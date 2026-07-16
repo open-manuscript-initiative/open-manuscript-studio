@@ -8,9 +8,9 @@ export const hu: TranslationDictionary = {
     delete: 'Törlés',
     edit: 'Szerkesztés',
     add: 'Hozzáadás',
-    loading: 'Betöltés…'
+    loading: 'Betöltés…',
+    language: 'Nyelv'
   },
-
   navigation: {
     documents: 'Dokumentumok',
     editor: 'Szerkesztő',
@@ -18,7 +18,6 @@ export const hu: TranslationDictionary = {
     preview: 'Előnézet',
     settings: 'Beállítások'
   },
-
   manuscript: {
     newDocument: 'Új kézirat',
     documentTitle: 'Dokumentum címe',
@@ -28,9 +27,10 @@ export const hu: TranslationDictionary = {
     sections: 'Fejezetek',
     annotations: 'Jegyzetek',
     citations: 'Hivatkozások',
-    bibliography: 'Irodalomjegyzék'
+    bibliography: 'Irodalomjegyzék',
+    documentLanguage: 'A dokumentum nyelve',
+    originalLanguage: 'Eredeti nyelv'
   },
-
   editor: {
     addSection: 'Fejezet hozzáadása',
     addParagraph: 'Bekezdés hozzáadása',
@@ -38,17 +38,20 @@ export const hu: TranslationDictionary = {
     untitledSection: 'Névtelen fejezet',
     emptyParagraph: 'Kezdj el írni…'
   },
-
   status: {
     draft: 'Piszkozat',
     submitted: 'Beküldve',
     accepted: 'Elfogadva',
     published: 'Megjelent'
   },
-
   validation: {
     requiredField: 'Ez a mező kötelező.',
     invalidDocument: 'A dokumentum szerkezete érvénytelen.',
     unsupportedSchema: 'A dokumentum sémaverziója nem támogatott.'
+  },
+  languages: {
+    en: 'Angol',
+    hu: 'Magyar',
+    de: 'Német'
   }
 };

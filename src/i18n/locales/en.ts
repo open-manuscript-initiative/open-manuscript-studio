@@ -8,9 +8,9 @@ export const en: TranslationDictionary = {
     delete: 'Delete',
     edit: 'Edit',
     add: 'Add',
-    loading: 'Loading…'
+    loading: 'Loading…',
+    language: 'Language'
   },
-
   navigation: {
     documents: 'Documents',
     editor: 'Editor',
@@ -18,7 +18,6 @@ export const en: TranslationDictionary = {
     preview: 'Preview',
     settings: 'Settings'
   },
-
   manuscript: {
     newDocument: 'New manuscript',
     documentTitle: 'Document title',
@@ -28,9 +27,10 @@ export const en: TranslationDictionary = {
     sections: 'Sections',
     annotations: 'Notes',
     citations: 'Citations',
-    bibliography: 'Bibliography'
+    bibliography: 'Bibliography',
+    documentLanguage: 'Document language',
+    originalLanguage: 'Original language'
   },
-
   editor: {
     addSection: 'Add section',
     addParagraph: 'Add paragraph',
@@ -38,17 +38,20 @@ export const en: TranslationDictionary = {
     untitledSection: 'Untitled section',
     emptyParagraph: 'Start writing…'
   },
-
   status: {
     draft: 'Draft',
     submitted: 'Submitted',
     accepted: 'Accepted',
     published: 'Published'
   },
-
   validation: {
     requiredField: 'This field is required.',
     invalidDocument: 'The document structure is invalid.',
     unsupportedSchema: 'The document schema version is not supported.'
+  },
+  languages: {
+    en: 'English',
+    hu: 'Hungarian',
+    de: 'German'
   }
 };
