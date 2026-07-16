@@ -1,53 +1,12 @@
-import { translations } from './config';
-import type {
-  SupportedLocale,
-  TranslationDictionary
-} from './types';
+import { useContext } from 'react';
+import { I18nContext } from './I18nProvider';
 
-type NestedKey<T> = {
-  [K in keyof T & string]:
-    T[K] extends string
-      ? K
-      : T[K] extends Record<string, unknown>
-        ? `${K}.${NestedKey<T[K]>}`
-        : never;
-}[keyof T & string];
+export function useTranslation() {
+  const context = useContext(I18nContext);
 
-export type TranslationKey =
-  NestedKey<TranslationDictionary>;
-
-function resolveTranslation(
-  dictionary: TranslationDictionary,
-  key: TranslationKey
-): string {
-  const value = key
-    .split('.')
-    .reduce<unknown>((current, segment) => {
-      if (
-        typeof current === 'object' &&
-        current !== null &&
-        segment in current
-      ) {
-        return (
-          current as Record<string, unknown>
-        )[segment];
-      }
-
-      return undefined;
-    }, dictionary);
-
-  if (typeof value !== 'string') {
-    return key;
+  if (!context) {
+    throw new Error('useTranslation must be used inside an I18nProvider.');
   }
 
-  return value;
-}
-
-export function createTranslator(locale: SupportedLocale) {
-  const dictionary =
-    translations[locale] ??
-    translations.en;
-
-  return (key: TranslationKey): string =>
-    resolveTranslation(dictionary, key);
+  return context;
 }
