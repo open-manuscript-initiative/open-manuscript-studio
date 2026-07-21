@@ -39,9 +39,15 @@ button { cursor: pointer; }
 .title-input:focus { border-color: #0f172a; }
 .section-editor { margin-top: 2rem; }
 .section-editor h2 { font-size: 1.35rem; }
-.block-editor, .abstract-editor { width: 100%; border: 1px solid #cbd5e1; border-radius: .8rem; padding: .85rem; line-height: 1.65; resize: vertical; }
-.block-editor { min-height: 150px; margin-bottom: 1rem; font-size: 1.05rem; }
-.abstract-editor { min-height: 180px; }
+.abstract-editor {
+  width: 100%;
+  min-height: 180px;
+  border: 1px solid #cbd5e1;
+  border-radius: .8rem;
+  padding: .85rem;
+  line-height: 1.65;
+  resize: vertical;
+}
 .property-card { border: 1px solid #e2e8f0; border-radius: .8rem; padding: .85rem; margin-bottom: 1rem; background: #f8fafc; }
 .property-card h3 { margin: 0 0 .5rem; font-size: .95rem; }
 .property-card p { margin: .35rem 0; color: #475569; }
