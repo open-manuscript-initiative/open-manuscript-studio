@@ -1,49 +1,620 @@
-/* =====================================================
-   OMI Editor (Tiptap)
-   ===================================================== */
+/* ==========================================================
+   OMI Studio — Semantic Editor
+   Tiptap + Live JSON Inspector
+   ========================================================== */
 
-.block-editor {
-  width: 100%;
+:root {
+  --omi-editor-border: #dbe2ea;
+  --omi-editor-border-strong: #b8c3d1;
+  --omi-editor-surface: #ffffff;
+  --omi-editor-surface-muted: #f8fafc;
+  --omi-editor-surface-hover: #f1f5f9;
+
+  --omi-editor-text: #1e293b;
+  --omi-editor-text-muted: #64748b;
+  --omi-editor-text-soft: #94a3b8;
+
+  --omi-editor-accent: #0f172a;
+  --omi-editor-accent-soft: #e0f2fe;
+  --omi-editor-accent-text: #075985;
+
+  --omi-editor-note-background: #fef9c3;
+  --omi-editor-note-border: #eab308;
+  --omi-editor-note-text: #713f12;
+
+  --omi-json-background: #111827;
+  --omi-json-background-header: #0f172a;
+  --omi-json-border: rgba(255, 255, 255, 0.1);
+  --omi-json-text: #dbeafe;
+  --omi-json-muted: #94a3b8;
+  --omi-json-success: #86efac;
+
+  --omi-editor-radius-small: 0.55rem;
+  --omi-editor-radius-medium: 0.8rem;
+  --omi-editor-radius-large: 1rem;
+
+  --omi-editor-shadow-focus:
+    0 0 0 3px rgba(15, 23, 42, 0.08);
 }
 
-.block-editor .tiptap {
-  min-height: 3rem;
-  padding: 0.75rem 0;
+/* ==========================================================
+   Main editor layout
+   ========================================================== */
+
+.omi-studio-editor {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  color: var(--omi-editor-text);
+  background: var(--omi-editor-surface);
+}
+
+.omi-editor-header {
+  flex: 0 0 auto;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--omi-editor-border);
+  background: var(--omi-editor-surface);
+}
+
+.omi-editor-header .field-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--omi-editor-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.omi-editor-header .title-input {
+  width: 100%;
+  padding: 0.25rem 0 0.45rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  outline: none;
+  color: var(--omi-editor-text);
+  background: transparent;
+  font: inherit;
+  font-size: clamp(1.65rem, 3vw, 2.5rem);
+  font-weight: 750;
+  line-height: 1.2;
+  transition:
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.omi-editor-header .title-input:hover {
+  border-bottom-color: var(--omi-editor-border);
+}
+
+.omi-editor-header .title-input:focus {
+  border-bottom-color: var(--omi-editor-accent);
+}
+
+.omi-editor-header .title-input::placeholder {
+  color: var(--omi-editor-text-soft);
+}
+
+/* ==========================================================
+   Editor and JSON split view
+   ========================================================== */
+
+.omi-editor-workspace {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 3fr)
+    minmax(22rem, 2fr);
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.omi-writing-pane {
+  min-width: 0;
+  min-height: 0;
+  padding: 2rem clamp(1.25rem, 4vw, 4rem) 4rem;
+  overflow-y: auto;
+  background: var(--omi-editor-surface);
+}
+
+.omi-section-editor {
+  width: min(100%, 54rem);
+  margin: 0 auto;
+}
+
+.omi-section-heading {
+  margin: 0 0 1.75rem;
+  color: var(--omi-editor-text);
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.omi-empty-section {
+  margin: 0;
+  padding: 1rem;
+  color: var(--omi-editor-text-muted);
+  border: 1px dashed var(--omi-editor-border);
+  border-radius: var(--omi-editor-radius-medium);
+  background: var(--omi-editor-surface-muted);
+}
+
+/* ==========================================================
+   Block editor container
+   ========================================================== */
+
+.omi-block-editor {
+  position: relative;
+  width: 100%;
+  margin: 0 0 1.25rem;
+  padding: 0.8rem 1rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--omi-editor-radius-medium);
+  background: var(--omi-editor-surface);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.omi-block-editor:hover {
+  border-color: var(--omi-editor-border);
+  background: #fff;
+}
+
+.omi-block-editor:focus-within {
+  border-color: var(--omi-editor-border-strong);
+  box-shadow: var(--omi-editor-shadow-focus);
+}
+
+.omi-block-editor--loading {
+  min-height: 7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--omi-editor-text-muted);
+  background: var(--omi-editor-surface-muted);
+}
+
+/* ==========================================================
+   Minimal block toolbar
+   ========================================================== */
+
+.omi-block-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 1.8rem;
+  margin-bottom: 0.35rem;
+  opacity: 0.45;
+  transition: opacity 150ms ease;
+}
+
+.omi-block-editor:hover .omi-block-toolbar,
+.omi-block-editor:focus-within .omi-block-toolbar {
+  opacity: 1;
+}
+
+.omi-block-type {
+  color: var(--omi-editor-text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.omi-note-insert-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 1.9rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--omi-editor-border);
+  border-radius: 999px;
+  color: var(--omi-editor-text-muted);
+  background: var(--omi-editor-surface);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 650;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background-color 150ms ease,
+    transform 100ms ease;
+}
+
+.omi-note-insert-button:hover {
+  color: var(--omi-editor-text);
+  border-color: var(--omi-editor-border-strong);
+  background: var(--omi-editor-surface-hover);
+}
+
+.omi-note-insert-button:active {
+  transform: translateY(1px);
+}
+
+.omi-note-insert-button:focus-visible {
+  outline: 2px solid var(--omi-editor-accent);
+  outline-offset: 2px;
+}
+
+/* ==========================================================
+   Tiptap / ProseMirror editor
+   ========================================================== */
+
+.omi-block-editor .tiptap,
+.omi-tiptap-editor {
+  min-height: 4.5rem;
+  padding: 0.35rem 0;
   border: 0;
   outline: none;
-  font: inherit;
-  line-height: 1.65;
-  color: inherit;
+  color: var(--omi-editor-text);
   background: transparent;
+  font: inherit;
+  font-size: 1.04rem;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
-.block-editor .tiptap p {
+.omi-block-editor .tiptap:focus,
+.omi-block-editor .tiptap.ProseMirror-focused,
+.omi-tiptap-editor:focus,
+.omi-tiptap-editor.ProseMirror-focused {
+  outline: none;
+}
+
+.omi-block-editor .tiptap p,
+.omi-tiptap-editor p {
   margin: 0;
 }
 
-.block-editor .tiptap:focus {
-  outline: none;
+.omi-block-editor .tiptap p + p,
+.omi-tiptap-editor p + p {
+  margin-top: 0.85rem;
 }
 
-.block-editor .tiptap.ProseMirror-focused {
-  outline: none;
+.omi-block-editor .tiptap strong,
+.omi-tiptap-editor strong {
+  font-weight: 700;
 }
+
+.omi-block-editor .tiptap em,
+.omi-tiptap-editor em {
+  font-style: italic;
+}
+
+.omi-block-editor .tiptap code,
+.omi-tiptap-editor code {
+  padding: 0.1rem 0.25rem;
+  border-radius: 0.3rem;
+  background: #f1f5f9;
+  font-family:
+    "SFMono-Regular",
+    Consolas,
+    "Liberation Mono",
+    Menlo,
+    monospace;
+  font-size: 0.9em;
+}
+
+.omi-block-editor .tiptap.ProseMirror,
+.omi-tiptap-editor.ProseMirror {
+  caret-color: var(--omi-editor-accent);
+}
+
+.omi-block-editor .tiptap ::selection,
+.omi-tiptap-editor ::selection {
+  color: var(--omi-editor-accent-text);
+  background: var(--omi-editor-accent-soft);
+}
+
+/* ==========================================================
+   Empty paragraph placeholder
+   ========================================================== */
+
+.omi-block-editor .tiptap p.is-editor-empty:first-child::before,
+.omi-tiptap-editor p.is-editor-empty:first-child::before {
+  content: "Kezdje el írni a bekezdést…";
+  float: left;
+  width: 0;
+  height: 0;
+  color: var(--omi-editor-text-soft);
+  pointer-events: none;
+}
+
+/* ==========================================================
+   OMI semantic note node
+   ========================================================== */
 
 .omi-note {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.25rem;
-  height: 1.25rem;
-  margin-inline: 0.15rem;
-  padding-inline: 0.25rem;
+  min-width: 1.5rem;
+  min-height: 1.3rem;
+  margin-inline: 0.2rem;
+  padding: 0.12rem 0.45rem;
+  border: 1px solid var(--omi-editor-note-border);
   border-radius: 999px;
-  vertical-align: super;
-  font-size: 0.7em;
-  line-height: 1;
-  cursor: pointer;
+  color: var(--omi-editor-note-text);
+  background: var(--omi-editor-note-background);
+  font-family: inherit;
+  font-size: 0.72em;
+  font-weight: 700;
+  line-height: 1.2;
+  vertical-align: 0.15em;
+  cursor: default;
   user-select: none;
+  transition:
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
 
-  background: #fff7cc;
-  border: 1px solid #facc15;
+.omi-note:hover {
+  box-shadow: 0 2px 8px rgba(113, 63, 18, 0.15);
+}
+
+.omi-note.ProseMirror-selectednode {
+  outline: 2px solid var(--omi-editor-accent);
+  outline-offset: 2px;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================
+   Live JSON panel
+   ========================================================== */
+
+.omi-json-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--omi-editor-border);
+  background: var(--omi-json-background);
+}
+
+.omi-json-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex: 0 0 auto;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--omi-json-border);
+  background: var(--omi-json-background-header);
+}
+
+.omi-json-header h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 0.94rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.omi-json-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--omi-json-success);
+  font-size: 0.72rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.omi-json-view {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 1.25rem;
+  overflow: auto;
+  color: var(--omi-json-text);
+  background: transparent;
+  font-family:
+    "SFMono-Regular",
+    Consolas,
+    "Liberation Mono",
+    Menlo,
+    monospace;
+  font-size: 0.78rem;
+  line-height: 1.65;
+  tab-size: 2;
+  white-space: pre;
+}
+
+.omi-json-view code {
+  color: inherit;
+  background: transparent;
+  font: inherit;
+}
+
+/* JSON scrollbar */
+
+.omi-json-view {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 transparent;
+}
+
+.omi-json-view::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.omi-json-view::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.omi-json-view::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: #475569;
+  background-clip: padding-box;
+}
+
+.omi-json-view::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+  background-clip: padding-box;
+}
+
+/* ==========================================================
+   Writing pane scrollbar
+   ========================================================== */
+
+.omi-writing-pane {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.omi-writing-pane::-webkit-scrollbar {
+  width: 10px;
+}
+
+.omi-writing-pane::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.omi-writing-pane::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: #cbd5e1;
+  background-clip: padding-box;
+}
+
+.omi-writing-pane::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  background-clip: padding-box;
+}
+
+/* ==========================================================
+   Accessibility
+   ========================================================== */
+
+.omi-studio-editor button:focus-visible,
+.omi-studio-editor input:focus-visible {
+  outline: 2px solid var(--omi-editor-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .omi-block-editor,
+  .omi-block-toolbar,
+  .omi-note-insert-button,
+  .omi-note,
+  .omi-editor-header .title-input {
+    transition: none;
+  }
+}
+
+/* ==========================================================
+   Responsive layout
+   ========================================================== */
+
+@media (max-width: 1180px) {
+  .omi-editor-workspace {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(20rem, 0.8fr);
+  }
+
+  .omi-writing-pane {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (max-width: 960px) {
+  .omi-studio-editor {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+  }
+
+  .omi-editor-workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows:
+      minmax(26rem, auto)
+      minmax(20rem, 45vh);
+    overflow: visible;
+  }
+
+  .omi-writing-pane {
+    min-height: 26rem;
+    overflow: visible;
+  }
+
+  .omi-json-pane {
+    min-height: 20rem;
+    border-top: 1px solid var(--omi-editor-border);
+    border-left: 0;
+  }
+
+  .omi-json-view {
+    max-height: 45vh;
+  }
+}
+
+@media (max-width: 760px) {
+  .omi-editor-header {
+    padding: 1rem;
+  }
+
+  .omi-writing-pane {
+    padding: 1.25rem 0.75rem 2rem;
+  }
+
+  .omi-block-editor {
+    padding: 0.75rem;
+    border-color: var(--omi-editor-border);
+  }
+
+  .omi-block-toolbar {
+    opacity: 1;
+  }
+
+  .omi-editor-workspace {
+    grid-template-rows:
+      minmax(24rem, auto)
+      minmax(18rem, 42vh);
+  }
+}
+
+@media (max-width: 520px) {
+  .omi-editor-header .title-input {
+    font-size: 1.55rem;
+  }
+
+  .omi-block-editor {
+    margin-bottom: 0.85rem;
+  }
+
+  .omi-note-insert-button span:last-child {
+    display: none;
+  }
+
+  .omi-note-insert-button {
+    width: 2rem;
+    padding-inline: 0;
+  }
+
+  .omi-json-header {
+    padding: 0.85rem 1rem;
+  }
+
+  .omi-json-view {
+    padding: 1rem;
+    font-size: 0.72rem;
+  }
 }
