@@ -1,0 +1,49 @@
+/* =====================================================
+   OMI Editor (Tiptap)
+   ===================================================== */
+
+.block-editor {
+  width: 100%;
+}
+
+.block-editor .tiptap {
+  min-height: 3rem;
+  padding: 0.75rem 0;
+  border: 0;
+  outline: none;
+  font: inherit;
+  line-height: 1.65;
+  color: inherit;
+  background: transparent;
+}
+
+.block-editor .tiptap p {
+  margin: 0;
+}
+
+.block-editor .tiptap:focus {
+  outline: none;
+}
+
+.block-editor .tiptap.ProseMirror-focused {
+  outline: none;
+}
+
+.omi-note {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  margin-inline: 0.15rem;
+  padding-inline: 0.25rem;
+  border-radius: 999px;
+  vertical-align: super;
+  font-size: 0.7em;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+
+  background: #fff7cc;
+  border: 1px solid #facc15;
+}
