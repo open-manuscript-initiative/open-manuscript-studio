@@ -35,7 +35,7 @@ export const OmiNoteExtension = Node.create({
       mergeAttributes(HTMLAttributes, {
         class: 'omi-note',
       }),
-      '📝',
+     <span class="omi-note">N1</span>
     ];
   },
 });
