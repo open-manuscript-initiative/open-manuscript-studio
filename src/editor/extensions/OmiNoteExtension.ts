@@ -1,41 +1,22 @@
-import { mergeAttributes, Node } from '@tiptap/core';
+import { Node, mergeAttributes } from '@tiptap/core';
 
-/**
- * Egy minimális, szövegközi OMI-jegyzetcsomópont.
- *
- * A node:
- * - inline: bekezdésen belül helyezhető el;
- * - atom: egyetlen, oszthatatlan szerkezeti egység;
- * - selectable: kattintással kijelölhető;
- * - contenteditable="false": a felirata közvetlenül nem szerkeszthető.
- */
 export const OmiNoteExtension = Node.create({
   name: 'omiNote',
 
   group: 'inline',
+
   inline: true,
+
   atom: true,
+
   selectable: true,
+
+  draggable: false,
 
   addAttributes() {
     return {
       noteId: {
         default: null,
-
-        parseHTML: (element: HTMLElement): string | null =>
-          element.getAttribute('data-note-id'),
-
-        renderHTML: (attributes: Record<string, unknown>) => {
-          const noteId = attributes.noteId;
-
-          if (typeof noteId !== 'string' || noteId.length === 0) {
-            return {};
-          }
-
-          return {
-            'data-note-id': noteId,
-          };
-        },
       },
     };
   },
@@ -43,7 +24,7 @@ export const OmiNoteExtension = Node.create({
   parseHTML() {
     return [
       {
-        tag: 'span.omi-note[data-note-id]',
+        tag: 'span[data-note-id]',
       },
     ];
   },
@@ -53,9 +34,8 @@ export const OmiNoteExtension = Node.create({
       'span',
       mergeAttributes(HTMLAttributes, {
         class: 'omi-note',
-        contenteditable: 'false',
       }),
-      'Jegyzet',
+      '📝',
     ];
   },
 });
