@@ -146,7 +146,7 @@ export function BlockEditor({
         <button
           type="button"
           className="omi-note-insert-button"
-          onClick={insertTestNote}
+          onClick={insertNote}
           aria-label="Szövegközi OMI-jegyzet beszúrása"
           title="Szövegközi OMI-jegyzet beszúrása"
         >
