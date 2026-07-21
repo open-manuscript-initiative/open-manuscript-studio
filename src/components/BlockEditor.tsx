@@ -1,6 +1,3 @@
-import { EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import { OmiNoteExtension } from '../editor/extensions/OmiNoteExtension';
 import { useEffect, useRef } from 'react';
 import {
   EditorContent,
@@ -30,10 +27,6 @@ export function BlockEditor({
   content,
   onUpdate,
 }: BlockEditorProps) {
-  /*
-   * A callbacket refben tartjuk, így az editor instance-t nem kell
-   * újra létrehozni akkor sem, ha a szülő komponens újrarenderelődik.
-   */
   const onUpdateRef = useRef(onUpdate);
 
   useEffect(() => {
@@ -43,10 +36,6 @@ export function BlockEditor({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        /*
-         * A PoC-ban csak tiszta bekezdésszerkesztést engedünk.
-         * Nincs Word-szerű címsor-, lista- vagy kódblokk-formázás.
-         */
         heading: false,
         blockquote: false,
         bulletList: false,
@@ -66,7 +55,7 @@ export function BlockEditor({
         class: 'omi-tiptap-editor',
         'data-block-id': blockId,
         'data-block-type': blockType,
-        'aria-label': `${blockType} block`,
+        'aria-label': `${formatBlockType(blockType)} szerkesztése`,
         spellcheck: 'true',
       },
     },
@@ -81,14 +70,6 @@ export function BlockEditor({
     },
   });
 
-  /*
-   * Ha a store tartalma külső okból változik meg
-   * — például dokumentumbetöltés vagy visszaállítás miatt —,
-   * visszatöltjük azt az editorba.
-   *
-   * Az emitUpdate: false megakadályozza a végtelen
-   * editor → store → editor frissítési ciklust.
-   */
   useEffect(() => {
     if (!editor) {
       return;
@@ -107,20 +88,20 @@ export function BlockEditor({
   }, [content, editor]);
 
   function insertNote(): void {
-  if (!editor) {
-    return;
-  }
+    if (!editor) {
+      return;
+    }
 
-  editor
-    .chain()
-    .focus()
-    .insertOmiNote({
-      label: 'N',
-      noteType: 'footnote',
-    })
-    .insertContent(' ')
-    .run();
-}
+    editor
+      .chain()
+      .focus()
+      .insertOmiNote({
+        label: 'N',
+        noteType: 'footnote',
+      })
+      .insertContent(' ')
+      .run();
+  }
 
   if (!editor) {
     return (
@@ -160,14 +141,6 @@ export function BlockEditor({
   );
 }
 
-/**
- * A store-ban levő tartalmat Tiptap JSON-dokumentummá alakítja.
- *
- * Három esetet kezel:
- * 1. érvényes Tiptap JSON-string;
- * 2. korábbi textarea-alapú egyszerű szöveg;
- * 3. üres tartalom.
- */
 function parseStoredContent(content: string): JSONContent {
   if (content.trim().length === 0) {
     return createParagraphDocument('');
@@ -180,10 +153,7 @@ function parseStoredContent(content: string): JSONContent {
       return parsed;
     }
   } catch {
-    /*
-     * A korábbi textarea-tartalom nem JSON.
-     * Ebben az esetben egyszerű szöveges bekezdésként nyitjuk meg.
-     */
+    // A korábbi textarea-tartalom egyszerű szövegként nyílik meg.
   }
 
   return createParagraphDocument(content);
