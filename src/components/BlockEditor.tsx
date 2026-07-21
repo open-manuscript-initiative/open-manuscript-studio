@@ -247,19 +247,6 @@ function documentsAreEqual(
   return JSON.stringify(first) === JSON.stringify(second);
 }
 
-function createNoteId(): string {
-  if (
-    typeof globalThis.crypto !== 'undefined' &&
-    typeof globalThis.crypto.randomUUID === 'function'
-  ) {
-    return globalThis.crypto.randomUUID();
-  }
-
-  return `note-${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2, 10)}`;
-}
-
 function formatBlockType(blockType: string): string {
   switch (blockType) {
     case 'paragraph':
