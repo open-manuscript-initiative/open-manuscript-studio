@@ -1,6 +1,6 @@
 import { Header } from './components/Header';
 import { DocumentTree } from './components/DocumentTree';
-import { EditorPane } from './editor/EditorPane';
+import { EditorPane } from './components/EditorPane';
 import { PropertiesPanel } from './components/PropertiesPanel';
 
 export function App() {
