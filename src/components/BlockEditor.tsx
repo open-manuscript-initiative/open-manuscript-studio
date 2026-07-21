@@ -1,3 +1,6 @@
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { OmiNoteExtension } from '../editor/extensions/OmiNoteExtension';
 import { useEffect, useRef } from 'react';
 import {
   EditorContent,
