@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useRef} from 'react';
+import { useEffect, useRef } from 'react';
 import {
   EditorContent,
   type JSONContent,
@@ -6,7 +6,7 @@ import {
 } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 
-import {OmiNoteExtension} from '../editor/extensions/OmiNoteExtension';
+import { OmiNoteExtension } from '../editor/extensions/OmiNoteExtension';
 
 interface BlockEditorProps {
   blockId: string;
@@ -16,7 +16,10 @@ interface BlockEditorProps {
 }
 
 /**
- * Egyetlen OMI-blokkhoz tartozó önálló Tiptap editor instance.
+ * Egyetlen kéziratblokk önálló Tiptap editor instance-a.
+ *
+ * A store jelenleg stringet tárol, ezért az editor.getJSON()
+ * eredményét JSON.stringify() segítségével mentjük.
  */
 export function BlockEditor({
   blockId,
@@ -25,9 +28,8 @@ export function BlockEditor({
   onUpdate,
 }: BlockEditorProps) {
   /*
-   * Az aktuális callbacket refben tartjuk, hogy a Zustand store
-   * callbackjének változása ne kényszerítse az editor instance
-   * újralétrehozását.
+   * A callbacket refben tartjuk, így az editor instance-t nem kell
+   * újra létrehozni akkor sem, ha a szülő komponens újrarenderelődik.
    */
   const onUpdateRef = useRef(onUpdate);
 
@@ -35,18 +37,12 @@ export function BlockEditor({
     onUpdateRef.current = onUpdate;
   }, [onUpdate]);
 
-  const initialContent = useMemo(
-    () => parseStoredContent(content),
-    [blockId],
-  );
-
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         /*
-         * Az OMI szerkesztőben egy blokk alapvetően bekezdés.
-         * A Word-szerű blokkformázási lehetőségeket ezért már
-         * séma szintjén is letiltjuk.
+         * A PoC-ban csak tiszta bekezdésszerkesztést engedünk.
+         * Nincs Word-szerű címsor-, lista- vagy kódblokk-formázás.
          */
         heading: false,
         blockquote: false,
@@ -60,11 +56,11 @@ export function BlockEditor({
       OmiNoteExtension,
     ],
 
-    content: initialContent,
+    content: parseStoredContent(content),
 
     editorProps: {
       attributes: {
-        class: 'block-editor',
+        class: 'omi-tiptap-editor',
         'data-block-id': blockId,
         'data-block-type': blockType,
         'aria-label': `${blockType} block`,
@@ -72,83 +68,134 @@ export function BlockEditor({
       },
     },
 
-    onUpdate: ({editor: currentEditor}) => {
-      const documentJson = currentEditor.getJSON();
+    onUpdate: ({ editor: currentEditor }) => {
+      const structuredContent = currentEditor.getJSON();
 
-      /*
-       * A jelenlegi store stringet vár, ezért a strukturált
-       * Tiptap JSON-t stringként mentjük.
-       */
       onUpdateRef.current(
         blockId,
-        JSON.stringify(documentJson),
+        JSON.stringify(structuredContent),
       );
     },
   });
 
   /*
-   * Külső állapotváltozás kezelése.
+   * Ha a store tartalma külső okból változik meg
+   * — például dokumentumbetöltés vagy visszaállítás miatt —,
+   * visszatöltjük azt az editorba.
    *
-   * Erre például dokumentum betöltése, visszaállítás vagy
-   * távoli szinkronizáció során lehet szükség. Az emitUpdate:
-   * false megakadályozza, hogy a visszatöltés újabb store-írást
-   * váltson ki.
+   * Az emitUpdate: false megakadályozza a végtelen
+   * editor → store → editor frissítési ciklust.
    */
   useEffect(() => {
     if (!editor) {
       return;
     }
 
-    const incomingContent = parseStoredContent(content);
+    const incomingDocument = parseStoredContent(content);
+    const currentDocument = editor.getJSON();
 
-    if (documentsAreEqual(editor.getJSON(), incomingContent)) {
+    if (documentsAreEqual(currentDocument, incomingDocument)) {
       return;
     }
 
-    editor.commands.setContent(incomingContent, {
+    editor.commands.setContent(incomingDocument, {
       emitUpdate: false,
     });
   }, [content, editor]);
 
-  if (!editor) {
-    return null;
+  function insertTestNote(): void {
+    if (!editor) {
+      return;
+    }
+
+    const noteId = createNoteId();
+
+    editor
+      .chain()
+      .focus()
+      .insertContent([
+        {
+          type: 'omiNote',
+          attrs: {
+            noteId,
+          },
+        },
+        {
+          type: 'text',
+          text: ' ',
+        },
+      ])
+      .run();
   }
 
-  return <EditorContent editor={editor} />;
+  if (!editor) {
+    return (
+      <div
+        className="omi-block-editor omi-block-editor--loading"
+        aria-live="polite"
+      >
+        A szerkesztő betöltése…
+      </div>
+    );
+  }
+
+  return (
+    <article
+      className="omi-block-editor"
+      data-block-id={blockId}
+    >
+      <div className="omi-block-toolbar">
+        <span className="omi-block-type">
+          {formatBlockType(blockType)}
+        </span>
+
+        <button
+          type="button"
+          className="omi-note-insert-button"
+          onClick={insertTestNote}
+          aria-label="Szövegközi OMI-jegyzet beszúrása"
+          title="Szövegközi OMI-jegyzet beszúrása"
+        >
+          <span aria-hidden="true">＋</span>
+          <span>Jegyzet</span>
+        </button>
+      </div>
+
+      <EditorContent editor={editor} />
+    </article>
+  );
 }
 
 /**
- * Feldolgozza a store-ban található blokk tartalmát.
+ * A store-ban levő tartalmat Tiptap JSON-dokumentummá alakítja.
  *
- * Támogatott:
- * 1. Tiptap JSON string;
- * 2. korábbi, textarea-ból származó egyszerű szöveg;
+ * Három esetet kezel:
+ * 1. érvényes Tiptap JSON-string;
+ * 2. korábbi textarea-alapú egyszerű szöveg;
  * 3. üres tartalom.
  */
 function parseStoredContent(content: string): JSONContent {
-  const normalizedContent = content.trim();
-
-  if (normalizedContent.length === 0) {
-    return createTextDocument('');
+  if (content.trim().length === 0) {
+    return createParagraphDocument('');
   }
 
   try {
-    const parsed: unknown = JSON.parse(normalizedContent);
+    const parsed: unknown = JSON.parse(content);
 
     if (isTiptapDocument(parsed)) {
       return parsed;
     }
   } catch {
     /*
-     * A tartalom nem JSON. Ez normális a korábbi, textarea-alapú
-     * dokumentumoknál, ezért egyszerű szövegként migráljuk.
+     * A korábbi textarea-tartalom nem JSON.
+     * Ebben az esetben egyszerű szöveges bekezdésként nyitjuk meg.
      */
   }
 
-  return createTextDocument(content);
+  return createParagraphDocument(content);
 }
 
-function createTextDocument(text: string): JSONContent {
+function createParagraphDocument(text: string): JSONContent {
   if (text.length === 0) {
     return {
       type: 'doc',
@@ -183,12 +230,13 @@ function isTiptapDocument(
     return false;
   }
 
+  if (value.type !== 'doc') {
+    return false;
+  }
+
   return (
-    value.type === 'doc' &&
-    (
-      value.content === undefined ||
-      Array.isArray(value.content)
-    )
+    value.content === undefined ||
+    Array.isArray(value.content)
   );
 }
 
@@ -203,4 +251,33 @@ function documentsAreEqual(
   second: JSONContent,
 ): boolean {
   return JSON.stringify(first) === JSON.stringify(second);
+}
+
+function createNoteId(): string {
+  if (
+    typeof globalThis.crypto !== 'undefined' &&
+    typeof globalThis.crypto.randomUUID === 'function'
+  ) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  return `note-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 10)}`;
+}
+
+function formatBlockType(blockType: string): string {
+  switch (blockType) {
+    case 'paragraph':
+      return 'Bekezdés';
+
+    case 'heading':
+      return 'Címsor';
+
+    case 'quote':
+      return 'Idézet';
+
+    default:
+      return blockType;
+  }
 }
