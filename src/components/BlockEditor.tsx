@@ -106,30 +106,21 @@ export function BlockEditor({
     });
   }, [content, editor]);
 
-  function insertTestNote(): void {
-    if (!editor) {
-      return;
-    }
-
-    const noteId = createNoteId();
-
-    editor
-      .chain()
-      .focus()
-      .insertContent([
-        {
-          type: 'omiNote',
-          attrs: {
-            noteId,
-          },
-        },
-        {
-          type: 'text',
-          text: ' ',
-        },
-      ])
-      .run();
+  function insertNote(): void {
+  if (!editor) {
+    return;
   }
+
+  editor
+    .chain()
+    .focus()
+    .insertOmiNote({
+      label: 'N',
+      noteType: 'footnote',
+    })
+    .insertContent(' ')
+    .run();
+}
 
   if (!editor) {
     return (
