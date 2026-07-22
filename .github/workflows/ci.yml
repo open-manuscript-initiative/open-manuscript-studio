@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  deployments: write
 
 concurrency:
   group: omi-studio-${{ github.ref }}
@@ -41,6 +42,10 @@ jobs:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+
+    environment:
+      name: production
+      url: https://studio.openmanuscript.org
 
     steps:
       - name: Deploy over SSH
