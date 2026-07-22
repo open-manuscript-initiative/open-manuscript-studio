@@ -1,4 +1,4 @@
-name: OMI Studio CI
+name: OMI Studio CI/CD
 
 on:
   push:
@@ -12,17 +12,16 @@ permissions:
   contents: read
 
 concurrency:
-  group: omi-studio-ci-${{ github.ref }}
+  group: omi-studio-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Build and verify
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -33,5 +32,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: TypeScript and production build
+      - name: Build
         run: npm run build
+
+  deploy:
+    name: Deploy to Production
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            export PATH="/var/www/vhosts/openmanuscript.org/.nodenv/shims:$PATH"
+
+            cd /var/www/vhosts/openmanuscript.org/studio/repository
+
+            git fetch origin main
+            git reset --hard origin/main
+
+            npm ci
+            npm run build
+
+            rsync -a --delete dist/ /var/www/vhosts/openmanuscript.org/studio/httpdocs/
