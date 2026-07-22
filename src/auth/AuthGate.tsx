@@ -1,20 +1,24 @@
 import type { ReactNode } from 'react';
 
-import { isAuthenticated, useAuthStore } from '../store/authStore';
+import {
+  getCurrentUser,
+  useAuthStore,
+} from '../store/authStore';
 
 interface AuthGateProps {
   children: ReactNode;
   fallback: ReactNode;
 }
 
-/**
- * Only renders the Studio when an authenticated user exists.
- */
 export function AuthGate({
   children,
   fallback,
 }: AuthGateProps) {
-  const authenticated = useAuthStore(isAuthenticated);
+  const currentUser = useAuthStore(getCurrentUser);
 
-  return authenticated ? children : fallback;
+  if (!currentUser) {
+    return fallback;
+  }
+
+  return children;
 }
