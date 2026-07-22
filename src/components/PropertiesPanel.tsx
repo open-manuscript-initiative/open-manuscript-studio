@@ -31,3 +31,8 @@ export function PropertiesPanel() {
     </aside>
   );
 }
+<div className="workspace">
+  <DocumentTree />
+  <EditorPane />
+  <PropertiesPanel />
+</div>
