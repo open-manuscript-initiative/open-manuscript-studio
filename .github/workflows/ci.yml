@@ -33,18 +33,20 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Read package version
         id: package
+        shell: bash
         run: |
-          echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Export build variables
+        shell: bash
         run: |
-          echo "VITE_APP_VERSION=${{ steps.package.outputs.version }}" >> $GITHUB_ENV
-          echo "VITE_BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
-          echo "VITE_COMMIT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
-          echo "VITE_BUILD_DATE=$(date -u +"%Y-%m-%d %H:%M UTC")" >> $GITHUB_ENV
+          echo "VITE_APP_VERSION=${{ steps.package.outputs.version }}" >> "$GITHUB_ENV"
+          echo "VITE_BUILD_NUMBER=${{ github.run_number }}" >> "$GITHUB_ENV"
+          echo "VITE_COMMIT_SHA=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+          echo "VITE_BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')" >> "$GITHUB_ENV"
 
       - name: Build
         run: npm run build
@@ -68,7 +70,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            set -e
+            set -euo pipefail
 
             export PATH="/var/www/vhosts/openmanuscript.org/.nodenv/shims:$PATH"
 
@@ -76,6 +78,17 @@ jobs:
 
             git fetch origin main
             git reset --hard origin/main
+
+            APP_VERSION="$(node -p "require('./package.json').version")"
+            BUILD_NUMBER="${{ github.run_number }}"
+            COMMIT_SHA="${{ github.sha }}"
+            COMMIT_SHORT="${COMMIT_SHA:0:7}"
+            BUILD_DATE="$(date -u '+%Y-%m-%d %H:%M UTC')"
+
+            export VITE_APP_VERSION="$APP_VERSION"
+            export VITE_BUILD_NUMBER="$BUILD_NUMBER"
+            export VITE_COMMIT_SHA="$COMMIT_SHORT"
+            export VITE_BUILD_DATE="$BUILD_DATE"
 
             npm ci
             npm run build
