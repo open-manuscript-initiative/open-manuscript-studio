@@ -49,6 +49,48 @@ export const de: TranslationDictionary = {
     invalidDocument: 'Die Dokumentstruktur ist ungültig.',
     unsupportedSchema: 'Die Schemaversion des Dokuments wird nicht unterstützt.'
   },
+  
+  auth: {
+  brand: {
+    name: 'Open Manuscript Studio',
+    description: 'Gemeinsame Manuskriptbearbeitung'
+  },
+
+  login: {
+    title: 'Anmelden',
+    description: 'Bitte melden Sie sich an.',
+    submit: 'Anmelden',
+    noAccount: 'Noch kein Konto?',
+    registerLink: 'Registrieren'
+  },
+
+  register: {
+    title: 'Konto erstellen',
+    description: 'Erstellen Sie ein neues Konto.',
+    submit: 'Registrieren',
+    hasAccount: 'Bereits registriert?',
+    loginLink: 'Anmelden'
+  },
+
+  fields: {
+    name: {
+      label: 'Vollständiger Name',
+      placeholder: 'Ihr vollständiger Name'
+    },
+
+    email: {
+      label: 'E-Mail',
+      placeholder: 'name@example.com'
+    },
+
+    password: {
+      label: 'Passwort',
+      placeholder: 'Passwort eingeben'
+    }
+  },
+
+  alphaNotice: 'Alpha-Version'
+  }
   languages: {
     en: 'Englisch',
     hu: 'Ungarisch',
