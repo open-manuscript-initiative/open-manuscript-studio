@@ -68,12 +68,13 @@ export const en: TranslationDictionary = {
     },
 
     login: {
-      title: 'Sign in',
-      description: 'Sign in to continue.',
-      submit: 'Sign in',
-      noAccount: "Don't have an account?",
-      registerLink: 'Create account'
-    },
+  title: 'Sign in',
+  description: 'Please sign in to continue.',
+  submit: 'Sign in',
+  submitting: 'Signing in…',
+  noAccount: 'Do not have an account yet?',
+  registerLink: 'Register'
+},
 
     register: {
       title: 'Create account',
