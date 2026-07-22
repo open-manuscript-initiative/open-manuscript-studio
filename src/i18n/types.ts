@@ -60,10 +60,55 @@ export interface TranslationDictionary {
   };
 
   auth: {
-    brand: {
-      name: string;
-      description: string;
+  brand: {
+    name: string;
+    description: string;
+  };
+
+  login: {
+    title: string;
+    description: string;
+    submit: string;
+    submitting: string;
+    noAccount: string;
+    registerLink: string;
+  };
+
+  register: {
+    title: string;
+    description: string;
+    submit: string;
+    hasAccount: string;
+    loginLink: string;
+  };
+
+  fields: {
+    name: {
+      label: string;
+      placeholder: string;
     };
+
+    email: {
+      label: string;
+      placeholder: string;
+    };
+
+    password: {
+      label: string;
+      placeholder: string;
+    };
+  };
+
+  errors: {
+    invalidEmail: string;
+    invalidCredentials: string;
+    userNotFound: string;
+    accountNotActive: string;
+    authenticationRequired: string;
+  };
+
+  alphaNotice: string;
+};
 
     login: {
       title: string;
