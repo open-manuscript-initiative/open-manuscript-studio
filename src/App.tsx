@@ -4,11 +4,10 @@ import { AuthGate } from './auth/AuthGate';
 import { LoginPage } from './auth/LoginPage';
 import { RegisterPage } from './auth/RegisterPage';
 
-import { Header } from './components/Header';
+import { AppLayout } from './components/AppLayout';
 import { DocumentTree } from './components/DocumentTree';
 import { EditorPane } from './components/EditorPane';
 import { PropertiesPanel } from './components/PropertiesPanel';
-import { Footer } from './components/Footer';
 
 import './styles/auth.css';
 
@@ -42,16 +41,12 @@ export function App() {
 
 function StudioApplication() {
   return (
-    <div className="app-shell">
-      <Header />
-
+    <AppLayout>
       <div className="workspace">
         <DocumentTree />
         <EditorPane />
         <PropertiesPanel />
       </div>
-
-      <Footer />
-    </div>
+    </AppLayout>
   );
 }
