@@ -49,6 +49,48 @@ export const hu: TranslationDictionary = {
     invalidDocument: 'A dokumentum szerkezete érvénytelen.',
     unsupportedSchema: 'A dokumentum sémaverziója nem támogatott.'
   },
+  
+  auth: {
+  brand: {
+    name: 'Open Manuscript Studio',
+    description: 'Együttműködő kéziratszerkesztő'
+  },
+
+  login: {
+    title: 'Bejelentkezés',
+    description: 'Jelentkezzen be a folytatáshoz.',
+    submit: 'Bejelentkezés',
+    noAccount: 'Nincs még fiókja?',
+    registerLink: 'Regisztráció'
+  },
+
+  register: {
+    title: 'Fiók létrehozása',
+    description: 'Hozzon létre új fiókot.',
+    submit: 'Regisztráció',
+    hasAccount: 'Már van fiókja?',
+    loginLink: 'Bejelentkezés'
+  },
+
+  fields: {
+    name: {
+      label: 'Teljes név',
+      placeholder: 'Teljes név'
+    },
+
+    email: {
+      label: 'E-mail',
+      placeholder: 'pelda@email.hu'
+    },
+
+    password: {
+      label: 'Jelszó',
+      placeholder: 'Jelszó'
+    }
+  },
+
+  alphaNotice: 'Alfa verzió'
+  }
   languages: {
     en: 'Angol',
     hu: 'Magyar',
