@@ -102,3 +102,35 @@ button { cursor: pointer; }
 .omi-footer-separator {
   opacity: .45;
 }
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f6f8;
+}
+
+.app-layout-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 280px)
+    minmax(0, 1fr)
+    minmax(260px, 320px);
+
+  overflow: hidden;
+}
+
+.workspace > * {
+  min-width: 0;
+  min-height: 0;
+}
