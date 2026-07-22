@@ -11,6 +11,7 @@ export const en: TranslationDictionary = {
     loading: 'Loading…',
     language: 'Language'
   },
+
   navigation: {
     documents: 'Documents',
     editor: 'Editor',
@@ -18,6 +19,7 @@ export const en: TranslationDictionary = {
     preview: 'Preview',
     settings: 'Settings'
   },
+
   manuscript: {
     newDocument: 'New manuscript',
     documentTitle: 'Document title',
@@ -31,6 +33,7 @@ export const en: TranslationDictionary = {
     documentLanguage: 'Document language',
     originalLanguage: 'Original language'
   },
+
   editor: {
     addSection: 'Add section',
     addParagraph: 'Add paragraph',
@@ -38,23 +41,27 @@ export const en: TranslationDictionary = {
     untitledSection: 'Untitled section',
     emptyParagraph: 'Start writing…'
   },
+
   status: {
     draft: 'Draft',
     submitted: 'Submitted',
     accepted: 'Accepted',
     published: 'Published'
   },
+
   validation: {
     requiredField: 'This field is required.',
     invalidDocument: 'The document structure is invalid.',
     unsupportedSchema: 'The document schema version is not supported.'
   },
+
   languages: {
     en: 'English',
     hu: 'Hungarian',
     de: 'German'
   },
-    auth: {
+
+  auth: {
     brand: {
       name: 'Open Manuscript Studio',
       description: 'Collaborative scholarly writing'
@@ -77,6 +84,11 @@ export const en: TranslationDictionary = {
     },
 
     fields: {
+      name: {
+        label: 'Full name',
+        placeholder: 'Your full name'
+      },
+
       email: {
         label: 'Email',
         placeholder: 'name@example.com'
@@ -85,14 +97,9 @@ export const en: TranslationDictionary = {
       password: {
         label: 'Password',
         placeholder: 'Enter your password'
-      },
-
-      name: {
-        label: 'Full name',
-        placeholder: 'Your full name'
       }
     },
 
-    alphaNotice: 'Alpha version'
-        }
+    alphaNotice: 'Alpha version – authentication is currently for testing purposes.'
+  }
 };
