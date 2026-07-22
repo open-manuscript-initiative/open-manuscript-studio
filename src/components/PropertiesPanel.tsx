@@ -1,38 +1,68 @@
-import { useStudioStore } from '../app/useStudioStore';
-import { PropertiesPanel } from './components/PropertiesPanel';
+import { useStudioStore } from '../store/useStudioStore';
+
 export function PropertiesPanel() {
-  const manuscript = useStudioStore((state) => state.manuscript);
-  const setAbstract = useStudioStore((state) => state.setAbstract);
+  const manuscript = useStudioStore(
+    (state) => state.manuscript,
+  );
+
+  const selectedSectionId = useStudioStore(
+    (state) => state.selectedSectionId,
+  );
+
+  const selectedSection =
+    manuscript.sections.find(
+      (section) =>
+        section.id === selectedSectionId,
+    ) ?? null;
 
   return (
-    <aside className="panel properties" aria-label="Properties">
-      <h2>Properties</h2>
-      <div className="property-card">
-        <h3>Manuscript metadata</h3>
-        <p><strong>Schema:</strong> OMI 0.1</p>
-        <p><strong>Locale:</strong> {manuscript.locale}</p>
-        <p><strong>Authors:</strong> {manuscript.authors.length}</p>
+    <aside className="omi-properties-panel">
+      <div className="omi-properties-panel-header">
+        <h2>Properties</h2>
       </div>
-      <label className="field-label" htmlFor="abstract">Abstract</label>
-      <textarea
-        id="abstract"
-        className="abstract-editor"
-        value={manuscript.abstract ?? ''}
-        onChange={(event) => setAbstract(event.target.value)}
-      />
-      <div className="property-card">
-        <h3>Publisher profile</h3>
-        <p>Default scholarly profile. Rendering rules will be added in Alpha 0.2.</p>
-      </div>
-      <div className="property-card">
-        <h3>Annotation rendering</h3>
-        <p>Footnote, endnote, margin note and popup targets are reserved in the model.</p>
+
+      <div className="omi-properties-panel-content">
+        <div className="omi-property-group">
+          <span className="omi-property-label">
+            Manuscript title
+          </span>
+
+          <span className="omi-property-value">
+            {manuscript.title || 'Untitled manuscript'}
+          </span>
+        </div>
+
+        <div className="omi-property-group">
+          <span className="omi-property-label">
+            Language
+          </span>
+
+          <span className="omi-property-value">
+            {manuscript.language || 'Not specified'}
+          </span>
+        </div>
+
+        <div className="omi-property-group">
+          <span className="omi-property-label">
+            Selected section
+          </span>
+
+          <span className="omi-property-value">
+            {selectedSection?.title ||
+              'No section selected'}
+          </span>
+        </div>
+
+        <div className="omi-property-group">
+          <span className="omi-property-label">
+            Sections
+          </span>
+
+          <span className="omi-property-value">
+            {manuscript.sections.length}
+          </span>
+        </div>
       </div>
     </aside>
   );
 }
-<div className="workspace">
-  <DocumentTree />
-  <EditorPane />
-  <PropertiesPanel />
-</div>
