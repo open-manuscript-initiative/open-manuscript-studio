@@ -21,7 +21,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -38,7 +39,7 @@ jobs:
   deploy:
     name: Deploy to Production
     needs: build
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
@@ -50,6 +51,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
+            set -e
+
             export PATH="/var/www/vhosts/openmanuscript.org/.nodenv/shims:$PATH"
 
             cd /var/www/vhosts/openmanuscript.org/studio/repository
@@ -60,4 +63,6 @@ jobs:
             npm ci
             npm run build
 
-            rsync -a --delete dist/ /var/www/vhosts/openmanuscript.org/studio/httpdocs/
+            rsync -a --delete \
+              dist/ \
+              /var/www/vhosts/openmanuscript.org/studio/httpdocs/
