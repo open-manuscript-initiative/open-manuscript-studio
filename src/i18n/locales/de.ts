@@ -52,7 +52,8 @@ export const de: TranslationDictionary = {
   validation: {
     requiredField: 'Dieses Feld ist erforderlich.',
     invalidDocument: 'Die Dokumentstruktur ist ungültig.',
-    unsupportedSchema: 'Die Schemaversion des Dokuments wird nicht unterstützt.'
+    unsupportedSchema:
+      'Die Schemaversion des Dokuments wird nicht unterstützt.'
   },
 
   languages: {
@@ -71,6 +72,7 @@ export const de: TranslationDictionary = {
       title: 'Anmelden',
       description: 'Bitte melden Sie sich an.',
       submit: 'Anmelden',
+      submitting: 'Anmeldung läuft…',
       noAccount: 'Noch kein Konto?',
       registerLink: 'Registrieren'
     },
@@ -100,6 +102,16 @@ export const de: TranslationDictionary = {
       }
     },
 
-    alphaNotice: 'Alpha-Version – die Anmeldung dient derzeit Testzwecken.'
+    errors: {
+      invalidEmail: 'Ungültige E-Mail-Adresse.',
+      invalidCredentials:
+        'Falsche E-Mail-Adresse oder falsches Passwort.',
+      userNotFound: 'Das Benutzerkonto wurde nicht gefunden.',
+      accountNotActive: 'Das Benutzerkonto ist nicht aktiv.',
+      authenticationRequired: 'Eine Anmeldung ist erforderlich.'
+    },
+
+    alphaNotice:
+      'Alpha-Version – die Anmeldung dient derzeit Testzwecken.'
   }
 };
