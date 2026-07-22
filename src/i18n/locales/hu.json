@@ -1,0 +1,64 @@
+{
+  "common": {
+    "appName": "Open Manuscript Studio",
+    "loading": "Betöltés...",
+    "save": "Mentés",
+    "cancel": "Mégse",
+    "close": "Bezárás",
+    "continue": "Folytatás",
+    "back": "Vissza",
+    "email": "E-mail-cím",
+    "password": "Jelszó",
+    "confirmPassword": "Jelszó megerősítése"
+  },
+  "auth": {
+    "login": {
+      "title": "Bejelentkezés",
+      "subtitle": "Jelentkezzen be az Open Manuscript Studio használatához.",
+      "emailLabel": "E-mail-cím",
+      "emailPlaceholder": "nev@pelda.hu",
+      "passwordLabel": "Jelszó",
+      "passwordPlaceholder": "Adja meg a jelszavát",
+      "submit": "Bejelentkezés",
+      "submitting": "Bejelentkezés...",
+      "noAccount": "Még nincs felhasználói fiókja?",
+      "registerLink": "Fiók létrehozása",
+      "invalidCredentials": "Az e-mail-cím vagy a jelszó hibás.",
+      "requiredEmail": "Az e-mail-cím megadása kötelező.",
+      "requiredPassword": "A jelszó megadása kötelező."
+    },
+    "register": {
+      "title": "Fiók létrehozása",
+      "subtitle": "Hozza létre Open Manuscript Studio-fiókját.",
+      "nameLabel": "Teljes név",
+      "namePlaceholder": "Adja meg a teljes nevét",
+      "emailLabel": "E-mail-cím",
+      "emailPlaceholder": "nev@pelda.hu",
+      "passwordLabel": "Jelszó",
+      "passwordPlaceholder": "Adjon meg egy jelszót",
+      "confirmPasswordLabel": "Jelszó megerősítése",
+      "confirmPasswordPlaceholder": "Adja meg újra a jelszót",
+      "submit": "Fiók létrehozása",
+      "submitting": "Fiók létrehozása...",
+      "hasAccount": "Már rendelkezik felhasználói fiókkal?",
+      "loginLink": "Bejelentkezés",
+      "requiredName": "A teljes név megadása kötelező.",
+      "requiredEmail": "Az e-mail-cím megadása kötelező.",
+      "requiredPassword": "A jelszó megadása kötelező.",
+      "passwordTooShort": "A jelszónak legalább 8 karakterből kell állnia.",
+      "passwordMismatch": "A két jelszó nem egyezik.",
+      "emailAlreadyExists": "Ezzel az e-mail-címmel már létezik felhasználói fiók."
+    },
+    "logout": "Kijelentkezés"
+  },
+  "language": {
+    "label": "Nyelv",
+    "english": "Angol",
+    "hungarian": "Magyar"
+  },
+  "workspace": {
+    "title": "Munkaterület",
+    "properties": "Tulajdonságok",
+    "emptyProperties": "Válasszon ki egy kéziratrészt a tulajdonságainak megtekintéséhez és szerkesztéséhez."
+  }
+}
