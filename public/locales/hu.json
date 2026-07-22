@@ -1,0 +1,37 @@
+{
+  "auth": {
+    "brand": {
+      "name": "Open Manuscript Studio",
+      "description": "Együttműködési munkakörnyezet tudományos kéziratokhoz"
+    },
+    "login": {
+      "title": "Bejelentkezés",
+      "description": "Jelentkezzen be a munkaterület megnyitásához",
+      "submit": "Bejelentkezés",
+      "noAccount": "Még nincs fiókja?",
+      "registerLink": "Regisztráció"
+    },
+    "register": {
+      "title": "Fiók létrehozása",
+      "description": "Hozzon létre fiókot az együttműködés megkezdéséhez",
+      "submit": "Fiók létrehozása",
+      "hasAccount": "Már van fiókja?",
+      "loginLink": "Bejelentkezés"
+    },
+    "fields": {
+      "email": {
+        "label": "E-mail-cím",
+        "placeholder": "nev@pelda.hu"
+      },
+      "password": {
+        "label": "Jelszó",
+        "placeholder": "Adja meg a jelszavát"
+      },
+      "name": {
+        "label": "Teljes név",
+        "placeholder": "Adja meg a teljes nevét"
+      }
+    },
+    "alphaNotice": "Alfa verzió — a bejelentkezés jelenleg tesztelési célokat szolgál."
+  }
+}
