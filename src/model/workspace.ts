@@ -551,10 +551,6 @@ export function createWorkspaceInvitation(
     throw new Error('Invalid invitation e-mail address.');
   }
 
-  if (input.role === 'owner') {
-    throw new Error('The owner role cannot be assigned by invitation.');
-  }
-
   if (expiresInDays <= 0) {
     throw new Error('Invitation expiration must be greater than zero days.');
   }
