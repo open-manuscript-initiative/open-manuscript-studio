@@ -45,7 +45,8 @@ jobs:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.2
         with:
-          host: ${{ secrets.SSH_HOST }}
+          host: 85.215.185.85
+          port: 22
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
