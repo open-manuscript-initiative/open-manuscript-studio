@@ -68,12 +68,13 @@ export const hu: TranslationDictionary = {
     },
 
     login: {
-      title: 'Bejelentkezés',
-      description: 'Jelentkezzen be a folytatáshoz.',
-      submit: 'Bejelentkezés',
-      noAccount: 'Nincs még fiókja?',
-      registerLink: 'Regisztráció'
-    },
+  title: 'Sign in',
+  description: 'Please sign in to continue.',
+  submit: 'Sign in',
+  submitting: 'Signing in…',
+  noAccount: 'Do not have an account yet?',
+  registerLink: 'Register'
+},
 
     register: {
       title: 'Fiók létrehozása',
