@@ -1,0 +1,64 @@
+{
+  "common": {
+    "appName": "Open Manuscript Studio",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "continue": "Continue",
+    "back": "Back",
+    "email": "Email address",
+    "password": "Password",
+    "confirmPassword": "Confirm password"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Sign in to continue to Open Manuscript Studio.",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "name@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "submit": "Sign in",
+      "submitting": "Signing in...",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Create an account",
+      "invalidCredentials": "The email address or password is incorrect.",
+      "requiredEmail": "Email address is required.",
+      "requiredPassword": "Password is required."
+    },
+    "register": {
+      "title": "Create an account",
+      "subtitle": "Create your Open Manuscript Studio account.",
+      "nameLabel": "Full name",
+      "namePlaceholder": "Enter your full name",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "name@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Create a password",
+      "confirmPasswordLabel": "Confirm password",
+      "confirmPasswordPlaceholder": "Enter the password again",
+      "submit": "Create account",
+      "submitting": "Creating account...",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Sign in",
+      "requiredName": "Full name is required.",
+      "requiredEmail": "Email address is required.",
+      "requiredPassword": "Password is required.",
+      "passwordTooShort": "The password must contain at least 8 characters.",
+      "passwordMismatch": "The passwords do not match.",
+      "emailAlreadyExists": "An account already exists with this email address."
+    },
+    "logout": "Sign out"
+  },
+  "language": {
+    "label": "Language",
+    "english": "English",
+    "hungarian": "Hungarian"
+  },
+  "workspace": {
+    "title": "Workspace",
+    "properties": "Properties",
+    "emptyProperties": "Select a manuscript section to view and edit its properties."
+  }
+}
