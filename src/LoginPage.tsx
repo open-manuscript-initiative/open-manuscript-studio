@@ -4,8 +4,11 @@ import {
   useState,
 } from 'react';
 
-import { useI18n } from '../i18n';
-import type { TranslationKey } from '../i18n/types';
+import {
+  useTranslation,
+  type TranslationKey,
+} from '../i18n';
+
 import { useAuthStore } from '../store/authStore';
 
 interface LoginPageProps {
@@ -15,7 +18,7 @@ interface LoginPageProps {
 export function LoginPage({
   onShowRegister,
 }: LoginPageProps) {
-  const { t } = useI18n();
+  const { t } = useTranslation();
 
   const login = useAuthStore((state) => state.login);
 
@@ -49,8 +52,8 @@ export function LoginPage({
         password,
       });
     } catch {
-      // Az authStore az error állapotban teszi elérhetővé
-      // a bejelentkezési hibát.
+      // A bejelentkezési hibát az authStore
+      // error állapota tartalmazza.
     }
   };
 
@@ -183,10 +186,6 @@ type TranslateFunction = (
   key: TranslationKey,
 ) => string;
 
-/**
- * Az authStore angol nyelvű hibaüzeneteit
- * fordítási kulcsokra alakítja.
- */
 function translateAuthError(
   t: TranslateFunction,
   message: string,
