@@ -11,12 +11,15 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@tiptap/core": "^3.0.0",
+    "@tiptap/react": "^3.0.0",
+    "@tiptap/starter-kit": "^3.0.0",
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "typescript": "latest",
+    "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "lucide-react": "latest",
+    "typescript": "latest",
+    "vite": "latest",
     "zustand": "latest"
   },
   "devDependencies": {
