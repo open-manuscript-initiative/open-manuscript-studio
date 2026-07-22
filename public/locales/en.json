@@ -1,0 +1,37 @@
+{
+  "auth": {
+    "brand": {
+      "name": "Open Manuscript Studio",
+      "description": "A collaborative workspace for scholarly manuscripts"
+    },
+    "login": {
+      "title": "Sign in",
+      "description": "Sign in to continue to your workspace",
+      "submit": "Sign in",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Create one"
+    },
+    "register": {
+      "title": "Create account",
+      "description": "Create an account to start collaborating",
+      "submit": "Create account",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Sign in"
+    },
+    "fields": {
+      "email": {
+        "label": "Email address",
+        "placeholder": "you@example.com"
+      },
+      "password": {
+        "label": "Password",
+        "placeholder": "Enter your password"
+      },
+      "name": {
+        "label": "Full name",
+        "placeholder": "Your full name"
+      }
+    },
+    "alphaNotice": "Alpha version — authentication is currently for testing purposes."
+  }
+}
