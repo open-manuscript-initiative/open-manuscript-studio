@@ -1,5 +1,5 @@
 import { useStudioStore } from '../app/useStudioStore';
-
+import { PropertiesPanel } from './components/PropertiesPanel';
 export function PropertiesPanel() {
   const manuscript = useStudioStore((state) => state.manuscript);
   const setAbstract = useStudioStore((state) => state.setAbstract);
