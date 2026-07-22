@@ -53,7 +53,7 @@ export const en: TranslationDictionary = {
     en: 'English',
     hu: 'Hungarian',
     de: 'German'
-  }
+  },
     auth: {
     brand: {
       name: 'Open Manuscript Studio',
