@@ -878,11 +878,304 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         const updatedWorkspace: Workspace = {
           ...workspace,
           ownerId: newOwnerUserId,
-          members: workspace.members.map(
+                    members: workspace.members.map(
             (member) => {
               if (
                 member.id ===
                 previousOwnerMember.id
               ) {
                 return previousOwnerMember;
-    
+              }
+
+              if (
+                member.id ===
+                newOwnerMember.id
+              ) {
+                return newOwnerMember;
+              }
+
+              return member;
+            },
+          ),
+          updatedAt: timestamp,
+        };
+
+        replaceWorkspace(
+          set,
+          updatedWorkspace,
+        );
+
+        return updatedWorkspace;
+      },
+
+      expireInvitations: (
+        now = new Date(),
+      ) => {
+        set((state) => ({
+          workspaces: state.workspaces.map(
+            (workspace) => {
+              let changed = false;
+
+              const invitations =
+                workspace.invitations.map(
+                  (
+                    invitation,
+                  ): WorkspaceInvitation => {
+                    if (
+                      invitation.status ===
+                        'pending' &&
+                      isInvitationExpired(
+                        invitation,
+                        now,
+                      )
+                    ) {
+                      changed = true;
+
+                      return {
+                        ...invitation,
+                        status: 'expired',
+                      };
+                    }
+
+                    return invitation;
+                  },
+                );
+
+              if (!changed) {
+                return workspace;
+              }
+
+              return {
+                ...workspace,
+                invitations,
+                updatedAt:
+                  createTimestamp(),
+              };
+            },
+          ),
+        }));
+      },
+
+      resetWorkspaceStore: () => {
+        set({
+          workspaces: [],
+          selectedWorkspaceId: null,
+        });
+      },
+    }),
+    {
+      name: STORAGE_KEY,
+    },
+  ),
+);
+
+/**
+ * Returns a workspace or throws when it does not exist.
+ */
+function getWorkspaceOrThrow(
+  workspaces: Workspace[],
+  workspaceId: WorkspaceId,
+): Workspace {
+  const workspace = workspaces.find(
+    (candidate) =>
+      candidate.id === workspaceId,
+  );
+
+  if (!workspace) {
+    throw new Error(
+      'The workspace could not be found.',
+    );
+  }
+
+  return workspace;
+}
+
+/**
+ * Returns a workspace member or throws when it does not exist.
+ */
+function getMemberOrThrow(
+  workspace: Workspace,
+  memberId: WorkspaceMemberId,
+): WorkspaceMember {
+  const member = workspace.members.find(
+    (candidate) =>
+      candidate.id === memberId,
+  );
+
+  if (!member) {
+    throw new Error(
+      'The workspace member could not be found.',
+    );
+  }
+
+  return member;
+}
+
+/**
+ * Returns an invitation or throws when it does not exist.
+ */
+function getInvitationOrThrow(
+  workspace: Workspace,
+  invitationId: WorkspaceInvitationId,
+): WorkspaceInvitation {
+  const invitation =
+    workspace.invitations.find(
+      (candidate) =>
+        candidate.id === invitationId,
+    );
+
+  if (!invitation) {
+    throw new Error(
+      'The workspace invitation could not be found.',
+    );
+  }
+
+  return invitation;
+}
+
+/**
+ * Replaces a workspace in Zustand state.
+ */
+function replaceWorkspace(
+  set: (
+    updater: (
+      state: WorkspaceState,
+    ) => Partial<WorkspaceState>,
+  ) => void,
+  updatedWorkspace: Workspace,
+): void {
+  set((state) => ({
+    workspaces: state.workspaces.map(
+      (workspace) =>
+        workspace.id ===
+        updatedWorkspace.id
+          ? updatedWorkspace
+          : workspace,
+    ),
+  }));
+}
+
+/**
+ * Replaces one member inside a workspace.
+ */
+function replaceMember(
+  workspace: Workspace,
+  updatedMember: WorkspaceMember,
+): Workspace {
+  return {
+    ...workspace,
+    members: workspace.members.map(
+      (member) =>
+        member.id === updatedMember.id
+          ? updatedMember
+          : member,
+    ),
+    updatedAt: createTimestamp(),
+  };
+}
+
+/**
+ * Replaces one invitation inside a workspace.
+ */
+function replaceInvitation(
+  workspace: Workspace,
+  updatedInvitation: WorkspaceInvitation,
+): Workspace {
+  return {
+    ...workspace,
+    invitations:
+      workspace.invitations.map(
+        (invitation) =>
+          invitation.id ===
+          updatedInvitation.id
+            ? updatedInvitation
+            : invitation,
+      ),
+    updatedAt: createTimestamp(),
+  };
+}
+
+/**
+ * Prevents modifications to archived or deleted workspaces.
+ */
+function assertWorkspaceIsEditable(
+  workspace: Workspace,
+): void {
+  if (workspace.status !== 'active') {
+    throw new Error(
+      'Only active workspaces can be modified.',
+    );
+  }
+}
+
+/**
+ * Creates an ISO timestamp.
+ */
+function createTimestamp(): string {
+  return new Date().toISOString();
+}
+
+/**
+ * Requires a non-empty trimmed string.
+ */
+function requireNonEmpty(
+  value: string,
+  errorMessage: string,
+): string {
+  const normalizedValue = value.trim();
+
+  if (!normalizedValue) {
+    throw new Error(errorMessage);
+  }
+
+  return normalizedValue;
+}
+
+/**
+ * Normalizes an e-mail address.
+ */
+function normalizeEmail(
+  email: string,
+): string {
+  const normalizedEmail = email
+    .trim()
+    .toLowerCase();
+
+  if (!normalizedEmail) {
+    throw new Error(
+      'The invitation e-mail address is required.',
+    );
+  }
+
+  return normalizedEmail;
+}
+
+/**
+ * Normalizes translation language codes and removes duplicates.
+ */
+function normalizeLanguages(
+  languages: string[],
+  manuscriptLanguage: string,
+): string[] {
+  const normalizedManuscriptLanguage =
+    manuscriptLanguage
+      .trim()
+      .toLowerCase();
+
+  return Array.from(
+    new Set(
+      languages
+        .map((language) =>
+          language
+            .trim()
+            .toLowerCase(),
+        )
+        .filter(
+          (language) =>
+            language.length > 0 &&
+            language !==
+              normalizedManuscriptLanguage,
+        ),
+    ),
+  );
+  }
