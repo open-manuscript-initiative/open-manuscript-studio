@@ -6,25 +6,74 @@
   text-rendering: optimizeLegibility;
 }
 
-* { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; min-height: 100vh; }
-button, input, textarea { font: inherit; }
-button { cursor: pointer; }
+* {
+  box-sizing: border-box;
+}
 
-.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+html,
+body,
+#root {
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+}
+
+.app-layout-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .app-header {
-  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  padding: 1rem 1.25rem; background: #111827; color: #f9fafb; border-bottom: 1px solid #334155;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #111827;
+  color: #f9fafb;
+  border-bottom: 1px solid #334155;
 }
-.app-header h1 { margin: 0; font-size: clamp(1.35rem, 2vw, 2rem); }
-.eyebrow { margin: 0 0 .25rem; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: #cbd5e1; }
-.header-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
-.header-actions button {
-  display: inline-flex; align-items: center; gap: .4rem; border: 1px solid #475569; border-radius: .6rem;
-  background: #1f2937; color: #f8fafc; padding: .6rem .8rem;
+
+.workspace {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 280px)
+    minmax(0, 1fr)
+    minmax(260px, 340px);
+
+  gap: 1rem;
+  padding: 1rem;
+  overflow: hidden;
 }
-.header-actions button.primary { background: #f8fafc; color: #111827; border-color: #f8fafc; }
-.workspace { flex: 1; display: grid; grid-template-columns: 280px minmax(0, 1fr) 340px; gap: 1rem; padding: 1rem; }
+
+.workspace > * {
+  min-width: 0;
+  min-height: 0;
+}
 .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 8px 24px rgba(15, 23, 42, .06); }
 .panel h2 { margin: 0 0 1rem; font-size: 1.05rem; }
 .sidebar, .properties { padding: 1rem; overflow: auto; }
