@@ -198,14 +198,20 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         const workspace = createWorkspace(input);
 
         set((state) => ({
-          workspaces: [...state.workspaces, workspace],
+          workspaces: [
+            ...state.workspaces,
+            workspace,
+          ],
           selectedWorkspaceId: workspace.id,
         }));
 
         return workspace;
       },
 
-      updateWorkspace: (workspaceId, input) => {
+      updateWorkspace: (
+        workspaceId,
+        input,
+      ) => {
         const workspace = getWorkspaceOrThrow(
           get().workspaces,
           workspaceId,
@@ -224,12 +230,14 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               : workspace.title,
           description:
             input.description !== undefined
-              ? input.description.trim() || undefined
+              ? input.description.trim() ||
+                undefined
               : workspace.description,
           manuscriptLanguage:
             input.manuscriptLanguage !== undefined
               ? requireNonEmpty(
-                  input.manuscriptLanguage.toLowerCase(),
+                  input.manuscriptLanguage
+                    .toLowerCase(),
                   'The manuscript language is required.',
                 )
               : workspace.manuscriptLanguage,
@@ -242,11 +250,15 @@ export const useWorkspaceStore = create<WorkspaceState>()(
                 )
               : workspace.translationLanguages,
           visibility:
-            input.visibility ?? workspace.visibility,
+            input.visibility ??
+            workspace.visibility,
           updatedAt: createTimestamp(),
         };
 
-        replaceWorkspace(set, updatedWorkspace);
+        replaceWorkspace(
+          set,
+          updatedWorkspace,
+        );
 
         return updatedWorkspace;
       },
@@ -289,7 +301,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           updatedAt: timestamp,
         };
 
-        replaceWorkspace(set, updatedWorkspace);
+        replaceWorkspace(
+          set,
+          updatedWorkspace,
+        );
 
         return updatedWorkspace;
       },
@@ -317,7 +332,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           updatedAt: createTimestamp(),
         };
 
-        replaceWorkspace(set, updatedWorkspace);
+        replaceWorkspace(
+          set,
+          updatedWorkspace,
+        );
 
         return updatedWorkspace;
       },
@@ -329,12 +347,15 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         );
 
         set((state) => ({
-          workspaces: state.workspaces.filter(
-            (workspace) =>
-              workspace.id !== workspaceId,
-          ),
+          workspaces:
+            state.workspaces.filter(
+              (workspace) =>
+                workspace.id !==
+                workspaceId,
+            ),
           selectedWorkspaceId:
-            state.selectedWorkspaceId === workspaceId
+            state.selectedWorkspaceId ===
+            workspaceId
               ? null
               : state.selectedWorkspaceId,
         }));
@@ -348,14 +369,19 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
         assertWorkspaceIsEditable(workspace);
 
-        const normalizedEmail = normalizeEmail(input.email);
+        const normalizedEmail =
+          normalizeEmail(input.email);
 
         const duplicateInvitation =
           workspace.invitations.some(
             (invitation) =>
-              invitation.email === normalizedEmail &&
-              invitation.status === 'pending' &&
-              !isInvitationExpired(invitation),
+              invitation.email ===
+                normalizedEmail &&
+              invitation.status ===
+                'pending' &&
+              !isInvitationExpired(
+                invitation,
+              ),
           );
 
         if (duplicateInvitation) {
@@ -364,10 +390,11 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           );
         }
 
-        const invitation = createWorkspaceInvitation({
-          ...input,
-          email: normalizedEmail,
-        });
+        const invitation =
+          createWorkspaceInvitation({
+            ...input,
+            email: normalizedEmail,
+          });
 
         const updatedWorkspace: Workspace = {
           ...workspace,
@@ -378,7 +405,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           updatedAt: createTimestamp(),
         };
 
-        replaceWorkspace(set, updatedWorkspace);
+        replaceWorkspace(
+          set,
+          updatedWorkspace,
+        );
 
         return invitation;
       },
@@ -392,28 +422,36 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           workspaceId,
         );
 
-        const invitation = getInvitationOrThrow(
-          workspace,
-          invitationId,
-        );
+        const invitation =
+          getInvitationOrThrow(
+            workspace,
+            invitationId,
+          );
 
-        if (invitation.status !== 'pending') {
+        if (
+          invitation.status !== 'pending'
+        ) {
           throw new Error(
             'Only pending invitations can be revoked.',
           );
         }
 
-        const updatedInvitation: WorkspaceInvitation = {
-          ...invitation,
-          status: 'revoked',
-        };
+        const updatedInvitation: WorkspaceInvitation =
+          {
+            ...invitation,
+            status: 'revoked',
+          };
 
-        const updatedWorkspace = replaceInvitation(
-          workspace,
-          updatedInvitation,
+        const updatedWorkspace =
+          replaceInvitation(
+            workspace,
+            updatedInvitation,
+          );
+
+        replaceWorkspace(
+          set,
+          updatedWorkspace,
         );
-
-        replaceWorkspace(set, updatedWorkspace);
 
         return updatedInvitation;
       },
@@ -427,34 +465,46 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           workspaceId,
         );
 
-        const invitation = getInvitationOrThrow(
-          workspace,
-          invitationId,
-        );
+        const invitation =
+          getInvitationOrThrow(
+            workspace,
+            invitationId,
+          );
 
-        if (invitation.status !== 'pending') {
+        if (
+          invitation.status !== 'pending'
+        ) {
           throw new Error(
             'Only pending invitations can be declined.',
           );
         }
 
-        const updatedInvitation: WorkspaceInvitation = {
-          ...invitation,
-          status: 'declined',
-        };
+        const updatedInvitation: WorkspaceInvitation =
+          {
+            ...invitation,
+            status: 'declined',
+          };
 
-        const updatedWorkspace = replaceInvitation(
-          workspace,
-          updatedInvitation,
+        const updatedWorkspace =
+          replaceInvitation(
+            workspace,
+            updatedInvitation,
+          );
+
+        replaceWorkspace(
+          set,
+          updatedWorkspace,
         );
-
-        replaceWorkspace(set, updatedWorkspace);
 
         return updatedInvitation;
       },
 
-      acceptInvitation: (token, userId) => {
-        const normalizedToken = token.trim();
+      acceptInvitation: (
+        token,
+        userId,
+      ) => {
+        const normalizedToken =
+          token.trim();
 
         if (!normalizedToken) {
           throw new Error(
@@ -462,13 +512,15 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           );
         }
 
-        const workspace = get().workspaces.find(
-          (candidate) =>
-            candidate.invitations.some(
-              (invitation) =>
-                invitation.token === normalizedToken,
-            ),
-        );
+        const workspace =
+          get().workspaces.find(
+            (candidate) =>
+              candidate.invitations.some(
+                (invitation) =>
+                  invitation.token ===
+                  normalizedToken,
+              ),
+          );
 
         if (!workspace) {
           throw new Error(
@@ -478,10 +530,12 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
         assertWorkspaceIsEditable(workspace);
 
-        const invitation = workspace.invitations.find(
-          (candidate) =>
-            candidate.token === normalizedToken,
-        );
+        const invitation =
+          workspace.invitations.find(
+            (candidate) =>
+              candidate.token ===
+              normalizedToken,
+          );
 
         if (!invitation) {
           throw new Error(
@@ -489,17 +543,22 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           );
         }
 
-        if (invitation.status !== 'pending') {
+        if (
+          invitation.status !== 'pending'
+        ) {
           throw new Error(
             'The invitation is no longer pending.',
           );
         }
 
-        if (isInvitationExpired(invitation)) {
-          const expiredInvitation: WorkspaceInvitation = {
-            ...invitation,
-            status: 'expired',
-          };
+        if (
+          isInvitationExpired(invitation)
+        ) {
+          const expiredInvitation: WorkspaceInvitation =
+            {
+              ...invitation,
+              status: 'expired',
+            };
 
           replaceWorkspace(
             set,
@@ -514,11 +573,12 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           );
         }
 
-        const existingMember = workspace.members.find(
-          (member) =>
-            member.userId === userId &&
-            member.status !== 'removed',
-        );
+        const existingMember =
+          workspace.members.find(
+            (member) =>
+              member.userId === userId &&
+              member.status !== 'removed',
+          );
 
         if (existingMember) {
           throw new Error(
@@ -526,40 +586,52 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           );
         }
 
-        const member = createWorkspaceMember(
-          workspace.id,
-          userId,
-          invitation.role,
-          invitation.invitedBy,
-        );
+        const member =
+          createWorkspaceMember(
+            workspace.id,
+            userId,
+            invitation.role,
+            invitation.invitedBy,
+          );
 
-        const timestamp = createTimestamp();
+        const timestamp =
+          createTimestamp();
 
-        const acceptedInvitation: WorkspaceInvitation = {
-          ...invitation,
-          status: 'accepted',
-          acceptedAt: timestamp,
-          acceptedByUserId: userId,
-        };
+        const acceptedInvitation: WorkspaceInvitation =
+          {
+            ...invitation,
+            status: 'accepted',
+            acceptedAt: timestamp,
+            acceptedByUserId: userId,
+          };
 
         const updatedWorkspace: Workspace = {
           ...workspace,
-          members: [...workspace.members, member],
-          invitations: workspace.invitations.map(
-            (candidate) =>
-              candidate.id === acceptedInvitation.id
-                ? acceptedInvitation
-                : candidate,
-          ),
+          members: [
+            ...workspace.members,
+            member,
+          ],
+          invitations:
+            workspace.invitations.map(
+              (candidate) =>
+                candidate.id ===
+                acceptedInvitation.id
+                  ? acceptedInvitation
+                  : candidate,
+            ),
           updatedAt: timestamp,
         };
 
-        replaceWorkspace(set, updatedWorkspace);
+        replaceWorkspace(
+          set,
+          updatedWorkspace,
+        );
 
         return {
           workspace: updatedWorkspace,
           member,
-          invitation: acceptedInvitation,
+          invitation:
+            acceptedInvitation,
         };
       },
 
@@ -576,17 +648,12 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
         assertWorkspaceIsEditable(workspace);
 
-        if (role === 'owner') {
-          throw new Error(
-            'Use transferOwnership to assign a new owner.',
+        const existingMember =
+          workspace.members.find(
+            (member) =>
+              member.userId === userId &&
+              member.status !== 'removed',
           );
-        }
-
-        const existingMember = workspace.members.find(
-          (member) =>
-            member.userId === userId &&
-            member.status !== 'removed',
-        );
 
         if (existingMember) {
           throw new Error(
@@ -594,20 +661,27 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           );
         }
 
-        const member = createWorkspaceMember(
-          workspaceId,
-          userId,
-          role,
-          addedBy,
-        );
+        const member =
+          createWorkspaceMember(
+            workspaceId,
+            userId,
+            role,
+            addedBy,
+          );
 
         const updatedWorkspace: Workspace = {
           ...workspace,
-          members: [...workspace.members, member],
+          members: [
+            ...workspace.members,
+            member,
+          ],
           updatedAt: createTimestamp(),
         };
 
-        replaceWorkspace(set, updatedWorkspace);
+        replaceWorkspace(
+          set,
+          updatedWorkspace,
+        );
 
         return member;
       },
@@ -649,30 +723,41 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           }
         }
 
-        const nextRole = input.role ?? member.role;
+        const nextRole =
+          input.role ?? member.role;
 
         const defaultPermissions =
           input.role !== undefined
-            ? getPermissionsForRole(nextRole)
+            ? getPermissionsForRole(
+                nextRole,
+              )
             : member.permissions;
 
-        const updatedMember: WorkspaceMember = {
-          ...member,
-          role: nextRole,
-          status: input.status ?? member.status,
-          permissions: {
-            ...defaultPermissions,
-            ...input.permissions,
-          },
-          updatedAt: createTimestamp(),
-        };
+        const updatedMember: WorkspaceMember =
+          {
+            ...member,
+            role: nextRole,
+            status:
+              input.status ??
+              member.status,
+            permissions: {
+              ...defaultPermissions,
+              ...input.permissions,
+            },
+            updatedAt:
+              createTimestamp(),
+          };
 
-        const updatedWorkspace = replaceMember(
-          workspace,
-          updatedMember,
+        const updatedWorkspace =
+          replaceMember(
+            workspace,
+            updatedMember,
+          );
+
+        replaceWorkspace(
+          set,
+          updatedWorkspace,
         );
-
-        replaceWorkspace(set, updatedWorkspace);
 
         return updatedMember;
       },
@@ -699,11 +784,13 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           );
         }
 
-        const removedMember: WorkspaceMember = {
-          ...member,
-          status: 'removed',
-          updatedAt: createTimestamp(),
-        };
+        const removedMember: WorkspaceMember =
+          {
+            ...member,
+            status: 'removed',
+            updatedAt:
+              createTimestamp(),
+          };
 
         replaceWorkspace(
           set,
@@ -727,16 +814,21 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
         assertWorkspaceIsEditable(workspace);
 
-        if (workspace.ownerId === newOwnerUserId) {
+        if (
+          workspace.ownerId ===
+          newOwnerUserId
+        ) {
           return workspace;
         }
 
-        const currentOwner = workspace.members.find(
-          (member) =>
-            member.userId === workspace.ownerId &&
-            member.role === 'owner' &&
-            member.status === 'active',
-        );
+        const currentOwner =
+          workspace.members.find(
+            (member) =>
+              member.userId ===
+                workspace.ownerId &&
+              member.role === 'owner' &&
+              member.status === 'active',
+          );
 
         if (!currentOwner) {
           throw new Error(
@@ -744,11 +836,13 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           );
         }
 
-        const newOwner = workspace.members.find(
-          (member) =>
-            member.userId === newOwnerUserId &&
-            member.status === 'active',
-        );
+        const newOwner =
+          workspace.members.find(
+            (member) =>
+              member.userId ===
+                newOwnerUserId &&
+              member.status === 'active',
+          );
 
         if (!newOwner) {
           throw new Error(
@@ -756,88 +850,39 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           );
         }
 
-        const timestamp = createTimestamp();
+        const timestamp =
+          createTimestamp();
 
-        const previousOwnerMember: WorkspaceMember = {
-          ...currentOwner,
-          role: 'editor',
-          permissions:
-            getPermissionsForRole('editor'),
-          updatedAt: timestamp,
-        };
+        const previousOwnerMember: WorkspaceMember =
+          {
+            ...currentOwner,
+            role: 'editor',
+            permissions:
+              getPermissionsForRole(
+                'editor',
+              ),
+            updatedAt: timestamp,
+          };
 
-        const newOwnerMember: WorkspaceMember = {
-          ...newOwner,
-          role: 'owner',
-          permissions:
-            getPermissionsForRole('owner'),
-          updatedAt: timestamp,
-        };
+        const newOwnerMember: WorkspaceMember =
+          {
+            ...newOwner,
+            role: 'owner',
+            permissions:
+              getPermissionsForRole(
+                'owner',
+              ),
+            updatedAt: timestamp,
+          };
 
         const updatedWorkspace: Workspace = {
           ...workspace,
           ownerId: newOwnerUserId,
-          members: workspace.members.map((member) => {
-            if (member.id === previousOwnerMember.id) {
-              return previousOwnerMember;
-            }
-
-            if (member.id === newOwnerMember.id) {
-              return newOwnerMember;
-            }
-
-            return member;
-          }),
-          updatedAt: timestamp,
-        };
-
-        replaceWorkspace(set, updatedWorkspace);
-
-        return updatedWorkspace;
-      },
-
-      expireInvitations: (now = new Date()) => {
-        set((state) => ({
-          workspaces: state.workspaces.map(
-            (workspace) => {
-              let changed = false;
-
-              const invitations =
-                workspace.invitations.map(
-                  (invitation) => {
-                    if (
-                      invitation.status === 'pending' &&
-                      isInvitationExpired(
-                        invitation,
-                        now,
-                      )
-                    ) {
-                      changed = true;
-
-                      return {
-                        ...invitation,
-                        status:
-                          'expired' as const,
-                      };
-                    }
-
-                    return invitation;
-                  },
-                );
-
-              if (!changed) {
-                return workspace;
-              }
-
-              return {
-                ...workspace,
-                invitations,
-                updatedAt: createTimestamp(),
-              },
-        
-            },
-);
-                  },
-);
-);
-      }
+          members: workspace.members.map(
+            (member) => {
+              if (
+                member.id ===
+                previousOwnerMember.id
+              ) {
+                return previousOwnerMember;
+    
