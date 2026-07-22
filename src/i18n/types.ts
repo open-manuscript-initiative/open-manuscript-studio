@@ -9,6 +9,7 @@ export interface TranslationDictionary {
     loading: string;
     language: string;
   };
+
   navigation: {
     documents: string;
     editor: string;
@@ -16,6 +17,7 @@ export interface TranslationDictionary {
     preview: string;
     settings: string;
   };
+
   manuscript: {
     newDocument: string;
     documentTitle: string;
@@ -29,6 +31,7 @@ export interface TranslationDictionary {
     documentLanguage: string;
     originalLanguage: string;
   };
+
   editor: {
     addSection: string;
     addParagraph: string;
@@ -36,21 +39,66 @@ export interface TranslationDictionary {
     untitledSection: string;
     emptyParagraph: string;
   };
+
   status: {
     draft: string;
     submitted: string;
     accepted: string;
     published: string;
   };
+
   validation: {
     requiredField: string;
     invalidDocument: string;
     unsupportedSchema: string;
   };
+
   languages: {
     en: string;
     hu: string;
     de: string;
+  };
+
+  auth: {
+    brand: {
+      name: string;
+      description: string;
+    };
+
+    login: {
+      title: string;
+      description: string;
+      submit: string;
+      noAccount: string;
+      registerLink: string;
+    };
+
+    register: {
+      title: string;
+      description: string;
+      submit: string;
+      hasAccount: string;
+      loginLink: string;
+    };
+
+    fields: {
+      name: {
+        label: string;
+        placeholder: string;
+      };
+
+      email: {
+        label: string;
+        placeholder: string;
+      };
+
+      password: {
+        label: string;
+        placeholder: string;
+      };
+    };
+
+    alphaNotice: string;
   };
 }
 
@@ -65,4 +113,5 @@ type NestedKeyOf<T> = {
         : never;
 }[keyof T & string];
 
-export type TranslationKey = NestedKeyOf<TranslationDictionary>;
+export type TranslationKey =
+  NestedKeyOf<TranslationDictionary>;
