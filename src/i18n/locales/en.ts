@@ -54,4 +54,45 @@ export const en: TranslationDictionary = {
     hu: 'Hungarian',
     de: 'German'
   }
+    auth: {
+    brand: {
+      name: 'Open Manuscript Studio',
+      description: 'Collaborative scholarly writing'
+    },
+
+    login: {
+      title: 'Sign in',
+      description: 'Sign in to continue.',
+      submit: 'Sign in',
+      noAccount: "Don't have an account?",
+      registerLink: 'Create account'
+    },
+
+    register: {
+      title: 'Create account',
+      description: 'Create your account.',
+      submit: 'Register',
+      hasAccount: 'Already have an account?',
+      loginLink: 'Sign in'
+    },
+
+    fields: {
+      email: {
+        label: 'Email',
+        placeholder: 'name@example.com'
+      },
+
+      password: {
+        label: 'Password',
+        placeholder: 'Enter your password'
+      },
+
+      name: {
+        label: 'Full name',
+        placeholder: 'Your full name'
+      }
+    },
+
+    alphaNotice: 'Alpha version'
+        }
 };
