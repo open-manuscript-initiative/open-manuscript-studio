@@ -17,7 +17,14 @@ export function Footer() {
         </div>
 
         <div className="omi-footer-links">
-          <span>© 2026 Open Manuscript Initiative</span>
+
+          <a
+            href="https://openmanuscript.org"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            © 2026 Open Manuscript Initiative
+         </a>
 
           <span className="omi-footer-separator">•</span>
 
