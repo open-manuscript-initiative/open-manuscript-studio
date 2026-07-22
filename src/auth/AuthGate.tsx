@@ -17,8 +17,8 @@ export function AuthGate({
   const currentUser = useAuthStore(getCurrentUser);
 
   if (!currentUser) {
-    return fallback;
+    return <>{fallback}</>;
   }
 
-  return children;
+  return <>{children}</>;
 }
