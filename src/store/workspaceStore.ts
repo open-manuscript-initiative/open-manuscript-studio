@@ -833,11 +833,11 @@ export const useWorkspaceStore = create<WorkspaceState>()(
                 ...workspace,
                 invitations,
                 updatedAt: createTimestamp(),
-              }
+              },
         
-            }
-)
-                  }
-)
-)
+            },
+);
+                  },
+);
+);
       }
