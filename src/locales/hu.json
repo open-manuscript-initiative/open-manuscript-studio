@@ -1,0 +1,67 @@
+{
+  "auth": {
+    "brand": {
+      "name": "Open Manuscript Studio",
+      "description": "Együttműködési munkatér tudományos kéziratokhoz"
+    },
+    "login": {
+      "title": "Bejelentkezés",
+      "description": "Jelentkezzen be a kéziratok és az együttműködési munkaterek eléréséhez.",
+      "submit": "Bejelentkezés",
+      "submitting": "Bejelentkezés…",
+      "noAccount": "Még nincs fiókja?",
+      "registerLink": "Fiók létrehozása"
+    },
+    "register": {
+      "title": "Fiók létrehozása",
+      "description": "Hozza létre Studio-profilját a kéziratok kezeléséhez és a szerzőtársakkal való együttműködéshez.",
+      "submit": "Fiók létrehozása",
+      "submitting": "Fiók létrehozása…",
+      "hasAccount": "Már van fiókja?",
+      "loginLink": "Bejelentkezés"
+    },
+    "fields": {
+      "fullName": {
+        "label": "Teljes név",
+        "placeholder": "Az Ön teljes neve"
+      },
+      "email": {
+        "label": "E-mail-cím",
+        "placeholder": "nev@pelda.hu"
+      },
+      "affiliation": {
+        "label": "Intézményi kapcsolat",
+        "placeholder": "Egyetem, kutatóintézet vagy szervezet"
+      },
+      "orcid": {
+        "label": "ORCID",
+        "placeholder": "0000-0000-0000-0000",
+        "hint": "Nem kötelező. Az azonosító vagy a teljes ORCID URL is megadható."
+      },
+      "password": {
+        "label": "Jelszó",
+        "placeholder": "Adja meg a jelszavát",
+        "hint": "Legalább 8 karaktert, egy betűt és egy számot kell tartalmaznia."
+      },
+      "passwordConfirmation": {
+        "label": "Jelszó megerősítése",
+        "placeholder": "Adja meg újra a jelszót"
+      }
+    },
+    "errors": {
+      "invalidEmail": "Adjon meg érvényes e-mail-címet.",
+      "invalidCredentials": "Az e-mail-cím vagy a jelszó hibás.",
+      "userNotFound": "A felhasználói fiók nem található.",
+      "accountNotActive": "Ez a felhasználói fiók nem aktív.",
+      "authenticationRequired": "A Studio használatához be kell jelentkeznie.",
+      "emailAlreadyExists": "Ezzel az e-mail-címmel már létezik fiók.",
+      "passwordTooShort": "A jelszónak legalább 8 karakterből kell állnia.",
+      "passwordNeedsLetter": "A jelszónak legalább egy betűt kell tartalmaznia.",
+      "passwordNeedsNumber": "A jelszónak legalább egy számot kell tartalmaznia.",
+      "passwordsDoNotMatch": "A megadott jelszavak nem egyeznek.",
+      "fullNameRequired": "Adja meg a teljes nevét.",
+      "invalidOrcid": "Adjon meg érvényes ORCID-azonosítót."
+    },
+    "alphaNotice": "Helyi alfa-hitelesítés. A fiók és a bejelentkezési adatok jelenleg csak ebben a böngészőben tárolódnak."
+  }
+}
