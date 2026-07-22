@@ -1,0 +1,67 @@
+{
+  "auth": {
+    "brand": {
+      "name": "Open Manuscript Studio",
+      "description": "Collaborative scholarly manuscript workspace"
+    },
+    "login": {
+      "title": "Sign in",
+      "description": "Sign in to access your manuscripts and collaborative workspaces.",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "noAccount": "Do not have an account?",
+      "registerLink": "Create an account"
+    },
+    "register": {
+      "title": "Create an account",
+      "description": "Create your Studio profile to manage manuscripts and collaborate with other contributors.",
+      "submit": "Create account",
+      "submitting": "Creating account…",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Sign in"
+    },
+    "fields": {
+      "fullName": {
+        "label": "Full name",
+        "placeholder": "Your full name"
+      },
+      "email": {
+        "label": "E-mail address",
+        "placeholder": "name@example.com"
+      },
+      "affiliation": {
+        "label": "Affiliation",
+        "placeholder": "University, research institute or organization"
+      },
+      "orcid": {
+        "label": "ORCID",
+        "placeholder": "0000-0000-0000-0000",
+        "hint": "Optional. You may enter either the identifier or a complete ORCID URL."
+      },
+      "password": {
+        "label": "Password",
+        "placeholder": "Enter your password",
+        "hint": "Use at least 8 characters, including a letter and a number."
+      },
+      "passwordConfirmation": {
+        "label": "Confirm password",
+        "placeholder": "Enter the password again"
+      }
+    },
+    "errors": {
+      "invalidEmail": "Enter a valid e-mail address.",
+      "invalidCredentials": "The e-mail address or password is incorrect.",
+      "userNotFound": "The user account could not be found.",
+      "accountNotActive": "This user account is not active.",
+      "authenticationRequired": "You must sign in to access the Studio.",
+      "emailAlreadyExists": "An account already exists with this e-mail address.",
+      "passwordTooShort": "The password must contain at least 8 characters.",
+      "passwordNeedsLetter": "The password must contain at least one letter.",
+      "passwordNeedsNumber": "The password must contain at least one number.",
+      "passwordsDoNotMatch": "The passwords do not match.",
+      "fullNameRequired": "Enter your full name.",
+      "invalidOrcid": "Enter a valid ORCID identifier."
+    },
+    "alphaNotice": "Local alpha authentication. Accounts and credentials are currently stored only in this browser."
+  }
+}
