@@ -11,6 +11,7 @@ export const de: TranslationDictionary = {
     loading: 'Wird geladen…',
     language: 'Sprache'
   },
+
   navigation: {
     documents: 'Dokumente',
     editor: 'Editor',
@@ -18,6 +19,7 @@ export const de: TranslationDictionary = {
     preview: 'Vorschau',
     settings: 'Einstellungen'
   },
+
   manuscript: {
     newDocument: 'Neues Manuskript',
     documentTitle: 'Dokumenttitel',
@@ -31,6 +33,7 @@ export const de: TranslationDictionary = {
     documentLanguage: 'Dokumentsprache',
     originalLanguage: 'Originalsprache'
   },
+
   editor: {
     addSection: 'Abschnitt hinzufügen',
     addParagraph: 'Absatz hinzufügen',
@@ -38,62 +41,65 @@ export const de: TranslationDictionary = {
     untitledSection: 'Unbenannter Abschnitt',
     emptyParagraph: 'Beginnen Sie zu schreiben…'
   },
+
   status: {
     draft: 'Entwurf',
     submitted: 'Eingereicht',
     accepted: 'Angenommen',
     published: 'Veröffentlicht'
   },
+
   validation: {
     requiredField: 'Dieses Feld ist erforderlich.',
     invalidDocument: 'Die Dokumentstruktur ist ungültig.',
     unsupportedSchema: 'Die Schemaversion des Dokuments wird nicht unterstützt.'
   },
-  
-  auth: {
-  brand: {
-    name: 'Open Manuscript Studio',
-    description: 'Gemeinsame Manuskriptbearbeitung'
-  },
 
-  login: {
-    title: 'Anmelden',
-    description: 'Bitte melden Sie sich an.',
-    submit: 'Anmelden',
-    noAccount: 'Noch kein Konto?',
-    registerLink: 'Registrieren'
-  },
-
-  register: {
-    title: 'Konto erstellen',
-    description: 'Erstellen Sie ein neues Konto.',
-    submit: 'Registrieren',
-    hasAccount: 'Bereits registriert?',
-    loginLink: 'Anmelden'
-  },
-
-  fields: {
-    name: {
-      label: 'Vollständiger Name',
-      placeholder: 'Ihr vollständiger Name'
-    },
-
-    email: {
-      label: 'E-Mail',
-      placeholder: 'name@example.com'
-    },
-
-    password: {
-      label: 'Passwort',
-      placeholder: 'Passwort eingeben'
-    }
-  },
-
-  alphaNotice: 'Alpha-Version'
-  }
   languages: {
     en: 'Englisch',
     hu: 'Ungarisch',
     de: 'Deutsch'
+  },
+
+  auth: {
+    brand: {
+      name: 'Open Manuscript Studio',
+      description: 'Gemeinsame Manuskriptbearbeitung'
+    },
+
+    login: {
+      title: 'Anmelden',
+      description: 'Bitte melden Sie sich an.',
+      submit: 'Anmelden',
+      noAccount: 'Noch kein Konto?',
+      registerLink: 'Registrieren'
+    },
+
+    register: {
+      title: 'Konto erstellen',
+      description: 'Erstellen Sie ein neues Konto.',
+      submit: 'Registrieren',
+      hasAccount: 'Bereits registriert?',
+      loginLink: 'Anmelden'
+    },
+
+    fields: {
+      name: {
+        label: 'Vollständiger Name',
+        placeholder: 'Ihr vollständiger Name'
+      },
+
+      email: {
+        label: 'E-Mail',
+        placeholder: 'name@example.com'
+      },
+
+      password: {
+        label: 'Passwort',
+        placeholder: 'Passwort eingeben'
+      }
+    },
+
+    alphaNotice: 'Alpha-Version – die Anmeldung dient derzeit Testzwecken.'
   }
 };
