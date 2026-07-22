@@ -7,9 +7,9 @@ import {
 import {
   useTranslation,
   type TranslationKey,
-} from '../i18n';
+} from './i18n';
 
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore } from './store/authStore';
 
 interface LoginPageProps {
   onShowRegister: () => void;
