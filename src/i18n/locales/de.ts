@@ -72,7 +72,6 @@ export const de: TranslationDictionary = {
       title: 'Anmelden',
       description: 'Bitte melden Sie sich an.',
       submit: 'Anmelden',
-      submitting: 'Anmeldung läuft…',
       noAccount: 'Noch kein Konto?',
       registerLink: 'Registrieren'
     },
