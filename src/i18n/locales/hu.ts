@@ -100,6 +100,17 @@ export const hu: TranslationDictionary = {
         placeholder: 'Adja meg a jelszavát'
       }
     },
+    errors: {
+  invalidEmail: 'Érvénytelen e-mail-cím.',
+  invalidCredentials:
+    'Helytelen e-mail-cím vagy jelszó.',
+  userNotFound:
+    'A felhasználói fiók nem található.',
+  accountNotActive:
+    'A felhasználói fiók nem aktív.',
+  authenticationRequired:
+    'A művelethez bejelentkezés szükséges.',
+},
 
     alphaNotice: 'Alfa verzió – a bejelentkezés jelenleg tesztelési célokat szolgál.'
   }
