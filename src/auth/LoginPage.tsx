@@ -172,22 +172,31 @@ export function LoginPage({
   );
 }
 
-type TranslateFunction = (
-  key: string,
-  options?: Record<string, unknown>,
-) => string;
-
-/**
- * Maps store error messages to translation keys.
- *
- * The current authStore exposes English messages. Later the store should
- * expose AuthErrorCode directly, but this adapter keeps UI translation
- * centralized until then.
- */
-function translateAuthError(
-  t: TranslateFunction,
+function getAuthErrorTranslationKey(
   message: string,
-): string {
+): TranslationKey | undefined {
+  const errorKeyMap: Record<
+    string,
+    TranslationKey
+  > = {
+    'Invalid e-mail address.':
+      'auth.errors.invalidEmail',
+
+    'Incorrect e-mail address or password.':
+      'auth.errors.invalidCredentials',
+
+    'The user account could not be found.':
+      'auth.errors.userNotFound',
+
+    'The user account is not active.':
+      'auth.errors.accountNotActive',
+
+    'Authentication is required.':
+      'auth.errors.authenticationRequired',
+  };
+
+  return errorKeyMap[message];
+}
   const errorKeyMap: Record<string, string> = {
     'Invalid e-mail address.':
       'auth.errors.invalidEmail',
