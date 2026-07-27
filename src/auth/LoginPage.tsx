@@ -20,17 +20,25 @@ export function LoginPage({
 }: LoginPageProps) {
   const { t } = useTranslation();
 
-  const login = useAuthStore((state) => state.login);
+  const login = useAuthStore(
+    (state) => state.login,
+  );
+
   const isLoading = useAuthStore(
     (state) => state.isLoading,
   );
-  const error = useAuthStore((state) => state.error);
+
+  const error = useAuthStore(
+    (state) => state.error,
+  );
+
   const clearError = useAuthStore(
     (state) => state.clearError,
   );
 
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [password, setPassword] =
+    useState('');
 
   useEffect(() => {
     clearError();
@@ -47,9 +55,13 @@ export function LoginPage({
         password,
       });
     } catch {
-      // The auth store exposes the translated-ready error state.
+      // A hibát az authStore error állapota tartalmazza.
     }
   };
+
+  const errorTranslationKey = error
+    ? getAuthErrorTranslationKey(error)
+    : undefined;
 
   return (
     <main className="auth-page">
@@ -72,7 +84,9 @@ export function LoginPage({
             {t('auth.login.title')}
           </h1>
 
-          <p>{t('auth.login.description')}</p>
+          <p>
+            {t('auth.login.description')}
+          </p>
         </header>
 
         <form
@@ -136,7 +150,9 @@ export function LoginPage({
               className="auth-error"
               role="alert"
             >
-              {translateAuthError(t, error)}
+              {errorTranslationKey
+                ? t(errorTranslationKey)
+                : error}
             </div>
           )}
 
@@ -152,7 +168,9 @@ export function LoginPage({
         </form>
 
         <footer className="auth-footer">
-          <span>{t('auth.login.noAccount')}</span>
+          <span>
+            {t('auth.login.noAccount')}
+          </span>
 
           <button
             type="button"
@@ -196,27 +214,4 @@ function getAuthErrorTranslationKey(
   };
 
   return errorKeyMap[message];
-}
-  const errorKeyMap: Record<string, string> = {
-    'Invalid e-mail address.':
-      'auth.errors.invalidEmail',
-
-    'Incorrect e-mail address or password.':
-      'auth.errors.invalidCredentials',
-
-    'The user account could not be found.':
-      'auth.errors.userNotFound',
-
-    'The user account is not active.':
-      'auth.errors.accountNotActive',
-
-    'Authentication is required.':
-      'auth.errors.authenticationRequired',
-  };
-
-  const translationKey = errorKeyMap[message];
-
-  return translationKey
-    ? t(translationKey)
-    : message;
 }
