@@ -3,7 +3,11 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { useTranslation } from 'react-i18next';
+
+import {
+  useTranslation,
+  type TranslationKey,
+} from '../i18n';
 
 import { useAuthStore } from '../store/authStore';
 
