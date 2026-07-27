@@ -100,6 +100,17 @@ export const en: TranslationDictionary = {
         placeholder: 'Enter your password'
       }
     },
+    errors: {
+  invalidEmail: 'Invalid e-mail address.',
+  invalidCredentials:
+    'Incorrect e-mail address or password.',
+  userNotFound:
+    'The user account could not be found.',
+  accountNotActive:
+    'The user account is not active.',
+  authenticationRequired:
+    'Authentication is required.',
+},
 
     alphaNotice: 'Alpha version – authentication is currently for testing purposes.'
   }
