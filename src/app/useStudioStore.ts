@@ -5,16 +5,32 @@ import {
   migrateIdentityModel,
   type LegacyOmiManuscript,
 } from '../document/migrateIdentityModel';
+import { migrateVersioningModel } from '../document/migrateVersioningModel';
 import {
   createContribution,
   createPersonAgent,
+  getExternalIdentifierValue,
   normalizeContributionRoles,
   updatePersonAgent,
   type ContributionRole,
   type ContributorEditInput,
   type OmiContribution,
 } from '../model/identity';
-import type { OmiManuscript } from '../types/omi';
+import {
+  commitManuscriptRevision,
+  extractManuscriptState,
+  revertManuscriptToRevision,
+  type CreateChangeEventInput,
+  type RevisionId,
+} from '../model/versioning';
+import {
+  getCurrentUser,
+  useAuthStore,
+} from '../store/authStore';
+import type {
+  OmiManuscript,
+  OmiManuscriptState,
+} from '../types/omi';
 
 interface ContributionEditInput {
   roles?: ContributionRole[];
@@ -43,6 +59,7 @@ interface StudioState {
     contributionId: string,
     direction: 'up' | 'down',
   ) => void;
+  revertRevision: (revisionId: RevisionId) => void;
   loadManuscript: (manuscript: LegacyOmiManuscript) => void;
   resetSample: () => void;
 }
@@ -54,27 +71,73 @@ export const useStudioStore = create<StudioState>((set) => ({
   selectedSectionId: initial.sections[0]?.id ?? null,
 
   setTitle: (title) =>
-    set((state) => ({
-      manuscript: touchManuscript({
-        ...state.manuscript,
-        title,
-      }),
-    })),
+    set((state) => {
+      if (state.manuscript.title === title) {
+        return state;
+      }
+
+      return {
+        manuscript: commitChange(
+          state.manuscript,
+          {
+            ...extractManuscriptState(state.manuscript),
+            title,
+          },
+          'Changed manuscript title',
+          [
+            {
+              operation: 'manuscript.title.set',
+              targetId: state.manuscript.id,
+              path: '/title',
+              previousValue: state.manuscript.title,
+              nextValue: title,
+            },
+          ],
+        ),
+      };
+    }),
 
   setAbstract: (abstractText) =>
-    set((state) => ({
-      manuscript: touchManuscript({
-        ...state.manuscript,
-        abstract: abstractText,
-      }),
-    })),
+    set((state) => {
+      if ((state.manuscript.abstract ?? '') === abstractText) {
+        return state;
+      }
+
+      return {
+        manuscript: commitChange(
+          state.manuscript,
+          {
+            ...extractManuscriptState(state.manuscript),
+            abstract: abstractText,
+          },
+          'Changed manuscript abstract',
+          [
+            {
+              operation: 'manuscript.abstract.set',
+              targetId: state.manuscript.id,
+              path: '/abstract',
+              previousValue: state.manuscript.abstract,
+              nextValue: abstractText,
+            },
+          ],
+        ),
+      };
+    }),
 
   selectSection: (sectionId) => set({ selectedSectionId: sectionId }),
 
   updateBlock: (blockId, content) =>
-    set((state) => ({
-      manuscript: touchManuscript({
-        ...state.manuscript,
+    set((state) => {
+      const previousBlock = state.manuscript.sections
+        .flatMap((section) => section.blocks)
+        .find((block) => block.id === blockId);
+
+      if (!previousBlock || previousBlock.content === content) {
+        return state;
+      }
+
+      const nextState: OmiManuscriptState = {
+        ...extractManuscriptState(state.manuscript),
         sections: state.manuscript.sections.map((section) => ({
           ...section,
           blocks: section.blocks.map((block) =>
@@ -86,8 +149,25 @@ export const useStudioStore = create<StudioState>((set) => ({
               : block,
           ),
         })),
-      }),
-    })),
+      };
+
+      return {
+        manuscript: commitChange(
+          state.manuscript,
+          nextState,
+          'Changed manuscript block content',
+          [
+            {
+              operation: 'block.content.set',
+              targetId: blockId,
+              path: `/blocks/${blockId}/content`,
+              previousValue: previousBlock.content,
+              nextValue: content,
+            },
+          ],
+        ),
+      };
+    }),
 
   addSection: () =>
     set((state) => {
@@ -102,13 +182,26 @@ export const useStudioStore = create<StudioState>((set) => ({
           },
         ],
       };
+      const nextState: OmiManuscriptState = {
+        ...extractManuscriptState(state.manuscript),
+        sections: [...state.manuscript.sections, section],
+      };
 
       return {
         selectedSectionId: section.id,
-        manuscript: touchManuscript({
-          ...state.manuscript,
-          sections: [...state.manuscript.sections, section],
-        }),
+        manuscript: commitChange(
+          state.manuscript,
+          nextState,
+          'Added manuscript section',
+          [
+            {
+              operation: 'section.create',
+              targetId: section.id,
+              path: '/sections/-',
+              nextValue: section,
+            },
+          ],
+        ),
       };
     }),
 
@@ -132,58 +225,135 @@ export const useStudioStore = create<StudioState>((set) => ({
         crypto.randomUUID(),
         timestamp,
       );
+      const nextState: OmiManuscriptState = {
+        ...extractManuscriptState(state.manuscript),
+        agents: [...state.manuscript.agents, agent],
+        contributions: normalizeContributionOrder([
+          ...state.manuscript.contributions,
+          contribution,
+        ]),
+      };
 
       return {
-        manuscript: {
-          ...state.manuscript,
-          agents: [...state.manuscript.agents, agent],
-          contributions: normalizeContributionOrder([
-            ...state.manuscript.contributions,
-            contribution,
-          ]),
-          updatedAt: timestamp,
-        },
+        manuscript: commitChange(
+          state.manuscript,
+          nextState,
+          'Added manuscript contributor',
+          [
+            {
+              operation: 'agent.create',
+              targetId: agent.id,
+              path: '/agents/-',
+              nextValue: agent,
+            },
+            {
+              operation: 'contribution.update',
+              targetId: contribution.id,
+              path: '/contributions/-',
+              nextValue: contribution,
+            },
+          ],
+          timestamp,
+        ),
       };
     }),
 
   updateContributor: (agentId, input) =>
-    set((state) => ({
-      manuscript: touchManuscript({
-        ...state.manuscript,
-        agents: state.manuscript.agents.map((agent) =>
-          agent.id === agentId
-            ? updatePersonAgent(agent, input)
-            : agent,
+    set((state) => {
+      const previousAgent = state.manuscript.agents.find(
+        (agent) => agent.id === agentId,
+      );
+
+      if (!previousAgent) {
+        return state;
+      }
+
+      const nextAgent = updatePersonAgent(previousAgent, input);
+
+      if (JSON.stringify(previousAgent) === JSON.stringify(nextAgent)) {
+        return state;
+      }
+
+      return {
+        manuscript: commitChange(
+          state.manuscript,
+          {
+            ...extractManuscriptState(state.manuscript),
+            agents: state.manuscript.agents.map((agent) =>
+              agent.id === agentId ? nextAgent : agent,
+            ),
+          },
+          'Changed contributor identity',
+          [
+            {
+              operation: 'agent.update',
+              targetId: agentId,
+              path: `/agents/${agentId}`,
+              previousValue: previousAgent,
+              nextValue: nextAgent,
+            },
+          ],
         ),
-      }),
-    })),
+      };
+    }),
 
   updateContribution: (contributionId, input) =>
     set((state) => {
+      const previousContribution = state.manuscript.contributions.find(
+        (contribution) => contribution.id === contributionId,
+      );
+
+      if (!previousContribution) {
+        return state;
+      }
+
       const timestamp = new Date().toISOString();
+      const nextContribution: OmiContribution = {
+        ...previousContribution,
+        roles:
+          input.roles !== undefined
+            ? normalizeContributionRoles(input.roles)
+            : previousContribution.roles,
+        corresponding:
+          input.corresponding !== undefined
+            ? input.corresponding
+            : previousContribution.corresponding,
+        updatedAt: timestamp,
+      };
+
+      if (
+        JSON.stringify(previousContribution.roles) ===
+          JSON.stringify(nextContribution.roles) &&
+        previousContribution.corresponding ===
+          nextContribution.corresponding
+      ) {
+        return state;
+      }
 
       return {
-        manuscript: {
-          ...state.manuscript,
-          contributions: state.manuscript.contributions.map(
-            (contribution) =>
-              contribution.id === contributionId
-                ? {
-                    ...contribution,
-                    roles:
-                      input.roles !== undefined
-                        ? normalizeContributionRoles(input.roles)
-                        : contribution.roles,
-                    corresponding:
-                      input.corresponding !== undefined
-                        ? input.corresponding
-                        : contribution.corresponding,
-                    updatedAt: timestamp,
-                  }
-                : contribution,
-          ),
-          updatedAt: timestamp,
-        },
+        manuscript: commitChange(
+          state.manuscript,
+          {
+            ...extractManuscriptState(state.manuscript),
+            contributions: state.manuscript.contributions.map(
+              (contribution) =>
+                contribution.id === contributionId
+                  ? nextContribution
+                  : contribution,
+            ),
+          },
+          'Changed contributor role',
+          [
+            {
+              operation: 'contribution.update',
+              targetId: contributionId,
+              path: `/contributions/${contributionId}`,
+              previousValue: previousContribution,
+              nextValue: nextContribution,
+            },
+          ],
+          timestamp,
+        ),
       };
     }),
 
@@ -204,17 +374,45 @@ export const useStudioStore = create<StudioState>((set) => ({
         (contribution) =>
           contribution.agentId === removedContribution.agentId,
       );
+      const removedAgent = agentIsStillReferenced
+        ? undefined
+        : state.manuscript.agents.find(
+            (agent) => agent.id === removedContribution.agentId,
+          );
+      const nextState: OmiManuscriptState = {
+        ...extractManuscriptState(state.manuscript),
+        agents: removedAgent
+          ? state.manuscript.agents.filter(
+              (agent) => agent.id !== removedAgent.id,
+            )
+          : state.manuscript.agents,
+        contributions: normalizeContributionOrder(contributions),
+      };
+      const events: CreateChangeEventInput[] = [
+        {
+          operation: 'contribution.remove',
+          targetId: contributionId,
+          path: `/contributions/${contributionId}`,
+          previousValue: removedContribution,
+        },
+      ];
+
+      if (removedAgent) {
+        events.push({
+          operation: 'agent.remove',
+          targetId: removedAgent.id,
+          path: `/agents/${removedAgent.id}`,
+          previousValue: removedAgent,
+        });
+      }
 
       return {
-        manuscript: touchManuscript({
-          ...state.manuscript,
-          agents: agentIsStillReferenced
-            ? state.manuscript.agents
-            : state.manuscript.agents.filter(
-                (agent) => agent.id !== removedContribution.agentId,
-              ),
-          contributions: normalizeContributionOrder(contributions),
-        }),
+        manuscript: commitChange(
+          state.manuscript,
+          nextState,
+          'Removed manuscript contributor',
+          events,
+        ),
       };
     }),
 
@@ -248,16 +446,58 @@ export const useStudioStore = create<StudioState>((set) => ({
       nextContributions[currentIndex] = targetContribution;
       nextContributions[targetIndex] = currentContribution;
 
+      const normalizedNextContributions = normalizeContributionOrder(
+        nextContributions,
+      );
+
       return {
-        manuscript: touchManuscript({
-          ...state.manuscript,
-          contributions: normalizeContributionOrder(nextContributions),
-        }),
+        manuscript: commitChange(
+          state.manuscript,
+          {
+            ...extractManuscriptState(state.manuscript),
+            contributions: normalizedNextContributions,
+          },
+          'Reordered manuscript contributors',
+          [
+            {
+              operation: 'contribution.reorder',
+              targetId: contributionId,
+              path: '/contributions',
+              previousValue: contributions.map((item) => item.id),
+              nextValue: normalizedNextContributions.map(
+                (item) => item.id,
+              ),
+            },
+          ],
+        ),
+      };
+    }),
+
+  revertRevision: (revisionId) =>
+    set((state) => {
+      const manuscript = revertManuscriptToRevision(
+        state.manuscript,
+        revisionId,
+        {
+          summary: 'Reverted manuscript to an earlier revision',
+          actorAgentId: resolveCurrentActorAgentId(state.manuscript),
+        },
+      );
+      const selectedSectionStillExists = manuscript.sections.some(
+        (section) => section.id === state.selectedSectionId,
+      );
+
+      return {
+        manuscript,
+        selectedSectionId: selectedSectionStillExists
+          ? state.selectedSectionId
+          : manuscript.sections[0]?.id ?? null,
       };
     }),
 
   loadManuscript: (manuscript) => {
-    const migrated = migrateIdentityModel(manuscript);
+    const identityMigrated = migrateIdentityModel(manuscript);
+    const migrated = migrateVersioningModel(identityMigrated);
 
     set({
       manuscript: migrated,
@@ -275,11 +515,68 @@ export const useStudioStore = create<StudioState>((set) => ({
   },
 }));
 
-function touchManuscript(manuscript: OmiManuscript): OmiManuscript {
-  return {
-    ...manuscript,
-    updatedAt: new Date().toISOString(),
-  };
+function commitChange(
+  manuscript: OmiManuscript,
+  nextState: OmiManuscriptState,
+  summary: string,
+  events: CreateChangeEventInput[],
+  timestamp?: string,
+): OmiManuscript {
+  return commitManuscriptRevision(
+    manuscript,
+    nextState,
+    {
+      summary,
+      events,
+      actorAgentId: resolveCurrentActorAgentId(manuscript),
+      timestamp,
+    },
+  );
+}
+
+function resolveCurrentActorAgentId(
+  manuscript: OmiManuscript,
+): string | undefined {
+  const currentUser = getCurrentUser(useAuthStore.getState());
+
+  if (!currentUser) {
+    return undefined;
+  }
+
+  if (
+    currentUser.agentId &&
+    manuscript.agents.some(
+      (agent) => agent.id === currentUser.agentId,
+    )
+  ) {
+    return currentUser.agentId;
+  }
+
+  const accountOrcid = normalizeOrcidForComparison(
+    currentUser.profile.orcid,
+  );
+
+  if (!accountOrcid) {
+    return undefined;
+  }
+
+  const matches = manuscript.agents.filter(
+    (agent) =>
+      normalizeOrcidForComparison(
+        getExternalIdentifierValue(agent, 'orcid'),
+      ) === accountOrcid,
+  );
+
+  return matches.length === 1 ? matches[0]?.id : undefined;
+}
+
+function normalizeOrcidForComparison(
+  value: string | undefined,
+): string {
+  return (value ?? '')
+    .trim()
+    .replace(/^https?:\/\/orcid\.org\//i, '')
+    .toUpperCase();
 }
 
 function normalizeContributionOrder(
