@@ -62,6 +62,35 @@ export const en: TranslationDictionary = {
     }
   },
 
+  history: {
+    title: 'Revision history',
+    description:
+      'Immutable OMI-SPEC-160 revisions recorded for this manuscript.',
+    empty: 'No revisions have been recorded.',
+    current: 'Current',
+    revision: 'Revision',
+    events: 'events',
+    unknownActor: 'Unknown actor',
+    completeHistory: 'Complete history',
+    shallowHistory: 'Shallow history',
+    revert: 'Revert',
+    confirmRevert:
+      'Create a new revision that restores this earlier manuscript state?',
+    operations: {
+      snapshotCreated: 'Manuscript snapshot created',
+      titleChanged: 'Manuscript title changed',
+      abstractChanged: 'Manuscript abstract changed',
+      sectionCreated: 'Section added',
+      blockChanged: 'Block content changed',
+      contributorAdded: 'Contributor added',
+      contributorChanged: 'Contributor identity changed',
+      contributorRemoved: 'Contributor removed',
+      contributionChanged: 'Contribution role changed',
+      contributorsReordered: 'Contributors reordered',
+      reverted: 'Earlier revision restored'
+    }
+  },
+
   editor: {
     addSection: 'Add section',
     addParagraph: 'Add paragraph',
