@@ -1,6 +1,9 @@
+import { useEffect } from 'react';
 import {
   History,
   RotateCcw,
+  Save,
+  Trash2,
 } from 'lucide-react';
 
 import { useStudioStore } from '../app/useStudioStore';
@@ -32,6 +35,13 @@ const OPERATION_LABELS: Partial<
 export function HistoryPanel() {
   const { t } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
+  const pendingChangeSet = useStudioStore(
+    (state) => state.pendingChangeSet,
+  );
+  const checkpoint = useStudioStore((state) => state.checkpoint);
+  const discardWorkingChanges = useStudioStore(
+    (state) => state.discardWorkingChanges,
+  );
   const revertRevision = useStudioStore(
     (state) => state.revertRevision,
   );
@@ -40,6 +50,29 @@ export function HistoryPanel() {
     manuscript.revisionHistory.completeness === 'complete'
       ? 'history.completeHistory'
       : 'history.shallowHistory';
+
+  useEffect(() => {
+    const checkpointOnWindowBlur = () => checkpoint('window-blur');
+    const checkpointWhenHidden = () => {
+      if (document.visibilityState === 'hidden') {
+        checkpoint('window-blur');
+      }
+    };
+
+    window.addEventListener('blur', checkpointOnWindowBlur);
+    document.addEventListener(
+      'visibilitychange',
+      checkpointWhenHidden,
+    );
+
+    return () => {
+      window.removeEventListener('blur', checkpointOnWindowBlur);
+      document.removeEventListener(
+        'visibilitychange',
+        checkpointWhenHidden,
+      );
+    };
+  }, [checkpoint]);
 
   return (
     <section
@@ -62,6 +95,53 @@ export function HistoryPanel() {
         </span>
       </header>
 
+      {pendingChangeSet ? (
+        <div className="history-pending" role="status">
+          <div className="history-pending-heading">
+            <div>
+              <strong>{t('history.pendingTitle')}</strong>
+              <p>{t('history.pendingDescription')}</p>
+            </div>
+
+            <span className="history-pending-badge">
+              {t('history.pendingBadge')}
+            </span>
+          </div>
+
+          <div className="history-pending-meta">
+            <span>
+              {pendingChangeSet.events.length} {t('history.events')}
+            </span>
+            <span aria-hidden="true">•</span>
+            <span>{formatTimestamp(pendingChangeSet.updatedAt)}</span>
+          </div>
+
+          <div className="history-pending-actions">
+            <button
+              type="button"
+              className="history-checkpoint-button"
+              onClick={() => checkpoint('manual')}
+            >
+              <Save size={15} aria-hidden="true" />
+              {t('history.checkpoint')}
+            </button>
+
+            <button
+              type="button"
+              className="history-discard-button"
+              onClick={() => {
+                if (window.confirm(t('history.confirmDiscard'))) {
+                  discardWorkingChanges();
+                }
+              }}
+            >
+              <Trash2 size={15} aria-hidden="true" />
+              {t('history.discard')}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {revisions.length === 0 ? (
         <p className="history-empty">{t('history.empty')}</p>
       ) : (
@@ -73,9 +153,13 @@ export function HistoryPanel() {
             const operationKey = operation
               ? OPERATION_LABELS[operation]
               : undefined;
-            const summary = operationKey
-              ? t(operationKey)
-              : revision.summary;
+            const summary =
+              revision.changeSet.events.length > 1
+                ? `${revision.changeSet.events.length} ${t('history.groupedChanges')}`
+                : operationKey
+                  ? t(operationKey)
+                  : revision.summary;
+            const revertIsBlocked = Boolean(pendingChangeSet);
 
             return (
               <li
@@ -111,7 +195,12 @@ export function HistoryPanel() {
                 <button
                   type="button"
                   className="history-revert-button"
-                  disabled={isCurrent}
+                  disabled={isCurrent || revertIsBlocked}
+                  title={
+                    revertIsBlocked
+                      ? t('history.revertBlocked')
+                      : undefined
+                  }
                   onClick={() => {
                     if (window.confirm(t('history.confirmRevert'))) {
                       revertRevision(revision.id);
