@@ -62,6 +62,35 @@ export const hu: TranslationDictionary = {
     }
   },
 
+  history: {
+    title: 'Revíziótörténet',
+    description:
+      'A kézirathoz rögzített, nem módosítható OMI-SPEC-160 revíziók.',
+    empty: 'Még nincs rögzített revízió.',
+    current: 'Jelenlegi',
+    revision: 'Revízió',
+    events: 'esemény',
+    unknownActor: 'Ismeretlen közreműködő',
+    completeHistory: 'Teljes előzmény',
+    shallowHistory: 'Részleges előzmény',
+    revert: 'Visszaállítás',
+    confirmRevert:
+      'Készüljön új revízió, amely visszaállítja ezt a korábbi kéziratállapotot?',
+    operations: {
+      snapshotCreated: 'Kézirat-pillanatkép létrehozva',
+      titleChanged: 'A kézirat címe megváltozott',
+      abstractChanged: 'A kézirat absztraktja megváltozott',
+      sectionCreated: 'Új fejezet hozzáadva',
+      blockChanged: 'A blokk tartalma megváltozott',
+      contributorAdded: 'Közreműködő hozzáadva',
+      contributorChanged: 'A közreműködő identitása megváltozott',
+      contributorRemoved: 'Közreműködő eltávolítva',
+      contributionChanged: 'A közreműködői szerep megváltozott',
+      contributorsReordered: 'A közreműködők sorrendje megváltozott',
+      reverted: 'Korábbi revízió visszaállítva'
+    }
+  },
+
   editor: {
     addSection: 'Fejezet hozzáadása',
     addParagraph: 'Bekezdés hozzáadása',
