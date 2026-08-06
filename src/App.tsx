@@ -7,6 +7,7 @@ import { RegisterPage } from './auth/RegisterPage';
 import { AppLayout } from './components/AppLayout';
 import { DocumentTree } from './components/DocumentTree';
 import { EditorPane } from './components/EditorPane';
+import { HistoryPanel } from './components/HistoryPanel';
 import { PropertiesPanel } from './components/PropertiesPanel';
 
 import './styles/auth.css';
@@ -45,7 +46,11 @@ function StudioApplication() {
       <div className="workspace">
         <DocumentTree />
         <EditorPane />
-        <PropertiesPanel />
+
+        <div className="properties-stack">
+          <PropertiesPanel />
+          <HistoryPanel />
+        </div>
       </div>
     </AppLayout>
   );
