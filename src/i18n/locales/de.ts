@@ -62,6 +62,35 @@ export const de: TranslationDictionary = {
     }
   },
 
+  history: {
+    title: 'Revisionsverlauf',
+    description:
+      'Unveränderliche OMI-SPEC-160-Revisionen dieses Manuskripts.',
+    empty: 'Es wurden noch keine Revisionen aufgezeichnet.',
+    current: 'Aktuell',
+    revision: 'Revision',
+    events: 'Ereignisse',
+    unknownActor: 'Unbekannter Mitwirkender',
+    completeHistory: 'Vollständiger Verlauf',
+    shallowHistory: 'Unvollständiger Verlauf',
+    revert: 'Wiederherstellen',
+    confirmRevert:
+      'Soll eine neue Revision erstellt werden, die diesen früheren Manuskriptstand wiederherstellt?',
+    operations: {
+      snapshotCreated: 'Manuskript-Snapshot erstellt',
+      titleChanged: 'Manuskripttitel geändert',
+      abstractChanged: 'Zusammenfassung geändert',
+      sectionCreated: 'Abschnitt hinzugefügt',
+      blockChanged: 'Blockinhalt geändert',
+      contributorAdded: 'Mitwirkender hinzugefügt',
+      contributorChanged: 'Identität des Mitwirkenden geändert',
+      contributorRemoved: 'Mitwirkender entfernt',
+      contributionChanged: 'Mitwirkungsrolle geändert',
+      contributorsReordered: 'Mitwirkende neu geordnet',
+      reverted: 'Frühere Revision wiederhergestellt'
+    }
+  },
+
   editor: {
     addSection: 'Abschnitt hinzufügen',
     addParagraph: 'Absatz hinzufügen',
