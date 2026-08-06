@@ -34,6 +34,34 @@ export const hu: TranslationDictionary = {
     originalLanguage: 'Eredeti nyelv'
   },
 
+  contributors: {
+    description:
+      'A hordozható tudományos identitások és a kézirathoz kötött közreműködői szerepek kezelése.',
+    add: 'Közreműködő hozzáadása',
+    empty: 'A kézirathoz még nincs közreműködő hozzáadva.',
+    remove: 'Közreműködő eltávolítása',
+    moveUp: 'Közreműködő feljebb mozgatása',
+    moveDown: 'Közreműködő lejjebb mozgatása',
+    givenName: 'Utónév',
+    familyName: 'Családnév',
+    affiliation: 'Intézményi kapcsolat',
+    orcid: 'ORCID',
+    invalidOrcid: 'Az ORCID formátuma vagy ellenőrző összege hibás.',
+    role: 'Közreműködői szerep',
+    corresponding: 'Kapcsolattartó közreműködő',
+    roles: {
+      author: 'Szerző',
+      editor: 'Szerkesztő',
+      translator: 'Fordító',
+      reviewer: 'Lektor',
+      dataCurator: 'Adatgondozó',
+      software: 'Szoftver',
+      methodology: 'Módszertan',
+      visualization: 'Vizualizáció',
+      other: 'Egyéb'
+    }
+  },
+
   editor: {
     addSection: 'Fejezet hozzáadása',
     addParagraph: 'Bekezdés hozzáadása',
@@ -68,13 +96,13 @@ export const hu: TranslationDictionary = {
     },
 
     login: {
-  title: 'Sign in',
-  description: 'Please sign in to continue.',
-  submit: 'Sign in',
-  submitting: 'Signing in…',
-  noAccount: 'Do not have an account yet?',
-  registerLink: 'Register'
-},
+      title: 'Bejelentkezés',
+      description: 'A folytatáshoz jelentkezzen be.',
+      submit: 'Bejelentkezés',
+      submitting: 'Bejelentkezés…',
+      noAccount: 'Még nincs fiókja?',
+      registerLink: 'Regisztráció'
+    },
 
     register: {
       title: 'Fiók létrehozása',
@@ -100,18 +128,20 @@ export const hu: TranslationDictionary = {
         placeholder: 'Adja meg a jelszavát'
       }
     },
-    errors: {
-  invalidEmail: 'Érvénytelen e-mail-cím.',
-  invalidCredentials:
-    'Helytelen e-mail-cím vagy jelszó.',
-  userNotFound:
-    'A felhasználói fiók nem található.',
-  accountNotActive:
-    'A felhasználói fiók nem aktív.',
-  authenticationRequired:
-    'A művelethez bejelentkezés szükséges.',
-},
 
-    alphaNotice: 'Alfa verzió – a bejelentkezés jelenleg tesztelési célokat szolgál.'
+    errors: {
+      invalidEmail: 'Érvénytelen e-mail-cím.',
+      invalidCredentials:
+        'Helytelen e-mail-cím vagy jelszó.',
+      userNotFound:
+        'A felhasználói fiók nem található.',
+      accountNotActive:
+        'A felhasználói fiók nem aktív.',
+      authenticationRequired:
+        'A művelethez bejelentkezés szükséges.'
+    },
+
+    alphaNotice:
+      'Alfa verzió – a bejelentkezés jelenleg tesztelési célokat szolgál.'
   }
 };
