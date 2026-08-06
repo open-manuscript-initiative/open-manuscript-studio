@@ -34,6 +34,34 @@ export const de: TranslationDictionary = {
     originalLanguage: 'Originalsprache'
   },
 
+  contributors: {
+    description:
+      'Verwalten Sie übertragbare wissenschaftliche Identitäten und manuskriptspezifische Mitwirkungsrollen.',
+    add: 'Mitwirkenden hinzufügen',
+    empty: 'Diesem Manuskript wurden noch keine Mitwirkenden hinzugefügt.',
+    remove: 'Mitwirkenden entfernen',
+    moveUp: 'Mitwirkenden nach oben verschieben',
+    moveDown: 'Mitwirkenden nach unten verschieben',
+    givenName: 'Vorname',
+    familyName: 'Familienname',
+    affiliation: 'Affiliation',
+    orcid: 'ORCID',
+    invalidOrcid: 'Format oder Prüfsumme der ORCID ist ungültig.',
+    role: 'Mitwirkungsrolle',
+    corresponding: 'Korrespondierender Mitwirkender',
+    roles: {
+      author: 'Autor/in',
+      editor: 'Herausgeber/in',
+      translator: 'Übersetzer/in',
+      reviewer: 'Gutachter/in',
+      dataCurator: 'Datenkurator/in',
+      software: 'Software',
+      methodology: 'Methodik',
+      visualization: 'Visualisierung',
+      other: 'Sonstige'
+    }
+  },
+
   editor: {
     addSection: 'Abschnitt hinzufügen',
     addParagraph: 'Absatz hinzufügen',

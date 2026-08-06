@@ -1,6 +1,8 @@
+import type { AgentId } from './identity';
+
 /**
  * Open Manuscript Studio
- * User domain model
+ * User account domain model
  */
 
 /**
@@ -15,7 +17,7 @@
 export type LanguageCode = string;
 
 /**
- * Globally unique identifier.
+ * Globally unique account identifier.
  *
  * The application currently uses UUID strings, but the alias keeps
  * identifier handling consistent and allows later refinement.
@@ -32,7 +34,10 @@ export type UserStatus =
   | 'deleted';
 
 /**
- * External identity providers that may be connected to a user account.
+ * Authentication providers that may be connected to a Studio account.
+ *
+ * These records are operational account data. They are not portable OMI
+ * identity assertions and must never be exported as manuscript attribution.
  */
 export type IdentityProvider =
   | 'password'
@@ -43,14 +48,14 @@ export type IdentityProvider =
   | 'institutional';
 
 /**
- * An external identity connected to the Studio account.
+ * An authentication identity connected to the Studio account.
  *
  * Authentication secrets, access tokens and refresh tokens must never
  * be stored in the manuscript or in the client-side user profile.
  */
 export interface ExternalIdentity {
   /**
-   * Authentication or identity provider.
+   * Authentication provider.
    */
   provider: IdentityProvider;
 
@@ -65,7 +70,7 @@ export interface ExternalIdentity {
   displayName?: string;
 
   /**
-   * Date when the identity was connected.
+   * Date when the authentication identity was connected.
    */
   connectedAt: string;
 }
@@ -96,24 +101,24 @@ export interface UserPreferences {
 }
 
 /**
- * Public and professional information belonging to a Studio user.
+ * Account-facing public and professional information.
+ *
+ * This profile remains a convenience for the current alpha. Portable
+ * scholarly identity and attribution belong to the linked OMI Agent.
  */
 export interface UserProfile {
   /**
-   * Full display name.
+   * Full display name used by the Studio account interface.
    */
   fullName: string;
 
   /**
-   * Primary institutional affiliation.
+   * Convenience account affiliation.
    */
   affiliation?: string;
 
   /**
-   * ORCID identifier in normalized form.
-   *
-   * Example:
-   * 0000-0002-1825-0097
+   * Convenience ORCID value for account onboarding.
    */
   orcid?: string;
 
@@ -129,17 +134,24 @@ export interface UserProfile {
 }
 
 /**
- * Primary Studio user model.
+ * Primary Studio account model.
  *
- * Workspace-specific roles are intentionally not stored here.
- * They belong to WorkspaceMember because one user may be an owner
- * in one workspace and a reviewer or translator in another.
+ * Workspace-specific roles are intentionally not stored here. They belong
+ * to WorkspaceMember. Scholarly contributor roles belong to OmiContribution.
  */
 export interface User {
   /**
-   * Internal immutable identifier.
+   * Internal immutable account identifier.
    */
   id: UserId;
+
+  /**
+   * Optional link to the portable OMI agent represented by this account.
+   *
+   * The account and agent remain separate objects. Deleting, suspending or
+   * exporting one must not silently perform the same operation on the other.
+   */
+  agentId?: AgentId;
 
   /**
    * Primary e-mail address.
@@ -157,7 +169,7 @@ export interface User {
   status: UserStatus;
 
   /**
-   * Public and professional user information.
+   * Account-facing profile information.
    */
   profile: UserProfile;
 
@@ -188,7 +200,7 @@ export interface User {
 }
 
 /**
- * Data required to create a new user.
+ * Data required to create a new account.
  *
  * Server-generated fields such as id, timestamps and verification status
  * are deliberately omitted.
@@ -198,6 +210,7 @@ export interface CreateUserInput {
   fullName: string;
   affiliation?: string;
   orcid?: string;
+  agentId?: AgentId;
   interfaceLanguage?: LanguageCode;
   workingLanguages?: LanguageCode[];
 }
@@ -278,10 +291,10 @@ export function isValidOrcid(orcid: string): boolean {
 }
 
 /**
- * Creates a client-side user model.
+ * Creates a client-side account model.
  *
  * This helper is suitable for the current local alpha implementation.
- * In a production multi-user system, user creation, identifiers and
+ * In a production multi-user system, account creation, identifiers and
  * timestamps must be handled by the backend.
  */
 export function createUser(
@@ -311,6 +324,7 @@ export function createUser(
 
   return {
     id,
+    agentId: input.agentId,
     email,
     emailVerified: false,
     status: 'pending',
@@ -332,7 +346,25 @@ export function createUser(
 }
 
 /**
- * Returns the name used when displaying the user in the interface.
+ * Returns a copy of an account linked to one portable OMI agent.
+ */
+export function linkUserToAgent(
+  user: User,
+  agentId: AgentId,
+): User {
+  if (!agentId.trim()) {
+    throw new Error('The agent identifier is required.');
+  }
+
+  return {
+    ...user,
+    agentId,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Returns the name used when displaying the account in the interface.
  */
 export function getUserDisplayName(user: User): string {
   return user.profile.fullName.trim() || user.email;
