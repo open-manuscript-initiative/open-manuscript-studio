@@ -24,6 +24,12 @@ import {
   type RevisionId,
 } from '../model/versioning';
 import {
+  createCheckpointDescriptor,
+  stagePendingChanges,
+  type CheckpointReason,
+  type OmiPendingChangeSet,
+} from '../model/workingState';
+import {
   getCurrentUser,
   useAuthStore,
 } from '../store/authStore';
@@ -39,6 +45,7 @@ interface ContributionEditInput {
 
 interface StudioState {
   manuscript: OmiManuscript;
+  pendingChangeSet: OmiPendingChangeSet | null;
   selectedSectionId: string | null;
   setTitle: (title: string) => void;
   setAbstract: (abstractText: string) => void;
@@ -59,15 +66,21 @@ interface StudioState {
     contributionId: string,
     direction: 'up' | 'down',
   ) => void;
+  checkpoint: (reason?: CheckpointReason) => void;
+  discardWorkingChanges: () => void;
   revertRevision: (revisionId: RevisionId) => void;
   loadManuscript: (manuscript: LegacyOmiManuscript) => void;
   resetSample: () => void;
 }
 
+const AUTO_CHECKPOINT_DELAY_MS = 2500;
+let autoCheckpointTimer: ReturnType<typeof setTimeout> | null = null;
+
 const initial = createSampleManuscript();
 
 export const useStudioStore = create<StudioState>((set) => ({
   manuscript: initial,
+  pendingChangeSet: null,
   selectedSectionId: initial.sections[0]?.id ?? null,
 
   setTitle: (title) =>
@@ -76,25 +89,23 @@ export const useStudioStore = create<StudioState>((set) => ({
         return state;
       }
 
-      return {
-        manuscript: commitChange(
-          state.manuscript,
+      return stageWorkingChange(
+        state,
+        {
+          ...extractManuscriptState(state.manuscript),
+          title,
+        },
+        'Changed manuscript title',
+        [
           {
-            ...extractManuscriptState(state.manuscript),
-            title,
+            operation: 'manuscript.title.set',
+            targetId: state.manuscript.id,
+            path: '/title',
+            previousValue: state.manuscript.title,
+            nextValue: title,
           },
-          'Changed manuscript title',
-          [
-            {
-              operation: 'manuscript.title.set',
-              targetId: state.manuscript.id,
-              path: '/title',
-              previousValue: state.manuscript.title,
-              nextValue: title,
-            },
-          ],
-        ),
-      };
+        ],
+      );
     }),
 
   setAbstract: (abstractText) =>
@@ -103,25 +114,23 @@ export const useStudioStore = create<StudioState>((set) => ({
         return state;
       }
 
-      return {
-        manuscript: commitChange(
-          state.manuscript,
+      return stageWorkingChange(
+        state,
+        {
+          ...extractManuscriptState(state.manuscript),
+          abstract: abstractText,
+        },
+        'Changed manuscript abstract',
+        [
           {
-            ...extractManuscriptState(state.manuscript),
-            abstract: abstractText,
+            operation: 'manuscript.abstract.set',
+            targetId: state.manuscript.id,
+            path: '/abstract',
+            previousValue: state.manuscript.abstract,
+            nextValue: abstractText,
           },
-          'Changed manuscript abstract',
-          [
-            {
-              operation: 'manuscript.abstract.set',
-              targetId: state.manuscript.id,
-              path: '/abstract',
-              previousValue: state.manuscript.abstract,
-              nextValue: abstractText,
-            },
-          ],
-        ),
-      };
+        ],
+      );
     }),
 
   selectSection: (sectionId) => set({ selectedSectionId: sectionId }),
@@ -151,22 +160,20 @@ export const useStudioStore = create<StudioState>((set) => ({
         })),
       };
 
-      return {
-        manuscript: commitChange(
-          state.manuscript,
-          nextState,
-          'Changed manuscript block content',
-          [
-            {
-              operation: 'block.content.set',
-              targetId: blockId,
-              path: `/blocks/${blockId}/content`,
-              previousValue: previousBlock.content,
-              nextValue: content,
-            },
-          ],
-        ),
-      };
+      return stageWorkingChange(
+        state,
+        nextState,
+        'Changed manuscript block content',
+        [
+          {
+            operation: 'block.content.set',
+            targetId: blockId,
+            path: `/blocks/${blockId}/content`,
+            previousValue: previousBlock.content,
+            nextValue: content,
+          },
+        ],
+      );
     }),
 
   addSection: () =>
@@ -188,9 +195,8 @@ export const useStudioStore = create<StudioState>((set) => ({
       };
 
       return {
-        selectedSectionId: section.id,
-        manuscript: commitChange(
-          state.manuscript,
+        ...stageWorkingChange(
+          state,
           nextState,
           'Added manuscript section',
           [
@@ -202,6 +208,7 @@ export const useStudioStore = create<StudioState>((set) => ({
             },
           ],
         ),
+        selectedSectionId: section.id,
       };
     }),
 
@@ -234,28 +241,26 @@ export const useStudioStore = create<StudioState>((set) => ({
         ]),
       };
 
-      return {
-        manuscript: commitChange(
-          state.manuscript,
-          nextState,
-          'Added manuscript contributor',
-          [
-            {
-              operation: 'agent.create',
-              targetId: agent.id,
-              path: '/agents/-',
-              nextValue: agent,
-            },
-            {
-              operation: 'contribution.update',
-              targetId: contribution.id,
-              path: '/contributions/-',
-              nextValue: contribution,
-            },
-          ],
-          timestamp,
-        ),
-      };
+      return stageWorkingChange(
+        state,
+        nextState,
+        'Added manuscript contributor',
+        [
+          {
+            operation: 'agent.create',
+            targetId: agent.id,
+            path: '/agents/-',
+            nextValue: agent,
+          },
+          {
+            operation: 'contribution.update',
+            targetId: contribution.id,
+            path: '/contributions/-',
+            nextValue: contribution,
+          },
+        ],
+        timestamp,
+      );
     }),
 
   updateContributor: (agentId, input) =>
@@ -274,27 +279,25 @@ export const useStudioStore = create<StudioState>((set) => ({
         return state;
       }
 
-      return {
-        manuscript: commitChange(
-          state.manuscript,
+      return stageWorkingChange(
+        state,
+        {
+          ...extractManuscriptState(state.manuscript),
+          agents: state.manuscript.agents.map((agent) =>
+            agent.id === agentId ? nextAgent : agent,
+          ),
+        },
+        'Changed contributor identity',
+        [
           {
-            ...extractManuscriptState(state.manuscript),
-            agents: state.manuscript.agents.map((agent) =>
-              agent.id === agentId ? nextAgent : agent,
-            ),
+            operation: 'agent.update',
+            targetId: agentId,
+            path: `/agents/${agentId}`,
+            previousValue: previousAgent,
+            nextValue: nextAgent,
           },
-          'Changed contributor identity',
-          [
-            {
-              operation: 'agent.update',
-              targetId: agentId,
-              path: `/agents/${agentId}`,
-              previousValue: previousAgent,
-              nextValue: nextAgent,
-            },
-          ],
-        ),
-      };
+        ],
+      );
     }),
 
   updateContribution: (contributionId, input) =>
@@ -330,31 +333,29 @@ export const useStudioStore = create<StudioState>((set) => ({
         return state;
       }
 
-      return {
-        manuscript: commitChange(
-          state.manuscript,
+      return stageWorkingChange(
+        state,
+        {
+          ...extractManuscriptState(state.manuscript),
+          contributions: state.manuscript.contributions.map(
+            (contribution) =>
+              contribution.id === contributionId
+                ? nextContribution
+                : contribution,
+          ),
+        },
+        'Changed contributor role',
+        [
           {
-            ...extractManuscriptState(state.manuscript),
-            contributions: state.manuscript.contributions.map(
-              (contribution) =>
-                contribution.id === contributionId
-                  ? nextContribution
-                  : contribution,
-            ),
+            operation: 'contribution.update',
+            targetId: contributionId,
+            path: `/contributions/${contributionId}`,
+            previousValue: previousContribution,
+            nextValue: nextContribution,
           },
-          'Changed contributor role',
-          [
-            {
-              operation: 'contribution.update',
-              targetId: contributionId,
-              path: `/contributions/${contributionId}`,
-              previousValue: previousContribution,
-              nextValue: nextContribution,
-            },
-          ],
-          timestamp,
-        ),
-      };
+        ],
+        timestamp,
+      );
     }),
 
   removeContributor: (contributionId) =>
@@ -406,14 +407,12 @@ export const useStudioStore = create<StudioState>((set) => ({
         });
       }
 
-      return {
-        manuscript: commitChange(
-          state.manuscript,
-          nextState,
-          'Removed manuscript contributor',
-          events,
-        ),
-      };
+      return stageWorkingChange(
+        state,
+        nextState,
+        'Removed manuscript contributor',
+        events,
+      );
     }),
 
   moveContributor: (contributionId, direction) =>
@@ -450,31 +449,79 @@ export const useStudioStore = create<StudioState>((set) => ({
         nextContributions,
       );
 
-      return {
-        manuscript: commitChange(
-          state.manuscript,
+      return stageWorkingChange(
+        state,
+        {
+          ...extractManuscriptState(state.manuscript),
+          contributions: normalizedNextContributions,
+        },
+        'Reordered manuscript contributors',
+        [
           {
-            ...extractManuscriptState(state.manuscript),
-            contributions: normalizedNextContributions,
+            operation: 'contribution.reorder',
+            targetId: contributionId,
+            path: '/contributions',
+            previousValue: contributions.map((item) => item.id),
+            nextValue: normalizedNextContributions.map((item) => item.id),
           },
-          'Reordered manuscript contributors',
-          [
-            {
-              operation: 'contribution.reorder',
-              targetId: contributionId,
-              path: '/contributions',
-              previousValue: contributions.map((item) => item.id),
-              nextValue: normalizedNextContributions.map(
-                (item) => item.id,
-              ),
-            },
-          ],
-        ),
-      };
+        ],
+      );
     }),
+
+  checkpoint: (reason = 'manual') => {
+    cancelAutomaticCheckpoint();
+    void reason;
+
+    set((state) => {
+      if (!state.pendingChangeSet) {
+        return state;
+      }
+
+      const descriptor = createCheckpointDescriptor(
+        state.pendingChangeSet,
+      );
+      const manuscript = commitManuscriptRevision(
+        state.manuscript,
+        extractManuscriptState(state.manuscript),
+        descriptor,
+      );
+
+      return {
+        manuscript,
+        pendingChangeSet: null,
+      };
+    });
+  },
+
+  discardWorkingChanges: () => {
+    cancelAutomaticCheckpoint();
+
+    set((state) => {
+      if (!state.pendingChangeSet) {
+        return state;
+      }
+
+      const manuscript = restoreCommittedHead(state.manuscript);
+      const selectedSectionStillExists = manuscript.sections.some(
+        (section) => section.id === state.selectedSectionId,
+      );
+
+      return {
+        manuscript,
+        pendingChangeSet: null,
+        selectedSectionId: selectedSectionStillExists
+          ? state.selectedSectionId
+          : manuscript.sections[0]?.id ?? null,
+      };
+    });
+  },
 
   revertRevision: (revisionId) =>
     set((state) => {
+      if (state.pendingChangeSet) {
+        return state;
+      }
+
       const manuscript = revertManuscriptToRevision(
         state.manuscript,
         revisionId,
@@ -496,42 +543,94 @@ export const useStudioStore = create<StudioState>((set) => ({
     }),
 
   loadManuscript: (manuscript) => {
+    cancelAutomaticCheckpoint();
     const identityMigrated = migrateIdentityModel(manuscript);
     const migrated = migrateVersioningModel(identityMigrated);
 
     set({
       manuscript: migrated,
+      pendingChangeSet: null,
       selectedSectionId: migrated.sections[0]?.id ?? null,
     });
   },
 
   resetSample: () => {
+    cancelAutomaticCheckpoint();
     const sample = createSampleManuscript();
 
     set({
       manuscript: sample,
+      pendingChangeSet: null,
       selectedSectionId: sample.sections[0]?.id ?? null,
     });
   },
 }));
 
-function commitChange(
-  manuscript: OmiManuscript,
+function stageWorkingChange(
+  state: StudioState,
   nextState: OmiManuscriptState,
   summary: string,
   events: CreateChangeEventInput[],
-  timestamp?: string,
-): OmiManuscript {
-  return commitManuscriptRevision(
-    manuscript,
-    nextState,
+  timestamp = new Date().toISOString(),
+): Partial<StudioState> {
+  const pendingChangeSet = stagePendingChanges(
+    state.pendingChangeSet,
     {
+      baseRevisionId: state.manuscript.headRevisionId,
       summary,
       events,
-      actorAgentId: resolveCurrentActorAgentId(manuscript),
+      actorAgentId: resolveCurrentActorAgentId(state.manuscript),
       timestamp,
     },
   );
+
+  scheduleAutomaticCheckpoint();
+
+  return {
+    manuscript: {
+      ...state.manuscript,
+      ...nextState,
+      updatedAt: timestamp,
+    },
+    pendingChangeSet,
+  };
+}
+
+function scheduleAutomaticCheckpoint(): void {
+  cancelAutomaticCheckpoint();
+
+  autoCheckpointTimer = setTimeout(() => {
+    autoCheckpointTimer = null;
+    useStudioStore.getState().checkpoint('idle');
+  }, AUTO_CHECKPOINT_DELAY_MS);
+}
+
+function cancelAutomaticCheckpoint(): void {
+  if (autoCheckpointTimer === null) {
+    return;
+  }
+
+  clearTimeout(autoCheckpointTimer);
+  autoCheckpointTimer = null;
+}
+
+function restoreCommittedHead(
+  manuscript: OmiManuscript,
+): OmiManuscript {
+  const headRevision = manuscript.revisionHistory.revisions.find(
+    (revision) => revision.id === manuscript.headRevisionId,
+  );
+
+  if (!headRevision) {
+    throw new Error('The committed head revision could not be found.');
+  }
+
+  return {
+    ...structuredClone(headRevision.snapshot.state),
+    versioningModelVersion: manuscript.versioningModelVersion,
+    headRevisionId: manuscript.headRevisionId,
+    revisionHistory: manuscript.revisionHistory,
+  };
 }
 
 function resolveCurrentActorAgentId(
