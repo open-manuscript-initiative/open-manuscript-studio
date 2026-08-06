@@ -1,17 +1,49 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { migrateVersioningModel } from '../src/document/migrateVersioningModel.ts';
-import { createSampleManuscript } from '../src/document/sampleManuscript.ts';
 import {
   commitManuscriptRevision,
+  createInitialVersioningEnvelope,
   extractManuscriptState,
   isValidLinearRevisionHistory,
   revertManuscriptToRevision,
 } from '../src/model/versioning.ts';
 
+function createState() {
+  return {
+    schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json',
+    id: 'manuscript-1',
+    version: '0.1.0-alpha.1',
+    identityModelVersion: 'OMI-SPEC-150@0.1.0',
+    locale: 'en',
+    title: 'Initial title',
+    abstract: 'Initial abstract',
+    keywords: [],
+    agents: [],
+    contributions: [],
+    sections: [],
+    annotations: [],
+    citations: [],
+    createdAt: '2026-08-06T21:00:00.000Z',
+    updatedAt: '2026-08-06T21:00:00.000Z',
+  } as const;
+}
+
+function createManuscript() {
+  const state = createState();
+
+  return {
+    ...state,
+    ...createInitialVersioningEnvelope(state, {
+      summary: 'Created manuscript',
+      timestamp: state.createdAt,
+      completeness: 'complete',
+    }),
+  };
+}
+
 test('creates a valid immutable root revision for a new manuscript', () => {
-  const manuscript = createSampleManuscript();
+  const manuscript = createManuscript();
   const root = manuscript.revisionHistory.revisions[0];
 
   assert.equal(
@@ -30,7 +62,7 @@ test('creates a valid immutable root revision for a new manuscript', () => {
 });
 
 test('commits a new revision without mutating the parent revision', () => {
-  const manuscript = createSampleManuscript();
+  const manuscript = createManuscript();
   const originalJson = JSON.stringify(manuscript);
   const originalHead = manuscript.headRevisionId;
   const nextState = {
@@ -68,7 +100,7 @@ test('commits a new revision without mutating the parent revision', () => {
 });
 
 test('records multiple semantic events in one atomic change set', () => {
-  const manuscript = createSampleManuscript();
+  const manuscript = createManuscript();
   const nextState = {
     ...extractManuscriptState(manuscript),
     title: 'Atomic title',
@@ -106,7 +138,7 @@ test('records multiple semantic events in one atomic change set', () => {
 });
 
 test('revert creates a new revision and preserves the reverted history', () => {
-  const manuscript = createSampleManuscript();
+  const manuscript = createManuscript();
   const rootRevisionId = manuscript.headRevisionId;
   const revised = commitManuscriptRevision(
     manuscript,
@@ -151,10 +183,16 @@ test('revert creates a new revision and preserves the reverted history', () => {
   );
 });
 
-test('migrates a timestamp-only manuscript to a disclosed shallow root', () => {
-  const current = createSampleManuscript();
-  const legacyState = extractManuscriptState(current);
-  const migrated = migrateVersioningModel(legacyState);
+test('represents timestamp-only migration as a disclosed shallow root', () => {
+  const state = createState();
+  const migrated = {
+    ...state,
+    ...createInitialVersioningEnvelope(state, {
+      summary: 'Imported legacy manuscript snapshot',
+      timestamp: state.updatedAt,
+      completeness: 'shallow',
+    }),
+  };
 
   assert.equal(migrated.revisionHistory.completeness, 'shallow');
   assert.equal(migrated.revisionHistory.revisions.length, 1);
