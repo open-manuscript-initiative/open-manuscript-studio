@@ -2,6 +2,10 @@ import type {
   OmiAgent,
   OmiContribution,
 } from '../model/identity';
+import type {
+  OmiRevisionHistory,
+  RevisionId,
+} from '../model/versioning';
 
 export type OmiLocale = 'hu' | 'en' | 'de' | string;
 
@@ -54,7 +58,13 @@ export interface OmiSection {
   blocks: OmiBlock[];
 }
 
-export interface OmiManuscript {
+/**
+ * Complete manuscript state captured by an immutable revision snapshot.
+ *
+ * Versioning envelope fields are intentionally excluded so snapshots do not
+ * recursively contain the complete revision history.
+ */
+export interface OmiManuscriptState {
   schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json';
   id: string;
   version: string;
@@ -85,4 +95,10 @@ export interface OmiManuscript {
   citations: OmiCitation[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface OmiManuscript extends OmiManuscriptState {
+  versioningModelVersion: 'OMI-SPEC-160@0.1.0';
+  headRevisionId: RevisionId;
+  revisionHistory: OmiRevisionHistory;
 }
