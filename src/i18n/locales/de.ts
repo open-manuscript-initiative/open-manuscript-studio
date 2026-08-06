@@ -70,12 +70,23 @@ export const de: TranslationDictionary = {
     current: 'Aktuell',
     revision: 'Revision',
     events: 'Ereignisse',
+    groupedChanges: 'gebündelte Änderungen',
     unknownActor: 'Unbekannter Mitwirkender',
     completeHistory: 'Vollständiger Verlauf',
     shallowHistory: 'Unvollständiger Verlauf',
+    pendingTitle: 'Nicht gespeicherter Arbeitsstand',
+    pendingDescription:
+      'Die letzten Bearbeitungen werden gebündelt und als eine unveränderliche Checkpoint-Revision gespeichert.',
+    pendingBadge: 'Ausstehend',
+    checkpoint: 'Checkpoint speichern',
+    discard: 'Änderungen verwerfen',
+    confirmDiscard:
+      'Alle nicht gespeicherten Änderungen verwerfen und die letzte gespeicherte Revision wiederherstellen?',
     revert: 'Wiederherstellen',
     confirmRevert:
       'Soll eine neue Revision erstellt werden, die diesen früheren Manuskriptstand wiederherstellt?',
+    revertBlocked:
+      'Speichern oder verwerfen Sie den ausstehenden Arbeitsstand, bevor Sie eine frühere Revision wiederherstellen.',
     operations: {
       snapshotCreated: 'Manuskript-Snapshot erstellt',
       titleChanged: 'Manuskripttitel geändert',
