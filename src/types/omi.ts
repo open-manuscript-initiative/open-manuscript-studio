@@ -1,3 +1,8 @@
+import type {
+  OmiAgent,
+  OmiContribution,
+} from '../model/identity';
+
 export type OmiLocale = 'hu' | 'en' | 'de' | string;
 
 export interface OmiIdentifier {
@@ -5,6 +10,12 @@ export interface OmiIdentifier {
   value: string;
 }
 
+/**
+ * Legacy embedded person representation.
+ *
+ * New documents use OmiAgent and OmiContribution. This interface remains
+ * available only for importing pre-OMI-SPEC-150 manuscript data.
+ */
 export interface OmiPerson {
   id: string;
   givenName: string;
@@ -47,12 +58,28 @@ export interface OmiManuscript {
   schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json';
   id: string;
   version: string;
+  identityModelVersion: 'OMI-SPEC-150@0.1.0';
   locale: OmiLocale;
   title: string;
   subtitle?: string;
   abstract?: string;
   keywords: string[];
-  authors: OmiPerson[];
+
+  /**
+   * Portable scholarly identities represented independently from accounts.
+   */
+  agents: OmiAgent[];
+
+  /**
+   * Contextual relationships between agents and manuscript objects.
+   */
+  contributions: OmiContribution[];
+
+  /**
+   * Deprecated compatibility field for importing older documents.
+   */
+  authors?: OmiPerson[];
+
   sections: OmiSection[];
   annotations: OmiAnnotation[];
   citations: OmiCitation[];
