@@ -70,12 +70,23 @@ export const en: TranslationDictionary = {
     current: 'Current',
     revision: 'Revision',
     events: 'events',
+    groupedChanges: 'grouped changes',
     unknownActor: 'Unknown actor',
     completeHistory: 'Complete history',
     shallowHistory: 'Shallow history',
+    pendingTitle: 'Uncommitted working state',
+    pendingDescription:
+      'Recent edits are being batched and will become one immutable checkpoint revision.',
+    pendingBadge: 'Pending',
+    checkpoint: 'Save checkpoint',
+    discard: 'Discard changes',
+    confirmDiscard:
+      'Discard all uncommitted changes and restore the latest committed revision?',
     revert: 'Revert',
     confirmRevert:
       'Create a new revision that restores this earlier manuscript state?',
+    revertBlocked:
+      'Save or discard the pending working state before reverting a committed revision.',
     operations: {
       snapshotCreated: 'Manuscript snapshot created',
       titleChanged: 'Manuscript title changed',
