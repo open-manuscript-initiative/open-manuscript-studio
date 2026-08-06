@@ -32,6 +32,33 @@ export interface TranslationDictionary {
     originalLanguage: string;
   };
 
+  contributors: {
+    description: string;
+    add: string;
+    empty: string;
+    remove: string;
+    moveUp: string;
+    moveDown: string;
+    givenName: string;
+    familyName: string;
+    affiliation: string;
+    orcid: string;
+    invalidOrcid: string;
+    role: string;
+    corresponding: string;
+    roles: {
+      author: string;
+      editor: string;
+      translator: string;
+      reviewer: string;
+      dataCurator: string;
+      software: string;
+      methodology: string;
+      visualization: string;
+      other: string;
+    };
+  };
+
   editor: {
     addSection: string;
     addParagraph: string;
