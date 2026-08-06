@@ -59,6 +59,33 @@ export interface TranslationDictionary {
     };
   };
 
+  history: {
+    title: string;
+    description: string;
+    empty: string;
+    current: string;
+    revision: string;
+    events: string;
+    unknownActor: string;
+    completeHistory: string;
+    shallowHistory: string;
+    revert: string;
+    confirmRevert: string;
+    operations: {
+      snapshotCreated: string;
+      titleChanged: string;
+      abstractChanged: string;
+      sectionCreated: string;
+      blockChanged: string;
+      contributorAdded: string;
+      contributorChanged: string;
+      contributorRemoved: string;
+      contributionChanged: string;
+      contributorsReordered: string;
+      reverted: string;
+    };
+  };
+
   editor: {
     addSection: string;
     addParagraph: string;

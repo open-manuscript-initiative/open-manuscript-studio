@@ -3,7 +3,13 @@ import {
   createContribution,
   createPersonAgent,
 } from '../model/identity';
-import type { OmiManuscript } from '../types/omi';
+import {
+  createInitialVersioningEnvelope,
+} from '../model/versioning';
+import type {
+  OmiManuscript,
+  OmiManuscriptState,
+} from '../types/omi';
 
 export const createSampleManuscript = (): OmiManuscript => {
   const now = new Date().toISOString();
@@ -18,8 +24,7 @@ export const createSampleManuscript = (): OmiManuscript => {
     crypto.randomUUID(),
     now,
   );
-
-  return {
+  const state: OmiManuscriptState = {
     schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json',
     id: manuscriptId,
     version: '0.1.0-alpha.1',
@@ -68,5 +73,15 @@ export const createSampleManuscript = (): OmiManuscript => {
     citations: [],
     createdAt: now,
     updatedAt: now,
+  };
+
+  return {
+    ...state,
+    ...createInitialVersioningEnvelope(state, {
+      summary: 'Created sample manuscript',
+      actorAgentId: sampleAgent.id,
+      timestamp: now,
+      completeness: 'complete',
+    }),
   };
 };
