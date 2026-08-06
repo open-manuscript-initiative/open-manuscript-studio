@@ -34,6 +34,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run tests
+        run: npm test
+
       - name: Read package version
         id: package
         shell: bash
@@ -91,6 +94,7 @@ jobs:
             export VITE_BUILD_DATE="$BUILD_DATE"
 
             npm ci
+            npm test
             npm run build
 
             rsync -a --delete \
