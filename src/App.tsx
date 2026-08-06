@@ -11,6 +11,7 @@ import { HistoryPanel } from './components/HistoryPanel';
 import { PropertiesPanel } from './components/PropertiesPanel';
 
 import './styles/auth.css';
+import './styles/history.css';
 
 type AuthView = 'login' | 'register';
 
