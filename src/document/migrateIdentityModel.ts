@@ -8,18 +8,31 @@ import {
 import type {
   OmiIdentifier,
   OmiManuscript,
+  OmiManuscriptState,
   OmiPerson,
 } from '../types/omi';
 
+type OptionalVersioningFields = Partial<
+  Pick<
+    OmiManuscript,
+    | 'versioningModelVersion'
+    | 'headRevisionId'
+    | 'revisionHistory'
+  >
+>;
+
+export type IdentityMigratedManuscript =
+  OmiManuscriptState & OptionalVersioningFields;
+
 export type LegacyOmiManuscript = Omit<
-  OmiManuscript,
+  OmiManuscriptState,
   'identityModelVersion' | 'agents' | 'contributions'
 > & {
-  identityModelVersion?: OmiManuscript['identityModelVersion'];
+  identityModelVersion?: OmiManuscriptState['identityModelVersion'];
   agents?: OmiAgent[];
   contributions?: OmiContribution[];
   authors?: OmiPerson[];
-};
+} & OptionalVersioningFields;
 
 /**
  * Upgrades the legacy embedded `authors` representation to the
@@ -27,10 +40,12 @@ export type LegacyOmiManuscript = Omit<
  *
  * The migration is idempotent: documents that already contain agents and
  * contributions are returned with only the identity model marker normalized.
+ * Existing OMI-SPEC-160 history fields are preserved for the next migration
+ * stage and are never embedded into an agent or contribution record.
  */
 export function migrateIdentityModel(
   manuscript: LegacyOmiManuscript,
-): OmiManuscript {
+): IdentityMigratedManuscript {
   const existingAgents = manuscript.agents ?? [];
   const existingContributions = manuscript.contributions ?? [];
 
