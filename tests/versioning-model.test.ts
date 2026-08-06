@@ -8,6 +8,7 @@ import {
   isValidLinearRevisionHistory,
   revertManuscriptToRevision,
 } from '../src/model/versioning.ts';
+import { serializeOmiJson } from '../src/services/exportOmi.ts';
 
 function createState() {
   return {
@@ -204,4 +205,25 @@ test('represents timestamp-only migration as a disclosed shallow root', () => {
     isValidLinearRevisionHistory(migrated.revisionHistory),
     true,
   );
+});
+
+test('exports the revision ledger and omits legacy embedded authors', () => {
+  const manuscript = {
+    ...createManuscript(),
+    authors: [
+      {
+        id: 'legacy-author',
+        givenName: 'Legacy',
+        familyName: 'Author',
+      },
+    ],
+  };
+  const exported = JSON.parse(serializeOmiJson(manuscript));
+
+  assert.equal(
+    exported.versioningModelVersion,
+    'OMI-SPEC-160@0.1.0',
+  );
+  assert.equal(exported.revisionHistory.revisions.length, 1);
+  assert.equal('authors' in exported, false);
 });
