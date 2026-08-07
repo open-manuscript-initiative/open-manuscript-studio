@@ -22,6 +22,7 @@ function createState() {
     keywords: [],
     agents: [],
     contributions: [],
+    tombstones: [],
     sections: [],
     annotations: [],
     citations: [],
@@ -43,6 +44,69 @@ function createManuscript() {
   };
 }
 
+function createContributorManuscript() {
+  const state = {
+    ...createState(),
+    agents: [
+      {
+        id: 'agent-1',
+        type: 'person',
+      },
+    ],
+    contributions: [
+      {
+        id: 'contribution-1',
+        agentId: 'agent-1',
+        targetId: 'manuscript-1',
+        roles: ['author'],
+        order: 1,
+      },
+    ],
+  };
+
+  return {
+    ...state,
+    ...createInitialVersioningEnvelope(state, {
+      summary: 'Created contributor manuscript',
+      timestamp: state.createdAt,
+      completeness: 'complete',
+    }),
+  };
+}
+
+function deleteContributor(manuscript) {
+  const agent = manuscript.agents[0];
+  const contribution = manuscript.contributions[0];
+
+  return commitManuscriptRevision(
+    manuscript,
+    {
+      ...extractManuscriptState(manuscript),
+      agents: [],
+      contributions: [],
+    },
+    {
+      summary: 'Removed manuscript contributor',
+      actorAgentId: 'agent-1',
+      timestamp: '2026-08-06T21:40:00.000Z',
+      events: [
+        {
+          operation: 'contribution.remove',
+          targetId: 'contribution-1',
+          path: '/contributions/contribution-1',
+          previousValue: contribution,
+        },
+        {
+          operation: 'agent.remove',
+          targetId: 'agent-1',
+          path: '/agents/agent-1',
+          previousValue: agent,
+        },
+      ],
+    },
+  );
+}
+
 test('creates a valid immutable root revision for a new manuscript', () => {
   const manuscript = createManuscript();
   const root = manuscript.revisionHistory.revisions[0];
@@ -56,6 +120,7 @@ test('creates a valid immutable root revision for a new manuscript', () => {
   assert.equal(root?.parentRevisionIds.length, 0);
   assert.equal(root?.id, manuscript.headRevisionId);
   assert.equal(root?.snapshot.state.title, manuscript.title);
+  assert.equal(root?.snapshot.state.tombstones.length, 0);
   assert.equal(
     isValidLinearRevisionHistory(manuscript.revisionHistory),
     true,
@@ -184,6 +249,111 @@ test('revert creates a new revision and preserves the reverted history', () => {
   );
 });
 
+test('creates persistent tombstones with committed revision and event identity', () => {
+  const manuscript = createContributorManuscript();
+  const deleted = deleteContributor(manuscript);
+  const deletionRevision = deleted.revisionHistory.revisions.at(-1);
+
+  assert.equal(deleted.agents.length, 0);
+  assert.equal(deleted.contributions.length, 0);
+  assert.equal(deleted.tombstones.length, 2);
+
+  const contributionTombstone = deleted.tombstones.find(
+    (tombstone) => tombstone.objectId === 'contribution-1',
+  );
+  const agentTombstone = deleted.tombstones.find(
+    (tombstone) => tombstone.objectId === 'agent-1',
+  );
+  const contributionEvent = deletionRevision?.changeSet.events.find(
+    (event) => event.targetId === 'contribution-1',
+  );
+
+  assert.equal(
+    contributionTombstone?.deletionRevisionId,
+    deleted.headRevisionId,
+  );
+  assert.equal(
+    contributionTombstone?.deletingChangeEventId,
+    contributionEvent?.id,
+  );
+  assert.equal(contributionTombstone?.objectType, 'contribution');
+  assert.equal(contributionTombstone?.formerContainerId, 'manuscript-1');
+  assert.equal(agentTombstone?.objectType, 'agent');
+  assert.equal(agentTombstone?.deletedByAgentId, 'agent-1');
+  assert.equal(agentTombstone?.restoredByRevisionId, undefined);
+});
+
+test('restores the same conceptual objects and retains tombstone evidence', () => {
+  const manuscript = createContributorManuscript();
+  const rootRevisionId = manuscript.headRevisionId;
+  const deleted = deleteContributor(manuscript);
+  const restored = revertManuscriptToRevision(
+    deleted,
+    rootRevisionId,
+    {
+      summary: 'Restore contributor through revert',
+      timestamp: '2026-08-06T21:41:00.000Z',
+    },
+  );
+  const restorationRevision = restored.revisionHistory.revisions.at(-1);
+
+  assert.equal(restored.agents[0]?.id, 'agent-1');
+  assert.equal(restored.contributions[0]?.id, 'contribution-1');
+  assert.equal(restored.tombstones.length, 2);
+  assert.equal(
+    restored.tombstones.every(
+      (tombstone) =>
+        tombstone.restoredByRevisionId === restored.headRevisionId,
+    ),
+    true,
+  );
+  assert.equal(
+    restorationRevision?.changeSet.events.some(
+      (event) => event.operation === 'agent.restore',
+    ),
+    true,
+  );
+  assert.equal(
+    restorationRevision?.changeSet.events.some(
+      (event) => event.operation === 'contribution.restore',
+    ),
+    true,
+  );
+});
+
+test('rejects reuse of an actively tombstoned identifier without restoration', () => {
+  const manuscript = createContributorManuscript();
+  const deleted = deleteContributor(manuscript);
+  const reusedAgent = {
+    id: 'agent-1',
+    type: 'person',
+  };
+
+  assert.throws(
+    () =>
+      commitManuscriptRevision(
+        deleted,
+        {
+          ...extractManuscriptState(deleted),
+          agents: [reusedAgent],
+        },
+        {
+          summary: 'Illegally reused deleted identifier',
+          timestamp: '2026-08-06T21:42:00.000Z',
+          events: [
+            {
+              operation: 'agent.create',
+              targetId: 'agent-1',
+              path: '/agents/-',
+              nextValue: reusedAgent,
+            },
+          ],
+        },
+      ),
+    /reserved by an active tombstone/,
+  );
+});
+
 test('represents timestamp-only migration as a disclosed shallow root', () => {
   const state = createState();
   const migrated = {
@@ -207,9 +377,10 @@ test('represents timestamp-only migration as a disclosed shallow root', () => {
   );
 });
 
-test('exports the revision ledger and omits legacy embedded authors', () => {
-  const manuscript = {
-    ...createManuscript(),
+test('exports revision history and tombstones while omitting legacy authors', () => {
+  const manuscript = createContributorManuscript();
+  const deleted = {
+    ...deleteContributor(manuscript),
     authors: [
       {
         id: 'legacy-author',
@@ -218,12 +389,13 @@ test('exports the revision ledger and omits legacy embedded authors', () => {
       },
     ],
   };
-  const exported = JSON.parse(serializeOmiJson(manuscript));
+  const exported = JSON.parse(serializeOmiJson(deleted));
 
   assert.equal(
     exported.versioningModelVersion,
     'OMI-SPEC-160@0.1.0',
   );
-  assert.equal(exported.revisionHistory.revisions.length, 1);
+  assert.equal(exported.revisionHistory.revisions.length, 2);
+  assert.equal(exported.tombstones.length, 2);
   assert.equal('authors' in exported, false);
 });
