@@ -4,6 +4,7 @@ import {
   FileText,
   History as HistoryIcon,
   Library,
+  Printer,
   RotateCcw,
   Settings2,
   StickyNote,
@@ -23,6 +24,7 @@ import {
   supportedLocales,
   useTranslation,
 } from '../i18n';
+import { getPublicationProfileCopy } from '../i18n/publicationProfile';
 import { downloadOmiJson } from '../services/exportOmi';
 import { CrossReferencePanel } from './CrossReferencePanel';
 import { DocxImportPanel } from './DocxImportPanel';
@@ -32,6 +34,7 @@ import { KeywordEditor } from './KeywordEditor';
 import { ManuscriptLanguageField } from './ManuscriptLanguageField';
 import { NotesPanel } from './NotesPanel';
 import { PropertiesPanel } from './PropertiesPanel';
+import { PublicationProfilePanel } from './PublicationProfilePanel';
 import { ReferencesPanel } from './ReferencesPanel';
 import { SectionNumberingControl } from './SectionNumberingControl';
 import { SectionStructurePanel } from './SectionStructurePanel';
@@ -42,6 +45,7 @@ type StudioMenuView =
   | 'notes'
   | 'references'
   | 'contributors'
+  | 'publication'
   | 'history'
   | 'tools'
   | 'settings';
@@ -55,7 +59,8 @@ export function StudioMenu({
   open,
   onClose,
 }: StudioMenuProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const publicationCopy = getPublicationProfileCopy(locale);
   const [activeView, setActiveView] =
     useState<StudioMenuView>('document');
 
@@ -156,6 +161,12 @@ export function StudioMenu({
               onClick={() => setActiveView('contributors')}
             />
             <MenuButton
+              active={activeView === 'publication'}
+              icon={<Printer size={18} aria-hidden="true" />}
+              label={publicationCopy.navigation}
+              onClick={() => setActiveView('publication')}
+            />
+            <MenuButton
               active={activeView === 'history'}
               icon={<HistoryIcon size={18} aria-hidden="true" />}
               label={t('studio.navigation.history')}
@@ -185,6 +196,7 @@ export function StudioMenu({
             ) : null}
             {activeView === 'references' ? <ReferencesPanel /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
+            {activeView === 'publication' ? <PublicationProfilePanel /> : null}
             {activeView === 'history' ? <HistoryPanel /> : null}
             {activeView === 'tools' ? <ToolsView /> : null}
             {activeView === 'settings' ? <SettingsView /> : null}
