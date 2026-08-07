@@ -9,12 +9,20 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
+    "server:dev": "tsx server/index.ts",
+    "integration:add": "tsx server/cli/add-integration.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "test": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/identity-model.test.ts tests/versioning-model.test.ts tests/working-state.test.ts tests/tombstone-model.test.ts tests/manuscript-language.test.ts tests/notes-model.test.ts tests/section-numbering.test.ts tests/section-structure.test.ts tests/visual-blocks.test.ts tests/ror-affiliation.test.ts tests/orcid-lookup.test.ts tests/cross-references.test.ts tests/hierarchical-cross-references.test.ts tests/rich-text.test.ts tests/docx-import.test.ts tests/publication-profile.test.ts tests/front-matter.test.ts tests/publication-rendering.test.ts tests/jats-export.test.ts tests/html-export.test.ts tests/html-omi-container.test.ts tests/asset-container.test.ts tests/state-digest.test.ts tests/keywords-model.test.ts tests/citation-model.test.ts tests/bibliographic-lookup.test.ts tests/csl-rendering.test.ts"
   },
   "dependencies": {
+    "@prisma/client": "^6.14.0",
     "@tiptap/core": "^3.0.0",
     "@tiptap/react": "^3.0.0",
     "@tiptap/starter-kit": "^3.0.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
     "i18next": "latest",
     "lucide-react": "latest",
     "react": "latest",
@@ -23,10 +31,14 @@
     "zustand": "latest"
   },
   "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.2.1",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "@vitejs/plugin-react": "latest",
     "eslint": "latest",
+    "prisma": "^6.14.0",
+    "tsx": "^4.20.3",
     "typescript": "latest",
     "typescript-eslint": "latest",
     "vite": "latest"
