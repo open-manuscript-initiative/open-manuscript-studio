@@ -1,0 +1,104 @@
+.omi-section-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  margin: 0 0 1.75rem;
+}
+
+.omi-section-number {
+  flex: 0 0 auto;
+  color: var(--omi-editor-text-muted);
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+  font-weight: 700;
+  line-height: 1.35;
+  user-select: none;
+}
+
+.omi-section-title-input {
+  min-width: 0;
+  width: 100%;
+  padding: 0.1rem 0 0.2rem;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  outline: none;
+  color: var(--omi-editor-text);
+  background: transparent;
+  font: inherit;
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+  font-weight: 700;
+  line-height: 1.35;
+  transition: border-color 150ms ease;
+}
+
+.omi-section-title-input:hover {
+  border-bottom-color: var(--omi-editor-border);
+}
+
+.omi-section-title-input:focus {
+  border-bottom-color: var(--omi-editor-accent);
+}
+
+.omi-section-title-input::placeholder {
+  color: var(--omi-editor-text-soft);
+}
+
+.section-numbering-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--omi-editor-border, #dbe2ea);
+  border-radius: 0.75rem;
+  background: var(--omi-editor-surface-muted, #f8fafc);
+}
+
+.section-numbering-control-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--omi-editor-text-muted, #64748b);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.section-numbering-control select {
+  min-width: 9rem;
+  padding: 0.45rem 2rem 0.45rem 0.65rem;
+  border: 1px solid var(--omi-editor-border, #dbe2ea);
+  border-radius: 0.55rem;
+  color: var(--omi-editor-text, #1e293b);
+  background: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.section-numbering-control select:focus-visible {
+  outline: 2px solid var(--omi-editor-accent, #0f172a);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .omi-section-title-row {
+    gap: 0.45rem;
+  }
+
+  .section-numbering-control {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .section-numbering-control select {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .omi-section-title-input {
+    transition: none;
+  }
+}
