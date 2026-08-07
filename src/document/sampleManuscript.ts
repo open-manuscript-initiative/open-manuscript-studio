@@ -49,6 +49,7 @@ export const createSampleManuscript = (): OmiManuscript => {
         now,
       ),
     ],
+    tombstones: [],
     sections: [
       {
         id: crypto.randomUUID(),

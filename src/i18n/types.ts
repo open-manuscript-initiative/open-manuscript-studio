@@ -79,6 +79,10 @@ export interface TranslationDictionary {
     revert: string;
     confirmRevert: string;
     revertBlocked: string;
+    tombstonesTitle: string;
+    tombstonesDescription: string;
+    tombstoneActive: string;
+    tombstoneRestored: string;
     operations: {
       snapshotCreated: string;
       titleChanged: string;

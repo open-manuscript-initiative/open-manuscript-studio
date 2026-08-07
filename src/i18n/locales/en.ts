@@ -87,6 +87,11 @@ export const en: TranslationDictionary = {
       'Create a new revision that restores this earlier manuscript state?',
     revertBlocked:
       'Save or discard the pending working state before reverting a committed revision.',
+    tombstonesTitle: 'Deleted object records',
+    tombstonesDescription:
+      'Persistent OMI-SPEC-160 tombstones preserve deleted object identifiers and restoration evidence.',
+    tombstoneActive: 'Deleted',
+    tombstoneRestored: 'Restored',
     operations: {
       snapshotCreated: 'Manuscript snapshot created',
       titleChanged: 'Manuscript title changed',

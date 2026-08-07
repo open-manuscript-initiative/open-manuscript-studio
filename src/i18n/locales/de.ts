@@ -87,6 +87,11 @@ export const de: TranslationDictionary = {
       'Soll eine neue Revision erstellt werden, die diesen früheren Manuskriptstand wiederherstellt?',
     revertBlocked:
       'Speichern oder verwerfen Sie den ausstehenden Arbeitsstand, bevor Sie eine frühere Revision wiederherstellen.',
+    tombstonesTitle: 'Nachweise gelöschter Objekte',
+    tombstonesDescription:
+      'Persistente OMI-SPEC-160-Tombstones bewahren Kennungen gelöschter Objekte und Nachweise ihrer Wiederherstellung.',
+    tombstoneActive: 'Gelöscht',
+    tombstoneRestored: 'Wiederhergestellt',
     operations: {
       snapshotCreated: 'Manuskript-Snapshot erstellt',
       titleChanged: 'Manuskripttitel geändert',

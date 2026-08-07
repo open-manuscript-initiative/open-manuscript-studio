@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test": "node --test --experimental-strip-types tests/identity-model.test.ts tests/versioning-model.test.ts tests/working-state.test.ts"
+    "test": "node --test --experimental-strip-types tests/identity-model.test.ts tests/versioning-model.test.ts tests/working-state.test.ts tests/tombstone-model.test.ts"
   },
   "dependencies": {
     "@tiptap/core": "^3.0.0",
