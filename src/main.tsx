@@ -6,6 +6,7 @@ import { I18nProvider } from './i18n';
 
 import './styles/global.css';
 import './styles/editor.css';
+import './styles/studio-shell.css';
 
 ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
