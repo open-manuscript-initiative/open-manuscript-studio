@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createSampleManuscript } from '../src/document/sampleManuscript.ts';
 import { createCrossReference } from '../src/model/crossReferences.ts';
 import { getPublicationProfile } from '../src/model/publicationProfile.ts';
 import {
   renderJatsArticle,
   validateJatsStructure,
 } from '../src/services/exportJats.ts';
+import { createTestManuscript } from './testManuscriptFixture.ts';
 
 test('renders deterministic JATS 1.4 authoring XML with title block and traceability metadata', () => {
-  const manuscript = createSampleManuscript();
+  const manuscript = createTestManuscript();
   manuscript.title = 'Meaning < Structure & Publication';
   manuscript.subtitle = 'A portable subtitle';
   manuscript.motto = 'Write naturally. Structure once.';
@@ -26,11 +26,16 @@ test('renders deterministic JATS 1.4 authoring XML with title block and traceabi
   assert.match(first.xml, /<article-title>Meaning &lt; Structure &amp; Publication<\/article-title>/);
   assert.match(first.xml, /<subtitle>A portable subtitle<\/subtitle>/);
   assert.match(first.xml, /<meta-name>omi-motto<\/meta-name>/);
-  assert.match(first.xml, new RegExp(manuscript.headRevisionId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(
+    first.xml,
+    new RegExp(
+      manuscript.headRevisionId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+    ),
+  );
 });
 
 test('renders semantic citation, note and internal cross-reference markers as JATS xrefs', () => {
-  const manuscript = createSampleManuscript();
+  const manuscript = createTestManuscript();
   const section = manuscript.sections[0];
   const block = section?.blocks[0];
   assert.ok(section);
@@ -136,20 +141,33 @@ test('renders semantic citation, note and internal cross-reference markers as JA
 
   const result = renderJatsArticle(manuscript);
 
-  assert.match(result.xml, new RegExp(`<xref ref-type="sec" rid="sec-${section.id}">Section 1<\\/xref>`));
-  assert.match(result.xml, /<xref ref-type="bibr" rid="ref-record-one">\(Scholar, 2026, p\. 12\)<\/xref>/);
+  assert.match(
+    result.xml,
+    new RegExp(
+      `<xref ref-type="sec" rid="sec-${section.id}">Section 1<\\/xref>`,
+    ),
+  );
+  assert.match(
+    result.xml,
+    /<xref ref-type="bibr" rid="ref-record-one">\(Scholar, 2026, p\. 12\)<\/xref>/,
+  );
   assert.match(result.xml, /<xref ref-type="fn" rid="fn-note-one">1<\/xref>/);
   assert.match(result.xml, /<fn id="fn-note-one"/);
   assert.match(result.xml, /<ref id="ref-record-one">/);
-  assert.match(result.xml, /<pub-id pub-id-type="doi">10\.1234\/example<\/pub-id>/);
+  assert.match(
+    result.xml,
+    /<pub-id pub-id-type="doi">10\.1234\/example<\/pub-id>/,
+  );
   assert.equal(
-    result.diagnostics.some((diagnostic) => diagnostic.code === 'unresolved-jats-rid'),
+    result.diagnostics.some(
+      (diagnostic) => diagnostic.code === 'unresolved-jats-rid',
+    ),
     false,
   );
 });
 
 test('renders structured rich text and scholarly visual objects instead of presentation HTML', () => {
-  const manuscript = createSampleManuscript();
+  const manuscript = createTestManuscript();
   const section = manuscript.sections[0];
   assert.ok(section);
   section.blocks = [
@@ -170,11 +188,20 @@ test('renders structured rich text and scholarly visual objects instead of prese
                   { type: 'omiLanguage', attrs: { lang: 'la' } },
                 ],
               },
-              { type: 'text', text: ' H₂O', marks: [{ type: 'omiSubscript' }] },
+              {
+                type: 'text',
+                text: ' H₂O',
+                marks: [{ type: 'omiSubscript' }],
+              },
               {
                 type: 'text',
                 text: ' source',
-                marks: [{ type: 'omiLink', attrs: { href: 'https://example.org/' } }],
+                marks: [
+                  {
+                    type: 'omiLink',
+                    attrs: { href: 'https://example.org/' },
+                  },
+                ],
               },
             ],
           },
@@ -210,11 +237,20 @@ test('renders structured rich text and scholarly visual objects instead of prese
 
   const result = renderJatsArticle(manuscript);
 
-  assert.match(result.xml, /<italic><named-content xml:lang="la">Latin<\/named-content><\/italic>|<named-content xml:lang="la"><italic>Latin<\/italic><\/named-content>/);
+  assert.match(
+    result.xml,
+    /<italic><named-content xml:lang="la">Latin<\/named-content><\/italic>|<named-content xml:lang="la"><italic>Latin<\/italic><\/named-content>/,
+  );
   assert.match(result.xml, /<sub> H₂O<\/sub>/);
-  assert.match(result.xml, /<ext-link ext-link-type="uri" xlink:href="https:\/\/example\.org\/"> source<\/ext-link>/);
+  assert.match(
+    result.xml,
+    /<ext-link ext-link-type="uri" xlink:href="https:\/\/example\.org\/"> source<\/ext-link>/,
+  );
   assert.match(result.xml, /<table-wrap id="tbl-table-one">/);
-  assert.match(result.xml, /<thead><tr><th>Year<\/th><th>Value<\/th><\/tr><\/thead>/);
+  assert.match(
+    result.xml,
+    /<thead><tr><th>Year<\/th><th>Value<\/th><\/tr><\/thead>/,
+  );
   assert.match(result.xml, /<disp-formula id="eq-equation-one">/);
   assert.match(result.xml, /<mml:math display="block">/);
 });
@@ -229,7 +265,9 @@ test('structural validation rejects duplicate ids and unresolved rid targets', (
     true,
   );
   assert.equal(
-    diagnostics.some((diagnostic) => diagnostic.code === 'unresolved-jats-rid'),
+    diagnostics.some(
+      (diagnostic) => diagnostic.code === 'unresolved-jats-rid',
+    ),
     true,
   );
 });
