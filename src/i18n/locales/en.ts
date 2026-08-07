@@ -161,9 +161,14 @@ export const en: TranslationDictionary = {
   editor: {
     addSection: 'Add section',
     addParagraph: 'Add paragraph',
-    addNote: 'Add note',
+    addNote: 'Note',
     untitledSection: 'Untitled section',
-    emptyParagraph: 'Start writing…'
+    emptyParagraph: 'Start writing…',
+    paragraph: 'Paragraph',
+    heading: 'Heading',
+    quote: 'Quote',
+    insertNote: 'Insert inline OMI note',
+    loading: 'Loading editor…'
   },
 
   status: {
