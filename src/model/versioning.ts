@@ -1,6 +1,7 @@
 import type { AgentId } from './identity';
 import {
   createTombstone,
+  getActiveTombstone,
   markLatestTombstoneRestored,
   mergeTombstones,
   type OmiTombstoneObjectType,
@@ -208,6 +209,12 @@ export function commitManuscriptRevision(
     ),
     updatedAt: timestamp,
   };
+
+  assertNoUndeclaredIdentifierRestoration(
+    stateWithRetainedTombstones,
+    changeSet,
+  );
+
   const normalizedState = applyTombstoneLifecycle(
     stateWithRetainedTombstones,
     changeSet,
@@ -401,6 +408,31 @@ function createChangeSet(
       createdAt: timestamp,
     })),
   };
+}
+
+function assertNoUndeclaredIdentifierRestoration(
+  state: OmiManuscriptState,
+  changeSet: OmiChangeSet,
+): void {
+  const explicitRestorationIds = new Set(
+    changeSet.events
+      .filter((event) => Boolean(RESTORATION_OPERATION_TYPES[event.operation]))
+      .map((event) => event.targetId),
+  );
+  const liveObjects = collectAddressableObjects(state);
+
+  for (const objectId of liveObjects.keys()) {
+    const activeTombstone = getActiveTombstone(
+      state.tombstones ?? [],
+      objectId,
+    );
+
+    if (activeTombstone && !explicitRestorationIds.has(objectId)) {
+      throw new Error(
+        `Object identifier ${objectId} is reserved by an active tombstone and cannot be reused without an explicit restoration event.`,
+      );
+    }
+  }
 }
 
 function applyTombstoneLifecycle(
