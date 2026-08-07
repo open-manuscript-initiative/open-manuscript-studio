@@ -238,6 +238,8 @@ export interface TranslationDictionary {
   };
 }
 
+export type SupportedLocale = 'en' | 'hu' | 'de';
+
 type NestedKeyOf<T> = {
   [K in keyof T & string]:
     T[K] extends string
