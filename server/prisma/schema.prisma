@@ -14,6 +14,16 @@ enum UserStatus {
   DISABLED
 }
 
+enum ExternalPlatform {
+  OJS
+  OMP
+}
+
+enum ExternalInstallationStatus {
+  ACTIVE
+  DISABLED
+}
+
 model User {
   id           String     @id @default(uuid()) @db.Uuid
   email        String     @unique @db.VarChar(320)
@@ -25,4 +35,33 @@ model User {
   lastLoginAt  DateTime?  @map("last_login_at") @db.Timestamptz(6)
 
   @@map("users")
+}
+
+model ExternalInstallation {
+  id                     String                     @id @default(uuid()) @db.Uuid
+  installationId         String                     @unique @map("installation_id") @db.VarChar(128)
+  platform               ExternalPlatform
+  displayName            String                     @map("display_name") @db.VarChar(200)
+  baseUrl                String                     @map("base_url") @db.VarChar(2048)
+  sharedSecretCiphertext String                     @map("shared_secret_ciphertext") @db.Text
+  sharedSecretIv         String                     @map("shared_secret_iv") @db.VarChar(128)
+  sharedSecretAuthTag    String                     @map("shared_secret_auth_tag") @db.VarChar(128)
+  status                 ExternalInstallationStatus @default(ACTIVE)
+  createdAt              DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([platform, status])
+  @@map("external_installations")
+}
+
+model ExternalLaunchNonce {
+  id             String   @id @default(uuid()) @db.Uuid
+  installationId String   @map("installation_id") @db.VarChar(128)
+  nonce          String   @db.VarChar(256)
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([installationId, nonce])
+  @@index([expiresAt])
+  @@map("external_launch_nonces")
 }
