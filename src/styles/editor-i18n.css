@@ -1,0 +1,4 @@
+.omi-block-editor .tiptap p.is-editor-empty:first-child::before,
+.omi-tiptap-editor p.is-editor-empty:first-child::before {
+  content: var(--omi-editor-placeholder, "Start writing…");
+}
