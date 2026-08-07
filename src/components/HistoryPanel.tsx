@@ -46,6 +46,7 @@ export function HistoryPanel() {
     (state) => state.revertRevision,
   );
   const revisions = [...manuscript.revisionHistory.revisions].reverse();
+  const tombstones = [...(manuscript.tombstones ?? [])].reverse();
   const completenessKey: TranslationKey =
     manuscript.revisionHistory.completeness === 'complete'
       ? 'history.completeHistory'
@@ -215,6 +216,43 @@ export function HistoryPanel() {
           })}
         </ol>
       )}
+
+      {tombstones.length > 0 ? (
+        <section
+          className="history-tombstones"
+          aria-labelledby="omi-tombstones-title"
+        >
+          <h3 id="omi-tombstones-title">
+            <Trash2 size={16} aria-hidden="true" />
+            {t('history.tombstonesTitle')}
+          </h3>
+          <p>{t('history.tombstonesDescription')}</p>
+
+          <ul className="history-tombstone-list">
+            {tombstones.map((tombstone) => {
+              const isRestored = Boolean(tombstone.restoredByRevisionId);
+
+              return (
+                <li
+                  key={`${tombstone.objectId}:${tombstone.deletionRevisionId}:${tombstone.deletingChangeEventId}`}
+                >
+                  <div>
+                    <strong>{tombstone.objectType}</strong>{' '}
+                    <code>{shortRevisionId(tombstone.objectId)}</code>
+                  </div>
+                  <span
+                    className={`history-tombstone-status history-tombstone-status--${isRestored ? 'restored' : 'active'}`}
+                  >
+                    {isRestored
+                      ? t('history.tombstoneRestored')
+                      : t('history.tombstoneActive')}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
     </section>
   );
 }
