@@ -343,7 +343,7 @@ export function validateCrossReferences(
 
 export function targetKindForBlock(
   kind: string | undefined,
-): OmiCrossReferenceTargetKind | undefined {
+): Exclude<OmiCrossReferenceTargetKind, 'section'> | undefined {
   switch (kind) {
     case 'image':
       return 'figure';
