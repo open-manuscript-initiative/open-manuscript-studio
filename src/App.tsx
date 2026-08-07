@@ -10,7 +10,6 @@ import { StudioMenu } from './components/StudioMenu';
 
 import './styles/auth.css';
 import './styles/history.css';
-import './styles/studio-shell.css';
 
 type AuthView = 'login' | 'register';
 
