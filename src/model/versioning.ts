@@ -1,5 +1,12 @@
 import type { AgentId } from './identity';
+import {
+  createTombstone,
+  markLatestTombstoneRestored,
+  mergeTombstones,
+  type OmiTombstoneObjectType,
+} from './tombstone';
 import type {
+  OmiBlock,
   OmiManuscript,
   OmiManuscriptState,
 } from '../types/omi';
@@ -20,13 +27,23 @@ export type OmiChangeOperation =
   | 'manuscript.title.set'
   | 'manuscript.abstract.set'
   | 'section.create'
+  | 'section.remove'
+  | 'section.restore'
   | 'block.content.set'
+  | 'block.remove'
+  | 'block.restore'
   | 'agent.create'
   | 'agent.update'
   | 'agent.remove'
+  | 'agent.restore'
   | 'contribution.update'
   | 'contribution.remove'
+  | 'contribution.restore'
   | 'contribution.reorder'
+  | 'annotation.remove'
+  | 'annotation.restore'
+  | 'citation.remove'
+  | 'citation.restore'
   | 'revision.revert';
 
 export interface OmiChangeEvent {
@@ -106,6 +123,11 @@ export function createInitialVersioningEnvelope(
 ): OmiVersioningEnvelope {
   const timestamp = input.timestamp ?? new Date().toISOString();
   const revisionId = crypto.randomUUID();
+  const normalizedState = cloneManuscriptState({
+    ...state,
+    tombstones: state.tombstones ?? [],
+    updatedAt: timestamp,
+  });
   const changeSet = createChangeSet(
     input.summary,
     [
@@ -131,10 +153,7 @@ export function createInitialVersioningEnvelope(
     changeSet,
     snapshot: {
       manuscriptId: state.id,
-      state: cloneManuscriptState({
-        ...state,
-        updatedAt: timestamp,
-      }),
+      state: normalizedState,
     },
   };
 
@@ -175,15 +194,27 @@ export function commitManuscriptRevision(
   const timestamp = input.timestamp ?? new Date().toISOString();
   const parentRevisionId = manuscript.revisionHistory.headRevisionId;
   const revisionId = crypto.randomUUID();
-  const normalizedState: OmiManuscriptState = {
-    ...nextState,
-    updatedAt: timestamp,
-  };
   const changeSet = createChangeSet(
     input.summary,
     input.events,
     input.actorAgentId,
     timestamp,
+  );
+  const stateWithRetainedTombstones: OmiManuscriptState = {
+    ...nextState,
+    tombstones: mergeTombstones(
+      manuscript.tombstones ?? [],
+      nextState.tombstones ?? [],
+    ),
+    updatedAt: timestamp,
+  };
+  const normalizedState = applyTombstoneLifecycle(
+    stateWithRetainedTombstones,
+    changeSet,
+    revisionId,
+    input.actorAgentId,
+    timestamp,
+    input.summary,
   );
   const revision: OmiRevision = {
     id: revisionId,
@@ -229,8 +260,18 @@ export function revertManuscriptToRevision(
   }
 
   const timestamp = input.timestamp ?? new Date().toISOString();
+  const currentState = extractManuscriptState(manuscript);
+  const targetState = cloneManuscriptState(targetRevision.snapshot.state);
+  const lifecycleEvents = createRevertLifecycleEvents(
+    currentState,
+    targetState,
+  );
   const restoredState: OmiManuscriptState = {
-    ...cloneManuscriptState(targetRevision.snapshot.state),
+    ...targetState,
+    tombstones: mergeTombstones(
+      manuscript.tombstones ?? [],
+      targetState.tombstones ?? [],
+    ),
     schema: manuscript.schema,
     id: manuscript.id,
     version: manuscript.version,
@@ -254,6 +295,7 @@ export function revertManuscriptToRevision(
           previousValue: manuscript.headRevisionId,
           nextValue: targetRevisionId,
         },
+        ...lifecycleEvents,
       ],
     },
   );
@@ -270,6 +312,7 @@ export function extractManuscriptState(
   } = manuscript;
   const portableState = {
     ...state,
+    tombstones: state.tombstones ?? [],
   };
 
   delete portableState.authors;
@@ -360,10 +403,265 @@ function createChangeSet(
   };
 }
 
+function applyTombstoneLifecycle(
+  state: OmiManuscriptState,
+  changeSet: OmiChangeSet,
+  revisionId: RevisionId,
+  actorAgentId: AgentId | undefined,
+  timestamp: string,
+  reason: string,
+): OmiManuscriptState {
+  let tombstones = mergeTombstones(state.tombstones ?? []);
+
+  for (const event of changeSet.events) {
+    const deletionType = DELETION_OPERATION_TYPES[event.operation];
+
+    if (deletionType) {
+      tombstones = [
+        ...tombstones,
+        createTombstone({
+          objectId: event.targetId,
+          objectType: deletionType,
+          deletionRevisionId: revisionId,
+          deletingChangeEventId: event.id,
+          deletedAt: timestamp,
+          deletedByAgentId: actorAgentId,
+          reason,
+          formerContainerId: inferFormerContainerId(
+            event,
+            deletionType,
+            state.id,
+          ),
+          visibility: 'public',
+          retention: 'retain',
+        }),
+      ];
+    }
+
+    if (RESTORATION_OPERATION_TYPES[event.operation]) {
+      tombstones = markLatestTombstoneRestored(
+        tombstones,
+        event.targetId,
+        revisionId,
+      );
+    }
+  }
+
+  return {
+    ...state,
+    tombstones,
+  };
+}
+
+interface AddressableObject {
+  type: OmiTombstoneObjectType;
+  value: unknown;
+  path: string;
+}
+
+function createRevertLifecycleEvents(
+  currentState: OmiManuscriptState,
+  targetState: OmiManuscriptState,
+): CreateChangeEventInput[] {
+  const currentObjects = collectAddressableObjects(currentState);
+  const targetObjects = collectAddressableObjects(targetState);
+  const events: CreateChangeEventInput[] = [];
+
+  for (const [objectId, currentObject] of currentObjects) {
+    if (targetObjects.has(objectId)) {
+      continue;
+    }
+
+    events.push({
+      operation: deletionOperationForType(currentObject.type),
+      targetId: objectId,
+      path: currentObject.path,
+      previousValue: currentObject.value,
+    });
+  }
+
+  for (const [objectId, targetObject] of targetObjects) {
+    if (currentObjects.has(objectId)) {
+      continue;
+    }
+
+    events.push({
+      operation: restorationOperationForType(targetObject.type),
+      targetId: objectId,
+      path: targetObject.path,
+      nextValue: targetObject.value,
+    });
+  }
+
+  return events;
+}
+
+function collectAddressableObjects(
+  state: OmiManuscriptState,
+): Map<string, AddressableObject> {
+  const objects = new Map<string, AddressableObject>();
+
+  for (const contribution of state.contributions) {
+    objects.set(contribution.id, {
+      type: 'contribution',
+      value: contribution,
+      path: `/contributions/${contribution.id}`,
+    });
+  }
+
+  for (const agent of state.agents) {
+    objects.set(agent.id, {
+      type: 'agent',
+      value: agent,
+      path: `/agents/${agent.id}`,
+    });
+  }
+
+  for (const section of state.sections) {
+    objects.set(section.id, {
+      type: 'section',
+      value: section,
+      path: `/sections/${section.id}`,
+    });
+
+    collectBlocks(section.blocks, objects);
+  }
+
+  for (const annotation of state.annotations) {
+    objects.set(annotation.id, {
+      type: 'annotation',
+      value: annotation,
+      path: `/annotations/${annotation.id}`,
+    });
+  }
+
+  for (const citation of state.citations) {
+    objects.set(citation.id, {
+      type: 'citation',
+      value: citation,
+      path: `/citations/${citation.id}`,
+    });
+  }
+
+  return objects;
+}
+
+function collectBlocks(
+  blocks: OmiBlock[],
+  objects: Map<string, AddressableObject>,
+): void {
+  for (const block of blocks) {
+    objects.set(block.id, {
+      type: 'block',
+      value: block,
+      path: `/blocks/${block.id}`,
+    });
+
+    if (block.children?.length) {
+      collectBlocks(block.children, objects);
+    }
+  }
+}
+
+function inferFormerContainerId(
+  event: OmiChangeEvent,
+  objectType: OmiTombstoneObjectType,
+  manuscriptId: string,
+): string {
+  if (objectType === 'contribution') {
+    const targetId = getStringProperty(event.previousValue, 'targetId');
+
+    if (targetId) {
+      return targetId;
+    }
+  }
+
+  return manuscriptId;
+}
+
+function getStringProperty(
+  value: unknown,
+  property: string,
+): string | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  const candidate = record[property];
+
+  return typeof candidate === 'string' ? candidate : undefined;
+}
+
+function deletionOperationForType(
+  objectType: OmiTombstoneObjectType,
+): OmiChangeOperation {
+  switch (objectType) {
+    case 'agent':
+      return 'agent.remove';
+    case 'contribution':
+      return 'contribution.remove';
+    case 'section':
+      return 'section.remove';
+    case 'block':
+      return 'block.remove';
+    case 'annotation':
+      return 'annotation.remove';
+    case 'citation':
+      return 'citation.remove';
+  }
+}
+
+function restorationOperationForType(
+  objectType: OmiTombstoneObjectType,
+): OmiChangeOperation {
+  switch (objectType) {
+    case 'agent':
+      return 'agent.restore';
+    case 'contribution':
+      return 'contribution.restore';
+    case 'section':
+      return 'section.restore';
+    case 'block':
+      return 'block.restore';
+    case 'annotation':
+      return 'annotation.restore';
+    case 'citation':
+      return 'citation.restore';
+  }
+}
+
+const DELETION_OPERATION_TYPES: Partial<
+  Record<OmiChangeOperation, OmiTombstoneObjectType>
+> = {
+  'agent.remove': 'agent',
+  'contribution.remove': 'contribution',
+  'section.remove': 'section',
+  'block.remove': 'block',
+  'annotation.remove': 'annotation',
+  'citation.remove': 'citation',
+};
+
+const RESTORATION_OPERATION_TYPES: Partial<
+  Record<OmiChangeOperation, OmiTombstoneObjectType>
+> = {
+  'agent.restore': 'agent',
+  'contribution.restore': 'contribution',
+  'section.restore': 'section',
+  'block.restore': 'block',
+  'annotation.restore': 'annotation',
+  'citation.restore': 'citation',
+};
+
 function cloneManuscriptState(
   state: OmiManuscriptState,
 ): OmiManuscriptState {
-  return JSON.parse(JSON.stringify(state)) as OmiManuscriptState;
+  const cloned = JSON.parse(JSON.stringify(state)) as OmiManuscriptState;
+
+  return {
+    ...cloned,
+    tombstones: cloned.tombstones ?? [],
+  };
 }
 
 function clonePortableValue(value: unknown): unknown {
