@@ -87,6 +87,11 @@ export const hu: TranslationDictionary = {
       'Készüljön új revízió, amely visszaállítja ezt a korábbi kéziratállapotot?',
     revertBlocked:
       'Korábbi revízió visszaállítása előtt mentse checkpointként vagy vesse el a függő módosításokat.',
+    tombstonesTitle: 'Törölt objektumok nyilvántartása',
+    tombstonesDescription:
+      'Az OMI-SPEC-160 tombstone-rekordok megőrzik a törölt objektumok azonosítóit és a későbbi helyreállítás bizonyítékát.',
+    tombstoneActive: 'Törölve',
+    tombstoneRestored: 'Helyreállítva',
     operations: {
       snapshotCreated: 'Kézirat-pillanatkép létrehozva',
       titleChanged: 'A kézirat címe megváltozott',
