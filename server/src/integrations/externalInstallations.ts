@@ -48,10 +48,9 @@ export async function upsertExternalInstallation(
     );
   }
 
-  const sharedSecret =
-    input.sharedSecret.trim().toLowerCase();
+  const sharedSecret = input.sharedSecret.trim();
 
-  if (!/^[0-9a-f]{64}$/.test(sharedSecret)) {
+  if (!/^[0-9a-fA-F]{64}$/.test(sharedSecret)) {
     throw new Error(
       'Shared secret must be exactly 64 hexadecimal characters.',
     );
