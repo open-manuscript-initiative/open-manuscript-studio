@@ -1,6 +1,9 @@
 export const OMI_IDENTITY_MODEL_VERSION =
   'OMI-SPEC-150@0.1.0' as const;
 
+export const ROR_API_SOURCE =
+  'https://api.ror.org/v2/organizations' as const;
+
 export type AgentId = string;
 export type NameFormId = string;
 export type IdentityAssertionId = string;
@@ -110,6 +113,13 @@ export interface ContributorEditInput {
   givenName?: string;
   familyName?: string;
   affiliation?: string;
+
+  /**
+   * Preferred full ROR URL for the selected affiliation organization.
+   * `null` explicitly removes a previously linked ROR identifier.
+   */
+  affiliationRorId?: string | null;
+
   orcid?: string;
 }
 
@@ -269,19 +279,40 @@ export function updatePersonAgent(
   if (input.affiliation !== undefined) {
     const organizationName = input.affiliation.trim();
     const currentAffiliation = agent.affiliations[0];
+    const rorInputWasProvided = input.affiliationRorId !== undefined;
+    const normalizedRorId =
+      typeof input.affiliationRorId === 'string'
+        ? normalizeRorId(input.affiliationRorId)
+        : '';
+    const organizationIdentifier = normalizedRorId
+      ? createExternalIdentifierAssertion(
+          'ror',
+          normalizedRorId,
+          'verified',
+          timestamp,
+          ROR_API_SOURCE,
+        )
+      : !rorInputWasProvided &&
+          currentAffiliation?.organizationName === organizationName
+        ? currentAffiliation.organizationIdentifier
+        : undefined;
+    const source = normalizedRorId
+      ? ROR_API_SOURCE
+      : organizationIdentifier
+        ? currentAffiliation?.source
+        : undefined;
 
     affiliations = organizationName
       ? [
           {
             id: currentAffiliation?.id ?? crypto.randomUUID(),
             organizationName,
-            organizationIdentifier:
-              currentAffiliation?.organizationIdentifier,
+            organizationIdentifier,
             department: currentAffiliation?.department,
             position: currentAffiliation?.position,
             validFrom: currentAffiliation?.validFrom,
             validUntil: currentAffiliation?.validUntil,
-            source: currentAffiliation?.source,
+            source,
             visibility: currentAffiliation?.visibility ?? 'public',
           },
           ...agent.affiliations.slice(1),
@@ -310,6 +341,16 @@ export function getAgentDisplayName(agent: OmiAgent): string {
 
 export function getPrimaryAffiliation(agent: OmiAgent): string {
   return agent.affiliations[0]?.organizationName ?? '';
+}
+
+export function getPrimaryAffiliationRorId(agent: OmiAgent): string {
+  const identifier = agent.affiliations[0]?.organizationIdentifier;
+
+  if (!identifier || identifier.scheme.trim().toLowerCase() !== 'ror') {
+    return '';
+  }
+
+  return normalizeRorId(identifier.normalizedValue || identifier.value);
 }
 
 export function getExternalIdentifierValue(
@@ -369,15 +410,37 @@ export function isValidOrcid(orcid: string): boolean {
   return calculatedCheckDigit === suppliedCheckDigit;
 }
 
+export function normalizeRorId(rorId: string): string {
+  const uniqueId = rorId
+    .trim()
+    .replace(/^https?:\/\/(?:www\.)?ror\.org\//i, '')
+    .replace(/^ror\.org\//i, '')
+    .replace(/\/$/, '')
+    .toLowerCase();
+
+  return /^0[a-hj-km-np-tv-z0-9]{6}[0-9]{2}$/.test(uniqueId)
+    ? `https://ror.org/${uniqueId}`
+    : '';
+}
+
+export function isValidRorId(rorId: string): boolean {
+  return normalizeRorId(rorId).length > 0;
+}
+
 function createExternalIdentifierAssertion(
   scheme: string,
   value: string,
   verificationStatus: IdentityVerificationStatus,
   assertedAt: string,
+  source?: string,
 ): OmiExternalIdentifierAssertion {
   const normalizedScheme = scheme.trim().toLowerCase();
   const normalizedValue =
-    normalizedScheme === 'orcid' ? normalizeOrcid(value) : value.trim();
+    normalizedScheme === 'orcid'
+      ? normalizeOrcid(value)
+      : normalizedScheme === 'ror'
+        ? normalizeRorId(value)
+        : value.trim();
 
   return {
     id: crypto.randomUUID(),
@@ -385,6 +448,7 @@ function createExternalIdentifierAssertion(
     value: normalizedValue,
     normalizedValue,
     verificationStatus,
+    source,
     assertedAt,
     visibility: 'public',
   };
