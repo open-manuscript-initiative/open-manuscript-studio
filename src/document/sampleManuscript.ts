@@ -71,6 +71,7 @@ export const createSampleManuscript = (): OmiManuscript => {
       },
     ],
     annotations: [],
+    bibliographicRecords: [],
     citations: [],
     createdAt: now,
     updatedAt: now,
