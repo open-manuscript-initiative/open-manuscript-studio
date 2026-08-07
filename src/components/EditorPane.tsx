@@ -1,8 +1,13 @@
 import { Fragment } from 'react';
 
+import {
+  stageMottoChange,
+  stageSubtitleChange,
+} from '../app/manuscriptFrontMatterActions';
 import { stageSectionTitleChange } from '../app/sectionActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { getFrontMatterCopy } from '../i18n/frontMatter';
 import {
   collectCrossReferenceTargets,
   formatCrossReferenceLabel,
@@ -14,7 +19,8 @@ import { VisualBlockEditor } from './VisualBlockEditor';
 import { VisualInsertMenu } from './VisualInsertMenu';
 
 export function EditorPane() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const frontMatterCopy = getFrontMatterCopy(locale);
   const manuscript = useStudioStore(
     (state) => state.manuscript,
   );
@@ -66,6 +72,31 @@ export function EditorPane() {
           }
           placeholder={t('studio.titlePlaceholder')}
         />
+
+        <div className="omi-front-matter-fields">
+          <label className="omi-front-matter-field" htmlFor="manuscript-subtitle">
+            <span>{frontMatterCopy.subtitleOptional}</span>
+            <input
+              id="manuscript-subtitle"
+              className="omi-subtitle-input"
+              value={manuscript.subtitle ?? ''}
+              onChange={(event) => stageSubtitleChange(event.target.value)}
+              placeholder={frontMatterCopy.subtitlePlaceholder}
+            />
+          </label>
+
+          <label className="omi-front-matter-field omi-front-matter-field--motto" htmlFor="manuscript-motto">
+            <span>{frontMatterCopy.mottoOptional}</span>
+            <textarea
+              id="manuscript-motto"
+              className="omi-motto-input"
+              rows={2}
+              value={manuscript.motto ?? ''}
+              onChange={(event) => stageMottoChange(event.target.value)}
+              placeholder={frontMatterCopy.mottoPlaceholder}
+            />
+          </label>
+        </div>
       </header>
 
       <section

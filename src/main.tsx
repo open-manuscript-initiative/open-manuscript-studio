@@ -6,6 +6,7 @@ import { I18nProvider } from './i18n';
 
 import './styles/global.css';
 import './styles/editor.css';
+import './styles/front-matter.css';
 import './styles/rich-text.css';
 import './styles/studio-shell.css';
 import './styles/settings.css';
@@ -23,6 +24,7 @@ import './styles/ror-affiliation.css';
 import './styles/orcid-lookup.css';
 import './styles/editor-i18n.css';
 import './styles/docx-import.css';
+import './styles/publication-profile.css';
 
 ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
