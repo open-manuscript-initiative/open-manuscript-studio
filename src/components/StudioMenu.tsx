@@ -24,6 +24,7 @@ import {
   useTranslation,
 } from '../i18n';
 import { downloadOmiJson } from '../services/exportOmi';
+import { CrossReferencePanel } from './CrossReferencePanel';
 import { Footer } from './Footer';
 import { HistoryPanel } from './HistoryPanel';
 import { KeywordEditor } from './KeywordEditor';
@@ -238,6 +239,7 @@ function DocumentMenuView({
       </div>
 
       <SectionNumberingControl />
+      <CrossReferencePanel />
       <SectionStructurePanel onNavigate={onNavigate} />
     </section>
   );

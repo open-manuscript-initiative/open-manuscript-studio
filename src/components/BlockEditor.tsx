@@ -16,25 +16,42 @@ import {
   stageCreateCitationCluster,
 } from '../app/citationActions';
 import {
+  reconcileCrossReferencesAfterBlockEdit,
+  stageCreateCrossReference,
+} from '../app/crossReferenceActions';
+import {
   reconcileNotesAfterBlockEdit,
   stageCreateNote,
 } from '../app/noteActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { OmiCitationExtension } from '../editor/extensions/OmiCitationExtension';
+import { OmiCrossReferenceExtension } from '../editor/extensions/OmiCrossReferenceExtension';
 import {
   OmiNoteExtension,
   type OmiNoteAttributes,
 } from '../editor/extensions/OmiNoteExtension';
 import { useTranslation } from '../i18n';
+import { getCrossReferenceCopy } from '../i18n/crossReferences';
 import type { TranslationKey } from '../i18n/types';
 import { createCitationCluster } from '../model/citationClusters';
+import {
+  createCrossReference,
+  formatCrossReferenceLabel,
+  resolveCrossReferenceTarget,
+} from '../model/crossReferences';
 import { renderCitationCluster } from '../model/cslRendering';
+import type {
+  OmiCrossReferenceDisplayStyle,
+  OmiCrossReferenceTargetKind,
+} from '../types/omi';
 import { CitationClusterEditorCard } from './CitationClusterEditorCard';
 import { CitationEditorCard } from './CitationEditorCard';
 import {
   CitationPicker,
   type CitationPickerSelection,
 } from './CitationPicker';
+import { CrossReferenceEditorCard } from './CrossReferenceEditorCard';
+import { CrossReferencePicker } from './CrossReferencePicker';
 import { NoteEditorCard } from './NoteEditorCard';
 
 interface BlockEditorProps {
@@ -50,11 +67,16 @@ export function BlockEditor({
   content,
   onUpdate,
 }: BlockEditorProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const crossReferenceCopy = getCrossReferenceCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [activeCitationId, setActiveCitationId] = useState<string | null>(null);
+  const [activeCrossReferenceId, setActiveCrossReferenceId] =
+    useState<string | null>(null);
   const [citationPickerOpen, setCitationPickerOpen] = useState(false);
+  const [crossReferencePickerOpen, setCrossReferencePickerOpen] =
+    useState(false);
   const onUpdateRef = useRef(onUpdate);
   const tRef = useRef(t);
   const blockLabel = formatBlockType(blockType, t);
@@ -102,6 +124,17 @@ export function BlockEditor({
     }
   }, [activeCitationId, manuscript.citations]);
 
+  useEffect(() => {
+    if (
+      activeCrossReferenceId &&
+      !(manuscript.crossReferences ?? []).some(
+        (reference) => reference.id === activeCrossReferenceId,
+      )
+    ) {
+      setActiveCrossReferenceId(null);
+    }
+  }, [activeCrossReferenceId, manuscript.crossReferences]);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -123,11 +156,13 @@ export function BlockEditor({
           });
           setActiveNoteId(attributes.noteId);
           setActiveCitationId(null);
+          setActiveCrossReferenceId(null);
         },
         accessibleLabel: (attributes: OmiNoteAttributes) =>
           `${tRef.current('notes.note')} ${attributes.label}`,
       }),
       OmiCitationExtension,
+      OmiCrossReferenceExtension,
     ],
 
     content: parseStoredContent(content),
@@ -147,6 +182,21 @@ export function BlockEditor({
           return false;
         }
 
+        const crossReferenceMarker = target.closest<HTMLElement>(
+          '[data-omi-cross-reference][data-cross-reference-id]',
+        );
+        const crossReferenceId =
+          crossReferenceMarker?.dataset.crossReferenceId;
+
+        if (crossReferenceId) {
+          setActiveCrossReferenceId(crossReferenceId);
+          setActiveCitationId(null);
+          setActiveNoteId(null);
+          setCitationPickerOpen(false);
+          setCrossReferencePickerOpen(false);
+          return true;
+        }
+
         const citationMarker = target.closest<HTMLElement>(
           '[data-omi-citation][data-citation-id]',
         );
@@ -154,8 +204,10 @@ export function BlockEditor({
 
         if (citationId) {
           setActiveCitationId(citationId);
+          setActiveCrossReferenceId(null);
           setActiveNoteId(null);
           setCitationPickerOpen(false);
+          setCrossReferencePickerOpen(false);
           return true;
         }
 
@@ -170,7 +222,9 @@ export function BlockEditor({
 
         setActiveNoteId(noteId);
         setActiveCitationId(null);
+        setActiveCrossReferenceId(null);
         setCitationPickerOpen(false);
+        setCrossReferencePickerOpen(false);
         return true;
       },
     },
@@ -184,6 +238,7 @@ export function BlockEditor({
       );
       reconcileNotesAfterBlockEdit();
       reconcileCitationsAfterBlockEdit();
+      reconcileCrossReferencesAfterBlockEdit();
     },
   });
 
@@ -204,13 +259,20 @@ export function BlockEditor({
     });
   }, [content, editor]);
 
+  function closeSecondaryEditors(): void {
+    setActiveNoteId(null);
+    setActiveCitationId(null);
+    setActiveCrossReferenceId(null);
+  }
+
   function insertNote(): void {
     if (!editor) {
       return;
     }
 
     setCitationPickerOpen(false);
-    setActiveCitationId(null);
+    setCrossReferencePickerOpen(false);
+    closeSecondaryEditors();
 
     editor
       .chain()
@@ -272,7 +334,51 @@ export function BlockEditor({
 
     if (inserted && stageCreateCitationCluster(creation)) {
       setCitationPickerOpen(false);
+      setCrossReferencePickerOpen(false);
       setActiveCitationId(firstCitation.id);
+      setActiveCrossReferenceId(null);
+      setActiveNoteId(null);
+    }
+  }
+
+  function insertCrossReference(
+    targetId: string,
+    targetKind: OmiCrossReferenceTargetKind,
+    displayStyle: OmiCrossReferenceDisplayStyle,
+  ): void {
+    if (!editor) return;
+
+    const target = resolveCrossReferenceTarget(manuscript, targetId);
+    if (!target || target.kind !== targetKind) return;
+
+    const reference = createCrossReference({
+      targetId,
+      targetKind,
+      sourceBlockId: blockId,
+      displayStyle,
+    });
+    const label = formatCrossReferenceLabel(
+      reference,
+      target,
+      manuscript.locale,
+    );
+    const inserted = editor
+      .chain()
+      .focus()
+      .insertOmiCrossReference({
+        crossReferenceId: reference.id,
+        anchorId: reference.anchorId,
+        label,
+        unresolved: false,
+      })
+      .insertContent(' ')
+      .run();
+
+    if (inserted && stageCreateCrossReference(reference)) {
+      setCrossReferencePickerOpen(false);
+      setCitationPickerOpen(false);
+      setActiveCrossReferenceId(reference.id);
+      setActiveCitationId(null);
       setActiveNoteId(null);
     }
   }
@@ -292,6 +398,7 @@ export function BlockEditor({
     <article
       className="omi-block-editor"
       data-block-id={blockId}
+      id={`omi-target-${blockId}`}
       style={editorStyle}
     >
       <div className="omi-block-toolbar">
@@ -304,9 +411,24 @@ export function BlockEditor({
             type="button"
             className="omi-note-insert-button"
             onClick={() => {
+              setCrossReferencePickerOpen((open) => !open);
+              setCitationPickerOpen(false);
+              closeSecondaryEditors();
+            }}
+            aria-label={crossReferenceCopy.insert}
+            title={crossReferenceCopy.insert}
+          >
+            <span aria-hidden="true">＋</span>
+            <span>{crossReferenceCopy.insert}</span>
+          </button>
+
+          <button
+            type="button"
+            className="omi-note-insert-button"
+            onClick={() => {
               setCitationPickerOpen((open) => !open);
-              setActiveCitationId(null);
-              setActiveNoteId(null);
+              setCrossReferencePickerOpen(false);
+              closeSecondaryEditors();
             }}
             aria-label={t('editor.insertCitation')}
             title={t('editor.insertCitation')}
@@ -330,10 +452,24 @@ export function BlockEditor({
 
       <EditorContent editor={editor} />
 
+      {crossReferencePickerOpen ? (
+        <CrossReferencePicker
+          onInsert={insertCrossReference}
+          onCancel={() => setCrossReferencePickerOpen(false)}
+        />
+      ) : null}
+
       {citationPickerOpen ? (
         <CitationPicker
           onInsert={insertCitationCluster}
           onCancel={() => setCitationPickerOpen(false)}
+        />
+      ) : null}
+
+      {activeCrossReferenceId ? (
+        <CrossReferenceEditorCard
+          crossReferenceId={activeCrossReferenceId}
+          onClose={() => setActiveCrossReferenceId(null)}
         />
       ) : null}
 

@@ -3,6 +3,10 @@ import { Fragment } from 'react';
 import { stageSectionTitleChange } from '../app/sectionActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import {
+  collectCrossReferenceTargets,
+  formatCrossReferenceLabel,
+} from '../model/crossReferences';
 import { formatSectionNumber } from '../model/sectionNumbering';
 import { isVisualBlock } from '../model/visualBlocks';
 import { BlockEditor } from './BlockEditor';
@@ -35,6 +39,10 @@ export function EditorPane() {
     sectionIndex,
     manuscript.sectionNumberingStyle,
   );
+  const crossReferenceTargets = collectCrossReferenceTargets(manuscript);
+  const targetMap = new Map(
+    crossReferenceTargets.map((target) => [target.id, target]),
+  );
 
   return (
     <section
@@ -66,7 +74,11 @@ export function EditorPane() {
       >
         {section ? (
           <div className="omi-section-editor">
-            <div className="omi-section-title-row">
+            <div
+              className="omi-section-title-row"
+              id={`omi-target-${section.id}`}
+              data-cross-reference-target="section"
+            >
               {sectionNumber ? (
                 <span
                   className="omi-section-number"
@@ -90,29 +102,52 @@ export function EditorPane() {
               />
             </div>
 
-            {section.blocks.map((block, blockIndex) => (
-              <Fragment key={block.id}>
-                <VisualInsertMenu
-                  sectionId={section.id}
-                  gapIndex={blockIndex}
-                />
+            {section.blocks.map((block, blockIndex) => {
+              const target = targetMap.get(block.id);
 
-                {isVisualBlock(block) ? (
-                  <VisualBlockEditor
-                    block={block}
+              return (
+                <Fragment key={block.id}>
+                  <VisualInsertMenu
                     sectionId={section.id}
-                    blockIndex={blockIndex}
+                    gapIndex={blockIndex}
                   />
-                ) : (
-                  <BlockEditor
-                    blockId={block.id}
-                    blockType={block.type}
-                    content={block.content}
-                    onUpdate={updateBlock}
-                  />
-                )}
-              </Fragment>
-            ))}
+
+                  {isVisualBlock(block) ? (
+                    <div
+                      className="omi-numbered-object"
+                      id={`omi-target-${block.id}`}
+                      data-cross-reference-target={target?.kind}
+                    >
+                      {target ? (
+                        <div className="omi-numbered-object-label">
+                          {formatCrossReferenceLabel(
+                            {
+                              targetId: target.id,
+                              displayStyle: 'label-number',
+                            },
+                            target,
+                            manuscript.locale,
+                          )}
+                        </div>
+                      ) : null}
+
+                      <VisualBlockEditor
+                        block={block}
+                        sectionId={section.id}
+                        blockIndex={blockIndex}
+                      />
+                    </div>
+                  ) : (
+                    <BlockEditor
+                      blockId={block.id}
+                      blockType={block.type}
+                      content={block.content}
+                      onUpdate={updateBlock}
+                    />
+                  )}
+                </Fragment>
+              );
+            })}
 
             <VisualInsertMenu
               sectionId={section.id}

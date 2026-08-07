@@ -1,4 +1,5 @@
 import { useStudioStore } from './useStudioStore';
+import { synchronizeCrossReferenceLabels } from '../model/crossReferences.ts';
 import { getExternalIdentifierValue } from '../model/identity';
 import {
   normalizeManuscriptLanguageTag,
@@ -9,7 +10,10 @@ import {
   getCurrentUser,
   useAuthStore,
 } from '../store/authStore';
-import type { OmiManuscript } from '../types/omi';
+import type {
+  OmiManuscript,
+  OmiSection,
+} from '../types/omi';
 
 const LANGUAGE_CHECKPOINT_DELAY_MS = 2500;
 let languageCheckpointTimer: ReturnType<typeof setTimeout> | null = null;
@@ -39,8 +43,18 @@ export function stageManuscriptLanguageChange(
       return state;
     }
 
-    const timestamp = new Date().toISOString();
     const previousLocale = state.manuscript.locale;
+    const nextSections = synchronizeCrossReferenceLabels(
+      state.manuscript.sections,
+      state.manuscript.crossReferences ?? [],
+      state.manuscript.crossReferenceNumbering,
+      normalized,
+    );
+    const contentEvents = collectBlockContentChanges(
+      state.manuscript.sections,
+      nextSections,
+    );
+    const timestamp = new Date().toISOString();
     const pendingChangeSet = stagePendingChanges(
       state.pendingChangeSet,
       {
@@ -48,14 +62,13 @@ export function stageManuscriptLanguageChange(
         summary: 'Changed manuscript language',
         events: [
           {
-            // The runtime operation is deliberately explicit even while the
-            // broader OMI change-operation vocabulary remains extensible.
             operation: 'manuscript.locale.set' as never,
             targetId: state.manuscript.id,
             path: '/locale',
             previousValue: previousLocale,
             nextValue: normalized,
           },
+          ...contentEvents,
         ],
         actorAgentId: resolveCurrentActorAgentId(state.manuscript),
         timestamp,
@@ -70,6 +83,7 @@ export function stageManuscriptLanguageChange(
         ...state.manuscript,
         ...portableState,
         locale: normalized,
+        sections: nextSections,
         updatedAt: timestamp,
       },
       pendingChangeSet,
@@ -81,6 +95,34 @@ export function stageManuscriptLanguageChange(
   }
 
   return true;
+}
+
+function collectBlockContentChanges(
+  previousSections: readonly OmiSection[],
+  nextSections: readonly OmiSection[],
+) {
+  const previousBlocks = new Map(
+    previousSections
+      .flatMap((section) => section.blocks)
+      .map((block) => [block.id, block]),
+  );
+
+  return nextSections
+    .flatMap((section) => section.blocks)
+    .flatMap((block) => {
+      const previous = previousBlocks.get(block.id);
+      if (!previous || previous.content === block.content) return [];
+
+      return [
+        {
+          operation: 'block.content.set' as const,
+          targetId: block.id,
+          path: `/blocks/${block.id}/content`,
+          previousValue: previous.content,
+          nextValue: block.content,
+        },
+      ];
+    });
 }
 
 function scheduleLanguageCheckpoint(): void {

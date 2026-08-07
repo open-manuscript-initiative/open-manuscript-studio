@@ -225,6 +225,46 @@ export interface OmiCitationCluster {
   modifiedAt?: string;
 }
 
+/** Addressable manuscript object classes supported by semantic xrefs. */
+export type OmiCrossReferenceTargetKind =
+  | 'section'
+  | 'figure'
+  | 'table'
+  | 'chart'
+  | 'equation';
+
+/** Presentation form of one semantic internal reference. */
+export type OmiCrossReferenceDisplayStyle =
+  | 'label-number'
+  | 'number'
+  | 'title'
+  | 'label-number-title';
+
+/**
+ * Visual-object numbering can run through the whole manuscript or restart in
+ * every top-level section. The target object's semantic identity is unchanged.
+ */
+export type OmiCrossReferenceNumbering = 'document' | 'section';
+
+/**
+ * Semantic internal reference to an addressable manuscript object.
+ *
+ * `targetId` is authoritative. The human-readable number and label are always
+ * derived from current document order and rendering preferences.
+ */
+export interface OmiCrossReference {
+  id: string;
+  anchorId: string;
+  /** Text block that currently carries the inline xref marker. */
+  sourceBlockId: string;
+  /** Stable section or visual-block identifier. */
+  targetId: string;
+  targetKind: OmiCrossReferenceTargetKind;
+  displayStyle: OmiCrossReferenceDisplayStyle;
+  createdAt?: string;
+  modifiedAt?: string;
+}
+
 export interface OmiImportProvenance {
   sourceFormat:
     | 'image'
@@ -351,6 +391,12 @@ export interface OmiManuscriptState {
   citationStyle?: OmiCitationStyleId;
 
   /**
+   * Presentation preference for numbering internal visual-object references.
+   * Defaults to continuous document-wide numbering when absent.
+   */
+  crossReferenceNumbering?: OmiCrossReferenceNumbering;
+
+  /**
    * Portable scholarly identities represented independently from accounts.
    */
   agents: OmiAgent[];
@@ -392,6 +438,12 @@ export interface OmiManuscriptState {
    * Optional for compatibility with pre-cluster alpha manuscripts.
    */
   citationClusters?: OmiCitationCluster[];
+
+  /**
+   * Semantic internal references to sections and structured visual objects.
+   * Optional for compatibility with manuscripts created before xref support.
+   */
+  crossReferences?: OmiCrossReference[];
 
   createdAt: string;
   updatedAt: string;
