@@ -7,7 +7,7 @@ import {
   collectCrossReferenceTargets,
   formatCrossReferenceLabel,
 } from '../model/crossReferences';
-import { formatSectionNumber } from '../model/sectionNumbering';
+import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
 import { isVisualBlock } from '../model/visualBlocks';
 import { BlockEditor } from './BlockEditor';
 import { VisualBlockEditor } from './VisualBlockEditor';
@@ -32,13 +32,13 @@ export function EditorPane() {
     manuscript.sections.find(
       (item) => item.id === selectedSectionId,
     ) ?? manuscript.sections[0];
-  const sectionIndex = section
-    ? manuscript.sections.findIndex((item) => item.id === section.id)
-    : -1;
-  const sectionNumber = formatSectionNumber(
-    sectionIndex,
-    manuscript.sectionNumberingStyle,
-  );
+  const sectionNumber = section
+    ? formatHierarchicalSectionNumber(
+        manuscript.sections,
+        section.id,
+        manuscript.sectionNumberingStyle,
+      )
+    : '';
   const crossReferenceTargets = collectCrossReferenceTargets(manuscript);
   const targetMap = new Map(
     crossReferenceTargets.map((target) => [target.id, target]),
