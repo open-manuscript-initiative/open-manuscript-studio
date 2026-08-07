@@ -33,6 +33,7 @@ export interface TranslationDictionary {
       contributors: string;
       history: string;
       tools: string;
+      settings: string;
     };
     document: {
       title: string;
@@ -59,6 +60,17 @@ export interface TranslationDictionary {
       technicalDescription: string;
       liveJson: string;
       synced: string;
+    };
+    settings: {
+      title: string;
+      description: string;
+      interfaceLanguages: string;
+      interfaceLanguagesDescription: string;
+      currentLanguage: string;
+      currentLanguageHint: string;
+      enabledLanguage: string;
+      disabledLanguage: string;
+      futureLanguages: string;
     };
   };
 
@@ -225,8 +237,6 @@ export interface TranslationDictionary {
     alphaNotice: string;
   };
 }
-
-export type SupportedLocale = 'en' | 'hu' | 'de';
 
 type NestedKeyOf<T> = {
   [K in keyof T & string]:
