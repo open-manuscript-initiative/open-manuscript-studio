@@ -4,7 +4,6 @@ import {
   FileText,
   History as HistoryIcon,
   Library,
-  Plus,
   RotateCcw,
   Settings2,
   StickyNote,
@@ -25,7 +24,6 @@ import {
   useTranslation,
 } from '../i18n';
 import { downloadOmiJson } from '../services/exportOmi';
-import { DocumentTree } from './DocumentTree';
 import { Footer } from './Footer';
 import { HistoryPanel } from './HistoryPanel';
 import { KeywordEditor } from './KeywordEditor';
@@ -34,6 +32,7 @@ import { NotesPanel } from './NotesPanel';
 import { PropertiesPanel } from './PropertiesPanel';
 import { ReferencesPanel } from './ReferencesPanel';
 import { SectionNumberingControl } from './SectionNumberingControl';
+import { SectionStructurePanel } from './SectionStructurePanel';
 
 type StudioMenuView =
   | 'document'
@@ -228,7 +227,6 @@ function DocumentMenuView({
   onNavigate: () => void;
 }) {
   const { t } = useTranslation();
-  const addSection = useStudioStore((state) => state.addSection);
 
   return (
     <section className="studio-menu-view">
@@ -237,19 +235,10 @@ function DocumentMenuView({
           <h3>{t('studio.document.title')}</h3>
           <p>{t('studio.document.description')}</p>
         </div>
-
-        <button
-          type="button"
-          className="studio-menu-primary-action"
-          onClick={addSection}
-        >
-          <Plus size={16} aria-hidden="true" />
-          {t('studio.document.addSection')}
-        </button>
       </div>
 
       <SectionNumberingControl />
-      <DocumentTree onNavigate={onNavigate} />
+      <SectionStructurePanel onNavigate={onNavigate} />
     </section>
   );
 }

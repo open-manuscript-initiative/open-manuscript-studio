@@ -1,0 +1,174 @@
+.omi-section-structure {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.omi-section-structure-header h4,
+.omi-section-structure-header p,
+.omi-section-structure-hint {
+  margin: 0;
+}
+
+.omi-section-structure-header p,
+.omi-section-structure-hint {
+  margin-top: 0.35rem;
+  color: var(--ifm-color-emphasis-700, #5f6368);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.omi-section-structure-list {
+  display: grid;
+  gap: 0;
+}
+
+.omi-section-structure-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(127, 127, 127, 0.24);
+  border-radius: 0.75rem;
+  background: var(--ifm-background-surface-color, #fff);
+  min-height: 3.25rem;
+  padding: 0.35rem 0.45rem;
+}
+
+.omi-section-structure-item--selected {
+  border-color: currentColor;
+}
+
+.omi-section-drag-handle {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  cursor: grab;
+  color: var(--ifm-color-emphasis-600, #6b7280);
+  user-select: none;
+}
+
+.omi-section-drag-handle:active {
+  cursor: grabbing;
+}
+
+.omi-section-drag-handle:focus-visible,
+.omi-section-structure-actions button:focus-visible,
+.omi-section-gap-button:focus-visible,
+.omi-section-structure-open:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.omi-section-structure-open {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.55rem;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  padding: 0.55rem 0.25rem;
+  color: inherit;
+}
+
+.omi-section-structure-open strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.omi-section-structure-open span {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  opacity: 0.7;
+}
+
+.omi-section-structure-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.omi-section-structure-actions button {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(127, 127, 127, 0.25);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.omi-section-structure-actions button:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.omi-section-gap {
+  display: grid;
+  grid-template-columns: minmax(1rem, 1fr) auto minmax(1rem, 1fr);
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.15rem;
+  transition: min-height 120ms ease;
+}
+
+.omi-section-gap--dragging {
+  min-height: 2.65rem;
+}
+
+.omi-section-gap-line {
+  height: 1px;
+  background: rgba(127, 127, 127, 0.28);
+}
+
+.omi-section-gap--active .omi-section-gap-line {
+  height: 2px;
+  background: currentColor;
+}
+
+.omi-section-gap-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.4rem;
+}
+
+.omi-section-gap-button:hover,
+.omi-section-gap--active .omi-section-gap-button {
+  opacity: 1;
+}
+
+@media (max-width: 720px) {
+  .omi-section-structure-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .omi-section-structure-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    padding: 0 0.25rem 0.25rem;
+  }
+
+  .omi-section-gap-button span {
+    display: none;
+  }
+
+  .omi-section-gap-button {
+    width: 2rem;
+    height: 2rem;
+    justify-content: center;
+  }
+}
