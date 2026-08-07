@@ -15,6 +15,23 @@ export interface AssetContainerCopy {
   integrity: string;
   format: string;
   privacyNote: string;
+  importTitle: string;
+  importDescription: string;
+  choosePackage: string;
+  inspecting: string;
+  importPackage: string;
+  importing: string;
+  verified: string;
+  invalid: string;
+  imported: string;
+  entries: string;
+  revisions: string;
+  checksums: string;
+  packageAssets: string;
+  manuscriptId: string;
+  headRevision: string;
+  replaceWarning: string;
+  confirmImport: string;
 }
 
 const COPY: Record<'en' | 'hu' | 'de', AssetContainerCopy> = {
@@ -36,7 +53,27 @@ const COPY: Record<'en' | 'hu' | 'de', AssetContainerCopy> = {
     integrity: 'SHA-256 integrity',
     format: 'OMI-SPEC-320 / OMI-SPEC-330 Draft package',
     privacyNote:
-      'Authoring preview data is removed from portable document.json when a stable asset reference exists. Binary payloads are stored separately under media/.',
+      'Asset-backed image previews are resolved from the local binary repository. Portable manuscript state no longer needs Base64 preview data after externalization.',
+    importTitle: 'Open OMI package',
+    importDescription:
+      'Inspect an untrusted .omi container, verify its manifest, ZIP structure, revision identities, assets and SHA-256 checksums before loading it.',
+    choosePackage: 'Choose .omi package',
+    inspecting: 'Verifying package…',
+    importPackage: 'Open verified manuscript',
+    importing: 'Opening manuscript…',
+    verified: 'The package passed integrity verification and can be opened.',
+    invalid: 'The package cannot be opened until its blocking integrity errors are resolved.',
+    imported: 'The verified OMI manuscript was opened with its original identity and revision history.',
+    entries: 'entries',
+    revisions: 'revisions',
+    checksums: 'checksums verified',
+    packageAssets: 'assets',
+    manuscriptId: 'Manuscript ID',
+    headRevision: 'Head revision',
+    replaceWarning:
+      'Opening the package replaces the active workspace manuscript. It does not create a new manuscript ID or revision root.',
+    confirmImport:
+      'Open this verified OMI manuscript and replace the currently active workspace document?',
   },
   hu: {
     title: 'OMI-csomag',
@@ -56,7 +93,27 @@ const COPY: Record<'en' | 'hu' | 'de', AssetContainerCopy> = {
     integrity: 'SHA-256 integritás',
     format: 'OMI-SPEC-320 / OMI-SPEC-330 Draft csomag',
     privacyNote:
-      'Ha stabil asset-hivatkozás létezik, a hordozható document.json nem tartalmazza a szerkesztői Base64-előnézetet. A bináris payload külön, a media/ könyvtárba kerül.',
+      'Az asset-alapú kép-előnézetet a Studio a helyi bináris tárból oldja fel. Külső assetté alakítás után a hordozható kéziratállapotnak már nincs szüksége Base64-előnézetre.',
+    importTitle: 'OMI-csomag megnyitása',
+    importDescription:
+      'A nem megbízhatónak tekintett .omi konténer ZIP-szerkezetének, manifestjének, revízióazonosítóinak, assetjeinek és SHA-256 ellenőrzőösszegeinek vizsgálata betöltés előtt.',
+    choosePackage: '.omi csomag kiválasztása',
+    inspecting: 'Csomag ellenőrzése…',
+    importPackage: 'Ellenőrzött kézirat megnyitása',
+    importing: 'Kézirat megnyitása…',
+    verified: 'A csomag átment az integritás-ellenőrzésen és megnyitható.',
+    invalid: 'A csomag a blokkoló integritási hibák kijavításáig nem nyitható meg.',
+    imported: 'Az ellenőrzött OMI-kézirat az eredeti azonosítóval és revíziótörténettel megnyílt.',
+    entries: 'csomagelem',
+    revisions: 'revízió',
+    checksums: 'ellenőrzött checksum',
+    packageAssets: 'asset',
+    manuscriptId: 'Kézirat-ID',
+    headRevision: 'Aktuális revízió',
+    replaceWarning:
+      'A csomag megnyitása lecseréli az aktív munkatér kéziratát. Nem hoz létre új kézirat-ID-t vagy új revíziós gyökeret.',
+    confirmImport:
+      'Megnyitod ezt az ellenőrzött OMI-kéziratot, és lecseréled vele a munkatér jelenlegi dokumentumát?',
   },
   de: {
     title: 'OMI-Paket',
@@ -76,7 +133,27 @@ const COPY: Record<'en' | 'hu' | 'de', AssetContainerCopy> = {
     integrity: 'SHA-256-Integrität',
     format: 'OMI-SPEC-320 / OMI-SPEC-330 Draft-Paket',
     privacyNote:
-      'Bei stabiler Asset-Referenz werden Base64-Autorenvorschauen aus portablem document.json entfernt. Binäre Payloads liegen separat unter media/.',
+      'Asset-basierte Bildvorschauen werden aus dem lokalen Binärspeicher aufgelöst. Nach der Externalisierung benötigt der portable Manuskriptzustand keine Base64-Vorschau mehr.',
+    importTitle: 'OMI-Paket öffnen',
+    importDescription:
+      'Ein nicht vertrauenswürdiger .omi-Container wird vor dem Laden auf ZIP-Struktur, Manifest, Revisionsidentitäten, Assets und SHA-256-Prüfsummen geprüft.',
+    choosePackage: '.omi-Paket auswählen',
+    inspecting: 'Paket wird geprüft…',
+    importPackage: 'Geprüftes Manuskript öffnen',
+    importing: 'Manuskript wird geöffnet…',
+    verified: 'Das Paket hat die Integritätsprüfung bestanden und kann geöffnet werden.',
+    invalid: 'Das Paket kann wegen blockierender Integritätsfehler nicht geöffnet werden.',
+    imported: 'Das geprüfte OMI-Manuskript wurde mit seiner ursprünglichen Identität und Versionshistorie geöffnet.',
+    entries: 'Einträge',
+    revisions: 'Revisionen',
+    checksums: 'Prüfsummen verifiziert',
+    packageAssets: 'Assets',
+    manuscriptId: 'Manuskript-ID',
+    headRevision: 'Head-Revision',
+    replaceWarning:
+      'Das Öffnen ersetzt das aktive Workspace-Manuskript. Es erzeugt weder eine neue Manuskript-ID noch eine neue Revisionswurzel.',
+    confirmImport:
+      'Dieses geprüfte OMI-Manuskript öffnen und damit das derzeit aktive Workspace-Dokument ersetzen?',
   },
 };
 
