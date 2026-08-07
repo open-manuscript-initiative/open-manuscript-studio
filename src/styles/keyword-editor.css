@@ -1,0 +1,93 @@
+.omi-keyword-editor {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.omi-keyword-editor-label {
+  color: var(--omi-editor-text-muted, #64748b);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.omi-keyword-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.omi-keyword-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.35rem 0.25rem 0.65rem;
+  border: 1px solid #dbe2ea;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #1e293b;
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.omi-keyword-chip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  color: #64748b;
+  background: transparent;
+  cursor: pointer;
+}
+
+.omi-keyword-chip button:hover {
+  color: #0f172a;
+  background: #e2e8f0;
+}
+
+.omi-keyword-chip button:focus-visible {
+  outline: 2px solid #0f172a;
+  outline-offset: 2px;
+}
+
+.omi-keyword-input-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.omi-keyword-input-row input {
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.65rem;
+  color: #0f172a;
+  background: #fff;
+  font: inherit;
+}
+
+.omi-keyword-input-row input:focus {
+  border-color: #0f172a;
+  outline: 2px solid rgba(15, 23, 42, 0.08);
+  outline-offset: 1px;
+}
+
+.omi-keyword-input-row button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (max-width: 640px) {
+  .omi-keyword-input-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .omi-keyword-input-row button {
+    justify-content: center;
+  }
+}
