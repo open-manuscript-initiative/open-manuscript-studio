@@ -1,0 +1,461 @@
+import type { Editor } from '@tiptap/core';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+} from 'react';
+
+import { getRichTextCopy } from '../i18n/richText';
+import type { SupportedLocale } from '../i18n/types';
+import {
+  normalizeExternalHref,
+  normalizeInlineLanguageTag,
+} from '../model/richText';
+
+interface RichTextToolbarProps {
+  editor: Editor;
+  locale: SupportedLocale;
+  manuscriptLanguage: string;
+}
+
+interface ToolbarPosition {
+  left: number;
+  top: number;
+  below: boolean;
+}
+
+const SPECIAL_CHARACTERS: ReadonlyArray<{
+  label: string;
+  value: string;
+}> = [
+  { label: '–', value: '–' },
+  { label: '—', value: '—' },
+  { label: '…', value: '…' },
+  { label: 'NBSP', value: '\u00a0' },
+  { label: '§', value: '§' },
+  { label: '¶', value: '¶' },
+  { label: '†', value: '†' },
+  { label: '‡', value: '‡' },
+  { label: '°', value: '°' },
+  { label: '±', value: '±' },
+  { label: '×', value: '×' },
+  { label: '÷', value: '÷' },
+  { label: '≈', value: '≈' },
+  { label: '≠', value: '≠' },
+  { label: '≤', value: '≤' },
+  { label: '≥', value: '≥' },
+  { label: '→', value: '→' },
+  { label: '←', value: '←' },
+  { label: 'α', value: 'α' },
+  { label: 'β', value: 'β' },
+  { label: 'γ', value: 'γ' },
+  { label: 'δ', value: 'δ' },
+  { label: 'μ', value: 'μ' },
+  { label: 'π', value: 'π' },
+  { label: 'Ω', value: 'Ω' },
+];
+
+export function RichTextToolbar({
+  editor,
+  locale,
+  manuscriptLanguage,
+}: RichTextToolbarProps) {
+  const copy = getRichTextCopy(locale);
+  const [position, setPosition] = useState<ToolbarPosition | null>(null);
+  const [focused, setFocused] = useState(editor.isFocused);
+  const [revision, setRevision] = useState(0);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkDraft, setLinkDraft] = useState('');
+  const [linkError, setLinkError] = useState(false);
+  const [languageDraft, setLanguageDraft] = useState(manuscriptLanguage);
+  const [languageError, setLanguageError] = useState(false);
+
+  useEffect(() => {
+    const updatePosition = () => {
+      try {
+        const { from, to } = editor.state.selection;
+        const start = editor.view.coordsAtPos(from);
+        const end = editor.view.coordsAtPos(to);
+        const below = start.top < 110;
+
+        setPosition({
+          left: Math.max(16, Math.min(window.innerWidth - 16, (start.left + end.right) / 2)),
+          top: below ? Math.max(start.bottom, end.bottom) + 10 : Math.min(start.top, end.top) - 10,
+          below,
+        });
+      } catch {
+        setPosition(null);
+      }
+    };
+
+    const handleFocus = () => {
+      setFocused(true);
+      updatePosition();
+      setRevision((value) => value + 1);
+    };
+    const handleBlur = () => {
+      setFocused(false);
+      setRevision((value) => value + 1);
+    };
+    const handleSelection = () => {
+      updatePosition();
+      setRevision((value) => value + 1);
+    };
+    const handleTransaction = () => {
+      setRevision((value) => value + 1);
+    };
+
+    editor.on('focus', handleFocus);
+    editor.on('blur', handleBlur);
+    editor.on('selectionUpdate', handleSelection);
+    editor.on('transaction', handleTransaction);
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    if (editor.isFocused) updatePosition();
+
+    return () => {
+      editor.off('focus', handleFocus);
+      editor.off('blur', handleBlur);
+      editor.off('selectionUpdate', handleSelection);
+      editor.off('transaction', handleTransaction);
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [editor]);
+
+  useEffect(() => {
+    if (!focused && !moreOpen && !linkOpen) {
+      setPosition(null);
+    }
+  }, [focused, linkOpen, moreOpen]);
+
+  const currentLanguage = useMemo(() => {
+    void revision;
+    const value = editor.getAttributes('omiLanguage').lang;
+    return typeof value === 'string' ? value : '';
+  }, [editor, revision]);
+
+  if (!position || (!focused && !moreOpen && !linkOpen)) {
+    return null;
+  }
+
+  const style = {
+    left: `${position.left}px`,
+    top: `${position.top}px`,
+  } as CSSProperties;
+
+  function keepEditorSelection(event: React.MouseEvent<HTMLButtonElement>): void {
+    event.preventDefault();
+  }
+
+  function toggleMark(mark: 'omiSuperscript' | 'omiSubscript'): void {
+    const other = mark === 'omiSuperscript' ? 'omiSubscript' : 'omiSuperscript';
+    const chain = editor.chain().focus().unsetMark(other);
+
+    if (editor.isActive(mark)) {
+      chain.unsetMark(mark).run();
+    } else {
+      chain.setMark(mark).run();
+    }
+  }
+
+  function openLinkEditor(): void {
+    const href = editor.getAttributes('omiLink').href;
+    setLinkDraft(typeof href === 'string' ? href : '');
+    setLinkError(false);
+    setMoreOpen(false);
+    setLinkOpen(true);
+  }
+
+  function applyLink(): void {
+    const href = normalizeExternalHref(linkDraft);
+    if (!href) {
+      setLinkError(true);
+      return;
+    }
+
+    if (editor.isActive('omiLink')) {
+      editor
+        .chain()
+        .focus()
+        .extendMarkRange('omiLink')
+        .setMark('omiLink', { href })
+        .run();
+    } else {
+      editor.chain().focus().setMark('omiLink', { href }).run();
+    }
+
+    setLinkOpen(false);
+    setLinkError(false);
+  }
+
+  function removeLink(): void {
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange('omiLink')
+      .unsetMark('omiLink')
+      .run();
+    setLinkOpen(false);
+  }
+
+  function applyLanguage(): void {
+    const lang = normalizeInlineLanguageTag(languageDraft);
+    if (!lang) {
+      setLanguageError(true);
+      return;
+    }
+
+    editor.chain().focus().setMark('omiLanguage', { lang }).run();
+    setLanguageDraft(lang);
+    setLanguageError(false);
+  }
+
+  function removeLanguage(): void {
+    editor.chain().focus().unsetMark('omiLanguage').run();
+    setLanguageDraft(manuscriptLanguage);
+    setLanguageError(false);
+  }
+
+  return (
+    <div
+      className={`omi-rich-text-toolbar${
+        position.below ? ' omi-rich-text-toolbar--below' : ''
+      }`}
+      style={style}
+      role="toolbar"
+      aria-label={copy.toolbar}
+      data-selection-length={editor.state.selection.to - editor.state.selection.from}
+    >
+      <div className="omi-rich-text-toolbar-row">
+        <ToolbarButton
+          label={copy.bold}
+          active={editor.isActive('bold')}
+          onMouseDown={keepEditorSelection}
+          onClick={() => editor.chain().focus().toggleBold().run()}
+        >
+          <strong>B</strong>
+        </ToolbarButton>
+        <ToolbarButton
+          label={copy.italic}
+          active={editor.isActive('italic')}
+          onMouseDown={keepEditorSelection}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+        >
+          <em>I</em>
+        </ToolbarButton>
+        <ToolbarButton
+          label={copy.superscript}
+          active={editor.isActive('omiSuperscript')}
+          onMouseDown={keepEditorSelection}
+          onClick={() => toggleMark('omiSuperscript')}
+        >
+          x²
+        </ToolbarButton>
+        <ToolbarButton
+          label={copy.subscript}
+          active={editor.isActive('omiSubscript')}
+          onMouseDown={keepEditorSelection}
+          onClick={() => toggleMark('omiSubscript')}
+        >
+          x₂
+        </ToolbarButton>
+        <ToolbarButton
+          label={copy.link}
+          active={editor.isActive('omiLink') || linkOpen}
+          onMouseDown={keepEditorSelection}
+          onClick={openLinkEditor}
+        >
+          ↗
+        </ToolbarButton>
+        <ToolbarButton
+          label={copy.more}
+          active={moreOpen}
+          onMouseDown={keepEditorSelection}
+          onClick={() => {
+            setLinkOpen(false);
+            setMoreOpen((value) => !value);
+          }}
+        >
+          ⋯
+        </ToolbarButton>
+      </div>
+
+      {linkOpen ? (
+        <div className="omi-rich-text-popover omi-rich-text-link-editor">
+          <label>
+            <span>{copy.linkAddress}</span>
+            <input
+              autoFocus
+              type="url"
+              value={linkDraft}
+              placeholder={copy.linkPlaceholder}
+              aria-invalid={linkError}
+              onChange={(event) => {
+                setLinkDraft(event.target.value);
+                setLinkError(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  applyLink();
+                }
+                if (event.key === 'Escape') {
+                  setLinkOpen(false);
+                }
+              }}
+            />
+          </label>
+          {linkError ? <small className="field-error">{copy.invalidLink}</small> : null}
+          <div className="omi-rich-text-popover-actions">
+            {editor.isActive('omiLink') ? (
+              <button type="button" onClick={removeLink}>{copy.unlink}</button>
+            ) : null}
+            <button type="button" onClick={() => setLinkOpen(false)}>{copy.cancel}</button>
+            <button type="button" className="primary" onClick={applyLink}>{copy.apply}</button>
+          </div>
+        </div>
+      ) : null}
+
+      {moreOpen ? (
+        <div className="omi-rich-text-popover omi-rich-text-more-menu">
+          <div className="omi-rich-text-command-grid">
+            <CommandButton
+              label={copy.strike}
+              active={editor.isActive('strike')}
+              onClick={() => editor.chain().focus().toggleStrike().run()}
+            />
+            <CommandButton
+              label={copy.bulletList}
+              active={editor.isActive('bulletList')}
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
+            />
+            <CommandButton
+              label={copy.orderedList}
+              active={editor.isActive('orderedList')}
+              onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            />
+            <CommandButton
+              label={copy.blockquote}
+              active={editor.isActive('blockquote')}
+              onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            />
+            <CommandButton
+              label={copy.inlineCode}
+              active={editor.isActive('code')}
+              onClick={() => editor.chain().focus().toggleCode().run()}
+            />
+            <CommandButton
+              label={copy.codeBlock}
+              active={editor.isActive('codeBlock')}
+              onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+            />
+            <CommandButton
+              label={copy.hardBreak}
+              active={false}
+              onClick={() => editor.chain().focus().setHardBreak().run()}
+            />
+            <CommandButton
+              label={copy.clearMarks}
+              active={false}
+              onClick={() => editor.chain().focus().unsetAllMarks().run()}
+            />
+          </div>
+
+          <div className="omi-rich-text-language-editor">
+            <label>
+              <span>{copy.language}</span>
+              <input
+                value={languageDraft}
+                placeholder={copy.languagePlaceholder}
+                aria-invalid={languageError}
+                onChange={(event) => {
+                  setLanguageDraft(event.target.value);
+                  setLanguageError(false);
+                }}
+              />
+            </label>
+            <div className="omi-rich-text-inline-actions">
+              {currentLanguage ? (
+                <button type="button" onClick={removeLanguage}>{copy.removeLanguage}</button>
+              ) : null}
+              <button type="button" onClick={applyLanguage}>{copy.apply}</button>
+            </div>
+          </div>
+
+          <div className="omi-rich-text-symbols" aria-label={copy.specialCharacters}>
+            <strong>{copy.specialCharacters}</strong>
+            <div className="omi-rich-text-symbol-grid">
+              {SPECIAL_CHARACTERS.map((character) => (
+                <button
+                  key={character.label}
+                  type="button"
+                  title={character.label}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => editor.chain().focus().insertContent(character.value).run()}
+                >
+                  {character.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+interface ToolbarButtonProps {
+  label: string;
+  active: boolean;
+  children: React.ReactNode;
+  onMouseDown: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onClick: () => void;
+}
+
+function ToolbarButton({
+  label,
+  active,
+  children,
+  onMouseDown,
+  onClick,
+}: ToolbarButtonProps) {
+  return (
+    <button
+      type="button"
+      className={active ? 'is-active' : ''}
+      aria-pressed={active}
+      aria-label={label}
+      title={label}
+      onMouseDown={onMouseDown}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+function CommandButton({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={active ? 'is-active' : ''}
+      aria-pressed={active}
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onClick}
+    >
+      {label}
+    </button>
+  );
+}
