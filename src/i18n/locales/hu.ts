@@ -32,6 +32,7 @@ export const hu: TranslationDictionary = {
     navigation: {
       document: 'Dokumentum',
       manuscript: 'Kézirat adatai',
+      notes: 'Jegyzetek',
       contributors: 'Közreműködők',
       history: 'Előzmények',
       tools: 'Export és eszközök',
@@ -99,6 +100,28 @@ export const hu: TranslationDictionary = {
     bibliography: 'Irodalomjegyzék',
     documentLanguage: 'A dokumentum nyelve',
     originalLanguage: 'Eredeti nyelv'
+  },
+
+  notes: {
+    title: 'Jegyzetek',
+    description:
+      'A kézirat szemantikus jegyzeteinek kezelése. A jegyzet szövege önálló annotation objektum, a szövegben csak a stabil horgony marad.',
+    empty: 'A kéziratban még nincs jegyzet.',
+    emptyHint:
+      'Helyezze a kurzort a szövegbe, majd használja a Jegyzet gombot vagy a Ctrl/Cmd+Alt+N billentyűkombinációt.',
+    note: 'Jegyzet',
+    type: 'Jegyzet típusa',
+    body: 'Jegyzet szövege',
+    bodyPlaceholder: 'Írja be a jegyzetet…',
+    footnote: 'Lábjegyzet',
+    endnote: 'Végjegyzet',
+    authorNote: 'Szerzői jegyzet',
+    delete: 'Jegyzet törlése',
+    confirmDelete:
+      'Törli ezt a jegyzetet és a hozzá tartozó szövegközi horgonyt a kéziratból?',
+    closeEditor: 'Jegyzetszerkesztő bezárása',
+    goToNote: 'Ugrás a jegyzethez',
+    autoSave: 'A kézirat revízióival együtt mentve'
   },
 
   contributors: {
@@ -183,7 +206,7 @@ export const hu: TranslationDictionary = {
     paragraph: 'Bekezdés',
     heading: 'Címsor',
     quote: 'Idézet',
-    insertNote: 'Szövegközi OMI-jegyzet beszúrása',
+    insertNote: 'Szemantikus jegyzet beszúrása',
     loading: 'A szerkesztő betöltése…'
   },
 
@@ -211,7 +234,6 @@ export const hu: TranslationDictionary = {
       name: 'Open Manuscript Studio',
       description: 'Együttműködő kéziratszerkesztő'
     },
-
     login: {
       title: 'Bejelentkezés',
       description: 'A folytatáshoz jelentkezzen be.',
@@ -220,7 +242,6 @@ export const hu: TranslationDictionary = {
       noAccount: 'Még nincs fiókja?',
       registerLink: 'Regisztráció'
     },
-
     register: {
       title: 'Fiók létrehozása',
       description: 'Hozzon létre új fiókot.',
@@ -228,36 +249,27 @@ export const hu: TranslationDictionary = {
       hasAccount: 'Már van fiókja?',
       loginLink: 'Bejelentkezés'
     },
-
     fields: {
       name: {
         label: 'Teljes név',
         placeholder: 'Adja meg a teljes nevét'
       },
-
       email: {
         label: 'E-mail',
         placeholder: 'pelda@email.hu'
       },
-
       password: {
         label: 'Jelszó',
         placeholder: 'Adja meg a jelszavát'
       }
     },
-
     errors: {
       invalidEmail: 'Érvénytelen e-mail-cím.',
-      invalidCredentials:
-        'Helytelen e-mail-cím vagy jelszó.',
-      userNotFound:
-        'A felhasználói fiók nem található.',
-      accountNotActive:
-        'A felhasználói fiók nem aktív.',
-      authenticationRequired:
-        'A művelethez bejelentkezés szükséges.'
+      invalidCredentials: 'Helytelen e-mail-cím vagy jelszó.',
+      userNotFound: 'A felhasználói fiók nem található.',
+      accountNotActive: 'A felhasználói fiók nem aktív.',
+      authenticationRequired: 'A művelethez bejelentkezés szükséges.'
     },
-
     alphaNotice:
       'Alfa verzió – a bejelentkezés jelenleg tesztelési célokat szolgál.'
   }
