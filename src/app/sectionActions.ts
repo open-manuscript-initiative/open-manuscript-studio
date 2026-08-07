@@ -1,5 +1,13 @@
 import { useStudioStore } from './useStudioStore';
 import { getExternalIdentifierValue } from '../model/identity';
+import {
+  arraysHaveSameOrder,
+  createEmptySection,
+  insertSectionAtGap,
+  moveSectionToGap,
+  moveSectionToIndex,
+  sectionOrder,
+} from '../model/sectionStructure.ts';
 import type { OmiSectionNumberingStyle } from '../types/omi';
 import { extractManuscriptState } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';
@@ -70,6 +78,94 @@ export function stageSectionTitleChange(
   }
 }
 
+/**
+ * Inserts a new empty section into an explicit structural gap.
+ * Gap 0 is before the first section and gap N is after the last section.
+ */
+export function stageInsertSectionAtGap(
+  gapIndex: number,
+): string | undefined {
+  let insertedSectionId: string | undefined;
+  let changed = false;
+
+  useStudioStore.setState((state) => {
+    const section = createEmptySection();
+    const sections = insertSectionAtGap(
+      state.manuscript.sections,
+      section,
+      gapIndex,
+    );
+    const insertedIndex = sections.findIndex(
+      (candidate) => candidate.id === section.id,
+    );
+    const timestamp = new Date().toISOString();
+    const pendingChangeSet = stagePendingChanges(
+      state.pendingChangeSet,
+      {
+        baseRevisionId: state.manuscript.headRevisionId,
+        summary: 'Inserted manuscript section',
+        events: [
+          {
+            operation: 'section.create',
+            targetId: section.id,
+            path: `/sections/${insertedIndex}`,
+            nextValue: section,
+          },
+        ],
+        actorAgentId: resolveCurrentActorAgentId(state.manuscript),
+        timestamp,
+      },
+    );
+    const portableState = extractManuscriptState(state.manuscript);
+
+    insertedSectionId = section.id;
+    changed = true;
+
+    return {
+      manuscript: {
+        ...state.manuscript,
+        ...portableState,
+        sections,
+        updatedAt: timestamp,
+      },
+      pendingChangeSet,
+      selectedSectionId: section.id,
+    };
+  });
+
+  if (changed) {
+    scheduleSectionCheckpoint();
+  }
+
+  return insertedSectionId;
+}
+
+/**
+ * Moves a section to a structural gap while preserving the section object and
+ * every stable descendant identifier it contains.
+ */
+export function stageMoveSectionToGap(
+  sectionId: string,
+  gapIndex: number,
+): boolean {
+  return stageSectionReorder(sectionId, (sections) =>
+    moveSectionToGap(sections, sectionId, gapIndex),
+  );
+}
+
+/**
+ * Accessible alternative to drag-and-drop. `targetIndex` is the final zero-
+ * based position of the section after the move.
+ */
+export function stageMoveSectionToIndex(
+  sectionId: string,
+  targetIndex: number,
+): boolean {
+  return stageSectionReorder(sectionId, (sections) =>
+    moveSectionToIndex(sections, sectionId, targetIndex),
+  );
+}
+
 export function stageSectionNumberingStyleChange(
   style: OmiSectionNumberingStyle,
 ): void {
@@ -119,6 +215,63 @@ export function stageSectionNumberingStyleChange(
   if (changed) {
     scheduleSectionCheckpoint();
   }
+}
+
+function stageSectionReorder(
+  sectionId: string,
+  reorder: (sections: OmiManuscript['sections']) => OmiManuscript['sections'],
+): boolean {
+  let changed = false;
+
+  useStudioStore.setState((state) => {
+    const previousSections = state.manuscript.sections;
+    const nextSections = reorder(previousSections);
+
+    if (arraysHaveSameOrder(previousSections, nextSections)) {
+      return state;
+    }
+
+    const timestamp = new Date().toISOString();
+    const previousOrder = sectionOrder(previousSections);
+    const nextOrder = sectionOrder(nextSections);
+    const pendingChangeSet = stagePendingChanges(
+      state.pendingChangeSet,
+      {
+        baseRevisionId: state.manuscript.headRevisionId,
+        summary: 'Reordered manuscript sections',
+        events: [
+          {
+            operation: 'section.reorder' as never,
+            targetId: sectionId,
+            path: '/sections',
+            previousValue: previousOrder,
+            nextValue: nextOrder,
+          },
+        ],
+        actorAgentId: resolveCurrentActorAgentId(state.manuscript),
+        timestamp,
+      },
+    );
+    const portableState = extractManuscriptState(state.manuscript);
+
+    changed = true;
+
+    return {
+      manuscript: {
+        ...state.manuscript,
+        ...portableState,
+        sections: nextSections,
+        updatedAt: timestamp,
+      },
+      pendingChangeSet,
+    };
+  });
+
+  if (changed) {
+    scheduleSectionCheckpoint();
+  }
+
+  return changed;
 }
 
 function scheduleSectionCheckpoint(): void {
