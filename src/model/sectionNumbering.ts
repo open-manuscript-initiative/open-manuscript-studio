@@ -40,8 +40,6 @@ export function formatSectionNumber(
       return `${toAlphabetic(ordinal)}.`;
     case 'lower-alpha':
       return `${toAlphabetic(ordinal).toLowerCase()}.`;
-    case 'none':
-      return '';
   }
 }
 
