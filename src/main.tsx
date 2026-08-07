@@ -11,6 +11,7 @@ import './styles/settings.css';
 import './styles/manuscript-language.css';
 import './styles/notes.css';
 import './styles/section-numbering.css';
+import './styles/keyword-editor.css';
 import './styles/editor-i18n.css';
 
 ReactDOM.createRoot(
