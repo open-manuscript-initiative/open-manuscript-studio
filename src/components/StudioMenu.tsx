@@ -6,6 +6,7 @@ import {
   Plus,
   RotateCcw,
   Settings2,
+  StickyNote,
   Users,
   Wrench,
   X,
@@ -27,11 +28,13 @@ import { DocumentTree } from './DocumentTree';
 import { Footer } from './Footer';
 import { HistoryPanel } from './HistoryPanel';
 import { ManuscriptLanguageField } from './ManuscriptLanguageField';
+import { NotesPanel } from './NotesPanel';
 import { PropertiesPanel } from './PropertiesPanel';
 
 type StudioMenuView =
   | 'document'
   | 'manuscript'
+  | 'notes'
   | 'contributors'
   | 'history'
   | 'tools'
@@ -129,6 +132,12 @@ export function StudioMenu({
               onClick={() => setActiveView('manuscript')}
             />
             <MenuButton
+              active={activeView === 'notes'}
+              icon={<StickyNote size={18} aria-hidden="true" />}
+              label={t('studio.navigation.notes')}
+              onClick={() => setActiveView('notes')}
+            />
+            <MenuButton
               active={activeView === 'contributors'}
               icon={<Users size={18} aria-hidden="true" />}
               label={t('studio.navigation.contributors')}
@@ -160,6 +169,9 @@ export function StudioMenu({
             ) : null}
             {activeView === 'manuscript' ? (
               <ManuscriptDataView />
+            ) : null}
+            {activeView === 'notes' ? (
+              <NotesPanel onNavigate={onClose} />
             ) : null}
             {activeView === 'contributors' ? (
               <PropertiesPanel />
