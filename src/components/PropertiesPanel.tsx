@@ -13,9 +13,9 @@ import {
   getPreferredNameForm,
   getPrimaryAffiliation,
   getPrimaryAffiliationRorId,
-  isValidOrcid,
   type ContributionRole,
 } from '../model/identity';
+import { OrcidLookupField } from './OrcidLookupField';
 import { RorAffiliationField } from './RorAffiliationField';
 
 const ROLE_OPTIONS: ReadonlyArray<{
@@ -121,11 +121,12 @@ export function PropertiesPanel() {
           }
 
           const name = getPreferredNameForm(agent);
+          const affiliation = getPrimaryAffiliation(agent);
+          const rorId = getPrimaryAffiliationRorId(agent);
           const orcid = getExternalIdentifierValue(
             agent,
             'orcid',
           );
-          const orcidIsValid = isValidOrcid(orcid);
           const primaryRole = contribution.roles[0] ?? 'author';
 
           return (
@@ -209,38 +210,21 @@ export function PropertiesPanel() {
 
                 <RorAffiliationField
                   agentId={agent.id}
-                  affiliation={getPrimaryAffiliation(agent)}
-                  rorId={getPrimaryAffiliationRorId(agent)}
+                  affiliation={affiliation}
+                  rorId={rorId}
                   label={t('contributors.affiliation')}
                 />
 
-                <label className="contributor-wide-field">
-                  <span>{t('contributors.orcid')}</span>
-                  <input
-                    type="text"
-                    value={orcid}
-                    aria-invalid={!orcidIsValid}
-                    aria-describedby={
-                      orcidIsValid
-                        ? undefined
-                        : `orcid-error-${contribution.id}`
-                    }
-                    placeholder="0000-0000-0000-0000"
-                    onChange={(event) =>
-                      updateContributor(agent.id, {
-                        orcid: event.target.value,
-                      })
-                    }
-                  />
-                  {!orcidIsValid ? (
-                    <small
-                      className="field-error"
-                      id={`orcid-error-${contribution.id}`}
-                    >
-                      {t('contributors.invalidOrcid')}
-                    </small>
-                  ) : null}
-                </label>
+                <OrcidLookupField
+                  agentId={agent.id}
+                  givenName={name?.givenName ?? ''}
+                  familyName={name?.familyName ?? ''}
+                  affiliation={affiliation}
+                  rorId={rorId}
+                  orcid={orcid}
+                  label={t('contributors.orcid')}
+                  invalidMessage={t('contributors.invalidOrcid')}
+                />
 
                 <label className="contributor-wide-field">
                   <span>{t('contributors.role')}</span>
