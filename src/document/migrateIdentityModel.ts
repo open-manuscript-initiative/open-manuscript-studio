@@ -5,6 +5,7 @@ import {
   type OmiAgent,
   type OmiContribution,
 } from '../model/identity';
+import type { OmiTombstone } from '../model/tombstone';
 import type {
   OmiIdentifier,
   OmiManuscript,
@@ -26,11 +27,15 @@ export type IdentityMigratedManuscript =
 
 export type LegacyOmiManuscript = Omit<
   OmiManuscriptState,
-  'identityModelVersion' | 'agents' | 'contributions'
+  | 'identityModelVersion'
+  | 'agents'
+  | 'contributions'
+  | 'tombstones'
 > & {
   identityModelVersion?: OmiManuscriptState['identityModelVersion'];
   agents?: OmiAgent[];
   contributions?: OmiContribution[];
+  tombstones?: OmiTombstone[];
   authors?: OmiPerson[];
 } & OptionalVersioningFields;
 
@@ -40,14 +45,15 @@ export type LegacyOmiManuscript = Omit<
  *
  * The migration is idempotent: documents that already contain agents and
  * contributions are returned with only the identity model marker normalized.
- * Existing OMI-SPEC-160 history fields are preserved for the next migration
- * stage and are never embedded into an agent or contribution record.
+ * Existing OMI-SPEC-160 history fields and tombstones are preserved for the
+ * next migration stage and are never embedded into an agent or contribution.
  */
 export function migrateIdentityModel(
   manuscript: LegacyOmiManuscript,
 ): IdentityMigratedManuscript {
   const existingAgents = manuscript.agents ?? [];
   const existingContributions = manuscript.contributions ?? [];
+  const tombstones = manuscript.tombstones ?? [];
 
   if (
     existingAgents.length > 0 ||
@@ -59,6 +65,7 @@ export function migrateIdentityModel(
       identityModelVersion: OMI_IDENTITY_MODEL_VERSION,
       agents: existingAgents,
       contributions: normalizeContributionOrder(existingContributions),
+      tombstones,
     };
   }
 
@@ -82,6 +89,7 @@ export function migrateIdentityModel(
     identityModelVersion: OMI_IDENTITY_MODEL_VERSION,
     agents,
     contributions,
+    tombstones,
   };
 }
 
