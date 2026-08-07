@@ -260,10 +260,12 @@ export async function buildOmiContainer(
 
   diagnostics.push(...validatePackageEntries(entries, manifest));
   const bytes = createStoreZip(entries.map((entry) => ({ name: entry.path, bytes: entry.bytes })));
+  const blobBytes = new Uint8Array(bytes.byteLength);
+  blobBytes.set(bytes);
 
   return {
     bytes,
-    blob: new Blob([bytes], { type: OMI_CONTAINER_MEDIA_TYPE }),
+    blob: new Blob([blobBytes.buffer], { type: OMI_CONTAINER_MEDIA_TYPE }),
     fileName: omiContainerFileName(manuscript),
     manifest,
     diagnostics,
