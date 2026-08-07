@@ -14,6 +14,11 @@ import {
   type ClipboardEvent,
 } from 'react';
 
+import {
+  externalizeBlocksForManuscript,
+  stageAssetAttachments,
+} from '../app/assetActions';
+import { useStudioStore } from '../app/useStudioStore';
 import { stageInsertBlocks } from '../app/visualBlockActions';
 import { useTranslation } from '../i18n';
 import { getVisualElementsCopy } from '../i18n/visualElements';
@@ -38,16 +43,31 @@ export function VisualInsertMenu({
 }: VisualInsertMenuProps) {
   const { locale } = useTranslation();
   const copy = getVisualElementsCopy(locale);
+  const manuscriptId = useStudioStore((state) => state.manuscript.id);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  function insert(blocks: Parameters<typeof stageInsertBlocks>[2]): void {
-    if (stageInsertBlocks(sectionId, gapIndex, blocks)) {
+  function insert(blocks: Parameters<typeof stageInsertBlocks>[2]): boolean {
+    const inserted = stageInsertBlocks(sectionId, gapIndex, blocks);
+    if (inserted) {
       setOpen(false);
       setError(null);
+    }
+    return inserted;
+  }
+
+  async function insertImported(
+    imported: Parameters<typeof stageInsertBlocks>[2],
+  ): Promise<void> {
+    const externalized = await externalizeBlocksForManuscript(
+      manuscriptId,
+      imported,
+    );
+    if (insert(externalized.blocks)) {
+      stageAssetAttachments(externalized.assets);
     }
   }
 
@@ -66,7 +86,7 @@ export function VisualInsertMenu({
         setError(copy.noImportableElements);
         return;
       }
-      insert(imported);
+      await insertImported(imported);
     } catch (importError) {
       setError(importError instanceof Error ? importError.message : copy.importFailed);
     } finally {
@@ -84,7 +104,7 @@ export function VisualInsertMenu({
         setError(copy.noImportableElements);
         return;
       }
-      insert(imported);
+      await insertImported(imported);
     } catch (importError) {
       setError(importError instanceof Error ? importError.message : copy.importFailed);
     } finally {

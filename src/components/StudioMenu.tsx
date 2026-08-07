@@ -26,6 +26,7 @@ import {
 } from '../i18n';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
 import { downloadOmiJson } from '../services/exportOmi';
+import { AssetContainerPanel } from './AssetContainerPanel';
 import { CrossReferencePanel } from './CrossReferencePanel';
 import { DocxImportPanel } from './DocxImportPanel';
 import { Footer } from './Footer';
@@ -327,6 +328,7 @@ function ToolsView() {
       </div>
 
       <DocxImportPanel />
+      <AssetContainerPanel />
 
       <div className="studio-tool-card">
         <div>

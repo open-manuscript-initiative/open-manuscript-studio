@@ -26,6 +26,7 @@ import './styles/editor-i18n.css';
 import './styles/docx-import.css';
 import './styles/publication-profile.css';
 import './styles/jats-export.css';
+import './styles/asset-container.css';
 
 ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
