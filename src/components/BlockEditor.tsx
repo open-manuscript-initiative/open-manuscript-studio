@@ -1,4 +1,8 @@
-import { useEffect, useRef } from 'react';
+import {
+  useEffect,
+  useRef,
+  type CSSProperties,
+} from 'react';
 import {
   EditorContent,
   type JSONContent,
@@ -7,6 +11,8 @@ import {
 import StarterKit from '@tiptap/starter-kit';
 
 import { OmiNoteExtension } from '../editor/extensions/OmiNoteExtension';
+import { useTranslation } from '../i18n';
+import type { TranslationKey } from '../i18n/types';
 
 interface BlockEditorProps {
   blockId: string;
@@ -15,19 +21,20 @@ interface BlockEditorProps {
   onUpdate: (blockId: string, content: string) => void;
 }
 
-/**
- * Egyetlen kéziratblokk önálló Tiptap editor instance-a.
- *
- * A store jelenleg stringet tárol, ezért az editor.getJSON()
- * eredményét JSON.stringify() segítségével mentjük.
- */
 export function BlockEditor({
   blockId,
   blockType,
   content,
   onUpdate,
 }: BlockEditorProps) {
+  const { t } = useTranslation();
   const onUpdateRef = useRef(onUpdate);
+  const blockLabel = formatBlockType(blockType, t);
+  const editorStyle = {
+    '--omi-editor-placeholder': JSON.stringify(
+      t('editor.emptyParagraph'),
+    ),
+  } as CSSProperties;
 
   useEffect(() => {
     onUpdateRef.current = onUpdate;
@@ -44,7 +51,6 @@ export function BlockEditor({
         codeBlock: false,
         horizontalRule: false,
       }),
-
       OmiNoteExtension,
     ],
 
@@ -55,7 +61,7 @@ export function BlockEditor({
         class: 'omi-tiptap-editor',
         'data-block-id': blockId,
         'data-block-type': blockType,
-        'aria-label': `${formatBlockType(blockType)} szerkesztése`,
+        'aria-label': `${blockLabel}: ${t('studio.editorAria')}`,
         spellcheck: 'true',
       },
     },
@@ -109,7 +115,7 @@ export function BlockEditor({
         className="omi-block-editor omi-block-editor--loading"
         aria-live="polite"
       >
-        A szerkesztő betöltése…
+        {t('editor.loading')}
       </div>
     );
   }
@@ -118,21 +124,22 @@ export function BlockEditor({
     <article
       className="omi-block-editor"
       data-block-id={blockId}
+      style={editorStyle}
     >
       <div className="omi-block-toolbar">
         <span className="omi-block-type">
-          {formatBlockType(blockType)}
+          {blockLabel}
         </span>
 
         <button
           type="button"
           className="omi-note-insert-button"
           onClick={insertNote}
-          aria-label="Szövegközi OMI-jegyzet beszúrása"
-          title="Szövegközi OMI-jegyzet beszúrása"
+          aria-label={t('editor.insertNote')}
+          title={t('editor.insertNote')}
         >
           <span aria-hidden="true">＋</span>
-          <span>Jegyzet</span>
+          <span>{t('editor.addNote')}</span>
         </button>
       </div>
 
@@ -153,7 +160,7 @@ function parseStoredContent(content: string): JSONContent {
       return parsed;
     }
   } catch {
-    // A korábbi textarea-tartalom egyszerű szövegként nyílik meg.
+    // Legacy textarea content opens as plain paragraph text.
   }
 
   return createParagraphDocument(content);
@@ -217,16 +224,19 @@ function documentsAreEqual(
   return JSON.stringify(first) === JSON.stringify(second);
 }
 
-function formatBlockType(blockType: string): string {
+function formatBlockType(
+  blockType: string,
+  t: (key: TranslationKey) => string,
+): string {
   switch (blockType) {
     case 'paragraph':
-      return 'Bekezdés';
+      return t('editor.paragraph');
 
     case 'heading':
-      return 'Címsor';
+      return t('editor.heading');
 
     case 'quote':
-      return 'Idézet';
+      return t('editor.quote');
 
     default:
       return blockType;

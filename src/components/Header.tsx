@@ -1,38 +1,73 @@
-import { Download, FilePlus2, RotateCcw } from 'lucide-react';
+import {
+  CheckCircle2,
+  Clock3,
+  Menu,
+} from 'lucide-react';
+
 import { useStudioStore } from '../app/useStudioStore';
-import { downloadOmiJson } from '../services/exportOmi';
+import { useTranslation } from '../i18n';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
-export function Header() {
-  const addSection = useStudioStore((state) => state.addSection);
-  const checkpoint = useStudioStore((state) => state.checkpoint);
-  const resetSample = useStudioStore((state) => state.resetSample);
+interface HeaderProps {
+  onOpenMenu: () => void;
+}
 
-  function exportManuscript(): void {
-    checkpoint('export');
-    downloadOmiJson(useStudioStore.getState().manuscript);
-  }
+export function Header({ onOpenMenu }: HeaderProps) {
+  const { t } = useTranslation();
+  const manuscript = useStudioStore((state) => state.manuscript);
+  const pendingChangeSet = useStudioStore(
+    (state) => state.pendingChangeSet,
+  );
+  const selectedSectionId = useStudioStore(
+    (state) => state.selectedSectionId,
+  );
+  const selectedSection = manuscript.sections.find(
+    (section) => section.id === selectedSectionId,
+  );
 
   return (
-    <header className="app-header">
-      <div>
-        <p className="eyebrow">Open Manuscript Initiative</p>
-        <h1>Open Manuscript Studio</h1>
+    <header className="app-header focus-header">
+      <button
+        type="button"
+        className="focus-menu-button"
+        aria-label={t('studio.menu')}
+        title={t('studio.menu')}
+        onClick={onOpenMenu}
+      >
+        <Menu size={20} aria-hidden="true" />
+      </button>
+
+      <div className="focus-header-context">
+        <span className="focus-header-brand">
+          Open Manuscript Studio
+        </span>
+        <span className="focus-header-section">
+          {selectedSection?.title ?? manuscript.title}
+        </span>
       </div>
-      <nav className="header-actions" aria-label="Studio actions">
-        <button type="button" onClick={addSection}>
-          <FilePlus2 size={18} /> New section
-        </button>
-        <button type="button" onClick={resetSample}>
-          <RotateCcw size={18} /> Reset sample
-        </button>
-        <button
-          type="button"
-          className="primary"
-          onClick={exportManuscript}
+
+      <div className="focus-header-actions">
+        <div
+          className={`focus-save-state${
+            pendingChangeSet ? ' focus-save-state--pending' : ''
+          }`}
+          role="status"
+          aria-live="polite"
         >
-          <Download size={18} /> Export .omi.json
-        </button>
-      </nav>
+          {pendingChangeSet ? (
+            <Clock3 size={16} aria-hidden="true" />
+          ) : (
+            <CheckCircle2 size={16} aria-hidden="true" />
+          )}
+          <span>
+            {pendingChangeSet
+              ? t('studio.pending')
+              : t('studio.saved')}
+          </span>
+        </div>
+
+        <LanguageSwitcher />
+      </div>
     </header>
   );
 }
