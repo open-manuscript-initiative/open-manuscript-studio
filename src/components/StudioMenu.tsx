@@ -30,6 +30,7 @@ import { HistoryPanel } from './HistoryPanel';
 import { ManuscriptLanguageField } from './ManuscriptLanguageField';
 import { NotesPanel } from './NotesPanel';
 import { PropertiesPanel } from './PropertiesPanel';
+import { SectionNumberingControl } from './SectionNumberingControl';
 
 type StudioMenuView =
   | 'document'
@@ -246,6 +247,7 @@ function DocumentMenuView({
         </button>
       </div>
 
+      <SectionNumberingControl />
       <DocumentTree onNavigate={onNavigate} />
     </section>
   );

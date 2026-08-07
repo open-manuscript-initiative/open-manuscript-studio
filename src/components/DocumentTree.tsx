@@ -1,5 +1,6 @@
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { formatSectionHeading } from '../model/sectionNumbering';
 
 interface DocumentTreeProps {
   onNavigate?: () => void;
@@ -40,7 +41,11 @@ export function DocumentTree({
             onNavigate?.();
           }}
         >
-          {index + 1}. {section.title}
+          {formatSectionHeading(
+            section.title || t('editor.untitledSection'),
+            index,
+            manuscript.sectionNumberingStyle,
+          )}
         </button>
       ))}
 
