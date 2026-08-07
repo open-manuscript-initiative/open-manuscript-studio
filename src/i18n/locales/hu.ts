@@ -34,7 +34,8 @@ export const hu: TranslationDictionary = {
       manuscript: 'Kézirat adatai',
       contributors: 'Közreműködők',
       history: 'Előzmények',
-      tools: 'Export és eszközök'
+      tools: 'Export és eszközök',
+      settings: 'Beállítások'
     },
     document: {
       title: 'Dokumentumszerkezet',
@@ -68,6 +69,21 @@ export const hu: TranslationDictionary = {
         'A szemantikai reprezentáció csak akkor jelenik meg, amikor technikai részletekre van szükség.',
       liveJson: 'Aktuális szakasz JSON',
       synced: 'Szinkronban'
+    },
+    settings: {
+      title: 'Felület beállításai',
+      description:
+        'Válassza ki, mely felületi nyelveket szeretné használni munka közben. A beállítások ezen az eszközön maradnak meg.',
+      interfaceLanguages: 'Használható felületi nyelvek',
+      interfaceLanguagesDescription:
+        'Az engedélyezett nyelvek jelennek meg a szerkesztő fejlécének gyors nyelvváltójában.',
+      currentLanguage: 'Jelenlegi felületi nyelv',
+      currentLanguageHint:
+        'Az éppen használt nyelvnek engedélyezve kell maradnia. A kikapcsolásához előbb váltson másik nyelvre.',
+      enabledLanguage: 'Megjelenik a gyors nyelvváltóban',
+      disabledLanguage: 'Elrejtve a gyors nyelvváltóból',
+      futureLanguages:
+        'A nyelvi regiszter bővíthető. Később új fordítási szótárak vehetők fel anélkül, hogy ezt a beállítási felületet újra kellene tervezni.'
     }
   },
 
