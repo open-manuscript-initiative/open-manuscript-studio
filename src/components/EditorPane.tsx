@@ -1,5 +1,7 @@
+import { stageSectionTitleChange } from '../app/sectionActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { formatSectionNumber } from '../model/sectionNumbering';
 import { BlockEditor } from './BlockEditor';
 
 export function EditorPane() {
@@ -21,6 +23,13 @@ export function EditorPane() {
     manuscript.sections.find(
       (item) => item.id === selectedSectionId,
     ) ?? manuscript.sections[0];
+  const sectionIndex = section
+    ? manuscript.sections.findIndex((item) => item.id === section.id)
+    : -1;
+  const sectionNumber = formatSectionNumber(
+    sectionIndex,
+    manuscript.sectionNumberingStyle,
+  );
 
   return (
     <section
@@ -52,9 +61,29 @@ export function EditorPane() {
       >
         {section ? (
           <div className="omi-section-editor">
-            <h1 className="omi-section-heading">
-              {section.title}
-            </h1>
+            <div className="omi-section-title-row">
+              {sectionNumber ? (
+                <span
+                  className="omi-section-number"
+                  aria-hidden="true"
+                >
+                  {sectionNumber}
+                </span>
+              ) : null}
+
+              <input
+                className="omi-section-title-input"
+                value={section.title}
+                aria-label={t('studio.document.sections')}
+                placeholder={t('editor.untitledSection')}
+                onChange={(event) =>
+                  stageSectionTitleChange(
+                    section.id,
+                    event.target.value,
+                  )
+                }
+              />
+            </div>
 
             {section.blocks.map((block) => (
               <BlockEditor
