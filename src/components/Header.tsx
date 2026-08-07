@@ -6,6 +6,7 @@ import {
 
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface HeaderProps {
   onOpenMenu: () => void;
@@ -45,23 +46,27 @@ export function Header({ onOpenMenu }: HeaderProps) {
         </span>
       </div>
 
-      <div
-        className={`focus-save-state${
-          pendingChangeSet ? ' focus-save-state--pending' : ''
-        }`}
-        role="status"
-        aria-live="polite"
-      >
-        {pendingChangeSet ? (
-          <Clock3 size={16} aria-hidden="true" />
-        ) : (
-          <CheckCircle2 size={16} aria-hidden="true" />
-        )}
-        <span>
-          {pendingChangeSet
-            ? t('studio.pending')
-            : t('studio.saved')}
-        </span>
+      <div className="focus-header-actions">
+        <div
+          className={`focus-save-state${
+            pendingChangeSet ? ' focus-save-state--pending' : ''
+          }`}
+          role="status"
+          aria-live="polite"
+        >
+          {pendingChangeSet ? (
+            <Clock3 size={16} aria-hidden="true" />
+          ) : (
+            <CheckCircle2 size={16} aria-hidden="true" />
+          )}
+          <span>
+            {pendingChangeSet
+              ? t('studio.pending')
+              : t('studio.saved')}
+          </span>
+        </div>
+
+        <LanguageSwitcher />
       </div>
     </header>
   );
