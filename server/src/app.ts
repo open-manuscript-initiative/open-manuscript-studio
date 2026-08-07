@@ -4,6 +4,7 @@ import helmet from 'helmet';
 
 import { env } from './config/env.js';
 import { healthRouter } from './routes/healthRoutes.js';
+import { integrationRouter } from './routes/integrationRoutes.js';
 
 export const app = express();
 
@@ -32,6 +33,7 @@ app.get('/api', (_request, response) => {
 });
 
 app.use('/api/health', healthRouter);
+app.use('/integrations', integrationRouter);
 
 app.use((_request, response) => {
   response.status(404).json({
