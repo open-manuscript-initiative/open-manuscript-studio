@@ -2,39 +2,36 @@ import { Node, mergeAttributes } from '@tiptap/core';
 
 export interface OmiNoteAttributes {
   noteId: string;
+  anchorId: string;
   label: string;
-  noteType: 'footnote' | 'endnote' | 'comment';
+  noteType: 'footnote' | 'endnote' | 'author-note';
 }
 
-/**
- * Egyedi azonosítót készít a jegyzet hivatkozási pontjához.
- *
- * A crypto.randomUUID() használható böngészőben és biztonságos
- * környezetben. A tartalék ág régebbi környezetekben is működik.
- */
-function createNoteId(): string {
+export interface OmiNoteOptions {
+  onNoteInserted?: (attributes: OmiNoteAttributes) => void;
+  accessibleLabel?: (attributes: OmiNoteAttributes) => string;
+}
+
+function createStableId(prefix: string): string {
   if (
     typeof crypto !== 'undefined' &&
     typeof crypto.randomUUID === 'function'
   ) {
-    return crypto.randomUUID();
+    return `${prefix}-${crypto.randomUUID()}`;
   }
 
-  return `note-${Date.now()}-${Math.random()
+  return `${prefix}-${Date.now()}-${Math.random()
     .toString(36)
     .slice(2, 10)}`;
 }
 
-/**
- * HTML-attribútumból biztonságosan olvassa ki a jegyzet típusát.
- */
 function parseNoteType(
   value: string | null,
 ): OmiNoteAttributes['noteType'] {
   if (
     value === 'footnote' ||
     value === 'endnote' ||
-    value === 'comment'
+    value === 'author-note'
   ) {
     return value;
   }
@@ -42,17 +39,12 @@ function parseNoteType(
   return 'footnote';
 }
 
-/**
- * Egyedi Tiptap-parancsok TypeScript-típusai.
- */
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     omiNote: {
       /**
-       * OMI-jegyzet hivatkozási pontjának beszúrása.
-       *
-       * Ha van kijelölt szöveg, a node a kijelölés végére kerül,
-       * így a kijelölt szöveg nem törlődik.
+       * Inserts a stable inline reference to an independent OMI annotation.
+       * Selected text is preserved; the note anchor is inserted after it.
        */
       insertOmiNote: (
         attributes?: Partial<OmiNoteAttributes>,
@@ -62,76 +54,67 @@ declare module '@tiptap/core' {
 }
 
 /**
- * OMI Note Anchor
+ * OMI note anchor.
  *
- * Ez a node nem magát a teljes jegyzetszöveget tárolja, hanem annak
- * szemantikus hivatkozási pontját. A jegyzet tartalma később az OMI
- * dokumentummodell külön objektumában tárolható, amelyhez a noteId
- * kapcsolja ezt a node-ot.
+ * The node stores only the stable inline reference. The note body and its
+ * scholarly metadata live independently in manuscript.annotations.
  */
-export const OmiNoteExtension = Node.create({
+export const OmiNoteExtension = Node.create<OmiNoteOptions>({
   name: 'omiNote',
 
   group: 'inline',
-
   inline: true,
-
   atom: true,
-
   selectable: true,
-
   draggable: false,
-
-  /**
-   * Az atom node egyetlen, nem közvetlenül szerkeszthető egységként
-   * viselkedik a ProseMirror-dokumentumban.
-   */
   content: '',
+
+  addOptions() {
+    return {
+      onNoteInserted: undefined,
+      accessibleLabel: undefined,
+    };
+  },
 
   addAttributes() {
     return {
       noteId: {
         default: null,
-
         parseHTML: (element: HTMLElement) =>
           element.getAttribute('data-note-id'),
+        renderHTML: (attributes: Record<string, unknown>) =>
+          attributes.noteId
+            ? { 'data-note-id': String(attributes.noteId) }
+            : {},
+      },
 
-        renderHTML: (attributes: Record<string, unknown>) => {
-          if (!attributes.noteId) {
-            return {};
-          }
-
-          return {
-            'data-note-id': String(attributes.noteId),
-          };
-        },
+      anchorId: {
+        default: null,
+        parseHTML: (element: HTMLElement) =>
+          element.getAttribute('data-anchor-id'),
+        renderHTML: (attributes: Record<string, unknown>) =>
+          attributes.anchorId
+            ? { 'data-anchor-id': String(attributes.anchorId) }
+            : {},
       },
 
       label: {
-        default: 'N',
-
+        default: '?',
         parseHTML: (element: HTMLElement) =>
           element.getAttribute('data-note-label') ||
           element.textContent ||
-          'N',
-
+          '?',
         renderHTML: (attributes: Record<string, unknown>) => ({
-          'data-note-label': String(attributes.label || 'N'),
+          'data-note-label': String(attributes.label || '?'),
         }),
       },
 
       noteType: {
         default: 'footnote',
-
         parseHTML: (element: HTMLElement) =>
-          parseNoteType(
-            element.getAttribute('data-note-type'),
-          ),
-
+          parseNoteType(element.getAttribute('data-note-type')),
         renderHTML: (attributes: Record<string, unknown>) => ({
-          'data-note-type': String(
-            attributes.noteType || 'footnote',
-          ),
+          'data-note-type': String(attributes.noteType || 'footnote'),
         }),
       },
     };
@@ -139,19 +122,16 @@ export const OmiNoteExtension = Node.create({
 
   parseHTML() {
     return [
-      {
-        tag: 'span[data-omi-note][data-note-id]',
-      },
-      {
-        // Korábbi próbaverziók kompatibilitása.
-        tag: 'span.omi-note[data-note-id]',
-      },
+      { tag: 'span[data-omi-note][data-note-id]' },
+      { tag: 'span.omi-note[data-note-id]' },
     ];
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    const attributes =
-      node.attrs as OmiNoteAttributes;
+    const attributes = node.attrs as OmiNoteAttributes;
+    const accessibleLabel =
+      this.options.accessibleLabel?.(attributes) ??
+      `Note ${attributes.label}`;
 
     return [
       'span',
@@ -159,13 +139,14 @@ export const OmiNoteExtension = Node.create({
         class: 'omi-note',
         'data-omi-note': 'true',
         'data-note-id': attributes.noteId,
+        'data-anchor-id': attributes.anchorId,
         'data-note-label': attributes.label,
         'data-note-type': attributes.noteType,
         contenteditable: 'false',
         role: 'button',
         tabindex: '0',
-        title: `Jegyzet: ${attributes.label}`,
-        'aria-label': `Jegyzet ${attributes.label}`,
+        title: accessibleLabel,
+        'aria-label': accessibleLabel,
       }),
       attributes.label,
     ];
@@ -176,51 +157,40 @@ export const OmiNoteExtension = Node.create({
       insertOmiNote:
         (attributes = {}) =>
         ({ editor, commands }) => {
-          const noteId =
-            attributes.noteId?.trim() || createNoteId();
-
-          const label =
-            attributes.label?.trim() || 'N';
-
-          const noteType =
-            attributes.noteType || 'footnote';
-
-          const { from, to, empty } =
-            editor.state.selection;
-
+          const noteAttributes: OmiNoteAttributes = {
+            noteId:
+              attributes.noteId?.trim() || createStableId('note'),
+            anchorId:
+              attributes.anchorId?.trim() || createStableId('anchor'),
+            label: attributes.label?.trim() || '?',
+            noteType: attributes.noteType || 'footnote',
+          };
+          const { to, empty } = editor.state.selection;
           const noteNode = {
             type: this.name,
-            attrs: {
-              noteId,
-              label,
-              noteType,
-            },
+            attrs: noteAttributes,
           };
+          const inserted = empty
+            ? commands.insertContent(noteNode)
+            : commands.insertContentAt(to, noteNode, {
+                updateSelection: true,
+              });
 
-          /*
-           * Üres kijelölésnél a kurzor helyére illesztjük.
-           * Szövegkijelölésnél a kijelölt tartalom után, hogy a
-           * kijelölt szöveg megmaradjon.
-           */
-          if (empty) {
-            return commands.insertContent(noteNode);
+          if (inserted) {
+            this.options.onNoteInserted?.(noteAttributes);
           }
 
-          return commands.insertContentAt(to, noteNode, {
-            updateSelection: true,
-          });
+          return inserted;
         },
     };
   },
 
   addKeyboardShortcuts() {
     return {
-      /**
-       * Ctrl+Alt+N / Cmd+Alt+N:
-       * új jegyzethivatkozás beszúrása.
-       */
       'Mod-Alt-n': () =>
-        this.editor.commands.insertOmiNote(),
+        this.editor.commands.insertOmiNote({
+          noteType: 'footnote',
+        }),
     };
   },
 });

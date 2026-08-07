@@ -1,0 +1,205 @@
+.omi-notes-panel .studio-menu-view-header h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.omi-notes-count {
+  display: inline-flex;
+  min-width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d0d5dd;
+  border-radius: 999px;
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.omi-notes-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.omi-notes-empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 2.5rem 1rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 0.9rem;
+  text-align: center;
+  color: #667085;
+}
+
+.omi-notes-empty p {
+  margin: 0.35rem 0 0;
+  color: #344054;
+  font-weight: 650;
+}
+
+.omi-notes-empty small {
+  max-width: 34rem;
+  line-height: 1.5;
+}
+
+.omi-note-editor-card {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid #d0d5dd;
+  border-radius: 0.85rem;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.omi-note-editor-card--compact {
+  margin-top: 0.85rem;
+  border-left: 3px solid #475467;
+  background: #f9fafb;
+}
+
+.omi-note-editor-header,
+.omi-note-editor-header > div,
+.omi-note-actions,
+.omi-note-meta {
+  display: flex;
+  align-items: center;
+}
+
+.omi-note-editor-header {
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.omi-note-editor-header > div {
+  gap: 0.6rem;
+}
+
+.omi-note-number {
+  display: inline-flex;
+  width: 1.8rem;
+  height: 1.8rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #101828;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.omi-note-icon-button {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+.omi-note-icon-button:hover {
+  background: #eaecf0;
+}
+
+.omi-note-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.omi-note-field > span {
+  color: #475467;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.omi-note-field select,
+.omi-note-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d0d5dd;
+  border-radius: 0.55rem;
+  background: #fff;
+  color: #101828;
+  font: inherit;
+}
+
+.omi-note-field select {
+  min-height: 2.5rem;
+  padding: 0 0.65rem;
+}
+
+.omi-note-field textarea {
+  min-height: 7rem;
+  resize: vertical;
+  padding: 0.7rem;
+  line-height: 1.5;
+}
+
+.omi-note-editor-card--compact .omi-note-field textarea {
+  min-height: 5.5rem;
+}
+
+.omi-note-meta {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: #667085;
+  font-size: 0.75rem;
+}
+
+.omi-note-meta code {
+  overflow: hidden;
+  max-width: 18rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.omi-note-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.omi-note {
+  display: inline-flex;
+  min-width: 1.2em;
+  height: 1.2em;
+  margin: 0 0.08em;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #eef2f6;
+  color: #344054;
+  font-size: 0.72em;
+  font-weight: 800;
+  line-height: 1;
+  vertical-align: super;
+  cursor: pointer;
+  user-select: none;
+}
+
+.omi-note:hover,
+.omi-note:focus {
+  outline: 2px solid #98a2b3;
+  outline-offset: 1px;
+}
+
+@media (max-width: 640px) {
+  .omi-note-editor-card {
+    padding: 0.85rem;
+  }
+
+  .omi-note-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .omi-note-actions button {
+    justify-content: center;
+    width: 100%;
+  }
+}

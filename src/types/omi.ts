@@ -32,10 +32,25 @@ export interface OmiPerson {
 export interface OmiAnnotation {
   id: string;
   type: 'note' | 'comment' | 'editorial' | 'semantic' | string;
+
+  /**
+   * Studio note subtype. Kept optional so older annotation payloads remain
+   * importable while the OMI-SPEC-130 model evolves.
+   */
+  noteKind?: 'footnote' | 'endnote' | 'author-note';
+
+  /**
+   * Stable semantic anchor carried by the inline Tiptap note marker.
+   */
+  anchorId?: string;
+
   targetBlockId: string;
   targetText?: string;
   body: string;
   renderingHint: 'footnote' | 'endnote' | 'margin' | 'popup' | 'hidden';
+  creatorAgentId?: string;
+  createdAt?: string;
+  modifiedAt?: string;
 }
 
 export interface OmiCitation {
