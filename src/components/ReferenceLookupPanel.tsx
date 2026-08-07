@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { stageAddBibliographicRecord } from '../app/citationActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { getReferenceLookupCopy } from '../i18n/referenceLookup';
 import {
   formatBibliographyEntry,
   getBibliographicIdentifier,
@@ -22,7 +23,8 @@ import {
 import type { OmiBibliographicRecord } from '../types/omi';
 
 export function ReferenceLookupPanel() {
-  const { t } = useTranslation();
+  const { locale } = useTranslation();
+  const copy = getReferenceLookupCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const [query, setQuery] = useState('');
   const [settings, setSettings] = useState<BibliographicLookupSettings>(() =>
@@ -36,7 +38,12 @@ export function ReferenceLookupPanel() {
   const providerCount = settings.enabledProviders.length;
   const canSearch = query.trim().length >= 2 && providerCount > 0 && !loading;
   const importedKeys = useMemo(
-    () => new Set(results.filter((candidate) => recordExists(records, candidate.record)).map((candidate) => candidate.key)),
+    () =>
+      new Set(
+        results
+          .filter((candidate) => recordExists(records, candidate.record))
+          .map((candidate) => candidate.key),
+      ),
     [records, results],
   );
 
@@ -80,9 +87,9 @@ export function ReferenceLookupPanel() {
         <div>
           <h4 id="omi-lookup-title">
             <Database size={17} aria-hidden="true" />
-            {t('citations.lookup.title')}
+            {copy.title}
           </h4>
-          <p>{t('citations.lookup.description')}</p>
+          <p>{copy.description}</p>
         </div>
       </div>
 
@@ -96,11 +103,11 @@ export function ReferenceLookupPanel() {
         <div className="omi-lookup-query-row">
           <label className="omi-lookup-query">
             <Search size={16} aria-hidden="true" />
-            <span className="sr-only">{t('citations.lookup.queryLabel')}</span>
+            <span className="sr-only">{copy.queryLabel}</span>
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder={t('citations.lookup.queryPlaceholder')}
+              placeholder={copy.queryPlaceholder}
               autoComplete="off"
             />
           </label>
@@ -110,11 +117,11 @@ export function ReferenceLookupPanel() {
             disabled={!canSearch}
           >
             <Search size={16} aria-hidden="true" />
-            {loading ? t('citations.lookup.searching') : t('citations.lookup.search')}
+            {loading ? copy.searching : copy.search}
           </button>
         </div>
 
-        <div className="omi-provider-toggle-list" aria-label={t('citations.lookup.providers')}>
+        <div className="omi-provider-toggle-list" aria-label={copy.providers}>
           {BIBLIOGRAPHIC_PROVIDERS.map((provider) => (
             <label className="omi-provider-toggle" key={provider}>
               <input
@@ -124,7 +131,7 @@ export function ReferenceLookupPanel() {
               />
               <span>{providerLabel(provider)}</span>
               {provider === 'openalex' && !settings.openAlexApiKey?.trim() ? (
-                <small>{t('citations.lookup.apiKeyRequired')}</small>
+                <small>{copy.apiKeyRequired}</small>
               ) : null}
             </label>
           ))}
@@ -133,11 +140,11 @@ export function ReferenceLookupPanel() {
         <details className="omi-lookup-settings">
           <summary>
             <Settings2 size={15} aria-hidden="true" />
-            {t('citations.lookup.serviceSettings')}
+            {copy.serviceSettings}
           </summary>
           <div className="omi-lookup-settings-grid">
             <label>
-              <span>{t('citations.lookup.crossrefEmail')}</span>
+              <span>{copy.crossrefEmail}</span>
               <input
                 type="email"
                 value={settings.crossrefMailto ?? ''}
@@ -149,10 +156,10 @@ export function ReferenceLookupPanel() {
                   })
                 }
               />
-              <small>{t('citations.lookup.crossrefEmailHint')}</small>
+              <small>{copy.crossrefEmailHint}</small>
             </label>
             <label>
-              <span>{t('citations.lookup.openAlexApiKey')}</span>
+              <span>{copy.openAlexApiKey}</span>
               <input
                 type="password"
                 value={settings.openAlexApiKey ?? ''}
@@ -164,10 +171,10 @@ export function ReferenceLookupPanel() {
                   })
                 }
               />
-              <small>{t('citations.lookup.openAlexApiKeyHint')}</small>
+              <small>{copy.openAlexApiKeyHint}</small>
             </label>
           </div>
-          <p className="omi-lookup-privacy-note">{t('citations.lookup.privacyNote')}</p>
+          <p className="omi-lookup-privacy-note">{copy.privacyNote}</p>
         </details>
       </form>
 
@@ -177,15 +184,15 @@ export function ReferenceLookupPanel() {
             <p key={`${issue.provider}:${issue.code}`}>
               <strong>{providerLabel(issue.provider)}:</strong>{' '}
               {issue.code === 'missing-api-key'
-                ? t('citations.lookup.missingApiKey')
-                : t('citations.lookup.providerUnavailable')}
+                ? copy.missingApiKey
+                : copy.providerUnavailable}
             </p>
           ))}
         </div>
       ) : null}
 
       {searched && !loading && results.length === 0 ? (
-        <p className="omi-lookup-empty">{t('citations.lookup.noResults')}</p>
+        <p className="omi-lookup-empty">{copy.noResults}</p>
       ) : null}
 
       {results.length > 0 ? (
@@ -193,6 +200,7 @@ export function ReferenceLookupPanel() {
           {results.map((candidate) => {
             const imported = importedKeys.has(candidate.key);
             const doi = getBibliographicIdentifier(candidate.record, 'doi');
+            const mtmtId = getBibliographicIdentifier(candidate.record, 'mtmt');
 
             return (
               <li key={candidate.key} className="omi-lookup-result">
@@ -207,9 +215,7 @@ export function ReferenceLookupPanel() {
                   <div className="omi-lookup-result-meta">
                     <span>{candidate.record.type}</span>
                     {doi ? <code>DOI {doi}</code> : null}
-                    {getBibliographicIdentifier(candidate.record, 'mtmt') ? (
-                      <code>MTMT {getBibliographicIdentifier(candidate.record, 'mtmt')}</code>
-                    ) : null}
+                    {mtmtId ? <code>MTMT {mtmtId}</code> : null}
                   </div>
                 </div>
                 <button
@@ -219,9 +225,7 @@ export function ReferenceLookupPanel() {
                   onClick={() => stageAddBibliographicRecord(candidate.record)}
                 >
                   <Download size={15} aria-hidden="true" />
-                  {imported
-                    ? t('citations.lookup.alreadyAdded')
-                    : t('citations.lookup.addToLibrary')}
+                  {imported ? copy.alreadyAdded : copy.addToLibrary}
                 </button>
               </li>
             );
@@ -234,10 +238,14 @@ export function ReferenceLookupPanel() {
 
 function providerLabel(provider: BibliographicProviderId): string {
   switch (provider) {
-    case 'crossref': return 'Crossref';
-    case 'datacite': return 'DataCite';
-    case 'openalex': return 'OpenAlex';
-    case 'mtmt': return 'MTMT';
+    case 'crossref':
+      return 'Crossref';
+    case 'datacite':
+      return 'DataCite';
+    case 'openalex':
+      return 'OpenAlex';
+    case 'mtmt':
+      return 'MTMT';
   }
 }
 
@@ -259,7 +267,9 @@ function recordExists(
     if (
       candidateMtmt &&
       getBibliographicIdentifier(record, 'mtmt') === candidateMtmt
-    ) return true;
+    ) {
+      return true;
+    }
 
     return (
       normalizeText(record.title) === normalizeText(candidate.title) &&
