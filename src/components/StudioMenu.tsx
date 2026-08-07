@@ -12,12 +12,14 @@ import {
 import {
   useEffect,
   useState,
+  type ReactNode,
 } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { downloadOmiJson } from '../services/exportOmi';
 import { DocumentTree } from './DocumentTree';
+import { Footer } from './Footer';
 import { HistoryPanel } from './HistoryPanel';
 import { PropertiesPanel } from './PropertiesPanel';
 
@@ -164,7 +166,7 @@ export function StudioMenu({
 
 interface MenuButtonProps {
   active: boolean;
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   onClick: () => void;
 }
@@ -351,6 +353,10 @@ function ToolsView() {
           <code>{JSON.stringify(semanticSection, null, 2)}</code>
         </pre>
       </details>
+
+      <div className="studio-menu-footer-wrap">
+        <Footer />
+      </div>
     </section>
   );
 }
