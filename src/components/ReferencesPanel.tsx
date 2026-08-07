@@ -1,20 +1,30 @@
 import { Edit3, ExternalLink, Plus, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
+import { stageSetCitationStyle } from '../app/citationActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { getCslRenderingCopy } from '../i18n/cslRendering';
 import {
   countCitationsForRecord,
   formatBibliographyEntry,
   getBibliographicIdentifier,
 } from '../model/citations';
+import {
+  CITATION_STYLE_IDS,
+  DEFAULT_CITATION_STYLE,
+  renderBibliography,
+} from '../model/cslRendering';
+import type { OmiCitationStyleId } from '../types/omi';
 import { BibliographicRecordEditor } from './BibliographicRecordEditor';
 import { ReferenceLookupPanel } from './ReferenceLookupPanel';
 
 export function ReferencesPanel() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const copy = getCslRenderingCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const records = manuscript.bibliographicRecords ?? [];
+  const citationStyle = manuscript.citationStyle ?? DEFAULT_CITATION_STYLE;
   const [query, setQuery] = useState('');
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -31,6 +41,19 @@ export function ReferencesPanel() {
           .includes(normalizedQuery);
       }),
     [normalizedQuery, records],
+  );
+  const citedRecordIds = useMemo(
+    () => new Set(manuscript.citations.map((citation) => citation.target)),
+    [manuscript.citations],
+  );
+  const bibliography = useMemo(
+    () =>
+      renderBibliography(
+        records.filter((record) => citedRecordIds.has(record.id)),
+        citationStyle,
+        manuscript.locale,
+      ),
+    [citationStyle, citedRecordIds, manuscript.locale, records],
   );
 
   if (creating || editingRecordId) {
@@ -64,6 +87,29 @@ export function ReferencesPanel() {
           {t('citations.addReference')}
         </button>
       </div>
+
+      <section className="omi-csl-style-panel">
+        <div>
+          <h4>{copy.styleTitle}</h4>
+          <p>{copy.styleDescription}</p>
+        </div>
+        <label>
+          <span>{copy.styleTitle}</span>
+          <select
+            value={citationStyle}
+            onChange={(event) =>
+              stageSetCitationStyle(event.target.value as OmiCitationStyleId)
+            }
+          >
+            {CITATION_STYLE_IDS.map((style) => (
+              <option value={style} key={style}>
+                {copy.styleNames[style]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <small>{copy.styleProfileNote}</small>
+      </section>
 
       <ReferenceLookupPanel />
 
@@ -142,25 +188,14 @@ export function ReferencesPanel() {
         </ol>
       )}
 
-      {records.length > 0 ? (
-        <section className="omi-bibliography-preview">
-          <h4>{t('manuscript.bibliography')}</h4>
-          <p>{t('citations.bibliographyPreviewDescription')}</p>
+      {bibliography.length > 0 ? (
+        <section className="omi-bibliography-preview omi-bibliography-preview--csl">
+          <h4>{copy.bibliographyTitle}</h4>
+          <p>{copy.bibliographyDescription}</p>
           <ol>
-            {records
-              .filter((record) =>
-                manuscript.citations.some(
-                  (citation) => citation.target === record.id,
-                ),
-              )
-              .sort((a, b) =>
-                formatBibliographyEntry(a).localeCompare(
-                  formatBibliographyEntry(b),
-                ),
-              )
-              .map((record) => (
-                <li key={record.id}>{formatBibliographyEntry(record)}</li>
-              ))}
+            {bibliography.map((entry) => (
+              <li key={entry.recordId}>{entry.text}</li>
+            ))}
           </ol>
         </section>
       ) : null}
