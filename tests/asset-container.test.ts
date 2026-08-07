@@ -1,13 +1,21 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { applyOmiContainerImportPlan } from '../src/app/omiContainerImportActions.ts';
+import { useStudioStore } from '../src/app/useStudioStore.ts';
 import {
   createAssetMetadata,
   decodeDataUrl,
+  externalizeImageBlock,
   sha256Hex,
 } from '../src/model/assets.ts';
 import {
+  commitManuscriptRevision,
+  extractManuscriptState,
+} from '../src/model/versioning.ts';
+import {
   clearMemoryAssetCache,
+  getAssetPayload,
   putAssetPayload,
 } from '../src/services/assetRepository.ts';
 import {
@@ -15,6 +23,11 @@ import {
   isSafeContainerPath,
   OMI_CONTAINER_MEDIA_TYPE,
 } from '../src/services/omiContainer.ts';
+import {
+  inspectOmiContainer,
+} from '../src/services/omiContainerImport.ts';
+import type { OmiAsset } from '../src/types/assets.ts';
+import type { OmiManuscript, OmiManuscriptState } from '../src/types/omi.ts';
 import { createTestManuscript } from './testManuscriptFixture.ts';
 
 test('decodes embedded image data and produces deterministic SHA-256 evidence', async () => {
@@ -47,6 +60,27 @@ test('creates portable asset metadata without embedding payload bytes', async ()
   assert.equal('bytes' in asset, false);
 });
 
+test('externalized image state no longer retains Base64 authoring preview data', async () => {
+  const externalized = await externalizeImageBlock({
+    id: 'image-block',
+    type: 'image',
+    content: '',
+    visual: {
+      kind: 'image',
+      src: 'data:image/png;base64,ZmFrZS1wbmctcGF5bG9hZA==',
+      mediaType: 'image/png',
+      fileName: 'figure.png',
+      alt: 'Figure',
+    },
+  });
+
+  assert.ok(externalized);
+  assert.ok(externalized.block.visual?.kind === 'image');
+  assert.equal(externalized.block.visual.src, '');
+  assert.equal(externalized.block.visual.assetId, externalized.asset.id);
+  assert.equal(new TextDecoder().decode(externalized.bytes), 'fake-png-payload');
+});
+
 test('rejects archive traversal and ambiguous container paths', () => {
   assert.equal(isSafeContainerPath('media/images/figure.png'), true);
   assert.equal(isSafeContainerPath('../figure.png'), false);
@@ -57,30 +91,7 @@ test('rejects archive traversal and ambiguous container paths', () => {
 
 test('builds a portable OMI ZIP with external asset payload and clean document JSON', async () => {
   clearMemoryAssetCache();
-  const manuscript = createTestManuscript();
-  const bytes = new TextEncoder().encode('fake-png-payload');
-  const asset = await createAssetMetadata(bytes, {
-    id: 'asset-figure-1',
-    mediaType: 'image/png',
-    fileName: 'figure.png',
-    role: 'figure',
-    createdAt: '2026-08-07T00:00:00.000Z',
-  });
-  manuscript.assets = [asset];
-  manuscript.sections[0]?.blocks.push({
-    id: 'figure-block-1',
-    type: 'image',
-    content: '',
-    visual: {
-      kind: 'image',
-      assetId: asset.id,
-      src: 'data:image/png;base64,ZmFrZS1wbmctcGF5bG9hZA==',
-      mediaType: 'image/png',
-      fileName: 'figure.png',
-      alt: 'Test figure',
-      caption: 'Portable figure',
-    },
-  });
+  const { manuscript, asset, bytes } = await createCommittedAssetManuscript();
   await putAssetPayload(manuscript.id, asset.id, bytes);
 
   const result = await buildOmiContainer(manuscript);
@@ -98,6 +109,129 @@ test('builds a portable OMI ZIP with external asset payload and clean document J
   assert.ok(jats.includes('xlink:href="media/images/asset-figure-1-figure.png"'));
   assert.ok(manifest.includes('OMI-SPEC-330@0.1.0'));
 });
+
+test('verifies an exported OMI package and preserves manuscript and revision identities', async () => {
+  clearMemoryAssetCache();
+  const { manuscript, asset, bytes } = await createCommittedAssetManuscript();
+  await putAssetPayload(manuscript.id, asset.id, bytes);
+  const exported = await buildOmiContainer(manuscript);
+
+  const plan = await inspectOmiContainer(exported.bytes);
+
+  assert.equal(plan.validForImport, true);
+  assert.equal(plan.diagnostics.filter((item) => item.severity === 'error').length, 0);
+  assert.equal(plan.manuscript?.id, manuscript.id);
+  assert.equal(plan.manuscript?.headRevisionId, manuscript.headRevisionId);
+  assert.equal(plan.summary.revisionCount, manuscript.revisionHistory.revisions.length);
+  assert.equal(plan.summary.assetCount, 1);
+  assert.equal(plan.summary.verifiedChecksums, plan.summary.declaredChecksums);
+  assert.equal(plan.assets[0]?.metadata.id, asset.id);
+  assert.equal(new TextDecoder().decode(plan.assets[0]?.bytes), 'fake-png-payload');
+  const importedImage = plan.manuscript?.sections[0]?.blocks.find(
+    (block) => block.id === 'figure-block-1',
+  );
+  assert.ok(importedImage?.visual?.kind === 'image');
+  assert.equal(importedImage.visual.src, '');
+  assert.equal(importedImage.visual.assetId, asset.id);
+});
+
+test('opens a verified package without creating a new manuscript or revision root', async () => {
+  clearMemoryAssetCache();
+  const { manuscript, asset, bytes } = await createCommittedAssetManuscript();
+  await putAssetPayload(manuscript.id, asset.id, bytes);
+  const exported = await buildOmiContainer(manuscript);
+  clearMemoryAssetCache();
+  const plan = await inspectOmiContainer(exported.bytes);
+
+  await applyOmiContainerImportPlan(plan);
+  const loaded = useStudioStore.getState().manuscript;
+
+  assert.equal(loaded.id, manuscript.id);
+  assert.equal(loaded.headRevisionId, manuscript.headRevisionId);
+  assert.equal(loaded.revisionHistory.rootRevisionId, manuscript.revisionHistory.rootRevisionId);
+  assert.equal(loaded.revisionHistory.revisions.length, manuscript.revisionHistory.revisions.length);
+  assert.equal(new TextDecoder().decode(await getAssetPayload(loaded.id, asset.id)), 'fake-png-payload');
+
+  useStudioStore.getState().resetSample();
+});
+
+test('rejects a package whose archived bytes were modified after checksums were created', async () => {
+  clearMemoryAssetCache();
+  const { manuscript, asset, bytes } = await createCommittedAssetManuscript();
+  await putAssetPayload(manuscript.id, asset.id, bytes);
+  const exported = await buildOmiContainer(manuscript);
+  const corrupted = new Uint8Array(exported.bytes);
+  const documentOffset = findStoreEntryDataOffset(corrupted, 'manuscript/document.json');
+  assert.ok(documentOffset >= 0);
+  corrupted[documentOffset] = (corrupted[documentOffset] ?? 0) ^ 0x01;
+
+  const plan = await inspectOmiContainer(corrupted);
+
+  assert.equal(plan.validForImport, false);
+  assert.ok(
+    plan.diagnostics.some((item) => item.code === 'invalid-omi-archive'),
+  );
+});
+
+async function createCommittedAssetManuscript(): Promise<{
+  manuscript: OmiManuscript;
+  asset: OmiAsset;
+  bytes: Uint8Array;
+}> {
+  const manuscript = createTestManuscript();
+  const bytes = new TextEncoder().encode('fake-png-payload');
+  const asset = await createAssetMetadata(bytes, {
+    id: 'asset-figure-1',
+    mediaType: 'image/png',
+    fileName: 'figure.png',
+    role: 'figure',
+    createdAt: '2026-08-07T00:00:00.000Z',
+  });
+  const figureBlock = {
+    id: 'figure-block-1',
+    type: 'image',
+    content: '',
+    visual: {
+      kind: 'image' as const,
+      assetId: asset.id,
+      src: '',
+      mediaType: 'image/png',
+      fileName: 'figure.png',
+      alt: 'Test figure',
+      caption: 'Portable figure',
+    },
+  };
+  const currentState = extractManuscriptState(manuscript);
+  const nextState: OmiManuscriptState = {
+    ...currentState,
+    assets: [asset],
+    sections: currentState.sections.map((section, index) =>
+      index === 0
+        ? { ...section, blocks: [...section.blocks, figureBlock] }
+        : section,
+    ),
+  };
+  const committed = commitManuscriptRevision(manuscript, nextState, {
+    summary: 'Attached test figure asset',
+    timestamp: '2026-08-07T00:01:00.000Z',
+    events: [
+      {
+        operation: 'asset.attach' as never,
+        targetId: asset.id,
+        path: '/assets/-',
+        nextValue: asset,
+      },
+      {
+        operation: 'block.update' as never,
+        targetId: figureBlock.id,
+        path: `/sections/${nextState.sections[0]?.id}/blocks/-`,
+        nextValue: figureBlock,
+      },
+    ],
+  });
+
+  return { manuscript: committed, asset, bytes };
+}
 
 function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {
   const entries = new Map<string, Uint8Array>();
@@ -120,4 +254,22 @@ function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {
   }
 
   return entries;
+}
+
+function findStoreEntryDataOffset(bytes: Uint8Array, target: string): number {
+  const decoder = new TextDecoder();
+  let offset = 0;
+  while (offset + 30 <= bytes.byteLength) {
+    const view = new DataView(bytes.buffer, bytes.byteOffset + offset, bytes.byteLength - offset);
+    if (view.getUint32(0, true) !== 0x04034b50) return -1;
+    const size = view.getUint32(18, true);
+    const nameLength = view.getUint16(26, true);
+    const extraLength = view.getUint16(28, true);
+    const nameStart = offset + 30;
+    const dataStart = nameStart + nameLength + extraLength;
+    const name = decoder.decode(bytes.subarray(nameStart, nameStart + nameLength));
+    if (name === target) return dataStart;
+    offset = dataStart + size;
+  }
+  return -1;
 }
