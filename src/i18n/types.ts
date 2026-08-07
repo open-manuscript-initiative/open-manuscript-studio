@@ -18,6 +18,50 @@ export interface TranslationDictionary {
     settings: string;
   };
 
+  studio: {
+    menu: string;
+    closeMenu: string;
+    languageSwitcher: string;
+    saved: string;
+    pending: string;
+    editorAria: string;
+    titlePlaceholder: string;
+    noSection: string;
+    navigation: {
+      document: string;
+      manuscript: string;
+      contributors: string;
+      history: string;
+      tools: string;
+    };
+    document: {
+      title: string;
+      description: string;
+      addSection: string;
+      sections: string;
+      objects: string;
+      annotations: string;
+      citations: string;
+    };
+    manuscript: {
+      title: string;
+      description: string;
+    };
+    tools: {
+      title: string;
+      description: string;
+      export: string;
+      exportDescription: string;
+      reset: string;
+      resetDescription: string;
+      confirmReset: string;
+      technicalData: string;
+      technicalDescription: string;
+      liveJson: string;
+      synced: string;
+    };
+  };
+
   manuscript: {
     newDocument: string;
     documentTitle: string;
