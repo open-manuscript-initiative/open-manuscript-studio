@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 
-import { Footer } from './Footer';
 import { Header } from './Header';
 
 interface AppLayoutProps {
@@ -19,8 +18,6 @@ export function AppLayout({
       <main className="app-layout-main">
         {children}
       </main>
-
-      <Footer />
     </div>
   );
 }
