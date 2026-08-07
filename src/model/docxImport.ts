@@ -132,12 +132,24 @@ export function parseWordCitationInstruction(
 
   const citationStart = input.search(/\bCITATION\b/i);
   const remainder = input.slice(citationStart).replace(/^CITATION\s+/i, '');
+  const tokens = tokenizeWordField(remainder);
   const tags: string[] = [];
+  let expectSource = true;
 
-  for (const token of tokenizeWordField(remainder)) {
-    if (token.startsWith('\\')) break;
+  for (const token of tokens) {
+    if (/^\\m$/i.test(token)) {
+      expectSource = true;
+      continue;
+    }
+    if (token.startsWith('\\')) {
+      expectSource = false;
+      continue;
+    }
+    if (!expectSource) continue;
+
     const cleaned = token.replace(/^['"]|['"]$/g, '').trim();
     if (cleaned) tags.push(cleaned);
+    expectSource = false;
   }
 
   return Array.from(new Set(tags));
@@ -234,7 +246,7 @@ export function mapWordSourceType(value: string | undefined): string {
       return 'report';
     case 'thesis':
       return 'thesis';
-    case 'electronicSource':
+    case 'electronicsource':
     case 'internetsite':
     case 'website':
       return 'web-page';
