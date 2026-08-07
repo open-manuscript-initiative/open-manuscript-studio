@@ -30,6 +30,7 @@ export interface TranslationDictionary {
     navigation: {
       document: string;
       manuscript: string;
+      notes: string;
       contributors: string;
       history: string;
       tools: string;
@@ -86,6 +87,25 @@ export interface TranslationDictionary {
     bibliography: string;
     documentLanguage: string;
     originalLanguage: string;
+  };
+
+  notes: {
+    title: string;
+    description: string;
+    empty: string;
+    emptyHint: string;
+    note: string;
+    type: string;
+    body: string;
+    bodyPlaceholder: string;
+    footnote: string;
+    endnote: string;
+    authorNote: string;
+    delete: string;
+    confirmDelete: string;
+    closeEditor: string;
+    goToNote: string;
+    autoSave: string;
   };
 
   contributors: {
