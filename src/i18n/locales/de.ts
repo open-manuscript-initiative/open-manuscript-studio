@@ -20,6 +20,57 @@ export const de: TranslationDictionary = {
     settings: 'Einstellungen'
   },
 
+  studio: {
+    menu: 'Manuskriptmenü',
+    closeMenu: 'Manuskriptmenü schließen',
+    languageSwitcher: 'Oberflächensprache',
+    saved: 'Gespeichert',
+    pending: 'Speichern…',
+    editorAria: 'Manuskripteditor',
+    titlePlaceholder: 'Manuskripttitel eingeben',
+    noSection: 'Kein Abschnitt ausgewählt.',
+    navigation: {
+      document: 'Dokument',
+      manuscript: 'Manuskriptdaten',
+      contributors: 'Mitwirkende',
+      history: 'Verlauf',
+      tools: 'Export und Werkzeuge'
+    },
+    document: {
+      title: 'Dokumentstruktur',
+      description:
+        'Wählen Sie den Abschnitt aus, an dem Sie arbeiten möchten. Struktur- und Objektdaten bleiben außerhalb der Schreiboberfläche, bis sie benötigt werden.',
+      addSection: 'Abschnitt hinzufügen',
+      sections: 'Abschnitte',
+      objects: 'Objekte',
+      annotations: 'Anmerkungen',
+      citations: 'Zitate'
+    },
+    manuscript: {
+      title: 'Manuskriptdaten',
+      description:
+        'Bearbeiten Sie manuskriptweite Angaben getrennt von der Schreiboberfläche.'
+    },
+    tools: {
+      title: 'Export und Werkzeuge',
+      description:
+        'Sekundäre, technische und potenziell destruktive Aktionen bleiben außerhalb der Schreiboberfläche.',
+      export: 'Export .omi.json',
+      exportDescription:
+        'Erstellt nach dem Speichern ausstehender Änderungen eine kanonische, portable OMI-Manuskriptdatei.',
+      reset: 'Beispiel zurücksetzen',
+      resetDescription:
+        'Ersetzt das aktuelle Alpha-Beispiel durch ein neues, sauberes Beispielmanuskript.',
+      confirmReset:
+        'Aktuelles Beispielmanuskript zurücksetzen? Die derzeitigen Beispieldaten werden ersetzt.',
+      technicalData: 'Technische Daten',
+      technicalDescription:
+        'Die semantische Repräsentation wird nur angezeigt, wenn technische Details benötigt werden.',
+      liveJson: 'JSON des aktuellen Abschnitts',
+      synced: 'Synchronisiert'
+    }
+  },
+
   manuscript: {
     newDocument: 'Neues Manuskript',
     documentTitle: 'Dokumenttitel',
