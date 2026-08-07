@@ -167,9 +167,13 @@ export async function searchBibliographicProviders(
   const candidates = deduplicateCandidates(
     results.flatMap((result) => result.candidates),
   );
-  const issues = results
-    .map((result) => result.issue)
-    .filter((issue): issue is BibliographicLookupIssue => Boolean(issue));
+  const issues: BibliographicLookupIssue[] = [];
+
+  for (const result of results) {
+    if (result.issue) {
+      issues.push(result.issue);
+    }
+  }
 
   return { candidates, issues };
 }
