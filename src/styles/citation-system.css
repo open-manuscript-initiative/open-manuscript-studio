@@ -1,0 +1,349 @@
+.omi-block-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.omi-citation {
+  display: inline-flex;
+  align-items: center;
+  max-width: min(28rem, 100%);
+  margin-inline: 0.18rem;
+  padding: 0.08rem 0.42rem;
+  border: 1px solid var(--omi-editor-border-strong);
+  border-radius: 0.45rem;
+  color: var(--omi-editor-accent-text);
+  background: var(--omi-editor-accent-soft);
+  font-size: 0.83em;
+  font-weight: 650;
+  line-height: 1.35;
+  vertical-align: 0.08em;
+  cursor: pointer;
+  user-select: none;
+}
+
+.omi-citation.ProseMirror-selectednode {
+  outline: 2px solid var(--omi-editor-accent);
+  outline-offset: 2px;
+}
+
+.omi-citation-picker,
+.omi-citation-editor-card {
+  margin-top: 0.8rem;
+  padding: 1rem;
+  border: 1px solid var(--omi-editor-border);
+  border-radius: var(--omi-editor-radius-medium);
+  background: var(--omi-editor-surface-muted);
+}
+
+.omi-citation-picker header strong,
+.omi-citation-editor-header strong,
+.omi-reference-editor h4,
+.omi-bibliography-preview h4 {
+  color: var(--omi-editor-text);
+}
+
+.omi-citation-picker header p,
+.omi-citation-editor-header p,
+.omi-reference-editor-header p,
+.omi-reference-subheading p,
+.omi-bibliography-preview > p,
+.omi-reference-empty p,
+.omi-citation-empty-inline p {
+  margin: 0.25rem 0 0;
+  color: var(--omi-editor-text-muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.omi-citation-search,
+.omi-citation-field,
+.omi-reference-form-grid label,
+.omi-reference-contributor label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--omi-editor-text-muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.omi-citation-search {
+  margin-top: 0.9rem;
+}
+
+.omi-citation-search input,
+.omi-citation-field input,
+.omi-citation-field select,
+.omi-reference-form-grid input,
+.omi-reference-form-grid select,
+.omi-reference-contributor input,
+.omi-reference-contributor select,
+.omi-reference-search input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.4rem;
+  padding: 0.52rem 0.65rem;
+  border: 1px solid var(--omi-editor-border);
+  border-radius: 0.55rem;
+  color: var(--omi-editor-text);
+  background: var(--omi-editor-surface);
+  font: inherit;
+}
+
+.omi-citation-picker-results {
+  display: grid;
+  gap: 0.45rem;
+  max-height: 14rem;
+  margin-top: 0.7rem;
+  overflow-y: auto;
+}
+
+.omi-citation-picker-record {
+  display: grid;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--omi-editor-border);
+  border-radius: 0.6rem;
+  color: var(--omi-editor-text);
+  background: var(--omi-editor-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.omi-citation-picker-record span {
+  color: var(--omi-editor-text-muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.omi-citation-picker-record--selected {
+  border-color: var(--omi-editor-accent);
+  box-shadow: var(--omi-editor-shadow-focus);
+}
+
+.omi-citation-locator-row,
+.omi-citation-editor-grid,
+.omi-reference-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.8rem;
+}
+
+.omi-citation-locator-row label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--omi-editor-text-muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.omi-citation-locator-row input,
+.omi-citation-locator-row select {
+  min-height: 2.4rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--omi-editor-border);
+  border-radius: 0.55rem;
+  background: var(--omi-editor-surface);
+  font: inherit;
+}
+
+.omi-citation-picker-actions,
+.omi-citation-editor-actions,
+.omi-reference-editor-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+}
+
+.omi-citation-editor-header,
+.omi-reference-editor-header,
+.omi-reference-subheading,
+.omi-reference-item-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.omi-citation-editor-header p {
+  max-width: 48rem;
+}
+
+.omi-citation-icon-button,
+.omi-reference-icon-action,
+.omi-reference-remove-contributor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 1px solid var(--omi-editor-border);
+  border-radius: 0.5rem;
+  color: var(--omi-editor-text-muted);
+  background: var(--omi-editor-surface);
+  cursor: pointer;
+}
+
+.omi-citation-field--wide,
+.omi-reference-field-wide {
+  grid-column: 1 / -1;
+}
+
+.omi-references-panel {
+  min-width: 0;
+}
+
+.omi-reference-search {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--omi-editor-border);
+  border-radius: 0.65rem;
+  color: var(--omi-editor-text-muted);
+  background: var(--omi-editor-surface);
+}
+
+.omi-reference-search input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
+
+.omi-reference-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.omi-reference-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem;
+  border: 1px solid var(--omi-editor-border);
+  border-radius: 0.7rem;
+  background: var(--omi-editor-surface);
+}
+
+.omi-reference-item-main {
+  min-width: 0;
+}
+
+.omi-reference-item-main > p {
+  margin: 0.35rem 0;
+  color: var(--omi-editor-text-muted);
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+
+.omi-reference-status {
+  flex: 0 0 auto;
+  padding: 0.18rem 0.45rem;
+  border-radius: 999px;
+  background: var(--omi-editor-surface-muted);
+  color: var(--omi-editor-text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.omi-reference-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.7rem;
+  color: var(--omi-editor-text-soft);
+  font-size: 0.7rem;
+}
+
+.omi-reference-item-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+}
+
+.omi-reference-empty,
+.omi-citation-empty-inline,
+.omi-reference-warning {
+  padding: 0.9rem;
+  border: 1px dashed var(--omi-editor-border-strong);
+  border-radius: 0.65rem;
+  background: var(--omi-editor-surface-muted);
+}
+
+.omi-reference-warning {
+  margin-top: 0.8rem;
+}
+
+.omi-reference-contributors {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--omi-editor-border);
+}
+
+.omi-reference-contributor-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.7rem;
+}
+
+.omi-reference-contributor {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.8fr) minmax(8rem, 1fr) minmax(8rem, 1fr) auto;
+  gap: 0.55rem;
+  align-items: end;
+}
+
+.omi-bibliography-preview {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--omi-editor-border);
+}
+
+.omi-bibliography-preview ol {
+  display: grid;
+  gap: 0.6rem;
+  padding-left: 1.4rem;
+  color: var(--omi-editor-text);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 720px) {
+  .omi-citation-locator-row,
+  .omi-citation-editor-grid,
+  .omi-reference-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .omi-citation-field--wide,
+  .omi-reference-field-wide {
+    grid-column: auto;
+  }
+
+  .omi-reference-contributor {
+    grid-template-columns: 1fr;
+  }
+
+  .omi-reference-item {
+    flex-direction: column;
+  }
+
+  .omi-reference-item-actions {
+    justify-content: flex-end;
+  }
+
+  .omi-citation-picker-actions,
+  .omi-citation-editor-actions,
+  .omi-reference-editor-actions {
+    flex-wrap: wrap;
+  }
+}

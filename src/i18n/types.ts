@@ -31,6 +31,7 @@ export interface TranslationDictionary {
       document: string;
       manuscript: string;
       notes: string;
+      references: string;
       contributors: string;
       history: string;
       tools: string;
@@ -108,6 +109,95 @@ export interface TranslationDictionary {
     autoSave: string;
   };
 
+  citations: {
+    referencesTitle: string;
+    referencesDescription: string;
+    addReference: string;
+    editReference: string;
+    referenceEditorDescription: string;
+    emptyLibrary: string;
+    emptyLibraryHint: string;
+    searchReferences: string;
+    searchPlaceholder: string;
+    untitledReference: string;
+    occurrences: string;
+    bibliographyPreviewDescription: string;
+    resourceType: string;
+    title: string;
+    titlePlaceholder: string;
+    subtitle: string;
+    creators: string;
+    creatorsDescription: string;
+    addCreator: string;
+    removeCreator: string;
+    noCreators: string;
+    creatorRole: string;
+    givenName: string;
+    familyName: string;
+    containerTitle: string;
+    issued: string;
+    volume: string;
+    issue: string;
+    pages: string;
+    publisher: string;
+    place: string;
+    duplicateReference: string;
+    insertTitle: string;
+    insertDescription: string;
+    noReferences: string;
+    noReferencesHint: string;
+    insert: string;
+    citation: string;
+    reference: string;
+    locatorType: string;
+    locator: string;
+    locatorPlaceholder: string;
+    prefix: string;
+    prefixPlaceholder: string;
+    suffix: string;
+    suffixPlaceholder: string;
+    openSource: string;
+    closeEditor: string;
+    deleteCitation: string;
+    confirmDeleteCitation: string;
+    unresolvedReference: string;
+    roles: {
+      author: string;
+      editor: string;
+      translator: string;
+      compiler: string;
+      contributor: string;
+    };
+    resourceTypes: {
+      'journal-article': string;
+      book: string;
+      'book-chapter': string;
+      'conference-paper': string;
+      thesis: string;
+      dissertation: string;
+      report: string;
+      preprint: string;
+      dataset: string;
+      software: string;
+      standard: string;
+      'archival-source': string;
+      manuscript: string;
+      'web-page': string;
+    };
+    locators: {
+      page: string;
+      'page-range': string;
+      chapter: string;
+      section: string;
+      paragraph: string;
+      figure: string;
+      table: string;
+      folio: string;
+      line: string;
+      timestamp: string;
+    };
+  };
+
   contributors: {
     description: string;
     add: string;
@@ -178,12 +268,14 @@ export interface TranslationDictionary {
     addSection: string;
     addParagraph: string;
     addNote: string;
+    addCitation: string;
     untitledSection: string;
     emptyParagraph: string;
     paragraph: string;
     heading: string;
     quote: string;
     insertNote: string;
+    insertCitation: string;
     loading: string;
   };
 

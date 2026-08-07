@@ -61,11 +61,131 @@ export interface OmiAnnotation {
   modifiedAt?: string;
 }
 
+export type OmiBibliographicResourceType =
+  | 'journal-article'
+  | 'book'
+  | 'book-chapter'
+  | 'conference-paper'
+  | 'thesis'
+  | 'dissertation'
+  | 'report'
+  | 'preprint'
+  | 'dataset'
+  | 'software'
+  | 'standard'
+  | 'archival-source'
+  | 'manuscript'
+  | 'web-page'
+  | string;
+
+export type OmiBibliographicContributorRole =
+  | 'author'
+  | 'editor'
+  | 'translator'
+  | 'compiler'
+  | 'contributor'
+  | string;
+
+export interface OmiBibliographicContributor {
+  id: string;
+  role: OmiBibliographicContributorRole;
+  givenName?: string;
+  familyName?: string;
+  literalName?: string;
+}
+
+export interface OmiBibliographicIdentifier {
+  scheme: 'doi' | 'isbn' | 'issn' | 'pmid' | 'arxiv' | 'url' | string;
+  value: string;
+}
+
+export type OmiBibliographicRecordStatus =
+  | 'unresolved'
+  | 'provisional'
+  | 'resolved'
+  | 'verified'
+  | 'conflicted'
+  | 'deprecated';
+
+/**
+ * Portable OMI-SPEC-220 bibliographic record.
+ *
+ * The record describes the cited work once. Individual acts of citing it are
+ * represented separately by OmiCitation objects.
+ */
+export interface OmiBibliographicRecord {
+  id: string;
+  type: OmiBibliographicResourceType;
+  title: string;
+  subtitle?: string;
+  contributors: OmiBibliographicContributor[];
+  containerTitle?: string;
+  issued?: string;
+  publisher?: string;
+  place?: string;
+  volume?: string;
+  issue?: string;
+  pages?: string;
+  language?: string;
+  identifiers: OmiBibliographicIdentifier[];
+  url?: string;
+  accessed?: string;
+  status: OmiBibliographicRecordStatus;
+  createdAt?: string;
+  modifiedAt?: string;
+}
+
+export type OmiCitationLocatorType =
+  | 'page'
+  | 'page-range'
+  | 'chapter'
+  | 'section'
+  | 'paragraph'
+  | 'figure'
+  | 'table'
+  | 'folio'
+  | 'line'
+  | 'timestamp'
+  | string;
+
+export interface OmiCitationLocator {
+  type: OmiCitationLocatorType;
+  value: string;
+}
+
+export type OmiCitationMode =
+  | 'parenthetical'
+  | 'narrative'
+  | 'note'
+  | 'bibliography-only'
+  | string;
+
+/**
+ * OMI-SPEC-210 citation occurrence.
+ *
+ * The complete bibliographic metadata is never duplicated here. `target`
+ * references one record in manuscript.bibliographicRecords.
+ */
 export interface OmiCitation {
   id: string;
-  citationKey: string;
-  label: string;
-  sourceType: 'book' | 'article' | 'chapter' | 'web' | string;
+  target: string;
+  anchorId: string;
+  targetBlockId: string;
+  locator?: OmiCitationLocator;
+  prefix?: string;
+  suffix?: string;
+  mode?: OmiCitationMode;
+  intent?: string;
+  createdAt?: string;
+  modifiedAt?: string;
+
+  /**
+   * Deprecated pre-OMI-SPEC-210 compatibility fields. New citations must not
+   * use these as their authoritative representation.
+   */
+  citationKey?: string;
+  label?: string;
+  sourceType?: string;
   issued?: string;
 }
 
@@ -132,6 +252,16 @@ export interface OmiManuscriptState {
 
   sections: OmiSection[];
   annotations: OmiAnnotation[];
+
+  /**
+   * Manuscript-local OMI-SPEC-220 reference library. Optional while older
+   * alpha manuscripts are still importable; new Studio edits initialize it.
+   */
+  bibliographicRecords?: OmiBibliographicRecord[];
+
+  /**
+   * OMI-SPEC-210 citation occurrences anchored in manuscript content.
+   */
   citations: OmiCitation[];
   createdAt: string;
   updatedAt: string;

@@ -33,6 +33,7 @@ export const hu: TranslationDictionary = {
       document: 'Dokumentum',
       manuscript: 'Kézirat adatai',
       notes: 'Jegyzetek',
+      references: 'Hivatkozások',
       contributors: 'Közreműködők',
       history: 'Előzmények',
       tools: 'Export és eszközök',
@@ -124,6 +125,104 @@ export const hu: TranslationDictionary = {
     autoSave: 'A kézirat revízióival együtt mentve'
   },
 
+  citations: {
+    referencesTitle: 'Hivatkozások',
+    referencesDescription:
+      'Egy művet csak egyszer kell felvenni a kézirat hivatkozásjegyzékébe, majd tetszőleges számú idézési előfordulásban újra felhasználható.',
+    addReference: 'Forrás hozzáadása',
+    editReference: 'Forrás szerkesztése',
+    referenceEditorDescription:
+      'A bibliográfiai adatokat strukturáltan, az egyes idézési helyektől és a megjelenítési stílustól függetlenül tárolja.',
+    emptyLibrary: 'A kézirat hivatkozásjegyzéke még üres.',
+    emptyLibraryHint:
+      'Vegyen fel könyvet, tanulmányt, levéltári forrást, webes forrást vagy más idézhető művet, majd illessze be a szövegbe.',
+    searchReferences: 'Keresés a hivatkozások között',
+    searchPlaceholder: 'Cím, szerző, év, DOI…',
+    untitledReference: 'Cím nélküli forrás',
+    occurrences: 'hivatkozás',
+    bibliographyPreviewDescription:
+      'A kéziratban ténylegesen idézett rekordok semleges előnézete. A végleges formázást a publikációs profil határozza meg.',
+    resourceType: 'Forrás típusa',
+    title: 'Cím',
+    titlePlaceholder: 'Az idézett mű címe',
+    subtitle: 'Alcím',
+    creators: 'Szerzők és közreműködők',
+    creatorsDescription:
+      'A neveket strukturáltan tároljuk, hogy a hivatkozási stílusok és exportok helyesen jeleníthessék meg őket.',
+    addCreator: 'Szerző hozzáadása',
+    removeCreator: 'Szerző eltávolítása',
+    noCreators: 'Még nincs megadott szerző vagy közreműködő.',
+    creatorRole: 'Szerep',
+    givenName: 'Utónév',
+    familyName: 'Családnév',
+    containerTitle: 'Folyóirat, kötet vagy befoglaló mű címe',
+    issued: 'Megjelenés dátuma / éve',
+    volume: 'Évfolyam / kötet',
+    issue: 'Szám',
+    pages: 'Oldalak / terjedelem',
+    publisher: 'Kiadó',
+    place: 'Kiadás helye',
+    duplicateReference:
+      'Valószínűleg már szerepel ugyanez a mű a hivatkozásjegyzékben:',
+    insertTitle: 'Hivatkozás beszúrása',
+    insertDescription:
+      'Válasszon művet a kézirat hivatkozásjegyzékéből, és szükség esetén adja meg a pontos helyet.',
+    noReferences: 'Még nincs használható forrás.',
+    noReferencesHint:
+      'A Kézirat menü → Hivatkozások pontban vegye fel a művet, majd térjen vissza ide a beszúráshoz.',
+    insert: 'Hivatkozás beszúrása',
+    citation: 'Hivatkozás',
+    reference: 'Idézett mű',
+    locatorType: 'Helymegjelölés típusa',
+    locator: 'Helymegjelölés',
+    locatorPlaceholder: 'pl. 45–47, 12r–13v, 4. fejezet',
+    prefix: 'Előtag',
+    prefixPlaceholder: 'pl. lásd még',
+    suffix: 'Utótag',
+    suffixPlaceholder: 'pl. kiemelés tőlem',
+    openSource: 'Forrás megnyitása',
+    closeEditor: 'Hivatkozásszerkesztő bezárása',
+    deleteCitation: 'Hivatkozás törlése',
+    confirmDeleteCitation:
+      'Törli ezt a hivatkozási előfordulást a kéziratból? A bibliográfiai rekord megmarad a hivatkozásjegyzékben.',
+    unresolvedReference: 'Az idézett bibliográfiai rekord hiányzik vagy nincs feloldva.',
+    roles: {
+      author: 'Szerző',
+      editor: 'Szerkesztő',
+      translator: 'Fordító',
+      compiler: 'Összeállító',
+      contributor: 'Közreműködő'
+    },
+    resourceTypes: {
+      'journal-article': 'Folyóiratcikk',
+      book: 'Könyv',
+      'book-chapter': 'Könyvfejezet',
+      'conference-paper': 'Konferencia-előadás',
+      thesis: 'Szakdolgozat',
+      dissertation: 'Disszertáció',
+      report: 'Jelentés',
+      preprint: 'Preprint',
+      dataset: 'Adatkészlet',
+      software: 'Szoftver',
+      standard: 'Szabvány',
+      'archival-source': 'Levéltári forrás',
+      manuscript: 'Kézirat',
+      'web-page': 'Weboldal'
+    },
+    locators: {
+      page: 'Oldal',
+      'page-range': 'Oldaltartomány',
+      chapter: 'Fejezet',
+      section: 'Szakasz',
+      paragraph: 'Bekezdés',
+      figure: 'Ábra',
+      table: 'Táblázat',
+      folio: 'Fólió',
+      line: 'Sor',
+      timestamp: 'Időpont'
+    }
+  },
+
   contributors: {
     description:
       'A hordozható tudományos identitások és a kézirathoz kötött közreműködői szerepek kezelése.',
@@ -201,12 +300,14 @@ export const hu: TranslationDictionary = {
     addSection: 'Fejezet hozzáadása',
     addParagraph: 'Bekezdés hozzáadása',
     addNote: 'Jegyzet',
+    addCitation: 'Hivatkozás',
     untitledSection: 'Névtelen fejezet',
     emptyParagraph: 'Kezdjen el írni…',
     paragraph: 'Bekezdés',
     heading: 'Címsor',
     quote: 'Idézet',
     insertNote: 'Szemantikus jegyzet beszúrása',
+    insertCitation: 'Szemantikus hivatkozás beszúrása',
     loading: 'A szerkesztő betöltése…'
   },
 

@@ -12,16 +12,28 @@ import {
 import StarterKit from '@tiptap/starter-kit';
 
 import {
+  reconcileCitationsAfterBlockEdit,
+  stageCreateCitation,
+} from '../app/citationActions';
+import {
   reconcileNotesAfterBlockEdit,
   stageCreateNote,
 } from '../app/noteActions';
 import { useStudioStore } from '../app/useStudioStore';
+import { OmiCitationExtension } from '../editor/extensions/OmiCitationExtension';
 import {
   OmiNoteExtension,
   type OmiNoteAttributes,
 } from '../editor/extensions/OmiNoteExtension';
 import { useTranslation } from '../i18n';
 import type { TranslationKey } from '../i18n/types';
+import {
+  createCitationOccurrence,
+  formatCitationLabel,
+} from '../model/citations';
+import type { OmiCitationLocator } from '../types/omi';
+import { CitationEditorCard } from './CitationEditorCard';
+import { CitationPicker } from './CitationPicker';
 import { NoteEditorCard } from './NoteEditorCard';
 
 interface BlockEditorProps {
@@ -40,6 +52,8 @@ export function BlockEditor({
   const { t } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
+  const [activeCitationId, setActiveCitationId] = useState<string | null>(null);
+  const [citationPickerOpen, setCitationPickerOpen] = useState(false);
   const onUpdateRef = useRef(onUpdate);
   const tRef = useRef(t);
   const blockLabel = formatBlockType(blockType, t);
@@ -68,6 +82,17 @@ export function BlockEditor({
     }
   }, [activeNoteId, manuscript.annotations]);
 
+  useEffect(() => {
+    if (
+      activeCitationId &&
+      !manuscript.citations.some(
+        (citation) => citation.id === activeCitationId,
+      )
+    ) {
+      setActiveCitationId(null);
+    }
+  }, [activeCitationId, manuscript.citations]);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -88,10 +113,12 @@ export function BlockEditor({
             kind: attributes.noteType,
           });
           setActiveNoteId(attributes.noteId);
+          setActiveCitationId(null);
         },
         accessibleLabel: (attributes: OmiNoteAttributes) =>
           `${tRef.current('notes.note')} ${attributes.label}`,
       }),
+      OmiCitationExtension,
     ],
 
     content: parseStoredContent(content),
@@ -111,14 +138,30 @@ export function BlockEditor({
           return false;
         }
 
-        const marker = target.closest<HTMLElement>('[data-omi-note][data-note-id]');
-        const noteId = marker?.dataset.noteId;
+        const citationMarker = target.closest<HTMLElement>(
+          '[data-omi-citation][data-citation-id]',
+        );
+        const citationId = citationMarker?.dataset.citationId;
+
+        if (citationId) {
+          setActiveCitationId(citationId);
+          setActiveNoteId(null);
+          setCitationPickerOpen(false);
+          return true;
+        }
+
+        const noteMarker = target.closest<HTMLElement>(
+          '[data-omi-note][data-note-id]',
+        );
+        const noteId = noteMarker?.dataset.noteId;
 
         if (!noteId) {
           return false;
         }
 
         setActiveNoteId(noteId);
+        setActiveCitationId(null);
+        setCitationPickerOpen(false);
         return true;
       },
     },
@@ -131,6 +174,7 @@ export function BlockEditor({
         JSON.stringify(structuredContent),
       );
       reconcileNotesAfterBlockEdit();
+      reconcileCitationsAfterBlockEdit();
     },
   });
 
@@ -156,6 +200,9 @@ export function BlockEditor({
       return;
     }
 
+    setCitationPickerOpen(false);
+    setActiveCitationId(null);
+
     editor
       .chain()
       .focus()
@@ -164,6 +211,46 @@ export function BlockEditor({
       })
       .insertContent(' ')
       .run();
+  }
+
+  function insertCitation(
+    recordId: string,
+    locator?: OmiCitationLocator,
+  ): void {
+    if (!editor) {
+      return;
+    }
+
+    const record = (manuscript.bibliographicRecords ?? []).find(
+      (item) => item.id === recordId,
+    );
+
+    if (!record) {
+      return;
+    }
+
+    const citation = createCitationOccurrence({
+      target: recordId,
+      targetBlockId: blockId,
+      locator,
+    });
+    const label = formatCitationLabel(record, citation);
+    const inserted = editor
+      .chain()
+      .focus()
+      .insertOmiCitation({
+        citationId: citation.id,
+        anchorId: citation.anchorId,
+        label,
+      })
+      .insertContent(' ')
+      .run();
+
+    if (inserted && stageCreateCitation(citation)) {
+      setCitationPickerOpen(false);
+      setActiveCitationId(citation.id);
+      setActiveNoteId(null);
+    }
   }
 
   if (!editor) {
@@ -188,19 +275,50 @@ export function BlockEditor({
           {blockLabel}
         </span>
 
-        <button
-          type="button"
-          className="omi-note-insert-button"
-          onClick={insertNote}
-          aria-label={t('editor.insertNote')}
-          title={`${t('editor.insertNote')} · Ctrl/Cmd+Alt+N`}
-        >
-          <span aria-hidden="true">＋</span>
-          <span>{t('editor.addNote')}</span>
-        </button>
+        <div className="omi-block-toolbar-actions">
+          <button
+            type="button"
+            className="omi-note-insert-button"
+            onClick={() => {
+              setCitationPickerOpen((open) => !open);
+              setActiveCitationId(null);
+              setActiveNoteId(null);
+            }}
+            aria-label={t('editor.insertCitation')}
+            title={t('editor.insertCitation')}
+          >
+            <span aria-hidden="true">＋</span>
+            <span>{t('editor.addCitation')}</span>
+          </button>
+
+          <button
+            type="button"
+            className="omi-note-insert-button"
+            onClick={insertNote}
+            aria-label={t('editor.insertNote')}
+            title={`${t('editor.insertNote')} · Ctrl/Cmd+Alt+N`}
+          >
+            <span aria-hidden="true">＋</span>
+            <span>{t('editor.addNote')}</span>
+          </button>
+        </div>
       </div>
 
       <EditorContent editor={editor} />
+
+      {citationPickerOpen ? (
+        <CitationPicker
+          onInsert={insertCitation}
+          onCancel={() => setCitationPickerOpen(false)}
+        />
+      ) : null}
+
+      {activeCitationId ? (
+        <CitationEditorCard
+          citationId={activeCitationId}
+          onClose={() => setActiveCitationId(null)}
+        />
+      ) : null}
 
       {activeNoteId ? (
         <NoteEditorCard
