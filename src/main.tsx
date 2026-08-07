@@ -23,6 +23,7 @@ import './styles/ror-affiliation.css';
 import './styles/orcid-lookup.css';
 import './styles/editor-i18n.css';
 import './styles/docx-import.css';
+import './styles/publication-profile.css';
 
 ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
