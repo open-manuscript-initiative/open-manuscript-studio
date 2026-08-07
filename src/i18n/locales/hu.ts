@@ -20,6 +20,57 @@ export const hu: TranslationDictionary = {
     settings: 'Beállítások'
   },
 
+  studio: {
+    menu: 'Kézirat menü',
+    closeMenu: 'Kézirat menü bezárása',
+    languageSwitcher: 'Felület nyelve',
+    saved: 'Mentve',
+    pending: 'Mentés…',
+    editorAria: 'Kéziratszerkesztő',
+    titlePlaceholder: 'Adja meg a kézirat címét',
+    noSection: 'Nincs kiválasztott szakasz.',
+    navigation: {
+      document: 'Dokumentum',
+      manuscript: 'Kézirat adatai',
+      contributors: 'Közreműködők',
+      history: 'Előzmények',
+      tools: 'Export és eszközök'
+    },
+    document: {
+      title: 'Dokumentumszerkezet',
+      description:
+        'Válassza ki azt a szakaszt, amelyen dolgozni szeretne. A szerkezeti és objektumadatok csak akkor jelennek meg, amikor szükség van rájuk.',
+      addSection: 'Szakasz hozzáadása',
+      sections: 'Szakaszok',
+      objects: 'Objektumok',
+      annotations: 'Jegyzetek',
+      citations: 'Hivatkozások'
+    },
+    manuscript: {
+      title: 'Kézirat adatai',
+      description:
+        'A kéziratszintű adatokat a szerkesztési felülettől elkülönítve kezelheti.'
+    },
+    tools: {
+      title: 'Export és eszközök',
+      description:
+        'A másodlagos, technikai és esetleg romboló műveletek nem jelennek meg a szerkesztési felületen.',
+      export: 'Export .omi.json',
+      exportDescription:
+        'Kanonikus, hordozható OMI kéziratfájl készítése a függő módosítások checkpointba mentése után.',
+      reset: 'Mintakézirat visszaállítása',
+      resetDescription:
+        'A jelenlegi alfa mintakézirat lecserélése egy új, tiszta mintakéziratra.',
+      confirmReset:
+        'Visszaállítja a mintakéziratot? A jelenlegi mintakézirat adatai lecserélődnek.',
+      technicalData: 'Technikai adatok',
+      technicalDescription:
+        'A szemantikai reprezentáció csak akkor jelenik meg, amikor technikai részletekre van szükség.',
+      liveJson: 'Aktuális szakasz JSON',
+      synced: 'Szinkronban'
+    }
+  },
+
   manuscript: {
     newDocument: 'Új kézirat',
     documentTitle: 'Dokumentum címe',
