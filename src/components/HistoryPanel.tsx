@@ -3,13 +3,20 @@ import {
   History,
   RotateCcw,
   Save,
+  ShieldAlert,
+  ShieldCheck,
   Trash2,
 } from 'lucide-react';
 
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { getStateDigestCopy } from '../i18n/stateDigest';
 import type { TranslationKey } from '../i18n/types';
 import { getPreferredNameForm } from '../model/identity';
+import {
+  inspectRevisionHistoryIntegrity,
+  type OmiRevisionIntegrityResult,
+} from '../model/revisionIntegrity';
 import type {
   OmiChangeOperation,
   OmiRevision,
@@ -33,7 +40,8 @@ const OPERATION_LABELS: Partial<
 };
 
 export function HistoryPanel() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const integrityCopy = getStateDigestCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const pendingChangeSet = useStudioStore(
     (state) => state.pendingChangeSet,
@@ -51,6 +59,15 @@ export function HistoryPanel() {
     manuscript.revisionHistory.completeness === 'complete'
       ? 'history.completeHistory'
       : 'history.shallowHistory';
+  const integrity = inspectRevisionHistoryIntegrity(
+    manuscript.revisionHistory,
+  );
+  const integrityByRevision = new Map(
+    integrity.results.map((result) => [result.revisionId, result]),
+  );
+  const integrityIsValid =
+    integrity.summary.mismatch === 0 &&
+    integrity.summary.unsupported === 0;
 
   useEffect(() => {
     const checkpointOnWindowBlur = () => checkpoint('window-blur');
@@ -95,6 +112,26 @@ export function HistoryPanel() {
           {t(completenessKey)}
         </span>
       </header>
+
+      <div
+        className={`history-integrity-summary history-integrity-summary--${
+          integrityIsValid ? 'verified' : 'invalid'
+        }`}
+        role="status"
+      >
+        {integrityIsValid ? (
+          <ShieldCheck size={18} aria-hidden="true" />
+        ) : (
+          <ShieldAlert size={18} aria-hidden="true" />
+        )}
+        <div>
+          <strong>{integrityCopy.integrity}</strong>
+          <p>{integrityCopy.summary}</p>
+        </div>
+        <span className="history-integrity-count">
+          {integrity.summary.verified}/{integrity.summary.total}
+        </span>
+      </div>
 
       {pendingChangeSet ? (
         <div className="history-pending" role="status">
@@ -161,6 +198,7 @@ export function HistoryPanel() {
                   ? t(operationKey)
                   : revision.summary;
             const revertIsBlocked = Boolean(pendingChangeSet);
+            const revisionIntegrity = integrityByRevision.get(revision.id);
 
             return (
               <li
@@ -191,6 +229,13 @@ export function HistoryPanel() {
                   <code className="history-revision-id">
                     {t('history.revision')} {shortRevisionId(revision.id)}
                   </code>
+
+                  {revisionIntegrity ? (
+                    <RevisionIntegrityBadge
+                      result={revisionIntegrity}
+                      copy={integrityCopy}
+                    />
+                  ) : null}
                 </div>
 
                 <button
@@ -257,6 +302,39 @@ export function HistoryPanel() {
   );
 }
 
+function RevisionIntegrityBadge({
+  result,
+  copy,
+}: {
+  result: OmiRevisionIntegrityResult;
+  copy: ReturnType<typeof getStateDigestCopy>;
+}) {
+  const label =
+    result.status === 'verified'
+      ? copy.verified
+      : result.status === 'missing'
+        ? copy.missing
+        : result.status === 'mismatch'
+          ? copy.mismatch
+          : copy.unsupported;
+  const value = result.digest?.value;
+
+  return (
+    <div
+      className={`history-state-digest history-state-digest--${result.status}`}
+      title={value ? `${copy.digest}: ${value}` : label}
+    >
+      {result.status === 'verified' ? (
+        <ShieldCheck size={14} aria-hidden="true" />
+      ) : (
+        <ShieldAlert size={14} aria-hidden="true" />
+      )}
+      <span>{label}</span>
+      {value ? <code>{shortDigest(value)}</code> : null}
+    </div>
+  );
+}
+
 function resolveActorName(revision: OmiRevision): string | undefined {
   if (!revision.actorAgentId) {
     return undefined;
@@ -273,6 +351,10 @@ function resolveActorName(revision: OmiRevision): string | undefined {
 
 function shortRevisionId(revisionId: string): string {
   return revisionId.slice(0, 8);
+}
+
+function shortDigest(value: string): string {
+  return `${value.slice(0, 12)}…`;
 }
 
 function formatTimestamp(timestamp: string): string {
