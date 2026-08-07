@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { latexToMathMl } from '../src/model/equationRendering.ts';
+import {
+  latexToMathMl,
+  sanitizeMathMlForPreview,
+} from '../src/model/equationRendering.ts';
 import {
   addTableColumn,
   addTableRow,
@@ -78,4 +81,14 @@ test('renders common LaTeX structures as browser-native MathML', () => {
   assert.match(mathml, /<msub>/);
   assert.match(mathml, /<msup>/);
   assert.ok(!mathml.includes('<script'));
+});
+
+test('never returns active markup when MathML sanitization runs without a browser DOM', () => {
+  const sanitized = sanitizeMathMlForPreview(
+    '<math onclick="alert(1)"><mrow><mi>x</mi><script>alert(1)</script></mrow></math>',
+  );
+
+  assert.match(sanitized, /^<math /);
+  assert.ok(!sanitized.includes('<script'));
+  assert.ok(!sanitized.includes('onclick='));
 });
