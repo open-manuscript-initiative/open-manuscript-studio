@@ -5,7 +5,7 @@ import {
   markLatestTombstoneRestored,
   mergeTombstones,
   type OmiTombstoneObjectType,
-} from './tombstone';
+} from './tombstone.ts';
 import type {
   OmiBlock,
   OmiManuscript,
