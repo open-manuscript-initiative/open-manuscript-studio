@@ -26,6 +26,7 @@ import { downloadOmiJson } from '../services/exportOmi';
 import { DocumentTree } from './DocumentTree';
 import { Footer } from './Footer';
 import { HistoryPanel } from './HistoryPanel';
+import { ManuscriptLanguageField } from './ManuscriptLanguageField';
 import { PropertiesPanel } from './PropertiesPanel';
 
 type StudioMenuView =
@@ -276,10 +277,7 @@ function ManuscriptDataView() {
           </div>
         </div>
 
-        <div className="studio-readonly-field">
-          <span>{t('manuscript.documentLanguage')}</span>
-          <strong>{manuscript.locale}</strong>
-        </div>
+        <ManuscriptLanguageField />
       </div>
     </section>
   );
