@@ -4,7 +4,11 @@ import {
   FileUp,
   LoaderCircle,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import {
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 
 import { applyDocxImportPlan } from '../app/docxImportActions';
 import { useTranslation } from '../i18n';
@@ -188,7 +192,7 @@ export function DocxImportPanel() {
                 return (
                   <li
                     key={section.id}
-                    style={{ '--docx-outline-depth': depth } as React.CSSProperties}
+                    style={{ '--docx-outline-depth': depth } as CSSProperties}
                   >
                     <span>{section.title || '—'}</span>
                     <small>{section.blocks.length}</small>
