@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 import { App } from './App';
+import { initializeRevisionIntegrity } from './app/revisionIntegrity';
 import { I18nProvider } from './i18n';
 
 import './styles/global.css';
@@ -27,6 +28,9 @@ import './styles/docx-import.css';
 import './styles/publication-profile.css';
 import './styles/jats-export.css';
 import './styles/asset-container.css';
+import './styles/state-digest.css';
+
+initializeRevisionIntegrity();
 
 ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
