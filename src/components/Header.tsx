@@ -3,9 +3,14 @@ import { useStudioStore } from '../app/useStudioStore';
 import { downloadOmiJson } from '../services/exportOmi';
 
 export function Header() {
-  const manuscript = useStudioStore((state) => state.manuscript);
   const addSection = useStudioStore((state) => state.addSection);
+  const checkpoint = useStudioStore((state) => state.checkpoint);
   const resetSample = useStudioStore((state) => state.resetSample);
+
+  function exportManuscript(): void {
+    checkpoint('export');
+    downloadOmiJson(useStudioStore.getState().manuscript);
+  }
 
   return (
     <header className="app-header">
@@ -20,7 +25,11 @@ export function Header() {
         <button type="button" onClick={resetSample}>
           <RotateCcw size={18} /> Reset sample
         </button>
-        <button type="button" className="primary" onClick={() => downloadOmiJson(manuscript)}>
+        <button
+          type="button"
+          className="primary"
+          onClick={exportManuscript}
+        >
           <Download size={18} /> Export .omi.json
         </button>
       </nav>

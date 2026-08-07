@@ -66,11 +66,19 @@ export interface TranslationDictionary {
     current: string;
     revision: string;
     events: string;
+    groupedChanges: string;
     unknownActor: string;
     completeHistory: string;
     shallowHistory: string;
+    pendingTitle: string;
+    pendingDescription: string;
+    pendingBadge: string;
+    checkpoint: string;
+    discard: string;
+    confirmDiscard: string;
     revert: string;
     confirmRevert: string;
+    revertBlocked: string;
     operations: {
       snapshotCreated: string;
       titleChanged: string;

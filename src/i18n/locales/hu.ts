@@ -70,12 +70,23 @@ export const hu: TranslationDictionary = {
     current: 'Jelenlegi',
     revision: 'Revízió',
     events: 'esemény',
+    groupedChanges: 'csoportosított változás',
     unknownActor: 'Ismeretlen közreműködő',
     completeHistory: 'Teljes előzmény',
     shallowHistory: 'Részleges előzmény',
+    pendingTitle: 'Nem rögzített munkapéldány',
+    pendingDescription:
+      'A legutóbbi módosítások összevonva várakoznak, és egyetlen nem módosítható checkpoint-revízióvá válnak.',
+    pendingBadge: 'Függőben',
+    checkpoint: 'Checkpoint mentése',
+    discard: 'Módosítások elvetése',
+    confirmDiscard:
+      'Elveti az összes nem rögzített módosítást, és visszaállítja a legutóbbi rögzített revíziót?',
     revert: 'Visszaállítás',
     confirmRevert:
       'Készüljön új revízió, amely visszaállítja ezt a korábbi kéziratállapotot?',
+    revertBlocked:
+      'Korábbi revízió visszaállítása előtt mentse checkpointként vagy vesse el a függő módosításokat.',
     operations: {
       snapshotCreated: 'Kézirat-pillanatkép létrehozva',
       titleChanged: 'A kézirat címe megváltozott',
