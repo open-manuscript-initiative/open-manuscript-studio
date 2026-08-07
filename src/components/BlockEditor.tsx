@@ -1,6 +1,7 @@
 import {
   useEffect,
   useRef,
+  useState,
   type CSSProperties,
 } from 'react';
 import {
@@ -10,9 +11,18 @@ import {
 } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 
-import { OmiNoteExtension } from '../editor/extensions/OmiNoteExtension';
+import {
+  reconcileNotesAfterBlockEdit,
+  stageCreateNote,
+} from '../app/noteActions';
+import { useStudioStore } from '../app/useStudioStore';
+import {
+  OmiNoteExtension,
+  type OmiNoteAttributes,
+} from '../editor/extensions/OmiNoteExtension';
 import { useTranslation } from '../i18n';
 import type { TranslationKey } from '../i18n/types';
+import { NoteEditorCard } from './NoteEditorCard';
 
 interface BlockEditorProps {
   blockId: string;
@@ -28,7 +38,10 @@ export function BlockEditor({
   onUpdate,
 }: BlockEditorProps) {
   const { t } = useTranslation();
+  const manuscript = useStudioStore((state) => state.manuscript);
+  const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const onUpdateRef = useRef(onUpdate);
+  const tRef = useRef(t);
   const blockLabel = formatBlockType(blockType, t);
   const editorStyle = {
     '--omi-editor-placeholder': JSON.stringify(
@@ -39,6 +52,21 @@ export function BlockEditor({
   useEffect(() => {
     onUpdateRef.current = onUpdate;
   }, [onUpdate]);
+
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
+
+  useEffect(() => {
+    if (
+      activeNoteId &&
+      !manuscript.annotations.some(
+        (annotation) => annotation.id === activeNoteId,
+      )
+    ) {
+      setActiveNoteId(null);
+    }
+  }, [activeNoteId, manuscript.annotations]);
 
   const editor = useEditor({
     extensions: [
@@ -51,7 +79,19 @@ export function BlockEditor({
         codeBlock: false,
         horizontalRule: false,
       }),
-      OmiNoteExtension,
+      OmiNoteExtension.configure({
+        onNoteInserted: (attributes: OmiNoteAttributes) => {
+          stageCreateNote({
+            id: attributes.noteId,
+            anchorId: attributes.anchorId,
+            targetBlockId: blockId,
+            kind: attributes.noteType,
+          });
+          setActiveNoteId(attributes.noteId);
+        },
+        accessibleLabel: (attributes: OmiNoteAttributes) =>
+          `${tRef.current('notes.note')} ${attributes.label}`,
+      }),
     ],
 
     content: parseStoredContent(content),
@@ -64,6 +104,23 @@ export function BlockEditor({
         'aria-label': `${blockLabel}: ${t('studio.editorAria')}`,
         spellcheck: 'true',
       },
+      handleClick: (_view, _pos, event) => {
+        const target = event.target;
+
+        if (!(target instanceof Element)) {
+          return false;
+        }
+
+        const marker = target.closest<HTMLElement>('[data-omi-note][data-note-id]');
+        const noteId = marker?.dataset.noteId;
+
+        if (!noteId) {
+          return false;
+        }
+
+        setActiveNoteId(noteId);
+        return true;
+      },
     },
 
     onUpdate: ({ editor: currentEditor }) => {
@@ -73,6 +130,7 @@ export function BlockEditor({
         blockId,
         JSON.stringify(structuredContent),
       );
+      reconcileNotesAfterBlockEdit();
     },
   });
 
@@ -102,7 +160,6 @@ export function BlockEditor({
       .chain()
       .focus()
       .insertOmiNote({
-        label: 'N',
         noteType: 'footnote',
       })
       .insertContent(' ')
@@ -136,7 +193,7 @@ export function BlockEditor({
           className="omi-note-insert-button"
           onClick={insertNote}
           aria-label={t('editor.insertNote')}
-          title={t('editor.insertNote')}
+          title={`${t('editor.insertNote')} · Ctrl/Cmd+Alt+N`}
         >
           <span aria-hidden="true">＋</span>
           <span>{t('editor.addNote')}</span>
@@ -144,6 +201,14 @@ export function BlockEditor({
       </div>
 
       <EditorContent editor={editor} />
+
+      {activeNoteId ? (
+        <NoteEditorCard
+          compact
+          noteId={activeNoteId}
+          onClose={() => setActiveNoteId(null)}
+        />
+      ) : null}
     </article>
   );
 }
