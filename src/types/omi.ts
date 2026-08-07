@@ -10,6 +10,14 @@ import type {
 
 export type OmiLocale = 'hu' | 'en' | 'de' | string;
 
+export type OmiSectionNumberingStyle =
+  | 'none'
+  | 'decimal'
+  | 'upper-roman'
+  | 'lower-roman'
+  | 'upper-alpha'
+  | 'lower-alpha';
+
 export interface OmiIdentifier {
   type: 'omi' | 'doi' | 'orcid' | 'isbn' | 'issn' | 'uri' | string;
   value: string;
@@ -90,6 +98,14 @@ export interface OmiManuscriptState {
   subtitle?: string;
   abstract?: string;
   keywords: string[];
+
+  /**
+   * Presentation preference for top-level section numbering.
+   *
+   * The semantic section title never contains the generated ordinal. This
+   * keeps titles portable while allowing renderers to choose another style.
+   */
+  sectionNumberingStyle?: OmiSectionNumberingStyle;
 
   /**
    * Portable scholarly identities represented independently from accounts.
