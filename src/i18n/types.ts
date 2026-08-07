@@ -148,6 +148,11 @@ export interface TranslationDictionary {
     addNote: string;
     untitledSection: string;
     emptyParagraph: string;
+    paragraph: string;
+    heading: string;
+    quote: string;
+    insertNote: string;
+    loading: string;
   };
 
   status: {
