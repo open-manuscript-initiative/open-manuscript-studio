@@ -1,4 +1,5 @@
 import { useStudioStore } from './useStudioStore';
+import { assertNoInvalidRevisionStateDigests } from '../model/revisionIntegrity';
 import { putAssetPayload } from '../services/assetRepository';
 import type { OmiContainerImportPlan } from '../services/omiContainerImport';
 
@@ -15,6 +16,8 @@ export async function applyOmiContainerImportPlan(
   }
 
   const manuscript = plan.manuscript;
+  assertNoInvalidRevisionStateDigests(manuscript);
+
   for (const asset of plan.assets) {
     await putAssetPayload(manuscript.id, asset.metadata.id, asset.bytes);
   }

@@ -4,6 +4,7 @@ import {
   Download,
   FileCheck2,
   FileSearch,
+  ShieldAlert,
   ShieldCheck,
   Upload,
 } from 'lucide-react';
@@ -21,6 +22,11 @@ import { applyOmiContainerImportPlan } from '../app/omiContainerImportActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getAssetContainerCopy } from '../i18n/assetContainer';
+import { getStateDigestCopy } from '../i18n/stateDigest';
+import {
+  ensureManuscriptRevisionStateDigests,
+  inspectRevisionHistoryIntegrity,
+} from '../model/revisionIntegrity';
 import {
   buildOmiContainer,
   type OmiContainerDiagnostic,
@@ -34,6 +40,7 @@ import {
 export function AssetContainerPanel() {
   const { locale } = useTranslation();
   const copy = getAssetContainerCopy(locale);
+  const digestCopy = getStateDigestCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const checkpoint = useStudioStore((state) => state.checkpoint);
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +64,22 @@ export function AssetContainerPanel() {
     [manuscript.sections],
   );
   const assets = manuscript.assets ?? [];
+  const currentIntegrity = inspectRevisionHistoryIntegrity(
+    manuscript.revisionHistory,
+  );
+  const importIntegrity = importPlan?.manuscript
+    ? inspectRevisionHistoryIntegrity(importPlan.manuscript.revisionHistory)
+    : null;
+  const importHasInvalidDigest = Boolean(
+    importIntegrity &&
+    (importIntegrity.summary.mismatch > 0 ||
+      importIntegrity.summary.unsupported > 0),
+  );
+  const importCanOpen = Boolean(
+    importPlan?.validForImport &&
+    importPlan.manuscript &&
+    !importHasInvalidDigest,
+  );
 
   async function prepareAssets(): Promise<number> {
     setBusy('prepare');
@@ -76,7 +99,11 @@ export function AssetContainerPanel() {
       await externalizeActiveManuscriptAssets();
       checkpoint('export');
       const current = useStudioStore.getState().manuscript;
-      const result = await buildOmiContainer(current);
+      const enriched = ensureManuscriptRevisionStateDigests(current);
+      if (enriched !== current) {
+        useStudioStore.setState({ manuscript: enriched });
+      }
+      const result = await buildOmiContainer(enriched);
       setDiagnostics(result.diagnostics);
       if (!result.validForExport) return;
 
@@ -121,7 +148,7 @@ export function AssetContainerPanel() {
   }
 
   async function openVerifiedPackage(): Promise<void> {
-    if (!importPlan?.validForImport || !importPlan.manuscript) return;
+    if (!importCanOpen || !importPlan?.manuscript) return;
     if (!window.confirm(copy.confirmImport)) return;
 
     setBusy('import');
@@ -163,6 +190,10 @@ export function AssetContainerPanel() {
         <span><strong>{assets.length}</strong> {copy.assets}</span>
         <span><strong>{embeddedImageCount}</strong> {copy.embedded}</span>
         <span><ShieldCheck size={14} aria-hidden="true" /> {copy.integrity}</span>
+        <span>
+          <strong>{currentIntegrity.summary.verified}/{currentIntegrity.summary.total}</strong>{' '}
+          {digestCopy.integrity}
+        </span>
       </div>
 
       <div className="omi-container-actions">
@@ -258,11 +289,11 @@ export function AssetContainerPanel() {
         {importPlan ? (
           <div className="omi-container-import-report">
             <p className={
-              importPlan.validForImport
+              importCanOpen
                 ? 'omi-container-status omi-container-status--ok'
                 : 'omi-container-status omi-container-status--error'
             }>
-              {importPlan.validForImport ? copy.verified : copy.invalid}
+              {importCanOpen ? copy.verified : copy.invalid}
             </p>
 
             <div className="omi-container-import-summary">
@@ -274,6 +305,27 @@ export function AssetContainerPanel() {
                 {copy.checksums}
               </span>
             </div>
+
+            {importIntegrity ? (
+              <div className="omi-container-integrity-report">
+                <p>
+                  {importHasInvalidDigest ? (
+                    <ShieldAlert size={15} aria-hidden="true" />
+                  ) : (
+                    <ShieldCheck size={15} aria-hidden="true" />
+                  )}{' '}
+                  <strong>{digestCopy.integrity}:</strong>{' '}
+                  {importIntegrity.summary.verified}/{importIntegrity.summary.total}
+                </p>
+                <p>
+                  {importHasInvalidDigest
+                    ? digestCopy.importInvalid
+                    : importIntegrity.summary.missing > 0
+                      ? digestCopy.importLegacy
+                      : digestCopy.importVerified}
+                </p>
+              </div>
+            ) : null}
 
             {importPlan.summary.title ? (
               <h5>{importPlan.summary.title}</h5>
@@ -308,7 +360,7 @@ export function AssetContainerPanel() {
               <button
                 type="button"
                 className="studio-menu-primary-action"
-                disabled={!importPlan.validForImport || busy !== null}
+                disabled={!importCanOpen || busy !== null}
                 onClick={() => void openVerifiedPackage()}
               >
                 <ShieldCheck size={16} aria-hidden="true" />

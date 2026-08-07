@@ -4,6 +4,7 @@ import {
   createInitialVersioningEnvelope,
   isValidLinearRevisionHistory,
 } from '../model/versioning';
+import { ensureManuscriptRevisionStateDigests } from '../model/revisionIntegrity';
 import type {
   OmiManuscript,
   OmiManuscriptState,
@@ -16,6 +17,9 @@ import type {
  * Existing valid linear histories are retained. Timestamp-only documents are
  * represented as one disclosed shallow root snapshot; the migration does not
  * invent unobserved earlier revisions or authorship.
+ *
+ * Missing state digests are derived from immutable snapshots. Existing digest
+ * declarations are never overwritten, so mismatches remain detectable.
  */
 export function migrateVersioningModel(
   manuscript: IdentityMigratedManuscript,
@@ -27,22 +31,22 @@ export function migrateVersioningModel(
     existingHistory &&
     isValidLinearRevisionHistory(existingHistory)
   ) {
-    return {
+    return ensureManuscriptRevisionStateDigests({
       ...state,
       versioningModelVersion: OMI_VERSIONING_MODEL_VERSION,
       headRevisionId: existingHistory.headRevisionId,
       revisionHistory: existingHistory,
-    };
+    });
   }
 
-  return {
+  return ensureManuscriptRevisionStateDigests({
     ...state,
     ...createInitialVersioningEnvelope(state, {
       summary: 'Imported legacy manuscript snapshot',
       timestamp: state.updatedAt || new Date().toISOString(),
       completeness: 'shallow',
     }),
-  };
+  });
 }
 
 function extractState(

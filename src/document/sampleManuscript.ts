@@ -3,6 +3,7 @@ import {
   createContribution,
   createPersonAgent,
 } from '../model/identity';
+import { ensureManuscriptRevisionStateDigests } from '../model/revisionIntegrity';
 import {
   createInitialVersioningEnvelope,
 } from '../model/versioning';
@@ -79,7 +80,7 @@ export const createSampleManuscript = (): OmiManuscript => {
     updatedAt: now,
   };
 
-  return {
+  return ensureManuscriptRevisionStateDigests({
     ...state,
     ...createInitialVersioningEnvelope(state, {
       summary: 'Created sample manuscript',
@@ -87,5 +88,5 @@ export const createSampleManuscript = (): OmiManuscript => {
       timestamp: now,
       completeness: 'complete',
     }),
-  };
+  });
 };
