@@ -1,8 +1,13 @@
+import { Fragment } from 'react';
+
 import { stageSectionTitleChange } from '../app/sectionActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { formatSectionNumber } from '../model/sectionNumbering';
+import { isVisualBlock } from '../model/visualBlocks';
 import { BlockEditor } from './BlockEditor';
+import { VisualBlockEditor } from './VisualBlockEditor';
+import { VisualInsertMenu } from './VisualInsertMenu';
 
 export function EditorPane() {
   const { t } = useTranslation();
@@ -85,15 +90,34 @@ export function EditorPane() {
               />
             </div>
 
-            {section.blocks.map((block) => (
-              <BlockEditor
-                key={block.id}
-                blockId={block.id}
-                blockType={block.type}
-                content={block.content}
-                onUpdate={updateBlock}
-              />
+            {section.blocks.map((block, blockIndex) => (
+              <Fragment key={block.id}>
+                <VisualInsertMenu
+                  sectionId={section.id}
+                  gapIndex={blockIndex}
+                />
+
+                {isVisualBlock(block) ? (
+                  <VisualBlockEditor
+                    block={block}
+                    sectionId={section.id}
+                    blockIndex={blockIndex}
+                  />
+                ) : (
+                  <BlockEditor
+                    blockId={block.id}
+                    blockType={block.type}
+                    content={block.content}
+                    onUpdate={updateBlock}
+                  />
+                )}
+              </Fragment>
             ))}
+
+            <VisualInsertMenu
+              sectionId={section.id}
+              gapIndex={section.blocks.length}
+            />
           </div>
         ) : (
           <p className="omi-empty-section">
