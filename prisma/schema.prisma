@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ExternalPlatform {
+  OJS
+  OMP
+}
+
+enum ExternalInstallationStatus {
+  ACTIVE
+  DISABLED
+}
+
+model ExternalInstallation {
+  id                    String                     @id @default(cuid())
+  installationId        String                     @unique
+  platform              ExternalPlatform
+  displayName           String
+  baseUrl               String
+  sharedSecretCiphertext String
+  sharedSecretIv         String
+  sharedSecretAuthTag    String
+  status                ExternalInstallationStatus @default(ACTIVE)
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
+
+  @@index([platform, status])
+}
+
+model ExternalLaunchNonce {
+  id             String   @id @default(cuid())
+  installationId String
+  nonce          String
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  @@unique([installationId, nonce])
+  @@index([expiresAt])
+}
