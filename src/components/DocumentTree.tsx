@@ -1,29 +1,58 @@
 import { useStudioStore } from '../app/useStudioStore';
+import { useTranslation } from '../i18n';
 
-export function DocumentTree() {
+interface DocumentTreeProps {
+  onNavigate?: () => void;
+}
+
+export function DocumentTree({
+  onNavigate,
+}: DocumentTreeProps) {
+  const { t } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
-  const selectedSectionId = useStudioStore((state) => state.selectedSectionId);
-  const selectSection = useStudioStore((state) => state.selectSection);
+  const selectedSectionId = useStudioStore(
+    (state) => state.selectedSectionId,
+  );
+  const selectSection = useStudioStore(
+    (state) => state.selectSection,
+  );
 
   return (
-    <aside className="panel sidebar" aria-label="Document tree">
-      <h2>Document</h2>
-      <div className="tree-item strong">Metadata</div>
-      <div className="tree-item strong">Authors</div>
-      <div className="tree-group-title">Sections</div>
+    <aside
+      className="panel sidebar studio-document-tree"
+      aria-label={t('studio.document.title')}
+    >
+      <div className="tree-group-title">
+        {t('studio.document.sections')}
+      </div>
+
       {manuscript.sections.map((section, index) => (
         <button
           key={section.id}
           type="button"
-          className={section.id === selectedSectionId ? 'tree-item active' : 'tree-item'}
-          onClick={() => selectSection(section.id)}
+          className={
+            section.id === selectedSectionId
+              ? 'tree-item active'
+              : 'tree-item'
+          }
+          onClick={() => {
+            selectSection(section.id);
+            onNavigate?.();
+          }}
         >
           {index + 1}. {section.title}
         </button>
       ))}
-      <div className="tree-group-title">Objects</div>
-      <div className="tree-item muted">Annotations: {manuscript.annotations.length}</div>
-      <div className="tree-item muted">Citations: {manuscript.citations.length}</div>
+
+      <div className="tree-group-title">
+        {t('studio.document.objects')}
+      </div>
+      <div className="tree-item muted">
+        {t('studio.document.annotations')}: {manuscript.annotations.length}
+      </div>
+      <div className="tree-item muted">
+        {t('studio.document.citations')}: {manuscript.citations.length}
+      </div>
     </aside>
   );
 }
