@@ -1,24 +1,41 @@
 import {
   ArrowDown,
+  ArrowLeft,
+  ArrowRight,
   ArrowUp,
   GripVertical,
   Plus,
 } from 'lucide-react';
 import {
-  Fragment,
+  useMemo,
   useState,
+  type CSSProperties,
   type DragEvent,
 } from 'react';
 
 import {
-  stageInsertSectionAtGap,
-  stageMoveSectionToGap,
-  stageMoveSectionToIndex,
+  stageIndentSection,
+  stageInsertSectionAfter,
+  stageInsertSubsection,
+  stageInsertTopLevelSection,
+  stageMoveSectionSibling,
+  stageOutdentSection,
+  stageReparentSection,
 } from '../app/sectionActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getSectionStructureCopy } from '../i18n/sectionStructure';
-import { formatSectionHeading } from '../model/sectionNumbering';
+import {
+  formatHierarchicalSectionHeading,
+} from '../model/sectionNumbering';
+import {
+  buildSectionOutline,
+  canIndentSection,
+  canOutdentSection,
+  getParentSectionId,
+  isDescendantOf,
+  validateSectionHierarchy,
+} from '../model/sectionStructure';
 
 interface SectionStructurePanelProps {
   onNavigate?: () => void;
@@ -37,194 +54,256 @@ export function SectionStructurePanel({
     (state) => state.selectSection,
   );
   const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
-  const [activeDropGap, setActiveDropGap] = useState<number | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+  const [rootDropActive, setRootDropActive] = useState(false);
+  const outline = useMemo(
+    () => buildSectionOutline(manuscript.sections),
+    [manuscript.sections],
+  );
+  const hierarchyIssues = useMemo(
+    () => validateSectionHierarchy(manuscript.sections),
+    [manuscript.sections],
+  );
 
-  function insertAt(gapIndex: number): void {
-    const sectionId = stageInsertSectionAtGap(gapIndex);
-
-    if (sectionId) {
-      onNavigate?.();
-    }
+  function finishDrag(): void {
+    setDraggedSectionId(null);
+    setDropTargetId(null);
+    setRootDropActive(false);
   }
 
-  function dropAt(event: DragEvent<HTMLDivElement>, gapIndex: number): void {
+  function insertTopLevel(): void {
+    const sectionId = stageInsertTopLevelSection();
+    if (sectionId) onNavigate?.();
+  }
+
+  function insertSubsection(parentId: string): void {
+    const sectionId = stageInsertSubsection(parentId);
+    if (sectionId) onNavigate?.();
+  }
+
+  function insertAfter(sectionId: string): void {
+    const insertedId = stageInsertSectionAfter(sectionId);
+    if (insertedId) onNavigate?.();
+  }
+
+  function canDropOnTarget(targetId: string): boolean {
+    return Boolean(
+      draggedSectionId &&
+        draggedSectionId !== targetId &&
+        !isDescendantOf(manuscript.sections, targetId, draggedSectionId),
+    );
+  }
+
+  function dropAsChild(
+    event: DragEvent<HTMLElement>,
+    targetId: string,
+  ): void {
     event.preventDefault();
-
-    if (draggedSectionId) {
-      stageMoveSectionToGap(draggedSectionId, gapIndex);
+    if (draggedSectionId && canDropOnTarget(targetId)) {
+      stageReparentSection(draggedSectionId, targetId);
     }
+    finishDrag();
+  }
 
-    setDraggedSectionId(null);
-    setActiveDropGap(null);
+  function dropAtRoot(event: DragEvent<HTMLDivElement>): void {
+    event.preventDefault();
+    if (draggedSectionId) {
+      stageReparentSection(draggedSectionId, undefined);
+    }
+    finishDrag();
   }
 
   return (
-    <section className="omi-section-structure" aria-labelledby="section-structure-title">
+    <section
+      className="omi-section-structure"
+      aria-labelledby="section-structure-title"
+    >
       <header className="omi-section-structure-header">
         <div>
           <h4 id="section-structure-title">{copy.title}</h4>
           <p>{copy.description}</p>
         </div>
+
+        <button
+          type="button"
+          className="omi-section-add-root"
+          onClick={insertTopLevel}
+        >
+          <Plus size={15} aria-hidden="true" />
+          {copy.addTopLevel}
+        </button>
       </header>
 
       <p className="omi-section-structure-hint">{copy.dragHint}</p>
 
-      <div className="omi-section-structure-list">
-        <SectionGap
-          gapIndex={0}
-          label={copy.insertFirst}
-          active={activeDropGap === 0}
-          dragging={Boolean(draggedSectionId)}
-          onInsert={insertAt}
-          onDragEnter={setActiveDropGap}
-          onDrop={dropAt}
-        />
+      {hierarchyIssues.length > 0 ? (
+        <div className="omi-section-hierarchy-warning" role="alert">
+          {copy.invalidHierarchy}
+        </div>
+      ) : null}
 
-        {manuscript.sections.map((section, index) => {
+      {draggedSectionId ? (
+        <div
+          className={`omi-section-root-drop${
+            rootDropActive ? ' omi-section-root-drop--active' : ''
+          }`}
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            setRootDropActive(true);
+            setDropTargetId(null);
+          }}
+          onDragLeave={() => setRootDropActive(false)}
+          onDrop={dropAtRoot}
+        >
+          {copy.addTopLevel}
+        </div>
+      ) : null}
+
+      <div className="omi-section-structure-list">
+        {outline.map(({ section, depth, parentSectionId }) => {
           const selected = section.id === selectedSectionId;
-          const heading = formatSectionHeading(
+          const heading = formatHierarchicalSectionHeading(
             section.title || copy.emptyTitle,
-            index,
+            manuscript.sections,
+            section.id,
             manuscript.sectionNumberingStyle,
           );
+          const siblings = manuscript.sections.filter(
+            (candidate) => getParentSectionId(candidate) === parentSectionId,
+          );
+          const siblingIndex = siblings.findIndex(
+            (candidate) => candidate.id === section.id,
+          );
+          const canMoveUp = siblingIndex > 0;
+          const canMoveDown =
+            siblingIndex >= 0 && siblingIndex < siblings.length - 1;
+          const canIndent = canIndentSection(manuscript.sections, section.id);
+          const canOutdent = canOutdentSection(manuscript.sections, section.id);
+          const validDropTarget = canDropOnTarget(section.id);
+          const isDropTarget = dropTargetId === section.id;
+          const rowStyle = {
+            '--omi-section-depth': depth,
+          } as CSSProperties;
 
           return (
-            <Fragment key={section.id}>
-              <article
-                className={`omi-section-structure-item${
-                  selected ? ' omi-section-structure-item--selected' : ''
-                }`}
-                data-section-id={section.id}
+            <article
+              key={section.id}
+              className={`omi-section-structure-item${
+                selected ? ' omi-section-structure-item--selected' : ''
+              }${isDropTarget ? ' omi-section-structure-item--drop-target' : ''}`}
+              data-section-id={section.id}
+              data-section-depth={depth}
+              style={rowStyle}
+              onDragOver={(event) => {
+                if (!validDropTarget) return;
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                setDropTargetId(section.id);
+                setRootDropActive(false);
+              }}
+              onDragLeave={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                  setDropTargetId((current) =>
+                    current === section.id ? null : current,
+                  );
+                }
+              }}
+              onDrop={(event) => dropAsChild(event, section.id)}
+              title={isDropTarget ? copy.dropAsChild : undefined}
+            >
+              <div
+                className="omi-section-drag-handle"
+                draggable
+                role="button"
+                tabIndex={0}
+                aria-label={`${copy.dragSection}: ${heading}`}
+                title={copy.dragSection}
+                onDragStart={(event) => {
+                  event.dataTransfer.effectAllowed = 'move';
+                  event.dataTransfer.setData('text/plain', section.id);
+                  setDraggedSectionId(section.id);
+                }}
+                onDragEnd={finishDrag}
               >
-                <div
-                  className="omi-section-drag-handle"
-                  draggable
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`${copy.dragSection}: ${heading}`}
-                  title={copy.dragSection}
-                  onDragStart={(event) => {
-                    event.dataTransfer.effectAllowed = 'move';
-                    event.dataTransfer.setData('text/plain', section.id);
-                    setDraggedSectionId(section.id);
-                  }}
-                  onDragEnd={() => {
-                    setDraggedSectionId(null);
-                    setActiveDropGap(null);
-                  }}
-                >
-                  <GripVertical size={18} aria-hidden="true" />
-                </div>
+                <GripVertical size={18} aria-hidden="true" />
+              </div>
 
+              <button
+                type="button"
+                className="omi-section-structure-open"
+                onClick={() => {
+                  selectSection(section.id);
+                  onNavigate?.();
+                }}
+                title={copy.openSection}
+              >
+                <strong>{heading}</strong>
+                <small>
+                  {copy.level} {depth + 1}
+                  {selected ? ` · ${copy.selected}` : ''}
+                </small>
+              </button>
+
+              <div className="omi-section-structure-actions">
                 <button
                   type="button"
-                  className="omi-section-structure-open"
-                  onClick={() => {
-                    selectSection(section.id);
-                    onNavigate?.();
-                  }}
-                  title={copy.openSection}
+                  onClick={() => insertSubsection(section.id)}
+                  aria-label={`${copy.addSubsection}: ${heading}`}
+                  title={copy.addSubsection}
                 >
-                  <strong>{heading}</strong>
-                  {selected ? <span>{copy.selected}</span> : null}
+                  <Plus size={15} aria-hidden="true" />
                 </button>
-
-                <div className="omi-section-structure-actions">
-                  <button
-                    type="button"
-                    disabled={index === 0}
-                    onClick={() =>
-                      stageMoveSectionToIndex(section.id, index - 1)
-                    }
-                    aria-label={`${copy.moveUp}: ${heading}`}
-                    title={copy.moveUp}
-                  >
-                    <ArrowUp size={15} aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={index === manuscript.sections.length - 1}
-                    onClick={() =>
-                      stageMoveSectionToIndex(section.id, index + 1)
-                    }
-                    aria-label={`${copy.moveDown}: ${heading}`}
-                    title={copy.moveDown}
-                  >
-                    <ArrowDown size={15} aria-hidden="true" />
-                  </button>
-                </div>
-              </article>
-
-              <SectionGap
-                gapIndex={index + 1}
-                label={
-                  index === manuscript.sections.length - 1
-                    ? copy.insertAfterLast
-                    : copy.insertHere
-                }
-                active={activeDropGap === index + 1}
-                dragging={Boolean(draggedSectionId)}
-                onInsert={insertAt}
-                onDragEnter={setActiveDropGap}
-                onDrop={dropAt}
-              />
-            </Fragment>
+                <button
+                  type="button"
+                  onClick={() => insertAfter(section.id)}
+                  aria-label={`${copy.insertAfter}: ${heading}`}
+                  title={copy.insertAfter}
+                >
+                  <Plus size={15} aria-hidden="true" />
+                  <span className="omi-section-action-sibling">↳</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!canOutdent}
+                  onClick={() => stageOutdentSection(section.id)}
+                  aria-label={`${copy.outdent}: ${heading}`}
+                  title={copy.outdent}
+                >
+                  <ArrowLeft size={15} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  disabled={!canIndent}
+                  onClick={() => stageIndentSection(section.id)}
+                  aria-label={`${copy.indent}: ${heading}`}
+                  title={copy.indent}
+                >
+                  <ArrowRight size={15} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  disabled={!canMoveUp}
+                  onClick={() => stageMoveSectionSibling(section.id, -1)}
+                  aria-label={`${copy.moveUp}: ${heading}`}
+                  title={copy.moveUp}
+                >
+                  <ArrowUp size={15} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  disabled={!canMoveDown}
+                  onClick={() => stageMoveSectionSibling(section.id, 1)}
+                  aria-label={`${copy.moveDown}: ${heading}`}
+                  title={copy.moveDown}
+                >
+                  <ArrowDown size={15} aria-hidden="true" />
+                </button>
+              </div>
+            </article>
           );
         })}
       </div>
     </section>
-  );
-}
-
-interface SectionGapProps {
-  gapIndex: number;
-  label: string;
-  active: boolean;
-  dragging: boolean;
-  onInsert: (gapIndex: number) => void;
-  onDragEnter: (gapIndex: number) => void;
-  onDrop: (event: DragEvent<HTMLDivElement>, gapIndex: number) => void;
-}
-
-function SectionGap({
-  gapIndex,
-  label,
-  active,
-  dragging,
-  onInsert,
-  onDragEnter,
-  onDrop,
-}: SectionGapProps) {
-  return (
-    <div
-      className={`omi-section-gap${active ? ' omi-section-gap--active' : ''}${
-        dragging ? ' omi-section-gap--dragging' : ''
-      }`}
-      onDragOver={(event) => {
-        if (!dragging) return;
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
-        onDragEnter(gapIndex);
-      }}
-      onDragEnter={(event) => {
-        if (!dragging) return;
-        event.preventDefault();
-        onDragEnter(gapIndex);
-      }}
-      onDrop={(event) => onDrop(event, gapIndex)}
-    >
-      <span className="omi-section-gap-line" aria-hidden="true" />
-      <button
-        type="button"
-        className="omi-section-gap-button"
-        onClick={() => onInsert(gapIndex)}
-        aria-label={label}
-        title={label}
-      >
-        <Plus size={14} aria-hidden="true" />
-        <span>{label}</span>
-      </button>
-      <span className="omi-section-gap-line" aria-hidden="true" />
-    </div>
   );
 }
