@@ -5,13 +5,12 @@ import { LoginPage } from './auth/LoginPage';
 import { RegisterPage } from './auth/RegisterPage';
 
 import { AppLayout } from './components/AppLayout';
-import { DocumentTree } from './components/DocumentTree';
 import { EditorPane } from './components/EditorPane';
-import { HistoryPanel } from './components/HistoryPanel';
-import { PropertiesPanel } from './components/PropertiesPanel';
+import { StudioMenu } from './components/StudioMenu';
 
 import './styles/auth.css';
 import './styles/history.css';
+import './styles/studio-shell.css';
 
 type AuthView = 'login' | 'register';
 
@@ -42,17 +41,18 @@ export function App() {
 }
 
 function StudioApplication() {
-  return (
-    <AppLayout>
-      <div className="workspace">
-        <DocumentTree />
-        <EditorPane />
+  const [menuOpen, setMenuOpen] = useState(false);
 
-        <div className="properties-stack">
-          <PropertiesPanel />
-          <HistoryPanel />
-        </div>
+  return (
+    <AppLayout onOpenMenu={() => setMenuOpen(true)}>
+      <div className="focus-workspace">
+        <EditorPane />
       </div>
+
+      <StudioMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+      />
     </AppLayout>
   );
 }
