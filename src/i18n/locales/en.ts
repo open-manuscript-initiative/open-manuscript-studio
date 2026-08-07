@@ -32,6 +32,7 @@ export const en: TranslationDictionary = {
     navigation: {
       document: 'Document',
       manuscript: 'Manuscript data',
+      notes: 'Notes',
       contributors: 'Contributors',
       history: 'History',
       tools: 'Export and tools',
@@ -99,6 +100,28 @@ export const en: TranslationDictionary = {
     bibliography: 'Bibliography',
     documentLanguage: 'Document language',
     originalLanguage: 'Original language'
+  },
+
+  notes: {
+    title: 'Notes',
+    description:
+      'Manage semantic manuscript notes. Note bodies remain independent annotation objects while their inline anchors stay in the text.',
+    empty: 'This manuscript has no notes yet.',
+    emptyHint:
+      'Place the cursor in the text and use the Note button or Ctrl/Cmd+Alt+N.',
+    note: 'Note',
+    type: 'Note type',
+    body: 'Note text',
+    bodyPlaceholder: 'Write the note…',
+    footnote: 'Footnote',
+    endnote: 'Endnote',
+    authorNote: 'Author note',
+    delete: 'Delete note',
+    confirmDelete:
+      'Delete this note and its inline anchor from the manuscript?',
+    closeEditor: 'Close note editor',
+    goToNote: 'Go to note',
+    autoSave: 'Saved with manuscript revisions'
   },
 
   contributors: {
@@ -183,7 +206,7 @@ export const en: TranslationDictionary = {
     paragraph: 'Paragraph',
     heading: 'Heading',
     quote: 'Quote',
-    insertNote: 'Insert inline OMI note',
+    insertNote: 'Insert semantic manuscript note',
     loading: 'Loading editor…'
   },
 
@@ -211,7 +234,6 @@ export const en: TranslationDictionary = {
       name: 'Open Manuscript Studio',
       description: 'Collaborative scholarly writing'
     },
-
     login: {
       title: 'Sign in',
       description: 'Please sign in to continue.',
@@ -220,7 +242,6 @@ export const en: TranslationDictionary = {
       noAccount: 'Do not have an account yet?',
       registerLink: 'Register'
     },
-
     register: {
       title: 'Create account',
       description: 'Create your account.',
@@ -228,36 +249,27 @@ export const en: TranslationDictionary = {
       hasAccount: 'Already have an account?',
       loginLink: 'Sign in'
     },
-
     fields: {
       name: {
         label: 'Full name',
         placeholder: 'Your full name'
       },
-
       email: {
         label: 'Email',
         placeholder: 'name@example.com'
       },
-
       password: {
         label: 'Password',
         placeholder: 'Enter your password'
       }
     },
-
     errors: {
       invalidEmail: 'Invalid e-mail address.',
-      invalidCredentials:
-        'Incorrect e-mail address or password.',
-      userNotFound:
-        'The user account could not be found.',
-      accountNotActive:
-        'The user account is not active.',
-      authenticationRequired:
-        'Authentication is required.'
+      invalidCredentials: 'Incorrect e-mail address or password.',
+      userNotFound: 'The user account could not be found.',
+      accountNotActive: 'The user account is not active.',
+      authenticationRequired: 'Authentication is required.'
     },
-
     alphaNotice:
       'Alpha version – authentication is currently for testing purposes.'
   }
