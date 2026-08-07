@@ -3,6 +3,7 @@ import {
   Download,
   FileText,
   History as HistoryIcon,
+  Library,
   Plus,
   RotateCcw,
   Settings2,
@@ -31,12 +32,14 @@ import { KeywordEditor } from './KeywordEditor';
 import { ManuscriptLanguageField } from './ManuscriptLanguageField';
 import { NotesPanel } from './NotesPanel';
 import { PropertiesPanel } from './PropertiesPanel';
+import { ReferencesPanel } from './ReferencesPanel';
 import { SectionNumberingControl } from './SectionNumberingControl';
 
 type StudioMenuView =
   | 'document'
   | 'manuscript'
   | 'notes'
+  | 'references'
   | 'contributors'
   | 'history'
   | 'tools'
@@ -140,6 +143,12 @@ export function StudioMenu({
               onClick={() => setActiveView('notes')}
             />
             <MenuButton
+              active={activeView === 'references'}
+              icon={<Library size={18} aria-hidden="true" />}
+              label={t('studio.navigation.references')}
+              onClick={() => setActiveView('references')}
+            />
+            <MenuButton
               active={activeView === 'contributors'}
               icon={<Users size={18} aria-hidden="true" />}
               label={t('studio.navigation.contributors')}
@@ -169,24 +178,15 @@ export function StudioMenu({
             {activeView === 'document' ? (
               <DocumentMenuView onNavigate={onClose} />
             ) : null}
-            {activeView === 'manuscript' ? (
-              <ManuscriptDataView />
-            ) : null}
+            {activeView === 'manuscript' ? <ManuscriptDataView /> : null}
             {activeView === 'notes' ? (
               <NotesPanel onNavigate={onClose} />
             ) : null}
-            {activeView === 'contributors' ? (
-              <PropertiesPanel />
-            ) : null}
-            {activeView === 'history' ? (
-              <HistoryPanel />
-            ) : null}
-            {activeView === 'tools' ? (
-              <ToolsView />
-            ) : null}
-            {activeView === 'settings' ? (
-              <SettingsView />
-            ) : null}
+            {activeView === 'references' ? <ReferencesPanel /> : null}
+            {activeView === 'contributors' ? <PropertiesPanel /> : null}
+            {activeView === 'history' ? <HistoryPanel /> : null}
+            {activeView === 'tools' ? <ToolsView /> : null}
+            {activeView === 'settings' ? <SettingsView /> : null}
           </div>
         </div>
       </aside>
@@ -401,9 +401,7 @@ function SettingsView() {
             <h4 id="studio-interface-languages-title">
               {t('studio.settings.interfaceLanguages')}
             </h4>
-            <p>
-              {t('studio.settings.interfaceLanguagesDescription')}
-            </p>
+            <p>{t('studio.settings.interfaceLanguagesDescription')}</p>
           </div>
         </div>
 
