@@ -41,7 +41,9 @@ export function CitationClusterEditorCard({
 
   if (!cluster) return null;
 
-  const citations = cluster.citationIds
+  const activeClusterId = cluster.id;
+  const activeClusterCitationIds = cluster.citationIds;
+  const citations = activeClusterCitationIds
     .map((citationId) =>
       manuscript.citations.find((citation) => citation.id === citationId),
     )
@@ -50,22 +52,22 @@ export function CitationClusterEditorCard({
   if (citations.length === 0) return null;
 
   function move(citationId: string, direction: -1 | 1): void {
-    const currentIndex = cluster.citationIds.indexOf(citationId);
+    const currentIndex = activeClusterCitationIds.indexOf(citationId);
     const nextIndex = currentIndex + direction;
 
     if (
       currentIndex < 0 ||
       nextIndex < 0 ||
-      nextIndex >= cluster.citationIds.length
+      nextIndex >= activeClusterCitationIds.length
     ) {
       return;
     }
 
-    const nextOrder = [...cluster.citationIds];
+    const nextOrder = [...activeClusterCitationIds];
     const [moved] = nextOrder.splice(currentIndex, 1);
     if (!moved) return;
     nextOrder.splice(nextIndex, 0, moved);
-    stageReorderCitationCluster(cluster.id, nextOrder);
+    stageReorderCitationCluster(activeClusterId, nextOrder);
   }
 
   return (
@@ -254,7 +256,7 @@ export function CitationClusterEditorCard({
           className="studio-menu-secondary-action studio-menu-danger-action"
           onClick={() => {
             if (window.confirm(copy.confirmDeleteCluster)) {
-              stageRemoveCitationCluster(cluster.id);
+              stageRemoveCitationCluster(activeClusterId);
               onClose?.();
             }
           }}
