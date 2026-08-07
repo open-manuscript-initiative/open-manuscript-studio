@@ -11,7 +11,10 @@ import {
 } from '../app/visualBlockActions';
 import { useTranslation } from '../i18n';
 import { getVisualElementsCopy } from '../i18n/visualElements';
-import { latexToMathMl } from '../model/equationRendering';
+import {
+  latexToMathMl,
+  sanitizeMathMlForPreview,
+} from '../model/equationRendering';
 import {
   addTableColumn,
   addTableRow,
@@ -164,7 +167,7 @@ export function VisualBlockEditor({
             dangerouslySetInnerHTML={{
               __html:
                 visual.notation === 'mathml'
-                  ? visual.source
+                  ? sanitizeMathMlForPreview(visual.source)
                   : latexToMathMl(visual.latex ?? visual.source),
             }}
           />
