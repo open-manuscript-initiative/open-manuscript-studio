@@ -1,13 +1,14 @@
 import {
   Mark,
   mergeAttributes,
-  type HTMLAttributes,
 } from '@tiptap/core';
 
 import {
   normalizeExternalHref,
   normalizeInlineLanguageTag,
 } from '../../model/richText';
+
+type HtmlAttributeMap = Record<string, unknown>;
 
 export const OmiLinkExtension = Mark.create({
   name: 'omiLink',
@@ -133,8 +134,8 @@ export const OMI_RICH_TEXT_EXTENSIONS = [
 ];
 
 function sanitizeLinkAttributes(
-  attributes: HTMLAttributes,
-): HTMLAttributes {
+  attributes: HtmlAttributeMap,
+): HtmlAttributeMap {
   return typeof attributes.title === 'string' && attributes.title.trim()
     ? { title: attributes.title.trim() }
     : {};
