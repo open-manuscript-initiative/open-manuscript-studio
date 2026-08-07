@@ -34,7 +34,8 @@ export const en: TranslationDictionary = {
       manuscript: 'Manuscript data',
       contributors: 'Contributors',
       history: 'History',
-      tools: 'Export and tools'
+      tools: 'Export and tools',
+      settings: 'Settings'
     },
     document: {
       title: 'Document structure',
@@ -68,6 +69,21 @@ export const en: TranslationDictionary = {
         'Inspect the semantic representation only when technical details are needed.',
       liveJson: 'Current section JSON',
       synced: 'Synced'
+    },
+    settings: {
+      title: 'Interface settings',
+      description:
+        'Choose which interface languages you want available while working. These preferences are stored on this device.',
+      interfaceLanguages: 'Available interface languages',
+      interfaceLanguagesDescription:
+        'Enabled languages appear in the quick language switcher in the editor header.',
+      currentLanguage: 'Current interface language',
+      currentLanguageHint:
+        'The language currently in use must remain enabled. Switch to another language before disabling it.',
+      enabledLanguage: 'Available in quick switcher',
+      disabledLanguage: 'Hidden from quick switcher',
+      futureLanguages:
+        'The language registry is extensible. Future translation dictionaries can be added without redesigning this settings screen.'
     }
   },
 
