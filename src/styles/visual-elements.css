@@ -1,0 +1,332 @@
+.omi-visual-insert-gap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin: 0.3rem 0;
+}
+
+.omi-visual-insert-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ifm-color-emphasis-600, #667085);
+  border-radius: 999px;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  opacity: 0.58;
+}
+
+.omi-visual-insert-gap:hover .omi-visual-insert-trigger,
+.omi-visual-insert-trigger:focus-visible,
+.omi-visual-insert-trigger[aria-expanded='true'] {
+  opacity: 1;
+  border-color: rgba(127, 127, 127, 0.25);
+  background: rgba(127, 127, 127, 0.06);
+}
+
+.omi-visual-insert-palette {
+  position: absolute;
+  z-index: 20;
+  top: 2.2rem;
+  width: min(680px, calc(100vw - 2rem));
+  padding: 0.85rem;
+  border: 1px solid rgba(127, 127, 127, 0.24);
+  border-radius: 14px;
+  background: var(--ifm-background-surface-color, #fff);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.16);
+}
+
+.omi-visual-insert-actions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.omi-visual-insert-actions button,
+.omi-table-actions button,
+.omi-visual-secondary-actions button,
+.omi-visual-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(127, 127, 127, 0.24);
+  background: transparent;
+  color: inherit;
+  border-radius: 9px;
+  padding: 0.52rem 0.65rem;
+  cursor: pointer;
+}
+
+.omi-visual-insert-actions button:hover,
+.omi-table-actions button:hover,
+.omi-visual-secondary-actions button:hover {
+  background: rgba(127, 127, 127, 0.08);
+}
+
+.omi-office-paste-target {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.7rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px dashed rgba(127, 127, 127, 0.4);
+  border-radius: 10px;
+  outline: none;
+}
+
+.omi-office-paste-target:focus {
+  border-style: solid;
+  box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.18);
+}
+
+.omi-office-paste-target span,
+.omi-visual-format-hint,
+.omi-import-provenance {
+  color: var(--ifm-color-emphasis-600, #667085);
+  font-size: 0.78rem;
+}
+
+.omi-visual-import-error {
+  color: #b42318;
+  margin: 0.55rem 0 0;
+  font-size: 0.82rem;
+}
+
+.omi-visually-hidden-input {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.omi-visual-block {
+  margin: 1rem 0;
+  padding: 0.9rem;
+  border: 1px solid rgba(127, 127, 127, 0.22);
+  border-radius: 13px;
+  background: rgba(127, 127, 127, 0.025);
+}
+
+.omi-visual-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.82rem;
+}
+
+.omi-visual-delete {
+  color: #b42318;
+  border-color: transparent;
+  padding: 0.35rem 0.5rem;
+}
+
+.omi-image-block {
+  margin: 0;
+}
+
+.omi-image-block img {
+  display: block;
+  max-width: 100%;
+  max-height: 70vh;
+  margin: 0 auto 0.8rem;
+  object-fit: contain;
+  border-radius: 7px;
+}
+
+.omi-image-block figcaption,
+.omi-chart-settings,
+.omi-equation-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.omi-image-block label,
+.omi-chart-settings label,
+.omi-equation-block label,
+.omi-table-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--ifm-color-emphasis-700, #475467);
+}
+
+.omi-image-block input,
+.omi-chart-settings input,
+.omi-chart-settings select,
+.omi-equation-block input,
+.omi-equation-block textarea,
+.omi-table-caption input {
+  width: 100%;
+  border: 1px solid rgba(127, 127, 127, 0.28);
+  border-radius: 8px;
+  background: var(--ifm-background-color, #fff);
+  color: inherit;
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+}
+
+.omi-table-scroll {
+  overflow: auto;
+  max-width: 100%;
+}
+
+.omi-table-editor {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+}
+
+.omi-table-editor th,
+.omi-table-editor td {
+  border: 1px solid rgba(127, 127, 127, 0.22);
+  padding: 0;
+  min-width: 8rem;
+}
+
+.omi-table-editor th {
+  background: rgba(127, 127, 127, 0.07);
+}
+
+.omi-table-editor input {
+  width: 100%;
+  min-width: 7.5rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0.48rem 0.55rem;
+  font: inherit;
+  outline: none;
+}
+
+.omi-table-editor input:focus {
+  box-shadow: inset 0 0 0 2px rgba(76, 110, 245, 0.35);
+}
+
+.omi-table-actions,
+.omi-visual-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+}
+
+.omi-table-caption {
+  margin-top: 0.65rem;
+}
+
+.omi-chart-block h4 {
+  text-align: center;
+  margin: 1rem 0 0.35rem;
+}
+
+.omi-chart-svg {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  margin: 0.45rem auto;
+  overflow: visible;
+}
+
+.omi-chart-axis line {
+  stroke: currentColor;
+  stroke-width: 1;
+  opacity: 0.45;
+}
+
+.omi-chart-labels text,
+.omi-chart-legend {
+  fill: currentColor;
+  font-size: 11px;
+}
+
+.omi-chart-line {
+  stroke: currentColor;
+  stroke-width: 3;
+}
+
+.omi-chart-series--0 { fill: #4c6ef5; stroke: #4c6ef5; }
+.omi-chart-series--1 { fill: #12b886; stroke: #12b886; }
+.omi-chart-series--2 { fill: #f59f00; stroke: #f59f00; }
+.omi-chart-series--3 { fill: #e64980; stroke: #e64980; }
+.omi-chart-series--4 { fill: #7950f2; stroke: #7950f2; }
+.omi-chart-series--5 { fill: #15aabf; stroke: #15aabf; }
+
+.omi-chart-legend--0 { fill: #4c6ef5; }
+.omi-chart-legend--1 { fill: #12b886; }
+.omi-chart-legend--2 { fill: #f59f00; }
+.omi-chart-legend--3 { fill: #e64980; }
+.omi-chart-legend--4 { fill: #7950f2; }
+.omi-chart-legend--5 { fill: #15aabf; }
+
+.omi-chart-empty {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  border: 1px dashed rgba(127, 127, 127, 0.3);
+  border-radius: 10px;
+  color: var(--ifm-color-emphasis-600, #667085);
+}
+
+.omi-chart-source {
+  margin-top: 0.75rem;
+}
+
+.omi-chart-source summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+
+.omi-equation-preview {
+  overflow-x: auto;
+  padding: 1rem;
+  margin-bottom: 0.7rem;
+  text-align: center;
+  font-size: 1.25rem;
+  background: rgba(127, 127, 127, 0.04);
+  border-radius: 9px;
+}
+
+.omi-equation-preview math {
+  font-size: 1.25em;
+}
+
+.omi-equation-block textarea {
+  min-height: 6rem;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.omi-equation-meta {
+  margin-top: 0.65rem;
+}
+
+.omi-import-provenance {
+  display: block;
+  margin-top: 0.7rem;
+}
+
+@media (max-width: 720px) {
+  .omi-visual-insert-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .omi-image-block figcaption,
+  .omi-chart-settings,
+  .omi-equation-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .omi-visual-block {
+    padding: 0.7rem;
+  }
+}
