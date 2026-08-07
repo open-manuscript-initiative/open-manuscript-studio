@@ -13,7 +13,7 @@ import StarterKit from '@tiptap/starter-kit';
 
 import {
   reconcileCitationsAfterBlockEdit,
-  stageCreateCitation,
+  stageCreateCitationCluster,
 } from '../app/citationActions';
 import {
   reconcileNotesAfterBlockEdit,
@@ -27,13 +27,14 @@ import {
 } from '../editor/extensions/OmiNoteExtension';
 import { useTranslation } from '../i18n';
 import type { TranslationKey } from '../i18n/types';
-import {
-  createCitationOccurrence,
-  formatCitationLabel,
-} from '../model/citations';
-import type { OmiCitationLocator } from '../types/omi';
+import { createCitationCluster } from '../model/citationClusters';
+import { renderCitationCluster } from '../model/cslRendering';
+import { CitationClusterEditorCard } from './CitationClusterEditorCard';
 import { CitationEditorCard } from './CitationEditorCard';
-import { CitationPicker } from './CitationPicker';
+import {
+  CitationPicker,
+  type CitationPickerSelection,
+} from './CitationPicker';
 import { NoteEditorCard } from './NoteEditorCard';
 
 interface BlockEditorProps {
@@ -62,6 +63,14 @@ export function BlockEditor({
       t('editor.emptyParagraph'),
     ),
   } as CSSProperties;
+  const activeCitation = activeCitationId
+    ? manuscript.citations.find((citation) => citation.id === activeCitationId)
+    : undefined;
+  const activeCluster = activeCitation?.clusterId
+    ? (manuscript.citationClusters ?? []).find(
+        (cluster) => cluster.id === activeCitation.clusterId,
+      )
+    : undefined;
 
   useEffect(() => {
     onUpdateRef.current = onUpdate;
@@ -213,42 +222,57 @@ export function BlockEditor({
       .run();
   }
 
-  function insertCitation(
-    recordId: string,
-    locator?: OmiCitationLocator,
+  function insertCitationCluster(
+    selections: CitationPickerSelection[],
   ): void {
-    if (!editor) {
+    if (!editor || selections.length === 0) {
       return;
     }
 
-    const record = (manuscript.bibliographicRecords ?? []).find(
-      (item) => item.id === recordId,
+    const records = manuscript.bibliographicRecords ?? [];
+    const validSelections = selections.filter((selection) =>
+      records.some((record) => record.id === selection.recordId),
     );
 
-    if (!record) {
+    if (validSelections.length === 0) {
       return;
     }
 
-    const citation = createCitationOccurrence({
-      target: recordId,
-      targetBlockId: blockId,
-      locator,
-    });
-    const label = formatCitationLabel(record, citation);
+    const creation = createCitationCluster(
+      validSelections.map((selection) => ({
+        target: selection.recordId,
+        locator: selection.locator,
+      })),
+      blockId,
+    );
+    const label = renderCitationCluster(
+      creation.citations,
+      records,
+      manuscript.citationStyle,
+      manuscript.locale,
+    );
+    const firstCitation = creation.citations[0];
+
+    if (!firstCitation) {
+      return;
+    }
+
     const inserted = editor
       .chain()
       .focus()
       .insertOmiCitation({
-        citationId: citation.id,
-        anchorId: citation.anchorId,
+        citationId: firstCitation.id,
+        citationIds: creation.cluster.citationIds,
+        clusterId: creation.cluster.id,
+        anchorId: creation.cluster.anchorId,
         label,
       })
       .insertContent(' ')
       .run();
 
-    if (inserted && stageCreateCitation(citation)) {
+    if (inserted && stageCreateCitationCluster(creation)) {
       setCitationPickerOpen(false);
-      setActiveCitationId(citation.id);
+      setActiveCitationId(firstCitation.id);
       setActiveNoteId(null);
     }
   }
@@ -308,12 +332,17 @@ export function BlockEditor({
 
       {citationPickerOpen ? (
         <CitationPicker
-          onInsert={insertCitation}
+          onInsert={insertCitationCluster}
           onCancel={() => setCitationPickerOpen(false)}
         />
       ) : null}
 
-      {activeCitationId ? (
+      {activeCitationId && activeCluster && activeCluster.citationIds.length > 1 ? (
+        <CitationClusterEditorCard
+          clusterId={activeCluster.id}
+          onClose={() => setActiveCitationId(null)}
+        />
+      ) : activeCitationId ? (
         <CitationEditorCard
           citationId={activeCitationId}
           onClose={() => setActiveCitationId(null)}
