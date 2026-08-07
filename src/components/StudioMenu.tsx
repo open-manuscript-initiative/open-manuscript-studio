@@ -5,6 +5,7 @@ import {
   History as HistoryIcon,
   Plus,
   RotateCcw,
+  Settings2,
   Users,
   Wrench,
   X,
@@ -16,7 +17,11 @@ import {
 } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import {
+  localeLabels,
+  supportedLocales,
+  useTranslation,
+} from '../i18n';
 import { downloadOmiJson } from '../services/exportOmi';
 import { DocumentTree } from './DocumentTree';
 import { Footer } from './Footer';
@@ -28,7 +33,8 @@ type StudioMenuView =
   | 'manuscript'
   | 'contributors'
   | 'history'
-  | 'tools';
+  | 'tools'
+  | 'settings';
 
 interface StudioMenuProps {
   open: boolean;
@@ -139,6 +145,12 @@ export function StudioMenu({
               label={t('studio.navigation.tools')}
               onClick={() => setActiveView('tools')}
             />
+            <MenuButton
+              active={activeView === 'settings'}
+              icon={<Settings2 size={18} aria-hidden="true" />}
+              label={t('studio.navigation.settings')}
+              onClick={() => setActiveView('settings')}
+            />
           </nav>
 
           <div className="studio-menu-content">
@@ -156,6 +168,9 @@ export function StudioMenu({
             ) : null}
             {activeView === 'tools' ? (
               <ToolsView />
+            ) : null}
+            {activeView === 'settings' ? (
+              <SettingsView />
             ) : null}
           </div>
         </div>
@@ -356,6 +371,91 @@ function ToolsView() {
 
       <div className="studio-menu-footer-wrap">
         <Footer />
+      </div>
+    </section>
+  );
+}
+
+function SettingsView() {
+  const {
+    locale,
+    enabledLocales,
+    setLocaleEnabled,
+    t,
+  } = useTranslation();
+
+  return (
+    <section className="studio-menu-view">
+      <div className="studio-menu-view-header">
+        <div>
+          <h3>{t('studio.settings.title')}</h3>
+          <p>{t('studio.settings.description')}</p>
+        </div>
+      </div>
+
+      <section
+        className="studio-settings-card"
+        aria-labelledby="studio-interface-languages-title"
+      >
+        <div className="studio-settings-card-header">
+          <div>
+            <h4 id="studio-interface-languages-title">
+              {t('studio.settings.interfaceLanguages')}
+            </h4>
+            <p>
+              {t('studio.settings.interfaceLanguagesDescription')}
+            </p>
+          </div>
+        </div>
+
+        <div className="studio-language-preference-list">
+          {supportedLocales.map((supportedLocale) => {
+            const enabled = enabledLocales.includes(supportedLocale);
+            const current = supportedLocale === locale;
+
+            return (
+              <label
+                className={`studio-language-preference${
+                  current ? ' studio-language-preference--current' : ''
+                }`}
+                key={supportedLocale}
+              >
+                <input
+                  type="checkbox"
+                  checked={enabled}
+                  disabled={current}
+                  onChange={(event) =>
+                    setLocaleEnabled(
+                      supportedLocale,
+                      event.target.checked,
+                    )
+                  }
+                />
+
+                <span className="studio-language-preference-copy">
+                  <strong>{localeLabels[supportedLocale]}</strong>
+                  <small>
+                    {current
+                      ? t('studio.settings.currentLanguage')
+                      : enabled
+                        ? t('studio.settings.enabledLanguage')
+                        : t('studio.settings.disabledLanguage')}
+                  </small>
+                </span>
+
+                <code>{supportedLocale}</code>
+              </label>
+            );
+          })}
+        </div>
+
+        <p className="studio-settings-hint">
+          {t('studio.settings.currentLanguageHint')}
+        </p>
+      </section>
+
+      <div className="studio-settings-future-note">
+        {t('studio.settings.futureLanguages')}
       </div>
     </section>
   );
