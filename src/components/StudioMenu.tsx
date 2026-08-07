@@ -27,6 +27,7 @@ import { downloadOmiJson } from '../services/exportOmi';
 import { DocumentTree } from './DocumentTree';
 import { Footer } from './Footer';
 import { HistoryPanel } from './HistoryPanel';
+import { KeywordEditor } from './KeywordEditor';
 import { ManuscriptLanguageField } from './ManuscriptLanguageField';
 import { NotesPanel } from './NotesPanel';
 import { PropertiesPanel } from './PropertiesPanel';
@@ -276,21 +277,7 @@ function ManuscriptDataView() {
           />
         </label>
 
-        <div className="studio-readonly-field">
-          <span>{t('manuscript.keywords')}</span>
-          <div className="studio-keyword-list">
-            {manuscript.keywords.length > 0 ? (
-              manuscript.keywords.map((keyword) => (
-                <span className="studio-keyword" key={keyword}>
-                  {keyword}
-                </span>
-              ))
-            ) : (
-              <span className="studio-muted-value">—</span>
-            )}
-          </div>
-        </div>
-
+        <KeywordEditor />
         <ManuscriptLanguageField />
       </div>
     </section>
