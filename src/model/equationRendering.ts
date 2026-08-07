@@ -14,8 +14,11 @@ export function latexToMathMl(latex: string): string {
 
 class LatexMathParser {
   private index = 0;
+  private readonly source: string;
 
-  constructor(private readonly source: string) {}
+  constructor(source: string) {
+    this.source = source;
+  }
 
   parse(stop?: string): string {
     let output = '';
