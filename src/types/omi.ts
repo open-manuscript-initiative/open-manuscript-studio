@@ -2,6 +2,7 @@ import type {
   OmiAgent,
   OmiContribution,
 } from '../model/identity';
+import type { OmiTombstone } from '../model/tombstone';
 import type {
   OmiRevisionHistory,
   RevisionId,
@@ -84,6 +85,14 @@ export interface OmiManuscriptState {
    * Contextual relationships between agents and manuscript objects.
    */
   contributions: OmiContribution[];
+
+  /**
+   * Persistent deletion evidence for addressable scholarly objects.
+   *
+   * Tombstones are part of committed manuscript state and survive restoration
+   * so a deleted identifier cannot silently be reused for another object.
+   */
+  tombstones: OmiTombstone[];
 
   /**
    * Deprecated compatibility field for importing older documents.
