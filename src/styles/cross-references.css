@@ -1,0 +1,274 @@
+.omi-cross-reference {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  padding: 0.05rem 0.28rem;
+  border-radius: 0.3rem;
+  border-bottom: 1px solid currentColor;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.omi-cross-reference:hover,
+.omi-cross-reference:focus {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.omi-cross-reference--unresolved {
+  text-decoration: wavy underline;
+  font-weight: 700;
+}
+
+.omi-numbered-object {
+  scroll-margin-top: 6rem;
+}
+
+.omi-numbered-object-label {
+  margin: 0 0 0.45rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.omi-xref-picker,
+.omi-xref-editor-card {
+  margin-top: 0.75rem;
+  padding: 0.9rem;
+  border: 1px solid var(--ifm-color-emphasis-300, #d4d4d8);
+  border-radius: 0.75rem;
+  background: var(--ifm-background-surface-color, #fff);
+}
+
+.omi-xref-picker-header,
+.omi-xref-editor-card > header,
+.omi-xref-status-panel > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.omi-xref-picker-header p,
+.omi-xref-editor-card header p,
+.omi-xref-status-panel header p {
+  margin: 0.2rem 0 0;
+  font-size: 0.86rem;
+  opacity: 0.75;
+}
+
+.omi-xref-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  min-height: 2rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+.omi-xref-picker-controls,
+.omi-xref-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(8rem, 0.7fr) minmax(10rem, 0.9fr);
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.omi-xref-picker-controls label,
+.omi-xref-editor-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+}
+
+.omi-xref-search {
+  position: relative;
+}
+
+.omi-xref-search svg {
+  position: absolute;
+  left: 0.65rem;
+  bottom: 0.68rem;
+  pointer-events: none;
+}
+
+.omi-xref-search input {
+  padding-left: 2rem;
+}
+
+.omi-xref-picker input,
+.omi-xref-picker select,
+.omi-xref-editor-card select,
+.omi-xref-numbering-control select {
+  width: 100%;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--ifm-color-emphasis-300, #d4d4d8);
+  border-radius: 0.45rem;
+  background: inherit;
+  color: inherit;
+}
+
+.omi-xref-target-list {
+  display: grid;
+  gap: 0.35rem;
+  max-height: 17rem;
+  margin-top: 0.75rem;
+  overflow: auto;
+}
+
+.omi-xref-target {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--ifm-color-emphasis-200, #e4e4e7);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.omi-xref-target:hover,
+.omi-xref-target:focus-visible {
+  border-color: currentColor;
+}
+
+.omi-xref-target small {
+  flex: 0 0 auto;
+  opacity: 0.65;
+}
+
+.omi-xref-empty {
+  margin: 0;
+  padding: 1rem;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.omi-xref-editor-grid {
+  grid-template-columns: minmax(0, 1.4fr) minmax(10rem, 0.8fr);
+}
+
+.omi-xref-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.omi-xref-editor-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.omi-xref-editor-actions .danger,
+.omi-xref-unresolved {
+  font-weight: 700;
+}
+
+.omi-xref-unresolved {
+  margin: 0.65rem 0 0;
+}
+
+.omi-xref-status-panel {
+  display: grid;
+  gap: 0.8rem;
+  margin: 1rem 0;
+  padding: 0.9rem;
+  border: 1px solid var(--ifm-color-emphasis-200, #e4e4e7);
+  border-radius: 0.75rem;
+}
+
+.omi-xref-status-panel h4 {
+  margin: 0;
+}
+
+.omi-xref-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0 0.45rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.omi-xref-numbering-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.8fr);
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.omi-xref-numbering-control > span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.omi-xref-numbering-control small {
+  opacity: 0.72;
+}
+
+.omi-xref-target-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.omi-xref-target-summary span {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--ifm-color-emphasis-200, #e4e4e7);
+  border-radius: 999px;
+  font-size: 0.78rem;
+}
+
+.omi-xref-validation {
+  padding: 0.65rem 0.7rem;
+  border-radius: 0.55rem;
+}
+
+.omi-xref-validation--ok,
+.omi-xref-validation-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.omi-xref-validation ul {
+  margin: 0.5rem 0 0 1.25rem;
+  padding: 0;
+}
+
+.omi-xref-validation li {
+  margin: 0.2rem 0;
+}
+
+.omi-xref-validation code {
+  margin-left: 0.4rem;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 760px) {
+  .omi-xref-picker-controls,
+  .omi-xref-editor-grid,
+  .omi-xref-numbering-control {
+    grid-template-columns: 1fr;
+  }
+
+  .omi-xref-target {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
