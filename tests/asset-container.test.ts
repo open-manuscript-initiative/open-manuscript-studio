@@ -28,7 +28,7 @@ import {
 } from '../src/services/omiContainerImport.ts';
 import type { OmiAsset } from '../src/types/assets.ts';
 import type { OmiManuscript, OmiManuscriptState } from '../src/types/omi.ts';
-import { createTestManuscript } from './testManuscriptFixture.ts';
+import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
 
 test('decodes embedded image data and produces deterministic SHA-256 evidence', async () => {
   const decoded = decodeDataUrl('data:text/plain;base64,aGVsbG8=');
@@ -178,7 +178,7 @@ async function createCommittedAssetManuscript(): Promise<{
   asset: OmiAsset;
   bytes: Uint8Array;
 }> {
-  const manuscript = createTestManuscript();
+  const manuscript = createVersionedTestManuscript();
   const bytes = new TextEncoder().encode('fake-png-payload');
   const asset = await createAssetMetadata(bytes, {
     id: 'asset-figure-1',
