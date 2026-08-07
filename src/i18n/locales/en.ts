@@ -20,6 +20,57 @@ export const en: TranslationDictionary = {
     settings: 'Settings'
   },
 
+  studio: {
+    menu: 'Manuscript menu',
+    closeMenu: 'Close manuscript menu',
+    languageSwitcher: 'Interface language',
+    saved: 'Saved',
+    pending: 'Saving…',
+    editorAria: 'Manuscript editor',
+    titlePlaceholder: 'Enter the manuscript title',
+    noSection: 'No section is selected.',
+    navigation: {
+      document: 'Document',
+      manuscript: 'Manuscript data',
+      contributors: 'Contributors',
+      history: 'History',
+      tools: 'Export and tools'
+    },
+    document: {
+      title: 'Document structure',
+      description:
+        'Choose the section you want to work on. Structural and object information stays out of the writing surface until you need it.',
+      addSection: 'Add section',
+      sections: 'Sections',
+      objects: 'Objects',
+      annotations: 'Annotations',
+      citations: 'Citations'
+    },
+    manuscript: {
+      title: 'Manuscript data',
+      description:
+        'Edit manuscript-level information separately from the writing surface.'
+    },
+    tools: {
+      title: 'Export and tools',
+      description:
+        'Secondary, technical and potentially destructive actions are kept outside the writing surface.',
+      export: 'Export .omi.json',
+      exportDescription:
+        'Create a canonical portable OMI manuscript file after checkpointing pending edits.',
+      reset: 'Reset sample',
+      resetDescription:
+        'Replace the current alpha sample with a new clean sample manuscript.',
+      confirmReset:
+        'Reset the current sample manuscript? Unsaved and current sample data will be replaced.',
+      technicalData: 'Technical data',
+      technicalDescription:
+        'Inspect the semantic representation only when technical details are needed.',
+      liveJson: 'Current section JSON',
+      synced: 'Synced'
+    }
+  },
+
   manuscript: {
     newDocument: 'New manuscript',
     documentTitle: 'Document title',
