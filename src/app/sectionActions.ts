@@ -1,4 +1,5 @@
 import { useStudioStore } from './useStudioStore';
+import { synchronizeCrossReferenceLabels } from '../model/crossReferences.ts';
 import { getExternalIdentifierValue } from '../model/identity';
 import {
   arraysHaveSameOrder,
@@ -8,14 +9,17 @@ import {
   moveSectionToIndex,
   sectionOrder,
 } from '../model/sectionStructure.ts';
-import type { OmiSectionNumberingStyle } from '../types/omi';
 import { extractManuscriptState } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';
 import {
   getCurrentUser,
   useAuthStore,
 } from '../store/authStore';
-import type { OmiManuscript } from '../types/omi';
+import type {
+  OmiManuscript,
+  OmiSection,
+  OmiSectionNumberingStyle,
+} from '../types/omi';
 
 const SECTION_CHECKPOINT_DELAY_MS = 2500;
 let sectionCheckpointTimer: ReturnType<typeof setTimeout> | null = null;
@@ -35,7 +39,21 @@ export function stageSectionTitleChange(
       return state;
     }
 
+    const unsynchronizedSections = state.manuscript.sections.map(
+      (candidate) =>
+        candidate.id === sectionId
+          ? { ...candidate, title }
+          : candidate,
+    );
+    const nextSections = synchronizeForManuscript(
+      state.manuscript,
+      unsynchronizedSections,
+    );
     const timestamp = new Date().toISOString();
+    const contentEvents = collectBlockContentChanges(
+      state.manuscript.sections,
+      nextSections,
+    );
     const pendingChangeSet = stagePendingChanges(
       state.pendingChangeSet,
       {
@@ -49,6 +67,7 @@ export function stageSectionTitleChange(
             previousValue: section.title,
             nextValue: title,
           },
+          ...contentEvents,
         ],
         actorAgentId: resolveCurrentActorAgentId(state.manuscript),
         timestamp,
@@ -62,11 +81,7 @@ export function stageSectionTitleChange(
       manuscript: {
         ...state.manuscript,
         ...portableState,
-        sections: state.manuscript.sections.map((candidate) =>
-          candidate.id === sectionId
-            ? { ...candidate, title }
-            : candidate,
-        ),
+        sections: nextSections,
         updatedAt: timestamp,
       },
       pendingChangeSet,
@@ -90,15 +105,23 @@ export function stageInsertSectionAtGap(
 
   useStudioStore.setState((state) => {
     const section = createEmptySection();
-    const sections = insertSectionAtGap(
+    const insertedSections = insertSectionAtGap(
       state.manuscript.sections,
       section,
       gapIndex,
     );
-    const insertedIndex = sections.findIndex(
+    const insertedIndex = insertedSections.findIndex(
       (candidate) => candidate.id === section.id,
     );
+    const nextSections = synchronizeForManuscript(
+      state.manuscript,
+      insertedSections,
+    );
     const timestamp = new Date().toISOString();
+    const contentEvents = collectBlockContentChanges(
+      state.manuscript.sections,
+      nextSections,
+    );
     const pendingChangeSet = stagePendingChanges(
       state.pendingChangeSet,
       {
@@ -111,6 +134,7 @@ export function stageInsertSectionAtGap(
             path: `/sections/${insertedIndex}`,
             nextValue: section,
           },
+          ...contentEvents,
         ],
         actorAgentId: resolveCurrentActorAgentId(state.manuscript),
         timestamp,
@@ -125,7 +149,7 @@ export function stageInsertSectionAtGap(
       manuscript: {
         ...state.manuscript,
         ...portableState,
-        sections,
+        sections: nextSections,
         updatedAt: timestamp,
       },
       pendingChangeSet,
@@ -219,21 +243,31 @@ export function stageSectionNumberingStyleChange(
 
 function stageSectionReorder(
   sectionId: string,
-  reorder: (sections: OmiManuscript['sections']) => OmiManuscript['sections'],
+  reorder: (
+    sections: OmiManuscript['sections'],
+  ) => OmiManuscript['sections'],
 ): boolean {
   let changed = false;
 
   useStudioStore.setState((state) => {
     const previousSections = state.manuscript.sections;
-    const nextSections = reorder(previousSections);
+    const reorderedSections = reorder(previousSections);
 
-    if (arraysHaveSameOrder(previousSections, nextSections)) {
+    if (arraysHaveSameOrder(previousSections, reorderedSections)) {
       return state;
     }
 
+    const nextSections = synchronizeForManuscript(
+      state.manuscript,
+      reorderedSections,
+    );
     const timestamp = new Date().toISOString();
     const previousOrder = sectionOrder(previousSections);
-    const nextOrder = sectionOrder(nextSections);
+    const nextOrder = sectionOrder(reorderedSections);
+    const contentEvents = collectBlockContentChanges(
+      previousSections,
+      nextSections,
+    );
     const pendingChangeSet = stagePendingChanges(
       state.pendingChangeSet,
       {
@@ -247,6 +281,7 @@ function stageSectionReorder(
             previousValue: previousOrder,
             nextValue: nextOrder,
           },
+          ...contentEvents,
         ],
         actorAgentId: resolveCurrentActorAgentId(state.manuscript),
         timestamp,
@@ -272,6 +307,46 @@ function stageSectionReorder(
   }
 
   return changed;
+}
+
+function synchronizeForManuscript(
+  manuscript: OmiManuscript,
+  sections: OmiSection[],
+): OmiSection[] {
+  return synchronizeCrossReferenceLabels(
+    sections,
+    manuscript.crossReferences ?? [],
+    manuscript.crossReferenceNumbering,
+    manuscript.locale,
+  );
+}
+
+function collectBlockContentChanges(
+  previousSections: readonly OmiSection[],
+  nextSections: readonly OmiSection[],
+) {
+  const previousBlocks = new Map(
+    previousSections
+      .flatMap((section) => section.blocks)
+      .map((block) => [block.id, block]),
+  );
+
+  return nextSections
+    .flatMap((section) => section.blocks)
+    .flatMap((block) => {
+      const previous = previousBlocks.get(block.id);
+      if (!previous || previous.content === block.content) return [];
+
+      return [
+        {
+          operation: 'block.content.set' as const,
+          targetId: block.id,
+          path: `/blocks/${block.id}/content`,
+          previousValue: previous.content,
+          nextValue: block.content,
+        },
+      ];
+    });
 }
 
 function scheduleSectionCheckpoint(): void {
