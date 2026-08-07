@@ -25,7 +25,9 @@ const platform =
 const installationId = readArg('id');
 const displayName = readArg('name');
 const baseUrl = readArg('base-url');
-const sharedSecret = readArg('secret');
+const sharedSecret =
+  readArg('secret') ??
+  process.env.OMI_INTEGRATION_SHARED_SECRET;
 
 if (
   !platform ||
@@ -35,7 +37,7 @@ if (
   !sharedSecret
 ) {
   console.error(
-    'Usage: npm run integration:add -- --platform=ojs --id=example-ojs --name="Example Journal" --base-url=https://example.org/ojs --secret=<64-hex>',
+    'Usage: OMI_INTEGRATION_SHARED_SECRET=<64-hex> npm run integration:add -- --platform=ojs --id=example-ojs --name="Example Journal" --base-url=https://example.org/ojs',
   );
   process.exit(1);
 }
