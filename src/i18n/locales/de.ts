@@ -32,6 +32,7 @@ export const de: TranslationDictionary = {
     navigation: {
       document: 'Dokument',
       manuscript: 'Manuskriptdaten',
+      notes: 'Anmerkungen',
       contributors: 'Mitwirkende',
       history: 'Verlauf',
       tools: 'Export und Werkzeuge',
@@ -99,6 +100,28 @@ export const de: TranslationDictionary = {
     bibliography: 'Literaturverzeichnis',
     documentLanguage: 'Dokumentsprache',
     originalLanguage: 'Originalsprache'
+  },
+
+  notes: {
+    title: 'Anmerkungen',
+    description:
+      'Verwalten Sie semantische Manuskriptanmerkungen. Der Anmerkungstext bleibt ein eigenständiges Annotation-Objekt, während im Text nur der stabile Anker steht.',
+    empty: 'Dieses Manuskript enthält noch keine Anmerkungen.',
+    emptyHint:
+      'Setzen Sie den Cursor in den Text und verwenden Sie die Schaltfläche Anmerkung oder Strg/Cmd+Alt+N.',
+    note: 'Anmerkung',
+    type: 'Anmerkungstyp',
+    body: 'Anmerkungstext',
+    bodyPlaceholder: 'Anmerkung schreiben…',
+    footnote: 'Fußnote',
+    endnote: 'Endnote',
+    authorNote: 'Autorenanmerkung',
+    delete: 'Anmerkung löschen',
+    confirmDelete:
+      'Diese Anmerkung und ihren Inline-Anker aus dem Manuskript löschen?',
+    closeEditor: 'Anmerkungseditor schließen',
+    goToNote: 'Zur Anmerkung',
+    autoSave: 'Mit den Manuskriptrevisionen gespeichert'
   },
 
   contributors: {
@@ -183,7 +206,7 @@ export const de: TranslationDictionary = {
     paragraph: 'Absatz',
     heading: 'Überschrift',
     quote: 'Zitat',
-    insertNote: 'Inline-OMI-Anmerkung einfügen',
+    insertNote: 'Semantische Anmerkung einfügen',
     loading: 'Editor wird geladen…'
   },
 
@@ -212,7 +235,6 @@ export const de: TranslationDictionary = {
       name: 'Open Manuscript Studio',
       description: 'Gemeinsame Manuskriptbearbeitung'
     },
-
     login: {
       title: 'Anmelden',
       description: 'Bitte melden Sie sich an.',
@@ -221,7 +243,6 @@ export const de: TranslationDictionary = {
       noAccount: 'Noch kein Konto?',
       registerLink: 'Registrieren'
     },
-
     register: {
       title: 'Konto erstellen',
       description: 'Erstellen Sie ein neues Konto.',
@@ -229,33 +250,27 @@ export const de: TranslationDictionary = {
       hasAccount: 'Bereits registriert?',
       loginLink: 'Anmelden'
     },
-
     fields: {
       name: {
         label: 'Vollständiger Name',
         placeholder: 'Ihr vollständiger Name'
       },
-
       email: {
         label: 'E-Mail',
         placeholder: 'name@example.com'
       },
-
       password: {
         label: 'Passwort',
         placeholder: 'Passwort eingeben'
       }
     },
-
     errors: {
       invalidEmail: 'Ungültige E-Mail-Adresse.',
-      invalidCredentials:
-        'Falsche E-Mail-Adresse oder falsches Passwort.',
+      invalidCredentials: 'Falsche E-Mail-Adresse oder falsches Passwort.',
       userNotFound: 'Das Benutzerkonto wurde nicht gefunden.',
       accountNotActive: 'Das Benutzerkonto ist nicht aktiv.',
       authenticationRequired: 'Eine Anmeldung ist erforderlich.'
     },
-
     alphaNotice:
       'Alpha-Version – die Anmeldung dient derzeit Testzwecken.'
   }
