@@ -38,6 +38,7 @@ export const createSampleManuscript = (): OmiManuscript => {
       'scholarly publishing',
       'structured editing',
     ],
+    citationStyle: 'apa-7',
     agents: [sampleAgent],
     contributions: [
       createContribution(
@@ -73,6 +74,7 @@ export const createSampleManuscript = (): OmiManuscript => {
     annotations: [],
     bibliographicRecords: [],
     citations: [],
+    citationClusters: [],
     createdAt: now,
     updatedAt: now,
   };
