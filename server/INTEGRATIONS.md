@@ -47,15 +47,19 @@ openssl rand -hex 32
 
 ## 4. Register the same OJS secret in Studio
 
-Run this from the `server` directory. The `--secret` value must be exactly the same shared secret configured in the OJS plugin:
+Run the registration from the `server` directory. The secret must be exactly the same value configured in the OJS plugin.
+
+To avoid putting the secret in shell history, read it without echo and pass it through a temporary environment variable:
 
 ```bash
-npm run integration:add -- \
+read -s -p "OJS shared secret: " OJS_SECRET
+echo
+OMI_INTEGRATION_SHARED_SECRET="$OJS_SECRET" npm run integration:add -- \
   --platform=ojs \
   --id=example-ojs-production \
   --name="Example Journal OJS" \
-  --base-url=https://journal.example.org/ojs \
-  --secret=<OJS_SHARED_SECRET>
+  --base-url=https://journal.example.org/ojs
+unset OJS_SECRET
 ```
 
 The command encrypts the shared secret before saving it to PostgreSQL. The plaintext secret is not returned by the API.
