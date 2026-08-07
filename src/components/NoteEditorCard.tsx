@@ -38,7 +38,8 @@ export function NoteEditorCard({
     return null;
   }
 
-  const noteNumber = getNoteNumber(manuscript, note.id);
+  const stableNoteId = note.id;
+  const noteNumber = getNoteNumber(manuscript, stableNoteId);
   const section = manuscript.sections.find((candidate) =>
     candidate.blocks.some((block) => block.id === note.targetBlockId),
   );
@@ -58,7 +59,7 @@ export function NoteEditorCard({
       return;
     }
 
-    stageRemoveNote(note.id);
+    stageRemoveNote(stableNoteId);
     onClose?.();
   }
 
@@ -95,7 +96,7 @@ export function NoteEditorCard({
         <select
           value={noteKind}
           onChange={(event) =>
-            stageUpdateNote(note.id, {
+            stageUpdateNote(stableNoteId, {
               kind: event.target.value as OmiNoteKind,
             })
           }
@@ -112,7 +113,7 @@ export function NoteEditorCard({
           value={note.body}
           placeholder={t('notes.bodyPlaceholder')}
           onChange={(event) =>
-            stageUpdateNote(note.id, {
+            stageUpdateNote(stableNoteId, {
               body: event.target.value,
             })
           }
@@ -120,7 +121,7 @@ export function NoteEditorCard({
       </label>
 
       <div className="omi-note-meta">
-        <code>{note.anchorId ?? note.id}</code>
+        <code>{note.anchorId ?? stableNoteId}</code>
         <span>{t('notes.autoSave')}</span>
       </div>
 
