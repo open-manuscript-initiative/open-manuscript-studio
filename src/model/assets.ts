@@ -1,9 +1,5 @@
-import type {
-  OmiAsset,
-  OmiAssetRole,
-  OmiBlock,
-  OmiImageBlockData,
-} from '../types/omi';
+import type { OmiBlock, OmiImageBlockData } from '../types/omi';
+import type { OmiAsset, OmiAssetRole } from '../types/assets';
 
 export const OMI_ASSET_MODEL_VERSION = '0.1.0-alpha.1' as const;
 export const MAX_CONTAINER_ASSET_BYTES = 100 * 1024 * 1024;
