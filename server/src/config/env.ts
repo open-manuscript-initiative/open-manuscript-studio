@@ -26,6 +26,13 @@ const environmentSchema = z.object({
     .string()
     .url()
     .default('http://localhost:5173'),
+
+  INTEGRATION_MASTER_KEY: z
+    .string()
+    .regex(
+      /^[0-9a-fA-F]{64}$/,
+      'INTEGRATION_MASTER_KEY must be exactly 64 hexadecimal characters.',
+    ),
 });
 
 const result = environmentSchema.safeParse(
