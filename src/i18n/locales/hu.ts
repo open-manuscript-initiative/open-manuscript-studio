@@ -161,9 +161,14 @@ export const hu: TranslationDictionary = {
   editor: {
     addSection: 'Fejezet hozzáadása',
     addParagraph: 'Bekezdés hozzáadása',
-    addNote: 'Jegyzet hozzáadása',
+    addNote: 'Jegyzet',
     untitledSection: 'Névtelen fejezet',
-    emptyParagraph: 'Kezdj el írni…'
+    emptyParagraph: 'Kezdjen el írni…',
+    paragraph: 'Bekezdés',
+    heading: 'Címsor',
+    quote: 'Idézet',
+    insertNote: 'Szövegközi OMI-jegyzet beszúrása',
+    loading: 'A szerkesztő betöltése…'
   },
 
   status: {
