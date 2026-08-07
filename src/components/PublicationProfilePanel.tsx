@@ -26,6 +26,7 @@ import {
   validateManuscriptForPublication,
   type OmiPublicationProfile,
 } from '../model/publicationProfile';
+import { JatsExportPanel } from './JatsExportPanel';
 
 export function PublicationProfilePanel() {
   const { locale } = useTranslation();
@@ -212,6 +213,8 @@ export function PublicationProfilePanel() {
           </ul>
         )}
       </section>
+
+      <JatsExportPanel />
 
       <section className="publication-profile-export">
         <div>

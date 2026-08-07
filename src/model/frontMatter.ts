@@ -1,9 +1,9 @@
 import type {
   OmiManuscriptState,
-} from '../types/omi';
+} from '../types/omi.ts';
 import type {
   OmiPublicationProfile,
-} from './publicationProfile';
+} from './publicationProfile.ts';
 
 /**
  * Optional manuscript front matter that is scholarly content, not layout.
@@ -11,7 +11,7 @@ import type {
  * `subtitle` already belongs to the portable manuscript state. `motto` is an
  * alpha extension while the canonical Document/Metadata specifications evolve.
  */
-declare module '../types/omi' {
+declare module '../types/omi.ts' {
   interface OmiManuscriptState {
     motto?: string;
   }
