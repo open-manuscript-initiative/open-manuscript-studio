@@ -12,9 +12,11 @@ import {
   getExternalIdentifierValue,
   getPreferredNameForm,
   getPrimaryAffiliation,
+  getPrimaryAffiliationRorId,
   isValidOrcid,
   type ContributionRole,
 } from '../model/identity';
+import { RorAffiliationField } from './RorAffiliationField';
 
 const ROLE_OPTIONS: ReadonlyArray<{
   value: ContributionRole;
@@ -205,18 +207,12 @@ export function PropertiesPanel() {
                   />
                 </label>
 
-                <label className="contributor-wide-field">
-                  <span>{t('contributors.affiliation')}</span>
-                  <input
-                    type="text"
-                    value={getPrimaryAffiliation(agent)}
-                    onChange={(event) =>
-                      updateContributor(agent.id, {
-                        affiliation: event.target.value,
-                      })
-                    }
-                  />
-                </label>
+                <RorAffiliationField
+                  agentId={agent.id}
+                  affiliation={getPrimaryAffiliation(agent)}
+                  rorId={getPrimaryAffiliationRorId(agent)}
+                  label={t('contributors.affiliation')}
+                />
 
                 <label className="contributor-wide-field">
                   <span>{t('contributors.orcid')}</span>
