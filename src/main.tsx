@@ -17,6 +17,7 @@ import './styles/citation-system.css';
 import './styles/reference-lookup.css';
 import './styles/csl-rendering.css';
 import './styles/visual-elements.css';
+import './styles/ror-affiliation.css';
 import './styles/editor-i18n.css';
 
 ReactDOM.createRoot(
