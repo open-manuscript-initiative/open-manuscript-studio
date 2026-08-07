@@ -1,27 +1,25 @@
-import {
-  getExternalIdentifierValue,
-  getPreferredNameForm,
-  type ContributionRole,
-  type OmiAffiliationAssertion,
-} from './identity';
+import type {
+  ContributionRole,
+  OmiAffiliationAssertion,
+} from './identity.ts';
 import {
   getPublicationFrontMatterRules,
   type OmiPublicationFrontMatterRules,
-} from './frontMatter';
+} from './frontMatter.ts';
 import {
   publicationReadinessSummary,
   resolvePublicationProfile,
   validateManuscriptForPublication,
   type OmiPublicationProfile,
   type OmiPublicationProfileIssue,
-} from './publicationProfile';
-import { formatHierarchicalSectionNumber } from './sectionNumbering';
-import { getParentSectionId } from './sectionStructure';
+} from './publicationProfile.ts';
+import { formatHierarchicalSectionNumber } from './sectionNumbering.ts';
+import { getParentSectionId } from './sectionStructure.ts';
 import type {
   OmiBlock,
   OmiManuscript,
   OmiSection,
-} from '../types/omi';
+} from '../types/omi.ts';
 
 export const OMI_PUBLICATION_RENDERING_MODEL =
   'omi-publication-rendering-context-alpha-0.1' as const;
@@ -116,6 +114,11 @@ export function buildPublicationRenderingContext(
   };
 }
 
+/**
+ * Builds the public contributor view used by publication renderers.
+ * Restricted/private identity assertions must never leak into an export merely
+ * because the containing agent is part of a public author contribution.
+ */
 export function collectPublicationContributors(
   manuscript: Pick<OmiManuscript, 'id' | 'agents' | 'contributions'>,
 ): OmiRenderedContributor[] {
@@ -128,23 +131,37 @@ export function collectPublicationContributors(
         contribution.roles.includes('author') &&
         contribution.visibility === 'public',
     )
-    .sort((left, right) => (left.order ?? Number.MAX_SAFE_INTEGER) - (right.order ?? Number.MAX_SAFE_INTEGER))
+    .sort(
+      (left, right) =>
+        (left.order ?? Number.MAX_SAFE_INTEGER) -
+        (right.order ?? Number.MAX_SAFE_INTEGER),
+    )
     .flatMap((contribution, index) => {
       const agent = agentMap.get(contribution.agentId);
       if (!agent || agent.type !== 'person') return [];
 
-      const publicNames = agent.names.filter((name) => name.visibility === 'public');
+      const publicNames = agent.names.filter(
+        (name) => name.visibility === 'public',
+      );
       const preferred =
-        publicNames.find((name) => name.preferred) ??
-        publicNames[0] ??
-        getPreferredNameForm(agent);
-      const displayName = contribution.attributionName?.trim() || preferred?.value?.trim();
+        publicNames.find((name) => name.preferred) ?? publicNames[0];
+      const displayName =
+        contribution.attributionName?.trim() || preferred?.value?.trim();
       if (!displayName) return [];
 
       const affiliations = agent.affiliations
         .filter((affiliation) => affiliation.visibility === 'public')
         .map(toRenderedAffiliation);
-      const orcid = getExternalIdentifierValue(agent, 'orcid');
+      const publicOrcid = agent.identifiers.find(
+        (identifier) =>
+          identifier.visibility === 'public' &&
+          identifier.scheme.trim().toLowerCase() === 'orcid' &&
+          Boolean(
+            (identifier.normalizedValue || identifier.value).trim(),
+          ),
+      );
+      const orcidValue =
+        publicOrcid?.normalizedValue.trim() || publicOrcid?.value.trim();
 
       return [
         {
@@ -156,7 +173,12 @@ export function collectPublicationContributors(
           roles: [...contribution.roles],
           corresponding: contribution.corresponding === true,
           order: contribution.order ?? index + 1,
-          orcid: orcid ? `https://orcid.org/${orcid}` : undefined,
+          orcid: orcidValue
+            ? `https://orcid.org/${orcidValue.replace(
+                /^https?:\/\/orcid\.org\//i,
+                '',
+              )}`
+            : undefined,
           affiliations,
         },
       ];
@@ -237,12 +259,17 @@ function sectionDepth(
 function toRenderedAffiliation(
   affiliation: OmiAffiliationAssertion,
 ): OmiRenderedAffiliation {
+  const publicOrganizationIdentifier =
+    affiliation.organizationIdentifier?.visibility === 'public'
+      ? affiliation.organizationIdentifier
+      : undefined;
+
   return {
     id: affiliation.id,
     organizationName: affiliation.organizationName,
     organizationIdentifier:
-      affiliation.organizationIdentifier?.normalizedValue ||
-      affiliation.organizationIdentifier?.value ||
+      publicOrganizationIdentifier?.normalizedValue ||
+      publicOrganizationIdentifier?.value ||
       undefined,
     department: optional(affiliation.department),
     position: optional(affiliation.position),
