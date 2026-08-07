@@ -1,0 +1,216 @@
+.omi-lookup-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--omi-border, #d8dde5);
+  border-radius: 0.9rem;
+  background: var(--omi-surface-soft, #f8fafc);
+}
+
+.omi-lookup-heading h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.omi-lookup-heading p,
+.omi-lookup-settings p,
+.omi-lookup-result p,
+.omi-lookup-empty,
+.omi-lookup-issues p {
+  margin: 0.35rem 0 0;
+}
+
+.omi-lookup-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.omi-lookup-query-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: stretch;
+}
+
+.omi-lookup-query {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0 0.75rem;
+  border: 1px solid var(--omi-border, #cbd5e1);
+  border-radius: 0.65rem;
+  background: var(--omi-surface, #fff);
+}
+
+.omi-lookup-query:focus-within {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.omi-lookup-query input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.75rem 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.omi-provider-toggle-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.omi-provider-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--omi-border, #d8dde5);
+  border-radius: 999px;
+  background: var(--omi-surface, #fff);
+  cursor: pointer;
+}
+
+.omi-provider-toggle small {
+  opacity: 0.65;
+  font-size: 0.72rem;
+}
+
+.omi-lookup-settings {
+  border-top: 1px solid var(--omi-border, #d8dde5);
+  padding-top: 0.75rem;
+}
+
+.omi-lookup-settings summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.omi-lookup-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 0.8rem;
+}
+
+.omi-lookup-settings-grid label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.omi-lookup-settings-grid input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--omi-border, #cbd5e1);
+  border-radius: 0.55rem;
+  background: var(--omi-surface, #fff);
+  color: inherit;
+  font: inherit;
+}
+
+.omi-lookup-settings-grid small,
+.omi-lookup-privacy-note {
+  opacity: 0.72;
+  line-height: 1.4;
+}
+
+.omi-lookup-privacy-note {
+  font-size: 0.8rem;
+}
+
+.omi-lookup-issues {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  border: 1px solid var(--omi-border, #d8dde5);
+  border-radius: 0.65rem;
+  background: var(--omi-surface, #fff);
+}
+
+.omi-lookup-results {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.omi-lookup-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: start;
+  padding: 0.85rem;
+  border: 1px solid var(--omi-border, #d8dde5);
+  border-radius: 0.75rem;
+  background: var(--omi-surface, #fff);
+}
+
+.omi-lookup-result-main {
+  min-width: 0;
+}
+
+.omi-lookup-provider-badges,
+.omi-lookup-result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.omi-lookup-provider-badges {
+  margin-bottom: 0.4rem;
+}
+
+.omi-lookup-provider-badges span {
+  padding: 0.18rem 0.42rem;
+  border-radius: 999px;
+  background: var(--omi-surface-soft, #eef2f7);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.omi-lookup-result p {
+  line-height: 1.45;
+}
+
+.omi-lookup-result-meta {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  opacity: 0.78;
+}
+
+.omi-lookup-result-meta code {
+  overflow-wrap: anywhere;
+}
+
+.omi-lookup-result button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+@media (max-width: 760px) {
+  .omi-lookup-query-row,
+  .omi-lookup-settings-grid,
+  .omi-lookup-result {
+    grid-template-columns: 1fr;
+  }
+
+  .omi-lookup-query-row > button,
+  .omi-lookup-result > button {
+    justify-self: stretch;
+    justify-content: center;
+  }
+}

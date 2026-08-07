@@ -9,6 +9,7 @@ import {
   getBibliographicIdentifier,
 } from '../model/citations';
 import { BibliographicRecordEditor } from './BibliographicRecordEditor';
+import { ReferenceLookupPanel } from './ReferenceLookupPanel';
 
 export function ReferencesPanel() {
   const { t } = useTranslation();
@@ -63,6 +64,8 @@ export function ReferencesPanel() {
           {t('citations.addReference')}
         </button>
       </div>
+
+      <ReferenceLookupPanel />
 
       {records.length > 0 ? (
         <label className="omi-reference-search">
