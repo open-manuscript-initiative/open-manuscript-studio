@@ -30,6 +30,7 @@ import {
   OmiNoteExtension,
   type OmiNoteAttributes,
 } from '../editor/extensions/OmiNoteExtension';
+import { OMI_RICH_TEXT_EXTENSIONS } from '../editor/extensions/OmiRichTextExtensions';
 import { useTranslation } from '../i18n';
 import { getCrossReferenceCopy } from '../i18n/crossReferences';
 import type { TranslationKey } from '../i18n/types';
@@ -40,6 +41,7 @@ import {
   resolveCrossReferenceTarget,
 } from '../model/crossReferences';
 import { renderCitationCluster } from '../model/cslRendering';
+import { sanitizeRichTextPasteHtml } from '../model/richText';
 import type {
   OmiCrossReferenceDisplayStyle,
   OmiCrossReferenceTargetKind,
@@ -53,6 +55,7 @@ import {
 import { CrossReferenceEditorCard } from './CrossReferenceEditorCard';
 import { CrossReferencePicker } from './CrossReferencePicker';
 import { NoteEditorCard } from './NoteEditorCard';
+import { RichTextToolbar } from './RichTextToolbar';
 
 interface BlockEditorProps {
   blockId: string;
@@ -139,13 +142,9 @@ export function BlockEditor({
     extensions: [
       StarterKit.configure({
         heading: false,
-        blockquote: false,
-        bulletList: false,
-        orderedList: false,
-        listItem: false,
-        codeBlock: false,
         horizontalRule: false,
       }),
+      ...OMI_RICH_TEXT_EXTENSIONS,
       OmiNoteExtension.configure({
         onNoteInserted: (attributes: OmiNoteAttributes) => {
           stageCreateNote({
@@ -175,6 +174,7 @@ export function BlockEditor({
         'aria-label': `${blockLabel}: ${t('studio.editorAria')}`,
         spellcheck: 'true',
       },
+      transformPastedHTML: (html) => sanitizeRichTextPasteHtml(html),
       handleClick: (_view, _pos, event) => {
         const target = event.target;
 
@@ -451,6 +451,12 @@ export function BlockEditor({
       </div>
 
       <EditorContent editor={editor} />
+
+      <RichTextToolbar
+        editor={editor}
+        locale={locale}
+        manuscriptLanguage={manuscript.locale}
+      />
 
       {crossReferencePickerOpen ? (
         <CrossReferencePicker
