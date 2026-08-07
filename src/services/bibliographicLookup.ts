@@ -2,7 +2,7 @@ import {
   createBibliographicRecord,
   createStableCitationId,
   formatBibliographyEntry,
-} from '../model/citations';
+} from '../model/citations.ts';
 import type {
   OmiBibliographicContributor,
   OmiBibliographicIdentifier,
