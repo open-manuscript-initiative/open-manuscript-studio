@@ -1,0 +1,113 @@
+.studio-settings-card {
+  border: 1px solid #e2e8f0;
+  border-radius: .85rem;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.studio-settings-card-header h4 {
+  margin: 0 0 .3rem;
+  color: #0f172a;
+  font-size: .95rem;
+}
+
+.studio-settings-card-header p,
+.studio-settings-hint {
+  margin: 0;
+  color: #64748b;
+  font-size: .8rem;
+  line-height: 1.5;
+}
+
+.studio-language-preference-list {
+  display: grid;
+  gap: .55rem;
+  margin-top: 1rem;
+}
+
+.studio-language-preference {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .75rem;
+  min-height: 3.5rem;
+  border: 1px solid #dbe3ec;
+  border-radius: .7rem;
+  background: #fff;
+  padding: .65rem .75rem;
+  cursor: pointer;
+}
+
+.studio-language-preference:hover {
+  border-color: #94a3b8;
+}
+
+.studio-language-preference--current {
+  border-color: #7dd3fc;
+  background: #f0f9ff;
+}
+
+.studio-language-preference input {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+}
+
+.studio-language-preference input:disabled {
+  cursor: not-allowed;
+}
+
+.studio-language-preference-copy {
+  min-width: 0;
+}
+
+.studio-language-preference-copy strong,
+.studio-language-preference-copy small {
+  display: block;
+}
+
+.studio-language-preference-copy strong {
+  color: #1e293b;
+  font-size: .86rem;
+}
+
+.studio-language-preference-copy small {
+  margin-top: .15rem;
+  color: #64748b;
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+.studio-language-preference code {
+  border-radius: .35rem;
+  background: #e2e8f0;
+  color: #475569;
+  padding: .2rem .38rem;
+  font-size: .68rem;
+  text-transform: uppercase;
+}
+
+.studio-settings-hint {
+  margin-top: .85rem;
+}
+
+.studio-settings-future-note {
+  margin-top: .9rem;
+  border-left: 3px solid #94a3b8;
+  color: #64748b;
+  background: #f8fafc;
+  padding: .7rem .85rem;
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 520px) {
+  .studio-language-preference {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .studio-language-preference code {
+    grid-column: 2;
+    width: max-content;
+  }
+}
