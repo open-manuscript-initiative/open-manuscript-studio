@@ -33,6 +33,7 @@ export const de: TranslationDictionary = {
       document: 'Dokument',
       manuscript: 'Manuskriptdaten',
       notes: 'Anmerkungen',
+      references: 'Literatur und Quellen',
       contributors: 'Mitwirkende',
       history: 'Verlauf',
       tools: 'Export und Werkzeuge',
@@ -124,6 +125,104 @@ export const de: TranslationDictionary = {
     autoSave: 'Mit den Manuskriptrevisionen gespeichert'
   },
 
+  citations: {
+    referencesTitle: 'Literatur und Quellen',
+    referencesDescription:
+      'Fügen Sie ein Werk einmal zur Referenzbibliothek des Manuskripts hinzu und verwenden Sie es anschließend in beliebig vielen Zitierstellen.',
+    addReference: 'Quelle hinzufügen',
+    editReference: 'Quelle bearbeiten',
+    referenceEditorDescription:
+      'Bibliografische Metadaten werden strukturiert und unabhängig von einzelnen Zitierstellen oder Ausgabestilen gespeichert.',
+    emptyLibrary: 'Die Referenzbibliothek des Manuskripts ist leer.',
+    emptyLibraryHint:
+      'Fügen Sie ein Buch, einen Artikel, eine Archivquelle, eine Webseite oder eine andere zitierbare Ressource hinzu.',
+    searchReferences: 'Referenzen durchsuchen',
+    searchPlaceholder: 'Titel, Autor, Jahr, DOI…',
+    untitledReference: 'Referenz ohne Titel',
+    occurrences: 'Zitierungen',
+    bibliographyPreviewDescription:
+      'Neutrale Vorschau der im Manuskript tatsächlich zitierten Datensätze. Die endgültige Formatierung bestimmt das Publikationsprofil.',
+    resourceType: 'Ressourcentyp',
+    title: 'Titel',
+    titlePlaceholder: 'Titel des zitierten Werks',
+    subtitle: 'Untertitel',
+    creators: 'Urheber und Mitwirkende',
+    creatorsDescription:
+      'Namen werden strukturiert gespeichert, damit Zitierstile und Exporte sie korrekt darstellen können.',
+    addCreator: 'Urheber hinzufügen',
+    removeCreator: 'Urheber entfernen',
+    noCreators: 'Noch kein Urheber oder Mitwirkender angegeben.',
+    creatorRole: 'Rolle',
+    givenName: 'Vorname',
+    familyName: 'Familienname',
+    containerTitle: 'Titel der Zeitschrift, des Sammelwerks oder Containers',
+    issued: 'Erscheinungsdatum / Jahr',
+    volume: 'Band',
+    issue: 'Heft',
+    pages: 'Seiten / Umfang',
+    publisher: 'Verlag',
+    place: 'Erscheinungsort',
+    duplicateReference:
+      'Wahrscheinlich befindet sich dieses Werk bereits in der Referenzbibliothek:',
+    insertTitle: 'Zitat einfügen',
+    insertDescription:
+      'Wählen Sie ein Werk aus der Referenzbibliothek und geben Sie bei Bedarf die genaue Fundstelle an.',
+    noReferences: 'Noch keine Referenz verfügbar.',
+    noReferencesHint:
+      'Fügen Sie das Werk unter Manuskriptmenü → Literatur und Quellen hinzu und kehren Sie anschließend hierher zurück.',
+    insert: 'Zitat einfügen',
+    citation: 'Zitat',
+    reference: 'Zitiertes Werk',
+    locatorType: 'Fundstellentyp',
+    locator: 'Fundstelle',
+    locatorPlaceholder: 'z. B. 45–47, 12r–13v, Kapitel 4',
+    prefix: 'Präfix',
+    prefixPlaceholder: 'z. B. siehe auch',
+    suffix: 'Suffix',
+    suffixPlaceholder: 'z. B. Hervorhebung hinzugefügt',
+    openSource: 'Quelle öffnen',
+    closeEditor: 'Zitiereditor schließen',
+    deleteCitation: 'Zitat löschen',
+    confirmDeleteCitation:
+      'Diese Zitierstelle aus dem Manuskript löschen? Der bibliografische Datensatz bleibt in der Referenzbibliothek erhalten.',
+    unresolvedReference: 'Der zitierte bibliografische Datensatz fehlt oder ist nicht aufgelöst.',
+    roles: {
+      author: 'Autor/in',
+      editor: 'Herausgeber/in',
+      translator: 'Übersetzer/in',
+      compiler: 'Zusammensteller/in',
+      contributor: 'Mitwirkende/r'
+    },
+    resourceTypes: {
+      'journal-article': 'Zeitschriftenartikel',
+      book: 'Buch',
+      'book-chapter': 'Buchkapitel',
+      'conference-paper': 'Konferenzbeitrag',
+      thesis: 'Abschlussarbeit',
+      dissertation: 'Dissertation',
+      report: 'Bericht',
+      preprint: 'Preprint',
+      dataset: 'Datensatz',
+      software: 'Software',
+      standard: 'Norm',
+      'archival-source': 'Archivquelle',
+      manuscript: 'Manuskript',
+      'web-page': 'Webseite'
+    },
+    locators: {
+      page: 'Seite',
+      'page-range': 'Seitenbereich',
+      chapter: 'Kapitel',
+      section: 'Abschnitt',
+      paragraph: 'Absatz',
+      figure: 'Abbildung',
+      table: 'Tabelle',
+      folio: 'Folio',
+      line: 'Zeile',
+      timestamp: 'Zeitmarke'
+    }
+  },
+
   contributors: {
     description:
       'Verwalten Sie übertragbare wissenschaftliche Identitäten und manuskriptspezifische Mitwirkungsrollen.',
@@ -201,12 +300,14 @@ export const de: TranslationDictionary = {
     addSection: 'Abschnitt hinzufügen',
     addParagraph: 'Absatz hinzufügen',
     addNote: 'Anmerkung',
+    addCitation: 'Zitat',
     untitledSection: 'Unbenannter Abschnitt',
     emptyParagraph: 'Beginnen Sie zu schreiben…',
     paragraph: 'Absatz',
     heading: 'Überschrift',
     quote: 'Zitat',
     insertNote: 'Semantische Anmerkung einfügen',
+    insertCitation: 'Semantisches Zitat einfügen',
     loading: 'Editor wird geladen…'
   },
 
