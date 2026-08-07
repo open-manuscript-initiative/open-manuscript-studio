@@ -161,9 +161,14 @@ export const de: TranslationDictionary = {
   editor: {
     addSection: 'Abschnitt hinzufügen',
     addParagraph: 'Absatz hinzufügen',
-    addNote: 'Anmerkung hinzufügen',
+    addNote: 'Anmerkung',
     untitledSection: 'Unbenannter Abschnitt',
-    emptyParagraph: 'Beginnen Sie zu schreiben…'
+    emptyParagraph: 'Beginnen Sie zu schreiben…',
+    paragraph: 'Absatz',
+    heading: 'Überschrift',
+    quote: 'Zitat',
+    insertNote: 'Inline-OMI-Anmerkung einfügen',
+    loading: 'Editor wird geladen…'
   },
 
   status: {
