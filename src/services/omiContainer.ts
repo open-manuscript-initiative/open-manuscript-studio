@@ -1,6 +1,7 @@
 import { assetPath, collectReferencedAssetIds, sha256Hex } from '../model/assets';
 import { extractManuscriptState } from '../model/versioning';
 import { resolvePublicationProfile } from '../model/publicationProfile';
+import { renderHtmlArticle } from './exportHtml';
 import { renderJatsArticle } from './exportJats';
 import { getAssetPayload } from './assetRepository';
 import type { OmiAsset } from '../types/assets';
@@ -133,11 +134,22 @@ export async function buildOmiContainer(
   }
 
   const packagedState = stripAuthoringAssetPreviews(extractManuscriptState(manuscript));
-  const jatsManuscript = rewriteAssetSourcesForPublication(manuscript, assetMap);
-  const jats = renderJatsArticle(jatsManuscript, profile);
+  const publicationManuscript = rewriteAssetSourcesForPublication(manuscript, assetMap);
+  const jats = renderJatsArticle(publicationManuscript, profile);
   diagnostics.push(
     ...jats.diagnostics.map((diagnostic) => ({
       code: `jats:${diagnostic.code}`,
+      severity: diagnostic.severity,
+      message: diagnostic.message,
+      targetId: diagnostic.targetId,
+    })),
+  );
+  const html = renderHtmlArticle(publicationManuscript, profile, {
+    assetPrefix: '../',
+  });
+  diagnostics.push(
+    ...html.diagnostics.map((diagnostic) => ({
+      code: `html:${diagnostic.code}`,
       severity: diagnostic.severity,
       message: diagnostic.message,
       targetId: diagnostic.targetId,
@@ -200,6 +212,23 @@ export async function buildOmiContainer(
       code: 'jats-output-omitted',
       severity: 'warning',
       message: 'JATS output was omitted from the container because publication validation reported errors.',
+    });
+  }
+
+  if (html.validForExport) {
+    entries.push(
+      textEntry(
+        'publication/article.html',
+        html.html,
+        'text/html;charset=utf-8',
+        'publication:semantic-html5',
+      ),
+    );
+  } else {
+    diagnostics.push({
+      code: 'html-output-omitted',
+      severity: 'warning',
+      message: 'Semantic HTML output was omitted from the container because publication validation reported errors.',
     });
   }
 
