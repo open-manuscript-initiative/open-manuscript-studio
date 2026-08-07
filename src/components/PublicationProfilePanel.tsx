@@ -26,6 +26,7 @@ import {
   validateManuscriptForPublication,
   type OmiPublicationProfile,
 } from '../model/publicationProfile';
+import { HtmlExportPanel } from './HtmlExportPanel';
 import { JatsExportPanel } from './JatsExportPanel';
 
 export function PublicationProfilePanel() {
@@ -215,6 +216,7 @@ export function PublicationProfilePanel() {
       </section>
 
       <JatsExportPanel />
+      <HtmlExportPanel />
 
       <section className="publication-profile-export">
         <div>

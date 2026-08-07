@@ -1,0 +1,153 @@
+.html-export-panel {
+  margin-top: 1.5rem;
+  padding: 1.1rem;
+  border: 1px solid var(--omi-border-color, #d6d9de);
+  border-radius: 12px;
+  background: var(--omi-surface, #fff);
+}
+
+.html-export-header,
+.html-export-status,
+.html-export-actions,
+.html-export-no-diagnostics,
+.html-export-diagnostic {
+  display: flex;
+  align-items: center;
+}
+
+.html-export-header {
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.html-export-header h4 {
+  margin: .25rem 0 .35rem;
+}
+
+.html-export-header p,
+.html-export-hint,
+.html-export-schema-note {
+  margin: 0;
+  color: var(--omi-muted-text, #59606b);
+}
+
+.html-export-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.html-export-header > code {
+  max-width: 18rem;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.html-export-status {
+  gap: .5rem;
+  margin-top: 1rem;
+  padding: .7rem .8rem;
+  border-radius: 8px;
+}
+
+.html-export-status--ready {
+  background: rgba(28, 133, 75, .09);
+}
+
+.html-export-status--error {
+  background: rgba(177, 49, 49, .09);
+}
+
+.html-export-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .75rem;
+  margin: 1rem 0;
+}
+
+.html-export-facts > div {
+  min-width: 0;
+  padding: .7rem;
+  border: 1px solid var(--omi-border-color, #d6d9de);
+  border-radius: 8px;
+}
+
+.html-export-facts dt {
+  margin-bottom: .25rem;
+  color: var(--omi-muted-text, #59606b);
+  font-size: .78rem;
+}
+
+.html-export-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.html-export-diagnostics {
+  margin: .85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.html-export-diagnostic {
+  align-items: flex-start;
+  gap: .45rem;
+  padding: .45rem 0;
+  font-size: .88rem;
+}
+
+.html-export-diagnostic--error strong {
+  color: #9d2525;
+}
+
+.html-export-diagnostic--warning strong {
+  color: #805b00;
+}
+
+.html-export-no-diagnostics {
+  gap: .45rem;
+  margin: .85rem 0 0;
+}
+
+.html-export-actions {
+  flex-wrap: wrap;
+  gap: .65rem;
+  margin-top: 1rem;
+}
+
+.html-export-preview {
+  max-height: 32rem;
+  overflow: auto;
+  margin: 1rem 0 0;
+  padding: .9rem;
+  border: 1px solid var(--omi-border-color, #d6d9de);
+  border-radius: 8px;
+  background: var(--omi-code-background, #f6f7f8);
+  white-space: pre;
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.html-export-schema-note {
+  margin-top: .75rem;
+  font-size: .82rem;
+}
+
+@media (max-width: 720px) {
+  .html-export-header {
+    flex-direction: column;
+  }
+
+  .html-export-header > code {
+    text-align: left;
+  }
+
+  .html-export-facts {
+    grid-template-columns: 1fr;
+  }
+}
