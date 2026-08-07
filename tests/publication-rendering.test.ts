@@ -24,7 +24,7 @@ test('builds a format-independent rendering context without mutating the manuscr
   assert.equal(context.profile.id, 'omi-generic-scholarly');
   assert.equal(context.headRevisionId, manuscript.headRevisionId);
   assert.equal(context.sections.length, 1);
-  assert.equal(context.sections[0]?.number, '1');
+  assert.equal(context.sections[0]?.number, '1.');
   assert.equal(JSON.stringify(manuscript), before);
 });
 
@@ -58,8 +58,8 @@ test('turns flat preorder section storage into a hierarchical publication tree',
   assert.equal(context.sections.length, 1);
   assert.equal(context.sections[0]?.children[0]?.title, 'Child');
   assert.equal(context.sections[0]?.children[0]?.children[0]?.title, 'Grandchild');
-  assert.equal(context.sections[0]?.children[0]?.number, '1.1');
-  assert.equal(context.sections[0]?.children[0]?.children[0]?.number, '1.1.1');
+  assert.equal(context.sections[0]?.children[0]?.number, '1.1.');
+  assert.equal(context.sections[0]?.children[0]?.children[0]?.number, '1.1.1.');
 });
 
 test('publication contributors respect public contribution visibility', () => {
