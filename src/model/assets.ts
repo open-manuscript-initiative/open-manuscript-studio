@@ -109,7 +109,6 @@ export async function externalizeImageBlock(
   const visual: OmiImageBlockData = {
     ...block.visual,
     assetId: asset.id,
-    src: '',
     mediaType: asset.mediaType,
     fileName: asset.fileName,
   };
