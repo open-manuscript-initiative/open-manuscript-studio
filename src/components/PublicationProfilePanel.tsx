@@ -4,14 +4,18 @@ import {
   Download,
   FileCheck2,
   LayoutTemplate,
-  RefreshCcw,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { stagePublicationProfileChange } from '../app/publicationProfileActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { getFrontMatterCopy } from '../i18n/frontMatter';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
+import {
+  getPublicationFrontMatterRules,
+  serializePublicationProfileWithFrontMatter,
+} from '../model/frontMatter';
 import {
   BUILTIN_PUBLICATION_PROFILES,
   DEFAULT_PUBLICATION_PROFILE_ID,
@@ -19,7 +23,6 @@ import {
   publicationProfileOverrides,
   publicationReadinessSummary,
   resolvePublicationProfile,
-  serializePublicationProfile,
   validateManuscriptForPublication,
   type OmiPublicationProfile,
 } from '../model/publicationProfile';
@@ -27,6 +30,7 @@ import {
 export function PublicationProfilePanel() {
   const { locale } = useTranslation();
   const copy = getPublicationProfileCopy(locale);
+  const frontMatterCopy = getFrontMatterCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const activeReference = getPublicationProfileReference(manuscript);
   const activeProfile = resolvePublicationProfile(manuscript);
@@ -56,9 +60,12 @@ export function PublicationProfilePanel() {
   }
 
   function exportProfile(): void {
-    const blob = new Blob([serializePublicationProfile(activeProfile)], {
-      type: 'application/json;charset=utf-8',
-    });
+    const blob = new Blob(
+      [serializePublicationProfileWithFrontMatter(activeProfile)],
+      {
+        type: 'application/json;charset=utf-8',
+      },
+    );
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -158,7 +165,11 @@ export function PublicationProfilePanel() {
         ) : null}
       </section>
 
-      <ProfileRuleSummary profile={activeProfile} copy={copy} />
+      <ProfileRuleSummary
+        profile={activeProfile}
+        copy={copy}
+        frontMatterCopy={frontMatterCopy}
+      />
 
       <section className="publication-profile-readiness" aria-labelledby="publication-readiness-title">
         <div className="publication-profile-section-heading">
@@ -186,11 +197,7 @@ export function PublicationProfilePanel() {
                 className={`publication-profile-issue publication-profile-issue--${issue.severity}`}
                 key={`${issue.code}:${issue.targetId ?? ''}:${issue.detail ?? ''}:${index}`}
               >
-                {issue.severity === 'error' ? (
-                  <AlertTriangle size={15} aria-hidden="true" />
-                ) : (
-                  <AlertTriangle size={15} aria-hidden="true" />
-                )}
+                <AlertTriangle size={15} aria-hidden="true" />
                 <span>
                   {copy.issueText[issue.code]}
                   {issue.code === 'too-few-keywords' && issue.detail
@@ -227,11 +234,14 @@ export function PublicationProfilePanel() {
 function ProfileRuleSummary({
   profile,
   copy,
+  frontMatterCopy,
 }: {
   profile: OmiPublicationProfile;
   copy: ReturnType<typeof getPublicationProfileCopy>;
+  frontMatterCopy: ReturnType<typeof getFrontMatterCopy>;
 }) {
   const rules = profile.rules;
+  const frontMatter = getPublicationFrontMatterRules(profile);
   const localized = copy.profileNames[profile.id] ?? {
     name: profile.name,
     description: profile.description,
@@ -250,6 +260,25 @@ function ProfileRuleSummary({
       </div>
 
       <div className="publication-profile-rule-grid">
+        <RuleCard title={frontMatterCopy.frontMatter}>
+          <RuleLine
+            label={frontMatterCopy.subtitle}
+            value={`${frontMatterCopy.optional} · ${frontMatterCopy.belowTitle}`}
+          />
+          <RuleLine
+            label={frontMatterCopy.motto}
+            value={`${frontMatterCopy.optional} · ${
+              frontMatter.motto.position === 'below-subtitle'
+                ? frontMatterCopy.belowSubtitle
+                : frontMatterCopy.belowTitle
+            } · ${
+              frontMatter.motto.style === 'italic'
+                ? frontMatterCopy.italic
+                : frontMatterCopy.normal
+            } · ${alignmentLabel(frontMatter.motto.alignment, frontMatterCopy)}`}
+          />
+        </RuleCard>
+
         <RuleCard title={copy.layout}>
           <RuleLine label={copy.page} value={`${rules.layout.pageSize} · ${rules.layout.columns} ${copy.columns.toLowerCase()}`} />
           <RuleLine label={copy.typography} value={`${rules.layout.fontFamily} · ${rules.layout.baseFontSizePt} pt · ${rules.layout.lineHeight}`} />
@@ -328,4 +357,13 @@ function notePlacementLabel(
   if (placement === 'endnotes') return copy.endnotes;
   if (placement === 'interactive') return copy.interactive;
   return copy.footnotes;
+}
+
+function alignmentLabel(
+  alignment: 'left' | 'center' | 'right',
+  copy: ReturnType<typeof getFrontMatterCopy>,
+): string {
+  if (alignment === 'left') return copy.alignLeft;
+  if (alignment === 'center') return copy.alignCenter;
+  return copy.alignRight;
 }
