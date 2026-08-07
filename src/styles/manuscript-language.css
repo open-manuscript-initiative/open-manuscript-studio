@@ -1,0 +1,77 @@
+.studio-manuscript-language-field {
+  display: grid;
+  gap: .55rem;
+  border: 1px solid #dbe3ec;
+  border-radius: .75rem;
+  background: #f8fafc;
+  padding: .85rem;
+}
+
+.studio-manuscript-language-field label > span {
+  display: block;
+  margin-bottom: .4rem;
+  color: #475569;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.studio-manuscript-language-field input {
+  width: 100%;
+  min-height: 2.65rem;
+  border: 1px solid #cbd5e1;
+  border-radius: .6rem;
+  background: #fff;
+  color: #1e293b;
+  padding: .55rem .65rem;
+}
+
+.studio-manuscript-language-field input:focus {
+  border-color: #0369a1;
+  outline: 2px solid rgba(3, 105, 161, .15);
+  outline-offset: 1px;
+}
+
+.studio-manuscript-language-field input[aria-invalid="true"] {
+  border-color: #b91c1c;
+}
+
+.studio-manuscript-language-description,
+.studio-manuscript-language-hint,
+.studio-manuscript-language-error {
+  margin: 0;
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.studio-manuscript-language-description,
+.studio-manuscript-language-hint {
+  color: #64748b;
+}
+
+.studio-manuscript-language-error {
+  color: #b91c1c;
+  font-weight: 650;
+}
+
+.studio-manuscript-language-current {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .45rem;
+  border-top: 1px solid #e2e8f0;
+  padding-top: .7rem;
+  color: #475569;
+  font-size: .78rem;
+}
+
+.studio-manuscript-language-current strong {
+  color: #1e293b;
+}
+
+.studio-manuscript-language-current code {
+  border-radius: .4rem;
+  background: #e2e8f0;
+  color: #334155;
+  padding: .12rem .35rem;
+  font-size: .72rem;
+}
