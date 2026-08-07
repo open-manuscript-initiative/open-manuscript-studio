@@ -33,6 +33,7 @@ export const en: TranslationDictionary = {
       document: 'Document',
       manuscript: 'Manuscript data',
       notes: 'Notes',
+      references: 'References',
       contributors: 'Contributors',
       history: 'History',
       tools: 'Export and tools',
@@ -124,6 +125,104 @@ export const en: TranslationDictionary = {
     autoSave: 'Saved with manuscript revisions'
   },
 
+  citations: {
+    referencesTitle: 'References',
+    referencesDescription:
+      'Add a work once to the manuscript reference library, then reuse it in as many citation occurrences as needed.',
+    addReference: 'Add reference',
+    editReference: 'Edit reference',
+    referenceEditorDescription:
+      'Store structured bibliographic metadata independently from any one citation or output style.',
+    emptyLibrary: 'The manuscript reference library is empty.',
+    emptyLibraryHint:
+      'Add a book, article, archival source, web resource or another cited work before inserting citations in the text.',
+    searchReferences: 'Search references',
+    searchPlaceholder: 'Search by title, creator, year, DOI…',
+    untitledReference: 'Untitled reference',
+    occurrences: 'citations',
+    bibliographyPreviewDescription:
+      'Neutral preview of records currently cited in the manuscript. Final formatting belongs to the publication profile.',
+    resourceType: 'Resource type',
+    title: 'Title',
+    titlePlaceholder: 'Title of the cited work',
+    subtitle: 'Subtitle',
+    creators: 'Creators and contributors',
+    creatorsDescription:
+      'Keep contributor names structured so citation styles and exports can render them correctly.',
+    addCreator: 'Add creator',
+    removeCreator: 'Remove creator',
+    noCreators: 'No creator has been added.',
+    creatorRole: 'Role',
+    givenName: 'Given name',
+    familyName: 'Family name',
+    containerTitle: 'Journal, book or container title',
+    issued: 'Publication date / year',
+    volume: 'Volume',
+    issue: 'Issue',
+    pages: 'Pages / extent',
+    publisher: 'Publisher',
+    place: 'Place of publication',
+    duplicateReference:
+      'A likely duplicate already exists in the reference library:',
+    insertTitle: 'Insert citation',
+    insertDescription:
+      'Choose a work from the manuscript reference library and optionally specify the cited location.',
+    noReferences: 'No reference is available yet.',
+    noReferencesHint:
+      'Add the work from Manuscript menu → References, then return here to cite it.',
+    insert: 'Insert citation',
+    citation: 'Citation',
+    reference: 'Cited work',
+    locatorType: 'Locator type',
+    locator: 'Locator',
+    locatorPlaceholder: 'e.g. 45–47, 12r–13v, chapter 4',
+    prefix: 'Prefix',
+    prefixPlaceholder: 'e.g. see also',
+    suffix: 'Suffix',
+    suffixPlaceholder: 'e.g. emphasis added',
+    openSource: 'Open source',
+    closeEditor: 'Close citation editor',
+    deleteCitation: 'Delete citation',
+    confirmDeleteCitation:
+      'Delete this citation occurrence from the manuscript? The bibliographic record will remain in the reference library.',
+    unresolvedReference: 'The cited bibliographic record is unresolved or missing.',
+    roles: {
+      author: 'Author',
+      editor: 'Editor',
+      translator: 'Translator',
+      compiler: 'Compiler',
+      contributor: 'Contributor'
+    },
+    resourceTypes: {
+      'journal-article': 'Journal article',
+      book: 'Book',
+      'book-chapter': 'Book chapter',
+      'conference-paper': 'Conference paper',
+      thesis: 'Thesis',
+      dissertation: 'Dissertation',
+      report: 'Report',
+      preprint: 'Preprint',
+      dataset: 'Dataset',
+      software: 'Software',
+      standard: 'Standard',
+      'archival-source': 'Archival source',
+      manuscript: 'Manuscript',
+      'web-page': 'Web page'
+    },
+    locators: {
+      page: 'Page',
+      'page-range': 'Page range',
+      chapter: 'Chapter',
+      section: 'Section',
+      paragraph: 'Paragraph',
+      figure: 'Figure',
+      table: 'Table',
+      folio: 'Folio',
+      line: 'Line',
+      timestamp: 'Timestamp'
+    }
+  },
+
   contributors: {
     description:
       'Manage portable scholarly identities and their manuscript-specific contribution roles.',
@@ -201,12 +300,14 @@ export const en: TranslationDictionary = {
     addSection: 'Add section',
     addParagraph: 'Add paragraph',
     addNote: 'Note',
+    addCitation: 'Citation',
     untitledSection: 'Untitled section',
     emptyParagraph: 'Start writing…',
     paragraph: 'Paragraph',
     heading: 'Heading',
     quote: 'Quote',
     insertNote: 'Insert semantic manuscript note',
+    insertCitation: 'Insert semantic citation',
     loading: 'Loading editor…'
   },
 
