@@ -34,7 +34,8 @@ export const de: TranslationDictionary = {
       manuscript: 'Manuskriptdaten',
       contributors: 'Mitwirkende',
       history: 'Verlauf',
-      tools: 'Export und Werkzeuge'
+      tools: 'Export und Werkzeuge',
+      settings: 'Einstellungen'
     },
     document: {
       title: 'Dokumentstruktur',
@@ -68,6 +69,21 @@ export const de: TranslationDictionary = {
         'Die semantische Repräsentation wird nur angezeigt, wenn technische Details benötigt werden.',
       liveJson: 'JSON des aktuellen Abschnitts',
       synced: 'Synchronisiert'
+    },
+    settings: {
+      title: 'Oberflächeneinstellungen',
+      description:
+        'Wählen Sie aus, welche Oberflächensprachen Sie beim Arbeiten verwenden möchten. Diese Einstellungen werden auf diesem Gerät gespeichert.',
+      interfaceLanguages: 'Verfügbare Oberflächensprachen',
+      interfaceLanguagesDescription:
+        'Aktivierte Sprachen erscheinen im schnellen Sprachumschalter in der Kopfzeile des Editors.',
+      currentLanguage: 'Aktuelle Oberflächensprache',
+      currentLanguageHint:
+        'Die aktuell verwendete Sprache muss aktiviert bleiben. Wechseln Sie zuerst zu einer anderen Sprache, bevor Sie sie deaktivieren.',
+      enabledLanguage: 'Im schnellen Sprachumschalter verfügbar',
+      disabledLanguage: 'Im schnellen Sprachumschalter ausgeblendet',
+      futureLanguages:
+        'Das Sprachregister ist erweiterbar. Zukünftige Übersetzungswörterbücher können hinzugefügt werden, ohne diese Einstellungsansicht neu zu entwerfen.'
     }
   },
 
