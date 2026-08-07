@@ -18,6 +18,20 @@ export type OmiSectionNumberingStyle =
   | 'upper-alpha'
   | 'lower-alpha';
 
+/**
+ * Built-in CSL-oriented presentation profiles available in Studio.
+ *
+ * This is a manuscript presentation preference, not bibliographic metadata.
+ * A later publication profile may override it without rewriting citation
+ * occurrences or reference records.
+ */
+export type OmiCitationStyleId =
+  | 'apa-7'
+  | 'chicago-author-date'
+  | 'chicago-notes-bibliography'
+  | 'mla-9'
+  | 'iso-690';
+
 export interface OmiIdentifier {
   type: 'omi' | 'doi' | 'orcid' | 'isbn' | 'issn' | 'uri' | string;
   value: string;
@@ -171,6 +185,13 @@ export interface OmiCitation {
   target: string;
   anchorId: string;
   targetBlockId: string;
+
+  /**
+   * Optional semantic cluster membership. Citations in the same cluster share
+   * one inline anchor while retaining independent target/locator semantics.
+   */
+  clusterId?: string;
+
   locator?: OmiCitationLocator;
   prefix?: string;
   suffix?: string;
@@ -187,6 +208,21 @@ export interface OmiCitation {
   label?: string;
   sourceType?: string;
   issued?: string;
+}
+
+/**
+ * Ordered group of citation occurrences rendered at one stable text anchor.
+ *
+ * The cluster does not duplicate bibliographic metadata. Its ordered
+ * `citationIds` array only groups independent OmiCitation occurrences.
+ */
+export interface OmiCitationCluster {
+  id: string;
+  anchorId: string;
+  targetBlockId: string;
+  citationIds: string[];
+  createdAt?: string;
+  modifiedAt?: string;
 }
 
 export interface OmiBlock {
@@ -228,6 +264,13 @@ export interface OmiManuscriptState {
   sectionNumberingStyle?: OmiSectionNumberingStyle;
 
   /**
+   * Preferred citation/bibliography presentation profile for authoring.
+   * Publication profiles may override this later without changing semantic
+   * citation or bibliographic objects.
+   */
+  citationStyle?: OmiCitationStyleId;
+
+  /**
    * Portable scholarly identities represented independently from accounts.
    */
   agents: OmiAgent[];
@@ -263,6 +306,13 @@ export interface OmiManuscriptState {
    * OMI-SPEC-210 citation occurrences anchored in manuscript content.
    */
   citations: OmiCitation[];
+
+  /**
+   * Ordered groups of citation occurrences that share one inline anchor.
+   * Optional for compatibility with pre-cluster alpha manuscripts.
+   */
+  citationClusters?: OmiCitationCluster[];
+
   createdAt: string;
   updatedAt: string;
 }
