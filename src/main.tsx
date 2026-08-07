@@ -8,6 +8,7 @@ import './styles/global.css';
 import './styles/editor.css';
 import './styles/studio-shell.css';
 import './styles/settings.css';
+import './styles/manuscript-language.css';
 import './styles/editor-i18n.css';
 
 ReactDOM.createRoot(
