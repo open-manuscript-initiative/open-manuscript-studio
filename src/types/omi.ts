@@ -225,10 +225,90 @@ export interface OmiCitationCluster {
   modifiedAt?: string;
 }
 
+export interface OmiImportProvenance {
+  sourceFormat:
+    | 'image'
+    | 'csv'
+    | 'tsv'
+    | 'html'
+    | 'xlsx'
+    | 'docx'
+    | 'clipboard'
+    | string;
+  fileName?: string;
+  importedAt: string;
+  sourcePart?: string;
+}
+
+export interface OmiImageBlockData {
+  kind: 'image';
+  /** Portable alpha representation. Future OMI containers may externalize it. */
+  src: string;
+  mediaType: string;
+  fileName?: string;
+  alt: string;
+  caption?: string;
+  width?: number;
+  height?: number;
+  provenance?: OmiImportProvenance;
+}
+
+export interface OmiTableBlockData {
+  kind: 'table';
+  /** Rectangular cell matrix. Cell text is scholarly data, not presentation HTML. */
+  cells: string[][];
+  headerRows?: number;
+  caption?: string;
+  provenance?: OmiImportProvenance;
+}
+
+export type OmiChartType = 'bar' | 'line' | 'pie' | 'scatter';
+
+export interface OmiChartBlockData {
+  kind: 'chart';
+  chartType: OmiChartType;
+  /**
+   * Source data table retained so imported spreadsheet charts remain editable.
+   * Row 0 is interpreted as series headings and column 0 as category/x labels.
+   */
+  cells: string[][];
+  title?: string;
+  caption?: string;
+  provenance?: OmiImportProvenance;
+}
+
+export interface OmiEquationBlockData {
+  kind: 'equation';
+  notation: 'latex' | 'mathml' | 'omml';
+  source: string;
+  /** Editable LaTeX normalization used by Studio when available. */
+  latex?: string;
+  label?: string;
+  caption?: string;
+  provenance?: OmiImportProvenance;
+}
+
+export type OmiVisualBlockData =
+  | OmiImageBlockData
+  | OmiTableBlockData
+  | OmiChartBlockData
+  | OmiEquationBlockData;
+
 export interface OmiBlock {
   id: string;
-  type: 'heading' | 'paragraph' | 'quote' | 'figure' | 'table' | string;
+  type:
+    | 'heading'
+    | 'paragraph'
+    | 'quote'
+    | 'figure'
+    | 'image'
+    | 'table'
+    | 'chart'
+    | 'equation'
+    | string;
+  /** Tiptap JSON or legacy text for textual blocks; empty for structured visual blocks. */
   content: string;
+  visual?: OmiVisualBlockData;
   children?: OmiBlock[];
 }
 
