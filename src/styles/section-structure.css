@@ -4,6 +4,13 @@
   margin-top: 1rem;
 }
 
+.omi-section-structure-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .omi-section-structure-header h4,
 .omi-section-structure-header p,
 .omi-section-structure-hint {
@@ -18,9 +25,22 @@
   line-height: 1.45;
 }
 
+.omi-section-add-root {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(127, 127, 127, 0.28);
+  border-radius: 0.6rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.5rem 0.65rem;
+}
+
 .omi-section-structure-list {
   display: grid;
-  gap: 0;
+  gap: 0.42rem;
 }
 
 .omi-section-structure-item {
@@ -33,10 +53,21 @@
   background: var(--ifm-background-surface-color, #fff);
   min-height: 3.25rem;
   padding: 0.35rem 0.45rem;
+  margin-inline-start: min(calc(var(--omi-section-depth, 0) * 1.45rem), 45%);
+  transition:
+    margin-inline-start 140ms ease,
+    border-color 120ms ease,
+    background 120ms ease;
 }
 
 .omi-section-structure-item--selected {
   border-color: currentColor;
+}
+
+.omi-section-structure-item--drop-target {
+  border-color: currentColor;
+  border-style: dashed;
+  background: color-mix(in srgb, currentColor 5%, transparent);
 }
 
 .omi-section-drag-handle {
@@ -56,17 +87,16 @@
 
 .omi-section-drag-handle:focus-visible,
 .omi-section-structure-actions button:focus-visible,
-.omi-section-gap-button:focus-visible,
-.omi-section-structure-open:focus-visible {
+.omi-section-structure-open:focus-visible,
+.omi-section-add-root:focus-visible {
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
 
 .omi-section-structure-open {
-  display: flex;
+  display: grid;
   min-width: 0;
-  align-items: center;
-  gap: 0.55rem;
+  gap: 0.1rem;
   border: 0;
   background: transparent;
   text-align: left;
@@ -81,21 +111,24 @@
   white-space: nowrap;
 }
 
-.omi-section-structure-open span {
-  flex: 0 0 auto;
+.omi-section-structure-open small {
   font-size: 0.72rem;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
 .omi-section-structure-actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.25rem;
 }
 
 .omi-section-structure-actions button {
-  display: grid;
-  place-items: center;
-  width: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.08rem;
+  min-width: 2rem;
   height: 2rem;
   border: 1px solid rgba(127, 127, 127, 0.25);
   border-radius: 0.5rem;
@@ -106,54 +139,41 @@
 
 .omi-section-structure-actions button:disabled {
   cursor: default;
-  opacity: 0.35;
+  opacity: 0.28;
 }
 
-.omi-section-gap {
+.omi-section-action-sibling {
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.omi-section-root-drop {
   display: grid;
-  grid-template-columns: minmax(1rem, 1fr) auto minmax(1rem, 1fr);
-  align-items: center;
-  gap: 0.45rem;
-  min-height: 2.15rem;
-  transition: min-height 120ms ease;
+  place-items: center;
+  min-height: 2.75rem;
+  border: 1px dashed rgba(127, 127, 127, 0.38);
+  border-radius: 0.65rem;
+  color: var(--ifm-color-emphasis-600, #6b7280);
+  font-size: 0.82rem;
 }
 
-.omi-section-gap--dragging {
-  min-height: 2.65rem;
-}
-
-.omi-section-gap-line {
-  height: 1px;
-  background: rgba(127, 127, 127, 0.28);
-}
-
-.omi-section-gap--active .omi-section-gap-line {
-  height: 2px;
-  background: currentColor;
-}
-
-.omi-section-gap-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  max-width: 100%;
-  border: 0;
-  background: transparent;
+.omi-section-root-drop--active {
+  border-color: currentColor;
   color: inherit;
-  opacity: 0.6;
-  cursor: pointer;
-  font-size: 0.78rem;
-  padding: 0.25rem 0.4rem;
+  background: color-mix(in srgb, currentColor 5%, transparent);
 }
 
-.omi-section-gap-button:hover,
-.omi-section-gap--active .omi-section-gap-button {
-  opacity: 1;
+.omi-section-hierarchy-warning {
+  border: 1px solid #b45309;
+  border-radius: 0.6rem;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.85rem;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   .omi-section-structure-item {
     grid-template-columns: auto minmax(0, 1fr);
+    margin-inline-start: min(calc(var(--omi-section-depth, 0) * 0.8rem), 30%);
   }
 
   .omi-section-structure-actions {
@@ -161,14 +181,18 @@
     justify-content: flex-end;
     padding: 0 0.25rem 0.25rem;
   }
+}
 
-  .omi-section-gap-button span {
-    display: none;
+@media (max-width: 620px) {
+  .omi-section-structure-header {
+    display: grid;
   }
 
-  .omi-section-gap-button {
-    width: 2rem;
-    height: 2rem;
-    justify-content: center;
+  .omi-section-add-root {
+    justify-self: start;
+  }
+
+  .omi-section-structure-item {
+    margin-inline-start: min(calc(var(--omi-section-depth, 0) * 0.45rem), 18%);
   }
 }

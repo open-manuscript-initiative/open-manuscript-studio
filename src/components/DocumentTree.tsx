@@ -1,6 +1,7 @@
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
-import { formatSectionHeading } from '../model/sectionNumbering';
+import { formatHierarchicalSectionHeading } from '../model/sectionNumbering';
+import { buildSectionOutline } from '../model/sectionStructure';
 
 interface DocumentTreeProps {
   onNavigate?: () => void;
@@ -17,6 +18,7 @@ export function DocumentTree({
   const selectSection = useStudioStore(
     (state) => state.selectSection,
   );
+  const outline = buildSectionOutline(manuscript.sections);
 
   return (
     <aside
@@ -27,7 +29,7 @@ export function DocumentTree({
         {t('studio.document.sections')}
       </div>
 
-      {manuscript.sections.map((section, index) => (
+      {outline.map(({ section, depth }) => (
         <button
           key={section.id}
           type="button"
@@ -36,14 +38,16 @@ export function DocumentTree({
               ? 'tree-item active'
               : 'tree-item'
           }
+          style={{ paddingInlineStart: `${0.75 + depth * 1.1}rem` }}
           onClick={() => {
             selectSection(section.id);
             onNavigate?.();
           }}
         >
-          {formatSectionHeading(
+          {formatHierarchicalSectionHeading(
             section.title || t('editor.untitledSection'),
-            index,
+            manuscript.sections,
+            section.id,
             manuscript.sectionNumberingStyle,
           )}
         </button>

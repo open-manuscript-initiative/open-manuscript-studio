@@ -6,6 +6,7 @@ import type {
   OmiManuscriptState,
   OmiSection,
 } from '../types/omi.ts';
+import { getSectionNumberToken } from './sectionNumbering.ts';
 
 export interface OmiCrossReferenceTarget {
   id: string;
@@ -67,8 +68,9 @@ export function createCrossReference(
 }
 
 /**
- * Derives the current addressable scholarly targets in manuscript order.
- * Numbers are presentation data and are never written into target objects.
+ * Derives addressable targets in manuscript preorder. Section and per-section
+ * visual numbering follow the semantic parent hierarchy, while target IDs stay
+ * stable through reparenting and reordering.
  */
 export function collectCrossReferenceTargets(
   manuscript: Pick<
@@ -81,8 +83,10 @@ export function collectCrossReferenceTargets(
   const targets: OmiCrossReferenceTarget[] = [];
   const documentCounters = createCounters();
 
-  manuscript.sections.forEach((section, sectionIndex) => {
-    const sectionNumber = String(sectionIndex + 1);
+  for (const section of manuscript.sections) {
+    const sectionNumber =
+      getSectionNumberToken(manuscript.sections, section.id, 'decimal') || '1';
+
     targets.push({
       id: section.id,
       kind: 'section',
@@ -114,7 +118,7 @@ export function collectCrossReferenceTargets(
         title: targetTitle(block.visual),
       });
     }
-  });
+  }
 
   return targets;
 }
@@ -183,10 +187,6 @@ export function formatCrossReferenceTargetOption(
   return target.title ? `${base} — ${target.title}` : base;
 }
 
-/**
- * Synchronizes only derived inline labels. The semantic target ID and the
- * target object's own scholarly data are left untouched.
- */
 export function synchronizeCrossReferenceLabels(
   sections: readonly OmiSection[],
   crossReferences: readonly OmiCrossReference[],
