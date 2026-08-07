@@ -1,0 +1,89 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import {
+  buildHeadingHierarchy,
+  detectKeywordLine,
+  headingLevelFromStyle,
+  mapWordSourceType,
+  mergeDetectedAuthors,
+  parseDetectedAuthors,
+  parseWordCitationInstruction,
+  parseWordHyperlinkInstruction,
+} from '../src/model/docxImport.ts';
+
+test('recognizes Word heading levels from built-in and localized style names', () => {
+  assert.equal(headingLevelFromStyle('Heading2', undefined, undefined), 2);
+  assert.equal(headingLevelFromStyle(undefined, 'Címsor 3', undefined), 3);
+  assert.equal(headingLevelFromStyle(undefined, 'Überschrift 4', undefined), 4);
+  assert.equal(headingLevelFromStyle(undefined, 'Normal', 1), 2);
+});
+
+test('derives stable parent relationships from heading depth changes', () => {
+  assert.deepEqual(
+    buildHeadingHierarchy([
+      { id: 'a', level: 1 },
+      { id: 'b', level: 2 },
+      { id: 'c', level: 3 },
+      { id: 'd', level: 2 },
+      { id: 'e', level: 1 },
+    ]),
+    [
+      { id: 'a', parentId: undefined },
+      { id: 'b', parentId: 'a' },
+      { id: 'c', parentId: 'b' },
+      { id: 'd', parentId: 'a' },
+      { id: 'e', parentId: undefined },
+    ],
+  );
+});
+
+test('parses and deduplicates DOCX author metadata without claiming verification', () => {
+  const core = parseDetectedAuthors('Ada Lovelace; Alan Turing', 'core-properties');
+  const styled = parseDetectedAuthors('Ada Lovelace', 'author-style');
+  const merged = mergeDetectedAuthors(core, styled);
+
+  assert.equal(merged.length, 2);
+  assert.deepEqual(merged[0], {
+    displayName: 'Ada Lovelace',
+    givenName: 'Ada',
+    familyName: 'Lovelace',
+    source: 'core-properties',
+  });
+});
+
+test('extracts single and clustered Word CITATION source tags', () => {
+  assert.deepEqual(
+    parseWordCitationInstruction(' CITATION Smith2020 \\l 1033 '),
+    ['Smith2020'],
+  );
+  assert.deepEqual(
+    parseWordCitationInstruction('CITATION Smith2020 \\m Jones2021 \\l 1033'),
+    ['Smith2020', 'Jones2021'],
+  );
+});
+
+test('extracts a Word HYPERLINK target without retaining field switches', () => {
+  assert.equal(
+    parseWordHyperlinkInstruction('HYPERLINK "https://openmanuscript.org/docs" \\o "OMI"'),
+    'https://openmanuscript.org/docs',
+  );
+});
+
+test('recognizes multilingual keyword lines', () => {
+  assert.deepEqual(
+    detectKeywordLine('Kulcsszavak: kézirat; metaadat; nyílt tudomány'),
+    ['kézirat', 'metaadat', 'nyílt tudomány'],
+  );
+  assert.deepEqual(
+    detectKeywordLine('Schlüsselwörter — Edition, Manuskript'),
+    ['Edition', 'Manuskript'],
+  );
+});
+
+test('maps common Word bibliography source types to portable resource types', () => {
+  assert.equal(mapWordSourceType('JournalArticle'), 'journal-article');
+  assert.equal(mapWordSourceType('BookSection'), 'book-chapter');
+  assert.equal(mapWordSourceType('ElectronicSource'), 'web-page');
+  assert.equal(mapWordSourceType('UnknownLegacyType'), 'manuscript');
+});

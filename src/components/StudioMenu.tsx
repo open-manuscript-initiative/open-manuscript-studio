@@ -25,6 +25,7 @@ import {
 } from '../i18n';
 import { downloadOmiJson } from '../services/exportOmi';
 import { CrossReferencePanel } from './CrossReferencePanel';
+import { DocxImportPanel } from './DocxImportPanel';
 import { Footer } from './Footer';
 import { HistoryPanel } from './HistoryPanel';
 import { KeywordEditor } from './KeywordEditor';
@@ -312,6 +313,8 @@ function ToolsView() {
           <p>{t('studio.tools.description')}</p>
         </div>
       </div>
+
+      <DocxImportPanel />
 
       <div className="studio-tool-card">
         <div>

@@ -1,0 +1,259 @@
+.docx-import-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--omi-editor-border, #dbe2ea);
+  border-radius: 0.9rem;
+  background: #fff;
+}
+
+.docx-import-card-header,
+.docx-import-preview-header,
+.docx-import-section-heading,
+.docx-import-commit {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.docx-import-card-header h4,
+.docx-import-preview-header h5,
+.docx-import-preview-section h6 {
+  margin: 0;
+  color: var(--omi-editor-text, #1e293b);
+}
+
+.docx-import-card-header p,
+.docx-import-preview-header p,
+.docx-import-hint,
+.docx-import-commit p {
+  margin: 0.35rem 0 0;
+  color: var(--omi-editor-text-muted, #64748b);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.docx-import-file-input {
+  display: none;
+}
+
+.docx-import-error,
+.docx-import-success,
+.docx-import-no-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.docx-import-error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.docx-import-success,
+.docx-import-no-warning {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.docx-import-spinner {
+  animation: docx-import-spin 0.8s linear infinite;
+}
+
+@keyframes docx-import-spin {
+  to { transform: rotate(360deg); }
+}
+
+.docx-import-preview {
+  display: grid;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--omi-editor-border, #dbe2ea);
+}
+
+.docx-import-preview-header code {
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--omi-editor-text-muted, #64748b);
+  font-size: 0.72rem;
+}
+
+.docx-import-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.7rem, 1fr));
+  gap: 0.55rem;
+}
+
+.docx-import-stat {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.65rem;
+  border: 1px solid var(--omi-editor-border, #dbe2ea);
+  border-radius: 0.65rem;
+  background: var(--omi-editor-surface-muted, #f8fafc);
+}
+
+.docx-import-stat strong {
+  font-size: 1.05rem;
+}
+
+.docx-import-stat span {
+  color: var(--omi-editor-text-muted, #64748b);
+  font-size: 0.7rem;
+}
+
+.docx-import-preview-section {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.docx-import-metadata {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--omi-editor-border, #dbe2ea);
+  border-radius: 0.65rem;
+  overflow: hidden;
+}
+
+.docx-import-metadata > div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.7fr) minmax(0, 1.3fr);
+  gap: 0.8rem;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--omi-editor-border, #dbe2ea);
+}
+
+.docx-import-metadata > div:last-child {
+  border-bottom: 0;
+}
+
+.docx-import-metadata dt {
+  color: var(--omi-editor-text-muted, #64748b);
+  font-size: 0.75rem;
+}
+
+.docx-import-metadata dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.docx-import-author-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--omi-editor-text, #1e293b);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.docx-import-author-list,
+.docx-import-warning-list,
+.docx-import-outline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.docx-import-author-list {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.docx-import-author-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.55rem;
+  background: var(--omi-editor-surface-muted, #f8fafc);
+}
+
+.docx-import-author-list small,
+.docx-import-outline small {
+  color: var(--omi-editor-text-muted, #64748b);
+}
+
+.docx-import-outline {
+  max-height: 18rem;
+  overflow: auto;
+  border: 1px solid var(--omi-editor-border, #dbe2ea);
+  border-radius: 0.65rem;
+}
+
+.docx-import-outline li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.48rem 0.65rem 0.48rem calc(0.65rem + (var(--docx-outline-depth, 0) * 1.15rem));
+  border-bottom: 1px solid var(--omi-editor-border, #dbe2ea);
+  font-size: 0.8rem;
+}
+
+.docx-import-outline li:last-child {
+  border-bottom: 0;
+}
+
+.docx-import-warning-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.docx-import-warning-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid #fde68a;
+  border-radius: 0.6rem;
+  background: #fffbeb;
+  color: #854d0e;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.docx-import-warning-list svg {
+  flex: 0 0 auto;
+  margin-top: 0.12rem;
+}
+
+.docx-import-commit {
+  align-items: center;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--omi-editor-border, #dbe2ea);
+}
+
+.docx-import-commit p {
+  max-width: 34rem;
+}
+
+@media (max-width: 720px) {
+  .docx-import-card-header,
+  .docx-import-preview-header,
+  .docx-import-section-heading,
+  .docx-import-commit {
+    flex-direction: column;
+  }
+
+  .docx-import-preview-header code {
+    max-width: 100%;
+  }
+
+  .docx-import-metadata > div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}
