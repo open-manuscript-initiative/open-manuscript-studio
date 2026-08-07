@@ -34,13 +34,15 @@
   background: rgba(20, 20, 20, 0.07);
 }
 
-.omi-container-facts {
+.omi-container-facts,
+.omi-container-import-summary {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.omi-container-facts span {
+.omi-container-facts span,
+.omi-container-import-summary span {
   display: inline-flex;
   gap: 0.3rem;
   align-items: center;
@@ -112,6 +114,68 @@
   line-height: 1.4;
 }
 
+.omi-container-divider {
+  height: 1px;
+  margin: 0.15rem 0;
+  background: var(--ifm-color-emphasis-200, #e5e5e5);
+}
+
+.omi-container-import,
+.omi-container-import-report {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.omi-container-import-report {
+  padding: 0.8rem;
+  border: 1px solid rgba(20, 20, 20, 0.11);
+  border-radius: 0.7rem;
+  background: rgba(20, 20, 20, 0.025);
+}
+
+.omi-container-import-report h5 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.omi-container-identities {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.omi-container-identities div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.32fr) minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: baseline;
+}
+
+.omi-container-identities dt,
+.omi-container-identities dd {
+  margin: 0;
+}
+
+.omi-container-identities dt {
+  font-size: 0.78rem;
+  font-weight: 650;
+  opacity: 0.72;
+}
+
+.omi-container-identities dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.78rem;
+}
+
+.omi-image-asset-placeholder {
+  width: 100%;
+  min-height: 7rem;
+  border: 1px dashed rgba(20, 20, 20, 0.18);
+  border-radius: 0.45rem;
+  background: rgba(20, 20, 20, 0.035);
+}
+
 @media (max-width: 720px) {
   .omi-container-actions {
     display: grid;
@@ -120,5 +184,10 @@
   .omi-container-actions button {
     justify-content: center;
     width: 100%;
+  }
+
+  .omi-container-identities div {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
   }
 }

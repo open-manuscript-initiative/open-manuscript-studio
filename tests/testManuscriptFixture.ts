@@ -1,3 +1,7 @@
+import {
+  createInitialVersioningEnvelope,
+  extractManuscriptState,
+} from '../src/model/versioning.ts';
 import type { OmiManuscript } from '../src/types/omi.ts';
 
 const TIMESTAMP = '2026-08-07T12:00:00.000Z';
@@ -91,4 +95,23 @@ export function createTestManuscript(): OmiManuscript {
       heads: ['revision-root'],
     } as never,
   } as OmiManuscript;
+}
+
+/**
+ * Container round-trip tests need a genuinely commit-capable OMI history,
+ * while older rendering tests intentionally keep the lightweight deterministic
+ * fixture above. This helper upgrades only the tests that need real history.
+ */
+export function createVersionedTestManuscript(): OmiManuscript {
+  const lightweight = createTestManuscript();
+  const state = extractManuscriptState(lightweight);
+  const envelope = createInitialVersioningEnvelope(state, {
+    summary: 'Created test manuscript',
+    timestamp: TIMESTAMP,
+    completeness: 'complete',
+  });
+  return {
+    ...state,
+    ...envelope,
+  };
 }

@@ -31,6 +31,7 @@ import type {
   OmiTableBlockData,
   OmiVisualBlockData,
 } from '../types/omi';
+import { AssetBackedImage } from './AssetBackedImage';
 
 interface VisualBlockEditorProps {
   block: OmiBlock & { visual: OmiVisualBlockData };
@@ -67,7 +68,7 @@ export function VisualBlockEditor({
 
       {visual.kind === 'image' ? (
         <figure className="omi-image-block">
-          <img src={visual.src} alt={visual.alt} />
+          <AssetBackedImage visual={visual} />
           <figcaption>
             <label>
               <span>{copy.altText}</span>
