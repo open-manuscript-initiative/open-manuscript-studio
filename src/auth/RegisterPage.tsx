@@ -70,6 +70,8 @@ export function RegisterPage({
         fullName,
         affiliation:
           affiliation.trim() || undefined,
+        affiliationRorId:
+          affiliationRorId.trim() || undefined,
         orcid: orcid.trim() || undefined,
         interfaceLanguage: locale,
         workingLanguages: [],
