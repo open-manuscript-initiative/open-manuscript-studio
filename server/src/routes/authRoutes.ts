@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Response } from 'express';
 import { z } from 'zod';
 
 import {
@@ -6,6 +6,7 @@ import {
   getUserForSession,
   loginUser,
   registerUser,
+  updateUserForSession,
 } from '../services/authService.js';
 
 export const authRouter = Router();
@@ -25,6 +26,14 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+const updateProfileSchema = z.object({
+  fullName: z.string().min(1).max(200).optional(),
+  affiliation: z.string().max(300).nullable().optional(),
+  affiliationRorId: z.string().max(128).nullable().optional(),
+  orcid: z.string().max(19).nullable().optional(),
+  interfaceLanguage: z.string().max(16).optional(),
+});
+
 const COOKIE_NAME = 'omi_session';
 
 function readSessionCookie(header: string | undefined): string | undefined {
@@ -36,7 +45,7 @@ function readSessionCookie(header: string | undefined): string | undefined {
   return undefined;
 }
 
-function setSessionCookie(response: Parameters<typeof authRouter.post>[1] extends never ? never : any, token: string, expiresAt: Date): void {
+function setSessionCookie(response: Response, token: string, expiresAt: Date): void {
   response.cookie(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: 'lax',
@@ -86,9 +95,36 @@ authRouter.get('/me', async (request, response) => {
   response.status(200).json({ user });
 });
 
+authRouter.patch('/me', async (request, response) => {
+  try {
+    const token = readSessionCookie(request.headers.cookie);
+    if (!token) {
+      response.status(401).json({ error: { code: 'NOT_AUTHENTICATED', message: 'Authentication is required.' } });
+      return;
+    }
+
+    const input = updateProfileSchema.parse(request.body);
+    const user = await updateUserForSession(token, input);
+    if (!user) {
+      response.status(401).json({ error: { code: 'NOT_AUTHENTICATED', message: 'Authentication is required.' } });
+      return;
+    }
+
+    response.status(200).json({ user });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Profile update failed.';
+    response.status(400).json({ error: { code: 'PROFILE_UPDATE_FAILED', message } });
+  }
+});
+
 authRouter.post('/logout', async (request, response) => {
   const token = readSessionCookie(request.headers.cookie);
   if (token) await destroySession(token);
-  response.clearCookie(COOKIE_NAME, { path: '/' });
+  response.clearCookie(COOKIE_NAME, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+  });
   response.status(204).end();
 });
