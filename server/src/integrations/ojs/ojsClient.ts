@@ -20,8 +20,6 @@ function requireScope(
 function apiUrl(
   claims: LaunchClaims,
   operation: string,
-  payload: string,
-  signature: string,
 ): URL {
   if (!claims.apiBaseUrl) {
     throw new Error(
@@ -29,27 +27,47 @@ function apiUrl(
     );
   }
 
-  const url = new URL(
+  return new URL(
     `${claims.apiBaseUrl.replace(/\/$/, '')}/${operation}`,
   );
-
-  url.searchParams.set('payload', payload);
-  url.searchParams.set('signature', signature);
-
-  return url;
 }
 
 async function readJson(
+  operation: string,
   url: URL,
+  authorization: string,
 ): Promise<Record<string, unknown>> {
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-    },
-    redirect: 'follow',
-    signal: AbortSignal.timeout(15_000),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: authorization,
+      },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    const cause =
+      error && typeof error === 'object' && 'cause' in error
+        ? (error as { cause?: unknown }).cause
+        : undefined;
+
+    const causeMessage =
+      cause instanceof Error
+        ? cause.message
+        : cause && typeof cause === 'object' && 'code' in cause
+          ? String((cause as { code?: unknown }).code)
+          : '';
+
+    throw new Error(
+      `OJS ${operation} request failed before an HTTP response${
+        causeMessage ? `: ${causeMessage}` : ''
+      }.`,
+    );
+  }
 
   const text = await response.text();
   let data: unknown;
@@ -58,7 +76,7 @@ async function readJson(
     data = JSON.parse(text);
   } catch {
     throw new Error(
-      `OJS returned a non-JSON response (${response.status}).`,
+      `OJS ${operation} returned a non-JSON response (${response.status}, ${response.url}).`,
     );
   }
 
@@ -67,16 +85,26 @@ async function readJson(
       data && typeof data === 'object'
         ? (data as Record<string, unknown>)
         : {};
+    const nestedError =
+      record.error && typeof record.error === 'object'
+        ? (record.error as Record<string, unknown>)
+        : {};
     const message =
-      typeof record.message === 'string'
-        ? record.message
-        : `OJS integration request failed with HTTP ${response.status}.`;
+      typeof nestedError.message === 'string'
+        ? nestedError.message
+        : typeof record.message === 'string'
+          ? record.message
+          : `OJS ${operation} request failed with HTTP ${response.status}.`;
 
-    throw new Error(message);
+    throw new Error(
+      `${message} Final URL: ${response.url}`,
+    );
   }
 
   if (!data || typeof data !== 'object') {
-    throw new Error('OJS returned an invalid integration response.');
+    throw new Error(
+      `OJS ${operation} returned an invalid integration response.`,
+    );
   }
 
   return data as Record<string, unknown>;
@@ -91,31 +119,24 @@ export async function loadOjsLaunchData(
   requireScope(claims, 'contributors.read');
   requireScope(claims, 'files.read');
 
+  const authorization = `OMI ${payload}.${signature}`;
+
   const [submissionResponse, contributorsResponse, filesResponse] =
     await Promise.all([
       readJson(
-        apiUrl(
-          claims,
-          'submission',
-          payload,
-          signature,
-        ),
+        'submission',
+        apiUrl(claims, 'submission'),
+        authorization,
       ),
       readJson(
-        apiUrl(
-          claims,
-          'contributors',
-          payload,
-          signature,
-        ),
+        'contributors',
+        apiUrl(claims, 'contributors'),
+        authorization,
       ),
       readJson(
-        apiUrl(
-          claims,
-          'files',
-          payload,
-          signature,
-        ),
+        'files',
+        apiUrl(claims, 'files'),
+        authorization,
       ),
     ]);
 
