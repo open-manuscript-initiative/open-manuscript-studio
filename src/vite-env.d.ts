@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_BUILD_NUMBER: string;
   readonly VITE_COMMIT_SHA: string;
   readonly VITE_BUILD_DATE: string;
+  readonly VITE_API_BASE_URL?: string;
 }
 
 interface ImportMeta {
