@@ -1,5 +1,13 @@
+import { authTranslations } from './authTranslations';
+import type { AuthTranslationKey } from './authTranslations';
 import { DEFAULT_LOCALE, translations } from './config';
-import type { SupportedLocale, TranslationDictionary, TranslationKey } from './types';
+import type {
+  SupportedLocale,
+  TranslationDictionary,
+  TranslationKey,
+} from './types';
+
+export type AppTranslationKey = TranslationKey | AuthTranslationKey;
 
 function resolveTranslation(
   dictionary: TranslationDictionary,
@@ -15,10 +23,22 @@ function resolveTranslation(
   return typeof value === 'string' ? value : undefined;
 }
 
-export function translate(locale: SupportedLocale, key: TranslationKey): string {
+function resolveAuthTranslation(
+  locale: SupportedLocale,
+  key: AppTranslationKey,
+): string | undefined {
+  return authTranslations[locale][key as AuthTranslationKey];
+}
+
+export function translate(
+  locale: SupportedLocale,
+  key: AppTranslationKey,
+): string {
   return (
-    resolveTranslation(translations[locale], key) ??
-    resolveTranslation(translations[DEFAULT_LOCALE], key) ??
+    resolveAuthTranslation(locale, key) ??
+    resolveAuthTranslation(DEFAULT_LOCALE, key) ??
+    resolveTranslation(translations[locale], key as TranslationKey) ??
+    resolveTranslation(translations[DEFAULT_LOCALE], key as TranslationKey) ??
     key
   );
 }
