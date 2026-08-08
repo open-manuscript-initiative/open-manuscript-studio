@@ -259,10 +259,13 @@ export async function loadOjsLaunchData(
     authorization,
   );
 
-  return {
+  const result: OjsLaunchData = {
     submission: submissionResult.data.submission ?? null,
     contributors,
     files,
-    sourceDocument,
   };
+  if (sourceDocument !== undefined) {
+    result.sourceDocument = sourceDocument;
+  }
+  return result;
 }
