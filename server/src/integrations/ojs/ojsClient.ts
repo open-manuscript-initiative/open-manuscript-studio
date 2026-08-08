@@ -57,42 +57,99 @@ function siblingOperationUrl(
   return nextUrl;
 }
 
+function isRedirect(status: number): boolean {
+  return status === 301 ||
+    status === 302 ||
+    status === 303 ||
+    status === 307 ||
+    status === 308;
+}
+
+async function fetchWithExplicitRedirects(
+  operation: string,
+  initialUrl: URL,
+  authorization: string,
+): Promise<Response> {
+  const originalOrigin = initialUrl.origin;
+  const visited = new Set<string>();
+  let currentUrl = new URL(initialUrl.toString());
+
+  for (let redirectCount = 0; redirectCount <= 3; redirectCount += 1) {
+    const currentKey = currentUrl.toString();
+    if (visited.has(currentKey)) {
+      throw new Error(
+        `OJS ${operation} entered a redirect loop at ${currentKey}.`,
+      );
+    }
+    visited.add(currentKey);
+
+    let response: Response;
+    try {
+      response = await fetch(currentUrl, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          Authorization: authorization,
+        },
+        redirect: 'manual',
+        signal: AbortSignal.timeout(15_000),
+      });
+    } catch (error) {
+      const cause =
+        error && typeof error === 'object' && 'cause' in error
+          ? (error as { cause?: unknown }).cause
+          : undefined;
+
+      const causeMessage =
+        cause instanceof Error
+          ? cause.message
+          : cause && typeof cause === 'object' && 'code' in cause
+            ? String((cause as { code?: unknown }).code)
+            : '';
+
+      throw new Error(
+        `OJS ${operation} request failed before an HTTP response${
+          causeMessage ? `: ${causeMessage}` : ''
+        }. URL: ${currentKey}`,
+      );
+    }
+
+    if (!isRedirect(response.status)) {
+      return response;
+    }
+
+    const location = response.headers.get('location');
+    if (!location) {
+      throw new Error(
+        `OJS ${operation} returned HTTP ${response.status} without a Location header. URL: ${currentKey}`,
+      );
+    }
+
+    const nextUrl = new URL(location, currentUrl);
+    if (nextUrl.origin !== originalOrigin) {
+      throw new Error(
+        `OJS ${operation} attempted a cross-origin redirect from ${currentKey} to ${nextUrl.toString()}.`,
+      );
+    }
+
+    currentUrl = nextUrl;
+  }
+
+  throw new Error(
+    `OJS ${operation} exceeded the allowed redirect count. Last URL: ${currentUrl.toString()}`,
+  );
+}
+
 async function readJson(
   operation: string,
   url: URL,
   authorization: string,
 ): Promise<OjsJsonResponse> {
-  let response: Response;
-
-  try {
-    response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        Authorization: authorization,
-      },
-      redirect: 'follow',
-      signal: AbortSignal.timeout(15_000),
-    });
-  } catch (error) {
-    const cause =
-      error && typeof error === 'object' && 'cause' in error
-        ? (error as { cause?: unknown }).cause
-        : undefined;
-
-    const causeMessage =
-      cause instanceof Error
-        ? cause.message
-        : cause && typeof cause === 'object' && 'code' in cause
-          ? String((cause as { code?: unknown }).code)
-          : '';
-
-    throw new Error(
-      `OJS ${operation} request failed before an HTTP response${
-        causeMessage ? `: ${causeMessage}` : ''
-      }.`,
-    );
-  }
+  const response = await fetchWithExplicitRedirects(
+    operation,
+    url,
+    authorization,
+  );
 
   const text = await response.text();
   let data: unknown;
@@ -149,10 +206,6 @@ export async function loadOjsLaunchData(
 
   const authorization = `OMI ${payload}.${signature}`;
 
-  // Resolve OJS's canonical, locale-aware integration URL once via the
-  // submission endpoint. Reuse that resolved route for sibling operations
-  // instead of independently entering OJS's locale redirect path for every
-  // request. This is important for multilingual OJS installations.
   const submissionResult = await readJson(
     'submission',
     apiUrl(claims, 'submission'),
