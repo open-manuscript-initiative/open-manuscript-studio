@@ -3,8 +3,12 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { useTranslation } from 'react-i18next';
 
+import {
+  useTranslation,
+  type AuthTranslationKey,
+} from '../i18n';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { useAuthStore } from '../store/authStore';
 
 interface RegisterPageProps {
@@ -14,7 +18,7 @@ interface RegisterPageProps {
 export function RegisterPage({
   onShowLogin,
 }: RegisterPageProps) {
-  const { t, i18n } = useTranslation();
+  const { t, locale } = useTranslation();
 
   const register = useAuthStore(
     (state) => state.register,
@@ -35,7 +39,7 @@ export function RegisterPage({
   const [passwordConfirmation, setPasswordConfirmation] =
     useState('');
   const [localErrorKey, setLocalErrorKey] = useState<
-    string | null
+    AuthTranslationKey | null
   >(null);
 
   useEffect(() => {
@@ -64,8 +68,7 @@ export function RegisterPage({
         affiliation:
           affiliation.trim() || undefined,
         orcid: orcid.trim() || undefined,
-        interfaceLanguage:
-          getBaseLanguage(i18n.resolvedLanguage),
+        interfaceLanguage: locale,
         workingLanguages: [],
       });
     } catch {
@@ -89,6 +92,10 @@ export function RegisterPage({
         className="auth-card auth-card-wide"
         aria-labelledby="register-title"
       >
+        <div className="auth-language-switcher">
+          <LanguageSwitcher showAllLocales />
+        </div>
+
         <div className="auth-brand">
           <div className="auth-brand-name">
             {t('auth.brand.name')}
@@ -306,15 +313,17 @@ export function RegisterPage({
 }
 
 type TranslateFunction = (
-  key: string,
-  options?: Record<string, unknown>,
+  key: AuthTranslationKey,
 ) => string;
 
 function translateRegisterError(
   t: TranslateFunction,
   message: string,
 ): string {
-  const errorKeyMap: Record<string, string> = {
+  const errorKeyMap: Record<
+    string,
+    AuthTranslationKey
+  > = {
     'Invalid e-mail address.':
       'auth.errors.invalidEmail',
 
@@ -343,9 +352,3 @@ function translateRegisterError(
     ? t(translationKey)
     : message;
 }
-
-function getBaseLanguage(
-  language: string | undefined,
-): string {
-  return language?.split('-')[0]?.toLowerCase() || 'en';
-            }
