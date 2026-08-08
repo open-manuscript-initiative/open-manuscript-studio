@@ -3,6 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 
 import { env } from './config/env.js';
+import { authRouter } from './routes/authRoutes.js';
 import { healthRouter } from './routes/healthRoutes.js';
 import { integrationRouter } from './routes/integrationRoutes.js';
 
@@ -33,6 +34,7 @@ app.get('/api', (_request, response) => {
 });
 
 app.use('/api/health', healthRouter);
+app.use('/api/auth', authRouter);
 app.use('/integrations', integrationRouter);
 
 app.use((_request, response) => {
