@@ -7,6 +7,8 @@ import {
   loginUser,
   registerUser,
   updateUserForSession,
+  type RegisterUserInput,
+  type UpdateUserInput,
 } from '../services/authService.js';
 
 export const authRouter = Router();
@@ -57,7 +59,16 @@ function setSessionCookie(response: Response, token: string, expiresAt: Date): v
 
 authRouter.post('/register', async (request, response) => {
   try {
-    const input = registerSchema.parse(request.body);
+    const parsed = registerSchema.parse(request.body);
+    const input: RegisterUserInput = {
+      email: parsed.email,
+      password: parsed.password,
+      fullName: parsed.fullName,
+      ...(parsed.affiliation !== undefined ? { affiliation: parsed.affiliation } : {}),
+      ...(parsed.affiliationRorId !== undefined ? { affiliationRorId: parsed.affiliationRorId } : {}),
+      ...(parsed.orcid !== undefined ? { orcid: parsed.orcid } : {}),
+      ...(parsed.interfaceLanguage !== undefined ? { interfaceLanguage: parsed.interfaceLanguage } : {}),
+    };
     const result = await registerUser(input);
     setSessionCookie(response, result.token, result.expiresAt);
     response.status(201).json({ user: result.user });
@@ -103,7 +114,14 @@ authRouter.patch('/me', async (request, response) => {
       return;
     }
 
-    const input = updateProfileSchema.parse(request.body);
+    const parsed = updateProfileSchema.parse(request.body);
+    const input: UpdateUserInput = {
+      ...(parsed.fullName !== undefined ? { fullName: parsed.fullName } : {}),
+      ...(parsed.affiliation !== undefined ? { affiliation: parsed.affiliation } : {}),
+      ...(parsed.affiliationRorId !== undefined ? { affiliationRorId: parsed.affiliationRorId } : {}),
+      ...(parsed.orcid !== undefined ? { orcid: parsed.orcid } : {}),
+      ...(parsed.interfaceLanguage !== undefined ? { interfaceLanguage: parsed.interfaceLanguage } : {}),
+    };
     const user = await updateUserForSession(token, input);
     if (!user) {
       response.status(401).json({ error: { code: 'NOT_AUTHENTICATED', message: 'Authentication is required.' } });
