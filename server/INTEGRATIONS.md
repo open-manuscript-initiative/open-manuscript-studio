@@ -86,7 +86,42 @@ The backend verifies:
 6. one-time nonce/replay protection;
 7. that the registered external platform is OJS.
 
-A successfully verified launch currently returns the verified integration context. Workspace creation and authenticated Studio-session continuation are the next integration layer.
+## 6. Launch handoff and metadata import
+
+After verification, the Studio backend uses the same short-lived OMI assertion to request the permitted OJS integration resources server-side:
+
+- submission metadata (`metadata.read`);
+- contributors (`contributors.read`);
+- submission file manifest (`files.read`).
+
+The backend then writes only the verified launch data to same-origin `sessionStorage` through a short-lived CSP-protected handoff page and redirects to the Studio frontend. No shared secret is exposed to the browser.
+
+After the Studio user is authenticated, the frontend consumes the handoff exactly once and loads a new Studio manuscript using the OJS title, subtitle, abstract, keywords, contributor identities, ORCID values where available, and source file names.
+
+The source OJS submission ID and installation context remain visible in the imported source description.
+
+### Current binary-transfer boundary
+
+The OJS connector currently advertises `files.read`, which exposes the authorized file manifest, but it does not yet advertise or implement protected binary file transfer. Therefore DOCX, JATS, PDF or other source file bytes are not imported in this stage.
+
+The next connector capability is protected file download followed by format-specific Studio import (for example DOCX or JATS). Until that capability is implemented, Studio MUST NOT imply that the manuscript body has been imported when only OJS metadata and a file manifest are available.
+
+## 7. Deploying launch-handoff changes
+
+No new database migration or npm dependency is required for the metadata handoff itself. Rebuild both application layers after pulling the updated repository:
+
+```bash
+# Frontend, from repository root
+npm install
+npm run build
+
+# Backend
+cd server
+npm install
+npm run build
+```
+
+Then restart the Studio API service and deploy the frontend `dist/` output using the normal deployment process.
 
 ## Security notes
 
@@ -97,3 +132,4 @@ A successfully verified launch currently returns the verified integration contex
 - Rotate a shared secret if it has been exposed.
 - Use a different shared secret for each external installation.
 - Use a different `INTEGRATION_MASTER_KEY` from every OJS/OMP shared secret.
+- Launch handoff data is stored only in `sessionStorage` and is consumed once by the authenticated Studio application.
