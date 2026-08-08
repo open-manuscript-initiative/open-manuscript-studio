@@ -6,6 +6,11 @@ export interface OjsLaunchData {
   files: unknown[];
 }
 
+interface OjsJsonResponse {
+  data: Record<string, unknown>;
+  finalUrl: URL;
+}
+
 function requireScope(
   claims: LaunchClaims,
   scope: string,
@@ -32,11 +37,31 @@ function apiUrl(
   );
 }
 
+function siblingOperationUrl(
+  finalUrl: URL,
+  currentOperation: string,
+  nextOperation: string,
+): URL {
+  const suffix = `/${currentOperation}`;
+
+  if (!finalUrl.pathname.endsWith(suffix)) {
+    throw new Error(
+      `OJS ${currentOperation} resolved to an unexpected URL: ${finalUrl.toString()}`,
+    );
+  }
+
+  const nextUrl = new URL(finalUrl.toString());
+  nextUrl.pathname = `${finalUrl.pathname.slice(0, -suffix.length)}/${nextOperation}`;
+  nextUrl.search = '';
+  nextUrl.hash = '';
+  return nextUrl;
+}
+
 async function readJson(
   operation: string,
   url: URL,
   authorization: string,
-): Promise<Record<string, unknown>> {
+): Promise<OjsJsonResponse> {
   let response: Response;
 
   try {
@@ -107,7 +132,10 @@ async function readJson(
     );
   }
 
-  return data as Record<string, unknown>;
+  return {
+    data: data as Record<string, unknown>,
+    finalUrl: new URL(response.url),
+  };
 }
 
 export async function loadOjsLaunchData(
@@ -121,35 +149,51 @@ export async function loadOjsLaunchData(
 
   const authorization = `OMI ${payload}.${signature}`;
 
-  const [submissionResponse, contributorsResponse, filesResponse] =
+  // Resolve OJS's canonical, locale-aware integration URL once via the
+  // submission endpoint. Reuse that resolved route for sibling operations
+  // instead of independently entering OJS's locale redirect path for every
+  // request. This is important for multilingual OJS installations.
+  const submissionResult = await readJson(
+    'submission',
+    apiUrl(claims, 'submission'),
+    authorization,
+  );
+
+  const contributorsUrl = siblingOperationUrl(
+    submissionResult.finalUrl,
+    'submission',
+    'contributors',
+  );
+  const filesUrl = siblingOperationUrl(
+    submissionResult.finalUrl,
+    'submission',
+    'files',
+  );
+
+  const [contributorsResult, filesResult] =
     await Promise.all([
       readJson(
-        'submission',
-        apiUrl(claims, 'submission'),
-        authorization,
-      ),
-      readJson(
         'contributors',
-        apiUrl(claims, 'contributors'),
+        contributorsUrl,
         authorization,
       ),
       readJson(
         'files',
-        apiUrl(claims, 'files'),
+        filesUrl,
         authorization,
       ),
     ]);
 
   return {
     submission:
-      submissionResponse.submission ?? null,
+      submissionResult.data.submission ?? null,
     contributors: Array.isArray(
-      contributorsResponse.contributors,
+      contributorsResult.data.contributors,
     )
-      ? contributorsResponse.contributors
+      ? contributorsResult.data.contributors
       : [],
-    files: Array.isArray(filesResponse.files)
-      ? filesResponse.files
+    files: Array.isArray(filesResult.data.files)
+      ? filesResult.data.files
       : [],
   };
 }
