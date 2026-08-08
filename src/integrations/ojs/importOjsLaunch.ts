@@ -185,7 +185,6 @@ export function createManuscriptFromOjsLaunch(
           givenName: contributor.name?.given ?? '',
           familyName: contributor.name?.family ?? '',
           affiliation: contributor.affiliation ?? '',
-          email: contributor.email || undefined,
           orcid: orcid || undefined,
           language: locale,
         },
