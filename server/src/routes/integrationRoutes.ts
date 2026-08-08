@@ -62,6 +62,7 @@ integrationRouter.get(
         submission: ojsData.submission,
         contributors: ojsData.contributors,
         files: ojsData.files,
+        sourceDocument: ojsData.sourceDocument,
         actor:
           verified.claims.actor ?? null,
         scope: verified.claims.scope ?? [],
