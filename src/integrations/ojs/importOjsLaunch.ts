@@ -122,13 +122,16 @@ function plainText(value: string): string {
   return document.body.textContent?.trim() ?? '';
 }
 
-export function consumeOjsLaunchPayload(): OjsLaunchPayload | null {
+/**
+ * Read, but do not consume, the pending OJS launch handoff.
+ * The handoff must survive the Studio authentication screen and is cleared
+ * only after the verified OJS data has been loaded as an OMI manuscript.
+ */
+export function readOjsLaunchPayload(): OjsLaunchPayload | null {
   const raw = sessionStorage.getItem(STORAGE_KEY);
   if (!raw) {
     return null;
   }
-
-  sessionStorage.removeItem(STORAGE_KEY);
 
   try {
     const parsed = JSON.parse(raw) as unknown;
@@ -148,6 +151,18 @@ export function consumeOjsLaunchPayload(): OjsLaunchPayload | null {
   } catch {
     return null;
   }
+}
+
+export function clearOjsLaunchPayload(): void {
+  sessionStorage.removeItem(STORAGE_KEY);
+}
+
+export function consumeOjsLaunchPayload(): OjsLaunchPayload | null {
+  const launch = readOjsLaunchPayload();
+  if (launch) {
+    clearOjsLaunchPayload();
+  }
+  return launch;
 }
 
 export function createManuscriptFromOjsLaunch(
