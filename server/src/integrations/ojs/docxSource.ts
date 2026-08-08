@@ -36,11 +36,15 @@ export function parseDocxSource(
     const text = extractParagraphText(body).trim();
     if (!text) continue;
 
-    paragraphs.push({
-      text,
-      styleId,
-      headingLevel: headingLevelFromStyleId(styleId),
-    });
+    const paragraph: OjsDocxParagraph = { text };
+    if (styleId !== undefined) {
+      paragraph.styleId = styleId;
+    }
+    const headingLevel = headingLevelFromStyleId(styleId);
+    if (headingLevel !== undefined) {
+      paragraph.headingLevel = headingLevel;
+    }
+    paragraphs.push(paragraph);
   }
 
   if (!paragraphs.length) {
