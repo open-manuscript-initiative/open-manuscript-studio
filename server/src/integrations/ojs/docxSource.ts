@@ -1,9 +1,27 @@
 import { inflateRawSync } from 'node:zlib';
 
+export interface OjsDocxInlineText {
+  kind: 'text';
+  text: string;
+}
+
+export interface OjsDocxFootnoteReference {
+  kind: 'footnoteReference';
+  footnoteId: string;
+}
+
+export type OjsDocxInline = OjsDocxInlineText | OjsDocxFootnoteReference;
+
 export interface OjsDocxParagraph {
   text: string;
   styleId?: string;
   headingLevel?: number;
+  inline?: OjsDocxInline[];
+}
+
+export interface OjsDocxFootnote {
+  id: string;
+  text: string;
 }
 
 export interface OjsSourceDocument {
@@ -12,6 +30,7 @@ export interface OjsSourceDocument {
   fileName: string;
   mediaType: string;
   paragraphs: OjsDocxParagraph[];
+  footnotes: OjsDocxFootnote[];
 }
 
 export function parseDocxSource(
@@ -25,6 +44,11 @@ export function parseDocxSource(
     throw new Error('The transferred DOCX does not contain word/document.xml.');
   }
 
+  const footnotesXml = readZipEntry(buffer, 'word/footnotes.xml');
+  const footnotes = footnotesXml
+    ? extractFootnotes(footnotesXml.toString('utf8'))
+    : [];
+
   const xml = documentXml.toString('utf8');
   const paragraphs: OjsDocxParagraph[] = [];
   const paragraphPattern = /<w:p(?:\s[^>]*)?>([\s\S]*?)<\/w:p>/g;
@@ -33,16 +57,21 @@ export function parseDocxSource(
   while ((paragraphMatch = paragraphPattern.exec(xml))) {
     const body = paragraphMatch[1] ?? '';
     const styleId = /<w:pStyle\b[^>]*\bw:val="([^"]+)"[^>]*\/?\s*>/.exec(body)?.[1];
-    const text = extractParagraphText(body).trim();
-    if (!text) continue;
+    const inline = extractParagraphInline(body);
+    const text = inline
+      .filter((item): item is OjsDocxInlineText => item.kind === 'text')
+      .map((item) => item.text)
+      .join('')
+      .trim();
+
+    if (!text && !inline.some((item) => item.kind === 'footnoteReference')) continue;
 
     const paragraph: OjsDocxParagraph = { text };
-    if (styleId !== undefined) {
-      paragraph.styleId = styleId;
-    }
+    if (styleId !== undefined) paragraph.styleId = styleId;
     const headingLevel = headingLevelFromStyleId(styleId);
-    if (headingLevel !== undefined) {
-      paragraph.headingLevel = headingLevel;
+    if (headingLevel !== undefined) paragraph.headingLevel = headingLevel;
+    if (inline.some((item) => item.kind === 'footnoteReference')) {
+      paragraph.inline = inline;
     }
     paragraphs.push(paragraph);
   }
@@ -57,29 +86,74 @@ export function parseDocxSource(
     fileName,
     mediaType,
     paragraphs,
+    footnotes,
   };
 }
 
-function extractParagraphText(body: string): string {
-  const normalized = body
-    .replace(/<w:tab\b[^>]*\/?\s*>/g, '\t')
-    .replace(/<w:br\b[^>]*\/?\s*>/g, '\n')
-    .replace(/<w:cr\b[^>]*\/?\s*>/g, '\n');
+function extractFootnotes(xml: string): OjsDocxFootnote[] {
+  const footnotes: OjsDocxFootnote[] = [];
+  const pattern = /<w:footnote\b([^>]*)>([\s\S]*?)<\/w:footnote>/g;
+  let match: RegExpExecArray | null;
 
-  const parts: string[] = [];
-  const textPattern = /<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g;
-  let textMatch: RegExpExecArray | null;
-  let lastIndex = 0;
+  while ((match = pattern.exec(xml))) {
+    const attributes = match[1] ?? '';
+    const body = match[2] ?? '';
+    const id = /\bw:id="(-?\d+)"/.exec(attributes)?.[1];
+    if (!id || Number(id) < 1) continue;
 
-  while ((textMatch = textPattern.exec(normalized))) {
-    const between = normalized.slice(lastIndex, textMatch.index);
-    if (between.includes('\t')) parts.push('\t');
-    if (between.includes('\n')) parts.push('\n');
-    parts.push(decodeXml(textMatch[1] ?? ''));
-    lastIndex = textPattern.lastIndex;
+    const paragraphs: string[] = [];
+    const paragraphPattern = /<w:p(?:\s[^>]*)?>([\s\S]*?)<\/w:p>/g;
+    let paragraphMatch: RegExpExecArray | null;
+    while ((paragraphMatch = paragraphPattern.exec(body))) {
+      const text = extractParagraphText(paragraphMatch[1] ?? '').trim();
+      if (text) paragraphs.push(text);
+    }
+
+    const text = paragraphs.join('\n\n').trim();
+    if (text) footnotes.push({ id, text });
   }
 
-  return parts.join('').replace(/[ \t]+\n/g, '\n').replace(/\n[ \t]+/g, '\n');
+  return footnotes;
+}
+
+function extractParagraphInline(body: string): OjsDocxInline[] {
+  const parts: OjsDocxInline[] = [];
+  const tokenPattern = /<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>|<w:footnoteReference\b[^>]*\bw:id="(-?\d+)"[^>]*\/?\s*>|<w:tab\b[^>]*\/?\s*>|<w:br\b[^>]*\/?\s*>|<w:cr\b[^>]*\/?\s*>/g;
+  let match: RegExpExecArray | null;
+
+  const pushText = (text: string) => {
+    if (!text) return;
+    const previous = parts.at(-1);
+    if (previous?.kind === 'text') previous.text += text;
+    else parts.push({ kind: 'text', text });
+  };
+
+  while ((match = tokenPattern.exec(body))) {
+    const token = match[0];
+    if (match[1] !== undefined) {
+      pushText(decodeXml(match[1]));
+      continue;
+    }
+    if (match[2] !== undefined) {
+      if (Number(match[2]) > 0) {
+        parts.push({ kind: 'footnoteReference', footnoteId: match[2] });
+      }
+      continue;
+    }
+    if (token.startsWith('<w:tab')) pushText('\t');
+    else pushText('\n');
+  }
+
+  return parts;
+}
+
+function extractParagraphText(body: string): string {
+  return extractParagraphInline(body)
+    .filter((item): item is OjsDocxInlineText => item.kind === 'text')
+    .map((item) => item.text)
+    .join('')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n[ \t]+/g, '\n');
 }
 
 function headingLevelFromStyleId(styleId: string | undefined): number | undefined {
