@@ -3,7 +3,7 @@ import {
   createContribution,
   createPersonAgent,
 } from '../../model/identity';
-import type { OmiManuscript } from '../../types/omi';
+import type { OmiAnnotation, OmiManuscript } from '../../types/omi';
 
 interface OjsLocalizedValue {
   [locale: string]: unknown;
@@ -31,10 +31,28 @@ interface OjsSubmission {
   updatedAt?: string | null;
 }
 
+interface OjsSourceInlineText {
+  kind?: 'text';
+  text?: string;
+}
+
+interface OjsSourceFootnoteReference {
+  kind?: 'footnoteReference';
+  footnoteId?: string;
+}
+
+type OjsSourceInline = OjsSourceInlineText | OjsSourceFootnoteReference;
+
 interface OjsSourceParagraph {
   text?: string;
   styleId?: string;
   headingLevel?: number;
+  inline?: OjsSourceInline[];
+}
+
+interface OjsSourceFootnote {
+  id?: string;
+  text?: string;
 }
 
 interface OjsSourceDocument {
@@ -43,6 +61,7 @@ interface OjsSourceDocument {
   fileName?: string;
   mediaType?: string;
   paragraphs?: OjsSourceParagraph[];
+  footnotes?: OjsSourceFootnote[];
 }
 
 export interface OjsLaunchPayload {
@@ -172,11 +191,12 @@ export function createManuscriptFromOjsLaunch(
     ),
   );
 
-  const sections = buildSourceSections(
+  const imported = buildSourceContent(
     launch.sourceDocument,
     locale,
     title,
     subtitle,
+    now,
   );
 
   return {
@@ -188,23 +208,37 @@ export function createManuscriptFromOjsLaunch(
     keywords,
     agents,
     contributions,
-    sections: sections.length
-      ? sections
+    sections: imported.sections.length
+      ? imported.sections
       : [createFallbackImportSection(launch, submission.externalId, locale)],
+    annotations: imported.annotations,
     createdAt: now,
     updatedAt: submission.updatedAt || now,
   };
 }
 
-function buildSourceSections(
+function buildSourceContent(
   source: OjsSourceDocument | undefined,
   locale: string,
   manuscriptTitle: string,
   manuscriptSubtitle: string,
-): OmiManuscript['sections'] {
-  if (source?.kind !== 'docx' || !Array.isArray(source.paragraphs)) return [];
+  importedAt: string,
+): {
+  sections: OmiManuscript['sections'];
+  annotations: OmiAnnotation[];
+} {
+  if (source?.kind !== 'docx' || !Array.isArray(source.paragraphs)) {
+    return { sections: [], annotations: [] };
+  }
 
   const sections: OmiManuscript['sections'] = [];
+  const annotations: OmiAnnotation[] = [];
+  const footnotes = new Map(
+    (source.footnotes ?? [])
+      .filter((footnote) => footnote.id && typeof footnote.text === 'string')
+      .map((footnote) => [footnote.id as string, footnote.text as string]),
+  );
+  let noteNumber = 0;
   let current = createSection(defaultBodyTitle(locale));
   const normalizedTitle = normalizeComparison(manuscriptTitle);
   const normalizedSubtitle = normalizeComparison(manuscriptSubtitle);
@@ -214,29 +248,131 @@ function buildSourceSections(
   };
 
   for (const paragraph of source.paragraphs) {
-    const text = paragraph.text?.trim();
-    if (!text) continue;
+    const text = paragraph.text?.trim() ?? '';
+    const hasFootnoteReference = paragraph.inline?.some(
+      (item) => item.kind === 'footnoteReference' && item.footnoteId,
+    ) ?? false;
+    if (!text && !hasFootnoteReference) continue;
 
     const normalized = normalizeComparison(text);
-    if (normalized === normalizedTitle || (normalizedSubtitle && normalized === normalizedSubtitle)) {
+    if (
+      text &&
+      (normalized === normalizedTitle ||
+        (normalizedSubtitle && normalized === normalizedSubtitle))
+    ) {
       continue;
     }
 
-    if (paragraph.headingLevel && paragraph.headingLevel >= 1) {
+    if (text && paragraph.headingLevel && paragraph.headingLevel >= 1) {
       if (current.blocks.length) pushCurrent();
       current = createSection(text);
       continue;
     }
 
+    const blockId = crypto.randomUUID();
+    const built = buildParagraphContent(
+      paragraph,
+      blockId,
+      footnotes,
+      noteNumber,
+      importedAt,
+    );
+    noteNumber = built.nextNoteNumber;
+    annotations.push(...built.annotations);
+
     current.blocks.push({
-      id: crypto.randomUUID(),
+      id: blockId,
       type: 'paragraph',
-      content: text,
+      content: built.content,
     });
   }
 
   if (current.blocks.length) pushCurrent();
-  return sections.filter((section) => section.blocks.length > 0);
+  return {
+    sections: sections.filter((section) => section.blocks.length > 0),
+    annotations,
+  };
+}
+
+function buildParagraphContent(
+  paragraph: OjsSourceParagraph,
+  blockId: string,
+  footnotes: Map<string, string>,
+  startingNoteNumber: number,
+  importedAt: string,
+): {
+  content: string;
+  annotations: OmiAnnotation[];
+  nextNoteNumber: number;
+} {
+  const inline = paragraph.inline;
+  if (!inline?.some((item) => item.kind === 'footnoteReference')) {
+    return {
+      content: paragraph.text?.trim() ?? '',
+      annotations: [],
+      nextNoteNumber: startingNoteNumber,
+    };
+  }
+
+  const nodes: Array<Record<string, unknown>> = [];
+  const annotations: OmiAnnotation[] = [];
+  let noteNumber = startingNoteNumber;
+
+  const appendText = (value: string) => {
+    const lines = value.split('\n');
+    lines.forEach((line, index) => {
+      if (line) nodes.push({ type: 'text', text: line });
+      if (index < lines.length - 1) nodes.push({ type: 'hardBreak' });
+    });
+  };
+
+  for (const item of inline) {
+    if (item.kind === 'text') {
+      appendText(item.text ?? '');
+      continue;
+    }
+
+    const sourceFootnoteId = item.footnoteId?.trim();
+    if (!sourceFootnoteId) continue;
+    const body = footnotes.get(sourceFootnoteId);
+    if (!body) continue;
+
+    noteNumber += 1;
+    const noteId = `note-${crypto.randomUUID()}`;
+    const anchorId = `anchor-${crypto.randomUUID()}`;
+    const label = String(noteNumber);
+
+    nodes.push({
+      type: 'omiNote',
+      attrs: {
+        noteId,
+        anchorId,
+        label,
+        noteType: 'footnote',
+      },
+    });
+
+    annotations.push({
+      id: noteId,
+      type: 'note',
+      noteKind: 'footnote',
+      anchorId,
+      targetBlockId: blockId,
+      body,
+      renderingHint: 'footnote',
+      createdAt: importedAt,
+      modifiedAt: importedAt,
+    });
+  }
+
+  return {
+    content: JSON.stringify({
+      type: 'doc',
+      content: [{ type: 'paragraph', content: nodes }],
+    }),
+    annotations,
+    nextNoteNumber: noteNumber,
+  };
 }
 
 function createSection(title: string): OmiManuscript['sections'][number] {
