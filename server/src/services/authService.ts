@@ -21,6 +21,14 @@ export interface RegisterUserInput {
   interfaceLanguage?: string;
 }
 
+export interface UpdateUserInput {
+  fullName?: string;
+  affiliation?: string | null;
+  affiliationRorId?: string | null;
+  orcid?: string | null;
+  interfaceLanguage?: string;
+}
+
 export interface LoginUserInput {
   email: string;
   password: string;
@@ -47,7 +55,7 @@ export async function registerUser(input: RegisterUserInput) {
       fullName,
       affiliation: cleanOptional(input.affiliation),
       affiliationRorId: cleanOptional(input.affiliationRorId),
-      orcid: cleanOptional(input.orcid)?.toUpperCase(),
+      orcid: normalizeOptionalOrcid(input.orcid),
       interfaceLanguage: cleanOptional(input.interfaceLanguage)?.toLowerCase() ?? 'en',
       status: 'ACTIVE',
     },
@@ -78,6 +86,66 @@ export async function loginUser(input: LoginUserInput) {
 }
 
 export async function getUserForSession(rawToken: string) {
+  const session = await getActiveSession(rawToken);
+  return session ? serializeUser(session.user) : null;
+}
+
+export async function updateUserForSession(
+  rawToken: string,
+  input: UpdateUserInput,
+) {
+  const session = await getActiveSession(rawToken);
+  if (!session) return null;
+
+  const data: {
+    fullName?: string;
+    affiliation?: string | null;
+    affiliationRorId?: string | null;
+    orcid?: string | null;
+    interfaceLanguage?: string;
+  } = {};
+
+  if (input.fullName !== undefined) {
+    const fullName = input.fullName.trim();
+    if (!fullName) throw new Error('The user name is required.');
+    data.fullName = fullName;
+  }
+
+  if (input.affiliation !== undefined) {
+    data.affiliation = cleanNullable(input.affiliation);
+  }
+
+  if (input.affiliationRorId !== undefined) {
+    data.affiliationRorId = cleanNullable(input.affiliationRorId);
+  }
+
+  if (input.orcid !== undefined) {
+    data.orcid = normalizeNullableOrcid(input.orcid);
+  }
+
+  if (input.interfaceLanguage !== undefined) {
+    const interfaceLanguage = input.interfaceLanguage.trim().toLowerCase();
+    if (!interfaceLanguage) {
+      throw new Error('The interface language is required.');
+    }
+    data.interfaceLanguage = interfaceLanguage;
+  }
+
+  const user = await prisma.user.update({
+    where: { id: session.userId },
+    data,
+  });
+
+  return serializeUser(user);
+}
+
+export async function destroySession(rawToken: string): Promise<void> {
+  await prisma.userSession.deleteMany({
+    where: { tokenHash: hashSessionToken(rawToken) },
+  });
+}
+
+async function getActiveSession(rawToken: string) {
   const tokenHash = hashSessionToken(rawToken);
   const session = await prisma.userSession.findUnique({
     where: { tokenHash },
@@ -91,13 +159,7 @@ export async function getUserForSession(rawToken: string) {
     return null;
   }
 
-  return serializeUser(session.user);
-}
-
-export async function destroySession(rawToken: string): Promise<void> {
-  await prisma.userSession.deleteMany({
-    where: { tokenHash: hashSessionToken(rawToken) },
-  });
+  return session;
 }
 
 async function createSession(userId: string) {
@@ -169,6 +231,24 @@ function normalizeEmail(value: string): string {
 function cleanOptional(value?: string): string | undefined {
   const normalized = value?.trim();
   return normalized || undefined;
+}
+
+function cleanNullable(value: string | null): string | null {
+  if (value === null) return null;
+  return value.trim() || null;
+}
+
+function normalizeOptionalOrcid(value?: string): string | undefined {
+  const normalized = value
+    ?.trim()
+    .replace(/^https?:\/\/(?:www\.)?orcid\.org\//i, '')
+    .toUpperCase();
+  return normalized || undefined;
+}
+
+function normalizeNullableOrcid(value: string | null): string | null {
+  if (value === null) return null;
+  return normalizeOptionalOrcid(value) ?? null;
 }
 
 function validateEmail(email: string): void {
