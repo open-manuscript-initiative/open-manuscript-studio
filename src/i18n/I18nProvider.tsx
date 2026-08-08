@@ -13,10 +13,8 @@ import {
   saveUiLocale,
 } from './storage';
 import { translate } from './translate';
-import type {
-  SupportedLocale,
-  TranslationKey,
-} from './types';
+import type { AppTranslationKey } from './translate';
+import type { SupportedLocale } from './types';
 
 export interface I18nContextValue {
   locale: SupportedLocale;
@@ -26,7 +24,7 @@ export interface I18nContextValue {
     locale: SupportedLocale,
     enabled: boolean,
   ) => void;
-  t: (key: TranslationKey) => string;
+  t: (key: AppTranslationKey) => string;
 }
 
 export const I18nContext =
@@ -92,7 +90,7 @@ export function I18nProvider({ children }: PropsWithChildren) {
   );
 
   const t = useCallback(
-    (key: TranslationKey) => translate(locale, key),
+    (key: AppTranslationKey) => translate(locale, key),
     [locale],
   );
 
