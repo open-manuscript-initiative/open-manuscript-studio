@@ -2,17 +2,28 @@ import { Languages } from 'lucide-react';
 
 import {
   localeLabels,
+  supportedLocales,
   useTranslation,
 } from '../i18n';
 import type { SupportedLocale } from '../i18n';
 
-export function LanguageSwitcher() {
+interface LanguageSwitcherProps {
+  showAllLocales?: boolean;
+}
+
+export function LanguageSwitcher({
+  showAllLocales = false,
+}: LanguageSwitcherProps) {
   const {
     locale,
     enabledLocales,
     setLocale,
     t,
   } = useTranslation();
+
+  const locales = showAllLocales
+    ? supportedLocales
+    : enabledLocales;
 
   return (
     <label
@@ -30,12 +41,12 @@ export function LanguageSwitcher() {
           setLocale(event.target.value as SupportedLocale)
         }
       >
-        {enabledLocales.map((enabledLocale) => (
+        {locales.map((availableLocale) => (
           <option
-            key={enabledLocale}
-            value={enabledLocale}
+            key={availableLocale}
+            value={availableLocale}
           >
-            {localeLabels[enabledLocale]}
+            {localeLabels[availableLocale]}
           </option>
         ))}
       </select>
