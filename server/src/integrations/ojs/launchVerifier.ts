@@ -8,7 +8,7 @@ import { ExternalPlatform } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { getActiveInstallationWithSecret } from '../externalInstallations.js';
 
-interface LaunchClaims {
+export interface LaunchClaims {
   protocol: string;
   profile?: string;
   installationId: string;
@@ -27,6 +27,8 @@ interface LaunchClaims {
   iat: number;
   exp: number;
   nonce: string;
+  externalBaseUrl?: string;
+  apiBaseUrl?: string;
 }
 
 function validateClaimsShape(
