@@ -9,6 +9,8 @@ import {
   type AuthTranslationKey,
 } from '../i18n';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { AuthRorAffiliationField } from './AuthRorAffiliationField';
+import { AuthOrcidLookupField } from './AuthOrcidLookupField';
 import { useAuthStore } from '../store/authStore';
 
 interface RegisterPageProps {
@@ -34,6 +36,7 @@ export function RegisterPage({
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [affiliation, setAffiliation] = useState('');
+  const [affiliationRorId, setAffiliationRorId] = useState('');
   const [orcid, setOrcid] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] =
@@ -164,53 +167,34 @@ export function RegisterPage({
             />
           </div>
 
-          <div className="auth-field">
-            <label htmlFor="register-affiliation">
-              {t('auth.fields.affiliation.label')}
-            </label>
+          <AuthRorAffiliationField
+            value={affiliation}
+            rorId={affiliationRorId}
+            label={t('auth.fields.affiliation.label')}
+            placeholder={t('auth.fields.affiliation.placeholder')}
+            disabled={isLoading}
+            onChange={(nextAffiliation, nextRorId) => {
+              setAffiliation(nextAffiliation);
+              setAffiliationRorId(nextRorId);
+              resetErrors();
+            }}
+          />
 
-            <input
-              id="register-affiliation"
-              name="affiliation"
-              type="text"
-              value={affiliation}
-              autoComplete="organization"
-              placeholder={t(
-                'auth.fields.affiliation.placeholder',
-              )}
-              disabled={isLoading}
-              onChange={(event) => {
-                setAffiliation(event.target.value);
-                resetErrors();
-              }}
-            />
-          </div>
-
-          <div className="auth-field">
-            <label htmlFor="register-orcid">
-              {t('auth.fields.orcid.label')}
-            </label>
-
-            <input
-              id="register-orcid"
-              name="orcid"
-              type="text"
-              value={orcid}
-              inputMode="text"
-              placeholder={t(
-                'auth.fields.orcid.placeholder',
-              )}
-              disabled={isLoading}
-              onChange={(event) => {
-                setOrcid(event.target.value);
-                resetErrors();
-              }}
-            />
-
-            <div className="auth-field-hint">
-              {t('auth.fields.orcid.hint')}
-            </div>
-          </div>
+          <AuthOrcidLookupField
+            fullName={fullName}
+            affiliation={affiliation}
+            rorId={affiliationRorId}
+            value={orcid}
+            label={t('auth.fields.orcid.label')}
+            placeholder={t('auth.fields.orcid.placeholder')}
+            hint={t('auth.fields.orcid.hint')}
+            invalidMessage={t('auth.errors.invalidOrcid')}
+            disabled={isLoading}
+            onChange={(nextOrcid) => {
+              setOrcid(nextOrcid);
+              resetErrors();
+            }}
+          />
 
           <div className="auth-field">
             <label htmlFor="register-password">
