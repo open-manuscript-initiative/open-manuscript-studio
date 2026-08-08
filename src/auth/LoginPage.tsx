@@ -8,7 +8,7 @@ import {
   useTranslation,
   type TranslationKey,
 } from '../i18n';
-
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { useAuthStore } from '../store/authStore';
 
 interface LoginPageProps {
@@ -55,7 +55,7 @@ export function LoginPage({
         password,
       });
     } catch {
-      // A hibát az authStore error állapota tartalmazza.
+      // The auth store exposes the error state.
     }
   };
 
@@ -69,6 +69,10 @@ export function LoginPage({
         className="auth-card"
         aria-labelledby="login-title"
       >
+        <div className="auth-language-switcher">
+          <LanguageSwitcher showAllLocales />
+        </div>
+
         <div className="auth-brand">
           <div className="auth-brand-name">
             {t('auth.brand.name')}
