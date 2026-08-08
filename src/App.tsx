@@ -12,8 +12,9 @@ import { AppLayout } from './components/AppLayout';
 import { EditorPane } from './components/EditorPane';
 import { StudioMenu } from './components/StudioMenu';
 import {
-  consumeOjsLaunchPayload,
+  clearOjsLaunchPayload,
   createManuscriptFromOjsLaunch,
+  readOjsLaunchPayload,
 } from './integrations/ojs/importOjsLaunch';
 
 import './styles/auth.css';
@@ -54,7 +55,10 @@ function StudioApplication() {
   );
 
   useEffect(() => {
-    const launch = consumeOjsLaunchPayload();
+    // AuthGate mounts StudioApplication only after the Studio session has
+    // been established. A verified OJS handoff can therefore wait safely in
+    // sessionStorage while the user signs in and resume automatically here.
+    const launch = readOjsLaunchPayload();
 
     if (!launch) {
       return;
@@ -63,9 +67,14 @@ function StudioApplication() {
     const manuscript =
       createManuscriptFromOjsLaunch(launch);
 
-    if (manuscript) {
-      loadManuscript(manuscript);
+    if (!manuscript) {
+      // Keep the handoff available for diagnostics/retry instead of losing it
+      // on a malformed or temporarily unsupported import payload.
+      return;
     }
+
+    loadManuscript(manuscript);
+    clearOjsLaunchPayload();
 
     const url = new URL(window.location.href);
     if (url.searchParams.has('omiOjsLaunch')) {
