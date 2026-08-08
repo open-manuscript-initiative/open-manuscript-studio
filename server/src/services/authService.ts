@@ -53,9 +53,9 @@ export async function registerUser(input: RegisterUserInput) {
       email,
       passwordHash,
       fullName,
-      affiliation: cleanOptional(input.affiliation),
-      affiliationRorId: cleanOptional(input.affiliationRorId),
-      orcid: normalizeOptionalOrcid(input.orcid),
+      affiliation: cleanOptional(input.affiliation) ?? null,
+      affiliationRorId: cleanOptional(input.affiliationRorId) ?? null,
+      orcid: normalizeOptionalOrcid(input.orcid) ?? null,
       interfaceLanguage: cleanOptional(input.interfaceLanguage)?.toLowerCase() ?? 'en',
       status: 'ACTIVE',
     },
@@ -209,9 +209,9 @@ function serializeUser(user: {
     status: user.status.toLowerCase(),
     profile: {
       fullName: user.fullName,
-      affiliation: user.affiliation ?? undefined,
-      affiliationRorId: user.affiliationRorId ?? undefined,
-      orcid: user.orcid ?? undefined,
+      ...(user.affiliation !== null ? { affiliation: user.affiliation } : {}),
+      ...(user.affiliationRorId !== null ? { affiliationRorId: user.affiliationRorId } : {}),
+      ...(user.orcid !== null ? { orcid: user.orcid } : {}),
     },
     preferences: {
       interfaceLanguage: user.interfaceLanguage,
@@ -220,7 +220,7 @@ function serializeUser(user: {
     identities: [],
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
-    lastLoginAt: user.lastLoginAt?.toISOString(),
+    ...(user.lastLoginAt !== null ? { lastLoginAt: user.lastLoginAt.toISOString() } : {}),
   };
 }
 
