@@ -37,6 +37,7 @@ export function NoteBodyEditor({
   const copy = getNoteCitationCopy(locale);
   const [pickerOpen, setPickerOpen] = useState(false);
   const noteIdRef = useRef(note.id);
+  const insertionPosRef = useRef<number | null>(null);
   noteIdRef.current = note.id;
 
   const initial = useMemo(
@@ -84,6 +85,12 @@ export function NoteBodyEditor({
     editor.commands.setContent(synchronized, { emitUpdate: true });
   }, [citationStyle, editor, manuscriptLocale, note, records]);
 
+  function togglePicker(): void {
+    if (!editor) return;
+    if (!pickerOpen) insertionPosRef.current = editor.state.selection.to;
+    setPickerOpen((value) => !value);
+  }
+
   function insertCitations(selections: CitationPickerSelection[]): void {
     if (!editor || selections.length === 0) return;
     const created = selections.map((selection) =>
@@ -104,7 +111,10 @@ export function NoteBodyEditor({
         : [{ type: 'text', text: '; ' }, node];
     });
 
-    editor.chain().focus().insertContent(nodes).run();
+    const maxPosition = editor.state.doc.content.size;
+    const position = Math.max(1, Math.min(insertionPosRef.current ?? editor.state.selection.to, maxPosition));
+    editor.chain().focus().insertContentAt(position, nodes, { updateSelection: true }).run();
+    insertionPosRef.current = null;
     setPickerOpen(false);
   }
 
@@ -118,7 +128,7 @@ export function NoteBodyEditor({
           type="button"
           className="studio-menu-secondary-action"
           onMouseDown={(event) => event.preventDefault()}
-          onClick={() => setPickerOpen((value) => !value)}
+          onClick={togglePicker}
         >
           <BookOpen size={15} aria-hidden="true" />
           {copy.addCitation}
@@ -127,7 +137,10 @@ export function NoteBodyEditor({
       {pickerOpen ? (
         <CitationPicker
           onInsert={insertCitations}
-          onCancel={() => setPickerOpen(false)}
+          onCancel={() => {
+            insertionPosRef.current = null;
+            setPickerOpen(false);
+          }}
         />
       ) : null}
     </div>
