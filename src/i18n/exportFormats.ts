@@ -15,6 +15,8 @@ export interface ExportFormatCopy {
   htmlDescription: string;
   docx: string;
   docxDescription: string;
+  idml: string;
+  idmlDescription: string;
   epub: string;
   epubDescription: string;
   pdf: string;
@@ -41,6 +43,8 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     htmlDescription: 'Önálló, script nélküli akadálymentes HTML publikációs nézet.',
     docx: 'Microsoft Word (DOCX)',
     docxDescription: 'Szerkeszthető Word-dokumentum valódi címsorstílusokkal és a kézirat fő szerkezetével.',
+    idml: 'Adobe InDesign (IDML)',
+    idmlDescription: 'Szerkeszthető InDesign Markup Language csomag OMI bekezdésstílusokkal, fejezet-hierarchiával és kiadói tördeléshez alkalmas szövegstruktúrával.',
     epub: 'EPUB 3',
     epubDescription: 'Hordozható e-könyv kiadvány EPUB 3 csomagként.',
     pdf: 'PDF',
@@ -65,6 +69,8 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     htmlDescription: 'Standalone, script-free accessible HTML publication view.',
     docx: 'Microsoft Word (DOCX)',
     docxDescription: 'Editable Word document with real heading styles and the core manuscript structure.',
+    idml: 'Adobe InDesign (IDML)',
+    idmlDescription: 'Editable InDesign Markup Language package with OMI paragraph styles, section hierarchy and publisher-oriented text structure.',
     epub: 'EPUB 3',
     epubDescription: 'Portable EPUB 3 ebook publication package.',
     pdf: 'PDF',
@@ -89,6 +95,8 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     htmlDescription: 'Eigenständige, skriptfreie und barrierearme HTML-Publikationsansicht.',
     docx: 'Microsoft Word (DOCX)',
     docxDescription: 'Bearbeitbares Word-Dokument mit echten Überschriftenformatvorlagen und Manuskriptstruktur.',
+    idml: 'Adobe InDesign (IDML)',
+    idmlDescription: 'Bearbeitbares InDesign-Markup-Language-Paket mit OMI-Absatzformaten, Abschnittshierarchie und verlagsorientierter Textstruktur.',
     epub: 'EPUB 3',
     epubDescription: 'Portables E-Book als EPUB-3-Paket.',
     pdf: 'PDF',
