@@ -1,17 +1,31 @@
-import { MapPin, Trash2, X } from 'lucide-react';
+import { BookOpen, MapPin, Trash2, X } from 'lucide-react';
+import { useState } from 'react';
 
+import {
+  stageAddNoteCitations,
+  stageRemoveNoteCitation,
+} from '../app/noteCitationActions';
 import {
   stageRemoveNote,
   stageUpdateNote,
 } from '../app/noteActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { getNoteCitationCopy } from '../i18n/noteCitations';
+import {
+  createNoteCitation,
+  renderNoteCitation,
+} from '../model/noteCitations';
 import {
   getNoteKind,
   getNoteNumber,
   isNoteAnnotation,
   type OmiNoteKind,
 } from '../model/notes';
+import {
+  CitationPicker,
+  type CitationPickerSelection,
+} from './CitationPicker';
 
 interface NoteEditorCardProps {
   noteId: string;
@@ -26,9 +40,11 @@ export function NoteEditorCard({
   onClose,
   onNavigate,
 }: NoteEditorCardProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const citationCopy = getNoteCitationCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const selectSection = useStudioStore((state) => state.selectSection);
+  const [citationPickerOpen, setCitationPickerOpen] = useState(false);
   const note = manuscript.annotations.find(
     (annotation) =>
       annotation.id === noteId && isNoteAnnotation(annotation),
@@ -44,6 +60,8 @@ export function NoteEditorCard({
     candidate.blocks.some((block) => block.id === note.targetBlockId),
   );
   const noteKind = getNoteKind(note);
+  const records = manuscript.bibliographicRecords ?? [];
+  const noteCitations = note.noteCitations ?? [];
 
   function navigateToNote(): void {
     if (!section) {
@@ -61,6 +79,15 @@ export function NoteEditorCard({
 
     stageRemoveNote(stableNoteId);
     onClose?.();
+  }
+
+  function insertCitations(selections: CitationPickerSelection[]): void {
+    const citations = selections.map((selection) =>
+      createNoteCitation(selection.recordId, selection.locator),
+    );
+    if (stageAddNoteCitations(stableNoteId, citations)) {
+      setCitationPickerOpen(false);
+    }
   }
 
   return (
@@ -119,6 +146,62 @@ export function NoteEditorCard({
           }
         />
       </label>
+
+      <section className="omi-note-citations" aria-label={citationCopy.citations}>
+        <div className="omi-note-citations-header">
+          <div>
+            <strong>{citationCopy.citations}</strong>
+            <p>{citationCopy.citationHint}</p>
+          </div>
+          <button
+            type="button"
+            className="studio-menu-secondary-action"
+            onClick={() => setCitationPickerOpen((value) => !value)}
+          >
+            <BookOpen size={15} aria-hidden="true" />
+            {citationCopy.addCitation}
+          </button>
+        </div>
+
+        {citationPickerOpen ? (
+          <CitationPicker
+            onInsert={insertCitations}
+            onCancel={() => setCitationPickerOpen(false)}
+          />
+        ) : null}
+
+        {noteCitations.length ? (
+          <ol className="omi-note-citation-list">
+            {noteCitations.map((citation) => {
+              const unresolved = !records.some((record) => record.id === citation.target);
+              return (
+                <li key={citation.id}>
+                  <span className={unresolved ? 'is-unresolved' : ''}>
+                    {renderNoteCitation(
+                      citation,
+                      note,
+                      records,
+                      manuscript.citationStyle ?? 'apa-7',
+                      manuscript.locale,
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    className="omi-note-icon-button"
+                    aria-label={citationCopy.removeCitation}
+                    title={citationCopy.removeCitation}
+                    onClick={() => stageRemoveNoteCitation(stableNoteId, citation.id)}
+                  >
+                    <X size={14} aria-hidden="true" />
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        ) : (
+          <p className="omi-note-citation-empty">{citationCopy.noCitations}</p>
+        )}
+      </section>
 
       <div className="omi-note-meta">
         <code>{note.anchorId ?? stableNoteId}</code>
