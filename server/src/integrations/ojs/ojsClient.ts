@@ -1,4 +1,5 @@
 import { applyDirectFormattingHeadingInference } from './docxDirectHeading.js';
+import { applyInlineSemantics } from './docxInlineSemantics.js';
 import { parseDocxSource, type OjsSourceDocument } from './docxSource.js';
 import type { LaunchClaims } from './launchVerifier.js';
 
@@ -208,7 +209,8 @@ async function loadSourceDocument(
     candidate.mediaType || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   );
 
-  return applyDirectFormattingHeadingInference(bytes, parsed);
+  const withHeadings = applyDirectFormattingHeadingInference(bytes, parsed);
+  return applyInlineSemantics(bytes, withHeadings);
 }
 
 function isDocx(file: OjsFileDescriptor): boolean {
