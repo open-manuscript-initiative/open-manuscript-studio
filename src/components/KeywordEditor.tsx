@@ -16,6 +16,7 @@ import {
   addKeywords,
   removeKeyword,
 } from '../model/keywords';
+import '../styles/scholarly-metadata.css';
 import type { OmiLocale } from '../types/omi';
 import { ScholarlyMetadataPanel } from './ScholarlyMetadataPanel';
 
