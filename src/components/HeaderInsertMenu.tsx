@@ -41,15 +41,21 @@ export function HeaderInsertMenu() {
         className="focus-insert-menu-trigger"
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label={copy.insertMenu}
+        title={copy.insertMenu}
         onClick={() => setOpen((current) => !current)}
       >
         <Plus size={16} aria-hidden="true" />
-        <span>{copy.insertElement}</span>
+        <span>{copy.insertMenu}</span>
         <ChevronDown size={14} aria-hidden="true" />
       </button>
 
       {open ? (
-        <div className="focus-insert-menu-popover" role="menu">
+        <div
+          className="focus-insert-menu-popover"
+          role="menu"
+          aria-label={copy.insertMenu}
+        >
           <VisualInsertPanel compact onInserted={() => setOpen(false)} />
         </div>
       ) : null}
