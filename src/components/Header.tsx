@@ -1,11 +1,13 @@
 import {
   CheckCircle2,
   Clock3,
+  LogOut,
   Menu,
 } from 'lucide-react';
 
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { useAuthStore } from '../store/authStore';
 import { HeaderInsertMenu } from './HeaderInsertMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
@@ -22,9 +24,18 @@ export function Header({ onOpenMenu }: HeaderProps) {
   const selectedSectionId = useStudioStore(
     (state) => state.selectedSectionId,
   );
+  const logout = useAuthStore((state) => state.logout);
+  const isAuthLoading = useAuthStore((state) => state.isLoading);
   const selectedSection = manuscript.sections.find(
     (section) => section.id === selectedSectionId,
   );
+
+  const handleLogout = () => {
+    void logout().catch(() => {
+      // The auth store clears the local session in logout()'s finally block,
+      // even if the server-side logout request cannot be completed.
+    });
+  };
 
   return (
     <header className="app-header focus-header">
@@ -70,6 +81,17 @@ export function Header({ onOpenMenu }: HeaderProps) {
         </div>
 
         <LanguageSwitcher />
+
+        <button
+          type="button"
+          className="focus-menu-button"
+          aria-label="Sign out"
+          title="Sign out"
+          onClick={handleLogout}
+          disabled={isAuthLoading}
+        >
+          <LogOut size={20} aria-hidden="true" />
+        </button>
       </div>
     </header>
   );
