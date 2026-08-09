@@ -1,5 +1,3 @@
-import { Fragment } from 'react';
-
 import {
   stageMottoChange,
   stageSubtitleChange,
@@ -16,7 +14,6 @@ import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
 import { isVisualBlock } from '../model/visualBlocks';
 import { BlockEditor } from './BlockEditor';
 import { VisualBlockEditor } from './VisualBlockEditor';
-import { VisualInsertMenu } from './VisualInsertMenu';
 
 /**
  * Continuous manuscript editor.
@@ -127,54 +124,42 @@ export function EditorPane() {
                       {section.blocks.map((block, blockIndex) => {
                         const target = targetMap.get(block.id);
 
-                        return (
-                          <Fragment key={block.id}>
-                            <VisualInsertMenu
-                              sectionId={section.id}
-                              gapIndex={blockIndex}
-                            />
-
-                            {isVisualBlock(block) ? (
-                              <div
-                                className="omi-numbered-object omi-continuous-visual"
-                                id={`omi-target-${block.id}`}
-                                data-cross-reference-target={target?.kind}
-                              >
-                                {target ? (
-                                  <div className="omi-numbered-object-label">
-                                    {formatCrossReferenceLabel(
-                                      {
-                                        targetId: target.id,
-                                        displayStyle: 'label-number',
-                                      },
-                                      target,
-                                      manuscript.locale,
-                                    )}
-                                  </div>
-                                ) : null}
-
-                                <VisualBlockEditor
-                                  block={block}
-                                  sectionId={section.id}
-                                  blockIndex={blockIndex}
-                                />
+                        return isVisualBlock(block) ? (
+                          <div
+                            className="omi-numbered-object omi-continuous-visual"
+                            id={`omi-target-${block.id}`}
+                            data-cross-reference-target={target?.kind}
+                            key={block.id}
+                          >
+                            {target ? (
+                              <div className="omi-numbered-object-label">
+                                {formatCrossReferenceLabel(
+                                  {
+                                    targetId: target.id,
+                                    displayStyle: 'label-number',
+                                  },
+                                  target,
+                                  manuscript.locale,
+                                )}
                               </div>
-                            ) : (
-                              <BlockEditor
-                                blockId={block.id}
-                                blockType={block.type}
-                                content={block.content}
-                                onUpdate={updateBlock}
-                              />
-                            )}
-                          </Fragment>
+                            ) : null}
+
+                            <VisualBlockEditor
+                              block={block}
+                              sectionId={section.id}
+                              blockIndex={blockIndex}
+                            />
+                          </div>
+                        ) : (
+                          <BlockEditor
+                            key={block.id}
+                            blockId={block.id}
+                            blockType={block.type}
+                            content={block.content}
+                            onUpdate={updateBlock}
+                          />
                         );
                       })}
-
-                      <VisualInsertMenu
-                        sectionId={section.id}
-                        gapIndex={section.blocks.length}
-                      />
                     </div>
                   </section>
                 );
