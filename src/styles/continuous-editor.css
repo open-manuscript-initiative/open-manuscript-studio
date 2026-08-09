@@ -1,0 +1,238 @@
+/* Continuous manuscript editing surface */
+
+.omi-continuous-manuscript {
+  background: #f3f4f6;
+}
+
+.omi-document-canvas {
+  padding: 2.5rem 1.5rem 5rem;
+  background: #f3f4f6;
+}
+
+.omi-manuscript-page {
+  width: min(100%, 58rem);
+  min-height: calc(100vh - 10rem);
+  margin: 0 auto;
+  padding: clamp(2.5rem, 6vw, 5rem) clamp(2rem, 7vw, 5.5rem) 6rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.35rem;
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+}
+
+.omi-continuous-front-matter {
+  padding: 0 0 2.75rem;
+  border: 0;
+  background: transparent;
+}
+
+.omi-continuous-front-matter .omi-document-title,
+.omi-continuous-front-matter .omi-document-subtitle,
+.omi-continuous-front-matter .omi-document-motto {
+  display: block;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
+
+.omi-continuous-front-matter .omi-document-title {
+  padding: 0;
+  text-align: center;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 750;
+  line-height: 1.16;
+}
+
+.omi-continuous-front-matter .omi-document-subtitle {
+  margin-top: 0.85rem;
+  padding: 0;
+  color: #475569;
+  text-align: center;
+  font: inherit;
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+
+.omi-continuous-front-matter .omi-document-motto {
+  width: min(100%, 38rem);
+  margin: 1.75rem auto 0;
+  padding: 0;
+  resize: vertical;
+  color: #64748b;
+  text-align: right;
+  font: inherit;
+  font-size: 0.95rem;
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.omi-continuous-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2.65rem;
+}
+
+.omi-continuous-section {
+  width: 100%;
+  margin: 0;
+}
+
+.omi-continuous-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  margin: 0 0 1rem;
+}
+
+.omi-continuous-section-title .omi-section-number {
+  flex: 0 0 auto;
+  font-size: 1.35rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.omi-continuous-section-title .omi-section-title-input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  color: #0f172a;
+  background: transparent;
+  font: inherit;
+  font-size: 1.35rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.omi-continuous-blocks > .omi-block-editor {
+  margin: 0;
+  padding: 0.15rem 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.omi-continuous-blocks > .omi-block-editor:hover,
+.omi-continuous-blocks > .omi-block-editor:focus-within {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.omi-continuous-blocks .omi-tiptap-editor,
+.omi-continuous-blocks .omi-block-editor .tiptap {
+  min-height: 1.75rem;
+  padding: 0.2rem 0;
+  font-size: 1.05rem;
+  line-height: 1.78;
+}
+
+/*
+ * Block actions become contextual instead of permanently fragmenting the page.
+ * They appear only while the current paragraph/block is active.
+ */
+.omi-continuous-blocks .omi-block-toolbar {
+  position: absolute;
+  z-index: 20;
+  top: -2.25rem;
+  right: 0;
+  min-height: auto;
+  margin: 0;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid #dbe2ea;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(0.25rem);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease,
+    visibility 120ms ease;
+}
+
+.omi-continuous-blocks .omi-block-editor:focus-within .omi-block-toolbar,
+.omi-continuous-blocks .omi-block-editor:hover .omi-block-toolbar {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.omi-continuous-blocks .omi-block-type {
+  display: none;
+}
+
+.omi-continuous-blocks .omi-block-toolbar-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.omi-continuous-blocks .omi-note-insert-button {
+  border-color: transparent;
+}
+
+.omi-continuous-blocks .omi-numbered-object,
+.omi-continuous-visual {
+  margin: 1.75rem 0;
+}
+
+/* Keep insertion affordances quiet until the author approaches them. */
+.omi-continuous-blocks .omi-visual-insert-menu {
+  opacity: 0.12;
+  transition: opacity 120ms ease;
+}
+
+.omi-continuous-blocks .omi-visual-insert-menu:hover,
+.omi-continuous-blocks .omi-visual-insert-menu:focus-within {
+  opacity: 1;
+}
+
+.omi-visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+@media (max-width: 760px) {
+  .omi-document-canvas {
+    padding: 0;
+  }
+
+  .omi-manuscript-page {
+    min-height: 100vh;
+    padding: 2rem 1.25rem 4rem;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .omi-continuous-blocks .omi-block-toolbar {
+    position: static;
+    margin-bottom: 0.35rem;
+    opacity: 0;
+    transform: none;
+  }
+
+  .omi-continuous-blocks .omi-block-editor:focus-within .omi-block-toolbar {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .omi-continuous-blocks .omi-block-toolbar,
+  .omi-continuous-blocks .omi-visual-insert-menu {
+    transition: none;
+  }
+}
