@@ -1,0 +1,76 @@
+.focus-insert-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.focus-insert-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.1rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.focus-insert-menu-trigger:hover,
+.focus-insert-menu-trigger:focus-visible,
+.focus-insert-menu-trigger[aria-expanded='true'] {
+  border-color: rgba(148, 163, 184, 0.45);
+  background: rgba(148, 163, 184, 0.12);
+  outline: none;
+}
+
+.focus-insert-menu-popover {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  width: min(26rem, calc(100vw - 2rem));
+  padding: 0.85rem;
+  border: 1px solid #dbe2ea;
+  border-radius: 0.65rem;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.16);
+}
+
+.focus-insert-menu-popover .omi-visual-insert-palette--compact {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.focus-insert-menu-popover .omi-visual-insert-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.focus-insert-menu-popover .omi-visual-insert-actions button {
+  justify-content: flex-start;
+}
+
+.focus-insert-menu-popover .omi-office-paste-target {
+  margin-top: 0.65rem;
+}
+
+@media (max-width: 720px) {
+  .focus-insert-menu-trigger span {
+    display: none;
+  }
+
+  .focus-insert-menu-popover {
+    position: fixed;
+    top: 4rem;
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+  }
+}
