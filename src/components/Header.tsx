@@ -6,6 +6,7 @@ import {
 
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { HeaderInsertMenu } from './HeaderInsertMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface HeaderProps {
@@ -45,6 +46,8 @@ export function Header({ onOpenMenu }: HeaderProps) {
           {selectedSection?.title ?? manuscript.title}
         </span>
       </div>
+
+      <HeaderInsertMenu />
 
       <div className="focus-header-actions">
         <div
