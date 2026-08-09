@@ -1,7 +1,13 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Minimal desktop capability for the Open Manuscript Studio webview.",
+  "description": "Desktop capability for Open Manuscript Studio. File access is limited to paths explicitly selected by the author through the native open/save dialogs.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "core:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "fs:allow-read-text-file",
+    "fs:allow-write-text-file"
+  ]
 }
