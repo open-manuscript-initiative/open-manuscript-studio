@@ -9,6 +9,7 @@ export type AuthTranslationKey =
   | 'auth.login.submitting'
   | 'auth.login.noAccount'
   | 'auth.login.registerLink'
+  | 'auth.logout'
   | 'auth.register.title'
   | 'auth.register.description'
   | 'auth.register.submit'
@@ -55,6 +56,7 @@ export const authTranslations: Record<SupportedLocale, AuthTranslations> = {
     'auth.login.submitting': 'Signing in…',
     'auth.login.noAccount': 'Do not have an account yet?',
     'auth.login.registerLink': 'Register',
+    'auth.logout': 'Sign out',
     'auth.register.title': 'Create account',
     'auth.register.description': 'Create your Open Manuscript Studio account.',
     'auth.register.submit': 'Create account',
@@ -98,6 +100,7 @@ export const authTranslations: Record<SupportedLocale, AuthTranslations> = {
     'auth.login.submitting': 'Bejelentkezés…',
     'auth.login.noAccount': 'Még nincs fiókja?',
     'auth.login.registerLink': 'Regisztráció',
+    'auth.logout': 'Kijelentkezés',
     'auth.register.title': 'Fiók létrehozása',
     'auth.register.description': 'Hozza létre Open Manuscript Studio-fiókját.',
     'auth.register.submit': 'Fiók létrehozása',
@@ -141,6 +144,7 @@ export const authTranslations: Record<SupportedLocale, AuthTranslations> = {
     'auth.login.submitting': 'Anmeldung…',
     'auth.login.noAccount': 'Noch kein Konto?',
     'auth.login.registerLink': 'Registrieren',
+    'auth.logout': 'Abmelden',
     'auth.register.title': 'Konto erstellen',
     'auth.register.description': 'Erstellen Sie Ihr Open-Manuscript-Studio-Konto.',
     'auth.register.submit': 'Konto erstellen',
