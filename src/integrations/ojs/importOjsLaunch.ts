@@ -41,7 +41,15 @@ interface OjsSourceFootnoteReference {
   footnoteId?: string;
 }
 
-type OjsSourceInline = OjsSourceInlineText | OjsSourceFootnoteReference;
+interface OjsSourceEndnoteReference {
+  kind: 'endnoteReference';
+  endnoteId?: string;
+}
+
+type OjsSourceInline =
+  | OjsSourceInlineText
+  | OjsSourceFootnoteReference
+  | OjsSourceEndnoteReference;
 
 interface OjsSourceParagraph {
   text?: string;
@@ -50,7 +58,7 @@ interface OjsSourceParagraph {
   inline?: OjsSourceInline[];
 }
 
-interface OjsSourceFootnote {
+interface OjsSourceNote {
   id?: string;
   text?: string;
 }
@@ -61,7 +69,8 @@ interface OjsSourceDocument {
   fileName?: string;
   mediaType?: string;
   paragraphs?: OjsSourceParagraph[];
-  footnotes?: OjsSourceFootnote[];
+  footnotes?: OjsSourceNote[];
+  endnotes?: OjsSourceNote[];
 }
 
 export interface OjsLaunchPayload {
@@ -233,11 +242,8 @@ function buildSourceContent(
 
   const sections: OmiManuscript['sections'] = [];
   const annotations: OmiAnnotation[] = [];
-  const footnotes = new Map(
-    (source.footnotes ?? [])
-      .filter((footnote) => footnote.id && typeof footnote.text === 'string')
-      .map((footnote) => [footnote.id as string, footnote.text as string]),
-  );
+  const footnotes = createNoteMap(source.footnotes);
+  const endnotes = createNoteMap(source.endnotes);
   let noteNumber = 0;
   let current = createSection(defaultBodyTitle(locale));
   const normalizedTitle = normalizeComparison(manuscriptTitle);
@@ -249,10 +255,8 @@ function buildSourceContent(
 
   for (const paragraph of source.paragraphs) {
     const text = paragraph.text?.trim() ?? '';
-    const hasFootnoteReference = paragraph.inline?.some(
-      (item) => item.kind === 'footnoteReference' && item.footnoteId,
-    ) ?? false;
-    if (!text && !hasFootnoteReference) continue;
+    const hasNoteReference = paragraph.inline?.some(isSourceNoteReference) ?? false;
+    if (!text && !hasNoteReference) continue;
 
     const normalized = normalizeComparison(text);
     if (
@@ -263,7 +267,7 @@ function buildSourceContent(
       continue;
     }
 
-    if (text && paragraph.headingLevel && paragraph.headingLevel >= 1) {
+    if (text && paragraph.headingLevel && paragraph.headingLevel >= 1 && !hasNoteReference) {
       if (current.blocks.length) pushCurrent();
       current = createSection(text);
       continue;
@@ -274,6 +278,7 @@ function buildSourceContent(
       paragraph,
       blockId,
       footnotes,
+      endnotes,
       noteNumber,
       importedAt,
     );
@@ -294,10 +299,28 @@ function buildSourceContent(
   };
 }
 
+function createNoteMap(notes: OjsSourceNote[] | undefined): Map<string, string> {
+  return new Map(
+    (notes ?? [])
+      .filter((note) => note.id !== undefined)
+      .map((note) => [String(note.id), typeof note.text === 'string' ? note.text : '']),
+  );
+}
+
+function isSourceNoteReference(
+  item: OjsSourceInline,
+): item is OjsSourceFootnoteReference | OjsSourceEndnoteReference {
+  return (
+    (item.kind === 'footnoteReference' && Boolean(item.footnoteId)) ||
+    (item.kind === 'endnoteReference' && Boolean(item.endnoteId))
+  );
+}
+
 function buildParagraphContent(
   paragraph: OjsSourceParagraph,
   blockId: string,
   footnotes: Map<string, string>,
+  endnotes: Map<string, string>,
   startingNoteNumber: number,
   importedAt: string,
 ): {
@@ -306,7 +329,7 @@ function buildParagraphContent(
   nextNoteNumber: number;
 } {
   const inline = paragraph.inline;
-  if (!inline?.some((item) => item.kind === 'footnoteReference')) {
+  if (!inline?.some(isSourceNoteReference)) {
     return {
       content: paragraph.text?.trim() ?? '',
       annotations: [],
@@ -332,10 +355,14 @@ function buildParagraphContent(
       continue;
     }
 
-    const sourceFootnoteId = item.footnoteId?.trim();
-    if (!sourceFootnoteId) continue;
-    const body = footnotes.get(sourceFootnoteId);
-    if (!body) continue;
+    const isEndnote = item.kind === 'endnoteReference';
+    const sourceNoteId = isEndnote
+      ? item.endnoteId?.trim()
+      : item.footnoteId?.trim();
+    if (!sourceNoteId) continue;
+
+    const noteKind = isEndnote ? 'endnote' : 'footnote';
+    const body = (isEndnote ? endnotes : footnotes).get(sourceNoteId) ?? '';
 
     noteNumber += 1;
     const noteId = `note-${crypto.randomUUID()}`;
@@ -348,18 +375,18 @@ function buildParagraphContent(
         noteId,
         anchorId,
         label,
-        noteType: 'footnote',
+        noteType: noteKind,
       },
     });
 
     annotations.push({
       id: noteId,
       type: 'note',
-      noteKind: 'footnote',
+      noteKind,
       anchorId,
       targetBlockId: blockId,
       body,
-      renderingHint: 'footnote',
+      renderingHint: noteKind,
       createdAt: importedAt,
       modifiedAt: importedAt,
     });
