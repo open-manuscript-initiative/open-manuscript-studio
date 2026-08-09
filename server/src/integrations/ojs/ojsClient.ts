@@ -1,3 +1,4 @@
+import { applyDirectFormattingHeadingInference } from './docxDirectHeading.js';
 import { parseDocxSource, type OjsSourceDocument } from './docxSource.js';
 import type { LaunchClaims } from './launchVerifier.js';
 
@@ -200,12 +201,14 @@ async function loadSourceDocument(
     throw new Error('The OJS DOCX source file exceeds the 25 MB import limit.');
   }
 
-  return parseDocxSource(
+  const parsed = parseDocxSource(
     bytes,
     candidate.externalId,
     candidate.name || `submission-${candidate.externalId}.docx`,
     candidate.mediaType || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   );
+
+  return applyDirectFormattingHeadingInference(bytes, parsed);
 }
 
 function isDocx(file: OjsFileDescriptor): boolean {
