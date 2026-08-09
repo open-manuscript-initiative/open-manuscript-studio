@@ -18,7 +18,9 @@ export function createManuscriptFromOjsLaunch(
     return manuscript;
   }
 
-  const primaryLocale = submission.primaryLocale?.trim() || manuscript.locale;
+  const primaryLocale = normalizeLocale(
+    submission.primaryLocale?.trim() || manuscript.locale,
+  );
   const abstracts = normalizeLocalizedAbstracts(submission.abstract);
   const keywordsByLocale = normalizeLocalizedKeywords(
     submission.keywords,
@@ -38,6 +40,7 @@ export function createManuscriptFromOjsLaunch(
 
   return {
     ...manuscript,
+    locale: primaryLocale,
     abstract: primaryAbstract,
     keywords: [...primaryKeywords],
     abstracts,
@@ -54,7 +57,8 @@ function normalizeLocalizedAbstracts(
   for (const [locale, item] of Object.entries(value)) {
     if (typeof item !== 'string') continue;
     const text = plainText(item).trim();
-    if (text) result[locale] = text;
+    if (!text) continue;
+    result[normalizeLocale(locale)] = text;
   }
 
   return result;
@@ -74,7 +78,7 @@ function normalizeLocalizedKeywords(
   const result: Partial<Record<string, string[]>> = {};
   for (const [locale, item] of Object.entries(value)) {
     const keywords = normalizeKeywordList(item);
-    if (keywords.length) result[locale] = keywords;
+    if (keywords.length) result[normalizeLocale(locale)] = keywords;
   }
   return result;
 }
@@ -101,6 +105,12 @@ function extractKeywordText(value: unknown): string {
 
   const name = (value as Record<string, unknown>).name;
   return typeof name === 'string' ? name.trim() : '';
+}
+
+function normalizeLocale(locale: string): string {
+  const normalized = locale.trim().replace(/_/g, '-').toLowerCase();
+  const language = normalized.split('-')[0] ?? normalized;
+  return ['hu', 'en', 'de'].includes(language) ? language : normalized;
 }
 
 function plainText(value: string): string {
