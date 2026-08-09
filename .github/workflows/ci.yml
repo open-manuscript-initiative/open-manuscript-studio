@@ -37,6 +37,18 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Install server dependencies
+        working-directory: server
+        run: npm install
+
+      - name: Generate Prisma client
+        working-directory: server
+        run: npm run prisma:generate
+
+      - name: Typecheck server API
+        working-directory: server
+        run: npm run typecheck
+
       - name: Read package version
         id: package
         shell: bash

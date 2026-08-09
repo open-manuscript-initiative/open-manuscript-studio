@@ -148,8 +148,8 @@ function parseCharacterStyles(xml: string): Map<string, CharacterStyle> {
     const rPr = readElementBody(body, 'rPr') ?? '';
     result.set(id, {
       id,
-      name,
-      basedOn,
+      ...(name !== undefined ? { name } : {}),
+      ...(basedOn !== undefined ? { basedOn } : {}),
       semantics: Array.from(new Set([
         ...styleNameSemantics(id, name),
         ...semanticsFromRunProperties(rPr),

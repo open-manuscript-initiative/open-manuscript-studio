@@ -1,0 +1,125 @@
+export type ReviewStatus =
+  | 'invited'
+  | 'accepted'
+  | 'declined'
+  | 'in_progress'
+  | 'submitted'
+  | 'completed';
+
+export type ReviewRecommendation =
+  | 'accept'
+  | 'minor_revision'
+  | 'major_revision'
+  | 'reject';
+
+export type ReviewFeedbackVisibility =
+  | 'author_and_editor'
+  | 'editor_only';
+
+export interface ReviewerFeedback {
+  id: string;
+  visibility: ReviewFeedbackVisibility;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewerAssignment {
+  id: string;
+  workspaceId: string;
+  manuscriptId: string;
+  reviewerAlias: string;
+  reviewRound: number;
+  anonymityMode: 'double_blind' | 'single_blind' | 'open';
+  status: ReviewStatus;
+  recommendation?: ReviewRecommendation;
+  feedback: ReviewerFeedback[];
+  invitedAt: string;
+  acceptedAt?: string;
+  submittedAt?: string;
+  completedAt?: string;
+}
+
+interface ReviewResponse {
+  review: ReviewerAssignment;
+}
+
+interface ReviewListResponse {
+  reviews: ReviewerAssignment[];
+}
+
+interface ErrorResponse {
+  error?: {
+    code?: string;
+    message?: string;
+  };
+}
+
+const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL ?? '')
+  .trim()
+  .replace(/\/$/, '');
+
+export async function listAssignedReviews(): Promise<ReviewerAssignment[]> {
+  const payload = await request<ReviewListResponse>('/api/reviews/assigned');
+  return payload.reviews;
+}
+
+export async function acceptAssignedReview(id: string): Promise<ReviewerAssignment> {
+  return (await request<ReviewResponse>(`/api/reviews/assigned/${encodeURIComponent(id)}/accept`, {
+    method: 'POST',
+  })).review;
+}
+
+export async function declineAssignedReview(id: string): Promise<ReviewerAssignment> {
+  return (await request<ReviewResponse>(`/api/reviews/assigned/${encodeURIComponent(id)}/decline`, {
+    method: 'POST',
+  })).review;
+}
+
+export async function addAssignedReviewFeedback(
+  id: string,
+  visibility: 'AUTHOR_AND_EDITOR' | 'EDITOR_ONLY',
+  body: string,
+): Promise<ReviewerAssignment> {
+  return (await request<ReviewResponse>(`/api/reviews/assigned/${encodeURIComponent(id)}/feedback`, {
+    method: 'POST',
+    body: JSON.stringify({ visibility, body }),
+  })).review;
+}
+
+export async function submitAssignedReview(
+  id: string,
+  recommendation: 'ACCEPT' | 'MINOR_REVISION' | 'MAJOR_REVISION' | 'REJECT',
+): Promise<ReviewerAssignment> {
+  return (await request<ReviewResponse>(`/api/reviews/assigned/${encodeURIComponent(id)}/submit`, {
+    method: 'POST',
+    body: JSON.stringify({ recommendation }),
+  })).review;
+}
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      ...init.headers,
+    },
+  });
+
+  if (!response.ok) {
+    throw await createApiError(response);
+  }
+
+  return (await response.json()) as T;
+}
+
+async function createApiError(response: Response): Promise<Error> {
+  try {
+    const payload = (await response.json()) as ErrorResponse;
+    return new Error(payload.error?.message || `Peer review request failed with HTTP ${response.status}.`);
+  } catch {
+    return new Error(`Peer review request failed with HTTP ${response.status}.`);
+  }
+}

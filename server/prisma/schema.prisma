@@ -24,20 +24,55 @@ enum ExternalInstallationStatus {
   DISABLED
 }
 
+enum ReviewStatus {
+  INVITED
+  ACCEPTED
+  DECLINED
+  IN_PROGRESS
+  SUBMITTED
+  COMPLETED
+}
+
+enum ReviewRecommendation {
+  ACCEPT
+  MINOR_REVISION
+  MAJOR_REVISION
+  REJECT
+}
+
+enum ReviewAnonymityMode {
+  DOUBLE_BLIND
+  SINGLE_BLIND
+  OPEN
+}
+
+enum ReviewFeedbackVisibility {
+  AUTHOR_AND_EDITOR
+  EDITOR_ONLY
+}
+
+enum ReviewWorkspaceRole {
+  AUTHOR
+  EDITOR
+}
+
 model User {
-  id               String     @id @default(uuid()) @db.Uuid
-  email            String     @unique @db.VarChar(320)
-  passwordHash     String     @map("password_hash") @db.VarChar(255)
-  fullName         String     @map("full_name") @db.VarChar(200)
-  affiliation      String?    @db.VarChar(300)
-  affiliationRorId String?    @map("affiliation_ror_id") @db.VarChar(128)
-  orcid            String?    @unique @db.VarChar(19)
-  interfaceLanguage String    @default("en") @map("interface_language") @db.VarChar(16)
-  status           UserStatus @default(ACTIVE)
-  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
-  lastLoginAt      DateTime?  @map("last_login_at") @db.Timestamptz(6)
-  sessions         UserSession[]
+  id                        String                  @id @default(uuid()) @db.Uuid
+  email                     String                  @unique @db.VarChar(320)
+  passwordHash              String                  @map("password_hash") @db.VarChar(255)
+  fullName                  String                  @map("full_name") @db.VarChar(200)
+  affiliation               String?                 @db.VarChar(300)
+  affiliationRorId          String?                 @map("affiliation_ror_id") @db.VarChar(128)
+  orcid                     String?                 @unique @db.VarChar(19)
+  interfaceLanguage         String                  @default("en") @map("interface_language") @db.VarChar(16)
+  status                    UserStatus              @default(ACTIVE)
+  createdAt                 DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  lastLoginAt               DateTime?               @map("last_login_at") @db.Timestamptz(6)
+  sessions                  UserSession[]
+  reviewAssignments         PeerReviewAssignment[]  @relation("ReviewerAssignments")
+  assignedReviewAssignments PeerReviewAssignment[]  @relation("ReviewAssigner")
+  reviewWorkspaceAccess     ReviewWorkspaceAccess[]
 
   @@map("users")
 }
@@ -54,6 +89,63 @@ model UserSession {
   @@index([userId])
   @@index([expiresAt])
   @@map("user_sessions")
+}
+
+model ReviewWorkspaceAccess {
+  id           String              @id @default(uuid()) @db.Uuid
+  workspaceId  String              @map("workspace_id") @db.VarChar(128)
+  manuscriptId String              @map("manuscript_id") @db.VarChar(128)
+  userId       String              @map("user_id") @db.Uuid
+  role         ReviewWorkspaceRole
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, role])
+  @@index([userId, role])
+  @@index([workspaceId, role])
+  @@map("review_workspace_access")
+}
+
+model PeerReviewAssignment {
+  id               String                @id @default(uuid()) @db.Uuid
+  workspaceId      String                @map("workspace_id") @db.VarChar(128)
+  manuscriptId     String                @map("manuscript_id") @db.VarChar(128)
+  reviewerUserId   String                @map("reviewer_user_id") @db.Uuid
+  assignedByUserId String                @map("assigned_by_user_id") @db.Uuid
+  reviewerAlias    String                @map("reviewer_alias") @db.VarChar(64)
+  reviewRound      Int                   @default(1) @map("review_round")
+  anonymityMode    ReviewAnonymityMode   @default(DOUBLE_BLIND) @map("anonymity_mode")
+  status           ReviewStatus          @default(INVITED)
+  recommendation   ReviewRecommendation?
+  invitedAt        DateTime              @default(now()) @map("invited_at") @db.Timestamptz(6)
+  acceptedAt       DateTime?             @map("accepted_at") @db.Timestamptz(6)
+  submittedAt      DateTime?             @map("submitted_at") @db.Timestamptz(6)
+  completedAt      DateTime?             @map("completed_at") @db.Timestamptz(6)
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reviewer         User                  @relation("ReviewerAssignments", fields: [reviewerUserId], references: [id], onDelete: Restrict)
+  assignedBy       User                  @relation("ReviewAssigner", fields: [assignedByUserId], references: [id], onDelete: Restrict)
+  feedback         PeerReviewFeedback[]
+
+  @@unique([workspaceId, reviewerUserId, reviewRound])
+  @@index([workspaceId, status])
+  @@index([manuscriptId])
+  @@index([reviewerUserId, status])
+  @@map("peer_review_assignments")
+}
+
+model PeerReviewFeedback {
+  id           String                   @id @default(uuid()) @db.Uuid
+  assignmentId String                   @map("assignment_id") @db.Uuid
+  visibility   ReviewFeedbackVisibility
+  body         String                   @db.Text
+  createdAt    DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  assignment   PeerReviewAssignment     @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([assignmentId, visibility])
+  @@map("peer_review_feedback")
 }
 
 model ExternalInstallation {
