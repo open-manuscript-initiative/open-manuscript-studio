@@ -51,22 +51,28 @@ enum ReviewFeedbackVisibility {
   EDITOR_ONLY
 }
 
+enum ReviewWorkspaceRole {
+  AUTHOR
+  EDITOR
+}
+
 model User {
-  id                        String                 @id @default(uuid()) @db.Uuid
-  email                     String                 @unique @db.VarChar(320)
-  passwordHash              String                 @map("password_hash") @db.VarChar(255)
-  fullName                  String                 @map("full_name") @db.VarChar(200)
-  affiliation               String?                @db.VarChar(300)
-  affiliationRorId          String?                @map("affiliation_ror_id") @db.VarChar(128)
-  orcid                     String?                @unique @db.VarChar(19)
-  interfaceLanguage         String                 @default("en") @map("interface_language") @db.VarChar(16)
-  status                    UserStatus             @default(ACTIVE)
-  createdAt                 DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                 DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
-  lastLoginAt               DateTime?              @map("last_login_at") @db.Timestamptz(6)
+  id                        String                  @id @default(uuid()) @db.Uuid
+  email                     String                  @unique @db.VarChar(320)
+  passwordHash              String                  @map("password_hash") @db.VarChar(255)
+  fullName                  String                  @map("full_name") @db.VarChar(200)
+  affiliation               String?                 @db.VarChar(300)
+  affiliationRorId          String?                 @map("affiliation_ror_id") @db.VarChar(128)
+  orcid                     String?                 @unique @db.VarChar(19)
+  interfaceLanguage         String                  @default("en") @map("interface_language") @db.VarChar(16)
+  status                    UserStatus              @default(ACTIVE)
+  createdAt                 DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  lastLoginAt               DateTime?               @map("last_login_at") @db.Timestamptz(6)
   sessions                  UserSession[]
-  reviewAssignments         PeerReviewAssignment[] @relation("ReviewerAssignments")
-  assignedReviewAssignments PeerReviewAssignment[] @relation("ReviewAssigner")
+  reviewAssignments         PeerReviewAssignment[]  @relation("ReviewerAssignments")
+  assignedReviewAssignments PeerReviewAssignment[]  @relation("ReviewAssigner")
+  reviewWorkspaceAccess     ReviewWorkspaceAccess[]
 
   @@map("users")
 }
@@ -83,6 +89,22 @@ model UserSession {
   @@index([userId])
   @@index([expiresAt])
   @@map("user_sessions")
+}
+
+model ReviewWorkspaceAccess {
+  id           String              @id @default(uuid()) @db.Uuid
+  workspaceId  String              @map("workspace_id") @db.VarChar(128)
+  manuscriptId String              @map("manuscript_id") @db.VarChar(128)
+  userId       String              @map("user_id") @db.Uuid
+  role         ReviewWorkspaceRole
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId, role])
+  @@index([userId, role])
+  @@index([workspaceId, role])
+  @@map("review_workspace_access")
 }
 
 model PeerReviewAssignment {
