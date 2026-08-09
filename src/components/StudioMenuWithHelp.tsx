@@ -46,6 +46,26 @@ export function StudioMenuWithHelp({
   }, [open]);
 
   useEffect(() => {
+    if (!navigationHost) return;
+
+    const closeHelpOnOtherNavigation = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const button = target?.closest<HTMLButtonElement>(
+        '.studio-menu-nav-button',
+      );
+
+      if (button && button.dataset.helpNavigation !== 'true') {
+        setHelpOpen(false);
+      }
+    };
+
+    navigationHost.addEventListener('click', closeHelpOnOtherNavigation);
+    return () => {
+      navigationHost.removeEventListener('click', closeHelpOnOtherNavigation);
+    };
+  }, [navigationHost]);
+
+  useEffect(() => {
     if (!contentHost) return;
 
     if (helpOpen) {
@@ -67,6 +87,7 @@ export function StudioMenuWithHelp({
         ? createPortal(
             <button
               type="button"
+              data-help-navigation="true"
               className={`studio-menu-nav-button${
                 helpOpen ? ' studio-menu-nav-button--active' : ''
               }`}
