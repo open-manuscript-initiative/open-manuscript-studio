@@ -36,9 +36,25 @@
   background: transparent;
 }
 
+/*
+ * Title fields are textareas so long scholarly titles can soft-wrap naturally.
+ * JavaScript keeps their height synchronized with the rendered content.
+ */
+.omi-auto-grow-heading {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  resize: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
 .omi-continuous-front-matter .omi-document-title {
   padding: 0;
   text-align: center;
+  font: inherit;
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 750;
   line-height: 1.16;
@@ -80,13 +96,14 @@
 
 .omi-continuous-section-title {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 0.65rem;
   margin: 0 0 1rem;
 }
 
 .omi-continuous-section-title .omi-section-number {
   flex: 0 0 auto;
+  padding-top: 0.05rem;
   font-size: 1.35rem;
   font-weight: 750;
   line-height: 1.35;
@@ -182,7 +199,7 @@
   margin: 1.75rem 0;
 }
 
-/* Keep insertion affordances quiet until the author approaches them. */
+/* Kept for backwards compatibility with older inline insert affordances. */
 .omi-continuous-blocks .omi-visual-insert-menu {
   opacity: 0.12;
   transition: opacity 120ms ease;
@@ -216,6 +233,19 @@
     border: 0;
     border-radius: 0;
     box-shadow: none;
+  }
+
+  .omi-continuous-front-matter .omi-document-title {
+    font-size: clamp(1.7rem, 8vw, 2.3rem);
+  }
+
+  .omi-continuous-section-title {
+    gap: 0.45rem;
+  }
+
+  .omi-continuous-section-title .omi-section-number,
+  .omi-continuous-section-title .omi-section-title-input {
+    font-size: 1.2rem;
   }
 
   .omi-continuous-blocks .omi-block-toolbar {

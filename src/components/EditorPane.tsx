@@ -1,4 +1,11 @@
 import {
+  useLayoutEffect,
+  useRef,
+  type ChangeEvent,
+  type KeyboardEvent,
+} from 'react';
+
+import {
   stageMottoChange,
   stageSubtitleChange,
 } from '../app/manuscriptFrontMatterActions';
@@ -14,6 +21,68 @@ import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
 import { isVisualBlock } from '../model/visualBlocks';
 import { BlockEditor } from './BlockEditor';
 import { VisualBlockEditor } from './VisualBlockEditor';
+
+interface AutoGrowHeadingProps {
+  id?: string;
+  className: string;
+  value: string;
+  ariaLabel: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+}
+
+/**
+ * A semantic single-value heading field that visually behaves like document
+ * text. The textarea soft-wraps long headings and grows with their rendered
+ * height, while Enter is suppressed so line breaks are not stored in title
+ * metadata accidentally.
+ */
+function AutoGrowHeading({
+  id,
+  className,
+  value,
+  ariaLabel,
+  placeholder,
+  onChange,
+}: AutoGrowHeadingProps) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  const resize = () => {
+    const element = ref.current;
+    if (!element) return;
+    element.style.height = 'auto';
+    element.style.height = `${element.scrollHeight}px`;
+  };
+
+  useLayoutEffect(() => {
+    resize();
+  }, [value]);
+
+  const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    onChange(event.target.value.replace(/[\r\n]+/g, ' '));
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+    }
+  };
+
+  return (
+    <textarea
+      ref={ref}
+      id={id}
+      className={className}
+      rows={1}
+      value={value}
+      aria-label={ariaLabel}
+      placeholder={placeholder}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      onInput={resize}
+    />
+  );
+}
 
 /**
  * Continuous manuscript editor.
@@ -51,22 +120,24 @@ export function EditorPane() {
               {t('manuscript.documentTitle')}
             </label>
 
-            <input
+            <AutoGrowHeading
               id="manuscript-title"
-              className="title-input omi-document-title"
+              className="title-input omi-document-title omi-auto-grow-heading"
               value={manuscript.title}
-              onChange={(event) => setTitle(event.target.value)}
+              ariaLabel={t('manuscript.documentTitle')}
+              onChange={setTitle}
               placeholder={t('studio.titlePlaceholder')}
             />
 
             <label className="omi-visually-hidden" htmlFor="manuscript-subtitle">
               {frontMatterCopy.subtitleOptional}
             </label>
-            <input
+            <AutoGrowHeading
               id="manuscript-subtitle"
-              className="omi-subtitle-input omi-document-subtitle"
+              className="omi-subtitle-input omi-document-subtitle omi-auto-grow-heading"
               value={manuscript.subtitle ?? ''}
-              onChange={(event) => stageSubtitleChange(event.target.value)}
+              ariaLabel={frontMatterCopy.subtitleOptional}
+              onChange={stageSubtitleChange}
               placeholder={frontMatterCopy.subtitlePlaceholder}
             />
 
@@ -109,13 +180,13 @@ export function EditorPane() {
                         </span>
                       ) : null}
 
-                      <input
-                        className="omi-section-title-input"
+                      <AutoGrowHeading
+                        className="omi-section-title-input omi-auto-grow-heading"
                         value={section.title}
-                        aria-label={t('studio.document.sections')}
+                        ariaLabel={t('studio.document.sections')}
                         placeholder={t('editor.untitledSection')}
-                        onChange={(event) =>
-                          stageSectionTitleChange(section.id, event.target.value)
+                        onChange={(value) =>
+                          stageSectionTitleChange(section.id, value)
                         }
                       />
                     </div>
