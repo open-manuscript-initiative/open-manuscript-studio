@@ -1,5 +1,10 @@
 import type { Editor } from '@tiptap/core';
-import { useEffect, useState, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+} from 'react';
 
 interface SelectionActionToolbarProps {
   editor: Editor;
@@ -41,8 +46,13 @@ export function SelectionActionToolbar({
         const end = editor.view.coordsAtPos(to);
         const below = Math.min(start.top, end.top) < 96;
         setPosition({
-          left: Math.max(16, Math.min(window.innerWidth - 16, (start.left + end.right) / 2)),
-          top: below ? Math.max(start.bottom, end.bottom) + 12 : Math.min(start.top, end.top) - 12,
+          left: Math.max(
+            16,
+            Math.min(window.innerWidth - 16, (start.left + end.right) / 2),
+          ),
+          top: below
+            ? Math.max(start.bottom, end.bottom) + 12
+            : Math.min(start.top, end.top) - 12,
           below,
         });
       } catch {
@@ -74,24 +84,38 @@ export function SelectionActionToolbar({
     top: `${position.top}px`,
   } as CSSProperties;
 
-  const preserveSelection = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const preserveSelection = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
   };
 
   return (
     <div
-      className={`omi-selection-action-toolbar${position.below ? ' omi-selection-action-toolbar--below' : ''}`}
+      className={`omi-selection-action-toolbar${
+        position.below ? ' omi-selection-action-toolbar--below' : ''
+      }`}
       style={style}
       role="toolbar"
       aria-label="Selection actions"
     >
-      <button type="button" onMouseDown={preserveSelection} onClick={onCitation}>
+      <button
+        type="button"
+        onMouseDown={preserveSelection}
+        onClick={onCitation}
+      >
         {citationLabel}
       </button>
-      <button type="button" onMouseDown={preserveSelection} onClick={onNote}>
+      <button
+        type="button"
+        onMouseDown={preserveSelection}
+        onClick={onNote}
+      >
         {noteLabel}
       </button>
-      <button type="button" onMouseDown={preserveSelection} onClick={onCrossReference}>
+      <button
+        type="button"
+        onMouseDown={preserveSelection}
+        onClick={onCrossReference}
+      >
         {crossReferenceLabel}
       </button>
     </div>
