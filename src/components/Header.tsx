@@ -85,8 +85,8 @@ export function Header({ onOpenMenu }: HeaderProps) {
         <button
           type="button"
           className="focus-menu-button"
-          aria-label="Sign out"
-          title="Sign out"
+          aria-label={t('auth.logout')}
+          title={t('auth.logout')}
           onClick={handleLogout}
           disabled={isAuthLoading}
         >
