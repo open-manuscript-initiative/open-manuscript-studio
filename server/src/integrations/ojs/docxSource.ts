@@ -10,7 +10,15 @@ export interface OjsDocxFootnoteReference {
   footnoteId: string;
 }
 
-export type OjsDocxInline = OjsDocxInlineText | OjsDocxFootnoteReference;
+export interface OjsDocxEndnoteReference {
+  kind: 'endnoteReference';
+  endnoteId: string;
+}
+
+export type OjsDocxInline =
+  | OjsDocxInlineText
+  | OjsDocxFootnoteReference
+  | OjsDocxEndnoteReference;
 
 export interface OjsDocxParagraph {
   text: string;
@@ -24,6 +32,11 @@ export interface OjsDocxFootnote {
   text: string;
 }
 
+export interface OjsDocxEndnote {
+  id: string;
+  text: string;
+}
+
 export interface OjsSourceDocument {
   kind: 'docx';
   fileExternalId: string;
@@ -31,6 +44,7 @@ export interface OjsSourceDocument {
   mediaType: string;
   paragraphs: OjsDocxParagraph[];
   footnotes: OjsDocxFootnote[];
+  endnotes: OjsDocxEndnote[];
 }
 
 export function parseDocxSource(
@@ -46,7 +60,12 @@ export function parseDocxSource(
 
   const footnotesXml = readZipEntry(buffer, 'word/footnotes.xml');
   const footnotes = footnotesXml
-    ? extractFootnotes(footnotesXml.toString('utf8'))
+    ? extractNotes(footnotesXml.toString('utf8'), 'footnote')
+    : [];
+
+  const endnotesXml = readZipEntry(buffer, 'word/endnotes.xml');
+  const endnotes = endnotesXml
+    ? extractNotes(endnotesXml.toString('utf8'), 'endnote')
     : [];
 
   const xml = documentXml.toString('utf8');
@@ -56,7 +75,7 @@ export function parseDocxSource(
 
   while ((paragraphMatch = paragraphPattern.exec(xml))) {
     const body = paragraphMatch[1] ?? '';
-    const styleId = /<w:pStyle\b[^>]*\bw:val="([^"]+)"[^>]*\/?\s*>/.exec(body)?.[1];
+    const styleId = /<w:pStyle\b[^>]*\bw:val=["']([^"']+)["'][^>]*\/?\s*>/.exec(body)?.[1];
     const inline = extractParagraphInline(body);
     const text = inline
       .filter((item): item is OjsDocxInlineText => item.kind === 'text')
@@ -64,15 +83,13 @@ export function parseDocxSource(
       .join('')
       .trim();
 
-    if (!text && !inline.some((item) => item.kind === 'footnoteReference')) continue;
+    if (!text && !inline.some(isNoteReference)) continue;
 
     const paragraph: OjsDocxParagraph = { text };
     if (styleId !== undefined) paragraph.styleId = styleId;
     const headingLevel = headingLevelFromStyleId(styleId);
     if (headingLevel !== undefined) paragraph.headingLevel = headingLevel;
-    if (inline.some((item) => item.kind === 'footnoteReference')) {
-      paragraph.inline = inline;
-    }
+    if (inline.some(isNoteReference)) paragraph.inline = inline;
     paragraphs.push(paragraph);
   }
 
@@ -87,18 +104,26 @@ export function parseDocxSource(
     mediaType,
     paragraphs,
     footnotes,
+    endnotes,
   };
 }
 
-function extractFootnotes(xml: string): OjsDocxFootnote[] {
-  const footnotes: OjsDocxFootnote[] = [];
-  const pattern = /<w:footnote\b([^>]*)>([\s\S]*?)<\/w:footnote>/g;
+function extractNotes(
+  xml: string,
+  kind: 'footnote' | 'endnote',
+): Array<{ id: string; text: string }> {
+  const notes: Array<{ id: string; text: string }> = [];
+  const elementName = kind === 'footnote' ? 'footnote' : 'endnote';
+  const pattern = new RegExp(
+    `<w:${elementName}\\b([^>]*)>([\\s\\S]*?)<\\/w:${elementName}>`,
+    'g',
+  );
   let match: RegExpExecArray | null;
 
   while ((match = pattern.exec(xml))) {
     const attributes = match[1] ?? '';
     const body = match[2] ?? '';
-    const id = /\bw:id="(-?\d+)"/.exec(attributes)?.[1];
+    const id = /\bw:id\s*=\s*["'](-?\d+)["']/.exec(attributes)?.[1];
     if (!id || Number(id) < 1) continue;
 
     const paragraphs: string[] = [];
@@ -110,15 +135,15 @@ function extractFootnotes(xml: string): OjsDocxFootnote[] {
     }
 
     const text = paragraphs.join('\n\n').trim();
-    if (text) footnotes.push({ id, text });
+    notes.push({ id, text });
   }
 
-  return footnotes;
+  return notes;
 }
 
 function extractParagraphInline(body: string): OjsDocxInline[] {
   const parts: OjsDocxInline[] = [];
-  const tokenPattern = /<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>|<w:footnoteReference\b[^>]*\bw:id="(-?\d+)"[^>]*\/?\s*>|<w:tab\b[^>]*\/?\s*>|<w:br\b[^>]*\/?\s*>|<w:cr\b[^>]*\/?\s*>/g;
+  const tokenPattern = /<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>|<w:footnoteReference\b[^>]*\bw:id\s*=\s*["'](-?\d+)["'][^>]*\/?\s*>|<w:endnoteReference\b[^>]*\bw:id\s*=\s*["'](-?\d+)["'][^>]*\/?\s*>|<w:tab\b[^>]*\/?\s*>|<w:br\b[^>]*\/?\s*>|<w:cr\b[^>]*\/?\s*>/g;
   let match: RegExpExecArray | null;
 
   const pushText = (text: string) => {
@@ -140,11 +165,23 @@ function extractParagraphInline(body: string): OjsDocxInline[] {
       }
       continue;
     }
+    if (match[3] !== undefined) {
+      if (Number(match[3]) > 0) {
+        parts.push({ kind: 'endnoteReference', endnoteId: match[3] });
+      }
+      continue;
+    }
     if (token.startsWith('<w:tab')) pushText('\t');
     else pushText('\n');
   }
 
   return parts;
+}
+
+function isNoteReference(
+  item: OjsDocxInline,
+): item is OjsDocxFootnoteReference | OjsDocxEndnoteReference {
+  return item.kind === 'footnoteReference' || item.kind === 'endnoteReference';
 }
 
 function extractParagraphText(body: string): string {
