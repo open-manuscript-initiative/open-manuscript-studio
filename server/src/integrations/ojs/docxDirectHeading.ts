@@ -53,7 +53,6 @@ function inferHeadingLevel(
   const text = paragraph.text.trim();
   if (!text || text.length > 160 || text.split(/\s+/).length > 18) return undefined;
 
-  // Long sentence-like paragraphs are not headings even when emphasis is used.
   if (/[.!?][”"')\]]?$/.test(text) && text.split(/\s+/).length > 7) return undefined;
 
   const enlargedBy =
@@ -70,14 +69,12 @@ function inferHeadingLevel(
   let score = 0;
   if (stronglyBold) score += 2;
   else if (moderatelyBold) score += 1;
-  if (enlargedBy >= 4) score += 2; // at least 2 pt larger than body text
-  if (enlargedBy >= 8) score += 1; // at least 4 pt larger
+  if (enlargedBy >= 4) score += 2;
+  if (enlargedBy >= 8) score += 1;
   if (centered) score += 1;
   if (separated) score += 1;
   if (/^[\p{Lu}\d][^.!?]{1,100}$/u.test(text)) score += 1;
 
-  // Require a genuinely typographic signal. Spacing/alignment alone is not
-  // sufficient because quotations and epigraphs often use those properties.
   if (!(moderatelyBold || enlargedBy >= 4) || score < 3) return undefined;
 
   const numbered = /^(\d+(?:\.\d+){0,5})[.)]?\s+\S/.exec(text);
@@ -138,14 +135,19 @@ function extractParagraphFormatting(xml: string): ParagraphFormatting[] {
       .map((run) => run.fontHalfPoints)
       .filter((value): value is number => value !== undefined);
 
-    result.push({
+    const format: ParagraphFormatting = {
       text,
       boldRatio: totalCharacters ? boldCharacters / totalCharacters : 0,
-      maxFontHalfPoints: sizes.length ? Math.max(...sizes) : readParagraphRunFontSize(body),
-      alignment: readElementValue(body, 'jc'),
-      spacingBefore: readNumericAttributeFromElement(body, 'spacing', 'before'),
-      spacingAfter: readNumericAttributeFromElement(body, 'spacing', 'after'),
-    });
+    };
+    const maxFontHalfPoints = sizes.length ? Math.max(...sizes) : readParagraphRunFontSize(body);
+    const alignment = readElementValue(body, 'jc');
+    const spacingBefore = readNumericAttributeFromElement(body, 'spacing', 'before');
+    const spacingAfter = readNumericAttributeFromElement(body, 'spacing', 'after');
+    if (maxFontHalfPoints !== undefined) format.maxFontHalfPoints = maxFontHalfPoints;
+    if (alignment !== undefined) format.alignment = alignment;
+    if (spacingBefore !== undefined) format.spacingBefore = spacingBefore;
+    if (spacingAfter !== undefined) format.spacingAfter = spacingAfter;
+    result.push(format);
   }
 
   return result;
@@ -165,11 +167,13 @@ function extractTextRuns(body: string): Array<{
     const text = extractText(run);
     if (!text) continue;
     const rPr = /<(?:[A-Za-z_][\w.-]*:)?rPr(?:\s[^>]*)?>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?rPr>/.exec(run)?.[1] ?? '';
-    runs.push({
+    const textRun: { text: string; bold: boolean; fontHalfPoints?: number } = {
       text,
       bold: readBooleanProperty(rPr, 'b'),
-      fontHalfPoints: readNumericElementValue(rPr, 'sz') ?? readNumericElementValue(rPr, 'szCs'),
-    });
+    };
+    const fontHalfPoints = readNumericElementValue(rPr, 'sz') ?? readNumericElementValue(rPr, 'szCs');
+    if (fontHalfPoints !== undefined) textRun.fontHalfPoints = fontHalfPoints;
+    runs.push(textRun);
   }
 
   return runs;
