@@ -109,13 +109,6 @@ jobs:
             npm test
             npm run build
 
-            cd server
-            npm ci
-            npm run prisma:generate
-            npm run typecheck
-            npm run prisma:migrate:deploy
-            cd ..
-
             rsync -a --delete \
               dist/ \
               /var/www/vhosts/openmanuscript.org/studio/httpdocs/
