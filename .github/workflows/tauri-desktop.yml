@@ -2,6 +2,14 @@ name: Tauri Desktop Builds
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Optional release tag, e.g. v0.1.0-alpha.1. Leave empty for build-only.'
+        required: false
+        type: string
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build-desktop:
@@ -74,3 +82,81 @@ jobs:
             src-tauri/target/**/release/bundle/**
             src-tauri/target/release/bundle/**
           if-no-files-found: error
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: build-desktop
+    if: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.release_tag != '' }}
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download desktop artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: open-manuscript-studio-*
+          path: release-input
+
+      - name: Prepare stable download filenames
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+
+          copy_first() {
+            local pattern="$1"
+            local output="$2"
+            local file
+            file="$(find release-input -type f -name "$pattern" -print -quit)"
+            if [ -z "$file" ]; then
+              echo "Missing release asset matching $pattern" >&2
+              exit 1
+            fi
+            cp "$file" "release-assets/$output"
+          }
+
+          copy_first '*.AppImage' 'Open-Manuscript-Studio-Linux-x64.AppImage'
+          copy_first '*.deb' 'Open-Manuscript-Studio-Linux-x64.deb'
+          copy_first '*.exe' 'Open-Manuscript-Studio-Windows-x64-Setup.exe'
+          copy_first '*.msi' 'Open-Manuscript-Studio-Windows-x64.msi'
+
+          arm_dmg="$(find release-input/open-manuscript-studio-macos-aarch64 -type f -name '*.dmg' -print -quit)"
+          intel_dmg="$(find release-input/open-manuscript-studio-macos-x86_64 -type f -name '*.dmg' -print -quit)"
+          test -n "$arm_dmg" && test -n "$intel_dmg"
+          cp "$arm_dmg" 'release-assets/Open-Manuscript-Studio-macOS-Apple-Silicon.dmg'
+          cp "$intel_dmg" 'release-assets/Open-Manuscript-Studio-macOS-Intel.dmg'
+
+          ls -lh release-assets
+
+      - name: Resolve release tag
+        id: release
+        shell: bash
+        env:
+          INPUT_TAG: ${{ inputs.release_tag }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            tag="${GITHUB_REF#refs/tags/}"
+          else
+            tag="$INPUT_TAG"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Create or update GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Open Manuscript Studio $RELEASE_TAG" \
+              --generate-notes
+          fi
+
+          gh release upload "$RELEASE_TAG" release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
