@@ -1,3 +1,8 @@
+import {
+  extractOmiInlineRuns,
+  type OmiInlineRun,
+  type OmiInlineSemanticKind,
+} from '../model/inlineSemantics';
 import { buildPublicationRenderingContext } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type { OmiManuscript } from '../types/omi';
@@ -25,8 +30,12 @@ export function buildLatexExport(manuscript: OmiManuscript): LatexExportResult {
       const command = sectionCommand(section.depth);
       body.push(`\\${command}{${latex(section.title)}}`);
       for (const block of section.blocks) {
-        const text = blockPlainText(block);
-        if (text) body.push(latex(text), '');
+        const runs = block.visual ? [] : extractOmiInlineRuns(block.content);
+        if (runs.length) body.push(renderLatexRuns(runs), '');
+        else {
+          const text = blockPlainText(block);
+          if (text) body.push(latex(text), '');
+        }
       }
       renderSections(section.children);
     }
@@ -55,6 +64,8 @@ export function buildLatexExport(manuscript: OmiManuscript): LatexExportResult {
     '\\usepackage{hyperref}',
     '\\usepackage{graphicx}',
     '\\usepackage{amsmath}',
+    '\\usepackage[normalem]{ulem}',
+    '\\usepackage{relsize}',
     `\\title{${title}}`,
     authors ? `\\author{${authors}}` : '\\author{}',
     '\\date{}',
@@ -73,6 +84,31 @@ export function buildLatexExport(manuscript: OmiManuscript): LatexExportResult {
   };
 }
 
+function renderLatexRuns(runs: readonly OmiInlineRun[]): string {
+  return runs.map((run) => {
+    if (run.text === '\n') return '\\\\ '; 
+    let value = latex(run.text);
+    for (const semantic of run.semantics) {
+      value = wrapSemantic(value, semantic);
+    }
+    if (run.link) value = `\\href{${latexUrl(run.link)}}{${value}}`;
+    return value;
+  }).join('');
+}
+
+function wrapSemantic(value: string, semantic: OmiInlineSemanticKind): string {
+  switch (semantic) {
+    case 'strong': return `\\textbf{${value}}`;
+    case 'emphasis': return `\\emph{${value}}`;
+    case 'strike': return `\\sout{${value}}`;
+    case 'underline': return `\\uline{${value}}`;
+    case 'small-caps': return `\\textsc{${value}}`;
+    case 'superscript': return `\\textsuperscript{${value}}`;
+    case 'subscript': return `\\textsubscript{${value}}`;
+    case 'code': return `\\texttt{${value}}`;
+  }
+}
+
 function sectionCommand(depth: number): string {
   if (depth <= 0) return 'section';
   if (depth === 1) return 'subsection';
@@ -87,4 +123,8 @@ function latex(value: string): string {
     .replace(/~/g, '\\textasciitilde{}')
     .replace(/\^/g, '\\textasciicircum{}')
     .replace(/\r?\n/g, '\\\\ ');
+}
+
+function latexUrl(value: string): string {
+  return value.replace(/([%#{}])/g, '\\$1');
 }
