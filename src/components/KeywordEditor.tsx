@@ -1,5 +1,6 @@
 import { Plus, X } from 'lucide-react';
 import {
+  useEffect,
   useMemo,
   useState,
   type KeyboardEvent,
@@ -26,6 +27,14 @@ export function KeywordEditor() {
     manuscript.locale,
   );
   const [draft, setDraft] = useState('');
+
+  useEffect(() => {
+    const primaryAbstract = manuscript.abstract ?? '';
+    const localizedPrimary = manuscript.abstracts?.[manuscript.locale] ?? '';
+    if (primaryAbstract !== localizedPrimary) {
+      setLocalizedAbstract(manuscript.locale, primaryAbstract);
+    }
+  }, [manuscript.abstract, manuscript.abstracts, manuscript.locale]);
 
   const locales = useMemo(() => {
     const values = new Set<string>([
