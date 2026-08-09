@@ -4,6 +4,7 @@ import {
   FileCode2,
   FileText,
   FileType2,
+  PanelsTopLeft,
   Printer,
   TabletSmartphone,
 } from 'lucide-react';
@@ -15,12 +16,13 @@ import { useTranslation } from '../i18n';
 import { buildDocxExport } from '../services/exportDocx';
 import { buildEpubExport } from '../services/exportEpub';
 import { renderHtmlArticle, htmlFileName } from '../services/exportHtml';
+import { buildIdmlExport } from '../services/exportIdml';
 import { renderJatsArticle, jatsFileName } from '../services/exportJats';
 import { downloadOmiJson } from '../services/exportOmi';
 import { buildOmiContainer } from '../services/omiContainer';
 import { openPdfPrintView } from '../services/exportPdf';
 
-type ExportId = 'omi' | 'omi-json' | 'jats' | 'html' | 'docx' | 'epub' | 'pdf';
+type ExportId = 'omi' | 'omi-json' | 'jats' | 'html' | 'docx' | 'idml' | 'epub' | 'pdf';
 
 export function ExportFormatsPanel() {
   const { locale } = useTranslation();
@@ -68,6 +70,11 @@ export function ExportFormatsPanel() {
           downloadBlob(result.blob, result.fileName);
           break;
         }
+        case 'idml': {
+          const result = buildIdmlExport(manuscript);
+          downloadBlob(result.blob, result.fileName);
+          break;
+        }
         case 'epub': {
           const result = buildEpubExport(manuscript);
           downloadBlob(result.blob, result.fileName);
@@ -102,6 +109,7 @@ export function ExportFormatsPanel() {
         <ExportCard icon={<FileCode2 size={19} aria-hidden="true" />} title={copy.jats} description={copy.jatsDescription} busy={busy === 'jats'} action={copy.export} preparing={copy.preparing} onClick={() => void run('jats')} />
         <ExportCard icon={<FileText size={19} aria-hidden="true" />} title={copy.html} description={copy.htmlDescription} busy={busy === 'html'} action={copy.export} preparing={copy.preparing} onClick={() => void run('html')} />
         <ExportCard icon={<FileType2 size={19} aria-hidden="true" />} title={copy.docx} description={copy.docxDescription} busy={busy === 'docx'} action={copy.export} preparing={copy.preparing} onClick={() => void run('docx')} />
+        <ExportCard icon={<PanelsTopLeft size={19} aria-hidden="true" />} title={copy.idml} description={copy.idmlDescription} busy={busy === 'idml'} action={copy.export} preparing={copy.preparing} onClick={() => void run('idml')} />
         <ExportCard icon={<TabletSmartphone size={19} aria-hidden="true" />} title={copy.epub} description={copy.epubDescription} busy={busy === 'epub'} action={copy.export} preparing={copy.preparing} onClick={() => void run('epub')} />
         <ExportCard icon={<Printer size={19} aria-hidden="true" />} title={copy.pdf} description={`${copy.pdfDescription} ${copy.pdfHint}`} busy={busy === 'pdf'} action={copy.export} preparing={copy.preparing} onClick={() => void run('pdf')} />
       </ExportGroup>
