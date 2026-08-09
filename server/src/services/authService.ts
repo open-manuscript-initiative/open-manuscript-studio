@@ -90,6 +90,11 @@ export async function getUserForSession(rawToken: string) {
   return session ? serializeUser(session.user) : null;
 }
 
+export async function getUserIdForSession(rawToken: string): Promise<string | null> {
+  const session = await getActiveSession(rawToken);
+  return session?.userId ?? null;
+}
+
 export async function updateUserForSession(
   rawToken: string,
   input: UpdateUserInput,
