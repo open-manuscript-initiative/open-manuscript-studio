@@ -10,7 +10,7 @@ import { RegisterPage } from './auth/RegisterPage';
 import { useStudioStore } from './app/useStudioStore';
 import { AppLayout } from './components/AppLayout';
 import { EditorPane } from './components/EditorPane';
-import { StudioMenu } from './components/StudioMenu';
+import { StudioMenuWithHelp } from './components/StudioMenuWithHelp';
 import {
   clearOjsLaunchPayload,
   readOjsLaunchPayload,
@@ -95,7 +95,7 @@ function StudioApplication() {
         <EditorPane />
       </div>
 
-      <StudioMenu
+      <StudioMenuWithHelp
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
       />
