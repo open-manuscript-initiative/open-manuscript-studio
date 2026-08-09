@@ -37,6 +37,18 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Install server dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Generate Prisma client
+        working-directory: server
+        run: npm run prisma:generate
+
+      - name: Typecheck server API
+        working-directory: server
+        run: npm run typecheck
+
       - name: Read package version
         id: package
         shell: bash
@@ -96,6 +108,13 @@ jobs:
             npm ci
             npm test
             npm run build
+
+            cd server
+            npm ci
+            npm run prisma:generate
+            npm run typecheck
+            npm run prisma:migrate:deploy
+            cd ..
 
             rsync -a --delete \
               dist/ \
