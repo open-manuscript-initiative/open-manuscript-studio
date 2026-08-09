@@ -24,8 +24,7 @@ peerReviewRouter.use(requireSession);
 
 const createAssignmentSchema = z.object({
   manuscriptId: z.string().min(1).max(128),
-  reviewerUserId: z.string().uuid(),
-  reviewerAlias: z.string().min(1).max(64),
+  reviewerEmail: z.string().email(),
   reviewRound: z.number().int().min(1).max(99).default(1),
 });
 
@@ -53,8 +52,7 @@ peerReviewRouter.post(
       const review = await createReviewAssignment(userId, {
         workspaceId,
         manuscriptId: parsed.manuscriptId,
-        reviewerUserId: parsed.reviewerUserId,
-        reviewerAlias: parsed.reviewerAlias,
+        reviewerEmail: parsed.reviewerEmail,
         reviewRound: parsed.reviewRound,
       });
       response.status(201).json({ review });
