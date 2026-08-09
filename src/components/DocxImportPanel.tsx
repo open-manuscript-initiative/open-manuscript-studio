@@ -14,10 +14,8 @@ import { applyDocxImportPlan } from '../app/docxImportActions';
 import { useTranslation } from '../i18n';
 import { getDocxImportCopy } from '../i18n/docxImport';
 import { getSectionDepth } from '../model/sectionStructure';
-import {
-  parseDocxManuscript,
-  type DocxManuscriptImportPlan,
-} from '../services/docxManuscriptImport';
+import { parseDocxManuscriptWithInlineSemantics } from '../services/docxInlineSemanticsImport';
+import type { DocxManuscriptImportPlan } from '../services/docxManuscriptImport';
 
 export function DocxImportPanel() {
   const { locale } = useTranslation();
@@ -36,7 +34,7 @@ export function DocxImportPanel() {
     setImported(false);
 
     try {
-      const nextPlan = await parseDocxManuscript(file);
+      const nextPlan = await parseDocxManuscriptWithInlineSemantics(file);
       setPlan(nextPlan);
       setImportAuthors(nextPlan.authors.length > 0);
     } catch (cause) {
