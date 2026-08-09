@@ -17,6 +17,14 @@ export interface ExportFormatCopy {
   docxDescription: string;
   idml: string;
   idmlDescription: string;
+  xtg: string;
+  xtgDescription: string;
+  mif: string;
+  mifDescription: string;
+  sla: string;
+  slaDescription: string;
+  latex: string;
+  latexDescription: string;
   epub: string;
   epubDescription: string;
   pdf: string;
@@ -45,6 +53,14 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     docxDescription: 'Szerkeszthető Word-dokumentum valódi címsorstílusokkal és a kézirat fő szerkezetével.',
     idml: 'Adobe InDesign (IDML)',
     idmlDescription: 'Szerkeszthető InDesign Markup Language csomag OMI bekezdésstílusokkal, fejezet-hierarchiával és kiadói tördeléshez alkalmas szövegstruktúrával.',
+    xtg: 'QuarkXPress (XPress Tags)',
+    xtgDescription: 'UTF-8 XPress Tags fájl QuarkXPress-importhoz, OMI cím- és bekezdésstílusokkal.',
+    mif: 'Adobe FrameMaker (MIF)',
+    mifDescription: 'Szerkeszthető Maker Interchange Format dokumentum FrameMaker munkafolyamatokhoz.',
+    sla: 'Scribus (SLA)',
+    slaDescription: 'Szerkeszthető Scribus dokumentum OMI bekezdésstílusokkal és folyamatos szövegkerettel.',
+    latex: 'LaTeX',
+    latexDescription: 'UTF-8 LaTeX forrás tudományos és automatizált TeX-alapú kiadói munkafolyamatokhoz.',
     epub: 'EPUB 3',
     epubDescription: 'Hordozható e-könyv kiadvány EPUB 3 csomagként.',
     pdf: 'PDF',
@@ -71,6 +87,14 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     docxDescription: 'Editable Word document with real heading styles and the core manuscript structure.',
     idml: 'Adobe InDesign (IDML)',
     idmlDescription: 'Editable InDesign Markup Language package with OMI paragraph styles, section hierarchy and publisher-oriented text structure.',
+    xtg: 'QuarkXPress (XPress Tags)',
+    xtgDescription: 'UTF-8 XPress Tags file for QuarkXPress import with OMI paragraph and heading styles.',
+    mif: 'Adobe FrameMaker (MIF)',
+    mifDescription: 'Editable Maker Interchange Format document for FrameMaker workflows.',
+    sla: 'Scribus (SLA)',
+    slaDescription: 'Editable Scribus document with OMI paragraph styles and a continuous text frame.',
+    latex: 'LaTeX',
+    latexDescription: 'UTF-8 LaTeX source for scientific and automated TeX-based publishing workflows.',
     epub: 'EPUB 3',
     epubDescription: 'Portable EPUB 3 ebook publication package.',
     pdf: 'PDF',
@@ -97,6 +121,14 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     docxDescription: 'Bearbeitbares Word-Dokument mit echten Überschriftenformatvorlagen und Manuskriptstruktur.',
     idml: 'Adobe InDesign (IDML)',
     idmlDescription: 'Bearbeitbares InDesign-Markup-Language-Paket mit OMI-Absatzformaten, Abschnittshierarchie und verlagsorientierter Textstruktur.',
+    xtg: 'QuarkXPress (XPress Tags)',
+    xtgDescription: 'UTF-8-XPress-Tags-Datei für den QuarkXPress-Import mit OMI-Absatz- und Überschriftenstilen.',
+    mif: 'Adobe FrameMaker (MIF)',
+    mifDescription: 'Bearbeitbares Maker-Interchange-Format-Dokument für FrameMaker-Workflows.',
+    sla: 'Scribus (SLA)',
+    slaDescription: 'Bearbeitbares Scribus-Dokument mit OMI-Absatzstilen und fortlaufendem Textrahmen.',
+    latex: 'LaTeX',
+    latexDescription: 'UTF-8-LaTeX-Quelle für wissenschaftliche und automatisierte TeX-Publikationsworkflows.',
     epub: 'EPUB 3',
     epubDescription: 'Portables E-Book als EPUB-3-Paket.',
     pdf: 'PDF',
