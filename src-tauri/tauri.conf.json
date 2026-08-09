@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Open Manuscript Studio",
+  "version": "0.1.0-alpha.1",
+  "identifier": "org.openmanuscript.studio",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Open Manuscript Studio",
+        "width": 1440,
+        "height": 920,
+        "minWidth": 960,
+        "minHeight": 640,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Productivity",
+    "shortDescription": "Portable scholarly manuscript authoring and publishing studio",
+    "longDescription": "Open Manuscript Studio is the reference authoring environment for portable, structured scholarly manuscripts using the Open Manuscript Initiative model."
+  }
+}
