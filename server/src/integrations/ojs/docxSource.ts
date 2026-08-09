@@ -23,6 +23,8 @@ export type OjsDocxInline =
 export interface OjsDocxParagraph {
   text: string;
   styleId?: string;
+  styleName?: string;
+  outlineLevel?: number;
   headingLevel?: number;
   inline?: OjsDocxInline[];
 }
@@ -45,6 +47,13 @@ export interface OjsSourceDocument {
   paragraphs: OjsDocxParagraph[];
   footnotes: OjsDocxFootnote[];
   endnotes: OjsDocxEndnote[];
+}
+
+interface WordStyle {
+  id: string;
+  name?: string;
+  basedOn?: string;
+  outlineLevel?: number;
 }
 
 export function parseDocxSource(
@@ -70,6 +79,14 @@ export function parseDocxSource(
   const endnotesPath =
     relationships.find((relationship) => relationship.type === 'endnotes')?.target ??
     'word/endnotes.xml';
+  const stylesPath =
+    relationships.find((relationship) => relationship.type === 'styles')?.target ??
+    'word/styles.xml';
+
+  const stylesXml = readZipEntry(buffer, stylesPath);
+  const styles = stylesXml
+    ? extractStyles(stylesXml.toString('utf8'))
+    : new Map<string, WordStyle>();
 
   const footnotesXml = readZipEntry(buffer, footnotesPath);
   const footnotes = footnotesXml
@@ -88,7 +105,11 @@ export function parseDocxSource(
 
   while ((paragraphMatch = paragraphPattern.exec(xml))) {
     const body = paragraphMatch[1] ?? '';
-    const styleId = /<(?:[A-Za-z_][\w.-]*:)?pStyle\b[^>]*\b(?:[A-Za-z_][\w.-]*:)?val\s*=\s*["']([^"']+)["'][^>]*\/?\s*>/.exec(body)?.[1];
+    const styleId = readElementValue(body, 'pStyle');
+    const directOutlineLevel = readOutlineLevel(body);
+    const resolvedStyle = styleId ? resolveStyle(styleId, styles) : undefined;
+    const styleName = resolvedStyle?.name;
+    const outlineLevel = directOutlineLevel ?? resolvedStyle?.outlineLevel;
     const inline = extractParagraphInline(body);
     const text = inline
       .filter((item): item is OjsDocxInlineText => item.kind === 'text')
@@ -100,7 +121,16 @@ export function parseDocxSource(
 
     const paragraph: OjsDocxParagraph = { text };
     if (styleId !== undefined) paragraph.styleId = styleId;
-    const headingLevel = headingLevelFromStyleId(styleId);
+    if (styleName !== undefined) paragraph.styleName = styleName;
+    if (outlineLevel !== undefined) paragraph.outlineLevel = outlineLevel;
+
+    const headingLevel = headingLevelFromWordParagraph(
+      styleId,
+      styleName,
+      outlineLevel,
+      resolvedStyle,
+      styles,
+    );
     if (headingLevel !== undefined) paragraph.headingLevel = headingLevel;
     if (inline.some(isNoteReference)) paragraph.inline = inline;
     paragraphs.push(paragraph);
@@ -122,7 +152,7 @@ export function parseDocxSource(
 }
 
 interface DocumentRelationship {
-  type: 'footnotes' | 'endnotes';
+  type: 'footnotes' | 'endnotes' | 'styles';
   target: string;
 }
 
@@ -145,7 +175,9 @@ function extractRelationships(
       ? 'footnotes'
       : type.endsWith('/endnotes')
         ? 'endnotes'
-        : null;
+        : type.endsWith('/styles')
+          ? 'styles'
+          : null;
     if (!relationshipType) continue;
 
     relationships.push({
@@ -157,8 +189,126 @@ function extractRelationships(
   return relationships;
 }
 
+function extractStyles(xml: string): Map<string, WordStyle> {
+  const styles = new Map<string, WordStyle>();
+  const stylePattern = /<(?:[A-Za-z_][\w.-]*:)?style\b([^>]*)>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?style>/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = stylePattern.exec(xml))) {
+    const attributes = match[1] ?? '';
+    const body = match[2] ?? '';
+    const type = readXmlAttribute(attributes, 'type');
+    if (type && type.toLowerCase() !== 'paragraph') continue;
+
+    const id = readXmlAttribute(attributes, 'styleId');
+    if (!id) continue;
+
+    const style: WordStyle = { id };
+    const name = readElementValue(body, 'name');
+    const basedOn = readElementValue(body, 'basedOn');
+    const outlineLevel = readOutlineLevel(body);
+    if (name) style.name = name;
+    if (basedOn) style.basedOn = basedOn;
+    if (outlineLevel !== undefined) style.outlineLevel = outlineLevel;
+    styles.set(id, style);
+  }
+
+  return styles;
+}
+
+function resolveStyle(
+  styleId: string,
+  styles: Map<string, WordStyle>,
+): WordStyle | undefined {
+  const original = styles.get(styleId);
+  if (!original) return undefined;
+
+  const resolved: WordStyle = { ...original };
+  const visited = new Set<string>([styleId]);
+  let current = original;
+
+  while (current.basedOn && !visited.has(current.basedOn)) {
+    visited.add(current.basedOn);
+    const parent = styles.get(current.basedOn);
+    if (!parent) break;
+    if (!resolved.name && parent.name) resolved.name = parent.name;
+    if (resolved.outlineLevel === undefined && parent.outlineLevel !== undefined) {
+      resolved.outlineLevel = parent.outlineLevel;
+    }
+    current = parent;
+  }
+
+  return resolved;
+}
+
+function headingLevelFromWordParagraph(
+  styleId: string | undefined,
+  styleName: string | undefined,
+  outlineLevel: number | undefined,
+  resolvedStyle: WordStyle | undefined,
+  styles: Map<string, WordStyle>,
+): number | undefined {
+  if (
+    outlineLevel !== undefined &&
+    Number.isInteger(outlineLevel) &&
+    outlineLevel >= 0 &&
+    outlineLevel <= 8
+  ) {
+    return outlineLevel + 1;
+  }
+
+  const direct = headingLevelFromStyleLabel(styleId) ?? headingLevelFromStyleLabel(styleName);
+  if (direct !== undefined) return direct;
+
+  const visited = new Set<string>();
+  let basedOn = resolvedStyle?.basedOn;
+  while (basedOn && !visited.has(basedOn)) {
+    visited.add(basedOn);
+    const level = headingLevelFromStyleLabel(basedOn);
+    if (level !== undefined) return level;
+    const parent = styles.get(basedOn);
+    if (!parent) break;
+    const parentLevel =
+      (parent.outlineLevel !== undefined && parent.outlineLevel >= 0 && parent.outlineLevel <= 8)
+        ? parent.outlineLevel + 1
+        : headingLevelFromStyleLabel(parent.name);
+    if (parentLevel !== undefined) return parentLevel;
+    basedOn = parent.basedOn;
+  }
+
+  return undefined;
+}
+
+function headingLevelFromStyleLabel(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const normalized = value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+  const match = /(?:heading|head|uberschrift|cimsor)\s*[_-]?\s*([1-9])/i.exec(normalized);
+  return match?.[1] ? Number(match[1]) : undefined;
+}
+
+function readElementValue(xml: string, elementName: string): string | undefined {
+  const pattern = new RegExp(
+    `<(?:[A-Za-z_][\\w.-]*:)?${elementName}\\b[^>]*\\b(?:[A-Za-z_][\\w.-]*:)?val\\s*=\\s*["']([^"']+)["'][^>]*\\/?\\s*>`,
+    'i',
+  );
+  return pattern.exec(xml)?.[1];
+}
+
+function readOutlineLevel(xml: string): number | undefined {
+  const raw = readElementValue(xml, 'outlineLvl');
+  if (raw === undefined || !/^\d+$/.test(raw)) return undefined;
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 0 && value <= 8 ? value : undefined;
+}
+
 function readXmlAttribute(attributes: string, name: string): string | undefined {
-  const match = new RegExp(`\\b${name}\\s*=\\s*["']([^"']+)["']`, 'i').exec(attributes);
+  const match = new RegExp(
+    `(?:^|\\s)(?:[A-Za-z_][\\w.-]*:)?${name}\\s*=\\s*["']([^"']+)["']`,
+    'i',
+  ).exec(attributes);
   return match?.[1];
 }
 
@@ -267,12 +417,6 @@ function extractParagraphText(body: string): string {
     .join('')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n[ \t]+/g, '\n');
-}
-
-function headingLevelFromStyleId(styleId: string | undefined): number | undefined {
-  if (!styleId) return undefined;
-  const match = /(?:heading|überschrift|uberschrift|címsor|cimsor)[_-]?([1-9])/i.exec(styleId);
-  return match?.[1] ? Number(match[1]) : undefined;
 }
 
 function decodeXml(value: string): string {
