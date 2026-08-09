@@ -32,16 +32,8 @@
   color: #667085;
 }
 
-.omi-notes-empty p {
-  margin: 0.35rem 0 0;
-  color: #344054;
-  font-weight: 650;
-}
-
-.omi-notes-empty small {
-  max-width: 34rem;
-  line-height: 1.5;
-}
+.omi-notes-empty p { margin: 0.35rem 0 0; color: #344054; font-weight: 650; }
+.omi-notes-empty small { max-width: 34rem; line-height: 1.5; }
 
 .omi-note-editor-card {
   display: grid;
@@ -67,14 +59,8 @@
   align-items: center;
 }
 
-.omi-note-editor-header {
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.omi-note-editor-header > div {
-  gap: 0.6rem;
-}
+.omi-note-editor-header { justify-content: space-between; gap: 0.75rem; }
+.omi-note-editor-header > div { gap: 0.6rem; }
 
 .omi-note-number {
   display: inline-flex;
@@ -101,25 +87,16 @@
   cursor: pointer;
 }
 
-.omi-note-icon-button:hover {
-  background: #eaecf0;
-}
+.omi-note-icon-button:hover { background: #eaecf0; }
 
-.omi-note-field {
-  display: grid;
-  gap: 0.35rem;
-}
+.omi-note-field { display: grid; gap: 0.35rem; }
+.omi-note-field > span { color: #475467; font-size: 0.82rem; font-weight: 650; }
 
-.omi-note-field > span {
-  color: #475467;
-  font-size: 0.82rem;
-  font-weight: 650;
-}
-
-.omi-note-field select,
-.omi-note-field textarea {
+.omi-note-field select {
   width: 100%;
+  min-height: 2.5rem;
   box-sizing: border-box;
+  padding: 0 0.65rem;
   border: 1px solid #d0d5dd;
   border-radius: 0.55rem;
   background: #fff;
@@ -127,77 +104,50 @@
   font: inherit;
 }
 
-.omi-note-field select {
-  min-height: 2.5rem;
-  padding: 0 0.65rem;
+.omi-note-rich-body {
+  display: grid;
+  gap: 0.55rem;
 }
 
-.omi-note-field textarea {
+.omi-note-rich-editor {
   min-height: 7rem;
-  resize: vertical;
+  box-sizing: border-box;
   padding: 0.7rem;
-  line-height: 1.5;
-}
-
-.omi-note-editor-card--compact .omi-note-field textarea {
-  min-height: 5.5rem;
-}
-
-.omi-note-citations {
-  display: grid;
-  gap: 0.7rem;
-  padding: 0.8rem;
-  border: 1px solid #e4e7ec;
-  border-radius: 0.7rem;
-  background: #f9fafb;
-}
-
-.omi-note-citations-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.omi-note-citations-header > div {
-  min-width: 0;
-}
-
-.omi-note-citations-header p,
-.omi-note-citation-empty {
-  margin: 0.25rem 0 0;
-  color: #667085;
-  font-size: 0.78rem;
-  line-height: 1.45;
-}
-
-.omi-note-citation-list {
-  display: grid;
-  gap: 0.45rem;
-  margin: 0;
-  padding-left: 1.4rem;
-}
-
-.omi-note-citation-list li {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.55rem;
-  border: 1px solid #eaecf0;
+  border: 1px solid #d0d5dd;
   border-radius: 0.55rem;
   background: #fff;
+  color: #101828;
+  line-height: 1.55;
+  outline: none;
 }
 
-.omi-note-citation-list li > span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-size: 0.88rem;
-  line-height: 1.45;
+.omi-note-editor-card--compact .omi-note-rich-editor { min-height: 5.5rem; }
+.omi-note-rich-editor:focus { border-color: #98a2b3; box-shadow: 0 0 0 3px rgba(152, 162, 179, 0.18); }
+.omi-note-rich-editor p { margin: 0 0 0.65rem; }
+.omi-note-rich-editor p:last-child { margin-bottom: 0; }
+
+.omi-note-rich-editor .omi-citation {
+  display: inline;
+  padding: 0.08em 0.28em;
+  border-radius: 0.3em;
+  background: #eef2f6;
+  color: #344054;
+  cursor: default;
+  white-space: normal;
 }
 
-.omi-note-citation-list .is-unresolved {
-  color: #b42318;
+.omi-note-rich-editor .omi-citation.ProseMirror-selectednode {
+  outline: 2px solid #667085;
+  outline-offset: 2px;
+}
+
+.omi-note-rich-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.omi-note-rich-body > .omi-citation-picker {
+  margin-top: 0.15rem;
 }
 
 .omi-note-meta {
@@ -246,19 +196,8 @@
 }
 
 @media (max-width: 640px) {
-  .omi-note-editor-card {
-    padding: 0.85rem;
-  }
-
-  .omi-note-actions,
-  .omi-note-citations-header {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
+  .omi-note-editor-card { padding: 0.85rem; }
+  .omi-note-actions { align-items: stretch; flex-direction: column; }
   .omi-note-actions button,
-  .omi-note-citations-header > button {
-    justify-content: center;
-    width: 100%;
-  }
+  .omi-note-rich-actions button { justify-content: center; width: 100%; }
 }
