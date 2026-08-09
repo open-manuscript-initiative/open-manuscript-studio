@@ -10,6 +10,7 @@ import {
   parseDetectedAuthors,
   parseWordCitationInstruction,
   parseWordHyperlinkInstruction,
+  wordCharacterStyleSemantics,
 } from '../src/model/docxImport.ts';
 
 test('recognizes Word heading levels from built-in and localized style names', () => {
@@ -17,6 +18,15 @@ test('recognizes Word heading levels from built-in and localized style names', (
   assert.equal(headingLevelFromStyle(undefined, 'Címsor 3', undefined), 3);
   assert.equal(headingLevelFromStyle(undefined, 'Überschrift 4', undefined), 4);
   assert.equal(headingLevelFromStyle(undefined, 'Normal', 1), 2);
+});
+
+test('recognizes Word character styles as portable inline semantics', () => {
+  assert.deepEqual(wordCharacterStyleSemantics('Emphasis', 'Emphasis'), ['emphasis']);
+  assert.deepEqual(wordCharacterStyleSemantics('Strong', 'Strong'), ['strong']);
+  assert.deepEqual(wordCharacterStyleSemantics('Dolt', 'Dőlt'), ['emphasis']);
+  assert.deepEqual(wordCharacterStyleSemantics('Felkover', 'Félkövér'), ['strong']);
+  assert.deepEqual(wordCharacterStyleSemantics('Kiskapitalis', 'Kiskapitális'), ['small-caps']);
+  assert.deepEqual(wordCharacterStyleSemantics('Underline', 'Aláhúzott'), ['underline']);
 });
 
 test('derives stable parent relationships from heading depth changes', () => {
