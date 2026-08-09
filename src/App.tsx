@@ -18,6 +18,12 @@ import {
 import {
   createManuscriptFromOjsLaunch,
 } from './integrations/ojs/importOjsLaunchLocalized';
+import {
+  isNativeStudio,
+  openLocalManuscript,
+  saveLocalManuscript,
+  saveLocalManuscriptAs,
+} from './services/nativeManuscriptFile';
 
 import './styles/auth.css';
 import './styles/history.css';
@@ -87,6 +93,36 @@ function StudioApplication() {
         `${url.pathname}${url.search}${url.hash}`,
       );
     }
+  }, [loadManuscript]);
+
+  useEffect(() => {
+    if (!isNativeStudio()) return;
+
+    const handleNativeFileShortcut = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+
+      const key = event.key.toLowerCase();
+      if (key !== 's' && key !== 'o') return;
+
+      event.preventDefault();
+
+      if (key === 'o') {
+        void openLocalManuscript().then((result) => {
+          if (result) loadManuscript(result.manuscript);
+        });
+        return;
+      }
+
+      const manuscript = useStudioStore.getState().manuscript;
+      if (event.shiftKey) {
+        void saveLocalManuscriptAs(manuscript);
+      } else {
+        void saveLocalManuscript(manuscript);
+      }
+    };
+
+    window.addEventListener('keydown', handleNativeFileShortcut);
+    return () => window.removeEventListener('keydown', handleNativeFileShortcut);
   }, [loadManuscript]);
 
   return (
