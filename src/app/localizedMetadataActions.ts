@@ -1,18 +1,23 @@
+import { getExternalIdentifierValue } from '../model/identity';
 import { normalizeKeywords } from '../model/keywords';
 import { extractManuscriptState } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';
-import type { OmiLocale, OmiManuscript } from '../types/omi';
-import { getExternalIdentifierValue } from '../model/identity';
 import {
   getCurrentUser,
   useAuthStore,
 } from '../store/authStore';
+import type { OmiLocale, OmiManuscript } from '../types/omi';
 import { useStudioStore } from './useStudioStore';
+
+const METADATA_CHECKPOINT_DELAY_MS = 2500;
+let metadataCheckpointTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function setLocalizedAbstract(
   locale: OmiLocale,
   abstractText: string,
 ): void {
+  let changed = false;
+
   useStudioStore.setState((state) => {
     const current = state.manuscript.abstracts?.[locale] ??
       (locale === state.manuscript.locale ? state.manuscript.abstract ?? '' : '');
@@ -44,17 +49,20 @@ export function setLocalizedAbstract(
       },
     );
 
+    changed = true;
     return {
       manuscript: {
         ...state.manuscript,
         ...portableState,
         abstracts,
-        abstract: isPrimary ? abstractText : state.manuscript.abstract,
+        abstract: isPrimary ? abstractText : (state.manuscript.abstract ?? ''),
         updatedAt: timestamp,
       },
       pendingChangeSet,
     };
   });
+
+  if (changed) scheduleMetadataCheckpoint();
 }
 
 export function setLocalizedKeywords(
@@ -62,6 +70,7 @@ export function setLocalizedKeywords(
   keywords: string[],
 ): void {
   const normalized = normalizeKeywords(keywords);
+  let changed = false;
 
   useStudioStore.setState((state) => {
     const current = state.manuscript.keywordsByLocale?.[locale] ??
@@ -94,6 +103,7 @@ export function setLocalizedKeywords(
       },
     );
 
+    changed = true;
     return {
       manuscript: {
         ...state.manuscript,
@@ -105,6 +115,19 @@ export function setLocalizedKeywords(
       pendingChangeSet,
     };
   });
+
+  if (changed) scheduleMetadataCheckpoint();
+}
+
+function scheduleMetadataCheckpoint(): void {
+  if (metadataCheckpointTimer !== null) {
+    clearTimeout(metadataCheckpointTimer);
+  }
+
+  metadataCheckpointTimer = setTimeout(() => {
+    metadataCheckpointTimer = null;
+    useStudioStore.getState().checkpoint('idle');
+  }, METADATA_CHECKPOINT_DELAY_MS);
 }
 
 function primaryAbstractMap(
