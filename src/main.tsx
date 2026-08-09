@@ -22,6 +22,7 @@ import './styles/citation-system.css';
 import './styles/reference-lookup.css';
 import './styles/csl-rendering.css';
 import './styles/visual-elements.css';
+import './styles/insert-menu-opaque.css';
 import './styles/cross-references.css';
 import './styles/ror-affiliation.css';
 import './styles/orcid-lookup.css';
