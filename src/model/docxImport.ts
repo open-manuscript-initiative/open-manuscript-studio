@@ -38,6 +38,40 @@ export interface DocxImportStats {
   warnings: number;
 }
 
+export type DocxInlineSemantic =
+  | 'strong'
+  | 'emphasis'
+  | 'strike'
+  | 'underline'
+  | 'small-caps'
+  | 'superscript'
+  | 'subscript'
+  | 'code';
+
+export function wordCharacterStyleSemantics(
+  styleId: string | undefined,
+  styleName: string | undefined,
+): DocxInlineSemantic[] {
+  const value = [styleId, styleName]
+    .filter((item): item is string => Boolean(item?.trim()))
+    .join(' ')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  if (!value) return [];
+
+  const result: DocxInlineSemantic[] = [];
+  if (/(?:^|\W)(?:strong|bold|fett|felkover)(?:\W|$)/.test(value)) result.push('strong');
+  if (/(?:emphasis|emphasized|italic|italics|kursiv|dolt)/.test(value)) result.push('emphasis');
+  if (/(?:small\s*caps?|smallcaps|kiskapitalis|kapitalchen)/.test(value)) result.push('small-caps');
+  if (/(?:underline|underlined|unterstrichen|alahuz)/.test(value)) result.push('underline');
+  if (/(?:strikethrough|strike|durchgestrichen|athuz)/.test(value)) result.push('strike');
+  if (/(?:superscript|hochgestellt|felso\s*index)/.test(value)) result.push('superscript');
+  if (/(?:subscript|tiefgestellt|also\s*index)/.test(value)) result.push('subscript');
+  if (/(?:source\s*code|inline\s*code|monospace|code|quellcode|kod)/.test(value)) result.push('code');
+  return Array.from(new Set(result));
+}
+
 export function headingLevelFromStyle(
   styleId: string | undefined,
   styleName: string | undefined,
