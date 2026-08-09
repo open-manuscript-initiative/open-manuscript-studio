@@ -37,6 +37,59 @@ interface SourceDocumentDiagnostics {
   observedOutlineLevels: number[];
 }
 
+interface KeywordDiagnostics {
+  submissionPresent: boolean;
+  primaryLocale: string | null;
+  keywordsPresent: boolean;
+  keywordsType: string;
+  localeKeys: string[];
+  localeShapes: Record<string, string>;
+  localeCounts: Record<string, number>;
+}
+
+function summarizeKeywords(submission: unknown): KeywordDiagnostics {
+  const empty: KeywordDiagnostics = {
+    submissionPresent: false,
+    primaryLocale: null,
+    keywordsPresent: false,
+    keywordsType: 'missing',
+    localeKeys: [],
+    localeShapes: {},
+    localeCounts: {},
+  };
+
+  if (!submission || typeof submission !== 'object') return empty;
+  const record = submission as Record<string, unknown>;
+  const keywords = record.keywords;
+  const result: KeywordDiagnostics = {
+    ...empty,
+    submissionPresent: true,
+    primaryLocale: typeof record.primaryLocale === 'string' ? record.primaryLocale : null,
+    keywordsPresent: keywords !== undefined && keywords !== null,
+    keywordsType: Array.isArray(keywords) ? 'array' : keywords === null ? 'null' : typeof keywords,
+  };
+
+  if (!keywords || typeof keywords !== 'object' || Array.isArray(keywords)) {
+    return result;
+  }
+
+  const locales = Object.entries(keywords as Record<string, unknown>);
+  result.localeKeys = locales.map(([locale]) => locale).sort();
+  for (const [locale, value] of locales) {
+    if (Array.isArray(value)) {
+      result.localeShapes[locale] = 'array';
+      result.localeCounts[locale] = value.length;
+    } else if (value && typeof value === 'object') {
+      result.localeShapes[locale] = 'object';
+      result.localeCounts[locale] = Object.keys(value as Record<string, unknown>).length;
+    } else {
+      result.localeShapes[locale] = value === null ? 'null' : typeof value;
+      result.localeCounts[locale] = typeof value === 'string' && value.trim() ? 1 : 0;
+    }
+  }
+  return result;
+}
+
 function summarizeSourceDocument(source: unknown): SourceDocumentDiagnostics {
   const empty: SourceDocumentDiagnostics = {
     present: false,
@@ -178,6 +231,9 @@ integrationRouter.get(
         payload,
         signature,
       );
+
+      const keywordDiagnostics = summarizeKeywords(ojsData.submission);
+      console.info('[OMI OJS import] keyword metadata', keywordDiagnostics);
 
       const sourceDiagnostics = summarizeSourceDocument(ojsData.sourceDocument);
       console.info('[OMI OJS import] source document loaded', sourceDiagnostics);
