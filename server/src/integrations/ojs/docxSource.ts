@@ -53,29 +53,42 @@ export function parseDocxSource(
   fileName: string,
   mediaType: string,
 ): OjsSourceDocument {
-  const documentXml = readZipEntry(buffer, 'word/document.xml');
+  const documentPath = 'word/document.xml';
+  const documentXml = readZipEntry(buffer, documentPath);
   if (!documentXml) {
     throw new Error('The transferred DOCX does not contain word/document.xml.');
   }
 
-  const footnotesXml = readZipEntry(buffer, 'word/footnotes.xml');
+  const relationshipsXml = readZipEntry(buffer, 'word/_rels/document.xml.rels');
+  const relationships = relationshipsXml
+    ? extractRelationships(relationshipsXml.toString('utf8'), documentPath)
+    : [];
+
+  const footnotesPath =
+    relationships.find((relationship) => relationship.type === 'footnotes')?.target ??
+    'word/footnotes.xml';
+  const endnotesPath =
+    relationships.find((relationship) => relationship.type === 'endnotes')?.target ??
+    'word/endnotes.xml';
+
+  const footnotesXml = readZipEntry(buffer, footnotesPath);
   const footnotes = footnotesXml
     ? extractNotes(footnotesXml.toString('utf8'), 'footnote')
     : [];
 
-  const endnotesXml = readZipEntry(buffer, 'word/endnotes.xml');
+  const endnotesXml = readZipEntry(buffer, endnotesPath);
   const endnotes = endnotesXml
     ? extractNotes(endnotesXml.toString('utf8'), 'endnote')
     : [];
 
   const xml = documentXml.toString('utf8');
   const paragraphs: OjsDocxParagraph[] = [];
-  const paragraphPattern = /<w:p(?:\s[^>]*)?>([\s\S]*?)<\/w:p>/g;
+  const paragraphPattern = /<(?:[A-Za-z_][\w.-]*:)?p(?:\s[^>]*)?>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?p>/g;
   let paragraphMatch: RegExpExecArray | null;
 
   while ((paragraphMatch = paragraphPattern.exec(xml))) {
     const body = paragraphMatch[1] ?? '';
-    const styleId = /<w:pStyle\b[^>]*\bw:val=["']([^"']+)["'][^>]*\/?\s*>/.exec(body)?.[1];
+    const styleId = /<(?:[A-Za-z_][\w.-]*:)?pStyle\b[^>]*\b(?:[A-Za-z_][\w.-]*:)?val\s*=\s*["']([^"']+)["'][^>]*\/?\s*>/.exec(body)?.[1];
     const inline = extractParagraphInline(body);
     const text = inline
       .filter((item): item is OjsDocxInlineText => item.kind === 'text')
@@ -108,6 +121,69 @@ export function parseDocxSource(
   };
 }
 
+interface DocumentRelationship {
+  type: 'footnotes' | 'endnotes';
+  target: string;
+}
+
+function extractRelationships(
+  xml: string,
+  sourcePath: string,
+): DocumentRelationship[] {
+  const relationships: DocumentRelationship[] = [];
+  const pattern = /<(?:[A-Za-z_][\w.-]*:)?Relationship\b([^>]*?)\/?\s*>/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(xml))) {
+    const attributes = match[1] ?? '';
+    const type = readXmlAttribute(attributes, 'Type');
+    const target = readXmlAttribute(attributes, 'Target');
+    const targetMode = readXmlAttribute(attributes, 'TargetMode');
+    if (!type || !target || targetMode?.toLowerCase() === 'external') continue;
+
+    const relationshipType = type.endsWith('/footnotes')
+      ? 'footnotes'
+      : type.endsWith('/endnotes')
+        ? 'endnotes'
+        : null;
+    if (!relationshipType) continue;
+
+    relationships.push({
+      type: relationshipType,
+      target: resolvePackagePartPath(sourcePath, target),
+    });
+  }
+
+  return relationships;
+}
+
+function readXmlAttribute(attributes: string, name: string): string | undefined {
+  const match = new RegExp(`\\b${name}\\s*=\\s*["']([^"']+)["']`, 'i').exec(attributes);
+  return match?.[1];
+}
+
+function resolvePackagePartPath(sourcePath: string, target: string): string {
+  if (target.startsWith('/')) return normalizePackagePath(target.slice(1));
+
+  const sourceDirectory = sourcePath.includes('/')
+    ? sourcePath.slice(0, sourcePath.lastIndexOf('/') + 1)
+    : '';
+  return normalizePackagePath(`${sourceDirectory}${target}`);
+}
+
+function normalizePackagePath(value: string): string {
+  const parts: string[] = [];
+  for (const part of value.replace(/\\/g, '/').split('/')) {
+    if (!part || part === '.') continue;
+    if (part === '..') {
+      parts.pop();
+      continue;
+    }
+    parts.push(part);
+  }
+  return parts.join('/');
+}
+
 function extractNotes(
   xml: string,
   kind: 'footnote' | 'endnote',
@@ -115,7 +191,7 @@ function extractNotes(
   const notes: Array<{ id: string; text: string }> = [];
   const elementName = kind === 'footnote' ? 'footnote' : 'endnote';
   const pattern = new RegExp(
-    `<w:${elementName}\\b([^>]*)>([\\s\\S]*?)<\\/w:${elementName}>`,
+    `<(?:[A-Za-z_][\\w.-]*:)?${elementName}\\b([^>]*)>([\\s\\S]*?)<\\/(?:[A-Za-z_][\\w.-]*:)?${elementName}>`,
     'g',
   );
   let match: RegExpExecArray | null;
@@ -123,11 +199,11 @@ function extractNotes(
   while ((match = pattern.exec(xml))) {
     const attributes = match[1] ?? '';
     const body = match[2] ?? '';
-    const id = /\bw:id\s*=\s*["'](-?\d+)["']/.exec(attributes)?.[1];
+    const id = /\b(?:[A-Za-z_][\w.-]*:)?id\s*=\s*["'](-?\d+)["']/.exec(attributes)?.[1];
     if (!id || Number(id) < 1) continue;
 
     const paragraphs: string[] = [];
-    const paragraphPattern = /<w:p(?:\s[^>]*)?>([\s\S]*?)<\/w:p>/g;
+    const paragraphPattern = /<(?:[A-Za-z_][\w.-]*:)?p(?:\s[^>]*)?>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?p>/g;
     let paragraphMatch: RegExpExecArray | null;
     while ((paragraphMatch = paragraphPattern.exec(body))) {
       const text = extractParagraphText(paragraphMatch[1] ?? '').trim();
@@ -143,7 +219,7 @@ function extractNotes(
 
 function extractParagraphInline(body: string): OjsDocxInline[] {
   const parts: OjsDocxInline[] = [];
-  const tokenPattern = /<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>|<w:footnoteReference\b[^>]*\bw:id\s*=\s*["'](-?\d+)["'][^>]*\/?\s*>|<w:endnoteReference\b[^>]*\bw:id\s*=\s*["'](-?\d+)["'][^>]*\/?\s*>|<w:tab\b[^>]*\/?\s*>|<w:br\b[^>]*\/?\s*>|<w:cr\b[^>]*\/?\s*>/g;
+  const tokenPattern = /<(?:[A-Za-z_][\w.-]*:)?t(?:\s[^>]*)?>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?t>|<(?:[A-Za-z_][\w.-]*:)?footnoteReference\b[^>]*\b(?:[A-Za-z_][\w.-]*:)?id\s*=\s*["'](-?\d+)["'][^>]*\/?\s*>|<(?:[A-Za-z_][\w.-]*:)?endnoteReference\b[^>]*\b(?:[A-Za-z_][\w.-]*:)?id\s*=\s*["'](-?\d+)["'][^>]*\/?\s*>|<(?:[A-Za-z_][\w.-]*:)?tab\b[^>]*\/?\s*>|<(?:[A-Za-z_][\w.-]*:)?br\b[^>]*\/?\s*>|<(?:[A-Za-z_][\w.-]*:)?cr\b[^>]*\/?\s*>/g;
   let match: RegExpExecArray | null;
 
   const pushText = (text: string) => {
@@ -171,7 +247,7 @@ function extractParagraphInline(body: string): OjsDocxInline[] {
       }
       continue;
     }
-    if (token.startsWith('<w:tab')) pushText('\t');
+    if (/<(?:[A-Za-z_][\w.-]*:)?tab\b/.test(token)) pushText('\t');
     else pushText('\n');
   }
 
@@ -211,6 +287,7 @@ function decodeXml(value: string): string {
 }
 
 function readZipEntry(buffer: Buffer, wantedName: string): Buffer | null {
+  const normalizedWantedName = normalizePackagePath(wantedName);
   const eocdOffset = findEndOfCentralDirectory(buffer);
   if (eocdOffset < 0) throw new Error('Invalid DOCX ZIP container.');
 
@@ -231,7 +308,7 @@ function readZipEntry(buffer: Buffer, wantedName: string): Buffer | null {
     const localHeaderOffset = buffer.readUInt32LE(offset + 42);
     const fileName = buffer.subarray(offset + 46, offset + 46 + fileNameLength).toString('utf8');
 
-    if (fileName === wantedName) {
+    if (normalizePackagePath(fileName) === normalizedWantedName) {
       return inflateEntry(
         buffer,
         localHeaderOffset,
