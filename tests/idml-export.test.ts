@@ -4,8 +4,23 @@ import test from 'node:test';
 import { buildIdmlExport, IDML_MEDIA_TYPE } from '../src/services/exportIdml.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
 
-test('builds an IDML package with design map, story, styles and spread', () => {
+test('builds an IDML package with paragraph and character styles', () => {
   const manuscript = createVersionedTestManuscript();
+  const block = manuscript.sections[0]?.blocks[0];
+  if (block) {
+    block.content = JSON.stringify({
+      type: 'doc',
+      content: [{
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Normal ' },
+          { type: 'text', text: 'emphasis', marks: [{ type: 'italic' }] },
+          { type: 'text', text: ' strong emphasis', marks: [{ type: 'bold' }, { type: 'italic' }] },
+        ],
+      }],
+    });
+  }
+
   const result = buildIdmlExport(manuscript);
   const entries = readStoreZipEntries(result.bytes);
 
@@ -19,6 +34,13 @@ test('builds an IDML package with design map, story, styles and spread', () => {
   const story = new TextDecoder().decode(entries.get('Stories/Story_u3.xml'));
   assert.match(story, /AppliedParagraphStyle="ParagraphStyle\/OMI Title"/);
   assert.match(story, /AppliedParagraphStyle="ParagraphStyle\/OMI Heading 1"/);
+  assert.match(story, /AppliedCharacterStyle="CharacterStyle\/OMI Emphasis"/);
+  assert.match(story, /AppliedCharacterStyle="CharacterStyle\/OMI Strong Emphasis"/);
+
+  const styles = new TextDecoder().decode(entries.get('Resources/Styles.xml'));
+  assert.match(styles, /Name="OMI Emphasis"/);
+  assert.match(styles, /Name="OMI Strong"/);
+  assert.match(styles, /Name="OMI Small Caps"/);
 
   const spread = new TextDecoder().decode(entries.get('Spreads/Spread_u2.xml'));
   assert.match(spread, /ParentStory="u3"/);
