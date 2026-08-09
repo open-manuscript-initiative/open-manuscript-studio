@@ -24,9 +24,14 @@ interface CharacterStyle {
   semantics: DocxInlineSemantic[];
 }
 
+interface TiptapMark {
+  type: string;
+  attrs?: Record<string, unknown>;
+}
+
 interface WordRunSegment {
   text: string;
-  marks: Array<{ type: string; attrs?: Record<string, unknown> }>;
+  marks: TiptapMark[];
 }
 
 interface RichParagraphCandidate {
@@ -156,7 +161,7 @@ function parseParagraphRuns(
       ? resolveCharacterStyleSemantics(styleId, styles)
       : [];
     const semantics = Array.from(new Set([...inherited, ...direct]));
-    const marks = semantics.flatMap(toTiptapMark);
+    const marks: TiptapMark[] = semantics.flatMap(toTiptapMark);
 
     const languageElement = properties
       ? directChildrenByLocalName(properties, 'lang')[0]
@@ -251,7 +256,7 @@ function semanticsFromRunProperties(properties: Element): DocxInlineSemantic[] {
   return Array.from(new Set(result));
 }
 
-function toTiptapMark(semantic: DocxInlineSemantic): Array<{ type: string }> {
+function toTiptapMark(semantic: DocxInlineSemantic): TiptapMark[] {
   switch (semantic) {
     case 'strong': return [{ type: 'bold' }];
     case 'emphasis': return [{ type: 'italic' }];
