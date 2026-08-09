@@ -2,6 +2,8 @@ export interface SemanticInlineStyle {
   strong: boolean;
   emphasis: boolean;
   strike: boolean;
+  underline: boolean;
+  smallCaps: boolean;
   verticalAlign?: 'super' | 'sub';
 }
 
@@ -52,8 +54,9 @@ export function normalizeInlineLanguageTag(
 }
 
 /**
- * Extracts the small subset of Word/Office inline CSS that carries scholarly
- * semantics. Presentation-only CSS is intentionally ignored.
+ * Extracts the subset of Word/Office inline CSS that carries durable scholarly
+ * or typographic semantics. Font family, size, color and other presentation-only
+ * CSS are deliberately ignored.
  */
 export function detectSemanticInlineStyle(
   style: string | undefined,
@@ -69,6 +72,11 @@ export function detectSemanticInlineStyle(
     strong,
     emphasis: /font-style\s*:\s*italic/.test(normalized),
     strike: /text-decoration(?:-line)?\s*:[^;]*line-through/.test(normalized),
+    underline: /text-decoration(?:-line)?\s*:[^;]*underline/.test(normalized),
+    smallCaps:
+      /font-variant(?:-caps)?\s*:\s*(?:small-caps|all-small-caps)/.test(normalized) ||
+      /mso-style-textfill-type\s*:\s*solid/.test(normalized) &&
+        /font-variant\s*:\s*small-caps/.test(normalized),
     verticalAlign: /vertical-align\s*:\s*super/.test(normalized)
       ? 'super'
       : /vertical-align\s*:\s*sub/.test(normalized)
@@ -86,6 +94,7 @@ const ALLOWED_TAGS = new Set([
   'STRONG',
   'EM',
   'S',
+  'U',
   'SUP',
   'SUB',
   'A',
@@ -137,6 +146,18 @@ export function sanitizeRichTextPasteHtml(html: string): string {
     }
     if (style.strike && element.tagName !== 'S') {
       wrapChildren(element, 's', document);
+    }
+    if (style.underline && element.tagName !== 'U') {
+      wrapChildren(element, 'u', document);
+    }
+    if (style.smallCaps) {
+      wrapChildrenWithAttribute(
+        element,
+        'span',
+        'data-omi-small-caps',
+        'true',
+        document,
+      );
     }
     if (style.verticalAlign === 'super' && element.tagName !== 'SUP') {
       wrapChildren(element, 'sup', document);
@@ -223,10 +244,27 @@ function wrapChildren(
   element.append(wrapper);
 }
 
+function wrapChildrenWithAttribute(
+  element: Element,
+  tagName: string,
+  attribute: string,
+  value: string,
+  document: Document,
+): void {
+  if (!element.firstChild) return;
+  const wrapper = document.createElement(tagName);
+  wrapper.setAttribute(attribute, value);
+  while (element.firstChild) wrapper.append(element.firstChild);
+  element.append(wrapper);
+}
+
 function removePresentationAttributes(element: Element): void {
   const href = element.tagName === 'A' ? element.getAttribute('href') : null;
   const title = element.tagName === 'A' ? element.getAttribute('title') : null;
   const lang = element.tagName === 'SPAN' ? element.getAttribute('lang') : null;
+  const smallCaps = element.tagName === 'SPAN'
+    ? element.getAttribute('data-omi-small-caps')
+    : null;
 
   for (const attribute of Array.from(element.attributes)) {
     element.removeAttribute(attribute.name);
@@ -235,6 +273,7 @@ function removePresentationAttributes(element: Element): void {
   if (href) element.setAttribute('href', href);
   if (title) element.setAttribute('title', title);
   if (lang) element.setAttribute('lang', lang);
+  if (smallCaps) element.setAttribute('data-omi-small-caps', smallCaps);
 }
 
 function unwrapElement(element: Element): void {
