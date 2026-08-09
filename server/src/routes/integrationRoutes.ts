@@ -28,6 +28,13 @@ interface SourceDocumentDiagnostics {
   endnotes: number;
   footnotesWithBody: number;
   endnotesWithBody: number;
+  paragraphsWithStyle: number;
+  paragraphsWithHeadingLevel: number;
+  paragraphsWithOutlineLevel: number;
+  observedStyleIds: string[];
+  observedStyleNames: string[];
+  observedHeadingLevels: number[];
+  observedOutlineLevels: number[];
 }
 
 function summarizeSourceDocument(source: unknown): SourceDocumentDiagnostics {
@@ -43,6 +50,13 @@ function summarizeSourceDocument(source: unknown): SourceDocumentDiagnostics {
     endnotes: 0,
     footnotesWithBody: 0,
     endnotesWithBody: 0,
+    paragraphsWithStyle: 0,
+    paragraphsWithHeadingLevel: 0,
+    paragraphsWithOutlineLevel: 0,
+    observedStyleIds: [],
+    observedStyleNames: [],
+    observedHeadingLevels: [],
+    observedOutlineLevels: [],
   };
 
   if (!source || typeof source !== 'object') return empty;
@@ -55,12 +69,35 @@ function summarizeSourceDocument(source: unknown): SourceDocumentDiagnostics {
   let paragraphsWithNoteReferences = 0;
   let footnoteReferences = 0;
   let endnoteReferences = 0;
+  let paragraphsWithStyle = 0;
+  let paragraphsWithHeadingLevel = 0;
+  let paragraphsWithOutlineLevel = 0;
+  const styleIds = new Set<string>();
+  const styleNames = new Set<string>();
+  const headingLevels = new Set<number>();
+  const outlineLevels = new Set<number>();
 
   for (const paragraph of paragraphs) {
     if (!paragraph || typeof paragraph !== 'object') continue;
-    const inline = Array.isArray((paragraph as Record<string, unknown>).inline)
-      ? (paragraph as Record<string, unknown>).inline as unknown[]
-      : [];
+    const record = paragraph as Record<string, unknown>;
+    const inline = Array.isArray(record.inline) ? record.inline as unknown[] : [];
+
+    const styleId = typeof record.styleId === 'string' ? record.styleId.trim() : '';
+    const styleName = typeof record.styleName === 'string' ? record.styleName.trim() : '';
+    const headingLevel = typeof record.headingLevel === 'number' ? record.headingLevel : null;
+    const outlineLevel = typeof record.outlineLevel === 'number' ? record.outlineLevel : null;
+
+    if (styleId || styleName) paragraphsWithStyle += 1;
+    if (styleId) styleIds.add(styleId);
+    if (styleName) styleNames.add(styleName);
+    if (headingLevel !== null && Number.isFinite(headingLevel)) {
+      paragraphsWithHeadingLevel += 1;
+      headingLevels.add(headingLevel);
+    }
+    if (outlineLevel !== null && Number.isFinite(outlineLevel)) {
+      paragraphsWithOutlineLevel += 1;
+      outlineLevels.add(outlineLevel);
+    }
 
     let paragraphHasNote = false;
     for (const item of inline) {
@@ -96,6 +133,13 @@ function summarizeSourceDocument(source: unknown): SourceDocumentDiagnostics {
     endnotes: endnotes.length,
     footnotesWithBody: countBodies(footnotes),
     endnotesWithBody: countBodies(endnotes),
+    paragraphsWithStyle,
+    paragraphsWithHeadingLevel,
+    paragraphsWithOutlineLevel,
+    observedStyleIds: Array.from(styleIds).sort().slice(0, 50),
+    observedStyleNames: Array.from(styleNames).sort().slice(0, 50),
+    observedHeadingLevels: Array.from(headingLevels).sort((a, b) => a - b),
+    observedOutlineLevels: Array.from(outlineLevels).sort((a, b) => a - b),
   };
 }
 
