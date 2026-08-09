@@ -53,7 +53,7 @@ jobs:
         id: package
         shell: bash
         run: |
-          echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Export build variables
         shell: bash
@@ -94,7 +94,7 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            APP_VERSION="$(node -p \"require('./package.json').version\")"
+            APP_VERSION="$(node -p "require('./package.json').version")"
             BUILD_NUMBER="${{ github.run_number }}"
             COMMIT_SHA="${{ github.sha }}"
             COMMIT_SHORT="${COMMIT_SHA:0:7}"
