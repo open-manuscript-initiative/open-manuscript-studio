@@ -267,7 +267,8 @@ function buildSourceContent(
       continue;
     }
 
-    if (text && paragraph.headingLevel && paragraph.headingLevel >= 1 && !hasNoteReference) {
+    const headingLevel = inferHeadingLevel(paragraph);
+    if (text && headingLevel && !hasNoteReference) {
       if (current.blocks.length) pushCurrent();
       current = createSection(text);
       continue;
@@ -297,6 +298,40 @@ function buildSourceContent(
     sections: sections.filter((section) => section.blocks.length > 0),
     annotations,
   };
+}
+
+function inferHeadingLevel(paragraph: OjsSourceParagraph): number | undefined {
+  if (
+    Number.isInteger(paragraph.headingLevel) &&
+    (paragraph.headingLevel ?? 0) >= 1 &&
+    (paragraph.headingLevel ?? 0) <= 9
+  ) {
+    return paragraph.headingLevel;
+  }
+
+  const rawStyleId = paragraph.styleId?.trim();
+  if (!rawStyleId) return undefined;
+
+  const styleId = rawStyleId
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase()
+    .replace(/[\s_.-]+/g, '');
+
+  const patterns = [
+    /^heading([1-9])$/,
+    /^head([1-9])$/,
+    /^title([1-9])$/,
+    /^uberschrift([1-9])$/,
+    /^cimsor([1-9])$/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = styleId.match(pattern);
+    if (match?.[1]) return Number(match[1]);
+  }
+
+  return undefined;
 }
 
 function createNoteMap(notes: OjsSourceNote[] | undefined): Map<string, string> {
