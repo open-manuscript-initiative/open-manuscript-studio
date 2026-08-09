@@ -30,14 +30,20 @@ import {
   importVisualBlocksFromFile,
 } from '../services/officeImport';
 
+interface VisualInsertPanelProps {
+  compact?: boolean;
+  onInserted?: () => void;
+}
+
 /**
- * Inserts visual/document elements from the Studio menu instead of rendering
- * insertion controls between manuscript paragraphs. For now, insertion targets
- * the end of the selected section; the component can later consume a precise
- * editor cursor/block position when the manuscript is consolidated into one
- * Tiptap document.
+ * Inserts visual/document elements outside the manuscript surface. For now,
+ * insertion targets the end of the selected section; once the manuscript uses
+ * one Tiptap document this can consume the exact editor cursor position.
  */
-export function VisualInsertPanel() {
+export function VisualInsertPanel({
+  compact = false,
+  onInserted,
+}: VisualInsertPanelProps) {
   const { locale, t } = useTranslation();
   const copy = getVisualElementsCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
@@ -61,6 +67,7 @@ export function VisualInsertPanel() {
     const inserted = stageInsertBlocks(selectedSection.id, gapIndex, blocks);
     if (inserted) {
       setError(null);
+      onInserted?.();
     }
     return inserted;
   }
@@ -118,53 +125,44 @@ export function VisualInsertPanel() {
     }
   }
 
-  return (
-    <section className="studio-menu-view">
-      <div className="studio-menu-view-header">
-        <div>
-          <h3>{copy.insertElement}</h3>
-          <p>{selectedSection.title}</p>
-        </div>
+  const palette = (
+    <>
+      <div className="omi-visual-insert-actions">
+        <button type="button" onClick={() => imageInputRef.current?.click()}>
+          <ImagePlus size={17} aria-hidden="true" />
+          {copy.image}
+        </button>
+        <button type="button" onClick={() => insert([createTableBlock()])}>
+          <Table2 size={17} aria-hidden="true" />
+          {copy.table}
+        </button>
+        <button type="button" onClick={() => insert([createChartBlock()])}>
+          <BarChart3 size={17} aria-hidden="true" />
+          {copy.chart}
+        </button>
+        <button type="button" onClick={() => insert([createEquationBlock()])}>
+          <FunctionSquare size={17} aria-hidden="true" />
+          {copy.equation}
+        </button>
+        <button type="button" onClick={() => importInputRef.current?.click()}>
+          <FileInput size={17} aria-hidden="true" />
+          {copy.import}
+        </button>
       </div>
 
-      <div className="omi-visual-insert-palette">
-        <div className="omi-visual-insert-actions">
-          <button type="button" onClick={() => imageInputRef.current?.click()}>
-            <ImagePlus size={17} aria-hidden="true" />
-            {copy.image}
-          </button>
-          <button type="button" onClick={() => insert([createTableBlock()])}>
-            <Table2 size={17} aria-hidden="true" />
-            {copy.table}
-          </button>
-          <button type="button" onClick={() => insert([createChartBlock()])}>
-            <BarChart3 size={17} aria-hidden="true" />
-            {copy.chart}
-          </button>
-          <button type="button" onClick={() => insert([createEquationBlock()])}>
-            <FunctionSquare size={17} aria-hidden="true" />
-            {copy.equation}
-          </button>
-          <button type="button" onClick={() => importInputRef.current?.click()}>
-            <FileInput size={17} aria-hidden="true" />
-            {copy.import}
-          </button>
-        </div>
-
-        <div
-          className="omi-office-paste-target"
-          role="textbox"
-          tabIndex={0}
-          onPaste={paste}
-          aria-label={copy.paste}
-        >
-          <strong>{busy ? copy.importing : copy.paste}</strong>
-          <span>{copy.pasteHint}</span>
-        </div>
-
-        <small className="omi-visual-format-hint">{copy.fileFormats}</small>
-        {error ? <p className="omi-visual-import-error" role="alert">{error}</p> : null}
+      <div
+        className="omi-office-paste-target"
+        role="textbox"
+        tabIndex={0}
+        onPaste={paste}
+        aria-label={copy.paste}
+      >
+        <strong>{busy ? copy.importing : copy.paste}</strong>
+        <span>{copy.pasteHint}</span>
       </div>
+
+      <small className="omi-visual-format-hint">{copy.fileFormats}</small>
+      {error ? <p className="omi-visual-import-error" role="alert">{error}</p> : null}
 
       <input
         ref={imageInputRef}
@@ -181,6 +179,27 @@ export function VisualInsertPanel() {
         accept=".docx,.xlsx,.csv,.tsv,.txt,.html,.htm,.tex,image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
         onChange={importFiles}
       />
+    </>
+  );
+
+  if (compact) {
+    return (
+      <div className="omi-visual-insert-palette omi-visual-insert-palette--compact">
+        {palette}
+      </div>
+    );
+  }
+
+  return (
+    <section className="studio-menu-view">
+      <div className="studio-menu-view-header">
+        <div>
+          <h3>{copy.insertElement}</h3>
+          <p>{selectedSection.title}</p>
+        </div>
+      </div>
+
+      <div className="omi-visual-insert-palette">{palette}</div>
     </section>
   );
 }
