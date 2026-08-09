@@ -36,6 +36,10 @@
   background: transparent;
 }
 
+/*
+ * Title fields are textareas so long scholarly titles can soft-wrap naturally.
+ * JavaScript keeps their height synchronized with the rendered content.
+ */
 .omi-auto-grow-heading {
   display: block;
   width: 100%;
@@ -192,38 +196,30 @@
 
 .omi-continuous-blocks .omi-numbered-object,
 .omi-continuous-visual {
-  margin: 1.5rem 0;
+  margin: 1.75rem 0;
 }
 
-.omi-continuous-blocks .omi-visual-editor {
-  border-radius: 0.5rem;
-}
-
-.omi-continuous-blocks .omi-visual-insert-gap {
-  margin: 0.35rem 0;
-}
-
-.omi-continuous-blocks .omi-visual-insert-trigger {
-  opacity: 0.16;
+/* Kept for backwards compatibility with older inline insert affordances. */
+.omi-continuous-blocks .omi-visual-insert-menu {
+  opacity: 0.12;
   transition: opacity 120ms ease;
 }
 
-.omi-continuous-blocks .omi-visual-insert-gap:hover .omi-visual-insert-trigger,
-.omi-continuous-blocks .omi-visual-insert-trigger:focus-visible,
-.omi-continuous-blocks .omi-visual-insert-gap:focus-within .omi-visual-insert-trigger {
+.omi-continuous-blocks .omi-visual-insert-menu:hover,
+.omi-continuous-blocks .omi-visual-insert-menu:focus-within {
   opacity: 1;
 }
 
 .omi-visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
 
 @media (max-width: 760px) {
@@ -232,8 +228,8 @@
   }
 
   .omi-manuscript-page {
-    min-height: calc(100vh - 3.5rem);
-    padding: 2rem 1.2rem 4rem;
+    min-height: 100vh;
+    padding: 2rem 1.25rem 4rem;
     border: 0;
     border-radius: 0;
     box-shadow: none;
@@ -243,10 +239,6 @@
     font-size: clamp(1.7rem, 8vw, 2.3rem);
   }
 
-  .omi-continuous-front-matter .omi-document-subtitle {
-    font-size: 1.05rem;
-  }
-
   .omi-continuous-section-title {
     gap: 0.45rem;
   }
@@ -254,5 +246,23 @@
   .omi-continuous-section-title .omi-section-number,
   .omi-continuous-section-title .omi-section-title-input {
     font-size: 1.2rem;
+  }
+
+  .omi-continuous-blocks .omi-block-toolbar {
+    position: static;
+    margin-bottom: 0.35rem;
+    opacity: 0;
+    transform: none;
+  }
+
+  .omi-continuous-blocks .omi-block-editor:focus-within .omi-block-toolbar {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .omi-continuous-blocks .omi-block-toolbar,
+  .omi-continuous-blocks .omi-visual-insert-menu {
+    transition: none;
   }
 }
