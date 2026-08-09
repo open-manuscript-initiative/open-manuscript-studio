@@ -32,12 +32,12 @@ interface OjsSubmission {
 }
 
 interface OjsSourceInlineText {
-  kind?: 'text';
+  kind: 'text';
   text?: string;
 }
 
 interface OjsSourceFootnoteReference {
-  kind?: 'footnoteReference';
+  kind: 'footnoteReference';
   footnoteId?: string;
 }
 
