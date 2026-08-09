@@ -10,6 +10,7 @@ import { RegisterPage } from './auth/RegisterPage';
 import { useStudioStore } from './app/useStudioStore';
 import { AppLayout } from './components/AppLayout';
 import { EditorPane } from './components/EditorPane';
+import { ReviewMode } from './components/ReviewMode';
 import { StudioMenuWithHelp } from './components/StudioMenuWithHelp';
 import {
   clearOjsLaunchPayload,
@@ -57,12 +58,15 @@ export function App() {
 }
 
 function StudioApplication() {
+  const reviewMode = new URLSearchParams(window.location.search).get('review') === '1';
   const [menuOpen, setMenuOpen] = useState(false);
   const loadManuscript = useStudioStore(
     (state) => state.loadManuscript,
   );
 
   useEffect(() => {
+    if (reviewMode) return;
+
     // AuthGate mounts StudioApplication only after the Studio session has
     // been established. A verified OJS handoff can therefore wait safely in
     // sessionStorage while the user signs in and resume automatically here.
@@ -93,10 +97,10 @@ function StudioApplication() {
         `${url.pathname}${url.search}${url.hash}`,
       );
     }
-  }, [loadManuscript]);
+  }, [loadManuscript, reviewMode]);
 
   useEffect(() => {
-    if (!isNativeStudio()) return;
+    if (reviewMode || !isNativeStudio()) return;
 
     const handleNativeFileShortcut = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
@@ -123,7 +127,11 @@ function StudioApplication() {
 
     window.addEventListener('keydown', handleNativeFileShortcut);
     return () => window.removeEventListener('keydown', handleNativeFileShortcut);
-  }, [loadManuscript]);
+  }, [loadManuscript, reviewMode]);
+
+  if (reviewMode) {
+    return <ReviewMode />;
+  }
 
   return (
     <AppLayout onOpenMenu={() => setMenuOpen(true)}>
