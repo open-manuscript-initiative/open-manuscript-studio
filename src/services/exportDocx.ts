@@ -1,3 +1,8 @@
+import {
+  extractOmiInlineRuns,
+  type OmiInlineRun,
+  type OmiInlineSemanticKind,
+} from '../model/inlineSemantics';
 import { buildPublicationRenderingContext } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type { OmiBlock, OmiManuscript } from '../types/omi';
@@ -12,7 +17,8 @@ export interface DocxExportResult {
 
 /**
  * Produces a portable WordprocessingML DOCX from the shared publication view.
- * Headings use real Word Heading styles so a later import can recover structure.
+ * Headings use real Word Heading styles and inline OMI semantics use named
+ * Word character styles instead of direct font formatting.
  */
 export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const profile = resolvePublicationProfile(manuscript);
@@ -39,10 +45,17 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
       const heading = section.number ? `${section.number} ${section.title}` : section.title;
       body.push(paragraph(heading, `Heading${level}`));
       for (const block of section.blocks) {
-        const text = blockPlainText(block);
-        if (text) body.push(paragraph(text));
         if (block.visual) {
+          const text = blockPlainText(block);
+          if (text) body.push(paragraph(text));
           warnings.push(`Structured ${block.visual.kind} object ${block.id} was exported as descriptive text in DOCX.`);
+          continue;
+        }
+        const runs = extractOmiInlineRuns(block.content);
+        if (runs.length) body.push(richParagraph(runs));
+        else {
+          const text = blockPlainText(block);
+          if (text) body.push(paragraph(text));
         }
       }
       renderSections(section.children);
@@ -63,8 +76,10 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
 <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
+<w:style w:type="character" w:default="1" w:styleId="DefaultParagraphFont"><w:name w:val="Default Paragraph Font"/><w:uiPriority w:val="1"/><w:semiHidden/><w:unhideWhenUsed/></w:style>
 ${style('Title', 'Title', 32, true)}${style('Subtitle', 'Subtitle', 24, false)}${style('Author', 'Author', 22, false)}
 ${[1,2,3,4,5,6].map((level) => headingStyle(level)).join('')}
+${characterStylesXml()}
 </w:styles>`;
 
   const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -93,6 +108,61 @@ function paragraph(value: string, styleId?: string): string {
   return `<w:p>${pPr}<w:r><w:t xml:space="preserve">${xml(value)}</w:t></w:r></w:p>`;
 }
 
+function richParagraph(runs: readonly OmiInlineRun[]): string {
+  const rendered = runs.map(wordRun).join('');
+  return `<w:p>${rendered}</w:p>`;
+}
+
+function wordRun(run: OmiInlineRun): string {
+  if (run.text === '\n') return '<w:r><w:br/></w:r>';
+  const styleId = wordCharacterStyleId(run.semantics);
+  const lang = run.language
+    ? `<w:lang w:val="${xml(run.language)}"/>`
+    : '';
+  const rPr = styleId || lang
+    ? `<w:rPr>${styleId ? `<w:rStyle w:val="${styleId}"/>` : ''}${lang}</w:rPr>`
+    : '';
+  return `<w:r>${rPr}<w:t xml:space="preserve">${xml(run.text)}</w:t></w:r>`;
+}
+
+function wordCharacterStyleId(semantics: readonly OmiInlineSemanticKind[]): string | undefined {
+  if (semantics.includes('strong') && semantics.includes('emphasis')) return 'OMIStrongEmphasis';
+  const priority: OmiInlineSemanticKind[] = [
+    'emphasis', 'strong', 'small-caps', 'superscript', 'subscript', 'underline', 'strike', 'code',
+  ];
+  const selected = priority.find((kind) => semantics.includes(kind));
+  return selected ? WORD_STYLE_IDS[selected] : undefined;
+}
+
+const WORD_STYLE_IDS: Record<OmiInlineSemanticKind, string> = {
+  emphasis: 'OMIEmphasis',
+  strong: 'OMIStrong',
+  strike: 'OMIStrike',
+  underline: 'OMIUnderline',
+  'small-caps': 'OMISmallCaps',
+  superscript: 'OMISuperscript',
+  subscript: 'OMISubscript',
+  code: 'OMICode',
+};
+
+function characterStylesXml(): string {
+  return [
+    characterStyle('OMIEmphasis', 'OMI Emphasis', '<w:i/>'),
+    characterStyle('OMIStrong', 'OMI Strong', '<w:b/>'),
+    characterStyle('OMIStrongEmphasis', 'OMI Strong Emphasis', '<w:b/><w:i/>'),
+    characterStyle('OMIStrike', 'OMI Strike', '<w:strike/>'),
+    characterStyle('OMIUnderline', 'OMI Underline', '<w:u w:val="single"/>'),
+    characterStyle('OMISmallCaps', 'OMI Small Caps', '<w:smallCaps/>'),
+    characterStyle('OMISuperscript', 'OMI Superscript', '<w:vertAlign w:val="superscript"/>'),
+    characterStyle('OMISubscript', 'OMI Subscript', '<w:vertAlign w:val="subscript"/>'),
+    characterStyle('OMICode', 'OMI Code', '<w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/>'),
+  ].join('');
+}
+
+function characterStyle(id: string, name: string, properties: string): string {
+  return `<w:style w:type="character" w:customStyle="1" w:styleId="${id}"><w:name w:val="${xml(name)}"/><w:basedOn w:val="DefaultParagraphFont"/><w:uiPriority w:val="10"/><w:qFormat/><w:rPr>${properties}</w:rPr></w:style>`;
+}
+
 function style(id: string, name: string, size: number, bold: boolean): string {
   return `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:qFormat/><w:rPr>${bold ? '<w:b/>' : ''}<w:sz w:val="${size}"/></w:rPr></w:style>`;
 }
@@ -108,22 +178,9 @@ function blockPlainText(block: OmiBlock): string {
     const label = block.visual.kind.charAt(0).toUpperCase() + block.visual.kind.slice(1);
     return caption?.trim() ? `[${label}: ${caption.trim()}]` : `[${label}]`;
   }
-  const value = block.content.trim();
-  if (!value) return '';
-  try {
-    const parsed = JSON.parse(value) as unknown;
-    return textFromJson(parsed).replace(/\s+/g, ' ').trim();
-  } catch {
-    return value;
-  }
-}
-
-function textFromJson(value: unknown): string {
-  if (!value || typeof value !== 'object') return '';
-  const node = value as { text?: unknown; content?: unknown[]; type?: unknown };
-  if (typeof node.text === 'string') return node.text;
-  const separator = node.type === 'paragraph' || node.type === 'heading' ? '\n' : '';
-  return (node.content ?? []).map(textFromJson).join(separator);
+  const runs = extractOmiInlineRuns(block.content);
+  if (runs.length) return runs.map((run) => run.text).join('').replace(/\s+/g, ' ').trim();
+  return block.content.trim();
 }
 
 function localizedLabel(locale: string, key: 'abstract' | 'keywords' | 'notes'): string {
