@@ -5,6 +5,8 @@ export interface RichTextCopy {
   italic: string;
   superscript: string;
   subscript: string;
+  smallCaps: string;
+  underline: string;
   link: string;
   unlink: string;
   more: string;
@@ -30,10 +32,12 @@ export interface RichTextCopy {
 
 const COPY: Record<SupportedLocale, RichTextCopy> = {
   en: {
-    bold: 'Bold',
-    italic: 'Italic',
+    bold: 'Bold / strong',
+    italic: 'Italic / emphasis',
     superscript: 'Superscript',
     subscript: 'Subscript',
+    smallCaps: 'Small caps',
+    underline: 'Underline',
     link: 'External link',
     unlink: 'Remove link',
     more: 'More text tools',
@@ -57,10 +61,12 @@ const COPY: Record<SupportedLocale, RichTextCopy> = {
     toolbar: 'Semantic text tools',
   },
   hu: {
-    bold: 'Félkövér',
-    italic: 'Dőlt',
+    bold: 'Félkövér / kiemelt',
+    italic: 'Dőlt / hangsúly',
     superscript: 'Felső index',
     subscript: 'Alsó index',
+    smallCaps: 'Kiskapitális',
+    underline: 'Aláhúzott',
     link: 'Külső hivatkozás',
     unlink: 'Hivatkozás eltávolítása',
     more: 'További szövegeszközök',
@@ -84,10 +90,12 @@ const COPY: Record<SupportedLocale, RichTextCopy> = {
     toolbar: 'Szemantikus szövegeszközök',
   },
   de: {
-    bold: 'Fett',
-    italic: 'Kursiv',
+    bold: 'Fett / stark',
+    italic: 'Kursiv / Hervorhebung',
     superscript: 'Hochgestellt',
     subscript: 'Tiefgestellt',
+    smallCaps: 'Kapitälchen',
+    underline: 'Unterstrichen',
     link: 'Externer Link',
     unlink: 'Link entfernen',
     more: 'Weitere Textwerkzeuge',
