@@ -1,40 +1,65 @@
 import { Plus, X } from 'lucide-react';
 import {
+  useMemo,
   useState,
   type KeyboardEvent,
 } from 'react';
 
-import { stageKeywordChange } from '../app/keywordActions';
+import {
+  setLocalizedAbstract,
+  setLocalizedKeywords,
+} from '../app/localizedMetadataActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import {
   addKeywords,
   removeKeyword,
 } from '../model/keywords';
+import type { OmiLocale } from '../types/omi';
+
+const COMMON_METADATA_LOCALES = ['hu', 'en', 'de'] as const;
 
 export function KeywordEditor() {
   const { t } = useTranslation();
-  const keywords = useStudioStore(
-    (state) => state.manuscript.keywords,
+  const manuscript = useStudioStore((state) => state.manuscript);
+  const [metadataLocale, setMetadataLocale] = useState<OmiLocale>(
+    manuscript.locale,
   );
   const [draft, setDraft] = useState('');
 
-  function addDraftKeywords(): void {
-    if (!draft.trim()) {
-      return;
-    }
+  const locales = useMemo(() => {
+    const values = new Set<string>([
+      manuscript.locale,
+      ...COMMON_METADATA_LOCALES,
+      ...Object.keys(manuscript.abstracts ?? {}),
+      ...Object.keys(manuscript.keywordsByLocale ?? {}),
+    ]);
+    return [...values];
+  }, [
+    manuscript.locale,
+    manuscript.abstracts,
+    manuscript.keywordsByLocale,
+  ]);
 
+  const keywords =
+    manuscript.keywordsByLocale?.[metadataLocale] ??
+    (metadataLocale === manuscript.locale ? manuscript.keywords : []);
+  const localizedAbstract =
+    manuscript.abstracts?.[metadataLocale] ??
+    (metadataLocale === manuscript.locale ? manuscript.abstract ?? '' : '');
+  const isPrimaryLocale = metadataLocale === manuscript.locale;
+
+  function addDraftKeywords(): void {
+    if (!draft.trim()) return;
     const nextKeywords = addKeywords(keywords, draft);
-    stageKeywordChange(nextKeywords);
+    setLocalizedKeywords(metadataLocale, nextKeywords);
     setDraft('');
   }
 
   function handleKeyDown(
     event: KeyboardEvent<HTMLInputElement>,
   ): void {
-    if (event.nativeEvent.isComposing) {
-      return;
-    }
+    if (event.nativeEvent.isComposing) return;
 
     if (event.key === 'Enter' || event.key === ',') {
       event.preventDefault();
@@ -44,14 +69,44 @@ export function KeywordEditor() {
 
   return (
     <div className="omi-keyword-editor">
+      <label>
+        <span>{t('common.language')}</span>
+        <select
+          value={metadataLocale}
+          onChange={(event) => {
+            setMetadataLocale(event.target.value);
+            setDraft('');
+          }}
+        >
+          {locales.map((locale) => (
+            <option value={locale} key={locale}>
+              {locale.toUpperCase()}
+              {locale === manuscript.locale ? ' •' : ''}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {!isPrimaryLocale ? (
+        <label>
+          <span>{t('manuscript.abstract')}</span>
+          <textarea
+            value={localizedAbstract}
+            onChange={(event) =>
+              setLocalizedAbstract(metadataLocale, event.target.value)
+            }
+          />
+        </label>
+      ) : null}
+
       <span className="omi-keyword-editor-label">
-        {t('manuscript.keywords')}
+        {t('manuscript.keywords')} ({metadataLocale.toUpperCase()})
       </span>
 
       {keywords.length > 0 ? (
         <div
           className="omi-keyword-chip-list"
-          aria-label={t('manuscript.keywords')}
+          aria-label={`${t('manuscript.keywords')} ${metadataLocale}`}
         >
           {keywords.map((keyword) => (
             <span className="omi-keyword-chip" key={keyword}>
@@ -59,7 +114,8 @@ export function KeywordEditor() {
               <button
                 type="button"
                 onClick={() =>
-                  stageKeywordChange(
+                  setLocalizedKeywords(
+                    metadataLocale,
                     removeKeyword(keywords, keyword),
                   )
                 }
@@ -79,8 +135,8 @@ export function KeywordEditor() {
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={t('manuscript.keywords')}
-          aria-label={t('manuscript.keywords')}
+          placeholder={`${t('manuscript.keywords')} (${metadataLocale.toUpperCase()})`}
+          aria-label={`${t('manuscript.keywords')} ${metadataLocale}`}
         />
         <button
           type="button"
