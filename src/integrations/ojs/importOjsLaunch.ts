@@ -54,6 +54,8 @@ type OjsSourceInline =
 interface OjsSourceParagraph {
   text?: string;
   styleId?: string;
+  styleName?: string;
+  outlineLevel?: number;
   headingLevel?: number;
   inline?: OjsSourceInline[];
 }
@@ -267,7 +269,7 @@ function buildSourceContent(
       continue;
     }
 
-    const headingLevel = inferHeadingLevel(paragraph);
+    const headingLevel = inferHeadingLevel(paragraph, locale);
     if (text && headingLevel && !hasNoteReference) {
       if (current.blocks.length) pushCurrent();
       current = createSection(text);
@@ -300,7 +302,10 @@ function buildSourceContent(
   };
 }
 
-function inferHeadingLevel(paragraph: OjsSourceParagraph): number | undefined {
+function inferHeadingLevel(
+  paragraph: OjsSourceParagraph,
+  locale: string,
+): number | undefined {
   if (
     Number.isInteger(paragraph.headingLevel) &&
     (paragraph.headingLevel ?? 0) >= 1 &&
@@ -309,26 +314,112 @@ function inferHeadingLevel(paragraph: OjsSourceParagraph): number | undefined {
     return paragraph.headingLevel;
   }
 
-  const rawStyleId = paragraph.styleId?.trim();
-  if (!rawStyleId) return undefined;
+  if (
+    Number.isInteger(paragraph.outlineLevel) &&
+    (paragraph.outlineLevel ?? -1) >= 0 &&
+    (paragraph.outlineLevel ?? -1) <= 8
+  ) {
+    return (paragraph.outlineLevel ?? 0) + 1;
+  }
 
-  const styleId = rawStyleId
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase()
-    .replace(/[\s_.-]+/g, '');
+  const styleValues = [paragraph.styleId, paragraph.styleName]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .map((value) =>
+      value
+        .trim()
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleLowerCase()
+        .replace(/[\s_.-]+/g, ''),
+    );
 
-  const patterns = [
-    /^heading([1-9])$/,
-    /^head([1-9])$/,
-    /^title([1-9])$/,
-    /^uberschrift([1-9])$/,
-    /^cimsor([1-9])$/,
-  ];
-
-  for (const pattern of patterns) {
-    const match = styleId.match(pattern);
+  for (const styleValue of styleValues) {
+    const match = /(?:heading|head|uberschrift|cimsor|outline|chapter|section).*?([1-9])/i.exec(
+      styleValue,
+    );
     if (match?.[1]) return Number(match[1]);
+
+    if (/^(?:heading|head|uberschrift|cimsor|chapter|section)$/i.test(styleValue)) {
+      return 1;
+    }
+  }
+
+  return inferHeadingLevelFromText(paragraph.text, locale);
+}
+
+function inferHeadingLevelFromText(
+  value: string | undefined,
+  locale: string,
+): number | undefined {
+  const text = value?.trim() ?? '';
+  if (!text || text.length > 160 || text.split(/\s+/).length > 18) {
+    return undefined;
+  }
+
+  const numbered = /^(\d+(?:\.\d+){0,5})[.)]?\s+\S/.exec(text);
+  if (numbered?.[1]) {
+    return Math.min(6, numbered[1].split('.').length);
+  }
+
+  const roman = /^(?:[IVXLCDM]{1,8})[.)]\s+\S/i.exec(text);
+  if (roman) return 1;
+
+  const normalized = normalizeComparison(text)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  const common = locale.toLowerCase().startsWith('hu')
+    ? [
+        'bevezetes',
+        'elozmenyek',
+        'modszertan',
+        'eredmenyek',
+        'megbeszeles',
+        'osszefoglalas',
+        'osszegzes',
+        'kovetkeztetesek',
+        'irodalomjegyzek',
+        'bibliografia',
+        'fuggelek',
+      ]
+    : locale.toLowerCase().startsWith('de')
+      ? [
+          'einleitung',
+          'hintergrund',
+          'methoden',
+          'ergebnisse',
+          'diskussion',
+          'zusammenfassung',
+          'schlussfolgerungen',
+          'literatur',
+          'literaturverzeichnis',
+          'anhang',
+        ]
+      : [
+          'introduction',
+          'background',
+          'methods',
+          'methodology',
+          'results',
+          'discussion',
+          'summary',
+          'conclusion',
+          'conclusions',
+          'references',
+          'bibliography',
+          'appendix',
+        ];
+
+  if (common.includes(normalized)) return 1;
+
+  const letters = text.match(/\p{L}/gu) ?? [];
+  const upper = text.match(/\p{Lu}/gu) ?? [];
+  if (
+    letters.length >= 4 &&
+    upper.length / letters.length >= 0.85 &&
+    !/[.!?;:]$/.test(text)
+  ) {
+    return 1;
   }
 
   return undefined;
