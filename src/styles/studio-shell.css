@@ -42,6 +42,18 @@
   background: rgba(255, 255, 255, .08);
 }
 
+.focus-logout-button {
+  width: auto;
+  gap: .45rem;
+  padding: 0 .7rem;
+  white-space: nowrap;
+}
+
+.focus-logout-label {
+  font-size: .75rem;
+  font-weight: 650;
+}
+
 .focus-header-context {
   display: flex;
   align-items: baseline;
@@ -509,6 +521,15 @@
   .focus-language-switcher select {
     width: 4.5rem;
     max-width: 4.5rem;
+  }
+
+  .focus-logout-button {
+    width: 2.4rem;
+    padding: 0;
+  }
+
+  .focus-logout-label {
+    display: none;
   }
 
   .focus-workspace {
