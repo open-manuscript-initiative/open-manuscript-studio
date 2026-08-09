@@ -10,6 +10,7 @@ import './styles/editor.css';
 import './styles/continuous-editor.css';
 import './styles/front-matter.css';
 import './styles/rich-text.css';
+import './styles/selection-toolbar.css';
 import './styles/studio-shell.css';
 import './styles/settings.css';
 import './styles/manuscript-language.css';
