@@ -13,12 +13,16 @@ jobs:
         include:
           - platform: ubuntu-22.04
             args: '--bundles appimage,deb'
+            artifact: linux-x86_64
           - platform: windows-latest
             args: '--bundles msi,nsis'
+            artifact: windows-x86_64
           - platform: macos-latest
             args: '--target aarch64-apple-darwin --bundles app,dmg'
+            artifact: macos-aarch64
           - platform: macos-latest
             args: '--target x86_64-apple-darwin --bundles app,dmg'
+            artifact: macos-x86_64
 
     runs-on: ${{ matrix.platform }}
 
@@ -51,6 +55,9 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Generate Tauri application icons
+        run: npm run tauri -- icon src-tauri/icons/icon.svg
+
       - name: Run frontend tests
         run: npm test
 
@@ -58,5 +65,12 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         with:
           args: ${{ matrix.args }}
-          uploadWorkflowArtifacts: true
-          workflowArtifactNamePattern: 'open-manuscript-studio-[platform]-[arch]-[bundle]'
+
+      - name: Upload desktop installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: open-manuscript-studio-${{ matrix.artifact }}
+          path: |
+            src-tauri/target/**/release/bundle/**
+            src-tauri/target/release/bundle/**
+          if-no-files-found: error
