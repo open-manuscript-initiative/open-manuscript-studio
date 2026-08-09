@@ -86,6 +86,51 @@ export const OmiSubscriptExtension = Mark.create({
   },
 });
 
+export const OmiSmallCapsExtension = Mark.create({
+  name: 'omiSmallCaps',
+
+  parseHTML() {
+    return [
+      { tag: 'span[data-omi-small-caps]' },
+      {
+        style: 'font-variant',
+        getAttrs: (value) =>
+          typeof value === 'string' && /small-caps/i.test(value) ? {} : false,
+      },
+    ];
+  },
+
+  renderHTML() {
+    return [
+      'span',
+      {
+        'data-omi-small-caps': 'true',
+        style: 'font-variant: small-caps',
+      },
+      0,
+    ];
+  },
+});
+
+export const OmiUnderlineExtension = Mark.create({
+  name: 'omiUnderline',
+
+  parseHTML() {
+    return [
+      { tag: 'u' },
+      {
+        style: 'text-decoration',
+        getAttrs: (value) =>
+          typeof value === 'string' && /underline/i.test(value) ? {} : false,
+      },
+    ];
+  },
+
+  renderHTML() {
+    return ['u', { 'data-omi-underline': 'true' }, 0];
+  },
+});
+
 export const OmiLanguageExtension = Mark.create({
   name: 'omiLanguage',
   inclusive: true,
@@ -130,6 +175,8 @@ export const OMI_RICH_TEXT_EXTENSIONS = [
   OmiLinkExtension,
   OmiSuperscriptExtension,
   OmiSubscriptExtension,
+  OmiSmallCapsExtension,
+  OmiUnderlineExtension,
   OmiLanguageExtension,
 ];
 
