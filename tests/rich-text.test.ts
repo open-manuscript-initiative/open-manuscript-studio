@@ -41,18 +41,22 @@ test('extracts semantic emphasis from common Word inline CSS only', () => {
       strong: true,
       emphasis: true,
       strike: false,
+      underline: false,
+      smallCaps: false,
       verticalAlign: undefined,
     },
   );
 
   assert.deepEqual(
     detectSemanticInlineStyle(
-      'vertical-align: super; text-decoration-line: line-through; margin-left: 12pt',
+      'vertical-align: super; text-decoration-line: line-through underline; font-variant: small-caps; margin-left: 12pt',
     ),
     {
       strong: false,
       emphasis: false,
       strike: true,
+      underline: true,
+      smallCaps: true,
       verticalAlign: 'super',
     },
   );
