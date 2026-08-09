@@ -5,8 +5,21 @@ import { buildDocxExport } from '../src/services/exportDocx.ts';
 import { buildEpubExport } from '../src/services/exportEpub.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
 
-test('DOCX export contains Word document and real heading styles', () => {
+test('DOCX export contains Word heading and named character styles', () => {
   const manuscript = createVersionedTestManuscript();
+  const block = manuscript.sections[0]?.blocks[0];
+  if (block) {
+    block.content = JSON.stringify({
+      type: 'doc',
+      content: [{
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Normal ' },
+          { type: 'text', text: 'emphasis', marks: [{ type: 'italic' }] },
+        ],
+      }],
+    });
+  }
   const result = buildDocxExport(manuscript);
   const entries = readStoreZipEntries(result.bytes);
 
@@ -17,6 +30,11 @@ test('DOCX export contains Word document and real heading styles', () => {
   const styles = new TextDecoder().decode(entries.get('word/styles.xml'));
   assert.match(styles, /w:styleId="Heading1"/);
   assert.match(styles, /w:outlineLvl w:val="0"/);
+  assert.match(styles, /w:styleId="OMIEmphasis"/);
+  assert.match(styles, /w:name w:val="OMI Emphasis"/);
+
+  const document = new TextDecoder().decode(entries.get('word/document.xml'));
+  assert.match(document, /w:rStyle w:val="OMIEmphasis"/);
 });
 
 test('EPUB export contains EPUB 3 package essentials', () => {
