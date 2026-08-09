@@ -16,6 +16,89 @@ function escapeJsonForHtml(value: unknown): string {
     .replace(/\u2029/g, '\\u2029');
 }
 
+interface SourceDocumentDiagnostics {
+  present: boolean;
+  kind: string | null;
+  fileName: string | null;
+  paragraphs: number;
+  paragraphsWithNoteReferences: number;
+  footnoteReferences: number;
+  endnoteReferences: number;
+  footnotes: number;
+  endnotes: number;
+  footnotesWithBody: number;
+  endnotesWithBody: number;
+}
+
+function summarizeSourceDocument(source: unknown): SourceDocumentDiagnostics {
+  const empty: SourceDocumentDiagnostics = {
+    present: false,
+    kind: null,
+    fileName: null,
+    paragraphs: 0,
+    paragraphsWithNoteReferences: 0,
+    footnoteReferences: 0,
+    endnoteReferences: 0,
+    footnotes: 0,
+    endnotes: 0,
+    footnotesWithBody: 0,
+    endnotesWithBody: 0,
+  };
+
+  if (!source || typeof source !== 'object') return empty;
+
+  const document = source as Record<string, unknown>;
+  const paragraphs = Array.isArray(document.paragraphs) ? document.paragraphs : [];
+  const footnotes = Array.isArray(document.footnotes) ? document.footnotes : [];
+  const endnotes = Array.isArray(document.endnotes) ? document.endnotes : [];
+
+  let paragraphsWithNoteReferences = 0;
+  let footnoteReferences = 0;
+  let endnoteReferences = 0;
+
+  for (const paragraph of paragraphs) {
+    if (!paragraph || typeof paragraph !== 'object') continue;
+    const inline = Array.isArray((paragraph as Record<string, unknown>).inline)
+      ? (paragraph as Record<string, unknown>).inline as unknown[]
+      : [];
+
+    let paragraphHasNote = false;
+    for (const item of inline) {
+      if (!item || typeof item !== 'object') continue;
+      const kind = (item as Record<string, unknown>).kind;
+      if (kind === 'footnoteReference') {
+        footnoteReferences += 1;
+        paragraphHasNote = true;
+      } else if (kind === 'endnoteReference') {
+        endnoteReferences += 1;
+        paragraphHasNote = true;
+      }
+    }
+    if (paragraphHasNote) paragraphsWithNoteReferences += 1;
+  }
+
+  const countBodies = (notes: unknown[]): number =>
+    notes.filter((note) => {
+      if (!note || typeof note !== 'object') return false;
+      const body = (note as Record<string, unknown>).text;
+      return typeof body === 'string' && body.trim().length > 0;
+    }).length;
+
+  return {
+    present: true,
+    kind: typeof document.kind === 'string' ? document.kind : null,
+    fileName: typeof document.fileName === 'string' ? document.fileName : null,
+    paragraphs: paragraphs.length,
+    paragraphsWithNoteReferences,
+    footnoteReferences,
+    endnoteReferences,
+    footnotes: footnotes.length,
+    endnotes: endnotes.length,
+    footnotesWithBody: countBodies(footnotes),
+    endnotesWithBody: countBodies(endnotes),
+  };
+}
+
 integrationRouter.get(
   '/ojs/launch',
   async (request, response) => {
@@ -52,6 +135,9 @@ integrationRouter.get(
         signature,
       );
 
+      const sourceDiagnostics = summarizeSourceDocument(ojsData.sourceDocument);
+      console.info('[OMI OJS import] source document loaded', sourceDiagnostics);
+
       const launchData = {
         protocol: 'omi-integration/1',
         profile: 'omi-integration/1/ojs',
@@ -70,6 +156,9 @@ integrationRouter.get(
           verified.claims.exp * 1000,
         ).toISOString(),
       };
+
+      const handoffDiagnostics = summarizeSourceDocument(launchData.sourceDocument);
+      console.info('[OMI OJS import] launch payload prepared', handoffDiagnostics);
 
       const nonce = randomBytes(18).toString('base64');
       const serialized = escapeJsonForHtml(launchData);
