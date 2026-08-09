@@ -6,6 +6,7 @@ import {
   type OmiIntegrationExtensions,
   type OmiScholarlyMetadata,
 } from '../../model/scholarlyMetadata';
+import { applyOjsInlineSemantics } from './applyOjsInlineSemantics';
 import {
   createManuscriptFromOjsLaunch as createBaseManuscriptFromOjsLaunch,
   type OjsLaunchPayload,
@@ -25,7 +26,10 @@ interface ExtendedOjsSubmission {
 export function createManuscriptFromOjsLaunch(
   launch: OjsLaunchPayload,
 ): OmiManuscript | null {
-  const manuscript = createBaseManuscriptFromOjsLaunch(launch);
+  const baseManuscript = createBaseManuscriptFromOjsLaunch(launch);
+  const manuscript = baseManuscript
+    ? applyOjsInlineSemantics(baseManuscript, launch)
+    : null;
   const submission = launch.submission as ExtendedOjsSubmission | null | undefined;
 
   if (!manuscript || !submission) return manuscript;
