@@ -42,9 +42,18 @@ interface KeywordDiagnostics {
   primaryLocale: string | null;
   keywordsPresent: boolean;
   keywordsType: string;
+  arrayCount: number;
+  arrayItemTypes: string[];
+  arrayItemKeys: string[];
   localeKeys: string[];
   localeShapes: Record<string, string>;
   localeCounts: Record<string, number>;
+}
+
+function valueType(value: unknown): string {
+  if (Array.isArray(value)) return 'array';
+  if (value === null) return 'null';
+  return typeof value;
 }
 
 function summarizeKeywords(submission: unknown): KeywordDiagnostics {
@@ -53,6 +62,9 @@ function summarizeKeywords(submission: unknown): KeywordDiagnostics {
     primaryLocale: null,
     keywordsPresent: false,
     keywordsType: 'missing',
+    arrayCount: 0,
+    arrayItemTypes: [],
+    arrayItemKeys: [],
     localeKeys: [],
     localeShapes: {},
     localeCounts: {},
@@ -66,12 +78,23 @@ function summarizeKeywords(submission: unknown): KeywordDiagnostics {
     submissionPresent: true,
     primaryLocale: typeof record.primaryLocale === 'string' ? record.primaryLocale : null,
     keywordsPresent: keywords !== undefined && keywords !== null,
-    keywordsType: Array.isArray(keywords) ? 'array' : keywords === null ? 'null' : typeof keywords,
+    keywordsType: valueType(keywords),
   };
 
-  if (!keywords || typeof keywords !== 'object' || Array.isArray(keywords)) {
+  if (Array.isArray(keywords)) {
+    result.arrayCount = keywords.length;
+    result.arrayItemTypes = Array.from(new Set(keywords.map(valueType))).sort();
+
+    const keys = new Set<string>();
+    for (const item of keywords) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+      for (const key of Object.keys(item as Record<string, unknown>)) keys.add(key);
+    }
+    result.arrayItemKeys = Array.from(keys).sort();
     return result;
   }
+
+  if (!keywords || typeof keywords !== 'object') return result;
 
   const locales = Object.entries(keywords as Record<string, unknown>);
   result.localeKeys = locales.map(([locale]) => locale).sort();
@@ -199,109 +222,43 @@ function summarizeSourceDocument(source: unknown): SourceDocumentDiagnostics {
 integrationRouter.get(
   '/ojs/launch',
   async (request, response) => {
-    const payload =
-      typeof request.query.payload === 'string'
-        ? request.query.payload
-        : '';
-
-    const signature =
-      typeof request.query.signature === 'string'
-        ? request.query.signature
-        : '';
+    const payload = typeof request.query.payload === 'string' ? request.query.payload : '';
+    const signature = typeof request.query.signature === 'string' ? request.query.signature : '';
 
     if (!payload || !signature) {
-      response.status(400).json({
-        error: {
-          code: 'MISSING_LAUNCH_ASSERTION',
-          message:
-            'The launch payload and signature are required.',
-        },
-      });
+      response.status(400).json({ error: { code: 'MISSING_LAUNCH_ASSERTION', message: 'The launch payload and signature are required.' } });
       return;
     }
 
     try {
-      const verified = await verifyOjsLaunch(
-        payload,
-        signature,
-      );
+      const verified = await verifyOjsLaunch(payload, signature);
+      const ojsData = await loadOjsLaunchData(verified.claims, payload, signature);
 
-      const ojsData = await loadOjsLaunchData(
-        verified.claims,
-        payload,
-        signature,
-      );
-
-      const keywordDiagnostics = summarizeKeywords(ojsData.submission);
-      console.info('[OMI OJS import] keyword metadata', keywordDiagnostics);
-
-      const sourceDiagnostics = summarizeSourceDocument(ojsData.sourceDocument);
-      console.info('[OMI OJS import] source document loaded', sourceDiagnostics);
+      console.info('[OMI OJS import] keyword metadata', summarizeKeywords(ojsData.submission));
+      console.info('[OMI OJS import] source document loaded', summarizeSourceDocument(ojsData.sourceDocument));
 
       const launchData = {
-        protocol: 'omi-integration/1',
-        profile: 'omi-integration/1/ojs',
-        status: 'verified',
-        installation: verified.installation,
-        context:
-          verified.claims.context ?? null,
-        submission: ojsData.submission,
-        contributors: ojsData.contributors,
-        files: ojsData.files,
-        sourceDocument: ojsData.sourceDocument,
-        actor:
-          verified.claims.actor ?? null,
-        scope: verified.claims.scope ?? [],
-        expiresAt: new Date(
-          verified.claims.exp * 1000,
-        ).toISOString(),
+        protocol: 'omi-integration/1', profile: 'omi-integration/1/ojs', status: 'verified',
+        installation: verified.installation, context: verified.claims.context ?? null,
+        submission: ojsData.submission, contributors: ojsData.contributors, files: ojsData.files,
+        sourceDocument: ojsData.sourceDocument, actor: verified.claims.actor ?? null,
+        scope: verified.claims.scope ?? [], expiresAt: new Date(verified.claims.exp * 1000).toISOString(),
       };
 
-      const handoffDiagnostics = summarizeSourceDocument(launchData.sourceDocument);
-      console.info('[OMI OJS import] launch payload prepared', handoffDiagnostics);
+      console.info('[OMI OJS import] launch payload prepared', summarizeSourceDocument(launchData.sourceDocument));
 
       const nonce = randomBytes(18).toString('base64');
       const serialized = escapeJsonForHtml(launchData);
-
-      response.setHeader(
-        'Content-Security-Policy',
-        `default-src 'none'; script-src 'nonce-${nonce}'; base-uri 'none'; frame-ancestors 'none'`,
-      );
-      response.setHeader(
-        'Cache-Control',
-        'no-store, max-age=0',
-      );
-      response.status(200).type('html').send(
-        `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Opening Open Manuscript Studio</title>
-</head>
-<body>
-<p>Opening Open Manuscript Studio…</p>
-<script nonce="${nonce}">
-try {
-  sessionStorage.setItem('omi:ojs-launch', ${JSON.stringify(serialized)});
-  window.location.replace('/?omiOjsLaunch=1');
-} catch (error) {
-  document.body.textContent = 'Unable to hand the OJS submission to Open Manuscript Studio.';
-}
-</script>
-</body>
-</html>`,
-      );
+      response.setHeader('Content-Security-Policy', `default-src 'none'; script-src 'nonce-${nonce}'; base-uri 'none'; frame-ancestors 'none'`);
+      response.setHeader('Cache-Control', 'no-store, max-age=0');
+      response.status(200).type('html').send(`<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Opening Open Manuscript Studio</title></head>
+<body><p>Opening Open Manuscript Studio…</p><script nonce="${nonce}">
+try { sessionStorage.setItem('omi:ojs-launch', ${JSON.stringify(serialized)}); window.location.replace('/?omiOjsLaunch=1'); }
+catch (error) { document.body.textContent = 'Unable to hand the OJS submission to Open Manuscript Studio.'; }
+</script></body></html>`);
     } catch (error) {
-      response.status(401).json({
-        error: {
-          code: 'INVALID_LAUNCH_ASSERTION',
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Launch verification failed.',
-        },
-      });
+      response.status(401).json({ error: { code: 'INVALID_LAUNCH_ASSERTION', message: error instanceof Error ? error.message : 'Launch verification failed.' } });
     }
   },
 );
