@@ -17,6 +17,7 @@ import {
   removeKeyword,
 } from '../model/keywords';
 import type { OmiLocale } from '../types/omi';
+import { ScholarlyMetadataPanel } from './ScholarlyMetadataPanel';
 
 const COMMON_METADATA_LOCALES = ['hu', 'en', 'de'] as const;
 
@@ -77,86 +78,90 @@ export function KeywordEditor() {
   }
 
   return (
-    <div className="omi-keyword-editor">
-      <label>
-        <span>{t('common.language')}</span>
-        <select
-          value={metadataLocale}
-          onChange={(event) => {
-            setMetadataLocale(event.target.value);
-            setDraft('');
-          }}
-        >
-          {locales.map((locale) => (
-            <option value={locale} key={locale}>
-              {locale.toUpperCase()}
-              {locale === manuscript.locale ? ' •' : ''}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {!isPrimaryLocale ? (
+    <>
+      <div className="omi-keyword-editor">
         <label>
-          <span>{t('manuscript.abstract')}</span>
-          <textarea
-            value={localizedAbstract}
-            onChange={(event) =>
-              setLocalizedAbstract(metadataLocale, event.target.value)
-            }
-          />
+          <span>{t('common.language')}</span>
+          <select
+            value={metadataLocale}
+            onChange={(event) => {
+              setMetadataLocale(event.target.value);
+              setDraft('');
+            }}
+          >
+            {locales.map((locale) => (
+              <option value={locale} key={locale}>
+                {locale.toUpperCase()}
+                {locale === manuscript.locale ? ' •' : ''}
+              </option>
+            ))}
+          </select>
         </label>
-      ) : null}
 
-      <span className="omi-keyword-editor-label">
-        {t('manuscript.keywords')} ({metadataLocale.toUpperCase()})
-      </span>
+        {!isPrimaryLocale ? (
+          <label>
+            <span>{t('manuscript.abstract')}</span>
+            <textarea
+              value={localizedAbstract}
+              onChange={(event) =>
+                setLocalizedAbstract(metadataLocale, event.target.value)
+              }
+            />
+          </label>
+        ) : null}
 
-      {keywords.length > 0 ? (
-        <div
-          className="omi-keyword-chip-list"
-          aria-label={`${t('manuscript.keywords')} ${metadataLocale}`}
-        >
-          {keywords.map((keyword) => (
-            <span className="omi-keyword-chip" key={keyword}>
-              <span>{keyword}</span>
-              <button
-                type="button"
-                onClick={() =>
-                  setLocalizedKeywords(
-                    metadataLocale,
-                    removeKeyword(keywords, keyword),
-                  )
-                }
-                aria-label={`${t('common.delete')}: ${keyword}`}
-                title={`${t('common.delete')}: ${keyword}`}
-              >
-                <X size={13} aria-hidden="true" />
-              </button>
-            </span>
-          ))}
+        <span className="omi-keyword-editor-label">
+          {t('manuscript.keywords')} ({metadataLocale.toUpperCase()})
+        </span>
+
+        {keywords.length > 0 ? (
+          <div
+            className="omi-keyword-chip-list"
+            aria-label={`${t('manuscript.keywords')} ${metadataLocale}`}
+          >
+            {keywords.map((keyword) => (
+              <span className="omi-keyword-chip" key={keyword}>
+                <span>{keyword}</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLocalizedKeywords(
+                      metadataLocale,
+                      removeKeyword(keywords, keyword),
+                    )
+                  }
+                  aria-label={`${t('common.delete')}: ${keyword}`}
+                  title={`${t('common.delete')}: ${keyword}`}
+                >
+                  <X size={13} aria-hidden="true" />
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="omi-keyword-input-row">
+          <input
+            type="text"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={`${t('manuscript.keywords')} (${metadataLocale.toUpperCase()})`}
+            aria-label={`${t('manuscript.keywords')} ${metadataLocale}`}
+          />
+          <button
+            type="button"
+            className="studio-menu-secondary-action"
+            disabled={!draft.trim()}
+            onClick={addDraftKeywords}
+          >
+            <Plus size={15} aria-hidden="true" />
+            {t('common.add')}
+          </button>
         </div>
-      ) : null}
-
-      <div className="omi-keyword-input-row">
-        <input
-          type="text"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={`${t('manuscript.keywords')} (${metadataLocale.toUpperCase()})`}
-          aria-label={`${t('manuscript.keywords')} ${metadataLocale}`}
-        />
-        <button
-          type="button"
-          className="studio-menu-secondary-action"
-          disabled={!draft.trim()}
-          onClick={addDraftKeywords}
-        >
-          <Plus size={15} aria-hidden="true" />
-          {t('common.add')}
-        </button>
       </div>
-    </div>
+
+      <ScholarlyMetadataPanel />
+    </>
   );
 }
