@@ -9,6 +9,8 @@ interface OjsLocalizedValue {
   [locale: string]: unknown;
 }
 
+type OjsKeywordValue = OjsLocalizedValue | unknown[];
+
 interface OjsContributor {
   externalId?: string;
   name?: { given?: string; family?: string };
@@ -26,7 +28,7 @@ interface OjsSubmission {
   title?: OjsLocalizedValue;
   subtitle?: OjsLocalizedValue;
   abstract?: OjsLocalizedValue;
-  keywords?: OjsLocalizedValue;
+  keywords?: OjsKeywordValue;
   status?: string;
   updatedAt?: string | null;
 }
@@ -106,19 +108,41 @@ function localizedString(
   return typeof first === 'string' ? first : '';
 }
 
+function normalizeKeywordList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const result: string[] = [];
+  const seen = new Set<string>();
+  for (const item of value) {
+    if (typeof item !== 'string') continue;
+    const keyword = item.trim();
+    if (!keyword) continue;
+    const key = keyword.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(keyword);
+  }
+  return result;
+}
+
 function localizedStrings(
-  value: OjsLocalizedValue | undefined,
+  value: OjsKeywordValue | undefined,
   locale: string,
 ): string[] {
   if (!value) return [];
-  const preferred = value[locale];
-  if (Array.isArray(preferred)) {
-    return preferred.filter((item): item is string => typeof item === 'string');
+
+  // OJS 3.5 may expose keywords directly as a string array rather than a
+  // locale-keyed object. Accept that representation first.
+  if (Array.isArray(value)) {
+    return normalizeKeywordList(value);
   }
+
+  const preferred = value[locale];
+  const preferredKeywords = normalizeKeywordList(preferred);
+  if (preferredKeywords.length) return preferredKeywords;
+
   for (const item of Object.values(value)) {
-    if (Array.isArray(item)) {
-      return item.filter((entry): entry is string => typeof entry === 'string');
-    }
+    const keywords = normalizeKeywordList(item);
+    if (keywords.length) return keywords;
   }
   return [];
 }
