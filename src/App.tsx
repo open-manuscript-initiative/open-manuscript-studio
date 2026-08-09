@@ -13,9 +13,11 @@ import { EditorPane } from './components/EditorPane';
 import { StudioMenu } from './components/StudioMenu';
 import {
   clearOjsLaunchPayload,
-  createManuscriptFromOjsLaunch,
   readOjsLaunchPayload,
 } from './integrations/ojs/importOjsLaunch';
+import {
+  createManuscriptFromOjsLaunch,
+} from './integrations/ojs/importOjsLaunchLocalized';
 
 import './styles/auth.css';
 import './styles/history.css';
