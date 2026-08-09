@@ -18,11 +18,27 @@ import { buildEpubExport } from '../services/exportEpub';
 import { renderHtmlArticle, htmlFileName } from '../services/exportHtml';
 import { buildIdmlExport } from '../services/exportIdml';
 import { renderJatsArticle, jatsFileName } from '../services/exportJats';
+import { buildLatexExport } from '../services/exportLatex';
+import { buildMifExport } from '../services/exportMif';
 import { downloadOmiJson } from '../services/exportOmi';
 import { buildOmiContainer } from '../services/omiContainer';
 import { openPdfPrintView } from '../services/exportPdf';
+import { buildSlaExport } from '../services/exportSla';
+import { buildXtgExport } from '../services/exportXtg';
 
-type ExportId = 'omi' | 'omi-json' | 'jats' | 'html' | 'docx' | 'idml' | 'epub' | 'pdf';
+type ExportId =
+  | 'omi'
+  | 'omi-json'
+  | 'jats'
+  | 'html'
+  | 'docx'
+  | 'idml'
+  | 'xtg'
+  | 'mif'
+  | 'sla'
+  | 'latex'
+  | 'epub'
+  | 'pdf';
 
 export function ExportFormatsPanel() {
   const { locale } = useTranslation();
@@ -75,6 +91,26 @@ export function ExportFormatsPanel() {
           downloadBlob(result.blob, result.fileName);
           break;
         }
+        case 'xtg': {
+          const result = buildXtgExport(manuscript);
+          downloadBlob(result.blob, result.fileName);
+          break;
+        }
+        case 'mif': {
+          const result = buildMifExport(manuscript);
+          downloadBlob(result.blob, result.fileName);
+          break;
+        }
+        case 'sla': {
+          const result = buildSlaExport(manuscript);
+          downloadBlob(result.blob, result.fileName);
+          break;
+        }
+        case 'latex': {
+          const result = buildLatexExport(manuscript);
+          downloadBlob(result.blob, result.fileName);
+          break;
+        }
         case 'epub': {
           const result = buildEpubExport(manuscript);
           downloadBlob(result.blob, result.fileName);
@@ -110,6 +146,10 @@ export function ExportFormatsPanel() {
         <ExportCard icon={<FileText size={19} aria-hidden="true" />} title={copy.html} description={copy.htmlDescription} busy={busy === 'html'} action={copy.export} preparing={copy.preparing} onClick={() => void run('html')} />
         <ExportCard icon={<FileType2 size={19} aria-hidden="true" />} title={copy.docx} description={copy.docxDescription} busy={busy === 'docx'} action={copy.export} preparing={copy.preparing} onClick={() => void run('docx')} />
         <ExportCard icon={<PanelsTopLeft size={19} aria-hidden="true" />} title={copy.idml} description={copy.idmlDescription} busy={busy === 'idml'} action={copy.export} preparing={copy.preparing} onClick={() => void run('idml')} />
+        <ExportCard icon={<PanelsTopLeft size={19} aria-hidden="true" />} title={copy.xtg} description={copy.xtgDescription} busy={busy === 'xtg'} action={copy.export} preparing={copy.preparing} onClick={() => void run('xtg')} />
+        <ExportCard icon={<FileText size={19} aria-hidden="true" />} title={copy.mif} description={copy.mifDescription} busy={busy === 'mif'} action={copy.export} preparing={copy.preparing} onClick={() => void run('mif')} />
+        <ExportCard icon={<PanelsTopLeft size={19} aria-hidden="true" />} title={copy.sla} description={copy.slaDescription} busy={busy === 'sla'} action={copy.export} preparing={copy.preparing} onClick={() => void run('sla')} />
+        <ExportCard icon={<FileCode2 size={19} aria-hidden="true" />} title={copy.latex} description={copy.latexDescription} busy={busy === 'latex'} action={copy.export} preparing={copy.preparing} onClick={() => void run('latex')} />
         <ExportCard icon={<TabletSmartphone size={19} aria-hidden="true" />} title={copy.epub} description={copy.epubDescription} busy={busy === 'epub'} action={copy.export} preparing={copy.preparing} onClick={() => void run('epub')} />
         <ExportCard icon={<Printer size={19} aria-hidden="true" />} title={copy.pdf} description={`${copy.pdfDescription} ${copy.pdfHint}`} busy={busy === 'pdf'} action={copy.export} preparing={copy.preparing} onClick={() => void run('pdf')} />
       </ExportGroup>
