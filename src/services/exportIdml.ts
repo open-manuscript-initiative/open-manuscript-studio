@@ -1,3 +1,9 @@
+import {
+  extractOmiInlineRuns,
+  omiCharacterStyleName,
+  OMI_CHARACTER_STYLE_NAMES,
+  type OmiInlineRun,
+} from '../model/inlineSemantics';
 import { buildPublicationRenderingContext } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type { OmiBlock, OmiManuscript } from '../types/omi';
@@ -15,9 +21,9 @@ export interface IdmlExportResult {
 
 /**
  * Generates an editable IDML package for Adobe InDesign.
- * The alpha renderer deliberately uses a simple one-page, one-story layout:
- * semantic structure is represented with named paragraph styles so publishers
- * can remap those styles in an InDesign template without losing hierarchy.
+ * Paragraph semantics become named InDesign Paragraph Styles and inline OMI
+ * semantics become named Character Styles. This keeps author intent separate
+ * from a publisher's final typography and makes template remapping practical.
  */
 export function buildIdmlExport(manuscript: OmiManuscript): IdmlExportResult {
   const profile = resolvePublicationProfile(manuscript);
@@ -44,10 +50,19 @@ export function buildIdmlExport(manuscript: OmiManuscript): IdmlExportResult {
       const heading = section.number ? `${section.number} ${section.title}` : section.title;
       storyParts.push(styledParagraph(heading, `OMI Heading ${level}`));
       for (const block of section.blocks) {
-        const text = blockPlainText(block);
-        if (text) storyParts.push(styledParagraph(text, block.visual ? 'OMI Figure Caption' : 'OMI Body'));
         if (block.visual) {
+          const text = blockPlainText(block);
+          if (text) storyParts.push(styledParagraph(text, 'OMI Figure Caption'));
           warnings.push(`Structured ${block.visual.kind} object ${block.id} is represented as descriptive text in the current IDML alpha export.`);
+          continue;
+        }
+
+        const runs = extractOmiInlineRuns(block.content);
+        if (runs.length) {
+          storyParts.push(styledRunsParagraph(runs, 'OMI Body'));
+        } else {
+          const text = blockPlainText(block);
+          if (text) storyParts.push(styledParagraph(text, 'OMI Body'));
         }
       }
       renderSections(section.children);
@@ -88,7 +103,6 @@ export function buildIdmlExport(manuscript: OmiManuscript): IdmlExportResult {
   </Story>
 </idPkg:Story>`;
 
-  // A4 page in PostScript points with a text frame inside 36 pt margins.
   const spreadXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <idPkg:Spread xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}">
   <Spread Self="${spreadId}" FlattenerOverride="Default" ShowMasterItems="true" PageTransitionType="None" PageTransitionDirection="NotApplicable" PageTransitionDuration="Medium" BindingLocation="0 0" AllowPageShuffle="true" ItemTransform="1 0 0 1 0 0">
@@ -119,7 +133,6 @@ export function buildIdmlExport(manuscript: OmiManuscript): IdmlExportResult {
   const containerXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0"><rootfiles><rootfile full-path="designmap.xml" media-type="text/xml"/></rootfiles></container>`;
 
-  // IDML is a UCF/ZIP package. Keep the mimetype entry first and uncompressed.
   const entries = [
     textZipEntry('mimetype', IDML_MEDIA_TYPE),
     textZipEntry('META-INF/container.xml', containerXml),
@@ -152,9 +165,24 @@ function buildStylesXml(): string {
     style('OMI Figure Caption', 9, false, 'CenterAlign', 4, 8),
     ...[1, 2, 3, 4, 5, 6].map((level) => style(`OMI Heading ${level}`, Math.max(11, 17 - level), true, 'LeftAlign', level === 1 ? 12 : 8, 4)),
   ].join('\n    ');
+  const characterStyles = [
+    characterStyle(OMI_CHARACTER_STYLE_NAMES.strong, 'Bold'),
+    characterStyle(OMI_CHARACTER_STYLE_NAMES.emphasis, 'Italic'),
+    characterStyle('OMI Strong Emphasis', 'Bold Italic'),
+    characterStyle(OMI_CHARACTER_STYLE_NAMES.strike, undefined, 'StrikeThru="true"'),
+    characterStyle(OMI_CHARACTER_STYLE_NAMES.underline, undefined, 'Underline="true"'),
+    characterStyle(OMI_CHARACTER_STYLE_NAMES['small-caps'], undefined, 'Capitalization="SmallCaps"'),
+    characterStyle(OMI_CHARACTER_STYLE_NAMES.superscript, undefined, 'Position="Superscript"'),
+    characterStyle(OMI_CHARACTER_STYLE_NAMES.subscript, undefined, 'Position="Subscript"'),
+    characterStyle(OMI_CHARACTER_STYLE_NAMES.code, undefined, undefined, 'Courier New'),
+  ].join('\n    ');
+
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <idPkg:Styles xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}">
-  <RootCharacterStyleGroup Self="uCharRoot"><CharacterStyle Self="CharacterStyle/$ID/[None]" Name="$ID/[None]"/></RootCharacterStyleGroup>
+  <RootCharacterStyleGroup Self="uCharRoot">
+    <CharacterStyle Self="CharacterStyle/$ID/[None]" Name="$ID/[None]"/>
+    ${characterStyles}
+  </RootCharacterStyleGroup>
   <RootParagraphStyleGroup Self="uParaRoot">
     <ParagraphStyle Self="ParagraphStyle/$ID/[No paragraph style]" Name="$ID/[No paragraph style]" Imported="false" NextStyle="ParagraphStyle/$ID/[No paragraph style]"/>
     ${paragraphStyles}
@@ -163,12 +191,27 @@ function buildStylesXml(): string {
 </idPkg:Styles>`;
 }
 
+function characterStyle(name: string, fontStyle?: string, attributes?: string, font = 'Times New Roman'): string {
+  return `<CharacterStyle Self="CharacterStyle/${xml(name)}" Name="${xml(name)}" BasedOn="CharacterStyle/$ID/[None]"${attributes ? ` ${attributes}` : ''}><Properties><AppliedFont type="string">${xml(font)}</AppliedFont>${fontStyle ? `<FontStyle type="string">${xml(fontStyle)}</FontStyle>` : ''}</Properties></CharacterStyle>`;
+}
+
 function style(name: string, size: number, bold: boolean, justification: string, spaceBefore: number, spaceAfter: number): string {
   return `<ParagraphStyle Self="ParagraphStyle/${xml(name)}" Name="${xml(name)}" BasedOn="ParagraphStyle/$ID/[No paragraph style]" NextStyle="ParagraphStyle/OMI Body" PointSize="${size}" Leading="Auto" Justification="${justification}" SpaceBefore="${spaceBefore}" SpaceAfter="${spaceAfter}"><Properties><AppliedFont type="string">Times New Roman</AppliedFont></Properties>${bold ? '<Properties><FontStyle type="string">Bold</FontStyle></Properties>' : ''}</ParagraphStyle>`;
 }
 
 function styledParagraph(value: string, styleName: string): string {
-  return `<ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/${xml(styleName)}"><CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Content>${xml(value)}</Content><Br/></CharacterStyleRange></ParagraphStyleRange>`;
+  return styledRunsParagraph([{ text: value, semantics: [] }], styleName);
+}
+
+function styledRunsParagraph(runs: readonly OmiInlineRun[], styleName: string): string {
+  const content = runs
+    .map((run) => {
+      const charStyle = omiCharacterStyleName(run.semantics) ?? '$ID/[None]';
+      const language = run.language ? ` AppliedLanguage="${xml(run.language)}"` : '';
+      return `<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/${xml(charStyle)}"${language}><Content>${xml(run.text)}</Content></CharacterStyleRange>`;
+    })
+    .join('');
+  return `<ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/${xml(styleName)}">${content}<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Br/></CharacterStyleRange></ParagraphStyleRange>`;
 }
 
 function blockPlainText(block: OmiBlock): string {
@@ -177,21 +220,9 @@ function blockPlainText(block: OmiBlock): string {
     const label = block.visual.kind.charAt(0).toUpperCase() + block.visual.kind.slice(1);
     return caption?.trim() ? `[${label}: ${caption.trim()}]` : `[${label}]`;
   }
-  const value = block.content.trim();
-  if (!value) return '';
-  try {
-    return textFromJson(JSON.parse(value) as unknown).replace(/\s+/g, ' ').trim();
-  } catch {
-    return value;
-  }
-}
-
-function textFromJson(value: unknown): string {
-  if (!value || typeof value !== 'object') return '';
-  const node = value as { text?: unknown; content?: unknown[]; type?: unknown };
-  if (typeof node.text === 'string') return node.text;
-  const separator = node.type === 'paragraph' || node.type === 'heading' ? '\n' : '';
-  return (node.content ?? []).map(textFromJson).join(separator);
+  const runs = extractOmiInlineRuns(block.content);
+  if (runs.length) return runs.map((run) => run.text).join('').replace(/\s+/g, ' ').trim();
+  return block.content.trim();
 }
 
 function localizedLabel(locale: string, key: 'abstract' | 'keywords' | 'notes'): string {
