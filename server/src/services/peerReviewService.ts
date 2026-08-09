@@ -13,8 +13,7 @@ export type ReviewFeedbackVisibility =
 export interface CreateAssignmentInput {
   workspaceId: string;
   manuscriptId: string;
-  reviewerUserId: string;
-  reviewerAlias: string;
+  reviewerEmail: string;
   reviewRound: number;
 }
 
@@ -56,21 +55,29 @@ export async function createReviewAssignment(
   }
 
   const reviewer = await prisma.user.findUnique({
-    where: { id: input.reviewerUserId },
+    where: { email: input.reviewerEmail.trim().toLowerCase() },
     select: { id: true, status: true },
   });
 
   if (!reviewer || reviewer.status !== 'ACTIVE') {
-    throw new Error('The reviewer account is not active.');
+    throw new Error('The reviewer account is not active or does not exist.');
   }
+
+  const aliasSequence = await prisma.peerReviewAssignment.count({
+    where: {
+      workspaceId: input.workspaceId,
+      reviewRound: input.reviewRound,
+    },
+  });
+  const reviewerAlias = `Reviewer ${aliasSequence + 1}`;
 
   const assignment = await prisma.peerReviewAssignment.create({
     data: {
       workspaceId: input.workspaceId,
       manuscriptId: input.manuscriptId,
-      reviewerUserId: input.reviewerUserId,
+      reviewerUserId: reviewer.id,
       assignedByUserId: editorUserId,
-      reviewerAlias: input.reviewerAlias.trim(),
+      reviewerAlias,
       reviewRound: input.reviewRound,
       anonymityMode: 'DOUBLE_BLIND',
       status: 'INVITED',
