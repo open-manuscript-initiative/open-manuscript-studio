@@ -7,6 +7,7 @@ import { authRouter } from './routes/authRoutes.js';
 import { healthRouter } from './routes/healthRoutes.js';
 import { integrationRouter } from './routes/integrationRoutes.js';
 import { peerReviewRouter } from './routes/peerReviewRoutes.js';
+import { reviewManuscriptRouter } from './routes/reviewManuscriptRoutes.js';
 
 export const app = express();
 
@@ -37,6 +38,7 @@ app.get('/api', (_request, response) => {
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/reviews', peerReviewRouter);
+app.use('/api/reviews', reviewManuscriptRouter);
 app.use('/integrations', integrationRouter);
 
 app.use((_request, response) => {
