@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { createElement, useEffect, useMemo, useState } from 'react';
 
 import {
   acceptAssignedReview,
@@ -158,8 +158,12 @@ export function ReviewMode() {
                     <div className="review-mode__body">
                       {manuscript.blocks.map((block, index) => {
                         if (block.type === 'heading') {
-                          const Heading = `h${Math.min(6, Math.max(2, block.level ?? 2))}` as keyof JSX.IntrinsicElements;
-                          return <Heading key={`${index}-${block.text.slice(0, 20)}`}>{block.text}</Heading>;
+                          const headingLevel = Math.min(6, Math.max(2, block.level ?? 2));
+                          return createElement(
+                            `h${headingLevel}`,
+                            { key: `${index}-${block.text.slice(0, 20)}` },
+                            block.text,
+                          );
                         }
                         if (block.type === 'note') {
                           return <aside key={`${index}-${block.text.slice(0, 20)}`} className="review-mode__note">{block.text}</aside>;
