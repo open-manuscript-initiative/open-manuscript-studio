@@ -4,9 +4,11 @@ import {
   acceptAssignedReview,
   addAssignedReviewFeedback,
   declineAssignedReview,
+  getAssignedReviewManuscript,
   listAssignedReviews,
   submitAssignedReview,
   type ReviewerAssignment,
+  type ReviewManuscriptSnapshot,
 } from '../services/peerReviewApi';
 import './ReviewMode.css';
 
@@ -20,6 +22,8 @@ const recommendationOptions = [
 export function ReviewMode() {
   const [reviews, setReviews] = useState<ReviewerAssignment[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [manuscript, setManuscript] = useState<ReviewManuscriptSnapshot | null>(null);
+  const [manuscriptLoading, setManuscriptLoading] = useState(false);
   const [authorComment, setAuthorComment] = useState('');
   const [editorComment, setEditorComment] = useState('');
   const [recommendation, setRecommendation] = useState<(typeof recommendationOptions)[number][0]>('MINOR_REVISION');
@@ -34,6 +38,34 @@ export function ReviewMode() {
     () => reviews.find((review) => review.id === selectedId) ?? reviews[0],
     [reviews, selectedId],
   );
+
+  useEffect(() => {
+    if (!selected?.id) {
+      setManuscript(null);
+      return;
+    }
+
+    let active = true;
+    setManuscriptLoading(true);
+
+    void getAssignedReviewManuscript(selected.id)
+      .then((next) => {
+        if (active) setManuscript(next);
+      })
+      .catch((caught) => {
+        if (active) {
+          setError(caught instanceof Error ? caught.message : 'Unable to load the anonymous manuscript.');
+          setManuscript(null);
+        }
+      })
+      .finally(() => {
+        if (active) setManuscriptLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selected?.id]);
 
   async function refresh() {
     try {
@@ -100,10 +132,45 @@ export function ReviewMode() {
               <section className="review-mode__card review-mode__summary">
                 <div>
                   <div className="review-mode__eyebrow">Anonymous manuscript</div>
-                  <h2>Manuscript {selected.manuscriptId}</h2>
+                  <h2>{manuscript?.title ?? `Manuscript ${selected.manuscriptId}`}</h2>
                   <p>Review round {selected.reviewRound} · {selected.anonymityMode.replace('_', ' ')}</p>
                 </div>
                 <span className="review-mode__status">{selected.status.replace('_', ' ')}</span>
+              </section>
+
+              <section className="review-mode__card review-mode__manuscript" aria-busy={manuscriptLoading}>
+                <div className="review-mode__identity-notice">
+                  Author-identifying metadata has been removed from this review copy.
+                </div>
+                {manuscriptLoading ? <p>Loading manuscript…</p> : manuscript ? (
+                  <article className="review-mode__document">
+                    <h1>{manuscript.title}</h1>
+                    {manuscript.subtitle ? <p className="review-mode__subtitle">{manuscript.subtitle}</p> : null}
+                    {manuscript.abstract ? (
+                      <section className="review-mode__abstract">
+                        <h2>Abstract</h2>
+                        <p>{manuscript.abstract}</p>
+                      </section>
+                    ) : null}
+                    {manuscript.keywords.length ? (
+                      <p className="review-mode__keywords"><strong>Keywords:</strong> {manuscript.keywords.join(', ')}</p>
+                    ) : null}
+                    <div className="review-mode__body">
+                      {manuscript.blocks.map((block, index) => {
+                        if (block.type === 'heading') {
+                          const Heading = `h${Math.min(6, Math.max(2, block.level ?? 2))}` as keyof JSX.IntrinsicElements;
+                          return <Heading key={`${index}-${block.text.slice(0, 20)}`}>{block.text}</Heading>;
+                        }
+                        if (block.type === 'note') {
+                          return <aside key={`${index}-${block.text.slice(0, 20)}`} className="review-mode__note">{block.text}</aside>;
+                        }
+                        return <p key={`${index}-${block.text.slice(0, 20)}`}>{block.text}</p>;
+                      })}
+                    </div>
+                  </article>
+                ) : (
+                  <p>The anonymized manuscript has not yet been attached to this review assignment.</p>
+                )}
               </section>
 
               {selected.status === 'invited' ? (
