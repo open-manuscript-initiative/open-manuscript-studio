@@ -40,12 +40,30 @@ export interface ReviewerAssignment {
   completedAt?: string;
 }
 
+export interface ReviewManuscriptBlock {
+  type: 'heading' | 'paragraph' | 'note';
+  text: string;
+  level?: number;
+}
+
+export interface ReviewManuscriptSnapshot {
+  title: string;
+  subtitle?: string;
+  abstract?: string;
+  keywords: string[];
+  blocks: ReviewManuscriptBlock[];
+}
+
 interface ReviewResponse {
   review: ReviewerAssignment;
 }
 
 interface ReviewListResponse {
   reviews: ReviewerAssignment[];
+}
+
+interface ManuscriptResponse {
+  manuscript: ReviewManuscriptSnapshot | null;
 }
 
 interface ErrorResponse {
@@ -62,6 +80,15 @@ const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL ?? '')
 export async function listAssignedReviews(): Promise<ReviewerAssignment[]> {
   const payload = await request<ReviewListResponse>('/api/reviews/assigned');
   return payload.reviews;
+}
+
+export async function getAssignedReviewManuscript(
+  id: string,
+): Promise<ReviewManuscriptSnapshot | null> {
+  const payload = await request<ManuscriptResponse>(
+    `/api/reviews/assigned/${encodeURIComponent(id)}/manuscript`,
+  );
+  return payload.manuscript;
 }
 
 export async function acceptAssignedReview(id: string): Promise<ReviewerAssignment> {
