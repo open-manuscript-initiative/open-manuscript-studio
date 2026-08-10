@@ -176,8 +176,8 @@ function resolveCharacterStyleSemantics(
 
 function semanticsFromRunProperties(xml: string): OjsInlineSemantic[] {
   const result: OjsInlineSemantic[] = [];
-  if (enabledProperty(xml, 'b')) result.push('strong');
-  if (enabledProperty(xml, 'i')) result.push('emphasis');
+  if (enabledProperty(xml, 'b') || enabledProperty(xml, 'bCs')) result.push('strong');
+  if (enabledProperty(xml, 'i') || enabledProperty(xml, 'iCs')) result.push('emphasis');
   if (enabledProperty(xml, 'strike')) result.push('strike');
   if (enabledProperty(xml, 'smallCaps')) result.push('small-caps');
 
