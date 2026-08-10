@@ -29,17 +29,27 @@ export async function setReviewManuscript(
 
   if (!assignment) throw notFound();
   await requireWorkspaceRole(assignment.workspaceId, editorUserId, 'EDITOR');
+  return storeSnapshot(assignmentId, input);
+}
 
-  const snapshot = sanitizeReviewManuscript(input);
-
-  await prisma.peerReviewAssignment.update({
+export async function setReviewManuscriptFromOjs(
+  assignmentId: string,
+  externalSubmissionId: string,
+  input: unknown,
+): Promise<ReviewManuscriptSnapshot> {
+  const assignment = await prisma.peerReviewAssignment.findUnique({
     where: { id: assignmentId },
-    data: {
-      manuscriptSnapshot: snapshot as unknown as Prisma.InputJsonValue,
-    },
+    select: { id: true, manuscriptId: true },
   });
 
-  return snapshot;
+  if (!assignment) throw notFound();
+  if (assignment.manuscriptId !== externalSubmissionId) {
+    const error = new Error('The OJS submission does not match this review assignment.');
+    error.name = 'ForbiddenError';
+    throw error;
+  }
+
+  return storeSnapshot(assignmentId, input);
 }
 
 export async function getReviewManuscriptForReviewer(
@@ -55,6 +65,20 @@ export async function getReviewManuscriptForReviewer(
   if (!assignment.manuscriptSnapshot) return null;
 
   return sanitizeReviewManuscript(assignment.manuscriptSnapshot);
+}
+
+async function storeSnapshot(
+  assignmentId: string,
+  input: unknown,
+): Promise<ReviewManuscriptSnapshot> {
+  const snapshot = sanitizeReviewManuscript(input);
+  await prisma.peerReviewAssignment.update({
+    where: { id: assignmentId },
+    data: {
+      manuscriptSnapshot: snapshot as unknown as Prisma.InputJsonValue,
+    },
+  });
+  return snapshot;
 }
 
 export function sanitizeReviewManuscript(input: unknown): ReviewManuscriptSnapshot {
