@@ -74,9 +74,9 @@ peerReviewRouter.post(
         reviewerEmail: parsed.reviewerEmail,
         reviewRound: parsed.reviewRound,
         assignmentType: parsed.assignmentType,
-        sourceLanguage: parsed.sourceLanguage,
-        targetLanguage: parsed.targetLanguage,
-        anonymityMode: parsed.anonymityMode,
+        ...(parsed.sourceLanguage !== undefined ? { sourceLanguage: parsed.sourceLanguage } : {}),
+        ...(parsed.targetLanguage !== undefined ? { targetLanguage: parsed.targetLanguage } : {}),
+        ...(parsed.anonymityMode !== undefined ? { anonymityMode: parsed.anonymityMode } : {}),
       });
       response.status(201).json({ review });
     } catch (error) {
@@ -195,11 +195,16 @@ peerReviewRouter.post(
   async (request: AuthenticatedRequest, response) => {
     try {
       const parsed = submitSchema.parse(request.body ?? {});
-      const review = await submitReview(
-        requireUserId(request),
-        parseId(request.params.assignmentId, 'review assignment'),
-        parsed.recommendation,
-      );
+      const review = parsed.recommendation === undefined
+        ? await submitReview(
+            requireUserId(request),
+            parseId(request.params.assignmentId, 'review assignment'),
+          )
+        : await submitReview(
+            requireUserId(request),
+            parseId(request.params.assignmentId, 'review assignment'),
+            parsed.recommendation,
+          );
       response.status(200).json({ review });
     } catch (error) {
       sendError(response, error, 'REVIEW_SUBMIT_FAILED');
