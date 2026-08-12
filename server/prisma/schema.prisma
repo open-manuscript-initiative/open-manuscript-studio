@@ -167,7 +167,7 @@ model ExternalInstallation {
   installationId         String                     @unique @map("installation_id") @db.VarChar(128)
   platform               ExternalPlatform
   displayName            String                     @map("display_name") @db.VarChar(200)
-  baseUrl                String                     @db.VarChar(2048)
+  baseUrl                String                     @map("base_url") @db.VarChar(2048)
   sharedSecretCiphertext String                     @map("shared_secret_ciphertext") @db.Text
   sharedSecretIv         String                     @map("shared_secret_iv") @db.VarChar(128)
   sharedSecretAuthTag    String                     @map("shared_secret_auth_tag") @db.VarChar(128)
