@@ -10,7 +10,7 @@ import { RegisterPage } from './auth/RegisterPage';
 import { useStudioStore } from './app/useStudioStore';
 import { AppLayout } from './components/AppLayout';
 import { EditorPane } from './components/EditorPane';
-import { ReviewMode } from './components/ReviewMode';
+import { ReviewPortal } from './components/ReviewPortal';
 import { StudioMenuWithHelp } from './components/StudioMenuWithHelp';
 import {
   clearOjsLaunchPayload,
@@ -67,9 +67,6 @@ function StudioApplication() {
   useEffect(() => {
     if (reviewMode) return;
 
-    // AuthGate mounts StudioApplication only after the Studio session has
-    // been established. A verified OJS handoff can therefore wait safely in
-    // sessionStorage while the user signs in and resume automatically here.
     const launch = readOjsLaunchPayload();
 
     if (!launch) {
@@ -80,8 +77,6 @@ function StudioApplication() {
       createManuscriptFromOjsLaunch(launch);
 
     if (!manuscript) {
-      // Keep the handoff available for diagnostics/retry instead of losing it
-      // on a malformed or temporarily unsupported import payload.
       return;
     }
 
@@ -130,7 +125,7 @@ function StudioApplication() {
   }, [loadManuscript, reviewMode]);
 
   if (reviewMode) {
-    return <ReviewMode />;
+    return <ReviewPortal />;
   }
 
   return (
