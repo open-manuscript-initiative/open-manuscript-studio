@@ -22,10 +22,29 @@ export const peerReviewRouter = Router();
 
 peerReviewRouter.use(requireSession);
 
+const assignmentTypeSchema = z.enum([
+  'SCIENTIFIC_REVIEW',
+  'LANGUAGE_REVIEW',
+  'TRANSLATION',
+  'EDITORIAL_REVISION',
+]);
+
+const anonymityModeSchema = z.enum([
+  'DOUBLE_BLIND',
+  'SINGLE_BLIND',
+  'OPEN',
+]);
+
+const languageSchema = z.string().trim().min(2).max(32);
+
 const createAssignmentSchema = z.object({
   manuscriptId: z.string().min(1).max(128),
   reviewerEmail: z.string().email(),
   reviewRound: z.number().int().min(1).max(99).default(1),
+  assignmentType: assignmentTypeSchema.default('SCIENTIFIC_REVIEW'),
+  sourceLanguage: languageSchema.optional(),
+  targetLanguage: languageSchema.optional(),
+  anonymityMode: anonymityModeSchema.optional(),
 });
 
 const feedbackSchema = z.object({
@@ -39,7 +58,7 @@ const submitSchema = z.object({
     'MINOR_REVISION',
     'MAJOR_REVISION',
     'REJECT',
-  ]),
+  ]).optional(),
 });
 
 peerReviewRouter.post(
@@ -54,6 +73,10 @@ peerReviewRouter.post(
         manuscriptId: parsed.manuscriptId,
         reviewerEmail: parsed.reviewerEmail,
         reviewRound: parsed.reviewRound,
+        assignmentType: parsed.assignmentType,
+        sourceLanguage: parsed.sourceLanguage,
+        targetLanguage: parsed.targetLanguage,
+        anonymityMode: parsed.anonymityMode,
       });
       response.status(201).json({ review });
     } catch (error) {
@@ -171,7 +194,7 @@ peerReviewRouter.post(
   '/assigned/:assignmentId/submit',
   async (request: AuthenticatedRequest, response) => {
     try {
-      const parsed = submitSchema.parse(request.body);
+      const parsed = submitSchema.parse(request.body ?? {});
       const review = await submitReview(
         requireUserId(request),
         parseId(request.params.assignmentId, 'review assignment'),
@@ -215,7 +238,7 @@ function parseId(value: string | string[] | undefined, label: string): string {
 }
 
 function sendError(response: Response, error: unknown, fallbackCode: string): void {
-  const message = error instanceof Error ? error.message : 'Peer review request failed.';
+  const message = error instanceof Error ? error.message : 'Editorial workflow request failed.';
   const name = error instanceof Error ? error.name : '';
 
   if (error instanceof z.ZodError) {
