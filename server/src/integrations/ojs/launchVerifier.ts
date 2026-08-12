@@ -3,7 +3,10 @@ import {
   timingSafeEqual,
 } from 'node:crypto';
 
-import { ExternalPlatform } from '@prisma/client';
+import {
+  ExternalPlatform,
+  Prisma,
+} from '@prisma/client';
 
 import { prisma } from '../../lib/prisma.js';
 import { getActiveInstallationWithSecret } from '../externalInstallations.js';
@@ -163,9 +166,18 @@ export async function verifyOjsLaunch(
         ),
       },
     });
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      throw new Error(
+        'Launch assertion has already been used.',
+      );
+    }
+
     throw new Error(
-      'Launch assertion has already been used.',
+      `Unable to persist the launch nonce${error instanceof Error ? `: ${error.message}` : '.'}`,
     );
   }
 
