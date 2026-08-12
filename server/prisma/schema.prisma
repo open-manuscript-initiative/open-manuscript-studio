@@ -40,6 +40,13 @@ enum ReviewRecommendation {
   REJECT
 }
 
+enum ReviewAssignmentType {
+  SCIENTIFIC_REVIEW
+  LANGUAGE_REVIEW
+  TRANSLATION
+  EDITORIAL_REVISION
+}
+
 enum ReviewAnonymityMode {
   DOUBLE_BLIND
   SINGLE_BLIND
@@ -114,6 +121,9 @@ model PeerReviewAssignment {
   reviewerUserId           String                @map("reviewer_user_id") @db.Uuid
   assignedByUserId         String                @map("assigned_by_user_id") @db.Uuid
   reviewerAlias            String                @map("reviewer_alias") @db.VarChar(64)
+  assignmentType           ReviewAssignmentType  @default(SCIENTIFIC_REVIEW) @map("assignment_type")
+  sourceLanguage           String?               @map("source_language") @db.VarChar(32)
+  targetLanguage           String?               @map("target_language") @db.VarChar(32)
   reviewRound              Int                   @default(1) @map("review_round")
   anonymityMode            ReviewAnonymityMode   @default(DOUBLE_BLIND) @map("anonymity_mode")
   status                   ReviewStatus          @default(INVITED)
@@ -131,8 +141,9 @@ model PeerReviewAssignment {
   assignedBy               User                  @relation("ReviewAssigner", fields: [assignedByUserId], references: [id], onDelete: Restrict)
   feedback                 PeerReviewFeedback[]
 
-  @@unique([workspaceId, reviewerUserId, reviewRound])
+  @@unique([workspaceId, reviewerUserId, reviewRound, assignmentType])
   @@index([workspaceId, status])
+  @@index([workspaceId, assignmentType, status])
   @@index([manuscriptId])
   @@index([reviewerUserId, status])
   @@map("peer_review_assignments")

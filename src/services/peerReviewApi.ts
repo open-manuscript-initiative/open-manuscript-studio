@@ -6,6 +6,12 @@ export type ReviewStatus =
   | 'submitted'
   | 'completed';
 
+export type ReviewAssignmentType =
+  | 'scientific_review'
+  | 'language_review'
+  | 'translation'
+  | 'editorial_revision';
+
 export type ReviewRecommendation =
   | 'accept'
   | 'minor_revision'
@@ -29,9 +35,13 @@ export interface ReviewerAssignment {
   workspaceId: string;
   manuscriptId: string;
   reviewerAlias: string;
+  assignmentType: ReviewAssignmentType;
+  sourceLanguage?: string;
+  targetLanguage?: string;
   reviewRound: number;
   anonymityMode: 'double_blind' | 'single_blind' | 'open';
   status: ReviewStatus;
+  requiresRecommendation: boolean;
   recommendation?: ReviewRecommendation;
   feedback: ReviewerFeedback[];
   invitedAt: string;
@@ -117,11 +127,12 @@ export async function addAssignedReviewFeedback(
 
 export async function submitAssignedReview(
   id: string,
-  recommendation: 'ACCEPT' | 'MINOR_REVISION' | 'MAJOR_REVISION' | 'REJECT',
+  recommendation?: 'ACCEPT' | 'MINOR_REVISION' | 'MAJOR_REVISION' | 'REJECT',
 ): Promise<ReviewerAssignment> {
+  const body = recommendation ? { recommendation } : {};
   return (await request<ReviewResponse>(`/api/reviews/assigned/${encodeURIComponent(id)}/submit`, {
     method: 'POST',
-    body: JSON.stringify({ recommendation }),
+    body: JSON.stringify(body),
   })).review;
 }
 
@@ -143,8 +154,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 async function createApiError(response: Response): Promise<Error> {
   try {
     const payload = (await response.json()) as ErrorResponse;
-    return new Error(payload.error?.message || `Peer review request failed with HTTP ${response.status}.`);
+    return new Error(payload.error?.message || `Editorial assignment request failed with HTTP ${response.status}.`);
   } catch {
-    return new Error(`Peer review request failed with HTTP ${response.status}.`);
+    return new Error(`Editorial assignment request failed with HTTP ${response.status}.`);
   }
 }

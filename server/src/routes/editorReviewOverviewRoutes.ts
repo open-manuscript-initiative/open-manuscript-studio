@@ -40,7 +40,11 @@ editorReviewOverviewRouter.get('/editor/overview', async (request: Authenticated
           },
           feedback: { orderBy: { createdAt: 'asc' } },
         },
-        orderBy: [{ reviewRound: 'desc' }, { invitedAt: 'asc' }],
+        orderBy: [
+          { reviewRound: 'desc' },
+          { assignmentType: 'asc' },
+          { invitedAt: 'asc' },
+        ],
       }),
       prisma.reviewWorkspaceAccess.findMany({
         where: { workspaceId: { in: workspaceIds }, role: 'AUTHOR' },
@@ -71,6 +75,9 @@ editorReviewOverviewRouter.get('/editor/overview', async (request: Authenticated
       workspaceId: assignment.workspaceId,
       manuscriptId: assignment.manuscriptId,
       reviewerAlias: assignment.reviewerAlias,
+      assignmentType: assignment.assignmentType.toLowerCase(),
+      sourceLanguage: assignment.sourceLanguage,
+      targetLanguage: assignment.targetLanguage,
       reviewRound: assignment.reviewRound,
       anonymityMode: assignment.anonymityMode.toLowerCase(),
       status: assignment.status.toLowerCase(),
@@ -120,7 +127,7 @@ function requireUserId(request: AuthenticatedRequest): string {
 }
 
 function sendError(response: Response, error: unknown): void {
-  const message = error instanceof Error ? error.message : 'Unable to load editorial review overview.';
+  const message = error instanceof Error ? error.message : 'Unable to load editorial assignment overview.';
   const name = error instanceof Error ? error.name : '';
   if (name === 'AuthenticationError') {
     response.status(401).json({ error: { code: 'NOT_AUTHENTICATED', message } });
