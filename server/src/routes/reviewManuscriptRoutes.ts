@@ -7,6 +7,9 @@ import {
 } from '../middleware/requireSession.js';
 import {
   getReviewManuscriptForReviewer,
+  getReviewRevisionForAuthor,
+  getReviewRevisionForReviewer,
+  saveReviewRevisionForReviewer,
   setReviewManuscript,
 } from '../services/reviewManuscriptService.js';
 
@@ -28,34 +31,67 @@ const manuscriptSchema = z.object({
   blocks: z.array(blockSchema).max(20_000).default([]),
 }).strip();
 
-reviewManuscriptRouter.put(
-  '/assignments/:assignmentId/manuscript',
-  async (request: AuthenticatedRequest, response) => {
-    try {
-      const userId = requireUserId(request);
-      const assignmentId = parseId(request.params.assignmentId);
-      const manuscript = manuscriptSchema.parse(request.body);
-      const stored = await setReviewManuscript(userId, assignmentId, manuscript);
-      response.status(200).json({ manuscript: stored });
-    } catch (error) {
-      sendError(response, error, 'REVIEW_MANUSCRIPT_UPDATE_FAILED');
-    }
-  },
-);
+reviewManuscriptRouter.put('/assignments/:assignmentId/manuscript', async (request: AuthenticatedRequest, response) => {
+  try {
+    const stored = await setReviewManuscript(
+      requireUserId(request),
+      parseId(request.params.assignmentId),
+      manuscriptSchema.parse(request.body),
+    );
+    response.status(200).json({ manuscript: stored });
+  } catch (error) {
+    sendError(response, error, 'REVIEW_MANUSCRIPT_UPDATE_FAILED');
+  }
+});
 
-reviewManuscriptRouter.get(
-  '/assigned/:assignmentId/manuscript',
-  async (request: AuthenticatedRequest, response) => {
-    try {
-      const userId = requireUserId(request);
-      const assignmentId = parseId(request.params.assignmentId);
-      const manuscript = await getReviewManuscriptForReviewer(userId, assignmentId);
-      response.status(200).json({ manuscript });
-    } catch (error) {
-      sendError(response, error, 'REVIEW_MANUSCRIPT_LOAD_FAILED');
-    }
-  },
-);
+reviewManuscriptRouter.get('/assigned/:assignmentId/manuscript', async (request: AuthenticatedRequest, response) => {
+  try {
+    const manuscript = await getReviewManuscriptForReviewer(
+      requireUserId(request),
+      parseId(request.params.assignmentId),
+    );
+    response.status(200).json({ manuscript });
+  } catch (error) {
+    sendError(response, error, 'REVIEW_MANUSCRIPT_LOAD_FAILED');
+  }
+});
+
+reviewManuscriptRouter.get('/assigned/:assignmentId/revision', async (request: AuthenticatedRequest, response) => {
+  try {
+    const manuscript = await getReviewRevisionForReviewer(
+      requireUserId(request),
+      parseId(request.params.assignmentId),
+    );
+    response.status(200).json({ manuscript });
+  } catch (error) {
+    sendError(response, error, 'REVIEW_REVISION_LOAD_FAILED');
+  }
+});
+
+reviewManuscriptRouter.put('/assigned/:assignmentId/revision', async (request: AuthenticatedRequest, response) => {
+  try {
+    const manuscript = await saveReviewRevisionForReviewer(
+      requireUserId(request),
+      parseId(request.params.assignmentId),
+      manuscriptSchema.parse(request.body),
+    );
+    response.status(200).json({ manuscript });
+  } catch (error) {
+    sendError(response, error, 'REVIEW_REVISION_UPDATE_FAILED');
+  }
+});
+
+reviewManuscriptRouter.get('/author/:assignmentId/revision', async (request: AuthenticatedRequest, response) => {
+  try {
+    const revision = await getReviewRevisionForAuthor(
+      requireUserId(request),
+      parseId(request.params.assignmentId),
+    );
+    response.status(200).json({ revision });
+  } catch (error) {
+    sendError(response, error, 'AUTHOR_REVIEW_REVISION_LOAD_FAILED');
+  }
+});
 
 function requireUserId(request: AuthenticatedRequest): string {
   if (!request.authUserId) {
