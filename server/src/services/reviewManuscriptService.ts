@@ -17,6 +17,12 @@ export interface ReviewManuscriptSnapshot {
   blocks: ReviewManuscriptBlock[];
 }
 
+export interface AuthorFacingReviewRevision {
+  reviewerAlias: string;
+  manuscript: ReviewManuscriptSnapshot | null;
+  revisionUpdatedAt?: string;
+}
+
 export async function setReviewManuscript(
   editorUserId: string,
   assignmentId: string,
@@ -67,6 +73,81 @@ export async function getReviewManuscriptForReviewer(
   return sanitizeReviewManuscript(assignment.manuscriptSnapshot);
 }
 
+export async function getReviewRevisionForReviewer(
+  reviewerUserId: string,
+  assignmentId: string,
+): Promise<ReviewManuscriptSnapshot | null> {
+  const assignment = await prisma.peerReviewAssignment.findFirst({
+    where: { id: assignmentId, reviewerUserId },
+    select: { manuscriptSnapshot: true, reviewRevisionSnapshot: true },
+  });
+
+  if (!assignment) throw notFound();
+  const source = assignment.reviewRevisionSnapshot ?? assignment.manuscriptSnapshot;
+  return source ? sanitizeReviewManuscript(source) : null;
+}
+
+export async function saveReviewRevisionForReviewer(
+  reviewerUserId: string,
+  assignmentId: string,
+  input: unknown,
+): Promise<ReviewManuscriptSnapshot> {
+  const assignment = await prisma.peerReviewAssignment.findFirst({
+    where: { id: assignmentId, reviewerUserId },
+    select: { id: true, status: true },
+  });
+
+  if (!assignment) throw notFound();
+  if (!['ACCEPTED', 'IN_PROGRESS'].includes(assignment.status)) {
+    throw new Error('The review revision can only be edited while the review is accepted or in progress.');
+  }
+
+  const revision = sanitizeReviewManuscript(input);
+  await prisma.peerReviewAssignment.update({
+    where: { id: assignmentId },
+    data: {
+      reviewRevisionSnapshot: revision as unknown as Prisma.InputJsonValue,
+      revisionUpdatedAt: new Date(),
+      status: 'IN_PROGRESS',
+    },
+  });
+  return revision;
+}
+
+export async function getReviewRevisionForAuthor(
+  authorUserId: string,
+  assignmentId: string,
+): Promise<AuthorFacingReviewRevision> {
+  const assignment = await prisma.peerReviewAssignment.findUnique({
+    where: { id: assignmentId },
+    select: {
+      workspaceId: true,
+      reviewerAlias: true,
+      status: true,
+      reviewRevisionSnapshot: true,
+      revisionUpdatedAt: true,
+    },
+  });
+
+  if (!assignment) throw notFound();
+  await requireWorkspaceRole(assignment.workspaceId, authorUserId, 'AUTHOR');
+  if (!['SUBMITTED', 'COMPLETED'].includes(assignment.status)) {
+    const error = new Error('The review revision is not available to the author until the review has been submitted.');
+    error.name = 'ForbiddenError';
+    throw error;
+  }
+
+  return {
+    reviewerAlias: assignment.reviewerAlias,
+    manuscript: assignment.reviewRevisionSnapshot
+      ? sanitizeReviewManuscript(assignment.reviewRevisionSnapshot)
+      : null,
+    ...(assignment.revisionUpdatedAt
+      ? { revisionUpdatedAt: assignment.revisionUpdatedAt.toISOString() }
+      : {}),
+  };
+}
+
 async function storeSnapshot(
   assignmentId: string,
   input: unknown,
@@ -108,11 +189,7 @@ export function sanitizeReviewManuscript(input: unknown): ReviewManuscriptSnapsh
       ? Math.max(1, Math.min(6, Math.trunc(block.level)))
       : undefined;
 
-    blocks.push({
-      type,
-      text,
-      ...(level !== undefined ? { level } : {}),
-    });
+    blocks.push({ type, text, ...(level !== undefined ? { level } : {}) });
   }
 
   return {

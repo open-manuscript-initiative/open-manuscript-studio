@@ -5,7 +5,9 @@ import {
   addAssignedReviewFeedback,
   declineAssignedReview,
   getAssignedReviewManuscript,
+  getAssignedReviewRevision,
   listAssignedReviews,
+  saveAssignedReviewRevision,
   submitAssignedReview,
   type ReviewerAssignment,
   type ReviewManuscriptSnapshot,
@@ -23,16 +25,17 @@ export function ReviewMode() {
   const [reviews, setReviews] = useState<ReviewerAssignment[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [manuscript, setManuscript] = useState<ReviewManuscriptSnapshot | null>(null);
+  const [revision, setRevision] = useState<ReviewManuscriptSnapshot | null>(null);
   const [manuscriptLoading, setManuscriptLoading] = useState(false);
+  const [revisionDirty, setRevisionDirty] = useState(false);
+  const [revisionSaved, setRevisionSaved] = useState(false);
   const [authorComment, setAuthorComment] = useState('');
   const [editorComment, setEditorComment] = useState('');
   const [recommendation, setRecommendation] = useState<(typeof recommendationOptions)[number][0]>('MINOR_REVISION');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    void refresh();
-  }, []);
+  useEffect(() => { void refresh(); }, []);
 
   const selected = useMemo(
     () => reviews.find((review) => review.id === selectedId) ?? reviews[0],
@@ -42,29 +45,36 @@ export function ReviewMode() {
   useEffect(() => {
     if (!selected?.id) {
       setManuscript(null);
+      setRevision(null);
       return;
     }
 
     let active = true;
     setManuscriptLoading(true);
+    setRevisionSaved(false);
+    setRevisionDirty(false);
 
-    void getAssignedReviewManuscript(selected.id)
-      .then((next) => {
-        if (active) setManuscript(next);
+    void Promise.all([
+      getAssignedReviewManuscript(selected.id),
+      getAssignedReviewRevision(selected.id),
+    ])
+      .then(([original, working]) => {
+        if (!active) return;
+        setManuscript(original);
+        setRevision(working ?? original);
       })
       .catch((caught) => {
         if (active) {
           setError(caught instanceof Error ? caught.message : 'Unable to load the anonymous manuscript.');
           setManuscript(null);
+          setRevision(null);
         }
       })
       .finally(() => {
         if (active) setManuscriptLoading(false);
       });
 
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [selected?.id]);
 
   async function refresh() {
@@ -91,8 +101,33 @@ export function ReviewMode() {
     }
   }
 
-  const canWrite = selected && ['accepted', 'in_progress'].includes(selected.status);
-  const submitted = selected && ['submitted', 'completed'].includes(selected.status);
+  async function saveRevision() {
+    if (!selected || !revision) return;
+    try {
+      setBusy(true);
+      setError(null);
+      const stored = await saveAssignedReviewRevision(selected.id, revision);
+      setRevision(stored);
+      setRevisionDirty(false);
+      setRevisionSaved(true);
+      setReviews((current) => current.map((item) =>
+        item.id === selected.id ? { ...item, status: 'in_progress' } : item,
+      ));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to save the review revision.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function updateRevision(next: ReviewManuscriptSnapshot) {
+    setRevision(next);
+    setRevisionDirty(true);
+    setRevisionSaved(false);
+  }
+
+  const canWrite = Boolean(selected && ['accepted', 'in_progress'].includes(selected.status));
+  const submitted = Boolean(selected && ['submitted', 'completed'].includes(selected.status));
 
   return (
     <main className="review-mode">
@@ -100,7 +135,7 @@ export function ReviewMode() {
         <div>
           <div className="review-mode__eyebrow">Open Manuscript Studio</div>
           <h1>Peer Review</h1>
-          <p>Double-blind review mode. Author identity is not available in this view.</p>
+          <p>Double-blind review mode. Author identity is not available in this view, and your identity is never exposed to the author.</p>
         </div>
         <a className="review-mode__back" href="/">Back to Studio</a>
       </header>
@@ -140,38 +175,22 @@ export function ReviewMode() {
 
               <section className="review-mode__card review-mode__manuscript" aria-busy={manuscriptLoading}>
                 <div className="review-mode__identity-notice">
-                  Author-identifying metadata has been removed from this review copy.
+                  Author-identifying metadata has been removed. Author-facing revision data uses only your anonymous reviewer alias.
                 </div>
                 {manuscriptLoading ? <p>Loading manuscript…</p> : manuscript ? (
-                  <article className="review-mode__document">
-                    <h1>{manuscript.title}</h1>
-                    {manuscript.subtitle ? <p className="review-mode__subtitle">{manuscript.subtitle}</p> : null}
-                    {manuscript.abstract ? (
-                      <section className="review-mode__abstract">
-                        <h2>Abstract</h2>
-                        <p>{manuscript.abstract}</p>
-                      </section>
-                    ) : null}
-                    {manuscript.keywords.length ? (
-                      <p className="review-mode__keywords"><strong>Keywords:</strong> {manuscript.keywords.join(', ')}</p>
-                    ) : null}
-                    <div className="review-mode__body">
-                      {manuscript.blocks.map((block, index) => {
-                        if (block.type === 'heading') {
-                          const headingLevel = Math.min(6, Math.max(2, block.level ?? 2));
-                          return createElement(
-                            `h${headingLevel}`,
-                            { key: `${index}-${block.text.slice(0, 20)}` },
-                            block.text,
-                          );
-                        }
-                        if (block.type === 'note') {
-                          return <aside key={`${index}-${block.text.slice(0, 20)}`} className="review-mode__note">{block.text}</aside>;
-                        }
-                        return <p key={`${index}-${block.text.slice(0, 20)}`}>{block.text}</p>;
-                      })}
-                    </div>
-                  </article>
+                  canWrite && revision ? (
+                    <RevisionEditor
+                      original={manuscript}
+                      revision={revision}
+                      disabled={busy}
+                      dirty={revisionDirty}
+                      saved={revisionSaved}
+                      onChange={updateRevision}
+                      onSave={() => void saveRevision()}
+                    />
+                  ) : (
+                    <ManuscriptView manuscript={revision ?? manuscript} />
+                  )
                 ) : (
                   <p>The anonymized manuscript has not yet been attached to this review assignment.</p>
                 )}
@@ -196,7 +215,7 @@ export function ReviewMode() {
                 <>
                   <section className="review-mode__card">
                     <h2>Comments to author</h2>
-                    <p>These comments will be visible to the author without your identity.</p>
+                    <p>These comments will be visible to the author under your anonymous reviewer alias.</p>
                     <textarea value={authorComment} onChange={(event) => setAuthorComment(event.target.value)} rows={8} placeholder="Write your review comments for the author…" />
                     <button disabled={busy || !authorComment.trim()} onClick={() => void run(async () => {
                       const updated = await addAssignedReviewFeedback(selected.id, 'AUTHOR_AND_EDITOR', authorComment);
@@ -221,7 +240,8 @@ export function ReviewMode() {
                     <select value={recommendation} onChange={(event) => setRecommendation(event.target.value as typeof recommendation)}>
                       {recommendationOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                     </select>
-                    <button className="review-mode__submit" disabled={busy} onClick={() => void run(() => submitAssignedReview(selected.id, recommendation))}>Submit review</button>
+                    {revisionDirty ? <p className="review-mode__warning">Save the manuscript revision before submitting the review.</p> : null}
+                    <button className="review-mode__submit" disabled={busy || revisionDirty} onClick={() => void run(() => submitAssignedReview(selected.id, recommendation))}>Submit review</button>
                   </section>
                 </>
               ) : null}
@@ -232,7 +252,7 @@ export function ReviewMode() {
                   <div className="review-mode__feedback-list">
                     {selected.feedback.map((feedback) => (
                       <article key={feedback.id} className="review-mode__feedback">
-                        <strong>{feedback.visibility === 'editor_only' ? 'Confidential to editor' : 'Visible to author'}</strong>
+                        <strong>{feedback.visibility === 'editor_only' ? 'Confidential to editor' : 'Visible to author anonymously'}</strong>
                         <p>{feedback.body}</p>
                       </article>
                     ))}
@@ -243,7 +263,7 @@ export function ReviewMode() {
               {submitted ? (
                 <section className="review-mode__card review-mode__submitted">
                   <h2>Review submitted</h2>
-                  <p>Your recommendation: <strong>{selected.recommendation?.replace('_', ' ')}</strong>. The author-facing response remains anonymous.</p>
+                  <p>Your recommendation: <strong>{selected.recommendation?.replace('_', ' ')}</strong>. The author-facing revision remains anonymous.</p>
                 </section>
               ) : null}
             </>
@@ -251,5 +271,98 @@ export function ReviewMode() {
         </section>
       </div>
     </main>
+  );
+}
+
+function RevisionEditor({
+  original,
+  revision,
+  disabled,
+  dirty,
+  saved,
+  onChange,
+  onSave,
+}: {
+  original: ReviewManuscriptSnapshot;
+  revision: ReviewManuscriptSnapshot;
+  disabled: boolean;
+  dirty: boolean;
+  saved: boolean;
+  onChange: (value: ReviewManuscriptSnapshot) => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="review-mode__revision">
+      <div className="review-mode__revision-toolbar">
+        <div>
+          <h2>Reviewer revision</h2>
+          <p>Edit the anonymous working copy. The source snapshot remains unchanged.</p>
+        </div>
+        <div className="review-mode__revision-actions">
+          {dirty ? <span>Unsaved changes</span> : saved ? <span>Revision saved</span> : null}
+          <button disabled={disabled || !dirty} onClick={onSave}>Save revision</button>
+        </div>
+      </div>
+
+      {revision.blocks.map((block, index) => {
+        const originalText = original.blocks[index]?.text ?? '';
+        const changed = block.text !== originalText;
+        return (
+          <div key={index} className={`review-mode__revision-block${changed ? ' is-changed' : ''}`}>
+            <div className="review-mode__revision-label">
+              <span>{block.type === 'heading' ? `Heading ${block.level ?? 2}` : block.type}</span>
+              {changed ? <strong>Revised</strong> : null}
+            </div>
+            <textarea
+              rows={block.type === 'heading' ? 2 : Math.max(3, Math.min(12, Math.ceil(block.text.length / 90)))}
+              value={block.text}
+              disabled={disabled}
+              onChange={(event) => {
+                const blocks = revision.blocks.map((item, itemIndex) =>
+                  itemIndex === index ? { ...item, text: event.target.value } : item,
+                );
+                onChange({ ...revision, blocks });
+              }}
+            />
+            {changed ? (
+              <details className="review-mode__original-text">
+                <summary>Show original</summary>
+                <p>{originalText}</p>
+              </details>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ManuscriptView({ manuscript }: { manuscript: ReviewManuscriptSnapshot }) {
+  return (
+    <article className="review-mode__document">
+      <h1>{manuscript.title}</h1>
+      {manuscript.subtitle ? <p className="review-mode__subtitle">{manuscript.subtitle}</p> : null}
+      {manuscript.abstract ? (
+        <section className="review-mode__abstract">
+          <h2>Abstract</h2>
+          <p>{manuscript.abstract}</p>
+        </section>
+      ) : null}
+      {manuscript.keywords.length ? (
+        <p className="review-mode__keywords"><strong>Keywords:</strong> {manuscript.keywords.join(', ')}</p>
+      ) : null}
+      <div className="review-mode__body">
+        {manuscript.blocks.map((block, index) => {
+          if (block.type === 'heading') {
+            const headingLevel = Math.min(6, Math.max(2, block.level ?? 2));
+            return createElement(`h${headingLevel}`, { key: index }, block.text);
+          }
+          if (block.type === 'note') {
+            return <aside key={index} className="review-mode__note">{block.text}</aside>;
+          }
+          return <p key={index}>{block.text}</p>;
+        })}
+      </div>
+    </article>
   );
 }

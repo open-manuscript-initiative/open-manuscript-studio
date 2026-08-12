@@ -54,23 +54,12 @@ export interface ReviewManuscriptSnapshot {
   blocks: ReviewManuscriptBlock[];
 }
 
-interface ReviewResponse {
-  review: ReviewerAssignment;
-}
-
-interface ReviewListResponse {
-  reviews: ReviewerAssignment[];
-}
-
-interface ManuscriptResponse {
-  manuscript: ReviewManuscriptSnapshot | null;
-}
+interface ReviewResponse { review: ReviewerAssignment; }
+interface ReviewListResponse { reviews: ReviewerAssignment[]; }
+interface ManuscriptResponse { manuscript: ReviewManuscriptSnapshot | null; }
 
 interface ErrorResponse {
-  error?: {
-    code?: string;
-    message?: string;
-  };
+  error?: { code?: string; message?: string; };
 }
 
 const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL ?? '')
@@ -78,17 +67,29 @@ const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL ?? '')
   .replace(/\/$/, '');
 
 export async function listAssignedReviews(): Promise<ReviewerAssignment[]> {
-  const payload = await request<ReviewListResponse>('/api/reviews/assigned');
-  return payload.reviews;
+  return (await request<ReviewListResponse>('/api/reviews/assigned')).reviews;
 }
 
-export async function getAssignedReviewManuscript(
-  id: string,
-): Promise<ReviewManuscriptSnapshot | null> {
-  const payload = await request<ManuscriptResponse>(
+export async function getAssignedReviewManuscript(id: string): Promise<ReviewManuscriptSnapshot | null> {
+  return (await request<ManuscriptResponse>(
     `/api/reviews/assigned/${encodeURIComponent(id)}/manuscript`,
-  );
-  return payload.manuscript;
+  )).manuscript;
+}
+
+export async function getAssignedReviewRevision(id: string): Promise<ReviewManuscriptSnapshot | null> {
+  return (await request<ManuscriptResponse>(
+    `/api/reviews/assigned/${encodeURIComponent(id)}/revision`,
+  )).manuscript;
+}
+
+export async function saveAssignedReviewRevision(
+  id: string,
+  manuscript: ReviewManuscriptSnapshot,
+): Promise<ReviewManuscriptSnapshot> {
+  return (await request<ManuscriptResponse>(
+    `/api/reviews/assigned/${encodeURIComponent(id)}/revision`,
+    { method: 'PUT', body: JSON.stringify(manuscript) },
+  )).manuscript as ReviewManuscriptSnapshot;
 }
 
 export async function acceptAssignedReview(id: string): Promise<ReviewerAssignment> {
@@ -135,10 +136,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     },
   });
 
-  if (!response.ok) {
-    throw await createApiError(response);
-  }
-
+  if (!response.ok) throw await createApiError(response);
   return (await response.json()) as T;
 }
 
