@@ -232,26 +232,28 @@ export async function loadOjsLaunchData(
   signature: string,
 ): Promise<OjsLaunchData> {
   requireScope(claims, 'metadata.read');
-  requireScope(claims, 'contributors.read');
   requireScope(claims, 'files.read');
 
   const authorization = `OMI ${payload}.${signature}`;
   const submissionResult = await readJson(
     'submission', apiUrl(claims, 'submission'), authorization,
   );
-  const contributorsUrl = siblingOperationUrl(
-    submissionResult.finalUrl, 'submission', 'contributors',
-  );
   const filesUrl = siblingOperationUrl(
     submissionResult.finalUrl, 'submission', 'files',
   );
+  const contributorsUrl = siblingOperationUrl(
+    submissionResult.finalUrl, 'submission', 'contributors',
+  );
 
+  const hasContributorScope = claims.scope?.includes('contributors.read') ?? false;
   const [contributorsResult, filesResult] = await Promise.all([
-    readJson('contributors', contributorsUrl, authorization),
+    hasContributorScope
+      ? readJson('contributors', contributorsUrl, authorization)
+      : Promise.resolve<OjsJsonResponse | null>(null),
     readJson('files', filesUrl, authorization),
   ]);
 
-  const contributors = Array.isArray(contributorsResult.data.contributors)
+  const contributors = contributorsResult && Array.isArray(contributorsResult.data.contributors)
     ? contributorsResult.data.contributors
     : [];
   const files = Array.isArray(filesResult.data.files)
