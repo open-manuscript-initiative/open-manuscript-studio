@@ -108,26 +108,28 @@ model ReviewWorkspaceAccess {
 }
 
 model PeerReviewAssignment {
-  id                 String                @id @default(uuid()) @db.Uuid
-  workspaceId        String                @map("workspace_id") @db.VarChar(128)
-  manuscriptId       String                @map("manuscript_id") @db.VarChar(128)
-  reviewerUserId     String                @map("reviewer_user_id") @db.Uuid
-  assignedByUserId   String                @map("assigned_by_user_id") @db.Uuid
-  reviewerAlias      String                @map("reviewer_alias") @db.VarChar(64)
-  reviewRound        Int                   @default(1) @map("review_round")
-  anonymityMode      ReviewAnonymityMode   @default(DOUBLE_BLIND) @map("anonymity_mode")
-  status             ReviewStatus          @default(INVITED)
-  recommendation     ReviewRecommendation?
-  manuscriptSnapshot Json?                 @map("manuscript_snapshot") @db.JsonB
-  invitedAt          DateTime              @default(now()) @map("invited_at") @db.Timestamptz(6)
-  acceptedAt         DateTime?             @map("accepted_at") @db.Timestamptz(6)
-  submittedAt        DateTime?             @map("submitted_at") @db.Timestamptz(6)
-  completedAt        DateTime?             @map("completed_at") @db.Timestamptz(6)
-  createdAt          DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
-  reviewer           User                  @relation("ReviewerAssignments", fields: [reviewerUserId], references: [id], onDelete: Restrict)
-  assignedBy         User                  @relation("ReviewAssigner", fields: [assignedByUserId], references: [id], onDelete: Restrict)
-  feedback           PeerReviewFeedback[]
+  id                       String                @id @default(uuid()) @db.Uuid
+  workspaceId              String                @map("workspace_id") @db.VarChar(128)
+  manuscriptId             String                @map("manuscript_id") @db.VarChar(128)
+  reviewerUserId           String                @map("reviewer_user_id") @db.Uuid
+  assignedByUserId         String                @map("assigned_by_user_id") @db.Uuid
+  reviewerAlias            String                @map("reviewer_alias") @db.VarChar(64)
+  reviewRound              Int                   @default(1) @map("review_round")
+  anonymityMode            ReviewAnonymityMode   @default(DOUBLE_BLIND) @map("anonymity_mode")
+  status                   ReviewStatus          @default(INVITED)
+  recommendation           ReviewRecommendation?
+  manuscriptSnapshot       Json?                 @map("manuscript_snapshot") @db.JsonB
+  reviewRevisionSnapshot   Json?                 @map("review_revision_snapshot") @db.JsonB
+  revisionUpdatedAt        DateTime?             @map("revision_updated_at") @db.Timestamptz(6)
+  invitedAt                DateTime              @default(now()) @map("invited_at") @db.Timestamptz(6)
+  acceptedAt               DateTime?             @map("accepted_at") @db.Timestamptz(6)
+  submittedAt              DateTime?             @map("submitted_at") @db.Timestamptz(6)
+  completedAt              DateTime?             @map("completed_at") @db.Timestamptz(6)
+  createdAt                DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reviewer                 User                  @relation("ReviewerAssignments", fields: [reviewerUserId], references: [id], onDelete: Restrict)
+  assignedBy               User                  @relation("ReviewAssigner", fields: [assignedByUserId], references: [id], onDelete: Restrict)
+  feedback                 PeerReviewFeedback[]
 
   @@unique([workspaceId, reviewerUserId, reviewRound])
   @@index([workspaceId, status])
