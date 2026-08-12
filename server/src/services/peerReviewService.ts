@@ -42,12 +42,12 @@ const assignmentPolicies: Record<ReviewAssignmentType, {
   },
   LANGUAGE_REVIEW: {
     alias: 'Language reviewer',
-    defaultAnonymity: 'SINGLE_BLIND',
+    defaultAnonymity: 'DOUBLE_BLIND',
     requiresRecommendation: false,
   },
   TRANSLATION: {
     alias: 'Translator',
-    defaultAnonymity: 'SINGLE_BLIND',
+    defaultAnonymity: 'DOUBLE_BLIND',
     requiresRecommendation: false,
   },
   EDITORIAL_REVISION: {
