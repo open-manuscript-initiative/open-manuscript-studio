@@ -263,11 +263,15 @@ export async function submitReview(
     throw new Error('A scientific review requires an editorial recommendation.');
   }
 
+  const recommendationValue: ReviewRecommendation | null = policy.requiresRecommendation
+    ? recommendation ?? null
+    : null;
+
   const updated = await prisma.peerReviewAssignment.update({
     where: { id: assignmentId },
     data: {
       status: 'SUBMITTED',
-      recommendation: policy.requiresRecommendation ? recommendation : null,
+      recommendation: recommendationValue,
       submittedAt: new Date(),
     },
     include: reviewInclude,
