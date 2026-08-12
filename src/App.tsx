@@ -15,6 +15,7 @@ import { StudioMenuWithHelp } from './components/StudioMenuWithHelp';
 import {
   clearOjsLaunchPayload,
   readOjsLaunchPayload,
+  type OjsLaunchPayload,
 } from './integrations/ojs/importOjsLaunch';
 import {
   createManuscriptFromOjsLaunch,
@@ -30,6 +31,8 @@ import './styles/auth.css';
 import './styles/history.css';
 
 type AuthView = 'login' | 'register';
+
+type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
 
 export function App() {
   const [authView, setAuthView] =
@@ -60,12 +63,16 @@ export function App() {
 function StudioApplication() {
   const reviewMode = new URLSearchParams(window.location.search).get('review') === '1';
   const [menuOpen, setMenuOpen] = useState(false);
+  const [ojsContributors, setOjsContributors] = useState<OjsContributors>([]);
   const loadManuscript = useStudioStore(
     (state) => state.loadManuscript,
   );
 
   useEffect(() => {
-    if (reviewMode) return;
+    if (reviewMode) {
+      setOjsContributors([]);
+      return;
+    }
 
     const launch = readOjsLaunchPayload();
 
@@ -79,6 +86,16 @@ function StudioApplication() {
     if (!manuscript) {
       return;
     }
+
+    // Keep the original OJS contributor records only in the current editor
+    // session. This preserves editor-visible fields such as email while the
+    // manuscript identity model continues to store portable author metadata.
+    // Review mode never receives this state.
+    setOjsContributors(
+      launch.scope?.includes('contributors.read')
+        ? launch.contributors ?? []
+        : [],
+    );
 
     loadManuscript(manuscript);
     clearOjsLaunchPayload();
@@ -131,7 +148,7 @@ function StudioApplication() {
   return (
     <AppLayout onOpenMenu={() => setMenuOpen(true)}>
       <div className="focus-workspace">
-        <EditorPane />
+        <EditorPane ojsContributors={ojsContributors} />
       </div>
 
       <StudioMenuWithHelp
