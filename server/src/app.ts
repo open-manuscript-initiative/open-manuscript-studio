@@ -4,6 +4,7 @@ import helmet from 'helmet';
 
 import { env } from './config/env.js';
 import { authRouter } from './routes/authRoutes.js';
+import { editorReviewOverviewRouter } from './routes/editorReviewOverviewRoutes.js';
 import { healthRouter } from './routes/healthRoutes.js';
 import { integrationRouter } from './routes/integrationRoutes.js';
 import { ojsReviewRouter } from './routes/ojsReviewRoutes.js';
@@ -40,6 +41,7 @@ app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/reviews', peerReviewRouter);
 app.use('/api/reviews', reviewManuscriptRouter);
+app.use('/api/reviews', editorReviewOverviewRouter);
 app.use('/integrations/ojs/review', ojsReviewRouter);
 app.use('/integrations', integrationRouter);
 
