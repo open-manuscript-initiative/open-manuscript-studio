@@ -21,6 +21,13 @@ const recommendationOptions = [
   ['REJECT', 'Reject'],
 ] as const;
 
+const assignmentLabels: Record<ReviewerAssignment['assignmentType'], string> = {
+  scientific_review: 'Scientific peer review',
+  language_review: 'Language review',
+  translation: 'Translation',
+  editorial_revision: 'Editorial revision',
+};
+
 export function ReviewMode() {
   const [reviews, setReviews] = useState<ReviewerAssignment[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -65,7 +72,7 @@ export function ReviewMode() {
       })
       .catch((caught) => {
         if (active) {
-          setError(caught instanceof Error ? caught.message : 'Unable to load the anonymous manuscript.');
+          setError(caught instanceof Error ? caught.message : 'Unable to load the assigned manuscript.');
           setManuscript(null);
           setRevision(null);
         }
@@ -84,7 +91,7 @@ export function ReviewMode() {
       setReviews(next);
       if (!selectedId && next[0]) setSelectedId(next[0].id);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Unable to load review assignments.');
+      setError(caught instanceof Error ? caught.message : 'Unable to load editorial assignments.');
     }
   }
 
@@ -95,7 +102,7 @@ export function ReviewMode() {
       const updated = await action();
       setReviews((current) => current.map((item) => item.id === updated.id ? updated : item));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Peer review request failed.');
+      setError(caught instanceof Error ? caught.message : 'Editorial workflow request failed.');
     } finally {
       setBusy(false);
     }
@@ -114,7 +121,7 @@ export function ReviewMode() {
         item.id === selected.id ? { ...item, status: 'in_progress' } : item,
       ));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Unable to save the review revision.');
+      setError(caught instanceof Error ? caught.message : 'Unable to save the revision.');
     } finally {
       setBusy(false);
     }
@@ -128,14 +135,18 @@ export function ReviewMode() {
 
   const canWrite = Boolean(selected && ['accepted', 'in_progress'].includes(selected.status));
   const submitted = Boolean(selected && ['submitted', 'completed'].includes(selected.status));
+  const assignmentLabel = selected ? assignmentLabels[selected.assignmentType] : 'Editorial assignment';
+  const languagePair = selected?.assignmentType === 'translation'
+    ? [selected.sourceLanguage, selected.targetLanguage].filter(Boolean).join(' → ')
+    : selected?.sourceLanguage;
 
   return (
     <main className="review-mode">
       <header className="review-mode__header">
         <div>
           <div className="review-mode__eyebrow">Open Manuscript Studio</div>
-          <h1>Peer Review</h1>
-          <p>Double-blind review mode. Author identity is not available in this view, and your identity is never exposed to the author.</p>
+          <h1>Editorial Assignment</h1>
+          <p>Your access is limited to the assignment granted by the editor. Identity data is exposed only according to the assignment privacy policy.</p>
         </div>
         <a className="review-mode__back" href="/">Back to Studio</a>
       </header>
@@ -143,8 +154,8 @@ export function ReviewMode() {
       {error ? <div className="review-mode__error" role="alert">{error}</div> : null}
 
       <div className="review-mode__layout">
-        <aside className="review-mode__list" aria-label="Assigned reviews">
-          <h2>Assigned reviews</h2>
+        <aside className="review-mode__list" aria-label="Assigned editorial tasks">
+          <h2>Assigned tasks</h2>
           {reviews.length ? reviews.map((review) => (
             <button
               key={review.id}
@@ -153,29 +164,33 @@ export function ReviewMode() {
               onClick={() => setSelectedId(review.id)}
             >
               <strong>{review.reviewerAlias}</strong>
+              <span>{assignmentLabels[review.assignmentType]}</span>
+              {review.assignmentType === 'translation' ? (
+                <span>{review.sourceLanguage ?? '?'} → {review.targetLanguage ?? '?'}</span>
+              ) : review.sourceLanguage ? <span>{review.sourceLanguage}</span> : null}
               <span>Manuscript {review.manuscriptId}</span>
               <span>Round {review.reviewRound} · {review.status.replace('_', ' ')}</span>
             </button>
-          )) : <p className="review-mode__empty">No review assignments.</p>}
+          )) : <p className="review-mode__empty">No editorial assignments.</p>}
         </aside>
 
         <section className="review-mode__content">
           {!selected ? (
-            <div className="review-mode__card"><p>No review selected.</p></div>
+            <div className="review-mode__card"><p>No assignment selected.</p></div>
           ) : (
             <>
               <section className="review-mode__card review-mode__summary">
                 <div>
-                  <div className="review-mode__eyebrow">Anonymous manuscript</div>
+                  <div className="review-mode__eyebrow">{assignmentLabel}</div>
                   <h2>{manuscript?.title ?? `Manuscript ${selected.manuscriptId}`}</h2>
-                  <p>Review round {selected.reviewRound} · {selected.anonymityMode.replace('_', ' ')}</p>
+                  <p>Round {selected.reviewRound} · {selected.anonymityMode.replace('_', ' ')}{languagePair ? ` · ${languagePair}` : ''}</p>
                 </div>
                 <span className="review-mode__status">{selected.status.replace('_', ' ')}</span>
               </section>
 
               <section className="review-mode__card review-mode__manuscript" aria-busy={manuscriptLoading}>
                 <div className="review-mode__identity-notice">
-                  Author-identifying metadata has been removed. Author-facing revision data uses only your anonymous reviewer alias.
+                  This workspace contains only the identity information permitted for this assignment. Author-facing revisions never expose your account identifiers.
                 </div>
                 {manuscriptLoading ? <p>Loading manuscript…</p> : manuscript ? (
                   canWrite && revision ? (
@@ -185,6 +200,7 @@ export function ReviewMode() {
                       disabled={busy}
                       dirty={revisionDirty}
                       saved={revisionSaved}
+                      label={assignmentLabel}
                       onChange={updateRevision}
                       onSave={() => void saveRevision()}
                     />
@@ -192,31 +208,31 @@ export function ReviewMode() {
                     <ManuscriptView manuscript={revision ?? manuscript} />
                   )
                 ) : (
-                  <p>The anonymized manuscript has not yet been attached to this review assignment.</p>
+                  <p>The manuscript has not yet been attached to this assignment.</p>
                 )}
               </section>
 
               {selected.status === 'invited' ? (
                 <section className="review-mode__card">
-                  <h2>Review invitation</h2>
-                  <p>Accept the invitation to begin the review, or decline it without revealing your identity to the author.</p>
+                  <h2>Assignment invitation</h2>
+                  <p>Accept the assignment to begin work, or decline it.</p>
                   <div className="review-mode__actions">
-                    <button disabled={busy} onClick={() => void run(() => acceptAssignedReview(selected.id))}>Accept review</button>
+                    <button disabled={busy} onClick={() => void run(() => acceptAssignedReview(selected.id))}>Accept assignment</button>
                     <button className="secondary" disabled={busy} onClick={() => void run(() => declineAssignedReview(selected.id))}>Decline</button>
                   </div>
                 </section>
               ) : null}
 
               {selected.status === 'declined' ? (
-                <section className="review-mode__card"><p>This review invitation was declined.</p></section>
+                <section className="review-mode__card"><p>This assignment was declined.</p></section>
               ) : null}
 
               {canWrite ? (
                 <>
                   <section className="review-mode__card">
                     <h2>Comments to author</h2>
-                    <p>These comments will be visible to the author under your anonymous reviewer alias.</p>
-                    <textarea value={authorComment} onChange={(event) => setAuthorComment(event.target.value)} rows={8} placeholder="Write your review comments for the author…" />
+                    <p>These comments may be shown to the author under the assignment alias, not your account identity.</p>
+                    <textarea value={authorComment} onChange={(event) => setAuthorComment(event.target.value)} rows={8} placeholder="Write comments for the author…" />
                     <button disabled={busy || !authorComment.trim()} onClick={() => void run(async () => {
                       const updated = await addAssignedReviewFeedback(selected.id, 'AUTHOR_AND_EDITOR', authorComment);
                       setAuthorComment('');
@@ -226,7 +242,7 @@ export function ReviewMode() {
 
                   <section className="review-mode__card">
                     <h2>Confidential comments to editor</h2>
-                    <p>These comments are never included in the author-facing review response.</p>
+                    <p>These comments are never included in the author-facing response.</p>
                     <textarea value={editorComment} onChange={(event) => setEditorComment(event.target.value)} rows={5} placeholder="Write a confidential note to the editor…" />
                     <button disabled={busy || !editorComment.trim()} onClick={() => void run(async () => {
                       const updated = await addAssignedReviewFeedback(selected.id, 'EDITOR_ONLY', editorComment);
@@ -236,23 +252,36 @@ export function ReviewMode() {
                   </section>
 
                   <section className="review-mode__card">
-                    <h2>Recommendation</h2>
-                    <select value={recommendation} onChange={(event) => setRecommendation(event.target.value as typeof recommendation)}>
-                      {recommendationOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                    </select>
-                    {revisionDirty ? <p className="review-mode__warning">Save the manuscript revision before submitting the review.</p> : null}
-                    <button className="review-mode__submit" disabled={busy || revisionDirty} onClick={() => void run(() => submitAssignedReview(selected.id, recommendation))}>Submit review</button>
+                    <h2>{selected.requiresRecommendation ? 'Recommendation' : 'Complete assignment'}</h2>
+                    {selected.requiresRecommendation ? (
+                      <select value={recommendation} onChange={(event) => setRecommendation(event.target.value as typeof recommendation)}>
+                        {recommendationOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                      </select>
+                    ) : (
+                      <p>Submit the completed {assignmentLabel.toLowerCase()} to the editor. No scientific accept/revise/reject recommendation is required.</p>
+                    )}
+                    {revisionDirty ? <p className="review-mode__warning">Save the manuscript revision before submitting the assignment.</p> : null}
+                    <button
+                      className="review-mode__submit"
+                      disabled={busy || revisionDirty}
+                      onClick={() => void run(() => submitAssignedReview(
+                        selected.id,
+                        selected.requiresRecommendation ? recommendation : undefined,
+                      ))}
+                    >
+                      {selected.requiresRecommendation ? 'Submit review' : 'Submit assignment'}
+                    </button>
                   </section>
                 </>
               ) : null}
 
               {selected.feedback.length ? (
                 <section className="review-mode__card">
-                  <h2>Saved review notes</h2>
+                  <h2>Saved notes</h2>
                   <div className="review-mode__feedback-list">
                     {selected.feedback.map((feedback) => (
                       <article key={feedback.id} className="review-mode__feedback">
-                        <strong>{feedback.visibility === 'editor_only' ? 'Confidential to editor' : 'Visible to author anonymously'}</strong>
+                        <strong>{feedback.visibility === 'editor_only' ? 'Confidential to editor' : 'Visible to author under assignment alias'}</strong>
                         <p>{feedback.body}</p>
                       </article>
                     ))}
@@ -262,8 +291,12 @@ export function ReviewMode() {
 
               {submitted ? (
                 <section className="review-mode__card review-mode__submitted">
-                  <h2>Review submitted</h2>
-                  <p>Your recommendation: <strong>{selected.recommendation?.replace('_', ' ')}</strong>. The author-facing revision remains anonymous.</p>
+                  <h2>Assignment submitted</h2>
+                  {selected.requiresRecommendation ? (
+                    <p>Your recommendation: <strong>{selected.recommendation?.replace('_', ' ')}</strong>. Author-facing data remains privacy-filtered.</p>
+                  ) : (
+                    <p>The {assignmentLabel.toLowerCase()} has been submitted to the editor.</p>
+                  )}
                 </section>
               ) : null}
             </>
@@ -280,6 +313,7 @@ function RevisionEditor({
   disabled,
   dirty,
   saved,
+  label,
   onChange,
   onSave,
 }: {
@@ -288,6 +322,7 @@ function RevisionEditor({
   disabled: boolean;
   dirty: boolean;
   saved: boolean;
+  label: string;
   onChange: (value: ReviewManuscriptSnapshot) => void;
   onSave: () => void;
 }) {
@@ -295,8 +330,8 @@ function RevisionEditor({
     <div className="review-mode__revision">
       <div className="review-mode__revision-toolbar">
         <div>
-          <h2>Reviewer revision</h2>
-          <p>Edit the anonymous working copy. The source snapshot remains unchanged.</p>
+          <h2>{label} revision</h2>
+          <p>Edit the assigned working copy. The source snapshot remains unchanged.</p>
         </div>
         <div className="review-mode__revision-actions">
           {dirty ? <span>Unsaved changes</span> : saved ? <span>Revision saved</span> : null}
