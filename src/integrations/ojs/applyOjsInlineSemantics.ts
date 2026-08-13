@@ -1,4 +1,4 @@
-import type { OmiManuscript } from '../../types/omi';
+import type { OmiBlock, OmiManuscript } from '../../types/omi';
 import type { OjsLaunchPayload } from './importOjsLaunch';
 
 type OjsInlineSemantic =
@@ -29,12 +29,18 @@ interface PortableSpan {
 }
 
 /**
- * Enriches paragraph blocks created by the established OJS importer with the
- * inline semantics emitted by the server-side DOCX handoff.
+ * Projects DOCX run-level semantics onto the paragraph blocks produced by the
+ * base OJS importer.
+ *
+ * Source and target paragraphs are paired in document order instead of by a
+ * normalized-text lookup. The base importer removes manuscript title/subtitle
+ * paragraphs and converts heading paragraphs into OMI section titles; this
+ * function mirrors those removals before zipping source paragraphs to target
+ * blocks. That makes italic/bold preservation independent of whitespace and
+ * run-splitting differences between paragraph.text and paragraph.inline.
  *
  * Existing OMI inline atoms (notes, citations and cross-references) are kept
- * intact. Styled text is projected onto the text nodes around those atoms, so
- * a paragraph can contain both italic/bold runs and note anchors.
+ * intact while styled text nodes are replaced with their marked equivalents.
  */
 export function applyOjsInlineSemantics(
   manuscript: OmiManuscript,
@@ -44,22 +50,12 @@ export function applyOjsInlineSemantics(
     paragraphs?: StyledSourceParagraph[];
   } | undefined;
   const paragraphs = Array.isArray(source?.paragraphs) ? source.paragraphs : [];
-  const queues = new Map<string, PortableSpan[][]>();
+  if (!paragraphs.length) return manuscript;
 
-  for (const paragraph of paragraphs) {
-    if (!Array.isArray(paragraph.inline)) continue;
-    const inline = paragraph.inline as StyledInlineText[];
-    if (!inline.some(hasPortableSemantics)) continue;
+  const sourceBody = bodyParagraphs(manuscript, paragraphs);
+  if (!sourceBody.length) return manuscript;
 
-    const spans = buildPortableSpans(inline);
-    const text = spans.map((span) => span.text).join('');
-    if (!normalize(text) || !spans.length) continue;
-    const queue = queues.get(normalize(text)) ?? [];
-    queue.push(spans);
-    queues.set(normalize(text), queue);
-  }
-
-  if (!queues.size) return manuscript;
+  let sourceIndex = 0;
 
   return {
     ...manuscript,
@@ -67,10 +63,16 @@ export function applyOjsInlineSemantics(
       ...section,
       blocks: section.blocks.map((block) => {
         if (block.visual || block.type !== 'paragraph') return block;
-        const text = storedPlainText(block.content);
-        const queue = queues.get(normalize(text));
-        const spans = queue?.shift();
-        if (!spans) return block;
+
+        const paragraph = sourceBody[sourceIndex];
+        sourceIndex += 1;
+        if (!paragraph || !Array.isArray(paragraph.inline)) return block;
+
+        const inline = paragraph.inline as StyledInlineText[];
+        if (!inline.some(hasPortableSemantics)) return block;
+
+        const spans = buildPortableSpans(inline);
+        if (!spans.length) return block;
 
         return {
           ...block,
@@ -79,6 +81,52 @@ export function applyOjsInlineSemantics(
       }),
     })),
   };
+}
+
+function bodyParagraphs(
+  manuscript: OmiManuscript,
+  paragraphs: readonly StyledSourceParagraph[],
+): StyledSourceParagraph[] {
+  const title = normalize(manuscript.title ?? '');
+  const subtitle = normalize(manuscript.subtitle ?? '');
+  const headingCounts = new Map<string, number>();
+
+  for (const section of manuscript.sections) {
+    const key = normalize(section.title ?? '');
+    if (!key) continue;
+    headingCounts.set(key, (headingCounts.get(key) ?? 0) + 1);
+  }
+
+  const result: StyledSourceParagraph[] = [];
+
+  for (const paragraph of paragraphs) {
+    const text = typeof paragraph.text === 'string' ? paragraph.text : '';
+    const key = normalize(text);
+    const inline = Array.isArray(paragraph.inline)
+      ? paragraph.inline as StyledInlineText[]
+      : [];
+    const hasNoteReference = inline.some(isSourceNoteReference);
+
+    if (!key && !hasNoteReference) continue;
+    if (key && (key === title || (subtitle && key === subtitle))) continue;
+
+    if (key && !hasNoteReference) {
+      const headingCount = headingCounts.get(key) ?? 0;
+      if (headingCount > 0) {
+        if (headingCount === 1) headingCounts.delete(key);
+        else headingCounts.set(key, headingCount - 1);
+        continue;
+      }
+    }
+
+    result.push(paragraph);
+  }
+
+  return result;
+}
+
+function isSourceNoteReference(item: StyledInlineText): boolean {
+  return item.kind === 'footnoteReference' || item.kind === 'endnoteReference';
 }
 
 function hasPortableSemantics(item: StyledInlineText): boolean {
@@ -138,7 +186,7 @@ function transformNode(
 
   if (!Array.isArray(node.content)) return node;
 
-  const content: unknown[] = [];
+  const transformedContent: unknown[] = [];
   for (const child of node.content) {
     const transformed = transformNode(child, spans, cursor);
     if (
@@ -148,12 +196,12 @@ function transformNode(
       (transformed as Record<string, unknown>).type === 'omiInlineGroup' &&
       Array.isArray((transformed as Record<string, unknown>).content)
     ) {
-      content.push(...((transformed as Record<string, unknown>).content as unknown[]));
+      transformedContent.push(...((transformed as Record<string, unknown>).content as unknown[]));
     } else {
-      content.push(transformed);
+      transformedContent.push(transformed);
     }
   }
-  return { ...node, content };
+  return { ...node, content: transformedContent };
 }
 
 function styledTextNodes(
@@ -253,23 +301,6 @@ function semanticMark(value: unknown): Array<Record<string, unknown>> {
   }
 }
 
-function storedPlainText(content: string): string {
-  const input = content.trim();
-  if (!input.startsWith('{')) return content;
-  try {
-    return collectJsonText(JSON.parse(input) as unknown);
-  } catch {
-    return content;
-  }
-}
-
-function collectJsonText(value: unknown): string {
-  if (!value || typeof value !== 'object') return '';
-  const node = value as { text?: unknown; content?: unknown[] };
-  if (typeof node.text === 'string') return node.text;
-  return (node.content ?? []).map(collectJsonText).join('');
-}
-
 function normalize(value: string): string {
-  return value.replace(/\s+/g, ' ').trim();
+  return value.replace(/\s+/g, ' ').trim().toLocaleLowerCase();
 }
