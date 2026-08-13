@@ -16,6 +16,8 @@ import {
 type LocalizedUnknown = Record<string, unknown>;
 type LocalizedKeywordValue = LocalizedUnknown | unknown[];
 
+const LIST_SENTINEL = '\u2060';
+
 interface ExtendedOjsSubmission {
   primaryLocale?: string;
   abstract?: LocalizedUnknown;
@@ -24,13 +26,38 @@ interface ExtendedOjsSubmission {
   extensions?: Record<string, unknown>;
 }
 
+interface ExtendedSourceParagraph extends Record<string, unknown> {
+  text?: string;
+}
+
+interface ExtendedStructuredBlock extends Record<string, unknown> {
+  kind?: string;
+  text?: string;
+  listLevel?: number;
+  ordered?: boolean;
+}
+
+interface ExtendedSourceDocument extends Record<string, unknown> {
+  paragraphs?: ExtendedSourceParagraph[];
+  structuredBlocks?: ExtendedStructuredBlock[];
+}
+
 export function createManuscriptFromOjsLaunch(
   launch: OjsLaunchPayload,
 ): OmiManuscript | null {
-  const baseManuscript = createBaseManuscriptFromOjsLaunch(launch);
-  const manuscript = baseManuscript
+  // Word numbered-list paragraphs can superficially resemble headings (for
+  // example "1. First item"). Mark known list paragraphs before the base
+  // importer runs so heading heuristics cannot consume them as section titles.
+  // The sentinel is removed immediately afterwards; structured-content import
+  // then converts the preserved paragraph sequence into real Tiptap lists.
+  const listAwareLaunch = suppressListHeadingInference(launch);
+  const baseManuscript = createBaseManuscriptFromOjsLaunch(listAwareLaunch);
+  const restoredBase = baseManuscript
+    ? removeListSentinels(baseManuscript)
+    : null;
+  const manuscript = restoredBase
     ? applyOjsStructuredContent(
-        applyOjsInlineSemantics(baseManuscript, launch),
+        applyOjsInlineSemantics(restoredBase, launch),
         launch,
       )
     : null;
@@ -69,6 +96,76 @@ export function createManuscriptFromOjsLaunch(
     metadata,
     extensions,
   };
+}
+
+function suppressListHeadingInference(launch: OjsLaunchPayload): OjsLaunchPayload {
+  const source = launch.sourceDocument as unknown as ExtendedSourceDocument | undefined;
+  if (!source || !Array.isArray(source.paragraphs) || !Array.isArray(source.structuredBlocks)) {
+    return launch;
+  }
+
+  const listQueues = new Map<string, number>();
+  for (const block of source.structuredBlocks) {
+    if (
+      block.kind !== 'paragraph' ||
+      typeof block.text !== 'string' ||
+      !Number.isInteger(block.listLevel) ||
+      typeof block.ordered !== 'boolean'
+    ) {
+      continue;
+    }
+    const key = normalizeListText(block.text);
+    if (!key) continue;
+    listQueues.set(key, (listQueues.get(key) ?? 0) + 1);
+  }
+
+  if (!listQueues.size) return launch;
+
+  const paragraphs = source.paragraphs.map((paragraph) => {
+    const text = typeof paragraph.text === 'string' ? paragraph.text : '';
+    const key = normalizeListText(text);
+    const remaining = listQueues.get(key) ?? 0;
+    if (!key || remaining <= 0) return paragraph;
+
+    if (remaining === 1) listQueues.delete(key);
+    else listQueues.set(key, remaining - 1);
+
+    return {
+      ...paragraph,
+      text: `${LIST_SENTINEL}${text}`,
+      // Remove explicit/direct heading signals as well as defeating the
+      // text-based numbered-heading fallback with the temporary sentinel.
+      styleId: undefined,
+      styleName: undefined,
+      outlineLevel: undefined,
+      headingLevel: undefined,
+    };
+  });
+
+  return {
+    ...launch,
+    sourceDocument: {
+      ...launch.sourceDocument,
+      paragraphs,
+    } as OjsLaunchPayload['sourceDocument'],
+  };
+}
+
+function removeListSentinels(manuscript: OmiManuscript): OmiManuscript {
+  const sections = manuscript.sections.map((section) => ({
+    ...section,
+    blocks: section.blocks.map((block) => ({
+      ...block,
+      content: block.content.includes(LIST_SENTINEL)
+        ? block.content.split(LIST_SENTINEL).join('')
+        : block.content,
+    })),
+  }));
+  return { ...manuscript, sections };
+}
+
+function normalizeListText(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
 }
 
 function normalizeScholarlyMetadata(
