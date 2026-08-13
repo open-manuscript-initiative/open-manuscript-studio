@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma.js';
@@ -21,6 +23,72 @@ export interface AuthorFacingReviewRevision {
   reviewerAlias: string;
   manuscript: ReviewManuscriptSnapshot | null;
   revisionUpdatedAt?: string;
+}
+
+export interface OjsReviewAssignmentInput {
+  reviewerUserId: string;
+  installationId: string;
+  contextId: string;
+  externalAssignmentId: string;
+  externalSubmissionId: string;
+  reviewRound?: number;
+}
+
+export async function upsertOjsReviewAssignment(
+  input: OjsReviewAssignmentInput,
+): Promise<{ id: string }> {
+  const existing = await prisma.peerReviewAssignment.findUnique({
+    where: {
+      externalInstallationId_externalAssignmentId: {
+        externalInstallationId: input.installationId,
+        externalAssignmentId: input.externalAssignmentId,
+      },
+    },
+    select: {
+      id: true,
+      reviewerUserId: true,
+      manuscriptId: true,
+    },
+  });
+
+  if (existing) {
+    if (
+      existing.reviewerUserId !== input.reviewerUserId ||
+      existing.manuscriptId !== input.externalSubmissionId
+    ) {
+      const error = new Error('The OJS review assignment is already linked to a different Studio account or manuscript.');
+      error.name = 'ForbiddenError';
+      throw error;
+    }
+    return { id: existing.id };
+  }
+
+  const workspaceId = `ojs:${createHash('sha256')
+    .update(`${input.installationId}:${input.contextId}`)
+    .digest('hex')
+    .slice(0, 40)}`;
+  const reviewRound = Number.isInteger(input.reviewRound) && (input.reviewRound ?? 0) > 0
+    ? Math.min(99, input.reviewRound as number)
+    : 1;
+
+  const assignment = await prisma.peerReviewAssignment.create({
+    data: {
+      workspaceId,
+      manuscriptId: input.externalSubmissionId,
+      reviewerUserId: input.reviewerUserId,
+      assignedByUserId: null,
+      externalInstallationId: input.installationId,
+      externalAssignmentId: input.externalAssignmentId,
+      reviewerAlias: 'Reviewer',
+      assignmentType: 'SCIENTIFIC_REVIEW',
+      reviewRound,
+      anonymityMode: 'DOUBLE_BLIND',
+      status: 'INVITED',
+    },
+    select: { id: true },
+  });
+
+  return assignment;
 }
 
 export async function setReviewManuscript(
