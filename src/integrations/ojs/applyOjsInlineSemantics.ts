@@ -23,9 +23,18 @@ interface StyledSourceParagraph {
   inline?: unknown;
 }
 
+interface PortableSpan {
+  text: string;
+  marks: Array<Record<string, unknown>>;
+}
+
 /**
- * Enriches the plain paragraph blocks created by the established OJS importer
- * with the inline semantics emitted by the server-side DOCX handoff.
+ * Enriches paragraph blocks created by the established OJS importer with the
+ * inline semantics emitted by the server-side DOCX handoff.
+ *
+ * Existing OMI inline atoms (notes, citations and cross-references) are kept
+ * intact. Styled text is projected onto the text nodes around those atoms, so
+ * a paragraph can contain both italic/bold runs and note anchors.
  */
 export function applyOjsInlineSemantics(
   manuscript: OmiManuscript,
@@ -35,19 +44,18 @@ export function applyOjsInlineSemantics(
     paragraphs?: StyledSourceParagraph[];
   } | undefined;
   const paragraphs = Array.isArray(source?.paragraphs) ? source.paragraphs : [];
-  const queues = new Map<string, string[]>();
+  const queues = new Map<string, PortableSpan[][]>();
 
   for (const paragraph of paragraphs) {
     if (!Array.isArray(paragraph.inline)) continue;
     const inline = paragraph.inline as StyledInlineText[];
-    if (inline.some((item) => item.kind !== 'text')) continue;
     if (!inline.some(hasPortableSemantics)) continue;
 
-    const text = inline.map((item) => typeof item.text === 'string' ? item.text : '').join('');
-    const content = buildTiptapContent(inline);
-    if (!normalize(text) || !content) continue;
+    const spans = buildPortableSpans(inline);
+    const text = spans.map((span) => span.text).join('');
+    if (!normalize(text) || !spans.length) continue;
     const queue = queues.get(normalize(text)) ?? [];
-    queue.push(content);
+    queue.push(spans);
     queues.set(normalize(text), queue);
   }
 
@@ -59,11 +67,15 @@ export function applyOjsInlineSemantics(
       ...section,
       blocks: section.blocks.map((block) => {
         if (block.visual || block.type !== 'paragraph') return block;
-        if (/"type"\s*:\s*"omi(?:Note|Citation|CrossReference)"/.test(block.content)) return block;
         const text = storedPlainText(block.content);
         const queue = queues.get(normalize(text));
-        const content = queue?.shift();
-        return content ? { ...block, content } : block;
+        const spans = queue?.shift();
+        if (!spans) return block;
+
+        return {
+          ...block,
+          content: applySpansToStoredContent(block.content, spans),
+        };
       }),
     })),
   };
@@ -71,14 +83,14 @@ export function applyOjsInlineSemantics(
 
 function hasPortableSemantics(item: StyledInlineText): boolean {
   return (
-    Array.isArray(item.semantics) && item.semantics.length > 0
-  ) || (
-    typeof item.language === 'string' && Boolean(item.language.trim())
+    item.kind === 'text' &&
+    ((Array.isArray(item.semantics) && item.semantics.length > 0) ||
+      (typeof item.language === 'string' && Boolean(item.language.trim())))
   );
 }
 
-function buildTiptapContent(inline: readonly StyledInlineText[]): string | undefined {
-  const nodes: Array<Record<string, unknown>> = [];
+function buildPortableSpans(inline: readonly StyledInlineText[]): PortableSpan[] {
+  const spans: PortableSpan[] = [];
   for (const item of inline) {
     if (item.kind !== 'text' || typeof item.text !== 'string' || !item.text) continue;
     const marks = Array.isArray(item.semantics)
@@ -87,16 +99,143 @@ function buildTiptapContent(inline: readonly StyledInlineText[]): string | undef
     if (typeof item.language === 'string' && item.language.trim()) {
       marks.push({ type: 'omiLanguage', attrs: { lang: item.language.trim() } });
     }
+    spans.push({ text: item.text, marks });
+  }
+  return spans;
+}
+
+function applySpansToStoredContent(
+  content: string,
+  spans: readonly PortableSpan[],
+): string {
+  const input = content.trim();
+  if (!input.startsWith('{')) {
+    return buildTiptapContent(spans);
+  }
+
+  try {
+    const parsed = JSON.parse(input) as unknown;
+    const cursor = { span: 0, offset: 0 };
+    const transformed = transformNode(parsed, spans, cursor);
+    return JSON.stringify(transformed);
+  } catch {
+    return buildTiptapContent(spans);
+  }
+}
+
+function transformNode(
+  value: unknown,
+  spans: readonly PortableSpan[],
+  cursor: { span: number; offset: number },
+): unknown {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+  const node = value as Record<string, unknown>;
+
+  if (node.type === 'text' && typeof node.text === 'string') {
+    const parts = styledTextNodes(node.text, spans, cursor);
+    return parts.length === 1 ? parts[0] : { type: 'omiInlineGroup', content: parts };
+  }
+
+  if (!Array.isArray(node.content)) return node;
+
+  const content: unknown[] = [];
+  for (const child of node.content) {
+    const transformed = transformNode(child, spans, cursor);
+    if (
+      transformed &&
+      typeof transformed === 'object' &&
+      !Array.isArray(transformed) &&
+      (transformed as Record<string, unknown>).type === 'omiInlineGroup' &&
+      Array.isArray((transformed as Record<string, unknown>).content)
+    ) {
+      content.push(...((transformed as Record<string, unknown>).content as unknown[]));
+    } else {
+      content.push(transformed);
+    }
+  }
+  return { ...node, content };
+}
+
+function styledTextNodes(
+  text: string,
+  spans: readonly PortableSpan[],
+  cursor: { span: number; offset: number },
+): Array<Record<string, unknown>> {
+  const nodes: Array<Record<string, unknown>> = [];
+  let remaining = text.length;
+  let fallbackOffset = 0;
+
+  while (remaining > 0 && cursor.span < spans.length) {
+    const span = spans[cursor.span];
+    if (!span) break;
+    const available = span.text.length - cursor.offset;
+    if (available <= 0) {
+      cursor.span += 1;
+      cursor.offset = 0;
+      continue;
+    }
+
+    const take = Math.min(remaining, available);
+    const value = span.text.slice(cursor.offset, cursor.offset + take);
     nodes.push({
       type: 'text',
-      text: item.text,
-      ...(marks.length ? { marks } : {}),
+      text: value,
+      ...(span.marks.length ? { marks: span.marks } : {}),
+    });
+    cursor.offset += take;
+    remaining -= take;
+    fallbackOffset += take;
+
+    if (cursor.offset >= span.text.length) {
+      cursor.span += 1;
+      cursor.offset = 0;
+    }
+  }
+
+  if (remaining > 0) {
+    nodes.push({
+      type: 'text',
+      text: text.slice(fallbackOffset, fallbackOffset + remaining),
     });
   }
-  if (!nodes.length) return undefined;
+
+  return coalesceTextNodes(nodes);
+}
+
+function coalesceTextNodes(
+  nodes: readonly Record<string, unknown>[],
+): Array<Record<string, unknown>> {
+  const result: Array<Record<string, unknown>> = [];
+  for (const node of nodes) {
+    const previous = result.at(-1);
+    if (
+      previous?.type === 'text' &&
+      node.type === 'text' &&
+      JSON.stringify(previous.marks ?? []) === JSON.stringify(node.marks ?? []) &&
+      typeof previous.text === 'string' &&
+      typeof node.text === 'string'
+    ) {
+      previous.text += node.text;
+    } else {
+      result.push({ ...node });
+    }
+  }
+  return result;
+}
+
+function buildTiptapContent(spans: readonly PortableSpan[]): string {
   return JSON.stringify({
     type: 'doc',
-    content: [{ type: 'paragraph', content: nodes }],
+    content: [
+      {
+        type: 'paragraph',
+        content: spans.map((span) => ({
+          type: 'text',
+          text: span.text,
+          ...(span.marks.length ? { marks: span.marks } : {}),
+        })),
+      },
+    ],
   });
 }
 
