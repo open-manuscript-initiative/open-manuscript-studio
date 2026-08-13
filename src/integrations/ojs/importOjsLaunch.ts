@@ -36,6 +36,8 @@ interface OjsSubmission {
 interface OjsSourceInlineText {
   kind: 'text';
   text?: string;
+  semantics?: unknown;
+  language?: unknown;
 }
 
 interface OjsSourceFootnoteReference {
@@ -479,7 +481,7 @@ function buildParagraphContent(
   nextNoteNumber: number;
 } {
   const inline = paragraph.inline;
-  if (!inline?.some(isSourceNoteReference)) {
+  if (!inline?.length) {
     return {
       content: paragraph.text?.trim() ?? '',
       annotations: [],
@@ -491,17 +493,26 @@ function buildParagraphContent(
   const annotations: OmiAnnotation[] = [];
   let noteNumber = startingNoteNumber;
 
-  const appendText = (value: string) => {
+  const appendText = (
+    value: string,
+    marks: Array<Record<string, unknown>> = [],
+  ) => {
     const lines = value.split('\n');
     lines.forEach((line, index) => {
-      if (line) nodes.push({ type: 'text', text: line });
+      if (line) {
+        nodes.push({
+          type: 'text',
+          text: line,
+          ...(marks.length ? { marks } : {}),
+        });
+      }
       if (index < lines.length - 1) nodes.push({ type: 'hardBreak' });
     });
   };
 
   for (const item of inline) {
     if (item.kind === 'text') {
-      appendText(item.text ?? '');
+      appendText(item.text ?? '', sourceTextMarks(item));
       continue;
     }
 
@@ -550,6 +561,53 @@ function buildParagraphContent(
     annotations,
     nextNoteNumber: noteNumber,
   };
+}
+
+function sourceTextMarks(
+  item: OjsSourceInlineText,
+): Array<Record<string, unknown>> {
+  const marks: Array<Record<string, unknown>> = [];
+  const semantics = Array.isArray(item.semantics) ? item.semantics : [];
+
+  for (const semantic of semantics) {
+    switch (semantic) {
+      case 'strong':
+        marks.push({ type: 'bold' });
+        break;
+      case 'emphasis':
+        marks.push({ type: 'italic' });
+        break;
+      case 'strike':
+        marks.push({ type: 'strike' });
+        break;
+      case 'underline':
+        marks.push({ type: 'omiUnderline' });
+        break;
+      case 'small-caps':
+        marks.push({ type: 'omiSmallCaps' });
+        break;
+      case 'superscript':
+        marks.push({ type: 'omiSuperscript' });
+        break;
+      case 'subscript':
+        marks.push({ type: 'omiSubscript' });
+        break;
+      case 'code':
+        marks.push({ type: 'code' });
+        break;
+      default:
+        break;
+    }
+  }
+
+  if (typeof item.language === 'string' && item.language.trim()) {
+    marks.push({
+      type: 'omiLanguage',
+      attrs: { lang: item.language.trim() },
+    });
+  }
+
+  return marks;
 }
 
 function createSection(title: string): OmiManuscript['sections'][number] {
