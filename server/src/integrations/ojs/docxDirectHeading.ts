@@ -1,10 +1,22 @@
 import { inflateRawSync } from 'node:zlib';
 
-import type { OjsSourceDocument } from './docxSource.js';
+import type {
+  OjsDocxInline,
+  OjsSourceDocument,
+} from './docxSource.js';
+
+type DirectInlineSemantic = 'strong' | 'emphasis';
+
+interface DirectInlineText {
+  kind: 'text';
+  text: string;
+  semantics?: DirectInlineSemantic[];
+}
 
 interface ParagraphFormatting {
   text: string;
   boldRatio: number;
+  directInline?: DirectInlineText[];
   maxFontHalfPoints?: number;
   alignment?: string;
   spacingBefore?: number;
@@ -15,6 +27,11 @@ interface ParagraphFormatting {
  * Adds heading levels for manuscripts that use direct Word formatting instead
  * of paragraph styles. Existing semantic heading/outline information always
  * wins; this function is deliberately a conservative fallback.
+ *
+ * This pass also preserves direct bold/italic run formatting before the later
+ * character-style enrichment pass. The direct run stream is therefore a
+ * fallback for OJS DOCX handoffs whose paragraph text cannot be safely matched
+ * by the secondary inline-semantics pass.
  */
 export function applyDirectFormattingHeadingInference(
   buffer: Buffer,
@@ -28,19 +45,31 @@ export function applyDirectFormattingHeadingInference(
 
   const bodyFontHalfPoints = inferBodyFontHalfPoints(formatting);
   const paragraphs = source.paragraphs.map((paragraph, index) => {
-    if (paragraph.headingLevel !== undefined || paragraph.outlineLevel !== undefined) {
-      return paragraph;
-    }
-
     const format = formatting[index];
     if (!format || normalizeText(format.text) !== normalizeText(paragraph.text)) {
       return paragraph;
     }
 
+    let nextParagraph = paragraph;
+    const hasNoteReference = paragraph.inline?.some((item) => item.kind !== 'text') ?? false;
+    if (
+      !hasNoteReference &&
+      format.directInline?.some((item) => item.semantics?.length)
+    ) {
+      nextParagraph = {
+        ...nextParagraph,
+        inline: format.directInline as unknown as OjsDocxInline[],
+      };
+    }
+
+    if (paragraph.headingLevel !== undefined || paragraph.outlineLevel !== undefined) {
+      return nextParagraph;
+    }
+
     const headingLevel = inferHeadingLevel(format, bodyFontHalfPoints);
     return headingLevel === undefined
-      ? paragraph
-      : { ...paragraph, headingLevel };
+      ? nextParagraph
+      : { ...nextParagraph, headingLevel };
   });
 
   return { ...source, paragraphs };
@@ -139,6 +168,22 @@ function extractParagraphFormatting(xml: string): ParagraphFormatting[] {
       text,
       boldRatio: totalCharacters ? boldCharacters / totalCharacters : 0,
     };
+    const directInline = coalesceDirectInline(
+      textRuns.map((run) => {
+        const semantics: DirectInlineSemantic[] = [];
+        if (run.bold) semantics.push('strong');
+        if (run.italic) semantics.push('emphasis');
+        return {
+          kind: 'text' as const,
+          text: run.text,
+          ...(semantics.length ? { semantics } : {}),
+        };
+      }),
+    );
+    if (directInline.some((item) => item.semantics?.length)) {
+      format.directInline = directInline;
+    }
+
     const maxFontHalfPoints = sizes.length ? Math.max(...sizes) : readParagraphRunFontSize(body);
     const alignment = readElementValue(body, 'jc');
     const spacingBefore = readNumericAttributeFromElement(body, 'spacing', 'before');
@@ -156,9 +201,15 @@ function extractParagraphFormatting(xml: string): ParagraphFormatting[] {
 function extractTextRuns(body: string): Array<{
   text: string;
   bold: boolean;
+  italic: boolean;
   fontHalfPoints?: number;
 }> {
-  const runs: Array<{ text: string; bold: boolean; fontHalfPoints?: number }> = [];
+  const runs: Array<{
+    text: string;
+    bold: boolean;
+    italic: boolean;
+    fontHalfPoints?: number;
+  }> = [];
   const runPattern = /<(?:[A-Za-z_][\w.-]*:)?r(?:\s[^>]*)?>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?r>/g;
   let match: RegExpExecArray | null;
 
@@ -167,9 +218,15 @@ function extractTextRuns(body: string): Array<{
     const text = extractText(run);
     if (!text) continue;
     const rPr = /<(?:[A-Za-z_][\w.-]*:)?rPr(?:\s[^>]*)?>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?rPr>/.exec(run)?.[1] ?? '';
-    const textRun: { text: string; bold: boolean; fontHalfPoints?: number } = {
+    const textRun: {
+      text: string;
+      bold: boolean;
+      italic: boolean;
+      fontHalfPoints?: number;
+    } = {
       text,
-      bold: readBooleanProperty(rPr, 'b'),
+      bold: readBooleanProperty(rPr, 'b') || readBooleanProperty(rPr, 'bCs'),
+      italic: readBooleanProperty(rPr, 'i') || readBooleanProperty(rPr, 'iCs'),
     };
     const fontHalfPoints = readNumericElementValue(rPr, 'sz') ?? readNumericElementValue(rPr, 'szCs');
     if (fontHalfPoints !== undefined) textRun.fontHalfPoints = fontHalfPoints;
@@ -177,6 +234,25 @@ function extractTextRuns(body: string): Array<{
   }
 
   return runs;
+}
+
+function coalesceDirectInline(items: readonly DirectInlineText[]): DirectInlineText[] {
+  const result: DirectInlineText[] = [];
+  for (const item of items) {
+    const previous = result.at(-1);
+    if (
+      previous &&
+      JSON.stringify(previous.semantics ?? []) === JSON.stringify(item.semantics ?? [])
+    ) {
+      previous.text += item.text;
+    } else {
+      result.push({
+        ...item,
+        ...(item.semantics ? { semantics: [...item.semantics] } : {}),
+      });
+    }
+  }
+  return result;
 }
 
 function readParagraphRunFontSize(body: string): number | undefined {
