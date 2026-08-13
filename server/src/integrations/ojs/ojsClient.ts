@@ -1,6 +1,7 @@
 import { applyDirectFormattingHeadingInference } from './docxDirectHeading.js';
 import { applyInlineSemantics } from './docxInlineSemantics.js';
 import { parseDocxSource, type OjsSourceDocument } from './docxSource.js';
+import { applyStructuredContent } from './docxStructuredContent.js';
 import type { LaunchClaims } from './launchVerifier.js';
 
 export interface OjsLaunchData {
@@ -210,7 +211,8 @@ async function loadSourceDocument(
   );
 
   const withHeadings = applyDirectFormattingHeadingInference(bytes, parsed);
-  return applyInlineSemantics(bytes, withHeadings);
+  const withInlineSemantics = applyInlineSemantics(bytes, withHeadings);
+  return applyStructuredContent(bytes, withInlineSemantics);
 }
 
 function isDocx(file: OjsFileDescriptor): boolean {

@@ -36,9 +36,12 @@ interface ZipEntry {
 }
 
 /**
- * Adds portable inline-semantic metadata to ordinary OJS DOCX paragraphs.
- * Paragraphs that already contain note references are kept untouched so the
- * proven note import path remains authoritative.
+ * Adds portable inline-semantic metadata to OJS DOCX paragraphs.
+ *
+ * Note references and character formatting are intentionally merged instead
+ * of being handled as mutually exclusive import paths. This is important for
+ * scholarly prose where an italic/bold run can occur in the same paragraph as
+ * a footnote or endnote reference.
  */
 export function applyInlineSemantics(
   buffer: Buffer,
@@ -68,16 +71,109 @@ export function applyInlineSemantics(
   return {
     ...source,
     paragraphs: source.paragraphs.map((paragraph) => {
-      if (paragraph.inline?.some((item) => item.kind !== 'text')) return paragraph;
       const queue = queues.get(normalizeText(paragraph.text));
       const styled = queue?.shift();
       if (!styled) return paragraph;
+
       return {
         ...paragraph,
-        inline: styled as OjsDocxInline[],
+        inline: paragraph.inline?.some((item) => item.kind !== 'text')
+          ? mergeStyledTextWithReferences(paragraph.inline, styled)
+          : styled as OjsDocxInline[],
       };
     }),
   };
+}
+
+/**
+ * Re-applies styled DOCX text runs while preserving note-reference nodes from
+ * the established note parser. Both representations contain the same visible
+ * text; note references consume no visible characters, so a character cursor
+ * is sufficient to splice the two streams together without losing either
+ * semantics or anchors.
+ */
+function mergeStyledTextWithReferences(
+  original: readonly OjsDocxInline[],
+  styled: readonly StyledTextInline[],
+): OjsDocxInline[] {
+  const result: OjsDocxInline[] = [];
+  let styledIndex = 0;
+  let styledOffset = 0;
+
+  const appendStyledText = (length: number, fallback: string) => {
+    let remaining = length;
+    let fallbackOffset = 0;
+
+    while (remaining > 0 && styledIndex < styled.length) {
+      const current = styled[styledIndex];
+      if (!current) break;
+      const available = current.text.length - styledOffset;
+      if (available <= 0) {
+        styledIndex += 1;
+        styledOffset = 0;
+        continue;
+      }
+
+      const take = Math.min(remaining, available);
+      const text = current.text.slice(styledOffset, styledOffset + take);
+      result.push({
+        kind: 'text',
+        text,
+        ...(current.semantics?.length ? { semantics: current.semantics } : {}),
+        ...(current.language ? { language: current.language } : {}),
+      } as OjsDocxInline);
+      styledOffset += take;
+      remaining -= take;
+      fallbackOffset += take;
+
+      if (styledOffset >= current.text.length) {
+        styledIndex += 1;
+        styledOffset = 0;
+      }
+    }
+
+    if (remaining > 0) {
+      result.push({
+        kind: 'text',
+        text: fallback.slice(fallbackOffset, fallbackOffset + remaining),
+      });
+    }
+  };
+
+  for (const item of original) {
+    if (item.kind !== 'text') {
+      result.push(item);
+      continue;
+    }
+    appendStyledText(item.text.length, item.text);
+  }
+
+  return coalesceStyledText(result);
+}
+
+function coalesceStyledText(items: readonly OjsDocxInline[]): OjsDocxInline[] {
+  const result: OjsDocxInline[] = [];
+  for (const item of items) {
+    const previous = result.at(-1) as (OjsDocxInline & {
+      semantics?: OjsInlineSemantic[];
+      language?: string;
+    }) | undefined;
+    const current = item as OjsDocxInline & {
+      semantics?: OjsInlineSemantic[];
+      language?: string;
+    };
+    if (
+      previous?.kind === 'text' &&
+      current.kind === 'text' &&
+      JSON.stringify(previous.semantics ?? []) === JSON.stringify(current.semantics ?? []) &&
+      previous.language === current.language
+    ) {
+      previous.text += current.text;
+    } else {
+      result.push({ ...item } as OjsDocxInline);
+    }
+  }
+  return result;
 }
 
 function extractStyledParagraphs(
