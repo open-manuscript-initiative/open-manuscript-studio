@@ -400,11 +400,13 @@ function serializeForEditor(assignment: ReviewRecord) {
       affiliation: assignment.reviewer.affiliation,
       orcid: assignment.reviewer.orcid,
     },
-    assignedBy: {
-      userId: assignment.assignedBy.id,
-      email: assignment.assignedBy.email,
-      fullName: assignment.assignedBy.fullName,
-    },
+    assignedBy: assignment.assignedBy
+      ? {
+          userId: assignment.assignedBy.id,
+          email: assignment.assignedBy.email,
+          fullName: assignment.assignedBy.fullName,
+        }
+      : null,
     feedback: assignment.feedback.map(serializeFeedback),
   };
 }
