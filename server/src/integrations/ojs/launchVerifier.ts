@@ -26,6 +26,11 @@ export interface LaunchClaims {
   actor?: {
     externalId?: string;
   };
+  actorMode?: 'editor' | 'author' | 'review';
+  reviewAssignment?: {
+    externalId?: string;
+    round?: number;
+  };
   scope?: string[];
   iat: number;
   exp: number;
