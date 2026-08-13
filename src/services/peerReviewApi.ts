@@ -67,6 +67,7 @@ export interface ReviewManuscriptSnapshot {
 interface ReviewResponse { review: ReviewerAssignment; }
 interface ReviewListResponse { reviews: ReviewerAssignment[]; }
 interface ManuscriptResponse { manuscript: ReviewManuscriptSnapshot | null; }
+interface OjsReviewLaunchResponse { assignmentId: string; }
 
 interface ErrorResponse {
   error?: { code?: string; message?: string; };
@@ -75,6 +76,16 @@ interface ErrorResponse {
 const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL ?? '')
   .trim()
   .replace(/\/$/, '');
+
+export async function claimOjsReviewLaunch(
+  payload: string,
+  signature: string,
+): Promise<string> {
+  return (await request<OjsReviewLaunchResponse>('/integrations/ojs/review/launch', {
+    method: 'POST',
+    body: JSON.stringify({ payload, signature }),
+  })).assignmentId;
+}
 
 export async function listAssignedReviews(): Promise<ReviewerAssignment[]> {
   return (await request<ReviewListResponse>('/api/reviews/assigned')).reviews;
