@@ -148,13 +148,22 @@ export function createReviewSnapshotFromOjs(
     if (text) blocks.push({ type: 'note', text });
   }
 
+  const bibliographicRecords = source?.bibliographicRecords ?? [];
+  if (bibliographicRecords.length) {
+    blocks.push({ type: 'heading', text: 'References', level: 2 });
+    for (const record of bibliographicRecords) {
+      const text = formatBibliographicRecord(record);
+      if (text) blocks.push({ type: 'paragraph', text });
+    }
+  }
+
   return {
     title,
     ...(subtitle ? { subtitle } : {}),
     ...(abstract ? { abstract } : {}),
     keywords,
     blocks,
-    bibliographicRecords: source?.bibliographicRecords ?? [],
+    bibliographicRecords,
   };
 }
 
@@ -218,6 +227,36 @@ function paragraphRichText(paragraph: SourceParagraph): ReviewInlineSpan[] {
     });
   }
   return spans;
+}
+
+function formatBibliographicRecord(record: ReviewBibliographicRecord): string {
+  const contributors = record.contributors
+    .map((contributor) => contributor.literalName ||
+      [contributor.familyName, contributor.givenName].filter(Boolean).join(', '))
+    .filter(Boolean)
+    .join('; ');
+  const title = record.subtitle ? `${record.title}: ${record.subtitle}` : record.title;
+  const container = [
+    record.containerTitle,
+    record.volume ? `vol. ${record.volume}` : undefined,
+    record.issue ? `no. ${record.issue}` : undefined,
+    record.pages ? `pp. ${record.pages}` : undefined,
+  ].filter(Boolean).join(', ');
+  const publication = [
+    record.place,
+    record.publisher,
+    record.issued,
+  ].filter(Boolean).join(': ');
+  const doi = record.identifiers.find((identifier) => identifier.scheme.toLowerCase() === 'doi')?.value;
+  const identifier = doi ? `https://doi.org/${doi.replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, '')}` : record.url;
+
+  return [
+    contributors ? `${contributors}.` : undefined,
+    `${title}.`,
+    container ? `${container}.` : undefined,
+    publication ? `${publication}.` : undefined,
+    identifier,
+  ].filter(Boolean).join(' ');
 }
 
 function isInlineSemantic(value: unknown): value is ReviewInlineSemantic {
