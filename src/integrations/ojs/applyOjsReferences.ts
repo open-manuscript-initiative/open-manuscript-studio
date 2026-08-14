@@ -193,6 +193,8 @@ export function applyOjsReferences(
           continue;
         }
 
+        if (item.kind !== 'citationReference') continue;
+
         const matchedRecords = (item.sourceTags ?? [])
           .map((tag) => recordByTag.get(tag))
           .filter((record): record is OmiBibliographicRecord => Boolean(record));
@@ -291,38 +293,53 @@ function toBibliographicRecord(
   timestamp: string,
 ): OmiBibliographicRecord {
   const contributors: OmiBibliographicContributor[] = (source.contributors ?? [])
-    .map((contributor) => ({
-      id: `bibcontrib-${crypto.randomUUID()}`,
-      role: contributor.role || 'author',
-      givenName: contributor.givenName?.trim() || undefined,
-      familyName: contributor.familyName?.trim() || undefined,
-      literalName: contributor.literalName?.trim() || undefined,
-    }))
+    .map((contributor): OmiBibliographicContributor => {
+      const givenName = contributor.givenName?.trim();
+      const familyName = contributor.familyName?.trim();
+      const literalName = contributor.literalName?.trim();
+      return {
+        id: `bibcontrib-${crypto.randomUUID()}`,
+        role: contributor.role || 'author',
+        ...(givenName ? { givenName } : {}),
+        ...(familyName ? { familyName } : {}),
+        ...(literalName ? { literalName } : {}),
+      };
+    })
     .filter((contributor) => Boolean(contributor.givenName || contributor.familyName || contributor.literalName));
+
+  const subtitle = source.subtitle?.trim();
+  const containerTitle = source.containerTitle?.trim();
+  const issued = source.issued?.trim();
+  const publisher = source.publisher?.trim();
+  const place = source.place?.trim();
+  const volume = source.volume?.trim();
+  const issue = source.issue?.trim();
+  const pages = source.pages?.trim();
+  const url = source.url?.trim();
 
   return {
     id: `bib-${crypto.randomUUID()}`,
     type: source.type || 'journal-article',
     title: source.title?.trim() || source.sourceTag?.trim() || 'Unresolved reference',
-    subtitle: source.subtitle?.trim() || undefined,
     contributors,
-    containerTitle: source.containerTitle?.trim() || undefined,
-    issued: source.issued?.trim() || undefined,
-    publisher: source.publisher?.trim() || undefined,
-    place: source.place?.trim() || undefined,
-    volume: source.volume?.trim() || undefined,
-    issue: source.issue?.trim() || undefined,
-    pages: source.pages?.trim() || undefined,
     identifiers: (source.identifiers ?? [])
       .filter((identifier) => Boolean(identifier.scheme?.trim() && identifier.value?.trim()))
       .map((identifier) => ({
         scheme: identifier.scheme!.trim().toLowerCase(),
         value: identifier.value!.trim(),
       })),
-    url: source.url?.trim() || undefined,
     status: 'provisional',
     createdAt: timestamp,
     modifiedAt: timestamp,
+    ...(subtitle ? { subtitle } : {}),
+    ...(containerTitle ? { containerTitle } : {}),
+    ...(issued ? { issued } : {}),
+    ...(publisher ? { publisher } : {}),
+    ...(place ? { place } : {}),
+    ...(volume ? { volume } : {}),
+    ...(issue ? { issue } : {}),
+    ...(pages ? { pages } : {}),
+    ...(url ? { url } : {}),
   };
 }
 
