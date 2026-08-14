@@ -36,26 +36,31 @@ export function ReviewerRichTextEditor({
   const { locale } = useTranslation();
   const reactId = useId();
   const blockId = `review-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const renderCapabilities = block.type === 'heading' && !capabilities.editStructure
+    ? { ...capabilities, editStructure: true }
+    : capabilities;
 
   return (
-    <BlockEditor
-      blockId={blockId}
-      blockType={block.type}
-      content={JSON.stringify(blockToDocument(block))}
-      onUpdate={(_id, content) => {
-        const document = parseDocument(content);
-        const { text, richText } = documentToReviewContent(document);
-        onChange({
-          ...block,
-          text,
-          ...(richText.length ? { richText } : { richText: undefined }),
-        } as ReviewTextBlock);
-      }}
-      editable={!disabled}
-      capabilities={capabilities}
-      manuscriptLanguage={manuscriptLanguage ?? locale}
-      className={`review-mode__studio-block-editor review-mode__studio-block-editor--${block.type}`}
-    />
+    <div className="omi-continuous-blocks review-mode__studio-block-flow">
+      <BlockEditor
+        blockId={blockId}
+        blockType={block.type}
+        content={JSON.stringify(blockToDocument(block))}
+        onUpdate={(_id, content) => {
+          const document = parseDocument(content);
+          const { text, richText } = documentToReviewContent(document);
+          onChange({
+            ...block,
+            text,
+            ...(richText.length ? { richText } : { richText: undefined }),
+          } as ReviewTextBlock);
+        }}
+        editable={!disabled}
+        capabilities={renderCapabilities}
+        manuscriptLanguage={manuscriptLanguage ?? locale}
+        className={`review-mode__studio-block-editor review-mode__studio-block-editor--${block.type}`}
+      />
+    </div>
   );
 }
 
