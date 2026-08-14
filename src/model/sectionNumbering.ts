@@ -96,7 +96,31 @@ export function formatHierarchicalSectionNumber(
   style: OmiSectionNumberingStyle | undefined,
 ): string {
   const token = getSectionNumberToken(sections, sectionId, style);
-  return token ? `${token}.` : '';
+  if (!token) return '';
+
+  // Imported DOCX headings may already contain their visible section number
+  // (for example "4. Notes" or "4 Notes"). The Studio normally renders its
+  // structural number separately, which would otherwise produce "5. 4. Notes"
+  // when the imported document contains an unnumbered introductory section or
+  // its source numbering differs from the current structural ordinal. Treat a
+  // leading source number as presentation-owned by the title and do not render
+  // a second generated number beside it. The stored title remains untouched so
+  // round-trip fidelity is preserved.
+  const section = sections.find((candidate) => candidate.id === sectionId);
+  if (section && hasLeadingSectionNumber(section.title)) return '';
+
+  return `${token}.`;
+}
+
+function hasLeadingSectionNumber(title: string): boolean {
+  const text = title.trim();
+  if (!text) return false;
+
+  return (
+    /^\d+(?:\.\d+){0,5}[.)]?\s+\S/.test(text) ||
+    /^(?:[IVXLCDM]{1,8})[.)]\s+\S/i.test(text) ||
+    /^[A-Z][.)]\s+\S/.test(text)
+  );
 }
 
 export function formatSectionHeading(
