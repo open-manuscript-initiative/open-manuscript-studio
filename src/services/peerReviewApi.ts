@@ -50,11 +50,32 @@ export interface ReviewerAssignment {
   completedAt?: string;
 }
 
-export interface ReviewManuscriptBlock {
-  type: 'heading' | 'paragraph' | 'note';
+export type ReviewInlineSemantic =
+  | 'strong'
+  | 'emphasis'
+  | 'strike'
+  | 'underline'
+  | 'small-caps'
+  | 'superscript'
+  | 'subscript'
+  | 'code';
+
+export interface ReviewInlineSpan {
   text: string;
-  level?: number;
+  semantics?: ReviewInlineSemantic[];
+  language?: string;
 }
+
+export type ReviewChartType = 'bar' | 'line' | 'pie' | 'scatter' | 'area';
+
+export type ReviewManuscriptBlock =
+  | { type: 'heading'; text: string; level?: number; richText?: ReviewInlineSpan[] }
+  | { type: 'paragraph'; text: string; richText?: ReviewInlineSpan[] }
+  | { type: 'note'; text: string; richText?: ReviewInlineSpan[] }
+  | { type: 'list'; text: string; ordered: boolean; listLevel: number; ordinal?: number; richText?: ReviewInlineSpan[] }
+  | { type: 'table'; cells: string[][]; headerRows: number }
+  | { type: 'image'; src: string; mediaType: string; fileName?: string; alt?: string }
+  | { type: 'chart'; cells: string[][]; chartType: ReviewChartType; title?: string };
 
 export interface ReviewManuscriptSnapshot {
   title: string;
