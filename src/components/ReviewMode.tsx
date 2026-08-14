@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import {
+  getEditorCapabilities,
+  type EditorCapabilities,
+  type EditorRole,
+} from '../editor/editorCapabilities';
+import {
   acceptAssignedReview,
   addAssignedReviewFeedback,
   declineAssignedReview,
@@ -29,6 +34,13 @@ const assignmentLabels: Record<ReviewerAssignment['assignmentType'], string> = {
   language_review: 'Language review',
   translation: 'Translation',
   editorial_revision: 'Editorial revision',
+};
+
+const assignmentEditorRoles: Record<ReviewerAssignment['assignmentType'], EditorRole> = {
+  scientific_review: 'scientific-review',
+  language_review: 'language-review',
+  translation: 'translation',
+  editorial_revision: 'editorial-revision',
 };
 
 export function ReviewMode() {
@@ -133,6 +145,12 @@ export function ReviewMode() {
   const canWrite = Boolean(selected && ['accepted', 'in_progress'].includes(selected.status));
   const submitted = Boolean(selected && ['submitted', 'completed'].includes(selected.status));
   const assignmentLabel = selected ? assignmentLabels[selected.assignmentType] : 'Editorial assignment';
+  const editorCapabilities = selected
+    ? getEditorCapabilities(assignmentEditorRoles[selected.assignmentType])
+    : getEditorCapabilities('read-only');
+  const manuscriptLanguage = selected?.assignmentType === 'translation'
+    ? selected.targetLanguage ?? selected.sourceLanguage
+    : selected?.sourceLanguage;
   const languagePair = selected?.assignmentType === 'translation'
     ? [selected.sourceLanguage, selected.targetLanguage].filter(Boolean).join(' → ')
     : selected?.sourceLanguage;
@@ -196,6 +214,8 @@ export function ReviewMode() {
                       dirty={revisionDirty}
                       saved={revisionSaved}
                       label={assignmentLabel}
+                      capabilities={editorCapabilities}
+                      manuscriptLanguage={manuscriptLanguage}
                       onChange={updateRevision}
                       onSave={() => void saveRevision()}
                     />
@@ -296,6 +316,8 @@ function RevisionEditor({
   dirty,
   saved,
   label,
+  capabilities,
+  manuscriptLanguage,
   onChange,
   onSave,
 }: {
@@ -305,6 +327,8 @@ function RevisionEditor({
   dirty: boolean;
   saved: boolean;
   label: string;
+  capabilities: EditorCapabilities;
+  manuscriptLanguage?: string;
   onChange: (value: ReviewManuscriptSnapshot) => void;
   onSave: () => void;
 }) {
@@ -349,6 +373,8 @@ function RevisionEditor({
             <ReviewerRichTextEditor
               block={block}
               disabled={disabled}
+              capabilities={capabilities}
+              manuscriptLanguage={manuscriptLanguage}
               onChange={(updated) => {
                 const blocks = revision.blocks.map((item, itemIndex) =>
                   itemIndex === index ? updated as ReviewManuscriptBlock : item,

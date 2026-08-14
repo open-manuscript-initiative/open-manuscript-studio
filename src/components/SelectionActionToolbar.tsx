@@ -11,9 +11,9 @@ interface SelectionActionToolbarProps {
   citationLabel: string;
   noteLabel: string;
   crossReferenceLabel: string;
-  onCitation: () => void;
-  onNote: () => void;
-  onCrossReference: () => void;
+  onCitation?: () => void;
+  onNote?: () => void;
+  onCrossReference?: () => void;
 }
 
 interface ToolbarPosition {
@@ -77,7 +77,7 @@ export function SelectionActionToolbar({
     };
   }, [editor]);
 
-  if (!position) return null;
+  if (!position || (!onCitation && !onNote && !onCrossReference)) return null;
 
   const style = {
     left: `${position.left}px`,
@@ -97,27 +97,33 @@ export function SelectionActionToolbar({
       role="toolbar"
       aria-label="Selection actions"
     >
-      <button
-        type="button"
-        onMouseDown={preserveSelection}
-        onClick={onCitation}
-      >
-        {citationLabel}
-      </button>
-      <button
-        type="button"
-        onMouseDown={preserveSelection}
-        onClick={onNote}
-      >
-        {noteLabel}
-      </button>
-      <button
-        type="button"
-        onMouseDown={preserveSelection}
-        onClick={onCrossReference}
-      >
-        {crossReferenceLabel}
-      </button>
+      {onCitation ? (
+        <button
+          type="button"
+          onMouseDown={preserveSelection}
+          onClick={onCitation}
+        >
+          {citationLabel}
+        </button>
+      ) : null}
+      {onNote ? (
+        <button
+          type="button"
+          onMouseDown={preserveSelection}
+          onClick={onNote}
+        >
+          {noteLabel}
+        </button>
+      ) : null}
+      {onCrossReference ? (
+        <button
+          type="button"
+          onMouseDown={preserveSelection}
+          onClick={onCrossReference}
+        >
+          {crossReferenceLabel}
+        </button>
+      ) : null}
     </div>
   );
 }
