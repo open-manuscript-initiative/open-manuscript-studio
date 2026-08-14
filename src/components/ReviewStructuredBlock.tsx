@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { createElement, type ReactNode } from 'react';
 
 import type {
   ReviewInlineSemantic,
@@ -14,8 +14,11 @@ export function ReviewStructuredBlock({
 }) {
   if (block.type === 'heading') {
     const level = Math.min(6, Math.max(2, block.level ?? 2));
-    const Heading = `h${level}` as keyof JSX.IntrinsicElements;
-    return <Heading className="review-structured-heading">{renderInline(block)}</Heading>;
+    return createElement(
+      `h${level}`,
+      { className: 'review-structured-heading' },
+      renderInline(block),
+    );
   }
 
   if (block.type === 'paragraph') {
