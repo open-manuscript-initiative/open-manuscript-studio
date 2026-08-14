@@ -13,10 +13,8 @@ import {
   type ReviewManuscriptBlock,
   type ReviewManuscriptSnapshot,
 } from '../services/peerReviewApi';
-import {
-  isReviewTextBlock,
-  ReviewStructuredBlock,
-} from './ReviewStructuredBlock';
+import { ReviewerRichTextEditor } from './ReviewerRichTextEditor';
+import { isReviewTextBlock, ReviewStructuredBlock } from './ReviewStructuredBlock';
 import './ReviewMode.css';
 
 const recommendationOptions = [
@@ -60,12 +58,10 @@ export function ReviewMode() {
       setRevision(null);
       return;
     }
-
     let active = true;
     setManuscriptLoading(true);
     setRevisionSaved(false);
     setRevisionDirty(false);
-
     void Promise.all([
       getAssignedReviewManuscript(selected.id),
       getAssignedReviewRevision(selected.id),
@@ -76,16 +72,12 @@ export function ReviewMode() {
         setRevision(working ?? original);
       })
       .catch((caught) => {
-        if (active) {
-          setError(caught instanceof Error ? caught.message : 'Unable to load the assigned manuscript.');
-          setManuscript(null);
-          setRevision(null);
-        }
+        if (!active) return;
+        setError(caught instanceof Error ? caught.message : 'Unable to load the assigned manuscript.');
+        setManuscript(null);
+        setRevision(null);
       })
-      .finally(() => {
-        if (active) setManuscriptLoading(false);
-      });
-
+      .finally(() => { if (active) setManuscriptLoading(false); });
     return () => { active = false; };
   }, [selected?.id]);
 
@@ -180,9 +172,7 @@ export function ReviewMode() {
         </aside>
 
         <section className="review-mode__content">
-          {!selected ? (
-            <div className="review-mode__card"><p>No assignment selected.</p></div>
-          ) : (
+          {!selected ? <div className="review-mode__card"><p>No assignment selected.</p></div> : (
             <>
               <section className="review-mode__card review-mode__summary">
                 <div>
@@ -209,12 +199,8 @@ export function ReviewMode() {
                       onChange={updateRevision}
                       onSave={() => void saveRevision()}
                     />
-                  ) : (
-                    <ManuscriptView manuscript={revision ?? manuscript} />
-                  )
-                ) : (
-                  <p>The manuscript has not yet been attached to this assignment.</p>
-                )}
+                  ) : <ManuscriptView manuscript={revision ?? manuscript} />
+                ) : <p>The manuscript has not yet been attached to this assignment.</p>}
               </section>
 
               {selected.status === 'invited' ? (
@@ -228,9 +214,7 @@ export function ReviewMode() {
                 </section>
               ) : null}
 
-              {selected.status === 'declined' ? (
-                <section className="review-mode__card"><p>This assignment was declined.</p></section>
-              ) : null}
+              {selected.status === 'declined' ? <section className="review-mode__card"><p>This assignment was declined.</p></section> : null}
 
               {canWrite ? (
                 <>
@@ -262,17 +246,12 @@ export function ReviewMode() {
                       <select value={recommendation} onChange={(event) => setRecommendation(event.target.value as typeof recommendation)}>
                         {recommendationOptions.map(([value, optionLabel]) => <option key={value} value={value}>{optionLabel}</option>)}
                       </select>
-                    ) : (
-                      <p>Submit the completed {assignmentLabel.toLowerCase()} to the editor. No scientific accept/revise/reject recommendation is required.</p>
-                    )}
+                    ) : <p>Submit the completed {assignmentLabel.toLowerCase()} to the editor. No scientific accept/revise/reject recommendation is required.</p>}
                     {revisionDirty ? <p className="review-mode__warning">Save the manuscript revision before submitting the assignment.</p> : null}
                     <button
                       className="review-mode__submit"
                       disabled={busy || revisionDirty}
-                      onClick={() => void run(() => submitAssignedReview(
-                        selected.id,
-                        selected.requiresRecommendation ? recommendation : undefined,
-                      ))}
+                      onClick={() => void run(() => submitAssignedReview(selected.id, selected.requiresRecommendation ? recommendation : undefined))}
                     >
                       {selected.requiresRecommendation ? 'Submit review' : 'Submit assignment'}
                     </button>
@@ -299,9 +278,7 @@ export function ReviewMode() {
                   <h2>Assignment submitted</h2>
                   {selected.requiresRecommendation ? (
                     <p>Your recommendation: <strong>{selected.recommendation?.replace('_', ' ')}</strong>. Author-facing data remains privacy-filtered.</p>
-                  ) : (
-                    <p>The {assignmentLabel.toLowerCase()} has been submitted to the editor.</p>
-                  )}
+                  ) : <p>The {assignmentLabel.toLowerCase()} has been submitted to the editor.</p>}
                 </section>
               ) : null}
             </>
@@ -349,50 +326,40 @@ function RevisionEditor({
         if (!isReviewTextBlock(block)) {
           return (
             <div key={index} className="review-mode__revision-block">
-              <div className="review-mode__revision-label">
-                <span>{blockLabel(block)}</span>
-              </div>
+              <div className="review-mode__revision-label"><span>{blockLabel(block)}</span></div>
               <div className="review-mode__revision-structured">
                 <ReviewStructuredBlock block={block} />
-                <p className="review-mode__revision-structured-note">
-                  Structured element preserved in the review copy.
-                </p>
+                <p className="review-mode__revision-structured-note">Structured element preserved in the review copy.</p>
               </div>
             </div>
           );
         }
 
-        const originalText = originalBlock && isReviewTextBlock(originalBlock)
-          ? originalBlock.text
-          : '';
-        const changed = block.text !== originalText;
+        const originalText = originalBlock && isReviewTextBlock(originalBlock) ? originalBlock.text : '';
+        const changed = block.text !== originalText || JSON.stringify(block.richText ?? []) !== JSON.stringify(
+          originalBlock && isReviewTextBlock(originalBlock) ? originalBlock.richText ?? [] : [],
+        );
+
         return (
           <div key={index} className={`review-mode__revision-block${changed ? ' is-changed' : ''}`}>
             <div className="review-mode__revision-label">
               <span>{blockLabel(block)}</span>
               {changed ? <strong>Revised</strong> : null}
             </div>
-            {block.richText?.length ? (
-              <div className="review-mode__revision-rich-preview">
-                <ReviewStructuredBlock block={block} />
-              </div>
-            ) : null}
-            <textarea
-              rows={block.type === 'heading' ? 2 : Math.max(3, Math.min(12, Math.ceil(block.text.length / 90)))}
-              value={block.text}
+            <ReviewerRichTextEditor
+              block={block}
               disabled={disabled}
-              onChange={(event) => {
-                const blocks = revision.blocks.map((item, itemIndex) => {
-                  if (itemIndex !== index || !isReviewTextBlock(item)) return item;
-                  return { ...item, text: event.target.value, richText: undefined } as ReviewManuscriptBlock;
-                });
+              onChange={(updated) => {
+                const blocks = revision.blocks.map((item, itemIndex) =>
+                  itemIndex === index ? updated as ReviewManuscriptBlock : item,
+                );
                 onChange({ ...revision, blocks });
               }}
             />
             {changed ? (
               <details className="review-mode__original-text">
                 <summary>Show original</summary>
-                <p>{originalText}</p>
+                <ReviewStructuredBlock block={originalBlock && isReviewTextBlock(originalBlock) ? originalBlock : block} />
               </details>
             ) : null}
           </div>
@@ -408,18 +375,11 @@ function ManuscriptView({ manuscript }: { manuscript: ReviewManuscriptSnapshot }
       <h1>{manuscript.title}</h1>
       {manuscript.subtitle ? <p className="review-mode__subtitle">{manuscript.subtitle}</p> : null}
       {manuscript.abstract ? (
-        <section className="review-mode__abstract">
-          <h2>Abstract</h2>
-          <p>{manuscript.abstract}</p>
-        </section>
+        <section className="review-mode__abstract"><h2>Abstract</h2><p>{manuscript.abstract}</p></section>
       ) : null}
-      {manuscript.keywords.length ? (
-        <p className="review-mode__keywords"><strong>Keywords:</strong> {manuscript.keywords.join(', ')}</p>
-      ) : null}
+      {manuscript.keywords.length ? <p className="review-mode__keywords"><strong>Keywords:</strong> {manuscript.keywords.join(', ')}</p> : null}
       <div className="review-mode__body" role="document">
-        {manuscript.blocks.map((block, index) => (
-          <ReviewStructuredBlock key={index} block={block} />
-        ))}
+        {manuscript.blocks.map((block, index) => <ReviewStructuredBlock key={index} block={block} />)}
       </div>
     </article>
   );
