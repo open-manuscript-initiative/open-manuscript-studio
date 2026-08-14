@@ -15,10 +15,40 @@ export type ReviewInlineSemantic =
   | 'subscript'
   | 'code';
 
+export interface ReviewCitationReference {
+  sourceTags: string[];
+  label: string;
+}
+
 export interface ReviewInlineSpan {
   text: string;
   semantics?: ReviewInlineSemantic[];
   language?: string;
+  citation?: ReviewCitationReference;
+}
+
+export interface ReviewBibliographicContributor {
+  role: 'author' | 'editor' | 'translator' | 'contributor';
+  givenName?: string;
+  familyName?: string;
+  literalName?: string;
+}
+
+export interface ReviewBibliographicRecord {
+  sourceTag: string;
+  type: string;
+  title: string;
+  subtitle?: string;
+  contributors: ReviewBibliographicContributor[];
+  containerTitle?: string;
+  issued?: string;
+  publisher?: string;
+  place?: string;
+  volume?: string;
+  issue?: string;
+  pages?: string;
+  identifiers: Array<{ scheme: string; value: string }>;
+  url?: string;
 }
 
 export type ReviewChartType = 'bar' | 'line' | 'pie' | 'scatter' | 'area';
@@ -38,6 +68,7 @@ export interface ReviewManuscriptSnapshot {
   abstract?: string;
   keywords: string[];
   blocks: ReviewManuscriptBlock[];
+  bibliographicRecords: ReviewBibliographicRecord[];
 }
 
 export interface AuthorFacingReviewRevision {
@@ -358,6 +389,7 @@ export function sanitizeReviewManuscript(input: unknown): ReviewManuscriptSnapsh
     ...(abstract ? { abstract } : {}),
     keywords,
     blocks,
+    bibliographicRecords: sanitizeBibliographicRecords(record.bibliographicRecords),
   };
 }
 
@@ -386,13 +418,105 @@ function sanitizeRichText(value: unknown): ReviewInlineSpan[] {
       ? span.semantics.filter(isInlineSemantic).slice(0, 8)
       : [];
     const language = cleanText(span.language, 100);
+    const citation = sanitizeCitationReference(span.citation, text);
     spans.push({
       text,
       ...(semantics.length ? { semantics } : {}),
       ...(language ? { language } : {}),
+      ...(citation ? { citation } : {}),
     });
   }
   return spans;
+}
+
+function sanitizeCitationReference(value: unknown, fallbackLabel: string): ReviewCitationReference | undefined {
+  const record = asRecord(value);
+  const sourceTags = Array.isArray(record.sourceTags)
+    ? record.sourceTags
+        .map((item) => cleanText(item, 500))
+        .filter((item): item is string => Boolean(item))
+        .slice(0, 100)
+    : [];
+  if (!sourceTags.length) return undefined;
+  const label = cleanInlineText(record.label, 5_000) ?? fallbackLabel;
+  return { sourceTags, label };
+}
+
+function sanitizeBibliographicRecords(value: unknown): ReviewBibliographicRecord[] {
+  if (!Array.isArray(value)) return [];
+  const result: ReviewBibliographicRecord[] = [];
+  const seen = new Set<string>();
+
+  for (const rawRecord of value.slice(0, 10_000)) {
+    const record = asRecord(rawRecord);
+    const sourceTag = cleanText(record.sourceTag, 500);
+    const title = cleanText(record.title, 5_000);
+    if (!sourceTag || !title || seen.has(sourceTag)) continue;
+    seen.add(sourceTag);
+
+    const contributors: ReviewBibliographicContributor[] = [];
+    if (Array.isArray(record.contributors)) {
+      for (const rawContributor of record.contributors.slice(0, 100)) {
+        const contributor = asRecord(rawContributor);
+        const role = sanitizeBibliographicRole(contributor.role);
+        const givenName = cleanText(contributor.givenName, 500);
+        const familyName = cleanText(contributor.familyName, 500);
+        const literalName = cleanText(contributor.literalName, 1_000);
+        if (!givenName && !familyName && !literalName) continue;
+        contributors.push({
+          role,
+          ...(givenName ? { givenName } : {}),
+          ...(familyName ? { familyName } : {}),
+          ...(literalName ? { literalName } : {}),
+        });
+      }
+    }
+
+    const identifiers: Array<{ scheme: string; value: string }> = [];
+    if (Array.isArray(record.identifiers)) {
+      for (const rawIdentifier of record.identifiers.slice(0, 100)) {
+        const identifier = asRecord(rawIdentifier);
+        const scheme = cleanText(identifier.scheme, 100);
+        const identifierValue = cleanText(identifier.value, 5_000);
+        if (scheme && identifierValue) identifiers.push({ scheme, value: identifierValue });
+      }
+    }
+
+    const type = cleanText(record.type, 200) ?? 'document';
+    const subtitle = cleanText(record.subtitle, 5_000);
+    const containerTitle = cleanText(record.containerTitle, 5_000);
+    const issued = cleanText(record.issued, 500);
+    const publisher = cleanText(record.publisher, 2_000);
+    const place = cleanText(record.place, 1_000);
+    const volume = cleanText(record.volume, 500);
+    const issue = cleanText(record.issue, 500);
+    const pages = cleanText(record.pages, 500);
+    const url = cleanExternalUrl(record.url);
+
+    result.push({
+      sourceTag,
+      type,
+      title,
+      contributors,
+      identifiers,
+      ...(subtitle ? { subtitle } : {}),
+      ...(containerTitle ? { containerTitle } : {}),
+      ...(issued ? { issued } : {}),
+      ...(publisher ? { publisher } : {}),
+      ...(place ? { place } : {}),
+      ...(volume ? { volume } : {}),
+      ...(issue ? { issue } : {}),
+      ...(pages ? { pages } : {}),
+      ...(url ? { url } : {}),
+    });
+  }
+
+  return result;
+}
+
+function sanitizeBibliographicRole(value: unknown): ReviewBibliographicContributor['role'] {
+  if (value === 'editor' || value === 'translator' || value === 'contributor') return value;
+  return 'author';
 }
 
 function isInlineSemantic(value: unknown): value is ReviewInlineSemantic {
@@ -413,6 +537,11 @@ function cleanImageSource(value: unknown): string | undefined {
   if (/^https:\/\//i.test(normalized)) return normalized;
   if (/^data:image\/(?:png|jpe?g|gif|webp|svg\+xml);base64,/i.test(normalized)) return normalized;
   return undefined;
+}
+
+function cleanExternalUrl(value: unknown): string | undefined {
+  const normalized = cleanText(value, 10_000);
+  return normalized && /^https?:\/\//i.test(normalized) ? normalized : undefined;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

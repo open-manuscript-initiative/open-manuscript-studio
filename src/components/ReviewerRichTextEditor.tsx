@@ -48,7 +48,7 @@ export function ReviewerRichTextEditor({
         content={JSON.stringify(blockToDocument(block))}
         onUpdate={(_id, content) => {
           const document = parseDocument(content);
-          const { text, richText } = documentToReviewContent(document);
+          const { text, richText } = documentToReviewContent(document, block.richText ?? []);
           onChange({
             ...block,
             text,
@@ -122,7 +122,7 @@ function spanToNode(span: ReviewInlineSpan): JSONContent {
   if (span.language) marks.push({ type: 'omiLanguage', attrs: { lang: span.language } });
   return {
     type: 'text',
-    text: span.text,
+    text: span.citation?.label || span.text,
     ...(marks.length ? { marks } : {}),
   };
 }
@@ -137,15 +137,19 @@ function parseDocument(content: string): JSONContent {
   return { type: 'doc', content: [{ type: 'paragraph' }] };
 }
 
-function documentToReviewContent(document: JSONContent): {
+function documentToReviewContent(
+  document: JSONContent,
+  previousSpans: ReviewInlineSpan[],
+): {
   text: string;
   richText: ReviewInlineSpan[];
 } {
   const spans: ReviewInlineSpan[] = [];
   collectText(document, spans);
+  const merged = mergeAdjacentSpans(spans);
   return {
-    text: spans.map((span) => span.text).join(''),
-    richText: mergeAdjacentSpans(spans),
+    text: merged.map((span) => span.text).join(''),
+    richText: reattachCitationMetadata(merged, previousSpans),
   };
 }
 
@@ -172,6 +176,53 @@ function collectText(node: JSONContent, spans: ReviewInlineSpan[]): void {
     return;
   }
   for (const child of node.content ?? []) collectText(child, spans);
+}
+
+function reattachCitationMetadata(
+  spans: ReviewInlineSpan[],
+  previousSpans: ReviewInlineSpan[],
+): ReviewInlineSpan[] {
+  const citations = previousSpans
+    .filter((span): span is ReviewInlineSpan & { citation: NonNullable<ReviewInlineSpan['citation']> } => Boolean(span.citation))
+    .map((span) => ({ ...span.citation, sourceTags: [...span.citation.sourceTags] }));
+  if (!citations.length) return spans;
+
+  const result: ReviewInlineSpan[] = [];
+  let citationIndex = 0;
+
+  for (const span of spans) {
+    let cursor = 0;
+    while (cursor < span.text.length && citationIndex < citations.length) {
+      const citation = citations[citationIndex];
+      const label = citation.label;
+      const matchIndex = span.text.indexOf(label, cursor);
+      if (matchIndex < 0) break;
+
+      if (matchIndex > cursor) {
+        result.push(copySpan(span, span.text.slice(cursor, matchIndex)));
+      }
+      result.push({
+        text: label,
+        citation: { ...citation, sourceTags: [...citation.sourceTags] },
+      });
+      cursor = matchIndex + label.length;
+      citationIndex += 1;
+    }
+
+    if (cursor < span.text.length) {
+      result.push(copySpan(span, span.text.slice(cursor)));
+    }
+  }
+
+  return result.length ? result : spans;
+}
+
+function copySpan(span: ReviewInlineSpan, text: string): ReviewInlineSpan {
+  return {
+    text,
+    ...(span.semantics?.length ? { semantics: [...span.semantics] } : {}),
+    ...(span.language ? { language: span.language } : {}),
+  };
 }
 
 function mergeAdjacentSpans(spans: ReviewInlineSpan[]): ReviewInlineSpan[] {

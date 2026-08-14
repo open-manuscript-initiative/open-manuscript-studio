@@ -1,18 +1,12 @@
 import type { OjsLaunchData } from './ojsClient.js';
 import type { OjsStructuredBlock } from './docxStructureTypes.js';
 import type {
+  ReviewBibliographicRecord,
   ReviewInlineSemantic,
   ReviewInlineSpan,
   ReviewManuscriptBlock,
   ReviewManuscriptSnapshot,
 } from '../../services/reviewManuscriptService.js';
-
-interface SourceInlineText {
-  kind: 'text';
-  text: string;
-  semantics?: ReviewInlineSemantic[];
-  language?: string;
-}
 
 interface SourceParagraph {
   text: string;
@@ -26,6 +20,7 @@ interface StructuredSourceDocument {
   structuredBlocks?: OjsStructuredBlock[];
   footnotes?: Array<{ text: string }>;
   endnotes?: Array<{ text: string }>;
+  bibliographicRecords?: ReviewBibliographicRecord[];
 }
 
 export function createReviewSnapshotFromOjs(
@@ -153,12 +148,22 @@ export function createReviewSnapshotFromOjs(
     if (text) blocks.push({ type: 'note', text });
   }
 
+  const bibliographicRecords = source?.bibliographicRecords ?? [];
+  if (bibliographicRecords.length) {
+    blocks.push({ type: 'heading', text: 'References', level: 2 });
+    for (const record of bibliographicRecords) {
+      const text = formatBibliographicRecord(record);
+      if (text) blocks.push({ type: 'paragraph', text });
+    }
+  }
+
   return {
     title,
     ...(subtitle ? { subtitle } : {}),
     ...(abstract ? { abstract } : {}),
     keywords,
     blocks,
+    bibliographicRecords,
   };
 }
 
@@ -187,6 +192,27 @@ function paragraphRichText(paragraph: SourceParagraph): ReviewInlineSpan[] {
   const spans: ReviewInlineSpan[] = [];
   for (const raw of paragraph.inline) {
     const inline = asRecord(raw);
+
+    if (inline.kind === 'citationReference') {
+      const sourceTags = Array.isArray(inline.sourceTags)
+        ? inline.sourceTags
+            .filter((value): value is string => typeof value === 'string' && Boolean(value.trim()))
+            .map((value) => value.trim())
+            .slice(0, 100)
+        : [];
+      const label = typeof inline.label === 'string' && inline.label.trim()
+        ? inline.label.trim()
+        : sourceTags.length
+          ? `[${sourceTags.join('; ')}]`
+          : '[citation]';
+      if (!sourceTags.length) continue;
+      spans.push({
+        text: label,
+        citation: { sourceTags, label },
+      });
+      continue;
+    }
+
     if (inline.kind !== 'text' || typeof inline.text !== 'string' || !inline.text) continue;
     const semantics = Array.isArray(inline.semantics)
       ? inline.semantics.filter(isInlineSemantic)
@@ -201,6 +227,36 @@ function paragraphRichText(paragraph: SourceParagraph): ReviewInlineSpan[] {
     });
   }
   return spans;
+}
+
+function formatBibliographicRecord(record: ReviewBibliographicRecord): string {
+  const contributors = record.contributors
+    .map((contributor) => contributor.literalName ||
+      [contributor.familyName, contributor.givenName].filter(Boolean).join(', '))
+    .filter(Boolean)
+    .join('; ');
+  const title = record.subtitle ? `${record.title}: ${record.subtitle}` : record.title;
+  const container = [
+    record.containerTitle,
+    record.volume ? `vol. ${record.volume}` : undefined,
+    record.issue ? `no. ${record.issue}` : undefined,
+    record.pages ? `pp. ${record.pages}` : undefined,
+  ].filter(Boolean).join(', ');
+  const publication = [
+    record.place,
+    record.publisher,
+    record.issued,
+  ].filter(Boolean).join(': ');
+  const doi = record.identifiers.find((identifier) => identifier.scheme.toLowerCase() === 'doi')?.value;
+  const identifier = doi ? `https://doi.org/${doi.replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, '')}` : record.url;
+
+  return [
+    contributors ? `${contributors}.` : undefined,
+    `${title}.`,
+    container ? `${container}.` : undefined,
+    publication ? `${publication}.` : undefined,
+    identifier,
+  ].filter(Boolean).join(' ');
 }
 
 function isInlineSemantic(value: unknown): value is ReviewInlineSemantic {
