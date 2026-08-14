@@ -1,0 +1,102 @@
+.review-structured-paragraph,
+.review-structured-heading,
+.review-structured-note,
+.review-structured-list-item {
+  overflow-wrap: anywhere;
+}
+
+.review-structured-list-item {
+  display: flex;
+  gap: 0.55rem;
+  margin: 0.45rem 0;
+  line-height: 1.55;
+}
+
+.review-structured-list-marker {
+  flex: 0 0 1.5rem;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.review-structured-note {
+  margin: 0.8rem 0;
+  padding: 0.8rem 1rem;
+  border-inline-start: 3px solid currentColor;
+  opacity: 0.88;
+}
+
+.review-structured-small-caps {
+  font-variant-caps: small-caps;
+}
+
+.review-structured-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0.9rem 0;
+}
+
+.review-structured-table {
+  width: 100%;
+  min-width: 32rem;
+  border-collapse: collapse;
+  font-size: 0.94rem;
+}
+
+.review-structured-table th,
+.review-structured-table td {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(75, 61, 55, 0.22);
+  text-align: start;
+  vertical-align: top;
+}
+
+.review-structured-table th {
+  font-weight: 650;
+  background: rgba(75, 61, 55, 0.05);
+}
+
+.review-structured-figure,
+.review-structured-chart {
+  margin: 1rem 0;
+}
+
+.review-structured-figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
+.review-structured-figure figcaption,
+.review-structured-chart figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.review-structured-chart figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.review-mode__revision-structured {
+  padding: 0.8rem;
+  border: 1px solid rgba(75, 61, 55, 0.16);
+  border-radius: 0.45rem;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.review-mode__revision-structured-note {
+  margin: 0.45rem 0 0;
+  font-size: 0.82rem;
+  opacity: 0.7;
+}
+
+.review-mode__revision-rich-preview {
+  margin-bottom: 0.55rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.35rem;
+  background: rgba(75, 61, 55, 0.045);
+}
