@@ -48,7 +48,7 @@ export function ReviewerRichTextEditor({
         content={JSON.stringify(blockToDocument(block))}
         onUpdate={(_id, content) => {
           const document = parseDocument(content);
-          const { text, richText } = documentToReviewContent(document);
+          const { text, richText } = documentToReviewContent(document, block.richText ?? []);
           onChange({
             ...block,
             text,
@@ -114,25 +114,6 @@ function clampHeadingLevel(level?: number): 1 | 2 | 3 | 4 | 5 | 6 {
 }
 
 function spanToNode(span: ReviewInlineSpan): JSONContent {
-  if (span.citation?.sourceTags.length) {
-    const sourceTags = span.citation.sourceTags;
-    const label = span.citation.label || span.text;
-    const stableKey = sourceTags
-      .join('-')
-      .replace(/[^a-zA-Z0-9_-]/g, '-')
-      .slice(0, 180) || 'citation';
-    return {
-      type: 'omiCitation',
-      attrs: {
-        citationId: sourceTags[0],
-        citationIds: sourceTags,
-        clusterId: sourceTags.length > 1 ? `review-cluster-${stableKey}` : null,
-        anchorId: `review-citation-${stableKey}`,
-        label,
-      },
-    };
-  }
-
   const marks: TiptapMark[] = [];
   for (const semantic of span.semantics ?? []) {
     const type = semanticToMark(semantic);
@@ -141,7 +122,7 @@ function spanToNode(span: ReviewInlineSpan): JSONContent {
   if (span.language) marks.push({ type: 'omiLanguage', attrs: { lang: span.language } });
   return {
     type: 'text',
-    text: span.text,
+    text: span.citation?.label || span.text,
     ...(marks.length ? { marks } : {}),
   };
 }
@@ -156,37 +137,23 @@ function parseDocument(content: string): JSONContent {
   return { type: 'doc', content: [{ type: 'paragraph' }] };
 }
 
-function documentToReviewContent(document: JSONContent): {
+function documentToReviewContent(
+  document: JSONContent,
+  previousSpans: ReviewInlineSpan[],
+): {
   text: string;
   richText: ReviewInlineSpan[];
 } {
   const spans: ReviewInlineSpan[] = [];
   collectText(document, spans);
+  const merged = mergeAdjacentSpans(spans);
   return {
-    text: spans.map((span) => span.text).join(''),
-    richText: mergeAdjacentSpans(spans),
+    text: merged.map((span) => span.text).join(''),
+    richText: reattachCitationMetadata(merged, previousSpans),
   };
 }
 
 function collectText(node: JSONContent, spans: ReviewInlineSpan[]): void {
-  if (node.type === 'omiCitation') {
-    const label = typeof node.attrs?.label === 'string' && node.attrs.label
-      ? node.attrs.label
-      : '[citation]';
-    const citationIds = Array.isArray(node.attrs?.citationIds)
-      ? node.attrs.citationIds.filter((value): value is string => typeof value === 'string' && Boolean(value))
-      : typeof node.attrs?.citationId === 'string' && node.attrs.citationId
-        ? [node.attrs.citationId]
-        : [];
-    spans.push({
-      text: label,
-      ...(citationIds.length
-        ? { citation: { sourceTags: citationIds, label } }
-        : {}),
-    });
-    return;
-  }
-
   if (node.type === 'text' && typeof node.text === 'string') {
     const semantics: ReviewInlineSemantic[] = [];
     let language: string | undefined;
@@ -211,26 +178,65 @@ function collectText(node: JSONContent, spans: ReviewInlineSpan[]): void {
   for (const child of node.content ?? []) collectText(child, spans);
 }
 
+function reattachCitationMetadata(
+  spans: ReviewInlineSpan[],
+  previousSpans: ReviewInlineSpan[],
+): ReviewInlineSpan[] {
+  const citations = previousSpans
+    .filter((span): span is ReviewInlineSpan & { citation: NonNullable<ReviewInlineSpan['citation']> } => Boolean(span.citation))
+    .map((span) => ({ ...span.citation, sourceTags: [...span.citation.sourceTags] }));
+  if (!citations.length) return spans;
+
+  const result: ReviewInlineSpan[] = [];
+  let citationIndex = 0;
+
+  for (const span of spans) {
+    let cursor = 0;
+    while (cursor < span.text.length && citationIndex < citations.length) {
+      const citation = citations[citationIndex];
+      const label = citation.label;
+      const matchIndex = span.text.indexOf(label, cursor);
+      if (matchIndex < 0) break;
+
+      if (matchIndex > cursor) {
+        result.push(copySpan(span, span.text.slice(cursor, matchIndex)));
+      }
+      result.push({
+        text: label,
+        citation: { ...citation, sourceTags: [...citation.sourceTags] },
+      });
+      cursor = matchIndex + label.length;
+      citationIndex += 1;
+    }
+
+    if (cursor < span.text.length) {
+      result.push(copySpan(span, span.text.slice(cursor)));
+    }
+  }
+
+  return result.length ? result : spans;
+}
+
+function copySpan(span: ReviewInlineSpan, text: string): ReviewInlineSpan {
+  return {
+    text,
+    ...(span.semantics?.length ? { semantics: [...span.semantics] } : {}),
+    ...(span.language ? { language: span.language } : {}),
+  };
+}
+
 function mergeAdjacentSpans(spans: ReviewInlineSpan[]): ReviewInlineSpan[] {
   const merged: ReviewInlineSpan[] = [];
   for (const span of spans) {
     const previous = merged.at(-1);
     if (
       previous &&
-      !previous.citation &&
-      !span.citation &&
       JSON.stringify(previous.semantics ?? []) === JSON.stringify(span.semantics ?? []) &&
       previous.language === span.language
     ) {
       previous.text += span.text;
     } else {
-      merged.push({
-        ...span,
-        semantics: span.semantics ? [...span.semantics] : undefined,
-        citation: span.citation
-          ? { ...span.citation, sourceTags: [...span.citation.sourceTags] }
-          : undefined,
-      });
+      merged.push({ ...span, semantics: span.semantics ? [...span.semantics] : undefined });
     }
   }
   return merged;
