@@ -23,6 +23,36 @@ interface StructuredSourceDocument {
   bibliographicRecords?: ReviewBibliographicRecord[];
 }
 
+type ReviewDocumentLocale = 'en' | 'hu' | 'de';
+
+interface BibliographyLocaleCopy {
+  heading: string;
+  volume: string;
+  issue: string;
+  pages: string;
+}
+
+const bibliographyLocaleCopy: Record<ReviewDocumentLocale, BibliographyLocaleCopy> = {
+  en: {
+    heading: 'References',
+    volume: 'vol.',
+    issue: 'no.',
+    pages: 'pp.',
+  },
+  hu: {
+    heading: 'Hivatkozások',
+    volume: 'évf.',
+    issue: 'sz.',
+    pages: 'o.',
+  },
+  de: {
+    heading: 'Literatur',
+    volume: 'Bd.',
+    issue: 'Nr.',
+    pages: 'S.',
+  },
+};
+
 export function createReviewSnapshotFromOjs(
   data: OjsLaunchData,
 ): ReviewManuscriptSnapshot {
@@ -33,6 +63,8 @@ export function createReviewSnapshotFromOjs(
   const keywords = collectKeywords(submission.keywords);
   const blocks: ReviewManuscriptBlock[] = [];
   const source = data.sourceDocument as StructuredSourceDocument | undefined;
+  const documentLocale = pickDocumentLocale(submission);
+  const bibliographyCopy = bibliographyLocaleCopy[documentLocale];
 
   const paragraphQueues = buildParagraphQueues(source?.paragraphs ?? []);
   const structured = source?.structuredBlocks ?? [];
@@ -150,9 +182,9 @@ export function createReviewSnapshotFromOjs(
 
   const bibliographicRecords = source?.bibliographicRecords ?? [];
   if (bibliographicRecords.length) {
-    blocks.push({ type: 'heading', text: 'References', level: 2 });
+    blocks.push({ type: 'heading', text: bibliographyCopy.heading, level: 2 });
     for (const record of bibliographicRecords) {
-      const text = formatBibliographicRecord(record);
+      const text = formatBibliographicRecord(record, bibliographyCopy);
       if (text) blocks.push({ type: 'paragraph', text });
     }
   }
@@ -229,7 +261,10 @@ function paragraphRichText(paragraph: SourceParagraph): ReviewInlineSpan[] {
   return spans;
 }
 
-function formatBibliographicRecord(record: ReviewBibliographicRecord): string {
+function formatBibliographicRecord(
+  record: ReviewBibliographicRecord,
+  copy: BibliographyLocaleCopy,
+): string {
   const contributors = record.contributors
     .map((contributor) => contributor.literalName ||
       [contributor.familyName, contributor.givenName].filter(Boolean).join(', '))
@@ -238,9 +273,9 @@ function formatBibliographicRecord(record: ReviewBibliographicRecord): string {
   const title = record.subtitle ? `${record.title}: ${record.subtitle}` : record.title;
   const container = [
     record.containerTitle,
-    record.volume ? `vol. ${record.volume}` : undefined,
-    record.issue ? `no. ${record.issue}` : undefined,
-    record.pages ? `pp. ${record.pages}` : undefined,
+    record.volume ? `${copy.volume} ${record.volume}` : undefined,
+    record.issue ? `${copy.issue} ${record.issue}` : undefined,
+    record.pages ? `${copy.pages} ${record.pages}` : undefined,
   ].filter(Boolean).join(', ');
   const publication = [
     record.place,
@@ -257,6 +292,24 @@ function formatBibliographicRecord(record: ReviewBibliographicRecord): string {
     publication ? `${publication}.` : undefined,
     identifier,
   ].filter(Boolean).join(' ');
+}
+
+function pickDocumentLocale(submission: Record<string, unknown>): ReviewDocumentLocale {
+  const candidates = [
+    submission.locale,
+    submission.language,
+    submission.primaryLocale,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string') continue;
+    const normalized = candidate.trim().toLowerCase().replace('_', '-');
+    if (normalized === 'hu' || normalized.startsWith('hu-')) return 'hu';
+    if (normalized === 'de' || normalized.startsWith('de-')) return 'de';
+    if (normalized === 'en' || normalized.startsWith('en-')) return 'en';
+  }
+
+  return 'en';
 }
 
 function isInlineSemantic(value: unknown): value is ReviewInlineSemantic {
