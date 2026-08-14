@@ -60,10 +60,40 @@ export type ReviewInlineSemantic =
   | 'subscript'
   | 'code';
 
+export interface ReviewCitationReference {
+  sourceTags: string[];
+  label: string;
+}
+
 export interface ReviewInlineSpan {
   text: string;
   semantics?: ReviewInlineSemantic[];
   language?: string;
+  citation?: ReviewCitationReference;
+}
+
+export interface ReviewBibliographicContributor {
+  role: 'author' | 'editor' | 'translator' | 'contributor';
+  givenName?: string;
+  familyName?: string;
+  literalName?: string;
+}
+
+export interface ReviewBibliographicRecord {
+  sourceTag: string;
+  type: string;
+  title: string;
+  subtitle?: string;
+  contributors: ReviewBibliographicContributor[];
+  containerTitle?: string;
+  issued?: string;
+  publisher?: string;
+  place?: string;
+  volume?: string;
+  issue?: string;
+  pages?: string;
+  identifiers: Array<{ scheme: string; value: string }>;
+  url?: string;
 }
 
 export type ReviewChartType = 'bar' | 'line' | 'pie' | 'scatter' | 'area';
@@ -83,6 +113,7 @@ export interface ReviewManuscriptSnapshot {
   abstract?: string;
   keywords: string[];
   blocks: ReviewManuscriptBlock[];
+  bibliographicRecords: ReviewBibliographicRecord[];
 }
 
 interface ReviewResponse { review: ReviewerAssignment; }
