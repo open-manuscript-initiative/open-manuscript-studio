@@ -16,6 +16,11 @@ export type ReviewTextBlock = Extract<
   { type: 'heading' | 'paragraph' | 'note' | 'list' }
 >;
 
+type TiptapMark = {
+  type: string;
+  attrs?: Record<string, unknown>;
+};
+
 export function ReviewerRichTextEditor({
   block,
   disabled,
@@ -85,7 +90,7 @@ export function ReviewerRichTextEditor({
 }
 
 function blockToDocument(block: ReviewTextBlock): JSONContent {
-  const content = block.richText?.length
+  const content: JSONContent[] | undefined = block.richText?.length
     ? block.richText.map(spanToNode)
     : block.text
       ? [{ type: 'text', text: block.text }]
@@ -98,7 +103,7 @@ function blockToDocument(block: ReviewTextBlock): JSONContent {
 }
 
 function spanToNode(span: ReviewInlineSpan): JSONContent {
-  const marks: JSONContent[] = [];
+  const marks: TiptapMark[] = [];
   for (const semantic of span.semantics ?? []) {
     const type = semanticToMark(semantic);
     if (type) marks.push({ type });
