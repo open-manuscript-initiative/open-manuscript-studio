@@ -99,11 +99,15 @@ export function parseDocxSource(
     : [];
 
   const xml = documentXml.toString('utf8');
+  // Paragraphs inside Word table cells are handled separately by
+  // docxStructuredContent.ts. Exclude complete <w:tbl> subtrees here so the
+  // same cell text is not also imported as ordinary manuscript paragraphs.
+  const paragraphXml = stripWordTableElements(xml);
   const paragraphs: OjsDocxParagraph[] = [];
   const paragraphPattern = /<(?:[A-Za-z_][\w.-]*:)?p(?:\s[^>]*)?>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?p>/g;
   let paragraphMatch: RegExpExecArray | null;
 
-  while ((paragraphMatch = paragraphPattern.exec(xml))) {
+  while ((paragraphMatch = paragraphPattern.exec(paragraphXml))) {
     const body = paragraphMatch[1] ?? '';
     const styleId = readElementValue(body, 'pStyle');
     const directOutlineLevel = readOutlineLevel(body);
@@ -417,6 +421,13 @@ function extractParagraphText(body: string): string {
     .join('')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n[ \t]+/g, '\n');
+}
+
+function stripWordTableElements(xml: string): string {
+  return xml.replace(
+    /<(?:[A-Za-z_][\w.-]*:)?tbl\b[^>]*>[\s\S]*?<\/(?:[A-Za-z_][\w.-]*:)?tbl>/g,
+    '',
+  );
 }
 
 function decodeXml(value: string): string {
