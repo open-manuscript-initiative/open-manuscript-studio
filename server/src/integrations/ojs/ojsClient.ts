@@ -1,6 +1,7 @@
 import { applyDirectFormattingHeadingInference } from './docxDirectHeading.js';
 import { applyInlineSemantics } from './docxInlineSemantics.js';
 import { applyStyleInheritedLists } from './docxListInheritance.js';
+import { applyNoteIntegrity } from './docxNoteIntegrity.js';
 import { parseDocxSource, type OjsSourceDocument } from './docxSource.js';
 import { applyStructuredContent } from './docxStructuredContent.js';
 import type { LaunchClaims } from './launchVerifier.js';
@@ -214,7 +215,8 @@ async function loadSourceDocument(
   const withHeadings = applyDirectFormattingHeadingInference(bytes, parsed);
   const withInlineSemantics = applyInlineSemantics(bytes, withHeadings);
   const withStructuredContent = applyStructuredContent(bytes, withInlineSemantics);
-  return applyStyleInheritedLists(bytes, withStructuredContent);
+  const withLists = applyStyleInheritedLists(bytes, withStructuredContent);
+  return applyNoteIntegrity(bytes, withLists);
 }
 
 function isDocx(file: OjsFileDescriptor): boolean {
