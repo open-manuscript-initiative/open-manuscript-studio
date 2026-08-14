@@ -7,6 +7,10 @@ import {
   type OmiScholarlyMetadata,
 } from '../../model/scholarlyMetadata';
 import { applyOjsInlineSemantics } from './applyOjsInlineSemantics';
+import {
+  applyOjsReferences,
+  prepareOjsReferencesForBaseImport,
+} from './applyOjsReferences';
 import { applyOjsStructuredContent } from './applyOjsStructuredContent';
 import {
   createManuscriptFromOjsLaunch as createBaseManuscriptFromOjsLaunch,
@@ -45,21 +49,29 @@ interface ExtendedSourceDocument extends Record<string, unknown> {
 export function createManuscriptFromOjsLaunch(
   launch: OjsLaunchPayload,
 ): OmiManuscript | null {
+  // Citation atoms are zero-width semantic objects. Convert them temporarily
+  // to their visible labels so the base importer can retain paragraph text;
+  // applyOjsReferences restores the semantic OMI citation nodes afterwards.
+  const referenceAwareLaunch = prepareOjsReferencesForBaseImport(launch);
+
   // Word numbered-list paragraphs can superficially resemble headings (for
   // example "1. First item"). Mark known list paragraphs before the base
   // importer runs so heading heuristics cannot consume them as section titles.
   // The sentinel is removed immediately afterwards; structured-content import
   // then converts the preserved paragraph sequence into real Tiptap lists.
-  const listAwareLaunch = suppressListHeadingInference(launch);
+  const listAwareLaunch = suppressListHeadingInference(referenceAwareLaunch);
   const baseManuscript = createBaseManuscriptFromOjsLaunch(listAwareLaunch);
   const restoredBase = baseManuscript
     ? removeListSentinels(baseManuscript)
     : null;
-  const manuscript = restoredBase
+  const structurallyImported = restoredBase
     ? applyOjsStructuredContent(
         applyOjsInlineSemantics(restoredBase, launch),
         launch,
       )
+    : null;
+  const manuscript = structurallyImported
+    ? applyOjsReferences(structurallyImported, launch)
     : null;
   const submission = launch.submission as ExtendedOjsSubmission | null | undefined;
 
