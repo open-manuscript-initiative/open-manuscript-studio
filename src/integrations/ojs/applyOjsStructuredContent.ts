@@ -17,7 +17,9 @@ export function applyOjsStructuredContent(manuscript: OmiManuscript, launch: Ojs
 
   const listQueues = new Map<string, ListInfo[]>();
   const visualsByAfter = new Map<string, OmiBlock[]>();
+  const tableCleanupByAfter = new Map<string, string[][]>();
   const leadingVisuals: OmiBlock[] = [];
+  const leadingTableCleanup: string[][] = [];
 
   for (const item of structured) {
     if (item.kind === 'paragraph') {
@@ -31,11 +33,21 @@ export function applyOjsStructuredContent(manuscript: OmiManuscript, launch: Ojs
     const visual = toVisualBlock(item);
     if (!visual) continue;
     const afterText = typeof item.afterText === 'string' ? normalize(item.afterText) : '';
-    if (!afterText) leadingVisuals.push(visual);
-    else {
+    if (!afterText) {
+      leadingVisuals.push(visual);
+      const cleanup = tableCleanupSequence(item);
+      if (cleanup.length) leadingTableCleanup.push(cleanup);
+    } else {
       const queue = visualsByAfter.get(afterText) ?? [];
       queue.push(visual);
       visualsByAfter.set(afterText, queue);
+
+      const cleanup = tableCleanupSequence(item);
+      if (cleanup.length) {
+        const cleanupQueue = tableCleanupByAfter.get(afterText) ?? [];
+        cleanupQueue.push(cleanup);
+        tableCleanupByAfter.set(afterText, cleanupQueue);
+      }
     }
   }
 
@@ -43,7 +55,9 @@ export function applyOjsStructuredContent(manuscript: OmiManuscript, launch: Ojs
     const output: OmiBlock[] = [];
     if (sectionIndex === 0 && leadingVisuals.length) output.push(...leadingVisuals);
 
-    let index = 0;
+    let index = sectionIndex === 0
+      ? skipStructuredTableCellParagraphs(section.blocks, 0, leadingTableCleanup)
+      : 0;
     while (index < section.blocks.length) {
       const block = section.blocks[index];
       if (!block) break;
@@ -58,7 +72,8 @@ export function applyOjsStructuredContent(manuscript: OmiManuscript, launch: Ojs
       if (!firstInfo) {
         output.push(block);
         output.push(...takeVisuals(visualsByAfter, firstText));
-        index += 1;
+        const cleanup = takeTableCleanup(tableCleanupByAfter, firstText);
+        index = skipStructuredTableCellParagraphs(section.blocks, index + 1, cleanup);
         continue;
       }
 
@@ -82,7 +97,11 @@ export function applyOjsStructuredContent(manuscript: OmiManuscript, launch: Ojs
       }
 
       output.push(buildListBlock(items));
-      for (const item of items) output.push(...takeVisuals(visualsByAfter, item.text));
+      for (const item of items) {
+        output.push(...takeVisuals(visualsByAfter, item.text));
+        const cleanup = takeTableCleanup(tableCleanupByAfter, item.text);
+        cursor = skipStructuredTableCellParagraphs(section.blocks, cursor, cleanup);
+      }
       index = cursor;
     }
     return { ...section, blocks: output };
@@ -183,11 +202,53 @@ function toVisualBlock(item: StructuredBlock): OmiBlock | undefined {
   return undefined;
 }
 
+function tableCleanupSequence(item: StructuredBlock): string[] {
+  if (item.kind !== 'table' || !isCells(item.cells)) return [];
+  return item.cells
+    .flat()
+    .map((cell) => normalize(cell))
+    .filter(Boolean);
+}
+
 function takeVisuals(map: Map<string, OmiBlock[]>, text: string): OmiBlock[] {
   const key = normalize(text);
   const value = map.get(key) ?? [];
   map.delete(key);
   return value;
+}
+
+function takeTableCleanup(map: Map<string, string[][]>, text: string): string[][] {
+  const key = normalize(text);
+  const value = map.get(key) ?? [];
+  map.delete(key);
+  return value;
+}
+
+function skipStructuredTableCellParagraphs(
+  blocks: OmiBlock[],
+  startIndex: number,
+  sequences: string[][],
+): number {
+  let index = startIndex;
+  for (const sequence of sequences) {
+    if (!sequence.length) continue;
+    let cursor = index;
+    let matched = true;
+    for (const expected of sequence) {
+      const block = blocks[cursor];
+      if (!block || block.visual || block.type !== 'paragraph') {
+        matched = false;
+        break;
+      }
+      if (normalize(storedPlainText(block.content)) !== expected) {
+        matched = false;
+        break;
+      }
+      cursor += 1;
+    }
+    if (matched) index = cursor;
+  }
+  return index;
 }
 
 function isCells(value: unknown): value is string[][] {
