@@ -114,6 +114,25 @@ function clampHeadingLevel(level?: number): 1 | 2 | 3 | 4 | 5 | 6 {
 }
 
 function spanToNode(span: ReviewInlineSpan): JSONContent {
+  if (span.citation?.sourceTags.length) {
+    const sourceTags = span.citation.sourceTags;
+    const label = span.citation.label || span.text;
+    const stableKey = sourceTags
+      .join('-')
+      .replace(/[^a-zA-Z0-9_-]/g, '-')
+      .slice(0, 180) || 'citation';
+    return {
+      type: 'omiCitation',
+      attrs: {
+        citationId: sourceTags[0],
+        citationIds: sourceTags,
+        clusterId: sourceTags.length > 1 ? `review-cluster-${stableKey}` : null,
+        anchorId: `review-citation-${stableKey}`,
+        label,
+      },
+    };
+  }
+
   const marks: TiptapMark[] = [];
   for (const semantic of span.semantics ?? []) {
     const type = semanticToMark(semantic);
@@ -150,6 +169,24 @@ function documentToReviewContent(document: JSONContent): {
 }
 
 function collectText(node: JSONContent, spans: ReviewInlineSpan[]): void {
+  if (node.type === 'omiCitation') {
+    const label = typeof node.attrs?.label === 'string' && node.attrs.label
+      ? node.attrs.label
+      : '[citation]';
+    const citationIds = Array.isArray(node.attrs?.citationIds)
+      ? node.attrs.citationIds.filter((value): value is string => typeof value === 'string' && Boolean(value))
+      : typeof node.attrs?.citationId === 'string' && node.attrs.citationId
+        ? [node.attrs.citationId]
+        : [];
+    spans.push({
+      text: label,
+      ...(citationIds.length
+        ? { citation: { sourceTags: citationIds, label } }
+        : {}),
+    });
+    return;
+  }
+
   if (node.type === 'text' && typeof node.text === 'string') {
     const semantics: ReviewInlineSemantic[] = [];
     let language: string | undefined;
@@ -180,12 +217,20 @@ function mergeAdjacentSpans(spans: ReviewInlineSpan[]): ReviewInlineSpan[] {
     const previous = merged.at(-1);
     if (
       previous &&
+      !previous.citation &&
+      !span.citation &&
       JSON.stringify(previous.semantics ?? []) === JSON.stringify(span.semantics ?? []) &&
       previous.language === span.language
     ) {
       previous.text += span.text;
     } else {
-      merged.push({ ...span, semantics: span.semantics ? [...span.semantics] : undefined });
+      merged.push({
+        ...span,
+        semantics: span.semantics ? [...span.semantics] : undefined,
+        citation: span.citation
+          ? { ...span.citation, sourceTags: [...span.citation.sourceTags] }
+          : undefined,
+      });
     }
   }
   return merged;
