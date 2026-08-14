@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { type JSONContent } from '@tiptap/react';
 
+import type { EditorCapabilities } from '../editor/editorCapabilities';
 import { useTranslation } from '../i18n';
 import type {
   ReviewInlineSemantic,
@@ -22,10 +23,14 @@ type TiptapMark = {
 export function ReviewerRichTextEditor({
   block,
   disabled,
+  capabilities,
+  manuscriptLanguage,
   onChange,
 }: {
   block: ReviewTextBlock;
   disabled: boolean;
+  capabilities: EditorCapabilities;
+  manuscriptLanguage?: string;
   onChange: (block: ReviewTextBlock) => void;
 }) {
   const { locale } = useTranslation();
@@ -47,8 +52,8 @@ export function ReviewerRichTextEditor({
         } as ReviewTextBlock);
       }}
       editable={!disabled}
-      restricted
-      manuscriptLanguage={locale}
+      capabilities={capabilities}
+      manuscriptLanguage={manuscriptLanguage ?? locale}
       className={`review-mode__studio-block-editor review-mode__studio-block-editor--${block.type}`}
     />
   );
