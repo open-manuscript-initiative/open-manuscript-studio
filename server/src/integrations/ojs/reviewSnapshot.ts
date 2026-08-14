@@ -1,18 +1,12 @@
 import type { OjsLaunchData } from './ojsClient.js';
 import type { OjsStructuredBlock } from './docxStructureTypes.js';
 import type {
+  ReviewBibliographicRecord,
   ReviewInlineSemantic,
   ReviewInlineSpan,
   ReviewManuscriptBlock,
   ReviewManuscriptSnapshot,
 } from '../../services/reviewManuscriptService.js';
-
-interface SourceInlineText {
-  kind: 'text';
-  text: string;
-  semantics?: ReviewInlineSemantic[];
-  language?: string;
-}
 
 interface SourceParagraph {
   text: string;
@@ -26,6 +20,7 @@ interface StructuredSourceDocument {
   structuredBlocks?: OjsStructuredBlock[];
   footnotes?: Array<{ text: string }>;
   endnotes?: Array<{ text: string }>;
+  bibliographicRecords?: ReviewBibliographicRecord[];
 }
 
 export function createReviewSnapshotFromOjs(
@@ -159,6 +154,7 @@ export function createReviewSnapshotFromOjs(
     ...(abstract ? { abstract } : {}),
     keywords,
     blocks,
+    bibliographicRecords: source?.bibliographicRecords ?? [],
   };
 }
 
@@ -187,6 +183,27 @@ function paragraphRichText(paragraph: SourceParagraph): ReviewInlineSpan[] {
   const spans: ReviewInlineSpan[] = [];
   for (const raw of paragraph.inline) {
     const inline = asRecord(raw);
+
+    if (inline.kind === 'citationReference') {
+      const sourceTags = Array.isArray(inline.sourceTags)
+        ? inline.sourceTags
+            .filter((value): value is string => typeof value === 'string' && Boolean(value.trim()))
+            .map((value) => value.trim())
+            .slice(0, 100)
+        : [];
+      const label = typeof inline.label === 'string' && inline.label.trim()
+        ? inline.label.trim()
+        : sourceTags.length
+          ? `[${sourceTags.join('; ')}]`
+          : '[citation]';
+      if (!sourceTags.length) continue;
+      spans.push({
+        text: label,
+        citation: { sourceTags, label },
+      });
+      continue;
+    }
+
     if (inline.kind !== 'text' || typeof inline.text !== 'string' || !inline.text) continue;
     const semantics = Array.isArray(inline.semantics)
       ? inline.semantics.filter(isInlineSemantic)
