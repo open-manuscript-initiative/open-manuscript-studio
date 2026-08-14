@@ -1,15 +1,13 @@
-import { useEffect, useRef } from 'react';
-import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
+import { useId } from 'react';
+import { type JSONContent } from '@tiptap/react';
 
-import { OMI_RICH_TEXT_EXTENSIONS } from '../editor/extensions/OmiRichTextExtensions';
 import { useTranslation } from '../i18n';
 import type {
   ReviewInlineSemantic,
   ReviewInlineSpan,
   ReviewManuscriptBlock,
 } from '../services/peerReviewApi';
-import { RichTextToolbar } from './RichTextToolbar';
+import { BlockEditor } from './BlockEditor';
 
 export type ReviewTextBlock = Extract<
   ReviewManuscriptBlock,
@@ -31,85 +29,72 @@ export function ReviewerRichTextEditor({
   onChange: (block: ReviewTextBlock) => void;
 }) {
   const { locale } = useTranslation();
-  const onChangeRef = useRef(onChange);
-
-  useEffect(() => {
-    onChangeRef.current = onChange;
-  }, [onChange]);
-
-  const editor = useEditor({
-    editable: !disabled,
-    extensions: [StarterKit, ...OMI_RICH_TEXT_EXTENSIONS],
-    content: blockToDocument(block),
-    editorProps: {
-      attributes: {
-        class: `omi-tiptap-editor review-mode__shared-editor review-mode__shared-editor--${block.type}`,
-        spellcheck: 'true',
-      },
-    },
-    onUpdate: ({ editor: currentEditor }) => {
-      const { text, richText } = documentToReviewContent(currentEditor.getJSON());
-      onChangeRef.current({
-        ...block,
-        text,
-        ...(richText.length ? { richText } : { richText: undefined }),
-      } as ReviewTextBlock);
-    },
-  });
-
-  useEffect(() => {
-    editor?.setEditable(!disabled);
-  }, [disabled, editor]);
-
-  useEffect(() => {
-    if (!editor) return;
-    const incoming = blockToDocument(block);
-    if (JSON.stringify(editor.getJSON()) === JSON.stringify(incoming)) return;
-    editor.commands.setContent(incoming, { emitUpdate: false });
-  }, [block, editor]);
-
-  if (!editor) return null;
+  const reactId = useId();
+  const blockId = `review-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   return (
-    <div className={`omi-block-editor review-mode__shared-block-editor review-mode__shared-block-editor--${block.type}`}>
-      {block.type === 'list' ? (
-        <span className="review-structured-list-marker" aria-hidden="true">
-          {block.ordered ? `${block.ordinal ?? 1}.` : '•'}
-        </span>
-      ) : null}
-      <EditorContent editor={editor} />
-      {!disabled ? (
-        <RichTextToolbar
-          editor={editor}
-          locale={locale}
-          manuscriptLanguage={locale}
-        />
-      ) : null}
-    </div>
+    <BlockEditor
+      blockId={blockId}
+      blockType={block.type}
+      content={JSON.stringify(blockToDocument(block))}
+      onUpdate={(_id, content) => {
+        const document = parseDocument(content);
+        const { text, richText } = documentToReviewContent(document);
+        onChange({
+          ...block,
+          text,
+          ...(richText.length ? { richText } : { richText: undefined }),
+        } as ReviewTextBlock);
+      }}
+      editable={!disabled}
+      restricted
+      manuscriptLanguage={locale}
+      className={`review-mode__studio-block-editor review-mode__studio-block-editor--${block.type}`}
+    />
   );
 }
 
 function blockToDocument(block: ReviewTextBlock): JSONContent {
-  const content: JSONContent[] | undefined = block.richText?.length
+  const inlineContent: JSONContent[] | undefined = block.richText?.length
     ? block.richText.map(spanToNode)
     : block.text
       ? [{ type: 'text', text: block.text }]
       : undefined;
 
-  const node = block.type === 'heading'
-    ? {
+  if (block.type === 'heading') {
+    return {
+      type: 'doc',
+      content: [{
         type: 'heading',
         attrs: { level: clampHeadingLevel(block.level) },
-        ...(content?.length ? { content } : {}),
-      }
-    : {
-        type: 'paragraph',
-        ...(content?.length ? { content } : {}),
-      };
+        ...(inlineContent?.length ? { content: inlineContent } : {}),
+      }],
+    };
+  }
+
+  if (block.type === 'list') {
+    return {
+      type: 'doc',
+      content: [{
+        type: block.ordered ? 'orderedList' : 'bulletList',
+        ...(block.ordered && block.ordinal ? { attrs: { start: block.ordinal } } : {}),
+        content: [{
+          type: 'listItem',
+          content: [{
+            type: 'paragraph',
+            ...(inlineContent?.length ? { content: inlineContent } : {}),
+          }],
+        }],
+      }],
+    };
+  }
 
   return {
     type: 'doc',
-    content: [node],
+    content: [{
+      type: 'paragraph',
+      ...(inlineContent?.length ? { content: inlineContent } : {}),
+    }],
   };
 }
 
@@ -130,6 +115,16 @@ function spanToNode(span: ReviewInlineSpan): JSONContent {
     text: span.text,
     ...(marks.length ? { marks } : {}),
   };
+}
+
+function parseDocument(content: string): JSONContent {
+  try {
+    const parsed = JSON.parse(content) as JSONContent;
+    if (parsed?.type === 'doc') return parsed;
+  } catch {
+    // BlockEditor emits JSON; this fallback only protects stale content.
+  }
+  return { type: 'doc', content: [{ type: 'paragraph' }] };
 }
 
 function documentToReviewContent(document: JSONContent): {
@@ -173,7 +168,11 @@ function mergeAdjacentSpans(spans: ReviewInlineSpan[]): ReviewInlineSpan[] {
   const merged: ReviewInlineSpan[] = [];
   for (const span of spans) {
     const previous = merged.at(-1);
-    if (previous && JSON.stringify(previous.semantics ?? []) === JSON.stringify(span.semantics ?? []) && previous.language === span.language) {
+    if (
+      previous &&
+      JSON.stringify(previous.semantics ?? []) === JSON.stringify(span.semantics ?? []) &&
+      previous.language === span.language
+    ) {
       previous.text += span.text;
     } else {
       merged.push({ ...span, semantics: span.semantics ? [...span.semantics] : undefined });
