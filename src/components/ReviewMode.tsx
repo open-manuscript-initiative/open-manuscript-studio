@@ -22,19 +22,78 @@ import { ReviewerRichTextEditor } from './ReviewerRichTextEditor';
 import { isReviewTextBlock, ReviewStructuredBlock } from './ReviewStructuredBlock';
 import './ReviewMode.css';
 
-const recommendationOptions = [
-  ['ACCEPT', 'Accept'],
-  ['MINOR_REVISION', 'Minor revision'],
-  ['MAJOR_REVISION', 'Major revision'],
-  ['REJECT', 'Reject'],
-] as const;
+type ReviewLocale = 'en' | 'hu' | 'de';
 
-const assignmentLabels: Record<ReviewerAssignment['assignmentType'], string> = {
-  scientific_review: 'Scientific peer review',
-  language_review: 'Language review',
-  translation: 'Translation',
-  editorial_revision: 'Editorial revision',
+type ReviewCopy = {
+  title: string;
+  intro: string;
+  back: string;
+  tasks: string;
+  noTasks: string;
+  noSelection: string;
+  manuscript: string;
+  round: string;
+  identityNotice: string;
+  loading: string;
+  unattached: string;
+  invitation: string;
+  invitationText: string;
+  accept: string;
+  decline: string;
+  declined: string;
+  authorComments: string;
+  authorCommentsHelp: string;
+  authorPlaceholder: string;
+  saveComment: string;
+  editorComments: string;
+  editorCommentsHelp: string;
+  editorPlaceholder: string;
+  saveConfidential: string;
+  recommendation: string;
+  complete: string;
+  noRecommendation: string;
+  saveBeforeSubmit: string;
+  submitReview: string;
+  submitAssignment: string;
+  savedNotes: string;
+  confidential: string;
+  visibleToAuthor: string;
+  submitted: string;
+  yourRecommendation: string;
+  submittedToEditor: string;
+  revision: string;
+  revisionHelp: string;
+  unsaved: string;
+  revisionSaved: string;
+  saveRevision: string;
+  structuredPreserved: string;
+  revised: string;
+  showOriginal: string;
+  abstract: string;
+  keywords: string;
+  heading: string;
+  numberedList: string;
+  bulletList: string;
+  table: string;
+  image: string;
+  chart: string;
+  assignmentLabels: Record<ReviewerAssignment['assignmentType'], string>;
+  recommendationLabels: Record<'ACCEPT' | 'MINOR_REVISION' | 'MAJOR_REVISION' | 'REJECT', string>;
 };
+
+const reviewCopies: Record<ReviewLocale, ReviewCopy> = {
+  en: {
+    title: 'Editorial Assignment', intro: 'Your access is limited to the assignment granted by the editor. Identity data is exposed only according to the assignment privacy policy.', back: 'Back to Studio', tasks: 'Assigned tasks', noTasks: 'No editorial assignments.', noSelection: 'No assignment selected.', manuscript: 'Manuscript', round: 'Round', identityNotice: 'This workspace contains only the identity information permitted for this assignment. Author-facing revisions never expose your account identifiers.', loading: 'Loading manuscript…', unattached: 'The manuscript has not yet been attached to this assignment.', invitation: 'Assignment invitation', invitationText: 'Accept the assignment to begin work, or decline it.', accept: 'Accept assignment', decline: 'Decline', declined: 'This assignment was declined.', authorComments: 'Comments to author', authorCommentsHelp: 'These comments may be shown to the author under the assignment alias, not your account identity.', authorPlaceholder: 'Write comments for the author…', saveComment: 'Save comment', editorComments: 'Confidential comments to editor', editorCommentsHelp: 'These comments are never included in the author-facing response.', editorPlaceholder: 'Write a confidential note to the editor…', saveConfidential: 'Save confidential note', recommendation: 'Recommendation', complete: 'Complete assignment', noRecommendation: 'Submit the completed assignment to the editor. No scientific accept/revise/reject recommendation is required.', saveBeforeSubmit: 'Save the manuscript revision before submitting the assignment.', submitReview: 'Submit review', submitAssignment: 'Submit assignment', savedNotes: 'Saved notes', confidential: 'Confidential to editor', visibleToAuthor: 'Visible to author under assignment alias', submitted: 'Assignment submitted', yourRecommendation: 'Your recommendation', submittedToEditor: 'The assignment has been submitted to the editor.', revision: 'revision', revisionHelp: 'Edit the assigned working copy. The source snapshot remains unchanged.', unsaved: 'Unsaved changes', revisionSaved: 'Revision saved', saveRevision: 'Save revision', structuredPreserved: 'Structured element preserved in the review copy.', revised: 'Revised', showOriginal: 'Show original', abstract: 'Abstract', keywords: 'Keywords', heading: 'Heading', numberedList: 'Numbered list item', bulletList: 'Bullet list item', table: 'Table', image: 'Image', chart: 'Chart', assignmentLabels: { scientific_review: 'Scientific peer review', language_review: 'Language review', translation: 'Translation', editorial_revision: 'Editorial revision' }, recommendationLabels: { ACCEPT: 'Accept', MINOR_REVISION: 'Minor revision', MAJOR_REVISION: 'Major revision', REJECT: 'Reject' },
+  },
+  hu: {
+    title: 'Lektori megbízás', intro: 'Hozzáférése a szerkesztő által megadott megbízásra korlátozódik. A személyazonosító adatok csak a megbízás adatvédelmi szabályai szerint jelennek meg.', back: 'Vissza a Stúdióhoz', tasks: 'Kijelölt feladatok', noTasks: 'Nincs lektori vagy szerkesztői megbízás.', noSelection: 'Nincs kiválasztott megbízás.', manuscript: 'Kézirat', round: 'Forduló', identityNotice: 'Ez a munkatér csak a megbízásban engedélyezett személyazonosító adatokat tartalmazza. A szerzőnek átadott javítások nem fedik fel az Ön fiókazonosítóit.', loading: 'Kézirat betöltése…', unattached: 'Ehhez a megbízáshoz még nincs kézirat csatolva.', invitation: 'Lektori felkérés', invitationText: 'A munka megkezdéséhez fogadja el a felkérést, vagy utasítsa vissza.', accept: 'Felkérés elfogadása', decline: 'Visszautasítás', declined: 'A megbízást visszautasították.', authorComments: 'Megjegyzések a szerzőnek', authorCommentsHelp: 'Ezek a megjegyzések a megbízás álnevével jelenhetnek meg a szerző számára, nem az Ön fiókazonosítójával.', authorPlaceholder: 'Írjon megjegyzést a szerzőnek…', saveComment: 'Megjegyzés mentése', editorComments: 'Bizalmas megjegyzések a szerkesztőnek', editorCommentsHelp: 'Ezek a megjegyzések nem kerülnek bele a szerzőnek küldött válaszba.', editorPlaceholder: 'Írjon bizalmas megjegyzést a szerkesztőnek…', saveConfidential: 'Bizalmas megjegyzés mentése', recommendation: 'Javaslat', complete: 'Megbízás befejezése', noRecommendation: 'Küldje be a befejezett megbízást a szerkesztőnek. Tudományos elfogadási/módosítási/elutasítási javaslat nem szükséges.', saveBeforeSubmit: 'A beküldés előtt mentse a kézirat javított változatát.', submitReview: 'Lektori vélemény beküldése', submitAssignment: 'Megbízás beküldése', savedNotes: 'Mentett megjegyzések', confidential: 'Bizalmas a szerkesztőnek', visibleToAuthor: 'A szerző számára a megbízás álnevével látható', submitted: 'Megbízás beküldve', yourRecommendation: 'Az Ön javaslata', submittedToEditor: 'A megbízást beküldték a szerkesztőnek.', revision: 'javítás', revisionHelp: 'Szerkessze a kijelölt munkapéldányt. A forrás-pillanatkép változatlan marad.', unsaved: 'Nem mentett változások', revisionSaved: 'Javítás mentve', saveRevision: 'Javítás mentése', structuredPreserved: 'A strukturált elem megmarad a lektori példányban.', revised: 'Módosítva', showOriginal: 'Eredeti megjelenítése', abstract: 'Absztrakt', keywords: 'Kulcsszavak', heading: 'Címsor', numberedList: 'Számozott listaelem', bulletList: 'Felsorolás elem', table: 'Táblázat', image: 'Kép', chart: 'Diagram', assignmentLabels: { scientific_review: 'Tudományos lektorálás', language_review: 'Nyelvi lektorálás', translation: 'Fordítás', editorial_revision: 'Szerkesztői javítás' }, recommendationLabels: { ACCEPT: 'Elfogadás', MINOR_REVISION: 'Kisebb javítás', MAJOR_REVISION: 'Nagyobb javítás', REJECT: 'Elutasítás' },
+  },
+  de: {
+    title: 'Redaktioneller Auftrag', intro: 'Ihr Zugriff ist auf den von der Redaktion erteilten Auftrag beschränkt. Identitätsdaten werden nur gemäß den Datenschutzregeln des Auftrags angezeigt.', back: 'Zurück zum Studio', tasks: 'Zugewiesene Aufgaben', noTasks: 'Keine redaktionellen Aufträge.', noSelection: 'Kein Auftrag ausgewählt.', manuscript: 'Manuskript', round: 'Runde', identityNotice: 'Dieser Arbeitsbereich enthält nur die für diesen Auftrag zulässigen Identitätsinformationen. Autorenbezogene Überarbeitungen legen Ihre Kontoidentifikatoren nicht offen.', loading: 'Manuskript wird geladen…', unattached: 'Diesem Auftrag wurde noch kein Manuskript zugeordnet.', invitation: 'Einladung zum Auftrag', invitationText: 'Nehmen Sie den Auftrag an, um mit der Arbeit zu beginnen, oder lehnen Sie ihn ab.', accept: 'Auftrag annehmen', decline: 'Ablehnen', declined: 'Dieser Auftrag wurde abgelehnt.', authorComments: 'Kommentare an die Autorin oder den Autor', authorCommentsHelp: 'Diese Kommentare können unter dem Auftragsalias angezeigt werden, nicht unter Ihrer Kontoidentität.', authorPlaceholder: 'Kommentare für die Autorin oder den Autor…', saveComment: 'Kommentar speichern', editorComments: 'Vertrauliche Kommentare an die Redaktion', editorCommentsHelp: 'Diese Kommentare werden niemals in die Antwort an die Autorin oder den Autor aufgenommen.', editorPlaceholder: 'Vertrauliche Notiz an die Redaktion…', saveConfidential: 'Vertrauliche Notiz speichern', recommendation: 'Empfehlung', complete: 'Auftrag abschließen', noRecommendation: 'Reichen Sie den abgeschlossenen Auftrag bei der Redaktion ein. Eine wissenschaftliche Annahme-/Überarbeitungs-/Ablehnungsempfehlung ist nicht erforderlich.', saveBeforeSubmit: 'Speichern Sie die Manuskriptüberarbeitung vor dem Einreichen.', submitReview: 'Gutachten einreichen', submitAssignment: 'Auftrag einreichen', savedNotes: 'Gespeicherte Notizen', confidential: 'Vertraulich für die Redaktion', visibleToAuthor: 'Für die Autorin oder den Autor unter dem Auftragsalias sichtbar', submitted: 'Auftrag eingereicht', yourRecommendation: 'Ihre Empfehlung', submittedToEditor: 'Der Auftrag wurde bei der Redaktion eingereicht.', revision: 'Überarbeitung', revisionHelp: 'Bearbeiten Sie die zugewiesene Arbeitskopie. Der Quell-Snapshot bleibt unverändert.', unsaved: 'Nicht gespeicherte Änderungen', revisionSaved: 'Überarbeitung gespeichert', saveRevision: 'Überarbeitung speichern', structuredPreserved: 'Strukturiertes Element bleibt in der Gutachtenkopie erhalten.', revised: 'Überarbeitet', showOriginal: 'Original anzeigen', abstract: 'Zusammenfassung', keywords: 'Schlagwörter', heading: 'Überschrift', numberedList: 'Nummerierter Listeneintrag', bulletList: 'Aufzählungspunkt', table: 'Tabelle', image: 'Bild', chart: 'Diagramm', assignmentLabels: { scientific_review: 'Wissenschaftliches Gutachten', language_review: 'Sprachlektorat', translation: 'Übersetzung', editorial_revision: 'Redaktionelle Überarbeitung' }, recommendationLabels: { ACCEPT: 'Annehmen', MINOR_REVISION: 'Kleine Überarbeitung', MAJOR_REVISION: 'Große Überarbeitung', REJECT: 'Ablehnen' },
+  },
+};
+
+const recommendationValues = ['ACCEPT', 'MINOR_REVISION', 'MAJOR_REVISION', 'REJECT'] as const;
 
 const assignmentEditorRoles: Record<ReviewerAssignment['assignmentType'], EditorRole> = {
   scientific_review: 'scientific-review',
@@ -53,7 +112,7 @@ export function ReviewMode() {
   const [revisionSaved, setRevisionSaved] = useState(false);
   const [authorComment, setAuthorComment] = useState('');
   const [editorComment, setEditorComment] = useState('');
-  const [recommendation, setRecommendation] = useState<(typeof recommendationOptions)[number][0]>('MINOR_REVISION');
+  const [recommendation, setRecommendation] = useState<(typeof recommendationValues)[number]>('MINOR_REVISION');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,6 +122,12 @@ export function ReviewMode() {
     () => reviews.find((review) => review.id === selectedId) ?? reviews[0],
     [reviews, selectedId],
   );
+  const locale = normalizeReviewLocale(selected?.sourceLanguage);
+  const copy = reviewCopies[locale];
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   useEffect(() => {
     if (!selected?.id) {
@@ -85,13 +150,13 @@ export function ReviewMode() {
       })
       .catch((caught) => {
         if (!active) return;
-        setError(caught instanceof Error ? caught.message : 'Unable to load the assigned manuscript.');
+        setError(caught instanceof Error ? caught.message : copy.unattached);
         setManuscript(null);
         setRevision(null);
       })
       .finally(() => { if (active) setManuscriptLoading(false); });
     return () => { active = false; };
-  }, [selected?.id]);
+  }, [selected?.id, copy.unattached]);
 
   async function refresh() {
     try {
@@ -100,7 +165,7 @@ export function ReviewMode() {
       setReviews(next);
       if (!selectedId && next[0]) setSelectedId(next[0].id);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Unable to load editorial assignments.');
+      setError(caught instanceof Error ? caught.message : copy.noTasks);
     }
   }
 
@@ -111,7 +176,7 @@ export function ReviewMode() {
       const updated = await action();
       setReviews((current) => current.map((item) => item.id === updated.id ? updated : item));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Editorial workflow request failed.');
+      setError(caught instanceof Error ? caught.message : copy.noTasks);
     } finally {
       setBusy(false);
     }
@@ -130,7 +195,7 @@ export function ReviewMode() {
         item.id === selected.id ? { ...item, status: 'in_progress' } : item,
       ));
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Unable to save the revision.');
+      setError(caught instanceof Error ? caught.message : copy.saveRevision);
     } finally {
       setBusy(false);
     }
@@ -144,7 +209,7 @@ export function ReviewMode() {
 
   const canWrite = Boolean(selected && ['accepted', 'in_progress'].includes(selected.status));
   const submitted = Boolean(selected && ['submitted', 'completed'].includes(selected.status));
-  const assignmentLabel = selected ? assignmentLabels[selected.assignmentType] : 'Editorial assignment';
+  const assignmentLabel = selected ? copy.assignmentLabels[selected.assignmentType] : copy.title;
   const editorCapabilities = selected
     ? getEditorCapabilities(assignmentEditorRoles[selected.assignmentType])
     : getEditorCapabilities('read-only');
@@ -156,149 +221,104 @@ export function ReviewMode() {
     : selected?.sourceLanguage;
 
   return (
-    <main className="review-mode">
+    <main className="review-mode" lang={locale}>
       <header className="review-mode__header">
         <div>
           <div className="review-mode__eyebrow">Open Manuscript Studio</div>
-          <h1>Editorial Assignment</h1>
-          <p>Your access is limited to the assignment granted by the editor. Identity data is exposed only according to the assignment privacy policy.</p>
+          <h1>{copy.title}</h1>
+          <p>{copy.intro}</p>
         </div>
-        <a className="review-mode__back" href="/">Back to Studio</a>
+        <a className="review-mode__back" href="/">{copy.back}</a>
       </header>
 
       {error ? <div className="review-mode__error" role="alert">{error}</div> : null}
 
       <div className="review-mode__layout">
-        <aside className="review-mode__list" aria-label="Assigned editorial tasks">
-          <h2>Assigned tasks</h2>
-          {reviews.length ? reviews.map((review) => (
-            <button
-              key={review.id}
-              type="button"
-              className={`review-mode__assignment${selected?.id === review.id ? ' is-active' : ''}`}
-              onClick={() => setSelectedId(review.id)}
-            >
-              <strong>{review.reviewerAlias}</strong>
-              <span>{assignmentLabels[review.assignmentType]}</span>
-              {review.assignmentType === 'translation' ? (
-                <span>{review.sourceLanguage ?? '?'} → {review.targetLanguage ?? '?'}</span>
-              ) : review.sourceLanguage ? <span>{review.sourceLanguage}</span> : null}
-              <span>Manuscript {review.manuscriptId}</span>
-              <span>Round {review.reviewRound} · {review.status.replace('_', ' ')}</span>
-            </button>
-          )) : <p className="review-mode__empty">No editorial assignments.</p>}
+        <aside className="review-mode__list" aria-label={copy.tasks}>
+          <h2>{copy.tasks}</h2>
+          {reviews.length ? reviews.map((review) => {
+            const reviewCopy = reviewCopies[normalizeReviewLocale(review.sourceLanguage)];
+            return (
+              <button key={review.id} type="button" className={`review-mode__assignment${selected?.id === review.id ? ' is-active' : ''}`} onClick={() => setSelectedId(review.id)}>
+                <strong>{review.reviewerAlias}</strong>
+                <span>{reviewCopy.assignmentLabels[review.assignmentType]}</span>
+                {review.assignmentType === 'translation' ? <span>{review.sourceLanguage ?? '?'} → {review.targetLanguage ?? '?'}</span> : review.sourceLanguage ? <span>{review.sourceLanguage}</span> : null}
+                <span>{reviewCopy.manuscript} {review.manuscriptId}</span>
+                <span>{reviewCopy.round} {review.reviewRound} · {review.status.replace('_', ' ')}</span>
+              </button>
+            );
+          }) : <p className="review-mode__empty">{copy.noTasks}</p>}
         </aside>
 
         <section className="review-mode__content">
-          {!selected ? <div className="review-mode__card"><p>No assignment selected.</p></div> : (
+          {!selected ? <div className="review-mode__card"><p>{copy.noSelection}</p></div> : (
             <>
               <section className="review-mode__card review-mode__summary">
                 <div>
                   <div className="review-mode__eyebrow">{assignmentLabel}</div>
-                  <h2>{manuscript?.title ?? `Manuscript ${selected.manuscriptId}`}</h2>
-                  <p>Round {selected.reviewRound} · {selected.anonymityMode.replace('_', ' ')}{languagePair ? ` · ${languagePair}` : ''}</p>
+                  <h2>{manuscript?.title ?? `${copy.manuscript} ${selected.manuscriptId}`}</h2>
+                  <p>{copy.round} {selected.reviewRound} · {selected.anonymityMode.replace('_', ' ')}{languagePair ? ` · ${languagePair}` : ''}</p>
                 </div>
                 <span className="review-mode__status">{selected.status.replace('_', ' ')}</span>
               </section>
 
               <section className="review-mode__card review-mode__manuscript" aria-busy={manuscriptLoading}>
-                <div className="review-mode__identity-notice">
-                  This workspace contains only the identity information permitted for this assignment. Author-facing revisions never expose your account identifiers.
-                </div>
-                {manuscriptLoading ? <p>Loading manuscript…</p> : manuscript ? (
+                <div className="review-mode__identity-notice">{copy.identityNotice}</div>
+                {manuscriptLoading ? <p>{copy.loading}</p> : manuscript ? (
                   canWrite && revision ? (
-                    <RevisionEditor
-                      original={manuscript}
-                      revision={revision}
-                      disabled={busy}
-                      dirty={revisionDirty}
-                      saved={revisionSaved}
-                      label={assignmentLabel}
-                      capabilities={editorCapabilities}
-                      manuscriptLanguage={manuscriptLanguage}
-                      onChange={updateRevision}
-                      onSave={() => void saveRevision()}
-                    />
-                  ) : <ManuscriptView manuscript={revision ?? manuscript} />
-                ) : <p>The manuscript has not yet been attached to this assignment.</p>}
+                    <RevisionEditor original={manuscript} revision={revision} disabled={busy} dirty={revisionDirty} saved={revisionSaved} label={assignmentLabel} capabilities={editorCapabilities} manuscriptLanguage={manuscriptLanguage} copy={copy} onChange={updateRevision} onSave={() => void saveRevision()} />
+                  ) : <ManuscriptView manuscript={revision ?? manuscript} copy={copy} />
+                ) : <p>{copy.unattached}</p>}
               </section>
 
               {selected.status === 'invited' ? (
                 <section className="review-mode__card">
-                  <h2>Assignment invitation</h2>
-                  <p>Accept the assignment to begin work, or decline it.</p>
+                  <h2>{copy.invitation}</h2><p>{copy.invitationText}</p>
                   <div className="review-mode__actions">
-                    <button disabled={busy} onClick={() => void run(() => acceptAssignedReview(selected.id))}>Accept assignment</button>
-                    <button className="secondary" disabled={busy} onClick={() => void run(() => declineAssignedReview(selected.id))}>Decline</button>
+                    <button disabled={busy} onClick={() => void run(() => acceptAssignedReview(selected.id))}>{copy.accept}</button>
+                    <button className="secondary" disabled={busy} onClick={() => void run(() => declineAssignedReview(selected.id))}>{copy.decline}</button>
                   </div>
                 </section>
               ) : null}
 
-              {selected.status === 'declined' ? <section className="review-mode__card"><p>This assignment was declined.</p></section> : null}
+              {selected.status === 'declined' ? <section className="review-mode__card"><p>{copy.declined}</p></section> : null}
 
               {canWrite ? (
                 <>
                   <section className="review-mode__card">
-                    <h2>Comments to author</h2>
-                    <p>These comments may be shown to the author under the assignment alias, not your account identity.</p>
-                    <textarea value={authorComment} onChange={(event) => setAuthorComment(event.target.value)} rows={8} placeholder="Write comments for the author…" />
-                    <button disabled={busy || !authorComment.trim()} onClick={() => void run(async () => {
-                      const updated = await addAssignedReviewFeedback(selected.id, 'AUTHOR_AND_EDITOR', authorComment);
-                      setAuthorComment('');
-                      return updated;
-                    })}>Save comment</button>
+                    <h2>{copy.authorComments}</h2><p>{copy.authorCommentsHelp}</p>
+                    <textarea value={authorComment} onChange={(event) => setAuthorComment(event.target.value)} rows={8} placeholder={copy.authorPlaceholder} />
+                    <button disabled={busy || !authorComment.trim()} onClick={() => void run(async () => { const updated = await addAssignedReviewFeedback(selected.id, 'AUTHOR_AND_EDITOR', authorComment); setAuthorComment(''); return updated; })}>{copy.saveComment}</button>
                   </section>
 
                   <section className="review-mode__card">
-                    <h2>Confidential comments to editor</h2>
-                    <p>These comments are never included in the author-facing response.</p>
-                    <textarea value={editorComment} onChange={(event) => setEditorComment(event.target.value)} rows={5} placeholder="Write a confidential note to the editor…" />
-                    <button disabled={busy || !editorComment.trim()} onClick={() => void run(async () => {
-                      const updated = await addAssignedReviewFeedback(selected.id, 'EDITOR_ONLY', editorComment);
-                      setEditorComment('');
-                      return updated;
-                    })}>Save confidential note</button>
+                    <h2>{copy.editorComments}</h2><p>{copy.editorCommentsHelp}</p>
+                    <textarea value={editorComment} onChange={(event) => setEditorComment(event.target.value)} rows={5} placeholder={copy.editorPlaceholder} />
+                    <button disabled={busy || !editorComment.trim()} onClick={() => void run(async () => { const updated = await addAssignedReviewFeedback(selected.id, 'EDITOR_ONLY', editorComment); setEditorComment(''); return updated; })}>{copy.saveConfidential}</button>
                   </section>
 
                   <section className="review-mode__card">
-                    <h2>{selected.requiresRecommendation ? 'Recommendation' : 'Complete assignment'}</h2>
+                    <h2>{selected.requiresRecommendation ? copy.recommendation : copy.complete}</h2>
                     {selected.requiresRecommendation ? (
                       <select value={recommendation} onChange={(event) => setRecommendation(event.target.value as typeof recommendation)}>
-                        {recommendationOptions.map(([value, optionLabel]) => <option key={value} value={value}>{optionLabel}</option>)}
+                        {recommendationValues.map((value) => <option key={value} value={value}>{copy.recommendationLabels[value]}</option>)}
                       </select>
-                    ) : <p>Submit the completed {assignmentLabel.toLowerCase()} to the editor. No scientific accept/revise/reject recommendation is required.</p>}
-                    {revisionDirty ? <p className="review-mode__warning">Save the manuscript revision before submitting the assignment.</p> : null}
-                    <button
-                      className="review-mode__submit"
-                      disabled={busy || revisionDirty}
-                      onClick={() => void run(() => submitAssignedReview(selected.id, selected.requiresRecommendation ? recommendation : undefined))}
-                    >
-                      {selected.requiresRecommendation ? 'Submit review' : 'Submit assignment'}
-                    </button>
+                    ) : <p>{copy.noRecommendation}</p>}
+                    {revisionDirty ? <p className="review-mode__warning">{copy.saveBeforeSubmit}</p> : null}
+                    <button className="review-mode__submit" disabled={busy || revisionDirty} onClick={() => void run(() => submitAssignedReview(selected.id, selected.requiresRecommendation ? recommendation : undefined))}>{selected.requiresRecommendation ? copy.submitReview : copy.submitAssignment}</button>
                   </section>
                 </>
               ) : null}
 
               {selected.feedback.length ? (
-                <section className="review-mode__card">
-                  <h2>Saved notes</h2>
-                  <div className="review-mode__feedback-list">
-                    {selected.feedback.map((feedback) => (
-                      <article key={feedback.id} className="review-mode__feedback">
-                        <strong>{feedback.visibility === 'editor_only' ? 'Confidential to editor' : 'Visible to author under assignment alias'}</strong>
-                        <p>{feedback.body}</p>
-                      </article>
-                    ))}
-                  </div>
-                </section>
+                <section className="review-mode__card"><h2>{copy.savedNotes}</h2><div className="review-mode__feedback-list">
+                  {selected.feedback.map((feedback) => <article key={feedback.id} className="review-mode__feedback"><strong>{feedback.visibility === 'editor_only' ? copy.confidential : copy.visibleToAuthor}</strong><p>{feedback.body}</p></article>)}
+                </div></section>
               ) : null}
 
               {submitted ? (
-                <section className="review-mode__card review-mode__submitted">
-                  <h2>Assignment submitted</h2>
-                  {selected.requiresRecommendation ? (
-                    <p>Your recommendation: <strong>{selected.recommendation?.replace('_', ' ')}</strong>. Author-facing data remains privacy-filtered.</p>
-                  ) : <p>The {assignmentLabel.toLowerCase()} has been submitted to the editor.</p>}
+                <section className="review-mode__card review-mode__submitted"><h2>{copy.submitted}</h2>
+                  {selected.requiresRecommendation ? <p>{copy.yourRecommendation}: <strong>{selected.recommendation ? copy.recommendationLabels[selected.recommendation.toUpperCase() as keyof ReviewCopy['recommendationLabels']] : ''}</strong>.</p> : <p>{copy.submittedToEditor}</p>}
                 </section>
               ) : null}
             </>
@@ -309,113 +329,37 @@ export function ReviewMode() {
   );
 }
 
-function RevisionEditor({
-  original,
-  revision,
-  disabled,
-  dirty,
-  saved,
-  label,
-  capabilities,
-  manuscriptLanguage,
-  onChange,
-  onSave,
-}: {
-  original: ReviewManuscriptSnapshot;
-  revision: ReviewManuscriptSnapshot;
-  disabled: boolean;
-  dirty: boolean;
-  saved: boolean;
-  label: string;
-  capabilities: EditorCapabilities;
-  manuscriptLanguage?: string;
-  onChange: (value: ReviewManuscriptSnapshot) => void;
-  onSave: () => void;
-}) {
+function RevisionEditor({ original, revision, disabled, dirty, saved, label, capabilities, manuscriptLanguage, copy, onChange, onSave }: { original: ReviewManuscriptSnapshot; revision: ReviewManuscriptSnapshot; disabled: boolean; dirty: boolean; saved: boolean; label: string; capabilities: EditorCapabilities; manuscriptLanguage?: string; copy: ReviewCopy; onChange: (value: ReviewManuscriptSnapshot) => void; onSave: () => void; }) {
   return (
     <div className="review-mode__revision">
-      <div className="review-mode__revision-toolbar">
-        <div>
-          <h2>{label} revision</h2>
-          <p>Edit the assigned working copy. The source snapshot remains unchanged.</p>
-        </div>
-        <div className="review-mode__revision-actions">
-          {dirty ? <span>Unsaved changes</span> : saved ? <span>Revision saved</span> : null}
-          <button disabled={disabled || !dirty} onClick={onSave}>Save revision</button>
-        </div>
-      </div>
-
+      <div className="review-mode__revision-toolbar"><div><h2>{label} – {copy.revision}</h2><p>{copy.revisionHelp}</p></div><div className="review-mode__revision-actions">{dirty ? <span>{copy.unsaved}</span> : saved ? <span>{copy.revisionSaved}</span> : null}<button disabled={disabled || !dirty} onClick={onSave}>{copy.saveRevision}</button></div></div>
       {revision.blocks.map((block, index) => {
         const originalBlock = original.blocks[index];
-        if (!isReviewTextBlock(block)) {
-          return (
-            <div key={index} className="review-mode__revision-block">
-              <div className="review-mode__revision-label"><span>{blockLabel(block)}</span></div>
-              <div className="review-mode__revision-structured">
-                <ReviewStructuredBlock block={block} />
-                <p className="review-mode__revision-structured-note">Structured element preserved in the review copy.</p>
-              </div>
-            </div>
-          );
-        }
-
+        if (!isReviewTextBlock(block)) return <div key={index} className="review-mode__revision-block"><div className="review-mode__revision-label"><span>{blockLabel(block, copy)}</span></div><div className="review-mode__revision-structured"><ReviewStructuredBlock block={block} /><p className="review-mode__revision-structured-note">{copy.structuredPreserved}</p></div></div>;
         const originalText = originalBlock && isReviewTextBlock(originalBlock) ? originalBlock.text : '';
-        const changed = block.text !== originalText || JSON.stringify(block.richText ?? []) !== JSON.stringify(
-          originalBlock && isReviewTextBlock(originalBlock) ? originalBlock.richText ?? [] : [],
-        );
-
-        return (
-          <div key={index} className={`review-mode__revision-block${changed ? ' is-changed' : ''}`}>
-            <div className="review-mode__revision-label">
-              <span>{blockLabel(block)}</span>
-              {changed ? <strong>Revised</strong> : null}
-            </div>
-            <ReviewerRichTextEditor
-              block={block}
-              disabled={disabled}
-              capabilities={capabilities}
-              manuscriptLanguage={manuscriptLanguage}
-              onChange={(updated) => {
-                const blocks = revision.blocks.map((item, itemIndex) =>
-                  itemIndex === index ? updated as ReviewManuscriptBlock : item,
-                );
-                onChange({ ...revision, blocks });
-              }}
-            />
-            {changed ? (
-              <details className="review-mode__original-text">
-                <summary>Show original</summary>
-                <ReviewStructuredBlock block={originalBlock && isReviewTextBlock(originalBlock) ? originalBlock : block} />
-              </details>
-            ) : null}
-          </div>
-        );
+        const changed = block.text !== originalText || JSON.stringify(block.richText ?? []) !== JSON.stringify(originalBlock && isReviewTextBlock(originalBlock) ? originalBlock.richText ?? [] : []);
+        return <div key={index} className={`review-mode__revision-block${changed ? ' is-changed' : ''}`}><div className="review-mode__revision-label"><span>{blockLabel(block, copy)}</span>{changed ? <strong>{copy.revised}</strong> : null}</div><ReviewerRichTextEditor block={block} disabled={disabled} capabilities={capabilities} manuscriptLanguage={manuscriptLanguage} onChange={(updated) => { const blocks = revision.blocks.map((item, itemIndex) => itemIndex === index ? updated as ReviewManuscriptBlock : item); onChange({ ...revision, blocks }); }} />{changed ? <details className="review-mode__original-text"><summary>{copy.showOriginal}</summary><ReviewStructuredBlock block={originalBlock && isReviewTextBlock(originalBlock) ? originalBlock : block} /></details> : null}</div>;
       })}
     </div>
   );
 }
 
-function ManuscriptView({ manuscript }: { manuscript: ReviewManuscriptSnapshot }) {
-  return (
-    <article className="review-mode__document">
-      <h1>{manuscript.title}</h1>
-      {manuscript.subtitle ? <p className="review-mode__subtitle">{manuscript.subtitle}</p> : null}
-      {manuscript.abstract ? (
-        <section className="review-mode__abstract"><h2>Abstract</h2><p>{manuscript.abstract}</p></section>
-      ) : null}
-      {manuscript.keywords.length ? <p className="review-mode__keywords"><strong>Keywords:</strong> {manuscript.keywords.join(', ')}</p> : null}
-      <div className="review-mode__body" role="document">
-        {manuscript.blocks.map((block, index) => <ReviewStructuredBlock key={index} block={block} />)}
-      </div>
-    </article>
-  );
+function ManuscriptView({ manuscript, copy }: { manuscript: ReviewManuscriptSnapshot; copy: ReviewCopy }) {
+  return <article className="review-mode__document"><h1>{manuscript.title}</h1>{manuscript.subtitle ? <p className="review-mode__subtitle">{manuscript.subtitle}</p> : null}{manuscript.abstract ? <section className="review-mode__abstract"><h2>{copy.abstract}</h2><p>{manuscript.abstract}</p></section> : null}{manuscript.keywords.length ? <p className="review-mode__keywords"><strong>{copy.keywords}:</strong> {manuscript.keywords.join(', ')}</p> : null}<div className="review-mode__body" role="document">{manuscript.blocks.map((block, index) => <ReviewStructuredBlock key={index} block={block} />)}</div></article>;
 }
 
-function blockLabel(block: ReviewManuscriptBlock): string {
-  if (block.type === 'heading') return `Heading ${block.level ?? 2}`;
-  if (block.type === 'list') return block.ordered ? 'Numbered list item' : 'Bullet list item';
-  if (block.type === 'table') return 'Table';
-  if (block.type === 'image') return 'Image';
-  if (block.type === 'chart') return 'Chart';
+function blockLabel(block: ReviewManuscriptBlock, copy: ReviewCopy): string {
+  if (block.type === 'heading') return `${copy.heading} ${block.level ?? 2}`;
+  if (block.type === 'list') return block.ordered ? copy.numberedList : copy.bulletList;
+  if (block.type === 'table') return copy.table;
+  if (block.type === 'image') return copy.image;
+  if (block.type === 'chart') return copy.chart;
   return block.type;
+}
+
+function normalizeReviewLocale(value?: string): ReviewLocale {
+  const normalized = value?.trim().toLowerCase().replace('_', '-') ?? '';
+  if (normalized === 'hu' || normalized.startsWith('hu-')) return 'hu';
+  if (normalized === 'de' || normalized.startsWith('de-')) return 'de';
+  return 'en';
 }

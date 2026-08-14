@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { loadOjsLaunchData } from '../integrations/ojs/ojsClient.js';
 import { verifyOjsLaunch } from '../integrations/ojs/launchVerifier.js';
 import { createReviewSnapshotFromOjs } from '../integrations/ojs/reviewSnapshot.js';
+import { prisma } from '../lib/prisma.js';
 import {
   requireSession,
   type AuthenticatedRequest,
@@ -55,6 +56,15 @@ ojsReviewRouter.post(
           ? { reviewRound: verified.claims.reviewAssignment.round }
           : {}),
       });
+
+      const sourceLanguage = getOjsSubmissionLocale(ojsData.submission);
+      if (sourceLanguage) {
+        await prisma.peerReviewAssignment.update({
+          where: { id: assignment.id },
+          data: { sourceLanguage },
+        });
+      }
+
       const snapshot = createReviewSnapshotFromOjs(ojsData);
       await setReviewManuscriptFromOjs(assignment.id, submissionId, snapshot);
 
@@ -71,3 +81,12 @@ ojsReviewRouter.post(
     }
   },
 );
+
+function getOjsSubmissionLocale(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const submission = value as Record<string, unknown>;
+  const raw = submission.primaryLocale;
+  if (typeof raw !== 'string') return undefined;
+  const normalized = raw.trim().replace('_', '-');
+  return normalized ? normalized.slice(0, 32) : undefined;
+}
