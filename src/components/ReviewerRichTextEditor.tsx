@@ -43,7 +43,7 @@ export function ReviewerRichTextEditor({
     content: blockToDocument(block),
     editorProps: {
       attributes: {
-        class: 'omi-tiptap-editor review-mode__shared-editor',
+        class: `omi-tiptap-editor review-mode__shared-editor review-mode__shared-editor--${block.type}`,
         spellcheck: 'true',
       },
     },
@@ -71,7 +71,7 @@ export function ReviewerRichTextEditor({
   if (!editor) return null;
 
   return (
-    <div className="omi-block-editor review-mode__shared-block-editor">
+    <div className={`omi-block-editor review-mode__shared-block-editor review-mode__shared-block-editor--${block.type}`}>
       {block.type === 'list' ? (
         <span className="review-structured-list-marker" aria-hidden="true">
           {block.ordered ? `${block.ordinal ?? 1}.` : '•'}
@@ -96,10 +96,26 @@ function blockToDocument(block: ReviewTextBlock): JSONContent {
       ? [{ type: 'text', text: block.text }]
       : undefined;
 
+  const node = block.type === 'heading'
+    ? {
+        type: 'heading',
+        attrs: { level: clampHeadingLevel(block.level) },
+        ...(content?.length ? { content } : {}),
+      }
+    : {
+        type: 'paragraph',
+        ...(content?.length ? { content } : {}),
+      };
+
   return {
     type: 'doc',
-    content: [{ type: 'paragraph', ...(content?.length ? { content } : {}) }],
+    content: [node],
   };
+}
+
+function clampHeadingLevel(level?: number): 1 | 2 | 3 | 4 | 5 | 6 {
+  const normalized = Math.max(1, Math.min(6, Math.trunc(level ?? 1)));
+  return normalized as 1 | 2 | 3 | 4 | 5 | 6;
 }
 
 function spanToNode(span: ReviewInlineSpan): JSONContent {
