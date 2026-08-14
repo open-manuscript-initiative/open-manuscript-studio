@@ -5,11 +5,32 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { requireWorkspaceRole } from './peerReviewService.js';
 
-export interface ReviewManuscriptBlock {
-  type: 'heading' | 'paragraph' | 'note';
+export type ReviewInlineSemantic =
+  | 'strong'
+  | 'emphasis'
+  | 'strike'
+  | 'underline'
+  | 'small-caps'
+  | 'superscript'
+  | 'subscript'
+  | 'code';
+
+export interface ReviewInlineSpan {
   text: string;
-  level?: number;
+  semantics?: ReviewInlineSemantic[];
+  language?: string;
 }
+
+export type ReviewChartType = 'bar' | 'line' | 'pie' | 'scatter' | 'area';
+
+export type ReviewManuscriptBlock =
+  | { type: 'heading'; text: string; level?: number; richText?: ReviewInlineSpan[] }
+  | { type: 'paragraph'; text: string; richText?: ReviewInlineSpan[] }
+  | { type: 'note'; text: string; richText?: ReviewInlineSpan[] }
+  | { type: 'list'; text: string; ordered: boolean; listLevel: number; ordinal?: number; richText?: ReviewInlineSpan[] }
+  | { type: 'table'; cells: string[][]; headerRows: number }
+  | { type: 'image'; src: string; mediaType: string; fileName?: string; alt?: string }
+  | { type: 'chart'; cells: string[][]; chartType: ReviewChartType; title?: string };
 
 export interface ReviewManuscriptSnapshot {
   title: string;
@@ -247,17 +268,88 @@ export function sanitizeReviewManuscript(input: unknown): ReviewManuscriptSnapsh
 
   for (const rawBlock of rawBlocks.slice(0, 20_000)) {
     const block = asRecord(rawBlock);
+
+    if (block.type === 'table') {
+      const cells = sanitizeCells(block.cells);
+      if (!cells.length) continue;
+      const headerRows = typeof block.headerRows === 'number'
+        ? Math.max(0, Math.min(cells.length, Math.trunc(block.headerRows)))
+        : 0;
+      blocks.push({ type: 'table', cells, headerRows });
+      continue;
+    }
+
+    if (block.type === 'chart') {
+      const cells = sanitizeCells(block.cells);
+      if (!cells.length) continue;
+      const chartType = sanitizeChartType(block.chartType);
+      const chartTitle = cleanText(block.title, 1_000);
+      blocks.push({
+        type: 'chart',
+        cells,
+        chartType,
+        ...(chartTitle ? { title: chartTitle } : {}),
+      });
+      continue;
+    }
+
+    if (block.type === 'image') {
+      const src = cleanImageSource(block.src);
+      if (!src) continue;
+      const mediaType = cleanText(block.mediaType, 200) || 'application/octet-stream';
+      const fileName = cleanText(block.fileName, 500);
+      const alt = cleanText(block.alt, 4_000);
+      blocks.push({
+        type: 'image',
+        src,
+        mediaType,
+        ...(fileName ? { fileName } : {}),
+        ...(alt ? { alt } : {}),
+      });
+      continue;
+    }
+
     const text = cleanText(block.text, 200_000);
     if (!text) continue;
+    const richText = sanitizeRichText(block.richText);
 
-    const type = block.type === 'heading' || block.type === 'note'
-      ? block.type
-      : 'paragraph';
-    const level = type === 'heading' && typeof block.level === 'number'
-      ? Math.max(1, Math.min(6, Math.trunc(block.level)))
-      : undefined;
+    if (block.type === 'heading') {
+      const level = typeof block.level === 'number'
+        ? Math.max(1, Math.min(6, Math.trunc(block.level)))
+        : undefined;
+      blocks.push({
+        type: 'heading',
+        text,
+        ...(level !== undefined ? { level } : {}),
+        ...(richText.length ? { richText } : {}),
+      });
+      continue;
+    }
 
-    blocks.push({ type, text, ...(level !== undefined ? { level } : {}) });
+    if (block.type === 'note') {
+      blocks.push({ type: 'note', text, ...(richText.length ? { richText } : {}) });
+      continue;
+    }
+
+    if (block.type === 'list') {
+      const listLevel = typeof block.listLevel === 'number'
+        ? Math.max(0, Math.min(8, Math.trunc(block.listLevel)))
+        : 0;
+      const ordinal = typeof block.ordinal === 'number' && Number.isFinite(block.ordinal)
+        ? Math.max(1, Math.min(99_999, Math.trunc(block.ordinal)))
+        : undefined;
+      blocks.push({
+        type: 'list',
+        text,
+        ordered: block.ordered === true,
+        listLevel,
+        ...(ordinal !== undefined ? { ordinal } : {}),
+        ...(richText.length ? { richText } : {}),
+      });
+      continue;
+    }
+
+    blocks.push({ type: 'paragraph', text, ...(richText.length ? { richText } : {}) });
   }
 
   return {
@@ -267,6 +359,60 @@ export function sanitizeReviewManuscript(input: unknown): ReviewManuscriptSnapsh
     keywords,
     blocks,
   };
+}
+
+function sanitizeCells(value: unknown): string[][] {
+  if (!Array.isArray(value)) return [];
+  const rows: string[][] = [];
+  for (const rawRow of value.slice(0, 2_000)) {
+    if (!Array.isArray(rawRow)) continue;
+    const row = rawRow
+      .slice(0, 100)
+      .map((cell) => cleanText(cell, 20_000) ?? '');
+    if (row.length) rows.push(row);
+  }
+  const width = Math.max(0, ...rows.map((row) => row.length));
+  return rows.map((row) => Array.from({ length: width }, (_, index) => row[index] ?? ''));
+}
+
+function sanitizeRichText(value: unknown): ReviewInlineSpan[] {
+  if (!Array.isArray(value)) return [];
+  const spans: ReviewInlineSpan[] = [];
+  for (const rawSpan of value.slice(0, 20_000)) {
+    const span = asRecord(rawSpan);
+    const text = cleanInlineText(span.text, 200_000);
+    if (!text) continue;
+    const semantics = Array.isArray(span.semantics)
+      ? span.semantics.filter(isInlineSemantic).slice(0, 8)
+      : [];
+    const language = cleanText(span.language, 100);
+    spans.push({
+      text,
+      ...(semantics.length ? { semantics } : {}),
+      ...(language ? { language } : {}),
+    });
+  }
+  return spans;
+}
+
+function isInlineSemantic(value: unknown): value is ReviewInlineSemantic {
+  return value === 'strong' || value === 'emphasis' || value === 'strike' ||
+    value === 'underline' || value === 'small-caps' || value === 'superscript' ||
+    value === 'subscript' || value === 'code';
+}
+
+function sanitizeChartType(value: unknown): ReviewChartType {
+  return value === 'line' || value === 'pie' || value === 'scatter' || value === 'area'
+    ? value
+    : 'bar';
+}
+
+function cleanImageSource(value: unknown): string | undefined {
+  if (typeof value !== 'string' || value.length > 35 * 1024 * 1024) return undefined;
+  const normalized = value.replace(/\u0000/g, '').trim();
+  if (/^https:\/\//i.test(normalized)) return normalized;
+  if (/^data:image\/(?:png|jpe?g|gif|webp|svg\+xml);base64,/i.test(normalized)) return normalized;
+  return undefined;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -279,6 +425,12 @@ function cleanText(value: unknown, maxLength: number): string | undefined {
   if (typeof value !== 'string') return undefined;
   const normalized = value.replace(/\u0000/g, '').trim();
   return normalized ? normalized.slice(0, maxLength) : undefined;
+}
+
+function cleanInlineText(value: unknown, maxLength: number): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.replace(/\u0000/g, '').slice(0, maxLength);
+  return normalized.length ? normalized : undefined;
 }
 
 function notFound(): Error {

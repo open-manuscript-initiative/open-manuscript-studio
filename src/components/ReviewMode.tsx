@@ -1,4 +1,4 @@
-import { createElement, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
   acceptAssignedReview,
@@ -10,8 +10,13 @@ import {
   saveAssignedReviewRevision,
   submitAssignedReview,
   type ReviewerAssignment,
+  type ReviewManuscriptBlock,
   type ReviewManuscriptSnapshot,
 } from '../services/peerReviewApi';
+import {
+  isReviewTextBlock,
+  ReviewStructuredBlock,
+} from './ReviewStructuredBlock';
 import './ReviewMode.css';
 
 const recommendationOptions = [
@@ -255,7 +260,7 @@ export function ReviewMode() {
                     <h2>{selected.requiresRecommendation ? 'Recommendation' : 'Complete assignment'}</h2>
                     {selected.requiresRecommendation ? (
                       <select value={recommendation} onChange={(event) => setRecommendation(event.target.value as typeof recommendation)}>
-                        {recommendationOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                        {recommendationOptions.map(([value, optionLabel]) => <option key={value} value={value}>{optionLabel}</option>)}
                       </select>
                     ) : (
                       <p>Submit the completed {assignmentLabel.toLowerCase()} to the editor. No scientific accept/revise/reject recommendation is required.</p>
@@ -340,22 +345,47 @@ function RevisionEditor({
       </div>
 
       {revision.blocks.map((block, index) => {
-        const originalText = original.blocks[index]?.text ?? '';
+        const originalBlock = original.blocks[index];
+        if (!isReviewTextBlock(block)) {
+          return (
+            <div key={index} className="review-mode__revision-block">
+              <div className="review-mode__revision-label">
+                <span>{blockLabel(block)}</span>
+              </div>
+              <div className="review-mode__revision-structured">
+                <ReviewStructuredBlock block={block} />
+                <p className="review-mode__revision-structured-note">
+                  Structured element preserved in the review copy.
+                </p>
+              </div>
+            </div>
+          );
+        }
+
+        const originalText = originalBlock && isReviewTextBlock(originalBlock)
+          ? originalBlock.text
+          : '';
         const changed = block.text !== originalText;
         return (
           <div key={index} className={`review-mode__revision-block${changed ? ' is-changed' : ''}`}>
             <div className="review-mode__revision-label">
-              <span>{block.type === 'heading' ? `Heading ${block.level ?? 2}` : block.type}</span>
+              <span>{blockLabel(block)}</span>
               {changed ? <strong>Revised</strong> : null}
             </div>
+            {block.richText?.length ? (
+              <div className="review-mode__revision-rich-preview">
+                <ReviewStructuredBlock block={block} />
+              </div>
+            ) : null}
             <textarea
               rows={block.type === 'heading' ? 2 : Math.max(3, Math.min(12, Math.ceil(block.text.length / 90)))}
               value={block.text}
               disabled={disabled}
               onChange={(event) => {
-                const blocks = revision.blocks.map((item, itemIndex) =>
-                  itemIndex === index ? { ...item, text: event.target.value } : item,
-                );
+                const blocks = revision.blocks.map((item, itemIndex) => {
+                  if (itemIndex !== index || !isReviewTextBlock(item)) return item;
+                  return { ...item, text: event.target.value, richText: undefined } as ReviewManuscriptBlock;
+                });
                 onChange({ ...revision, blocks });
               }}
             />
@@ -386,18 +416,20 @@ function ManuscriptView({ manuscript }: { manuscript: ReviewManuscriptSnapshot }
       {manuscript.keywords.length ? (
         <p className="review-mode__keywords"><strong>Keywords:</strong> {manuscript.keywords.join(', ')}</p>
       ) : null}
-      <div className="review-mode__body">
-        {manuscript.blocks.map((block, index) => {
-          if (block.type === 'heading') {
-            const headingLevel = Math.min(6, Math.max(2, block.level ?? 2));
-            return createElement(`h${headingLevel}`, { key: index }, block.text);
-          }
-          if (block.type === 'note') {
-            return <aside key={index} className="review-mode__note">{block.text}</aside>;
-          }
-          return <p key={index}>{block.text}</p>;
-        })}
+      <div className="review-mode__body" role="document">
+        {manuscript.blocks.map((block, index) => (
+          <ReviewStructuredBlock key={index} block={block} />
+        ))}
       </div>
     </article>
   );
+}
+
+function blockLabel(block: ReviewManuscriptBlock): string {
+  if (block.type === 'heading') return `Heading ${block.level ?? 2}`;
+  if (block.type === 'list') return block.ordered ? 'Numbered list item' : 'Bullet list item';
+  if (block.type === 'table') return 'Table';
+  if (block.type === 'image') return 'Image';
+  if (block.type === 'chart') return 'Chart';
+  return block.type;
 }

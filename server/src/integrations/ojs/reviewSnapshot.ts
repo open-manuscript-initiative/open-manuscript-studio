@@ -1,5 +1,32 @@
 import type { OjsLaunchData } from './ojsClient.js';
-import type { ReviewManuscriptSnapshot } from '../../services/reviewManuscriptService.js';
+import type { OjsStructuredBlock } from './docxStructureTypes.js';
+import type {
+  ReviewInlineSemantic,
+  ReviewInlineSpan,
+  ReviewManuscriptBlock,
+  ReviewManuscriptSnapshot,
+} from '../../services/reviewManuscriptService.js';
+
+interface SourceInlineText {
+  kind: 'text';
+  text: string;
+  semantics?: ReviewInlineSemantic[];
+  language?: string;
+}
+
+interface SourceParagraph {
+  text: string;
+  headingLevel?: number;
+  outlineLevel?: number;
+  inline?: unknown[];
+}
+
+interface StructuredSourceDocument {
+  paragraphs?: SourceParagraph[];
+  structuredBlocks?: OjsStructuredBlock[];
+  footnotes?: Array<{ text: string }>;
+  endnotes?: Array<{ text: string }>;
+}
 
 export function createReviewSnapshotFromOjs(
   data: OjsLaunchData,
@@ -9,23 +36,119 @@ export function createReviewSnapshotFromOjs(
   const subtitle = pickLocalizedString(submission.subtitle);
   const abstract = pickLocalizedString(submission.abstract);
   const keywords = collectKeywords(submission.keywords);
-  const blocks: ReviewManuscriptSnapshot['blocks'] = [];
+  const blocks: ReviewManuscriptBlock[] = [];
+  const source = data.sourceDocument as StructuredSourceDocument | undefined;
 
-  for (const paragraph of data.sourceDocument?.paragraphs ?? []) {
-    const text = paragraph.text.trim();
-    if (!text) continue;
-    const level = paragraph.headingLevel ??
-      (typeof paragraph.outlineLevel === 'number' ? paragraph.outlineLevel + 1 : undefined);
-    blocks.push(level !== undefined
-      ? { type: 'heading', text, level: Math.max(1, Math.min(6, level)) }
-      : { type: 'paragraph', text });
+  const paragraphQueues = buildParagraphQueues(source?.paragraphs ?? []);
+  const structured = source?.structuredBlocks ?? [];
+
+  if (structured.length) {
+    const orderedCounters = new Map<number, number>();
+    for (const item of structured) {
+      if (item.kind === 'paragraph') {
+        const paragraph = takeParagraph(paragraphQueues, item.text);
+        const richText = paragraph ? paragraphRichText(paragraph) : [];
+        const level = item.headingLevel ?? paragraph?.headingLevel ??
+          (typeof paragraph?.outlineLevel === 'number' ? paragraph.outlineLevel + 1 : undefined);
+
+        if (level !== undefined) {
+          blocks.push({
+            type: 'heading',
+            text: item.text,
+            level: Math.max(1, Math.min(6, level)),
+            ...(richText.length ? { richText } : {}),
+          });
+          resetListCounters(orderedCounters);
+          continue;
+        }
+
+        if (Number.isInteger(item.listLevel) && typeof item.ordered === 'boolean') {
+          const listLevel = Math.max(0, item.listLevel ?? 0);
+          let ordinal: number | undefined;
+          if (item.ordered) {
+            ordinal = (orderedCounters.get(listLevel) ?? 0) + 1;
+            orderedCounters.set(listLevel, ordinal);
+          } else {
+            orderedCounters.delete(listLevel);
+          }
+          for (const key of Array.from(orderedCounters.keys())) {
+            if (key > listLevel) orderedCounters.delete(key);
+          }
+          blocks.push({
+            type: 'list',
+            text: item.text,
+            ordered: item.ordered,
+            listLevel,
+            ...(ordinal !== undefined ? { ordinal } : {}),
+            ...(richText.length ? { richText } : {}),
+          });
+          continue;
+        }
+
+        resetListCounters(orderedCounters);
+        blocks.push({
+          type: 'paragraph',
+          text: item.text,
+          ...(richText.length ? { richText } : {}),
+        });
+        continue;
+      }
+
+      resetListCounters(orderedCounters);
+      if (item.kind === 'table') {
+        blocks.push({
+          type: 'table',
+          cells: item.cells,
+          headerRows: item.headerRows,
+        });
+        continue;
+      }
+      if (item.kind === 'image') {
+        blocks.push({
+          type: 'image',
+          src: item.src,
+          mediaType: item.mediaType,
+          fileName: item.fileName,
+          ...(item.alt ? { alt: item.alt } : {}),
+        });
+        continue;
+      }
+      if (item.kind === 'chart') {
+        blocks.push({
+          type: 'chart',
+          cells: item.cells,
+          chartType: item.chartType,
+          ...(item.title ? { title: item.title } : {}),
+        });
+      }
+    }
+  } else {
+    for (const paragraph of source?.paragraphs ?? []) {
+      const text = paragraph.text.trim();
+      if (!text) continue;
+      const richText = paragraphRichText(paragraph);
+      const level = paragraph.headingLevel ??
+        (typeof paragraph.outlineLevel === 'number' ? paragraph.outlineLevel + 1 : undefined);
+      blocks.push(level !== undefined
+        ? {
+            type: 'heading',
+            text,
+            level: Math.max(1, Math.min(6, level)),
+            ...(richText.length ? { richText } : {}),
+          }
+        : {
+            type: 'paragraph',
+            text,
+            ...(richText.length ? { richText } : {}),
+          });
+    }
   }
 
-  for (const note of data.sourceDocument?.footnotes ?? []) {
+  for (const note of source?.footnotes ?? []) {
     const text = note.text.trim();
     if (text) blocks.push({ type: 'note', text });
   }
-  for (const note of data.sourceDocument?.endnotes ?? []) {
+  for (const note of source?.endnotes ?? []) {
     const text = note.text.trim();
     if (text) blocks.push({ type: 'note', text });
   }
@@ -37,6 +160,61 @@ export function createReviewSnapshotFromOjs(
     keywords,
     blocks,
   };
+}
+
+function buildParagraphQueues(paragraphs: SourceParagraph[]): Map<string, SourceParagraph[]> {
+  const queues = new Map<string, SourceParagraph[]>();
+  for (const paragraph of paragraphs) {
+    const key = normalize(paragraph.text);
+    if (!key) continue;
+    const queue = queues.get(key) ?? [];
+    queue.push(paragraph);
+    queues.set(key, queue);
+  }
+  return queues;
+}
+
+function takeParagraph(
+  queues: Map<string, SourceParagraph[]>,
+  text: string,
+): SourceParagraph | undefined {
+  const queue = queues.get(normalize(text));
+  return queue?.shift();
+}
+
+function paragraphRichText(paragraph: SourceParagraph): ReviewInlineSpan[] {
+  if (!Array.isArray(paragraph.inline)) return [];
+  const spans: ReviewInlineSpan[] = [];
+  for (const raw of paragraph.inline) {
+    const inline = asRecord(raw);
+    if (inline.kind !== 'text' || typeof inline.text !== 'string' || !inline.text) continue;
+    const semantics = Array.isArray(inline.semantics)
+      ? inline.semantics.filter(isInlineSemantic)
+      : [];
+    const language = typeof inline.language === 'string' && inline.language.trim()
+      ? inline.language.trim()
+      : undefined;
+    spans.push({
+      text: inline.text,
+      ...(semantics.length ? { semantics } : {}),
+      ...(language ? { language } : {}),
+    });
+  }
+  return spans;
+}
+
+function isInlineSemantic(value: unknown): value is ReviewInlineSemantic {
+  return value === 'strong' || value === 'emphasis' || value === 'strike' ||
+    value === 'underline' || value === 'small-caps' || value === 'superscript' ||
+    value === 'subscript' || value === 'code';
+}
+
+function resetListCounters(counters: Map<number, number>): void {
+  counters.clear();
+}
+
+function normalize(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
 }
 
 function collectKeywords(value: unknown): string[] {
