@@ -14,6 +14,8 @@ export interface OjsAssignmentSummary {
   sourceLanguage?: string | null;
   targetLanguage?: string | null;
   invitedAt: string;
+  accountStatus?: string;
+  invitationSent?: boolean;
   reviewer: {
     userId: string;
     email: string;
@@ -43,6 +45,7 @@ export async function listOjsAssignments(grant: string): Promise<{
 export async function createOjsAssignment(input: {
   context: OjsAssignmentLaunchContext;
   reviewerEmail: string;
+  reviewerFullName?: string;
   assignmentType: OjsAssignmentType;
   sourceLanguage?: string;
   targetLanguage?: string;
@@ -54,6 +57,7 @@ export async function createOjsAssignment(input: {
     body: JSON.stringify({
       grant: input.context.grant,
       reviewerEmail: input.reviewerEmail,
+      reviewerFullName: input.reviewerFullName,
       assignmentType: input.assignmentType.toUpperCase(),
       sourceLanguage: input.sourceLanguage || undefined,
       targetLanguage: input.targetLanguage || undefined,

@@ -7,6 +7,7 @@ import {
 import { promisify } from 'node:util';
 
 import { prisma } from '../lib/prisma.js';
+import { consumeAssignmentInvitation } from './assignmentInvitationService.js';
 
 const scrypt = promisify(scryptCallback);
 const SESSION_TTL_DAYS = 30;
@@ -19,6 +20,7 @@ export interface RegisterUserInput {
   affiliationRorId?: string;
   orcid?: string;
   interfaceLanguage?: string;
+  invitationToken?: string;
 }
 
 export interface UpdateUserInput {
@@ -41,6 +43,43 @@ export async function registerUser(input: RegisterUserInput) {
 
   const fullName = input.fullName.trim();
   if (!fullName) throw new Error('The user name is required.');
+
+  const invitationToken = input.invitationToken?.trim();
+  if (invitationToken) {
+    const invitation = await consumeAssignmentInvitation(invitationToken);
+    if (!invitation) throw new Error('The invitation is invalid or has expired.');
+    if (email !== invitation.email.toLowerCase()) {
+      throw new Error('The invitation belongs to a different e-mail address.');
+    }
+
+    const pending = await prisma.user.findUnique({ where: { id: invitation.userId } });
+    if (!pending || pending.status !== 'PENDING') {
+      throw new Error('The invitation is no longer available.');
+    }
+
+    const passwordHash = await hashPassword(input.password);
+    const [user] = await prisma.$transaction([
+      prisma.user.update({
+        where: { id: pending.id },
+        data: {
+          passwordHash,
+          fullName,
+          affiliation: cleanOptional(input.affiliation) ?? pending.affiliation,
+          affiliationRorId: cleanOptional(input.affiliationRorId) ?? pending.affiliationRorId,
+          orcid: normalizeOptionalOrcid(input.orcid) ?? pending.orcid,
+          interfaceLanguage: cleanOptional(input.interfaceLanguage)?.toLowerCase() ?? pending.interfaceLanguage,
+          status: 'ACTIVE',
+        },
+      }),
+      prisma.userInvitation.update({
+        where: { id: invitation.invitationId },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+
+    const session = await createSession(user.id);
+    return { user: serializeUser(user), ...session };
+  }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {

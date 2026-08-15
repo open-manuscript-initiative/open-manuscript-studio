@@ -23,6 +23,7 @@ export interface AuthSession {
 
 export interface RegisterInput extends CreateUserInput {
   password: string;
+  invitationToken?: string;
 }
 
 export interface LoginInput {
@@ -106,6 +107,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         affiliationRorId: input.affiliationRorId,
         orcid: input.orcid,
         interfaceLanguage: input.interfaceLanguage,
+        invitationToken: input.invitationToken,
       });
 
       setAuthenticatedUser(set, user, true);

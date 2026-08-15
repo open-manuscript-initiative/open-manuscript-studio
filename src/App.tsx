@@ -40,8 +40,9 @@ type AssignmentAwareLaunch = OjsLaunchPayload & {
 };
 
 export function App() {
-  const [authView, setAuthView] =
-    useState<AuthView>('login');
+  const [authView, setAuthView] = useState<AuthView>(() =>
+    new URLSearchParams(window.location.search).has('invite') ? 'register' : 'login',
+  );
 
   const authScreen =
     authView === 'login' ? (
