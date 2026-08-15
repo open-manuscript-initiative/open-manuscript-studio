@@ -26,7 +26,13 @@ export function ReviewStructuredBlock({
   }
 
   if (block.type === 'note') {
-    return <aside className="review-structured-note">{renderInline(block)}</aside>;
+    return (
+      <aside className="omi-note-editor-card omi-note-editor-card--compact review-structured-note">
+        <div className="omi-note-rich-editor review-structured-note-body">
+          {renderInline(block)}
+        </div>
+      </aside>
+    );
   }
 
   if (block.type === 'list') {

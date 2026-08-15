@@ -39,9 +39,12 @@ export function ReviewerRichTextEditor({
   const renderCapabilities = block.type === 'heading' && !capabilities.editStructure
     ? { ...capabilities, editStructure: true }
     : capabilities;
+  const flowClassName = block.type === 'note'
+    ? 'omi-note-editor-card omi-note-editor-card--compact review-mode__review-note-card'
+    : 'omi-continuous-blocks review-mode__studio-block-flow';
 
   return (
-    <div className="omi-continuous-blocks review-mode__studio-block-flow">
+    <div className={flowClassName}>
       <BlockEditor
         blockId={blockId}
         blockType={block.type}
@@ -58,7 +61,9 @@ export function ReviewerRichTextEditor({
         editable={!disabled}
         capabilities={renderCapabilities}
         manuscriptLanguage={manuscriptLanguage ?? locale}
-        className={`review-mode__studio-block-editor review-mode__studio-block-editor--${block.type}`}
+        className={`review-mode__studio-block-editor review-mode__studio-block-editor--${block.type}${
+          block.type === 'note' ? ' omi-note-rich-editor' : ''
+        }`}
       />
     </div>
   );

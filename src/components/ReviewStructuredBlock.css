@@ -19,10 +19,13 @@
 }
 
 .review-structured-note {
-  margin: 0.8rem 0;
-  padding: 0.8rem 1rem;
-  border-inline-start: 3px solid currentColor;
-  opacity: 0.88;
+  margin: 0.85rem 0;
+  opacity: 1;
+}
+
+.review-structured-note-body {
+  min-height: 0;
+  white-space: pre-wrap;
 }
 
 .review-structured-small-caps {
