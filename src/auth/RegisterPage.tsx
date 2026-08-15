@@ -1,6 +1,7 @@
 import {
   type FormEvent,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 
@@ -9,6 +10,7 @@ import {
   type AuthTranslationKey,
 } from '../i18n';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { getRegistrationInvitation } from '../services/authApi';
 import { AuthRorAffiliationField } from './AuthRorAffiliationField';
 import { AuthOrcidLookupField } from './AuthOrcidLookupField';
 import { useAuthStore } from '../store/authStore';
@@ -33,6 +35,14 @@ export function RegisterPage({
     (state) => state.clearError,
   );
 
+  const invitationToken = useMemo(
+    () => new URLSearchParams(window.location.search).get('invite')?.trim() || undefined,
+    [],
+  );
+  const [invitationLoading, setInvitationLoading] = useState(Boolean(invitationToken));
+  const [invitationError, setInvitationError] = useState('');
+  const [invitedEmail, setInvitedEmail] = useState('');
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [affiliation, setAffiliation] = useState('');
@@ -48,6 +58,28 @@ export function RegisterPage({
   useEffect(() => {
     clearError();
   }, [clearError]);
+
+  useEffect(() => {
+    if (!invitationToken) return;
+    let active = true;
+    setInvitationLoading(true);
+    setInvitationError('');
+    void getRegistrationInvitation(invitationToken)
+      .then((invitation) => {
+        if (!active) return;
+        setEmail(invitation.email);
+        setInvitedEmail(invitation.email);
+        setFullName(invitation.fullName);
+      })
+      .catch((caught) => {
+        if (!active) return;
+        setInvitationError(caught instanceof Error ? caught.message : 'The invitation is invalid or has expired.');
+      })
+      .finally(() => {
+        if (active) setInvitationLoading(false);
+      });
+    return () => { active = false; };
+  }, [invitationToken]);
 
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>,
@@ -75,7 +107,13 @@ export function RegisterPage({
         orcid: orcid.trim() || undefined,
         interfaceLanguage: locale,
         workingLanguages: [],
+        invitationToken,
       });
+      if (invitationToken) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('invite');
+        window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+      }
     } catch {
       // The auth store exposes the error state.
     }
@@ -90,6 +128,8 @@ export function RegisterPage({
       setLocalErrorKey(null);
     }
   };
+
+  const registrationDisabled = isLoading || invitationLoading || Boolean(invitationError);
 
   return (
     <main className="auth-page">
@@ -117,6 +157,13 @@ export function RegisterPage({
           </h1>
 
           <p>{t('auth.register.description')}</p>
+          {invitationToken && !invitationError ? (
+            <p className="auth-field-hint">
+              {invitationLoading
+                ? 'Loading assignment invitation…'
+                : 'Complete your Studio registration to open the assignment sent to this e-mail address.'}
+            </p>
+          ) : null}
         </header>
 
         <form
@@ -138,7 +185,7 @@ export function RegisterPage({
                 'auth.fields.fullName.placeholder',
               )}
               required
-              disabled={isLoading}
+              disabled={registrationDisabled}
               onChange={(event) => {
                 setFullName(event.target.value);
                 resetErrors();
@@ -161,12 +208,16 @@ export function RegisterPage({
                 'auth.fields.email.placeholder',
               )}
               required
-              disabled={isLoading}
+              readOnly={Boolean(invitedEmail)}
+              disabled={registrationDisabled}
               onChange={(event) => {
                 setEmail(event.target.value);
                 resetErrors();
               }}
             />
+            {invitedEmail ? (
+              <div className="auth-field-hint">This e-mail address is fixed by the invitation.</div>
+            ) : null}
           </div>
 
           <AuthRorAffiliationField
@@ -174,7 +225,7 @@ export function RegisterPage({
             rorId={affiliationRorId}
             label={t('auth.fields.affiliation.label')}
             placeholder={t('auth.fields.affiliation.placeholder')}
-            disabled={isLoading}
+            disabled={registrationDisabled}
             onChange={(nextAffiliation, nextRorId) => {
               setAffiliation(nextAffiliation);
               setAffiliationRorId(nextRorId);
@@ -191,7 +242,7 @@ export function RegisterPage({
             placeholder={t('auth.fields.orcid.placeholder')}
             hint={t('auth.fields.orcid.hint')}
             invalidMessage={t('auth.errors.invalidOrcid')}
-            disabled={isLoading}
+            disabled={registrationDisabled}
             onChange={(nextOrcid) => {
               setOrcid(nextOrcid);
               resetErrors();
@@ -213,7 +264,7 @@ export function RegisterPage({
                 'auth.fields.password.placeholder',
               )}
               required
-              disabled={isLoading}
+              disabled={registrationDisabled}
               onChange={(event) => {
                 setPassword(event.target.value);
                 resetErrors();
@@ -242,7 +293,7 @@ export function RegisterPage({
                 'auth.fields.passwordConfirmation.placeholder',
               )}
               required
-              disabled={isLoading}
+              disabled={registrationDisabled}
               onChange={(event) => {
                 setPasswordConfirmation(
                   event.target.value,
@@ -252,24 +303,24 @@ export function RegisterPage({
             />
           </div>
 
-          {(localErrorKey || error) && (
+          {(localErrorKey || error || invitationError) && (
             <div
               className="auth-error"
               role="alert"
             >
-              {localErrorKey
+              {invitationError || (localErrorKey
                 ? t(localErrorKey)
                 : translateRegisterError(
                     t,
                     error ?? '',
-                  )}
+                  ))}
             </div>
           )}
 
           <button
             className="auth-primary-button"
             type="submit"
-            disabled={isLoading}
+            disabled={registrationDisabled}
           >
             {isLoading
               ? t('auth.register.submitting')
