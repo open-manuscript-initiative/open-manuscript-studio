@@ -9,6 +9,10 @@ import {
   type TranslationKey,
 } from '../i18n';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import {
+  getAuthProviders,
+  getOrcidAuthUrl,
+} from '../services/authApi';
 import { useAuthStore } from '../store/authStore';
 
 interface LoginPageProps {
@@ -18,7 +22,7 @@ interface LoginPageProps {
 export function LoginPage({
   onShowRegister,
 }: LoginPageProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
 
   const login = useAuthStore(
     (state) => state.login,
@@ -37,11 +41,15 @@ export function LoginPage({
   );
 
   const [email, setEmail] = useState('');
-  const [password, setPassword] =
-    useState('');
+  const [password, setPassword] = useState('');
+  const [orcidEnabled, setOrcidEnabled] = useState(false);
+  const authErrorCode = new URLSearchParams(window.location.search).get('authError');
 
   useEffect(() => {
     clearError();
+    void getAuthProviders()
+      .then((providers) => setOrcidEnabled(providers.orcid.enabled))
+      .catch(() => setOrcidEnabled(false));
   }, [clearError]);
 
   const handleSubmit = async (
@@ -62,6 +70,7 @@ export function LoginPage({
   const errorTranslationKey = error
     ? getAuthErrorTranslationKey(error)
     : undefined;
+  const federatedError = authErrorCode ? federatedErrorMessage(authErrorCode, locale) : '';
 
   return (
     <main className="auth-page">
@@ -88,75 +97,67 @@ export function LoginPage({
             {t('auth.login.title')}
           </h1>
 
-          <p>
-            {t('auth.login.description')}
-          </p>
+          <p>{t('auth.login.description')}</p>
         </header>
+
+        {orcidEnabled ? (
+          <div className="auth-form">
+            <a className="auth-primary-button" href={getOrcidAuthUrl()}>
+              {locale === 'hu' ? 'Bejelentkezés ORCID-dal' : locale === 'de' ? 'Mit ORCID anmelden' : 'Sign in with ORCID'}
+            </a>
+            <div className="auth-field-hint">
+              {locale === 'hu'
+                ? 'Az ORCID-hitelesítés a Studio-fiókhoz kapcsolt, ellenőrzött ORCID iD-t használja.'
+                : locale === 'de'
+                  ? 'Die ORCID-Anmeldung verwendet die verifizierte ORCID iD, die mit Ihrem Studio-Konto verknüpft ist.'
+                  : 'ORCID sign-in uses the verified ORCID iD linked to your Studio account.'}
+            </div>
+          </div>
+        ) : null}
 
         <form
           className="auth-form"
           onSubmit={handleSubmit}
         >
           <div className="auth-field">
-            <label htmlFor="login-email">
-              {t('auth.fields.email.label')}
-            </label>
-
+            <label htmlFor="login-email">{t('auth.fields.email.label')}</label>
             <input
               id="login-email"
               name="email"
               type="email"
               value={email}
               autoComplete="email"
-              placeholder={t(
-                'auth.fields.email.placeholder',
-              )}
+              placeholder={t('auth.fields.email.placeholder')}
               required
               disabled={isLoading}
               onChange={(event) => {
                 setEmail(event.target.value);
-
-                if (error) {
-                  clearError();
-                }
+                if (error) clearError();
               }}
             />
           </div>
 
           <div className="auth-field">
-            <label htmlFor="login-password">
-              {t('auth.fields.password.label')}
-            </label>
-
+            <label htmlFor="login-password">{t('auth.fields.password.label')}</label>
             <input
               id="login-password"
               name="password"
               type="password"
               value={password}
               autoComplete="current-password"
-              placeholder={t(
-                'auth.fields.password.placeholder',
-              )}
+              placeholder={t('auth.fields.password.placeholder')}
               required
               disabled={isLoading}
               onChange={(event) => {
                 setPassword(event.target.value);
-
-                if (error) {
-                  clearError();
-                }
+                if (error) clearError();
               }}
             />
           </div>
 
-          {error && (
-            <div
-              className="auth-error"
-              role="alert"
-            >
-              {errorTranslationKey
-                ? t(errorTranslationKey)
-                : error}
+          {(error || federatedError) && (
+            <div className="auth-error" role="alert">
+              {federatedError || (errorTranslationKey ? t(errorTranslationKey) : error)}
             </div>
           )}
 
@@ -165,17 +166,12 @@ export function LoginPage({
             type="submit"
             disabled={isLoading}
           >
-            {isLoading
-              ? t('auth.login.submitting')
-              : t('auth.login.submit')}
+            {isLoading ? t('auth.login.submitting') : t('auth.login.submit')}
           </button>
         </form>
 
         <footer className="auth-footer">
-          <span>
-            {t('auth.login.noAccount')}
-          </span>
-
+          <span>{t('auth.login.noAccount')}</span>
           <button
             type="button"
             className="auth-link-button"
@@ -186,35 +182,36 @@ export function LoginPage({
           </button>
         </footer>
 
-        <p className="auth-alpha-notice">
-          {t('auth.alphaNotice')}
-        </p>
+        <p className="auth-alpha-notice">{t('auth.alphaNotice')}</p>
       </section>
     </main>
   );
 }
 
+function federatedErrorMessage(code: string, locale: string): string {
+  const messages: Record<string, [string, string, string]> = {
+    orcid_not_linked: [
+      'This ORCID iD is not linked to a Studio account yet. Sign in with e-mail first and link ORCID from your profile.',
+      'Ez az ORCID iD még nincs Studio-fiókhoz kapcsolva. Jelentkezz be e-maillel, majd kapcsold hozzá az ORCID-ot a profilodban.',
+      'Diese ORCID iD ist noch nicht mit einem Studio-Konto verknüpft. Melden Sie sich zuerst per E-Mail an und verknüpfen Sie ORCID im Profil.',
+    ],
+    orcid_state_expired: ['The ORCID sign-in request expired. Please try again.', 'Az ORCID-bejelentkezési kérés lejárt. Próbáld újra.', 'Die ORCID-Anmeldung ist abgelaufen. Bitte versuchen Sie es erneut.'],
+    orcid_signin_failed: ['ORCID sign-in failed.', 'Az ORCID-bejelentkezés nem sikerült.', 'Die ORCID-Anmeldung ist fehlgeschlagen.'],
+    orcid_callback_invalid: ['The ORCID response is invalid.', 'Az ORCID válasza érvénytelen.', 'Die ORCID-Antwort ist ungültig.'],
+  };
+  const value = messages[code] ?? messages.orcid_signin_failed;
+  return locale === 'hu' ? value[1] : locale === 'de' ? value[2] : value[0];
+}
+
 function getAuthErrorTranslationKey(
   message: string,
 ): TranslationKey | undefined {
-  const errorKeyMap: Record<
-    string,
-    TranslationKey
-  > = {
-    'Invalid e-mail address.':
-      'auth.errors.invalidEmail',
-
-    'Incorrect e-mail address or password.':
-      'auth.errors.invalidCredentials',
-
-    'The user account could not be found.':
-      'auth.errors.userNotFound',
-
-    'The user account is not active.':
-      'auth.errors.accountNotActive',
-
-    'Authentication is required.':
-      'auth.errors.authenticationRequired',
+  const errorKeyMap: Record<string, TranslationKey> = {
+    'Invalid e-mail address.': 'auth.errors.invalidEmail',
+    'Incorrect e-mail address or password.': 'auth.errors.invalidCredentials',
+    'The user account could not be found.': 'auth.errors.userNotFound',
+    'The user account is not active.': 'auth.errors.accountNotActive',
+    'Authentication is required.': 'auth.errors.authenticationRequired',
   };
 
   return errorKeyMap[message];
