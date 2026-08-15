@@ -40,8 +40,9 @@ type AssignmentAwareLaunch = OjsLaunchPayload & {
 };
 
 export function App() {
-  const [authView, setAuthView] =
-    useState<AuthView>('login');
+  const [authView, setAuthView] = useState<AuthView>(() =>
+    new URLSearchParams(window.location.search).has('invite') ? 'register' : 'login',
+  );
 
   const authScreen =
     authView === 'login' ? (
@@ -117,46 +118,6 @@ function StudioApplication() {
 
     loadManuscript(manuscript);
     clearOjsLaunchPayload();
-
-    const url = new URL(window.location.href);
-    if (url.searchParams.has('omiOjsLaunch')) {
-      url.searchParams.delete('omiOjsLaunch');
-      window.history.replaceState(
-        null,
-        '',
-        `${url.pathname}${url.search}${url.hash}`,
-      );
-    }
-  }, [loadManuscript, reviewMode]);
-
-  useEffect(() => {
-    if (reviewMode || !isNativeStudio()) return;
-
-    const handleNativeFileShortcut = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
-
-      const key = event.key.toLowerCase();
-      if (key !== 's' && key !== 'o') return;
-
-      event.preventDefault();
-
-      if (key === 'o') {
-        void openLocalManuscript().then((result) => {
-          if (result) loadManuscript(result.manuscript);
-        });
-        return;
-      }
-
-      const manuscript = useStudioStore.getState().manuscript;
-      if (event.shiftKey) {
-        void saveLocalManuscriptAs(manuscript);
-      } else {
-        void saveLocalManuscript(manuscript);
-      }
-    };
-
-    window.addEventListener('keydown', handleNativeFileShortcut);
-    return () => window.removeEventListener('keydown', handleNativeFileShortcut);
   }, [loadManuscript, reviewMode]);
 
   if (reviewMode) {
@@ -164,11 +125,19 @@ function StudioApplication() {
   }
 
   return (
-    <AppLayout onOpenMenu={() => setMenuOpen(true)}>
-      <div className="focus-workspace">
-        <EditorPane ojsContributors={ojsContributors} />
-      </div>
-
+    <AppLayout>
+      <EditorPane
+        ojsContributors={ojsContributors}
+        onOpenMenu={() => setMenuOpen(true)}
+        nativeFileActions={isNativeStudio() ? {
+          onOpen: async () => {
+            const manuscript = await openLocalManuscript();
+            if (manuscript) loadManuscript(manuscript);
+          },
+          onSave: saveLocalManuscript,
+          onSaveAs: saveLocalManuscriptAs,
+        } : undefined}
+      />
       <StudioMenuWithHelp
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
