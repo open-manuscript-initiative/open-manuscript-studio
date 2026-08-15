@@ -51,10 +51,19 @@ const environmentSchema = z.object({
     .max(720)
     .default(168),
 
+  // Transitional direct ORCID OAuth configuration. This remains supported
+  // until a deployment is migrated to the central OMI Identity Service.
   ORCID_CLIENT_ID: z.string().trim().optional(),
   ORCID_CLIENT_SECRET: z.string().trim().optional(),
   ORCID_BASE_URL: z.string().url().default('https://orcid.org'),
   ORCID_REDIRECT_URI: z.string().url().optional(),
+
+  // Future central OMI Identity Service (OIDC) configuration. These values
+  // are optional so current deployments remain fully backward compatible.
+  OMI_IDENTITY_ISSUER: z.string().url().optional(),
+  OMI_IDENTITY_CLIENT_ID: z.string().trim().optional(),
+  OMI_IDENTITY_CLIENT_SECRET: z.string().trim().optional(),
+  OMI_IDENTITY_REDIRECT_URI: z.string().url().optional(),
 });
 
 const result = environmentSchema.safeParse(
