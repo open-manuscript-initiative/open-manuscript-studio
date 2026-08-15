@@ -10,6 +10,10 @@ import {
   requireSession,
   type AuthenticatedRequest,
 } from '../middleware/requireSession.js';
+import {
+  issueAssignmentInvitation,
+  pendingPasswordPlaceholder,
+} from '../services/assignmentInvitationService.js';
 import { sanitizeReviewManuscript } from '../services/reviewManuscriptService.js';
 
 export const ojsAssignmentRouter = Router();
@@ -19,6 +23,7 @@ ojsAssignmentRouter.use(requireSession);
 const createSchema = z.object({
   grant: z.string().min(20),
   reviewerEmail: z.string().email(),
+  reviewerFullName: z.string().trim().min(1).max(200).optional(),
   assignmentType: z.enum(['SCIENTIFIC_REVIEW', 'LANGUAGE_REVIEW', 'TRANSLATION']),
   sourceLanguage: z.string().trim().min(2).max(32).optional(),
   targetLanguage: z.string().trim().min(2).max(32).optional(),
@@ -41,7 +46,7 @@ ojsAssignmentRouter.get('/ojs/assignments', async (request: AuthenticatedRequest
       },
       include: {
         reviewer: {
-          select: { id: true, email: true, fullName: true, affiliation: true, orcid: true },
+          select: { id: true, email: true, fullName: true, affiliation: true, orcid: true, status: true },
         },
       },
       orderBy: [{ assignmentType: 'asc' }, { invitedAt: 'asc' }],
@@ -57,6 +62,7 @@ ojsAssignmentRouter.get('/ojs/assignments', async (request: AuthenticatedRequest
         sourceLanguage: assignment.sourceLanguage,
         targetLanguage: assignment.targetLanguage,
         invitedAt: assignment.invitedAt.toISOString(),
+        accountStatus: assignment.reviewer.status.toLowerCase(),
         reviewer: context.actorMode === 'editor' || assignment.assignmentType !== 'SCIENTIFIC_REVIEW'
           ? {
               userId: assignment.reviewer.id,
@@ -88,8 +94,9 @@ ojsAssignmentRouter.post('/ojs/assignments', async (request: AuthenticatedReques
       }
     }
 
-    const reviewer = await prisma.user.findUnique({
-      where: { email: parsed.reviewerEmail.trim().toLowerCase() },
+    const reviewerEmail = parsed.reviewerEmail.trim().toLowerCase();
+    let reviewer = await prisma.user.findUnique({
+      where: { email: reviewerEmail },
       select: {
         id: true,
         email: true,
@@ -99,8 +106,29 @@ ojsAssignmentRouter.post('/ojs/assignments', async (request: AuthenticatedReques
         status: true,
       },
     });
-    if (!reviewer || reviewer.status !== 'ACTIVE') {
-      throw new Error('The selected OJS participant must have an active Studio account with the same email address.');
+
+    if (reviewer && reviewer.status !== 'ACTIVE' && reviewer.status !== 'PENDING') {
+      throw new Error('The selected Studio account is suspended or disabled.');
+    }
+
+    if (!reviewer) {
+      reviewer = await prisma.user.create({
+        data: {
+          email: reviewerEmail,
+          passwordHash: pendingPasswordPlaceholder(),
+          fullName: parsed.reviewerFullName?.trim() || reviewerEmail,
+          status: 'PENDING',
+          interfaceLanguage: 'en',
+        },
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          affiliation: true,
+          orcid: true,
+          status: true,
+        },
+      });
     }
 
     const workspaceId = workspaceIdFor(context.installationId, context.contextId);
@@ -132,6 +160,17 @@ ojsAssignmentRouter.post('/ojs/assignments', async (request: AuthenticatedReques
       },
     });
 
+    let invitationSent: boolean | undefined;
+    if (reviewer.status === 'PENDING') {
+      const invitation = await issueAssignmentInvitation({
+        userId: reviewer.id,
+        email: reviewer.email,
+        fullName: reviewer.fullName,
+        assignmentType: parsed.assignmentType,
+      });
+      invitationSent = invitation.sent;
+    }
+
     response.status(201).json({
       assignment: {
         id: assignment.id,
@@ -140,6 +179,8 @@ ojsAssignmentRouter.post('/ojs/assignments', async (request: AuthenticatedReques
         reviewerAlias: assignment.reviewerAlias,
         sourceLanguage: assignment.sourceLanguage,
         targetLanguage: assignment.targetLanguage,
+        accountStatus: reviewer.status.toLowerCase(),
+        ...(invitationSent !== undefined ? { invitationSent } : {}),
         reviewer: {
           userId: reviewer.id,
           email: reviewer.email,
