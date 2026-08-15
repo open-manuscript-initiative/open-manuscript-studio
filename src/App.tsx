@@ -20,6 +20,7 @@ import {
 import {
   createManuscriptFromOjsLaunch,
 } from './integrations/ojs/importOjsLaunchLocalized';
+import type { OjsAssignmentLaunchContext } from './services/ojsAssignmentApi';
 import {
   isNativeStudio,
   openLocalManuscript,
@@ -33,6 +34,10 @@ import './styles/history.css';
 type AuthView = 'login' | 'register';
 
 type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
+type AssignmentAwareLaunch = OjsLaunchPayload & {
+  actorMode?: 'editor' | 'author' | string | null;
+  assignmentContext?: OjsAssignmentLaunchContext | null;
+};
 
 export function App() {
   const [authView, setAuthView] =
@@ -64,6 +69,10 @@ function StudioApplication() {
   const reviewMode = new URLSearchParams(window.location.search).get('review') === '1';
   const [menuOpen, setMenuOpen] = useState(false);
   const [ojsContributors, setOjsContributors] = useState<OjsContributors>([]);
+  const [ojsAssignment, setOjsAssignment] = useState<{
+    actorMode: 'editor' | 'author';
+    context: OjsAssignmentLaunchContext;
+  } | null>(null);
   const loadManuscript = useStudioStore(
     (state) => state.loadManuscript,
   );
@@ -71,10 +80,11 @@ function StudioApplication() {
   useEffect(() => {
     if (reviewMode) {
       setOjsContributors([]);
+      setOjsAssignment(null);
       return;
     }
 
-    const launch = readOjsLaunchPayload();
+    const launch = readOjsLaunchPayload() as AssignmentAwareLaunch | null;
 
     if (!launch) {
       return;
@@ -87,15 +97,23 @@ function StudioApplication() {
       return;
     }
 
-    // Keep the original OJS contributor records only in the current editor
-    // session. This preserves editor-visible fields such as email while the
-    // manuscript identity model continues to store portable author metadata.
-    // Review mode never receives this state.
     setOjsContributors(
       launch.scope?.includes('contributors.read')
         ? launch.contributors ?? []
         : [],
     );
+
+    if (
+      (launch.actorMode === 'editor' || launch.actorMode === 'author') &&
+      launch.assignmentContext?.grant
+    ) {
+      setOjsAssignment({
+        actorMode: launch.actorMode,
+        context: launch.assignmentContext,
+      });
+    } else {
+      setOjsAssignment(null);
+    }
 
     loadManuscript(manuscript);
     clearOjsLaunchPayload();
@@ -154,6 +172,7 @@ function StudioApplication() {
       <StudioMenuWithHelp
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
+        ojsAssignment={ojsAssignment}
       />
     </AppLayout>
   );

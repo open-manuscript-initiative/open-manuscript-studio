@@ -7,6 +7,7 @@ import { authRouter } from './routes/authRoutes.js';
 import { editorReviewOverviewRouter } from './routes/editorReviewOverviewRoutes.js';
 import { healthRouter } from './routes/healthRoutes.js';
 import { integrationRouter } from './routes/integrationRoutes.js';
+import { ojsAssignmentRouter } from './routes/ojsAssignmentRoutes.js';
 import { ojsReviewRouter } from './routes/ojsReviewRoutes.js';
 import { peerReviewRouter } from './routes/peerReviewRoutes.js';
 import { reviewManuscriptRouter } from './routes/reviewManuscriptRoutes.js';
@@ -42,6 +43,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/reviews', peerReviewRouter);
 app.use('/api/reviews', reviewManuscriptRouter);
 app.use('/api/reviews', editorReviewOverviewRouter);
+app.use('/api/reviews', ojsAssignmentRouter);
 app.use('/integrations/ojs/review', ojsReviewRouter);
 app.use('/integrations', integrationRouter);
 
