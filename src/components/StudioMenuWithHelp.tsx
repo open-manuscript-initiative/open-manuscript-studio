@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 
 import { useTranslation } from '../i18n';
 import { getHelpCopy } from '../i18n/help';
+import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import { ExportFormatsPanel } from './ExportFormatsPanel';
 import { HelpPanel } from './HelpPanel';
 import { StudioMenu } from './StudioMenu';
@@ -15,11 +16,16 @@ import './StudioMenuWithHelp.css';
 interface StudioMenuWithHelpProps {
   open: boolean;
   onClose: () => void;
+  ojsAssignment?: {
+    actorMode: 'editor' | 'author';
+    context: OjsAssignmentLaunchContext;
+  } | null;
 }
 
 export function StudioMenuWithHelp({
   open,
   onClose,
+  ojsAssignment = null,
 }: StudioMenuWithHelpProps) {
   const { locale } = useTranslation();
   const copy = getHelpCopy(locale);
@@ -128,7 +134,7 @@ export function StudioMenuWithHelp({
 
   return (
     <>
-      <StudioMenu open={open} onClose={onClose} />
+      <StudioMenu open={open} onClose={onClose} ojsAssignment={ojsAssignment} />
 
       {navigationHost
         ? createPortal(
