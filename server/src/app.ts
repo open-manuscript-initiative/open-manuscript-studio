@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import { env } from './config/env.js';
 import { authRouter } from './routes/authRoutes.js';
 import { editorReviewOverviewRouter } from './routes/editorReviewOverviewRoutes.js';
+import { federatedAuthRouter } from './routes/federatedAuthRoutes.js';
 import { healthRouter } from './routes/healthRoutes.js';
 import { integrationRouter } from './routes/integrationRoutes.js';
 import { ojsAssignmentRouter } from './routes/ojsAssignmentRoutes.js';
@@ -39,6 +40,7 @@ app.get('/api', (_request, response) => {
 });
 
 app.use('/api/health', healthRouter);
+app.use('/api/auth', federatedAuthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/reviews', peerReviewRouter);
 app.use('/api/reviews', reviewManuscriptRouter);

@@ -14,6 +14,12 @@ enum UserStatus {
   DISABLED
 }
 
+enum IdentityProvider {
+  ORCID
+  OIDC
+  SAML
+}
+
 enum ExternalPlatform {
   OJS
   OMP
@@ -78,6 +84,8 @@ model User {
   lastLoginAt               DateTime?               @map("last_login_at") @db.Timestamptz(6)
   sessions                  UserSession[]
   invitations               UserInvitation[]
+  identities                UserIdentity[]
+  oauthStates               OAuthLoginState[]
   reviewAssignments         PeerReviewAssignment[]  @relation("ReviewerAssignments")
   assignedReviewAssignments PeerReviewAssignment[]  @relation("ReviewAssigner")
   reviewWorkspaceAccess     ReviewWorkspaceAccess[]
@@ -112,6 +120,43 @@ model UserInvitation {
   @@index([userId, expiresAt])
   @@index([expiresAt, usedAt])
   @@map("user_invitations")
+}
+
+model UserIdentity {
+  id           String           @id @default(uuid()) @db.Uuid
+  userId       String           @map("user_id") @db.Uuid
+  provider     IdentityProvider
+  issuer       String           @db.VarChar(512)
+  subject      String           @db.VarChar(320)
+  displayName  String?          @map("display_name") @db.VarChar(200)
+  profile      Json?            @db.JsonB
+  accessToken  String?          @map("access_token") @db.Text
+  refreshToken String?          @map("refresh_token") @db.Text
+  tokenExpiresAt DateTime?      @map("token_expires_at") @db.Timestamptz(6)
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  lastUsedAt   DateTime?        @map("last_used_at") @db.Timestamptz(6)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, issuer, subject])
+  @@index([userId, provider])
+  @@map("user_identities")
+}
+
+model OAuthLoginState {
+  id              String           @id @default(uuid()) @db.Uuid
+  stateHash       String           @unique @map("state_hash") @db.VarChar(64)
+  provider        IdentityProvider
+  mode            String           @db.VarChar(16)
+  userId          String?          @map("user_id") @db.Uuid
+  invitationToken String?          @map("invitation_token") @db.Text
+  returnPath      String?          @map("return_path") @db.VarChar(1024)
+  expiresAt       DateTime         @map("expires_at") @db.Timestamptz(6)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  user            User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("oauth_login_states")
 }
 
 model ReviewWorkspaceAccess {

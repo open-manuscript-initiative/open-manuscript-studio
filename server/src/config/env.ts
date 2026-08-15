@@ -50,6 +50,11 @@ const environmentSchema = z.object({
     .positive()
     .max(720)
     .default(168),
+
+  ORCID_CLIENT_ID: z.string().trim().optional(),
+  ORCID_CLIENT_SECRET: z.string().trim().optional(),
+  ORCID_BASE_URL: z.string().url().default('https://orcid.org'),
+  ORCID_REDIRECT_URI: z.string().url().optional(),
 });
 
 const result = environmentSchema.safeParse(
