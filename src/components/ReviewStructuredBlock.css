@@ -29,30 +29,18 @@
   font-variant-caps: small-caps;
 }
 
-.review-structured-table-wrap {
-  max-width: 100%;
-  overflow-x: auto;
+.review-structured-external-link {
+  color: #0369a1;
+  text-decoration: underline;
+  text-underline-offset: 0.13em;
+}
+
+.review-structured-table-readonly {
   margin: 0.9rem 0;
 }
 
-.review-structured-table {
-  width: 100%;
-  min-width: 32rem;
-  border-collapse: collapse;
-  font-size: 0.94rem;
-}
-
-.review-structured-table th,
-.review-structured-table td {
-  padding: 0.55rem 0.65rem;
-  border: 1px solid rgba(75, 61, 55, 0.22);
-  text-align: start;
-  vertical-align: top;
-}
-
-.review-structured-table th {
-  font-weight: 650;
-  background: rgba(75, 61, 55, 0.05);
+.review-structured-table-readonly .omi-table-editor input[readonly] {
+  cursor: default;
 }
 
 .review-structured-figure,

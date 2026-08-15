@@ -24,6 +24,7 @@ export interface ReviewInlineSpan {
   text: string;
   semantics?: ReviewInlineSemantic[];
   language?: string;
+  href?: string;
   citation?: ReviewCitationReference;
 }
 
@@ -418,11 +419,13 @@ function sanitizeRichText(value: unknown): ReviewInlineSpan[] {
       ? span.semantics.filter(isInlineSemantic).slice(0, 8)
       : [];
     const language = cleanText(span.language, 100);
+    const href = cleanExternalUrl(span.href);
     const citation = sanitizeCitationReference(span.citation, text);
     spans.push({
       text,
       ...(semantics.length ? { semantics } : {}),
       ...(language ? { language } : {}),
+      ...(href ? { href } : {}),
       ...(citation ? { citation } : {}),
     });
   }

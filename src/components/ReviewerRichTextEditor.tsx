@@ -120,6 +120,7 @@ function spanToNode(span: ReviewInlineSpan): JSONContent {
     if (type) marks.push({ type });
   }
   if (span.language) marks.push({ type: 'omiLanguage', attrs: { lang: span.language } });
+  if (span.href) marks.push({ type: 'omiLink', attrs: { href: span.href } });
   return {
     type: 'text',
     text: span.citation?.label || span.text,
@@ -157,17 +158,22 @@ function collectText(node: JSONContent, spans: ReviewInlineSpan[]): void {
   if (node.type === 'text' && typeof node.text === 'string') {
     const semantics: ReviewInlineSemantic[] = [];
     let language: string | undefined;
+    let href: string | undefined;
     for (const mark of node.marks ?? []) {
       const semantic = markToSemantic(mark.type ?? '');
       if (semantic) semantics.push(semantic);
       if (mark.type === 'omiLanguage' && typeof mark.attrs?.lang === 'string') {
         language = mark.attrs.lang;
       }
+      if (mark.type === 'omiLink' && typeof mark.attrs?.href === 'string') {
+        href = mark.attrs.href;
+      }
     }
     spans.push({
       text: node.text,
       ...(semantics.length ? { semantics } : {}),
       ...(language ? { language } : {}),
+      ...(href ? { href } : {}),
     });
     return;
   }
@@ -222,6 +228,7 @@ function copySpan(span: ReviewInlineSpan, text: string): ReviewInlineSpan {
     text,
     ...(span.semantics?.length ? { semantics: [...span.semantics] } : {}),
     ...(span.language ? { language: span.language } : {}),
+    ...(span.href ? { href: span.href } : {}),
   };
 }
 
@@ -232,7 +239,8 @@ function mergeAdjacentSpans(spans: ReviewInlineSpan[]): ReviewInlineSpan[] {
     if (
       previous &&
       JSON.stringify(previous.semantics ?? []) === JSON.stringify(span.semantics ?? []) &&
-      previous.language === span.language
+      previous.language === span.language &&
+      previous.href === span.href
     ) {
       previous.text += span.text;
     } else {

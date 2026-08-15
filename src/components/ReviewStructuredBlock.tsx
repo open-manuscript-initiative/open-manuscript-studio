@@ -85,19 +85,30 @@ function ReviewTable({
   headerRows: number;
 }) {
   return (
-    <div className="review-structured-table-wrap">
-      <table className="review-structured-table">
-        <tbody>
-          {cells.map((row, rowIndex) => (
-            <tr key={rowIndex}>
-              {row.map((cell, columnIndex) => {
-                const Cell = rowIndex < headerRows ? 'th' : 'td';
-                return <Cell key={columnIndex}>{cell}</Cell>;
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="omi-table-editor-wrap review-structured-table-readonly">
+      <div className="omi-table-scroll">
+        <table className="omi-table-editor">
+          <tbody>
+            {cells.map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                {row.map((cell, columnIndex) => {
+                  const Cell = rowIndex < headerRows ? 'th' : 'td';
+                  return (
+                    <Cell key={columnIndex}>
+                      <input
+                        value={cell}
+                        readOnly
+                        tabIndex={-1}
+                        aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}`}
+                      />
+                    </Cell>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -115,6 +126,20 @@ function applySemantics(span: ReviewInlineSpan, key: number): ReactNode {
   let node: ReactNode = span.text;
   for (const semantic of span.semantics ?? []) {
     node = wrapSemantic(semantic, node, `${key}-${semantic}`);
+  }
+  if (span.href) {
+    node = (
+      <a
+        key={`${key}-link`}
+        href={span.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-omi-external-link="true"
+        className="review-structured-external-link"
+      >
+        {node}
+      </a>
+    );
   }
   return node;
 }

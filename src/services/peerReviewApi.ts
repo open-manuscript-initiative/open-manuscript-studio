@@ -69,6 +69,7 @@ export interface ReviewInlineSpan {
   text: string;
   semantics?: ReviewInlineSemantic[];
   language?: string;
+  href?: string;
   citation?: ReviewCitationReference;
 }
 
