@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 
-import { Router } from 'express';
+import { Router, type Response } from 'express';
 
 import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
@@ -11,15 +11,34 @@ export const federatedAuthRouter = Router();
 const COOKIE_NAME = 'omi_session';
 const SESSION_TTL_DAYS = 30;
 const STATE_TTL_MINUTES = 10;
-const ORCID_ISSUER = 'https://orcid.org';
+const ORCID_ISSUER = new URL(env.ORCID_BASE_URL).origin;
 
-federatedAuthRouter.get('/providers', (_request, response) => {
+federatedAuthRouter.get('/providers', async (request, response) => {
+  const userId = await currentUserId(request.headers.cookie);
+  const linkedOrcid = userId
+    ? await prisma.userIdentity.findFirst({
+        where: { userId, provider: 'ORCID', issuer: ORCID_ISSUER },
+        select: { id: true, subject: true, displayName: true, createdAt: true },
+      })
+    : null;
+
   response.status(200).json({
     providers: {
       orcid: {
         enabled: orcidConfigured(),
         label: 'ORCID',
+        linked: Boolean(linkedOrcid),
+        identity: linkedOrcid
+          ? {
+              id: linkedOrcid.id,
+              providerUserId: linkedOrcid.subject,
+              displayName: linkedOrcid.displayName,
+              connectedAt: linkedOrcid.createdAt.toISOString(),
+            }
+          : null,
       },
+      oidc: { enabled: false, label: 'OpenID Connect' },
+      saml: { enabled: false, label: 'SAML' },
     },
   });
 });
@@ -30,13 +49,19 @@ federatedAuthRouter.get('/orcid/start', async (request, response) => {
     return;
   }
 
-  const mode = request.query.mode === 'invite' ? 'invite' : 'login';
+  const requestedMode = typeof request.query.mode === 'string' ? request.query.mode : 'login';
+  const mode = requestedMode === 'invite' || requestedMode === 'link' ? requestedMode : 'login';
   const invitationToken = mode === 'invite' && typeof request.query.invite === 'string'
     ? request.query.invite.trim()
     : undefined;
+  const userId = mode === 'link' ? await currentUserId(request.headers.cookie) : undefined;
 
   if (mode === 'invite' && !invitationToken) {
     response.status(400).json({ error: { code: 'INVITATION_REQUIRED', message: 'An invitation token is required.' } });
+    return;
+  }
+  if (mode === 'link' && !userId) {
+    response.status(401).json({ error: { code: 'AUTHENTICATION_REQUIRED', message: 'Sign in before linking an ORCID iD.' } });
     return;
   }
 
@@ -46,6 +71,7 @@ federatedAuthRouter.get('/orcid/start', async (request, response) => {
       stateHash: hash(state),
       provider: 'ORCID',
       mode,
+      userId: userId ?? null,
       invitationToken: invitationToken ?? null,
       returnPath: '/',
       expiresAt: new Date(Date.now() + STATE_TTL_MINUTES * 60 * 1000),
@@ -85,6 +111,29 @@ federatedAuthRouter.get('/orcid/callback', async (request, response) => {
     if (!orcid) throw new Error('ORCID did not return an authenticated iD.');
 
     let userId: string | undefined;
+
+    if (loginState.mode === 'link') {
+      if (!loginState.userId) throw new Error('The Studio account to link could not be resolved.');
+      const existingIdentity = await prisma.userIdentity.findUnique({
+        where: { provider_issuer_subject: { provider: 'ORCID', issuer: ORCID_ISSUER, subject: orcid } },
+      });
+      if (existingIdentity && existingIdentity.userId !== loginState.userId) {
+        throw new Error('This ORCID iD is already linked to another Studio account.');
+      }
+      const user = await prisma.user.findUnique({ where: { id: loginState.userId } });
+      if (!user || user.status !== 'ACTIVE') throw new Error('The Studio account is not active.');
+      await prisma.$transaction([
+        prisma.user.update({ where: { id: user.id }, data: { orcid } }),
+        prisma.userIdentity.upsert({
+          where: { provider_issuer_subject: { provider: 'ORCID', issuer: ORCID_ISSUER, subject: orcid } },
+          create: identityCreate(user.id, orcid, token.name || user.fullName, token.scope),
+          update: { displayName: token.name || user.fullName, lastUsedAt: new Date() },
+        }),
+      ]);
+      response.redirect(302, env.FRONTEND_ORIGIN);
+      return;
+    }
+
     if (loginState.mode === 'invite' && loginState.invitationToken) {
       const invitation = await consumeAssignmentInvitation(loginState.invitationToken);
       if (!invitation) throw new Error('The invitation is invalid or has expired.');
@@ -99,30 +148,14 @@ federatedAuthRouter.get('/orcid/callback', async (request, response) => {
       await prisma.$transaction([
         prisma.user.update({
           where: { id: pending.id },
-          data: {
-            status: 'ACTIVE',
-            orcid,
-            fullName: pending.fullName || token.name || pending.email,
-            lastLoginAt: new Date(),
-          },
+          data: { status: 'ACTIVE', orcid, fullName: token.name || pending.fullName, lastLoginAt: new Date() },
         }),
         prisma.userIdentity.upsert({
           where: { provider_issuer_subject: { provider: 'ORCID', issuer: ORCID_ISSUER, subject: orcid } },
-          create: {
-            userId: pending.id,
-            provider: 'ORCID',
-            issuer: ORCID_ISSUER,
-            subject: orcid,
-            displayName: token.name || pending.fullName,
-            profile: { scope: token.scope ?? '/authenticate' },
-            lastUsedAt: new Date(),
-          },
+          create: identityCreate(pending.id, orcid, token.name || pending.fullName, token.scope),
           update: { lastUsedAt: new Date(), displayName: token.name || pending.fullName },
         }),
-        prisma.userInvitation.update({
-          where: { id: invitation.invitationId },
-          data: { usedAt: new Date() },
-        }),
+        prisma.userInvitation.update({ where: { id: invitation.invitationId }, data: { usedAt: new Date() } }),
       ]);
       userId = pending.id;
     } else {
@@ -135,15 +168,7 @@ federatedAuthRouter.get('/orcid/callback', async (request, response) => {
         const legacyUser = await prisma.user.findUnique({ where: { orcid } });
         if (legacyUser) {
           await prisma.userIdentity.create({
-            data: {
-              userId: legacyUser.id,
-              provider: 'ORCID',
-              issuer: ORCID_ISSUER,
-              subject: orcid,
-              displayName: token.name || legacyUser.fullName,
-              profile: { scope: token.scope ?? '/authenticate' },
-              lastUsedAt: new Date(),
-            },
+            data: identityCreate(legacyUser.id, orcid, token.name || legacyUser.fullName, token.scope),
           });
           userId = legacyUser.id;
         }
@@ -178,6 +203,18 @@ federatedAuthRouter.get('/orcid/callback', async (request, response) => {
   }
 });
 
+function identityCreate(userId: string, orcid: string, displayName: string, scope?: string) {
+  return {
+    userId,
+    provider: 'ORCID' as const,
+    issuer: ORCID_ISSUER,
+    subject: orcid,
+    displayName,
+    profile: { scope: scope ?? '/authenticate' },
+    lastUsedAt: new Date(),
+  };
+}
+
 function orcidConfigured(): boolean {
   return Boolean(env.ORCID_CLIENT_ID && env.ORCID_CLIENT_SECRET);
 }
@@ -196,10 +233,7 @@ async function exchangeOrcidCode(code: string): Promise<{ orcid?: string; name?:
   });
   const response = await fetch(new URL('/oauth/token', env.ORCID_BASE_URL), {
     method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
+    headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
     signal: AbortSignal.timeout(20_000),
   });
@@ -212,25 +246,38 @@ async function exchangeOrcidCode(code: string): Promise<{ orcid?: string; name?:
   };
 }
 
+async function currentUserId(cookieHeader: string | undefined): Promise<string | undefined> {
+  if (!cookieHeader) return undefined;
+  const token = cookieHeader
+    .split(';')
+    .map((part) => part.trim().split('='))
+    .find(([name]) => name === COOKIE_NAME)?.slice(1).join('=');
+  if (!token) return undefined;
+  const session = await prisma.userSession.findUnique({
+    where: { tokenHash: hash(decodeURIComponent(token)) },
+    include: { user: true },
+  });
+  if (!session || session.expiresAt <= new Date() || session.user.status !== 'ACTIVE') return undefined;
+  return session.userId;
+}
+
 async function createSession(userId: string) {
   const token = randomBytes(32).toString('base64url');
   const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
-  await prisma.userSession.create({
-    data: { userId, tokenHash: hash(token), expiresAt },
-  });
+  await prisma.userSession.create({ data: { userId, tokenHash: hash(token), expiresAt } });
   return { token, expiresAt };
 }
 
 function normalizeOrcid(value: string | undefined): string | undefined {
   const normalized = value?.trim().replace(/^https?:\/\/(?:www\.)?orcid\.org\//i, '').toUpperCase();
-  return normalized && /^\d{4}-\d{4}-\d{4}-[\dX]{4}$/.test(normalized) ? normalized : undefined;
+  return normalized && /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(normalized) ? normalized : undefined;
 }
 
 function hash(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
 
-function redirectError(response: Parameters<typeof federatedAuthRouter.get>[1] extends never ? never : any, code: string): void {
+function redirectError(response: Response, code: string): void {
   const url = new URL(env.FRONTEND_ORIGIN);
   url.searchParams.set('authError', code);
   response.redirect(302, url.toString());
