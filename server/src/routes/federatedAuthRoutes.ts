@@ -223,7 +223,11 @@ function redirectUri(): string {
   return env.ORCID_REDIRECT_URI || `${env.FRONTEND_ORIGIN.replace(/\/$/, '')}/api/auth/orcid/callback`;
 }
 
-async function exchangeOrcidCode(code: string): Promise<{ orcid?: string; name?: string; scope?: string }> {
+async function exchangeOrcidCode(code: string): Promise<{
+  orcid: string | undefined;
+  name: string | undefined;
+  scope: string | undefined;
+}> {
   const body = new URLSearchParams({
     client_id: env.ORCID_CLIENT_ID!,
     client_secret: env.ORCID_CLIENT_SECRET!,
