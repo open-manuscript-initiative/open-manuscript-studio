@@ -25,6 +25,13 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface AuthProviders {
+  orcid: {
+    enabled: boolean;
+    label: string;
+  };
+}
+
 interface UserResponse {
   user: User;
 }
@@ -39,6 +46,30 @@ interface ErrorResponse {
 const API_BASE_URL = normalizeBaseUrl(
   import.meta.env?.VITE_API_BASE_URL ?? '',
 );
+
+export async function getAuthProviders(): Promise<AuthProviders> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/providers`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) throw await createApiError(response);
+  const payload = (await response.json()) as { providers: AuthProviders };
+  return payload.providers;
+}
+
+export function getOrcidAuthUrl(input?: {
+  invitationToken?: string;
+}): string {
+  const params = new URLSearchParams();
+  if (input?.invitationToken) {
+    params.set('mode', 'invite');
+    params.set('invite', input.invitationToken);
+  } else {
+    params.set('mode', 'login');
+  }
+  return `${API_BASE_URL}/api/auth/orcid/start?${params.toString()}`;
+}
 
 export async function getRegistrationInvitation(
   token: string,
