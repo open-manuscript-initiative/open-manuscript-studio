@@ -252,10 +252,14 @@ function paragraphRichText(paragraph: SourceParagraph): ReviewInlineSpan[] {
     const language = typeof inline.language === 'string' && inline.language.trim()
       ? inline.language.trim()
       : undefined;
+    const href = typeof inline.href === 'string' && inline.href.trim()
+      ? inline.href.trim()
+      : undefined;
     spans.push({
       text: inline.text,
       ...(semantics.length ? { semantics } : {}),
       ...(language ? { language } : {}),
+      ...(href ? { href } : {}),
     });
   }
   return spans;
