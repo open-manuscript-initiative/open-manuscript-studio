@@ -11,6 +11,13 @@ export interface RegisterRequest {
   affiliationRorId?: string;
   orcid?: string;
   interfaceLanguage?: string;
+  invitationToken?: string;
+}
+
+export interface RegistrationInvitation {
+  email: string;
+  fullName: string;
+  expiresAt: string;
 }
 
 export interface LoginRequest {
@@ -32,6 +39,22 @@ interface ErrorResponse {
 const API_BASE_URL = normalizeBaseUrl(
   import.meta.env?.VITE_API_BASE_URL ?? '',
 );
+
+export async function getRegistrationInvitation(
+  token: string,
+): Promise<RegistrationInvitation> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/auth/invitations/${encodeURIComponent(token)}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    },
+  );
+  if (!response.ok) throw await createApiError(response);
+  const payload = (await response.json()) as { invitation: RegistrationInvitation };
+  return payload.invitation;
+}
 
 export async function registerAccount(
   input: RegisterRequest,
