@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 
+import type { Prisma } from '@prisma/client';
 import { Router, type Response } from 'express';
 import { z } from 'zod';
 
@@ -89,7 +90,14 @@ ojsAssignmentRouter.post('/ojs/assignments', async (request: AuthenticatedReques
 
     const reviewer = await prisma.user.findUnique({
       where: { email: parsed.reviewerEmail.trim().toLowerCase() },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        affiliation: true,
+        orcid: true,
+        status: true,
+      },
     });
     if (!reviewer || reviewer.status !== 'ACTIVE') {
       throw new Error('The selected OJS participant must have an active Studio account with the same email address.');
@@ -105,6 +113,7 @@ ojsAssignmentRouter.post('/ojs/assignments', async (request: AuthenticatedReques
       where: { workspaceId, manuscriptId: context.manuscriptId, assignmentType: parsed.assignmentType },
     });
     const manuscript = sanitizeReviewManuscript(parsed.manuscript);
+    const manuscriptSnapshot = JSON.parse(JSON.stringify(manuscript)) as Prisma.InputJsonValue;
 
     const assignment = await prisma.peerReviewAssignment.create({
       data: {
@@ -119,12 +128,7 @@ ojsAssignmentRouter.post('/ojs/assignments', async (request: AuthenticatedReques
         reviewRound: 1,
         anonymityMode: parsed.assignmentType === 'SCIENTIFIC_REVIEW' ? 'DOUBLE_BLIND' : 'OPEN',
         status: 'INVITED',
-        manuscriptSnapshot: manuscript,
-      },
-      include: {
-        reviewer: {
-          select: { id: true, email: true, fullName: true, affiliation: true, orcid: true },
-        },
+        manuscriptSnapshot,
       },
     });
 
@@ -137,11 +141,11 @@ ojsAssignmentRouter.post('/ojs/assignments', async (request: AuthenticatedReques
         sourceLanguage: assignment.sourceLanguage,
         targetLanguage: assignment.targetLanguage,
         reviewer: {
-          userId: assignment.reviewer.id,
-          email: assignment.reviewer.email,
-          fullName: assignment.reviewer.fullName,
-          affiliation: assignment.reviewer.affiliation,
-          orcid: assignment.reviewer.orcid,
+          userId: reviewer.id,
+          email: reviewer.email,
+          fullName: reviewer.fullName,
+          affiliation: reviewer.affiliation,
+          orcid: reviewer.orcid,
         },
       },
     });
