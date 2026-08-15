@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
+import { claimOjsReviewLaunch } from '../services/peerReviewApi';
+import { AssignmentStudioMenu } from './AssignmentStudioMenu';
 import { EditorReviewMode, loadEditorReviewOverview } from './EditorReviewMode';
 import { ReviewMode } from './ReviewMode';
-import { claimOjsReviewLaunch } from '../services/peerReviewApi';
+import { ReviewPortalHeader } from './ReviewPortalHeader';
 
 export function ReviewPortal() {
   const [editorReviews, setEditorReviews] = useState<Awaited<ReturnType<typeof loadEditorReviewOverview>> | null>(null);
   const [launchError, setLaunchError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -45,12 +48,18 @@ export function ReviewPortal() {
     return () => { active = false; };
   }, []);
 
-  if (editorReviews === null) {
-    return <main className="review-mode"><div className="review-mode__card"><p>Loading peer review workspace…</p></div></main>;
-  }
+  let content: ReactNode;
 
-  if (launchError) {
-    return (
+  if (editorReviews === null) {
+    content = (
+      <main className="review-mode">
+        <div className="review-mode__card">
+          <p>Loading peer review workspace…</p>
+        </div>
+      </main>
+    );
+  } else if (launchError) {
+    content = (
       <main className="review-mode">
         <div className="review-mode__card review-mode__error" role="alert">
           <p>{launchError}</p>
@@ -58,11 +67,20 @@ export function ReviewPortal() {
         </div>
       </main>
     );
+  } else if (editorReviews.length > 0) {
+    content = <EditorReviewMode initialReviews={editorReviews} />;
+  } else {
+    content = <ReviewMode />;
   }
 
-  if (editorReviews.length > 0) {
-    return <EditorReviewMode initialReviews={editorReviews} />;
-  }
-
-  return <ReviewMode />;
+  return (
+    <>
+      <ReviewPortalHeader onOpenMenu={() => setMenuOpen(true)} />
+      {content}
+      <AssignmentStudioMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+      />
+    </>
+  );
 }
