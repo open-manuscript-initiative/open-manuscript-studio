@@ -6,6 +6,7 @@ import { issueOjsAssignmentGrant } from '../integrations/ojs/ojsAssignmentGrant.
 import { loadOjsAssignmentContext } from '../integrations/ojs/ojsAssignmentContext.js';
 import { loadOjsLaunchData } from '../integrations/ojs/ojsClient.js';
 import { verifyOjsLaunch } from '../integrations/ojs/launchVerifier.js';
+import { createReviewSnapshotFromOjs } from '../integrations/ojs/reviewSnapshot.js';
 
 export const integrationRouter = Router();
 
@@ -57,6 +58,7 @@ integrationRouter.get(
             actorMode,
           })
         : undefined;
+      const reviewSnapshot = assignmentGrant ? createReviewSnapshotFromOjs(ojsData) : undefined;
 
       const launchData = {
         protocol: 'omi-integration/1',
@@ -79,6 +81,7 @@ integrationRouter.get(
           ? {
               grant: assignmentGrant,
               candidates: actorMode === 'editor' ? assignmentContext.candidates : [],
+              manuscript: reviewSnapshot,
             }
           : null,
         expiresAt: new Date(verified.claims.exp * 1000).toISOString(),
