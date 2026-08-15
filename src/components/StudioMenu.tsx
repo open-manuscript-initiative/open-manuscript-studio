@@ -11,6 +11,7 @@ import {
   SaveAll,
   Settings2,
   StickyNote,
+  UserPlus,
   Users,
   Wrench,
   X,
@@ -29,6 +30,7 @@ import {
 } from '../i18n';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
 import { downloadOmiJson } from '../services/exportOmi';
+import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import {
   getCurrentManuscriptFilePath,
   isNativeStudio,
@@ -44,6 +46,7 @@ import { HistoryPanel } from './HistoryPanel';
 import { KeywordEditor } from './KeywordEditor';
 import { ManuscriptLanguageField } from './ManuscriptLanguageField';
 import { NotesPanel } from './NotesPanel';
+import { OjsAssignmentPanel } from './OjsAssignmentPanel';
 import { PropertiesPanel } from './PropertiesPanel';
 import { PublicationProfilePanel } from './PublicationProfilePanel';
 import { ReferencesPanel } from './ReferencesPanel';
@@ -56,6 +59,7 @@ type StudioMenuView =
   | 'notes'
   | 'references'
   | 'contributors'
+  | 'assignments'
   | 'publication'
   | 'history'
   | 'tools'
@@ -64,16 +68,26 @@ type StudioMenuView =
 interface StudioMenuProps {
   open: boolean;
   onClose: () => void;
+  ojsAssignment?: {
+    actorMode: 'editor' | 'author';
+    context: OjsAssignmentLaunchContext;
+  } | null;
 }
 
 export function StudioMenu({
   open,
   onClose,
+  ojsAssignment = null,
 }: StudioMenuProps) {
   const { t, locale } = useTranslation();
   const publicationCopy = getPublicationProfileCopy(locale);
   const [activeView, setActiveView] =
     useState<StudioMenuView>('document');
+  const assignmentsLabel = locale === 'hu'
+    ? 'Megbízások'
+    : locale === 'de'
+      ? 'Aufträge'
+      : 'Assignments';
 
   useEffect(() => {
     if (!open) return;
@@ -107,6 +121,7 @@ export function StudioMenu({
             <MenuButton active={activeView === 'notes'} icon={<StickyNote size={18} aria-hidden="true" />} label={t('studio.navigation.notes')} onClick={() => setActiveView('notes')} />
             <MenuButton active={activeView === 'references'} icon={<Library size={18} aria-hidden="true" />} label={t('studio.navigation.references')} onClick={() => setActiveView('references')} />
             <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} />
+            {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={assignmentsLabel} onClick={() => setActiveView('assignments')} /> : null}
             <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} />
             <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
             <MenuButton active={activeView === 'tools'} icon={<Wrench size={18} aria-hidden="true" />} label={t('studio.navigation.tools')} onClick={() => setActiveView('tools')} />
@@ -118,6 +133,7 @@ export function StudioMenu({
             {activeView === 'notes' ? <NotesPanel onNavigate={onClose} /> : null}
             {activeView === 'references' ? <ReferencesPanel /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
+            {activeView === 'assignments' && ojsAssignment ? <OjsAssignmentPanel actorMode={ojsAssignment.actorMode} context={ojsAssignment.context} /> : null}
             {activeView === 'publication' ? <PublicationProfilePanel /> : null}
             {activeView === 'history' ? <HistoryPanel /> : null}
             {activeView === 'tools' ? <ToolsView /> : null}
