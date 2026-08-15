@@ -33,6 +33,23 @@ const environmentSchema = z.object({
       /^[0-9a-fA-F]{64}$/,
       'INTEGRATION_MASTER_KEY must be exactly 64 hexadecimal characters.',
     ),
+
+  MAIL_FROM: z
+    .string()
+    .min(3)
+    .default('Open Manuscript Studio <no-reply@openmanuscript.org>'),
+
+  SENDMAIL_PATH: z
+    .string()
+    .min(1)
+    .default('/usr/sbin/sendmail'),
+
+  INVITATION_TTL_HOURS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(720)
+    .default(168),
 });
 
 const result = environmentSchema.safeParse(
