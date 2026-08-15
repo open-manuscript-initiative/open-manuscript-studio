@@ -10,6 +10,7 @@ import {
   type RegisterUserInput,
   type UpdateUserInput,
 } from '../services/authService.js';
+import { getAssignmentInvitation } from '../services/assignmentInvitationService.js';
 
 export const authRouter = Router();
 
@@ -21,6 +22,7 @@ const registerSchema = z.object({
   affiliationRorId: z.string().max(128).optional(),
   orcid: z.string().max(19).optional(),
   interfaceLanguage: z.string().max(16).optional(),
+  invitationToken: z.string().min(20).max(512).optional(),
 });
 
 const loginSchema = z.object({
@@ -57,6 +59,20 @@ function setSessionCookie(response: Response, token: string, expiresAt: Date): v
   });
 }
 
+authRouter.get('/invitations/:token', async (request, response) => {
+  const token = typeof request.params.token === 'string' ? request.params.token : '';
+  if (!token) {
+    response.status(404).json({ error: { code: 'INVITATION_NOT_FOUND', message: 'The invitation is invalid or has expired.' } });
+    return;
+  }
+  const invitation = await getAssignmentInvitation(token);
+  if (!invitation) {
+    response.status(404).json({ error: { code: 'INVITATION_NOT_FOUND', message: 'The invitation is invalid or has expired.' } });
+    return;
+  }
+  response.status(200).json({ invitation });
+});
+
 authRouter.post('/register', async (request, response) => {
   try {
     const parsed = registerSchema.parse(request.body);
@@ -68,6 +84,7 @@ authRouter.post('/register', async (request, response) => {
       ...(parsed.affiliationRorId !== undefined ? { affiliationRorId: parsed.affiliationRorId } : {}),
       ...(parsed.orcid !== undefined ? { orcid: parsed.orcid } : {}),
       ...(parsed.interfaceLanguage !== undefined ? { interfaceLanguage: parsed.interfaceLanguage } : {}),
+      ...(parsed.invitationToken !== undefined ? { invitationToken: parsed.invitationToken } : {}),
     };
     const result = await registerUser(input);
     setSessionCookie(response, result.token, result.expiresAt);
