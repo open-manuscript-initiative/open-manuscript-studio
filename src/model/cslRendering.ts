@@ -205,7 +205,7 @@ export function toCslJson(record: OmiBibliographicRecord): CslJsonItem {
     ISBN: identifier(record, 'isbn'),
     ISSN: identifier(record, 'issn'),
     URL: optional(record.url) || (doi ? `https://doi.org/${doi}` : undefined),
-  }) as CslJsonItem;
+  }) as unknown as CslJsonItem;
 }
 
 export function renderCitationCluster(
