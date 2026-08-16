@@ -1,8 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import {
+  createPublisherExportStylesheet,
+  createPublisherPrintStylesheet,
+  validatePublisherExportCss,
+} from '../src/model/publisherExportStyle.ts';
+import { resolvePublicationProfile } from '../src/model/publicationProfile.ts';
 import { buildDocxExport } from '../src/services/exportDocx.ts';
 import { buildEpubExport } from '../src/services/exportEpub.ts';
+import { buildPdfPrintDocument } from '../src/services/exportPdf.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
 
 test('DOCX export contains Word heading and named character styles', () => {
@@ -51,6 +58,56 @@ test('EPUB export contains EPUB 3 package essentials', () => {
   const opf = new TextDecoder().decode(entries.get('EPUB/package.opf'));
   assert.match(opf, /<package[^>]+version="3.0"/);
   assert.match(opf, /properties="nav"/);
+});
+
+test('PDF print document applies profile page settings and publisher print CSS in override order', () => {
+  const manuscript = createVersionedTestManuscript();
+  const base = resolvePublicationProfile(manuscript);
+  const profile = {
+    ...base,
+    id: 'publisher:test-pdf',
+    version: '2',
+    rules: {
+      ...base.rules,
+      layout: {
+        ...base.rules.layout,
+        pageSize: 'Letter' as const,
+        marginMm: { top: 18, right: 19, bottom: 20, left: 21 },
+      },
+      outputs: [...new Set([...base.rules.outputs, 'pdf' as const])],
+    },
+    exportStylesheet: createPublisherExportStylesheet(
+      'journal.css',
+      '.omi-scholarly-article { font-family: Georgia, serif; }',
+      '2026-08-16T00:00:00Z',
+    ),
+    printStylesheet: createPublisherPrintStylesheet(
+      'journal-print.css',
+      '@page { margin: 12mm; }\n@media print { h2 { break-before: page; } }',
+      '2026-08-16T00:00:00Z',
+    ),
+  };
+
+  const html = buildPdfPrintDocument(manuscript, profile);
+
+  assert.match(html, /meta name="omi-output-format" content="pdf-print"/);
+  assert.match(html, /size: Letter/);
+  assert.match(html, /margin: 18mm 19mm 20mm 21mm/);
+  assert.match(html, /font-family: Georgia, serif/);
+  assert.match(html, /@page \{ margin: 12mm; \}/);
+  assert.match(html, /h2 \{ break-before: page; \}/);
+  assert.ok(
+    html.indexOf('margin: 18mm 19mm 20mm 21mm') <
+      html.indexOf('@page { margin: 12mm; }'),
+    'publisher print CSS must load after generated page defaults',
+  );
+});
+
+test('publisher CSS validator rejects markup escape from inline print style', () => {
+  assert.match(
+    validatePublisherExportCss('</style><script>alert(1)</script>') ?? '',
+    /style tags/i,
+  );
 });
 
 function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {
