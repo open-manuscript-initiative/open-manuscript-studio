@@ -65,7 +65,8 @@ jobs:
         id: package
         shell: bash
         run: |
-          echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+          version="$(node -p "require('./package.json').version")"
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
 
       - name: Export build variables
         shell: bash
