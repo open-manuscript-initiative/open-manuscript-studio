@@ -28,6 +28,7 @@ import {
 } from '../model/publicationProfile';
 import { HtmlExportPanel } from './HtmlExportPanel';
 import { JatsExportPanel } from './JatsExportPanel';
+import { PublisherExportStylesheetPanel } from './PublisherExportStylesheetPanel';
 import { PublisherProfileEditor } from './PublisherProfileEditor';
 
 export function PublicationProfilePanel() {
@@ -127,6 +128,7 @@ export function PublicationProfilePanel() {
       </section>
 
       <PublisherProfileEditor baseProfile={activeProfile} />
+      <PublisherExportStylesheetPanel profile={activeProfile} />
 
       <ProfileRuleSummary profile={activeProfile} copy={copy} frontMatterCopy={frontMatterCopy} />
 
@@ -188,6 +190,7 @@ function ProfileRuleSummary({ profile, copy, frontMatterCopy }: { profile: OmiPu
         <RuleCard title={copy.requirements}><RuleLine label="Abstract" value={rules.metadata.requireAbstract ? copy.requirementLabels.required : copy.requirementLabels.off} /><RuleLine label="Keywords" value={rules.metadata.minimumKeywords > 0 ? `≥ ${rules.metadata.minimumKeywords}` : copy.requirementLabels.off} /><RuleLine label="Affiliation" value={copy.requirementLabels[rules.metadata.affiliation]} /><RuleLine label="ORCID" value={copy.requirementLabels[rules.metadata.orcid]} /></RuleCard>
       </div>
       <div className="publication-profile-output-row"><strong>{copy.outputs}</strong><div className="publication-profile-output-list">{rules.outputs.map((format) => <code key={format}>{format.toUpperCase()}</code>)}</div></div>
+      {profile.exportStylesheet ? <div className="publication-profile-output-row"><strong>CSS</strong><div className="publication-profile-output-list"><code>{profile.exportStylesheet.fileName}</code></div></div> : null}
     </section>
   );
 }
