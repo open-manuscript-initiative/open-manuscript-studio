@@ -1,6 +1,6 @@
 {
   "referenceLocale": "en",
-  "completeLocales": ["hu", "de"],
+  "completeLocales": ["hu", "de", "bg"],
   "identicalAllowlist": [],
   "identicalAllowlistByLocale": {
     "hu": [
@@ -61,6 +61,27 @@
       "/modules/orcidLookup/selected",
       "/modules/publicationProfile/profileVersion",
       "/modules/publicationProfile/layout",
+      "/modules/richText/linkPlaceholder"
+    ],
+    "bg": [
+      "/contributors/orcid",
+      "/auth/brand/name",
+      "/auth/fields/email/placeholder",
+      "/modules/cslRendering/styleNames/apa-7",
+      "/modules/cslRendering/styleNames/mla-9",
+      "/modules/cslRendering/styleNames/iso-690",
+      "/modules/exportFormats/omiJson",
+      "/modules/exportFormats/jats",
+      "/modules/exportFormats/docx",
+      "/modules/exportFormats/idml",
+      "/modules/exportFormats/xtg",
+      "/modules/exportFormats/mif",
+      "/modules/exportFormats/sla",
+      "/modules/exportFormats/latex",
+      "/modules/exportFormats/epub",
+      "/modules/exportFormats/pdf",
+      "/modules/jatsExport/title",
+      "/modules/orcidLookup/selected",
       "/modules/richText/linkPlaceholder"
     ]
   }
