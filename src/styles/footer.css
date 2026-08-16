@@ -1,0 +1,96 @@
+.omi-footer {
+  flex: 0 0 auto;
+  width: 100%;
+  border-top: 1px solid #334155;
+  background: #111827;
+  color: #cbd5e1;
+}
+
+.omi-footer-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  width: min(100%, 88rem);
+  min-height: 3.25rem;
+  margin: 0 auto;
+  padding: .7rem 1.25rem;
+  text-align: left;
+}
+
+.omi-footer-brand {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .35rem .7rem;
+  min-width: 0;
+}
+
+.omi-footer-brand strong {
+  color: #f8fafc;
+  font-size: .8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.omi-footer-version {
+  margin: 0;
+  color: #94a3b8;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: .68rem;
+  line-height: 1.4;
+}
+
+.omi-footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: .35rem .85rem;
+  margin: 0;
+  color: #cbd5e1;
+  font-size: .73rem;
+}
+
+.omi-footer-links a {
+  color: inherit;
+  text-decoration: none;
+  text-underline-offset: .18em;
+  white-space: nowrap;
+}
+
+.omi-footer-links a:hover,
+.omi-footer-links a:focus-visible {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* The footer is an application-level landmark. Legacy copies embedded inside
+   individual Studio menu views must not be rendered as local content. */
+.studio-menu-footer-wrap {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .omi-footer-container {
+    display: block;
+    min-height: 0;
+    padding: .75rem 1rem;
+    text-align: center;
+  }
+
+  .omi-footer-brand,
+  .omi-footer-links {
+    justify-content: center;
+  }
+
+  .omi-footer-brand {
+    display: grid;
+    gap: .2rem;
+  }
+
+  .omi-footer-links {
+    margin-top: .55rem;
+    gap: .35rem .75rem;
+  }
+}
