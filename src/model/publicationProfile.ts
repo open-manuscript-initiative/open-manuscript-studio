@@ -226,6 +226,10 @@ export function profileSupportsOutput(
   return profile.rules.outputs.includes(format);
 }
 
+export function serializePublicationProfile(profile: OmiPublicationProfile): string {
+  return `${JSON.stringify(profile, null, 2)}\n`;
+}
+
 export function applyPublicationProfileDefaults(state: OmiManuscriptState, profile: OmiPublicationProfile): OmiManuscriptState {
   const isBuiltin = Boolean(getPublicationProfile(profile.id));
   return {
