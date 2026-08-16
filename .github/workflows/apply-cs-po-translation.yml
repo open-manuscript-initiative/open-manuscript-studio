@@ -27,6 +27,34 @@ jobs:
         run: |
           git fetch origin agent/unified-i18n-all
           git show origin/agent/unified-i18n-all:scripts/i18n-module-translations/cs.json > /tmp/cs.json
+      - name: Seed Czech core translations missing from legacy module dictionary
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const p = 'locale/pending/cs.json';
+          const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+          const translations = {
+            '/navigation/editor': 'Editor',
+            '/navigation/metadata': 'Metadata',
+            '/citations/creatorRole': 'Role',
+            '/citations/prefix': 'Prefix',
+            '/citations/roles/editor': 'Editor',
+            '/citations/resourceTypes/preprint': 'Preprint',
+            '/citations/resourceTypes/software': 'Software',
+            '/citations/locators/folio': 'Folio',
+            '/contributors/roles/editor': 'Editor',
+            '/contributors/roles/software': 'Software'
+          };
+          let filled = 0;
+          for (const e of data.entries) {
+            if (Object.prototype.hasOwnProperty.call(translations, e.key)) {
+              e.translation = translations[e.key];
+              filled++;
+            }
+          }
+          fs.writeFileSync(p, JSON.stringify(data, null, 2) + '\n');
+          console.log(`Seeded ${filled} Czech core translations.`);
+          NODE
       - name: Fill pending Czech translations
         run: node scripts/fill-pending-from-legacy-module-translations.mjs --locale=cs --legacy=/tmp/cs.json
       - run: node scripts/apply-pending-po-translations.mjs --locale=cs
