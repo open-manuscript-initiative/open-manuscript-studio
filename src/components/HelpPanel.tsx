@@ -1,11 +1,11 @@
 import { CircleHelp, Lightbulb } from 'lucide-react';
 
 import { useTranslation } from '../i18n';
-import { getHelpCopy } from '../i18n/help';
+import { getLocalizedHelpCopy } from '../i18n/helpResolver';
 
 export function HelpPanel() {
   const { locale } = useTranslation();
-  const copy = getHelpCopy(locale);
+  const copy = getLocalizedHelpCopy(locale);
 
   return (
     <section className="studio-menu-view">
