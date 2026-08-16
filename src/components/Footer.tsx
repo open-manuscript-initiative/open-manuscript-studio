@@ -1,33 +1,24 @@
-import { BUILD_INFO } from "../version";
+import { BUILD_INFO } from '../version';
 
 export function Footer() {
   return (
-    <footer className="omi-footer">
+    <footer className="omi-footer" aria-label="Open Manuscript Studio">
       <div className="omi-footer-container">
-        <div className="omi-footer-title">
-          Open Manuscript Studio
+        <div className="omi-footer-brand">
+          <strong>Open Manuscript Studio</strong>
+          <span className="omi-footer-version">
+            v{BUILD_INFO.version} · Build #{BUILD_INFO.build} · {BUILD_INFO.commit}
+          </span>
         </div>
 
-        <div className="omi-footer-version">
-          v{BUILD_INFO.version}
-          {" • "}
-          Build #{BUILD_INFO.build}
-          {" • "}
-          {BUILD_INFO.commit}
-        </div>
-
-        <div className="omi-footer-links">
-
+        <nav className="omi-footer-links" aria-label="Studio links">
           <a
             href="https://openmanuscript.org"
             target="_blank"
             rel="noopener noreferrer"
           >
             © 2026 Open Manuscript Initiative
-         </a>
-
-          <span className="omi-footer-separator">•</span>
-
+          </a>
           <a
             href="https://github.com/open-manuscript-initiative/open-manuscript-studio"
             target="_blank"
@@ -35,9 +26,6 @@ export function Footer() {
           >
             GitHub
           </a>
-
-          <span className="omi-footer-separator">•</span>
-
           <a
             href="https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/LICENSE"
             target="_blank"
@@ -45,9 +33,6 @@ export function Footer() {
           >
             MIT License
           </a>
-
-          <span className="omi-footer-separator">•</span>
-
           <a
             href="https://openmanuscript.org/docs/"
             target="_blank"
@@ -55,7 +40,7 @@ export function Footer() {
           >
             Documentation
           </a>
-        </div>
+        </nav>
       </div>
     </footer>
   );
