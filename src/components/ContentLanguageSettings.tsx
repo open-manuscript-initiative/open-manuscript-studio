@@ -7,6 +7,7 @@ import {
   getManuscriptLanguageDisplayName,
   getManuscriptLanguageOptions,
 } from '../model/manuscriptLanguage';
+import { CloudStorageSettings } from './CloudStorageSettings';
 
 interface Copy {
   manuscriptTitle: string;
@@ -191,6 +192,7 @@ export function ContentLanguageSettings() {
         uiLocale={locale}
         copy={copy}
       />
+      <CloudStorageSettings />
     </>
   );
 }
