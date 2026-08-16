@@ -8,7 +8,6 @@ import {
 import { stageManuscriptLanguageChange } from '../app/manuscriptLanguageActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
-import type { SupportedLocale } from '../i18n';
 import {
   getManuscriptLanguageDisplayName,
   getManuscriptLanguageOptions,
@@ -23,7 +22,7 @@ interface ManuscriptLanguageCopy {
   standardHint: string;
 }
 
-const COPY: Record<SupportedLocale, ManuscriptLanguageCopy> = {
+const COPY: Record<'en' | 'hu' | 'de', ManuscriptLanguageCopy> = {
   en: {
     description:
       'Choose the language of the manuscript. The stored value is a standardized BCP 47 language tag.',
@@ -53,6 +52,14 @@ const COPY: Record<SupportedLocale, ManuscriptLanguageCopy> = {
   },
 };
 
+function getCopy(uiLocale: string): ManuscriptLanguageCopy {
+  if (uiLocale === 'hu' || uiLocale === 'de') {
+    return COPY[uiLocale];
+  }
+
+  return COPY.en;
+}
+
 export function ManuscriptLanguageField() {
   const { locale: uiLocale, t } = useTranslation();
   const manuscriptLocale = useStudioStore(
@@ -63,7 +70,7 @@ export function ManuscriptLanguageField() {
   const listId = useId();
   const descriptionId = useId();
   const errorId = useId();
-  const copy = COPY[uiLocale];
+  const copy = getCopy(uiLocale);
   const options = useMemo(
     () => getManuscriptLanguageOptions(uiLocale),
     [uiLocale],

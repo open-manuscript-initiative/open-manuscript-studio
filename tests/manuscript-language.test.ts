@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  EU_OFFICIAL_MANUSCRIPT_LANGUAGE_CODES,
   ISO_639_1_LANGUAGE_CODES,
   SPECIAL_MANUSCRIPT_LANGUAGE_TAGS,
   getManuscriptLanguageOptions,
@@ -21,6 +22,21 @@ test('contains the complete ISO 639-1 language code set without duplicates', () 
       ISO_639_1_LANGUAGE_CODES.includes(
         code as (typeof ISO_639_1_LANGUAGE_CODES)[number],
       ),
+    );
+  }
+});
+
+test('keeps all 24 EU official languages available as manuscript metadata', () => {
+  assert.equal(EU_OFFICIAL_MANUSCRIPT_LANGUAGE_CODES.length, 24);
+  assert.equal(
+    new Set(EU_OFFICIAL_MANUSCRIPT_LANGUAGE_CODES).size,
+    EU_OFFICIAL_MANUSCRIPT_LANGUAGE_CODES.length,
+  );
+
+  for (const code of EU_OFFICIAL_MANUSCRIPT_LANGUAGE_CODES) {
+    assert.ok(
+      ISO_639_1_LANGUAGE_CODES.includes(code),
+      `${code} must remain in the manuscript language registry`,
     );
   }
 });
@@ -53,4 +69,14 @@ test('builds the full standard option list in the requested display locale', () 
   assert.ok(options.some((option) => option.tag === 'hu'));
   assert.ok(options.some((option) => option.tag === 'mul'));
   assert.ok(options.every((option) => option.label.length > 0));
+});
+
+test('manuscript language options do not shrink with a non-original UI locale', () => {
+  const options = getManuscriptLanguageOptions('bg');
+  const tags = new Set(options.map((option) => option.tag));
+
+  assert.equal(options.length, 187);
+  for (const code of EU_OFFICIAL_MANUSCRIPT_LANGUAGE_CODES) {
+    assert.ok(tags.has(code));
+  }
 });

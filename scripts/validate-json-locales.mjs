@@ -5,24 +5,24 @@ const localesRoot = resolve('src/i18n/locales');
 const referenceLocale = 'en';
 
 function flatten(value, prefix = '') {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw new TypeError(`Expected translation object at ${prefix || '<root>'}.`);
+  if (typeof value === 'string') {
+    return [[prefix, value]];
   }
 
-  const entries = [];
+  if (Array.isArray(value)) {
+    return value.flatMap((child, index) =>
+      flatten(child, `${prefix}[${index}]`),
+    );
+  }
 
-  for (const [key, child] of Object.entries(value)) {
+  if (!value || typeof value !== 'object') {
+    throw new TypeError(`Expected translation value at ${prefix || '<root>'}.`);
+  }
+
+  return Object.entries(value).flatMap(([key, child]) => {
     const path = prefix ? `${prefix}.${key}` : key;
-
-    if (typeof child === 'string') {
-      entries.push([path, child]);
-      continue;
-    }
-
-    entries.push(...flatten(child, path));
-  }
-
-  return entries;
+    return flatten(child, path);
+  });
 }
 
 async function loadLocale(locale) {

@@ -1,0 +1,36 @@
+{
+  "locale": "hu",
+  "referenceLocale": "en",
+  "generatedFrom": "locale/<locale>/studio.po",
+  "pendingCount": 22,
+  "instructions": [
+    "Translate only the translation field.",
+    "Do not change key or source.",
+    "Preserve protectedTerms verbatim unless the product terminology policy is explicitly changed.",
+    "Do not remove placeholders, URLs, identifiers, file extensions, or standard names."
+  ],
+  "entries": [
+    {"key":"/studio/tools/export","source":"Export .omi.json","translation":".omi.json exportálása","protectedTerms":[]},
+    {"key":"/citations/resourceTypes/preprint","source":"Preprint","translation":"Preprint","protectedTerms":[]},
+    {"key":"/contributors/orcid","source":"ORCID","translation":"ORCID","protectedTerms":["ORCID"]},
+    {"key":"/auth/brand/name","source":"Open Manuscript Studio","translation":"Open Manuscript Studio","protectedTerms":["Open Manuscript Studio"]},
+    {"key":"/modules/cslRendering/styleNames/apa-7","source":"APA 7","translation":"APA 7","protectedTerms":[]},
+    {"key":"/modules/cslRendering/styleNames/mla-9","source":"MLA 9","translation":"MLA 9","protectedTerms":[]},
+    {"key":"/modules/cslRendering/styleNames/iso-690","source":"ISO 690","translation":"ISO 690","protectedTerms":[]},
+    {"key":"/modules/exportFormats/omiJson","source":"OMI JSON","translation":"OMI JSON","protectedTerms":["OMI","JSON"]},
+    {"key":"/modules/exportFormats/jats","source":"JATS XML 1.4","translation":"JATS XML 1.4","protectedTerms":["JATS","JATS XML","XML"]},
+    {"key":"/modules/exportFormats/docx","source":"Microsoft Word (DOCX)","translation":"Microsoft Word (DOCX)","protectedTerms":["DOCX"]},
+    {"key":"/modules/exportFormats/idml","source":"Adobe InDesign (IDML)","translation":"Adobe InDesign (IDML)","protectedTerms":["Adobe InDesign","IDML"]},
+    {"key":"/modules/exportFormats/xtg","source":"QuarkXPress (XPress Tags)","translation":"QuarkXPress (XPress Tags)","protectedTerms":["QuarkXPress","XPress Tags"]},
+    {"key":"/modules/exportFormats/mif","source":"Adobe FrameMaker (MIF)","translation":"Adobe FrameMaker (MIF)","protectedTerms":["Adobe FrameMaker","MIF"]},
+    {"key":"/modules/exportFormats/sla","source":"Scribus (SLA)","translation":"Scribus (SLA)","protectedTerms":["Scribus","SLA"]},
+    {"key":"/modules/exportFormats/latex","source":"LaTeX","translation":"LaTeX","protectedTerms":["LaTeX","TeX"]},
+    {"key":"/modules/exportFormats/epub","source":"EPUB 3","translation":"EPUB 3","protectedTerms":["EPUB"]},
+    {"key":"/modules/exportFormats/pdf","source":"PDF","translation":"PDF","protectedTerms":[]},
+    {"key":"/modules/help/topics/7/title","source":"DOCX import","translation":"DOCX-importálás","protectedTerms":["DOCX"]},
+    {"key":"/modules/help/topics/8/title","source":"Export","translation":"Exportálás","protectedTerms":[]},
+    {"key":"/modules/jatsExport/title","source":"JATS XML","translation":"JATS XML","protectedTerms":["JATS","JATS XML","XML"]},
+    {"key":"/modules/orcidLookup/selected","source":"ORCID iD","translation":"ORCID iD","protectedTerms":["ORCID"]},
+    {"key":"/modules/richText/linkPlaceholder","source":"https://…","translation":"https://…","protectedTerms":[]}
+  ]
+}
