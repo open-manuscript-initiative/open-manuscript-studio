@@ -39,6 +39,9 @@ export function validatePublisherExportCss(cssText: string): string | undefined 
   if (/\@import\b/i.test(cssText)) {
     return 'CSS @import rules are not allowed in portable publisher stylesheets.';
   }
+  if (/<\/style\s*>/i.test(cssText)) {
+    return 'Closing style tags are not allowed in publisher stylesheets.';
+  }
   if (/url\(\s*["']?\s*(?:https?:)?\/\//i.test(cssText)) {
     return 'Remote HTTP(S) resources are not allowed in portable publisher stylesheets.';
   }
