@@ -34,6 +34,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Compile PO locales
+        run: npm run i18n:po:compile
+
+      - name: Validate locale parity
+        run: npm run i18n:validate-json
+
+      - name: Verify generated runtime locales are committed
+        run: git diff --exit-code -- src/i18n/locales
+
       - name: Run tests
         run: npm test
 
@@ -53,7 +62,7 @@ jobs:
         id: package
         shell: bash
         run: |
-          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
 
       - name: Export build variables
         shell: bash
@@ -106,6 +115,8 @@ jobs:
             export VITE_BUILD_DATE="$BUILD_DATE"
 
             npm ci
+            npm run i18n:po:compile
+            npm run i18n:validate-json
             npm test
             npm run build
 
