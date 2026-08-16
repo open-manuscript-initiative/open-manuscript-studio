@@ -12,9 +12,22 @@ export interface OmiPublisherExportStylesheet {
   addedAt: string;
 }
 
+export interface OmiPublisherPrintStylesheet {
+  model: 'OMI-PUBLISHER-PRINT-STYLESHEET';
+  version: '0.1.0';
+  fileName: string;
+  mediaType: 'text/css';
+  cssText: string;
+  scope: 'print-pdf';
+  addedAt: string;
+}
+
 declare module './publicationProfile' {
   interface OmiPublicationProfile {
+    /** General publisher presentation rules used by publication exports. */
     exportStylesheet?: OmiPublisherExportStylesheet;
+    /** Print/PDF overrides, including CSS Paged Media rules such as @page. */
+    printStylesheet?: OmiPublisherPrintStylesheet;
   }
 }
 
@@ -45,7 +58,7 @@ export function createPublisherExportStylesheet(
   return {
     model: 'OMI-PUBLISHER-EXPORT-STYLESHEET',
     version: '0.1.0',
-    fileName: normalizeCssFileName(fileName),
+    fileName: normalizeCssFileName(fileName, 'publisher'),
     mediaType: 'text/css',
     cssText,
     scope: 'publication-export',
@@ -53,18 +66,49 @@ export function createPublisherExportStylesheet(
   };
 }
 
+export function createPublisherPrintStylesheet(
+  fileName: string,
+  cssText: string,
+  addedAt = new Date().toISOString(),
+): OmiPublisherPrintStylesheet {
+  const validationError = validatePublisherExportCss(cssText);
+  if (validationError) throw new Error(validationError);
+  return {
+    model: 'OMI-PUBLISHER-PRINT-STYLESHEET',
+    version: '0.1.0',
+    fileName: normalizeCssFileName(fileName, 'publisher-print'),
+    mediaType: 'text/css',
+    cssText,
+    scope: 'print-pdf',
+    addedAt,
+  };
+}
+
 export function publisherStylesheetPackagePath(profile: OmiPublicationProfile): string | undefined {
   const stylesheet = profile.exportStylesheet;
   if (!stylesheet?.cssText.trim()) return undefined;
-  return `styles/${normalizeCssFileName(stylesheet.fileName)}`;
+  return `styles/${normalizeCssFileName(stylesheet.fileName, 'publisher')}`;
 }
 
-function normalizeCssFileName(value: string): string {
+export function publisherPrintStylesheetPackagePath(profile: OmiPublicationProfile): string | undefined {
+  const stylesheet = profile.printStylesheet;
+  if (!stylesheet?.cssText.trim()) return undefined;
+  return `styles/${normalizeCssFileName(stylesheet.fileName, 'publisher-print')}`;
+}
+
+export function combinedPublisherPrintCss(profile: OmiPublicationProfile): string {
+  return [profile.exportStylesheet?.cssText, profile.printStylesheet?.cssText]
+    .map((value) => value?.trim() ?? '')
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+function normalizeCssFileName(value: string, fallback: string): string {
   const stem = value
     .replace(/\.css$/i, '')
     .normalize('NFKD')
     .replace(/[^a-zA-Z0-9._-]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 96) || 'publisher';
+    .slice(0, 96) || fallback;
   return `${stem}.css`;
 }
