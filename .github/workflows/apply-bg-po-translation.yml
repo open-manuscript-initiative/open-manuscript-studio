@@ -1,0 +1,70 @@
+name: Apply Bulgarian PO translation
+
+on:
+  push:
+    branches:
+      - agent/po-localization-pipeline
+    paths:
+      - '.github/workflows/apply-bg-po-translation.yml'
+      - 'scripts/fill-pending-from-legacy-module-translations.mjs'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout localization branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/po-localization-pipeline
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch legacy Bulgarian module translations
+        run: |
+          git fetch origin agent/unified-i18n-all
+          git show origin/agent/unified-i18n-all:scripts/i18n-module-translations/bg.json > /tmp/bg-module-translations.json
+
+      - name: Fill Bulgarian pending worklist
+        run: node scripts/fill-pending-from-legacy-module-translations.mjs --locale=bg --legacy=/tmp/bg-module-translations.json
+
+      - name: Apply Bulgarian translations to PO
+        run: node scripts/apply-pending-po-translations.mjs --locale=bg
+
+      - name: Compile PO catalogs to runtime JSON
+        run: npm run i18n:po:compile
+
+      - name: Validate JSON locale parity
+        run: npm run i18n:validate-json
+
+      - name: Audit PO catalogs
+        run: npm run i18n:po:audit
+
+      - name: Regenerate Bulgarian pending list
+        run: node scripts/export-pending-po-translations.mjs --locale=bg
+
+      - name: Show Bulgarian residual pending count
+        run: node -e "const p=require('./locale/pending/bg.json'); console.log('Bulgarian residual identical candidates:', p.pendingCount); for (const e of p.entries) console.log(e.key, '=>', JSON.stringify(e.source));"
+
+      - name: Commit Bulgarian catalogs
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add locale/bg/studio.po locale/pending/bg.json src/i18n/locales/bg/studio.json
+          if git diff --cached --quiet; then
+            echo 'No Bulgarian changes to commit.'
+            exit 0
+          fi
+          git commit -m 'Apply Bulgarian PO translations [skip ci]'
+          git push origin HEAD:agent/po-localization-pipeline
