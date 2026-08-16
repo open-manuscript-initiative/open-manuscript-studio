@@ -6,7 +6,7 @@ import {
 import { createPortal } from 'react-dom';
 
 import { useTranslation } from '../i18n';
-import { getHelpCopy } from '../i18n/help';
+import { getLocalizedHelpCopy } from '../i18n/helpResolver';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import { ExportFormatsPanel } from './ExportFormatsPanel';
 import { HelpPanel } from './HelpPanel';
@@ -28,7 +28,7 @@ export function StudioMenuWithHelp({
   ojsAssignment = null,
 }: StudioMenuWithHelpProps) {
   const { locale } = useTranslation();
-  const copy = getHelpCopy(locale);
+  const copy = getLocalizedHelpCopy(locale);
   const [helpOpen, setHelpOpen] = useState(false);
   const [navigationHost, setNavigationHost] = useState<HTMLElement | null>(null);
   const [contentHost, setContentHost] = useState<HTMLElement | null>(null);
