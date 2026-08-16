@@ -14,19 +14,15 @@ const initialLocale =
     ? savedLocale
     : DEFAULT_LOCALE;
 
-void i18n.use(initReactI18next).init({
-  resources: {
-    en: {
-      translation: translations.en,
-    },
-    hu: {
-      translation: translations.hu,
-    },
-    de: {
-      translation: translations.de,
-    },
-  },
+const resources = Object.fromEntries(
+  Object.entries(translations).map(([locale, dictionary]) => [
+    locale,
+    { translation: dictionary },
+  ]),
+);
 
+void i18n.use(initReactI18next).init({
+  resources,
   lng: initialLocale,
   fallbackLng: DEFAULT_LOCALE,
 

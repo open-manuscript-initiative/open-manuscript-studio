@@ -1,0 +1,332 @@
+{
+  "common": {
+    "save": "Sábháil",
+    "cancel": "Cealaigh",
+    "close": "Dún",
+    "delete": "Scrios",
+    "edit": "Cuir in eagar",
+    "add": "Cuir leis",
+    "loading": "Á lódáil…",
+    "language": "Teanga"
+  },
+  "navigation": {
+    "documents": "Doiciméid",
+    "editor": "Eagarthóir",
+    "metadata": "Meiteashonraí",
+    "preview": "Réamhamharc",
+    "settings": "Socruithe"
+  },
+  "studio": {
+    "menu": "Roghchlár na lámhscríbhinne",
+    "closeMenu": "Dún roghchlár na lámhscríbhinne",
+    "languageSwitcher": "Teanga an chomhéadain",
+    "saved": "Sábháilte",
+    "pending": "Á shábháil…",
+    "editorAria": "Eagarthóir lámhscríbhinne",
+    "titlePlaceholder": "Cuir teideal na lámhscríbhinne isteach",
+    "noSection": "Níl aon rannán roghnaithe.",
+    "navigation": {
+      "document": "Doiciméad",
+      "manuscript": "Sonraí lámhscríbhinne",
+      "notes": "Nótaí",
+      "references": "Tagairtí",
+      "contributors": "Rannpháirtithe",
+      "history": "Stair",
+      "tools": "Easpórtáil agus uirlisí",
+      "settings": "Socruithe"
+    },
+    "document": {
+      "title": "Struchtúr an doiciméid",
+      "description": "Roghnaigh an rannán ar mian leat oibriú air. Fanann faisnéis struchtúrach agus faisnéis faoi réada lasmuigh den limistéar scríbhneoireachta go dtí go mbíonn siad de dhíth.",
+      "addSection": "Cuir rannán leis",
+      "sections": "Rannáin",
+      "objects": "Réada",
+      "annotations": "Anótálacha",
+      "citations": "Lua"
+    },
+    "manuscript": {
+      "title": "Sonraí lámhscríbhinne",
+      "description": "Cuir faisnéis ar leibhéal na lámhscríbhinne in eagar ar leithligh ón limistéar scríbhneoireachta."
+    },
+    "tools": {
+      "title": "Easpórtáil agus uirlisí",
+      "description": "Coinnítear gníomhartha tánaisteacha, teicniúla agus a d’fhéadfadh a bheith millteach lasmuigh den limistéar scríbhneoireachta.",
+      "export": "Easpórtáil .omi.json",
+      "exportDescription": "Cruthaigh comhad lámhscríbhinne OMI canónach iniompartha tar éis athruithe ar feitheamh a shábháil mar sheicphointe.",
+      "reset": "Athshocraigh an sampla",
+      "resetDescription": "Cuir lámhscríbhinn shamplach ghlan nua in ionad an tsampla alfa reatha.",
+      "confirmReset": "An lámhscríbhinn shamplach reatha a athshocrú? Cuirfear sonraí neamhshábháilte agus sonraí an tsampla reatha ina n-ionad.",
+      "technicalData": "Sonraí teicniúla",
+      "technicalDescription": "Scrúdaigh an léiriú séimeantach amháin nuair a bhíonn sonraí teicniúla ag teastáil.",
+      "liveJson": "JSON an rannáin reatha",
+      "synced": "Sioncronaithe"
+    },
+    "settings": {
+      "title": "Socruithe an chomhéadain",
+      "description": "Roghnaigh na teangacha comhéadain is mian leat a bheith ar fáil agus tú ag obair. Stóráiltear na roghanna ar an ngléas seo.",
+      "interfaceLanguages": "Teangacha comhéadain atá ar fáil",
+      "interfaceLanguagesDescription": "Feictear teangacha cumasaithe sa lascóir tapa teanga i gceanntásc an eagarthóra.",
+      "currentLanguage": "Teanga reatha an chomhéadain",
+      "currentLanguageHint": "Caithfidh an teanga atá in úsáid faoi láthair fanacht cumasaithe. Athraigh go teanga eile sula ndíchumasaítear í.",
+      "enabledLanguage": "Ar fáil sa lascóir tapa",
+      "disabledLanguage": "Folaithe ón lascóir tapa",
+      "futureLanguages": "Is féidir clár na dteangacha a leathnú. Is féidir foclóirí aistriúcháin nua a chur leis gan an scáileán socruithe seo a athdhearadh."
+    }
+  },
+  "manuscript": {
+    "newDocument": "Lámhscríbhinn nua",
+    "documentTitle": "Teideal an doiciméid",
+    "abstract": "Achoimre",
+    "keywords": "Eochairfhocail",
+    "contributors": "Rannpháirtithe",
+    "sections": "Rannáin",
+    "annotations": "Nótaí",
+    "citations": "Lua",
+    "bibliography": "Leabharliosta",
+    "documentLanguage": "Teanga an doiciméid",
+    "originalLanguage": "Bunteanga"
+  },
+  "notes": {
+    "title": "Nótaí",
+    "description": "Bainistigh nótaí séimeantacha na lámhscríbhinne. Fanann corp an nóta ina réad anótála neamhspleách agus fanann a ancairí inlíne sa téacs.",
+    "empty": "Níl aon nótaí sa lámhscríbhinn seo fós.",
+    "emptyHint": "Cuir an cúrsóir sa téacs agus úsáid an cnaipe Nóta nó Ctrl/Cmd+Alt+N.",
+    "note": "Nóta",
+    "type": "Cineál nóta",
+    "body": "Téacs an nóta",
+    "bodyPlaceholder": "Scríobh an nóta…",
+    "footnote": "Fonóta",
+    "endnote": "Iarnóta",
+    "authorNote": "Nóta údair",
+    "delete": "Scrios an nóta",
+    "confirmDelete": "An nóta seo agus a ancaire inlíne a scriosadh ón lámhscríbhinn?",
+    "closeEditor": "Dún eagarthóir na nótaí",
+    "goToNote": "Téigh chuig an nóta",
+    "autoSave": "Sábháiltear le hathbhreithnithe na lámhscríbhinne"
+  },
+  "citations": {
+    "referencesTitle": "Tagairtí",
+    "referencesDescription": "Cuir saothar leis an leabharlann tagairtí uair amháin agus athúsáid é in oiread lua agus is gá.",
+    "addReference": "Cuir tagairt leis",
+    "editReference": "Cuir tagairt in eagar",
+    "referenceEditorDescription": "Stóráil meiteashonraí leabharliosta struchtúrtha go neamhspleách ar lua aonair nó ar stíl aschuir.",
+    "emptyLibrary": "Tá leabharlann tagairtí na lámhscríbhinne folamh.",
+    "emptyLibraryHint": "Cuir leabhar, alt, foinse cartlainne, acmhainn gréasáin nó saothar eile a luaitear leis sula gcuirtear lua isteach sa téacs.",
+    "searchReferences": "Cuardaigh tagairtí",
+    "searchPlaceholder": "Cuardaigh de réir teidil, údair, bliana, DOI…",
+    "untitledReference": "Tagairt gan teideal",
+    "occurrences": "lua",
+    "bibliographyPreviewDescription": "Réamhamharc neodrach ar na taifid atá luaite sa lámhscríbhinn faoi láthair. Baineann an fhormáidiú deiridh leis an bpróifíl foilseacháin.",
+    "resourceType": "Cineál acmhainne",
+    "title": "Teideal",
+    "titlePlaceholder": "Teideal an tsaothair a luaitear",
+    "subtitle": "Fotheidil",
+    "creators": "Údair agus rannpháirtithe",
+    "creatorsDescription": "Coinnigh ainmneacha rannpháirtithe struchtúrtha ionas gur féidir le stíleanna lua agus easpórtálacha iad a léiriú i gceart.",
+    "addCreator": "Cuir údar/rannpháirtí leis",
+    "removeCreator": "Bain údar/rannpháirtí",
+    "noCreators": "Níor cuireadh aon údar ná rannpháirtí leis.",
+    "creatorRole": "Ról",
+    "givenName": "Céadainm",
+    "familyName": "Sloinne",
+    "containerTitle": "Teideal irise, leabhair nó coimeádáin",
+    "issued": "Dáta / bliain foilsithe",
+    "volume": "Imleabhar",
+    "issue": "Eagrán",
+    "pages": "Leathanaigh / fairsinge",
+    "publisher": "Foilsitheoir",
+    "place": "Áit foilsithe",
+    "duplicateReference": "Tá dúblach dóchúil sa leabharlann tagairtí cheana:",
+    "insertTitle": "Cuir lua isteach",
+    "insertDescription": "Roghnaigh saothar ó leabharlann tagairtí na lámhscríbhinne agus sonraigh an suíomh a luaitear más mian leat.",
+    "noReferences": "Níl aon tagairt ar fáil fós.",
+    "noReferencesHint": "Cuir an saothar leis trí Roghchlár na lámhscríbhinne → Tagairtí agus fill anseo chun é a lua.",
+    "insert": "Cuir lua isteach",
+    "citation": "Lua",
+    "reference": "Saothar a luaitear",
+    "locatorType": "Cineál aimsitheora",
+    "locator": "Aimsitheoir",
+    "locatorPlaceholder": "m.sh. 45–47, 12r–13v, caibidil 4",
+    "prefix": "Réimír",
+    "prefixPlaceholder": "m.sh. féach freisin",
+    "suffix": "Iarmhír",
+    "suffixPlaceholder": "m.sh. béim curtha leis",
+    "openSource": "Oscail an fhoinse",
+    "closeEditor": "Dún eagarthóir na lua",
+    "deleteCitation": "Scrios an lua",
+    "confirmDeleteCitation": "An lua seo a scriosadh ón lámhscríbhinn? Fanfaidh an taifead leabharliosta sa leabharlann tagairtí.",
+    "unresolvedReference": "Ní féidir an taifead leabharliosta a luaitear a réiteach nó tá sé ar iarraidh.",
+    "roles": {
+      "author": "Údar",
+      "editor": "Eagarthóir",
+      "translator": "Aistritheoir",
+      "compiler": "Tiomsaitheoir",
+      "contributor": "Rannpháirtí"
+    },
+    "resourceTypes": {
+      "journal-article": "Alt irise",
+      "book": "Leabhar",
+      "book-chapter": "Caibidil leabhair",
+      "conference-paper": "Páipéar comhdhála",
+      "thesis": "Tráchtas",
+      "dissertation": "Tráchtas dochtúireachta",
+      "report": "Tuarascáil",
+      "preprint": "Réamhchló",
+      "dataset": "Tacar sonraí",
+      "software": "Bogearraí",
+      "standard": "Caighdeán",
+      "archival-source": "Foinse cartlainne",
+      "manuscript": "Lámhscríbhinn",
+      "web-page": "Leathanach gréasáin"
+    },
+    "locators": {
+      "page": "Leathanach",
+      "page-range": "Raon leathanach",
+      "chapter": "Caibidil",
+      "section": "Rannán",
+      "paragraph": "Alt",
+      "figure": "Fíor",
+      "table": "Tábla",
+      "folio": "Fóilió",
+      "line": "Líne",
+      "timestamp": "Stampa ama"
+    }
+  },
+  "contributors": {
+    "description": "Bainistigh féiniúlachtaí scolártha iniompartha agus a róil rannchuidithe a bhaineann leis an lámhscríbhinn.",
+    "add": "Cuir rannpháirtí leis",
+    "empty": "Níor cuireadh aon rannpháirtithe leis an lámhscríbhinn seo.",
+    "remove": "Bain rannpháirtí",
+    "moveUp": "Bog rannpháirtí suas",
+    "moveDown": "Bog rannpháirtí síos",
+    "givenName": "Céadainm",
+    "familyName": "Sloinne",
+    "affiliation": "Cleamhnacht",
+    "orcid": "ORCID",
+    "invalidOrcid": "Tá seicshuim nó formáid ORCID neamhbhailí.",
+    "role": "Ról rannchuidithe",
+    "corresponding": "Rannpháirtí comhfhreagrach",
+    "roles": {
+      "author": "Údar",
+      "editor": "Eagarthóir",
+      "translator": "Aistritheoir",
+      "reviewer": "Athbhreithneoir",
+      "dataCurator": "Coimeádaí sonraí",
+      "software": "Bogearraí",
+      "methodology": "Modheolaíocht",
+      "visualization": "Amharcléiriú",
+      "other": "Eile"
+    }
+  },
+  "history": {
+    "title": "Stair athbhreithnithe",
+    "description": "Athbhreithnithe do-athraithe OMI-SPEC-160 a taifeadadh don lámhscríbhinn seo.",
+    "empty": "Níor taifeadadh aon athbhreithnithe.",
+    "current": "Reatha",
+    "revision": "Athbhreithniú",
+    "events": "imeachtaí",
+    "groupedChanges": "athruithe grúpáilte",
+    "unknownActor": "Gníomhaí anaithnid",
+    "completeHistory": "Stair iomlán",
+    "shallowHistory": "Stair ghairid",
+    "pendingTitle": "Staid oibre neamhthiomanta",
+    "pendingDescription": "Tá athruithe le déanaí á ngrúpáil agus beidh siad ina n-athbhreithniú seicphointe do-athraithe amháin.",
+    "pendingBadge": "Ar feitheamh",
+    "checkpoint": "Sábháil seicphointe",
+    "discard": "Caith athruithe uait",
+    "confirmDiscard": "Gach athrú neamhthiomanta a chaitheamh uait agus an t-athbhreithniú tiomanta is déanaí a athbhunú?",
+    "revert": "Fill ar ais",
+    "confirmRevert": "Athbhreithniú nua a chruthú a athbhunaíonn an staid níos luaithe seo den lámhscríbhinn?",
+    "revertBlocked": "Sábháil nó caith uait an staid oibre ar feitheamh sula bhfilltear ar athbhreithniú tiomanta.",
+    "tombstonesTitle": "Taifid réad scriosta",
+    "tombstonesDescription": "Caomhnaíonn taifid bhuana tombstone OMI-SPEC-160 aitheantóirí réad scriosta agus fianaise athchóirithe.",
+    "tombstoneActive": "Scriosta",
+    "tombstoneRestored": "Athchóirithe",
+    "operations": {
+      "snapshotCreated": "Cruthaíodh seat den lámhscríbhinn",
+      "titleChanged": "Athraíodh teideal na lámhscríbhinne",
+      "abstractChanged": "Athraíodh achoimre na lámhscríbhinne",
+      "sectionCreated": "Cuireadh rannán leis",
+      "blockChanged": "Athraíodh ábhar an bhloic",
+      "contributorAdded": "Cuireadh rannpháirtí leis",
+      "contributorChanged": "Athraíodh féiniúlacht an rannpháirtí",
+      "contributorRemoved": "Baineadh rannpháirtí",
+      "contributionChanged": "Athraíodh ról rannchuidithe",
+      "contributorsReordered": "Athordaíodh rannpháirtithe",
+      "reverted": "Athchóiríodh athbhreithniú níos luaithe"
+    }
+  },
+  "editor": {
+    "addSection": "Cuir rannán leis",
+    "addParagraph": "Cuir alt leis",
+    "addNote": "Nóta",
+    "addCitation": "Lua",
+    "untitledSection": "Rannán gan teideal",
+    "emptyParagraph": "Tosaigh ag scríobh…",
+    "paragraph": "Alt",
+    "heading": "Ceannteideal",
+    "quote": "Sliocht",
+    "insertNote": "Cuir nóta séimeantach lámhscríbhinne isteach",
+    "insertCitation": "Cuir lua séimeantach isteach",
+    "loading": "Eagarthóir á lódáil…"
+  },
+  "status": {
+    "draft": "Dréacht",
+    "submitted": "Curtha isteach",
+    "accepted": "Glactha",
+    "published": "Foilsithe"
+  },
+  "validation": {
+    "requiredField": "Tá an réimse seo riachtanach.",
+    "invalidDocument": "Tá struchtúr an doiciméid neamhbhailí.",
+    "unsupportedSchema": "Ní thacaítear le leagan scéimre an doiciméid."
+  },
+  "languages": {
+    "en": "Béarla",
+    "hu": "Ungáiris",
+    "de": "Gearmáinis"
+  },
+  "auth": {
+    "brand": {
+      "name": "Open Manuscript Studio",
+      "description": "Scríbhneoireacht scolártha chomhoibríoch"
+    },
+    "login": {
+      "title": "Sínigh isteach",
+      "description": "Sínigh isteach chun leanúint ar aghaidh.",
+      "submit": "Sínigh isteach",
+      "submitting": "Ag síniú isteach…",
+      "noAccount": "Níl cuntas agat fós?",
+      "registerLink": "Cláraigh"
+    },
+    "register": {
+      "title": "Cruthaigh cuntas",
+      "description": "Cruthaigh do chuntas.",
+      "submit": "Cláraigh",
+      "hasAccount": "Tá cuntas agat cheana?",
+      "loginLink": "Sínigh isteach"
+    },
+    "fields": {
+      "name": {
+        "label": "Ainm iomlán",
+        "placeholder": "D’ainm iomlán"
+      },
+      "email": {
+        "label": "Ríomhphost",
+        "placeholder": "ainm@example.ie"
+      },
+      "password": {
+        "label": "Focal faire",
+        "placeholder": "Cuir d’fhocal faire isteach"
+      }
+    },
+    "errors": {
+      "invalidEmail": "Seoladh ríomhphoist neamhbhailí.",
+      "invalidCredentials": "Seoladh ríomhphoist nó focal faire mícheart.",
+      "userNotFound": "Níor aimsíodh an cuntas úsáideora.",
+      "accountNotActive": "Níl an cuntas úsáideora gníomhach.",
+      "authenticationRequired": "Tá fíordheimhniú riachtanach."
+    },
+    "alphaNotice": "Leagan alfa – tá an fíordheimhniú le haghaidh tástála faoi láthair."
+  }
+}

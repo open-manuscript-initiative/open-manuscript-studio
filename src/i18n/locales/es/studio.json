@@ -1,0 +1,332 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "add": "Añadir",
+    "loading": "Cargando…",
+    "language": "Idioma"
+  },
+  "navigation": {
+    "documents": "Documentos",
+    "editor": "Editor",
+    "metadata": "Metadatos",
+    "preview": "Vista previa",
+    "settings": "Configuración"
+  },
+  "studio": {
+    "menu": "Menú del manuscrito",
+    "closeMenu": "Cerrar el menú del manuscrito",
+    "languageSwitcher": "Idioma de la interfaz",
+    "saved": "Guardado",
+    "pending": "Guardando…",
+    "editorAria": "Editor de manuscritos",
+    "titlePlaceholder": "Introduzca el título del manuscrito",
+    "noSection": "No hay ninguna sección seleccionada.",
+    "navigation": {
+      "document": "Documento",
+      "manuscript": "Datos del manuscrito",
+      "notes": "Notas",
+      "references": "Referencias",
+      "contributors": "Colaboradores",
+      "history": "Historial",
+      "tools": "Exportación y herramientas",
+      "settings": "Configuración"
+    },
+    "document": {
+      "title": "Estructura del documento",
+      "description": "Elija la sección en la que desea trabajar. La información estructural y de objetos permanece fuera del área de escritura hasta que la necesite.",
+      "addSection": "Añadir sección",
+      "sections": "Secciones",
+      "objects": "Objetos",
+      "annotations": "Anotaciones",
+      "citations": "Citas"
+    },
+    "manuscript": {
+      "title": "Datos del manuscrito",
+      "description": "Edite la información a nivel del manuscrito por separado del área de escritura."
+    },
+    "tools": {
+      "title": "Exportación y herramientas",
+      "description": "Las acciones secundarias, técnicas y potencialmente destructivas se mantienen fuera del área de escritura.",
+      "export": "Exportar .omi.json",
+      "exportDescription": "Cree un archivo de manuscrito OMI canónico y portátil después de guardar los cambios pendientes como punto de control.",
+      "reset": "Restablecer ejemplo",
+      "resetDescription": "Sustituya el ejemplo alfa actual por un nuevo manuscrito de ejemplo limpio.",
+      "confirmReset": "¿Restablecer el manuscrito de ejemplo actual? Los datos no guardados y los datos del ejemplo actual se sustituirán.",
+      "technicalData": "Datos técnicos",
+      "technicalDescription": "Inspeccione la representación semántica solo cuando necesite detalles técnicos.",
+      "liveJson": "JSON de la sección actual",
+      "synced": "Sincronizado"
+    },
+    "settings": {
+      "title": "Configuración de la interfaz",
+      "description": "Elija los idiomas de la interfaz que quiere tener disponibles mientras trabaja. Estas preferencias se guardan en este dispositivo.",
+      "interfaceLanguages": "Idiomas de interfaz disponibles",
+      "interfaceLanguagesDescription": "Los idiomas habilitados aparecen en el selector rápido de idioma de la cabecera del editor.",
+      "currentLanguage": "Idioma actual de la interfaz",
+      "currentLanguageHint": "El idioma actualmente en uso debe permanecer habilitado. Cambie a otro idioma antes de deshabilitarlo.",
+      "enabledLanguage": "Disponible en el selector rápido",
+      "disabledLanguage": "Oculto en el selector rápido",
+      "futureLanguages": "El registro de idiomas es extensible. Se pueden añadir nuevos diccionarios de traducción sin rediseñar esta pantalla."
+    }
+  },
+  "manuscript": {
+    "newDocument": "Nuevo manuscrito",
+    "documentTitle": "Título del documento",
+    "abstract": "Resumen",
+    "keywords": "Palabras clave",
+    "contributors": "Colaboradores",
+    "sections": "Secciones",
+    "annotations": "Notas",
+    "citations": "Citas",
+    "bibliography": "Bibliografía",
+    "documentLanguage": "Idioma del documento",
+    "originalLanguage": "Idioma original"
+  },
+  "notes": {
+    "title": "Notas",
+    "description": "Gestione notas semánticas del manuscrito. El contenido de las notas permanece como objeto de anotación independiente mientras sus anclajes en línea permanecen en el texto.",
+    "empty": "Este manuscrito aún no tiene notas.",
+    "emptyHint": "Coloque el cursor en el texto y use el botón Nota o Ctrl/Cmd+Alt+N.",
+    "note": "Nota",
+    "type": "Tipo de nota",
+    "body": "Texto de la nota",
+    "bodyPlaceholder": "Escriba la nota…",
+    "footnote": "Nota al pie",
+    "endnote": "Nota final",
+    "authorNote": "Nota del autor",
+    "delete": "Eliminar nota",
+    "confirmDelete": "¿Eliminar esta nota y su anclaje en línea del manuscrito?",
+    "closeEditor": "Cerrar el editor de notas",
+    "goToNote": "Ir a la nota",
+    "autoSave": "Se guarda con las revisiones del manuscrito"
+  },
+  "citations": {
+    "referencesTitle": "Referencias",
+    "referencesDescription": "Añada una obra una sola vez a la biblioteca de referencias del manuscrito y reutilícela en tantas apariciones de cita como sea necesario.",
+    "addReference": "Añadir referencia",
+    "editReference": "Editar referencia",
+    "referenceEditorDescription": "Guarde metadatos bibliográficos estructurados independientemente de una cita concreta o de un estilo de salida.",
+    "emptyLibrary": "La biblioteca de referencias del manuscrito está vacía.",
+    "emptyLibraryHint": "Añada un libro, artículo, fuente de archivo, recurso web u otra obra citada antes de insertar citas en el texto.",
+    "searchReferences": "Buscar referencias",
+    "searchPlaceholder": "Buscar por título, autor, año, DOI…",
+    "untitledReference": "Referencia sin título",
+    "occurrences": "citas",
+    "bibliographyPreviewDescription": "Vista previa neutra de los registros citados actualmente en el manuscrito. El formato final corresponde al perfil de publicación.",
+    "resourceType": "Tipo de recurso",
+    "title": "Título",
+    "titlePlaceholder": "Título de la obra citada",
+    "subtitle": "Subtítulo",
+    "creators": "Autores y colaboradores",
+    "creatorsDescription": "Mantenga los nombres estructurados para que los estilos de cita y las exportaciones puedan representarlos correctamente.",
+    "addCreator": "Añadir autor/colaborador",
+    "removeCreator": "Eliminar autor/colaborador",
+    "noCreators": "No se ha añadido ningún autor o colaborador.",
+    "creatorRole": "Rol",
+    "givenName": "Nombre",
+    "familyName": "Apellidos",
+    "containerTitle": "Título de revista, libro o contenedor",
+    "issued": "Fecha / año de publicación",
+    "volume": "Volumen",
+    "issue": "Número",
+    "pages": "Páginas / extensión",
+    "publisher": "Editorial",
+    "place": "Lugar de publicación",
+    "duplicateReference": "Ya existe un probable duplicado en la biblioteca de referencias:",
+    "insertTitle": "Insertar cita",
+    "insertDescription": "Elija una obra de la biblioteca de referencias del manuscrito y, opcionalmente, especifique la ubicación citada.",
+    "noReferences": "Todavía no hay referencias disponibles.",
+    "noReferencesHint": "Añada la obra desde Menú del manuscrito → Referencias y vuelva aquí para citarla.",
+    "insert": "Insertar cita",
+    "citation": "Cita",
+    "reference": "Obra citada",
+    "locatorType": "Tipo de localizador",
+    "locator": "Localizador",
+    "locatorPlaceholder": "p. ej. 45–47, 12r–13v, capítulo 4",
+    "prefix": "Prefijo",
+    "prefixPlaceholder": "p. ej. véase también",
+    "suffix": "Sufijo",
+    "suffixPlaceholder": "p. ej. énfasis añadido",
+    "openSource": "Abrir fuente",
+    "closeEditor": "Cerrar editor de citas",
+    "deleteCitation": "Eliminar cita",
+    "confirmDeleteCitation": "¿Eliminar esta aparición de cita del manuscrito? El registro bibliográfico permanecerá en la biblioteca de referencias.",
+    "unresolvedReference": "El registro bibliográfico citado no se puede resolver o falta.",
+    "roles": {
+      "author": "Autor",
+      "editor": "Editor",
+      "translator": "Traductor",
+      "compiler": "Compilador",
+      "contributor": "Colaborador"
+    },
+    "resourceTypes": {
+      "journal-article": "Artículo de revista",
+      "book": "Libro",
+      "book-chapter": "Capítulo de libro",
+      "conference-paper": "Ponencia de congreso",
+      "thesis": "Trabajo académico",
+      "dissertation": "Tesis doctoral",
+      "report": "Informe",
+      "preprint": "Prepublicación",
+      "dataset": "Conjunto de datos",
+      "software": "Software",
+      "standard": "Norma",
+      "archival-source": "Fuente de archivo",
+      "manuscript": "Manuscrito",
+      "web-page": "Página web"
+    },
+    "locators": {
+      "page": "Página",
+      "page-range": "Rango de páginas",
+      "chapter": "Capítulo",
+      "section": "Sección",
+      "paragraph": "Párrafo",
+      "figure": "Figura",
+      "table": "Tabla",
+      "folio": "Folio",
+      "line": "Línea",
+      "timestamp": "Marca de tiempo"
+    }
+  },
+  "contributors": {
+    "description": "Gestione identidades académicas portátiles y sus roles de contribución específicos del manuscrito.",
+    "add": "Añadir colaborador",
+    "empty": "No se han añadido colaboradores a este manuscrito.",
+    "remove": "Eliminar colaborador",
+    "moveUp": "Mover colaborador hacia arriba",
+    "moveDown": "Mover colaborador hacia abajo",
+    "givenName": "Nombre",
+    "familyName": "Apellidos",
+    "affiliation": "Afiliación",
+    "orcid": "ORCID",
+    "invalidOrcid": "El formato o la suma de comprobación del ORCID no son válidos.",
+    "role": "Rol de contribución",
+    "corresponding": "Colaborador de correspondencia",
+    "roles": {
+      "author": "Autor",
+      "editor": "Editor",
+      "translator": "Traductor",
+      "reviewer": "Revisor",
+      "dataCurator": "Curador de datos",
+      "software": "Software",
+      "methodology": "Metodología",
+      "visualization": "Visualización",
+      "other": "Otro"
+    }
+  },
+  "history": {
+    "title": "Historial de revisiones",
+    "description": "Revisiones inmutables OMI-SPEC-160 registradas para este manuscrito.",
+    "empty": "No se han registrado revisiones.",
+    "current": "Actual",
+    "revision": "Revisión",
+    "events": "eventos",
+    "groupedChanges": "cambios agrupados",
+    "unknownActor": "Actor desconocido",
+    "completeHistory": "Historial completo",
+    "shallowHistory": "Historial abreviado",
+    "pendingTitle": "Estado de trabajo no confirmado",
+    "pendingDescription": "Las ediciones recientes se agrupan y se convertirán en una única revisión de punto de control inmutable.",
+    "pendingBadge": "Pendiente",
+    "checkpoint": "Guardar punto de control",
+    "discard": "Descartar cambios",
+    "confirmDiscard": "¿Descartar todos los cambios no confirmados y restaurar la última revisión confirmada?",
+    "revert": "Revertir",
+    "confirmRevert": "¿Crear una nueva revisión que restaure este estado anterior del manuscrito?",
+    "revertBlocked": "Guarde o descarte el estado de trabajo pendiente antes de revertir una revisión confirmada.",
+    "tombstonesTitle": "Registros de objetos eliminados",
+    "tombstonesDescription": "Los tombstones persistentes OMI-SPEC-160 conservan los identificadores de objetos eliminados y la evidencia de restauración.",
+    "tombstoneActive": "Eliminado",
+    "tombstoneRestored": "Restaurado",
+    "operations": {
+      "snapshotCreated": "Instantánea del manuscrito creada",
+      "titleChanged": "Título del manuscrito modificado",
+      "abstractChanged": "Resumen del manuscrito modificado",
+      "sectionCreated": "Sección añadida",
+      "blockChanged": "Contenido del bloque modificado",
+      "contributorAdded": "Colaborador añadido",
+      "contributorChanged": "Identidad del colaborador modificada",
+      "contributorRemoved": "Colaborador eliminado",
+      "contributionChanged": "Rol de contribución modificado",
+      "contributorsReordered": "Colaboradores reordenados",
+      "reverted": "Revisión anterior restaurada"
+    }
+  },
+  "editor": {
+    "addSection": "Añadir sección",
+    "addParagraph": "Añadir párrafo",
+    "addNote": "Nota",
+    "addCitation": "Cita",
+    "untitledSection": "Sección sin título",
+    "emptyParagraph": "Empiece a escribir…",
+    "paragraph": "Párrafo",
+    "heading": "Encabezado",
+    "quote": "Cita",
+    "insertNote": "Insertar nota semántica del manuscrito",
+    "insertCitation": "Insertar cita semántica",
+    "loading": "Cargando editor…"
+  },
+  "status": {
+    "draft": "Borrador",
+    "submitted": "Enviado",
+    "accepted": "Aceptado",
+    "published": "Publicado"
+  },
+  "validation": {
+    "requiredField": "Este campo es obligatorio.",
+    "invalidDocument": "La estructura del documento no es válida.",
+    "unsupportedSchema": "La versión del esquema del documento no es compatible."
+  },
+  "languages": {
+    "en": "Inglés",
+    "hu": "Húngaro",
+    "de": "Alemán"
+  },
+  "auth": {
+    "brand": {
+      "name": "Open Manuscript Studio",
+      "description": "Redacción académica colaborativa"
+    },
+    "login": {
+      "title": "Iniciar sesión",
+      "description": "Inicie sesión para continuar.",
+      "submit": "Iniciar sesión",
+      "submitting": "Iniciando sesión…",
+      "noAccount": "¿Aún no tiene una cuenta?",
+      "registerLink": "Registrarse"
+    },
+    "register": {
+      "title": "Crear cuenta",
+      "description": "Cree su cuenta.",
+      "submit": "Registrarse",
+      "hasAccount": "¿Ya tiene una cuenta?",
+      "loginLink": "Iniciar sesión"
+    },
+    "fields": {
+      "name": {
+        "label": "Nombre completo",
+        "placeholder": "Su nombre completo"
+      },
+      "email": {
+        "label": "Correo electrónico",
+        "placeholder": "nombre@ejemplo.es"
+      },
+      "password": {
+        "label": "Contraseña",
+        "placeholder": "Introduzca su contraseña"
+      }
+    },
+    "errors": {
+      "invalidEmail": "Dirección de correo electrónico no válida.",
+      "invalidCredentials": "Correo electrónico o contraseña incorrectos.",
+      "userNotFound": "No se ha encontrado la cuenta de usuario.",
+      "accountNotActive": "La cuenta de usuario no está activa.",
+      "authenticationRequired": "Se requiere autenticación."
+    },
+    "alphaNotice": "Versión alfa: la autenticación se utiliza actualmente con fines de prueba."
+  }
+}
