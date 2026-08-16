@@ -1,0 +1,3618 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Open Manuscript Studio\n"
+"Language: hu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. OMI translation key: /common/save
+msgctxt "/common/save"
+msgid "Save"
+msgstr "Mentés"
+
+#. OMI translation key: /common/cancel
+msgctxt "/common/cancel"
+msgid "Cancel"
+msgstr "Mégse"
+
+#. OMI translation key: /common/close
+msgctxt "/common/close"
+msgid "Close"
+msgstr "Bezárás"
+
+#. OMI translation key: /common/delete
+msgctxt "/common/delete"
+msgid "Delete"
+msgstr "Törlés"
+
+#. OMI translation key: /common/edit
+msgctxt "/common/edit"
+msgid "Edit"
+msgstr "Szerkesztés"
+
+#. OMI translation key: /common/add
+msgctxt "/common/add"
+msgid "Add"
+msgstr "Hozzáadás"
+
+#. OMI translation key: /common/loading
+msgctxt "/common/loading"
+msgid "Loading…"
+msgstr "Betöltés…"
+
+#. OMI translation key: /common/language
+msgctxt "/common/language"
+msgid "Language"
+msgstr "Nyelv"
+
+#. OMI translation key: /navigation/documents
+msgctxt "/navigation/documents"
+msgid "Documents"
+msgstr "Dokumentumok"
+
+#. OMI translation key: /navigation/editor
+msgctxt "/navigation/editor"
+msgid "Editor"
+msgstr "Szerkesztő"
+
+#. OMI translation key: /navigation/metadata
+msgctxt "/navigation/metadata"
+msgid "Metadata"
+msgstr "Metaadatok"
+
+#. OMI translation key: /navigation/preview
+msgctxt "/navigation/preview"
+msgid "Preview"
+msgstr "Előnézet"
+
+#. OMI translation key: /navigation/settings
+msgctxt "/navigation/settings"
+msgid "Settings"
+msgstr "Beállítások"
+
+#. OMI translation key: /studio/menu
+msgctxt "/studio/menu"
+msgid "Manuscript menu"
+msgstr "Kézirat menü"
+
+#. OMI translation key: /studio/closeMenu
+msgctxt "/studio/closeMenu"
+msgid "Close manuscript menu"
+msgstr "Kézirat menü bezárása"
+
+#. OMI translation key: /studio/languageSwitcher
+msgctxt "/studio/languageSwitcher"
+msgid "Interface language"
+msgstr "Felület nyelve"
+
+#. OMI translation key: /studio/saved
+msgctxt "/studio/saved"
+msgid "Saved"
+msgstr "Mentve"
+
+#. OMI translation key: /studio/pending
+msgctxt "/studio/pending"
+msgid "Saving…"
+msgstr "Mentés…"
+
+#. OMI translation key: /studio/editorAria
+msgctxt "/studio/editorAria"
+msgid "Manuscript editor"
+msgstr "Kéziratszerkesztő"
+
+#. OMI translation key: /studio/titlePlaceholder
+msgctxt "/studio/titlePlaceholder"
+msgid "Enter the manuscript title"
+msgstr "Adja meg a kézirat címét"
+
+#. OMI translation key: /studio/noSection
+msgctxt "/studio/noSection"
+msgid "No section is selected."
+msgstr "Nincs kiválasztott szakasz."
+
+#. OMI translation key: /studio/navigation/document
+msgctxt "/studio/navigation/document"
+msgid "Document"
+msgstr "Dokumentum"
+
+#. OMI translation key: /studio/navigation/manuscript
+msgctxt "/studio/navigation/manuscript"
+msgid "Manuscript data"
+msgstr "Kézirat adatai"
+
+#. OMI translation key: /studio/navigation/notes
+msgctxt "/studio/navigation/notes"
+msgid "Notes"
+msgstr "Jegyzetek"
+
+#. OMI translation key: /studio/navigation/references
+msgctxt "/studio/navigation/references"
+msgid "References"
+msgstr "Hivatkozások"
+
+#. OMI translation key: /studio/navigation/contributors
+msgctxt "/studio/navigation/contributors"
+msgid "Contributors"
+msgstr "Közreműködők"
+
+#. OMI translation key: /studio/navigation/history
+msgctxt "/studio/navigation/history"
+msgid "History"
+msgstr "Előzmények"
+
+#. OMI translation key: /studio/navigation/tools
+msgctxt "/studio/navigation/tools"
+msgid "Export and tools"
+msgstr "Export és eszközök"
+
+#. OMI translation key: /studio/navigation/settings
+msgctxt "/studio/navigation/settings"
+msgid "Settings"
+msgstr "Beállítások"
+
+#. OMI translation key: /studio/document/title
+msgctxt "/studio/document/title"
+msgid "Document structure"
+msgstr "Dokumentumszerkezet"
+
+#. OMI translation key: /studio/document/description
+msgctxt "/studio/document/description"
+msgid "Choose the section you want to work on. Structural and object information stays out of the writing surface until you need it."
+msgstr "Válassza ki azt a szakaszt, amelyen dolgozni szeretne. A szerkezeti és objektumadatok csak akkor jelennek meg, amikor szükség van rájuk."
+
+#. OMI translation key: /studio/document/addSection
+msgctxt "/studio/document/addSection"
+msgid "Add section"
+msgstr "Szakasz hozzáadása"
+
+#. OMI translation key: /studio/document/sections
+msgctxt "/studio/document/sections"
+msgid "Sections"
+msgstr "Szakaszok"
+
+#. OMI translation key: /studio/document/objects
+msgctxt "/studio/document/objects"
+msgid "Objects"
+msgstr "Objektumok"
+
+#. OMI translation key: /studio/document/annotations
+msgctxt "/studio/document/annotations"
+msgid "Annotations"
+msgstr "Jegyzetek"
+
+#. OMI translation key: /studio/document/citations
+msgctxt "/studio/document/citations"
+msgid "Citations"
+msgstr "Hivatkozások"
+
+#. OMI translation key: /studio/manuscript/title
+msgctxt "/studio/manuscript/title"
+msgid "Manuscript data"
+msgstr "Kézirat adatai"
+
+#. OMI translation key: /studio/manuscript/description
+msgctxt "/studio/manuscript/description"
+msgid "Edit manuscript-level information separately from the writing surface."
+msgstr "A kéziratszintű adatokat a szerkesztési felülettől elkülönítve kezelheti."
+
+#. OMI translation key: /studio/tools/title
+msgctxt "/studio/tools/title"
+msgid "Export and tools"
+msgstr "Export és eszközök"
+
+#. OMI translation key: /studio/tools/description
+msgctxt "/studio/tools/description"
+msgid "Secondary, technical and potentially destructive actions are kept outside the writing surface."
+msgstr "A másodlagos, technikai és esetleg romboló műveletek nem jelennek meg a szerkesztési felületen."
+
+#. OMI translation key: /studio/tools/export
+msgctxt "/studio/tools/export"
+msgid "Export .omi.json"
+msgstr "Export .omi.json"
+
+#. OMI translation key: /studio/tools/exportDescription
+msgctxt "/studio/tools/exportDescription"
+msgid "Create a canonical portable OMI manuscript file after checkpointing pending edits."
+msgstr "Kanonikus, hordozható OMI kéziratfájl készítése a függő módosítások checkpointba mentése után."
+
+#. OMI translation key: /studio/tools/reset
+msgctxt "/studio/tools/reset"
+msgid "Reset sample"
+msgstr "Mintakézirat visszaállítása"
+
+#. OMI translation key: /studio/tools/resetDescription
+msgctxt "/studio/tools/resetDescription"
+msgid "Replace the current alpha sample with a new clean sample manuscript."
+msgstr "A jelenlegi alfa mintakézirat lecserélése egy új, tiszta mintakéziratra."
+
+#. OMI translation key: /studio/tools/confirmReset
+msgctxt "/studio/tools/confirmReset"
+msgid "Reset the current sample manuscript? Unsaved and current sample data will be replaced."
+msgstr "Visszaállítja a mintakéziratot? A jelenlegi mintakézirat adatai lecserélődnek."
+
+#. OMI translation key: /studio/tools/technicalData
+msgctxt "/studio/tools/technicalData"
+msgid "Technical data"
+msgstr "Technikai adatok"
+
+#. OMI translation key: /studio/tools/technicalDescription
+msgctxt "/studio/tools/technicalDescription"
+msgid "Inspect the semantic representation only when technical details are needed."
+msgstr "A szemantikai reprezentáció csak akkor jelenik meg, amikor technikai részletekre van szükség."
+
+#. OMI translation key: /studio/tools/liveJson
+msgctxt "/studio/tools/liveJson"
+msgid "Current section JSON"
+msgstr "Aktuális szakasz JSON"
+
+#. OMI translation key: /studio/tools/synced
+msgctxt "/studio/tools/synced"
+msgid "Synced"
+msgstr "Szinkronban"
+
+#. OMI translation key: /studio/settings/title
+msgctxt "/studio/settings/title"
+msgid "Interface settings"
+msgstr "Felület beállításai"
+
+#. OMI translation key: /studio/settings/description
+msgctxt "/studio/settings/description"
+msgid "Choose which interface languages you want available while working. These preferences are stored on this device."
+msgstr "Válassza ki, mely felületi nyelveket szeretné használni munka közben. A beállítások ezen az eszközön maradnak meg."
+
+#. OMI translation key: /studio/settings/interfaceLanguages
+msgctxt "/studio/settings/interfaceLanguages"
+msgid "Available interface languages"
+msgstr "Használható felületi nyelvek"
+
+#. OMI translation key: /studio/settings/interfaceLanguagesDescription
+msgctxt "/studio/settings/interfaceLanguagesDescription"
+msgid "Enabled languages appear in the quick language switcher in the editor header."
+msgstr "Az engedélyezett nyelvek jelennek meg a szerkesztő fejlécének gyors nyelvváltójában."
+
+#. OMI translation key: /studio/settings/currentLanguage
+msgctxt "/studio/settings/currentLanguage"
+msgid "Current interface language"
+msgstr "Jelenlegi felületi nyelv"
+
+#. OMI translation key: /studio/settings/currentLanguageHint
+msgctxt "/studio/settings/currentLanguageHint"
+msgid "The language currently in use must remain enabled. Switch to another language before disabling it."
+msgstr "Az éppen használt nyelvnek engedélyezve kell maradnia. A kikapcsolásához előbb váltson másik nyelvre."
+
+#. OMI translation key: /studio/settings/enabledLanguage
+msgctxt "/studio/settings/enabledLanguage"
+msgid "Available in quick switcher"
+msgstr "Megjelenik a gyors nyelvváltóban"
+
+#. OMI translation key: /studio/settings/disabledLanguage
+msgctxt "/studio/settings/disabledLanguage"
+msgid "Hidden from quick switcher"
+msgstr "Elrejtve a gyors nyelvváltóból"
+
+#. OMI translation key: /studio/settings/futureLanguages
+msgctxt "/studio/settings/futureLanguages"
+msgid "The language registry is extensible. Future translation dictionaries can be added without redesigning this settings screen."
+msgstr "A nyelvi regiszter bővíthető. Később új fordítási szótárak vehetők fel anélkül, hogy ezt a beállítási felületet újra kellene tervezni."
+
+#. OMI translation key: /manuscript/newDocument
+msgctxt "/manuscript/newDocument"
+msgid "New manuscript"
+msgstr "Új kézirat"
+
+#. OMI translation key: /manuscript/documentTitle
+msgctxt "/manuscript/documentTitle"
+msgid "Document title"
+msgstr "Dokumentum címe"
+
+#. OMI translation key: /manuscript/abstract
+msgctxt "/manuscript/abstract"
+msgid "Abstract"
+msgstr "Absztrakt"
+
+#. OMI translation key: /manuscript/keywords
+msgctxt "/manuscript/keywords"
+msgid "Keywords"
+msgstr "Kulcsszavak"
+
+#. OMI translation key: /manuscript/contributors
+msgctxt "/manuscript/contributors"
+msgid "Contributors"
+msgstr "Közreműködők"
+
+#. OMI translation key: /manuscript/sections
+msgctxt "/manuscript/sections"
+msgid "Sections"
+msgstr "Fejezetek"
+
+#. OMI translation key: /manuscript/annotations
+msgctxt "/manuscript/annotations"
+msgid "Notes"
+msgstr "Jegyzetek"
+
+#. OMI translation key: /manuscript/citations
+msgctxt "/manuscript/citations"
+msgid "Citations"
+msgstr "Hivatkozások"
+
+#. OMI translation key: /manuscript/bibliography
+msgctxt "/manuscript/bibliography"
+msgid "Bibliography"
+msgstr "Irodalomjegyzék"
+
+#. OMI translation key: /manuscript/documentLanguage
+msgctxt "/manuscript/documentLanguage"
+msgid "Document language"
+msgstr "A dokumentum nyelve"
+
+#. OMI translation key: /manuscript/originalLanguage
+msgctxt "/manuscript/originalLanguage"
+msgid "Original language"
+msgstr "Eredeti nyelv"
+
+#. OMI translation key: /notes/title
+msgctxt "/notes/title"
+msgid "Notes"
+msgstr "Jegyzetek"
+
+#. OMI translation key: /notes/description
+msgctxt "/notes/description"
+msgid "Manage semantic manuscript notes. Note bodies remain independent annotation objects while their inline anchors stay in the text."
+msgstr "A kézirat szemantikus jegyzeteinek kezelése. A jegyzet szövege önálló annotation objektum, a szövegben csak a stabil horgony marad."
+
+#. OMI translation key: /notes/empty
+msgctxt "/notes/empty"
+msgid "This manuscript has no notes yet."
+msgstr "A kéziratban még nincs jegyzet."
+
+#. OMI translation key: /notes/emptyHint
+msgctxt "/notes/emptyHint"
+msgid "Place the cursor in the text and use the Note button or Ctrl/Cmd+Alt+N."
+msgstr "Helyezze a kurzort a szövegbe, majd használja a Jegyzet gombot vagy a Ctrl/Cmd+Alt+N billentyűkombinációt."
+
+#. OMI translation key: /notes/note
+msgctxt "/notes/note"
+msgid "Note"
+msgstr "Jegyzet"
+
+#. OMI translation key: /notes/type
+msgctxt "/notes/type"
+msgid "Note type"
+msgstr "Jegyzet típusa"
+
+#. OMI translation key: /notes/body
+msgctxt "/notes/body"
+msgid "Note text"
+msgstr "Jegyzet szövege"
+
+#. OMI translation key: /notes/bodyPlaceholder
+msgctxt "/notes/bodyPlaceholder"
+msgid "Write the note…"
+msgstr "Írja be a jegyzetet…"
+
+#. OMI translation key: /notes/footnote
+msgctxt "/notes/footnote"
+msgid "Footnote"
+msgstr "Lábjegyzet"
+
+#. OMI translation key: /notes/endnote
+msgctxt "/notes/endnote"
+msgid "Endnote"
+msgstr "Végjegyzet"
+
+#. OMI translation key: /notes/authorNote
+msgctxt "/notes/authorNote"
+msgid "Author note"
+msgstr "Szerzői jegyzet"
+
+#. OMI translation key: /notes/delete
+msgctxt "/notes/delete"
+msgid "Delete note"
+msgstr "Jegyzet törlése"
+
+#. OMI translation key: /notes/confirmDelete
+msgctxt "/notes/confirmDelete"
+msgid "Delete this note and its inline anchor from the manuscript?"
+msgstr "Törli ezt a jegyzetet és a hozzá tartozó szövegközi horgonyt a kéziratból?"
+
+#. OMI translation key: /notes/closeEditor
+msgctxt "/notes/closeEditor"
+msgid "Close note editor"
+msgstr "Jegyzetszerkesztő bezárása"
+
+#. OMI translation key: /notes/goToNote
+msgctxt "/notes/goToNote"
+msgid "Go to note"
+msgstr "Ugrás a jegyzethez"
+
+#. OMI translation key: /notes/autoSave
+msgctxt "/notes/autoSave"
+msgid "Saved with manuscript revisions"
+msgstr "A kézirat revízióival együtt mentve"
+
+#. OMI translation key: /citations/referencesTitle
+msgctxt "/citations/referencesTitle"
+msgid "References"
+msgstr "Hivatkozások"
+
+#. OMI translation key: /citations/referencesDescription
+msgctxt "/citations/referencesDescription"
+msgid "Add a work once to the manuscript reference library, then reuse it in as many citation occurrences as needed."
+msgstr "Egy művet csak egyszer kell felvenni a kézirat hivatkozásjegyzékébe, majd tetszőleges számú idézési előfordulásban újra felhasználható."
+
+#. OMI translation key: /citations/addReference
+msgctxt "/citations/addReference"
+msgid "Add reference"
+msgstr "Forrás hozzáadása"
+
+#. OMI translation key: /citations/editReference
+msgctxt "/citations/editReference"
+msgid "Edit reference"
+msgstr "Forrás szerkesztése"
+
+#. OMI translation key: /citations/referenceEditorDescription
+msgctxt "/citations/referenceEditorDescription"
+msgid "Store structured bibliographic metadata independently from any one citation or output style."
+msgstr "A bibliográfiai adatokat strukturáltan, az egyes idézési helyektől és a megjelenítési stílustól függetlenül tárolja."
+
+#. OMI translation key: /citations/emptyLibrary
+msgctxt "/citations/emptyLibrary"
+msgid "The manuscript reference library is empty."
+msgstr "A kézirat hivatkozásjegyzéke még üres."
+
+#. OMI translation key: /citations/emptyLibraryHint
+msgctxt "/citations/emptyLibraryHint"
+msgid "Add a book, article, archival source, web resource or another cited work before inserting citations in the text."
+msgstr "Vegyen fel könyvet, tanulmányt, levéltári forrást, webes forrást vagy más idézhető művet, majd illessze be a szövegbe."
+
+#. OMI translation key: /citations/searchReferences
+msgctxt "/citations/searchReferences"
+msgid "Search references"
+msgstr "Keresés a hivatkozások között"
+
+#. OMI translation key: /citations/searchPlaceholder
+msgctxt "/citations/searchPlaceholder"
+msgid "Search by title, creator, year, DOI…"
+msgstr "Cím, szerző, év, DOI…"
+
+#. OMI translation key: /citations/untitledReference
+msgctxt "/citations/untitledReference"
+msgid "Untitled reference"
+msgstr "Cím nélküli forrás"
+
+#. OMI translation key: /citations/occurrences
+msgctxt "/citations/occurrences"
+msgid "citations"
+msgstr "hivatkozás"
+
+#. OMI translation key: /citations/bibliographyPreviewDescription
+msgctxt "/citations/bibliographyPreviewDescription"
+msgid "Neutral preview of records currently cited in the manuscript. Final formatting belongs to the publication profile."
+msgstr "A kéziratban ténylegesen idézett rekordok semleges előnézete. A végleges formázást a publikációs profil határozza meg."
+
+#. OMI translation key: /citations/resourceType
+msgctxt "/citations/resourceType"
+msgid "Resource type"
+msgstr "Forrás típusa"
+
+#. OMI translation key: /citations/title
+msgctxt "/citations/title"
+msgid "Title"
+msgstr "Cím"
+
+#. OMI translation key: /citations/titlePlaceholder
+msgctxt "/citations/titlePlaceholder"
+msgid "Title of the cited work"
+msgstr "Az idézett mű címe"
+
+#. OMI translation key: /citations/subtitle
+msgctxt "/citations/subtitle"
+msgid "Subtitle"
+msgstr "Alcím"
+
+#. OMI translation key: /citations/creators
+msgctxt "/citations/creators"
+msgid "Creators and contributors"
+msgstr "Szerzők és közreműködők"
+
+#. OMI translation key: /citations/creatorsDescription
+msgctxt "/citations/creatorsDescription"
+msgid "Keep contributor names structured so citation styles and exports can render them correctly."
+msgstr "A neveket strukturáltan tároljuk, hogy a hivatkozási stílusok és exportok helyesen jeleníthessék meg őket."
+
+#. OMI translation key: /citations/addCreator
+msgctxt "/citations/addCreator"
+msgid "Add creator"
+msgstr "Szerző hozzáadása"
+
+#. OMI translation key: /citations/removeCreator
+msgctxt "/citations/removeCreator"
+msgid "Remove creator"
+msgstr "Szerző eltávolítása"
+
+#. OMI translation key: /citations/noCreators
+msgctxt "/citations/noCreators"
+msgid "No creator has been added."
+msgstr "Még nincs megadott szerző vagy közreműködő."
+
+#. OMI translation key: /citations/creatorRole
+msgctxt "/citations/creatorRole"
+msgid "Role"
+msgstr "Szerep"
+
+#. OMI translation key: /citations/givenName
+msgctxt "/citations/givenName"
+msgid "Given name"
+msgstr "Utónév"
+
+#. OMI translation key: /citations/familyName
+msgctxt "/citations/familyName"
+msgid "Family name"
+msgstr "Családnév"
+
+#. OMI translation key: /citations/containerTitle
+msgctxt "/citations/containerTitle"
+msgid "Journal, book or container title"
+msgstr "Folyóirat, kötet vagy befoglaló mű címe"
+
+#. OMI translation key: /citations/issued
+msgctxt "/citations/issued"
+msgid "Publication date / year"
+msgstr "Megjelenés dátuma / éve"
+
+#. OMI translation key: /citations/volume
+msgctxt "/citations/volume"
+msgid "Volume"
+msgstr "Évfolyam / kötet"
+
+#. OMI translation key: /citations/issue
+msgctxt "/citations/issue"
+msgid "Issue"
+msgstr "Szám"
+
+#. OMI translation key: /citations/pages
+msgctxt "/citations/pages"
+msgid "Pages / extent"
+msgstr "Oldalak / terjedelem"
+
+#. OMI translation key: /citations/publisher
+msgctxt "/citations/publisher"
+msgid "Publisher"
+msgstr "Kiadó"
+
+#. OMI translation key: /citations/place
+msgctxt "/citations/place"
+msgid "Place of publication"
+msgstr "Kiadás helye"
+
+#. OMI translation key: /citations/duplicateReference
+msgctxt "/citations/duplicateReference"
+msgid "A likely duplicate already exists in the reference library:"
+msgstr "Valószínűleg már szerepel ugyanez a mű a hivatkozásjegyzékben:"
+
+#. OMI translation key: /citations/insertTitle
+msgctxt "/citations/insertTitle"
+msgid "Insert citation"
+msgstr "Hivatkozás beszúrása"
+
+#. OMI translation key: /citations/insertDescription
+msgctxt "/citations/insertDescription"
+msgid "Choose a work from the manuscript reference library and optionally specify the cited location."
+msgstr "Válasszon művet a kézirat hivatkozásjegyzékéből, és szükség esetén adja meg a pontos helyet."
+
+#. OMI translation key: /citations/noReferences
+msgctxt "/citations/noReferences"
+msgid "No reference is available yet."
+msgstr "Még nincs használható forrás."
+
+#. OMI translation key: /citations/noReferencesHint
+msgctxt "/citations/noReferencesHint"
+msgid "Add the work from Manuscript menu → References, then return here to cite it."
+msgstr "A Kézirat menü → Hivatkozások pontban vegye fel a művet, majd térjen vissza ide a beszúráshoz."
+
+#. OMI translation key: /citations/insert
+msgctxt "/citations/insert"
+msgid "Insert citation"
+msgstr "Hivatkozás beszúrása"
+
+#. OMI translation key: /citations/citation
+msgctxt "/citations/citation"
+msgid "Citation"
+msgstr "Hivatkozás"
+
+#. OMI translation key: /citations/reference
+msgctxt "/citations/reference"
+msgid "Cited work"
+msgstr "Idézett mű"
+
+#. OMI translation key: /citations/locatorType
+msgctxt "/citations/locatorType"
+msgid "Locator type"
+msgstr "Helymegjelölés típusa"
+
+#. OMI translation key: /citations/locator
+msgctxt "/citations/locator"
+msgid "Locator"
+msgstr "Helymegjelölés"
+
+#. OMI translation key: /citations/locatorPlaceholder
+msgctxt "/citations/locatorPlaceholder"
+msgid "e.g. 45–47, 12r–13v, chapter 4"
+msgstr "pl. 45–47, 12r–13v, 4. fejezet"
+
+#. OMI translation key: /citations/prefix
+msgctxt "/citations/prefix"
+msgid "Prefix"
+msgstr "Előtag"
+
+#. OMI translation key: /citations/prefixPlaceholder
+msgctxt "/citations/prefixPlaceholder"
+msgid "e.g. see also"
+msgstr "pl. lásd még"
+
+#. OMI translation key: /citations/suffix
+msgctxt "/citations/suffix"
+msgid "Suffix"
+msgstr "Utótag"
+
+#. OMI translation key: /citations/suffixPlaceholder
+msgctxt "/citations/suffixPlaceholder"
+msgid "e.g. emphasis added"
+msgstr "pl. kiemelés tőlem"
+
+#. OMI translation key: /citations/openSource
+msgctxt "/citations/openSource"
+msgid "Open source"
+msgstr "Forrás megnyitása"
+
+#. OMI translation key: /citations/closeEditor
+msgctxt "/citations/closeEditor"
+msgid "Close citation editor"
+msgstr "Hivatkozásszerkesztő bezárása"
+
+#. OMI translation key: /citations/deleteCitation
+msgctxt "/citations/deleteCitation"
+msgid "Delete citation"
+msgstr "Hivatkozás törlése"
+
+#. OMI translation key: /citations/confirmDeleteCitation
+msgctxt "/citations/confirmDeleteCitation"
+msgid "Delete this citation occurrence from the manuscript? The bibliographic record will remain in the reference library."
+msgstr "Törli ezt a hivatkozási előfordulást a kéziratból? A bibliográfiai rekord megmarad a hivatkozásjegyzékben."
+
+#. OMI translation key: /citations/unresolvedReference
+msgctxt "/citations/unresolvedReference"
+msgid "The cited bibliographic record is unresolved or missing."
+msgstr "Az idézett bibliográfiai rekord hiányzik vagy nincs feloldva."
+
+#. OMI translation key: /citations/roles/author
+msgctxt "/citations/roles/author"
+msgid "Author"
+msgstr "Szerző"
+
+#. OMI translation key: /citations/roles/editor
+msgctxt "/citations/roles/editor"
+msgid "Editor"
+msgstr "Szerkesztő"
+
+#. OMI translation key: /citations/roles/translator
+msgctxt "/citations/roles/translator"
+msgid "Translator"
+msgstr "Fordító"
+
+#. OMI translation key: /citations/roles/compiler
+msgctxt "/citations/roles/compiler"
+msgid "Compiler"
+msgstr "Összeállító"
+
+#. OMI translation key: /citations/roles/contributor
+msgctxt "/citations/roles/contributor"
+msgid "Contributor"
+msgstr "Közreműködő"
+
+#. OMI translation key: /citations/resourceTypes/journal-article
+msgctxt "/citations/resourceTypes/journal-article"
+msgid "Journal article"
+msgstr "Folyóiratcikk"
+
+#. OMI translation key: /citations/resourceTypes/book
+msgctxt "/citations/resourceTypes/book"
+msgid "Book"
+msgstr "Könyv"
+
+#. OMI translation key: /citations/resourceTypes/book-chapter
+msgctxt "/citations/resourceTypes/book-chapter"
+msgid "Book chapter"
+msgstr "Könyvfejezet"
+
+#. OMI translation key: /citations/resourceTypes/conference-paper
+msgctxt "/citations/resourceTypes/conference-paper"
+msgid "Conference paper"
+msgstr "Konferencia-előadás"
+
+#. OMI translation key: /citations/resourceTypes/thesis
+msgctxt "/citations/resourceTypes/thesis"
+msgid "Thesis"
+msgstr "Szakdolgozat"
+
+#. OMI translation key: /citations/resourceTypes/dissertation
+msgctxt "/citations/resourceTypes/dissertation"
+msgid "Dissertation"
+msgstr "Disszertáció"
+
+#. OMI translation key: /citations/resourceTypes/report
+msgctxt "/citations/resourceTypes/report"
+msgid "Report"
+msgstr "Jelentés"
+
+#. OMI translation key: /citations/resourceTypes/preprint
+msgctxt "/citations/resourceTypes/preprint"
+msgid "Preprint"
+msgstr "Preprint"
+
+#. OMI translation key: /citations/resourceTypes/dataset
+msgctxt "/citations/resourceTypes/dataset"
+msgid "Dataset"
+msgstr "Adatkészlet"
+
+#. OMI translation key: /citations/resourceTypes/software
+msgctxt "/citations/resourceTypes/software"
+msgid "Software"
+msgstr "Szoftver"
+
+#. OMI translation key: /citations/resourceTypes/standard
+msgctxt "/citations/resourceTypes/standard"
+msgid "Standard"
+msgstr "Szabvány"
+
+#. OMI translation key: /citations/resourceTypes/archival-source
+msgctxt "/citations/resourceTypes/archival-source"
+msgid "Archival source"
+msgstr "Levéltári forrás"
+
+#. OMI translation key: /citations/resourceTypes/manuscript
+msgctxt "/citations/resourceTypes/manuscript"
+msgid "Manuscript"
+msgstr "Kézirat"
+
+#. OMI translation key: /citations/resourceTypes/web-page
+msgctxt "/citations/resourceTypes/web-page"
+msgid "Web page"
+msgstr "Weboldal"
+
+#. OMI translation key: /citations/locators/page
+msgctxt "/citations/locators/page"
+msgid "Page"
+msgstr "Oldal"
+
+#. OMI translation key: /citations/locators/page-range
+msgctxt "/citations/locators/page-range"
+msgid "Page range"
+msgstr "Oldaltartomány"
+
+#. OMI translation key: /citations/locators/chapter
+msgctxt "/citations/locators/chapter"
+msgid "Chapter"
+msgstr "Fejezet"
+
+#. OMI translation key: /citations/locators/section
+msgctxt "/citations/locators/section"
+msgid "Section"
+msgstr "Szakasz"
+
+#. OMI translation key: /citations/locators/paragraph
+msgctxt "/citations/locators/paragraph"
+msgid "Paragraph"
+msgstr "Bekezdés"
+
+#. OMI translation key: /citations/locators/figure
+msgctxt "/citations/locators/figure"
+msgid "Figure"
+msgstr "Ábra"
+
+#. OMI translation key: /citations/locators/table
+msgctxt "/citations/locators/table"
+msgid "Table"
+msgstr "Táblázat"
+
+#. OMI translation key: /citations/locators/folio
+msgctxt "/citations/locators/folio"
+msgid "Folio"
+msgstr "Fólió"
+
+#. OMI translation key: /citations/locators/line
+msgctxt "/citations/locators/line"
+msgid "Line"
+msgstr "Sor"
+
+#. OMI translation key: /citations/locators/timestamp
+msgctxt "/citations/locators/timestamp"
+msgid "Timestamp"
+msgstr "Időpont"
+
+#. OMI translation key: /contributors/description
+msgctxt "/contributors/description"
+msgid "Manage portable scholarly identities and their manuscript-specific contribution roles."
+msgstr "A hordozható tudományos identitások és a kézirathoz kötött közreműködői szerepek kezelése."
+
+#. OMI translation key: /contributors/add
+msgctxt "/contributors/add"
+msgid "Add contributor"
+msgstr "Közreműködő hozzáadása"
+
+#. OMI translation key: /contributors/empty
+msgctxt "/contributors/empty"
+msgid "No contributors have been added to this manuscript."
+msgstr "A kézirathoz még nincs közreműködő hozzáadva."
+
+#. OMI translation key: /contributors/remove
+msgctxt "/contributors/remove"
+msgid "Remove contributor"
+msgstr "Közreműködő eltávolítása"
+
+#. OMI translation key: /contributors/moveUp
+msgctxt "/contributors/moveUp"
+msgid "Move contributor up"
+msgstr "Közreműködő feljebb mozgatása"
+
+#. OMI translation key: /contributors/moveDown
+msgctxt "/contributors/moveDown"
+msgid "Move contributor down"
+msgstr "Közreműködő lejjebb mozgatása"
+
+#. OMI translation key: /contributors/givenName
+msgctxt "/contributors/givenName"
+msgid "Given name"
+msgstr "Utónév"
+
+#. OMI translation key: /contributors/familyName
+msgctxt "/contributors/familyName"
+msgid "Family name"
+msgstr "Családnév"
+
+#. OMI translation key: /contributors/affiliation
+msgctxt "/contributors/affiliation"
+msgid "Affiliation"
+msgstr "Intézményi kapcsolat"
+
+#. OMI translation key: /contributors/orcid
+msgctxt "/contributors/orcid"
+msgid "ORCID"
+msgstr "ORCID"
+
+#. OMI translation key: /contributors/invalidOrcid
+msgctxt "/contributors/invalidOrcid"
+msgid "The ORCID checksum or format is invalid."
+msgstr "Az ORCID formátuma vagy ellenőrző összege hibás."
+
+#. OMI translation key: /contributors/role
+msgctxt "/contributors/role"
+msgid "Contribution role"
+msgstr "Közreműködői szerep"
+
+#. OMI translation key: /contributors/corresponding
+msgctxt "/contributors/corresponding"
+msgid "Corresponding contributor"
+msgstr "Kapcsolattartó közreműködő"
+
+#. OMI translation key: /contributors/roles/author
+msgctxt "/contributors/roles/author"
+msgid "Author"
+msgstr "Szerző"
+
+#. OMI translation key: /contributors/roles/editor
+msgctxt "/contributors/roles/editor"
+msgid "Editor"
+msgstr "Szerkesztő"
+
+#. OMI translation key: /contributors/roles/translator
+msgctxt "/contributors/roles/translator"
+msgid "Translator"
+msgstr "Fordító"
+
+#. OMI translation key: /contributors/roles/reviewer
+msgctxt "/contributors/roles/reviewer"
+msgid "Reviewer"
+msgstr "Lektor"
+
+#. OMI translation key: /contributors/roles/dataCurator
+msgctxt "/contributors/roles/dataCurator"
+msgid "Data curator"
+msgstr "Adatgondozó"
+
+#. OMI translation key: /contributors/roles/software
+msgctxt "/contributors/roles/software"
+msgid "Software"
+msgstr "Szoftver"
+
+#. OMI translation key: /contributors/roles/methodology
+msgctxt "/contributors/roles/methodology"
+msgid "Methodology"
+msgstr "Módszertan"
+
+#. OMI translation key: /contributors/roles/visualization
+msgctxt "/contributors/roles/visualization"
+msgid "Visualization"
+msgstr "Vizualizáció"
+
+#. OMI translation key: /contributors/roles/other
+msgctxt "/contributors/roles/other"
+msgid "Other"
+msgstr "Egyéb"
+
+#. OMI translation key: /history/title
+msgctxt "/history/title"
+msgid "Revision history"
+msgstr "Revíziótörténet"
+
+#. OMI translation key: /history/description
+msgctxt "/history/description"
+msgid "Immutable OMI-SPEC-160 revisions recorded for this manuscript."
+msgstr "A kézirathoz rögzített, nem módosítható OMI-SPEC-160 revíziók."
+
+#. OMI translation key: /history/empty
+msgctxt "/history/empty"
+msgid "No revisions have been recorded."
+msgstr "Még nincs rögzített revízió."
+
+#. OMI translation key: /history/current
+msgctxt "/history/current"
+msgid "Current"
+msgstr "Jelenlegi"
+
+#. OMI translation key: /history/revision
+msgctxt "/history/revision"
+msgid "Revision"
+msgstr "Revízió"
+
+#. OMI translation key: /history/events
+msgctxt "/history/events"
+msgid "events"
+msgstr "esemény"
+
+#. OMI translation key: /history/groupedChanges
+msgctxt "/history/groupedChanges"
+msgid "grouped changes"
+msgstr "csoportosított változás"
+
+#. OMI translation key: /history/unknownActor
+msgctxt "/history/unknownActor"
+msgid "Unknown actor"
+msgstr "Ismeretlen közreműködő"
+
+#. OMI translation key: /history/completeHistory
+msgctxt "/history/completeHistory"
+msgid "Complete history"
+msgstr "Teljes előzmény"
+
+#. OMI translation key: /history/shallowHistory
+msgctxt "/history/shallowHistory"
+msgid "Shallow history"
+msgstr "Részleges előzmény"
+
+#. OMI translation key: /history/pendingTitle
+msgctxt "/history/pendingTitle"
+msgid "Uncommitted working state"
+msgstr "Nem rögzített munkapéldány"
+
+#. OMI translation key: /history/pendingDescription
+msgctxt "/history/pendingDescription"
+msgid "Recent edits are being batched and will become one immutable checkpoint revision."
+msgstr "A legutóbbi módosítások összevonva várakoznak, és egyetlen nem módosítható checkpoint-revízióvá válnak."
+
+#. OMI translation key: /history/pendingBadge
+msgctxt "/history/pendingBadge"
+msgid "Pending"
+msgstr "Függőben"
+
+#. OMI translation key: /history/checkpoint
+msgctxt "/history/checkpoint"
+msgid "Save checkpoint"
+msgstr "Checkpoint mentése"
+
+#. OMI translation key: /history/discard
+msgctxt "/history/discard"
+msgid "Discard changes"
+msgstr "Módosítások elvetése"
+
+#. OMI translation key: /history/confirmDiscard
+msgctxt "/history/confirmDiscard"
+msgid "Discard all uncommitted changes and restore the latest committed revision?"
+msgstr "Elveti az összes nem rögzített módosítást, és visszaállítja a legutóbbi rögzített revíziót?"
+
+#. OMI translation key: /history/revert
+msgctxt "/history/revert"
+msgid "Revert"
+msgstr "Visszaállítás"
+
+#. OMI translation key: /history/confirmRevert
+msgctxt "/history/confirmRevert"
+msgid "Create a new revision that restores this earlier manuscript state?"
+msgstr "Készüljön új revízió, amely visszaállítja ezt a korábbi kéziratállapotot?"
+
+#. OMI translation key: /history/revertBlocked
+msgctxt "/history/revertBlocked"
+msgid "Save or discard the pending working state before reverting a committed revision."
+msgstr "Korábbi revízió visszaállítása előtt mentse checkpointként vagy vesse el a függő módosításokat."
+
+#. OMI translation key: /history/tombstonesTitle
+msgctxt "/history/tombstonesTitle"
+msgid "Deleted object records"
+msgstr "Törölt objektumok nyilvántartása"
+
+#. OMI translation key: /history/tombstonesDescription
+msgctxt "/history/tombstonesDescription"
+msgid "Persistent OMI-SPEC-160 tombstones preserve deleted object identifiers and restoration evidence."
+msgstr "Az OMI-SPEC-160 tombstone-rekordok megőrzik a törölt objektumok azonosítóit és a későbbi helyreállítás bizonyítékát."
+
+#. OMI translation key: /history/tombstoneActive
+msgctxt "/history/tombstoneActive"
+msgid "Deleted"
+msgstr "Törölve"
+
+#. OMI translation key: /history/tombstoneRestored
+msgctxt "/history/tombstoneRestored"
+msgid "Restored"
+msgstr "Helyreállítva"
+
+#. OMI translation key: /history/operations/snapshotCreated
+msgctxt "/history/operations/snapshotCreated"
+msgid "Manuscript snapshot created"
+msgstr "Kézirat-pillanatkép létrehozva"
+
+#. OMI translation key: /history/operations/titleChanged
+msgctxt "/history/operations/titleChanged"
+msgid "Manuscript title changed"
+msgstr "A kézirat címe megváltozott"
+
+#. OMI translation key: /history/operations/abstractChanged
+msgctxt "/history/operations/abstractChanged"
+msgid "Manuscript abstract changed"
+msgstr "A kézirat absztraktja megváltozott"
+
+#. OMI translation key: /history/operations/sectionCreated
+msgctxt "/history/operations/sectionCreated"
+msgid "Section added"
+msgstr "Új fejezet hozzáadva"
+
+#. OMI translation key: /history/operations/blockChanged
+msgctxt "/history/operations/blockChanged"
+msgid "Block content changed"
+msgstr "A blokk tartalma megváltozott"
+
+#. OMI translation key: /history/operations/contributorAdded
+msgctxt "/history/operations/contributorAdded"
+msgid "Contributor added"
+msgstr "Közreműködő hozzáadva"
+
+#. OMI translation key: /history/operations/contributorChanged
+msgctxt "/history/operations/contributorChanged"
+msgid "Contributor identity changed"
+msgstr "A közreműködő identitása megváltozott"
+
+#. OMI translation key: /history/operations/contributorRemoved
+msgctxt "/history/operations/contributorRemoved"
+msgid "Contributor removed"
+msgstr "Közreműködő eltávolítva"
+
+#. OMI translation key: /history/operations/contributionChanged
+msgctxt "/history/operations/contributionChanged"
+msgid "Contribution role changed"
+msgstr "A közreműködői szerep megváltozott"
+
+#. OMI translation key: /history/operations/contributorsReordered
+msgctxt "/history/operations/contributorsReordered"
+msgid "Contributors reordered"
+msgstr "A közreműködők sorrendje megváltozott"
+
+#. OMI translation key: /history/operations/reverted
+msgctxt "/history/operations/reverted"
+msgid "Earlier revision restored"
+msgstr "Korábbi revízió visszaállítva"
+
+#. OMI translation key: /editor/addSection
+msgctxt "/editor/addSection"
+msgid "Add section"
+msgstr "Fejezet hozzáadása"
+
+#. OMI translation key: /editor/addParagraph
+msgctxt "/editor/addParagraph"
+msgid "Add paragraph"
+msgstr "Bekezdés hozzáadása"
+
+#. OMI translation key: /editor/addNote
+msgctxt "/editor/addNote"
+msgid "Note"
+msgstr "Jegyzet"
+
+#. OMI translation key: /editor/addCitation
+msgctxt "/editor/addCitation"
+msgid "Citation"
+msgstr "Hivatkozás"
+
+#. OMI translation key: /editor/untitledSection
+msgctxt "/editor/untitledSection"
+msgid "Untitled section"
+msgstr "Névtelen fejezet"
+
+#. OMI translation key: /editor/emptyParagraph
+msgctxt "/editor/emptyParagraph"
+msgid "Start writing…"
+msgstr "Kezdjen el írni…"
+
+#. OMI translation key: /editor/paragraph
+msgctxt "/editor/paragraph"
+msgid "Paragraph"
+msgstr "Bekezdés"
+
+#. OMI translation key: /editor/heading
+msgctxt "/editor/heading"
+msgid "Heading"
+msgstr "Címsor"
+
+#. OMI translation key: /editor/quote
+msgctxt "/editor/quote"
+msgid "Quote"
+msgstr "Idézet"
+
+#. OMI translation key: /editor/insertNote
+msgctxt "/editor/insertNote"
+msgid "Insert semantic manuscript note"
+msgstr "Szemantikus jegyzet beszúrása"
+
+#. OMI translation key: /editor/insertCitation
+msgctxt "/editor/insertCitation"
+msgid "Insert semantic citation"
+msgstr "Szemantikus hivatkozás beszúrása"
+
+#. OMI translation key: /editor/loading
+msgctxt "/editor/loading"
+msgid "Loading editor…"
+msgstr "A szerkesztő betöltése…"
+
+#. OMI translation key: /status/draft
+msgctxt "/status/draft"
+msgid "Draft"
+msgstr "Piszkozat"
+
+#. OMI translation key: /status/submitted
+msgctxt "/status/submitted"
+msgid "Submitted"
+msgstr "Beküldve"
+
+#. OMI translation key: /status/accepted
+msgctxt "/status/accepted"
+msgid "Accepted"
+msgstr "Elfogadva"
+
+#. OMI translation key: /status/published
+msgctxt "/status/published"
+msgid "Published"
+msgstr "Megjelent"
+
+#. OMI translation key: /validation/requiredField
+msgctxt "/validation/requiredField"
+msgid "This field is required."
+msgstr "Ez a mező kötelező."
+
+#. OMI translation key: /validation/invalidDocument
+msgctxt "/validation/invalidDocument"
+msgid "The document structure is invalid."
+msgstr "A dokumentum szerkezete érvénytelen."
+
+#. OMI translation key: /validation/unsupportedSchema
+msgctxt "/validation/unsupportedSchema"
+msgid "The document schema version is not supported."
+msgstr "A dokumentum sémaverziója nem támogatott."
+
+#. OMI translation key: /languages/en
+msgctxt "/languages/en"
+msgid "English"
+msgstr "Angol"
+
+#. OMI translation key: /languages/hu
+msgctxt "/languages/hu"
+msgid "Hungarian"
+msgstr "Magyar"
+
+#. OMI translation key: /languages/de
+msgctxt "/languages/de"
+msgid "German"
+msgstr "Német"
+
+#. OMI translation key: /auth/brand/name
+msgctxt "/auth/brand/name"
+msgid "Open Manuscript Studio"
+msgstr "Open Manuscript Studio"
+
+#. OMI translation key: /auth/brand/description
+msgctxt "/auth/brand/description"
+msgid "Collaborative scholarly writing"
+msgstr "Együttműködő kéziratszerkesztő"
+
+#. OMI translation key: /auth/login/title
+msgctxt "/auth/login/title"
+msgid "Sign in"
+msgstr "Bejelentkezés"
+
+#. OMI translation key: /auth/login/description
+msgctxt "/auth/login/description"
+msgid "Please sign in to continue."
+msgstr "A folytatáshoz jelentkezzen be."
+
+#. OMI translation key: /auth/login/submit
+msgctxt "/auth/login/submit"
+msgid "Sign in"
+msgstr "Bejelentkezés"
+
+#. OMI translation key: /auth/login/submitting
+msgctxt "/auth/login/submitting"
+msgid "Signing in…"
+msgstr "Bejelentkezés…"
+
+#. OMI translation key: /auth/login/noAccount
+msgctxt "/auth/login/noAccount"
+msgid "Do not have an account yet?"
+msgstr "Még nincs fiókja?"
+
+#. OMI translation key: /auth/login/registerLink
+msgctxt "/auth/login/registerLink"
+msgid "Register"
+msgstr "Regisztráció"
+
+#. OMI translation key: /auth/register/title
+msgctxt "/auth/register/title"
+msgid "Create account"
+msgstr "Fiók létrehozása"
+
+#. OMI translation key: /auth/register/description
+msgctxt "/auth/register/description"
+msgid "Create your account."
+msgstr "Hozzon létre új fiókot."
+
+#. OMI translation key: /auth/register/submit
+msgctxt "/auth/register/submit"
+msgid "Register"
+msgstr "Regisztráció"
+
+#. OMI translation key: /auth/register/hasAccount
+msgctxt "/auth/register/hasAccount"
+msgid "Already have an account?"
+msgstr "Már van fiókja?"
+
+#. OMI translation key: /auth/register/loginLink
+msgctxt "/auth/register/loginLink"
+msgid "Sign in"
+msgstr "Bejelentkezés"
+
+#. OMI translation key: /auth/fields/name/label
+msgctxt "/auth/fields/name/label"
+msgid "Full name"
+msgstr "Teljes név"
+
+#. OMI translation key: /auth/fields/name/placeholder
+msgctxt "/auth/fields/name/placeholder"
+msgid "Your full name"
+msgstr "Adja meg a teljes nevét"
+
+#. OMI translation key: /auth/fields/email/label
+msgctxt "/auth/fields/email/label"
+msgid "Email"
+msgstr "E-mail"
+
+#. OMI translation key: /auth/fields/email/placeholder
+msgctxt "/auth/fields/email/placeholder"
+msgid "name@example.com"
+msgstr "pelda@email.hu"
+
+#. OMI translation key: /auth/fields/password/label
+msgctxt "/auth/fields/password/label"
+msgid "Password"
+msgstr "Jelszó"
+
+#. OMI translation key: /auth/fields/password/placeholder
+msgctxt "/auth/fields/password/placeholder"
+msgid "Enter your password"
+msgstr "Adja meg a jelszavát"
+
+#. OMI translation key: /auth/errors/invalidEmail
+msgctxt "/auth/errors/invalidEmail"
+msgid "Invalid e-mail address."
+msgstr "Érvénytelen e-mail-cím."
+
+#. OMI translation key: /auth/errors/invalidCredentials
+msgctxt "/auth/errors/invalidCredentials"
+msgid "Incorrect e-mail address or password."
+msgstr "Helytelen e-mail-cím vagy jelszó."
+
+#. OMI translation key: /auth/errors/userNotFound
+msgctxt "/auth/errors/userNotFound"
+msgid "The user account could not be found."
+msgstr "A felhasználói fiók nem található."
+
+#. OMI translation key: /auth/errors/accountNotActive
+msgctxt "/auth/errors/accountNotActive"
+msgid "The user account is not active."
+msgstr "A felhasználói fiók nem aktív."
+
+#. OMI translation key: /auth/errors/authenticationRequired
+msgctxt "/auth/errors/authenticationRequired"
+msgid "Authentication is required."
+msgstr "A művelethez bejelentkezés szükséges."
+
+#. OMI translation key: /auth/alphaNotice
+msgctxt "/auth/alphaNotice"
+msgid "Alpha version – authentication is currently for testing purposes."
+msgstr "Alfa verzió – a bejelentkezés jelenleg tesztelési célokat szolgál."
+
+#. OMI translation key: /modules/assetContainer/title
+msgctxt "/modules/assetContainer/title"
+msgid "OMI package"
+msgstr "OMI-csomag"
+
+#. OMI translation key: /modules/assetContainer/description
+msgctxt "/modules/assetContainer/description"
+msgid "Externalize binary resources and package the manuscript, history, publication profile, checksums, assets and valid JATS output as a portable .omi container."
+msgstr "A bináris erőforrások külső assetté alakítása, majd a kézirat, revíziótörténet, publikációs profil, ellenőrzőösszegek, assetek és az érvényes JATS-kimenet hordozható .omi konténerbe csomagolása."
+
+#. OMI translation key: /modules/assetContainer/assets
+msgctxt "/modules/assetContainer/assets"
+msgid "registered assets"
+msgstr "regisztrált asset"
+
+#. OMI translation key: /modules/assetContainer/embedded
+msgctxt "/modules/assetContainer/embedded"
+msgid "embedded images awaiting externalization"
+msgstr "külső assetté alakítandó beágyazott kép"
+
+#. OMI translation key: /modules/assetContainer/prepare
+msgctxt "/modules/assetContainer/prepare"
+msgid "Prepare assets"
+msgstr "Assetek előkészítése"
+
+#. OMI translation key: /modules/assetContainer/preparing
+msgctxt "/modules/assetContainer/preparing"
+msgid "Preparing assets…"
+msgstr "Assetek előkészítése…"
+
+#. OMI translation key: /modules/assetContainer/prepared
+msgctxt "/modules/assetContainer/prepared"
+msgid "Embedded image payloads are registered as stable assets."
+msgstr "A beágyazott képek stabil assetként regisztrálva vannak."
+
+#. OMI translation key: /modules/assetContainer/download
+msgctxt "/modules/assetContainer/download"
+msgid "Download .omi package"
+msgstr ".omi csomag letöltése"
+
+#. OMI translation key: /modules/assetContainer/downloading
+msgctxt "/modules/assetContainer/downloading"
+msgid "Building package…"
+msgstr "Csomag készítése…"
+
+#. OMI translation key: /modules/assetContainer/ready
+msgctxt "/modules/assetContainer/ready"
+msgid "The container passed Studio integrity checks."
+msgstr "A konténer átment a Studio integritás-ellenőrzésén."
+
+#. OMI translation key: /modules/assetContainer/blocked
+msgctxt "/modules/assetContainer/blocked"
+msgid "The package has blocking integrity errors."
+msgstr "A csomag blokkoló integritási hibákat tartalmaz."
+
+#. OMI translation key: /modules/assetContainer/diagnostics
+msgctxt "/modules/assetContainer/diagnostics"
+msgid "Container diagnostics"
+msgstr "Konténerdiagnosztika"
+
+#. OMI translation key: /modules/assetContainer/noDiagnostics
+msgctxt "/modules/assetContainer/noDiagnostics"
+msgid "No container-specific diagnostics."
+msgstr "Nincs konténer-specifikus diagnosztika."
+
+#. OMI translation key: /modules/assetContainer/integrity
+msgctxt "/modules/assetContainer/integrity"
+msgid "SHA-256 integrity"
+msgstr "SHA-256 integritás"
+
+#. OMI translation key: /modules/assetContainer/format
+msgctxt "/modules/assetContainer/format"
+msgid "OMI-SPEC-320 / OMI-SPEC-330 Draft package"
+msgstr "OMI-SPEC-320 / OMI-SPEC-330 Draft csomag"
+
+#. OMI translation key: /modules/assetContainer/privacyNote
+msgctxt "/modules/assetContainer/privacyNote"
+msgid "Asset-backed image previews are resolved from the local binary repository. Portable manuscript state no longer needs Base64 preview data after externalization."
+msgstr "Az asset-alapú kép-előnézetet a Studio a helyi bináris tárból oldja fel. Külső assetté alakítás után a hordozható kéziratállapotnak már nincs szüksége Base64-előnézetre."
+
+#. OMI translation key: /modules/assetContainer/importTitle
+msgctxt "/modules/assetContainer/importTitle"
+msgid "Open OMI package"
+msgstr "OMI-csomag megnyitása"
+
+#. OMI translation key: /modules/assetContainer/importDescription
+msgctxt "/modules/assetContainer/importDescription"
+msgid "Inspect an untrusted .omi container, verify its manifest, ZIP structure, revision identities, assets and SHA-256 checksums before loading it."
+msgstr "A nem megbízhatónak tekintett .omi konténer ZIP-szerkezetének, manifestjének, revízióazonosítóinak, assetjeinek és SHA-256 ellenőrzőösszegeinek vizsgálata betöltés előtt."
+
+#. OMI translation key: /modules/assetContainer/choosePackage
+msgctxt "/modules/assetContainer/choosePackage"
+msgid "Choose .omi package"
+msgstr ".omi csomag kiválasztása"
+
+#. OMI translation key: /modules/assetContainer/inspecting
+msgctxt "/modules/assetContainer/inspecting"
+msgid "Verifying package…"
+msgstr "Csomag ellenőrzése…"
+
+#. OMI translation key: /modules/assetContainer/importPackage
+msgctxt "/modules/assetContainer/importPackage"
+msgid "Open verified manuscript"
+msgstr "Ellenőrzött kézirat megnyitása"
+
+#. OMI translation key: /modules/assetContainer/importing
+msgctxt "/modules/assetContainer/importing"
+msgid "Opening manuscript…"
+msgstr "Kézirat megnyitása…"
+
+#. OMI translation key: /modules/assetContainer/verified
+msgctxt "/modules/assetContainer/verified"
+msgid "The package passed integrity verification and can be opened."
+msgstr "A csomag átment az integritás-ellenőrzésen és megnyitható."
+
+#. OMI translation key: /modules/assetContainer/invalid
+msgctxt "/modules/assetContainer/invalid"
+msgid "The package cannot be opened until its blocking integrity errors are resolved."
+msgstr "A csomag a blokkoló integritási hibák kijavításáig nem nyitható meg."
+
+#. OMI translation key: /modules/assetContainer/imported
+msgctxt "/modules/assetContainer/imported"
+msgid "The verified OMI manuscript was opened with its original identity and revision history."
+msgstr "Az ellenőrzött OMI-kézirat az eredeti azonosítóval és revíziótörténettel megnyílt."
+
+#. OMI translation key: /modules/assetContainer/entries
+msgctxt "/modules/assetContainer/entries"
+msgid "entries"
+msgstr "csomagelem"
+
+#. OMI translation key: /modules/assetContainer/revisions
+msgctxt "/modules/assetContainer/revisions"
+msgid "revisions"
+msgstr "revízió"
+
+#. OMI translation key: /modules/assetContainer/checksums
+msgctxt "/modules/assetContainer/checksums"
+msgid "checksums verified"
+msgstr "ellenőrzött checksum"
+
+#. OMI translation key: /modules/assetContainer/packageAssets
+msgctxt "/modules/assetContainer/packageAssets"
+msgid "assets"
+msgstr "asset"
+
+#. OMI translation key: /modules/assetContainer/manuscriptId
+msgctxt "/modules/assetContainer/manuscriptId"
+msgid "Manuscript ID"
+msgstr "Kézirat-ID"
+
+#. OMI translation key: /modules/assetContainer/headRevision
+msgctxt "/modules/assetContainer/headRevision"
+msgid "Head revision"
+msgstr "Aktuális revízió"
+
+#. OMI translation key: /modules/assetContainer/replaceWarning
+msgctxt "/modules/assetContainer/replaceWarning"
+msgid "Opening the package replaces the active workspace manuscript. It does not create a new manuscript ID or revision root."
+msgstr "A csomag megnyitása lecseréli az aktív munkatér kéziratát. Nem hoz létre új kézirat-ID-t vagy új revíziós gyökeret."
+
+#. OMI translation key: /modules/assetContainer/confirmImport
+msgctxt "/modules/assetContainer/confirmImport"
+msgid "Open this verified OMI manuscript and replace the currently active workspace document?"
+msgstr "Megnyitod ezt az ellenőrzött OMI-kéziratot, és lecseréled vele a munkatér jelenlegi dokumentumát?"
+
+#. OMI translation key: /modules/crossReferences/insert
+msgctxt "/modules/crossReferences/insert"
+msgid "Cross-reference"
+msgstr "Kereszthivatkozás"
+
+#. OMI translation key: /modules/crossReferences/insertDescription
+msgctxt "/modules/crossReferences/insertDescription"
+msgid "Link to a section, figure, table, chart or equation by stable object identity."
+msgstr "Hivatkozás szakaszra, ábrára, táblázatra, grafikonra vagy egyenletre stabil objektumazonosítóval."
+
+#. OMI translation key: /modules/crossReferences/chooseTarget
+msgctxt "/modules/crossReferences/chooseTarget"
+msgid "Choose target"
+msgstr "Cél kiválasztása"
+
+#. OMI translation key: /modules/crossReferences/searchPlaceholder
+msgctxt "/modules/crossReferences/searchPlaceholder"
+msgid "Search document objects…"
+msgstr "Dokumentumobjektum keresése…"
+
+#. OMI translation key: /modules/crossReferences/noTargets
+msgctxt "/modules/crossReferences/noTargets"
+msgid "No matching document objects."
+msgstr "Nincs megfelelő dokumentumobjektum."
+
+#. OMI translation key: /modules/crossReferences/cancel
+msgctxt "/modules/crossReferences/cancel"
+msgid "Cancel"
+msgstr "Mégse"
+
+#. OMI translation key: /modules/crossReferences/display
+msgctxt "/modules/crossReferences/display"
+msgid "Display"
+msgstr "Megjelenítés"
+
+#. OMI translation key: /modules/crossReferences/displayLabelNumber
+msgctxt "/modules/crossReferences/displayLabelNumber"
+msgid "Label and number"
+msgstr "Megnevezés és szám"
+
+#. OMI translation key: /modules/crossReferences/displayNumber
+msgctxt "/modules/crossReferences/displayNumber"
+msgid "Number only"
+msgstr "Csak szám"
+
+#. OMI translation key: /modules/crossReferences/displayTitle
+msgctxt "/modules/crossReferences/displayTitle"
+msgid "Title or caption"
+msgstr "Cím vagy képaláírás"
+
+#. OMI translation key: /modules/crossReferences/displayLabelNumberTitle
+msgctxt "/modules/crossReferences/displayLabelNumberTitle"
+msgid "Label, number and title"
+msgstr "Megnevezés, szám és cím"
+
+#. OMI translation key: /modules/crossReferences/edit
+msgctxt "/modules/crossReferences/edit"
+msgid "Edit cross-reference"
+msgstr "Kereszthivatkozás szerkesztése"
+
+#. OMI translation key: /modules/crossReferences/target
+msgctxt "/modules/crossReferences/target"
+msgid "Target"
+msgstr "Cél"
+
+#. OMI translation key: /modules/crossReferences/goToTarget
+msgctxt "/modules/crossReferences/goToTarget"
+msgid "Go to target"
+msgstr "Ugrás a célhoz"
+
+#. OMI translation key: /modules/crossReferences/deleteReference
+msgctxt "/modules/crossReferences/deleteReference"
+msgid "Delete reference"
+msgstr "Hivatkozás törlése"
+
+#. OMI translation key: /modules/crossReferences/confirmDelete
+msgctxt "/modules/crossReferences/confirmDelete"
+msgid "Delete this internal cross-reference?"
+msgstr "Törli ezt a belső kereszthivatkozást?"
+
+#. OMI translation key: /modules/crossReferences/unresolved
+msgctxt "/modules/crossReferences/unresolved"
+msgid "The target object no longer exists."
+msgstr "A hivatkozott objektum már nem létezik."
+
+#. OMI translation key: /modules/crossReferences/numbering
+msgctxt "/modules/crossReferences/numbering"
+msgid "Object numbering"
+msgstr "Objektumszámozás"
+
+#. OMI translation key: /modules/crossReferences/numberingDescription
+msgctxt "/modules/crossReferences/numberingDescription"
+msgid "Choose whether figures, tables, charts and equations are numbered through the manuscript or restart in each section."
+msgstr "Az ábrák, táblázatok, grafikonok és egyenletek számozása lehet folyamatos vagy szakaszonként újrainduló."
+
+#. OMI translation key: /modules/crossReferences/numberingDocument
+msgctxt "/modules/crossReferences/numberingDocument"
+msgid "Continuous through document"
+msgstr "Folyamatos a dokumentumban"
+
+#. OMI translation key: /modules/crossReferences/numberingSection
+msgctxt "/modules/crossReferences/numberingSection"
+msgid "Restart in each section"
+msgstr "Újrakezdés szakaszonként"
+
+#. OMI translation key: /modules/crossReferences/statusTitle
+msgctxt "/modules/crossReferences/statusTitle"
+msgid "Internal references"
+msgstr "Belső hivatkozások"
+
+#. OMI translation key: /modules/crossReferences/statusDescription
+msgctxt "/modules/crossReferences/statusDescription"
+msgid "Semantic references remain attached to stable object IDs when document order changes."
+msgstr "A szemantikus hivatkozások átrendezés után is a stabil objektumazonosítóhoz kapcsolódnak."
+
+#. OMI translation key: /modules/crossReferences/statusHealthy
+msgctxt "/modules/crossReferences/statusHealthy"
+msgid "All internal references resolve correctly."
+msgstr "Minden belső hivatkozás helyesen feloldható."
+
+#. OMI translation key: /modules/crossReferences/statusIssues
+msgctxt "/modules/crossReferences/statusIssues"
+msgid "Internal reference issues"
+msgstr "Belső hivatkozási problémák"
+
+#. OMI translation key: /modules/crossReferences/missingTarget
+msgctxt "/modules/crossReferences/missingTarget"
+msgid "Missing target"
+msgstr "Hiányzó célobjektum"
+
+#. OMI translation key: /modules/crossReferences/missingAnchor
+msgctxt "/modules/crossReferences/missingAnchor"
+msgid "Missing text anchor"
+msgstr "Hiányzó szöveghorgony"
+
+#. OMI translation key: /modules/crossReferences/section
+msgctxt "/modules/crossReferences/section"
+msgid "Sections"
+msgstr "Szakaszok"
+
+#. OMI translation key: /modules/crossReferences/figure
+msgctxt "/modules/crossReferences/figure"
+msgid "Figures"
+msgstr "Ábrák"
+
+#. OMI translation key: /modules/crossReferences/table
+msgctxt "/modules/crossReferences/table"
+msgid "Tables"
+msgstr "Táblázatok"
+
+#. OMI translation key: /modules/crossReferences/chart
+msgctxt "/modules/crossReferences/chart"
+msgid "Charts"
+msgstr "Grafikonok"
+
+#. OMI translation key: /modules/crossReferences/equation
+msgctxt "/modules/crossReferences/equation"
+msgid "Equations"
+msgstr "Egyenletek"
+
+#. OMI translation key: /modules/cslRendering/styleTitle
+msgctxt "/modules/cslRendering/styleTitle"
+msgid "Citation style"
+msgstr "Hivatkozási stílus"
+
+#. OMI translation key: /modules/cslRendering/styleDescription
+msgctxt "/modules/cslRendering/styleDescription"
+msgid "Choose how citations and the bibliography are rendered while authoring. The semantic citation data remain unchanged."
+msgstr "Válaszd ki, hogyan jelenjenek meg szerkesztés közben a hivatkozások és az irodalomjegyzék. A szemantikus hivatkozási adatok nem változnak."
+
+#. OMI translation key: /modules/cslRendering/styleProfileNote
+msgctxt "/modules/cslRendering/styleProfileNote"
+msgid "Studio currently uses CSL-JSON-compatible built-in profiles. A publication profile may override this presentation preference later."
+msgstr "A Studio jelenleg CSL-JSON-kompatibilis beépített profilokat használ. A publikációs profil később felülírhatja ezt a megjelenítési beállítást."
+
+#. OMI translation key: /modules/cslRendering/bibliographyTitle
+msgctxt "/modules/cslRendering/bibliographyTitle"
+msgid "Formatted bibliography"
+msgstr "Formázott irodalomjegyzék"
+
+#. OMI translation key: /modules/cslRendering/bibliographyDescription
+msgctxt "/modules/cslRendering/bibliographyDescription"
+msgid "Generated from cited bibliographic records using the selected presentation profile."
+msgstr "Az idézett bibliográfiai rekordokból, a kiválasztott megjelenítési profil szerint generálva."
+
+#. OMI translation key: /modules/cslRendering/selectedSources
+msgctxt "/modules/cslRendering/selectedSources"
+msgid "Selected sources"
+msgstr "Kiválasztott források"
+
+#. OMI translation key: /modules/cslRendering/clusterHint
+msgctxt "/modules/cslRendering/clusterHint"
+msgid "Select one or more works. Multiple selections are inserted as one semantic citation cluster."
+msgstr "Egy vagy több mű választható ki. Több mű egyetlen szemantikus hivatkozáscsoportként kerül a szövegbe."
+
+#. OMI translation key: /modules/cslRendering/addToCluster
+msgctxt "/modules/cslRendering/addToCluster"
+msgid "Add to cluster"
+msgstr "Hozzáadás a csoporthoz"
+
+#. OMI translation key: /modules/cslRendering/removeFromCluster
+msgctxt "/modules/cslRendering/removeFromCluster"
+msgid "Remove from cluster"
+msgstr "Eltávolítás a csoportból"
+
+#. OMI translation key: /modules/cslRendering/clusterTitle
+msgctxt "/modules/cslRendering/clusterTitle"
+msgid "Citation cluster"
+msgstr "Hivatkozáscsoport"
+
+#. OMI translation key: /modules/cslRendering/clusterDescription
+msgctxt "/modules/cslRendering/clusterDescription"
+msgid "Each item remains an independent citation occurrence with its own locator, prefix and suffix."
+msgstr "Minden elem önálló hivatkozási előfordulás marad saját helymegjelöléssel, előtaggal és utótaggal."
+
+#. OMI translation key: /modules/cslRendering/deleteCluster
+msgctxt "/modules/cslRendering/deleteCluster"
+msgid "Delete cluster"
+msgstr "Csoport törlése"
+
+#. OMI translation key: /modules/cslRendering/confirmDeleteCluster
+msgctxt "/modules/cslRendering/confirmDeleteCluster"
+msgid "Delete this complete citation cluster from the manuscript? Bibliographic records remain in the reference library."
+msgstr "Törlöd a teljes hivatkozáscsoportot a kéziratból? A bibliográfiai rekordok megmaradnak a hivatkozásjegyzékben."
+
+#. OMI translation key: /modules/cslRendering/moveUp
+msgctxt "/modules/cslRendering/moveUp"
+msgid "Move earlier"
+msgstr "Előrébb"
+
+#. OMI translation key: /modules/cslRendering/moveDown
+msgctxt "/modules/cslRendering/moveDown"
+msgid "Move later"
+msgstr "Hátrébb"
+
+#. OMI translation key: /modules/cslRendering/styleNames/apa-7
+msgctxt "/modules/cslRendering/styleNames/apa-7"
+msgid "APA 7"
+msgstr "APA 7"
+
+#. OMI translation key: /modules/cslRendering/styleNames/chicago-author-date
+msgctxt "/modules/cslRendering/styleNames/chicago-author-date"
+msgid "Chicago Author-Date"
+msgstr "Chicago szerző–év"
+
+#. OMI translation key: /modules/cslRendering/styleNames/chicago-notes-bibliography
+msgctxt "/modules/cslRendering/styleNames/chicago-notes-bibliography"
+msgid "Chicago Notes & Bibliography"
+msgstr "Chicago jegyzetek és bibliográfia"
+
+#. OMI translation key: /modules/cslRendering/styleNames/mla-9
+msgctxt "/modules/cslRendering/styleNames/mla-9"
+msgid "MLA 9"
+msgstr "MLA 9"
+
+#. OMI translation key: /modules/cslRendering/styleNames/iso-690
+msgctxt "/modules/cslRendering/styleNames/iso-690"
+msgid "ISO 690"
+msgstr "ISO 690"
+
+#. OMI translation key: /modules/docxImport/title
+msgctxt "/modules/docxImport/title"
+msgid "Import Word manuscript"
+msgstr "Word-kézirat importálása"
+
+#. OMI translation key: /modules/docxImport/description
+msgctxt "/modules/docxImport/description"
+msgid "Convert a DOCX manuscript into semantic OMI structure locally in your browser."
+msgstr "DOCX-kézirat szemantikus OMI-struktúrává alakítása helyben, a böngészőben."
+
+#. OMI translation key: /modules/docxImport/chooseFile
+msgctxt "/modules/docxImport/chooseFile"
+msgid "Choose DOCX file"
+msgstr "DOCX-fájl kiválasztása"
+
+#. OMI translation key: /modules/docxImport/parsing
+msgctxt "/modules/docxImport/parsing"
+msgid "Reading and analysing DOCX…"
+msgstr "DOCX beolvasása és elemzése…"
+
+#. OMI translation key: /modules/docxImport/replaceFile
+msgctxt "/modules/docxImport/replaceFile"
+msgid "Choose another file"
+msgstr "Másik fájl kiválasztása"
+
+#. OMI translation key: /modules/docxImport/previewTitle
+msgctxt "/modules/docxImport/previewTitle"
+msgid "Import preview"
+msgstr "Import-előnézet"
+
+#. OMI translation key: /modules/docxImport/previewDescription
+msgctxt "/modules/docxImport/previewDescription"
+msgid "Review the reconstructed structure before opening it as a new OMI manuscript."
+msgstr "A létrehozott szerkezet ellenőrizhető, mielőtt új OMI-kéziratként megnyílik."
+
+#. OMI translation key: /modules/docxImport/detectedMetadata
+msgctxt "/modules/docxImport/detectedMetadata"
+msgid "Detected metadata"
+msgstr "Felismert metaadatok"
+
+#. OMI translation key: /modules/docxImport/manuscriptTitle
+msgctxt "/modules/docxImport/manuscriptTitle"
+msgid "Title"
+msgstr "Cím"
+
+#. OMI translation key: /modules/docxImport/language
+msgctxt "/modules/docxImport/language"
+msgid "Language"
+msgstr "Nyelv"
+
+#. OMI translation key: /modules/docxImport/titleSource
+msgctxt "/modules/docxImport/titleSource"
+msgid "Title source"
+msgstr "A cím forrása"
+
+#. OMI translation key: /modules/docxImport/sourceCore
+msgctxt "/modules/docxImport/sourceCore"
+msgid "DOCX core properties"
+msgstr "DOCX alapmetaadat"
+
+#. OMI translation key: /modules/docxImport/sourceStyle
+msgctxt "/modules/docxImport/sourceStyle"
+msgid "Word Title style"
+msgstr "Word Cím stílus"
+
+#. OMI translation key: /modules/docxImport/sourceFilename
+msgctxt "/modules/docxImport/sourceFilename"
+msgid "File name fallback"
+msgstr "Fájlnévből képzett cím"
+
+#. OMI translation key: /modules/docxImport/authors
+msgctxt "/modules/docxImport/authors"
+msgid "Detected authors"
+msgstr "Felismert szerzők"
+
+#. OMI translation key: /modules/docxImport/importAuthors
+msgctxt "/modules/docxImport/importAuthors"
+msgid "Import detected authors"
+msgstr "Felismert szerzők átvétele"
+
+#. OMI translation key: /modules/docxImport/importAuthorsHint
+msgctxt "/modules/docxImport/importAuthorsHint"
+msgid "DOCX creator/Author-style metadata can be ambiguous. Imported names remain editable and are not identity-verified."
+msgstr "A DOCX creator/Author metaadata nem mindig azonos a közlemény szerzőségével. Az átvett nevek szerkeszthetők és nem minősülnek hitelesített identitásnak."
+
+#. OMI translation key: /modules/docxImport/coreAuthorSource
+msgctxt "/modules/docxImport/coreAuthorSource"
+msgid "core metadata"
+msgstr "alapmetaadat"
+
+#. OMI translation key: /modules/docxImport/styleAuthorSource
+msgctxt "/modules/docxImport/styleAuthorSource"
+msgid "Author style"
+msgstr "Szerző stílus"
+
+#. OMI translation key: /modules/docxImport/outline
+msgctxt "/modules/docxImport/outline"
+msgid "Reconstructed outline"
+msgstr "Felismert dokumentumszerkezet"
+
+#. OMI translation key: /modules/docxImport/warnings
+msgctxt "/modules/docxImport/warnings"
+msgid "Review items"
+msgstr "Ellenőrizendő elemek"
+
+#. OMI translation key: /modules/docxImport/noWarnings
+msgctxt "/modules/docxImport/noWarnings"
+msgid "No structural warnings were detected."
+msgstr "Nem találtam szerkezeti figyelmeztetést."
+
+#. OMI translation key: /modules/docxImport/importButton
+msgctxt "/modules/docxImport/importButton"
+msgid "Open as new OMI manuscript"
+msgstr "Megnyitás új OMI-kéziratként"
+
+#. OMI translation key: /modules/docxImport/imported
+msgctxt "/modules/docxImport/imported"
+msgid "The DOCX manuscript has been opened."
+msgstr "A DOCX-kézirat megnyílt."
+
+#. OMI translation key: /modules/docxImport/confirmReplace
+msgctxt "/modules/docxImport/confirmReplace"
+msgid "Open this DOCX as a new OMI manuscript? The current active manuscript will leave the single-document workspace."
+msgstr "Megnyitja ezt a DOCX-fájlt új OMI-kéziratként? A jelenlegi aktív kézirat kikerül az egykéziratos munkatérből."
+
+#. OMI translation key: /modules/docxImport/currentWorkspaceWarning
+msgctxt "/modules/docxImport/currentWorkspaceWarning"
+msgid "Import creates a new manuscript identity and a new root revision. It does not rewrite the current manuscript history."
+msgstr "Az import új kéziratazonosítót és új gyökérrevíziót hoz létre; a jelenlegi kézirat történetét nem írja át."
+
+#. OMI translation key: /modules/docxImport/stats/sections
+msgctxt "/modules/docxImport/stats/sections"
+msgid "Sections"
+msgstr "Szakaszok"
+
+#. OMI translation key: /modules/docxImport/stats/paragraphs
+msgctxt "/modules/docxImport/stats/paragraphs"
+msgid "Paragraphs"
+msgstr "Bekezdések"
+
+#. OMI translation key: /modules/docxImport/stats/lists
+msgctxt "/modules/docxImport/stats/lists"
+msgid "Lists"
+msgstr "Listák"
+
+#. OMI translation key: /modules/docxImport/stats/notes
+msgctxt "/modules/docxImport/stats/notes"
+msgid "Notes"
+msgstr "Jegyzetek"
+
+#. OMI translation key: /modules/docxImport/stats/images
+msgctxt "/modules/docxImport/stats/images"
+msgid "Images"
+msgstr "Képek"
+
+#. OMI translation key: /modules/docxImport/stats/tables
+msgctxt "/modules/docxImport/stats/tables"
+msgid "Tables"
+msgstr "Táblázatok"
+
+#. OMI translation key: /modules/docxImport/stats/equations
+msgctxt "/modules/docxImport/stats/equations"
+msgid "Equations"
+msgstr "Egyenletek"
+
+#. OMI translation key: /modules/docxImport/stats/citations
+msgctxt "/modules/docxImport/stats/citations"
+msgid "Citations"
+msgstr "Hivatkozások"
+
+#. OMI translation key: /modules/docxImport/stats/references
+msgctxt "/modules/docxImport/stats/references"
+msgid "Reference records"
+msgstr "Bibliográfiai rekordok"
+
+#. OMI translation key: /modules/docxImport/warningText/tracked-deletions
+msgctxt "/modules/docxImport/warningText/tracked-deletions"
+msgid "Tracked deletions are not imported; accepted/visible text is preferred."
+msgstr "A követett törlések nem kerülnek be; a látható/elfogadott szöveg kap elsőbbséget."
+
+#. OMI translation key: /modules/docxImport/warningText/comments-not-imported
+msgctxt "/modules/docxImport/warningText/comments-not-imported"
+msgid "Word comments are not yet converted into OMI review annotations."
+msgstr "A Word-megjegyzések még nem alakulnak OMI lektori annotációvá."
+
+#. OMI translation key: /modules/docxImport/warningText/text-boxes-flattened
+msgctxt "/modules/docxImport/warningText/text-boxes-flattened"
+msgid "Text-box content may be flattened into the main text flow."
+msgstr "A szövegdobozok tartalma a fő szövegfolyamba lapulhat."
+
+#. OMI translation key: /modules/docxImport/warningText/conflicting-title-metadata
+msgctxt "/modules/docxImport/warningText/conflicting-title-metadata"
+msgid "DOCX core title and the styled document title differ; the core title is retained."
+msgstr "A DOCX alapmetaadatában és a dokumentumban szereplő cím eltér; az alapmetaadat címe marad meg."
+
+#. OMI translation key: /modules/docxImport/warningText/merged-table-cells
+msgctxt "/modules/docxImport/warningText/merged-table-cells"
+msgid "Merged Word table cells are flattened into the editable rectangular OMI table model."
+msgstr "A Word egyesített cellái az OMI szerkeszthető, téglalap alakú táblázatmodelljében kilapításra kerülnek."
+
+#. OMI translation key: /modules/docxImport/warningText/missing-note-body
+msgctxt "/modules/docxImport/warningText/missing-note-body"
+msgid "A note reference was found without a readable note body."
+msgstr "Jegyzethivatkozás található, de a jegyzet törzse nem olvasható."
+
+#. OMI translation key: /modules/docxImport/warningText/unresolved-word-citation
+msgctxt "/modules/docxImport/warningText/unresolved-word-citation"
+msgid "A Word citation field references a source that could not be matched to embedded bibliography metadata."
+msgstr "Egy Word-hivatkozás nem párosítható a DOCX-be ágyazott bibliográfiai forrással."
+
+#. OMI translation key: /modules/docxImport/warningText/word-cross-reference-flattened
+msgctxt "/modules/docxImport/warningText/word-cross-reference-flattened"
+msgid "A Word REF/PAGEREF field is preserved as visible text; semantic OMI target mapping needs review."
+msgstr "A Word REF/PAGEREF mező látható szövegként megmarad; a szemantikus OMI-célpontot ellenőrizni kell."
+
+#. OMI translation key: /modules/docxImport/warningText/inline-equation-promoted
+msgctxt "/modules/docxImport/warningText/inline-equation-promoted"
+msgid "An inline Word equation was promoted to a separate editable equation block."
+msgstr "Egy szövegközi Word-egyenlet külön szerkeszthető egyenletblokkká alakult."
+
+#. OMI translation key: /modules/docxImport/warningText/title-from-filename
+msgctxt "/modules/docxImport/warningText/title-from-filename"
+msgid "No explicit document title was found; the file name is used as the manuscript title."
+msgstr "Nem találtam kifejezett dokumentumcímet; a fájlnév lett a kézirat címe."
+
+#. OMI translation key: /modules/docxImport/warningText/authors-from-docx-metadata
+msgctxt "/modules/docxImport/warningText/authors-from-docx-metadata"
+msgid "Author names were inferred from DOCX metadata and should be reviewed."
+msgstr "A szerzőnevek DOCX-metaadatból származnak, ezért ellenőrzendők."
+
+#. OMI translation key: /modules/docxImport/warningText/headers-footers-not-imported
+msgctxt "/modules/docxImport/warningText/headers-footers-not-imported"
+msgid "Headers and footers are not imported into scholarly manuscript content."
+msgstr "A Word élőfeje és élőlába nem kerül a tudományos kézirattartalomba."
+
+#. OMI translation key: /modules/exportFormats/title
+msgctxt "/modules/exportFormats/title"
+msgid "Export formats"
+msgstr "Exportálható formátumok"
+
+#. OMI translation key: /modules/exportFormats/description
+msgctxt "/modules/exportFormats/description"
+msgid "Export the manuscript from the same semantic OMI model into portable and publication formats."
+msgstr "A kézirat ugyanabból a szemantikus OMI modellből több hordozható és publikációs formátumba exportálható."
+
+#. OMI translation key: /modules/exportFormats/portable
+msgctxt "/modules/exportFormats/portable"
+msgid "Portable OMI formats"
+msgstr "Hordozható OMI formátumok"
+
+#. OMI translation key: /modules/exportFormats/publication
+msgctxt "/modules/exportFormats/publication"
+msgid "Publication formats"
+msgstr "Publikációs formátumok"
+
+#. OMI translation key: /modules/exportFormats/omi
+msgctxt "/modules/exportFormats/omi"
+msgid "OMI container"
+msgstr "OMI konténer"
+
+#. OMI translation key: /modules/exportFormats/omiDescription
+msgctxt "/modules/exportFormats/omiDescription"
+msgid "Complete portable package containing manuscript state, history, metadata, publication profile, JATS/HTML and assets."
+msgstr "Teljes hordozható csomag: kézirat, revíziótörténet, metaadatok, publikációs profil, JATS/HTML és eszközök."
+
+#. OMI translation key: /modules/exportFormats/omiJson
+msgctxt "/modules/exportFormats/omiJson"
+msgid "OMI JSON"
+msgstr "OMI JSON"
+
+#. OMI translation key: /modules/exportFormats/omiJsonDescription
+msgctxt "/modules/exportFormats/omiJsonDescription"
+msgid "Canonical human- and machine-readable JSON representation of the OMI manuscript model."
+msgstr "A kanonikus, ember és gép által olvasható OMI kéziratmodell JSON reprezentációja."
+
+#. OMI translation key: /modules/exportFormats/jats
+msgctxt "/modules/exportFormats/jats"
+msgid "JATS XML 1.4"
+msgstr "JATS XML 1.4"
+
+#. OMI translation key: /modules/exportFormats/jatsDescription
+msgctxt "/modules/exportFormats/jatsDescription"
+msgid "NISO JATS Article Authoring XML for journal and publisher workflows."
+msgstr "NISO JATS Article Authoring XML folyóirati és kiadói munkafolyamatokhoz."
+
+#. OMI translation key: /modules/exportFormats/html
+msgctxt "/modules/exportFormats/html"
+msgid "Semantic HTML5"
+msgstr "Szemantikus HTML5"
+
+#. OMI translation key: /modules/exportFormats/htmlDescription
+msgctxt "/modules/exportFormats/htmlDescription"
+msgid "Standalone, script-free accessible HTML publication view."
+msgstr "Önálló, script nélküli akadálymentes HTML publikációs nézet."
+
+#. OMI translation key: /modules/exportFormats/docx
+msgctxt "/modules/exportFormats/docx"
+msgid "Microsoft Word (DOCX)"
+msgstr "Microsoft Word (DOCX)"
+
+#. OMI translation key: /modules/exportFormats/docxDescription
+msgctxt "/modules/exportFormats/docxDescription"
+msgid "Editable Word document with real heading styles and the core manuscript structure."
+msgstr "Szerkeszthető Word-dokumentum valódi címsorstílusokkal és a kézirat fő szerkezetével."
+
+#. OMI translation key: /modules/exportFormats/idml
+msgctxt "/modules/exportFormats/idml"
+msgid "Adobe InDesign (IDML)"
+msgstr "Adobe InDesign (IDML)"
+
+#. OMI translation key: /modules/exportFormats/idmlDescription
+msgctxt "/modules/exportFormats/idmlDescription"
+msgid "Editable InDesign Markup Language package with OMI paragraph styles, section hierarchy and publisher-oriented text structure."
+msgstr "Szerkeszthető InDesign Markup Language csomag OMI bekezdésstílusokkal, fejezet-hierarchiával és kiadói tördeléshez alkalmas szövegstruktúrával."
+
+#. OMI translation key: /modules/exportFormats/xtg
+msgctxt "/modules/exportFormats/xtg"
+msgid "QuarkXPress (XPress Tags)"
+msgstr "QuarkXPress (XPress Tags)"
+
+#. OMI translation key: /modules/exportFormats/xtgDescription
+msgctxt "/modules/exportFormats/xtgDescription"
+msgid "UTF-8 XPress Tags file for QuarkXPress import with OMI paragraph and heading styles."
+msgstr "UTF-8 XPress Tags fájl QuarkXPress-importhoz, OMI cím- és bekezdésstílusokkal."
+
+#. OMI translation key: /modules/exportFormats/mif
+msgctxt "/modules/exportFormats/mif"
+msgid "Adobe FrameMaker (MIF)"
+msgstr "Adobe FrameMaker (MIF)"
+
+#. OMI translation key: /modules/exportFormats/mifDescription
+msgctxt "/modules/exportFormats/mifDescription"
+msgid "Editable Maker Interchange Format document for FrameMaker workflows."
+msgstr "Szerkeszthető Maker Interchange Format dokumentum FrameMaker munkafolyamatokhoz."
+
+#. OMI translation key: /modules/exportFormats/sla
+msgctxt "/modules/exportFormats/sla"
+msgid "Scribus (SLA)"
+msgstr "Scribus (SLA)"
+
+#. OMI translation key: /modules/exportFormats/slaDescription
+msgctxt "/modules/exportFormats/slaDescription"
+msgid "Editable Scribus document with OMI paragraph styles and a continuous text frame."
+msgstr "Szerkeszthető Scribus dokumentum OMI bekezdésstílusokkal és folyamatos szövegkerettel."
+
+#. OMI translation key: /modules/exportFormats/latex
+msgctxt "/modules/exportFormats/latex"
+msgid "LaTeX"
+msgstr "LaTeX"
+
+#. OMI translation key: /modules/exportFormats/latexDescription
+msgctxt "/modules/exportFormats/latexDescription"
+msgid "UTF-8 LaTeX source for scientific and automated TeX-based publishing workflows."
+msgstr "UTF-8 LaTeX forrás tudományos és automatizált TeX-alapú kiadói munkafolyamatokhoz."
+
+#. OMI translation key: /modules/exportFormats/epub
+msgctxt "/modules/exportFormats/epub"
+msgid "EPUB 3"
+msgstr "EPUB 3"
+
+#. OMI translation key: /modules/exportFormats/epubDescription
+msgctxt "/modules/exportFormats/epubDescription"
+msgid "Portable EPUB 3 ebook publication package."
+msgstr "Hordozható e-könyv kiadvány EPUB 3 csomagként."
+
+#. OMI translation key: /modules/exportFormats/pdf
+msgctxt "/modules/exportFormats/pdf"
+msgid "PDF"
+msgstr "PDF"
+
+#. OMI translation key: /modules/exportFormats/pdfDescription
+msgctxt "/modules/exportFormats/pdfDescription"
+msgid "Publication-profile print view that can be saved as PDF in the browser."
+msgstr "A publikációs profil alapján formázott nyomtatási nézet; a böngészőben PDF-ként menthető."
+
+#. OMI translation key: /modules/exportFormats/export
+msgctxt "/modules/exportFormats/export"
+msgid "Export"
+msgstr "Exportálás"
+
+#. OMI translation key: /modules/exportFormats/preparing
+msgctxt "/modules/exportFormats/preparing"
+msgid "Preparing…"
+msgstr "Előkészítés…"
+
+#. OMI translation key: /modules/exportFormats/failed
+msgctxt "/modules/exportFormats/failed"
+msgid "Export failed."
+msgstr "Az export nem sikerült."
+
+#. OMI translation key: /modules/exportFormats/pdfHint
+msgctxt "/modules/exportFormats/pdfHint"
+msgid "Choose Save as PDF in the print dialog that opens."
+msgstr "A megnyíló nyomtatási ablakban válassza a Mentés PDF-ként lehetőséget."
+
+#. OMI translation key: /modules/frontMatter/subtitle
+msgctxt "/modules/frontMatter/subtitle"
+msgid "Subtitle"
+msgstr "Alcím"
+
+#. OMI translation key: /modules/frontMatter/subtitleOptional
+msgctxt "/modules/frontMatter/subtitleOptional"
+msgid "Subtitle (optional)"
+msgstr "Alcím (opcionális)"
+
+#. OMI translation key: /modules/frontMatter/subtitlePlaceholder
+msgctxt "/modules/frontMatter/subtitlePlaceholder"
+msgid "Add an optional subtitle"
+msgstr "Opcionális alcím megadása"
+
+#. OMI translation key: /modules/frontMatter/motto
+msgctxt "/modules/frontMatter/motto"
+msgid "Motto"
+msgstr "Mottó"
+
+#. OMI translation key: /modules/frontMatter/mottoOptional
+msgctxt "/modules/frontMatter/mottoOptional"
+msgid "Motto (optional)"
+msgstr "Mottó (opcionális)"
+
+#. OMI translation key: /modules/frontMatter/mottoPlaceholder
+msgctxt "/modules/frontMatter/mottoPlaceholder"
+msgid "Add an optional motto or epigraph"
+msgstr "Opcionális mottó vagy epigráf megadása"
+
+#. OMI translation key: /modules/frontMatter/frontMatter
+msgctxt "/modules/frontMatter/frontMatter"
+msgid "Title block"
+msgstr "Címblokk"
+
+#. OMI translation key: /modules/frontMatter/frontMatterDescription
+msgctxt "/modules/frontMatter/frontMatterDescription"
+msgid "Subtitle and motto are independent optional scholarly front-matter fields."
+msgstr "Az alcím és a mottó egymástól független, opcionális tudományos előanyagmező."
+
+#. OMI translation key: /modules/frontMatter/optional
+msgctxt "/modules/frontMatter/optional"
+msgid "Optional"
+msgstr "Opcionális"
+
+#. OMI translation key: /modules/frontMatter/belowTitle
+msgctxt "/modules/frontMatter/belowTitle"
+msgid "Below title"
+msgstr "A cím alatt"
+
+#. OMI translation key: /modules/frontMatter/belowSubtitle
+msgctxt "/modules/frontMatter/belowSubtitle"
+msgid "Below subtitle"
+msgstr "Az alcím alatt"
+
+#. OMI translation key: /modules/frontMatter/italic
+msgctxt "/modules/frontMatter/italic"
+msgid "Italic"
+msgstr "Dőlt"
+
+#. OMI translation key: /modules/frontMatter/normal
+msgctxt "/modules/frontMatter/normal"
+msgid "Normal"
+msgstr "Normál"
+
+#. OMI translation key: /modules/frontMatter/alignLeft
+msgctxt "/modules/frontMatter/alignLeft"
+msgid "Left"
+msgstr "Balra"
+
+#. OMI translation key: /modules/frontMatter/alignCenter
+msgctxt "/modules/frontMatter/alignCenter"
+msgid "Center"
+msgstr "Középre"
+
+#. OMI translation key: /modules/frontMatter/alignRight
+msgctxt "/modules/frontMatter/alignRight"
+msgid "Right"
+msgstr "Jobbra"
+
+#. OMI translation key: /modules/help/navigation
+msgctxt "/modules/help/navigation"
+msgid "Help"
+msgstr "Súgó"
+
+#. OMI translation key: /modules/help/title
+msgctxt "/modules/help/title"
+msgid "Help for authors"
+msgstr "Súgó szerzőknek"
+
+#. OMI translation key: /modules/help/description
+msgctxt "/modules/help/description"
+msgid "A short guide to editing manuscripts and using the main Studio features."
+msgstr "Rövid útmutató a kézirat szerkesztéséhez és a legfontosabb Studio-funkciókhoz."
+
+#. OMI translation key: /modules/help/gettingStarted
+msgctxt "/modules/help/gettingStarted"
+msgid "When a manuscript is opened from OJS, Studio imports the document and available publication metadata. Editing then takes place in the Studio manuscript model."
+msgstr "Ha OJS-ből nyitotta meg a kéziratot, a Studio átveszi a dokumentumot és az elérhető publikációs metaadatokat. A módosítások a Studio kéziratmodelljében készülnek."
+
+#. OMI translation key: /modules/help/topics/0/title
+msgctxt "/modules/help/topics/0/title"
+msgid "Editing the manuscript"
+msgstr "A kézirat szerkesztése"
+
+#. OMI translation key: /modules/help/topics/0/body
+msgctxt "/modules/help/topics/0/body"
+msgid "Edit manuscript text in the main editor. Review its structure under Manuscript menu → Document."
+msgstr "A fő szerkesztőfelületen a kézirat szövegét módosíthatja. A dokumentum szerkezetét a Kézirat menü → Dokumentum alatt ellenőrizheti."
+
+#. OMI translation key: /modules/help/topics/0/tips/0
+msgctxt "/modules/help/topics/0/tips/0"
+msgid "Use real heading styles for section headings."
+msgstr "A fejezetcímekhez használjon valódi címsorstílust."
+
+#. OMI translation key: /modules/help/topics/0/tips/1
+msgctxt "/modules/help/topics/0/tips/1"
+msgid "Do not rely on bold text or font size alone to express structure."
+msgstr "A szerkezeti elemeket ne pusztán félkövér vagy nagyobb betűmérettel jelölje."
+
+#. OMI translation key: /modules/help/topics/1/title
+msgctxt "/modules/help/topics/1/title"
+msgid "Manuscript data and languages"
+msgstr "Kézirat adatai és nyelvek"
+
+#. OMI translation key: /modules/help/topics/1/body
+msgctxt "/modules/help/topics/1/body"
+msgid "Abstracts, keywords and other scholarly metadata are edited under Manuscript data. Multilingual fields can be maintained separately in HU, EN and DE."
+msgstr "A Kézirat adatai alatt szerkeszthető az absztrakt, a kulcsszavak és a további tudományos metaadatok. A többnyelvű mezők HU, EN és DE változatai külön kezelhetők."
+
+#. OMI translation key: /modules/help/topics/1/tips/0
+msgctxt "/modules/help/topics/1/tips/0"
+msgid "The manuscript language and metadata language are separate concepts."
+msgstr "A kézirat fő nyelve és a metaadatok nyelve két külön dolog."
+
+#. OMI translation key: /modules/help/topics/1/tips/1
+msgctxt "/modules/help/topics/1/tips/1"
+msgid "A Hungarian article may also have English and German abstracts and keywords."
+msgstr "Egy magyar tanulmányhoz is megadható angol és német absztrakt és kulcsszólista."
+
+#. OMI translation key: /modules/help/topics/2/title
+msgctxt "/modules/help/topics/2/title"
+msgid "Notes"
+msgstr "Jegyzetek"
+
+#. OMI translation key: /modules/help/topics/2/body
+msgctxt "/modules/help/topics/2/body"
+msgid "Footnotes and endnotes are retained as semantic note objects. Review and edit them under Notes."
+msgstr "A lábjegyzetek és végjegyzetek szemantikus jegyzetobjektumként maradnak a kéziratban. A Jegyzetek menüpontban áttekinthetők és szerkeszthetők."
+
+#. OMI translation key: /modules/help/topics/3/title
+msgctxt "/modules/help/topics/3/title"
+msgid "References"
+msgstr "Hivatkozások"
+
+#. OMI translation key: /modules/help/topics/3/body
+msgctxt "/modules/help/topics/3/body"
+msgid "Cited works are stored as structured bibliographic records. Add a work once and reuse it in multiple citations."
+msgstr "Az idézett műveket a Hivatkozások részben strukturált bibliográfiai rekordként kezelheti. Egy művet elég egyszer felvenni, majd több helyen is hivatkozhat rá."
+
+#. OMI translation key: /modules/help/topics/4/title
+msgctxt "/modules/help/topics/4/title"
+msgid "Contributors"
+msgstr "Közreműködők"
+
+#. OMI translation key: /modules/help/topics/4/body
+msgctxt "/modules/help/topics/4/body"
+msgid "Manage authors and other contributors, roles, affiliations and ORCID identifiers here."
+msgstr "Itt kezelhetők a szerzők és más közreműködők adatai, szerepei, intézményi kapcsolatai és ORCID-azonosítói."
+
+#. OMI translation key: /modules/help/topics/5/title
+msgctxt "/modules/help/topics/5/title"
+msgid "Revisions and saving"
+msgstr "Revíziók és mentés"
+
+#. OMI translation key: /modules/help/topics/5/body
+msgctxt "/modules/help/topics/5/body"
+msgid "Studio tracks important changes as revisions. Use History to review changes and, where supported, return to an earlier state."
+msgstr "A Studio a fontos változtatásokat revíziókban követi. Az Előzmények alatt áttekintheti a kézirat változásait és szükség esetén korábbi állapothoz térhet vissza."
+
+#. OMI translation key: /modules/help/topics/6/title
+msgctxt "/modules/help/topics/6/title"
+msgid "Import from OJS"
+msgstr "Import OJS-ből"
+
+#. OMI translation key: /modules/help/topics/6/body
+msgctxt "/modules/help/topics/6/body"
+msgid "Studio can import the document, abstracts, keywords and other publication metadata from OJS. Only metadata actually present in OJS can be imported."
+msgstr "Az OJS-ből megnyitott kéziratnál a Studio átveheti a dokumentumot, az absztraktokat, kulcsszavakat és más publikációs metaadatokat. Csak az OJS-ben ténylegesen kitöltött adatok importálhatók."
+
+#. OMI translation key: /modules/help/topics/7/title
+msgctxt "/modules/help/topics/7/title"
+msgid "DOCX import"
+msgstr "DOCX import"
+
+#. OMI translation key: /modules/help/topics/7/body
+msgctxt "/modules/help/topics/7/body"
+msgid "When importing Word documents, Studio also attempts to recover document structure."
+msgstr "Word-dokumentum importálásakor a Studio a dokumentum szerkezetét is megpróbálja felismerni."
+
+#. OMI translation key: /modules/help/topics/7/tips/0
+msgctxt "/modules/help/topics/7/tips/0"
+msgid "Use Word Heading 1, Heading 2, etc. for section headings."
+msgstr "A fejezetcímeket Word Címsor 1, Címsor 2 stb. stílussal jelölje."
+
+#. OMI translation key: /modules/help/topics/7/tips/1
+msgctxt "/modules/help/topics/7/tips/1"
+msgid "Direct-formatting recognition is only a fallback."
+msgstr "A közvetlen formázás felismerése csak tartalék módszer."
+
+#. OMI translation key: /modules/help/topics/8/title
+msgctxt "/modules/help/topics/8/title"
+msgid "Export"
+msgstr "Export"
+
+#. OMI translation key: /modules/help/topics/8/body
+msgctxt "/modules/help/topics/8/body"
+msgid "Export & tools can create a portable .omi.json manuscript file containing the semantic document structure and OMI metadata."
+msgstr "Az Export és eszközök menüben hordozható .omi.json kéziratfájl készíthető. Ez a dokumentum szemantikai szerkezetét és OMI-metaadatait őrzi."
+
+#. OMI translation key: /modules/help/topics/9/title
+msgctxt "/modules/help/topics/9/title"
+msgid "If something looks wrong"
+msgstr "Ha valami nem úgy jelenik meg, ahogy várta"
+
+#. OMI translation key: /modules/help/topics/9/body
+msgctxt "/modules/help/topics/9/body"
+msgid "Check the manuscript language, selected metadata language and, for Word imports, heading styles. For OJS imports, also verify that the value is actually filled in under the OJS Publication metadata."
+msgstr "Először ellenőrizze a kézirat nyelvét, a kiválasztott metaadatnyelvet és Word-import esetén a címsorstílusokat. OJS-importnál ellenőrizze azt is, hogy az adat az OJS Publication metaadatai között valóban ki van-e töltve."
+
+#. OMI translation key: /modules/htmlExport/title
+msgctxt "/modules/htmlExport/title"
+msgid "Semantic HTML5"
+msgstr "Szemantikus HTML5"
+
+#. OMI translation key: /modules/htmlExport/description
+msgctxt "/modules/htmlExport/description"
+msgid "Render the semantic manuscript through the active Publication Profile as an accessible, script-free HTML5 scholarly article."
+msgstr "A szemantikus kézirat renderelése az aktív publikációs profilon keresztül akadálymentes, szkriptmentes HTML5 tudományos cikké."
+
+#. OMI translation key: /modules/htmlExport/standard
+msgctxt "/modules/htmlExport/standard"
+msgid "Output profile"
+msgstr "Kimeneti profil"
+
+#. OMI translation key: /modules/htmlExport/renderingContext
+msgctxt "/modules/htmlExport/renderingContext"
+msgid "Rendering context"
+msgstr "Renderelési kontextus"
+
+#. OMI translation key: /modules/htmlExport/currentRevision
+msgctxt "/modules/htmlExport/currentRevision"
+msgid "Manuscript revision"
+msgstr "Kéziratrevízió"
+
+#. OMI translation key: /modules/htmlExport/preview
+msgctxt "/modules/htmlExport/preview"
+msgid "Preview source"
+msgstr "Forrás előnézete"
+
+#. OMI translation key: /modules/htmlExport/hidePreview
+msgctxt "/modules/htmlExport/hidePreview"
+msgid "Hide source"
+msgstr "Forrás elrejtése"
+
+#. OMI translation key: /modules/htmlExport/openPreview
+msgctxt "/modules/htmlExport/openPreview"
+msgid "Open rendered preview"
+msgstr "Renderelt előnézet megnyitása"
+
+#. OMI translation key: /modules/htmlExport/downloadPackage
+msgctxt "/modules/htmlExport/downloadPackage"
+msgid "Download HTML package"
+msgstr "HTML-csomag letöltése"
+
+#. OMI translation key: /modules/htmlExport/preparingPackage
+msgctxt "/modules/htmlExport/preparingPackage"
+msgid "Preparing package…"
+msgstr "Csomag készítése…"
+
+#. OMI translation key: /modules/htmlExport/exportReady
+msgctxt "/modules/htmlExport/exportReady"
+msgid "The HTML rendering has no blocking diagnostics."
+msgstr "A HTML-renderelésben nincs blokkoló diagnosztika."
+
+#. OMI translation key: /modules/htmlExport/exportHasErrors
+msgctxt "/modules/htmlExport/exportHasErrors"
+msgid "The HTML can be inspected, but blocking diagnostics must be resolved before a publication package is created."
+msgstr "A HTML ellenőrizhető, de publikációs csomag készítése előtt a blokkoló hibákat meg kell oldani."
+
+#. OMI translation key: /modules/htmlExport/errors
+msgctxt "/modules/htmlExport/errors"
+msgid "errors"
+msgstr "hiba"
+
+#. OMI translation key: /modules/htmlExport/warnings
+msgctxt "/modules/htmlExport/warnings"
+msgid "warnings"
+msgstr "figyelmeztetés"
+
+#. OMI translation key: /modules/htmlExport/diagnostics
+msgctxt "/modules/htmlExport/diagnostics"
+msgid "HTML diagnostics"
+msgstr "HTML diagnosztika"
+
+#. OMI translation key: /modules/htmlExport/noDiagnostics
+msgctxt "/modules/htmlExport/noDiagnostics"
+msgid "No HTML-specific diagnostics."
+msgstr "Nincs HTML-specifikus diagnosztika."
+
+#. OMI translation key: /modules/htmlExport/workingPreview
+msgctxt "/modules/htmlExport/workingPreview"
+msgid "The preview reflects the current working state. Package download creates a checkpoint first so the output is traceable to a committed revision."
+msgstr "Az előnézet az aktuális munkapéldányt mutatja. Csomagletöltéskor a Studio előbb checkpointot készít, így a kimenet konkrét committed revízióhoz visszavezethető."
+
+#. OMI translation key: /modules/htmlExport/unsupportedProfile
+msgctxt "/modules/htmlExport/unsupportedProfile"
+msgid "The active profile does not declare HTML as a supported output."
+msgstr "Az aktív profil nem jelöli támogatott kimenetként a HTML formátumot."
+
+#. OMI translation key: /modules/htmlExport/accessibilityNote
+msgctxt "/modules/htmlExport/accessibilityNote"
+msgid "The renderer uses semantic headings, figures, tables, document-note roles, bibliography links and explicit image alt attributes. External accessibility auditing remains a separate publication step."
+msgstr "A renderer szemantikus címsorokat, ábra- és táblázatszerkezetet, dokumentumjegyzet-szerepeket, bibliográfiai linkeket és explicit kép-alt attribútumokat használ. A külső akadálymentességi audit külön publikációs lépés marad."
+
+#. OMI translation key: /modules/htmlExport/packageNote
+msgctxt "/modules/htmlExport/packageNote"
+msgid "The ZIP package contains index.html, a manifest and referenced media assets under relative media/ paths. No script or external stylesheet is required."
+msgstr "A ZIP-csomag index.html fájlt, manifestet és a hivatkozott médiafájlokat tartalmazza relatív media/ útvonalakon. Nem igényel szkriptet vagy külső stíluslapot."
+
+#. OMI translation key: /modules/jatsExport/title
+msgctxt "/modules/jatsExport/title"
+msgid "JATS XML"
+msgstr "JATS XML"
+
+#. OMI translation key: /modules/jatsExport/description
+msgctxt "/modules/jatsExport/description"
+msgid "Render the semantic manuscript through the active Publication Profile as NISO JATS 1.4 Article Authoring XML."
+msgstr "A szemantikus kézirat renderelése az aktív publikációs profilon keresztül NISO JATS 1.4 Article Authoring XML formátumba."
+
+#. OMI translation key: /modules/jatsExport/standard
+msgctxt "/modules/jatsExport/standard"
+msgid "Target standard"
+msgstr "Célszabvány"
+
+#. OMI translation key: /modules/jatsExport/renderingContext
+msgctxt "/modules/jatsExport/renderingContext"
+msgid "Rendering context"
+msgstr "Renderelési kontextus"
+
+#. OMI translation key: /modules/jatsExport/currentRevision
+msgctxt "/modules/jatsExport/currentRevision"
+msgid "Manuscript revision"
+msgstr "Kéziratrevízió"
+
+#. OMI translation key: /modules/jatsExport/preview
+msgctxt "/modules/jatsExport/preview"
+msgid "Preview XML"
+msgstr "XML előnézet"
+
+#. OMI translation key: /modules/jatsExport/hidePreview
+msgctxt "/modules/jatsExport/hidePreview"
+msgid "Hide XML"
+msgstr "XML elrejtése"
+
+#. OMI translation key: /modules/jatsExport/download
+msgctxt "/modules/jatsExport/download"
+msgid "Download JATS XML"
+msgstr "JATS XML letöltése"
+
+#. OMI translation key: /modules/jatsExport/exportReady
+msgctxt "/modules/jatsExport/exportReady"
+msgid "The JATS rendering has no blocking diagnostics."
+msgstr "A JATS-renderelésben nincs blokkoló diagnosztika."
+
+#. OMI translation key: /modules/jatsExport/exportHasErrors
+msgctxt "/modules/jatsExport/exportHasErrors"
+msgid "The XML can be inspected, but blocking diagnostics must be resolved before publication."
+msgstr "Az XML ellenőrizhető, de a blokkoló hibákat publikálás előtt meg kell oldani."
+
+#. OMI translation key: /modules/jatsExport/errors
+msgctxt "/modules/jatsExport/errors"
+msgid "errors"
+msgstr "hiba"
+
+#. OMI translation key: /modules/jatsExport/warnings
+msgctxt "/modules/jatsExport/warnings"
+msgid "warnings"
+msgstr "figyelmeztetés"
+
+#. OMI translation key: /modules/jatsExport/diagnostics
+msgctxt "/modules/jatsExport/diagnostics"
+msgid "JATS diagnostics"
+msgstr "JATS diagnosztika"
+
+#. OMI translation key: /modules/jatsExport/noDiagnostics
+msgctxt "/modules/jatsExport/noDiagnostics"
+msgid "No JATS-specific diagnostics."
+msgstr "Nincs JATS-specifikus diagnosztika."
+
+#. OMI translation key: /modules/jatsExport/workingPreview
+msgctxt "/modules/jatsExport/workingPreview"
+msgid "The preview reflects the current working state. Download creates a checkpoint first so the exported XML is traceable to a committed revision."
+msgstr "Az előnézet az aktuális munkapéldányt mutatja. Letöltéskor a Studio előbb checkpointot készít, így az XML egy konkrét committed revízióhoz visszavezethető."
+
+#. OMI translation key: /modules/jatsExport/unsupportedProfile
+msgctxt "/modules/jatsExport/unsupportedProfile"
+msgid "The active profile does not declare JATS as a supported output."
+msgstr "Az aktív profil nem jelöli támogatott kimenetként a JATS formátumot."
+
+#. OMI translation key: /modules/jatsExport/schemaNote
+msgctxt "/modules/jatsExport/schemaNote"
+msgid "Studio checks required structure, XML identifiers and internal rid targets. Full external JATS DTD/XSD/RNG validation remains a separate conformance step."
+msgstr "A Studio ellenőrzi a kötelező szerkezetet, az XML-azonosítókat és a belső rid célokat. A teljes külső JATS DTD/XSD/RNG validáció külön megfelelőségi lépés marad."
+
+#. OMI translation key: /modules/noteCitations/addCitation
+msgctxt "/modules/noteCitations/addCitation"
+msgid "Insert reference"
+msgstr "Hivatkozás beszúrása"
+
+#. OMI translation key: /modules/noteCitations/citations
+msgctxt "/modules/noteCitations/citations"
+msgid "References in this note"
+msgstr "A jegyzet hivatkozásai"
+
+#. OMI translation key: /modules/noteCitations/noCitations
+msgctxt "/modules/noteCitations/noCitations"
+msgid "No bibliographic references have been added to this note yet."
+msgstr "Ehhez a jegyzethez még nincs bibliográfiai hivatkozás."
+
+#. OMI translation key: /modules/noteCitations/removeCitation
+msgctxt "/modules/noteCitations/removeCitation"
+msgid "Remove reference"
+msgstr "Hivatkozás eltávolítása"
+
+#. OMI translation key: /modules/noteCitations/citationHint
+msgctxt "/modules/noteCitations/citationHint"
+msgid "Choose from the manuscript bibliography. Page, chapter, section and other locators are supported."
+msgstr "Válasszon a kézirat hivatkozásjegyzékéből. Oldal-, fejezet-, szakasz- és más helymegjelölés is megadható."
+
+#. OMI translation key: /modules/orcidLookup/searching
+msgctxt "/modules/orcidLookup/searching"
+msgid "Searching ORCID…"
+msgstr "Keresés az ORCID-ban…"
+
+#. OMI translation key: /modules/orcidLookup/noResults
+msgctxt "/modules/orcidLookup/noResults"
+msgid "No matching public ORCID records found."
+msgstr "Nem található egyező nyilvános ORCID-rekord."
+
+#. OMI translation key: /modules/orcidLookup/unavailable
+msgctxt "/modules/orcidLookup/unavailable"
+msgid "ORCID search is temporarily unavailable. You can still enter an ORCID iD manually."
+msgstr "Az ORCID-keresés átmenetileg nem érhető el. Az ORCID iD kézzel továbbra is megadható."
+
+#. OMI translation key: /modules/orcidLookup/suggestions
+msgctxt "/modules/orcidLookup/suggestions"
+msgid "ORCID suggestions"
+msgstr "ORCID-találatok"
+
+#. OMI translation key: /modules/orcidLookup/selected
+msgctxt "/modules/orcidLookup/selected"
+msgid "ORCID iD"
+msgstr "ORCID iD"
+
+#. OMI translation key: /modules/orcidLookup/openProfile
+msgctxt "/modules/orcidLookup/openProfile"
+msgid "Open ORCID record"
+msgstr "ORCID-rekord megnyitása"
+
+#. OMI translation key: /modules/orcidLookup/registryMatch
+msgctxt "/modules/orcidLookup/registryMatch"
+msgid "Selected from the ORCID Registry"
+msgstr "Az ORCID Registryből kiválasztva"
+
+#. OMI translation key: /modules/orcidLookup/notAuthenticated
+msgctxt "/modules/orcidLookup/notAuthenticated"
+msgid "Registry match — not OAuth-authenticated"
+msgstr "Regisztertalálat — nem OAuth-hitelesített"
+
+#. OMI translation key: /modules/orcidLookup/manualEntry
+msgctxt "/modules/orcidLookup/manualEntry"
+msgid "You can also enter an ORCID iD manually."
+msgstr "Az ORCID iD kézzel is megadható."
+
+#. OMI translation key: /modules/orcidLookup/poweredBy
+msgctxt "/modules/orcidLookup/poweredBy"
+msgid "Search powered by the public ORCID Registry"
+msgstr "Keresés a nyilvános ORCID Registryben"
+
+#. OMI translation key: /modules/publicationProfile/navigation
+msgctxt "/modules/publicationProfile/navigation"
+msgid "Publication"
+msgstr "Publikáció"
+
+#. OMI translation key: /modules/publicationProfile/title
+msgctxt "/modules/publicationProfile/title"
+msgid "Publication profile"
+msgstr "Publikációs profil"
+
+#. OMI translation key: /modules/publicationProfile/description
+msgctxt "/modules/publicationProfile/description"
+msgid "Choose the rendering, metadata and accessibility rules for the intended publication target."
+msgstr "Válaszd ki a célkiadvány megjelenítési, metaadat- és akadálymentességi szabályait."
+
+#. OMI translation key: /modules/publicationProfile/experimental
+msgctxt "/modules/publicationProfile/experimental"
+msgid "Studio implementation profile. OMI-SPEC-240 is still Reserved; this does not claim specification conformance."
+msgstr "Studio implementációs profil. Az OMI-SPEC-240 még Reserved állapotú; ez nem jelent specifikációs megfelelőségi állítást."
+
+#. OMI translation key: /modules/publicationProfile/selectedProfile
+msgctxt "/modules/publicationProfile/selectedProfile"
+msgid "Selected profile"
+msgstr "Kiválasztott profil"
+
+#. OMI translation key: /modules/publicationProfile/chooseProfile
+msgctxt "/modules/publicationProfile/chooseProfile"
+msgid "Choose a profile"
+msgstr "Profil kiválasztása"
+
+#. OMI translation key: /modules/publicationProfile/applyProfile
+msgctxt "/modules/publicationProfile/applyProfile"
+msgid "Apply profile"
+msgstr "Profil alkalmazása"
+
+#. OMI translation key: /modules/publicationProfile/reapplied
+msgctxt "/modules/publicationProfile/reapplied"
+msgid "Profile defaults applied."
+msgstr "A profil alapértékei alkalmazva."
+
+#. OMI translation key: /modules/publicationProfile/active
+msgctxt "/modules/publicationProfile/active"
+msgid "Active"
+msgstr "Aktív"
+
+#. OMI translation key: /modules/publicationProfile/profileVersion
+msgctxt "/modules/publicationProfile/profileVersion"
+msgid "Version"
+msgstr "Verzió"
+
+#. OMI translation key: /modules/publicationProfile/profilePublisher
+msgctxt "/modules/publicationProfile/profilePublisher"
+msgid "Publisher"
+msgstr "Kiadó"
+
+#. OMI translation key: /modules/publicationProfile/rules
+msgctxt "/modules/publicationProfile/rules"
+msgid "Rendering rules"
+msgstr "Megjelenítési szabályok"
+
+#. OMI translation key: /modules/publicationProfile/layout
+msgctxt "/modules/publicationProfile/layout"
+msgid "Layout"
+msgstr "Oldalkép"
+
+#. OMI translation key: /modules/publicationProfile/sections
+msgctxt "/modules/publicationProfile/sections"
+msgid "Sections"
+msgstr "Szakaszok"
+
+#. OMI translation key: /modules/publicationProfile/citations
+msgctxt "/modules/publicationProfile/citations"
+msgid "Citations"
+msgstr "Hivatkozások"
+
+#. OMI translation key: /modules/publicationProfile/notes
+msgctxt "/modules/publicationProfile/notes"
+msgid "Notes"
+msgstr "Jegyzetek"
+
+#. OMI translation key: /modules/publicationProfile/objects
+msgctxt "/modules/publicationProfile/objects"
+msgid "Figures, tables and equations"
+msgstr "Ábrák, táblázatok és egyenletek"
+
+#. OMI translation key: /modules/publicationProfile/contributors
+msgctxt "/modules/publicationProfile/contributors"
+msgid "Contributors"
+msgstr "Szerzők és közreműködők"
+
+#. OMI translation key: /modules/publicationProfile/accessibility
+msgctxt "/modules/publicationProfile/accessibility"
+msgid "Accessibility"
+msgstr "Akadálymentesség"
+
+#. OMI translation key: /modules/publicationProfile/outputs
+msgctxt "/modules/publicationProfile/outputs"
+msgid "Output targets"
+msgstr "Kimeneti formátumok"
+
+#. OMI translation key: /modules/publicationProfile/page
+msgctxt "/modules/publicationProfile/page"
+msgid "Page"
+msgstr "Oldal"
+
+#. OMI translation key: /modules/publicationProfile/columns
+msgctxt "/modules/publicationProfile/columns"
+msgid "Columns"
+msgstr "Hasábok"
+
+#. OMI translation key: /modules/publicationProfile/typography
+msgctxt "/modules/publicationProfile/typography"
+msgid "Typography"
+msgstr "Tipográfia"
+
+#. OMI translation key: /modules/publicationProfile/margins
+msgctxt "/modules/publicationProfile/margins"
+msgid "Margins"
+msgstr "Margók"
+
+#. OMI translation key: /modules/publicationProfile/numbering
+msgctxt "/modules/publicationProfile/numbering"
+msgid "Numbering"
+msgstr "Számozás"
+
+#. OMI translation key: /modules/publicationProfile/maxDepth
+msgctxt "/modules/publicationProfile/maxDepth"
+msgid "Numbered depth"
+msgstr "Számozott mélység"
+
+#. OMI translation key: /modules/publicationProfile/citationStyle
+msgctxt "/modules/publicationProfile/citationStyle"
+msgid "Citation style"
+msgstr "Hivatkozási stílus"
+
+#. OMI translation key: /modules/publicationProfile/notePlacement
+msgctxt "/modules/publicationProfile/notePlacement"
+msgid "Note placement"
+msgstr "Jegyzetek helye"
+
+#. OMI translation key: /modules/publicationProfile/objectNumbering
+msgctxt "/modules/publicationProfile/objectNumbering"
+msgid "Object numbering"
+msgstr "Objektumszámozás"
+
+#. OMI translation key: /modules/publicationProfile/figureCaption
+msgctxt "/modules/publicationProfile/figureCaption"
+msgid "Figure caption"
+msgstr "Ábrafelirat"
+
+#. OMI translation key: /modules/publicationProfile/tableCaption
+msgctxt "/modules/publicationProfile/tableCaption"
+msgid "Table caption"
+msgstr "Táblázatfelirat"
+
+#. OMI translation key: /modules/publicationProfile/showOrcid
+msgctxt "/modules/publicationProfile/showOrcid"
+msgid "Show ORCID"
+msgstr "ORCID megjelenítése"
+
+#. OMI translation key: /modules/publicationProfile/showAffiliations
+msgctxt "/modules/publicationProfile/showAffiliations"
+msgid "Show affiliations"
+msgstr "Affiliációk megjelenítése"
+
+#. OMI translation key: /modules/publicationProfile/yes
+msgctxt "/modules/publicationProfile/yes"
+msgid "Yes"
+msgstr "Igen"
+
+#. OMI translation key: /modules/publicationProfile/no
+msgctxt "/modules/publicationProfile/no"
+msgid "No"
+msgstr "Nem"
+
+#. OMI translation key: /modules/publicationProfile/above
+msgctxt "/modules/publicationProfile/above"
+msgid "Above"
+msgstr "Fölötte"
+
+#. OMI translation key: /modules/publicationProfile/below
+msgctxt "/modules/publicationProfile/below"
+msgid "Below"
+msgstr "Alatta"
+
+#. OMI translation key: /modules/publicationProfile/document
+msgctxt "/modules/publicationProfile/document"
+msgid "Whole document"
+msgstr "Teljes dokumentumban"
+
+#. OMI translation key: /modules/publicationProfile/section
+msgctxt "/modules/publicationProfile/section"
+msgid "Per section"
+msgstr "Szakaszonként"
+
+#. OMI translation key: /modules/publicationProfile/footnotes
+msgctxt "/modules/publicationProfile/footnotes"
+msgid "Footnotes"
+msgstr "Lábjegyzetek"
+
+#. OMI translation key: /modules/publicationProfile/endnotes
+msgctxt "/modules/publicationProfile/endnotes"
+msgid "Endnotes"
+msgstr "Végjegyzetek"
+
+#. OMI translation key: /modules/publicationProfile/interactive
+msgctxt "/modules/publicationProfile/interactive"
+msgid "Interactive notes"
+msgstr "Interaktív jegyzetek"
+
+#. OMI translation key: /modules/publicationProfile/readiness
+msgctxt "/modules/publicationProfile/readiness"
+msgid "Publication readiness"
+msgstr "Publikációs készültség"
+
+#. OMI translation key: /modules/publicationProfile/ready
+msgctxt "/modules/publicationProfile/ready"
+msgid "Ready for profile-based rendering"
+msgstr "Kész a profil szerinti renderelésre"
+
+#. OMI translation key: /modules/publicationProfile/notReady
+msgctxt "/modules/publicationProfile/notReady"
+msgid "Publication requirements still need attention"
+msgstr "Még vannak teljesítendő publikációs követelmények"
+
+#. OMI translation key: /modules/publicationProfile/errors
+msgctxt "/modules/publicationProfile/errors"
+msgid "errors"
+msgstr "hiba"
+
+#. OMI translation key: /modules/publicationProfile/warnings
+msgctxt "/modules/publicationProfile/warnings"
+msgid "warnings"
+msgstr "figyelmeztetés"
+
+#. OMI translation key: /modules/publicationProfile/noIssues
+msgctxt "/modules/publicationProfile/noIssues"
+msgid "No profile-specific readiness issues were found."
+msgstr "Nem találtam profilspecifikus publikációs problémát."
+
+#. OMI translation key: /modules/publicationProfile/requirements
+msgctxt "/modules/publicationProfile/requirements"
+msgid "Metadata requirements"
+msgstr "Metaadat-követelmények"
+
+#. OMI translation key: /modules/publicationProfile/requirementLabels/off
+msgctxt "/modules/publicationProfile/requirementLabels/off"
+msgid "Not required"
+msgstr "Nem követelmény"
+
+#. OMI translation key: /modules/publicationProfile/requirementLabels/recommended
+msgctxt "/modules/publicationProfile/requirementLabels/recommended"
+msgid "Recommended"
+msgstr "Ajánlott"
+
+#. OMI translation key: /modules/publicationProfile/requirementLabels/required
+msgctxt "/modules/publicationProfile/requirementLabels/required"
+msgid "Required"
+msgstr "Kötelező"
+
+#. OMI translation key: /modules/publicationProfile/issueText/missing-title
+msgctxt "/modules/publicationProfile/issueText/missing-title"
+msgid "A manuscript title is required."
+msgstr "A kézirat címe kötelező."
+
+#. OMI translation key: /modules/publicationProfile/issueText/missing-abstract
+msgctxt "/modules/publicationProfile/issueText/missing-abstract"
+msgid "An abstract is required by this profile."
+msgstr "Ehhez a profilhoz absztrakt szükséges."
+
+#. OMI translation key: /modules/publicationProfile/issueText/too-few-keywords
+msgctxt "/modules/publicationProfile/issueText/too-few-keywords"
+msgid "The manuscript has fewer keywords than this profile requires."
+msgstr "A kézirat kevesebb kulcsszót tartalmaz, mint amennyit a profil előír."
+
+#. OMI translation key: /modules/publicationProfile/issueText/missing-contributor
+msgctxt "/modules/publicationProfile/issueText/missing-contributor"
+msgid "At least one author contribution is required."
+msgstr "Legalább egy szerzői közreműködés szükséges."
+
+#. OMI translation key: /modules/publicationProfile/issueText/missing-affiliation
+msgctxt "/modules/publicationProfile/issueText/missing-affiliation"
+msgid "A contributor has no affiliation."
+msgstr "Egy szerzőnél hiányzik az affiliáció."
+
+#. OMI translation key: /modules/publicationProfile/issueText/missing-orcid
+msgctxt "/modules/publicationProfile/issueText/missing-orcid"
+msgid "A contributor has no ORCID identifier."
+msgstr "Egy szerzőnél hiányzik az ORCID-azonosító."
+
+#. OMI translation key: /modules/publicationProfile/issueText/missing-figure-alt
+msgctxt "/modules/publicationProfile/issueText/missing-figure-alt"
+msgid "A figure is missing alternative text."
+msgstr "Egy ábránál hiányzik az alternatív szöveg."
+
+#. OMI translation key: /modules/publicationProfile/issueText/missing-table-header
+msgctxt "/modules/publicationProfile/issueText/missing-table-header"
+msgid "A table has no declared header row."
+msgstr "Egy táblázatnál nincs fejlécsor megadva."
+
+#. OMI translation key: /modules/publicationProfile/issueText/unresolved-citation
+msgctxt "/modules/publicationProfile/issueText/unresolved-citation"
+msgid "A citation points to a missing bibliographic record."
+msgstr "Egy idézés hiányzó bibliográfiai rekordra mutat."
+
+#. OMI translation key: /modules/publicationProfile/issueText/unresolved-cross-reference
+msgctxt "/modules/publicationProfile/issueText/unresolved-cross-reference"
+msgid "An internal cross-reference points to a missing target."
+msgstr "Egy belső kereszthivatkozás hiányzó célobjektumra mutat."
+
+#. OMI translation key: /modules/publicationProfile/issueText/profile-override
+msgctxt "/modules/publicationProfile/issueText/profile-override"
+msgid "A manuscript presentation preference overrides the selected profile default."
+msgstr "A kézirat egyik megjelenítési beállítása felülírja a profil alapértékét."
+
+#. OMI translation key: /modules/publicationProfile/exportProfile
+msgctxt "/modules/publicationProfile/exportProfile"
+msgid "Export profile JSON"
+msgstr "Profil JSON exportálása"
+
+#. OMI translation key: /modules/publicationProfile/exportDescription
+msgctxt "/modules/publicationProfile/exportDescription"
+msgid "Save the exact profile definition used for reproducible future rendering."
+msgstr "A reprodukálható későbbi rendereléshez mentsd el a használt profil pontos definícióját."
+
+#. OMI translation key: /modules/publicationProfile/profileSeparation
+msgctxt "/modules/publicationProfile/profileSeparation"
+msgid "The profile changes presentation and publication requirements, not scholarly content. Profile selection and explicit presentation overrides are revisioned separately from text edits."
+msgstr "A profil a megjelenítést és a publikációs követelményeket módosítja, nem a tudományos tartalmat. A profilválasztás és az explicit megjelenítési felülírások a szövegszerkesztéstől elkülönülten kerülnek a revíziótörténetbe."
+
+#. OMI translation key: /modules/publicationProfile/profileOverrides
+msgctxt "/modules/publicationProfile/profileOverrides"
+msgid "This manuscript currently contains presentation overrides that differ from the selected profile."
+msgstr "A kézirat jelenleg olyan megjelenítési felülírásokat tartalmaz, amelyek eltérnek a kiválasztott profil alapértékeitől."
+
+#. OMI translation key: /modules/publicationProfile/resetDefaults
+msgctxt "/modules/publicationProfile/resetDefaults"
+msgid "Reapply profile defaults"
+msgstr "Profil alapértékeinek visszaállítása"
+
+#. OMI translation key: /modules/publicationProfile/profileNames/omi-generic-scholarly/name
+msgctxt "/modules/publicationProfile/profileNames/omi-generic-scholarly/name"
+msgid "OMI Generic Scholarly"
+msgstr "OMI általános tudományos profil"
+
+#. OMI translation key: /modules/publicationProfile/profileNames/omi-generic-scholarly/description
+msgctxt "/modules/publicationProfile/profileNames/omi-generic-scholarly/description"
+msgid "Neutral scholarly rendering for general-purpose publishing."
+msgstr "Semleges tudományos megjelenítés általános publikálási célokra."
+
+#. OMI translation key: /modules/publicationProfile/profileNames/omi-journal-author-date/name
+msgctxt "/modules/publicationProfile/profileNames/omi-journal-author-date/name"
+msgid "OMI Journal — Author-Date"
+msgstr "OMI folyóirat — szerző–év"
+
+#. OMI translation key: /modules/publicationProfile/profileNames/omi-journal-author-date/description
+msgctxt "/modules/publicationProfile/profileNames/omi-journal-author-date/description"
+msgid "Journal profile with author-date citations and stricter metadata requirements."
+msgstr "Folyóiratprofil szerző–év hivatkozásokkal és szigorúbb metaadat-követelményekkel."
+
+#. OMI translation key: /modules/publicationProfile/profileNames/omi-humanities-notes/name
+msgctxt "/modules/publicationProfile/profileNames/omi-humanities-notes/name"
+msgid "OMI Humanities — Notes & Bibliography"
+msgstr "OMI bölcsészettudomány — jegyzetek és bibliográfia"
+
+#. OMI translation key: /modules/publicationProfile/profileNames/omi-humanities-notes/description
+msgctxt "/modules/publicationProfile/profileNames/omi-humanities-notes/description"
+msgid "Humanities profile with Chicago notes, bibliography and footnotes."
+msgstr "Bölcsészettudományi profil Chicago jegyzetes hivatkozással, bibliográfiával és lábjegyzetekkel."
+
+#. OMI translation key: /modules/referenceLookup/title
+msgctxt "/modules/referenceLookup/title"
+msgid "Search external bibliographic services"
+msgstr "Keresés külső bibliográfiai szolgáltatásokban"
+
+#. OMI translation key: /modules/referenceLookup/description
+msgctxt "/modules/referenceLookup/description"
+msgid "Search Crossref, DataCite, OpenAlex and MTMT, then add a normalized record to this manuscript’s reference library."
+msgstr "Keresés a Crossref, DataCite, OpenAlex és MTMT adatbázisában, majd a kiválasztott rekord normalizált felvétele a kézirat hivatkozásjegyzékébe."
+
+#. OMI translation key: /modules/referenceLookup/queryLabel
+msgctxt "/modules/referenceLookup/queryLabel"
+msgid "Bibliographic query"
+msgstr "Bibliográfiai keresés"
+
+#. OMI translation key: /modules/referenceLookup/queryPlaceholder
+msgctxt "/modules/referenceLookup/queryPlaceholder"
+msgid "DOI, title, author or keywords…"
+msgstr "DOI, cím, szerző vagy kulcsszavak…"
+
+#. OMI translation key: /modules/referenceLookup/search
+msgctxt "/modules/referenceLookup/search"
+msgid "Search"
+msgstr "Keresés"
+
+#. OMI translation key: /modules/referenceLookup/searching
+msgctxt "/modules/referenceLookup/searching"
+msgid "Searching…"
+msgstr "Keresés…"
+
+#. OMI translation key: /modules/referenceLookup/providers
+msgctxt "/modules/referenceLookup/providers"
+msgid "Bibliographic providers"
+msgstr "Bibliográfiai szolgáltatók"
+
+#. OMI translation key: /modules/referenceLookup/apiKeyRequired
+msgctxt "/modules/referenceLookup/apiKeyRequired"
+msgid "API key required"
+msgstr "API-kulcs szükséges"
+
+#. OMI translation key: /modules/referenceLookup/serviceSettings
+msgctxt "/modules/referenceLookup/serviceSettings"
+msgid "Service settings"
+msgstr "Szolgáltatási beállítások"
+
+#. OMI translation key: /modules/referenceLookup/crossrefEmail
+msgctxt "/modules/referenceLookup/crossrefEmail"
+msgid "Crossref contact email (optional)"
+msgstr "Crossref kapcsolattartó e-mail (opcionális)"
+
+#. OMI translation key: /modules/referenceLookup/crossrefEmailHint
+msgctxt "/modules/referenceLookup/crossrefEmailHint"
+msgid "When provided, Crossref receives it through the recommended mailto parameter for polite API access."
+msgstr "Megadásakor a Crossref a javasolt mailto paraméterben kapja meg a címet a kíméletes API-használathoz."
+
+#. OMI translation key: /modules/referenceLookup/openAlexApiKey
+msgctxt "/modules/referenceLookup/openAlexApiKey"
+msgid "OpenAlex API key"
+msgstr "OpenAlex API-kulcs"
+
+#. OMI translation key: /modules/referenceLookup/openAlexApiKeyHint
+msgctxt "/modules/referenceLookup/openAlexApiKeyHint"
+msgid "OpenAlex currently requires an API key. The key is stored only in this browser and is never written to the manuscript."
+msgstr "Az OpenAlex jelenleg API-kulcsot kér. A kulcs csak ebben a böngészőben tárolódik, és nem kerül a kéziratba."
+
+#. OMI translation key: /modules/referenceLookup/privacyNote
+msgctxt "/modules/referenceLookup/privacyNote"
+msgid "Queries are sent only to the providers you enable. Service credentials and contact settings are local interface preferences and are not exported in .omi.json."
+msgstr "A keresés csak az engedélyezett szolgáltatókhoz küld kérést. A szolgáltatási hitelesítési és kapcsolattartási adatok helyi felületi beállítások, és nem kerülnek a .omi.json exportba."
+
+#. OMI translation key: /modules/referenceLookup/missingApiKey
+msgctxt "/modules/referenceLookup/missingApiKey"
+msgid "This provider was skipped because its required API key is not configured."
+msgstr "A szolgáltató lekérdezése kimaradt, mert nincs beállítva a szükséges API-kulcs."
+
+#. OMI translation key: /modules/referenceLookup/providerUnavailable
+msgctxt "/modules/referenceLookup/providerUnavailable"
+msgid "The provider could not be queried. Other provider results are still shown."
+msgstr "A szolgáltató jelenleg nem volt lekérdezhető. A többi szolgáltató találatai ettől még megjelennek."
+
+#. OMI translation key: /modules/referenceLookup/noResults
+msgctxt "/modules/referenceLookup/noResults"
+msgid "No matching bibliographic records were returned by the selected providers."
+msgstr "A kiválasztott szolgáltatók nem adtak vissza megfelelő bibliográfiai rekordot."
+
+#. OMI translation key: /modules/referenceLookup/addToLibrary
+msgctxt "/modules/referenceLookup/addToLibrary"
+msgid "Add to library"
+msgstr "Felvétel a hivatkozásjegyzékbe"
+
+#. OMI translation key: /modules/referenceLookup/alreadyAdded
+msgctxt "/modules/referenceLookup/alreadyAdded"
+msgid "Already added"
+msgstr "Már felvéve"
+
+#. OMI translation key: /modules/richText/bold
+msgctxt "/modules/richText/bold"
+msgid "Bold / strong"
+msgstr "Félkövér / kiemelt"
+
+#. OMI translation key: /modules/richText/italic
+msgctxt "/modules/richText/italic"
+msgid "Italic / emphasis"
+msgstr "Dőlt / hangsúly"
+
+#. OMI translation key: /modules/richText/superscript
+msgctxt "/modules/richText/superscript"
+msgid "Superscript"
+msgstr "Felső index"
+
+#. OMI translation key: /modules/richText/subscript
+msgctxt "/modules/richText/subscript"
+msgid "Subscript"
+msgstr "Alsó index"
+
+#. OMI translation key: /modules/richText/smallCaps
+msgctxt "/modules/richText/smallCaps"
+msgid "Small caps"
+msgstr "Kiskapitális"
+
+#. OMI translation key: /modules/richText/underline
+msgctxt "/modules/richText/underline"
+msgid "Underline"
+msgstr "Aláhúzott"
+
+#. OMI translation key: /modules/richText/link
+msgctxt "/modules/richText/link"
+msgid "External link"
+msgstr "Külső hivatkozás"
+
+#. OMI translation key: /modules/richText/unlink
+msgctxt "/modules/richText/unlink"
+msgid "Remove link"
+msgstr "Hivatkozás eltávolítása"
+
+#. OMI translation key: /modules/richText/more
+msgctxt "/modules/richText/more"
+msgid "More text tools"
+msgstr "További szövegeszközök"
+
+#. OMI translation key: /modules/richText/strike
+msgctxt "/modules/richText/strike"
+msgid "Strikethrough"
+msgstr "Áthúzott"
+
+#. OMI translation key: /modules/richText/bulletList
+msgctxt "/modules/richText/bulletList"
+msgid "Bullet list"
+msgstr "Felsorolás"
+
+#. OMI translation key: /modules/richText/orderedList
+msgctxt "/modules/richText/orderedList"
+msgid "Numbered list"
+msgstr "Számozott lista"
+
+#. OMI translation key: /modules/richText/blockquote
+msgctxt "/modules/richText/blockquote"
+msgid "Block quotation"
+msgstr "Blokkidézet"
+
+#. OMI translation key: /modules/richText/inlineCode
+msgctxt "/modules/richText/inlineCode"
+msgid "Inline code"
+msgstr "Sorközi kód"
+
+#. OMI translation key: /modules/richText/codeBlock
+msgctxt "/modules/richText/codeBlock"
+msgid "Code block"
+msgstr "Kódblokk"
+
+#. OMI translation key: /modules/richText/hardBreak
+msgctxt "/modules/richText/hardBreak"
+msgid "Line break"
+msgstr "Sortörés"
+
+#. OMI translation key: /modules/richText/language
+msgctxt "/modules/richText/language"
+msgid "Text language"
+msgstr "Szövegrész nyelve"
+
+#. OMI translation key: /modules/richText/removeLanguage
+msgctxt "/modules/richText/removeLanguage"
+msgid "Remove language mark"
+msgstr "Nyelvjelölés eltávolítása"
+
+#. OMI translation key: /modules/richText/languagePlaceholder
+msgctxt "/modules/richText/languagePlaceholder"
+msgid "BCP 47 tag, e.g. la, de, en-GB"
+msgstr "BCP 47 kód, pl. la, de, en-GB"
+
+#. OMI translation key: /modules/richText/apply
+msgctxt "/modules/richText/apply"
+msgid "Apply"
+msgstr "Alkalmazás"
+
+#. OMI translation key: /modules/richText/cancel
+msgctxt "/modules/richText/cancel"
+msgid "Cancel"
+msgstr "Mégse"
+
+#. OMI translation key: /modules/richText/linkAddress
+msgctxt "/modules/richText/linkAddress"
+msgid "External address"
+msgstr "Külső cím"
+
+#. OMI translation key: /modules/richText/linkPlaceholder
+msgctxt "/modules/richText/linkPlaceholder"
+msgid "https://…"
+msgstr "https://…"
+
+#. OMI translation key: /modules/richText/invalidLink
+msgctxt "/modules/richText/invalidLink"
+msgid "Enter a valid http, https or mailto address."
+msgstr "Érvényes http, https vagy mailto címet adjon meg."
+
+#. OMI translation key: /modules/richText/specialCharacters
+msgctxt "/modules/richText/specialCharacters"
+msgid "Special characters"
+msgstr "Speciális karakterek"
+
+#. OMI translation key: /modules/richText/clearMarks
+msgctxt "/modules/richText/clearMarks"
+msgid "Clear inline formatting"
+msgstr "Sorközi formázás törlése"
+
+#. OMI translation key: /modules/richText/toolbar
+msgctxt "/modules/richText/toolbar"
+msgid "Semantic text tools"
+msgstr "Szemantikus szövegeszközök"
+
+#. OMI translation key: /modules/rorAffiliation/searching
+msgctxt "/modules/rorAffiliation/searching"
+msgid "Searching ROR…"
+msgstr "Keresés a ROR-ban…"
+
+#. OMI translation key: /modules/rorAffiliation/suggestions
+msgctxt "/modules/rorAffiliation/suggestions"
+msgid "ROR organization suggestions"
+msgstr "ROR intézményi találatok"
+
+#. OMI translation key: /modules/rorAffiliation/noResults
+msgctxt "/modules/rorAffiliation/noResults"
+msgid "No ROR organization found. You can keep the affiliation as free text."
+msgstr "Nem található megfelelő ROR-intézmény. Az affiliáció szabad szövegként is megtartható."
+
+#. OMI translation key: /modules/rorAffiliation/searchUnavailable
+msgctxt "/modules/rorAffiliation/searchUnavailable"
+msgid "ROR search is temporarily unavailable. You can keep editing the affiliation manually."
+msgstr "A ROR keresése átmenetileg nem érhető el. Az affiliáció továbbra is kézzel szerkeszthető."
+
+#. OMI translation key: /modules/rorAffiliation/selected
+msgctxt "/modules/rorAffiliation/selected"
+msgid "Linked to ROR"
+msgstr "ROR-hoz kapcsolva"
+
+#. OMI translation key: /modules/rorAffiliation/removeLink
+msgctxt "/modules/rorAffiliation/removeLink"
+msgid "Remove ROR link"
+msgstr "ROR-kapcsolat eltávolítása"
+
+#. OMI translation key: /modules/rorAffiliation/openRor
+msgctxt "/modules/rorAffiliation/openRor"
+msgid "Open ROR record"
+msgstr "ROR-rekord megnyitása"
+
+#. OMI translation key: /modules/rorAffiliation/locationUnknown
+msgctxt "/modules/rorAffiliation/locationUnknown"
+msgid "Location not specified"
+msgstr "Nincs megadott hely"
+
+#. OMI translation key: /modules/rorAffiliation/poweredBy
+msgctxt "/modules/rorAffiliation/poweredBy"
+msgid "Organization data from ROR"
+msgstr "Intézményi adatok: ROR"
+
+#. OMI translation key: /modules/sectionStructure/title
+msgctxt "/modules/sectionStructure/title"
+msgid "Hierarchical document structure"
+msgstr "Hierarchikus dokumentumszerkezet"
+
+#. OMI translation key: /modules/sectionStructure/description
+msgctxt "/modules/sectionStructure/description"
+msgid "Build chapters and subsections at any depth. Stable section identities remain unchanged while the outline and generated numbering evolve."
+msgstr "Tetszőleges mélységű fejezetek és alszakaszok hozhatók létre. A stabil szakaszazonosítók változatlanok maradnak, miközben a szerkezet és az automatikus számozás módosul."
+
+#. OMI translation key: /modules/sectionStructure/addTopLevel
+msgctxt "/modules/sectionStructure/addTopLevel"
+msgid "Add top-level section"
+msgstr "Felső szintű szakasz hozzáadása"
+
+#. OMI translation key: /modules/sectionStructure/addSubsection
+msgctxt "/modules/sectionStructure/addSubsection"
+msgid "Add subsection"
+msgstr "Alszakasz hozzáadása"
+
+#. OMI translation key: /modules/sectionStructure/insertAfter
+msgctxt "/modules/sectionStructure/insertAfter"
+msgid "Insert sibling after this section"
+msgstr "Azonos szintű szakasz beszúrása utána"
+
+#. OMI translation key: /modules/sectionStructure/dragHint
+msgctxt "/modules/sectionStructure/dragHint"
+msgid "Drag a section onto another section to make it a subsection. Use the arrows and indent/outdent controls for keyboard- and touch-friendly restructuring."
+msgstr "Húzz egy szakaszt egy másikra, hogy annak alszakasza legyen. Billentyűzeten és érintőképernyőn a nyilak, illetve a behúzás/kihúzás gombok használhatók."
+
+#. OMI translation key: /modules/sectionStructure/dropAsChild
+msgctxt "/modules/sectionStructure/dropAsChild"
+msgid "Drop here to make this section a subsection"
+msgstr "Ejtsd ide, hogy alszakasz legyen"
+
+#. OMI translation key: /modules/sectionStructure/openSection
+msgctxt "/modules/sectionStructure/openSection"
+msgid "Open section"
+msgstr "Szakasz megnyitása"
+
+#. OMI translation key: /modules/sectionStructure/moveUp
+msgctxt "/modules/sectionStructure/moveUp"
+msgid "Move before previous sibling"
+msgstr "Mozgatás az előző testvér elé"
+
+#. OMI translation key: /modules/sectionStructure/moveDown
+msgctxt "/modules/sectionStructure/moveDown"
+msgid "Move after next sibling"
+msgstr "Mozgatás a következő testvér után"
+
+#. OMI translation key: /modules/sectionStructure/indent
+msgctxt "/modules/sectionStructure/indent"
+msgid "Make subsection of previous sibling"
+msgstr "Legyen az előző testvér alszakasza"
+
+#. OMI translation key: /modules/sectionStructure/outdent
+msgctxt "/modules/sectionStructure/outdent"
+msgid "Promote one level"
+msgstr "Kiemelés egy szinttel"
+
+#. OMI translation key: /modules/sectionStructure/dragSection
+msgctxt "/modules/sectionStructure/dragSection"
+msgid "Drag section subtree"
+msgstr "Szakasz és alstruktúrájának húzása"
+
+#. OMI translation key: /modules/sectionStructure/selected
+msgctxt "/modules/sectionStructure/selected"
+msgid "Selected"
+msgstr "Kijelölve"
+
+#. OMI translation key: /modules/sectionStructure/emptyTitle
+msgctxt "/modules/sectionStructure/emptyTitle"
+msgid "Untitled section"
+msgstr "Névtelen szakasz"
+
+#. OMI translation key: /modules/sectionStructure/level
+msgctxt "/modules/sectionStructure/level"
+msgid "Level"
+msgstr "Szint"
+
+#. OMI translation key: /modules/sectionStructure/invalidHierarchy
+msgctxt "/modules/sectionStructure/invalidHierarchy"
+msgid "The section hierarchy contains an invalid parent relationship."
+msgstr "A szakaszhierarchia érvénytelen szülőkapcsolatot tartalmaz."
+
+#. OMI translation key: /modules/stateDigest/integrity
+msgctxt "/modules/stateDigest/integrity"
+msgid "Revision state integrity"
+msgstr "Revízióállapot integritása"
+
+#. OMI translation key: /modules/stateDigest/verified
+msgctxt "/modules/stateDigest/verified"
+msgid "Verified"
+msgstr "Ellenőrzött"
+
+#. OMI translation key: /modules/stateDigest/missing
+msgctxt "/modules/stateDigest/missing"
+msgid "Digest not recorded"
+msgstr "Nincs rögzített digest"
+
+#. OMI translation key: /modules/stateDigest/mismatch
+msgctxt "/modules/stateDigest/mismatch"
+msgid "Digest mismatch"
+msgstr "Digest-eltérés"
+
+#. OMI translation key: /modules/stateDigest/unsupported
+msgctxt "/modules/stateDigest/unsupported"
+msgid "Unsupported digest profile"
+msgstr "Nem támogatott digestprofil"
+
+#. OMI translation key: /modules/stateDigest/digest
+msgctxt "/modules/stateDigest/digest"
+msgid "State digest"
+msgstr "Állapotdigest"
+
+#. OMI translation key: /modules/stateDigest/canonicalization
+msgctxt "/modules/stateDigest/canonicalization"
+msgid "Canonicalization"
+msgstr "Kanonizálás"
+
+#. OMI translation key: /modules/stateDigest/scope
+msgctxt "/modules/stateDigest/scope"
+msgid "Committed manuscript snapshot"
+msgstr "Commitolt kézirat-pillanatkép"
+
+#. OMI translation key: /modules/stateDigest/summary
+msgctxt "/modules/stateDigest/summary"
+msgid "Canonical SHA-256 evidence for immutable manuscript revisions."
+msgstr "Kanonikus SHA-256 integritási bizonyíték az immutable kéziratrevíziókhoz."
+
+#. OMI translation key: /modules/stateDigest/importVerified
+msgctxt "/modules/stateDigest/importVerified"
+msgid "All declared revision state digests are verified."
+msgstr "Minden deklarált revízióállapot-digest ellenőrzése sikeres."
+
+#. OMI translation key: /modules/stateDigest/importLegacy
+msgctxt "/modules/stateDigest/importLegacy"
+msgid "This package contains revisions without state digests. They can be backfilled locally after import."
+msgstr "A csomag olyan korábbi revíziókat tartalmaz, amelyekhez nincs állapotdigest. Import után helyben pótolhatók."
+
+#. OMI translation key: /modules/stateDigest/importInvalid
+msgctxt "/modules/stateDigest/importInvalid"
+msgid "The package contains an invalid or incompatible revision state digest."
+msgstr "A csomag hibás vagy nem kompatibilis revízióállapot-digestet tartalmaz."
+
+#. OMI translation key: /modules/visualElements/insertMenu
+msgctxt "/modules/visualElements/insertMenu"
+msgid "Insert"
+msgstr "Beszúrás"
+
+#. OMI translation key: /modules/visualElements/insertElement
+msgctxt "/modules/visualElements/insertElement"
+msgid "Insert element"
+msgstr "Elem beszúrása"
+
+#. OMI translation key: /modules/visualElements/image
+msgctxt "/modules/visualElements/image"
+msgid "Image"
+msgstr "Kép"
+
+#. OMI translation key: /modules/visualElements/table
+msgctxt "/modules/visualElements/table"
+msgid "Table"
+msgstr "Táblázat"
+
+#. OMI translation key: /modules/visualElements/chart
+msgctxt "/modules/visualElements/chart"
+msgid "Chart"
+msgstr "Grafikon"
+
+#. OMI translation key: /modules/visualElements/equation
+msgctxt "/modules/visualElements/equation"
+msgid "Equation"
+msgstr "Egyenlet"
+
+#. OMI translation key: /modules/visualElements/import
+msgctxt "/modules/visualElements/import"
+msgid "Import"
+msgstr "Importálás"
+
+#. OMI translation key: /modules/visualElements/paste
+msgctxt "/modules/visualElements/paste"
+msgid "Paste from Word / Excel"
+msgstr "Beillesztés Wordből / Excelből"
+
+#. OMI translation key: /modules/visualElements/pasteHint
+msgctxt "/modules/visualElements/pasteHint"
+msgid "Paste a table, image or equation here from Word, Excel or another application."
+msgstr "Illesszen be ide táblázatot, képet vagy egyenletet Wordből, Excelből vagy más alkalmazásból."
+
+#. OMI translation key: /modules/visualElements/importing
+msgctxt "/modules/visualElements/importing"
+msgid "Importing…"
+msgstr "Importálás…"
+
+#. OMI translation key: /modules/visualElements/importFailed
+msgctxt "/modules/visualElements/importFailed"
+msgid "The file could not be imported."
+msgstr "A fájlt nem sikerült importálni."
+
+#. OMI translation key: /modules/visualElements/noImportableElements
+msgctxt "/modules/visualElements/noImportableElements"
+msgid "No supported visual elements were found."
+msgstr "Nem található támogatott vizuális elem."
+
+#. OMI translation key: /modules/visualElements/chooseFile
+msgctxt "/modules/visualElements/chooseFile"
+msgid "Choose file"
+msgstr "Fájl kiválasztása"
+
+#. OMI translation key: /modules/visualElements/caption
+msgctxt "/modules/visualElements/caption"
+msgid "Caption"
+msgstr "Képaláírás / felirat"
+
+#. OMI translation key: /modules/visualElements/altText
+msgctxt "/modules/visualElements/altText"
+msgid "Alternative text"
+msgstr "Alternatív szöveg"
+
+#. OMI translation key: /modules/visualElements/chartType
+msgctxt "/modules/visualElements/chartType"
+msgid "Chart type"
+msgstr "Grafikon típusa"
+
+#. OMI translation key: /modules/visualElements/chartBar
+msgctxt "/modules/visualElements/chartBar"
+msgid "Bar"
+msgstr "Oszlop"
+
+#. OMI translation key: /modules/visualElements/chartLine
+msgctxt "/modules/visualElements/chartLine"
+msgid "Line"
+msgstr "Vonal"
+
+#. OMI translation key: /modules/visualElements/chartPie
+msgctxt "/modules/visualElements/chartPie"
+msgid "Pie"
+msgstr "Kör"
+
+#. OMI translation key: /modules/visualElements/chartScatter
+msgctxt "/modules/visualElements/chartScatter"
+msgid "Scatter"
+msgstr "Pont"
+
+#. OMI translation key: /modules/visualElements/chartTitle
+msgctxt "/modules/visualElements/chartTitle"
+msgid "Chart title"
+msgstr "Grafikon címe"
+
+#. OMI translation key: /modules/visualElements/equationLatex
+msgctxt "/modules/visualElements/equationLatex"
+msgid "LaTeX source"
+msgstr "LaTeX-forrás"
+
+#. OMI translation key: /modules/visualElements/equationLabel
+msgctxt "/modules/visualElements/equationLabel"
+msgid "Equation label"
+msgstr "Egyenlet jelölése"
+
+#. OMI translation key: /modules/visualElements/addRow
+msgctxt "/modules/visualElements/addRow"
+msgid "Add row"
+msgstr "Sor hozzáadása"
+
+#. OMI translation key: /modules/visualElements/addColumn
+msgctxt "/modules/visualElements/addColumn"
+msgid "Add column"
+msgstr "Oszlop hozzáadása"
+
+#. OMI translation key: /modules/visualElements/removeRow
+msgctxt "/modules/visualElements/removeRow"
+msgid "Remove last row"
+msgstr "Utolsó sor törlése"
+
+#. OMI translation key: /modules/visualElements/removeColumn
+msgctxt "/modules/visualElements/removeColumn"
+msgid "Remove last column"
+msgstr "Utolsó oszlop törlése"
+
+#. OMI translation key: /modules/visualElements/createChart
+msgctxt "/modules/visualElements/createChart"
+msgid "Create chart from table"
+msgstr "Grafikon készítése a táblázatból"
+
+#. OMI translation key: /modules/visualElements/deleteElement
+msgctxt "/modules/visualElements/deleteElement"
+msgid "Delete element"
+msgstr "Elem törlése"
+
+#. OMI translation key: /modules/visualElements/confirmDelete
+msgctxt "/modules/visualElements/confirmDelete"
+msgid "Delete this element from the manuscript?"
+msgstr "Törli ezt az elemet a kéziratból?"
+
+#. OMI translation key: /modules/visualElements/source
+msgctxt "/modules/visualElements/source"
+msgid "Source data"
+msgstr "Forrásadatok"
+
+#. OMI translation key: /modules/visualElements/emptyChart
+msgctxt "/modules/visualElements/emptyChart"
+msgid "Add numeric source data to render the chart."
+msgstr "Adjon meg numerikus forrásadatokat a grafikon megjelenítéséhez."
+
+#. OMI translation key: /modules/visualElements/importedFrom
+msgctxt "/modules/visualElements/importedFrom"
+msgid "Imported from"
+msgstr "Importálva innen"
+
+#. OMI translation key: /modules/visualElements/fileFormats
+msgctxt "/modules/visualElements/fileFormats"
+msgid "Images, DOCX, XLSX, CSV/TSV, HTML and TeX are supported."
+msgstr "Támogatott: képek, DOCX, XLSX, CSV/TSV, HTML és TeX."
+
