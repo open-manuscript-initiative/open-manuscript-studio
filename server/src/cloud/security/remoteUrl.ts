@@ -10,7 +10,10 @@ function isPrivateIpv4(address: string): boolean {
     return true;
   }
 
-  const [a, b] = octets;
+  const a = octets[0];
+  const b = octets[1];
+  if (a === undefined || b === undefined) return true;
+
   return (
     a === 0 ||
     a === 10 ||
