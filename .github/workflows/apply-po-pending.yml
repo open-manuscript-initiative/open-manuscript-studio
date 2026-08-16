@@ -10,6 +10,7 @@ on:
       - 'locale/pending/de.json'
       - 'locale/translation-status.json'
       - 'scripts/audit-po-locales.mjs'
+      - 'scripts/compile-po-locales-to-json.mjs'
 
 permissions:
   contents: write
