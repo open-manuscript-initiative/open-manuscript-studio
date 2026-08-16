@@ -17,6 +17,17 @@ export const ISO_639_1_LANGUAGE_CODES = [
   'yo', 'za', 'zh', 'zu',
 ] as const;
 
+/**
+ * EU official languages are kept as an explicit regression guard for the
+ * Studio's current localization scope. This list is manuscript metadata,
+ * not the interface-locale registry: every language below must remain
+ * selectable even when its Studio UI translation is disabled or unavailable.
+ */
+export const EU_OFFICIAL_MANUSCRIPT_LANGUAGE_CODES = [
+  'bg', 'cs', 'da', 'de', 'el', 'en', 'es', 'et', 'fi', 'fr', 'ga', 'hr',
+  'hu', 'it', 'lt', 'lv', 'mt', 'nl', 'pl', 'pt', 'ro', 'sk', 'sl', 'sv',
+] as const;
+
 export const SPECIAL_MANUSCRIPT_LANGUAGE_TAGS = [
   'mul',
   'und',
@@ -94,6 +105,10 @@ export function isIso6391LanguageCode(
 /**
  * Returns the complete ISO 639-1 language list plus the standard special
  * language tags used by bibliographic and scholarly metadata systems.
+ *
+ * This registry is deliberately independent from the Studio UI locale
+ * registry. Adding, disabling or removing an interface translation must not
+ * change which languages a scholarly manuscript can declare.
  *
  * Labels are generated in the current Studio UI language through the
  * platform's Intl.DisplayNames implementation. The stored value is always
