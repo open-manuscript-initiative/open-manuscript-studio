@@ -34,6 +34,7 @@ import './styles/html-export.css';
 import './styles/asset-container.css';
 import './styles/state-digest.css';
 import './styles/footer.css';
+import './styles/academic-shell.css';
 
 initializeRevisionIntegrity();
 
