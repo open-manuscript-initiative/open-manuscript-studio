@@ -1,6 +1,12 @@
 {
   "referenceLocale": "en",
-  "completeLocales": ["hu", "de", "bg", "cs"],
+  "completeLocales": [
+    "hu",
+    "de",
+    "bg",
+    "cs",
+    "da"
+  ],
   "identicalAllowlist": [],
   "identicalAllowlistByLocale": {
     "hu": [
@@ -116,6 +122,42 @@
       "/modules/orcidLookup/selected",
       "/modules/richText/linkPlaceholder",
       "/modules/visualElements/import"
+    ],
+    "da": [
+      "/navigation/metadata",
+      "/notes/note",
+      "/citations/citation",
+      "/citations/resourceTypes/preprint",
+      "/citations/resourceTypes/software",
+      "/citations/resourceTypes/standard",
+      "/citations/locators/folio",
+      "/contributors/orcid",
+      "/contributors/roles/software",
+      "/history/revision",
+      "/editor/addNote",
+      "/editor/addCitation",
+      "/auth/brand/name",
+      "/modules/cslRendering/styleNames/apa-7",
+      "/modules/cslRendering/styleNames/mla-9",
+      "/modules/cslRendering/styleNames/iso-690",
+      "/modules/exportFormats/omiJson",
+      "/modules/exportFormats/jats",
+      "/modules/exportFormats/docx",
+      "/modules/exportFormats/idml",
+      "/modules/exportFormats/xtg",
+      "/modules/exportFormats/mif",
+      "/modules/exportFormats/sla",
+      "/modules/exportFormats/latex",
+      "/modules/exportFormats/epub",
+      "/modules/exportFormats/pdf",
+      "/modules/frontMatter/motto",
+      "/modules/frontMatter/normal",
+      "/modules/jatsExport/title",
+      "/modules/jatsExport/download",
+      "/modules/orcidLookup/selected",
+      "/modules/publicationProfile/profileVersion",
+      "/modules/publicationProfile/layout",
+      "/modules/richText/linkPlaceholder"
     ]
   }
 }
