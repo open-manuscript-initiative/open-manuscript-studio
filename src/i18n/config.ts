@@ -23,32 +23,60 @@ const jsonTranslations = Object.fromEntries(
 
     return [match[1], dictionary];
   }),
-) as Partial<Record<SupportedLocale, TranslationDictionary>>;
+) as Record<string, TranslationDictionary>;
 
 /**
- * Transitional fallback while the canonical JSON locale files are being
- * committed. Once en/hu/de studio.json files are in the repository and
- * validated, the legacy TypeScript imports can be removed.
+ * Transitional fallback for the original three Studio locales. The legacy
+ * imports can be removed after en/hu/de studio.json files are committed.
  */
-const legacyTranslations: Record<SupportedLocale, TranslationDictionary> = {
+const legacyTranslations: Record<string, TranslationDictionary> = {
   en: legacyEn,
   hu: legacyHu,
   de: legacyDe,
 };
 
-export const translations: Record<SupportedLocale, TranslationDictionary> = {
-  en: jsonTranslations.en ?? legacyTranslations.en,
-  hu: jsonTranslations.hu ?? legacyTranslations.hu,
-  de: jsonTranslations.de ?? legacyTranslations.de,
+/**
+ * JSON locales override the transitional TypeScript dictionaries. Any new
+ * locale becomes available automatically when locales/<code>/studio.json is
+ * added and passes the JSON locale validator.
+ */
+export const translations: Record<string, TranslationDictionary> = {
+  ...legacyTranslations,
+  ...jsonTranslations,
 };
 
-export const supportedLocales: readonly SupportedLocale[] = ['en', 'hu', 'de'];
-
-export const localeLabels: Record<SupportedLocale, string> = {
-  en: 'English',
-  hu: 'Magyar',
+export const localeLabels: Record<string, string> = {
+  bg: 'Български',
+  cs: 'Čeština',
+  da: 'Dansk',
   de: 'Deutsch',
+  el: 'Ελληνικά',
+  en: 'English',
+  es: 'Español',
+  et: 'Eesti',
+  fi: 'Suomi',
+  fr: 'Français',
+  ga: 'Gaeilge',
+  hr: 'Hrvatski',
+  hu: 'Magyar',
+  it: 'Italiano',
+  lt: 'Lietuvių',
+  lv: 'Latviešu',
+  mt: 'Malti',
+  nl: 'Nederlands',
+  pl: 'Polski',
+  pt: 'Português',
+  ro: 'Română',
+  sk: 'Slovenčina',
+  sl: 'Slovenščina',
+  sv: 'Svenska',
 };
+
+const localeOrder = Object.keys(localeLabels);
+
+export const supportedLocales = localeOrder.filter((locale) =>
+  Object.prototype.hasOwnProperty.call(translations, locale),
+) as SupportedLocale[];
 
 export function isSupportedLocale(value: string): value is SupportedLocale {
   return supportedLocales.includes(value as SupportedLocale);
