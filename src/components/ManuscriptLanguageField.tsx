@@ -8,6 +8,7 @@ import {
 import { stageManuscriptLanguageChange } from '../app/manuscriptLanguageActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { useContentLanguagePreferences } from '../languages/languagePreferences';
 import {
   getManuscriptLanguageDisplayName,
   getManuscriptLanguageOptions,
@@ -30,7 +31,7 @@ const COPY: Record<'en' | 'hu' | 'de', ManuscriptLanguageCopy> = {
     invalid: 'Enter a valid BCP 47 language tag.',
     current: 'Current manuscript language',
     standardHint:
-      'The list includes all ISO 639-1 languages. More specific or historical BCP 47 tags such as grc, sr-Latn, zh-Hant or pt-BR are also accepted.',
+      'Suggestions follow the manuscript languages enabled in Settings. Any valid BCP 47 tag can still be entered directly.',
   },
   hu: {
     description:
@@ -39,7 +40,7 @@ const COPY: Record<'en' | 'hu' | 'de', ManuscriptLanguageCopy> = {
     invalid: 'Adjon meg érvényes BCP 47 nyelvi címkét.',
     current: 'A kézirat jelenlegi nyelve',
     standardHint:
-      'A lista az összes ISO 639-1 nyelvet tartalmazza. Részletesebb vagy történeti BCP 47 címkék, például grc, sr-Latn, zh-Hant vagy pt-BR is használhatók.',
+      'A javaslatok a Beállításokban engedélyezett kéziratnyelveket követik. Bármely érvényes BCP 47 címke közvetlenül is megadható.',
   },
   de: {
     description:
@@ -48,7 +49,7 @@ const COPY: Record<'en' | 'hu' | 'de', ManuscriptLanguageCopy> = {
     invalid: 'Geben Sie ein gültiges BCP-47-Sprach-Tag ein.',
     current: 'Aktuelle Manuskriptsprache',
     standardHint:
-      'Die Liste enthält alle ISO-639-1-Sprachen. Genauere oder historische BCP-47-Tags wie grc, sr-Latn, zh-Hant oder pt-BR werden ebenfalls akzeptiert.',
+      'Die Vorschläge folgen den in den Einstellungen aktivierten Manuskriptsprachen. Gültige BCP-47-Tags können weiterhin direkt eingegeben werden.',
   },
 };
 
@@ -62,6 +63,7 @@ function getCopy(uiLocale: string): ManuscriptLanguageCopy {
 
 export function ManuscriptLanguageField() {
   const { locale: uiLocale, t } = useTranslation();
+  const { manuscriptLanguages } = useContentLanguagePreferences();
   const manuscriptLocale = useStudioStore(
     (state) => state.manuscript.locale,
   );
@@ -72,8 +74,13 @@ export function ManuscriptLanguageField() {
   const errorId = useId();
   const copy = getCopy(uiLocale);
   const options = useMemo(
-    () => getManuscriptLanguageOptions(uiLocale),
-    [uiLocale],
+    () =>
+      getManuscriptLanguageOptions(uiLocale).filter(
+        (option) =>
+          manuscriptLanguages.includes(option.tag) ||
+          option.tag === manuscriptLocale,
+      ),
+    [uiLocale, manuscriptLanguages, manuscriptLocale],
   );
   const currentDisplayName = getManuscriptLanguageDisplayName(
     manuscriptLocale,
