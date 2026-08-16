@@ -10,7 +10,8 @@ const UI_ENABLED_LOCALES_STORAGE_KEY =
   'omi-studio-ui-enabled-locales';
 const UI_LOCALE_REGISTRY_VERSION_KEY =
   'omi-studio-ui-locale-registry-version';
-const UI_LOCALE_REGISTRY_VERSION = '2';
+const UI_LOCALE_REGISTRY_VERSION = '3';
+const LEGACY_UI_LOCALES = new Set(['en', 'hu', 'de']);
 
 export function loadUiLocale(): SupportedLocale {
   if (typeof window === 'undefined') return DEFAULT_LOCALE;
@@ -88,14 +89,13 @@ export function saveEnabledUiLocales(
 }
 
 /**
- * Before the modular locale registry the Studio only exposed EN/HU/DE.
- * Browsers that used that release can still have exactly those three values
- * persisted in localStorage. Without an explicit migration that historical
- * default looks like a deliberate preference forever, hiding every locale
- * added later.
- *
- * Version 2 performs a one-time expansion to the current registry. After the
- * marker is written, subsequent user choices are preserved verbatim.
+ * Early Studio releases exposed only EN/HU/DE. A browser can therefore have
+ * a persisted enabled-locale list containing only that legacy set. Version 2
+ * was intentionally conservative and could miss such browsers if its marker
+ * had already been written. Version 3 performs one final migration: while the
+ * stored list contains no locale outside the legacy set, expand it to the
+ * complete current registry. Once the v3 marker exists, later user choices are
+ * preserved exactly.
  */
 function migrateLegacyEnabledUiLocales(): void {
   const version = window.localStorage.getItem(
@@ -117,8 +117,12 @@ function migrateLegacyEnabledUiLocales(): void {
       const parsed = JSON.parse(stored) as unknown;
       shouldExpand =
         Array.isArray(parsed) &&
-        parsed.length === 3 &&
-        ['en', 'hu', 'de'].every((locale) => parsed.includes(locale));
+        parsed.length > 0 &&
+        parsed.every(
+          (locale) =>
+            typeof locale === 'string' &&
+            LEGACY_UI_LOCALES.has(locale),
+        );
     } catch {
       shouldExpand = true;
     }
