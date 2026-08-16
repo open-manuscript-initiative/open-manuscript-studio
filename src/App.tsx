@@ -9,7 +9,6 @@ import { RegisterPage } from './auth/RegisterPage';
 
 import { useStudioStore } from './app/useStudioStore';
 import { AppLayout } from './components/AppLayout';
-import { AuthorSignatureControl } from './components/AuthorSignatureControl';
 import { EditorPane } from './components/EditorPane';
 import { ReviewPortal } from './components/ReviewPortal';
 import { StudioMenuWithHelp } from './components/StudioMenuWithHelp';
@@ -168,7 +167,6 @@ function StudioApplication() {
   return (
     <AppLayout onOpenMenu={() => setMenuOpen(true)}>
       <div className="focus-workspace">
-        <AuthorSignatureControl />
         <EditorPane ojsContributors={ojsContributors} />
       </div>
 
