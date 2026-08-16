@@ -20,6 +20,6 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Test manuscript language registry
-        run: node --import tsx --test tests/manuscript-language.test.ts
+        run: node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/manuscript-language.test.ts
       - name: Build Studio
         run: npm run build
