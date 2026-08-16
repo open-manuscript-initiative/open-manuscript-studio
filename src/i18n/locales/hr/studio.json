@@ -1,0 +1,332 @@
+{
+  "common": {
+    "save": "Spremi",
+    "cancel": "Odustani",
+    "close": "Zatvori",
+    "delete": "Izbriši",
+    "edit": "Uredi",
+    "add": "Dodaj",
+    "loading": "Učitavanje…",
+    "language": "Jezik"
+  },
+  "navigation": {
+    "documents": "Dokumenti",
+    "editor": "Uređivač",
+    "metadata": "Metapodaci",
+    "preview": "Pregled",
+    "settings": "Postavke"
+  },
+  "studio": {
+    "menu": "Izbornik rukopisa",
+    "closeMenu": "Zatvori izbornik rukopisa",
+    "languageSwitcher": "Jezik sučelja",
+    "saved": "Spremljeno",
+    "pending": "Spremanje…",
+    "editorAria": "Uređivač rukopisa",
+    "titlePlaceholder": "Unesite naslov rukopisa",
+    "noSection": "Nijedan odjeljak nije odabran.",
+    "navigation": {
+      "document": "Dokument",
+      "manuscript": "Podaci o rukopisu",
+      "notes": "Bilješke",
+      "references": "Literatura",
+      "contributors": "Suradnici",
+      "history": "Povijest",
+      "tools": "Izvoz i alati",
+      "settings": "Postavke"
+    },
+    "document": {
+      "title": "Struktura dokumenta",
+      "description": "Odaberite odjeljak na kojem želite raditi. Strukturni podaci i informacije o objektima ostaju izvan površine za pisanje dok vam ne zatrebaju.",
+      "addSection": "Dodaj odjeljak",
+      "sections": "Odjeljci",
+      "objects": "Objekti",
+      "annotations": "Anotacije",
+      "citations": "Citati"
+    },
+    "manuscript": {
+      "title": "Podaci o rukopisu",
+      "description": "Uređujte informacije na razini rukopisa odvojeno od površine za pisanje."
+    },
+    "tools": {
+      "title": "Izvoz i alati",
+      "description": "Sekundarne, tehničke i potencijalno destruktivne radnje odvojene su od površine za pisanje.",
+      "export": "Izvezi .omi.json",
+      "exportDescription": "Izradite kanonsku prijenosnu OMI datoteku rukopisa nakon spremanja promjena kao kontrolne točke.",
+      "reset": "Vrati ogledni rukopis",
+      "resetDescription": "Zamijenite trenutačni alfa primjer novim čistim oglednim rukopisom.",
+      "confirmReset": "Vratiti trenutačni ogledni rukopis? Nespremljeni i trenutačni ogledni podaci bit će zamijenjeni.",
+      "technicalData": "Tehnički podaci",
+      "technicalDescription": "Pregledajte semantički prikaz samo kada su potrebne tehničke pojedinosti.",
+      "liveJson": "JSON trenutačnog odjeljka",
+      "synced": "Sinkronizirano"
+    },
+    "settings": {
+      "title": "Postavke sučelja",
+      "description": "Odaberite jezike sučelja koje želite imati dostupne tijekom rada. Postavke se spremaju na ovom uređaju.",
+      "interfaceLanguages": "Dostupni jezici sučelja",
+      "interfaceLanguagesDescription": "Omogućeni jezici prikazuju se u brzom biraču jezika u zaglavlju uređivača.",
+      "currentLanguage": "Trenutačni jezik sučelja",
+      "currentLanguageHint": "Jezik koji se trenutačno koristi mora ostati omogućen. Prije isključivanja prijeđite na drugi jezik.",
+      "enabledLanguage": "Dostupno u brzom biraču",
+      "disabledLanguage": "Skriveno iz brzog birača",
+      "futureLanguages": "Registar jezika je proširiv. Novi prijevodni rječnici mogu se dodavati bez izmjene ovog zaslona."
+    }
+  },
+  "manuscript": {
+    "newDocument": "Novi rukopis",
+    "documentTitle": "Naslov dokumenta",
+    "abstract": "Sažetak",
+    "keywords": "Ključne riječi",
+    "contributors": "Suradnici",
+    "sections": "Odjeljci",
+    "annotations": "Bilješke",
+    "citations": "Citati",
+    "bibliography": "Bibliografija",
+    "documentLanguage": "Jezik dokumenta",
+    "originalLanguage": "Izvorni jezik"
+  },
+  "notes": {
+    "title": "Bilješke",
+    "description": "Upravljajte semantičkim bilješkama rukopisa. Tekst bilješke ostaje neovisan objekt anotacije, dok njegova umetnuta sidra ostaju u tekstu.",
+    "empty": "Ovaj rukopis još nema bilješki.",
+    "emptyHint": "Postavite pokazivač u tekst i upotrijebite gumb Bilješka ili Ctrl/Cmd+Alt+N.",
+    "note": "Bilješka",
+    "type": "Vrsta bilješke",
+    "body": "Tekst bilješke",
+    "bodyPlaceholder": "Napišite bilješku…",
+    "footnote": "Fusnota",
+    "endnote": "Krajnja bilješka",
+    "authorNote": "Autorska bilješka",
+    "delete": "Izbriši bilješku",
+    "confirmDelete": "Izbrisati ovu bilješku i njezino umetnuto sidro iz rukopisa?",
+    "closeEditor": "Zatvori uređivač bilješki",
+    "goToNote": "Idi na bilješku",
+    "autoSave": "Sprema se s revizijama rukopisa"
+  },
+  "citations": {
+    "referencesTitle": "Literatura",
+    "referencesDescription": "Dodajte djelo jednom u knjižnicu literature rukopisa, a zatim ga ponovno koristite u onoliko citata koliko je potrebno.",
+    "addReference": "Dodaj bibliografski zapis",
+    "editReference": "Uredi bibliografski zapis",
+    "referenceEditorDescription": "Pohranite strukturirane bibliografske metapodatke neovisno o pojedinom citatu ili izlaznom stilu.",
+    "emptyLibrary": "Knjižnica literature rukopisa je prazna.",
+    "emptyLibraryHint": "Dodajte knjigu, članak, arhivski izvor, mrežni izvor ili drugo citirano djelo prije umetanja citata u tekst.",
+    "searchReferences": "Pretraži literaturu",
+    "searchPlaceholder": "Pretraži po naslovu, autoru, godini, DOI-ju…",
+    "untitledReference": "Bibliografski zapis bez naslova",
+    "occurrences": "citata",
+    "bibliographyPreviewDescription": "Neutralni pregled zapisa koji se trenutačno citiraju u rukopisu. Završno oblikovanje određuje publikacijski profil.",
+    "resourceType": "Vrsta izvora",
+    "title": "Naslov",
+    "titlePlaceholder": "Naslov citiranog djela",
+    "subtitle": "Podnaslov",
+    "creators": "Autori i suradnici",
+    "creatorsDescription": "Imena suradnika čuvajte strukturirano kako bi ih citatni stilovi i izvozi mogli ispravno prikazati.",
+    "addCreator": "Dodaj autora/suradnika",
+    "removeCreator": "Ukloni autora/suradnika",
+    "noCreators": "Nije dodan nijedan autor ili suradnik.",
+    "creatorRole": "Uloga",
+    "givenName": "Ime",
+    "familyName": "Prezime",
+    "containerTitle": "Naslov časopisa, knjige ili nadređene publikacije",
+    "issued": "Datum / godina objave",
+    "volume": "Svezak",
+    "issue": "Broj",
+    "pages": "Stranice / opseg",
+    "publisher": "Nakladnik",
+    "place": "Mjesto izdanja",
+    "duplicateReference": "Vjerojatan duplikat već postoji u knjižnici literature:",
+    "insertTitle": "Umetni citat",
+    "insertDescription": "Odaberite djelo iz knjižnice literature rukopisa i po želji navedite citirano mjesto.",
+    "noReferences": "Još nema dostupnih bibliografskih zapisa.",
+    "noReferencesHint": "Dodajte djelo kroz Izbornik rukopisa → Literatura, zatim se vratite ovamo kako biste ga citirali.",
+    "insert": "Umetni citat",
+    "citation": "Citat",
+    "reference": "Citirano djelo",
+    "locatorType": "Vrsta lokatora",
+    "locator": "Lokator",
+    "locatorPlaceholder": "npr. 45–47, 12r–13v, poglavlje 4",
+    "prefix": "Prefiks",
+    "prefixPlaceholder": "npr. vidi također",
+    "suffix": "Sufiks",
+    "suffixPlaceholder": "npr. kurziv dodan",
+    "openSource": "Otvori izvor",
+    "closeEditor": "Zatvori uređivač citata",
+    "deleteCitation": "Izbriši citat",
+    "confirmDeleteCitation": "Izbrisati ovaj citat iz rukopisa? Bibliografski zapis ostat će u knjižnici literature.",
+    "unresolvedReference": "Citirani bibliografski zapis nije razriješen ili nedostaje.",
+    "roles": {
+      "author": "Autor",
+      "editor": "Urednik",
+      "translator": "Prevoditelj",
+      "compiler": "Priređivač",
+      "contributor": "Suradnik"
+    },
+    "resourceTypes": {
+      "journal-article": "Članak u časopisu",
+      "book": "Knjiga",
+      "book-chapter": "Poglavlje u knjizi",
+      "conference-paper": "Konferencijski rad",
+      "thesis": "Završni rad",
+      "dissertation": "Disertacija",
+      "report": "Izvještaj",
+      "preprint": "Pretisak",
+      "dataset": "Skup podataka",
+      "software": "Softver",
+      "standard": "Norma",
+      "archival-source": "Arhivski izvor",
+      "manuscript": "Rukopis",
+      "web-page": "Mrežna stranica"
+    },
+    "locators": {
+      "page": "Stranica",
+      "page-range": "Raspon stranica",
+      "chapter": "Poglavlje",
+      "section": "Odjeljak",
+      "paragraph": "Odlomak",
+      "figure": "Slika",
+      "table": "Tablica",
+      "folio": "Folij",
+      "line": "Redak",
+      "timestamp": "Vremenska oznaka"
+    }
+  },
+  "contributors": {
+    "description": "Upravljajte prijenosnim znanstvenim identitetima i njihovim ulogama doprinosa specifičnima za rukopis.",
+    "add": "Dodaj suradnika",
+    "empty": "Ovom rukopisu nije dodan nijedan suradnik.",
+    "remove": "Ukloni suradnika",
+    "moveUp": "Pomakni suradnika gore",
+    "moveDown": "Pomakni suradnika dolje",
+    "givenName": "Ime",
+    "familyName": "Prezime",
+    "affiliation": "Afilijacija",
+    "orcid": "ORCID",
+    "invalidOrcid": "Kontrolni zbroj ili format ORCID-a nije valjan.",
+    "role": "Uloga doprinosa",
+    "corresponding": "Korespondentni suradnik",
+    "roles": {
+      "author": "Autor",
+      "editor": "Urednik",
+      "translator": "Prevoditelj",
+      "reviewer": "Recenzent",
+      "dataCurator": "Kustos podataka",
+      "software": "Softver",
+      "methodology": "Metodologija",
+      "visualization": "Vizualizacija",
+      "other": "Ostalo"
+    }
+  },
+  "history": {
+    "title": "Povijest revizija",
+    "description": "Nepromjenjive OMI-SPEC-160 revizije zabilježene za ovaj rukopis.",
+    "empty": "Nema zabilježenih revizija.",
+    "current": "Trenutačno",
+    "revision": "Revizija",
+    "events": "događaja",
+    "groupedChanges": "grupiranih promjena",
+    "unknownActor": "Nepoznat sudionik",
+    "completeHistory": "Potpuna povijest",
+    "shallowHistory": "Sažeta povijest",
+    "pendingTitle": "Nepotvrđeno radno stanje",
+    "pendingDescription": "Nedavne izmjene grupiraju se i postat će jedna nepromjenjiva revizija kontrolne točke.",
+    "pendingBadge": "Na čekanju",
+    "checkpoint": "Spremi kontrolnu točku",
+    "discard": "Odbaci promjene",
+    "confirmDiscard": "Odbaciti sve nepotvrđene promjene i vratiti posljednju potvrđenu reviziju?",
+    "revert": "Vrati",
+    "confirmRevert": "Stvoriti novu reviziju koja vraća ovo ranije stanje rukopisa?",
+    "revertBlocked": "Spremite ili odbacite radno stanje na čekanju prije vraćanja potvrđene revizije.",
+    "tombstonesTitle": "Zapisi izbrisanih objekata",
+    "tombstonesDescription": "Trajni OMI-SPEC-160 tombstone zapisi čuvaju identifikatore izbrisanih objekata i dokaz o vraćanju.",
+    "tombstoneActive": "Izbrisano",
+    "tombstoneRestored": "Vraćeno",
+    "operations": {
+      "snapshotCreated": "Stvorena snimka rukopisa",
+      "titleChanged": "Naslov rukopisa promijenjen",
+      "abstractChanged": "Sažetak rukopisa promijenjen",
+      "sectionCreated": "Odjeljak dodan",
+      "blockChanged": "Sadržaj bloka promijenjen",
+      "contributorAdded": "Suradnik dodan",
+      "contributorChanged": "Identitet suradnika promijenjen",
+      "contributorRemoved": "Suradnik uklonjen",
+      "contributionChanged": "Uloga doprinosa promijenjena",
+      "contributorsReordered": "Suradnici preraspoređeni",
+      "reverted": "Vraćena ranija revizija"
+    }
+  },
+  "editor": {
+    "addSection": "Dodaj odjeljak",
+    "addParagraph": "Dodaj odlomak",
+    "addNote": "Bilješka",
+    "addCitation": "Citat",
+    "untitledSection": "Odjeljak bez naslova",
+    "emptyParagraph": "Počnite pisati…",
+    "paragraph": "Odlomak",
+    "heading": "Naslov",
+    "quote": "Citat",
+    "insertNote": "Umetni semantičku bilješku rukopisa",
+    "insertCitation": "Umetni semantički citat",
+    "loading": "Učitavanje uređivača…"
+  },
+  "status": {
+    "draft": "Nacrt",
+    "submitted": "Predano",
+    "accepted": "Prihvaćeno",
+    "published": "Objavljeno"
+  },
+  "validation": {
+    "requiredField": "Ovo je polje obvezno.",
+    "invalidDocument": "Struktura dokumenta nije valjana.",
+    "unsupportedSchema": "Verzija sheme dokumenta nije podržana."
+  },
+  "languages": {
+    "en": "Engleski",
+    "hu": "Mađarski",
+    "de": "Njemački"
+  },
+  "auth": {
+    "brand": {
+      "name": "Open Manuscript Studio",
+      "description": "Suradničko znanstveno pisanje"
+    },
+    "login": {
+      "title": "Prijava",
+      "description": "Prijavite se za nastavak.",
+      "submit": "Prijavi se",
+      "submitting": "Prijava…",
+      "noAccount": "Još nemate račun?",
+      "registerLink": "Registracija"
+    },
+    "register": {
+      "title": "Izradi račun",
+      "description": "Izradite svoj račun.",
+      "submit": "Registriraj se",
+      "hasAccount": "Već imate račun?",
+      "loginLink": "Prijava"
+    },
+    "fields": {
+      "name": {
+        "label": "Puno ime",
+        "placeholder": "Vaše puno ime"
+      },
+      "email": {
+        "label": "E-pošta",
+        "placeholder": "ime@primjer.hr"
+      },
+      "password": {
+        "label": "Lozinka",
+        "placeholder": "Unesite lozinku"
+      }
+    },
+    "errors": {
+      "invalidEmail": "Nevaljana adresa e-pošte.",
+      "invalidCredentials": "Netočna adresa e-pošte ili lozinka.",
+      "userNotFound": "Korisnički račun nije pronađen.",
+      "accountNotActive": "Korisnički račun nije aktivan.",
+      "authenticationRequired": "Potrebna je autentikacija."
+    },
+    "alphaNotice": "Alfa inačica – autentikacija je trenutačno namijenjena testiranju."
+  }
+}

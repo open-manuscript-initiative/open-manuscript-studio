@@ -1,0 +1,332 @@
+{
+  "common": {
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "close": "Sluiten",
+    "delete": "Verwijderen",
+    "edit": "Bewerken",
+    "add": "Toevoegen",
+    "loading": "Laden…",
+    "language": "Taal"
+  },
+  "navigation": {
+    "documents": "Documenten",
+    "editor": "Editor",
+    "metadata": "Metadata",
+    "preview": "Voorbeeld",
+    "settings": "Instellingen"
+  },
+  "studio": {
+    "menu": "Manuscriptmenu",
+    "closeMenu": "Manuscriptmenu sluiten",
+    "languageSwitcher": "Interfacetaal",
+    "saved": "Opgeslagen",
+    "pending": "Opslaan…",
+    "editorAria": "Manuscripteditor",
+    "titlePlaceholder": "Voer de titel van het manuscript in",
+    "noSection": "Er is geen sectie geselecteerd.",
+    "navigation": {
+      "document": "Document",
+      "manuscript": "Manuscriptgegevens",
+      "notes": "Noten",
+      "references": "Referenties",
+      "contributors": "Medewerkers",
+      "history": "Geschiedenis",
+      "tools": "Export en hulpmiddelen",
+      "settings": "Instellingen"
+    },
+    "document": {
+      "title": "Documentstructuur",
+      "description": "Kies de sectie waaraan u wilt werken. Structurele informatie en objectgegevens blijven buiten het schrijfvlak totdat u ze nodig hebt.",
+      "addSection": "Sectie toevoegen",
+      "sections": "Secties",
+      "objects": "Objecten",
+      "annotations": "Annotaties",
+      "citations": "Citaten"
+    },
+    "manuscript": {
+      "title": "Manuscriptgegevens",
+      "description": "Bewerk informatie op manuscriptniveau afzonderlijk van het schrijfvlak."
+    },
+    "tools": {
+      "title": "Export en hulpmiddelen",
+      "description": "Secundaire, technische en mogelijk destructieve handelingen worden buiten het schrijfvlak gehouden.",
+      "export": ".omi.json exporteren",
+      "exportDescription": "Maak een canoniek, overdraagbaar OMI-manuscriptbestand nadat openstaande wijzigingen als controlepunt zijn opgeslagen.",
+      "reset": "Voorbeeld herstellen",
+      "resetDescription": "Vervang het huidige alfavoorbeeld door een nieuw, schoon voorbeeldmanuscript.",
+      "confirmReset": "Het huidige voorbeeldmanuscript herstellen? Niet-opgeslagen en huidige voorbeeldgegevens worden vervangen.",
+      "technicalData": "Technische gegevens",
+      "technicalDescription": "Bekijk de semantische representatie alleen wanneer technische details nodig zijn.",
+      "liveJson": "JSON van huidige sectie",
+      "synced": "Gesynchroniseerd"
+    },
+    "settings": {
+      "title": "Interface-instellingen",
+      "description": "Kies welke interfacetalen tijdens het werken beschikbaar moeten zijn. Deze voorkeuren worden op dit apparaat opgeslagen.",
+      "interfaceLanguages": "Beschikbare interfacetalen",
+      "interfaceLanguagesDescription": "Ingeschakelde talen verschijnen in de snelle taalwisselaar in de editorbalk.",
+      "currentLanguage": "Huidige interfacetaal",
+      "currentLanguageHint": "De taal die momenteel wordt gebruikt moet ingeschakeld blijven. Schakel eerst naar een andere taal voordat u deze uitschakelt.",
+      "enabledLanguage": "Beschikbaar in snelle wisselaar",
+      "disabledLanguage": "Verborgen in snelle wisselaar",
+      "futureLanguages": "Het taalregister is uitbreidbaar. Nieuwe vertaalwoordenboeken kunnen worden toegevoegd zonder dit instellingenscherm opnieuw te ontwerpen."
+    }
+  },
+  "manuscript": {
+    "newDocument": "Nieuw manuscript",
+    "documentTitle": "Documenttitel",
+    "abstract": "Samenvatting",
+    "keywords": "Trefwoorden",
+    "contributors": "Medewerkers",
+    "sections": "Secties",
+    "annotations": "Noten",
+    "citations": "Citaten",
+    "bibliography": "Bibliografie",
+    "documentLanguage": "Documenttaal",
+    "originalLanguage": "Oorspronkelijke taal"
+  },
+  "notes": {
+    "title": "Noten",
+    "description": "Beheer semantische manuscriptnoten. De tekst van een noot blijft een zelfstandig annotatieobject, terwijl de inline-ankers in de tekst blijven staan.",
+    "empty": "Dit manuscript bevat nog geen noten.",
+    "emptyHint": "Plaats de cursor in de tekst en gebruik de knop Noot of Ctrl/Cmd+Alt+N.",
+    "note": "Noot",
+    "type": "Nootsoort",
+    "body": "Noottekst",
+    "bodyPlaceholder": "Schrijf de noot…",
+    "footnote": "Voetnoot",
+    "endnote": "Eindnoot",
+    "authorNote": "Auteursnoot",
+    "delete": "Noot verwijderen",
+    "confirmDelete": "Deze noot en het inline-anker uit het manuscript verwijderen?",
+    "closeEditor": "Noteneditor sluiten",
+    "goToNote": "Ga naar noot",
+    "autoSave": "Wordt opgeslagen met manuscriptrevisies"
+  },
+  "citations": {
+    "referencesTitle": "Referenties",
+    "referencesDescription": "Voeg een werk eenmaal toe aan de referentiebibliotheek van het manuscript en hergebruik het daarna in zoveel citaatvoorkomens als nodig.",
+    "addReference": "Referentie toevoegen",
+    "editReference": "Referentie bewerken",
+    "referenceEditorDescription": "Bewaar gestructureerde bibliografische metadata onafhankelijk van één specifiek citaat of uitvoerstijl.",
+    "emptyLibrary": "De referentiebibliotheek van het manuscript is leeg.",
+    "emptyLibraryHint": "Voeg een boek, artikel, archiefbron, webbron of ander geciteerd werk toe voordat u citaten in de tekst invoegt.",
+    "searchReferences": "Referenties doorzoeken",
+    "searchPlaceholder": "Zoeken op titel, maker, jaar, DOI…",
+    "untitledReference": "Referentie zonder titel",
+    "occurrences": "citaten",
+    "bibliographyPreviewDescription": "Neutrale weergave van records die momenteel in het manuscript worden geciteerd. De uiteindelijke opmaak wordt bepaald door het publicatieprofiel.",
+    "resourceType": "Brontype",
+    "title": "Titel",
+    "titlePlaceholder": "Titel van het geciteerde werk",
+    "subtitle": "Ondertitel",
+    "creators": "Makers en medewerkers",
+    "creatorsDescription": "Bewaar namen gestructureerd zodat citatiestijlen en exports ze correct kunnen weergeven.",
+    "addCreator": "Maker toevoegen",
+    "removeCreator": "Maker verwijderen",
+    "noCreators": "Er is geen maker toegevoegd.",
+    "creatorRole": "Rol",
+    "givenName": "Voornaam",
+    "familyName": "Achternaam",
+    "containerTitle": "Titel van tijdschrift, boek of overkoepelende publicatie",
+    "issued": "Publicatiedatum / jaar",
+    "volume": "Jaargang / deel",
+    "issue": "Nummer",
+    "pages": "Pagina’s / omvang",
+    "publisher": "Uitgever",
+    "place": "Plaats van uitgave",
+    "duplicateReference": "Er bestaat waarschijnlijk al een dubbele referentie in de bibliotheek:",
+    "insertTitle": "Citaat invoegen",
+    "insertDescription": "Kies een werk uit de referentiebibliotheek en geef desgewenst de geciteerde locatie op.",
+    "noReferences": "Er is nog geen referentie beschikbaar.",
+    "noReferencesHint": "Voeg het werk toe via Manuscriptmenu → Referenties en keer daarna terug om het te citeren.",
+    "insert": "Citaat invoegen",
+    "citation": "Citaat",
+    "reference": "Geciteerd werk",
+    "locatorType": "Locatortype",
+    "locator": "Locator",
+    "locatorPlaceholder": "bijv. 45–47, 12r–13v, hoofdstuk 4",
+    "prefix": "Voorvoegsel",
+    "prefixPlaceholder": "bijv. zie ook",
+    "suffix": "Achtervoegsel",
+    "suffixPlaceholder": "bijv. nadruk toegevoegd",
+    "openSource": "Bron openen",
+    "closeEditor": "Citatie-editor sluiten",
+    "deleteCitation": "Citaat verwijderen",
+    "confirmDeleteCitation": "Dit citaatvoorkomen uit het manuscript verwijderen? Het bibliografische record blijft in de referentiebibliotheek.",
+    "unresolvedReference": "Het geciteerde bibliografische record kan niet worden gevonden of ontbreekt.",
+    "roles": {
+      "author": "Auteur",
+      "editor": "Redacteur",
+      "translator": "Vertaler",
+      "compiler": "Samensteller",
+      "contributor": "Medewerker"
+    },
+    "resourceTypes": {
+      "journal-article": "Tijdschriftartikel",
+      "book": "Boek",
+      "book-chapter": "Boekhoofdstuk",
+      "conference-paper": "Conferentiebijdrage",
+      "thesis": "Scriptie",
+      "dissertation": "Dissertatie",
+      "report": "Rapport",
+      "preprint": "Preprint",
+      "dataset": "Dataset",
+      "software": "Software",
+      "standard": "Standaard",
+      "archival-source": "Archiefbron",
+      "manuscript": "Manuscript",
+      "web-page": "Webpagina"
+    },
+    "locators": {
+      "page": "Pagina",
+      "page-range": "Paginabereik",
+      "chapter": "Hoofdstuk",
+      "section": "Sectie",
+      "paragraph": "Alinea",
+      "figure": "Figuur",
+      "table": "Tabel",
+      "folio": "Folio",
+      "line": "Regel",
+      "timestamp": "Tijdstempel"
+    }
+  },
+  "contributors": {
+    "description": "Beheer overdraagbare wetenschappelijke identiteiten en hun manuscriptafgebakende bijdragerollen.",
+    "add": "Medewerker toevoegen",
+    "empty": "Er zijn geen medewerkers aan dit manuscript toegevoegd.",
+    "remove": "Medewerker verwijderen",
+    "moveUp": "Medewerker omhoog verplaatsen",
+    "moveDown": "Medewerker omlaag verplaatsen",
+    "givenName": "Voornaam",
+    "familyName": "Achternaam",
+    "affiliation": "Affiliatie",
+    "orcid": "ORCID",
+    "invalidOrcid": "De ORCID-controlesom of het formaat is ongeldig.",
+    "role": "Bijdragerol",
+    "corresponding": "Correspondentieauteur / -medewerker",
+    "roles": {
+      "author": "Auteur",
+      "editor": "Redacteur",
+      "translator": "Vertaler",
+      "reviewer": "Beoordelaar",
+      "dataCurator": "Datacurator",
+      "software": "Software",
+      "methodology": "Methodologie",
+      "visualization": "Visualisatie",
+      "other": "Overig"
+    }
+  },
+  "history": {
+    "title": "Revisiegeschiedenis",
+    "description": "Onveranderlijke OMI-SPEC-160-revisies die voor dit manuscript zijn vastgelegd.",
+    "empty": "Er zijn geen revisies vastgelegd.",
+    "current": "Huidig",
+    "revision": "Revisie",
+    "events": "gebeurtenissen",
+    "groupedChanges": "gegroepeerde wijzigingen",
+    "unknownActor": "Onbekende actor",
+    "completeHistory": "Volledige geschiedenis",
+    "shallowHistory": "Beknopte geschiedenis",
+    "pendingTitle": "Niet-vastgelegde werkstatus",
+    "pendingDescription": "Recente wijzigingen worden gebundeld en vormen één onveranderlijke controlepuntrevisie.",
+    "pendingBadge": "In afwachting",
+    "checkpoint": "Controlepunt opslaan",
+    "discard": "Wijzigingen verwerpen",
+    "confirmDiscard": "Alle niet-vastgelegde wijzigingen verwerpen en de laatste vastgelegde revisie herstellen?",
+    "revert": "Terugzetten",
+    "confirmRevert": "Een nieuwe revisie maken die deze eerdere manuscriptstatus herstelt?",
+    "revertBlocked": "Sla de openstaande werkstatus op of verwerp deze voordat u een vastgelegde revisie terugzet.",
+    "tombstonesTitle": "Records van verwijderde objecten",
+    "tombstonesDescription": "Permanente OMI-SPEC-160-tombstones bewaren identifiers van verwijderde objecten en bewijs van herstel.",
+    "tombstoneActive": "Verwijderd",
+    "tombstoneRestored": "Hersteld",
+    "operations": {
+      "snapshotCreated": "Momentopname van manuscript gemaakt",
+      "titleChanged": "Manuscripttitel gewijzigd",
+      "abstractChanged": "Samenvatting gewijzigd",
+      "sectionCreated": "Sectie toegevoegd",
+      "blockChanged": "Blokinhoud gewijzigd",
+      "contributorAdded": "Medewerker toegevoegd",
+      "contributorChanged": "Identiteit van medewerker gewijzigd",
+      "contributorRemoved": "Medewerker verwijderd",
+      "contributionChanged": "Bijdragerol gewijzigd",
+      "contributorsReordered": "Medewerkers opnieuw geordend",
+      "reverted": "Eerdere revisie hersteld"
+    }
+  },
+  "editor": {
+    "addSection": "Sectie toevoegen",
+    "addParagraph": "Alinea toevoegen",
+    "addNote": "Noot",
+    "addCitation": "Citaat",
+    "untitledSection": "Sectie zonder titel",
+    "emptyParagraph": "Begin met schrijven…",
+    "paragraph": "Alinea",
+    "heading": "Kop",
+    "quote": "Citaat",
+    "insertNote": "Semantische manuscriptnoot invoegen",
+    "insertCitation": "Semantisch citaat invoegen",
+    "loading": "Editor laden…"
+  },
+  "status": {
+    "draft": "Concept",
+    "submitted": "Ingediend",
+    "accepted": "Geaccepteerd",
+    "published": "Gepubliceerd"
+  },
+  "validation": {
+    "requiredField": "Dit veld is verplicht.",
+    "invalidDocument": "De documentstructuur is ongeldig.",
+    "unsupportedSchema": "De versie van het documentschema wordt niet ondersteund."
+  },
+  "languages": {
+    "en": "Engels",
+    "hu": "Hongaars",
+    "de": "Duits"
+  },
+  "auth": {
+    "brand": {
+      "name": "Open Manuscript Studio",
+      "description": "Samenwerkend wetenschappelijk schrijven"
+    },
+    "login": {
+      "title": "Aanmelden",
+      "description": "Meld u aan om door te gaan.",
+      "submit": "Aanmelden",
+      "submitting": "Aanmelden…",
+      "noAccount": "Nog geen account?",
+      "registerLink": "Registreren"
+    },
+    "register": {
+      "title": "Account aanmaken",
+      "description": "Maak uw account aan.",
+      "submit": "Registreren",
+      "hasAccount": "Hebt u al een account?",
+      "loginLink": "Aanmelden"
+    },
+    "fields": {
+      "name": {
+        "label": "Volledige naam",
+        "placeholder": "Uw volledige naam"
+      },
+      "email": {
+        "label": "E-mail",
+        "placeholder": "naam@voorbeeld.nl"
+      },
+      "password": {
+        "label": "Wachtwoord",
+        "placeholder": "Voer uw wachtwoord in"
+      }
+    },
+    "errors": {
+      "invalidEmail": "Ongeldig e-mailadres.",
+      "invalidCredentials": "Onjuist e-mailadres of wachtwoord.",
+      "userNotFound": "Het gebruikersaccount is niet gevonden.",
+      "accountNotActive": "Het gebruikersaccount is niet actief.",
+      "authenticationRequired": "Authenticatie is vereist."
+    },
+    "alphaNotice": "Alfaversie – authenticatie is momenteel bedoeld voor testdoeleinden."
+  }
+}
