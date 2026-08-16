@@ -69,6 +69,22 @@ enum ReviewWorkspaceRole {
   EDITOR
 }
 
+enum CloudProviderType {
+  WEBDAV
+  NEXTCLOUD
+}
+
+enum CloudConnectionStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
+enum CloudBackupStatus {
+  COMPLETED
+  FAILED
+}
+
 model User {
   id                        String                  @id @default(uuid()) @db.Uuid
   email                     String                  @unique @db.VarChar(320)
@@ -89,6 +105,8 @@ model User {
   reviewAssignments         PeerReviewAssignment[]  @relation("ReviewerAssignments")
   assignedReviewAssignments PeerReviewAssignment[]  @relation("ReviewAssigner")
   reviewWorkspaceAccess     ReviewWorkspaceAccess[]
+  cloudConnections          CloudConnection[]
+  cloudBackups              CloudBackup[]
 
   @@map("users")
 }
@@ -123,20 +141,20 @@ model UserInvitation {
 }
 
 model UserIdentity {
-  id           String           @id @default(uuid()) @db.Uuid
-  userId       String           @map("user_id") @db.Uuid
-  provider     IdentityProvider
-  issuer       String           @db.VarChar(512)
-  subject      String           @db.VarChar(320)
-  displayName  String?          @map("display_name") @db.VarChar(200)
-  profile      Json?            @db.JsonB
-  accessToken  String?          @map("access_token") @db.Text
-  refreshToken String?          @map("refresh_token") @db.Text
-  tokenExpiresAt DateTime?      @map("token_expires_at") @db.Timestamptz(6)
-  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
-  lastUsedAt   DateTime?        @map("last_used_at") @db.Timestamptz(6)
-  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String           @id @default(uuid()) @db.Uuid
+  userId         String           @map("user_id") @db.Uuid
+  provider       IdentityProvider
+  issuer         String           @db.VarChar(512)
+  subject        String           @db.VarChar(320)
+  displayName    String?          @map("display_name") @db.VarChar(200)
+  profile        Json?            @db.JsonB
+  accessToken    String?          @map("access_token") @db.Text
+  refreshToken   String?          @map("refresh_token") @db.Text
+  tokenExpiresAt DateTime?        @map("token_expires_at") @db.Timestamptz(6)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  lastUsedAt     DateTime?        @map("last_used_at") @db.Timestamptz(6)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, issuer, subject])
   @@index([userId, provider])
@@ -253,4 +271,42 @@ model ExternalLaunchNonce {
   @@unique([installationId, nonce])
   @@index([expiresAt])
   @@map("external_launch_nonces")
+}
+
+model CloudConnection {
+  id                   String                @id @default(uuid()) @db.Uuid
+  userId               String                @map("user_id") @db.Uuid
+  providerType         CloudProviderType     @map("provider_type")
+  displayName          String                @map("display_name") @db.VarChar(200)
+  status               CloudConnectionStatus @default(DISCONNECTED)
+  encryptedCredentials String                @map("encrypted_credentials") @db.Text
+  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  lastVerifiedAt       DateTime?             @map("last_verified_at") @db.Timestamptz(6)
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  backups              CloudBackup[]
+
+  @@index([userId])
+  @@index([providerType, status])
+  @@map("cloud_connections")
+}
+
+model CloudBackup {
+  id               String            @id @default(uuid()) @db.Uuid
+  manuscriptId     String            @map("manuscript_id") @db.VarChar(128)
+  userId           String            @map("user_id") @db.Uuid
+  connectionId     String            @map("connection_id") @db.Uuid
+  providerObjectId String            @map("provider_object_id") @db.Text
+  providerPath     String            @map("provider_path") @db.Text
+  packageVersion   String            @map("package_version") @db.VarChar(32)
+  checksum         String            @db.VarChar(64)
+  sizeBytes        BigInt            @map("size_bytes")
+  status           CloudBackupStatus @default(COMPLETED)
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connection       CloudConnection   @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([manuscriptId, userId, createdAt])
+  @@index([connectionId])
+  @@map("cloud_backups")
 }
