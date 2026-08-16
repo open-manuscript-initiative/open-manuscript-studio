@@ -14,10 +14,18 @@ const referenceFile = path.join(jsonRoot, referenceLocale, 'studio.json');
 const reference = JSON.parse(await fs.readFile(referenceFile, 'utf8'));
 const englishEntries = new Map(flattenStrings(reference));
 
-const poDirs = (await fs.readdir(poRoot, { withFileTypes: true }))
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => entry.name)
-  .sort();
+const poDirs = [];
+for (const entry of await fs.readdir(poRoot, { withFileTypes: true })) {
+  if (!entry.isDirectory()) continue;
+  const poFile = path.join(poRoot, entry.name, 'studio.po');
+  try {
+    await fs.access(poFile);
+    poDirs.push(entry.name);
+  } catch {
+    // Non-locale working directories such as locale/pending are ignored.
+  }
+}
+poDirs.sort();
 
 if (!poDirs.includes(referenceLocale)) {
   throw new Error('English PO locale is required.');
