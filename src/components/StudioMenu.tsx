@@ -2,6 +2,7 @@ import {
   BookOpen,
   Download,
   FileText,
+  Fingerprint,
   FolderOpen,
   History as HistoryIcon,
   Library,
@@ -39,6 +40,7 @@ import {
   saveLocalManuscriptAs,
 } from '../services/nativeManuscriptFile';
 import { AssetContainerPanel } from './AssetContainerPanel';
+import { AuthorSignaturePanel } from './AuthorSignaturePanel';
 import { ContentLanguageSettings } from './ContentLanguageSettings';
 import { CrossReferencePanel } from './CrossReferencePanel';
 import { DocxImportPanel } from './DocxImportPanel';
@@ -62,6 +64,7 @@ type StudioMenuView =
   | 'contributors'
   | 'assignments'
   | 'publication'
+  | 'signatures'
   | 'history'
   | 'tools'
   | 'settings';
@@ -89,6 +92,11 @@ export function StudioMenu({
     : locale === 'de'
       ? 'Aufträge'
       : 'Assignments';
+  const signaturesLabel = locale === 'hu'
+    ? 'Aláírások'
+    : locale === 'de'
+      ? 'Signaturen'
+      : 'Signatures';
 
   useEffect(() => {
     if (!open) return;
@@ -124,6 +132,7 @@ export function StudioMenu({
             <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} />
             {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={assignmentsLabel} onClick={() => setActiveView('assignments')} /> : null}
             <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} />
+            <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={signaturesLabel} onClick={() => setActiveView('signatures')} />
             <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
             <MenuButton active={activeView === 'tools'} icon={<Wrench size={18} aria-hidden="true" />} label={t('studio.navigation.tools')} onClick={() => setActiveView('tools')} />
             <MenuButton active={activeView === 'settings'} icon={<Settings2 size={18} aria-hidden="true" />} label={t('studio.navigation.settings')} onClick={() => setActiveView('settings')} />
@@ -136,6 +145,7 @@ export function StudioMenu({
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
             {activeView === 'assignments' && ojsAssignment ? <OjsAssignmentPanel actorMode={ojsAssignment.actorMode} context={ojsAssignment.context} /> : null}
             {activeView === 'publication' ? <PublicationProfilePanel /> : null}
+            {activeView === 'signatures' ? <AuthorSignaturePanel /> : null}
             {activeView === 'history' ? <HistoryPanel /> : null}
             {activeView === 'tools' ? <ToolsView /> : null}
             {activeView === 'settings' ? <SettingsView /> : null}
