@@ -39,26 +39,40 @@ export function Header({ onOpenMenu }: HeaderProps) {
 
   return (
     <header className="app-header focus-header">
-      <button
-        type="button"
-        className="focus-menu-button"
-        aria-label={t('studio.menu')}
-        title={t('studio.menu')}
-        onClick={onOpenMenu}
-      >
-        <Menu size={20} aria-hidden="true" />
-      </button>
+      <div className="focus-header-identity">
+        <button
+          type="button"
+          className="focus-menu-button"
+          aria-label={t('studio.menu')}
+          title={t('studio.menu')}
+          onClick={onOpenMenu}
+        >
+          <Menu size={19} aria-hidden="true" />
+        </button>
 
-      <div className="focus-header-context">
-        <span className="focus-header-brand">
-          Open Manuscript Studio
-        </span>
-        <span className="focus-header-section">
-          {selectedSection?.title ?? manuscript.title}
-        </span>
+        <div className="focus-brand-lockup" aria-label="Open Manuscript Studio">
+          <span className="focus-brand-mark" aria-hidden="true">OMI</span>
+          <span className="focus-brand-copy">
+            <span className="focus-brand-initiative">Open Manuscript Initiative</span>
+            <strong>Studio</strong>
+          </span>
+        </div>
       </div>
 
-      <HeaderInsertMenu />
+      <div className="focus-header-context" title={selectedSection?.title ?? manuscript.title}>
+        <span className="focus-header-context-label">Manuscript</span>
+        <span className="focus-header-manuscript-title">{manuscript.title}</span>
+        {selectedSection?.title && selectedSection.title !== manuscript.title ? (
+          <>
+            <span className="focus-header-context-divider" aria-hidden="true">/</span>
+            <span className="focus-header-section">{selectedSection.title}</span>
+          </>
+        ) : null}
+      </div>
+
+      <div className="focus-header-primary-action">
+        <HeaderInsertMenu />
+      </div>
 
       <div className="focus-header-actions">
         <div
@@ -69,9 +83,9 @@ export function Header({ onOpenMenu }: HeaderProps) {
           aria-live="polite"
         >
           {pendingChangeSet ? (
-            <Clock3 size={16} aria-hidden="true" />
+            <Clock3 size={15} aria-hidden="true" />
           ) : (
-            <CheckCircle2 size={16} aria-hidden="true" />
+            <CheckCircle2 size={15} aria-hidden="true" />
           )}
           <span>
             {pendingChangeSet
@@ -90,7 +104,7 @@ export function Header({ onOpenMenu }: HeaderProps) {
           onClick={handleLogout}
           disabled={isAuthLoading}
         >
-          <LogOut size={20} aria-hidden="true" />
+          <LogOut size={18} aria-hidden="true" />
           <span className="focus-logout-label">
             {t('auth.logout')}
           </span>
