@@ -18,10 +18,12 @@ import {
 } from '../model/publicationProfile';
 import {
   OMI_HTML_PROFILE,
-  renderHtmlArticle,
   type HtmlDiagnostic,
 } from '../services/exportHtml';
-import { buildHtmlPackage } from '../services/exportHtmlPackage';
+import {
+  buildPublisherHtmlPackage,
+  renderPublisherHtmlArticle,
+} from '../services/exportPublisherHtmlPackage';
 
 export function HtmlExportPanel() {
   const { locale } = useTranslation();
@@ -31,7 +33,7 @@ export function HtmlExportPanel() {
   const profile = resolvePublicationProfile(manuscript);
   const supported = profileSupportsOutput(profile, 'html');
   const result = useMemo(
-    () => renderHtmlArticle(manuscript, profile),
+    () => renderPublisherHtmlArticle(manuscript, profile),
     [manuscript, profile],
   );
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -57,7 +59,7 @@ export function HtmlExportPanel() {
       checkpoint('export');
       const committedManuscript = useStudioStore.getState().manuscript;
       const committedProfile = resolvePublicationProfile(committedManuscript);
-      const packageResult = await buildHtmlPackage(
+      const packageResult = await buildPublisherHtmlPackage(
         committedManuscript,
         committedProfile,
       );
@@ -138,6 +140,12 @@ export function HtmlExportPanel() {
             {errors.length} {copy.errors} · {warnings.length} {copy.warnings}
           </dd>
         </div>
+        {profile.exportStylesheet ? (
+          <div>
+            <dt>CSS</dt>
+            <dd><code>{profile.exportStylesheet.fileName}</code></dd>
+          </div>
+        ) : null}
       </dl>
 
       <p className="html-export-hint">{copy.workingPreview}</p>
