@@ -209,7 +209,7 @@ msgstr "A másodlagos, technikai és esetleg romboló műveletek nem jelennek me
 #. OMI translation key: /studio/tools/export
 msgctxt "/studio/tools/export"
 msgid "Export .omi.json"
-msgstr "Export .omi.json"
+msgstr ".omi.json exportálása"
 
 #. OMI translation key: /studio/tools/exportDescription
 msgctxt "/studio/tools/exportDescription"
@@ -2359,7 +2359,7 @@ msgstr "Az OJS-ből megnyitott kéziratnál a Studio átveheti a dokumentumot, a
 #. OMI translation key: /modules/help/topics/7/title
 msgctxt "/modules/help/topics/7/title"
 msgid "DOCX import"
-msgstr "DOCX import"
+msgstr "DOCX-importálás"
 
 #. OMI translation key: /modules/help/topics/7/body
 msgctxt "/modules/help/topics/7/body"
@@ -2379,7 +2379,7 @@ msgstr "A közvetlen formázás felismerése csak tartalék módszer."
 #. OMI translation key: /modules/help/topics/8/title
 msgctxt "/modules/help/topics/8/title"
 msgid "Export"
-msgstr "Export"
+msgstr "Exportálás"
 
 #. OMI translation key: /modules/help/topics/8/body
 msgctxt "/modules/help/topics/8/body"

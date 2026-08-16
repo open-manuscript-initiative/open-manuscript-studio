@@ -51,7 +51,7 @@
     "tools": {
       "title": "Export és eszközök",
       "description": "A másodlagos, technikai és esetleg romboló műveletek nem jelennek meg a szerkesztési felületen.",
-      "export": "Export .omi.json",
+      "export": ".omi.json exportálása",
       "exportDescription": "Kanonikus, hordozható OMI kéziratfájl készítése a függő módosítások checkpointba mentése után.",
       "reset": "Mintakézirat visszaállítása",
       "resetDescription": "A jelenlegi alfa mintakézirat lecserélése egy új, tiszta mintakéziratra.",
@@ -571,7 +571,7 @@
           "body": "Az OJS-ből megnyitott kéziratnál a Studio átveheti a dokumentumot, az absztraktokat, kulcsszavakat és más publikációs metaadatokat. Csak az OJS-ben ténylegesen kitöltött adatok importálhatók."
         },
         {
-          "title": "DOCX import",
+          "title": "DOCX-importálás",
           "body": "Word-dokumentum importálásakor a Studio a dokumentum szerkezetét is megpróbálja felismerni.",
           "tips": [
             "A fejezetcímeket Word Címsor 1, Címsor 2 stb. stílussal jelölje.",
@@ -579,7 +579,7 @@
           ]
         },
         {
-          "title": "Export",
+          "title": "Exportálás",
           "body": "Az Export és eszközök menüben hordozható .omi.json kéziratfájl készíthető. Ez a dokumentum szemantikai szerkezetét és OMI-metaadatait őrzi."
         },
         {
