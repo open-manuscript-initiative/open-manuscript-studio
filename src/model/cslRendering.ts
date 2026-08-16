@@ -7,6 +7,10 @@ import type {
 
 export const DEFAULT_CITATION_STYLE: OmiCitationStyleId = 'apa-7';
 
+/**
+ * Legacy built-ins kept stable for backwards compatibility and existing tests.
+ * The full selector uses CITATION_STYLE_CATALOG below.
+ */
 export const CITATION_STYLE_IDS: readonly OmiCitationStyleId[] = [
   'apa-7',
   'chicago-author-date',
@@ -14,6 +18,131 @@ export const CITATION_STYLE_IDS: readonly OmiCitationStyleId[] = [
   'mla-9',
   'iso-690',
 ] as const;
+
+type BaseCitationStyle =
+  | 'apa-7'
+  | 'chicago-author-date'
+  | 'chicago-notes-bibliography'
+  | 'mla-9'
+  | 'iso-690';
+
+export interface CitationStyleDescriptor {
+  id: string;
+  label: string;
+  category: string;
+  baseStyle: BaseCitationStyle;
+  numeric?: boolean;
+}
+
+function style(
+  id: string,
+  label: string,
+  category: string,
+  baseStyle: BaseCitationStyle,
+  numeric = false,
+): CitationStyleDescriptor {
+  return { id, label, category, baseStyle, numeric };
+}
+
+/**
+ * Curated cross-disciplinary CSL-oriented style registry.
+ *
+ * OMI stores the selected style as a presentation preference. Journal-specific
+ * CSL XML can later be attached without rewriting bibliographic records.
+ */
+export const CITATION_STYLE_CATALOG: readonly CitationStyleDescriptor[] = [
+  style('apa-7', 'APA 7th edition', 'Social sciences', 'apa-7'),
+  style('apa-6', 'APA 6th edition', 'Social sciences', 'apa-7'),
+  style('mla-9', 'MLA 9th edition', 'Humanities', 'mla-9'),
+  style('mla-8', 'MLA 8th edition', 'Humanities', 'mla-9'),
+  style('chicago-author-date', 'Chicago Author-Date', 'Humanities', 'chicago-author-date'),
+  style('chicago-notes-bibliography', 'Chicago Notes & Bibliography', 'Humanities', 'chicago-notes-bibliography'),
+  style('chicago-18-author-date', 'Chicago 18th edition – Author-Date', 'Humanities', 'chicago-author-date'),
+  style('chicago-18-notes-bibliography', 'Chicago 18th edition – Notes & Bibliography', 'Humanities', 'chicago-notes-bibliography'),
+  style('turabian-9-author-date', 'Turabian 9th edition – Author-Date', 'Humanities', 'chicago-author-date'),
+  style('turabian-9-notes-bibliography', 'Turabian 9th edition – Notes & Bibliography', 'Humanities', 'chicago-notes-bibliography'),
+  style('harvard-cite-them-right', 'Harvard – Cite Them Right', 'Author-date', 'chicago-author-date'),
+  style('harvard-anglia-ruskin', 'Harvard – Anglia Ruskin University', 'Author-date', 'chicago-author-date'),
+  style('harvard-imperial-college-london', 'Harvard – Imperial College London', 'Author-date', 'chicago-author-date'),
+  style('elsevier-harvard', 'Elsevier – Harvard', 'Publisher', 'chicago-author-date'),
+  style('springer-basic-author-date', 'Springer – Basic Author-Date', 'Publisher', 'chicago-author-date'),
+  style('iso-690', 'ISO 690 – Author-date', 'Standards', 'iso-690'),
+  style('iso-690-numeric', 'ISO 690 – Numeric', 'Standards', 'iso-690', true),
+  style('din-1505-2', 'DIN 1505-2', 'Standards', 'iso-690'),
+  style('gb-t-7714-2015-author-date', 'GB/T 7714-2015 – Author-Date', 'Standards', 'iso-690'),
+  style('gb-t-7714-2015-numeric', 'GB/T 7714-2015 – Numeric', 'Standards', 'iso-690', true),
+  style('gost-r-7-0-5-2008', 'GOST R 7.0.5-2008', 'Standards', 'iso-690', true),
+  style('abnt-nbr-6023-2018', 'ABNT NBR 6023:2018', 'Standards', 'iso-690'),
+  style('sist02', 'SIST02', 'Standards', 'iso-690'),
+  style('vancouver', 'Vancouver', 'Medicine', 'iso-690', true),
+  style('nlm', 'NLM', 'Medicine', 'iso-690', true),
+  style('ama-11', 'AMA Manual of Style 11th edition', 'Medicine', 'iso-690', true),
+  style('jama', 'JAMA', 'Medicine', 'iso-690', true),
+  style('nejm', 'New England Journal of Medicine', 'Medicine', 'iso-690', true),
+  style('bmj', 'BMJ', 'Medicine', 'iso-690', true),
+  style('the-lancet', 'The Lancet', 'Medicine', 'iso-690', true),
+  style('nature', 'Nature', 'Natural sciences', 'iso-690', true),
+  style('science', 'Science', 'Natural sciences', 'iso-690', true),
+  style('cell', 'Cell', 'Natural sciences', 'iso-690', true),
+  style('acs', 'American Chemical Society (ACS)', 'Chemistry', 'iso-690', true),
+  style('aip', 'American Institute of Physics (AIP)', 'Physics', 'iso-690', true),
+  style('aps', 'American Physical Society (APS)', 'Physics', 'iso-690', true),
+  style('ieee', 'IEEE', 'Engineering', 'iso-690', true),
+  style('acm-sig-proceedings', 'ACM SIG Proceedings', 'Computing', 'iso-690', true),
+  style('springer-basic-number', 'Springer – Basic Number', 'Publisher', 'iso-690', true),
+  style('springer-vancouver', 'Springer – Vancouver', 'Publisher', 'iso-690', true),
+  style('elsevier-vancouver', 'Elsevier – Vancouver', 'Publisher', 'iso-690', true),
+  style('cse-name-year', 'CSE – Name-Year', 'Natural sciences', 'chicago-author-date'),
+  style('cse-citation-name', 'CSE – Citation-Name', 'Natural sciences', 'iso-690', true),
+  style('cse-citation-sequence', 'CSE – Citation-Sequence', 'Natural sciences', 'iso-690', true),
+  style('asa', 'American Sociological Association (ASA)', 'Social sciences', 'chicago-author-date'),
+  style('apsa', 'American Political Science Association (APSA)', 'Social sciences', 'chicago-author-date'),
+  style('aaa', 'American Anthropological Association (AAA)', 'Social sciences', 'chicago-author-date'),
+  style('bluebook', 'The Bluebook', 'Law', 'chicago-notes-bibliography'),
+  style('oscola', 'OSCOLA', 'Law', 'chicago-notes-bibliography'),
+  style('mhra', 'MHRA', 'Humanities', 'chicago-notes-bibliography'),
+  style('american-historical-review', 'American Historical Review', 'History', 'chicago-notes-bibliography'),
+  style('modern-humanities-research-association', 'Modern Humanities Research Association', 'Humanities', 'chicago-notes-bibliography'),
+] as const;
+
+export interface CustomCitationStyleConfig {
+  name: string;
+  baseStyle: BaseCitationStyle;
+  citationPrefix?: string;
+  citationSuffix?: string;
+  citationDelimiter?: string;
+  bibliographyPrefix?: string;
+  bibliographySuffix?: string;
+  uppercaseAuthors?: boolean;
+  showYear?: boolean;
+}
+
+export function createCustomCitationStyleId(config: CustomCitationStyleConfig): string {
+  return `custom:${encodeURIComponent(JSON.stringify(config))}`;
+}
+
+export function parseCustomCitationStyleId(
+  id: string,
+): CustomCitationStyleConfig | undefined {
+  if (!id.startsWith('custom:')) return undefined;
+  try {
+    const parsed = JSON.parse(decodeURIComponent(id.slice('custom:'.length))) as Partial<CustomCitationStyleConfig>;
+    if (!parsed.name || !parsed.baseStyle) return undefined;
+    if (!CITATION_STYLE_IDS.includes(parsed.baseStyle as OmiCitationStyleId)) return undefined;
+    return parsed as CustomCitationStyleConfig;
+  } catch {
+    return undefined;
+  }
+}
+
+export function getCitationStyleDescriptor(id: string): CitationStyleDescriptor {
+  const custom = parseCustomCitationStyleId(id);
+  if (custom) {
+    return style(id, custom.name, 'Custom', custom.baseStyle);
+  }
+  return CITATION_STYLE_CATALOG.find((candidate) => candidate.id === id)
+    ?? CITATION_STYLE_CATALOG[0]!;
+}
 
 export interface CslJsonName {
   given?: string;
@@ -26,13 +155,6 @@ export interface CslJsonDate {
   literal?: string;
 }
 
-/**
- * Focused CSL-JSON shape produced by Studio.
- *
- * Studio deliberately keeps its canonical OMI bibliographic model separate
- * from CSL. This adapter allows citation/publishing renderers to consume a
- * standard presentation-oriented representation without rewriting OMI data.
- */
 export interface CslJsonItem {
   id: string;
   type: string;
@@ -63,22 +185,16 @@ export function toCslJson(record: OmiBibliographicRecord): CslJsonItem {
   const authors = contributorsByRole(record, 'author').map(toCslName);
   const editors = contributorsByRole(record, 'editor').map(toCslName);
   const translators = contributorsByRole(record, 'translator').map(toCslName);
-  const issued = toCslDate(record.issued);
   const doi = identifier(record, 'doi');
-  const isbn = identifier(record, 'isbn');
-  const issn = identifier(record, 'issn');
-
   return compactObject({
     id: record.id,
     type: toCslType(record.type),
-    title: record.subtitle
-      ? `${normalize(record.title)}: ${normalize(record.subtitle)}`
-      : normalize(record.title),
+    title: fullTitle(record),
     author: authors.length ? authors : undefined,
     editor: editors.length ? editors : undefined,
     translator: translators.length ? translators : undefined,
     'container-title': optional(record.containerTitle),
-    issued,
+    issued: toCslDate(record.issued),
     publisher: optional(record.publisher),
     'publisher-place': optional(record.place),
     volume: optional(record.volume),
@@ -86,8 +202,8 @@ export function toCslJson(record: OmiBibliographicRecord): CslJsonItem {
     page: optional(record.pages),
     language: optional(record.language),
     DOI: doi,
-    ISBN: isbn,
-    ISSN: issn,
+    ISBN: identifier(record, 'isbn'),
+    ISSN: identifier(record, 'issn'),
     URL: optional(record.url) || (doi ? `https://doi.org/${doi}` : undefined),
   }) as CslJsonItem;
 }
@@ -95,31 +211,46 @@ export function toCslJson(record: OmiBibliographicRecord): CslJsonItem {
 export function renderCitationCluster(
   citations: readonly OmiCitation[],
   records: readonly OmiBibliographicRecord[],
-  style: OmiCitationStyleId = DEFAULT_CITATION_STYLE,
+  styleId: OmiCitationStyleId = DEFAULT_CITATION_STYLE,
   locale = 'en',
 ): string {
-  const recordMap = new Map(records.map((record) => [record.id, record]));
-  const rendered = citations.map((citation) =>
-    renderCitationItem(citation, recordMap.get(citation.target), style, locale),
+  const rawId = String(styleId);
+  const descriptor = getCitationStyleDescriptor(rawId);
+  const custom = parseCustomCitationStyleId(rawId);
+  const recordsById = new Map(records.map((record) => [record.id, record]));
+  const rendered = citations.map((citation, index) =>
+    descriptor.numeric
+      ? renderNumericCitation(citation, index + 1, descriptor.baseStyle, locale)
+      : renderCitationItem(citation, recordsById.get(citation.target), descriptor.baseStyle, locale),
   );
 
-  if (style === 'chicago-notes-bibliography') {
-    return rendered.join('; ');
+  if (descriptor.numeric) {
+    const values = rendered.join(custom?.citationDelimiter ?? ', ');
+    return `${custom?.citationPrefix ?? '['}${values}${custom?.citationSuffix ?? ']'}`;
   }
 
-  return `(${rendered.join('; ')})`;
+  if (descriptor.baseStyle === 'chicago-notes-bibliography') {
+    const values = rendered.join(custom?.citationDelimiter ?? '; ');
+    return `${custom?.citationPrefix ?? ''}${values}${custom?.citationSuffix ?? ''}`;
+  }
+
+  const values = rendered.join(custom?.citationDelimiter ?? '; ');
+  return `${custom?.citationPrefix ?? '('}${values}${custom?.citationSuffix ?? ')'}`;
 }
 
 export function renderBibliography(
   records: readonly OmiBibliographicRecord[],
-  style: OmiCitationStyleId = DEFAULT_CITATION_STYLE,
+  styleId: OmiCitationStyleId = DEFAULT_CITATION_STYLE,
   locale = 'en',
 ): RenderedBibliographyEntry[] {
+  const descriptor = getCitationStyleDescriptor(String(styleId));
   return records
-    .map((record) => ({
+    .map((record, index) => ({
       recordId: record.id,
-      text: renderBibliographyRecord(record, style, locale),
-      sortKey: bibliographySortKey(record, style),
+      text: descriptor.numeric
+        ? `${index + 1}. ${renderBibliographyRecord(record, styleId, locale)}`
+        : renderBibliographyRecord(record, styleId, locale),
+      sortKey: descriptor.numeric ? String(index).padStart(8, '0') : bibliographySortKey(record),
     }))
     .sort((a, b) => a.sortKey.localeCompare(b.sortKey, locale))
     .map(({ recordId, text }) => ({ recordId, text }));
@@ -127,294 +258,212 @@ export function renderBibliography(
 
 export function renderBibliographyRecord(
   record: OmiBibliographicRecord,
-  style: OmiCitationStyleId = DEFAULT_CITATION_STYLE,
+  styleId: OmiCitationStyleId = DEFAULT_CITATION_STYLE,
   locale = 'en',
 ): string {
-  switch (style) {
+  const rawId = String(styleId);
+  const descriptor = getCitationStyleDescriptor(rawId);
+  const custom = parseCustomCitationStyleId(rawId);
+  let rendered: string;
+  switch (descriptor.baseStyle) {
     case 'apa-7':
-      return renderApaBibliography(record, locale);
+      rendered = renderApaBibliography(record, locale);
+      break;
     case 'chicago-author-date':
-      return renderChicagoAuthorDateBibliography(record, locale);
+      rendered = renderChicagoAuthorDateBibliography(record, locale);
+      break;
     case 'chicago-notes-bibliography':
-      return renderChicagoNotesBibliography(record, locale);
+      rendered = renderChicagoNotesBibliography(record, locale);
+      break;
     case 'mla-9':
-      return renderMlaBibliography(record, locale);
+      rendered = renderMlaBibliography(record, locale);
+      break;
     case 'iso-690':
-      return renderIsoBibliography(record, locale);
+      rendered = renderIsoBibliography(record, locale);
+      break;
   }
+
+  if (custom?.uppercaseAuthors) {
+    const creator = preferredCreators(record)[0];
+    const family = creator ? familyOrLiteral(creator) : '';
+    if (family) rendered = rendered.replace(family, family.toLocaleUpperCase(locale));
+  }
+  return `${custom?.bibliographyPrefix ?? ''}${rendered}${custom?.bibliographySuffix ?? ''}`;
+}
+
+function renderNumericCitation(
+  citation: OmiCitation,
+  number: number,
+  baseStyle: BaseCitationStyle,
+  locale: string,
+): string {
+  const locator = renderLocator(citation, baseStyle, locale);
+  return locator ? `${number}, ${locator}` : String(number);
 }
 
 function renderCitationItem(
   citation: OmiCitation,
   record: OmiBibliographicRecord | undefined,
-  style: OmiCitationStyleId,
+  styleId: BaseCitationStyle,
   locale: string,
 ): string {
-  if (!record) {
-    return localized(locale, 'unresolved');
-  }
-
-  const author = shortAuthor(record, style, locale);
+  if (!record) return localized(locale, 'unresolved');
+  const author = shortAuthor(record, styleId, locale);
   const year = publicationYear(record) || localized(locale, 'noDate');
   const title = shortTitle(record.title);
-  const locator = renderLocator(citation, style, locale);
-  let core: string;
-
-  switch (style) {
-    case 'apa-7':
-      core = joinDefined([author || title, year], ', ');
-      break;
-    case 'chicago-author-date':
-      core = joinDefined([author || title, year], ' ');
-      break;
-    case 'chicago-notes-bibliography':
-      core = joinDefined([author || title, title && author ? title : undefined], ', ');
-      break;
-    case 'mla-9':
-      core = author || title;
-      break;
-    case 'iso-690':
-      core = joinDefined([author ? author.toLocaleUpperCase(locale) : title, year], ', ');
-      break;
+  const locator = renderLocator(citation, styleId, locale);
+  let core = '';
+  switch (styleId) {
+    case 'apa-7': core = joinDefined([author || title, year], ', '); break;
+    case 'chicago-author-date': core = joinDefined([author || title, year], ' '); break;
+    case 'chicago-notes-bibliography': core = joinDefined([author || title, title && author ? title : undefined], ', '); break;
+    case 'mla-9': core = author || title; break;
+    case 'iso-690': core = joinDefined([author ? author.toLocaleUpperCase(locale) : title, year], ', '); break;
   }
-
-  const withLocator = locator ? `${core}${locatorSeparator(style)}${locator}` : core;
-  const withPrefix = citation.prefix?.trim()
-    ? `${citation.prefix.trim()} ${withLocator}`
-    : withLocator;
-
-  return citation.suffix?.trim()
-    ? `${withPrefix}, ${citation.suffix.trim()}`
-    : withPrefix;
+  const withLocator = locator ? `${core}${locatorSeparator(styleId)}${locator}` : core;
+  const withPrefix = citation.prefix?.trim() ? `${citation.prefix.trim()} ${withLocator}` : withLocator;
+  return citation.suffix?.trim() ? `${withPrefix}, ${citation.suffix.trim()}` : withPrefix;
 }
 
-function renderApaBibliography(
-  record: OmiBibliographicRecord,
-  locale: string,
-): string {
-  const creators = apaCreators(record, locale);
+function renderApaBibliography(record: OmiBibliographicRecord, locale: string): string {
+  const creators = apaCreators(record);
   const year = publicationYear(record) || localized(locale, 'noDate');
-  const title = fullTitle(record);
-  const container = containerSegment(record, 'apa');
-  const publication = publicationSegment(record, false);
-  const online = onlineIdentifier(record);
-
   return sentence([
     creators ? `${creators} (${year}).` : `(${year}).`,
-    title ? `${title}.` : '',
-    container,
-    publication,
-    online,
+    `${fullTitle(record)}.`,
+    containerSegment(record, 'apa'),
+    publicationSegment(record, false),
+    onlineIdentifier(record),
   ]);
 }
 
-function renderChicagoAuthorDateBibliography(
-  record: OmiBibliographicRecord,
-  locale: string,
-): string {
+function renderChicagoAuthorDateBibliography(record: OmiBibliographicRecord, locale: string): string {
   const creators = chicagoCreators(record, locale);
   const year = publicationYear(record) || localized(locale, 'noDate');
-  const title = quoteArticleTitle(record, fullTitle(record));
-  const container = containerSegment(record, 'chicago');
-  const publication = publicationSegment(record, true);
-  const online = onlineIdentifier(record);
-
   return sentence([
     creators ? `${creators}.` : '',
     `${year}.`,
-    title ? `${title}.` : '',
-    container,
-    publication,
-    online,
+    `${quoteArticleTitle(record, fullTitle(record))}.`,
+    containerSegment(record, 'chicago'),
+    publicationSegment(record, true),
+    onlineIdentifier(record),
   ]);
 }
 
-function renderChicagoNotesBibliography(
-  record: OmiBibliographicRecord,
-  locale: string,
-): string {
+function renderChicagoNotesBibliography(record: OmiBibliographicRecord, locale: string): string {
   const creators = chicagoCreators(record, locale);
-  const title = quoteArticleTitle(record, fullTitle(record));
-  const container = containerSegment(record, 'chicago');
-  const publication = chicagoNotesPublication(record);
-  const online = onlineIdentifier(record);
-
   return sentence([
     creators ? `${creators}.` : '',
-    title ? `${title}.` : '',
-    container,
-    publication,
-    online,
+    `${quoteArticleTitle(record, fullTitle(record))}.`,
+    containerSegment(record, 'chicago'),
+    publicationSegment(record, true),
+    onlineIdentifier(record),
   ]);
 }
 
-function renderMlaBibliography(
-  record: OmiBibliographicRecord,
-  locale: string,
-): string {
+function renderMlaBibliography(record: OmiBibliographicRecord, locale: string): string {
   const creators = mlaCreators(record, locale);
-  const title = quoteArticleTitle(record, fullTitle(record));
   const container = optional(record.containerTitle);
   const volume = record.volume ? `${localized(locale, 'volume')} ${record.volume}` : '';
   const issue = record.issue ? `${localized(locale, 'number')} ${record.issue}` : '';
-  const year = publicationYear(record);
   const pages = record.pages ? `${localized(locale, 'pages')} ${record.pages}` : '';
-  const publisher = optional(record.publisher);
-  const online = onlineIdentifier(record);
-
   return sentence([
     creators ? `${creators}.` : '',
-    title ? `${title}.` : '',
+    `${quoteArticleTitle(record, fullTitle(record))}.`,
     container ? `${container},` : '',
-    commaSeries([volume, issue, year, pages, publisher]),
-    online,
+    commaSeries([volume, issue, publicationYear(record), pages, optional(record.publisher)]),
+    onlineIdentifier(record),
   ]);
 }
 
-function renderIsoBibliography(
-  record: OmiBibliographicRecord,
-  locale: string,
-): string {
+function renderIsoBibliography(record: OmiBibliographicRecord, locale: string): string {
   const creators = isoCreators(record, locale);
-  const title = fullTitle(record);
-  const container = optional(record.containerTitle);
-  const year = publicationYear(record);
-  const volume = record.volume ? `${localized(locale, 'volume')} ${record.volume}` : '';
-  const issue = record.issue ? `${localized(locale, 'number')} ${record.issue}` : '';
-  const pages = record.pages ? `${localized(locale, 'pages')} ${record.pages}` : '';
-  const publication = publicationSegment(record, true);
-  const online = onlineIdentifier(record);
-
   return sentence([
     creators ? `${creators}.` : '',
-    title ? `${title}.` : '',
-    container ? `${container}.` : '',
-    commaSeries([year, volume, issue, pages]),
-    publication,
-    online,
+    `${fullTitle(record)}.`,
+    record.containerTitle ? `${record.containerTitle}.` : '',
+    commaSeries([
+      publicationYear(record),
+      record.volume ? `${localized(locale, 'volume')} ${record.volume}` : '',
+      record.issue ? `${localized(locale, 'number')} ${record.issue}` : '',
+      record.pages ? `${localized(locale, 'pages')} ${record.pages}` : '',
+    ]),
+    publicationSegment(record, true),
+    onlineIdentifier(record),
   ]);
 }
 
-function shortAuthor(
-  record: OmiBibliographicRecord,
-  style: OmiCitationStyleId,
-  locale: string,
-): string {
-  const contributors = preferredCreators(record);
-  const first = contributors[0];
-
-  if (!first) return '';
-
-  const firstName = familyOrLiteral(first);
-
-  if (contributors.length === 1) {
-    return firstName;
+function shortAuthor(record: OmiBibliographicRecord, styleId: BaseCitationStyle, locale: string): string {
+  const creators = preferredCreators(record);
+  if (!creators[0]) return '';
+  const first = familyOrLiteral(creators[0]);
+  if (creators.length === 1) return first;
+  if (creators.length === 2) {
+    const connector = styleId === 'apa-7' ? '&' : localized(locale, 'and');
+    return `${first} ${connector} ${familyOrLiteral(creators[1]!)}`;
   }
-
-  if (contributors.length === 2) {
-    const connector = style === 'apa-7' ? '&' : localized(locale, 'and');
-    return `${firstName} ${connector} ${familyOrLiteral(contributors[1]!)}`;
-  }
-
-  return `${firstName} ${localized(locale, 'etAl')}`;
+  return `${first} ${localized(locale, 'etAl')}`;
 }
 
-function apaCreators(record: OmiBibliographicRecord, locale: string): string {
+function apaCreators(record: OmiBibliographicRecord): string {
   const creators = preferredCreators(record);
-
-  return creators
-    .map((creator) => {
-      if (creator.literalName) return creator.literalName;
-      const family = optional(creator.familyName) || optional(creator.givenName) || '';
-      const initials = initialsFor(creator.givenName);
-      return joinDefined([family ? `${family},` : '', initials], ' ');
-    })
-    .map((value, index, values) =>
-      index === values.length - 1 && values.length > 1
-        ? `& ${value}`
-        : value,
-    )
-    .join(creators.length > 2 ? ', ' : ' ')
-    .replace(/, & /g, ', & ')
-    .trim();
+  return creators.map((creator) => {
+    if (creator.literalName) return creator.literalName;
+    const family = optional(creator.familyName) || optional(creator.givenName) || '';
+    const initials = initialsFor(creator.givenName);
+    return joinDefined([family ? `${family},` : '', initials], ' ');
+  }).map((value, index, values) => index === values.length - 1 && values.length > 1 ? `& ${value}` : value)
+    .join(creators.length > 2 ? ', ' : ' ').trim();
 }
 
 function chicagoCreators(record: OmiBibliographicRecord, locale: string): string {
   const creators = preferredCreators(record);
-
-  return creators
-    .map((creator, index) =>
-      index === 0 ? invertedName(creator) : normalName(creator),
-    )
-    .reduce((accumulator, value, index) => {
-      if (!accumulator) return value;
-      if (index === creators.length - 1) {
-        return `${accumulator}, ${localized(locale, 'and')} ${value}`;
-      }
-      return `${accumulator}, ${value}`;
+  return creators.map((creator, index) => index === 0 ? invertedName(creator) : normalName(creator))
+    .reduce((acc, value, index) => {
+      if (!acc) return value;
+      return index === creators.length - 1 ? `${acc}, ${localized(locale, 'and')} ${value}` : `${acc}, ${value}`;
     }, '');
 }
 
 function mlaCreators(record: OmiBibliographicRecord, locale: string): string {
   const creators = preferredCreators(record);
-
-  if (creators.length === 0) return '';
+  if (!creators.length) return '';
   if (creators.length === 1) return invertedName(creators[0]!);
-  if (creators.length === 2) {
-    return `${invertedName(creators[0]!)}, ${localized(locale, 'and')} ${normalName(creators[1]!)}`;
-  }
-
+  if (creators.length === 2) return `${invertedName(creators[0]!)}, ${localized(locale, 'and')} ${normalName(creators[1]!)}`;
   return `${invertedName(creators[0]!)} ${localized(locale, 'etAl')}`;
 }
 
 function isoCreators(record: OmiBibliographicRecord, locale: string): string {
-  const creators = preferredCreators(record);
-
-  return creators
-    .map((creator) => {
-      if (creator.literalName) return creator.literalName.toLocaleUpperCase(locale);
-      const family = optional(creator.familyName)?.toLocaleUpperCase(locale) ?? '';
-      const given = optional(creator.givenName) ?? '';
-      return joinDefined([family, given], ', ');
-    })
-    .join('; ');
+  return preferredCreators(record).map((creator) => {
+    if (creator.literalName) return creator.literalName.toLocaleUpperCase(locale);
+    return joinDefined([
+      optional(creator.familyName)?.toLocaleUpperCase(locale),
+      optional(creator.givenName),
+    ], ', ');
+  }).join('; ');
 }
 
 function preferredCreators(record: OmiBibliographicRecord): OmiBibliographicContributor[] {
   const authors = contributorsByRole(record, 'author');
   if (authors.length) return authors;
-
   const editors = contributorsByRole(record, 'editor');
-  if (editors.length) return editors;
-
-  return [...record.contributors];
+  return editors.length ? editors : [...record.contributors];
 }
 
-function contributorsByRole(
-  record: OmiBibliographicRecord,
-  role: string,
-): OmiBibliographicContributor[] {
+function contributorsByRole(record: OmiBibliographicRecord, role: string): OmiBibliographicContributor[] {
   return record.contributors.filter((contributor) => contributor.role === role);
 }
 
 function toCslName(contributor: OmiBibliographicContributor): CslJsonName {
-  if (contributor.literalName) {
-    return { literal: normalize(contributor.literalName) };
-  }
-
-  return compactObject({
-    given: optional(contributor.givenName),
-    family: optional(contributor.familyName),
-  }) as CslJsonName;
+  if (contributor.literalName) return { literal: normalize(contributor.literalName) };
+  return compactObject({ given: optional(contributor.givenName), family: optional(contributor.familyName) }) as CslJsonName;
 }
 
 function toCslDate(value: string | undefined): CslJsonDate | undefined {
   const normalized = optional(value);
   if (!normalized) return undefined;
-
   const match = normalized.match(/^(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?$/);
   if (!match) return { literal: normalized };
-
   const parts: Array<number | string> = [Number(match[1])];
   if (match[2]) parts.push(Number(match[2]));
   if (match[3]) parts.push(Number(match[3]));
@@ -435,142 +484,18 @@ function toCslType(type: string): string {
   }
 }
 
-function renderLocator(
-  citation: OmiCitation,
-  style: OmiCitationStyleId,
-  locale: string,
-): string {
+function renderLocator(citation: OmiCitation, styleId: BaseCitationStyle, locale: string): string {
   const locator = citation.locator;
   if (!locator?.value?.trim()) return '';
-
   const value = locator.value.trim();
-
-  if (
-    (style === 'apa-7' || style === 'iso-690') &&
-    (locator.type === 'page' || locator.type === 'page-range')
-  ) {
-    const label = locator.type === 'page-range'
-      ? localized(locale, 'pages')
-      : localized(locale, 'page');
-    return `${label} ${value}`;
+  if ((styleId === 'apa-7' || styleId === 'iso-690') && (locator.type === 'page' || locator.type === 'page-range')) {
+    return `${locator.type === 'page-range' ? localized(locale, 'pages') : localized(locale, 'page')} ${value}`;
   }
-
-  if (locator.type === 'chapter') {
-    return `${localized(locale, 'chapter')} ${value}`;
-  }
-
-  if (locator.type === 'section') {
-    return `${localized(locale, 'section')} ${value}`;
-  }
-
-  if (locator.type === 'figure') {
-    return `${localized(locale, 'figure')} ${value}`;
-  }
-
-  if (locator.type === 'table') {
-    return `${localized(locale, 'table')} ${value}`;
-  }
-
-  if (locator.type === 'folio') {
-    return `${localized(locale, 'folio')} ${value}`;
-  }
-
-  if (locator.type === 'line') {
-    return `${localized(locale, 'line')} ${value}`;
-  }
-
   return value;
 }
 
-function locatorSeparator(style: OmiCitationStyleId): string {
-  return style === 'chicago-notes-bibliography' ? ', ' : ', ';
-}
-
-function containerSegment(
-  record: OmiBibliographicRecord,
-  family: 'apa' | 'chicago',
-): string {
-  if (!record.containerTitle) return '';
-
-  const volumeIssue = record.volume
-    ? record.issue
-      ? family === 'apa'
-        ? `${record.volume}(${record.issue})`
-        : `${record.volume}, no. ${record.issue}`
-      : record.volume
-    : record.issue
-      ? family === 'apa'
-        ? `(${record.issue})`
-        : `no. ${record.issue}`
-      : '';
-  const pages = record.pages
-    ? family === 'apa'
-      ? `, ${record.pages}`
-      : `: ${record.pages}`
-    : '';
-
-  return `${record.containerTitle}${volumeIssue ? ` ${volumeIssue}` : ''}${pages}.`;
-}
-
-function publicationSegment(record: OmiBibliographicRecord, includeYear: boolean): string {
-  const placePublisher = [record.place, record.publisher]
-    .filter(Boolean)
-    .join(': ');
-  const year = includeYear ? publicationYear(record) : '';
-  const value = [placePublisher, year].filter(Boolean).join(', ');
-  return value ? `${value}.` : '';
-}
-
-function chicagoNotesPublication(record: OmiBibliographicRecord): string {
-  const placePublisher = [record.place, record.publisher]
-    .filter(Boolean)
-    .join(': ');
-  const year = publicationYear(record);
-
-  if (!placePublisher && !year) return '';
-  if (placePublisher && year) return `${placePublisher}, ${year}.`;
-  return `${placePublisher || year}.`;
-}
-
-function onlineIdentifier(record: OmiBibliographicRecord): string {
-  const doi = identifier(record, 'doi');
-  if (doi) return `https://doi.org/${doi}`;
-  return optional(record.url) ?? '';
-}
-
-function identifier(record: OmiBibliographicRecord, scheme: string): string | undefined {
-  return record.identifiers.find(
-    (candidate) => candidate.scheme.toLocaleLowerCase() === scheme.toLocaleLowerCase(),
-  )?.value?.trim() || undefined;
-}
-
-function quoteArticleTitle(record: OmiBibliographicRecord, title: string): string {
-  if (!title) return '';
-
-  return record.type === 'journal-article' ||
-    record.type === 'book-chapter' ||
-    record.type === 'conference-paper'
-    ? `“${title}”`
-    : title;
-}
-
-function bibliographySortKey(
-  record: OmiBibliographicRecord,
-  style: OmiCitationStyleId,
-): string {
-  const creator = familyOrLiteral(preferredCreators(record)[0]);
-  const year = publicationYear(record);
-
-  return style === 'iso-690'
-    ? `${creator.toLocaleUpperCase()}|${year}|${record.title}`
-    : `${creator}|${year}|${record.title}`;
-}
-
-function publicationYear(record: OmiBibliographicRecord): string {
-  const value = optional(record.issued);
-  if (!value) return '';
-  const match = value.match(/\b(\d{4})\b/);
-  return match?.[1] ?? value;
+function locatorSeparator(styleId: BaseCitationStyle): string {
+  return styleId === 'chicago-author-date' ? ', ' : ', ';
 }
 
 function fullTitle(record: OmiBibliographicRecord): string {
@@ -581,24 +506,56 @@ function fullTitle(record: OmiBibliographicRecord): string {
 
 function shortTitle(title: string): string {
   const normalized = normalize(title);
-  return normalized.length > 42
-    ? `${normalized.slice(0, 39).trim()}…`
-    : normalized;
+  return normalized.length > 42 ? `${normalized.slice(0, 39).trim()}…` : normalized;
 }
 
-function familyOrLiteral(contributor: OmiBibliographicContributor | undefined): string {
-  if (!contributor) return '';
-  return optional(contributor.familyName) ||
-    optional(contributor.literalName) ||
-    optional(contributor.givenName) ||
-    '';
+function quoteArticleTitle(record: OmiBibliographicRecord, title: string): string {
+  return ['journal-article', 'book-chapter', 'conference-paper', 'web-page'].includes(record.type)
+    ? `“${title}”`
+    : title;
 }
 
-function invertedName(contributor: OmiBibliographicContributor): string {
-  if (contributor.literalName) return normalize(contributor.literalName);
-  const family = optional(contributor.familyName) ?? '';
-  const given = optional(contributor.givenName) ?? '';
-  return family && given ? `${family}, ${given}` : family || given;
+function containerSegment(record: OmiBibliographicRecord, styleId: 'apa' | 'chicago'): string {
+  const container = optional(record.containerTitle);
+  if (!container) return '';
+  const volumeIssue = joinDefined([
+    optional(record.volume),
+    record.issue ? `(${record.issue})` : undefined,
+  ], '');
+  const pages = optional(record.pages);
+  if (styleId === 'apa') return `${container}${volumeIssue ? `, ${volumeIssue}` : ''}${pages ? `, ${pages}` : ''}.`;
+  return `${container}${volumeIssue ? ` ${volumeIssue}` : ''}${pages ? `: ${pages}` : ''}.`;
+}
+
+function publicationSegment(record: OmiBibliographicRecord, includePlace: boolean): string {
+  const publisher = optional(record.publisher);
+  const place = optional(record.place);
+  if (!publisher && !place) return '';
+  if (includePlace && place && publisher) return `${place}: ${publisher}.`;
+  return `${publisher || place}.`;
+}
+
+function onlineIdentifier(record: OmiBibliographicRecord): string {
+  const doi = identifier(record, 'doi');
+  if (doi) return `https://doi.org/${doi}`;
+  return optional(record.url) ?? '';
+}
+
+function identifier(record: OmiBibliographicRecord, scheme: string): string | undefined {
+  return record.identifiers.find((candidate) => candidate.scheme.toLowerCase() === scheme.toLowerCase())?.value.trim() || undefined;
+}
+
+function publicationYear(record: OmiBibliographicRecord): string {
+  return optional(record.issued)?.match(/\b\d{4}\b/)?.[0] ?? '';
+}
+
+function bibliographySortKey(record: OmiBibliographicRecord): string {
+  const creator = preferredCreators(record)[0];
+  return `${creator ? familyOrLiteral(creator) : ''}|${publicationYear(record)}|${record.title}`.toLocaleLowerCase();
+}
+
+function familyOrLiteral(contributor: OmiBibliographicContributor): string {
+  return optional(contributor.familyName) || optional(contributor.literalName) || optional(contributor.givenName) || '';
 }
 
 function normalName(contributor: OmiBibliographicContributor): string {
@@ -606,120 +563,49 @@ function normalName(contributor: OmiBibliographicContributor): string {
   return joinDefined([optional(contributor.givenName), optional(contributor.familyName)], ' ');
 }
 
+function invertedName(contributor: OmiBibliographicContributor): string {
+  if (contributor.literalName) return normalize(contributor.literalName);
+  const family = optional(contributor.familyName);
+  const given = optional(contributor.givenName);
+  return family && given ? `${family}, ${given}` : family || given || '';
+}
+
 function initialsFor(value: string | undefined): string {
-  return (value ?? '')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) => `${part.charAt(0).toLocaleUpperCase()}.`)
-    .join(' ');
+  return (value ?? '').trim().split(/\s+/).filter(Boolean).map((part) => `${part[0]?.toLocaleUpperCase() ?? ''}.`).join(' ');
 }
 
-function commaSeries(values: Array<string | undefined>): string {
-  const compact = values.filter((value): value is string => Boolean(value));
-  return compact.length ? `${compact.join(', ')}.` : '';
-}
-
-function sentence(values: Array<string | undefined>): string {
-  return values
-    .filter((value): value is string => Boolean(value?.trim()))
-    .join(' ')
-    .replace(/\s+/g, ' ')
-    .replace(/\.\./g, '.')
-    .trim();
-}
-
-function joinDefined(
-  values: Array<string | undefined>,
-  separator: string,
-): string {
-  return values.filter((value): value is string => Boolean(value?.trim())).join(separator);
-}
-
-function normalize(value: string): string {
-  return value.replace(/\s+/g, ' ').trim();
+function localized(locale: string, key: 'and' | 'etAl' | 'noDate' | 'unresolved' | 'page' | 'pages' | 'volume' | 'number'): string {
+  const language = locale.toLowerCase().split('-')[0];
+  const dictionaries: Record<string, Record<typeof key, string>> = {
+    en: { and: 'and', etAl: 'et al.', noDate: 'n.d.', unresolved: '[unresolved citation]', page: 'p.', pages: 'pp.', volume: 'vol.', number: 'no.' },
+    hu: { and: 'és', etAl: 'et al.', noDate: 'é. n.', unresolved: '[feloldatlan hivatkozás]', page: 'p.', pages: 'pp.', volume: 'köt.', number: 'sz.' },
+    de: { and: 'und', etAl: 'et al.', noDate: 'o. J.', unresolved: '[nicht aufgelöstes Zitat]', page: 'S.', pages: 'S.', volume: 'Bd.', number: 'Nr.' },
+  };
+  return (dictionaries[language] ?? dictionaries.en)![key];
 }
 
 function optional(value: string | undefined): string | undefined {
-  if (value === undefined) return undefined;
-  const normalized = normalize(value);
+  const normalized = value?.trim();
   return normalized || undefined;
 }
 
-function compactObject<T extends Record<string, unknown>>(value: T): Partial<T> {
-  return Object.fromEntries(
-    Object.entries(value).filter(([, candidate]) => candidate !== undefined),
-  ) as Partial<T>;
+function normalize(value: string): string {
+  return value.trim().replace(/\s+/g, ' ');
 }
 
-type LocalizedToken =
-  | 'and'
-  | 'etAl'
-  | 'noDate'
-  | 'unresolved'
-  | 'page'
-  | 'pages'
-  | 'chapter'
-  | 'section'
-  | 'figure'
-  | 'table'
-  | 'folio'
-  | 'line'
-  | 'volume'
-  | 'number';
+function sentence(parts: Array<string | undefined>): string {
+  return parts.filter((part): part is string => Boolean(part?.trim())).join(' ').replace(/\s+/g, ' ').trim();
+}
 
-const TOKENS: Record<string, Record<LocalizedToken, string>> = {
-  en: {
-    and: 'and',
-    etAl: 'et al.',
-    noDate: 'n.d.',
-    unresolved: '[unresolved]',
-    page: 'p.',
-    pages: 'pp.',
-    chapter: 'chap.',
-    section: 'sec.',
-    figure: 'fig.',
-    table: 'table',
-    folio: 'fol.',
-    line: 'line',
-    volume: 'vol.',
-    number: 'no.',
-  },
-  hu: {
-    and: 'és',
-    etAl: 'et al.',
-    noDate: 'é. n.',
-    unresolved: '[feloldatlan]',
-    page: 'p.',
-    pages: 'pp.',
-    chapter: 'fej.',
-    section: 'szak.',
-    figure: 'ábra',
-    table: 'tábl.',
-    folio: 'fol.',
-    line: 'sor',
-    volume: 'köt.',
-    number: 'sz.',
-  },
-  de: {
-    and: 'und',
-    etAl: 'et al.',
-    noDate: 'o. J.',
-    unresolved: '[nicht aufgelöst]',
-    page: 'S.',
-    pages: 'S.',
-    chapter: 'Kap.',
-    section: 'Abschn.',
-    figure: 'Abb.',
-    table: 'Tab.',
-    folio: 'Bl.',
-    line: 'Z.',
-    volume: 'Bd.',
-    number: 'Nr.',
-  },
-};
+function commaSeries(parts: Array<string | undefined>): string {
+  const values = parts.filter((part): part is string => Boolean(part?.trim()));
+  return values.length ? `${values.join(', ')}.` : '';
+}
 
-function localized(locale: string, token: LocalizedToken): string {
-  const language = locale.toLocaleLowerCase().split('-')[0] ?? 'en';
-  return TOKENS[language]?.[token] ?? TOKENS.en![token];
+function joinDefined(parts: Array<string | undefined>, separator: string): string {
+  return parts.filter((part): part is string => Boolean(part?.trim())).join(separator);
+}
+
+function compactObject(value: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined && entry !== ''));
 }
