@@ -141,5 +141,5 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
 };
 
 export function getExportFormatCopy(locale: SupportedLocale): ExportFormatCopy {
-  return copy[locale];
+  return copy[locale] ?? copy.en;
 }
