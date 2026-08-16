@@ -1,3 +1,5 @@
+import { normalizeNextcloudWebDavUrl } from './nextcloudConnection';
+
 export type CloudProviderType = 'webdav' | 'nextcloud';
 export type CloudConnectionStatus = 'connected' | 'disconnected' | 'error';
 
@@ -46,6 +48,13 @@ export async function listCloudConnections(): Promise<CloudConnection[]> {
 export async function createCloudConnection(
   input: CreateCloudConnectionInput,
 ): Promise<CloudConnection> {
+  const normalizedInput = input.providerType === 'nextcloud'
+    ? {
+        ...input,
+        baseUrl: normalizeNextcloudWebDavUrl(input.baseUrl, input.username),
+      }
+    : input;
+
   const response = await fetch('/api/cloud/connections', {
     method: 'POST',
     credentials: 'include',
@@ -53,7 +62,7 @@ export async function createCloudConnection(
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
-    body: JSON.stringify(input),
+    body: JSON.stringify(normalizedInput),
   });
   const data = await readJson<{ connection: CloudConnection }>(response);
   return data.connection;
