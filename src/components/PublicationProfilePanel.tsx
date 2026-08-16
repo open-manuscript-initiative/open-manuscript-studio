@@ -29,6 +29,7 @@ import {
 import { HtmlExportPanel } from './HtmlExportPanel';
 import { JatsExportPanel } from './JatsExportPanel';
 import { PublisherExportStylesheetPanel } from './PublisherExportStylesheetPanel';
+import { PublisherPrintStylesheetPanel } from './PublisherPrintStylesheetPanel';
 import { PublisherProfileEditor } from './PublisherProfileEditor';
 
 export function PublicationProfilePanel() {
@@ -129,6 +130,7 @@ export function PublicationProfilePanel() {
 
       <PublisherProfileEditor baseProfile={activeProfile} />
       <PublisherExportStylesheetPanel profile={activeProfile} />
+      <PublisherPrintStylesheetPanel profile={activeProfile} />
 
       <ProfileRuleSummary profile={activeProfile} copy={copy} frontMatterCopy={frontMatterCopy} />
 
@@ -191,6 +193,7 @@ function ProfileRuleSummary({ profile, copy, frontMatterCopy }: { profile: OmiPu
       </div>
       <div className="publication-profile-output-row"><strong>{copy.outputs}</strong><div className="publication-profile-output-list">{rules.outputs.map((format) => <code key={format}>{format.toUpperCase()}</code>)}</div></div>
       {profile.exportStylesheet ? <div className="publication-profile-output-row"><strong>CSS</strong><div className="publication-profile-output-list"><code>{profile.exportStylesheet.fileName}</code></div></div> : null}
+      {profile.printStylesheet ? <div className="publication-profile-output-row"><strong>Print / PDF CSS</strong><div className="publication-profile-output-list"><code>{profile.printStylesheet.fileName}</code></div></div> : null}
     </section>
   );
 }
