@@ -66,5 +66,5 @@ const copy: Record<SupportedLocale, HelpCopy> = {
 };
 
 export function getHelpCopy(locale: SupportedLocale): HelpCopy {
-  return copy[locale];
+  return copy[locale] ?? copy.en;
 }
