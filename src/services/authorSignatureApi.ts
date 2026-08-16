@@ -81,7 +81,7 @@ export async function registerAuthorSigningCredential(label?: string): Promise<v
       challenge: fromBase64Url(start.challenge),
       rp: { id: start.rpId, name: 'Open Manuscript Studio' },
       user: {
-        id: new TextEncoder().encode(start.userId),
+        id: copyToArrayBuffer(new TextEncoder().encode(start.userId)),
         name: start.userName,
         displayName: start.userName,
       },
@@ -160,7 +160,7 @@ export async function signCurrentManuscriptRevision(
     publicKey: {
       challenge: fromBase64Url(start.challenge),
       rpId: start.rpId,
-      allowCredentials: start.credentialIds.map((credentialId) => ({
+      allowCredentials: start.credentialIds.map((credentialId): PublicKeyCredentialDescriptor => ({
         type: 'public-key',
         id: fromBase64Url(credentialId),
       })),
@@ -234,8 +234,14 @@ function toBase64Url(value: ArrayBuffer): string {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
-function fromBase64Url(value: string): Uint8Array {
+function fromBase64Url(value: string): ArrayBuffer {
   const padded = value.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(value.length / 4) * 4, '=');
   const binary = atob(padded);
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  return copyToArrayBuffer(Uint8Array.from(binary, (character) => character.charCodeAt(0)));
+}
+
+function copyToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
 }
