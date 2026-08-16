@@ -1,6 +1,3 @@
-import { de as legacyDe } from './locales/de';
-import { en as legacyEn } from './locales/en';
-import { hu as legacyHu } from './locales/hu';
 import type { SupportedLocale, TranslationDictionary } from './types';
 
 export const DEFAULT_LOCALE: SupportedLocale = 'en';
@@ -13,7 +10,7 @@ const jsonLocaleModules = import.meta.glob(
   },
 ) as Record<string, TranslationDictionary>;
 
-const jsonTranslations = Object.fromEntries(
+export const translations = Object.fromEntries(
   Object.entries(jsonLocaleModules).map(([path, dictionary]) => {
     const match = path.match(/\/locales\/([^/]+)\/studio\.json$/);
 
@@ -24,26 +21,6 @@ const jsonTranslations = Object.fromEntries(
     return [match[1], dictionary];
   }),
 ) as Record<string, TranslationDictionary>;
-
-/**
- * Transitional fallback for the original three Studio locales. The legacy
- * imports can be removed after en/hu/de studio.json files are committed.
- */
-const legacyTranslations: Record<string, TranslationDictionary> = {
-  en: legacyEn,
-  hu: legacyHu,
-  de: legacyDe,
-};
-
-/**
- * JSON locales override the transitional TypeScript dictionaries. Any new
- * locale becomes available automatically when locales/<code>/studio.json is
- * added and passes the JSON locale validator.
- */
-export const translations: Record<string, TranslationDictionary> = {
-  ...legacyTranslations,
-  ...jsonTranslations,
-};
 
 export const localeLabels: Record<string, string> = {
   bg: 'Български',
