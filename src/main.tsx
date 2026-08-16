@@ -33,6 +33,7 @@ import './styles/jats-export.css';
 import './styles/html-export.css';
 import './styles/asset-container.css';
 import './styles/state-digest.css';
+import './styles/footer.css';
 
 initializeRevisionIntegrity();
 
