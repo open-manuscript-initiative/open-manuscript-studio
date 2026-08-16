@@ -10,9 +10,13 @@ import type {
 export type AppTranslationKey = TranslationKey | AuthTranslationKey;
 
 function resolveTranslation(
-  dictionary: TranslationDictionary,
-  key: TranslationKey
+  dictionary: TranslationDictionary | undefined,
+  key: TranslationKey,
 ): string | undefined {
+  if (!dictionary) {
+    return undefined;
+  }
+
   const value = key.split('.').reduce<unknown>((current, segment) => {
     if (typeof current === 'object' && current !== null && segment in current) {
       return (current as Record<string, unknown>)[segment];
@@ -27,7 +31,7 @@ function resolveAuthTranslation(
   locale: SupportedLocale,
   key: AppTranslationKey,
 ): string | undefined {
-  return authTranslations[locale][key as AuthTranslationKey];
+  return authTranslations[locale]?.[key as AuthTranslationKey];
 }
 
 export function translate(
