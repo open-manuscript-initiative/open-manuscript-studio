@@ -93,6 +93,9 @@ export async function uploadCloudBackup(input: {
   packageVersion: string;
   bytes: Uint8Array;
 }): Promise<CloudBackup> {
+  const payload = new Uint8Array(input.bytes.byteLength);
+  payload.set(input.bytes);
+
   const response = await fetch(
     `/api/manuscripts/${encodeURIComponent(input.manuscriptId)}/backups?connectionId=${encodeURIComponent(input.connectionId)}`,
     {
@@ -103,7 +106,7 @@ export async function uploadCloudBackup(input: {
         Accept: 'application/json',
         'X-OMI-Package-Version': input.packageVersion,
       },
-      body: input.bytes,
+      body: payload.buffer,
     },
   );
   const data = await readJson<{ backup: CloudBackup }>(response);
