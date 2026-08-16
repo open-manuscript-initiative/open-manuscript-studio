@@ -4,7 +4,7 @@ import { getUserIdForSession } from '../services/authService.js';
 
 const COOKIE_NAME = 'omi_session';
 
-export interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends Request<Record<string, string>> {
   authUserId?: string;
 }
 
