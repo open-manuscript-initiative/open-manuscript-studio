@@ -219,6 +219,13 @@ export function createPublicationProfileReference(profile: OmiPublicationProfile
   return { id: profile.id, version: profile.version };
 }
 
+export function profileSupportsOutput(
+  profile: OmiPublicationProfile,
+  format: OmiPublicationOutputFormat,
+): boolean {
+  return profile.rules.outputs.includes(format);
+}
+
 export function applyPublicationProfileDefaults(state: OmiManuscriptState, profile: OmiPublicationProfile): OmiManuscriptState {
   const isBuiltin = Boolean(getPublicationProfile(profile.id));
   return {
