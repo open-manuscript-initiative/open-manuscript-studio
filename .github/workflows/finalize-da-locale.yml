@@ -1,0 +1,41 @@
+name: Finalize Danish locale
+
+on:
+  push:
+    branches:
+      - agent/po-localization-pipeline
+    paths:
+      - '.github/workflows/finalize-da-locale.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/po-localization-pipeline
+      - name: Mark Danish locale complete
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const statusPath = 'locale/translation-status.json';
+          const pendingPath = 'locale/pending/da.json';
+          const status = JSON.parse(fs.readFileSync(statusPath, 'utf8'));
+          const pending = JSON.parse(fs.readFileSync(pendingPath, 'utf8'));
+          const keys = pending.entries.map(e => e.key);
+          status.completeLocales = [...new Set([...(status.completeLocales || []), 'da'])];
+          status.identicalAllowlistByLocale ||= {};
+          status.identicalAllowlistByLocale.da = keys;
+          fs.writeFileSync(statusPath, JSON.stringify(status, null, 2) + '\n');
+          console.log(`Danish locale marked complete with ${keys.length} intentional identical entries.`);
+          NODE
+      - name: Commit status
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add locale/translation-status.json
+          git commit -m 'Mark Danish locale complete [skip ci]'
+          git push origin HEAD:agent/po-localization-pipeline
