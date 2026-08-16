@@ -1349,402 +1349,402 @@ msgstr "Алфа версия – удостоверяването в момен
 #. OMI translation key: /modules/assetContainer/title
 msgctxt "/modules/assetContainer/title"
 msgid "OMI package"
-msgstr "OMI package"
+msgstr "OMI пакет"
 
 #. OMI translation key: /modules/assetContainer/description
 msgctxt "/modules/assetContainer/description"
 msgid "Externalize binary resources and package the manuscript, history, publication profile, checksums, assets and valid JATS output as a portable .omi container."
-msgstr "Externalize binary resources and package the manuscript, history, publication profile, checksums, assets and valid JATS output as a portable .omi container."
+msgstr "Изнесете двоичните ресурси и опаковайте ръкописа, историята, профила за публикуване, контролните суми, ресурсите и валидния JATS изход в преносим .omi контейнер."
 
 #. OMI translation key: /modules/assetContainer/assets
 msgctxt "/modules/assetContainer/assets"
 msgid "registered assets"
-msgstr "registered assets"
+msgstr "регистрирани ресурси"
 
 #. OMI translation key: /modules/assetContainer/embedded
 msgctxt "/modules/assetContainer/embedded"
 msgid "embedded images awaiting externalization"
-msgstr "embedded images awaiting externalization"
+msgstr "вградени изображения, очакващи изнасяне"
 
 #. OMI translation key: /modules/assetContainer/prepare
 msgctxt "/modules/assetContainer/prepare"
 msgid "Prepare assets"
-msgstr "Prepare assets"
+msgstr "Подготовка на ресурсите"
 
 #. OMI translation key: /modules/assetContainer/preparing
 msgctxt "/modules/assetContainer/preparing"
 msgid "Preparing assets…"
-msgstr "Preparing assets…"
+msgstr "Подготовка на ресурсите…"
 
 #. OMI translation key: /modules/assetContainer/prepared
 msgctxt "/modules/assetContainer/prepared"
 msgid "Embedded image payloads are registered as stable assets."
-msgstr "Embedded image payloads are registered as stable assets."
+msgstr "Данните на вградените изображения са регистрирани като стабилни ресурси."
 
 #. OMI translation key: /modules/assetContainer/download
 msgctxt "/modules/assetContainer/download"
 msgid "Download .omi package"
-msgstr "Download .omi package"
+msgstr "Изтегляне на .omi пакет"
 
 #. OMI translation key: /modules/assetContainer/downloading
 msgctxt "/modules/assetContainer/downloading"
 msgid "Building package…"
-msgstr "Building package…"
+msgstr "Създаване на пакета…"
 
 #. OMI translation key: /modules/assetContainer/ready
 msgctxt "/modules/assetContainer/ready"
 msgid "The container passed Studio integrity checks."
-msgstr "The container passed Studio integrity checks."
+msgstr "Контейнерът премина проверките за цялост на Studio."
 
 #. OMI translation key: /modules/assetContainer/blocked
 msgctxt "/modules/assetContainer/blocked"
 msgid "The package has blocking integrity errors."
-msgstr "The package has blocking integrity errors."
+msgstr "Пакетът съдържа блокиращи грешки в целостта."
 
 #. OMI translation key: /modules/assetContainer/diagnostics
 msgctxt "/modules/assetContainer/diagnostics"
 msgid "Container diagnostics"
-msgstr "Container diagnostics"
+msgstr "Диагностика на контейнера"
 
 #. OMI translation key: /modules/assetContainer/noDiagnostics
 msgctxt "/modules/assetContainer/noDiagnostics"
 msgid "No container-specific diagnostics."
-msgstr "No container-specific diagnostics."
+msgstr "Няма специфична за контейнера диагностика."
 
 #. OMI translation key: /modules/assetContainer/integrity
 msgctxt "/modules/assetContainer/integrity"
 msgid "SHA-256 integrity"
-msgstr "SHA-256 integrity"
+msgstr "SHA-256 цялост"
 
 #. OMI translation key: /modules/assetContainer/format
 msgctxt "/modules/assetContainer/format"
 msgid "OMI-SPEC-320 / OMI-SPEC-330 Draft package"
-msgstr "OMI-SPEC-320 / OMI-SPEC-330 Draft package"
+msgstr "Чернова на пакет OMI-SPEC-320 / OMI-SPEC-330"
 
 #. OMI translation key: /modules/assetContainer/privacyNote
 msgctxt "/modules/assetContainer/privacyNote"
 msgid "Asset-backed image previews are resolved from the local binary repository. Portable manuscript state no longer needs Base64 preview data after externalization."
-msgstr "Asset-backed image previews are resolved from the local binary repository. Portable manuscript state no longer needs Base64 preview data after externalization."
+msgstr "Прегледите на изображения, базирани на ресурси, се зареждат от локалното двоично хранилище. След изнасянето преносимото състояние на ръкописа вече не се нуждае от Base64 данни за преглед."
 
 #. OMI translation key: /modules/assetContainer/importTitle
 msgctxt "/modules/assetContainer/importTitle"
 msgid "Open OMI package"
-msgstr "Open OMI package"
+msgstr "Отваряне на OMI пакет"
 
 #. OMI translation key: /modules/assetContainer/importDescription
 msgctxt "/modules/assetContainer/importDescription"
 msgid "Inspect an untrusted .omi container, verify its manifest, ZIP structure, revision identities, assets and SHA-256 checksums before loading it."
-msgstr "Inspect an untrusted .omi container, verify its manifest, ZIP structure, revision identities, assets and SHA-256 checksums before loading it."
+msgstr "Проверете ненадежден .omi контейнер, неговия манифест, ZIP структура, идентичности на ревизиите, ресурси и SHA-256 контролни суми, преди да го заредите."
 
 #. OMI translation key: /modules/assetContainer/choosePackage
 msgctxt "/modules/assetContainer/choosePackage"
 msgid "Choose .omi package"
-msgstr "Choose .omi package"
+msgstr "Избор на .omi пакет"
 
 #. OMI translation key: /modules/assetContainer/inspecting
 msgctxt "/modules/assetContainer/inspecting"
 msgid "Verifying package…"
-msgstr "Verifying package…"
+msgstr "Проверка на пакета…"
 
 #. OMI translation key: /modules/assetContainer/importPackage
 msgctxt "/modules/assetContainer/importPackage"
 msgid "Open verified manuscript"
-msgstr "Open verified manuscript"
+msgstr "Отваряне на проверен ръкопис"
 
 #. OMI translation key: /modules/assetContainer/importing
 msgctxt "/modules/assetContainer/importing"
 msgid "Opening manuscript…"
-msgstr "Opening manuscript…"
+msgstr "Отваряне на ръкописа…"
 
 #. OMI translation key: /modules/assetContainer/verified
 msgctxt "/modules/assetContainer/verified"
 msgid "The package passed integrity verification and can be opened."
-msgstr "The package passed integrity verification and can be opened."
+msgstr "Пакетът премина проверката за цялост и може да бъде отворен."
 
 #. OMI translation key: /modules/assetContainer/invalid
 msgctxt "/modules/assetContainer/invalid"
 msgid "The package cannot be opened until its blocking integrity errors are resolved."
-msgstr "The package cannot be opened until its blocking integrity errors are resolved."
+msgstr "Пакетът не може да бъде отворен, докато блокиращите грешки в целостта не бъдат отстранени."
 
 #. OMI translation key: /modules/assetContainer/imported
 msgctxt "/modules/assetContainer/imported"
 msgid "The verified OMI manuscript was opened with its original identity and revision history."
-msgstr "The verified OMI manuscript was opened with its original identity and revision history."
+msgstr "Провереният OMI ръкопис е отворен с оригиналната си идентичност и история на ревизиите."
 
 #. OMI translation key: /modules/assetContainer/entries
 msgctxt "/modules/assetContainer/entries"
 msgid "entries"
-msgstr "entries"
+msgstr "записи"
 
 #. OMI translation key: /modules/assetContainer/revisions
 msgctxt "/modules/assetContainer/revisions"
 msgid "revisions"
-msgstr "revisions"
+msgstr "ревизии"
 
 #. OMI translation key: /modules/assetContainer/checksums
 msgctxt "/modules/assetContainer/checksums"
 msgid "checksums verified"
-msgstr "checksums verified"
+msgstr "проверени контролни суми"
 
 #. OMI translation key: /modules/assetContainer/packageAssets
 msgctxt "/modules/assetContainer/packageAssets"
 msgid "assets"
-msgstr "assets"
+msgstr "ресурси"
 
 #. OMI translation key: /modules/assetContainer/manuscriptId
 msgctxt "/modules/assetContainer/manuscriptId"
 msgid "Manuscript ID"
-msgstr "Manuscript ID"
+msgstr "ID на ръкописа"
 
 #. OMI translation key: /modules/assetContainer/headRevision
 msgctxt "/modules/assetContainer/headRevision"
 msgid "Head revision"
-msgstr "Head revision"
+msgstr "Текуща ревизия"
 
 #. OMI translation key: /modules/assetContainer/replaceWarning
 msgctxt "/modules/assetContainer/replaceWarning"
 msgid "Opening the package replaces the active workspace manuscript. It does not create a new manuscript ID or revision root."
-msgstr "Opening the package replaces the active workspace manuscript. It does not create a new manuscript ID or revision root."
+msgstr "Отварянето на пакета заменя активния ръкопис в работното пространство. Не се създава нов ID на ръкопис или нов корен на ревизиите."
 
 #. OMI translation key: /modules/assetContainer/confirmImport
 msgctxt "/modules/assetContainer/confirmImport"
 msgid "Open this verified OMI manuscript and replace the currently active workspace document?"
-msgstr "Open this verified OMI manuscript and replace the currently active workspace document?"
+msgstr "Да се отвори ли този проверен OMI ръкопис и да се замени текущо активният документ в работното пространство?"
 
 #. OMI translation key: /modules/crossReferences/insert
 msgctxt "/modules/crossReferences/insert"
 msgid "Cross-reference"
-msgstr "Cross-reference"
+msgstr "Кръстосана препратка"
 
 #. OMI translation key: /modules/crossReferences/insertDescription
 msgctxt "/modules/crossReferences/insertDescription"
 msgid "Link to a section, figure, table, chart or equation by stable object identity."
-msgstr "Link to a section, figure, table, chart or equation by stable object identity."
+msgstr "Свържете раздел, фигура, таблица, диаграма или уравнение чрез стабилна идентичност на обекта."
 
 #. OMI translation key: /modules/crossReferences/chooseTarget
 msgctxt "/modules/crossReferences/chooseTarget"
 msgid "Choose target"
-msgstr "Choose target"
+msgstr "Избор на цел"
 
 #. OMI translation key: /modules/crossReferences/searchPlaceholder
 msgctxt "/modules/crossReferences/searchPlaceholder"
 msgid "Search document objects…"
-msgstr "Search document objects…"
+msgstr "Търсене в обектите на документа…"
 
 #. OMI translation key: /modules/crossReferences/noTargets
 msgctxt "/modules/crossReferences/noTargets"
 msgid "No matching document objects."
-msgstr "No matching document objects."
+msgstr "Няма съвпадащи обекти в документа."
 
 #. OMI translation key: /modules/crossReferences/cancel
 msgctxt "/modules/crossReferences/cancel"
 msgid "Cancel"
-msgstr "Cancel"
+msgstr "Отказ"
 
 #. OMI translation key: /modules/crossReferences/display
 msgctxt "/modules/crossReferences/display"
 msgid "Display"
-msgstr "Display"
+msgstr "Показване"
 
 #. OMI translation key: /modules/crossReferences/displayLabelNumber
 msgctxt "/modules/crossReferences/displayLabelNumber"
 msgid "Label and number"
-msgstr "Label and number"
+msgstr "Етикет и номер"
 
 #. OMI translation key: /modules/crossReferences/displayNumber
 msgctxt "/modules/crossReferences/displayNumber"
 msgid "Number only"
-msgstr "Number only"
+msgstr "Само номер"
 
 #. OMI translation key: /modules/crossReferences/displayTitle
 msgctxt "/modules/crossReferences/displayTitle"
 msgid "Title or caption"
-msgstr "Title or caption"
+msgstr "Заглавие или надпис"
 
 #. OMI translation key: /modules/crossReferences/displayLabelNumberTitle
 msgctxt "/modules/crossReferences/displayLabelNumberTitle"
 msgid "Label, number and title"
-msgstr "Label, number and title"
+msgstr "Етикет, номер и заглавие"
 
 #. OMI translation key: /modules/crossReferences/edit
 msgctxt "/modules/crossReferences/edit"
 msgid "Edit cross-reference"
-msgstr "Edit cross-reference"
+msgstr "Редактиране на кръстосана препратка"
 
 #. OMI translation key: /modules/crossReferences/target
 msgctxt "/modules/crossReferences/target"
 msgid "Target"
-msgstr "Target"
+msgstr "Цел"
 
 #. OMI translation key: /modules/crossReferences/goToTarget
 msgctxt "/modules/crossReferences/goToTarget"
 msgid "Go to target"
-msgstr "Go to target"
+msgstr "Към целта"
 
 #. OMI translation key: /modules/crossReferences/deleteReference
 msgctxt "/modules/crossReferences/deleteReference"
 msgid "Delete reference"
-msgstr "Delete reference"
+msgstr "Изтриване на препратката"
 
 #. OMI translation key: /modules/crossReferences/confirmDelete
 msgctxt "/modules/crossReferences/confirmDelete"
 msgid "Delete this internal cross-reference?"
-msgstr "Delete this internal cross-reference?"
+msgstr "Да се изтрие ли тази вътрешна кръстосана препратка?"
 
 #. OMI translation key: /modules/crossReferences/unresolved
 msgctxt "/modules/crossReferences/unresolved"
 msgid "The target object no longer exists."
-msgstr "The target object no longer exists."
+msgstr "Целевият обект вече не съществува."
 
 #. OMI translation key: /modules/crossReferences/numbering
 msgctxt "/modules/crossReferences/numbering"
 msgid "Object numbering"
-msgstr "Object numbering"
+msgstr "Номериране на обекти"
 
 #. OMI translation key: /modules/crossReferences/numberingDescription
 msgctxt "/modules/crossReferences/numberingDescription"
 msgid "Choose whether figures, tables, charts and equations are numbered through the manuscript or restart in each section."
-msgstr "Choose whether figures, tables, charts and equations are numbered through the manuscript or restart in each section."
+msgstr "Изберете дали фигурите, таблиците, диаграмите и уравненията да се номерират последователно в целия ръкопис или да започват отначало във всеки раздел."
 
 #. OMI translation key: /modules/crossReferences/numberingDocument
 msgctxt "/modules/crossReferences/numberingDocument"
 msgid "Continuous through document"
-msgstr "Continuous through document"
+msgstr "Последователно в целия документ"
 
 #. OMI translation key: /modules/crossReferences/numberingSection
 msgctxt "/modules/crossReferences/numberingSection"
 msgid "Restart in each section"
-msgstr "Restart in each section"
+msgstr "Отначало във всеки раздел"
 
 #. OMI translation key: /modules/crossReferences/statusTitle
 msgctxt "/modules/crossReferences/statusTitle"
 msgid "Internal references"
-msgstr "Internal references"
+msgstr "Вътрешни препратки"
 
 #. OMI translation key: /modules/crossReferences/statusDescription
 msgctxt "/modules/crossReferences/statusDescription"
 msgid "Semantic references remain attached to stable object IDs when document order changes."
-msgstr "Semantic references remain attached to stable object IDs when document order changes."
+msgstr "Семантичните препратки остават свързани със стабилните ID на обектите при промяна на реда в документа."
 
 #. OMI translation key: /modules/crossReferences/statusHealthy
 msgctxt "/modules/crossReferences/statusHealthy"
 msgid "All internal references resolve correctly."
-msgstr "All internal references resolve correctly."
+msgstr "Всички вътрешни препратки се разрешават правилно."
 
 #. OMI translation key: /modules/crossReferences/statusIssues
 msgctxt "/modules/crossReferences/statusIssues"
 msgid "Internal reference issues"
-msgstr "Internal reference issues"
+msgstr "Проблеми с вътрешните препратки"
 
 #. OMI translation key: /modules/crossReferences/missingTarget
 msgctxt "/modules/crossReferences/missingTarget"
 msgid "Missing target"
-msgstr "Missing target"
+msgstr "Липсваща цел"
 
 #. OMI translation key: /modules/crossReferences/missingAnchor
 msgctxt "/modules/crossReferences/missingAnchor"
 msgid "Missing text anchor"
-msgstr "Missing text anchor"
+msgstr "Липсваща текстова котва"
 
 #. OMI translation key: /modules/crossReferences/section
 msgctxt "/modules/crossReferences/section"
 msgid "Sections"
-msgstr "Sections"
+msgstr "Раздели"
 
 #. OMI translation key: /modules/crossReferences/figure
 msgctxt "/modules/crossReferences/figure"
 msgid "Figures"
-msgstr "Figures"
+msgstr "Фигури"
 
 #. OMI translation key: /modules/crossReferences/table
 msgctxt "/modules/crossReferences/table"
 msgid "Tables"
-msgstr "Tables"
+msgstr "Таблици"
 
 #. OMI translation key: /modules/crossReferences/chart
 msgctxt "/modules/crossReferences/chart"
 msgid "Charts"
-msgstr "Charts"
+msgstr "Диаграми"
 
 #. OMI translation key: /modules/crossReferences/equation
 msgctxt "/modules/crossReferences/equation"
 msgid "Equations"
-msgstr "Equations"
+msgstr "Уравнения"
 
 #. OMI translation key: /modules/cslRendering/styleTitle
 msgctxt "/modules/cslRendering/styleTitle"
 msgid "Citation style"
-msgstr "Citation style"
+msgstr "Стил на цитиране"
 
 #. OMI translation key: /modules/cslRendering/styleDescription
 msgctxt "/modules/cslRendering/styleDescription"
 msgid "Choose how citations and the bibliography are rendered while authoring. The semantic citation data remain unchanged."
-msgstr "Choose how citations and the bibliography are rendered while authoring. The semantic citation data remain unchanged."
+msgstr "Изберете как да се показват цитиранията и библиографията по време на писане. Семантичните данни за цитиране остават непроменени."
 
 #. OMI translation key: /modules/cslRendering/styleProfileNote
 msgctxt "/modules/cslRendering/styleProfileNote"
 msgid "Studio currently uses CSL-JSON-compatible built-in profiles. A publication profile may override this presentation preference later."
-msgstr "Studio currently uses CSL-JSON-compatible built-in profiles. A publication profile may override this presentation preference later."
+msgstr "Studio в момента използва вградени профили, съвместими с CSL-JSON. Профилът за публикуване може по-късно да замени това предпочитание за представяне."
 
 #. OMI translation key: /modules/cslRendering/bibliographyTitle
 msgctxt "/modules/cslRendering/bibliographyTitle"
 msgid "Formatted bibliography"
-msgstr "Formatted bibliography"
+msgstr "Форматирана библиография"
 
 #. OMI translation key: /modules/cslRendering/bibliographyDescription
 msgctxt "/modules/cslRendering/bibliographyDescription"
 msgid "Generated from cited bibliographic records using the selected presentation profile."
-msgstr "Generated from cited bibliographic records using the selected presentation profile."
+msgstr "Генерирана от цитираните библиографски записи чрез избрания профил за представяне."
 
 #. OMI translation key: /modules/cslRendering/selectedSources
 msgctxt "/modules/cslRendering/selectedSources"
 msgid "Selected sources"
-msgstr "Selected sources"
+msgstr "Избрани източници"
 
 #. OMI translation key: /modules/cslRendering/clusterHint
 msgctxt "/modules/cslRendering/clusterHint"
 msgid "Select one or more works. Multiple selections are inserted as one semantic citation cluster."
-msgstr "Select one or more works. Multiple selections are inserted as one semantic citation cluster."
+msgstr "Изберете едно или повече произведения. Няколко избора се вмъкват като един семантичен клъстер от цитирания."
 
 #. OMI translation key: /modules/cslRendering/addToCluster
 msgctxt "/modules/cslRendering/addToCluster"
 msgid "Add to cluster"
-msgstr "Add to cluster"
+msgstr "Добавяне към клъстера"
 
 #. OMI translation key: /modules/cslRendering/removeFromCluster
 msgctxt "/modules/cslRendering/removeFromCluster"
 msgid "Remove from cluster"
-msgstr "Remove from cluster"
+msgstr "Премахване от клъстера"
 
 #. OMI translation key: /modules/cslRendering/clusterTitle
 msgctxt "/modules/cslRendering/clusterTitle"
 msgid "Citation cluster"
-msgstr "Citation cluster"
+msgstr "Клъстер от цитирания"
 
 #. OMI translation key: /modules/cslRendering/clusterDescription
 msgctxt "/modules/cslRendering/clusterDescription"
 msgid "Each item remains an independent citation occurrence with its own locator, prefix and suffix."
-msgstr "Each item remains an independent citation occurrence with its own locator, prefix and suffix."
+msgstr "Всеки елемент остава самостоятелно цитиране със собствен локатор, префикс и суфикс."
 
 #. OMI translation key: /modules/cslRendering/deleteCluster
 msgctxt "/modules/cslRendering/deleteCluster"
 msgid "Delete cluster"
-msgstr "Delete cluster"
+msgstr "Изтриване на клъстера"
 
 #. OMI translation key: /modules/cslRendering/confirmDeleteCluster
 msgctxt "/modules/cslRendering/confirmDeleteCluster"
 msgid "Delete this complete citation cluster from the manuscript? Bibliographic records remain in the reference library."
-msgstr "Delete this complete citation cluster from the manuscript? Bibliographic records remain in the reference library."
+msgstr "Да се изтрие ли целият клъстер от цитирания от ръкописа? Библиографските записи ще останат в библиотеката с източници."
 
 #. OMI translation key: /modules/cslRendering/moveUp
 msgctxt "/modules/cslRendering/moveUp"
 msgid "Move earlier"
-msgstr "Move earlier"
+msgstr "Преместване по-рано"
 
 #. OMI translation key: /modules/cslRendering/moveDown
 msgctxt "/modules/cslRendering/moveDown"
 msgid "Move later"
-msgstr "Move later"
+msgstr "Преместване по-късно"
 
 #. OMI translation key: /modules/cslRendering/styleNames/apa-7
 msgctxt "/modules/cslRendering/styleNames/apa-7"
@@ -1754,12 +1754,12 @@ msgstr "APA 7"
 #. OMI translation key: /modules/cslRendering/styleNames/chicago-author-date
 msgctxt "/modules/cslRendering/styleNames/chicago-author-date"
 msgid "Chicago Author-Date"
-msgstr "Chicago Author-Date"
+msgstr "Chicago автор–дата"
 
 #. OMI translation key: /modules/cslRendering/styleNames/chicago-notes-bibliography
 msgctxt "/modules/cslRendering/styleNames/chicago-notes-bibliography"
 msgid "Chicago Notes & Bibliography"
-msgstr "Chicago Notes & Bibliography"
+msgstr "Chicago бележки и библиография"
 
 #. OMI translation key: /modules/cslRendering/styleNames/mla-9
 msgctxt "/modules/cslRendering/styleNames/mla-9"
@@ -1774,267 +1774,267 @@ msgstr "ISO 690"
 #. OMI translation key: /modules/docxImport/title
 msgctxt "/modules/docxImport/title"
 msgid "Import Word manuscript"
-msgstr "Import Word manuscript"
+msgstr "Импортиране на Word ръкопис"
 
 #. OMI translation key: /modules/docxImport/description
 msgctxt "/modules/docxImport/description"
 msgid "Convert a DOCX manuscript into semantic OMI structure locally in your browser."
-msgstr "Convert a DOCX manuscript into semantic OMI structure locally in your browser."
+msgstr "Преобразувайте DOCX ръкопис в семантична OMI структура локално в браузъра."
 
 #. OMI translation key: /modules/docxImport/chooseFile
 msgctxt "/modules/docxImport/chooseFile"
 msgid "Choose DOCX file"
-msgstr "Choose DOCX file"
+msgstr "Избор на DOCX файл"
 
 #. OMI translation key: /modules/docxImport/parsing
 msgctxt "/modules/docxImport/parsing"
 msgid "Reading and analysing DOCX…"
-msgstr "Reading and analysing DOCX…"
+msgstr "Четене и анализ на DOCX…"
 
 #. OMI translation key: /modules/docxImport/replaceFile
 msgctxt "/modules/docxImport/replaceFile"
 msgid "Choose another file"
-msgstr "Choose another file"
+msgstr "Избор на друг файл"
 
 #. OMI translation key: /modules/docxImport/previewTitle
 msgctxt "/modules/docxImport/previewTitle"
 msgid "Import preview"
-msgstr "Import preview"
+msgstr "Преглед на импорта"
 
 #. OMI translation key: /modules/docxImport/previewDescription
 msgctxt "/modules/docxImport/previewDescription"
 msgid "Review the reconstructed structure before opening it as a new OMI manuscript."
-msgstr "Review the reconstructed structure before opening it as a new OMI manuscript."
+msgstr "Прегледайте възстановената структура, преди да я отворите като нов OMI ръкопис."
 
 #. OMI translation key: /modules/docxImport/detectedMetadata
 msgctxt "/modules/docxImport/detectedMetadata"
 msgid "Detected metadata"
-msgstr "Detected metadata"
+msgstr "Открити метаданни"
 
 #. OMI translation key: /modules/docxImport/manuscriptTitle
 msgctxt "/modules/docxImport/manuscriptTitle"
 msgid "Title"
-msgstr "Title"
+msgstr "Заглавие"
 
 #. OMI translation key: /modules/docxImport/language
 msgctxt "/modules/docxImport/language"
 msgid "Language"
-msgstr "Language"
+msgstr "Език"
 
 #. OMI translation key: /modules/docxImport/titleSource
 msgctxt "/modules/docxImport/titleSource"
 msgid "Title source"
-msgstr "Title source"
+msgstr "Източник на заглавието"
 
 #. OMI translation key: /modules/docxImport/sourceCore
 msgctxt "/modules/docxImport/sourceCore"
 msgid "DOCX core properties"
-msgstr "DOCX core properties"
+msgstr "Основни свойства на DOCX"
 
 #. OMI translation key: /modules/docxImport/sourceStyle
 msgctxt "/modules/docxImport/sourceStyle"
 msgid "Word Title style"
-msgstr "Word Title style"
+msgstr "Стил Заглавие в Word"
 
 #. OMI translation key: /modules/docxImport/sourceFilename
 msgctxt "/modules/docxImport/sourceFilename"
 msgid "File name fallback"
-msgstr "File name fallback"
+msgstr "Резервно заглавие от името на файла"
 
 #. OMI translation key: /modules/docxImport/authors
 msgctxt "/modules/docxImport/authors"
 msgid "Detected authors"
-msgstr "Detected authors"
+msgstr "Открити автори"
 
 #. OMI translation key: /modules/docxImport/importAuthors
 msgctxt "/modules/docxImport/importAuthors"
 msgid "Import detected authors"
-msgstr "Import detected authors"
+msgstr "Импортиране на откритите автори"
 
 #. OMI translation key: /modules/docxImport/importAuthorsHint
 msgctxt "/modules/docxImport/importAuthorsHint"
 msgid "DOCX creator/Author-style metadata can be ambiguous. Imported names remain editable and are not identity-verified."
-msgstr "DOCX creator/Author-style metadata can be ambiguous. Imported names remain editable and are not identity-verified."
+msgstr "Метаданните creator/Author в DOCX могат да бъдат нееднозначни. Импортираните имена остават редактируеми и не са потвърдени като самоличност."
 
 #. OMI translation key: /modules/docxImport/coreAuthorSource
 msgctxt "/modules/docxImport/coreAuthorSource"
 msgid "core metadata"
-msgstr "core metadata"
+msgstr "основни метаданни"
 
 #. OMI translation key: /modules/docxImport/styleAuthorSource
 msgctxt "/modules/docxImport/styleAuthorSource"
 msgid "Author style"
-msgstr "Author style"
+msgstr "стил Автор"
 
 #. OMI translation key: /modules/docxImport/outline
 msgctxt "/modules/docxImport/outline"
 msgid "Reconstructed outline"
-msgstr "Reconstructed outline"
+msgstr "Възстановена структура"
 
 #. OMI translation key: /modules/docxImport/warnings
 msgctxt "/modules/docxImport/warnings"
 msgid "Review items"
-msgstr "Review items"
+msgstr "Елементи за преглед"
 
 #. OMI translation key: /modules/docxImport/noWarnings
 msgctxt "/modules/docxImport/noWarnings"
 msgid "No structural warnings were detected."
-msgstr "No structural warnings were detected."
+msgstr "Не са открити структурни предупреждения."
 
 #. OMI translation key: /modules/docxImport/importButton
 msgctxt "/modules/docxImport/importButton"
 msgid "Open as new OMI manuscript"
-msgstr "Open as new OMI manuscript"
+msgstr "Отваряне като нов OMI ръкопис"
 
 #. OMI translation key: /modules/docxImport/imported
 msgctxt "/modules/docxImport/imported"
 msgid "The DOCX manuscript has been opened."
-msgstr "The DOCX manuscript has been opened."
+msgstr "DOCX ръкописът е отворен."
 
 #. OMI translation key: /modules/docxImport/confirmReplace
 msgctxt "/modules/docxImport/confirmReplace"
 msgid "Open this DOCX as a new OMI manuscript? The current active manuscript will leave the single-document workspace."
-msgstr "Open this DOCX as a new OMI manuscript? The current active manuscript will leave the single-document workspace."
+msgstr "Да се отвори ли този DOCX като нов OMI ръкопис? Текущият активен ръкопис ще напусне работното пространство за един документ."
 
 #. OMI translation key: /modules/docxImport/currentWorkspaceWarning
 msgctxt "/modules/docxImport/currentWorkspaceWarning"
 msgid "Import creates a new manuscript identity and a new root revision. It does not rewrite the current manuscript history."
-msgstr "Import creates a new manuscript identity and a new root revision. It does not rewrite the current manuscript history."
+msgstr "Импортът създава нова идентичност на ръкописа и нова коренова ревизия. Той не пренаписва историята на текущия ръкопис."
 
 #. OMI translation key: /modules/docxImport/stats/sections
 msgctxt "/modules/docxImport/stats/sections"
 msgid "Sections"
-msgstr "Sections"
+msgstr "Раздели"
 
 #. OMI translation key: /modules/docxImport/stats/paragraphs
 msgctxt "/modules/docxImport/stats/paragraphs"
 msgid "Paragraphs"
-msgstr "Paragraphs"
+msgstr "Абзаци"
 
 #. OMI translation key: /modules/docxImport/stats/lists
 msgctxt "/modules/docxImport/stats/lists"
 msgid "Lists"
-msgstr "Lists"
+msgstr "Списъци"
 
 #. OMI translation key: /modules/docxImport/stats/notes
 msgctxt "/modules/docxImport/stats/notes"
 msgid "Notes"
-msgstr "Notes"
+msgstr "Бележки"
 
 #. OMI translation key: /modules/docxImport/stats/images
 msgctxt "/modules/docxImport/stats/images"
 msgid "Images"
-msgstr "Images"
+msgstr "Изображения"
 
 #. OMI translation key: /modules/docxImport/stats/tables
 msgctxt "/modules/docxImport/stats/tables"
 msgid "Tables"
-msgstr "Tables"
+msgstr "Таблици"
 
 #. OMI translation key: /modules/docxImport/stats/equations
 msgctxt "/modules/docxImport/stats/equations"
 msgid "Equations"
-msgstr "Equations"
+msgstr "Уравнения"
 
 #. OMI translation key: /modules/docxImport/stats/citations
 msgctxt "/modules/docxImport/stats/citations"
 msgid "Citations"
-msgstr "Citations"
+msgstr "Цитирания"
 
 #. OMI translation key: /modules/docxImport/stats/references
 msgctxt "/modules/docxImport/stats/references"
 msgid "Reference records"
-msgstr "Reference records"
+msgstr "Библиографски записи"
 
 #. OMI translation key: /modules/docxImport/warningText/tracked-deletions
 msgctxt "/modules/docxImport/warningText/tracked-deletions"
 msgid "Tracked deletions are not imported; accepted/visible text is preferred."
-msgstr "Tracked deletions are not imported; accepted/visible text is preferred."
+msgstr "Проследените изтривания не се импортират; предпочита се приетият/видимият текст."
 
 #. OMI translation key: /modules/docxImport/warningText/comments-not-imported
 msgctxt "/modules/docxImport/warningText/comments-not-imported"
 msgid "Word comments are not yet converted into OMI review annotations."
-msgstr "Word comments are not yet converted into OMI review annotations."
+msgstr "Коментарите от Word все още не се преобразуват в OMI анотации за рецензиране."
 
 #. OMI translation key: /modules/docxImport/warningText/text-boxes-flattened
 msgctxt "/modules/docxImport/warningText/text-boxes-flattened"
 msgid "Text-box content may be flattened into the main text flow."
-msgstr "Text-box content may be flattened into the main text flow."
+msgstr "Съдържанието на текстови полета може да бъде влято в основния текстов поток."
 
 #. OMI translation key: /modules/docxImport/warningText/conflicting-title-metadata
 msgctxt "/modules/docxImport/warningText/conflicting-title-metadata"
 msgid "DOCX core title and the styled document title differ; the core title is retained."
-msgstr "DOCX core title and the styled document title differ; the core title is retained."
+msgstr "Основното DOCX заглавие и стилизираното заглавие на документа се различават; запазва се основното заглавие."
 
 #. OMI translation key: /modules/docxImport/warningText/merged-table-cells
 msgctxt "/modules/docxImport/warningText/merged-table-cells"
 msgid "Merged Word table cells are flattened into the editable rectangular OMI table model."
-msgstr "Merged Word table cells are flattened into the editable rectangular OMI table model."
+msgstr "Обединените клетки в Word се преобразуват в правоъгълния редактируем модел за OMI таблици."
 
 #. OMI translation key: /modules/docxImport/warningText/missing-note-body
 msgctxt "/modules/docxImport/warningText/missing-note-body"
 msgid "A note reference was found without a readable note body."
-msgstr "A note reference was found without a readable note body."
+msgstr "Намерена е препратка към бележка без четимо съдържание на бележката."
 
 #. OMI translation key: /modules/docxImport/warningText/unresolved-word-citation
 msgctxt "/modules/docxImport/warningText/unresolved-word-citation"
 msgid "A Word citation field references a source that could not be matched to embedded bibliography metadata."
-msgstr "A Word citation field references a source that could not be matched to embedded bibliography metadata."
+msgstr "Поле за цитиране в Word сочи към източник, който не може да бъде съпоставен с вградените библиографски метаданни."
 
 #. OMI translation key: /modules/docxImport/warningText/word-cross-reference-flattened
 msgctxt "/modules/docxImport/warningText/word-cross-reference-flattened"
 msgid "A Word REF/PAGEREF field is preserved as visible text; semantic OMI target mapping needs review."
-msgstr "A Word REF/PAGEREF field is preserved as visible text; semantic OMI target mapping needs review."
+msgstr "Поле Word REF/PAGEREF се запазва като видим текст; семантичното съпоставяне към OMI цел трябва да бъде проверено."
 
 #. OMI translation key: /modules/docxImport/warningText/inline-equation-promoted
 msgctxt "/modules/docxImport/warningText/inline-equation-promoted"
 msgid "An inline Word equation was promoted to a separate editable equation block."
-msgstr "An inline Word equation was promoted to a separate editable equation block."
+msgstr "Вградено в текста Word уравнение е преобразувано в отделен редактируем блок с уравнение."
 
 #. OMI translation key: /modules/docxImport/warningText/title-from-filename
 msgctxt "/modules/docxImport/warningText/title-from-filename"
 msgid "No explicit document title was found; the file name is used as the manuscript title."
-msgstr "No explicit document title was found; the file name is used as the manuscript title."
+msgstr "Не е намерено изрично заглавие на документа; името на файла се използва като заглавие на ръкописа."
 
 #. OMI translation key: /modules/docxImport/warningText/authors-from-docx-metadata
 msgctxt "/modules/docxImport/warningText/authors-from-docx-metadata"
 msgid "Author names were inferred from DOCX metadata and should be reviewed."
-msgstr "Author names were inferred from DOCX metadata and should be reviewed."
+msgstr "Имената на авторите са изведени от DOCX метаданни и трябва да бъдат проверени."
 
 #. OMI translation key: /modules/docxImport/warningText/headers-footers-not-imported
 msgctxt "/modules/docxImport/warningText/headers-footers-not-imported"
 msgid "Headers and footers are not imported into scholarly manuscript content."
-msgstr "Headers and footers are not imported into scholarly manuscript content."
+msgstr "Горните и долните колонтитули не се импортират като научно съдържание на ръкописа."
 
 #. OMI translation key: /modules/exportFormats/title
 msgctxt "/modules/exportFormats/title"
 msgid "Export formats"
-msgstr "Export formats"
+msgstr "Формати за експорт"
 
 #. OMI translation key: /modules/exportFormats/description
 msgctxt "/modules/exportFormats/description"
 msgid "Export the manuscript from the same semantic OMI model into portable and publication formats."
-msgstr "Export the manuscript from the same semantic OMI model into portable and publication formats."
+msgstr "Експортирайте ръкописа от един и същ семантичен OMI модел в преносими и публикационни формати."
 
 #. OMI translation key: /modules/exportFormats/portable
 msgctxt "/modules/exportFormats/portable"
 msgid "Portable OMI formats"
-msgstr "Portable OMI formats"
+msgstr "Преносими OMI формати"
 
 #. OMI translation key: /modules/exportFormats/publication
 msgctxt "/modules/exportFormats/publication"
 msgid "Publication formats"
-msgstr "Publication formats"
+msgstr "Публикационни формати"
 
 #. OMI translation key: /modules/exportFormats/omi
 msgctxt "/modules/exportFormats/omi"
 msgid "OMI container"
-msgstr "OMI container"
+msgstr "OMI контейнер"
 
 #. OMI translation key: /modules/exportFormats/omiDescription
 msgctxt "/modules/exportFormats/omiDescription"
 msgid "Complete portable package containing manuscript state, history, metadata, publication profile, JATS/HTML and assets."
-msgstr "Complete portable package containing manuscript state, history, metadata, publication profile, JATS/HTML and assets."
+msgstr "Пълен преносим пакет със състоянието на ръкописа, история, метаданни, профил за публикуване, JATS/HTML и ресурси."
 
 #. OMI translation key: /modules/exportFormats/omiJson
 msgctxt "/modules/exportFormats/omiJson"
@@ -2044,7 +2044,7 @@ msgstr "OMI JSON"
 #. OMI translation key: /modules/exportFormats/omiJsonDescription
 msgctxt "/modules/exportFormats/omiJsonDescription"
 msgid "Canonical human- and machine-readable JSON representation of the OMI manuscript model."
-msgstr "Canonical human- and machine-readable JSON representation of the OMI manuscript model."
+msgstr "Канонично JSON представяне на OMI модела на ръкописа, четимо от хора и машини."
 
 #. OMI translation key: /modules/exportFormats/jats
 msgctxt "/modules/exportFormats/jats"
@@ -2054,17 +2054,17 @@ msgstr "JATS XML 1.4"
 #. OMI translation key: /modules/exportFormats/jatsDescription
 msgctxt "/modules/exportFormats/jatsDescription"
 msgid "NISO JATS Article Authoring XML for journal and publisher workflows."
-msgstr "NISO JATS Article Authoring XML for journal and publisher workflows."
+msgstr "NISO JATS Article Authoring XML за работни процеси на списания и издатели."
 
 #. OMI translation key: /modules/exportFormats/html
 msgctxt "/modules/exportFormats/html"
 msgid "Semantic HTML5"
-msgstr "Semantic HTML5"
+msgstr "Семантичен HTML5"
 
 #. OMI translation key: /modules/exportFormats/htmlDescription
 msgctxt "/modules/exportFormats/htmlDescription"
 msgid "Standalone, script-free accessible HTML publication view."
-msgstr "Standalone, script-free accessible HTML publication view."
+msgstr "Самостоятелен, достъпен HTML изглед за публикуване без скриптове."
 
 #. OMI translation key: /modules/exportFormats/docx
 msgctxt "/modules/exportFormats/docx"
@@ -2074,7 +2074,7 @@ msgstr "Microsoft Word (DOCX)"
 #. OMI translation key: /modules/exportFormats/docxDescription
 msgctxt "/modules/exportFormats/docxDescription"
 msgid "Editable Word document with real heading styles and the core manuscript structure."
-msgstr "Editable Word document with real heading styles and the core manuscript structure."
+msgstr "Редактируем Word документ с реални стилове за заглавия и основната структура на ръкописа."
 
 #. OMI translation key: /modules/exportFormats/idml
 msgctxt "/modules/exportFormats/idml"
@@ -2084,7 +2084,7 @@ msgstr "Adobe InDesign (IDML)"
 #. OMI translation key: /modules/exportFormats/idmlDescription
 msgctxt "/modules/exportFormats/idmlDescription"
 msgid "Editable InDesign Markup Language package with OMI paragraph styles, section hierarchy and publisher-oriented text structure."
-msgstr "Editable InDesign Markup Language package with OMI paragraph styles, section hierarchy and publisher-oriented text structure."
+msgstr "Редактируем пакет InDesign Markup Language с OMI стилове за абзаци, йерархия на разделите и текстова структура за издателска работа."
 
 #. OMI translation key: /modules/exportFormats/xtg
 msgctxt "/modules/exportFormats/xtg"
@@ -2094,7 +2094,7 @@ msgstr "QuarkXPress (XPress Tags)"
 #. OMI translation key: /modules/exportFormats/xtgDescription
 msgctxt "/modules/exportFormats/xtgDescription"
 msgid "UTF-8 XPress Tags file for QuarkXPress import with OMI paragraph and heading styles."
-msgstr "UTF-8 XPress Tags file for QuarkXPress import with OMI paragraph and heading styles."
+msgstr "UTF-8 XPress Tags файл за импорт в QuarkXPress с OMI стилове за заглавия и абзаци."
 
 #. OMI translation key: /modules/exportFormats/mif
 msgctxt "/modules/exportFormats/mif"
@@ -2104,7 +2104,7 @@ msgstr "Adobe FrameMaker (MIF)"
 #. OMI translation key: /modules/exportFormats/mifDescription
 msgctxt "/modules/exportFormats/mifDescription"
 msgid "Editable Maker Interchange Format document for FrameMaker workflows."
-msgstr "Editable Maker Interchange Format document for FrameMaker workflows."
+msgstr "Редактируем документ Maker Interchange Format за работни процеси във FrameMaker."
 
 #. OMI translation key: /modules/exportFormats/sla
 msgctxt "/modules/exportFormats/sla"
@@ -2114,7 +2114,7 @@ msgstr "Scribus (SLA)"
 #. OMI translation key: /modules/exportFormats/slaDescription
 msgctxt "/modules/exportFormats/slaDescription"
 msgid "Editable Scribus document with OMI paragraph styles and a continuous text frame."
-msgstr "Editable Scribus document with OMI paragraph styles and a continuous text frame."
+msgstr "Редактируем Scribus документ с OMI стилове за абзаци и непрекъсната текстова рамка."
 
 #. OMI translation key: /modules/exportFormats/latex
 msgctxt "/modules/exportFormats/latex"
@@ -2124,7 +2124,7 @@ msgstr "LaTeX"
 #. OMI translation key: /modules/exportFormats/latexDescription
 msgctxt "/modules/exportFormats/latexDescription"
 msgid "UTF-8 LaTeX source for scientific and automated TeX-based publishing workflows."
-msgstr "UTF-8 LaTeX source for scientific and automated TeX-based publishing workflows."
+msgstr "UTF-8 LaTeX изходен текст за научни и автоматизирани TeX издателски процеси."
 
 #. OMI translation key: /modules/exportFormats/epub
 msgctxt "/modules/exportFormats/epub"
@@ -2134,7 +2134,7 @@ msgstr "EPUB 3"
 #. OMI translation key: /modules/exportFormats/epubDescription
 msgctxt "/modules/exportFormats/epubDescription"
 msgid "Portable EPUB 3 ebook publication package."
-msgstr "Portable EPUB 3 ebook publication package."
+msgstr "Преносим пакет за електронна книга EPUB 3."
 
 #. OMI translation key: /modules/exportFormats/pdf
 msgctxt "/modules/exportFormats/pdf"
@@ -2144,357 +2144,357 @@ msgstr "PDF"
 #. OMI translation key: /modules/exportFormats/pdfDescription
 msgctxt "/modules/exportFormats/pdfDescription"
 msgid "Publication-profile print view that can be saved as PDF in the browser."
-msgstr "Publication-profile print view that can be saved as PDF in the browser."
+msgstr "Печатен изглед според профила за публикуване, който може да бъде записан като PDF в браузъра."
 
 #. OMI translation key: /modules/exportFormats/export
 msgctxt "/modules/exportFormats/export"
 msgid "Export"
-msgstr "Export"
+msgstr "Експорт"
 
 #. OMI translation key: /modules/exportFormats/preparing
 msgctxt "/modules/exportFormats/preparing"
 msgid "Preparing…"
-msgstr "Preparing…"
+msgstr "Подготовка…"
 
 #. OMI translation key: /modules/exportFormats/failed
 msgctxt "/modules/exportFormats/failed"
 msgid "Export failed."
-msgstr "Export failed."
+msgstr "Експортът е неуспешен."
 
 #. OMI translation key: /modules/exportFormats/pdfHint
 msgctxt "/modules/exportFormats/pdfHint"
 msgid "Choose Save as PDF in the print dialog that opens."
-msgstr "Choose Save as PDF in the print dialog that opens."
+msgstr "Изберете Запазване като PDF в отворения диалог за печат."
 
 #. OMI translation key: /modules/frontMatter/subtitle
 msgctxt "/modules/frontMatter/subtitle"
 msgid "Subtitle"
-msgstr "Subtitle"
+msgstr "Подзаглавие"
 
 #. OMI translation key: /modules/frontMatter/subtitleOptional
 msgctxt "/modules/frontMatter/subtitleOptional"
 msgid "Subtitle (optional)"
-msgstr "Subtitle (optional)"
+msgstr "Подзаглавие (по избор)"
 
 #. OMI translation key: /modules/frontMatter/subtitlePlaceholder
 msgctxt "/modules/frontMatter/subtitlePlaceholder"
 msgid "Add an optional subtitle"
-msgstr "Add an optional subtitle"
+msgstr "Добавете подзаглавие по избор"
 
 #. OMI translation key: /modules/frontMatter/motto
 msgctxt "/modules/frontMatter/motto"
 msgid "Motto"
-msgstr "Motto"
+msgstr "Мото"
 
 #. OMI translation key: /modules/frontMatter/mottoOptional
 msgctxt "/modules/frontMatter/mottoOptional"
 msgid "Motto (optional)"
-msgstr "Motto (optional)"
+msgstr "Мото (по избор)"
 
 #. OMI translation key: /modules/frontMatter/mottoPlaceholder
 msgctxt "/modules/frontMatter/mottoPlaceholder"
 msgid "Add an optional motto or epigraph"
-msgstr "Add an optional motto or epigraph"
+msgstr "Добавете мото или епиграф по избор"
 
 #. OMI translation key: /modules/frontMatter/frontMatter
 msgctxt "/modules/frontMatter/frontMatter"
 msgid "Title block"
-msgstr "Title block"
+msgstr "Заглавен блок"
 
 #. OMI translation key: /modules/frontMatter/frontMatterDescription
 msgctxt "/modules/frontMatter/frontMatterDescription"
 msgid "Subtitle and motto are independent optional scholarly front-matter fields."
-msgstr "Subtitle and motto are independent optional scholarly front-matter fields."
+msgstr "Подзаглавието и мотото са независими, незадължителни полета на научната предна част."
 
 #. OMI translation key: /modules/frontMatter/optional
 msgctxt "/modules/frontMatter/optional"
 msgid "Optional"
-msgstr "Optional"
+msgstr "По избор"
 
 #. OMI translation key: /modules/frontMatter/belowTitle
 msgctxt "/modules/frontMatter/belowTitle"
 msgid "Below title"
-msgstr "Below title"
+msgstr "Под заглавието"
 
 #. OMI translation key: /modules/frontMatter/belowSubtitle
 msgctxt "/modules/frontMatter/belowSubtitle"
 msgid "Below subtitle"
-msgstr "Below subtitle"
+msgstr "Под подзаглавието"
 
 #. OMI translation key: /modules/frontMatter/italic
 msgctxt "/modules/frontMatter/italic"
 msgid "Italic"
-msgstr "Italic"
+msgstr "Курсив"
 
 #. OMI translation key: /modules/frontMatter/normal
 msgctxt "/modules/frontMatter/normal"
 msgid "Normal"
-msgstr "Normal"
+msgstr "Нормален"
 
 #. OMI translation key: /modules/frontMatter/alignLeft
 msgctxt "/modules/frontMatter/alignLeft"
 msgid "Left"
-msgstr "Left"
+msgstr "Вляво"
 
 #. OMI translation key: /modules/frontMatter/alignCenter
 msgctxt "/modules/frontMatter/alignCenter"
 msgid "Center"
-msgstr "Center"
+msgstr "Центрирано"
 
 #. OMI translation key: /modules/frontMatter/alignRight
 msgctxt "/modules/frontMatter/alignRight"
 msgid "Right"
-msgstr "Right"
+msgstr "Вдясно"
 
 #. OMI translation key: /modules/help/navigation
 msgctxt "/modules/help/navigation"
 msgid "Help"
-msgstr "Help"
+msgstr "Помощ"
 
 #. OMI translation key: /modules/help/title
 msgctxt "/modules/help/title"
 msgid "Help for authors"
-msgstr "Help for authors"
+msgstr "Помощ за автори"
 
 #. OMI translation key: /modules/help/description
 msgctxt "/modules/help/description"
 msgid "A short guide to editing manuscripts and using the main Studio features."
-msgstr "A short guide to editing manuscripts and using the main Studio features."
+msgstr "Кратко ръководство за редактиране на ръкописи и използване на основните функции на Studio."
 
 #. OMI translation key: /modules/help/gettingStarted
 msgctxt "/modules/help/gettingStarted"
 msgid "When a manuscript is opened from OJS, Studio imports the document and available publication metadata. Editing then takes place in the Studio manuscript model."
-msgstr "When a manuscript is opened from OJS, Studio imports the document and available publication metadata. Editing then takes place in the Studio manuscript model."
+msgstr "Когато ръкопис се отвори от OJS, Studio импортира документа и наличните публикационни метаданни. След това редактирането се извършва в модела на ръкописа на Studio."
 
 #. OMI translation key: /modules/help/topics/0/title
 msgctxt "/modules/help/topics/0/title"
 msgid "Editing the manuscript"
-msgstr "Editing the manuscript"
+msgstr "Редактиране на ръкописа"
 
 #. OMI translation key: /modules/help/topics/0/body
 msgctxt "/modules/help/topics/0/body"
 msgid "Edit manuscript text in the main editor. Review its structure under Manuscript menu → Document."
-msgstr "Edit manuscript text in the main editor. Review its structure under Manuscript menu → Document."
+msgstr "Редактирайте текста на ръкописа в основния редактор. Проверете структурата му в Меню на ръкописа → Документ."
 
 #. OMI translation key: /modules/help/topics/0/tips/0
 msgctxt "/modules/help/topics/0/tips/0"
 msgid "Use real heading styles for section headings."
-msgstr "Use real heading styles for section headings."
+msgstr "Използвайте истински стилове за заглавията на разделите."
 
 #. OMI translation key: /modules/help/topics/0/tips/1
 msgctxt "/modules/help/topics/0/tips/1"
 msgid "Do not rely on bold text or font size alone to express structure."
-msgstr "Do not rely on bold text or font size alone to express structure."
+msgstr "Не разчитайте само на удебелен текст или размер на шрифта за обозначаване на структура."
 
 #. OMI translation key: /modules/help/topics/1/title
 msgctxt "/modules/help/topics/1/title"
 msgid "Manuscript data and languages"
-msgstr "Manuscript data and languages"
+msgstr "Данни за ръкописа и езици"
 
 #. OMI translation key: /modules/help/topics/1/body
 msgctxt "/modules/help/topics/1/body"
 msgid "Abstracts, keywords and other scholarly metadata are edited under Manuscript data. Multilingual fields can be maintained separately in HU, EN and DE."
-msgstr "Abstracts, keywords and other scholarly metadata are edited under Manuscript data. Multilingual fields can be maintained separately in HU, EN and DE."
+msgstr "Резюметата, ключовите думи и другите научни метаданни се редактират в Данни за ръкописа. Многоезичните полета могат да се поддържат отделно на HU, EN и DE."
 
 #. OMI translation key: /modules/help/topics/1/tips/0
 msgctxt "/modules/help/topics/1/tips/0"
 msgid "The manuscript language and metadata language are separate concepts."
-msgstr "The manuscript language and metadata language are separate concepts."
+msgstr "Езикът на ръкописа и езикът на метаданните са различни понятия."
 
 #. OMI translation key: /modules/help/topics/1/tips/1
 msgctxt "/modules/help/topics/1/tips/1"
 msgid "A Hungarian article may also have English and German abstracts and keywords."
-msgstr "A Hungarian article may also have English and German abstracts and keywords."
+msgstr "Унгарска статия може да има и английски и немски резюмета и ключови думи."
 
 #. OMI translation key: /modules/help/topics/2/title
 msgctxt "/modules/help/topics/2/title"
 msgid "Notes"
-msgstr "Notes"
+msgstr "Бележки"
 
 #. OMI translation key: /modules/help/topics/2/body
 msgctxt "/modules/help/topics/2/body"
 msgid "Footnotes and endnotes are retained as semantic note objects. Review and edit them under Notes."
-msgstr "Footnotes and endnotes are retained as semantic note objects. Review and edit them under Notes."
+msgstr "Бележките под линия и крайните бележки се запазват като семантични обекти за бележки. Преглеждайте и редактирайте ги в Бележки."
 
 #. OMI translation key: /modules/help/topics/3/title
 msgctxt "/modules/help/topics/3/title"
 msgid "References"
-msgstr "References"
+msgstr "Източници"
 
 #. OMI translation key: /modules/help/topics/3/body
 msgctxt "/modules/help/topics/3/body"
 msgid "Cited works are stored as structured bibliographic records. Add a work once and reuse it in multiple citations."
-msgstr "Cited works are stored as structured bibliographic records. Add a work once and reuse it in multiple citations."
+msgstr "Цитираните произведения се съхраняват като структурирани библиографски записи. Добавете произведение веднъж и го използвайте повторно в множество цитирания."
 
 #. OMI translation key: /modules/help/topics/4/title
 msgctxt "/modules/help/topics/4/title"
 msgid "Contributors"
-msgstr "Contributors"
+msgstr "Сътрудници"
 
 #. OMI translation key: /modules/help/topics/4/body
 msgctxt "/modules/help/topics/4/body"
 msgid "Manage authors and other contributors, roles, affiliations and ORCID identifiers here."
-msgstr "Manage authors and other contributors, roles, affiliations and ORCID identifiers here."
+msgstr "Тук управлявайте автори и други сътрудници, роли, институционални принадлежности и ORCID идентификатори."
 
 #. OMI translation key: /modules/help/topics/5/title
 msgctxt "/modules/help/topics/5/title"
 msgid "Revisions and saving"
-msgstr "Revisions and saving"
+msgstr "Ревизии и записване"
 
 #. OMI translation key: /modules/help/topics/5/body
 msgctxt "/modules/help/topics/5/body"
 msgid "Studio tracks important changes as revisions. Use History to review changes and, where supported, return to an earlier state."
-msgstr "Studio tracks important changes as revisions. Use History to review changes and, where supported, return to an earlier state."
+msgstr "Studio проследява важните промени като ревизии. Използвайте История, за да преглеждате промените и, когато е възможно, да се връщате към по-ранно състояние."
 
 #. OMI translation key: /modules/help/topics/6/title
 msgctxt "/modules/help/topics/6/title"
 msgid "Import from OJS"
-msgstr "Import from OJS"
+msgstr "Импорт от OJS"
 
 #. OMI translation key: /modules/help/topics/6/body
 msgctxt "/modules/help/topics/6/body"
 msgid "Studio can import the document, abstracts, keywords and other publication metadata from OJS. Only metadata actually present in OJS can be imported."
-msgstr "Studio can import the document, abstracts, keywords and other publication metadata from OJS. Only metadata actually present in OJS can be imported."
+msgstr "Studio може да импортира документа, резюмета, ключови думи и други публикационни метаданни от OJS. Могат да се импортират само метаданни, които действително присъстват в OJS."
 
 #. OMI translation key: /modules/help/topics/7/title
 msgctxt "/modules/help/topics/7/title"
 msgid "DOCX import"
-msgstr "DOCX import"
+msgstr "DOCX импорт"
 
 #. OMI translation key: /modules/help/topics/7/body
 msgctxt "/modules/help/topics/7/body"
 msgid "When importing Word documents, Studio also attempts to recover document structure."
-msgstr "When importing Word documents, Studio also attempts to recover document structure."
+msgstr "При импортиране на Word документи Studio се опитва да възстанови и структурата на документа."
 
 #. OMI translation key: /modules/help/topics/7/tips/0
 msgctxt "/modules/help/topics/7/tips/0"
 msgid "Use Word Heading 1, Heading 2, etc. for section headings."
-msgstr "Use Word Heading 1, Heading 2, etc. for section headings."
+msgstr "Използвайте Word Heading 1, Heading 2 и т.н. за заглавията на разделите."
 
 #. OMI translation key: /modules/help/topics/7/tips/1
 msgctxt "/modules/help/topics/7/tips/1"
 msgid "Direct-formatting recognition is only a fallback."
-msgstr "Direct-formatting recognition is only a fallback."
+msgstr "Разпознаването на директно форматиране е само резервен метод."
 
 #. OMI translation key: /modules/help/topics/8/title
 msgctxt "/modules/help/topics/8/title"
 msgid "Export"
-msgstr "Export"
+msgstr "Експорт"
 
 #. OMI translation key: /modules/help/topics/8/body
 msgctxt "/modules/help/topics/8/body"
 msgid "Export & tools can create a portable .omi.json manuscript file containing the semantic document structure and OMI metadata."
-msgstr "Export & tools can create a portable .omi.json manuscript file containing the semantic document structure and OMI metadata."
+msgstr "Експорт и инструменти може да създаде преносим .omi.json файл на ръкописа със семантичната структура на документа и OMI метаданните."
 
 #. OMI translation key: /modules/help/topics/9/title
 msgctxt "/modules/help/topics/9/title"
 msgid "If something looks wrong"
-msgstr "If something looks wrong"
+msgstr "Ако нещо изглежда неправилно"
 
 #. OMI translation key: /modules/help/topics/9/body
 msgctxt "/modules/help/topics/9/body"
 msgid "Check the manuscript language, selected metadata language and, for Word imports, heading styles. For OJS imports, also verify that the value is actually filled in under the OJS Publication metadata."
-msgstr "Check the manuscript language, selected metadata language and, for Word imports, heading styles. For OJS imports, also verify that the value is actually filled in under the OJS Publication metadata."
+msgstr "Проверете езика на ръкописа, избрания език на метаданните и при Word импорт — стиловете за заглавия. При OJS импорт проверете също дали стойността действително е попълнена в публикационните метаданни на OJS."
 
 #. OMI translation key: /modules/htmlExport/title
 msgctxt "/modules/htmlExport/title"
 msgid "Semantic HTML5"
-msgstr "Semantic HTML5"
+msgstr "Семантичен HTML5"
 
 #. OMI translation key: /modules/htmlExport/description
 msgctxt "/modules/htmlExport/description"
 msgid "Render the semantic manuscript through the active Publication Profile as an accessible, script-free HTML5 scholarly article."
-msgstr "Render the semantic manuscript through the active Publication Profile as an accessible, script-free HTML5 scholarly article."
+msgstr "Визуализирайте семантичния ръкопис чрез активния профил за публикуване като достъпна научна статия HTML5 без скриптове."
 
 #. OMI translation key: /modules/htmlExport/standard
 msgctxt "/modules/htmlExport/standard"
 msgid "Output profile"
-msgstr "Output profile"
+msgstr "Изходен профил"
 
 #. OMI translation key: /modules/htmlExport/renderingContext
 msgctxt "/modules/htmlExport/renderingContext"
 msgid "Rendering context"
-msgstr "Rendering context"
+msgstr "Контекст на визуализацията"
 
 #. OMI translation key: /modules/htmlExport/currentRevision
 msgctxt "/modules/htmlExport/currentRevision"
 msgid "Manuscript revision"
-msgstr "Manuscript revision"
+msgstr "Ревизия на ръкописа"
 
 #. OMI translation key: /modules/htmlExport/preview
 msgctxt "/modules/htmlExport/preview"
 msgid "Preview source"
-msgstr "Preview source"
+msgstr "Преглед на изходния код"
 
 #. OMI translation key: /modules/htmlExport/hidePreview
 msgctxt "/modules/htmlExport/hidePreview"
 msgid "Hide source"
-msgstr "Hide source"
+msgstr "Скриване на изходния код"
 
 #. OMI translation key: /modules/htmlExport/openPreview
 msgctxt "/modules/htmlExport/openPreview"
 msgid "Open rendered preview"
-msgstr "Open rendered preview"
+msgstr "Отваряне на визуализирания преглед"
 
 #. OMI translation key: /modules/htmlExport/downloadPackage
 msgctxt "/modules/htmlExport/downloadPackage"
 msgid "Download HTML package"
-msgstr "Download HTML package"
+msgstr "Изтегляне на HTML пакет"
 
 #. OMI translation key: /modules/htmlExport/preparingPackage
 msgctxt "/modules/htmlExport/preparingPackage"
 msgid "Preparing package…"
-msgstr "Preparing package…"
+msgstr "Подготовка на пакета…"
 
 #. OMI translation key: /modules/htmlExport/exportReady
 msgctxt "/modules/htmlExport/exportReady"
 msgid "The HTML rendering has no blocking diagnostics."
-msgstr "The HTML rendering has no blocking diagnostics."
+msgstr "HTML визуализацията няма блокираща диагностика."
 
 #. OMI translation key: /modules/htmlExport/exportHasErrors
 msgctxt "/modules/htmlExport/exportHasErrors"
 msgid "The HTML can be inspected, but blocking diagnostics must be resolved before a publication package is created."
-msgstr "The HTML can be inspected, but blocking diagnostics must be resolved before a publication package is created."
+msgstr "HTML може да бъде прегледан, но блокиращата диагностика трябва да бъде отстранена преди създаването на публикационен пакет."
 
 #. OMI translation key: /modules/htmlExport/errors
 msgctxt "/modules/htmlExport/errors"
 msgid "errors"
-msgstr "errors"
+msgstr "грешки"
 
 #. OMI translation key: /modules/htmlExport/warnings
 msgctxt "/modules/htmlExport/warnings"
 msgid "warnings"
-msgstr "warnings"
+msgstr "предупреждения"
 
 #. OMI translation key: /modules/htmlExport/diagnostics
 msgctxt "/modules/htmlExport/diagnostics"
 msgid "HTML diagnostics"
-msgstr "HTML diagnostics"
+msgstr "HTML диагностика"
 
 #. OMI translation key: /modules/htmlExport/noDiagnostics
 msgctxt "/modules/htmlExport/noDiagnostics"
 msgid "No HTML-specific diagnostics."
-msgstr "No HTML-specific diagnostics."
+msgstr "Няма специфична за HTML диагностика."
 
 #. OMI translation key: /modules/htmlExport/workingPreview
 msgctxt "/modules/htmlExport/workingPreview"
 msgid "The preview reflects the current working state. Package download creates a checkpoint first so the output is traceable to a committed revision."
-msgstr "The preview reflects the current working state. Package download creates a checkpoint first so the output is traceable to a committed revision."
+msgstr "Прегледът отразява текущото работно състояние. Изтеглянето на пакета първо създава контролна точка, за да може изходът да бъде проследен до записана ревизия."
 
 #. OMI translation key: /modules/htmlExport/unsupportedProfile
 msgctxt "/modules/htmlExport/unsupportedProfile"
 msgid "The active profile does not declare HTML as a supported output."
-msgstr "The active profile does not declare HTML as a supported output."
+msgstr "Активният профил не посочва HTML като поддържан изход."
 
 #. OMI translation key: /modules/htmlExport/accessibilityNote
 msgctxt "/modules/htmlExport/accessibilityNote"
 msgid "The renderer uses semantic headings, figures, tables, document-note roles, bibliography links and explicit image alt attributes. External accessibility auditing remains a separate publication step."
-msgstr "The renderer uses semantic headings, figures, tables, document-note roles, bibliography links and explicit image alt attributes. External accessibility auditing remains a separate publication step."
+msgstr "Визуализаторът използва семантични заглавия, фигури, таблици, роли за бележки в документа, библиографски връзки и явни alt атрибути за изображения. Външният одит за достъпност остава отделна стъпка при публикуването."
 
 #. OMI translation key: /modules/htmlExport/packageNote
 msgctxt "/modules/htmlExport/packageNote"
 msgid "The ZIP package contains index.html, a manifest and referenced media assets under relative media/ paths. No script or external stylesheet is required."
-msgstr "The ZIP package contains index.html, a manifest and referenced media assets under relative media/ paths. No script or external stylesheet is required."
+msgstr "ZIP пакетът съдържа index.html, манифест и използваните медийни ресурси в относителни пътища media/. Не са необходими скриптове или външни стилови таблици."
 
 #. OMI translation key: /modules/jatsExport/title
 msgctxt "/modules/jatsExport/title"
@@ -2504,127 +2504,127 @@ msgstr "JATS XML"
 #. OMI translation key: /modules/jatsExport/description
 msgctxt "/modules/jatsExport/description"
 msgid "Render the semantic manuscript through the active Publication Profile as NISO JATS 1.4 Article Authoring XML."
-msgstr "Render the semantic manuscript through the active Publication Profile as NISO JATS 1.4 Article Authoring XML."
+msgstr "Визуализирайте семантичния ръкопис чрез активния профил за публикуване като NISO JATS 1.4 Article Authoring XML."
 
 #. OMI translation key: /modules/jatsExport/standard
 msgctxt "/modules/jatsExport/standard"
 msgid "Target standard"
-msgstr "Target standard"
+msgstr "Целеви стандарт"
 
 #. OMI translation key: /modules/jatsExport/renderingContext
 msgctxt "/modules/jatsExport/renderingContext"
 msgid "Rendering context"
-msgstr "Rendering context"
+msgstr "Контекст на визуализацията"
 
 #. OMI translation key: /modules/jatsExport/currentRevision
 msgctxt "/modules/jatsExport/currentRevision"
 msgid "Manuscript revision"
-msgstr "Manuscript revision"
+msgstr "Ревизия на ръкописа"
 
 #. OMI translation key: /modules/jatsExport/preview
 msgctxt "/modules/jatsExport/preview"
 msgid "Preview XML"
-msgstr "Preview XML"
+msgstr "Преглед на XML"
 
 #. OMI translation key: /modules/jatsExport/hidePreview
 msgctxt "/modules/jatsExport/hidePreview"
 msgid "Hide XML"
-msgstr "Hide XML"
+msgstr "Скриване на XML"
 
 #. OMI translation key: /modules/jatsExport/download
 msgctxt "/modules/jatsExport/download"
 msgid "Download JATS XML"
-msgstr "Download JATS XML"
+msgstr "Изтегляне на JATS XML"
 
 #. OMI translation key: /modules/jatsExport/exportReady
 msgctxt "/modules/jatsExport/exportReady"
 msgid "The JATS rendering has no blocking diagnostics."
-msgstr "The JATS rendering has no blocking diagnostics."
+msgstr "JATS визуализацията няма блокираща диагностика."
 
 #. OMI translation key: /modules/jatsExport/exportHasErrors
 msgctxt "/modules/jatsExport/exportHasErrors"
 msgid "The XML can be inspected, but blocking diagnostics must be resolved before publication."
-msgstr "The XML can be inspected, but blocking diagnostics must be resolved before publication."
+msgstr "XML може да бъде прегледан, но блокиращата диагностика трябва да бъде отстранена преди публикуване."
 
 #. OMI translation key: /modules/jatsExport/errors
 msgctxt "/modules/jatsExport/errors"
 msgid "errors"
-msgstr "errors"
+msgstr "грешки"
 
 #. OMI translation key: /modules/jatsExport/warnings
 msgctxt "/modules/jatsExport/warnings"
 msgid "warnings"
-msgstr "warnings"
+msgstr "предупреждения"
 
 #. OMI translation key: /modules/jatsExport/diagnostics
 msgctxt "/modules/jatsExport/diagnostics"
 msgid "JATS diagnostics"
-msgstr "JATS diagnostics"
+msgstr "JATS диагностика"
 
 #. OMI translation key: /modules/jatsExport/noDiagnostics
 msgctxt "/modules/jatsExport/noDiagnostics"
 msgid "No JATS-specific diagnostics."
-msgstr "No JATS-specific diagnostics."
+msgstr "Няма специфична за JATS диагностика."
 
 #. OMI translation key: /modules/jatsExport/workingPreview
 msgctxt "/modules/jatsExport/workingPreview"
 msgid "The preview reflects the current working state. Download creates a checkpoint first so the exported XML is traceable to a committed revision."
-msgstr "The preview reflects the current working state. Download creates a checkpoint first so the exported XML is traceable to a committed revision."
+msgstr "Прегледът отразява текущото работно състояние. Изтеглянето първо създава контролна точка, за да може експортираният XML да бъде проследен до записана ревизия."
 
 #. OMI translation key: /modules/jatsExport/unsupportedProfile
 msgctxt "/modules/jatsExport/unsupportedProfile"
 msgid "The active profile does not declare JATS as a supported output."
-msgstr "The active profile does not declare JATS as a supported output."
+msgstr "Активният профил не посочва JATS като поддържан изход."
 
 #. OMI translation key: /modules/jatsExport/schemaNote
 msgctxt "/modules/jatsExport/schemaNote"
 msgid "Studio checks required structure, XML identifiers and internal rid targets. Full external JATS DTD/XSD/RNG validation remains a separate conformance step."
-msgstr "Studio checks required structure, XML identifiers and internal rid targets. Full external JATS DTD/XSD/RNG validation remains a separate conformance step."
+msgstr "Studio проверява задължителната структура, XML идентификаторите и вътрешните rid цели. Пълната външна JATS DTD/XSD/RNG валидация остава отделна стъпка за съответствие."
 
 #. OMI translation key: /modules/noteCitations/addCitation
 msgctxt "/modules/noteCitations/addCitation"
 msgid "Insert reference"
-msgstr "Insert reference"
+msgstr "Вмъкване на препратка"
 
 #. OMI translation key: /modules/noteCitations/citations
 msgctxt "/modules/noteCitations/citations"
 msgid "References in this note"
-msgstr "References in this note"
+msgstr "Препратки в тази бележка"
 
 #. OMI translation key: /modules/noteCitations/noCitations
 msgctxt "/modules/noteCitations/noCitations"
 msgid "No bibliographic references have been added to this note yet."
-msgstr "No bibliographic references have been added to this note yet."
+msgstr "Към тази бележка все още не са добавени библиографски препратки."
 
 #. OMI translation key: /modules/noteCitations/removeCitation
 msgctxt "/modules/noteCitations/removeCitation"
 msgid "Remove reference"
-msgstr "Remove reference"
+msgstr "Премахване на препратка"
 
 #. OMI translation key: /modules/noteCitations/citationHint
 msgctxt "/modules/noteCitations/citationHint"
 msgid "Choose from the manuscript bibliography. Page, chapter, section and other locators are supported."
-msgstr "Choose from the manuscript bibliography. Page, chapter, section and other locators are supported."
+msgstr "Изберете от библиографията на ръкописа. Поддържат се страници, глави, раздели и други локатори."
 
 #. OMI translation key: /modules/orcidLookup/searching
 msgctxt "/modules/orcidLookup/searching"
 msgid "Searching ORCID…"
-msgstr "Searching ORCID…"
+msgstr "Търсене в ORCID…"
 
 #. OMI translation key: /modules/orcidLookup/noResults
 msgctxt "/modules/orcidLookup/noResults"
 msgid "No matching public ORCID records found."
-msgstr "No matching public ORCID records found."
+msgstr "Не са намерени съвпадащи публични ORCID записи."
 
 #. OMI translation key: /modules/orcidLookup/unavailable
 msgctxt "/modules/orcidLookup/unavailable"
 msgid "ORCID search is temporarily unavailable. You can still enter an ORCID iD manually."
-msgstr "ORCID search is temporarily unavailable. You can still enter an ORCID iD manually."
+msgstr "Търсенето в ORCID временно не е достъпно. Все още можете да въведете ORCID iD ръчно."
 
 #. OMI translation key: /modules/orcidLookup/suggestions
 msgctxt "/modules/orcidLookup/suggestions"
 msgid "ORCID suggestions"
-msgstr "ORCID suggestions"
+msgstr "ORCID предложения"
 
 #. OMI translation key: /modules/orcidLookup/selected
 msgctxt "/modules/orcidLookup/selected"
@@ -2634,602 +2634,602 @@ msgstr "ORCID iD"
 #. OMI translation key: /modules/orcidLookup/openProfile
 msgctxt "/modules/orcidLookup/openProfile"
 msgid "Open ORCID record"
-msgstr "Open ORCID record"
+msgstr "Отваряне на ORCID запис"
 
 #. OMI translation key: /modules/orcidLookup/registryMatch
 msgctxt "/modules/orcidLookup/registryMatch"
 msgid "Selected from the ORCID Registry"
-msgstr "Selected from the ORCID Registry"
+msgstr "Избрано от ORCID Registry"
 
 #. OMI translation key: /modules/orcidLookup/notAuthenticated
 msgctxt "/modules/orcidLookup/notAuthenticated"
 msgid "Registry match — not OAuth-authenticated"
-msgstr "Registry match — not OAuth-authenticated"
+msgstr "Съвпадение в регистъра — без OAuth удостоверяване"
 
 #. OMI translation key: /modules/orcidLookup/manualEntry
 msgctxt "/modules/orcidLookup/manualEntry"
 msgid "You can also enter an ORCID iD manually."
-msgstr "You can also enter an ORCID iD manually."
+msgstr "Можете също да въведете ORCID iD ръчно."
 
 #. OMI translation key: /modules/orcidLookup/poweredBy
 msgctxt "/modules/orcidLookup/poweredBy"
 msgid "Search powered by the public ORCID Registry"
-msgstr "Search powered by the public ORCID Registry"
+msgstr "Търсене чрез публичния ORCID Registry"
 
 #. OMI translation key: /modules/publicationProfile/navigation
 msgctxt "/modules/publicationProfile/navigation"
 msgid "Publication"
-msgstr "Publication"
+msgstr "Публикуване"
 
 #. OMI translation key: /modules/publicationProfile/title
 msgctxt "/modules/publicationProfile/title"
 msgid "Publication profile"
-msgstr "Publication profile"
+msgstr "Профил за публикуване"
 
 #. OMI translation key: /modules/publicationProfile/description
 msgctxt "/modules/publicationProfile/description"
 msgid "Choose the rendering, metadata and accessibility rules for the intended publication target."
-msgstr "Choose the rendering, metadata and accessibility rules for the intended publication target."
+msgstr "Изберете правилата за визуализация, метаданни и достъпност за целевата публикация."
 
 #. OMI translation key: /modules/publicationProfile/experimental
 msgctxt "/modules/publicationProfile/experimental"
 msgid "Studio implementation profile. OMI-SPEC-240 is still Reserved; this does not claim specification conformance."
-msgstr "Studio implementation profile. OMI-SPEC-240 is still Reserved; this does not claim specification conformance."
+msgstr "Профил за имплементация на Studio. OMI-SPEC-240 все още е Reserved; това не е твърдение за съответствие със спецификацията."
 
 #. OMI translation key: /modules/publicationProfile/selectedProfile
 msgctxt "/modules/publicationProfile/selectedProfile"
 msgid "Selected profile"
-msgstr "Selected profile"
+msgstr "Избран профил"
 
 #. OMI translation key: /modules/publicationProfile/chooseProfile
 msgctxt "/modules/publicationProfile/chooseProfile"
 msgid "Choose a profile"
-msgstr "Choose a profile"
+msgstr "Избор на профил"
 
 #. OMI translation key: /modules/publicationProfile/applyProfile
 msgctxt "/modules/publicationProfile/applyProfile"
 msgid "Apply profile"
-msgstr "Apply profile"
+msgstr "Прилагане на профила"
 
 #. OMI translation key: /modules/publicationProfile/reapplied
 msgctxt "/modules/publicationProfile/reapplied"
 msgid "Profile defaults applied."
-msgstr "Profile defaults applied."
+msgstr "Настройките по подразбиране на профила са приложени."
 
 #. OMI translation key: /modules/publicationProfile/active
 msgctxt "/modules/publicationProfile/active"
 msgid "Active"
-msgstr "Active"
+msgstr "Активен"
 
 #. OMI translation key: /modules/publicationProfile/profileVersion
 msgctxt "/modules/publicationProfile/profileVersion"
 msgid "Version"
-msgstr "Version"
+msgstr "Версия"
 
 #. OMI translation key: /modules/publicationProfile/profilePublisher
 msgctxt "/modules/publicationProfile/profilePublisher"
 msgid "Publisher"
-msgstr "Publisher"
+msgstr "Издател"
 
 #. OMI translation key: /modules/publicationProfile/rules
 msgctxt "/modules/publicationProfile/rules"
 msgid "Rendering rules"
-msgstr "Rendering rules"
+msgstr "Правила за визуализация"
 
 #. OMI translation key: /modules/publicationProfile/layout
 msgctxt "/modules/publicationProfile/layout"
 msgid "Layout"
-msgstr "Layout"
+msgstr "Оформление"
 
 #. OMI translation key: /modules/publicationProfile/sections
 msgctxt "/modules/publicationProfile/sections"
 msgid "Sections"
-msgstr "Sections"
+msgstr "Раздели"
 
 #. OMI translation key: /modules/publicationProfile/citations
 msgctxt "/modules/publicationProfile/citations"
 msgid "Citations"
-msgstr "Citations"
+msgstr "Цитирания"
 
 #. OMI translation key: /modules/publicationProfile/notes
 msgctxt "/modules/publicationProfile/notes"
 msgid "Notes"
-msgstr "Notes"
+msgstr "Бележки"
 
 #. OMI translation key: /modules/publicationProfile/objects
 msgctxt "/modules/publicationProfile/objects"
 msgid "Figures, tables and equations"
-msgstr "Figures, tables and equations"
+msgstr "Фигури, таблици и уравнения"
 
 #. OMI translation key: /modules/publicationProfile/contributors
 msgctxt "/modules/publicationProfile/contributors"
 msgid "Contributors"
-msgstr "Contributors"
+msgstr "Сътрудници"
 
 #. OMI translation key: /modules/publicationProfile/accessibility
 msgctxt "/modules/publicationProfile/accessibility"
 msgid "Accessibility"
-msgstr "Accessibility"
+msgstr "Достъпност"
 
 #. OMI translation key: /modules/publicationProfile/outputs
 msgctxt "/modules/publicationProfile/outputs"
 msgid "Output targets"
-msgstr "Output targets"
+msgstr "Изходни формати"
 
 #. OMI translation key: /modules/publicationProfile/page
 msgctxt "/modules/publicationProfile/page"
 msgid "Page"
-msgstr "Page"
+msgstr "Страница"
 
 #. OMI translation key: /modules/publicationProfile/columns
 msgctxt "/modules/publicationProfile/columns"
 msgid "Columns"
-msgstr "Columns"
+msgstr "Колони"
 
 #. OMI translation key: /modules/publicationProfile/typography
 msgctxt "/modules/publicationProfile/typography"
 msgid "Typography"
-msgstr "Typography"
+msgstr "Типография"
 
 #. OMI translation key: /modules/publicationProfile/margins
 msgctxt "/modules/publicationProfile/margins"
 msgid "Margins"
-msgstr "Margins"
+msgstr "Полета"
 
 #. OMI translation key: /modules/publicationProfile/numbering
 msgctxt "/modules/publicationProfile/numbering"
 msgid "Numbering"
-msgstr "Numbering"
+msgstr "Номериране"
 
 #. OMI translation key: /modules/publicationProfile/maxDepth
 msgctxt "/modules/publicationProfile/maxDepth"
 msgid "Numbered depth"
-msgstr "Numbered depth"
+msgstr "Дълбочина на номериране"
 
 #. OMI translation key: /modules/publicationProfile/citationStyle
 msgctxt "/modules/publicationProfile/citationStyle"
 msgid "Citation style"
-msgstr "Citation style"
+msgstr "Стил на цитиране"
 
 #. OMI translation key: /modules/publicationProfile/notePlacement
 msgctxt "/modules/publicationProfile/notePlacement"
 msgid "Note placement"
-msgstr "Note placement"
+msgstr "Разположение на бележките"
 
 #. OMI translation key: /modules/publicationProfile/objectNumbering
 msgctxt "/modules/publicationProfile/objectNumbering"
 msgid "Object numbering"
-msgstr "Object numbering"
+msgstr "Номериране на обекти"
 
 #. OMI translation key: /modules/publicationProfile/figureCaption
 msgctxt "/modules/publicationProfile/figureCaption"
 msgid "Figure caption"
-msgstr "Figure caption"
+msgstr "Надпис на фигура"
 
 #. OMI translation key: /modules/publicationProfile/tableCaption
 msgctxt "/modules/publicationProfile/tableCaption"
 msgid "Table caption"
-msgstr "Table caption"
+msgstr "Надпис на таблица"
 
 #. OMI translation key: /modules/publicationProfile/showOrcid
 msgctxt "/modules/publicationProfile/showOrcid"
 msgid "Show ORCID"
-msgstr "Show ORCID"
+msgstr "Показване на ORCID"
 
 #. OMI translation key: /modules/publicationProfile/showAffiliations
 msgctxt "/modules/publicationProfile/showAffiliations"
 msgid "Show affiliations"
-msgstr "Show affiliations"
+msgstr "Показване на институционалните принадлежности"
 
 #. OMI translation key: /modules/publicationProfile/yes
 msgctxt "/modules/publicationProfile/yes"
 msgid "Yes"
-msgstr "Yes"
+msgstr "Да"
 
 #. OMI translation key: /modules/publicationProfile/no
 msgctxt "/modules/publicationProfile/no"
 msgid "No"
-msgstr "No"
+msgstr "Не"
 
 #. OMI translation key: /modules/publicationProfile/above
 msgctxt "/modules/publicationProfile/above"
 msgid "Above"
-msgstr "Above"
+msgstr "Отгоре"
 
 #. OMI translation key: /modules/publicationProfile/below
 msgctxt "/modules/publicationProfile/below"
 msgid "Below"
-msgstr "Below"
+msgstr "Отдолу"
 
 #. OMI translation key: /modules/publicationProfile/document
 msgctxt "/modules/publicationProfile/document"
 msgid "Whole document"
-msgstr "Whole document"
+msgstr "Целият документ"
 
 #. OMI translation key: /modules/publicationProfile/section
 msgctxt "/modules/publicationProfile/section"
 msgid "Per section"
-msgstr "Per section"
+msgstr "По раздели"
 
 #. OMI translation key: /modules/publicationProfile/footnotes
 msgctxt "/modules/publicationProfile/footnotes"
 msgid "Footnotes"
-msgstr "Footnotes"
+msgstr "Бележки под линия"
 
 #. OMI translation key: /modules/publicationProfile/endnotes
 msgctxt "/modules/publicationProfile/endnotes"
 msgid "Endnotes"
-msgstr "Endnotes"
+msgstr "Крайни бележки"
 
 #. OMI translation key: /modules/publicationProfile/interactive
 msgctxt "/modules/publicationProfile/interactive"
 msgid "Interactive notes"
-msgstr "Interactive notes"
+msgstr "Интерактивни бележки"
 
 #. OMI translation key: /modules/publicationProfile/readiness
 msgctxt "/modules/publicationProfile/readiness"
 msgid "Publication readiness"
-msgstr "Publication readiness"
+msgstr "Готовност за публикуване"
 
 #. OMI translation key: /modules/publicationProfile/ready
 msgctxt "/modules/publicationProfile/ready"
 msgid "Ready for profile-based rendering"
-msgstr "Ready for profile-based rendering"
+msgstr "Готово за визуализация според профила"
 
 #. OMI translation key: /modules/publicationProfile/notReady
 msgctxt "/modules/publicationProfile/notReady"
 msgid "Publication requirements still need attention"
-msgstr "Publication requirements still need attention"
+msgstr "Изискванията за публикуване все още изискват внимание"
 
 #. OMI translation key: /modules/publicationProfile/errors
 msgctxt "/modules/publicationProfile/errors"
 msgid "errors"
-msgstr "errors"
+msgstr "грешки"
 
 #. OMI translation key: /modules/publicationProfile/warnings
 msgctxt "/modules/publicationProfile/warnings"
 msgid "warnings"
-msgstr "warnings"
+msgstr "предупреждения"
 
 #. OMI translation key: /modules/publicationProfile/noIssues
 msgctxt "/modules/publicationProfile/noIssues"
 msgid "No profile-specific readiness issues were found."
-msgstr "No profile-specific readiness issues were found."
+msgstr "Не са открити специфични за профила проблеми с готовността."
 
 #. OMI translation key: /modules/publicationProfile/requirements
 msgctxt "/modules/publicationProfile/requirements"
 msgid "Metadata requirements"
-msgstr "Metadata requirements"
+msgstr "Изисквания към метаданните"
 
 #. OMI translation key: /modules/publicationProfile/requirementLabels/off
 msgctxt "/modules/publicationProfile/requirementLabels/off"
 msgid "Not required"
-msgstr "Not required"
+msgstr "Не се изисква"
 
 #. OMI translation key: /modules/publicationProfile/requirementLabels/recommended
 msgctxt "/modules/publicationProfile/requirementLabels/recommended"
 msgid "Recommended"
-msgstr "Recommended"
+msgstr "Препоръчително"
 
 #. OMI translation key: /modules/publicationProfile/requirementLabels/required
 msgctxt "/modules/publicationProfile/requirementLabels/required"
 msgid "Required"
-msgstr "Required"
+msgstr "Задължително"
 
 #. OMI translation key: /modules/publicationProfile/issueText/missing-title
 msgctxt "/modules/publicationProfile/issueText/missing-title"
 msgid "A manuscript title is required."
-msgstr "A manuscript title is required."
+msgstr "Изисква се заглавие на ръкописа."
 
 #. OMI translation key: /modules/publicationProfile/issueText/missing-abstract
 msgctxt "/modules/publicationProfile/issueText/missing-abstract"
 msgid "An abstract is required by this profile."
-msgstr "An abstract is required by this profile."
+msgstr "Този профил изисква резюме."
 
 #. OMI translation key: /modules/publicationProfile/issueText/too-few-keywords
 msgctxt "/modules/publicationProfile/issueText/too-few-keywords"
 msgid "The manuscript has fewer keywords than this profile requires."
-msgstr "The manuscript has fewer keywords than this profile requires."
+msgstr "Ръкописът има по-малко ключови думи, отколкото изисква този профил."
 
 #. OMI translation key: /modules/publicationProfile/issueText/missing-contributor
 msgctxt "/modules/publicationProfile/issueText/missing-contributor"
 msgid "At least one author contribution is required."
-msgstr "At least one author contribution is required."
+msgstr "Необходимо е поне едно авторско участие."
 
 #. OMI translation key: /modules/publicationProfile/issueText/missing-affiliation
 msgctxt "/modules/publicationProfile/issueText/missing-affiliation"
 msgid "A contributor has no affiliation."
-msgstr "A contributor has no affiliation."
+msgstr "Сътрудник няма посочена институционална принадлежност."
 
 #. OMI translation key: /modules/publicationProfile/issueText/missing-orcid
 msgctxt "/modules/publicationProfile/issueText/missing-orcid"
 msgid "A contributor has no ORCID identifier."
-msgstr "A contributor has no ORCID identifier."
+msgstr "Сътрудник няма ORCID идентификатор."
 
 #. OMI translation key: /modules/publicationProfile/issueText/missing-figure-alt
 msgctxt "/modules/publicationProfile/issueText/missing-figure-alt"
 msgid "A figure is missing alternative text."
-msgstr "A figure is missing alternative text."
+msgstr "На фигура липсва алтернативен текст."
 
 #. OMI translation key: /modules/publicationProfile/issueText/missing-table-header
 msgctxt "/modules/publicationProfile/issueText/missing-table-header"
 msgid "A table has no declared header row."
-msgstr "A table has no declared header row."
+msgstr "Таблица няма зададен заглавен ред."
 
 #. OMI translation key: /modules/publicationProfile/issueText/unresolved-citation
 msgctxt "/modules/publicationProfile/issueText/unresolved-citation"
 msgid "A citation points to a missing bibliographic record."
-msgstr "A citation points to a missing bibliographic record."
+msgstr "Цитиране сочи към липсващ библиографски запис."
 
 #. OMI translation key: /modules/publicationProfile/issueText/unresolved-cross-reference
 msgctxt "/modules/publicationProfile/issueText/unresolved-cross-reference"
 msgid "An internal cross-reference points to a missing target."
-msgstr "An internal cross-reference points to a missing target."
+msgstr "Вътрешна кръстосана препратка сочи към липсваща цел."
 
 #. OMI translation key: /modules/publicationProfile/issueText/profile-override
 msgctxt "/modules/publicationProfile/issueText/profile-override"
 msgid "A manuscript presentation preference overrides the selected profile default."
-msgstr "A manuscript presentation preference overrides the selected profile default."
+msgstr "Предпочитание за представяне на ръкописа заменя настройката по подразбиране на избрания профил."
 
 #. OMI translation key: /modules/publicationProfile/exportProfile
 msgctxt "/modules/publicationProfile/exportProfile"
 msgid "Export profile JSON"
-msgstr "Export profile JSON"
+msgstr "Експорт на JSON профил"
 
 #. OMI translation key: /modules/publicationProfile/exportDescription
 msgctxt "/modules/publicationProfile/exportDescription"
 msgid "Save the exact profile definition used for reproducible future rendering."
-msgstr "Save the exact profile definition used for reproducible future rendering."
+msgstr "Запазете точната дефиниция на профила, използвана за възпроизводима бъдеща визуализация."
 
 #. OMI translation key: /modules/publicationProfile/profileSeparation
 msgctxt "/modules/publicationProfile/profileSeparation"
 msgid "The profile changes presentation and publication requirements, not scholarly content. Profile selection and explicit presentation overrides are revisioned separately from text edits."
-msgstr "The profile changes presentation and publication requirements, not scholarly content. Profile selection and explicit presentation overrides are revisioned separately from text edits."
+msgstr "Профилът променя представянето и изискванията за публикуване, а не научното съдържание. Изборът на профил и явните промени в представянето се версионират отделно от редакциите на текста."
 
 #. OMI translation key: /modules/publicationProfile/profileOverrides
 msgctxt "/modules/publicationProfile/profileOverrides"
 msgid "This manuscript currently contains presentation overrides that differ from the selected profile."
-msgstr "This manuscript currently contains presentation overrides that differ from the selected profile."
+msgstr "Този ръкопис в момента съдържа настройки за представяне, които се различават от избрания профил."
 
 #. OMI translation key: /modules/publicationProfile/resetDefaults
 msgctxt "/modules/publicationProfile/resetDefaults"
 msgid "Reapply profile defaults"
-msgstr "Reapply profile defaults"
+msgstr "Повторно прилагане на настройките по подразбиране"
 
 #. OMI translation key: /modules/publicationProfile/profileNames/omi-generic-scholarly/name
 msgctxt "/modules/publicationProfile/profileNames/omi-generic-scholarly/name"
 msgid "OMI Generic Scholarly"
-msgstr "OMI Generic Scholarly"
+msgstr "OMI общ научен профил"
 
 #. OMI translation key: /modules/publicationProfile/profileNames/omi-generic-scholarly/description
 msgctxt "/modules/publicationProfile/profileNames/omi-generic-scholarly/description"
 msgid "Neutral scholarly rendering for general-purpose publishing."
-msgstr "Neutral scholarly rendering for general-purpose publishing."
+msgstr "Неутрална научна визуализация за общи публикационни цели."
 
 #. OMI translation key: /modules/publicationProfile/profileNames/omi-journal-author-date/name
 msgctxt "/modules/publicationProfile/profileNames/omi-journal-author-date/name"
 msgid "OMI Journal — Author-Date"
-msgstr "OMI Journal — Author-Date"
+msgstr "OMI списание — автор–дата"
 
 #. OMI translation key: /modules/publicationProfile/profileNames/omi-journal-author-date/description
 msgctxt "/modules/publicationProfile/profileNames/omi-journal-author-date/description"
 msgid "Journal profile with author-date citations and stricter metadata requirements."
-msgstr "Journal profile with author-date citations and stricter metadata requirements."
+msgstr "Профил за списание с цитирания автор–дата и по-строги изисквания към метаданните."
 
 #. OMI translation key: /modules/publicationProfile/profileNames/omi-humanities-notes/name
 msgctxt "/modules/publicationProfile/profileNames/omi-humanities-notes/name"
 msgid "OMI Humanities — Notes & Bibliography"
-msgstr "OMI Humanities — Notes & Bibliography"
+msgstr "OMI хуманитарни науки — бележки и библиография"
 
 #. OMI translation key: /modules/publicationProfile/profileNames/omi-humanities-notes/description
 msgctxt "/modules/publicationProfile/profileNames/omi-humanities-notes/description"
 msgid "Humanities profile with Chicago notes, bibliography and footnotes."
-msgstr "Humanities profile with Chicago notes, bibliography and footnotes."
+msgstr "Профил за хуманитарни науки с Chicago бележки, библиография и бележки под линия."
 
 #. OMI translation key: /modules/referenceLookup/title
 msgctxt "/modules/referenceLookup/title"
 msgid "Search external bibliographic services"
-msgstr "Search external bibliographic services"
+msgstr "Търсене във външни библиографски услуги"
 
 #. OMI translation key: /modules/referenceLookup/description
 msgctxt "/modules/referenceLookup/description"
 msgid "Search Crossref, DataCite, OpenAlex and MTMT, then add a normalized record to this manuscript’s reference library."
-msgstr "Search Crossref, DataCite, OpenAlex and MTMT, then add a normalized record to this manuscript’s reference library."
+msgstr "Търсете в Crossref, DataCite, OpenAlex и MTMT, след което добавете нормализиран запис в библиотеката с източници на този ръкопис."
 
 #. OMI translation key: /modules/referenceLookup/queryLabel
 msgctxt "/modules/referenceLookup/queryLabel"
 msgid "Bibliographic query"
-msgstr "Bibliographic query"
+msgstr "Библиографско търсене"
 
 #. OMI translation key: /modules/referenceLookup/queryPlaceholder
 msgctxt "/modules/referenceLookup/queryPlaceholder"
 msgid "DOI, title, author or keywords…"
-msgstr "DOI, title, author or keywords…"
+msgstr "DOI, заглавие, автор или ключови думи…"
 
 #. OMI translation key: /modules/referenceLookup/search
 msgctxt "/modules/referenceLookup/search"
 msgid "Search"
-msgstr "Search"
+msgstr "Търсене"
 
 #. OMI translation key: /modules/referenceLookup/searching
 msgctxt "/modules/referenceLookup/searching"
 msgid "Searching…"
-msgstr "Searching…"
+msgstr "Търсене…"
 
 #. OMI translation key: /modules/referenceLookup/providers
 msgctxt "/modules/referenceLookup/providers"
 msgid "Bibliographic providers"
-msgstr "Bibliographic providers"
+msgstr "Библиографски доставчици"
 
 #. OMI translation key: /modules/referenceLookup/apiKeyRequired
 msgctxt "/modules/referenceLookup/apiKeyRequired"
 msgid "API key required"
-msgstr "API key required"
+msgstr "Изисква се API ключ"
 
 #. OMI translation key: /modules/referenceLookup/serviceSettings
 msgctxt "/modules/referenceLookup/serviceSettings"
 msgid "Service settings"
-msgstr "Service settings"
+msgstr "Настройки на услугата"
 
 #. OMI translation key: /modules/referenceLookup/crossrefEmail
 msgctxt "/modules/referenceLookup/crossrefEmail"
 msgid "Crossref contact email (optional)"
-msgstr "Crossref contact email (optional)"
+msgstr "Имейл за контакт с Crossref (по избор)"
 
 #. OMI translation key: /modules/referenceLookup/crossrefEmailHint
 msgctxt "/modules/referenceLookup/crossrefEmailHint"
 msgid "When provided, Crossref receives it through the recommended mailto parameter for polite API access."
-msgstr "When provided, Crossref receives it through the recommended mailto parameter for polite API access."
+msgstr "Когато е зададен, Crossref го получава чрез препоръчания параметър mailto за коректен API достъп."
 
 #. OMI translation key: /modules/referenceLookup/openAlexApiKey
 msgctxt "/modules/referenceLookup/openAlexApiKey"
 msgid "OpenAlex API key"
-msgstr "OpenAlex API key"
+msgstr "OpenAlex API ключ"
 
 #. OMI translation key: /modules/referenceLookup/openAlexApiKeyHint
 msgctxt "/modules/referenceLookup/openAlexApiKeyHint"
 msgid "OpenAlex currently requires an API key. The key is stored only in this browser and is never written to the manuscript."
-msgstr "OpenAlex currently requires an API key. The key is stored only in this browser and is never written to the manuscript."
+msgstr "OpenAlex в момента изисква API ключ. Ключът се съхранява само в този браузър и никога не се записва в ръкописа."
 
 #. OMI translation key: /modules/referenceLookup/privacyNote
 msgctxt "/modules/referenceLookup/privacyNote"
 msgid "Queries are sent only to the providers you enable. Service credentials and contact settings are local interface preferences and are not exported in .omi.json."
-msgstr "Queries are sent only to the providers you enable. Service credentials and contact settings are local interface preferences and are not exported in .omi.json."
+msgstr "Заявките се изпращат само към активираните от вас доставчици. Данните за достъп до услугите и настройките за контакт са локални предпочитания на интерфейса и не се експортират в .omi.json."
 
 #. OMI translation key: /modules/referenceLookup/missingApiKey
 msgctxt "/modules/referenceLookup/missingApiKey"
 msgid "This provider was skipped because its required API key is not configured."
-msgstr "This provider was skipped because its required API key is not configured."
+msgstr "Този доставчик е пропуснат, защото необходимият му API ключ не е конфигуриран."
 
 #. OMI translation key: /modules/referenceLookup/providerUnavailable
 msgctxt "/modules/referenceLookup/providerUnavailable"
 msgid "The provider could not be queried. Other provider results are still shown."
-msgstr "The provider could not be queried. Other provider results are still shown."
+msgstr "Доставчикът не можа да бъде заявен. Резултатите от другите доставчици все пак се показват."
 
 #. OMI translation key: /modules/referenceLookup/noResults
 msgctxt "/modules/referenceLookup/noResults"
 msgid "No matching bibliographic records were returned by the selected providers."
-msgstr "No matching bibliographic records were returned by the selected providers."
+msgstr "Избраните доставчици не върнаха съвпадащи библиографски записи."
 
 #. OMI translation key: /modules/referenceLookup/addToLibrary
 msgctxt "/modules/referenceLookup/addToLibrary"
 msgid "Add to library"
-msgstr "Add to library"
+msgstr "Добавяне в библиотеката"
 
 #. OMI translation key: /modules/referenceLookup/alreadyAdded
 msgctxt "/modules/referenceLookup/alreadyAdded"
 msgid "Already added"
-msgstr "Already added"
+msgstr "Вече е добавено"
 
 #. OMI translation key: /modules/richText/bold
 msgctxt "/modules/richText/bold"
 msgid "Bold / strong"
-msgstr "Bold / strong"
+msgstr "Получер / силно подчертано"
 
 #. OMI translation key: /modules/richText/italic
 msgctxt "/modules/richText/italic"
 msgid "Italic / emphasis"
-msgstr "Italic / emphasis"
+msgstr "Курсив / акцент"
 
 #. OMI translation key: /modules/richText/superscript
 msgctxt "/modules/richText/superscript"
 msgid "Superscript"
-msgstr "Superscript"
+msgstr "Горен индекс"
 
 #. OMI translation key: /modules/richText/subscript
 msgctxt "/modules/richText/subscript"
 msgid "Subscript"
-msgstr "Subscript"
+msgstr "Долен индекс"
 
 #. OMI translation key: /modules/richText/smallCaps
 msgctxt "/modules/richText/smallCaps"
 msgid "Small caps"
-msgstr "Small caps"
+msgstr "Малки главни букви"
 
 #. OMI translation key: /modules/richText/underline
 msgctxt "/modules/richText/underline"
 msgid "Underline"
-msgstr "Underline"
+msgstr "Подчертаване"
 
 #. OMI translation key: /modules/richText/link
 msgctxt "/modules/richText/link"
 msgid "External link"
-msgstr "External link"
+msgstr "Външна връзка"
 
 #. OMI translation key: /modules/richText/unlink
 msgctxt "/modules/richText/unlink"
 msgid "Remove link"
-msgstr "Remove link"
+msgstr "Премахване на връзката"
 
 #. OMI translation key: /modules/richText/more
 msgctxt "/modules/richText/more"
 msgid "More text tools"
-msgstr "More text tools"
+msgstr "Още текстови инструменти"
 
 #. OMI translation key: /modules/richText/strike
 msgctxt "/modules/richText/strike"
 msgid "Strikethrough"
-msgstr "Strikethrough"
+msgstr "Зачертаване"
 
 #. OMI translation key: /modules/richText/bulletList
 msgctxt "/modules/richText/bulletList"
 msgid "Bullet list"
-msgstr "Bullet list"
+msgstr "Списък с водещи знаци"
 
 #. OMI translation key: /modules/richText/orderedList
 msgctxt "/modules/richText/orderedList"
 msgid "Numbered list"
-msgstr "Numbered list"
+msgstr "Номериран списък"
 
 #. OMI translation key: /modules/richText/blockquote
 msgctxt "/modules/richText/blockquote"
 msgid "Block quotation"
-msgstr "Block quotation"
+msgstr "Блоков цитат"
 
 #. OMI translation key: /modules/richText/inlineCode
 msgctxt "/modules/richText/inlineCode"
 msgid "Inline code"
-msgstr "Inline code"
+msgstr "Вграден код"
 
 #. OMI translation key: /modules/richText/codeBlock
 msgctxt "/modules/richText/codeBlock"
 msgid "Code block"
-msgstr "Code block"
+msgstr "Блок код"
 
 #. OMI translation key: /modules/richText/hardBreak
 msgctxt "/modules/richText/hardBreak"
 msgid "Line break"
-msgstr "Line break"
+msgstr "Нов ред"
 
 #. OMI translation key: /modules/richText/language
 msgctxt "/modules/richText/language"
 msgid "Text language"
-msgstr "Text language"
+msgstr "Език на текста"
 
 #. OMI translation key: /modules/richText/removeLanguage
 msgctxt "/modules/richText/removeLanguage"
 msgid "Remove language mark"
-msgstr "Remove language mark"
+msgstr "Премахване на езиковата маркировка"
 
 #. OMI translation key: /modules/richText/languagePlaceholder
 msgctxt "/modules/richText/languagePlaceholder"
 msgid "BCP 47 tag, e.g. la, de, en-GB"
-msgstr "BCP 47 tag, e.g. la, de, en-GB"
+msgstr "BCP 47 код, напр. la, de, en-GB"
 
 #. OMI translation key: /modules/richText/apply
 msgctxt "/modules/richText/apply"
 msgid "Apply"
-msgstr "Apply"
+msgstr "Прилагане"
 
 #. OMI translation key: /modules/richText/cancel
 msgctxt "/modules/richText/cancel"
 msgid "Cancel"
-msgstr "Cancel"
+msgstr "Отказ"
 
 #. OMI translation key: /modules/richText/linkAddress
 msgctxt "/modules/richText/linkAddress"
 msgid "External address"
-msgstr "External address"
+msgstr "Външен адрес"
 
 #. OMI translation key: /modules/richText/linkPlaceholder
 msgctxt "/modules/richText/linkPlaceholder"
@@ -3239,380 +3239,380 @@ msgstr "https://…"
 #. OMI translation key: /modules/richText/invalidLink
 msgctxt "/modules/richText/invalidLink"
 msgid "Enter a valid http, https or mailto address."
-msgstr "Enter a valid http, https or mailto address."
+msgstr "Въведете валиден http, https или mailto адрес."
 
 #. OMI translation key: /modules/richText/specialCharacters
 msgctxt "/modules/richText/specialCharacters"
 msgid "Special characters"
-msgstr "Special characters"
+msgstr "Специални знаци"
 
 #. OMI translation key: /modules/richText/clearMarks
 msgctxt "/modules/richText/clearMarks"
 msgid "Clear inline formatting"
-msgstr "Clear inline formatting"
+msgstr "Изчистване на вграденото форматиране"
 
 #. OMI translation key: /modules/richText/toolbar
 msgctxt "/modules/richText/toolbar"
 msgid "Semantic text tools"
-msgstr "Semantic text tools"
+msgstr "Семантични текстови инструменти"
 
 #. OMI translation key: /modules/rorAffiliation/searching
 msgctxt "/modules/rorAffiliation/searching"
 msgid "Searching ROR…"
-msgstr "Searching ROR…"
+msgstr "Търсене в ROR…"
 
 #. OMI translation key: /modules/rorAffiliation/suggestions
 msgctxt "/modules/rorAffiliation/suggestions"
 msgid "ROR organization suggestions"
-msgstr "ROR organization suggestions"
+msgstr "Предложения за организации от ROR"
 
 #. OMI translation key: /modules/rorAffiliation/noResults
 msgctxt "/modules/rorAffiliation/noResults"
 msgid "No ROR organization found. You can keep the affiliation as free text."
-msgstr "No ROR organization found. You can keep the affiliation as free text."
+msgstr "Не е намерена ROR организация. Можете да запазите институционалната принадлежност като свободен текст."
 
 #. OMI translation key: /modules/rorAffiliation/searchUnavailable
 msgctxt "/modules/rorAffiliation/searchUnavailable"
 msgid "ROR search is temporarily unavailable. You can keep editing the affiliation manually."
-msgstr "ROR search is temporarily unavailable. You can keep editing the affiliation manually."
+msgstr "Търсенето в ROR временно не е достъпно. Можете да продължите да редактирате институционалната принадлежност ръчно."
 
 #. OMI translation key: /modules/rorAffiliation/selected
 msgctxt "/modules/rorAffiliation/selected"
 msgid "Linked to ROR"
-msgstr "Linked to ROR"
+msgstr "Свързано с ROR"
 
 #. OMI translation key: /modules/rorAffiliation/removeLink
 msgctxt "/modules/rorAffiliation/removeLink"
 msgid "Remove ROR link"
-msgstr "Remove ROR link"
+msgstr "Премахване на ROR връзката"
 
 #. OMI translation key: /modules/rorAffiliation/openRor
 msgctxt "/modules/rorAffiliation/openRor"
 msgid "Open ROR record"
-msgstr "Open ROR record"
+msgstr "Отваряне на ROR запис"
 
 #. OMI translation key: /modules/rorAffiliation/locationUnknown
 msgctxt "/modules/rorAffiliation/locationUnknown"
 msgid "Location not specified"
-msgstr "Location not specified"
+msgstr "Местоположението не е посочено"
 
 #. OMI translation key: /modules/rorAffiliation/poweredBy
 msgctxt "/modules/rorAffiliation/poweredBy"
 msgid "Organization data from ROR"
-msgstr "Organization data from ROR"
+msgstr "Данни за организации от ROR"
 
 #. OMI translation key: /modules/sectionStructure/title
 msgctxt "/modules/sectionStructure/title"
 msgid "Hierarchical document structure"
-msgstr "Hierarchical document structure"
+msgstr "Йерархична структура на документа"
 
 #. OMI translation key: /modules/sectionStructure/description
 msgctxt "/modules/sectionStructure/description"
 msgid "Build chapters and subsections at any depth. Stable section identities remain unchanged while the outline and generated numbering evolve."
-msgstr "Build chapters and subsections at any depth. Stable section identities remain unchanged while the outline and generated numbering evolve."
+msgstr "Създавайте глави и подраздели на произволна дълбочина. Стабилните идентичности на разделите остават непроменени, докато структурата и генерираното номериране се развиват."
 
 #. OMI translation key: /modules/sectionStructure/addTopLevel
 msgctxt "/modules/sectionStructure/addTopLevel"
 msgid "Add top-level section"
-msgstr "Add top-level section"
+msgstr "Добавяне на раздел от най-високо ниво"
 
 #. OMI translation key: /modules/sectionStructure/addSubsection
 msgctxt "/modules/sectionStructure/addSubsection"
 msgid "Add subsection"
-msgstr "Add subsection"
+msgstr "Добавяне на подраздел"
 
 #. OMI translation key: /modules/sectionStructure/insertAfter
 msgctxt "/modules/sectionStructure/insertAfter"
 msgid "Insert sibling after this section"
-msgstr "Insert sibling after this section"
+msgstr "Вмъкване на раздел на същото ниво след този"
 
 #. OMI translation key: /modules/sectionStructure/dragHint
 msgctxt "/modules/sectionStructure/dragHint"
 msgid "Drag a section onto another section to make it a subsection. Use the arrows and indent/outdent controls for keyboard- and touch-friendly restructuring."
-msgstr "Drag a section onto another section to make it a subsection. Use the arrows and indent/outdent controls for keyboard- and touch-friendly restructuring."
+msgstr "Плъзнете раздел върху друг раздел, за да го направите подраздел. Използвайте стрелките и контролите за отстъп/изнасяне за преструктуриране с клавиатура или докосване."
 
 #. OMI translation key: /modules/sectionStructure/dropAsChild
 msgctxt "/modules/sectionStructure/dropAsChild"
 msgid "Drop here to make this section a subsection"
-msgstr "Drop here to make this section a subsection"
+msgstr "Пуснете тук, за да направите този раздел подраздел"
 
 #. OMI translation key: /modules/sectionStructure/openSection
 msgctxt "/modules/sectionStructure/openSection"
 msgid "Open section"
-msgstr "Open section"
+msgstr "Отваряне на раздел"
 
 #. OMI translation key: /modules/sectionStructure/moveUp
 msgctxt "/modules/sectionStructure/moveUp"
 msgid "Move before previous sibling"
-msgstr "Move before previous sibling"
+msgstr "Преместване пред предишния раздел на същото ниво"
 
 #. OMI translation key: /modules/sectionStructure/moveDown
 msgctxt "/modules/sectionStructure/moveDown"
 msgid "Move after next sibling"
-msgstr "Move after next sibling"
+msgstr "Преместване след следващия раздел на същото ниво"
 
 #. OMI translation key: /modules/sectionStructure/indent
 msgctxt "/modules/sectionStructure/indent"
 msgid "Make subsection of previous sibling"
-msgstr "Make subsection of previous sibling"
+msgstr "Направи подраздел на предишния раздел"
 
 #. OMI translation key: /modules/sectionStructure/outdent
 msgctxt "/modules/sectionStructure/outdent"
 msgid "Promote one level"
-msgstr "Promote one level"
+msgstr "Повишаване с едно ниво"
 
 #. OMI translation key: /modules/sectionStructure/dragSection
 msgctxt "/modules/sectionStructure/dragSection"
 msgid "Drag section subtree"
-msgstr "Drag section subtree"
+msgstr "Плъзгане на поддървото на раздела"
 
 #. OMI translation key: /modules/sectionStructure/selected
 msgctxt "/modules/sectionStructure/selected"
 msgid "Selected"
-msgstr "Selected"
+msgstr "Избрано"
 
 #. OMI translation key: /modules/sectionStructure/emptyTitle
 msgctxt "/modules/sectionStructure/emptyTitle"
 msgid "Untitled section"
-msgstr "Untitled section"
+msgstr "Раздел без заглавие"
 
 #. OMI translation key: /modules/sectionStructure/level
 msgctxt "/modules/sectionStructure/level"
 msgid "Level"
-msgstr "Level"
+msgstr "Ниво"
 
 #. OMI translation key: /modules/sectionStructure/invalidHierarchy
 msgctxt "/modules/sectionStructure/invalidHierarchy"
 msgid "The section hierarchy contains an invalid parent relationship."
-msgstr "The section hierarchy contains an invalid parent relationship."
+msgstr "Йерархията на разделите съдържа невалидна родителска връзка."
 
 #. OMI translation key: /modules/stateDigest/integrity
 msgctxt "/modules/stateDigest/integrity"
 msgid "Revision state integrity"
-msgstr "Revision state integrity"
+msgstr "Цялост на състоянието на ревизията"
 
 #. OMI translation key: /modules/stateDigest/verified
 msgctxt "/modules/stateDigest/verified"
 msgid "Verified"
-msgstr "Verified"
+msgstr "Проверено"
 
 #. OMI translation key: /modules/stateDigest/missing
 msgctxt "/modules/stateDigest/missing"
 msgid "Digest not recorded"
-msgstr "Digest not recorded"
+msgstr "Не е записан digest"
 
 #. OMI translation key: /modules/stateDigest/mismatch
 msgctxt "/modules/stateDigest/mismatch"
 msgid "Digest mismatch"
-msgstr "Digest mismatch"
+msgstr "Несъответствие на digest"
 
 #. OMI translation key: /modules/stateDigest/unsupported
 msgctxt "/modules/stateDigest/unsupported"
 msgid "Unsupported digest profile"
-msgstr "Unsupported digest profile"
+msgstr "Неподдържан digest профил"
 
 #. OMI translation key: /modules/stateDigest/digest
 msgctxt "/modules/stateDigest/digest"
 msgid "State digest"
-msgstr "State digest"
+msgstr "Digest на състоянието"
 
 #. OMI translation key: /modules/stateDigest/canonicalization
 msgctxt "/modules/stateDigest/canonicalization"
 msgid "Canonicalization"
-msgstr "Canonicalization"
+msgstr "Каноникализация"
 
 #. OMI translation key: /modules/stateDigest/scope
 msgctxt "/modules/stateDigest/scope"
 msgid "Committed manuscript snapshot"
-msgstr "Committed manuscript snapshot"
+msgstr "Записана моментна снимка на ръкописа"
 
 #. OMI translation key: /modules/stateDigest/summary
 msgctxt "/modules/stateDigest/summary"
 msgid "Canonical SHA-256 evidence for immutable manuscript revisions."
-msgstr "Canonical SHA-256 evidence for immutable manuscript revisions."
+msgstr "Канонично SHA-256 доказателство за непроменими ревизии на ръкописа."
 
 #. OMI translation key: /modules/stateDigest/importVerified
 msgctxt "/modules/stateDigest/importVerified"
 msgid "All declared revision state digests are verified."
-msgstr "All declared revision state digests are verified."
+msgstr "Всички декларирани digest стойности на състоянието на ревизиите са проверени."
 
 #. OMI translation key: /modules/stateDigest/importLegacy
 msgctxt "/modules/stateDigest/importLegacy"
 msgid "This package contains revisions without state digests. They can be backfilled locally after import."
-msgstr "This package contains revisions without state digests. They can be backfilled locally after import."
+msgstr "Този пакет съдържа ревизии без digest на състоянието. Те могат да бъдат допълнени локално след импорта."
 
 #. OMI translation key: /modules/stateDigest/importInvalid
 msgctxt "/modules/stateDigest/importInvalid"
 msgid "The package contains an invalid or incompatible revision state digest."
-msgstr "The package contains an invalid or incompatible revision state digest."
+msgstr "Пакетът съдържа невалиден или несъвместим digest на състоянието на ревизията."
 
 #. OMI translation key: /modules/visualElements/insertMenu
 msgctxt "/modules/visualElements/insertMenu"
 msgid "Insert"
-msgstr "Insert"
+msgstr "Вмъкване"
 
 #. OMI translation key: /modules/visualElements/insertElement
 msgctxt "/modules/visualElements/insertElement"
 msgid "Insert element"
-msgstr "Insert element"
+msgstr "Вмъкване на елемент"
 
 #. OMI translation key: /modules/visualElements/image
 msgctxt "/modules/visualElements/image"
 msgid "Image"
-msgstr "Image"
+msgstr "Изображение"
 
 #. OMI translation key: /modules/visualElements/table
 msgctxt "/modules/visualElements/table"
 msgid "Table"
-msgstr "Table"
+msgstr "Таблица"
 
 #. OMI translation key: /modules/visualElements/chart
 msgctxt "/modules/visualElements/chart"
 msgid "Chart"
-msgstr "Chart"
+msgstr "Диаграма"
 
 #. OMI translation key: /modules/visualElements/equation
 msgctxt "/modules/visualElements/equation"
 msgid "Equation"
-msgstr "Equation"
+msgstr "Уравнение"
 
 #. OMI translation key: /modules/visualElements/import
 msgctxt "/modules/visualElements/import"
 msgid "Import"
-msgstr "Import"
+msgstr "Импорт"
 
 #. OMI translation key: /modules/visualElements/paste
 msgctxt "/modules/visualElements/paste"
 msgid "Paste from Word / Excel"
-msgstr "Paste from Word / Excel"
+msgstr "Поставяне от Word / Excel"
 
 #. OMI translation key: /modules/visualElements/pasteHint
 msgctxt "/modules/visualElements/pasteHint"
 msgid "Paste a table, image or equation here from Word, Excel or another application."
-msgstr "Paste a table, image or equation here from Word, Excel or another application."
+msgstr "Поставете тук таблица, изображение или уравнение от Word, Excel или друго приложение."
 
 #. OMI translation key: /modules/visualElements/importing
 msgctxt "/modules/visualElements/importing"
 msgid "Importing…"
-msgstr "Importing…"
+msgstr "Импортиране…"
 
 #. OMI translation key: /modules/visualElements/importFailed
 msgctxt "/modules/visualElements/importFailed"
 msgid "The file could not be imported."
-msgstr "The file could not be imported."
+msgstr "Файлът не можа да бъде импортиран."
 
 #. OMI translation key: /modules/visualElements/noImportableElements
 msgctxt "/modules/visualElements/noImportableElements"
 msgid "No supported visual elements were found."
-msgstr "No supported visual elements were found."
+msgstr "Не са намерени поддържани визуални елементи."
 
 #. OMI translation key: /modules/visualElements/chooseFile
 msgctxt "/modules/visualElements/chooseFile"
 msgid "Choose file"
-msgstr "Choose file"
+msgstr "Избор на файл"
 
 #. OMI translation key: /modules/visualElements/caption
 msgctxt "/modules/visualElements/caption"
 msgid "Caption"
-msgstr "Caption"
+msgstr "Надпис"
 
 #. OMI translation key: /modules/visualElements/altText
 msgctxt "/modules/visualElements/altText"
 msgid "Alternative text"
-msgstr "Alternative text"
+msgstr "Алтернативен текст"
 
 #. OMI translation key: /modules/visualElements/chartType
 msgctxt "/modules/visualElements/chartType"
 msgid "Chart type"
-msgstr "Chart type"
+msgstr "Тип диаграма"
 
 #. OMI translation key: /modules/visualElements/chartBar
 msgctxt "/modules/visualElements/chartBar"
 msgid "Bar"
-msgstr "Bar"
+msgstr "Стълбовидна"
 
 #. OMI translation key: /modules/visualElements/chartLine
 msgctxt "/modules/visualElements/chartLine"
 msgid "Line"
-msgstr "Line"
+msgstr "Линейна"
 
 #. OMI translation key: /modules/visualElements/chartPie
 msgctxt "/modules/visualElements/chartPie"
 msgid "Pie"
-msgstr "Pie"
+msgstr "Кръгова"
 
 #. OMI translation key: /modules/visualElements/chartScatter
 msgctxt "/modules/visualElements/chartScatter"
 msgid "Scatter"
-msgstr "Scatter"
+msgstr "Точкова"
 
 #. OMI translation key: /modules/visualElements/chartTitle
 msgctxt "/modules/visualElements/chartTitle"
 msgid "Chart title"
-msgstr "Chart title"
+msgstr "Заглавие на диаграмата"
 
 #. OMI translation key: /modules/visualElements/equationLatex
 msgctxt "/modules/visualElements/equationLatex"
 msgid "LaTeX source"
-msgstr "LaTeX source"
+msgstr "LaTeX изходен текст"
 
 #. OMI translation key: /modules/visualElements/equationLabel
 msgctxt "/modules/visualElements/equationLabel"
 msgid "Equation label"
-msgstr "Equation label"
+msgstr "Етикет на уравнението"
 
 #. OMI translation key: /modules/visualElements/addRow
 msgctxt "/modules/visualElements/addRow"
 msgid "Add row"
-msgstr "Add row"
+msgstr "Добавяне на ред"
 
 #. OMI translation key: /modules/visualElements/addColumn
 msgctxt "/modules/visualElements/addColumn"
 msgid "Add column"
-msgstr "Add column"
+msgstr "Добавяне на колона"
 
 #. OMI translation key: /modules/visualElements/removeRow
 msgctxt "/modules/visualElements/removeRow"
 msgid "Remove last row"
-msgstr "Remove last row"
+msgstr "Премахване на последния ред"
 
 #. OMI translation key: /modules/visualElements/removeColumn
 msgctxt "/modules/visualElements/removeColumn"
 msgid "Remove last column"
-msgstr "Remove last column"
+msgstr "Премахване на последната колона"
 
 #. OMI translation key: /modules/visualElements/createChart
 msgctxt "/modules/visualElements/createChart"
 msgid "Create chart from table"
-msgstr "Create chart from table"
+msgstr "Създаване на диаграма от таблица"
 
 #. OMI translation key: /modules/visualElements/deleteElement
 msgctxt "/modules/visualElements/deleteElement"
 msgid "Delete element"
-msgstr "Delete element"
+msgstr "Изтриване на елемент"
 
 #. OMI translation key: /modules/visualElements/confirmDelete
 msgctxt "/modules/visualElements/confirmDelete"
 msgid "Delete this element from the manuscript?"
-msgstr "Delete this element from the manuscript?"
+msgstr "Да се изтрие ли този елемент от ръкописа?"
 
 #. OMI translation key: /modules/visualElements/source
 msgctxt "/modules/visualElements/source"
 msgid "Source data"
-msgstr "Source data"
+msgstr "Изходни данни"
 
 #. OMI translation key: /modules/visualElements/emptyChart
 msgctxt "/modules/visualElements/emptyChart"
 msgid "Add numeric source data to render the chart."
-msgstr "Add numeric source data to render the chart."
+msgstr "Добавете числови изходни данни, за да се визуализира диаграмата."
 
 #. OMI translation key: /modules/visualElements/importedFrom
 msgctxt "/modules/visualElements/importedFrom"
 msgid "Imported from"
-msgstr "Imported from"
+msgstr "Импортирано от"
 
 #. OMI translation key: /modules/visualElements/fileFormats
 msgctxt "/modules/visualElements/fileFormats"
 msgid "Images, DOCX, XLSX, CSV/TSV, HTML and TeX are supported."
-msgstr "Images, DOCX, XLSX, CSV/TSV, HTML and TeX are supported."
+msgstr "Поддържат се изображения, DOCX, XLSX, CSV/TSV, HTML и TeX."
 
