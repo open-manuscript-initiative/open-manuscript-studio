@@ -12,10 +12,11 @@ const policyFile = path.join(root, 'locale', 'translation-status.json');
 const policy = JSON.parse(await fs.readFile(policyFile, 'utf8'));
 const referenceLocale = policy.referenceLocale ?? 'en';
 const completeLocales = new Set(policy.completeLocales ?? []);
-const identicalAllowlist = new Set(policy.identicalAllowlist ?? []);
+const globalIdenticalAllowlist = new Set(policy.identicalAllowlist ?? []);
+const identicalAllowlistByLocale = policy.identicalAllowlistByLocale ?? {};
 
 const localeDirs = (await fs.readdir(poRoot, { withFileTypes: true }))
-  .filter((entry) => entry.isDirectory())
+  .filter((entry) => entry.isDirectory() && entry.name !== 'pending')
   .map((entry) => entry.name)
   .sort();
 
@@ -47,6 +48,7 @@ for (const locale of localeDirs) {
   const duplicates = entries.length - byPointer.size;
   const missing = [...expectedPointers].filter((pointer) => !byPointer.has(pointer));
   const extra = [...byPointer.keys()].filter((pointer) => !expectedPointers.has(pointer));
+  const localeAllowlist = new Set(identicalAllowlistByLocale[locale] ?? []);
 
   const empty = [];
   const stale = [];
@@ -65,7 +67,8 @@ for (const locale of localeDirs) {
     } else if (
       locale !== referenceLocale &&
       entry.translation === referenceEntry.source &&
-      !identicalAllowlist.has(pointer)
+      !globalIdenticalAllowlist.has(pointer) &&
+      !localeAllowlist.has(pointer)
     ) {
       identical.push(pointer);
     }
