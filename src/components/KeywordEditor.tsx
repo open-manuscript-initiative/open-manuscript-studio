@@ -12,6 +12,7 @@ import {
 } from '../app/localizedMetadataActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { useContentLanguagePreferences } from '../languages/languagePreferences';
 import {
   addKeywords,
   removeKeyword,
@@ -20,10 +21,9 @@ import '../styles/scholarly-metadata.css';
 import type { OmiLocale } from '../types/omi';
 import { ScholarlyMetadataPanel } from './ScholarlyMetadataPanel';
 
-const COMMON_METADATA_LOCALES = ['hu', 'en', 'de'] as const;
-
 export function KeywordEditor() {
   const { t } = useTranslation();
+  const { metadataLanguages } = useContentLanguagePreferences();
   const manuscript = useStudioStore((state) => state.manuscript);
   const [metadataLocale, setMetadataLocale] = useState<OmiLocale>(
     manuscript.locale,
@@ -41,16 +41,24 @@ export function KeywordEditor() {
   const locales = useMemo(() => {
     const values = new Set<string>([
       manuscript.locale,
-      ...COMMON_METADATA_LOCALES,
+      ...metadataLanguages,
       ...Object.keys(manuscript.abstracts ?? {}),
       ...Object.keys(manuscript.keywordsByLocale ?? {}),
     ]);
     return [...values];
   }, [
     manuscript.locale,
+    metadataLanguages,
     manuscript.abstracts,
     manuscript.keywordsByLocale,
   ]);
+
+  useEffect(() => {
+    if (!locales.includes(metadataLocale)) {
+      setMetadataLocale(locales[0] ?? manuscript.locale);
+      setDraft('');
+    }
+  }, [locales, metadataLocale, manuscript.locale]);
 
   const keywords =
     manuscript.keywordsByLocale?.[metadataLocale] ??
