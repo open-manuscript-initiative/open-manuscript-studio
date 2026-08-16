@@ -1,0 +1,75 @@
+name: Apply Danish PO translation
+
+on:
+  push:
+    branches:
+      - agent/po-localization-pipeline
+    paths:
+      - '.github/workflows/apply-da-po-translation.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/po-localization-pipeline
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Fetch Danish module translations
+        run: |
+          git fetch origin agent/unified-i18n-all
+          git show origin/agent/unified-i18n-all:scripts/i18n-module-translations/da.json > /tmp/da.json
+      - name: Seed Danish core translations missing from legacy module dictionary
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const p = 'locale/pending/da.json';
+          const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+          const translations = {
+            '/navigation/metadata': 'Metadata',
+            '/notes/note': 'Note',
+            '/citations/citation': 'Citation',
+            '/citations/resourceTypes/preprint': 'Preprint',
+            '/citations/resourceTypes/software': 'Software',
+            '/citations/resourceTypes/standard': 'Standard',
+            '/citations/locators/folio': 'Folio',
+            '/contributors/roles/software': 'Software',
+            '/history/revision': 'Revision',
+            '/editor/addNote': 'Note',
+            '/editor/addCitation': 'Citation'
+          };
+          let filled = 0;
+          for (const e of data.entries) {
+            if (Object.prototype.hasOwnProperty.call(translations, e.key)) {
+              e.translation = translations[e.key];
+              filled++;
+            }
+          }
+          fs.writeFileSync(p, JSON.stringify(data, null, 2) + '\n');
+          console.log(`Seeded ${filled} Danish core translations.`);
+          NODE
+      - name: Fill pending Danish translations
+        run: node scripts/fill-pending-from-legacy-module-translations.mjs --locale=da --legacy=/tmp/da.json
+      - run: node scripts/apply-pending-po-translations.mjs --locale=da
+      - run: npm run i18n:po:compile
+      - run: npm run i18n:validate-json
+      - run: npm run i18n:po:audit
+      - run: node scripts/export-pending-po-translations.mjs --locale=da
+      - name: Show residual candidates
+        run: node -e "const p=require('./locale/pending/da.json'); console.log('Danish residual:',p.pendingCount); for(const e of p.entries) console.log(e.key,'=>',JSON.stringify(e.source));"
+      - name: Commit Danish catalogs
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add locale/da/studio.po locale/pending/da.json src/i18n/locales/da/studio.json
+          git commit -m 'Apply Danish PO translations [skip ci]' || exit 0
+          git push origin HEAD:agent/po-localization-pipeline
