@@ -1,4 +1,5 @@
 import type {
+  IntegrationAuthenticationMode,
   IntegrationPermission,
   IntegrationProviderDescriptor,
   IntegrationProviderKind,
@@ -11,6 +12,7 @@ export interface IntegrationCatalogEntry extends IntegrationProviderDescriptor {
 }
 
 const permissions = (...items: IntegrationPermission[]) => items;
+const auth = (...items: IntegrationAuthenticationMode[]) => items;
 
 export const integrationCatalog: IntegrationCatalogEntry[] = [
   {
@@ -20,7 +22,10 @@ export const integrationCatalog: IntegrationCatalogEntry[] = [
     description: 'Machine translation provider for selections, blocks, sections, and manuscript language variants.',
     categoryLabel: 'Translation',
     permissions: permissions('document.read', 'document.suggest'),
+    authenticationModes: auth('server_secret', 'user_api_key'),
+    preferredAuthenticationMode: 'server_secret',
     requiresServerSecret: true,
+    supportsPerUserAuthentication: true,
     configurable: true,
     status: 'available',
   },
@@ -31,7 +36,10 @@ export const integrationCatalog: IntegrationCatalogEntry[] = [
     description: 'Provider-neutral AI endpoint for language editing, summarisation, metadata and citation assistance.',
     categoryLabel: 'AI',
     permissions: permissions('document.read', 'document.suggest', 'metadata.read'),
+    authenticationModes: auth('server_secret', 'user_api_key', 'oauth2'),
+    preferredAuthenticationMode: 'server_secret',
     requiresServerSecret: true,
+    supportsPerUserAuthentication: true,
     configurable: true,
     status: 'planned',
   },
@@ -42,6 +50,8 @@ export const integrationCatalog: IntegrationCatalogEntry[] = [
     description: 'Scoped assistants for language editing, metadata generation, summarisation and citation checks.',
     categoryLabel: 'AI agents',
     permissions: permissions('document.read', 'document.suggest', 'metadata.read'),
+    authenticationModes: auth('none'),
+    preferredAuthenticationMode: 'none',
     requiresServerSecret: false,
     status: 'planned',
   },
@@ -52,6 +62,8 @@ export const integrationCatalog: IntegrationCatalogEntry[] = [
     description: 'Publishing-system integration for manuscript exchange, assignments and editorial workflow.',
     categoryLabel: 'Publishing',
     permissions: permissions('document.read', 'document.write', 'metadata.read', 'metadata.write', 'files.read', 'files.write'),
+    authenticationModes: auth('integration_token'),
+    preferredAuthenticationMode: 'integration_token',
     requiresServerSecret: false,
     status: 'connected',
   },
@@ -62,7 +74,10 @@ export const integrationCatalog: IntegrationCatalogEntry[] = [
     description: 'Researcher identity and profile linking using ORCID authentication and identifiers.',
     categoryLabel: 'Identity',
     permissions: permissions('metadata.read', 'metadata.write'),
+    authenticationModes: auth('oauth2'),
+    preferredAuthenticationMode: 'oauth2',
     requiresServerSecret: true,
+    supportsPerUserAuthentication: true,
     configurable: true,
     status: 'planned',
   },
@@ -73,7 +88,10 @@ export const integrationCatalog: IntegrationCatalogEntry[] = [
     description: 'Pluggable storage providers for synchronized manuscript files and backups.',
     categoryLabel: 'Storage',
     permissions: permissions('files.read', 'files.write'),
+    authenticationModes: auth('oauth2', 'oidc'),
+    preferredAuthenticationMode: 'oauth2',
     requiresServerSecret: true,
+    supportsPerUserAuthentication: true,
     configurable: true,
     status: 'planned',
   },
