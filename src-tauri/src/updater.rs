@@ -1,7 +1,7 @@
 #[cfg(desktop)]
 use serde::Serialize;
 #[cfg(desktop)]
-use tauri::{AppHandle, Runtime};
+use tauri::{AppHandle, Manager, Runtime};
 #[cfg(desktop)]
 use tauri_plugin_updater::UpdaterExt;
 
@@ -53,7 +53,7 @@ pub async fn check_for_update<R: Runtime>(app: AppHandle<R>) -> Result<Option<De
 
     Ok(Some(DesktopUpdateInfo {
         current_version,
-        version: update.version.clone(),
+        version: update.version.to_string(),
         date: update.date.map(|value| value.to_string()),
         body: update.body.clone(),
     }))
