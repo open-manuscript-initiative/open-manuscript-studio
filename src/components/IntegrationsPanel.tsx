@@ -6,12 +6,18 @@ import {
   ShieldCheck,
   Sparkles,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { useTranslation } from '../i18n';
 import {
   integrationCatalog,
   type IntegrationCatalogEntry,
 } from '../integrations/registry';
+import type { IntegrationProviderStatus } from '../integrations/contracts';
+import {
+  getIntegrationStatus,
+  testIntegrationConnection,
+} from '../services/integrationApi';
 import './IntegrationsPanel.css';
 
 export function IntegrationsPanel() {
@@ -52,7 +58,52 @@ function IntegrationCard({
   locale: string;
 }) {
   const copy = getCopy(locale);
-  const status = copy.status[entry.status];
+  const [expanded, setExpanded] = useState(false);
+  const [remoteStatus, setRemoteStatus] = useState<IntegrationProviderStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (entry.id !== 'deepl' || !expanded) return;
+    let cancelled = false;
+    setBusy(true);
+    setError('');
+    void getIntegrationStatus(entry.id)
+      .then((status) => {
+        if (!cancelled) setRemoteStatus(status);
+      })
+      .catch((reason: unknown) => {
+        if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason));
+      })
+      .finally(() => {
+        if (!cancelled) setBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [entry.id, expanded]);
+
+  const catalogStatus = copy.status[entry.status];
+  const statusLabel = remoteStatus
+    ? remoteStatus.configured
+      ? remoteStatus.healthy === false
+        ? copy.status.error
+        : copy.status.connected
+      : copy.status.notConfigured
+    : catalogStatus;
+
+  async function testConnection(): Promise<void> {
+    setBusy(true);
+    setError('');
+    try {
+      const status = await testIntegrationConnection(entry.id);
+      setRemoteStatus(status);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <article className="omi-integration-card">
@@ -65,7 +116,7 @@ function IntegrationCard({
           <h4>{entry.displayName}</h4>
         </div>
         <span className={`omi-integration-status omi-integration-status--${entry.status}`}>
-          {status}
+          {statusLabel}
         </span>
       </div>
 
@@ -86,16 +137,38 @@ function IntegrationCard({
 
       <div className="omi-integration-card__actions">
         {entry.configurable ? (
-          <button type="button" className="studio-menu-primary-action" disabled={entry.id !== 'deepl'}>
+          <button
+            type="button"
+            className="studio-menu-primary-action"
+            disabled={entry.id !== 'deepl'}
+            onClick={() => entry.id === 'deepl' && setExpanded((value) => !value)}
+          >
             {entry.id === 'deepl' ? copy.configure : copy.comingSoon}
           </button>
         ) : null}
-        {entry.id === 'deepl' ? (
-          <button type="button" className="studio-menu-secondary-action" disabled>
-            {copy.testConnection}
-          </button>
-        ) : null}
       </div>
+
+      {entry.id === 'deepl' && expanded ? (
+        <div className="omi-integration-config">
+          <strong>{copy.deeplConfiguration}</strong>
+          <p>{copy.deeplConfigurationDescription}</p>
+          <dl>
+            <div><dt>{copy.configured}</dt><dd>{remoteStatus?.configured ? copy.yes : copy.no}</dd></div>
+            <div><dt>{copy.enabled}</dt><dd>{remoteStatus?.enabled ? copy.yes : copy.no}</dd></div>
+            <div><dt>{copy.health}</dt><dd>{remoteStatus?.healthy === true ? copy.healthy : remoteStatus?.healthy === false ? copy.unhealthy : copy.unknown}</dd></div>
+          </dl>
+          {remoteStatus?.message ? <p role="status">{remoteStatus.message}</p> : null}
+          {error ? <p className="omi-integration-error" role="alert">{error}</p> : null}
+          <button
+            type="button"
+            className="studio-menu-secondary-action"
+            disabled={busy || !remoteStatus?.configured}
+            onClick={() => void testConnection()}
+          >
+            {busy ? copy.checking : copy.testConnection}
+          </button>
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -127,7 +200,10 @@ function getCopy(locale: string) {
       configure: 'Beállítás',
       testConnection: 'Kapcsolat tesztelése',
       comingSoon: 'Hamarosan',
-      status: { available: 'Elérhető', planned: 'Tervezett', connected: 'Kapcsolódva' },
+      deeplConfiguration: 'DeepL konfiguráció',
+      deeplConfigurationDescription: 'A hitelesítő kulcsot a Studio API szerverén kell beállítani. A böngésző csak a konfiguráció állapotát kérdezi le.',
+      configured: 'Konfigurálva', enabled: 'Engedélyezve', health: 'Kapcsolat', yes: 'Igen', no: 'Nem', healthy: 'Rendben', unhealthy: 'Hiba', unknown: 'Ismeretlen', checking: 'Ellenőrzés…',
+      status: { available: 'Elérhető', planned: 'Tervezett', connected: 'Kapcsolódva', notConfigured: 'Nincs beállítva', error: 'Hiba' },
     };
   }
 
@@ -142,7 +218,10 @@ function getCopy(locale: string) {
       configure: 'Konfigurieren',
       testConnection: 'Verbindung testen',
       comingSoon: 'Demnächst',
-      status: { available: 'Verfügbar', planned: 'Geplant', connected: 'Verbunden' },
+      deeplConfiguration: 'DeepL-Konfiguration',
+      deeplConfigurationDescription: 'Der API-Schlüssel wird auf dem Studio-API-Server konfiguriert. Der Browser liest nur den Konfigurationsstatus.',
+      configured: 'Konfiguriert', enabled: 'Aktiviert', health: 'Verbindung', yes: 'Ja', no: 'Nein', healthy: 'In Ordnung', unhealthy: 'Fehler', unknown: 'Unbekannt', checking: 'Prüfung…',
+      status: { available: 'Verfügbar', planned: 'Geplant', connected: 'Verbunden', notConfigured: 'Nicht konfiguriert', error: 'Fehler' },
     };
   }
 
@@ -156,6 +235,9 @@ function getCopy(locale: string) {
     configure: 'Configure',
     testConnection: 'Test connection',
     comingSoon: 'Coming soon',
-    status: { available: 'Available', planned: 'Planned', connected: 'Connected' },
+    deeplConfiguration: 'DeepL configuration',
+    deeplConfigurationDescription: 'The credential is configured on the Studio API server. The browser only reads configuration status.',
+    configured: 'Configured', enabled: 'Enabled', health: 'Connection', yes: 'Yes', no: 'No', healthy: 'Healthy', unhealthy: 'Error', unknown: 'Unknown', checking: 'Checking…',
+    status: { available: 'Available', planned: 'Planned', connected: 'Connected', notConfigured: 'Not configured', error: 'Error' },
   };
 }
