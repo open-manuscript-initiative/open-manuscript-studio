@@ -9,6 +9,7 @@ import {
   portugueseHelp,
   spanishHelp,
 } from './helpWesternEurope';
+import { danishHelp, swedishHelp } from './helpNorthernEurope';
 import type { SupportedLocale } from './types';
 
 const fullHelpByLocale: Partial<Record<string, HelpCopy>> = {
@@ -17,6 +18,8 @@ const fullHelpByLocale: Partial<Record<string, HelpCopy>> = {
   pt: portugueseHelp,
   nl: dutchHelp,
   pl: polishHelp,
+  da: danishHelp,
+  sv: swedishHelp,
 };
 
 export function getLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy {
