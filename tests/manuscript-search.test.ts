@@ -3,7 +3,11 @@ import test from 'node:test';
 
 import {
   countMatchesInBlockContent,
+  countMatchesInText,
+  findTextMatchRanges,
   replaceInBlockContent,
+  replaceMatchInBlockContent,
+  replaceMatchInText,
 } from '../src/model/manuscriptSearch.ts';
 
 test('counts matches in legacy plain-text block content', () => {
@@ -39,6 +43,40 @@ test('searches only Tiptap text nodes and preserves attributes', () => {
   assert.equal(parsed.content[0].content[0].text, 'szilva ');
   assert.deepEqual(parsed.content[0].content[0].marks, [{ type: 'italic' }]);
   assert.equal(parsed.content[0].content[1].text, 'körte szilva');
+});
+
+test('replaces only the selected rich-text occurrence', () => {
+  const content = JSON.stringify({
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'alma ', marks: [{ type: 'italic' }] },
+          { type: 'text', text: 'alma alma', marks: [{ type: 'bold' }] },
+        ],
+      },
+    ],
+  });
+
+  const result = replaceMatchInBlockContent(content, 'alma', 'körte', 1);
+  assert.equal(result.replacements, 1);
+  const parsed = JSON.parse(result.content);
+  assert.equal(parsed.content[0].content[0].text, 'alma ');
+  assert.equal(parsed.content[0].content[1].text, 'körte alma');
+  assert.deepEqual(parsed.content[0].content[1].marks, [{ type: 'bold' }]);
+});
+
+test('finds text ranges for result navigation', () => {
+  assert.deepEqual(findTextMatchRanges('alma körte alma', 'alma'), [
+    { start: 0, end: 4 },
+    { start: 11, end: 15 },
+  ]);
+  assert.equal(countMatchesInText('Alma alma', 'alma'), 2);
+  assert.deepEqual(replaceMatchInText('alma alma', 'alma', 'körte', 1), {
+    text: 'alma körte',
+    replacements: 1,
+  });
 });
 
 test('whole-word matching uses Unicode letter and number boundaries', () => {
