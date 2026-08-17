@@ -1,0 +1,9 @@
+{
+  "locale": "nl",
+  "byPointer": {
+    "/navigation/metadata": "Metadata",
+    "/studio/navigation/document": "Document",
+    "/citations/locator": "Plaatsaanduiding",
+    "/citations/resourceTypes/manuscript": "Manuscript"
+  }
+}
