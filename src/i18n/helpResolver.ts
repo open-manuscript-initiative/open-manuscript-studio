@@ -10,5 +10,5 @@ export function getLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy
   const additional = getAdditionalHelpCopy(locale);
   if (additional) return enrichAdditionalHelp(locale, additional);
 
-  return getHelpCopy(locale as SupportedLocale);
+  return enrichAdditionalHelp(locale, getHelpCopy(locale as SupportedLocale));
 }
