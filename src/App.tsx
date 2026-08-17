@@ -11,6 +11,7 @@ import { useStudioStore } from './app/useStudioStore';
 import { AppLayout } from './components/AppLayout';
 import { EditorPane } from './components/EditorPane';
 import { ReviewPortal } from './components/ReviewPortal';
+import { SearchReplaceOverlay } from './components/SearchReplaceOverlay';
 import { StudioMenuWithHelp } from './components/StudioMenuWithHelp';
 import {
   clearOjsLaunchPayload,
@@ -169,6 +170,8 @@ function StudioApplication() {
       <div className="focus-workspace">
         <EditorPane ojsContributors={ojsContributors} />
       </div>
+
+      <SearchReplaceOverlay />
 
       <StudioMenuWithHelp
         open={menuOpen}
