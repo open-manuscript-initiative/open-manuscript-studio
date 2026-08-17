@@ -39,6 +39,11 @@
     ],
     "category": "Productivity",
     "shortDescription": "Portable scholarly manuscript authoring and publishing studio",
-    "longDescription": "Open Manuscript Studio is the reference authoring environment for portable, structured scholarly manuscripts using the Open Manuscript Initiative model."
+    "longDescription": "Open Manuscript Studio is the reference authoring environment for portable, structured scholarly manuscripts using the Open Manuscript Initiative model.",
+    "windows": {
+      "wix": {
+        "version": "0.1.0.2"
+      }
+    }
   }
 }
