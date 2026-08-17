@@ -64,6 +64,12 @@ test('every locale documents current signature and publisher-profile workflows',
     assert.match(corpus, /css/i, `${locale}: publisher export CSS guidance missing`);
     assert.match(corpus, /ojs/i, `${locale}: OJS integration guidance missing`);
     assert.match(corpus, /docx/i, `${locale}: DOCX import guidance missing`);
-    assert.ok(copy.topics.some((topic) => /signature|signatur|firma|podpis|parakst|paraš|allekir|υπογραφ|подпис|síni|potpis|semnătur|assinatura|handtekening/i.test(topic.title + ' ' + topic.body)), `${locale}: author-signature topic missing`);
+
+    const signatureTopic = copy.topics.find((topic) => {
+      const topicCorpus = [topic.title, topic.body, ...(topic.tips ?? [])].join('\n');
+      return /orcid/i.test(topicCorpus) && /webauthn|passkey/i.test(topicCorpus);
+    });
+
+    assert.ok(signatureTopic, `${locale}: author-signature topic missing`);
   }
 });
