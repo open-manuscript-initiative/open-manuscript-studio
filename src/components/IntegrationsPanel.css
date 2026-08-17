@@ -105,6 +105,44 @@
   margin-top: auto;
 }
 
+.omi-integration-config {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 3%, transparent);
+}
+
+.omi-integration-config dl {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.omi-integration-config dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.omi-integration-config dt {
+  opacity: 0.72;
+}
+
+.omi-integration-config dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.omi-integration-error {
+  padding: 8px 10px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  white-space: pre-wrap;
+}
+
 @media (max-width: 760px) {
   .omi-integrations-grid {
     grid-template-columns: 1fr;
