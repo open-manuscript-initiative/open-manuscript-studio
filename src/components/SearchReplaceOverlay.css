@@ -1,0 +1,119 @@
+.omi-search-replace {
+  position: fixed;
+  top: 76px;
+  right: 24px;
+  z-index: 1200;
+  width: min(520px, calc(100vw - 32px));
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 12px;
+  background: var(--omi-surface, #ffffff);
+  box-shadow: 0 16px 42px rgb(0 0 0 / 16%);
+}
+
+.omi-search-replace__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.omi-search-replace__row--replace {
+  margin-top: 8px;
+  grid-template-columns: 17px minmax(0, 1fr) auto;
+}
+
+.omi-search-replace input[type='text'],
+.omi-search-replace__row > input:not([type]) {
+  width: 100%;
+}
+
+.omi-search-replace__row input {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+}
+
+.omi-search-replace__count {
+  min-width: 72px;
+  font-size: 0.82rem;
+  opacity: 0.72;
+  text-align: right;
+}
+
+.omi-search-replace__icon-button,
+.omi-search-replace__action {
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.omi-search-replace__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+}
+
+.omi-search-replace__action {
+  padding: 8px 12px;
+  font-weight: 600;
+}
+
+.omi-search-replace__action:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.omi-search-replace__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 0.82rem;
+}
+
+.omi-search-replace__options label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.omi-search-replace__options > span {
+  margin-left: auto;
+  opacity: 0.68;
+}
+
+@media (max-width: 640px) {
+  .omi-search-replace {
+    top: 64px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+  }
+
+  .omi-search-replace__row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .omi-search-replace__count {
+    grid-column: 2 / 3;
+    grid-row: 2;
+    text-align: left;
+  }
+
+  .omi-search-replace__row--replace {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .omi-search-replace__indent {
+    display: none;
+  }
+}
