@@ -1,0 +1,16 @@
+{
+  "locale":"fr",
+  "byPointer":{
+    "/navigation/documents":"Documents",
+    "/studio/navigation/document":"Document",
+    "/studio/document/annotations":"Annotations",
+    "/notes/note":"Note",
+    "/citations/occurrences":"citations",
+    "/citations/citation":"Citation",
+    "/citations/locators/section":"Section",
+    "/citations/locators/figure":"Figure",
+    "/contributors/affiliation":"Affiliation",
+    "/editor/addNote":"Note",
+    "/editor/addCitation":"Citation"
+  }
+}
