@@ -1,4 +1,4 @@
-import { CircleHelp } from 'lucide-react';
+import { CircleHelp, Plug } from 'lucide-react';
 import {
   useEffect,
   useState,
@@ -10,6 +10,7 @@ import { getLocalizedHelpCopy } from '../i18n/helpResolver';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import { ExportFormatsPanel } from './ExportFormatsPanel';
 import { HelpPanel } from './HelpPanel';
+import { IntegrationsPanel } from './IntegrationsPanel';
 import { StudioMenu } from './StudioMenu';
 import './StudioMenuWithHelp.css';
 
@@ -29,7 +30,9 @@ export function StudioMenuWithHelp({
 }: StudioMenuWithHelpProps) {
   const { locale } = useTranslation();
   const copy = getLocalizedHelpCopy(locale);
+  const integrationsLabel = getIntegrationsLabel(locale);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [integrationsOpen, setIntegrationsOpen] = useState(false);
   const [navigationHost, setNavigationHost] = useState<HTMLElement | null>(null);
   const [contentHost, setContentHost] = useState<HTMLElement | null>(null);
   const [exportHost, setExportHost] = useState<HTMLElement | null>(null);
@@ -37,6 +40,7 @@ export function StudioMenuWithHelp({
   useEffect(() => {
     if (!open) {
       setHelpOpen(false);
+      setIntegrationsOpen(false);
       setNavigationHost(null);
       setContentHost(null);
       setExportHost(null);
@@ -57,20 +61,20 @@ export function StudioMenuWithHelp({
   useEffect(() => {
     if (!navigationHost) return;
 
-    const closeHelpOnOtherNavigation = (event: MouseEvent) => {
+    const closePortalOnOtherNavigation = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       const button = target?.closest<HTMLButtonElement>(
         '.studio-menu-nav-button',
       );
 
-      if (button && button.dataset.helpNavigation !== 'true') {
-        setHelpOpen(false);
-      }
+      if (!button) return;
+      if (button.dataset.helpNavigation !== 'true') setHelpOpen(false);
+      if (button.dataset.integrationsNavigation !== 'true') setIntegrationsOpen(false);
     };
 
-    navigationHost.addEventListener('click', closeHelpOnOtherNavigation);
+    navigationHost.addEventListener('click', closePortalOnOtherNavigation);
     return () => {
-      navigationHost.removeEventListener('click', closeHelpOnOtherNavigation);
+      navigationHost.removeEventListener('click', closePortalOnOtherNavigation);
     };
   }, [navigationHost]);
 
@@ -121,7 +125,7 @@ export function StudioMenuWithHelp({
   useEffect(() => {
     if (!contentHost) return;
 
-    if (helpOpen) {
+    if (helpOpen || integrationsOpen) {
       contentHost.classList.add('studio-menu-content--help-open');
     } else {
       contentHost.classList.remove('studio-menu-content--help-open');
@@ -130,7 +134,7 @@ export function StudioMenuWithHelp({
     return () => {
       contentHost.classList.remove('studio-menu-content--help-open');
     };
-  }, [contentHost, helpOpen]);
+  }, [contentHost, helpOpen, integrationsOpen]);
 
   return (
     <>
@@ -138,19 +142,49 @@ export function StudioMenuWithHelp({
 
       {navigationHost
         ? createPortal(
-            <button
-              type="button"
-              data-help-navigation="true"
-              className={`studio-menu-nav-button${
-                helpOpen ? ' studio-menu-nav-button--active' : ''
-              }`}
-              aria-current={helpOpen ? 'page' : undefined}
-              onClick={() => setHelpOpen(true)}
-            >
-              <CircleHelp size={18} aria-hidden="true" />
-              <span>{copy.navigation}</span>
-            </button>,
+            <>
+              <button
+                type="button"
+                data-integrations-navigation="true"
+                className={`studio-menu-nav-button${
+                  integrationsOpen ? ' studio-menu-nav-button--active' : ''
+                }`}
+                aria-current={integrationsOpen ? 'page' : undefined}
+                onClick={() => {
+                  setHelpOpen(false);
+                  setIntegrationsOpen(true);
+                }}
+              >
+                <Plug size={18} aria-hidden="true" />
+                <span>{integrationsLabel}</span>
+              </button>
+
+              <button
+                type="button"
+                data-help-navigation="true"
+                className={`studio-menu-nav-button${
+                  helpOpen ? ' studio-menu-nav-button--active' : ''
+                }`}
+                aria-current={helpOpen ? 'page' : undefined}
+                onClick={() => {
+                  setIntegrationsOpen(false);
+                  setHelpOpen(true);
+                }}
+              >
+                <CircleHelp size={18} aria-hidden="true" />
+                <span>{copy.navigation}</span>
+              </button>
+            </>,
             navigationHost,
+          )
+        : null}
+
+      {contentHost && integrationsOpen
+        ? createPortal(
+            <div className="studio-help-portal studio-integrations-portal">
+              <IntegrationsPanel />
+            </div>,
+            contentHost,
           )
         : null}
 
@@ -166,4 +200,34 @@ export function StudioMenuWithHelp({
       {exportHost ? createPortal(<ExportFormatsPanel />, exportHost) : null}
     </>
   );
+}
+
+function getIntegrationsLabel(locale: string): string {
+  const labels: Record<string, string> = {
+    bg: 'Интеграции',
+    cs: 'Integrace',
+    da: 'Integrationer',
+    de: 'Integrationen',
+    el: 'Ενσωματώσεις',
+    en: 'Integrations',
+    es: 'Integraciones',
+    et: 'Integratsioonid',
+    fi: 'Integraatiot',
+    fr: 'Intégrations',
+    ga: 'Comhtháthuithe',
+    hr: 'Integracije',
+    hu: 'Integrációk',
+    it: 'Integrazioni',
+    lt: 'Integracijos',
+    lv: 'Integrācijas',
+    mt: 'Integrazzjonijiet',
+    nl: 'Integraties',
+    pl: 'Integracje',
+    pt: 'Integrações',
+    ro: 'Integrări',
+    sk: 'Integrácie',
+    sl: 'Integracije',
+    sv: 'Integrationer',
+  };
+  return labels[locale] ?? labels.en;
 }
