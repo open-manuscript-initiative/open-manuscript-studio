@@ -62,13 +62,7 @@ for (const locale of localeDirs) {
       continue;
     }
 
-    const resolved = resolveReviewedTranslation({
-      locale,
-      pointer,
-      source: referenceEntry.source,
-      current: entry.translation,
-      overlay,
-    });
+    const resolved = resolveReviewedTranslation({locale,pointer,source:referenceEntry.source,current:entry.translation,overlay});
     if (resolved.reviewedByOverlay) reviewedOverlay += 1;
 
     if (
@@ -86,7 +80,6 @@ for (const locale of localeDirs) {
   const complete = completeLocales.has(locale);
   if (structural > 0) structuralFailures += 1;
   if (complete && identical.length > 0) completenessFailures += 1;
-
   rows.push({locale,total:expectedPointers.size,translated,percent,empty:empty.length,identical:identical.length,missing:missing.length,extra:extra.length,stale:stale.length,duplicates,complete,reviewedOverlay,identicalPointers:identical});
 }
 
@@ -110,12 +103,12 @@ console.log(`Reviewed overlay values applied: ${nonReferenceRows.reduce((sum,row
 console.log(`Empty translations: ${nonReferenceRows.reduce((sum,row)=>sum+row.empty,0)}`);
 console.log(`Structurally invalid locales: ${structuralFailures}`);
 
-if (process.argv.includes('--details')) {
-  for (const row of nonReferenceRows) {
-    if (!row.identicalPointers.length) continue;
-    console.log(`\n${row.locale}: identical-to-English candidates (${row.identicalPointers.length})`);
-    for (const pointer of row.identicalPointers) console.log(`  ${pointer}`);
-  }
+const detailsRequested = process.argv.includes('--details');
+for (const row of nonReferenceRows) {
+  if (!row.identicalPointers.length) continue;
+  if (!detailsRequested && !row.complete) continue;
+  console.log(`\n${row.locale}: unresolved English-identical candidates (${row.identicalPointers.length})`);
+  for (const pointer of row.identicalPointers) console.log(`  ${pointer}`);
 }
 
 if (structuralFailures > 0) throw new Error(`${structuralFailures} locale(s) failed PO structural validation.`);
