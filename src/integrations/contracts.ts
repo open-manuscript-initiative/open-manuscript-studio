@@ -7,6 +7,14 @@ export type IntegrationProviderKind =
   | 'identity'
   | 'scholarly-service';
 
+export type IntegrationAuthenticationMode =
+  | 'none'
+  | 'server_secret'
+  | 'user_api_key'
+  | 'oauth2'
+  | 'oidc'
+  | 'integration_token';
+
 export type IntegrationPermission =
   | 'document.read'
   | 'document.suggest'
@@ -25,7 +33,10 @@ export interface IntegrationProviderDescriptor {
   displayName: string;
   description: string;
   permissions: IntegrationPermission[];
+  authenticationModes: IntegrationAuthenticationMode[];
+  preferredAuthenticationMode: IntegrationAuthenticationMode;
   requiresServerSecret: boolean;
+  supportsPerUserAuthentication?: boolean;
   documentationUrl?: string;
 }
 
@@ -34,7 +45,17 @@ export interface IntegrationProviderStatus {
   enabled: boolean;
   configured: boolean;
   healthy?: boolean;
+  authenticationMode?: IntegrationAuthenticationMode;
+  connectedAccountLabel?: string;
   message?: string;
+}
+
+export interface IntegrationAuthenticationState {
+  providerId: string;
+  mode: IntegrationAuthenticationMode;
+  configured: boolean;
+  connected: boolean;
+  accountLabel?: string;
 }
 
 export interface TranslationRequest {
