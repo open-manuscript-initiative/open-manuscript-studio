@@ -16,6 +16,33 @@ interface HeaderProps {
   onOpenMenu: () => void;
 }
 
+const searchLabels: Record<string, string> = {
+  bg: 'Търсене',
+  cs: 'Hledat',
+  da: 'Søg',
+  de: 'Suchen',
+  el: 'Αναζήτηση',
+  en: 'Search',
+  es: 'Buscar',
+  et: 'Otsi',
+  fi: 'Haku',
+  fr: 'Rechercher',
+  ga: 'Cuardaigh',
+  hr: 'Pretraži',
+  hu: 'Keresés',
+  it: 'Cerca',
+  lt: 'Ieškoti',
+  lv: 'Meklēt',
+  mt: 'Fittex',
+  nl: 'Zoeken',
+  pl: 'Szukaj',
+  pt: 'Pesquisar',
+  ro: 'Căutare',
+  sk: 'Hľadať',
+  sl: 'Iskanje',
+  sv: 'Sök',
+};
+
 export function Header({ onOpenMenu }: HeaderProps) {
   const { t, locale } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
@@ -30,11 +57,7 @@ export function Header({ onOpenMenu }: HeaderProps) {
   const selectedSection = manuscript.sections.find(
     (section) => section.id === selectedSectionId,
   );
-  const searchLabel = locale === 'hu'
-    ? 'Keresés'
-    : locale === 'de'
-      ? 'Suchen'
-      : 'Search';
+  const searchLabel = searchLabels[locale] ?? searchLabels.en;
 
   const handleLogout = () => {
     void logout().catch(() => {
