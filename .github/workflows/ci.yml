@@ -43,8 +43,8 @@ jobs:
       - name: Audit PO translation completeness
         run: npm run i18n:po:audit
 
-      - name: Verify generated runtime locales are committed
-        run: git diff --exit-code -- src/i18n/locales
+      - name: Verify generated runtime locales
+        run: node scripts/verify-generated-runtime-locales.mjs
 
       - name: Run tests
         run: npm test
