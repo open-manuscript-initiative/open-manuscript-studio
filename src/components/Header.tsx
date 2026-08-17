@@ -3,6 +3,7 @@ import {
   Clock3,
   LogOut,
   Menu,
+  Search,
 } from 'lucide-react';
 
 import { useStudioStore } from '../app/useStudioStore';
@@ -16,7 +17,7 @@ interface HeaderProps {
 }
 
 export function Header({ onOpenMenu }: HeaderProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
   const pendingChangeSet = useStudioStore(
     (state) => state.pendingChangeSet,
@@ -29,12 +30,27 @@ export function Header({ onOpenMenu }: HeaderProps) {
   const selectedSection = manuscript.sections.find(
     (section) => section.id === selectedSectionId,
   );
+  const searchLabel = locale === 'hu'
+    ? 'Keresés'
+    : locale === 'de'
+      ? 'Suchen'
+      : 'Search';
 
   const handleLogout = () => {
     void logout().catch(() => {
       // The auth store clears the local session in logout()'s finally block,
       // even if the server-side logout request cannot be completed.
     });
+  };
+
+  const handleSearch = () => {
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'f',
+        ctrlKey: true,
+        bubbles: true,
+      }),
+    );
   };
 
   return (
@@ -48,6 +64,16 @@ export function Header({ onOpenMenu }: HeaderProps) {
           onClick={onOpenMenu}
         >
           <Menu size={19} aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          className="focus-menu-button focus-search-button"
+          aria-label={searchLabel}
+          title={`${searchLabel} (Ctrl+F)`}
+          onClick={handleSearch}
+        >
+          <Search size={18} aria-hidden="true" />
         </button>
 
         <div className="focus-brand-lockup" aria-label="Open Manuscript Studio">
