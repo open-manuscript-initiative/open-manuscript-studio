@@ -1,0 +1,159 @@
+.omi-integrations-panel {
+  gap: 18px;
+}
+
+.omi-integrations-security-note {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+
+.omi-integrations-security-note p {
+  margin: 4px 0 0;
+  opacity: 0.76;
+}
+
+.omi-integrations-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.omi-integration-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 14px;
+}
+
+.omi-integration-card__header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.omi-integration-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+
+.omi-integration-card__category {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 0.76rem;
+  opacity: 0.64;
+}
+
+.omi-integration-card h4,
+.omi-integration-card p {
+  margin: 0;
+}
+
+.omi-integration-status {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  white-space: nowrap;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.omi-integration-status--connected,
+.omi-integration-status--available {
+  font-weight: 600;
+}
+
+.omi-integration-permissions {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.omi-integration-permissions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.omi-integration-permissions code {
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+  font-size: 0.75rem;
+}
+
+.omi-integration-secret-note {
+  font-size: 0.82rem;
+  opacity: 0.7;
+}
+
+.omi-integration-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.omi-integration-config {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 3%, transparent);
+}
+
+.omi-integration-config dl {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.omi-integration-config dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.omi-integration-config dt {
+  opacity: 0.72;
+}
+
+.omi-integration-config dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.omi-integration-error {
+  padding: 8px 10px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 760px) {
+  .omi-integrations-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .omi-integration-card__header {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .omi-integration-status {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
