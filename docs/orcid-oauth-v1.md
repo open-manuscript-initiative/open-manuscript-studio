@@ -1,23 +1,24 @@
-# ORCID OAuth v1
+# ORCID OpenID Connect v1
 
-Open Manuscript Studio supports authenticated ORCID iDs through the ORCID OAuth 2.0 authorization-code flow.
+Open Manuscript Studio authenticates ORCID iDs through the ORCID OpenID Connect authorization-code flow. Local e-mail/password authentication remains available as a fallback.
 
-## Scope of v1
+## Scope
 
-The first version keeps the existing e-mail/password authentication and adds ORCID as a federated sign-in identity. It supports:
+The integration supports:
 
-- discovering whether ORCID login is configured;
-- starting an ORCID authorization request with the `/authenticate` scope;
-- validating a single-use, time-limited OAuth `state` value;
-- exchanging the authorization code on the server;
+- provider discovery and live connection state;
+- ORCID authorization with the `openid` scope;
+- cryptographically random OAuth `state` and OpenID Connect `nonce` values;
+- server-side authorization-code exchange;
+- signed `id_token` validation against ORCID's discovered JWKS;
+- issuer, audience, expiry and nonce validation;
 - linking a verified ORCID iD to an existing Studio account;
-- showing the linked ORCID iD in the Studio Integrations panel;
-- disconnecting a linked ORCID identity from the authenticated Studio account;
-- signing in an account that already has a linked ORCID identity;
-- accepting assignment invitations through ORCID;
-- creating the normal Studio session cookie after successful ORCID authentication.
+- ORCID sign-in for an already linked account;
+- assignment invitations through ORCID;
+- displaying and disconnecting the linked ORCID iD in **Integrations → ORCID**;
+- normal ORCID accounts and accounts protected by ORCID two-factor authentication.
 
-The browser never receives `ORCID_CLIENT_SECRET`.
+ORCID performs password and 2FA verification on its own site. Studio never receives the ORCID password or second-factor secret.
 
 ## Endpoints
 
@@ -28,23 +29,29 @@ The browser never receives `ORCID_CLIENT_SECRET`.
 - `GET /api/auth/orcid/callback`
 - `DELETE /api/auth/orcid/link`
 
-`GET /api/auth/providers` reports whether ORCID is configured and, for an authenticated Studio session, whether the current account already has an ORCID identity linked. `DELETE /api/auth/orcid/link` is authenticated and idempotent: it removes the current account's ORCID identity link and clears the matching legacy `users.orcid` value, while leaving the local Studio account and password login intact.
+`GET /api/auth/providers` reports whether ORCID is configured and whether the current authenticated Studio account has a linked ORCID identity. `DELETE /api/auth/orcid/link` removes the current account's ORCID identity link while leaving the local Studio account and password login intact.
+
+## OpenID Connect security
+
+The authorization request uses `scope=openid` and sends both `state` and `nonce`. State and nonce are generated from cryptographically secure random bytes. Only SHA-256 digests are persisted in the short-lived OAuth state record.
+
+The callback exchanges the authorization code on the server and requires an `id_token`. Studio obtains ORCID's OpenID Provider metadata from `/.well-known/openid-configuration`, loads the advertised JWKS, and verifies the ID token signature and standard claims with JOSE. The token must have the expected ORCID issuer, the configured Studio client ID as audience, a valid lifetime, and the nonce originally generated for that authentication attempt.
+
+If the token exposes an `amr` authentication-method reference, Studio stores it as identity metadata. ORCID documents that member integrations can use this information to determine whether two-factor authentication was used. The integration itself does not require or bypass 2FA; it delegates the complete authentication ceremony to ORCID.
 
 ## Integrations panel
 
-The **Integrations → ORCID** card is available when this version is deployed. It reads live provider state from `GET /api/auth/providers` and distinguishes these states:
+The **Integrations → ORCID** card distinguishes these states:
 
 - **Not configured** — server-side ORCID client credentials are missing;
-- **Available** — ORCID OAuth is configured, but this Studio account has no linked ORCID iD;
+- **Available** — ORCID OpenID Connect is configured, but this Studio account has no linked ORCID iD;
 - **Connected** — the signed-in Studio account has a linked ORCID identity.
 
-The **Connect ORCID** action starts `GET /api/auth/orcid/start?mode=link`. Authentication and consent take place on ORCID, not inside Studio. When connected, the card displays the verified ORCID iD and exposes **Disconnect ORCID**, which calls `DELETE /api/auth/orcid/link`.
+The **Connect ORCID** action starts the linking flow. Once connected, the card displays the verified ORCID iD and offers **Disconnect ORCID**.
 
 ## ORCID Sandbox client registration
 
-ORCID recommends testing Public API integrations in the Sandbox before production. Sign in to the ORCID Sandbox, open **Developer Tools**, accept the Public API terms if requested, and register a new Public API application.
-
-Use these values for the Open Manuscript Studio test client:
+Test in the ORCID Sandbox before production. Register a Public API application with:
 
 **Name**
 
@@ -58,25 +65,15 @@ Open Manuscript Studio
 https://openmanuscript.org/
 ```
 
-**Application description**
-
-```text
-Open Manuscript Studio is an open-source scholarly manuscript editing environment developed by the Open Manuscript Initiative. The ORCID integration allows researchers to authenticate their ORCID iD and link that verified identifier to their Studio account. The first version requests only the ORCID /authenticate scope and does not write data to ORCID records.
-```
-
 **Redirect URI**
 
 ```text
 https://openmanuscript.org/api/auth/orcid/callback
 ```
 
-Register the full callback path, not only the domain. ORCID requires redirect URI matching and production redirect URIs must use HTTPS.
-
-After saving the application, ORCID displays a Client ID (normally beginning with `APP-`) and a Client Secret. The secret must be copied only to the server configuration; never place it in GitHub, frontend source code, a `VITE_*` variable, browser storage, screenshots, or public documentation.
+The callback URI registered at ORCID and `ORCID_REDIRECT_URI` must be identical.
 
 ## Sandbox server configuration
-
-Add the generated Sandbox credentials to the environment used by `omi-studio-api.service`:
 
 ```dotenv
 ORCID_CLIENT_ID=APP-REPLACE_WITH_SANDBOX_CLIENT_ID
@@ -85,11 +82,12 @@ ORCID_BASE_URL=https://sandbox.orcid.org
 ORCID_REDIRECT_URI=https://openmanuscript.org/api/auth/orcid/callback
 ```
 
-The callback URI registered at ORCID and `ORCID_REDIRECT_URI` must be identical.
-
-Restart the API after changing the environment:
+Install the updated server dependencies and restart the API:
 
 ```bash
+cd server
+npm install
+npm run build
 sudo systemctl restart omi-studio-api.service
 sudo systemctl status omi-studio-api.service --no-pager
 ```
@@ -100,61 +98,28 @@ Then verify provider discovery:
 curl -sS https://openmanuscript.org/api/auth/providers
 ```
 
-The response should contain:
+## End-to-end test, including 2FA
 
-```json
-{
-  "providers": {
-    "orcid": {
-      "enabled": true,
-      "label": "ORCID"
-    }
-  }
-}
-```
-
-Additional properties may also be present.
-
-## Sandbox end-to-end test
-
-1. Create or use an ORCID Sandbox test record. Sandbox identities are separate from production ORCID records.
-2. Open Open Manuscript Studio and sign in with an existing local Studio account.
+1. Create or use an ORCID Sandbox account and enable two-factor authentication on it.
+2. Sign in to Studio with an existing local account.
 3. Open **Integrations → ORCID** and choose **Connect ORCID**.
-4. Authenticate against `sandbox.orcid.org` and approve the request.
-5. Confirm that ORCID redirects to `https://openmanuscript.org/api/auth/orcid/callback` and the Integrations card shows **Connected** with the verified ORCID iD.
-6. Sign out of Studio.
-7. Choose **Sign in with ORCID** and confirm that Studio creates the normal authenticated session for the linked account.
-8. Confirm that the account retains its e-mail/password login as a fallback.
-9. Optionally sign in locally again, choose **Disconnect ORCID**, and confirm that the ORCID card returns to **Available** while the local account continues to work.
+4. Complete the ORCID password and two-factor authentication screens on `sandbox.orcid.org`.
+5. Approve the authorization request.
+6. Confirm that ORCID returns to `/api/auth/orcid/callback` and the card shows **Connected** with the verified ORCID iD.
+7. Sign out of Studio and use **Sign in with ORCID**.
+8. Complete ORCID 2FA again if ORCID requests it and confirm that Studio creates the normal authenticated session.
+9. Confirm that e-mail/password login still works.
+10. Test **Disconnect ORCID** and confirm that only the external identity link is removed.
 
-The first version intentionally does not create an arbitrary new Studio account solely from an unknown ORCID iD. An ORCID identity must be linked to an existing Studio account, or be associated through a supported invitation flow. This prevents accidental duplicate accounts.
+The first version intentionally does not create an arbitrary new Studio account solely from an unknown ORCID iD. The identity must first be linked to an existing Studio account or associated through a supported invitation flow.
 
 ## Database
 
-The Prisma schema uses `UserIdentity` for federated identities and `OAuthLoginState` for short-lived authorization state. Apply the existing migrations before enabling ORCID authentication:
+No new database migration is required for the OpenID Connect upgrade. The existing `OAuthLoginState.returnPath` field carries the short-lived hashed nonce marker for an authentication attempt; no raw nonce is persisted. `UserIdentity.profile` records the protocol, granted scope, and available authentication-method metadata.
 
-```bash
-cd server
-npm ci
-npx prisma migrate deploy
-npx prisma generate
-```
+## Production
 
-## Production registration
-
-After the Sandbox flow succeeds, register a separate Public API client in the production ORCID Registry. Use the same application identity:
-
-**Name:** `Open Manuscript Studio`
-
-**Application URL:** `https://openmanuscript.org/`
-
-**Redirect URI:**
-
-```text
-https://openmanuscript.org/api/auth/orcid/callback
-```
-
-Production configuration:
+After Sandbox testing succeeds, register or configure the production ORCID client with the same callback URI and switch to:
 
 ```dotenv
 ORCID_CLIENT_ID=APP-REPLACE_WITH_PRODUCTION_CLIENT_ID
@@ -163,10 +128,4 @@ ORCID_BASE_URL=https://orcid.org
 ORCID_REDIRECT_URI=https://openmanuscript.org/api/auth/orcid/callback
 ```
 
-Do not reuse Sandbox credentials in production. Restart the API and repeat provider discovery and sign-in testing after switching environments.
-
-## Security notes
-
-OAuth `state` values are generated using cryptographically secure random bytes, stored only as SHA-256 hashes, expire after ten minutes, and are deleted when consumed. The ORCID authorization code is exchanged only by the server. Studio stores the authenticated ORCID identifier and identity metadata; v1 does not persist the returned ORCID access token.
-
-For production, keep the API and callback behind HTTPS and never place the ORCID client secret in a `VITE_*` variable or frontend bundle.
+Do not reuse Sandbox credentials in production. Keep the client secret exclusively in server-side configuration and never expose it through a `VITE_*` variable, browser storage, screenshots, or public documentation.
