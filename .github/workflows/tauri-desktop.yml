@@ -162,13 +162,23 @@ jobs:
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
         run: |
           set -euo pipefail
+
           if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create "$RELEASE_TAG" \
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
               --title "Open Manuscript Studio $RELEASE_TAG" \
               --generate-notes \
-              --prerelease
+              --latest
+          else
+            release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.id')"
+            gh api \
+              --method PATCH \
+              "repos/$GITHUB_REPOSITORY/releases/$release_id" \
+              -F prerelease=false \
+              -F draft=false \
+              -f make_latest=true \
+              >/dev/null
           fi
 
           gh release upload "$RELEASE_TAG" release-assets/* \
