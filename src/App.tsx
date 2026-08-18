@@ -34,12 +34,29 @@ import './styles/auth.css';
 import './styles/history.css';
 
 type AuthView = 'login' | 'register';
+type OjsImportState =
+  | { status: 'idle'; message?: undefined }
+  | { status: 'loading'; message?: undefined }
+  | { status: 'error'; message: string };
 
 type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
 type AssignmentAwareLaunch = OjsLaunchPayload & {
   actorMode?: 'editor' | 'author' | string | null;
   assignmentContext?: OjsAssignmentLaunchContext | null;
 };
+
+const LEGACY_OJS_LAUNCH_STORAGE_KEY = 'omi:ojs-launch';
+
+function hasInitialOjsLaunch(): boolean {
+  const url = new URL(window.location.href);
+  if (url.searchParams.has('omiOjsLaunch')) return true;
+
+  try {
+    return window.sessionStorage.getItem(LEGACY_OJS_LAUNCH_STORAGE_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
 
 async function fetchOjsHandoff(token: string): Promise<AssignmentAwareLaunch | null> {
   const response = await fetch(
@@ -88,6 +105,11 @@ export function App() {
 function StudioApplication() {
   const reviewMode = new URLSearchParams(window.location.search).get('review') === '1';
   const [menuOpen, setMenuOpen] = useState(false);
+  const [ojsImportState, setOjsImportState] = useState<OjsImportState>(() =>
+    !reviewMode && hasInitialOjsLaunch()
+      ? { status: 'loading' }
+      : { status: 'idle' },
+  );
   const [ojsContributors, setOjsContributors] = useState<OjsContributors>([]);
   const [ojsAssignment, setOjsAssignment] = useState<{
     actorMode: 'editor' | 'author';
@@ -99,6 +121,7 @@ function StudioApplication() {
     if (reviewMode) {
       setOjsContributors([]);
       setOjsAssignment(null);
+      setOjsImportState({ status: 'idle' });
       return;
     }
 
@@ -107,6 +130,14 @@ function StudioApplication() {
     const importLaunch = async () => {
       const url = new URL(window.location.href);
       const handoffToken = url.searchParams.get('omiOjsLaunch');
+      const hasLaunchRequest = Boolean(handoffToken) || hasInitialOjsLaunch();
+
+      if (!hasLaunchRequest) {
+        if (!cancelled) setOjsImportState({ status: 'idle' });
+        return;
+      }
+
+      if (!cancelled) setOjsImportState({ status: 'loading' });
 
       let launch: AssignmentAwareLaunch | null = null;
       try {
@@ -116,39 +147,53 @@ function StudioApplication() {
           // Backward compatibility with the former sessionStorage handoff.
           launch = readOjsLaunchPayload() as AssignmentAwareLaunch | null;
         }
-      } catch (error) {
-        console.error('Unable to retrieve the OJS launch payload.', error);
-        return;
-      }
 
-      if (cancelled || !launch) return;
-      const manuscript = createManuscriptFromOjsLaunch(launch);
-      if (!manuscript) return;
+        if (cancelled) return;
+        if (!launch) {
+          throw new Error('The OJS launch payload is unavailable or has expired.');
+        }
 
-      setOjsContributors(
-        launch.scope?.includes('contributors.read') ? launch.contributors ?? [] : [],
-      );
-      if (
-        (launch.actorMode === 'editor' || launch.actorMode === 'author') &&
-        launch.assignmentContext?.grant
-      ) {
-        setOjsAssignment({
-          actorMode: launch.actorMode,
-          context: launch.assignmentContext,
-        });
-      } else {
-        setOjsAssignment(null);
-      }
+        const manuscript = createManuscriptFromOjsLaunch(launch);
+        if (!manuscript) {
+          throw new Error('The OJS manuscript could not be imported.');
+        }
 
-      loadManuscript(manuscript);
-      clearOjsLaunchPayload();
-      if (url.searchParams.has('omiOjsLaunch')) {
-        url.searchParams.delete('omiOjsLaunch');
-        window.history.replaceState(
-          null,
-          '',
-          `${url.pathname}${url.search}${url.hash}`,
+        setOjsContributors(
+          launch.scope?.includes('contributors.read') ? launch.contributors ?? [] : [],
         );
+        if (
+          (launch.actorMode === 'editor' || launch.actorMode === 'author') &&
+          launch.assignmentContext?.grant
+        ) {
+          setOjsAssignment({
+            actorMode: launch.actorMode,
+            context: launch.assignmentContext,
+          });
+        } else {
+          setOjsAssignment(null);
+        }
+
+        loadManuscript(manuscript);
+        clearOjsLaunchPayload();
+        if (url.searchParams.has('omiOjsLaunch')) {
+          url.searchParams.delete('omiOjsLaunch');
+          window.history.replaceState(
+            null,
+            '',
+            `${url.pathname}${url.search}${url.hash}`,
+          );
+        }
+        setOjsImportState({ status: 'idle' });
+      } catch (error) {
+        console.error('Unable to retrieve or import the OJS launch payload.', error);
+        if (!cancelled) {
+          setOjsImportState({
+            status: 'error',
+            message: error instanceof Error
+              ? error.message
+              : 'Unable to import the OJS manuscript.',
+          });
+        }
       }
     };
 
@@ -180,6 +225,32 @@ function StudioApplication() {
   }, [loadManuscript, reviewMode]);
 
   if (reviewMode) return <ReviewPortal />;
+
+  if (ojsImportState.status === 'loading') {
+    return (
+      <main className="auth-page" aria-busy="true" aria-live="polite">
+        <section className="auth-card">
+          <div className="auth-brand">
+            <div className="auth-brand-name">Open Manuscript Studio</div>
+            <div className="auth-brand-description">Loading manuscript from OJS…</div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (ojsImportState.status === 'error') {
+    return (
+      <main className="auth-page" aria-live="assertive">
+        <section className="auth-card">
+          <div className="auth-header">
+            <h1>Unable to load manuscript</h1>
+            <p>{ojsImportState.message}</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <AppLayout onOpenMenu={() => setMenuOpen(true)}>
