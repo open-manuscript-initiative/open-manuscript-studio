@@ -70,8 +70,11 @@ export function createManuscriptFromOjsLaunch(
         launch,
       )
     : null;
-  const manuscript = structurallyImported
-    ? applyOjsReferences(structurallyImported, launch)
+  const deduplicatedStructured = structurallyImported
+    ? removeDuplicateStructuredParagraphs(structurallyImported, launch)
+    : null;
+  const manuscript = deduplicatedStructured
+    ? applyOjsReferences(deduplicatedStructured, launch)
     : null;
   const submission = launch.submission as ExtendedOjsSubmission | null | undefined;
 
@@ -174,6 +177,70 @@ function removeListSentinels(manuscript: OmiManuscript): OmiManuscript {
     })),
   }));
   return { ...manuscript, sections };
+}
+
+function removeDuplicateStructuredParagraphs(
+  manuscript: OmiManuscript,
+  launch: OjsLaunchPayload,
+): OmiManuscript {
+  const source = launch.sourceDocument as unknown as ExtendedSourceDocument | undefined;
+  if (!Array.isArray(source?.structuredBlocks)) return manuscript;
+
+  const sourceCounts = new Map<string, number>();
+  for (const block of source.structuredBlocks) {
+    if (block.kind !== 'paragraph' || typeof block.text !== 'string') continue;
+    const key = normalizeListText(block.text);
+    if (!key) continue;
+    sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
+  }
+  if (!sourceCounts.size) return manuscript;
+
+  const sections = manuscript.sections.map((section) => {
+    const blocks = [] as typeof section.blocks;
+    let previousParagraphKey = '';
+    let runLength = 0;
+
+    for (const block of section.blocks) {
+      if (block.visual || block.type !== 'paragraph') {
+        blocks.push(block);
+        previousParagraphKey = '';
+        runLength = 0;
+        continue;
+      }
+
+      const key = normalizeListText(storedBlockText(block.content));
+      if (key && key === previousParagraphKey) runLength += 1;
+      else {
+        previousParagraphKey = key;
+        runLength = key ? 1 : 0;
+      }
+
+      const expected = key ? sourceCounts.get(key) ?? 0 : 0;
+      if (expected === 1 && runLength > 1) continue;
+      blocks.push(block);
+    }
+
+    return { ...section, blocks };
+  });
+
+  return { ...manuscript, sections };
+}
+
+function storedBlockText(content: string): string {
+  const input = content.trim();
+  if (!input.startsWith('{')) return content;
+  try {
+    return collectBlockJsonText(JSON.parse(input) as unknown);
+  } catch {
+    return content;
+  }
+}
+
+function collectBlockJsonText(value: unknown): string {
+  if (!value || typeof value !== 'object') return '';
+  const node = value as { text?: unknown; content?: unknown[] };
+  if (typeof node.text === 'string') return node.text;
+  return (node.content ?? []).map(collectBlockJsonText).join('');
 }
 
 function normalizeListText(value: string): string {
