@@ -28,6 +28,15 @@ export function applyStructuredContent(buffer: Buffer, source: OjsSourceDocument
     }
 
     const text = visibleText(xml).trim();
+    // Word text boxes (w:txbxContent) are floating drawing content, not part of
+    // the surrounding paragraph's normal document flow. They can contain their
+    // own nested w:p elements and labels placed on top of an image. Using those
+    // labels as afterText anchors makes the frontend unable to match the visual
+    // to a real manuscript paragraph, so it falls back to appending the image at
+    // the end of the document. Keep a second text representation that excludes
+    // text-box content and use only that representation for visual positioning.
+    const flowText = visibleFlowText(xml).trim();
+    const previousFlowText = lastText;
     const list = parseListInfo(xml, numbering);
     const sourceParagraph = findSourceParagraph(source, text);
     if (text) {
@@ -37,16 +46,17 @@ export function applyStructuredContent(buffer: Buffer, source: OjsSourceDocument
         ...(sourceParagraph?.headingLevel !== undefined ? { headingLevel: sourceParagraph.headingLevel } : {}),
         ...(list ? { listLevel: list.level, ordered: list.ordered } : {}),
       });
-      lastText = text;
     }
+    if (flowText) lastText = flowText;
 
-    appendImagesFromXml(buffer, xml, relationships, blocks, text || lastText);
+    const visualAnchor = flowText || previousFlowText;
+    appendImagesFromXml(buffer, xml, relationships, blocks, visualAnchor);
 
     for (const target of embeddedTargets(xml, relationships, 'chart', 'id')) {
       const chartXml = readZipEntry(buffer, target)?.toString('utf8');
       if (!chartXml) continue;
       const chart = parseChart(chartXml);
-      if (chart.cells.length > 1) blocks.push({ kind: 'chart', ...chart, afterText: text || lastText });
+      if (chart.cells.length > 1) blocks.push({ kind: 'chart', ...chart, afterText: visualAnchor });
     }
   }
 
@@ -256,6 +266,17 @@ function visibleText(xml: string): string {
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(xml))) parts.push(match[1] !== undefined ? decodeXml(match[1]) : /tab\b/.test(match[0]) ? '\t' : '\n');
   return parts.join('');
+}
+
+function visibleFlowText(xml: string): string {
+  // txbxContent itself does not nest in normal WordprocessingML drawing
+  // content, so removing each complete text-box container is sufficient before
+  // collecting text from the surrounding paragraph flow.
+  const withoutTextBoxes = xml.replace(
+    /<(?:[A-Za-z_][\w.-]*:)?txbxContent\b[^>]*>[\s\S]*?<\/(?:[A-Za-z_][\w.-]*:)?txbxContent>/gi,
+    '',
+  );
+  return visibleText(withoutTextBoxes);
 }
 
 function readElementBody(xml: string, name: string): string | undefined { return new RegExp(`<(?:[A-Za-z_][\\w.-]*:)?${name}\\b[^>]*>([\\s\\S]*?)<\\/(?:[A-Za-z_][\\w.-]*:)?${name}>`, 'i').exec(xml)?.[1] }
