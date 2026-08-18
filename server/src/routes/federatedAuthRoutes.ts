@@ -87,6 +87,46 @@ federatedAuthRouter.get('/orcid/start', async (request, response) => {
   response.redirect(302, authorizeUrl.toString());
 });
 
+federatedAuthRouter.delete('/orcid/link', async (request, response) => {
+  const userId = await currentUserId(request.headers.cookie);
+  if (!userId) {
+    response.status(401).json({
+      error: {
+        code: 'AUTHENTICATION_REQUIRED',
+        message: 'Sign in before disconnecting an ORCID iD.',
+      },
+    });
+    return;
+  }
+
+  const linkedIdentities = await prisma.userIdentity.findMany({
+    where: { userId, provider: 'ORCID', issuer: ORCID_ISSUER },
+    select: { id: true, subject: true },
+  });
+
+  if (linkedIdentities.length === 0) {
+    response.status(204).end();
+    return;
+  }
+
+  const subjects = new Set(linkedIdentities.map((identity) => identity.subject));
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { orcid: true },
+  });
+
+  await prisma.$transaction([
+    prisma.userIdentity.deleteMany({
+      where: { userId, provider: 'ORCID', issuer: ORCID_ISSUER },
+    }),
+    ...(user?.orcid && subjects.has(user.orcid)
+      ? [prisma.user.update({ where: { id: userId }, data: { orcid: null } })]
+      : []),
+  ]);
+
+  response.status(204).end();
+});
+
 federatedAuthRouter.get('/orcid/callback', async (request, response) => {
   const code = typeof request.query.code === 'string' ? request.query.code.trim() : '';
   const state = typeof request.query.state === 'string' ? request.query.state.trim() : '';
