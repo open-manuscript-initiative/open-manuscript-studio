@@ -10,18 +10,33 @@ type StructuredBlock =
 
 type TiptapNode = { type: string; text?: string; attrs?: Record<string, unknown>; marks?: Array<Record<string, unknown>>; content?: TiptapNode[] };
 
+type VisualFallback = {
+  anchorBlockId?: string;
+};
+
 export function applyOjsStructuredContent(manuscript: OmiManuscript, launch: OjsLaunchPayload): OmiManuscript {
   const source = launch.sourceDocument as unknown as { structuredBlocks?: unknown[] } | undefined;
   const structured = Array.isArray(source?.structuredBlocks) ? source.structuredBlocks as StructuredBlock[] : [];
   if (!structured.length) return manuscript;
+
+  // structuredBlocks already arrive in the original DOCX XML order. Map the
+  // paragraph entries in that sequence to the actual imported manuscript
+  // blocks before any list/table transformations occur. Visuals can then use
+  // the nearest preceding mapped paragraph as a stable positional fallback
+  // when their textual afterText anchor cannot be resolved.
+  const fallbackByVisualIndex = buildSourceOrderFallbacks(manuscript, structured);
 
   const listQueues = new Map<string, ListInfo[]>();
   const visualsByAfter = new Map<string, OmiBlock[]>();
   const tableCleanupByAfter = new Map<string, string[][]>();
   const leadingVisuals: OmiBlock[] = [];
   const leadingTableCleanup: string[][] = [];
+  const fallbackByVisualId = new Map<string, VisualFallback>();
 
-  for (const item of structured) {
+  for (let structuredIndex = 0; structuredIndex < structured.length; structuredIndex += 1) {
+    const item = structured[structuredIndex];
+    if (!item) continue;
+
     if (item.kind === 'paragraph') {
       if (typeof item.text !== 'string' || !Number.isInteger(item.listLevel) || typeof item.ordered !== 'boolean') continue;
       const key = normalize(item.text);
@@ -30,8 +45,11 @@ export function applyOjsStructuredContent(manuscript: OmiManuscript, launch: Ojs
       listQueues.set(key, queue);
       continue;
     }
+
     const visual = toVisualBlock(item);
     if (!visual) continue;
+    fallbackByVisualId.set(visual.id, fallbackByVisualIndex.get(structuredIndex) ?? {});
+
     const afterText = typeof item.afterText === 'string' ? normalize(item.afterText) : '';
     if (!afterText) {
       leadingVisuals.push(visual);
@@ -51,7 +69,7 @@ export function applyOjsStructuredContent(manuscript: OmiManuscript, launch: Ojs
     }
   }
 
-  const sections = manuscript.sections.map((section, sectionIndex) => {
+  let sections = manuscript.sections.map((section, sectionIndex) => {
     const output: OmiBlock[] = [];
     if (sectionIndex === 0 && leadingVisuals.length) output.push(...leadingVisuals);
 
@@ -108,13 +126,95 @@ export function applyOjsStructuredContent(manuscript: OmiManuscript, launch: Ojs
   });
 
   const leftovers = Array.from(visualsByAfter.values()).flat();
-  if (leftovers.length && sections.length) {
-    const last = sections.length - 1;
-    const section = sections[last];
-    if (section) sections[last] = { ...section, blocks: [...section.blocks, ...leftovers] };
+  if (leftovers.length) {
+    sections = insertLeftoversBySourceOrder(sections, leftovers, fallbackByVisualId);
   }
 
   return { ...manuscript, sections };
+}
+
+function buildSourceOrderFallbacks(
+  manuscript: OmiManuscript,
+  structured: StructuredBlock[],
+): Map<number, VisualFallback> {
+  const paragraphBlocks = manuscript.sections.flatMap((section) =>
+    section.blocks.filter((block) => !block.visual && block.type === 'paragraph'),
+  );
+
+  const mappedParagraphs = new Map<number, string>();
+  let manuscriptCursor = 0;
+
+  for (let structuredIndex = 0; structuredIndex < structured.length; structuredIndex += 1) {
+    const item = structured[structuredIndex];
+    if (item?.kind !== 'paragraph' || typeof item.text !== 'string') continue;
+    const expected = normalize(item.text);
+    if (!expected) continue;
+
+    for (let cursor = manuscriptCursor; cursor < paragraphBlocks.length; cursor += 1) {
+      const candidate = paragraphBlocks[cursor];
+      if (!candidate) continue;
+      if (normalize(storedPlainText(candidate.content)) !== expected) continue;
+      mappedParagraphs.set(structuredIndex, candidate.id);
+      manuscriptCursor = cursor + 1;
+      break;
+    }
+  }
+
+  const result = new Map<number, VisualFallback>();
+  let lastAnchorBlockId: string | undefined;
+  for (let structuredIndex = 0; structuredIndex < structured.length; structuredIndex += 1) {
+    const mapped = mappedParagraphs.get(structuredIndex);
+    if (mapped) lastAnchorBlockId = mapped;
+
+    const item = structured[structuredIndex];
+    if (!item || item.kind === 'paragraph') continue;
+    result.set(structuredIndex, lastAnchorBlockId ? { anchorBlockId: lastAnchorBlockId } : {});
+  }
+  return result;
+}
+
+function insertLeftoversBySourceOrder(
+  sections: OmiManuscript['sections'],
+  leftovers: OmiBlock[],
+  fallbackByVisualId: Map<string, VisualFallback>,
+): OmiManuscript['sections'] {
+  const pendingByAnchor = new Map<string, OmiBlock[]>();
+  const stillUnresolved: OmiBlock[] = [];
+
+  for (const visual of leftovers) {
+    const anchorBlockId = fallbackByVisualId.get(visual.id)?.anchorBlockId;
+    if (!anchorBlockId) {
+      stillUnresolved.push(visual);
+      continue;
+    }
+    const queue = pendingByAnchor.get(anchorBlockId) ?? [];
+    queue.push(visual);
+    pendingByAnchor.set(anchorBlockId, queue);
+  }
+
+  const result = sections.map((section) => {
+    const blocks: OmiBlock[] = [];
+    for (const block of section.blocks) {
+      blocks.push(block);
+      const pending = pendingByAnchor.get(block.id);
+      if (!pending?.length) continue;
+      blocks.push(...pending);
+      pendingByAnchor.delete(block.id);
+    }
+    return { ...section, blocks };
+  });
+
+  // A mapped paragraph can disappear when multiple source paragraphs collapse
+  // into a single list block. In that rare compatibility case keep the former
+  // behaviour rather than dropping content: unresolved visuals are appended to
+  // the document end.
+  for (const pending of pendingByAnchor.values()) stillUnresolved.push(...pending);
+  if (stillUnresolved.length && result.length) {
+    const lastIndex = result.length - 1;
+    const last = result[lastIndex];
+    if (last) result[lastIndex] = { ...last, blocks: [...last.blocks, ...stillUnresolved] };
+  }
+  return result;
 }
 
 function buildListBlock(items: Array<{ block: OmiBlock; info: ListInfo }>): OmiBlock {
