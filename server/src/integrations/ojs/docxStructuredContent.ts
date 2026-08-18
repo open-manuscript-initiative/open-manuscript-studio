@@ -25,6 +25,7 @@ export function applyStructuredContent(buffer: Buffer, source: OjsSourceDocument
     if (kind === 'tbl') {
       const cells = parseTable(xml);
       if (cells.length) blocks.push({ kind: 'table', cells, headerRows: /<(?:[A-Za-z_][\w.-]*:)?tblHeader\b/i.test(xml) ? 1 : 0, afterText: lastText });
+      appendImagesFromXml(buffer, xml, relationships, blocks, lastText);
       continue;
     }
 
@@ -41,20 +42,7 @@ export function applyStructuredContent(buffer: Buffer, source: OjsSourceDocument
       lastText = text;
     }
 
-    const alt = readDocPrAlt(xml);
-    for (const target of embeddedTargets(xml, relationships, 'blip', 'embed')) {
-      const bytes = readZipEntry(buffer, target);
-      if (!bytes) continue;
-      const mediaType = mediaTypeFor(target);
-      blocks.push({
-        kind: 'image',
-        src: `data:${mediaType};base64,${bytes.toString('base64')}`,
-        mediaType,
-        fileName: target.split('/').pop() ?? 'image',
-        alt: alt ?? '',
-        afterText: text || lastText,
-      });
-    }
+    appendImagesFromXml(buffer, xml, relationships, blocks, text || lastText);
 
     for (const target of embeddedTargets(xml, relationships, 'chart', 'id')) {
       const chartXml = readZipEntry(buffer, target)?.toString('utf8');
@@ -65,6 +53,37 @@ export function applyStructuredContent(buffer: Buffer, source: OjsSourceDocument
   }
 
   return Object.assign(source, { structuredBlocks: blocks });
+}
+
+function appendImagesFromXml(
+  buffer: Buffer,
+  xml: string,
+  relationships: Map<string, Relationship>,
+  blocks: OjsStructuredBlock[],
+  afterText: string,
+): void {
+  const alt = readDocPrAlt(xml);
+  const targets = [
+    ...embeddedTargets(xml, relationships, 'blip', 'embed'),
+    ...embeddedTargets(xml, relationships, 'imagedata', 'id'),
+  ];
+  const seen = new Set<string>();
+
+  for (const target of targets) {
+    if (seen.has(target)) continue;
+    seen.add(target);
+    const bytes = readZipEntry(buffer, target);
+    if (!bytes) continue;
+    const mediaType = mediaTypeFor(target);
+    blocks.push({
+      kind: 'image',
+      src: `data:${mediaType};base64,${bytes.toString('base64')}`,
+      mediaType,
+      fileName: target.split('/').pop() ?? 'image',
+      alt: alt ?? '',
+      afterText,
+    });
+  }
 }
 
 function findSourceParagraph(source: OjsSourceDocument, text: string) {
