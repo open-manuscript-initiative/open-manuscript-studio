@@ -62,13 +62,23 @@ async function fetchDiscovery(origin: string): Promise<DiscoveryDocument> {
   if (!response.ok) {
     throw new Error(`ORCID OpenID discovery failed with HTTP ${response.status}.`);
   }
+
   const payload = await response.json() as Partial<DiscoveryDocument>;
-  if (!payload.issuer || !payload.jwks_uri) {
+  const issuer = payload.issuer;
+  const jwksUri = payload.jwks_uri;
+
+  if (typeof issuer !== 'string' || issuer.length === 0 || typeof jwksUri !== 'string' || jwksUri.length === 0) {
     throw new Error('ORCID OpenID discovery response is incomplete.');
   }
-  return {
-    issuer: payload.issuer,
-    jwks_uri: payload.jwks_uri,
-    userinfo_endpoint: payload.userinfo_endpoint,
+
+  const discovery: DiscoveryDocument = {
+    issuer,
+    jwks_uri: jwksUri,
   };
+
+  if (typeof payload.userinfo_endpoint === 'string' && payload.userinfo_endpoint.length > 0) {
+    discovery.userinfo_endpoint = payload.userinfo_endpoint;
+  }
+
+  return discovery;
 }
