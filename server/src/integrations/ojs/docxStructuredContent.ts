@@ -5,6 +5,7 @@ import type { OjsStructuredBlock } from './docxStructureTypes.js';
 
 interface Relationship { id: string; target: string; type: string }
 interface ZipEntry { method: number; compressedSize: number; uncompressedSize: number; localHeaderOffset: number }
+interface BodyBlock { kind: 'p' | 'tbl'; xml: string }
 
 export function applyStructuredContent(buffer: Buffer, source: OjsSourceDocument): OjsSourceDocument {
   const documentXml = readZipEntry(buffer, 'word/document.xml');
@@ -15,16 +16,14 @@ export function applyStructuredContent(buffer: Buffer, source: OjsSourceDocument
   const relationships = relsXml ? parseRelationships(relsXml.toString('utf8')) : new Map<string, Relationship>();
   const blocks: OjsStructuredBlock[] = [];
   const body = readElementBody(documentXml.toString('utf8'), 'body') ?? documentXml.toString('utf8');
-  const childPattern = /<(?:[A-Za-z_][\w.-]*:)?(p|tbl)\b[^>]*>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?\1>/g;
-  let child: RegExpExecArray | null;
   let lastText = '';
 
-  while ((child = childPattern.exec(body))) {
-    const kind = child[1];
-    const xml = child[2] ?? '';
+  for (const child of topLevelBodyBlocks(body)) {
+    const { kind, xml } = child;
     if (kind === 'tbl') {
       const cells = parseTable(xml);
       if (cells.length) blocks.push({ kind: 'table', cells, headerRows: /<(?:[A-Za-z_][\w.-]*:)?tblHeader\b/i.test(xml) ? 1 : 0, afterText: lastText });
+      appendImagesFromXml(buffer, xml, relationships, blocks, lastText);
       continue;
     }
 
@@ -41,20 +40,7 @@ export function applyStructuredContent(buffer: Buffer, source: OjsSourceDocument
       lastText = text;
     }
 
-    const alt = readDocPrAlt(xml);
-    for (const target of embeddedTargets(xml, relationships, 'blip', 'embed')) {
-      const bytes = readZipEntry(buffer, target);
-      if (!bytes) continue;
-      const mediaType = mediaTypeFor(target);
-      blocks.push({
-        kind: 'image',
-        src: `data:${mediaType};base64,${bytes.toString('base64')}`,
-        mediaType,
-        fileName: target.split('/').pop() ?? 'image',
-        alt: alt ?? '',
-        afterText: text || lastText,
-      });
-    }
+    appendImagesFromXml(buffer, xml, relationships, blocks, text || lastText);
 
     for (const target of embeddedTargets(xml, relationships, 'chart', 'id')) {
       const chartXml = readZipEntry(buffer, target)?.toString('utf8');
@@ -65,6 +51,82 @@ export function applyStructuredContent(buffer: Buffer, source: OjsSourceDocument
   }
 
   return Object.assign(source, { structuredBlocks: blocks });
+}
+
+function topLevelBodyBlocks(body: string): BodyBlock[] {
+  const blocks: BodyBlock[] = [];
+  const opening = /<(?:[A-Za-z_][\w.-]*:)?(p|tbl)\b[^>]*>/gi;
+  let cursor = 0;
+
+  while (cursor < body.length) {
+    opening.lastIndex = cursor;
+    const first = opening.exec(body);
+    if (!first) break;
+    const kind = first[1] as 'p' | 'tbl';
+    const tagPattern = new RegExp(
+      `<(?<close>/)?(?:[A-Za-z_][\\w.-]*:)?${kind}\\b[^>]*?(?<self>/)?>`,
+      'gi',
+    );
+    tagPattern.lastIndex = first.index;
+    let depth = 0;
+    let end = -1;
+    let closeStart = -1;
+    let tag: RegExpExecArray | null;
+
+    while ((tag = tagPattern.exec(body))) {
+      const groups = tag.groups ?? {};
+      if (groups.close) {
+        depth -= 1;
+        if (depth === 0) {
+          closeStart = tag.index;
+          end = tagPattern.lastIndex;
+          break;
+        }
+      } else if (!groups.self) {
+        depth += 1;
+      }
+    }
+
+    if (end < 0 || closeStart < first.index) break;
+    blocks.push({
+      kind,
+      xml: body.slice(first.index + first[0].length, closeStart),
+    });
+    cursor = end;
+  }
+
+  return blocks;
+}
+
+function appendImagesFromXml(
+  buffer: Buffer,
+  xml: string,
+  relationships: Map<string, Relationship>,
+  blocks: OjsStructuredBlock[],
+  afterText: string,
+): void {
+  const alt = readDocPrAlt(xml);
+  const targets = [
+    ...embeddedTargets(xml, relationships, 'blip', 'embed'),
+    ...embeddedTargets(xml, relationships, 'imagedata', 'id'),
+  ];
+  const seen = new Set<string>();
+
+  for (const target of targets) {
+    if (seen.has(target)) continue;
+    seen.add(target);
+    const bytes = readZipEntry(buffer, target);
+    if (!bytes) continue;
+    const mediaType = mediaTypeFor(target);
+    blocks.push({
+      kind: 'image',
+      src: `data:${mediaType};base64,${bytes.toString('base64')}`,
+      mediaType,
+      fileName: target.split('/').pop() ?? 'image',
+      alt: alt ?? '',
+      afterText,
+    });
+  }
 }
 
 function findSourceParagraph(source: OjsSourceDocument, text: string) {
