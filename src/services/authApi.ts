@@ -29,6 +29,13 @@ export interface AuthProviders {
   orcid: {
     enabled: boolean;
     label: string;
+    linked?: boolean;
+    identity?: {
+      id: string;
+      providerUserId: string;
+      displayName?: string | null;
+      connectedAt: string;
+    } | null;
   };
 }
 
@@ -69,6 +76,21 @@ export function getOrcidAuthUrl(input?: {
     params.set('mode', 'login');
   }
   return `${API_BASE_URL}/api/auth/orcid/start?${params.toString()}`;
+}
+
+export function getOrcidLinkUrl(): string {
+  return `${API_BASE_URL}/api/auth/orcid/start?mode=link`;
+}
+
+export async function unlinkOrcid(): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/orcid/link`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok && response.status !== 204) {
+    throw await createApiError(response);
+  }
 }
 
 export async function getRegistrationInvitation(
