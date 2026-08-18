@@ -60,6 +60,9 @@ integrationRouter.get(
         : undefined;
       const reviewSnapshot = assignmentGrant ? createReviewSnapshotFromOjs(ojsData) : undefined;
 
+      // The complete OJS file list is only needed server-side to choose the
+      // manuscript source. Do not copy every attachment into the browser
+      // handoff payload; large submissions can exceed sessionStorage quota.
       const launchData = {
         protocol: 'omi-integration/1',
         profile: 'omi-integration/1/ojs',
@@ -68,7 +71,6 @@ integrationRouter.get(
         context: verified.claims.context ?? null,
         submission: ojsData.submission,
         contributors: ojsData.contributors,
-        files: ojsData.files,
         sourceDocument: ojsData.sourceDocument,
         actor: {
           ...(verified.claims.actor ?? {}),
@@ -98,7 +100,7 @@ integrationRouter.get(
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Opening Open Manuscript Studio</title></head>
 <body><p>Opening Open Manuscript Studio…</p><script nonce="${nonce}">
 try { sessionStorage.setItem('omi:ojs-launch', ${JSON.stringify(serialized)}); window.location.replace('/?omiOjsLaunch=1'); }
-catch (error) { document.body.textContent = 'Unable to hand the OJS submission to Open Manuscript Studio.'; }
+catch (error) { const detail = error instanceof Error ? ' (' + error.name + ': ' + error.message + ')' : ''; document.body.textContent = 'Unable to hand the OJS submission to Open Manuscript Studio.' + detail; }
 </script></body></html>`);
     } catch (error) {
       response.status(401).json({
