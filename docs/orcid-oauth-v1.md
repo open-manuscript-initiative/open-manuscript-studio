@@ -11,6 +11,8 @@ The first version keeps the existing e-mail/password authentication and adds ORC
 - validating a single-use, time-limited OAuth `state` value;
 - exchanging the authorization code on the server;
 - linking a verified ORCID iD to an existing Studio account;
+- showing the linked ORCID iD in the Studio Integrations panel;
+- disconnecting a linked ORCID identity from the authenticated Studio account;
 - signing in an account that already has a linked ORCID identity;
 - accepting assignment invitations through ORCID;
 - creating the normal Studio session cookie after successful ORCID authentication.
@@ -24,6 +26,19 @@ The browser never receives `ORCID_CLIENT_SECRET`.
 - `GET /api/auth/orcid/start?mode=link`
 - `GET /api/auth/orcid/start?mode=invite&invite=<token>`
 - `GET /api/auth/orcid/callback`
+- `DELETE /api/auth/orcid/link`
+
+`GET /api/auth/providers` reports whether ORCID is configured and, for an authenticated Studio session, whether the current account already has an ORCID identity linked. `DELETE /api/auth/orcid/link` is authenticated and idempotent: it removes the current account's ORCID identity link and clears the matching legacy `users.orcid` value, while leaving the local Studio account and password login intact.
+
+## Integrations panel
+
+The **Integrations → ORCID** card is available when this version is deployed. It reads live provider state from `GET /api/auth/providers` and distinguishes these states:
+
+- **Not configured** — server-side ORCID client credentials are missing;
+- **Available** — ORCID OAuth is configured, but this Studio account has no linked ORCID iD;
+- **Connected** — the signed-in Studio account has a linked ORCID identity.
+
+The **Connect ORCID** action starts `GET /api/auth/orcid/start?mode=link`. Authentication and consent take place on ORCID, not inside Studio. When connected, the card displays the verified ORCID iD and exposes **Disconnect ORCID**, which calls `DELETE /api/auth/orcid/link`.
 
 ## ORCID Sandbox client registration
 
@@ -104,12 +119,13 @@ Additional properties may also be present.
 
 1. Create or use an ORCID Sandbox test record. Sandbox identities are separate from production ORCID records.
 2. Open Open Manuscript Studio and sign in with an existing local Studio account.
-3. Link the Sandbox ORCID iD to that Studio account through the ORCID linking flow.
-4. Sign out of Studio.
-5. Choose **Sign in with ORCID**.
-6. Authenticate against `sandbox.orcid.org` and approve the request.
-7. Confirm that ORCID redirects to `https://openmanuscript.org/api/auth/orcid/callback` and Studio creates a normal authenticated session.
+3. Open **Integrations → ORCID** and choose **Connect ORCID**.
+4. Authenticate against `sandbox.orcid.org` and approve the request.
+5. Confirm that ORCID redirects to `https://openmanuscript.org/api/auth/orcid/callback` and the Integrations card shows **Connected** with the verified ORCID iD.
+6. Sign out of Studio.
+7. Choose **Sign in with ORCID** and confirm that Studio creates the normal authenticated session for the linked account.
 8. Confirm that the account retains its e-mail/password login as a fallback.
+9. Optionally sign in locally again, choose **Disconnect ORCID**, and confirm that the ORCID card returns to **Available** while the local account continues to work.
 
 The first version intentionally does not create an arbitrary new Studio account solely from an unknown ORCID iD. An ORCID identity must be linked to an existing Studio account, or be associated through a supported invitation flow. This prevents accidental duplicate accounts.
 
