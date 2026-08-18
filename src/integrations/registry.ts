@@ -79,7 +79,7 @@ export const integrationCatalog: IntegrationCatalogEntry[] = [
     requiresServerSecret: true,
     supportsPerUserAuthentication: true,
     configurable: true,
-    status: 'planned',
+    status: 'available',
   },
   {
     id: 'cloud-storage',
