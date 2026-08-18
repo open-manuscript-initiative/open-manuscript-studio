@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
-const HANDOFF_TTL_MS = 60_000;
+const HANDOFF_TTL_MS = 10 * 60_000;
 
 interface HandoffEntry {
   expiresAt: number;
