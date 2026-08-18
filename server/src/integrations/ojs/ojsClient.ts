@@ -24,12 +24,18 @@ interface OjsFileDescriptor {
   name?: string;
   mediaType?: string;
   size?: number | null;
+  stage?: number | null;
+  genreExternalId?: string | null;
+  genreKey?: string | null;
+  genreName?: string | null;
   revision?: number | null;
   updatedAt?: string | null;
   contentPath?: string;
 }
 
 const MAX_SOURCE_FILE_BYTES = 25 * 1024 * 1024;
+const OJS_SUBMISSION_FILE_STAGE = 2;
+const OJS_ARTICLE_TEXT_GENRE_KEY = 'SUBMISSION';
 
 function requireScope(claims: LaunchClaims, scope: string): void {
   if (!claims.scope?.includes(scope)) {
@@ -171,6 +177,7 @@ async function loadSourceDocument(
   authorization: string,
 ): Promise<OjsSourceDocument | undefined> {
   const candidate = [...files]
+    .filter(isArticleTextSubmissionFile)
     .filter((file) => isDocx(file) && file.externalId && file.contentPath)
     .filter((file) => !file.size || file.size <= MAX_SOURCE_FILE_BYTES)
     .sort(compareSourceFiles)[0];
@@ -219,6 +226,19 @@ async function loadSourceDocument(
   const withLists = applyStyleInheritedLists(bytes, withStructuredContent);
   const withNotes = applyNoteIntegrity(bytes, withLists);
   return applyReferenceSemantics(bytes, withNotes);
+}
+
+function isArticleTextSubmissionFile(file: OjsFileDescriptor): boolean {
+  if (Number(file.stage) !== OJS_SUBMISSION_FILE_STAGE) return false;
+
+  const genreKey = (file.genreKey || '').trim().toUpperCase();
+  if (genreKey) return genreKey === OJS_ARTICLE_TEXT_GENRE_KEY;
+
+  // Compatibility with older OJS connector responses that did not expose
+  // genreKey yet. This fallback is intentionally limited to the canonical
+  // English component name and should disappear once all connectors expose
+  // the stable PKP genre key.
+  return (file.genreName || '').trim().toLowerCase() === 'article text';
 }
 
 function isDocx(file: OjsFileDescriptor): boolean {
