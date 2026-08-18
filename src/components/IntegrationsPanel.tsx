@@ -1,5 +1,5 @@
 import { Bot, Cloud, Languages, Link2, ShieldCheck, Sparkles } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { useTranslation } from '../i18n';
 import type { IntegrationAuthenticationMode, IntegrationProviderStatus } from '../integrations/contracts';
@@ -128,7 +128,7 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
   );
 }
 
-function Meta({ label, children }: { label: string; children: React.ReactNode }) {
+function Meta({ label, children }: { label: string; children: ReactNode }) {
   return <div className="omi-integration-permissions"><strong>{label}</strong><div>{children}</div></div>;
 }
 
