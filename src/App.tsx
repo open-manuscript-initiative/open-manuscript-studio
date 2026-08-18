@@ -41,6 +41,36 @@ type AssignmentAwareLaunch = OjsLaunchPayload & {
   assignmentContext?: OjsAssignmentLaunchContext | null;
 };
 
+async function fetchOjsHandoff(token: string): Promise<AssignmentAwareLaunch | null> {
+  const response = await fetch(
+    `/integrations/ojs/handoff/${encodeURIComponent(token)}`,
+    {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+      credentials: 'same-origin',
+    },
+  );
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null) as
+      | { error?: { message?: string } }
+      | null;
+    throw new Error(
+      body?.error?.message || `OJS handoff failed with HTTP ${response.status}.`,
+    );
+  }
+
+  const launch = await response.json() as AssignmentAwareLaunch;
+  if (
+    launch.protocol !== 'omi-integration/1' ||
+    launch.profile !== 'omi-integration/1/ojs'
+  ) {
+    throw new Error('The OJS handoff returned an invalid launch payload.');
+  }
+  return launch;
+}
+
 export function App() {
   const [authView, setAuthView] = useState<AuthView>(() =>
     new URLSearchParams(window.location.search).has('invite') ? 'register' : 'login',
@@ -71,23 +101,61 @@ function StudioApplication() {
       setOjsAssignment(null);
       return;
     }
-    const launch = readOjsLaunchPayload() as AssignmentAwareLaunch | null;
-    if (!launch) return;
-    const manuscript = createManuscriptFromOjsLaunch(launch);
-    if (!manuscript) return;
-    setOjsContributors(launch.scope?.includes('contributors.read') ? launch.contributors ?? [] : []);
-    if ((launch.actorMode === 'editor' || launch.actorMode === 'author') && launch.assignmentContext?.grant) {
-      setOjsAssignment({ actorMode: launch.actorMode, context: launch.assignmentContext });
-    } else {
-      setOjsAssignment(null);
-    }
-    loadManuscript(manuscript);
-    clearOjsLaunchPayload();
-    const url = new URL(window.location.href);
-    if (url.searchParams.has('omiOjsLaunch')) {
-      url.searchParams.delete('omiOjsLaunch');
-      window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
-    }
+
+    let cancelled = false;
+
+    const importLaunch = async () => {
+      const url = new URL(window.location.href);
+      const handoffToken = url.searchParams.get('omiOjsLaunch');
+
+      let launch: AssignmentAwareLaunch | null = null;
+      try {
+        if (handoffToken && handoffToken !== '1') {
+          launch = await fetchOjsHandoff(handoffToken);
+        } else {
+          // Backward compatibility with the former sessionStorage handoff.
+          launch = readOjsLaunchPayload() as AssignmentAwareLaunch | null;
+        }
+      } catch (error) {
+        console.error('Unable to retrieve the OJS launch payload.', error);
+        return;
+      }
+
+      if (cancelled || !launch) return;
+      const manuscript = createManuscriptFromOjsLaunch(launch);
+      if (!manuscript) return;
+
+      setOjsContributors(
+        launch.scope?.includes('contributors.read') ? launch.contributors ?? [] : [],
+      );
+      if (
+        (launch.actorMode === 'editor' || launch.actorMode === 'author') &&
+        launch.assignmentContext?.grant
+      ) {
+        setOjsAssignment({
+          actorMode: launch.actorMode,
+          context: launch.assignmentContext,
+        });
+      } else {
+        setOjsAssignment(null);
+      }
+
+      loadManuscript(manuscript);
+      clearOjsLaunchPayload();
+      if (url.searchParams.has('omiOjsLaunch')) {
+        url.searchParams.delete('omiOjsLaunch');
+        window.history.replaceState(
+          null,
+          '',
+          `${url.pathname}${url.search}${url.hash}`,
+        );
+      }
+    };
+
+    void importLaunch();
+    return () => {
+      cancelled = true;
+    };
   }, [loadManuscript, reviewMode]);
 
   useEffect(() => {
@@ -98,7 +166,9 @@ function StudioApplication() {
       if (key !== 's' && key !== 'o') return;
       event.preventDefault();
       if (key === 'o') {
-        void openLocalManuscript().then((result) => { if (result) loadManuscript(result.manuscript); });
+        void openLocalManuscript().then((result) => {
+          if (result) loadManuscript(result.manuscript);
+        });
         return;
       }
       const manuscript = useStudioStore.getState().manuscript;
@@ -116,7 +186,11 @@ function StudioApplication() {
       <div className="focus-workspace"><EditorPane ojsContributors={ojsContributors} /></div>
       <SearchReplaceOverlay />
       <DesktopUpdatePrompt />
-      <StudioMenuWithHelp open={menuOpen} onClose={() => setMenuOpen(false)} ojsAssignment={ojsAssignment} />
+      <StudioMenuWithHelp
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        ojsAssignment={ojsAssignment}
+      />
     </AppLayout>
   );
 }
