@@ -1,3 +1,4 @@
+import { authSupplementalTranslations } from './authSupplementalTranslations';
 import { authTranslations } from './authTranslations';
 import type { AuthTranslationKey } from './authTranslations';
 import { DEFAULT_LOCALE, translations } from './config';
@@ -28,10 +29,13 @@ function resolveTranslation(
 }
 
 function resolveAuthTranslation(
-  locale: SupportedLocale,
+  locale: string,
   key: AppTranslationKey,
 ): string | undefined {
-  return authTranslations[locale]?.[key as AuthTranslationKey];
+  return (
+    authSupplementalTranslations[locale]?.[key as AuthTranslationKey] ??
+    authTranslations[locale as SupportedLocale]?.[key as AuthTranslationKey]
+  );
 }
 
 export function translate(
@@ -40,8 +44,8 @@ export function translate(
 ): string {
   return (
     resolveAuthTranslation(locale, key) ??
-    resolveAuthTranslation(DEFAULT_LOCALE, key) ??
     resolveTranslation(translations[locale], key as TranslationKey) ??
+    resolveAuthTranslation(DEFAULT_LOCALE, key) ??
     resolveTranslation(translations[DEFAULT_LOCALE], key as TranslationKey) ??
     key
   );
