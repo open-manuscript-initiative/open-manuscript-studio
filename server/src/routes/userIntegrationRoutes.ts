@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { Prisma } from '../generated/prisma/client.js';
 import { encryptSecret } from '../integrations/secretCrypto.js';
 import {
   getIntegrationProvider,
@@ -183,6 +184,8 @@ userIntegrationRouter.post(
       ? JSON.stringify(encryptSecret(body.data.secret))
       : null;
 
+    const config = body.data.config as Prisma.InputJsonValue | undefined;
+
     const connection = await prisma.userIntegration.upsert({
       where: {
         userId_providerId_connectionKey: {
@@ -195,7 +198,7 @@ userIntegrationRouter.post(
         displayName: body.data.displayName ?? null,
         authenticationMode: body.data.authenticationMode,
         enabled: body.data.enabled,
-        ...(body.data.config !== undefined ? { config: body.data.config } : {}),
+        ...(config !== undefined ? { config } : {}),
         ...(encryptedSecret ? { encryptedSecret } : {}),
         status: 'CONFIGURED',
         lastError: null,
@@ -207,7 +210,7 @@ userIntegrationRouter.post(
         displayName: body.data.displayName ?? null,
         authenticationMode: body.data.authenticationMode,
         enabled: body.data.enabled,
-        ...(body.data.config !== undefined ? { config: body.data.config } : {}),
+        ...(config !== undefined ? { config } : {}),
         encryptedSecret,
         status: 'CONFIGURED',
       },
