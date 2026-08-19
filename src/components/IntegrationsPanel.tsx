@@ -5,7 +5,11 @@ import { useTranslation } from '../i18n';
 import type { IntegrationAuthenticationMode, IntegrationProviderStatus } from '../integrations/contracts';
 import { integrationCatalog, type IntegrationCatalogEntry } from '../integrations/registry';
 import { getAuthProviders, getOrcidLinkUrl, type AuthProviders, unlinkOrcid } from '../services/authApi';
-import { getIntegrationStatus, testIntegrationConnection } from '../services/integrationApi';
+import {
+  getIntegrationStatus,
+  saveIntegrationConnection,
+  testIntegrationConnection,
+} from '../services/integrationApi';
 import './IntegrationsPanel.css';
 
 export function IntegrationsPanel() {
@@ -30,8 +34,10 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
   const [expanded, setExpanded] = useState(false);
   const [remoteStatus, setRemoteStatus] = useState<IntegrationProviderStatus | null>(null);
   const [orcid, setOrcid] = useState<AuthProviders['orcid'] | null>(null);
+  const [apiKey, setApiKey] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     if (entry.id !== 'orcid') return;
@@ -61,14 +67,46 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
     : remoteStatus
       ? remoteStatus.configured ? remoteStatus.healthy === false ? copy.status.error : copy.status.connected : copy.status.notConfigured
       : copy.status[entry.status];
-  const statusClass = entry.id === 'orcid' && orcid?.linked ? 'connected' : entry.status;
+  const statusClass = entry.id === 'orcid' && orcid?.linked
+    ? 'connected'
+    : remoteStatus?.healthy === true
+      ? 'connected'
+      : remoteStatus?.healthy === false
+        ? 'available'
+        : entry.status;
   const configurableNow = entry.id === 'deepl' || entry.id === 'orcid';
 
   async function testConnection() {
-    setBusy(true); setError('');
+    setBusy(true); setError(''); setNotice('');
     try { setRemoteStatus(await testIntegrationConnection(entry.id)); }
     catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)); }
     finally { setBusy(false); }
+  }
+
+  async function saveDeepLApiKey() {
+    const key = apiKey.trim();
+    if (!key) {
+      setError(copy.apiKeyRequired);
+      return;
+    }
+    setBusy(true); setError(''); setNotice('');
+    try {
+      await saveIntegrationConnection('deepl', {
+        connectionKey: 'personal',
+        displayName: 'DeepL personal API key',
+        authenticationMode: 'user_api_key',
+        secret: key,
+        enabled: true,
+      });
+      setApiKey('');
+      const status = await testIntegrationConnection('deepl');
+      setRemoteStatus(status);
+      setNotice(status.healthy ? copy.savedAndVerified : status.message ?? copy.saved);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function disconnectOrcid() {
@@ -99,13 +137,28 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
       {entry.id === 'deepl' && expanded ? (
         <div className="omi-integration-config">
           <strong>{copy.deeplConfiguration}</strong><p>{copy.deeplConfigurationDescription}</p>
+          <label>
+            <span>{copy.personalApiKey}</span>
+            <input
+              type="password"
+              autoComplete="off"
+              value={apiKey}
+              placeholder={copy.apiKeyPlaceholder}
+              onChange={(event) => setApiKey(event.target.value)}
+            />
+          </label>
+          <p className="omi-integration-secret-note">{copy.apiKeySecurity}</p>
+          <div className="omi-integration-card__actions">
+            <button type="button" className="studio-menu-primary-action" disabled={busy || !apiKey.trim()} onClick={() => void saveDeepLApiKey()}>{busy ? copy.checking : copy.saveAndTest}</button>
+            <button type="button" className="studio-menu-secondary-action" disabled={busy || !remoteStatus?.configured} onClick={() => void testConnection()}>{busy ? copy.checking : copy.testConnection}</button>
+          </div>
           <dl>
             <div><dt>{copy.configured}</dt><dd>{remoteStatus?.configured ? copy.yes : copy.no}</dd></div>
-            <div><dt>{copy.enabled}</dt><dd>{remoteStatus?.enabled ? copy.yes : copy.no}</dd></div>
+            <div><dt>{copy.enabled}</dt><dd>{remoteStatus?.enabled !== false ? copy.yes : copy.no}</dd></div>
             <div><dt>{copy.health}</dt><dd>{remoteStatus?.healthy === true ? copy.healthy : remoteStatus?.healthy === false ? copy.unhealthy : copy.unknown}</dd></div>
           </dl>
+          {notice ? <p>{notice}</p> : null}
           {error ? <p className="omi-integration-error" role="alert">{error}</p> : null}
-          <button type="button" className="studio-menu-secondary-action" disabled={busy || !remoteStatus?.configured} onClick={() => void testConnection()}>{busy ? copy.checking : copy.testConnection}</button>
         </div>
       ) : null}
 
@@ -156,17 +209,17 @@ function getCopy(locale: string) {
   };
   if (locale === 'hu') return {
     ...common,
-    title: 'Integrációk', description: 'Külső szolgáltatások, fordítók, AI-szolgáltatók és kiadói rendszerek kapcsolatai.', securityTitle: 'Elkülönített hitelesítés', securityDescription: 'Az OMI-fiók bejelentkezése és a külső szolgáltatások hitelesítése külön történik. Külső szolgáltatás jelszavát a Studio nem kéri és nem tárolja.', permissions: 'Engedélyek', authentication: 'Hitelesítés', preferred: 'ajánlott', perUserAuthentication: 'Ez a szolgáltatás felhasználónként külön is kapcsolható.', serverSecret: 'Egyes hitelesítési módokhoz szerveroldali titkos konfiguráció szükséges.', configure: 'Beállítás', testConnection: 'Kapcsolat tesztelése', comingSoon: 'Hamarosan', deeplConfiguration: 'DeepL konfiguráció', deeplConfigurationDescription: 'A DeepL használható központi szerveroldali API-kulccsal vagy később a felhasználó saját API-kulcsával.', orcidConfiguration: 'ORCID kapcsolat', orcidConfigurationDescription: 'Kapcsold a Studio-fiókhoz a saját ORCID iD-det. A hitelesítés az ORCID oldalán történik; az OMI nem kapja meg az ORCID-jelszót.', connectOrcid: 'ORCID összekapcsolása', disconnectOrcid: 'ORCID leválasztása', connectionState: 'Állapot', configured: 'Konfigurálva', enabled: 'Engedélyezve', health: 'Kapcsolat', connectedAccount: 'Kapcsolt fiók', yes: 'Igen', no: 'Nem', healthy: 'Rendben', unhealthy: 'Hiba', unknown: 'Ismeretlen', checking: 'Ellenőrzés…',
+    title: 'Integrációk', description: 'Külső szolgáltatások, fordítók, AI-szolgáltatók és kiadói rendszerek kapcsolatai.', securityTitle: 'Elkülönített hitelesítés', securityDescription: 'Az OMI-fiók bejelentkezése és a külső szolgáltatások hitelesítése külön történik. Külső szolgáltatás jelszavát a Studio nem kéri és nem tárolja.', permissions: 'Engedélyek', authentication: 'Hitelesítés', preferred: 'ajánlott', perUserAuthentication: 'Ez a szolgáltatás felhasználónként külön is kapcsolható.', serverSecret: 'Egyes hitelesítési módokhoz szerveroldali titkos konfiguráció szükséges.', configure: 'Beállítás', testConnection: 'Kapcsolat tesztelése', comingSoon: 'Hamarosan', deeplConfiguration: 'DeepL konfiguráció', deeplConfigurationDescription: 'A DeepL központi szerveroldali API-kulccsal vagy a saját személyes API-kulcsoddal használható.', personalApiKey: 'Személyes DeepL API-kulcs', apiKeyPlaceholder: 'DeepL API-kulcs', apiKeySecurity: 'A kulcs titkosítva, szerveroldalon kerül tárolásra; a Studio nem kér DeepL-jelszót.', apiKeyRequired: 'Add meg a DeepL API-kulcsot.', saveAndTest: 'Mentés és tesztelés', savedAndVerified: 'A DeepL API-kulcs mentve, a kapcsolat ellenőrizve.', saved: 'A beállítás mentve.', orcidConfiguration: 'ORCID kapcsolat', orcidConfigurationDescription: 'Kapcsold a Studio-fiókhoz a saját ORCID iD-det. A hitelesítés az ORCID oldalán történik; az OMI nem kapja meg az ORCID-jelszót.', connectOrcid: 'ORCID összekapcsolása', disconnectOrcid: 'ORCID leválasztása', connectionState: 'Állapot', configured: 'Konfigurálva', enabled: 'Engedélyezve', health: 'Kapcsolat', connectedAccount: 'Kapcsolt fiók', yes: 'Igen', no: 'Nem', healthy: 'Rendben', unhealthy: 'Hiba', unknown: 'Ismeretlen', checking: 'Ellenőrzés…',
     status: { available: 'Elérhető', planned: 'Tervezett', connected: 'Kapcsolódva', notConnected: 'Nincs összekapcsolva', notConfigured: 'Nincs beállítva', error: 'Hiba' },
   };
   if (locale === 'de') return {
     ...common,
-    title: 'Integrationen', description: 'Verbindungen zu externen Diensten, Übersetzern, KI-Anbietern und Publikationssystemen.', securityTitle: 'Getrennte Authentifizierung', securityDescription: 'OMI-Anmeldung und Authentifizierung externer Dienste bleiben getrennt. Passwörter externer Anbieter werden von Studio weder abgefragt noch gespeichert.', permissions: 'Berechtigungen', authentication: 'Authentifizierung', preferred: 'empfohlen', perUserAuthentication: 'Dieser Dienst kann auch pro Benutzer separat verbunden werden.', serverSecret: 'Einige Authentifizierungsarten benötigen eine geheime serverseitige Konfiguration.', configure: 'Konfigurieren', testConnection: 'Verbindung testen', comingSoon: 'Demnächst', deeplConfiguration: 'DeepL-Konfiguration', deeplConfigurationDescription: 'DeepL kann mit einem zentralen serverseitigen API-Schlüssel oder später mit einem persönlichen API-Schlüssel verwendet werden.', orcidConfiguration: 'ORCID-Verbindung', orcidConfigurationDescription: 'Verbinden Sie Ihre ORCID iD mit Ihrem Studio-Konto. Die Anmeldung erfolgt bei ORCID; OMI erhält Ihr ORCID-Passwort nicht.', connectOrcid: 'ORCID verbinden', disconnectOrcid: 'ORCID trennen', connectionState: 'Status', configured: 'Konfiguriert', enabled: 'Aktiviert', health: 'Verbindung', connectedAccount: 'Verbundenes Konto', yes: 'Ja', no: 'Nein', healthy: 'In Ordnung', unhealthy: 'Fehler', unknown: 'Unbekannt', checking: 'Prüfung…',
+    title: 'Integrationen', description: 'Verbindungen zu externen Diensten, Übersetzern, KI-Anbietern und Publikationssystemen.', securityTitle: 'Getrennte Authentifizierung', securityDescription: 'OMI-Anmeldung und Authentifizierung externer Dienste bleiben getrennt. Passwörter externer Anbieter werden von Studio weder abgefragt noch gespeichert.', permissions: 'Berechtigungen', authentication: 'Authentifizierung', preferred: 'empfohlen', perUserAuthentication: 'Dieser Dienst kann auch pro Benutzer separat verbunden werden.', serverSecret: 'Einige Authentifizierungsarten benötigen eine geheime serverseitige Konfiguration.', configure: 'Konfigurieren', testConnection: 'Verbindung testen', comingSoon: 'Demnächst', deeplConfiguration: 'DeepL-Konfiguration', deeplConfigurationDescription: 'DeepL kann mit einem zentralen serverseitigen API-Schlüssel oder einem persönlichen API-Schlüssel verwendet werden.', personalApiKey: 'Persönlicher DeepL-API-Schlüssel', apiKeyPlaceholder: 'DeepL-API-Schlüssel', apiKeySecurity: 'Der Schlüssel wird verschlüsselt auf dem Server gespeichert; Studio fragt nicht nach Ihrem DeepL-Passwort.', apiKeyRequired: 'Geben Sie den DeepL-API-Schlüssel ein.', saveAndTest: 'Speichern und testen', savedAndVerified: 'Der DeepL-API-Schlüssel wurde gespeichert und die Verbindung geprüft.', saved: 'Die Einstellung wurde gespeichert.', orcidConfiguration: 'ORCID-Verbindung', orcidConfigurationDescription: 'Verbinden Sie Ihre ORCID iD mit Ihrem Studio-Konto. Die Anmeldung erfolgt bei ORCID; OMI erhält Ihr ORCID-Passwort nicht.', connectOrcid: 'ORCID verbinden', disconnectOrcid: 'ORCID trennen', connectionState: 'Status', configured: 'Konfiguriert', enabled: 'Aktiviert', health: 'Verbindung', connectedAccount: 'Verbundenes Konto', yes: 'Ja', no: 'Nein', healthy: 'In Ordnung', unhealthy: 'Fehler', unknown: 'Unbekannt', checking: 'Prüfung…',
     status: { available: 'Verfügbar', planned: 'Geplant', connected: 'Verbunden', notConnected: 'Nicht verbunden', notConfigured: 'Nicht konfiguriert', error: 'Fehler' },
   };
   return {
     ...common,
-    title: 'Integrations', description: 'Connections to external services, translators, AI providers, and publishing systems.', securityTitle: 'Separated authentication', securityDescription: 'OMI account sign-in and external provider authentication remain separate. Studio never asks for or stores an external provider password.', permissions: 'Permissions', authentication: 'Authentication', preferred: 'preferred', perUserAuthentication: 'This service can also be connected separately for each user.', serverSecret: 'Some authentication modes require secret server-side configuration.', configure: 'Configure', testConnection: 'Test connection', comingSoon: 'Coming soon', deeplConfiguration: 'DeepL configuration', deeplConfigurationDescription: 'DeepL can use a central server-side API key or, later, a user-owned API key.', orcidConfiguration: 'ORCID connection', orcidConfigurationDescription: 'Connect your ORCID iD to your Studio account. Authentication happens on ORCID; OMI never receives your ORCID password.', connectOrcid: 'Connect ORCID', disconnectOrcid: 'Disconnect ORCID', connectionState: 'Status', configured: 'Configured', enabled: 'Enabled', health: 'Connection', connectedAccount: 'Connected account', yes: 'Yes', no: 'No', healthy: 'Healthy', unhealthy: 'Error', unknown: 'Unknown', checking: 'Checking…',
+    title: 'Integrations', description: 'Connections to external services, translators, AI providers, and publishing systems.', securityTitle: 'Separated authentication', securityDescription: 'OMI account sign-in and external provider authentication remain separate. Studio never asks for or stores an external provider password.', permissions: 'Permissions', authentication: 'Authentication', preferred: 'preferred', perUserAuthentication: 'This service can also be connected separately for each user.', serverSecret: 'Some authentication modes require secret server-side configuration.', configure: 'Configure', testConnection: 'Test connection', comingSoon: 'Coming soon', deeplConfiguration: 'DeepL configuration', deeplConfigurationDescription: 'DeepL can use a central server-side API key or your own personal API key.', personalApiKey: 'Personal DeepL API key', apiKeyPlaceholder: 'DeepL API key', apiKeySecurity: 'The key is encrypted and stored server-side; Studio never asks for your DeepL password.', apiKeyRequired: 'Enter the DeepL API key.', saveAndTest: 'Save and test', savedAndVerified: 'The DeepL API key was saved and the connection verified.', saved: 'The setting was saved.', orcidConfiguration: 'ORCID connection', orcidConfigurationDescription: 'Connect your ORCID iD to your Studio account. Authentication happens on ORCID; OMI never receives your ORCID password.', connectOrcid: 'Connect ORCID', disconnectOrcid: 'Disconnect ORCID', connectionState: 'Status', configured: 'Configured', enabled: 'Enabled', health: 'Connection', connectedAccount: 'Connected account', yes: 'Yes', no: 'No', healthy: 'Healthy', unhealthy: 'Error', unknown: 'Unknown', checking: 'Checking…',
     status: { available: 'Available', planned: 'Planned', connected: 'Connected', notConnected: 'Not connected', notConfigured: 'Not configured', error: 'Error' },
   };
 }
