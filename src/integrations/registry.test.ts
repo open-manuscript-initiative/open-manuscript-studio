@@ -26,4 +26,16 @@ describe('integration catalog publishing providers', () => {
     expect(ojs?.permissions).toContain('document.write');
     expect(ojs?.status).toBe('available');
   });
+
+  it('allows a publisher to register multiple OJS and OMP connections', () => {
+    const ojs = integrationCatalog.find((entry) => entry.id === 'ojs');
+    const omp = integrationCatalog.find((entry) => entry.id === 'omp');
+
+    expect(ojs?.supportsPerUserAuthentication).toBe(true);
+    expect(ojs?.supportsMultipleConnections).toBe(true);
+    expect(ojs?.configurable).toBe(true);
+    expect(omp?.supportsPerUserAuthentication).toBe(true);
+    expect(omp?.supportsMultipleConnections).toBe(true);
+    expect(omp?.configurable).toBe(true);
+  });
 });
