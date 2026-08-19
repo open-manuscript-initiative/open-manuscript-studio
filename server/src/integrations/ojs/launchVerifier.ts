@@ -5,10 +5,12 @@ import {
 
 import {
   ExternalPlatform,
-  Prisma,
-} from '@prisma/client';
+} from '../../generated/prisma/client.js';
 
-import { prisma } from '../../lib/prisma.js';
+import {
+  prisma,
+  Prisma,
+} from '../../lib/prisma.js';
 import { getActiveInstallationWithSecret } from '../externalInstallations.js';
 
 export interface LaunchClaims {
@@ -171,18 +173,23 @@ export async function verifyOjsLaunch(
         ),
       },
     });
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
+  } catch (error: unknown) {
+    const prismaError =
+      error as { code?: string };
+
+    if (prismaError.code === 'P2002') {
       throw new Error(
         'Launch assertion has already been used.',
       );
     }
 
+    const message =
+      error instanceof Error
+        ? `: ${error.message}`
+        : '.';
+
     throw new Error(
-      `Unable to persist the launch nonce${error instanceof Error ? `: ${error.message}` : '.'}`,
+      `Unable to persist the launch nonce${message}`,
     );
   }
 
