@@ -42,6 +42,7 @@ function publicConnection(connection: {
   enabled: boolean;
   status: string;
   config: unknown;
+  encryptedSecret: string | null;
   lastCheckedAt: Date | null;
   lastError: string | null;
   createdAt: Date;
@@ -56,7 +57,7 @@ function publicConnection(connection: {
     enabled: connection.enabled,
     status: connection.status.toLowerCase(),
     config: connection.config,
-    hasSecret: true,
+    hasSecret: Boolean(connection.encryptedSecret),
     lastCheckedAt: connection.lastCheckedAt?.toISOString() ?? null,
     lastError: connection.lastError,
     createdAt: connection.createdAt.toISOString(),
@@ -100,6 +101,29 @@ userIntegrationRouter.get(
             .map(publicConnection),
         };
       }),
+    });
+  },
+);
+
+userIntegrationRouter.get(
+  '/integrations/:providerId/status',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    const providerId = providerIdSchema.safeParse(request.params.providerId);
+    if (!providerId.success || !getIntegrationProvider(providerId.data)) {
+      response.status(404).json({
+        error: { code: 'INTEGRATION_PROVIDER_NOT_FOUND', message: 'Unknown integration provider.' },
+      });
+      return;
+    }
+
+    const status = await testIntegrationProvider(providerId.data, request.authUserId!);
+    response.status(200).json({
+      providerId: providerId.data,
+      enabled: true,
+      configured: status.configured,
+      healthy: status.healthy,
+      message: status.message,
     });
   },
 );
