@@ -130,7 +130,7 @@ export async function saveIntegrationConnection(
 }
 
 export async function createPublishingConnection(
-  providerId: 'ojs' | 'omp',
+  providerId: string,
   input: { displayName: string; baseUrl: string },
 ): Promise<{
   connection: IntegrationConnection;
