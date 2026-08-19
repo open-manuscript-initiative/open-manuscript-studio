@@ -29,6 +29,7 @@ export interface IntegrationCatalogProvider {
   authenticationModes: IntegrationAuthenticationMode[];
   preferredAuthenticationMode: IntegrationAuthenticationMode;
   supportsPerUserAuthentication: boolean;
+  supportsMultipleConnections: boolean;
   configurable: boolean;
   server: {
     enabled: boolean;
