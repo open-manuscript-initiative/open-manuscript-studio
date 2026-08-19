@@ -86,11 +86,14 @@
   gap: 6px;
 }
 
-.omi-integration-permissions code {
+.omi-integration-permissions code,
+.omi-publishing-connection code,
+.omi-publishing-credentials code {
   padding: 3px 6px;
   border-radius: 6px;
   background: color-mix(in srgb, currentColor 6%, transparent);
   font-size: 0.75rem;
+  overflow-wrap: anywhere;
 }
 
 .omi-integration-secret-note {
@@ -98,7 +101,8 @@
   opacity: 0.7;
 }
 
-.omi-integration-card__actions {
+.omi-integration-card__actions,
+.omi-publishing-connection__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -113,6 +117,18 @@
   border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
   border-radius: 10px;
   background: color-mix(in srgb, currentColor 3%, transparent);
+}
+
+.omi-integration-config label,
+.omi-publishing-form {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.omi-integration-config input {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .omi-integration-config dl {
@@ -134,6 +150,57 @@
 .omi-integration-config dd {
   margin: 0;
   font-weight: 600;
+  min-width: 0;
+  text-align: right;
+}
+
+.omi-publishing-connections {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.omi-publishing-connection {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+  border-radius: 9px;
+}
+
+.omi-publishing-connection__main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.omi-publishing-connection__main span {
+  overflow-wrap: anywhere;
+  opacity: 0.72;
+  font-size: 0.82rem;
+}
+
+.omi-publishing-connection__actions {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+}
+
+.omi-publishing-form,
+.omi-publishing-credentials {
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.omi-publishing-credentials {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.omi-publishing-credentials dd {
+  max-width: 68%;
 }
 
 .omi-integration-error {
@@ -155,5 +222,24 @@
   .omi-integration-status {
     grid-column: 2;
     justify-self: start;
+  }
+
+  .omi-publishing-connection {
+    grid-template-columns: 1fr;
+  }
+
+  .omi-publishing-connection > .omi-integration-status {
+    grid-column: 1;
+  }
+
+  .omi-integration-config dl > div {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .omi-integration-config dd,
+  .omi-publishing-credentials dd {
+    max-width: 100%;
+    text-align: left;
   }
 }
