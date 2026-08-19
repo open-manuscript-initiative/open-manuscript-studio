@@ -5,11 +5,11 @@ import {
 
 import {
   ExternalPlatform,
+  Prisma,
 } from '../../generated/prisma/client.js';
 
 import {
   prisma,
-  Prisma,
 } from '../../lib/prisma.js';
 import { getActiveInstallationWithSecret } from '../externalInstallations.js';
 
