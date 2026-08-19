@@ -29,6 +29,7 @@ export interface IntegrationCatalogProvider {
   authenticationModes: IntegrationAuthenticationMode[];
   preferredAuthenticationMode: IntegrationAuthenticationMode;
   supportsPerUserAuthentication: boolean;
+  supportsMultipleConnections: boolean;
   configurable: boolean;
   server: {
     enabled: boolean;
@@ -38,6 +39,11 @@ export interface IntegrationCatalogProvider {
     lastError: string | null;
   };
   connections: IntegrationConnection[];
+}
+
+export interface PublishingConnectionCredentials {
+  installationId: string;
+  sharedSecret: string;
 }
 
 async function readErrorMessage(response: Response): Promise<string | undefined> {
@@ -123,6 +129,63 @@ export async function saveIntegrationConnection(
   return payload.connection;
 }
 
+export async function createPublishingConnection(
+  providerId: string,
+  input: { displayName: string; baseUrl: string },
+): Promise<{
+  connection: IntegrationConnection;
+  credentials: PublishingConnectionCredentials;
+}> {
+  const response = await fetch(
+    `${API_BASE_URL}/integrations/${encodeURIComponent(providerId)}/publishing-connections`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(
+      (await readErrorMessage(response)) ??
+      `Publishing connection registration failed with HTTP ${response.status}.`,
+    );
+  }
+  return await response.json() as {
+    connection: IntegrationConnection;
+    credentials: PublishingConnectionCredentials;
+  };
+}
+
+export async function updatePublishingConnection(
+  connectionId: string,
+  input: { displayName: string; baseUrl: string },
+): Promise<IntegrationConnection> {
+  const response = await fetch(
+    `${API_BASE_URL}/integrations/connections/${encodeURIComponent(connectionId)}/publishing`,
+    {
+      method: 'PUT',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(
+      (await readErrorMessage(response)) ??
+      `Publishing connection update failed with HTTP ${response.status}.`,
+    );
+  }
+  const payload = await response.json() as { connection: IntegrationConnection };
+  return payload.connection;
+}
+
 export async function testIntegrationConnection(
   providerId: string,
 ): Promise<IntegrationProviderStatus> {
@@ -165,6 +228,31 @@ export async function testIntegrationConnection(
     };
   }
   return payload as IntegrationProviderStatus;
+}
+
+export async function testIntegrationConnectionById(
+  connectionId: string,
+): Promise<IntegrationConnection> {
+  const response = await fetch(
+    `${API_BASE_URL}/integrations/connections/${encodeURIComponent(connectionId)}/test`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: '{}',
+    },
+  );
+  if (!response.ok && response.status !== 409) {
+    throw new Error(
+      (await readErrorMessage(response)) ??
+      `Integration connection test failed with HTTP ${response.status}.`,
+    );
+  }
+  const payload = await response.json() as { connection: IntegrationConnection };
+  return payload.connection;
 }
 
 export async function deleteIntegrationConnection(connectionId: string): Promise<void> {

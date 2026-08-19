@@ -30,7 +30,13 @@ test('identity and cloud providers use delegated authentication', () => {
 });
 
 test('OJS and OMP retain purpose-built integration token authentication', () => {
-  const publishing = integrationCatalog.find((entry) => entry.id === 'ojs-omp');
-  assert.ok(publishing);
-  assert.deepEqual(publishing.authenticationModes, ['integration_token']);
+  const ojs = integrationCatalog.find((entry) => entry.id === 'ojs');
+  const omp = integrationCatalog.find((entry) => entry.id === 'omp');
+
+  assert.ok(ojs);
+  assert.ok(omp);
+  assert.deepEqual(ojs.authenticationModes, ['integration_token']);
+  assert.deepEqual(omp.authenticationModes, ['integration_token']);
+  assert.equal(ojs.supportsMultipleConnections, true);
+  assert.equal(omp.supportsMultipleConnections, true);
 });

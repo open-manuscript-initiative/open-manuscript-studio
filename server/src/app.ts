@@ -14,6 +14,7 @@ import { ojsAssignmentRouter } from './routes/ojsAssignmentRoutes.js';
 import { ojsReviewRouter } from './routes/ojsReviewRoutes.js';
 import { orcidOidcRouter } from './routes/orcidOidcRoutes.js';
 import { peerReviewRouter } from './routes/peerReviewRoutes.js';
+import { publishingConnectionRouter } from './routes/publishingConnectionRoutes.js';
 import { reviewManuscriptRouter } from './routes/reviewManuscriptRoutes.js';
 import { userIntegrationRouter } from './routes/userIntegrationRoutes.js';
 
@@ -50,6 +51,7 @@ app.use('/api/auth', authRouter);
 app.use('/api', authorSignatureRouter);
 app.use('/api', cloudRouter);
 app.use('/api', userIntegrationRouter);
+app.use('/api', publishingConnectionRouter);
 app.use('/api/reviews', peerReviewRouter);
 app.use('/api/reviews', reviewManuscriptRouter);
 app.use('/api/reviews', editorReviewOverviewRouter);

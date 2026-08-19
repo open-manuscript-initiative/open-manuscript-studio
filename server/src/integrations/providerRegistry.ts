@@ -27,6 +27,7 @@ export interface IntegrationProviderDescriptor {
   authenticationModes: IntegrationAuthenticationMode[];
   preferredAuthenticationMode: IntegrationAuthenticationMode;
   supportsPerUserAuthentication: boolean;
+  supportsMultipleConnections: boolean;
   configurable: boolean;
 }
 
@@ -41,37 +42,45 @@ const providers: IntegrationProviderDescriptor[] = [
     id: 'deepl', kind: 'translation', displayName: 'DeepL',
     description: 'Machine translation for manuscript text and language variants.',
     authenticationModes: ['server_secret', 'user_api_key'],
-    preferredAuthenticationMode: 'server_secret', supportsPerUserAuthentication: true, configurable: true,
+    preferredAuthenticationMode: 'server_secret', supportsPerUserAuthentication: true,
+    supportsMultipleConnections: false, configurable: true,
   },
   {
     id: 'ai-provider', kind: 'ai', displayName: 'AI provider',
     description: 'Provider-neutral AI integration for language and scholarly assistance.',
     authenticationModes: ['server_secret', 'user_api_key', 'oauth2'],
-    preferredAuthenticationMode: 'server_secret', supportsPerUserAuthentication: true, configurable: true,
+    preferredAuthenticationMode: 'server_secret', supportsPerUserAuthentication: true,
+    supportsMultipleConnections: true, configurable: true,
   },
   {
     id: 'omi-agents', kind: 'agent', displayName: 'OMI agents',
     description: 'Scoped OMI assistants for editing, metadata, summaries and citation checks.',
     authenticationModes: ['none'], preferredAuthenticationMode: 'none',
-    supportsPerUserAuthentication: false, configurable: false,
+    supportsPerUserAuthentication: false, supportsMultipleConnections: false, configurable: false,
   },
   {
-    id: 'ojs-omp', kind: 'publishing', displayName: 'OJS / OMP',
-    description: 'Publishing-system integration for manuscript exchange and editorial workflow.',
+    id: 'ojs', kind: 'publishing', displayName: 'Open Journal Systems (OJS)',
+    description: 'Journal publishing integration for manuscript exchange, peer review, assignments and editorial workflow.',
     authenticationModes: ['integration_token'], preferredAuthenticationMode: 'integration_token',
-    supportsPerUserAuthentication: false, configurable: false,
+    supportsPerUserAuthentication: true, supportsMultipleConnections: true, configurable: true,
+  },
+  {
+    id: 'omp', kind: 'publishing', displayName: 'Open Monograph Press (OMP)',
+    description: 'Monograph publishing integration for books, chapters, contributors, files and editorial workflow.',
+    authenticationModes: ['integration_token'], preferredAuthenticationMode: 'integration_token',
+    supportsPerUserAuthentication: true, supportsMultipleConnections: true, configurable: true,
   },
   {
     id: 'orcid', kind: 'identity', displayName: 'ORCID',
     description: 'Researcher identity and profile linking.',
     authenticationModes: ['oauth2'], preferredAuthenticationMode: 'oauth2',
-    supportsPerUserAuthentication: true, configurable: true,
+    supportsPerUserAuthentication: true, supportsMultipleConnections: false, configurable: true,
   },
   {
     id: 'cloud-storage', kind: 'storage', displayName: 'Cloud storage',
     description: 'Pluggable storage connections for manuscript backups and synchronization.',
     authenticationModes: ['oauth2', 'oidc', 'user_api_key'], preferredAuthenticationMode: 'oauth2',
-    supportsPerUserAuthentication: true, configurable: true,
+    supportsPerUserAuthentication: true, supportsMultipleConnections: true, configurable: true,
   },
 ];
 
@@ -132,6 +141,25 @@ async function testDeepL(userId: string): Promise<IntegrationConnectionStatus> {
   }
 }
 
+async function testPublishingProvider(
+  providerId: 'ojs' | 'omp',
+  userId: string,
+): Promise<IntegrationConnectionStatus> {
+  const connections = await prisma.userIntegration.findMany({
+    where: { userId, providerId, enabled: true },
+    select: { status: true },
+  });
+  const connected = connections.filter((connection) => connection.status === 'CONNECTED').length;
+  const configured = connections.length;
+  return {
+    configured: configured > 0,
+    healthy: configured > 0 && connected === configured,
+    message: configured > 0
+      ? `${configured} ${providerId.toUpperCase()} connection(s) configured; ${connected} connected.`
+      : `No ${providerId.toUpperCase()} connection is configured for this user.`,
+  };
+}
+
 export async function testIntegrationProvider(
   providerId: string,
   userId: string,
@@ -154,13 +182,10 @@ export async function testIntegrationProvider(
             : 'ORCID OAuth is configured; the user has not connected an ORCID account yet.',
       };
     }
-    case 'ojs-omp': {
-      const count = await prisma.externalInstallation.count({ where: { status: 'ACTIVE' } });
-      return {
-        configured: count > 0, healthy: count > 0,
-        message: count > 0 ? `${count} active OJS/OMP installation(s) configured.` : 'No active OJS/OMP installation is configured.',
-      };
-    }
+    case 'ojs':
+      return testPublishingProvider('ojs', userId);
+    case 'omp':
+      return testPublishingProvider('omp', userId);
     case 'cloud-storage': {
       const count = await prisma.cloudConnection.count({ where: { userId, status: 'CONNECTED' } });
       return {

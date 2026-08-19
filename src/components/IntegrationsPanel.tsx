@@ -6,9 +6,16 @@ import type { IntegrationAuthenticationMode, IntegrationProviderStatus } from '.
 import { integrationCatalog, type IntegrationCatalogEntry } from '../integrations/registry';
 import { getAuthProviders, getOrcidLinkUrl, type AuthProviders, unlinkOrcid } from '../services/authApi';
 import {
+  createPublishingConnection,
+  deleteIntegrationConnection,
+  getIntegrationCatalog,
   getIntegrationStatus,
   saveIntegrationConnection,
   testIntegrationConnection,
+  testIntegrationConnectionById,
+  updatePublishingConnection,
+  type IntegrationConnection,
+  type PublishingConnectionCredentials,
 } from '../services/integrationApi';
 import './IntegrationsPanel.css';
 
@@ -38,6 +45,13 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [connections, setConnections] = useState<IntegrationConnection[]>([]);
+  const [publishingName, setPublishingName] = useState('');
+  const [publishingBaseUrl, setPublishingBaseUrl] = useState('');
+  const [credentials, setCredentials] = useState<PublishingConnectionCredentials | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const isPublishing = entry.id === 'ojs' || entry.id === 'omp';
 
   useEffect(() => {
     if (entry.id !== 'orcid') return;
@@ -62,19 +76,44 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
     return () => { cancelled = true; };
   }, [entry.id, expanded]);
 
-  const statusLabel = entry.id === 'orcid' && orcid
-    ? orcid.linked ? copy.status.connected : orcid.enabled ? copy.status.available : copy.status.notConfigured
-    : remoteStatus
-      ? remoteStatus.configured ? remoteStatus.healthy === false ? copy.status.error : copy.status.connected : copy.status.notConfigured
-      : copy.status[entry.status];
-  const statusClass = entry.id === 'orcid' && orcid?.linked
+  useEffect(() => {
+    if (!isPublishing || !expanded) return;
+    let cancelled = false;
+    setBusy(true);
+    setError('');
+    void getIntegrationCatalog()
+      .then((catalog) => {
+        if (cancelled) return;
+        setConnections(catalog.find((provider) => provider.id === entry.id)?.connections ?? []);
+      })
+      .catch((reason: unknown) => { if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason)); })
+      .finally(() => { if (!cancelled) setBusy(false); });
+    return () => { cancelled = true; };
+  }, [entry.id, expanded, isPublishing]);
+
+  const connectedCount = connections.filter((connection) => connection.status === 'connected').length;
+  const statusLabel = isPublishing && connections.length > 0
+    ? copy.connectedCount(connections.length, connectedCount)
+    : entry.id === 'orcid' && orcid
+      ? orcid.linked ? copy.status.connected : orcid.enabled ? copy.status.available : copy.status.notConfigured
+      : remoteStatus
+        ? remoteStatus.configured ? remoteStatus.healthy === false ? copy.status.error : copy.status.connected : copy.status.notConfigured
+        : copy.status[entry.status];
+  const statusClass = isPublishing && connectedCount > 0
     ? 'connected'
-    : remoteStatus?.healthy === true
+    : entry.id === 'orcid' && orcid?.linked
       ? 'connected'
-      : remoteStatus?.healthy === false
-        ? 'available'
-        : entry.status;
-  const configurableNow = entry.id === 'deepl' || entry.id === 'orcid';
+      : remoteStatus?.healthy === true
+        ? 'connected'
+        : remoteStatus?.healthy === false
+          ? 'available'
+          : entry.status;
+  const configurableNow = entry.id === 'deepl' || entry.id === 'orcid' || isPublishing;
+
+  async function refreshPublishingConnections() {
+    const catalog = await getIntegrationCatalog();
+    setConnections(catalog.find((provider) => provider.id === entry.id)?.connections ?? []);
+  }
 
   async function testConnection() {
     setBusy(true); setError(''); setNotice('');
@@ -109,6 +148,77 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
     }
   }
 
+  async function savePublishing() {
+    if (!isPublishing) return;
+    const displayName = publishingName.trim();
+    const baseUrl = publishingBaseUrl.trim();
+    if (!displayName || !baseUrl) {
+      setError(copy.publishingRequired);
+      return;
+    }
+    setBusy(true); setError(''); setNotice('');
+    try {
+      if (editingId) {
+        await updatePublishingConnection(editingId, { displayName, baseUrl });
+        setNotice(copy.connectionUpdated);
+      } else {
+        const result = await createPublishingConnection(entry.id, { displayName, baseUrl });
+        setCredentials(result.credentials);
+        setNotice(copy.connectionCreated);
+      }
+      setPublishingName('');
+      setPublishingBaseUrl('');
+      setEditingId(null);
+      await refreshPublishingConnections();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function testPublishingConnection(connection: IntegrationConnection) {
+    setBusy(true); setError(''); setNotice('');
+    try {
+      await testIntegrationConnectionById(connection.id);
+      await refreshPublishingConnections();
+      setNotice(copy.connectionVerified);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removePublishingConnection(connection: IntegrationConnection) {
+    if (!window.confirm(copy.deleteConfirmation(connection.displayName ?? connection.connectionKey))) return;
+    setBusy(true); setError(''); setNotice('');
+    try {
+      await deleteIntegrationConnection(connection.id);
+      if (editingId === connection.id) {
+        setEditingId(null);
+        setPublishingName('');
+        setPublishingBaseUrl('');
+      }
+      await refreshPublishingConnections();
+      setNotice(copy.connectionDeleted);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function editPublishingConnection(connection: IntegrationConnection) {
+    const baseUrl = typeof connection.config?.baseUrl === 'string' ? connection.config.baseUrl : '';
+    setEditingId(connection.id);
+    setPublishingName(connection.displayName ?? '');
+    setPublishingBaseUrl(baseUrl);
+    setCredentials(null);
+    setNotice('');
+    setError('');
+  }
+
   async function disconnectOrcid() {
     setBusy(true); setError('');
     try {
@@ -128,25 +238,74 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
       <p>{entry.description}</p>
       <Meta label={copy.authentication}>{entry.authenticationModes.map((mode) => <code key={mode} title={copy.authenticationHelp[mode]}>{copy.authenticationMode[mode]}{mode === entry.preferredAuthenticationMode ? ` · ${copy.preferred}` : ''}</code>)}</Meta>
       <Meta label={copy.permissions}>{entry.permissions.map((permission) => <code key={permission}>{permission}</code>)}</Meta>
-      {entry.supportsPerUserAuthentication ? <p className="omi-integration-secret-note">{copy.perUserAuthentication}</p> : null}
+      {entry.supportsMultipleConnections ? <p className="omi-integration-secret-note">{copy.multipleConnections}</p> : null}
       {entry.requiresServerSecret ? <p className="omi-integration-secret-note">{copy.serverSecret}</p> : null}
       <div className="omi-integration-card__actions">
         {entry.configurable ? <button type="button" className="studio-menu-primary-action" disabled={!configurableNow} onClick={() => configurableNow && setExpanded((value) => !value)}>{configurableNow ? copy.configure : copy.comingSoon}</button> : null}
       </div>
 
+      {isPublishing && expanded ? (
+        <div className="omi-integration-config">
+          <strong>{entry.id === 'ojs' ? copy.ojsConnections : copy.ompConnections}</strong>
+          <p>{entry.id === 'ojs' ? copy.ojsConnectionsDescription : copy.ompConnectionsDescription}</p>
+
+          {connections.length ? (
+            <div className="omi-publishing-connections">
+              {connections.map((connection) => {
+                const baseUrl = typeof connection.config?.baseUrl === 'string' ? connection.config.baseUrl : '';
+                const installationId = typeof connection.config?.installationId === 'string' ? connection.config.installationId : connection.connectionKey;
+                return (
+                  <div className="omi-publishing-connection" key={connection.id}>
+                    <div className="omi-publishing-connection__main">
+                      <strong>{connection.displayName ?? installationId}</strong>
+                      <span>{baseUrl}</span>
+                      <code>{installationId}</code>
+                    </div>
+                    <span className={`omi-integration-status omi-integration-status--${connection.status === 'connected' ? 'connected' : 'available'}`}>
+                      {connection.status === 'connected' ? copy.status.connected : connection.status === 'disconnected' ? copy.status.notConnected : copy.status.configured}
+                    </span>
+                    <div className="omi-publishing-connection__actions">
+                      <button type="button" className="studio-menu-secondary-action" disabled={busy} onClick={() => void testPublishingConnection(connection)}>{copy.test}</button>
+                      <button type="button" className="studio-menu-secondary-action" disabled={busy} onClick={() => editPublishingConnection(connection)}>{copy.edit}</button>
+                      <button type="button" className="studio-menu-secondary-action" disabled={busy} onClick={() => void removePublishingConnection(connection)}>{copy.delete}</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : <p className="omi-integration-secret-note">{copy.noPublishingConnections}</p>}
+
+          <div className="omi-publishing-form">
+            <strong>{editingId ? copy.editConnection : copy.addConnection}</strong>
+            <label><span>{copy.connectionName}</span><input value={publishingName} onChange={(event) => setPublishingName(event.target.value)} placeholder={entry.id === 'ojs' ? copy.ojsNamePlaceholder : copy.ompNamePlaceholder} /></label>
+            <label><span>{copy.baseUrl}</span><input type="url" value={publishingBaseUrl} onChange={(event) => setPublishingBaseUrl(event.target.value)} placeholder="https://example.org" /></label>
+            <div className="omi-integration-card__actions">
+              <button type="button" className="studio-menu-primary-action" disabled={busy} onClick={() => void savePublishing()}>{busy ? copy.checking : editingId ? copy.saveChanges : copy.registerConnection}</button>
+              {editingId ? <button type="button" className="studio-menu-secondary-action" disabled={busy} onClick={() => { setEditingId(null); setPublishingName(''); setPublishingBaseUrl(''); }}>{copy.cancel}</button> : null}
+            </div>
+          </div>
+
+          {credentials ? (
+            <div className="omi-publishing-credentials">
+              <strong>{copy.credentialsTitle}</strong>
+              <p>{copy.credentialsDescription}</p>
+              <dl>
+                <div><dt>{copy.studioUrl}</dt><dd><code>{window.location.origin}</code></dd></div>
+                <div><dt>{copy.installationId}</dt><dd><code>{credentials.installationId}</code></dd></div>
+                <div><dt>{copy.sharedSecret}</dt><dd><code>{credentials.sharedSecret}</code></dd></div>
+                <div><dt>{copy.tokenTtl}</dt><dd><code>300</code></dd></div>
+              </dl>
+            </div>
+          ) : null}
+          {notice ? <p>{notice}</p> : null}
+          {error ? <p className="omi-integration-error" role="alert">{error}</p> : null}
+        </div>
+      ) : null}
+
       {entry.id === 'deepl' && expanded ? (
         <div className="omi-integration-config">
           <strong>{copy.deeplConfiguration}</strong><p>{copy.deeplConfigurationDescription}</p>
-          <label>
-            <span>{copy.personalApiKey}</span>
-            <input
-              type="password"
-              autoComplete="off"
-              value={apiKey}
-              placeholder={copy.apiKeyPlaceholder}
-              onChange={(event) => setApiKey(event.target.value)}
-            />
-          </label>
+          <label><span>{copy.personalApiKey}</span><input type="password" autoComplete="off" value={apiKey} placeholder={copy.apiKeyPlaceholder} onChange={(event) => setApiKey(event.target.value)} /></label>
           <p className="omi-integration-secret-note">{copy.apiKeySecurity}</p>
           <div className="omi-integration-card__actions">
             <button type="button" className="studio-menu-primary-action" disabled={busy || !apiKey.trim()} onClick={() => void saveDeepLApiKey()}>{busy ? copy.checking : copy.saveAndTest}</button>
@@ -203,23 +362,20 @@ const authenticationModeHelp: Record<IntegrationAuthenticationMode, string> = {
 };
 
 function getCopy(locale: string) {
-  const common = {
-    authenticationMode: authenticationModeLabels,
-    authenticationHelp: authenticationModeHelp,
-  };
+  const common = { authenticationMode: authenticationModeLabels, authenticationHelp: authenticationModeHelp };
   if (locale === 'hu') return {
     ...common,
-    title: 'Integrációk', description: 'Külső szolgáltatások, fordítók, AI-szolgáltatók és kiadói rendszerek kapcsolatai.', securityTitle: 'Elkülönített hitelesítés', securityDescription: 'Az OMI-fiók bejelentkezése és a külső szolgáltatások hitelesítése külön történik. Külső szolgáltatás jelszavát a Studio nem kéri és nem tárolja.', permissions: 'Engedélyek', authentication: 'Hitelesítés', preferred: 'ajánlott', perUserAuthentication: 'Ez a szolgáltatás felhasználónként külön is kapcsolható.', serverSecret: 'Egyes hitelesítési módokhoz szerveroldali titkos konfiguráció szükséges.', configure: 'Beállítás', testConnection: 'Kapcsolat tesztelése', comingSoon: 'Hamarosan', deeplConfiguration: 'DeepL konfiguráció', deeplConfigurationDescription: 'A DeepL központi szerveroldali API-kulccsal vagy a saját személyes API-kulcsoddal használható.', personalApiKey: 'Személyes DeepL API-kulcs', apiKeyPlaceholder: 'DeepL API-kulcs', apiKeySecurity: 'A kulcs titkosítva, szerveroldalon kerül tárolásra; a Studio nem kér DeepL-jelszót.', apiKeyRequired: 'Add meg a DeepL API-kulcsot.', saveAndTest: 'Mentés és tesztelés', savedAndVerified: 'A DeepL API-kulcs mentve, a kapcsolat ellenőrizve.', saved: 'A beállítás mentve.', orcidConfiguration: 'ORCID kapcsolat', orcidConfigurationDescription: 'Kapcsold a Studio-fiókhoz a saját ORCID iD-det. A hitelesítés az ORCID oldalán történik; az OMI nem kapja meg az ORCID-jelszót.', connectOrcid: 'ORCID összekapcsolása', disconnectOrcid: 'ORCID leválasztása', connectionState: 'Állapot', configured: 'Konfigurálva', enabled: 'Engedélyezve', health: 'Kapcsolat', connectedAccount: 'Kapcsolt fiók', yes: 'Igen', no: 'Nem', healthy: 'Rendben', unhealthy: 'Hiba', unknown: 'Ismeretlen', checking: 'Ellenőrzés…',
-    status: { available: 'Elérhető', planned: 'Tervezett', connected: 'Kapcsolódva', notConnected: 'Nincs összekapcsolva', notConfigured: 'Nincs beállítva', error: 'Hiba' },
+    title: 'Integrációk', description: 'Külső szolgáltatások, fordítók, AI-szolgáltatók és kiadói rendszerek kapcsolatai.', securityTitle: 'Elkülönített hitelesítés', securityDescription: 'Az OMI-fiók bejelentkezése és a külső szolgáltatások hitelesítése külön történik. Külső szolgáltatás jelszavát a Studio nem kéri és nem tárolja.', permissions: 'Engedélyek', authentication: 'Hitelesítés', preferred: 'ajánlott', multipleConnections: 'Több különálló kapcsolat regisztrálható.', serverSecret: 'Egyes hitelesítési módokhoz szerveroldali titkos konfiguráció szükséges.', configure: 'Beállítás', testConnection: 'Kapcsolat tesztelése', comingSoon: 'Hamarosan', deeplConfiguration: 'DeepL konfiguráció', deeplConfigurationDescription: 'A DeepL központi szerveroldali API-kulccsal vagy a saját személyes API-kulcsoddal használható.', personalApiKey: 'Személyes DeepL API-kulcs', apiKeyPlaceholder: 'DeepL API-kulcs', apiKeySecurity: 'A kulcs titkosítva, szerveroldalon kerül tárolásra; a Studio nem kér DeepL-jelszót.', apiKeyRequired: 'Add meg a DeepL API-kulcsot.', saveAndTest: 'Mentés és tesztelés', savedAndVerified: 'A DeepL API-kulcs mentve, a kapcsolat ellenőrizve.', saved: 'A beállítás mentve.', orcidConfiguration: 'ORCID kapcsolat', orcidConfigurationDescription: 'Kapcsold a Studio-fiókhoz a saját ORCID iD-det. A hitelesítés az ORCID oldalán történik; az OMI nem kapja meg az ORCID-jelszót.', connectOrcid: 'ORCID összekapcsolása', disconnectOrcid: 'ORCID leválasztása', connectionState: 'Állapot', configured: 'Konfigurálva', enabled: 'Engedélyezve', health: 'Kapcsolat', connectedAccount: 'Kapcsolt fiók', yes: 'Igen', no: 'Nem', healthy: 'Rendben', unhealthy: 'Hiba', unknown: 'Ismeretlen', checking: 'Ellenőrzés…', ojsConnections: 'OJS folyóiratok', ompConnections: 'OMP kiadók', ojsConnectionsDescription: 'Regisztrálj egy vagy több OJS telepítést vagy folyóiratot külön kapcsolattal.', ompConnectionsDescription: 'Regisztrálj egy vagy több OMP telepítést vagy kiadói kontextust külön kapcsolattal.', noPublishingConnections: 'Még nincs regisztrált kapcsolat.', addConnection: 'Kapcsolat hozzáadása', editConnection: 'Kapcsolat szerkesztése', connectionName: 'Megjelenítési név', ojsNamePlaceholder: 'Például: Egyháztörténeti Szemle', ompNamePlaceholder: 'Például: Varga Webkiadó', baseUrl: 'Külső rendszer URL-je', registerConnection: 'Kapcsolat regisztrálása', saveChanges: 'Módosítások mentése', cancel: 'Mégse', test: 'Teszt', edit: 'Szerkesztés', delete: 'Törlés', publishingRequired: 'Add meg a kapcsolat nevét és URL-jét.', connectionCreated: 'A kapcsolat létrejött. Másold át az alábbi adatokat az OJS/OMP plugin beállításaiba.', connectionUpdated: 'A kapcsolat frissítve.', connectionVerified: 'A Studio-regisztráció ellenőrzése sikerült.', connectionDeleted: 'A kapcsolat törölve és a külső telepítés letiltva.', credentialsTitle: 'Egyszer megjelenített kapcsolati adatok', credentialsDescription: 'A megosztott titok biztonsági okból később nem jeleníthető meg újra. Másold át most a pluginba.', studioUrl: 'Studio URL', installationId: 'Telepítési azonosító', sharedSecret: 'Megosztott titok', tokenTtl: 'Token élettartama (másodperc)', deleteConfirmation: (name: string) => `Biztosan törlöd ezt a kapcsolatot: ${name}?`, connectedCount: (total: number, connected: number) => `${connected}/${total} kapcsolódva`,
+    status: { available: 'Elérhető', planned: 'Tervezett', connected: 'Kapcsolódva', configured: 'Konfigurálva', notConnected: 'Nincs összekapcsolva', notConfigured: 'Nincs beállítva', error: 'Hiba' },
   };
   if (locale === 'de') return {
     ...common,
-    title: 'Integrationen', description: 'Verbindungen zu externen Diensten, Übersetzern, KI-Anbietern und Publikationssystemen.', securityTitle: 'Getrennte Authentifizierung', securityDescription: 'OMI-Anmeldung und Authentifizierung externer Dienste bleiben getrennt. Passwörter externer Anbieter werden von Studio weder abgefragt noch gespeichert.', permissions: 'Berechtigungen', authentication: 'Authentifizierung', preferred: 'empfohlen', perUserAuthentication: 'Dieser Dienst kann auch pro Benutzer separat verbunden werden.', serverSecret: 'Einige Authentifizierungsarten benötigen eine geheime serverseitige Konfiguration.', configure: 'Konfigurieren', testConnection: 'Verbindung testen', comingSoon: 'Demnächst', deeplConfiguration: 'DeepL-Konfiguration', deeplConfigurationDescription: 'DeepL kann mit einem zentralen serverseitigen API-Schlüssel oder einem persönlichen API-Schlüssel verwendet werden.', personalApiKey: 'Persönlicher DeepL-API-Schlüssel', apiKeyPlaceholder: 'DeepL-API-Schlüssel', apiKeySecurity: 'Der Schlüssel wird verschlüsselt auf dem Server gespeichert; Studio fragt nicht nach Ihrem DeepL-Passwort.', apiKeyRequired: 'Geben Sie den DeepL-API-Schlüssel ein.', saveAndTest: 'Speichern und testen', savedAndVerified: 'Der DeepL-API-Schlüssel wurde gespeichert und die Verbindung geprüft.', saved: 'Die Einstellung wurde gespeichert.', orcidConfiguration: 'ORCID-Verbindung', orcidConfigurationDescription: 'Verbinden Sie Ihre ORCID iD mit Ihrem Studio-Konto. Die Anmeldung erfolgt bei ORCID; OMI erhält Ihr ORCID-Passwort nicht.', connectOrcid: 'ORCID verbinden', disconnectOrcid: 'ORCID trennen', connectionState: 'Status', configured: 'Konfiguriert', enabled: 'Aktiviert', health: 'Verbindung', connectedAccount: 'Verbundenes Konto', yes: 'Ja', no: 'Nein', healthy: 'In Ordnung', unhealthy: 'Fehler', unknown: 'Unbekannt', checking: 'Prüfung…',
-    status: { available: 'Verfügbar', planned: 'Geplant', connected: 'Verbunden', notConnected: 'Nicht verbunden', notConfigured: 'Nicht konfiguriert', error: 'Fehler' },
+    title: 'Integrationen', description: 'Verbindungen zu externen Diensten, Übersetzern, KI-Anbietern und Publikationssystemen.', securityTitle: 'Getrennte Authentifizierung', securityDescription: 'OMI-Anmeldung und Authentifizierung externer Dienste bleiben getrennt. Passwörter externer Anbieter werden von Studio weder abgefragt noch gespeichert.', permissions: 'Berechtigungen', authentication: 'Authentifizierung', preferred: 'empfohlen', multipleConnections: 'Mehrere unabhängige Verbindungen können registriert werden.', serverSecret: 'Einige Authentifizierungsarten benötigen eine geheime serverseitige Konfiguration.', configure: 'Konfigurieren', testConnection: 'Verbindung testen', comingSoon: 'Demnächst', deeplConfiguration: 'DeepL-Konfiguration', deeplConfigurationDescription: 'DeepL kann mit einem zentralen serverseitigen API-Schlüssel oder einem persönlichen API-Schlüssel verwendet werden.', personalApiKey: 'Persönlicher DeepL-API-Schlüssel', apiKeyPlaceholder: 'DeepL-API-Schlüssel', apiKeySecurity: 'Der Schlüssel wird verschlüsselt auf dem Server gespeichert; Studio fragt nicht nach Ihrem DeepL-Passwort.', apiKeyRequired: 'Geben Sie den DeepL-API-Schlüssel ein.', saveAndTest: 'Speichern und testen', savedAndVerified: 'Der DeepL-API-Schlüssel wurde gespeichert und die Verbindung geprüft.', saved: 'Die Einstellung wurde gespeichert.', orcidConfiguration: 'ORCID-Verbindung', orcidConfigurationDescription: 'Verbinden Sie Ihre ORCID iD mit Ihrem Studio-Konto. Die Anmeldung erfolgt bei ORCID; OMI erhält Ihr ORCID-Passwort nicht.', connectOrcid: 'ORCID verbinden', disconnectOrcid: 'ORCID trennen', connectionState: 'Status', configured: 'Konfiguriert', enabled: 'Aktiviert', health: 'Verbindung', connectedAccount: 'Verbundenes Konto', yes: 'Ja', no: 'Nein', healthy: 'In Ordnung', unhealthy: 'Fehler', unknown: 'Unbekannt', checking: 'Prüfung…', ojsConnections: 'OJS-Zeitschriften', ompConnections: 'OMP-Verlage', ojsConnectionsDescription: 'Registrieren Sie eine oder mehrere OJS-Installationen oder Zeitschriften als getrennte Verbindungen.', ompConnectionsDescription: 'Registrieren Sie eine oder mehrere OMP-Installationen oder Press-Kontexte als getrennte Verbindungen.', noPublishingConnections: 'Noch keine Verbindung registriert.', addConnection: 'Verbindung hinzufügen', editConnection: 'Verbindung bearbeiten', connectionName: 'Anzeigename', ojsNamePlaceholder: 'Zum Beispiel: Fachzeitschrift', ompNamePlaceholder: 'Zum Beispiel: Universitätsverlag', baseUrl: 'URL des externen Systems', registerConnection: 'Verbindung registrieren', saveChanges: 'Änderungen speichern', cancel: 'Abbrechen', test: 'Testen', edit: 'Bearbeiten', delete: 'Löschen', publishingRequired: 'Geben Sie einen Namen und eine URL ein.', connectionCreated: 'Die Verbindung wurde erstellt. Übertragen Sie die folgenden Daten in die OJS/OMP-Plugin-Einstellungen.', connectionUpdated: 'Die Verbindung wurde aktualisiert.', connectionVerified: 'Die Studio-Registrierung wurde erfolgreich geprüft.', connectionDeleted: 'Die Verbindung wurde gelöscht und die externe Installation deaktiviert.', credentialsTitle: 'Einmalig angezeigte Verbindungsdaten', credentialsDescription: 'Das gemeinsame Geheimnis wird aus Sicherheitsgründen später nicht erneut angezeigt. Kopieren Sie es jetzt in das Plugin.', studioUrl: 'Studio-URL', installationId: 'Installations-ID', sharedSecret: 'Gemeinsames Geheimnis', tokenTtl: 'Token-Lebensdauer (Sekunden)', deleteConfirmation: (name: string) => `Diese Verbindung wirklich löschen: ${name}?`, connectedCount: (total: number, connected: number) => `${connected}/${total} verbunden`,
+    status: { available: 'Verfügbar', planned: 'Geplant', connected: 'Verbunden', configured: 'Konfiguriert', notConnected: 'Nicht verbunden', notConfigured: 'Nicht konfiguriert', error: 'Fehler' },
   };
   return {
     ...common,
-    title: 'Integrations', description: 'Connections to external services, translators, AI providers, and publishing systems.', securityTitle: 'Separated authentication', securityDescription: 'OMI account sign-in and external provider authentication remain separate. Studio never asks for or stores an external provider password.', permissions: 'Permissions', authentication: 'Authentication', preferred: 'preferred', perUserAuthentication: 'This service can also be connected separately for each user.', serverSecret: 'Some authentication modes require secret server-side configuration.', configure: 'Configure', testConnection: 'Test connection', comingSoon: 'Coming soon', deeplConfiguration: 'DeepL configuration', deeplConfigurationDescription: 'DeepL can use a central server-side API key or your own personal API key.', personalApiKey: 'Personal DeepL API key', apiKeyPlaceholder: 'DeepL API key', apiKeySecurity: 'The key is encrypted and stored server-side; Studio never asks for your DeepL password.', apiKeyRequired: 'Enter the DeepL API key.', saveAndTest: 'Save and test', savedAndVerified: 'The DeepL API key was saved and the connection verified.', saved: 'The setting was saved.', orcidConfiguration: 'ORCID connection', orcidConfigurationDescription: 'Connect your ORCID iD to your Studio account. Authentication happens on ORCID; OMI never receives your ORCID password.', connectOrcid: 'Connect ORCID', disconnectOrcid: 'Disconnect ORCID', connectionState: 'Status', configured: 'Configured', enabled: 'Enabled', health: 'Connection', connectedAccount: 'Connected account', yes: 'Yes', no: 'No', healthy: 'Healthy', unhealthy: 'Error', unknown: 'Unknown', checking: 'Checking…',
-    status: { available: 'Available', planned: 'Planned', connected: 'Connected', notConnected: 'Not connected', notConfigured: 'Not configured', error: 'Error' },
+    title: 'Integrations', description: 'Connections to external services, translators, AI providers, and publishing systems.', securityTitle: 'Separated authentication', securityDescription: 'OMI account sign-in and external provider authentication remain separate. Studio never asks for or stores an external provider password.', permissions: 'Permissions', authentication: 'Authentication', preferred: 'preferred', multipleConnections: 'Multiple independent connections can be registered.', serverSecret: 'Some authentication modes require secret server-side configuration.', configure: 'Configure', testConnection: 'Test connection', comingSoon: 'Coming soon', deeplConfiguration: 'DeepL configuration', deeplConfigurationDescription: 'DeepL can use a central server-side API key or your own personal API key.', personalApiKey: 'Personal DeepL API key', apiKeyPlaceholder: 'DeepL API key', apiKeySecurity: 'The key is encrypted and stored server-side; Studio never asks for your DeepL password.', apiKeyRequired: 'Enter the DeepL API key.', saveAndTest: 'Save and test', savedAndVerified: 'The DeepL API key was saved and the connection verified.', saved: 'The setting was saved.', orcidConfiguration: 'ORCID connection', orcidConfigurationDescription: 'Connect your ORCID iD to your Studio account. Authentication happens on ORCID; OMI never receives your ORCID password.', connectOrcid: 'Connect ORCID', disconnectOrcid: 'Disconnect ORCID', connectionState: 'Status', configured: 'Configured', enabled: 'Enabled', health: 'Connection', connectedAccount: 'Connected account', yes: 'Yes', no: 'No', healthy: 'Healthy', unhealthy: 'Error', unknown: 'Unknown', checking: 'Checking…', ojsConnections: 'OJS journals', ompConnections: 'OMP presses', ojsConnectionsDescription: 'Register one or more OJS installations or journals as independent connections.', ompConnectionsDescription: 'Register one or more OMP installations or press contexts as independent connections.', noPublishingConnections: 'No connection has been registered yet.', addConnection: 'Add connection', editConnection: 'Edit connection', connectionName: 'Display name', ojsNamePlaceholder: 'For example: Journal of Example Studies', ompNamePlaceholder: 'For example: University Press', baseUrl: 'External system URL', registerConnection: 'Register connection', saveChanges: 'Save changes', cancel: 'Cancel', test: 'Test', edit: 'Edit', delete: 'Delete', publishingRequired: 'Enter a connection name and URL.', connectionCreated: 'The connection was created. Copy the following values into the OJS/OMP plugin settings.', connectionUpdated: 'The connection was updated.', connectionVerified: 'The Studio registration was verified successfully.', connectionDeleted: 'The connection was deleted and the external installation disabled.', credentialsTitle: 'Connection credentials shown once', credentialsDescription: 'For security, the shared secret cannot be displayed again later. Copy it to the plugin now.', studioUrl: 'Studio URL', installationId: 'Installation ID', sharedSecret: 'Shared secret', tokenTtl: 'Token lifetime (seconds)', deleteConfirmation: (name: string) => `Delete this connection: ${name}?`, connectedCount: (total: number, connected: number) => `${connected}/${total} connected`,
+    status: { available: 'Available', planned: 'Planned', connected: 'Connected', configured: 'Configured', notConnected: 'Not connected', notConfigured: 'Not configured', error: 'Error' },
   };
 }

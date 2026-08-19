@@ -37,6 +37,7 @@ export interface IntegrationProviderDescriptor {
   preferredAuthenticationMode: IntegrationAuthenticationMode;
   requiresServerSecret: boolean;
   supportsPerUserAuthentication?: boolean;
+  supportsMultipleConnections?: boolean;
   documentationUrl?: string;
 }
 
