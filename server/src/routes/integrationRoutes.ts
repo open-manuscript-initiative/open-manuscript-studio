@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { createOmpHandoff, consumeOmpHandoff } from '../integrations/omp/handoffStore.js';
+import { loadOmpLaunchData } from '../integrations/omp/ompClient.js';
 import { verifyOmpLaunch } from '../integrations/omp/launchVerifier.js';
 import { createOjsHandoff, consumeOjsHandoff } from '../integrations/ojs/handoffStore.js';
 import { issueOjsAssignmentGrant } from '../integrations/ojs/ojsAssignmentGrant.js';
@@ -54,14 +55,17 @@ integrationRouter.get('/omp/launch', async (request, response) => {
 
   try {
     const verified = await verifyOmpLaunch(payload, signature);
+    const ompData = await loadOmpLaunchData(verified.claims, payload, signature);
     const launchData = {
       protocol: 'omi-integration/1',
       profile: 'omi-integration/1/omp',
       status: 'verified',
       installation: verified.installation,
       context: verified.claims.context ?? null,
-      submission: verified.claims.submission ?? null,
+      submission: ompData.submission,
       component: verified.claims.component ?? null,
+      contributors: ompData.contributors,
+      files: ompData.files,
       actor: verified.claims.actor ?? null,
       actorMode: verified.claims.actorMode ?? null,
       scope: verified.claims.scope ?? [],
