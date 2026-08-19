@@ -20,8 +20,8 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-	
-	env:
+    
+    env:
       DATABASE_URL: postgresql://omi_ci:omi_ci@localhost:5432/omi_ci
 
     steps:
