@@ -15,6 +15,10 @@ import { ReviewPortal } from './components/ReviewPortal';
 import { SearchReplaceOverlay } from './components/SearchReplaceOverlay';
 import { StudioMenuWithHelp } from './components/StudioMenuWithHelp';
 import {
+  createManuscriptFromOmpLaunch,
+  fetchOmpHandoff,
+} from './integrations/omp/importOmpLaunch';
+import {
   clearOjsLaunchPayload,
   readOjsLaunchPayload,
   type OjsLaunchPayload,
@@ -34,7 +38,7 @@ import './styles/auth.css';
 import './styles/history.css';
 
 type AuthView = 'login' | 'register';
-type OjsImportState =
+type ExternalImportState =
   | { status: 'idle'; message?: undefined }
   | { status: 'loading'; message?: undefined }
   | { status: 'error'; message: string };
@@ -56,6 +60,10 @@ function hasInitialOjsLaunch(): boolean {
   } catch {
     return false;
   }
+}
+
+function hasInitialOmpLaunch(): boolean {
+  return new URL(window.location.href).searchParams.has('omiOmpLaunch');
 }
 
 async function fetchOjsHandoff(token: string): Promise<AssignmentAwareLaunch | null> {
@@ -105,8 +113,8 @@ export function App() {
 function StudioApplication() {
   const reviewMode = new URLSearchParams(window.location.search).get('review') === '1';
   const [menuOpen, setMenuOpen] = useState(false);
-  const [ojsImportState, setOjsImportState] = useState<OjsImportState>(() =>
-    !reviewMode && hasInitialOjsLaunch()
+  const [externalImportState, setExternalImportState] = useState<ExternalImportState>(() =>
+    !reviewMode && (hasInitialOjsLaunch() || hasInitialOmpLaunch())
       ? { status: 'loading' }
       : { status: 'idle' },
   );
@@ -121,7 +129,7 @@ function StudioApplication() {
     if (reviewMode) {
       setOjsContributors([]);
       setOjsAssignment(null);
-      setOjsImportState({ status: 'idle' });
+      setExternalImportState({ status: 'idle' });
       return;
     }
 
@@ -129,22 +137,45 @@ function StudioApplication() {
 
     const importLaunch = async () => {
       const url = new URL(window.location.href);
-      const handoffToken = url.searchParams.get('omiOjsLaunch');
-      const hasLaunchRequest = Boolean(handoffToken) || hasInitialOjsLaunch();
+      const ompHandoffToken = url.searchParams.get('omiOmpLaunch');
+      const ojsHandoffToken = url.searchParams.get('omiOjsLaunch');
+      const hasLaunchRequest = Boolean(ompHandoffToken)
+        || Boolean(ojsHandoffToken)
+        || hasInitialOjsLaunch();
 
       if (!hasLaunchRequest) {
-        if (!cancelled) setOjsImportState({ status: 'idle' });
+        if (!cancelled) setExternalImportState({ status: 'idle' });
         return;
       }
 
-      if (!cancelled) setOjsImportState({ status: 'loading' });
+      if (!cancelled) setExternalImportState({ status: 'loading' });
 
-      let launch: AssignmentAwareLaunch | null = null;
       try {
-        if (handoffToken && handoffToken !== '1') {
-          launch = await fetchOjsHandoff(handoffToken);
+        if (ompHandoffToken) {
+          const launch = await fetchOmpHandoff(ompHandoffToken);
+          if (cancelled) return;
+          const manuscript = createManuscriptFromOmpLaunch(launch);
+          if (!manuscript) {
+            throw new Error('The OMP monograph could not be initialized.');
+          }
+
+          setOjsContributors([]);
+          setOjsAssignment(null);
+          loadManuscript(manuscript);
+          url.searchParams.delete('omiOmpLaunch');
+          window.history.replaceState(
+            null,
+            '',
+            `${url.pathname}${url.search}${url.hash}`,
+          );
+          setExternalImportState({ status: 'idle' });
+          return;
+        }
+
+        let launch: AssignmentAwareLaunch | null = null;
+        if (ojsHandoffToken && ojsHandoffToken !== '1') {
+          launch = await fetchOjsHandoff(ojsHandoffToken);
         } else {
-          // Backward compatibility with the former sessionStorage handoff.
           launch = readOjsLaunchPayload() as AssignmentAwareLaunch | null;
         }
 
@@ -183,15 +214,15 @@ function StudioApplication() {
             `${url.pathname}${url.search}${url.hash}`,
           );
         }
-        setOjsImportState({ status: 'idle' });
+        setExternalImportState({ status: 'idle' });
       } catch (error) {
-        console.error('Unable to retrieve or import the OJS launch payload.', error);
+        console.error('Unable to retrieve or import the external launch payload.', error);
         if (!cancelled) {
-          setOjsImportState({
+          setExternalImportState({
             status: 'error',
             message: error instanceof Error
               ? error.message
-              : 'Unable to import the OJS manuscript.',
+              : 'Unable to import the external manuscript.',
           });
         }
       }
@@ -226,26 +257,26 @@ function StudioApplication() {
 
   if (reviewMode) return <ReviewPortal />;
 
-  if (ojsImportState.status === 'loading') {
+  if (externalImportState.status === 'loading') {
     return (
       <main className="auth-page" aria-busy="true" aria-live="polite">
         <section className="auth-card">
           <div className="auth-brand">
             <div className="auth-brand-name">Open Manuscript Studio</div>
-            <div className="auth-brand-description">Loading manuscript from OJS…</div>
+            <div className="auth-brand-description">Loading external manuscript…</div>
           </div>
         </section>
       </main>
     );
   }
 
-  if (ojsImportState.status === 'error') {
+  if (externalImportState.status === 'error') {
     return (
       <main className="auth-page" aria-live="assertive">
         <section className="auth-card">
           <div className="auth-header">
             <h1>Unable to load manuscript</h1>
-            <p>{ojsImportState.message}</p>
+            <p>{externalImportState.message}</p>
           </div>
         </section>
       </main>

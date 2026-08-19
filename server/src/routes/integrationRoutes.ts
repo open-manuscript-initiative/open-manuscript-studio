@@ -1,5 +1,7 @@
 import { Router } from 'express';
 
+import { createOmpHandoff, consumeOmpHandoff } from '../integrations/omp/handoffStore.js';
+import { verifyOmpLaunch } from '../integrations/omp/launchVerifier.js';
 import { createOjsHandoff, consumeOjsHandoff } from '../integrations/ojs/handoffStore.js';
 import { issueOjsAssignmentGrant } from '../integrations/ojs/ojsAssignmentGrant.js';
 import { loadOjsAssignmentContext } from '../integrations/ojs/ojsAssignmentContext.js';
@@ -8,6 +10,78 @@ import { verifyOjsLaunch } from '../integrations/ojs/launchVerifier.js';
 import { createReviewSnapshotFromOjs } from '../integrations/ojs/reviewSnapshot.js';
 
 export const integrationRouter = Router();
+
+integrationRouter.get('/omp/handoff/:token', (request, response) => {
+  const token = typeof request.params.token === 'string' ? request.params.token : '';
+  if (!token) {
+    response.status(400).json({
+      error: {
+        code: 'MISSING_HANDOFF_TOKEN',
+        message: 'The OMP handoff token is required.',
+      },
+    });
+    return;
+  }
+
+  const payload = consumeOmpHandoff(token);
+  if (!payload) {
+    response.status(410).json({
+      error: {
+        code: 'OMP_HANDOFF_EXPIRED',
+        message: 'The OMP handoff token is invalid, expired, or has already been used.',
+      },
+    });
+    return;
+  }
+
+  response.setHeader('Cache-Control', 'no-store, max-age=0');
+  response.status(200).json(payload);
+});
+
+integrationRouter.get('/omp/launch', async (request, response) => {
+  const payload = typeof request.query.payload === 'string' ? request.query.payload : '';
+  const signature = typeof request.query.signature === 'string' ? request.query.signature : '';
+
+  if (!payload || !signature) {
+    response.status(400).json({
+      error: {
+        code: 'MISSING_LAUNCH_ASSERTION',
+        message: 'The OMP launch payload and signature are required.',
+      },
+    });
+    return;
+  }
+
+  try {
+    const verified = await verifyOmpLaunch(payload, signature);
+    const launchData = {
+      protocol: 'omi-integration/1',
+      profile: 'omi-integration/1/omp',
+      status: 'verified',
+      installation: verified.installation,
+      context: verified.claims.context ?? null,
+      submission: verified.claims.submission ?? null,
+      component: verified.claims.component ?? null,
+      actor: verified.claims.actor ?? null,
+      actorMode: verified.claims.actorMode ?? null,
+      scope: verified.claims.scope ?? [],
+      externalBaseUrl: verified.claims.externalBaseUrl ?? null,
+      apiBaseUrl: verified.claims.apiBaseUrl ?? null,
+      expiresAt: new Date(verified.claims.exp * 1000).toISOString(),
+    };
+
+    const handoffToken = createOmpHandoff(launchData);
+    response.setHeader('Cache-Control', 'no-store, max-age=0');
+    response.redirect(302, `/?omiOmpLaunch=${encodeURIComponent(handoffToken)}`);
+  } catch (error) {
+    response.status(401).json({
+      error: {
+        code: 'INVALID_OMP_LAUNCH_ASSERTION',
+        message: error instanceof Error ? error.message : 'OMP launch verification failed.',
+      },
+    });
+  }
+});
 
 integrationRouter.get('/ojs/handoff/:token', (request, response) => {
   const token = typeof request.params.token === 'string' ? request.params.token : '';
@@ -103,10 +177,6 @@ integrationRouter.get(
         expiresAt: new Date(verified.claims.exp * 1000).toISOString(),
       };
 
-      // Keep the potentially large manuscript payload on the API server.
-      // The browser receives only a short-lived, one-time token and retrieves
-      // the launch data after Studio has loaded. This avoids Web Storage quota
-      // limits when DOCX files contain embedded images or other rich content.
       const handoffToken = createOjsHandoff(launchData);
       response.setHeader('Cache-Control', 'no-store, max-age=0');
       response.redirect(302, `/?omiOjsLaunch=${encodeURIComponent(handoffToken)}`);
