@@ -86,7 +86,7 @@ function localizedString(
   return typeof first === 'string' ? first.trim() : '';
 }
 
-function keywordList(value: OmpLaunchPayload['submission'] extends infer _ ? unknown : never): string[] {
+function keywordList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value
     .filter((item): item is string => typeof item === 'string')
