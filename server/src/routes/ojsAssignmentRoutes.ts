@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import type { Prisma } from '@prisma/client';
+import type { Prisma } from '../generated/prisma/client.js';
 import { Router, type Response } from 'express';
 import { z } from 'zod';
 
