@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../generated/prisma/client.js';
 
 import { prisma } from '../lib/prisma.js';
 import { requireWorkspaceRole } from './peerReviewService.js';

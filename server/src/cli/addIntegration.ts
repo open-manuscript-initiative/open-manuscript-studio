@@ -1,4 +1,4 @@
-import { ExternalPlatform } from '@prisma/client';
+import { ExternalPlatform } from '../generated/prisma/client.js';
 
 import { upsertExternalInstallation } from '../integrations/externalInstallations.js';
 

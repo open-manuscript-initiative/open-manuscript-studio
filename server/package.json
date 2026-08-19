@@ -17,19 +17,21 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^6.0.0",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
     "cors": "^2.8.5",
     "dotenv": "^17.0.0",
     "express": "^5.0.0",
     "helmet": "^8.0.0",
     "jose": "^6.1.0",
+    "pg": "^8.23.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.0",
     "@types/node": "^24.0.0",
-    "prisma": "^6.0.0",
+    "prisma": "^7.9.1",
     "tsx": "^4.0.0",
     "typescript": "^5.9.0"
   }
