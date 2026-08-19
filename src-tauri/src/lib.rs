@@ -1,8 +1,16 @@
 #[cfg(desktop)]
 mod updater;
 
+#[cfg(mobile)]
+fn install_mobile_crypto_provider() {
+    let _ = rustls::crypto::ring::default_provider().install_default();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(mobile)]
+    install_mobile_crypto_provider();
+
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init());
