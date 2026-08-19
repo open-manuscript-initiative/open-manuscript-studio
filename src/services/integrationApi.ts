@@ -160,6 +160,32 @@ export async function createPublishingConnection(
   };
 }
 
+export async function updatePublishingConnection(
+  connectionId: string,
+  input: { displayName: string; baseUrl: string },
+): Promise<IntegrationConnection> {
+  const response = await fetch(
+    `${API_BASE_URL}/integrations/connections/${encodeURIComponent(connectionId)}/publishing`,
+    {
+      method: 'PUT',
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(
+      (await readErrorMessage(response)) ??
+      `Publishing connection update failed with HTTP ${response.status}.`,
+    );
+  }
+  const payload = await response.json() as { connection: IntegrationConnection };
+  return payload.connection;
+}
+
 export async function testIntegrationConnection(
   providerId: string,
 ): Promise<IntegrationProviderStatus> {
