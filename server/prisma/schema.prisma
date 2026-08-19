@@ -107,6 +107,7 @@ model User {
   reviewWorkspaceAccess     ReviewWorkspaceAccess[]
   cloudConnections          CloudConnection[]
   cloudBackups              CloudBackup[]
+  integrations              UserIntegration[]
 
   @@map("users")
 }
@@ -242,6 +243,46 @@ model PeerReviewFeedback {
 
   @@index([assignmentId, visibility])
   @@map("peer_review_feedback")
+}
+
+model IntegrationProviderConfig {
+  id                 String    @id @default(uuid()) @db.Uuid
+  providerId         String    @unique @map("provider_id") @db.VarChar(128)
+  enabled            Boolean   @default(true)
+  authenticationMode String?   @map("authentication_mode") @db.VarChar(32)
+  config              Json?     @db.JsonB
+  encryptedSecret     String?   @map("encrypted_secret") @db.Text
+  status              String    @default("UNCONFIGURED") @db.VarChar(32)
+  lastCheckedAt       DateTime? @map("last_checked_at") @db.Timestamptz(6)
+  lastError           String?   @map("last_error") @db.Text
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([enabled, status])
+  @@map("integration_provider_configs")
+}
+
+model UserIntegration {
+  id                 String    @id @default(uuid()) @db.Uuid
+  userId             String    @map("user_id") @db.Uuid
+  providerId         String    @map("provider_id") @db.VarChar(128)
+  connectionKey      String    @default("default") @map("connection_key") @db.VarChar(128)
+  displayName        String?   @map("display_name") @db.VarChar(200)
+  authenticationMode String    @map("authentication_mode") @db.VarChar(32)
+  enabled            Boolean   @default(true)
+  config              Json?     @db.JsonB
+  encryptedSecret     String?   @map("encrypted_secret") @db.Text
+  status              String    @default("CONFIGURED") @db.VarChar(32)
+  lastCheckedAt       DateTime? @map("last_checked_at") @db.Timestamptz(6)
+  lastError           String?   @map("last_error") @db.Text
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, providerId, connectionKey])
+  @@index([userId, providerId])
+  @@index([providerId, enabled, status])
+  @@map("user_integrations")
 }
 
 model ExternalInstallation {
