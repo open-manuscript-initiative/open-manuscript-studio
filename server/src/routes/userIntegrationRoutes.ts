@@ -172,10 +172,37 @@ userIntegrationRouter.post(
       return;
     }
 
-    const secretRequired = body.data.authenticationMode === 'user_api_key';
+    if (!provider.supportsMultipleConnections) {
+      const existingOtherConnection = await prisma.userIntegration.findFirst({
+        where: {
+          userId: request.authUserId!,
+          providerId: provider.id,
+          NOT: { connectionKey: body.data.connectionKey },
+        },
+        select: { id: true },
+      });
+      if (existingOtherConnection) {
+        response.status(409).json({
+          error: {
+            code: 'INTEGRATION_MULTIPLE_CONNECTIONS_NOT_SUPPORTED',
+            message: 'This provider supports only one connection per user.',
+          },
+        });
+        return;
+      }
+    }
+
+    const secretRequired =
+      body.data.authenticationMode === 'user_api_key' ||
+      body.data.authenticationMode === 'integration_token';
     if (secretRequired && !body.data.secret) {
       response.status(400).json({
-        error: { code: 'INTEGRATION_SECRET_REQUIRED', message: 'An API key is required.' },
+        error: {
+          code: 'INTEGRATION_SECRET_REQUIRED',
+          message: body.data.authenticationMode === 'integration_token'
+            ? 'An integration token is required.'
+            : 'An API key is required.',
+        },
       });
       return;
     }
