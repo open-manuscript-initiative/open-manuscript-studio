@@ -1,7 +1,14 @@
+import { randomBytes, randomUUID } from 'node:crypto';
+
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { Prisma } from '../generated/prisma/client.js';
+import {
+  ExternalInstallationStatus,
+  ExternalPlatform,
+  Prisma,
+} from '../generated/prisma/client.js';
+import { upsertExternalInstallation } from '../integrations/externalInstallations.js';
 import { encryptSecret } from '../integrations/secretCrypto.js';
 import {
   getIntegrationProvider,
@@ -32,6 +39,10 @@ const connectionSchema = z.object({
   secret: z.string().min(1).max(16384).optional(),
   config: z.record(z.string(), z.unknown()).optional(),
   enabled: z.boolean().default(true),
+});
+const publishingConnectionSchema = z.object({
+  displayName: z.string().trim().min(1).max(200),
+  baseUrl: z.string().trim().url().max(2048),
 });
 
 function publicConnection(connection: {
@@ -64,6 +75,20 @@ function publicConnection(connection: {
     createdAt: connection.createdAt.toISOString(),
     updatedAt: connection.updatedAt.toISOString(),
   };
+}
+
+function publishingPlatform(providerId: string): ExternalPlatform | null {
+  if (providerId === 'ojs') return ExternalPlatform.OJS;
+  if (providerId === 'omp') return ExternalPlatform.OMP;
+  return null;
+}
+
+function readInstallationId(config: unknown): string | null {
+  if (!config || typeof config !== 'object' || Array.isArray(config)) return null;
+  const installationId = (config as Record<string, unknown>).installationId;
+  return typeof installationId === 'string' && installationId.trim()
+    ? installationId.trim()
+    : null;
 }
 
 userIntegrationRouter.get(
@@ -126,6 +151,74 @@ userIntegrationRouter.get(
       healthy: status.healthy,
       message: status.message,
     });
+  },
+);
+
+userIntegrationRouter.post(
+  '/integrations/:providerId/publishing-connections',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    const providerId = providerIdSchema.safeParse(request.params.providerId);
+    const body = publishingConnectionSchema.safeParse(request.body);
+    const platform = providerId.success ? publishingPlatform(providerId.data) : null;
+
+    if (!providerId.success || !platform || !body.success) {
+      response.status(400).json({
+        error: {
+          code: 'INVALID_PUBLISHING_CONNECTION',
+          message: 'The OJS/OMP connection configuration is invalid.',
+          fields: body.success ? undefined : body.error.flatten().fieldErrors,
+        },
+      });
+      return;
+    }
+
+    const installationId = `${providerId.data}-${randomUUID()}`;
+    const sharedSecret = randomBytes(32).toString('hex');
+
+    try {
+      await upsertExternalInstallation({
+        installationId,
+        platform,
+        displayName: body.data.displayName,
+        baseUrl: body.data.baseUrl,
+        sharedSecret,
+      });
+
+      const encryptedSecret = JSON.stringify(encryptSecret(sharedSecret));
+      const config: Prisma.InputJsonValue = {
+        installationId,
+        baseUrl: body.data.baseUrl,
+      };
+      const connection = await prisma.userIntegration.create({
+        data: {
+          userId: request.authUserId!,
+          providerId: providerId.data,
+          connectionKey: installationId,
+          displayName: body.data.displayName,
+          authenticationMode: 'integration_token',
+          enabled: true,
+          config,
+          encryptedSecret,
+          status: 'CONFIGURED',
+        },
+      });
+
+      response.status(201).json({
+        connection: publicConnection(connection),
+        credentials: {
+          installationId,
+          sharedSecret,
+        },
+      });
+    } catch (error) {
+      response.status(400).json({
+        error: {
+          code: 'PUBLISHING_CONNECTION_REGISTRATION_FAILED',
+          message: error instanceof Error ? error.message : 'Publishing connection registration failed.',
+        },
+      });
+    }
   },
 );
 
@@ -248,6 +341,64 @@ userIntegrationRouter.post(
 );
 
 userIntegrationRouter.post(
+  '/integrations/connections/:connectionId/test',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    const connectionId = connectionIdSchema.safeParse(request.params.connectionId);
+    if (!connectionId.success) {
+      response.status(400).json({
+        error: { code: 'INVALID_INTEGRATION_CONNECTION_ID', message: 'The connection ID is invalid.' },
+      });
+      return;
+    }
+
+    const connection = await prisma.userIntegration.findFirst({
+      where: { id: connectionId.data, userId: request.authUserId! },
+    });
+    if (!connection) {
+      response.status(404).json({
+        error: { code: 'INTEGRATION_CONNECTION_NOT_FOUND', message: 'Integration connection not found.' },
+      });
+      return;
+    }
+
+    const platform = publishingPlatform(connection.providerId);
+    if (!platform) {
+      response.status(400).json({
+        error: { code: 'CONNECTION_TEST_NOT_SUPPORTED', message: 'Per-connection testing is not supported for this provider.' },
+      });
+      return;
+    }
+
+    const installationId = readInstallationId(connection.config);
+    const installation = installationId
+      ? await prisma.externalInstallation.findUnique({ where: { installationId } })
+      : null;
+    const healthy = Boolean(
+      installation &&
+      installation.platform === platform &&
+      installation.status === ExternalInstallationStatus.ACTIVE,
+    );
+    const message = healthy
+      ? 'The publishing installation is registered and active in Studio.'
+      : 'The publishing installation is not registered or is disabled in Studio.';
+    const checked = await prisma.userIntegration.update({
+      where: { id: connection.id },
+      data: {
+        status: healthy ? 'CONNECTED' : 'DISCONNECTED',
+        lastCheckedAt: new Date(),
+        lastError: healthy ? null : message,
+      },
+    });
+
+    response.status(healthy ? 200 : 409).json({
+      connection: publicConnection(checked),
+      status: { configured: Boolean(installationId), healthy, message },
+    });
+  },
+);
+
+userIntegrationRouter.post(
   '/integrations/:providerId/test',
   requireSession,
   async (request: AuthenticatedRequest, response) => {
@@ -285,15 +436,31 @@ userIntegrationRouter.delete(
       return;
     }
 
-    const deleted = await prisma.userIntegration.deleteMany({
+    const connection = await prisma.userIntegration.findFirst({
       where: { id: connectionId.data, userId: request.authUserId! },
+      select: { id: true, providerId: true, config: true },
     });
-    if (deleted.count === 0) {
+    if (!connection) {
       response.status(404).json({
         error: { code: 'INTEGRATION_CONNECTION_NOT_FOUND', message: 'Integration connection not found.' },
       });
       return;
     }
+
+    const installationId = publishingPlatform(connection.providerId)
+      ? readInstallationId(connection.config)
+      : null;
+
+    await prisma.$transaction(async (transaction) => {
+      await transaction.userIntegration.delete({ where: { id: connection.id } });
+      if (installationId) {
+        await transaction.externalInstallation.updateMany({
+          where: { installationId },
+          data: { status: ExternalInstallationStatus.DISABLED },
+        });
+      }
+    });
+
     response.status(204).end();
   },
 );
