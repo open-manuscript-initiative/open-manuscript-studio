@@ -8,7 +8,6 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from '../i18n';
 import { getLocalizedHelpCopy } from '../i18n/helpResolver';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
-import { ExportFormatsPanel } from './ExportFormatsPanel';
 import { HelpPanel } from './HelpPanel';
 import { IntegrationsPanel } from './IntegrationsPanel';
 import { StudioMenu } from './StudioMenu';
@@ -35,7 +34,6 @@ export function StudioMenuWithHelp({
   const [integrationsOpen, setIntegrationsOpen] = useState(false);
   const [navigationHost, setNavigationHost] = useState<HTMLElement | null>(null);
   const [contentHost, setContentHost] = useState<HTMLElement | null>(null);
-  const [exportHost, setExportHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -43,7 +41,6 @@ export function StudioMenuWithHelp({
       setIntegrationsOpen(false);
       setNavigationHost(null);
       setContentHost(null);
-      setExportHost(null);
       return;
     }
 
@@ -77,50 +74,6 @@ export function StudioMenuWithHelp({
       navigationHost.removeEventListener('click', closePortalOnOtherNavigation);
     };
   }, [navigationHost]);
-
-  useEffect(() => {
-    if (!contentHost) return;
-
-    const syncExportHost = () => {
-      const toolView = Array.from(
-        contentHost.querySelectorAll<HTMLElement>('.studio-menu-view'),
-      ).find((view) => Boolean(view.querySelector('.studio-json-view')));
-
-      if (!toolView) {
-        setExportHost(null);
-        return;
-      }
-
-      const existing = toolView.querySelector<HTMLElement>(
-        ':scope > .studio-export-portal-host',
-      );
-      if (existing) {
-        setExportHost(existing);
-        return;
-      }
-
-      const firstLegacyExportCard = toolView.querySelector<HTMLElement>(
-        ':scope > .studio-tool-card',
-      );
-      const host = document.createElement('div');
-      host.className = 'studio-export-portal-host';
-      if (firstLegacyExportCard) {
-        firstLegacyExportCard.classList.add('studio-legacy-export-card');
-        toolView.insertBefore(host, firstLegacyExportCard);
-      } else {
-        toolView.appendChild(host);
-      }
-      setExportHost(host);
-    };
-
-    syncExportHost();
-    const observer = new MutationObserver(syncExportHost);
-    observer.observe(contentHost, { childList: true, subtree: true });
-    return () => {
-      observer.disconnect();
-      setExportHost(null);
-    };
-  }, [contentHost]);
 
   useEffect(() => {
     if (!contentHost) return;
@@ -196,8 +149,6 @@ export function StudioMenuWithHelp({
             contentHost,
           )
         : null}
-
-      {exportHost ? createPortal(<ExportFormatsPanel />, exportHost) : null}
     </>
   );
 }
