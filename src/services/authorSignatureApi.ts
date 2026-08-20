@@ -62,6 +62,8 @@ export interface AuthorSignatureStatus {
 }
 
 const SIGNATURE_STORAGE_PREFIX = 'omi.publication-signatures.v1:';
+const NATIVE_SESSION_KEY = 'omi_native_session_token';
+const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 
 export async function getAuthorSignatureStatus(): Promise<AuthorSignatureStatus> {
   return requestJson<AuthorSignatureStatus>('/api/signatures/status');
@@ -215,16 +217,42 @@ function ensureWebAuthn(): void {
 }
 
 async function requestJson<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(path, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}) },
+  const native = isNativeRuntime();
+  const token = native ? globalThis.localStorage?.getItem(NATIVE_SESSION_KEY) : null;
+  const headers = new Headers(init.headers ?? {});
+  headers.set('Accept', 'application/json');
+  headers.set('Content-Type', 'application/json');
+  if (native) {
+    headers.set('X-OMI-Native-Client', '1');
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const baseUrl = native && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '';
+  const response = await fetch(`${baseUrl}${path}`, {
     ...init,
+    credentials: 'include',
+    headers,
   });
-  const payload = await response.json().catch(() => ({})) as {
+
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    if (!response.ok) {
+      throw new Error(`Request failed with HTTP ${response.status}.`);
+    }
+    throw new Error('Signature API returned a non-JSON response.');
+  }
+
+  const payload = await response.json() as {
     error?: { message?: string };
   } & T;
   if (!response.ok) throw new Error(payload.error?.message || `Request failed with HTTP ${response.status}.`);
   return payload;
+}
+
+function isNativeRuntime(): boolean {
+  const location = globalThis.location;
+  if (!location) return false;
+  return location.protocol === 'tauri:' || location.hostname === 'tauri.localhost';
 }
 
 function toBase64Url(value: ArrayBuffer): string {
