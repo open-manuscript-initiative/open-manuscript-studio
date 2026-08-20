@@ -11,6 +11,10 @@ on:
     branches:
       - main
     paths:
+      - 'package.json'
+      - 'src-tauri/Cargo.toml'
+      - 'src-tauri/Cargo.lock'
+      - 'src-tauri/tauri.conf.json'
       - '.github/workflows/tauri-desktop.yml'
   push:
     branches:
@@ -75,6 +79,12 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Verify locked Rust dependency graph
+        run: cargo metadata --manifest-path src-tauri/Cargo.toml --locked --format-version 1
+
+      - name: Fetch locked Rust dependencies
+        run: cargo fetch --manifest-path src-tauri/Cargo.toml --locked
+
       - name: Generate Tauri application icons
         run: npm run tauri -- icon src-tauri/icons/icon.svg
 
@@ -129,6 +139,12 @@ jobs:
 
       - name: Install frontend dependencies
         run: npm ci
+
+      - name: Verify locked Rust dependency graph
+        run: cargo metadata --manifest-path src-tauri/Cargo.toml --locked --format-version 1
+
+      - name: Fetch locked Rust dependencies
+        run: cargo fetch --manifest-path src-tauri/Cargo.toml --locked
 
       - name: Generate Tauri application icons
         run: npm run tauri -- icon src-tauri/icons/icon.svg
