@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Optional release tag, e.g. v0.1.0-alpha.3. Leave empty for continuous build.'
+        description: 'Optional release tag, e.g. v0.1.0-alpha.3. Leave empty to use package.json version.'
         required: false
         type: string
   pull_request:
@@ -294,8 +294,9 @@ jobs:
             title="Open Manuscript Studio $tag"
             prerelease=false
           else
-            tag="continuous"
-            title="Open Manuscript Studio Continuous Build"
+            version="$(node -p "require('./package.json').version")"
+            tag="v${version}"
+            title="Open Manuscript Studio ${tag}"
             prerelease=true
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
