@@ -1,7 +1,9 @@
 .mobile-shell {
+  height: 100dvh;
   min-height: 100dvh;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
   background: var(--ifm-background-color, #fff);
   color: inherit;
 }
@@ -89,13 +91,27 @@
 .mobile-workspace {
   min-width: 0;
   min-height: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .mobile-workspace .focus-workspace {
   min-width: 0;
-  min-height: 100%;
+  min-height: max-content;
+  height: auto;
+  overflow: visible;
+}
+
+.mobile-workspace .editor,
+.mobile-workspace .editor-pane,
+.mobile-workspace .continuous-editor {
+  min-height: 0;
+  height: auto;
+  overflow: visible;
 }
 
 .mobile-workspace .omi-footer {
