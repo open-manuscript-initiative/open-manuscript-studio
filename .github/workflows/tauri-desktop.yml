@@ -7,6 +7,11 @@ on:
         description: 'Optional release tag, e.g. v0.1.0-alpha.3. Leave empty for continuous build.'
         required: false
         type: string
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/tauri-desktop.yml'
   push:
     branches:
       - main
