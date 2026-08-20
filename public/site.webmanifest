@@ -1,13 +1,19 @@
 {
-  "name": "Open Manuscript Initiative",
-  "short_name": "OMI",
-  "description": "Open standards and tools for portable scholarly publishing.",
+  "name": "Open Manuscript Studio",
+  "short_name": "OMI Studio",
+  "description": "Structured scholarly writing and publishing environment.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#1f4f91",
+  "theme_color": "#0f172a",
   "icons": [
+    {
+      "src": "/studio-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/android-chrome-192x192.png",
       "sizes": "192x192",
