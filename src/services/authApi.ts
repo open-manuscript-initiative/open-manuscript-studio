@@ -1,3 +1,5 @@
+import { isTauri } from '@tauri-apps/api/core';
+
 import type {
   UpdateUserProfileInput,
   User,
@@ -43,6 +45,11 @@ interface UserResponse {
   user: User;
 }
 
+interface NativeSessionResponse extends UserResponse {
+  token?: string;
+  expiresAt?: string;
+}
+
 interface ErrorResponse {
   error?: {
     code?: string;
@@ -50,15 +57,21 @@ interface ErrorResponse {
   };
 }
 
+const NATIVE_SESSION_KEY = 'omi_native_session_token';
+const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
+const IS_TAURI = isTauri();
+const USE_DIRECT_NATIVE_API = IS_TAURI && !import.meta.env.DEV;
+
 const API_BASE_URL = normalizeBaseUrl(
-  import.meta.env?.VITE_API_BASE_URL ?? '',
+  import.meta.env?.VITE_API_BASE_URL ??
+    (USE_DIRECT_NATIVE_API ? NATIVE_API_BASE_URL : ''),
 );
 
 export async function getAuthProviders(): Promise<AuthProviders> {
   const response = await fetch(`${API_BASE_URL}/api/auth/providers`, {
     method: 'GET',
     credentials: 'include',
-    headers: { Accept: 'application/json' },
+    headers: authHeaders({ Accept: 'application/json' }),
   });
   if (!response.ok) throw await createApiError(response);
   const payload = (await response.json()) as { providers: AuthProviders };
@@ -86,7 +99,7 @@ export async function unlinkOrcid(): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/api/auth/orcid/link`, {
     method: 'DELETE',
     credentials: 'include',
-    headers: { Accept: 'application/json' },
+    headers: authHeaders({ Accept: 'application/json' }),
   });
   if (!response.ok && response.status !== 204) {
     throw await createApiError(response);
@@ -101,7 +114,7 @@ export async function getRegistrationInvitation(
     {
       method: 'GET',
       credentials: 'include',
-      headers: { Accept: 'application/json' },
+      headers: authHeaders({ Accept: 'application/json' }),
     },
   );
   if (!response.ok) throw await createApiError(response);
@@ -112,7 +125,7 @@ export async function getRegistrationInvitation(
 export async function registerAccount(
   input: RegisterRequest,
 ): Promise<User> {
-  const response = await request<UserResponse>(
+  const response = await request<NativeSessionResponse>(
     '/api/auth/register',
     {
       method: 'POST',
@@ -120,13 +133,14 @@ export async function registerAccount(
     },
   );
 
+  persistNativeSession(response);
   return response.user;
 }
 
 export async function loginAccount(
   input: LoginRequest,
 ): Promise<User> {
-  const response = await request<UserResponse>(
+  const response = await request<NativeSessionResponse>(
     '/api/auth/login',
     {
       method: 'POST',
@@ -134,19 +148,23 @@ export async function loginAccount(
     },
   );
 
+  persistNativeSession(response);
   return response.user;
 }
 
 export async function getCurrentAccount(): Promise<User | null> {
+  if (IS_TAURI && !getNativeSessionToken()) {
+    return null;
+  }
+
   const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
     method: 'GET',
     credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
+    headers: authHeaders({ Accept: 'application/json' }),
   });
 
   if (response.status === 401) {
+    if (IS_TAURI) clearNativeSession();
     return null;
   }
 
@@ -190,16 +208,18 @@ export async function updateCurrentAccount(
 }
 
 export async function logoutAccount(): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: authHeaders({ Accept: 'application/json' }),
+    });
 
-  if (!response.ok && response.status !== 204) {
-    throw await createApiError(response);
+    if (!response.ok && response.status !== 204) {
+      throw await createApiError(response);
+    }
+  } finally {
+    if (IS_TAURI) clearNativeSession();
   }
 }
 
@@ -210,11 +230,11 @@ async function request<T>(
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     credentials: 'include',
-    headers: {
+    headers: authHeaders({
       Accept: 'application/json',
       'Content-Type': 'application/json',
       ...init.headers,
-    },
+    }),
   });
 
   if (!response.ok) {
@@ -225,17 +245,46 @@ async function request<T>(
 }
 
 async function createApiError(response: Response): Promise<Error> {
-  try {
-    const payload = (await response.json()) as ErrorResponse;
-    return new Error(
-      payload.error?.message ||
-        `Authentication request failed with HTTP ${response.status}.`,
-    );
-  } catch {
-    return new Error(
-      `Authentication request failed with HTTP ${response.status}.`,
-    );
+  const contentType = response.headers.get('content-type') ?? '';
+  if (contentType.includes('application/json')) {
+    try {
+      const payload = (await response.json()) as ErrorResponse;
+      return new Error(
+        payload.error?.message ||
+          `Authentication request failed with HTTP ${response.status}.`,
+      );
+    } catch {
+      // Fall through to the generic HTTP error below.
+    }
   }
+
+  return new Error(
+    `Authentication request failed with HTTP ${response.status}.`,
+  );
+}
+
+function authHeaders(input: HeadersInit = {}): Headers {
+  const headers = new Headers(input);
+  if (!IS_TAURI) return headers;
+
+  headers.set('X-OMI-Native-Client', '1');
+  const token = getNativeSessionToken();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  return headers;
+}
+
+function persistNativeSession(response: NativeSessionResponse): void {
+  if (!IS_TAURI || !response.token) return;
+  globalThis.localStorage?.setItem(NATIVE_SESSION_KEY, response.token);
+}
+
+function getNativeSessionToken(): string | null {
+  if (!IS_TAURI) return null;
+  return globalThis.localStorage?.getItem(NATIVE_SESSION_KEY) ?? null;
+}
+
+function clearNativeSession(): void {
+  globalThis.localStorage?.removeItem(NATIVE_SESSION_KEY);
 }
 
 function normalizeBaseUrl(value: string): string {
