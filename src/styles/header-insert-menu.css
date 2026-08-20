@@ -29,8 +29,11 @@
   position: absolute;
   z-index: 80;
   top: calc(100% + 0.45rem);
-  left: 0;
+  right: 0;
+  left: auto;
   width: min(26rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  box-sizing: border-box;
   padding: 0.85rem;
   border: 1px solid #dbe2ea;
   border-radius: 0.65rem;
@@ -54,11 +57,18 @@
 }
 
 .focus-insert-menu-popover .omi-visual-insert-actions button {
+  min-width: 0;
   justify-content: flex-start;
 }
 
 .focus-insert-menu-popover .omi-office-paste-target {
+  min-width: 0;
   margin-top: 0.65rem;
+}
+
+.focus-insert-menu-popover * {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 @media (max-width: 720px) {
@@ -68,9 +78,10 @@
 
   .focus-insert-menu-popover {
     position: fixed;
-    top: 4rem;
+    top: 7.25rem;
     right: 0.75rem;
     left: 0.75rem;
     width: auto;
+    max-width: none;
   }
 }
