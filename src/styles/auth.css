@@ -65,6 +65,17 @@
   text-align: center;
 }
 
+.auth-brand::before {
+  content: '';
+  display: block;
+  width: 4.5rem;
+  height: 4.5rem;
+  margin: 0 auto 0.9rem;
+  border-radius: 1rem;
+  background: url('/studio-icon.svg') center / contain no-repeat;
+  box-shadow: 0 0.45rem 1.35rem rgb(15 23 42 / 14%);
+}
+
 .auth-brand-name {
   font-size: 1.125rem;
   font-weight: 700;
@@ -207,10 +218,28 @@
 @media (max-width: 40rem) {
   .auth-page {
     align-items: flex-start;
-    padding: 1rem;
+    padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+    background: #ffffff;
   }
 
-  .auth-card {
-    padding: 1.5rem;
+  .auth-card,
+  .auth-card-wide {
+    max-width: none;
+    padding: 0.75rem 0.25rem 1.5rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .auth-brand {
+    margin-bottom: 1.5rem;
+  }
+
+  .auth-brand::before {
+    width: 4rem;
+    height: 4rem;
+    margin-bottom: 0.75rem;
+    border-radius: 0.875rem;
   }
 }
