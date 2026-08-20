@@ -64,7 +64,10 @@ export function MobileLayout({
         >
           <Menu size={22} aria-hidden="true" />
         </button>
-        <div className="mobile-header-title">Open Manuscript Studio</div>
+        <div className="mobile-header-title">
+          <img src="/studio-icon.svg" width="28" height="28" alt="" aria-hidden="true" />
+          <span>Open Manuscript Studio</span>
+        </div>
         <button
           type="button"
           className="mobile-icon-button"
