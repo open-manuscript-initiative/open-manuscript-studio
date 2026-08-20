@@ -10,6 +10,15 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     host: tauriDevHost || true,
+    proxy: tauriDevHost
+      ? {
+          '/api': {
+            target: 'https://studio.openmanuscript.org',
+            changeOrigin: true,
+            secure: true,
+          },
+        }
+      : undefined,
     watch: {
       ignored: [
         '**/src-tauri/target/**',
