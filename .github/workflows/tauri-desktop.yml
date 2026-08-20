@@ -285,20 +285,33 @@ jobs:
           INPUT_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
+
+          sanitize_tag() {
+            local value="$1"
+            value="$(printf '%s' "$value" | tr -d '\r\n\t ' )"
+            printf '%s' "$value"
+          }
+
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            tag="${GITHUB_REF#refs/tags/}"
-            title="Open Manuscript Studio $tag"
+            tag="$(sanitize_tag "${GITHUB_REF#refs/tags/}")"
             prerelease=false
-          elif [[ -n "$INPUT_TAG" ]]; then
-            tag="$INPUT_TAG"
-            title="Open Manuscript Studio $tag"
+          elif [[ -n "${INPUT_TAG:-}" ]]; then
+            tag="$(sanitize_tag "$INPUT_TAG")"
             prerelease=false
           else
             version="$(node -p "require('./package.json').version")"
+            version="$(sanitize_tag "$version")"
             tag="v${version}"
-            title="Open Manuscript Studio ${tag}"
             prerelease=true
           fi
+
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+            echo "Invalid release tag resolved: '$tag'" >&2
+            exit 1
+          fi
+
+          title="Open Manuscript Studio $tag"
+          echo "Resolved release tag: $tag"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "title=$title" >> "$GITHUB_OUTPUT"
           echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
