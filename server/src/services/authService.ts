@@ -6,6 +6,11 @@ import {
 } from 'node:crypto';
 import { promisify } from 'node:util';
 
+import {
+  ensureStudioPrincipal,
+  getStudioPrincipalByEmail,
+} from '../identity/studioPrincipalBridge.js';
+import { identityPrisma } from '../lib/identityPrisma.js';
 import { prisma } from '../lib/prisma.js';
 import { consumeAssignmentInvitation } from './assignmentInvitationService.js';
 
@@ -46,48 +51,21 @@ export async function registerUser(input: RegisterUserInput) {
 
   const invitationToken = input.invitationToken?.trim();
   if (invitationToken) {
-    const invitation = await consumeAssignmentInvitation(invitationToken);
-    if (!invitation) throw new Error('The invitation is invalid or has expired.');
-    if (email !== invitation.email.toLowerCase()) {
-      throw new Error('The invitation belongs to a different e-mail address.');
-    }
-
-    const pending = await prisma.user.findUnique({ where: { id: invitation.userId } });
-    if (!pending || pending.status !== 'PENDING') {
-      throw new Error('The invitation is no longer available.');
-    }
-
-    const passwordHash = await hashPassword(input.password);
-    const [user] = await prisma.$transaction([
-      prisma.user.update({
-        where: { id: pending.id },
-        data: {
-          passwordHash,
-          fullName,
-          affiliation: cleanOptional(input.affiliation) ?? pending.affiliation,
-          affiliationRorId: cleanOptional(input.affiliationRorId) ?? pending.affiliationRorId,
-          orcid: normalizeOptionalOrcid(input.orcid) ?? pending.orcid,
-          interfaceLanguage: cleanOptional(input.interfaceLanguage)?.toLowerCase() ?? pending.interfaceLanguage,
-          status: 'ACTIVE',
-        },
-      }),
-      prisma.userInvitation.update({
-        where: { id: invitation.invitationId },
-        data: { usedAt: new Date() },
-      }),
-    ]);
-
-    const session = await createSession(user.id);
-    return { user: serializeUser(user), ...session };
+    return registerInvitedUser({ ...input, email, fullName, invitationToken });
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
+  const existingIdentity = await identityPrisma.user.findUnique({ where: { email } });
+  if (existingIdentity) {
+    throw new Error('An account already exists with this e-mail address.');
+  }
+
+  const existingStudio = await getStudioPrincipalByEmail(email);
+  if (existingStudio) {
     throw new Error('An account already exists with this e-mail address.');
   }
 
   const passwordHash = await hashPassword(input.password);
-  const user = await prisma.user.create({
+  const user = await identityPrisma.user.create({
     data: {
       email,
       passwordHash,
@@ -100,26 +78,114 @@ export async function registerUser(input: RegisterUserInput) {
     },
   });
 
+  await ensureStudioPrincipal(toPrincipalSnapshot(user));
   const session = await createSession(user.id);
   return { user: serializeUser(user), ...session };
+}
+
+async function registerInvitedUser(
+  input: RegisterUserInput & { email: string; fullName: string; invitationToken: string },
+) {
+  const invitation = await consumeAssignmentInvitation(input.invitationToken);
+  if (!invitation) throw new Error('The invitation is invalid or has expired.');
+  if (input.email !== invitation.email.toLowerCase()) {
+    throw new Error('The invitation belongs to a different e-mail address.');
+  }
+
+  const pendingStudio = await prisma.user.findUnique({ where: { id: invitation.userId } });
+  if (!pendingStudio || pendingStudio.status !== 'PENDING') {
+    throw new Error('The invitation is no longer available.');
+  }
+
+  const identityByEmail = await identityPrisma.user.findUnique({ where: { email: input.email } });
+  if (identityByEmail && identityByEmail.id !== pendingStudio.id) {
+    throw new Error('This e-mail address is already linked to another Identity account.');
+  }
+
+  const passwordHash = await hashPassword(input.password);
+  const identityUser = identityByEmail
+    ? await identityPrisma.user.update({
+        where: { id: identityByEmail.id },
+        data: {
+          passwordHash,
+          fullName: input.fullName,
+          affiliation: cleanOptional(input.affiliation) ?? pendingStudio.affiliation,
+          affiliationRorId: cleanOptional(input.affiliationRorId) ?? pendingStudio.affiliationRorId,
+          orcid: normalizeOptionalOrcid(input.orcid) ?? pendingStudio.orcid,
+          interfaceLanguage:
+            cleanOptional(input.interfaceLanguage)?.toLowerCase() ?? pendingStudio.interfaceLanguage,
+          status: 'ACTIVE',
+        },
+      })
+    : await identityPrisma.user.create({
+        data: {
+          id: pendingStudio.id,
+          email: input.email,
+          passwordHash,
+          fullName: input.fullName,
+          affiliation: cleanOptional(input.affiliation) ?? pendingStudio.affiliation,
+          affiliationRorId: cleanOptional(input.affiliationRorId) ?? pendingStudio.affiliationRorId,
+          orcid: normalizeOptionalOrcid(input.orcid) ?? pendingStudio.orcid,
+          interfaceLanguage:
+            cleanOptional(input.interfaceLanguage)?.toLowerCase() ?? pendingStudio.interfaceLanguage,
+          status: 'ACTIVE',
+        },
+      });
+
+  await ensureStudioPrincipal(toPrincipalSnapshot(identityUser));
+  await prisma.userInvitation.update({
+    where: { id: invitation.invitationId },
+    data: { usedAt: new Date() },
+  });
+
+  const session = await createSession(identityUser.id);
+  return { user: serializeUser(identityUser), ...session };
 }
 
 export async function loginUser(input: LoginUserInput) {
   const email = normalizeEmail(input.email);
   validateEmail(email);
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
+  let user = await identityPrisma.user.findUnique({ where: { email } });
+
+  if (!user) {
+    const legacy = await getStudioPrincipalByEmail(email);
+    if (!legacy || !(await verifyPassword(input.password, legacy.passwordHash))) {
+      throw new Error('Incorrect e-mail address or password.');
+    }
+    if (legacy.status !== 'ACTIVE') {
+      throw new Error('The user account is not active.');
+    }
+
+    user = await identityPrisma.user.create({
+      data: {
+        id: legacy.id,
+        email: legacy.email,
+        passwordHash: legacy.passwordHash,
+        fullName: legacy.fullName,
+        affiliation: legacy.affiliation,
+        affiliationRorId: legacy.affiliationRorId,
+        orcid: legacy.orcid,
+        interfaceLanguage: legacy.interfaceLanguage,
+        status: legacy.status,
+        createdAt: legacy.createdAt,
+        lastLoginAt: legacy.lastLoginAt,
+      },
+    });
+  } else if (!(await verifyPassword(input.password, user.passwordHash))) {
     throw new Error('Incorrect e-mail address or password.');
   }
+
   if (user.status !== 'ACTIVE') {
     throw new Error('The user account is not active.');
   }
 
-  const updated = await prisma.user.update({
+  const updated = await identityPrisma.user.update({
     where: { id: user.id },
     data: { lastLoginAt: new Date() },
   });
+  await ensureStudioPrincipal(toPrincipalSnapshot(updated));
+
   const session = await createSession(updated.id);
   return { user: serializeUser(updated), ...session };
 }
@@ -154,51 +220,39 @@ export async function updateUserForSession(
     if (!fullName) throw new Error('The user name is required.');
     data.fullName = fullName;
   }
-
-  if (input.affiliation !== undefined) {
-    data.affiliation = cleanNullable(input.affiliation);
-  }
-
-  if (input.affiliationRorId !== undefined) {
-    data.affiliationRorId = cleanNullable(input.affiliationRorId);
-  }
-
-  if (input.orcid !== undefined) {
-    data.orcid = normalizeNullableOrcid(input.orcid);
-  }
-
+  if (input.affiliation !== undefined) data.affiliation = cleanNullable(input.affiliation);
+  if (input.affiliationRorId !== undefined) data.affiliationRorId = cleanNullable(input.affiliationRorId);
+  if (input.orcid !== undefined) data.orcid = normalizeNullableOrcid(input.orcid);
   if (input.interfaceLanguage !== undefined) {
     const interfaceLanguage = input.interfaceLanguage.trim().toLowerCase();
-    if (!interfaceLanguage) {
-      throw new Error('The interface language is required.');
-    }
+    if (!interfaceLanguage) throw new Error('The interface language is required.');
     data.interfaceLanguage = interfaceLanguage;
   }
 
-  const user = await prisma.user.update({
+  const user = await identityPrisma.user.update({
     where: { id: session.userId },
     data,
   });
-
+  await ensureStudioPrincipal(toPrincipalSnapshot(user));
   return serializeUser(user);
 }
 
 export async function destroySession(rawToken: string): Promise<void> {
-  await prisma.userSession.deleteMany({
+  await identityPrisma.userSession.deleteMany({
     where: { tokenHash: hashSessionToken(rawToken) },
   });
 }
 
 async function getActiveSession(rawToken: string) {
   const tokenHash = hashSessionToken(rawToken);
-  const session = await prisma.userSession.findUnique({
+  const session = await identityPrisma.userSession.findUnique({
     where: { tokenHash },
     include: { user: true },
   });
 
   if (!session || session.expiresAt <= new Date() || session.user.status !== 'ACTIVE') {
     if (session) {
-      await prisma.userSession.delete({ where: { id: session.id } }).catch(() => undefined);
+      await identityPrisma.userSession.delete({ where: { id: session.id } }).catch(() => undefined);
     }
     return null;
   }
@@ -209,7 +263,7 @@ async function getActiveSession(rawToken: string) {
 async function createSession(userId: string) {
   const token = randomBytes(32).toString('base64url');
   const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
-  await prisma.userSession.create({
+  await identityPrisma.userSession.create({
     data: { userId, tokenHash: hashSessionToken(token), expiresAt },
   });
   return { token, expiresAt };
@@ -231,6 +285,30 @@ async function verifyPassword(password: string, stored: string): Promise<boolean
 
 function hashSessionToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
+}
+
+function toPrincipalSnapshot(user: {
+  id: string;
+  email: string;
+  fullName: string;
+  affiliation: string | null;
+  affiliationRorId: string | null;
+  orcid: string | null;
+  interfaceLanguage: string;
+  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'DISABLED';
+  lastLoginAt: Date | null;
+}) {
+  return {
+    id: user.id,
+    email: user.email,
+    fullName: user.fullName,
+    affiliation: user.affiliation,
+    affiliationRorId: user.affiliationRorId,
+    orcid: user.orcid,
+    interfaceLanguage: user.interfaceLanguage,
+    status: user.status,
+    lastLoginAt: user.lastLoginAt,
+  };
 }
 
 function serializeUser(user: {
@@ -271,17 +349,14 @@ function serializeUser(user: {
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
 }
-
 function cleanOptional(value?: string): string | undefined {
   const normalized = value?.trim();
   return normalized || undefined;
 }
-
 function cleanNullable(value: string | null): string | null {
   if (value === null) return null;
   return value.trim() || null;
 }
-
 function normalizeOptionalOrcid(value?: string): string | undefined {
   const normalized = value
     ?.trim()
@@ -289,18 +364,15 @@ function normalizeOptionalOrcid(value?: string): string | undefined {
     .toUpperCase();
   return normalized || undefined;
 }
-
 function normalizeNullableOrcid(value: string | null): string | null {
   if (value === null) return null;
   return normalizeOptionalOrcid(value) ?? null;
 }
-
 function validateEmail(email: string): void {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new Error('Invalid e-mail address.');
   }
 }
-
 function validatePassword(password: string): void {
   if (password.length < 8) throw new Error('The password must contain at least 8 characters.');
   if (!/[A-Za-z]/.test(password)) throw new Error('The password must contain at least one letter.');
