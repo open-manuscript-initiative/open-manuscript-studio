@@ -44,9 +44,14 @@
 }
 
 .focus-insert-menu-popover .omi-visual-insert-palette--compact {
+  position: static;
+  inset: auto;
+  width: 100%;
+  max-width: none;
   margin: 0;
   padding: 0;
   border: 0;
+  border-radius: 0;
   background: transparent;
   box-shadow: none;
 }
@@ -120,5 +125,8 @@
     left: 0.75rem;
     width: auto;
     max-width: none;
+    max-height: calc(100dvh - 8.25rem - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }
