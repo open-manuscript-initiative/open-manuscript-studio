@@ -100,7 +100,7 @@ export function Header({ onOpenMenu }: HeaderProps) {
         </button>
 
         <div className="focus-brand-lockup" aria-label="Open Manuscript Studio">
-          <span className="focus-brand-mark" aria-hidden="true">OMI</span>
+          <img className="focus-brand-icon" src="/studio-icon.svg" alt="" aria-hidden="true" />
           <span className="focus-brand-copy">
             <span className="focus-brand-initiative">Open Manuscript Initiative</span>
             <strong>Studio</strong>
