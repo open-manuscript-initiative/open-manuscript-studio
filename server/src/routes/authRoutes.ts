@@ -1,4 +1,4 @@
-import { Router, type Response } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 
 import {
@@ -39,6 +39,7 @@ const updateProfileSchema = z.object({
 });
 
 const COOKIE_NAME = 'omi_session';
+const NATIVE_HEADER = 'x-omi-native-client';
 
 function readSessionCookie(header: string | undefined): string | undefined {
   if (!header) return undefined;
@@ -49,6 +50,20 @@ function readSessionCookie(header: string | undefined): string | undefined {
   return undefined;
 }
 
+function readBearerToken(header: string | undefined): string | undefined {
+  if (!header) return undefined;
+  const match = /^Bearer\s+(.+)$/i.exec(header.trim());
+  return match?.[1]?.trim() || undefined;
+}
+
+function readSessionToken(request: Request): string | undefined {
+  return readBearerToken(request.headers.authorization) ?? readSessionCookie(request.headers.cookie);
+}
+
+function isNativeClient(request: Request): boolean {
+  return request.headers[NATIVE_HEADER] === '1';
+}
+
 function setSessionCookie(response: Response, token: string, expiresAt: Date): void {
   response.cookie(COOKIE_NAME, token, {
     httpOnly: true,
@@ -57,6 +72,19 @@ function setSessionCookie(response: Response, token: string, expiresAt: Date): v
     expires: expiresAt,
     path: '/',
   });
+}
+
+function authResponse(
+  request: Request,
+  result: { user: unknown; token: string; expiresAt: Date },
+) {
+  return isNativeClient(request)
+    ? {
+        user: result.user,
+        token: result.token,
+        expiresAt: result.expiresAt.toISOString(),
+      }
+    : { user: result.user };
 }
 
 authRouter.get('/invitations/:token', async (request, response) => {
@@ -88,7 +116,7 @@ authRouter.post('/register', async (request, response) => {
     };
     const result = await registerUser(input);
     setSessionCookie(response, result.token, result.expiresAt);
-    response.status(201).json({ user: result.user });
+    response.status(201).json(authResponse(request, result));
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Registration failed.';
     response.status(400).json({ error: { code: 'REGISTRATION_FAILED', message } });
@@ -100,7 +128,7 @@ authRouter.post('/login', async (request, response) => {
     const input = loginSchema.parse(request.body);
     const result = await loginUser(input);
     setSessionCookie(response, result.token, result.expiresAt);
-    response.status(200).json({ user: result.user });
+    response.status(200).json(authResponse(request, result));
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Login failed.';
     response.status(401).json({ error: { code: 'LOGIN_FAILED', message } });
@@ -108,7 +136,7 @@ authRouter.post('/login', async (request, response) => {
 });
 
 authRouter.get('/me', async (request, response) => {
-  const token = readSessionCookie(request.headers.cookie);
+  const token = readSessionToken(request);
   if (!token) {
     response.status(401).json({ error: { code: 'NOT_AUTHENTICATED', message: 'Authentication is required.' } });
     return;
@@ -125,7 +153,7 @@ authRouter.get('/me', async (request, response) => {
 
 authRouter.patch('/me', async (request, response) => {
   try {
-    const token = readSessionCookie(request.headers.cookie);
+    const token = readSessionToken(request);
     if (!token) {
       response.status(401).json({ error: { code: 'NOT_AUTHENTICATED', message: 'Authentication is required.' } });
       return;
@@ -153,7 +181,7 @@ authRouter.patch('/me', async (request, response) => {
 });
 
 authRouter.post('/logout', async (request, response) => {
-  const token = readSessionCookie(request.headers.cookie);
+  const token = readSessionToken(request);
   if (token) await destroySession(token);
   response.clearCookie(COOKIE_NAME, {
     httpOnly: true,
