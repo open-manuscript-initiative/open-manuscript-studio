@@ -56,16 +56,34 @@
   color: inherit;
 }
 
-.mobile-action-bar {
+.mobile-action-bar,
+.mobile-account-bar {
   min-width: 0;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
   border-bottom: 1px solid rgba(127, 127, 127, 0.2);
   background: inherit;
   z-index: 19;
+}
+
+.mobile-action-bar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.mobile-account-bar {
+  display: flex;
+  justify-content: space-between;
+  min-height: 48px;
+  box-sizing: border-box;
+}
+
+.mobile-account-bar strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mobile-action-button {
@@ -99,7 +117,8 @@
   justify-content: center;
 }
 
-.mobile-action-bar .focus-language-switcher {
+.mobile-action-bar .focus-language-switcher,
+.mobile-account-bar .focus-language-switcher {
   margin: 0;
 }
 
@@ -127,6 +146,131 @@
   min-height: 0;
   height: auto;
   overflow: visible;
+}
+
+.mobile-document-view,
+.mobile-details-view {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 18px 16px 28px;
+}
+
+.mobile-document-view .studio-document-tree {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  position: static;
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.mobile-document-view .tree-group-title {
+  margin: 0 0 8px;
+  padding: 10px 4px 6px;
+  color: #667085;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mobile-document-view .tree-item {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  margin: 0 0 5px;
+  border: 1px solid rgba(127, 127, 127, 0.18);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+}
+
+.mobile-document-view button.tree-item.active {
+  border-color: rgba(96, 24, 45, 0.42);
+  background: rgba(96, 24, 45, 0.08);
+  font-weight: 700;
+}
+
+.mobile-document-view .tree-item.muted {
+  color: #667085;
+  background: rgba(127, 127, 127, 0.04);
+}
+
+.mobile-details-view .omi-properties-panel {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  height: auto;
+  position: static;
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.mobile-details-view .omi-properties-panel-header {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mobile-details-view .omi-properties-panel-header h2 {
+  margin: 0 0 4px;
+}
+
+.mobile-details-view .omi-properties-panel-header p {
+  margin: 0;
+  color: #667085;
+}
+
+.mobile-details-view .contributor-add-button {
+  width: 100%;
+  min-height: 44px;
+  justify-content: center;
+}
+
+.mobile-details-view .omi-properties-panel-content {
+  display: grid;
+  gap: 14px;
+}
+
+.mobile-details-view .contributor-card {
+  margin: 0;
+  padding: 16px;
+  border: 1px solid rgba(127, 127, 127, 0.2);
+  border-radius: 12px;
+  background: var(--ifm-background-surface-color, #fff);
+  box-shadow: none;
+}
+
+.mobile-details-view .contributor-card-header {
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.mobile-details-view .contributor-form-grid {
+  grid-template-columns: 1fr;
+}
+
+.mobile-details-view .contributor-wide-field {
+  grid-column: auto;
+}
+
+.mobile-details-view input,
+.mobile-details-view select {
+  min-height: 42px;
+  font-size: 16px;
 }
 
 .mobile-workspace .omi-footer {
@@ -163,10 +307,6 @@
   font-weight: 700;
 }
 
-.mobile-nav-item:disabled {
-  opacity: 0.45;
-}
-
 @media (max-width: 430px) {
   .mobile-action-button span,
   .mobile-action-bar .focus-insert-menu-trigger span {
@@ -175,6 +315,11 @@
 
   .mobile-action-bar {
     grid-template-columns: 44px minmax(44px, 1fr) auto;
+  }
+
+  .mobile-document-view,
+  .mobile-details-view {
+    padding-inline: 12px;
   }
 }
 
@@ -189,5 +334,11 @@
     justify-self: center;
     border-left: 1px solid rgba(127, 127, 127, 0.2);
     border-right: 1px solid rgba(127, 127, 127, 0.2);
+  }
+
+  .mobile-document-view,
+  .mobile-details-view {
+    max-width: 760px;
+    margin: 0 auto;
   }
 }
