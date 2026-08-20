@@ -26,6 +26,8 @@ import {
 import {
   createManuscriptFromOjsLaunch,
 } from './integrations/ojs/importOjsLaunchLocalized';
+import { MobileLayout } from './mobile/navigation/MobileLayout';
+import { isMobileStudio } from './mobile/platform/platform';
 import type { OjsAssignmentLaunchContext } from './services/ojsAssignmentApi';
 import {
   isNativeStudio,
@@ -280,6 +282,24 @@ function StudioApplication() {
           </div>
         </section>
       </main>
+    );
+  }
+
+  if (isMobileStudio()) {
+    return (
+      <>
+        <MobileLayout onOpenMenu={() => setMenuOpen(true)}>
+          <div className="focus-workspace">
+            <EditorPane ojsContributors={ojsContributors} />
+          </div>
+          <SearchReplaceOverlay />
+        </MobileLayout>
+        <StudioMenuWithHelp
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          ojsAssignment={ojsAssignment}
+        />
+      </>
     );
   }
 
