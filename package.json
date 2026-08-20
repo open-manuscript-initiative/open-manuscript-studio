@@ -21,7 +21,7 @@
     "i18n:po:pending": "node scripts/export-pending-po-translations.mjs",
     "i18n:po:apply": "node scripts/apply-pending-po-translations.mjs",
     "i18n:po:roundtrip": "npm run i18n:po:export && npm run i18n:po:compile && npm run i18n:validate-json && npm run i18n:po:audit",
-    "tauri": "npx @tauri-apps/cli@2",
+    "tauri": "npx @tauri-apps/cli@2.11.4",
     "desktop:dev": "npm run tauri -- dev",
     "desktop:build": "npm run tauri -- build",
     "android:init": "npm run tauri -- android init",
