@@ -1,10 +1,10 @@
-name: Tauri Desktop Builds
+name: Tauri Builds and Releases
 
 on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Optional release tag, e.g. v0.1.0-alpha.2. Leave empty for build-only.'
+        description: 'Optional release tag, e.g. v0.1.0-alpha.3. Leave empty for continuous build.'
         required: false
         type: string
   push:
@@ -12,14 +12,14 @@ on:
       - main
     tags:
       - 'v*'
-    paths:
-      - 'package.json'
-      - 'src-tauri/Cargo.toml'
-      - 'src-tauri/tauri.conf.json'
-      - '.github/workflows/tauri-desktop.yml'
+
+concurrency:
+  group: tauri-release-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-desktop:
+    name: Desktop (${{ matrix.artifact }})
     permissions:
       contents: read
     strategy:
@@ -90,9 +90,85 @@ jobs:
             src-tauri/target/release/bundle/**
           if-no-files-found: error
 
+  build-android:
+    name: Android universal APK
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Rust with Android targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Generate Tauri application icons
+        run: npm run tauri -- icon src-tauri/icons/icon.svg
+
+      - name: Run frontend tests
+        run: npm test
+
+      - name: Initialize Android project
+        env:
+          CI: 'true'
+          NDK_HOME: ${{ env.ANDROID_NDK_LATEST_HOME }}
+        run: npm run tauri -- android init --ci
+
+      - name: Build installable Android APK
+        env:
+          CI: 'true'
+          NDK_HOME: ${{ env.ANDROID_NDK_LATEST_HOME }}
+        run: npm run tauri -- android build --debug --apk --ci
+
+      - name: Collect Android APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p android-artifact
+          apk="$(find src-tauri/gen/android/app/build/outputs/apk -type f -name '*.apk' -print -quit)"
+          if [ -z "$apk" ]; then
+            echo 'No Android APK was produced.' >&2
+            find src-tauri/gen/android/app/build/outputs -maxdepth 6 -type f -print || true
+            exit 1
+          fi
+          cp "$apk" android-artifact/Open-Manuscript-Studio-Android-universal.apk
+          ls -lh android-artifact
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: open-manuscript-studio-android
+          path: android-artifact/Open-Manuscript-Studio-Android-universal.apk
+          if-no-files-found: error
+
   publish-release:
-    name: Publish GitHub Release
-    needs: build-desktop
+    name: Publish downloadable builds
+    needs:
+      - build-desktop
+      - build-android
     if: ${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' || inputs.release_tag != '' }}
     runs-on: ubuntu-22.04
     permissions:
@@ -102,7 +178,7 @@ jobs:
       - name: Checkout release metadata
         uses: actions/checkout@v4
 
-      - name: Download desktop artifacts
+      - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: open-manuscript-studio-*
@@ -130,6 +206,7 @@ jobs:
           copy_first '*.deb' 'Open-Manuscript-Studio-Linux-x64.deb'
           copy_first '*.exe' 'Open-Manuscript-Studio-Windows-x64-Setup.exe'
           copy_first '*.msi' 'Open-Manuscript-Studio-Windows-x64.msi'
+          copy_first 'Open-Manuscript-Studio-Android-universal.apk' 'Open-Manuscript-Studio-Android-universal.apk'
 
           arm_dmg="$(find release-input/open-manuscript-studio-macos-aarch64 -type f -name '*.dmg' -print -quit)"
           intel_dmg="$(find release-input/open-manuscript-studio-macos-x86_64 -type f -name '*.dmg' -print -quit)"
@@ -137,47 +214,66 @@ jobs:
           cp "$arm_dmg" 'release-assets/Open-Manuscript-Studio-macOS-Apple-Silicon.dmg'
           cp "$intel_dmg" 'release-assets/Open-Manuscript-Studio-macOS-Intel.dmg'
 
+          (cd release-assets && sha256sum * > SHA256SUMS.txt)
           ls -lh release-assets
 
-      - name: Resolve release tag
+      - name: Resolve release target
         id: release
         shell: bash
         env:
           INPUT_TAG: ${{ inputs.release_tag }}
         run: |
+          set -euo pipefail
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             tag="${GITHUB_REF#refs/tags/}"
+            title="Open Manuscript Studio $tag"
+            prerelease=false
           elif [[ -n "$INPUT_TAG" ]]; then
             tag="$INPUT_TAG"
+            title="Open Manuscript Studio $tag"
+            prerelease=false
           else
-            version="$(node -p "require('./package.json').version")"
-            tag="v${version}"
+            tag="continuous"
+            title="Open Manuscript Studio Continuous Build"
+            prerelease=true
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "title=$title" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
 
       - name: Create or update GitHub Release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_TITLE: ${{ steps.release.outputs.title }}
+          PRERELEASE: ${{ steps.release.outputs.prerelease }}
         run: |
           set -euo pipefail
 
           if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release create "$RELEASE_TAG" \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
-              --title "Open Manuscript Studio $RELEASE_TAG" \
-              --generate-notes \
-              --latest
+            args=(
+              release create "$RELEASE_TAG"
+              --repo "$GITHUB_REPOSITORY"
+              --target "$GITHUB_SHA"
+              --title "$RELEASE_TITLE"
+              --generate-notes
+            )
+            if [[ "$PRERELEASE" == "true" ]]; then
+              args+=(--prerelease)
+            else
+              args+=(--latest)
+            fi
+            gh "${args[@]}"
           else
             release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.id')"
             gh api \
               --method PATCH \
               "repos/$GITHUB_REPOSITORY/releases/$release_id" \
-              -F prerelease=false \
+              -f target_commitish="$GITHUB_SHA" \
+              -f name="$RELEASE_TITLE" \
+              -F prerelease="$PRERELEASE" \
               -F draft=false \
-              -f make_latest=true \
               >/dev/null
           fi
 
