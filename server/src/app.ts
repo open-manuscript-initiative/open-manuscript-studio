@@ -20,13 +20,26 @@ import { userIntegrationRouter } from './routes/userIntegrationRoutes.js';
 
 export const app = express();
 
+const allowedOrigins = new Set([
+  env.FRONTEND_ORIGIN,
+  'tauri://localhost',
+  'http://tauri.localhost',
+  'https://tauri.localhost',
+]);
+
 app.disable('x-powered-by');
 
 app.use(helmet());
 
 app.use(
   cors({
-    origin: env.FRONTEND_ORIGIN,
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`Origin ${origin} is not allowed by CORS.`));
+    },
     credentials: true,
   }),
 );
