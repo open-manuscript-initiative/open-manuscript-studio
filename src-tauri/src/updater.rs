@@ -1,7 +1,7 @@
 #[cfg(desktop)]
 use serde::Serialize;
 #[cfg(desktop)]
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Runtime};
 #[cfg(desktop)]
 use tauri_plugin_updater::UpdaterExt;
 
@@ -26,7 +26,7 @@ fn updater_public_key() -> Result<&'static str, String> {
 }
 
 #[cfg(desktop)]
-async fn check<R: Runtime>(app: &AppHandle<R>) -> Result<Option<tauri_plugin_updater::Update<R>>, String> {
+async fn check<R: Runtime>(app: &AppHandle<R>) -> Result<Option<tauri_plugin_updater::Update>, String> {
     let pubkey = updater_public_key()?;
     let endpoint = UPDATE_ENDPOINT
         .parse()
@@ -71,8 +71,13 @@ pub async fn install_update<R: Runtime>(app: AppHandle<R>) -> Result<(), String>
         .await
         .map_err(|error| error.to_string())?;
 
-    #[cfg(not(target_os = "windows"))]
-    app.restart();
+    #[cfg(target_os = "windows")]
+    {
+        Ok(())
+    }
 
-    Ok(())
+    #[cfg(not(target_os = "windows"))]
+    {
+        app.restart()
+    }
 }
