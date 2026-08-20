@@ -4,10 +4,14 @@ import {
   LogOut,
   Menu,
   Pencil,
+  Search,
   SlidersHorizontal,
   User,
 } from 'lucide-react';
 
+import { Footer } from '../../components/Footer';
+import { HeaderInsertMenu } from '../../components/HeaderInsertMenu';
+import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 import { useTranslation } from '../../i18n';
 import { useAuthStore } from '../../store/authStore';
 import '../styles/mobile.css';
@@ -17,13 +21,30 @@ interface MobileLayoutProps {
   onOpenMenu: () => void;
 }
 
+const searchLabels: Record<string, string> = {
+  de: 'Suchen',
+  en: 'Search',
+  hu: 'Keresés',
+};
+
 export function MobileLayout({
   children,
   onOpenMenu,
 }: MobileLayoutProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const logout = useAuthStore((state) => state.logout);
   const isAuthLoading = useAuthStore((state) => state.isLoading);
+  const searchLabel = searchLabels[locale] ?? searchLabels.en;
+
+  const handleSearch = () => {
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'f',
+        ctrlKey: true,
+        bubbles: true,
+      }),
+    );
+  };
 
   const handleLogout = () => {
     void logout().catch(() => {
@@ -38,7 +59,8 @@ export function MobileLayout({
           type="button"
           className="mobile-icon-button"
           onClick={onOpenMenu}
-          aria-label="Open Studio menu"
+          aria-label={t('studio.menu')}
+          title={t('studio.menu')}
         >
           <Menu size={22} aria-hidden="true" />
         </button>
@@ -55,8 +77,26 @@ export function MobileLayout({
         </button>
       </header>
 
+      <div className="mobile-action-bar" aria-label="Studio actions">
+        <button
+          type="button"
+          className="mobile-action-button"
+          onClick={handleSearch}
+          aria-label={searchLabel}
+          title={searchLabel}
+        >
+          <Search size={18} aria-hidden="true" />
+          <span>{searchLabel}</span>
+        </button>
+        <div className="mobile-insert-action">
+          <HeaderInsertMenu />
+        </div>
+        <LanguageSwitcher />
+      </div>
+
       <main className="mobile-workspace">
         {children}
+        <Footer />
       </main>
 
       <nav className="mobile-bottom-nav" aria-label="Mobile Studio navigation">
