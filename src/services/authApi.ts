@@ -59,7 +59,7 @@ interface ErrorResponse {
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
 const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
-const IS_TAURI = isTauri();
+const IS_TAURI = detectTauriRuntime();
 const USE_DIRECT_NATIVE_API = IS_TAURI && !import.meta.env.DEV;
 
 const API_BASE_URL = normalizeBaseUrl(
@@ -74,7 +74,7 @@ export async function getAuthProviders(): Promise<AuthProviders> {
     headers: authHeaders({ Accept: 'application/json' }),
   });
   if (!response.ok) throw await createApiError(response);
-  const payload = (await response.json()) as { providers: AuthProviders };
+  const payload = await parseJsonResponse<{ providers: AuthProviders }>(response);
   return payload.providers;
 }
 
@@ -118,7 +118,7 @@ export async function getRegistrationInvitation(
     },
   );
   if (!response.ok) throw await createApiError(response);
-  const payload = (await response.json()) as { invitation: RegistrationInvitation };
+  const payload = await parseJsonResponse<{ invitation: RegistrationInvitation }>(response);
   return payload.invitation;
 }
 
@@ -172,7 +172,7 @@ export async function getCurrentAccount(): Promise<User | null> {
     throw await createApiError(response);
   }
 
-  const payload = (await response.json()) as UserResponse;
+  const payload = await parseJsonResponse<UserResponse>(response);
   return payload.user;
 }
 
@@ -241,6 +241,18 @@ async function request<T>(
     throw await createApiError(response);
   }
 
+  return parseJsonResponse<T>(response);
+}
+
+async function parseJsonResponse<T>(response: Response): Promise<T> {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    const preview = (await response.text()).trim().slice(0, 80);
+    throw new Error(
+      `Authentication API returned ${contentType || 'an unknown content type'} from ${response.url || 'the requested endpoint'} instead of JSON${preview ? `: ${preview}` : '.'}`,
+    );
+  }
+
   return (await response.json()) as T;
 }
 
@@ -285,6 +297,18 @@ function getNativeSessionToken(): string | null {
 
 function clearNativeSession(): void {
   globalThis.localStorage?.removeItem(NATIVE_SESSION_KEY);
+}
+
+function detectTauriRuntime(): boolean {
+  if (isTauri()) return true;
+
+  const location = globalThis.location;
+  if (!location) return false;
+
+  return (
+    location.protocol === 'tauri:' ||
+    location.hostname === 'tauri.localhost'
+  );
 }
 
 function normalizeBaseUrl(value: string): string {
