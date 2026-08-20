@@ -6,15 +6,20 @@
   "description": "Backend API for Open Manuscript Studio.",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "prisma generate && tsc -p tsconfig.json",
+    "build": "npm run prisma:generate:all && tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "integration:add": "tsx src/cli/addIntegration.ts",
     "review:grant": "tsx src/cli/grantReviewAccess.ts",
     "prisma:generate": "prisma generate",
+    "prisma:generate:identity": "prisma generate --config prisma.identity.config.ts",
+    "prisma:generate:all": "npm run prisma:generate && npm run prisma:generate:identity",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:studio": "prisma studio"
+    "prisma:migrate:identity:dev": "prisma migrate dev --config prisma.identity.config.ts",
+    "prisma:migrate:identity:deploy": "prisma migrate deploy --config prisma.identity.config.ts",
+    "prisma:studio": "prisma studio",
+    "prisma:studio:identity": "prisma studio --config prisma.identity.config.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
