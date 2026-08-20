@@ -56,9 +56,9 @@ jobs:
         working-directory: server
         run: npm install
 
-      - name: Generate Prisma client
+      - name: Generate Prisma clients
         working-directory: server
-        run: npm run prisma:generate
+        run: npm run prisma:generate:all
 
       - name: Typecheck server API
         working-directory: server

@@ -3,7 +3,9 @@ import { createHash, randomBytes } from 'node:crypto';
 import { Router, type Response } from 'express';
 
 import { env } from '../config/env.js';
+import { ensureStudioPrincipal } from '../identity/studioPrincipalBridge.js';
 import { validateOrcidIdToken, type OrcidOidcTokenResponse } from '../integrations/orcidOidc.js';
+import { identityPrisma } from '../lib/identityPrisma.js';
 import { prisma } from '../lib/prisma.js';
 import { consumeAssignmentInvitation } from '../services/assignmentInvitationService.js';
 
@@ -39,7 +41,7 @@ orcidOidcRouter.get('/orcid/start', async (request, response) => {
 
   const state = randomBytes(32).toString('base64url');
   const nonce = randomBytes(32).toString('base64url');
-  await prisma.oAuthLoginState.create({
+  await identityPrisma.oAuthLoginState.create({
     data: {
       stateHash: hash(state),
       provider: 'ORCID',
@@ -69,7 +71,7 @@ orcidOidcRouter.get('/orcid/callback', async (request, response) => {
     return;
   }
 
-  const loginState = await prisma.oAuthLoginState.findUnique({ where: { stateHash: hash(state) } });
+  const loginState = await identityPrisma.oAuthLoginState.findUnique({ where: { stateHash: hash(state) } });
   if (!loginState || loginState.expiresAt <= new Date() || loginState.provider !== 'ORCID') {
     redirectError(response, 'orcid_state_expired');
     return;
@@ -78,7 +80,7 @@ orcidOidcRouter.get('/orcid/callback', async (request, response) => {
   const expectedNonceHash = loginState.returnPath?.startsWith(NONCE_PREFIX)
     ? loginState.returnPath.slice(NONCE_PREFIX.length)
     : '';
-  await prisma.oAuthLoginState.delete({ where: { id: loginState.id } }).catch(() => undefined);
+  await identityPrisma.oAuthLoginState.delete({ where: { id: loginState.id } }).catch(() => undefined);
 
   if (!expectedNonceHash) {
     redirectError(response, 'orcid_nonce_missing');
@@ -106,22 +108,21 @@ orcidOidcRouter.get('/orcid/callback', async (request, response) => {
 
     if (loginState.mode === 'link') {
       if (!loginState.userId) throw new Error('The Studio account to link could not be resolved.');
-      const existingIdentity = await prisma.userIdentity.findUnique({
+      const existingIdentity = await identityPrisma.userIdentity.findUnique({
         where: { provider_issuer_subject: { provider: 'ORCID', issuer: ORCID_ISSUER, subject: orcid } },
       });
       if (existingIdentity && existingIdentity.userId !== loginState.userId) {
         throw new Error('This ORCID iD is already linked to another Studio account.');
       }
-      const user = await prisma.user.findUnique({ where: { id: loginState.userId } });
+      const user = await identityPrisma.user.findUnique({ where: { id: loginState.userId } });
       if (!user || user.status !== 'ACTIVE') throw new Error('The Studio account is not active.');
-      await prisma.$transaction([
-        prisma.user.update({ where: { id: user.id }, data: { orcid } }),
-        prisma.userIdentity.upsert({
-          where: { provider_issuer_subject: { provider: 'ORCID', issuer: ORCID_ISSUER, subject: orcid } },
-          create: identityCreate(user.id, orcid, displayName || user.fullName, token.scope, amr),
-          update: { displayName: displayName || user.fullName, profile: identityProfile(token.scope, amr), lastUsedAt: new Date() },
-        }),
-      ]);
+      const updated = await identityPrisma.user.update({ where: { id: user.id }, data: { orcid } });
+      await identityPrisma.userIdentity.upsert({
+        where: { provider_issuer_subject: { provider: 'ORCID', issuer: ORCID_ISSUER, subject: orcid } },
+        create: identityCreate(user.id, orcid, displayName || user.fullName, token.scope, amr),
+        update: { displayName: displayName || user.fullName, profile: identityProfile(token.scope, amr), lastUsedAt: new Date() },
+      });
+      await ensureStudioPrincipal(toPrincipalSnapshot(updated));
       response.redirect(302, env.FRONTEND_ORIGIN);
       return;
     }
@@ -131,27 +132,49 @@ orcidOidcRouter.get('/orcid/callback', async (request, response) => {
       if (!invitation) throw new Error('The invitation is invalid or has expired.');
       const pending = await prisma.user.findUnique({ where: { id: invitation.userId } });
       if (!pending || pending.status !== 'PENDING') throw new Error('The invitation is no longer available.');
-      const existingIdentity = await prisma.userIdentity.findUnique({
+
+      const existingIdentity = await identityPrisma.userIdentity.findUnique({
         where: { provider_issuer_subject: { provider: 'ORCID', issuer: ORCID_ISSUER, subject: orcid } },
       });
       if (existingIdentity && existingIdentity.userId !== pending.id) {
         throw new Error('This ORCID iD is already linked to another Studio account.');
       }
-      await prisma.$transaction([
-        prisma.user.update({
-          where: { id: pending.id },
-          data: { status: 'ACTIVE', orcid, fullName: displayName || pending.fullName, lastLoginAt: new Date() },
-        }),
-        prisma.userIdentity.upsert({
-          where: { provider_issuer_subject: { provider: 'ORCID', issuer: ORCID_ISSUER, subject: orcid } },
-          create: identityCreate(pending.id, orcid, displayName || pending.fullName, token.scope, amr),
-          update: { lastUsedAt: new Date(), displayName: displayName || pending.fullName, profile: identityProfile(token.scope, amr) },
-        }),
-        prisma.userInvitation.update({ where: { id: invitation.invitationId }, data: { usedAt: new Date() } }),
-      ]);
-      userId = pending.id;
+
+      const existingUser = await identityPrisma.user.findUnique({ where: { email: pending.email } });
+      if (existingUser && existingUser.id !== pending.id) {
+        throw new Error('This e-mail address is already linked to another Identity account.');
+      }
+      const now = new Date();
+      const identityUser = existingUser
+        ? await identityPrisma.user.update({
+            where: { id: existingUser.id },
+            data: { status: 'ACTIVE', orcid, fullName: displayName || pending.fullName, lastLoginAt: now },
+          })
+        : await identityPrisma.user.create({
+            data: {
+              id: pending.id,
+              email: pending.email,
+              passwordHash: `orcid-only:${randomBytes(32).toString('hex')}`,
+              fullName: displayName || pending.fullName,
+              affiliation: pending.affiliation,
+              affiliationRorId: pending.affiliationRorId,
+              orcid,
+              interfaceLanguage: pending.interfaceLanguage,
+              status: 'ACTIVE',
+              createdAt: pending.createdAt,
+              lastLoginAt: now,
+            },
+          });
+      await identityPrisma.userIdentity.upsert({
+        where: { provider_issuer_subject: { provider: 'ORCID', issuer: ORCID_ISSUER, subject: orcid } },
+        create: identityCreate(identityUser.id, orcid, displayName || identityUser.fullName, token.scope, amr),
+        update: { lastUsedAt: now, displayName: displayName || identityUser.fullName, profile: identityProfile(token.scope, amr) },
+      });
+      await ensureStudioPrincipal(toPrincipalSnapshot(identityUser));
+      await prisma.userInvitation.update({ where: { id: invitation.invitationId }, data: { usedAt: now } });
+      userId = identityUser.id;
     } else {
-      const identity = await prisma.userIdentity.findUnique({
+      const identity = await identityPrisma.userIdentity.findUnique({
         where: { provider_issuer_subject: { provider: 'ORCID', issuer: ORCID_ISSUER, subject: orcid } },
       });
       if (identity) {
@@ -159,10 +182,11 @@ orcidOidcRouter.get('/orcid/callback', async (request, response) => {
       } else {
         const legacyUser = await prisma.user.findUnique({ where: { orcid } });
         if (legacyUser) {
-          await prisma.userIdentity.create({
-            data: identityCreate(legacyUser.id, orcid, displayName || legacyUser.fullName, token.scope, amr),
+          const identityUser = await ensureLegacyIdentityUser(legacyUser);
+          await identityPrisma.userIdentity.create({
+            data: identityCreate(identityUser.id, orcid, displayName || identityUser.fullName, token.scope, amr),
           });
-          userId = legacyUser.id;
+          userId = identityUser.id;
         }
       }
     }
@@ -172,13 +196,14 @@ orcidOidcRouter.get('/orcid/callback', async (request, response) => {
       return;
     }
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await identityPrisma.user.findUnique({ where: { id: userId } });
     if (!user || user.status !== 'ACTIVE') throw new Error('The Studio account is not active.');
-    await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date(), orcid } });
-    await prisma.userIdentity.updateMany({
+    const updated = await identityPrisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date(), orcid } });
+    await identityPrisma.userIdentity.updateMany({
       where: { userId: user.id, provider: 'ORCID', issuer: ORCID_ISSUER, subject: orcid },
       data: { lastUsedAt: new Date(), profile: identityProfile(token.scope, amr) },
     });
+    await ensureStudioPrincipal(toPrincipalSnapshot(updated));
 
     const session = await createSession(user.id);
     response.cookie(COOKIE_NAME, session.token, {
@@ -194,6 +219,62 @@ orcidOidcRouter.get('/orcid/callback', async (request, response) => {
     redirectError(response, 'orcid_signin_failed');
   }
 });
+
+async function ensureLegacyIdentityUser(legacy: {
+  id: string;
+  email: string;
+  passwordHash: string;
+  fullName: string;
+  affiliation: string | null;
+  affiliationRorId: string | null;
+  orcid: string | null;
+  interfaceLanguage: string;
+  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'DISABLED';
+  createdAt: Date;
+  lastLoginAt: Date | null;
+}) {
+  const existing = await identityPrisma.user.findUnique({ where: { id: legacy.id } });
+  if (existing) return existing;
+  return identityPrisma.user.create({
+    data: {
+      id: legacy.id,
+      email: legacy.email,
+      passwordHash: legacy.passwordHash,
+      fullName: legacy.fullName,
+      affiliation: legacy.affiliation,
+      affiliationRorId: legacy.affiliationRorId,
+      orcid: legacy.orcid,
+      interfaceLanguage: legacy.interfaceLanguage,
+      status: legacy.status,
+      createdAt: legacy.createdAt,
+      lastLoginAt: legacy.lastLoginAt,
+    },
+  });
+}
+
+function toPrincipalSnapshot(user: {
+  id: string;
+  email: string;
+  fullName: string;
+  affiliation: string | null;
+  affiliationRorId: string | null;
+  orcid: string | null;
+  interfaceLanguage: string;
+  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'DISABLED';
+  lastLoginAt: Date | null;
+}) {
+  return {
+    id: user.id,
+    email: user.email,
+    fullName: user.fullName,
+    affiliation: user.affiliation,
+    affiliationRorId: user.affiliationRorId,
+    orcid: user.orcid,
+    interfaceLanguage: user.interfaceLanguage,
+    status: user.status,
+    lastLoginAt: user.lastLoginAt,
+  };
+}
 
 function identityProfile(scope?: string, amr?: string[]) {
   return { scope: scope ?? 'openid', protocol: 'openid-connect', ...(amr?.length ? { amr } : {}) };
@@ -243,7 +324,7 @@ async function currentUserId(cookieHeader: string | undefined): Promise<string |
   const token = cookieHeader.split(';').map((part) => part.trim().split('='))
     .find(([name]) => name === COOKIE_NAME)?.slice(1).join('=');
   if (!token) return undefined;
-  const session = await prisma.userSession.findUnique({
+  const session = await identityPrisma.userSession.findUnique({
     where: { tokenHash: hash(decodeURIComponent(token)) },
     include: { user: true },
   });
@@ -254,7 +335,7 @@ async function currentUserId(cookieHeader: string | undefined): Promise<string |
 async function createSession(userId: string) {
   const token = randomBytes(32).toString('base64url');
   const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
-  await prisma.userSession.create({ data: { userId, tokenHash: hash(token), expiresAt } });
+  await identityPrisma.userSession.create({ data: { userId, tokenHash: hash(token), expiresAt } });
   return { token, expiresAt };
 }
 
