@@ -3,6 +3,11 @@ import express from 'express';
 import helmet from 'helmet';
 
 import { env } from './config/env.js';
+import {
+  apiRateLimit,
+  authRateLimit,
+  integrationRateLimit,
+} from './middleware/rateLimits.js';
 import { authRouter } from './routes/authRoutes.js';
 import { authorSignatureRouter } from './routes/authorSignatureRoutes.js';
 import { cloudRouter } from './routes/cloudRoutes.js';
@@ -28,6 +33,9 @@ const allowedOrigins = new Set([
 ]);
 
 app.disable('x-powered-by');
+// Production traffic reaches the API through the single Nginx reverse proxy.
+// This makes req.ip reflect the real client address for express-rate-limit.
+app.set('trust proxy', 1);
 
 app.use(helmet());
 
@@ -57,7 +65,15 @@ app.get('/api', (_request, response) => {
   });
 });
 
+// Health probes stay outside the user-facing limiter so infrastructure checks
+// cannot consume the request budget. All resource-consuming API handlers below
+// are protected by the general limiter, with tighter policies for authentication
+// and external integration launch endpoints.
 app.use('/api/health', healthRouter);
+app.use(apiRateLimit);
+app.use('/api/auth', authRateLimit);
+app.use('/integrations', integrationRateLimit);
+
 app.use('/api/auth', orcidOidcRouter);
 app.use('/api/auth', federatedAuthRouter);
 app.use('/api/auth', authRouter);
