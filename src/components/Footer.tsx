@@ -1,6 +1,59 @@
+import { useEffect, useState } from 'react';
+
 import { BUILD_INFO } from '../version';
 
+type DeploymentMode = 'personal' | 'institutional';
+
+type ProviderStatus = {
+  deployment?: {
+    mode?: DeploymentMode;
+    label?: string;
+  };
+  providers?: {
+    orcid?: {
+      environment?: 'sandbox' | 'production';
+    };
+  };
+};
+
 export function Footer() {
+  const [deploymentMode, setDeploymentMode] = useState<DeploymentMode | null>(null);
+  const [orcidEnvironment, setOrcidEnvironment] = useState<'sandbox' | 'production' | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetch('/api/auth/providers', {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return await response.json() as ProviderStatus;
+      })
+      .then((status) => {
+        if (cancelled || !status) return;
+        const mode = status.deployment?.mode;
+        if (mode === 'personal' || mode === 'institutional') setDeploymentMode(mode);
+        const environment = status.providers?.orcid?.environment;
+        if (environment === 'sandbox' || environment === 'production') {
+          setOrcidEnvironment(environment);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const deploymentLabel = deploymentMode === 'institutional'
+    ? 'Institutional'
+    : deploymentMode === 'personal'
+      ? 'Personal'
+      : null;
+
   return (
     <footer className="omi-footer" aria-label="Open Manuscript Studio">
       <div className="omi-footer-accent" aria-hidden="true" />
@@ -48,6 +101,24 @@ export function Footer() {
           </nav>
 
           <div className="omi-footer-build">
+            {deploymentLabel ? (
+              <>
+                <span
+                  title={deploymentMode === 'institutional'
+                    ? 'Institutional deployment'
+                    : 'Personal deployment'}
+                >
+                  OMI Studio · {deploymentLabel}
+                </span>
+                <span aria-hidden="true">·</span>
+              </>
+            ) : null}
+            {orcidEnvironment === 'sandbox' ? (
+              <>
+                <span title="ORCID test environment">ORCID Sandbox</span>
+                <span aria-hidden="true">·</span>
+              </>
+            ) : null}
             <span>v{BUILD_INFO.version}</span>
             <span aria-hidden="true">·</span>
             <span>Build #{BUILD_INFO.build}</span>
