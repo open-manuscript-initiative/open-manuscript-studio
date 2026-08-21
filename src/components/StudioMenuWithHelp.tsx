@@ -76,6 +76,42 @@ export function StudioMenuWithHelp({
   }, [navigationHost]);
 
   useEffect(() => {
+    if (!navigationHost) return;
+
+    const internalButtons = Array.from(
+      navigationHost.querySelectorAll<HTMLButtonElement>(
+        '.studio-menu-nav-button:not([data-help-navigation="true"]):not([data-integrations-navigation="true"])',
+      ),
+    );
+    const externalNavigationOpen = helpOpen || integrationsOpen;
+
+    for (const button of internalButtons) {
+      button.classList.remove('studio-menu-nav-button--external-suppressed');
+
+      if (!button.classList.contains('studio-menu-nav-button--active')) {
+        button.removeAttribute('aria-current');
+        continue;
+      }
+
+      if (externalNavigationOpen) {
+        button.classList.add('studio-menu-nav-button--external-suppressed');
+        button.removeAttribute('aria-current');
+      } else {
+        button.setAttribute('aria-current', 'page');
+      }
+    }
+
+    return () => {
+      for (const button of internalButtons) {
+        button.classList.remove('studio-menu-nav-button--external-suppressed');
+        if (button.classList.contains('studio-menu-nav-button--active')) {
+          button.setAttribute('aria-current', 'page');
+        }
+      }
+    };
+  }, [navigationHost, helpOpen, integrationsOpen]);
+
+  useEffect(() => {
     if (!contentHost) return;
 
     if (helpOpen || integrationsOpen) {
