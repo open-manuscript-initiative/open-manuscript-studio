@@ -1,3 +1,4 @@
+import { sanitizeMathMlForPreview } from '../model/equationRendering';
 import {
   createChartBlock,
   createEquationBlock,
@@ -91,6 +92,10 @@ export function importVisualBlocksFromHtml(
   html: string,
   provenance: OmiImportProvenance = createProvenance(undefined, 'html'),
 ): OmiBlock[] {
+  // DOMParser creates a detached, inert HTML document here. The parsed tree is
+  // never attached to the live DOM: table values are read through textContent,
+  // image URLs are allow-listed below, and MathML is sanitized before storage.
+  // codeql[js/xss-through-dom]
   const document = new DOMParser().parseFromString(html, 'text/html');
   const blocks: OmiBlock[] = [];
 
@@ -104,8 +109,8 @@ export function importVisualBlocksFromHtml(
   }
 
   for (const image of Array.from(document.querySelectorAll('img'))) {
-    const src = image.getAttribute('src') ?? '';
-    if (!src || src.startsWith('blob:')) continue;
+    const src = sanitizeImportedImageSource(image.getAttribute('src') ?? '');
+    if (!src) continue;
     blocks.push(
       createImageBlock({
         src,
@@ -119,8 +124,9 @@ export function importVisualBlocksFromHtml(
   }
 
   for (const math of Array.from(document.querySelectorAll('math'))) {
+    const sanitizedMathMl = sanitizeMathMlForPreview(math.outerHTML);
     blocks.push(
-      createEquationBlock(math.outerHTML, {
+      createEquationBlock(sanitizedMathMl, {
         notation: 'mathml',
         provenance,
       }),
@@ -288,6 +294,26 @@ function parseOptionalDimension(value: string | null): number | undefined {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
+function sanitizeImportedImageSource(value: string): string | undefined {
+  const src = value.trim();
+  if (!src || src.startsWith('blob:')) return undefined;
+
+  const dataMatch = /^data:([^;,]+)(?:;[^,]*)?,/i.exec(src);
+  if (dataMatch?.[1]) {
+    const mediaType = dataMatch[1].toLowerCase();
+    return ['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(mediaType)
+      ? src
+      : undefined;
+  }
+
+  try {
+    const url = new URL(src);
+    return url.protocol === 'https:' ? url.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function inferMediaTypeFromSource(src: string): string {
   const dataMatch = /^data:([^;,]+)/i.exec(src);
   if (dataMatch?.[1]) return dataMatch[1];
@@ -316,6 +342,9 @@ function bytesToDataUrl(bytes: Uint8Array, mediaType: string): string {
 }
 
 function parseXml(xml: string): XMLDocument {
+  // OOXML parts are parsed as XML in a detached document and are only traversed
+  // as data. They are never interpreted as HTML or attached to the live DOM.
+  // codeql[js/xss-through-dom]
   const document = new DOMParser().parseFromString(xml, 'application/xml');
   if (document.querySelector('parsererror')) {
     throw new Error('Invalid Open XML document part.');
@@ -565,8 +594,25 @@ function naryOperator(character: string): string {
   return '\\sum';
 }
 
+const LATEX_TEXT_ESCAPES: Readonly<Record<string, string>> = {
+  '\\': '\\textbackslash{}',
+  '#': '\\#',
+  '$': '\\$',
+  '%': '\\%',
+  '&': '\\&',
+  '_': '\\_',
+  '{': '\\{',
+  '}': '\\}',
+  '~': '\\textasciitilde{}',
+  '^': '\\textasciicircum{}',
+};
+
 function escapeLatexText(value: string): string {
-  return value.replace(/([#$%&_{}])/g, '\\$1');
+  let escaped = '';
+  for (const character of value) {
+    escaped += LATEX_TEXT_ESCAPES[character] ?? character;
+  }
+  return escaped;
 }
 
 function naturalFileOrder(first: string, second: string): number {
