@@ -34,8 +34,11 @@ interface CloudCopy {
   description: string;
   connectionTitle: string;
   provider: string;
+  providerDescription: string;
   nextcloud: string;
+  nextcloudDescription: string;
   webdav: string;
+  webdavDescription: string;
   displayName: string;
   serverUrl: string;
   username: string;
@@ -73,8 +76,11 @@ const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
     description: 'Connect Nextcloud or another WebDAV service and store portable OMI manuscript backups in your own cloud account.',
     connectionTitle: 'Cloud connections',
     provider: 'Provider',
+    providerDescription: 'Choose the storage provider for this connection.',
     nextcloud: 'Nextcloud',
+    nextcloudDescription: 'Nextcloud account using its WebDAV endpoint. A normal account URL can be entered and Studio derives the DAV path.',
     webdav: 'WebDAV',
+    webdavDescription: 'Standards-based WebDAV server, including self-hosted and institutional storage.',
     displayName: 'Connection name',
     serverUrl: 'WebDAV server URL',
     username: 'Username',
@@ -110,8 +116,11 @@ const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
     description: 'Kapcsoljon Nextcloudot vagy más WebDAV-szolgáltatást, és a hordozható OMI kéziratmentéseket a saját felhőfiókjában tárolja.',
     connectionTitle: 'Felhőkapcsolatok',
     provider: 'Szolgáltató',
+    providerDescription: 'Válassza ki, melyik tárhelyszolgáltatóhoz tartozik a kapcsolat.',
     nextcloud: 'Nextcloud',
+    nextcloudDescription: 'Nextcloud-fiók a beépített WebDAV-végponton keresztül. Megadható a szokásos fiók URL-je, a Studio előállítja a DAV útvonalat.',
     webdav: 'WebDAV',
+    webdavDescription: 'Szabványos WebDAV-szerver, beleértve a saját vagy intézményi tárhelyeket is.',
     displayName: 'Kapcsolat neve',
     serverUrl: 'WebDAV szerver URL-je',
     username: 'Felhasználónév',
@@ -147,8 +156,11 @@ const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
     description: 'Verbinden Sie Nextcloud oder einen anderen WebDAV-Dienst und speichern Sie portable OMI-Manuskriptsicherungen in Ihrem eigenen Cloud-Konto.',
     connectionTitle: 'Cloud-Verbindungen',
     provider: 'Anbieter',
+    providerDescription: 'Wählen Sie den Speicheranbieter für diese Verbindung.',
     nextcloud: 'Nextcloud',
+    nextcloudDescription: 'Nextcloud-Konto über den integrierten WebDAV-Endpunkt. Eine normale Konto-URL kann eingegeben werden; Studio leitet den DAV-Pfad ab.',
     webdav: 'WebDAV',
+    webdavDescription: 'Standardbasierter WebDAV-Server, einschließlich selbst gehosteter und institutioneller Speicher.',
     displayName: 'Verbindungsname',
     serverUrl: 'WebDAV-Server-URL',
     username: 'Benutzername',
@@ -237,6 +249,17 @@ export function CloudStorageSettings() {
   useEffect(() => {
     void refresh();
   }, [manuscript.id]);
+
+  function chooseProvider(nextProvider: CloudProviderType): void {
+    setProviderType(nextProvider);
+    setDisplayName((current) => {
+      const trimmed = current.trim();
+      if (!trimmed || trimmed === 'Nextcloud' || trimmed === 'WebDAV') {
+        return nextProvider === 'nextcloud' ? 'Nextcloud' : 'WebDAV';
+      }
+      return current;
+    });
+  }
 
   async function connect(): Promise<void> {
     setBusy('connect');
@@ -387,12 +410,40 @@ export function CloudStorageSettings() {
           </div>
         )}
 
+        <div className="studio-cloud-provider-picker">
+          <div>
+            <strong>{copy.provider}</strong>
+            <p>{copy.providerDescription}</p>
+          </div>
+          <div className="studio-cloud-provider-options" role="group" aria-label={copy.provider}>
+            <button
+              type="button"
+              className={`studio-cloud-provider-option${providerType === 'nextcloud' ? ' studio-cloud-provider-option--active' : ''}`}
+              aria-pressed={providerType === 'nextcloud'}
+              disabled={busy !== null}
+              onClick={() => chooseProvider('nextcloud')}
+            >
+              <Cloud size={18} aria-hidden="true" />
+              <span><strong>{copy.nextcloud}</strong><small>{copy.nextcloudDescription}</small></span>
+            </button>
+            <button
+              type="button"
+              className={`studio-cloud-provider-option${providerType === 'webdav' ? ' studio-cloud-provider-option--active' : ''}`}
+              aria-pressed={providerType === 'webdav'}
+              disabled={busy !== null}
+              onClick={() => chooseProvider('webdav')}
+            >
+              <Cloud size={18} aria-hidden="true" />
+              <span><strong>{copy.webdav}</strong><small>{copy.webdavDescription}</small></span>
+            </button>
+          </div>
+        </div>
+
         <div className="studio-manuscript-fields">
-          <label><span>{copy.provider}</span><select value={providerType} onChange={(event) => setProviderType(event.target.value as CloudProviderType)}><option value="nextcloud">{copy.nextcloud}</option><option value="webdav">{copy.webdav}</option></select></label>
           <label><span>{copy.displayName}</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></label>
-          <label><span>{copy.serverUrl}</span><input type="url" placeholder="https://cloud.example.org/remote.php/dav/files/user/" value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} /></label>
+          <label><span>{copy.serverUrl}</span><input type="url" placeholder={providerType === 'nextcloud' ? 'https://cloud.example.org' : 'https://dav.example.org/path/'} value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} /></label>
           <label><span>{copy.username}</span><input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} /></label>
-          <label><span>{copy.password}</span><input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+          <label><span>{copy.password}</span><input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
           <label><span>{copy.rootPath}</span><input value={rootPath} onChange={(event) => setRootPath(event.target.value)} /></label>
         </div>
         <button type="button" className="studio-menu-primary-action" disabled={busy !== null || !displayName.trim() || !baseUrl.trim() || !username.trim() || !password} onClick={() => void connect()}>
