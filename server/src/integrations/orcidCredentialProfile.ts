@@ -4,10 +4,10 @@ export type InstitutionalOrcidApiType = 'public' | 'member';
 
 export interface OrcidCredentialProfile {
   source: OrcidCredentialSource;
-  clientId?: string;
-  clientSecret?: string;
-  redirectUri?: string;
-  apiType?: InstitutionalOrcidApiType;
+  clientId?: string | undefined;
+  clientSecret?: string | undefined;
+  redirectUri?: string | undefined;
+  apiType?: InstitutionalOrcidApiType | undefined;
 }
 
 export function resolveOrcidCredentialProfile(input: {
