@@ -12,8 +12,8 @@ export interface OrcidRuntimeConfig {
 }
 
 export function resolveOrcidRuntimeConfig(input: {
-  environment?: OrcidEnvironment;
-  legacyBaseUrl?: string;
+  environment?: OrcidEnvironment | undefined;
+  legacyBaseUrl?: string | undefined;
 }): OrcidRuntimeConfig {
   const explicitEnvironment = input.environment;
   const legacyOrigin = input.legacyBaseUrl
@@ -57,9 +57,9 @@ export function resolveOrcidRuntimeConfig(input: {
 export function validateOrcidDeployment(input: {
   environment: OrcidEnvironment;
   nodeEnv: 'development' | 'test' | 'production';
-  clientId?: string;
-  clientSecret?: string;
-  redirectUri?: string;
+  clientId?: string | undefined;
+  clientSecret?: string | undefined;
+  redirectUri?: string | undefined;
 }): void {
   const hasClientId = Boolean(input.clientId?.trim());
   const hasClientSecret = Boolean(input.clientSecret?.trim());
