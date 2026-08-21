@@ -16,7 +16,8 @@ The integration supports:
 - ORCID sign-in for an already linked account;
 - assignment invitations through ORCID;
 - displaying and disconnecting the linked ORCID iD in **Integrations → ORCID**;
-- normal ORCID accounts and accounts protected by ORCID two-factor authentication.
+- normal ORCID accounts and accounts protected by ORCID two-factor authentication;
+- explicit Sandbox/production network selection with fail-closed configuration validation.
 
 ORCID performs password and 2FA verification on its own site. Studio never receives the ORCID password or second-factor secret.
 
@@ -39,6 +40,14 @@ The callback exchanges the authorization code on the server and requires an `id_
 
 If the token exposes an `amr` authentication-method reference, Studio stores it as identity metadata. ORCID documents that member integrations can use this information to determine whether two-factor authentication was used. The integration itself does not require or bypass 2FA; it delegates the complete authentication ceremony to ORCID.
 
+## Account and identity binding
+
+The ORCID identity key is the tuple `(provider, issuer, subject)`. This means Sandbox and production identities are cryptographically and logically separate even if the textual ORCID iD happens to be the same.
+
+For an already linked identity, subsequent ORCID sign-ins resolve the existing `UserIdentity` row and therefore return to the same Studio account; they do not create another user. During linking and invitation acceptance, Studio checks whether the authenticated ORCID identity is already owned by a different Studio account and rejects the operation if so.
+
+The first version intentionally does not create an arbitrary new Studio account solely from an unknown ORCID iD. The identity must first be linked to an existing Studio account or associated through a supported invitation flow. This prevents accidental duplicate accounts and prevents possession of an unrelated ORCID account from claiming an existing Studio profile.
+
 ## Integrations panel
 
 The **Integrations → ORCID** card distinguishes these states:
@@ -49,9 +58,36 @@ The **Integrations → ORCID** card distinguishes these states:
 
 The **Connect ORCID** action starts the linking flow. Once connected, the card displays the verified ORCID iD and offers **Disconnect ORCID**.
 
+## Environment selection
+
+Use `ORCID_ENVIRONMENT` as the authoritative network selector:
+
+```dotenv
+ORCID_ENVIRONMENT=sandbox
+```
+
+or:
+
+```dotenv
+ORCID_ENVIRONMENT=production
+```
+
+The server maps these values internally:
+
+| Environment | ORCID base URL / issuer |
+| --- | --- |
+| `sandbox` | `https://sandbox.orcid.org` |
+| `production` | `https://orcid.org` |
+
+`ORCID_BASE_URL` remains accepted only as a backward-compatible migration option. If both `ORCID_ENVIRONMENT` and `ORCID_BASE_URL` are present, they must identify the same ORCID network or server startup fails. Unknown ORCID base URLs are rejected.
+
+Sandbox is the safe default when neither value is set, so a deployment cannot move to production ORCID accidentally merely because code was upgraded.
+
+The server also rejects a partial credential pair: `ORCID_CLIENT_ID` and `ORCID_CLIENT_SECRET` must either both be configured or both be absent. When `NODE_ENV=production`, an explicitly configured `ORCID_REDIRECT_URI` must use HTTPS.
+
 ## ORCID Sandbox client registration
 
-Test in the ORCID Sandbox before production. Register a Public API application with:
+Test in the ORCID Sandbox before production. Register an ORCID Sandbox application with:
 
 **Name**
 
@@ -76,9 +112,9 @@ The callback URI registered at ORCID and `ORCID_REDIRECT_URI` must be identical.
 ## Sandbox server configuration
 
 ```dotenv
+ORCID_ENVIRONMENT=sandbox
 ORCID_CLIENT_ID=APP-REPLACE_WITH_SANDBOX_CLIENT_ID
 ORCID_CLIENT_SECRET=REPLACE_WITH_SANDBOX_CLIENT_SECRET
-ORCID_BASE_URL=https://sandbox.orcid.org
 ORCID_REDIRECT_URI=https://openmanuscript.org/api/auth/orcid/callback
 ```
 
@@ -107,25 +143,37 @@ curl -sS https://openmanuscript.org/api/auth/providers
 5. Approve the authorization request.
 6. Confirm that ORCID returns to `/api/auth/orcid/callback` and the card shows **Connected** with the verified ORCID iD.
 7. Sign out of Studio and use **Sign in with ORCID**.
-8. Complete ORCID 2FA again if ORCID requests it and confirm that Studio creates the normal authenticated session.
-9. Confirm that e-mail/password login still works.
-10. Test **Disconnect ORCID** and confirm that only the external identity link is removed.
-
-The first version intentionally does not create an arbitrary new Studio account solely from an unknown ORCID iD. The identity must first be linked to an existing Studio account or associated through a supported invitation flow.
+8. Complete ORCID 2FA again if ORCID requests it and confirm that Studio creates the normal authenticated session for the same account.
+9. Repeat ORCID sign-in and verify that no second Studio user is created.
+10. Attempt to link the same Sandbox ORCID identity to another Studio account and confirm that the link is rejected.
+11. Confirm that e-mail/password login still works.
+12. Test **Disconnect ORCID** and confirm that only the external identity link is removed.
 
 ## Database
 
-No new database migration is required for the OpenID Connect upgrade. The existing `OAuthLoginState.returnPath` field carries the short-lived hashed nonce marker for an authentication attempt; no raw nonce is persisted. `UserIdentity.profile` records the protocol, granted scope, and available authentication-method metadata.
+No new database migration is required for this production-readiness update. The existing `OAuthLoginState.returnPath` field carries the short-lived hashed nonce marker for an authentication attempt; no raw nonce is persisted. `UserIdentity.profile` records the protocol, granted scope, and available authentication-method metadata.
 
-## Production
+## Production cutover
 
-After Sandbox testing succeeds, register or configure the production ORCID client with the same callback URI and switch to:
+Production ORCID requires its own production client credentials. Do not reuse Sandbox credentials.
+
+Register/configure the production ORCID application with the callback:
+
+```text
+https://openmanuscript.org/api/auth/orcid/callback
+```
+
+Then change the server configuration to:
 
 ```dotenv
+ORCID_ENVIRONMENT=production
 ORCID_CLIENT_ID=APP-REPLACE_WITH_PRODUCTION_CLIENT_ID
 ORCID_CLIENT_SECRET=REPLACE_WITH_PRODUCTION_CLIENT_SECRET
-ORCID_BASE_URL=https://orcid.org
 ORCID_REDIRECT_URI=https://openmanuscript.org/api/auth/orcid/callback
 ```
 
-Do not reuse Sandbox credentials in production. Keep the client secret exclusively in server-side configuration and never expose it through a `VITE_*` variable, browser storage, screenshots, or public documentation.
+Remove an old `ORCID_BASE_URL=https://sandbox.orcid.org` line when switching, or replace it with the production value. Prefer removing `ORCID_BASE_URL` entirely and letting `ORCID_ENVIRONMENT` select the endpoint.
+
+Before restart, verify that no `VITE_ORCID_*` variable contains the client secret. The secret belongs only in server-side configuration. Then rebuild and restart the API and check `/api/auth/providers` before performing the first production login.
+
+Keep the client secret exclusively in server-side configuration and never expose it through a `VITE_*` variable, browser storage, screenshots, committed `.env` files, or public documentation.
