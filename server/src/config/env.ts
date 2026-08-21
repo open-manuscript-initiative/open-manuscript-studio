@@ -51,11 +51,15 @@ const environmentSchema = z.object({
     .max(720)
     .default(168),
 
-  // Transitional direct ORCID OAuth configuration. This remains supported
-  // until a deployment is migrated to the central OMI Identity Service.
+  // Transitional direct ORCID OpenID Connect configuration. Select the
+  // network explicitly; Sandbox remains the safe default until production
+  // credentials are deliberately installed.
+  ORCID_ENVIRONMENT: z.enum(['sandbox', 'production']).optional(),
   ORCID_CLIENT_ID: z.string().trim().optional(),
   ORCID_CLIENT_SECRET: z.string().trim().optional(),
-  ORCID_BASE_URL: z.string().url().default('https://orcid.org'),
+  // Backward-compatible migration aid. When present it must match the
+  // selected ORCID_ENVIRONMENT; new deployments should prefer the enum.
+  ORCID_BASE_URL: z.string().url().optional(),
   ORCID_REDIRECT_URI: z.string().url().optional(),
 
   // Future central OMI Identity Service (OIDC) configuration. These values
