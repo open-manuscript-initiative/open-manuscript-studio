@@ -2,6 +2,11 @@ import 'dotenv/config';
 
 import { z } from 'zod';
 
+import {
+  resolveOrcidRuntimeConfig,
+  validateOrcidDeployment,
+} from '../integrations/orcidEnvironment.js';
+
 const environmentSchema = z.object({
   NODE_ENV: z
     .enum([
@@ -51,11 +56,15 @@ const environmentSchema = z.object({
     .max(720)
     .default(168),
 
-  // Transitional direct ORCID OAuth configuration. This remains supported
-  // until a deployment is migrated to the central OMI Identity Service.
+  // Transitional direct ORCID OpenID Connect configuration. Select the
+  // network explicitly; Sandbox remains the safe default until production
+  // credentials are deliberately installed.
+  ORCID_ENVIRONMENT: z.enum(['sandbox', 'production']).optional(),
   ORCID_CLIENT_ID: z.string().trim().optional(),
   ORCID_CLIENT_SECRET: z.string().trim().optional(),
-  ORCID_BASE_URL: z.string().url().default('https://orcid.org'),
+  // Backward-compatible migration aid. When present it must match the
+  // selected ORCID_ENVIRONMENT; new deployments should prefer the enum.
+  ORCID_BASE_URL: z.string().url().optional(),
   ORCID_REDIRECT_URI: z.string().url().optional(),
 
   // Future central OMI Identity Service (OIDC) configuration. These values
@@ -81,4 +90,21 @@ if (!result.success) {
   );
 }
 
-export const env = result.data;
+const orcid = resolveOrcidRuntimeConfig({
+  environment: result.data.ORCID_ENVIRONMENT,
+  legacyBaseUrl: result.data.ORCID_BASE_URL,
+});
+
+validateOrcidDeployment({
+  environment: orcid.environment,
+  nodeEnv: result.data.NODE_ENV,
+  clientId: result.data.ORCID_CLIENT_ID,
+  clientSecret: result.data.ORCID_CLIENT_SECRET,
+  redirectUri: result.data.ORCID_REDIRECT_URI,
+});
+
+export const env = {
+  ...result.data,
+  ORCID_ENVIRONMENT: orcid.environment,
+  ORCID_BASE_URL: orcid.baseUrl,
+};

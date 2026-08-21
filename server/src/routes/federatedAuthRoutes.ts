@@ -25,6 +25,8 @@ federatedAuthRouter.get('/providers', async (request, response) => {
       orcid: {
         enabled: orcidConfigured(),
         label: 'ORCID',
+        environment: env.ORCID_ENVIRONMENT,
+        issuer: ORCID_ISSUER,
         linked: Boolean(linkedOrcid),
         identity: linkedOrcid
           ? {
