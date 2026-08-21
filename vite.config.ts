@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 import { defineConfig } from 'vite';
@@ -9,16 +10,43 @@ const packageMetadata = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
 ) as { version?: string };
 
-// The web deployment exports these variables explicitly. Native Tauri builds
-// run in a separate GitHub Actions workflow, so derive equivalent metadata
-// from GitHub's standard environment when VITE_* values were not pre-set.
-process.env.VITE_APP_VERSION ??= packageMetadata.version ?? 'dev';
-process.env.VITE_BUILD_NUMBER ??= process.env.GITHUB_RUN_NUMBER ?? '-';
-process.env.VITE_COMMIT_SHA ??=
-  process.env.GITHUB_SHA?.slice(0, 7) ?? '-';
-process.env.VITE_BUILD_DATE ??= process.env.GITHUB_ACTIONS
-  ? new Date().toISOString()
-  : '-';
+function nonEmpty(value: string | undefined): string | undefined {
+  const normalized = value?.trim();
+  return normalized || undefined;
+}
+
+function gitValue(args: string[]): string | undefined {
+  try {
+    return nonEmpty(
+      execFileSync('git', args, {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }),
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+// GitHub Actions remains the canonical source for release build numbers. When
+// the web application is built manually on the production server, fall back to
+// the repository's monotonically increasing commit count so the footer never
+// loses the number after "Build #".
+process.env.VITE_APP_VERSION =
+  nonEmpty(process.env.VITE_APP_VERSION) ?? packageMetadata.version ?? 'dev';
+process.env.VITE_BUILD_NUMBER =
+  nonEmpty(process.env.VITE_BUILD_NUMBER) ??
+  nonEmpty(process.env.GITHUB_RUN_NUMBER) ??
+  gitValue(['rev-list', '--count', 'HEAD']) ??
+  '0';
+process.env.VITE_COMMIT_SHA =
+  nonEmpty(process.env.VITE_COMMIT_SHA) ??
+  nonEmpty(process.env.GITHUB_SHA)?.slice(0, 7) ??
+  gitValue(['rev-parse', '--short=7', 'HEAD']) ??
+  '-';
+process.env.VITE_BUILD_DATE =
+  nonEmpty(process.env.VITE_BUILD_DATE) ??
+  (process.env.GITHUB_ACTIONS ? new Date().toISOString() : '-');
 
 export default defineConfig({
   plugins: [react()],

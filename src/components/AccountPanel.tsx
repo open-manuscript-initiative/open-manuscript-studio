@@ -1,6 +1,7 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { BadgeCheck, LogOut, Save, ShieldCheck, UserRound } from 'lucide-react';
 
+import { getSystemTimeZone, getTimeZoneOptions } from '../account/timeZones';
 import { useOrcidProvider } from '../auth/useOrcidProvider';
 import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
@@ -18,6 +19,7 @@ const copy = {
     bio: 'Short biography',
     preferences: 'Preferences',
     timezone: 'Time zone',
+    timezoneHint: 'Standard IANA time-zone identifier; the current UTC offset is shown for reference.',
     identity: 'Account identity',
     verified: 'Verified e-mail',
     unverified: 'E-mail not verified',
@@ -36,6 +38,7 @@ const copy = {
     bio: 'Rövid bemutatkozás',
     preferences: 'Beállítások',
     timezone: 'Időzóna',
+    timezoneHint: 'Szabványos IANA-időzóna; tájékoztatásként az aktuális UTC-eltolás is látható.',
     identity: 'Fiókazonosság',
     verified: 'Ellenőrzött e-mail-cím',
     unverified: 'Nem ellenőrzött e-mail-cím',
@@ -54,6 +57,7 @@ const copy = {
     bio: 'Kurzbiografie',
     preferences: 'Einstellungen',
     timezone: 'Zeitzone',
+    timezoneHint: 'Standardisierte IANA-Zeitzone; der aktuelle UTC-Versatz wird zur Orientierung angezeigt.',
     identity: 'Kontoidentität',
     verified: 'Bestätigte E-Mail-Adresse',
     unverified: 'E-Mail-Adresse nicht bestätigt',
@@ -87,8 +91,12 @@ export function AccountPanel() {
     affiliation: '',
     orcid: '',
     bio: '',
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+    timeZone: getSystemTimeZone(),
   });
+  const timeZoneOptions = useMemo(
+    () => getTimeZoneOptions(form.timeZone),
+    [form.timeZone],
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -97,10 +105,7 @@ export function AccountPanel() {
       affiliation: user.profile.affiliation ?? '',
       orcid: user.profile.orcid ?? '',
       bio: user.profile.bio ?? '',
-      timeZone:
-        user.preferences.timeZone ||
-        Intl.DateTimeFormat().resolvedOptions().timeZone ||
-        'UTC',
+      timeZone: user.preferences.timeZone || getSystemTimeZone(),
     });
   }, [user]);
 
@@ -180,12 +185,19 @@ export function AccountPanel() {
           <h2>{labels.preferences}</h2>
           <label>
             {labels.timezone}
-            <input
+            <select
               value={form.timeZone}
               onChange={(event) =>
                 setForm({ ...form, timeZone: event.target.value })
               }
-            />
+            >
+              {timeZoneOptions.map((option) => (
+                <option value={option.id} key={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <small className="account-field-hint">{labels.timezoneHint}</small>
           </label>
 
           {error ? (
