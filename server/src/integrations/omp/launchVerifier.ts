@@ -9,6 +9,7 @@ import {
 
 import { prisma } from '../../lib/prisma.js';
 import { getActiveInstallationWithSecret } from '../externalInstallations.js';
+import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
 
 export interface OmpLaunchClaims {
   protocol: string;
@@ -48,7 +49,20 @@ function validateClaimsShape(value: unknown): value is OmpLaunchClaims {
     typeof claims.installationId === 'string' &&
     typeof claims.iat === 'number' &&
     typeof claims.exp === 'number' &&
-    typeof claims.nonce === 'string'
+    typeof claims.nonce === 'string' &&
+    (claims.profile === undefined || typeof claims.profile === 'string') &&
+    (claims.externalBaseUrl === undefined || typeof claims.externalBaseUrl === 'string') &&
+    (claims.apiBaseUrl === undefined || typeof claims.apiBaseUrl === 'string') &&
+    (
+      claims.actorMode === undefined ||
+      claims.actorMode === 'editor' ||
+      claims.actorMode === 'author' ||
+      claims.actorMode === 'review'
+    ) &&
+    (
+      claims.scope === undefined ||
+      (Array.isArray(claims.scope) && claims.scope.every((item) => typeof item === 'string'))
+    )
   );
 }
 
@@ -109,6 +123,14 @@ export async function verifyOmpLaunch(payload: string, signature: string) {
 
   if (claims.nonce.length < 1 || claims.nonce.length > 256) {
     throw new Error('Invalid OMP launch nonce.');
+  }
+
+  if (claims.apiBaseUrl) {
+    const trustedApiBaseUrl = await assertTrustedIntegrationUrl(
+      claims.apiBaseUrl,
+      installation.baseUrl,
+    );
+    claims.apiBaseUrl = trustedApiBaseUrl.toString().replace(/\/$/, '');
   }
 
   try {
