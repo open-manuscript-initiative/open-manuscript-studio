@@ -210,6 +210,80 @@
   white-space: pre-wrap;
 }
 
+.omi-cloud-storage-config {
+  padding: 0;
+  background: transparent;
+}
+
+.omi-cloud-storage-config > .studio-settings-card {
+  margin: 0;
+  padding: 12px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+}
+
+.studio-cloud-provider-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.studio-cloud-provider-picker > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.studio-cloud-provider-picker > div:first-child p {
+  font-size: 0.82rem;
+  opacity: 0.72;
+}
+
+.studio-cloud-provider-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.studio-cloud-provider-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, currentColor 2%, transparent);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.studio-cloud-provider-option:hover:not(:disabled),
+.studio-cloud-provider-option:focus-visible:not(:disabled) {
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.studio-cloud-provider-option--active {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.studio-cloud-provider-option > span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.studio-cloud-provider-option small {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  opacity: 0.72;
+}
+
 @media (max-width: 760px) {
   .omi-integrations-grid {
     grid-template-columns: 1fr;
@@ -241,5 +315,9 @@
   .omi-publishing-credentials dd {
     max-width: 100%;
     text-align: left;
+  }
+
+  .studio-cloud-provider-options {
+    grid-template-columns: 1fr;
   }
 }
