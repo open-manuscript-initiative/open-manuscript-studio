@@ -33,6 +33,8 @@ export interface ExportFormatCopy {
   pdfDescription: string;
   export: string;
   preparing: string;
+  saved: string;
+  cancelled: string;
   failed: string;
   pdfHint: string;
 }
@@ -40,7 +42,7 @@ export interface ExportFormatCopy {
 const copy: Record<SupportedLocale, ExportFormatCopy> = {
   hu: {
     title: 'Exportálás',
-    description: 'Válassza ki a kívánt hordozható vagy publikációs formátumot, majd indítsa el az exportálást.',
+    description: 'Válassza ki a kívánt hordozható vagy publikációs formátumot, majd indítsa el az exportálást. A telepített alkalmazás natív fájlmentést használ.',
     format: 'Exportálási formátum',
     chooseFormat: 'Válasszon formátumot…',
     portable: 'Hordozható OMI formátumok',
@@ -51,8 +53,8 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     omiJsonDescription: 'A kanonikus, ember és gép által olvasható OMI kéziratmodell JSON reprezentációja.',
     jats: 'JATS XML 1.4',
     jatsDescription: 'NISO JATS Article Authoring XML folyóirati és kiadói munkafolyamatokhoz.',
-    html: 'Szemantikus HTML5',
-    htmlDescription: 'Önálló, script nélküli akadálymentes HTML publikációs nézet.',
+    html: 'Szemantikus HTML5 csomag',
+    htmlDescription: 'Offline használható ZIP-csomag index.html fájllal, manifeszttel és az ellenőrzött kézirateszközökkel.',
     docx: 'Microsoft Word (DOCX)',
     docxDescription: 'Szerkeszthető Word-dokumentum valódi címsorstílusokkal és a kézirat fő szerkezetével.',
     idml: 'Adobe InDesign (IDML)',
@@ -68,15 +70,17 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     epub: 'EPUB 3',
     epubDescription: 'Hordozható e-könyv kiadvány EPUB 3 csomagként.',
     pdf: 'PDF',
-    pdfDescription: 'A publikációs profil alapján formázott nyomtatási nézet; a böngészőben PDF-ként menthető.',
+    pdfDescription: 'A publikációs profil alapján formázott nyomtatási nézet; PDF-ként a rendszer nyomtatási párbeszédablakából menthető.',
     export: 'Exportálás',
     preparing: 'Előkészítés…',
+    saved: 'Az export elkészült.',
+    cancelled: 'A fájl mentése megszakítva.',
     failed: 'Az export nem sikerült.',
     pdfHint: 'A megnyíló nyomtatási ablakban válassza a Mentés PDF-ként lehetőséget.',
   },
   en: {
     title: 'Export',
-    description: 'Choose a portable or publication format, then start the export.',
+    description: 'Choose a portable or publication format, then start the export. Installed apps use the native file save dialog.',
     format: 'Export format',
     chooseFormat: 'Choose a format…',
     portable: 'Portable OMI formats',
@@ -87,8 +91,8 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     omiJsonDescription: 'Canonical human- and machine-readable JSON representation of the OMI manuscript model.',
     jats: 'JATS XML 1.4',
     jatsDescription: 'NISO JATS Article Authoring XML for journal and publisher workflows.',
-    html: 'Semantic HTML5',
-    htmlDescription: 'Standalone, script-free accessible HTML publication view.',
+    html: 'Semantic HTML5 package',
+    htmlDescription: 'Offline ZIP package containing index.html, a manifest and verified manuscript assets.',
     docx: 'Microsoft Word (DOCX)',
     docxDescription: 'Editable Word document with real heading styles and the core manuscript structure.',
     idml: 'Adobe InDesign (IDML)',
@@ -104,15 +108,17 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     epub: 'EPUB 3',
     epubDescription: 'Portable EPUB 3 ebook publication package.',
     pdf: 'PDF',
-    pdfDescription: 'Publication-profile print view that can be saved as PDF in the browser.',
+    pdfDescription: 'Publication-profile print view that can be saved as PDF from the system print dialog.',
     export: 'Export',
     preparing: 'Preparing…',
+    saved: 'Export completed.',
+    cancelled: 'File save cancelled.',
     failed: 'Export failed.',
     pdfHint: 'Choose Save as PDF in the print dialog that opens.',
   },
   de: {
     title: 'Export',
-    description: 'Wählen Sie ein portables oder Publikationsformat und starten Sie anschließend den Export.',
+    description: 'Wählen Sie ein portables oder Publikationsformat und starten Sie anschließend den Export. Installierte Apps verwenden den nativen Dateidialog.',
     format: 'Exportformat',
     chooseFormat: 'Format auswählen…',
     portable: 'Portable OMI-Formate',
@@ -123,8 +129,8 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     omiJsonDescription: 'Kanonische, menschen- und maschinenlesbare JSON-Repräsentation des OMI-Manuskriptmodells.',
     jats: 'JATS XML 1.4',
     jatsDescription: 'NISO JATS Article Authoring XML für Zeitschriften- und Verlagsworkflows.',
-    html: 'Semantisches HTML5',
-    htmlDescription: 'Eigenständige, skriptfreie und barrierearme HTML-Publikationsansicht.',
+    html: 'Semantisches HTML5-Paket',
+    htmlDescription: 'Offline nutzbares ZIP-Paket mit index.html, Manifest und geprüften Manuskript-Assets.',
     docx: 'Microsoft Word (DOCX)',
     docxDescription: 'Bearbeitbares Word-Dokument mit echten Überschriftenformatvorlagen und Manuskriptstruktur.',
     idml: 'Adobe InDesign (IDML)',
@@ -140,9 +146,11 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     epub: 'EPUB 3',
     epubDescription: 'Portables E-Book als EPUB-3-Paket.',
     pdf: 'PDF',
-    pdfDescription: 'Druckansicht nach Publikationsprofil, die im Browser als PDF gespeichert werden kann.',
+    pdfDescription: 'Druckansicht nach Publikationsprofil, die über den Systemdruckdialog als PDF gespeichert werden kann.',
     export: 'Exportieren',
     preparing: 'Wird vorbereitet…',
+    saved: 'Export abgeschlossen.',
+    cancelled: 'Dateispeichern abgebrochen.',
     failed: 'Export fehlgeschlagen.',
     pdfHint: 'Wählen Sie im geöffneten Druckdialog Als PDF speichern.',
   },

@@ -5,12 +5,13 @@ import { useTranslation } from '../i18n';
 import { getExportFormatCopy } from '../i18n/exportFormats';
 import { buildDocxExport } from '../services/exportDocx';
 import { buildEpubExport } from '../services/exportEpub';
-import { htmlFileName, renderHtmlArticle } from '../services/exportHtml';
+import { saveExportBlob, saveExportText, type ExportDeliveryResult } from '../services/exportFileDelivery';
+import { buildHtmlPackage } from '../services/exportHtmlPackage';
 import { buildIdmlExport } from '../services/exportIdml';
 import { jatsFileName, renderJatsArticle } from '../services/exportJats';
 import { buildLatexExport } from '../services/exportLatex';
 import { buildMifExport } from '../services/exportMif';
-import { downloadOmiJson } from '../services/exportOmi';
+import { omiJsonFileName, serializeOmiJson } from '../services/exportOmi';
 import { openPdfPrintView } from '../services/exportPdf';
 import { buildSlaExport } from '../services/exportSla';
 import { buildXtgExport } from '../services/exportXtg';
@@ -47,12 +48,13 @@ export function ExportFormatsPanel() {
   const [selectedId, setSelectedId] = useState<ExportId | ''>('');
   const [busy, setBusy] = useState<ExportId | null>(null);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
   const formats: ExportFormatOption[] = [
     { id: 'omi', group: 'portable', label: copy.omi, description: copy.omiDescription, extension: '.omi.zip' },
     { id: 'omi-json', group: 'portable', label: copy.omiJson, description: copy.omiJsonDescription, extension: '.omi.json' },
     { id: 'jats', group: 'publication', label: copy.jats, description: copy.jatsDescription, extension: '.xml' },
-    { id: 'html', group: 'publication', label: copy.html, description: copy.htmlDescription, extension: '.html' },
+    { id: 'html', group: 'publication', label: copy.html, description: copy.htmlDescription, extension: '.html.zip' },
     { id: 'docx', group: 'publication', label: copy.docx, description: copy.docxDescription, extension: '.docx' },
     { id: 'idml', group: 'publication', label: copy.idml, description: copy.idmlDescription, extension: '.idml' },
     { id: 'xtg', group: 'publication', label: copy.xtg, description: copy.xtgDescription, extension: '.xtg' },
@@ -67,8 +69,17 @@ export function ExportFormatsPanel() {
     ? formats.find((format) => format.id === selectedId) ?? null
     : null;
 
+  const reportDelivery = (delivery: ExportDeliveryResult): void => {
+    if (!delivery.saved) {
+      setNotice(copy.cancelled);
+      return;
+    }
+    setNotice(delivery.path ? `${copy.saved} ${delivery.path}` : copy.saved);
+  };
+
   const run = async (id: ExportId): Promise<void> => {
     setError('');
+    setNotice('');
     setBusy(id);
     try {
       checkpoint('export');
@@ -79,61 +90,69 @@ export function ExportFormatsPanel() {
           if (!result.validForExport) {
             throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
           }
-          downloadBlob(result.blob, result.fileName);
+          reportDelivery(await saveExportBlob(result.blob, result.fileName));
           break;
         }
         case 'omi-json':
-          downloadOmiJson(manuscript);
+          reportDelivery(await saveExportText(
+            serializeOmiJson(manuscript),
+            omiJsonFileName(manuscript),
+            'application/vnd.openmanuscript+json;charset=utf-8',
+          ));
           break;
         case 'jats': {
           const result = renderJatsArticle(manuscript);
           if (!result.validForExport) {
             throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
           }
-          downloadText(result.xml, jatsFileName(manuscript), 'application/xml;charset=utf-8');
+          reportDelivery(await saveExportText(
+            result.xml,
+            jatsFileName(manuscript),
+            'application/xml;charset=utf-8',
+          ));
           break;
         }
         case 'html': {
-          const result = renderHtmlArticle(manuscript);
+          const result = await buildHtmlPackage(manuscript);
           if (!result.validForExport) {
             throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
           }
-          downloadText(result.html, htmlFileName(manuscript), 'text/html;charset=utf-8');
+          reportDelivery(await saveExportBlob(result.blob, result.fileName));
           break;
         }
         case 'docx': {
           const result = buildDocxExport(manuscript);
-          downloadBlob(result.blob, result.fileName);
+          reportDelivery(await saveExportBlob(result.blob, result.fileName));
           break;
         }
         case 'idml': {
           const result = buildIdmlExport(manuscript);
-          downloadBlob(result.blob, result.fileName);
+          reportDelivery(await saveExportBlob(result.blob, result.fileName));
           break;
         }
         case 'xtg': {
           const result = buildXtgExport(manuscript);
-          downloadBlob(result.blob, result.fileName);
+          reportDelivery(await saveExportBlob(result.blob, result.fileName));
           break;
         }
         case 'mif': {
           const result = buildMifExport(manuscript);
-          downloadBlob(result.blob, result.fileName);
+          reportDelivery(await saveExportBlob(result.blob, result.fileName));
           break;
         }
         case 'sla': {
           const result = buildSlaExport(manuscript);
-          downloadBlob(result.blob, result.fileName);
+          reportDelivery(await saveExportBlob(result.blob, result.fileName));
           break;
         }
         case 'latex': {
           const result = buildLatexExport(manuscript);
-          downloadBlob(result.blob, result.fileName);
+          reportDelivery(await saveExportBlob(result.blob, result.fileName));
           break;
         }
         case 'epub': {
           const result = buildEpubExport(manuscript);
-          downloadBlob(result.blob, result.fileName);
+          reportDelivery(await saveExportBlob(result.blob, result.fileName));
           break;
         }
         case 'pdf':
@@ -165,6 +184,7 @@ export function ExportFormatsPanel() {
             onChange={(event) => {
               setSelectedId(event.target.value as ExportId | '');
               setError('');
+              setNotice('');
             }}
           >
             <option value="">{copy.chooseFormat}</option>
@@ -202,22 +222,8 @@ export function ExportFormatsPanel() {
         </button>
       </div>
 
+      {notice ? <p className="studio-settings-hint" role="status">{notice}</p> : null}
       {error ? <div className="studio-export-error" role="alert">{error}</div> : null}
     </section>
   );
-}
-
-function downloadText(value: string, fileName: string, mediaType: string): void {
-  downloadBlob(new Blob([value], { type: mediaType }), fileName);
-}
-
-function downloadBlob(blob: Blob, fileName: string): void {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
 }
