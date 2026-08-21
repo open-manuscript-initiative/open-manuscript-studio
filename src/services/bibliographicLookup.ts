@@ -78,14 +78,23 @@ export function loadBibliographicLookupSettings(): BibliographicLookupSettings {
     const enabledProviders = BIBLIOGRAPHIC_PROVIDERS.filter((provider) =>
       parsed.enabledProviders?.includes(provider),
     );
-
-    return {
+    const persisted = {
       enabledProviders:
         enabledProviders.length > 0
           ? enabledProviders
           : [...DEFAULT_BIBLIOGRAPHIC_LOOKUP_SETTINGS.enabledProviders],
       crossrefMailto: normalizeOptional(parsed.crossrefMailto),
-      openAlexApiKey: normalizeOptional(parsed.openAlexApiKey),
+    };
+
+    // API keys are intentionally memory-only. Remove a key written by older
+    // Studio versions as soon as the settings are loaded.
+    if (typeof parsed.openAlexApiKey === 'string') {
+      window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(persisted));
+    }
+
+    return {
+      ...persisted,
+      openAlexApiKey: '',
     };
   } catch {
     return { ...DEFAULT_BIBLIOGRAPHIC_LOOKUP_SETTINGS };
@@ -106,7 +115,6 @@ export function saveBibliographicLookupSettings(
         settings.enabledProviders.includes(provider),
       ),
       crossrefMailto: normalizeOptional(settings.crossrefMailto),
-      openAlexApiKey: normalizeOptional(settings.openAlexApiKey),
     }),
   );
 }
