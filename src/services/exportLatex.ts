@@ -7,6 +7,7 @@ import { buildPublicationRenderingContext } from '../model/publicationRendering'
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type { OmiManuscript } from '../types/omi';
 import { blockPlainText, exportFileStem, localizedPublicationLabel } from './exportTextUtils';
+import { escapeLatexText, escapeLatexUrl } from './latexEscaping';
 
 export interface LatexExportResult {
   text: string;
@@ -19,22 +20,22 @@ export function buildLatexExport(manuscript: OmiManuscript): LatexExportResult {
   const body: string[] = [];
 
   if (context.abstract) {
-    body.push('\\begin{abstract}', latex(context.abstract), '\\end{abstract}', '');
+    body.push('\\begin{abstract}', escapeLatexText(context.abstract), '\\end{abstract}', '');
   }
   if (context.keywords.length) {
-    body.push(`\\noindent\\textbf{${latex(localizedPublicationLabel(context.locale, 'keywords'))}:} ${context.keywords.map(latex).join('; ')}`, '');
+    body.push(`\\noindent\\textbf{${escapeLatexText(localizedPublicationLabel(context.locale, 'keywords'))}:} ${context.keywords.map(escapeLatexText).join('; ')}`, '');
   }
 
   const renderSections = (sections: typeof context.sections) => {
     for (const section of sections) {
       const command = sectionCommand(section.depth);
-      body.push(`\\${command}{${latex(section.title)}}`);
+      body.push(`\\${command}{${escapeLatexText(section.title)}}`);
       for (const block of section.blocks) {
         const runs = block.visual ? [] : extractOmiInlineRuns(block.content);
         if (runs.length) body.push(renderLatexRuns(runs), '');
         else {
           const text = blockPlainText(block);
-          if (text) body.push(latex(text), '');
+          if (text) body.push(escapeLatexText(text), '');
         }
       }
       renderSections(section.children);
@@ -43,14 +44,14 @@ export function buildLatexExport(manuscript: OmiManuscript): LatexExportResult {
   renderSections(context.sections);
 
   if (manuscript.annotations.length) {
-    body.push(`\\section*{${latex(localizedPublicationLabel(context.locale, 'notes'))}}`);
+    body.push(`\\section*{${escapeLatexText(localizedPublicationLabel(context.locale, 'notes'))}}`);
     body.push('\\begin{enumerate}');
-    manuscript.annotations.forEach((note) => body.push(`\\item ${latex(note.body)}`));
+    manuscript.annotations.forEach((note) => body.push(`\\item ${escapeLatexText(note.body)}`));
     body.push('\\end{enumerate}', '');
   }
 
-  const authors = context.contributors.map((item) => latex(item.displayName)).join(' \\and ');
-  const title = context.subtitle ? `${latex(context.title)}\\\\{\\large ${latex(context.subtitle)}}` : latex(context.title);
+  const authors = context.contributors.map((item) => escapeLatexText(item.displayName)).join(' \\and ');
+  const title = context.subtitle ? `${escapeLatexText(context.title)}\\\\{\\large ${escapeLatexText(context.subtitle)}}` : escapeLatexText(context.title);
   const language = context.locale.toLowerCase().split(/[-_]/)[0];
   const babel = language === 'hu' ? 'magyar' : language === 'de' ? 'ngerman' : 'english';
 
@@ -86,12 +87,12 @@ export function buildLatexExport(manuscript: OmiManuscript): LatexExportResult {
 
 function renderLatexRuns(runs: readonly OmiInlineRun[]): string {
   return runs.map((run) => {
-    if (run.text === '\n') return '\\\\ '; 
-    let value = latex(run.text);
+    if (run.text === '\n') return '\\\\ ';
+    let value = escapeLatexText(run.text);
     for (const semantic of run.semantics) {
       value = wrapSemantic(value, semantic);
     }
-    if (run.link) value = `\\href{${latexUrl(run.link)}}{${value}}`;
+    if (run.link) value = `\\href{${escapeLatexUrl(run.link)}}{${value}}`;
     return value;
   }).join('');
 }
@@ -114,17 +115,4 @@ function sectionCommand(depth: number): string {
   if (depth === 1) return 'subsection';
   if (depth === 2) return 'subsubsection';
   return 'paragraph';
-}
-
-function latex(value: string): string {
-  return value
-    .replace(/\\/g, '\\textbackslash{}')
-    .replace(/([#$%&_{}])/g, '\\$1')
-    .replace(/~/g, '\\textasciitilde{}')
-    .replace(/\^/g, '\\textasciicircum{}')
-    .replace(/\r?\n/g, '\\\\ ');
-}
-
-function latexUrl(value: string): string {
-  return value.replace(/([%#{}])/g, '\\$1');
 }
