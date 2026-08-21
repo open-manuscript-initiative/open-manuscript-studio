@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import {
+  getCloudConnectionMethods,
+  getDefaultCloudConnectionMethod,
+} from '../src/integrations/cloudStorageProviders.ts';
 import { integrationCatalog } from '../src/integrations/registry.ts';
 
 test('every integration declares at least one authentication mode and a valid preferred mode', () => {
@@ -20,17 +24,48 @@ test('DeepL never models provider email/password authentication', () => {
   assert.equal(deepl.supportsPerUserAuthentication, true);
 });
 
-test('identity uses delegated authentication while current cloud providers use encrypted server-side credentials', () => {
-  const orcid = integrationCatalog.find((entry) => entry.id === 'orcid');
+test('cloud storage declares provider-dependent authentication capabilities', () => {
   const storage = integrationCatalog.find((entry) => entry.id === 'cloud-storage');
-  assert.ok(orcid);
   assert.ok(storage);
-  assert.deepEqual(orcid.authenticationModes, ['oauth2']);
-  assert.deepEqual(storage.authenticationModes, ['server_secret']);
+  assert.deepEqual(storage.authenticationModes, ['none', 'server_secret', 'oauth2']);
+  assert.equal(storage.preferredAuthenticationMode, 'none');
   assert.equal(storage.requiresServerSecret, false);
   assert.equal(storage.supportsPerUserAuthentication, true);
   assert.equal(storage.supportsMultipleConnections, true);
   assert.equal(storage.status, 'available');
+});
+
+test('desktop OneDrive prefers a locally synchronized folder without OMI credentials', () => {
+  const methods = getCloudConnectionMethods('onedrive', 'personal', 'desktop');
+  const local = methods.find((method) => method.id === 'local-folder');
+  const oauth = methods.find((method) => method.id === 'oauth2');
+
+  assert.ok(local);
+  assert.equal(local.available, true);
+  assert.equal(local.authentication, 'none');
+  assert.equal(local.recommended, true);
+  assert.ok(oauth);
+  assert.equal(oauth.available, false);
+  assert.equal(getDefaultCloudConnectionMethod('onedrive', 'personal', 'desktop'), 'local-folder');
+});
+
+test('web Nextcloud uses direct WebDAV while OAuth remains a future option', () => {
+  const methods = getCloudConnectionMethods('nextcloud', 'business', 'web');
+  const webdav = methods.find((method) => method.id === 'webdav');
+  const oauth = methods.find((method) => method.id === 'oauth2');
+
+  assert.ok(webdav);
+  assert.equal(webdav.available, true);
+  assert.equal(webdav.authentication, 'webdav-credentials');
+  assert.ok(oauth);
+  assert.equal(oauth.available, false);
+  assert.equal(getDefaultCloudConnectionMethod('nextcloud', 'business', 'web'), 'webdav');
+});
+
+test('ORCID uses delegated authentication', () => {
+  const orcid = integrationCatalog.find((entry) => entry.id === 'orcid');
+  assert.ok(orcid);
+  assert.deepEqual(orcid.authenticationModes, ['oauth2']);
 });
 
 test('OJS and OMP retain purpose-built integration token authentication', () => {
