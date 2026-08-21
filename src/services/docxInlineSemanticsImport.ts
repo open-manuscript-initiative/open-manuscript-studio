@@ -297,6 +297,9 @@ function normalize(value: string): string {
 }
 
 function parseXml(xml: string): XMLDocument {
+  // WordprocessingML is parsed as XML in a detached document and only read as
+  // structured data. It is never reinterpreted as HTML or mounted in the live DOM.
+  // codeql[js/xss-through-dom]
   const document = new DOMParser().parseFromString(xml, 'application/xml');
   if (document.querySelector('parsererror')) throw new Error('Invalid Open XML part.');
   return document;
