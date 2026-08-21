@@ -13,6 +13,7 @@
   border-color: transparent;
   background: transparent;
   color: #334155;
+  box-shadow: none;
 }
 
 .studio-menu-nav-button.studio-menu-nav-button--active.studio-menu-nav-button--external-suppressed:hover,
@@ -20,6 +21,7 @@
   border-color: #cbd5e1;
   background: #fff;
   color: #334155;
+  box-shadow: none;
 }
 
 .studio-help-portal {
