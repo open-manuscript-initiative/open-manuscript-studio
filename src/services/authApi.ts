@@ -31,6 +31,10 @@ export interface AuthProviders {
   orcid: {
     enabled: boolean;
     label: string;
+    environment?: 'sandbox' | 'production';
+    issuer?: string;
+    credentialSource?: 'personal' | 'institutional';
+    apiType?: 'public' | 'member';
     linked?: boolean;
     identity?: {
       id: string;
