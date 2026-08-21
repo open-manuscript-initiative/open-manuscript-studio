@@ -48,6 +48,9 @@ export function AuthOrcidLookupField({
   const { givenName, familyName } = splitFullName(fullName);
   const canSearch = fullName.trim().length >= 4;
   const valid = !value.trim() || isValidOrcid(value);
+  const orcidProfileUrl = value && valid
+    ? `https://orcid.org/${encodeURIComponent(value.trim())}`
+    : undefined;
   const publicSearchUrl = useMemo(() => {
     const url = new URL('https://orcid.org/orcid-search/search');
     url.searchParams.set('searchQuery', fullName.trim() || affiliation);
@@ -129,10 +132,10 @@ export function AuthOrcidLookupField({
 
       {!valid ? <small className="field-error">{invalidMessage}</small> : null}
 
-      {value && valid ? (
+      {orcidProfileUrl ? (
         <div className="orcid-lookup-linked">
           <span>{copy.selected}</span>
-          <a href={`https://orcid.org/${value}`} target="_blank" rel="noopener noreferrer" title={copy.openProfile}>
+          <a href={orcidProfileUrl} target="_blank" rel="noopener noreferrer" title={copy.openProfile}>
             {value}
             <ExternalLink size={13} aria-hidden="true" />
           </a>
