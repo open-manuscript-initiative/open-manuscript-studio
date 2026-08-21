@@ -18,6 +18,10 @@ export function serializeOmiJson(
   return JSON.stringify(portableManuscript, null, 2);
 }
 
+export function omiJsonFileName(manuscript: Pick<OmiManuscript, 'title'>): string {
+  return `${slugify(manuscript.title || 'manuscript') || 'manuscript'}.omi.json`;
+}
+
 export function downloadOmiJson(manuscript: OmiManuscript): void {
   const blob = new Blob([serializeOmiJson(manuscript)], {
     type: 'application/vnd.openmanuscript+json;charset=utf-8'
@@ -25,7 +29,7 @@ export function downloadOmiJson(manuscript: OmiManuscript): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${slugify(manuscript.title || 'manuscript')}.omi.json`;
+  link.download = omiJsonFileName(manuscript);
   document.body.appendChild(link);
   link.click();
   link.remove();
