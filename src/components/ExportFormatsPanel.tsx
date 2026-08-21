@@ -1,30 +1,20 @@
-import {
-  Archive,
-  Braces,
-  FileCode2,
-  FileText,
-  FileType2,
-  PanelsTopLeft,
-  Printer,
-  TabletSmartphone,
-} from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
-import { getExportFormatCopy } from '../i18n/exportFormats';
 import { useTranslation } from '../i18n';
+import { getExportFormatCopy } from '../i18n/exportFormats';
 import { buildDocxExport } from '../services/exportDocx';
 import { buildEpubExport } from '../services/exportEpub';
-import { renderHtmlArticle, htmlFileName } from '../services/exportHtml';
+import { htmlFileName, renderHtmlArticle } from '../services/exportHtml';
 import { buildIdmlExport } from '../services/exportIdml';
-import { renderJatsArticle, jatsFileName } from '../services/exportJats';
+import { jatsFileName, renderJatsArticle } from '../services/exportJats';
 import { buildLatexExport } from '../services/exportLatex';
 import { buildMifExport } from '../services/exportMif';
 import { downloadOmiJson } from '../services/exportOmi';
-import { buildOmiContainer } from '../services/omiContainer';
 import { openPdfPrintView } from '../services/exportPdf';
 import { buildSlaExport } from '../services/exportSla';
 import { buildXtgExport } from '../services/exportXtg';
+import { buildOmiContainer } from '../services/omiContainer';
 
 type ExportId =
   | 'omi'
@@ -40,12 +30,42 @@ type ExportId =
   | 'epub'
   | 'pdf';
 
+type ExportGroupId = 'portable' | 'publication';
+
+interface ExportFormatOption {
+  id: ExportId;
+  group: ExportGroupId;
+  label: string;
+  description: string;
+  extension: string;
+}
+
 export function ExportFormatsPanel() {
   const { locale } = useTranslation();
   const copy = getExportFormatCopy(locale);
   const checkpoint = useStudioStore((state) => state.checkpoint);
+  const [selectedId, setSelectedId] = useState<ExportId | ''>('');
   const [busy, setBusy] = useState<ExportId | null>(null);
   const [error, setError] = useState('');
+
+  const formats: ExportFormatOption[] = [
+    { id: 'omi', group: 'portable', label: copy.omi, description: copy.omiDescription, extension: '.omi.zip' },
+    { id: 'omi-json', group: 'portable', label: copy.omiJson, description: copy.omiJsonDescription, extension: '.omi.json' },
+    { id: 'jats', group: 'publication', label: copy.jats, description: copy.jatsDescription, extension: '.xml' },
+    { id: 'html', group: 'publication', label: copy.html, description: copy.htmlDescription, extension: '.html' },
+    { id: 'docx', group: 'publication', label: copy.docx, description: copy.docxDescription, extension: '.docx' },
+    { id: 'idml', group: 'publication', label: copy.idml, description: copy.idmlDescription, extension: '.idml' },
+    { id: 'xtg', group: 'publication', label: copy.xtg, description: copy.xtgDescription, extension: '.xtg' },
+    { id: 'mif', group: 'publication', label: copy.mif, description: copy.mifDescription, extension: '.mif' },
+    { id: 'sla', group: 'publication', label: copy.sla, description: copy.slaDescription, extension: '.sla' },
+    { id: 'latex', group: 'publication', label: copy.latex, description: copy.latexDescription, extension: '.tex' },
+    { id: 'epub', group: 'publication', label: copy.epub, description: copy.epubDescription, extension: '.epub' },
+    { id: 'pdf', group: 'publication', label: copy.pdf, description: `${copy.pdfDescription} ${copy.pdfHint}`, extension: '.pdf' },
+  ];
+
+  const selectedFormat = selectedId
+    ? formats.find((format) => format.id === selectedId) ?? null
+    : null;
 
   const run = async (id: ExportId): Promise<void> => {
     setError('');
@@ -136,57 +156,54 @@ export function ExportFormatsPanel() {
         </div>
       </div>
 
-      <ExportGroup title={copy.portable}>
-        <ExportCard icon={<Archive size={19} aria-hidden="true" />} title={copy.omi} description={copy.omiDescription} busy={busy === 'omi'} action={copy.export} preparing={copy.preparing} onClick={() => void run('omi')} />
-        <ExportCard icon={<Braces size={19} aria-hidden="true" />} title={copy.omiJson} description={copy.omiJsonDescription} busy={busy === 'omi-json'} action={copy.export} preparing={copy.preparing} onClick={() => void run('omi-json')} />
-      </ExportGroup>
+      <div className="studio-manuscript-fields">
+        <label>
+          <span>{copy.format}</span>
+          <select
+            value={selectedId}
+            disabled={busy !== null}
+            onChange={(event) => {
+              setSelectedId(event.target.value as ExportId | '');
+              setError('');
+            }}
+          >
+            <option value="">{copy.chooseFormat}</option>
+            <optgroup label={copy.portable}>
+              {formats.filter((format) => format.group === 'portable').map((format) => (
+                <option value={format.id} key={format.id}>{format.label} ({format.extension})</option>
+              ))}
+            </optgroup>
+            <optgroup label={copy.publication}>
+              {formats.filter((format) => format.group === 'publication').map((format) => (
+                <option value={format.id} key={format.id}>{format.label} ({format.extension})</option>
+              ))}
+            </optgroup>
+          </select>
+        </label>
+      </div>
 
-      <ExportGroup title={copy.publication}>
-        <ExportCard icon={<FileCode2 size={19} aria-hidden="true" />} title={copy.jats} description={copy.jatsDescription} busy={busy === 'jats'} action={copy.export} preparing={copy.preparing} onClick={() => void run('jats')} />
-        <ExportCard icon={<FileText size={19} aria-hidden="true" />} title={copy.html} description={copy.htmlDescription} busy={busy === 'html'} action={copy.export} preparing={copy.preparing} onClick={() => void run('html')} />
-        <ExportCard icon={<FileType2 size={19} aria-hidden="true" />} title={copy.docx} description={copy.docxDescription} busy={busy === 'docx'} action={copy.export} preparing={copy.preparing} onClick={() => void run('docx')} />
-        <ExportCard icon={<PanelsTopLeft size={19} aria-hidden="true" />} title={copy.idml} description={copy.idmlDescription} busy={busy === 'idml'} action={copy.export} preparing={copy.preparing} onClick={() => void run('idml')} />
-        <ExportCard icon={<PanelsTopLeft size={19} aria-hidden="true" />} title={copy.xtg} description={copy.xtgDescription} busy={busy === 'xtg'} action={copy.export} preparing={copy.preparing} onClick={() => void run('xtg')} />
-        <ExportCard icon={<FileText size={19} aria-hidden="true" />} title={copy.mif} description={copy.mifDescription} busy={busy === 'mif'} action={copy.export} preparing={copy.preparing} onClick={() => void run('mif')} />
-        <ExportCard icon={<PanelsTopLeft size={19} aria-hidden="true" />} title={copy.sla} description={copy.slaDescription} busy={busy === 'sla'} action={copy.export} preparing={copy.preparing} onClick={() => void run('sla')} />
-        <ExportCard icon={<FileCode2 size={19} aria-hidden="true" />} title={copy.latex} description={copy.latexDescription} busy={busy === 'latex'} action={copy.export} preparing={copy.preparing} onClick={() => void run('latex')} />
-        <ExportCard icon={<TabletSmartphone size={19} aria-hidden="true" />} title={copy.epub} description={copy.epubDescription} busy={busy === 'epub'} action={copy.export} preparing={copy.preparing} onClick={() => void run('epub')} />
-        <ExportCard icon={<Printer size={19} aria-hidden="true" />} title={copy.pdf} description={`${copy.pdfDescription} ${copy.pdfHint}`} busy={busy === 'pdf'} action={copy.export} preparing={copy.preparing} onClick={() => void run('pdf')} />
-      </ExportGroup>
+      {selectedFormat ? (
+        <div className="studio-settings-hint">
+          <strong>{selectedFormat.label}</strong>
+          <p>{selectedFormat.description}</p>
+        </div>
+      ) : null}
+
+      <div className="studio-tool-actions">
+        <button
+          type="button"
+          className="studio-menu-primary-action"
+          disabled={!selectedId || busy !== null}
+          onClick={() => {
+            if (selectedId) void run(selectedId);
+          }}
+        >
+          {busy ? copy.preparing : copy.export}
+        </button>
+      </div>
 
       {error ? <div className="studio-export-error" role="alert">{error}</div> : null}
     </section>
-  );
-}
-
-function ExportGroup({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="studio-export-group">
-      <h5>{title}</h5>
-      <div className="studio-export-grid">{children}</div>
-    </section>
-  );
-}
-
-function ExportCard({ icon, title, description, busy, action, preparing, onClick }: {
-  icon: ReactNode;
-  title: string;
-  description: string;
-  busy: boolean;
-  action: string;
-  preparing: string;
-  onClick: () => void;
-}) {
-  return (
-    <article className="studio-export-card">
-      <div className="studio-export-card-copy">
-        <span className="studio-export-card-icon">{icon}</span>
-        <div><strong>{title}</strong><p>{description}</p></div>
-      </div>
-      <button type="button" className="studio-menu-secondary-action" disabled={busy} onClick={onClick}>
-        {busy ? preparing : action}
-      </button>
-    </article>
   );
 }
 
