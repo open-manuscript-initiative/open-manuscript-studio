@@ -1,0 +1,61 @@
+.orcid-environment-badge {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid #d0d5dd;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #344054;
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.orcid-environment-badge strong {
+  color: inherit;
+  font-size: inherit;
+  white-space: nowrap;
+}
+
+.orcid-environment-badge__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.orcid-environment-badge__description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orcid-environment-badge--sandbox {
+  border-color: #f2c94c;
+  background: #fff8e1;
+  color: #8a5a00;
+}
+
+.orcid-environment-badge--production {
+  border-color: #86c98b;
+  background: #edf9ee;
+  color: #216e39;
+}
+
+.orcid-environment-badge--compact {
+  padding: 0.35rem 0.55rem;
+}
+
+@media (max-width: 40rem) {
+  .orcid-environment-badge {
+    align-items: flex-start;
+    border-radius: 0.65rem;
+  }
+
+  .orcid-environment-badge__description {
+    white-space: normal;
+  }
+}
