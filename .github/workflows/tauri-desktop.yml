@@ -110,6 +110,11 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: read
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
     steps:
       - name: Checkout
@@ -199,10 +204,54 @@ jobs:
           CI: 'true'
         run: npm run tauri -- android init --ci
 
-      - name: Build installable Android APK
+      - name: Prepare Android release signing key
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          missing=0
+          for name in \
+            ANDROID_KEYSTORE_BASE64 \
+            ANDROID_KEYSTORE_PASSWORD \
+            ANDROID_KEY_ALIAS \
+            ANDROID_KEY_PASSWORD
+          do
+            if [[ -z "${!name:-}" ]]; then
+              echo "Required GitHub Actions secret is missing: $name" >&2
+              missing=1
+            fi
+          done
+          if [[ "$missing" -ne 0 ]]; then
+            echo 'Android release signing is mandatory for published builds.' >&2
+            exit 1
+          fi
+
+          keystore="$RUNNER_TEMP/omi-android-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$keystore"
+          chmod 600 "$keystore"
+          test -s "$keystore"
+          echo "ANDROID_KEYSTORE_PATH=$keystore" >> "$GITHUB_ENV"
+
+          keytool -list \
+            -keystore "$keystore" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" \
+            >/dev/null
+
+          echo 'Android release signing key loaded successfully.'
+
+      - name: Build Android APK for pull request
+        if: github.event_name == 'pull_request'
         env:
           CI: 'true'
         run: npm run tauri -- android build --debug --apk --ci
+
+      - name: Build Android release APK
+        if: github.event_name != 'pull_request'
+        env:
+          CI: 'true'
+        run: npm run tauri -- android build --apk --ci
 
       - name: Collect Android APK
         shell: bash
@@ -217,6 +266,33 @@ jobs:
           fi
           cp "$apk" android-artifact/Open-Manuscript-Studio-Android-universal.apk
           ls -lh android-artifact
+
+      - name: Sign and verify Android release APK
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          apk="$GITHUB_WORKSPACE/android-artifact/Open-Manuscript-Studio-Android-universal.apk"
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d -print | sort -V | tail -n 1)"
+          apksigner="$build_tools/apksigner"
+
+          if [[ ! -x "$apksigner" ]]; then
+            echo "apksigner not found under $ANDROID_HOME/build-tools" >&2
+            exit 1
+          fi
+
+          "$apksigner" sign \
+            --ks "$ANDROID_KEYSTORE_PATH" \
+            --ks-key-alias "$ANDROID_KEY_ALIAS" \
+            --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+            --key-pass env:ANDROID_KEY_PASSWORD \
+            "$apk"
+
+          "$apksigner" verify \
+            --verbose \
+            --print-certs \
+            "$apk"
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v7
