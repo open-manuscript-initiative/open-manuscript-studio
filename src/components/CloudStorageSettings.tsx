@@ -37,13 +37,18 @@ import {
 } from '../services/cloudStorageApi';
 import {
   chooseSynchronizedFolder,
+  clearSynchronizedFolderPreference,
+  getSynchronizedFolderPreference,
+  setSynchronizedFolderPreference,
   writeOmiBackupToSynchronizedFolder,
+  type SynchronizedFolderPreferenceContext,
 } from '../services/localCloudFolder';
 import {
   buildOmiContainer,
   OMI_CONTAINER_VERSION,
 } from '../services/omiContainer';
 import { inspectOmiContainer } from '../services/omiContainerImport';
+import { getCurrentUser, useAuthStore } from '../store/authStore';
 
 interface CloudCopy {
   title: string;
@@ -71,6 +76,8 @@ interface CloudCopy {
   localFolderDescription: string;
   chooseFolder: string;
   folderNotSelected: string;
+  folderRemembered: string;
+  forgetFolder: string;
   saveLocalBackup: string;
   savingLocalBackup: string;
   localBackupSaved: string;
@@ -138,6 +145,8 @@ const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
     localFolderDescription: 'Select a folder already synchronized by OneDrive, Google Drive, Dropbox, Nextcloud, iCloud Drive or another desktop sync client. Studio writes the portable OMI package locally; the provider client performs the cloud synchronization.',
     chooseFolder: 'Choose folder',
     folderNotSelected: 'No folder selected.',
+    folderRemembered: 'Remembered only on this device. The folder path is never sent to the Studio server.',
+    forgetFolder: 'Forget folder',
     saveLocalBackup: 'Save OMI backup to folder',
     savingLocalBackup: 'Creating local synchronized backup…',
     localBackupSaved: 'Backup saved to the synchronized folder.',
@@ -203,6 +212,8 @@ const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
     localFolderDescription: 'Válassz egy olyan mappát, amelyet a OneDrive, Google Drive, Dropbox, Nextcloud, iCloud Drive vagy más asztali kliens már szinkronizál. A Studio helyben írja ki a hordozható OMI-csomagot; a felhőbe feltöltést a szolgáltató saját kliense végzi.',
     chooseFolder: 'Mappa kiválasztása',
     folderNotSelected: 'Nincs kiválasztott mappa.',
+    folderRemembered: 'Csak ezen az eszközön jegyezzük meg. A mappa elérési útja nem kerül a Studio szerverére.',
+    forgetFolder: 'Mappa elfelejtése',
     saveLocalBackup: 'OMI-mentés ebbe a mappába',
     savingLocalBackup: 'A helyi szinkronizált mentés készítése…',
     localBackupSaved: 'A mentés elkészült a szinkronizált mappában.',
@@ -268,6 +279,8 @@ const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
     localFolderDescription: 'Wählen Sie einen Ordner, der bereits von OneDrive, Google Drive, Dropbox, Nextcloud, iCloud Drive oder einem anderen Desktop-Client synchronisiert wird. Studio schreibt das portable OMI-Paket lokal; der Anbieterclient übernimmt die Cloud-Synchronisation.',
     chooseFolder: 'Ordner auswählen',
     folderNotSelected: 'Kein Ordner ausgewählt.',
+    folderRemembered: 'Nur auf diesem Gerät gespeichert. Der Ordnerpfad wird niemals an den Studio-Server übertragen.',
+    forgetFolder: 'Ordner vergessen',
     saveLocalBackup: 'OMI-Sicherung in Ordner speichern',
     savingLocalBackup: 'Lokale synchronisierte Sicherung wird erstellt…',
     localBackupSaved: 'Sicherung im synchronisierten Ordner gespeichert.',
@@ -333,13 +346,19 @@ export function CloudStorageSettings() {
   const copy = copyFor(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const checkpoint = useStudioStore((state) => state.checkpoint);
+  const currentUser = useAuthStore(getCurrentUser);
   const platform = getStudioPlatform();
+  const desktopLocalFolder = platform === 'desktop';
   const [connections, setConnections] = useState<CloudConnection[]>([]);
   const [backups, setBackups] = useState<CloudBackup[]>([]);
   const [selectedConnectionId, setSelectedConnectionId] = useState('');
-  const [providerId, setProviderId] = useState<CloudStorageProviderId | ''>('');
+  const [providerId, setProviderId] = useState<CloudStorageProviderId | ''>(
+    desktopLocalFolder ? 'local-folder' : '',
+  );
   const [accountType, setAccountType] = useState<CloudAccountType>('personal');
-  const [connectionMethodId, setConnectionMethodId] = useState<CloudConnectionMethodId | ''>('');
+  const [connectionMethodId, setConnectionMethodId] = useState<CloudConnectionMethodId | ''>(
+    desktopLocalFolder ? 'local-folder' : '',
+  );
   const [localFolderPath, setLocalFolderPath] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
@@ -361,6 +380,16 @@ export function CloudStorageSettings() {
   const connectedConnections = useMemo(
     () => connections.filter((connection) => connection.status === 'connected'),
     [connections],
+  );
+  const localFolderContext = useMemo<SynchronizedFolderPreferenceContext | null>(
+    () => providerId
+      ? {
+          userId: String(currentUser?.id ?? 'anonymous'),
+          providerId,
+          accountType,
+        }
+      : null,
+    [currentUser?.id, providerId, accountType],
   );
 
   async function refresh(): Promise<void> {
@@ -385,10 +414,27 @@ export function CloudStorageSettings() {
     void refresh();
   }, [manuscript.id]);
 
+  useEffect(() => {
+    if (
+      platform !== 'desktop'
+      || selectedMethod?.implementation !== 'local-folder'
+      || !localFolderContext
+    ) {
+      setLocalFolderPath('');
+      return;
+    }
+    setLocalFolderPath(getSynchronizedFolderPreference(localFolderContext));
+  }, [
+    platform,
+    selectedMethod?.implementation,
+    localFolderContext,
+  ]);
+
   function selectProvider(value: string): void {
     if (!value) {
       setProviderId('');
       setConnectionMethodId('');
+      setLocalFolderPath('');
       return;
     }
     const nextProvider = getCloudStorageProvider(value as CloudStorageProviderId);
@@ -410,13 +456,23 @@ export function CloudStorageSettings() {
   }
 
   async function chooseLocalFolder(): Promise<void> {
+    if (!localFolderContext) return;
     setMessage('');
     try {
-      const selected = await chooseSynchronizedFolder();
-      if (selected) setLocalFolderPath(selected);
+      const selected = await chooseSynchronizedFolder(localFolderPath);
+      if (!selected) return;
+      setSynchronizedFolderPreference(localFolderContext, selected);
+      setLocalFolderPath(selected);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
     }
+  }
+
+  function forgetLocalFolder(): void {
+    if (!localFolderContext) return;
+    clearSynchronizedFolderPreference(localFolderContext);
+    setLocalFolderPath('');
+    setMessage('');
   }
 
   async function saveLocalBackup(): Promise<void> {
@@ -634,11 +690,17 @@ export function CloudStorageSettings() {
               <strong>{copy.localFolderMethod}</strong>
               <p>{copy.localFolderDescription}</p>
               <small>{platform === 'desktop' ? localFolderPath || copy.folderNotSelected : copy.desktopOnly}</small>
+              {platform === 'desktop' && localFolderPath ? <small>{copy.folderRemembered}</small> : null}
             </div>
             <div className="studio-tool-actions">
               <button type="button" className="studio-menu-secondary-action" disabled={busy !== null || platform !== 'desktop'} onClick={() => void chooseLocalFolder()}>
                 <FolderOpen size={16} aria-hidden="true" /> {copy.chooseFolder}
               </button>
+              {localFolderPath ? (
+                <button type="button" className="studio-menu-secondary-action" disabled={busy !== null || platform !== 'desktop'} onClick={forgetLocalFolder}>
+                  <Trash2 size={14} aria-hidden="true" /> {copy.forgetFolder}
+                </button>
+              ) : null}
               <button type="button" className="studio-menu-primary-action" disabled={busy !== null || platform !== 'desktop' || !localFolderPath} onClick={() => void saveLocalBackup()}>
                 <Save size={16} aria-hidden="true" /> {busy === 'local-backup' ? copy.savingLocalBackup : copy.saveLocalBackup}
               </button>
