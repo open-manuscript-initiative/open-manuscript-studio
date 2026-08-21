@@ -21,7 +21,11 @@ export interface OmpLaunchData {
 }
 
 function endpoint(baseUrl: string, operation: string): string {
-  return `${baseUrl.replace(/\/+$/, '')}/${operation}`;
+  let normalized = baseUrl;
+  while (normalized.endsWith('/')) {
+    normalized = normalized.slice(0, -1);
+  }
+  return `${normalized}/${operation}`;
 }
 
 async function readJson<T>(
