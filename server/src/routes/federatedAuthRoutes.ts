@@ -31,6 +31,10 @@ federatedAuthRouter.get('/providers', async (request, response) => {
         label: 'ORCID',
         environment: env.ORCID_ENVIRONMENT,
         issuer: ORCID_ISSUER,
+        credentialSource: env.ORCID_CREDENTIAL_SOURCE,
+        ...(env.ORCID_CREDENTIAL_SOURCE === 'institutional'
+          ? { apiType: env.ORCID_API_TYPE ?? 'public' }
+          : {}),
         linked: Boolean(linkedOrcid),
         identity: linkedOrcid
           ? {
