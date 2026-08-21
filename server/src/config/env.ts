@@ -2,6 +2,11 @@ import 'dotenv/config';
 
 import { z } from 'zod';
 
+import {
+  resolveOrcidRuntimeConfig,
+  validateOrcidDeployment,
+} from '../integrations/orcidEnvironment.js';
+
 const environmentSchema = z.object({
   NODE_ENV: z
     .enum([
@@ -85,4 +90,21 @@ if (!result.success) {
   );
 }
 
-export const env = result.data;
+const orcid = resolveOrcidRuntimeConfig({
+  environment: result.data.ORCID_ENVIRONMENT,
+  legacyBaseUrl: result.data.ORCID_BASE_URL,
+});
+
+validateOrcidDeployment({
+  environment: orcid.environment,
+  nodeEnv: result.data.NODE_ENV,
+  clientId: result.data.ORCID_CLIENT_ID,
+  clientSecret: result.data.ORCID_CLIENT_SECRET,
+  redirectUri: result.data.ORCID_REDIRECT_URI,
+});
+
+export const env = {
+  ...result.data,
+  ORCID_ENVIRONMENT: orcid.environment,
+  ORCID_BASE_URL: orcid.baseUrl,
+};
