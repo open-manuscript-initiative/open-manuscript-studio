@@ -22,8 +22,9 @@ export async function loadOjsAssignmentContext(
   }
 
   const authorization = `OMI ${payload}.${signature}`;
-  const base = claims.apiBaseUrl.replace(/\/$/, '');
-  const submission = await readJson(`${base}/submission`, authorization);
+  const baseUrl = getTrustedApiBaseUrl(claims.apiBaseUrl);
+  const submissionUrl = new URL('submission', baseUrl);
+  const submission = await readJson(submissionUrl, authorization);
   const actor = asRecord(submission.actor);
   const actorEmail = cleanEmail(actor.email);
   const actorFullName = cleanText(actor.fullName, 200);
@@ -36,7 +37,8 @@ export async function loadOjsAssignmentContext(
     };
   }
 
-  const reviewerResponse = await readJson(`${base}/reviewers`, authorization);
+  const reviewersUrl = new URL('reviewers', baseUrl);
+  const reviewerResponse = await readJson(reviewersUrl, authorization);
   const rawReviewers = Array.isArray(reviewerResponse.reviewers)
     ? reviewerResponse.reviewers
     : [];
@@ -71,8 +73,29 @@ function isRedirect(status: number): boolean {
     status === 308;
 }
 
-async function readJson(url: string, authorization: string): Promise<Record<string, unknown>> {
-  const initialUrl = new URL(url);
+function getTrustedApiBaseUrl(apiBaseUrl: string): URL {
+  let parsed: URL;
+  try {
+    parsed = new URL(apiBaseUrl);
+  } catch {
+    throw new Error('Invalid OJS API base URL.');
+  }
+
+  if (parsed.protocol !== 'https:') {
+    throw new Error('OJS API base URL must use HTTPS.');
+  }
+  if (parsed.username || parsed.password) {
+    throw new Error('OJS API base URL must not include credentials.');
+  }
+
+  parsed.pathname = parsed.pathname.replace(/\/?$/, '/');
+  parsed.search = '';
+  parsed.hash = '';
+  return parsed;
+}
+
+async function readJson(url: URL, authorization: string): Promise<Record<string, unknown>> {
+  const initialUrl = new URL(url.toString());
   const trustedOrigin = initialUrl.origin;
   const visited = new Set<string>();
   let currentUrl = initialUrl;
