@@ -23,11 +23,7 @@ import {
 } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
-import {
-  localeLabels,
-  supportedLocales,
-  useTranslation,
-} from '../i18n';
+import { useTranslation } from '../i18n';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import {
@@ -231,8 +227,8 @@ function ToolsView() {
 }
 
 function SettingsView() {
-  const { locale, enabledLocales, setLocaleEnabled, t } = useTranslation();
-  return <section className="studio-menu-view"><div className="studio-menu-view-header"><div><h3>{t('studio.settings.title')}</h3><p>{t('studio.settings.description')}</p></div></div><section className="studio-settings-card" aria-labelledby="studio-interface-languages-title"><div className="studio-settings-card-header"><div><h4 id="studio-interface-languages-title">{t('studio.settings.interfaceLanguages')}</h4><p>{t('studio.settings.interfaceLanguagesDescription')}</p></div></div><div className="studio-language-preference-list">{supportedLocales.map((supportedLocale) => { const enabled = enabledLocales.includes(supportedLocale); const current = supportedLocale === locale; return <label className={`studio-language-preference${current ? ' studio-language-preference--current' : ''}`} key={supportedLocale}><input type="checkbox" checked={enabled} disabled={current} onChange={(event) => setLocaleEnabled(supportedLocale, event.target.checked)} /><span className="studio-language-preference-copy"><strong>{localeLabels[supportedLocale]}</strong><small>{current ? t('studio.settings.currentLanguage') : enabled ? t('studio.settings.enabledLanguage') : t('studio.settings.disabledLanguage')}</small></span><code>{supportedLocale}</code></label>; })}</div><p className="studio-settings-hint">{t('studio.settings.currentLanguageHint')}</p></section><ContentLanguageSettings /><div className="studio-settings-future-note">{t('studio.settings.futureLanguages')}</div></section>;
+  const { t } = useTranslation();
+  return <section className="studio-menu-view"><div className="studio-menu-view-header"><div><h3>{t('studio.settings.title')}</h3><p>{t('studio.settings.description')}</p></div></div><ContentLanguageSettings /></section>;
 }
 
 function getLocalFileLabels(locale: string) {
