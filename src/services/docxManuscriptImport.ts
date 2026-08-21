@@ -1191,6 +1191,9 @@ function deduplicateWarnings(warnings: readonly DocxImportWarning[]): DocxImport
 }
 
 function parseXml(xml: string): XMLDocument {
+  // WordprocessingML/OOXML is parsed as XML in a detached document and only
+  // traversed as structured data. It is never reinterpreted as HTML or mounted.
+  // codeql[js/xss-through-dom]
   const document = new DOMParser().parseFromString(xml, 'application/xml');
   if (document.querySelector('parsererror')) {
     throw new Error('Invalid Open XML document part.');
