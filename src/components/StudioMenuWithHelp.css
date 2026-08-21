@@ -2,6 +2,19 @@
   display: none !important;
 }
 
+.studio-menu-nav-button--external-suppressed {
+  border-color: transparent;
+  background: transparent;
+  color: #334155;
+}
+
+.studio-menu-nav-button--external-suppressed:hover,
+.studio-menu-nav-button--external-suppressed:focus-visible {
+  border-color: #cbd5e1;
+  background: #fff;
+  color: #334155;
+}
+
 .studio-help-portal {
   width: 100%;
 }
