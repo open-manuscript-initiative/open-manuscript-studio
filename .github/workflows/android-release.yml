@@ -1,0 +1,156 @@
+name: Android Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_to_play:
+        description: Upload the signed AAB to Google Play after building
+        required: true
+        type: boolean
+        default: false
+      play_track:
+        description: Google Play testing track
+        required: true
+        type: choice
+        default: internal
+        options:
+          - internal
+          - alpha
+          - beta
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NDK_VERSION: 27.2.12479018
+  ANDROID_PACKAGE_NAME: org.openmanuscript.studio
+
+jobs:
+  build:
+    name: Build signed Android release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Configure Rust Android targets
+        run: |
+          rustup update stable
+          rustup default stable
+          rustup target add \
+            aarch64-linux-android \
+            armv7-linux-androideabi \
+            i686-linux-android \
+            x86_64-linux-android
+
+      - name: Install Android SDK and NDK
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "ndk;${NDK_VERSION}"
+          echo "NDK_HOME=${ANDROID_HOME}/ndk/${NDK_VERSION}" >> "$GITHUB_ENV"
+
+      - name: Generate Tauri Android project
+        run: |
+          npm run icons:generate
+          npm run tauri -- android init
+
+      - name: Validate Android signing secrets
+        shell: bash
+        env:
+          ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          missing=0
+          for name in ANDROID_KEY_BASE64 ANDROID_KEY_ALIAS ANDROID_KEYSTORE_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required GitHub secret: ${name}"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Configure Android release signing
+        shell: bash
+        env:
+          ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          KEYSTORE_PATH="$RUNNER_TEMP/open-manuscript-upload.jks"
+          printf '%s' "$ANDROID_KEY_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+
+          {
+            printf 'keyAlias=%s\n' "$ANDROID_KEY_ALIAS"
+            printf 'storePassword=%s\n' "$ANDROID_KEYSTORE_PASSWORD"
+            printf 'keyPassword=%s\n' "${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
+            printf 'storeFile=%s\n' "$KEYSTORE_PATH"
+          } > src-tauri/gen/android/keystore.properties
+
+          node scripts/configure-android-signing.mjs
+
+      - name: Build signed Android App Bundle
+        run: npm run tauri -- android build --aab
+
+      - name: Build signed universal APK
+        run: npm run tauri -- android build --apk
+
+      - name: Upload signed Android artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: open-manuscript-studio-android-signed
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
+            src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+
+      - name: Validate Google Play credentials
+        if: ${{ inputs.publish_to_play }}
+        shell: bash
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::Missing required GitHub secret: GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"
+            exit 1
+          fi
+
+      - name: Upload AAB to Google Play
+        if: ${{ inputs.publish_to_play }}
+        uses: r0adkll/upload-google-play@v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ env.ANDROID_PACKAGE_NAME }}
+          releaseFiles: src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
+          tracks: ${{ inputs.play_track }}
+          status: completed
