@@ -45,7 +45,12 @@ ojsReviewRouter.post(
         throw new Error('The OJS review launch does not identify its submission, review assignment, or context.');
       }
 
-      const ojsData = await loadOjsLaunchData(verified.claims, payload, signature);
+      const ojsData = await loadOjsLaunchData(
+        verified.claims,
+        payload,
+        signature,
+        verified.installation.baseUrl,
+      );
       const assignment = await upsertOjsReviewAssignment({
         reviewerUserId: request.authUserId,
         installationId: verified.installation.installationId,
