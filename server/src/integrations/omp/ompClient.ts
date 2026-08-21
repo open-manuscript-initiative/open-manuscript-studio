@@ -120,9 +120,14 @@ export async function loadOmpLaunchData(
     };
   }
 
+  const externalBaseUrl = claims.externalBaseUrl?.trim();
+  if (!externalBaseUrl) {
+    throw new Error('The OMP launch assertion does not include externalBaseUrl.');
+  }
+
   const trustedApiBaseUrl = await assertTrustedIntegrationUrl(
     apiBaseUrl,
-    claims.externalBaseUrl,
+    externalBaseUrl,
   );
   const trustedApiBaseUrlString = trustedApiBaseUrl.toString().replace(/\/$/, '');
 
