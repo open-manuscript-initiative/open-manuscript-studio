@@ -1,9 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
   <title id="title">Open Manuscript Studio</title>
-  <rect width="512" height="512" rx="96" fill="#0F172A"/>
-  <path d="M146 134 C91 134 54 177 54 239 C54 301 91 344 146 344 C199 344 236 301 236 239 C236 177 199 134 146 134Z" fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round"/>
-  <path d="M272 346V146L368 251L464 146V346" fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M106 358 C154 348 202 356 256 386 C310 356 358 348 406 358" fill="none" stroke="#FFFFFF" stroke-width="17" stroke-linecap="round"/>
-  <path d="M256 386 C224 347 180 322 124 306" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round"/>
-  <path d="M256 386 C228 332 190 293 147 267" fill="none" stroke="#84BE50" stroke-width="14" stroke-linecap="round"/>
+  <rect width="512" height="512" rx="112" fill="#0F172A"/>
+  <g fill="#FFFFFF">
+    <path d="M92 132c0-31 25-56 56-56h48c31 0 56 25 56 56v84c0 31-25 56-56 56h-48c-31 0-56-25-56-56zm56-8c-13 0-24 11-24 24v52c0 13 11 24 24 24h48c13 0 24-11 24-24v-52c0-13-11-24-24-24z"/>
+    <path d="M275 80h39l54 79 54-79h39v192h-42V148l-51 74-51-74v124h-42z"/>
+    <path d="M81 304c66 18 118 20 175 82 57-62 109-64 175-82-18 46-54 83-101 104-29 13-52 29-74 52-22-23-45-39-74-52-47-21-83-58-101-104z"/>
+  </g>
+  <path d="M112 280c52 17 94 22 144 67 50-45 92-50 144-67-22 33-52 58-88 72-22 9-39 20-56 36-17-16-34-27-56-36-36-14-66-39-88-72z" fill="#84BE50"/>
 </svg>
