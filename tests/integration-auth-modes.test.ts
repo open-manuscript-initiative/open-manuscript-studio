@@ -20,13 +20,17 @@ test('DeepL never models provider email/password authentication', () => {
   assert.equal(deepl.supportsPerUserAuthentication, true);
 });
 
-test('identity and cloud providers use delegated authentication', () => {
+test('identity uses delegated authentication while current cloud providers use encrypted server-side credentials', () => {
   const orcid = integrationCatalog.find((entry) => entry.id === 'orcid');
   const storage = integrationCatalog.find((entry) => entry.id === 'cloud-storage');
   assert.ok(orcid);
   assert.ok(storage);
   assert.deepEqual(orcid.authenticationModes, ['oauth2']);
-  assert.ok(storage.authenticationModes.includes('oauth2'));
+  assert.deepEqual(storage.authenticationModes, ['server_secret']);
+  assert.equal(storage.requiresServerSecret, false);
+  assert.equal(storage.supportsPerUserAuthentication, true);
+  assert.equal(storage.supportsMultipleConnections, true);
+  assert.equal(storage.status, 'available');
 });
 
 test('OJS and OMP retain purpose-built integration token authentication', () => {
