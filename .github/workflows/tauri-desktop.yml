@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Optional release tag, e.g. v0.1.0-alpha.3. Leave empty to use package.json version.'
+        description: 'Optional release tag, e.g. v0.1.0-alpha.4. Leave empty to use package.json version.'
         required: false
         type: string
   pull_request:
@@ -12,9 +12,13 @@ on:
       - main
     paths:
       - 'package.json'
+      - 'public/android-chrome-512x512.png'
+      - 'public/studio-icon.svg'
+      - 'src-tauri/icons/icon.svg'
       - 'src-tauri/Cargo.toml'
       - 'src-tauri/Cargo.lock'
       - 'src-tauri/tauri.conf.json'
+      - 'src-tauri/tauri.android.conf.json'
       - '.github/workflows/tauri-desktop.yml'
   push:
     branches:
@@ -86,7 +90,7 @@ jobs:
         run: cargo fetch --manifest-path src-tauri/Cargo.toml --locked
 
       - name: Generate Tauri application icons
-        run: npm run tauri -- icon src-tauri/icons/icon.svg
+        run: npm run icons:generate
 
       - name: Run frontend tests
         run: npm test
@@ -151,9 +155,6 @@ jobs:
       - name: Fetch locked Rust dependencies
         run: cargo fetch --manifest-path src-tauri/Cargo.toml --locked
 
-      - name: Generate Tauri application icons
-        run: npm run tauri -- icon src-tauri/icons/icon.svg
-
       - name: Run frontend tests
         run: npm test
 
@@ -172,15 +173,7 @@ jobs:
 
           if [[ -z "$ndk_home" || ! -f "$ndk_home/source.properties" ]]; then
             if [[ -d "$android_home/ndk" ]]; then
-              ndk_home="$(
-                find "$android_home/ndk" \
-                  -mindepth 1 \
-                  -maxdepth 1 \
-                  -type d \
-                  -print \
-                  | sort -V \
-                  | tail -n 1
-              )"
+              ndk_home="$(find "$android_home/ndk" -mindepth 1 -maxdepth 1 -type d -print | sort -V | tail -n 1)"
             fi
           fi
 
@@ -203,6 +196,33 @@ jobs:
         env:
           CI: 'true'
         run: npm run tauri -- android init --ci
+
+      # Mobile icons can only be written after gen/android exists.
+      - name: Generate Android launcher icons
+        run: npm run icons:generate
+
+      - name: Verify generated Android launcher icons
+        shell: bash
+        run: |
+          set -euo pipefail
+          res='src-tauri/gen/android/app/src/main/res'
+          required=(
+            "$res/mipmap-mdpi/ic_launcher.png"
+            "$res/mipmap-hdpi/ic_launcher.png"
+            "$res/mipmap-xhdpi/ic_launcher.png"
+            "$res/mipmap-xxhdpi/ic_launcher.png"
+            "$res/mipmap-xxxhdpi/ic_launcher.png"
+            "$res/mipmap-mdpi/ic_launcher_foreground.png"
+          )
+          for icon in "${required[@]}"; do
+            if [[ ! -s "$icon" ]]; then
+              echo "Missing generated launcher icon: $icon" >&2
+              exit 1
+            fi
+          done
+          echo 'Generated Android launcher icons:'
+          find "$res" -type f \( -name 'ic_launcher*.png' -o -name 'ic_launcher*.xml' \) -print | sort
+          sha256sum "$res"/mipmap-*/ic_launcher*.png
 
       - name: Prepare Android release signing key
         if: github.event_name != 'pull_request'
@@ -259,7 +279,7 @@ jobs:
           set -euo pipefail
           mkdir -p android-artifact
           apk="$(find src-tauri/gen/android/app/build/outputs/apk -type f -name '*.apk' -print -quit)"
-          if [ -z "$apk" ]; then
+          if [[ -z "$apk" ]]; then
             echo 'No Android APK was produced.' >&2
             find src-tauri/gen/android/app/build/outputs -maxdepth 6 -type f -print || true
             exit 1
@@ -332,7 +352,7 @@ jobs:
             local output="$2"
             local file
             file="$(find release-input -type f -name "$pattern" -print -quit)"
-            if [ -z "$file" ]; then
+            if [[ -z "$file" ]]; then
               echo "Missing release asset matching $pattern" >&2
               exit 1
             fi
