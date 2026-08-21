@@ -1,6 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
-  <title id="title">Open Manuscript Studio</title>
-  <rect width="512" height="512" rx="112" fill="#111827"/>
-  <path d="M144 128h224v256H144z" fill="#f8fafc"/>
-  <path d="M192 192h128M192 248h128M192 304h80" stroke="#111827" stroke-width="24" stroke-linecap="round"/>
+  <title id="title">Open Manuscript Initiative</title>
+  <rect width="512" height="512" rx="96" fill="#0F172A"/>
+  <g transform="translate(0,0) scale(1)">
+    <path d="M146 134 C91 134 54 177 54 239 C54 301 91 344 146 344 C199 344 236 301 236 239 C236 177 199 134 146 134Z" fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round"/>
+    <path d="M272 346V146L368 251L464 146V346" fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M106 358 C154 348 202 356 256 386 C310 356 358 348 406 358" fill="none" stroke="#FFFFFF" stroke-width="17" stroke-linecap="round"/>
+    <path d="M256 386 C224 347 180 322 124 306" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round"/>
+    <path d="M256 386 C228 332 190 293 147 267" fill="none" stroke="#84BE50" stroke-width="14" stroke-linecap="round"/>
+  </g>
 </svg>

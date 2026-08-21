@@ -2,8 +2,6 @@ import { FormEvent, useEffect, useState } from 'react';
 import { BadgeCheck, LogOut, Save, ShieldCheck, UserRound } from 'lucide-react';
 
 import { useTranslation } from '../i18n';
-import { isSupportedLocale } from '../i18n/config';
-import type { SupportedLocale } from '../i18n/types';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import '../styles/account.css';
 
@@ -17,7 +15,6 @@ const copy = {
     orcid: 'ORCID iD',
     bio: 'Short biography',
     preferences: 'Preferences',
-    language: 'Interface language',
     timezone: 'Time zone',
     identity: 'Account identity',
     verified: 'Verified e-mail',
@@ -36,7 +33,6 @@ const copy = {
     orcid: 'ORCID iD',
     bio: 'Rövid bemutatkozás',
     preferences: 'Beállítások',
-    language: 'Felület nyelve',
     timezone: 'Időzóna',
     identity: 'Fiókazonosság',
     verified: 'Ellenőrzött e-mail-cím',
@@ -55,7 +51,6 @@ const copy = {
     orcid: 'ORCID iD',
     bio: 'Kurzbiografie',
     preferences: 'Einstellungen',
-    language: 'Oberflächensprache',
     timezone: 'Zeitzone',
     identity: 'Kontoidentität',
     verified: 'Bestätigte E-Mail-Adresse',
@@ -72,7 +67,6 @@ type AccountFormState = {
   affiliation: string;
   orcid: string;
   bio: string;
-  interfaceLanguage: SupportedLocale;
   timeZone: string;
 };
 
@@ -90,28 +84,22 @@ export function AccountPanel() {
     affiliation: '',
     orcid: '',
     bio: '',
-    interfaceLanguage: locale,
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
   });
 
   useEffect(() => {
     if (!user) return;
-    const preferredLocale = isSupportedLocale(user.preferences.interfaceLanguage)
-      ? user.preferences.interfaceLanguage
-      : locale;
-
     setForm({
       fullName: user.profile.fullName ?? '',
       affiliation: user.profile.affiliation ?? '',
       orcid: user.profile.orcid ?? '',
       bio: user.profile.bio ?? '',
-      interfaceLanguage: preferredLocale,
       timeZone:
         user.preferences.timeZone ||
         Intl.DateTimeFormat().resolvedOptions().timeZone ||
         'UTC',
     });
-  }, [user, locale]);
+  }, [user]);
 
   if (!user) return null;
 
@@ -123,15 +111,9 @@ export function AccountPanel() {
       affiliation: form.affiliation || undefined,
       orcid: form.orcid || undefined,
       bio: form.bio || undefined,
-      interfaceLanguage: form.interfaceLanguage,
       timeZone: form.timeZone || undefined,
     });
     setSaved(true);
-  };
-
-  const setInterfaceLanguage = (value: string) => {
-    if (!isSupportedLocale(value)) return;
-    setForm((current) => ({ ...current, interfaceLanguage: value }));
   };
 
   return (
@@ -193,28 +175,15 @@ export function AccountPanel() {
           </label>
 
           <h2>{labels.preferences}</h2>
-          <div className="account-form-row">
-            <label>
-              {labels.language}
-              <select
-                value={form.interfaceLanguage}
-                onChange={(event) => setInterfaceLanguage(event.target.value)}
-              >
-                <option value="hu">Magyar</option>
-                <option value="en">English</option>
-                <option value="de">Deutsch</option>
-              </select>
-            </label>
-            <label>
-              {labels.timezone}
-              <input
-                value={form.timeZone}
-                onChange={(event) =>
-                  setForm({ ...form, timeZone: event.target.value })
-                }
-              />
-            </label>
-          </div>
+          <label>
+            {labels.timezone}
+            <input
+              value={form.timeZone}
+              onChange={(event) =>
+                setForm({ ...form, timeZone: event.target.value })
+              }
+            />
+          </label>
 
           {error ? (
             <div className="account-error" role="alert">
