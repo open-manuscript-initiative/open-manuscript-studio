@@ -222,14 +222,32 @@ export class WebDavProvider implements CloudStorageProvider {
   }
 
   async upload(request: CloudUploadRequest): Promise<CloudObject> {
-    const path = normalizePath(request.path);
+    const runtimeRequest: unknown = request;
+    if (!runtimeRequest || typeof runtimeRequest !== 'object') {
+      throw new CloudStorageError('CLOUD_UPLOAD_FAILED', 'The cloud upload request is invalid.');
+    }
+
+    const input = runtimeRequest as {
+      path?: unknown;
+      data?: unknown;
+      contentType?: unknown;
+    };
+    if (typeof input.path !== 'string' || !Buffer.isBuffer(input.data)) {
+      throw new CloudStorageError('CLOUD_UPLOAD_FAILED', 'The cloud upload path and binary data are invalid.');
+    }
+
+    const path = normalizePath(input.path);
+    const data = Buffer.from(input.data);
+    const contentType = typeof input.contentType === 'string' && input.contentType.length <= 255
+      ? input.contentType
+      : 'application/octet-stream';
     const directory = path.split('/').slice(0, -1).join('/');
     if (directory) await this.ensureDirectory(directory);
 
     const response = await this.request('PUT', path, {
-      body: request.data,
+      body: data,
       headers: {
-        'Content-Type': request.contentType ?? 'application/octet-stream',
+        'Content-Type': contentType,
       },
     });
 
@@ -239,7 +257,7 @@ export class WebDavProvider implements CloudStorageProvider {
       id: path,
       path,
       name: path.split('/').pop() ?? path,
-      size: request.data.length,
+      size: data.byteLength,
       ...(response.headers.get('etag')
         ? { checksum: response.headers.get('etag')!.replace(/^W\//, '').replace(/^"|"$/g, '') }
         : {}),
