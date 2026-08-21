@@ -3,6 +3,8 @@ import type { SupportedLocale } from './types';
 export interface ExportFormatCopy {
   title: string;
   description: string;
+  format: string;
+  chooseFormat: string;
   portable: string;
   publication: string;
   omi: string;
@@ -37,8 +39,10 @@ export interface ExportFormatCopy {
 
 const copy: Record<SupportedLocale, ExportFormatCopy> = {
   hu: {
-    title: 'Exportálható formátumok',
-    description: 'A kézirat ugyanabból a szemantikus OMI modellből több hordozható és publikációs formátumba exportálható.',
+    title: 'Exportálás',
+    description: 'Válassza ki a kívánt hordozható vagy publikációs formátumot, majd indítsa el az exportálást.',
+    format: 'Exportálási formátum',
+    chooseFormat: 'Válasszon formátumot…',
     portable: 'Hordozható OMI formátumok',
     publication: 'Publikációs formátumok',
     omi: 'OMI konténer',
@@ -68,11 +72,13 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     export: 'Exportálás',
     preparing: 'Előkészítés…',
     failed: 'Az export nem sikerült.',
-    pdfHint: 'A megnyíló nyomtatási ablakban válassza a Mentés PDF-ként lehetőséget.'
+    pdfHint: 'A megnyíló nyomtatási ablakban válassza a Mentés PDF-ként lehetőséget.',
   },
   en: {
-    title: 'Export formats',
-    description: 'Export the manuscript from the same semantic OMI model into portable and publication formats.',
+    title: 'Export',
+    description: 'Choose a portable or publication format, then start the export.',
+    format: 'Export format',
+    chooseFormat: 'Choose a format…',
     portable: 'Portable OMI formats',
     publication: 'Publication formats',
     omi: 'OMI container',
@@ -102,11 +108,13 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     export: 'Export',
     preparing: 'Preparing…',
     failed: 'Export failed.',
-    pdfHint: 'Choose Save as PDF in the print dialog that opens.'
+    pdfHint: 'Choose Save as PDF in the print dialog that opens.',
   },
   de: {
-    title: 'Exportformate',
-    description: 'Exportieren Sie das Manuskript aus demselben semantischen OMI-Modell in portable und Publikationsformate.',
+    title: 'Export',
+    description: 'Wählen Sie ein portables oder Publikationsformat und starten Sie anschließend den Export.',
+    format: 'Exportformat',
+    chooseFormat: 'Format auswählen…',
     portable: 'Portable OMI-Formate',
     publication: 'Publikationsformate',
     omi: 'OMI-Container',
@@ -136,8 +144,8 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     export: 'Exportieren',
     preparing: 'Wird vorbereitet…',
     failed: 'Export fehlgeschlagen.',
-    pdfHint: 'Wählen Sie im geöffneten Druckdialog Als PDF speichern.'
-  }
+    pdfHint: 'Wählen Sie im geöffneten Druckdialog Als PDF speichern.',
+  },
 };
 
 export function getExportFormatCopy(locale: SupportedLocale): ExportFormatCopy {
