@@ -1,4 +1,5 @@
 import type { OmpLaunchClaims } from './launchVerifier.js';
+import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
 
 interface OmpMetadataResponse {
   protocol?: string;
@@ -115,14 +116,20 @@ export async function loadOmpLaunchData(
     };
   }
 
+  const trustedApiBaseUrl = await assertTrustedIntegrationUrl(
+    apiBaseUrl,
+    claims.externalBaseUrl,
+  );
+  const trustedApiBaseUrlString = trustedApiBaseUrl.toString().replace(/\/$/, '');
+
   const metadataPromise = scopes.has('metadata.read')
-    ? readJson<OmpMetadataResponse>(endpoint(apiBaseUrl, 'metadata'), payload, signature)
+    ? readJson<OmpMetadataResponse>(endpoint(trustedApiBaseUrlString, 'metadata'), payload, signature)
     : Promise.resolve<OmpMetadataResponse>({});
   const contributorsPromise = scopes.has('contributors.read')
-    ? readJson<OmpContributorsResponse>(endpoint(apiBaseUrl, 'contributors'), payload, signature)
+    ? readJson<OmpContributorsResponse>(endpoint(trustedApiBaseUrlString, 'contributors'), payload, signature)
     : Promise.resolve<OmpContributorsResponse>({});
   const filesPromise = scopes.has('files.read')
-    ? readJson<OmpFilesResponse>(endpoint(apiBaseUrl, 'files'), payload, signature)
+    ? readJson<OmpFilesResponse>(endpoint(trustedApiBaseUrlString, 'files'), payload, signature)
     : Promise.resolve<OmpFilesResponse>({});
 
   const [metadata, contributors, files] = await Promise.all([
