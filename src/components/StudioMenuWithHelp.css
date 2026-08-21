@@ -2,14 +2,21 @@
   display: none !important;
 }
 
-.studio-menu-nav-button--external-suppressed {
+/*
+ * StudioMenuWithHelp.css is imported through App.tsx, while the base
+ * studio-shell.css navigation styles are imported later by main.tsx. Keep
+ * this selector deliberately more specific than the base active-state rule
+ * so Integrations/Help can visually suppress the previously selected built-in
+ * item regardless of stylesheet evaluation order.
+ */
+.studio-menu-nav-button.studio-menu-nav-button--active.studio-menu-nav-button--external-suppressed {
   border-color: transparent;
   background: transparent;
   color: #334155;
 }
 
-.studio-menu-nav-button--external-suppressed:hover,
-.studio-menu-nav-button--external-suppressed:focus-visible {
+.studio-menu-nav-button.studio-menu-nav-button--active.studio-menu-nav-button--external-suppressed:hover,
+.studio-menu-nav-button.studio-menu-nav-button--active.studio-menu-nav-button--external-suppressed:focus-visible {
   border-color: #cbd5e1;
   background: #fff;
   color: #334155;
