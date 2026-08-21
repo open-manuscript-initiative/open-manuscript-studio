@@ -22,7 +22,7 @@
     "i18n:po:apply": "node scripts/apply-pending-po-translations.mjs",
     "i18n:po:roundtrip": "npm run i18n:po:export && npm run i18n:po:compile && npm run i18n:validate-json && npm run i18n:po:audit",
     "tauri": "npx @tauri-apps/cli@2.11.4",
-    "icons:generate": "npm run tauri -- icon src-tauri/icons/icon.svg",
+    "icons:generate": "npm run tauri -- icon public/studio-icon.svg",
     "desktop:dev": "npm run tauri -- dev",
     "desktop:build": "npm run icons:generate && npm run tauri -- build",
     "android:init": "npm run tauri -- android init && npm run icons:generate",
