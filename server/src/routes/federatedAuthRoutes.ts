@@ -21,6 +21,10 @@ federatedAuthRouter.get('/providers', async (request, response) => {
     : null;
 
   response.status(200).json({
+    deployment: {
+      mode: env.DEPLOYMENT_MODE,
+      label: env.DEPLOYMENT_MODE === 'institutional' ? 'Institutional' : 'Personal',
+    },
     providers: {
       orcid: {
         enabled: orcidConfigured(),
