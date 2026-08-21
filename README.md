@@ -52,7 +52,11 @@ The desktop application follows a **local-first** approach. Manuscripts can be s
 
 ### Windows signing status
 
-Desktop release automation is operational. Windows code signing is being prepared separately. Until trusted Authenticode signing is active, Windows may display an unknown-publisher or reputation warning for installers.
+Desktop release automation is operational. The project is preparing trusted Windows Authenticode signing through SignPath Foundation. Until trusted signing is active, Windows may display an unknown-publisher or reputation warning for installers.
+
+**Code signing policy:** https://openmanuscript.org/docs/governance/code-signing-policy/
+
+Free code signing provided by SignPath.io, certificate by SignPath Foundation.
 
 ## Supported interface languages
 
