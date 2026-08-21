@@ -176,8 +176,14 @@ export function getDefaultCloudConnectionMethod(
   platform: StudioPlatform,
 ): CloudConnectionMethodId | null {
   const methods = getCloudConnectionMethods(providerId, accountType, platform);
-  return methods.find((method) => method.recommended && method.available)?.id
-    ?? methods.find((method) => method.available)?.id
-    ?? methods[0]?.id
-    ?? null;
+  const available = methods.find((method) => method.recommended && method.available)?.id
+    ?? methods.find((method) => method.available)?.id;
+  if (available) return available;
+
+  if (platform !== 'desktop') {
+    const oauth = methods.find((method) => method.id === 'oauth2');
+    if (oauth) return oauth.id;
+  }
+
+  return methods[0]?.id ?? null;
 }
