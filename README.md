@@ -87,7 +87,73 @@ The OJS integration remains configuration-dependent and requires the correspondi
 - Zustand
 - Tiptap
 - Tauri 2
+- Rust
+- Node.js server components
+- PostgreSQL-backed server services
 
-## License
+## Development setup
 
-Open Manuscript Studio is released under the MIT License. See `LICENSE` for details.
+Requirements:
+
+- Node.js 22
+- npm
+- Rust toolchain for Tauri desktop development
+
+Install dependencies:
+
+```bash
+npm ci
+```
+
+Run the web development server:
+
+```bash
+npm run dev
+```
+
+Open the URL printed by Vite, usually `http://localhost:5173`.
+
+Run tests:
+
+```bash
+npm test
+```
+
+Build the web application:
+
+```bash
+npm run build
+```
+
+The production web output is generated in `dist/`.
+
+Build Tauri desktop bundles according to the platform-specific Tauri prerequisites:
+
+```bash
+npm run tauri -- build
+```
+
+## Releases
+
+Desktop releases are built by `.github/workflows/tauri-desktop.yml`. The workflow produces platform-specific artifacts and publishes the current release with stable download filenames used by the OMI website.
+
+Release versioning is still in the alpha series. See the GitHub Releases page for the current public build.
+
+## Documentation
+
+OMI specifications, architecture, implementation status and integration documentation are maintained at:
+
+**https://openmanuscript.org/**
+
+Useful project documents include:
+
+- `SECURITY.md` — vulnerability reporting and release security;
+- `CONTRIBUTING.md` — contribution guidelines;
+- `CODE_OF_CONDUCT.md` — community standards;
+- `LICENSE` — MIT License.
+
+## Project principle
+
+Open Manuscript Studio is a **reference implementation**, not a proprietary replacement for the OMI standard. Its purpose is to test the specifications in real authoring, peer-review, editorial and publishing workflows while keeping scholarly manuscripts structured, portable and interoperable.
+
+**Write naturally. Structure once. Publish everywhere.**
