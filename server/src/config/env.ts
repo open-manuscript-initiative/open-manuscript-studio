@@ -3,6 +3,9 @@ import 'dotenv/config';
 import { z } from 'zod';
 
 import {
+  resolveOrcidCredentialProfile,
+} from '../integrations/orcidCredentialProfile.js';
+import {
   resolveOrcidRuntimeConfig,
   validateOrcidDeployment,
 } from '../integrations/orcidEnvironment.js';
@@ -32,9 +35,6 @@ const environmentSchema = z.object({
     .url()
     .default('http://localhost:5173'),
 
-  // Controls which installation profile is active. Personal is the safe
-  // default for standalone author installations. Institutional enables
-  // organization-managed integrations and credentials.
   DEPLOYMENT_MODE: z.enum(['personal', 'institutional']).default('personal'),
 
   INTEGRATION_MASTER_KEY: z
@@ -61,19 +61,24 @@ const environmentSchema = z.object({
     .max(720)
     .default(168),
 
-  // Transitional direct ORCID OpenID Connect configuration. Select the
-  // network explicitly; Sandbox remains the safe default until production
-  // credentials are deliberately installed.
   ORCID_ENVIRONMENT: z.enum(['sandbox', 'production']).optional(),
+
+  // Personal deployment credentials. These remain the backward-compatible
+  // names used by existing standalone Studio installations.
   ORCID_CLIENT_ID: z.string().trim().optional(),
   ORCID_CLIENT_SECRET: z.string().trim().optional(),
-  // Backward-compatible migration aid. When present it must match the
-  // selected ORCID_ENVIRONMENT; new deployments should prefer the enum.
-  ORCID_BASE_URL: z.string().url().optional(),
   ORCID_REDIRECT_URI: z.string().url().optional(),
 
-  // Future central OMI Identity Service (OIDC) configuration. These values
-  // are optional so current deployments remain fully backward compatible.
+  // Institutional credentials are deliberately separate: switching a Studio
+  // instance to institutional mode never silently reuses personal/OMI-owned
+  // ORCID credentials.
+  INSTITUTIONAL_ORCID_CLIENT_ID: z.string().trim().optional(),
+  INSTITUTIONAL_ORCID_CLIENT_SECRET: z.string().trim().optional(),
+  INSTITUTIONAL_ORCID_REDIRECT_URI: z.string().url().optional(),
+  INSTITUTIONAL_ORCID_API_TYPE: z.enum(['public', 'member']).default('public'),
+
+  ORCID_BASE_URL: z.string().url().optional(),
+
   OMI_IDENTITY_ISSUER: z.string().url().optional(),
   OMI_IDENTITY_CLIENT_ID: z.string().trim().optional(),
   OMI_IDENTITY_CLIENT_SECRET: z.string().trim().optional(),
@@ -100,16 +105,34 @@ const orcid = resolveOrcidRuntimeConfig({
   legacyBaseUrl: result.data.ORCID_BASE_URL,
 });
 
+const orcidCredentials = resolveOrcidCredentialProfile({
+  deploymentMode: result.data.DEPLOYMENT_MODE,
+  personalClientId: result.data.ORCID_CLIENT_ID,
+  personalClientSecret: result.data.ORCID_CLIENT_SECRET,
+  personalRedirectUri: result.data.ORCID_REDIRECT_URI,
+  institutionalClientId: result.data.INSTITUTIONAL_ORCID_CLIENT_ID,
+  institutionalClientSecret: result.data.INSTITUTIONAL_ORCID_CLIENT_SECRET,
+  institutionalRedirectUri: result.data.INSTITUTIONAL_ORCID_REDIRECT_URI,
+  institutionalApiType: result.data.INSTITUTIONAL_ORCID_API_TYPE,
+});
+
 validateOrcidDeployment({
   environment: orcid.environment,
   nodeEnv: result.data.NODE_ENV,
-  clientId: result.data.ORCID_CLIENT_ID,
-  clientSecret: result.data.ORCID_CLIENT_SECRET,
-  redirectUri: result.data.ORCID_REDIRECT_URI,
+  clientId: orcidCredentials.clientId,
+  clientSecret: orcidCredentials.clientSecret,
+  redirectUri: orcidCredentials.redirectUri,
 });
 
 export const env = {
   ...result.data,
   ORCID_ENVIRONMENT: orcid.environment,
   ORCID_BASE_URL: orcid.baseUrl,
+  // Existing ORCID routes consume these resolved aliases. Their credential
+  // source is selected exclusively by DEPLOYMENT_MODE.
+  ORCID_CLIENT_ID: orcidCredentials.clientId,
+  ORCID_CLIENT_SECRET: orcidCredentials.clientSecret,
+  ORCID_REDIRECT_URI: orcidCredentials.redirectUri,
+  ORCID_CREDENTIAL_SOURCE: orcidCredentials.source,
+  ORCID_API_TYPE: orcidCredentials.apiType,
 };
