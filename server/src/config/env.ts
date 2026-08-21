@@ -32,6 +32,11 @@ const environmentSchema = z.object({
     .url()
     .default('http://localhost:5173'),
 
+  // Controls which installation profile is active. Personal is the safe
+  // default for standalone author installations. Institutional enables
+  // organization-managed integrations and credentials.
+  DEPLOYMENT_MODE: z.enum(['personal', 'institutional']).default('personal'),
+
   INTEGRATION_MASTER_KEY: z
     .string()
     .regex(
