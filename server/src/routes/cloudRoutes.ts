@@ -227,8 +227,9 @@ cloudRouter.post(
     const expectedChecksum = typeof expectedChecksumHeader === 'string'
       ? checksumSchema.safeParse(expectedChecksumHeader)
       : undefined;
+    const requestBody: unknown = request.body;
 
-    if (!manuscriptId.success || !connectionId.success || !Buffer.isBuffer(request.body) || request.body.length === 0) {
+    if (!manuscriptId.success || !connectionId.success || !Buffer.isBuffer(requestBody) || requestBody.byteLength === 0) {
       response.status(400).json({
         error: {
           code: 'INVALID_BACKUP_REQUEST',
@@ -242,6 +243,12 @@ cloudRouter.post(
       return;
     }
 
+    // Copy the validated raw body into a concrete Buffer before using any
+    // length/hash properties. This prevents parameter tampering from changing
+    // the runtime type after Express parsing and keeps downstream providers on
+    // a single binary representation.
+    const packageBytes = Buffer.from(requestBody);
+
     const connection = await prisma.cloudConnection.findFirst({
       where: { id: connectionId.data, userId: request.authUserId! },
     });
@@ -250,7 +257,7 @@ cloudRouter.post(
       return;
     }
 
-    const checksum = createHash('sha256').update(request.body).digest('hex');
+    const checksum = createHash('sha256').update(packageBytes).digest('hex');
     if (expectedChecksum?.success && expectedChecksum.data.toLowerCase() !== checksum) {
       response.status(400).json({
         error: {
@@ -275,7 +282,7 @@ cloudRouter.post(
       const provider = createCloudProvider(connection);
       const object = await provider.upload({
         path: remotePath,
-        data: request.body,
+        data: packageBytes,
         contentType: 'application/vnd.openmanuscript.package+zip',
         metadata: { manuscriptId: manuscriptId.data, packageVersion, checksum },
       });
@@ -289,7 +296,7 @@ cloudRouter.post(
           providerPath: object.path,
           packageVersion,
           checksum,
-          sizeBytes: BigInt(request.body.length),
+          sizeBytes: BigInt(packageBytes.byteLength),
           status: 'COMPLETED',
         },
       });
