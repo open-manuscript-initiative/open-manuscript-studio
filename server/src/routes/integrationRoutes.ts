@@ -132,7 +132,12 @@ integrationRouter.get(
 
     try {
       const verified = await verifyOjsLaunch(payload, signature);
-      const ojsData = await loadOjsLaunchData(verified.claims, payload, signature);
+      const ojsData = await loadOjsLaunchData(
+        verified.claims,
+        payload,
+        signature,
+        verified.installation.baseUrl,
+      );
       const assignmentContext = await loadOjsAssignmentContext(
         verified.claims,
         payload,
