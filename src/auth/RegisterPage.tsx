@@ -10,13 +10,14 @@ import {
   type AuthTranslationKey,
 } from '../i18n';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { OrcidEnvironmentBadge } from '../components/OrcidEnvironmentBadge';
 import {
-  getAuthProviders,
   getOrcidAuthUrl,
   getRegistrationInvitation,
 } from '../services/authApi';
 import { AuthRorAffiliationField } from './AuthRorAffiliationField';
 import { AuthOrcidLookupField } from './AuthOrcidLookupField';
+import { useOrcidProvider } from './useOrcidProvider';
 import { useAuthStore } from '../store/authStore';
 
 interface RegisterPageProps {
@@ -40,7 +41,7 @@ export function RegisterPage({
   const [invitationLoading, setInvitationLoading] = useState(Boolean(invitationToken));
   const [invitationError, setInvitationError] = useState('');
   const [invitedEmail, setInvitedEmail] = useState('');
-  const [orcidEnabled, setOrcidEnabled] = useState(false);
+  const orcidProvider = useOrcidProvider();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -53,9 +54,6 @@ export function RegisterPage({
 
   useEffect(() => {
     clearError();
-    void getAuthProviders()
-      .then((providers) => setOrcidEnabled(providers.orcid.enabled))
-      .catch(() => setOrcidEnabled(false));
   }, [clearError]);
 
   useEffect(() => {
@@ -142,7 +140,7 @@ export function RegisterPage({
           ) : null}
         </header>
 
-        {invitationToken && orcidEnabled && !invitationError ? (
+        {invitationToken && orcidProvider?.enabled && !invitationError ? (
           <div className="auth-form">
             <a className="auth-primary-button" href={getOrcidAuthUrl({ invitationToken })}>
               {locale === 'hu'
@@ -151,6 +149,7 @@ export function RegisterPage({
                   ? 'Einladung mit ORCID annehmen'
                   : 'Accept invitation with ORCID'}
             </a>
+            <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
             <div className="auth-field-hint">
               {locale === 'hu'
                 ? 'Az ORCID-hitelesítés aktiválja a meghívott Studio-fiókot; külön Studio-jelszó létrehozása nem szükséges.'
