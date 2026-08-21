@@ -1,7 +1,11 @@
 import { Plus, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { useTranslation } from '../i18n';
+import {
+  localeLabels,
+  supportedLocales,
+  useTranslation,
+} from '../i18n';
 import { useContentLanguagePreferences } from '../languages/languagePreferences';
 import {
   getManuscriptLanguageDisplayName,
@@ -10,6 +14,8 @@ import {
 import { CloudStorageSettings } from './CloudStorageSettings';
 
 interface Copy {
+  title: string;
+  description: string;
   manuscriptTitle: string;
   manuscriptDescription: string;
   metadataTitle: string;
@@ -22,36 +28,36 @@ interface Copy {
 
 const COPY: Record<'en' | 'hu' | 'de', Copy> = {
   en: {
+    title: 'Language preferences',
+    description: 'Interface, manuscript and metadata languages in one compact overview.',
     manuscriptTitle: 'Manuscript languages',
-    manuscriptDescription:
-      'Choose the languages you normally use for manuscript documents. You can change this list at any time while writing.',
+    manuscriptDescription: 'Languages normally used for manuscript documents.',
     metadataTitle: 'Metadata languages',
-    metadataDescription:
-      'Choose the languages available for localized abstracts, keywords and extended metadata. Existing manuscript data is never deleted when a language is removed from this preference list.',
+    metadataDescription: 'Languages available for abstracts, keywords and localized metadata.',
     addLanguage: 'Add language',
     chooseLanguage: 'Choose a language',
     remove: 'Remove',
     minimum: 'At least one language must remain enabled.',
   },
   hu: {
+    title: 'Nyelvi beállítások',
+    description: 'A felület, a kéziratok és a metaadatok nyelvei egyetlen áttekinthető nézetben.',
     manuscriptTitle: 'Kézirat nyelvei',
-    manuscriptDescription:
-      'Válassza ki a kéziratokhoz rendszeresen használt nyelveket. A lista a kézirat írása közben is bármikor módosítható.',
+    manuscriptDescription: 'A kéziratokhoz rendszeresen használt nyelvek.',
     metadataTitle: 'Metaadat nyelvei',
-    metadataDescription:
-      'Válassza ki az absztraktokhoz, kulcsszavakhoz és kibővített metaadatokhoz használható nyelveket. Egy nyelv kikapcsolása soha nem törli a kéziratban már meglévő adatokat.',
+    metadataDescription: 'Az absztraktokhoz, kulcsszavakhoz és lokalizált metaadatokhoz használható nyelvek.',
     addLanguage: 'Nyelv hozzáadása',
     chooseLanguage: 'Válasszon nyelvet',
     remove: 'Eltávolítás',
     minimum: 'Legalább egy nyelvnek engedélyezve kell maradnia.',
   },
   de: {
+    title: 'Spracheinstellungen',
+    description: 'Oberflächen-, Manuskript- und Metadatensprachen in einer kompakten Übersicht.',
     manuscriptTitle: 'Manuskriptsprachen',
-    manuscriptDescription:
-      'Wählen Sie die Sprachen, die Sie normalerweise für Manuskripte verwenden. Die Liste kann während des Schreibens jederzeit geändert werden.',
+    manuscriptDescription: 'Sprachen, die regelmäßig für Manuskripte verwendet werden.',
     metadataTitle: 'Metadatensprachen',
-    metadataDescription:
-      'Wählen Sie die Sprachen für lokalisierte Abstracts, Schlagwörter und erweiterte Metadaten. Bereits vorhandene Manuskriptdaten werden beim Entfernen einer Sprache niemals gelöscht.',
+    metadataDescription: 'Sprachen für Abstracts, Schlagwörter und lokalisierte Metadaten.',
     addLanguage: 'Sprache hinzufügen',
     chooseLanguage: 'Sprache auswählen',
     remove: 'Entfernen',
@@ -102,42 +108,34 @@ function LanguageListEditor({
   }
 
   return (
-    <section className="studio-settings-card">
-      <div className="studio-settings-card-header">
+    <section className="studio-language-setting-row">
+      <div className="studio-language-setting-heading">
         <div>
-          <h4>{title}</h4>
+          <h5>{title}</h5>
           <p>{description}</p>
         </div>
       </div>
 
-      <div className="studio-language-preference-list">
+      <div className="studio-language-chip-list">
         {languages.map((language) => (
-          <div className="studio-language-preference" key={language}>
-            <span className="studio-language-preference-copy">
-              <strong>
-                {getManuscriptLanguageDisplayName(language, uiLocale)}
-              </strong>
-              <small>{language}</small>
-            </span>
+          <span className="studio-language-chip" key={language}>
+            <strong>{getManuscriptLanguageDisplayName(language, uiLocale)}</strong>
             <code>{language}</code>
             <button
               type="button"
-              className="studio-menu-secondary-action"
+              className="studio-language-chip-remove"
               disabled={languages.length <= 1}
               aria-label={`${copy.remove}: ${language}`}
-              title={
-                languages.length <= 1 ? copy.minimum : copy.remove
-              }
+              title={languages.length <= 1 ? copy.minimum : copy.remove}
               onClick={() => removeLanguage(language)}
             >
-              <X size={14} aria-hidden="true" />
-              {copy.remove}
+              <X size={12} aria-hidden="true" />
             </button>
-          </div>
+          </span>
         ))}
       </div>
 
-      <div className="omi-keyword-input-row">
+      <div className="studio-language-compact-add">
         <select
           value={candidate}
           aria-label={copy.chooseLanguage}
@@ -156,8 +154,8 @@ function LanguageListEditor({
           disabled={!candidate}
           onClick={addCandidate}
         >
-          <Plus size={15} aria-hidden="true" />
-          {copy.addLanguage}
+          <Plus size={14} aria-hidden="true" />
+          <span>{copy.addLanguage}</span>
         </button>
       </div>
     </section>
@@ -165,7 +163,12 @@ function LanguageListEditor({
 }
 
 export function ContentLanguageSettings() {
-  const { locale } = useTranslation();
+  const {
+    locale,
+    enabledLocales,
+    setLocaleEnabled,
+    t,
+  } = useTranslation();
   const copy = getCopy(locale);
   const {
     manuscriptLanguages,
@@ -176,22 +179,69 @@ export function ContentLanguageSettings() {
 
   return (
     <>
-      <LanguageListEditor
-        title={copy.manuscriptTitle}
-        description={copy.manuscriptDescription}
-        languages={manuscriptLanguages}
-        onChange={setManuscriptLanguages}
-        uiLocale={locale}
-        copy={copy}
-      />
-      <LanguageListEditor
-        title={copy.metadataTitle}
-        description={copy.metadataDescription}
-        languages={metadataLanguages}
-        onChange={setMetadataLanguages}
-        uiLocale={locale}
-        copy={copy}
-      />
+      <section className="studio-settings-card studio-language-settings-card">
+        <div className="studio-settings-card-header">
+          <div>
+            <h4>{copy.title}</h4>
+            <p>{copy.description}</p>
+          </div>
+        </div>
+
+        <div className="studio-language-settings-grid">
+          <section className="studio-language-setting-row">
+            <div className="studio-language-setting-heading">
+              <div>
+                <h5>{t('studio.settings.interfaceLanguages')}</h5>
+                <p>{t('studio.settings.interfaceLanguagesDescription')}</p>
+              </div>
+            </div>
+            <div className="studio-language-chip-list">
+              {supportedLocales.map((supportedLocale) => {
+                const enabled = enabledLocales.includes(supportedLocale);
+                const current = supportedLocale === locale;
+                return (
+                  <label
+                    className={`studio-language-chip studio-language-chip--toggle${current ? ' studio-language-chip--current' : ''}`}
+                    key={supportedLocale}
+                    title={current ? t('studio.settings.currentLanguage') : undefined}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={enabled}
+                      disabled={current}
+                      onChange={(event) =>
+                        setLocaleEnabled(supportedLocale, event.target.checked)
+                      }
+                    />
+                    <strong>{localeLabels[supportedLocale]}</strong>
+                    <code>{supportedLocale}</code>
+                  </label>
+                );
+              })}
+            </div>
+            <small className="studio-language-inline-hint">
+              {t('studio.settings.currentLanguageHint')}
+            </small>
+          </section>
+
+          <LanguageListEditor
+            title={copy.manuscriptTitle}
+            description={copy.manuscriptDescription}
+            languages={manuscriptLanguages}
+            onChange={setManuscriptLanguages}
+            uiLocale={locale}
+            copy={copy}
+          />
+          <LanguageListEditor
+            title={copy.metadataTitle}
+            description={copy.metadataDescription}
+            languages={metadataLanguages}
+            onChange={setMetadataLanguages}
+            uiLocale={locale}
+            copy={copy}
+          />
+        </div>
+      </section>
       <CloudStorageSettings />
     </>
   );
