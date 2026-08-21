@@ -64,6 +64,31 @@ function normalizedBasePath(pathname: string): string {
   return pathname.replace(/\/+$/, '') || '/';
 }
 
+function canonicalizePathname(pathname: string): string {
+  return pathname
+    .split('/')
+    .map((segment) => {
+      if (!segment) return '';
+
+      let decoded: string;
+      try {
+        decoded = decodeURIComponent(segment);
+      } catch {
+        throw new Error('Integration API URL contains invalid path encoding.');
+      }
+
+      if (decoded === '.' || decoded === '..') {
+        throw new Error('Integration API URL must not contain path traversal segments.');
+      }
+
+      // encodeURIComponent is intentionally the final transformation of every
+      // request-controlled path segment. It prevents a segment from changing
+      // the trusted scheme/host/path structure used by the server-side fetch.
+      return encodeURIComponent(decoded);
+    })
+    .join('/');
+}
+
 async function assertPublicHost(url: URL): Promise<void> {
   if (isDevelopmentLocalhost(url)) return;
 
@@ -76,8 +101,9 @@ async function assertPublicHost(url: URL): Promise<void> {
 /**
  * Validate a launch-provided integration API URL against the installation URL
  * stored by the Studio administrator. The returned URL is rebuilt from the
- * trusted installation origin so request-controlled input cannot replace the
- * scheme, host, credentials, or port used by server-side fetches.
+ * trusted installation origin and a canonicalized path so request-controlled
+ * input cannot replace the scheme, host, credentials, port, or path structure
+ * used by server-side fetches.
  */
 export async function assertTrustedIntegrationUrl(
   rawUrl: string,
@@ -126,6 +152,10 @@ export async function assertTrustedIntegrationUrl(
     throw new Error('Integration API URL is outside the registered installation path.');
   }
 
+  if (candidate.search) {
+    throw new Error('Integration API base URL must not contain a query string.');
+  }
+
   if (candidate.hash) {
     throw new Error('Integration API URL must not contain a fragment.');
   }
@@ -134,7 +164,6 @@ export async function assertTrustedIntegrationUrl(
   await assertPublicHost(candidate);
 
   const trusted = new URL(installation.origin);
-  trusted.pathname = candidate.pathname;
-  trusted.search = candidate.search;
+  trusted.pathname = canonicalizePathname(candidate.pathname);
   return trusted;
 }
