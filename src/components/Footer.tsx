@@ -1,3 +1,4 @@
+import { isTauri } from '@tauri-apps/api/core';
 import { useEffect, useState } from 'react';
 
 import { BUILD_INFO } from '../version';
@@ -16,6 +17,19 @@ type ProviderStatus = {
   };
 };
 
+const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
+
+function providerStatusUrl(): string {
+  const location = globalThis.location;
+  const nativeRuntime = isTauri()
+    || location?.protocol === 'tauri:'
+    || location?.hostname === 'tauri.localhost';
+
+  return nativeRuntime && !import.meta.env.DEV
+    ? `${NATIVE_API_BASE_URL}/api/auth/providers`
+    : '/api/auth/providers';
+}
+
 export function Footer() {
   const [deploymentMode, setDeploymentMode] = useState<DeploymentMode | null>(null);
   const [orcidEnvironment, setOrcidEnvironment] = useState<'sandbox' | 'production' | null>(null);
@@ -23,8 +37,8 @@ export function Footer() {
   useEffect(() => {
     let cancelled = false;
 
-    void fetch('/api/auth/providers', {
-      credentials: 'same-origin',
+    void fetch(providerStatusUrl(), {
+      credentials: 'include',
       headers: { Accept: 'application/json' },
       cache: 'no-store',
     })
