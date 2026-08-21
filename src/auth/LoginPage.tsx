@@ -9,11 +9,10 @@ import {
   type TranslationKey,
 } from '../i18n';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
-import {
-  getAuthProviders,
-  getOrcidAuthUrl,
-} from '../services/authApi';
+import { OrcidEnvironmentBadge } from '../components/OrcidEnvironmentBadge';
+import { getOrcidAuthUrl } from '../services/authApi';
 import { useAuthStore } from '../store/authStore';
+import { useOrcidProvider } from './useOrcidProvider';
 
 interface LoginPageProps {
   onShowRegister: () => void;
@@ -42,14 +41,11 @@ export function LoginPage({
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [orcidEnabled, setOrcidEnabled] = useState(false);
+  const orcidProvider = useOrcidProvider();
   const authErrorCode = new URLSearchParams(window.location.search).get('authError');
 
   useEffect(() => {
     clearError();
-    void getAuthProviders()
-      .then((providers) => setOrcidEnabled(providers.orcid.enabled))
-      .catch(() => setOrcidEnabled(false));
   }, [clearError]);
 
   const handleSubmit = async (
@@ -100,11 +96,12 @@ export function LoginPage({
           <p>{t('auth.login.description')}</p>
         </header>
 
-        {orcidEnabled ? (
+        {orcidProvider?.enabled ? (
           <div className="auth-form">
             <a className="auth-primary-button" href={getOrcidAuthUrl()}>
               {locale === 'hu' ? 'Bejelentkezés ORCID-dal' : locale === 'de' ? 'Mit ORCID anmelden' : 'Sign in with ORCID'}
             </a>
+            <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
             <div className="auth-field-hint">
               {locale === 'hu'
                 ? 'Az ORCID-hitelesítés a Studio-fiókhoz kapcsolt, ellenőrzött ORCID iD-t használja.'

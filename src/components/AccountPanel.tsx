@@ -1,8 +1,10 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { BadgeCheck, LogOut, Save, ShieldCheck, UserRound } from 'lucide-react';
 
+import { useOrcidProvider } from '../auth/useOrcidProvider';
 import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
+import { OrcidEnvironmentBadge } from './OrcidEnvironmentBadge';
 import '../styles/account.css';
 
 const copy = {
@@ -78,6 +80,7 @@ export function AccountPanel() {
   const logout = useAuthStore((state) => state.logout);
   const loading = useAuthStore((state) => state.isLoading);
   const error = useAuthStore((state) => state.error);
+  const orcidProvider = useOrcidProvider();
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState<AccountFormState>({
     fullName: '',
@@ -215,6 +218,9 @@ export function AccountPanel() {
               {user.emailVerified ? labels.verified : labels.unverified}
             </span>
           </div>
+          {orcidProvider?.enabled ? (
+            <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
+          ) : null}
           <div className="account-identities">
             <h3>{labels.connected}</h3>
             {user.identities.length ? (
