@@ -1,6 +1,5 @@
 import {
   BookOpen,
-  Download,
   FileText,
   Fingerprint,
   FolderOpen,
@@ -66,7 +65,6 @@ type StudioMenuView =
   | 'publication'
   | 'signatures'
   | 'history'
-  | 'export'
   | 'tools'
   | 'settings';
 
@@ -135,7 +133,6 @@ export function StudioMenu({
             <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} />
             <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={signaturesLabel} onClick={() => setActiveView('signatures')} />
             <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
-            <MenuButton active={activeView === 'export'} icon={<Download size={18} aria-hidden="true" />} label={t('studio.tools.export')} onClick={() => setActiveView('export')} />
             <MenuButton active={activeView === 'tools'} icon={<Wrench size={18} aria-hidden="true" />} label={t('studio.navigation.tools')} onClick={() => setActiveView('tools')} />
             <MenuButton active={activeView === 'settings'} icon={<Settings2 size={18} aria-hidden="true" />} label={t('studio.navigation.settings')} onClick={() => setActiveView('settings')} />
           </nav>
@@ -149,7 +146,6 @@ export function StudioMenu({
             {activeView === 'publication' ? <PublicationProfilePanel /> : null}
             {activeView === 'signatures' ? <AuthorSignaturePanel /> : null}
             {activeView === 'history' ? <HistoryPanel /> : null}
-            {activeView === 'export' ? <ExportView /> : null}
             {activeView === 'tools' ? <ToolsView /> : null}
             {activeView === 'settings' ? <SettingsView /> : null}
           </div>
@@ -201,14 +197,6 @@ function ManuscriptDataView() {
   return <section className="studio-menu-view"><div className="studio-menu-view-header"><div><h3>{t('studio.manuscript.title')}</h3><p>{t('studio.manuscript.description')}</p></div></div><div className="studio-manuscript-fields"><label><span>{t('manuscript.abstract')}</span><textarea value={manuscript.abstract ?? ''} onChange={(event) => setAbstract(event.target.value)} /></label><KeywordEditor /><ManuscriptLanguageField /></div></section>;
 }
 
-function ExportView() {
-  const { t } = useTranslation();
-  return <section className="studio-menu-view">
-    <div className="studio-menu-view-header"><div><h3>{t('studio.tools.export')}</h3><p>{t('studio.tools.exportDescription')}</p></div></div>
-    <ExportFormatsPanel />
-  </section>;
-}
-
 function ToolsView() {
   const { t, locale } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
@@ -235,6 +223,7 @@ function ToolsView() {
   }
 
   return <section className="studio-menu-view"><div className="studio-menu-view-header"><div><h3>{t('studio.tools.title')}</h3><p>{t('studio.tools.description')}</p></div></div>
+    <ExportFormatsPanel />
     {native ? <div className="studio-tool-card"><div><strong>{labels.localTitle}</strong><p>{labels.localDescription}</p><small>{localPath ?? labels.noFile}</small>{fileMessage ? <p role="status">{fileMessage}</p> : null}</div><div className="studio-tool-actions"><button type="button" className="studio-menu-primary-action" onClick={() => void saveNative(false)}><Save size={16} aria-hidden="true" />{labels.save}</button><button type="button" className="studio-menu-secondary-action" onClick={() => void saveNative(true)}><SaveAll size={16} aria-hidden="true" />{labels.saveAs}</button></div></div> : null}
     <AssetContainerPanel />
     <div className="studio-tool-card"><div><strong>{t('studio.tools.reset')}</strong><p>{t('studio.tools.resetDescription')}</p></div><button type="button" className="studio-menu-secondary-action studio-menu-danger-action" onClick={() => { if (window.confirm(t('studio.tools.confirmReset'))) resetSample(); }}><RotateCcw size={16} aria-hidden="true" />{t('studio.tools.reset')}</button></div>
