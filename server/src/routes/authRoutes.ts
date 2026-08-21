@@ -52,8 +52,13 @@ function readSessionCookie(header: string | undefined): string | undefined {
 
 function readBearerToken(header: string | undefined): string | undefined {
   if (!header) return undefined;
-  const match = /^Bearer\s+(.+)$/i.exec(header.trim());
-  return match?.[1]?.trim() || undefined;
+  const value = header.trim();
+  const prefix = 'bearer ';
+  if (value.length <= prefix.length || value.slice(0, prefix.length).toLowerCase() !== prefix) {
+    return undefined;
+  }
+  const token = value.slice(prefix.length).trim();
+  return token || undefined;
 }
 
 function readSessionToken(request: Request): string | undefined {
