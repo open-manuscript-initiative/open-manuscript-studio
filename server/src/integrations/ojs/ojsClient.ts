@@ -72,15 +72,52 @@ function isRedirect(status: number): boolean {
   return [301, 302, 303, 307, 308].includes(status);
 }
 
+function canonicalizeRequestUrl(candidate: URL, trustedOrigin: string): URL {
+  if (candidate.origin !== trustedOrigin) {
+    throw new Error('OJS request URL escaped the registered installation origin.');
+  }
+  if (candidate.username || candidate.password) {
+    throw new Error('OJS request URL must not contain embedded credentials.');
+  }
+  if (candidate.search) {
+    throw new Error('OJS integration endpoints must not redirect to query-string URLs.');
+  }
+  if (candidate.hash) {
+    throw new Error('OJS integration endpoints must not contain URL fragments.');
+  }
+
+  const trusted = new URL(trustedOrigin);
+  trusted.pathname = candidate.pathname
+    .split('/')
+    .map((segment) => {
+      if (!segment) return '';
+
+      let decoded: string;
+      try {
+        decoded = decodeURIComponent(segment);
+      } catch {
+        throw new Error('OJS request URL contains invalid path encoding.');
+      }
+
+      if (decoded === '.' || decoded === '..') {
+        throw new Error('OJS request URL contains a path traversal segment.');
+      }
+
+      return encodeURIComponent(decoded);
+    })
+    .join('/');
+  return trusted;
+}
+
 async function fetchWithExplicitRedirects(
   operation: string,
   initialUrl: URL,
   authorization: string,
+  trustedOrigin: string,
   accept = 'application/json',
 ): Promise<Response> {
-  const originalOrigin = initialUrl.origin;
   const visited = new Set<string>();
-  let currentUrl = new URL(initialUrl.toString());
+  let currentUrl = canonicalizeRequestUrl(initialUrl, trustedOrigin);
 
   for (let redirectCount = 0; redirectCount <= 3; redirectCount += 1) {
     const currentKey = currentUrl.toString();
@@ -122,13 +159,8 @@ async function fetchWithExplicitRedirects(
       );
     }
 
-    const nextUrl = new URL(location, currentUrl);
-    if (nextUrl.origin !== originalOrigin) {
-      throw new Error(
-        `OJS ${operation} attempted a cross-origin redirect from ${currentKey} to ${nextUrl.toString()}.`,
-      );
-    }
-    currentUrl = nextUrl;
+    const redirectTarget = new URL(location, currentUrl);
+    currentUrl = canonicalizeRequestUrl(redirectTarget, trustedOrigin);
   }
 
   throw new Error(
@@ -140,8 +172,14 @@ async function readJson(
   operation: string,
   url: URL,
   authorization: string,
+  trustedOrigin: string,
 ): Promise<OjsJsonResponse> {
-  const response = await fetchWithExplicitRedirects(operation, url, authorization);
+  const response = await fetchWithExplicitRedirects(
+    operation,
+    url,
+    authorization,
+    trustedOrigin,
+  );
   const text = await response.text();
   let data: unknown;
   try {
@@ -175,6 +213,7 @@ async function loadSourceDocument(
   files: OjsFileDescriptor[],
   filesUrl: URL,
   authorization: string,
+  trustedOrigin: string,
 ): Promise<OjsSourceDocument | undefined> {
   const candidate = [...files]
     .filter(isArticleTextSubmissionFile)
@@ -194,6 +233,7 @@ async function loadSourceDocument(
     `file ${candidate.externalId}`,
     contentUrl,
     authorization,
+    trustedOrigin,
     candidate.mediaType || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   );
 
@@ -258,13 +298,21 @@ export async function loadOjsLaunchData(
   claims: LaunchClaims,
   payload: string,
   signature: string,
+  installationBaseUrl: string,
 ): Promise<OjsLaunchData> {
   requireScope(claims, 'metadata.read');
   requireScope(claims, 'files.read');
 
+  let trustedOrigin: string;
+  try {
+    trustedOrigin = new URL(installationBaseUrl).origin;
+  } catch {
+    throw new Error('The registered OJS installation URL is invalid.');
+  }
+
   const authorization = `OMI ${payload}.${signature}`;
   const submissionResult = await readJson(
-    'submission', apiUrl(claims, 'submission'), authorization,
+    'submission', apiUrl(claims, 'submission'), authorization, trustedOrigin,
   );
   const filesUrl = siblingOperationUrl(
     submissionResult.finalUrl, 'submission', 'files',
@@ -276,9 +324,9 @@ export async function loadOjsLaunchData(
   const hasContributorScope = claims.scope?.includes('contributors.read') ?? false;
   const [contributorsResult, filesResult] = await Promise.all([
     hasContributorScope
-      ? readJson('contributors', contributorsUrl, authorization)
+      ? readJson('contributors', contributorsUrl, authorization, trustedOrigin)
       : Promise.resolve<OjsJsonResponse | null>(null),
-    readJson('files', filesUrl, authorization),
+    readJson('files', filesUrl, authorization, trustedOrigin),
   ]);
 
   const contributors = contributorsResult && Array.isArray(contributorsResult.data.contributors)
@@ -292,6 +340,7 @@ export async function loadOjsLaunchData(
     files as OjsFileDescriptor[],
     filesResult.finalUrl,
     authorization,
+    trustedOrigin,
   );
 
   const result: OjsLaunchData = {
