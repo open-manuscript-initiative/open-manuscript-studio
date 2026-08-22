@@ -8,6 +8,7 @@ import {
   type UserId,
 } from '../model/user';
 import {
+  consumeNativeOrcidHandoffFromLocation,
   getCurrentAccount,
   loginAccount,
   logoutAccount,
@@ -70,7 +71,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const user = await getCurrentAccount();
+      const nativeHandoffUser = await consumeNativeOrcidHandoffFromLocation();
+      const user = nativeHandoffUser ?? await getCurrentAccount();
 
       if (!user) {
         set({
