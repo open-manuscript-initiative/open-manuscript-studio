@@ -6,6 +6,7 @@ const ALLOWED_NATIVE_RETURN_ORIGINS = new Set([
   'http://tauri.localhost',
   'https://tauri.localhost',
   'openmanuscript://auth',
+  'https://app.openmanuscript.org/auth/orcid',
 ]);
 
 export interface OrcidStateReturnMetadata {
