@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 
 import { App } from './App';
 import { initializeRevisionIntegrity } from './app/revisionIntegrity';
+import { initializeFormattingToolbarPreference } from './editor/formattingToolbarPreference';
 import { I18nProvider } from './i18n';
 
 import './styles/global.css';
@@ -39,8 +40,10 @@ import './styles/academic-shell.css';
 import './styles/mobile-language-switcher.css';
 import './styles/desktop-fullscreen-panels.css';
 import './styles/desktop-document-tabs.css';
+import './styles/formatting-toolbar-preference.css';
 
 initializeRevisionIntegrity();
+initializeFormattingToolbarPreference();
 
 ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
