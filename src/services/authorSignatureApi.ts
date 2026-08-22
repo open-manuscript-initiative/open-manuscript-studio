@@ -1,14 +1,29 @@
 import { createManuscriptStateDigest } from '../model/stateDigest';
-import { getExternalIdentifierValue, getPreferredNameForm } from '../model/identity';
+import { getExternalIdentifierValue } from '../model/identity';
 import type { OmiManuscript } from '../types/omi';
+
+export interface OmiCredentialIssuerAttestation {
+  model: 'OMI-SIGNING-CREDENTIAL-ATTESTATION';
+  version: '0.1.0';
+  protected: string;
+  payload: string;
+  signature: string;
+  issuerKey: {
+    issuer: string;
+    keyId: string;
+    algorithm: 'Ed25519';
+    publicKeySpki: string;
+    fingerprint: string;
+  };
+}
 
 export interface OmiPublicationSignature {
   model: 'OMI-PUBLICATION-SIGNATURE';
-  version: '0.1.0';
+  version: '0.1.0' | '0.2.0';
   signatureId: string;
   payload: {
     model: 'OMI-PUBLICATION-SIGNATURE';
-    version: '0.1.0';
+    version: '0.1.0' | '0.2.0';
     manuscriptId: string;
     revisionId: string;
     stateDigest: {
@@ -25,12 +40,18 @@ export interface OmiPublicationSignature {
       subject: string;
       orcid: string;
     };
+    credential?: {
+      credentialId: string;
+      algorithm: 'ES256';
+      issuerAttestationKeyId: string;
+    };
     signedAt: string;
   };
   credential: {
     credentialId: string;
     algorithm: 'ES256';
     publicKeySpki: string;
+    issuerAttestation?: OmiCredentialIssuerAttestation;
   };
   evidence: {
     format: 'webauthn-assertion';
@@ -46,7 +67,7 @@ export interface OmiPublicationSignature {
     provider: 'ORCID';
     issuer: string;
     subject: string;
-    verification: 'server-authenticated-session';
+    verification: 'server-authenticated-session' | 'issuer-attested-orcid-session';
   };
 }
 
@@ -58,7 +79,11 @@ export interface AuthorSignatureStatus {
     orcid: string;
     displayName: string;
   };
-  credentials: Array<{ credentialId: string; algorithm: string }>;
+  credentials: Array<{
+    credentialId: string;
+    algorithm: string;
+    issuerAttestation?: OmiCredentialIssuerAttestation;
+  }>;
 }
 
 const SIGNATURE_STORAGE_PREFIX = 'omi.publication-signatures.v1:';
@@ -134,13 +159,31 @@ export async function signCurrentManuscriptRevision(
   const author = manuscript.contributions
     .filter((contribution) => contribution.targetId === manuscript.id && contribution.roles.includes('author'))
     .map((contribution) => manuscript.agents.find((agent) => agent.id === contribution.agentId))
-    .find((agent) => agent && getExternalIdentifierValue(agent, 'orcid') === status.identity.orcid);
+    .find((agent) => agent && normalizeOrcid(getExternalIdentifierValue(agent, 'orcid') ?? '') === normalizeOrcid(status.identity.orcid));
   if (!author) {
     throw new Error('The authenticated ORCID iD is not attached to an author of this manuscript.');
   }
 
-  const digest = createManuscriptStateDigest(head.snapshot.state, head.createdAt);
-  const signerName = getPreferredNameForm(author)?.value || status.identity.displayName;
+  const signingCredential = status.credentials[0];
+  if (!signingCredential) {
+    throw new Error('Register a signing credential before signing.');
+  }
+
+  const localDigest = createManuscriptStateDigest(head.snapshot.state, head.createdAt);
+  const committed = await requestJson<{ stateDigest: string }>('/api/signatures/revisions/commit', {
+    method: 'POST',
+    body: JSON.stringify({
+      manuscriptId: manuscript.id,
+      revisionId: head.id,
+      snapshotCreatedAt: head.createdAt,
+      snapshotState: head.snapshot.state,
+      signerAgentId: author.id,
+    }),
+  });
+  if (committed.stateDigest.toLowerCase() !== localDigest.value.toLowerCase()) {
+    throw new Error('The server committed a different manuscript state digest.');
+  }
+
   const start = await requestJson<{
     challenge: string;
     rpId: string;
@@ -152,9 +195,8 @@ export async function signCurrentManuscriptRevision(
     body: JSON.stringify({
       manuscriptId: manuscript.id,
       revisionId: head.id,
-      stateDigest: digest.value,
       signerAgentId: author.id,
-      signerName,
+      credentialId: signingCredential.credentialId,
     }),
   });
 
@@ -208,6 +250,24 @@ export function savePublicationSignature(signature: OmiPublicationSignature): vo
   );
   signatures.push(signature);
   localStorage.setItem(`${SIGNATURE_STORAGE_PREFIX}${manuscriptId}`, JSON.stringify(signatures));
+}
+
+export function importPublicationSignatures(
+  manuscriptId: string,
+  signatures: OmiPublicationSignature[] | undefined,
+): void {
+  if (!Array.isArray(signatures) || signatures.length === 0) return;
+  const current = getPublicationSignatures(manuscriptId);
+  const byId = new Map(current.map((signature) => [signature.signatureId, signature]));
+  for (const signature of signatures) {
+    if (signature?.payload?.manuscriptId === manuscriptId && signature.signatureId) {
+      byId.set(signature.signatureId, signature);
+    }
+  }
+  localStorage.setItem(
+    `${SIGNATURE_STORAGE_PREFIX}${manuscriptId}`,
+    JSON.stringify([...byId.values()]),
+  );
 }
 
 function ensureWebAuthn(): void {
@@ -272,4 +332,8 @@ function copyToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   const copy = new Uint8Array(bytes.byteLength);
   copy.set(bytes);
   return copy.buffer;
+}
+
+function normalizeOrcid(value: string): string {
+  return value.trim().replace(/^https?:\/\/orcid\.org\//i, '').toUpperCase();
 }
