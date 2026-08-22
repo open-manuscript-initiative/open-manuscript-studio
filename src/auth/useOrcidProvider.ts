@@ -5,18 +5,18 @@ import {
   type AuthProviders,
 } from '../services/authApi';
 
-export function useOrcidProvider(): AuthProviders['orcid'] | null {
-  const [provider, setProvider] = useState<AuthProviders['orcid'] | null>(null);
+export function useAuthProviders(): AuthProviders | null {
+  const [providers, setProviders] = useState<AuthProviders | null>(null);
 
   useEffect(() => {
     let active = true;
 
     void getAuthProviders()
-      .then((providers) => {
-        if (active) setProvider(providers.orcid);
+      .then((value) => {
+        if (active) setProviders(value);
       })
       .catch(() => {
-        if (active) setProvider(null);
+        if (active) setProviders(null);
       });
 
     return () => {
@@ -24,5 +24,9 @@ export function useOrcidProvider(): AuthProviders['orcid'] | null {
     };
   }, []);
 
-  return provider;
+  return providers;
+}
+
+export function useOrcidProvider(): AuthProviders['orcid'] | null {
+  return useAuthProviders()?.orcid ?? null;
 }
