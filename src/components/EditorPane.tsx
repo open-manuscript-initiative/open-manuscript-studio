@@ -20,7 +20,7 @@ import {
 } from '../model/crossReferences';
 import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
 import { isVisualBlock } from '../model/visualBlocks';
-import { BlockEditor } from './BlockEditor';
+import { LazyBlockEditor } from './LazyBlockEditor';
 import { VisualBlockEditor } from './VisualBlockEditor';
 
 type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
@@ -37,6 +37,8 @@ interface AutoGrowHeadingProps {
   placeholder: string;
   onChange: (value: string) => void;
 }
+
+const LARGE_MANUSCRIPT_BLOCK_THRESHOLD = 180;
 
 function AutoGrowHeading({
   id,
@@ -125,6 +127,11 @@ export function EditorPane({ ojsContributors = [] }: EditorPaneProps) {
   const manuscript = useStudioStore((state) => state.manuscript);
   const setTitle = useStudioStore((state) => state.setTitle);
   const updateBlock = useStudioStore((state) => state.updateBlock);
+  const blockCount = manuscript.sections.reduce(
+    (total, section) => total + section.blocks.length,
+    0,
+  );
+  const deferOffscreenEditors = blockCount > LARGE_MANUSCRIPT_BLOCK_THRESHOLD;
 
   const crossReferenceTargets = collectCrossReferenceTargets(manuscript);
   const targetMap = new Map(
@@ -250,12 +257,13 @@ export function EditorPane({ ojsContributors = [] }: EditorPaneProps) {
                             />
                           </div>
                         ) : (
-                          <BlockEditor
+                          <LazyBlockEditor
                             key={block.id}
                             blockId={block.id}
                             blockType={block.type}
                             content={block.content}
                             onUpdate={updateBlock}
+                            lazy={deferOffscreenEditors}
                           />
                         );
                       })}
