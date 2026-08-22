@@ -141,6 +141,54 @@ async function testDeepL(userId: string): Promise<IntegrationConnectionStatus> {
   }
 }
 
+function readConfigRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+async function testAiProvider(userId: string): Promise<IntegrationConnectionStatus> {
+  const [userConnection, serverConfig] = await Promise.all([
+    prisma.userIntegration.findFirst({
+      where: { userId, providerId: 'ai-provider', enabled: true },
+      orderBy: { updatedAt: 'desc' },
+    }),
+    prisma.integrationProviderConfig.findUnique({ where: { providerId: 'ai-provider' } }),
+  ]);
+
+  const encryptedSecret = userConnection?.encryptedSecret ?? serverConfig?.encryptedSecret;
+  const config = readConfigRecord(userConnection?.config ?? serverConfig?.config);
+  const endpoint = typeof config?.endpoint === 'string' ? config.endpoint.trim() : '';
+  const model = typeof config?.model === 'string' ? config.model.trim() : '';
+
+  if (!encryptedSecret || !endpoint || !model) {
+    return {
+      configured: false,
+      healthy: false,
+      message: 'AI provider requires an API secret, an HTTPS chat-completions endpoint, and a model name.',
+    };
+  }
+
+  try {
+    const url = new URL(endpoint);
+    if (url.protocol !== 'https:' || url.username || url.password) {
+      throw new Error('AI provider endpoint must be a credential-free HTTPS URL.');
+    }
+    decryptSecret(parseEncryptedSecret(encryptedSecret));
+    return {
+      configured: true,
+      healthy: true,
+      message: `AI provider configuration is ready for model ${model}.`,
+    };
+  } catch (error) {
+    return {
+      configured: true,
+      healthy: false,
+      message: error instanceof Error ? error.message : 'AI provider configuration is invalid.',
+    };
+  }
+}
+
 async function testPublishingProvider(
   providerId: 'ojs' | 'omp',
   userId: string,
@@ -167,6 +215,8 @@ export async function testIntegrationProvider(
   switch (providerId) {
     case 'deepl':
       return testDeepL(userId);
+    case 'ai-provider':
+      return testAiProvider(userId);
     case 'orcid': {
       const identity = await prisma.userIdentity.findFirst({
         where: { userId, provider: 'ORCID' }, select: { id: true },
