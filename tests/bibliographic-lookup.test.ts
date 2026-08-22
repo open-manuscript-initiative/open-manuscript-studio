@@ -13,6 +13,13 @@ import {
   parseMtmtResponse,
   parseOpenAlexResponse,
 } from '../src/services/bibliographicLookup.ts';
+import {
+  ACADEMIA_WEB_PROVIDER,
+  buildWebBibliographicSearchUrl,
+  createWebBibliographicProvider,
+  normalizeWebBibliographicProvider,
+  validateWebBibliographicProviderDraft,
+} from '../src/services/webBibliographicProviders.ts';
 
 
 test('normalizes DOI input from common DOI URL forms', () => {
@@ -169,4 +176,86 @@ test('deduplicates the same DOI returned by multiple providers', () => {
   const merged = deduplicateCandidates([...crossref, ...datacite]);
   assert.equal(merged.length, 1);
   assert.deepEqual(new Set(merged[0]?.providers), new Set(['crossref', 'datacite']));
+});
+
+
+test('validates signed-in web providers without accepting credentials or insecure URLs', () => {
+  assert.equal(
+    validateWebBibliographicProviderDraft({
+      name: 'Example Library',
+      loginUrl: 'https://example.org/login',
+      searchUrlTemplate: 'https://example.org/search?q={query}',
+      logoutUrl: 'https://example.org/logout',
+    }),
+    undefined,
+  );
+
+  assert.equal(
+    validateWebBibliographicProviderDraft({
+      name: 'Example Library',
+      loginUrl: 'http://example.org/login',
+      searchUrlTemplate: 'https://example.org/search?q={query}',
+    }),
+    'login-url',
+  );
+
+  assert.equal(
+    validateWebBibliographicProviderDraft({
+      name: 'Example Library',
+      loginUrl: 'https://user:secret@example.org/login',
+      searchUrlTemplate: 'https://example.org/search?q={query}',
+    }),
+    'login-url',
+  );
+
+  assert.equal(
+    validateWebBibliographicProviderDraft({
+      name: 'Example Library',
+      loginUrl: 'https://example.org/login',
+      searchUrlTemplate: 'https://example.org/search',
+    }),
+    'search-template',
+  );
+});
+
+
+test('builds an encoded Academia.edu signed-in search from the preset', () => {
+  const url = new URL(
+    buildWebBibliographicSearchUrl(
+      ACADEMIA_WEB_PROVIDER,
+      'open manuscript infrastructure',
+    ),
+  );
+
+  assert.equal(url.hostname, 'www.academia.edu');
+  assert.equal(url.pathname, '/search');
+  assert.equal(url.searchParams.get('q'), 'open manuscript infrastructure');
+  assert.equal(ACADEMIA_WEB_PROVIDER.loginUrl, 'https://www.academia.edu/login');
+  assert.equal(ACADEMIA_WEB_PROVIDER.logoutUrl, 'https://www.academia.edu/logout');
+});
+
+
+test('stores only provider configuration and creates unique custom provider ids', () => {
+  const provider = createWebBibliographicProvider(
+    {
+      name: 'Example Library',
+      loginUrl: 'https://example.org/login',
+      searchUrlTemplate: 'https://example.org/search?q={query}',
+      logoutUrl: 'https://example.org/logout',
+    },
+    ['example-library'],
+  );
+
+  assert.equal(provider.id, 'example-library-2');
+  assert.deepEqual(
+    Object.keys(provider).sort(),
+    ['enabled', 'id', 'loginUrl', 'logoutUrl', 'name', 'searchUrlTemplate'].sort(),
+  );
+  assert.equal(
+    normalizeWebBibliographicProvider({
+      ...provider,
+      loginUrl: 'javascript:alert(1)',
+    }),
+    undefined,
+  );
 });

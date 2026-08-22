@@ -19,7 +19,8 @@
 .omi-lookup-settings p,
 .omi-lookup-result p,
 .omi-lookup-empty,
-.omi-lookup-issues p {
+.omi-lookup-issues p,
+.omi-web-provider-heading p {
   margin: 0.35rem 0 0;
 }
 
@@ -79,6 +80,10 @@
   cursor: pointer;
 }
 
+.omi-provider-toggle-web {
+  border-style: dashed;
+}
+
 .omi-provider-toggle small {
   opacity: 0.65;
   font-size: 0.72rem;
@@ -104,12 +109,14 @@
   margin-top: 0.8rem;
 }
 
-.omi-lookup-settings-grid label {
+.omi-lookup-settings-grid label,
+.omi-web-provider-form label {
   display: grid;
   gap: 0.35rem;
 }
 
-.omi-lookup-settings-grid input {
+.omi-lookup-settings-grid input,
+.omi-web-provider-form input {
   width: 100%;
   box-sizing: border-box;
   padding: 0.65rem 0.7rem;
@@ -121,13 +128,130 @@
 }
 
 .omi-lookup-settings-grid small,
-.omi-lookup-privacy-note {
+.omi-lookup-privacy-note,
+.omi-web-provider-form small {
   opacity: 0.72;
   line-height: 1.4;
 }
 
 .omi-lookup-privacy-note {
   font-size: 0.8rem;
+}
+
+.omi-web-provider-section {
+  display: grid;
+  gap: 0.8rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--omi-border, #d8dde5);
+}
+
+.omi-web-provider-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.omi-web-provider-heading h5 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.omi-web-provider-heading p {
+  max-width: 62rem;
+  line-height: 1.45;
+  opacity: 0.8;
+}
+
+.omi-web-provider-add-actions,
+.omi-web-provider-card-actions,
+.omi-web-provider-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.omi-web-provider-add-actions {
+  justify-content: flex-end;
+}
+
+.omi-web-provider-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid var(--omi-border, #d8dde5);
+  border-radius: 0.7rem;
+  background: var(--omi-surface, #fff);
+}
+
+.omi-web-provider-form-wide,
+.omi-web-provider-form-actions {
+  grid-column: 1 / -1;
+}
+
+.omi-web-provider-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.omi-web-provider-card {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--omi-border, #d8dde5);
+  border-radius: 0.7rem;
+  background: var(--omi-surface, #fff);
+}
+
+.omi-web-provider-card-main {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.omi-web-provider-card-main label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.omi-web-provider-card-main small {
+  padding-left: 1.55rem;
+  overflow-wrap: anywhere;
+  opacity: 0.68;
+}
+
+.omi-web-provider-card-actions {
+  justify-content: flex-end;
+}
+
+.omi-web-provider-card-actions button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.omi-web-provider-privacy-note {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.6rem;
+  background: var(--omi-surface, #fff);
+}
+
+.omi-web-provider-notice {
+  margin: 0;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--omi-border, #d8dde5);
+  border-radius: 0.6rem;
+  background: var(--omi-surface, #fff);
+  line-height: 1.4;
+}
+
+.omi-web-provider-notice-error {
+  font-weight: 600;
 }
 
 .omi-lookup-issues {
@@ -201,16 +325,44 @@
   opacity: 0.6;
 }
 
+@media (max-width: 900px) {
+  .omi-web-provider-heading,
+  .omi-web-provider-card {
+    grid-template-columns: 1fr;
+  }
+
+  .omi-web-provider-heading {
+    display: grid;
+  }
+
+  .omi-web-provider-add-actions,
+  .omi-web-provider-card-actions {
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 760px) {
   .omi-lookup-query-row,
   .omi-lookup-settings-grid,
+  .omi-web-provider-form,
   .omi-lookup-result {
     grid-template-columns: 1fr;
+  }
+
+  .omi-web-provider-form-wide,
+  .omi-web-provider-form-actions {
+    grid-column: auto;
   }
 
   .omi-lookup-query-row > button,
   .omi-lookup-result > button {
     justify-self: stretch;
+    justify-content: center;
+  }
+
+  .omi-web-provider-card-actions button:not(:last-child),
+  .omi-web-provider-add-actions button {
+    flex: 1 1 12rem;
     justify-content: center;
   }
 }
