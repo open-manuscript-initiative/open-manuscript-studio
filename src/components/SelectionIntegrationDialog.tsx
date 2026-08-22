@@ -47,6 +47,10 @@ export function SelectionIntegrationDialog({
   onClose,
 }: SelectionIntegrationDialogProps) {
   const selection = useMemo(() => collectSelectedTextParts(editor), [editor, mode]);
+  const wholeBlock = useMemo(() => collectWholeBlockTextParts(editor), [editor, mode]);
+  const [translationScope, setTranslationScope] = useState<'selection' | 'block'>(
+    selection.length ? 'selection' : 'block',
+  );
   const [targetLanguage, setTargetLanguage] = useState('EN');
   const [agentId, setAgentId] = useState<BuiltInAgentId>('language-editor');
   const [busy, setBusy] = useState(false);
@@ -54,11 +58,15 @@ export function SelectionIntegrationDialog({
   const [translated, setTranslated] = useState<TranslationSegment[]>([]);
   const [suggestion, setSuggestion] = useState('');
 
+  const activeParts = translationScope === 'selection' ? selection : wholeBlock;
   const selectedText = selection.map((part) => part.text).join('');
+  const translationText = activeParts.map((part) => part.text).join('');
 
-  async function translateSelection(): Promise<void> {
-    if (!selection.length) {
-      setError('Select text before using DeepL.');
+  async function translateText(): Promise<void> {
+    if (!activeParts.length) {
+      setError(translationScope === 'selection'
+        ? 'Select text before using DeepL.'
+        : 'This block contains no translatable text.');
       return;
     }
     setBusy(true);
@@ -68,8 +76,8 @@ export function SelectionIntegrationDialog({
       const result = await translateWithDeepL({
         sourceLanguage,
         targetLanguage,
-        scope: { kind: 'selection', id: blockId },
-        segments: selection.map(({ id, text }) => ({ id, text, kind: 'text' })),
+        scope: { kind: translationScope, id: blockId },
+        segments: activeParts.map(({ id, text }) => ({ id, text, kind: 'text' })),
       });
       setTranslated(result.segments);
     } catch (reason) {
@@ -80,10 +88,10 @@ export function SelectionIntegrationDialog({
   }
 
   function applyTranslation(): void {
-    if (!translated.length || translated.length !== selection.length) return;
+    if (!translated.length || translated.length !== activeParts.length) return;
     const translatedById = new Map(translated.map((segment) => [segment.id, segment.text]));
     let transaction = editor.state.tr;
-    for (const part of [...selection].sort((a, b) => b.from - a.from)) {
+    for (const part of [...activeParts].sort((a, b) => b.from - a.from)) {
       const nextText = translatedById.get(part.id);
       if (nextText === undefined) continue;
       transaction = transaction.replaceWith(
@@ -133,19 +141,20 @@ export function SelectionIntegrationDialog({
   }
 
   return (
-    <div className="omi-selection-integration-dialog" role="dialog" aria-modal="false" aria-label={mode === 'translate' ? 'Translate selected text' : 'AI suggestion for selected text'}>
+    <div className="omi-selection-integration-dialog" role="dialog" aria-modal="false" aria-label={mode === 'translate' ? 'Translate manuscript text' : 'AI suggestion for selected text'}>
       <header>
-        <div>{mode === 'translate' ? <Languages size={17} aria-hidden="true" /> : <Bot size={17} aria-hidden="true" />}<strong>{mode === 'translate' ? 'Translate selection' : 'Agent suggestion'}</strong></div>
+        <div>{mode === 'translate' ? <Languages size={17} aria-hidden="true" /> : <Bot size={17} aria-hidden="true" />}<strong>{mode === 'translate' ? 'DeepL translation' : 'Agent suggestion'}</strong></div>
         <button type="button" className="omi-selection-integration-close" onClick={onClose} aria-label="Close"><X size={16} aria-hidden="true" /></button>
       </header>
 
-      <p className="omi-selection-integration-source">{selectedText || 'No text selected.'}</p>
+      <p className="omi-selection-integration-source">{mode === 'translate' ? (translationText || 'No translatable text.') : (selectedText || 'No text selected.')}</p>
 
       {mode === 'translate' ? (
         <>
+          <label><span>Translate</span><select value={translationScope} onChange={(event) => { setTranslationScope(event.target.value as 'selection' | 'block'); setTranslated([]); setError(''); }}><option value="selection" disabled={!selection.length}>Selected text</option><option value="block">Whole block</option></select></label>
           <label><span>Target language</span><select value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)}>{LANGUAGES.map(([value, label]) => <option value={value} key={value}>{label} ({value})</option>)}</select></label>
           <div className="omi-selection-integration-actions">
-            <button type="button" className="studio-menu-primary-action" disabled={busy || !selection.length} onClick={() => void translateSelection()}>{busy ? 'Translating…' : 'Translate'}</button>
+            <button type="button" className="studio-menu-primary-action" disabled={busy || !activeParts.length} onClick={() => void translateText()}>{busy ? 'Translating…' : 'Translate'}</button>
             <button type="button" className="studio-menu-secondary-action" disabled={busy || !translated.length} onClick={applyTranslation}>Apply translation</button>
           </div>
           {translated.length ? <div className="omi-selection-integration-result">{translated.map((segment) => <span key={segment.id}>{segment.text}</span>)}</div> : null}
@@ -162,7 +171,7 @@ export function SelectionIntegrationDialog({
       )}
 
       {error ? <p className="omi-integration-error" role="alert">{error}</p> : null}
-      <small>Only the selected text is sent externally. Citation, note and cross-reference nodes remain outside the request.</small>
+      <small>Only plain manuscript text is sent externally. Inline formatting is preserved; citation, note and cross-reference nodes and code marks remain outside translation requests.</small>
     </div>
   );
 }
@@ -170,6 +179,19 @@ export function SelectionIntegrationDialog({
 function collectSelectedTextParts(editor: Editor): SelectedTextPart[] {
   const { from, to } = editor.state.selection;
   if (from === to) return [];
+  return collectTextParts(editor, from, to, 'selection');
+}
+
+function collectWholeBlockTextParts(editor: Editor): SelectedTextPart[] {
+  return collectTextParts(editor, 0, editor.state.doc.content.size, 'block');
+}
+
+function collectTextParts(
+  editor: Editor,
+  from: number,
+  to: number,
+  prefix: string,
+): SelectedTextPart[] {
   const parts: SelectedTextPart[] = [];
   editor.state.doc.nodesBetween(from, to, (node, position) => {
     if (!node.isText || !node.text) return;
@@ -180,7 +202,7 @@ function collectSelectedTextParts(editor: Editor): SelectedTextPart[] {
     const text = node.text.slice(start - position, end - position);
     if (!text.trim()) return;
     parts.push({
-      id: `selection-${parts.length}`,
+      id: `${prefix}-${parts.length}`,
       text,
       from: start,
       to: end,
