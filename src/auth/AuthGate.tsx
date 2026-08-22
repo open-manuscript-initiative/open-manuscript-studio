@@ -3,6 +3,7 @@ import {
   useEffect,
 } from 'react';
 
+import { listenForNativeOrcidHandoff } from '../services/authApi';
 import {
   getCurrentUser,
   useAuthStore,
@@ -24,10 +25,31 @@ export function AuthGate({
   const initializeSession = useAuthStore(
     (state) => state.initializeSession,
   );
+  const completeNativeOrcidHandoff = useAuthStore(
+    (state) => state.completeNativeOrcidHandoff,
+  );
 
   useEffect(() => {
+    let active = true;
+    let unlisten: (() => void) | undefined;
+
+    void listenForNativeOrcidHandoff((url) => {
+      void completeNativeOrcidHandoff(url);
+    }).then((dispose) => {
+      if (active) {
+        unlisten = dispose;
+      } else {
+        dispose();
+      }
+    });
+
     void initializeSession();
-  }, [initializeSession]);
+
+    return () => {
+      active = false;
+      unlisten?.();
+    };
+  }, [completeNativeOrcidHandoff, initializeSession]);
 
   if (!isInitialized) {
     return (
