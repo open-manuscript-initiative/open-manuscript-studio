@@ -35,9 +35,30 @@ export function AuthGate({
     let active = true;
     let unlisten: (() => void) | undefined;
 
+    const exposeNativeAuthError = (url: string) => {
+      try {
+        const parsed = new URL(url);
+        const params = new URLSearchParams(parsed.hash.replace(/^#/, ''));
+        const authError = params.get('authError');
+        if (!authError) return;
+
+        const currentHash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        currentHash.set('authError', authError);
+        const nextHash = currentHash.toString();
+        window.history.replaceState(
+          window.history.state,
+          '',
+          `${window.location.pathname}${window.location.search}${nextHash ? `#${nextHash}` : ''}`,
+        );
+      } catch {
+        // Ignore malformed or unrelated native URLs.
+      }
+    };
+
     const handleNativeUrl = (url: string) => {
       if (!active || handledNativeUrls.current.has(url)) return;
       handledNativeUrls.current.add(url);
+      exposeNativeAuthError(url);
       void completeNativeOrcidHandoff(url);
     };
 
