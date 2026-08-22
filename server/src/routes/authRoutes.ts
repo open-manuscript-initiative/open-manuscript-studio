@@ -11,6 +11,10 @@ import {
   type UpdateUserInput,
 } from '../services/authService.js';
 import { getAssignmentInvitation } from '../services/assignmentInvitationService.js';
+import {
+  requestPasswordReset,
+  resetPasswordWithToken,
+} from '../services/passwordResetService.js';
 
 export const authRouter = Router();
 
@@ -28,6 +32,15 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(20).max(512),
+  password: z.string().min(8).max(512),
 });
 
 const updateProfileSchema = z.object({
@@ -137,6 +150,35 @@ authRouter.post('/login', async (request, response) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Login failed.';
     response.status(401).json({ error: { code: 'LOGIN_FAILED', message } });
+  }
+});
+
+authRouter.post('/password/forgot', async (request, response) => {
+  try {
+    const input = forgotPasswordSchema.parse(request.body);
+    try {
+      await requestPasswordReset(input.email);
+    } catch (error) {
+      // The public response deliberately does not reveal account existence or
+      // mail-delivery state. Operational failures stay in the server log.
+      console.error('[OMI password reset] request failed', error);
+    }
+    response.status(202).json({ ok: true });
+  } catch {
+    response.status(400).json({
+      error: { code: 'INVALID_EMAIL', message: 'Invalid e-mail address.' },
+    });
+  }
+});
+
+authRouter.post('/password/reset', async (request, response) => {
+  try {
+    const input = resetPasswordSchema.parse(request.body);
+    await resetPasswordWithToken(input.token, input.password);
+    response.status(200).json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Password reset failed.';
+    response.status(400).json({ error: { code: 'PASSWORD_RESET_FAILED', message } });
   }
 });
 
