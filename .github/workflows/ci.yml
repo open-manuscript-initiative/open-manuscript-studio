@@ -93,6 +93,49 @@ jobs:
       url: https://studio.openmanuscript.org
 
     steps:
+      - name: Set up Java for Android app-link certificate
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Resolve Android signing certificate fingerprint
+        id: android_app_link
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "Required GitHub Actions secret is missing: $name" >&2
+              exit 1
+            fi
+          done
+
+          keystore="$RUNNER_TEMP/omi-android-release.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$keystore"
+          chmod 600 "$keystore"
+
+          fingerprint="$(
+            keytool -exportcert \
+              -alias "$ANDROID_KEY_ALIAS" \
+              -keystore "$keystore" \
+              -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+              -rfc |
+            openssl x509 -noout -fingerprint -sha256 |
+            cut -d= -f2
+          )"
+
+          if [[ ! "$fingerprint" =~ ^([0-9A-F]{2}:){31}[0-9A-F]{2}$ ]]; then
+            echo 'Could not resolve the Android release certificate SHA-256 fingerprint.' >&2
+            exit 1
+          fi
+
+          echo "fingerprint=$fingerprint" >> "$GITHUB_OUTPUT"
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.2
         with:
@@ -139,6 +182,29 @@ jobs:
               dist/ \
               /var/www/vhosts/openmanuscript.org/studio/httpdocs/
 
+            APP_LINK_ROOT="/var/www/vhosts/openmanuscript.org/app/httpdocs"
+            if [[ ! -d "$APP_LINK_ROOT" ]]; then
+              echo "The app.openmanuscript.org document root does not exist: $APP_LINK_ROOT" >&2
+              exit 1
+            fi
+
+            rsync -a app-link-site/ "$APP_LINK_ROOT/"
+            install -d "$APP_LINK_ROOT/.well-known"
+            cat > "$APP_LINK_ROOT/.well-known/assetlinks.json" <<'JSON'
+            [
+              {
+                "relation": ["delegate_permission/common.handle_all_urls"],
+                "target": {
+                  "namespace": "android_app",
+                  "package_name": "org.openmanuscript.studio",
+                  "sha256_cert_fingerprints": [
+                    "${{ steps.android_app_link.outputs.fingerprint }}"
+                  ]
+                }
+              }
+            ]
+            JSON
+
             restart_api() {
               if systemctl restart omi-studio-api.service 2>/dev/null; then
                 return 0
@@ -153,3 +219,8 @@ jobs:
             restart_api
             systemctl is-active --quiet omi-studio-api.service
             curl --fail --silent --show-error http://127.0.0.1:3001/api/health >/dev/null
+
+            assetlinks_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://app.openmanuscript.org/.well-known/assetlinks.json)"
+            fallback_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://app.openmanuscript.org/auth/orcid/)"
+            test "$assetlinks_status" = '200'
+            test "$fallback_status" = '200'
