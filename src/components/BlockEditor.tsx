@@ -61,6 +61,7 @@ import { CrossReferencePicker } from './CrossReferencePicker';
 import { NoteEditorCard } from './NoteEditorCard';
 import { RichTextToolbar } from './RichTextToolbar';
 import { SelectionActionToolbar } from './SelectionActionToolbar';
+import { SelectionIntegrationDialog } from './SelectionIntegrationDialog';
 
 interface BlockEditorProps {
   blockId: string;
@@ -91,13 +92,16 @@ export function BlockEditor({
   const [activeCrossReferenceId, setActiveCrossReferenceId] = useState<string | null>(null);
   const [citationPickerOpen, setCitationPickerOpen] = useState(false);
   const [crossReferencePickerOpen, setCrossReferencePickerOpen] = useState(false);
+  const [integrationAction, setIntegrationAction] = useState<'translate' | 'agent' | null>(null);
   const onUpdateRef = useRef(onUpdate);
   const tRef = useRef(t);
   const blockLabel = formatBlockType(blockType, t);
   const effectiveEditable = editable && capabilities.editText;
+  const externalIntegrationsAllowed = effectiveEditable && capabilities.reconcileWorkspaceReferences;
   const editorStyle = {
     '--omi-editor-placeholder': JSON.stringify(t('editor.emptyParagraph')),
   } as CSSProperties;
+  const integrationLabels = getIntegrationActionLabels(locale);
 
   const activeCitation = activeCitationId
     ? manuscript.citations.find((citation) => citation.id === activeCitationId)
@@ -162,6 +166,7 @@ export function BlockEditor({
                 setActiveNoteId(attributes.noteId);
                 setActiveCitationId(null);
                 setActiveCrossReferenceId(null);
+                setIntegrationAction(null);
               },
               accessibleLabel: (attributes: OmiNoteAttributes) =>
                 `${tRef.current('notes.note')} ${attributes.label}`,
@@ -195,6 +200,7 @@ export function BlockEditor({
             setActiveNoteId(null);
             setCitationPickerOpen(false);
             setCrossReferencePickerOpen(false);
+            setIntegrationAction(null);
             return true;
           }
         }
@@ -209,6 +215,7 @@ export function BlockEditor({
             setActiveNoteId(null);
             setCitationPickerOpen(false);
             setCrossReferencePickerOpen(false);
+            setIntegrationAction(null);
             return true;
           }
         }
@@ -224,6 +231,7 @@ export function BlockEditor({
         setActiveCrossReferenceId(null);
         setCitationPickerOpen(false);
         setCrossReferencePickerOpen(false);
+        setIntegrationAction(null);
         return true;
       },
     },
@@ -265,6 +273,7 @@ export function BlockEditor({
     collapseSelectionToEnd();
     setCitationPickerOpen(true);
     setCrossReferencePickerOpen(false);
+    setIntegrationAction(null);
     closeSecondaryEditors();
   }
 
@@ -273,7 +282,16 @@ export function BlockEditor({
     collapseSelectionToEnd();
     setCrossReferencePickerOpen(true);
     setCitationPickerOpen(false);
+    setIntegrationAction(null);
     closeSecondaryEditors();
+  }
+
+  function openIntegrationAction(action: 'translate' | 'agent'): void {
+    if (!editor || !externalIntegrationsAllowed) return;
+    setCitationPickerOpen(false);
+    setCrossReferencePickerOpen(false);
+    closeSecondaryEditors();
+    setIntegrationAction(action);
   }
 
   function insertNote(): void {
@@ -281,6 +299,7 @@ export function BlockEditor({
     collapseSelectionToEnd();
     setCitationPickerOpen(false);
     setCrossReferencePickerOpen(false);
+    setIntegrationAction(null);
     closeSecondaryEditors();
     editor.chain().focus().insertOmiNote({ noteType: 'footnote' }).insertContent(' ').run();
   }
@@ -325,6 +344,7 @@ export function BlockEditor({
     if (inserted && stageCreateCitationCluster(creation)) {
       setCitationPickerOpen(false);
       setCrossReferencePickerOpen(false);
+      setIntegrationAction(null);
       setActiveCitationId(firstCitation.id);
       setActiveCrossReferenceId(null);
       setActiveNoteId(null);
@@ -362,6 +382,7 @@ export function BlockEditor({
     if (inserted && stageCreateCrossReference(reference)) {
       setCrossReferencePickerOpen(false);
       setCitationPickerOpen(false);
+      setIntegrationAction(null);
       setActiveCrossReferenceId(reference.id);
       setActiveCitationId(null);
       setActiveNoteId(null);
@@ -379,7 +400,8 @@ export function BlockEditor({
   const showSelectionActions = effectiveEditable && (
     capabilities.editCitations ||
     capabilities.insertNotes ||
-    capabilities.editCrossReferences
+    capabilities.editCrossReferences ||
+    externalIntegrationsAllowed
   );
 
   return (
@@ -405,9 +427,23 @@ export function BlockEditor({
           citationLabel={t('editor.addCitation')}
           noteLabel={t('editor.addNote')}
           crossReferenceLabel={crossReferenceCopy.insert}
+          translateLabel={integrationLabels.translate}
+          assistantLabel={integrationLabels.assistant}
           onCitation={capabilities.editCitations ? openCitationPicker : undefined}
           onNote={capabilities.insertNotes ? insertNote : undefined}
           onCrossReference={capabilities.editCrossReferences ? openCrossReferencePicker : undefined}
+          onTranslate={externalIntegrationsAllowed ? () => openIntegrationAction('translate') : undefined}
+          onAssistant={externalIntegrationsAllowed ? () => openIntegrationAction('agent') : undefined}
+        />
+      ) : null}
+
+      {integrationAction && externalIntegrationsAllowed ? (
+        <SelectionIntegrationDialog
+          editor={editor}
+          blockId={blockId}
+          mode={integrationAction}
+          sourceLanguage={manuscriptLanguage ?? manuscript.locale}
+          onClose={() => setIntegrationAction(null)}
         />
       ) : null}
 
@@ -503,4 +539,13 @@ function formatBlockType(
     default:
       return blockType;
   }
+}
+
+function getIntegrationActionLabels(locale: string): {
+  translate: string;
+  assistant: string;
+} {
+  if (locale === 'hu') return { translate: 'Fordítás', assistant: 'Asszisztens' };
+  if (locale === 'de') return { translate: 'Übersetzen', assistant: 'Assistent' };
+  return { translate: 'Translate', assistant: 'Assistant' };
 }

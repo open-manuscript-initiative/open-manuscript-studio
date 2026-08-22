@@ -9,6 +9,7 @@ import { useTranslation } from '../i18n';
 import { getLocalizedHelpCopy } from '../i18n/helpResolver';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import { HelpPanel } from './HelpPanel';
+import { IntegrationExecutionWorkspace } from './IntegrationExecutionWorkspace';
 import { IntegrationsPanel } from './IntegrationsPanel';
 import { StudioMenu } from './StudioMenu';
 import './StudioMenuWithHelp.css';
@@ -172,6 +173,7 @@ export function StudioMenuWithHelp({
         ? createPortal(
             <div className="studio-help-portal studio-integrations-portal">
               <IntegrationsPanel />
+              <IntegrationExecutionWorkspace />
             </div>,
             contentHost,
           )

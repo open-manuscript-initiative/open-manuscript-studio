@@ -1,0 +1,137 @@
+.omi-integration-workspace {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.omi-integration-workspace-card {
+  border: 1px solid var(--border, #d9d9d9);
+  border-radius: 14px;
+  background: var(--surface, #fff);
+  padding: 1rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.omi-integration-workspace-card > header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.omi-integration-workspace-card > header > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.omi-integration-workspace-card h4,
+.omi-integration-workspace-card p {
+  margin: 0;
+}
+
+.omi-integration-workspace-card header p {
+  margin-top: 0.25rem;
+  color: var(--text-muted, #666);
+}
+
+.omi-integration-workspace-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.omi-integration-workspace-grid label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.omi-integration-workspace-grid input,
+.omi-integration-workspace-grid select,
+.omi-extension-manifest-editor {
+  width: 100%;
+  border: 1px solid var(--border, #d2d2d2);
+  border-radius: 9px;
+  background: var(--surface, #fff);
+  color: inherit;
+  padding: 0.6rem 0.7rem;
+}
+
+.omi-extension-manifest-editor {
+  min-height: 15rem;
+  resize: vertical;
+  font: 0.82rem/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.omi-translation-preview,
+.omi-agent-suggestion {
+  border-left: 3px solid currentColor;
+  padding-left: 0.8rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.omi-translation-preview p {
+  margin: 0;
+}
+
+.omi-agent-suggestion pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0;
+  font: inherit;
+}
+
+.omi-integration-record-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.omi-integration-record {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border, #e2e2e2);
+  padding-top: 0.55rem;
+}
+
+.omi-integration-record > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.omi-integration-audit-list {
+  display: grid;
+  gap: 0.4rem;
+  max-height: 20rem;
+  overflow: auto;
+}
+
+.omi-integration-audit-row {
+  display: grid;
+  grid-template-columns: auto minmax(6rem, 1fr) minmax(7rem, 1fr) auto auto minmax(9rem, auto);
+  gap: 0.6rem;
+  align-items: center;
+  font-size: 0.82rem;
+  border-top: 1px solid var(--border, #e5e5e5);
+  padding-top: 0.45rem;
+}
+
+@media (max-width: 52rem) {
+  .omi-integration-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .omi-integration-record {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .omi-integration-audit-row {
+    grid-template-columns: auto 1fr;
+  }
+
+  .omi-integration-audit-row time {
+    grid-column: 1 / -1;
+  }
+}

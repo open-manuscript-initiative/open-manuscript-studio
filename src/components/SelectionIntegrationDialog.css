@@ -1,0 +1,74 @@
+.omi-selection-integration-dialog {
+  margin-top: 0.7rem;
+  border: 1px solid var(--border, #d9d9d9);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  padding: 0.85rem;
+  display: grid;
+  gap: 0.7rem;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 8%);
+}
+
+.omi-selection-integration-dialog > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.omi-selection-integration-dialog > header > div {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.omi-selection-integration-close {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0.25rem;
+  cursor: pointer;
+}
+
+.omi-selection-integration-dialog label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.omi-selection-integration-dialog select {
+  width: 100%;
+  border: 1px solid var(--border, #d2d2d2);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: inherit;
+  padding: 0.55rem 0.65rem;
+}
+
+.omi-selection-integration-source,
+.omi-selection-integration-result {
+  margin: 0;
+  padding: 0.7rem;
+  border-radius: 8px;
+  background: rgb(127 127 127 / 8%);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.omi-selection-integration-source {
+  max-height: 8rem;
+  overflow: auto;
+  color: var(--text-muted, #555);
+}
+
+.omi-selection-integration-result {
+  display: block;
+  max-height: 14rem;
+  overflow: auto;
+  font: inherit;
+}
+
+.omi-selection-integration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
