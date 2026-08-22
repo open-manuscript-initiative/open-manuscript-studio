@@ -2,6 +2,7 @@ import {
   createHash,
   createPrivateKey,
   generateKeyPairSync,
+  randomUUID,
   sign as signBytes,
 } from 'node:crypto';
 
@@ -98,8 +99,7 @@ export function canonicalJson(value: unknown): string {
 }
 
 export function calculatePortableStateDigest(state: unknown): string {
-  const normalized = normalizeStateForDigest(state);
-  return sha256(canonicalJson(normalized));
+  return sha256(canonicalJson(normalizeStateForDigest(state)));
 }
 
 export function assertSignerIsAuthor(
@@ -146,13 +146,29 @@ export function assertSignerIsAuthor(
     throw new Error('The committed author identity does not match the authenticated ORCID iD.');
   }
 
-  const names = Array.isArray(agent.names) ? agent.names.map(asRecord).filter(Boolean) : [];
-  const preferred = names.find((name) => name?.preferred === true) ?? names[0];
+  const names = Array.isArray(agent.names)
+    ? agent.names.map(asRecord).filter((name): name is Record<string, unknown> => Boolean(name))
+    : [];
+  const preferred = names.find((name) => name.preferred === true) ?? names[0];
   const signerName = typeof preferred?.value === 'string' && preferred.value.trim()
     ? preferred.value.trim()
     : identity.displayName;
 
   return { signerName, orcid: identityOrcid };
+}
+
+export async function getSignatureIssuerDescriptor() {
+  const issuerKey = await getOrCreateIssuerKey();
+  const publicKeyBytes = Buffer.from(issuerKey.public_key_spki, 'base64url');
+  return {
+    model: 'OMI-SIGNATURE-ISSUER',
+    version: '0.1.0',
+    issuer: issuerKey.issuer,
+    keyId: issuerKey.key_id,
+    algorithm: 'Ed25519' as const,
+    publicKeySpki: issuerKey.public_key_spki,
+    fingerprint: sha256(publicKeyBytes),
+  };
 }
 
 export async function createCredentialAttestation(input: {
@@ -229,7 +245,7 @@ async function getOrCreateIssuerKey(): Promise<IssuerKeyRow> {
       INSERT INTO signature_issuer_keys
         (id, issuer, key_id, public_key_spki, encrypted_private_key, algorithm, active)
       VALUES
-        (${crypto.randomUUID()}::uuid, ${issuer}, ${keyId}, ${publicKeyDer.toString('base64url')}, ${encryptedPrivateKey}, 'Ed25519', TRUE)
+        (${randomUUID()}::uuid, ${issuer}, ${keyId}, ${publicKeyDer.toString('base64url')}, ${encryptedPrivateKey}, 'Ed25519', TRUE)
     `;
   } catch {
     const raced = await activeIssuerKey();
