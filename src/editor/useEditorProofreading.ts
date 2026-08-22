@@ -53,6 +53,7 @@ export function useEditorProofreading(
     let disposed = false;
 
     const run = async () => {
+      if (!editor.isFocused) return;
       controller?.abort();
       controller = new AbortController();
       const text = editor.state.doc.textBetween(0, editor.state.doc.content.size, '');
@@ -92,17 +93,28 @@ export function useEditorProofreading(
     };
 
     const schedule = () => {
+      if (!editor.isFocused) return;
       if (timer !== undefined) window.clearTimeout(timer);
       timer = window.setTimeout(() => void run(), 900);
     };
 
-    schedule();
+    const handleBlur = () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      controller?.abort();
+      setChecking(false);
+    };
+
+    if (editor.isFocused) schedule();
+    editor.on('focus', schedule);
     editor.on('update', schedule);
+    editor.on('blur', handleBlur);
     return () => {
       disposed = true;
       if (timer !== undefined) window.clearTimeout(timer);
       controller?.abort();
+      editor.off('focus', schedule);
       editor.off('update', schedule);
+      editor.off('blur', handleBlur);
     };
   }, [blockId, editor, language, languageCheckEnabled]);
 
