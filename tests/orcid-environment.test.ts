@@ -61,18 +61,34 @@ test('production deployment rejects an insecure ORCID callback', () => {
       nodeEnv: 'production',
       clientId: 'APP-EXAMPLE',
       clientSecret: 'secret',
-      redirectUri: 'http://openmanuscript.org/api/auth/orcid/callback',
+      redirectUri: 'http://studio.openmanuscript.org/api/auth/orcid/callback',
+      frontendOrigin: 'https://studio.openmanuscript.org',
     }),
     /must use HTTPS in production/,
   );
 });
 
-test('production deployment accepts HTTPS callback and complete credentials', () => {
+test('production deployment rejects an ORCID callback on a different origin', () => {
+  assert.throws(
+    () => validateOrcidDeployment({
+      environment: 'production',
+      nodeEnv: 'production',
+      clientId: 'APP-EXAMPLE',
+      clientSecret: 'secret',
+      redirectUri: 'https://openmanuscript.org/api/auth/orcid/callback',
+      frontendOrigin: 'https://studio.openmanuscript.org',
+    }),
+    /must use the same origin as FRONTEND_ORIGIN in production/,
+  );
+});
+
+test('production deployment accepts the Studio callback origin and complete credentials', () => {
   assert.doesNotThrow(() => validateOrcidDeployment({
     environment: 'production',
     nodeEnv: 'production',
     clientId: 'APP-EXAMPLE',
     clientSecret: 'secret',
-    redirectUri: 'https://openmanuscript.org/api/auth/orcid/callback',
+    redirectUri: 'https://studio.openmanuscript.org/api/auth/orcid/callback',
+    frontendOrigin: 'https://studio.openmanuscript.org',
   }));
 });
