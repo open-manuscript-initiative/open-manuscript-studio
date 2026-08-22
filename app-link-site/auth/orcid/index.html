@@ -38,7 +38,11 @@
   <script>
     (() => {
       const fragment = window.location.hash || '';
-      document.getElementById('open-app').href = `openmanuscript://auth/${fragment}`;
+      const params = new URLSearchParams(fragment.startsWith('#') ? fragment.slice(1) : fragment);
+      const nativeAuthCode = params.get('nativeAuthCode');
+      const nativeUrl = `openmanuscript://auth/${fragment}`;
+
+      document.getElementById('open-app').href = nativeUrl;
 
       const language = (navigator.language || 'en').toLowerCase();
       const copy = language.startsWith('hu') ? {
@@ -67,6 +71,12 @@
       document.getElementById('install').textContent = copy.install;
       document.getElementById('web').textContent = copy.web;
       document.getElementById('hint').textContent = copy.hint;
+
+      if (nativeAuthCode) {
+        window.setTimeout(() => {
+          window.location.replace(nativeUrl);
+        }, 150);
+      }
     })();
   </script>
 </body>
