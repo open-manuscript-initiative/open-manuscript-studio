@@ -1,12 +1,13 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Default capability for Open Manuscript Studio. File access is limited to paths explicitly selected by the author through native dialogs; ORCID authentication may open the system browser and return through the registered Studio deep link on mobile.",
+  "description": "Default capability for Open Manuscript Studio. File access is limited to paths explicitly selected by the author through native dialogs; ORCID authentication may open the Android native auth browser and return through the registered Studio deep link on mobile.",
   "windows": ["main"],
   "permissions": [
     "core:default",
     "deep-link:default",
     "opener:default",
+    "auth-browser:default",
     "dialog:allow-open",
     "dialog:allow-save",
     "fs:allow-read-text-file",

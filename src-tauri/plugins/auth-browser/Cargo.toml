@@ -1,0 +1,11 @@
+[package]
+name = "tauri-plugin-auth-browser"
+version = "0.1.0"
+edition = "2021"
+links = "tauri-plugin-auth-browser"
+
+[build-dependencies]
+tauri-plugin = { version = "2", features = ["build"] }
+
+[dependencies]
+tauri = { version = "2" }
