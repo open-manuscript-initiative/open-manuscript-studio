@@ -13,6 +13,7 @@ import { useStudioStore } from './app/useStudioStore';
 import { AppLayout } from './components/AppLayout';
 import {
   DesktopDocumentTabs,
+  type DesktopDocumentTabId,
   type DesktopDocumentTabItem,
 } from './components/DesktopDocumentTabs';
 import { DesktopUpdatePrompt } from './components/DesktopUpdatePrompt';
@@ -127,7 +128,7 @@ function StudioApplication() {
   const reviewMode = new URLSearchParams(window.location.search).get('review') === '1';
   const mobileStudio = isMobileStudio();
   const initialDesktopManuscript = useRef(useStudioStore.getState().manuscript);
-  const initialDesktopTabId = useRef(crypto.randomUUID());
+  const initialDesktopTabId = useRef<DesktopDocumentTabId>(crypto.randomUUID());
   const [menuOpen, setMenuOpen] = useState(false);
   const [externalImportState, setExternalImportState] = useState<ExternalImportState>(() =>
     !reviewMode && (hasInitialOjsLaunch() || hasInitialOmpLaunch())
@@ -145,7 +146,7 @@ function StudioApplication() {
     title: getDocumentTabTitle(initialDesktopManuscript.current),
     manuscript: initialDesktopManuscript.current,
   }]);
-  const [activeDesktopTabId, setActiveDesktopTabId] = useState(
+  const [activeDesktopTabId, setActiveDesktopTabId] = useState<DesktopDocumentTabId>(
     initialDesktopTabId.current,
   );
   const desktopTabsRef = useRef(desktopTabs);
@@ -209,7 +210,7 @@ function StudioApplication() {
     });
   }, [mobileStudio, reviewMode]);
 
-  const activateDesktopTab = useCallback((tabId: string) => {
+  const activateDesktopTab = useCallback((tabId: DesktopDocumentTabId) => {
     if (tabId === activeDesktopTabIdRef.current) return;
 
     useStudioStore.getState().checkpoint('manual');
@@ -223,7 +224,7 @@ function StudioApplication() {
     switchingDesktopTabRef.current = false;
   }, []);
 
-  const closeDesktopTab = useCallback((tabId: string) => {
+  const closeDesktopTab = useCallback((tabId: DesktopDocumentTabId) => {
     const tabs = desktopTabsRef.current;
     if (tabs.length <= 1) return;
 
@@ -448,7 +449,7 @@ function StudioApplication() {
 }
 
 function createDesktopTabSession(
-  id: string,
+  id: DesktopDocumentTabId,
   manuscript: OmiManuscript,
 ): DesktopTabSession {
   return {
