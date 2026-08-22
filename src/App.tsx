@@ -9,6 +9,7 @@ import { RegisterPage } from './auth/RegisterPage';
 
 import { useStudioStore } from './app/useStudioStore';
 import { AppLayout } from './components/AppLayout';
+import { DesktopDocumentOutline } from './components/DesktopDocumentOutline';
 import { DesktopUpdatePrompt } from './components/DesktopUpdatePrompt';
 import { EditorPane } from './components/EditorPane';
 import { ReviewPortal } from './components/ReviewPortal';
@@ -115,6 +116,7 @@ export function App() {
 function StudioApplication() {
   const reviewMode = new URLSearchParams(window.location.search).get('review') === '1';
   const [menuOpen, setMenuOpen] = useState(false);
+  const [outlineOpen, setOutlineOpen] = useState(false);
   const [externalImportState, setExternalImportState] = useState<ExternalImportState>(() =>
     !reviewMode && (hasInitialOjsLaunch() || hasInitialOmpLaunch())
       ? { status: 'loading' }
@@ -304,8 +306,17 @@ function StudioApplication() {
   }
 
   return (
-    <AppLayout onOpenMenu={() => setMenuOpen(true)}>
-      <div className="focus-workspace"><EditorPane ojsContributors={ojsContributors} /></div>
+    <AppLayout
+      onOpenMenu={() => setMenuOpen(true)}
+      outlineOpen={outlineOpen}
+      onToggleOutline={() => setOutlineOpen((current) => !current)}
+    >
+      <div className={`focus-workspace${outlineOpen ? ' focus-workspace--outline' : ''}`}>
+        {outlineOpen ? (
+          <DesktopDocumentOutline onClose={() => setOutlineOpen(false)} />
+        ) : null}
+        <EditorPane ojsContributors={ojsContributors} />
+      </div>
       <SearchReplaceOverlay />
       <DesktopUpdatePrompt />
       <StudioMenuWithHelp
