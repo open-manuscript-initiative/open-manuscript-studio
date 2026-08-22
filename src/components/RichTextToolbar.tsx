@@ -8,6 +8,8 @@ import {
 
 import { getRichTextCopy } from '../i18n/richText';
 import type { SupportedLocale } from '../i18n/types';
+import { useContentLanguagePreferences } from '../languages/languagePreferences';
+import { getManuscriptLanguageDisplayName } from '../model/manuscriptLanguage';
 import {
   normalizeExternalHref,
   normalizeInlineLanguageTag,
@@ -62,6 +64,7 @@ export function RichTextToolbar({
   manuscriptLanguage,
 }: RichTextToolbarProps) {
   const copy = getRichTextCopy(locale);
+  const { manuscriptLanguages } = useContentLanguagePreferences();
   const [position, setPosition] = useState<ToolbarPosition | null>(null);
   const [focused, setFocused] = useState(editor.isFocused);
   const [revision, setRevision] = useState(0);
@@ -138,6 +141,21 @@ export function RichTextToolbar({
     return typeof value === 'string' ? value : '';
   }, [editor, revision]);
 
+  const languageOptions = useMemo(() => {
+    const normalized = [
+      currentLanguage,
+      manuscriptLanguage,
+      ...manuscriptLanguages,
+    ]
+      .map((language) => normalizeInlineLanguageTag(language))
+      .filter((language): language is string => Boolean(language));
+
+    return [...new Set(normalized)].map((tag) => ({
+      tag,
+      label: getManuscriptLanguageDisplayName(tag, locale),
+    }));
+  }, [currentLanguage, locale, manuscriptLanguage, manuscriptLanguages]);
+
   if (!position || (!focused && !moreOpen && !linkOpen)) {
     return null;
   }
@@ -168,6 +186,14 @@ export function RichTextToolbar({
     setLinkError(false);
     setMoreOpen(false);
     setLinkOpen(true);
+  }
+
+  function closeExpandedMenu(): void {
+    setMoreOpen(false);
+    setLinkOpen(false);
+    setLinkError(false);
+    setLanguageError(false);
+    editor.commands.focus();
   }
 
   function applyLink(): void {
@@ -220,11 +246,13 @@ export function RichTextToolbar({
     setLanguageError(false);
   }
 
+  const expanded = moreOpen || linkOpen;
+
   return (
     <div
       className={`omi-rich-text-toolbar${
         position.below ? ' omi-rich-text-toolbar--below' : ''
-      }`}
+      }${expanded ? ' omi-rich-text-toolbar--expanded' : ''}`}
       style={style}
       role="toolbar"
       aria-label={copy.toolbar}
@@ -277,11 +305,25 @@ export function RichTextToolbar({
           onMouseDown={keepEditorSelection}
           onClick={() => {
             setLinkOpen(false);
+            setLanguageDraft(currentLanguage || manuscriptLanguage);
+            setLanguageError(false);
             setMoreOpen((value) => !value);
           }}
         >
           ⋯
         </ToolbarButton>
+        {expanded ? (
+          <button
+            type="button"
+            className="omi-rich-text-toolbar-dismiss"
+            aria-label={copy.cancel}
+            title={copy.cancel}
+            onMouseDown={keepEditorSelection}
+            onClick={closeExpandedMenu}
+          >
+            ×
+          </button>
+        ) : null}
       </div>
 
       {linkOpen ? (
@@ -304,7 +346,7 @@ export function RichTextToolbar({
                   applyLink();
                 }
                 if (event.key === 'Escape') {
-                  setLinkOpen(false);
+                  closeExpandedMenu();
                 }
               }}
             />
@@ -314,7 +356,7 @@ export function RichTextToolbar({
             {editor.isActive('omiLink') ? (
               <button type="button" onClick={removeLink}>{copy.unlink}</button>
             ) : null}
-            <button type="button" onClick={() => setLinkOpen(false)}>{copy.cancel}</button>
+            <button type="button" onClick={closeExpandedMenu}>{copy.cancel}</button>
             <button type="button" className="primary" onClick={applyLink}>{copy.apply}</button>
           </div>
         </div>
@@ -368,15 +410,20 @@ export function RichTextToolbar({
           <div className="omi-rich-text-language-editor">
             <label>
               <span>{copy.language}</span>
-              <input
+              <select
                 value={languageDraft}
-                placeholder={copy.languagePlaceholder}
                 aria-invalid={languageError}
                 onChange={(event) => {
                   setLanguageDraft(event.target.value);
                   setLanguageError(false);
                 }}
-              />
+              >
+                {languageOptions.map((option) => (
+                  <option value={option.tag} key={option.tag}>
+                    {option.label} — {option.tag}
+                  </option>
+                ))}
+              </select>
             </label>
             <div className="omi-rich-text-inline-actions">
               {currentLanguage ? (
