@@ -1,0 +1,87 @@
+.desktop-document-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 18;
+  min-width: 0;
+  border-bottom: 1px solid var(--border-color, #d7dbe2);
+  background: var(--surface-muted, #f4f6f8);
+}
+
+.desktop-document-tabs__track {
+  display: flex;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.desktop-document-tab {
+  display: flex;
+  align-items: stretch;
+  flex: 0 1 240px;
+  min-width: 120px;
+  max-width: 280px;
+  border-right: 1px solid var(--border-color, #d7dbe2);
+  background: var(--surface-muted, #f4f6f8);
+}
+
+.desktop-document-tab--active {
+  background: var(--surface, #ffffff);
+  box-shadow: inset 0 -2px 0 var(--accent-color, #6b2431);
+}
+
+.desktop-document-tab__main,
+.desktop-document-tab__close {
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.desktop-document-tab__main {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.65rem 0.45rem 0.65rem 0.75rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.desktop-document-tab__main span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.desktop-document-tab__close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  flex: 0 0 32px;
+  cursor: pointer;
+  opacity: 0.62;
+}
+
+.desktop-document-tab__close:hover:not(:disabled),
+.desktop-document-tab__close:focus-visible:not(:disabled) {
+  opacity: 1;
+  background: rgba(127, 127, 127, 0.12);
+}
+
+.desktop-document-tab__close:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+
+.desktop-document-tab__main:focus-visible,
+.desktop-document-tab__close:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+@media (max-width: 760px) {
+  .desktop-document-tabs {
+    display: none;
+  }
+}

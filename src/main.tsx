@@ -38,6 +38,7 @@ import './styles/footer.css';
 import './styles/academic-shell.css';
 import './styles/mobile-language-switcher.css';
 import './styles/desktop-fullscreen-panels.css';
+import './styles/desktop-document-tabs.css';
 
 initializeRevisionIntegrity();
 
