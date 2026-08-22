@@ -83,7 +83,7 @@ The server maps these values internally:
 
 Sandbox is the safe default when neither value is set, so a deployment cannot move to production ORCID accidentally merely because code was upgraded.
 
-The server also rejects a partial credential pair: `ORCID_CLIENT_ID` and `ORCID_CLIENT_SECRET` must either both be configured or both be absent. When `NODE_ENV=production`, an explicitly configured `ORCID_REDIRECT_URI` must use HTTPS.
+The server also rejects a partial credential pair: `ORCID_CLIENT_ID` and `ORCID_CLIENT_SECRET` must either both be configured or both be absent. When `NODE_ENV=production`, an explicitly configured `ORCID_REDIRECT_URI` must use HTTPS and must use the same origin as `FRONTEND_ORIGIN`. The callback route is served by the Studio API, so pointing the redirect at a different website host would return a 404 and would also separate the authentication callback from the Studio session cookie.
 
 ## ORCID Sandbox client registration
 
@@ -98,13 +98,13 @@ Open Manuscript Studio
 **Application URL**
 
 ```text
-https://openmanuscript.org/
+https://studio.openmanuscript.org/
 ```
 
 **Redirect URI**
 
 ```text
-https://openmanuscript.org/api/auth/orcid/callback
+https://studio.openmanuscript.org/api/auth/orcid/callback
 ```
 
 The callback URI registered at ORCID and `ORCID_REDIRECT_URI` must be identical.
@@ -112,10 +112,11 @@ The callback URI registered at ORCID and `ORCID_REDIRECT_URI` must be identical.
 ## Sandbox server configuration
 
 ```dotenv
+FRONTEND_ORIGIN=https://studio.openmanuscript.org
 ORCID_ENVIRONMENT=sandbox
 ORCID_CLIENT_ID=APP-REPLACE_WITH_SANDBOX_CLIENT_ID
 ORCID_CLIENT_SECRET=REPLACE_WITH_SANDBOX_CLIENT_SECRET
-ORCID_REDIRECT_URI=https://openmanuscript.org/api/auth/orcid/callback
+ORCID_REDIRECT_URI=https://studio.openmanuscript.org/api/auth/orcid/callback
 ```
 
 Install the updated server dependencies and restart the API:
@@ -131,7 +132,7 @@ sudo systemctl status omi-studio-api.service --no-pager
 Then verify provider discovery:
 
 ```bash
-curl -sS https://openmanuscript.org/api/auth/providers
+curl -sS https://studio.openmanuscript.org/api/auth/providers
 ```
 
 ## End-to-end test, including 2FA
@@ -141,7 +142,7 @@ curl -sS https://openmanuscript.org/api/auth/providers
 3. Open **Integrations → ORCID** and choose **Connect ORCID**.
 4. Complete the ORCID password and two-factor authentication screens on `sandbox.orcid.org`.
 5. Approve the authorization request.
-6. Confirm that ORCID returns to `/api/auth/orcid/callback` and the card shows **Connected** with the verified ORCID iD.
+6. Confirm that ORCID returns to `/api/auth/orcid/callback` on the Studio host and the card shows **Connected** with the verified ORCID iD.
 7. Sign out of Studio and use **Sign in with ORCID**.
 8. Complete ORCID 2FA again if ORCID requests it and confirm that Studio creates the normal authenticated session for the same account.
 9. Repeat ORCID sign-in and verify that no second Studio user is created.
@@ -157,23 +158,28 @@ No new database migration is required for this production-readiness update. The 
 
 Production ORCID requires its own production client credentials. Do not reuse Sandbox credentials.
 
-Register/configure the production ORCID application with the callback:
+For the hosted Open Manuscript Studio deployment, register/configure the production ORCID application with the callback:
 
 ```text
-https://openmanuscript.org/api/auth/orcid/callback
+https://studio.openmanuscript.org/api/auth/orcid/callback
 ```
 
 Then change the server configuration to:
 
 ```dotenv
+NODE_ENV=production
+FRONTEND_ORIGIN=https://studio.openmanuscript.org
+DEPLOYMENT_MODE=personal
 ORCID_ENVIRONMENT=production
 ORCID_CLIENT_ID=APP-REPLACE_WITH_PRODUCTION_CLIENT_ID
 ORCID_CLIENT_SECRET=REPLACE_WITH_PRODUCTION_CLIENT_SECRET
-ORCID_REDIRECT_URI=https://openmanuscript.org/api/auth/orcid/callback
+ORCID_REDIRECT_URI=https://studio.openmanuscript.org/api/auth/orcid/callback
 ```
 
 Remove an old `ORCID_BASE_URL=https://sandbox.orcid.org` line when switching, or replace it with the production value. Prefer removing `ORCID_BASE_URL` entirely and letting `ORCID_ENVIRONMENT` select the endpoint.
 
-Before restart, verify that no `VITE_ORCID_*` variable contains the client secret. The secret belongs only in server-side configuration. Then rebuild and restart the API and check `/api/auth/providers` before performing the first production login.
+Before restart, verify that no `VITE_ORCID_*` variable contains the client secret. The secret belongs only in server-side configuration. The production callback origin guard will reject a callback such as `https://openmanuscript.org/api/auth/orcid/callback` when `FRONTEND_ORIGIN=https://studio.openmanuscript.org`, preventing the cross-host 404 failure observed during the production cutover.
+
+Then rebuild and restart the API and check `/api/auth/providers` before performing the first production login.
 
 Keep the client secret exclusively in server-side configuration and never expose it through a `VITE_*` variable, browser storage, screenshots, committed `.env` files, or public documentation.
