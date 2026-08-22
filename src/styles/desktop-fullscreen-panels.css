@@ -1,0 +1,57 @@
+@media (min-width: 761px) {
+  .studio-menu-backdrop {
+    background: var(--omi-academic-paper, #fffefa);
+    backdrop-filter: none;
+  }
+
+  .studio-menu-drawer {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .studio-menu-body {
+    min-height: 0;
+  }
+
+  .studio-menu-content {
+    overflow: auto;
+  }
+
+  .studio-menu-view {
+    width: min(100%, 72rem);
+  }
+
+  .account-overlay {
+    display: block;
+    background: #f8fafc;
+  }
+
+  .account-overlay-backdrop {
+    display: none;
+  }
+
+  .account-drawer {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    box-shadow: none;
+  }
+
+  .account-page {
+    width: 100%;
+    max-width: 1280px;
+  }
+
+  .studio-menu-mobile-structure {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .studio-menu-mobile-structure {
+    display: block;
+  }
+}
