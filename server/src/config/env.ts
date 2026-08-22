@@ -122,6 +122,7 @@ validateOrcidDeployment({
   clientId: orcidCredentials.clientId,
   clientSecret: orcidCredentials.clientSecret,
   redirectUri: orcidCredentials.redirectUri,
+  frontendOrigin: result.data.FRONTEND_ORIGIN,
 });
 
 export const env = {
