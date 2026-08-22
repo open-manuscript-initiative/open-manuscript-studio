@@ -42,8 +42,11 @@
       const nativeAuthCode = params.get('nativeAuthCode');
       const nativeUrl = `openmanuscript://auth/${fragment}`;
       const isAndroid = /Android/i.test(navigator.userAgent || '');
+      const androidIntentUrl = nativeAuthCode
+        ? `intent://auth/?nativeAuthCode=${encodeURIComponent(nativeAuthCode)}#Intent;scheme=openmanuscript;package=org.openmanuscript.studio;end`
+        : 'intent://auth/#Intent;scheme=openmanuscript;package=org.openmanuscript.studio;end';
 
-      document.getElementById('open-app').href = nativeUrl;
+      document.getElementById('open-app').href = isAndroid ? androidIntentUrl : nativeUrl;
 
       const language = (navigator.language || 'en').toLowerCase();
       const copy = language.startsWith('hu') ? {
