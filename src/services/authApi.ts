@@ -112,11 +112,10 @@ export async function startOrcidAuthentication(input?: {
   const url = getOrcidAuthUrl(input);
 
   if (IS_MOBILE_TAURI) {
+    const { openUrl } = await import('@tauri-apps/plugin-opener');
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      await invoke('plugin:auth-browser|open_auth_url', { url });
+      await openUrl(url, 'inAppBrowser');
     } catch {
-      const { openUrl } = await import('@tauri-apps/plugin-opener');
       await openUrl(url);
     }
     return;
