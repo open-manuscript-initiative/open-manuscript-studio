@@ -1,16 +1,18 @@
 import { FileText, X } from 'lucide-react';
 
+export type DesktopDocumentTabId = ReturnType<Crypto['randomUUID']>;
+
 export interface DesktopDocumentTabItem {
-  id: string;
+  id: DesktopDocumentTabId;
   manuscriptId: string;
   title: string;
 }
 
 interface DesktopDocumentTabsProps {
   tabs: DesktopDocumentTabItem[];
-  activeTabId: string;
-  onActivate: (tabId: string) => void;
-  onClose: (tabId: string) => void;
+  activeTabId: DesktopDocumentTabId;
+  onActivate: (tabId: DesktopDocumentTabId) => void;
+  onClose: (tabId: DesktopDocumentTabId) => void;
 }
 
 export function DesktopDocumentTabs({
