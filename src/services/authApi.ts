@@ -228,6 +228,23 @@ export async function loginAccount(
   return response.user;
 }
 
+export async function requestPasswordReset(email: string): Promise<void> {
+  await request<{ ok: true }>('/api/auth/password/forgot', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(input: {
+  token: string;
+  password: string;
+}): Promise<void> {
+  await request<{ ok: true }>('/api/auth/password/reset', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
 export async function getCurrentAccount(): Promise<User | null> {
   if (IS_TAURI && !getNativeSessionToken()) {
     return null;
