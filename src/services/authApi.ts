@@ -63,8 +63,10 @@ interface ErrorResponse {
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
 const NATIVE_AUTH_CODE_PARAM = 'nativeAuthCode';
+const NATIVE_MOBILE_RETURN_URL = 'openmanuscript://auth';
 const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 const IS_TAURI = detectTauriRuntime();
+const IS_MOBILE_TAURI = detectMobileTauriRuntime();
 const USE_DIRECT_NATIVE_API = IS_TAURI && !import.meta.env.DEV;
 
 const API_BASE_URL = normalizeBaseUrl(
@@ -103,30 +105,60 @@ export function getOrcidLinkUrl(): string {
   return `${API_BASE_URL}/api/auth/orcid/start?${params.toString()}`;
 }
 
+export async function startOrcidAuthentication(input?: {
+  invitationToken?: string;
+}): Promise<void> {
+  const url = getOrcidAuthUrl(input);
+
+  if (IS_MOBILE_TAURI) {
+    const { openUrl } = await import('@tauri-apps/plugin-opener');
+    await openUrl(url);
+    return;
+  }
+
+  globalThis.location?.assign(url);
+}
+
 export async function consumeNativeOrcidHandoffFromLocation(): Promise<User | null> {
   if (!IS_TAURI) return null;
 
-  const code = readLocationFragmentParam(NATIVE_AUTH_CODE_PARAM)?.trim();
+  const locationCode = readLocationFragmentParam(NATIVE_AUTH_CODE_PARAM)?.trim();
+  if (locationCode) {
+    try {
+      return await exchangeNativeOrcidHandoff(locationCode);
+    } finally {
+      removeLocationFragmentParam(NATIVE_AUTH_CODE_PARAM);
+    }
+  }
+
+  if (!IS_MOBILE_TAURI) return null;
+
+  const { getCurrent } = await import('@tauri-apps/plugin-deep-link');
+  const urls = await getCurrent();
+  const deepLink = urls?.find(isNativeOrcidDeepLink);
+  return deepLink ? consumeNativeOrcidHandoffFromUrl(deepLink) : null;
+}
+
+export async function consumeNativeOrcidHandoffFromUrl(url: string): Promise<User | null> {
+  if (!IS_TAURI || !isNativeOrcidDeepLink(url)) return null;
+
+  const code = readUrlFragmentParam(url, NATIVE_AUTH_CODE_PARAM)?.trim();
   if (!code) return null;
 
-  try {
-    const response = await request<NativeSessionResponse>(
-      '/api/auth/orcid/native/exchange',
-      {
-        method: 'POST',
-        body: JSON.stringify({ code }),
-      },
-    );
+  return exchangeNativeOrcidHandoff(code);
+}
 
-    if (!response.token) {
-      throw new Error('The native ORCID session token was not returned by the Studio API.');
+export async function listenForNativeOrcidHandoff(
+  handler: (url: string) => void,
+): Promise<() => void> {
+  if (!IS_MOBILE_TAURI) return () => undefined;
+
+  const { onOpenUrl } = await import('@tauri-apps/plugin-deep-link');
+  return onOpenUrl((urls) => {
+    for (const url of urls) {
+      if (isNativeOrcidDeepLink(url)) handler(url);
     }
-
-    persistNativeSession(response);
-    return response.user;
-  } finally {
-    removeLocationFragmentParam(NATIVE_AUTH_CODE_PARAM);
-  }
+  });
 }
 
 export function getAuthErrorCodeFromLocation(): string | null {
@@ -262,6 +294,23 @@ export async function logoutAccount(): Promise<void> {
   }
 }
 
+async function exchangeNativeOrcidHandoff(code: string): Promise<User> {
+  const response = await request<NativeSessionResponse>(
+    '/api/auth/orcid/native/exchange',
+    {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    },
+  );
+
+  if (!response.token) {
+    throw new Error('The native ORCID session token was not returned by the Studio API.');
+  }
+
+  persistNativeSession(response);
+  return response.user;
+}
+
 async function request<T>(
   path: string,
   init: RequestInit,
@@ -348,6 +397,7 @@ function appendNativeOrcidParams(params: URLSearchParams): void {
 
 function getNativeReturnOrigin(): string | undefined {
   if (!IS_TAURI) return undefined;
+  if (IS_MOBILE_TAURI) return NATIVE_MOBILE_RETURN_URL;
 
   const location = globalThis.location;
   if (!location) return undefined;
@@ -360,6 +410,24 @@ function getNativeReturnOrigin(): string | undefined {
   }
 
   return undefined;
+}
+
+function isNativeOrcidDeepLink(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return `${url.protocol}//${url.host}` === NATIVE_MOBILE_RETURN_URL;
+  } catch {
+    return false;
+  }
+}
+
+function readUrlFragmentParam(url: string, name: string): string | null {
+  try {
+    const hash = new URL(url).hash;
+    return new URLSearchParams(hash.replace(/^#/, '')).get(name);
+  } catch {
+    return null;
+  }
 }
 
 function readLocationFragmentParam(name: string): string | null {
@@ -392,6 +460,12 @@ function detectTauriRuntime(): boolean {
     location.protocol === 'tauri:' ||
     location.hostname === 'tauri.localhost'
   );
+}
+
+function detectMobileTauriRuntime(): boolean {
+  if (!IS_TAURI) return false;
+  const userAgent = globalThis.navigator?.userAgent ?? '';
+  return /Android|iPhone|iPad|iPod/i.test(userAgent);
 }
 
 function normalizeBaseUrl(value: string): string {
