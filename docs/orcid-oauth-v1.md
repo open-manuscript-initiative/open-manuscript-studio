@@ -18,6 +18,7 @@ The integration supports:
 - displaying and disconnecting the linked ORCID iD in **Integrations → ORCID**;
 - normal ORCID accounts and accounts protected by ORCID two-factor authentication;
 - native-session handoff for installed Tauri applications;
+- system-browser authentication and deep-link return on Android and iOS;
 - explicit Sandbox/production network selection with fail-closed configuration validation.
 
 ORCID performs password and 2FA verification on its own site. Studio never receives the ORCID password or second-factor secret.
@@ -54,17 +55,19 @@ The first version intentionally does not create an arbitrary new Studio account 
 
 Installed Windows, macOS, Linux, Android and iOS builds use the same hosted ORCID client and the same HTTPS callback as the web application. The ORCID client secret remains exclusively on the Studio server and is never compiled into a desktop or mobile application.
 
-A Tauri client adds a validated local application return origin to the ORCID start request. Only these Tauri origins are accepted:
+Desktop Tauri clients may use one of these exact local application return origins:
 
-- `http://tauri.localhost` — default production origin on Windows and Android;
-- `https://tauri.localhost` — supported when a Tauri build explicitly enables the HTTPS scheme;
-- `tauri://localhost` — custom-protocol origin used by other supported Tauri targets.
+- `http://tauri.localhost`;
+- `https://tauri.localhost`;
+- `tauri://localhost`.
 
-After ORCID authentication succeeds, the server does **not** place a Studio session token in a redirect URL. Instead it creates a random, two-minute, single-use handoff code, stores only its SHA-256 digest, and redirects the same application WebView back to its validated local Tauri origin. The handoff code is carried in the URL fragment so it is not sent as an HTTP query string.
+Android and iOS do not navigate the application WebView away from the bundled Studio UI for ORCID authentication. The app opens the ORCID authorization URL in the system browser and requests the exact registered mobile return target `openmanuscript://auth`. Tauri registers the `openmanuscript` custom URI scheme for mobile builds and delivers the return URL to the running app, or exposes it on cold start.
 
-When the bundled frontend loads again, it calls `POST /api/auth/orcid/native/exchange` with the one-time code and the native-client header. The server atomically consumes the handoff, creates the normal native Studio session, and returns the native bearer token. The client persists that token in the same native session storage already used by e-mail/password login.
+After ORCID authentication succeeds, the server does **not** place a Studio session token in a redirect URL. Instead it creates a random, two-minute, single-use handoff code and stores only its SHA-256 digest. Desktop flows return the code to the validated local Tauri origin; mobile flows return it through `openmanuscript://auth`. The handoff code is carried in the URL fragment rather than the query string.
 
-This avoids the Windows failure mode where ORCID successfully created a web cookie on `studio.openmanuscript.org` but the installed application still had no `omi_native_session_token` and therefore returned to its login screen.
+The bundled frontend then calls `POST /api/auth/orcid/native/exchange` with the one-time code and the native-client header. The server atomically consumes the handoff, creates the normal native Studio session, and returns the native bearer token. The client persists that token in the same native session storage already used by e-mail/password login.
+
+The server accepts only the exact native return targets listed above, including the exact `openmanuscript://auth` mobile target, so caller-controlled return URLs cannot be used as an open redirect.
 
 ## Integrations panel
 
@@ -125,7 +128,7 @@ https://studio.openmanuscript.org/
 https://studio.openmanuscript.org/api/auth/orcid/callback
 ```
 
-The callback URI registered at ORCID and `ORCID_REDIRECT_URI` must be identical.
+The callback URI registered at ORCID and `ORCID_REDIRECT_URI` must be identical. The mobile `openmanuscript://auth` URI is an application return target after the hosted callback; it is not registered as the ORCID OAuth callback and therefore does not expose the ORCID client secret to the app.
 
 ## Sandbox server configuration
 
@@ -167,13 +170,15 @@ curl -sS https://studio.openmanuscript.org/api/auth/providers
 10. Attempt to link the same Sandbox ORCID identity to another Studio account and confirm that the link is rejected.
 11. Confirm that e-mail/password login still works.
 12. Test **Disconnect ORCID** and confirm that only the external identity link is removed.
-13. Repeat the ORCID sign-in in an installed Windows application and confirm that the callback returns to the bundled app instead of the web login page.
-14. Confirm that the installed application remains authenticated after restart, proving that the native bearer session was persisted.
-15. Repeat the native test on Android and, when release builds are available, on macOS, Linux and iOS.
+13. Repeat the ORCID sign-in in an installed desktop application and confirm that the native bearer session is created and persists after restart.
+14. On Android, tap **Sign in with ORCID** and confirm that the system browser opens the ORCID authorization page.
+15. Complete authentication and confirm that `openmanuscript://auth` returns to the installed Studio app and that the user is signed in without seeing the web login page.
+16. Repeat the mobile return test with the app already running and with the app fully closed before the browser returns.
+17. Repeat the mobile test on iOS when a release build is available.
 
 ## Database
 
-No new database migration is required for this production-readiness update. The existing `OAuthLoginState.returnPath` field carries the short-lived hashed nonce marker and the validated native return-origin marker for an authentication attempt; no raw nonce is persisted. The same short-lived table is reused for native handoff records, storing only the SHA-256 digest of the two-minute, single-use handoff code. `UserIdentity.profile` records the protocol, granted scope, and available authentication-method metadata.
+No new database migration is required for this production-readiness update. The existing `OAuthLoginState.returnPath` field carries the short-lived hashed nonce marker and the validated native return-target marker for an authentication attempt; no raw nonce is persisted. The same short-lived table is reused for native handoff records, storing only the SHA-256 digest of the two-minute, single-use handoff code. `UserIdentity.profile` records the protocol, granted scope, and available authentication-method metadata.
 
 ## Production cutover
 
@@ -199,7 +204,7 @@ ORCID_REDIRECT_URI=https://studio.openmanuscript.org/api/auth/orcid/callback
 
 Remove an old `ORCID_BASE_URL=https://sandbox.orcid.org` line when switching, or replace it with the production value. Prefer removing `ORCID_BASE_URL` entirely and letting `ORCID_ENVIRONMENT` select the endpoint.
 
-Before restart, verify that no `VITE_ORCID_*` variable contains the client secret. The secret belongs only in server-side configuration. The production callback origin guard will reject a callback such as `https://openmanuscript.org/api/auth/orcid/callback` when `FRONTEND_ORIGIN=https://studio.openmanuscript.org`, preventing the cross-host 404 failure observed during the production cutover.
+Before restart, verify that no `VITE_ORCID_*` variable contains the client secret. The secret belongs only in server-side configuration. The production callback origin guard will reject a callback such as `https://openmanuscript.org/api/auth/orcid/callback` when `FRONTEND_ORIGIN=https://studio.openmanuscript.org`, preventing a cross-host callback failure.
 
 Then rebuild and restart the API and check `/api/auth/providers` before performing the first production login.
 
