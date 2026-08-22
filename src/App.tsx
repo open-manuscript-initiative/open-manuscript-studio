@@ -1,5 +1,7 @@
 import {
+  useCallback,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -9,6 +11,10 @@ import { RegisterPage } from './auth/RegisterPage';
 
 import { useStudioStore } from './app/useStudioStore';
 import { AppLayout } from './components/AppLayout';
+import {
+  DesktopDocumentTabs,
+  type DesktopDocumentTabItem,
+} from './components/DesktopDocumentTabs';
 import { DesktopUpdatePrompt } from './components/DesktopUpdatePrompt';
 import { EditorPane } from './components/EditorPane';
 import { ReviewPortal } from './components/ReviewPortal';
@@ -35,6 +41,7 @@ import {
   saveLocalManuscript,
   saveLocalManuscriptAs,
 } from './services/nativeManuscriptFile';
+import type { OmiManuscript } from './types/omi';
 
 import './styles/auth.css';
 import './styles/history.css';
@@ -49,6 +56,10 @@ type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
 type AssignmentAwareLaunch = OjsLaunchPayload & {
   actorMode?: 'editor' | 'author' | string | null;
   assignmentContext?: OjsAssignmentLaunchContext | null;
+};
+
+type DesktopTabSession = DesktopDocumentTabItem & {
+  manuscript: OmiManuscript;
 };
 
 const LEGACY_OJS_LAUNCH_STORAGE_KEY = 'omi:ojs-launch';
@@ -114,6 +125,9 @@ export function App() {
 
 function StudioApplication() {
   const reviewMode = new URLSearchParams(window.location.search).get('review') === '1';
+  const mobileStudio = isMobileStudio();
+  const initialDesktopManuscript = useRef(useStudioStore.getState().manuscript);
+  const initialDesktopTabId = useRef(crypto.randomUUID());
   const [menuOpen, setMenuOpen] = useState(false);
   const [externalImportState, setExternalImportState] = useState<ExternalImportState>(() =>
     !reviewMode && (hasInitialOjsLaunch() || hasInitialOmpLaunch())
@@ -125,7 +139,117 @@ function StudioApplication() {
     actorMode: 'editor' | 'author';
     context: OjsAssignmentLaunchContext;
   } | null>(null);
+  const [desktopTabs, setDesktopTabs] = useState<DesktopTabSession[]>(() => [{
+    id: initialDesktopTabId.current,
+    manuscriptId: initialDesktopManuscript.current.id,
+    title: getDocumentTabTitle(initialDesktopManuscript.current),
+    manuscript: initialDesktopManuscript.current,
+  }]);
+  const [activeDesktopTabId, setActiveDesktopTabId] = useState(
+    initialDesktopTabId.current,
+  );
+  const desktopTabsRef = useRef(desktopTabs);
+  const activeDesktopTabIdRef = useRef(activeDesktopTabId);
+  const switchingDesktopTabRef = useRef(false);
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
+
+  useEffect(() => {
+    if (reviewMode || mobileStudio) return;
+
+    return useStudioStore.subscribe((state, previousState) => {
+      if (state.manuscript === previousState.manuscript) return;
+
+      setDesktopTabs((tabs) => {
+        const activeId = activeDesktopTabIdRef.current;
+        const activeIndex = tabs.findIndex((tab) => tab.id === activeId);
+        if (activeIndex < 0) return tabs;
+
+        const activeTab = tabs[activeIndex];
+        if (!activeTab) return tabs;
+
+        if (
+          !switchingDesktopTabRef.current &&
+          state.manuscript.id !== activeTab.manuscriptId
+        ) {
+          const existing = tabs.find(
+            (tab) => tab.manuscriptId === state.manuscript.id,
+          );
+
+          if (existing) {
+            const nextTabs = tabs.map((tab) =>
+              tab.id === existing.id
+                ? createDesktopTabSession(existing.id, state.manuscript)
+                : tab,
+            );
+            desktopTabsRef.current = nextTabs;
+            activeDesktopTabIdRef.current = existing.id;
+            setActiveDesktopTabId(existing.id);
+            return nextTabs;
+          }
+
+          const nextTab = createDesktopTabSession(
+            crypto.randomUUID(),
+            state.manuscript,
+          );
+          const nextTabs = [...tabs, nextTab];
+          desktopTabsRef.current = nextTabs;
+          activeDesktopTabIdRef.current = nextTab.id;
+          setActiveDesktopTabId(nextTab.id);
+          return nextTabs;
+        }
+
+        const nextTabs = tabs.map((tab) =>
+          tab.id === activeId
+            ? createDesktopTabSession(tab.id, state.manuscript)
+            : tab,
+        );
+        desktopTabsRef.current = nextTabs;
+        return nextTabs;
+      });
+    });
+  }, [mobileStudio, reviewMode]);
+
+  const activateDesktopTab = useCallback((tabId: string) => {
+    if (tabId === activeDesktopTabIdRef.current) return;
+
+    useStudioStore.getState().checkpoint('manual');
+    const target = desktopTabsRef.current.find((tab) => tab.id === tabId);
+    if (!target) return;
+
+    activeDesktopTabIdRef.current = tabId;
+    setActiveDesktopTabId(tabId);
+    switchingDesktopTabRef.current = true;
+    useStudioStore.getState().loadManuscript(target.manuscript);
+    switchingDesktopTabRef.current = false;
+  }, []);
+
+  const closeDesktopTab = useCallback((tabId: string) => {
+    const tabs = desktopTabsRef.current;
+    if (tabs.length <= 1) return;
+
+    const closingIndex = tabs.findIndex((tab) => tab.id === tabId);
+    if (closingIndex < 0) return;
+
+    if (tabId !== activeDesktopTabIdRef.current) {
+      const nextTabs = tabs.filter((tab) => tab.id !== tabId);
+      desktopTabsRef.current = nextTabs;
+      setDesktopTabs(nextTabs);
+      return;
+    }
+
+    useStudioStore.getState().checkpoint('manual');
+    const nextTabs = tabs.filter((tab) => tab.id !== tabId);
+    const nextActive = nextTabs[Math.min(closingIndex, nextTabs.length - 1)];
+    if (!nextActive) return;
+
+    desktopTabsRef.current = nextTabs;
+    setDesktopTabs(nextTabs);
+    activeDesktopTabIdRef.current = nextActive.id;
+    setActiveDesktopTabId(nextActive.id);
+    switchingDesktopTabRef.current = true;
+    useStudioStore.getState().loadManuscript(nextActive.manuscript);
+    switchingDesktopTabRef.current = false;
+  }, []);
 
   useEffect(() => {
     if (reviewMode) {
@@ -285,7 +409,7 @@ function StudioApplication() {
     );
   }
 
-  if (isMobileStudio()) {
+  if (mobileStudio) {
     return (
       <>
         <MobileLayout onOpenMenu={() => setMenuOpen(true)}>
@@ -305,6 +429,12 @@ function StudioApplication() {
 
   return (
     <AppLayout onOpenMenu={() => setMenuOpen(true)}>
+      <DesktopDocumentTabs
+        tabs={desktopTabs}
+        activeTabId={activeDesktopTabId}
+        onActivate={activateDesktopTab}
+        onClose={closeDesktopTab}
+      />
       <div className="focus-workspace"><EditorPane ojsContributors={ojsContributors} /></div>
       <SearchReplaceOverlay />
       <DesktopUpdatePrompt />
@@ -315,4 +445,21 @@ function StudioApplication() {
       />
     </AppLayout>
   );
+}
+
+function createDesktopTabSession(
+  id: string,
+  manuscript: OmiManuscript,
+): DesktopTabSession {
+  return {
+    id,
+    manuscriptId: manuscript.id,
+    title: getDocumentTabTitle(manuscript),
+    manuscript,
+  };
+}
+
+function getDocumentTabTitle(manuscript: OmiManuscript): string {
+  const title = manuscript.title?.trim();
+  return title || 'Untitled manuscript';
 }
