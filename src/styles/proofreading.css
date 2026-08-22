@@ -1,0 +1,78 @@
+.omi-proofreading-issue {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.omi-proofreading-issue--spelling {
+  text-decoration-color: #b91c1c;
+}
+
+.omi-proofreading-issue--grammar {
+  text-decoration-color: #2563eb;
+}
+
+.omi-proofreading-issue--punctuation {
+  text-decoration-color: #b45309;
+}
+
+.omi-proofreading-issue--style {
+  text-decoration-color: #7c3aed;
+}
+
+.omi-proofreading-card {
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color, #d7d7d7);
+  border-radius: 10px;
+  background: var(--surface-color, #fff);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 10%);
+  font-size: 0.9rem;
+}
+
+.omi-proofreading-card header,
+.omi-proofreading-card header > div,
+.omi-proofreading-card footer,
+.omi-proofreading-replacements {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.omi-proofreading-card header {
+  justify-content: space-between;
+}
+
+.omi-proofreading-card header > button {
+  border: 0;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.omi-proofreading-card p {
+  margin: 0.55rem 0;
+}
+
+.omi-proofreading-category {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: rgb(127 127 127 / 10%);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.omi-proofreading-replacements {
+  flex-wrap: wrap;
+  margin: 0.5rem 0;
+}
+
+.omi-proofreading-card footer {
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
