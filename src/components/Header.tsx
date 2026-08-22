@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   CheckCircle2,
   Clock3,
@@ -15,13 +16,12 @@ import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { useAuthStore } from '../store/authStore';
 import { AccountPanel } from './AccountPanel';
+import { DesktopDocumentOutline } from './DesktopDocumentOutline';
 import { HeaderInsertMenu } from './HeaderInsertMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface HeaderProps {
   onOpenMenu: () => void;
-  outlineOpen: boolean;
-  onToggleOutline: () => void;
 }
 
 const searchLabels: Record<string, string> = {
@@ -51,13 +51,11 @@ const outlineLabels: Record<string, { show: string; hide: string }> = {
   },
 };
 
-export function Header({
-  onOpenMenu,
-  outlineOpen,
-  onToggleOutline,
-}: HeaderProps) {
+export function Header({ onOpenMenu }: HeaderProps) {
   const { t, locale } = useTranslation();
   const [accountOpen, setAccountOpen] = useState(false);
+  const [outlineOpen, setOutlineOpen] = useState(false);
+  const [outlineHost, setOutlineHost] = useState<HTMLElement | null>(null);
   const manuscript = useStudioStore((state) => state.manuscript);
   const pending = useStudioStore((state) => state.pendingChangeSet);
   const selectedId = useStudioStore((state) => state.selectedSectionId);
@@ -69,6 +67,15 @@ export function Header({
   const outlineLabel = outlineOpen
     ? (outlineLabels[locale] ?? outlineLabels.en).hide
     : (outlineLabels[locale] ?? outlineLabels.en).show;
+
+  useEffect(() => {
+    const host = document.querySelector<HTMLElement>('.focus-workspace');
+    setOutlineHost(host);
+    if (!host) return;
+
+    host.classList.toggle('focus-workspace--outline', outlineOpen);
+    return () => host.classList.remove('focus-workspace--outline');
+  }, [outlineOpen]);
 
   const search = () =>
     window.dispatchEvent(
@@ -95,7 +102,7 @@ export function Header({
           <button
             type="button"
             className="focus-menu-button focus-outline-button"
-            onClick={onToggleOutline}
+            onClick={() => setOutlineOpen((current) => !current)}
             aria-label={outlineLabel}
             title={outlineLabel}
             aria-pressed={outlineOpen}
@@ -179,6 +186,13 @@ export function Header({
           </button>
         </div>
       </header>
+
+      {outlineOpen && outlineHost
+        ? createPortal(
+            <DesktopDocumentOutline onClose={() => setOutlineOpen(false)} />,
+            outlineHost,
+          )
+        : null}
 
       {accountOpen ? (
         <div className="account-overlay" role="dialog" aria-modal="true" aria-label={accountLabel}>
