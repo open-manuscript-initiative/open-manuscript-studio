@@ -10,7 +10,10 @@ import {
 } from '../i18n';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { OrcidEnvironmentBadge } from '../components/OrcidEnvironmentBadge';
-import { getOrcidAuthUrl } from '../services/authApi';
+import {
+  getAuthErrorCodeFromLocation,
+  getOrcidAuthUrl,
+} from '../services/authApi';
 import { useAuthStore } from '../store/authStore';
 import { useOrcidProvider } from './useOrcidProvider';
 
@@ -42,7 +45,7 @@ export function LoginPage({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const orcidProvider = useOrcidProvider();
-  const authErrorCode = new URLSearchParams(window.location.search).get('authError');
+  const authErrorCode = getAuthErrorCodeFromLocation();
 
   useEffect(() => {
     clearError();
