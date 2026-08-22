@@ -103,12 +103,12 @@ jobs:
         id: android_app_link
         shell: bash
         env:
-          ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
           set -euo pipefail
-          for name in ANDROID_KEY_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS; do
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS; do
             if [[ -z "${!name:-}" ]]; then
               echo "Required GitHub Actions secret is missing: $name" >&2
               exit 1
@@ -116,7 +116,7 @@ jobs:
           done
 
           keystore="$RUNNER_TEMP/omi-android-release.jks"
-          printf '%s' "$ANDROID_KEY_BASE64" | base64 --decode > "$keystore"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$keystore"
           chmod 600 "$keystore"
 
           fingerprint="$(
@@ -182,32 +182,17 @@ jobs:
               dist/ \
               /var/www/vhosts/openmanuscript.org/studio/httpdocs/
 
-            APP_LINK_ASSET_FILE="$(
-              find /var/www/vhosts/openmanuscript.org /var/www/vhosts/app.openmanuscript.org \
-                -type f -path '*/.well-known/assetlinks.json' -print -quit 2>/dev/null || true
-            )"
-            APP_LINK_FALLBACK_FILE="$(
-              find /var/www/vhosts/openmanuscript.org /var/www/vhosts/app.openmanuscript.org \
-                -type f -path '*/auth/orcid/index.html' -print -quit 2>/dev/null || true
-            )"
-
-            if [[ -z "$APP_LINK_ASSET_FILE" || -z "$APP_LINK_FALLBACK_FILE" ]]; then
-              echo 'Could not locate the prepared app.openmanuscript.org marker files.' >&2
-              echo 'Expected .well-known/assetlinks.json and auth/orcid/index.html under the subdomain document root.' >&2
+            APP_LINK_ROOT='/var/www/vhosts/openmanuscript.org/app/httpdocs'
+            if [[ ! -d "$APP_LINK_ROOT" ]]; then
+              echo "The app.openmanuscript.org document root was not found at $APP_LINK_ROOT." >&2
+              echo 'If Plesk uses a custom document root, update APP_LINK_ROOT in .github/workflows/ci.yml.' >&2
               exit 1
             fi
 
-            APP_LINK_ROOT="$(dirname "$(dirname "$APP_LINK_ASSET_FILE")")"
-            FALLBACK_ROOT="$(dirname "$(dirname "$(dirname "$APP_LINK_FALLBACK_FILE")")")"
-            if [[ "$APP_LINK_ROOT" != "$FALLBACK_ROOT" ]]; then
-              echo 'The prepared app-link files are not under the same document root.' >&2
-              echo "assetlinks root: $APP_LINK_ROOT" >&2
-              echo "fallback root: $FALLBACK_ROOT" >&2
-              exit 1
-            fi
-
-            rsync -a app-link-site/ "$APP_LINK_ROOT/"
-            cat > "$APP_LINK_ASSET_FILE" <<'JSON'
+            mkdir -p "$APP_LINK_ROOT/.well-known" "$APP_LINK_ROOT/auth/orcid"
+            rsync -a --delete app-link-site/ "$APP_LINK_ROOT/"
+            mkdir -p "$APP_LINK_ROOT/.well-known"
+            cat > "$APP_LINK_ROOT/.well-known/assetlinks.json" <<'JSON'
             [
               {
                 "relation": ["delegate_permission/common.handle_all_urls"],
