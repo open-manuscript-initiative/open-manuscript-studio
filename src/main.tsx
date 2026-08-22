@@ -37,6 +37,7 @@ import './styles/state-digest.css';
 import './styles/footer.css';
 import './styles/academic-shell.css';
 import './styles/mobile-language-switcher.css';
+import './styles/desktop-fullscreen-panels.css';
 
 initializeRevisionIntegrity();
 
