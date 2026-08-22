@@ -1,11 +1,12 @@
 const NONCE_PREFIX = 'oidc-nonce:';
 const NATIVE_RETURN_PREFIX = 'native-return:';
+const MOBILE_RETURN_ORIGIN = 'openmanuscript://auth';
 
 const ALLOWED_NATIVE_RETURN_ORIGINS = new Set([
   'tauri://localhost',
   'http://tauri.localhost',
   'https://tauri.localhost',
-  'openmanuscript://auth',
+  MOBILE_RETURN_ORIGIN,
 ]);
 
 export interface OrcidStateReturnMetadata {
@@ -71,9 +72,19 @@ export function buildNativeAuthReturnUrl(
   }
 
   const url = new URL(`${normalizedOrigin}/`);
-  const fragment = new URLSearchParams();
-  if (input.handoffCode) fragment.set('nativeAuthCode', input.handoffCode);
-  if (input.errorCode) fragment.set('authError', input.errorCode);
-  url.hash = fragment.toString();
+  const params = new URLSearchParams();
+  if (input.handoffCode) params.set('nativeAuthCode', input.handoffCode);
+  if (input.errorCode) params.set('authError', input.errorCode);
+
+  if (normalizedOrigin === MOBILE_RETURN_ORIGIN) {
+    // Android/iOS custom-scheme intents preserve query parameters reliably when
+    // the application is resumed from a system browser. The value is still a
+    // random, short-lived, single-use handoff code rather than a session token.
+    url.search = params.toString();
+  } else {
+    // Desktop Tauri local origins keep the handoff outside the HTTP request.
+    url.hash = params.toString();
+  }
+
   return url.toString();
 }
