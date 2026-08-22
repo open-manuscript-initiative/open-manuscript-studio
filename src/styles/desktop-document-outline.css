@@ -6,6 +6,7 @@
 .desktop-document-outline {
   position: sticky;
   top: 5.45rem;
+  order: -1;
   width: clamp(15.5rem, 19vw, 19rem);
   height: calc(100vh - 7rem);
   flex: 0 0 clamp(15.5rem, 19vw, 19rem);
