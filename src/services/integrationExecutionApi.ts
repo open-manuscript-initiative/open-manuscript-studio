@@ -112,6 +112,18 @@ export interface RegisteredIntegrationExtension {
   updatedAt: string;
 }
 
+export interface TranslationVariant {
+  id: string;
+  manuscriptId: string;
+  sourceLocale: string | null;
+  targetLocale: string;
+  scope: { kind: 'section' | 'manuscript'; id: string | null };
+  providerId: string;
+  translatedState: unknown;
+  createdAt: string;
+  updatedAt: string;
+}
+
 async function readError(response: Response, fallback: string): Promise<Error> {
   const payload = await response.json().catch(() => null) as
     | { error?: { message?: string } }
@@ -207,5 +219,54 @@ export async function deleteIntegrationExtension(extensionId: string): Promise<v
   );
   if (!response.ok && response.status !== 204) {
     throw await readError(response, `Extension deletion failed with HTTP ${response.status}.`);
+  }
+}
+
+export async function getTranslationVariants(manuscriptId: string): Promise<TranslationVariant[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/integrations/translation-variants?manuscriptId=${encodeURIComponent(manuscriptId)}`,
+    { credentials: 'include', headers: { Accept: 'application/json' } },
+  );
+  if (!response.ok) {
+    throw await readError(response, `Translation variant request failed with HTTP ${response.status}.`);
+  }
+  const payload = await response.json() as { variants: TranslationVariant[] };
+  return payload.variants;
+}
+
+export async function saveTranslationVariant(input: {
+  manuscriptId: string;
+  sourceLocale?: string;
+  targetLocale: string;
+  scope: { kind: 'section' | 'manuscript'; id?: string };
+  translatedState: unknown;
+}): Promise<string> {
+  const response = await fetch(`${API_BASE_URL}/integrations/translation-variants`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ ...input, providerId: 'deepl' }),
+  });
+  if (!response.ok) {
+    throw await readError(response, `Translation variant save failed with HTTP ${response.status}.`);
+  }
+  const payload = await response.json() as { id: string };
+  return payload.id;
+}
+
+export async function deleteTranslationVariant(variantId: string): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/integrations/translation-variants/${encodeURIComponent(variantId)}`,
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    },
+  );
+  if (!response.ok && response.status !== 204) {
+    throw await readError(response, `Translation variant deletion failed with HTTP ${response.status}.`);
   }
 }
