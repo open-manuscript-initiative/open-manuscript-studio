@@ -4,18 +4,26 @@ import { Router, type Response } from 'express';
 
 import { env } from '../config/env.js';
 import { ensureStudioPrincipal } from '../identity/studioPrincipalBridge.js';
+import {
+  buildNativeAuthReturnUrl,
+  decodeOrcidStateReturnPath,
+  encodeOrcidStateReturnPath,
+  normalizeNativeReturnOrigin,
+} from '../integrations/nativeAuthHandoff.js';
 import { validateOrcidIdToken, type OrcidOidcTokenResponse } from '../integrations/orcidOidc.js';
 import { identityPrisma } from '../lib/identityPrisma.js';
 import { prisma } from '../lib/prisma.js';
+import { getUserForSession } from '../services/authService.js';
 import { consumeAssignmentInvitation } from '../services/assignmentInvitationService.js';
 
 export const orcidOidcRouter = Router();
 
 const COOKIE_NAME = 'omi_session';
+const NATIVE_HEADER = 'x-omi-native-client';
 const SESSION_TTL_DAYS = 30;
 const STATE_TTL_MINUTES = 10;
+const NATIVE_HANDOFF_TTL_MINUTES = 2;
 const ORCID_ISSUER = new URL(env.ORCID_BASE_URL).origin;
-const NONCE_PREFIX = 'oidc-nonce:';
 
 orcidOidcRouter.get('/orcid/start', async (request, response) => {
   if (!orcidConfigured()) {
@@ -28,7 +36,16 @@ orcidOidcRouter.get('/orcid/start', async (request, response) => {
   const invitationToken = mode === 'invite' && typeof request.query.invite === 'string'
     ? request.query.invite.trim()
     : undefined;
-  const userId = mode === 'link' ? await currentUserId(request.headers.cookie) : undefined;
+  const userId = mode === 'link'
+    ? await currentUserId(request.headers.cookie, request.headers.authorization)
+    : undefined;
+  const nativeRequested = request.query.native === '1';
+  const requestedNativeReturnOrigin = typeof request.query.return_origin === 'string'
+    ? request.query.return_origin
+    : undefined;
+  const nativeReturnOrigin = nativeRequested
+    ? normalizeNativeReturnOrigin(requestedNativeReturnOrigin)
+    : undefined;
 
   if (mode === 'invite' && !invitationToken) {
     response.status(400).json({ error: { code: 'INVITATION_REQUIRED', message: 'An invitation token is required.' } });
@@ -36,6 +53,15 @@ orcidOidcRouter.get('/orcid/start', async (request, response) => {
   }
   if (mode === 'link' && !userId) {
     response.status(401).json({ error: { code: 'AUTHENTICATION_REQUIRED', message: 'Sign in before linking an ORCID iD.' } });
+    return;
+  }
+  if (nativeRequested && !nativeReturnOrigin) {
+    response.status(400).json({
+      error: {
+        code: 'INVALID_NATIVE_RETURN_ORIGIN',
+        message: 'The native authentication return origin is not supported.',
+      },
+    });
     return;
   }
 
@@ -48,7 +74,7 @@ orcidOidcRouter.get('/orcid/start', async (request, response) => {
       mode,
       userId: userId ?? null,
       invitationToken: invitationToken ?? null,
-      returnPath: `${NONCE_PREFIX}${hash(nonce)}`,
+      returnPath: encodeOrcidStateReturnPath(hash(nonce), nativeReturnOrigin),
       expiresAt: new Date(Date.now() + STATE_TTL_MINUTES * 60 * 1000),
     },
   });
@@ -61,6 +87,97 @@ orcidOidcRouter.get('/orcid/start', async (request, response) => {
   authorizeUrl.searchParams.set('state', state);
   authorizeUrl.searchParams.set('nonce', nonce);
   response.redirect(302, authorizeUrl.toString());
+});
+
+orcidOidcRouter.post('/orcid/native/exchange', async (request, response) => {
+  if (request.headers[NATIVE_HEADER] !== '1') {
+    response.status(403).json({
+      error: {
+        code: 'NATIVE_CLIENT_REQUIRED',
+        message: 'This endpoint is available only to native Studio clients.',
+      },
+    });
+    return;
+  }
+
+  const code = typeof request.body?.code === 'string' ? request.body.code.trim() : '';
+  if (!code || code.length > 256) {
+    response.status(400).json({
+      error: {
+        code: 'INVALID_NATIVE_HANDOFF',
+        message: 'The native authentication handoff code is invalid.',
+      },
+    });
+    return;
+  }
+
+  const stateHash = hash(code);
+  const handoff = await identityPrisma.oAuthLoginState.findUnique({ where: { stateHash } });
+  if (
+    !handoff ||
+    handoff.provider !== 'ORCID' ||
+    handoff.mode !== 'native_handoff' ||
+    !handoff.userId ||
+    handoff.expiresAt <= new Date()
+  ) {
+    if (handoff) {
+      await identityPrisma.oAuthLoginState.delete({ where: { id: handoff.id } }).catch(() => undefined);
+    }
+    response.status(401).json({
+      error: {
+        code: 'NATIVE_HANDOFF_EXPIRED',
+        message: 'The native authentication handoff has expired or was already used.',
+      },
+    });
+    return;
+  }
+
+  const consumed = await identityPrisma.oAuthLoginState.deleteMany({
+    where: {
+      id: handoff.id,
+      stateHash,
+      provider: 'ORCID',
+      mode: 'native_handoff',
+    },
+  });
+  if (consumed.count !== 1) {
+    response.status(401).json({
+      error: {
+        code: 'NATIVE_HANDOFF_EXPIRED',
+        message: 'The native authentication handoff has expired or was already used.',
+      },
+    });
+    return;
+  }
+
+  const user = await identityPrisma.user.findUnique({ where: { id: handoff.userId } });
+  if (!user || user.status !== 'ACTIVE') {
+    response.status(401).json({
+      error: {
+        code: 'ACCOUNT_NOT_ACTIVE',
+        message: 'The Studio account is not active.',
+      },
+    });
+    return;
+  }
+
+  const session = await createSession(user.id);
+  const serializedUser = await getUserForSession(session.token);
+  if (!serializedUser) {
+    response.status(401).json({
+      error: {
+        code: 'SESSION_CREATION_FAILED',
+        message: 'The native Studio session could not be created.',
+      },
+    });
+    return;
+  }
+
+  response.status(200).json({
+    user: serializedUser,
+    token: session.token,
+    expiresAt: session.expiresAt.toISOString(),
+  });
 });
 
 orcidOidcRouter.get('/orcid/callback', async (request, response) => {
@@ -77,13 +194,13 @@ orcidOidcRouter.get('/orcid/callback', async (request, response) => {
     return;
   }
 
-  const expectedNonceHash = loginState.returnPath?.startsWith(NONCE_PREFIX)
-    ? loginState.returnPath.slice(NONCE_PREFIX.length)
-    : '';
+  const stateMetadata = decodeOrcidStateReturnPath(loginState.returnPath);
+  const expectedNonceHash = stateMetadata.expectedNonceHash;
+  const nativeReturnOrigin = stateMetadata.nativeReturnOrigin;
   await identityPrisma.oAuthLoginState.delete({ where: { id: loginState.id } }).catch(() => undefined);
 
   if (!expectedNonceHash) {
-    redirectError(response, 'orcid_nonce_missing');
+    redirectError(response, 'orcid_nonce_missing', nativeReturnOrigin);
     return;
   }
 
@@ -123,7 +240,11 @@ orcidOidcRouter.get('/orcid/callback', async (request, response) => {
         update: { displayName: displayName || user.fullName, profile: identityProfile(token.scope, amr), lastUsedAt: new Date() },
       });
       await ensureStudioPrincipal(toPrincipalSnapshot(updated));
-      response.redirect(302, env.FRONTEND_ORIGIN);
+      if (nativeReturnOrigin) {
+        await redirectNativeHandoff(response, updated.id, nativeReturnOrigin);
+      } else {
+        response.redirect(302, env.FRONTEND_ORIGIN);
+      }
       return;
     }
 
@@ -192,7 +313,7 @@ orcidOidcRouter.get('/orcid/callback', async (request, response) => {
     }
 
     if (!userId) {
-      redirectError(response, 'orcid_not_linked');
+      redirectError(response, 'orcid_not_linked', nativeReturnOrigin);
       return;
     }
 
@@ -205,6 +326,11 @@ orcidOidcRouter.get('/orcid/callback', async (request, response) => {
     });
     await ensureStudioPrincipal(toPrincipalSnapshot(updated));
 
+    if (nativeReturnOrigin) {
+      await redirectNativeHandoff(response, updated.id, nativeReturnOrigin);
+      return;
+    }
+
     const session = await createSession(user.id);
     response.cookie(COOKIE_NAME, session.token, {
       httpOnly: true,
@@ -216,7 +342,7 @@ orcidOidcRouter.get('/orcid/callback', async (request, response) => {
     response.redirect(302, env.FRONTEND_ORIGIN);
   } catch (error) {
     console.error('[OMI ORCID OpenID Connect]', error);
-    redirectError(response, 'orcid_signin_failed');
+    redirectError(response, 'orcid_signin_failed', nativeReturnOrigin);
   }
 });
 
@@ -319,17 +445,35 @@ async function exchangeOrcidCode(code: string): Promise<OrcidOidcTokenResponse> 
   return payload;
 }
 
-async function currentUserId(cookieHeader: string | undefined): Promise<string | undefined> {
-  if (!cookieHeader) return undefined;
-  const token = cookieHeader.split(';').map((part) => part.trim().split('='))
-    .find(([name]) => name === COOKIE_NAME)?.slice(1).join('=');
+async function currentUserId(
+  cookieHeader: string | undefined,
+  authorizationHeader: string | undefined,
+): Promise<string | undefined> {
+  const bearerToken = readBearerToken(authorizationHeader);
+  const cookieToken = readSessionCookie(cookieHeader);
+  const token = bearerToken ?? cookieToken;
   if (!token) return undefined;
+
   const session = await identityPrisma.userSession.findUnique({
-    where: { tokenHash: hash(decodeURIComponent(token)) },
+    where: { tokenHash: hash(token) },
     include: { user: true },
   });
   if (!session || session.expiresAt <= new Date() || session.user.status !== 'ACTIVE') return undefined;
   return session.userId;
+}
+
+function readSessionCookie(cookieHeader: string | undefined): string | undefined {
+  if (!cookieHeader) return undefined;
+  const token = cookieHeader.split(';').map((part) => part.trim().split('='))
+    .find(([name]) => name === COOKIE_NAME)?.slice(1).join('=');
+  return token ? decodeURIComponent(token) : undefined;
+}
+
+function readBearerToken(authorizationHeader: string | undefined): string | undefined {
+  if (!authorizationHeader) return undefined;
+  const value = authorizationHeader.trim();
+  if (!value.toLowerCase().startsWith('bearer ')) return undefined;
+  return value.slice(7).trim() || undefined;
 }
 
 async function createSession(userId: string) {
@@ -337,6 +481,27 @@ async function createSession(userId: string) {
   const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
   await identityPrisma.userSession.create({ data: { userId, tokenHash: hash(token), expiresAt } });
   return { token, expiresAt };
+}
+
+async function redirectNativeHandoff(
+  response: Response,
+  userId: string,
+  nativeReturnOrigin: string,
+): Promise<void> {
+  const handoffCode = randomBytes(32).toString('base64url');
+  await identityPrisma.oAuthLoginState.create({
+    data: {
+      stateHash: hash(handoffCode),
+      provider: 'ORCID',
+      mode: 'native_handoff',
+      userId,
+      invitationToken: null,
+      returnPath: null,
+      expiresAt: new Date(Date.now() + NATIVE_HANDOFF_TTL_MINUTES * 60 * 1000),
+    },
+  });
+
+  response.redirect(302, buildNativeAuthReturnUrl(nativeReturnOrigin, { handoffCode }));
 }
 
 function normalizeOrcid(value: string | undefined): string | undefined {
@@ -348,7 +513,16 @@ function hash(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }
 
-function redirectError(response: Response, code: string): void {
+function redirectError(
+  response: Response,
+  code: string,
+  nativeReturnOrigin?: string,
+): void {
+  if (nativeReturnOrigin) {
+    response.redirect(302, buildNativeAuthReturnUrl(nativeReturnOrigin, { errorCode: code }));
+    return;
+  }
+
   const url = new URL(env.FRONTEND_ORIGIN);
   url.searchParams.set('authError', code);
   response.redirect(302, url.toString());
