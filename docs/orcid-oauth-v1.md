@@ -17,6 +17,7 @@ The integration supports:
 - assignment invitations through ORCID;
 - displaying and disconnecting the linked ORCID iD in **Integrations → ORCID**;
 - normal ORCID accounts and accounts protected by ORCID two-factor authentication;
+- native-session handoff for installed Tauri applications;
 - explicit Sandbox/production network selection with fail-closed configuration validation.
 
 ORCID performs password and 2FA verification on its own site. Studio never receives the ORCID password or second-factor secret.
@@ -28,6 +29,7 @@ ORCID performs password and 2FA verification on its own site. Studio never recei
 - `GET /api/auth/orcid/start?mode=link`
 - `GET /api/auth/orcid/start?mode=invite&invite=<token>`
 - `GET /api/auth/orcid/callback`
+- `POST /api/auth/orcid/native/exchange`
 - `DELETE /api/auth/orcid/link`
 
 `GET /api/auth/providers` reports whether ORCID is configured and whether the current authenticated Studio account has a linked ORCID identity. `DELETE /api/auth/orcid/link` removes the current account's ORCID identity link while leaving the local Studio account and password login intact.
@@ -47,6 +49,22 @@ The ORCID identity key is the tuple `(provider, issuer, subject)`. This means Sa
 For an already linked identity, subsequent ORCID sign-ins resolve the existing `UserIdentity` row and therefore return to the same Studio account; they do not create another user. During linking and invitation acceptance, Studio checks whether the authenticated ORCID identity is already owned by a different Studio account and rejects the operation if so.
 
 The first version intentionally does not create an arbitrary new Studio account solely from an unknown ORCID iD. The identity must first be linked to an existing Studio account or associated through a supported invitation flow. This prevents accidental duplicate accounts and prevents possession of an unrelated ORCID account from claiming an existing Studio profile.
+
+## Installed application session handoff
+
+Installed Windows, macOS, Linux, Android and iOS builds use the same hosted ORCID client and the same HTTPS callback as the web application. The ORCID client secret remains exclusively on the Studio server and is never compiled into a desktop or mobile application.
+
+A Tauri client adds a validated local application return origin to the ORCID start request. Only these Tauri origins are accepted:
+
+- `http://tauri.localhost` — default production origin on Windows and Android;
+- `https://tauri.localhost` — supported when a Tauri build explicitly enables the HTTPS scheme;
+- `tauri://localhost` — custom-protocol origin used by other supported Tauri targets.
+
+After ORCID authentication succeeds, the server does **not** place a Studio session token in a redirect URL. Instead it creates a random, two-minute, single-use handoff code, stores only its SHA-256 digest, and redirects the same application WebView back to its validated local Tauri origin. The handoff code is carried in the URL fragment so it is not sent as an HTTP query string.
+
+When the bundled frontend loads again, it calls `POST /api/auth/orcid/native/exchange` with the one-time code and the native-client header. The server atomically consumes the handoff, creates the normal native Studio session, and returns the native bearer token. The client persists that token in the same native session storage already used by e-mail/password login.
+
+This avoids the Windows failure mode where ORCID successfully created a web cookie on `studio.openmanuscript.org` but the installed application still had no `omi_native_session_token` and therefore returned to its login screen.
 
 ## Integrations panel
 
@@ -149,10 +167,13 @@ curl -sS https://studio.openmanuscript.org/api/auth/providers
 10. Attempt to link the same Sandbox ORCID identity to another Studio account and confirm that the link is rejected.
 11. Confirm that e-mail/password login still works.
 12. Test **Disconnect ORCID** and confirm that only the external identity link is removed.
+13. Repeat the ORCID sign-in in an installed Windows application and confirm that the callback returns to the bundled app instead of the web login page.
+14. Confirm that the installed application remains authenticated after restart, proving that the native bearer session was persisted.
+15. Repeat the native test on Android and, when release builds are available, on macOS, Linux and iOS.
 
 ## Database
 
-No new database migration is required for this production-readiness update. The existing `OAuthLoginState.returnPath` field carries the short-lived hashed nonce marker for an authentication attempt; no raw nonce is persisted. `UserIdentity.profile` records the protocol, granted scope, and available authentication-method metadata.
+No new database migration is required for this production-readiness update. The existing `OAuthLoginState.returnPath` field carries the short-lived hashed nonce marker and the validated native return-origin marker for an authentication attempt; no raw nonce is persisted. The same short-lived table is reused for native handoff records, storing only the SHA-256 digest of the two-minute, single-use handoff code. `UserIdentity.profile` records the protocol, granted scope, and available authentication-method metadata.
 
 ## Production cutover
 
