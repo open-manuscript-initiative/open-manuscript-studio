@@ -4,10 +4,12 @@ const STORAGE_KEY = 'omi:proofreading-preferences';
 
 export interface ProofreadingPreferences {
   spellcheckEnabled: boolean;
+  languageCheckEnabled: boolean;
 }
 
 const DEFAULTS: ProofreadingPreferences = {
   spellcheckEnabled: true,
+  languageCheckEnabled: false,
 };
 
 let current = readPreferences();
@@ -20,6 +22,7 @@ function readPreferences(): ProofreadingPreferences {
     const parsed = JSON.parse(raw) as Partial<ProofreadingPreferences>;
     return {
       spellcheckEnabled: parsed.spellcheckEnabled ?? DEFAULTS.spellcheckEnabled,
+      languageCheckEnabled: parsed.languageCheckEnabled ?? DEFAULTS.languageCheckEnabled,
     };
   } catch {
     return DEFAULTS;
@@ -38,6 +41,10 @@ function emit(next: ProofreadingPreferences): void {
 
 export function setSpellcheckEnabled(enabled: boolean): void {
   emit({ ...current, spellcheckEnabled: enabled });
+}
+
+export function setLanguageCheckEnabled(enabled: boolean): void {
+  emit({ ...current, languageCheckEnabled: enabled });
 }
 
 export function useProofreadingPreferences(): ProofreadingPreferences {
