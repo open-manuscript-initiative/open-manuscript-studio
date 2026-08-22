@@ -12,7 +12,7 @@ import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { OrcidEnvironmentBadge } from '../components/OrcidEnvironmentBadge';
 import {
   getAuthErrorCodeFromLocation,
-  getOrcidAuthUrl,
+  startOrcidAuthentication,
 } from '../services/authApi';
 import { useAuthStore } from '../store/authStore';
 import { useOrcidProvider } from './useOrcidProvider';
@@ -44,6 +44,7 @@ export function LoginPage({
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [orcidStartError, setOrcidStartError] = useState('');
   const orcidProvider = useOrcidProvider();
   const authErrorCode = getAuthErrorCodeFromLocation();
 
@@ -63,6 +64,21 @@ export function LoginPage({
       });
     } catch {
       // The auth store exposes the error state.
+    }
+  };
+
+  const handleOrcidSignIn = async () => {
+    setOrcidStartError('');
+    try {
+      await startOrcidAuthentication();
+    } catch {
+      setOrcidStartError(
+        locale === 'hu'
+          ? 'Az ORCID-hitelesítés nem nyitható meg. Próbáld újra.'
+          : locale === 'de'
+            ? 'Die ORCID-Anmeldung konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.'
+            : 'ORCID sign-in could not be opened. Please try again.',
+      );
     }
   };
 
@@ -101,9 +117,13 @@ export function LoginPage({
 
         {orcidProvider?.enabled ? (
           <div className="auth-form">
-            <a className="auth-primary-button" href={getOrcidAuthUrl()}>
+            <button
+              className="auth-primary-button"
+              type="button"
+              onClick={() => void handleOrcidSignIn()}
+            >
               {locale === 'hu' ? 'Bejelentkezés ORCID-dal' : locale === 'de' ? 'Mit ORCID anmelden' : 'Sign in with ORCID'}
-            </a>
+            </button>
             <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
             <div className="auth-field-hint">
               {locale === 'hu'
@@ -112,6 +132,7 @@ export function LoginPage({
                   ? 'Die ORCID-Anmeldung verwendet die verifizierte ORCID iD, die mit Ihrem Studio-Konto verknüpft ist.'
                   : 'ORCID sign-in uses the verified ORCID iD linked to your Studio account.'}
             </div>
+            {orcidStartError ? <div className="auth-error" role="alert">{orcidStartError}</div> : null}
           </div>
         ) : null}
 
