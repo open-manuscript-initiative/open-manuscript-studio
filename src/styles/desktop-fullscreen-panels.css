@@ -24,6 +24,10 @@
     width: min(100%, 72rem);
   }
 
+  .studio-menu-drawer .omi-section-structure {
+    display: none;
+  }
+
   .account-overlay {
     display: block;
     background: #f8fafc;
@@ -44,14 +48,10 @@
     width: 100%;
     max-width: 1280px;
   }
-
-  .studio-menu-mobile-structure {
-    display: none;
-  }
 }
 
 @media (max-width: 760px) {
-  .studio-menu-mobile-structure {
+  .studio-menu-drawer .omi-section-structure {
     display: block;
   }
 }
