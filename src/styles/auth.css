@@ -1,4 +1,5 @@
 @import './auth-desktop.css';
+@import './auth-register.css';
 
 .auth-page {
   display: flex;

@@ -1,0 +1,166 @@
+.auth-page-register .auth-register-shell {
+  grid-template-columns: minmax(22rem, .82fr) minmax(36rem, 1.18fr);
+}
+
+.auth-page-register .auth-card.auth-register-card {
+  width: calc(100% - clamp(2rem, 4vw, 4rem));
+  max-width: 47rem;
+  padding: clamp(1.35rem, 2.2vh, 1.9rem) clamp(1.5rem, 2.6vw, 2.35rem);
+}
+
+.auth-page-register .auth-register-header {
+  margin-bottom: clamp(.75rem, 1.4vh, 1.05rem);
+}
+
+.auth-page-register .auth-register-header h1 {
+  font-size: clamp(1.65rem, 2.1vw, 2.05rem);
+}
+
+.auth-page-register .auth-register-header p {
+  margin-top: .38rem;
+}
+
+.auth-page-register .auth-register-invitation-hint {
+  margin-top: .45rem;
+}
+
+.auth-page-register .auth-register-orcid {
+  gap: .55rem;
+  margin-bottom: .9rem;
+  padding: .75rem;
+  border: 1px solid #e3dcd3;
+  border-radius: .7rem;
+  background: rgba(249, 246, 241, .72);
+}
+
+.auth-page-register .auth-register-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .72rem 1rem;
+}
+
+.auth-page-register .auth-register-form > .auth-field {
+  min-width: 0;
+  align-content: start;
+}
+
+.auth-page-register .auth-register-card .auth-field {
+  gap: .3rem;
+}
+
+.auth-page-register .auth-register-card .auth-field input {
+  min-height: 2.7rem;
+  padding-block: .62rem;
+  border-color: #d6cec4;
+  border-radius: .62rem;
+  background: rgba(255, 255, 255, .9);
+}
+
+.auth-page-register .auth-register-card .auth-field input:focus {
+  border-color: #7a1f2b;
+  outline-color: rgba(122, 31, 43, .12);
+}
+
+.auth-page-register .auth-register-card .auth-field-hint {
+  font-size: .68rem;
+  line-height: 1.3;
+}
+
+.auth-page-register .auth-register-full {
+  grid-column: 1 / -1;
+}
+
+.auth-page-register .auth-register-submit {
+  min-height: 2.75rem;
+  margin-top: .05rem;
+}
+
+.auth-page-register .auth-register-footer {
+  margin-top: .72rem;
+}
+
+.auth-page-register .auth-register-notice {
+  margin-top: .65rem;
+  padding-top: .6rem;
+}
+
+@media (max-height: 780px) and (min-width: 52.01rem) {
+  .auth-page-register .auth-card.auth-register-card {
+    max-height: calc(100dvh - 1rem);
+    margin-block: .5rem;
+    padding-block: 1rem;
+  }
+
+  .auth-page-register .auth-login-language-switcher,
+  .auth-page-register .auth-register-header {
+    margin-bottom: .55rem;
+  }
+
+  .auth-page-register .auth-register-form {
+    gap: .55rem .85rem;
+  }
+
+  .auth-page-register .auth-register-card .auth-field input {
+    min-height: 2.5rem;
+    padding-block: .5rem;
+  }
+
+  .auth-page-register .auth-register-card .auth-field label {
+    font-size: .78rem;
+  }
+
+  .auth-page-register .auth-register-card .auth-field-hint,
+  .auth-page-register .auth-register-notice {
+    font-size: .64rem;
+    line-height: 1.2;
+  }
+
+  .auth-page-register .auth-register-footer {
+    margin-top: .55rem;
+  }
+}
+
+@media (max-width: 70rem) and (min-width: 52.01rem) {
+  .auth-page-register .auth-register-shell {
+    grid-template-columns: minmax(17rem, .62fr) minmax(35rem, 1.38fr);
+  }
+
+  .auth-page-register .auth-login-hero {
+    padding-inline: 1.7rem 1rem;
+  }
+
+  .auth-page-register .auth-login-product-name {
+    font-size: clamp(2.4rem, 4vw, 3.5rem);
+  }
+}
+
+@media (max-width: 52rem) {
+  .auth-page-register .auth-register-form {
+    grid-template-columns: 1fr;
+    gap: 1.125rem;
+  }
+
+  .auth-page-register .auth-register-full {
+    grid-column: auto;
+  }
+
+  .auth-page-register .auth-card.auth-register-card {
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: .75rem .25rem 1.5rem;
+    overflow: visible;
+  }
+
+  .auth-page-register .auth-register-orcid {
+    margin-bottom: 1.125rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .auth-page-register .auth-register-card .auth-field input {
+    min-height: auto;
+    padding: .75rem .875rem;
+  }
+}
