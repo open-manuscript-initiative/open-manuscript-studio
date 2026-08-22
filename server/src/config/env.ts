@@ -86,6 +86,23 @@ const environmentSchema = z.object({
 
   ORCID_BASE_URL: z.string().url().optional(),
 
+  // Optional external OpenID Connect identity providers. A provider is exposed
+  // only when client id, client secret and redirect URI are all configured.
+  GOOGLE_OIDC_CLIENT_ID: z.string().trim().optional(),
+  GOOGLE_OIDC_CLIENT_SECRET: z.string().trim().optional(),
+  GOOGLE_OIDC_REDIRECT_URI: z.string().url().optional(),
+
+  MICROSOFT_OIDC_CLIENT_ID: z.string().trim().optional(),
+  MICROSOFT_OIDC_CLIENT_SECRET: z.string().trim().optional(),
+  MICROSOFT_OIDC_REDIRECT_URI: z.string().url().optional(),
+  MICROSOFT_OIDC_TENANT: z.string().trim().default('common'),
+
+  OIDC_ISSUER: z.string().url().optional(),
+  OIDC_CLIENT_ID: z.string().trim().optional(),
+  OIDC_CLIENT_SECRET: z.string().trim().optional(),
+  OIDC_REDIRECT_URI: z.string().url().optional(),
+  OIDC_LABEL: z.string().trim().max(80).default('Institutional sign-in'),
+
   OMI_IDENTITY_ISSUER: z.string().url().optional(),
   OMI_IDENTITY_CLIENT_ID: z.string().trim().optional(),
   OMI_IDENTITY_CLIENT_SECRET: z.string().trim().optional(),
