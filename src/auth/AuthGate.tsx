@@ -30,6 +30,8 @@ export function AuthGate({
     (state) => state.completeNativeOrcidHandoff,
   );
   const handledNativeUrls = useRef(new Set<string>());
+  const passwordResetRequested = new URLSearchParams(window.location.search)
+    .has('resetPassword');
 
   useEffect(() => {
     let active = true;
@@ -137,7 +139,7 @@ export function AuthGate({
     );
   }
 
-  if (!currentUser) {
+  if (!currentUser || passwordResetRequested) {
     return <>{fallback}</>;
   }
 

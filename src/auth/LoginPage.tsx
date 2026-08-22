@@ -20,6 +20,7 @@ import {
   startOrcidAuthentication,
 } from '../services/authApi';
 import { useAuthStore } from '../store/authStore';
+import { PasswordRecoveryPage } from './PasswordRecoveryPage';
 import { useOrcidProvider } from './useOrcidProvider';
 
 interface LoginPageProps {
@@ -49,9 +50,11 @@ export function LoginPage({
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [orcidStartError, setOrcidStartError] = useState('');
   const orcidProvider = useOrcidProvider();
   const authErrorCode = getAuthErrorCodeFromLocation();
+  const resetToken = new URLSearchParams(window.location.search).get('resetPassword')?.trim() ?? '';
   const heroCopy = getLoginHeroCopy(locale);
 
   useEffect(() => {
@@ -87,6 +90,28 @@ export function LoginPage({
       );
     }
   };
+
+  const closeRecovery = () => {
+    if (resetToken) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('resetPassword');
+      window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+      window.location.reload();
+      return;
+    }
+    setRecoveryOpen(false);
+  };
+
+  if (resetToken || recoveryOpen) {
+    return (
+      <PasswordRecoveryPage
+        mode={resetToken ? 'reset' : 'forgot'}
+        token={resetToken || undefined}
+        initialEmail={email}
+        onBack={closeRecovery}
+      />
+    );
+  }
 
   const errorTranslationKey = error
     ? getAuthErrorTranslationKey(error)
@@ -223,6 +248,19 @@ export function LoginPage({
                   if (error) clearError();
                 }}
               />
+              <div className="auth-password-help">
+                <button
+                  type="button"
+                  className="auth-link-button"
+                  disabled={isLoading}
+                  onClick={() => {
+                    clearError();
+                    setRecoveryOpen(true);
+                  }}
+                >
+                  {heroCopy.forgotPassword}
+                </button>
+              </div>
             </div>
 
             {(error || federatedError) && (
@@ -269,6 +307,7 @@ function getLoginHeroCopy(locale: string) {
       structure: 'Strukturáljon egyszer',
       publish: 'Publikáljon bárhol',
       orEmail: 'vagy e-mail-címmel',
+      forgotPassword: 'Elfelejtette a jelszavát?',
     };
   }
 
@@ -281,6 +320,7 @@ function getLoginHeroCopy(locale: string) {
       structure: 'Einmal strukturieren',
       publish: 'Überall publizieren',
       orEmail: 'oder mit E-Mail',
+      forgotPassword: 'Passwort vergessen?',
     };
   }
 
@@ -292,6 +332,7 @@ function getLoginHeroCopy(locale: string) {
     structure: 'Structure once',
     publish: 'Publish everywhere',
     orEmail: 'or with e-mail',
+    forgotPassword: 'Forgot your password?',
   };
 }
 

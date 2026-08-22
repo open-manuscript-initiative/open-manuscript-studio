@@ -61,6 +61,13 @@ const environmentSchema = z.object({
     .max(720)
     .default(168),
 
+  PASSWORD_RESET_TTL_MINUTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(1440)
+    .default(60),
+
   ORCID_ENVIRONMENT: z.enum(['sandbox', 'production']).optional(),
 
   // Personal deployment credentials. These remain the backward-compatible

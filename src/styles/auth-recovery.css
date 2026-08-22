@@ -1,0 +1,93 @@
+.auth-password-help {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: .05rem;
+}
+
+.auth-password-help .auth-link-button {
+  color: #7a1f2b;
+  font-size: .78rem;
+  font-weight: 650;
+}
+
+.auth-recovery-card {
+  max-width: 31rem !important;
+}
+
+.auth-recovery-icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-bottom: .85rem;
+  place-items: center;
+  border: 1px solid #dfd4c8;
+  border-radius: .75rem;
+  background: #f7f0e6;
+  color: #7a1f2b;
+}
+
+.auth-recovery-icon svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.auth-recovery-security-note {
+  display: flex;
+  align-items: flex-start;
+  gap: .7rem;
+  max-width: 35rem;
+  margin-top: 2rem;
+  color: #5c514b;
+  font-size: .86rem;
+  line-height: 1.55;
+}
+
+.auth-recovery-security-note svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: 0 0 auto;
+  margin-top: .05rem;
+  color: #7a1f2b;
+}
+
+.auth-recovery-back {
+  justify-self: center;
+  margin-top: .15rem;
+  color: #7a1f2b;
+}
+
+.auth-recovery-success {
+  display: grid;
+  gap: .85rem;
+  padding: 1rem;
+  border: 1px solid #b8dbc5;
+  border-radius: .75rem;
+  background: #f1faf4;
+  color: #285b3c;
+}
+
+.auth-recovery-success p {
+  margin: 0;
+  color: #456654;
+  font-size: .88rem;
+  line-height: 1.55;
+}
+
+.auth-recovery-success .auth-primary-button {
+  margin-top: .2rem;
+}
+
+@media (max-width: 52rem) {
+  .auth-recovery-page .auth-login-hero {
+    display: none;
+  }
+
+  .auth-recovery-page .auth-login-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-recovery-card {
+    width: min(100% - 2rem, 31rem) !important;
+    margin-inline: auto !important;
+  }
+}
