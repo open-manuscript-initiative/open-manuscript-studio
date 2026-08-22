@@ -60,6 +60,7 @@ export function validateOrcidDeployment(input: {
   clientId?: string | undefined;
   clientSecret?: string | undefined;
   redirectUri?: string | undefined;
+  frontendOrigin?: string | undefined;
 }): void {
   const hasClientId = Boolean(input.clientId?.trim());
   const hasClientSecret = Boolean(input.clientSecret?.trim());
@@ -79,6 +80,15 @@ export function validateOrcidDeployment(input: {
   const redirect = new URL(input.redirectUri);
   if (input.nodeEnv === 'production' && redirect.protocol !== 'https:') {
     throw new Error('ORCID_REDIRECT_URI must use HTTPS in production.');
+  }
+
+  if (input.nodeEnv === 'production' && input.frontendOrigin) {
+    const frontendOrigin = normalizeOrigin(input.frontendOrigin);
+    if (redirect.origin !== frontendOrigin) {
+      throw new Error(
+        `ORCID_REDIRECT_URI must use the same origin as FRONTEND_ORIGIN in production (${frontendOrigin}).`,
+      );
+    }
   }
 
   if (input.environment === 'production' && input.nodeEnv !== 'production') {
