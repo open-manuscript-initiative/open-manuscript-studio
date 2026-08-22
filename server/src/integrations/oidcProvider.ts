@@ -157,18 +157,28 @@ export async function validateOidcToken(input: {
   if (!input.token.id_token) throw new Error('The OpenID provider did not return an ID token.');
 
   const discovery = await getDiscovery(input.provider.issuer);
-  const jwks = createRemoteJWKSet(new URL(discovery.jwks_uri));
+  let verificationDiscovery = discovery;
 
-  // Microsoft multitenant discovery uses an issuer template containing
-  // {tenantid}. Verify signature/audience first, then perform the exact issuer
-  // check below using the token's validated tenant claim.
-  const usesMicrosoftIssuerTemplate = discovery.issuer.includes('{tenantid}');
+  // Microsoft's tenant-independent metadata returns an issuer template. Decode
+  // only the tenant id first, validate its syntax, then re-run discovery against
+  // that concrete tenant and perform the actual signature + exact issuer check
+  // with the tenant-scoped signing keys.
+  if (discovery.issuer.includes('{tenantid}')) {
+    const unverified = decodeJwt(input.token.id_token);
+    const tid = claimString(unverified.tid);
+    if (!tid || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tid)) {
+      throw new Error('Microsoft OpenID token did not contain a valid tenant ID.');
+    }
+    const concreteIssuer = discovery.issuer.replace('{tenantid}', tid);
+    verificationDiscovery = await getDiscovery(concreteIssuer);
+  }
+
+  const jwks = createRemoteJWKSet(new URL(verificationDiscovery.jwks_uri));
   const { payload } = await jwtVerify(input.token.id_token, jwks, {
+    issuer: verificationDiscovery.issuer,
     audience: input.provider.clientId,
-    ...(usesMicrosoftIssuerTemplate ? {} : { issuer: discovery.issuer }),
   });
 
-  validateIssuer(payload, discovery.issuer);
   if (typeof payload.nonce !== 'string' || hash(payload.nonce) !== input.expectedNonceHash) {
     throw new Error('OpenID Connect nonce validation failed.');
   }
@@ -187,7 +197,7 @@ export async function validateOidcToken(input: {
     }
   }
 
-  const issuer = typeof payload.iss === 'string' ? payload.iss : discovery.issuer;
+  const issuer = typeof payload.iss === 'string' ? payload.iss : verificationDiscovery.issuer;
   const email = claimString(claims.email) ??
     (input.provider.key === 'microsoft' ? claimString(claims.preferred_username) : undefined);
   const emailVerified = claims.email_verified === true ||
@@ -265,23 +275,6 @@ async function fetchUserInfo(endpoint: string, accessToken: string): Promise<JWT
   });
   if (!response.ok) throw new Error(`OpenID UserInfo request failed with HTTP ${response.status}.`);
   return await response.json() as JWTPayload;
-}
-
-function validateIssuer(payload: JWTPayload, expectedIssuer: string): void {
-  if (typeof payload.iss !== 'string' || !payload.iss) {
-    throw new Error('OpenID Connect token did not contain an issuer.');
-  }
-  if (!expectedIssuer.includes('{tenantid}')) {
-    if (payload.iss !== expectedIssuer) throw new Error('OpenID Connect issuer validation failed.');
-    return;
-  }
-
-  const tid = claimString(payload.tid);
-  if (!tid || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tid)) {
-    throw new Error('Microsoft OpenID token did not contain a valid tenant ID.');
-  }
-  const concreteIssuer = expectedIssuer.replace('{tenantid}', tid);
-  if (payload.iss !== concreteIssuer) throw new Error('Microsoft OpenID issuer validation failed.');
 }
 
 function claimString(value: unknown): string | undefined {
