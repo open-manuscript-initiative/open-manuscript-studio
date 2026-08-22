@@ -435,8 +435,12 @@ async function authenticatedOrcidIdentity(
 
 function readBearerToken(header: string | undefined): string | undefined {
   if (!header) return undefined;
-  const match = /^Bearer\s+(.+)$/i.exec(header.trim());
-  return match?.[1]?.trim() || undefined;
+  const value = header.trim();
+  if (value.length < 8 || value.slice(0, 7).toLowerCase() !== 'bearer ') {
+    return undefined;
+  }
+  const token = value.slice(7).trim();
+  return token || undefined;
 }
 
 function readSessionCookie(header: string | undefined): string | undefined {
