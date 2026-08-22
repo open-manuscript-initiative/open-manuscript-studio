@@ -9,6 +9,7 @@ import {
 } from '../model/user';
 import {
   consumeNativeOrcidHandoffFromLocation,
+  consumeNativeOrcidHandoffFromUrl,
   getCurrentAccount,
   loginAccount,
   logoutAccount,
@@ -40,6 +41,7 @@ export interface AuthState {
   isInitialized: boolean;
   error: string | null;
   initializeSession: () => Promise<void>;
+  completeNativeOrcidHandoff: (url: string) => Promise<void>;
   register: (input: RegisterInput) => Promise<User>;
   login: (input: LoginInput) => Promise<User>;
   logout: () => Promise<void>;
@@ -90,6 +92,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({
         users: [],
         session: null,
+        isLoading: false,
+        isInitialized: true,
+        error: getErrorMessage(error),
+      });
+    }
+  },
+
+  completeNativeOrcidHandoff: async (url) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      const user = await consumeNativeOrcidHandoffFromUrl(url);
+      if (!user) {
+        set({ isLoading: false, isInitialized: true });
+        return;
+      }
+      setAuthenticatedUser(set, user, true);
+    } catch (error) {
+      set({
         isLoading: false,
         isInitialized: true,
         error: getErrorMessage(error),
