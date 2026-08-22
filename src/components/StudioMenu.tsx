@@ -182,7 +182,9 @@ function DocumentMenuView({ onNavigate }: { onNavigate: () => void }) {
     <DocxImportPanel />
     <SectionNumberingControl />
     <CrossReferencePanel />
-    <SectionStructurePanel onNavigate={onNavigate} />
+    <div className="studio-menu-mobile-structure">
+      <SectionStructurePanel onNavigate={onNavigate} />
+    </div>
   </section>;
 }
 
