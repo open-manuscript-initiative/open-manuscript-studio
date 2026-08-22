@@ -14,28 +14,28 @@ export type ExternalDocumentScopeKind =
 
 export interface ExternalDocumentScope {
   kind: ExternalDocumentScopeKind;
-  id?: string;
-  reviewConfidential?: boolean;
+  id?: string | undefined;
+  reviewConfidential?: boolean | undefined;
 }
 
 export interface TranslationSegment {
   id: string;
   text: string;
-  kind?: string;
+  kind?: string | undefined;
 }
 
 export interface TranslationRequest {
-  sourceLanguage?: string;
+  sourceLanguage?: string | undefined;
   targetLanguage: string;
-  formality?: 'default' | 'more' | 'less' | 'prefer_more' | 'prefer_less';
+  formality?: 'default' | 'more' | 'less' | 'prefer_more' | 'prefer_less' | undefined;
   scope: ExternalDocumentScope;
   segments: TranslationSegment[];
-  allowReviewConfidential?: boolean;
+  allowReviewConfidential?: boolean | undefined;
 }
 
 export interface TranslationResult {
   providerId: 'deepl';
-  detectedSourceLanguage?: string;
+  detectedSourceLanguage?: string | undefined;
   targetLanguage: string;
   scope: ExternalDocumentScope;
   segments: TranslationSegment[];
@@ -51,10 +51,10 @@ export interface AgentRunRequest {
   agentId: BuiltInAgentId;
   scope: ExternalDocumentScope;
   content: string;
-  context?: Record<string, unknown>;
-  requestedPermissions?: string[];
-  allowReviewConfidential?: boolean;
-  allowDirectWrite?: boolean;
+  context?: Record<string, unknown> | undefined;
+  requestedPermissions?: string[] | undefined;
+  allowReviewConfidential?: boolean | undefined;
+  allowDirectWrite?: boolean | undefined;
 }
 
 export interface AgentRunResult {
@@ -63,7 +63,7 @@ export interface AgentRunResult {
   mode: 'suggestion';
   scope: ExternalDocumentScope;
   suggestion: string;
-  model?: string;
+  model?: string | undefined;
   auditId: string;
 }
 
@@ -335,7 +335,7 @@ export async function listIntegrationAuditEvents(userId: string, limit = 50) {
 }
 
 async function resolveIntegrationConnection(userId: string, providerId: string): Promise<{
-  secret?: string;
+  secret?: string | undefined;
   config: unknown;
 }> {
   const userRows = await prisma.$queryRaw<UserIntegrationRow[]>`

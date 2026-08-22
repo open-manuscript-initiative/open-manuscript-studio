@@ -10,28 +10,28 @@ export type ExternalDocumentScopeKind =
 
 export interface ExternalDocumentScope {
   kind: ExternalDocumentScopeKind;
-  id?: string;
-  reviewConfidential?: boolean;
+  id?: string | undefined;
+  reviewConfidential?: boolean | undefined;
 }
 
 export interface TranslationSegment {
   id: string;
   text: string;
-  kind?: string;
+  kind?: string | undefined;
 }
 
 export interface DeepLTranslationRequest {
-  sourceLanguage?: string;
+  sourceLanguage?: string | undefined;
   targetLanguage: string;
-  formality?: 'default' | 'more' | 'less' | 'prefer_more' | 'prefer_less';
+  formality?: 'default' | 'more' | 'less' | 'prefer_more' | 'prefer_less' | undefined;
   scope: ExternalDocumentScope;
   segments: TranslationSegment[];
-  allowReviewConfidential?: boolean;
+  allowReviewConfidential?: boolean | undefined;
 }
 
 export interface DeepLTranslationResult {
   providerId: 'deepl';
-  detectedSourceLanguage?: string;
+  detectedSourceLanguage?: string | undefined;
   targetLanguage: string;
   scope: ExternalDocumentScope;
   segments: TranslationSegment[];
@@ -47,10 +47,10 @@ export interface AgentRunRequest {
   agentId: BuiltInAgentId;
   scope: ExternalDocumentScope;
   content: string;
-  context?: Record<string, unknown>;
-  requestedPermissions?: string[];
-  allowReviewConfidential?: boolean;
-  allowDirectWrite?: boolean;
+  context?: Record<string, unknown> | undefined;
+  requestedPermissions?: string[] | undefined;
+  allowReviewConfidential?: boolean | undefined;
+  allowDirectWrite?: boolean | undefined;
 }
 
 export interface AgentRunResult {
@@ -59,7 +59,7 @@ export interface AgentRunResult {
   mode: 'suggestion';
   scope: ExternalDocumentScope;
   suggestion: string;
-  model?: string;
+  model?: string | undefined;
   auditId: string;
 }
 
@@ -94,13 +94,13 @@ export interface IntegrationExtensionManifest {
     | 'publishing'
     | 'identity'
     | 'scholarly-service';
-  description?: string;
+  description?: string | undefined;
   authenticationModes: Array<
     'none' | 'server_secret' | 'user_api_key' | 'oauth2' | 'oidc' | 'integration_token'
   >;
   permissions: string[];
   capabilities: string[];
-  endpoints?: Record<string, string>;
+  endpoints?: Record<string, string> | undefined;
 }
 
 export interface RegisteredIntegrationExtension {
@@ -236,9 +236,9 @@ export async function getTranslationVariants(manuscriptId: string): Promise<Tran
 
 export async function saveTranslationVariant(input: {
   manuscriptId: string;
-  sourceLocale?: string;
+  sourceLocale?: string | undefined;
   targetLocale: string;
-  scope: { kind: 'section' | 'manuscript'; id?: string };
+  scope: { kind: 'section' | 'manuscript'; id?: string | undefined };
   translatedState: unknown;
 }): Promise<string> {
   const response = await fetch(`${API_BASE_URL}/integrations/translation-variants`, {
