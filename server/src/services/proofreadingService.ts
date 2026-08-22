@@ -1,4 +1,7 @@
-import { runBuiltInAgent } from '../integrations/integrationExecution.js';
+import { isIP } from 'node:net';
+
+import { decryptSecret, type EncryptedSecret } from '../integrations/secretCrypto.js';
+import { prisma } from '../lib/prisma.js';
 
 export type ProofreadingCategory = 'spelling' | 'grammar' | 'punctuation' | 'style';
 
@@ -25,6 +28,11 @@ interface CheckInput {
   blockId?: string | undefined;
 }
 
+interface UserIntegrationRow {
+  encrypted_secret: string | null;
+  config: unknown;
+}
+
 const MAX_ISSUES = 100;
 const EXTERNAL_TIMEOUT_MS = 20_000;
 
@@ -36,7 +44,7 @@ export async function checkProofreading(
   if (language === 'en' || language === 'de') {
     return checkWithLanguageTool(input.text, input.language);
   }
-  return checkWithAi(userId, input.text, input.language, input.blockId);
+  return checkWithAi(userId, input.text, input.language);
 }
 
 async function checkWithLanguageTool(
@@ -94,38 +102,98 @@ async function checkWithLanguageTool(
     })
     .filter((issue): issue is ProofreadingIssue => Boolean(issue));
 
-  return { providerId: 'languagetool', language, issues };
+  return { providerId: 'languagetool', language: normalizeLanguage(language), issues };
 }
 
 async function checkWithAi(
   userId: string,
   text: string,
   language: string,
-  blockId?: string,
 ): Promise<ProofreadingResult> {
-  const result = await runBuiltInAgent(userId, {
-    agentId: 'language-editor',
-    scope: { kind: 'block', id: blockId },
-    content: text,
-    requestedPermissions: ['document.read', 'suggest'],
-    context: {
-      language,
-      proofreadingStructured: true,
-      instruction: [
-        'Return ONLY valid JSON.',
-        'Use UTF-16 string offsets relative to the supplied Content.',
-        'Do not rewrite the whole passage.',
-        'Schema: {"issues":[{"offset":0,"length":1,"message":"...","category":"spelling|grammar|punctuation|style","replacements":["..."]}]}',
-        'Return at most 50 issues and at most 5 replacements per issue.',
-      ].join(' '),
-    },
-  });
+  const connection = await resolveAiConnection(userId);
+  const config = asRecord(connection.config);
+  const endpoint = safeHttpsEndpoint(String(config?.endpoint ?? ''));
+  const model = typeof config?.model === 'string' && config.model.trim()
+    ? config.model.trim()
+    : '';
+  if (!connection.secret) throw new Error('The AI provider secret is not configured.');
+  if (!model) throw new Error('The AI provider model is not configured.');
 
-  const parsed = parseAiIssues(result.suggestion, text.length);
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${connection.secret}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: 'system',
+          content: [
+            'You are an academic proofreader.',
+            'Find only real spelling, grammar, punctuation and style issues.',
+            'Preserve scholarly meaning, citations, names and identifiers.',
+            'Return ONLY valid JSON with schema:',
+            '{"issues":[{"offset":0,"length":1,"message":"...","category":"spelling|grammar|punctuation|style","replacements":["..."]}]}',
+            'Offsets and lengths must use UTF-16 string indexing relative to the exact input text.',
+            'Return at most 50 issues and at most 5 replacements per issue.',
+          ].join(' '),
+        },
+        {
+          role: 'user',
+          content: `Language: ${language}\n\nExact input text:\n${text}`,
+        },
+      ],
+      temperature: 0.1,
+    }),
+    signal: AbortSignal.timeout(EXTERNAL_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`AI proofreading request failed with HTTP ${response.status}.`);
+  const payload = await response.json() as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+  const raw = payload.choices?.[0]?.message?.content?.trim();
+  if (!raw) throw new Error('AI provider returned no proofreading result.');
+
   return {
     providerId: 'ai-provider',
     language: normalizeLanguage(language),
-    issues: parsed,
+    issues: parseAiIssues(raw, text.length),
+  };
+}
+
+async function resolveAiConnection(userId: string): Promise<{
+  secret?: string | undefined;
+  config: unknown;
+}> {
+  const rows = await prisma.$queryRaw<UserIntegrationRow[]>`
+    SELECT encrypted_secret, config
+    FROM user_integrations
+    WHERE user_id = ${userId}::uuid
+      AND provider_id = 'ai-provider'
+      AND enabled = TRUE
+    ORDER BY updated_at DESC
+    LIMIT 1
+  `;
+  const userConnection = rows[0];
+  if (userConnection?.encrypted_secret) {
+    return {
+      secret: decryptStoredSecret(userConnection.encrypted_secret),
+      config: userConnection.config,
+    };
+  }
+
+  const serverConfig = await prisma.integrationProviderConfig.findUnique({
+    where: { providerId: 'ai-provider' },
+  });
+  if (!serverConfig) throw new Error('ai-provider is not configured.');
+  return {
+    secret: serverConfig.encryptedSecret
+      ? decryptStoredSecret(serverConfig.encryptedSecret)
+      : undefined,
+    config: serverConfig.config,
   };
 }
 
@@ -184,4 +252,52 @@ function normalizeCategory(value: unknown): ProofreadingCategory {
 
 function normalizeLanguage(language: string): string {
   return language.trim().toLowerCase().split(/[-_]/)[0] || 'en';
+}
+
+function decryptStoredSecret(value: string): string {
+  const parsed = JSON.parse(value) as Partial<EncryptedSecret>;
+  if (!parsed.ciphertext || !parsed.iv || !parsed.authTag) {
+    throw new Error('Stored integration secret is invalid.');
+  }
+  return decryptSecret(parsed as EncryptedSecret);
+}
+
+function safeHttpsEndpoint(raw: string): string {
+  const url = new URL(raw.trim());
+  if (url.protocol !== 'https:' || url.username || url.password) {
+    throw new Error('AI provider endpoint must be a credential-free HTTPS URL.');
+  }
+  const hostname = url.hostname.toLowerCase();
+  if (
+    hostname === 'localhost' ||
+    hostname.endsWith('.localhost') ||
+    hostname.endsWith('.local') ||
+    hostname === '0.0.0.0' ||
+    hostname === '::1' ||
+    isPrivateIp(hostname)
+  ) {
+    throw new Error('AI provider endpoint may not target a local or private network address.');
+  }
+  return url.toString();
+}
+
+function isPrivateIp(hostname: string): boolean {
+  const version = isIP(hostname);
+  if (version === 4) {
+    const [a = 0, b = 0] = hostname.split('.').map(Number);
+    return a === 10 || a === 127 || (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+  }
+  if (version === 6) {
+    return hostname === '::1' || hostname.startsWith('fc') || hostname.startsWith('fd') ||
+      hostname.startsWith('fe8') || hostname.startsWith('fe9') ||
+      hostname.startsWith('fea') || hostname.startsWith('feb');
+  }
+  return false;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
 }
