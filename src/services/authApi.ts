@@ -143,7 +143,7 @@ export async function consumeNativeOrcidHandoffFromLocation(): Promise<User | nu
 export async function consumeNativeOrcidHandoffFromUrl(url: string): Promise<User | null> {
   if (!IS_TAURI || !isNativeOrcidDeepLink(url)) return null;
 
-  const code = readUrlFragmentParam(url, NATIVE_AUTH_CODE_PARAM)?.trim();
+  const code = readUrlParam(url, NATIVE_AUTH_CODE_PARAM)?.trim();
   if (!code) return null;
 
   return exchangeNativeOrcidHandoff(code);
@@ -430,10 +430,11 @@ function isNativeOrcidDeepLink(value: string): boolean {
   }
 }
 
-function readUrlFragmentParam(url: string, name: string): string | null {
+function readUrlParam(url: string, name: string): string | null {
   try {
-    const hash = new URL(url).hash;
-    return new URLSearchParams(hash.replace(/^#/, '')).get(name);
+    const parsed = new URL(url);
+    return parsed.searchParams.get(name)
+      ?? new URLSearchParams(parsed.hash.replace(/^#/, '')).get(name);
   } catch {
     return null;
   }
