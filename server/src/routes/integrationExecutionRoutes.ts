@@ -78,6 +78,18 @@ const extensionManifestSchema = z.object({
   }
 });
 
+const translationVariantSchema = z.object({
+  manuscriptId: z.string().trim().min(1).max(128),
+  sourceLocale: z.string().trim().min(2).max(32).optional(),
+  targetLocale: z.string().trim().min(2).max(32),
+  scope: z.object({
+    kind: z.enum(['section', 'manuscript']),
+    id: z.string().trim().min(1).max(256).optional(),
+  }),
+  providerId: z.literal('deepl').default('deepl'),
+  translatedState: z.unknown(),
+});
+
 integrationExecutionRouter.post(
   '/integrations/deepl/translate',
   requireSession,
@@ -240,6 +252,98 @@ integrationExecutionRouter.delete(
       DELETE FROM integration_extension_manifests
       WHERE user_id = ${request.authUserId!}::uuid
         AND extension_id = ${extensionId.data}
+    `;
+    response.status(204).end();
+  },
+);
+
+integrationExecutionRouter.get(
+  '/integrations/translation-variants',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    const manuscriptId = z.string().trim().min(1).max(128).safeParse(request.query.manuscriptId);
+    if (!manuscriptId.success) {
+      response.status(400).json({ error: { code: 'INVALID_MANUSCRIPT_ID', message: 'A manuscript id is required.' } });
+      return;
+    }
+    const rows = await prisma.$queryRaw<Array<{
+      id: string;
+      manuscript_id: string;
+      source_locale: string | null;
+      target_locale: string;
+      scope_kind: string;
+      scope_id: string | null;
+      provider_id: string;
+      translated_state: unknown;
+      created_at: Date;
+      updated_at: Date;
+    }>>`
+      SELECT id, manuscript_id, source_locale, target_locale, scope_kind, scope_id,
+             provider_id, translated_state, created_at, updated_at
+      FROM integration_translation_variants
+      WHERE user_id = ${request.authUserId!}::uuid
+        AND manuscript_id = ${manuscriptId.data}
+      ORDER BY updated_at DESC
+    `;
+    response.status(200).json({
+      variants: rows.map((row) => ({
+        id: row.id,
+        manuscriptId: row.manuscript_id,
+        sourceLocale: row.source_locale,
+        targetLocale: row.target_locale,
+        scope: { kind: row.scope_kind, id: row.scope_id },
+        providerId: row.provider_id,
+        translatedState: row.translated_state,
+        createdAt: row.created_at.toISOString(),
+        updatedAt: row.updated_at.toISOString(),
+      })),
+    });
+  },
+);
+
+integrationExecutionRouter.post(
+  '/integrations/translation-variants',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    const input = translationVariantSchema.safeParse(request.body);
+    if (!input.success) {
+      response.status(400).json({
+        error: {
+          code: 'INVALID_TRANSLATION_VARIANT',
+          message: 'The translated language variant is invalid.',
+          fields: input.error.flatten().fieldErrors,
+        },
+      });
+      return;
+    }
+    const id = randomUUID();
+    await prisma.$executeRaw`
+      INSERT INTO integration_translation_variants
+        (id, user_id, manuscript_id, source_locale, target_locale, scope_kind,
+         scope_id, provider_id, translated_state)
+      VALUES
+        (${id}::uuid, ${request.authUserId!}::uuid, ${input.data.manuscriptId},
+         ${input.data.sourceLocale ?? null}, ${input.data.targetLocale}, ${input.data.scope.kind},
+         ${input.data.scope.id ?? null}, ${input.data.providerId},
+         ${JSON.stringify(input.data.translatedState)}::jsonb)
+    `;
+    response.status(201).json({ id });
+  },
+);
+
+integrationExecutionRouter.delete(
+  '/integrations/translation-variants/:variantId',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    const variantId = z.string().uuid().safeParse(request.params.variantId);
+    if (!variantId.success) {
+      response.status(400).json({ error: { code: 'INVALID_VARIANT_ID', message: 'Invalid translation variant id.' } });
+      return;
+    }
+    await prisma.$executeRaw`
+      DELETE FROM integration_translation_variants
+      WHERE id = ${variantId.data}::uuid
+        AND user_id = ${request.authUserId!}::uuid
     `;
     response.status(204).end();
   },
