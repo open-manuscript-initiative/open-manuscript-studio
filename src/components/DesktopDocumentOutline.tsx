@@ -1,5 +1,5 @@
 import { ListTree, X } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type CSSProperties } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
@@ -125,6 +125,9 @@ export function DesktopDocumentOutline({ onClose }: DesktopDocumentOutlineProps)
             manuscript.sectionNumberingStyle,
           );
           const active = section.id === selectedSectionId;
+          const itemStyle = {
+            '--desktop-outline-depth': depth,
+          } as CSSProperties;
 
           return (
             <button
@@ -133,7 +136,7 @@ export function DesktopDocumentOutline({ onClose }: DesktopDocumentOutlineProps)
               className={`desktop-document-outline-item${
                 active ? ' desktop-document-outline-item--active' : ''
               }`}
-              style={{ '--desktop-outline-depth': depth } as React.CSSProperties}
+              style={itemStyle}
               aria-current={active ? 'location' : undefined}
               onClick={() => navigateToSection(section.id)}
               title={heading}
