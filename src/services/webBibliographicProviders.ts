@@ -1,3 +1,6 @@
+import type { DataStoreIdentifier } from '@tauri-apps/api/app';
+import type { WebviewWindow } from '@tauri-apps/api/webviewWindow';
+
 export interface WebBibliographicProvider {
   id: string;
   name: string;
@@ -223,7 +226,7 @@ async function createTauriProviderWindow(
   provider: WebBibliographicProvider,
   url: string,
   visible: boolean,
-) {
+): Promise<WebviewWindow> {
   const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
   const label = providerWindowLabel(provider.id);
   const existing = await WebviewWindow.getByLabel(label);
@@ -250,9 +253,7 @@ async function createTauriProviderWindow(
   return webview;
 }
 
-function waitForWebviewCreation(
-  webview: Awaited<ReturnType<typeof createTauriWebviewType>>,
-): Promise<void> {
+function waitForWebviewCreation(webview: WebviewWindow): Promise<void> {
   return new Promise((resolve, reject) => {
     void webview.once('tauri://created', () => resolve());
     void webview.once<unknown>('tauri://error', (event) => {
@@ -267,16 +268,11 @@ function waitForWebviewCreation(
   });
 }
 
-async function createTauriWebviewType() {
-  const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-  return new WebviewWindow('type-placeholder', { url: 'about:blank' });
-}
-
 function providerWindowLabel(providerId: string): string {
   return `bibliographic-provider-${normalizeProviderId(providerId) || 'provider'}`;
 }
 
-function providerDataStoreIdentifier(providerId: string): number[] {
+function providerDataStoreIdentifier(providerId: string): DataStoreIdentifier {
   const seed = `omi-bibliographic-provider:${providerId}`;
   const bytes: number[] = [];
   let state = 2166136261;
@@ -291,7 +287,7 @@ function providerDataStoreIdentifier(providerId: string): number[] {
 
   bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x40;
   bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
-  return bytes;
+  return bytes as DataStoreIdentifier;
 }
 
 function openBrowserWindow(url: string, name: string): void {
@@ -299,9 +295,16 @@ function openBrowserWindow(url: string, name: string): void {
     throw new Error('Browser window is not available.');
   }
 
-  const opened = window.open(url, name, 'noopener,noreferrer');
+  const opened = window.open(url, name);
   if (!opened) {
     throw new Error('The provider window was blocked by the browser.');
+  }
+
+  try {
+    opened.opener = null;
+  } catch {
+    // Cross-origin browsers can forbid changing opener; the provider window
+    // still remains a normal browser-controlled session in this fallback.
   }
 }
 
