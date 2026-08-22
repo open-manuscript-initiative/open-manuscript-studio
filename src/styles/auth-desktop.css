@@ -1,4 +1,4 @@
-.auth-page-login {
+.auth-page.auth-page-login {
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -119,7 +119,7 @@
   stroke-width: 1.7;
 }
 
-.auth-login-card {
+.auth-card.auth-login-card {
   align-self: center;
   width: calc(100% - clamp(2rem, 5vw, 5rem));
   max-width: 34rem;
@@ -136,7 +136,7 @@
   backdrop-filter: blur(14px);
 }
 
-.auth-login-language-switcher {
+.auth-language-switcher.auth-login-language-switcher {
   margin-bottom: clamp(.75rem, 1.6vh, 1.2rem);
 }
 
@@ -149,7 +149,7 @@
   display: none;
 }
 
-.auth-login-header {
+.auth-header.auth-login-header {
   margin-bottom: clamp(.9rem, 1.7vh, 1.35rem);
 }
 
@@ -233,7 +233,7 @@
   background: linear-gradient(135deg, #571824, #751824);
 }
 
-.auth-login-footer {
+.auth-footer.auth-login-footer {
   margin-top: clamp(.8rem, 1.5vh, 1.15rem);
 }
 
@@ -241,7 +241,7 @@
   color: #7a1f2b;
 }
 
-.auth-login-notice {
+.auth-alpha-notice.auth-login-notice {
   margin-top: clamp(.75rem, 1.4vh, 1rem);
   padding-top: .75rem;
   font-size: .67rem;
@@ -270,14 +270,14 @@
     margin-top: 1.55rem;
   }
 
-  .auth-login-card {
+  .auth-card.auth-login-card {
     max-height: calc(100dvh - 1.4rem);
     margin-block: .7rem;
     padding-block: 1.3rem;
   }
 
-  .auth-login-language-switcher,
-  .auth-login-header {
+  .auth-language-switcher.auth-login-language-switcher,
+  .auth-header.auth-login-header {
     margin-bottom: .72rem;
   }
 
@@ -291,7 +291,7 @@
   }
 
   .auth-login-orcid-hint,
-  .auth-login-notice {
+  .auth-alpha-notice.auth-login-notice {
     line-height: 1.25;
   }
 }
@@ -323,7 +323,7 @@
 }
 
 @media (max-width: 52rem) {
-  .auth-page-login {
+  .auth-page.auth-page-login {
     overflow: visible;
   }
 
@@ -342,7 +342,7 @@
     display: none;
   }
 
-  .auth-login-card {
+  .auth-card.auth-login-card {
     width: 100%;
     max-width: none;
     max-height: none;
