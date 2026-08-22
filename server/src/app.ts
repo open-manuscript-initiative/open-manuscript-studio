@@ -18,6 +18,7 @@ import { integrationExecutionRouter } from './routes/integrationExecutionRoutes.
 import { integrationRouter } from './routes/integrationRoutes.js';
 import { ojsAssignmentRouter } from './routes/ojsAssignmentRoutes.js';
 import { ojsReviewRouter } from './routes/ojsReviewRoutes.js';
+import { orcidLinkStartRouter } from './routes/orcidLinkStartRoutes.js';
 import { orcidOidcRouter } from './routes/orcidOidcRoutes.js';
 import { peerReviewRouter } from './routes/peerReviewRoutes.js';
 import { publishingConnectionRouter } from './routes/publishingConnectionRoutes.js';
@@ -78,6 +79,7 @@ app.use('/integrations', integrationRateLimit);
 app.use('/api/auth', orcidOidcRouter);
 app.use('/api/auth', federatedAuthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api', orcidLinkStartRouter);
 app.use('/api', authorSignatureRouter);
 app.use('/api', cloudRouter);
 app.use('/api', userIntegrationRouter);
