@@ -52,18 +52,30 @@
   box-shadow: inset 0 0 0 1px var(--omi-editor-border-strong);
 }
 
+.omi-rich-text-toolbar-row > .omi-rich-text-toolbar-dismiss {
+  margin-left: auto;
+  border-left: 1px solid var(--omi-editor-border);
+  border-radius: 0.35rem;
+  color: var(--omi-editor-text-muted);
+  font-size: 1rem;
+}
+
 .omi-rich-text-toolbar button:focus-visible,
-.omi-rich-text-toolbar input:focus-visible {
+.omi-rich-text-toolbar input:focus-visible,
+.omi-rich-text-toolbar select:focus-visible {
   outline: 2px solid var(--omi-editor-accent);
   outline-offset: 2px;
 }
 
 .omi-rich-text-popover {
   width: min(30rem, calc(100vw - 2rem));
+  max-height: min(66vh, 30rem);
+  overflow-y: auto;
   padding: 0.7rem;
   border-top: 1px solid var(--omi-editor-border);
   background: var(--omi-editor-surface);
   border-radius: 0 0 0.75rem 0.75rem;
+  scrollbar-width: thin;
 }
 
 .omi-rich-text-popover label {
@@ -74,7 +86,8 @@
   font-weight: 650;
 }
 
-.omi-rich-text-popover input {
+.omi-rich-text-popover input,
+.omi-rich-text-popover select {
   width: 100%;
   min-height: 2.25rem;
   padding: 0.4rem 0.55rem;
@@ -117,36 +130,40 @@
 .omi-rich-text-command-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.35rem;
+  gap: 0.3rem;
 }
 
 .omi-rich-text-command-grid button {
+  min-height: 1.9rem;
+  padding: 0.3rem 0.5rem;
   text-align: left;
 }
 
 .omi-rich-text-language-editor,
 .omi-rich-text-symbols {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
   border-top: 1px solid var(--omi-editor-border);
 }
 
 .omi-rich-text-symbols > strong {
   display: block;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.4rem;
   color: var(--omi-editor-text-muted);
   font-size: 0.75rem;
 }
 
 .omi-rich-text-symbol-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0.2rem;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.18rem;
 }
 
 .omi-rich-text-symbol-grid button {
+  min-width: 1.85rem;
+  height: 1.85rem;
   border: 1px solid transparent;
-  font-size: 0.88rem;
+  font-size: 0.84rem;
 }
 
 .omi-rich-text-toolbar .field-error {
@@ -206,13 +223,47 @@
   font-size: 0.88rem;
 }
 
-@media (max-width: 640px) {
+@media (min-width: 761px) {
+  .omi-rich-text-toolbar--expanded,
+  .omi-rich-text-toolbar--expanded.omi-rich-text-toolbar--below {
+    left: auto !important;
+    right: 1rem;
+    top: 5rem !important;
+    width: min(21rem, calc(100vw - 2rem));
+    max-width: min(21rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 6rem);
+    transform: none;
+    overflow: hidden;
+    border-radius: 0.55rem;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.16);
+  }
+
+  .omi-rich-text-toolbar--expanded .omi-rich-text-toolbar-row {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    flex: 0 0 auto;
+    border-bottom: 1px solid var(--omi-editor-border);
+    background: var(--omi-editor-surface);
+  }
+
+  .omi-rich-text-toolbar--expanded .omi-rich-text-popover {
+    width: 100%;
+    max-height: calc(100dvh - 9rem);
+    border-top: 0;
+    border-radius: 0 0 0.55rem 0.55rem;
+    padding: 0.6rem;
+  }
+}
+
+@media (max-width: 760px) {
   .omi-rich-text-toolbar {
     max-width: calc(100vw - 1rem);
   }
 
   .omi-rich-text-popover {
     width: min(28rem, calc(100vw - 1rem));
+    max-height: min(58vh, 26rem);
   }
 
   .omi-rich-text-command-grid {
