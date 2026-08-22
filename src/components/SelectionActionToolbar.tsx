@@ -11,9 +11,13 @@ interface SelectionActionToolbarProps {
   citationLabel: string;
   noteLabel: string;
   crossReferenceLabel: string;
+  translateLabel?: string;
+  assistantLabel?: string;
   onCitation?: () => void;
   onNote?: () => void;
   onCrossReference?: () => void;
+  onTranslate?: () => void;
+  onAssistant?: () => void;
 }
 
 interface ToolbarPosition {
@@ -27,9 +31,13 @@ export function SelectionActionToolbar({
   citationLabel,
   noteLabel,
   crossReferenceLabel,
+  translateLabel,
+  assistantLabel,
   onCitation,
   onNote,
   onCrossReference,
+  onTranslate,
+  onAssistant,
 }: SelectionActionToolbarProps) {
   const [position, setPosition] = useState<ToolbarPosition | null>(null);
 
@@ -77,7 +85,10 @@ export function SelectionActionToolbar({
     };
   }, [editor]);
 
-  if (!position || (!onCitation && !onNote && !onCrossReference)) return null;
+  if (
+    !position ||
+    (!onCitation && !onNote && !onCrossReference && !onTranslate && !onAssistant)
+  ) return null;
 
   const style = {
     left: `${position.left}px`,
@@ -98,30 +109,28 @@ export function SelectionActionToolbar({
       aria-label="Selection actions"
     >
       {onCitation ? (
-        <button
-          type="button"
-          onMouseDown={preserveSelection}
-          onClick={onCitation}
-        >
+        <button type="button" onMouseDown={preserveSelection} onClick={onCitation}>
           {citationLabel}
         </button>
       ) : null}
       {onNote ? (
-        <button
-          type="button"
-          onMouseDown={preserveSelection}
-          onClick={onNote}
-        >
+        <button type="button" onMouseDown={preserveSelection} onClick={onNote}>
           {noteLabel}
         </button>
       ) : null}
       {onCrossReference ? (
-        <button
-          type="button"
-          onMouseDown={preserveSelection}
-          onClick={onCrossReference}
-        >
+        <button type="button" onMouseDown={preserveSelection} onClick={onCrossReference}>
           {crossReferenceLabel}
+        </button>
+      ) : null}
+      {onTranslate ? (
+        <button type="button" onMouseDown={preserveSelection} onClick={onTranslate}>
+          {translateLabel ?? 'Translate'}
+        </button>
+      ) : null}
+      {onAssistant ? (
+        <button type="button" onMouseDown={preserveSelection} onClick={onAssistant}>
+          {assistantLabel ?? 'Assistant'}
         </button>
       ) : null}
     </div>
