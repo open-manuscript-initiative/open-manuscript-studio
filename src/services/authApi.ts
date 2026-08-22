@@ -63,7 +63,8 @@ interface ErrorResponse {
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
 const NATIVE_AUTH_CODE_PARAM = 'nativeAuthCode';
-const NATIVE_MOBILE_RETURN_URL = 'openmanuscript://auth';
+const NATIVE_MOBILE_RETURN_URL = 'https://app.openmanuscript.org/auth/orcid';
+const NATIVE_MOBILE_FALLBACK_URL = 'openmanuscript://auth';
 const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 const IS_TAURI = detectTauriRuntime();
 const IS_MOBILE_TAURI = detectMobileTauriRuntime();
@@ -415,7 +416,15 @@ function getNativeReturnOrigin(): string | undefined {
 function isNativeOrcidDeepLink(value: string): boolean {
   try {
     const url = new URL(value);
-    return `${url.protocol}//${url.host}` === NATIVE_MOBILE_RETURN_URL;
+    const path = url.pathname.replace(/\/+$/, '') || '/';
+    const verifiedAppLink =
+      url.protocol === 'https:' &&
+      url.host === 'app.openmanuscript.org' &&
+      path === '/auth/orcid';
+    const customSchemeFallback =
+      `${url.protocol}//${url.host}` === NATIVE_MOBILE_FALLBACK_URL;
+
+    return verifiedAppLink || customSchemeFallback;
   } catch {
     return false;
   }

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Open Manuscript Studio</title>
+  <style>
+    :root { color-scheme: light dark; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4f5f7; color: #1d2530; }
+    main { width: min(92vw, 560px); box-sizing: border-box; padding: 2rem; border-radius: 18px; background: #fff; box-shadow: 0 16px 48px rgba(21, 29, 39, .12); }
+    h1 { margin: 0 0 .5rem; font-size: 1.75rem; }
+    p { line-height: 1.55; }
+    .actions { display: grid; gap: .75rem; margin-top: 1.5rem; }
+    a { display: block; padding: .85rem 1rem; border-radius: 10px; text-align: center; text-decoration: none; font-weight: 650; }
+    .primary { background: #5a1213; color: #fff; }
+    .secondary { border: 1px solid #c9cdd3; color: inherit; }
+    .hint { margin-top: 1.25rem; font-size: .92rem; color: #5f6670; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #111419; color: #edf0f4; }
+      main { background: #1a1f26; box-shadow: none; }
+      .secondary { border-color: #4a515c; }
+      .hint { color: #aab1bc; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1 id="title">Open Manuscript Studio</h1>
+    <p id="message">Authentication finished. If the Studio app is installed, Android should open it automatically.</p>
+    <div class="actions">
+      <a id="open-app" class="primary" href="openmanuscript://auth/">Open the Studio app</a>
+      <a id="install" class="secondary" href="https://openmanuscript.org/studio/">Install Open Manuscript Studio</a>
+      <a id="web" class="secondary" href="https://studio.openmanuscript.org/">Continue in the web Studio</a>
+    </div>
+    <p id="hint" class="hint">If you install the app now, start ORCID sign-in again from the installed app so a fresh one-time handoff can be created.</p>
+  </main>
+  <script>
+    (() => {
+      const fragment = window.location.hash || '';
+      document.getElementById('open-app').href = `openmanuscript://auth/${fragment}`;
+
+      const language = (navigator.language || 'en').toLowerCase();
+      const copy = language.startsWith('hu') ? {
+        message: 'A hitelesítés befejeződött. Ha az OMI Studio telepítve van, az Androidnak automatikusan meg kell nyitnia.',
+        open: 'OMI Studio megnyitása',
+        install: 'OMI Studio telepítése',
+        web: 'Folytatás a webes Stúdióban',
+        hint: 'Ha most telepíted az alkalmazást, indítsd újra benne az ORCID-bejelentkezést, hogy új egyszer használatos visszatérési kód készüljön.'
+      } : language.startsWith('de') ? {
+        message: 'Die Authentifizierung ist abgeschlossen. Wenn OMI Studio installiert ist, sollte Android die App automatisch öffnen.',
+        open: 'OMI Studio öffnen',
+        install: 'OMI Studio installieren',
+        web: 'Im Web-Studio fortfahren',
+        hint: 'Wenn Sie die App jetzt installieren, starten Sie die ORCID-Anmeldung danach erneut in der App, damit ein neuer einmaliger Rückgabecode erzeugt wird.'
+      } : {
+        message: 'Authentication finished. If OMI Studio is installed, Android should open the app automatically.',
+        open: 'Open OMI Studio',
+        install: 'Install OMI Studio',
+        web: 'Continue in the web Studio',
+        hint: 'If you install the app now, start ORCID sign-in again from the installed app so a fresh one-time handoff can be created.'
+      };
+
+      document.documentElement.lang = language.startsWith('hu') ? 'hu' : language.startsWith('de') ? 'de' : 'en';
+      document.getElementById('message').textContent = copy.message;
+      document.getElementById('open-app').textContent = copy.open;
+      document.getElementById('install').textContent = copy.install;
+      document.getElementById('web').textContent = copy.web;
+      document.getElementById('hint').textContent = copy.hint;
+    })();
+  </script>
+</body>
+</html>

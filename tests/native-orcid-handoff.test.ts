@@ -13,7 +13,12 @@ test('native ORCID handoff accepts only registered Studio return targets', () =>
   assert.equal(normalizeNativeReturnOrigin('http://tauri.localhost/'), 'http://tauri.localhost');
   assert.equal(normalizeNativeReturnOrigin('https://tauri.localhost'), 'https://tauri.localhost');
   assert.equal(normalizeNativeReturnOrigin('openmanuscript://auth'), 'openmanuscript://auth');
+  assert.equal(
+    normalizeNativeReturnOrigin('https://app.openmanuscript.org/auth/orcid/'),
+    'https://app.openmanuscript.org/auth/orcid',
+  );
   assert.equal(normalizeNativeReturnOrigin('https://studio.openmanuscript.org'), undefined);
+  assert.equal(normalizeNativeReturnOrigin('https://app.openmanuscript.org/auth/attacker'), undefined);
   assert.equal(normalizeNativeReturnOrigin('http://tauri.localhost.evil.example'), undefined);
   assert.equal(normalizeNativeReturnOrigin('openmanuscript://attacker'), undefined);
 });
@@ -53,12 +58,22 @@ test('native handoff code is returned in the local app URL fragment', () => {
   assert.equal(new URL(url).search, '');
 });
 
-test('mobile handoff code is returned through the registered app scheme', () => {
-  const url = buildNativeAuthReturnUrl('openmanuscript://auth', {
+test('mobile handoff code is returned through the verified HTTPS app link', () => {
+  const url = buildNativeAuthReturnUrl('https://app.openmanuscript.org/auth/orcid', {
     handoffCode: 'mobile-one-time-code',
   });
-  assert.equal(url, 'openmanuscript://auth/#nativeAuthCode=mobile-one-time-code');
+  assert.equal(
+    url,
+    'https://app.openmanuscript.org/auth/orcid/#nativeAuthCode=mobile-one-time-code',
+  );
   assert.equal(new URL(url).search, '');
+});
+
+test('legacy custom-scheme mobile return remains available as fallback', () => {
+  const url = buildNativeAuthReturnUrl('openmanuscript://auth', {
+    handoffCode: 'fallback-code',
+  });
+  assert.equal(url, 'openmanuscript://auth/#nativeAuthCode=fallback-code');
 });
 
 test('native ORCID errors return to the local Tauri application', () => {

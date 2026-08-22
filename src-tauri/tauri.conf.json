@@ -31,6 +31,12 @@
     "deep-link": {
       "mobile": [
         {
+          "scheme": ["https"],
+          "host": "app.openmanuscript.org",
+          "pathPrefix": ["/auth/orcid"],
+          "appLink": true
+        },
+        {
           "scheme": ["openmanuscript"],
           "appLink": false
         }
