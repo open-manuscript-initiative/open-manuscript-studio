@@ -18,6 +18,7 @@ import { integrationExecutionRouter } from './routes/integrationExecutionRoutes.
 import { integrationRouter } from './routes/integrationRoutes.js';
 import { ojsAssignmentRouter } from './routes/ojsAssignmentRoutes.js';
 import { ojsReviewRouter } from './routes/ojsReviewRoutes.js';
+import { orcidLinkStartRouter } from './routes/orcidLinkStartRoutes.js';
 import { orcidOidcRouter } from './routes/orcidOidcRoutes.js';
 import { peerReviewRouter } from './routes/peerReviewRoutes.js';
 import { proofreadingRouter } from './routes/proofreadingRoutes.js';
@@ -35,7 +36,10 @@ const allowedOrigins = new Set([
 ]);
 
 app.disable('x-powered-by');
+// Production traffic reaches the API through the single Nginx reverse proxy.
+// This makes req.ip reflect the real client address for express-rate-limit.
 app.set('trust proxy', 1);
+
 app.use(helmet());
 
 app.use(
@@ -51,7 +55,11 @@ app.use(
   }),
 );
 
-app.use(express.json({ limit: '1mb' }));
+app.use(
+  express.json({
+    limit: '1mb',
+  }),
+);
 
 app.get('/api', (_request, response) => {
   response.status(200).json({
@@ -60,6 +68,10 @@ app.get('/api', (_request, response) => {
   });
 });
 
+// Health probes stay outside the user-facing limiter so infrastructure checks
+// cannot consume the request budget. All resource-consuming API handlers below
+// are protected by the general limiter, with tighter policies for authentication
+// and external integration launch endpoints.
 app.use('/api/health', healthRouter);
 app.use(apiRateLimit);
 app.use('/api/auth', authRateLimit);
@@ -68,6 +80,7 @@ app.use('/integrations', integrationRateLimit);
 app.use('/api/auth', orcidOidcRouter);
 app.use('/api/auth', federatedAuthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api', orcidLinkStartRouter);
 app.use('/api', authorSignatureRouter);
 app.use('/api', cloudRouter);
 app.use('/api', userIntegrationRouter);

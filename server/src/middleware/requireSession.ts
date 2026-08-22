@@ -19,12 +19,20 @@ function readSessionCookie(header: string | undefined): string | undefined {
   return undefined;
 }
 
+function readBearerToken(header: string | undefined): string | undefined {
+  if (!header) return undefined;
+  const value = header.trim();
+  if (!value.toLowerCase().startsWith('bearer ')) return undefined;
+  return value.slice(7).trim() || undefined;
+}
+
 export async function requireSession(
   request: AuthenticatedRequest,
   response: Response,
   next: NextFunction,
 ): Promise<void> {
-  const token = readSessionCookie(request.headers.cookie);
+  const token = readBearerToken(request.headers.authorization)
+    ?? readSessionCookie(request.headers.cookie);
   if (!token) {
     response.status(401).json({
       error: {

@@ -43,6 +43,7 @@ import './styles/desktop-fullscreen-panels.css';
 import './styles/desktop-document-tabs.css';
 import './styles/formatting-toolbar-preference.css';
 import './styles/proofreading.css';
+import './styles/remove-default-document-reset.css';
 
 initializeRevisionIntegrity();
 initializeFormattingToolbarPreference();
