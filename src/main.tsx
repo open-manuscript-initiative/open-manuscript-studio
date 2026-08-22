@@ -39,6 +39,7 @@ import './styles/academic-shell.css';
 import './styles/mobile-language-switcher.css';
 import './styles/desktop-fullscreen-panels.css';
 import './styles/desktop-document-tabs.css';
+import './styles/remove-default-document-reset.css';
 
 initializeRevisionIntegrity();
 
