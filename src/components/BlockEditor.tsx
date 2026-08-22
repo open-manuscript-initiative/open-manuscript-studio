@@ -34,7 +34,9 @@ import {
   OmiNoteExtension,
   type OmiNoteAttributes,
 } from '../editor/extensions/OmiNoteExtension';
+import { OmiProofreadingExtension } from '../editor/extensions/OmiProofreadingExtension';
 import { OMI_RICH_TEXT_EXTENSIONS } from '../editor/extensions/OmiRichTextExtensions';
+import { useEditorProofreading } from '../editor/useEditorProofreading';
 import { useTranslation } from '../i18n';
 import { getCrossReferenceCopy } from '../i18n/crossReferences';
 import type { TranslationKey } from '../i18n/types';
@@ -59,6 +61,7 @@ import {
 import { CrossReferenceEditorCard } from './CrossReferenceEditorCard';
 import { CrossReferencePicker } from './CrossReferencePicker';
 import { NoteEditorCard } from './NoteEditorCard';
+import { ProofreadingSuggestionCard } from './ProofreadingSuggestionCard';
 import { RichTextToolbar } from './RichTextToolbar';
 import { SelectionActionToolbar } from './SelectionActionToolbar';
 import { SelectionIntegrationDialog } from './SelectionIntegrationDialog';
@@ -95,6 +98,7 @@ export function BlockEditor({
   const [integrationAction, setIntegrationAction] = useState<'translate' | 'agent' | null>(null);
   const onUpdateRef = useRef(onUpdate);
   const tRef = useRef(t);
+  const proofreadingSelectRef = useRef<(id: string | null) => void>(() => undefined);
   const blockLabel = formatBlockType(blockType, t);
   const effectiveEditable = editable && capabilities.editText;
   const externalIntegrationsAllowed = effectiveEditable && capabilities.reconcileWorkspaceReferences;
@@ -153,6 +157,7 @@ export function BlockEditor({
           : { heading: false, horizontalRule: false },
       ),
       ...OMI_RICH_TEXT_EXTENSIONS,
+      OmiProofreadingExtension,
       ...(capabilities.insertNotes
         ? [
             OmiNoteExtension.configure({
@@ -189,6 +194,14 @@ export function BlockEditor({
       handleClick: (_view, _pos, event) => {
         const target = event.target;
         if (!(target instanceof Element)) return false;
+
+        const proofreadingIssueId = target
+          .closest<HTMLElement>('[data-proofreading-issue-id]')
+          ?.dataset.proofreadingIssueId;
+        if (proofreadingIssueId) {
+          proofreadingSelectRef.current(proofreadingIssueId);
+          return true;
+        }
 
         if (capabilities.editCrossReferences) {
           const crossReferenceId = target
@@ -244,6 +257,13 @@ export function BlockEditor({
       }
     },
   });
+
+  const proofreading = useEditorProofreading(
+    editor,
+    blockId,
+    manuscriptLanguage ?? manuscript.locale,
+  );
+  proofreadingSelectRef.current = proofreading.selectIssue;
 
   useEffect(() => {
     editor?.setEditable(effectiveEditable);
@@ -412,6 +432,16 @@ export function BlockEditor({
       style={editorStyle}
     >
       <EditorContent editor={editor} />
+
+      {proofreading.activeIssue ? (
+        <ProofreadingSuggestionCard
+          issue={proofreading.activeIssue}
+          locale={locale}
+          onApply={proofreading.applyReplacement}
+          onIgnore={proofreading.ignoreActiveIssue}
+          onClose={() => proofreading.selectIssue(null)}
+        />
+      ) : null}
 
       {effectiveEditable ? (
         <RichTextToolbar

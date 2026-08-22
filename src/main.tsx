@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 
 import { App } from './App';
 import { initializeRevisionIntegrity } from './app/revisionIntegrity';
+import { ProofreadingController } from './components/ProofreadingController';
 import { initializeFormattingToolbarPreference } from './editor/formattingToolbarPreference';
 import { I18nProvider } from './i18n';
 
@@ -41,6 +42,7 @@ import './styles/mobile-language-switcher.css';
 import './styles/desktop-fullscreen-panels.css';
 import './styles/desktop-document-tabs.css';
 import './styles/formatting-toolbar-preference.css';
+import './styles/proofreading.css';
 import './styles/remove-default-document-reset.css';
 
 initializeRevisionIntegrity();
@@ -51,6 +53,7 @@ ReactDOM.createRoot(
 ).render(
   <React.StrictMode>
     <I18nProvider>
+      <ProofreadingController />
       <App />
     </I18nProvider>
   </React.StrictMode>
