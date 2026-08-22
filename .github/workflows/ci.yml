@@ -128,6 +128,28 @@ jobs:
             npm test
             npm run build
 
+            cd server
+            npm ci
+            npm run build
+            npm run prisma:migrate:deploy
+            npm run prisma:migrate:identity:deploy
+            cd ..
+
             rsync -a --delete \
               dist/ \
               /var/www/vhosts/openmanuscript.org/studio/httpdocs/
+
+            restart_api() {
+              if systemctl restart omi-studio-api.service 2>/dev/null; then
+                return 0
+              fi
+              if command -v sudo >/dev/null && sudo -n systemctl restart omi-studio-api.service; then
+                return 0
+              fi
+              echo 'Unable to restart omi-studio-api.service with the deployment account.' >&2
+              return 1
+            }
+
+            restart_api
+            systemctl is-active --quiet omi-studio-api.service
+            curl --fail --silent --show-error http://127.0.0.1:3001/api/health >/dev/null
