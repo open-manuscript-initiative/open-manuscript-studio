@@ -182,14 +182,24 @@ jobs:
               dist/ \
               /var/www/vhosts/openmanuscript.org/studio/httpdocs/
 
-            APP_LINK_ROOT='/var/www/vhosts/openmanuscript.org/app/httpdocs'
-            if [[ ! -d "$APP_LINK_ROOT" ]]; then
-              echo "The app.openmanuscript.org document root was not found at $APP_LINK_ROOT." >&2
-              echo 'If Plesk uses a custom document root, update APP_LINK_ROOT in .github/workflows/ci.yml.' >&2
+            APP_LINK_ROOT=''
+            for candidate in \
+              /var/www/vhosts/openmanuscript.org/app/httpdocs \
+              /var/www/vhosts/openmanuscript.org/app.openmanuscript.org \
+              /var/www/vhosts/openmanuscript.org/subdomains/app/httpdocs
+            do
+              if [[ -d "$candidate" ]]; then
+                APP_LINK_ROOT="$candidate"
+                break
+              fi
+            done
+
+            if [[ -z "$APP_LINK_ROOT" ]]; then
+              echo 'Could not locate the app.openmanuscript.org Plesk document root.' >&2
+              echo 'Checked the standard app/httpdocs, app.openmanuscript.org and subdomains/app/httpdocs locations.' >&2
               exit 1
             fi
 
-            mkdir -p "$APP_LINK_ROOT/.well-known" "$APP_LINK_ROOT/auth/orcid"
             rsync -a --delete app-link-site/ "$APP_LINK_ROOT/"
             mkdir -p "$APP_LINK_ROOT/.well-known"
             cat > "$APP_LINK_ROOT/.well-known/assetlinks.json" <<'JSON'
