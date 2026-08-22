@@ -1,12 +1,15 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Default capability for Open Manuscript Studio. File access is limited to paths explicitly selected by the author through native dialogs; ORCID authentication may open a Tauri in-app browser and return through the registered Studio deep link on mobile.",
+  "description": "Default capability for Open Manuscript Studio. File access is limited to paths explicitly selected by the author through native dialogs; ORCID authentication may open a Tauri in-app browser and return through the registered Studio deep link on mobile. The trusted main window may also create bibliographic provider WebViews and clear their local browsing sessions on explicit sign-out.",
   "windows": [
     "main"
   ],
   "permissions": [
     "core:default",
+    "core:webview:allow-create-webview-window",
+    "core:webview:allow-clear-all-browsing-data",
+    "core:window:allow-destroy",
     "deep-link:default",
     "opener:default",
     "dialog:allow-open",
