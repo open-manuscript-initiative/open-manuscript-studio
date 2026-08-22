@@ -114,6 +114,7 @@ export function AuthorSignaturePanel() {
       await startOrcidIdentityLink();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
       setBusy(false);
     }
   }
