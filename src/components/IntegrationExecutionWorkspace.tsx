@@ -1,4 +1,4 @@
-import { Bot, FileClock, Languages, Puzzle, RefreshCw, Trash2 } from 'lucide-react';
+import { Bot, FileClock, Languages, Puzzle, RefreshCw, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
@@ -24,6 +24,10 @@ import {
   type TranslationSegment,
   type TranslationVariant,
 } from '../services/integrationExecutionApi';
+import {
+  saveIntegrationConnection,
+  testIntegrationConnection,
+} from '../services/integrationApi';
 import type { OmiManuscript } from '../types/omi';
 import './IntegrationExecutionWorkspace.css';
 
@@ -66,6 +70,13 @@ export function IntegrationExecutionWorkspace() {
   const [translatedManuscript, setTranslatedManuscript] = useState<OmiManuscript | null>(null);
   const [variants, setVariants] = useState<TranslationVariant[]>([]);
 
+  const [aiEndpoint, setAiEndpoint] = useState('https://api.openai.com/v1/chat/completions');
+  const [aiModel, setAiModel] = useState('');
+  const [aiSecret, setAiSecret] = useState('');
+  const [aiConfigBusy, setAiConfigBusy] = useState(false);
+  const [aiConfigError, setAiConfigError] = useState('');
+  const [aiConfigNotice, setAiConfigNotice] = useState('');
+
   const [agentId, setAgentId] = useState<BuiltInAgentId>('language-editor');
   const [agentScope, setAgentScope] = useState<'section' | 'manuscript' | 'metadata' | 'references'>('section');
   const [agentBusy, setAgentBusy] = useState(false);
@@ -104,6 +115,53 @@ export function IntegrationExecutionWorkspace() {
       setAuditEvents(nextAudit);
     } catch (error) {
       setAuditError(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  async function saveAiConfiguration(): Promise<void> {
+    setAiConfigBusy(true);
+    setAiConfigError('');
+    setAiConfigNotice('');
+    try {
+      const endpoint = new URL(aiEndpoint.trim());
+      if (endpoint.protocol !== 'https:' || endpoint.username || endpoint.password) {
+        throw new Error('The AI endpoint must be a credential-free HTTPS URL.');
+      }
+      if (!aiModel.trim() || !aiSecret.trim()) {
+        throw new Error('Model name and API secret are required.');
+      }
+      await saveIntegrationConnection('ai-provider', {
+        connectionKey: 'default',
+        displayName: 'Default AI provider',
+        authenticationMode: 'user_api_key',
+        secret: aiSecret.trim(),
+        config: {
+          endpoint: endpoint.toString(),
+          model: aiModel.trim(),
+        },
+        enabled: true,
+      });
+      setAiSecret('');
+      const status = await testIntegrationConnection('ai-provider');
+      setAiConfigNotice(status.message ?? 'AI provider configuration saved.');
+    } catch (error) {
+      setAiConfigError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setAiConfigBusy(false);
+    }
+  }
+
+  async function testAiConfiguration(): Promise<void> {
+    setAiConfigBusy(true);
+    setAiConfigError('');
+    setAiConfigNotice('');
+    try {
+      const status = await testIntegrationConnection('ai-provider');
+      setAiConfigNotice(status.message ?? 'AI provider configuration is ready.');
+    } catch (error) {
+      setAiConfigError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setAiConfigBusy(false);
     }
   }
 
@@ -277,6 +335,21 @@ export function IntegrationExecutionWorkspace() {
 
   return (
     <div className="omi-integration-workspace">
+      <section className="omi-integration-workspace-card">
+        <header><Sparkles size={18} aria-hidden="true" /><div><h4>AI provider configuration</h4><p>Configure an OpenAI-compatible chat-completions endpoint. The API secret is encrypted server-side and is never returned to the browser.</p></div></header>
+        <div className="omi-integration-workspace-grid">
+          <label><span>HTTPS endpoint</span><input type="url" value={aiEndpoint} onChange={(event) => setAiEndpoint(event.target.value)} placeholder="https://provider.example/v1/chat/completions" /></label>
+          <label><span>Model</span><input value={aiModel} onChange={(event) => setAiModel(event.target.value)} placeholder="model-name" /></label>
+          <label><span>API secret</span><input type="password" autoComplete="off" value={aiSecret} onChange={(event) => setAiSecret(event.target.value)} placeholder="API key" /></label>
+        </div>
+        <div className="omi-integration-card__actions">
+          <button type="button" className="studio-menu-primary-action" disabled={aiConfigBusy} onClick={() => void saveAiConfiguration()}>{aiConfigBusy ? 'Saving…' : 'Save AI provider'}</button>
+          <button type="button" className="studio-menu-secondary-action" disabled={aiConfigBusy} onClick={() => void testAiConfiguration()}>Test configuration</button>
+        </div>
+        {aiConfigNotice ? <p role="status">{aiConfigNotice}</p> : null}
+        {aiConfigError ? <p className="omi-integration-error" role="alert">{aiConfigError}</p> : null}
+      </section>
+
       <section className="omi-integration-workspace-card">
         <header><Languages size={18} aria-hidden="true" /><div><h4>DeepL translation workspace</h4><p>Translate structured OMI content without rewriting citations, cross-references, bibliography records, code blocks, or equations.</p></div></header>
         <div className="omi-integration-workspace-grid">
