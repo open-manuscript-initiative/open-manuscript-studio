@@ -1,0 +1,78 @@
+name: Refactor ORCID auth browser once
+
+on:
+  push:
+    branches:
+      - fix/android-orcid-opener-custom-tab
+    paths:
+      - .github/workflows/refactor-orcid-auth-browser-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          ref: fix/android-orcid-opener-custom-tab
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Replace custom auth browser with Tauri opener Custom Tabs
+        shell: bash
+        run: |
+          python <<'PY'
+          import json
+          from pathlib import Path
+
+          auth = Path('src/services/authApi.ts')
+          text = auth.read_text()
+          old = """  if (IS_MOBILE_TAURI) {\n    try {\n      const { invoke } = await import('@tauri-apps/api/core');\n      await invoke('plugin:auth-browser|open_auth_url', { url });\n    } catch {\n      const { openUrl } = await import('@tauri-apps/plugin-opener');\n      await openUrl(url);\n    }\n    return;\n  }"""
+          new = """  if (IS_MOBILE_TAURI) {\n    const { openUrl } = await import('@tauri-apps/plugin-opener');\n    try {\n      await openUrl(url, 'inAppBrowser');\n    } catch {\n      await openUrl(url);\n    }\n    return;\n  }"""
+          if old not in text:
+              raise SystemExit('Expected ORCID mobile auth block not found')
+          auth.write_text(text.replace(old, new))
+
+          cargo = Path('src-tauri/Cargo.toml')
+          text = cargo.read_text()
+          line = 'tauri-plugin-auth-browser = { path = "plugins/auth-browser" }\n'
+          if line not in text:
+              raise SystemExit('Expected auth-browser Cargo dependency not found')
+          cargo.write_text(text.replace(line, ''))
+
+          lib = Path('src-tauri/src/lib.rs')
+          text = lib.read_text()
+          line = '        .plugin(tauri_plugin_auth_browser::init())\n'
+          if line not in text:
+              raise SystemExit('Expected auth-browser plugin registration not found')
+          lib.write_text(text.replace(line, ''))
+
+          capability = Path('src-tauri/capabilities/default.json')
+          data = json.loads(capability.read_text())
+          data['permissions'] = [p for p in data['permissions'] if p != 'auth-browser:default']
+          data['description'] = (
+              'Default capability for Open Manuscript Studio. File access is limited to paths explicitly selected '
+              'by the author through native dialogs; ORCID authentication may open a Tauri in-app browser and '
+              'return through the registered Studio deep link on mobile.'
+          )
+          capability.write_text(json.dumps(data, indent=2) + '\n')
+          PY
+
+          rm -rf src-tauri/plugins/auth-browser
+
+      - name: Refresh Cargo lockfile minimally
+        working-directory: src-tauri
+        run: cargo metadata --format-version 1 >/dev/null
+
+      - name: Commit refactor
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/services/authApi.ts src-tauri/Cargo.toml src-tauri/Cargo.lock src-tauri/src/lib.rs src-tauri/capabilities/default.json src-tauri/plugins/auth-browser
+          git commit -m "fix: use Tauri in-app browser for ORCID on Android"
+          git push origin HEAD:fix/android-orcid-opener-custom-tab
