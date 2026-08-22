@@ -2513,7 +2513,6 @@ dependencies = [
  "serde_json",
  "tauri",
  "tauri-build",
- "tauri-plugin-auth-browser",
  "tauri-plugin-deep-link",
  "tauri-plugin-dialog",
  "tauri-plugin-fs",
@@ -3878,14 +3877,6 @@ dependencies = [
  "serde_json",
  "tauri-utils",
  "walkdir",
-]
-
-[[package]]
-name = "tauri-plugin-auth-browser"
-version = "0.1.0"
-dependencies = [
- "tauri",
- "tauri-plugin",
 ]
 
 [[package]]
