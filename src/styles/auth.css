@@ -1,3 +1,5 @@
+@import './auth-desktop.css';
+
 .auth-page {
   display: flex;
   min-height: 100vh;
@@ -170,6 +172,8 @@
   cursor: pointer;
   font: inherit;
   font-weight: 700;
+  text-align: center;
+  text-decoration: none;
 }
 
 .auth-primary-button:hover:not(:disabled) {
