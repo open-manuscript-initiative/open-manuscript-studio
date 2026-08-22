@@ -45,6 +45,7 @@
   gap: 0.35rem;
 }
 
+.omi-integration-workspace-grid input,
 .omi-integration-workspace-grid select,
 .omi-extension-manifest-editor {
   width: 100%;
