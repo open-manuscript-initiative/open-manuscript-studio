@@ -229,8 +229,30 @@ jobs:
             }
 
             restart_api
-            systemctl is-active --quiet omi-studio-api.service
-            curl --fail --silent --show-error http://127.0.0.1:3001/api/health >/dev/null
+
+            api_ready=false
+            for attempt in $(seq 1 30); do
+              if curl --fail --silent --show-error http://127.0.0.1:3001/api/health >/dev/null 2>&1; then
+                echo "API health check passed on attempt $attempt."
+                api_ready=true
+                break
+              fi
+
+              if ! systemctl is-active --quiet omi-studio-api.service; then
+                echo 'omi-studio-api.service stopped while waiting for the health endpoint.' >&2
+                systemctl status omi-studio-api.service --no-pager -l || true
+                exit 1
+              fi
+
+              echo "API is not ready yet (attempt $attempt/30); retrying in 2 seconds..."
+              sleep 2
+            done
+
+            if [[ "$api_ready" != 'true' ]]; then
+              echo 'API health check did not become ready within 60 seconds.' >&2
+              systemctl status omi-studio-api.service --no-pager -l || true
+              exit 1
+            fi
 
             assetlinks_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://app.openmanuscript.org/.well-known/assetlinks.json)"
             fallback_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://app.openmanuscript.org/auth/orcid/)"
