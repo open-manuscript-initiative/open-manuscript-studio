@@ -12,6 +12,7 @@ import {
   getManuscriptLanguageOptions,
 } from '../model/manuscriptLanguage';
 import { CloudStorageSettings } from './CloudStorageSettings';
+import { ProofreadingSettings } from './ProofreadingSettings';
 
 interface Copy {
   title: string;
@@ -242,6 +243,7 @@ export function ContentLanguageSettings() {
           />
         </div>
       </section>
+      <ProofreadingSettings />
       <CloudStorageSettings />
     </>
   );
