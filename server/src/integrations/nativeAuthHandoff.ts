@@ -40,7 +40,7 @@ export function decodeOrcidStateReturnPath(
     return { expectedNonceHash: '' };
   }
 
-  const [noncePart, ...metadata] = value.split('|');
+  const [noncePart = '', ...metadata] = value.split('|');
   const expectedNonceHash = noncePart.slice(NONCE_PREFIX.length);
   if (!/^[0-9a-f]{64}$/i.test(expectedNonceHash)) {
     return { expectedNonceHash: '' };
