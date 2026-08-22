@@ -1,4 +1,4 @@
-import { CheckCircle2, Fingerprint, KeyRound, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { BadgeCheck, CheckCircle2, Fingerprint, KeyRound, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
@@ -11,6 +11,7 @@ import {
   type AuthorSignatureStatus,
   type OmiPublicationSignature,
 } from '../services/authorSignatureApi';
+import { startOrcidIdentityLink } from '../services/orcidLinkApi';
 
 export function AuthorSignaturePanel() {
   const { locale } = useTranslation();
@@ -26,6 +27,8 @@ export function AuthorSignaturePanel() {
         description: 'A kézirat aktuális, változtathatatlan revízióját WebAuthn/passkey kulccsal írhatja alá. Az identitást a Studio ORCID-on keresztül ellenőrzi.',
         identity: 'Hitelesített identitás',
         noIdentity: 'Nincs hitelesített ORCID-identitás ehhez a munkamenethez.',
+        verifyOrcid: 'Hitelesítés ORCID-dal',
+        verifyHint: 'Először kapcsolja és hitelesítse ORCID iD-jét. A hitelesítés után ezen a képernyőn folytathatja az aláírókulcs regisztrálását.',
         credential: 'Aláírókulcs regisztrálása',
         sign: 'Aktuális revízió aláírása',
         noCredential: 'Az aláírás előtt regisztráljon egy eszközhöz/passkeyhez kötött aláírókulcsot.',
@@ -42,6 +45,8 @@ export function AuthorSignaturePanel() {
           description: 'Signieren Sie die aktuelle unveränderliche Manuskriptrevision mit einem WebAuthn-/Passkey-Schlüssel. Studio verifiziert die Identität über ORCID.',
           identity: 'Verifizierte Identität',
           noIdentity: 'Für diese Sitzung ist keine verifizierte ORCID-Identität verfügbar.',
+          verifyOrcid: 'Mit ORCID verifizieren',
+          verifyHint: 'Verknüpfen und verifizieren Sie zuerst Ihre ORCID iD. Danach können Sie auf diesem Bildschirm mit der Registrierung des Signaturschlüssels fortfahren.',
           credential: 'Signaturschlüssel registrieren',
           sign: 'Aktuelle Revision signieren',
           noCredential: 'Registrieren Sie vor dem Signieren einen geräte-/passkeygebundenen Signaturschlüssel.',
@@ -57,6 +62,8 @@ export function AuthorSignaturePanel() {
           description: 'Sign the current immutable manuscript revision with a WebAuthn/passkey key. Studio verifies the signer identity through ORCID.',
           identity: 'Verified identity',
           noIdentity: 'No verified ORCID identity is available for this session.',
+          verifyOrcid: 'Verify with ORCID',
+          verifyHint: 'Link and verify your ORCID iD first. After verification you can continue registering a signing key on this screen.',
           credential: 'Register signing key',
           sign: 'Sign current revision',
           noCredential: 'Register a device/passkey-bound signing key before signing.',
@@ -73,6 +80,20 @@ export function AuthorSignaturePanel() {
     void refreshStatus();
   }, [manuscript.id]);
 
+  useEffect(() => {
+    const refreshWhenActive = () => {
+      if (document.visibilityState === 'visible') {
+        window.setTimeout(() => void refreshStatus(), 500);
+      }
+    };
+    window.addEventListener('focus', refreshWhenActive);
+    document.addEventListener('visibilitychange', refreshWhenActive);
+    return () => {
+      window.removeEventListener('focus', refreshWhenActive);
+      document.removeEventListener('visibilitychange', refreshWhenActive);
+    };
+  }, []);
+
   const currentSignatures = useMemo(
     () => signatures.filter((signature) => signature.payload.revisionId === manuscript.headRevisionId),
     [signatures, manuscript.headRevisionId],
@@ -83,6 +104,18 @@ export function AuthorSignaturePanel() {
       setStatus(await getAuthorSignatureStatus());
     } catch {
       setStatus(null);
+    }
+  }
+
+  async function verifyWithOrcid(): Promise<void> {
+    setBusy(true);
+    setMessage('');
+    try {
+      await startOrcidIdentityLink();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -131,11 +164,19 @@ export function AuthorSignaturePanel() {
           {status ? (
             <p><CheckCircle2 size={15} aria-hidden="true" /> {status.identity.displayName} · ORCID {status.identity.orcid}</p>
           ) : (
-            <p><TriangleAlert size={15} aria-hidden="true" /> {copy.noIdentity}</p>
+            <>
+              <p><TriangleAlert size={15} aria-hidden="true" /> {copy.noIdentity}</p>
+              <small>{copy.verifyHint}</small>
+            </>
           )}
           {status && status.credentials.length === 0 ? <small>{copy.noCredential}</small> : null}
         </div>
         <div className="studio-tool-actions">
+          {!status ? (
+            <button type="button" className="studio-menu-secondary-action" disabled={busy} onClick={() => void verifyWithOrcid()}>
+              <BadgeCheck size={16} aria-hidden="true" />{copy.verifyOrcid}
+            </button>
+          ) : null}
           <button type="button" className="studio-menu-secondary-action" disabled={busy || !status} onClick={() => void registerCredential()}>
             <KeyRound size={16} aria-hidden="true" />{copy.credential}
           </button>
