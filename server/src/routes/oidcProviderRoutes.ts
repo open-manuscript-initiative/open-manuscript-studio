@@ -3,7 +3,10 @@ import { randomBytes } from 'node:crypto';
 import { Router, type Request, type Response } from 'express';
 
 import { env } from '../config/env.js';
-import { ensureStudioPrincipal } from '../identity/studioPrincipalBridge.js';
+import {
+  ensureStudioPrincipal,
+  getStudioPrincipalByEmail,
+} from '../identity/studioPrincipalBridge.js';
 import {
   buildNativeAuthReturnUrl,
   normalizeNativeReturnOrigin,
@@ -61,12 +64,13 @@ oidcProviderRouter.get('/oidc/:provider/start', async (request, response) => {
     return;
   }
 
+  const locale = normalizeLocale(request.query.locale);
   try {
     const authorizeUrl = await issueOidcState({
       provider,
       mode: 'login',
-      nativeReturnOrigin,
-      locale: normalizeLocale(request.query.locale),
+      ...(nativeReturnOrigin ? { nativeReturnOrigin } : {}),
+      ...(locale ? { locale } : {}),
     });
     response.redirect(302, authorizeUrl);
   } catch (error) {
@@ -108,13 +112,14 @@ oidcProviderRouter.post('/oidc/:provider/link/start', async (request, response) 
     return;
   }
 
+  const locale = normalizeLocale(request.body?.locale);
   try {
     const authorizeUrl = await issueOidcState({
       provider,
       mode: 'link',
       userId,
-      nativeReturnOrigin,
-      locale: normalizeLocale(request.body?.locale),
+      ...(nativeReturnOrigin ? { nativeReturnOrigin } : {}),
+      ...(locale ? { locale } : {}),
     });
     response.status(200).json({ authorizeUrl });
   } catch (error) {
@@ -276,10 +281,13 @@ async function resolveLoginUser(
   }
 
   // Never silently attach a newly seen external identity to an existing local
-  // account based on e-mail alone. The user must sign in locally and explicitly
-  // link the provider from Account settings.
-  const existingByEmail = await identityPrisma.user.findUnique({ where: { email: profile.email } });
-  if (existingByEmail) return null;
+  // account based on e-mail alone. This includes legacy Studio principals that
+  // have not yet migrated into the separate Identity database.
+  const [existingIdentityUser, existingStudioUser] = await Promise.all([
+    identityPrisma.user.findUnique({ where: { email: profile.email } }),
+    getStudioPrincipalByEmail(profile.email),
+  ]);
+  if (existingIdentityUser || existingStudioUser) return null;
 
   const now = new Date();
   const created = await identityPrisma.user.create({
@@ -381,10 +389,6 @@ function identityProfile(provider: OidcProviderConfig, profile: OidcProfile) {
   };
 }
 
-function encodeStateMetadata(value: OidcStateMetadata): string {
-  return JSON.stringify(value);
-}
-
 function decodeStateMetadata(value: string | null | undefined): OidcStateMetadata | null {
   if (!value) return null;
   try {
@@ -399,12 +403,13 @@ function decodeStateMetadata(value: string | null | undefined): OidcStateMetadat
     const nativeReturnOrigin = typeof parsed.nativeReturnOrigin === 'string'
       ? normalizeNativeReturnOrigin(parsed.nativeReturnOrigin)
       : undefined;
+    const locale = normalizeLocale(parsed.locale);
     return {
       providerKey: parsed.providerKey,
       expectedNonceHash: parsed.expectedNonceHash,
       codeVerifier: parsed.codeVerifier,
       ...(nativeReturnOrigin ? { nativeReturnOrigin } : {}),
-      ...(typeof parsed.locale === 'string' ? { locale: normalizeLocale(parsed.locale) } : {}),
+      ...(locale ? { locale } : {}),
     };
   } catch {
     return null;
