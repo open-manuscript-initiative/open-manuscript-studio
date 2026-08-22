@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 
 import { App } from './App';
 import { initializeRevisionIntegrity } from './app/revisionIntegrity';
+import { ProofreadingController } from './components/ProofreadingController';
 import { I18nProvider } from './i18n';
 
 import './styles/global.css';
@@ -47,6 +48,7 @@ ReactDOM.createRoot(
 ).render(
   <React.StrictMode>
     <I18nProvider>
+      <ProofreadingController />
       <App />
     </I18nProvider>
   </React.StrictMode>
