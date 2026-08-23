@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -81,4 +82,63 @@ test('native ORCID errors return to the local Tauri application', () => {
     buildNativeAuthReturnUrl('tauri://localhost', { errorCode: 'orcid_signin_failed' }),
     'tauri://localhost/#authError=orcid_signin_failed',
   );
+});
+
+test('iOS configuration uses App Store-compatible versioning and the shared bundle id', () => {
+  const iosConfig = JSON.parse(
+    readFileSync(new URL('../src-tauri/tauri.ios.conf.json', import.meta.url), 'utf8'),
+  ) as {
+    version?: string;
+    bundle?: {
+      iOS?: {
+        minimumSystemVersion?: string;
+        bundleVersion?: string;
+        infoPlist?: string;
+      };
+    };
+  };
+  const baseConfig = JSON.parse(
+    readFileSync(new URL('../src-tauri/tauri.conf.json', import.meta.url), 'utf8'),
+  ) as {
+    identifier?: string;
+    plugins?: {
+      'deep-link'?: {
+        mobile?: Array<{
+          scheme?: string[];
+          host?: string;
+          pathPrefix?: string[];
+          appLink?: boolean;
+        }>;
+      };
+    };
+  };
+
+  assert.equal(baseConfig.identifier, 'org.openmanuscript.studio');
+  assert.equal(iosConfig.version, '0.1.0');
+  assert.equal(iosConfig.bundle?.iOS?.minimumSystemVersion, '14.0');
+  assert.equal(iosConfig.bundle?.iOS?.bundleVersion, '4');
+  assert.equal(iosConfig.bundle?.iOS?.infoPlist, 'Info.ios.plist');
+
+  const mobileLinks = baseConfig.plugins?.['deep-link']?.mobile ?? [];
+  assert.ok(mobileLinks.some((link) =>
+    link.appLink === true
+    && link.scheme?.includes('https')
+    && link.host === 'app.openmanuscript.org'
+    && link.pathPrefix?.includes('/auth/orcid')));
+  assert.ok(mobileLinks.some((link) =>
+    link.appLink === false
+    && link.scheme?.includes('openmanuscript')));
+});
+
+test('iOS Info.plist supports iPad multitasking and declares encryption metadata', () => {
+  const plist = readFileSync(
+    new URL('../src-tauri/Info.ios.plist', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(plist, /<key>CFBundleDisplayName<\/key>\s*<string>OMI Studio<\/string>/);
+  assert.match(plist, /<key>ITSAppUsesNonExemptEncryption<\/key>\s*<false\/>/);
+  assert.match(plist, /<key>UIRequiresFullScreen<\/key>\s*<false\/>/);
+  assert.match(plist, /<key>UISupportedInterfaceOrientations~ipad<\/key>/);
+  assert.match(plist, /<key>UIApplicationSupportsIndirectInputEvents<\/key>\s*<true\/>/);
 });
