@@ -139,7 +139,7 @@ export async function createInstitutionApiCredential(input: {
   scopes: InstitutionApiScope[];
   expiresInDays?: number;
 }): Promise<{ credential: InstitutionApiCredential; token: string; tokenVisibleOnce: true }> {
-  return request(
+  return request<{ credential: InstitutionApiCredential; token: string; tokenVisibleOnce: true }>(
     `/api/central-admin/institutions/${encodeURIComponent(input.institutionId)}/api-credentials`,
     {
       method: 'POST',
