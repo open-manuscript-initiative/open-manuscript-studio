@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import { useStudioStore } from '../app/useStudioStore';
+import { getHeaderSupplementalCopy } from '../i18n/headerSupplementalTranslations';
 import { useTranslation } from '../i18n';
 import { useAuthStore } from '../store/authStore';
 import { AccountPanel } from './AccountPanel';
@@ -24,35 +25,9 @@ interface HeaderProps {
   onOpenMenu: () => void;
 }
 
-const searchLabels: Record<string, string> = {
-  de: 'Suchen',
-  en: 'Search',
-  hu: 'Keresés',
-};
-
-const accountLabels: Record<string, string> = {
-  en: 'Account',
-  hu: 'Fiók',
-  de: 'Konto',
-};
-
-const outlineLabels: Record<string, { show: string; hide: string }> = {
-  en: {
-    show: 'Show document outline',
-    hide: 'Hide document outline',
-  },
-  hu: {
-    show: 'Dokumentumszerkezet megjelenítése',
-    hide: 'Dokumentumszerkezet elrejtése',
-  },
-  de: {
-    show: 'Dokumentstruktur anzeigen',
-    hide: 'Dokumentstruktur ausblenden',
-  },
-};
-
 export function Header({ onOpenMenu }: HeaderProps) {
   const { t, locale } = useTranslation();
+  const headerCopy = getHeaderSupplementalCopy(locale);
   const [accountOpen, setAccountOpen] = useState(false);
   const [outlineOpen, setOutlineOpen] = useState(false);
   const [outlineHost, setOutlineHost] = useState<HTMLElement | null>(null);
@@ -62,11 +37,7 @@ export function Header({ onOpenMenu }: HeaderProps) {
   const logout = useAuthStore((state) => state.logout);
   const loading = useAuthStore((state) => state.isLoading);
   const section = manuscript.sections.find((candidate) => candidate.id === selectedId);
-  const searchLabel = searchLabels[locale] ?? searchLabels.en;
-  const accountLabel = accountLabels[locale] ?? accountLabels.en;
-  const outlineLabel = outlineOpen
-    ? (outlineLabels[locale] ?? outlineLabels.en).hide
-    : (outlineLabels[locale] ?? outlineLabels.en).show;
+  const outlineLabel = outlineOpen ? headerCopy.hideOutline : headerCopy.showOutline;
 
   useEffect(() => {
     const host = document.querySelector<HTMLElement>('.focus-workspace');
@@ -118,8 +89,8 @@ export function Header({ onOpenMenu }: HeaderProps) {
             type="button"
             className="focus-menu-button focus-search-button"
             onClick={search}
-            aria-label={searchLabel}
-            title={searchLabel}
+            aria-label={headerCopy.search}
+            title={headerCopy.search}
           >
             <Search size={18} aria-hidden="true" />
           </button>
@@ -140,7 +111,7 @@ export function Header({ onOpenMenu }: HeaderProps) {
         </div>
 
         <div className="focus-header-context" title={section?.title ?? manuscript.title}>
-          <span className="focus-header-context-label">Manuscript</span>
+          <span className="focus-header-context-label">{headerCopy.manuscript}</span>
           <span className="focus-header-manuscript-title">{manuscript.title}</span>
           {section?.title && section.title !== manuscript.title ? (
             <>
@@ -168,11 +139,11 @@ export function Header({ onOpenMenu }: HeaderProps) {
             type="button"
             className="focus-menu-button"
             onClick={() => setAccountOpen(true)}
-            aria-label={accountLabel}
-            title={accountLabel}
+            aria-label={headerCopy.account}
+            title={headerCopy.account}
           >
             <UserRound size={18} aria-hidden="true" />
-            <span className="focus-logout-label">{accountLabel}</span>
+            <span className="focus-logout-label">{headerCopy.account}</span>
           </button>
           <button
             type="button"
@@ -195,14 +166,14 @@ export function Header({ onOpenMenu }: HeaderProps) {
         : null}
 
       {accountOpen ? (
-        <div className="account-overlay" role="dialog" aria-modal="true" aria-label={accountLabel}>
+        <div className="account-overlay" role="dialog" aria-modal="true" aria-label={headerCopy.account}>
           <div className="account-overlay-backdrop" onClick={() => setAccountOpen(false)} />
           <div className="account-drawer">
             <button
               type="button"
               className="account-close"
               onClick={() => setAccountOpen(false)}
-              aria-label="Close"
+              aria-label={t('common.close')}
             >
               <X size={22} aria-hidden="true" />
             </button>

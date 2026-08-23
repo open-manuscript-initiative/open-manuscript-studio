@@ -1,5 +1,7 @@
 import { FileText, X } from 'lucide-react';
 
+import { useTranslation } from '../i18n';
+
 export type DesktopDocumentTabId = ReturnType<Crypto['randomUUID']>;
 
 export interface DesktopDocumentTabItem {
@@ -21,8 +23,11 @@ export function DesktopDocumentTabs({
   onActivate,
   onClose,
 }: DesktopDocumentTabsProps) {
+  const { t } = useTranslation();
+  const closeLabel = t('common.close');
+
   return (
-    <nav className="desktop-document-tabs" aria-label="Open documents">
+    <nav className="desktop-document-tabs" aria-label={t('navigation.documents')}>
       <div className="desktop-document-tabs__track" role="tablist">
         {tabs.map((tab) => {
           const active = tab.id === activeTabId;
@@ -46,8 +51,8 @@ export function DesktopDocumentTabs({
               <button
                 type="button"
                 className="desktop-document-tab__close"
-                aria-label={`Close ${tab.title}`}
-                title="Close"
+                aria-label={`${closeLabel}: ${tab.title}`}
+                title={closeLabel}
                 disabled={tabs.length === 1}
                 onClick={() => onClose(tab.id)}
               >

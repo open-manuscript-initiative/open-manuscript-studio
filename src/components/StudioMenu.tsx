@@ -26,6 +26,7 @@ import {
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
+import { getStudioMenuSupplementalCopy } from '../i18n/studioMenuSupplementalTranslations';
 import { getStudioPlatform, type StudioPlatform } from '../mobile/platform/platform';
 import {
   getDeviceStorageMode,
@@ -94,18 +95,9 @@ export function StudioMenu({
 }: StudioMenuProps) {
   const { t, locale } = useTranslation();
   const publicationCopy = getPublicationProfileCopy(locale);
+  const supplementalCopy = getStudioMenuSupplementalCopy(locale);
   const [activeView, setActiveView] =
     useState<StudioMenuView>('document');
-  const assignmentsLabel = locale === 'hu'
-    ? 'Megbízások'
-    : locale === 'de'
-      ? 'Aufträge'
-      : 'Assignments';
-  const signaturesLabel = locale === 'hu'
-    ? 'Aláírások'
-    : locale === 'de'
-      ? 'Signaturen'
-      : 'Signatures';
 
   useEffect(() => {
     if (!open) return;
@@ -139,9 +131,9 @@ export function StudioMenu({
             <MenuButton active={activeView === 'notes'} icon={<StickyNote size={18} aria-hidden="true" />} label={t('studio.navigation.notes')} onClick={() => setActiveView('notes')} />
             <MenuButton active={activeView === 'references'} icon={<Library size={18} aria-hidden="true" />} label={t('studio.navigation.references')} onClick={() => setActiveView('references')} />
             <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} />
-            {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={assignmentsLabel} onClick={() => setActiveView('assignments')} /> : null}
+            {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
             <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} />
-            <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={signaturesLabel} onClick={() => setActiveView('signatures')} />
+            <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} />
             <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
             <MenuButton active={activeView === 'tools'} icon={<Wrench size={18} aria-hidden="true" />} label={t('studio.navigation.tools')} onClick={() => setActiveView('tools')} />
             <MenuButton active={activeView === 'settings'} icon={<Settings2 size={18} aria-hidden="true" />} label={t('studio.navigation.settings')} onClick={() => setActiveView('settings')} />
