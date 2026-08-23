@@ -36,6 +36,7 @@ export interface UserPreferences {
   timeZone?: string;
 }
 
+/** Personal scholarly profile. Legacy affiliation fields remain for compatibility only. */
 export interface UserProfile {
   fullName: string;
   affiliation?: string;
@@ -43,6 +44,40 @@ export interface UserProfile {
   orcid?: string;
   avatarUrl?: string;
   bio?: string;
+}
+
+export interface InstitutionalIdentityReference {
+  id: string;
+  provider: 'OIDC' | 'SAML';
+  providerKey: string | null;
+  issuer: string;
+  subject: string;
+  displayName: string | null;
+}
+
+export interface InstitutionalProfile {
+  id: string;
+  organizationName: string;
+  rorId: string | null;
+  department: string | null;
+  positionTitle: string | null;
+  institutionalEmail: string | null;
+  emailVerified: boolean;
+  identityId: string | null;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+  identity: InstitutionalIdentityReference | null;
+}
+
+export interface InstitutionalProfileInput {
+  organizationName: string;
+  rorId?: string | null;
+  department?: string | null;
+  positionTitle?: string | null;
+  institutionalEmail?: string | null;
+  identityId?: string | null;
+  isDefault?: boolean;
 }
 
 export interface User {
