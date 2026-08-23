@@ -37,6 +37,13 @@ const environmentSchema = z.object({
 
   DEPLOYMENT_MODE: z.enum(['personal', 'institutional']).default('personal'),
 
+  // Optional organization metadata used only by managed institutional
+  // deployments. Admin e-mail addresses are a bootstrap allow-list, but an
+  // OIDC/SAML identity must also be linked before OWNER access is provisioned.
+  INSTITUTIONAL_NAME: z.string().trim().max(300).optional(),
+  INSTITUTIONAL_ROR_ID: z.string().trim().max(128).optional(),
+  INSTITUTIONAL_ADMIN_EMAILS: z.string().trim().default(''),
+
   INTEGRATION_MASTER_KEY: z
     .string()
     .regex(
