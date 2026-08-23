@@ -348,17 +348,12 @@ export function CloudStorageSettings() {
   const checkpoint = useStudioStore((state) => state.checkpoint);
   const currentUser = useAuthStore(getCurrentUser);
   const platform = getStudioPlatform();
-  const desktopLocalFolder = platform === 'desktop';
   const [connections, setConnections] = useState<CloudConnection[]>([]);
   const [backups, setBackups] = useState<CloudBackup[]>([]);
   const [selectedConnectionId, setSelectedConnectionId] = useState('');
-  const [providerId, setProviderId] = useState<CloudStorageProviderId | ''>(
-    desktopLocalFolder ? 'local-folder' : '',
-  );
+  const [providerId, setProviderId] = useState<CloudStorageProviderId | ''>('');
   const [accountType, setAccountType] = useState<CloudAccountType>('personal');
-  const [connectionMethodId, setConnectionMethodId] = useState<CloudConnectionMethodId | ''>(
-    desktopLocalFolder ? 'local-folder' : '',
-  );
+  const [connectionMethodId, setConnectionMethodId] = useState<CloudConnectionMethodId | ''>('');
   const [localFolderPath, setLocalFolderPath] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
@@ -687,7 +682,7 @@ export function CloudStorageSettings() {
         {selectedMethod?.implementation === 'local-folder' ? (
           <div className="studio-tool-card">
             <div>
-              <strong>{copy.localFolderMethod}</strong>
+              <strong>{selectedProvider?.displayName} · {copy.localFolderMethod}</strong>
               <p>{copy.localFolderDescription}</p>
               <small>{platform === 'desktop' ? localFolderPath || copy.folderNotSelected : copy.desktopOnly}</small>
               {platform === 'desktop' && localFolderPath ? <small>{copy.folderRemembered}</small> : null}
