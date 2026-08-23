@@ -40,6 +40,11 @@ export interface TranslationDictionary {
     document: {
       title: string;
       description: string;
+      addSection: string;
+      sections: string;
+      objects: string;
+      annotations: string;
+      citations: string;
     };
     manuscript: {
       title: string;
@@ -48,6 +53,8 @@ export interface TranslationDictionary {
     tools: {
       title: string;
       description: string;
+      export: string;
+      exportDescription: string;
       reset: string;
       resetDescription: string;
       confirmReset: string;
@@ -59,155 +66,278 @@ export interface TranslationDictionary {
     settings: {
       title: string;
       description: string;
-    };
-    footer: {
-      tagline: string;
-      linksLabel: string;
-      documentation: string;
-      license: string;
-      orcidSandbox: string;
-      orcidSandboxTitle: string;
-      copyright: string;
+      interfaceLanguages: string;
+      interfaceLanguagesDescription: string;
+      currentLanguage: string;
+      currentLanguageHint: string;
+      enabledLanguage: string;
+      disabledLanguage: string;
+      futureLanguages: string;
     };
   };
 
   manuscript: {
-    title: string;
-    subtitle: string;
+    newDocument: string;
+    documentTitle: string;
     abstract: string;
     keywords: string;
-    keywordsHint: string;
-    language: string;
-    languageHint: string;
-    metadataLanguage: string;
-    metadataLanguageHint: string;
-  };
-
-  editor: {
-    formatting: {
-      bold: string;
-      italic: string;
-      strike: string;
-      superscript: string;
-      subscript: string;
-      bulletList: string;
-      orderedList: string;
-      blockquote: string;
-      inlineCode: string;
-      codeBlock: string;
-      hardBreak: string;
-      clearFormatting: string;
-      language: string;
-      automaticToolbar: string;
-    };
-    insert: {
-      title: string;
-      image: string;
-      table: string;
-      chart: string;
-      equation: string;
-      spreadsheet: string;
-    };
-    search: {
-      openSearch: string;
-      openReplace: string;
-      searchTitle: string;
-      replaceTitle: string;
-      searchPlaceholder: string;
-      replacePlaceholder: string;
-      previous: string;
-      next: string;
-      close: string;
-      matchCase: string;
-      wholeWord: string;
-      scope: string;
-      all: string;
-      currentSection: string;
-      titleAbstract: string;
-      replace: string;
-      replaceAll: string;
-      noResults: string;
-      resultCount: string;
-    };
+    contributors: string;
+    sections: string;
+    annotations: string;
+    citations: string;
+    bibliography: string;
+    documentLanguage: string;
+    originalLanguage: string;
   };
 
   notes: {
     title: string;
     description: string;
-    addFootnote: string;
-    addEndnote: string;
+    empty: string;
+    emptyHint: string;
+    note: string;
+    type: string;
+    body: string;
+    bodyPlaceholder: string;
     footnote: string;
     endnote: string;
-    label: string;
-    content: string;
+    authorNote: string;
     delete: string;
-    empty: string;
+    confirmDelete: string;
+    closeEditor: string;
+    goToNote: string;
+    autoSave: string;
   };
 
-  references: {
+  citations: {
+    referencesTitle: string;
+    referencesDescription: string;
+    addReference: string;
+    editReference: string;
+    referenceEditorDescription: string;
+    emptyLibrary: string;
+    emptyLibraryHint: string;
+    searchReferences: string;
+    searchPlaceholder: string;
+    untitledReference: string;
+    occurrences: string;
+    bibliographyPreviewDescription: string;
+    resourceType: string;
     title: string;
-    description: string;
-    search: string;
-    add: string;
-    edit: string;
-    delete: string;
-    style: string;
-    styleSearch: string;
-    customStyle: string;
-    noRecords: string;
+    titlePlaceholder: string;
+    subtitle: string;
+    creators: string;
+    creatorsDescription: string;
+    addCreator: string;
+    removeCreator: string;
+    noCreators: string;
+    creatorRole: string;
+    givenName: string;
+    familyName: string;
+    containerTitle: string;
+    issued: string;
+    volume: string;
+    issue: string;
+    pages: string;
+    publisher: string;
+    place: string;
+    duplicateReference: string;
+    insertTitle: string;
+    insertDescription: string;
+    noReferences: string;
+    noReferencesHint: string;
+    insert: string;
+    citation: string;
+    reference: string;
+    locatorType: string;
+    locator: string;
+    locatorPlaceholder: string;
+    prefix: string;
+    prefixPlaceholder: string;
+    suffix: string;
+    suffixPlaceholder: string;
+    openSource: string;
+    closeEditor: string;
+    deleteCitation: string;
+    confirmDeleteCitation: string;
+    unresolvedReference: string;
+    roles: {
+      author: string;
+      editor: string;
+      translator: string;
+      compiler: string;
+      contributor: string;
+    };
+    resourceTypes: {
+      'journal-article': string;
+      book: string;
+      'book-chapter': string;
+      'conference-paper': string;
+      thesis: string;
+      dissertation: string;
+      report: string;
+      preprint: string;
+      dataset: string;
+      software: string;
+      standard: string;
+      'archival-source': string;
+      manuscript: string;
+      'web-page': string;
+    };
+    locators: {
+      page: string;
+      'page-range': string;
+      chapter: string;
+      section: string;
+      paragraph: string;
+      figure: string;
+      table: string;
+      folio: string;
+      line: string;
+      timestamp: string;
+    };
   };
 
   contributors: {
-    title: string;
     description: string;
     add: string;
-    fullName: string;
-    affiliation: string;
-    orcid: string;
-    role: string;
-    corresponding: string;
+    empty: string;
+    remove: string;
     moveUp: string;
     moveDown: string;
-    remove: string;
+    givenName: string;
+    familyName: string;
+    affiliation: string;
+    orcid: string;
+    invalidOrcid: string;
+    role: string;
+    corresponding: string;
+    roles: {
+      author: string;
+      editor: string;
+      translator: string;
+      reviewer: string;
+      dataCurator: string;
+      software: string;
+      methodology: string;
+      visualization: string;
+      other: string;
+    };
   };
 
   history: {
     title: string;
     description: string;
+    empty: string;
+    current: string;
+    revision: string;
+    events: string;
+    groupedChanges: string;
+    unknownActor: string;
+    completeHistory: string;
+    shallowHistory: string;
+    pendingTitle: string;
+    pendingDescription: string;
+    pendingBadge: string;
     checkpoint: string;
-    noHistory: string;
-    restore: string;
+    discard: string;
+    confirmDiscard: string;
+    revert: string;
+    confirmRevert: string;
+    revertBlocked: string;
+    tombstonesTitle: string;
+    tombstonesDescription: string;
+    tombstoneActive: string;
+    tombstoneRestored: string;
+    operations: {
+      snapshotCreated: string;
+      titleChanged: string;
+      abstractChanged: string;
+      sectionCreated: string;
+      blockChanged: string;
+      contributorAdded: string;
+      contributorChanged: string;
+      contributorRemoved: string;
+      contributionChanged: string;
+      contributorsReordered: string;
+      reverted: string;
+    };
+  };
+
+  editor: {
+    addSection: string;
+    addParagraph: string;
+    addNote: string;
+    addCitation: string;
+    untitledSection: string;
+    emptyParagraph: string;
+    paragraph: string;
+    heading: string;
+    quote: string;
+    insertNote: string;
+    insertCitation: string;
+    loading: string;
   };
 
   status: {
-    ready: string;
-    loading: string;
-    error: string;
-    saved: string;
-    saving: string;
+    draft: string;
+    submitted: string;
+    accepted: string;
+    published: string;
   };
 
   validation: {
-    required: string;
-    invalid: string;
+    requiredField: string;
+    invalidDocument: string;
+    unsupportedSchema: string;
   };
 
-  languages: Record<string, string>;
+  languages: {
+    en: string;
+    hu: string;
+    de: string;
+  };
 
   auth: {
-    title: string;
-    subtitle: string;
-    login: string;
-    register: string;
-    logout: string;
-    email: {
-      label: string;
-      placeholder: string;
+    brand: {
+      name: string;
+      description: string;
     };
-    password: {
-      label: string;
-      placeholder: string;
+
+    login: {
+      title: string;
+      description: string;
+      submit: string;
+      submitting: string;
+      noAccount: string;
+      registerLink: string;
     };
+
+    register: {
+      title: string;
+      description: string;
+      submit: string;
+      hasAccount: string;
+      loginLink: string;
+    };
+
+    fields: {
+      name: {
+        label: string;
+        placeholder: string;
+      };
+
+      email: {
+        label: string;
+        placeholder: string;
+      };
+
+      password: {
+        label: string;
+        placeholder: string;
+      };
+    };
+
     errors: {
       invalidEmail: string;
       invalidCredentials: string;
@@ -215,19 +345,12 @@ export interface TranslationDictionary {
       accountNotActive: string;
       authenticationRequired: string;
     };
+
     alphaNotice: string;
   };
 }
 
-/**
- * Every UI locale shipped by Studio.
- *
- * Keep this union aligned with `localeLabels` in config.ts and with the
- * canonical PO/JSON locale directories. Historically this type listed only
- * en/hu/de even after the runtime expanded to 24 locales, which made newer
- * component-local translation maps silently regress to three-language
- * coverage.
- */
+/** Every UI locale currently shipped by Studio. */
 export type SupportedLocale =
   | 'bg'
   | 'cs'
