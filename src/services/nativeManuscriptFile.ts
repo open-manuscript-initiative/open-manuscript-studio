@@ -38,6 +38,28 @@ export async function openLocalManuscript(): Promise<{
   manuscript: OmiManuscript;
   path: string;
 } | null> {
+  return openManuscriptWithPicker(true);
+}
+
+/**
+ * Opens a manuscript from removable/portable storage without making that path
+ * the current working file. This is intended for shared or foreign machines:
+ * the author can read from a USB drive, but Studio does not retain a local
+ * working-path association afterwards.
+ */
+export async function openPortableManuscript(): Promise<{
+  manuscript: OmiManuscript;
+  path: string;
+} | null> {
+  return openManuscriptWithPicker(false);
+}
+
+async function openManuscriptWithPicker(
+  rememberPath: boolean,
+): Promise<{
+  manuscript: OmiManuscript;
+  path: string;
+} | null> {
   if (!isNativeStudio()) {
     return null;
   }
@@ -59,7 +81,7 @@ export async function openLocalManuscript(): Promise<{
 
   const raw = await readTextFile(selected);
   const manuscript = JSON.parse(raw) as OmiManuscript;
-  currentFilePath = selected;
+  currentFilePath = rememberPath ? selected : null;
 
   return { manuscript, path: selected };
 }
@@ -83,6 +105,24 @@ export async function saveLocalManuscript(
 export async function saveLocalManuscriptAs(
   manuscript: OmiManuscript,
 ): Promise<string | null> {
+  return saveManuscriptWithPicker(manuscript, true);
+}
+
+/**
+ * Saves a one-off manuscript copy through the native picker without retaining
+ * the selected path. On a shared computer the user can explicitly choose a
+ * removable drive while Studio keeps cloud storage as the normal workflow.
+ */
+export async function savePortableManuscriptCopy(
+  manuscript: OmiManuscript,
+): Promise<string | null> {
+  return saveManuscriptWithPicker(manuscript, false);
+}
+
+async function saveManuscriptWithPicker(
+  manuscript: OmiManuscript,
+  rememberPath: boolean,
+): Promise<string | null> {
   if (!isNativeStudio()) {
     return null;
   }
@@ -104,7 +144,7 @@ export async function saveLocalManuscriptAs(
   }
 
   await writeTextFile(selected, serializeOmiJson(manuscript));
-  currentFilePath = selected;
+  currentFilePath = rememberPath ? selected : null;
   return selected;
 }
 
