@@ -6,6 +6,7 @@ import {
   getDefaultCloudConnectionMethod,
 } from '../src/integrations/cloudStorageProviders.ts';
 import { integrationCatalog } from '../src/integrations/registry.ts';
+import { hasNativeSystemStorage } from '../src/mobile/platform/platform.ts';
 
 test('every integration declares at least one authentication mode and a valid preferred mode', () => {
   for (const entry of integrationCatalog) {
@@ -35,18 +36,15 @@ test('cloud storage declares provider-dependent authentication capabilities', ()
   assert.equal(storage.status, 'available');
 });
 
-test('desktop OneDrive prefers a locally synchronized folder without OMI credentials', () => {
+test('desktop OneDrive uses native system storage without duplicating it as a provider connection', () => {
   const methods = getCloudConnectionMethods('onedrive', 'personal', 'desktop');
-  const local = methods.find((method) => method.id === 'local-folder');
   const oauth = methods.find((method) => method.id === 'oauth2');
 
-  assert.ok(local);
-  assert.equal(local.available, true);
-  assert.equal(local.authentication, 'none');
-  assert.equal(local.recommended, true);
+  assert.equal(hasNativeSystemStorage('desktop'), true);
+  assert.equal(methods.some((method) => method.id === 'local-folder'), false);
   assert.ok(oauth);
   assert.equal(oauth.available, false);
-  assert.equal(getDefaultCloudConnectionMethod('onedrive', 'personal', 'desktop'), 'local-folder');
+  assert.equal(getDefaultCloudConnectionMethod('onedrive', 'personal', 'desktop'), 'oauth2');
 });
 
 test('web Nextcloud uses direct WebDAV while OAuth remains a future option', () => {
