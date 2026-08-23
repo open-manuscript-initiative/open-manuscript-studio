@@ -6,6 +6,7 @@ import {
   RotateCcw,
   Save,
   Trash2,
+  Usb,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -38,25 +39,40 @@ import {
   type CloudConnection,
   type CloudProviderType,
 } from '../services/cloudStorageApi';
+import {
+  getDeviceStorageMode,
+  setDeviceStorageMode,
+  subscribeDeviceStorageMode,
+} from '../services/deviceStorageMode';
 import { saveExportBlob } from '../services/exportFileDelivery';
 import {
   buildOmiContainer,
   OMI_CONTAINER_VERSION,
 } from '../services/omiContainer';
 import { inspectOmiContainer } from '../services/omiContainerImport';
+import { getCurrentUser, useAuthStore } from '../store/authStore';
 
 interface CloudCopy {
   title: string;
   description: string;
+  ownDevice: string;
+  ownDeviceHint: string;
+  sharedDeviceHint: string;
   systemTitle: string;
   systemEnabled: string;
+  systemDisabled: string;
   systemDescription: string;
   systemWebDescription: string;
+  portableTitle: string;
+  portableDescription: string;
   saveSystemBackup: string;
+  savePortableBackup: string;
   savingSystemBackup: string;
   systemBackupSaved: string;
+  portableBackupSaved: string;
   providerSetup: string;
   providerSetupDescription: string;
+  profileCloudDescription: string;
   provider: string;
   chooseProvider: string;
   accountType: string;
@@ -113,16 +129,25 @@ interface CloudCopy {
 const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
   en: {
     title: 'Storage and cloud connections',
-    description: 'Installed Studio apps use the operating system storage picker by default. Configure a direct provider connection only when Studio itself must connect to a cloud service.',
+    description: 'Choose whether this is your own device. Local system storage is enabled only on your own device; cloud connections belong to your signed-in profile.',
+    ownDevice: 'This is my own device',
+    ownDeviceHint: 'System storage is enabled. Studio may keep a current local document path during this app session.',
+    sharedDeviceHint: 'Shared or foreign device mode. Cloud storage is preferred and local working paths are not retained.',
     systemTitle: 'System storage',
     systemEnabled: 'enabled',
-    systemDescription: 'Uses the operating system save interface. This includes local folders, network drives and cloud locations already exposed by OneDrive, Google Drive, Dropbox, Nextcloud, iCloud Drive or another installed provider.',
-    systemWebDescription: 'The hosted web Studio uses normal browser downloads. Install the native Studio app to use operating-system storage locations directly.',
+    systemDisabled: 'disabled on this device',
+    systemDescription: 'Uses the operating system save interface for local folders, network drives and synchronized cloud folders exposed by the operating system.',
+    systemWebDescription: 'The hosted web Studio does not have native system-storage access.',
+    portableTitle: 'Portable storage',
+    portableDescription: 'On a shared computer you can still save a one-off copy to a USB drive or other removable storage. Studio does not remember the selected path.',
     saveSystemBackup: 'Save portable OMI backup',
-    savingSystemBackup: 'Preparing system-storage backup…',
-    systemBackupSaved: 'The portable OMI backup was saved through the system storage interface.',
-    providerSetup: 'Optional direct cloud connection',
-    providerSetupDescription: 'Direct connections are separate from system storage. Use one only when Studio should authenticate to and communicate with a provider itself.',
+    savePortableBackup: 'Save to portable storage',
+    savingSystemBackup: 'Preparing backup…',
+    systemBackupSaved: 'The portable OMI backup was saved through system storage.',
+    portableBackupSaved: 'The one-off copy was saved. The selected path was not retained by Studio.',
+    providerSetup: 'Cloud storage for this profile',
+    providerSetupDescription: 'These connections are stored for the signed-in profile and are available after signing in on another device.',
+    profileCloudDescription: 'On a shared device, use a profile cloud connection as the normal save destination. Portable storage remains available for one-off copies.',
     provider: 'Cloud provider',
     chooseProvider: 'Choose a provider',
     accountType: 'Account type',
@@ -134,14 +159,14 @@ const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
     recommended: 'recommended',
     comingSoon: 'coming soon',
     authentication: 'Authentication',
-    authWebDav: 'WebDAV username plus password or app password. The credential is encrypted and stored on the Studio API server.',
+    authWebDav: 'WebDAV username plus password or app password. The credential is encrypted and stored on the Studio API server for this profile.',
     authOAuth: 'OAuth 2.0 provider sign-in. Studio receives an authorization token and never receives the provider password.',
-    personalNote: 'This connection belongs to the signed-in author.',
+    personalNote: 'This connection belongs to the signed-in author profile.',
     businessNote: 'Organization policies, tenant restrictions or administrator consent may apply to business accounts.',
-    oauthPlanned: 'Direct OAuth integration for this provider is planned. Until then, use the provider location through the operating system storage picker when it is available there.',
+    oauthPlanned: 'Direct OAuth integration for this provider is planned.',
     directConnection: 'Direct cloud connection',
-    directConnectionDescription: 'Studio connects to this storage service itself instead of relying on the operating system or a local synchronization client.',
-    connectionTitle: 'Registered direct connections',
+    directConnectionDescription: 'Studio connects to the storage service itself. This configuration follows the signed-in profile rather than this computer.',
+    connectionTitle: 'Profile cloud connections',
     providerLabel: 'Provider',
     nextcloud: 'Nextcloud',
     webdav: 'WebDAV',
@@ -156,20 +181,20 @@ const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
     connectionError: 'Connection error',
     test: 'Test',
     remove: 'Remove',
-    noConnections: 'No direct cloud connection has been configured yet.',
-    backupTitle: 'Server-side manuscript backup',
-    backupDescription: 'Create a complete portable OMI package and upload it through a registered direct cloud connection.',
+    noConnections: 'No cloud connection has been configured for this profile yet.',
+    backupTitle: 'Cloud manuscript backup',
+    backupDescription: 'Create a portable OMI package and upload it through a cloud connection belonging to your profile.',
     chooseConnection: 'Choose a cloud connection',
     saveBackup: 'Save to cloud',
     savingBackup: 'Creating and uploading backup…',
     backupSaved: 'Cloud backup saved.',
-    backups: 'Server-side backup history',
-    noBackups: 'No server-side cloud backups exist for this manuscript yet.',
+    backups: 'Cloud backup history',
+    noBackups: 'No cloud backups exist for this manuscript yet.',
     restore: 'Restore',
     restoring: 'Downloading and verifying backup…',
     restored: 'Backup restored successfully.',
     deleteBackup: 'Delete',
-    confirmDeleteConnection: 'Remove this cloud connection? Its registered backup history will also be removed from Studio.',
+    confirmDeleteConnection: 'Remove this cloud connection from your profile? Its registered backup history will also be removed from Studio.',
     confirmDeleteBackup: 'Delete this backup from cloud storage?',
     confirmRestore: 'Restore this backup? The currently open manuscript will be replaced by the verified package.',
     invalidPackage: 'The downloaded OMI package failed integrity verification.',
@@ -177,16 +202,25 @@ const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
   },
   hu: {
     title: 'Tárhely és felhőkapcsolatok',
-    description: 'A telepített Studio alapértelmezetten az operációs rendszer tárhelyválasztóját használja. Közvetlen szolgáltatói kapcsolatot csak akkor kell beállítani, ha maga a Studio kapcsolódjon a felhőszolgáltatóhoz.',
+    description: 'Állítsd be, hogy ez a saját eszközöd-e. A helyi rendszertárhely csak saját eszközön aktív; a felhőkapcsolatok a bejelentkezett profilhoz tartoznak.',
+    ownDevice: 'A saját gépemen / eszközömön dolgozom',
+    ownDeviceHint: 'A rendszertárhely bekapcsolva. A Studio a munkamenetben megjegyezheti az aktuális helyi dokumentum útvonalát.',
+    sharedDeviceHint: 'Idegen vagy közös eszköz mód. A felhőtárhely az elsődleges, helyi munkafájl-útvonalat nem őrzünk meg.',
     systemTitle: 'Rendszertárhely',
     systemEnabled: 'bekapcsolva',
-    systemDescription: 'Az operációs rendszer mentési felületét használja. Ide tartoznak a helyi mappák, hálózati meghajtók és a rendszerben már elérhető OneDrive-, Google Drive-, Dropbox-, Nextcloud-, iCloud Drive- vagy más szolgáltatói helyek.',
-    systemWebDescription: 'A webes Studio hagyományos böngészős letöltést használ. Az operációs rendszer tárhelyeinek közvetlen használatához a telepített Studio alkalmazás szükséges.',
+    systemDisabled: 'ezen az eszközön kikapcsolva',
+    systemDescription: 'Az operációs rendszer mentési felületét használja helyi mappákhoz, hálózati meghajtókhoz és a rendszerben elérhető szinkronizált felhőmappákhoz.',
+    systemWebDescription: 'A webes Studio nem rendelkezik natív rendszertárhely-hozzáféréssel.',
+    portableTitle: 'Hordozható adattároló',
+    portableDescription: 'Idegen gépen is menthetsz egyszeri másolatot pendrive-ra vagy más hordozható adathordozóra. A Studio nem jegyzi meg a kiválasztott útvonalat.',
     saveSystemBackup: 'Hordozható OMI-mentés',
-    savingSystemBackup: 'A rendszertárhelyes mentés előkészítése…',
-    systemBackupSaved: 'A hordozható OMI-mentés elkészült a rendszer mentési felületén keresztül.',
-    providerSetup: 'Opcionális közvetlen felhőkapcsolat',
-    providerSetupDescription: 'A közvetlen kapcsolat külön funkció a rendszertárhelytől. Csak akkor használd, ha a Studio maga hitelesítsen és kommunikáljon a felhőszolgáltatóval.',
+    savePortableBackup: 'Mentés hordozható adattárolóra',
+    savingSystemBackup: 'A mentés előkészítése…',
+    systemBackupSaved: 'A hordozható OMI-mentés elkészült a rendszertárhelyen keresztül.',
+    portableBackupSaved: 'Az egyszeri másolat elkészült. A Studio nem őrizte meg a kiválasztott útvonalat.',
+    providerSetup: 'A profil felhőtárhelyei',
+    providerSetupDescription: 'Ezek a kapcsolatok a bejelentkezett profilhoz tartoznak, ezért másik eszközön történő bejelentkezés után is elérhetők.',
+    profileCloudDescription: 'Idegen gépen a profilhoz kapcsolt felhőtárhely legyen a normál mentési cél. Pendrive-ra továbbra is készíthető egyszeri másolat.',
     provider: 'Felhőszolgáltató',
     chooseProvider: 'Válassz szolgáltatót',
     accountType: 'Fiók típusa',
@@ -198,14 +232,14 @@ const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
     recommended: 'ajánlott',
     comingSoon: 'hamarosan',
     authentication: 'Hitelesítés',
-    authWebDav: 'WebDAV felhasználónév és jelszó vagy alkalmazásjelszó. A hitelesítő adat titkosítva, a Studio API szerverén kerül tárolásra.',
+    authWebDav: 'WebDAV felhasználónév és jelszó vagy alkalmazásjelszó. A hitelesítő adat titkosítva, ehhez a profilhoz kötve kerül a Studio API szerverére.',
     authOAuth: 'OAuth 2.0 szolgáltatói bejelentkezés. A Studio engedélyezési tokent kap, a szolgáltatói jelszót nem.',
-    personalNote: 'A kapcsolat a bejelentkezett szerző saját fiókjához tartozik.',
+    personalNote: 'A kapcsolat a bejelentkezett szerző profiljához tartozik.',
     businessNote: 'Szervezeti fióknál vállalati házirend, tenant-korlátozás vagy rendszergazdai jóváhagyás is szükséges lehet.',
-    oauthPlanned: 'Ehhez a szolgáltatóhoz a közvetlen OAuth-kapcsolat tervezett. Addig használd a szolgáltató tárhelyét az operációs rendszer mentési felületén keresztül, ha ott elérhető.',
+    oauthPlanned: 'Ehhez a szolgáltatóhoz a közvetlen OAuth-kapcsolat tervezett.',
     directConnection: 'Közvetlen felhőkapcsolat',
-    directConnectionDescription: 'A Studio közvetlenül kapcsolódik a tárhelyszolgáltatáshoz, nem az operációs rendszerre vagy egy helyi szinkronizáló kliensre támaszkodik.',
-    connectionTitle: 'Regisztrált közvetlen kapcsolatok',
+    directConnectionDescription: 'A Studio közvetlenül kapcsolódik a tárhelyszolgáltatáshoz. A beállítás a profilhoz tartozik, nem ehhez a géphez.',
+    connectionTitle: 'Profilhoz kapcsolt felhőkapcsolatok',
     providerLabel: 'Szolgáltató',
     nextcloud: 'Nextcloud',
     webdav: 'WebDAV',
@@ -220,20 +254,20 @@ const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
     connectionError: 'Kapcsolati hiba',
     test: 'Tesztelés',
     remove: 'Eltávolítás',
-    noConnections: 'Még nincs beállított közvetlen felhőkapcsolat.',
-    backupTitle: 'Szerveroldali kéziratmentés',
-    backupDescription: 'Teljes, hordozható OMI-csomag készítése és feltöltése egy regisztrált közvetlen felhőkapcsolaton keresztül.',
+    noConnections: 'Ehhez a profilhoz még nincs beállított felhőkapcsolat.',
+    backupTitle: 'Kézirat mentése felhőbe',
+    backupDescription: 'Hordozható OMI-csomag készítése és feltöltése a profilhoz tartozó felhőkapcsolaton keresztül.',
     chooseConnection: 'Válassz felhőkapcsolatot',
     saveBackup: 'Mentés felhőbe',
     savingBackup: 'A mentés készítése és feltöltése folyamatban…',
     backupSaved: 'A felhőmentés elkészült.',
-    backups: 'Szerveroldali mentési előzmények',
-    noBackups: 'Ehhez a kézirathoz még nincs szerveroldali felhőmentés.',
+    backups: 'Felhőmentési előzmények',
+    noBackups: 'Ehhez a kézirathoz még nincs felhőmentés.',
     restore: 'Visszaállítás',
     restoring: 'A mentés letöltése és ellenőrzése…',
     restored: 'A mentés sikeresen visszaállítva.',
     deleteBackup: 'Törlés',
-    confirmDeleteConnection: 'Eltávolítod ezt a felhőkapcsolatot? A hozzá tartozó mentési előzmények is törlődnek a Stúdióból.',
+    confirmDeleteConnection: 'Eltávolítod ezt a felhőkapcsolatot a profilodból? A hozzá tartozó mentési előzmények is törlődnek a Stúdióból.',
     confirmDeleteBackup: 'Törlöd ezt a biztonsági mentést a felhőtárhelyről?',
     confirmRestore: 'Visszaállítod ezt a mentést? A jelenleg megnyitott kéziratot az ellenőrzött csomag váltja fel.',
     invalidPackage: 'A letöltött OMI-csomag nem ment át az integritásellenőrzésen.',
@@ -241,16 +275,25 @@ const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
   },
   de: {
     title: 'Speicher und Cloud-Verbindungen',
-    description: 'Installierte Studio-Apps verwenden standardmäßig die Speicheroberfläche des Betriebssystems. Eine direkte Anbieter-Verbindung ist nur nötig, wenn Studio selbst mit dem Cloud-Dienst kommunizieren soll.',
+    description: 'Legen Sie fest, ob dies Ihr eigenes Gerät ist. Systemspeicher ist nur auf dem eigenen Gerät aktiv; Cloud-Verbindungen gehören zum angemeldeten Profil.',
+    ownDevice: 'Ich arbeite auf meinem eigenen Gerät',
+    ownDeviceHint: 'Systemspeicher ist aktiviert. Studio darf den aktuellen lokalen Dokumentpfad während dieser Sitzung beibehalten.',
+    sharedDeviceHint: 'Gemeinsames oder fremdes Gerät. Cloud-Speicher wird bevorzugt; lokale Arbeitspfade werden nicht beibehalten.',
     systemTitle: 'Systemspeicher',
     systemEnabled: 'aktiviert',
-    systemDescription: 'Verwendet den Speicherdialog des Betriebssystems. Dazu gehören lokale Ordner, Netzlaufwerke und bereits im System verfügbare OneDrive-, Google-Drive-, Dropbox-, Nextcloud-, iCloud-Drive- oder andere Anbieterorte.',
-    systemWebDescription: 'Das gehostete Web-Studio verwendet normale Browser-Downloads. Für direkten Zugriff auf Systemspeicherorte ist die installierte Studio-App erforderlich.',
+    systemDisabled: 'auf diesem Gerät deaktiviert',
+    systemDescription: 'Verwendet den Speicherdialog des Betriebssystems für lokale Ordner, Netzlaufwerke und synchronisierte Cloud-Ordner.',
+    systemWebDescription: 'Das gehostete Web-Studio hat keinen nativen Systemspeicherzugriff.',
+    portableTitle: 'Wechseldatenträger',
+    portableDescription: 'Auf einem fremden Rechner kann eine einmalige Kopie auf USB-Stick oder einen anderen Wechseldatenträger gespeichert werden. Studio merkt sich den Pfad nicht.',
     saveSystemBackup: 'Portable OMI-Sicherung speichern',
-    savingSystemBackup: 'Systemspeicher-Sicherung wird vorbereitet…',
-    systemBackupSaved: 'Die portable OMI-Sicherung wurde über die Systemspeicheroberfläche gespeichert.',
-    providerSetup: 'Optionale direkte Cloud-Verbindung',
-    providerSetupDescription: 'Direkte Verbindungen sind vom Systemspeicher getrennt. Verwenden Sie sie nur, wenn Studio selbst beim Anbieter authentifizieren und kommunizieren soll.',
+    savePortableBackup: 'Auf Wechseldatenträger speichern',
+    savingSystemBackup: 'Sicherung wird vorbereitet…',
+    systemBackupSaved: 'Die portable OMI-Sicherung wurde über den Systemspeicher gespeichert.',
+    portableBackupSaved: 'Die einmalige Kopie wurde gespeichert. Studio hat den gewählten Pfad nicht beibehalten.',
+    providerSetup: 'Cloud-Speicher dieses Profils',
+    providerSetupDescription: 'Diese Verbindungen gehören zum angemeldeten Profil und sind nach der Anmeldung auch auf anderen Geräten verfügbar.',
+    profileCloudDescription: 'Auf einem fremden Gerät sollte eine profilgebundene Cloud-Verbindung das normale Speicherziel sein. Wechseldatenträger bleiben für einmalige Kopien verfügbar.',
     provider: 'Cloud-Anbieter',
     chooseProvider: 'Anbieter auswählen',
     accountType: 'Kontotyp',
@@ -262,14 +305,14 @@ const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
     recommended: 'empfohlen',
     comingSoon: 'demnächst',
     authentication: 'Authentifizierung',
-    authWebDav: 'WebDAV-Benutzername plus Passwort oder App-Passwort. Die Zugangsdaten werden verschlüsselt auf dem Studio-API-Server gespeichert.',
+    authWebDav: 'WebDAV-Benutzername plus Passwort oder App-Passwort. Die Zugangsdaten werden verschlüsselt und diesem Profil zugeordnet auf dem Studio-API-Server gespeichert.',
     authOAuth: 'OAuth-2.0-Anmeldung beim Anbieter. Studio erhält ein Autorisierungstoken, nicht das Anbieterpasswort.',
-    personalNote: 'Diese Verbindung gehört zum persönlichen Konto des angemeldeten Autors.',
+    personalNote: 'Diese Verbindung gehört zum Profil des angemeldeten Autors.',
     businessNote: 'Bei Organisationskonten können Mandantenrichtlinien oder Administratorfreigaben erforderlich sein.',
-    oauthPlanned: 'Die direkte OAuth-Integration für diesen Anbieter ist geplant. Verwenden Sie bis dahin den Anbieter über den Speicherdialog des Betriebssystems, sofern er dort verfügbar ist.',
+    oauthPlanned: 'Die direkte OAuth-Integration für diesen Anbieter ist geplant.',
     directConnection: 'Direkte Cloud-Verbindung',
-    directConnectionDescription: 'Studio verbindet sich selbst mit dem Speicherdienst, statt das Betriebssystem oder einen lokalen Synchronisationsclient zu verwenden.',
-    connectionTitle: 'Registrierte direkte Verbindungen',
+    directConnectionDescription: 'Studio verbindet sich selbst mit dem Speicherdienst. Die Einstellung gehört zum Profil und nicht zu diesem Computer.',
+    connectionTitle: 'Cloud-Verbindungen des Profils',
     providerLabel: 'Anbieter',
     nextcloud: 'Nextcloud',
     webdav: 'WebDAV',
@@ -284,20 +327,20 @@ const COPY: Record<'en' | 'hu' | 'de', CloudCopy> = {
     connectionError: 'Verbindungsfehler',
     test: 'Testen',
     remove: 'Entfernen',
-    noConnections: 'Noch keine direkte Cloud-Verbindung konfiguriert.',
-    backupTitle: 'Serverseitige Manuskriptsicherung',
-    backupDescription: 'Erstellt ein vollständiges portables OMI-Paket und lädt es über eine registrierte direkte Cloud-Verbindung hoch.',
+    noConnections: 'Für dieses Profil ist noch keine Cloud-Verbindung konfiguriert.',
+    backupTitle: 'Manuskript in der Cloud sichern',
+    backupDescription: 'Erstellt ein portables OMI-Paket und lädt es über eine Cloud-Verbindung des Profils hoch.',
     chooseConnection: 'Cloud-Verbindung auswählen',
     saveBackup: 'In Cloud speichern',
     savingBackup: 'Sicherung wird erstellt und hochgeladen…',
     backupSaved: 'Cloud-Sicherung gespeichert.',
-    backups: 'Serverseitiger Sicherungsverlauf',
-    noBackups: 'Für dieses Manuskript gibt es noch keine serverseitigen Cloud-Sicherungen.',
+    backups: 'Cloud-Sicherungsverlauf',
+    noBackups: 'Für dieses Manuskript gibt es noch keine Cloud-Sicherungen.',
     restore: 'Wiederherstellen',
     restoring: 'Sicherung wird heruntergeladen und geprüft…',
     restored: 'Sicherung erfolgreich wiederhergestellt.',
     deleteBackup: 'Löschen',
-    confirmDeleteConnection: 'Diese Cloud-Verbindung entfernen? Der zugehörige Sicherungsverlauf wird ebenfalls aus Studio entfernt.',
+    confirmDeleteConnection: 'Diese Cloud-Verbindung aus Ihrem Profil entfernen? Der zugehörige Sicherungsverlauf wird ebenfalls aus Studio entfernt.',
     confirmDeleteBackup: 'Diese Sicherung aus dem Cloud-Speicher löschen?',
     confirmRestore: 'Diese Sicherung wiederherstellen? Das aktuell geöffnete Manuskript wird durch das geprüfte Paket ersetzt.',
     invalidPackage: 'Das heruntergeladene OMI-Paket hat die Integritätsprüfung nicht bestanden.',
@@ -329,8 +372,12 @@ export function CloudStorageSettings() {
   const copy = copyFor(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const checkpoint = useStudioStore((state) => state.checkpoint);
+  const currentUser = useAuthStore(getCurrentUser);
   const platform = getStudioPlatform();
-  const systemStorageAvailable = hasNativeSystemStorage(platform);
+  const nativeStorageCapable = hasNativeSystemStorage(platform);
+  const userId = String(currentUser?.id ?? 'anonymous');
+  const [deviceMode, setDeviceMode] = useState(() => getDeviceStorageMode(userId));
+  const ownDevice = nativeStorageCapable && deviceMode === 'own-device';
   const [connections, setConnections] = useState<CloudConnection[]>([]);
   const [backups, setBackups] = useState<CloudBackup[]>([]);
   const [selectedConnectionId, setSelectedConnectionId] = useState('');
@@ -344,6 +391,13 @@ export function CloudStorageSettings() {
   const [rootPath, setRootPath] = useState('OMI');
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    setDeviceMode(getDeviceStorageMode(userId));
+    return subscribeDeviceStorageMode(() => {
+      setDeviceMode(getDeviceStorageMode(userId));
+    });
+  }, [userId]);
 
   const directProviders = useMemo(
     () => cloudStorageProviders.filter((provider) => provider.supportsWebDav || provider.supportsOAuth),
@@ -385,6 +439,13 @@ export function CloudStorageSettings() {
     void refresh();
   }, [manuscript.id]);
 
+  function changeOwnDevice(checked: boolean): void {
+    const nextMode = checked ? 'own-device' : 'shared-device';
+    setDeviceStorageMode(userId, nextMode);
+    setDeviceMode(nextMode);
+    setMessage('');
+  }
+
   function selectProvider(value: string): void {
     if (!value) {
       setProviderId('');
@@ -408,9 +469,9 @@ export function CloudStorageSettings() {
     setMessage('');
   }
 
-  async function saveSystemBackup(): Promise<void> {
-    if (!systemStorageAvailable) return;
-    setBusy('system-backup');
+  async function saveNativeBackup(portableOnly: boolean): Promise<void> {
+    if (!nativeStorageCapable) return;
+    setBusy(portableOnly ? 'portable-backup' : 'system-backup');
     setMessage(copy.savingSystemBackup);
     try {
       checkpoint('manual');
@@ -424,7 +485,11 @@ export function CloudStorageSettings() {
         throw new Error(detail || copy.invalidPackage);
       }
       const delivery = await saveExportBlob(packaged.blob, packaged.fileName);
-      setMessage(delivery.saved ? copy.systemBackupSaved : '');
+      setMessage(
+        delivery.saved
+          ? portableOnly ? copy.portableBackupSaved : copy.systemBackupSaved
+          : '',
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -565,19 +630,35 @@ export function CloudStorageSettings() {
         </button>
       </div>
 
+      {nativeStorageCapable ? (
+        <div className="studio-cloud-section">
+          <label className="studio-settings-hint">
+            <span>
+              <input
+                type="checkbox"
+                checked={ownDevice}
+                onChange={(event) => changeOwnDevice(event.target.checked)}
+              />{' '}
+              <strong>{copy.ownDevice}</strong>
+            </span>
+            <p>{ownDevice ? copy.ownDeviceHint : copy.sharedDeviceHint}</p>
+          </label>
+        </div>
+      ) : null}
+
       <div className="studio-cloud-section">
         <div className="studio-tool-card">
           <div>
-            <strong><HardDrive size={16} aria-hidden="true" /> {copy.systemTitle}{systemStorageAvailable ? ` · ${copy.systemEnabled}` : ''}</strong>
-            <p>{systemStorageAvailable ? copy.systemDescription : copy.systemWebDescription}</p>
+            <strong><HardDrive size={16} aria-hidden="true" /> {copy.systemTitle} · {ownDevice ? copy.systemEnabled : copy.systemDisabled}</strong>
+            <p>{nativeStorageCapable ? copy.systemDescription : copy.systemWebDescription}</p>
           </div>
-          {systemStorageAvailable ? (
+          {ownDevice ? (
             <div className="studio-tool-actions">
               <button
                 type="button"
                 className="studio-menu-primary-action"
                 disabled={busy !== null}
-                onClick={() => void saveSystemBackup()}
+                onClick={() => void saveNativeBackup(false)}
               >
                 <Save size={16} aria-hidden="true" />
                 {busy === 'system-backup' ? copy.savingSystemBackup : copy.saveSystemBackup}
@@ -587,9 +668,32 @@ export function CloudStorageSettings() {
         </div>
       </div>
 
+      {nativeStorageCapable && !ownDevice ? (
+        <div className="studio-cloud-section">
+          <div className="studio-tool-card">
+            <div>
+              <strong><Usb size={16} aria-hidden="true" /> {copy.portableTitle}</strong>
+              <p>{copy.portableDescription}</p>
+            </div>
+            <div className="studio-tool-actions">
+              <button
+                type="button"
+                className="studio-menu-secondary-action"
+                disabled={busy !== null}
+                onClick={() => void saveNativeBackup(true)}
+              >
+                <Usb size={16} aria-hidden="true" />
+                {busy === 'portable-backup' ? copy.savingSystemBackup : copy.savePortableBackup}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="studio-cloud-section">
         <strong>{copy.providerSetup}</strong>
         <p>{copy.providerSetupDescription}</p>
+        {!ownDevice && nativeStorageCapable ? <p className="studio-settings-hint">{copy.profileCloudDescription}</p> : null}
         <div className="studio-manuscript-fields">
           <label>
             <span>{copy.provider}</span>
