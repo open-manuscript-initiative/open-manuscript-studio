@@ -10,7 +10,11 @@ import {
 } from 'lucide-react';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { InstitutionalProfile, InstitutionalProfileInput } from '../model/user';
+import type {
+  InstitutionalProfile,
+  InstitutionalProfileInput,
+  InstitutionRole,
+} from '../model/user';
 import {
   createInstitutionalProfile,
   deleteInstitutionalProfile,
@@ -52,13 +56,14 @@ const copy = {
     title: 'Institutional profiles',
     description: 'Keep organization-specific affiliations separate from your personal scholarly profile. You can maintain more than one institution and choose a default.',
     add: 'Add institution',
-    edit: 'Edit',
+    edit: 'Edit profile',
     cancel: 'Cancel',
-    save: 'Save institution',
+    save: 'Save profile',
     create: 'Add institutional profile',
     organization: 'Institution / organization',
     ror: 'ROR identifier',
     rorHint: 'Optional. Example: https://ror.org/03yrm5c26',
+    fixedInstitution: 'Institution name and ROR are shared organization data. Institutional administrators manage them.',
     department: 'Department / unit',
     position: 'Position / role',
     email: 'Institutional e-mail',
@@ -69,26 +74,29 @@ const copy = {
     makeDefault: 'Make default',
     defaultHint: 'The default institution is used as the compatibility affiliation for existing Studio workflows.',
     linkedIdentity: 'Connected identity',
+    accessRole: 'Institution role',
     noProfiles: 'No institutional profile has been added yet.',
-    delete: 'Delete',
-    confirmDelete: 'Delete this institutional profile? The connected identity itself will not be removed.',
+    delete: 'Remove',
+    confirmDelete: 'Remove this institutional profile from your account? The institution and connected sign-in identity will not be deleted.',
     loading: 'Loading institutional profiles…',
     saved: 'Institutional profile saved.',
-    deleted: 'Institutional profile deleted.',
+    deleted: 'Institutional profile removed.',
     error: 'Institutional profiles could not be loaded.',
     unverified: 'Institutional e-mail not verified',
+    roles: { MEMBER: 'Member', ADMIN: 'Administrator', OWNER: 'Owner' },
   },
   hu: {
     title: 'Intézményi profilok',
     description: 'Az intézményi affiliációk külön kezelhetők a személyes tudományos profiltól. Több intézmény is megadható, és kijelölhető egy alapértelmezett.',
     add: 'Intézmény hozzáadása',
-    edit: 'Szerkesztés',
+    edit: 'Profil szerkesztése',
     cancel: 'Mégse',
-    save: 'Intézmény mentése',
+    save: 'Profil mentése',
     create: 'Intézményi profil hozzáadása',
     organization: 'Intézmény / szervezet',
     ror: 'ROR-azonosító',
     rorHint: 'Nem kötelező. Példa: https://ror.org/03yrm5c26',
+    fixedInstitution: 'Az intézmény neve és ROR-azonosítója közös szervezeti adat; ezt az intézményi adminisztrátor kezeli.',
     department: 'Tanszék / szervezeti egység',
     position: 'Beosztás / szerepkör',
     email: 'Intézményi e-mail-cím',
@@ -97,28 +105,31 @@ const copy = {
     identityHint: 'Nem kötelező. Előbb a Kapcsolt azonosítók alatt kapcsolható Google-, Microsoft-, intézményi OIDC- vagy SAML-fiók.',
     default: 'Alapértelmezett intézmény',
     makeDefault: 'Legyen alapértelmezett',
-    defaultHint: 'Az alapértelmezett intézményt használják a kompatibilitás miatt a korábbi Studio-munkafolyamatok.',
+    defaultHint: 'Az alapértelmezett intézményt használják kompatibilitás miatt a korábbi Studio-munkafolyamatok.',
     linkedIdentity: 'Kapcsolt azonosító',
+    accessRole: 'Intézményi jogosultság',
     noProfiles: 'Még nincs intézményi profil megadva.',
-    delete: 'Törlés',
-    confirmDelete: 'Törlöd ezt az intézményi profilt? A kapcsolt bejelentkezési azonosító nem törlődik.',
+    delete: 'Eltávolítás',
+    confirmDelete: 'Eltávolítod ezt az intézményi profilt a fiókodból? Maga az intézmény és a kapcsolt bejelentkezési azonosító nem törlődik.',
     loading: 'Intézményi profilok betöltése…',
     saved: 'Az intézményi profil elmentve.',
-    deleted: 'Az intézményi profil törölve.',
+    deleted: 'Az intézményi profil eltávolítva.',
     error: 'Az intézményi profilok nem tölthetők be.',
     unverified: 'Az intézményi e-mail-cím nincs ellenőrizve',
+    roles: { MEMBER: 'Tag', ADMIN: 'Adminisztrátor', OWNER: 'Tulajdonos' },
   },
   de: {
     title: 'Institutionelle Profile',
     description: 'Organisationsbezogene Zugehörigkeiten werden getrennt vom persönlichen wissenschaftlichen Profil verwaltet. Mehrere Institutionen und eine Standardinstitution sind möglich.',
     add: 'Institution hinzufügen',
-    edit: 'Bearbeiten',
+    edit: 'Profil bearbeiten',
     cancel: 'Abbrechen',
-    save: 'Institution speichern',
+    save: 'Profil speichern',
     create: 'Institutionelles Profil hinzufügen',
     organization: 'Institution / Organisation',
     ror: 'ROR-Kennung',
     rorHint: 'Optional. Beispiel: https://ror.org/03yrm5c26',
+    fixedInstitution: 'Institutionsname und ROR sind gemeinsame Organisationsdaten und werden von Institutionsadministratoren verwaltet.',
     department: 'Abteilung / Einheit',
     position: 'Position / Rolle',
     email: 'Institutionelle E-Mail-Adresse',
@@ -129,14 +140,16 @@ const copy = {
     makeDefault: 'Als Standard festlegen',
     defaultHint: 'Die Standardinstitution wird für bestehende Studio-Abläufe als Kompatibilitäts-Zugehörigkeit verwendet.',
     linkedIdentity: 'Verknüpfte Identität',
+    accessRole: 'Institutionsrolle',
     noProfiles: 'Noch kein institutionelles Profil vorhanden.',
-    delete: 'Löschen',
-    confirmDelete: 'Dieses institutionelle Profil löschen? Die verknüpfte Anmeldeidentität selbst bleibt erhalten.',
+    delete: 'Entfernen',
+    confirmDelete: 'Dieses institutionelle Profil vom Konto entfernen? Die Institution und die verknüpfte Anmeldeidentität bleiben erhalten.',
     loading: 'Institutionelle Profile werden geladen…',
     saved: 'Institutionelles Profil gespeichert.',
-    deleted: 'Institutionelles Profil gelöscht.',
+    deleted: 'Institutionelles Profil entfernt.',
     error: 'Institutionelle Profile konnten nicht geladen werden.',
     unverified: 'Institutionelle E-Mail-Adresse nicht bestätigt',
+    roles: { MEMBER: 'Mitglied', ADMIN: 'Administrator', OWNER: 'Eigentümer' },
   },
 } as const;
 
@@ -212,20 +225,26 @@ export function InstitutionalProfilesSettings({ locale }: InstitutionalProfilesS
     setBusy(true);
     setError('');
     setMessage('');
-    const input: InstitutionalProfileInput = {
-      organizationName: form.organizationName.trim(),
-      rorId: form.rorId.trim() || null,
-      department: form.department.trim() || null,
-      positionTitle: form.positionTitle.trim() || null,
-      institutionalEmail: form.institutionalEmail.trim() || null,
-      identityId: form.identityId || null,
-      isDefault: form.isDefault,
-    };
+
     try {
       if (editingId) {
-        await updateInstitutionalProfile(editingId, input);
+        await updateInstitutionalProfile(editingId, {
+          department: form.department.trim() || null,
+          positionTitle: form.positionTitle.trim() || null,
+          institutionalEmail: form.institutionalEmail.trim() || null,
+          identityId: form.identityId || null,
+        });
         if (form.isDefault) await setDefaultInstitutionalProfile(editingId);
       } else {
+        const input: InstitutionalProfileInput = {
+          organizationName: form.organizationName.trim(),
+          rorId: form.rorId.trim() || null,
+          department: form.department.trim() || null,
+          positionTitle: form.positionTitle.trim() || null,
+          institutionalEmail: form.institutionalEmail.trim() || null,
+          identityId: form.identityId || null,
+          isDefault: form.isDefault,
+        };
         await createInstitutionalProfile(input);
       }
       await refresh();
@@ -295,15 +314,15 @@ export function InstitutionalProfilesSettings({ locale }: InstitutionalProfilesS
                 <div className="account-institution-title-row">
                   <strong>{profile.organizationName}</strong>
                   {profile.isDefault ? <span className="account-default-badge"><Check size={13} aria-hidden="true" /> {labels.default}</span> : null}
+                  <span className={`account-role-badge account-role-badge--${profile.role.toLowerCase()}`}>
+                    {roleLabel(profile.role, labels.roles)}
+                  </span>
                 </div>
                 {profile.department ? <span>{profile.department}</span> : null}
                 {profile.positionTitle ? <span>{profile.positionTitle}</span> : null}
                 {profile.rorId ? <small>ROR: {profile.rorId}</small> : null}
                 {profile.institutionalEmail ? (
-                  <small>
-                    {profile.institutionalEmail}
-                    {!profile.emailVerified ? ` · ${labels.unverified}` : ''}
-                  </small>
+                  <small>{profile.institutionalEmail}{!profile.emailVerified ? ` · ${labels.unverified}` : ''}</small>
                 ) : null}
                 {profile.identity ? (
                   <small className="account-institution-identity">
@@ -337,16 +356,28 @@ export function InstitutionalProfilesSettings({ locale }: InstitutionalProfilesS
               <X size={14} aria-hidden="true" /> {labels.cancel}
             </button>
           </div>
+
+          {editingId ? (
+            <div className="account-institution-fixed">
+              <strong>{form.organizationName}</strong>
+              {form.rorId ? <span>ROR: {form.rorId}</span> : null}
+              <small>{labels.fixedInstitution}</small>
+            </div>
+          ) : (
+            <div className="account-institution-fields">
+              <label>
+                {labels.organization}
+                <input required maxLength={300} value={form.organizationName} onChange={(event) => setForm({ ...form, organizationName: event.target.value })} />
+              </label>
+              <label>
+                {labels.ror}
+                <input maxLength={128} placeholder="https://ror.org/…" value={form.rorId} onChange={(event) => setForm({ ...form, rorId: event.target.value })} />
+                <small className="account-field-hint">{labels.rorHint}</small>
+              </label>
+            </div>
+          )}
+
           <div className="account-institution-fields">
-            <label>
-              {labels.organization}
-              <input required maxLength={300} value={form.organizationName} onChange={(event) => setForm({ ...form, organizationName: event.target.value })} />
-            </label>
-            <label>
-              {labels.ror}
-              <input maxLength={128} placeholder="https://ror.org/…" value={form.rorId} onChange={(event) => setForm({ ...form, rorId: event.target.value })} />
-              <small className="account-field-hint">{labels.rorHint}</small>
-            </label>
             <label>
               {labels.department}
               <input maxLength={300} value={form.department} onChange={(event) => setForm({ ...form, department: event.target.value })} />
@@ -368,11 +399,13 @@ export function InstitutionalProfilesSettings({ locale }: InstitutionalProfilesS
               <small className="account-field-hint">{labels.identityHint}</small>
             </label>
           </div>
+
           <label className="account-default-toggle">
             <input type="checkbox" checked={form.isDefault} onChange={(event) => setForm({ ...form, isDefault: event.target.checked })} />
             <span><strong>{labels.default}</strong><small>{labels.defaultHint}</small></span>
           </label>
-          <button className="account-primary" type="submit" disabled={busy || !form.organizationName.trim()}>
+
+          <button className="account-primary" type="submit" disabled={busy || (!editingId && !form.organizationName.trim())}>
             <Save size={16} aria-hidden="true" /> {labels.save}
           </button>
         </form>
@@ -382,4 +415,11 @@ export function InstitutionalProfilesSettings({ locale }: InstitutionalProfilesS
       {error ? <div className="account-error" role="alert">{error}</div> : null}
     </section>
   );
+}
+
+function roleLabel(
+  role: InstitutionRole,
+  labels: Record<InstitutionRole, string>,
+): string {
+  return labels[role];
 }
