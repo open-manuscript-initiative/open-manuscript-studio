@@ -1,3 +1,4 @@
+import { getStudioPlatform } from '../mobile/platform/platform';
 import { isNativeStudio } from './nativeManuscriptFile';
 
 export interface ExportDeliveryResult {
@@ -45,8 +46,21 @@ export async function saveExportText(
 function dialogFilter(fileName: string): { name: string; extensions: string[] } {
   return {
     name: 'Open Manuscript export',
-    extensions: [extensionForFileName(fileName)],
+    extensions: getStudioPlatform() === 'android'
+      ? [mimeTypeForFileName(fileName)]
+      : [extensionForFileName(fileName)],
   };
+}
+
+function mimeTypeForFileName(fileName: string): string {
+  const normalized = fileName.trim().toLowerCase();
+  if (normalized.endsWith('.omi.zip') || normalized.endsWith('.html.zip')) return 'application/zip';
+  if (normalized.endsWith('.omi.json') || normalized.endsWith('.json')) return 'application/json';
+  if (normalized.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if (normalized.endsWith('.epub')) return 'application/epub+zip';
+  if (normalized.endsWith('.xml')) return 'application/xml';
+  if (normalized.endsWith('.tex')) return 'text/plain';
+  return 'application/octet-stream';
 }
 
 function extensionForFileName(fileName: string): string {
