@@ -26,6 +26,14 @@ export function isAndroidDocumentUri(value: string | null | undefined): boolean 
   return typeof value === 'string' && value.startsWith('content://');
 }
 
+export function isIosDocumentUri(value: string | null | undefined): boolean {
+  return typeof value === 'string' && value.startsWith('file://');
+}
+
+export function isMobileDocumentUri(value: string | null | undefined): boolean {
+  return isAndroidDocumentUri(value) || isIosDocumentUri(value);
+}
+
 export function getCurrentManuscriptFilePath(): string | null {
   return currentFilePath;
 }
@@ -44,8 +52,8 @@ export async function openLocalManuscript(): Promise<{
 /**
  * Opens a manuscript from removable/portable storage without making that path
  * the current working file. This is intended for shared or foreign machines:
- * the author can read from a USB drive, but Studio does not retain a local
- * working-path association afterwards.
+ * the author can read from a USB drive or mobile Files provider, but Studio
+ * does not retain a local working-path association afterwards.
  */
 export async function openPortableManuscript(): Promise<{
   manuscript: OmiManuscript;
@@ -66,13 +74,17 @@ async function openManuscriptWithPicker(
 
   const { open } = await import('@tauri-apps/plugin-dialog');
   const { readTextFile } = await import('@tauri-apps/plugin-fs');
-  const android = getStudioPlatform() === 'android';
+  const platform = getStudioPlatform();
+  const android = platform === 'android';
+  const ios = platform === 'ios';
+  const mobile = android || ios;
 
   const selected = await open({
     multiple: false,
     directory: false,
     filters: android ? ANDROID_OMI_FILTERS : DESKTOP_OMI_FILTERS,
-    ...(android ? { pickerMode: 'document' as const } : {}),
+    ...(mobile ? { pickerMode: 'document' as const } : {}),
+    ...(ios ? { fileAccess: 'scoped' as const } : {}),
   });
 
   if (!selected || Array.isArray(selected)) {
@@ -110,8 +122,9 @@ export async function saveLocalManuscriptAs(
 
 /**
  * Saves a one-off manuscript copy through the native picker without retaining
- * the selected path. On a shared computer the user can explicitly choose a
- * removable drive while Studio keeps cloud storage as the normal workflow.
+ * the selected path. On a shared computer or mobile device the user can
+ * explicitly choose portable/external storage while Studio keeps cloud
+ * storage as the normal workflow.
  */
 export async function savePortableManuscriptCopy(
   manuscript: OmiManuscript,
@@ -129,11 +142,13 @@ async function saveManuscriptWithPicker(
 
   const { save } = await import('@tauri-apps/plugin-dialog');
   const { writeTextFile } = await import('@tauri-apps/plugin-fs');
-  const android = getStudioPlatform() === 'android';
+  const platform = getStudioPlatform();
+  const android = platform === 'android';
 
-  // On Android this invokes the Storage Access Framework/Documents UI. The
-  // returned content:// URI can be written directly by tauri-plugin-fs, so the
-  // app never needs broad shared-storage permissions.
+  // Android invokes the Storage Access Framework/Documents UI and returns a
+  // content:// URI. iOS/iPadOS invokes the Files/UIDocumentPicker surface and
+  // returns a file:// URI. tauri-plugin-fs can write both directly, so Studio
+  // does not request broad shared-storage access on either mobile platform.
   const selected = await save({
     defaultPath: `${slugify(manuscript.title || 'manuscript')}.omi.json`,
     filters: android ? ANDROID_OMI_FILTERS : DESKTOP_OMI_FILTERS,
