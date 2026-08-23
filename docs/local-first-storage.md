@@ -21,6 +21,14 @@ Cloud synchronization remains the responsibility of the selected cloud provider.
 
 The web Studio retains browser download/export behavior and does not receive unrestricted filesystem access.
 
+## Cloud provider settings
+
+In the desktop application, a locally synchronized folder is a **connection method of the actual cloud provider**, not a separate cloud service. For example, OneDrive, SharePoint, Google Drive, Dropbox, Nextcloud and iCloud Drive can use a folder that their installed desktop client already synchronizes.
+
+Studio remembers the selected folder locally per signed-in user, provider and account type. The path is not uploaded to the Studio API. Studio writes the portable OMI package into that folder, while the provider's own client remains responsible for authentication, conflict handling and cloud synchronization.
+
+Web and mobile clients do not receive unrestricted filesystem access; they expose only connection methods available on those platforms.
+
 ## Security boundary
 
 The Tauri shell enables only native open/save dialogs and text-file read/write operations. The intended security model is explicit author selection: the application does not scan cloud folders or arbitrary filesystem locations.
