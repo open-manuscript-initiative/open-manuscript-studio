@@ -11,6 +11,7 @@ import {
 import { authRouter } from './routes/authRoutes.js';
 import { authorSignatureRouter } from './routes/authorSignatureRoutes.js';
 import { centralAdminRouter } from './routes/centralAdminRoutes.js';
+import { cloudOAuthRouter } from './routes/cloudOAuthRoutes.js';
 import { cloudRouter } from './routes/cloudRoutes.js';
 import { editorReviewOverviewRouter } from './routes/editorReviewOverviewRoutes.js';
 import { federatedAuthRouter } from './routes/federatedAuthRoutes.js';
@@ -83,6 +84,7 @@ app.use('/api/central-admin', centralAdminRouter);
 app.use('/api/institution-admin', institutionAdminApiRouter);
 app.use('/api', orcidLinkStartRouter);
 app.use('/api', authorSignatureRouter);
+app.use('/api', cloudOAuthRouter);
 app.use('/api', cloudRouter);
 app.use('/api', userIntegrationRouter);
 app.use('/api', integrationExecutionRouter);

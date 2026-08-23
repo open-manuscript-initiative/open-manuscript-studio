@@ -2,6 +2,7 @@ import {
   Cloud,
   CloudUpload,
   HardDrive,
+  KeyRound,
   RefreshCw,
   RotateCcw,
   Save,
@@ -13,6 +14,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { applyOmiContainerImportPlan } from '../app/omiContainerImportActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { getCloudOAuthCopy, type CloudOAuthCopy } from '../i18n/cloudOAuthTranslations';
 import { getCloudStorageCopy, type CloudCopy } from '../i18n/cloudStorageTranslations';
 import {
   cloudStorageProviders,
@@ -28,17 +30,22 @@ import {
   hasNativeSystemStorage,
 } from '../mobile/platform/platform';
 import {
+  consumeCloudOAuthResultFromLocation,
   createCloudConnection,
   deleteCloudBackup,
   deleteCloudConnection,
   downloadCloudBackup,
   listCloudBackups,
   listCloudConnections,
+  listCloudOAuthProviders,
+  listenForCloudOAuthReturn,
+  startCloudOAuthConnection,
   testCloudConnection,
   uploadCloudBackup,
   type CloudBackup,
   type CloudConnection,
-  type CloudProviderType,
+  type CloudOAuthProviderConfig,
+  type CloudOAuthProviderId,
 } from '../services/cloudStorageApi';
 import {
   getDeviceStorageMode,
@@ -61,15 +68,37 @@ function formatBytes(value: string): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function methodLabel(methodId: CloudConnectionMethodId, copy: CloudCopy): string {
+function template(value: string, provider: string): string {
+  return value.replace('{provider}', provider);
+}
+
+function methodLabel(
+  methodId: CloudConnectionMethodId,
+  copy: CloudCopy,
+  oauthCopy: CloudOAuthCopy,
+): string {
   if (methodId === 'webdav') return copy.webdavMethod;
-  if (methodId === 'oauth2') return copy.oauthMethod;
+  if (methodId === 'oauth2') return oauthCopy.oauthMethod;
+  if (methodId === 'proton-sdk') return oauthCopy.protonMethod;
   return copy.systemTitle;
+}
+
+function isOAuthProviderId(value: string): value is CloudOAuthProviderId {
+  return value === 'google-drive' || value === 'onedrive' || value === 'dropbox';
+}
+
+function connectionProviderLabel(connection: CloudConnection, copy: CloudCopy): string {
+  if (connection.providerType === 'nextcloud') return copy.nextcloud;
+  if (connection.providerType === 'webdav') return copy.webdav;
+  if (connection.providerType === 'google-drive') return 'Google Drive';
+  if (connection.providerType === 'onedrive') return 'Microsoft OneDrive';
+  return 'Dropbox';
 }
 
 export function CloudStorageSettings() {
   const { locale } = useTranslation();
   const copy = getCloudStorageCopy(locale);
+  const oauthCopy = getCloudOAuthCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const checkpoint = useStudioStore((state) => state.checkpoint);
   const currentUser = useAuthStore(getCurrentUser);
@@ -80,6 +109,7 @@ export function CloudStorageSettings() {
   const ownDevice = nativeStorageCapable && deviceMode === 'own-device';
   const [connections, setConnections] = useState<CloudConnection[]>([]);
   const [backups, setBackups] = useState<CloudBackup[]>([]);
+  const [oauthProviders, setOauthProviders] = useState<CloudOAuthProviderConfig[]>([]);
   const [selectedConnectionId, setSelectedConnectionId] = useState('');
   const [providerId, setProviderId] = useState<CloudStorageProviderId | ''>('');
   const [accountType, setAccountType] = useState<CloudAccountType>('personal');
@@ -100,8 +130,10 @@ export function CloudStorageSettings() {
   }, [userId]);
 
   const directProviders = useMemo(
-    () => cloudStorageProviders.filter((provider) => provider.supportsWebDav || provider.supportsOAuth),
-    [],
+    () => cloudStorageProviders.filter((provider) =>
+      provider.accountTypes.some((type) => getCloudConnectionMethods(provider.id, type, platform).length > 0),
+    ),
+    [platform],
   );
   const selectedProvider = useMemo(
     () => providerId ? getCloudStorageProvider(providerId) : null,
@@ -116,15 +148,23 @@ export function CloudStorageSettings() {
     () => connections.filter((connection) => connection.status === 'connected'),
     [connections],
   );
+  const selectedOAuthConfig = useMemo(
+    () => selectedProvider && isOAuthProviderId(selectedProvider.id)
+      ? oauthProviders.find((provider) => provider.id === selectedProvider.id) ?? null
+      : null,
+    [selectedProvider, oauthProviders],
+  );
 
   async function refresh(): Promise<void> {
     try {
-      const [nextConnections, nextBackups] = await Promise.all([
+      const [nextConnections, nextBackups, nextOauthProviders] = await Promise.all([
         listCloudConnections(),
         listCloudBackups(manuscript.id),
+        listCloudOAuthProviders().catch(() => [] as CloudOAuthProviderConfig[]),
       ]);
       setConnections(nextConnections);
       setBackups(nextBackups);
+      setOauthProviders(nextOauthProviders);
       setSelectedConnectionId((current) =>
         nextConnections.some((connection) => connection.id === current && connection.status === 'connected')
           ? current
@@ -138,6 +178,43 @@ export function CloudStorageSettings() {
   useEffect(() => {
     void refresh();
   }, [manuscript.id]);
+
+  useEffect(() => {
+    const exposeResult = (result: { status: 'connected' | 'error'; provider?: string; error?: string }) => {
+      const provider = oauthProviders.find((entry) => entry.id === result.provider)?.label
+        ?? selectedProvider?.displayName
+        ?? result.provider
+        ?? '';
+      if (result.status === 'connected') {
+        setMessage(template(oauthCopy.connected, provider));
+        void refresh();
+        return;
+      }
+      setMessage(
+        result.error === 'access_denied'
+          ? oauthCopy.accessDenied
+          : result.error === 'exchange_failed'
+            ? oauthCopy.exchangeFailed
+            : oauthCopy.authorizationFailed,
+      );
+    };
+
+    const locationResult = consumeCloudOAuthResultFromLocation();
+    if (locationResult) exposeResult(locationResult);
+
+    let dispose: (() => void) | undefined;
+    let active = true;
+    void listenForCloudOAuthReturn((result) => {
+      if (active) exposeResult(result);
+    }).then((nextDispose) => {
+      if (active) dispose = nextDispose;
+      else nextDispose();
+    });
+    return () => {
+      active = false;
+      dispose?.();
+    };
+  }, [locale, oauthProviders, selectedProvider]);
 
   function changeOwnDevice(checked: boolean): void {
     const nextMode = checked ? 'own-device' : 'shared-device';
@@ -197,13 +274,13 @@ export function CloudStorageSettings() {
     }
   }
 
-  async function connect(): Promise<void> {
+  async function connectWebDav(): Promise<void> {
     if (!selectedProvider?.directProviderType || selectedMethod?.implementation !== 'webdav') return;
     setBusy('connect');
     setMessage('');
     try {
       const connection = await createCloudConnection({
-        providerType: selectedProvider.directProviderType as CloudProviderType,
+        providerType: selectedProvider.directProviderType,
         displayName,
         baseUrl,
         username,
@@ -216,6 +293,23 @@ export function CloudStorageSettings() {
       setMessage(copy.connected);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function connectOAuth(): Promise<void> {
+    if (!selectedProvider || !isOAuthProviderId(selectedProvider.id) || !selectedOAuthConfig?.configured) return;
+    setBusy('oauth-connect');
+    setMessage(oauthCopy.connecting);
+    try {
+      await startCloudOAuthConnection({
+        provider: selectedProvider.id,
+        accountType,
+        displayName: displayName.trim() || selectedProvider.displayName,
+      });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : oauthCopy.authorizationFailed);
     } finally {
       setBusy(null);
     }
@@ -316,7 +410,9 @@ export function CloudStorageSettings() {
     ? copy.authWebDav
     : selectedMethod?.authentication === 'oauth2'
       ? copy.authOAuth
-      : '';
+      : selectedMethod?.authentication === 'proton-session'
+        ? oauthCopy.protonAuth
+        : '';
 
   return (
     <section className="studio-settings-card" aria-labelledby="studio-cloud-storage-title">
@@ -422,7 +518,7 @@ export function CloudStorageSettings() {
               <select value={connectionMethodId} onChange={(event) => setConnectionMethodId(event.target.value as CloudConnectionMethodId)}>
                 {methods.map((method) => (
                   <option value={method.id} key={method.id}>
-                    {methodLabel(method.id, copy)}{method.recommended ? ` · ${copy.recommended}` : ''}{!method.available ? ` · ${copy.comingSoon}` : ''}
+                    {methodLabel(method.id, copy, oauthCopy)}{method.recommended ? ` · ${copy.recommended}` : ''}{!method.available ? ` · ${copy.comingSoon}` : ''}
                   </option>
                 ))}
               </select>
@@ -442,6 +538,54 @@ export function CloudStorageSettings() {
           <p className="studio-settings-future-note">{copy.oauthPlanned}</p>
         ) : null}
 
+        {selectedMethod?.implementation === 'planned-proton-sdk' ? (
+          <div className="studio-tool-card">
+            <div>
+              <strong>{oauthCopy.protonPreviewTitle}</strong>
+              <p>{oauthCopy.protonPreviewText}</p>
+              <p>{oauthCopy.protonSystemStorageText}</p>
+              <small>{oauthCopy.protonSdkStatus}</small>
+            </div>
+          </div>
+        ) : null}
+
+        {selectedMethod?.implementation === 'oauth2' && selectedProvider && isOAuthProviderId(selectedProvider.id) ? (
+          <div className="studio-cloud-section">
+            <strong><KeyRound size={16} aria-hidden="true" /> {oauthCopy.oauthTitle}</strong>
+            <p>{oauthCopy.oauthDescription}</p>
+            <div className="studio-settings-hint">
+              <strong>{selectedOAuthConfig?.configured ? oauthCopy.serverConfigured : oauthCopy.serverNotConfigured}</strong>
+              {selectedOAuthConfig?.redirectUri ? (
+                <p><span>{oauthCopy.redirectUri}: </span><code>{selectedOAuthConfig.redirectUri}</code></p>
+              ) : null}
+              {selectedOAuthConfig?.scopes.length ? (
+                <p><span>{oauthCopy.scopes}: </span><code>{selectedOAuthConfig.scopes.join(' ')}</code></p>
+              ) : null}
+              {selectedOAuthConfig?.setupEnvironment.length ? (
+                <p><span>{oauthCopy.serverVariables}: </span><code>{selectedOAuthConfig.setupEnvironment.join(', ')}</code></p>
+              ) : null}
+            </div>
+            <details className="studio-technical-details">
+              <summary>{oauthCopy.adminSetupTitle}</summary>
+              <p>{oauthCopy.adminSetupText}</p>
+            </details>
+            <div className="studio-manuscript-fields">
+              <label><span>{copy.displayName}</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></label>
+            </div>
+            <button
+              type="button"
+              className="studio-menu-primary-action"
+              disabled={busy !== null || !selectedOAuthConfig?.configured}
+              onClick={() => void connectOAuth()}
+            >
+              <KeyRound size={16} aria-hidden="true" />
+              {busy === 'oauth-connect'
+                ? oauthCopy.connecting
+                : template(oauthCopy.connectWith, selectedProvider.displayName)}
+            </button>
+          </div>
+        ) : null}
+
         {selectedMethod?.implementation === 'webdav' && selectedProvider?.directProviderType ? (
           <div className="studio-cloud-section">
             <strong>{copy.directConnection}</strong>
@@ -454,7 +598,7 @@ export function CloudStorageSettings() {
               <label><span>{copy.password}</span><input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
               <label><span>{copy.rootPath}</span><input value={rootPath} onChange={(event) => setRootPath(event.target.value)} /></label>
             </div>
-            <button type="button" className="studio-menu-primary-action" disabled={busy !== null || !displayName.trim() || !baseUrl.trim() || !username.trim() || !password} onClick={() => void connect()}>
+            <button type="button" className="studio-menu-primary-action" disabled={busy !== null || !displayName.trim() || !baseUrl.trim() || !username.trim() || !password} onClick={() => void connectWebDav()}>
               <Cloud size={16} aria-hidden="true" /> {busy === 'connect' ? copy.connecting : copy.connect}
             </button>
           </div>
@@ -469,7 +613,7 @@ export function CloudStorageSettings() {
               <div className="studio-language-preference" key={connection.id}>
                 <span className="studio-language-preference-copy">
                   <strong>{connection.displayName}</strong>
-                  <small>{connection.providerType === 'nextcloud' ? copy.nextcloud : copy.webdav} · {connection.status === 'connected' ? copy.connected : copy.connectionError}</small>
+                  <small>{connectionProviderLabel(connection, copy)} · {connection.status === 'connected' ? copy.connected : copy.connectionError}</small>
                 </span>
                 <button type="button" className="studio-menu-secondary-action" disabled={busy !== null} onClick={() => void testConnection(connection.id)}>
                   <RefreshCw size={14} aria-hidden="true" /> {copy.test}

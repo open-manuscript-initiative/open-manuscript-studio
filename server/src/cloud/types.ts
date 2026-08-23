@@ -1,4 +1,9 @@
-export type CloudProviderType = 'webdav' | 'nextcloud';
+export type CloudProviderType =
+  | 'webdav'
+  | 'nextcloud'
+  | 'google-drive'
+  | 'onedrive'
+  | 'dropbox';
 
 export type CloudConnectionState =
   | 'connected'
@@ -35,5 +40,14 @@ export interface WebDavCredentials {
   baseUrl: string;
   username: string;
   password: string;
+  rootPath: string;
+}
+
+export interface OAuthCloudCredentials {
+  provider: 'google-drive' | 'onedrive' | 'dropbox';
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  scope?: string;
   rootPath: string;
 }

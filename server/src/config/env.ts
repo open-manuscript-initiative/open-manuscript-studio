@@ -125,6 +125,22 @@ const environmentSchema = z.object({
   OMI_IDENTITY_CLIENT_ID: z.string().trim().optional(),
   OMI_IDENTITY_CLIENT_SECRET: z.string().trim().optional(),
   OMI_IDENTITY_REDIRECT_URI: z.string().url().optional(),
+
+  // Direct cloud-storage OAuth applications. These are intentionally separate
+  // from Google/Microsoft OIDC sign-in clients because storage permissions are
+  // materially broader than identity-only OpenID Connect scopes.
+  GOOGLE_DRIVE_OAUTH_CLIENT_ID: z.string().trim().optional(),
+  GOOGLE_DRIVE_OAUTH_CLIENT_SECRET: z.string().trim().optional(),
+  GOOGLE_DRIVE_OAUTH_REDIRECT_URI: z.string().url().optional(),
+
+  MICROSOFT_STORAGE_OAUTH_CLIENT_ID: z.string().trim().optional(),
+  MICROSOFT_STORAGE_OAUTH_CLIENT_SECRET: z.string().trim().optional(),
+  MICROSOFT_STORAGE_OAUTH_REDIRECT_URI: z.string().url().optional(),
+  MICROSOFT_STORAGE_OAUTH_TENANT: z.string().trim().default('common'),
+
+  DROPBOX_OAUTH_CLIENT_ID: z.string().trim().optional(),
+  DROPBOX_OAUTH_CLIENT_SECRET: z.string().trim().optional(),
+  DROPBOX_OAUTH_REDIRECT_URI: z.string().url().optional(),
 });
 
 const result = environmentSchema.safeParse(

@@ -36,12 +36,37 @@ test('Nextcloud and WebDAV use direct WebDAV when configured', () => {
   assert.equal(getDefaultCloudConnectionMethod('webdav', 'personal', 'desktop'), 'webdav');
 });
 
-test('planned OAuth providers remain optional direct connections', () => {
-  const methods = getCloudConnectionMethods('onedrive', 'personal', 'desktop');
+test('production OAuth providers expose an available direct OAuth 2.0 connection', () => {
+  for (const providerId of ['google-drive', 'onedrive', 'dropbox'] as const) {
+    const methods = getCloudConnectionMethods(providerId, 'personal', 'desktop');
+    assert.equal(methods.length, 1);
+    assert.equal(methods[0]?.id, 'oauth2');
+    assert.equal(methods[0]?.implementation, 'oauth2');
+    assert.equal(methods[0]?.authentication, 'oauth2');
+    assert.equal(methods[0]?.available, true);
+    assert.equal(methods[0]?.recommended, true);
+    assert.equal(getDefaultCloudConnectionMethod(providerId, 'personal', 'desktop'), 'oauth2');
+  }
+});
+
+test('SharePoint OAuth remains planned until the provider flow is enabled', () => {
+  const methods = getCloudConnectionMethods('sharepoint', 'business', 'desktop');
   assert.equal(methods.length, 1);
   assert.equal(methods[0]?.id, 'oauth2');
+  assert.equal(methods[0]?.implementation, 'planned-oauth');
   assert.equal(methods[0]?.available, false);
-  assert.equal(getDefaultCloudConnectionMethod('onedrive', 'personal', 'desktop'), 'oauth2');
+  assert.equal(methods[0]?.recommended, false);
+});
+
+test('Proton Drive is exposed as a preview SDK integration, not generic OAuth', () => {
+  const methods = getCloudConnectionMethods('proton-drive', 'personal', 'desktop');
+  assert.equal(methods.length, 1);
+  assert.equal(methods[0]?.id, 'proton-sdk');
+  assert.equal(methods[0]?.implementation, 'planned-proton-sdk');
+  assert.equal(methods[0]?.authentication, 'proton-session');
+  assert.equal(methods[0]?.available, false);
+  assert.equal(methods[0]?.recommended, false);
+  assert.equal(getDefaultCloudConnectionMethod('proton-drive', 'personal', 'desktop'), 'proton-sdk');
 });
 
 test('iCloud requires no Studio-side provider connection to use system storage', () => {

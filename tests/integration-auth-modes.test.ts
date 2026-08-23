@@ -36,14 +36,17 @@ test('cloud storage declares provider-dependent authentication capabilities', ()
   assert.equal(storage.status, 'available');
 });
 
-test('desktop OneDrive uses native system storage without duplicating it as a provider connection', () => {
+test('desktop OneDrive keeps native system storage separate while exposing direct OAuth', () => {
   const methods = getCloudConnectionMethods('onedrive', 'personal', 'desktop');
   const oauth = methods.find((method) => method.id === 'oauth2');
 
   assert.equal(hasNativeSystemStorage('desktop'), true);
   assert.equal(methods.some((method) => method.id === 'local-folder'), false);
   assert.ok(oauth);
-  assert.equal(oauth.available, false);
+  assert.equal(oauth.available, true);
+  assert.equal(oauth.implementation, 'oauth2');
+  assert.equal(oauth.authentication, 'oauth2');
+  assert.equal(oauth.recommended, true);
   assert.equal(getDefaultCloudConnectionMethod('onedrive', 'personal', 'desktop'), 'oauth2');
 });
 
