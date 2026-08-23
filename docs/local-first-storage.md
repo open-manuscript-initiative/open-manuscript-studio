@@ -2,40 +2,47 @@
 
 The installable Open Manuscript Studio treats the manuscript as an author-controlled portable document rather than as data that must live on an OMI server.
 
-## Storage locations
+## System storage is enabled by default
 
-The native application can open and save `.omi.json` manuscript files through the operating system's file picker. The author may therefore choose any location exposed by the operating system, including:
+Every installed Studio build uses the operating system's own document/file surface as its primary storage integration. This is not an optional cloud plugin and does not require a provider account to be configured in Studio.
 
-- a local Documents folder;
-- a synchronized OneDrive, Dropbox, Google Drive, iCloud Drive, Nextcloud or similar folder;
-- a mounted NAS or network drive;
-- an external drive.
+On Windows, macOS and Linux, the native picker can expose locations such as:
 
-Cloud synchronization remains the responsibility of the selected cloud provider. OMI does not require credentials for those providers when their folders are mounted by the operating system.
+- local Documents and Downloads folders;
+- synchronized OneDrive, Dropbox, Google Drive, iCloud Drive, Nextcloud or similar folders;
+- mounted NAS or network drives;
+- external drives and removable media.
+
+On Android, Studio uses the system Documents / Storage Access Framework picker. It can therefore save to device storage, SD cards and document providers exposed by installed storage applications. iOS uses the corresponding system file-provider surface.
+
+Cloud synchronization remains the responsibility of the operating system integration or the selected provider application. OMI does not require provider credentials when the destination is already available through the system picker.
 
 ## Commands
 
-- **Open** selects an existing OMI manuscript and makes that path the current document path.
-- **Save** writes to the current document path. If the manuscript has no current path, it behaves as Save As.
-- **Save As** asks for a new location and makes the selected path current.
+- **Open** selects an existing OMI manuscript and makes that document target current for the running application session.
+- **Save** writes to the current document target. If the manuscript has no current target, it behaves as Save As.
+- **Save As / Save to another location** opens the system picker and makes the selected target current.
+- Portable OMI packages and supported export formats use the same system save surface in installed builds.
 
-The web Studio retains browser download/export behavior and does not receive unrestricted filesystem access.
+The hosted web Studio retains browser download/export behavior and does not receive unrestricted filesystem access.
 
-## Cloud provider settings
+## Direct cloud provider settings
 
-In the desktop application, a locally synchronized folder is a **connection method of the actual cloud provider**, not a separate cloud service. For example, OneDrive, SharePoint, Google Drive, Dropbox, Nextcloud and iCloud Drive can use a folder that their installed desktop client already synchronizes.
+Cloud provider settings are reserved for cases where Studio itself must connect directly to a service through a protocol or provider API, for example WebDAV or a future OAuth-based provider integration.
 
-Studio remembers the selected folder locally per signed-in user, provider and account type. The path is not uploaded to the Studio API. Studio writes the portable OMI package into that folder, while the provider's own client remains responsible for authentication, conflict handling and cloud synchronization.
+System-visible OneDrive, SharePoint, Google Drive, Dropbox, Nextcloud, iCloud Drive and similar locations do **not** need a second provider-specific folder configuration inside Studio. If the operating system or provider app exposes the location, authors can use it directly from the normal Open, Save and Save As workflow.
 
-Web and mobile clients do not receive unrestricted filesystem access; they expose only connection methods available on those platforms.
+This keeps the default experience consistent across installed platforms while retaining direct provider connections for deployments that actually need server-managed cloud access.
 
 ## Security boundary
 
-The Tauri shell enables only native open/save dialogs and text-file read/write operations. The intended security model is explicit author selection: the application does not scan cloud folders or arbitrary filesystem locations.
+The Tauri shell enables narrowly scoped native open/save dialogs and file operations. The intended security model is explicit author selection: the application does not scan arbitrary folders or request broad shared-storage access.
+
+On Android, document-provider URIs are handled through the system picker rather than through blanket storage permissions. On desktop, Studio accesses only paths selected through normal native file/folder interaction.
 
 ## Offline operation
 
-Local file open/save does not require the OMI server. Features that depend on remote services (for example OJS integration, online bibliographic lookup, collaboration or server synchronization) may still require network access.
+Local/system file open and save do not require the OMI server. Features that depend on remote services (for example OJS integration, online bibliographic lookup, collaboration, direct cloud APIs or server synchronization) may still require network access.
 
 ## Portability
 
