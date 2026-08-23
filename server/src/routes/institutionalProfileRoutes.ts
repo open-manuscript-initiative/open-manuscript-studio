@@ -3,6 +3,10 @@ import { z } from 'zod';
 
 import { ensureStudioPrincipal } from '../identity/studioPrincipalBridge.js';
 import { identityPrisma } from '../lib/identityPrisma.js';
+import {
+  getInstitutionAdminMemberships,
+  requireInstitutionRole,
+} from '../services/institutionAccessService.js';
 import { getUserIdForSession } from '../services/authService.js';
 
 export const institutionalProfileRouter = Router();
@@ -19,12 +23,18 @@ const createProfileSchema = z.object({
   isDefault: z.boolean().optional(),
 });
 
-const updateProfileSchema = createProfileSchema
-  .omit({ isDefault: true })
-  .partial()
-  .refine((value) => Object.keys(value).length > 0, {
-    message: 'At least one institutional profile field is required.',
-  });
+const updateProfileSchema = z.object({
+  department: z.string().trim().max(300).nullable().optional(),
+  positionTitle: z.string().trim().max(200).nullable().optional(),
+  institutionalEmail: z.string().trim().email().max(320).nullable().optional(),
+  identityId: z.string().uuid().nullable().optional(),
+}).refine((value) => Object.keys(value).length > 0, {
+  message: 'At least one institutional profile field is required.',
+});
+
+const updateRoleSchema = z.object({
+  role: z.enum(['MEMBER', 'ADMIN', 'OWNER']),
+});
 
 institutionalProfileRouter.get('/profiles/institutions', async (request, response) => {
   const userId = await currentUserId(request);
@@ -35,12 +45,12 @@ institutionalProfileRouter.get('/profiles/institutions', async (request, respons
 
   try {
     await materializeLegacyProfile(userId);
-    const profiles = await identityPrisma.institutionalProfile.findMany({
+    const memberships = await identityPrisma.institutionMembership.findMany({
       where: { userId },
-      include: { identity: true },
+      include: { institution: true, identity: true },
       orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
     });
-    response.status(200).json({ profiles: profiles.map(serializeProfile) });
+    response.status(200).json({ profiles: memberships.map(serializeMembership) });
   } catch (error) {
     console.error('[OMI institutional profiles] list failed', error);
     response.status(500).json({ error: { code: 'PROFILE_LIST_FAILED', message: 'Institutional profiles could not be loaded.' } });
@@ -57,33 +67,40 @@ institutionalProfileRouter.post('/profiles/institutions', async (request, respon
   try {
     const input = createProfileSchema.parse(request.body);
     const identityId = await validateIdentityLink(userId, input.identityId);
-    const count = await identityPrisma.institutionalProfile.count({ where: { userId } });
+    const institution = await findOrCreateInstitution(input.organizationName, input.rorId);
+    const count = await identityPrisma.institutionMembership.count({ where: { userId } });
     const makeDefault = input.isDefault === true || count === 0;
 
-    const profile = await identityPrisma.$transaction(async (tx) => {
+    const membership = await identityPrisma.$transaction(async (tx) => {
+      const existing = await tx.institutionMembership.findUnique({
+        where: { userId_institutionId: { userId, institutionId: institution.id } },
+      });
+      if (existing) throw new Error('This institution is already linked to your account.');
+
       if (makeDefault) {
-        await tx.institutionalProfile.updateMany({
+        await tx.institutionMembership.updateMany({
           where: { userId, isDefault: true },
           data: { isDefault: false },
         });
       }
-      return tx.institutionalProfile.create({
+
+      return tx.institutionMembership.create({
         data: {
           userId,
-          organizationName: input.organizationName,
-          rorId: cleanNullable(input.rorId),
+          institutionId: institution.id,
+          role: 'MEMBER',
           department: cleanNullable(input.department),
           positionTitle: cleanNullable(input.positionTitle),
           institutionalEmail: normalizeNullableEmail(input.institutionalEmail),
           identityId,
           isDefault: makeDefault,
         },
-        include: { identity: true },
+        include: { institution: true, identity: true },
       });
     });
 
     if (makeDefault) await syncLegacyAffiliation(userId);
-    response.status(201).json({ profile: serializeProfile(profile) });
+    response.status(201).json({ profile: serializeMembership(membership) });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Institutional profile creation failed.';
     response.status(400).json({ error: { code: 'PROFILE_CREATE_FAILED', message } });
@@ -100,34 +117,29 @@ institutionalProfileRouter.patch('/profiles/institutions/:profileId', async (req
   try {
     const profileId = z.string().uuid().parse(request.params.profileId);
     const input = updateProfileSchema.parse(request.body);
-    const existing = await identityPrisma.institutionalProfile.findFirst({ where: { id: profileId, userId } });
+    const existing = await identityPrisma.institutionMembership.findFirst({ where: { id: profileId, userId } });
     if (!existing) {
       response.status(404).json({ error: { code: 'PROFILE_NOT_FOUND', message: 'Institutional profile not found.' } });
       return;
     }
 
     const data: {
-      organizationName?: string;
-      rorId?: string | null;
       department?: string | null;
       positionTitle?: string | null;
       institutionalEmail?: string | null;
       identityId?: string | null;
     } = {};
-    if (input.organizationName !== undefined) data.organizationName = input.organizationName;
-    if (input.rorId !== undefined) data.rorId = cleanNullable(input.rorId);
     if (input.department !== undefined) data.department = cleanNullable(input.department);
     if (input.positionTitle !== undefined) data.positionTitle = cleanNullable(input.positionTitle);
     if (input.institutionalEmail !== undefined) data.institutionalEmail = normalizeNullableEmail(input.institutionalEmail);
     if (input.identityId !== undefined) data.identityId = await validateIdentityLink(userId, input.identityId);
 
-    const profile = await identityPrisma.institutionalProfile.update({
+    const membership = await identityPrisma.institutionMembership.update({
       where: { id: profileId },
       data,
-      include: { identity: true },
+      include: { institution: true, identity: true },
     });
-    if (profile.isDefault) await syncLegacyAffiliation(userId);
-    response.status(200).json({ profile: serializeProfile(profile) });
+    response.status(200).json({ profile: serializeMembership(membership) });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Institutional profile update failed.';
     response.status(400).json({ error: { code: 'PROFILE_UPDATE_FAILED', message } });
@@ -143,28 +155,28 @@ institutionalProfileRouter.post('/profiles/institutions/:profileId/default', asy
 
   try {
     const profileId = z.string().uuid().parse(request.params.profileId);
-    const existing = await identityPrisma.institutionalProfile.findFirst({ where: { id: profileId, userId } });
+    const existing = await identityPrisma.institutionMembership.findFirst({ where: { id: profileId, userId } });
     if (!existing) {
       response.status(404).json({ error: { code: 'PROFILE_NOT_FOUND', message: 'Institutional profile not found.' } });
       return;
     }
 
     await identityPrisma.$transaction([
-      identityPrisma.institutionalProfile.updateMany({
+      identityPrisma.institutionMembership.updateMany({
         where: { userId, isDefault: true },
         data: { isDefault: false },
       }),
-      identityPrisma.institutionalProfile.update({
+      identityPrisma.institutionMembership.update({
         where: { id: profileId },
         data: { isDefault: true },
       }),
     ]);
     await syncLegacyAffiliation(userId);
-    const profile = await identityPrisma.institutionalProfile.findUnique({
+    const membership = await identityPrisma.institutionMembership.findUnique({
       where: { id: profileId },
-      include: { identity: true },
+      include: { institution: true, identity: true },
     });
-    response.status(200).json({ profile: profile ? serializeProfile(profile) : null });
+    response.status(200).json({ profile: membership ? serializeMembership(membership) : null });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Default institutional profile could not be changed.';
     response.status(400).json({ error: { code: 'PROFILE_DEFAULT_FAILED', message } });
@@ -180,20 +192,27 @@ institutionalProfileRouter.delete('/profiles/institutions/:profileId', async (re
 
   try {
     const profileId = z.string().uuid().parse(request.params.profileId);
-    const existing = await identityPrisma.institutionalProfile.findFirst({ where: { id: profileId, userId } });
+    const existing = await identityPrisma.institutionMembership.findFirst({ where: { id: profileId, userId } });
     if (!existing) {
       response.status(204).end();
       return;
     }
 
-    await identityPrisma.institutionalProfile.delete({ where: { id: profileId } });
+    if (existing.role === 'OWNER') {
+      const ownerCount = await identityPrisma.institutionMembership.count({
+        where: { institutionId: existing.institutionId, role: 'OWNER' },
+      });
+      if (ownerCount <= 1) throw new Error('The last institutional owner cannot remove their membership.');
+    }
+
+    await identityPrisma.institutionMembership.delete({ where: { id: profileId } });
     if (existing.isDefault) {
-      const replacement = await identityPrisma.institutionalProfile.findFirst({
+      const replacement = await identityPrisma.institutionMembership.findFirst({
         where: { userId },
         orderBy: { createdAt: 'asc' },
       });
       if (replacement) {
-        await identityPrisma.institutionalProfile.update({
+        await identityPrisma.institutionMembership.update({
           where: { id: replacement.id },
           data: { isDefault: true },
         });
@@ -207,8 +226,112 @@ institutionalProfileRouter.delete('/profiles/institutions/:profileId', async (re
   }
 });
 
+institutionalProfileRouter.get('/institutions/admin-context', async (request, response) => {
+  const userId = await currentUserId(request);
+  if (!userId) {
+    response.status(401).json({ error: { code: 'AUTHENTICATION_REQUIRED', message: 'Authentication is required.' } });
+    return;
+  }
+
+  const memberships = await getInstitutionAdminMemberships(userId);
+  response.status(200).json({
+    institutions: memberships.map((membership) => ({
+      membershipId: membership.id,
+      institutionId: membership.institutionId,
+      name: membership.institution.name,
+      rorId: membership.institution.rorId,
+      role: membership.role,
+    })),
+  });
+});
+
+institutionalProfileRouter.get('/institutions/:institutionId/members', async (request, response) => {
+  const userId = await currentUserId(request);
+  if (!userId) {
+    response.status(401).json({ error: { code: 'AUTHENTICATION_REQUIRED', message: 'Authentication is required.' } });
+    return;
+  }
+
+  try {
+    const institutionId = z.string().uuid().parse(request.params.institutionId);
+    await requireInstitutionRole(userId, institutionId, ['ADMIN', 'OWNER']);
+    const members = await identityPrisma.institutionMembership.findMany({
+      where: { institutionId },
+      include: { user: true, identity: true },
+      orderBy: [{ role: 'desc' }, { createdAt: 'asc' }],
+    });
+    response.status(200).json({
+      members: members.map((member) => ({
+        id: member.id,
+        userId: member.userId,
+        fullName: member.user.fullName,
+        email: member.user.email,
+        role: member.role,
+        department: member.department,
+        positionTitle: member.positionTitle,
+        institutionalEmail: member.institutionalEmail,
+        identityId: member.identityId,
+        identityDisplayName: member.identity?.displayName ?? null,
+        createdAt: member.createdAt.toISOString(),
+      })),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Institution members could not be loaded.';
+    response.status(403).json({ error: { code: 'INSTITUTION_ADMIN_REQUIRED', message } });
+  }
+});
+
+institutionalProfileRouter.patch('/institutions/:institutionId/members/:membershipId/role', async (request, response) => {
+  const userId = await currentUserId(request);
+  if (!userId) {
+    response.status(401).json({ error: { code: 'AUTHENTICATION_REQUIRED', message: 'Authentication is required.' } });
+    return;
+  }
+
+  try {
+    const institutionId = z.string().uuid().parse(request.params.institutionId);
+    const membershipId = z.string().uuid().parse(request.params.membershipId);
+    const { role } = updateRoleSchema.parse(request.body);
+    const actor = await requireInstitutionRole(userId, institutionId, ['ADMIN', 'OWNER']);
+    const target = await identityPrisma.institutionMembership.findFirst({ where: { id: membershipId, institutionId } });
+    if (!target) throw new Error('Institution member not found.');
+
+    if (actor.role !== 'OWNER' && (target.role === 'OWNER' || role === 'OWNER')) {
+      throw new Error('Only an institutional owner can change owner roles.');
+    }
+    if (target.role === 'OWNER' && role !== 'OWNER') {
+      const owners = await identityPrisma.institutionMembership.count({ where: { institutionId, role: 'OWNER' } });
+      if (owners <= 1) throw new Error('The institution must keep at least one owner.');
+    }
+
+    const updated = await identityPrisma.institutionMembership.update({
+      where: { id: membershipId },
+      data: { role },
+      include: { user: true, identity: true },
+    });
+    response.status(200).json({
+      member: {
+        id: updated.id,
+        userId: updated.userId,
+        fullName: updated.user.fullName,
+        email: updated.user.email,
+        role: updated.role,
+        department: updated.department,
+        positionTitle: updated.positionTitle,
+        institutionalEmail: updated.institutionalEmail,
+        identityId: updated.identityId,
+        identityDisplayName: updated.identity?.displayName ?? null,
+        createdAt: updated.createdAt.toISOString(),
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Institution role could not be changed.';
+    response.status(403).json({ error: { code: 'INSTITUTION_ROLE_UPDATE_FAILED', message } });
+  }
+});
+
 async function materializeLegacyProfile(userId: string): Promise<void> {
-  const existingCount = await identityPrisma.institutionalProfile.count({ where: { userId } });
+  const existingCount = await identityPrisma.institutionMembership.count({ where: { userId } });
   if (existingCount > 0) return;
 
   const user = await identityPrisma.user.findUnique({
@@ -218,13 +341,32 @@ async function materializeLegacyProfile(userId: string): Promise<void> {
   const organizationName = user?.affiliation?.trim();
   if (!organizationName) return;
 
-  await identityPrisma.institutionalProfile.create({
+  const institution = await findOrCreateInstitution(organizationName, user?.affiliationRorId);
+  await identityPrisma.institutionMembership.create({
     data: {
       userId,
-      organizationName,
-      rorId: cleanNullable(user?.affiliationRorId),
+      institutionId: institution.id,
+      role: 'MEMBER',
       isDefault: true,
     },
+  });
+}
+
+async function findOrCreateInstitution(name: string, rorId: string | null | undefined) {
+  const cleanRor = cleanNullable(rorId);
+  if (cleanRor) {
+    const byRor = await identityPrisma.institution.findUnique({ where: { rorId: cleanRor } });
+    if (byRor) return byRor;
+  }
+
+  const normalizedName = name.trim();
+  const byName = await identityPrisma.institution.findFirst({
+    where: { name: { equals: normalizedName, mode: 'insensitive' } },
+  });
+  if (byName) return byName;
+
+  return identityPrisma.institution.create({
+    data: { name: normalizedName, rorId: cleanRor, status: 'ACTIVE' },
   });
 }
 
@@ -242,15 +384,16 @@ async function validateIdentityLink(userId: string, identityId: string | null | 
 }
 
 async function syncLegacyAffiliation(userId: string): Promise<void> {
-  const profile = await identityPrisma.institutionalProfile.findFirst({
+  const membership = await identityPrisma.institutionMembership.findFirst({
     where: { userId, isDefault: true },
+    include: { institution: true },
     orderBy: { createdAt: 'asc' },
   });
   const user = await identityPrisma.user.update({
     where: { id: userId },
     data: {
-      affiliation: profile?.organizationName ?? null,
-      affiliationRorId: profile?.rorId ?? null,
+      affiliation: membership?.institution.name ?? null,
+      affiliationRorId: membership?.institution.rorId ?? null,
     },
   });
   await ensureStudioPrincipal({
@@ -266,10 +409,10 @@ async function syncLegacyAffiliation(userId: string): Promise<void> {
   });
 }
 
-function serializeProfile(profile: {
+function serializeMembership(membership: {
   id: string;
-  organizationName: string;
-  rorId: string | null;
+  institutionId: string;
+  role: 'MEMBER' | 'ADMIN' | 'OWNER';
   department: string | null;
   positionTitle: string | null;
   institutionalEmail: string | null;
@@ -278,6 +421,7 @@ function serializeProfile(profile: {
   isDefault: boolean;
   createdAt: Date;
   updatedAt: Date;
+  institution: { name: string; rorId: string | null };
   identity: null | {
     id: string;
     provider: 'ORCID' | 'OIDC' | 'SAML';
@@ -287,27 +431,28 @@ function serializeProfile(profile: {
     profile: unknown;
   };
 }) {
-  const providerKey = readProviderKey(profile.identity?.profile);
   return {
-    id: profile.id,
-    organizationName: profile.organizationName,
-    rorId: profile.rorId,
-    department: profile.department,
-    positionTitle: profile.positionTitle,
-    institutionalEmail: profile.institutionalEmail,
-    emailVerified: profile.emailVerified,
-    identityId: profile.identityId,
-    isDefault: profile.isDefault,
-    createdAt: profile.createdAt.toISOString(),
-    updatedAt: profile.updatedAt.toISOString(),
-    identity: profile.identity
+    id: membership.id,
+    institutionId: membership.institutionId,
+    organizationName: membership.institution.name,
+    rorId: membership.institution.rorId,
+    role: membership.role,
+    department: membership.department,
+    positionTitle: membership.positionTitle,
+    institutionalEmail: membership.institutionalEmail,
+    emailVerified: membership.emailVerified,
+    identityId: membership.identityId,
+    isDefault: membership.isDefault,
+    createdAt: membership.createdAt.toISOString(),
+    updatedAt: membership.updatedAt.toISOString(),
+    identity: membership.identity
       ? {
-          id: profile.identity.id,
-          provider: profile.identity.provider,
-          providerKey,
-          issuer: profile.identity.issuer,
-          subject: profile.identity.subject,
-          displayName: profile.identity.displayName,
+          id: membership.identity.id,
+          provider: membership.identity.provider,
+          providerKey: readProviderKey(membership.identity.profile),
+          issuer: membership.identity.issuer,
+          subject: membership.identity.subject,
+          displayName: membership.identity.displayName,
         }
       : null,
   };
@@ -325,8 +470,7 @@ function cleanNullable(value: string | null | undefined): string | null {
 }
 
 function normalizeNullableEmail(value: string | null | undefined): string | null {
-  const email = cleanNullable(value)?.toLowerCase() ?? null;
-  return email;
+  return cleanNullable(value)?.toLowerCase() ?? null;
 }
 
 async function currentUserId(request: Request): Promise<string | null> {
