@@ -1,12 +1,10 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { BadgeCheck, Link2, LogOut, Save, ShieldCheck, UserRound } from 'lucide-react';
+import { BadgeCheck, LogOut, Save, ShieldCheck, UserRound } from 'lucide-react';
 
 import { getSystemTimeZone, getTimeZoneOptions } from '../account/timeZones';
-import { useAuthProviders } from '../auth/useOrcidProvider';
 import { useTranslation } from '../i18n';
-import { startOidcLink, type OidcProviderKey } from '../services/authApi';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
-import { OrcidEnvironmentBadge } from './OrcidEnvironmentBadge';
+import { LinkedIdentitiesSettings } from './LinkedIdentitiesSettings';
 import '../styles/account.css';
 
 const copy = {
@@ -24,11 +22,6 @@ const copy = {
     identity: 'Account identity',
     verified: 'Verified e-mail',
     unverified: 'E-mail not verified',
-    connected: 'Connected identities',
-    providers: 'Sign-in providers',
-    connect: 'Connect',
-    providerConnected: 'Connected',
-    providerError: 'The external sign-in provider could not be opened.',
     save: 'Save changes',
     saved: 'Changes saved.',
     logout: 'Sign out',
@@ -47,11 +40,6 @@ const copy = {
     identity: 'Fiókazonosság',
     verified: 'Ellenőrzött e-mail-cím',
     unverified: 'Nem ellenőrzött e-mail-cím',
-    connected: 'Kapcsolt azonosítók',
-    providers: 'Bejelentkezési szolgáltatók',
-    connect: 'Kapcsolás',
-    providerConnected: 'Kapcsolva',
-    providerError: 'A külső bejelentkezési szolgáltató nem nyitható meg.',
     save: 'Módosítások mentése',
     saved: 'Módosítások elmentve.',
     logout: 'Kijelentkezés',
@@ -70,11 +58,6 @@ const copy = {
     identity: 'Kontoidentität',
     verified: 'Bestätigte E-Mail-Adresse',
     unverified: 'E-Mail-Adresse nicht bestätigt',
-    connected: 'Verknüpfte Identitäten',
-    providers: 'Anmeldeanbieter',
-    connect: 'Verbinden',
-    providerConnected: 'Verbunden',
-    providerError: 'Der externe Anmeldeanbieter konnte nicht geöffnet werden.',
     save: 'Änderungen speichern',
     saved: 'Änderungen gespeichert.',
     logout: 'Abmelden',
@@ -97,16 +80,7 @@ export function AccountPanel() {
   const logout = useAuthStore((state) => state.logout);
   const loading = useAuthStore((state) => state.isLoading);
   const error = useAuthStore((state) => state.error);
-  const providers = useAuthProviders();
-  const orcidProvider = providers?.orcid ?? null;
-  const externalProviders = providers
-    ? (['google', 'microsoft', 'oidc'] as const)
-        .map((key) => ({ key, provider: providers[key] }))
-        .filter(({ provider }) => provider?.enabled)
-    : [];
   const [saved, setSaved] = useState(false);
-  const [providerError, setProviderError] = useState('');
-  const [linkingProvider, setLinkingProvider] = useState<OidcProviderKey | null>(null);
   const [form, setForm] = useState<AccountFormState>({
     fullName: '',
     affiliation: '',
@@ -143,17 +117,6 @@ export function AccountPanel() {
       timeZone: form.timeZone || undefined,
     });
     setSaved(true);
-  };
-
-  const linkProvider = async (key: OidcProviderKey) => {
-    setProviderError('');
-    setLinkingProvider(key);
-    try {
-      await startOidcLink(key, locale);
-    } catch {
-      setProviderError(labels.providerError);
-      setLinkingProvider(null);
-    }
   };
 
   return (
@@ -262,62 +225,8 @@ export function AccountPanel() {
               {user.emailVerified ? labels.verified : labels.unverified}
             </span>
           </div>
-          {orcidProvider?.enabled ? (
-            <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
-          ) : null}
-          <div className="account-identities">
-            <h3>{labels.connected}</h3>
-            {user.identities.length ? (
-              user.identities.map((identity) => (
-                <div
-                  className="account-identity-row"
-                  key={`${identity.provider}:${identity.providerUserId}`}
-                >
-                  <strong>
-                    {identity.provider === 'orcid' ? 'ORCID' : identity.provider}
-                  </strong>
-                  <span>{identity.displayName || identity.providerUserId}</span>
-                </div>
-              ))
-            ) : (
-              <span>—</span>
-            )}
-          </div>
 
-          {externalProviders.length ? (
-            <div className="account-provider-section">
-              <h3>{labels.providers}</h3>
-              <div className="account-provider-list">
-                {externalProviders.map(({ key, provider }) => (
-                  <div className="account-provider-row" key={key}>
-                    <div>
-                      <strong>{provider.label}</strong>
-                      {provider.issuer ? <small>{provider.issuer}</small> : null}
-                    </div>
-                    {provider.linked ? (
-                      <span className="account-provider-connected">
-                        <BadgeCheck size={16} aria-hidden="true" />
-                        {labels.providerConnected}
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="account-provider-connect"
-                        disabled={Boolean(linkingProvider)}
-                        onClick={() => void linkProvider(key)}
-                      >
-                        <Link2 size={15} aria-hidden="true" />
-                        {linkingProvider === key ? '…' : labels.connect}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {providerError ? (
-                <div className="account-error" role="alert">{providerError}</div>
-              ) : null}
-            </div>
-          ) : null}
+          <LinkedIdentitiesSettings locale={locale} email={user.email} />
 
           <button
             type="button"
