@@ -2,47 +2,69 @@
 
 The installable Open Manuscript Studio treats the manuscript as an author-controlled portable document rather than as data that must live on an OMI server.
 
-## System storage is enabled by default
+## Own-device mode
 
-Every installed Studio build uses the operating system's own document/file surface as its primary storage integration. This is not an optional cloud plugin and does not require a provider account to be configured in Studio.
+Every signed-in user can decide locally whether the current installation is running on their own device.
 
-On Windows, macOS and Linux, the native picker can expose locations such as:
+- **Own device enabled:** native system storage is available as a normal working location. Studio may keep the current document path during the app session.
+- **Own device disabled:** the machine is treated as shared or foreign. Profile cloud storage is the normal save path and Studio does not retain a local working-file path.
 
-- local Documents and Downloads folders;
-- synchronized OneDrive, Dropbox, Google Drive, iCloud Drive, Nextcloud or similar folders;
-- mounted NAS or network drives;
-- external drives and removable media.
+This preference is deliberately device-local and user-scoped. It is not synchronized to the profile because the same author may trust an office computer but not a borrowed computer.
 
-On Android, Studio uses the system Documents / Storage Access Framework picker. It can therefore save to device storage, SD cards and document providers exposed by installed storage applications. iOS uses the corresponding system file-provider surface.
+A newly seen device defaults to shared-device mode until the author explicitly marks it as their own device.
 
-Cloud synchronization remains the responsibility of the operating system integration or the selected provider application. OMI does not require provider credentials when the destination is already available through the system picker.
+## System storage on an own device
 
-## Commands
+The native application can open and save `.omi.json` manuscript files through the operating system's file picker. The author may therefore choose any location exposed by the operating system, including:
 
-- **Open** selects an existing OMI manuscript and makes that document target current for the running application session.
-- **Save** writes to the current document target. If the manuscript has no current target, it behaves as Save As.
-- **Save As / Save to another location** opens the system picker and makes the selected target current.
-- Portable OMI packages and supported export formats use the same system save surface in installed builds.
+- a local Documents folder;
+- a synchronized OneDrive, Dropbox, Google Drive, iCloud Drive, Nextcloud or similar folder;
+- a mounted NAS or network drive;
+- an external drive.
 
-The hosted web Studio retains browser download/export behavior and does not receive unrestricted filesystem access.
+Cloud synchronization remains the responsibility of the selected cloud provider when its folder is mounted by the operating system. OMI does not require provider credentials for this mode.
 
-## Direct cloud provider settings
+On Android the equivalent surface is the system Documents / Storage Access Framework picker. Available document providers may include internal storage, Downloads, SD cards and cloud apps installed on the device.
 
-Cloud provider settings are reserved for cases where Studio itself must connect directly to a service through a protocol or provider API, for example WebDAV or a future OAuth-based provider integration.
+## Portable storage on a shared or foreign device
 
-System-visible OneDrive, SharePoint, Google Drive, Dropbox, Nextcloud, iCloud Drive and similar locations do **not** need a second provider-specific folder configuration inside Studio. If the operating system or provider app exposes the location, authors can use it directly from the normal Open, Save and Save As workflow.
+Shared-device mode still permits explicit use of removable storage such as a USB flash drive.
 
-This keeps the default experience consistent across installed platforms while retaining direct provider connections for deployments that actually need server-managed cloud access.
+The user chooses the removable device through the operating system file picker. Studio cannot reliably distinguish a USB drive from every other mounted volume on all supported operating systems, so it applies a stricter semantic rule instead:
+
+- opening from portable storage reads the selected manuscript without retaining the path as the current working file;
+- saving to portable storage creates a one-off copy and does not retain the selected path;
+- portable `.omi.zip` backup export remains available;
+- normal local Save / Save As is disabled as a persistent workflow in shared-device mode.
+
+This prevents a borrowed computer from silently becoming the manuscript's remembered working location.
+
+## Profile cloud storage
+
+Direct cloud connections belong to the authenticated user profile. The server stores each cloud connection under the authenticated user ID and returns only that user's connections.
+
+This means a configured direct WebDAV or Nextcloud connection follows the user when they sign in on another device. Credentials remain encrypted on the Studio API server.
+
+The intended shared-device workflow is therefore:
+
+1. sign in;
+2. keep **This is my own device** disabled;
+3. work with a profile cloud connection;
+4. optionally create a one-off copy on a USB drive or other removable storage.
+
+Direct OAuth integrations for additional providers can follow the same profile-scoped model when implemented.
 
 ## Security boundary
 
-The Tauri shell enables narrowly scoped native open/save dialogs and file operations. The intended security model is explicit author selection: the application does not scan arbitrary folders or request broad shared-storage access.
+The own/shared-device choice controls persistence semantics, not low-level operating-system permissions. The native file picker always requires an explicit user selection.
 
-On Android, document-provider URIs are handled through the system picker rather than through blanket storage permissions. On desktop, Studio accesses only paths selected through normal native file/folder interaction.
+The Studio does not scan disks, automatically discover removable drives, or upload local filesystem paths to the server.
 
 ## Offline operation
 
-Local/system file open and save do not require the OMI server. Features that depend on remote services (for example OJS integration, online bibliographic lookup, collaboration, direct cloud APIs or server synchronization) may still require network access.
+Own-device local file open/save does not require the OMI server. Shared-device profile cloud storage requires network access, while one-off portable-storage open/save remains local.
+
+Features that depend on remote services, such as OJS integration, online bibliographic lookup or collaboration, may also require network access.
 
 ## Portability
 
