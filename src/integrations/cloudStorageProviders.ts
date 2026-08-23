@@ -8,23 +8,31 @@ export type CloudStorageProviderId =
   | 'sharepoint'
   | 'google-drive'
   | 'dropbox'
+  | 'proton-drive'
   | 'icloud-drive';
 
 // local-folder is retained only for compatibility with older device-local
 // preferences. New UI flows expose native system storage globally instead of
 // pretending it is a provider-specific connection method.
-export type CloudConnectionMethodId = 'local-folder' | 'webdav' | 'oauth2';
+export type CloudConnectionMethodId =
+  | 'local-folder'
+  | 'webdav'
+  | 'oauth2'
+  | 'proton-sdk';
 export type CloudAccountType = 'personal' | 'business';
 
 export type CloudConnectionImplementation =
   | 'local-folder'
   | 'webdav'
-  | 'planned-oauth';
+  | 'oauth2'
+  | 'planned-oauth'
+  | 'planned-proton-sdk';
 
 export type CloudAuthenticationKind =
   | 'none'
   | 'webdav-credentials'
-  | 'oauth2';
+  | 'oauth2'
+  | 'proton-session';
 
 export interface CloudStorageProviderDescriptor {
   id: CloudStorageProviderId;
@@ -34,6 +42,7 @@ export interface CloudStorageProviderDescriptor {
   supportsLocalFolder: boolean;
   supportsWebDav: boolean;
   supportsOAuth: boolean;
+  supportsProtonSdk?: boolean;
   directProviderType: 'nextcloud' | 'webdav' | null;
 }
 
@@ -109,6 +118,16 @@ export const cloudStorageProviders: CloudStorageProviderDescriptor[] = [
     directProviderType: null,
   },
   {
+    id: 'proton-drive',
+    displayName: 'Proton Drive',
+    accountTypes: ['personal', 'business'],
+    supportsLocalFolder: true,
+    supportsWebDav: false,
+    supportsOAuth: false,
+    supportsProtonSdk: true,
+    directProviderType: null,
+  },
+  {
     id: 'icloud-drive',
     displayName: 'iCloud Drive',
     accountTypes: ['personal'],
@@ -166,10 +185,23 @@ export function getCloudConnectionMethods(
   }
 
   if (provider.supportsOAuth) {
+    const productionOAuth = provider.id === 'google-drive'
+      || provider.id === 'onedrive'
+      || provider.id === 'dropbox';
     methods.push({
       id: 'oauth2',
-      implementation: 'planned-oauth',
+      implementation: productionOAuth ? 'oauth2' : 'planned-oauth',
       authentication: 'oauth2',
+      available: productionOAuth,
+      recommended: productionOAuth && !provider.supportsWebDav,
+    });
+  }
+
+  if (provider.supportsProtonSdk) {
+    methods.push({
+      id: 'proton-sdk',
+      implementation: 'planned-proton-sdk',
+      authentication: 'proton-session',
       available: false,
       recommended: false,
     });
