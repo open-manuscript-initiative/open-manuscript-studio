@@ -22,8 +22,15 @@ export function isNativeStudio(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
+/**
+ * Compatibility helper retained for existing UI call sites. Android document
+ * providers return content:// and iOS/iPadOS Files returns file://. Both are
+ * native document-provider transport identifiers and should be hidden from
+ * user-facing location labels.
+ */
 export function isAndroidDocumentUri(value: string | null | undefined): boolean {
-  return typeof value === 'string' && value.startsWith('content://');
+  return typeof value === 'string'
+    && (value.startsWith('content://') || value.startsWith('file://'));
 }
 
 export function isIosDocumentUri(value: string | null | undefined): boolean {
@@ -31,7 +38,7 @@ export function isIosDocumentUri(value: string | null | undefined): boolean {
 }
 
 export function isMobileDocumentUri(value: string | null | undefined): boolean {
-  return isAndroidDocumentUri(value) || isIosDocumentUri(value);
+  return isAndroidDocumentUri(value);
 }
 
 export function getCurrentManuscriptFilePath(): string | null {
