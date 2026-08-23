@@ -1,11 +1,35 @@
-import type { SupportedLocale } from './types';
-
 export interface StudioMenuSupplementalCopy {
   assignments: string;
   signatures: string;
 }
 
-const studioMenuSupplementalTranslations: Record<SupportedLocale, StudioMenuSupplementalCopy> = {
+type StudioUiLocale =
+  | 'bg'
+  | 'cs'
+  | 'da'
+  | 'de'
+  | 'el'
+  | 'en'
+  | 'es'
+  | 'et'
+  | 'fi'
+  | 'fr'
+  | 'ga'
+  | 'hr'
+  | 'hu'
+  | 'it'
+  | 'lt'
+  | 'lv'
+  | 'mt'
+  | 'nl'
+  | 'pl'
+  | 'pt'
+  | 'ro'
+  | 'sk'
+  | 'sl'
+  | 'sv';
+
+const studioMenuSupplementalTranslations: Record<StudioUiLocale, StudioMenuSupplementalCopy> = {
   bg: { assignments: 'Задания', signatures: 'Подписи' },
   cs: { assignments: 'Úkoly', signatures: 'Podpisy' },
   da: { assignments: 'Opgaver', signatures: 'Signaturer' },
@@ -33,7 +57,8 @@ const studioMenuSupplementalTranslations: Record<SupportedLocale, StudioMenuSupp
 };
 
 export function getStudioMenuSupplementalCopy(
-  locale: SupportedLocale,
+  locale: string,
 ): StudioMenuSupplementalCopy {
-  return studioMenuSupplementalTranslations[locale];
+  return studioMenuSupplementalTranslations[locale as StudioUiLocale]
+    ?? studioMenuSupplementalTranslations.en;
 }
