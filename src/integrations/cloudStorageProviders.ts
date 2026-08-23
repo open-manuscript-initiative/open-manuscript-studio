@@ -41,16 +41,14 @@ export interface CloudConnectionMethodDescriptor {
   recommended: boolean;
 }
 
+/**
+ * Real storage providers presented to the author.
+ *
+ * A locally synchronized folder is deliberately not a provider of its own:
+ * on desktop it is a connection method for the actual provider whose sync
+ * client owns the folder (OneDrive, Google Drive, Dropbox, Nextcloud, etc.).
+ */
 export const cloudStorageProviders: CloudStorageProviderDescriptor[] = [
-  {
-    id: 'local-folder',
-    displayName: 'Local / synchronized folder',
-    accountTypes: ['personal'],
-    supportsLocalFolder: true,
-    supportsWebDav: false,
-    supportsOAuth: false,
-    directProviderType: null,
-  },
   {
     id: 'nextcloud',
     displayName: 'Nextcloud',
@@ -116,9 +114,23 @@ export const cloudStorageProviders: CloudStorageProviderDescriptor[] = [
   },
 ];
 
+// Kept only for compatibility with older device-local preference keys. It is
+// intentionally omitted from cloudStorageProviders and therefore never shown
+// as a separate cloud service in the current UI.
+const legacyLocalFolderProvider: CloudStorageProviderDescriptor = {
+  id: 'local-folder',
+  displayName: 'Local / synchronized folder',
+  accountTypes: ['personal'],
+  supportsLocalFolder: true,
+  supportsWebDav: false,
+  supportsOAuth: false,
+  directProviderType: null,
+};
+
 export function getCloudStorageProvider(
   providerId: CloudStorageProviderId,
 ): CloudStorageProviderDescriptor {
+  if (providerId === 'local-folder') return legacyLocalFolderProvider;
   const provider = cloudStorageProviders.find((entry) => entry.id === providerId);
   if (!provider) {
     throw new Error(`Unsupported cloud storage provider: ${providerId}`);
