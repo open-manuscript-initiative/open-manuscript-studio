@@ -1,7 +1,15 @@
+import { isTauri } from '@tauri-apps/api/core';
+
 import { normalizeNextcloudWebDavUrl } from './nextcloudConnection';
 
-export type CloudProviderType = 'webdav' | 'nextcloud';
+export type CloudProviderType =
+  | 'webdav'
+  | 'nextcloud'
+  | 'google-drive'
+  | 'onedrive'
+  | 'dropbox';
 export type CloudConnectionStatus = 'connected' | 'disconnected' | 'error';
+export type CloudOAuthProviderId = 'google-drive' | 'onedrive' | 'dropbox';
 
 export interface CloudConnection {
   id: string;
@@ -28,7 +36,7 @@ export interface CloudBackup {
 }
 
 export interface CreateCloudConnectionInput {
-  providerType: CloudProviderType;
+  providerType: 'webdav' | 'nextcloud';
   displayName: string;
   baseUrl: string;
   username: string;
@@ -36,9 +44,24 @@ export interface CreateCloudConnectionInput {
   rootPath: string;
 }
 
+export interface CloudOAuthProviderConfig {
+  id: CloudOAuthProviderId;
+  label: string;
+  configured: boolean;
+  redirectUri: string | null;
+  scopes: string[];
+  setupEnvironment: string[];
+}
+
+const NATIVE_SESSION_KEY = 'omi_native_session_token';
+const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
+const IS_TAURI = isTauri();
+const IS_MOBILE_TAURI = IS_TAURI && /Android|iPhone|iPad|iPod/i.test(globalThis.navigator?.userAgent ?? '');
+const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL?.trim()
+  || (IS_TAURI && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '')).replace(/\/$/, '');
+
 export async function listCloudConnections(): Promise<CloudConnection[]> {
-  const response = await fetch('/api/cloud/connections', {
-    credentials: 'include',
+  const response = await cloudFetch('/api/cloud/connections', {
     headers: { Accept: 'application/json' },
   });
   const data = await readJson<{ connections: CloudConnection[] }>(response);
@@ -55,9 +78,8 @@ export async function createCloudConnection(
       }
     : input;
 
-  const response = await fetch('/api/cloud/connections', {
+  const response = await cloudFetch('/api/cloud/connections', {
     method: 'POST',
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
@@ -68,14 +90,104 @@ export async function createCloudConnection(
   return data.connection;
 }
 
+export async function listCloudOAuthProviders(): Promise<CloudOAuthProviderConfig[]> {
+  const response = await cloudFetch('/api/cloud/oauth/providers', {
+    headers: { Accept: 'application/json' },
+  });
+  const data = await readJson<{ providers: CloudOAuthProviderConfig[] }>(response);
+  return data.providers;
+}
+
+export async function startCloudOAuthConnection(input: {
+  provider: CloudOAuthProviderId;
+  accountType: 'personal' | 'business';
+  displayName: string;
+}): Promise<void> {
+  const returnOrigin = IS_TAURI
+    ? IS_MOBILE_TAURI
+      ? 'https://app.openmanuscript.org/auth/orcid'
+      : 'openmanuscript://auth'
+    : undefined;
+  const response = await cloudFetch(`/api/cloud/oauth/${encodeURIComponent(input.provider)}/start`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      accountType: input.accountType,
+      displayName: input.displayName,
+      returnPath: globalThis.location?.pathname || '/',
+      ...(returnOrigin ? { returnOrigin } : {}),
+    }),
+  });
+  const data = await readJson<{ authorizationUrl: string; expiresAt: string }>(response);
+
+  if (IS_TAURI) {
+    const { openUrl } = await import('@tauri-apps/plugin-opener');
+    if (IS_MOBILE_TAURI) {
+      try {
+        await openUrl(data.authorizationUrl, 'inAppBrowser');
+      } catch {
+        await openUrl(data.authorizationUrl);
+      }
+    } else {
+      await openUrl(data.authorizationUrl);
+    }
+    return;
+  }
+
+  globalThis.location?.assign(data.authorizationUrl);
+}
+
+export async function listenForCloudOAuthReturn(
+  handler: (result: { status: 'connected' | 'error'; provider?: string; error?: string }) => void,
+): Promise<() => void> {
+  if (!IS_TAURI) return () => undefined;
+  const { onOpenUrl } = await import('@tauri-apps/plugin-deep-link');
+  return onOpenUrl((urls) => {
+    for (const value of urls) {
+      const result = readCloudOAuthResult(value);
+      if (result) handler(result);
+    }
+  });
+}
+
+export function consumeCloudOAuthResultFromLocation(): {
+  status: 'connected' | 'error';
+  provider?: string;
+  error?: string;
+} | null {
+  const location = globalThis.location;
+  if (!location) return null;
+  const query = new URLSearchParams(location.search);
+  const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const status = query.get('cloudOAuth') ?? hash.get('cloudOAuth');
+  if (status !== 'connected' && status !== 'error') return null;
+  const provider = query.get('provider') ?? hash.get('provider') ?? undefined;
+  const error = query.get('cloudOAuthError') ?? hash.get('cloudOAuthError') ?? undefined;
+  query.delete('cloudOAuth');
+  query.delete('provider');
+  query.delete('cloudOAuthError');
+  hash.delete('cloudOAuth');
+  hash.delete('provider');
+  hash.delete('cloudOAuthError');
+  const next = `${location.pathname}${query.toString() ? `?${query.toString()}` : ''}${hash.toString() ? `#${hash.toString()}` : ''}`;
+  globalThis.history?.replaceState(globalThis.history.state, '', next);
+  return {
+    status,
+    ...(provider ? { provider } : {}),
+    ...(error ? { error } : {}),
+  };
+}
+
 export async function testCloudConnection(
   connectionId: string,
 ): Promise<CloudConnection> {
-  const response = await fetch(
+  const response = await cloudFetch(
     `/api/cloud/connections/${encodeURIComponent(connectionId)}/test`,
     {
       method: 'POST',
-      credentials: 'include',
       headers: { Accept: 'application/json' },
     },
   );
@@ -86,12 +198,9 @@ export async function testCloudConnection(
 export async function deleteCloudConnection(
   connectionId: string,
 ): Promise<void> {
-  const response = await fetch(
+  const response = await cloudFetch(
     `/api/cloud/connections/${encodeURIComponent(connectionId)}`,
-    {
-      method: 'DELETE',
-      credentials: 'include',
-    },
+    { method: 'DELETE' },
   );
   await ensureSuccess(response);
 }
@@ -105,11 +214,10 @@ export async function uploadCloudBackup(input: {
   const payload = new Uint8Array(input.bytes.byteLength);
   payload.set(input.bytes);
 
-  const response = await fetch(
+  const response = await cloudFetch(
     `/api/manuscripts/${encodeURIComponent(input.manuscriptId)}/backups?connectionId=${encodeURIComponent(input.connectionId)}`,
     {
       method: 'POST',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/vnd.openmanuscript.package+zip',
         Accept: 'application/json',
@@ -125,35 +233,64 @@ export async function uploadCloudBackup(input: {
 export async function listCloudBackups(
   manuscriptId: string,
 ): Promise<CloudBackup[]> {
-  const response = await fetch(
+  const response = await cloudFetch(
     `/api/manuscripts/${encodeURIComponent(manuscriptId)}/backups`,
-    {
-      credentials: 'include',
-      headers: { Accept: 'application/json' },
-    },
+    { headers: { Accept: 'application/json' } },
   );
   const data = await readJson<{ backups: CloudBackup[] }>(response);
   return data.backups;
 }
 
 export async function downloadCloudBackup(backupId: string): Promise<Uint8Array> {
-  const response = await fetch(
+  const response = await cloudFetch(
     `/api/backups/${encodeURIComponent(backupId)}/content`,
-    {
-      credentials: 'include',
-      headers: { Accept: 'application/vnd.openmanuscript.package+zip' },
-    },
+    { headers: { Accept: 'application/vnd.openmanuscript.package+zip' } },
   );
   await ensureSuccess(response);
   return new Uint8Array(await response.arrayBuffer());
 }
 
 export async function deleteCloudBackup(backupId: string): Promise<void> {
-  const response = await fetch(`/api/backups/${encodeURIComponent(backupId)}`, {
+  const response = await cloudFetch(`/api/backups/${encodeURIComponent(backupId)}`, {
     method: 'DELETE',
-    credentials: 'include',
   });
   await ensureSuccess(response);
+}
+
+async function cloudFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(init.headers);
+  if (IS_TAURI) {
+    headers.set('X-OMI-Native-Client', '1');
+    const token = globalThis.localStorage?.getItem(NATIVE_SESSION_KEY);
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+  }
+  return fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    credentials: 'include',
+    headers,
+  });
+}
+
+function readCloudOAuthResult(value: string): {
+  status: 'connected' | 'error';
+  provider?: string;
+  error?: string;
+} | null {
+  try {
+    const url = new URL(value);
+    const params = new URLSearchParams(url.hash.replace(/^#/, ''));
+    const status = params.get('cloudOAuth');
+    if (status !== 'connected' && status !== 'error') return null;
+    const provider = params.get('provider') ?? undefined;
+    const error = params.get('cloudOAuthError') ?? undefined;
+    return {
+      status,
+      ...(provider ? { provider } : {}),
+      ...(error ? { error } : {}),
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function ensureSuccess(response: Response): Promise<void> {
