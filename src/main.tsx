@@ -44,6 +44,7 @@ import './styles/desktop-document-tabs.css';
 import './styles/formatting-toolbar-preference.css';
 import './styles/proofreading.css';
 import './styles/remove-default-document-reset.css';
+import './styles/account-profiles.css';
 
 initializeRevisionIntegrity();
 initializeFormattingToolbarPreference();
