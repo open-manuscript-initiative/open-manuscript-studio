@@ -13,9 +13,9 @@ export type CloudOAuthProviderKey = 'google-drive' | 'onedrive' | 'dropbox';
 export interface CloudOAuthProviderConfig {
   key: CloudOAuthProviderKey;
   label: string;
-  clientId?: string;
-  clientSecret?: string;
-  redirectUri?: string;
+  clientId?: string | undefined;
+  clientSecret?: string | undefined;
+  redirectUri?: string | undefined;
   authorizationEndpoint: string;
   tokenEndpoint: string;
   scopes: string[];
@@ -130,10 +130,10 @@ export function createCloudOAuthAuthorization(input: {
   provider: CloudOAuthProviderConfig;
   userId: string;
   accountType: 'personal' | 'business';
-  displayName?: string;
+  displayName?: string | undefined;
   native: boolean;
-  returnOrigin?: string;
-  returnPath?: string;
+  returnOrigin?: string | undefined;
+  returnPath?: string | undefined;
 }): { authorizationUrl: string; expiresAt: string } {
   assertConfigured(input.provider);
   const codeVerifier = randomBytes(48).toString('base64url');
