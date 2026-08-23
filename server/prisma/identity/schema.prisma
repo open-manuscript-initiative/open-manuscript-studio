@@ -21,21 +21,24 @@ enum IdentityProvider {
 }
 
 model User {
-  id                    String            @id @default(uuid()) @db.Uuid
-  email                 String            @unique @db.VarChar(320)
-  passwordHash          String            @map("password_hash") @db.VarChar(255)
-  fullName              String            @map("full_name") @db.VarChar(200)
-  affiliation           String?           @db.VarChar(300)
-  affiliationRorId      String?           @map("affiliation_ror_id") @db.VarChar(128)
-  orcid                 String?           @unique @db.VarChar(19)
-  interfaceLanguage     String            @default("en") @map("interface_language") @db.VarChar(16)
-  status                UserStatus        @default(ACTIVE)
-  createdAt             DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
-  lastLoginAt           DateTime?         @map("last_login_at") @db.Timestamptz(6)
+  id                    String                 @id @default(uuid()) @db.Uuid
+  email                 String                 @unique @db.VarChar(320)
+  passwordHash          String                 @map("password_hash") @db.VarChar(255)
+  fullName              String                 @map("full_name") @db.VarChar(200)
+  affiliation           String?                @db.VarChar(300)
+  affiliationRorId      String?                @map("affiliation_ror_id") @db.VarChar(128)
+  orcid                 String?                @unique @db.VarChar(19)
+  bio                   String?                @db.VarChar(2000)
+  timeZone              String?                @map("time_zone") @db.VarChar(64)
+  interfaceLanguage     String                 @default("en") @map("interface_language") @db.VarChar(16)
+  status                UserStatus             @default(ACTIVE)
+  createdAt             DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+  lastLoginAt           DateTime?              @map("last_login_at") @db.Timestamptz(6)
   sessions              UserSession[]
   invitations           UserInvitation[]
   identities            UserIdentity[]
+  institutionalProfiles InstitutionalProfile[]
   oauthStates           OAuthLoginState[]
   passwordResetTokens   PasswordResetToken[]
 
@@ -86,24 +89,47 @@ model UserInvitation {
 }
 
 model UserIdentity {
-  id             String           @id @default(uuid()) @db.Uuid
-  userId         String           @map("user_id") @db.Uuid
-  provider       IdentityProvider
-  issuer         String           @db.VarChar(512)
-  subject        String           @db.VarChar(320)
-  displayName    String?          @map("display_name") @db.VarChar(200)
-  profile        Json?            @db.JsonB
-  accessToken    String?          @map("access_token") @db.Text
-  refreshToken   String?          @map("refresh_token") @db.Text
-  tokenExpiresAt DateTime?        @map("token_expires_at") @db.Timestamptz(6)
-  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
-  lastUsedAt     DateTime?        @map("last_used_at") @db.Timestamptz(6)
-  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                    String                 @id @default(uuid()) @db.Uuid
+  userId                String                 @map("user_id") @db.Uuid
+  provider              IdentityProvider
+  issuer                String                 @db.VarChar(512)
+  subject               String                 @db.VarChar(320)
+  displayName           String?                @map("display_name") @db.VarChar(200)
+  profile               Json?                  @db.JsonB
+  accessToken           String?                @map("access_token") @db.Text
+  refreshToken          String?                @map("refresh_token") @db.Text
+  tokenExpiresAt        DateTime?              @map("token_expires_at") @db.Timestamptz(6)
+  createdAt             DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+  lastUsedAt            DateTime?              @map("last_used_at") @db.Timestamptz(6)
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institutionalProfiles InstitutionalProfile[]
 
   @@unique([provider, issuer, subject])
   @@index([userId, provider])
   @@map("user_identities")
+}
+
+model InstitutionalProfile {
+  id                 String        @id @default(uuid()) @db.Uuid
+  userId             String        @map("user_id") @db.Uuid
+  organizationName   String        @map("organization_name") @db.VarChar(300)
+  rorId              String?       @map("ror_id") @db.VarChar(128)
+  department         String?       @db.VarChar(300)
+  positionTitle      String?       @map("position_title") @db.VarChar(200)
+  institutionalEmail String?       @map("institutional_email") @db.VarChar(320)
+  emailVerified      Boolean       @default(false) @map("email_verified")
+  identityId         String?       @map("identity_id") @db.Uuid
+  isDefault          Boolean       @default(false) @map("is_default")
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  identity           UserIdentity? @relation(fields: [identityId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isDefault])
+  @@index([userId, rorId])
+  @@index([identityId])
+  @@map("institutional_profiles")
 }
 
 model OAuthLoginState {
