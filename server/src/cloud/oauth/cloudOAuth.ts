@@ -31,7 +31,7 @@ export interface CloudOAuthPublicConfig {
   setupEnvironment: string[];
 }
 
-interface CloudOAuthStatePayload {
+export interface CloudOAuthStatePayload {
   version: 1;
   userId: string;
   provider: CloudOAuthProviderKey;
@@ -39,6 +39,7 @@ interface CloudOAuthStatePayload {
   displayName: string;
   codeVerifier: string;
   native: boolean;
+  returnOrigin?: string;
   returnPath: string;
   expiresAt: number;
   nonce: string;
@@ -131,6 +132,7 @@ export function createCloudOAuthAuthorization(input: {
   accountType: 'personal' | 'business';
   displayName?: string;
   native: boolean;
+  returnOrigin?: string;
   returnPath?: string;
 }): { authorizationUrl: string; expiresAt: string } {
   assertConfigured(input.provider);
@@ -144,6 +146,7 @@ export function createCloudOAuthAuthorization(input: {
     displayName: input.displayName?.trim() || input.provider.label,
     codeVerifier,
     native: input.native,
+    ...(input.returnOrigin ? { returnOrigin: input.returnOrigin } : {}),
     returnPath: normalizeReturnPath(input.returnPath),
     expiresAt,
     nonce: randomBytes(24).toString('base64url'),
