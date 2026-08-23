@@ -23,15 +23,24 @@ export async function saveExportBlob(
 
   const { save } = await import('@tauri-apps/plugin-dialog');
   const { writeFile } = await import('@tauri-apps/plugin-fs');
+  const platform = getStudioPlatform();
   const selected = await save({
     defaultPath: fileName,
-    filters: [dialogFilter(fileName)],
+    filters: [dialogFilter(fileName, platform)],
   });
 
   if (!selected) return { saved: false };
 
   const bytes = new Uint8Array(await blob.arrayBuffer());
   await writeFile(selected, bytes);
+
+  // Android content:// and iOS file:// document-provider URLs are transport
+  // details. Mobile users work with the system Files/Documents surface rather
+  // than filesystem paths, so do not expose those URIs in success messages.
+  if (platform === 'android' || platform === 'ios') {
+    return { saved: true };
+  }
+
   return { saved: true, path: selected };
 }
 
@@ -43,10 +52,16 @@ export async function saveExportText(
   return saveExportBlob(new Blob([value], { type: mediaType }), fileName);
 }
 
-function dialogFilter(fileName: string): { name: string; extensions: string[] } {
+function dialogFilter(
+  fileName: string,
+  platform: ReturnType<typeof getStudioPlatform>,
+): { name: string; extensions: string[] } {
   return {
     name: 'Open Manuscript export',
-    extensions: getStudioPlatform() === 'android'
+    // Android's Storage Access Framework primarily filters by MIME type.
+    // iOS/iPadOS Files/UIDocumentPicker supports filename extensions, like
+    // desktop platforms, so keep extension filters there.
+    extensions: platform === 'android'
       ? [mimeTypeForFileName(fileName)]
       : [extensionForFileName(fileName)],
   };

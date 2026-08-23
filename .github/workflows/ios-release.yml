@@ -1,0 +1,124 @@
+name: iOS and iPadOS Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_kind:
+        description: Build an iOS Simulator app or a signed App Store Connect IPA
+        required: true
+        type: choice
+        default: simulator
+        options:
+          - simulator
+          - app-store-connect
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  APPLE_DEVELOPMENT_TEAM: ${{ secrets.APPLE_DEVELOPMENT_TEAM }}
+
+jobs:
+  build:
+    name: Build iOS / iPadOS
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Configure Rust iOS targets
+        run: |
+          rustup update stable
+          rustup default stable
+          rustup target add \
+            aarch64-apple-ios \
+            aarch64-apple-ios-sim \
+            x86_64-apple-ios
+
+      - name: Ensure CocoaPods is available
+        shell: bash
+        run: |
+          if ! command -v pod >/dev/null 2>&1; then
+            brew install cocoapods
+          fi
+          pod --version
+
+      - name: Validate Apple development team
+        shell: bash
+        run: |
+          if [ -z "$APPLE_DEVELOPMENT_TEAM" ]; then
+            echo "::error::Missing GitHub secret APPLE_DEVELOPMENT_TEAM. Use the Apple Developer Team ID registered for org.openmanuscript.studio."
+            exit 1
+          fi
+
+      - name: Generate iOS project and icons
+        run: |
+          npm run icons:generate
+          rm -rf src-tauri/gen/apple src-tauri/gen/ios
+          npm run tauri -- ios init
+
+      - name: Build simulator application
+        if: ${{ inputs.build_kind == 'simulator' }}
+        run: npm run tauri -- ios build --target aarch64-sim --debug
+
+      - name: Validate App Store signing material
+        if: ${{ inputs.build_kind == 'app-store-connect' }}
+        shell: bash
+        env:
+          IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_MOBILE_PROVISION: ${{ secrets.IOS_MOBILE_PROVISION }}
+        run: |
+          missing=0
+          for name in IOS_CERTIFICATE IOS_CERTIFICATE_PASSWORD IOS_MOBILE_PROVISION; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required GitHub secret: ${name}"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Build signed App Store Connect IPA
+        if: ${{ inputs.build_kind == 'app-store-connect' }}
+        env:
+          IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_MOBILE_PROVISION: ${{ secrets.IOS_MOBILE_PROVISION }}
+        run: npm run tauri -- ios build -- --export-method app-store-connect
+
+      - name: Upload simulator artifact
+        if: ${{ inputs.build_kind == 'simulator' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: open-manuscript-studio-ios-simulator
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            src-tauri/gen/apple/build/**/*-sim/**/*.app
+            src-tauri/gen/ios/build/**/*-sim/**/*.app
+
+      - name: Upload signed IPA
+        if: ${{ inputs.build_kind == 'app-store-connect' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: open-manuscript-studio-ios-app-store
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            src-tauri/gen/apple/build/arm64/*.ipa
+            src-tauri/gen/ios/build/arm64/*.ipa
