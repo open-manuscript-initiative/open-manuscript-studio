@@ -1,4 +1,4 @@
-import { Router, type Request } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 
 import { identityPrisma } from '../lib/identityPrisma.js';
@@ -479,7 +479,7 @@ centralAdminRouter.get('/audit', async (request, response) => {
   const limit = Number.isFinite(limitInput) ? Math.min(Math.max(Math.trunc(limitInput), 1), 250) : 100;
 
   const events = await identityPrisma.adminAuditEvent.findMany({
-    where: institutionId ? { institutionId } : undefined,
+    ...(institutionId ? { where: { institutionId } } : {}),
     orderBy: { createdAt: 'desc' },
     take: limit,
   });
@@ -501,7 +501,7 @@ centralAdminRouter.get('/audit', async (request, response) => {
 
 async function requireCentralActor(
   request: Request,
-  response: Parameters<Parameters<typeof centralAdminRouter.get>[1]>[1],
+  response: Response,
   roles: Array<'ADMIN' | 'OWNER'> = ['ADMIN', 'OWNER'],
 ): Promise<string | null> {
   const userId = await currentUserId(request);
