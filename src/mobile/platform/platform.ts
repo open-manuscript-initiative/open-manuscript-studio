@@ -26,6 +26,19 @@ export function getStudioPlatform(): StudioPlatform {
   return 'desktop';
 }
 
+/**
+ * Installed Studio builds always use the operating system's own document/file
+ * surface as their primary storage integration. Desktop exposes local,
+ * network and synchronized cloud folders through the native picker; Android
+ * and iOS expose their document-provider/file-provider surfaces. The hosted
+ * web application cannot request the same broad system storage access.
+ */
+export function hasNativeSystemStorage(
+  platform: StudioPlatform = getStudioPlatform(),
+): boolean {
+  return platform !== 'web';
+}
+
 export function isMobileStudio(): boolean {
   const platform = getStudioPlatform();
   return platform === 'android' || platform === 'ios';
