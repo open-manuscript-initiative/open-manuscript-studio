@@ -220,7 +220,9 @@ export class OAuthCloudProvider implements CloudStorageProvider {
   }
 
   private async uploadDropbox(path: string, request: CloudUploadRequest): Promise<CloudObject> {
-    const fullPath = `/${normalizePath(`${this.credentials.rootPath}/${path}`)}`;
+    const normalized = normalizePath(`${this.credentials.rootPath}/${path}`);
+    await this.ensureDropboxFolders(normalized.split('/').slice(0, -1));
+    const fullPath = `/${normalized}`;
     const response = await this.authorizedJson('https://content.dropboxapi.com/2/files/upload', {
       method: 'POST',
       headers: {
@@ -238,8 +240,27 @@ export class OAuthCloudProvider implements CloudStorageProvider {
     };
   }
 
+  private async ensureDropboxFolders(parts: string[]): Promise<void> {
+    let current = '';
+    for (const folder of parts) {
+      current = `${current}/${folder}`;
+      const response = await this.authorizedFetch('https://api.dropboxapi.com/2/files/create_folder_v2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: current, autorename: false }),
+      }, [200, 409]);
+      if (response.status !== 409) continue;
+      const payload = (await response.text()).toLowerCase();
+      if (!payload.includes('conflict') || !payload.includes('folder')) {
+        throw new CloudStorageError('CLOUD_UPLOAD_FAILED', `Dropbox could not create folder ${current}.`);
+      }
+    }
+  }
+
   private async listDropbox(path: string): Promise<CloudObject[]> {
     const fullPath = normalizePath(`${this.credentials.rootPath}/${path}`);
+    const parts = fullPath.split('/').filter(Boolean);
+    if (parts.length) await this.ensureDropboxFolders(parts);
     const data = await this.authorizedJson('https://api.dropboxapi.com/2/files/list_folder', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
