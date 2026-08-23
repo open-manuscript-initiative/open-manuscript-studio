@@ -10,8 +10,11 @@ export type CloudStorageProviderId =
   | 'dropbox'
   | 'icloud-drive';
 
-export type CloudAccountType = 'personal' | 'business';
+// local-folder is retained only for compatibility with older device-local
+// preferences. New UI flows expose native system storage globally instead of
+// pretending it is a provider-specific connection method.
 export type CloudConnectionMethodId = 'local-folder' | 'webdav' | 'oauth2';
+export type CloudAccountType = 'personal' | 'business';
 
 export type CloudConnectionImplementation =
   | 'local-folder'
@@ -27,6 +30,7 @@ export interface CloudStorageProviderDescriptor {
   id: CloudStorageProviderId;
   displayName: string;
   accountTypes: CloudAccountType[];
+  /** Whether the provider commonly appears through an OS sync/file provider. */
   supportsLocalFolder: boolean;
   supportsWebDav: boolean;
   supportsOAuth: boolean;
@@ -42,11 +46,12 @@ export interface CloudConnectionMethodDescriptor {
 }
 
 /**
- * Real storage providers presented to the author.
+ * Real cloud services that may receive a direct Studio-managed connection.
  *
- * A locally synchronized folder is deliberately not a provider of its own:
- * on desktop it is a connection method for the actual provider whose sync
- * client owns the folder (OneDrive, Google Drive, Dropbox, Nextcloud, etc.).
+ * Native system storage is deliberately outside this list. Installed Studio
+ * builds always use the operating system picker for local, synchronized,
+ * network and document-provider storage without requiring a provider account
+ * to be configured in Studio first.
  */
 export const cloudStorageProviders: CloudStorageProviderDescriptor[] = [
   {
@@ -114,9 +119,8 @@ export const cloudStorageProviders: CloudStorageProviderDescriptor[] = [
   },
 ];
 
-// Kept only for compatibility with older device-local preference keys. It is
-// intentionally omitted from cloudStorageProviders and therefore never shown
-// as a separate cloud service in the current UI.
+// Kept only so old local preference identifiers remain understandable to
+// compatibility code. It is never exposed in the current provider picker.
 const legacyLocalFolderProvider: CloudStorageProviderDescriptor = {
   id: 'local-folder',
   displayName: 'Local / synchronized folder',
@@ -141,31 +145,23 @@ export function getCloudStorageProvider(
 export function getCloudConnectionMethods(
   providerId: CloudStorageProviderId,
   accountType: CloudAccountType,
-  platform: StudioPlatform,
+  _platform: StudioPlatform,
 ): CloudConnectionMethodDescriptor[] {
   const provider = getCloudStorageProvider(providerId);
   if (!provider.accountTypes.includes(accountType)) return [];
 
   const methods: CloudConnectionMethodDescriptor[] = [];
-  const desktop = platform === 'desktop';
 
-  if (provider.supportsLocalFolder) {
-    methods.push({
-      id: 'local-folder',
-      implementation: 'local-folder',
-      authentication: 'none',
-      available: desktop,
-      recommended: desktop,
-    });
-  }
-
+  // The system picker is globally available in native builds and therefore is
+  // not repeated as a provider-specific method here. These are only direct
+  // Studio-managed cloud connections.
   if (provider.supportsWebDav) {
     methods.push({
       id: 'webdav',
       implementation: 'webdav',
       authentication: 'webdav-credentials',
       available: true,
-      recommended: !desktop || !provider.supportsLocalFolder,
+      recommended: true,
     });
   }
 
@@ -188,14 +184,9 @@ export function getDefaultCloudConnectionMethod(
   platform: StudioPlatform,
 ): CloudConnectionMethodId | null {
   const methods = getCloudConnectionMethods(providerId, accountType, platform);
-  const available = methods.find((method) => method.recommended && method.available)?.id
-    ?? methods.find((method) => method.available)?.id;
-  if (available) return available;
-
-  if (platform !== 'desktop') {
-    const oauth = methods.find((method) => method.id === 'oauth2');
-    if (oauth) return oauth.id;
-  }
-
-  return methods[0]?.id ?? null;
+  return methods.find((method) => method.recommended && method.available)?.id
+    ?? methods.find((method) => method.available)?.id
+    ?? methods.find((method) => method.id === 'oauth2')?.id
+    ?? methods[0]?.id
+    ?? null;
 }
