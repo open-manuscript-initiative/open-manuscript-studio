@@ -1,6 +1,7 @@
 import { BadgeCheck, KeyRound, Link2, RefreshCw, Unlink } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { getLinkedIdentitiesCopy } from '../i18n/linkedIdentitiesTranslations';
 import {
   getAuthProviders,
   getOrcidLinkUrl,
@@ -22,83 +23,11 @@ interface LinkedIdentitiesSettingsProps {
   email: string;
 }
 
-const copy = {
-  en: {
-    title: 'Connected identities',
-    description: 'Manage the credentials and external identities that can sign in to this Studio account.',
-    local: 'E-mail and password',
-    available: 'Available',
-    notSet: 'Not set',
-    passwordAction: 'Set / change password',
-    passwordSent: 'A password setup link was sent if this e-mail address can receive Studio mail.',
-    linked: 'Connected',
-    connect: 'Connect',
-    disconnect: 'Disconnect',
-    connectedAt: 'Connected',
-    lastUsed: 'Last used',
-    issuer: 'Issuer',
-    cannotDisconnect: 'Add another sign-in method or set a password before disconnecting this identity.',
-    confirmDisconnect: 'Disconnect this identity from your Studio account?',
-    providers: 'Available sign-in providers',
-    none: 'No additional provider is currently available.',
-    refresh: 'Refresh',
-    loading: 'Loading connected identities…',
-    error: 'The linked identity settings could not be loaded.',
-    providerError: 'The external sign-in provider could not be opened.',
-  },
-  hu: {
-    title: 'Kapcsolt azonosítók',
-    description: 'Itt kezelhetők azok a hitelesítési módok és külső azonosítók, amelyekkel ebbe a Studio-fiókba be lehet jelentkezni.',
-    local: 'E-mail-cím és jelszó',
-    available: 'Elérhető',
-    notSet: 'Nincs beállítva',
-    passwordAction: 'Jelszó beállítása / módosítása',
-    passwordSent: 'A rendszer elküldte a jelszóbeállító hivatkozást, ha erre az e-mail-címre a Studio levelet tud kézbesíteni.',
-    linked: 'Kapcsolva',
-    connect: 'Kapcsolás',
-    disconnect: 'Leválasztás',
-    connectedAt: 'Kapcsolva',
-    lastUsed: 'Utoljára használva',
-    issuer: 'Kibocsátó',
-    cannotDisconnect: 'Előbb kapcsolj egy másik bejelentkezési módot vagy állíts be jelszót.',
-    confirmDisconnect: 'Leválasztod ezt az azonosítót a Studio-fiókról?',
-    providers: 'Elérhető bejelentkezési szolgáltatók',
-    none: 'Jelenleg nincs további elérhető szolgáltató.',
-    refresh: 'Frissítés',
-    loading: 'A kapcsolt azonosítók betöltése…',
-    error: 'A kapcsolt azonosítók beállításai nem tölthetők be.',
-    providerError: 'A külső bejelentkezési szolgáltató nem nyitható meg.',
-  },
-  de: {
-    title: 'Verknüpfte Identitäten',
-    description: 'Verwalten Sie die Anmeldemethoden und externen Identitäten, mit denen dieses Studio-Konto verwendet werden kann.',
-    local: 'E-Mail-Adresse und Passwort',
-    available: 'Verfügbar',
-    notSet: 'Nicht eingerichtet',
-    passwordAction: 'Passwort einrichten / ändern',
-    passwordSent: 'Ein Link zum Einrichten des Passworts wurde gesendet, sofern Studio E-Mails an diese Adresse zustellen kann.',
-    linked: 'Verbunden',
-    connect: 'Verbinden',
-    disconnect: 'Trennen',
-    connectedAt: 'Verbunden',
-    lastUsed: 'Zuletzt verwendet',
-    issuer: 'Aussteller',
-    cannotDisconnect: 'Richten Sie zuerst eine weitere Anmeldemethode oder ein Passwort ein.',
-    confirmDisconnect: 'Diese Identität vom Studio-Konto trennen?',
-    providers: 'Verfügbare Anmeldeanbieter',
-    none: 'Derzeit ist kein weiterer Anbieter verfügbar.',
-    refresh: 'Aktualisieren',
-    loading: 'Verknüpfte Identitäten werden geladen…',
-    error: 'Die Einstellungen für verknüpfte Identitäten konnten nicht geladen werden.',
-    providerError: 'Der externe Anmeldeanbieter konnte nicht geöffnet werden.',
-  },
-} as const;
-
 export function LinkedIdentitiesSettings({
   locale,
   email,
 }: LinkedIdentitiesSettingsProps) {
-  const labels = copy[locale as keyof typeof copy] ?? copy.en;
+  const labels = getLinkedIdentitiesCopy(locale);
   const [settings, setSettings] = useState<LinkedIdentitySettings | null>(null);
   const [providers, setProviders] = useState<AuthProviders | null>(null);
   const [busy, setBusy] = useState<string | null>(null);

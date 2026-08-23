@@ -25,6 +25,7 @@ import {
 
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { getLocalFileLabels, type LocalFileLabels } from '../i18n/nativeStorageTranslations';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
 import { getStudioMenuSupplementalCopy } from '../i18n/studioMenuSupplementalTranslations';
 import { getStudioPlatform, type StudioPlatform } from '../mobile/platform/platform';
@@ -96,8 +97,7 @@ export function StudioMenu({
   const { t, locale } = useTranslation();
   const publicationCopy = getPublicationProfileCopy(locale);
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
-  const [activeView, setActiveView] =
-    useState<StudioMenuView>('document');
+  const [activeView, setActiveView] = useState<StudioMenuView>('document');
 
   useEffect(() => {
     if (!open) return;
@@ -157,7 +157,13 @@ export function StudioMenu({
   );
 }
 
-interface MenuButtonProps { active: boolean; icon: ReactNode; label: string; onClick: () => void; }
+interface MenuButtonProps {
+  active: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}
+
 function MenuButton({ active, icon, label, onClick }: MenuButtonProps) {
   return <button type="button" className={`studio-menu-nav-button${active ? ' studio-menu-nav-button--active' : ''}`} aria-current={active ? 'page' : undefined} onClick={onClick}>{icon}<span>{label}</span></button>;
 }
@@ -192,9 +198,7 @@ function DocumentMenuView({ onNavigate }: { onNavigate: () => void }) {
 
   async function openNative(): Promise<void> {
     try {
-      const result = ownDevice
-        ? await openLocalManuscript()
-        : await openPortableManuscript();
+      const result = ownDevice ? await openLocalManuscript() : await openPortableManuscript();
       if (!result) return;
       loadManuscript(result.manuscript);
       setLocalPath(ownDevice ? result.path : null);
@@ -238,7 +242,15 @@ function ToolsView() {
   const platform = getStudioPlatform();
   const labels = getLocalFileLabels(locale, platform);
 
-  const semanticSection = selectedSection ? { id: selectedSection.id, title: selectedSection.title, blocks: selectedSection.blocks.map((block) => ({ id: block.id, type: block.type, content: parseBlockContent(block.content) })) } : null;
+  const semanticSection = selectedSection ? {
+    id: selectedSection.id,
+    title: selectedSection.title,
+    blocks: selectedSection.blocks.map((block) => ({
+      id: block.id,
+      type: block.type,
+      content: parseBlockContent(block.content),
+    })),
+  } : null;
 
   async function saveNative(asNewFile = false): Promise<void> {
     if (!ownDevice) return;
@@ -359,166 +371,6 @@ function SettingsView() {
   return <section className="studio-menu-view"><div className="studio-menu-view-header"><div><h3>{t('studio.settings.title')}</h3><p>{t('studio.settings.description')}</p></div></div><ContentLanguageSettings /><CloudStorageSettings /></section>;
 }
 
-interface LocalFileLabels {
-  localTitle: string;
-  localDescription: string;
-  sharedTitle: string;
-  sharedDescription: string;
-  openTitle: string;
-  openDescription: string;
-  portableOpenTitle: string;
-  portableOpenDescription: string;
-  open: string;
-  openPortable: string;
-  save: string;
-  saving: string;
-  saveAs: string;
-  savePortable: string;
-  noFile: string;
-  targetSelected: string;
-  saved: string;
-  portableSaved: string;
-  opened: string;
-  portableOpened: string;
-  cancelled: string;
-  portableBackup: string;
-  backupSaving: string;
-  backupSaved: string;
-  backupFailed: string;
-  androidProviderHint: string;
-}
-
-function getLocalFileLabels(locale: string, platform: StudioPlatform): LocalFileLabels {
-  const base: LocalFileLabels = locale === 'hu'
-    ? {
-        localTitle: 'Helyi kéziratfájl',
-        localDescription: 'Saját eszközön a Studio közvetlenül a gépre, szinkronizált felhőmappába, NAS-ra vagy külső meghajtóra menthet.',
-        sharedTitle: 'Idegen vagy közös eszköz',
-        sharedDescription: 'A normál munkamentés a profil felhőtárhelyére történjen. Pendrive-ra vagy más hordozható adattárolóra egyszeri másolat készíthető; az útvonalat a Studio nem jegyzi meg.',
-        openTitle: 'Meglévő dokumentum megnyitása',
-        openDescription: 'Nyisson meg egy korábban mentett OMI kéziratot a telepített Studio alkalmazásban.',
-        portableOpenTitle: 'Megnyitás hordozható adattárolóról',
-        portableOpenDescription: 'Válasszon OMI kéziratot pendrive-ról vagy más hordozható tárolóról. A Studio nem jegyzi meg az útvonalat munkafájlként.',
-        open: 'Megnyitás',
-        openPortable: 'Megnyitás adathordozóról',
-        save: 'Mentés',
-        saving: 'Mentés…',
-        saveAs: 'Mentés másként',
-        savePortable: 'Mentés pendrive-ra / adathordozóra',
-        noFile: 'Még nincs fájlhely kiválasztva.',
-        targetSelected: 'A dokumentum mentési helye ki van választva.',
-        saved: 'A kézirat mentve.',
-        portableSaved: 'Az egyszeri másolat mentve; az útvonalat a Studio nem őrzi meg.',
-        opened: 'A kézirat megnyitva.',
-        portableOpened: 'A kézirat hordozható adathordozóról megnyitva; az útvonal nincs megjegyezve.',
-        cancelled: 'A művelet megszakítva.',
-        portableBackup: 'OMI biztonsági másolat',
-        backupSaving: 'Biztonsági másolat készítése…',
-        backupSaved: 'A hordozható OMI biztonsági másolat mentve.',
-        backupFailed: 'Az OMI biztonsági másolat nem készíthető el.',
-        androidProviderHint: '',
-      }
-    : locale === 'de'
-      ? {
-          localTitle: 'Lokale Manuskriptdatei',
-          localDescription: 'Auf dem eigenen Gerät kann Studio direkt auf dem Computer, in synchronisierten Cloud-Ordnern, auf NAS oder externen Laufwerken speichern.',
-          sharedTitle: 'Fremdes oder gemeinsames Gerät',
-          sharedDescription: 'Normale Arbeitsspeicherung sollte über den Profil-Cloudspeicher erfolgen. Eine einmalige Kopie kann auf USB-Stick oder anderen Wechseldatenträger gespeichert werden; Studio merkt sich den Pfad nicht.',
-          openTitle: 'Vorhandenes Dokument öffnen',
-          openDescription: 'Öffnen Sie ein zuvor gespeichertes OMI-Manuskript in der installierten Studio-App.',
-          portableOpenTitle: 'Von Wechseldatenträger öffnen',
-          portableOpenDescription: 'Wählen Sie ein OMI-Manuskript auf einem USB-Stick oder anderen Wechseldatenträger. Studio behält den Pfad nicht als Arbeitsdatei.',
-          open: 'Öffnen',
-          openPortable: 'Von Datenträger öffnen',
-          save: 'Speichern',
-          saving: 'Wird gespeichert…',
-          saveAs: 'Speichern unter',
-          savePortable: 'Auf USB / Wechseldatenträger speichern',
-          noFile: 'Noch kein Dateispeicherort ausgewählt.',
-          targetSelected: 'Der Speicherort des Dokuments ist ausgewählt.',
-          saved: 'Manuskript gespeichert.',
-          portableSaved: 'Einmalige Kopie gespeichert; Studio hat den Pfad nicht beibehalten.',
-          opened: 'Manuskript geöffnet.',
-          portableOpened: 'Manuskript vom Wechseldatenträger geöffnet; der Pfad wurde nicht beibehalten.',
-          cancelled: 'Vorgang abgebrochen.',
-          portableBackup: 'OMI-Sicherung',
-          backupSaving: 'Sicherung wird erstellt…',
-          backupSaved: 'Portable OMI-Sicherung gespeichert.',
-          backupFailed: 'Die OMI-Sicherung konnte nicht erstellt werden.',
-          androidProviderHint: '',
-        }
-      : {
-          localTitle: 'Local manuscript file',
-          localDescription: 'On your own device, Studio can save directly to the computer, synchronized cloud folders, NAS, or external drives.',
-          sharedTitle: 'Shared or foreign device',
-          sharedDescription: 'Use profile cloud storage for normal work. You can make a one-off copy to a USB drive or other removable storage; Studio does not retain that path.',
-          openTitle: 'Open an existing document',
-          openDescription: 'Open a previously saved OMI manuscript in the installed Studio app.',
-          portableOpenTitle: 'Open from portable storage',
-          portableOpenDescription: 'Choose an OMI manuscript from a USB drive or other removable storage. Studio does not retain the path as a working file.',
-          open: 'Open',
-          openPortable: 'Open from portable storage',
-          save: 'Save',
-          saving: 'Saving…',
-          saveAs: 'Save as',
-          savePortable: 'Save to USB / portable storage',
-          noFile: 'No file location selected yet.',
-          targetSelected: 'The document save location is selected.',
-          saved: 'Manuscript saved.',
-          portableSaved: 'One-off copy saved; Studio did not retain the path.',
-          opened: 'Manuscript opened.',
-          portableOpened: 'Manuscript opened from portable storage; the path was not retained.',
-          cancelled: 'Operation cancelled.',
-          portableBackup: 'OMI backup',
-          backupSaving: 'Creating backup…',
-          backupSaved: 'Portable OMI backup saved.',
-          backupFailed: 'The OMI backup could not be created.',
-          androidProviderHint: '',
-        };
-
-  if (platform !== 'android') return base;
-
-  if (locale === 'hu') {
-    return {
-      ...base,
-      localTitle: 'Mentés Androidon',
-      localDescription: 'Saját eszköz módban a Studio az Android rendszerfájlválasztóját használja. Menthetsz a készülékre, a Letöltések közé, SD-kártyára vagy az Androidban elérhető dokumentumszolgáltatóba.',
-      openTitle: 'Kézirat megnyitása Androidon',
-      openDescription: 'Válassz OMI kéziratot a készülékről vagy egy, az Android fájlválasztójában megjelenő tárhelyszolgáltatóból.',
-      saveAs: 'Mentés másik helyre',
-      noFile: 'Még nincs kiválasztott dokumentumhely ebben a munkamenetben.',
-      targetSelected: 'A dokumentumhely ki van választva erre a munkamenetre.',
-      androidProviderHint: 'A Google Drive, OneDrive, Dropbox, Nextcloud és más tárhelyek akkor jelenhetnek meg itt, ha a telepített alkalmazásuk Android dokumentumszolgáltatót biztosít.',
-    };
-  }
-
-  if (locale === 'de') {
-    return {
-      ...base,
-      localTitle: 'Speichern unter Android',
-      localDescription: 'Im Modus eigenes Gerät verwendet Studio die Android-Systemdateiauswahl. Sie können auf dem Gerät, in Downloads, auf einer SD-Karte oder bei einem Android-Dokumentanbieter speichern.',
-      openTitle: 'Manuskript unter Android öffnen',
-      openDescription: 'Wählen Sie ein OMI-Manuskript auf dem Gerät oder bei einem in der Android-Dateiauswahl verfügbaren Speicheranbieter aus.',
-      saveAs: 'An anderem Ort speichern',
-      noFile: 'In dieser Sitzung wurde noch kein Dokumentspeicherort ausgewählt.',
-      targetSelected: 'Der Dokumentspeicherort ist für diese Sitzung ausgewählt.',
-      androidProviderHint: 'Google Drive, OneDrive, Dropbox, Nextcloud und andere Speicher können hier erscheinen, wenn ihre installierte App einen Android-Dokumentanbieter bereitstellt.',
-    };
-  }
-
-  return {
-    ...base,
-    localTitle: 'Save on Android',
-    localDescription: 'In own-device mode Studio uses the Android system file picker. You can save on the device, in Downloads, on an SD card, or to a document provider available to Android.',
-    openTitle: 'Open manuscript on Android',
-    openDescription: 'Choose an OMI manuscript from the device or from a storage provider exposed in the Android file picker.',
-    saveAs: 'Save to another location',
-    noFile: 'No document location has been selected in this session yet.',
-    targetSelected: 'The document location is selected for this session.',
-    androidProviderHint: 'Google Drive, OneDrive, Dropbox, Nextcloud and other storage apps can appear here when their installed app exposes an Android document provider.',
-  };
-}
-
 function formatNativeLocation(
   path: string | null,
   platform: StudioPlatform,
@@ -531,5 +383,9 @@ function formatNativeLocation(
 
 function parseBlockContent(content: string): unknown {
   if (content.trim().length === 0) return { type: 'doc', content: [{ type: 'paragraph' }] };
-  try { return JSON.parse(content) as unknown; } catch { return { legacyText: content }; }
+  try {
+    return JSON.parse(content) as unknown;
+  } catch {
+    return { legacyText: content };
+  }
 }

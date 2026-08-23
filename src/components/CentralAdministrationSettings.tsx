@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
+import { getCentralAdministrationCopy } from '../i18n/centralAdministrationTranslations';
+import { getInstitutionalProfilesCopy } from '../i18n/institutionalProfilesTranslations';
 import {
   addCentralInstitutionAdmin,
   createCentralInstitution,
@@ -40,95 +42,9 @@ const API_SCOPES: InstitutionApiScope[] = [
   'integrations:write',
 ];
 
-const copy = {
-  en: {
-    title: 'Central administration',
-    description: 'Manage institutions, institutional administrators and scoped Admin API credentials. Central access does not grant manuscript access.',
-    refresh: 'Refresh',
-    addInstitution: 'Add institution',
-    institutionName: 'Institution name',
-    ror: 'ROR identifier',
-    create: 'Create',
-    active: 'Active',
-    disabled: 'Disabled',
-    manage: 'Manage',
-    members: 'members',
-    apiKeys: 'API credentials',
-    admins: 'Institution administrators',
-    addAdmin: 'Add administrator',
-    email: 'Studio account e-mail',
-    adminRole: 'Role',
-    remove: 'Remove admin role',
-    apiTitle: 'Institution Admin API',
-    apiDescription: 'Tokens are institution-bound, scoped and shown only once when created.',
-    label: 'Credential label',
-    expires: 'Expires in days',
-    createToken: 'Create API token',
-    revoke: 'Revoke',
-    tokenOnce: 'Copy this token now. It will not be shown again.',
-    audit: 'Recent audit events',
-    none: 'No records yet.',
-  },
-  hu: {
-    title: 'Központi adminisztráció',
-    description: 'Intézmények, intézményi adminisztrátorok és scope-olt Admin API-hozzáférések kezelése. A központi jogosultság nem ad hozzáférést a kéziratokhoz.',
-    refresh: 'Frissítés',
-    addInstitution: 'Intézmény hozzáadása',
-    institutionName: 'Intézmény neve',
-    ror: 'ROR-azonosító',
-    create: 'Létrehozás',
-    active: 'Aktív',
-    disabled: 'Letiltva',
-    manage: 'Kezelés',
-    members: 'tag',
-    apiKeys: 'API-hozzáférések',
-    admins: 'Intézményi adminisztrátorok',
-    addAdmin: 'Adminisztrátor hozzáadása',
-    email: 'Studio-fiók e-mail-címe',
-    adminRole: 'Szerepkör',
-    remove: 'Adminjog visszavonása',
-    apiTitle: 'Intézményi Admin API',
-    apiDescription: 'A tokenek intézményhez kötöttek, scope-oltak, és létrehozáskor csak egyszer láthatók.',
-    label: 'API-hozzáférés neve',
-    expires: 'Lejárat napokban',
-    createToken: 'API-token létrehozása',
-    revoke: 'Visszavonás',
-    tokenOnce: 'Másold ki most a tokent. Később nem jelenik meg újra.',
-    audit: 'Legutóbbi auditbejegyzések',
-    none: 'Még nincs bejegyzés.',
-  },
-  de: {
-    title: 'Zentrale Administration',
-    description: 'Institutionen, Institutionsadministratoren und bereichsgebundene Admin-API-Zugänge verwalten. Zentrale Rechte gewähren keinen Manuskriptzugriff.',
-    refresh: 'Aktualisieren',
-    addInstitution: 'Institution hinzufügen',
-    institutionName: 'Name der Institution',
-    ror: 'ROR-Kennung',
-    create: 'Erstellen',
-    active: 'Aktiv',
-    disabled: 'Deaktiviert',
-    manage: 'Verwalten',
-    members: 'Mitglieder',
-    apiKeys: 'API-Zugänge',
-    admins: 'Institutionsadministratoren',
-    addAdmin: 'Administrator hinzufügen',
-    email: 'E-Mail des Studio-Kontos',
-    adminRole: 'Rolle',
-    remove: 'Adminrolle entfernen',
-    apiTitle: 'Institution Admin API',
-    apiDescription: 'Tokens sind institutionsgebunden, bereichsbeschränkt und werden bei der Erstellung nur einmal angezeigt.',
-    label: 'Bezeichnung',
-    expires: 'Ablauf in Tagen',
-    createToken: 'API-Token erstellen',
-    revoke: 'Widerrufen',
-    tokenOnce: 'Kopieren Sie den Token jetzt. Er wird später nicht erneut angezeigt.',
-    audit: 'Letzte Audit-Ereignisse',
-    none: 'Noch keine Einträge.',
-  },
-} as const;
-
 export function CentralAdministrationSettings({ locale, role }: CentralAdministrationSettingsProps) {
-  const labels = copy[locale as keyof typeof copy] ?? copy.en;
+  const labels = getCentralAdministrationCopy(locale);
+  const institutionCopy = getInstitutionalProfilesCopy(locale);
   const [institutions, setInstitutions] = useState<CentralInstitution[]>([]);
   const [selectedId, setSelectedId] = useState<string>('');
   const [admins, setAdmins] = useState<CentralInstitutionAdmin[]>([]);
@@ -157,9 +73,9 @@ export function CentralAdministrationSettings({ locale, role }: CentralAdministr
       setInstitutions(next);
       setSelectedId((current) => current && next.some((item) => item.id === current) ? current : next[0]?.id ?? '');
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Central administration could not be loaded.');
+      setError(reason instanceof Error ? reason.message : labels.loadCentralError);
     }
-  }, []);
+  }, [labels.loadCentralError]);
 
   const refreshSelected = useCallback(async () => {
     if (!selectedId) {
@@ -178,9 +94,9 @@ export function CentralAdministrationSettings({ locale, role }: CentralAdministr
       setCredentials(nextCredentials);
       setAudit(nextAudit);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Institution administration could not be loaded.');
+      setError(reason instanceof Error ? reason.message : labels.loadInstitutionError);
     }
-  }, [selectedId]);
+  }, [labels.loadInstitutionError, selectedId]);
 
   useEffect(() => { void refreshInstitutions(); }, [refreshInstitutions]);
   useEffect(() => { void refreshSelected(); }, [refreshSelected]);
@@ -193,7 +109,7 @@ export function CentralAdministrationSettings({ locale, role }: CentralAdministr
       setInstitutionName(''); setRorId('');
       await refreshInstitutions();
       setSelectedId(institution.id);
-    } catch (reason) { setError(errorText(reason)); } finally { setBusy(false); }
+    } catch (reason) { setError(errorText(reason, labels.requestError)); } finally { setBusy(false); }
   }
 
   async function toggleInstitution(institution: CentralInstitution): Promise<void> {
@@ -201,7 +117,7 @@ export function CentralAdministrationSettings({ locale, role }: CentralAdministr
     try {
       await updateCentralInstitution(institution.id, { status: institution.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE' });
       await refreshInstitutions();
-    } catch (reason) { setError(errorText(reason)); } finally { setBusy(false); }
+    } catch (reason) { setError(errorText(reason, labels.requestError)); } finally { setBusy(false); }
   }
 
   async function addAdmin(event: FormEvent): Promise<void> {
@@ -212,7 +128,7 @@ export function CentralAdministrationSettings({ locale, role }: CentralAdministr
       await addCentralInstitutionAdmin(selectedId, adminEmail, adminRole);
       setAdminEmail('');
       await refreshSelected();
-    } catch (reason) { setError(errorText(reason)); } finally { setBusy(false); }
+    } catch (reason) { setError(errorText(reason, labels.requestError)); } finally { setBusy(false); }
   }
 
   async function removeAdmin(membershipId: string): Promise<void> {
@@ -221,7 +137,7 @@ export function CentralAdministrationSettings({ locale, role }: CentralAdministr
     try {
       await removeCentralInstitutionAdmin(selectedId, membershipId);
       await refreshSelected();
-    } catch (reason) { setError(errorText(reason)); } finally { setBusy(false); }
+    } catch (reason) { setError(errorText(reason, labels.requestError)); } finally { setBusy(false); }
   }
 
   async function createCredential(event: FormEvent): Promise<void> {
@@ -238,7 +154,7 @@ export function CentralAdministrationSettings({ locale, role }: CentralAdministr
       setNewToken(result.token);
       setCredentialLabel('');
       await refreshSelected();
-    } catch (reason) { setError(errorText(reason)); } finally { setBusy(false); }
+    } catch (reason) { setError(errorText(reason, labels.requestError)); } finally { setBusy(false); }
   }
 
   async function revokeCredential(credentialId: string): Promise<void> {
@@ -247,12 +163,14 @@ export function CentralAdministrationSettings({ locale, role }: CentralAdministr
     try {
       await revokeInstitutionApiCredential(selectedId, credentialId);
       await refreshSelected();
-    } catch (reason) { setError(errorText(reason)); } finally { setBusy(false); }
+    } catch (reason) { setError(errorText(reason, labels.requestError)); } finally { setBusy(false); }
   }
 
   function toggleScope(scope: InstitutionApiScope): void {
     setScopes((current) => current.includes(scope) ? current.filter((value) => value !== scope) : [...current, scope]);
   }
+
+  const roleLabel = (value: 'ADMIN' | 'OWNER') => institutionCopy.roles[value];
 
   return (
     <section className="central-admin-settings">
@@ -260,7 +178,7 @@ export function CentralAdministrationSettings({ locale, role }: CentralAdministr
         <div>
           <h2>{labels.title}</h2>
           <p>{labels.description}</p>
-          <small><ShieldCheck size={13} aria-hidden="true" /> {role}</small>
+          <small><ShieldCheck size={13} aria-hidden="true" /> {roleLabel(role)}</small>
         </div>
         <button type="button" className="account-identity-action" onClick={() => void refreshInstitutions()} disabled={busy}>
           <RefreshCw size={14} aria-hidden="true" /> {labels.refresh}
@@ -302,13 +220,13 @@ export function CentralAdministrationSettings({ locale, role }: CentralAdministr
             <form className="central-admin-inline-form" onSubmit={(event) => void addAdmin(event)}>
               <input required type="email" value={adminEmail} placeholder={labels.email} onChange={(event) => setAdminEmail(event.target.value)} />
               <select value={adminRole} aria-label={labels.adminRole} onChange={(event) => setAdminRole(event.target.value as 'ADMIN' | 'OWNER')}>
-                <option value="ADMIN">ADMIN</option><option value="OWNER">OWNER</option>
+                <option value="ADMIN">{roleLabel('ADMIN')}</option><option value="OWNER">{roleLabel('OWNER')}</option>
               </select>
               <button className="account-primary" type="submit" disabled={busy}><Plus size={15} aria-hidden="true" /> {labels.addAdmin}</button>
             </form>
             {admins.map((admin) => (
               <div className="central-admin-row" key={admin.id}>
-                <div><strong>{admin.fullName}</strong><small>{admin.email} · {admin.role}</small></div>
+                <div><strong>{admin.fullName}</strong><small>{admin.email} · {roleLabel(admin.role)}</small></div>
                 <button type="button" className="account-identity-action account-identity-action--danger" disabled={busy} onClick={() => void removeAdmin(admin.id)}>
                   <Trash2 size={14} aria-hidden="true" /> {labels.remove}
                 </button>
@@ -332,7 +250,7 @@ export function CentralAdministrationSettings({ locale, role }: CentralAdministr
             {newToken ? <div className="central-admin-token-once"><strong>{labels.tokenOnce}</strong><code>{newToken}</code></div> : null}
             {credentials.map((credential) => (
               <div className="central-admin-row" key={credential.id}>
-                <div><strong>{credential.label}</strong><small>{credential.tokenPrefix} · {credential.status} · {credential.scopes.join(', ')}</small></div>
+                <div><strong>{credential.label}</strong><small>{credential.tokenPrefix} · {credential.status === 'ACTIVE' ? labels.active : labels.disabled} · {credential.scopes.join(', ')}</small></div>
                 {credential.status === 'ACTIVE' ? <button type="button" className="account-identity-action account-identity-action--danger" disabled={busy} onClick={() => void revokeCredential(credential.id)}>{labels.revoke}</button> : null}
               </div>
             ))}
@@ -350,6 +268,6 @@ export function CentralAdministrationSettings({ locale, role }: CentralAdministr
   );
 }
 
-function errorText(reason: unknown): string {
-  return reason instanceof Error ? reason.message : 'Central administration request failed.';
+function errorText(reason: unknown, fallback: string): string {
+  return reason instanceof Error ? reason.message : fallback;
 }
