@@ -4,7 +4,7 @@ Open Manuscript Studio uses one React/Vite application for the web and native sh
 
 ## Architecture
 
-The web application remains the canonical Studio frontend. `src-tauri/` contains only the native shell and platform integration layer. This separation allows normal Studio development to continue without maintaining separate Windows, macOS, Linux, or Android application forks.
+The web application remains the canonical Studio frontend. `src-tauri/` contains only the native shell and platform integration layer. This separation allows normal Studio development to continue without maintaining separate Windows, macOS, Linux, Android, iOS, or iPadOS application forks.
 
 The OMI manuscript schema version is intentionally independent from the Studio application version. Native applications must continue to read older supported OMI documents and migrate them explicitly when a schema migration is required.
 
@@ -21,7 +21,7 @@ The existing web deployment is unchanged.
 
 Prerequisites:
 
-- Node.js 22 or a compatible current LTS release
+- Node.js 24 or a compatible current release
 - Rust stable
 - the platform prerequisites required by Tauri 2
 
@@ -48,9 +48,7 @@ Typical outputs are:
 
 ## GitHub Actions desktop builds
 
-The `Tauri Desktop Builds` workflow is intentionally manual during the alpha phase. Run it from GitHub Actions using **Run workflow**.
-
-It builds and stores workflow artifacts for:
+The `Tauri Desktop Builds` workflow builds and stores workflow artifacts for:
 
 - Windows x86-64
 - Linux x86-64
@@ -59,7 +57,7 @@ It builds and stores workflow artifacts for:
 
 The workflow runs the Studio test suite before packaging each native build.
 
-Release publication and automatic updates are intentionally not enabled yet. Tauri updater artifacts must be cryptographically signed. The signing private key must be generated and stored securely before installed clients are allowed to auto-update.
+Tauri updater artifacts must be cryptographically signed before installed clients are allowed to auto-update.
 
 ## Android preparation
 
@@ -102,9 +100,57 @@ Android returns `content://` document URIs rather than desktop filesystem paths.
 
 Android file filters use MIME types, because extension-based filtering is not generally supported by the platform document picker.
 
-### Android export surface
+## iOS and iPadOS preparation
 
-Only formats that are meaningful and supported in the Android workflow are shown:
+The iPhone/iPad application uses the same Tauri 2 mobile shell and Studio frontend. Development requires macOS, Xcode, CocoaPods and the Rust iOS targets.
+
+```bash
+rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim
+```
+
+An Apple Development Team ID is required by Xcode/Tauri:
+
+```bash
+export APPLE_DEVELOPMENT_TEAM=YOUR_TEAM_ID
+```
+
+Initialize the generated Apple project:
+
+```bash
+npm run ios:init
+```
+
+Run an Apple Silicon simulator:
+
+```bash
+npm run ios:simulator
+```
+
+Build a simulator artifact:
+
+```bash
+npm run ios:build:simulator
+```
+
+Build a signed App Store Connect IPA after configuring the required Apple signing credentials:
+
+```bash
+npm run ios:build:app-store
+```
+
+The iOS-specific Tauri configuration uses the bundle identifier `org.openmanuscript.studio`, minimum system version 14.0, App Store short version `0.1.0` and build number `4`. The Studio release line remains `0.1.0-alpha.4` in product/release metadata.
+
+### iOS/iPadOS document storage
+
+iOS and iPadOS use the system Files / UIDocumentPicker surface. The user can select locations exposed by Files such as On My iPhone/On My iPad, iCloud Drive, external storage and compatible third-party file providers.
+
+When opening a manuscript, Studio explicitly requests document-picker mode and security-scoped access. The Tauri dialog layer returns `file://` document URLs and the filesystem plugin reads/writes those URLs directly. Studio therefore does not require broad device storage permissions.
+
+The same own-device/shared-device policy applies as on the other native clients: a trusted personal device may use normal system storage; on a shared device normal persistent local-path association is disabled and portable one-off storage remains possible.
+
+### Mobile export surface
+
+Android, iOS and iPadOS expose the same mobile-focused export choices:
 
 - portable OMI package (`.omi.zip`)
 - OMI JSON (`.omi.json`)
@@ -114,7 +160,7 @@ Only formats that are meaningful and supported in the Android workflow are shown
 - LaTeX (`.tex`)
 - EPUB (`.epub`)
 
-Desktop-oriented publishing formats are hidden from Android rather than appearing as non-functional choices:
+Desktop-oriented publishing formats are hidden from mobile rather than appearing as non-functional choices:
 
 - IDML
 - XTG
@@ -123,6 +169,14 @@ Desktop-oriented publishing formats are hidden from Android rather than appearin
 - browser print/PDF export
 
 They remain available on the platforms where their workflows are supported.
+
+### iOS/iPadOS authentication return
+
+ORCID and OIDC sign-in use the same one-time native handoff as Android. The production return target is the verified Universal Link at `https://app.openmanuscript.org/auth/orcid/`, with `openmanuscript://auth/` retained as a custom-scheme fallback.
+
+Before public iOS distribution, `app.openmanuscript.org` must publish a valid `/.well-known/apple-app-site-association` file containing the real Apple Development Team ID and `org.openmanuscript.studio`. The Team ID cannot be generated by Studio and must come from the Apple Developer account.
+
+See [iOS and iPadOS](./ios-ipados.md) for the complete build, signing and Universal Link procedure.
 
 ## Native file integration
 
@@ -135,13 +189,39 @@ Native operations include:
 - import DOCX through the native file picker;
 - export the formats supported by the current platform to a user-selected destination.
 
-Desktop installations can additionally work with normal filesystem paths such as locally synchronized cloud folders, NAS mounts and external drives. Android uses document-provider access instead of desktop-style folder paths.
+Desktop installations can additionally work with normal filesystem paths such as locally synchronized cloud folders, NAS mounts and external drives. Android uses document-provider access and iOS/iPadOS uses the Files document-provider layer instead of desktop-style folder paths.
+
+## Mobile authentication
+
+The native clients use bearer-session transport to the Studio API and external identity providers open through the platform in-app browser. ORCID, Google, Microsoft and configured institutional OIDC providers return through the shared native handoff. One-time handoff codes are exchanged for the native Studio session; provider credentials are never placed in the return URL.
+
+## iPad layout
+
+iPadOS uses the responsive Studio application rather than a separate tablet product. The app declares portrait and landscape orientations, allows indirect input devices such as keyboard/trackpad input, and does not require full-screen presentation, enabling iPad multitasking where supported by the operating system.
+
+## iOS GitHub Actions build
+
+The manual **iOS and iPadOS Build** workflow runs on a macOS GitHub runner and offers two modes:
+
+- `simulator` — generates the Apple project and builds an Apple Silicon simulator application;
+- `app-store-connect` — builds a signed App Store Connect IPA.
+
+The workflow requires `APPLE_DEVELOPMENT_TEAM`. The signed IPA path additionally requires these GitHub secrets:
+
+```text
+IOS_CERTIFICATE
+IOS_CERTIFICATE_PASSWORD
+IOS_MOBILE_PROVISION
+```
+
+Certificates and provisioning profiles are never committed to the repository.
 
 ## Versioning
 
 Keep these versions conceptually separate:
 
 - Studio application version: distributed software release
+- platform store/build number: Apple/Google packaging requirement
 - OMI schema/model version: portable document contract
 
 A Studio release may change without changing the OMI schema. An OMI schema change must have an explicit migration path.
