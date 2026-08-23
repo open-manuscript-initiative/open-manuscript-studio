@@ -72,6 +72,9 @@ enum ReviewWorkspaceRole {
 enum CloudProviderType {
   WEBDAV
   NEXTCLOUD
+  GOOGLE_DRIVE
+  ONEDRIVE
+  DROPBOX
 }
 
 enum CloudConnectionStatus {
