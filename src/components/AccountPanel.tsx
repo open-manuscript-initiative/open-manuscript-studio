@@ -10,7 +10,9 @@ import {
 
 import { getSystemTimeZone, getTimeZoneOptions } from '../account/timeZones';
 import { useTranslation } from '../i18n';
+import { getCentralAdminContext, type CentralAdminRole } from '../services/centralAdminApi';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
+import { CentralAdministrationSettings } from './CentralAdministrationSettings';
 import { InstitutionalProfilesSettings } from './InstitutionalProfilesSettings';
 import { LinkedIdentitiesSettings } from './LinkedIdentitiesSettings';
 import '../styles/account.css';
@@ -21,6 +23,7 @@ const copy = {
     subtitle: 'Personal identity, institutional roles and sign-in methods',
     personal: 'Personal profile',
     institutional: 'Institutional profiles',
+    central: 'Central administration',
     personalDescription: 'Your durable scholarly identity. Organization-specific affiliations are managed separately.',
     name: 'Full name',
     orcid: 'ORCID iD',
@@ -40,6 +43,7 @@ const copy = {
     subtitle: 'Személyes identitás, intézményi szerepek és bejelentkezési módok',
     personal: 'Személyes profil',
     institutional: 'Intézményi profilok',
+    central: 'Központi adminisztráció',
     personalDescription: 'A tartós személyes tudományos identitásod. Az intézményi affiliációk külön kezelhetők.',
     name: 'Teljes név',
     orcid: 'ORCID iD',
@@ -59,6 +63,7 @@ const copy = {
     subtitle: 'Persönliche Identität, institutionelle Rollen und Anmeldemethoden',
     personal: 'Persönliches Profil',
     institutional: 'Institutionelle Profile',
+    central: 'Zentrale Administration',
     personalDescription: 'Ihre dauerhafte wissenschaftliche Identität. Organisationsbezogene Zugehörigkeiten werden separat verwaltet.',
     name: 'Vollständiger Name',
     orcid: 'ORCID iD',
@@ -82,7 +87,7 @@ type AccountFormState = {
   timeZone: string;
 };
 
-type ProfileView = 'personal' | 'institutional';
+type ProfileView = 'personal' | 'institutional' | 'central';
 
 export function AccountPanel() {
   const { locale } = useTranslation();
@@ -93,6 +98,7 @@ export function AccountPanel() {
   const loading = useAuthStore((state) => state.isLoading);
   const error = useAuthStore((state) => state.error);
   const [profileView, setProfileView] = useState<ProfileView>('personal');
+  const [centralRole, setCentralRole] = useState<CentralAdminRole | null>(null);
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState<AccountFormState>({
     fullName: '',
@@ -113,6 +119,9 @@ export function AccountPanel() {
       bio: user.profile.bio ?? '',
       timeZone: user.preferences.timeZone || getSystemTimeZone(),
     });
+    void getCentralAdminContext()
+      .then((context) => setCentralRole(context.centralAdmin ? context.role : null))
+      .catch(() => setCentralRole(null));
   }, [user]);
 
   if (!user) return null;
@@ -162,6 +171,18 @@ export function AccountPanel() {
           <Building2 size={17} aria-hidden="true" />
           {labels.institutional}
         </button>
+        {centralRole ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={profileView === 'central'}
+            className={profileView === 'central' ? 'account-profile-tab account-profile-tab--active' : 'account-profile-tab'}
+            onClick={() => setProfileView('central')}
+          >
+            <ShieldCheck size={17} aria-hidden="true" />
+            {labels.central}
+          </button>
+        ) : null}
       </div>
 
       <div className="account-grid">
@@ -227,11 +248,15 @@ export function AccountPanel() {
                 {labels.save}
               </button>
             </form>
-          ) : (
+          ) : profileView === 'institutional' ? (
             <div className="account-card">
               <InstitutionalProfilesSettings locale={locale} />
             </div>
-          )}
+          ) : centralRole ? (
+            <div className="account-card account-card--central-admin">
+              <CentralAdministrationSettings locale={locale} role={centralRole} />
+            </div>
+          ) : null}
         </div>
 
         <aside className="account-card account-identity">
