@@ -42,6 +42,16 @@ interface ExportFormatOption {
   extension: string;
 }
 
+const ANDROID_EXPORT_IDS: ReadonlySet<ExportId> = new Set([
+  'omi',
+  'omi-json',
+  'jats',
+  'html',
+  'docx',
+  'latex',
+  'epub',
+]);
+
 export function ExportFormatsPanel() {
   const { locale } = useTranslation();
   const copy = getExportFormatCopy(locale);
@@ -66,9 +76,12 @@ export function ExportFormatsPanel() {
     { id: 'epub', group: 'publication', label: copy.epub, description: copy.epubDescription, extension: '.epub' },
     { id: 'pdf', group: 'publication', label: copy.pdf, description: `${copy.pdfDescription} ${copy.pdfHint}`, extension: '.pdf' },
   ];
+  const visibleFormats = platform === 'android'
+    ? formats.filter((format) => ANDROID_EXPORT_IDS.has(format.id))
+    : formats;
 
   const selectedFormat = selectedId
-    ? formats.find((format) => format.id === selectedId) ?? null
+    ? visibleFormats.find((format) => format.id === selectedId) ?? null
     : null;
 
   const reportDelivery = (delivery: ExportDeliveryResult): void => {
@@ -84,6 +97,8 @@ export function ExportFormatsPanel() {
   };
 
   const run = async (id: ExportId): Promise<void> => {
+    if (platform === 'android' && !ANDROID_EXPORT_IDS.has(id)) return;
+
     setError('');
     setNotice('');
     setBusy(id);
@@ -195,12 +210,12 @@ export function ExportFormatsPanel() {
           >
             <option value="">{copy.chooseFormat}</option>
             <optgroup label={copy.portable}>
-              {formats.filter((format) => format.group === 'portable').map((format) => (
+              {visibleFormats.filter((format) => format.group === 'portable').map((format) => (
                 <option value={format.id} key={format.id}>{format.label} ({format.extension})</option>
               ))}
             </optgroup>
             <optgroup label={copy.publication}>
-              {formats.filter((format) => format.group === 'publication').map((format) => (
+              {visibleFormats.filter((format) => format.group === 'publication').map((format) => (
                 <option value={format.id} key={format.id}>{format.label} ({format.extension})</option>
               ))}
             </optgroup>
