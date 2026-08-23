@@ -44,6 +44,17 @@ const environmentSchema = z.object({
   INSTITUTIONAL_ROR_ID: z.string().trim().max(128).optional(),
   INSTITUTIONAL_ADMIN_EMAILS: z.string().trim().default(''),
 
+  // Central OMI administration is a separate privilege plane. Bootstrap
+  // e-mails are promoted to central OWNER only after an OIDC/SAML identity is
+  // linked to the Studio account.
+  CENTRAL_ADMIN_EMAILS: z.string().trim().default(''),
+  INSTITUTION_API_TOKEN_TTL_DAYS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(3650)
+    .default(365),
+
   INTEGRATION_MASTER_KEY: z
     .string()
     .regex(
@@ -77,8 +88,8 @@ const environmentSchema = z.object({
 
   ORCID_ENVIRONMENT: z.enum(['sandbox', 'production']).optional(),
 
-  // Personal deployment credentials. These remain the backward-compatible
-  // names used by existing standalone Studio installations.
+  // Personal mode ORCID client. These values are ignored when
+  // DEPLOYMENT_MODE=institutional.
   ORCID_CLIENT_ID: z.string().trim().optional(),
   ORCID_CLIENT_SECRET: z.string().trim().optional(),
   ORCID_REDIRECT_URI: z.string().url().optional(),
@@ -160,8 +171,6 @@ export const env = {
   ...result.data,
   ORCID_ENVIRONMENT: orcid.environment,
   ORCID_BASE_URL: orcid.baseUrl,
-  // Existing ORCID routes consume these resolved aliases. Their credential
-  // source is selected exclusively by DEPLOYMENT_MODE.
   ORCID_CLIENT_ID: orcidCredentials.clientId,
   ORCID_CLIENT_SECRET: orcidCredentials.clientSecret,
   ORCID_REDIRECT_URI: orcidCredentials.redirectUri,
