@@ -42,7 +42,12 @@ interface ExportFormatOption {
   extension: string;
 }
 
-const ANDROID_EXPORT_IDS: ReadonlySet<ExportId> = new Set([
+/**
+ * Mobile Studio deliberately exposes only formats that are useful through the
+ * operating-system document picker. Desktop DTP formats and browser print/PDF
+ * remain available on desktop/web where their downstream workflow exists.
+ */
+const MOBILE_EXPORT_IDS: ReadonlySet<ExportId> = new Set([
   'omi',
   'omi-json',
   'jats',
@@ -57,6 +62,7 @@ export function ExportFormatsPanel() {
   const copy = getExportFormatCopy(locale);
   const checkpoint = useStudioStore((state) => state.checkpoint);
   const platform = getStudioPlatform();
+  const mobile = platform === 'android' || platform === 'ios';
   const [selectedId, setSelectedId] = useState<ExportId | ''>('');
   const [busy, setBusy] = useState<ExportId | null>(null);
   const [error, setError] = useState('');
@@ -76,8 +82,8 @@ export function ExportFormatsPanel() {
     { id: 'epub', group: 'publication', label: copy.epub, description: copy.epubDescription, extension: '.epub' },
     { id: 'pdf', group: 'publication', label: copy.pdf, description: `${copy.pdfDescription} ${copy.pdfHint}`, extension: '.pdf' },
   ];
-  const visibleFormats = platform === 'android'
-    ? formats.filter((format) => ANDROID_EXPORT_IDS.has(format.id))
+  const visibleFormats = mobile
+    ? formats.filter((format) => MOBILE_EXPORT_IDS.has(format.id))
     : formats;
 
   const selectedFormat = selectedId
@@ -89,15 +95,15 @@ export function ExportFormatsPanel() {
       setNotice(copy.cancelled);
       return;
     }
-    // Android returns a content:// URI from the Storage Access Framework. It
-    // is an implementation detail rather than a useful user-facing path.
-    setNotice(delivery.path && platform !== 'android'
+    // Mobile document-provider URIs are implementation details rather than
+    // useful user-facing paths. saveExportBlob intentionally omits them.
+    setNotice(delivery.path
       ? `${copy.saved} ${delivery.path}`
       : copy.saved);
   };
 
   const run = async (id: ExportId): Promise<void> => {
-    if (platform === 'android' && !ANDROID_EXPORT_IDS.has(id)) return;
+    if (mobile && !MOBILE_EXPORT_IDS.has(id)) return;
 
     setError('');
     setNotice('');
