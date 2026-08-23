@@ -1,0 +1,173 @@
+.auth-login-federated {
+  gap: .55rem;
+}
+
+.auth-login-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .55rem;
+}
+
+.auth-provider-button {
+  min-height: 2.65rem;
+  padding: .55rem .7rem;
+  border: 1px solid #d6cec4;
+  background: #fff;
+  color: #29313d;
+  box-shadow: none;
+  font-size: .82rem;
+  line-height: 1.2;
+}
+
+.auth-provider-button:hover:not(:disabled) {
+  border-color: #b9ad9e;
+  background: #faf7f2;
+}
+
+.auth-provider-button--google {
+  background: #fff;
+  color: #202124;
+}
+
+.auth-provider-button--microsoft {
+  background: #fff;
+  color: #252525;
+}
+
+.auth-provider-button--oidc {
+  border-color: #cab9a8;
+  background: #fbf7f0;
+  color: #5f2732;
+}
+
+.auth-orcid-button.auth-provider-button {
+  border-color: #a6ce39;
+  background: #fff;
+  color: #456300;
+}
+
+.auth-login-orcid-meta {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  min-width: 0;
+}
+
+.auth-login-orcid-meta .auth-login-orcid-hint {
+  min-width: 0;
+  flex: 1;
+}
+
+.account-provider-section {
+  display: grid;
+  gap: .65rem;
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eaecf0;
+}
+
+.account-provider-section h3 {
+  margin: 0;
+  color: #667085;
+  font-size: .86rem;
+}
+
+.account-provider-list {
+  display: grid;
+  gap: .5rem;
+}
+
+.account-provider-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .65rem .7rem;
+  border: 1px solid #e2e6ec;
+  border-radius: .6rem;
+  background: #fafbfc;
+}
+
+.account-provider-row > div {
+  display: grid;
+  min-width: 0;
+  gap: .15rem;
+}
+
+.account-provider-row small {
+  overflow: hidden;
+  color: #7b8495;
+  font-size: .68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-provider-connect,
+.account-provider-connected {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: .35rem;
+  min-height: 2rem;
+  padding: 0 .65rem;
+  border-radius: .5rem;
+  font-size: .74rem;
+  font-weight: 700;
+}
+
+.account-provider-connect {
+  border: 1px solid #cfd6df;
+  background: #fff;
+  color: #344054;
+  cursor: pointer;
+}
+
+.account-provider-connect:hover:not(:disabled) {
+  border-color: #98a2b3;
+  background: #f8fafc;
+}
+
+.account-provider-connect:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.account-provider-connected {
+  color: #027a48;
+}
+
+@media (max-height: 780px) and (min-width: 52.01rem) {
+  .auth-login-provider-grid {
+    gap: .4rem;
+  }
+
+  .auth-provider-button {
+    min-height: 2.35rem;
+    padding-block: .4rem;
+    font-size: .76rem;
+  }
+
+  .auth-login-orcid-meta .auth-login-orcid-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .auth-login-provider-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-provider-button {
+    min-height: 2.8rem;
+  }
+
+  .auth-login-orcid-meta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .account-provider-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -27,6 +27,15 @@ export interface LoginRequest {
   password: string;
 }
 
+export type OidcProviderKey = 'google' | 'microsoft' | 'oidc';
+
+export interface ExternalAuthProvider {
+  enabled: boolean;
+  label: string;
+  issuer?: string;
+  linked?: boolean;
+}
+
 export interface AuthProviders {
   orcid: {
     enabled: boolean;
@@ -43,6 +52,10 @@ export interface AuthProviders {
       connectedAt: string;
     } | null;
   };
+  google: ExternalAuthProvider;
+  microsoft: ExternalAuthProvider;
+  oidc: ExternalAuthProvider;
+  saml?: ExternalAuthProvider;
 }
 
 interface UserResponse {
@@ -96,32 +109,54 @@ export function getOrcidAuthUrl(input?: {
   } else {
     params.set('mode', 'login');
   }
-  appendNativeOrcidParams(params);
+  appendNativeAuthParams(params);
   return `${API_BASE_URL}/api/auth/orcid/start?${params.toString()}`;
 }
 
 export function getOrcidLinkUrl(): string {
   const params = new URLSearchParams({ mode: 'link' });
-  appendNativeOrcidParams(params);
+  appendNativeAuthParams(params);
   return `${API_BASE_URL}/api/auth/orcid/start?${params.toString()}`;
 }
 
 export async function startOrcidAuthentication(input?: {
   invitationToken?: string;
 }): Promise<void> {
-  const url = getOrcidAuthUrl(input);
+  await openAuthenticationUrl(getOrcidAuthUrl(input));
+}
 
-  if (IS_MOBILE_TAURI) {
-    const { openUrl } = await import('@tauri-apps/plugin-opener');
-    try {
-      await openUrl(url, 'inAppBrowser');
-    } catch {
-      await openUrl(url);
-    }
-    return;
-  }
+export function getOidcAuthUrl(
+  provider: OidcProviderKey,
+  locale?: string,
+): string {
+  const params = new URLSearchParams();
+  if (locale) params.set('locale', locale);
+  appendNativeAuthParams(params);
+  return `${API_BASE_URL}/api/auth/oidc/${encodeURIComponent(provider)}/start?${params.toString()}`;
+}
 
-  globalThis.location?.assign(url);
+export async function startOidcAuthentication(
+  provider: OidcProviderKey,
+  locale?: string,
+): Promise<void> {
+  await openAuthenticationUrl(getOidcAuthUrl(provider, locale));
+}
+
+export async function startOidcLink(
+  provider: OidcProviderKey,
+  locale?: string,
+): Promise<void> {
+  const payload = await request<{ authorizeUrl: string }>(
+    `/api/auth/oidc/${encodeURIComponent(provider)}/link/start`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        locale,
+        returnOrigin: getNativeReturnOrigin(),
+      }),
+    },
+  );
+  await openAuthenticationUrl(payload.authorizeUrl);
 }
 
 export async function consumeNativeOrcidHandoffFromLocation(): Promise<User | null> {
@@ -130,7 +165,7 @@ export async function consumeNativeOrcidHandoffFromLocation(): Promise<User | nu
   const locationCode = readLocationFragmentParam(NATIVE_AUTH_CODE_PARAM)?.trim();
   if (locationCode) {
     try {
-      return await exchangeNativeOrcidHandoff(locationCode);
+      return await exchangeNativeAuthHandoff(locationCode);
     } finally {
       removeLocationFragmentParam(NATIVE_AUTH_CODE_PARAM);
     }
@@ -150,7 +185,7 @@ export async function consumeNativeOrcidHandoffFromUrl(url: string): Promise<Use
   const code = readUrlParam(url, NATIVE_AUTH_CODE_PARAM)?.trim();
   if (!code) return null;
 
-  return exchangeNativeOrcidHandoff(code);
+  return exchangeNativeAuthHandoff(code);
 }
 
 export async function listenForNativeOrcidHandoff(
@@ -316,9 +351,9 @@ export async function logoutAccount(): Promise<void> {
   }
 }
 
-async function exchangeNativeOrcidHandoff(code: string): Promise<User> {
+async function exchangeNativeAuthHandoff(code: string): Promise<User> {
   const response = await request<NativeSessionResponse>(
-    '/api/auth/orcid/native/exchange',
+    '/api/auth/native/exchange',
     {
       method: 'POST',
       body: JSON.stringify({ code }),
@@ -326,11 +361,25 @@ async function exchangeNativeOrcidHandoff(code: string): Promise<User> {
   );
 
   if (!response.token) {
-    throw new Error('The native ORCID session token was not returned by the Studio API.');
+    throw new Error('The native authentication session token was not returned by the Studio API.');
   }
 
   persistNativeSession(response);
   return response.user;
+}
+
+async function openAuthenticationUrl(url: string): Promise<void> {
+  if (IS_MOBILE_TAURI) {
+    const { openUrl } = await import('@tauri-apps/plugin-opener');
+    try {
+      await openUrl(url, 'inAppBrowser');
+    } catch {
+      await openUrl(url);
+    }
+    return;
+  }
+
+  globalThis.location?.assign(url);
 }
 
 async function request<T>(
@@ -409,7 +458,7 @@ function clearNativeSession(): void {
   globalThis.localStorage?.removeItem(NATIVE_SESSION_KEY);
 }
 
-function appendNativeOrcidParams(params: URLSearchParams): void {
+function appendNativeAuthParams(params: URLSearchParams): void {
   const returnOrigin = getNativeReturnOrigin();
   if (!returnOrigin) return;
 

@@ -17,11 +17,13 @@ import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { OrcidEnvironmentBadge } from '../components/OrcidEnvironmentBadge';
 import {
   getAuthErrorCodeFromLocation,
+  startOidcAuthentication,
   startOrcidAuthentication,
+  type OidcProviderKey,
 } from '../services/authApi';
 import { useAuthStore } from '../store/authStore';
 import { PasswordRecoveryPage } from './PasswordRecoveryPage';
-import { useOrcidProvider } from './useOrcidProvider';
+import { useAuthProviders } from './useOrcidProvider';
 
 interface LoginPageProps {
   onShowRegister: () => void;
@@ -51,8 +53,15 @@ export function LoginPage({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [recoveryOpen, setRecoveryOpen] = useState(false);
-  const [orcidStartError, setOrcidStartError] = useState('');
-  const orcidProvider = useOrcidProvider();
+  const [federatedStartError, setFederatedStartError] = useState('');
+  const providers = useAuthProviders();
+  const orcidProvider = providers?.orcid ?? null;
+  const oidcProviders = providers
+    ? (['google', 'microsoft', 'oidc'] as const)
+        .map((key) => ({ key, provider: providers[key] }))
+        .filter(({ provider }) => provider?.enabled)
+    : [];
+  const hasFederatedProvider = Boolean(orcidProvider?.enabled || oidcProviders.length);
   const authErrorCode = getAuthErrorCodeFromLocation();
   const resetToken = new URLSearchParams(window.location.search).get('resetPassword')?.trim() ?? '';
   const heroCopy = getLoginHeroCopy(locale);
@@ -77,17 +86,20 @@ export function LoginPage({
   };
 
   const handleOrcidSignIn = async () => {
-    setOrcidStartError('');
+    setFederatedStartError('');
     try {
       await startOrcidAuthentication();
     } catch {
-      setOrcidStartError(
-        locale === 'hu'
-          ? 'Az ORCID-hitelesítés nem nyitható meg. Próbáld újra.'
-          : locale === 'de'
-            ? 'Die ORCID-Anmeldung konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.'
-            : 'ORCID sign-in could not be opened. Please try again.',
-      );
+      setFederatedStartError(providerOpenError('ORCID', locale));
+    }
+  };
+
+  const handleOidcSignIn = async (provider: OidcProviderKey, label: string) => {
+    setFederatedStartError('');
+    try {
+      await startOidcAuthentication(provider, locale);
+    } catch {
+      setFederatedStartError(providerOpenError(label, locale));
     }
   };
 
@@ -183,28 +195,46 @@ export function LoginPage({
             <p>{t('auth.login.description')}</p>
           </header>
 
-          {orcidProvider?.enabled ? (
-            <div className="auth-form auth-login-orcid">
-              <button
-                className="auth-primary-button auth-orcid-button"
-                type="button"
-                onClick={() => void handleOrcidSignIn()}
-              >
-                {locale === 'hu' ? 'Bejelentkezés ORCID-dal' : locale === 'de' ? 'Mit ORCID anmelden' : 'Sign in with ORCID'}
-              </button>
-              <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
-              <div className="auth-field-hint auth-login-orcid-hint">
-                {locale === 'hu'
-                  ? 'Az ORCID-hitelesítés a Studio-fiókhoz kapcsolt, ellenőrzött ORCID iD-t használja.'
-                  : locale === 'de'
-                    ? 'Die ORCID-Anmeldung verwendet die verifizierte ORCID iD, die mit Ihrem Studio-Konto verknüpft ist.'
-                    : 'ORCID sign-in uses the verified ORCID iD linked to your Studio account.'}
+          {hasFederatedProvider ? (
+            <div className="auth-form auth-login-federated">
+              <div className="auth-login-provider-grid">
+                {orcidProvider?.enabled ? (
+                  <button
+                    className="auth-primary-button auth-provider-button auth-orcid-button"
+                    type="button"
+                    onClick={() => void handleOrcidSignIn()}
+                  >
+                    {providerButtonLabel('ORCID', locale)}
+                  </button>
+                ) : null}
+                {oidcProviders.map(({ key, provider }) => (
+                  <button
+                    className={`auth-primary-button auth-provider-button auth-provider-button--${key}`}
+                    type="button"
+                    key={key}
+                    onClick={() => void handleOidcSignIn(key, provider.label)}
+                  >
+                    {providerButtonLabel(provider.label, locale)}
+                  </button>
+                ))}
               </div>
-              {orcidStartError ? <div className="auth-error" role="alert">{orcidStartError}</div> : null}
+              {orcidProvider?.enabled ? (
+                <div className="auth-login-orcid-meta">
+                  <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
+                  <div className="auth-field-hint auth-login-orcid-hint">
+                    {locale === 'hu'
+                      ? 'Az ORCID-hitelesítés a Studio-fiókhoz kapcsolt, ellenőrzött ORCID iD-t használja.'
+                      : locale === 'de'
+                        ? 'Die ORCID-Anmeldung verwendet die verifizierte ORCID iD, die mit Ihrem Studio-Konto verknüpft ist.'
+                        : 'ORCID sign-in uses the verified ORCID iD linked to your Studio account.'}
+                  </div>
+                </div>
+              ) : null}
+              {federatedStartError ? <div className="auth-error" role="alert">{federatedStartError}</div> : null}
             </div>
           ) : null}
 
-          {orcidProvider?.enabled ? (
+          {hasFederatedProvider ? (
             <div className="auth-login-divider" aria-hidden="true">
               <span>{heroCopy.orEmail}</span>
             </div>
@@ -336,18 +366,38 @@ function getLoginHeroCopy(locale: string) {
   };
 }
 
+function providerButtonLabel(label: string, locale: string): string {
+  if (locale === 'hu') return `Bejelentkezés – ${label}`;
+  if (locale === 'de') return `Anmelden mit ${label}`;
+  return `Sign in with ${label}`;
+}
+
+function providerOpenError(label: string, locale: string): string {
+  if (locale === 'hu') return `A(z) ${label} bejelentkezés nem nyitható meg. Próbálja újra.`;
+  if (locale === 'de') return `${label} konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.`;
+  return `${label} sign-in could not be opened. Please try again.`;
+}
+
 function federatedErrorMessage(code: string, locale: string): string {
   const messages: Record<string, [string, string, string]> = {
     orcid_not_linked: [
       'This ORCID iD is not linked to a Studio account yet. Sign in with e-mail first and link ORCID from your profile.',
-      'Ez az ORCID iD még nincs Studio-fiókhoz kapcsolva. Jelentkezz be e-maillel, majd kapcsold hozzá az ORCID-ot a profilodban.',
+      'Ez az ORCID iD még nincs Studio-fiókhoz kapcsolva. Jelentkezzen be e-maillel, majd kapcsolja hozzá az ORCID-ot a profiljában.',
       'Diese ORCID iD ist noch nicht mit einem Studio-Konto verknüpft. Melden Sie sich zuerst per E-Mail an und verknüpfen Sie ORCID im Profil.',
     ],
-    orcid_state_expired: ['The ORCID sign-in request expired. Please try again.', 'Az ORCID-bejelentkezési kérés lejárt. Próbáld újra.', 'Die ORCID-Anmeldung ist abgelaufen. Bitte versuchen Sie es erneut.'],
+    orcid_state_expired: ['The ORCID sign-in request expired. Please try again.', 'Az ORCID-bejelentkezési kérés lejárt. Próbálja újra.', 'Die ORCID-Anmeldung ist abgelaufen. Bitte versuchen Sie es erneut.'],
     orcid_signin_failed: ['ORCID sign-in failed.', 'Az ORCID-bejelentkezés nem sikerült.', 'Die ORCID-Anmeldung ist fehlgeschlagen.'],
     orcid_callback_invalid: ['The ORCID response is invalid.', 'Az ORCID válasza érvénytelen.', 'Die ORCID-Antwort ist ungültig.'],
+    oidc_account_exists: [
+      'A Studio account already exists with this e-mail address. Sign in with e-mail first and connect the provider from Account settings.',
+      'Ezzel az e-mail-címmel már létezik Studio-fiók. Először jelentkezzen be e-maillel, majd a Fiók beállításainál kapcsolja hozzá a szolgáltatót.',
+      'Für diese E-Mail-Adresse existiert bereits ein Studio-Konto. Melden Sie sich zuerst per E-Mail an und verbinden Sie den Anbieter in den Kontoeinstellungen.',
+    ],
+    oidc_state_expired: ['The external sign-in request expired. Please try again.', 'A külső bejelentkezési kérés lejárt. Próbálja újra.', 'Die externe Anmeldung ist abgelaufen. Bitte versuchen Sie es erneut.'],
+    oidc_signin_failed: ['External sign-in failed.', 'A külső bejelentkezés nem sikerült.', 'Die externe Anmeldung ist fehlgeschlagen.'],
+    oidc_callback_invalid: ['The external sign-in response is invalid.', 'A külső bejelentkezési válasz érvénytelen.', 'Die externe Anmeldeantwort ist ungültig.'],
   };
-  const value = messages[code] ?? messages.orcid_signin_failed;
+  const value = messages[code] ?? messages.oidc_signin_failed;
   return locale === 'hu' ? value[1] : locale === 'de' ? value[2] : value[0];
 }
 
