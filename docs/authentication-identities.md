@@ -9,10 +9,23 @@ Open Manuscript Studio separates the local user account from the credentials use
 Initial providers:
 
 - `ORCID`: implemented using ORCID OAuth 2.0 authorization-code authentication.
-- `OIDC`: reserved for institutional OpenID Connect providers.
+- `OIDC`: used by configured Google, Microsoft and institutional OpenID Connect providers.
 - `SAML`: reserved for institutional SAML identity providers.
 
 A user may keep local e-mail/password authentication while also linking one or more external identities. Assignment permissions, manuscript roles and privacy rules remain attached to the Studio `User`, never to the external identity.
+
+## Account → Connected identities
+
+The Account panel exposes authentication methods separately from scholarly profile metadata.
+
+- The local e-mail/password credential is shown as a sign-in method when a usable password exists.
+- ORCID, Google, Microsoft and institutional OIDC identities are listed with their display name, issuer, connection date and last-used timestamp when available.
+- Enabled providers that are not yet connected can be linked from the same panel.
+- External identities can be disconnected only when at least one other usable sign-in method remains.
+- Accounts created through ORCID/OIDC without a local password must therefore set a password or connect another provider before their last external identity can be removed.
+- Password setup/change uses the same one-time password-reset mail flow as forgotten-password recovery.
+
+This lockout protection is enforced by the API, not only by the user interface.
 
 ## ORCID behavior
 
@@ -52,7 +65,9 @@ The redirect URI must exactly match the URI registered for the ORCID OAuth clien
 
 ## HTTP endpoints
 
-- `GET /api/auth/providers` reports enabled identity providers and, when a Studio session exists, whether ORCID is linked.
+- `GET /api/auth/providers` reports enabled identity providers and whether configured providers are already linked.
+- `GET /api/auth/identities` returns the signed-in account's local password status and linked external identities.
+- `DELETE /api/auth/identities/:identityId` disconnects one external identity while enforcing last-sign-in-method protection.
 - `GET /api/auth/orcid/start?mode=login` begins ORCID sign-in.
 - `GET /api/auth/orcid/start?mode=invite&invite=...` accepts a Studio assignment invitation using ORCID.
 - `GET /api/auth/orcid/start?mode=link` links ORCID to the currently signed-in Studio account.
@@ -60,6 +75,6 @@ The redirect URI must exactly match the URI registered for the ORCID OAuth clien
 
 ## Future providers
 
-Institutional OIDC and SAML adapters should use the same `UserIdentity` model. Provider-specific claims must be normalized to a stable issuer and subject. No provider is allowed to grant manuscript access directly: authentication resolves a Studio `User`; the existing Studio authorization/capability layer then determines access.
+Institutional OIDC and SAML adapters use the same `UserIdentity` model. Provider-specific claims must be normalized to a stable issuer and subject. No provider is allowed to grant manuscript access directly: authentication resolves a Studio `User`; the existing Studio authorization/capability layer then determines access.
 
 Automatic account merging must not be performed from display names or unverified e-mail claims. Account linking requires either an authenticated Studio session, a valid Studio invitation, or an explicitly verified migration rule.
