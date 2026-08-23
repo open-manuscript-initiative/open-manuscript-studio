@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getExportFormatCopy } from '../i18n/exportFormats';
+import { getStudioPlatform } from '../mobile/platform/platform';
 import { buildDocxExport } from '../services/exportDocx';
 import { buildEpubExport } from '../services/exportEpub';
 import { saveExportBlob, saveExportText, type ExportDeliveryResult } from '../services/exportFileDelivery';
@@ -41,10 +42,21 @@ interface ExportFormatOption {
   extension: string;
 }
 
+const ANDROID_EXPORT_IDS: ReadonlySet<ExportId> = new Set([
+  'omi',
+  'omi-json',
+  'jats',
+  'html',
+  'docx',
+  'latex',
+  'epub',
+]);
+
 export function ExportFormatsPanel() {
   const { locale } = useTranslation();
   const copy = getExportFormatCopy(locale);
   const checkpoint = useStudioStore((state) => state.checkpoint);
+  const platform = getStudioPlatform();
   const [selectedId, setSelectedId] = useState<ExportId | ''>('');
   const [busy, setBusy] = useState<ExportId | null>(null);
   const [error, setError] = useState('');
@@ -64,9 +76,12 @@ export function ExportFormatsPanel() {
     { id: 'epub', group: 'publication', label: copy.epub, description: copy.epubDescription, extension: '.epub' },
     { id: 'pdf', group: 'publication', label: copy.pdf, description: `${copy.pdfDescription} ${copy.pdfHint}`, extension: '.pdf' },
   ];
+  const visibleFormats = platform === 'android'
+    ? formats.filter((format) => ANDROID_EXPORT_IDS.has(format.id))
+    : formats;
 
   const selectedFormat = selectedId
-    ? formats.find((format) => format.id === selectedId) ?? null
+    ? visibleFormats.find((format) => format.id === selectedId) ?? null
     : null;
 
   const reportDelivery = (delivery: ExportDeliveryResult): void => {
@@ -74,10 +89,16 @@ export function ExportFormatsPanel() {
       setNotice(copy.cancelled);
       return;
     }
-    setNotice(delivery.path ? `${copy.saved} ${delivery.path}` : copy.saved);
+    // Android returns a content:// URI from the Storage Access Framework. It
+    // is an implementation detail rather than a useful user-facing path.
+    setNotice(delivery.path && platform !== 'android'
+      ? `${copy.saved} ${delivery.path}`
+      : copy.saved);
   };
 
   const run = async (id: ExportId): Promise<void> => {
+    if (platform === 'android' && !ANDROID_EXPORT_IDS.has(id)) return;
+
     setError('');
     setNotice('');
     setBusy(id);
@@ -189,12 +210,12 @@ export function ExportFormatsPanel() {
           >
             <option value="">{copy.chooseFormat}</option>
             <optgroup label={copy.portable}>
-              {formats.filter((format) => format.group === 'portable').map((format) => (
+              {visibleFormats.filter((format) => format.group === 'portable').map((format) => (
                 <option value={format.id} key={format.id}>{format.label} ({format.extension})</option>
               ))}
             </optgroup>
             <optgroup label={copy.publication}>
-              {formats.filter((format) => format.group === 'publication').map((format) => (
+              {visibleFormats.filter((format) => format.group === 'publication').map((format) => (
                 <option value={format.id} key={format.id}>{format.label} ({format.extension})</option>
               ))}
             </optgroup>

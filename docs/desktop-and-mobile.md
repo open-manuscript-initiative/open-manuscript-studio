@@ -85,16 +85,57 @@ npm run android:build
 
 The Android UI should remain responsive and may use platform-specific layout adaptations, but it must consume the same OMI document model and shared Studio feature modules.
 
+### Android document storage
+
+Android uses the system Storage Access Framework / Documents picker instead of exposing arbitrary filesystem paths to Studio. This gives the author explicit control over each opened or created document without requesting broad shared-storage permissions.
+
+The Android save workflow provides:
+
+- **Save**: writes the current manuscript back to the document selected during the current app session;
+- **Save to another location**: opens the Android system save picker and establishes the newly selected document as the current manuscript location;
+- **OMI backup**: builds the portable `.omi.zip` package and lets the author place it through the Android system picker;
+- supported publication exports use the same system picker.
+
+The Android picker can expose device storage, Downloads, SD cards and document providers supplied by installed storage applications. Studio does not hard-code or require credentials for those providers.
+
+Android returns `content://` document URIs rather than desktop filesystem paths. These URIs are treated as implementation details and are not shown to users as filenames. Access granted by the picker is scoped to the selected document and the current native permission scope.
+
+Android file filters use MIME types, because extension-based filtering is not generally supported by the platform document picker.
+
+### Android export surface
+
+Only formats that are meaningful and supported in the Android workflow are shown:
+
+- portable OMI package (`.omi.zip`)
+- OMI JSON (`.omi.json`)
+- JATS XML (`.xml`)
+- HTML package (`.html.zip`)
+- DOCX (`.docx`)
+- LaTeX (`.tex`)
+- EPUB (`.epub`)
+
+Desktop-oriented publishing formats are hidden from Android rather than appearing as non-functional choices:
+
+- IDML
+- XTG
+- MIF
+- SLA
+- browser print/PDF export
+
+They remain available on the platforms where their workflows are supported.
+
 ## Native file integration
 
-The first Tauri milestone provides the cross-platform shell and build pipeline. Native file open/save integration should be added through narrowly scoped Tauri permissions rather than enabling broad filesystem access. Browser builds must keep their current download/upload behavior as a fallback.
+Native file open/save integration uses narrowly scoped Tauri permissions rather than broad filesystem access. Browser builds retain their download/upload behavior as a fallback.
 
-Planned native operations include:
+Native operations include:
 
-- open `.omi` and `.omi.json`
-- save manuscripts to a selected local path
-- import DOCX through the native file picker
-- export DOCX, JATS, HTML, EPUB, IDML, XTG, MIF, SLA and LaTeX to a selected path
+- open `.omi` and `.omi.json` manuscripts;
+- save manuscripts through the platform-native file/document picker;
+- import DOCX through the native file picker;
+- export the formats supported by the current platform to a user-selected destination.
+
+Desktop installations can additionally work with normal filesystem paths such as locally synchronized cloud folders, NAS mounts and external drives. Android uses document-provider access instead of desktop-style folder paths.
 
 ## Versioning
 
