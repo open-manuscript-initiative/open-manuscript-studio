@@ -46,6 +46,8 @@ export interface UserProfile {
   bio?: string;
 }
 
+export type InstitutionRole = 'MEMBER' | 'ADMIN' | 'OWNER';
+
 export interface InstitutionalIdentityReference {
   id: string;
   provider: 'OIDC' | 'SAML';
@@ -57,8 +59,10 @@ export interface InstitutionalIdentityReference {
 
 export interface InstitutionalProfile {
   id: string;
+  institutionId: string;
   organizationName: string;
   rorId: string | null;
+  role: InstitutionRole;
   department: string | null;
   positionTitle: string | null;
   institutionalEmail: string | null;
