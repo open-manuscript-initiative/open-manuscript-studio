@@ -10,75 +10,13 @@ import {
 
 import { getSystemTimeZone, getTimeZoneOptions } from '../account/timeZones';
 import { useTranslation } from '../i18n';
+import { getAccountPanelCopy } from '../i18n/accountPanelTranslations';
 import { getCentralAdminContext, type CentralAdminRole } from '../services/centralAdminApi';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { CentralAdministrationSettings } from './CentralAdministrationSettings';
 import { InstitutionalProfilesSettings } from './InstitutionalProfilesSettings';
 import { LinkedIdentitiesSettings } from './LinkedIdentitiesSettings';
 import '../styles/account.css';
-
-const copy = {
-  en: {
-    title: 'Account',
-    subtitle: 'Personal identity, institutional roles and sign-in methods',
-    personal: 'Personal profile',
-    institutional: 'Institutional profiles',
-    central: 'Central administration',
-    personalDescription: 'Your durable scholarly identity. Organization-specific affiliations are managed separately.',
-    name: 'Full name',
-    orcid: 'ORCID iD',
-    bio: 'Short biography',
-    preferences: 'Personal preferences',
-    timezone: 'Time zone',
-    timezoneHint: 'Standard IANA time-zone identifier; the current UTC offset is shown for reference.',
-    identity: 'Account identity',
-    verified: 'Verified e-mail',
-    unverified: 'E-mail not verified',
-    save: 'Save personal profile',
-    saved: 'Personal profile saved.',
-    logout: 'Sign out',
-  },
-  hu: {
-    title: 'Fiók',
-    subtitle: 'Személyes identitás, intézményi szerepek és bejelentkezési módok',
-    personal: 'Személyes profil',
-    institutional: 'Intézményi profilok',
-    central: 'Központi adminisztráció',
-    personalDescription: 'A tartós személyes tudományos identitásod. Az intézményi affiliációk külön kezelhetők.',
-    name: 'Teljes név',
-    orcid: 'ORCID iD',
-    bio: 'Rövid bemutatkozás',
-    preferences: 'Személyes beállítások',
-    timezone: 'Időzóna',
-    timezoneHint: 'Szabványos IANA-időzóna; tájékoztatásként az aktuális UTC-eltolás is látható.',
-    identity: 'Fiókazonosság',
-    verified: 'Ellenőrzött e-mail-cím',
-    unverified: 'Nem ellenőrzött e-mail-cím',
-    save: 'Személyes profil mentése',
-    saved: 'A személyes profil elmentve.',
-    logout: 'Kijelentkezés',
-  },
-  de: {
-    title: 'Konto',
-    subtitle: 'Persönliche Identität, institutionelle Rollen und Anmeldemethoden',
-    personal: 'Persönliches Profil',
-    institutional: 'Institutionelle Profile',
-    central: 'Zentrale Administration',
-    personalDescription: 'Ihre dauerhafte wissenschaftliche Identität. Organisationsbezogene Zugehörigkeiten werden separat verwaltet.',
-    name: 'Vollständiger Name',
-    orcid: 'ORCID iD',
-    bio: 'Kurzbiografie',
-    preferences: 'Persönliche Einstellungen',
-    timezone: 'Zeitzone',
-    timezoneHint: 'Standardisierte IANA-Zeitzone; der aktuelle UTC-Versatz wird zur Orientierung angezeigt.',
-    identity: 'Kontoidentität',
-    verified: 'Bestätigte E-Mail-Adresse',
-    unverified: 'E-Mail-Adresse nicht bestätigt',
-    save: 'Persönliches Profil speichern',
-    saved: 'Persönliches Profil gespeichert.',
-    logout: 'Abmelden',
-  },
-} as const;
 
 type AccountFormState = {
   fullName: string;
@@ -91,7 +29,7 @@ type ProfileView = 'personal' | 'institutional' | 'central';
 
 export function AccountPanel() {
   const { locale } = useTranslation();
-  const labels = copy[locale] ?? copy.en;
+  const labels = getAccountPanelCopy(locale);
   const user = useAuthStore(getCurrentUser);
   const update = useAuthStore((state) => state.updateCurrentUser);
   const logout = useAuthStore((state) => state.logout);
