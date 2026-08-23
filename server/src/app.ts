@@ -10,10 +10,14 @@ import {
 } from './middleware/rateLimits.js';
 import { authRouter } from './routes/authRoutes.js';
 import { authorSignatureRouter } from './routes/authorSignatureRoutes.js';
+import { centralAdminRouter } from './routes/centralAdminRoutes.js';
 import { cloudRouter } from './routes/cloudRoutes.js';
 import { editorReviewOverviewRouter } from './routes/editorReviewOverviewRoutes.js';
 import { federatedAuthRouter } from './routes/federatedAuthRoutes.js';
 import { healthRouter } from './routes/healthRoutes.js';
+import { institutionAdminApiRouter } from './routes/institutionAdminApiRoutes.js';
+import { institutionAdminAuthRouter } from './routes/institutionAdminAuthRoutes.js';
+import { institutionalProfileRouter } from './routes/institutionalProfileRoutes.js';
 import { integrationExecutionRouter } from './routes/integrationExecutionRoutes.js';
 import { integrationRouter } from './routes/integrationRoutes.js';
 import { linkedIdentityRouter } from './routes/linkedIdentityRoutes.js';
@@ -38,10 +42,7 @@ const allowedOrigins = new Set([
 ]);
 
 app.disable('x-powered-by');
-// Production traffic reaches the API through the single Nginx reverse proxy.
-// This makes req.ip reflect the real client address for express-rate-limit.
 app.set('trust proxy', 1);
-
 app.use(helmet());
 
 app.use(
@@ -57,11 +58,7 @@ app.use(
   }),
 );
 
-app.use(
-  express.json({
-    limit: '1mb',
-  }),
-);
+app.use(express.json({ limit: '1mb' }));
 
 app.get('/api', (_request, response) => {
   response.status(200).json({
@@ -70,10 +67,6 @@ app.get('/api', (_request, response) => {
   });
 });
 
-// Health probes stay outside the user-facing limiter so infrastructure checks
-// cannot consume the request budget. All resource-consuming API handlers below
-// are protected by the general limiter, with tighter policies for authentication
-// and external integration launch endpoints.
 app.use('/api/health', healthRouter);
 app.use(apiRateLimit);
 app.use('/api/auth', authRateLimit);
@@ -83,7 +76,11 @@ app.use('/api/auth', orcidOidcRouter);
 app.use('/api/auth', oidcProviderRouter);
 app.use('/api/auth', federatedAuthRouter);
 app.use('/api/auth', linkedIdentityRouter);
+app.use('/api/auth', institutionAdminAuthRouter);
+app.use('/api/auth', institutionalProfileRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/central-admin', centralAdminRouter);
+app.use('/api/institution-admin', institutionAdminApiRouter);
 app.use('/api', orcidLinkStartRouter);
 app.use('/api', authorSignatureRouter);
 app.use('/api', cloudRouter);

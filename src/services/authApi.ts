@@ -321,6 +321,14 @@ export async function updateCurrentAccount(
       input.orcid !== undefined
         ? input.orcid.trim() || null
         : undefined,
+    bio:
+      input.bio !== undefined
+        ? input.bio.trim() || null
+        : undefined,
+    timeZone:
+      input.timeZone !== undefined
+        ? input.timeZone.trim() || null
+        : undefined,
     interfaceLanguage: input.interfaceLanguage,
   };
 

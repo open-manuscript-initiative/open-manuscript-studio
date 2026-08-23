@@ -4,9 +4,11 @@ import {
   useState,
 } from 'react';
 import {
+  Building2,
   FilePenLine,
   Globe2,
   Layers3,
+  UserRound,
 } from 'lucide-react';
 
 import {
@@ -21,6 +23,11 @@ import {
   startOrcidAuthentication,
   type OidcProviderKey,
 } from '../services/authApi';
+import {
+  clearInstitutionAdminLoginPending,
+  getAuthDeploymentInfo,
+  markInstitutionAdminLoginPending,
+} from '../services/institutionAdminApi';
 import { useAuthStore } from '../store/authStore';
 import { PasswordRecoveryPage } from './PasswordRecoveryPage';
 import { useAuthProviders } from './useOrcidProvider';
@@ -29,31 +36,20 @@ interface LoginPageProps {
   onShowRegister: () => void;
 }
 
-export function LoginPage({
-  onShowRegister,
-}: LoginPageProps) {
+export function LoginPage({ onShowRegister }: LoginPageProps) {
   const { t, locale } = useTranslation();
-
-  const login = useAuthStore(
-    (state) => state.login,
-  );
-
-  const isLoading = useAuthStore(
-    (state) => state.isLoading,
-  );
-
-  const error = useAuthStore(
-    (state) => state.error,
-  );
-
-  const clearError = useAuthStore(
-    (state) => state.clearError,
-  );
+  const login = useAuthStore((state) => state.login);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const error = useAuthStore((state) => state.error);
+  const clearError = useAuthStore((state) => state.clearError);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [federatedStartError, setFederatedStartError] = useState('');
+  const [adminMode, setAdminMode] = useState(false);
+  const [institutionalDeployment, setInstitutionalDeployment] = useState(false);
+
   const providers = useAuthProviders();
   const orcidProvider = providers?.orcid ?? null;
   const oidcProviders = providers
@@ -61,24 +57,31 @@ export function LoginPage({
         .map((key) => ({ key, provider: providers[key] }))
         .filter(({ provider }) => provider?.enabled)
     : [];
-  const hasFederatedProvider = Boolean(orcidProvider?.enabled || oidcProviders.length);
+  const showOrcid = !adminMode && Boolean(orcidProvider?.enabled);
+  const hasFederatedProvider = showOrcid || oidcProviders.length > 0;
   const authErrorCode = getAuthErrorCodeFromLocation();
   const resetToken = new URLSearchParams(window.location.search).get('resetPassword')?.trim() ?? '';
   const heroCopy = getLoginHeroCopy(locale);
+  const adminCopy = getInstitutionAdminCopy(locale);
 
   useEffect(() => {
     clearError();
+    void getAuthDeploymentInfo()
+      .then((deployment) => setInstitutionalDeployment(deployment.mode === 'institutional'))
+      .catch(() => setInstitutionalDeployment(false));
   }, [clearError]);
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
+  useEffect(() => {
+    if (authErrorCode) clearInstitutionAdminLoginPending();
+  }, [authErrorCode]);
 
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     try {
       await login({
         email,
         password,
+        institutionAdmin: adminMode,
       });
     } catch {
       // The auth store exposes the error state.
@@ -96,11 +99,20 @@ export function LoginPage({
 
   const handleOidcSignIn = async (provider: OidcProviderKey, label: string) => {
     setFederatedStartError('');
+    if (adminMode) markInstitutionAdminLoginPending();
     try {
       await startOidcAuthentication(provider, locale);
     } catch {
+      if (adminMode) clearInstitutionAdminLoginPending();
       setFederatedStartError(providerOpenError(label, locale));
     }
+  };
+
+  const switchMode = (nextAdminMode: boolean) => {
+    clearError();
+    setFederatedStartError('');
+    if (!nextAdminMode) clearInstitutionAdminLoginPending();
+    setAdminMode(nextAdminMode);
   };
 
   const closeRecovery = () => {
@@ -125,9 +137,7 @@ export function LoginPage({
     );
   }
 
-  const errorTranslationKey = error
-    ? getAuthErrorTranslationKey(error)
-    : undefined;
+  const errorTranslationKey = error ? getAuthErrorTranslationKey(error) : undefined;
   const federatedError = authErrorCode ? federatedErrorMessage(authErrorCode, locale) : '';
 
   return (
@@ -136,11 +146,7 @@ export function LoginPage({
         <aside className="auth-login-hero" aria-label={t('auth.brand.name')}>
           <div className="auth-login-hero-content">
             <div className="auth-login-lockup">
-              <img
-                className="auth-login-logo"
-                src="/android-chrome-512x512.png"
-                alt=""
-              />
+              <img className="auth-login-logo" src="/android-chrome-512x512.png" alt="" />
               <div className="auth-login-product-name">OMI Studio</div>
             </div>
 
@@ -149,7 +155,7 @@ export function LoginPage({
             </p>
 
             <p className="auth-login-intro">
-              {heroCopy.intro}
+              {adminMode ? adminCopy.hero : heroCopy.intro}
             </p>
 
             <div className="auth-login-features" aria-label={heroCopy.featuresLabel}>
@@ -169,36 +175,52 @@ export function LoginPage({
           </div>
         </aside>
 
-        <section
-          className="auth-card auth-login-card"
-          aria-labelledby="login-title"
-        >
+        <section className="auth-card auth-login-card" aria-labelledby="login-title">
           <div className="auth-language-switcher auth-login-language-switcher">
             <LanguageSwitcher showAllLocales />
           </div>
 
           <div className="auth-brand auth-login-mobile-brand">
-            <div className="auth-brand-name">
-              {t('auth.brand.name')}
-            </div>
-
-            <div className="auth-brand-description">
-              {t('auth.brand.description')}
-            </div>
+            <div className="auth-brand-name">{t('auth.brand.name')}</div>
+            <div className="auth-brand-description">{t('auth.brand.description')}</div>
           </div>
+
+          {institutionalDeployment ? (
+            <div className="auth-login-mode-switch" role="tablist" aria-label={adminCopy.modeLabel}>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={!adminMode}
+                className={!adminMode ? 'auth-login-mode auth-login-mode--active' : 'auth-login-mode'}
+                onClick={() => switchMode(false)}
+              >
+                <UserRound size={16} aria-hidden="true" />
+                {adminCopy.personalMode}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={adminMode}
+                className={adminMode ? 'auth-login-mode auth-login-mode--active' : 'auth-login-mode'}
+                onClick={() => switchMode(true)}
+              >
+                <Building2 size={16} aria-hidden="true" />
+                {adminCopy.adminMode}
+              </button>
+            </div>
+          ) : null}
 
           <header className="auth-header auth-login-header">
             <h1 id="login-title">
-              {heroCopy.welcome}
+              {adminMode ? adminCopy.welcome : heroCopy.welcome}
             </h1>
-
-            <p>{t('auth.login.description')}</p>
+            <p>{adminMode ? adminCopy.description : t('auth.login.description')}</p>
           </header>
 
           {hasFederatedProvider ? (
             <div className="auth-form auth-login-federated">
               <div className="auth-login-provider-grid">
-                {orcidProvider?.enabled ? (
+                {showOrcid ? (
                   <button
                     className="auth-primary-button auth-provider-button auth-orcid-button"
                     type="button"
@@ -214,11 +236,14 @@ export function LoginPage({
                     key={key}
                     onClick={() => void handleOidcSignIn(key, provider.label)}
                   >
-                    {providerButtonLabel(provider.label, locale)}
+                    {adminMode
+                      ? adminProviderButtonLabel(provider.label, locale)
+                      : providerButtonLabel(provider.label, locale)}
                   </button>
                 ))}
               </div>
-              {orcidProvider?.enabled ? (
+
+              {showOrcid && orcidProvider ? (
                 <div className="auth-login-orcid-meta">
                   <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
                   <div className="auth-field-hint auth-login-orcid-hint">
@@ -230,6 +255,13 @@ export function LoginPage({
                   </div>
                 </div>
               ) : null}
+
+              {adminMode ? (
+                <div className="auth-field-hint auth-admin-login-hint">
+                  {adminCopy.federatedHint}
+                </div>
+              ) : null}
+
               {federatedStartError ? <div className="auth-error" role="alert">{federatedStartError}</div> : null}
             </div>
           ) : null}
@@ -240,10 +272,7 @@ export function LoginPage({
             </div>
           ) : null}
 
-          <form
-            className="auth-form auth-login-email-form"
-            onSubmit={handleSubmit}
-          >
+          <form className="auth-form auth-login-email-form" onSubmit={handleSubmit}>
             <div className="auth-field">
               <label htmlFor="login-email">{t('auth.fields.email.label')}</label>
               <input
@@ -299,26 +328,40 @@ export function LoginPage({
               </div>
             )}
 
-            <button
-              className="auth-primary-button auth-login-submit"
-              type="submit"
-              disabled={isLoading}
-            >
-              {isLoading ? t('auth.login.submitting') : t('auth.login.submit')}
+            <button className="auth-primary-button auth-login-submit" type="submit" disabled={isLoading}>
+              {isLoading
+                ? t('auth.login.submitting')
+                : adminMode
+                  ? adminCopy.submit
+                  : t('auth.login.submit')}
             </button>
           </form>
 
-          <footer className="auth-footer auth-login-footer">
-            <span>{t('auth.login.noAccount')}</span>
-            <button
-              type="button"
-              className="auth-link-button"
-              disabled={isLoading}
-              onClick={onShowRegister}
-            >
-              {t('auth.login.registerLink')}
-            </button>
-          </footer>
+          {adminMode ? (
+            <footer className="auth-footer auth-login-footer auth-admin-login-footer">
+              <span>{adminCopy.noRegistration}</span>
+              <button
+                type="button"
+                className="auth-link-button"
+                disabled={isLoading}
+                onClick={() => switchMode(false)}
+              >
+                {adminCopy.backToPersonal}
+              </button>
+            </footer>
+          ) : (
+            <footer className="auth-footer auth-login-footer">
+              <span>{t('auth.login.noAccount')}</span>
+              <button
+                type="button"
+                className="auth-link-button"
+                disabled={isLoading}
+                onClick={onShowRegister}
+              >
+                {t('auth.login.registerLink')}
+              </button>
+            </footer>
+          )}
 
           <p className="auth-alpha-notice auth-login-notice">{t('auth.alphaNotice')}</p>
         </section>
@@ -366,10 +409,59 @@ function getLoginHeroCopy(locale: string) {
   };
 }
 
+function getInstitutionAdminCopy(locale: string) {
+  if (locale === 'hu') {
+    return {
+      modeLabel: 'Bejelentkezési mód',
+      personalMode: 'Személyes',
+      adminMode: 'Intézményi adminisztrátor',
+      welcome: 'Intézményi adminisztrátor',
+      description: 'Csak olyan Studio-fiókkal használható, amelyhez az intézmény ADMIN vagy OWNER jogosultságot rendelt.',
+      hero: 'Az intézményi adminisztrátor a szervezet tagjait, szerepköreit és intézményi kapcsolatokat kezeli; a személyes szerzői profil ettől elkülönül.',
+      federatedHint: 'Az intézményi azonosítóval történő belépés után a Studio szerveroldalon ellenőrzi az adminisztrátori jogosultságot.',
+      submit: 'Adminisztrátori bejelentkezés',
+      noRegistration: 'Adminisztrátori jogosultság itt nem hozható létre.',
+      backToPersonal: 'Vissza a személyes belépéshez',
+    };
+  }
+  if (locale === 'de') {
+    return {
+      modeLabel: 'Anmeldemodus',
+      personalMode: 'Persönlich',
+      adminMode: 'Institutionsadministrator',
+      welcome: 'Institutionsadministrator',
+      description: 'Nur für Studio-Konten mit einer von der Institution vergebenen ADMIN- oder OWNER-Rolle.',
+      hero: 'Institutionelle Administratoren verwalten Mitglieder, Rollen und Organisationsverbindungen; das persönliche Autorenprofil bleibt davon getrennt.',
+      federatedHint: 'Nach der Anmeldung mit einer institutionellen Identität prüft der Studio-Server die Administratorberechtigung.',
+      submit: 'Als Administrator anmelden',
+      noRegistration: 'Administratorrechte können hier nicht selbst erstellt werden.',
+      backToPersonal: 'Zur persönlichen Anmeldung',
+    };
+  }
+  return {
+    modeLabel: 'Sign-in mode',
+    personalMode: 'Personal',
+    adminMode: 'Institution administrator',
+    welcome: 'Institution administrator',
+    description: 'Available only to Studio accounts that have an ADMIN or OWNER role assigned by the institution.',
+    hero: 'Institution administrators manage organization membership, roles and institutional connections while the personal author profile remains separate.',
+    federatedHint: 'After institutional sign-in, the Studio server verifies administrator permission before the admin context is accepted.',
+    submit: 'Administrator sign in',
+    noRegistration: 'Administrator permission cannot be self-registered here.',
+    backToPersonal: 'Back to personal sign in',
+  };
+}
+
 function providerButtonLabel(label: string, locale: string): string {
   if (locale === 'hu') return `Bejelentkezés – ${label}`;
   if (locale === 'de') return `Anmelden mit ${label}`;
   return `Sign in with ${label}`;
+}
+
+function adminProviderButtonLabel(label: string, locale: string): string {
+  if (locale === 'hu') return `Adminisztrátori belépés – ${label}`;
+  if (locale === 'de') return `Administrator-Anmeldung mit ${label}`;
+  return `Administrator sign in with ${label}`;
 }
 
 function providerOpenError(label: string, locale: string): string {
@@ -401,9 +493,7 @@ function federatedErrorMessage(code: string, locale: string): string {
   return locale === 'hu' ? value[1] : locale === 'de' ? value[2] : value[0];
 }
 
-function getAuthErrorTranslationKey(
-  message: string,
-): TranslationKey | undefined {
+function getAuthErrorTranslationKey(message: string): TranslationKey | undefined {
   const errorKeyMap: Record<string, TranslationKey> = {
     'Invalid e-mail address.': 'auth.errors.invalidEmail',
     'Incorrect e-mail address or password.': 'auth.errors.invalidCredentials',

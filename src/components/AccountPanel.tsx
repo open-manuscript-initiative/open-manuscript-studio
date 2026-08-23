@@ -1,76 +1,93 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { BadgeCheck, LogOut, Save, ShieldCheck, UserRound } from 'lucide-react';
+import {
+  BadgeCheck,
+  Building2,
+  LogOut,
+  Save,
+  ShieldCheck,
+  UserRound,
+} from 'lucide-react';
 
 import { getSystemTimeZone, getTimeZoneOptions } from '../account/timeZones';
 import { useTranslation } from '../i18n';
+import { getCentralAdminContext, type CentralAdminRole } from '../services/centralAdminApi';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
+import { CentralAdministrationSettings } from './CentralAdministrationSettings';
+import { InstitutionalProfilesSettings } from './InstitutionalProfilesSettings';
 import { LinkedIdentitiesSettings } from './LinkedIdentitiesSettings';
 import '../styles/account.css';
 
 const copy = {
   en: {
     title: 'Account',
-    subtitle: 'Profile and scholarly identity',
-    profile: 'Profile',
+    subtitle: 'Personal identity, institutional roles and sign-in methods',
+    personal: 'Personal profile',
+    institutional: 'Institutional profiles',
+    central: 'Central administration',
+    personalDescription: 'Your durable scholarly identity. Organization-specific affiliations are managed separately.',
     name: 'Full name',
-    affiliation: 'Affiliation',
     orcid: 'ORCID iD',
     bio: 'Short biography',
-    preferences: 'Preferences',
+    preferences: 'Personal preferences',
     timezone: 'Time zone',
     timezoneHint: 'Standard IANA time-zone identifier; the current UTC offset is shown for reference.',
     identity: 'Account identity',
     verified: 'Verified e-mail',
     unverified: 'E-mail not verified',
-    save: 'Save changes',
-    saved: 'Changes saved.',
+    save: 'Save personal profile',
+    saved: 'Personal profile saved.',
     logout: 'Sign out',
   },
   hu: {
     title: 'Fiók',
-    subtitle: 'Profil és tudományos identitás',
-    profile: 'Profil',
+    subtitle: 'Személyes identitás, intézményi szerepek és bejelentkezési módok',
+    personal: 'Személyes profil',
+    institutional: 'Intézményi profilok',
+    central: 'Központi adminisztráció',
+    personalDescription: 'A tartós személyes tudományos identitásod. Az intézményi affiliációk külön kezelhetők.',
     name: 'Teljes név',
-    affiliation: 'Intézményi affiliáció',
     orcid: 'ORCID iD',
     bio: 'Rövid bemutatkozás',
-    preferences: 'Beállítások',
+    preferences: 'Személyes beállítások',
     timezone: 'Időzóna',
     timezoneHint: 'Szabványos IANA-időzóna; tájékoztatásként az aktuális UTC-eltolás is látható.',
     identity: 'Fiókazonosság',
     verified: 'Ellenőrzött e-mail-cím',
     unverified: 'Nem ellenőrzött e-mail-cím',
-    save: 'Módosítások mentése',
-    saved: 'Módosítások elmentve.',
+    save: 'Személyes profil mentése',
+    saved: 'A személyes profil elmentve.',
     logout: 'Kijelentkezés',
   },
   de: {
     title: 'Konto',
-    subtitle: 'Profil und wissenschaftliche Identität',
-    profile: 'Profil',
+    subtitle: 'Persönliche Identität, institutionelle Rollen und Anmeldemethoden',
+    personal: 'Persönliches Profil',
+    institutional: 'Institutionelle Profile',
+    central: 'Zentrale Administration',
+    personalDescription: 'Ihre dauerhafte wissenschaftliche Identität. Organisationsbezogene Zugehörigkeiten werden separat verwaltet.',
     name: 'Vollständiger Name',
-    affiliation: 'Institutionelle Zugehörigkeit',
     orcid: 'ORCID iD',
     bio: 'Kurzbiografie',
-    preferences: 'Einstellungen',
+    preferences: 'Persönliche Einstellungen',
     timezone: 'Zeitzone',
     timezoneHint: 'Standardisierte IANA-Zeitzone; der aktuelle UTC-Versatz wird zur Orientierung angezeigt.',
     identity: 'Kontoidentität',
     verified: 'Bestätigte E-Mail-Adresse',
     unverified: 'E-Mail-Adresse nicht bestätigt',
-    save: 'Änderungen speichern',
-    saved: 'Änderungen gespeichert.',
+    save: 'Persönliches Profil speichern',
+    saved: 'Persönliches Profil gespeichert.',
     logout: 'Abmelden',
   },
 } as const;
 
 type AccountFormState = {
   fullName: string;
-  affiliation: string;
   orcid: string;
   bio: string;
   timeZone: string;
 };
+
+type ProfileView = 'personal' | 'institutional' | 'central';
 
 export function AccountPanel() {
   const { locale } = useTranslation();
@@ -80,10 +97,11 @@ export function AccountPanel() {
   const logout = useAuthStore((state) => state.logout);
   const loading = useAuthStore((state) => state.isLoading);
   const error = useAuthStore((state) => state.error);
+  const [profileView, setProfileView] = useState<ProfileView>('personal');
+  const [centralRole, setCentralRole] = useState<CentralAdminRole | null>(null);
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState<AccountFormState>({
     fullName: '',
-    affiliation: '',
     orcid: '',
     bio: '',
     timeZone: getSystemTimeZone(),
@@ -97,11 +115,13 @@ export function AccountPanel() {
     if (!user) return;
     setForm({
       fullName: user.profile.fullName ?? '',
-      affiliation: user.profile.affiliation ?? '',
       orcid: user.profile.orcid ?? '',
       bio: user.profile.bio ?? '',
       timeZone: user.preferences.timeZone || getSystemTimeZone(),
     });
+    void getCentralAdminContext()
+      .then((context) => setCentralRole(context.centralAdmin ? context.role : null))
+      .catch(() => setCentralRole(null));
   }, [user]);
 
   if (!user) return null;
@@ -111,7 +131,6 @@ export function AccountPanel() {
     setSaved(false);
     await update({
       fullName: form.fullName,
-      affiliation: form.affiliation || undefined,
       orcid: form.orcid || undefined,
       bio: form.bio || undefined,
       timeZone: form.timeZone || undefined,
@@ -131,86 +150,114 @@ export function AccountPanel() {
         </div>
       </header>
 
-      <div className="account-grid">
-        <form
-          className="account-card account-form"
-          onSubmit={(event) => void submit(event)}
+      <div className="account-profile-switch" role="tablist" aria-label={labels.title}>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={profileView === 'personal'}
+          className={profileView === 'personal' ? 'account-profile-tab account-profile-tab--active' : 'account-profile-tab'}
+          onClick={() => setProfileView('personal')}
         >
-          <h2>{labels.profile}</h2>
-          <label>
-            {labels.name}
-            <input
-              value={form.fullName}
-              onChange={(event) =>
-                setForm({ ...form, fullName: event.target.value })
-              }
-              required
-            />
-          </label>
-          <label>
-            {labels.affiliation}
-            <input
-              value={form.affiliation}
-              onChange={(event) =>
-                setForm({ ...form, affiliation: event.target.value })
-              }
-            />
-          </label>
-          <label>
-            {labels.orcid}
-            <input
-              value={form.orcid}
-              onChange={(event) =>
-                setForm({ ...form, orcid: event.target.value })
-              }
-              placeholder="0000-0000-0000-0000"
-            />
-          </label>
-          <label>
-            {labels.bio}
-            <textarea
-              rows={4}
-              value={form.bio}
-              onChange={(event) =>
-                setForm({ ...form, bio: event.target.value })
-              }
-            />
-          </label>
-
-          <h2>{labels.preferences}</h2>
-          <label>
-            {labels.timezone}
-            <select
-              value={form.timeZone}
-              onChange={(event) =>
-                setForm({ ...form, timeZone: event.target.value })
-              }
-            >
-              {timeZoneOptions.map((option) => (
-                <option value={option.id} key={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <small className="account-field-hint">{labels.timezoneHint}</small>
-          </label>
-
-          {error ? (
-            <div className="account-error" role="alert">
-              {error}
-            </div>
-          ) : null}
-          {saved ? (
-            <div className="account-success" role="status">
-              {labels.saved}
-            </div>
-          ) : null}
-
-          <button className="account-primary" type="submit" disabled={loading}>
-            <Save size={17} aria-hidden="true" />
-            {labels.save}
+          <UserRound size={17} aria-hidden="true" />
+          {labels.personal}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={profileView === 'institutional'}
+          className={profileView === 'institutional' ? 'account-profile-tab account-profile-tab--active' : 'account-profile-tab'}
+          onClick={() => setProfileView('institutional')}
+        >
+          <Building2 size={17} aria-hidden="true" />
+          {labels.institutional}
+        </button>
+        {centralRole ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={profileView === 'central'}
+            className={profileView === 'central' ? 'account-profile-tab account-profile-tab--active' : 'account-profile-tab'}
+            onClick={() => setProfileView('central')}
+          >
+            <ShieldCheck size={17} aria-hidden="true" />
+            {labels.central}
           </button>
-        </form>
+        ) : null}
+      </div>
+
+      <div className="account-grid">
+        <div className="account-profile-column">
+          {profileView === 'personal' ? (
+            <form
+              className="account-card account-form"
+              onSubmit={(event) => void submit(event)}
+            >
+              <div className="account-section-heading account-section-heading--form">
+                <div>
+                  <h2>{labels.personal}</h2>
+                  <p>{labels.personalDescription}</p>
+                </div>
+              </div>
+
+              <label>
+                {labels.name}
+                <input
+                  value={form.fullName}
+                  onChange={(event) => setForm({ ...form, fullName: event.target.value })}
+                  required
+                />
+              </label>
+
+              <label>
+                {labels.orcid}
+                <input
+                  value={form.orcid}
+                  onChange={(event) => setForm({ ...form, orcid: event.target.value })}
+                  placeholder="0000-0000-0000-0000"
+                />
+              </label>
+
+              <label>
+                {labels.bio}
+                <textarea
+                  rows={4}
+                  value={form.bio}
+                  onChange={(event) => setForm({ ...form, bio: event.target.value })}
+                />
+              </label>
+
+              <h2>{labels.preferences}</h2>
+              <label>
+                {labels.timezone}
+                <select
+                  value={form.timeZone}
+                  onChange={(event) => setForm({ ...form, timeZone: event.target.value })}
+                >
+                  {timeZoneOptions.map((option) => (
+                    <option value={option.id} key={option.id}>{option.label}</option>
+                  ))}
+                </select>
+                <small className="account-field-hint">{labels.timezoneHint}</small>
+              </label>
+
+              {error ? <div className="account-error" role="alert">{error}</div> : null}
+              {saved ? <div className="account-success" role="status">{labels.saved}</div> : null}
+
+              <button className="account-primary" type="submit" disabled={loading}>
+                <Save size={17} aria-hidden="true" />
+                {labels.save}
+              </button>
+            </form>
+          ) : profileView === 'institutional' ? (
+            <div className="account-card">
+              <InstitutionalProfilesSettings locale={locale} />
+            </div>
+          ) : centralRole ? (
+            <div className="account-card account-card--central-admin">
+              <CentralAdministrationSettings locale={locale} role={centralRole} />
+            </div>
+          ) : null}
+        </div>
 
         <aside className="account-card account-identity">
           <h2>{labels.identity}</h2>

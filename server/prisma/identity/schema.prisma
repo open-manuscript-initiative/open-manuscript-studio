@@ -20,24 +20,49 @@ enum IdentityProvider {
   SAML
 }
 
+enum InstitutionStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum InstitutionRole {
+  MEMBER
+  ADMIN
+  OWNER
+}
+
+enum CentralAdminRole {
+  ADMIN
+  OWNER
+}
+
+enum InstitutionApiCredentialStatus {
+  ACTIVE
+  REVOKED
+}
+
 model User {
-  id                    String            @id @default(uuid()) @db.Uuid
-  email                 String            @unique @db.VarChar(320)
-  passwordHash          String            @map("password_hash") @db.VarChar(255)
-  fullName              String            @map("full_name") @db.VarChar(200)
-  affiliation           String?           @db.VarChar(300)
-  affiliationRorId      String?           @map("affiliation_ror_id") @db.VarChar(128)
-  orcid                 String?           @unique @db.VarChar(19)
-  interfaceLanguage     String            @default("en") @map("interface_language") @db.VarChar(16)
-  status                UserStatus        @default(ACTIVE)
-  createdAt             DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
-  lastLoginAt           DateTime?         @map("last_login_at") @db.Timestamptz(6)
-  sessions              UserSession[]
-  invitations           UserInvitation[]
-  identities            UserIdentity[]
-  oauthStates           OAuthLoginState[]
-  passwordResetTokens   PasswordResetToken[]
+  id                     String                  @id @default(uuid()) @db.Uuid
+  email                  String                  @unique @db.VarChar(320)
+  passwordHash           String                  @map("password_hash") @db.VarChar(255)
+  fullName               String                  @map("full_name") @db.VarChar(200)
+  affiliation            String?                 @db.VarChar(300)
+  affiliationRorId       String?                 @map("affiliation_ror_id") @db.VarChar(128)
+  orcid                  String?                 @unique @db.VarChar(19)
+  bio                    String?                 @db.VarChar(2000)
+  timeZone               String?                 @map("time_zone") @db.VarChar(64)
+  interfaceLanguage      String                  @default("en") @map("interface_language") @db.VarChar(16)
+  status                 UserStatus              @default(ACTIVE)
+  createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  lastLoginAt            DateTime?               @map("last_login_at") @db.Timestamptz(6)
+  sessions               UserSession[]
+  invitations            UserInvitation[]
+  identities             UserIdentity[]
+  institutionMemberships InstitutionMembership[]
+  centralAdminGrant      CentralAdminGrant?
+  oauthStates            OAuthLoginState[]
+  passwordResetTokens    PasswordResetToken[]
 
   @@map("users")
 }
@@ -86,34 +111,124 @@ model UserInvitation {
 }
 
 model UserIdentity {
-  id             String           @id @default(uuid()) @db.Uuid
-  userId         String           @map("user_id") @db.Uuid
-  provider       IdentityProvider
-  issuer         String           @db.VarChar(512)
-  subject        String           @db.VarChar(320)
-  displayName    String?          @map("display_name") @db.VarChar(200)
-  profile        Json?            @db.JsonB
-  accessToken    String?          @map("access_token") @db.Text
-  refreshToken   String?          @map("refresh_token") @db.Text
-  tokenExpiresAt DateTime?        @map("token_expires_at") @db.Timestamptz(6)
-  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
-  lastUsedAt     DateTime?        @map("last_used_at") @db.Timestamptz(6)
-  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                     String                  @id @default(uuid()) @db.Uuid
+  userId                 String                  @map("user_id") @db.Uuid
+  provider               IdentityProvider
+  issuer                 String                  @db.VarChar(512)
+  subject                String                  @db.VarChar(320)
+  displayName            String?                 @map("display_name") @db.VarChar(200)
+  profile                Json?                   @db.JsonB
+  accessToken            String?                 @map("access_token") @db.Text
+  refreshToken           String?                 @map("refresh_token") @db.Text
+  tokenExpiresAt         DateTime?               @map("token_expires_at") @db.Timestamptz(6)
+  createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  lastUsedAt             DateTime?               @map("last_used_at") @db.Timestamptz(6)
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institutionMemberships InstitutionMembership[]
 
   @@unique([provider, issuer, subject])
   @@index([userId, provider])
   @@map("user_identities")
 }
 
+model Institution {
+  id             String                     @id @default(uuid()) @db.Uuid
+  name           String                     @db.VarChar(300)
+  rorId          String?                    @unique @map("ror_id") @db.VarChar(128)
+  status         InstitutionStatus          @default(ACTIVE)
+  createdAt      DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  memberships    InstitutionMembership[]
+  apiCredentials InstitutionApiCredential[]
+
+  @@index([name])
+  @@map("institutions")
+}
+
+model InstitutionMembership {
+  id                 String          @id @default(uuid()) @db.Uuid
+  userId             String          @map("user_id") @db.Uuid
+  institutionId      String          @map("institution_id") @db.Uuid
+  role               InstitutionRole @default(MEMBER)
+  department         String?         @db.VarChar(300)
+  positionTitle      String?         @map("position_title") @db.VarChar(200)
+  institutionalEmail String?         @map("institutional_email") @db.VarChar(320)
+  emailVerified      Boolean         @default(false) @map("email_verified")
+  identityId         String?         @map("identity_id") @db.Uuid
+  isDefault          Boolean         @default(false) @map("is_default")
+  createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institution        Institution     @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  identity           UserIdentity?   @relation(fields: [identityId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, institutionId])
+  @@index([userId, isDefault])
+  @@index([institutionId, role])
+  @@index([identityId])
+  @@map("institution_memberships")
+}
+
+model CentralAdminGrant {
+  id              String           @id @default(uuid()) @db.Uuid
+  userId          String           @unique @map("user_id") @db.Uuid
+  role            CentralAdminRole @default(ADMIN)
+  createdByUserId String?          @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([role])
+  @@map("central_admin_grants")
+}
+
+model InstitutionApiCredential {
+  id              String                         @id @default(uuid()) @db.Uuid
+  institutionId   String                         @map("institution_id") @db.Uuid
+  label           String                         @db.VarChar(160)
+  tokenPrefix     String                         @map("token_prefix") @db.VarChar(24)
+  tokenHash       String                         @unique @map("token_hash") @db.VarChar(64)
+  scopes          String[]
+  status          InstitutionApiCredentialStatus @default(ACTIVE)
+  expiresAt       DateTime?                      @map("expires_at") @db.Timestamptz(6)
+  lastUsedAt      DateTime?                      @map("last_used_at") @db.Timestamptz(6)
+  createdByUserId String                         @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime                       @default(now()) @map("created_at") @db.Timestamptz(6)
+  revokedAt       DateTime?                      @map("revoked_at") @db.Timestamptz(6)
+  institution     Institution                    @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+
+  @@index([institutionId, status])
+  @@index([expiresAt])
+  @@map("institution_api_credentials")
+}
+
+model AdminAuditEvent {
+  id              String   @id @default(uuid()) @db.Uuid
+  actorUserId     String?  @map("actor_user_id") @db.Uuid
+  apiCredentialId String?  @map("api_credential_id") @db.Uuid
+  institutionId   String?  @map("institution_id") @db.Uuid
+  action          String   @db.VarChar(120)
+  targetType      String?  @map("target_type") @db.VarChar(80)
+  targetId        String?  @map("target_id") @db.VarChar(160)
+  details         Json?    @db.JsonB
+  ipAddress       String?  @map("ip_address") @db.VarChar(64)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([createdAt])
+  @@index([institutionId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@map("admin_audit_events")
+}
+
 model OAuthLoginState {
   id              String           @id @default(uuid()) @db.Uuid
   stateHash       String           @unique @map("state_hash") @db.VarChar(64)
   provider        IdentityProvider
-  mode            String           @db.VarChar(16)
+  mode            String           @db.VarChar(32)
   userId          String?          @map("user_id") @db.Uuid
   invitationToken String?          @map("invitation_token") @db.Text
-  returnPath      String?          @map("return_path") @db.VarChar(1024)
+  returnPath      String?          @map("return_path") @db.VarChar(2048)
   expiresAt       DateTime         @map("expires_at") @db.Timestamptz(6)
   createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   user            User?            @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -48,6 +48,8 @@ const updateProfileSchema = z.object({
   affiliation: z.string().max(300).nullable().optional(),
   affiliationRorId: z.string().max(128).nullable().optional(),
   orcid: z.string().max(19).nullable().optional(),
+  bio: z.string().max(2000).nullable().optional(),
+  timeZone: z.string().max(64).nullable().optional(),
   interfaceLanguage: z.string().max(16).optional(),
 });
 
@@ -212,6 +214,8 @@ authRouter.patch('/me', async (request, response) => {
       ...(parsed.affiliation !== undefined ? { affiliation: parsed.affiliation } : {}),
       ...(parsed.affiliationRorId !== undefined ? { affiliationRorId: parsed.affiliationRorId } : {}),
       ...(parsed.orcid !== undefined ? { orcid: parsed.orcid } : {}),
+      ...(parsed.bio !== undefined ? { bio: parsed.bio } : {}),
+      ...(parsed.timeZone !== undefined ? { timeZone: parsed.timeZone } : {}),
       ...(parsed.interfaceLanguage !== undefined ? { interfaceLanguage: parsed.interfaceLanguage } : {}),
     };
     const user = await updateUserForSession(token, input);

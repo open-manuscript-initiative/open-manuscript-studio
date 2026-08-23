@@ -16,6 +16,11 @@ import {
   registerAccount,
   updateCurrentAccount,
 } from '../services/authApi';
+import {
+  consumeInstitutionAdminLoginPending,
+  getInstitutionAdminContext,
+  loginInstitutionAdminAccount,
+} from '../services/institutionAdminApi';
 
 export interface AuthSession {
   userId: UserId;
@@ -31,6 +36,7 @@ export interface RegisterInput extends CreateUserInput {
 export interface LoginInput {
   email: string;
   password: string;
+  institutionAdmin?: boolean;
 }
 
 export interface AuthState {
@@ -74,7 +80,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     try {
       const nativeHandoffUser = await consumeNativeOrcidHandoffFromLocation();
-      const user = nativeHandoffUser ?? await getCurrentAccount();
+      const candidate = nativeHandoffUser ?? await getCurrentAccount();
+      const user = candidate ? await enforcePendingInstitutionAdminLogin(candidate) : null;
 
       if (!user) {
         set({
@@ -103,14 +110,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const user = await consumeNativeOrcidHandoffFromUrl(url);
-      if (!user) {
+      const candidate = await consumeNativeOrcidHandoffFromUrl(url);
+      if (!candidate) {
         set({ isLoading: false, isInitialized: true });
         return;
       }
+      const user = await enforcePendingInstitutionAdminLogin(candidate);
       setAuthenticatedUser(set, user, true);
     } catch (error) {
       set({
+        users: [],
+        session: null,
         isLoading: false,
         isInitialized: true,
         error: getErrorMessage(error),
@@ -146,7 +156,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const user = await loginAccount(input);
+      const user = input.institutionAdmin
+        ? await loginInstitutionAdminAccount({ email: input.email, password: input.password })
+        : await loginAccount({ email: input.email, password: input.password });
       setAuthenticatedUser(set, user, true);
       return user;
     } catch (error) {
@@ -230,6 +242,16 @@ export function getCurrentUserDisplayName(
 ): string | undefined {
   const user = getCurrentUser(state);
   return user ? getUserDisplayName(user) : undefined;
+}
+
+async function enforcePendingInstitutionAdminLogin(user: User): Promise<User> {
+  if (!consumeInstitutionAdminLoginPending()) return user;
+
+  const institutions = await getInstitutionAdminContext();
+  if (institutions.length > 0) return user;
+
+  await logoutAccount();
+  throw new Error('This Studio account is not an administrator of an institution.');
 }
 
 function setAuthenticatedUser(
