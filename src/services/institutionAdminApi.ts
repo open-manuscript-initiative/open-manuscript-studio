@@ -10,6 +10,11 @@ export interface InstitutionAdminContext {
   role: 'ADMIN' | 'OWNER';
 }
 
+export interface AuthDeploymentInfo {
+  mode: 'personal' | 'institutional';
+  label: string;
+}
+
 interface NativeAdminLoginResponse {
   user: User;
   token?: string;
@@ -52,6 +57,17 @@ export async function getInstitutionAdminContext(): Promise<InstitutionAdminCont
   if (!response.ok) throw await apiError(response);
   const payload = await response.json() as { institutions: InstitutionAdminContext[] };
   return payload.institutions;
+}
+
+export async function getAuthDeploymentInfo(): Promise<AuthDeploymentInfo> {
+  const response = await fetch(`${apiBaseUrl()}/api/auth/providers`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: authHeaders({ Accept: 'application/json' }),
+  });
+  if (!response.ok) throw await apiError(response);
+  const payload = await response.json() as { deployment?: AuthDeploymentInfo };
+  return payload.deployment ?? { mode: 'personal', label: 'Personal' };
 }
 
 export function markInstitutionAdminLoginPending(): void {
