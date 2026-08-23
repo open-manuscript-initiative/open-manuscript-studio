@@ -350,32 +350,7 @@ export interface TranslationDictionary {
   };
 }
 
-/** Every UI locale currently shipped by Studio. */
-export type SupportedLocale =
-  | 'bg'
-  | 'cs'
-  | 'da'
-  | 'de'
-  | 'el'
-  | 'en'
-  | 'es'
-  | 'et'
-  | 'fi'
-  | 'fr'
-  | 'ga'
-  | 'hr'
-  | 'hu'
-  | 'it'
-  | 'lt'
-  | 'lv'
-  | 'mt'
-  | 'nl'
-  | 'pl'
-  | 'pt'
-  | 'ro'
-  | 'sk'
-  | 'sl'
-  | 'sv';
+export type SupportedLocale = 'en' | 'hu' | 'de';
 
 type NestedKeyOf<T> = {
   [K in keyof T & string]:
