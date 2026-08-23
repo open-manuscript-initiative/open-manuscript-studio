@@ -33,6 +33,8 @@ export interface UpdateUserInput {
   affiliation?: string | null;
   affiliationRorId?: string | null;
   orcid?: string | null;
+  bio?: string | null;
+  timeZone?: string | null;
   interfaceLanguage?: string;
 }
 
@@ -212,6 +214,8 @@ export async function updateUserForSession(
     affiliation?: string | null;
     affiliationRorId?: string | null;
     orcid?: string | null;
+    bio?: string | null;
+    timeZone?: string | null;
     interfaceLanguage?: string;
   } = {};
 
@@ -223,6 +227,8 @@ export async function updateUserForSession(
   if (input.affiliation !== undefined) data.affiliation = cleanNullable(input.affiliation);
   if (input.affiliationRorId !== undefined) data.affiliationRorId = cleanNullable(input.affiliationRorId);
   if (input.orcid !== undefined) data.orcid = normalizeNullableOrcid(input.orcid);
+  if (input.bio !== undefined) data.bio = cleanNullable(input.bio);
+  if (input.timeZone !== undefined) data.timeZone = cleanNullable(input.timeZone);
   if (input.interfaceLanguage !== undefined) {
     const interfaceLanguage = input.interfaceLanguage.trim().toLowerCase();
     if (!interfaceLanguage) throw new Error('The interface language is required.');
@@ -318,6 +324,8 @@ function serializeUser(user: {
   affiliation: string | null;
   affiliationRorId: string | null;
   orcid: string | null;
+  bio: string | null;
+  timeZone: string | null;
   interfaceLanguage: string;
   status: string;
   createdAt: Date;
@@ -334,10 +342,12 @@ function serializeUser(user: {
       ...(user.affiliation !== null ? { affiliation: user.affiliation } : {}),
       ...(user.affiliationRorId !== null ? { affiliationRorId: user.affiliationRorId } : {}),
       ...(user.orcid !== null ? { orcid: user.orcid } : {}),
+      ...(user.bio !== null ? { bio: user.bio } : {}),
     },
     preferences: {
       interfaceLanguage: user.interfaceLanguage,
       workingLanguages: [],
+      ...(user.timeZone !== null ? { timeZone: user.timeZone } : {}),
     },
     identities: [],
     createdAt: user.createdAt.toISOString(),
