@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getExportFormatCopy } from '../i18n/exportFormats';
+import { getStudioPlatform } from '../mobile/platform/platform';
 import { buildDocxExport } from '../services/exportDocx';
 import { buildEpubExport } from '../services/exportEpub';
 import { saveExportBlob, saveExportText, type ExportDeliveryResult } from '../services/exportFileDelivery';
@@ -45,6 +46,7 @@ export function ExportFormatsPanel() {
   const { locale } = useTranslation();
   const copy = getExportFormatCopy(locale);
   const checkpoint = useStudioStore((state) => state.checkpoint);
+  const platform = getStudioPlatform();
   const [selectedId, setSelectedId] = useState<ExportId | ''>('');
   const [busy, setBusy] = useState<ExportId | null>(null);
   const [error, setError] = useState('');
@@ -74,7 +76,11 @@ export function ExportFormatsPanel() {
       setNotice(copy.cancelled);
       return;
     }
-    setNotice(delivery.path ? `${copy.saved} ${delivery.path}` : copy.saved);
+    // Android returns a content:// URI from the Storage Access Framework. It
+    // is an implementation detail rather than a useful user-facing path.
+    setNotice(delivery.path && platform !== 'android'
+      ? `${copy.saved} ${delivery.path}`
+      : copy.saved);
   };
 
   const run = async (id: ExportId): Promise<void> => {
