@@ -11,7 +11,10 @@ import {
 import { applyDocxImportPlan } from '../app/docxImportActions';
 import { useTranslation } from '../i18n';
 import { getDocxImportCopy } from '../i18n/docxImport';
-import { parseDocxManuscriptWithInlineSemantics } from '../services/docxInlineSemanticsImport';
+import {
+  parseDocxForStudio,
+  type DocxImportStage,
+} from '../services/docxImportStrategy';
 
 interface DocxImportPanelProps {
   onImported?: () => void;
@@ -22,18 +25,27 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
   const copy = getDocxImportCopy(locale);
   const inputRef = useRef<HTMLInputElement>(null);
   const [parsing, setParsing] = useState(false);
+  const [importStage, setImportStage] = useState<DocxImportStage | null>(null);
+  const [largeDocumentMode, setLargeDocumentMode] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleFile(file: File | undefined): Promise<void> {
     if (!file || parsing) return;
     setParsing(true);
+    setImportStage('preparing');
+    setLargeDocumentMode(false);
     setError(null);
 
     try {
       // Let the file-picker event finish and allow the busy state to paint before
       // the CPU-intensive Open XML parsing starts.
       await yieldToBrowser();
-      const plan = await parseDocxManuscriptWithInlineSemantics(file);
+      const plan = await parseDocxForStudio(file, {
+        onProgress: ({ stage, largeDocumentMode: large }) => {
+          setImportStage(stage);
+          setLargeDocumentMode(large);
+        },
+      });
       await yieldToBrowser();
 
       // A DOCX import is already defined as a new OMI manuscript/revision root.
@@ -46,6 +58,8 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       setParsing(false);
+      setImportStage(null);
+      setLargeDocumentMode(false);
       if (inputRef.current) inputRef.current.value = '';
     }
   }
@@ -83,7 +97,13 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
       </button>
 
       {parsing ? (
-        <p className="docx-import-hint" role="status" aria-live="polite">
+        <p
+          className="docx-import-hint"
+          role="status"
+          aria-live="polite"
+          data-import-stage={importStage ?? undefined}
+          data-large-document-mode={largeDocumentMode ? 'true' : undefined}
+        >
           {copy.parsing}
         </p>
       ) : null}
