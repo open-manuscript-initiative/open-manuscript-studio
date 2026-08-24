@@ -12,6 +12,11 @@ import {
   parseWordHyperlinkInstruction,
   wordCharacterStyleSemantics,
 } from '../src/model/docxImport.ts';
+import {
+  LARGE_DOCX_THRESHOLD_BYTES,
+  MAX_DOCX_PACKAGE_BYTES,
+  isLargeDocx,
+} from '../src/services/docxImportStrategy.ts';
 
 test('recognizes Word heading levels from built-in and localized style names', () => {
   assert.equal(headingLevelFromStyle('Heading2', undefined, undefined), 2);
@@ -96,4 +101,15 @@ test('maps common Word bibliography source types to portable resource types', ()
   assert.equal(mapWordSourceType('BookSection'), 'book-chapter');
   assert.equal(mapWordSourceType('ElectronicSource'), 'web-page');
   assert.equal(mapWordSourceType('UnknownLegacyType'), 'manuscript');
+});
+
+test('switches manuscript-sized DOCX packages to the large-document path', () => {
+  assert.equal(isLargeDocx({ size: LARGE_DOCX_THRESHOLD_BYTES - 1 }), false);
+  assert.equal(isLargeDocx({ size: LARGE_DOCX_THRESHOLD_BYTES }), true);
+  assert.equal(isLargeDocx({ size: LARGE_DOCX_THRESHOLD_BYTES * 4 }), true);
+});
+
+test('keeps a separate whole-DOCX safety ceiling for large packages', () => {
+  assert.equal(MAX_DOCX_PACKAGE_BYTES, 200 * 1024 * 1024);
+  assert.ok(MAX_DOCX_PACKAGE_BYTES > LARGE_DOCX_THRESHOLD_BYTES);
 });
