@@ -6,6 +6,10 @@ import {
   type MouseEvent,
 } from 'react';
 
+import { useStudioStore } from '../app/useStudioStore';
+import { useTranslation } from '../i18n';
+import { createManualNameIndexEntry } from '../model/indexing';
+
 interface SelectionActionToolbarProps {
   editor: Editor;
   citationLabel: string;
@@ -26,6 +30,12 @@ interface ToolbarPosition {
   below: boolean;
 }
 
+const indexLabels: Record<string, string> = {
+  en: 'Add to name index',
+  hu: 'Névmutató-jelölés',
+  de: 'Zum Personenregister',
+};
+
 export function SelectionActionToolbar({
   editor,
   citationLabel,
@@ -39,6 +49,7 @@ export function SelectionActionToolbar({
   onTranslate,
   onAssistant,
 }: SelectionActionToolbarProps) {
+  const { locale } = useTranslation();
   const [position, setPosition] = useState<ToolbarPosition | null>(null);
 
   useEffect(() => {
@@ -85,10 +96,7 @@ export function SelectionActionToolbar({
     };
   }, [editor]);
 
-  if (
-    !position ||
-    (!onCitation && !onNote && !onCrossReference && !onTranslate && !onAssistant)
-  ) return null;
+  if (!position) return null;
 
   const style = {
     left: `${position.left}px`,
@@ -97,6 +105,31 @@ export function SelectionActionToolbar({
 
   const preserveSelection = (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
+  };
+
+  const addNameIndexEntry = () => {
+    const { from, to } = editor.state.selection;
+    if (from === to) return;
+    const selectedText = editor.state.doc.textBetween(from, to, ' ').trim();
+    if (!selectedText) return;
+    const blockId = editor.view.dom.getAttribute('data-block-id');
+    if (!blockId) return;
+
+    const entry = createManualNameIndexEntry({
+      term: selectedText,
+      targetText: selectedText,
+      targetBlockId: blockId,
+    });
+
+    useStudioStore.setState((state) => ({
+      manuscript: {
+        ...state.manuscript,
+        indexEntries: [...(state.manuscript.indexEntries ?? []), entry],
+        updatedAt: new Date().toISOString(),
+      },
+    }));
+    editor.commands.setTextSelection(to);
+    editor.commands.focus();
   };
 
   return (
@@ -108,6 +141,9 @@ export function SelectionActionToolbar({
       role="toolbar"
       aria-label="Selection actions"
     >
+      <button type="button" onMouseDown={preserveSelection} onClick={addNameIndexEntry}>
+        {indexLabels[locale] ?? indexLabels.en}
+      </button>
       {onCitation ? (
         <button type="button" onMouseDown={preserveSelection} onClick={onCitation}>
           {citationLabel}
