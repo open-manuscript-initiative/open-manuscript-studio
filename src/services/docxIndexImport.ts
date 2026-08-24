@@ -225,7 +225,7 @@ class DocxZipArchive {
 
 declare module './docxManuscriptImport' {
   interface DocxManuscriptImportPlan {
-    indexEntries: OmiIndexEntry[];
-    generatedIndexes: OmiGeneratedIndex[];
+    indexEntries?: OmiIndexEntry[];
+    generatedIndexes?: OmiGeneratedIndex[];
   }
 }
