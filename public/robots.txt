@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /studio/
+
+Sitemap: https://openmanuscript.org/studio/sitemap.xml
