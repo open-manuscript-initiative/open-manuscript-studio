@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   FileText,
   LogOut,
@@ -46,8 +46,36 @@ export function MobileLayout({ children, onOpenMenu }: MobileLayoutProps) {
   const logout = useAuthStore((state) => state.logout);
   const isAuthLoading = useAuthStore((state) => state.isLoading);
   const [view, setView] = useState<MobileView>('editor');
+  const [pendingSectionNavigation, setPendingSectionNavigation] = useState<string | null>(null);
   const searchLabel = searchLabels[locale] ?? searchLabels.en;
   const nav = navLabels[locale] ?? navLabels.en;
+
+  useEffect(() => {
+    if (view !== 'editor' || !pendingSectionNavigation) return;
+
+    let innerFrame = 0;
+    const outerFrame = requestAnimationFrame(() => {
+      innerFrame = requestAnimationFrame(() => {
+        const section = Array.from(
+          document.querySelectorAll<HTMLElement>('.omi-continuous-section[data-section-id]'),
+        ).find((element) => element.dataset.sectionId === pendingSectionNavigation);
+
+        if (section) {
+          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          section
+            .querySelector<HTMLTextAreaElement>('.omi-section-title-input')
+            ?.focus({ preventScroll: true });
+        }
+
+        setPendingSectionNavigation(null);
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(outerFrame);
+      if (innerFrame) cancelAnimationFrame(innerFrame);
+    };
+  }, [pendingSectionNavigation, view]);
 
   const handleSearch = () => {
     window.dispatchEvent(
@@ -57,6 +85,11 @@ export function MobileLayout({ children, onOpenMenu }: MobileLayoutProps) {
         bubbles: true,
       }),
     );
+  };
+
+  const handleDocumentNavigate = (sectionId: string) => {
+    setPendingSectionNavigation(sectionId);
+    setView('editor');
   };
 
   const secondaryBarTitle =
@@ -120,7 +153,7 @@ export function MobileLayout({ children, onOpenMenu }: MobileLayoutProps) {
       <main className="mobile-workspace">
         {view === 'document' ? (
           <div className="mobile-document-view">
-            <DocumentTree onNavigate={() => setView('editor')} />
+            <DocumentTree onNavigate={handleDocumentNavigate} />
           </div>
         ) : view === 'details' ? (
           <div className="mobile-details-view">
