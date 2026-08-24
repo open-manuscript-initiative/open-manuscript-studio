@@ -4,11 +4,14 @@ import {
   parseDocxManuscript,
   type DocxManuscriptImportPlan,
 } from './docxManuscriptImport';
+import { parseDocxMonograph } from './docxMonographImport';
 
 // A long, text-heavy book can compress surprisingly well. Keep this threshold
 // deliberately low so manuscript-length DOCX files avoid the expensive second
 // full document.xml parse even when the ZIP itself is only around a megabyte.
 export const LARGE_DOCX_THRESHOLD_BYTES = 1024 * 1024;
+export const MONOGRAPH_DOCX_THRESHOLD_BYTES = 4 * 1024 * 1024;
+export const MONOGRAPH_DOCUMENT_XML_THRESHOLD_BYTES = 8 * 1024 * 1024;
 export const MAX_DOCX_PACKAGE_BYTES = 200 * 1024 * 1024;
 
 export type DocxImportStage =
@@ -19,6 +22,9 @@ export type DocxImportStage =
 export interface DocxImportProgress {
   stage: DocxImportStage;
   largeDocumentMode: boolean;
+  monographMode: boolean;
+  processedParagraphs?: number;
+  totalParagraphs?: number;
 }
 
 export interface DocxImportOptions {
@@ -26,11 +32,15 @@ export interface DocxImportOptions {
 }
 
 /**
- * Chooses the lowest-memory DOCX import path that preserves the mature OMI
- * structural importer. Large packages skip the legacy second full XML pass
- * used only for compatibility inline enrichment. The structural importer
- * already recovers direct run formatting, citations, notes, lists, tables,
- * equations and media in its first pass.
+ * Chooses among three DOCX paths:
+ * - normal: structural import plus compatibility inline enrichment;
+ * - large: one structural DOM pass only;
+ * - monograph: low-memory paragraph scanning for very large/complex books.
+ *
+ * The monograph path is designed for real scholarly books containing thousands
+ * of paragraphs, footnotes and Word fields such as XE, TOC and PAGEREF. It
+ * avoids constructing a single DOM for a multi-megabyte document.xml and
+ * yields periodically so the browser remains responsive.
  */
 export async function parseDocxForStudio(
   file: File,
@@ -47,21 +57,91 @@ export async function parseDocxForStudio(
   }
 
   const largeDocumentMode = isLargeDocx(file);
-  options.onProgress?.({ stage: 'preparing', largeDocumentMode });
+  const documentXmlBytes = largeDocumentMode
+    ? await inspectDocumentXmlUncompressedBytes(file)
+    : 0;
+  const monographMode = isMonographComplexity({
+    fileSize: file.size,
+    documentXmlBytes,
+  });
+
+  options.onProgress?.({ stage: 'preparing', largeDocumentMode, monographMode });
   await yieldToBrowser();
 
-  options.onProgress?.({ stage: 'parsing', largeDocumentMode });
-  const plan = largeDocumentMode
-    ? await parseDocxManuscript(createLargeDocxFacade(file))
-    : await parseDocxManuscriptWithInlineSemantics(file);
+  options.onProgress?.({ stage: 'parsing', largeDocumentMode, monographMode });
+  const plan = monographMode
+    ? await parseDocxMonograph(file, {
+        onProgress: ({ processedParagraphs, totalParagraphs }) => {
+          options.onProgress?.({
+            stage: 'parsing',
+            largeDocumentMode,
+            monographMode,
+            processedParagraphs,
+            totalParagraphs,
+          });
+        },
+      })
+    : largeDocumentMode
+      ? await parseDocxManuscript(createLargeDocxFacade(file))
+      : await parseDocxManuscriptWithInlineSemantics(file);
 
-  options.onProgress?.({ stage: 'finalizing', largeDocumentMode });
+  options.onProgress?.({ stage: 'finalizing', largeDocumentMode, monographMode });
   await yieldToBrowser();
   return plan;
 }
 
 export function isLargeDocx(file: Pick<File, 'size'>): boolean {
   return file.size >= LARGE_DOCX_THRESHOLD_BYTES;
+}
+
+export function isMonographComplexity(input: {
+  fileSize: number;
+  documentXmlBytes: number;
+}): boolean {
+  return (
+    input.fileSize >= MONOGRAPH_DOCX_THRESHOLD_BYTES ||
+    input.documentXmlBytes >= MONOGRAPH_DOCUMENT_XML_THRESHOLD_BYTES
+  );
+}
+
+/**
+ * Reads only the ZIP central directory to obtain the uncompressed size of
+ * word/document.xml. No XML decompression or DOM construction is needed for
+ * this routing decision.
+ */
+async function inspectDocumentXmlUncompressedBytes(file: File): Promise<number> {
+  try {
+    const buffer = await file.arrayBuffer();
+    const view = new DataView(buffer);
+    const bytes = new Uint8Array(buffer);
+    const minimum = Math.max(0, bytes.length - 0xffff - 22);
+    let eocd = -1;
+    for (let offset = bytes.length - 22; offset >= minimum; offset -= 1) {
+      if (view.getUint32(offset, true) === 0x06054b50) {
+        eocd = offset;
+        break;
+      }
+    }
+    if (eocd < 0) return 0;
+
+    const entryCount = view.getUint16(eocd + 10, true);
+    let offset = view.getUint32(eocd + 16, true);
+    const decoder = new TextDecoder();
+    for (let index = 0; index < entryCount; index += 1) {
+      if (view.getUint32(offset, true) !== 0x02014b50) return 0;
+      const uncompressedSize = view.getUint32(offset + 24, true);
+      const fileNameLength = view.getUint16(offset + 28, true);
+      const extraLength = view.getUint16(offset + 30, true);
+      const commentLength = view.getUint16(offset + 32, true);
+      const name = decoder.decode(bytes.slice(offset + 46, offset + 46 + fileNameLength));
+      if (name === 'word/document.xml') return uncompressedSize;
+      offset += 46 + fileNameLength + extraLength + commentLength;
+    }
+  } catch {
+    // Fall back to the ordinary large-document route if package inspection
+    // fails; the actual parser will still surface any real DOCX corruption.
+  }
+  return 0;
 }
 
 /**
