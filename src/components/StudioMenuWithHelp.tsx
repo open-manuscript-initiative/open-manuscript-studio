@@ -1,4 +1,4 @@
-import { CircleHelp, Plug } from 'lucide-react';
+import { BookA, CircleHelp, Plug } from 'lucide-react';
 import {
   useEffect,
   useState,
@@ -9,6 +9,7 @@ import { useTranslation } from '../i18n';
 import { getLocalizedHelpCopy } from '../i18n/helpResolver';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import { HelpPanel } from './HelpPanel';
+import { IndexPanel } from './IndexPanel';
 import { IntegrationExecutionWorkspace } from './IntegrationExecutionWorkspace';
 import { IntegrationsPanel } from './IntegrationsPanel';
 import { StudioMenu } from './StudioMenu';
@@ -31,8 +32,10 @@ export function StudioMenuWithHelp({
   const { locale } = useTranslation();
   const copy = getLocalizedHelpCopy(locale);
   const integrationsLabel = getIntegrationsLabel(locale);
+  const indexLabel = getIndexLabel(locale);
   const [helpOpen, setHelpOpen] = useState(false);
   const [integrationsOpen, setIntegrationsOpen] = useState(false);
+  const [indexOpen, setIndexOpen] = useState(false);
   const [navigationHost, setNavigationHost] = useState<HTMLElement | null>(null);
   const [contentHost, setContentHost] = useState<HTMLElement | null>(null);
 
@@ -40,6 +43,7 @@ export function StudioMenuWithHelp({
     if (!open) {
       setHelpOpen(false);
       setIntegrationsOpen(false);
+      setIndexOpen(false);
       setNavigationHost(null);
       setContentHost(null);
       return;
@@ -68,6 +72,7 @@ export function StudioMenuWithHelp({
       if (!button) return;
       if (button.dataset.helpNavigation !== 'true') setHelpOpen(false);
       if (button.dataset.integrationsNavigation !== 'true') setIntegrationsOpen(false);
+      if (button.dataset.indexNavigation !== 'true') setIndexOpen(false);
     };
 
     navigationHost.addEventListener('click', closePortalOnOtherNavigation);
@@ -81,10 +86,10 @@ export function StudioMenuWithHelp({
 
     const internalButtons = Array.from(
       navigationHost.querySelectorAll<HTMLButtonElement>(
-        '.studio-menu-nav-button:not([data-help-navigation="true"]):not([data-integrations-navigation="true"])',
+        '.studio-menu-nav-button:not([data-help-navigation="true"]):not([data-integrations-navigation="true"]):not([data-index-navigation="true"])',
       ),
     );
-    const externalNavigationOpen = helpOpen || integrationsOpen;
+    const externalNavigationOpen = helpOpen || integrationsOpen || indexOpen;
 
     for (const button of internalButtons) {
       button.classList.remove('studio-menu-nav-button--external-suppressed');
@@ -110,12 +115,12 @@ export function StudioMenuWithHelp({
         }
       }
     };
-  }, [navigationHost, helpOpen, integrationsOpen]);
+  }, [navigationHost, helpOpen, integrationsOpen, indexOpen]);
 
   useEffect(() => {
     if (!contentHost) return;
 
-    if (helpOpen || integrationsOpen) {
+    if (helpOpen || integrationsOpen || indexOpen) {
       contentHost.classList.add('studio-menu-content--help-open');
     } else {
       contentHost.classList.remove('studio-menu-content--help-open');
@@ -124,7 +129,7 @@ export function StudioMenuWithHelp({
     return () => {
       contentHost.classList.remove('studio-menu-content--help-open');
     };
-  }, [contentHost, helpOpen, integrationsOpen]);
+  }, [contentHost, helpOpen, integrationsOpen, indexOpen]);
 
   return (
     <>
@@ -135,6 +140,23 @@ export function StudioMenuWithHelp({
             <>
               <button
                 type="button"
+                data-index-navigation="true"
+                className={`studio-menu-nav-button${
+                  indexOpen ? ' studio-menu-nav-button--active' : ''
+                }`}
+                aria-current={indexOpen ? 'page' : undefined}
+                onClick={() => {
+                  setHelpOpen(false);
+                  setIntegrationsOpen(false);
+                  setIndexOpen(true);
+                }}
+              >
+                <BookA size={18} aria-hidden="true" />
+                <span>{indexLabel}</span>
+              </button>
+
+              <button
+                type="button"
                 data-integrations-navigation="true"
                 className={`studio-menu-nav-button${
                   integrationsOpen ? ' studio-menu-nav-button--active' : ''
@@ -142,6 +164,7 @@ export function StudioMenuWithHelp({
                 aria-current={integrationsOpen ? 'page' : undefined}
                 onClick={() => {
                   setHelpOpen(false);
+                  setIndexOpen(false);
                   setIntegrationsOpen(true);
                 }}
               >
@@ -158,6 +181,7 @@ export function StudioMenuWithHelp({
                 aria-current={helpOpen ? 'page' : undefined}
                 onClick={() => {
                   setIntegrationsOpen(false);
+                  setIndexOpen(false);
                   setHelpOpen(true);
                 }}
               >
@@ -166,6 +190,15 @@ export function StudioMenuWithHelp({
               </button>
             </>,
             navigationHost,
+          )
+        : null}
+
+      {contentHost && indexOpen
+        ? createPortal(
+            <div className="studio-help-portal studio-index-portal">
+              <IndexPanel />
+            </div>,
+            contentHost,
           )
         : null}
 
@@ -217,6 +250,15 @@ function getIntegrationsLabel(locale: string): string {
     sk: 'Integrácie',
     sl: 'Integracije',
     sv: 'Integrationer',
+  };
+  return labels[locale] ?? labels.en;
+}
+
+function getIndexLabel(locale: string): string {
+  const labels: Record<string, string> = {
+    de: 'Personenregister',
+    en: 'Name index',
+    hu: 'Névmutató',
   };
   return labels[locale] ?? labels.en;
 }

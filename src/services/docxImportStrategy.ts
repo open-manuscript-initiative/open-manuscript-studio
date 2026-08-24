@@ -1,4 +1,5 @@
 import { MAX_VISUAL_IMPORT_BYTES } from '../model/visualBlocks';
+import { attachWordIndexData } from './docxIndexImport';
 import { parseDocxManuscriptWithInlineSemantics } from './docxInlineSemanticsImport';
 import {
   parseDocxManuscript,
@@ -86,8 +87,9 @@ export async function parseDocxForStudio(
       : await parseDocxManuscriptWithInlineSemantics(file);
 
   options.onProgress?.({ stage: 'finalizing', largeDocumentMode, monographMode });
+  const indexedPlan = await attachWordIndexData(file, plan);
   await yieldToBrowser();
-  return plan;
+  return indexedPlan;
 }
 
 export function isLargeDocx(file: Pick<File, 'size'>): boolean {
