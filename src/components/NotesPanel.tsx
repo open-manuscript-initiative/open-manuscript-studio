@@ -13,25 +13,14 @@ interface NotesPanelProps {
   onNavigate?: () => void;
 }
 
-const INITIAL_VISIBLE_NOTES = 100;
-const NOTE_PAGE_SIZE = 100;
-
-const moreLabels: Record<string, string> = {
-  en: 'Show more notes',
-  hu: 'További jegyzetek megjelenítése',
-  de: 'Weitere Notizen anzeigen',
-};
-
 export function NotesPanel({ onNavigate }: NotesPanelProps) {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
-  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_NOTES);
   const notes = useMemo(
     () => sortNotesByDocumentOrder(manuscript),
     [manuscript],
   );
-  const visibleNotes = notes.slice(0, visibleCount);
 
   return (
     <section className="studio-menu-view omi-notes-panel">
@@ -57,7 +46,7 @@ export function NotesPanel({ onNavigate }: NotesPanelProps) {
         </div>
       ) : (
         <div className="omi-notes-list">
-          {visibleNotes.map((note, index) => {
+          {notes.map((note, index) => {
             if (note.id === activeNoteId) {
               return (
                 <NoteEditorCard
@@ -90,20 +79,6 @@ export function NotesPanel({ onNavigate }: NotesPanelProps) {
               </button>
             );
           })}
-
-          {visibleCount < notes.length ? (
-            <button
-              type="button"
-              className="studio-menu-secondary-action"
-              onClick={() =>
-                setVisibleCount((current) =>
-                  Math.min(current + NOTE_PAGE_SIZE, notes.length),
-                )
-              }
-            >
-              {moreLabels[locale] ?? moreLabels.en} ({notes.length - visibleCount})
-            </button>
-          ) : null}
         </div>
       )}
     </section>
