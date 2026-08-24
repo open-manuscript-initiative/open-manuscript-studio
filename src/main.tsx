@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 import { App } from './App';
+import { initializeLastSessionPersistence } from './app/lastSessionPersistence';
 import { initializeRevisionIntegrity } from './app/revisionIntegrity';
 import { ProofreadingController } from './components/ProofreadingController';
 import { initializeFormattingToolbarPreference } from './editor/formattingToolbarPreference';
@@ -49,13 +50,19 @@ import './styles/account-profiles.css';
 initializeRevisionIntegrity();
 initializeFormattingToolbarPreference();
 
-ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-).render(
-  <React.StrictMode>
-    <I18nProvider>
-      <ProofreadingController />
-      <App />
-    </I18nProvider>
-  </React.StrictMode>
-);
+async function bootstrap(): Promise<void> {
+  await initializeLastSessionPersistence();
+
+  ReactDOM.createRoot(
+    document.getElementById('root') as HTMLElement
+  ).render(
+    <React.StrictMode>
+      <I18nProvider>
+        <ProofreadingController />
+        <App />
+      </I18nProvider>
+    </React.StrictMode>
+  );
+}
+
+void bootstrap();
