@@ -68,6 +68,7 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
     );
     if (section) selectSection(section.id);
     onNavigate?.();
+    document.querySelector<HTMLButtonElement>('.studio-menu-close')?.click();
 
     window.setTimeout(() => {
       const target = document.querySelector<HTMLElement>(
@@ -78,65 +79,39 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
       if (entry.targetText) selectText(target, entry.targetText);
       target.classList.add('omi-index-navigation-target');
       window.setTimeout(() => target.classList.remove('omi-index-navigation-target'), 1600);
-    }, 80);
+    }, 120);
   }
 
   return (
     <section className="studio-menu-view omi-index-panel">
       <div className="studio-menu-view-header">
         <div>
-          <h3>
-            <BookA size={18} aria-hidden="true" />
-            {copy.title}
-          </h3>
+          <h3><BookA size={18} aria-hidden="true" />{copy.title}</h3>
           <p>{copy.description}</p>
         </div>
         <span className="omi-notes-count">{entries.length}</span>
       </div>
 
       {generatedIndexes.length > 0 ? (
-        <div className="studio-tool-card">
-          <div>
-            <strong>{copy.imported}</strong>
-            <p>{generatedIndexes.length}</p>
-          </div>
-        </div>
+        <div className="studio-tool-card"><div><strong>{copy.imported}</strong><p>{generatedIndexes.length}</p></div></div>
       ) : null}
 
       {groups.length === 0 ? (
-        <div className="omi-notes-empty">
-          <BookA size={22} aria-hidden="true" />
-          <p>{copy.empty}</p>
-        </div>
+        <div className="omi-notes-empty"><BookA size={22} aria-hidden="true" /><p>{copy.empty}</p></div>
       ) : (
         <div className="omi-notes-list" aria-label={copy.entries}>
           {groups.map((group) => {
             const expanded = openGroup === group.key;
             return (
               <div key={group.key} className="omi-note-editor-card omi-note-editor-card--compact">
-                <button
-                  type="button"
-                  className="studio-menu-secondary-action"
-                  onClick={() => setOpenGroup(expanded ? null : group.key)}
-                  aria-expanded={expanded}
-                >
-                  <strong>{group.label}</strong>
-                  <span>{group.count} {copy.occurrences}</span>
+                <button type="button" className="studio-menu-secondary-action" onClick={() => setOpenGroup(expanded ? null : group.key)} aria-expanded={expanded}>
+                  <strong>{group.label}</strong><span>{group.count} {copy.occurrences}</span>
                 </button>
-
                 {expanded ? (
                   <div className="omi-index-occurrences">
                     {group.entries.map((entry, index) => (
-                      <button
-                        key={entry.id}
-                        type="button"
-                        className="studio-menu-secondary-action"
-                        disabled={!entry.targetBlockId}
-                        title={entry.targetBlockId ? copy.goTo : copy.noLocation}
-                        onClick={() => navigateToEntry(entry)}
-                      >
-                        <MapPin size={15} aria-hidden="true" />
-                        <span>{index + 1}. {entry.targetText || group.label}</span>
+                      <button key={entry.id} type="button" className="studio-menu-secondary-action" disabled={!entry.targetBlockId} title={entry.targetBlockId ? copy.goTo : copy.noLocation} onClick={() => navigateToEntry(entry)}>
+                        <MapPin size={15} aria-hidden="true" /><span>{index + 1}. {entry.targetText || group.label}</span>
                       </button>
                     ))}
                   </div>
@@ -151,9 +126,7 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
 }
 
 function cssEscape(value: string): string {
-  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
-    return CSS.escape(value);
-  }
+  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value);
   return value.replace(/["\\]/g, '\\$&');
 }
 
