@@ -12,14 +12,6 @@ export interface ApplyDocxImportOptions {
   importDetectedAuthors: boolean;
 }
 
-/**
- * Opens a DOCX-derived document as a new OMI manuscript.
- *
- * A DOCX import deliberately starts a new revision root instead of rewriting
- * the active manuscript's history. The Studio is currently a single-active-
- * manuscript reference implementation, so loading the new manuscript replaces
- * the active workspace document without mutating the old manuscript identity.
- */
 export function applyDocxImportPlan(
   plan: DocxManuscriptImportPlan,
   options: ApplyDocxImportOptions,
@@ -75,6 +67,7 @@ export function applyDocxImportPlan(
     crossReferences: [],
     ...(plan.indexEntries ? { indexEntries: plan.indexEntries } : {}),
     ...(plan.generatedIndexes ? { generatedIndexes: plan.generatedIndexes } : {}),
+    ...(plan.tableOfContents ? { tableOfContents: plan.tableOfContents } : {}),
     createdAt: timestamp,
     updatedAt: timestamp,
   };
@@ -83,10 +76,7 @@ export function applyDocxImportPlan(
     timestamp,
     completeness: 'complete',
   });
-  const manuscript: OmiManuscript = {
-    ...state,
-    ...envelope,
-  };
+  const manuscript: OmiManuscript = { ...state, ...envelope };
 
   useStudioStore.getState().loadManuscript(manuscript);
   return manuscriptId;
