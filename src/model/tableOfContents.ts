@@ -1,3 +1,6 @@
+import { getSectionDepth } from './sectionStructure';
+import type { OmiSection } from '../types/omi';
+
 export interface OmiTableOfContents {
   id: string;
   title?: string;
@@ -18,44 +21,21 @@ export interface TableOfContentsEntry {
 }
 
 export function buildTableOfContentsEntries(
-  sections: readonly { id: string; title: string }[],
+  sections: readonly OmiSection[],
   toc: OmiTableOfContents,
 ): TableOfContentsEntry[] {
-  const parentById = new Map<string, string | undefined>();
-  for (const section of sections) {
-    parentById.set(section.id, readParentSectionId(section));
-  }
-
-  const depthCache = new Map<string, number>();
-  const depthOf = (sectionId: string): number => {
-    const cached = depthCache.get(sectionId);
-    if (cached) return cached;
-    let depth = 1;
-    let parentId = parentById.get(sectionId);
-    const seen = new Set<string>([sectionId]);
-    while (parentId && !seen.has(parentId)) {
-      seen.add(parentId);
-      depth += 1;
-      parentId = parentById.get(parentId);
-    }
-    depthCache.set(sectionId, depth);
-    return depth;
-  };
-
   return sections
     .map((section) => ({
       sectionId: section.id,
       title: section.title,
-      level: depthOf(section.id),
+      level: getSectionDepth(sections, section.id) + 1,
     }))
-    .filter((entry) => entry.level >= toc.minLevel && entry.level <= toc.maxLevel);
-}
-
-function readParentSectionId(section: { id: string }): string | undefined {
-  const candidate = section as { parentSectionId?: unknown };
-  return typeof candidate.parentSectionId === 'string' && candidate.parentSectionId
-    ? candidate.parentSectionId
-    : undefined;
+    .filter(
+      (entry) =>
+        entry.title.trim() &&
+        entry.level >= toc.minLevel &&
+        entry.level <= toc.maxLevel,
+    );
 }
 
 declare module '../types/omi' {
