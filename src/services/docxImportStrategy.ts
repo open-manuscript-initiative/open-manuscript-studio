@@ -5,7 +5,10 @@ import {
   type DocxManuscriptImportPlan,
 } from './docxManuscriptImport';
 
-export const LARGE_DOCX_THRESHOLD_BYTES = 4 * 1024 * 1024;
+// A long, text-heavy book can compress surprisingly well. Keep this threshold
+// deliberately low so manuscript-length DOCX files avoid the expensive second
+// full document.xml parse even when the ZIP itself is only around a megabyte.
+export const LARGE_DOCX_THRESHOLD_BYTES = 1024 * 1024;
 export const MAX_DOCX_PACKAGE_BYTES = 200 * 1024 * 1024;
 
 export type DocxImportStage =
@@ -63,18 +66,18 @@ export function isLargeDocx(file: Pick<File, 'size'>): boolean {
 
 /**
  * The old importer reused MAX_VISUAL_IMPORT_BYTES as a whole-DOCX package
- * limit. That constant protects individual visual imports, but a Word package
- * can legitimately be much larger while containing only reasonably sized
- * media. Keep the parser behavior intact while replacing that legacy package
- * size check with MAX_DOCX_PACKAGE_BYTES above.
+ * limit. That constant protects visual payloads, but a Word package can
+ * legitimately be much larger while containing reasonable media. Keep the
+ * mature parser unchanged while replacing that legacy package-size gate with
+ * MAX_DOCX_PACKAGE_BYTES above.
  */
 function createLargeDocxFacade(file: File): File {
   if (file.size <= MAX_VISUAL_IMPORT_BYTES) return file;
 
   return new Proxy(file, {
-    get(target, property, receiver) {
+    get(target, property) {
       if (property === 'size') return MAX_VISUAL_IMPORT_BYTES;
-      const value = Reflect.get(target, property, receiver);
+      const value = Reflect.get(target, property, target);
       return typeof value === 'function' ? value.bind(target) : value;
     },
   });
@@ -82,7 +85,7 @@ function createLargeDocxFacade(file: File): File {
 
 function yieldToBrowser(): Promise<void> {
   return new Promise((resolve) => {
-    if (typeof requestAnimationFrame === 'function') {
+    if (typeof requestAnimationFrame === 'function' && typeof window !== 'undefined') {
       requestAnimationFrame(() => window.setTimeout(resolve, 0));
       return;
     }
