@@ -73,6 +73,8 @@ export function applyDocxImportPlan(
     citations: plan.citations,
     citationClusters: plan.citationClusters,
     crossReferences: [],
+    indexEntries: plan.indexEntries,
+    generatedIndexes: plan.generatedIndexes,
     createdAt: timestamp,
     updatedAt: timestamp,
   };
