@@ -15,7 +15,10 @@ import {
 import {
   LARGE_DOCX_THRESHOLD_BYTES,
   MAX_DOCX_PACKAGE_BYTES,
+  MONOGRAPH_DOCX_THRESHOLD_BYTES,
+  MONOGRAPH_DOCUMENT_XML_THRESHOLD_BYTES,
   isLargeDocx,
+  isMonographComplexity,
 } from '../src/services/docxImportStrategy.ts';
 
 test('recognizes Word heading levels from built-in and localized style names', () => {
@@ -109,7 +112,32 @@ test('switches manuscript-sized DOCX packages to the large-document path', () =>
   assert.equal(isLargeDocx({ size: LARGE_DOCX_THRESHOLD_BYTES * 4 }), true);
 });
 
+test('routes book-sized or highly expanded Word XML to monograph mode', () => {
+  assert.equal(
+    isMonographComplexity({
+      fileSize: MONOGRAPH_DOCX_THRESHOLD_BYTES,
+      documentXmlBytes: 1,
+    }),
+    true,
+  );
+  assert.equal(
+    isMonographComplexity({
+      fileSize: 512 * 1024,
+      documentXmlBytes: MONOGRAPH_DOCUMENT_XML_THRESHOLD_BYTES,
+    }),
+    true,
+  );
+  assert.equal(
+    isMonographComplexity({
+      fileSize: MONOGRAPH_DOCX_THRESHOLD_BYTES - 1,
+      documentXmlBytes: MONOGRAPH_DOCUMENT_XML_THRESHOLD_BYTES - 1,
+    }),
+    false,
+  );
+});
+
 test('keeps a separate whole-DOCX safety ceiling for large packages', () => {
   assert.equal(MAX_DOCX_PACKAGE_BYTES, 200 * 1024 * 1024);
   assert.ok(MAX_DOCX_PACKAGE_BYTES > LARGE_DOCX_THRESHOLD_BYTES);
+  assert.ok(MAX_DOCX_PACKAGE_BYTES > MONOGRAPH_DOCX_THRESHOLD_BYTES);
 });
