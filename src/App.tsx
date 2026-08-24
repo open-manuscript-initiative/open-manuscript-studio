@@ -9,6 +9,10 @@ import { AuthGate } from './auth/AuthGate';
 import { LoginPage } from './auth/LoginPage';
 import { RegisterPage } from './auth/RegisterPage';
 
+import {
+  getRestoredDesktopSession,
+  updateDesktopSessionPersistence,
+} from './app/lastSessionPersistence';
 import { useStudioStore } from './app/useStudioStore';
 import { AppLayout } from './components/AppLayout';
 import {
@@ -127,8 +131,13 @@ export function App() {
 function StudioApplication() {
   const reviewMode = new URLSearchParams(window.location.search).get('review') === '1';
   const mobileStudio = isMobileStudio();
+  const restoredDesktopSession = useRef(
+    !mobileStudio && !reviewMode ? getRestoredDesktopSession() : null,
+  );
   const initialDesktopManuscript = useRef(useStudioStore.getState().manuscript);
-  const initialDesktopTabId = useRef<DesktopDocumentTabId>(crypto.randomUUID());
+  const initialDesktopTabId = useRef<DesktopDocumentTabId>(
+    restoredDesktopSession.current?.activeTabId ?? crypto.randomUUID(),
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [externalImportState, setExternalImportState] = useState<ExternalImportState>(() =>
     !reviewMode && (hasInitialOjsLaunch() || hasInitialOmpLaunch())
@@ -140,19 +149,45 @@ function StudioApplication() {
     actorMode: 'editor' | 'author';
     context: OjsAssignmentLaunchContext;
   } | null>(null);
-  const [desktopTabs, setDesktopTabs] = useState<DesktopTabSession[]>(() => [{
-    id: initialDesktopTabId.current,
-    manuscriptId: initialDesktopManuscript.current.id,
-    title: getDocumentTabTitle(initialDesktopManuscript.current),
-    manuscript: initialDesktopManuscript.current,
-  }]);
+  const [desktopTabs, setDesktopTabs] = useState<DesktopTabSession[]>(() => {
+    const restored = restoredDesktopSession.current;
+    if (restored?.tabs.length) {
+      return restored.tabs.map((tab) => ({
+        id: tab.id,
+        manuscriptId: tab.manuscriptId,
+        title: tab.title,
+        manuscript: tab.manuscript,
+      }));
+    }
+
+    return [{
+      id: initialDesktopTabId.current,
+      manuscriptId: initialDesktopManuscript.current.id,
+      title: getDocumentTabTitle(initialDesktopManuscript.current),
+      manuscript: initialDesktopManuscript.current,
+    }];
+  });
   const [activeDesktopTabId, setActiveDesktopTabId] = useState<DesktopDocumentTabId>(
-    initialDesktopTabId.current,
+    restoredDesktopSession.current?.activeTabId ?? initialDesktopTabId.current,
   );
   const desktopTabsRef = useRef(desktopTabs);
   const activeDesktopTabIdRef = useRef(activeDesktopTabId);
   const switchingDesktopTabRef = useRef(false);
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
+
+  useEffect(() => {
+    if (reviewMode || mobileStudio) return;
+
+    updateDesktopSessionPersistence({
+      tabs: desktopTabs.map((tab) => ({
+        id: tab.id,
+        manuscriptId: tab.manuscriptId,
+        title: tab.title,
+        manuscript: tab.manuscript,
+      })),
+      activeTabId: activeDesktopTabId,
+    });
+  }, [activeDesktopTabId, desktopTabs, mobileStudio, reviewMode]);
 
   useEffect(() => {
     if (reviewMode || mobileStudio) return;
