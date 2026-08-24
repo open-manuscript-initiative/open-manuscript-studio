@@ -41,9 +41,23 @@
 }
 
 .auth-orcid-button.auth-provider-button {
-  border-color: #a6ce39;
-  background: #fff;
-  color: #456300;
+  border: 2px solid #a6ce39;
+  background: #a6ce39;
+  color: #173000;
+  box-shadow: 0 2px 8px rgb(89 122 0 / 18%);
+  font-weight: 700;
+}
+
+.auth-orcid-button.auth-provider-button:hover:not(:disabled) {
+  border-color: #8fb82f;
+  background: #b5d957;
+  color: #102400;
+  box-shadow: 0 3px 10px rgb(89 122 0 / 24%);
+}
+
+.auth-orcid-button.auth-provider-button:focus-visible {
+  outline: 3px solid rgb(166 206 57 / 35%);
+  outline-offset: 2px;
 }
 
 .auth-login-orcid-meta {
