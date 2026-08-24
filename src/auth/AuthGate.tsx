@@ -5,6 +5,7 @@ import {
 } from 'react';
 
 import { listenForNativeOrcidHandoff } from '../services/authApi';
+import { isNativeStudio } from '../services/nativeManuscriptFile';
 import {
   getCurrentUser,
   useAuthStore,
@@ -126,6 +127,16 @@ export function AuthGate({
   }, [completeNativeOrcidHandoff, initializeSession]);
 
   if (!isInitialized) {
+    // On the hosted web Studio, render the real public login page immediately
+    // while the session check runs. This keeps the first meaningful paint and
+    // crawler-visible DOM identical to the anonymous end state instead of
+    // exposing a transient logo-only authentication splash. Native clients
+    // retain the compact startup state while their deep-link/session bootstrap
+    // completes.
+    if (!isNativeStudio()) {
+      return <>{fallback}</>;
+    }
+
     return (
       <main className="auth-page" aria-busy="true">
         <section className="auth-card">
