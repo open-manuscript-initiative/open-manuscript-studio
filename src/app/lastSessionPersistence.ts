@@ -7,16 +7,40 @@ const STORE_NAME = 'session';
 const SESSION_KEY = 'last-session';
 const SAVE_DELAY_MS = 250;
 
-interface PersistedStudioSession {
+export interface PersistedDesktopTabSession {
+  id: string;
+  manuscriptId: string;
+  title: string;
+  manuscript: OmiManuscript;
+}
+
+export interface PersistedDesktopSession {
+  tabs: PersistedDesktopTabSession[];
+  activeTabId: string;
+}
+
+interface PersistedStudioSessionV1 {
   version: 1;
   manuscript: OmiManuscript;
   selectedSectionId: string | null;
   savedAt: string;
 }
 
+interface PersistedStudioSessionV2 {
+  version: 2;
+  manuscript: OmiManuscript;
+  selectedSectionId: string | null;
+  desktopSession: PersistedDesktopSession | null;
+  savedAt: string;
+}
+
+type PersistedStudioSession = PersistedStudioSessionV1 | PersistedStudioSessionV2;
+
 let databasePromise: Promise<IDBDatabase> | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let persistenceStarted = false;
+let restoredDesktopSession: PersistedDesktopSession | null = null;
+let currentDesktopSession: PersistedDesktopSession | null = null;
 
 export async function initializeLastSessionPersistence(): Promise<void> {
   if (persistenceStarted || typeof indexedDB === 'undefined') return;
@@ -24,12 +48,24 @@ export async function initializeLastSessionPersistence(): Promise<void> {
 
   const restored = await readLastSession().catch(() => null);
   if (restored?.manuscript) {
+    const desktopSession = restored.version === 2
+      ? normalizeDesktopSession(restored.desktopSession)
+      : null;
+
+    restoredDesktopSession = desktopSession;
+    currentDesktopSession = desktopSession;
+
+    const activeDesktopManuscript = desktopSession
+      ? desktopSession.tabs.find((tab) => tab.id === desktopSession.activeTabId)?.manuscript
+      : undefined;
+    const manuscript = activeDesktopManuscript ?? restored.manuscript;
+
     const store = useStudioStore.getState();
-    store.loadManuscript(restored.manuscript);
+    store.loadManuscript(manuscript);
 
     if (
       restored.selectedSectionId &&
-      restored.manuscript.sections.some(
+      manuscript.sections.some(
         (section) => section.id === restored.selectedSectionId,
       )
     ) {
@@ -45,6 +81,22 @@ export async function initializeLastSessionPersistence(): Promise<void> {
       return;
     }
 
+    if (currentDesktopSession) {
+      currentDesktopSession = {
+        ...currentDesktopSession,
+        tabs: currentDesktopSession.tabs.map((tab) =>
+          tab.id === currentDesktopSession?.activeTabId
+            ? {
+                ...tab,
+                manuscriptId: state.manuscript.id,
+                title: state.manuscript.title?.trim() || 'Untitled manuscript',
+                manuscript: state.manuscript,
+              }
+            : tab,
+        ),
+      };
+    }
+
     scheduleSave();
   });
 
@@ -54,6 +106,40 @@ export async function initializeLastSessionPersistence(): Promise<void> {
   });
 
   scheduleSave();
+}
+
+export function getRestoredDesktopSession(): PersistedDesktopSession | null {
+  return restoredDesktopSession
+    ? structuredClone(restoredDesktopSession)
+    : null;
+}
+
+export function updateDesktopSessionPersistence(
+  session: PersistedDesktopSession | null,
+): void {
+  currentDesktopSession = normalizeDesktopSession(session);
+  scheduleSave();
+}
+
+function normalizeDesktopSession(
+  session: PersistedDesktopSession | null | undefined,
+): PersistedDesktopSession | null {
+  if (!session || session.tabs.length === 0) return null;
+
+  const tabs = session.tabs.filter(
+    (tab) => Boolean(tab?.id && tab?.manuscript?.id),
+  );
+  if (tabs.length === 0) return null;
+
+  const activeTabId = tabs.some((tab) => tab.id === session.activeTabId)
+    ? session.activeTabId
+    : tabs[0]?.id;
+  if (!activeTabId) return null;
+
+  return {
+    tabs,
+    activeTabId,
+  };
 }
 
 function scheduleSave(): void {
@@ -66,10 +152,11 @@ function scheduleSave(): void {
 
 function saveCurrentSession(): void {
   const state = useStudioStore.getState();
-  const session: PersistedStudioSession = {
-    version: 1,
+  const session: PersistedStudioSessionV2 = {
+    version: 2,
     manuscript: state.manuscript,
     selectedSectionId: state.selectedSectionId,
+    desktopSession: currentDesktopSession,
     savedAt: new Date().toISOString(),
   };
 
@@ -87,13 +174,13 @@ async function readLastSession(): Promise<PersistedStudioSession | null> {
 
     request.onsuccess = () => {
       const value = request.result as PersistedStudioSession | undefined;
-      resolve(value?.version === 1 ? value : null);
+      resolve(value?.version === 1 || value?.version === 2 ? value : null);
     };
     request.onerror = () => reject(request.error);
   });
 }
 
-async function writeLastSession(session: PersistedStudioSession): Promise<void> {
+async function writeLastSession(session: PersistedStudioSessionV2): Promise<void> {
   const database = await openDatabase();
 
   await new Promise<void>((resolve, reject) => {
