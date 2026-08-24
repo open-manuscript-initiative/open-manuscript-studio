@@ -4,7 +4,7 @@ import { formatHierarchicalSectionHeading } from '../model/sectionNumbering';
 import { buildSectionOutline } from '../model/sectionStructure';
 
 interface DocumentTreeProps {
-  onNavigate?: () => void;
+  onNavigate?: (sectionId: string) => void;
 }
 
 export function DocumentTree({
@@ -41,7 +41,7 @@ export function DocumentTree({
           style={{ paddingInlineStart: `${0.75 + depth * 1.1}rem` }}
           onClick={() => {
             selectSection(section.id);
-            onNavigate?.();
+            onNavigate?.(section.id);
           }}
         >
           {formatHierarchicalSectionHeading(
