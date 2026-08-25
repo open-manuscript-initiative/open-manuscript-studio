@@ -73,6 +73,7 @@ export function OmiAgentsSettings() {
   const canSaveAi = Boolean(aiEndpoint.trim() && aiModel.trim() && (aiApiKey.trim() || aiHasSecret));
   const aiModelPlaceholder = AI_PROVIDER_PRESETS[aiProviderPreset].modelPlaceholder;
   const aiEndpointLabel = aiProviderPreset === 'openai' ? copy.aiResponsesEndpoint : copy.aiEndpoint;
+  const visibleNotice = notice && notice !== aiStatus?.message && notice !== status?.message ? notice : '';
 
   useEffect(() => {
     let cancelled = false;
@@ -382,7 +383,7 @@ export function OmiAgentsSettings() {
         <div><dt>{copy.health}</dt><dd>{status?.healthy === true ? copy.ready : status?.healthy === false ? copy.notReady : copy.unknown}</dd></div>
       </dl>
       {status?.message ? <p className="omi-integration-secret-note">{status.message}</p> : null}
-      {notice ? <p>{notice}</p> : null}
+      {visibleNotice ? <p>{visibleNotice}</p> : null}
       {error ? <p className="omi-integration-error" role="alert">{error}</p> : null}
     </div>
   );
