@@ -2,7 +2,7 @@ import { FileText, X } from 'lucide-react';
 
 import { useTranslation } from '../i18n';
 
-export type DesktopDocumentTabId = ReturnType<Crypto['randomUUID']>;
+export type DesktopDocumentTabId = string;
 
 export interface DesktopDocumentTabItem {
   id: DesktopDocumentTabId;
