@@ -1,3 +1,4 @@
+import { isDocumentClosedState } from './documentCloseState';
 import { useStudioStore } from './useStudioStore';
 import type { OmiManuscript } from '../types/omi';
 
@@ -39,14 +40,16 @@ type PersistedStudioSession = PersistedStudioSessionV1 | PersistedStudioSessionV
 let databasePromise: Promise<IDBDatabase> | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let persistenceStarted = false;
+let sessionClosed = false;
 let restoredDesktopSession: PersistedDesktopSession | null = null;
 let currentDesktopSession: PersistedDesktopSession | null = null;
 
 export async function initializeLastSessionPersistence(): Promise<void> {
   if (persistenceStarted || typeof indexedDB === 'undefined') return;
   persistenceStarted = true;
+  sessionClosed = isDocumentClosedState();
 
-  const restored = await readLastSession().catch(() => null);
+  const restored = sessionClosed ? null : await readLastSession().catch(() => null);
   if (restored?.manuscript) {
     const desktopSession = restored.version === 2
       ? normalizeDesktopSession(restored.desktopSession)
@@ -81,6 +84,8 @@ export async function initializeLastSessionPersistence(): Promise<void> {
       return;
     }
 
+    if (sessionClosed) return;
+
     if (currentDesktopSession) {
       currentDesktopSession = {
         ...currentDesktopSession,
@@ -105,7 +110,7 @@ export async function initializeLastSessionPersistence(): Promise<void> {
     if (document.visibilityState === 'hidden') saveCurrentSession();
   });
 
-  scheduleSave();
+  if (!sessionClosed) scheduleSave();
 }
 
 export function getRestoredDesktopSession(): PersistedDesktopSession | null {
@@ -118,7 +123,34 @@ export function updateDesktopSessionPersistence(
   session: PersistedDesktopSession | null,
 ): void {
   currentDesktopSession = normalizeDesktopSession(session);
-  scheduleSave();
+  if (!sessionClosed) scheduleSave();
+}
+
+export async function clearLastSessionPersistence(): Promise<void> {
+  sessionClosed = true;
+  restoredDesktopSession = null;
+  currentDesktopSession = null;
+
+  if (saveTimer !== null) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+
+  if (typeof indexedDB === 'undefined') return;
+  const database = await openDatabase();
+
+  await new Promise<void>((resolve, reject) => {
+    const transaction = database.transaction(STORE_NAME, 'readwrite');
+    transaction.objectStore(STORE_NAME).delete(SESSION_KEY);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
+}
+
+export async function resumeLastSessionPersistence(): Promise<void> {
+  sessionClosed = false;
+  await writeCurrentSession();
 }
 
 function normalizeDesktopSession(
@@ -143,6 +175,7 @@ function normalizeDesktopSession(
 }
 
 function scheduleSave(): void {
+  if (sessionClosed) return;
   if (saveTimer !== null) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saveTimer = null;
@@ -151,6 +184,14 @@ function scheduleSave(): void {
 }
 
 function saveCurrentSession(): void {
+  if (sessionClosed) return;
+
+  void writeCurrentSession().catch((error) => {
+    console.warn('Unable to persist the last Studio session.', error);
+  });
+}
+
+async function writeCurrentSession(): Promise<void> {
   const state = useStudioStore.getState();
   const session: PersistedStudioSessionV2 = {
     version: 2,
@@ -160,9 +201,7 @@ function saveCurrentSession(): void {
     savedAt: new Date().toISOString(),
   };
 
-  void writeLastSession(session).catch((error) => {
-    console.warn('Unable to persist the last Studio session.', error);
-  });
+  await writeLastSession(session);
 }
 
 async function readLastSession(): Promise<PersistedStudioSession | null> {

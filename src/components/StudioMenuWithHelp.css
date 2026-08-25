@@ -24,6 +24,19 @@
   box-shadow: none;
 }
 
+.studio-menu-nav-button.studio-menu-nav-button--document-close {
+  margin-top: 0.35rem;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.studio-menu-nav-button.studio-menu-nav-button--document-close:hover,
+.studio-menu-nav-button.studio-menu-nav-button--document-close:focus-visible {
+  border-color: #fca5a5;
+  background: #fff1f2;
+  color: #7f1d1d;
+}
+
 .studio-help-portal {
   width: 100%;
 }
