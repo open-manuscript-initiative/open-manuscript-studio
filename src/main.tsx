@@ -2,8 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 import { App } from './App';
+import { isDocumentClosedState } from './app/documentCloseState';
 import { initializeLastSessionPersistence } from './app/lastSessionPersistence';
 import { initializeRevisionIntegrity } from './app/revisionIntegrity';
+import { ClosedDocumentScreen } from './components/ClosedDocumentScreen';
 import { ProofreadingController } from './components/ProofreadingController';
 import { initializeFormattingToolbarPreference } from './editor/formattingToolbarPreference';
 import { I18nProvider } from './i18n';
@@ -52,14 +54,21 @@ initializeFormattingToolbarPreference();
 
 async function bootstrap(): Promise<void> {
   await initializeLastSessionPersistence();
+  const documentClosed = isDocumentClosedState();
 
   ReactDOM.createRoot(
     document.getElementById('root') as HTMLElement
   ).render(
     <React.StrictMode>
       <I18nProvider>
-        <ProofreadingController />
-        <App />
+        {documentClosed ? (
+          <ClosedDocumentScreen />
+        ) : (
+          <>
+            <ProofreadingController />
+            <App />
+          </>
+        )}
       </I18nProvider>
     </React.StrictMode>
   );
