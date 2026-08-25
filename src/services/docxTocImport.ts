@@ -1,4 +1,5 @@
 import type { OmiTableOfContents } from '../model/tableOfContents';
+import type { OmiBlock } from '../types/omi';
 import type { DocxManuscriptImportPlan } from './docxManuscriptImport';
 
 interface ZipEntry {
@@ -13,8 +14,15 @@ export async function attachWordTableOfContents(
   file: File,
   plan: DocxManuscriptImportPlan,
 ): Promise<DocxManuscriptImportPlan> {
-  const tableOfContents = await extractWordTableOfContents(file);
-  plan.tableOfContents = tableOfContents ?? undefined;
+  const archive = new DocxZipArchive(await file.arrayBuffer());
+  if (!archive.has('word/document.xml')) return plan;
+
+  const xml = await archive.text('word/document.xml');
+  const tableOfContents = extractWordTableOfContentsFromXml(xml);
+  if (!tableOfContents) return plan;
+
+  plan.tableOfContents = tableOfContents;
+  removeRenderedWordTocLines(plan, extractRenderedTocLines(xml));
   return plan;
 }
 
@@ -23,8 +31,10 @@ export async function extractWordTableOfContents(
 ): Promise<OmiTableOfContents | null> {
   const archive = new DocxZipArchive(await file.arrayBuffer());
   if (!archive.has('word/document.xml')) return null;
+  return extractWordTableOfContentsFromXml(await archive.text('word/document.xml'));
+}
 
-  const xml = await archive.text('word/document.xml');
+function extractWordTableOfContentsFromXml(xml: string): OmiTableOfContents | null {
   const instruction = collectFieldInstructions(xml).find((candidate) =>
     /^TOC\b/i.test(candidate.replace(/\s+/g, ' ').trim()),
   );
@@ -39,13 +49,83 @@ export async function extractWordTableOfContents(
     id: crypto.randomUUID(),
     minLevel: Math.min(minLevel, maxLevel),
     maxLevel: Math.max(minLevel, maxLevel),
-    hyperlinks: /(?:^|\s)\\h(?:\s|$)/i.test(normalized),
+    // OMI always renders a semantic in-document TOC as navigation, regardless
+    // of whether the cached Word field was created with the \\h switch.
+    hyperlinks: true,
     useOutlineLevels: /(?:^|\s)\\u(?:\s|$)/i.test(normalized),
     source: {
       format: 'docx-toc',
       instruction: normalized,
     },
   };
+}
+
+function extractRenderedTocLines(xml: string): Set<string> {
+  const result = new Set<string>();
+  const paragraphs = xml.match(/<w:p\b[\s\S]*?<\/w:p>/gi) ?? [];
+
+  for (const paragraph of paragraphs) {
+    const styleId = /<w:pStyle\b[^>]*\bw:val="([^"]+)"[^>]*\/?\s*>/i.exec(paragraph)?.[1] ?? '';
+    if (!/^TOC\d+$/i.test(styleId)) continue;
+
+    const text = Array.from(paragraph.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gi))
+      .map((match) => decodeXml(match[1] ?? ''))
+      .join('');
+    const normalized = normalizeTocDisplayText(text);
+    if (normalized) result.add(normalized);
+  }
+
+  return result;
+}
+
+function removeRenderedWordTocLines(
+  plan: DocxManuscriptImportPlan,
+  renderedLines: Set<string>,
+): void {
+  // A single TOC-styled paragraph can be a custom document style. Requiring
+  // multiple cached TOC rows keeps this cleanup conservative.
+  if (renderedLines.size < 2) return;
+
+  for (const section of plan.sections) {
+    section.blocks = section.blocks.filter((block) => {
+      const text = normalizeTocDisplayText(blockPlainText(block));
+      return !text || !renderedLines.has(text);
+    });
+  }
+
+  plan.sections = plan.sections.filter((section) => {
+    if (!isTocHeading(section.title)) return true;
+    return section.blocks.some((block) => blockPlainText(block).trim().length > 0);
+  });
+}
+
+function normalizeTocDisplayText(value: string): string {
+  return value
+    .replace(/\u00a0/g, ' ')
+    .replace(/[.·•…_\-\s]+\d+\s*$/u, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLocaleLowerCase();
+}
+
+function blockPlainText(block: OmiBlock): string {
+  if (typeof block.content !== 'string') return '';
+  try {
+    return collectJsonText(JSON.parse(block.content) as unknown);
+  } catch {
+    return block.content;
+  }
+}
+
+function collectJsonText(value: unknown): string {
+  if (!value || typeof value !== 'object') return '';
+  const node = value as { text?: unknown; content?: unknown[] };
+  if (typeof node.text === 'string') return node.text;
+  return (node.content ?? []).map(collectJsonText).join('');
+}
+
+function isTocHeading(value: string): boolean {
+  return /^(contents|table of contents|tartalomjegyz[eé]k|inhaltsverzeichnis)$/i.test(value.trim());
 }
 
 function clampHeadingLevel(level: number): number {
