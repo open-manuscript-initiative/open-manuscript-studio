@@ -18,6 +18,8 @@ type ProviderStatus = {
 };
 
 const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
+const STUDIO_SHARE_URL = 'https://openmanuscript.org/studio/';
+const STUDIO_SHARE_TITLE = 'Open Manuscript Studio';
 
 function providerStatusUrl(): string {
   const location = globalThis.location;
@@ -28,6 +30,19 @@ function providerStatusUrl(): string {
   return nativeRuntime && !import.meta.env.DEV
     ? `${NATIVE_API_BASE_URL}/api/auth/providers`
     : '/api/auth/providers';
+}
+
+function socialShareUrl(provider: 'facebook' | 'linkedin' | 'bluesky'): string {
+  const encodedUrl = encodeURIComponent(STUDIO_SHARE_URL);
+  const encodedText = encodeURIComponent(`${STUDIO_SHARE_TITLE} ${STUDIO_SHARE_URL}`);
+
+  if (provider === 'facebook') {
+    return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+  }
+  if (provider === 'linkedin') {
+    return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+  }
+  return `https://bsky.app/intent/compose?text=${encodedText}`;
 }
 
 export function Footer() {
@@ -67,6 +82,21 @@ export function Footer() {
     : deploymentMode === 'personal'
       ? 'Personal'
       : null;
+  const nativeShareSupported = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+  async function shareStudio(): Promise<void> {
+    if (!nativeShareSupported) return;
+    try {
+      await navigator.share({
+        title: STUDIO_SHARE_TITLE,
+        text: 'Open scholarly writing and publishing infrastructure.',
+        url: STUDIO_SHARE_URL,
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      console.warn('Native sharing failed.', error);
+    }
+  }
 
   return (
     <footer className="omi-footer" aria-label="Open Manuscript Studio">
@@ -113,6 +143,16 @@ export function Footer() {
               MIT License
             </a>
           </nav>
+
+          <div className="omi-footer-share" aria-label="Share Open Manuscript Studio">
+            <span className="omi-footer-share__label">Share</span>
+            {nativeShareSupported ? (
+              <button type="button" onClick={() => void shareStudio()}>Share…</button>
+            ) : null}
+            <a href={socialShareUrl('facebook')} target="_blank" rel="noopener noreferrer">Facebook</a>
+            <a href={socialShareUrl('linkedin')} target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            <a href={socialShareUrl('bluesky')} target="_blank" rel="noopener noreferrer">Bluesky</a>
+          </div>
 
           <div className="omi-footer-build">
             {deploymentLabel ? (
