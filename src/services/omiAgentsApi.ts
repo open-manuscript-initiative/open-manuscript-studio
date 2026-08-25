@@ -18,40 +18,22 @@ const API_BASE_URL = normalizeBaseUrl(
 // works for book-length documents and leaves room for future request framing.
 const AGENT_CHUNK_CHARACTERS = 64_000;
 
-export async function runOmiAgent(request: AgentRunRequest): Promise<AgentRunResult> {
-  const response = await fetch(`${API_BASE_URL}/integrations/agents/run`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: nativeHeaders({
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    }),
-    body: JSON.stringify(request),
-  });
-
-  if (!response.ok) {
-    throw new Error(await readErrorMessage(response, `Agent execution failed with HTTP ${response.status}.`));
-  }
-
-  return parseJsonResponse<AgentRunResult>(response);
-}
-
 /**
  * Runs an OMI Agent against content of any practical manuscript size.
- * Small inputs use the normal single request. Large inputs are split on
- * paragraph boundaries where possible and processed sequentially. Each
- * server call is independently permission-checked and audited.
+ * Small inputs use one request. Large inputs are split on paragraph
+ * boundaries where possible and processed sequentially. Each server call is
+ * independently permission-checked and audited.
  */
-export async function runOmiAgentChunked(request: AgentRunRequest): Promise<AgentRunResult> {
+export async function runOmiAgent(request: AgentRunRequest): Promise<AgentRunResult> {
   if (request.content.length <= AGENT_CHUNK_CHARACTERS) {
-    return runOmiAgent(request);
+    return runOmiAgentSingle(request);
   }
 
   const chunks = splitAgentContent(request.content, AGENT_CHUNK_CHARACTERS);
   const results: AgentRunResult[] = [];
 
   for (let index = 0; index < chunks.length; index += 1) {
-    const result = await runOmiAgent({
+    const result = await runOmiAgentSingle({
       ...request,
       content: chunks[index]!,
       context: {
@@ -74,6 +56,24 @@ export async function runOmiAgentChunked(request: AgentRunRequest): Promise<Agen
     model: first.model ?? last.model,
     auditId: last.auditId,
   };
+}
+
+async function runOmiAgentSingle(request: AgentRunRequest): Promise<AgentRunResult> {
+  const response = await fetch(`${API_BASE_URL}/integrations/agents/run`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: nativeHeaders({
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, `Agent execution failed with HTTP ${response.status}.`));
+  }
+
+  return parseJsonResponse<AgentRunResult>(response);
 }
 
 function splitAgentContent(content: string, maxCharacters: number): string[] {
