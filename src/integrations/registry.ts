@@ -34,7 +34,7 @@ export const integrationCatalog: IntegrationCatalogEntry[] = [
     id: 'ai-provider',
     kind: 'ai',
     displayName: 'AI provider',
-    description: 'Provider-neutral AI endpoint for language editing, summarisation, metadata and citation assistance. Configure and run it in the integration workspace below.',
+    description: 'Provider-neutral OpenAI-compatible AI endpoint used by OMI Agents. Endpoint, model and encrypted API key are configured inside the OMI Agents settings.',
     categoryLabel: 'AI',
     permissions: permissions('document.read', 'document.suggest', 'metadata.read'),
     authenticationModes: auth('server_secret', 'user_api_key'),
