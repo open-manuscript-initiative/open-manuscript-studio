@@ -161,6 +161,32 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
     return null;
   }
 
+  function getEntryContext(entry: OmiIndexEntry | null): string {
+    if (!entry?.targetBlockId) return '';
+    const block = manuscript.sections
+      .flatMap((section) => section.blocks)
+      .find((candidate) => candidate.id === entry.targetBlockId);
+    if (!block) return '';
+
+    const text = normalizeWhitespace(blockPlainText(block.content));
+    const needle = normalizeWhitespace(entry.targetText ?? entry.terms.at(-1) ?? '');
+    if (!text || !needle) return '';
+
+    const normalizedText = text.toLocaleLowerCase();
+    const normalizedNeedle = needle.toLocaleLowerCase();
+    let start = typeof entry.targetTextOffset === 'number' ? entry.targetTextOffset : -1;
+    if (start < 0 || normalizedText.slice(start, start + needle.length) !== normalizedNeedle) {
+      start = normalizedText.indexOf(normalizedNeedle);
+    }
+    if (start < 0) return '';
+
+    const beforeWords = text.slice(0, start).trim().split(/\s+/).filter(Boolean);
+    const afterWords = text.slice(start + needle.length).trim().split(/\s+/).filter(Boolean);
+    const before = beforeWords.slice(-7).join(' ');
+    const after = afterWords.slice(0, 7).join(' ');
+    return `${beforeWords.length > 7 ? '…' : ''}${before ? `${before} ` : ''}${needle}${after ? ` ${after}` : ''}${afterWords.length > 7 ? '…' : ''}`;
+  }
+
   function navigateToEntry(entry: OmiIndexEntry, occurrenceIndex: number, fallbackText: string): void {
     const resolved = resolveEntry(entry, occurrenceIndex, fallbackText);
     if (!resolved?.targetBlockId) return;
@@ -185,7 +211,7 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
       if (entry.targetText) selectText(target, entry.targetText, entry.targetTextOffset);
       target.classList.add('omi-index-navigation-target');
       window.setTimeout(() => target.classList.remove('omi-index-navigation-target'), 1600);
-    }, attempt === 0 ? 100 : 100);
+    }, 100);
   }
 
   return (
@@ -235,6 +261,7 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
                   <div className="omi-index-occurrences">
                     {group.entries.map((entry, index) => {
                       const resolved = resolveEntry(entry, index, group.label);
+                      const context = getEntryContext(resolved);
                       return (
                         <button
                           key={entry.id}
@@ -245,7 +272,10 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
                           onClick={() => navigateToEntry(entry, index, group.label)}
                         >
                           <MapPin size={15} aria-hidden="true" />
-                          <span>{index + 1}. {entry.targetText || group.label}</span>
+                          <span>
+                            <strong>{index + 1}. {entry.targetText || group.label}</strong>
+                            {context ? <small style={{ display: 'block', marginTop: '.2rem', fontWeight: 400 }}>{context}</small> : null}
+                          </span>
                         </button>
                       );
                     })}
@@ -258,6 +288,10 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
       )}
     </section>
   );
+}
+
+function normalizeWhitespace(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
 }
 
 function blockPlainText(content: string): string {
