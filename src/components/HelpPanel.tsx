@@ -3,9 +3,18 @@ import { CircleHelp, Lightbulb } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { getLocalizedHelpCopy } from '../i18n/helpResolver';
 
+const HELP_TOPIC_NUMBER_PREFIX = /^\s*(?:\d+(?:\.\d+)*[.):-]?|[IVXLCDM]+[.)])\s+/i;
+
 export function HelpPanel() {
   const { locale } = useTranslation();
   const copy = getLocalizedHelpCopy(locale);
+  const collator = new Intl.Collator(locale, { sensitivity: 'base', numeric: true });
+  const topics = copy.topics
+    .map((topic) => ({
+      ...topic,
+      title: topic.title.replace(HELP_TOPIC_NUMBER_PREFIX, '').trim(),
+    }))
+    .sort((left, right) => collator.compare(left.title, right.title));
 
   return (
     <section className="studio-menu-view">
@@ -22,7 +31,7 @@ export function HelpPanel() {
       </div>
 
       <div className="studio-help-topics">
-        {copy.topics.map((topic, index) => (
+        {topics.map((topic, index) => (
           <details className="studio-help-topic" key={topic.title} open={index === 0}>
             <summary>{topic.title}</summary>
             <div className="studio-help-topic-body">
