@@ -175,17 +175,60 @@ async function testAiProvider(userId: string): Promise<IntegrationConnectionStat
     if (url.protocol !== 'https:' || url.username || url.password) {
       throw new Error('AI provider endpoint must be a credential-free HTTPS URL.');
     }
-    decryptSecret(parseEncryptedSecret(encryptedSecret));
+    const apiKey = decryptSecret(parseEncryptedSecret(encryptedSecret));
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: 'You are an API connection test. Reply with OK.' },
+          { role: 'user', content: 'OK' },
+        ],
+        temperature: 0,
+        max_tokens: 2,
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) {
+      return {
+        configured: true,
+        healthy: false,
+        message: `AI provider rejected the live connection test with HTTP ${response.status}.`,
+      };
+    }
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.includes('application/json')) {
+      return {
+        configured: true,
+        healthy: false,
+        message: `AI provider returned ${contentType || 'a non-JSON response'} instead of JSON.`,
+      };
+    }
+    const payload = await response.json() as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    if (!payload.choices?.[0]?.message) {
+      return {
+        configured: true,
+        healthy: false,
+        message: 'AI provider returned an unexpected chat-completions response.',
+      };
+    }
     return {
       configured: true,
       healthy: true,
-      message: `AI provider configuration is ready for model ${model}.`,
+      message: `AI provider live connection is healthy for model ${model}.`,
     };
   } catch (error) {
     return {
       configured: true,
       healthy: false,
-      message: error instanceof Error ? error.message : 'AI provider configuration is invalid.',
+      message: error instanceof Error ? error.message : 'AI provider connection test failed.',
     };
   }
 }
