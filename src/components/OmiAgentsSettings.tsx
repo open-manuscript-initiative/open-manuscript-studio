@@ -1,4 +1,4 @@
-import { Bot, ShieldCheck } from 'lucide-react';
+import { Bot, ShieldCheck, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { useTranslation } from '../i18n';
@@ -48,18 +48,28 @@ export function OmiAgentsSettings() {
   const [enabledAgents, setEnabledAgents] = useState<AgentId[]>([...AGENTS]);
   const [permissions, setPermissions] = useState<AgentPermission[]>(SAFE_PERMISSIONS);
   const [status, setStatus] = useState<IntegrationProviderStatus | null>(null);
+  const [aiStatus, setAiStatus] = useState<IntegrationProviderStatus | null>(null);
+  const [aiEndpoint, setAiEndpoint] = useState('');
+  const [aiModel, setAiModel] = useState('');
+  const [aiApiKey, setAiApiKey] = useState('');
+  const [aiHasSecret, setAiHasSecret] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
 
   const directWriteEnabled = permissions.includes('document.write') || permissions.includes('metadata.write');
   const canSave = enabledAgents.length > 0 && permissions.includes('document.suggest');
+  const canSaveAi = Boolean(aiEndpoint.trim() && aiModel.trim() && aiApiKey.trim());
 
   useEffect(() => {
     let cancelled = false;
     setBusy(true);
-    void Promise.all([getIntegrationCatalog(), testIntegrationConnection('omi-agents')])
-      .then(([catalog, nextStatus]) => {
+    void Promise.all([
+      getIntegrationCatalog(),
+      testIntegrationConnection('omi-agents'),
+      testIntegrationConnection('ai-provider'),
+    ])
+      .then(([catalog, nextStatus, nextAiStatus]) => {
         if (cancelled) return;
         const provider = catalog.find((item) => item.id === 'omi-agents');
         const connection = provider?.connections.find((item) => item.connectionKey === 'default');
@@ -78,7 +88,19 @@ export function OmiAgentsSettings() {
             setReviewRequired(config.reviewRequired !== false);
           }
         }
+
+        const aiProvider = catalog.find((item) => item.id === 'ai-provider');
+        const aiConnection = aiProvider?.connections.find((item) => item.connectionKey === 'omi-agents')
+          ?? aiProvider?.connections[0];
+        if (aiConnection) {
+          const config = aiConnection.config;
+          if (typeof config?.endpoint === 'string') setAiEndpoint(config.endpoint);
+          if (typeof config?.model === 'string') setAiModel(config.model);
+          setAiHasSecret(aiConnection.hasSecret);
+        }
+
         setStatus(nextStatus);
+        setAiStatus(nextAiStatus);
       })
       .catch((reason: unknown) => {
         if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason));
@@ -107,6 +129,57 @@ export function OmiAgentsSettings() {
     setPermissions((current) => current.includes(permission)
       ? current.filter((item) => item !== permission)
       : [...current, permission]);
+  }
+
+  async function saveAiProvider() {
+    if (!canSaveAi) {
+      setError(copy.aiRequired);
+      return;
+    }
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      await saveIntegrationConnection('ai-provider', {
+        connectionKey: 'omi-agents',
+        displayName: 'OMI Agents AI provider',
+        authenticationMode: 'user_api_key',
+        secret: aiApiKey.trim(),
+        enabled: true,
+        config: {
+          endpoint: aiEndpoint.trim(),
+          model: aiModel.trim(),
+        },
+      });
+      setAiApiKey('');
+      setAiHasSecret(true);
+      const nextAiStatus = await testIntegrationConnection('ai-provider');
+      setAiStatus(nextAiStatus);
+      const nextAgentStatus = await testIntegrationConnection('omi-agents');
+      setStatus(nextAgentStatus);
+      setNotice(nextAiStatus.healthy ? copy.aiSavedReady : nextAiStatus.message ?? copy.saved);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function testAiProvider() {
+    setBusy(true);
+    setError('');
+    setNotice('');
+    try {
+      const nextAiStatus = await testIntegrationConnection('ai-provider');
+      setAiStatus(nextAiStatus);
+      const nextAgentStatus = await testIntegrationConnection('omi-agents');
+      setStatus(nextAgentStatus);
+      setNotice(nextAiStatus.message ?? '');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function saveAndTest() {
@@ -157,6 +230,58 @@ export function OmiAgentsSettings() {
       <div className="omi-integrations-security-note">
         <ShieldCheck size={18} aria-hidden="true" />
         <div><strong>{copy.safetyTitle}</strong><p>{copy.safetyDescription}</p></div>
+      </div>
+
+      <div className="omi-agent-settings-section">
+        <strong><Sparkles size={16} aria-hidden="true" /> {copy.aiTitle}</strong>
+        <p>{copy.aiDescription}</p>
+        <label>
+          <span>{copy.aiEndpoint}</span>
+          <input
+            type="url"
+            inputMode="url"
+            autoCapitalize="none"
+            autoCorrect="off"
+            value={aiEndpoint}
+            placeholder="https://api.example.org/v1/chat/completions"
+            onChange={(event) => setAiEndpoint(event.target.value)}
+          />
+        </label>
+        <label>
+          <span>{copy.aiModel}</span>
+          <input
+            type="text"
+            autoCapitalize="none"
+            autoCorrect="off"
+            value={aiModel}
+            placeholder="model-name"
+            onChange={(event) => setAiModel(event.target.value)}
+          />
+        </label>
+        <label>
+          <span>{copy.aiApiKey}</span>
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={aiApiKey}
+            placeholder={aiHasSecret ? copy.aiSecretStored : copy.aiApiKeyPlaceholder}
+            onChange={(event) => setAiApiKey(event.target.value)}
+          />
+        </label>
+        <p className="omi-integration-secret-note">{copy.aiSecurity}</p>
+        <div className="omi-integration-card__actions">
+          <button type="button" className="studio-menu-primary-action" disabled={busy || !canSaveAi} onClick={() => void saveAiProvider()}>
+            {busy ? copy.checking : copy.aiSaveAndTest}
+          </button>
+          <button type="button" className="studio-menu-secondary-action" disabled={busy || !aiStatus?.configured} onClick={() => void testAiProvider()}>
+            {copy.aiTest}
+          </button>
+        </div>
+        <dl>
+          <div><dt>{copy.configured}</dt><dd>{aiStatus?.configured ? copy.yes : copy.no}</dd></div>
+          <div><dt>{copy.health}</dt><dd>{aiStatus?.healthy === true ? copy.ready : aiStatus?.healthy === false ? copy.notReady : copy.unknown}</dd></div>
+        </dl>
+        {aiStatus?.message ? <p className="omi-integration-secret-note">{aiStatus.message}</p> : null}
       </div>
 
       <label className="omi-agent-toggle">
@@ -217,7 +342,6 @@ export function OmiAgentsSettings() {
           {copy.test}
         </button>
       </div>
-
       <dl>
         <div><dt>{copy.configured}</dt><dd>{status?.configured ? copy.yes : copy.no}</dd></div>
         <div><dt>{copy.health}</dt><dd>{status?.healthy === true ? copy.ready : status?.healthy === false ? copy.notReady : copy.unknown}</dd></div>
@@ -242,6 +366,11 @@ function getCopy(locale: string) {
   if (locale === 'hu') return {
     safetyTitle: 'Korlátozott jogosultságú ügynökök',
     safetyDescription: 'Az OMI Agents csak az itt engedélyezett műveleteket használhatja. Alapértelmezésben kizárólag ellenőrizhető javaslatot készít, a kéziratot nem módosítja közvetlenül.',
+    aiTitle: 'AI-szolgáltató',
+    aiDescription: 'Az OMI Agents egy OpenAI-kompatibilis HTTPS chat-completions végpontot használ. Add meg a végpontot, a modell nevét és az API-kulcsot.',
+    aiEndpoint: 'Chat-completions végpont', aiModel: 'Modell', aiApiKey: 'API-kulcs', aiApiKeyPlaceholder: 'AI-szolgáltató API-kulcsa', aiSecretStored: 'Titkos kulcs már tárolva — új kulcsot adj meg a módosításhoz',
+    aiSecurity: 'Az API-kulcs titkosítva, kizárólag a Studio API szerverén kerül tárolásra. A kliens később nem kapja vissza.',
+    aiRequired: 'Add meg a HTTPS végpontot, a modell nevét és az API-kulcsot.', aiSaveAndTest: 'AI beállítás mentése és tesztelése', aiTest: 'AI kapcsolat tesztelése', aiSavedReady: 'Az AI-szolgáltató mentve és sikeresen ellenőrizve.',
     enableAgents: 'OMI Agents engedélyezése', enableAgentsHelp: 'Az ügynökök külön kapcsolóval kikapcsolhatók anélkül, hogy a beállításaik elvesznének.',
     agentsTitle: 'Aktív ügynökök', agentsDescription: 'Válaszd ki, mely beépített asszisztensek használhatók.',
     agents: {
@@ -259,6 +388,8 @@ function getCopy(locale: string) {
   };
   if (locale === 'de') return {
     safetyTitle: 'Agenten mit begrenzten Rechten', safetyDescription: 'OMI Agents dürfen nur die hier gewährten Aktionen verwenden. Standardmäßig erzeugen sie nur überprüfbare Vorschläge und ändern das Manuskript nicht direkt.',
+    aiTitle: 'KI-Anbieter', aiDescription: 'OMI Agents verwenden einen OpenAI-kompatiblen HTTPS-Chat-Completions-Endpunkt. Geben Sie Endpunkt, Modellname und API-Schlüssel an.',
+    aiEndpoint: 'Chat-Completions-Endpunkt', aiModel: 'Modell', aiApiKey: 'API-Schlüssel', aiApiKeyPlaceholder: 'API-Schlüssel des KI-Anbieters', aiSecretStored: 'Geheimer Schlüssel ist gespeichert — zum Ändern einen neuen Schlüssel eingeben', aiSecurity: 'Der API-Schlüssel wird verschlüsselt ausschließlich auf dem Studio-API-Server gespeichert und nicht an den Client zurückgegeben.', aiRequired: 'Geben Sie HTTPS-Endpunkt, Modell und API-Schlüssel ein.', aiSaveAndTest: 'KI-Einstellung speichern und testen', aiTest: 'KI-Verbindung testen', aiSavedReady: 'Der KI-Anbieter wurde gespeichert und erfolgreich geprüft.',
     enableAgents: 'OMI Agents aktivieren', enableAgentsHelp: 'Agenten können ausgeschaltet werden, ohne ihre Einstellungen zu verlieren.',
     agentsTitle: 'Aktive Agenten', agentsDescription: 'Wählen Sie die verfügbaren integrierten Assistenten.',
     agents: {
@@ -274,6 +405,8 @@ function getCopy(locale: string) {
   };
   return {
     safetyTitle: 'Scoped agent permissions', safetyDescription: 'OMI Agents may use only the actions granted here. By default they produce reviewable suggestions and never modify the manuscript directly.',
+    aiTitle: 'AI provider', aiDescription: 'OMI Agents use an OpenAI-compatible HTTPS chat-completions endpoint. Enter the endpoint, model name, and API key.',
+    aiEndpoint: 'Chat-completions endpoint', aiModel: 'Model', aiApiKey: 'API key', aiApiKeyPlaceholder: 'AI provider API key', aiSecretStored: 'Secret is stored — enter a new key to replace it', aiSecurity: 'The API key is encrypted and stored only on the Studio API server. It is never returned to the client.', aiRequired: 'Enter the HTTPS endpoint, model name, and API key.', aiSaveAndTest: 'Save and test AI provider', aiTest: 'Test AI connection', aiSavedReady: 'The AI provider was saved and verified successfully.',
     enableAgents: 'Enable OMI Agents', enableAgentsHelp: 'Agents can be disabled without losing their saved configuration.',
     agentsTitle: 'Active agents', agentsDescription: 'Choose which built-in assistants may be used.',
     agents: {
