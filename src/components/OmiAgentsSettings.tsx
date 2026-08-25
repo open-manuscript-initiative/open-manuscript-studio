@@ -2,11 +2,11 @@ import { Bot, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { useTranslation } from '../i18n';
+import type { IntegrationProviderStatus } from '../integrations/contracts';
 import {
   getIntegrationCatalog,
   saveIntegrationConnection,
   testIntegrationConnection,
-  type IntegrationProviderStatus,
 } from '../services/integrationApi';
 
 const AGENTS = [
