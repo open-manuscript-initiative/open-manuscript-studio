@@ -1,9 +1,15 @@
-import { BookA, MapPin } from 'lucide-react';
+import { BookA, MapPin, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
-import { groupIndexEntries, type OmiIndexEntry } from '../model/indexing';
+import {
+  DEFAULT_INDEX_ID,
+  getDocumentIndexDefinitions,
+  groupIndexEntries,
+  type OmiIndexDefinition,
+  type OmiIndexEntry,
+} from '../model/indexing';
 
 const labels: Record<string, {
   title: string;
@@ -14,36 +20,52 @@ const labels: Record<string, {
   imported: string;
   goTo: string;
   noLocation: string;
+  create: string;
+  newName: string;
+  rename: string;
+  noEntries: string;
 }> = {
   en: {
-    title: 'Name index',
-    description: 'Semantic index entries preserved from Word XE fields and manual text selections.',
+    title: 'Indexes',
+    description: 'Create and name document indexes such as a name index, place index or list of figures.',
     empty: 'No index markers are stored in this manuscript.',
     entries: 'Index entries',
     occurrences: 'occurrences',
-    imported: 'Imported generated index',
+    imported: 'Imported generated indexes',
     goTo: 'Go to occurrence',
     noLocation: 'Location is not available for this imported marker yet.',
+    create: 'New index',
+    newName: 'Index name',
+    rename: 'Rename',
+    noEntries: 'This index has no entries yet. Select text in the document and add it to this index.',
   },
   hu: {
-    title: 'Névmutató',
-    description: 'A Word XE mezőiből és kézi szövegkijelölésből megőrzött szemantikus névmutató-bejegyzések.',
-    empty: 'A kézirat nem tartalmaz névmutató-jelöléseket.',
-    entries: 'Névmutató-bejegyzések',
+    title: 'Mutatók',
+    description: 'Hozzon létre és nevezzen el tetszőleges dokumentummutatókat, például névmutatót, helységmutatót vagy képek jegyzékét.',
+    empty: 'A kézirat nem tartalmaz mutatójelöléseket.',
+    entries: 'Mutatóbejegyzések',
     occurrences: 'előfordulás',
-    imported: 'Importált generált névmutató',
+    imported: 'Importált generált mutatók',
     goTo: 'Ugrás az előforduláshoz',
     noLocation: 'Ehhez az importált jelöléshez még nincs pontos helyadat.',
+    create: 'Új mutató',
+    newName: 'Mutató neve',
+    rename: 'Átnevezés',
+    noEntries: 'Ebben a mutatóban még nincs bejegyzés. Jelöljön ki szöveget a dokumentumban, majd adja hozzá ehhez a mutatóhoz.',
   },
   de: {
-    title: 'Personenregister',
-    description: 'Semantische Registereinträge aus Word-XE-Feldern und manuellen Textmarkierungen.',
+    title: 'Register',
+    description: 'Erstellen und benennen Sie beliebige Register, etwa Personen-, Orts- oder Abbildungsverzeichnisse.',
     empty: 'Dieses Manuskript enthält keine Registermarkierungen.',
     entries: 'Registereinträge',
     occurrences: 'Vorkommen',
-    imported: 'Importiertes generiertes Register',
+    imported: 'Importierte generierte Register',
     goTo: 'Zum Vorkommen',
     noLocation: 'Für diese importierte Markierung ist noch keine genaue Position verfügbar.',
+    create: 'Neues Register',
+    newName: 'Registername',
+    rename: 'Umbenennen',
+    noEntries: 'Dieses Register enthält noch keine Einträge. Markieren Sie Text im Dokument und fügen Sie ihn diesem Register hinzu.',
   },
 };
 
@@ -58,8 +80,52 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
   const selectSection = useStudioStore((state) => state.selectSection);
   const entries = manuscript.indexEntries ?? [];
   const generatedIndexes = manuscript.generatedIndexes ?? [];
-  const groups = useMemo(() => groupIndexEntries(entries), [entries]);
+  const definitions = useMemo(
+    () => getDocumentIndexDefinitions({
+      locale,
+      indexDefinitions: manuscript.indexDefinitions,
+      entries,
+    }),
+    [entries, locale, manuscript.indexDefinitions],
+  );
+  const [activeIndexId, setActiveIndexId] = useState<string>(
+    definitions[0]?.id ?? DEFAULT_INDEX_ID,
+  );
+  const activeDefinition = definitions.find((item) => item.id === activeIndexId) ?? definitions[0];
+  const activeEntries = entries.filter((entry) =>
+    entry.indexId ? entry.indexId === activeDefinition?.id : activeDefinition?.id === DEFAULT_INDEX_ID,
+  );
+  const groups = useMemo(() => groupIndexEntries(activeEntries), [activeEntries]);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [newIndexName, setNewIndexName] = useState('');
+
+  function persistDefinitions(next: OmiIndexDefinition[]): void {
+    useStudioStore.setState((state) => ({
+      manuscript: {
+        ...state.manuscript,
+        indexDefinitions: next,
+        updatedAt: new Date().toISOString(),
+      },
+    }));
+  }
+
+  function createIndex(): void {
+    const title = newIndexName.trim();
+    if (!title) return;
+    const definition: OmiIndexDefinition = { id: crypto.randomUUID(), title };
+    persistDefinitions([...definitions, definition]);
+    setActiveIndexId(definition.id);
+    setNewIndexName('');
+  }
+
+  function renameActiveIndex(): void {
+    if (!activeDefinition) return;
+    const nextTitle = window.prompt(copy.newName, activeDefinition.title)?.trim();
+    if (!nextTitle || nextTitle === activeDefinition.title) return;
+    persistDefinitions(definitions.map((item) =>
+      item.id === activeDefinition.id ? { ...item, title: nextTitle } : item,
+    ));
+  }
 
   function navigateToEntry(entry: OmiIndexEntry): void {
     if (!entry.targetBlockId) return;
@@ -70,16 +136,22 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
     onNavigate?.();
     document.querySelector<HTMLButtonElement>('.studio-menu-close')?.click();
 
+    revealTarget(entry, 0);
+  }
+
+  function revealTarget(entry: OmiIndexEntry, attempt: number): void {
     window.setTimeout(() => {
-      const target = document.querySelector<HTMLElement>(
-        `[data-block-id="${cssEscape(entry.targetBlockId ?? '')}"]`,
-      );
-      if (!target) return;
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      if (entry.targetText) selectText(target, entry.targetText);
+      const target = document.getElementById(`omi-target-${entry.targetBlockId}`)
+        ?? document.querySelector<HTMLElement>(`[data-block-id="${cssEscape(entry.targetBlockId ?? '')}"]`);
+      if (!target) {
+        if (attempt < 8) revealTarget(entry, attempt + 1);
+        return;
+      }
+      target.scrollIntoView({ behavior: attempt === 0 ? 'smooth' : 'auto', block: 'center' });
+      if (entry.targetText) selectText(target, entry.targetText, entry.targetTextOffset);
       target.classList.add('omi-index-navigation-target');
       window.setTimeout(() => target.classList.remove('omi-index-navigation-target'), 1600);
-    }, 120);
+    }, attempt === 0 ? 100 : 90);
   }
 
   return (
@@ -92,12 +164,30 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
         <span className="omi-notes-count">{entries.length}</span>
       </div>
 
+      <div className="studio-tool-card">
+        <div style={{ width: '100%' }}>
+          <strong>{copy.title}</strong>
+          <select value={activeDefinition?.id ?? ''} onChange={(event) => { setActiveIndexId(event.target.value); setOpenGroup(null); }}>
+            {definitions.map((definition) => (
+              <option key={definition.id} value={definition.id}>{definition.title}</option>
+            ))}
+          </select>
+          <div className="studio-tool-actions">
+            <input value={newIndexName} placeholder={copy.newName} onChange={(event) => setNewIndexName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') createIndex(); }} />
+            <button type="button" className="studio-menu-secondary-action" onClick={createIndex}><Plus size={15} aria-hidden="true" />{copy.create}</button>
+            <button type="button" className="studio-menu-secondary-action" onClick={renameActiveIndex}>{copy.rename}</button>
+          </div>
+        </div>
+      </div>
+
       {generatedIndexes.length > 0 ? (
         <div className="studio-tool-card"><div><strong>{copy.imported}</strong><p>{generatedIndexes.length}</p></div></div>
       ) : null}
 
-      {groups.length === 0 ? (
+      {definitions.length === 0 && groups.length === 0 ? (
         <div className="omi-notes-empty"><BookA size={22} aria-hidden="true" /><p>{copy.empty}</p></div>
+      ) : groups.length === 0 ? (
+        <div className="omi-notes-empty"><BookA size={22} aria-hidden="true" /><p>{copy.noEntries}</p></div>
       ) : (
         <div className="omi-notes-list" aria-label={copy.entries}>
           {groups.map((group) => {
@@ -130,7 +220,7 @@ function cssEscape(value: string): string {
   return value.replace(/["\\]/g, '\\$&');
 }
 
-function selectText(root: HTMLElement, needle: string): void {
+function selectText(root: HTMLElement, needle: string, preferredOffset?: number): void {
   const text = needle.trim();
   if (!text) return;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -141,7 +231,13 @@ function selectText(root: HTMLElement, needle: string): void {
     nodes.push(node);
     combined += node.data;
   }
-  const start = combined.toLocaleLowerCase().indexOf(text.toLocaleLowerCase());
+  const normalizedNeedle = text.toLocaleLowerCase();
+  let start = -1;
+  if (typeof preferredOffset === 'number' && preferredOffset >= 0) {
+    const candidate = combined.slice(preferredOffset, preferredOffset + text.length);
+    if (candidate.toLocaleLowerCase() === normalizedNeedle) start = preferredOffset;
+  }
+  if (start < 0) start = combined.toLocaleLowerCase().indexOf(normalizedNeedle);
   if (start < 0) return;
   const end = start + text.length;
   let offset = 0;
