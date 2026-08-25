@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
@@ -47,7 +47,7 @@ export function EmbeddedTableOfContents() {
         {entries.map((entry) => (
           <li
             key={entry.sectionId}
-            style={{ '--omi-toc-level': entry.level - toc.minLevel } as React.CSSProperties}
+            style={{ '--omi-toc-level': entry.level - toc.minLevel } as CSSProperties}
           >
             <button type="button" onClick={() => navigate(entry.sectionId)}>
               {entry.title}
