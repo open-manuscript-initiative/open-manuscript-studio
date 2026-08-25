@@ -163,7 +163,7 @@ export function StudioMenuWithHelp({
         contentHost,
       ) : null}
       {contentHost && indexOpen ? createPortal(
-        <div className="studio-help-portal studio-index-portal"><IndexPanel /></div>,
+        <div className="studio-help-portal studio-index-portal"><IndexPanel onNavigate={onClose} /></div>,
         contentHost,
       ) : null}
       {contentHost && integrationsOpen ? createPortal(
@@ -186,7 +186,7 @@ function getIntegrationsLabel(locale: string): string {
 }
 
 function getIndexLabel(locale: string): string {
-  const labels: Record<string, string> = { de: 'Personenregister', en: 'Name index', hu: 'Névmutató' };
+  const labels: Record<string, string> = { de: 'Register', en: 'Indexes', hu: 'Mutatók' };
   return labels[locale] ?? labels.en;
 }
 
