@@ -1,0 +1,197 @@
+.omi-agents-workspace {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+}
+
+.omi-agents-workspace__header {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.omi-agents-workspace__header h3,
+.omi-agents-workspace__header p {
+  margin: 0;
+}
+
+.omi-agents-workspace__header p {
+  margin-top: 0.3rem;
+  line-height: 1.45;
+  opacity: 0.78;
+}
+
+.omi-agents-workspace__icon {
+  display: inline-flex;
+  padding: 0.65rem;
+  border-radius: 0.8rem;
+  background: var(--omi-surface-subtle, #f7f8fa);
+}
+
+.omi-agents-workspace__safety,
+.omi-agents-workspace__status {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--omi-border, #d8dde6);
+  border-radius: 0.75rem;
+  background: var(--omi-surface-subtle, #f7f8fa);
+}
+
+.omi-agents-workspace__safety p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.omi-agents-workspace__status > span:nth-child(2) {
+  flex: 1 1 auto;
+}
+
+.omi-agents-workspace__status-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #94a3b8;
+}
+
+.omi-agents-workspace__status-dot.is-ready {
+  background: #16a34a;
+}
+
+.omi-agents-workspace__status-dot.is-error {
+  background: #dc2626;
+}
+
+.omi-agents-workspace__controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.omi-agents-workspace__controls label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.omi-agents-workspace__controls label > span {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.omi-agents-workspace__controls select {
+  width: 100%;
+  min-height: 2.75rem;
+}
+
+.omi-agents-workspace__context {
+  margin: -0.25rem 0 0;
+  font-size: 0.9rem;
+  opacity: 0.78;
+}
+
+.omi-agents-workspace__run {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.8rem;
+}
+
+.omi-agents-workspace__result {
+  border: 1px solid var(--omi-border, #d8dde6);
+  border-radius: 0.85rem;
+  background: var(--omi-surface, #fff);
+  overflow: hidden;
+}
+
+.omi-agents-workspace__result > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid var(--omi-border, #d8dde6);
+  background: var(--omi-surface-subtle, #f7f8fa);
+}
+
+.omi-agents-workspace__result > header strong,
+.omi-agents-workspace__result > header small {
+  display: block;
+}
+
+.omi-agents-workspace__result > header small {
+  margin-top: 0.2rem;
+  opacity: 0.7;
+}
+
+.omi-agents-workspace__dismiss {
+  display: inline-flex;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.omi-agents-workspace__suggestion {
+  padding: 1rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
+.omi-agents-workspace__result-actions {
+  display: flex;
+  gap: 0.65rem;
+  padding: 0 1rem 0.8rem;
+}
+
+.omi-agents-workspace__result-actions button {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.omi-agents-workspace__review-note {
+  margin: 0;
+  padding: 0 1rem 1rem;
+  font-size: 0.84rem;
+  opacity: 0.72;
+}
+
+@media (max-width: 720px) {
+  .omi-agents-workspace {
+    gap: 0.85rem;
+    min-height: 100%;
+  }
+
+  .omi-agents-workspace__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .omi-agents-workspace__status {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .omi-agents-workspace__status > span:nth-child(2) {
+    min-width: calc(100% - 1.4rem);
+  }
+
+  .omi-agents-workspace__status button,
+  .omi-agents-workspace__run,
+  .omi-agents-workspace__result-actions button {
+    width: 100%;
+  }
+
+  .omi-agents-workspace__result-actions {
+    flex-direction: column;
+  }
+
+  .omi-agents-workspace__suggestion {
+    max-height: 52vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
