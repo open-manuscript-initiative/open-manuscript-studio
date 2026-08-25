@@ -140,12 +140,57 @@
   line-height: 1.55;
 }
 
+.omi-agents-workspace__diff {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.omi-agents-workspace__diff > div {
+  padding: 0.8rem;
+  border: 1px solid var(--omi-border, #d8dde6);
+  border-radius: 0.65rem;
+  background: var(--omi-surface-subtle, #f7f8fa);
+}
+
+.omi-agents-workspace__diff > div:nth-child(2) {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.omi-agents-workspace__diff strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.72;
+}
+
+.omi-agents-workspace__diff p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.omi-agents-workspace__diff > small {
+  line-height: 1.4;
+  opacity: 0.76;
+}
+
+.omi-agents-workspace__proposal-nav,
 .omi-agents-workspace__result-actions {
   display: flex;
   gap: 0.65rem;
   padding: 0 1rem 0.8rem;
 }
 
+.omi-agents-workspace__proposal-nav {
+  justify-content: space-between;
+}
+
+.omi-agents-workspace__proposal-nav button,
 .omi-agents-workspace__result-actions button {
   display: inline-flex;
   gap: 0.4rem;
@@ -189,7 +234,12 @@
     flex-direction: column;
   }
 
-  .omi-agents-workspace__suggestion {
+  .omi-agents-workspace__proposal-nav button {
+    flex: 1 1 0;
+  }
+
+  .omi-agents-workspace__suggestion,
+  .omi-agents-workspace__diff {
     max-height: 52vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
