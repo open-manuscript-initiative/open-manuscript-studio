@@ -8,6 +8,7 @@ import {
   authRateLimit,
   integrationRateLimit,
 } from './middleware/rateLimits.js';
+import { agentReviewRouter } from './routes/agentReviewRoutes.js';
 import { authRouter } from './routes/authRoutes.js';
 import { authorSignatureRouter } from './routes/authorSignatureRoutes.js';
 import { centralAdminRouter } from './routes/centralAdminRoutes.js';
@@ -87,6 +88,7 @@ app.use('/api', authorSignatureRouter);
 app.use('/api', cloudOAuthRouter);
 app.use('/api', cloudRouter);
 app.use('/api', userIntegrationRouter);
+app.use('/api', agentReviewRouter);
 app.use('/api', integrationExecutionRouter);
 app.use('/api', proofreadingRouter);
 app.use('/api', publishingConnectionRouter);
