@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { isIP } from 'node:net';
 
 import { prisma } from '../lib/prisma.js';
+import { assertOmiAgentRunAllowed } from './omiAgentsConfig.js';
 import { decryptSecret, type EncryptedSecret } from './secretCrypto.js';
 
 export type ExternalDocumentScopeKind =
@@ -214,6 +215,14 @@ export async function runBuiltInAgent(
   if (writeRequested && input.allowDirectWrite !== true) {
     throw new Error('Direct document or metadata writes require explicit confirmation.');
   }
+
+  await assertOmiAgentRunAllowed({
+    userId,
+    agentId: input.agentId,
+    scopeKind: input.scope.kind,
+    requestedPermissions,
+    allowDirectWrite: input.allowDirectWrite,
+  });
 
   // The first production implementation intentionally returns suggestions only.
   // A later UI step may apply a suggestion through normal Studio mutation actions,

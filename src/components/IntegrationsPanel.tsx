@@ -18,6 +18,7 @@ import {
   type PublishingConnectionCredentials,
 } from '../services/integrationApi';
 import { CloudStorageSettings } from './CloudStorageSettings';
+import { OmiAgentsSettings } from './OmiAgentsSettings';
 import './IntegrationsPanel.css';
 
 export function IntegrationsPanel() {
@@ -54,6 +55,7 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
 
   const isPublishing = entry.id === 'ojs' || entry.id === 'omp';
   const isCloudStorage = entry.id === 'cloud-storage';
+  const isOmiAgents = entry.id === 'omi-agents';
 
   useEffect(() => {
     if (entry.id !== 'orcid') return;
@@ -67,7 +69,7 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
   }, [entry.id]);
 
   useEffect(() => {
-    if (entry.id !== 'deepl' || !expanded) return;
+    if ((entry.id !== 'deepl' && !isOmiAgents) || !expanded) return;
     let cancelled = false;
     setBusy(true);
     setError('');
@@ -76,7 +78,7 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
       .catch((reason: unknown) => { if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason)); })
       .finally(() => { if (!cancelled) setBusy(false); });
     return () => { cancelled = true; };
-  }, [entry.id, expanded]);
+  }, [entry.id, expanded, isOmiAgents]);
 
   useEffect(() => {
     if (!isPublishing || !expanded) return;
@@ -110,7 +112,7 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
         : remoteStatus?.healthy === false
           ? 'available'
           : entry.status;
-  const configurableNow = entry.id === 'deepl' || entry.id === 'orcid' || isPublishing || isCloudStorage;
+  const configurableNow = entry.id === 'deepl' || entry.id === 'orcid' || isOmiAgents || isPublishing || isCloudStorage;
 
   async function refreshPublishingConnections() {
     const catalog = await getIntegrationCatalog();
@@ -311,6 +313,12 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
       {isCloudStorage && expanded ? (
         <div className="omi-integration-config omi-cloud-storage-config">
           <CloudStorageSettings />
+        </div>
+      ) : null}
+
+      {isOmiAgents && expanded ? (
+        <div className="omi-integration-config">
+          <OmiAgentsSettings />
         </div>
       ) : null}
 

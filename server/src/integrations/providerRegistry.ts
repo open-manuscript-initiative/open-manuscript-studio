@@ -1,6 +1,7 @@
 import { env } from '../config/env.js';
-import { decryptSecret, type EncryptedSecret } from './secretCrypto.js';
 import { prisma } from '../lib/prisma.js';
+import { loadOmiAgentsConfiguration } from './omiAgentsConfig.js';
+import { decryptSecret, type EncryptedSecret } from './secretCrypto.js';
 
 export type IntegrationProviderKind =
   | 'translation'
@@ -56,7 +57,7 @@ const providers: IntegrationProviderDescriptor[] = [
     id: 'omi-agents', kind: 'agent', displayName: 'OMI agents',
     description: 'Scoped OMI assistants for editing, metadata, summaries and citation checks.',
     authenticationModes: ['none'], preferredAuthenticationMode: 'none',
-    supportsPerUserAuthentication: false, supportsMultipleConnections: false, configurable: false,
+    supportsPerUserAuthentication: true, supportsMultipleConnections: false, configurable: true,
   },
   {
     id: 'ojs', kind: 'publishing', displayName: 'Open Journal Systems (OJS)',
@@ -189,6 +190,39 @@ async function testAiProvider(userId: string): Promise<IntegrationConnectionStat
   }
 }
 
+async function testOmiAgents(userId: string): Promise<IntegrationConnectionStatus> {
+  const state = await loadOmiAgentsConfiguration(userId);
+  if (!state.configured) {
+    return {
+      configured: false,
+      healthy: false,
+      message: 'OMI Agents are not configured for this account.',
+    };
+  }
+  if (!state.enabled) {
+    return {
+      configured: true,
+      healthy: false,
+      message: 'OMI Agents are configured but disabled.',
+    };
+  }
+
+  const ai = await testAiProvider(userId);
+  if (!ai.configured || !ai.healthy) {
+    return {
+      configured: true,
+      healthy: false,
+      message: `OMI Agents are configured, but the underlying AI provider is not ready. ${ai.message}`,
+    };
+  }
+
+  return {
+    configured: true,
+    healthy: true,
+    message: `OMI Agents are ready: ${state.config.enabledAgents.length} agent(s), ${state.config.permissions.length} permission(s), ${state.config.reviewRequired ? 'review required' : 'direct-write policy enabled'}.`,
+  };
+}
+
 async function testPublishingProvider(
   providerId: 'ojs' | 'omp',
   userId: string,
@@ -217,6 +251,8 @@ export async function testIntegrationProvider(
       return testDeepL(userId);
     case 'ai-provider':
       return testAiProvider(userId);
+    case 'omi-agents':
+      return testOmiAgents(userId);
     case 'orcid': {
       const identity = await prisma.userIdentity.findFirst({
         where: { userId, provider: 'ORCID' }, select: { id: true },
