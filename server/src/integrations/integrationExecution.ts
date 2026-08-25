@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { isIP } from 'node:net';
 
 import { prisma } from '../lib/prisma.js';
+import { requestAiText, resolveAiEndpoint } from './aiProviderClient.js';
 import { assertOmiAgentRunAllowed } from './omiAgentsConfig.js';
 import { decryptSecret, type EncryptedSecret } from './secretCrypto.js';
 
@@ -224,12 +225,10 @@ export async function runBuiltInAgent(
     allowDirectWrite: input.allowDirectWrite,
   });
 
-  // The first production implementation intentionally returns suggestions only.
-  // A later UI step may apply a suggestion through normal Studio mutation actions,
-  // which preserves revision history and keeps the external provider away from the model store.
   const connection = await resolveIntegrationConnection(userId, 'ai-provider');
   const config = asRecord(connection.config);
-  const endpoint = requireSafeHttpsEndpoint(String(config?.endpoint ?? ''));
+  const endpoint = requireSafeHttpsEndpoint(resolveAiEndpoint(config ?? {}));
+  const providerPreset = typeof config?.providerPreset === 'string' ? config.providerPreset : undefined;
   const model = typeof config?.model === 'string' && config.model.trim()
     ? config.model.trim()
     : undefined;
@@ -245,34 +244,19 @@ export async function runBuiltInAgent(
     reviewConfidential: Boolean(input.scope.reviewConfidential),
   });
   const contextText = input.context ? JSON.stringify(input.context) : '{}';
+  const userPrompt = `OMI document scope: ${scopeDescription}\nContext: ${contextText}\n\nContent:\n${input.content}`;
 
   try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          {
-            role: 'user',
-            content: `OMI document scope: ${scopeDescription}\nContext: ${contextText}\n\nContent:\n${input.content}`,
-          },
-        ],
-        temperature: 0.2,
-      }),
-      signal: AbortSignal.timeout(EXTERNAL_TIMEOUT_MS),
+    const suggestion = await requestAiText({
+      endpoint,
+      providerPreset,
+      model,
+      apiKey,
+      systemPrompt,
+      userPrompt,
+      timeoutMs: EXTERNAL_TIMEOUT_MS,
+      maxOutputTokens: 4096,
     });
-    if (!response.ok) throw new Error(`AI provider request failed with HTTP ${response.status}.`);
-    const payload = await response.json() as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const suggestion = payload.choices?.[0]?.message?.content?.trim();
-    if (!suggestion) throw new Error('AI provider returned no suggestion.');
 
     await writeAuditEvent({
       id: auditId,
@@ -285,7 +269,7 @@ export async function runBuiltInAgent(
       permissions: requestedPermissions,
       directWrite: false,
       status: 'SUCCESS',
-      detail: { model, requestedDirectWrite: writeRequested },
+      detail: { model, providerPreset: providerPreset ?? null, requestedDirectWrite: writeRequested },
     });
 
     return {
@@ -308,7 +292,7 @@ export async function runBuiltInAgent(
       permissions: requestedPermissions,
       directWrite: false,
       status: 'ERROR',
-      detail: { model, error: safeErrorMessage(error) },
+      detail: { model, providerPreset: providerPreset ?? null, error: safeErrorMessage(error) },
     });
     throw error;
   }

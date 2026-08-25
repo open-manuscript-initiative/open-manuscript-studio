@@ -1,5 +1,6 @@
 import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
+import { requestAiText, resolveAiEndpoint } from './aiProviderClient.js';
 import { loadOmiAgentsConfiguration } from './omiAgentsConfig.js';
 import { decryptSecret, type EncryptedSecret } from './secretCrypto.js';
 
@@ -159,14 +160,15 @@ async function testAiProvider(userId: string): Promise<IntegrationConnectionStat
 
   const encryptedSecret = userConnection?.encryptedSecret ?? serverConfig?.encryptedSecret;
   const config = readConfigRecord(userConnection?.config ?? serverConfig?.config);
-  const endpoint = typeof config?.endpoint === 'string' ? config.endpoint.trim() : '';
+  const endpoint = resolveAiEndpoint(config ?? {});
   const model = typeof config?.model === 'string' ? config.model.trim() : '';
+  const providerPreset = typeof config?.providerPreset === 'string' ? config.providerPreset : undefined;
 
   if (!encryptedSecret || !endpoint || !model) {
     return {
       configured: false,
       healthy: false,
-      message: 'AI provider requires an API secret, an HTTPS chat-completions endpoint, and a model name.',
+      message: 'AI provider requires an API secret, an HTTPS endpoint, and a model name.',
     };
   }
 
@@ -176,49 +178,16 @@ async function testAiProvider(userId: string): Promise<IntegrationConnectionStat
       throw new Error('AI provider endpoint must be a credential-free HTTPS URL.');
     }
     const apiKey = decryptSecret(parseEncryptedSecret(encryptedSecret));
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: 'You are an API connection test. Reply with OK.' },
-          { role: 'user', content: 'OK' },
-        ],
-        temperature: 0,
-        max_tokens: 2,
-      }),
-      signal: AbortSignal.timeout(15000),
+    await requestAiText({
+      endpoint: url.toString(),
+      providerPreset,
+      model,
+      apiKey,
+      systemPrompt: 'You are an API connection test. Reply with OK.',
+      userPrompt: 'OK',
+      timeoutMs: 15000,
+      maxOutputTokens: 16,
     });
-    if (!response.ok) {
-      return {
-        configured: true,
-        healthy: false,
-        message: `AI provider rejected the live connection test with HTTP ${response.status}.`,
-      };
-    }
-    const contentType = response.headers.get('content-type') ?? '';
-    if (!contentType.includes('application/json')) {
-      return {
-        configured: true,
-        healthy: false,
-        message: `AI provider returned ${contentType || 'a non-JSON response'} instead of JSON.`,
-      };
-    }
-    const payload = await response.json() as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    if (!payload.choices?.[0]?.message) {
-      return {
-        configured: true,
-        healthy: false,
-        message: 'AI provider returned an unexpected chat-completions response.',
-      };
-    }
     return {
       configured: true,
       healthy: true,
