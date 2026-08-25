@@ -122,7 +122,7 @@ export async function assertOmiAgentRunAllowed(input: {
   agentId: OmiBuiltInAgentId;
   scopeKind: string;
   requestedPermissions: string[];
-  allowDirectWrite?: boolean;
+  allowDirectWrite: boolean | undefined;
 }): Promise<OmiAgentsConfiguration> {
   const state = await loadOmiAgentsConfiguration(input.userId);
   if (!state.configured) {
