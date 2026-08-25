@@ -20,6 +20,7 @@ import {
 } from '../model/crossReferences';
 import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
 import { isVisualBlock } from '../model/visualBlocks';
+import { EmbeddedTableOfContents } from './EmbeddedTableOfContents';
 import { LazyBlockEditor } from './LazyBlockEditor';
 import { VisualBlockEditor } from './VisualBlockEditor';
 
@@ -188,6 +189,8 @@ export function EditorPane({ ojsContributors = [] }: EditorPaneProps) {
 
             <OjsContributorPanel contributors={ojsContributors} />
           </header>
+
+          <EmbeddedTableOfContents />
 
           <div className="omi-continuous-sections">
             {manuscript.sections.length > 0 ? (

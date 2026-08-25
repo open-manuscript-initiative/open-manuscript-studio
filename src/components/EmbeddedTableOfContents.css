@@ -1,0 +1,48 @@
+.omi-embedded-toc {
+  margin: 1.5rem 0 2rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--omi-border, #d8dde6);
+  border-bottom: 1px solid var(--omi-border, #d8dde6);
+}
+
+.omi-embedded-toc h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+}
+
+.omi-embedded-toc ol {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.omi-embedded-toc li {
+  margin-inline-start: calc(var(--omi-toc-level, 0) * 1.2rem);
+}
+
+.omi-embedded-toc button {
+  width: 100%;
+  padding: 0.45rem 0.35rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: 1.35;
+  text-align: start;
+  cursor: pointer;
+}
+
+.omi-embedded-toc button:hover,
+.omi-embedded-toc button:focus-visible {
+  background: var(--omi-surface-subtle, #f7f8fa);
+  text-decoration: underline;
+}
+
+.omi-toc-navigation-target {
+  outline: 2px solid currentColor;
+  outline-offset: 0.35rem;
+  border-radius: 0.2rem;
+}

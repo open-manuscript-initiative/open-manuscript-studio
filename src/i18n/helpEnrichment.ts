@@ -27,7 +27,7 @@ const practicalGuidance: Record<string, { label: string; suffix: string }> = {
   pt: { label: 'Sugestão prática', suffix: 'Verifique as definições e o resultado antes da exportação final.' },
   ro: { label: 'Sfat practic', suffix: 'Verificați setările și rezultatul înainte de exportul final.' },
   sk: { label: 'Praktický tip', suffix: 'Pred konečným exportom skontrolujte nastavenia a výsledok.' },
-  sl: { label: 'Praktični nasvet', suffix: 'Pred končnim izvozom preverite nastavitve in rezultat.' },
+  sl: { label: 'Praktični nasvet', suffix: 'Pred končnim izvozem preverite nastavitve in rezultat.' },
   sv: { label: 'Praktiskt tips', suffix: 'Kontrollera inställningarna och resultatet före den slutliga exporten.' },
 };
 
@@ -57,6 +57,12 @@ const signatureTopic: Record<string, { title: string; body: string; tips: string
   sv: { title: 'Kryptografisk författarsignatur', body: 'En registrerad författare kan signera en viss revision med WebAuthn/passkey kopplad till en säkert verifierad identitet, exempelvis ORCID. Signaturen binds till revisionens kryptografiska digest.', tips: ['Ett manuellt angivet ORCID är inte samma sak som en autentiserad ORCID-identitet.', 'Efter en ändring av manuskriptet måste den nya revisionen signeras igen.'] },
 };
 
+const navigationTopic: Partial<Record<string, { title: string; body: string; tips: string[] }>> = {
+  hu: { title: 'Tartalomjegyzék és mutatók', body: 'A Studio a tartalomjegyzéket és a mutatókat szemantikus navigációként kezeli. Wordből importált tartalomjegyzék esetén a címsorhierarchiából élő, a dokumentumba ágyazott tartalomjegyzék készül: a bejegyzésekre kattintva közvetlenül a megfelelő fejezethez lehet ugrani. A Word statikus oldalszámai nem kerülnek megőrzésre, mert a Studio folyamatos, reszponzív dokumentummodellt használ. A dokumentumban több, szabadon elnevezhető mutató is létrehozható – például névmutató, helységmutató vagy képek jegyzéke – és a mutató előfordulásai a megjelölt szöveghelyhez navigálnak.', tips: ['A tartalomjegyzék alapja a címsorhierarchia, ezért a fejezetekhez valódi címsorszinteket használjon.', 'Import után ne javítsa kézzel a tartalomjegyzék oldalszámait: a Studio nem statikus oldalszámokra építi a navigációt.', 'Mutatóbejegyzésnél a konkrét előfordulásra kattintva a dokumentum megfelelő helyére ugorhat.'] },
+  en: { title: 'Table of contents and indexes', body: 'Studio treats tables of contents and indexes as semantic navigation. When a Word table of contents is imported, Studio builds a live in-document table of contents from the heading hierarchy; selecting an entry navigates directly to its section. Static Word page numbers are not preserved because Studio uses a continuous responsive document model. A manuscript can also contain multiple freely named indexes, such as a name index, place index, or list of figures, with occurrences navigating to their marked location.', tips: ['Use real heading levels because the table of contents is generated from the heading hierarchy.', 'Do not manually repair imported TOC page numbers; Studio navigation does not depend on static pagination.', 'Select an index occurrence to navigate to the corresponding place in the manuscript.'] },
+  de: { title: 'Inhaltsverzeichnis und Register', body: 'Studio behandelt Inhaltsverzeichnisse und Register als semantische Navigation. Beim Import eines Word-Inhaltsverzeichnisses erzeugt Studio aus der Überschriftenhierarchie ein dynamisches Inhaltsverzeichnis im Dokument; ein Klick auf einen Eintrag führt direkt zum entsprechenden Abschnitt. Statische Word-Seitenzahlen werden nicht übernommen, da Studio ein fortlaufendes responsives Dokumentmodell verwendet. Ein Manuskript kann außerdem mehrere frei benannte Register enthalten, etwa Personenregister, Ortsregister oder Abbildungsverzeichnis; die Fundstellen führen zur markierten Stelle im Dokument.', tips: ['Verwenden Sie echte Überschriftenebenen, da daraus das Inhaltsverzeichnis erzeugt wird.', 'Korrigieren Sie importierte Seitenzahlen nicht manuell; die Studio-Navigation beruht nicht auf statischer Paginierung.', 'Klicken Sie auf eine Registerfundstelle, um zur entsprechenden Stelle im Manuskript zu springen.'] },
+};
+
 export function enrichAdditionalHelp(locale: string, copy: HelpCopy): HelpCopy {
   const guidance = practicalGuidance[locale];
   const signature = signatureTopic[locale];
@@ -68,6 +74,11 @@ export function enrichAdditionalHelp(locale: string, copy: HelpCopy): HelpCopy {
       ? topic.tips
       : [`${guidance.label}: ${guidance.suffix}`],
   }));
+
+  const navigation = navigationTopic[locale];
+  if (navigation && !topics.some((topic) => topic.title === navigation.title)) {
+    topics.push(navigation);
+  }
 
   if (signature && !topics.some((topic) => topic.title === signature.title)) {
     topics.push(signature);
