@@ -154,6 +154,62 @@
   text-align: right;
 }
 
+.omi-agents-settings,
+.omi-agent-settings-section,
+.omi-agent-settings-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.omi-agent-settings-section {
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.omi-agent-settings-section > strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.omi-agent-settings-options label,
+.omi-agent-toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, currentColor 2%, transparent);
+}
+
+.omi-agent-settings-options input,
+.omi-agent-toggle input {
+  width: auto;
+  margin-top: 3px;
+}
+
+.omi-agent-settings-options span,
+.omi-agent-toggle span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.omi-agent-settings-options small,
+.omi-agent-toggle small {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  opacity: 0.7;
+}
+
+.omi-agent-permission--dangerous {
+  border-style: dashed !important;
+}
+
 .omi-publishing-connections {
   display: flex;
   flex-direction: column;
