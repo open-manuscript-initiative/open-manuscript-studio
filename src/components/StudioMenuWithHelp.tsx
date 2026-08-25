@@ -1,10 +1,12 @@
-import { BookA, CircleHelp, ListTree, Plug } from 'lucide-react';
+import { BookA, CircleHelp, CircleX, ListTree, Plug } from 'lucide-react';
 import {
   useEffect,
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
 
+import { isDocumentClosedState } from '../app/documentCloseState';
+import { closeCurrentDocument } from '../app/documentLifecycle';
 import { useTranslation } from '../i18n';
 import { getLocalizedHelpCopy } from '../i18n/helpResolver';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
@@ -35,6 +37,8 @@ export function StudioMenuWithHelp({
   const integrationsLabel = getIntegrationsLabel(locale);
   const indexLabel = getIndexLabel(locale);
   const tocLabel = getTocLabel(locale);
+  const closeDocumentCopy = getCloseDocumentCopy(locale);
+  const documentAlreadyClosed = isDocumentClosedState();
   const [helpOpen, setHelpOpen] = useState(false);
   const [integrationsOpen, setIntegrationsOpen] = useState(false);
   const [indexOpen, setIndexOpen] = useState(false);
@@ -75,7 +79,7 @@ export function StudioMenuWithHelp({
     if (!navigationHost) return;
     const internalButtons = Array.from(
       navigationHost.querySelectorAll<HTMLButtonElement>(
-        '.studio-menu-nav-button:not([data-help-navigation="true"]):not([data-integrations-navigation="true"]):not([data-index-navigation="true"]):not([data-toc-navigation="true"])',
+        '.studio-menu-nav-button:not([data-help-navigation="true"]):not([data-integrations-navigation="true"]):not([data-index-navigation="true"]):not([data-toc-navigation="true"]):not([data-document-close="true"])',
       ),
     );
     const externalNavigationOpen = helpOpen || integrationsOpen || indexOpen || tocOpen;
@@ -117,6 +121,11 @@ export function StudioMenuWithHelp({
     setTocOpen(false);
   };
 
+  const requestDocumentClose = () => {
+    if (!window.confirm(closeDocumentCopy.confirm)) return;
+    void closeCurrentDocument();
+  };
+
   return (
     <>
       <StudioMenu open={open} onClose={onClose} ojsAssignment={ojsAssignment} />
@@ -135,6 +144,16 @@ export function StudioMenuWithHelp({
           <button type="button" data-help-navigation="true" className={`studio-menu-nav-button${helpOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={helpOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setHelpOpen(true); }}>
             <CircleHelp size={18} aria-hidden="true" /><span>{copy.navigation}</span>
           </button>
+          {!documentAlreadyClosed ? (
+            <button
+              type="button"
+              data-document-close="true"
+              className="studio-menu-nav-button studio-menu-nav-button--document-close"
+              onClick={requestDocumentClose}
+            >
+              <CircleX size={18} aria-hidden="true" /><span>{closeDocumentCopy.label}</span>
+            </button>
+          ) : null}
         </>,
         navigationHost,
       ) : null}
@@ -174,4 +193,25 @@ function getIndexLabel(locale: string): string {
 function getTocLabel(locale: string): string {
   const labels: Record<string, string> = { de: 'Inhaltsverzeichnis', en: 'Table of contents', hu: 'Tartalomjegyzék' };
   return labels[locale] ?? labels.en;
+}
+
+function getCloseDocumentCopy(locale: string) {
+  if (locale === 'hu') {
+    return {
+      label: 'Dokumentum bezárása',
+      confirm: 'Bezárja az aktuális dokumentumot? A dokumentum kikerül a visszaállított munkamenetből. A külön fájlba vagy külső rendszerbe még el nem mentett tartalom elveszhet.',
+    };
+  }
+
+  if (locale === 'de') {
+    return {
+      label: 'Dokument schließen',
+      confirm: 'Aktuelles Dokument schließen? Es wird aus der wiederhergestellten Sitzung entfernt. Inhalte, die noch nicht in einer separaten Datei oder einem externen System gespeichert wurden, können verloren gehen.',
+    };
+  }
+
+  return {
+    label: 'Close document',
+    confirm: 'Close the current document? It will be removed from the restored session. Content not yet saved to a separate file or external system may be lost.',
+  };
 }
