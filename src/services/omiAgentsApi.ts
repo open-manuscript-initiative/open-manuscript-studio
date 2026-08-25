@@ -13,6 +13,11 @@ const API_BASE_URL = normalizeBaseUrl(
     (IS_TAURI && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '/api'),
 );
 
+// The server deliberately caps one agent request at 80,000 characters.
+// Keep client chunks below that boundary so whole-manuscript analysis also
+// works for book-length documents and leaves room for future request framing.
+const AGENT_CHUNK_CHARACTERS = 64_000;
+
 export async function runOmiAgent(request: AgentRunRequest): Promise<AgentRunResult> {
   const response = await fetch(`${API_BASE_URL}/integrations/agents/run`, {
     method: 'POST',
@@ -31,14 +36,97 @@ export async function runOmiAgent(request: AgentRunRequest): Promise<AgentRunRes
   return parseJsonResponse<AgentRunResult>(response);
 }
 
+/**
+ * Runs an OMI Agent against content of any practical manuscript size.
+ * Small inputs use the normal single request. Large inputs are split on
+ * paragraph boundaries where possible and processed sequentially. Each
+ * server call is independently permission-checked and audited.
+ */
+export async function runOmiAgentChunked(request: AgentRunRequest): Promise<AgentRunResult> {
+  if (request.content.length <= AGENT_CHUNK_CHARACTERS) {
+    return runOmiAgent(request);
+  }
+
+  const chunks = splitAgentContent(request.content, AGENT_CHUNK_CHARACTERS);
+  const results: AgentRunResult[] = [];
+
+  for (let index = 0; index < chunks.length; index += 1) {
+    const result = await runOmiAgent({
+      ...request,
+      content: chunks[index]!,
+      context: {
+        ...(request.context ?? {}),
+        chunk: {
+          index: index + 1,
+          count: chunks.length,
+          continuation: index > 0,
+        },
+      },
+    });
+    results.push(result);
+  }
+
+  const first = results[0]!;
+  const last = results[results.length - 1]!;
+  return {
+    ...first,
+    suggestion: results.map((result) => result.suggestion.trim()).filter(Boolean).join('\n\n---\n\n'),
+    model: first.model ?? last.model,
+    auditId: last.auditId,
+  };
+}
+
+function splitAgentContent(content: string, maxCharacters: number): string[] {
+  const normalized = content.trim();
+  if (normalized.length <= maxCharacters) return [normalized];
+
+  const paragraphs = normalized.split(/\n{2,}/);
+  const chunks: string[] = [];
+  let current = '';
+
+  const flush = () => {
+    const value = current.trim();
+    if (value) chunks.push(value);
+    current = '';
+  };
+
+  for (const paragraph of paragraphs) {
+    const value = paragraph.trim();
+    if (!value) continue;
+
+    if (value.length > maxCharacters) {
+      flush();
+      for (let offset = 0; offset < value.length; offset += maxCharacters) {
+        chunks.push(value.slice(offset, offset + maxCharacters));
+      }
+      continue;
+    }
+
+    const candidate = current ? `${current}\n\n${value}` : value;
+    if (candidate.length > maxCharacters) {
+      flush();
+      current = value;
+    } else {
+      current = candidate;
+    }
+  }
+
+  flush();
+  return chunks;
+}
+
 async function readErrorMessage(response: Response, fallback: string): Promise<string> {
   const contentType = response.headers.get('content-type') ?? '';
   if (!contentType.includes('application/json')) return fallback;
 
   const body = await response.json().catch(() => null) as
-    | { error?: { message?: string } }
+    | { error?: { message?: string; fields?: Record<string, string[] | undefined> } }
     | null;
-  return body?.error?.message ?? fallback;
+  const message = body?.error?.message ?? fallback;
+  const fieldDetails = Object.entries(body?.error?.fields ?? {})
+    .flatMap(([field, messages]) => (messages ?? []).map((item) => `${field}: ${item}`))
+    .join('; ');
+  return fieldDetails ? `${message} ${fieldDetails}` : message;
 }
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
