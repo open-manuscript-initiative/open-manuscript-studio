@@ -127,16 +127,76 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
     ));
   }
 
-  function navigateToEntry(entry: OmiIndexEntry): void {
-    if (!entry.targetBlockId) return;
+  function resolveEntry(entry: OmiIndexEntry, occurrenceIndex: number, fallbackText: string): OmiIndexEntry | null {
+    if (entry.targetBlockId) return entry;
+
+    const needle = (entry.targetText || fallbackText || entry.terms.at(-1) || '').trim();
+    if (!needle) return null;
+    const normalizedNeedle = needle.toLocaleLowerCase();
+    let seen = 0;
+
+    for (const section of manuscript.sections) {
+      for (const block of section.blocks) {
+        const text = blockPlainText(block.content);
+        if (!text) continue;
+        const normalizedText = text.toLocaleLowerCase();
+        let from = 0;
+        while (from <= normalizedText.length - normalizedNeedle.length) {
+          const found = normalizedText.indexOf(normalizedNeedle, from);
+          if (found < 0) break;
+          if (seen === occurrenceIndex) {
+            return {
+              ...entry,
+              targetBlockId: block.id,
+              targetText: needle,
+              targetTextOffset: found,
+            };
+          }
+          seen += 1;
+          from = found + Math.max(1, normalizedNeedle.length);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  function getEntryContext(entry: OmiIndexEntry | null): string {
+    if (!entry?.targetBlockId) return '';
+    const block = manuscript.sections
+      .flatMap((section) => section.blocks)
+      .find((candidate) => candidate.id === entry.targetBlockId);
+    if (!block) return '';
+
+    const text = normalizeWhitespace(blockPlainText(block.content));
+    const needle = normalizeWhitespace(entry.targetText ?? entry.terms.at(-1) ?? '');
+    if (!text || !needle) return '';
+
+    const normalizedText = text.toLocaleLowerCase();
+    const normalizedNeedle = needle.toLocaleLowerCase();
+    let start = typeof entry.targetTextOffset === 'number' ? entry.targetTextOffset : -1;
+    if (start < 0 || normalizedText.slice(start, start + needle.length) !== normalizedNeedle) {
+      start = normalizedText.indexOf(normalizedNeedle);
+    }
+    if (start < 0) return '';
+
+    const beforeWords = text.slice(0, start).trim().split(/\s+/).filter(Boolean);
+    const afterWords = text.slice(start + needle.length).trim().split(/\s+/).filter(Boolean);
+    const before = beforeWords.slice(-7).join(' ');
+    const after = afterWords.slice(0, 7).join(' ');
+    return `${beforeWords.length > 7 ? '…' : ''}${before ? `${before} ` : ''}${needle}${after ? ` ${after}` : ''}${afterWords.length > 7 ? '…' : ''}`;
+  }
+
+  function navigateToEntry(entry: OmiIndexEntry, occurrenceIndex: number, fallbackText: string): void {
+    const resolved = resolveEntry(entry, occurrenceIndex, fallbackText);
+    if (!resolved?.targetBlockId) return;
     const section = manuscript.sections.find((candidate) =>
-      candidate.blocks.some((block) => block.id === entry.targetBlockId),
+      candidate.blocks.some((block) => block.id === resolved.targetBlockId),
     );
     if (section) selectSection(section.id);
     onNavigate?.();
     document.querySelector<HTMLButtonElement>('.studio-menu-close')?.click();
-
-    revealTarget(entry, 0);
+    revealTarget(resolved, 0);
   }
 
   function revealTarget(entry: OmiIndexEntry, attempt: number): void {
@@ -144,14 +204,14 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
       const target = document.getElementById(`omi-target-${entry.targetBlockId}`)
         ?? document.querySelector<HTMLElement>(`[data-block-id="${cssEscape(entry.targetBlockId ?? '')}"]`);
       if (!target) {
-        if (attempt < 8) revealTarget(entry, attempt + 1);
+        if (attempt < 12) revealTarget(entry, attempt + 1);
         return;
       }
       target.scrollIntoView({ behavior: attempt === 0 ? 'smooth' : 'auto', block: 'center' });
       if (entry.targetText) selectText(target, entry.targetText, entry.targetTextOffset);
       target.classList.add('omi-index-navigation-target');
       window.setTimeout(() => target.classList.remove('omi-index-navigation-target'), 1600);
-    }, attempt === 0 ? 100 : 90);
+    }, 100);
   }
 
   return (
@@ -199,11 +259,26 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
                 </button>
                 {expanded ? (
                   <div className="omi-index-occurrences">
-                    {group.entries.map((entry, index) => (
-                      <button key={entry.id} type="button" className="studio-menu-secondary-action" disabled={!entry.targetBlockId} title={entry.targetBlockId ? copy.goTo : copy.noLocation} onClick={() => navigateToEntry(entry)}>
-                        <MapPin size={15} aria-hidden="true" /><span>{index + 1}. {entry.targetText || group.label}</span>
-                      </button>
-                    ))}
+                    {group.entries.map((entry, index) => {
+                      const resolved = resolveEntry(entry, index, group.label);
+                      const context = getEntryContext(resolved);
+                      return (
+                        <button
+                          key={entry.id}
+                          type="button"
+                          className="studio-menu-secondary-action"
+                          disabled={!resolved?.targetBlockId}
+                          title={resolved?.targetBlockId ? copy.goTo : copy.noLocation}
+                          onClick={() => navigateToEntry(entry, index, group.label)}
+                        >
+                          <MapPin size={15} aria-hidden="true" />
+                          <span>
+                            <strong>{index + 1}. {entry.targetText || group.label}</strong>
+                            {context ? <small style={{ display: 'block', marginTop: '.2rem', fontWeight: 400 }}>{context}</small> : null}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : null}
               </div>
@@ -213,6 +288,29 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
       )}
     </section>
   );
+}
+
+function normalizeWhitespace(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function blockPlainText(content: string): string {
+  try {
+    const value = JSON.parse(content) as unknown;
+    return collectNodeText(value);
+  } catch {
+    return content.replace(/<[^>]+>/g, ' ');
+  }
+}
+
+function collectNodeText(value: unknown): string {
+  if (!value || typeof value !== 'object') return '';
+  const node = value as { text?: unknown; content?: unknown };
+  const own = typeof node.text === 'string' ? node.text : '';
+  const children = Array.isArray(node.content)
+    ? node.content.map((child) => collectNodeText(child)).join('')
+    : '';
+  return `${own}${children}`;
 }
 
 function cssEscape(value: string): string {
