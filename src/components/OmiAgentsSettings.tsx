@@ -26,6 +26,16 @@ type AgentPermission =
   | 'metadata.write'
   | 'references.read';
 
+type AiProviderPreset = 'openai' | 'mistral' | 'groq' | 'openrouter' | 'custom';
+
+const AI_PROVIDER_PRESETS: Record<AiProviderPreset, { endpoint: string; modelPlaceholder: string }> = {
+  openai: { endpoint: 'https://api.openai.com/v1/chat/completions', modelPlaceholder: 'gpt-5.4' },
+  mistral: { endpoint: 'https://api.mistral.ai/v1/chat/completions', modelPlaceholder: 'mistral-large-latest' },
+  groq: { endpoint: 'https://api.groq.com/openai/v1/chat/completions', modelPlaceholder: 'openai/gpt-oss-120b' },
+  openrouter: { endpoint: 'https://openrouter.ai/api/v1/chat/completions', modelPlaceholder: 'openai/gpt-5.4' },
+  custom: { endpoint: '', modelPlaceholder: 'model-name' },
+};
+
 const SAFE_PERMISSIONS: AgentPermission[] = [
   'document.read',
   'document.suggest',
@@ -49,7 +59,8 @@ export function OmiAgentsSettings() {
   const [permissions, setPermissions] = useState<AgentPermission[]>(SAFE_PERMISSIONS);
   const [status, setStatus] = useState<IntegrationProviderStatus | null>(null);
   const [aiStatus, setAiStatus] = useState<IntegrationProviderStatus | null>(null);
-  const [aiEndpoint, setAiEndpoint] = useState('');
+  const [aiProviderPreset, setAiProviderPreset] = useState<AiProviderPreset>('openai');
+  const [aiEndpoint, setAiEndpoint] = useState(AI_PROVIDER_PRESETS.openai.endpoint);
   const [aiModel, setAiModel] = useState('');
   const [aiApiKey, setAiApiKey] = useState('');
   const [aiHasSecret, setAiHasSecret] = useState(false);
@@ -59,7 +70,8 @@ export function OmiAgentsSettings() {
 
   const directWriteEnabled = permissions.includes('document.write') || permissions.includes('metadata.write');
   const canSave = enabledAgents.length > 0 && permissions.includes('document.suggest');
-  const canSaveAi = Boolean(aiEndpoint.trim() && aiModel.trim() && aiApiKey.trim());
+  const canSaveAi = Boolean(aiEndpoint.trim() && aiModel.trim() && (aiApiKey.trim() || aiHasSecret));
+  const aiModelPlaceholder = AI_PROVIDER_PRESETS[aiProviderPreset].modelPlaceholder;
 
   useEffect(() => {
     let cancelled = false;
@@ -94,7 +106,11 @@ export function OmiAgentsSettings() {
           ?? aiProvider?.connections[0];
         if (aiConnection) {
           const config = aiConnection.config;
-          if (typeof config?.endpoint === 'string') setAiEndpoint(config.endpoint);
+          if (typeof config?.endpoint === 'string') {
+            const endpoint = config.endpoint;
+            setAiEndpoint(endpoint);
+            setAiProviderPreset(detectProviderPreset(endpoint));
+          }
           if (typeof config?.model === 'string') setAiModel(config.model);
           setAiHasSecret(aiConnection.hasSecret);
         }
@@ -131,6 +147,11 @@ export function OmiAgentsSettings() {
       : [...current, permission]);
   }
 
+  function selectAiProvider(nextProvider: AiProviderPreset) {
+    setAiProviderPreset(nextProvider);
+    if (nextProvider !== 'custom') setAiEndpoint(AI_PROVIDER_PRESETS[nextProvider].endpoint);
+  }
+
   async function saveAiProvider() {
     if (!canSaveAi) {
       setError(copy.aiRequired);
@@ -142,17 +163,18 @@ export function OmiAgentsSettings() {
     try {
       await saveIntegrationConnection('ai-provider', {
         connectionKey: 'omi-agents',
-        displayName: 'OMI Agents AI provider',
+        displayName: `OMI Agents AI provider · ${copy.aiProviders[aiProviderPreset]}`,
         authenticationMode: 'user_api_key',
-        secret: aiApiKey.trim(),
+        ...(aiApiKey.trim() ? { secret: aiApiKey.trim() } : {}),
         enabled: true,
         config: {
+          providerPreset: aiProviderPreset,
           endpoint: aiEndpoint.trim(),
           model: aiModel.trim(),
         },
       });
+      if (aiApiKey.trim()) setAiHasSecret(true);
       setAiApiKey('');
-      setAiHasSecret(true);
       const nextAiStatus = await testIntegrationConnection('ai-provider');
       setAiStatus(nextAiStatus);
       const nextAgentStatus = await testIntegrationConnection('omi-agents');
@@ -236,6 +258,17 @@ export function OmiAgentsSettings() {
         <strong><Sparkles size={16} aria-hidden="true" /> {copy.aiTitle}</strong>
         <p>{copy.aiDescription}</p>
         <label>
+          <span>{copy.aiProvider}</span>
+          <select value={aiProviderPreset} onChange={(event) => selectAiProvider(event.target.value as AiProviderPreset)}>
+            <option value="openai">{copy.aiProviders.openai}</option>
+            <option value="mistral">{copy.aiProviders.mistral}</option>
+            <option value="groq">{copy.aiProviders.groq}</option>
+            <option value="openrouter">{copy.aiProviders.openrouter}</option>
+            <option value="custom">{copy.aiProviders.custom}</option>
+          </select>
+        </label>
+        <p className="omi-integration-secret-note">{copy.aiProviderHelp}</p>
+        <label>
           <span>{copy.aiEndpoint}</span>
           <input
             type="url"
@@ -243,6 +276,7 @@ export function OmiAgentsSettings() {
             autoCapitalize="none"
             autoCorrect="off"
             value={aiEndpoint}
+            readOnly={aiProviderPreset !== 'custom'}
             placeholder="https://api.example.org/v1/chat/completions"
             onChange={(event) => setAiEndpoint(event.target.value)}
           />
@@ -254,7 +288,7 @@ export function OmiAgentsSettings() {
             autoCapitalize="none"
             autoCorrect="off"
             value={aiModel}
-            placeholder="model-name"
+            placeholder={aiModelPlaceholder}
             onChange={(event) => setAiModel(event.target.value)}
           />
         </label>
@@ -353,6 +387,14 @@ export function OmiAgentsSettings() {
   );
 }
 
+function detectProviderPreset(endpoint: string): AiProviderPreset {
+  const normalized = endpoint.trim().replace(/\/$/, '');
+  for (const preset of ['openai', 'mistral', 'groq', 'openrouter'] as const) {
+    if (normalized === AI_PROVIDER_PRESETS[preset].endpoint) return preset;
+  }
+  return 'custom';
+}
+
 function isAgentPermission(value: unknown): value is AgentPermission {
   return value === 'document.read'
     || value === 'document.suggest'
@@ -367,10 +409,12 @@ function getCopy(locale: string) {
     safetyTitle: 'Korlátozott jogosultságú ügynökök',
     safetyDescription: 'Az OMI Agents csak az itt engedélyezett műveleteket használhatja. Alapértelmezésben kizárólag ellenőrizhető javaslatot készít, a kéziratot nem módosítja közvetlenül.',
     aiTitle: 'AI-szolgáltató',
-    aiDescription: 'Az OMI Agents egy OpenAI-kompatibilis HTTPS chat-completions végpontot használ. Add meg a végpontot, a modell nevét és az API-kulcsot.',
-    aiEndpoint: 'Chat-completions végpont', aiModel: 'Modell', aiApiKey: 'API-kulcs', aiApiKeyPlaceholder: 'AI-szolgáltató API-kulcsa', aiSecretStored: 'Titkos kulcs már tárolva — új kulcsot adj meg a módosításhoz',
+    aiDescription: 'Válassz támogatott OpenAI-kompatibilis szolgáltatót, vagy használj egyéni HTTPS chat-completions végpontot.',
+    aiProvider: 'Szolgáltató', aiProviderHelp: 'A beépített szolgáltatóknál a Studio automatikusan kitölti a hivatalos chat-completions végpontot. Egyéni szolgáltatónál a végpont kézzel szerkeszthető.',
+    aiProviders: { openai: 'OpenAI', mistral: 'Mistral AI', groq: 'Groq', openrouter: 'OpenRouter', custom: 'Egyéni OpenAI-kompatibilis' },
+    aiEndpoint: 'Chat-completions végpont', aiModel: 'Modell', aiApiKey: 'API-kulcs', aiApiKeyPlaceholder: 'AI-szolgáltató API-kulcsa', aiSecretStored: 'Titkos kulcs már tárolva — új kulcsot csak módosításkor adj meg',
     aiSecurity: 'Az API-kulcs titkosítva, kizárólag a Studio API szerverén kerül tárolásra. A kliens később nem kapja vissza.',
-    aiRequired: 'Add meg a HTTPS végpontot, a modell nevét és az API-kulcsot.', aiSaveAndTest: 'AI beállítás mentése és tesztelése', aiTest: 'AI kapcsolat tesztelése', aiSavedReady: 'Az AI-szolgáltató mentve és sikeresen ellenőrizve.',
+    aiRequired: 'Add meg a HTTPS végpontot, a modell nevét és az API-kulcsot, vagy használd a már eltárolt kulcsot.', aiSaveAndTest: 'AI beállítás mentése és tesztelése', aiTest: 'AI kapcsolat tesztelése', aiSavedReady: 'Az AI-szolgáltató mentve és sikeresen ellenőrizve.',
     enableAgents: 'OMI Agents engedélyezése', enableAgentsHelp: 'Az ügynökök külön kapcsolóval kikapcsolhatók anélkül, hogy a beállításaik elvesznének.',
     agentsTitle: 'Aktív ügynökök', agentsDescription: 'Válaszd ki, mely beépített asszisztensek használhatók.',
     agents: {
@@ -388,8 +432,10 @@ function getCopy(locale: string) {
   };
   if (locale === 'de') return {
     safetyTitle: 'Agenten mit begrenzten Rechten', safetyDescription: 'OMI Agents dürfen nur die hier gewährten Aktionen verwenden. Standardmäßig erzeugen sie nur überprüfbare Vorschläge und ändern das Manuskript nicht direkt.',
-    aiTitle: 'KI-Anbieter', aiDescription: 'OMI Agents verwenden einen OpenAI-kompatiblen HTTPS-Chat-Completions-Endpunkt. Geben Sie Endpunkt, Modellname und API-Schlüssel an.',
-    aiEndpoint: 'Chat-Completions-Endpunkt', aiModel: 'Modell', aiApiKey: 'API-Schlüssel', aiApiKeyPlaceholder: 'API-Schlüssel des KI-Anbieters', aiSecretStored: 'Geheimer Schlüssel ist gespeichert — zum Ändern einen neuen Schlüssel eingeben', aiSecurity: 'Der API-Schlüssel wird verschlüsselt ausschließlich auf dem Studio-API-Server gespeichert und nicht an den Client zurückgegeben.', aiRequired: 'Geben Sie HTTPS-Endpunkt, Modell und API-Schlüssel ein.', aiSaveAndTest: 'KI-Einstellung speichern und testen', aiTest: 'KI-Verbindung testen', aiSavedReady: 'Der KI-Anbieter wurde gespeichert und erfolgreich geprüft.',
+    aiTitle: 'KI-Anbieter', aiDescription: 'Wählen Sie einen unterstützten OpenAI-kompatiblen Anbieter oder verwenden Sie einen eigenen HTTPS-Chat-Completions-Endpunkt.',
+    aiProvider: 'Anbieter', aiProviderHelp: 'Für integrierte Anbieter trägt Studio den offiziellen Chat-Completions-Endpunkt automatisch ein. Bei einem benutzerdefinierten Anbieter kann der Endpunkt bearbeitet werden.',
+    aiProviders: { openai: 'OpenAI', mistral: 'Mistral AI', groq: 'Groq', openrouter: 'OpenRouter', custom: 'Benutzerdefiniert · OpenAI-kompatibel' },
+    aiEndpoint: 'Chat-Completions-Endpunkt', aiModel: 'Modell', aiApiKey: 'API-Schlüssel', aiApiKeyPlaceholder: 'API-Schlüssel des KI-Anbieters', aiSecretStored: 'Geheimer Schlüssel ist gespeichert — nur zum Ändern einen neuen eingeben', aiSecurity: 'Der API-Schlüssel wird verschlüsselt ausschließlich auf dem Studio-API-Server gespeichert und nicht an den Client zurückgegeben.', aiRequired: 'Geben Sie HTTPS-Endpunkt, Modell und API-Schlüssel ein oder verwenden Sie den bereits gespeicherten Schlüssel.', aiSaveAndTest: 'KI-Einstellung speichern und testen', aiTest: 'KI-Verbindung testen', aiSavedReady: 'Der KI-Anbieter wurde gespeichert und erfolgreich geprüft.',
     enableAgents: 'OMI Agents aktivieren', enableAgentsHelp: 'Agenten können ausgeschaltet werden, ohne ihre Einstellungen zu verlieren.',
     agentsTitle: 'Aktive Agenten', agentsDescription: 'Wählen Sie die verfügbaren integrierten Assistenten.',
     agents: {
@@ -405,8 +451,10 @@ function getCopy(locale: string) {
   };
   return {
     safetyTitle: 'Scoped agent permissions', safetyDescription: 'OMI Agents may use only the actions granted here. By default they produce reviewable suggestions and never modify the manuscript directly.',
-    aiTitle: 'AI provider', aiDescription: 'OMI Agents use an OpenAI-compatible HTTPS chat-completions endpoint. Enter the endpoint, model name, and API key.',
-    aiEndpoint: 'Chat-completions endpoint', aiModel: 'Model', aiApiKey: 'API key', aiApiKeyPlaceholder: 'AI provider API key', aiSecretStored: 'Secret is stored — enter a new key to replace it', aiSecurity: 'The API key is encrypted and stored only on the Studio API server. It is never returned to the client.', aiRequired: 'Enter the HTTPS endpoint, model name, and API key.', aiSaveAndTest: 'Save and test AI provider', aiTest: 'Test AI connection', aiSavedReady: 'The AI provider was saved and verified successfully.',
+    aiTitle: 'AI provider', aiDescription: 'Choose a supported OpenAI-compatible provider or use a custom HTTPS chat-completions endpoint.',
+    aiProvider: 'Provider', aiProviderHelp: 'For built-in providers Studio fills the official chat-completions endpoint automatically. Custom providers can edit the endpoint.',
+    aiProviders: { openai: 'OpenAI', mistral: 'Mistral AI', groq: 'Groq', openrouter: 'OpenRouter', custom: 'Custom · OpenAI-compatible' },
+    aiEndpoint: 'Chat-completions endpoint', aiModel: 'Model', aiApiKey: 'API key', aiApiKeyPlaceholder: 'AI provider API key', aiSecretStored: 'Secret is stored — enter a new key only to replace it', aiSecurity: 'The API key is encrypted and stored only on the Studio API server. It is never returned to the client.', aiRequired: 'Enter the HTTPS endpoint, model name, and API key or use the already stored key.', aiSaveAndTest: 'Save and test AI provider', aiTest: 'Test AI connection', aiSavedReady: 'The AI provider was saved and verified successfully.',
     enableAgents: 'Enable OMI Agents', enableAgentsHelp: 'Agents can be disabled without losing their saved configuration.',
     agentsTitle: 'Active agents', agentsDescription: 'Choose which built-in assistants may be used.',
     agents: {
