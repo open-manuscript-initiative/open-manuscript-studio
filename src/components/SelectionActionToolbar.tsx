@@ -1,6 +1,7 @@
 import type { Editor } from '@tiptap/core';
 import {
   useEffect,
+  useMemo,
   useState,
   type CSSProperties,
   type MouseEvent,
@@ -8,7 +9,11 @@ import {
 
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
-import { createManualNameIndexEntry } from '../model/indexing';
+import {
+  createManualIndexEntry,
+  DEFAULT_INDEX_ID,
+  getDocumentIndexDefinitions,
+} from '../model/indexing';
 
 interface SelectionActionToolbarProps {
   editor: Editor;
@@ -30,10 +35,10 @@ interface ToolbarPosition {
   below: boolean;
 }
 
-const indexLabels: Record<string, string> = {
-  en: 'Add to name index',
-  hu: 'Névmutató-jelölés',
-  de: 'Zum Personenregister',
+const indexLabels: Record<string, { action: string; choose: string }> = {
+  en: { action: 'Add to index', choose: 'Index' },
+  hu: { action: 'Mutatóba', choose: 'Mutató' },
+  de: { action: 'Zum Register', choose: 'Register' },
 };
 
 export function SelectionActionToolbar({
@@ -50,7 +55,24 @@ export function SelectionActionToolbar({
   onAssistant,
 }: SelectionActionToolbarProps) {
   const { locale } = useTranslation();
+  const manuscript = useStudioStore((state) => state.manuscript);
   const [position, setPosition] = useState<ToolbarPosition | null>(null);
+  const indexCopy = indexLabels[locale] ?? indexLabels.en;
+  const indexDefinitions = useMemo(
+    () => getDocumentIndexDefinitions({
+      locale,
+      indexDefinitions: manuscript.indexDefinitions,
+      entries: manuscript.indexEntries,
+    }),
+    [locale, manuscript.indexDefinitions, manuscript.indexEntries],
+  );
+  const [selectedIndexId, setSelectedIndexId] = useState(DEFAULT_INDEX_ID);
+
+  useEffect(() => {
+    if (!indexDefinitions.some((definition) => definition.id === selectedIndexId)) {
+      setSelectedIndexId(indexDefinitions[0]?.id ?? DEFAULT_INDEX_ID);
+    }
+  }, [indexDefinitions, selectedIndexId]);
 
   useEffect(() => {
     const update = () => {
@@ -65,13 +87,8 @@ export function SelectionActionToolbar({
         const end = editor.view.coordsAtPos(to);
         const below = Math.min(start.top, end.top) < 96;
         setPosition({
-          left: Math.max(
-            16,
-            Math.min(window.innerWidth - 16, (start.left + end.right) / 2),
-          ),
-          top: below
-            ? Math.max(start.bottom, end.bottom) + 12
-            : Math.min(start.top, end.top) - 12,
+          left: Math.max(16, Math.min(window.innerWidth - 16, (start.left + end.right) / 2)),
+          top: below ? Math.max(start.bottom, end.bottom) + 12 : Math.min(start.top, end.top) - 12,
           below,
         });
       } catch {
@@ -98,32 +115,34 @@ export function SelectionActionToolbar({
 
   if (!position) return null;
 
-  const style = {
-    left: `${position.left}px`,
-    top: `${position.top}px`,
-  } as CSSProperties;
+  const style = { left: `${position.left}px`, top: `${position.top}px` } as CSSProperties;
+  const preserveSelection = (event: MouseEvent<HTMLElement>) => event.preventDefault();
 
-  const preserveSelection = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-  };
-
-  const addNameIndexEntry = () => {
+  const addIndexEntry = () => {
     const { from, to } = editor.state.selection;
     if (from === to) return;
     const selectedText = editor.state.doc.textBetween(from, to, ' ').trim();
     if (!selectedText) return;
     const blockId = editor.view.dom.getAttribute('data-block-id');
     if (!blockId) return;
+    const targetTextOffset = editor.state.doc.textBetween(0, from, ' ').length;
+    const selectedDefinition = indexDefinitions.find((item) => item.id === selectedIndexId);
 
-    const entry = createManualNameIndexEntry({
+    const entry = createManualIndexEntry({
       term: selectedText,
       targetText: selectedText,
+      targetTextOffset,
       targetBlockId: blockId,
+      indexId: selectedIndexId,
+      kind: selectedDefinition?.kind ?? 'index',
     });
 
     useStudioStore.setState((state) => ({
       manuscript: {
         ...state.manuscript,
+        indexDefinitions: state.manuscript.indexDefinitions?.length
+          ? state.manuscript.indexDefinitions
+          : indexDefinitions,
         indexEntries: [...(state.manuscript.indexEntries ?? []), entry],
         updatedAt: new Date().toISOString(),
       },
@@ -133,42 +152,23 @@ export function SelectionActionToolbar({
   };
 
   return (
-    <div
-      className={`omi-selection-action-toolbar${
-        position.below ? ' omi-selection-action-toolbar--below' : ''
-      }`}
-      style={style}
-      role="toolbar"
-      aria-label="Selection actions"
-    >
-      <button type="button" onMouseDown={preserveSelection} onClick={addNameIndexEntry}>
-        {indexLabels[locale] ?? indexLabels.en}
-      </button>
-      {onCitation ? (
-        <button type="button" onMouseDown={preserveSelection} onClick={onCitation}>
-          {citationLabel}
-        </button>
-      ) : null}
-      {onNote ? (
-        <button type="button" onMouseDown={preserveSelection} onClick={onNote}>
-          {noteLabel}
-        </button>
-      ) : null}
-      {onCrossReference ? (
-        <button type="button" onMouseDown={preserveSelection} onClick={onCrossReference}>
-          {crossReferenceLabel}
-        </button>
-      ) : null}
-      {onTranslate ? (
-        <button type="button" onMouseDown={preserveSelection} onClick={onTranslate}>
-          {translateLabel ?? 'Translate'}
-        </button>
-      ) : null}
-      {onAssistant ? (
-        <button type="button" onMouseDown={preserveSelection} onClick={onAssistant}>
-          {assistantLabel ?? 'Assistant'}
-        </button>
-      ) : null}
+    <div className={`omi-selection-action-toolbar${position.below ? ' omi-selection-action-toolbar--below' : ''}`} style={style} role="toolbar" aria-label="Selection actions">
+      <select
+        aria-label={indexCopy.choose}
+        value={selectedIndexId}
+        onMouseDown={preserveSelection}
+        onChange={(event) => setSelectedIndexId(event.target.value)}
+      >
+        {indexDefinitions.map((definition) => (
+          <option key={definition.id} value={definition.id}>{definition.title}</option>
+        ))}
+      </select>
+      <button type="button" onMouseDown={preserveSelection} onClick={addIndexEntry}>{indexCopy.action}</button>
+      {onCitation ? <button type="button" onMouseDown={preserveSelection} onClick={onCitation}>{citationLabel}</button> : null}
+      {onNote ? <button type="button" onMouseDown={preserveSelection} onClick={onNote}>{noteLabel}</button> : null}
+      {onCrossReference ? <button type="button" onMouseDown={preserveSelection} onClick={onCrossReference}>{crossReferenceLabel}</button> : null}
+      {onTranslate ? <button type="button" onMouseDown={preserveSelection} onClick={onTranslate}>{translateLabel ?? 'Translate'}</button> : null}
+      {onAssistant ? <button type="button" onMouseDown={preserveSelection} onClick={onAssistant}>{assistantLabel ?? 'Assistant'}</button> : null}
     </div>
   );
 }
