@@ -1,9 +1,18 @@
+import { isTauri } from '@tauri-apps/api/core';
+
 import type {
   IntegrationAuthenticationMode,
   IntegrationProviderStatus,
 } from '../integrations/contracts';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
+const NATIVE_SESSION_KEY = 'omi_native_session_token';
+const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org/api';
+const IS_TAURI = detectTauriRuntime();
+const USE_DIRECT_NATIVE_API = IS_TAURI && !import.meta.env.DEV;
+const API_BASE_URL = normalizeBaseUrl(
+  import.meta.env.VITE_API_BASE_URL ??
+    (USE_DIRECT_NATIVE_API ? NATIVE_API_BASE_URL : '/api'),
+);
 
 export interface IntegrationConnection {
   id: string;
@@ -47,6 +56,11 @@ export interface PublishingConnectionCredentials {
 }
 
 async function readErrorMessage(response: Response): Promise<string | undefined> {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    return undefined;
+  }
+
   const body = await response.json().catch(() => null) as
     | { error?: { message?: string } }
     | null;
@@ -61,7 +75,7 @@ export async function getIntegrationStatus(
     {
       method: 'GET',
       credentials: 'include',
-      headers: { Accept: 'application/json' },
+      headers: integrationHeaders({ Accept: 'application/json' }),
     },
   );
 
@@ -75,16 +89,19 @@ export async function getIntegrationStatus(
         message: 'Integration endpoint is not configured on this Studio server.',
       };
     }
-    throw new Error(`Integration status request failed with HTTP ${response.status}.`);
+    throw new Error(
+      (await readErrorMessage(response)) ??
+      `Integration status request failed with HTTP ${response.status}.`,
+    );
   }
 
-  return await response.json() as IntegrationProviderStatus;
+  return parseJsonResponse<IntegrationProviderStatus>(response);
 }
 
 export async function getIntegrationCatalog(): Promise<IntegrationCatalogProvider[]> {
   const response = await fetch(`${API_BASE_URL}/integrations/catalog`, {
     credentials: 'include',
-    headers: { Accept: 'application/json' },
+    headers: integrationHeaders({ Accept: 'application/json' }),
   });
   if (!response.ok) {
     throw new Error(
@@ -92,7 +109,7 @@ export async function getIntegrationCatalog(): Promise<IntegrationCatalogProvide
       `Integration catalog request failed with HTTP ${response.status}.`,
     );
   }
-  const payload = await response.json() as { providers: IntegrationCatalogProvider[] };
+  const payload = await parseJsonResponse<{ providers: IntegrationCatalogProvider[] }>(response);
   return payload.providers;
 }
 
@@ -112,10 +129,10 @@ export async function saveIntegrationConnection(
     {
       method: 'POST',
       credentials: 'include',
-      headers: {
+      headers: integrationHeaders({
         Accept: 'application/json',
         'Content-Type': 'application/json',
-      },
+      }),
       body: JSON.stringify(input),
     },
   );
@@ -125,7 +142,7 @@ export async function saveIntegrationConnection(
       `Integration configuration failed with HTTP ${response.status}.`,
     );
   }
-  const payload = await response.json() as { connection: IntegrationConnection };
+  const payload = await parseJsonResponse<{ connection: IntegrationConnection }>(response);
   return payload.connection;
 }
 
@@ -141,10 +158,10 @@ export async function createPublishingConnection(
     {
       method: 'POST',
       credentials: 'include',
-      headers: {
+      headers: integrationHeaders({
         Accept: 'application/json',
         'Content-Type': 'application/json',
-      },
+      }),
       body: JSON.stringify(input),
     },
   );
@@ -154,10 +171,10 @@ export async function createPublishingConnection(
       `Publishing connection registration failed with HTTP ${response.status}.`,
     );
   }
-  return await response.json() as {
+  return parseJsonResponse<{
     connection: IntegrationConnection;
     credentials: PublishingConnectionCredentials;
-  };
+  }>(response);
 }
 
 export async function updatePublishingConnection(
@@ -169,10 +186,10 @@ export async function updatePublishingConnection(
     {
       method: 'PUT',
       credentials: 'include',
-      headers: {
+      headers: integrationHeaders({
         Accept: 'application/json',
         'Content-Type': 'application/json',
-      },
+      }),
       body: JSON.stringify(input),
     },
   );
@@ -182,7 +199,7 @@ export async function updatePublishingConnection(
       `Publishing connection update failed with HTTP ${response.status}.`,
     );
   }
-  const payload = await response.json() as { connection: IntegrationConnection };
+  const payload = await parseJsonResponse<{ connection: IntegrationConnection }>(response);
   return payload.connection;
 }
 
@@ -194,10 +211,10 @@ export async function testIntegrationConnection(
     {
       method: 'POST',
       credentials: 'include',
-      headers: {
+      headers: integrationHeaders({
         Accept: 'application/json',
         'Content-Type': 'application/json',
-      },
+      }),
       body: '{}',
     },
   );
@@ -209,14 +226,14 @@ export async function testIntegrationConnection(
     );
   }
 
-  const payload = await response.json() as {
+  const payload = await parseJsonResponse<{
     status?: { healthy: boolean; configured: boolean; message: string };
     providerId?: string;
     enabled?: boolean;
     configured?: boolean;
     healthy?: boolean;
     message?: string;
-  };
+  }>(response);
 
   if (payload.status) {
     return {
@@ -238,10 +255,10 @@ export async function testIntegrationConnectionById(
     {
       method: 'POST',
       credentials: 'include',
-      headers: {
+      headers: integrationHeaders({
         Accept: 'application/json',
         'Content-Type': 'application/json',
-      },
+      }),
       body: '{}',
     },
   );
@@ -251,7 +268,7 @@ export async function testIntegrationConnectionById(
       `Integration connection test failed with HTTP ${response.status}.`,
     );
   }
-  const payload = await response.json() as { connection: IntegrationConnection };
+  const payload = await parseJsonResponse<{ connection: IntegrationConnection }>(response);
   return payload.connection;
 }
 
@@ -261,7 +278,7 @@ export async function deleteIntegrationConnection(connectionId: string): Promise
     {
       method: 'DELETE',
       credentials: 'include',
-      headers: { Accept: 'application/json' },
+      headers: integrationHeaders({ Accept: 'application/json' }),
     },
   );
   if (!response.ok && response.status !== 204) {
@@ -270,4 +287,39 @@ export async function deleteIntegrationConnection(connectionId: string): Promise
       `Integration deletion failed with HTTP ${response.status}.`,
     );
   }
+}
+
+async function parseJsonResponse<T>(response: Response): Promise<T> {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    const preview = (await response.text()).trim().slice(0, 120);
+    throw new Error(
+      `Integration API returned ${contentType || 'an unknown content type'} from ${response.url || 'the requested endpoint'} instead of JSON${preview ? `: ${preview}` : '.'}`,
+    );
+  }
+
+  return (await response.json()) as T;
+}
+
+function integrationHeaders(input: HeadersInit = {}): Headers {
+  const headers = new Headers(input);
+  if (!IS_TAURI) return headers;
+
+  headers.set('X-OMI-Native-Client', '1');
+  const token = globalThis.localStorage?.getItem(NATIVE_SESSION_KEY);
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  return headers;
+}
+
+function detectTauriRuntime(): boolean {
+  if (isTauri()) return true;
+
+  const location = globalThis.location;
+  if (!location) return false;
+
+  return location.protocol === 'tauri:' || location.hostname === 'tauri.localhost';
+}
+
+function normalizeBaseUrl(value: string): string {
+  return value.trim().replace(/\/$/, '');
 }
