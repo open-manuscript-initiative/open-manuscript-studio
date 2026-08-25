@@ -13,10 +13,15 @@ const API_BASE_URL = normalizeBaseUrl(
     (IS_TAURI && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '/api'),
 );
 
-// The server deliberately caps one agent request at 80,000 characters.
-// Keep client chunks below that boundary so whole-manuscript analysis also
-// works for book-length documents and leaves room for future request framing.
 const AGENT_CHUNK_CHARACTERS = 64_000;
+
+export interface OmiAgentReviewInput {
+  auditId: string;
+  decision: 'accepted' | 'rejected';
+  blockId: string;
+  segmentId: string;
+  model?: string | undefined;
+}
 
 /**
  * Runs an OMI Agent against content of any practical manuscript size.
@@ -56,6 +61,21 @@ export async function runOmiAgent(request: AgentRunRequest): Promise<AgentRunRes
     model: first.model ?? last.model,
     auditId: last.auditId,
   };
+}
+
+export async function recordOmiAgentReview(input: OmiAgentReviewInput): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/integrations/agents/review`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: nativeHeaders({
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, `Agent review audit failed with HTTP ${response.status}.`));
+  }
 }
 
 async function runOmiAgentSingle(request: AgentRunRequest): Promise<AgentRunResult> {
