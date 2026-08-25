@@ -1,4 +1,4 @@
-import { BookA, CircleHelp, CircleX, ListTree, Plug } from 'lucide-react';
+import { BookA, Bot, CircleHelp, CircleX, ListTree, Plug } from 'lucide-react';
 import {
   useEffect,
   useState,
@@ -14,6 +14,7 @@ import { HelpPanel } from './HelpPanel';
 import { IndexPanel } from './IndexPanel';
 import { IntegrationExecutionWorkspace } from './IntegrationExecutionWorkspace';
 import { IntegrationsPanel } from './IntegrationsPanel';
+import { OmiAgentsWorkspace } from './OmiAgentsWorkspace';
 import { StudioMenu } from './StudioMenu';
 import { TableOfContentsPanel } from './TableOfContentsPanel';
 import './StudioMenuWithHelp.css';
@@ -35,12 +36,14 @@ export function StudioMenuWithHelp({
   const { locale } = useTranslation();
   const copy = getLocalizedHelpCopy(locale);
   const integrationsLabel = getIntegrationsLabel(locale);
+  const agentsLabel = getAgentsLabel(locale);
   const indexLabel = getIndexLabel(locale);
   const tocLabel = getTocLabel(locale);
   const closeDocumentCopy = getCloseDocumentCopy(locale);
   const documentAlreadyClosed = isDocumentClosedState();
   const [helpOpen, setHelpOpen] = useState(false);
   const [integrationsOpen, setIntegrationsOpen] = useState(false);
+  const [agentsOpen, setAgentsOpen] = useState(false);
   const [indexOpen, setIndexOpen] = useState(false);
   const [tocOpen, setTocOpen] = useState(false);
   const [navigationHost, setNavigationHost] = useState<HTMLElement | null>(null);
@@ -50,6 +53,7 @@ export function StudioMenuWithHelp({
     if (!open) {
       setHelpOpen(false);
       setIntegrationsOpen(false);
+      setAgentsOpen(false);
       setIndexOpen(false);
       setTocOpen(false);
       setNavigationHost(null);
@@ -68,6 +72,7 @@ export function StudioMenuWithHelp({
       if (!button) return;
       if (button.dataset.helpNavigation !== 'true') setHelpOpen(false);
       if (button.dataset.integrationsNavigation !== 'true') setIntegrationsOpen(false);
+      if (button.dataset.agentsNavigation !== 'true') setAgentsOpen(false);
       if (button.dataset.indexNavigation !== 'true') setIndexOpen(false);
       if (button.dataset.tocNavigation !== 'true') setTocOpen(false);
     };
@@ -79,10 +84,10 @@ export function StudioMenuWithHelp({
     if (!navigationHost) return;
     const internalButtons = Array.from(
       navigationHost.querySelectorAll<HTMLButtonElement>(
-        '.studio-menu-nav-button:not([data-help-navigation="true"]):not([data-integrations-navigation="true"]):not([data-index-navigation="true"]):not([data-toc-navigation="true"]):not([data-document-close="true"])',
+        '.studio-menu-nav-button:not([data-help-navigation="true"]):not([data-integrations-navigation="true"]):not([data-agents-navigation="true"]):not([data-index-navigation="true"]):not([data-toc-navigation="true"]):not([data-document-close="true"])',
       ),
     );
-    const externalNavigationOpen = helpOpen || integrationsOpen || indexOpen || tocOpen;
+    const externalNavigationOpen = helpOpen || integrationsOpen || agentsOpen || indexOpen || tocOpen;
     for (const button of internalButtons) {
       button.classList.remove('studio-menu-nav-button--external-suppressed');
       if (!button.classList.contains('studio-menu-nav-button--active')) {
@@ -102,21 +107,22 @@ export function StudioMenuWithHelp({
         if (button.classList.contains('studio-menu-nav-button--active')) button.setAttribute('aria-current', 'page');
       }
     };
-  }, [navigationHost, helpOpen, integrationsOpen, indexOpen, tocOpen]);
+  }, [navigationHost, helpOpen, integrationsOpen, agentsOpen, indexOpen, tocOpen]);
 
   useEffect(() => {
     if (!contentHost) return;
-    if (helpOpen || integrationsOpen || indexOpen || tocOpen) {
+    if (helpOpen || integrationsOpen || agentsOpen || indexOpen || tocOpen) {
       contentHost.classList.add('studio-menu-content--help-open');
     } else {
       contentHost.classList.remove('studio-menu-content--help-open');
     }
     return () => contentHost.classList.remove('studio-menu-content--help-open');
-  }, [contentHost, helpOpen, integrationsOpen, indexOpen, tocOpen]);
+  }, [contentHost, helpOpen, integrationsOpen, agentsOpen, indexOpen, tocOpen]);
 
   const closeExternalViews = () => {
     setHelpOpen(false);
     setIntegrationsOpen(false);
+    setAgentsOpen(false);
     setIndexOpen(false);
     setTocOpen(false);
   };
@@ -137,6 +143,9 @@ export function StudioMenuWithHelp({
           </button>
           <button type="button" data-index-navigation="true" className={`studio-menu-nav-button${indexOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={indexOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setIndexOpen(true); }}>
             <BookA size={18} aria-hidden="true" /><span>{indexLabel}</span>
+          </button>
+          <button type="button" data-agents-navigation="true" className={`studio-menu-nav-button${agentsOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={agentsOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setAgentsOpen(true); }}>
+            <Bot size={18} aria-hidden="true" /><span>{agentsLabel}</span>
           </button>
           <button type="button" data-integrations-navigation="true" className={`studio-menu-nav-button${integrationsOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={integrationsOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setIntegrationsOpen(true); }}>
             <Plug size={18} aria-hidden="true" /><span>{integrationsLabel}</span>
@@ -166,6 +175,10 @@ export function StudioMenuWithHelp({
         <div className="studio-help-portal studio-index-portal"><IndexPanel onNavigate={onClose} /></div>,
         contentHost,
       ) : null}
+      {contentHost && agentsOpen ? createPortal(
+        <div className="studio-help-portal studio-agents-portal"><OmiAgentsWorkspace /></div>,
+        contentHost,
+      ) : null}
       {contentHost && integrationsOpen ? createPortal(
         <div className="studio-help-portal studio-integrations-portal"><IntegrationsPanel /><IntegrationExecutionWorkspace /></div>,
         contentHost,
@@ -176,6 +189,11 @@ export function StudioMenuWithHelp({
       ) : null}
     </>
   );
+}
+
+function getAgentsLabel(locale: string): string {
+  const labels: Record<string, string> = { de: 'OMI Agents', en: 'OMI Agents', hu: 'OMI Agents' };
+  return labels[locale] ?? labels.en;
 }
 
 function getIntegrationsLabel(locale: string): string {
