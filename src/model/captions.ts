@@ -1,10 +1,6 @@
 import type {
   OmiBlock,
-  OmiChartBlockData,
-  OmiEquationBlockData,
-  OmiImageBlockData,
   OmiSection,
-  OmiTableBlockData,
   OmiVisualBlockData,
 } from '../types/omi';
 
@@ -53,10 +49,7 @@ export function normalizeCaptionSequenceKey(label: string): string {
 }
 
 export function getLegacyCaptionTitle(visual: OmiVisualBlockData): string {
-  if (visual.kind === 'image' || visual.kind === 'table' || visual.kind === 'chart' || visual.kind === 'equation') {
-    return visual.caption?.trim() ?? '';
-  }
-  return '';
+  return visual.caption?.trim() ?? '';
 }
 
 export function ensureSemanticCaption(
@@ -132,18 +125,22 @@ export function updateCaptionSemantics(
   const normalized = ensureSemanticCaption(visual);
   if (!normalized.semanticCaption) return normalized;
 
-  const label = input.label?.trim() || normalized.semanticCaption.label;
+  const current = normalized.semanticCaption;
+  const label = input.label?.trim() || current.label;
+  const sequenceKey =
+    input.sequenceKey?.trim() ||
+    (input.label !== undefined
+      ? normalizeCaptionSequenceKey(label)
+      : current.sequenceKey);
+  const scope = input.scope ?? current.scope ?? 'document';
+
   return {
     ...normalized,
     semanticCaption: {
-      ...normalized.semanticCaption,
-      ...input,
+      ...current,
       label,
-      sequenceKey:
-        input.sequenceKey?.trim() ||
-        (input.label !== undefined
-          ? normalizeCaptionSequenceKey(label)
-          : normalized.semanticCaption.sequenceKey),
+      sequenceKey,
+      scope,
     },
   };
 }
@@ -170,5 +167,3 @@ declare module '../types/omi' {
     semanticCaption?: OmiCaption;
   }
 }
-
-void (undefined as unknown as OmiImageBlockData | OmiTableBlockData | OmiChartBlockData | OmiEquationBlockData);
