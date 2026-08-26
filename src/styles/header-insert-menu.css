@@ -13,22 +13,40 @@
 }
 
 .focus-history-button {
+  position: relative;
   min-width: 2.35rem;
   min-height: 2.35rem;
   justify-content: center;
   padding-inline: 0.45rem;
-  color: #364152;
+  border-color: transparent;
+  background: transparent;
+  color: #1f2937;
 }
 
 .focus-history-button svg {
+  position: relative;
+  z-index: 1;
   display: block;
   flex: 0 0 auto;
+  stroke: currentColor;
+}
+
+.focus-history-button:hover:not(:disabled) {
+  border-color: rgba(148, 163, 184, 0.45);
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.focus-history-button:focus-visible {
+  border-color: rgba(31, 41, 55, 0.35);
+  background: rgba(148, 163, 184, 0.12);
+  outline: none;
 }
 
 .focus-history-button:disabled {
-  opacity: 0.72;
+  opacity: 1;
   color: #6b7280;
   cursor: default;
+  background: transparent;
 }
 
 .focus-history-button:disabled:hover {
