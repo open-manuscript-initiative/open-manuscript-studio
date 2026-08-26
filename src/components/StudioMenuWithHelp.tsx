@@ -62,7 +62,7 @@ export function StudioMenuWithHelp({ open, onClose, ojsAssignment = null }: Stud
   useEffect(() => {
     if (!navigationHost) return;
     const internalButtons = Array.from(navigationHost.querySelectorAll<HTMLButtonElement>(
-      '.studio-menu-nav-button:not([data-help-navigation="true"]):not([data-integrations-navigation="true"]):not([data-agents-navigation="true"]):not([data-lists-navigation="true"]):not([data-document-close="true"])',
+      '.studio-menu-nav-button:not([data-help-navigation="true"]):not([data-integrations-navigation="true"]):not([data-agents-navigation="true"]):not([data-lists-navigation="true"])',
     ));
     const externalNavigationOpen = helpOpen || integrationsOpen || agentsOpen || listsOpen;
     for (const button of internalButtons) {
@@ -90,10 +90,12 @@ export function StudioMenuWithHelp({ open, onClose, ojsAssignment = null }: Stud
     <button type="button" data-agents-navigation="true" className={`studio-menu-nav-button${agentsOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={agentsOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setAgentsOpen(true); }}><Bot size={18} aria-hidden="true" /><span>{agentsLabel}</span></button>
     <button type="button" data-integrations-navigation="true" className={`studio-menu-nav-button${integrationsOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={integrationsOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setIntegrationsOpen(true); }}><Plug size={18} aria-hidden="true" /><span>{integrationsLabel}</span></button>
   </>;
-  const utilityNavigation = <>
+  const utilityNavigation = (
     <button type="button" data-help-navigation="true" className={`studio-menu-nav-button${helpOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={helpOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setHelpOpen(true); }}><CircleHelp size={18} aria-hidden="true" /><span>{copy.navigation}</span></button>
-    {!documentAlreadyClosed ? <button type="button" data-document-close="true" className="studio-menu-nav-button studio-menu-nav-button--document-close" onClick={requestDocumentClose}><CircleX size={18} aria-hidden="true" /><span>{closeDocumentCopy.label}</span></button> : null}
-  </>;
+  );
+  const documentCloseAction = !documentAlreadyClosed ? (
+    <button type="button" data-document-close="true" className="studio-menu-secondary-action studio-menu-danger-action" onClick={requestDocumentClose}><CircleX size={16} aria-hidden="true" /><span>{closeDocumentCopy.label}</span></button>
+  ) : null;
 
   return <>
     <StudioMenu
@@ -103,6 +105,7 @@ export function StudioMenuWithHelp({ open, onClose, ojsAssignment = null }: Stud
       navigationAfterReferences={listsNavigation}
       navigationBeforeTools={workflowServicesNavigation}
       navigationAfterSettings={utilityNavigation}
+      documentCloseAction={documentCloseAction}
     />
     {contentHost && listsOpen ? createPortal(<div className="studio-help-portal studio-lists-portal"><ListsPanel onNavigate={onClose} /></div>, contentHost) : null}
     {contentHost && agentsOpen ? createPortal(<div className="studio-help-portal studio-agents-portal"><OmiAgentsWorkspace /></div>, contentHost) : null}
