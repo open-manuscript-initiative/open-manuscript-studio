@@ -235,8 +235,9 @@ export function EditorPane({ ojsContributors = [] }: EditorPaneProps) {
 
                         return isVisualBlock(block) ? (
                           <div
-                            className="omi-numbered-object omi-continuous-visual"
+                            className="omi-numbered-object omi-continuous-visual omi-block-editor"
                             id={`omi-target-${block.id}`}
+                            data-block-id={block.id}
                             data-cross-reference-target={target?.kind}
                             key={block.id}
                           >
