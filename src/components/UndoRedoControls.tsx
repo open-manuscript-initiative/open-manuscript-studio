@@ -61,7 +61,7 @@ export function UndoRedoControls() {
     <div className="focus-history-controls" role="group" aria-label={`${copy.undo} / ${copy.redo}`}>
       <button
         type="button"
-        className="focus-insert-menu-trigger focus-history-button"
+        className="focus-history-button"
         aria-label={`${copy.undo} (Ctrl+Z)`}
         title={`${copy.undo} (Ctrl+Z)`}
         disabled={!hasEditor}
@@ -72,7 +72,7 @@ export function UndoRedoControls() {
       </button>
       <button
         type="button"
-        className="focus-insert-menu-trigger focus-history-button"
+        className="focus-history-button"
         aria-label={`${copy.redo} (Ctrl+Y / Ctrl+Shift+Z)`}
         title={`${copy.redo} (Ctrl+Y / Ctrl+Shift+Z)`}
         disabled={!hasEditor}
