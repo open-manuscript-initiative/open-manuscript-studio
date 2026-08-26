@@ -7,6 +7,8 @@
 }
 
 .focus-history-controls {
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 0.05rem;
@@ -14,44 +16,67 @@
 
 .focus-history-button {
   position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 2.35rem;
   min-height: 2.35rem;
-  justify-content: center;
-  padding-inline: 0.45rem;
-  border-color: transparent;
+  padding: 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 0.4rem;
   background: transparent;
-  color: #1f2937;
+  color: #374151;
+  font: inherit;
+  line-height: 1;
+  box-shadow: none;
+  cursor: pointer;
+  isolation: isolate;
 }
 
 .focus-history-button svg {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   display: block;
   flex: 0 0 auto;
   stroke: currentColor;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: none;
 }
 
 .focus-history-button:hover:not(:disabled) {
-  border-color: rgba(148, 163, 184, 0.45);
-  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(109, 33, 48, 0.28);
+  background: rgba(109, 33, 48, 0.08);
+  color: #521721;
 }
 
 .focus-history-button:focus-visible {
-  border-color: rgba(31, 41, 55, 0.35);
-  background: rgba(148, 163, 184, 0.12);
-  outline: none;
+  border-color: rgba(39, 93, 112, 0.45);
+  background: rgba(39, 93, 112, 0.08);
+  color: #25282d;
+  outline: 2px solid rgba(39, 93, 112, 0.12);
+  outline-offset: 1px;
 }
 
 .focus-history-button:disabled {
   opacity: 1;
-  color: #6b7280;
-  cursor: default;
+  border-color: transparent;
   background: transparent;
+  color: #7a8088;
+  cursor: default;
+}
+
+.focus-history-button:disabled svg {
+  opacity: 1;
+  visibility: visible;
+  stroke: currentColor;
 }
 
 .focus-history-button:disabled:hover {
   border-color: transparent;
   background: transparent;
+  color: #7a8088;
 }
 
 .focus-insert-menu-trigger {
@@ -172,7 +197,7 @@
   .focus-history-button {
     min-width: 2.6rem;
     min-height: 2.6rem;
-    padding-inline: 0.5rem;
+    padding: 0.5rem;
   }
 
   .focus-insert-menu-popover {
