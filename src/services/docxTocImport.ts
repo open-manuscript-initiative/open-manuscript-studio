@@ -22,7 +22,7 @@ export async function attachWordTableOfContents(
   if (!tableOfContents) return plan;
 
   plan.tableOfContents = tableOfContents;
-  removeRenderedWordTocLines(plan, extractRenderedTocLines(xml));
+  removeRenderedWordTocLines(plan, extractRenderedWordTocLines(xml));
   return plan;
 }
 
@@ -60,22 +60,43 @@ function extractWordTableOfContentsFromXml(xml: string): OmiTableOfContents | nu
   };
 }
 
-function extractRenderedTocLines(xml: string): Set<string> {
+/**
+ * Returns the normalized visible rows cached by Word for a TOC field.
+ *
+ * Word stores the entry text and its page number in separate runs with a
+ * `<w:tab/>` between them. Preserving that tab here is important: the normal
+ * DOCX importers preserve it too, so the semantic TOC cleanup must compare the
+ * same visible representation on both sides. Previously this extractor joined
+ * only `<w:t>` values, turning e.g. `Introduction<TAB>12` into
+ * `Introduction12`; the imported paragraph remained `Introduction<TAB>12`, so
+ * the stale rendered TOC was not removed after the interactive OMI TOC was
+ * attached.
+ */
+export function extractRenderedWordTocLines(xml: string): Set<string> {
   const result = new Set<string>();
   const paragraphs = xml.match(/<w:p\b[\s\S]*?<\/w:p>/gi) ?? [];
 
   for (const paragraph of paragraphs) {
     const styleId = /<w:pStyle\b[^>]*\bw:val="([^"]+)"[^>]*\/?\s*>/i.exec(paragraph)?.[1] ?? '';
-    if (!/^TOC\d+$/i.test(styleId)) continue;
+    if (!/^TOC\s*[1-9]$/i.test(styleId)) continue;
 
-    const text = Array.from(paragraph.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gi))
-      .map((match) => decodeXml(match[1] ?? ''))
-      .join('');
-    const normalized = normalizeTocDisplayText(text);
+    const normalized = normalizeWordTocDisplayText(extractWordParagraphDisplayText(paragraph));
     if (normalized) result.add(normalized);
   }
 
   return result;
+}
+
+function extractWordParagraphDisplayText(paragraph: string): string {
+  const tokens = paragraph.match(
+    /<w:t\b[^>]*>[\s\S]*?<\/w:t>|<w:tab\b[^>]*\/?\s*>|<w:(?:br|cr)\b[^>]*\/?\s*>/gi,
+  ) ?? [];
+
+  return tokens.map((token) => {
+    if (/^<w:tab\b/i.test(token)) return '\t';
+    if (/^<w:(?:br|cr)\b/i.test(token)) return '\n';
+    return decodeXml(/>([\s\S]*?)<\/w:t>/i.exec(token)?.[1] ?? '');
+  }).join('');
 }
 
 function removeRenderedWordTocLines(
@@ -88,7 +109,7 @@ function removeRenderedWordTocLines(
 
   for (const section of plan.sections) {
     section.blocks = section.blocks.filter((block) => {
-      const text = normalizeTocDisplayText(blockPlainText(block));
+      const text = normalizeWordTocDisplayText(blockPlainText(block));
       return !text || !renderedLines.has(text);
     });
   }
@@ -99,9 +120,12 @@ function removeRenderedWordTocLines(
   });
 }
 
-function normalizeTocDisplayText(value: string): string {
+export function normalizeWordTocDisplayText(value: string): string {
   return value
     .replace(/\u00a0/g, ' ')
+    // Word normally separates the cached page number with a tab stop and may
+    // also include dot/dash leaders. Strip only that trailing layout artifact;
+    // the entry title itself remains the comparison key.
     .replace(/[.·•…_\-\s]+\d+\s*$/u, '')
     .replace(/\s+/g, ' ')
     .trim()

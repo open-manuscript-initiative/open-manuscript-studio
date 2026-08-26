@@ -20,6 +20,10 @@ import {
   isLargeDocx,
   isMonographComplexity,
 } from '../src/services/docxImportStrategy.ts';
+import {
+  extractRenderedWordTocLines,
+  normalizeWordTocDisplayText,
+} from '../src/services/docxTocImport.ts';
 
 test('recognizes Word heading levels from built-in and localized style names', () => {
   assert.equal(headingLevelFromStyle('Heading2', undefined, undefined), 2);
@@ -104,6 +108,33 @@ test('maps common Word bibliography source types to portable resource types', ()
   assert.equal(mapWordSourceType('BookSection'), 'book-chapter');
   assert.equal(mapWordSourceType('ElectronicSource'), 'web-page');
   assert.equal(mapWordSourceType('UnknownLegacyType'), 'manuscript');
+});
+
+test('normalizes cached Word TOC page numbers without changing the entry title', () => {
+  assert.equal(
+    normalizeWordTocDisplayText('1. Bevezetés\t12'),
+    '1. bevezetés',
+  );
+  assert.equal(
+    normalizeWordTocDisplayText('Második fejezet ........ 27'),
+    'második fejezet',
+  );
+});
+
+test('preserves Word TOC tab stops while extracting cached display rows', () => {
+  const xml = `
+    <w:document xmlns:w="urn:test">
+      <w:body>
+        <w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr><w:r><w:t>1. Bevezetés</w:t></w:r><w:r><w:tab/></w:r><w:r><w:t>12</w:t></w:r></w:p>
+        <w:p><w:pPr><w:pStyle w:val="TOC2"/></w:pPr><w:r><w:t>1.1. Előzmények</w:t></w:r><w:r><w:tab/></w:r><w:r><w:t>13</w:t></w:r></w:p>
+        <w:p><w:pPr><w:pStyle w:val="Normal"/></w:pPr><w:r><w:t>Valódi bekezdés 42</w:t></w:r></w:p>
+      </w:body>
+    </w:document>`;
+
+  assert.deepEqual(
+    [...extractRenderedWordTocLines(xml)],
+    ['1. bevezetés', '1.1. előzmények'],
+  );
 });
 
 test('switches manuscript-sized DOCX packages to the large-document path', () => {
