@@ -68,7 +68,7 @@ export function UndoRedoControls() {
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => run('undo')}
       >
-        <Undo2 size={16} aria-hidden="true" />
+        <Undo2 size={21} strokeWidth={2.5} aria-hidden="true" />
       </button>
       <button
         type="button"
@@ -79,7 +79,7 @@ export function UndoRedoControls() {
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => run('redo')}
       >
-        <Redo2 size={16} aria-hidden="true" />
+        <Redo2 size={21} strokeWidth={2.5} aria-hidden="true" />
       </button>
     </div>
   );
