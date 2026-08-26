@@ -6,7 +6,10 @@ import {
   type DocxManuscriptImportPlan,
 } from './docxManuscriptImport';
 import { parseDocxMonograph } from './docxMonographImport';
-import { attachWordTableOfContents } from './docxTocImport';
+import {
+  attachWordTableOfContents,
+  preflightWordTableOfContents,
+} from './docxTocImport';
 
 export const LARGE_DOCX_THRESHOLD_BYTES = 1024 * 1024;
 export const MONOGRAPH_DOCX_THRESHOLD_BYTES = 4 * 1024 * 1024;
@@ -41,6 +44,13 @@ export async function parseDocxForStudio(
   const monographMode = isMonographComplexity({ fileSize: file.size, documentXmlBytes });
 
   options.onProgress?.({ stage: 'preparing', largeDocumentMode, monographMode });
+
+  // Detect semantic Word TOC fields before the content parser starts. This is
+  // intentionally a preflight step: cached, page-numbered Word TOC rows are
+  // presentation output, not canonical manuscript content. The detected result
+  // region is discarded before the completed import plan is returned to Studio.
+  const tocPreflight = await preflightWordTableOfContents(file);
+
   await yieldToBrowser();
   options.onProgress?.({ stage: 'parsing', largeDocumentMode, monographMode });
 
@@ -56,7 +66,7 @@ export async function parseDocxForStudio(
 
   options.onProgress?.({ stage: 'finalizing', largeDocumentMode, monographMode });
   const indexedPlan = await attachWordIndexData(file, plan);
-  const semanticPlan = await attachWordTableOfContents(file, indexedPlan);
+  const semanticPlan = await attachWordTableOfContents(file, indexedPlan, tocPreflight);
   await yieldToBrowser();
   return semanticPlan;
 }
