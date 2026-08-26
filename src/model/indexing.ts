@@ -4,18 +4,42 @@ export interface OmiIndexDefinition {
   kind?: string;
 }
 
+export type OmiIndexEntryRelation = 'location' | 'see' | 'see-also';
+
+export interface OmiIndexTextRange {
+  /** Stable block containing the beginning of the indexed range. */
+  startBlockId: string;
+  startOffset: number;
+  /** Stable block containing the end of the indexed range. */
+  endBlockId: string;
+  endOffset: number;
+  /** Cached selected text for human-readable review and DOCX XE export. */
+  text?: string;
+}
+
 export interface OmiIndexEntry {
   id: string;
   /** Optional document-defined index. Legacy entries without this field use the default index. */
   indexId?: string;
   kind: 'name' | 'subject' | string;
+  /** Hierarchical term path. terms[0] is the main entry; following values are subentries. */
   terms: string[];
   sortKey?: string;
+  /** Stable parent identity for author-created hierarchical entries. */
+  parentEntryId?: string;
+  /** Normal occurrence, See redirect, or See also relation. */
+  relation?: OmiIndexEntryRelation;
+  /** Stable semantic target for See / See also. */
+  relatedEntryId?: string;
+  /** Retained when an imported relation cannot yet be resolved to a local entry id. */
+  relatedTerm?: string;
   targetBlockId?: string;
   anchorId?: string;
   targetText?: string;
   /** Plain-text character offset inside the target block, used for exact navigation. */
   targetTextOffset?: number;
+  /** A semantic text range; pagination is deliberately not stored in the manuscript. */
+  range?: OmiIndexTextRange;
   source?: {
     format: 'manual' | 'docx-xe' | 'ai-suggestion' | string;
     instruction?: string;
@@ -38,6 +62,17 @@ export interface GroupedIndexEntry {
   label: string;
   count: number;
   entries: OmiIndexEntry[];
+}
+
+export interface OmiIndexValidationIssue {
+  entryId: string;
+  type:
+    | 'empty-term'
+    | 'missing-parent'
+    | 'missing-related-entry'
+    | 'self-reference'
+    | 'missing-range-target'
+    | 'invalid-range';
 }
 
 export const DEFAULT_INDEX_ID = 'omi-default-index';
@@ -67,31 +102,54 @@ export function getDocumentIndexDefinitions(input: {
 
 export function createManualIndexEntry(input: {
   term: string;
-  targetBlockId: string;
+  targetBlockId?: string;
   indexId?: string;
   targetText?: string;
   targetTextOffset?: number;
   subterm?: string;
+  terms?: string[];
   sortKey?: string;
   id?: string;
   anchorId?: string;
   kind?: string;
+  parentEntryId?: string;
+  relation?: OmiIndexEntryRelation;
+  relatedEntryId?: string;
+  relatedTerm?: string;
+  range?: OmiIndexTextRange;
 }): OmiIndexEntry {
+  const suppliedTerms = input.terms?.map((term) => term.trim()).filter(Boolean);
   const term = input.term.trim();
   const subterm = input.subterm?.trim();
+  const terms = suppliedTerms?.length
+    ? suppliedTerms
+    : [term, ...(subterm ? [subterm] : [])].filter(Boolean);
+  if (!terms.length) throw new Error('An index entry term is required.');
+
+  const relation = input.relation ?? 'location';
+  if (relation !== 'location' && !input.relatedEntryId && !input.relatedTerm?.trim()) {
+    throw new Error('A See or See also entry requires a related index entry.');
+  }
+
+  const firstTargetBlock = input.range?.startBlockId ?? input.targetBlockId;
   return {
     id: input.id ?? crypto.randomUUID(),
     indexId: input.indexId || undefined,
     kind: input.kind ?? 'index',
-    terms: [term, ...(subterm ? [subterm] : [])],
+    terms,
     sortKey: input.sortKey?.trim() || undefined,
-    targetBlockId: input.targetBlockId,
-    anchorId: input.anchorId ?? crypto.randomUUID(),
-    targetText: input.targetText?.trim() || term,
+    parentEntryId: input.parentEntryId || undefined,
+    relation,
+    relatedEntryId: input.relatedEntryId || undefined,
+    relatedTerm: input.relatedTerm?.trim() || undefined,
+    targetBlockId: firstTargetBlock,
+    anchorId: firstTargetBlock ? (input.anchorId ?? crypto.randomUUID()) : input.anchorId,
+    targetText: input.targetText?.trim() || input.range?.text?.trim() || terms.at(-1),
     targetTextOffset:
       typeof input.targetTextOffset === 'number' && input.targetTextOffset >= 0
         ? input.targetTextOffset
-        : undefined,
+        : input.range?.startOffset,
+    range: input.range,
     source: { format: 'manual' },
   };
 }
@@ -112,6 +170,68 @@ export function createManualNameIndexEntry(input: {
     indexId: DEFAULT_INDEX_ID,
     kind: 'name',
   });
+}
+
+export function createIndexSubentry(input: {
+  parent: OmiIndexEntry;
+  term: string;
+  targetBlockId?: string;
+  targetText?: string;
+  targetTextOffset?: number;
+  range?: OmiIndexTextRange;
+}): OmiIndexEntry {
+  const term = input.term.trim();
+  if (!term) throw new Error('A subentry term is required.');
+  return createManualIndexEntry({
+    term,
+    terms: [...input.parent.terms, term],
+    indexId: input.parent.indexId,
+    kind: input.parent.kind,
+    parentEntryId: input.parent.id,
+    targetBlockId: input.targetBlockId,
+    targetText: input.targetText,
+    targetTextOffset: input.targetTextOffset,
+    range: input.range,
+  });
+}
+
+export function indexEntryDisplayLabel(entry: Pick<OmiIndexEntry, 'terms'>): string {
+  return entry.terms.map((term) => term.trim()).filter(Boolean).join(' — ');
+}
+
+export function validateIndexEntries(input: {
+  entries: readonly OmiIndexEntry[];
+  blockIds?: ReadonlySet<string>;
+}): OmiIndexValidationIssue[] {
+  const issues: OmiIndexValidationIssue[] = [];
+  const byId = new Map(input.entries.map((entry) => [entry.id, entry]));
+
+  for (const entry of input.entries) {
+    if (!entry.terms.some((term) => term.trim())) {
+      issues.push({ entryId: entry.id, type: 'empty-term' });
+    }
+    if (entry.parentEntryId && !byId.has(entry.parentEntryId)) {
+      issues.push({ entryId: entry.id, type: 'missing-parent' });
+    }
+    if (entry.relatedEntryId === entry.id) {
+      issues.push({ entryId: entry.id, type: 'self-reference' });
+    } else if (entry.relatedEntryId && !byId.has(entry.relatedEntryId)) {
+      issues.push({ entryId: entry.id, type: 'missing-related-entry' });
+    } else if ((entry.relation === 'see' || entry.relation === 'see-also') && !entry.relatedEntryId && !entry.relatedTerm?.trim()) {
+      issues.push({ entryId: entry.id, type: 'missing-related-entry' });
+    }
+
+    if (entry.range) {
+      const { startBlockId, endBlockId, startOffset, endOffset } = entry.range;
+      if (input.blockIds && (!input.blockIds.has(startBlockId) || !input.blockIds.has(endBlockId))) {
+        issues.push({ entryId: entry.id, type: 'missing-range-target' });
+      }
+      if (startOffset < 0 || endOffset < 0 || (startBlockId === endBlockId && endOffset < startOffset)) {
+        issues.push({ entryId: entry.id, type: 'invalid-range' });
+      }
+    }
+  }
+  return issues;
 }
 
 export function groupIndexEntries(entries: readonly OmiIndexEntry[]): GroupedIndexEntry[] {
@@ -147,7 +267,7 @@ export function groupIndexEntries(entries: readonly OmiIndexEntry[]): GroupedInd
 
 declare module '../types/omi' {
   interface OmiManuscriptState {
-    /** User-defined document indexes (name index, place index, list of figures, etc.). */
+    /** User-defined document indexes (name index, place index, subject index, etc.). */
     indexDefinitions?: OmiIndexDefinition[];
     /** Semantic manuscript index markers, including imported Word XE fields. */
     indexEntries?: OmiIndexEntry[];
