@@ -1,8 +1,12 @@
 import {
   BarChart3,
+  BookA,
   FileInput,
   FunctionSquare,
   ImagePlus,
+  Images,
+  ListPlus,
+  ListTree,
   Table2,
 } from 'lucide-react';
 import {
@@ -20,6 +24,8 @@ import { useStudioStore } from '../app/useStudioStore';
 import { stageInsertBlocks } from '../app/visualBlockActions';
 import { useTranslation } from '../i18n';
 import { getVisualElementsCopy } from '../i18n/visualElements';
+import type { OmiGeneratedListKind } from '../model/generatedLists';
+import type { OmiTableOfContents } from '../model/tableOfContents';
 import {
   createChartBlock,
   createEquationBlock,
@@ -46,6 +52,7 @@ export function VisualInsertPanel({
 }: VisualInsertPanelProps) {
   const { locale, t } = useTranslation();
   const copy = getVisualElementsCopy(locale);
+  const listCopy = getListInsertCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const selectedSectionId = useStudioStore((state) => state.selectedSectionId);
   const [busy, setBusy] = useState(false);
@@ -70,6 +77,63 @@ export function VisualInsertPanel({
       onInserted?.();
     }
     return inserted;
+  }
+
+  function persistGeneratedList(kind: OmiGeneratedListKind, title: string): void {
+    useStudioStore.setState((state) => {
+      const current = state.manuscript.generatedListDefinitions ?? [];
+      const exists = kind === 'custom'
+        ? current.some((item) => item.kind === kind && item.title === title)
+        : current.some((item) => item.kind === kind);
+      if (exists) return state;
+      return {
+        manuscript: {
+          ...state.manuscript,
+          generatedListDefinitions: [...current, { id: crypto.randomUUID(), kind, title }],
+          updatedAt: new Date().toISOString(),
+        },
+      };
+    });
+    setError(null);
+    onInserted?.();
+  }
+
+  function insertGeneratedList(kind: 'toc' | 'figures' | 'tables' | 'index'): void {
+    if (kind === 'toc') {
+      useStudioStore.setState((state) => {
+        if (state.manuscript.tableOfContents) return state;
+        const toc: OmiTableOfContents = {
+          id: crypto.randomUUID(),
+          title: listCopy.toc,
+          minLevel: 1,
+          maxLevel: 3,
+          hyperlinks: true,
+          useOutlineLevels: true,
+          source: { format: 'manual' },
+        };
+        return {
+          manuscript: {
+            ...state.manuscript,
+            tableOfContents: toc,
+            updatedAt: new Date().toISOString(),
+          },
+        };
+      });
+    }
+    const title = kind === 'toc'
+      ? listCopy.toc
+      : kind === 'figures'
+        ? listCopy.figures
+        : kind === 'tables'
+          ? listCopy.tables
+          : listCopy.indexes;
+    persistGeneratedList(kind, title);
+  }
+
+  function insertCustomList(): void {
+    const title = window.prompt(listCopy.customPrompt)?.trim();
+    if (!title) return;
+    persistGeneratedList('custom', title);
   }
 
   async function insertImported(
@@ -150,6 +214,30 @@ export function VisualInsertPanel({
         </button>
       </div>
 
+      <div className="omi-visual-format-hint"><strong>{listCopy.title}</strong></div>
+      <div className="omi-visual-insert-actions">
+        <button type="button" onClick={() => insertGeneratedList('toc')}>
+          <ListTree size={17} aria-hidden="true" />
+          {listCopy.toc}
+        </button>
+        <button type="button" onClick={() => insertGeneratedList('figures')}>
+          <Images size={17} aria-hidden="true" />
+          {listCopy.figures}
+        </button>
+        <button type="button" onClick={() => insertGeneratedList('tables')}>
+          <Table2 size={17} aria-hidden="true" />
+          {listCopy.tables}
+        </button>
+        <button type="button" onClick={() => insertGeneratedList('index')}>
+          <BookA size={17} aria-hidden="true" />
+          {listCopy.indexes}
+        </button>
+        <button type="button" onClick={insertCustomList}>
+          <ListPlus size={17} aria-hidden="true" />
+          {listCopy.custom}
+        </button>
+      </div>
+
       <div
         className="omi-office-paste-target"
         role="textbox"
@@ -202,4 +290,34 @@ export function VisualInsertPanel({
       <div className="omi-visual-insert-palette">{palette}</div>
     </section>
   );
+}
+
+function getListInsertCopy(locale: string) {
+  if (locale === 'hu') return {
+    title: 'Jegyzékek',
+    toc: 'Tartalomjegyzék',
+    figures: 'Képek jegyzéke',
+    tables: 'Táblázatok jegyzéke',
+    indexes: 'Mutató',
+    custom: 'Egyéni jegyzék',
+    customPrompt: 'Jegyzék neve',
+  };
+  if (locale === 'de') return {
+    title: 'Verzeichnisse',
+    toc: 'Inhaltsverzeichnis',
+    figures: 'Abbildungsverzeichnis',
+    tables: 'Tabellenverzeichnis',
+    indexes: 'Register',
+    custom: 'Benutzerdefiniert',
+    customPrompt: 'Name des Verzeichnisses',
+  };
+  return {
+    title: 'Lists',
+    toc: 'Table of contents',
+    figures: 'List of figures',
+    tables: 'List of tables',
+    indexes: 'Index',
+    custom: 'Custom list',
+    customPrompt: 'List name',
+  };
 }
