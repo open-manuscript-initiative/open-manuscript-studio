@@ -83,15 +83,27 @@ export function StudioMenuWithHelp({ open, onClose, ojsAssignment = null }: Stud
   const closeExternalViews = () => { setHelpOpen(false); setIntegrationsOpen(false); setAgentsOpen(false); setListsOpen(false); };
   const requestDocumentClose = () => { if (window.confirm(closeDocumentCopy.confirm)) void closeCurrentDocument(); };
 
+  const listsNavigation = (
+    <button type="button" data-lists-navigation="true" className={`studio-menu-nav-button${listsOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={listsOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setListsOpen(true); }}><ListTree size={18} aria-hidden="true" /><span>{listsLabel}</span></button>
+  );
+  const workflowServicesNavigation = <>
+    <button type="button" data-agents-navigation="true" className={`studio-menu-nav-button${agentsOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={agentsOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setAgentsOpen(true); }}><Bot size={18} aria-hidden="true" /><span>{agentsLabel}</span></button>
+    <button type="button" data-integrations-navigation="true" className={`studio-menu-nav-button${integrationsOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={integrationsOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setIntegrationsOpen(true); }}><Plug size={18} aria-hidden="true" /><span>{integrationsLabel}</span></button>
+  </>;
+  const utilityNavigation = <>
+    <button type="button" data-help-navigation="true" className={`studio-menu-nav-button${helpOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={helpOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setHelpOpen(true); }}><CircleHelp size={18} aria-hidden="true" /><span>{copy.navigation}</span></button>
+    {!documentAlreadyClosed ? <button type="button" data-document-close="true" className="studio-menu-nav-button studio-menu-nav-button--document-close" onClick={requestDocumentClose}><CircleX size={18} aria-hidden="true" /><span>{closeDocumentCopy.label}</span></button> : null}
+  </>;
+
   return <>
-    <StudioMenu open={open} onClose={onClose} ojsAssignment={ojsAssignment} />
-    {navigationHost ? createPortal(<>
-      <button type="button" data-lists-navigation="true" className={`studio-menu-nav-button${listsOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={listsOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setListsOpen(true); }}><ListTree size={18} aria-hidden="true" /><span>{listsLabel}</span></button>
-      <button type="button" data-agents-navigation="true" className={`studio-menu-nav-button${agentsOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={agentsOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setAgentsOpen(true); }}><Bot size={18} aria-hidden="true" /><span>{agentsLabel}</span></button>
-      <button type="button" data-integrations-navigation="true" className={`studio-menu-nav-button${integrationsOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={integrationsOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setIntegrationsOpen(true); }}><Plug size={18} aria-hidden="true" /><span>{integrationsLabel}</span></button>
-      <button type="button" data-help-navigation="true" className={`studio-menu-nav-button${helpOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={helpOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setHelpOpen(true); }}><CircleHelp size={18} aria-hidden="true" /><span>{copy.navigation}</span></button>
-      {!documentAlreadyClosed ? <button type="button" data-document-close="true" className="studio-menu-nav-button studio-menu-nav-button--document-close" onClick={requestDocumentClose}><CircleX size={18} aria-hidden="true" /><span>{closeDocumentCopy.label}</span></button> : null}
-    </>, navigationHost) : null}
+    <StudioMenu
+      open={open}
+      onClose={onClose}
+      ojsAssignment={ojsAssignment}
+      navigationAfterReferences={listsNavigation}
+      navigationBeforeTools={workflowServicesNavigation}
+      navigationAfterSettings={utilityNavigation}
+    />
     {contentHost && listsOpen ? createPortal(<div className="studio-help-portal studio-lists-portal"><ListsPanel onNavigate={onClose} /></div>, contentHost) : null}
     {contentHost && agentsOpen ? createPortal(<div className="studio-help-portal studio-agents-portal"><OmiAgentsWorkspace /></div>, contentHost) : null}
     {contentHost && integrationsOpen ? createPortal(<div className="studio-help-portal studio-integrations-portal"><IntegrationsPanel /><IntegrationExecutionWorkspace /></div>, contentHost) : null}
