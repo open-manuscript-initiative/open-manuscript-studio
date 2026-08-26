@@ -56,18 +56,18 @@ export interface CreateSemanticFieldInput {
   id?: string;
 }
 
-export const SEMANTIC_FIELD_PRESETS = [
+export const SEMANTIC_FIELD_PRESETS: ReadonlyArray<{
+  role: string;
+  label: string;
+  valueType: OmiSemanticFieldValueType;
+}> = [
   { role: 'funding-statement', label: 'Funding statement', valueType: 'rich-text' },
   { role: 'conflict-of-interest', label: 'Conflict of interest', valueType: 'rich-text' },
   { role: 'ethics-statement', label: 'Ethics statement', valueType: 'rich-text' },
   { role: 'data-availability', label: 'Data availability statement', valueType: 'rich-text' },
   { role: 'acknowledgements', label: 'Acknowledgements', valueType: 'rich-text' },
   { role: 'publication-date', label: 'Publication date', valueType: 'date' },
-] as const satisfies ReadonlyArray<{
-  role: string;
-  label: string;
-  valueType: OmiSemanticFieldValueType;
-}>;
+];
 
 export function createSemanticField(
   input: CreateSemanticFieldInput,
@@ -118,17 +118,14 @@ export function updateSemanticField(
   const label = patch.label === undefined
     ? field.label
     : patch.label.trim().replace(/\s+/g, ' ');
-  const sectionId = patch.sectionId ?? field.sectionId;
 
   if (!role || !label) return field;
   if (valueType === 'choice' && options.length === 0) return field;
-  if (scope === 'section' && !sectionId?.trim()) return field;
-
-  const merged = { ...field, ...patch };
-  const { options: _oldOptions, sectionId: _oldSectionId, ...base } = merged;
+  if (scope === 'section' && !(patch.sectionId ?? field.sectionId)?.trim()) return field;
 
   return {
-    ...base,
+    ...field,
+    ...patch,
     role,
     label,
     valueType,
@@ -137,9 +134,9 @@ export function updateSemanticField(
       valueType,
       options,
     ),
-    ...(options.length ? { options } : {}),
+    ...(options.length ? { options } : { options: undefined }),
     scope,
-    ...(scope === 'section' && sectionId ? { sectionId } : {}),
+    sectionId: scope === 'section' ? (patch.sectionId ?? field.sectionId) : undefined,
     modifiedAt: timestamp,
   };
 }
