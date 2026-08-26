@@ -105,6 +105,7 @@ export function renderHtmlArticle(
     collectCrossReferenceTargets({
       sections: manuscript.sections,
       crossReferenceNumbering: profile.rules.objects.numbering,
+      namedAnchors: manuscript.namedAnchors,
     }).map((target) => [target.id, target]),
   );
   const state: RenderState = {
@@ -361,7 +362,7 @@ function renderContributors(state: RenderState): string {
                 )}" rel="external">ROR</a>`
               : '';
             return `<li id="${htmlId('aff', affiliation.id)}">${escapeHtml(details)}${
-              ror ? ` <span class="affiliation-ror">${ror}</span>` : ''
+              ror ? ` <span class="author-affiliation-inline">${ror}</span>` : ''
             }</li>`;
           })
           .join('')}</ol>`
@@ -668,7 +669,7 @@ function renderCrossReferenceMarker(node: JsonNode, state: RenderState): string 
     return `<span class="xref xref-unresolved">${escapeHtml(label)}</span>`;
   }
 
-  return `<a class="xref" href="#${targetHtmlId(target)}">${escapeHtml(label)}</a>`;
+  return `<a class="xref" href="#${targetHtmlId(target, state)}">${escapeHtml(label)}</a>`;
 }
 
 function renderNoteMarker(node: JsonNode, state: RenderState): string {
@@ -841,7 +842,7 @@ function collectNoteLabels(manuscript: OmiManuscript): Map<string, string> {
   return labels;
 }
 
-function targetHtmlId(target: OmiCrossReferenceTarget): string {
+function targetHtmlId(target: OmiCrossReferenceTarget, state: RenderState): string {
   switch (target.kind) {
     case 'section':
       return htmlId('sec', target.id);
@@ -853,6 +854,31 @@ function targetHtmlId(target: OmiCrossReferenceTarget): string {
       return htmlId('chart', target.id);
     case 'equation':
       return htmlId('eq', target.id);
+    case 'bookmark':
+      return bookmarkDestinationHtmlId(target, state);
+  }
+}
+
+function bookmarkDestinationHtmlId(target: OmiCrossReferenceTarget, state: RenderState): string {
+  const destinationId = target.destinationId ?? target.id;
+  if (target.destinationKind === 'section') {
+    return htmlId('sec', destinationId);
+  }
+
+  const block = state.manuscript.sections
+    .flatMap((section) => section.blocks)
+    .find((candidate) => candidate.id === destinationId);
+  switch (block?.visual?.kind) {
+    case 'image':
+      return htmlId('fig', destinationId);
+    case 'table':
+      return htmlId('tbl', destinationId);
+    case 'chart':
+      return htmlId('chart', destinationId);
+    case 'equation':
+      return htmlId('eq', destinationId);
+    default:
+      return htmlId('block', destinationId);
   }
 }
 

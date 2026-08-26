@@ -40,9 +40,10 @@ export function CrossReferenceEditorCard({
   function goToTarget(): void {
     if (!target) return;
     selectSection(target.sectionId);
+    const destinationId = target.destinationId ?? target.id;
     window.setTimeout(() => {
       document
-        .getElementById(`omi-target-${target.id}`)
+        .getElementById(`omi-target-${destinationId}`)
         ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 0);
   }

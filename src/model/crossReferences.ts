@@ -6,6 +6,8 @@ import type {
   OmiManuscriptState,
   OmiSection,
 } from '../types/omi.ts';
+import type { OmiNamedAnchor } from './namedAnchors.ts';
+import { resolveNamedAnchorTarget } from './namedAnchors.ts';
 import { getSectionNumberToken } from './sectionNumbering.ts';
 
 export interface OmiCrossReferenceTarget {
@@ -14,6 +16,9 @@ export interface OmiCrossReferenceTarget {
   sectionId: string;
   number: string;
   title: string;
+  /** For bookmark targets, the concrete semantic destination behind the name. */
+  destinationId?: string;
+  destinationKind?: 'section' | 'block';
 }
 
 export interface OmiCrossReferenceAnchor {
@@ -70,13 +75,14 @@ export function createCrossReference(
 /**
  * Derives addressable targets in manuscript preorder. Section and per-section
  * visual numbering follow the semantic parent hierarchy, while target IDs stay
- * stable through reparenting and reordering.
+ * stable through reparenting and reordering. Named bookmarks are appended as
+ * first-class semantic destinations and retain their own stable bookmark IDs.
  */
 export function collectCrossReferenceTargets(
   manuscript: Pick<
     OmiManuscriptState,
     'sections' | 'crossReferenceNumbering'
-  >,
+  > & { namedAnchors?: OmiNamedAnchor[] },
 ): OmiCrossReferenceTarget[] {
   const numbering =
     manuscript.crossReferenceNumbering ?? DEFAULT_CROSS_REFERENCE_NUMBERING;
@@ -120,6 +126,21 @@ export function collectCrossReferenceTargets(
     }
   }
 
+  for (const anchor of manuscript.namedAnchors ?? []) {
+    const destination = resolveNamedAnchorTarget(manuscript, anchor);
+    if (!destination) continue;
+
+    targets.push({
+      id: anchor.id,
+      kind: 'bookmark',
+      sectionId: destination.sectionId,
+      number: '',
+      title: anchor.name,
+      destinationId: destination.id,
+      destinationKind: destination.kind,
+    });
+  }
+
   return targets;
 }
 
@@ -127,7 +148,7 @@ export function resolveCrossReferenceTarget(
   manuscript: Pick<
     OmiManuscriptState,
     'sections' | 'crossReferenceNumbering'
-  >,
+  > & { namedAnchors?: OmiNamedAnchor[] },
   targetId: string,
 ): OmiCrossReferenceTarget | undefined {
   return collectCrossReferenceTargets(manuscript).find(
@@ -145,6 +166,20 @@ export function formatCrossReferenceLabel(
 ): string {
   if (!target) {
     return unresolvedLabel(locale);
+  }
+
+  if (target.kind === 'bookmark') {
+    const bookmarkLabel = targetKindLabels(locale).bookmark;
+    const title = target.title.trim();
+    switch (crossReference.displayStyle) {
+      case 'number':
+      case 'title':
+        return title || bookmarkLabel;
+      case 'label-number-title':
+      case 'label-number':
+      default:
+        return title ? `${bookmarkLabel}: ${title}` : bookmarkLabel;
+    }
   }
 
   const labels = targetKindLabels(locale);
@@ -175,6 +210,10 @@ export function formatCrossReferenceTargetOption(
   target: OmiCrossReferenceTarget,
   locale = 'en',
 ): string {
+  if (target.kind === 'bookmark') {
+    return `${targetKindLabels(locale).bookmark}: ${target.title}`;
+  }
+
   const base = formatCrossReferenceLabel(
     {
       targetId: target.id,
@@ -192,10 +231,12 @@ export function synchronizeCrossReferenceLabels(
   crossReferences: readonly OmiCrossReference[],
   numbering: OmiCrossReferenceNumbering = DEFAULT_CROSS_REFERENCE_NUMBERING,
   locale = 'en',
+  namedAnchors: readonly OmiNamedAnchor[] = [],
 ): OmiSection[] {
   const manuscript = {
     sections: sections as OmiSection[],
     crossReferenceNumbering: numbering,
+    namedAnchors: namedAnchors as OmiNamedAnchor[],
   };
   const targets = collectCrossReferenceTargets(manuscript);
   const targetMap = new Map(targets.map((target) => [target.id, target]));
@@ -306,7 +347,7 @@ export function validateCrossReferences(
     | 'sections'
     | 'crossReferences'
     | 'crossReferenceNumbering'
-  >,
+  > & { namedAnchors?: OmiNamedAnchor[] },
 ): OmiCrossReferenceValidationIssue[] {
   const references = manuscript.crossReferences ?? [];
   const targetIds = new Set(
@@ -343,7 +384,7 @@ export function validateCrossReferences(
 
 export function targetKindForBlock(
   kind: string | undefined,
-): Exclude<OmiCrossReferenceTargetKind, 'section'> | undefined {
+): Exclude<OmiCrossReferenceTargetKind, 'section' | 'bookmark'> | undefined {
   switch (kind) {
     case 'image':
       return 'figure';
@@ -391,6 +432,8 @@ function formatLabelNumber(
 ): string {
   const language = primaryLanguage(locale);
 
+  if (kind === 'bookmark') return label;
+
   if (kind === 'equation') {
     if (language === 'hu') return `${number} ${label}`;
     return `${label} ${number}`;
@@ -414,6 +457,7 @@ function targetKindLabels(
         table: 'táblázat',
         chart: 'grafikon',
         equation: 'egyenlet',
+        bookmark: 'könyvjelző',
       };
     case 'de':
       return {
@@ -422,6 +466,7 @@ function targetKindLabels(
         table: 'Tabelle',
         chart: 'Diagramm',
         equation: 'Gleichung',
+        bookmark: 'Textmarke',
       };
     default:
       return {
@@ -430,6 +475,7 @@ function targetKindLabels(
         table: 'Table',
         chart: 'Chart',
         equation: 'Equation',
+        bookmark: 'Bookmark',
       };
   }
 }
@@ -450,7 +496,7 @@ function primaryLanguage(locale: string): string {
 }
 
 function createCounters(): Record<
-  Exclude<OmiCrossReferenceTargetKind, 'section'>,
+  Exclude<OmiCrossReferenceTargetKind, 'section' | 'bookmark'>,
   number
 > {
   return {

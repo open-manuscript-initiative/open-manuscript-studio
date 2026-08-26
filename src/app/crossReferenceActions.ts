@@ -59,6 +59,7 @@ export function stageCreateCrossReference(
       nextReferences,
       state.manuscript.crossReferenceNumbering,
       state.manuscript.locale,
+      state.manuscript.namedAnchors ?? [],
     );
     const blockEvents = collectBlockContentChanges(
       state.manuscript.sections,
@@ -142,6 +143,7 @@ export function stageUpdateCrossReference(
       nextReferences,
       state.manuscript.crossReferenceNumbering,
       state.manuscript.locale,
+      state.manuscript.namedAnchors ?? [],
     );
     const blockEvents = collectBlockContentChanges(
       state.manuscript.sections,
@@ -207,6 +209,7 @@ export function stageRemoveCrossReference(
       nextReferences,
       state.manuscript.crossReferenceNumbering,
       state.manuscript.locale,
+      state.manuscript.namedAnchors ?? [],
     );
     const blockEvents = collectBlockContentChanges(
       state.manuscript.sections,
@@ -263,6 +266,7 @@ export function stageSetCrossReferenceNumbering(
       state.manuscript.crossReferences ?? [],
       numbering,
       state.manuscript.locale,
+      state.manuscript.namedAnchors ?? [],
     );
     const blockEvents = collectBlockContentChanges(
       state.manuscript.sections,
@@ -355,6 +359,7 @@ export function reconcileCrossReferencesAfterBlockEdit(): void {
       nextReferences,
       state.manuscript.crossReferenceNumbering,
       state.manuscript.locale,
+      state.manuscript.namedAnchors ?? [],
     );
     const blockEvents = collectBlockContentChanges(
       state.manuscript.sections,
