@@ -10,6 +10,7 @@ import {
   type OmiIndexDefinition,
   type OmiIndexEntry,
 } from '../model/indexing';
+import type { OmiBlock } from '../types/omi';
 
 const labels: Record<string, {
   title: string;
@@ -95,7 +96,17 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
   const activeEntries = entries.filter((entry) =>
     entry.indexId ? entry.indexId === activeDefinition?.id : activeDefinition?.id === DEFAULT_INDEX_ID,
   );
-  const groups = useMemo(() => groupIndexEntries(activeEntries), [activeEntries]);
+  const automaticFigureEntries = useMemo(
+    () => isFigureIndex(activeDefinition)
+      ? createAutomaticFigureEntries(manuscript.sections, activeEntries, activeDefinition?.id, locale)
+      : [],
+    [activeDefinition, activeEntries, locale, manuscript.sections],
+  );
+  const groupedEntries = useMemo(
+    () => [...activeEntries, ...automaticFigureEntries],
+    [activeEntries, automaticFigureEntries],
+  );
+  const groups = useMemo(() => groupIndexEntries(groupedEntries), [groupedEntries]);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [newIndexName, setNewIndexName] = useState('');
 
@@ -112,7 +123,11 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
   function createIndex(): void {
     const title = newIndexName.trim();
     if (!title) return;
-    const definition: OmiIndexDefinition = { id: crypto.randomUUID(), title };
+    const definition: OmiIndexDefinition = {
+      id: crypto.randomUUID(),
+      title,
+      kind: looksLikeFigureIndexTitle(title) ? 'figure' : undefined,
+    };
     persistDefinitions([...definitions, definition]);
     setActiveIndexId(definition.id);
     setNewIndexName('');
@@ -123,7 +138,9 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
     const nextTitle = window.prompt(copy.newName, activeDefinition.title)?.trim();
     if (!nextTitle || nextTitle === activeDefinition.title) return;
     persistDefinitions(definitions.map((item) =>
-      item.id === activeDefinition.id ? { ...item, title: nextTitle } : item,
+      item.id === activeDefinition.id
+        ? { ...item, title: nextTitle, kind: item.kind ?? (looksLikeFigureIndexTitle(nextTitle) ? 'figure' : undefined) }
+        : item,
     ));
   }
 
@@ -136,7 +153,7 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
     let seen = 0;
 
     for (const section of manuscript.sections) {
-      for (const block of section.blocks) {
+      for (const block of flattenBlocks(section.blocks)) {
         const text = blockPlainText(block.content);
         if (!text) continue;
         const normalizedText = text.toLocaleLowerCase();
@@ -164,7 +181,7 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
   function getEntryContext(entry: OmiIndexEntry | null): string {
     if (!entry?.targetBlockId) return '';
     const block = manuscript.sections
-      .flatMap((section) => section.blocks)
+      .flatMap((section) => flattenBlocks(section.blocks))
       .find((candidate) => candidate.id === entry.targetBlockId);
     if (!block) return '';
 
@@ -191,7 +208,7 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
     const resolved = resolveEntry(entry, occurrenceIndex, fallbackText);
     if (!resolved?.targetBlockId) return;
     const section = manuscript.sections.find((candidate) =>
-      candidate.blocks.some((block) => block.id === resolved.targetBlockId),
+      flattenBlocks(candidate.blocks).some((block) => block.id === resolved.targetBlockId),
     );
     if (section) selectSection(section.id);
     onNavigate?.();
@@ -208,7 +225,9 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
         return;
       }
       target.scrollIntoView({ behavior: attempt === 0 ? 'smooth' : 'auto', block: 'center' });
-      if (entry.targetText) selectText(target, entry.targetText, entry.targetTextOffset);
+      if (entry.targetText && entry.source?.format !== 'auto-figure-index') {
+        selectText(target, entry.targetText, entry.targetTextOffset);
+      }
       target.classList.add('omi-index-navigation-target');
       window.setTimeout(() => target.classList.remove('omi-index-navigation-target'), 1600);
     }, 100);
@@ -221,7 +240,7 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
           <h3><BookA size={18} aria-hidden="true" />{copy.title}</h3>
           <p>{copy.description}</p>
         </div>
-        <span className="omi-notes-count">{entries.length}</span>
+        <span className="omi-notes-count">{entries.length + automaticFigureEntries.length}</span>
       </div>
 
       <div className="studio-tool-card">
@@ -288,6 +307,92 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
       )}
     </section>
   );
+}
+
+function isFigureIndex(definition: OmiIndexDefinition | undefined): boolean {
+  if (!definition) return false;
+  const kind = normalizeIndexKey(definition.kind ?? '');
+  return ['figure', 'figures', 'image', 'images', 'illustration', 'illustrations', 'list of figures'].includes(kind)
+    || looksLikeFigureIndexTitle(definition.title);
+}
+
+function looksLikeFigureIndexTitle(title: string): boolean {
+  const value = normalizeIndexKey(title);
+  return [
+    'kepek jegyzeke',
+    'abrak jegyzeke',
+    'abra jegyzek',
+    'list of figures',
+    'list of images',
+    'list of illustrations',
+    'abbildungsverzeichnis',
+    'bilderverzeichnis',
+  ].includes(value);
+}
+
+function normalizeIndexKey(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+}
+
+function createAutomaticFigureEntries(
+  sections: Array<{ blocks: OmiBlock[] }>,
+  manualEntries: OmiIndexEntry[],
+  indexId: string | undefined,
+  locale: string,
+): OmiIndexEntry[] {
+  const manuallyIndexedBlocks = new Set(
+    manualEntries.map((entry) => entry.targetBlockId).filter((id): id is string => Boolean(id)),
+  );
+  const result: OmiIndexEntry[] = [];
+  let number = 0;
+
+  for (const section of sections) {
+    for (const block of flattenBlocks(section.blocks)) {
+      if (!isFigureBlock(block)) continue;
+      number += 1;
+      if (manuallyIndexedBlocks.has(block.id)) continue;
+      const label = figureLabel(block, number, locale);
+      result.push({
+        id: `auto-figure-index:${block.id}`,
+        indexId,
+        kind: 'figure',
+        terms: [label],
+        targetBlockId: block.id,
+        targetText: label,
+        relation: 'location',
+        source: { format: 'auto-figure-index' },
+      });
+    }
+  }
+  return result;
+}
+
+function isFigureBlock(block: OmiBlock): boolean {
+  const type = block.type?.toLocaleLowerCase();
+  const visualKind = block.visual?.kind?.toLocaleLowerCase();
+  return type === 'figure' || type === 'image' || visualKind === 'image';
+}
+
+function figureLabel(block: OmiBlock, number: number, locale: string): string {
+  const visual = block.visual;
+  const candidate = visual?.caption?.trim()
+    || visual?.alt?.trim()
+    || visual?.fileName?.trim()
+    || normalizeWhitespace(blockPlainText(block.content));
+  if (candidate) return candidate;
+  const language = locale.toLocaleLowerCase().split('-')[0];
+  if (language === 'hu') return `Ábra ${number}`;
+  if (language === 'de') return `Abbildung ${number}`;
+  return `Figure ${number}`;
+}
+
+function flattenBlocks(blocks: OmiBlock[]): OmiBlock[] {
+  return blocks.flatMap((block) => [block, ...flattenBlocks(block.children ?? [])]);
 }
 
 function normalizeWhitespace(value: string): string {
