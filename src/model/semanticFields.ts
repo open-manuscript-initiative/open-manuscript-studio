@@ -118,14 +118,17 @@ export function updateSemanticField(
   const label = patch.label === undefined
     ? field.label
     : patch.label.trim().replace(/\s+/g, ' ');
+  const sectionId = patch.sectionId ?? field.sectionId;
 
   if (!role || !label) return field;
   if (valueType === 'choice' && options.length === 0) return field;
-  if (scope === 'section' && !(patch.sectionId ?? field.sectionId)?.trim()) return field;
+  if (scope === 'section' && !sectionId?.trim()) return field;
+
+  const merged = { ...field, ...patch };
+  const { options: _oldOptions, sectionId: _oldSectionId, ...base } = merged;
 
   return {
-    ...field,
-    ...patch,
+    ...base,
     role,
     label,
     valueType,
@@ -134,9 +137,9 @@ export function updateSemanticField(
       valueType,
       options,
     ),
-    ...(options.length ? { options } : { options: undefined }),
+    ...(options.length ? { options } : {}),
     scope,
-    sectionId: scope === 'section' ? (patch.sectionId ?? field.sectionId) : undefined,
+    ...(scope === 'section' && sectionId ? { sectionId } : {}),
     modifiedAt: timestamp,
   };
 }
