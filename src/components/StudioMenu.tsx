@@ -87,12 +87,18 @@ interface StudioMenuProps {
     actorMode: 'editor' | 'author';
     context: OjsAssignmentLaunchContext;
   } | null;
+  navigationAfterReferences?: ReactNode;
+  navigationBeforeTools?: ReactNode;
+  navigationAfterSettings?: ReactNode;
 }
 
 export function StudioMenu({
   open,
   onClose,
   ojsAssignment = null,
+  navigationAfterReferences,
+  navigationBeforeTools,
+  navigationAfterSettings,
 }: StudioMenuProps) {
   const { t, locale } = useTranslation();
   const publicationCopy = getPublicationProfileCopy(locale);
@@ -128,26 +134,29 @@ export function StudioMenu({
           <nav className="studio-menu-navigation" aria-label={t('studio.menu')}>
             <MenuButton active={activeView === 'document'} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} />
             <MenuButton active={activeView === 'manuscript'} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} />
+            <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} />
             <MenuButton active={activeView === 'notes'} icon={<StickyNote size={18} aria-hidden="true" />} label={t('studio.navigation.notes')} onClick={() => setActiveView('notes')} />
             <MenuButton active={activeView === 'references'} icon={<Library size={18} aria-hidden="true" />} label={t('studio.navigation.references')} onClick={() => setActiveView('references')} />
-            <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} />
+            {navigationAfterReferences}
             {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
-            <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} />
             <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} />
             <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
+            <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} />
+            {navigationBeforeTools}
             <MenuButton active={activeView === 'tools'} icon={<Wrench size={18} aria-hidden="true" />} label={t('studio.navigation.tools')} onClick={() => setActiveView('tools')} />
             <MenuButton active={activeView === 'settings'} icon={<Settings2 size={18} aria-hidden="true" />} label={t('studio.navigation.settings')} onClick={() => setActiveView('settings')} />
+            {navigationAfterSettings}
           </nav>
           <div className="studio-menu-content">
-            {activeView === 'document' ? <DocumentMenuView onNavigate={onClose} /> : null}
-            {activeView === 'manuscript' ? <ManuscriptDataView /> : null}
-            {activeView === 'notes' ? <NotesPanel onNavigate={onClose} /> : null}
-            {activeView === 'references' ? <ReferencesPanel /> : null}
+            {activeView === 'document' ? <DocumentMenuView /> : null}
+            {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={onClose} /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
+            {activeView === 'notes' ? <NotesPanel onNavigate={onClose} /> : null}
+            {activeView === 'references' ? <ReferencesView /> : null}
             {activeView === 'assignments' && ojsAssignment ? <OjsAssignmentPanel actorMode={ojsAssignment.actorMode} context={ojsAssignment.context} /> : null}
-            {activeView === 'publication' ? <PublicationProfilePanel /> : null}
             {activeView === 'signatures' ? <AuthorSignaturePanel /> : null}
             {activeView === 'history' ? <HistoryPanel /> : null}
+            {activeView === 'publication' ? <PublicationProfilePanel /> : null}
             {activeView === 'tools' ? <ToolsView /> : null}
             {activeView === 'settings' ? <SettingsView /> : null}
           </div>
@@ -186,7 +195,7 @@ function useOwnDeviceStorage(): boolean {
   return mode === 'own-device';
 }
 
-function DocumentMenuView({ onNavigate }: { onNavigate: () => void }) {
+function DocumentMenuView() {
   const { t, locale } = useTranslation();
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
   const [localPath, setLocalPath] = useState(getCurrentManuscriptFilePath());
@@ -212,19 +221,26 @@ function DocumentMenuView({ onNavigate }: { onNavigate: () => void }) {
     <div className="studio-menu-view-header"><div><h3>{t('studio.document.title')}</h3><p>{t('studio.document.description')}</p></div></div>
     {native ? <div className="studio-tool-card"><div><strong>{ownDevice ? labels.openTitle : labels.portableOpenTitle}</strong><p>{ownDevice ? labels.openDescription : labels.portableOpenDescription}</p>{ownDevice ? <small>{formatNativeLocation(localPath, platform, labels)}</small> : null}{fileMessage ? <p role="status">{fileMessage}</p> : null}</div><div className="studio-tool-actions"><button type="button" className="studio-menu-primary-action" onClick={() => void openNative()}>{ownDevice ? <FolderOpen size={16} aria-hidden="true" /> : <Usb size={16} aria-hidden="true" />}{ownDevice ? labels.open : labels.openPortable}</button></div></div> : null}
     <DocxImportPanel />
-    <SectionNumberingControl />
-    <CrossReferencePanel />
-    <div className="studio-menu-mobile-structure">
-      <SectionStructurePanel onNavigate={onNavigate} />
-    </div>
   </section>;
 }
 
-function ManuscriptDataView() {
+function ManuscriptDataView({ onNavigate }: { onNavigate: () => void }) {
   const { t } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
   const setAbstract = useStudioStore((state) => state.setAbstract);
-  return <section className="studio-menu-view"><div className="studio-menu-view-header"><div><h3>{t('studio.manuscript.title')}</h3><p>{t('studio.manuscript.description')}</p></div></div><div className="studio-manuscript-fields"><label><span>{t('manuscript.abstract')}</span><textarea value={manuscript.abstract ?? ''} onChange={(event) => setAbstract(event.target.value)} /></label><KeywordEditor /><ManuscriptLanguageField /></div></section>;
+  return <section className="studio-menu-view">
+    <div className="studio-menu-view-header"><div><h3>{t('studio.manuscript.title')}</h3><p>{t('studio.manuscript.description')}</p></div></div>
+    <div className="studio-manuscript-fields"><label><span>{t('manuscript.abstract')}</span><textarea value={manuscript.abstract ?? ''} onChange={(event) => setAbstract(event.target.value)} /></label><KeywordEditor /><ManuscriptLanguageField /></div>
+    <SectionNumberingControl />
+    <div className="studio-menu-mobile-structure"><SectionStructurePanel onNavigate={onNavigate} /></div>
+  </section>;
+}
+
+function ReferencesView() {
+  return <>
+    <ReferencesPanel />
+    <CrossReferencePanel />
+  </>;
 }
 
 function ToolsView() {
