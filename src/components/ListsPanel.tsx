@@ -1,4 +1,4 @@
-import { BookA, Images, ListPlus, ListTree, Plus, Table2 } from 'lucide-react';
+import { BookA, BookMarked, Images, ListPlus, ListTree, Plus, Table2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
@@ -6,10 +6,11 @@ import { useTranslation } from '../i18n';
 import { buildCaptionListEntries, getGeneratedListDefinitions, type OmiGeneratedListKind } from '../model/generatedLists';
 import type { OmiTableOfContents } from '../model/tableOfContents';
 import { AdvancedIndexEntryPanel } from './AdvancedIndexEntryPanel';
+import { CategorizedReferenceListsPanel } from './CategorizedReferenceListsPanel';
 import { IndexPanel } from './IndexPanel';
 import { TableOfContentsPanel } from './TableOfContentsPanel';
 
-type BuiltInKind = 'toc' | 'figures' | 'tables' | 'index';
+type BuiltInKind = 'toc' | 'figures' | 'tables' | 'index' | 'references';
 
 export function ListsPanel({ onNavigate }: { onNavigate?: () => void }) {
   const { locale } = useTranslation();
@@ -45,6 +46,7 @@ export function ListsPanel({ onNavigate }: { onNavigate?: () => void }) {
 
   function createBuiltIn(kind: BuiltInKind): void {
     if (kind === 'toc') { ensureToc(); return; }
+    if (kind === 'references') { setActive('references'); return; }
     const title = kind === 'figures' ? copy.figures : kind === 'tables' ? copy.tables : copy.indexes;
     persistDefinition(kind, title);
     setActive(kind);
@@ -71,6 +73,7 @@ export function ListsPanel({ onNavigate }: { onNavigate?: () => void }) {
           <button type="button" className="studio-menu-secondary-action" onClick={() => createBuiltIn('figures')}><Images size={15} />{copy.figures}</button>
           <button type="button" className="studio-menu-secondary-action" onClick={() => createBuiltIn('tables')}><Table2 size={15} />{copy.tables}</button>
           <button type="button" className="studio-menu-secondary-action" onClick={() => createBuiltIn('index')}><BookA size={15} />{copy.indexes}</button>
+          <button type="button" className="studio-menu-secondary-action" onClick={() => createBuiltIn('references')}><BookMarked size={15} />{copy.references}</button>
         </div>
         <div className="studio-tool-actions">
           <input value={customTitle} placeholder={copy.customPlaceholder} onChange={(event) => setCustomTitle(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') createCustom(); }} />
@@ -85,12 +88,14 @@ export function ListsPanel({ onNavigate }: { onNavigate?: () => void }) {
           <button type="button" className="studio-menu-secondary-action" onClick={() => setActive('figures')}>{copy.figures}</button>
           <button type="button" className="studio-menu-secondary-action" onClick={() => setActive('tables')}>{copy.tables}</button>
           <button type="button" className="studio-menu-secondary-action" onClick={() => setActive('index')}>{copy.indexes}</button>
+          <button type="button" className="studio-menu-secondary-action" onClick={() => setActive('references')}>{copy.references}</button>
         </div>
         {definitions.filter((item) => item.kind === 'custom').map((item) => <p key={item.id}><ListPlus size={14} aria-hidden="true" /> {item.title}</p>)}
       </div></div>
 
       {active === 'toc' ? <TableOfContentsPanel onNavigate={onNavigate} /> : null}
       {active === 'index' ? <><AdvancedIndexEntryPanel /><IndexPanel onNavigate={onNavigate} /></> : null}
+      {active === 'references' ? <CategorizedReferenceListsPanel /> : null}
       {active === 'figures' || active === 'tables' ? <CaptionList kind={active} onNavigate={onNavigate} /> : null}
     </section>
   );
@@ -120,7 +125,7 @@ function CaptionList({ kind, onNavigate }: { kind: 'figures' | 'tables'; onNavig
 }
 
 function getCopy(locale: string) {
-  if (locale === 'hu') return { title: 'Jegyzékek', description: 'Hozzon létre és kezeljen automatikusan frissülő jegyzékeket a dokumentum strukturált jelöléseiből.', create: 'Új jegyzék létrehozása', available: 'Jegyzékek', toc: 'Tartalomjegyzék', figures: 'Képek jegyzéke', tables: 'Táblázatok jegyzéke', indexes: 'Mutatók', custom: 'Egyéni jegyzék', customPlaceholder: 'Jegyzék neve', captionDescription: 'A dokumentum feliratozott elemeiből automatikusan generált jegyzék.', noCaptions: 'A dokumentumban még nincs ehhez a jegyzékhez használható feliratozott elem.' };
-  if (locale === 'de') return { title: 'Verzeichnisse', description: 'Erstellen und verwalten Sie automatisch aktualisierte Verzeichnisse aus strukturierten Dokumentmarkierungen.', create: 'Neues Verzeichnis erstellen', available: 'Verzeichnisse', toc: 'Inhaltsverzeichnis', figures: 'Abbildungsverzeichnis', tables: 'Tabellenverzeichnis', indexes: 'Register', custom: 'Benutzerdefiniert', customPlaceholder: 'Name des Verzeichnisses', captionDescription: 'Automatisch aus beschrifteten Dokumentelementen erzeugtes Verzeichnis.', noCaptions: 'Das Dokument enthält noch keine passenden beschrifteten Elemente.' };
-  return { title: 'Lists', description: 'Create and manage automatically updated lists from structured document markers.', create: 'Create new list', available: 'Lists', toc: 'Table of contents', figures: 'List of figures', tables: 'List of tables', indexes: 'Indexes', custom: 'Custom list', customPlaceholder: 'List name', captionDescription: 'Automatically generated from captioned document elements.', noCaptions: 'The document does not yet contain captioned elements for this list.' };
+  if (locale === 'hu') return { title: 'Jegyzékek', description: 'Hozzon létre és kezeljen automatikusan frissülő jegyzékeket a dokumentum strukturált jelöléseiből.', create: 'Új jegyzék létrehozása', available: 'Jegyzékek', toc: 'Tartalomjegyzék', figures: 'Képek jegyzéke', tables: 'Táblázatok jegyzéke', indexes: 'Mutatók', references: 'Hivatkozásjegyzékek', custom: 'Egyéni jegyzék', customPlaceholder: 'Jegyzék neve', captionDescription: 'A dokumentum feliratozott elemeiből automatikusan generált jegyzék.', noCaptions: 'A dokumentumban még nincs ehhez a jegyzékhez használható feliratozott elem.' };
+  if (locale === 'de') return { title: 'Verzeichnisse', description: 'Erstellen und verwalten Sie automatisch aktualisierte Verzeichnisse aus strukturierten Dokumentmarkierungen.', create: 'Neues Verzeichnis erstellen', available: 'Verzeichnisse', toc: 'Inhaltsverzeichnis', figures: 'Abbildungsverzeichnis', tables: 'Tabellenverzeichnis', indexes: 'Register', references: 'Referenzverzeichnisse', custom: 'Benutzerdefiniert', customPlaceholder: 'Name des Verzeichnisses', captionDescription: 'Automatisch aus beschrifteten Dokumentelementen erzeugtes Verzeichnis.', noCaptions: 'Das Dokument enthält noch keine passenden beschrifteten Elemente.' };
+  return { title: 'Lists', description: 'Create and manage automatically updated lists from structured document markers.', create: 'Create new list', available: 'Lists', toc: 'Table of contents', figures: 'List of figures', tables: 'List of tables', indexes: 'Indexes', references: 'Reference lists', custom: 'Custom list', customPlaceholder: 'List name', captionDescription: 'Automatically generated from captioned document elements.', noCaptions: 'The document does not yet contain captioned elements for this list.' };
 }
