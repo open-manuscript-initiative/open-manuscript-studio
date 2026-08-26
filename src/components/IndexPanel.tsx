@@ -380,9 +380,10 @@ function isFigureBlock(block: OmiBlock): boolean {
 
 function figureLabel(block: OmiBlock, number: number, locale: string): string {
   const visual = block.visual;
+  const image = visual?.kind === 'image' ? visual : undefined;
   const candidate = visual?.caption?.trim()
-    || visual?.alt?.trim()
-    || visual?.fileName?.trim()
+    || image?.alt?.trim()
+    || image?.fileName?.trim()
     || normalizeWhitespace(blockPlainText(block.content));
   if (candidate) return candidate;
   const language = locale.toLocaleLowerCase().split('-')[0];
