@@ -7,13 +7,16 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
   deployments: write
 
 concurrency:
-  group: omi-studio-${{ github.ref }}
+  # v2 intentionally bypasses any stale concurrency group left behind by a
+  # GitHub Actions run that could not be cancelled.
+  group: omi-studio-v2-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
