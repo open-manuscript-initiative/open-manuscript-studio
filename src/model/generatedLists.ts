@@ -1,7 +1,7 @@
 import { resolveSemanticCaptions } from './captions';
 import type { OmiSection } from '../types/omi';
 
-export type OmiGeneratedListKind = 'toc' | 'figures' | 'tables' | 'index' | 'custom';
+export type OmiGeneratedListKind = 'toc' | 'figures' | 'tables' | 'index' | 'references' | 'custom';
 
 export interface OmiGeneratedListDefinition {
   id: string;
@@ -12,6 +12,7 @@ export interface OmiGeneratedListDefinition {
     instruction?: string;
     captionLabel?: string;
     indexId?: string;
+    categorizedReferenceListId?: string;
   };
 }
 
@@ -25,6 +26,7 @@ export function getGeneratedListDefinitions(manuscript: {
   generatedListDefinitions?: OmiGeneratedListDefinition[];
   tableOfContents?: unknown;
   indexDefinitions?: Array<{ id: string; title: string }>;
+  categorizedReferenceLists?: Array<{ id: string; title: string }>;
 }): OmiGeneratedListDefinition[] {
   const stored = manuscript.generatedListDefinitions ?? [];
   const result = [...stored];
@@ -34,6 +36,11 @@ export function getGeneratedListDefinitions(manuscript: {
   for (const index of manuscript.indexDefinitions ?? []) {
     if (!result.some((item) => item.kind === 'index' && item.source?.indexId === index.id)) {
       result.push({ id: `index:${index.id}`, kind: 'index', title: index.title, source: { indexId: index.id } });
+    }
+  }
+  for (const list of manuscript.categorizedReferenceLists ?? []) {
+    if (!result.some((item) => item.kind === 'references' && item.source?.categorizedReferenceListId === list.id)) {
+      result.push({ id: `references:${list.id}`, kind: 'references', title: list.title, source: { categorizedReferenceListId: list.id } });
     }
   }
   return result;
@@ -107,7 +114,7 @@ function firstString(...values: unknown[]): string {
 
 declare module '../types/omi' {
   interface OmiManuscriptState {
-    /** User-created and imported generated lists (TOC, figures, tables, indexes, custom lists). */
+    /** User-created and imported generated lists (TOC, figures, tables, indexes, references, custom lists). */
     generatedListDefinitions?: OmiGeneratedListDefinition[];
   }
 }
