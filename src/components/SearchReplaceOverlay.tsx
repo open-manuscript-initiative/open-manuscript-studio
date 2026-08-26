@@ -53,6 +53,8 @@ export function SearchReplaceOverlay() {
   const updateBlock = useStudioStore((state) => state.updateBlock);
   const [mode, setMode] = useState<SearchMode | null>(null);
   const [query, setQuery] = useState('');
+  const [submittedQuery, setSubmittedQuery] = useState('');
+  const [searchSubmitted, setSearchSubmitted] = useState(false);
   const [replacement, setReplacement] = useState('');
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [wholeWord, setWholeWord] = useState(false);
@@ -81,8 +83,10 @@ export function SearchReplaceOverlay() {
   }, [mode]);
 
   const results = useMemo(
-    () => collectResults(manuscript, selectedSectionId, scope, query, options),
-    [manuscript, options, query, scope, selectedSectionId],
+    () => searchSubmitted
+      ? collectResults(manuscript, selectedSectionId, scope, submittedQuery, options)
+      : [],
+    [manuscript, options, scope, searchSubmitted, selectedSectionId, submittedQuery],
   );
 
   useEffect(() => {
@@ -91,12 +95,25 @@ export function SearchReplaceOverlay() {
 
   const activeResult = results[activeIndex];
   useEffect(() => {
-    if (!activeResult) return;
-    if (!query && activeResult.target !== 'object') return;
-    revealResult(activeResult, query, options);
-  }, [activeResult, options, query]);
+    if (!searchSubmitted || !activeResult) return;
+    if (!submittedQuery && activeResult.target !== 'object') return;
+    revealResult(activeResult, submittedQuery, options);
+  }, [activeResult, options, searchSubmitted, submittedQuery]);
 
   if (!mode) return null;
+
+  const resetPendingSearch = () => {
+    setSearchSubmitted(false);
+    setActiveIndex(0);
+    clearSearchHighlights();
+  };
+
+  const submitSearch = () => {
+    setSubmittedQuery(query);
+    setSearchSubmitted(true);
+    setActiveIndex(0);
+  };
+
   const move = (delta: number) => {
     if (!results.length) return;
     setActiveIndex((current) => (current + delta + results.length) % results.length);
@@ -110,16 +127,23 @@ export function SearchReplaceOverlay() {
         <input
           ref={queryRef}
           value={query}
-          onChange={(event) => { setQuery(event.target.value); setActiveIndex(0); }}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            resetPendingSearch();
+          }}
           onKeyDown={(event) => {
-            if (event.key === 'Enter') { event.preventDefault(); move(event.shiftKey ? -1 : 1); }
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              if (!searchSubmitted || query !== submittedQuery) submitSearch();
+              else move(event.shiftKey ? -1 : 1);
+            }
             if (event.key === 'Escape') setMode(null);
           }}
           placeholder={objectMode ? copy.objectPlaceholder : copy.findPlaceholder}
           aria-label={objectMode ? copy.objectPlaceholder : copy.findPlaceholder}
         />
         <span className="omi-search-replace__count" aria-live="polite">
-          {(query || objectMode) ? copy.position(results.length ? activeIndex + 1 : 0, results.length) : ''}
+          {searchSubmitted ? copy.position(results.length ? activeIndex + 1 : 0, results.length) : ''}
         </span>
         <div className="omi-search-replace__navigation">
           <button type="button" className="omi-search-replace__icon-button" disabled={!results.length} aria-label={copy.previous} title={copy.previous} onClick={() => move(-1)}><ChevronUp size={17} aria-hidden="true" /></button>
@@ -132,17 +156,17 @@ export function SearchReplaceOverlay() {
         <div className="omi-search-replace__row omi-search-replace__row--replace">
           <span aria-hidden="true" className="omi-search-replace__indent" />
           <input value={replacement} onChange={(event) => setReplacement(event.target.value)} placeholder={copy.replacePlaceholder} aria-label={copy.replacePlaceholder} />
-          <button type="button" className="omi-search-replace__action" disabled={!activeResult} onClick={() => query && activeResult && replaceResult(activeResult, manuscript, query, replacement, options, mutators)}>{copy.replace}</button>
-          <button type="button" className="omi-search-replace__action" disabled={!query || !results.length} onClick={() => query && replaceAllInScope(manuscript, selectedSectionId, scope, query, replacement, options, mutators)}>{copy.replaceAll}</button>
+          <button type="button" className="omi-search-replace__action" disabled={!activeResult} onClick={() => submittedQuery && activeResult && replaceResult(activeResult, manuscript, submittedQuery, replacement, options, mutators)}>{copy.replace}</button>
+          <button type="button" className="omi-search-replace__action" disabled={!searchSubmitted || !submittedQuery || !results.length} onClick={() => submittedQuery && replaceAllInScope(manuscript, selectedSectionId, scope, submittedQuery, replacement, options, mutators)}>{copy.replaceAll}</button>
         </div>
       ) : null}
 
       <div className="omi-search-replace__options">
-        <label><input type="checkbox" checked={caseSensitive} onChange={(event) => setCaseSensitive(event.target.checked)} />{copy.caseSensitive}</label>
-        <label><input type="checkbox" checked={wholeWord} onChange={(event) => setWholeWord(event.target.checked)} />{copy.wholeWord}</label>
+        <label><input type="checkbox" checked={caseSensitive} onChange={(event) => { setCaseSensitive(event.target.checked); resetPendingSearch(); }} />{copy.caseSensitive}</label>
+        <label><input type="checkbox" checked={wholeWord} onChange={(event) => { setWholeWord(event.target.checked); resetPendingSearch(); }} />{copy.wholeWord}</label>
         <label className="omi-search-replace__scope-label">
           <span>{copy.scope}</span>
-          <select value={scope} onChange={(event) => { setScope(event.target.value as SearchScope); setActiveIndex(0); }}>
+          <select value={scope} onChange={(event) => { setScope(event.target.value as SearchScope); resetPendingSearch(); }}>
             <option value="all">{copy.scopes.all}</option>
             <option value="current-section">{copy.scopes.currentSection}</option>
             <option value="headings">{copy.scopes.headings}</option>
