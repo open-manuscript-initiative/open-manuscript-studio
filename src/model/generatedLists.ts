@@ -1,5 +1,5 @@
-import { resolveSemanticCaptions } from './captions';
-import type { OmiSection } from '../types/omi';
+import { defaultCaptionLabel, resolveSemanticCaptions } from './captions';
+import type { OmiBlock, OmiSection, OmiVisualBlockData } from '../types/omi';
 
 export type OmiGeneratedListKind = 'toc' | 'figures' | 'tables' | 'index' | 'references' | 'custom';
 
@@ -48,7 +48,8 @@ export function getGeneratedListDefinitions(manuscript: {
 
 /**
  * Builds generated figure/table lists from semantic captions first, while
- * retaining a compatibility fallback for older Tiptap-embedded caption nodes.
+ * retaining compatibility fallbacks for older Tiptap-embedded captions and
+ * structured visual blocks imported without semantic caption metadata.
  */
 export function buildCaptionListEntries(
   sections: readonly OmiSection[],
@@ -70,16 +71,82 @@ export function buildCaptionListEntries(
     blockId: caption.blockId,
   }));
   const semanticBlockIds = new Set(semantic.map((caption) => caption.blockId));
+  const structuredBlockIds = new Set<string>();
 
   for (const section of sections) {
-    for (const block of section.blocks) {
+    for (const block of flattenBlocks(section.blocks)) {
       if (semanticBlockIds.has(block.id)) continue;
+
+      if (matchesStructuredVisual(block, kind)) {
+        structuredBlockIds.add(block.id);
+        const number = entries.length + 1;
+        entries.push({
+          id: `visual:${block.id}`,
+          label: structuredVisualLabel(block, number, captionLabel),
+          blockId: block.id,
+        });
+        continue;
+      }
+
       let value: unknown;
       try { value = JSON.parse(block.content); } catch { continue; }
       collectCaptionNodes(value, kind, block.id, entries);
     }
   }
-  return entries;
+
+  return deduplicateGeneratedEntries(entries, structuredBlockIds);
+}
+
+function matchesStructuredVisual(block: OmiBlock, kind: 'figures' | 'tables'): boolean {
+  if (!block.visual) return false;
+  return kind === 'figures'
+    ? block.visual.kind === 'image' || block.visual.kind === 'chart'
+    : block.visual.kind === 'table';
+}
+
+function structuredVisualLabel(block: OmiBlock, number: number, captionLabel?: string): string {
+  const visual = block.visual;
+  if (!visual) return `${captionLabel?.trim() || 'Figure'} ${number}`;
+
+  const label = captionLabel?.trim() || defaultCaptionLabel(visual.kind);
+  const title = structuredVisualTitle(visual);
+  return title ? `${label} ${number}. ${title}` : `${label} ${number}`;
+}
+
+function structuredVisualTitle(visual: OmiVisualBlockData): string {
+  const caption = visual.caption?.trim();
+  if (caption) return caption;
+
+  if (visual.kind === 'image') {
+    return visual.alt?.trim() || visual.fileName?.trim() || '';
+  }
+  if (visual.kind === 'chart') {
+    return visual.title?.trim() || '';
+  }
+  return '';
+}
+
+function flattenBlocks(blocks: readonly OmiBlock[]): OmiBlock[] {
+  return blocks.flatMap((block) => [block, ...flattenBlocks(block.children ?? [])]);
+}
+
+function deduplicateGeneratedEntries(
+  entries: GeneratedListEntry[],
+  structuredBlockIds: ReadonlySet<string>,
+): GeneratedListEntry[] {
+  const seenIds = new Set<string>();
+  const seenStructuredBlocks = new Set<string>();
+
+  return entries.filter((entry) => {
+    if (seenIds.has(entry.id)) return false;
+    seenIds.add(entry.id);
+
+    if (entry.blockId && structuredBlockIds.has(entry.blockId)) {
+      if (seenStructuredBlocks.has(entry.blockId)) return false;
+      seenStructuredBlocks.add(entry.blockId);
+    }
+    return true;
+  });
 }
 
 function collectCaptionNodes(value: unknown, kind: 'figures' | 'tables', blockId: string, result: GeneratedListEntry[]): void {
