@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 
 import { SearchReplaceOverlay as SearchReplaceOverlayBase } from './SearchReplaceOverlayBase';
 
+const OBJECT_SCOPES = new Set(['visuals', 'images', 'tables', 'charts', 'equations']);
+
 /**
  * Normalizes the primary manuscript-search field for mobile IMEs.
  * Android WebView may otherwise expose the action key as "Next"/Tab instead
@@ -10,6 +12,27 @@ import { SearchReplaceOverlay as SearchReplaceOverlayBase } from './SearchReplac
 export function SearchReplaceOverlay() {
   const rootRef = useRef<HTMLDivElement>(null);
   const replayingEnter = useRef(false);
+
+  const replaySearchEnter = (input: HTMLInputElement, shiftKey = false) => {
+    window.setTimeout(() => {
+      replayingEnter.current = true;
+      input.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        bubbles: true,
+        cancelable: true,
+        shiftKey,
+      }));
+      replayingEnter.current = false;
+    }, 0);
+  };
+
+  const submitEmptyObjectSearch = (searchPanel: Element) => {
+    const input = searchPanel.querySelector<HTMLInputElement>('input');
+    const scope = searchPanel.querySelector<HTMLSelectElement>('select');
+    if (!input || !scope || input.value.trim() || !OBJECT_SCOPES.has(scope.value)) return;
+    replaySearchEnter(input);
+  };
 
   useEffect(() => {
     const root = rootRef.current;
@@ -45,6 +68,21 @@ export function SearchReplaceOverlay() {
         target.setAttribute('enterkeyhint', 'search');
         target.setAttribute('inputmode', 'search');
       }}
+      onChangeCapture={(event) => {
+        const target = event.target;
+        const searchPanel = target instanceof Element ? target.closest('.omi-search-replace') : null;
+        if (!searchPanel) return;
+
+        if (target instanceof HTMLSelectElement) {
+          if (!OBJECT_SCOPES.has(target.value)) return;
+          window.setTimeout(() => submitEmptyObjectSearch(searchPanel), 0);
+          return;
+        }
+
+        if (target instanceof HTMLInputElement && searchPanel.querySelector('input') === target && !target.value.trim()) {
+          window.setTimeout(() => submitEmptyObjectSearch(searchPanel), 0);
+        }
+      }}
       onKeyDownCapture={(event) => {
         if (replayingEnter.current) return;
 
@@ -61,18 +99,7 @@ export function SearchReplaceOverlay() {
         const shiftKey = event.shiftKey;
         event.preventDefault();
         event.stopPropagation();
-
-        window.setTimeout(() => {
-          replayingEnter.current = true;
-          target.dispatchEvent(new KeyboardEvent('keydown', {
-            key: 'Enter',
-            code: 'Enter',
-            bubbles: true,
-            cancelable: true,
-            shiftKey,
-          }));
-          replayingEnter.current = false;
-        }, 0);
+        replaySearchEnter(target, shiftKey);
       }}
     >
       <SearchReplaceOverlayBase />
