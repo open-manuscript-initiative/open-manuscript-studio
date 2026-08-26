@@ -90,6 +90,7 @@ interface StudioMenuProps {
   navigationAfterReferences?: ReactNode;
   navigationBeforeTools?: ReactNode;
   navigationAfterSettings?: ReactNode;
+  documentCloseAction?: ReactNode;
 }
 
 export function StudioMenu({
@@ -99,6 +100,7 @@ export function StudioMenu({
   navigationAfterReferences,
   navigationBeforeTools,
   navigationAfterSettings,
+  documentCloseAction,
 }: StudioMenuProps) {
   const { t, locale } = useTranslation();
   const publicationCopy = getPublicationProfileCopy(locale);
@@ -148,7 +150,7 @@ export function StudioMenu({
             {navigationAfterSettings}
           </nav>
           <div className="studio-menu-content">
-            {activeView === 'document' ? <DocumentMenuView /> : null}
+            {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} /> : null}
             {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={onClose} /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
             {activeView === 'notes' ? <NotesPanel onNavigate={onClose} /> : null}
@@ -195,7 +197,7 @@ function useOwnDeviceStorage(): boolean {
   return mode === 'own-device';
 }
 
-function DocumentMenuView() {
+function DocumentMenuView({ documentCloseAction }: { documentCloseAction?: ReactNode }) {
   const { t, locale } = useTranslation();
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
   const [localPath, setLocalPath] = useState(getCurrentManuscriptFilePath());
@@ -219,7 +221,7 @@ function DocumentMenuView() {
 
   return <section className="studio-menu-view">
     <div className="studio-menu-view-header"><div><h3>{t('studio.document.title')}</h3><p>{t('studio.document.description')}</p></div></div>
-    {native ? <div className="studio-tool-card"><div><strong>{ownDevice ? labels.openTitle : labels.portableOpenTitle}</strong><p>{ownDevice ? labels.openDescription : labels.portableOpenDescription}</p>{ownDevice ? <small>{formatNativeLocation(localPath, platform, labels)}</small> : null}{fileMessage ? <p role="status">{fileMessage}</p> : null}</div><div className="studio-tool-actions"><button type="button" className="studio-menu-primary-action" onClick={() => void openNative()}>{ownDevice ? <FolderOpen size={16} aria-hidden="true" /> : <Usb size={16} aria-hidden="true" />}{ownDevice ? labels.open : labels.openPortable}</button></div></div> : null}
+    {native ? <div className="studio-tool-card"><div><strong>{ownDevice ? labels.openTitle : labels.portableOpenTitle}</strong><p>{ownDevice ? labels.openDescription : labels.portableOpenDescription}</p>{ownDevice ? <small>{formatNativeLocation(localPath, platform, labels)}</small> : null}{fileMessage ? <p role="status">{fileMessage}</p> : null}</div><div className="studio-tool-actions"><button type="button" className="studio-menu-primary-action" onClick={() => void openNative()}>{ownDevice ? <FolderOpen size={16} aria-hidden="true" /> : <Usb size={16} aria-hidden="true" />}{ownDevice ? labels.open : labels.openPortable}</button>{documentCloseAction}</div></div> : documentCloseAction ? <div className="studio-tool-card"><div className="studio-tool-actions">{documentCloseAction}</div></div> : null}
     <DocxImportPanel />
   </section>;
 }
@@ -228,19 +230,11 @@ function ManuscriptDataView({ onNavigate }: { onNavigate: () => void }) {
   const { t } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
   const setAbstract = useStudioStore((state) => state.setAbstract);
-  return <section className="studio-menu-view">
-    <div className="studio-menu-view-header"><div><h3>{t('studio.manuscript.title')}</h3><p>{t('studio.manuscript.description')}</p></div></div>
-    <div className="studio-manuscript-fields"><label><span>{t('manuscript.abstract')}</span><textarea value={manuscript.abstract ?? ''} onChange={(event) => setAbstract(event.target.value)} /></label><KeywordEditor /><ManuscriptLanguageField /></div>
-    <SectionNumberingControl />
-    <div className="studio-menu-mobile-structure"><SectionStructurePanel onNavigate={onNavigate} /></div>
-  </section>;
+  return <section className="studio-menu-view"><div className="studio-menu-view-header"><div><h3>{t('studio.manuscript.title')}</h3><p>{t('studio.manuscript.description')}</p></div></div><div className="studio-manuscript-fields"><label><span>{t('manuscript.abstract')}</span><textarea value={manuscript.abstract ?? ''} onChange={(event) => setAbstract(event.target.value)} /></label><KeywordEditor /><ManuscriptLanguageField /></div><SectionNumberingControl /><div className="studio-menu-mobile-structure"><SectionStructurePanel onNavigate={onNavigate} /></div></section>;
 }
 
 function ReferencesView() {
-  return <>
-    <ReferencesPanel />
-    <CrossReferencePanel />
-  </>;
+  return <section className="studio-menu-view"><ReferencesPanel /><CrossReferencePanel /></section>;
 }
 
 function ToolsView() {
