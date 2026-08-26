@@ -139,7 +139,9 @@ export class OAuthCloudProvider implements CloudStorageProvider {
   }
 
   private async ensureGoogleFolder(parentId: string, name: string): Promise<string> {
-    const escaped = name.replace(/'/g, "\\'");
+    const escaped = name
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'");
     const q = encodeURIComponent(`name='${escaped}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`);
     const found = await this.authorizedJson(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=1`);
     const files = Array.isArray(found.files) ? found.files as JsonRecord[] : [];
