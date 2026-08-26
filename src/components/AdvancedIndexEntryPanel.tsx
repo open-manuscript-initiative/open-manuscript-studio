@@ -4,8 +4,10 @@ import { useMemo, useState } from 'react';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import {
+  DEFAULT_INDEX_ID,
   createIndexSubentry,
   createManualIndexEntry,
+  getDocumentIndexDefinitions,
   indexEntryDisplayLabel,
   validateIndexEntries,
   type OmiIndexEntry,
@@ -13,16 +15,23 @@ import {
   type OmiIndexTextRange,
 } from '../model/indexing';
 
-interface AdvancedIndexEntryPanelProps {
-  indexId: string;
-}
-
-export function AdvancedIndexEntryPanel({ indexId }: AdvancedIndexEntryPanelProps) {
+export function AdvancedIndexEntryPanel() {
   const { locale } = useTranslation();
   const copy = getCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const allEntries = manuscript.indexEntries ?? [];
-  const entries = allEntries.filter((entry) => (entry.indexId ?? indexId) === indexId);
+  const definitions = useMemo(() => getDocumentIndexDefinitions({
+    locale,
+    indexDefinitions: manuscript.indexDefinitions,
+    entries: allEntries,
+  }), [allEntries, locale, manuscript.indexDefinitions]);
+  const [selectedIndexId, setSelectedIndexId] = useState(definitions[0]?.id ?? DEFAULT_INDEX_ID);
+  const indexId = definitions.some((definition) => definition.id === selectedIndexId)
+    ? selectedIndexId
+    : definitions[0]?.id ?? DEFAULT_INDEX_ID;
+  const entries = allEntries.filter((entry) =>
+    entry.indexId ? entry.indexId === indexId : indexId === DEFAULT_INDEX_ID,
+  );
   const [term, setTerm] = useState('');
   const [parentEntryId, setParentEntryId] = useState('');
   const [relation, setRelation] = useState<OmiIndexEntryRelation>('location');
@@ -87,7 +96,7 @@ export function AdvancedIndexEntryPanel({ indexId }: AdvancedIndexEntryPanelProp
             range: relation === 'location' ? selectionRange ?? undefined : undefined,
           });
 
-      const completed = parent && relation !== 'location'
+      const completed: OmiIndexEntry = parent && relation !== 'location'
         ? {
             ...entry,
             relation,
@@ -126,6 +135,12 @@ export function AdvancedIndexEntryPanel({ indexId }: AdvancedIndexEntryPanelProp
         <strong>{copy.title}</strong>
         <p>{copy.description}</p>
         <div className="studio-manuscript-fields">
+          <label>
+            <span>{copy.index}</span>
+            <select value={indexId} onChange={(event) => { setSelectedIndexId(event.target.value); setParentEntryId(''); setRelatedEntryId(''); }}>
+              {definitions.map((definition) => <option key={definition.id} value={definition.id}>{definition.title}</option>)}
+            </select>
+          </label>
           <label>
             <span>{copy.term}</span>
             <input value={term} onChange={(event) => setTerm(event.target.value)} placeholder={copy.termPlaceholder} />
@@ -259,14 +274,14 @@ function getCopy(locale: string) {
   const language = locale.toLowerCase().split('-')[0];
   if (language === 'hu') return {
     title: 'Fejlett mutatóbejegyzés', description: 'Hozzon létre fő- és albejegyzéseket, Lásd/Lásd még kapcsolatokat, illetve stabil szövegtartományhoz kötött bejegyzéseket.',
-    term: 'Bejegyzés', termPlaceholder: 'Pl. Bethlen Gábor', parent: 'Szint', mainEntry: 'Főbejegyzés', relation: 'Kapcsolat', location: 'Előfordulás', see: 'Lásd', seeAlso: 'Lásd még', related: 'Kapcsolódó bejegyzés', captureSelection: 'Kijelölt szöveg rögzítése', range: 'Szövegtartomány', selectedRange: 'kijelölt tartomány', addEntry: 'Bejegyzés hozzáadása', addSubentry: 'Albejegyzés hozzáadása', created: 'Mutatóbejegyzés létrehozva.', noSelection: 'Előbb jelöljön ki szöveget a dokumentumban.', selectionCaptured: 'A kijelölt szövegtartomány rögzítve.', delete: 'Törlés', validation: 'Ellenőrzési problémák',
+    index: 'Mutató', term: 'Bejegyzés', termPlaceholder: 'Pl. Bethlen Gábor', parent: 'Szint', mainEntry: 'Főbejegyzés', relation: 'Kapcsolat', location: 'Előfordulás', see: 'Lásd', seeAlso: 'Lásd még', related: 'Kapcsolódó bejegyzés', captureSelection: 'Kijelölt szöveg rögzítése', range: 'Szövegtartomány', selectedRange: 'kijelölt tartomány', addEntry: 'Bejegyzés hozzáadása', addSubentry: 'Albejegyzés hozzáadása', created: 'Mutatóbejegyzés létrehozva.', noSelection: 'Előbb jelöljön ki szöveget a dokumentumban.', selectionCaptured: 'A kijelölt szövegtartomány rögzítve.', delete: 'Törlés', validation: 'Ellenőrzési problémák',
   };
   if (language === 'de') return {
     title: 'Erweiterter Registereintrag', description: 'Erstellen Sie Haupt- und Untereinträge, Siehe/Siehe-auch-Verweise und Einträge für stabile Textbereiche.',
-    term: 'Eintrag', termPlaceholder: 'z. B. Bethlen Gábor', parent: 'Ebene', mainEntry: 'Haupteintrag', relation: 'Beziehung', location: 'Vorkommen', see: 'Siehe', seeAlso: 'Siehe auch', related: 'Verknüpfter Eintrag', captureSelection: 'Textauswahl übernehmen', range: 'Textbereich', selectedRange: 'ausgewählter Bereich', addEntry: 'Eintrag hinzufügen', addSubentry: 'Untereintrag hinzufügen', created: 'Registereintrag erstellt.', noSelection: 'Markieren Sie zuerst Text im Dokument.', selectionCaptured: 'Der ausgewählte Textbereich wurde übernommen.', delete: 'Löschen', validation: 'Validierungsprobleme',
+    index: 'Register', term: 'Eintrag', termPlaceholder: 'z. B. Bethlen Gábor', parent: 'Ebene', mainEntry: 'Haupteintrag', relation: 'Beziehung', location: 'Vorkommen', see: 'Siehe', seeAlso: 'Siehe auch', related: 'Verknüpfter Eintrag', captureSelection: 'Textauswahl übernehmen', range: 'Textbereich', selectedRange: 'ausgewählter Bereich', addEntry: 'Eintrag hinzufügen', addSubentry: 'Untereintrag hinzufügen', created: 'Registereintrag erstellt.', noSelection: 'Markieren Sie zuerst Text im Dokument.', selectionCaptured: 'Der ausgewählte Textbereich wurde übernommen.', delete: 'Löschen', validation: 'Validierungsprobleme',
   };
   return {
     title: 'Advanced index entry', description: 'Create main entries, subentries, See/See also relations, and entries bound to stable text ranges.',
-    term: 'Entry', termPlaceholder: 'e.g. Bethlen Gábor', parent: 'Level', mainEntry: 'Main entry', relation: 'Relation', location: 'Occurrence', see: 'See', seeAlso: 'See also', related: 'Related entry', captureSelection: 'Capture selected text', range: 'Text range', selectedRange: 'selected range', addEntry: 'Add entry', addSubentry: 'Add subentry', created: 'Index entry created.', noSelection: 'Select text in the document first.', selectionCaptured: 'Selected text range captured.', delete: 'Delete', validation: 'Validation issues',
+    index: 'Index', term: 'Entry', termPlaceholder: 'e.g. Bethlen Gábor', parent: 'Level', mainEntry: 'Main entry', relation: 'Relation', location: 'Occurrence', see: 'See', seeAlso: 'See also', related: 'Related entry', captureSelection: 'Capture selected text', range: 'Text range', selectedRange: 'selected range', addEntry: 'Add entry', addSubentry: 'Add subentry', created: 'Index entry created.', noSelection: 'Select text in the document first.', selectionCaptured: 'Selected text range captured.', delete: 'Delete', validation: 'Validation issues',
   };
 }
