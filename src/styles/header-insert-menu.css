@@ -17,23 +17,38 @@
   min-height: 2.35rem;
   justify-content: center;
   padding-inline: 0.45rem;
-  color: #364152;
+  border-color: transparent;
+  background: transparent;
+  color: #1f2937;
 }
 
 .focus-history-button svg {
   display: block;
   flex: 0 0 auto;
+  stroke: currentColor;
+}
+
+.focus-history-button:hover,
+.focus-history-button:focus-visible,
+.focus-history-button:active,
+.focus-history-button:disabled,
+.focus-history-button:disabled:hover {
+  background: transparent;
+}
+
+.focus-history-button:focus-visible {
+  border-color: rgba(31, 41, 55, 0.35);
+  outline: none;
 }
 
 .focus-history-button:disabled {
-  opacity: 0.72;
+  opacity: 1;
   color: #6b7280;
   cursor: default;
 }
 
 .focus-history-button:disabled:hover {
   border-color: transparent;
-  background: transparent;
 }
 
 .focus-insert-menu-trigger {
@@ -56,6 +71,14 @@
   border-color: rgba(148, 163, 184, 0.45);
   background: rgba(148, 163, 184, 0.12);
   outline: none;
+}
+
+.focus-history-button:hover,
+.focus-history-button:focus-visible,
+.focus-history-button:active,
+.focus-history-button:disabled,
+.focus-history-button:disabled:hover {
+  background: transparent;
 }
 
 .focus-insert-menu-popover {
