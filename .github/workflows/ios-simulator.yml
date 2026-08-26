@@ -15,7 +15,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: ios-simulator-${{ github.event.pull_request.number || github.ref }}
+  # v2 intentionally bypasses any stale concurrency group left behind by a
+  # GitHub Actions run that could not be cancelled.
+  group: ios-simulator-v2-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
