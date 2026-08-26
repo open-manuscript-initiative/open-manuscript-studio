@@ -9,6 +9,7 @@ import {
   validateCrossReferences,
 } from '../model/crossReferences';
 import type { OmiCrossReferenceNumbering } from '../types/omi';
+import { ComputedFieldsPanel } from './ComputedFieldsPanel';
 import { NamedAnchorsPanel } from './NamedAnchorsPanel';
 import { SemanticFieldsPanel } from './SemanticFieldsPanel';
 
@@ -24,6 +25,7 @@ export function CrossReferencePanel() {
   return (
     <>
       <SemanticFieldsPanel />
+      <ComputedFieldsPanel />
       <NamedAnchorsPanel />
       <section className="omi-xref-status-panel">
         <header>
