@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { useTranslation } from '../i18n';
 import { getVisualElementsCopy } from '../i18n/visualElements';
+import { UndoRedoControls } from './UndoRedoControls';
 import { VisualInsertPanel } from './VisualInsertPanel';
 
 import '../styles/header-insert-menu.css';
@@ -36,6 +37,7 @@ export function HeaderInsertMenu() {
 
   return (
     <div className="focus-insert-menu" ref={rootRef}>
+      <UndoRedoControls />
       <button
         type="button"
         className="focus-insert-menu-trigger"
