@@ -1,4 +1,8 @@
 import { MAX_VISUAL_IMPORT_BYTES } from '../model/visualBlocks';
+import {
+  attachWordGeneratedLists,
+  preflightWordGeneratedLists,
+} from './docxGeneratedListImport';
 import { attachWordIndexData } from './docxIndexImport';
 import { parseDocxManuscriptWithInlineSemantics } from './docxInlineSemanticsImport';
 import {
@@ -45,11 +49,13 @@ export async function parseDocxForStudio(
 
   options.onProgress?.({ stage: 'preparing', largeDocumentMode, monographMode });
 
-  // Detect semantic Word TOC fields before the content parser starts. This is
-  // intentionally a preflight step: cached, page-numbered Word TOC rows are
-  // presentation output, not canonical manuscript content. The detected result
-  // region is discarded before the completed import plan is returned to Studio.
-  const tocPreflight = await preflightWordTableOfContents(file);
+  // Word stores the visible results of TOC, caption-list and INDEX fields as
+  // pagination-dependent cached paragraphs. Detect all of them before the body
+  // parser starts so only their semantic OMI definitions survive the import.
+  const [tocPreflight, generatedListPreflight] = await Promise.all([
+    preflightWordTableOfContents(file),
+    preflightWordGeneratedLists(file),
+  ]);
 
   await yieldToBrowser();
   options.onProgress?.({ stage: 'parsing', largeDocumentMode, monographMode });
@@ -66,7 +72,8 @@ export async function parseDocxForStudio(
 
   options.onProgress?.({ stage: 'finalizing', largeDocumentMode, monographMode });
   const indexedPlan = await attachWordIndexData(file, plan);
-  const semanticPlan = await attachWordTableOfContents(file, indexedPlan, tocPreflight);
+  const tocPlan = await attachWordTableOfContents(file, indexedPlan, tocPreflight);
+  const semanticPlan = attachWordGeneratedLists(tocPlan, generatedListPreflight);
   await yieldToBrowser();
   return semanticPlan;
 }
