@@ -1,3 +1,6 @@
+import { resolveSemanticCaptions } from './captions';
+import type { OmiSection } from '../types/omi';
+
 export type OmiGeneratedListKind = 'toc' | 'figures' | 'tables' | 'index' | 'custom';
 
 export interface OmiGeneratedListDefinition {
@@ -36,13 +39,34 @@ export function getGeneratedListDefinitions(manuscript: {
   return result;
 }
 
+/**
+ * Builds generated figure/table lists from semantic captions first, while
+ * retaining a compatibility fallback for older Tiptap-embedded caption nodes.
+ */
 export function buildCaptionListEntries(
-  sections: readonly { blocks: readonly { id: string; content: string }[] }[],
+  sections: readonly OmiSection[],
   kind: 'figures' | 'tables',
+  captionLabel?: string,
 ): GeneratedListEntry[] {
-  const entries: GeneratedListEntry[] = [];
+  const normalizedLabel = captionLabel?.trim().toLocaleLowerCase();
+  const semantic = resolveSemanticCaptions(sections).filter((caption) => {
+    const kindMatches = kind === 'figures'
+      ? caption.objectKind === 'image' || caption.objectKind === 'chart'
+      : caption.objectKind === 'table';
+    const labelMatches = !normalizedLabel || caption.label.toLocaleLowerCase() === normalizedLabel;
+    return kindMatches && labelMatches;
+  });
+
+  const entries: GeneratedListEntry[] = semantic.map((caption) => ({
+    id: caption.id,
+    label: caption.renderedLabel,
+    blockId: caption.blockId,
+  }));
+  const semanticBlockIds = new Set(semantic.map((caption) => caption.blockId));
+
   for (const section of sections) {
     for (const block of section.blocks) {
+      if (semanticBlockIds.has(block.id)) continue;
       let value: unknown;
       try { value = JSON.parse(block.content); } catch { continue; }
       collectCaptionNodes(value, kind, block.id, entries);
