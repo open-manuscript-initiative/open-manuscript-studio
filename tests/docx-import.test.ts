@@ -137,6 +137,38 @@ test('preserves Word TOC tab stops while extracting cached display rows', () => 
   );
 });
 
+test('detects cached TOC rows from the TOC field boundary even with custom paragraph styles', () => {
+  const xml = `
+    <w:document xmlns:w="urn:test">
+      <w:body>
+        <w:p>
+          <w:pPr><w:pStyle w:val="TJ2"/></w:pPr>
+          <w:r><w:fldChar w:fldCharType="begin"/></w:r>
+          <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h \\z \\u </w:instrText></w:r>
+          <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+          <w:r><w:t>Bevezetés</w:t></w:r><w:r><w:tab/></w:r>
+          <w:r><w:fldChar w:fldCharType="begin"/></w:r>
+          <w:r><w:instrText> PAGEREF _Toc1 \\h </w:instrText></w:r>
+          <w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>5</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>
+        </w:p>
+        <w:p>
+          <w:pPr><w:pStyle w:val="TJ3"/></w:pPr>
+          <w:r><w:t>Első fejezet</w:t></w:r><w:r><w:tab/></w:r>
+          <w:r><w:fldChar w:fldCharType="begin"/></w:r>
+          <w:r><w:instrText> PAGEREF _Toc2 \\h </w:instrText></w:r>
+          <w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>17</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>
+        </w:p>
+        <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
+        <w:p><w:pPr><w:pStyle w:val="Normal"/></w:pPr><w:r><w:t>Valódi bekezdés 42</w:t></w:r></w:p>
+      </w:body>
+    </w:document>`;
+
+  assert.deepEqual(
+    [...extractRenderedWordTocLines(xml)],
+    ['bevezetés', 'első fejezet'],
+  );
+});
+
 test('switches manuscript-sized DOCX packages to the large-document path', () => {
   assert.equal(isLargeDocx({ size: LARGE_DOCX_THRESHOLD_BYTES - 1 }), false);
   assert.equal(isLargeDocx({ size: LARGE_DOCX_THRESHOLD_BYTES }), true);

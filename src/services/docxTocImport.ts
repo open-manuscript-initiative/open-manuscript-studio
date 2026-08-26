@@ -10,28 +10,52 @@ interface ZipEntry {
   localHeaderOffset: number;
 }
 
+export interface WordTocPreflight {
+  tableOfContents: OmiTableOfContents | null;
+  renderedLines: Set<string>;
+}
+
+/**
+ * Reads Word TOC semantics before the manuscript parser starts.
+ *
+ * The visible page-numbered rows stored inside a Word TOC field are only a
+ * cached rendering of the field result. OMI keeps the semantic TOC definition,
+ * not that pagination-dependent cache. Detecting the field boundary here also
+ * works when a publisher/template replaces Word's built-in TOC1..TOC9 styles
+ * with custom styles.
+ */
+export async function preflightWordTableOfContents(
+  file: File,
+): Promise<WordTocPreflight> {
+  const archive = new DocxZipArchive(await file.arrayBuffer());
+  if (!archive.has('word/document.xml')) {
+    return { tableOfContents: null, renderedLines: new Set() };
+  }
+
+  const xml = await archive.text('word/document.xml');
+  return {
+    tableOfContents: extractWordTableOfContentsFromXml(xml),
+    renderedLines: extractRenderedWordTocLines(xml),
+  };
+}
+
 export async function attachWordTableOfContents(
   file: File,
   plan: DocxManuscriptImportPlan,
+  preflight?: WordTocPreflight,
 ): Promise<DocxManuscriptImportPlan> {
-  const archive = new DocxZipArchive(await file.arrayBuffer());
-  if (!archive.has('word/document.xml')) return plan;
+  const detected = preflight ?? await preflightWordTableOfContents(file);
+  if (!detected.tableOfContents) return plan;
 
-  const xml = await archive.text('word/document.xml');
-  const tableOfContents = extractWordTableOfContentsFromXml(xml);
-  if (!tableOfContents) return plan;
-
-  plan.tableOfContents = tableOfContents;
-  removeRenderedWordTocLines(plan, extractRenderedWordTocLines(xml));
+  plan.tableOfContents = detected.tableOfContents;
+  removeRenderedWordTocLines(plan, detected.renderedLines);
   return plan;
 }
 
 export async function extractWordTableOfContents(
   file: File,
 ): Promise<OmiTableOfContents | null> {
-  const archive = new DocxZipArchive(await file.arrayBuffer());
-  if (!archive.has('word/document.xml')) return null;
-  return extractWordTableOfContentsFromXml(await archive.text('word/document.xml'));
+  return (await preflightWordTableOfContents(file)).tableOfContents;
 }
 
 function extractWordTableOfContentsFromXml(xml: string): OmiTableOfContents | null {
@@ -61,30 +85,91 @@ function extractWordTableOfContentsFromXml(xml: string): OmiTableOfContents | nu
 }
 
 /**
- * Returns the normalized visible rows cached by Word for a TOC field.
+ * Returns normalized visible rows cached by Word for a TOC field.
  *
- * Word stores the entry text and its page number in separate runs with a
- * `<w:tab/>` between them. Preserving that tab here is important: the normal
- * DOCX importers preserve it too, so the semantic TOC cleanup must compare the
- * same visible representation on both sides. Previously this extractor joined
- * only `<w:t>` values, turning e.g. `Introduction<TAB>12` into
- * `Introduction12`; the imported paragraph remained `Introduction<TAB>12`, so
- * the stale rendered TOC was not removed after the interactive OMI TOC was
- * attached.
+ * The primary detector follows the actual complex-field boundary from
+ * `fldChar begin` through the TOC instruction, `separate`, and final `end`.
+ * Therefore it does not depend on paragraph style names. This matters for real
+ * manuscripts whose TOC rows use template-specific styles such as `TJ2`/`TJ3`
+ * rather than Word's built-in `TOC1`/`TOC2` identifiers.
+ *
+ * A style-based fallback is retained for unusual producers that flatten the
+ * field structure but preserve TOC1..TOC9 styles.
  */
 export function extractRenderedWordTocLines(xml: string): Set<string> {
-  const result = new Set<string>();
+  const result = extractComplexTocResultLines(xml);
   const paragraphs = xml.match(/<w:p\b[\s\S]*?<\/w:p>/gi) ?? [];
 
   for (const paragraph of paragraphs) {
     const styleId = /<w:pStyle\b[^>]*\bw:val="([^"]+)"[^>]*\/?\s*>/i.exec(paragraph)?.[1] ?? '';
     if (!/^TOC\s*[1-9]$/i.test(styleId)) continue;
 
-    const normalized = normalizeWordTocDisplayText(extractWordParagraphDisplayText(paragraph));
+    const normalized = normalizeWordTocDisplayText(
+      extractWordParagraphDisplayText(paragraph),
+    );
     if (normalized) result.add(normalized);
   }
 
   return result;
+}
+
+function extractComplexTocResultLines(xml: string): Set<string> {
+  const result = new Set<string>();
+  const paragraphs = xml.match(/<w:p\b[\s\S]*?<\/w:p>/gi) ?? [];
+  const stack: Array<{
+    instruction: string;
+    phase: 'instruction' | 'result';
+    isToc: boolean;
+  }> = [];
+
+  for (const paragraph of paragraphs) {
+    let paragraphInTocResult = stack.some(
+      (field) => field.isToc && field.phase === 'result',
+    );
+    const tokens = paragraph.match(
+      /<w:fldChar\b[^>]*\/?\s*>|<w:instrText\b[^>]*>[\s\S]*?<\/w:instrText>/gi,
+    ) ?? [];
+
+    for (const token of tokens) {
+      if (/^<w:fldChar\b/i.test(token)) {
+        const type = /\bw:fldCharType="([^"]+)"/i.exec(token)?.[1]?.toLowerCase();
+        if (type === 'begin') {
+          stack.push({ instruction: '', phase: 'instruction', isToc: false });
+        } else if (type === 'separate') {
+          const field = stack.at(-1);
+          if (field) {
+            field.isToc = isTocInstruction(field.instruction);
+            field.phase = 'result';
+            if (field.isToc) paragraphInTocResult = true;
+          }
+        } else if (type === 'end') {
+          if (stack.some((field) => field.isToc && field.phase === 'result')) {
+            paragraphInTocResult = true;
+          }
+          stack.pop();
+        }
+        continue;
+      }
+
+      const field = stack.at(-1);
+      if (!field || field.phase !== 'instruction') continue;
+      field.instruction += decodeXml(
+        />([\s\S]*?)<\/w:instrText>/i.exec(token)?.[1] ?? '',
+      );
+    }
+
+    if (!paragraphInTocResult) continue;
+    const normalized = normalizeWordTocDisplayText(
+      extractWordParagraphDisplayText(paragraph),
+    );
+    if (normalized) result.add(normalized);
+  }
+
+  return result;
+}
+
+function isTocInstruction(value: string): boolean {
+  return /^TOC\b/i.test(value.replace(/\s+/g, ' ').trim());
 }
 
 function extractWordParagraphDisplayText(paragraph: string): string {
@@ -103,8 +188,8 @@ function removeRenderedWordTocLines(
   plan: DocxManuscriptImportPlan,
   renderedLines: Set<string>,
 ): void {
-  // A single TOC-styled paragraph can be a custom document style. Requiring
-  // multiple cached TOC rows keeps this cleanup conservative.
+  // A single matching paragraph is too weak a signal for destructive cleanup.
+  // A real generated Word TOC normally contains several cached result rows.
   if (renderedLines.size < 2) return;
 
   for (const section of plan.sections) {
