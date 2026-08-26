@@ -1,6 +1,31 @@
 .focus-insert-menu {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
   flex: 0 0 auto;
+}
+
+.focus-history-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.05rem;
+}
+
+.focus-history-button {
+  min-width: 2.1rem;
+  justify-content: center;
+  padding-inline: 0.45rem;
+}
+
+.focus-history-button:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.focus-history-button:disabled:hover {
+  border-color: transparent;
+  background: transparent;
 }
 
 .focus-insert-menu-trigger {
