@@ -29,6 +29,7 @@ const TARGET_KINDS: Array<OmiCrossReferenceTargetKind | 'all'> = [
   'table',
   'chart',
   'equation',
+  'bookmark',
 ];
 
 export function CrossReferencePicker({
@@ -49,6 +50,7 @@ export function CrossReferencePicker({
     [
       manuscript.sections,
       manuscript.crossReferenceNumbering,
+      manuscript.namedAnchors,
     ],
   );
   const normalizedQuery = query.trim().toLocaleLowerCase(locale);
@@ -109,7 +111,7 @@ export function CrossReferencePicker({
             {TARGET_KINDS.filter((value) => value !== 'all').map(
               (value) => (
                 <option key={value} value={value}>
-                  {kindLabel(value as OmiCrossReferenceTargetKind, copy)}
+                  {kindLabel(value as OmiCrossReferenceTargetKind, copy, locale)}
                 </option>
               ),
             )}
@@ -157,7 +159,7 @@ export function CrossReferencePicker({
                   manuscript.locale,
                 )}
               </strong>
-              <small>{kindLabel(target.kind, copy)}</small>
+              <small>{kindLabel(target.kind, copy, locale)}</small>
             </button>
           ))
         )}
@@ -169,6 +171,7 @@ export function CrossReferencePicker({
 function kindLabel(
   kind: OmiCrossReferenceTargetKind,
   copy: ReturnType<typeof getCrossReferenceCopy>,
+  locale: string,
 ): string {
   switch (kind) {
     case 'section':
@@ -181,5 +184,18 @@ function kindLabel(
       return copy.chart;
     case 'equation':
       return copy.equation;
+    case 'bookmark':
+      return bookmarkLabel(locale);
+  }
+}
+
+function bookmarkLabel(locale: string): string {
+  switch (locale.trim().toLowerCase().split('-')[0]) {
+    case 'hu':
+      return 'Könyvjelző';
+    case 'de':
+      return 'Textmarke';
+    default:
+      return 'Bookmark';
   }
 }
