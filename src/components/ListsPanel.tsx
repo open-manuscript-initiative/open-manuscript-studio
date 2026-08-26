@@ -5,6 +5,7 @@ import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { buildCaptionListEntries, getGeneratedListDefinitions, type OmiGeneratedListKind } from '../model/generatedLists';
 import type { OmiTableOfContents } from '../model/tableOfContents';
+import { AdvancedIndexEntryPanel } from './AdvancedIndexEntryPanel';
 import { IndexPanel } from './IndexPanel';
 import { TableOfContentsPanel } from './TableOfContentsPanel';
 
@@ -89,7 +90,7 @@ export function ListsPanel({ onNavigate }: { onNavigate?: () => void }) {
       </div></div>
 
       {active === 'toc' ? <TableOfContentsPanel onNavigate={onNavigate} /> : null}
-      {active === 'index' ? <IndexPanel onNavigate={onNavigate} /> : null}
+      {active === 'index' ? <><AdvancedIndexEntryPanel /><IndexPanel onNavigate={onNavigate} /></> : null}
       {active === 'figures' || active === 'tables' ? <CaptionList kind={active} onNavigate={onNavigate} /> : null}
     </section>
   );
