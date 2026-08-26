@@ -231,7 +231,8 @@ export type OmiCrossReferenceTargetKind =
   | 'figure'
   | 'table'
   | 'chart'
-  | 'equation';
+  | 'equation'
+  | 'bookmark';
 
 /** Presentation form of one semantic internal reference. */
 export type OmiCrossReferenceDisplayStyle =
@@ -257,7 +258,7 @@ export interface OmiCrossReference {
   anchorId: string;
   /** Text block that currently carries the inline xref marker. */
   sourceBlockId: string;
-  /** Stable section or visual-block identifier. */
+  /** Stable section, visual-block, or named-bookmark identifier. */
   targetId: string;
   targetKind: OmiCrossReferenceTargetKind;
   displayStyle: OmiCrossReferenceDisplayStyle;
@@ -440,8 +441,8 @@ export interface OmiManuscriptState {
   citationClusters?: OmiCitationCluster[];
 
   /**
-   * Semantic internal references to sections and structured visual objects.
-   * Optional for compatibility with manuscripts created before xref support.
+   * Semantic internal references to sections, structured visual objects, and
+   * named bookmarks. Optional for compatibility with earlier manuscripts.
    */
   crossReferences?: OmiCrossReference[];
 
