@@ -1,0 +1,272 @@
+/*
+ * Egyháztörténeti Szemle — editable publisher stylesheet
+ * Visual starting point reconstructed from the supplied 2026/2 printed PDF sample.
+ * Replace estimated values with authoritative publisher measurements where available.
+ */
+
+:root {
+  --ets-font-body: "EB Garamond", Garamond, serif;
+  --ets-font-note: "EB Garamond", Garamond, serif;
+  --ets-body-size: 10.5pt;
+  --ets-body-leading: 12.5pt;
+  --ets-body-indent: 5mm;
+  --ets-title-size: 14pt;
+  --ets-title-leading: 15.5pt;
+  --ets-subtitle-size: 11.5pt;
+  --ets-subtitle-leading: 13pt;
+  --ets-secondary-title-size: 11.5pt;
+  --ets-secondary-title-leading: 13pt;
+  --ets-secondary-subtitle-size: 10.5pt;
+  --ets-secondary-subtitle-leading: 12pt;
+  --ets-author-size: 13pt;
+  --ets-author-leading: 14pt;
+  --ets-affiliation-size: 10.5pt;
+  --ets-affiliation-leading: 12pt;
+  --ets-abstract-size: 9.5pt;
+  --ets-abstract-leading: 11pt;
+  --ets-keywords-size: 9.5pt;
+  --ets-keywords-leading: 11pt;
+  --ets-h1-size: 11.5pt;
+  --ets-h1-leading: 13pt;
+  --ets-h2-size: 10.5pt;
+  --ets-h2-leading: 12pt;
+  --ets-note-size: 8.2pt;
+  --ets-note-leading: 9.4pt;
+  --ets-caption-size: 9pt;
+  --ets-caption-leading: 10.5pt;
+  --ets-bibliography-size: 9.5pt;
+  --ets-bibliography-leading: 11pt;
+  --ets-bibliography-hanging: 5mm;
+  --ets-page-width: 150mm;
+  --ets-page-height: 240mm;
+  --ets-margin-top: 18mm;
+  --ets-margin-bottom: 18mm;
+  --ets-margin-inner: 19mm;
+  --ets-margin-outer: 17mm;
+  --ets-running-head-size: 9pt;
+  --ets-rule-width: 0.3pt;
+}
+
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--ets-font-body);
+  font-size: var(--ets-body-size);
+  line-height: var(--ets-body-leading);
+  color: #000;
+}
+.omi-scholarly-article { max-width: none; margin: 0 auto; }
+
+.article-front { text-align: center; }
+.article-front h1, .article-title-primary {
+  margin: 0 0 2pt;
+  font-size: var(--ets-title-size);
+  line-height: var(--ets-title-leading);
+  font-weight: 600;
+  text-align: center;
+}
+.article-front .article-subtitle, .article-front .subtitle, .article-subtitle-primary {
+  margin: 0 0 5pt;
+  font-size: var(--ets-subtitle-size);
+  line-height: var(--ets-subtitle-leading);
+  text-align: center;
+}
+.article-title-secondary {
+  margin: 5pt 0 1pt;
+  font-size: var(--ets-secondary-title-size);
+  line-height: var(--ets-secondary-title-leading);
+  font-weight: 600;
+  text-align: center;
+}
+.article-subtitle-secondary {
+  margin: 0 0 5pt;
+  font-size: var(--ets-secondary-subtitle-size);
+  line-height: var(--ets-secondary-subtitle-leading);
+  text-align: center;
+}
+.article-front .contributor-name, .article-front .author, .article-author {
+  margin: 4pt 0 1pt;
+  font-size: var(--ets-author-size);
+  line-height: var(--ets-author-leading);
+  font-weight: 600;
+  text-align: center;
+}
+.article-front .affiliation, .article-affiliation {
+  margin: 0 0 6pt;
+  font-size: var(--ets-affiliation-size);
+  line-height: var(--ets-affiliation-leading);
+  text-align: center;
+}
+
+.abstract h2, .abstract-title, .abstract-heading {
+  margin: 3pt 0 2pt;
+  font-size: 10.5pt;
+  line-height: 12pt;
+  font-weight: 600;
+  text-align: center;
+}
+.abstract p, .article-abstract p, .abstract-body {
+  margin: 0 0 3pt;
+  font-size: var(--ets-abstract-size);
+  line-height: var(--ets-abstract-leading);
+  text-align: justify;
+  text-indent: 0;
+  hyphens: auto;
+}
+.keywords, .article-keywords {
+  margin: 2pt 0;
+  font-size: var(--ets-keywords-size);
+  line-height: var(--ets-keywords-leading);
+  text-align: left;
+}
+
+.article-body p {
+  margin: 0;
+  font-size: var(--ets-body-size);
+  line-height: var(--ets-body-leading);
+  text-align: justify;
+  text-indent: var(--ets-body-indent);
+  hyphens: auto;
+  orphans: 2;
+  widows: 2;
+}
+.article-body h2, .heading-1 {
+  margin: 7pt 0 3pt;
+  font-size: var(--ets-h1-size);
+  line-height: var(--ets-h1-leading);
+  font-weight: 600;
+  text-align: left;
+}
+.article-body h3, .heading-2 {
+  margin: 5pt 0 2pt;
+  font-size: var(--ets-h2-size);
+  line-height: var(--ets-h2-leading);
+  font-weight: 600;
+  text-align: left;
+}
+
+.epigraph, .article-epigraph, .motto {
+  margin: 2pt 0 5pt auto;
+  max-width: 78%;
+  font-size: 9.5pt;
+  line-height: 11pt;
+  font-style: italic;
+  text-align: right;
+  text-indent: 0;
+}
+blockquote {
+  margin: 4pt 8mm;
+  font-size: 9.8pt;
+  line-height: 11.5pt;
+  text-indent: 0;
+}
+
+ol, ul { margin-top: 3pt; margin-bottom: 3pt; padding-left: 7mm; }
+li { margin: 0; }
+
+figure { margin: 6pt 0; }
+figure img, figure svg, img, svg { max-width: 100%; height: auto; }
+figcaption, .figure-caption {
+  margin: 2pt 0 4pt;
+  font-size: var(--ets-caption-size);
+  line-height: var(--ets-caption-leading);
+  text-align: center;
+}
+table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  font-size: 9.5pt;
+  line-height: 11pt;
+}
+table caption, .table-caption {
+  margin: 4pt 0 2pt;
+  font-size: var(--ets-caption-size);
+  line-height: var(--ets-caption-leading);
+  text-align: left;
+}
+th, td { padding: 1.5mm 2mm; vertical-align: top; }
+
+.article-notes, .footnotes, [role="doc-endnotes"] {
+  font-family: var(--ets-font-note);
+  font-size: var(--ets-note-size);
+  line-height: var(--ets-note-leading);
+}
+.article-notes ol, .footnotes ol, [role="doc-endnotes"] ol { padding-left: 5mm; }
+.article-notes li, .footnotes li, [role="doc-endnotes"] li { margin: 0 0 1pt; }
+
+.bibliography p, .references li, .ref-list li {
+  margin: 0;
+  padding-left: var(--ets-bibliography-hanging);
+  font-size: var(--ets-bibliography-size);
+  line-height: var(--ets-bibliography-leading);
+  text-align: justify;
+  text-indent: calc(-1 * var(--ets-bibliography-hanging));
+}
+
+.article-publication-meta, .article-doi, .article-copyright, .article-license {
+  font-size: 8.5pt;
+  line-height: 10pt;
+  text-align: left;
+}
+
+/* Continuous HTML: no page geometry, headers, page numbers or forced page breaks. */
+@media screen {
+  body {
+    padding: 2rem max(1rem, calc((100vw - 56rem) / 2));
+    background: #fff;
+  }
+  .omi-scholarly-article {
+    width: auto;
+    min-height: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .omi-print-running-header, .omi-print-page-number { display: none !important; }
+  *, *::before, *::after {
+    break-before: auto !important;
+    break-after: auto !important;
+    page-break-before: auto !important;
+    page-break-after: auto !important;
+  }
+  .omi-scholarly-article, section, figure, table, .article-notes, .footnotes {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+}
+
+/* Paged PDF / print. */
+@page {
+  size: 150mm 240mm;
+  margin: 18mm 17mm 18mm 19mm;
+}
+@page:left { margin-left: 17mm; margin-right: 19mm; }
+@page:right { margin-left: 19mm; margin-right: 17mm; }
+
+@media print {
+  html, body { width: auto; min-height: 0; }
+  body { padding: 0; background: transparent; }
+  .omi-scholarly-article { width: auto; min-height: 0; margin: 0; padding: 0; }
+  .article-body h2, .article-body h3 { break-after: avoid-page; page-break-after: avoid; }
+  figure, table { break-inside: avoid-page; page-break-inside: avoid; }
+  .article-notes, .footnotes {
+    border-top: var(--ets-rule-width) solid currentColor;
+    padding-top: 2mm;
+  }
+  .omi-print-running-header {
+    display: flex;
+    position: fixed;
+    top: -11mm;
+    left: 0;
+    right: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8mm;
+    padding-bottom: 1.5mm;
+    border-bottom: var(--ets-rule-width) solid currentColor;
+    font-family: var(--ets-font-body);
+    font-size: var(--ets-running-head-size);
+    line-height: 1;
+  }
+  .omi-print-page-number::after { content: counter(page); }
+}
