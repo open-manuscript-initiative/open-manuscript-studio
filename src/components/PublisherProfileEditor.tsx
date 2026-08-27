@@ -1,4 +1,4 @@
-import { FilePlus2, ImagePlus, LockKeyhole, Save, Trash2, UnlockKeyhole } from 'lucide-react';
+import { ImagePlus, LockKeyhole, Save, Trash2, UnlockKeyhole } from 'lucide-react';
 import { useMemo, useState, type ChangeEvent } from 'react';
 
 import { stagePublicationProfileChange } from '../app/publicationProfileActions';
@@ -10,7 +10,6 @@ import {
 import {
   canProtectPublisherProfile,
   canUnlockPublisherProfile,
-  createEditablePublisherProfileVersion,
   isPublisherProfileReadOnly,
   protectPublisherProfile,
   publisherProfileIdentityLabel,
@@ -40,9 +39,10 @@ export function PublisherProfileEditor({
   const [draft, setDraft] = useState<OmiPublicationProfile>(() => cloneAsCustom(baseProfile));
   const [message, setMessage] = useState('');
 
-  const logo = draft.branding?.logoDataUrl;
-  const readOnly = isPublisherProfileReadOnly(draft);
-  const canSave = !readOnly && draft.name.trim().length > 0 && (draft.publisher ?? '').trim().length > 0;
+  const protectedProfile = isPublisherProfileReadOnly(draft);
+  const canSave = !protectedProfile
+    && draft.name.trim().length > 0
+    && (draft.publisher ?? '').trim().length > 0;
   const actor = useMemo<PublisherProfileActor | undefined>(() => currentUser ? ({
     userId: currentUser.id,
     email: currentUser.email,
@@ -55,50 +55,28 @@ export function PublisherProfileEditor({
   }) : undefined, [currentUser]);
 
   const profileIdPreview = useMemo(
-    () => readOnly ? draft.id : makeProfileId(draft.publisher ?? '', draft.name),
-    [draft.id, draft.publisher, draft.name, readOnly],
+    () => protectedProfile ? draft.id : makeProfileId(draft.publisher ?? '', draft.name),
+    [draft.id, draft.publisher, draft.name, protectedProfile],
   );
   const isPersisted = savedProfiles.some(
     (profile) => profile.id === draft.id && profile.version === draft.version,
   );
 
   function update<K extends keyof OmiPublicationProfile>(key: K, value: OmiPublicationProfile[K]) {
-    if (readOnly) return;
+    if (protectedProfile) return;
     setDraft((current) => ({ ...current, [key]: value }));
   }
 
   function updateBranding(key: string, value: string | undefined) {
-    if (readOnly) return;
+    if (protectedProfile) return;
     setDraft((current) => ({
       ...current,
       branding: { ...current.branding, [key]: value },
     }));
   }
 
-  function updateLayout(key: string, value: string | number) {
-    if (readOnly) return;
-    setDraft((current) => ({
-      ...current,
-      rules: {
-        ...current.rules,
-        layout: { ...current.rules.layout, [key]: value },
-      },
-    }));
-  }
-
-  function updateMetadata(key: string, value: string | number | boolean) {
-    if (readOnly) return;
-    setDraft((current) => ({
-      ...current,
-      rules: {
-        ...current.rules,
-        metadata: { ...current.rules.metadata, [key]: value },
-      },
-    }));
-  }
-
   function handleLogo(event: ChangeEvent<HTMLInputElement>) {
-    if (readOnly) return;
+    if (protectedProfile) return;
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -149,10 +127,10 @@ export function PublisherProfileEditor({
       return;
     }
     try {
-      const protectedProfile = protectPublisherProfile(draft, actor);
-      setSavedProfiles(saveProtectedPublisherProfile(protectedProfile));
-      setDraft(protectedProfile);
-      stagePublicationProfileChange(protectedProfile);
+      const next = protectPublisherProfile(draft, actor);
+      setSavedProfiles(saveProtectedPublisherProfile(next));
+      setDraft(next);
+      stagePublicationProfileChange(next);
       setMessage(labels.protected);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : labels.protectFailed);
@@ -175,16 +153,12 @@ export function PublisherProfileEditor({
     }
   }
 
-  function startNewVersion() {
-    const editable = createEditablePublisherProfileVersion(draft);
-    setDraft(editable);
-    setMessage(labels.newVersionReady);
-  }
-
   function editSaved(profile: OmiPublicationProfile) {
     setDraft(JSON.parse(JSON.stringify(profile)) as OmiPublicationProfile);
     setMessage('');
   }
+
+  const logo = draft.branding?.logoDataUrl;
 
   return (
     <section className="publisher-profile-editor" aria-labelledby="publisher-profile-editor-title">
@@ -192,42 +166,40 @@ export function PublisherProfileEditor({
         <div>
           <h4 id="publisher-profile-editor-title">{labels.title}</h4>
           <p>{labels.description}</p>
+          <p className="publication-profile-experimental-note">{labels.styleNotice}</p>
         </div>
       </div>
 
       {savedProfiles.length > 0 ? (
         <div className="publisher-profile-saved-list">
-          {savedProfiles.map((profile) => {
-            const protectedProfile = isPublisherProfileReadOnly(profile);
-            return (
-              <div className="publisher-profile-saved" key={`${profile.id}@${profile.version}`}>
-                {profile.branding?.logoDataUrl ? (
-                  <img src={profile.branding.logoDataUrl} alt={profile.branding.logoAlt ?? profile.publisher ?? profile.name} />
-                ) : (
-                  <span className="publisher-profile-logo-placeholder" aria-hidden="true">{initials(profile.publisher ?? profile.name)}</span>
-                )}
-                <button type="button" className="publisher-profile-open" onClick={() => editSaved(profile)}>
-                  <strong>{profile.name}</strong>
-                  <span>{profile.publisher} · {profile.version}</span>
+          {savedProfiles.map((profile) => (
+            <div className="publisher-profile-saved" key={`${profile.id}@${profile.version}`}>
+              {profile.branding?.logoDataUrl ? (
+                <img src={profile.branding.logoDataUrl} alt={profile.branding.logoAlt ?? profile.publisher ?? profile.name} />
+              ) : (
+                <span className="publisher-profile-logo-placeholder" aria-hidden="true">{initials(profile.publisher ?? profile.name)}</span>
+              )}
+              <button type="button" className="publisher-profile-open" onClick={() => editSaved(profile)}>
+                <strong>{profile.name}</strong>
+                <span>{profile.publisher} · {profile.version}</span>
+              </button>
+              {isPublisherProfileReadOnly(profile) ? (
+                <span className="publisher-profile-lock-badge" title={labels.readOnly}>
+                  <LockKeyhole size={14} aria-hidden="true" />
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="publisher-profile-delete"
+                  aria-label={`${labels.delete}: ${profile.name}`}
+                  title={labels.delete}
+                  onClick={() => setSavedProfiles(deletePublisherProfile(profile.id, profile.version))}
+                >
+                  <Trash2 size={15} aria-hidden="true" />
                 </button>
-                {protectedProfile ? (
-                  <span className="publisher-profile-lock-badge" title={labels.readOnly}>
-                    <LockKeyhole size={14} aria-hidden="true" />
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    className="publisher-profile-delete"
-                    aria-label={`${labels.delete}: ${profile.name}`}
-                    title={labels.delete}
-                    onClick={() => setSavedProfiles(deletePublisherProfile(profile.id, profile.version))}
-                  >
-                    <Trash2 size={15} aria-hidden="true" />
-                  </button>
-                )}
-              </div>
-            );
-          })}
+              )}
+            </div>
+          ))}
         </div>
       ) : null}
 
@@ -240,7 +212,7 @@ export function PublisherProfileEditor({
           <strong>{draft.publisher || labels.publisherPlaceholder}</strong>
           <span>{draft.name || labels.namePlaceholder}</span>
         </div>
-        {readOnly ? (
+        {protectedProfile ? (
           <div className="publisher-profile-protection-summary">
             <LockKeyhole size={16} aria-hidden="true" />
             <div>
@@ -252,7 +224,7 @@ export function PublisherProfileEditor({
         ) : null}
       </div>
 
-      <fieldset className="publisher-profile-editable-fields" disabled={readOnly}>
+      <fieldset className="publisher-profile-editable-fields" disabled={protectedProfile}>
         <div className="publisher-profile-form-grid">
           <label><span>{labels.profileName}</span><input value={draft.name} onChange={(e) => update('name', e.target.value)} placeholder={labels.namePlaceholder} /></label>
           <label><span>{labels.publisher}</span><input value={draft.publisher ?? ''} onChange={(e) => update('publisher', e.target.value)} placeholder={labels.publisherPlaceholder} /></label>
@@ -268,20 +240,6 @@ export function PublisherProfileEditor({
             {logo ? <button type="button" onClick={() => updateBranding('logoDataUrl', undefined)}>{labels.removeLogo}</button> : null}
           </label>
         </div>
-
-        <details className="publisher-profile-rules-editor">
-          <summary>{labels.rules}</summary>
-          <div className="publisher-profile-form-grid">
-            <label><span>{labels.pageSize}</span><select value={draft.rules.layout.pageSize} onChange={(e) => updateLayout('pageSize', e.target.value)}><option>A4</option><option>Letter</option></select></label>
-            <label><span>{labels.columns}</span><select value={draft.rules.layout.columns} onChange={(e) => updateLayout('columns', Number(e.target.value))}><option value="1">1</option><option value="2">2</option></select></label>
-            <label><span>{labels.font}</span><select value={draft.rules.layout.fontFamily} onChange={(e) => updateLayout('fontFamily', e.target.value)}><option value="serif">Serif</option><option value="sans-serif">Sans serif</option></select></label>
-            <label><span>{labels.fontSize}</span><input type="number" min="7" max="20" step="0.5" value={draft.rules.layout.baseFontSizePt} onChange={(e) => updateLayout('baseFontSizePt', Number(e.target.value))} /></label>
-            <label><span>{labels.lineHeight}</span><input type="number" min="1" max="2.5" step="0.05" value={draft.rules.layout.lineHeight} onChange={(e) => updateLayout('lineHeight', Number(e.target.value))} /></label>
-            <label><span>{labels.minimumKeywords}</span><input type="number" min="0" max="20" value={draft.rules.metadata.minimumKeywords} onChange={(e) => updateMetadata('minimumKeywords', Number(e.target.value))} /></label>
-            <label className="publisher-profile-checkbox"><input type="checkbox" checked={draft.rules.metadata.requireAbstract} onChange={(e) => updateMetadata('requireAbstract', e.target.checked)} /><span>{labels.requireAbstract}</span></label>
-            <label className="publisher-profile-checkbox"><input type="checkbox" checked={draft.rules.contributors.showOrcid} onChange={(e) => setDraft((current) => ({ ...current, rules: { ...current.rules, contributors: { ...current.rules.contributors, showOrcid: e.target.checked } } }))} /><span>{labels.showOrcid}</span></label>
-          </div>
-        </details>
       </fieldset>
 
       <div className="publisher-profile-actions">
@@ -290,15 +248,10 @@ export function PublisherProfileEditor({
           {message ? <span role="status">{message}</span> : null}
         </div>
         <div className="publisher-profile-action-buttons">
-          {readOnly ? (
-            <>
-              <button type="button" className="studio-menu-secondary-action" onClick={startNewVersion}>
-                <FilePlus2 size={16} aria-hidden="true" />{labels.newVersion}
-              </button>
-              <button type="button" className="studio-menu-secondary-action" disabled={!currentUser || !canUnlockPublisherProfile(draft, currentUser.id)} onClick={removeReadOnly}>
-                <UnlockKeyhole size={16} aria-hidden="true" />{labels.unlock}
-              </button>
-            </>
+          {protectedProfile ? (
+            <button type="button" className="studio-menu-secondary-action" disabled={!currentUser || !canUnlockPublisherProfile(draft, currentUser.id)} onClick={removeReadOnly}>
+              <UnlockKeyhole size={16} aria-hidden="true" />{labels.unlock}
+            </button>
           ) : (
             <>
               <button type="button" className="studio-menu-secondary-action" disabled={!isPersisted || !canProtectPublisherProfile(actor)} onClick={makeReadOnly} title={!actor ? labels.identificationRequired : labels.protectHelp}>
@@ -362,13 +315,18 @@ function identityCopy(method: string | undefined, locale: string): string {
 
 function copy(locale: string) {
   if (locale === 'hu') return {
-    title: 'Saját kiadói profil', description: 'Készítsen névvel menthető, hordozható kiadói profilt saját arculattal és kiadványszabályokkal.',
-    preview: 'Arculati előnézet', profileName: 'Profil neve', publisher: 'Kiadó / folyóirat', descriptionField: 'Leírás', website: 'Weboldal', logo: 'Logó', logoAlt: 'Logó alternatív szövege', chooseLogo: 'Logó kiválasztása', removeLogo: 'Logó eltávolítása', primaryColor: 'Elsődleges szín', accentColor: 'Kiemelő szín', rules: 'Kiadványszabályok szerkesztése', pageSize: 'Oldalméret', columns: 'Hasábok', font: 'Betűcsalád', fontSize: 'Betűméret (pt)', lineHeight: 'Sorköz', minimumKeywords: 'Minimális kulcsszószám', requireAbstract: 'Absztrakt kötelező', showOrcid: 'ORCID megjelenítése', saveApply: 'Profil mentése és alkalmazása', saved: 'A profil mentve és alkalmazva.', delete: 'Profil törlése', imageOnly: 'Csak képfájl tölthető fel.', imageTooLarge: 'A logó legfeljebb 1 MB lehet.', publisherPlaceholder: 'Kiadó neve', namePlaceholder: 'Pl. Folyóirat szerzői profil', saveFailed: 'A profil mentése nem sikerült.', protect: 'Írásvédelem', protectHelp: 'A mentett profil lezárása a jelenlegi azonosított fiókkal.', protected: 'A profil írásvédett. Tartalma csak új verzióban módosítható.', readOnly: 'Írásvédett profil', protectedBy: 'Lezárta', identificationRequired: 'Az írásvédelemhez aktív, bejelentkezett kiadói fiók szükséges.', saveBeforeProtect: 'Előbb mentse el a profilt, majd teheti írásvédetté.', protectFailed: 'Az írásvédelem beállítása nem sikerült.', unlock: 'Írásvédelem feloldása', unlocked: 'Az írásvédelem feloldva.', unlockDenied: 'Az írásvédelmet csak az a bejelentkezett fiók oldhatja fel, amely lezárta a profilt.', newVersion: 'Új verzió', newVersionReady: 'Szerkeszthető új verzió készült. Mentse el a módosítások után.',
+    title: 'Saját kiadói profil', description: 'A kiadó vagy folyóirat identitásának, arculatának és tulajdonosi védelmének beállítása.',
+    styleNotice: 'A tipográfiát, lapméretet, margókat, címsorokat és lábjegyzeteket az alábbi Kiadványstílus szerkesztő kezeli.',
+    preview: 'Arculati előnézet', profileName: 'Profil neve', publisher: 'Kiadó / folyóirat', descriptionField: 'Leírás', website: 'Weboldal', logo: 'Logó', logoAlt: 'Logó alternatív szövege', chooseLogo: 'Logó kiválasztása', removeLogo: 'Logó eltávolítása', primaryColor: 'Elsődleges szín', accentColor: 'Kiemelő szín', saveApply: 'Profil mentése és alkalmazása', saved: 'A profil mentve és alkalmazva.', delete: 'Profil törlése', imageOnly: 'Csak képfájl tölthető fel.', imageTooLarge: 'A logó legfeljebb 1 MB lehet.', publisherPlaceholder: 'Kiadó neve', namePlaceholder: 'Pl. Folyóirat kiadói profil', saveFailed: 'A profil mentése nem sikerült.', protect: 'Profil zárolása', protectHelp: 'A mentett kiadói identitás zárolása.', protected: 'A kiadói profil zárolva.', readOnly: 'Zárolt kiadói profil', protectedBy: 'Zárolta', identificationRequired: 'A zároláshoz aktív, bejelentkezett kiadói fiók szükséges.', saveBeforeProtect: 'Előbb mentse el a profilt, majd zárolhatja.', protectFailed: 'A profil zárolása nem sikerült.', unlock: 'Zárolás feloldása', unlocked: 'A zárolás feloldva.', unlockDenied: 'A zárolást csak a jogosult bejelentkezett fiók oldhatja fel.',
   };
   if (locale === 'de') return {
-    title: 'Eigenes Verlagsprofil', description: 'Erstellen Sie ein benanntes, portables Verlagsprofil mit eigenem Branding und Publikationsregeln.', preview: 'Branding-Vorschau', profileName: 'Profilname', publisher: 'Verlag / Zeitschrift', descriptionField: 'Beschreibung', website: 'Website', logo: 'Logo', logoAlt: 'Alternativtext des Logos', chooseLogo: 'Logo auswählen', removeLogo: 'Logo entfernen', primaryColor: 'Primärfarbe', accentColor: 'Akzentfarbe', rules: 'Publikationsregeln bearbeiten', pageSize: 'Seitengröße', columns: 'Spalten', font: 'Schriftfamilie', fontSize: 'Schriftgröße (pt)', lineHeight: 'Zeilenabstand', minimumKeywords: 'Mindestzahl Schlüsselwörter', requireAbstract: 'Abstract erforderlich', showOrcid: 'ORCID anzeigen', saveApply: 'Profil speichern und anwenden', saved: 'Profil gespeichert und angewendet.', delete: 'Profil löschen', imageOnly: 'Es können nur Bilddateien hochgeladen werden.', imageTooLarge: 'Das Logo darf höchstens 1 MB groß sein.', publisherPlaceholder: 'Name des Verlags', namePlaceholder: 'z. B. Autorenprofil der Zeitschrift', saveFailed: 'Profil konnte nicht gespeichert werden.', protect: 'Schreibschutz', protectHelp: 'Das gespeicherte Profil mit dem aktuellen identifizierten Konto sperren.', protected: 'Das Profil ist schreibgeschützt. Änderungen sind nur in einer neuen Version möglich.', readOnly: 'Schreibgeschütztes Profil', protectedBy: 'Gesperrt von', identificationRequired: 'Für den Schreibschutz ist ein aktives angemeldetes Verlagskonto erforderlich.', saveBeforeProtect: 'Speichern Sie das Profil zuerst und aktivieren Sie danach den Schreibschutz.', protectFailed: 'Schreibschutz konnte nicht aktiviert werden.', unlock: 'Schreibschutz aufheben', unlocked: 'Schreibschutz aufgehoben.', unlockDenied: 'Nur das angemeldete Konto, das das Profil gesperrt hat, kann den Schreibschutz aufheben.', newVersion: 'Neue Version', newVersionReady: 'Eine bearbeitbare neue Version wurde erstellt. Speichern Sie sie nach den Änderungen.',
+    title: 'Eigenes Verlagsprofil', description: 'Identität, Branding und Eigentumsschutz des Verlags oder der Zeitschrift verwalten.',
+    styleNotice: 'Typografie, Seitengröße, Ränder, Überschriften und Fußnoten werden ausschließlich im Publikationsstil-Editor unten bearbeitet.',
+    preview: 'Branding-Vorschau', profileName: 'Profilname', publisher: 'Verlag / Zeitschrift', descriptionField: 'Beschreibung', website: 'Website', logo: 'Logo', logoAlt: 'Alternativtext des Logos', chooseLogo: 'Logo auswählen', removeLogo: 'Logo entfernen', primaryColor: 'Primärfarbe', accentColor: 'Akzentfarbe', saveApply: 'Profil speichern und anwenden', saved: 'Profil gespeichert und angewendet.', delete: 'Profil löschen', imageOnly: 'Es können nur Bilddateien hochgeladen werden.', imageTooLarge: 'Das Logo darf höchstens 1 MB groß sein.', publisherPlaceholder: 'Name des Verlags', namePlaceholder: 'z. B. Verlagsprofil der Zeitschrift', saveFailed: 'Profil konnte nicht gespeichert werden.', protect: 'Profil sperren', protectHelp: 'Die gespeicherte Verlagsidentität sperren.', protected: 'Das Verlagsprofil ist gesperrt.', readOnly: 'Gesperrtes Verlagsprofil', protectedBy: 'Gesperrt von', identificationRequired: 'Zum Sperren ist ein aktives angemeldetes Verlagskonto erforderlich.', saveBeforeProtect: 'Speichern Sie das Profil zuerst und sperren Sie es danach.', protectFailed: 'Profil konnte nicht gesperrt werden.', unlock: 'Sperre aufheben', unlocked: 'Sperre aufgehoben.', unlockDenied: 'Nur das berechtigte angemeldete Konto kann die Sperre aufheben.',
   };
   return {
-    title: 'Custom publisher profile', description: 'Create a named, portable publisher profile with your own branding and publication rules.', preview: 'Brand preview', profileName: 'Profile name', publisher: 'Publisher / journal', descriptionField: 'Description', website: 'Website', logo: 'Logo', logoAlt: 'Logo alternative text', chooseLogo: 'Choose logo', removeLogo: 'Remove logo', primaryColor: 'Primary color', accentColor: 'Accent color', rules: 'Edit publication rules', pageSize: 'Page size', columns: 'Columns', font: 'Font family', fontSize: 'Font size (pt)', lineHeight: 'Line height', minimumKeywords: 'Minimum keywords', requireAbstract: 'Abstract required', showOrcid: 'Show ORCID', saveApply: 'Save and apply profile', saved: 'Profile saved and applied.', delete: 'Delete profile', imageOnly: 'Only image files can be uploaded.', imageTooLarge: 'Logo must be 1 MB or smaller.', publisherPlaceholder: 'Publisher name', namePlaceholder: 'e.g. Journal author profile', saveFailed: 'Could not save the profile.', protect: 'Make read-only', protectHelp: 'Lock the saved profile with the current identified account.', protected: 'The profile is now read-only. Its contents can only be changed in a new version.', readOnly: 'Read-only profile', protectedBy: 'Locked by', identificationRequired: 'An active signed-in publisher account is required to protect a profile.', saveBeforeProtect: 'Save the profile first, then make it read-only.', protectFailed: 'Could not protect the profile.', unlock: 'Remove protection', unlocked: 'Read-only protection removed.', unlockDenied: 'Only the signed-in account that protected this profile can remove its protection.', newVersion: 'New version', newVersionReady: 'An editable new version was created. Save it after making changes.',
+    title: 'Custom publisher profile', description: 'Manage publisher or journal identity, branding, and ownership protection.',
+    styleNotice: 'Typography, page size, margins, headings, and footnotes are edited only in the Publication Style editor below.',
+    preview: 'Brand preview', profileName: 'Profile name', publisher: 'Publisher / journal', descriptionField: 'Description', website: 'Website', logo: 'Logo', logoAlt: 'Logo alternative text', chooseLogo: 'Choose logo', removeLogo: 'Remove logo', primaryColor: 'Primary color', accentColor: 'Accent color', saveApply: 'Save and apply profile', saved: 'Profile saved and applied.', delete: 'Delete profile', imageOnly: 'Only image files can be uploaded.', imageTooLarge: 'Logo must be 1 MB or smaller.', publisherPlaceholder: 'Publisher name', namePlaceholder: 'e.g. Journal publisher profile', saveFailed: 'Could not save the profile.', protect: 'Lock profile', protectHelp: 'Lock the saved publisher identity.', protected: 'The publisher profile is locked.', readOnly: 'Locked publisher profile', protectedBy: 'Locked by', identificationRequired: 'An active signed-in publisher account is required to lock a profile.', saveBeforeProtect: 'Save the profile first, then lock it.', protectFailed: 'Could not lock the profile.', unlock: 'Unlock profile', unlocked: 'Profile unlocked.', unlockDenied: 'Only the authorized signed-in account can unlock this profile.',
   };
 }
