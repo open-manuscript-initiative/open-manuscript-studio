@@ -78,8 +78,48 @@
   padding: 0 1rem 1rem;
 }
 
-.studio-help-topic-body p {
+.studio-help-topic-body > p {
   margin-top: 0;
+  line-height: 1.55;
+}
+
+.studio-help-detailed {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+}
+
+.studio-help-detail-section {
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--omi-border, #d8dde6);
+  border-radius: 0.65rem;
+  background: var(--omi-surface-subtle, #f7f8fa);
+}
+
+.studio-help-detail-section--checks {
+  background: var(--omi-surface, #fff);
+}
+
+.studio-help-detail-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.studio-help-detail-section p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.studio-help-detail-section ol,
+.studio-help-detail-section ul {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding-left: 1.25rem;
+  line-height: 1.5;
 }
 
 .studio-help-tips {
@@ -192,6 +232,10 @@
   .studio-help-intro {
     padding-left: 0.8rem;
     padding-right: 0.8rem;
+  }
+
+  .studio-help-detail-section {
+    padding: 0.7rem 0.75rem;
   }
 
   .studio-export-formats {
