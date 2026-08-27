@@ -1,4 +1,4 @@
-import { Download, RotateCcw, Save } from 'lucide-react';
+import { Copy, Download, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
 import { useMemo, useState, type CSSProperties } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
@@ -10,35 +10,65 @@ import './PublicationStyleEditor.css';
 type PublicationStyle = typeof templateJson;
 type Align = 'left' | 'center' | 'right' | 'justify';
 
-const STORAGE_KEY = 'omi:publication-style:egyhaztorteneti-szemle';
+const LEGACY_STORAGE_KEY = 'omi:publication-style:egyhaztorteneti-szemle';
+const LIBRARY_STORAGE_KEY = 'omi:publication-style-library:v1';
+const ACTIVE_STYLE_KEY = 'omi:publication-style-active:v1';
 
 function cloneTemplate(): PublicationStyle {
   return JSON.parse(JSON.stringify(templateJson)) as PublicationStyle;
 }
 
-function loadStyle(): PublicationStyle {
+function makeStyleId(): string {
+  return `publication-style:${crypto.randomUUID()}`;
+}
+
+function loadLibrary(): PublicationStyle[] {
   try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    return saved ? (JSON.parse(saved) as PublicationStyle) : cloneTemplate();
+    const raw = window.localStorage.getItem(LIBRARY_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed) && parsed.length) return parsed as PublicationStyle[];
+    }
+    const legacy = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy) {
+      const migrated = JSON.parse(legacy) as PublicationStyle;
+      return [migrated];
+    }
   } catch {
-    return cloneTemplate();
+    // Fall back to the bundled template.
   }
+  return [cloneTemplate()];
+}
+
+function loadInitialState(): { library: PublicationStyle[]; activeId: string; style: PublicationStyle } {
+  const library = loadLibrary();
+  const requestedId = window.localStorage.getItem(ACTIVE_STYLE_KEY);
+  const active = library.find((item) => item.id === requestedId) ?? library[0] ?? cloneTemplate();
+  return { library, activeId: active.id, style: JSON.parse(JSON.stringify(active)) as PublicationStyle };
+}
+
+function persistLibrary(library: PublicationStyle[], active: PublicationStyle): void {
+  window.localStorage.setItem(LIBRARY_STORAGE_KEY, JSON.stringify(library));
+  window.localStorage.setItem(ACTIVE_STYLE_KEY, active.id);
+  // Compatibility bridge: current PDF/HTML export readers consume this key.
+  window.localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(active));
 }
 
 function copyFor(locale: string) {
   if (locale === 'hu') return {
-    title: 'Kiadványstílus szerkesztő', description: 'Az export megjelenésének szerkeszthető beállításai élő előnézettel.',
+    title: 'Kiadványstílus szerkesztő', description: 'Egy kiadói profilhoz több névvel ellátott exportstílus tartozhat. Válasszon, hozzon létre vagy másoljon stílust, majd szerkessze élő előnézettel.',
+    styles: 'Kiadványstílusok', styleName: 'Stílus neve', newStyle: 'Új stílus', duplicate: 'Másolat készítése', deleteStyle: 'Stílus törlése', cannotDeleteLast: 'Legalább egy kiadványstílusnak meg kell maradnia.',
     page: 'Lap', width: 'Szélesség', height: 'Magasság', margins: 'Margók', top: 'Felső', bottom: 'Alsó', inner: 'Belső', outer: 'Külső',
     typography: 'Tipográfia', font: 'Betűcsalád', bodySize: 'Törzsszöveg mérete', bodyLeading: 'Törzsszöveg sorköze', indent: 'Első sor behúzása',
     titleStyle: 'Cím', titleSize: 'Cím mérete', headingSize: 'Címsor mérete', footnoteSize: 'Lábjegyzet mérete', alignment: 'Igazítás',
-    save: 'Mentés', saved: 'Mentve ezen az eszközön', reset: 'Sablon visszaállítása', export: 'Stílus exportálása', preview: 'Élő előnézet',
-    untitled: 'Cím nélküli kézirat', emptyBody: 'A kézirat még nem tartalmaz megjeleníthető törzsszöveget.'
+    save: 'Stílus mentése', saved: 'A stílus mentve és aktív', reset: 'Sablonértékek visszaállítása', export: 'Stílus exportálása', preview: 'Élő előnézet',
+    untitled: 'Cím nélküli kézirat', emptyBody: 'A kézirat még nem tartalmaz megjeleníthető törzsszöveget.', defaultNewName: 'Új kiadványstílus', copySuffix: 'másolat'
   };
   if (locale === 'de') return {
-    title: 'Publikationsstil-Editor', description: 'Bearbeitbare Exporteinstellungen mit Live-Vorschau.', page: 'Seite', width: 'Breite', height: 'Höhe', margins: 'Ränder', top: 'Oben', bottom: 'Unten', inner: 'Innen', outer: 'Außen', typography: 'Typografie', font: 'Schriftfamilie', bodySize: 'Grundschrift', bodyLeading: 'Zeilenabstand', indent: 'Erstzeileneinzug', titleStyle: 'Titel', titleSize: 'Titelgröße', headingSize: 'Überschriftgröße', footnoteSize: 'Fußnotengröße', alignment: 'Ausrichtung', save: 'Speichern', saved: 'Auf diesem Gerät gespeichert', reset: 'Vorlage zurücksetzen', export: 'Stil exportieren', preview: 'Live-Vorschau', untitled: 'Unbenanntes Manuskript', emptyBody: 'Das Manuskript enthält noch keinen darstellbaren Fließtext.'
+    title: 'Publikationsstil-Editor', description: 'Ein Verlagsprofil kann mehrere benannte Exportstile enthalten. Wählen, erstellen oder duplizieren Sie einen Stil und bearbeiten Sie ihn mit Live-Vorschau.', styles: 'Publikationsstile', styleName: 'Stilname', newStyle: 'Neuer Stil', duplicate: 'Duplizieren', deleteStyle: 'Stil löschen', cannotDeleteLast: 'Mindestens ein Publikationsstil muss erhalten bleiben.', page: 'Seite', width: 'Breite', height: 'Höhe', margins: 'Ränder', top: 'Oben', bottom: 'Unten', inner: 'Innen', outer: 'Außen', typography: 'Typografie', font: 'Schriftfamilie', bodySize: 'Grundschrift', bodyLeading: 'Zeilenabstand', indent: 'Erstzeileneinzug', titleStyle: 'Titel', titleSize: 'Titelgröße', headingSize: 'Überschriftgröße', footnoteSize: 'Fußnotengröße', alignment: 'Ausrichtung', save: 'Stil speichern', saved: 'Stil gespeichert und aktiv', reset: 'Vorlagenwerte zurücksetzen', export: 'Stil exportieren', preview: 'Live-Vorschau', untitled: 'Unbenanntes Manuskript', emptyBody: 'Das Manuskript enthält noch keinen darstellbaren Fließtext.', defaultNewName: 'Neuer Publikationsstil', copySuffix: 'Kopie'
   };
   return {
-    title: 'Publication style editor', description: 'Editable export appearance settings with a live preview.', page: 'Page', width: 'Width', height: 'Height', margins: 'Margins', top: 'Top', bottom: 'Bottom', inner: 'Inner', outer: 'Outer', typography: 'Typography', font: 'Font family', bodySize: 'Body size', bodyLeading: 'Body leading', indent: 'First-line indent', titleStyle: 'Title', titleSize: 'Title size', headingSize: 'Heading size', footnoteSize: 'Footnote size', alignment: 'Alignment', save: 'Save', saved: 'Saved on this device', reset: 'Reset template', export: 'Export style', preview: 'Live preview', untitled: 'Untitled manuscript', emptyBody: 'The manuscript does not yet contain displayable body text.'
+    title: 'Publication style editor', description: 'A publisher profile can contain multiple named export styles. Select, create or duplicate a style, then edit it with a live preview.', styles: 'Publication styles', styleName: 'Style name', newStyle: 'New style', duplicate: 'Duplicate', deleteStyle: 'Delete style', cannotDeleteLast: 'At least one publication style must remain.', page: 'Page', width: 'Width', height: 'Height', margins: 'Margins', top: 'Top', bottom: 'Bottom', inner: 'Inner', outer: 'Outer', typography: 'Typography', font: 'Font family', bodySize: 'Body size', bodyLeading: 'Body leading', indent: 'First-line indent', titleStyle: 'Title', titleSize: 'Title size', headingSize: 'Heading size', footnoteSize: 'Footnote size', alignment: 'Alignment', save: 'Save style', saved: 'Style saved and active', reset: 'Reset template values', export: 'Export style', preview: 'Live preview', untitled: 'Untitled manuscript', emptyBody: 'The manuscript does not yet contain displayable body text.', defaultNewName: 'New publication style', copySuffix: 'copy'
   };
 }
 
@@ -136,8 +166,12 @@ export function PublicationStyleEditor() {
   const copy = copyFor(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const previewContent = useMemo(() => manuscriptPreviewContent(manuscript), [manuscript]);
-  const [style, setStyle] = useState<PublicationStyle>(loadStyle);
+  const initial = useMemo(loadInitialState, []);
+  const [library, setLibrary] = useState<PublicationStyle[]>(initial.library);
+  const [activeId, setActiveId] = useState(initial.activeId);
+  const [style, setStyle] = useState<PublicationStyle>(initial.style);
   const [saved, setSaved] = useState(false);
+  const [message, setMessage] = useState('');
 
   const pageRatio = useMemo(() => style.page.height / style.page.width, [style.page.height, style.page.width]);
 
@@ -168,16 +202,85 @@ export function PublicationStyleEditor() {
     } as PublicationStyle));
   }
 
-  function save() {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(style));
+  function selectStyle(id: string) {
+    const next = library.find((item) => item.id === id);
+    if (!next) return;
+    const copyOfStyle = JSON.parse(JSON.stringify(next)) as PublicationStyle;
+    setActiveId(id);
+    setStyle(copyOfStyle);
     setSaved(true);
+    setMessage('');
+    window.localStorage.setItem(ACTIVE_STYLE_KEY, id);
+    window.localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(copyOfStyle));
+  }
+
+  function updateStyleName(name: string) {
+    setSaved(false);
+    setStyle((current) => ({ ...current, name }));
+  }
+
+  function save() {
+    const cleanName = style.name.trim() || copy.defaultNewName;
+    const nextStyle = { ...style, name: cleanName };
+    const nextLibrary = [
+      ...library.filter((item) => item.id !== activeId),
+      nextStyle,
+    ];
+    setStyle(nextStyle);
+    setLibrary(nextLibrary);
+    persistLibrary(nextLibrary, nextStyle);
+    setSaved(true);
+    setMessage('');
+  }
+
+  function createStyle() {
+    const next = cloneTemplate();
+    next.id = makeStyleId();
+    next.name = copy.defaultNewName;
+    const nextLibrary = [...library, next];
+    setLibrary(nextLibrary);
+    setActiveId(next.id);
+    setStyle(next);
+    persistLibrary(nextLibrary, next);
+    setSaved(true);
+    setMessage('');
+  }
+
+  function duplicateStyle() {
+    const next = JSON.parse(JSON.stringify(style)) as PublicationStyle;
+    next.id = makeStyleId();
+    next.name = `${style.name || copy.defaultNewName} — ${copy.copySuffix}`;
+    const nextLibrary = [...library, next];
+    setLibrary(nextLibrary);
+    setActiveId(next.id);
+    setStyle(next);
+    persistLibrary(nextLibrary, next);
+    setSaved(true);
+    setMessage('');
+  }
+
+  function deleteStyle() {
+    if (library.length <= 1) {
+      setMessage(copy.cannotDeleteLast);
+      return;
+    }
+    const nextLibrary = library.filter((item) => item.id !== activeId);
+    const next = nextLibrary[0] ?? cloneTemplate();
+    setLibrary(nextLibrary);
+    setActiveId(next.id);
+    setStyle(JSON.parse(JSON.stringify(next)) as PublicationStyle);
+    persistLibrary(nextLibrary, next);
+    setSaved(true);
+    setMessage('');
   }
 
   function reset() {
     const next = cloneTemplate();
+    next.id = style.id;
+    next.name = style.name;
     setStyle(next);
-    window.localStorage.removeItem(STORAGE_KEY);
     setSaved(false);
+    setMessage('');
   }
 
   function exportStyle() {
@@ -185,7 +288,7 @@ export function PublicationStyleEditor() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${style.id}.omi-publication-style.json`;
+    link.download = `${style.id.replace(/[^a-z0-9._-]+/gi, '-')}.omi-publication-style.json`;
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -201,6 +304,14 @@ export function PublicationStyleEditor() {
     </div>
     <div className="publication-style-editor-layout">
       <div className="publication-style-controls">
+        <fieldset><legend>{copy.styles}</legend><div className="publication-style-grid">
+          <label><span>{copy.styles}</span><select value={activeId} onChange={(event) => selectStyle(event.target.value)}>{library.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+          <label><span>{copy.styleName}</span><input value={style.name} onChange={(event) => updateStyleName(event.target.value)} /></label>
+        </div><div className="publication-style-actions">
+          <button type="button" className="studio-menu-secondary-action" onClick={createStyle}><Plus size={16} aria-hidden="true" />{copy.newStyle}</button>
+          <button type="button" className="studio-menu-secondary-action" onClick={duplicateStyle}><Copy size={16} aria-hidden="true" />{copy.duplicate}</button>
+          <button type="button" className="studio-menu-secondary-action" disabled={library.length <= 1} onClick={deleteStyle}><Trash2 size={16} aria-hidden="true" />{copy.deleteStyle}</button>
+        </div></fieldset>
         <fieldset><legend>{copy.page}</legend><div className="publication-style-grid">
           <NumberField label={`${copy.width} (mm)`} value={style.page.width} onChange={(value) => setPage('width', value)} />
           <NumberField label={`${copy.height} (mm)`} value={style.page.height} onChange={(value) => setPage('height', value)} />
@@ -227,6 +338,7 @@ export function PublicationStyleEditor() {
           <button type="button" className="studio-menu-secondary-action" onClick={reset}><RotateCcw size={16} aria-hidden="true" />{copy.reset}</button>
         </div>
         {saved ? <p className="publication-style-saved" role="status">{copy.saved}</p> : null}
+        {message ? <p className="publication-style-saved" role="status">{message}</p> : null}
       </div>
       <div className="publication-style-preview-wrap">
         <strong>{copy.preview}</strong>
