@@ -1,12 +1,20 @@
-import { Bot, CircleHelp, CircleX, ListTree, Plug } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Bot, CircleHelp, CircleX, FolderOpen, ListTree, Plug } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { isDocumentClosedState } from '../app/documentCloseState';
+import {
+  clearDocumentClosedState,
+  isDocumentClosedState,
+} from '../app/documentCloseState';
 import { closeCurrentDocument } from '../app/documentLifecycle';
+import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getLocalizedHelpCopy } from '../i18n/helpResolver';
+import { getLocalFileLabels } from '../i18n/nativeStorageTranslations';
+import { getStudioPlatform } from '../mobile/platform/platform';
+import { isNativeStudio } from '../services/nativeManuscriptFile';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
+import type { OmiManuscript } from '../types/omi';
 import { HelpPanel } from './HelpPanel';
 import { IntegrationExecutionWorkspace } from './IntegrationExecutionWorkspace';
 import { IntegrationsPanel } from './IntegrationsPanel';
@@ -28,13 +36,28 @@ export function StudioMenuWithHelp({ open, onClose, ojsAssignment = null }: Stud
   const agentsLabel = getAgentsLabel(locale);
   const listsLabel = getListsLabel(locale);
   const closeDocumentCopy = getCloseDocumentCopy(locale);
-  const documentAlreadyClosed = isDocumentClosedState();
+  const platform = getStudioPlatform();
+  const localFileLabels = getLocalFileLabels(locale, platform);
+  const native = isNativeStudio();
+  const manuscript = useStudioStore((state) => state.manuscript);
+  const loadManuscript = useStudioStore((state) => state.loadManuscript);
+  const previousManuscriptRef = useRef(manuscript);
+  const browserFileInputRef = useRef<HTMLInputElement>(null);
+  const [documentAlreadyClosed, setDocumentAlreadyClosed] = useState(() => isDocumentClosedState());
+  const [browserOpenMessage, setBrowserOpenMessage] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
   const [integrationsOpen, setIntegrationsOpen] = useState(false);
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [listsOpen, setListsOpen] = useState(false);
   const [navigationHost, setNavigationHost] = useState<HTMLElement | null>(null);
   const [contentHost, setContentHost] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (previousManuscriptRef.current === manuscript) return;
+    previousManuscriptRef.current = manuscript;
+    clearDocumentClosedState();
+    setDocumentAlreadyClosed(false);
+  }, [manuscript]);
 
   useEffect(() => {
     if (!open) {
@@ -83,6 +106,24 @@ export function StudioMenuWithHelp({ open, onClose, ojsAssignment = null }: Stud
   const closeExternalViews = () => { setHelpOpen(false); setIntegrationsOpen(false); setAgentsOpen(false); setListsOpen(false); };
   const requestDocumentClose = () => { if (window.confirm(closeDocumentCopy.confirm)) void closeCurrentDocument(); };
 
+  async function openBrowserDocument(file: File | undefined): Promise<void> {
+    if (!file) return;
+    setBrowserOpenMessage('');
+    try {
+      const raw = await file.text();
+      const parsed = JSON.parse(raw) as unknown;
+      if (!isOmiManuscript(parsed)) throw new Error(getInvalidDocumentMessage(locale));
+      loadManuscript(parsed);
+      clearDocumentClosedState();
+      setDocumentAlreadyClosed(false);
+      setBrowserOpenMessage(localFileLabels.opened);
+    } catch (error) {
+      setBrowserOpenMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      if (browserFileInputRef.current) browserFileInputRef.current.value = '';
+    }
+  }
+
   const listsNavigation = (
     <button type="button" data-lists-navigation="true" className={`studio-menu-nav-button${listsOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={listsOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setListsOpen(true); }}><ListTree size={18} aria-hidden="true" /><span>{listsLabel}</span></button>
   );
@@ -93,9 +134,33 @@ export function StudioMenuWithHelp({ open, onClose, ojsAssignment = null }: Stud
   const utilityNavigation = (
     <button type="button" data-help-navigation="true" className={`studio-menu-nav-button${helpOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={helpOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setHelpOpen(true); }}><CircleHelp size={18} aria-hidden="true" /><span>{copy.navigation}</span></button>
   );
-  const documentCloseAction = !documentAlreadyClosed ? (
-    <button type="button" data-document-close="true" className="studio-menu-secondary-action studio-menu-danger-action" onClick={requestDocumentClose}><CircleX size={16} aria-hidden="true" /><span>{closeDocumentCopy.label}</span></button>
-  ) : null;
+  const documentCloseAction = (
+    <>
+      {!native ? (
+        <>
+          <input
+            ref={browserFileInputRef}
+            type="file"
+            accept=".omi.json,.json,application/json,application/vnd.openmanuscript+json"
+            hidden
+            onChange={(event) => void openBrowserDocument(event.target.files?.[0])}
+          />
+          <button
+            type="button"
+            className="studio-menu-primary-action"
+            onClick={() => browserFileInputRef.current?.click()}
+          >
+            <FolderOpen size={16} aria-hidden="true" />
+            <span>{localFileLabels.open}</span>
+          </button>
+          {browserOpenMessage ? <span role="status" aria-live="polite">{browserOpenMessage}</span> : null}
+        </>
+      ) : null}
+      {!documentAlreadyClosed ? (
+        <button type="button" data-document-close="true" className="studio-menu-secondary-action studio-menu-danger-action" onClick={requestDocumentClose}><CircleX size={16} aria-hidden="true" /><span>{closeDocumentCopy.label}</span></button>
+      ) : null}
+    </>
+  );
 
   return <>
     <StudioMenu
@@ -112,6 +177,20 @@ export function StudioMenuWithHelp({ open, onClose, ojsAssignment = null }: Stud
     {contentHost && integrationsOpen ? createPortal(<div className="studio-help-portal studio-integrations-portal"><IntegrationsPanel /><IntegrationExecutionWorkspace /></div>, contentHost) : null}
     {contentHost && helpOpen ? createPortal(<div className="studio-help-portal"><HelpPanel /></div>, contentHost) : null}
   </>;
+}
+
+function isOmiManuscript(value: unknown): value is OmiManuscript {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<OmiManuscript>;
+  return typeof candidate.id === 'string'
+    && typeof candidate.title === 'string'
+    && Array.isArray(candidate.sections);
+}
+
+function getInvalidDocumentMessage(locale: string): string {
+  if (locale === 'hu') return 'A kiválasztott fájl nem érvényes OMI-kézirat.';
+  if (locale === 'de') return 'Die ausgewählte Datei ist kein gültiges OMI-Manuskript.';
+  return 'The selected file is not a valid OMI manuscript.';
 }
 
 function getAgentsLabel(locale: string): string { return ({ de: 'OMI Agents', en: 'OMI Agents', hu: 'OMI Agents' } as Record<string, string>)[locale] ?? 'OMI Agents'; }
