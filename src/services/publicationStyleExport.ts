@@ -146,15 +146,13 @@ export function withPublicationStyleCss(
 
 export function withPrintRunningHeader(
   html: string,
-  manuscript: Pick<OmiManuscript, 'title'>,
+  _manuscript: Pick<OmiManuscript, 'title'>,
   style: PublicationStyle,
 ): string {
   if (!style.runningHeaders.enabled) return html;
-  const left = escapeHtml(manuscript.title || style.name);
-  const right = escapeHtml(style.name);
   return html.replace(
     '<body>',
-    `<body>\n  <div class="omi-print-running-header" aria-hidden="true"><span>${left}</span><span>${right} · <span class="omi-print-page-number"></span></span></div>`,
+    '<body>\n  <div class="omi-print-running-header" aria-hidden="true"><span data-omi-running-header-left></span><span><span data-omi-running-header-right></span> · <span class="omi-print-page-number"></span></span></div>',
   );
 }
 
