@@ -1,9 +1,10 @@
-import { Copy, Download, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { Copy, Download, FileCode2, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
 import { useMemo, useState, type CSSProperties } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
 import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json';
 import { useTranslation } from '../i18n';
+import { buildPublicationStyleCss } from '../services/publicationStyleExport';
 import type { OmiBlock, OmiManuscript } from '../types/omi';
 import './PublicationStyleEditor.css';
 
@@ -61,14 +62,14 @@ function copyFor(locale: string) {
     page: 'Lap', width: 'Szélesség', height: 'Magasság', margins: 'Margók', top: 'Felső', bottom: 'Alsó', inner: 'Belső', outer: 'Külső',
     typography: 'Tipográfia', font: 'Betűcsalád', bodySize: 'Törzsszöveg mérete', bodyLeading: 'Törzsszöveg sorköze', indent: 'Első sor behúzása',
     titleStyle: 'Cím', titleSize: 'Cím mérete', headingSize: 'Címsor mérete', footnoteSize: 'Lábjegyzet mérete', alignment: 'Igazítás',
-    save: 'Stílus mentése', saved: 'A stílus mentve és aktív', reset: 'Sablonértékek visszaállítása', export: 'Stílus exportálása', preview: 'Élő előnézet',
+    save: 'Stílus mentése', saved: 'A stílus mentve és aktív', reset: 'Sablonértékek visszaállítása', export: 'Stílus exportálása', exportCss: 'CSS letöltése', preview: 'Élő előnézet',
     untitled: 'Cím nélküli kézirat', emptyBody: 'A kézirat még nem tartalmaz megjeleníthető törzsszöveget.', defaultNewName: 'Új kiadványstílus', copySuffix: 'másolat'
   };
   if (locale === 'de') return {
-    title: 'Publikationsstil-Editor', description: 'Ein Verlagsprofil kann mehrere benannte Exportstile enthalten. Wählen, erstellen oder duplizieren Sie einen Stil und bearbeiten Sie ihn mit Live-Vorschau.', styles: 'Publikationsstile', styleName: 'Stilname', newStyle: 'Neuer Stil', duplicate: 'Duplizieren', deleteStyle: 'Stil löschen', cannotDeleteLast: 'Mindestens ein Publikationsstil muss erhalten bleiben.', page: 'Seite', width: 'Breite', height: 'Höhe', margins: 'Ränder', top: 'Oben', bottom: 'Unten', inner: 'Innen', outer: 'Außen', typography: 'Typografie', font: 'Schriftfamilie', bodySize: 'Grundschrift', bodyLeading: 'Zeilenabstand', indent: 'Erstzeileneinzug', titleStyle: 'Titel', titleSize: 'Titelgröße', headingSize: 'Überschriftgröße', footnoteSize: 'Fußnotengröße', alignment: 'Ausrichtung', save: 'Stil speichern', saved: 'Stil gespeichert und aktiv', reset: 'Vorlagenwerte zurücksetzen', export: 'Stil exportieren', preview: 'Live-Vorschau', untitled: 'Unbenanntes Manuskript', emptyBody: 'Das Manuskript enthält noch keinen darstellbaren Fließtext.', defaultNewName: 'Neuer Publikationsstil', copySuffix: 'Kopie'
+    title: 'Publikationsstil-Editor', description: 'Ein Verlagsprofil kann mehrere benannte Exportstile enthalten. Wählen, erstellen oder duplizieren Sie einen Stil und bearbeiten Sie ihn mit Live-Vorschau.', styles: 'Publikationsstile', styleName: 'Stilname', newStyle: 'Neuer Stil', duplicate: 'Duplizieren', deleteStyle: 'Stil löschen', cannotDeleteLast: 'Mindestens ein Publikationsstil muss erhalten bleiben.', page: 'Seite', width: 'Breite', height: 'Höhe', margins: 'Ränder', top: 'Oben', bottom: 'Unten', inner: 'Innen', outer: 'Außen', typography: 'Typografie', font: 'Schriftfamilie', bodySize: 'Grundschrift', bodyLeading: 'Zeilenabstand', indent: 'Erstzeileneinzug', titleStyle: 'Titel', titleSize: 'Titelgröße', headingSize: 'Überschriftgröße', footnoteSize: 'Fußnotengröße', alignment: 'Ausrichtung', save: 'Stil speichern', saved: 'Stil gespeichert und aktiv', reset: 'Vorlagenwerte zurücksetzen', export: 'Stil exportieren', exportCss: 'CSS herunterladen', preview: 'Live-Vorschau', untitled: 'Unbenanntes Manuskript', emptyBody: 'Das Manuskript enthält noch keinen darstellbaren Fließtext.', defaultNewName: 'Neuer Publikationsstil', copySuffix: 'Kopie'
   };
   return {
-    title: 'Publication style editor', description: 'A publisher profile can contain multiple named export styles. Select, create or duplicate a style, then edit it with a live preview.', styles: 'Publication styles', styleName: 'Style name', newStyle: 'New style', duplicate: 'Duplicate', deleteStyle: 'Delete style', cannotDeleteLast: 'At least one publication style must remain.', page: 'Page', width: 'Width', height: 'Height', margins: 'Margins', top: 'Top', bottom: 'Bottom', inner: 'Inner', outer: 'Outer', typography: 'Typography', font: 'Font family', bodySize: 'Body size', bodyLeading: 'Body leading', indent: 'First-line indent', titleStyle: 'Title', titleSize: 'Title size', headingSize: 'Heading size', footnoteSize: 'Footnote size', alignment: 'Alignment', save: 'Save style', saved: 'Style saved and active', reset: 'Reset template values', export: 'Export style', preview: 'Live preview', untitled: 'Untitled manuscript', emptyBody: 'The manuscript does not yet contain displayable body text.', defaultNewName: 'New publication style', copySuffix: 'copy'
+    title: 'Publication style editor', description: 'A publisher profile can contain multiple named export styles. Select, create or duplicate a style, then edit it with a live preview.', styles: 'Publication styles', styleName: 'Style name', newStyle: 'New style', duplicate: 'Duplicate', deleteStyle: 'Delete style', cannotDeleteLast: 'At least one publication style must remain.', page: 'Page', width: 'Width', height: 'Height', margins: 'Margins', top: 'Top', bottom: 'Bottom', inner: 'Inner', outer: 'Outer', typography: 'Typography', font: 'Font family', bodySize: 'Body size', bodyLeading: 'Body leading', indent: 'First-line indent', titleStyle: 'Title', titleSize: 'Title size', headingSize: 'Heading size', footnoteSize: 'Footnote size', alignment: 'Alignment', save: 'Save style', saved: 'Style saved and active', reset: 'Reset template values', export: 'Export style', exportCss: 'Download CSS', preview: 'Live preview', untitled: 'Untitled manuscript', emptyBody: 'The manuscript does not yet contain displayable body text.', defaultNewName: 'New publication style', copySuffix: 'copy'
   };
 }
 
@@ -285,12 +286,13 @@ export function PublicationStyleEditor() {
 
   function exportStyle() {
     const blob = new Blob([JSON.stringify(style, null, 2)], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${style.id.replace(/[^a-z0-9._-]+/gi, '-')}.omi-publication-style.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `${fileStem(style)}.omi-publication-style.json`);
+  }
+
+  function exportCss() {
+    const css = `/* OMI publication style: ${style.name} */\n/* Generated from the current editor values. */\n${buildPublicationStyleCss(style, 'print')}`;
+    const blob = new Blob([css], { type: 'text/css;charset=utf-8' });
+    downloadBlob(blob, `${fileStem(style)}.css`);
   }
 
   const body = style.styles.body;
@@ -335,6 +337,7 @@ export function PublicationStyleEditor() {
         <div className="publication-style-actions">
           <button type="button" className="studio-menu-primary-action" onClick={save}><Save size={16} aria-hidden="true" />{copy.save}</button>
           <button type="button" className="studio-menu-secondary-action" onClick={exportStyle}><Download size={16} aria-hidden="true" />{copy.export}</button>
+          <button type="button" className="studio-menu-secondary-action" onClick={exportCss}><FileCode2 size={16} aria-hidden="true" />{copy.exportCss}</button>
           <button type="button" className="studio-menu-secondary-action" onClick={reset}><RotateCcw size={16} aria-hidden="true" />{copy.reset}</button>
         </div>
         {saved ? <p className="publication-style-saved" role="status">{copy.saved}</p> : null}
@@ -364,6 +367,22 @@ export function PublicationStyleEditor() {
       </div>
     </div>
   </section>;
+}
+
+function fileStem(style: PublicationStyle): string {
+  const value = style.name.trim() || style.id;
+  return value.toLowerCase().normalize('NFKD').replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'publication-style';
+}
+
+function downloadBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function NumberField({ label, value, onChange, step = 1 }: { label: string; value: number; onChange: (value: number) => void; step?: number }) {
