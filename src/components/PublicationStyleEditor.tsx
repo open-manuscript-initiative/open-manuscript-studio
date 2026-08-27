@@ -148,7 +148,13 @@ export function PublicationStyleEditor() {
 
   function setMargin(key: keyof PublicationStyle['page']['margins'], value: number) {
     setSaved(false);
-    setStyle((current) => ({ ...current, page: { ...current.page, margins: { ...current.page.margins, [key]: value } }));
+    setStyle((current) => ({
+      ...current,
+      page: {
+        ...current.page,
+        margins: { ...current.page.margins, [key]: value },
+      },
+    }));
   }
 
   function setStyleValue(styleKey: keyof PublicationStyle['styles'], property: string, value: string | number) {
