@@ -67,10 +67,12 @@ export function PublicationStyleExportPanel() {
       setMessage(copy.popupBlocked);
       return;
     }
-    printWindow.document.write(`<title>${escapeHtml(copy.preparingPdf)}</title><p style="font-family:sans-serif;padding:2rem">${escapeHtml(copy.preparingPdf)}</p>`);
-    printWindow.document.close();
+
+    showPreparingPdf(printWindow, copy.preparingPdf);
     setBusy('pdf');
     setMessage('');
+    let printUrl: string | null = null;
+
     try {
       await externalizeActiveManuscriptAssets();
       checkpoint('export');
@@ -78,9 +80,9 @@ export function PublicationStyleExportPanel() {
       const profile = resolvePublicationProfile(committed);
       const style = loadPublicationStyle();
       const html = await renderStyleBasedHtml(committed, profile, 'print');
-      printWindow.document.open();
-      printWindow.document.write(html);
-      printWindow.document.close();
+
+      printUrl = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+      await navigatePrintWindow(printWindow, printUrl);
 
       const runningHeaderLeft = printWindow.document.querySelector<HTMLElement>('[data-omi-running-header-left]');
       const runningHeaderRight = printWindow.document.querySelector<HTMLElement>('[data-omi-running-header-right]');
@@ -90,9 +92,11 @@ export function PublicationStyleExportPanel() {
       printWindow.focus();
       window.setTimeout(() => {
         printWindow.print();
+        if (printUrl) URL.revokeObjectURL(printUrl);
       }, 350);
       setMessage(copy.pdfReady);
     } catch (error) {
+      if (printUrl) URL.revokeObjectURL(printUrl);
       printWindow.close();
       setMessage(error instanceof Error ? error.message : copy.exportError);
     } finally {
@@ -174,6 +178,32 @@ function copyFor(locale: string) {
   };
 }
 
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function showPreparingPdf(target: Window, message: string): void {
+  target.document.title = message;
+  const paragraph = target.document.createElement('p');
+  paragraph.style.fontFamily = 'sans-serif';
+  paragraph.style.padding = '2rem';
+  paragraph.textContent = message;
+  target.document.body.replaceChildren(paragraph);
+}
+
+function navigatePrintWindow(target: Window, url: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const handleLoad = () => {
+      cleanup();
+      resolve();
+    };
+    const handleError = () => {
+      cleanup();
+      reject(new Error('Failed to load the generated print document.'));
+    };
+    const cleanup = () => {
+      target.removeEventListener('load', handleLoad);
+      target.removeEventListener('error', handleError);
+    };
+
+    target.addEventListener('load', handleLoad, { once: true });
+    target.addEventListener('error', handleError, { once: true });
+    target.location.replace(url);
+  });
 }
