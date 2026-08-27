@@ -1,0 +1,229 @@
+{
+  "schemaVersion": "0.1.0",
+  "id": "egyhaztorteneti-szemle",
+  "name": "Egyháztörténeti Szemle",
+  "description": "Editable starter publication/export style reconstructed from a 2026/2 printed article sample. All measurements are intentionally editable and should be replaced with the publisher's authoritative values.",
+  "editable": true,
+  "units": {
+    "page": "mm",
+    "type": "pt"
+  },
+  "page": {
+    "width": 150,
+    "height": 240,
+    "margins": {
+      "top": 18,
+      "bottom": 18,
+      "inner": 19,
+      "outer": 17
+    },
+    "mirroredMargins": true
+  },
+  "fonts": {
+    "body": {
+      "family": "EB Garamond",
+      "fallback": "serif"
+    },
+    "note": {
+      "family": "EB Garamond",
+      "fallback": "serif"
+    },
+    "comment": "The source PDF embeds commercial Garamond fonts. EB Garamond is only a freely usable default; a licensed publisher font can be selected instead."
+  },
+  "styles": {
+    "body": {
+      "font": "body",
+      "fontSize": 10.5,
+      "lineHeight": 12.5,
+      "alignment": "justify",
+      "firstLineIndent": 5,
+      "spaceBefore": 0,
+      "spaceAfter": 0,
+      "hyphenation": true
+    },
+    "articleTitlePrimary": {
+      "font": "body",
+      "fontSize": 14,
+      "lineHeight": 15.5,
+      "fontWeight": 600,
+      "alignment": "center",
+      "spaceAfter": 2
+    },
+    "articleSubtitlePrimary": {
+      "font": "body",
+      "fontSize": 11.5,
+      "lineHeight": 13,
+      "alignment": "center",
+      "spaceAfter": 5
+    },
+    "articleTitleSecondary": {
+      "font": "body",
+      "fontSize": 11.5,
+      "lineHeight": 13,
+      "fontWeight": 600,
+      "alignment": "center",
+      "spaceAfter": 1
+    },
+    "articleSubtitleSecondary": {
+      "font": "body",
+      "fontSize": 10.5,
+      "lineHeight": 12,
+      "alignment": "center",
+      "spaceAfter": 5
+    },
+    "author": {
+      "font": "body",
+      "fontSize": 13,
+      "lineHeight": 14,
+      "fontWeight": 600,
+      "alignment": "center",
+      "spaceAfter": 1
+    },
+    "affiliation": {
+      "font": "body",
+      "fontSize": 10.5,
+      "lineHeight": 12,
+      "alignment": "center",
+      "spaceAfter": 6
+    },
+    "abstractHeading": {
+      "font": "body",
+      "fontSize": 10.5,
+      "lineHeight": 12,
+      "fontWeight": 600,
+      "alignment": "center",
+      "spaceBefore": 3,
+      "spaceAfter": 2
+    },
+    "abstractBody": {
+      "font": "body",
+      "fontSize": 9.5,
+      "lineHeight": 11,
+      "alignment": "justify",
+      "firstLineIndent": 0,
+      "spaceAfter": 3
+    },
+    "keywords": {
+      "font": "body",
+      "fontSize": 9.5,
+      "lineHeight": 11,
+      "alignment": "left",
+      "firstLineIndent": 0,
+      "spaceBefore": 2,
+      "spaceAfter": 2
+    },
+    "heading1": {
+      "font": "body",
+      "fontSize": 11.5,
+      "lineHeight": 13,
+      "fontWeight": 600,
+      "alignment": "left",
+      "spaceBefore": 7,
+      "spaceAfter": 3,
+      "keepWithNext": true
+    },
+    "heading2": {
+      "font": "body",
+      "fontSize": 10.5,
+      "lineHeight": 12,
+      "fontWeight": 600,
+      "alignment": "left",
+      "spaceBefore": 5,
+      "spaceAfter": 2,
+      "keepWithNext": true
+    },
+    "epigraph": {
+      "font": "body",
+      "fontSize": 9.5,
+      "lineHeight": 11,
+      "fontStyle": "italic",
+      "alignment": "right",
+      "firstLineIndent": 0,
+      "spaceBefore": 2,
+      "spaceAfter": 5
+    },
+    "footnote": {
+      "font": "note",
+      "fontSize": 8.2,
+      "lineHeight": 9.4,
+      "alignment": "justify",
+      "firstLineIndent": 0
+    },
+    "figureCaption": {
+      "font": "body",
+      "fontSize": 9,
+      "lineHeight": 10.5,
+      "alignment": "center",
+      "spaceBefore": 2,
+      "spaceAfter": 4
+    },
+    "tableCaption": {
+      "font": "body",
+      "fontSize": 9,
+      "lineHeight": 10.5,
+      "alignment": "left",
+      "spaceBefore": 4,
+      "spaceAfter": 2
+    },
+    "bibliography": {
+      "font": "body",
+      "fontSize": 9.5,
+      "lineHeight": 11,
+      "alignment": "justify",
+      "hangingIndent": 5
+    }
+  },
+  "runningHeaders": {
+    "enabled": true,
+    "rule": {
+      "enabled": true,
+      "width": 0.3
+    },
+    "even": {
+      "left": "{{pageNumber}}",
+      "right": "{{journalTitle}} {{volume}}/{{issue}} ({{year}})"
+    },
+    "odd": {
+      "left": "{{shortArticleTitle}}",
+      "right": "{{pageNumber}}"
+    },
+    "font": "body",
+    "fontSize": 9
+  },
+  "footnotes": {
+    "placement": "page-bottom",
+    "separator": {
+      "enabled": true,
+      "width": 0.3,
+      "length": 30
+    },
+    "numbering": "continuous"
+  },
+  "firstPage": {
+    "showRunningHeader": false,
+    "footerMetadata": [
+      "doi",
+      "copyright",
+      "license"
+    ]
+  },
+  "semanticMappings": {
+    "paragraph": "body",
+    "heading-1": "heading1",
+    "heading-2": "heading2",
+    "article-title-primary": "articleTitlePrimary",
+    "article-subtitle-primary": "articleSubtitlePrimary",
+    "article-title-secondary": "articleTitleSecondary",
+    "article-subtitle-secondary": "articleSubtitleSecondary",
+    "author": "author",
+    "affiliation": "affiliation",
+    "abstract-heading": "abstractHeading",
+    "abstract": "abstractBody",
+    "keywords": "keywords",
+    "epigraph": "epigraph",
+    "footnote": "footnote",
+    "figure-caption": "figureCaption",
+    "table-caption": "tableCaption",
+    "bibliography": "bibliography"
+  }
+}
