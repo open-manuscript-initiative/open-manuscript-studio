@@ -15,7 +15,15 @@ const LEGACY_STORAGE_KEY = 'omi:publication-style:egyhaztorteneti-szemle';
 const LIBRARY_STORAGE_KEY = 'omi:publication-style-library:v1';
 const ACTIVE_STYLE_KEY = 'omi:publication-style-active:v1';
 
-export function IdmlPublicationStyleImportPanel({ onImported }: { onImported?: () => void }) {
+interface IdmlPublicationStyleImportPanelProps {
+  onImported?: () => void;
+  compact?: boolean;
+}
+
+export function IdmlPublicationStyleImportPanel({
+  onImported,
+  compact = false,
+}: IdmlPublicationStyleImportPanelProps) {
   const { locale } = useTranslation();
   const copy = copyFor(locale);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -48,6 +56,39 @@ export function IdmlPublicationStyleImportPanel({ onImported }: { onImported?: (
     }
   }
 
+  const input = (
+    <input
+      ref={inputRef}
+      type="file"
+      accept=".idml,application/vnd.adobe.indesign-idml-package"
+      hidden
+      onChange={(event) => void handleFile(event)}
+    />
+  );
+
+  const button = (
+    <button
+      type="button"
+      className="studio-menu-secondary-action"
+      disabled={busy}
+      onClick={() => inputRef.current?.click()}
+      title={copy.description}
+    >
+      <FileUp size={16} aria-hidden="true" />
+      {busy ? copy.reading : copy.action}
+    </button>
+  );
+
+  if (compact) {
+    return (
+      <>
+        {input}
+        {button}
+        {message ? <span className="publication-style-saved" role="status">{message}</span> : null}
+      </>
+    );
+  }
+
   return (
     <section className="publication-profile-export" aria-labelledby="idml-style-import-title">
       <div>
@@ -55,22 +96,8 @@ export function IdmlPublicationStyleImportPanel({ onImported }: { onImported?: (
         <p>{copy.description}</p>
         {message ? <p className="publication-style-saved" role="status">{message}</p> : null}
       </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept=".idml,application/vnd.adobe.indesign-idml-package"
-        hidden
-        onChange={(event) => void handleFile(event)}
-      />
-      <button
-        type="button"
-        className="studio-menu-secondary-action"
-        disabled={busy}
-        onClick={() => inputRef.current?.click()}
-      >
-        <FileUp size={16} aria-hidden="true" />
-        {busy ? copy.reading : copy.action}
-      </button>
+      {input}
+      {button}
     </section>
   );
 }
@@ -124,19 +151,19 @@ function copyFor(locale: string) {
   if (locale === 'hu') return {
     title: 'InDesign stíluskészlet importálása',
     description: 'IDML-fájlból beolvassa az oldalgeometriát és a felismerhető bekezdésstílusokat. A kézirat szemantikája nem változik; az import új kiadványstílust hoz létre.',
-    action: 'IDML importálása', reading: 'IDML feldolgozása…', failed: 'Az IDML stíluskészlet nem importálható.',
+    action: 'InDesign / IDML importálása', reading: 'IDML feldolgozása…', failed: 'Az IDML stíluskészlet nem importálható.',
     imported: 'Az InDesign stíluskészlet importálva: {mapped} stílus automatikusan megfeleltetve, {unmapped} egyedi stílus nem lett hozzárendelve.',
   };
   if (locale === 'de') return {
     title: 'InDesign-Stilsatz importieren',
     description: 'Liest Seitengeometrie und erkennbare Absatzformate aus einer IDML-Datei. Die Manuskriptsemantik bleibt unverändert; der Import erstellt einen neuen Publikationsstil.',
-    action: 'IDML importieren', reading: 'IDML wird verarbeitet…', failed: 'Der IDML-Stilsatz konnte nicht importiert werden.',
+    action: 'InDesign / IDML importieren', reading: 'IDML wird verarbeitet…', failed: 'Der IDML-Stilsatz konnte nicht importiert werden.',
     imported: 'InDesign-Stilsatz importiert: {mapped} Formate automatisch zugeordnet, {unmapped} benutzerdefinierte Formate nicht zugeordnet.',
   };
   return {
     title: 'Import InDesign style set',
     description: 'Reads page geometry and recognizable paragraph styles from an IDML file. Manuscript semantics stay unchanged; the import creates a new publication style.',
-    action: 'Import IDML', reading: 'Processing IDML…', failed: 'The IDML style set could not be imported.',
+    action: 'Import InDesign / IDML', reading: 'Processing IDML…', failed: 'The IDML style set could not be imported.',
     imported: 'InDesign style set imported: {mapped} styles mapped automatically, {unmapped} custom styles left unmapped.',
   };
 }
