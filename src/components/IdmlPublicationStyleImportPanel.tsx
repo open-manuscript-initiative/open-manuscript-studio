@@ -93,7 +93,7 @@ function createPublicationStyle(imported: IdmlPublicationStyleImportResult): Pub
   for (const [key, patch] of Object.entries(imported.styles) as Array<[keyof PublicationStyle['styles'], IdmlStylePatch]>) {
     if (!(key in next.styles)) continue;
     const { fontFamily, ...stylePatch } = patch;
-    next.styles[key] = { ...next.styles[key], ...stylePatch } as PublicationStyle['styles'][typeof key];
+    Object.assign(next.styles[key] as object, stylePatch);
     if (fontFamily) {
       if (key === 'footnote') noteFont = fontFamily;
       else bodyFont ??= fontFamily;
