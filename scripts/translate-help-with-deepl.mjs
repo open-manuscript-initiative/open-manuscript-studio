@@ -23,6 +23,7 @@ const PROTECTED_TERMS = [
   'OMI', 'CSS', 'HTML', 'PDF', 'EPUB', 'XTG', 'MIF', 'SLA', 'LaTeX',
   '@page', 'passkey', 'Word', 'Studio',
 ].sort((a, b) => b.length - a.length);
+const PROTECTED_PATTERN = new RegExp(PROTECTED_TERMS.map(escapeRegExp).join('|'), 'g');
 
 const args = new Set(process.argv.slice(2));
 const write = args.has('--write');
@@ -192,12 +193,7 @@ async function translateTexts(apiBase, authKey, targetLang, texts) {
 }
 
 function protectTerms(text) {
-  let result = text;
-  for (const term of PROTECTED_TERMS) {
-    const escaped = escapeRegExp(term);
-    result = result.replace(new RegExp(escaped, 'g'), (match) => `<keep>${escapeXml(match)}</keep>`);
-  }
-  return result;
+  return text.replace(PROTECTED_PATTERN, (match) => `<keep>${escapeXml(match)}</keep>`);
 }
 
 function unprotectTerms(text) {
