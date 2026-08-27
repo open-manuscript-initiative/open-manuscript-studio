@@ -22,6 +22,8 @@
     "i18n:po:pending": "node scripts/export-pending-po-translations.mjs",
     "i18n:po:apply": "node scripts/apply-pending-po-translations.mjs",
     "i18n:po:roundtrip": "npm run i18n:po:export && npm run i18n:po:compile && npm run i18n:validate-json && npm run i18n:po:audit",
+    "i18n:deepl:help:check": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/translate-help-with-deepl.mjs",
+    "i18n:deepl:help": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/translate-help-with-deepl.mjs --write",
     "tauri": "npx @tauri-apps/cli@2.11.4",
     "icons:generate": "npm run tauri -- icon public/android-chrome-512x512.png",
     "desktop:dev": "npm run tauri -- dev",
