@@ -23,6 +23,7 @@ interface DocxImportPanelProps {
 export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
   const { locale } = useTranslation();
   const copy = getDocxImportCopy(locale);
+  const description = getCurrentDocxImportDescription(locale);
   const inputRef = useRef<HTMLInputElement>(null);
   const [parsing, setParsing] = useState(false);
   const [importStage, setImportStage] = useState<DocxImportStage | null>(null);
@@ -69,7 +70,7 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
       <div className="docx-import-card-header">
         <div>
           <h4 id="docx-import-title">{copy.title}</h4>
-          <p>{copy.description}</p>
+          <p>{description}</p>
         </div>
         <FileUp size={22} aria-hidden="true" />
       </div>
@@ -116,6 +117,17 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
       ) : null}
     </section>
   );
+}
+
+function getCurrentDocxImportDescription(locale: string): string {
+  const language = locale.toLowerCase().split('-')[0];
+  if (language === 'hu') {
+    return 'Word-kézirat megnyitása új, szerkeszthető OMI-kéziratként, a dokumentumszerkezet, metaadatok, jegyzetek, képek, táblázatok, egyenletek és támogatott hivatkozások felismerésével.';
+  }
+  if (language === 'de') {
+    return 'Ein Word-Manuskript als neues, bearbeitbares OMI-Manuskript öffnen; Dokumentstruktur, Metadaten, Anmerkungen, Bilder, Tabellen, Gleichungen und unterstützte Verweise werden dabei erkannt.';
+  }
+  return 'Open a Word manuscript as a new editable OMI manuscript, detecting document structure, metadata, notes, images, tables, equations, and supported references.';
 }
 
 function yieldToBrowser(): Promise<void> {
