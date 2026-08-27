@@ -2,6 +2,7 @@ import { lazy, Suspense, useState, type SyntheticEvent } from 'react';
 
 import { useTranslation } from '../i18n';
 import { getAssetContainerCopy } from '../i18n/assetContainer';
+import { LongTaskStatus } from './LongTaskStatus';
 
 const LazyAssetContainerPanelContent = lazy(async () => {
   const module = await import('./AssetContainerPanelContent');
@@ -22,7 +23,7 @@ export function AssetContainerPanel() {
       <summary>{copy.title}</summary>
       <p>{copy.description}</p>
       {open ? (
-        <Suspense fallback={<p className="studio-settings-hint">{copy.preparing}</p>}>
+        <Suspense fallback={<LongTaskStatus message={copy.preparing} />}>
           <LazyAssetContainerPanelContent />
         </Suspense>
       ) : null}
