@@ -91,6 +91,12 @@ const DANGEROUS_ELEMENTS =
 const ALLOWED_TAGS = new Set([
   'P',
   'BR',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
   'STRONG',
   'EM',
   'S',
@@ -112,6 +118,9 @@ const ALLOWED_TAGS = new Set([
  *
  * The function keeps semantic structure supported by Studio while removing
  * Office classes, inline presentation CSS, event handlers and active markup.
+ * Word heading styles are promoted to real heading elements, and unsupported
+ * Word tables are flattened row-by-row rather than silently losing cell
+ * boundaries.
  */
 export function sanitizeRichTextPasteHtml(html: string): string {
   if (typeof DOMParser === 'undefined') {
@@ -125,12 +134,15 @@ export function sanitizeRichTextPasteHtml(html: string): string {
     element.remove();
   });
 
+  flattenUnsupportedTables(document);
+
   const elements = Array.from(document.body.querySelectorAll('*'));
 
   for (const originalElement of elements) {
     if (!originalElement.isConnected) continue;
 
-    let element = normalizeSemanticTag(originalElement, document);
+    let element = normalizeWordStructuralTag(originalElement, document);
+    element = normalizeSemanticTag(element, document);
     const style = detectSemanticInlineStyle(element.getAttribute('style') ?? undefined);
     const language = normalizeInlineLanguageTag(
       element.getAttribute('lang') ??
@@ -178,7 +190,10 @@ export function sanitizeRichTextPasteHtml(html: string): string {
     }
 
     if (element.tagName === 'A') {
-      const href = normalizeExternalHref(element.getAttribute('href') ?? undefined);
+      const rawHref = element.getAttribute('href') ?? undefined;
+      const href = rawHref?.startsWith('#')
+        ? undefined
+        : normalizeExternalHref(rawHref);
       if (href) {
         element.setAttribute('href', href);
       } else {
@@ -199,6 +214,57 @@ export function sanitizeRichTextPasteHtml(html: string): string {
   }
 
   return document.body.innerHTML;
+}
+
+function normalizeWordStructuralTag(
+  element: Element,
+  document: Document,
+): Element {
+  if (element.tagName !== 'P' && element.tagName !== 'DIV') return element;
+
+  const className = element.getAttribute('class') ?? '';
+  const style = element.getAttribute('style') ?? '';
+  const headingLevel = detectWordHeadingLevel(className, style);
+  if (!headingLevel) return element;
+
+  return renameElement(element, `h${headingLevel}`, document);
+}
+
+export function detectWordHeadingLevel(
+  className: string | undefined,
+  style: string | undefined,
+): 1 | 2 | 3 | 4 | 5 | 6 | undefined {
+  const classes = (className ?? '').toLowerCase();
+  const css = (style ?? '').toLowerCase();
+  const classMatch = classes.match(/(?:mso)?heading\s*([1-6])|msoheading([1-6])/i);
+  const styleNameMatch = css.match(/mso-style-name\s*:\s*['\"]?heading\s*([1-6])/i);
+  const outlineMatch = css.match(/mso-outline-level\s*:\s*([0-5])/i);
+  const raw = classMatch?.[1] ?? classMatch?.[2] ?? styleNameMatch?.[1];
+
+  if (raw) return Number(raw) as 1 | 2 | 3 | 4 | 5 | 6;
+  if (outlineMatch?.[1]) {
+    return (Number(outlineMatch[1]) + 1) as 1 | 2 | 3 | 4 | 5 | 6;
+  }
+  return undefined;
+}
+
+function flattenUnsupportedTables(document: Document): void {
+  document.querySelectorAll('table').forEach((table) => {
+    const replacement = document.createElement('div');
+    const rows = Array.from(table.querySelectorAll('tr'));
+
+    for (const row of rows) {
+      const cells = Array.from(row.querySelectorAll(':scope > th, :scope > td'));
+      const paragraph = document.createElement('p');
+      cells.forEach((cell, index) => {
+        if (index > 0) paragraph.append(document.createTextNode(' — '));
+        while (cell.firstChild) paragraph.append(cell.firstChild);
+      });
+      if (paragraph.textContent?.trim()) replacement.append(paragraph);
+    }
+
+    table.replaceWith(replacement);
+  });
 }
 
 function normalizeSemanticTag(
