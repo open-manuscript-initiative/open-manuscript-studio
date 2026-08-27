@@ -29,6 +29,7 @@ import {
 import { HtmlExportPanel } from './HtmlExportPanel';
 import { JatsExportPanel } from './JatsExportPanel';
 import { PublicationStyleEditor } from './PublicationStyleEditor';
+import { PublicationStyleExportPanel } from './PublicationStyleExportPanel';
 import { PublisherExportStylesheetPanel } from './PublisherExportStylesheetPanel';
 import { PublisherPrintStylesheetPanel } from './PublisherPrintStylesheetPanel';
 import { PublisherProfileEditor } from './PublisherProfileEditor';
@@ -131,6 +132,7 @@ export function PublicationProfilePanel() {
 
       <PublisherProfileEditor baseProfile={activeProfile} />
       <PublicationStyleEditor />
+      <PublicationStyleExportPanel />
       <PublisherExportStylesheetPanel profile={activeProfile} />
       <PublisherPrintStylesheetPanel profile={activeProfile} />
 
