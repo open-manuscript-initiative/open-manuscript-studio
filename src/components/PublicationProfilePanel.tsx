@@ -27,6 +27,7 @@ import {
   type OmiPublicationProfile,
 } from '../model/publicationProfile';
 import { HtmlExportPanel } from './HtmlExportPanel';
+import { IdmlPublicationStyleImportPanel } from './IdmlPublicationStyleImportPanel';
 import { JatsExportPanel } from './JatsExportPanel';
 import { PublicationStyleEditor } from './PublicationStyleEditor';
 import { PublicationStyleExportPanel } from './PublicationStyleExportPanel';
@@ -45,6 +46,7 @@ export function PublicationProfilePanel() {
     activeReference?.id ?? DEFAULT_PUBLICATION_PROFILE_ID,
   );
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [styleRevision, setStyleRevision] = useState(0);
 
   useEffect(() => {
     setCandidateId(activeReference?.id ?? DEFAULT_PUBLICATION_PROFILE_ID);
@@ -131,7 +133,8 @@ export function PublicationProfilePanel() {
       </section>
 
       <PublisherProfileEditor baseProfile={activeProfile} />
-      <PublicationStyleEditor />
+      <PublicationStyleEditor key={styleRevision} />
+      <IdmlPublicationStyleImportPanel onImported={() => setStyleRevision((current) => current + 1)} />
       <PublicationStyleExportPanel />
       <PublisherExportStylesheetPanel profile={activeProfile} />
       <PublisherPrintStylesheetPanel profile={activeProfile} />
