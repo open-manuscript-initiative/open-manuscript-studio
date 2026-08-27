@@ -17,21 +17,9 @@ import { openPdfPrintView } from '../services/exportPdf';
 import { buildSlaExport } from '../services/exportSla';
 import { buildXtgExport } from '../services/exportXtg';
 import { buildOmiContainer } from '../services/omiContainer';
+import { LongTaskStatus } from './LongTaskStatus';
 
-type ExportId =
-  | 'omi'
-  | 'omi-json'
-  | 'jats'
-  | 'html'
-  | 'docx'
-  | 'idml'
-  | 'xtg'
-  | 'mif'
-  | 'sla'
-  | 'latex'
-  | 'epub'
-  | 'pdf';
-
+type ExportId = 'omi' | 'omi-json' | 'jats' | 'html' | 'docx' | 'idml' | 'xtg' | 'mif' | 'sla' | 'latex' | 'epub' | 'pdf';
 type ExportGroupId = 'portable' | 'publication';
 
 interface ExportFormatOption {
@@ -42,19 +30,8 @@ interface ExportFormatOption {
   extension: string;
 }
 
-/**
- * Mobile Studio deliberately exposes only formats that are useful through the
- * operating-system document picker. Desktop DTP formats and browser print/PDF
- * remain available on desktop/web where their downstream workflow exists.
- */
 const MOBILE_EXPORT_IDS: ReadonlySet<ExportId> = new Set([
-  'omi',
-  'omi-json',
-  'jats',
-  'html',
-  'docx',
-  'latex',
-  'epub',
+  'omi', 'omi-json', 'jats', 'html', 'docx', 'latex', 'epub',
 ]);
 
 export function ExportFormatsPanel() {
@@ -82,68 +59,46 @@ export function ExportFormatsPanel() {
     { id: 'epub', group: 'publication', label: copy.epub, description: copy.epubDescription, extension: '.epub' },
     { id: 'pdf', group: 'publication', label: copy.pdf, description: `${copy.pdfDescription} ${copy.pdfHint}`, extension: '.pdf' },
   ];
-  const visibleFormats = mobile
-    ? formats.filter((format) => MOBILE_EXPORT_IDS.has(format.id))
-    : formats;
-
-  const selectedFormat = selectedId
-    ? visibleFormats.find((format) => format.id === selectedId) ?? null
-    : null;
+  const visibleFormats = mobile ? formats.filter((format) => MOBILE_EXPORT_IDS.has(format.id)) : formats;
+  const selectedFormat = selectedId ? visibleFormats.find((format) => format.id === selectedId) ?? null : null;
+  const busyFormat = busy ? visibleFormats.find((format) => format.id === busy) ?? null : null;
 
   const reportDelivery = (delivery: ExportDeliveryResult): void => {
     if (!delivery.saved) {
       setNotice(copy.cancelled);
       return;
     }
-    // Mobile document-provider URIs are implementation details rather than
-    // useful user-facing paths. saveExportBlob intentionally omits them.
-    setNotice(delivery.path
-      ? `${copy.saved} ${delivery.path}`
-      : copy.saved);
+    setNotice(delivery.path ? `${copy.saved} ${delivery.path}` : copy.saved);
   };
 
   const run = async (id: ExportId): Promise<void> => {
     if (mobile && !MOBILE_EXPORT_IDS.has(id)) return;
-
     setError('');
     setNotice('');
     setBusy(id);
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
     try {
       checkpoint('export');
       const manuscript = useStudioStore.getState().manuscript;
       switch (id) {
         case 'omi': {
           const result = await buildOmiContainer(manuscript);
-          if (!result.validForExport) {
-            throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
-          }
+          if (!result.validForExport) throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
           reportDelivery(await saveExportBlob(result.blob, result.fileName));
           break;
         }
         case 'omi-json':
-          reportDelivery(await saveExportText(
-            serializeOmiJson(manuscript),
-            omiJsonFileName(manuscript),
-            'application/vnd.openmanuscript+json;charset=utf-8',
-          ));
+          reportDelivery(await saveExportText(serializeOmiJson(manuscript), omiJsonFileName(manuscript), 'application/vnd.openmanuscript+json;charset=utf-8'));
           break;
         case 'jats': {
           const result = renderJatsArticle(manuscript);
-          if (!result.validForExport) {
-            throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
-          }
-          reportDelivery(await saveExportText(
-            result.xml,
-            jatsFileName(manuscript),
-            'application/xml;charset=utf-8',
-          ));
+          if (!result.validForExport) throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
+          reportDelivery(await saveExportText(result.xml, jatsFileName(manuscript), 'application/xml;charset=utf-8'));
           break;
         }
         case 'html': {
           const result = await buildHtmlPackage(manuscript);
-          if (!result.validForExport) {
-            throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
-          }
+          if (!result.validForExport) throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
           reportDelivery(await saveExportBlob(result.blob, result.fileName));
           break;
         }
@@ -194,61 +149,18 @@ export function ExportFormatsPanel() {
   };
 
   return (
-    <section className="studio-export-formats" aria-labelledby="studio-export-formats-title">
-      <div className="studio-settings-card-header">
-        <div>
-          <h4 id="studio-export-formats-title">{copy.title}</h4>
-          <p>{copy.description}</p>
-        </div>
-      </div>
-
+    <section className="studio-export-formats" aria-labelledby="studio-export-formats-title" aria-busy={busy !== null}>
+      <div className="studio-settings-card-header"><div><h4 id="studio-export-formats-title">{copy.title}</h4><p>{copy.description}</p></div></div>
       <div className="studio-manuscript-fields">
-        <label>
-          <span>{copy.format}</span>
-          <select
-            value={selectedId}
-            disabled={busy !== null}
-            onChange={(event) => {
-              setSelectedId(event.target.value as ExportId | '');
-              setError('');
-              setNotice('');
-            }}
-          >
-            <option value="">{copy.chooseFormat}</option>
-            <optgroup label={copy.portable}>
-              {visibleFormats.filter((format) => format.group === 'portable').map((format) => (
-                <option value={format.id} key={format.id}>{format.label} ({format.extension})</option>
-              ))}
-            </optgroup>
-            <optgroup label={copy.publication}>
-              {visibleFormats.filter((format) => format.group === 'publication').map((format) => (
-                <option value={format.id} key={format.id}>{format.label} ({format.extension})</option>
-              ))}
-            </optgroup>
-          </select>
-        </label>
+        <label><span>{copy.format}</span><select value={selectedId} disabled={busy !== null} onChange={(event) => { setSelectedId(event.target.value as ExportId | ''); setError(''); setNotice(''); }}>
+          <option value="">{copy.chooseFormat}</option>
+          <optgroup label={copy.portable}>{visibleFormats.filter((format) => format.group === 'portable').map((format) => <option value={format.id} key={format.id}>{format.label} ({format.extension})</option>)}</optgroup>
+          <optgroup label={copy.publication}>{visibleFormats.filter((format) => format.group === 'publication').map((format) => <option value={format.id} key={format.id}>{format.label} ({format.extension})</option>)}</optgroup>
+        </select></label>
       </div>
-
-      {selectedFormat ? (
-        <div className="studio-settings-hint">
-          <strong>{selectedFormat.label}</strong>
-          <p>{selectedFormat.description}</p>
-        </div>
-      ) : null}
-
-      <div className="studio-tool-actions">
-        <button
-          type="button"
-          className="studio-menu-primary-action"
-          disabled={!selectedId || busy !== null}
-          onClick={() => {
-            if (selectedId) void run(selectedId);
-          }}
-        >
-          {busy ? copy.preparing : copy.export}
-        </button>
-      </div>
-
+      {selectedFormat ? <div className="studio-settings-hint"><strong>{selectedFormat.label}</strong><p>{selectedFormat.description}</p></div> : null}
+      <div className="studio-tool-actions"><button type="button" className="studio-menu-primary-action" disabled={!selectedId || busy !== null} onClick={() => { if (selectedId) void run(selectedId); }}>{busy ? copy.preparing : copy.export}</button></div>
+      {busy ? <LongTaskStatus message={busyFormat ? `${busyFormat.label} — ${copy.preparing}` : copy.preparing} /> : null}
       {notice ? <p className="studio-settings-hint" role="status">{notice}</p> : null}
       {error ? <div className="studio-export-error" role="alert">{error}</div> : null}
     </section>
