@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  CircleX,
   FileText,
   Fingerprint,
   FolderOpen,
@@ -19,10 +20,16 @@ import {
 } from 'lucide-react';
 import {
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 
+import {
+  clearDocumentClosedState,
+  isDocumentClosedState,
+} from '../app/documentCloseState';
+import { closeCurrentDocument } from '../app/documentLifecycle';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getLocalFileLabels, type LocalFileLabels } from '../i18n/nativeStorageTranslations';
@@ -48,6 +55,7 @@ import {
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import { buildOmiContainer } from '../services/omiContainer';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
+import type { OmiManuscript } from '../types/omi';
 import { AssetContainerPanel } from './AssetContainerPanel';
 import { AuthorSignaturePanel } from './AuthorSignaturePanel';
 import { CloudStorageSettings } from './CloudStorageSettings';
@@ -107,6 +115,11 @@ export function StudioMenu({
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
   const [activeView, setActiveView] = useState<StudioMenuView>('document');
 
+  // Kept temporarily for API compatibility with StudioMenuWithHelp. The
+  // document view now owns its lifecycle controls so they cannot disappear
+  // because an outer wrapper omitted or conditionally rendered this fragment.
+  void documentCloseAction;
+
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
@@ -150,7 +163,7 @@ export function StudioMenu({
             {navigationAfterSettings}
           </nav>
           <div className="studio-menu-content">
-            {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} /> : null}
+            {activeView === 'document' ? <DocumentMenuView /> : null}
             {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={onClose} /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
             {activeView === 'notes' ? <NotesPanel onNavigate={onClose} /> : null}
@@ -197,31 +210,98 @@ function useOwnDeviceStorage(): boolean {
   return mode === 'own-device';
 }
 
-function DocumentMenuView({ documentCloseAction }: { documentCloseAction?: ReactNode }) {
+function DocumentMenuView() {
   const { t, locale } = useTranslation();
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
   const [localPath, setLocalPath] = useState(getCurrentManuscriptFilePath());
   const [fileMessage, setFileMessage] = useState('');
+  const [documentClosed, setDocumentClosed] = useState(() => isDocumentClosedState());
+  const browserFileInputRef = useRef<HTMLInputElement>(null);
   const native = isNativeStudio();
   const ownDevice = useOwnDeviceStorage();
   const platform = getStudioPlatform();
   const labels = getLocalFileLabels(locale, platform);
+  const closeCopy = getCloseDocumentCopy(locale);
 
-  async function openNative(): Promise<void> {
+  async function openDocument(file?: File): Promise<void> {
+    setFileMessage('');
     try {
-      const result = ownDevice ? await openLocalManuscript() : await openPortableManuscript();
-      if (!result) return;
-      loadManuscript(result.manuscript);
-      setLocalPath(ownDevice ? result.path : null);
-      setFileMessage(ownDevice ? labels.opened : labels.portableOpened);
+      if (native) {
+        const result = ownDevice ? await openLocalManuscript() : await openPortableManuscript();
+        if (!result) return;
+        loadManuscript(result.manuscript);
+        setLocalPath(ownDevice ? result.path : null);
+        setFileMessage(ownDevice ? labels.opened : labels.portableOpened);
+      } else {
+        if (!file) {
+          browserFileInputRef.current?.click();
+          return;
+        }
+        const raw = await file.text();
+        const parsed = JSON.parse(raw) as unknown;
+        if (!isOmiManuscript(parsed)) throw new Error(getInvalidDocumentMessage(locale));
+        loadManuscript(parsed);
+        setLocalPath(null);
+        setFileMessage(labels.opened);
+      }
+      clearDocumentClosedState();
+      setDocumentClosed(false);
     } catch (error) {
       setFileMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      if (browserFileInputRef.current) browserFileInputRef.current.value = '';
     }
   }
 
+  async function closeDocument(): Promise<void> {
+    if (!window.confirm(closeCopy.confirm)) return;
+    await closeCurrentDocument();
+    setDocumentClosed(true);
+    setLocalPath(null);
+    setFileMessage('');
+  }
+
+  const openTitle = native
+    ? (ownDevice ? labels.openTitle : labels.portableOpenTitle)
+    : labels.openTitle;
+  const openDescription = native
+    ? (ownDevice ? labels.openDescription : labels.portableOpenDescription)
+    : labels.openDescription;
+  const openLabel = native
+    ? (ownDevice ? labels.open : labels.openPortable)
+    : labels.open;
+
   return <section className="studio-menu-view">
     <div className="studio-menu-view-header"><div><h3>{t('studio.document.title')}</h3><p>{t('studio.document.description')}</p></div></div>
-    {native ? <div className="studio-tool-card"><div><strong>{ownDevice ? labels.openTitle : labels.portableOpenTitle}</strong><p>{ownDevice ? labels.openDescription : labels.portableOpenDescription}</p>{ownDevice ? <small>{formatNativeLocation(localPath, platform, labels)}</small> : null}{fileMessage ? <p role="status">{fileMessage}</p> : null}</div><div className="studio-tool-actions"><button type="button" className="studio-menu-primary-action" onClick={() => void openNative()}>{ownDevice ? <FolderOpen size={16} aria-hidden="true" /> : <Usb size={16} aria-hidden="true" />}{ownDevice ? labels.open : labels.openPortable}</button>{documentCloseAction}</div></div> : documentCloseAction ? <div className="studio-tool-card"><div className="studio-tool-actions">{documentCloseAction}</div></div> : null}
+    <div className="studio-tool-card" data-document-lifecycle="true">
+      <div>
+        <strong>{openTitle}</strong>
+        <p>{openDescription}</p>
+        {native && ownDevice ? <small>{formatNativeLocation(localPath, platform, labels)}</small> : null}
+        {fileMessage ? <p role="status" aria-live="polite">{fileMessage}</p> : null}
+      </div>
+      <div className="studio-tool-actions">
+        {!native ? (
+          <input
+            ref={browserFileInputRef}
+            type="file"
+            accept=".omi.json,.json,application/json,application/vnd.openmanuscript+json"
+            hidden
+            onChange={(event) => void openDocument(event.target.files?.[0])}
+          />
+        ) : null}
+        <button type="button" className="studio-menu-primary-action" onClick={() => void openDocument()}>
+          {native && !ownDevice ? <Usb size={16} aria-hidden="true" /> : <FolderOpen size={16} aria-hidden="true" />}
+          {openLabel}
+        </button>
+        {!documentClosed ? (
+          <button type="button" className="studio-menu-secondary-action studio-menu-danger-action" data-document-close="true" onClick={() => void closeDocument()}>
+            <CircleX size={16} aria-hidden="true" />
+            {closeCopy.label}
+          </button>
+        ) : null}
+      </div>
+    </div>
     <DocxImportPanel />
   </section>;
 }
@@ -389,6 +469,35 @@ function formatNativeLocation(
   if (!path) return labels.noFile;
   if (platform === 'android' || isAndroidDocumentUri(path)) return labels.targetSelected;
   return path;
+}
+
+function isOmiManuscript(value: unknown): value is OmiManuscript {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<OmiManuscript>;
+  return typeof candidate.id === 'string'
+    && typeof candidate.title === 'string'
+    && Array.isArray(candidate.sections);
+}
+
+function getInvalidDocumentMessage(locale: string): string {
+  if (locale === 'hu') return 'A kiválasztott fájl nem érvényes OMI-kézirat.';
+  if (locale === 'de') return 'Die ausgewählte Datei ist kein gültiges OMI-Manuskript.';
+  return 'The selected file is not a valid OMI manuscript.';
+}
+
+function getCloseDocumentCopy(locale: string) {
+  if (locale === 'hu') return {
+    label: 'Dokumentum bezárása',
+    confirm: 'Bezárja az aktuális dokumentumot? A dokumentum kikerül a visszaállított munkamenetből. A külön fájlba vagy külső rendszerbe még el nem mentett tartalom elveszhet.',
+  };
+  if (locale === 'de') return {
+    label: 'Dokument schließen',
+    confirm: 'Aktuelles Dokument schließen? Es wird aus der wiederhergestellten Sitzung entfernt. Inhalte, die noch nicht in einer separaten Datei oder einem externen System gespeichert wurden, können verloren gehen.',
+  };
+  return {
+    label: 'Close document',
+    confirm: 'Close the current document? It will be removed from the restored session. Content not yet saved to a separate file or external system may be lost.',
+  };
 }
 
 function parseBlockContent(content: string): unknown {
