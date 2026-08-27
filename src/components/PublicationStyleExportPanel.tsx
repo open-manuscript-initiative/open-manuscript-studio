@@ -76,10 +76,17 @@ export function PublicationStyleExportPanel() {
       checkpoint('export');
       const committed = useStudioStore.getState().manuscript;
       const profile = resolvePublicationProfile(committed);
+      const style = loadPublicationStyle();
       const html = await renderStyleBasedHtml(committed, profile, 'print');
       printWindow.document.open();
       printWindow.document.write(html);
       printWindow.document.close();
+
+      const runningHeaderLeft = printWindow.document.querySelector<HTMLElement>('[data-omi-running-header-left]');
+      const runningHeaderRight = printWindow.document.querySelector<HTMLElement>('[data-omi-running-header-right]');
+      if (runningHeaderLeft) runningHeaderLeft.textContent = committed.title || style.name;
+      if (runningHeaderRight) runningHeaderRight.textContent = style.name;
+
       printWindow.focus();
       window.setTimeout(() => {
         printWindow.print();
