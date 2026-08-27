@@ -40,8 +40,9 @@ export function IdmlPublicationStyleImportPanel({ onImported }: { onImported?: (
       const unmapped = imported.unmappedStyles.length;
       setMessage(copy.imported.replace('{mapped}', String(mapped)).replace('{unmapped}', String(unmapped)));
       onImported?.();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : copy.failed);
+    } catch {
+      // Do not render parser/package error text derived from an untrusted IDML file.
+      setMessage(copy.failed);
     } finally {
       setBusy(false);
     }
