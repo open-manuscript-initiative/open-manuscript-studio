@@ -1,5 +1,6 @@
 import { FileUp } from 'lucide-react';
 import { useRef, useState, type ChangeEvent } from 'react';
+import { createPortal } from 'react-dom';
 
 import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json';
 import { useTranslation } from '../i18n';
@@ -15,15 +16,7 @@ const LEGACY_STORAGE_KEY = 'omi:publication-style:egyhaztorteneti-szemle';
 const LIBRARY_STORAGE_KEY = 'omi:publication-style-library:v1';
 const ACTIVE_STYLE_KEY = 'omi:publication-style-active:v1';
 
-interface IdmlPublicationStyleImportPanelProps {
-  onImported?: () => void;
-  compact?: boolean;
-}
-
-export function IdmlPublicationStyleImportPanel({
-  onImported,
-  compact = false,
-}: IdmlPublicationStyleImportPanelProps) {
+export function IdmlPublicationStyleImportPanel({ onImported }: { onImported?: () => void }) {
   const { locale } = useTranslation();
   const copy = copyFor(locale);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -56,49 +49,47 @@ export function IdmlPublicationStyleImportPanel({
     }
   }
 
-  const input = (
-    <input
-      ref={inputRef}
-      type="file"
-      accept=".idml,application/vnd.adobe.indesign-idml-package"
-      hidden
-      onChange={(event) => void handleFile(event)}
-    />
-  );
+  const editorHeading = typeof document === 'undefined'
+    ? null
+    : document.getElementById('publication-style-editor-title')?.closest('.publication-profile-section-heading');
 
-  const button = (
-    <button
-      type="button"
-      className="studio-menu-secondary-action"
-      disabled={busy}
-      onClick={() => inputRef.current?.click()}
-      title={copy.description}
-    >
-      <FileUp size={16} aria-hidden="true" />
-      {busy ? copy.reading : copy.action}
-    </button>
+  const action = (
+    <div className="publication-style-idml-import-action">
+      <button
+        type="button"
+        className="studio-menu-primary-action"
+        disabled={busy}
+        onClick={() => inputRef.current?.click()}
+        title={copy.description}
+      >
+        <FileUp size={16} aria-hidden="true" />
+        {busy ? copy.reading : copy.action}
+      </button>
+      {message ? <small className="publication-style-saved" role="status">{message}</small> : null}
+    </div>
   );
-
-  if (compact) {
-    return (
-      <>
-        {input}
-        {button}
-        {message ? <span className="publication-style-saved" role="status">{message}</span> : null}
-      </>
-    );
-  }
 
   return (
-    <section className="publication-profile-export" aria-labelledby="idml-style-import-title">
-      <div>
-        <strong id="idml-style-import-title">{copy.title}</strong>
-        <p>{copy.description}</p>
-        {message ? <p className="publication-style-saved" role="status">{message}</p> : null}
-      </div>
-      {input}
-      {button}
-    </section>
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".idml,application/vnd.adobe.indesign-idml-package"
+        hidden
+        onChange={(event) => void handleFile(event)}
+      />
+      {editorHeading
+        ? createPortal(action, editorHeading)
+        : (
+          <section className="publication-profile-export" aria-labelledby="idml-style-import-title">
+            <div>
+              <strong id="idml-style-import-title">{copy.title}</strong>
+              <p>{copy.description}</p>
+            </div>
+            {action}
+          </section>
+        )}
+    </>
   );
 }
 
