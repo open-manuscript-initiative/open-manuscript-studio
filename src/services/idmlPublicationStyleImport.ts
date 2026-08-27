@@ -68,7 +68,9 @@ export async function importPublicationStyleFromIdml(file: File): Promise<IdmlPu
   for (const entry of xmlEntries) {
     if (!shouldReadEntry(entry.name)) continue;
     const bytes = await readZipEntry(buffer, entry);
-    xmlByName.set(entry.name, new TextDecoder().decode(bytes));
+    const xml = new TextDecoder().decode(bytes);
+    assertSafeIdmlXml(xml);
+    xmlByName.set(entry.name, xml);
   }
 
   const stylesXml = findXml(xmlByName, /(^|\/)Resources\/Styles\.xml$/i)
@@ -114,36 +116,76 @@ function findXml(xmlByName: Map<string, string>, pattern: RegExp): string | unde
 }
 
 function parseParagraphStyles(xml: string): RawParagraphStyle[] {
-  const document = parseXml(xml);
-  return Array.from(document.getElementsByTagName('ParagraphStyle')).map((element) => {
-    const name = element.getAttribute('Name') ?? element.getAttribute('Self') ?? 'Unnamed style';
-    const id = element.getAttribute('Self') ?? name;
-    const basedOn = normalizeReference(element.getAttribute('BasedOn'));
+  const styles: RawParagraphStyle[] = [];
+  const pattern = /<ParagraphStyle\b([^>]*?)(?:\/>|>([\s\S]*?)<\/ParagraphStyle>)/gi;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(xml)) !== null) {
+    const attributes = parseAttributes(match[1] ?? '');
+    const body = match[2] ?? '';
+    const name = attributes.Name ?? attributes.Self ?? 'Unnamed style';
+    const id = attributes.Self ?? name;
+    const basedOn = normalizeReference(attributes.BasedOn ?? null);
     const patch: IdmlStylePatch = {};
 
-    const fontFamily = propertyText(element, 'AppliedFont') || element.getAttribute('AppliedFont') || undefined;
+    const fontFamily = propertyText(body, 'AppliedFont') || attributes.AppliedFont;
     if (fontFamily && !fontFamily.startsWith('$ID/')) patch.fontFamily = fontFamily;
 
-    assignNumber(patch, 'fontSize', attributeNumber(element, 'PointSize'));
-    const leading = attributeNumber(element, 'Leading');
+    assignNumber(patch, 'fontSize', attributeNumber(attributes.PointSize));
+    const leading = attributeNumber(attributes.Leading);
     if (leading !== undefined && leading > 0) patch.lineHeight = leading;
-    const firstLineIndent = attributeNumber(element, 'FirstLineIndent');
+    const firstLineIndent = attributeNumber(attributes.FirstLineIndent);
     if (firstLineIndent !== undefined) patch.firstLineIndent = round(firstLineIndent * PT_TO_MM);
-    const spaceBefore = attributeNumber(element, 'SpaceBefore');
+    const spaceBefore = attributeNumber(attributes.SpaceBefore);
     if (spaceBefore !== undefined) patch.spaceBefore = round(spaceBefore);
-    const spaceAfter = attributeNumber(element, 'SpaceAfter');
+    const spaceAfter = attributeNumber(attributes.SpaceAfter);
     if (spaceAfter !== undefined) patch.spaceAfter = round(spaceAfter);
 
-    const justification = element.getAttribute('Justification');
-    const alignment = mapJustification(justification);
+    const alignment = mapJustification(attributes.Justification ?? null);
     if (alignment) patch.alignment = alignment;
 
-    const fontStyle = (element.getAttribute('FontStyle') ?? propertyText(element, 'FontStyle')).toLowerCase();
+    const fontStyle = (attributes.FontStyle ?? propertyText(body, 'FontStyle')).toLowerCase();
     if (/italic|oblique/.test(fontStyle)) patch.fontStyle = 'italic';
     if (/bold|semibold|demibold/.test(fontStyle)) patch.fontWeight = /semi|demi/.test(fontStyle) ? 600 : 700;
 
-    return { id, name, basedOn, patch };
-  });
+    styles.push({ id, name, basedOn, patch });
+  }
+  return styles;
+}
+
+function parseAttributes(source: string): Record<string, string> {
+  const attributes: Record<string, string> = {};
+  const pattern = /([A-Za-z_:][\w:.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(source)) !== null) {
+    attributes[match[1]] = decodeXmlEntities(match[2] ?? match[3] ?? '');
+  }
+  return attributes;
+}
+
+function propertyText(body: string, propertyName: string): string {
+  const escaped = escapeRegExp(propertyName);
+  const match = body.match(new RegExp(`<${escaped}\\b[^>]*>([\\s\\S]*?)<\\/${escaped}>`, 'i'));
+  if (!match) return '';
+  return decodeXmlEntities(stripXmlTags(match[1])).trim();
+}
+
+function stripXmlTags(value: string): string {
+  return value.replace(/<[^>]*>/g, '');
+}
+
+function decodeXmlEntities(value: string): string {
+  return value
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code: string) => String.fromCodePoint(Number.parseInt(code, 16)));
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function resolveBasedOnStyles(styles: RawParagraphStyle[]): RawParagraphStyle[] {
@@ -231,22 +273,7 @@ function assertSafeIdmlXml(xml: string): void {
   if (/<!DOCTYPE/i.test(xml)) throw new Error('An IDML XML resource contains an unsupported DOCTYPE declaration.');
   if (/<!ENTITY/i.test(xml)) throw new Error('An IDML XML resource contains an unsupported entity declaration.');
   if (/<\?xml-stylesheet/i.test(xml)) throw new Error('An IDML XML resource contains an unsupported processing instruction.');
-}
-
-function parseXml(xml: string): XMLDocument {
-  assertSafeIdmlXml(xml);
-  const document = new DOMParser().parseFromString(xml, 'application/xml');
-  if (document.querySelector('parsererror')) throw new Error('An IDML XML resource could not be parsed.');
-  return document;
-}
-
-function propertyText(element: Element, propertyName: string): string {
-  const properties = element.getElementsByTagName('Properties')[0];
-  if (!properties) return '';
-  for (const child of Array.from(properties.children)) {
-    if (child.localName === propertyName || child.tagName === propertyName) return child.textContent?.trim() ?? '';
-  }
-  return '';
+  if (/<script\b/i.test(xml)) throw new Error('An IDML XML resource contains unsupported executable markup.');
 }
 
 function normalizeReference(value: string | null): string | undefined {
@@ -254,8 +281,7 @@ function normalizeReference(value: string | null): string | undefined {
   return value.replace(/^ParagraphStyle\//, '');
 }
 
-function attributeNumber(element: Element, name: string): number | undefined {
-  const value = element.getAttribute(name);
+function attributeNumber(value: string | undefined): number | undefined {
   if (!value || value === 'Auto' || value.startsWith('$ID/')) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
