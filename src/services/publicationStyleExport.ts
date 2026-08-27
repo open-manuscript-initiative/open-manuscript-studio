@@ -162,7 +162,9 @@ function bytesToBase64(bytes: Uint8Array): string {
 }
 
 function cssFontFamily(family: string, fallback: string): string {
-  return `"${family.replace(/"/g, '\\"')}", ${fallback}`;
+  const escapedFamily = family.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const escapedFallback = fallback.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return `"${escapedFamily}", "${escapedFallback}"`;
 }
 
 function escapeHtml(value: string): string {
