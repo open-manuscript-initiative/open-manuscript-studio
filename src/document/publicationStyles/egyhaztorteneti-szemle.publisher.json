@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "0.1.0",
+  "id": "egyhaztorteneti-szemle-publisher",
+  "journalTitle": "Egyháztörténeti Szemle",
+  "journalShortTitle": "Egyháztörténeti Szemle",
+  "publisherName": "",
+  "publisherAddress": "",
+  "website": "https://egyhaztortenetiszemle.hu/ojs/index.php/e/",
+  "contactEmail": "",
+  "identifiers": {
+    "issn": "",
+    "eissn": ""
+  },
+  "branding": {
+    "logo": {
+      "enabled": true,
+      "src": "",
+      "alt": "Egyháztörténeti Szemle",
+      "position": "article-header",
+      "maxWidthMm": 38,
+      "showInPdf": true,
+      "showInHtml": true
+    }
+  },
+  "issue": {
+    "volume": "",
+    "number": "",
+    "year": "",
+    "displayTemplate": "{{journalTitle}} {{volume}}/{{issue}} ({{year}})"
+  },
+  "doi": {
+    "enabled": true,
+    "label": "DOI",
+    "displayTemplate": "{{doi}}",
+    "linkPrefix": "https://doi.org/"
+  },
+  "legal": {
+    "copyright": {
+      "enabled": true,
+      "template": "© {{year}} {{copyrightHolder}}",
+      "copyrightHolder": "Egyháztörténeti Szemle"
+    },
+    "license": {
+      "enabled": true,
+      "label": "",
+      "url": "",
+      "iconSrc": ""
+    }
+  },
+  "display": {
+    "firstPageBranding": true,
+    "firstPageLegalBlock": true,
+    "htmlArticleBranding": true,
+    "htmlLegalFooter": true,
+    "showIssn": true,
+    "showWebsite": true
+  },
+  "notes": "Editable publisher identity companion for the Egyháztörténeti Szemle publication style. Empty values are intentional and should be filled only from authoritative journal data. Logo src may be an OMI/public asset path or a data URL."
+}

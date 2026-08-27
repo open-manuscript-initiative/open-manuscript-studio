@@ -1,3 +1,4 @@
+import publisherJson from '../document/publicationStyles/egyhaztorteneti-szemle.publisher.json';
 import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json';
 import { assetPath } from '../model/assets';
 import type { OmiPublicationProfile } from '../model/publicationProfile';
@@ -6,12 +7,18 @@ import { getAssetPayload } from './assetRepository';
 import { renderPublisherHtmlArticle } from './exportPublisherHtmlPackage';
 
 export type PublicationStyle = typeof templateJson;
+export type PublicationPublisherIdentity = typeof publisherJson;
 export type PublicationStyleTarget = 'html' | 'print';
 
 export const PUBLICATION_STYLE_STORAGE_KEY = 'omi:publication-style:egyhaztorteneti-szemle';
+export const PUBLICATION_PUBLISHER_STORAGE_KEY = 'omi:publication-publisher:egyhaztorteneti-szemle';
 
 export function clonePublicationStyleTemplate(): PublicationStyle {
   return JSON.parse(JSON.stringify(templateJson)) as PublicationStyle;
+}
+
+export function clonePublicationPublisherTemplate(): PublicationPublisherIdentity {
+  return JSON.parse(JSON.stringify(publisherJson)) as PublicationPublisherIdentity;
 }
 
 export function loadPublicationStyle(): PublicationStyle {
@@ -23,13 +30,31 @@ export function loadPublicationStyle(): PublicationStyle {
   }
 }
 
+export function loadPublicationPublisherIdentity(): PublicationPublisherIdentity {
+  try {
+    const saved = window.localStorage.getItem(PUBLICATION_PUBLISHER_STORAGE_KEY);
+    return saved ? (JSON.parse(saved) as PublicationPublisherIdentity) : clonePublicationPublisherTemplate();
+  } catch {
+    return clonePublicationPublisherTemplate();
+  }
+}
+
 export function savePublicationStyle(style: PublicationStyle): void {
   window.localStorage.setItem(PUBLICATION_STYLE_STORAGE_KEY, JSON.stringify(style));
+}
+
+export function savePublicationPublisherIdentity(identity: PublicationPublisherIdentity): void {
+  window.localStorage.setItem(PUBLICATION_PUBLISHER_STORAGE_KEY, JSON.stringify(identity));
 }
 
 export function resetPublicationStyle(): PublicationStyle {
   window.localStorage.removeItem(PUBLICATION_STYLE_STORAGE_KEY);
   return clonePublicationStyleTemplate();
+}
+
+export function resetPublicationPublisherIdentity(): PublicationPublisherIdentity {
+  window.localStorage.removeItem(PUBLICATION_PUBLISHER_STORAGE_KEY);
+  return clonePublicationPublisherTemplate();
 }
 
 export function buildPublicationStyleCss(
@@ -57,6 +82,11 @@ export function buildPublicationStyleCss(
 html, body { margin: 0; padding: 0; }
 body { font-family: var(--omi-publication-font); font-size: ${body.fontSize}pt; line-height: ${body.lineHeight}pt; }
 .omi-scholarly-article { max-width: none; margin: 0 auto; }
+.omi-publisher-branding { display: flex; justify-content: center; align-items: center; margin: 0 0 6mm; }
+.omi-publisher-logo { display: block; height: auto; max-width: 100%; }
+.omi-publisher-legal { margin-top: 8mm; padding-top: 2.5mm; border-top: .3pt solid currentColor; font-size: 8.5pt; line-height: 1.25; }
+.omi-publisher-legal p { margin: 0 0 1mm; text-indent: 0; }
+.omi-publisher-legal a { color: inherit; text-decoration: none; }
 .article-front h1 { font-size: ${title.fontSize}pt; line-height: ${title.lineHeight}pt; font-weight: ${title.fontWeight}; text-align: ${title.alignment}; margin: 0 0 ${title.spaceAfter}pt; }
 .article-front .article-subtitle, .article-front .subtitle { font-size: ${subtitle.fontSize}pt; line-height: ${subtitle.lineHeight}pt; text-align: ${subtitle.alignment}; margin: 0 0 ${subtitle.spaceAfter}pt; }
 .article-front .contributor-name, .article-front .author { font-size: ${author.fontSize}pt; line-height: ${author.lineHeight}pt; font-weight: ${author.fontWeight}; text-align: ${author.alignment}; }
@@ -128,14 +158,86 @@ export function withPrintRunningHeader(
   );
 }
 
+export function withPublisherIdentity(
+  html: string,
+  manuscript: OmiManuscript,
+  target: PublicationStyleTarget,
+  identity: PublicationPublisherIdentity = loadPublicationPublisherIdentity(),
+): string {
+  const showBranding = target === 'print'
+    ? identity.display.firstPageBranding && identity.branding.logo.showInPdf
+    : identity.display.htmlArticleBranding && identity.branding.logo.showInHtml;
+  const showLegal = target === 'print'
+    ? identity.display.firstPageLegalBlock
+    : identity.display.htmlLegalFooter;
+
+  let result = html;
+  if (showBranding && identity.branding.logo.enabled && identity.branding.logo.src.trim()) {
+    const maxWidth = Math.max(1, identity.branding.logo.maxWidthMm);
+    const logo = `<div class="omi-publisher-branding" data-omi-publisher-branding><img class="omi-publisher-logo" src="${escapeHtml(identity.branding.logo.src.trim())}" alt="${escapeHtml(identity.branding.logo.alt)}" style="max-width:${maxWidth}mm"></div>`;
+    result = result.replace('<body>', `<body>\n  ${logo}`);
+  }
+
+  if (showLegal) {
+    const legal = renderPublisherLegalBlock(manuscript, identity);
+    if (legal) result = result.replace('</body>', `  ${legal}\n</body>`);
+  }
+  return result;
+}
+
+function renderPublisherLegalBlock(
+  manuscript: OmiManuscript,
+  identity: PublicationPublisherIdentity,
+): string {
+  const year = identity.issue.year.trim() || manuscript.updatedAt.slice(0, 4);
+  const lines: string[] = [];
+
+  if (identity.legal.copyright.enabled) {
+    const copyright = fillPublisherTemplate(identity.legal.copyright.template, {
+      year,
+      journalTitle: identity.journalTitle,
+      copyrightHolder: identity.legal.copyright.copyrightHolder || identity.publisherName || identity.journalTitle,
+    });
+    if (copyright.trim()) lines.push(`<p class="omi-publisher-copyright">${escapeHtml(copyright)}</p>`);
+  }
+
+  if (identity.legal.license.enabled && identity.legal.license.label.trim()) {
+    const label = escapeHtml(identity.legal.license.label.trim());
+    const url = identity.legal.license.url.trim();
+    lines.push(`<p class="omi-publisher-license">${url ? `<a href="${escapeHtml(url)}">${label}</a>` : label}</p>`);
+  }
+
+  const identifiers = [
+    identity.identifiers.issn.trim() ? `ISSN ${identity.identifiers.issn.trim()}` : '',
+    identity.identifiers.eissn.trim() ? `eISSN ${identity.identifiers.eissn.trim()}` : '',
+  ].filter(Boolean);
+  if (identity.display.showIssn && identifiers.length) {
+    lines.push(`<p class="omi-publisher-identifiers">${escapeHtml(identifiers.join(' · '))}</p>`);
+  }
+
+  if (identity.display.showWebsite && identity.website.trim()) {
+    const website = identity.website.trim();
+    lines.push(`<p class="omi-publisher-website"><a href="${escapeHtml(website)}">${escapeHtml(website)}</a></p>`);
+  }
+
+  if (!lines.length) return '';
+  return `<footer class="omi-publisher-legal" data-omi-publisher-legal>${lines.join('')}</footer>`;
+}
+
+function fillPublisherTemplate(template: string, values: Record<string, string>): string {
+  return template.replace(/\{\{([a-zA-Z][a-zA-Z0-9]*)\}\}/g, (_match, key: string) => values[key] ?? '');
+}
+
 export async function renderStyleBasedHtml(
   manuscript: OmiManuscript,
   profile: OmiPublicationProfile,
   target: PublicationStyleTarget,
 ): Promise<string> {
   const style = loadPublicationStyle();
+  const identity = loadPublicationPublisherIdentity();
   const rendered = renderPublisherHtmlArticle(manuscript, profile);
   let html = withPublicationStyleCss(rendered.html, style, target);
+  html = withPublisherIdentity(html, manuscript, target, identity);
   if (target === 'print') html = withPrintRunningHeader(html, manuscript, style);
   return target === 'print' ? inlineManuscriptAssets(html, manuscript) : html;
 }
