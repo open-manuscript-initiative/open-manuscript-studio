@@ -1,7 +1,7 @@
 import { CheckCircle2, CircleHelp, Lightbulb, MapPin, Route } from 'lucide-react';
 
 import { useTranslation } from '../i18n';
-import { getDetailedHelpLabels, getDetailedHelpTopic } from '../i18n/helpDetailed';
+import { getDetailedHelpLabels, getDetailedHelpTopic } from '../i18n/helpDetailedAll';
 import { getLocalizedHelpCopy } from '../i18n/helpResolver';
 
 const HELP_TOPIC_NUMBER_PREFIX = /^\s*(?:\d+(?:\.\d+)*[.):-]?|[IVXLCDM]+[.)])\s+/i;
