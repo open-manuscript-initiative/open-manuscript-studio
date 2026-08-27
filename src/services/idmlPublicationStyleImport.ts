@@ -225,7 +225,16 @@ function mapJustification(value: string | null): IdmlStylePatch['alignment'] | u
   return undefined;
 }
 
+function assertSafeIdmlXml(xml: string): void {
+  const trimmed = xml.trimStart();
+  if (!trimmed.startsWith('<')) throw new Error('An IDML XML resource is not valid XML.');
+  if (/<!DOCTYPE/i.test(xml)) throw new Error('An IDML XML resource contains an unsupported DOCTYPE declaration.');
+  if (/<!ENTITY/i.test(xml)) throw new Error('An IDML XML resource contains an unsupported entity declaration.');
+  if (/<\?xml-stylesheet/i.test(xml)) throw new Error('An IDML XML resource contains an unsupported processing instruction.');
+}
+
 function parseXml(xml: string): XMLDocument {
+  assertSafeIdmlXml(xml);
   const document = new DOMParser().parseFromString(xml, 'application/xml');
   if (document.querySelector('parsererror')) throw new Error('An IDML XML resource could not be parsed.');
   return document;
