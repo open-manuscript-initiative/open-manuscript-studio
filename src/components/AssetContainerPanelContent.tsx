@@ -36,6 +36,7 @@ import {
   MAX_OMI_IMPORT_BYTES,
   type OmiContainerImportPlan,
 } from '../services/omiContainerImport';
+import { LongTaskStatus } from './LongTaskStatus';
 
 export function AssetContainerPanelContent() {
   const { locale } = useTranslation();
@@ -64,22 +65,26 @@ export function AssetContainerPanelContent() {
     [manuscript.sections],
   );
   const assets = manuscript.assets ?? [];
-  const currentIntegrity = inspectRevisionHistoryIntegrity(
-    manuscript.revisionHistory,
-  );
+  const currentIntegrity = inspectRevisionHistoryIntegrity(manuscript.revisionHistory);
   const importIntegrity = importPlan?.manuscript
     ? inspectRevisionHistoryIntegrity(importPlan.manuscript.revisionHistory)
     : null;
   const importHasInvalidDigest = Boolean(
     importIntegrity &&
-    (importIntegrity.summary.mismatch > 0 ||
-      importIntegrity.summary.unsupported > 0),
+    (importIntegrity.summary.mismatch > 0 || importIntegrity.summary.unsupported > 0),
   );
   const importCanOpen = Boolean(
-    importPlan?.validForImport &&
-    importPlan.manuscript &&
-    !importHasInvalidDigest,
+    importPlan?.validForImport && importPlan.manuscript && !importHasInvalidDigest,
   );
+  const busyMessage = busy === 'download'
+    ? copy.downloading
+    : busy === 'inspect'
+      ? copy.inspecting
+      : busy === 'import'
+        ? copy.importing
+        : busy === 'prepare'
+          ? copy.preparing
+          : '';
 
   async function prepareAssets(): Promise<number> {
     setBusy('prepare');
@@ -100,13 +105,10 @@ export function AssetContainerPanelContent() {
       checkpoint('export');
       const current = useStudioStore.getState().manuscript;
       const enriched = ensureManuscriptRevisionStateDigests(current);
-      if (enriched !== current) {
-        useStudioStore.setState({ manuscript: enriched });
-      }
+      if (enriched !== current) useStudioStore.setState({ manuscript: enriched });
       const result = await buildOmiContainer(enriched);
       setDiagnostics(result.diagnostics);
       if (!result.validForExport) return;
-
       const url = URL.createObjectURL(result.blob);
       const anchor = document.createElement('a');
       anchor.href = url;
@@ -124,24 +126,18 @@ export function AssetContainerPanelContent() {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
-
     setBusy('inspect');
     setImportPlan(null);
     setImportedTitle(null);
     setImportReadError(null);
     try {
       if (file.size > MAX_OMI_IMPORT_BYTES) {
-        setImportReadError(
-          `${copy.invalid} (${Math.round(file.size / 1024 / 1024)} MB > ${Math.round(MAX_OMI_IMPORT_BYTES / 1024 / 1024)} MB)`,
-        );
+        setImportReadError(`${copy.invalid} (${Math.round(file.size / 1024 / 1024)} MB > ${Math.round(MAX_OMI_IMPORT_BYTES / 1024 / 1024)} MB)`);
         return;
       }
-      const plan = await inspectOmiContainer(await file.arrayBuffer());
-      setImportPlan(plan);
+      setImportPlan(await inspectOmiContainer(await file.arrayBuffer()));
     } catch (importError) {
-      setImportReadError(
-        importError instanceof Error ? importError.message : copy.invalid,
-      );
+      setImportReadError(importError instanceof Error ? importError.message : copy.invalid);
     } finally {
       setBusy(null);
     }
@@ -150,7 +146,6 @@ export function AssetContainerPanelContent() {
   async function openVerifiedPackage(): Promise<void> {
     if (!importCanOpen || !importPlan?.manuscript) return;
     if (!window.confirm(copy.confirmImport)) return;
-
     setBusy('import');
     setImportReadError(null);
     try {
@@ -161,9 +156,7 @@ export function AssetContainerPanelContent() {
       setDiagnostics([]);
       setPreparedCount(null);
     } catch (importError) {
-      setImportReadError(
-        importError instanceof Error ? importError.message : copy.invalid,
-      );
+      setImportReadError(importError instanceof Error ? importError.message : copy.invalid);
     } finally {
       setBusy(null);
     }
@@ -175,11 +168,12 @@ export function AssetContainerPanelContent() {
   const importWarnings = importPlan?.diagnostics.filter((item) => item.severity === 'warning') ?? [];
 
   return (
-    <section className="omi-container-card" aria-labelledby="omi-container-title">
+    <section className="omi-container-card" aria-labelledby="omi-container-title" aria-busy={busy !== null}>
       <div className="omi-container-header">
         <div className="omi-container-icon" aria-hidden="true"><Archive size={19} /></div>
         <div><h4 id="omi-container-title">{copy.title}</h4><p>{copy.description}</p></div>
       </div>
+      {busy && busyMessage ? <LongTaskStatus message={busyMessage} /> : null}
       <div className="omi-container-facts">
         <span><strong>{assets.length}</strong> {copy.assets}</span>
         <span><strong>{embeddedImageCount}</strong> {copy.embedded}</span>
