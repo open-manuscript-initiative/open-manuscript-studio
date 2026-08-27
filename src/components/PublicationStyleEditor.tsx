@@ -1,8 +1,10 @@
 import { Download, RotateCcw, Save } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 
+import { useStudioStore } from '../app/useStudioStore';
 import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json';
 import { useTranslation } from '../i18n';
+import type { OmiBlock, OmiManuscript } from '../types/omi';
 import './PublicationStyleEditor.css';
 
 type PublicationStyle = typeof templateJson;
@@ -30,19 +32,110 @@ function copyFor(locale: string) {
     typography: 'Tipográfia', font: 'Betűcsalád', bodySize: 'Törzsszöveg mérete', bodyLeading: 'Törzsszöveg sorköze', indent: 'Első sor behúzása',
     titleStyle: 'Cím', titleSize: 'Cím mérete', headingSize: 'Címsor mérete', footnoteSize: 'Lábjegyzet mérete', alignment: 'Igazítás',
     save: 'Mentés', saved: 'Mentve ezen az eszközön', reset: 'Sablon visszaállítása', export: 'Stílus exportálása', preview: 'Élő előnézet',
-    sampleTitle: 'Hibrid köztisztviselők vagy szerzetes pap-tanárok?', sampleSubtitle: 'II. József tanári pályafutásról alkotott elképzelése', sampleAuthor: 'Balla János', sampleAffiliation: 'Nemzeti Közszolgálati Egyetem', sampleHeading: '1. Fejezetcím', sampleBody: 'Ez a bekezdés a kiválasztott kiadványstílus törzsszövegét, sorközét, margóit és behúzását szemlélteti. A végleges értékek bármikor pontosíthatók a nyomdai tördelés adatai alapján.', sampleFootnote: '1 Minta lábjegyzet az aktuális betűmérettel.'
+    untitled: 'Cím nélküli kézirat', emptyBody: 'A kézirat még nem tartalmaz megjeleníthető törzsszöveget.'
   };
   if (locale === 'de') return {
-    title: 'Publikationsstil-Editor', description: 'Bearbeitbare Exporteinstellungen mit Live-Vorschau.', page: 'Seite', width: 'Breite', height: 'Höhe', margins: 'Ränder', top: 'Oben', bottom: 'Unten', inner: 'Innen', outer: 'Außen', typography: 'Typografie', font: 'Schriftfamilie', bodySize: 'Grundschrift', bodyLeading: 'Zeilenabstand', indent: 'Erstzeileneinzug', titleStyle: 'Titel', titleSize: 'Titelgröße', headingSize: 'Überschriftgröße', footnoteSize: 'Fußnotengröße', alignment: 'Ausrichtung', save: 'Speichern', saved: 'Auf diesem Gerät gespeichert', reset: 'Vorlage zurücksetzen', export: 'Stil exportieren', preview: 'Live-Vorschau', sampleTitle: 'Hybrid Public Servants or Religious Teacher-Priests?', sampleSubtitle: 'Beispiel für einen Untertitel', sampleAuthor: 'Balla János', sampleAffiliation: 'Nemzeti Közszolgálati Egyetem', sampleHeading: '1. Abschnittsüberschrift', sampleBody: 'Dieser Absatz zeigt Grundschrift, Zeilenabstand, Ränder und Einzug des gewählten Publikationsstils.', sampleFootnote: '1 Beispiel für eine Fußnote.'
+    title: 'Publikationsstil-Editor', description: 'Bearbeitbare Exporteinstellungen mit Live-Vorschau.', page: 'Seite', width: 'Breite', height: 'Höhe', margins: 'Ränder', top: 'Oben', bottom: 'Unten', inner: 'Innen', outer: 'Außen', typography: 'Typografie', font: 'Schriftfamilie', bodySize: 'Grundschrift', bodyLeading: 'Zeilenabstand', indent: 'Erstzeileneinzug', titleStyle: 'Titel', titleSize: 'Titelgröße', headingSize: 'Überschriftgröße', footnoteSize: 'Fußnotengröße', alignment: 'Ausrichtung', save: 'Speichern', saved: 'Auf diesem Gerät gespeichert', reset: 'Vorlage zurücksetzen', export: 'Stil exportieren', preview: 'Live-Vorschau', untitled: 'Unbenanntes Manuskript', emptyBody: 'Das Manuskript enthält noch keinen darstellbaren Fließtext.'
   };
   return {
-    title: 'Publication style editor', description: 'Editable export appearance settings with a live preview.', page: 'Page', width: 'Width', height: 'Height', margins: 'Margins', top: 'Top', bottom: 'Bottom', inner: 'Inner', outer: 'Outer', typography: 'Typography', font: 'Font family', bodySize: 'Body size', bodyLeading: 'Body leading', indent: 'First-line indent', titleStyle: 'Title', titleSize: 'Title size', headingSize: 'Heading size', footnoteSize: 'Footnote size', alignment: 'Alignment', save: 'Save', saved: 'Saved on this device', reset: 'Reset template', export: 'Export style', preview: 'Live preview', sampleTitle: 'Hybrid Public Servants or Religious Teacher-Priests?', sampleSubtitle: 'Sample article subtitle', sampleAuthor: 'Balla János', sampleAffiliation: 'Nemzeti Közszolgálati Egyetem', sampleHeading: '1. Section heading', sampleBody: 'This paragraph previews body typography, line height, margins and first-line indentation for the selected publication style.', sampleFootnote: '1 Sample footnote at the current size.'
+    title: 'Publication style editor', description: 'Editable export appearance settings with a live preview.', page: 'Page', width: 'Width', height: 'Height', margins: 'Margins', top: 'Top', bottom: 'Bottom', inner: 'Inner', outer: 'Outer', typography: 'Typography', font: 'Font family', bodySize: 'Body size', bodyLeading: 'Body leading', indent: 'First-line indent', titleStyle: 'Title', titleSize: 'Title size', headingSize: 'Heading size', footnoteSize: 'Footnote size', alignment: 'Alignment', save: 'Save', saved: 'Saved on this device', reset: 'Reset template', export: 'Export style', preview: 'Live preview', untitled: 'Untitled manuscript', emptyBody: 'The manuscript does not yet contain displayable body text.'
   };
+}
+
+interface ManuscriptPreviewContent {
+  title: string;
+  subtitle?: string;
+  authors: string[];
+  affiliation?: string;
+  heading?: string;
+  body?: string;
+  footnote?: string;
+}
+
+function manuscriptPreviewContent(manuscript: OmiManuscript): ManuscriptPreviewContent {
+  const agentById = new Map(manuscript.agents.map((agent) => [agent.id, agent]));
+  const authorContributions = manuscript.contributions
+    .filter((contribution) => contribution.targetId === manuscript.id && contribution.roles.includes('author'))
+    .sort((left, right) => (left.order ?? Number.MAX_SAFE_INTEGER) - (right.order ?? Number.MAX_SAFE_INTEGER));
+
+  const authors = authorContributions
+    .map((contribution) => {
+      if (contribution.attributionName?.trim()) return contribution.attributionName.trim();
+      const agent = agentById.get(contribution.agentId);
+      const preferred = agent?.names.find((name) => name.preferred) ?? agent?.names[0];
+      return preferred?.value.trim() ?? '';
+    })
+    .filter(Boolean);
+
+  if (!authors.length && manuscript.authors?.length) {
+    authors.push(...manuscript.authors
+      .map((author) => [author.givenName, author.familyName].filter(Boolean).join(' ').trim())
+      .filter(Boolean));
+  }
+
+  const firstAuthorAgent = authorContributions.length
+    ? agentById.get(authorContributions[0]?.agentId ?? '')
+    : undefined;
+  const affiliation = firstAuthorAgent?.affiliations.find((item) => item.visibility === 'public')?.organizationName.trim()
+    || manuscript.authors?.find((author) => author.affiliation?.trim())?.affiliation?.trim();
+
+  const heading = manuscript.sections.find((section) => section.title.trim())?.title.trim();
+  const body = findFirstBodyText(manuscript.sections.flatMap((section) => section.blocks));
+  const footnote = manuscript.annotations.find(
+    (annotation) => annotation.noteKind === 'footnote' || annotation.renderingHint === 'footnote',
+  )?.body.trim();
+
+  return {
+    title: manuscript.title.trim(),
+    subtitle: manuscript.subtitle?.trim() || undefined,
+    authors,
+    affiliation: affiliation || undefined,
+    heading: heading || undefined,
+    body: body || undefined,
+    footnote: footnote || undefined,
+  };
+}
+
+function findFirstBodyText(blocks: readonly OmiBlock[]): string | undefined {
+  for (const block of blocks) {
+    if (block.type === 'paragraph' || block.type === 'quote') {
+      const text = blockPlainText(block.content);
+      if (text) return text;
+    }
+    if (block.children?.length) {
+      const nested = findFirstBodyText(block.children);
+      if (nested) return nested;
+    }
+  }
+  return undefined;
+}
+
+function blockPlainText(content: string): string {
+  const trimmed = content.trim();
+  if (!trimmed) return '';
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    return jsonNodeText(parsed).replace(/\s+/g, ' ').trim();
+  } catch {
+    return trimmed.replace(/\s+/g, ' ');
+  }
+}
+
+function jsonNodeText(value: unknown): string {
+  if (!value || typeof value !== 'object') return '';
+  const node = value as { text?: unknown; content?: unknown };
+  const ownText = typeof node.text === 'string' ? node.text : '';
+  const children = Array.isArray(node.content)
+    ? node.content.map((child) => jsonNodeText(child)).join(' ')
+    : '';
+  return [ownText, children].filter(Boolean).join(' ');
 }
 
 export function PublicationStyleEditor() {
   const { locale } = useTranslation();
   const copy = copyFor(locale);
+  const manuscript = useStudioStore((state) => state.manuscript);
+  const previewContent = useMemo(() => manuscriptPreviewContent(manuscript), [manuscript]);
   const [style, setStyle] = useState<PublicationStyle>(loadStyle);
   const [saved, setSaved] = useState(false);
 
@@ -55,7 +148,7 @@ export function PublicationStyleEditor() {
 
   function setMargin(key: keyof PublicationStyle['page']['margins'], value: number) {
     setSaved(false);
-    setStyle((current) => ({ ...current, page: { ...current.page, margins: { ...current.page.margins, [key]: value } } }));
+    setStyle((current) => ({ ...current, page: { ...current.page, margins: { ...current.page.margins, [key]: value } }));
   }
 
   function setStyleValue(styleKey: keyof PublicationStyle['styles'], property: string, value: string | number) {
@@ -141,13 +234,13 @@ export function PublicationStyleEditor() {
             paddingLeft: `${style.page.margins.inner / style.page.width * 100}%`,
             paddingRight: `${style.page.margins.outer / style.page.width * 100}%`,
           }}>
-            <h1 style={{ fontSize: `${title.fontSize}px`, lineHeight: title.lineHeight / title.fontSize }}>{copy.sampleTitle}</h1>
-            <p className="publication-style-preview-subtitle">{copy.sampleSubtitle}</p>
-            <p className="publication-style-preview-author">{copy.sampleAuthor}</p>
-            <p className="publication-style-preview-affiliation">{copy.sampleAffiliation}</p>
-            <h2 style={{ fontSize: `${heading.fontSize}px`, lineHeight: heading.lineHeight / heading.fontSize }}>{copy.sampleHeading}</h2>
-            <p className="publication-style-preview-body" style={{ fontSize: `${body.fontSize}px`, lineHeight: body.lineHeight / body.fontSize, textAlign: body.alignment as React.CSSProperties['textAlign'], textIndent: `${body.firstLineIndent}px` }}>{copy.sampleBody}</p>
-            <div className="publication-style-preview-footnote" style={{ fontSize: `${footnote.fontSize}px`, lineHeight: footnote.lineHeight / footnote.fontSize }}>{copy.sampleFootnote}</div>
+            <h1 style={{ fontSize: `${title.fontSize}px`, lineHeight: title.lineHeight / title.fontSize }}>{previewContent.title || copy.untitled}</h1>
+            {previewContent.subtitle ? <p className="publication-style-preview-subtitle">{previewContent.subtitle}</p> : null}
+            {previewContent.authors.length ? <p className="publication-style-preview-author">{previewContent.authors.join(', ')}</p> : null}
+            {previewContent.affiliation ? <p className="publication-style-preview-affiliation">{previewContent.affiliation}</p> : null}
+            {previewContent.heading ? <h2 style={{ fontSize: `${heading.fontSize}px`, lineHeight: heading.lineHeight / heading.fontSize }}>{previewContent.heading}</h2> : null}
+            <p className="publication-style-preview-body" style={{ fontSize: `${body.fontSize}px`, lineHeight: body.lineHeight / body.fontSize, textAlign: body.alignment as CSSProperties['textAlign'], textIndent: `${body.firstLineIndent}px` }}>{previewContent.body || copy.emptyBody}</p>
+            {previewContent.footnote ? <div className="publication-style-preview-footnote" style={{ fontSize: `${footnote.fontSize}px`, lineHeight: footnote.lineHeight / footnote.fontSize }}>{previewContent.footnote}</div> : null}
           </article>
         </div>
       </div>
