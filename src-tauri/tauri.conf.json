@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Open Manuscript Studio",
-  "version": "0.1.0-alpha.4",
+  "version": "0.1.0-beta.1",
   "identifier": "org.openmanuscript.studio",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -58,7 +58,7 @@
     "longDescription": "Open Manuscript Studio is the reference authoring environment for portable, structured scholarly manuscripts using the Open Manuscript Initiative model.",
     "windows": {
       "wix": {
-        "version": "0.1.0.4"
+        "version": "0.1.0.5"
       }
     }
   }

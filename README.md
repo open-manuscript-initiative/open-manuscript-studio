@@ -2,9 +2,9 @@
 
 **Open Manuscript Studio** is the open-source reference implementation of the **Open Manuscript Initiative (OMI)**: a structured, multilingual scholarly authoring environment for writing, reviewing, exchanging and preparing manuscripts for publication without locking the manuscript to one application, operating system or publishing platform.
 
-> **Current status:** `0.1.0-alpha.4` · active alpha / beta-readiness stabilization.
+> **Current status:** `0.1.0-beta.1` · public beta.
 >
-> The core authoring, account, review, import/export, native packaging and institutional-administration layers are implemented and actively exercised. Work before beta is focused primarily on regression coverage, interoperability, recovery/error handling, migration discipline and trusted distribution rather than on basic product scaffolding.
+> The core authoring, account, review, import/export, native packaging and institutional-administration layers are implemented and actively exercised. Beta development focuses on regression elimination, interoperability, recovery/error handling, migration discipline, performance, accessibility and trusted distribution on the path toward the first release candidate.
 
 - Web Studio: https://studio.openmanuscript.org
 - Project website and specifications: https://openmanuscript.org
@@ -22,7 +22,7 @@ Studio uses one shared React/TypeScript application core and one OMI manuscript 
 | Linux x64 | Automated native build | AppImage and DEB |
 | macOS Apple Silicon | Automated native build | DMG; signing/notarization hardening remains |
 | macOS Intel | Automated native build | DMG; signing/notarization hardening remains |
-| Android | Operational public alpha | Universal APK; Documents/SAF file workflow |
+| Android | Operational public beta | Universal APK; Documents/SAF file workflow |
 | iOS / iPadOS | Validated native build target | iPhone/iPad simulator build passes; TestFlight/App Store signing and physical-device validation remain |
 
 The iOS/iPadOS target is no longer only architectural planning: Tauri/Xcode project generation and Apple Silicon iPhone/iPad simulator compilation are validated in CI. Public Apple distribution still requires the real Apple Developer Team ID, signing certificate, provisioning profile, production Universal Link association and TestFlight/device validation.
@@ -345,7 +345,7 @@ Current distribution hardening includes:
 - macOS signing/notarization work;
 - prepared Apple signing workflow for a future TestFlight/App Store IPA.
 
-The public release line remains alpha until the beta-readiness gate is met.
+The public release line is now beta; remaining work is stabilization toward the first release candidate.
 
 ## Documentation
 
