@@ -167,7 +167,7 @@ export function ExportFormatsPanel() {
       </div>
       {selectedFormat ? <div className="studio-settings-hint"><strong>{selectedFormat.label}</strong><p>{selectedFormat.description}</p></div> : null}
       {selectedId === 'custom' ? <CustomExportPanel /> : (
-        <div className="studio-tool-actions"><button type="button" className="studio-menu-primary-action" disabled={!selectedId || busy !== null} onClick={() => { if (selectedId && selectedId !== 'custom') void run(selectedId); }}>{busy ? copy.preparing : copy.export}</button></div>
+        <div className="studio-tool-actions"><button type="button" className="studio-menu-primary-action" disabled={!selectedId || busy !== null} onClick={() => { if (selectedId) void run(selectedId); }}>{busy ? copy.preparing : copy.export}</button></div>
       )}
       {busy ? <LongTaskStatus message={busyFormat ? `${busyFormat.label} — ${copy.preparing}` : copy.preparing} /> : null}
       {notice ? <p className="studio-settings-hint" role="status">{notice}</p> : null}
