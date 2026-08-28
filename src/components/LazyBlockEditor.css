@@ -1,0 +1,23 @@
+.omi-block-editor__deferred-preview {
+  box-sizing: border-box;
+  width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.omi-block-editor__deferred-preview > p {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  line-height: inherit;
+}
+
+/*
+ * The deferred preview intentionally reuses the same editor class as the
+ * mounted Tiptap surface. Keep its own box model neutral so swapping the
+ * lightweight preview for BlockEditor does not create a visible spacing jump.
+ */
+.omi-continuous-blocks > .omi-block-editor--deferred {
+  min-height: 0;
+}
