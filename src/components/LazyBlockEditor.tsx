@@ -52,17 +52,20 @@ export function LazyBlockEditor({
     );
   }
 
-  const estimatedLines = Math.max(1, Math.ceil(previewText.length / 95));
   return (
     <div
       ref={hostRef}
       className="omi-block-editor omi-block-editor--deferred"
       data-block-id={blockId}
       id={`omi-target-${blockId}`}
-      style={{ minHeight: `${Math.min(estimatedLines * 1.55, 18)}rem` }}
       aria-label="Deferred manuscript paragraph"
     >
-      <p>{previewText}</p>
+      <div
+        className="omi-tiptap-editor omi-block-editor__deferred-preview"
+        aria-hidden="true"
+      >
+        <p>{previewText}</p>
+      </div>
     </div>
   );
 }
