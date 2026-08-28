@@ -3,6 +3,7 @@ import {
   type OmiInlineRun,
   type OmiInlineSemanticKind,
 } from '../model/inlineSemantics';
+import type { OmiIndexEntry } from '../model/indexing';
 import { buildPublicationRenderingContext } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type { OmiBlock, OmiManuscript } from '../types/omi';
@@ -19,12 +20,17 @@ export interface DocxExportResult {
  * Produces a portable WordprocessingML DOCX from the shared publication view.
  * Headings use real Word Heading styles and inline OMI semantics use named
  * Word character styles instead of direct font formatting.
+ *
+ * OMI index markers remain semantic during editing. DOCX export writes real XE
+ * fields at their target paragraphs plus a generated INDEX field. Word can then
+ * calculate and deduplicate page numbers from the final pagination.
  */
 export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const profile = resolvePublicationProfile(manuscript);
   const context = buildPublicationRenderingContext(manuscript, profile);
   const warnings: string[] = [];
   const body: string[] = [];
+  const indexEntriesByBlock = collectIndexEntriesByBlock(manuscript.indexEntries ?? []);
 
   body.push(paragraph(context.title, 'Title'));
   if (context.subtitle) body.push(paragraph(context.subtitle, 'Subtitle'));
@@ -45,17 +51,18 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
       const heading = section.number ? `${section.number} ${section.title}` : section.title;
       body.push(paragraph(heading, `Heading${level}`));
       for (const block of section.blocks) {
+        const indexFields = renderWordIndexEntryFields(indexEntriesByBlock.get(block.id) ?? []);
         if (block.visual) {
           const text = blockPlainText(block);
-          if (text) body.push(paragraph(text));
+          if (text || indexFields) body.push(paragraph(text, undefined, indexFields));
           warnings.push(`Structured ${block.visual.kind} object ${block.id} was exported as descriptive text in DOCX.`);
           continue;
         }
         const runs = extractOmiInlineRuns(block.content);
-        if (runs.length) body.push(richParagraph(runs));
+        if (runs.length) body.push(richParagraph(runs, indexFields));
         else {
           const text = blockPlainText(block);
-          if (text) body.push(paragraph(text));
+          if (text || indexFields) body.push(paragraph(text, undefined, indexFields));
         }
       }
       renderSections(section.children);
@@ -70,6 +77,12 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
     });
   }
 
+  if ((manuscript.generatedIndexes?.length ?? 0) > 0 && indexEntriesByBlock.size > 0) {
+    const title = manuscript.generatedIndexes?.[0]?.title?.trim() || localizedIndexLabel(context.locale);
+    body.push(paragraph(title, 'Heading1'));
+    body.push(renderWordGeneratedIndexField(context.locale));
+  }
+
   const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`;
 
@@ -82,15 +95,19 @@ ${[1,2,3,4,5,6].map((level) => headingStyle(level)).join('')}
 ${characterStylesXml()}
 </w:styles>`;
 
+  const settingsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:updateFields w:val="true"/></w:settings>`;
+
   const core = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xml(context.title)}</dc:title><dc:language>${xml(context.locale)}</dc:language><cp:lastModifiedBy>Open Manuscript Studio</cp:lastModifiedBy><dcterms:modified xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:modified></cp:coreProperties>`;
 
   const entries = [
-    textZipEntry('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`),
+    textZipEntry('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`),
     textZipEntry('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`),
-    textZipEntry('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`),
+    textZipEntry('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/></Relationships>`),
     textZipEntry('word/document.xml', documentXml),
     textZipEntry('word/styles.xml', stylesXml),
+    textZipEntry('word/settings.xml', settingsXml),
     textZipEntry('docProps/core.xml', core),
   ];
   const bytes = createStoreZip(entries);
@@ -103,14 +120,14 @@ ${characterStylesXml()}
   };
 }
 
-function paragraph(value: string, styleId?: string): string {
+function paragraph(value: string, styleId?: string, suffix = ''): string {
   const pPr = styleId ? `<w:pPr><w:pStyle w:val="${xml(styleId)}"/></w:pPr>` : '';
-  return `<w:p>${pPr}<w:r><w:t xml:space="preserve">${xml(value)}</w:t></w:r></w:p>`;
+  return `<w:p>${pPr}<w:r><w:t xml:space="preserve">${xml(value)}</w:t></w:r>${suffix}</w:p>`;
 }
 
-function richParagraph(runs: readonly OmiInlineRun[]): string {
+function richParagraph(runs: readonly OmiInlineRun[], suffix = ''): string {
   const rendered = runs.map(wordRun).join('');
-  return `<w:p>${rendered}</w:p>`;
+  return `<w:p>${rendered}${suffix}</w:p>`;
 }
 
 function wordRun(run: OmiInlineRun): string {
@@ -123,6 +140,40 @@ function wordRun(run: OmiInlineRun): string {
     ? `<w:rPr>${styleId ? `<w:rStyle w:val="${styleId}"/>` : ''}${lang}</w:rPr>`
     : '';
   return `<w:r>${rPr}<w:t xml:space="preserve">${xml(run.text)}</w:t></w:r>`;
+}
+
+function collectIndexEntriesByBlock(entries: readonly OmiIndexEntry[]): Map<string, OmiIndexEntry[]> {
+  const result = new Map<string, OmiIndexEntry[]>();
+  for (const entry of entries) {
+    if (!entry.targetBlockId || (entry.relation && entry.relation !== 'location')) continue;
+    const bucket = result.get(entry.targetBlockId) ?? [];
+    bucket.push(entry);
+    result.set(entry.targetBlockId, bucket);
+  }
+  return result;
+}
+
+export function renderWordIndexEntryFields(entries: readonly OmiIndexEntry[]): string {
+  return entries.map((entry) => {
+    const term = entry.terms.map((item) => item.trim()).filter(Boolean).join(':');
+    if (!term) return '';
+    const instruction = ` XE "${escapeWordFieldTerm(term)}" `;
+    return `<w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve">${xml(instruction)}</w:instrText></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r>`;
+  }).join('');
+}
+
+export function renderWordGeneratedIndexField(locale = 'en'): string {
+  const instruction = ' INDEX ';
+  const placeholder = locale.toLowerCase().startsWith('hu')
+    ? 'A névmutató oldalszámai a dokumentum megnyitásakor frissülnek.'
+    : locale.toLowerCase().startsWith('de')
+      ? 'Die Seitenzahlen des Registers werden beim Öffnen aktualisiert.'
+      : 'Index page numbers update when the document is opened.';
+  return `<w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="true"/></w:r><w:r><w:instrText xml:space="preserve">${xml(instruction)}</w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t xml:space="preserve">${xml(placeholder)}</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>`;
+}
+
+function escapeWordFieldTerm(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
 function wordCharacterStyleId(semantics: readonly OmiInlineSemanticKind[]): string | undefined {
@@ -191,6 +242,11 @@ function localizedLabel(locale: string, key: 'abstract' | 'keywords' | 'notes'):
       ? { abstract: 'Zusammenfassung', keywords: 'Schlüsselwörter', notes: 'Anmerkungen' }
       : { abstract: 'Abstract', keywords: 'Keywords', notes: 'Notes' };
   return labels[key];
+}
+
+function localizedIndexLabel(locale: string): string {
+  const language = locale.toLowerCase().split(/[-_]/)[0];
+  return language === 'hu' ? 'Névmutató' : language === 'de' ? 'Personenregister' : 'Name index';
 }
 
 function xml(value: string): string {
