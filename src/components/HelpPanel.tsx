@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from '../i18n';
 import { getDetailedHelpLabels, getDetailedHelpTopic } from '../i18n/helpDetailedAll';
 import { getLocalizedHelpCopy } from '../i18n/helpResolver';
+import './HelpPanelSearch.css';
 
 const HELP_TOPIC_NUMBER_PREFIX = /^\s*(?:\d+(?:\.\d+)*[.):-]?|[IVXLCDM]+[.)])\s+/i;
 
