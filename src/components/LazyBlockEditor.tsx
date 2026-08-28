@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { BlockEditor } from './BlockEditor';
+import './LazyBlockEditor.css';
 
 interface LazyBlockEditorProps {
   blockId: string;
