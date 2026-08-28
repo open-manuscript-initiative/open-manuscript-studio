@@ -100,90 +100,57 @@ export function Footer() {
 
   return (
     <footer className="omi-footer" aria-label="Open Manuscript Studio">
-      <div className="omi-footer-accent" aria-hidden="true" />
-
       <div className="omi-footer-container">
-        <div className="omi-footer-identity">
-          <div className="omi-footer-mark" aria-hidden="true">OMI</div>
+        <div className="omi-footer-columns">
+          <section className="omi-footer-column">
+            <h2>Open Manuscript Initiative</h2>
+            <a href="https://openmanuscript.org/docs/vision/" target="_blank" rel="noopener noreferrer">Vision</a>
+            <a href="https://openmanuscript.org/docs/vision/" target="_blank" rel="noopener noreferrer">Documentation</a>
+            <a href="https://openmanuscript.org/docs/governance/roadmap-to-omi-1.0/" target="_blank" rel="noopener noreferrer">Roadmap</a>
+            <a href="https://openmanuscript.org/studio/" target="_blank" rel="noopener noreferrer">Studio</a>
+          </section>
 
-          <div className="omi-footer-brand">
-            <strong>Open Manuscript Studio</strong>
-            <span>Scholarly writing and publishing infrastructure</span>
-          </div>
+          <section className="omi-footer-column">
+            <h2>Community</h2>
+            <a href="https://openmanuscript.org/support/" target="_blank" rel="noopener noreferrer">Support</a>
+            <a href="https://github.com/sponsors/open-manuscript-initiative" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a>
+            <a href="https://github.com/open-manuscript-initiative/open-manuscript-studio" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://www.facebook.com/share/19AmDMBVoe/" target="_blank" rel="noopener noreferrer">Facebook</a>
+          </section>
+
+          <section className="omi-footer-column">
+            <h2>Project</h2>
+            <a href="https://openmanuscript.org/docs/governance/funding-and-partnerships/" target="_blank" rel="noopener noreferrer">Funding &amp; Partnerships</a>
+            <a href="https://openmanuscript.org/docs/governance/grant-readiness-pack/" target="_blank" rel="noopener noreferrer">Grant Readiness Pack</a>
+            <a href="https://openmanuscript.org/docs/governance/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy policy</a>
+            <a href="https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>
+          </section>
         </div>
 
-        <div className="omi-footer-meta">
-          <nav className="omi-footer-links" aria-label="Studio links">
-            <a
-              href="https://openmanuscript.org"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open Manuscript Initiative
-            </a>
-            <a
-              href="https://openmanuscript.org/docs/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Documentation
-            </a>
-            <a
-              href="https://github.com/open-manuscript-initiative/open-manuscript-studio"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              GitHub
-            </a>
-            <a
-              href="https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/LICENSE"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              MIT License
-            </a>
-          </nav>
-
-          <div className="omi-footer-share" aria-label="Share Open Manuscript Studio">
-            <span className="omi-footer-share__label">Share</span>
-            {nativeShareSupported ? (
-              <button type="button" onClick={() => void shareStudio()}>Share…</button>
-            ) : null}
-            <a href={socialShareUrl('facebook')} target="_blank" rel="noopener noreferrer">Facebook</a>
-            <a href={socialShareUrl('linkedin')} target="_blank" rel="noopener noreferrer">LinkedIn</a>
-            <a href={socialShareUrl('bluesky')} target="_blank" rel="noopener noreferrer">Bluesky</a>
-          </div>
-
-          <div className="omi-footer-build">
-            {deploymentLabel ? (
-              <>
-                <span
-                  title={deploymentMode === 'institutional'
-                    ? 'Institutional deployment'
-                    : 'Personal deployment'}
-                >
-                  OMI Studio · {deploymentLabel}
-                </span>
-                <span aria-hidden="true">·</span>
-              </>
-            ) : null}
-            {orcidEnvironment === 'sandbox' ? (
-              <>
-                <span title="ORCID test environment">ORCID Sandbox</span>
-                <span aria-hidden="true">·</span>
-              </>
-            ) : null}
-            <span>v{BUILD_INFO.version}</span>
-            <span aria-hidden="true">·</span>
-            <span>Build #{BUILD_INFO.build}</span>
-            <span aria-hidden="true">·</span>
-            <span>{BUILD_INFO.commit}</span>
-          </div>
+        <div className="omi-footer-share" aria-label="Share Open Manuscript Studio">
+          <span className="omi-footer-share__label">Share</span>
+          {nativeShareSupported ? (
+            <button type="button" onClick={() => void shareStudio()}>Share…</button>
+          ) : null}
+          <a href={socialShareUrl('facebook')} target="_blank" rel="noopener noreferrer">Facebook</a>
+          <a href={socialShareUrl('linkedin')} target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          <a href={socialShareUrl('bluesky')} target="_blank" rel="noopener noreferrer">Bluesky</a>
         </div>
-      </div>
 
-      <div className="omi-footer-copyright">
-        © 2026 Open Manuscript Initiative · Open infrastructure for scholarly communication
+        <div className="omi-footer-message">
+          <strong>Open Manuscript Studio</strong>
+          <span>Write naturally. Structure once. Publish everywhere.</span>
+          <span>Open standards for scholarly publishing.</span>
+          <span>© {new Date().getFullYear()} Open Manuscript Initiative Contributors.</span>
+        </div>
+
+        <div className="omi-footer-build">
+          {deploymentLabel ? <span>OMI Studio · {deploymentLabel}</span> : null}
+          {orcidEnvironment === 'sandbox' ? <span>ORCID Sandbox</span> : null}
+          <span>v{BUILD_INFO.version}</span>
+          <span>Build #{BUILD_INFO.build}</span>
+          <span>{BUILD_INFO.commit}</span>
+        </div>
       </div>
     </footer>
   );
