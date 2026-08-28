@@ -41,6 +41,12 @@ const indexLabels: Record<string, { action: string; choose: string }> = {
   de: { action: 'Zum Register', choose: 'Register' },
 };
 
+const clipboardLabels: Record<string, { cut: string; copy: string }> = {
+  en: { cut: 'Cut', copy: 'Copy' },
+  hu: { cut: 'Kivágás', copy: 'Másolás' },
+  de: { cut: 'Ausschneiden', copy: 'Kopieren' },
+};
+
 export function SelectionActionToolbar({
   editor,
   citationLabel,
@@ -58,6 +64,7 @@ export function SelectionActionToolbar({
   const manuscript = useStudioStore((state) => state.manuscript);
   const [position, setPosition] = useState<ToolbarPosition | null>(null);
   const indexCopy = indexLabels[locale] ?? indexLabels.en;
+  const clipboardCopy = clipboardLabels[locale] ?? clipboardLabels.en;
   const indexDefinitions = useMemo(
     () => getDocumentIndexDefinitions({
       locale,
@@ -118,6 +125,26 @@ export function SelectionActionToolbar({
   const style = { left: `${position.left}px`, top: `${position.top}px` } as CSSProperties;
   const preserveSelection = (event: MouseEvent<HTMLElement>) => event.preventDefault();
 
+  const runClipboardAction = async (action: 'copy' | 'cut') => {
+    editor.commands.focus();
+
+    // execCommand deliberately remains the primary path here: unlike the
+    // text-only Clipboard API it preserves Tiptap/OMI HTML marks and works in
+    // Android WebView selection contexts. Native Ctrl/Cmd+C/X and the Android
+    // selection menu continue to use the browser's normal clipboard pipeline.
+    if (typeof document.execCommand === 'function' && document.execCommand(action)) return;
+
+    const { from, to } = editor.state.selection;
+    if (from === to) return;
+    const text = editor.state.doc.textBetween(from, to, '\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      if (action === 'cut') editor.chain().focus().deleteSelection().run();
+    } catch {
+      // If clipboard permissions are unavailable, leave the document intact.
+    }
+  };
+
   const addIndexEntry = () => {
     const { from, to } = editor.state.selection;
     if (from === to) return;
@@ -153,6 +180,8 @@ export function SelectionActionToolbar({
 
   return (
     <div className={`omi-selection-action-toolbar${position.below ? ' omi-selection-action-toolbar--below' : ''}`} style={style} role="toolbar" aria-label="Selection actions">
+      <button type="button" onMouseDown={preserveSelection} onClick={() => void runClipboardAction('cut')}>{clipboardCopy.cut}</button>
+      <button type="button" onMouseDown={preserveSelection} onClick={() => void runClipboardAction('copy')}>{clipboardCopy.copy}</button>
       <select
         aria-label={indexCopy.choose}
         value={selectedIndexId}

@@ -2,7 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  isMicrosoftWordClipboardHtml,
+  plainTextToPasteHtml,
+} from '../src/editor/clipboardPaste.ts';
+import {
   detectSemanticInlineStyle,
+  detectWordHeadingLevel,
   normalizeExternalHref,
   normalizeInlineLanguageTag,
 } from '../src/model/richText.ts';
@@ -59,5 +64,32 @@ test('extracts semantic emphasis from common Word inline CSS only', () => {
       smallCaps: true,
       verticalAlign: 'super',
     },
+  );
+});
+
+test('recognizes Microsoft Word heading styles during clipboard paste', () => {
+  assert.equal(detectWordHeadingLevel('MsoHeading1', undefined), 1);
+  assert.equal(detectWordHeadingLevel('Heading 3', undefined), 3);
+  assert.equal(detectWordHeadingLevel(undefined, 'mso-style-name:"Heading 2"'), 2);
+  assert.equal(detectWordHeadingLevel(undefined, 'mso-outline-level:4'), 5);
+  assert.equal(detectWordHeadingLevel('MsoNormal', 'font-weight:bold'), undefined);
+});
+
+test('recognizes Word HTML clipboard payloads', () => {
+  assert.equal(
+    isMicrosoftWordClipboardHtml('<p class="MsoNormal">Word</p>'),
+    true,
+  );
+  assert.equal(
+    isMicrosoftWordClipboardHtml('<p style="mso-list:l0 level1 lfo1">Item</p>'),
+    true,
+  );
+  assert.equal(isMicrosoftWordClipboardHtml('<p>Browser HTML</p>'), false);
+});
+
+test('turns plain clipboard text into safe paragraph HTML', () => {
+  assert.equal(
+    plainTextToPasteHtml('One\nline\n\nTwo < three'),
+    '<p>One<br>line</p><p>Two &lt; three</p>',
   );
 });
