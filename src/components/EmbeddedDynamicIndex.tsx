@@ -11,7 +11,11 @@ export function EmbeddedDynamicIndex() {
   const manuscript = useStudioStore((state) => state.manuscript);
   const entries = manuscript.indexEntries ?? [];
   const generatedIndexes = manuscript.generatedIndexes ?? [];
-  const groups = useMemo(() => groupIndexEntries(entries), [entries]);
+  const navigableEntries = useMemo(
+    () => entries.filter((entry) => Boolean(entry.targetBlockId)),
+    [entries],
+  );
+  const groups = useMemo(() => groupIndexEntries(navigableEntries), [navigableEntries]);
   const [host, setHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -44,9 +48,8 @@ export function EmbeddedDynamicIndex() {
                   key={entry.id}
                   type="button"
                   className="omi-embedded-dynamic-index-link"
-                  disabled={!entry.targetBlockId}
                   aria-label={`${group.label} — ${occurrenceLabel(locale, index + 1)}`}
-                  title={entry.targetBlockId ? goToLabel(locale) : unavailableLabel(locale)}
+                  title={goToLabel(locale)}
                   onClick={() => navigateToIndexTarget(entry.targetBlockId)}
                 >
                   ↗
@@ -92,11 +95,6 @@ function defaultIndexTitle(locale: string): string {
 function goToLabel(locale: string): string {
   const language = locale.toLowerCase().split(/[-_]/)[0];
   return language === 'hu' ? 'Ugrás az előforduláshoz' : language === 'de' ? 'Zum Vorkommen' : 'Go to occurrence';
-}
-
-function unavailableLabel(locale: string): string {
-  const language = locale.toLowerCase().split(/[-_]/)[0];
-  return language === 'hu' ? 'A célhely nem érhető el' : language === 'de' ? 'Ziel nicht verfügbar' : 'Target unavailable';
 }
 
 function occurrenceLabel(locale: string, number: number): string {
