@@ -3,6 +3,7 @@ import { useMemo, type CSSProperties } from 'react';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { buildTableOfContentsEntries } from '../model/tableOfContents';
+import { EmbeddedDynamicIndex } from './EmbeddedDynamicIndex';
 import './EmbeddedTableOfContents.css';
 
 const labels: Record<string, string> = {
@@ -20,8 +21,6 @@ export function EmbeddedTableOfContents() {
     () => (toc ? buildTableOfContentsEntries(manuscript.sections, toc) : []),
     [manuscript.sections, toc],
   );
-
-  if (!toc || entries.length === 0) return null;
 
   function navigate(sectionId: string): void {
     selectSection(sectionId);
@@ -41,21 +40,26 @@ export function EmbeddedTableOfContents() {
   }
 
   return (
-    <nav className="omi-embedded-toc" aria-label={toc.title || labels[locale] || labels.en}>
-      <h2>{toc.title || labels[locale] || labels.en}</h2>
-      <ol>
-        {entries.map((entry) => (
-          <li
-            key={entry.sectionId}
-            style={{ '--omi-toc-level': entry.level - toc.minLevel } as CSSProperties}
-          >
-            <button type="button" onClick={() => navigate(entry.sectionId)}>
-              {entry.title}
-            </button>
-          </li>
-        ))}
-      </ol>
-    </nav>
+    <>
+      <EmbeddedDynamicIndex />
+      {toc && entries.length > 0 ? (
+        <nav className="omi-embedded-toc" aria-label={toc.title || labels[locale] || labels.en}>
+          <h2>{toc.title || labels[locale] || labels.en}</h2>
+          <ol>
+            {entries.map((entry) => (
+              <li
+                key={entry.sectionId}
+                style={{ '--omi-toc-level': entry.level - toc.minLevel } as CSSProperties}
+              >
+                <button type="button" onClick={() => navigate(entry.sectionId)}>
+                  {entry.title}
+                </button>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      ) : null}
+    </>
   );
 }
 
