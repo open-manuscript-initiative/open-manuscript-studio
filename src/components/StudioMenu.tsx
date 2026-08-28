@@ -115,11 +115,6 @@ export function StudioMenu({
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
   const [activeView, setActiveView] = useState<StudioMenuView>('document');
 
-  // Kept temporarily for API compatibility with StudioMenuWithHelp. The
-  // document view now owns its lifecycle controls so they cannot disappear
-  // because an outer wrapper omitted or conditionally rendered this fragment.
-  void documentCloseAction;
-
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
@@ -163,7 +158,7 @@ export function StudioMenu({
             {navigationAfterSettings}
           </nav>
           <div className="studio-menu-content">
-            {activeView === 'document' ? <DocumentMenuView /> : null}
+            {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} /> : null}
             {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={onClose} /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
             {activeView === 'notes' ? <NotesPanel onNavigate={onClose} /> : null}
@@ -210,7 +205,7 @@ function useOwnDeviceStorage(): boolean {
   return mode === 'own-device';
 }
 
-function DocumentMenuView() {
+function DocumentMenuView({ documentCloseAction }: { documentCloseAction?: ReactNode }) {
   const { t, locale } = useTranslation();
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
   const [localPath, setLocalPath] = useState(getCurrentManuscriptFilePath());
@@ -281,7 +276,7 @@ function DocumentMenuView() {
         {fileMessage ? <p role="status" aria-live="polite">{fileMessage}</p> : null}
       </div>
       <div className="studio-tool-actions">
-        {!native ? (
+        {!native && !documentCloseAction ? (
           <input
             ref={browserFileInputRef}
             type="file"
@@ -290,16 +285,18 @@ function DocumentMenuView() {
             onChange={(event) => void openDocument(event.target.files?.[0])}
           />
         ) : null}
-        <button type="button" className="studio-menu-primary-action" onClick={() => void openDocument()}>
-          {native && !ownDevice ? <Usb size={16} aria-hidden="true" /> : <FolderOpen size={16} aria-hidden="true" />}
-          {openLabel}
-        </button>
-        {!documentClosed ? (
+        {native || !documentCloseAction ? (
+          <button type="button" className="studio-menu-primary-action" onClick={() => void openDocument()}>
+            {native && !ownDevice ? <Usb size={16} aria-hidden="true" /> : <FolderOpen size={16} aria-hidden="true" />}
+            {openLabel}
+          </button>
+        ) : null}
+        {documentCloseAction ?? (!documentClosed ? (
           <button type="button" className="studio-menu-secondary-action studio-menu-danger-action" data-document-close="true" onClick={() => void closeDocument()}>
             <CircleX size={16} aria-hidden="true" />
             {closeCopy.label}
           </button>
-        ) : null}
+        ) : null)}
       </div>
     </div>
     <DocxImportPanel />
