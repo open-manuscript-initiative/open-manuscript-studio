@@ -199,6 +199,20 @@ export function indexEntryDisplayLabel(entry: Pick<OmiIndexEntry, 'terms'>): str
   return entry.terms.map((term) => term.trim()).filter(Boolean).join(' — ');
 }
 
+/**
+ * Name-index terms are semantic person names, not printed page references.
+ * Arabic digits are therefore rejected from name terms while Roman numerals
+ * (for example "I. Rákóczi György" or "Apafi Mihály II.") remain valid.
+ *
+ * This intentionally examines the index term only. A person's occurrence may
+ * sit next to a year in prose ("Apafi Mihály 1661-ben"), which must not make
+ * the person itself invalid.
+ */
+export function isIndexEntryEligible(entry: Pick<OmiIndexEntry, 'kind' | 'terms'>): boolean {
+  if (entry.kind !== 'name') return true;
+  return entry.terms.every((term) => !/[0-9]/u.test(term));
+}
+
 export function validateIndexEntries(input: {
   entries: readonly OmiIndexEntry[];
   blockIds?: ReadonlySet<string>;
@@ -238,6 +252,7 @@ export function groupIndexEntries(entries: readonly OmiIndexEntry[]): GroupedInd
   const groups = new Map<string, GroupedIndexEntry>();
 
   for (const entry of entries) {
+    if (!isIndexEntryEligible(entry)) continue;
     const terms = entry.terms.map((term) => term.trim()).filter(Boolean);
     if (!terms.length) continue;
     const key = terms.join('\u0000').toLocaleLowerCase();
