@@ -37,11 +37,29 @@ export interface CustomExportBlock {
   bibliographyStyle?: OmiCitationStyleId;
 }
 
+/**
+ * Formatting/content rule for one inline citation occurrence class.
+ *
+ * `content` is a token template. Supported tokens are intentionally based on
+ * portable OMI bibliographic/citation data rather than renderer-specific HTML.
+ */
+export interface CustomExportCitationOccurrenceRule {
+  content: string;
+  typography: CustomExportTypography;
+}
+
+export interface CustomExportCitationStyle {
+  enabled: boolean;
+  first: CustomExportCitationOccurrenceRule;
+  subsequent: CustomExportCitationOccurrenceRule;
+}
+
 export interface CustomExportTemplate {
   id: string;
   name: string;
   output: CustomExportOutput;
   blocks: CustomExportBlock[];
+  citationStyle?: CustomExportCitationStyle;
 }
 
 export interface OmiLocalizedFrontMatterEntry {
@@ -58,6 +76,23 @@ declare module '../types/omi' {
 const DEFAULT_FONT = 'Times New Roman';
 const DEFAULT_BODY_SIZE = 12;
 
+export const CUSTOM_CITATION_CONTENT_TOKENS = [
+  '{citation}',
+  '{author}',
+  '{title}',
+  '{shortTitle}',
+  '{year}',
+  '{container}',
+  '{place}',
+  '{publisher}',
+  '{volume}',
+  '{issue}',
+  '{pages}',
+  '{locator}',
+  '{doi}',
+  '{url}',
+] as const;
+
 function typography(fontSizePt: number, overrides: Partial<CustomExportTypography> = {}): CustomExportTypography {
   return {
     fontFamily: DEFAULT_FONT,
@@ -70,12 +105,30 @@ function typography(fontSizePt: number, overrides: Partial<CustomExportTypograph
   };
 }
 
+export function defaultCustomCitationStyle(): CustomExportCitationStyle {
+  const inline = typography(10, { spaceAfterPt: 0, lineHeight: 1 });
+  return {
+    enabled: false,
+    // Keeping {citation} as the default preserves the manuscript's current
+    // citation renderer until an export template deliberately overrides it.
+    first: {
+      content: '{citation}',
+      typography: { ...inline },
+    },
+    subsequent: {
+      content: '{citation}',
+      typography: { ...inline },
+    },
+  };
+}
+
 export function defaultCustomExportTemplate(manuscript: Pick<OmiManuscript, 'locale' | 'citationStyle'>): CustomExportTemplate {
   const locale = normalizeLanguage(manuscript.locale);
   return {
     id: 'default',
     name: 'Custom export',
     output: 'docx',
+    citationStyle: defaultCustomCitationStyle(),
     blocks: [
       { id: 'author', kind: 'author', enabled: true, typography: typography(12, { alignment: 'center' }) },
       { id: 'affiliation', kind: 'affiliation', enabled: true, typography: typography(10, { alignment: 'center', italic: true }) },
@@ -95,6 +148,14 @@ export function defaultCustomExportTemplate(manuscript: Pick<OmiManuscript, 'loc
       },
     ],
   };
+}
+
+export function normalizeCustomExportTemplate(
+  template: CustomExportTemplate,
+): CustomExportTemplate {
+  return template.citationStyle
+    ? template
+    : { ...template, citationStyle: defaultCustomCitationStyle() };
 }
 
 export function customExportLanguages(manuscript: OmiManuscript): string[] {

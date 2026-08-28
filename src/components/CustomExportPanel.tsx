@@ -3,10 +3,14 @@ import { useMemo, useState } from 'react';
 import { useStudioStore } from '../app/useStudioStore';
 import { CITATION_STYLE_CATALOG } from '../model/cslRendering';
 import {
+  CUSTOM_CITATION_CONTENT_TOKENS,
   customExportLanguages,
+  defaultCustomCitationStyle,
   defaultCustomExportTemplate,
+  normalizeCustomExportTemplate,
   type CustomExportBlock,
   type CustomExportBlockKind,
+  type CustomExportCitationOccurrenceRule,
   type CustomExportNoteMode,
   type CustomExportOutput,
   type CustomExportTemplate,
@@ -24,11 +28,11 @@ const FONT_OPTIONS = ['Times New Roman', 'Arial', 'Calibri', 'Garamond', 'Georgi
 
 const LABELS: Record<string, Record<string, string>> = {
   hu: {
-    title: 'Egyéni export', description: 'Állítsd össze a kimenetet rendezhető, opcionális blokkokból.', output: 'Kimenet', template: 'Sablon', saveTemplate: 'Sablon mentése', templateName: 'Sablon neve', export: 'Exportálás', enabled: 'Bekapcsolva', font: 'Betűtípus', size: 'Méret', bold: 'Félkövér', italic: 'Dőlt', align: 'Igazítás', spacing: 'Térköz utána', lineHeight: 'Sorköz', language: 'Nyelv', noteMode: 'Jegyzettípus', bibliographyStyle: 'Bibliográfia stílusa', moveUp: 'Fel', moveDown: 'Le', remove: 'Eltávolítás', addAbstract: 'Absztrakt hozzáadása', addKeywords: 'Kulcsszavak hozzáadása', saved: 'Sablon mentve.', failed: 'Az export nem sikerült.', titleBlock: 'Cím', subtitleBlock: 'Alcím', mottoBlock: 'Mottó', authorBlock: 'Szerző', affiliationBlock: 'Affiliáció', abstractBlock: 'Absztrakt', keywordsBlock: 'Kulcsszavak', bodyBlock: 'Szövegtörzs', notesBlock: 'Jegyzetek', bibliographyBlock: 'Bibliográfia' },
+    title: 'Egyéni export', description: 'Állítsd össze a kimenetet rendezhető, opcionális blokkokból.', output: 'Kimenet', template: 'Sablon', saveTemplate: 'Sablon mentése', templateName: 'Sablon neve', export: 'Exportálás', enabled: 'Bekapcsolva', font: 'Betűtípus', size: 'Méret', bold: 'Félkövér', italic: 'Dőlt', align: 'Igazítás', spacing: 'Térköz utána', lineHeight: 'Sorköz', language: 'Nyelv', noteMode: 'Jegyzettípus', bibliographyStyle: 'Bibliográfia stílusa', moveUp: 'Fel', moveDown: 'Le', remove: 'Eltávolítás', addAbstract: 'Absztrakt hozzáadása', addKeywords: 'Kulcsszavak hozzáadása', saved: 'Sablon mentve.', failed: 'Az export nem sikerült.', titleBlock: 'Cím', subtitleBlock: 'Alcím', mottoBlock: 'Mottó', authorBlock: 'Szerző', affiliationBlock: 'Affiliáció', abstractBlock: 'Absztrakt', keywordsBlock: 'Kulcsszavak', bodyBlock: 'Szövegtörzs', notesBlock: 'Jegyzetek', bibliographyBlock: 'Bibliográfia', citationStyle: 'Hivatkozások stílusa', citationStyleDescription: 'Az első és a további előfordulások tartalma és tipográfiája külön szabályozható.', customCitationStyle: 'Egyéni előfordulási szabályok használata', firstOccurrence: 'Első előfordulás', subsequentOccurrence: 'További előfordulások', content: 'Tartalom', tokens: 'Használható mezők' },
   de: {
-    title: 'Benutzerdefinierter Export', description: 'Ausgabe aus sortierbaren, optionalen Blöcken zusammenstellen.', output: 'Ausgabe', template: 'Vorlage', saveTemplate: 'Vorlage speichern', templateName: 'Vorlagenname', export: 'Exportieren', enabled: 'Aktiv', font: 'Schriftart', size: 'Größe', bold: 'Fett', italic: 'Kursiv', align: 'Ausrichtung', spacing: 'Abstand danach', lineHeight: 'Zeilenabstand', language: 'Sprache', noteMode: 'Anmerkungstyp', bibliographyStyle: 'Bibliografiestil', moveUp: 'Hoch', moveDown: 'Runter', remove: 'Entfernen', addAbstract: 'Zusammenfassung hinzufügen', addKeywords: 'Schlüsselwörter hinzufügen', saved: 'Vorlage gespeichert.', failed: 'Export fehlgeschlagen.', titleBlock: 'Titel', subtitleBlock: 'Untertitel', mottoBlock: 'Motto', authorBlock: 'Autor', affiliationBlock: 'Affiliation', abstractBlock: 'Zusammenfassung', keywordsBlock: 'Schlüsselwörter', bodyBlock: 'Textkörper', notesBlock: 'Anmerkungen', bibliographyBlock: 'Bibliografie' },
+    title: 'Benutzerdefinierter Export', description: 'Ausgabe aus sortierbaren, optionalen Blöcken zusammenstellen.', output: 'Ausgabe', template: 'Vorlage', saveTemplate: 'Vorlage speichern', templateName: 'Vorlagenname', export: 'Exportieren', enabled: 'Aktiv', font: 'Schriftart', size: 'Größe', bold: 'Fett', italic: 'Kursiv', align: 'Ausrichtung', spacing: 'Abstand danach', lineHeight: 'Zeilenabstand', language: 'Sprache', noteMode: 'Anmerkungstyp', bibliographyStyle: 'Bibliografiestil', moveUp: 'Hoch', moveDown: 'Runter', remove: 'Entfernen', addAbstract: 'Zusammenfassung hinzufügen', addKeywords: 'Schlüsselwörter hinzufügen', saved: 'Vorlage gespeichert.', failed: 'Export fehlgeschlagen.', titleBlock: 'Titel', subtitleBlock: 'Untertitel', mottoBlock: 'Motto', authorBlock: 'Autor', affiliationBlock: 'Affiliation', abstractBlock: 'Zusammenfassung', keywordsBlock: 'Schlüsselwörter', bodyBlock: 'Textkörper', notesBlock: 'Anmerkungen', bibliographyBlock: 'Bibliografie', citationStyle: 'Zitationsstil', citationStyleDescription: 'Inhalt und Typografie der ersten und weiteren Nennungen können getrennt festgelegt werden.', customCitationStyle: 'Eigene Regeln für Erst- und Folgezitate verwenden', firstOccurrence: 'Erste Nennung', subsequentOccurrence: 'Weitere Nennungen', content: 'Inhalt', tokens: 'Verfügbare Felder' },
   en: {
-    title: 'Custom export', description: 'Build the output from reorderable, optional blocks.', output: 'Output', template: 'Template', saveTemplate: 'Save template', templateName: 'Template name', export: 'Export', enabled: 'Enabled', font: 'Font', size: 'Size', bold: 'Bold', italic: 'Italic', align: 'Alignment', spacing: 'Space after', lineHeight: 'Line spacing', language: 'Language', noteMode: 'Note type', bibliographyStyle: 'Bibliography style', moveUp: 'Up', moveDown: 'Down', remove: 'Remove', addAbstract: 'Add abstract', addKeywords: 'Add keywords', saved: 'Template saved.', failed: 'Export failed.', titleBlock: 'Title', subtitleBlock: 'Subtitle', mottoBlock: 'Motto', authorBlock: 'Author', affiliationBlock: 'Affiliation', abstractBlock: 'Abstract', keywordsBlock: 'Keywords', bodyBlock: 'Body text', notesBlock: 'Notes', bibliographyBlock: 'Bibliography' },
+    title: 'Custom export', description: 'Build the output from reorderable, optional blocks.', output: 'Output', template: 'Template', saveTemplate: 'Save template', templateName: 'Template name', export: 'Export', enabled: 'Enabled', font: 'Font', size: 'Size', bold: 'Bold', italic: 'Italic', align: 'Alignment', spacing: 'Space after', lineHeight: 'Line spacing', language: 'Language', noteMode: 'Note type', bibliographyStyle: 'Bibliography style', moveUp: 'Up', moveDown: 'Down', remove: 'Remove', addAbstract: 'Add abstract', addKeywords: 'Add keywords', saved: 'Template saved.', failed: 'Export failed.', titleBlock: 'Title', subtitleBlock: 'Subtitle', mottoBlock: 'Motto', authorBlock: 'Author', affiliationBlock: 'Affiliation', abstractBlock: 'Abstract', keywordsBlock: 'Keywords', bodyBlock: 'Body text', notesBlock: 'Notes', bibliographyBlock: 'Bibliography', citationStyle: 'Citation style', citationStyleDescription: 'Configure the content and typography of first and subsequent occurrences separately.', customCitationStyle: 'Use custom occurrence rules', firstOccurrence: 'First occurrence', subsequentOccurrence: 'Subsequent occurrences', content: 'Content', tokens: 'Available fields' },
 };
 
 export function CustomExportPanel() {
@@ -41,9 +45,26 @@ export function CustomExportPanel() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const languages = useMemo(() => customExportLanguages(manuscript), [manuscript]);
+  const citationStyle = template.citationStyle ?? defaultCustomCitationStyle();
 
   const updateBlock = (id: string, patch: Partial<CustomExportBlock>) => {
     setTemplate((current) => ({ ...current, blocks: current.blocks.map((block) => block.id === id ? { ...block, ...patch } : block) }));
+  };
+
+  const updateCitationRule = (
+    occurrence: 'first' | 'subsequent',
+    patch: Partial<CustomExportCitationOccurrenceRule>,
+  ) => {
+    setTemplate((current) => {
+      const style = current.citationStyle ?? defaultCustomCitationStyle();
+      return {
+        ...current,
+        citationStyle: {
+          ...style,
+          [occurrence]: { ...style[occurrence], ...patch },
+        },
+      };
+    });
   };
 
   const moveBlock = (id: string, delta: number) => {
@@ -68,7 +89,10 @@ export function CustomExportPanel() {
   };
 
   const saveTemplate = () => {
-    const normalized = { ...template, id: template.id === 'default' ? `template-${Date.now()}` : template.id };
+    const normalized = normalizeCustomExportTemplate({
+      ...template,
+      id: template.id === 'default' ? `template-${Date.now()}` : template.id,
+    });
     const next = [...templates.filter((item) => item.id !== normalized.id), normalized];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     setTemplates(next);
@@ -80,10 +104,11 @@ export function CustomExportPanel() {
     setBusy(true); setError(''); setNotice('');
     try {
       useStudioStore.getState().checkpoint('export');
-      if (template.output === 'pdf') {
-        openCustomPdfPrintView(manuscript, template);
+      const normalized = normalizeCustomExportTemplate(template);
+      if (normalized.output === 'pdf') {
+        openCustomPdfPrintView(manuscript, normalized);
       } else {
-        const result = template.output === 'docx' ? buildCustomDocxExport(manuscript, template) : buildCustomHtmlExport(manuscript, template);
+        const result = normalized.output === 'docx' ? buildCustomDocxExport(manuscript, normalized) : buildCustomHtmlExport(manuscript, normalized);
         await saveExportBlob(result.blob, result.fileName);
       }
     } catch (cause) {
@@ -99,7 +124,7 @@ export function CustomExportPanel() {
       <div className="studio-manuscript-fields">
         <label><span>{copy.output}</span><select value={template.output} onChange={(event) => setTemplate((current) => ({ ...current, output: event.target.value as CustomExportOutput }))}><option value="docx">DOCX</option><option value="pdf">PDF</option><option value="html">HTML</option></select></label>
         <label><span>{copy.templateName}</span><input value={template.name} onChange={(event) => setTemplate((current) => ({ ...current, name: event.target.value }))} /></label>
-        {templates.length ? <label><span>{copy.template}</span><select value="" onChange={(event) => { const selected = templates.find((item) => item.id === event.target.value); if (selected) setTemplate(selected); }}><option value="">—</option>{templates.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label> : null}
+        {templates.length ? <label><span>{copy.template}</span><select value="" onChange={(event) => { const selected = templates.find((item) => item.id === event.target.value); if (selected) setTemplate(normalizeCustomExportTemplate(selected)); }}><option value="">—</option>{templates.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label> : null}
       </div>
 
       <div className="studio-custom-export-blocks">
@@ -124,6 +149,17 @@ export function CustomExportPanel() {
           </div>
         ))}
       </div>
+
+      <div className="studio-settings-card studio-custom-export-citations">
+        <div className="studio-settings-card-header"><div><h4>{copy.citationStyle}</h4><p>{copy.citationStyleDescription}</p></div></div>
+        <label><input type="checkbox" checked={citationStyle.enabled} onChange={(event) => setTemplate((current) => ({ ...current, citationStyle: { ...(current.citationStyle ?? defaultCustomCitationStyle()), enabled: event.target.checked } }))} /> {copy.customCitationStyle}</label>
+        <p className="studio-settings-hint">{copy.tokens}: {CUSTOM_CITATION_CONTENT_TOKENS.join(' ')}</p>
+        <div className="studio-custom-export-blocks">
+          <CitationOccurrenceEditor label={copy.firstOccurrence} rule={citationStyle.first} copy={copy} disabled={!citationStyle.enabled} onChange={(patch) => updateCitationRule('first', patch)} />
+          <CitationOccurrenceEditor label={copy.subsequentOccurrence} rule={citationStyle.subsequent} copy={copy} disabled={!citationStyle.enabled} onChange={(patch) => updateCitationRule('subsequent', patch)} />
+        </div>
+      </div>
+
       <div className="studio-tool-actions"><button type="button" onClick={() => addLocalizedBlock('abstract')}>{copy.addAbstract}</button><button type="button" onClick={() => addLocalizedBlock('keywords')}>{copy.addKeywords}</button><button type="button" onClick={saveTemplate}>{copy.saveTemplate}</button><button type="button" className="studio-menu-primary-action" disabled={busy} onClick={() => void runExport()}>{busy ? '…' : copy.export}</button></div>
       {notice ? <p className="studio-settings-hint" role="status">{notice}</p> : null}
       {error ? <div className="studio-export-error" role="alert">{error}</div> : null}
@@ -131,10 +167,25 @@ export function CustomExportPanel() {
   );
 }
 
+function CitationOccurrenceEditor({ label, rule, copy, disabled, onChange }: { label: string; rule: CustomExportCitationOccurrenceRule; copy: Record<string, string>; disabled: boolean; onChange: (patch: Partial<CustomExportCitationOccurrenceRule>) => void }) {
+  return (
+    <div className="studio-settings-card studio-custom-export-block">
+      <div className="studio-settings-card-header"><strong>{label}</strong></div>
+      <div className="studio-manuscript-fields">
+        <label><span>{copy.content}</span><textarea rows={3} value={rule.content} disabled={disabled} onChange={(event) => onChange({ content: event.target.value })} /></label>
+        <label><span>{copy.font}</span><select value={rule.typography.fontFamily} disabled={disabled} onChange={(event) => onChange({ typography: { ...rule.typography, fontFamily: event.target.value } })}>{FONT_OPTIONS.map((font) => <option key={font}>{font}</option>)}</select></label>
+        <label><span>{copy.size} (pt)</span><input type="number" min="6" max="72" step="0.5" value={rule.typography.fontSizePt} disabled={disabled} onChange={(event) => onChange({ typography: { ...rule.typography, fontSizePt: Number(event.target.value) || 10 } })} /></label>
+        <label><span>{copy.bold}</span><input type="checkbox" checked={Boolean(rule.typography.bold)} disabled={disabled} onChange={(event) => onChange({ typography: { ...rule.typography, bold: event.target.checked } })} /></label>
+        <label><span>{copy.italic}</span><input type="checkbox" checked={Boolean(rule.typography.italic)} disabled={disabled} onChange={(event) => onChange({ typography: { ...rule.typography, italic: event.target.checked } })} /></label>
+      </div>
+    </div>
+  );
+}
+
 function loadTemplates(): CustomExportTemplate[] {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.map((item) => normalizeCustomExportTemplate(item as CustomExportTemplate)) : [];
   } catch {
     return [];
   }
