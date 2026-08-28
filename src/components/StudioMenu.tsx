@@ -7,7 +7,6 @@ import {
   History as HistoryIcon,
   Library,
   Printer,
-  RotateCcw,
   Save,
   SaveAll,
   Settings2,
@@ -319,7 +318,6 @@ function ToolsView() {
   const manuscript = useStudioStore((state) => state.manuscript);
   const selectedSectionId = useStudioStore((state) => state.selectedSectionId);
   const checkpoint = useStudioStore((state) => state.checkpoint);
-  const resetSample = useStudioStore((state) => state.resetSample);
   const selectedSection = manuscript.sections.find((section) => section.id === selectedSectionId);
   const [localPath, setLocalPath] = useState(getCurrentManuscriptFilePath());
   const [fileMessage, setFileMessage] = useState('');
@@ -449,7 +447,6 @@ function ToolsView() {
     <ExportFormatsPanel />
     {platform !== 'android' ? nativeSaveCard : null}
     <AssetContainerPanel />
-    <div className="studio-tool-card"><div><strong>{t('studio.tools.reset')}</strong><p>{t('studio.tools.resetDescription')}</p></div><button type="button" className="studio-menu-secondary-action studio-menu-danger-action" onClick={() => { if (window.confirm(t('studio.tools.confirmReset'))) resetSample(); }}><RotateCcw size={16} aria-hidden="true" />{t('studio.tools.reset')}</button></div>
     <details className="studio-technical-details"><summary>{t('studio.tools.technicalData')}</summary><p>{t('studio.tools.technicalDescription')}</p><div className="studio-json-header"><strong>{t('studio.tools.liveJson')}</strong><span>{t('studio.tools.synced')}</span></div><pre className="studio-json-view"><code>{JSON.stringify(semanticSection, null, 2)}</code></pre></details><div className="studio-menu-footer-wrap"><Footer /></div></section>;
 }
 
