@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
@@ -10,12 +11,26 @@ export function EmbeddedDynamicIndex() {
   const entries = manuscript.indexEntries ?? [];
   const generatedIndexes = manuscript.generatedIndexes ?? [];
   const groups = useMemo(() => groupIndexEntries(entries), [entries]);
+  const [host, setHost] = useState<HTMLElement | null>(null);
 
-  if (!generatedIndexes.length || !groups.length) return null;
+  useEffect(() => {
+    const manuscriptPage = document.querySelector<HTMLElement>('.omi-manuscript-page');
+    if (!manuscriptPage) return;
+    const element = document.createElement('div');
+    element.className = 'omi-embedded-dynamic-index-host';
+    manuscriptPage.appendChild(element);
+    setHost(element);
+    return () => {
+      setHost(null);
+      element.remove();
+    };
+  }, []);
+
+  if (!host || !generatedIndexes.length || !groups.length) return null;
 
   const title = generatedIndexes[0]?.title?.trim() || defaultIndexTitle(locale);
 
-  return (
+  return createPortal(
     <section className="omi-embedded-dynamic-index" aria-label={title}>
       <h2>{title}</h2>
       <div className="omi-embedded-dynamic-index-list">
@@ -40,7 +55,8 @@ export function EmbeddedDynamicIndex() {
           </p>
         ))}
       </div>
-    </section>
+    </section>,
+    host,
   );
 }
 
