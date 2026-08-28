@@ -1,0 +1,52 @@
+name: Refresh PostCSS security dependency
+
+on:
+  push:
+    branches:
+      - fix/postcss-security-update
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-lockfile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          ref: fix/postcss-security-update
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Update PostCSS in lockfile
+        run: npm update postcss --package-lock-only --ignore-scripts
+
+      - name: Verify patched PostCSS version
+        run: |
+          node - <<'NODE'
+          const lock = require('./package-lock.json')
+          const version = lock.packages?.['node_modules/postcss']?.version
+          if (!version) throw new Error('PostCSS version not found in package-lock.json')
+          const [major, minor, patch] = version.split('.').map(Number)
+          const patched = major > 8 || (major === 8 && (minor > 5 || (minor === 5 && patch >= 23)))
+          if (!patched) throw new Error(`PostCSS ${version} is still vulnerable; need >= 8.5.23`)
+          console.log(`PostCSS ${version} is patched.`)
+          NODE
+
+      - name: Commit refreshed lockfile
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo 'No lockfile change required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package-lock.json
+          git commit -m 'fix: update PostCSS to patched version'
+          git push origin HEAD:fix/postcss-security-update
