@@ -4,6 +4,7 @@ import {
   preflightWordGeneratedLists,
 } from './docxGeneratedListImport';
 import { attachWordIndexData } from './docxIndexImport';
+import { attachWordIndexLocations } from './docxIndexLocationImport';
 import { parseDocxManuscriptWithInlineSemantics } from './docxInlineSemanticsImport';
 import {
   parseDocxManuscript,
@@ -72,7 +73,8 @@ export async function parseDocxForStudio(
 
   options.onProgress?.({ stage: 'finalizing', largeDocumentMode, monographMode });
   const indexedPlan = await attachWordIndexData(file, plan);
-  const tocPlan = await attachWordTableOfContents(file, indexedPlan, tocPreflight);
+  const locatedIndexPlan = await attachWordIndexLocations(file, indexedPlan);
+  const tocPlan = await attachWordTableOfContents(file, locatedIndexPlan, tocPreflight);
   const semanticPlan = attachWordGeneratedLists(tocPlan, generatedListPreflight);
   await yieldToBrowser();
   return semanticPlan;
