@@ -1,3 +1,16 @@
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.app-layout-main {
+  flex: 1 0 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
 .omi-footer {
   flex: 0 0 auto;
   width: 100%;
@@ -141,6 +154,16 @@
 }
 
 @media (max-width: 760px) {
+  .app-layout-main {
+    flex-basis: auto;
+  }
+
+  .omi-footer {
+    position: relative;
+    z-index: 1;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
   .omi-footer-container {
     padding: 2rem 1rem 1.5rem;
   }
