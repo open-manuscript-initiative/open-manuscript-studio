@@ -15,6 +15,8 @@ export type CustomExportBlockKind =
 
 export type CustomExportNoteMode = 'footnote' | 'endnote' | 'author-note' | 'all';
 export type CustomExportAlignment = 'left' | 'center' | 'right' | 'justify';
+export type CustomExportPageNumberArea = 'header' | 'footer';
+export type CustomExportPageNumberAlignment = 'left' | 'center' | 'right';
 
 export interface CustomExportTypography {
   fontFamily: string;
@@ -37,12 +39,6 @@ export interface CustomExportBlock {
   bibliographyStyle?: OmiCitationStyleId;
 }
 
-/**
- * Formatting/content rule for one inline citation occurrence class.
- *
- * `content` is a token template. Supported tokens are intentionally based on
- * portable OMI bibliographic/citation data rather than renderer-specific HTML.
- */
 export interface CustomExportCitationOccurrenceRule {
   content: string;
   typography: CustomExportTypography;
@@ -54,12 +50,37 @@ export interface CustomExportCitationStyle {
   subsequent: CustomExportCitationOccurrenceRule;
 }
 
+export interface CustomExportRunningContent {
+  enabled: boolean;
+  left: string;
+  right: string;
+  typography: CustomExportTypography;
+}
+
+export interface CustomExportPageNumbering {
+  enabled: boolean;
+  area: CustomExportPageNumberArea;
+  alignment: CustomExportPageNumberAlignment;
+  /** Physical document page on which the page number first becomes visible. */
+  startOnPage: number;
+  /** Number displayed on startOnPage. */
+  startAt: number;
+  typography: CustomExportTypography;
+}
+
+export interface CustomExportPageLayout {
+  header: CustomExportRunningContent;
+  footer: CustomExportRunningContent;
+  pageNumbering: CustomExportPageNumbering;
+}
+
 export interface CustomExportTemplate {
   id: string;
   name: string;
   output: CustomExportOutput;
   blocks: CustomExportBlock[];
   citationStyle?: CustomExportCitationStyle;
+  pageLayout?: CustomExportPageLayout;
 }
 
 export interface OmiLocalizedFrontMatterEntry {
@@ -77,21 +98,11 @@ const DEFAULT_FONT = 'Times New Roman';
 const DEFAULT_BODY_SIZE = 12;
 
 export const CUSTOM_CITATION_CONTENT_TOKENS = [
-  '{citation}',
-  '{author}',
-  '{title}',
-  '{shortTitle}',
-  '{year}',
-  '{container}',
-  '{place}',
-  '{publisher}',
-  '{volume}',
-  '{issue}',
-  '{pages}',
-  '{locator}',
-  '{doi}',
-  '{url}',
+  '{citation}', '{author}', '{title}', '{shortTitle}', '{year}', '{container}',
+  '{place}', '{publisher}', '{volume}', '{issue}', '{pages}', '{locator}', '{doi}', '{url}',
 ] as const;
+
+export const CUSTOM_RUNNING_CONTENT_TOKENS = ['{title}', '{subtitle}', '{author}'] as const;
 
 function typography(fontSizePt: number, overrides: Partial<CustomExportTypography> = {}): CustomExportTypography {
   return {
@@ -109,15 +120,33 @@ export function defaultCustomCitationStyle(): CustomExportCitationStyle {
   const inline = typography(10, { spaceAfterPt: 0, lineHeight: 1 });
   return {
     enabled: false,
-    // Keeping {citation} as the default preserves the manuscript's current
-    // citation renderer until an export template deliberately overrides it.
-    first: {
-      content: '{citation}',
-      typography: { ...inline },
+    first: { content: '{citation}', typography: { ...inline } },
+    subsequent: { content: '{citation}', typography: { ...inline } },
+  };
+}
+
+export function defaultCustomPageLayout(): CustomExportPageLayout {
+  const running = typography(9, { spaceAfterPt: 0, lineHeight: 1 });
+  return {
+    header: {
+      enabled: false,
+      left: '',
+      right: '',
+      typography: { ...running },
     },
-    subsequent: {
-      content: '{citation}',
-      typography: { ...inline },
+    footer: {
+      enabled: false,
+      left: '',
+      right: '',
+      typography: { ...running },
+    },
+    pageNumbering: {
+      enabled: false,
+      area: 'footer',
+      alignment: 'center',
+      startOnPage: 1,
+      startAt: 1,
+      typography: { ...running },
     },
   };
 }
@@ -129,6 +158,7 @@ export function defaultCustomExportTemplate(manuscript: Pick<OmiManuscript, 'loc
     name: 'Custom export',
     output: 'docx',
     citationStyle: defaultCustomCitationStyle(),
+    pageLayout: defaultCustomPageLayout(),
     blocks: [
       { id: 'author', kind: 'author', enabled: true, typography: typography(12, { alignment: 'center' }) },
       { id: 'affiliation', kind: 'affiliation', enabled: true, typography: typography(10, { alignment: 'center', italic: true }) },
@@ -150,12 +180,12 @@ export function defaultCustomExportTemplate(manuscript: Pick<OmiManuscript, 'loc
   };
 }
 
-export function normalizeCustomExportTemplate(
-  template: CustomExportTemplate,
-): CustomExportTemplate {
-  return template.citationStyle
-    ? template
-    : { ...template, citationStyle: defaultCustomCitationStyle() };
+export function normalizeCustomExportTemplate(template: CustomExportTemplate): CustomExportTemplate {
+  return {
+    ...template,
+    citationStyle: template.citationStyle ?? defaultCustomCitationStyle(),
+    pageLayout: template.pageLayout ?? defaultCustomPageLayout(),
+  };
 }
 
 export function customExportLanguages(manuscript: OmiManuscript): string[] {
