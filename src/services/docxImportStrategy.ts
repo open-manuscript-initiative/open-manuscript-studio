@@ -3,7 +3,10 @@ import {
   attachWordGeneratedLists,
   preflightWordGeneratedLists,
 } from './docxGeneratedListImport';
-import { removeWordGeneratedIndexCache } from './docxGeneratedIndexCleanup';
+import {
+  normalizeWordGeneratedIndexSpacing,
+  removeWordGeneratedIndexCache,
+} from './docxGeneratedIndexCleanup';
 import { attachWordIndexData } from './docxIndexImport';
 import { attachWordIndexLocations } from './docxIndexLocationImport';
 import { parseDocxManuscriptWithInlineSemantics } from './docxInlineSemanticsImport';
@@ -73,7 +76,12 @@ export async function parseDocxForStudio(
       : await parseDocxManuscriptWithInlineSemantics(file);
 
   options.onProgress?.({ stage: 'finalizing', largeDocumentMode, monographMode });
-  const indexedPlan = await attachWordIndexData(file, plan);
+
+  // First normalize only the generated name-index section. Word-import paths
+  // can flatten the boundary between a name and its cached Arabic page number
+  // ("Ignác376" -> "Ignác 376"). Do this before importing XE/index semantics.
+  const spacedPlan = normalizeWordGeneratedIndexSpacing(plan);
+  const indexedPlan = await attachWordIndexData(file, spacedPlan);
   const locatedIndexPlan = await attachWordIndexLocations(file, indexedPlan);
   const tocPlan = await attachWordTableOfContents(file, locatedIndexPlan, tocPreflight);
   const semanticPlan = attachWordGeneratedLists(tocPlan, generatedListPreflight);

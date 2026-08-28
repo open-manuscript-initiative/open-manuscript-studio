@@ -3,6 +3,23 @@ import type { OmiBlock } from '../types/omi';
 import type { DocxManuscriptImportPlan } from './docxManuscriptImport';
 
 /**
+ * Normalizes only a Word-generated name-index section before semantic index
+ * import. Some DOCX readers flatten the tab between an INDEX entry and its
+ * cached page list, producing e.g. "Acsády Ignác376, 391". Insert the missing
+ * boundary space first so subsequent index processing sees an unambiguous
+ * "name + page cache" shape. Canonical manuscript body text is untouched.
+ */
+export function normalizeWordGeneratedIndexSpacing(
+  plan: DocxManuscriptImportPlan,
+): DocxManuscriptImportPlan {
+  for (const section of plan.sections) {
+    if (!looksLikeIndexHeading(section.title)) continue;
+    section.blocks = section.blocks.map(normalizeIndexBlockSpacing);
+  }
+  return plan;
+}
+
+/**
  * Removes Word's cached INDEX rendering from canonical manuscript content.
  *
  * The semantic source of truth is the XE marker collection. Page numbers in an
@@ -40,15 +57,59 @@ export function removeWordGeneratedIndexCache(
   return plan;
 }
 
+export function insertIndexLetterNumberSpacing(value: string): string {
+  return value.replace(/([\p{L}\p{M}])(?=\d)/gu, '$1 ');
+}
+
 export function stripGeneratedIndexPageNumbers(value: string): string {
   return value
     .replace(/\u00a0/g, ' ')
     .replace(/\t[.·•…_\-\s]*\d+(?:\s*[-–—,]\s*\d+)*\s*$/u, '')
-    // DOCX body parsers commonly discard the tab between the entry and the
-    // cached page list, producing e.g. "Acsády Ignác376, 391".
+    // The pre-import spacing normalizer turns flattened Word INDEX rows into
+    // e.g. "Acsády Ignác 376, 391". Keep the compact fallback for legacy OMI
+    // documents that may already contain the older flattened representation.
+    .replace(/\s+\d+(?:\s*,\s*\d+)*\s*$/u, '')
     .replace(/(?<=[\p{L}\p{M}.\)])\d+(?:\s*,\s*\d+)*\s*$/u, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function normalizeIndexBlockSpacing(block: OmiBlock): OmiBlock {
+  return {
+    ...block,
+    content: normalizeBlockContentSpacing(block.content),
+    children: block.children?.map(normalizeIndexBlockSpacing),
+  };
+}
+
+function normalizeBlockContentSpacing(content: string): string {
+  if (!content) return content;
+  try {
+    const parsed = JSON.parse(content) as unknown;
+    const normalized = normalizeJsonTextNodes(parsed);
+    return JSON.stringify(normalized);
+  } catch {
+    if (/<[^>]+>/.test(content)) {
+      return content.replace(/(^|>)([^<]+)/g, (_match, prefix: string, text: string) =>
+        `${prefix}${insertIndexLetterNumberSpacing(text)}`,
+      );
+    }
+    return insertIndexLetterNumberSpacing(content);
+  }
+}
+
+function normalizeJsonTextNodes(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(normalizeJsonTextNodes);
+  if (!value || typeof value !== 'object') return value;
+
+  const input = value as Record<string, unknown>;
+  const output: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(input)) {
+    output[key] = key === 'text' && typeof child === 'string'
+      ? insertIndexLetterNumberSpacing(child)
+      : normalizeJsonTextNodes(child);
+  }
+  return output;
 }
 
 function isGeneratedIndexRow(value: string, labels: ReadonlySet<string>): boolean {
