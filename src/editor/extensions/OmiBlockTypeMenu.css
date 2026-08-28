@@ -1,0 +1,61 @@
+.omi-block-type-menu-host {
+  position: relative;
+}
+
+.omi-block-type-menu {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  z-index: 6;
+  max-width: min(15rem, calc(100% - 0.9rem));
+  opacity: 0;
+  transform: translateY(-2px);
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.omi-block-editor:focus-within .omi-block-type-menu,
+.omi-block-type-menu:focus-within {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.omi-block-type-menu__select {
+  width: 100%;
+  min-height: 2rem;
+  padding: 0.35rem 1.8rem 0.35rem 0.6rem;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: 0.55rem;
+  background: var(--omi-surface, #fff);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgb(15 23 42 / 10%);
+  cursor: pointer;
+}
+
+.omi-block-type-menu__select:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.omi-block-type-menu__select:disabled {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .omi-block-type-menu {
+    position: sticky;
+    top: 0.25rem;
+    right: auto;
+    margin: 0 0 0.4rem auto;
+    width: min(13rem, 72vw);
+  }
+
+  .omi-block-type-menu__select {
+    min-height: 2.35rem;
+    font-size: 0.86rem;
+  }
+}
