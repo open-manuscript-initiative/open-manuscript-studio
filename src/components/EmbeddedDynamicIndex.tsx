@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { groupIndexEntries } from '../model/indexing';
+import './EmbeddedDynamicIndex.css';
 
 export function EmbeddedDynamicIndex() {
   const { locale } = useTranslation();
