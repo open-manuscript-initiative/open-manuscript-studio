@@ -60,7 +60,9 @@ export function SearchReplaceOverlay() {
   const [wholeWord, setWholeWord] = useState(false);
   const [scope, setScope] = useState<SearchScope>('all');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [revealRequestId, setRevealRequestId] = useState(0);
   const queryRef = useRef<HTMLInputElement>(null);
+  const handledRevealRequestId = useRef(0);
   const copy = getCopy(locale);
   const options = useMemo<ManuscriptSearchOptions>(() => ({ caseSensitive, wholeWord }), [caseSensitive, wholeWord]);
   const objectMode = OBJECT_SCOPES.has(scope);
@@ -95,10 +97,12 @@ export function SearchReplaceOverlay() {
 
   const activeResult = results[activeIndex];
   useEffect(() => {
+    if (revealRequestId === 0 || handledRevealRequestId.current === revealRequestId) return;
+    handledRevealRequestId.current = revealRequestId;
     if (!searchSubmitted || !activeResult) return;
     if (!submittedQuery && activeResult.target !== 'object') return;
     revealResult(activeResult, submittedQuery, options);
-  }, [activeResult, options, searchSubmitted, submittedQuery]);
+  }, [activeResult, options, revealRequestId, searchSubmitted, submittedQuery]);
 
   if (!mode) return null;
 
@@ -112,11 +116,13 @@ export function SearchReplaceOverlay() {
     setSubmittedQuery(query);
     setSearchSubmitted(true);
     setActiveIndex(0);
+    setRevealRequestId((current) => current + 1);
   };
 
   const move = (delta: number) => {
     if (!results.length) return;
     setActiveIndex((current) => (current + delta + results.length) % results.length);
+    setRevealRequestId((current) => current + 1);
   };
   const mutators = { setTitle, setAbstract, updateBlock };
 
