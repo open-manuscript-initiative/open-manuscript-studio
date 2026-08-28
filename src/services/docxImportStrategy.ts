@@ -3,6 +3,7 @@ import {
   attachWordGeneratedLists,
   preflightWordGeneratedLists,
 } from './docxGeneratedListImport';
+import { removeWordGeneratedIndexCache } from './docxGeneratedIndexCleanup';
 import { attachWordIndexData } from './docxIndexImport';
 import { attachWordIndexLocations } from './docxIndexLocationImport';
 import { parseDocxManuscriptWithInlineSemantics } from './docxInlineSemanticsImport';
@@ -76,8 +77,9 @@ export async function parseDocxForStudio(
   const locatedIndexPlan = await attachWordIndexLocations(file, indexedPlan);
   const tocPlan = await attachWordTableOfContents(file, locatedIndexPlan, tocPreflight);
   const semanticPlan = attachWordGeneratedLists(tocPlan, generatedListPreflight);
+  const cleanPlan = removeWordGeneratedIndexCache(semanticPlan);
   await yieldToBrowser();
-  return semanticPlan;
+  return cleanPlan;
 }
 
 export function isLargeDocx(file: Pick<File, 'size'>): boolean {
