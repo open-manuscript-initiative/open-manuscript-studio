@@ -1,0 +1,57 @@
+.omi-embedded-dynamic-index-host {
+  margin-top: 2rem;
+}
+
+.omi-embedded-dynamic-index {
+  padding-top: 0.5rem;
+}
+
+.omi-embedded-dynamic-index h2 {
+  margin: 0 0 1.25rem;
+}
+
+.omi-embedded-dynamic-index-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.omi-embedded-dynamic-index-row {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.omi-embedded-dynamic-index-label {
+  font-weight: 500;
+}
+
+.omi-embedded-dynamic-index-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.18rem;
+  margin-inline-start: 0.3rem;
+  vertical-align: baseline;
+}
+
+.omi-embedded-dynamic-index-link {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--omi-accent, #7b1f35);
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+  padding: 0.15rem 0.2rem;
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.omi-embedded-dynamic-index-link:hover,
+.omi-embedded-dynamic-index-link:focus-visible {
+  text-decoration-thickness: 0.14em;
+}
+
+.omi-embedded-dynamic-index-link:disabled {
+  cursor: default;
+  opacity: 0.35;
+  text-decoration: none;
+}
