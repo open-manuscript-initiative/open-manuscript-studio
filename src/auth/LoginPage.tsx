@@ -362,8 +362,6 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
               </button>
             </footer>
           )}
-
-          <p className="auth-alpha-notice auth-login-notice">{t('auth.alphaNotice')}</p>
         </section>
       </div>
     </main>
