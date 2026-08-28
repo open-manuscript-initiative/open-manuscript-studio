@@ -79,7 +79,7 @@ export function CustomExportPanel() {
   const runExport = async () => {
     setBusy(true); setError(''); setNotice('');
     try {
-      useStudioStore.getState().checkpoint('custom-export');
+      useStudioStore.getState().checkpoint('export');
       if (template.output === 'pdf') {
         openCustomPdfPrintView(manuscript, template);
       } else {
