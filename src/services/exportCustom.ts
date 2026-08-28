@@ -209,4 +209,4 @@ function fileStem(manuscript: Pick<OmiManuscript, 'title' | 'id'>): string {
 function escapeHtml(value: string): string { return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 function escapeAttribute(value: string): string { return escapeHtml(value); }
 function xml(value: string): string { return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;'); }
-function cssString(value: string): string { return `'${value.replace(/'/g, "\\'")}'`; }
+function cssString(value: string): string { return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`; }
