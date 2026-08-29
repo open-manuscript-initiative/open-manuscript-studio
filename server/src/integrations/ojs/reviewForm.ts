@@ -1,214 +1,257 @@
-import { prisma } from '../../lib/prisma.js';
-import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
-import type { LaunchClaims } from './launchVerifier.js';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../../db.js';
 
-export type OjsReviewFormElementType =
-  | 'small_text'
-  | 'text'
-  | 'textarea'
-  | 'checkboxes'
-  | 'radio'
-  | 'dropdown';
-
-export interface OjsReviewFormOption {
+export type OjsReviewFormOption = {
   value: string;
   label: string;
-}
+  localizations?: Record<string, string>;
+};
 
-export interface OjsReviewFormLocalization {
+export type OjsReviewFormElement = {
+  id: number;
+  sequence: number;
+  type: 'smallTextField' | 'smallTextArea' | 'textArea' | 'checkBoxes' | 'radioButtons' | 'dropDownBox';
   question: string;
-  description: string;
-  options: OjsReviewFormOption[];
-}
-
-export interface OjsReviewFormElement {
-  externalId: string;
-  type: OjsReviewFormElementType;
-  question: string;
-  description: string;
+  description?: string | null;
   required: boolean;
   authorVisible: boolean;
   options: OjsReviewFormOption[];
-  value: string | string[] | null;
-  localizations?: Record<string, OjsReviewFormLocalization>;
-}
+  localizations?: Record<string, {
+    question?: string;
+    description?: string | null;
+    options?: Record<string, string>;
+  }>;
+};
 
-export interface OjsReviewFormDefinition {
-  externalId: string;
+export type OjsReviewFormDefinition = {
+  id: number;
+  title?: string | null;
+  description?: string | null;
   elements: OjsReviewFormElement[];
-}
+};
 
-export interface OjsReviewFormResponse {
-  elementExternalId: string;
-  value: string | string[] | null;
-}
+export type OjsReviewFormResponseValue = string | string[] | null;
 
-interface StoredReviewFormRow {
-  form_external_id: string | null;
-  definition: unknown;
-  responses: unknown;
-}
+export type OjsReviewFormState = {
+  form: OjsReviewFormDefinition;
+  responses: Record<string, OjsReviewFormResponseValue>;
+};
 
-function hasScope(claims: LaunchClaims, scope: string): boolean {
-  return claims.scope?.includes(scope) ?? false;
-}
-
-function parseDefinition(value: unknown): OjsReviewFormDefinition | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  const record = value as Record<string, unknown>;
-  if (typeof record.externalId !== 'string' || !Array.isArray(record.elements)) return null;
-  return record as unknown as OjsReviewFormDefinition;
-}
-
-function parseResponses(value: unknown): OjsReviewFormResponse[] {
-  return Array.isArray(value) ? value as OjsReviewFormResponse[] : [];
-}
-
-export async function loadOjsReviewForm(
-  claims: LaunchClaims,
-  payload: string,
-  signature: string,
-  installationBaseUrl: string,
-): Promise<OjsReviewFormDefinition | null> {
-  if (claims.actorMode !== 'review') return null;
-  if (!hasScope(claims, 'review.form.read')) {
-    throw new Error('The reviewer launch does not grant review.form.read.');
-  }
-  if (!claims.apiBaseUrl) throw new Error('The OJS reviewer launch does not include apiBaseUrl.');
-
-  const trustedBase = await assertTrustedIntegrationUrl(claims.apiBaseUrl, installationBaseUrl);
-  const target = new URL(`${trustedBase.toString().replace(/\/$/, '')}/review-form`);
-  if (target.origin !== new URL(installationBaseUrl).origin || target.search || target.hash) {
-    throw new Error('The OJS review form URL is not trusted.');
-  }
-
-  const response = await fetch(target, {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-      Authorization: `OMI ${payload}.${signature}`,
-    },
-    redirect: 'error',
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!response.ok) {
-    const text = (await response.text()).slice(0, 500);
-    throw new Error(`OJS review form request failed with HTTP ${response.status}${text ? `: ${text}` : ''}`);
-  }
-
-  const data = await response.json() as { reviewForm?: unknown };
-  if (data.reviewForm === null || data.reviewForm === undefined) return null;
-  const definition = parseDefinition(data.reviewForm);
-  if (!definition) throw new Error('OJS returned an invalid native review form definition.');
-  return definition;
-}
-
-export async function rememberOjsReviewForm(
+export async function replaceOjsReviewFormState(
   assignmentId: string,
-  definition: OjsReviewFormDefinition | null,
+  state: OjsReviewFormState | null,
 ): Promise<void> {
-  const formExternalId = definition?.externalId ?? null;
-  const definitionJson = definition ? JSON.stringify(definition) : null;
-  const initialResponses = definition
-    ? definition.elements
-        .filter((element) => element.value !== null && element.value !== '')
-        .map((element) => ({ elementExternalId: element.externalId, value: element.value }))
-    : [];
-  const responsesJson = JSON.stringify(initialResponses);
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`DELETE FROM "ojs_review_form_responses" WHERE "assignment_id" = ${assignmentId}::uuid`;
+    await tx.$executeRaw`DELETE FROM "ojs_review_form_contexts" WHERE "assignment_id" = ${assignmentId}::uuid`;
 
-  await prisma.$executeRaw`
-    INSERT INTO ojs_review_form_contexts
-      (assignment_id, form_external_id, definition, responses, updated_at)
-    VALUES (
-      ${assignmentId}::uuid,
-      ${formExternalId},
-      ${definitionJson}::jsonb,
-      ${responsesJson}::jsonb,
-      CURRENT_TIMESTAMP
-    )
-    ON CONFLICT (assignment_id)
-    DO UPDATE SET
-      form_external_id = EXCLUDED.form_external_id,
-      definition = EXCLUDED.definition,
-      responses = EXCLUDED.responses,
-      updated_at = CURRENT_TIMESTAMP
-  `;
+    if (!state) return;
+
+    const normalized = normalizeDefinition(state.form);
+    await tx.$executeRaw`
+      INSERT INTO "ojs_review_form_contexts" ("assignment_id", "external_form_id", "definition", "created_at", "updated_at")
+      VALUES (${assignmentId}::uuid, ${normalized.id}, ${JSON.stringify(normalized)}::jsonb, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `;
+
+    for (const element of normalized.elements) {
+      const value = normalizeResponseValue(element, state.responses[String(element.id)] ?? null);
+      if (isEmpty(value)) continue;
+      await tx.$executeRaw`
+        INSERT INTO "ojs_review_form_responses" ("assignment_id", "external_element_id", "response", "created_at", "updated_at")
+        VALUES (${assignmentId}::uuid, ${element.id}, ${JSON.stringify(value)}::jsonb, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `;
+    }
+  });
 }
 
-export async function getOjsReviewFormContext(
-  assignmentId: string,
-): Promise<{ definition: OjsReviewFormDefinition | null; responses: OjsReviewFormResponse[] } | null> {
-  const rows = await prisma.$queryRaw<StoredReviewFormRow[]>`
-    SELECT form_external_id, definition, responses
-    FROM ojs_review_form_contexts
-    WHERE assignment_id = ${assignmentId}::uuid
+export async function getOjsReviewFormState(assignmentId: string): Promise<OjsReviewFormState | null> {
+  const contexts = await prisma.$queryRaw<Array<{ definition: unknown }>>`
+    SELECT "definition"
+    FROM "ojs_review_form_contexts"
+    WHERE "assignment_id" = ${assignmentId}::uuid
     LIMIT 1
   `;
-  const row = rows[0];
-  if (!row) return null;
-  return {
-    definition: parseDefinition(row.definition),
-    responses: parseResponses(row.responses),
-  };
+  if (!contexts[0]) return null;
+
+  const form = normalizeDefinition(contexts[0].definition);
+  const rows = await prisma.$queryRaw<Array<{ external_element_id: number; response: unknown }>>`
+    SELECT "external_element_id", "response"
+    FROM "ojs_review_form_responses"
+    WHERE "assignment_id" = ${assignmentId}::uuid
+  `;
+  const responses: Record<string, OjsReviewFormResponseValue> = {};
+  for (const row of rows) {
+    const element = form.elements.find((item) => item.id === row.external_element_id);
+    if (!element) continue;
+    responses[String(element.id)] = normalizeResponseValue(element, row.response);
+  }
+  return { form, responses };
 }
 
 export async function saveOjsReviewFormResponses(
   assignmentId: string,
-  responses: OjsReviewFormResponse[],
-): Promise<void> {
-  const context = await getOjsReviewFormContext(assignmentId);
-  if (!context?.definition) throw new Error('This review assignment does not have an OJS review form.');
-  const elements = new Map(context.definition.elements.map((element) => [element.externalId, element]));
-  const normalized = new Map<string, OjsReviewFormResponse>();
+  input: Record<string, unknown>,
+): Promise<OjsReviewFormState> {
+  const state = await getOjsReviewFormState(assignmentId);
+  if (!state) throw new Error('This review assignment has no OJS review form.');
 
-  for (const response of responses) {
-    const element = elements.get(response.elementExternalId);
-    if (!element) throw new Error('A response references an element outside the assigned OJS review form.');
-    const value = normalizeValue(element, response.value);
-    normalized.set(element.externalId, { elementExternalId: element.externalId, value });
+  const normalized: Record<string, OjsReviewFormResponseValue> = { ...state.responses };
+  for (const element of state.form.elements) {
+    const key = String(element.id);
+    if (!Object.prototype.hasOwnProperty.call(input, key)) continue;
+    normalized[key] = normalizeResponseValue(element, input[key]);
   }
 
-  const merged = new Map(context.responses.map((response) => [response.elementExternalId, response]));
-  for (const [id, response] of normalized) merged.set(id, response);
-  const payload = [...merged.values()];
-  const json = JSON.stringify(payload);
-  await prisma.$executeRaw`
-    UPDATE ojs_review_form_contexts
-    SET responses = ${json}::jsonb, updated_at = CURRENT_TIMESTAMP
-    WHERE assignment_id = ${assignmentId}::uuid
-  `;
+  await prisma.$transaction(async (tx) => {
+    for (const element of state.form.elements) {
+      const key = String(element.id);
+      if (!Object.prototype.hasOwnProperty.call(input, key)) continue;
+      const value = normalized[key] ?? null;
+      if (isEmpty(value)) {
+        await tx.$executeRaw`
+          DELETE FROM "ojs_review_form_responses"
+          WHERE "assignment_id" = ${assignmentId}::uuid AND "external_element_id" = ${element.id}
+        `;
+        continue;
+      }
+      await tx.$executeRaw`
+        INSERT INTO "ojs_review_form_responses" ("assignment_id", "external_element_id", "response", "created_at", "updated_at")
+        VALUES (${assignmentId}::uuid, ${element.id}, ${JSON.stringify(value)}::jsonb, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ON CONFLICT ("assignment_id", "external_element_id") DO UPDATE SET
+          "response" = EXCLUDED."response",
+          "updated_at" = CURRENT_TIMESTAMP
+      `;
+    }
+  });
+
+  return { form: state.form, responses: normalized };
 }
 
-export async function validateOjsReviewFormComplete(assignmentId: string): Promise<void> {
-  const context = await getOjsReviewFormContext(assignmentId);
-  if (!context?.definition) return;
-  const values = new Map(context.responses.map((response) => [response.elementExternalId, response.value]));
-  for (const element of context.definition.elements) {
+export async function assertOjsReviewFormComplete(assignmentId: string): Promise<void> {
+  const state = await getOjsReviewFormState(assignmentId);
+  if (!state) return;
+  for (const element of state.form.elements) {
     if (!element.required) continue;
-    const value = values.get(element.externalId);
-    if (isEmpty(value)) throw new Error(`Required OJS review form field is incomplete: ${plainText(element.question)}`);
+    if (isEmpty(state.responses[String(element.id)])) {
+      throw new Error(`Required review form field is incomplete: ${plainText(element.question)}`);
+    }
   }
 }
 
-function normalizeValue(
-  element: OjsReviewFormElement,
-  value: string | string[] | null,
-): string | string[] | null {
+export function authorVisibleOjsReviewFormResponses(state: OjsReviewFormState | null): Array<{
+  elementId: number;
+  question: string;
+  response: OjsReviewFormResponseValue;
+}> {
+  if (!state) return [];
+  return state.form.elements
+    .filter((element) => element.authorVisible)
+    .map((element) => ({
+      elementId: element.id,
+      question: plainText(element.question),
+      response: state.responses[String(element.id)] ?? null,
+    }))
+    .filter((item) => !isEmpty(item.response));
+}
+
+function normalizeDefinition(value: unknown): OjsReviewFormDefinition {
+  if (!value || typeof value !== 'object') throw new Error('Invalid OJS review form definition.');
+  const form = value as Record<string, unknown>;
+  const id = Number(form.id);
+  if (!Number.isInteger(id) || id <= 0) throw new Error('Invalid OJS review form id.');
+  const rawElements = Array.isArray(form.elements) ? form.elements : [];
+  return {
+    id,
+    title: typeof form.title === 'string' ? plainText(form.title) : null,
+    description: typeof form.description === 'string' ? plainText(form.description) : null,
+    elements: rawElements.map(normalizeElement).sort((a, b) => a.sequence - b.sequence),
+  };
+}
+
+function normalizeElement(value: unknown): OjsReviewFormElement {
+  if (!value || typeof value !== 'object') throw new Error('Invalid OJS review form element.');
+  const element = value as Record<string, unknown>;
+  const id = Number(element.id);
+  const sequence = Number(element.sequence ?? 0);
+  const type = String(element.type ?? '') as OjsReviewFormElement['type'];
+  const allowedTypes = new Set<OjsReviewFormElement['type']>([
+    'smallTextField', 'smallTextArea', 'textArea', 'checkBoxes', 'radioButtons', 'dropDownBox',
+  ]);
+  if (!Number.isInteger(id) || id <= 0 || !allowedTypes.has(type)) throw new Error('Invalid OJS review form element.');
+
+  const options = Array.isArray(element.options)
+    ? element.options.map((option) => {
+        if (!option || typeof option !== 'object') throw new Error('Invalid OJS review form option.');
+        const item = option as Record<string, unknown>;
+        const optionLocalizations = normalizeStringMap(item.localizations);
+        return {
+          value: String(item.value ?? ''),
+          label: plainText(String(item.label ?? item.value ?? '')),
+          ...(Object.keys(optionLocalizations).length > 0 ? { localizations: optionLocalizations } : {}),
+        };
+      })
+    : [];
+
+  const elementLocalizations = normalizeElementLocalizations(element.localizations);
+
+  return {
+    id,
+    sequence: Number.isFinite(sequence) ? sequence : 0,
+    type,
+    question: plainText(String(element.question ?? '')),
+    description: typeof element.description === 'string' ? plainText(element.description) : null,
+    required: Boolean(element.required),
+    authorVisible: Boolean(element.authorVisible),
+    options,
+    ...(Object.keys(elementLocalizations).length > 0 ? { localizations: elementLocalizations } : {}),
+  };
+}
+
+function normalizeStringMap(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const result: Record<string, string> = {};
+  for (const [locale, text] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof text === 'string' && text.trim()) result[locale] = plainText(text);
+  }
+  return result;
+}
+
+function normalizeElementLocalizations(value: unknown): NonNullable<OjsReviewFormElement['localizations']> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const result: NonNullable<OjsReviewFormElement['localizations']> = {};
+  for (const [locale, raw] of Object.entries(value as Record<string, unknown>)) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
+    const item = raw as Record<string, unknown>;
+    const question = typeof item.question === 'string' ? plainText(item.question) : undefined;
+    const description = typeof item.description === 'string' ? plainText(item.description) : undefined;
+    const localizedOptions = normalizeStringMap(item.options);
+    if (!question && !description && Object.keys(localizedOptions).length === 0) continue;
+    result[locale] = {
+      ...(question ? { question } : {}),
+      ...(description ? { description } : {}),
+      ...(Object.keys(localizedOptions).length > 0 ? { options: localizedOptions } : {}),
+    };
+  }
+  return result;
+}
+
+function normalizeResponseValue(element: OjsReviewFormElement, value: unknown): OjsReviewFormResponseValue {
   const allowed = new Set(element.options.map((option) => option.value));
-  if (element.type === 'checkboxes') {
-    if (!Array.isArray(value)) throw new Error(`Review form field "${plainText(element.question)}" requires multiple-choice values.`);
+  if (element.type === 'checkBoxes') {
+    if (value === null || value === undefined || value === '') return [];
+    if (!Array.isArray(value)) throw new Error(`Review form field "${plainText(element.question)}" requires multiple values.`);
     const values = [...new Set(value.map(String))];
     for (const item of values) if (!allowed.has(item)) throw new Error(`Review form field "${plainText(element.question)}" contains an invalid option.`);
     return values;
   }
-  if (element.type === 'radio' || element.type === 'dropdown') {
+  if (element.type === 'radioButtons' || element.type === 'dropDownBox') {
     if (Array.isArray(value)) throw new Error(`Review form field "${plainText(element.question)}" requires a single value.`);
-    const scalar = value === null ? '' : String(value);
+    const scalar = value === null || value === undefined ? '' : String(value);
     if (scalar && !allowed.has(scalar)) throw new Error(`Review form field "${plainText(element.question)}" contains an invalid option.`);
     return scalar;
   }
   if (Array.isArray(value)) throw new Error(`Review form field "${plainText(element.question)}" requires text.`);
-  const text = value === null ? '' : String(value);
+  const text = value === null || value === undefined ? '' : String(value);
   if (text.length > 100_000) throw new Error(`Review form field "${plainText(element.question)}" is too long.`);
   return text;
 }
@@ -219,16 +262,18 @@ function isEmpty(value: string | string[] | null | undefined): boolean {
 }
 
 function plainText(value: string): string {
+  // Strip markup before decoding entities. Decoding &lt;script&gt; first would
+  // manufacture new tag-looking text after the sanitization pass.
   return value
     .replace(/<br\s*\/?>/gi, ' ')
     .replace(/<\/p\s*>/gi, ' ')
     .replace(/<[^>]*>/g, '')
     .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
     .replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>')
     .replace(/&quot;/gi, '"')
     .replace(/&#(?:0*39|x0*27);/gi, "'")
+    .replace(/&amp;/gi, '&')
     .replace(/\s+/g, ' ')
     .trim();
 }
