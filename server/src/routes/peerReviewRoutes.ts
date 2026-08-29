@@ -1,6 +1,11 @@
 import { Router, type Response } from 'express';
 import { z } from 'zod';
 
+import {
+  getOjsReviewFormContext,
+  saveOjsReviewFormResponses,
+  validateOjsReviewFormComplete,
+} from '../integrations/ojs/reviewForm.js';
 import { writeBackSubmittedOjsReview } from '../integrations/ojs/reviewWriteback.js';
 import {
   requireSession,
@@ -51,6 +56,17 @@ const createAssignmentSchema = z.object({
 const feedbackSchema = z.object({
   visibility: z.enum(['AUTHOR_AND_EDITOR', 'EDITOR_ONLY']),
   body: z.string().trim().min(1).max(100_000),
+});
+
+const reviewFormResponsesSchema = z.object({
+  responses: z.array(z.object({
+    elementExternalId: z.string().trim().min(1).max(128),
+    value: z.union([
+      z.string().max(100_000),
+      z.array(z.string().max(1024)).max(500),
+      z.null(),
+    ]),
+  })).max(500),
 });
 
 const submitSchema = z.object({
@@ -143,6 +159,38 @@ peerReviewRouter.get(
   },
 );
 
+peerReviewRouter.get(
+  '/assigned/:assignmentId/review-form',
+  async (request: AuthenticatedRequest, response) => {
+    try {
+      const assignmentId = parseId(request.params.assignmentId, 'review assignment');
+      await getReviewerAssignment(requireUserId(request), assignmentId);
+      const reviewForm = await getOjsReviewFormContext(assignmentId);
+      response.setHeader('Cache-Control', 'no-store, max-age=0');
+      response.status(200).json({ reviewForm });
+    } catch (error) {
+      sendError(response, error, 'REVIEW_FORM_READ_FAILED');
+    }
+  },
+);
+
+peerReviewRouter.put(
+  '/assigned/:assignmentId/review-form',
+  async (request: AuthenticatedRequest, response) => {
+    try {
+      const assignmentId = parseId(request.params.assignmentId, 'review assignment');
+      await getReviewerAssignment(requireUserId(request), assignmentId);
+      const parsed = reviewFormResponsesSchema.parse(request.body ?? {});
+      await saveOjsReviewFormResponses(assignmentId, parsed.responses);
+      const reviewForm = await getOjsReviewFormContext(assignmentId);
+      response.setHeader('Cache-Control', 'no-store, max-age=0');
+      response.status(200).json({ reviewForm });
+    } catch (error) {
+      sendError(response, error, 'REVIEW_FORM_WRITE_FAILED');
+    }
+  },
+);
+
 peerReviewRouter.post(
   '/assigned/:assignmentId/accept',
   async (request: AuthenticatedRequest, response) => {
@@ -198,6 +246,8 @@ peerReviewRouter.post(
       const reviewerUserId = requireUserId(request);
       const assignmentId = parseId(request.params.assignmentId, 'review assignment');
       const parsed = submitSchema.parse(request.body ?? {});
+      await getReviewerAssignment(reviewerUserId, assignmentId);
+      await validateOjsReviewFormComplete(assignmentId);
       const review = parsed.recommendation === undefined
         ? await submitReview(reviewerUserId, assignmentId)
         : await submitReview(reviewerUserId, assignmentId, parsed.recommendation);
