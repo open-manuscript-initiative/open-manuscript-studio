@@ -175,11 +175,11 @@ function ReviewField({
 }) {
   const scalar = Array.isArray(value) ? '' : value ?? '';
   const localized = resolveLocalization(element, locale);
-  const question = plainText(localized?.question ?? element.question);
-  const description = plainText(localized?.description ?? element.description);
+  const question = ojsText(localized?.question ?? element.question);
+  const description = ojsText(localized?.description ?? element.description);
   const options = (localized?.options ?? element.options).map((option) => ({
     ...option,
-    label: plainText(option.label),
+    label: ojsText(option.label),
   }));
 
   return (
@@ -253,18 +253,8 @@ function normalizeLocale(locale: string): string {
   return locale.trim().replace(/_/g, '-').toLowerCase();
 }
 
-function plainText(value: string | undefined | null): string {
+function ojsText(value: string | undefined | null): string {
   if (!value) return '';
-  return value
-    .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/<\/p\s*>/gi, ' ')
-    .replace(/<[^>]*>/g, '')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#(?:0*39|x0*27);/gi, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
+  const document = new DOMParser().parseFromString(value, 'text/html');
+  return (document.body.textContent ?? '').replace(/\s+/g, ' ').trim();
 }
