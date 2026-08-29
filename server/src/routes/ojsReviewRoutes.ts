@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { loadOjsLaunchData } from '../integrations/ojs/ojsClient.js';
 import { verifyOjsLaunch } from '../integrations/ojs/launchVerifier.js';
 import { createReviewSnapshotFromOjs } from '../integrations/ojs/reviewSnapshot.js';
+import { rememberOjsReviewWritebackEndpoint } from '../integrations/ojs/reviewWriteback.js';
 import { prisma } from '../lib/prisma.js';
 import {
   requireSession,
@@ -61,6 +62,12 @@ ojsReviewRouter.post(
           ? { reviewRound: verified.claims.reviewAssignment.round }
           : {}),
       });
+
+      await rememberOjsReviewWritebackEndpoint(
+        assignment.id,
+        verified.claims.apiBaseUrl,
+        verified.installation.baseUrl,
+      );
 
       const sourceLanguage = getOjsSubmissionLocale(ojsData.submission);
       if (sourceLanguage) {
