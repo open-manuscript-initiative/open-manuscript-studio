@@ -14,8 +14,9 @@
 .omi-footer {
   flex: 0 0 auto;
   width: 100%;
-  background: #242526;
-  color: #e5e7eb;
+  background: #1f2328;
+  color: #f3f4f6;
+  color-scheme: dark;
 }
 
 .omi-footer-container {
@@ -46,18 +47,25 @@
 
 .omi-footer-column a {
   width: fit-content;
-  color: #d1d5db;
+  color: #e5e7eb;
   font-size: .86rem;
   line-height: 1.45;
   text-decoration: none;
-  transition: color .2s ease, opacity .2s ease;
+  transition: color .2s ease, background-color .2s ease;
 }
 
 .omi-footer-column a:hover,
 .omi-footer-column a:focus-visible {
   color: #fff;
-  opacity: .85;
-  text-decoration: none;
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
+
+.omi-footer-column a:focus-visible,
+.omi-footer-share a:focus-visible,
+.omi-footer-share button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
 }
 
 .omi-footer-share {
@@ -67,13 +75,13 @@
   flex-wrap: wrap;
   gap: .5rem;
   margin-top: 1.5rem;
-  border-top: 1px solid rgb(255 255 255 / 15%);
+  border-top: 1px solid #626972;
   padding-top: 1.25rem;
 }
 
 .omi-footer-share__label {
   margin-right: .2rem;
-  color: #d1d5db;
+  color: #e5e7eb;
   font-size: .8rem;
   font-weight: 700;
   letter-spacing: .03em;
@@ -83,11 +91,11 @@
 .omi-footer-share a,
 .omi-footer-share button {
   appearance: none;
-  border: 1px solid rgb(255 255 255 / 28%);
+  border: 1px solid #7d848d;
   border-radius: 999px;
-  background: transparent;
+  background: #292e34;
   padding: .36rem .72rem;
-  color: inherit;
+  color: #f9fafb;
   font: inherit;
   font-size: .78rem;
   line-height: 1.2;
@@ -100,9 +108,9 @@
 .omi-footer-share a:focus-visible,
 .omi-footer-share button:hover,
 .omi-footer-share button:focus-visible {
-  border-color: rgb(255 255 255 / 55%);
-  background: rgb(255 255 255 / 10%);
-  color: inherit;
+  border-color: #d1d5db;
+  background: #343a41;
+  color: #fff;
   text-decoration: none;
 }
 
@@ -112,9 +120,9 @@
   align-items: center;
   gap: .35rem;
   margin-top: 2rem;
-  border-top: 1px solid rgb(255 255 255 / 15%);
+  border-top: 1px solid #626972;
   padding-top: 1.5rem;
-  color: #d1d5db;
+  color: #e5e7eb;
   text-align: center;
 }
 
@@ -135,7 +143,7 @@
   flex-wrap: wrap;
   gap: .35rem .75rem;
   margin-top: 1rem;
-  color: #9ca3af;
+  color: #cbd5e1;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: .68rem;
   line-height: 1.4;
@@ -143,7 +151,7 @@
 
 .omi-footer-build span + span::before {
   margin-right: .75rem;
-  color: #6b7280;
+  color: #9ca3af;
   content: "·";
 }
 
