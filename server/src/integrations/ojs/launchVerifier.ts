@@ -42,6 +42,30 @@ export interface LaunchClaims {
   apiBaseUrl?: string;
 }
 
+const REVIEWER_REQUIRED_SCOPES = [
+  'review.metadata.read',
+  'review.files.read',
+  'review.manuscript.read',
+  'review.revision.write',
+  'review.response.write',
+] as const;
+
+const REVIEWER_FORBIDDEN_SCOPES = [
+  'contributors.read',
+  'contributors.write',
+  'metadata.write',
+  'files.write',
+  'manuscript.write',
+  'revision.read',
+  'revision.write',
+  'author.manuscript.write',
+  'author.revision.write',
+  'review.assignment.read',
+  'review.assignment.write',
+  'review.identity.read',
+  'review.response.read',
+] as const;
+
 function validateClaimsShape(
   value: unknown,
 ): value is LaunchClaims {
@@ -176,6 +200,10 @@ export async function verifyOjsLaunch(
     throw new Error('Invalid launch nonce.');
   }
 
+  if (claims.actorMode === 'review') {
+    validateReviewerBoundary(claims);
+  }
+
   if (claims.apiBaseUrl) {
     const trustedApiBaseUrl = await assertTrustedIntegrationUrl(
       claims.apiBaseUrl,
@@ -226,4 +254,28 @@ export async function verifyOjsLaunch(
       baseUrl: installation.baseUrl,
     },
   };
+}
+
+function validateReviewerBoundary(claims: LaunchClaims): void {
+  if (!claims.submission?.externalId?.trim()) {
+    throw new Error('Reviewer launch does not identify a submission.');
+  }
+  if (!claims.reviewAssignment?.externalId?.trim()) {
+    throw new Error('Reviewer launch does not identify a review assignment.');
+  }
+  if (!claims.actor?.externalId?.trim()) {
+    throw new Error('Reviewer launch does not identify the reviewer.');
+  }
+
+  const scopes = new Set(claims.scope ?? []);
+  for (const required of REVIEWER_REQUIRED_SCOPES) {
+    if (!scopes.has(required)) {
+      throw new Error(`Reviewer launch is missing required scope: ${required}.`);
+    }
+  }
+  for (const forbidden of REVIEWER_FORBIDDEN_SCOPES) {
+    if (scopes.has(forbidden)) {
+      throw new Error(`Reviewer launch contains forbidden scope: ${forbidden}.`);
+    }
+  }
 }
