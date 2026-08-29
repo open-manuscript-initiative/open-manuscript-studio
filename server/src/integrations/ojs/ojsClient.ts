@@ -37,9 +37,9 @@ const MAX_SOURCE_FILE_BYTES = 25 * 1024 * 1024;
 const OJS_SUBMISSION_FILE_STAGE = 2;
 const OJS_ARTICLE_TEXT_GENRE_KEY = 'SUBMISSION';
 
-function requireScope(claims: LaunchClaims, scope: string): void {
-  if (!claims.scope?.includes(scope)) {
-    throw new Error(`The launch assertion does not grant ${scope}.`);
+function requireAnyScope(claims: LaunchClaims, scopes: string[]): void {
+  if (!scopes.some((scope) => claims.scope?.includes(scope))) {
+    throw new Error(`The launch assertion does not grant any of: ${scopes.join(', ')}.`);
   }
 }
 
@@ -214,11 +214,16 @@ async function loadSourceDocument(
   filesUrl: URL,
   authorization: string,
   trustedOrigin: string,
+  reviewerMode: boolean,
 ): Promise<OjsSourceDocument | undefined> {
-  const candidate = [...files]
-    .filter(isArticleTextSubmissionFile)
+  const eligible = [...files]
     .filter((file) => isDocx(file) && file.externalId && file.contentPath)
-    .filter((file) => !file.size || file.size <= MAX_SOURCE_FILE_BYTES)
+    .filter((file) => !file.size || file.size <= MAX_SOURCE_FILE_BYTES);
+
+  const preferred = reviewerMode
+    ? eligible.filter(isArticleTextSubmissionFile)
+    : eligible.filter(isArticleTextSubmissionFile);
+  const candidate = (preferred.length > 0 ? preferred : reviewerMode ? eligible : preferred)
     .sort(compareSourceFiles)[0];
 
   if (!candidate?.externalId || !candidate.contentPath) return undefined;
@@ -274,10 +279,6 @@ function isArticleTextSubmissionFile(file: OjsFileDescriptor): boolean {
   const genreKey = (file.genreKey || '').trim().toUpperCase();
   if (genreKey) return genreKey === OJS_ARTICLE_TEXT_GENRE_KEY;
 
-  // Compatibility with older OJS connector responses that did not expose
-  // genreKey yet. This fallback is intentionally limited to the canonical
-  // English component name and should disappear once all connectors expose
-  // the stable PKP genre key.
   return (file.genreName || '').trim().toLowerCase() === 'article text';
 }
 
@@ -300,8 +301,9 @@ export async function loadOjsLaunchData(
   signature: string,
   installationBaseUrl: string,
 ): Promise<OjsLaunchData> {
-  requireScope(claims, 'metadata.read');
-  requireScope(claims, 'files.read');
+  const reviewerMode = claims.actorMode === 'review';
+  requireAnyScope(claims, reviewerMode ? ['review.metadata.read'] : ['metadata.read']);
+  requireAnyScope(claims, reviewerMode ? ['review.files.read'] : ['files.read']);
 
   let trustedOrigin: string;
   try {
@@ -321,7 +323,7 @@ export async function loadOjsLaunchData(
     submissionResult.finalUrl, 'submission', 'contributors',
   );
 
-  const hasContributorScope = claims.scope?.includes('contributors.read') ?? false;
+  const hasContributorScope = !reviewerMode && (claims.scope?.includes('contributors.read') ?? false);
   const [contributorsResult, filesResult] = await Promise.all([
     hasContributorScope
       ? readJson('contributors', contributorsUrl, authorization, trustedOrigin)
@@ -341,6 +343,7 @@ export async function loadOjsLaunchData(
     filesResult.finalUrl,
     authorization,
     trustedOrigin,
+    reviewerMode,
   );
 
   const result: OjsLaunchData = {
