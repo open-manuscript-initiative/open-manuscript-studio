@@ -3,6 +3,7 @@ import { createHash, createHmac } from 'node:crypto';
 import { getActiveInstallationWithSecret } from '../externalInstallations.js';
 import { prisma } from '../../lib/prisma.js';
 import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
+import { getOjsReviewFormContext } from './reviewForm.js';
 
 interface WritebackContextRow {
   api_base_url: string;
@@ -74,6 +75,7 @@ export async function writeBackSubmittedOjsReview(
       .map((item) => item.body.trim())
       .filter(Boolean)
       .join('\n\n');
+    const reviewFormContext = await getOjsReviewFormContext(assignment.id);
 
     const body = JSON.stringify({
       submissionExternalId: assignment.manuscriptId,
@@ -81,6 +83,7 @@ export async function writeBackSubmittedOjsReview(
       authorAndEditorComment: authorComments,
       editorOnlyComment: editorComments,
       recommendation: assignment.recommendation ?? '',
+      reviewFormResponses: reviewFormContext?.responses ?? [],
     });
 
     const timestamp = Math.floor(Date.now() / 1000).toString();
