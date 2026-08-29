@@ -11,12 +11,14 @@ import {
 
 type Locale = 'en' | 'hu' | 'de';
 
+type ReviewFormLocalization = {
+  question?: string;
+  description?: string;
+  options?: ReviewFormOption[];
+};
+
 type LocalizedReviewFormElement = ReviewFormElement & {
-  localizations?: Record<string, {
-    question?: string;
-    description?: string;
-    options?: ReviewFormOption[];
-  }>;
+  localizations?: Record<string, ReviewFormLocalization>;
 };
 
 const copy = {
@@ -235,7 +237,7 @@ function ReviewField({
 function resolveLocalization(
   element: LocalizedReviewFormElement,
   locale: Locale,
-): LocalizedReviewFormElement['localizations'][string] | undefined {
+): ReviewFormLocalization | undefined {
   const entries = Object.entries(element.localizations ?? {});
   if (entries.length === 0) return undefined;
 
