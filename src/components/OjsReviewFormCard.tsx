@@ -5,10 +5,21 @@ import {
   saveAssignedReviewForm,
   type ReviewFormContext,
   type ReviewFormElement,
+  type ReviewFormOption,
   type ReviewFormResponseValue,
 } from '../services/peerReviewApi';
 
 type Locale = 'en' | 'hu' | 'de';
+
+type ReviewFormLocalization = {
+  question?: string;
+  description?: string;
+  options?: ReviewFormOption[];
+};
+
+type LocalizedReviewFormElement = ReviewFormElement & {
+  localizations?: Record<string, ReviewFormLocalization>;
+};
 
 const copy = {
   en: {
@@ -127,7 +138,8 @@ export function OjsReviewFormCard({
         {elements.map((element) => (
           <ReviewField
             key={element.externalId}
-            element={element}
+            element={element as LocalizedReviewFormElement}
+            locale={locale}
             value={values[element.externalId] ?? null}
             disabled={disabled || saving}
             labels={labels}
@@ -148,25 +160,35 @@ export function OjsReviewFormCard({
 
 function ReviewField({
   element,
+  locale,
   value,
   disabled,
   labels,
   onChange,
 }: {
-  element: ReviewFormElement;
+  element: LocalizedReviewFormElement;
+  locale: Locale;
   value: string | string[] | null;
   disabled: boolean;
   labels: Record<string, string>;
   onChange: (value: string | string[] | null) => void;
 }) {
   const scalar = Array.isArray(value) ? '' : value ?? '';
+  const localized = resolveLocalization(element, locale);
+  const question = ojsText(localized?.question ?? element.question);
+  const description = ojsText(localized?.description ?? element.description);
+  const options = (localized?.options ?? element.options).map((option) => ({
+    ...option,
+    label: ojsText(option.label),
+  }));
+
   return (
     <fieldset className="review-mode__ojs-form-field" disabled={disabled}>
       <legend>
-        {element.question}
+        {question}
         {element.required ? <span aria-label={labels.required}> *</span> : null}
       </legend>
-      {element.description ? <p>{element.description}</p> : null}
+      {description ? <p>{description}</p> : null}
       <small>{element.authorVisible ? labels.authorVisible : labels.confidential}</small>
 
       {element.type === 'textarea' ? (
@@ -176,11 +198,11 @@ function ReviewField({
       ) : element.type === 'dropdown' ? (
         <select required={element.required} value={scalar} onChange={(event) => onChange(event.target.value)}>
           <option value="">{labels.select}</option>
-          {element.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
       ) : element.type === 'radio' ? (
         <div className="review-mode__ojs-form-options">
-          {element.options.map((option) => (
+          {options.map((option) => (
             <label key={option.value}>
               <input type="radio" name={`review-form-${element.externalId}`} checked={scalar === option.value} onChange={() => onChange(option.value)} />
               {option.label}
@@ -189,7 +211,7 @@ function ReviewField({
         </div>
       ) : (
         <div className="review-mode__ojs-form-options">
-          {element.options.map((option) => {
+          {options.map((option) => {
             const selected = Array.isArray(value) ? value : [];
             return (
               <label key={option.value}>
@@ -210,4 +232,29 @@ function ReviewField({
       )}
     </fieldset>
   );
+}
+
+function resolveLocalization(
+  element: LocalizedReviewFormElement,
+  locale: Locale,
+): ReviewFormLocalization | undefined {
+  const entries = Object.entries(element.localizations ?? {});
+  if (entries.length === 0) return undefined;
+
+  const normalizedLocale = normalizeLocale(locale);
+  const exact = entries.find(([key]) => normalizeLocale(key) === normalizedLocale);
+  if (exact) return exact[1];
+
+  const language = normalizedLocale.split('-')[0];
+  return entries.find(([key]) => normalizeLocale(key).split('-')[0] === language)?.[1];
+}
+
+function normalizeLocale(locale: string): string {
+  return locale.trim().replace(/_/g, '-').toLowerCase();
+}
+
+function ojsText(value: string | undefined | null): string {
+  if (!value) return '';
+  const document = new DOMParser().parseFromString(value, 'text/html');
+  return (document.body.textContent ?? '').replace(/\s+/g, ' ').trim();
 }
