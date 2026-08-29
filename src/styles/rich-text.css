@@ -257,13 +257,34 @@
 }
 
 @media (max-width: 760px) {
-  .omi-rich-text-toolbar {
+  /*
+   * Android/iOS browsers own the area around a touch selection: they may show
+   * selection handles and a native Cut/Copy/Select action bar there. Keep the
+   * Studio toolbar in a stable bottom position instead of competing for the
+   * same coordinates. The ProseMirror selection itself remains intact, so the
+   * Studio formatting actions still apply to the selected text.
+   */
+  .omi-rich-text-toolbar,
+  .omi-rich-text-toolbar--below {
+    left: 50% !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    width: max-content;
     max-width: calc(100vw - 1rem);
+    transform: translateX(-50%) !important;
+  }
+
+  .omi-rich-text-toolbar--expanded,
+  .omi-rich-text-toolbar--expanded.omi-rich-text-toolbar--below {
+    width: min(28rem, calc(100vw - 1rem));
+    max-height: min(62dvh, 30rem);
+    overflow: hidden;
   }
 
   .omi-rich-text-popover {
-    width: min(28rem, calc(100vw - 1rem));
-    max-height: min(58vh, 26rem);
+    width: 100%;
+    max-height: min(52dvh, 24rem);
   }
 
   .omi-rich-text-command-grid {
