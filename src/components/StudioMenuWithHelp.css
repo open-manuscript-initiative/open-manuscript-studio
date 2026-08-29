@@ -43,6 +43,14 @@
 
 .studio-menu-mobile-footer {
   margin-top: 2rem;
+  background: #1f2328;
+  color: #f3f4f6;
+  isolation: isolate;
+}
+
+.studio-menu-mobile-footer .omi-footer {
+  background: #1f2328;
+  color: #f3f4f6;
 }
 
 .studio-help-intro {
