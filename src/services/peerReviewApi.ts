@@ -50,6 +50,45 @@ export interface ReviewerAssignment {
   completedAt?: string;
 }
 
+export type ReviewFormElementType =
+  | 'small_text'
+  | 'text'
+  | 'textarea'
+  | 'checkboxes'
+  | 'radio'
+  | 'dropdown';
+
+export interface ReviewFormOption {
+  value: string;
+  label: string;
+}
+
+export interface ReviewFormElement {
+  externalId: string;
+  type: ReviewFormElementType;
+  question: string;
+  description: string;
+  required: boolean;
+  authorVisible: boolean;
+  options: ReviewFormOption[];
+  value: string | string[] | null;
+}
+
+export interface ReviewFormDefinition {
+  externalId: string;
+  elements: ReviewFormElement[];
+}
+
+export interface ReviewFormResponseValue {
+  elementExternalId: string;
+  value: string | string[] | null;
+}
+
+export interface ReviewFormContext {
+  definition: ReviewFormDefinition | null;
+  responses: ReviewFormResponseValue[];
+}
+
 export type ReviewInlineSemantic =
   | 'strong'
   | 'emphasis'
@@ -121,6 +160,7 @@ interface ReviewResponse { review: ReviewerAssignment; }
 interface ReviewListResponse { reviews: ReviewerAssignment[]; }
 interface ManuscriptResponse { manuscript: ReviewManuscriptSnapshot | null; }
 interface OjsReviewLaunchResponse { assignmentId: string; }
+interface ReviewFormContextResponse { reviewForm: ReviewFormContext | null; }
 
 interface ErrorResponse {
   error?: { code?: string; message?: string; };
@@ -142,6 +182,22 @@ export async function claimOjsReviewLaunch(
 
 export async function listAssignedReviews(): Promise<ReviewerAssignment[]> {
   return (await request<ReviewListResponse>('/api/reviews/assigned')).reviews;
+}
+
+export async function getAssignedReviewForm(id: string): Promise<ReviewFormContext | null> {
+  return (await request<ReviewFormContextResponse>(
+    `/api/reviews/assigned/${encodeURIComponent(id)}/review-form`,
+  )).reviewForm;
+}
+
+export async function saveAssignedReviewForm(
+  id: string,
+  responses: ReviewFormResponseValue[],
+): Promise<ReviewFormContext | null> {
+  return (await request<ReviewFormContextResponse>(
+    `/api/reviews/assigned/${encodeURIComponent(id)}/review-form`,
+    { method: 'PUT', body: JSON.stringify({ responses }) },
+  )).reviewForm;
 }
 
 export async function getAssignedReviewManuscript(id: string): Promise<ReviewManuscriptSnapshot | null> {

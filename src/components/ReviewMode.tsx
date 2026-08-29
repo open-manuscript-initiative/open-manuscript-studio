@@ -18,6 +18,7 @@ import {
   type ReviewManuscriptBlock,
   type ReviewManuscriptSnapshot,
 } from '../services/peerReviewApi';
+import { OjsReviewFormCard } from './OjsReviewFormCard';
 import { ReviewerRichTextEditor } from './ReviewerRichTextEditor';
 import { isReviewTextBlock, ReviewStructuredBlock } from './ReviewStructuredBlock';
 import './ReviewMode.css';
@@ -282,6 +283,15 @@ export function ReviewMode() {
               ) : null}
 
               {selected.status === 'declined' ? <section className="review-mode__card"><p>{copy.declined}</p></section> : null}
+
+              {selected.status !== 'invited' && selected.status !== 'declined' ? (
+                <OjsReviewFormCard
+                  assignmentId={selected.id}
+                  locale={locale}
+                  disabled={!canWrite || busy}
+                  onError={setError}
+                />
+              ) : null}
 
               {canWrite ? (
                 <>
