@@ -1,6 +1,7 @@
 import { Router, type Response } from 'express';
 import { z } from 'zod';
 
+import { writeBackSubmittedOjsReview } from '../integrations/ojs/reviewWriteback.js';
 import {
   requireSession,
   type AuthenticatedRequest,
@@ -194,18 +195,14 @@ peerReviewRouter.post(
   '/assigned/:assignmentId/submit',
   async (request: AuthenticatedRequest, response) => {
     try {
+      const reviewerUserId = requireUserId(request);
+      const assignmentId = parseId(request.params.assignmentId, 'review assignment');
       const parsed = submitSchema.parse(request.body ?? {});
       const review = parsed.recommendation === undefined
-        ? await submitReview(
-            requireUserId(request),
-            parseId(request.params.assignmentId, 'review assignment'),
-          )
-        : await submitReview(
-            requireUserId(request),
-            parseId(request.params.assignmentId, 'review assignment'),
-            parsed.recommendation,
-          );
-      response.status(200).json({ review });
+        ? await submitReview(reviewerUserId, assignmentId)
+        : await submitReview(reviewerUserId, assignmentId, parsed.recommendation);
+      const ojsWriteback = await writeBackSubmittedOjsReview(assignmentId, reviewerUserId);
+      response.status(200).json({ review, ojsWriteback });
     } catch (error) {
       sendError(response, error, 'REVIEW_SUBMIT_FAILED');
     }
