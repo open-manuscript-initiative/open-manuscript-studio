@@ -2,6 +2,10 @@ import { Router } from 'express';
 
 import { loadOjsLaunchData } from '../integrations/ojs/ojsClient.js';
 import { verifyOjsLaunch } from '../integrations/ojs/launchVerifier.js';
+import {
+  loadOjsReviewForm,
+  rememberOjsReviewForm,
+} from '../integrations/ojs/reviewForm.js';
 import { createReviewSnapshotFromOjs } from '../integrations/ojs/reviewSnapshot.js';
 import { rememberOjsReviewWritebackEndpoint } from '../integrations/ojs/reviewWriteback.js';
 import { prisma } from '../lib/prisma.js';
@@ -46,12 +50,21 @@ ojsReviewRouter.post(
         throw new Error('The OJS review launch does not identify its submission, review assignment, or context.');
       }
 
-      const ojsData = await loadOjsLaunchData(
-        verified.claims,
-        payload,
-        signature,
-        verified.installation.baseUrl,
-      );
+      const [ojsData, reviewForm] = await Promise.all([
+        loadOjsLaunchData(
+          verified.claims,
+          payload,
+          signature,
+          verified.installation.baseUrl,
+        ),
+        loadOjsReviewForm(
+          verified.claims,
+          payload,
+          signature,
+          verified.installation.baseUrl,
+        ),
+      ]);
+
       const assignment = await upsertOjsReviewAssignment({
         reviewerUserId: request.authUserId,
         installationId: verified.installation.installationId,
@@ -63,11 +76,14 @@ ojsReviewRouter.post(
           : {}),
       });
 
-      await rememberOjsReviewWritebackEndpoint(
-        assignment.id,
-        verified.claims.apiBaseUrl,
-        verified.installation.baseUrl,
-      );
+      await Promise.all([
+        rememberOjsReviewWritebackEndpoint(
+          assignment.id,
+          verified.claims.apiBaseUrl,
+          verified.installation.baseUrl,
+        ),
+        rememberOjsReviewForm(assignment.id, reviewForm),
+      ]);
 
       const sourceLanguage = getOjsSubmissionLocale(ojsData.submission);
       if (sourceLanguage) {
@@ -81,7 +97,12 @@ ojsReviewRouter.post(
       await setReviewManuscriptFromOjs(assignment.id, submissionId, snapshot);
 
       response.setHeader('Cache-Control', 'no-store, max-age=0');
-      response.status(200).json({ assignmentId: assignment.id });
+      response.status(200).json({
+        assignmentId: assignment.id,
+        reviewForm: reviewForm
+          ? { externalId: reviewForm.externalId, elementCount: reviewForm.elements.length }
+          : null,
+      });
     } catch (error) {
       const name = error instanceof Error ? error.name : '';
       response.status(name === 'ForbiddenError' ? 403 : 401).json({
