@@ -15,6 +15,12 @@ export interface OjsReviewFormOption {
   label: string;
 }
 
+export interface OjsReviewFormLocalization {
+  question: string;
+  description: string;
+  options: OjsReviewFormOption[];
+}
+
 export interface OjsReviewFormElement {
   externalId: string;
   type: OjsReviewFormElementType;
@@ -24,6 +30,7 @@ export interface OjsReviewFormElement {
   authorVisible: boolean;
   options: OjsReviewFormOption[];
   value: string | string[] | null;
+  localizations?: Record<string, OjsReviewFormLocalization>;
 }
 
 export interface OjsReviewFormDefinition {
@@ -179,7 +186,7 @@ export async function validateOjsReviewFormComplete(assignmentId: string): Promi
   for (const element of context.definition.elements) {
     if (!element.required) continue;
     const value = values.get(element.externalId);
-    if (isEmpty(value)) throw new Error(`Required OJS review form field is incomplete: ${element.question}`);
+    if (isEmpty(value)) throw new Error(`Required OJS review form field is incomplete: ${plainText(element.question)}`);
   }
 }
 
@@ -189,24 +196,39 @@ function normalizeValue(
 ): string | string[] | null {
   const allowed = new Set(element.options.map((option) => option.value));
   if (element.type === 'checkboxes') {
-    if (!Array.isArray(value)) throw new Error(`Review form field "${element.question}" requires multiple-choice values.`);
+    if (!Array.isArray(value)) throw new Error(`Review form field "${plainText(element.question)}" requires multiple-choice values.`);
     const values = [...new Set(value.map(String))];
-    for (const item of values) if (!allowed.has(item)) throw new Error(`Review form field "${element.question}" contains an invalid option.`);
+    for (const item of values) if (!allowed.has(item)) throw new Error(`Review form field "${plainText(element.question)}" contains an invalid option.`);
     return values;
   }
   if (element.type === 'radio' || element.type === 'dropdown') {
-    if (Array.isArray(value)) throw new Error(`Review form field "${element.question}" requires a single value.`);
+    if (Array.isArray(value)) throw new Error(`Review form field "${plainText(element.question)}" requires a single value.`);
     const scalar = value === null ? '' : String(value);
-    if (scalar && !allowed.has(scalar)) throw new Error(`Review form field "${element.question}" contains an invalid option.`);
+    if (scalar && !allowed.has(scalar)) throw new Error(`Review form field "${plainText(element.question)}" contains an invalid option.`);
     return scalar;
   }
-  if (Array.isArray(value)) throw new Error(`Review form field "${element.question}" requires text.`);
+  if (Array.isArray(value)) throw new Error(`Review form field "${plainText(element.question)}" requires text.`);
   const text = value === null ? '' : String(value);
-  if (text.length > 100_000) throw new Error(`Review form field "${element.question}" is too long.`);
+  if (text.length > 100_000) throw new Error(`Review form field "${plainText(element.question)}" is too long.`);
   return text;
 }
 
 function isEmpty(value: string | string[] | null | undefined): boolean {
   if (Array.isArray(value)) return value.length === 0;
   return !value?.trim();
+}
+
+function plainText(value: string): string {
+  return value
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/p\s*>/gi, ' ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#(?:0*39|x0*27);/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
 }
