@@ -11,18 +11,28 @@
   min-height: 0;
 }
 
+/*
+ * The footer is a fixed dark brand surface in every Studio theme and runtime.
+ * Some application/theme rules set semantic surfaces later in the cascade;
+ * keep the footer background authoritative so light surfaces cannot be paired
+ * with the footer's intentionally light foreground colours.
+ */
 .omi-footer {
   flex: 0 0 auto;
   width: 100%;
-  background: #1f2328;
+  background-color: #1f2328 !important;
+  background-image: none !important;
   color: #f3f4f6;
   color-scheme: dark;
+  isolation: isolate;
 }
 
 .omi-footer-container {
   width: min(100%, 88rem);
   margin: 0 auto;
   padding: 2.5rem 1.5rem 2rem;
+  background-color: #1f2328 !important;
+  background-image: none !important;
 }
 
 .omi-footer-columns {
@@ -35,6 +45,7 @@
   display: grid;
   align-content: start;
   gap: .55rem;
+  background: transparent;
 }
 
 .omi-footer-column h2 {
@@ -77,6 +88,7 @@
   margin-top: 1.5rem;
   border-top: 1px solid #626972;
   padding-top: 1.25rem;
+  background: transparent;
 }
 
 .omi-footer-share__label {
@@ -122,6 +134,7 @@
   margin-top: 2rem;
   border-top: 1px solid #626972;
   padding-top: 1.5rem;
+  background: transparent;
   color: #e5e7eb;
   text-align: center;
 }
@@ -143,6 +156,7 @@
   flex-wrap: wrap;
   gap: .35rem .75rem;
   margin-top: 1rem;
+  background: transparent;
   color: #cbd5e1;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: .68rem;
