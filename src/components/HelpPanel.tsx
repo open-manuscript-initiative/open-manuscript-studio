@@ -4,9 +4,11 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from '../i18n';
 import { getDetailedHelpLabels, getDetailedHelpTopic } from '../i18n/helpDetailedAll';
 import { getLocalizedHelpCopy } from '../i18n/helpResolver';
+import { BUILD_INFO } from '../version';
 import './HelpPanelSearch.css';
 
 const HELP_TOPIC_NUMBER_PREFIX = /^\s*(?:\d+(?:\.\d+)*[.):-]?|[IVXLCDM]+[.)])\s+/i;
+const HELP_VERSION_PATTERN = /\b\d+\.\d+\.\d+-(?:alpha|beta)\.\d+\b/gi;
 
 export function HelpPanel() {
   const { locale } = useTranslation();
@@ -25,6 +27,7 @@ export function HelpPanel() {
     .sort((left, right) => collator.compare(left.title, right.title)), [collator, copy.topics, locale]);
 
   const normalizedQuery = normalizeHelpSearch(query);
+  const helpDescription = copy.description.replace(HELP_VERSION_PATTERN, BUILD_INFO.version);
   const filteredTopics = useMemo(() => {
     if (!normalizedQuery) return topics;
     return topics.filter((topic) => {
@@ -46,7 +49,7 @@ export function HelpPanel() {
       <div className="studio-menu-view-header">
         <div>
           <h3>{copy.title}</h3>
-          <p>{copy.description}</p>
+          <p>{helpDescription}</p>
         </div>
       </div>
 

@@ -41,6 +41,10 @@
   width: 100%;
 }
 
+.studio-menu-mobile-footer {
+  margin-top: 2rem;
+}
+
 .studio-help-intro {
   display: flex;
   gap: 0.75rem;
@@ -249,5 +253,15 @@
 
   .studio-export-card button {
     width: 100%;
+  }
+
+  .studio-menu-mobile-footer {
+    width: calc(100% + 1.7rem);
+    margin: 2rem -0.85rem -0.85rem;
+  }
+
+  .studio-menu-mobile-footer .omi-footer-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }

@@ -15,6 +15,7 @@ import { getStudioPlatform } from '../mobile/platform/platform';
 import { isNativeStudio } from '../services/nativeManuscriptFile';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import type { OmiManuscript } from '../types/omi';
+import { Footer } from './Footer';
 import { HelpPanel } from './HelpPanel';
 import { IntegrationExecutionWorkspace } from './IntegrationExecutionWorkspace';
 import { IntegrationsPanel } from './IntegrationsPanel';
@@ -176,6 +177,7 @@ export function StudioMenuWithHelp({ open, onClose, ojsAssignment = null }: Stud
     {contentHost && agentsOpen ? createPortal(<div className="studio-help-portal studio-agents-portal"><OmiAgentsWorkspace /></div>, contentHost) : null}
     {contentHost && integrationsOpen ? createPortal(<div className="studio-help-portal studio-integrations-portal"><IntegrationsPanel /><IntegrationExecutionWorkspace /></div>, contentHost) : null}
     {contentHost && helpOpen ? createPortal(<div className="studio-help-portal"><HelpPanel /></div>, contentHost) : null}
+    {contentHost && platform === 'android' ? createPortal(<div className="studio-help-portal studio-menu-mobile-footer"><Footer /></div>, contentHost) : null}
   </>;
 }
 
