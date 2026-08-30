@@ -1,3 +1,4 @@
+import { materializeSectionHeadingBlocks } from '../model/atomicTextBlocks';
 import { MAX_VISUAL_IMPORT_BYTES } from '../model/visualBlocks';
 import {
   attachWordGeneratedLists,
@@ -65,7 +66,7 @@ export async function parseDocxForStudio(
   await yieldToBrowser();
   options.onProgress?.({ stage: 'parsing', largeDocumentMode, monographMode });
 
-  const plan = monographMode
+  const parsedPlan = monographMode
     ? await parseDocxMonograph(file, {
         onProgress: ({ processedParagraphs, totalParagraphs }) => options.onProgress?.({
           stage: 'parsing', largeDocumentMode, monographMode, processedParagraphs, totalParagraphs,
@@ -74,6 +75,10 @@ export async function parseDocxForStudio(
     : largeDocumentMode
       ? await parseDocxManuscript(createLargeDocxFacade(file))
       : await parseDocxManuscriptWithInlineSemantics(file);
+  const plan: DocxManuscriptImportPlan = {
+    ...parsedPlan,
+    sections: materializeSectionHeadingBlocks(parsedPlan.sections),
+  };
 
   options.onProgress?.({ stage: 'finalizing', largeDocumentMode, monographMode });
 

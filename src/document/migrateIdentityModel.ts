@@ -5,6 +5,7 @@ import {
   type OmiAgent,
   type OmiContribution,
 } from '../model/identity';
+import { materializeSectionHeadingBlocks } from '../model/atomicTextBlocks';
 import type { OmiTombstone } from '../model/tombstone';
 import type {
   OmiIdentifier,
@@ -41,12 +42,13 @@ export type LegacyOmiManuscript = Omit<
 
 /**
  * Upgrades the legacy embedded `authors` representation to the
- * OMI-SPEC-150 agent and contribution model.
+ * OMI-SPEC-150 agent and contribution model and normalizes legacy section
+ * titles into atomic heading blocks.
  *
- * The migration is idempotent: documents that already contain agents and
- * contributions are returned with only the identity model marker normalized.
- * Existing OMI-SPEC-160 history fields and tombstones are preserved for the
- * next migration stage and are never embedded into an agent or contribution.
+ * The migration is idempotent: documents that already contain agents,
+ * contributions and heading blocks are returned with only their model markers
+ * normalized. Existing OMI-SPEC-160 history fields and tombstones are
+ * preserved for the next migration stage.
  */
 export function migrateIdentityModel(
   manuscript: LegacyOmiManuscript,
@@ -54,6 +56,7 @@ export function migrateIdentityModel(
   const existingAgents = manuscript.agents ?? [];
   const existingContributions = manuscript.contributions ?? [];
   const tombstones = manuscript.tombstones ?? [];
+  const sections = materializeSectionHeadingBlocks(manuscript.sections);
 
   if (
     existingAgents.length > 0 ||
@@ -66,6 +69,7 @@ export function migrateIdentityModel(
       agents: existingAgents,
       contributions: normalizeContributionOrder(existingContributions),
       tombstones,
+      sections,
     };
   }
 
@@ -90,6 +94,7 @@ export function migrateIdentityModel(
     agents,
     contributions,
     tombstones,
+    sections,
   };
 }
 
