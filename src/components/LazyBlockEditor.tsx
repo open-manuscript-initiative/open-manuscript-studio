@@ -20,6 +20,10 @@ export function LazyBlockEditor({
 }: LazyBlockEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(!lazy);
+  const editorContent = useMemo(
+    () => normalizeLegacyBlockContent(blockType, content),
+    [blockType, content],
+  );
   const previewText = useMemo(() => storedPlainText(content), [content]);
 
   useEffect(() => {
@@ -47,7 +51,7 @@ export function LazyBlockEditor({
       <BlockEditor
         blockId={blockId}
         blockType={blockType}
-        content={content}
+        content={editorContent}
         onUpdate={onUpdate}
       />
     );
@@ -69,6 +73,37 @@ export function LazyBlockEditor({
       </div>
     </div>
   );
+}
+
+function normalizeLegacyBlockContent(blockType: string, content: string): string {
+  if (blockType !== 'heading') return content;
+
+  try {
+    const parsed: unknown = JSON.parse(content);
+    if (isTiptapDocument(parsed)) return content;
+  } catch {
+    // Imported/legacy heading content may still be stored as plain text.
+  }
+
+  return JSON.stringify({
+    type: 'doc',
+    content: [
+      content.length === 0
+        ? { type: 'heading', attrs: { level: 1 } }
+        : {
+            type: 'heading',
+            attrs: { level: 1 },
+            content: [{ type: 'text', text: content }],
+          },
+    ],
+  });
+}
+
+function isTiptapDocument(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false;
+  const node = value as { type?: unknown; content?: unknown };
+  return node.type === 'doc' &&
+    (node.content === undefined || Array.isArray(node.content));
 }
 
 function storedPlainText(content: string): string {
