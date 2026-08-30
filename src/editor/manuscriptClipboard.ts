@@ -200,11 +200,8 @@ export function parseManuscriptClipboardFragment(
   if (!value.trim()) return undefined;
   try {
     const parsed: unknown = JSON.parse(value);
-    if (!isRecord(parsed) || parsed.version !== 1 || !Array.isArray(parsed.blocks)) {
-      return undefined;
-    }
-    if (!parsed.blocks.every(isClipboardBlock)) return undefined;
-    return clone(parsed as OmiManuscriptClipboardFragment);
+    if (!isManuscriptClipboardFragment(parsed)) return undefined;
+    return clone(parsed);
   } catch {
     return undefined;
   }
@@ -386,6 +383,15 @@ function cloneBlockWithNewIds(block: ClipboardBlock): OmiBlock {
 
 function cloneSections(sections: readonly OmiSection[]): OmiSection[] {
   return sections.map(clone);
+}
+
+function isManuscriptClipboardFragment(
+  value: unknown,
+): value is OmiManuscriptClipboardFragment {
+  return isRecord(value) &&
+    value.version === 1 &&
+    Array.isArray(value.blocks) &&
+    value.blocks.every(isClipboardBlock);
 }
 
 function isClipboardBlock(value: unknown): value is ClipboardBlock {
