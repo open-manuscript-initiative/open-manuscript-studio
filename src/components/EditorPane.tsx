@@ -15,6 +15,10 @@ import { useTranslation } from '../i18n';
 import { getFrontMatterCopy } from '../i18n/frontMatter';
 import type { OjsLaunchPayload } from '../integrations/ojs/importOjsLaunch';
 import {
+  isSectionHeadingBlock,
+  textFromAtomicBlock,
+} from '../model/atomicTextBlocks';
+import {
   collectCrossReferenceTargets,
   formatCrossReferenceLabel,
 } from '../model/crossReferences';
@@ -200,6 +204,14 @@ export function EditorPane({ ojsContributors = [] }: EditorPaneProps) {
                   section.id,
                   manuscript.sectionNumberingStyle,
                 );
+                const sectionHeadingBlock = isSectionHeadingBlock(
+                  section.blocks[0],
+                )
+                  ? section.blocks[0]
+                  : undefined;
+                const bodyBlocks = sectionHeadingBlock
+                  ? section.blocks.slice(1)
+                  : section.blocks;
 
                 return (
                   <section
@@ -218,19 +230,38 @@ export function EditorPane({ ojsContributors = [] }: EditorPaneProps) {
                         </span>
                       ) : null}
 
-                      <AutoGrowHeading
-                        className="omi-section-title-input omi-auto-grow-heading"
-                        value={section.title}
-                        ariaLabel={t('studio.document.sections')}
-                        placeholder={t('editor.untitledSection')}
-                        onChange={(value) =>
-                          stageSectionTitleChange(section.id, value)
-                        }
-                      />
+                      {sectionHeadingBlock ? (
+                        <LazyBlockEditor
+                          blockId={sectionHeadingBlock.id}
+                          blockType={sectionHeadingBlock.type}
+                          content={sectionHeadingBlock.content}
+                          onUpdate={(blockId, content) => {
+                            updateBlock(blockId, content);
+                            const nextTitle = textFromAtomicBlock(content);
+                            if (nextTitle !== section.title) {
+                              stageSectionTitleChange(section.id, nextTitle);
+                            }
+                          }}
+                          lazy={false}
+                        />
+                      ) : (
+                        <AutoGrowHeading
+                          className="omi-section-title-input omi-auto-grow-heading"
+                          value={section.title}
+                          ariaLabel={t('studio.document.sections')}
+                          placeholder={t('editor.untitledSection')}
+                          onChange={(value) =>
+                            stageSectionTitleChange(section.id, value)
+                          }
+                        />
+                      )}
                     </div>
 
                     <div className="omi-continuous-blocks">
-                      {section.blocks.map((block, blockIndex) => {
+                      {bodyBlocks.map((block) => {
+                        const blockIndex = section.blocks.findIndex(
+                          (candidate) => candidate.id === block.id,
+                        );
                         const target = targetMap.get(block.id);
 
                         return isVisualBlock(block) ? (
