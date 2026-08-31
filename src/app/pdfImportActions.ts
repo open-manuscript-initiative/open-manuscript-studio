@@ -103,24 +103,30 @@ export function applyPdfImportResult(result: PdfImportResult): string {
  * PDF extractors frequently expose each visual line as an independent text
  * block. Merge likely wrapped lines before materializing OMI paragraphs while
  * keeping headings, notes, page changes and likely short paragraph endings as
- * boundaries.
+ * boundaries. Decisions are based on the previous original PDF line, not on
+ * the already accumulated paragraph text.
  */
 function coalescePdfParagraphLines(blocks: readonly PdfImportBlock[]): PdfImportBlock[] {
   const merged: PdfImportBlock[] = [];
+  let previousSourceLine: PdfImportBlock | null = null;
 
   for (const current of blocks) {
-    const previous = merged.at(-1);
-    if (
+    const previousMerged = merged.at(-1);
+    const canJoin =
       current.kind === 'paragraph' &&
-      previous?.kind === 'paragraph' &&
-      previous.page === current.page &&
-      shouldJoinWrappedLine(previous.text, current.text)
-    ) {
-      previous.text = joinWrappedText(previous.text, current.text);
-      previous.confidence = Math.min(previous.confidence, current.confidence);
-      continue;
+      previousMerged?.kind === 'paragraph' &&
+      previousSourceLine?.kind === 'paragraph' &&
+      previousSourceLine.page === current.page &&
+      shouldJoinWrappedLine(previousSourceLine.text, current.text);
+
+    if (canJoin) {
+      previousMerged.text = joinWrappedText(previousMerged.text, current.text);
+      previousMerged.confidence = Math.min(previousMerged.confidence, current.confidence);
+    } else {
+      merged.push({ ...current });
     }
-    merged.push({ ...current });
+
+    previousSourceLine = current;
   }
 
   return merged;
@@ -135,9 +141,10 @@ function shouldJoinWrappedLine(previous: string, current: string): boolean {
   if (/[,;:–—]$/u.test(left)) return true;
   if (/^[\p{Ll}\p{M}]/u.test(right)) return true;
 
-  // A line that reaches a typical journal text width is much more likely to be
-  // a soft PDF line wrap than the final line of a paragraph, even when it ends
-  // in sentence punctuation.
+  // A full journal line is usually a soft wrap. A short sentence-ending line
+  // is instead treated as a paragraph boundary. Keeping the decision tied to
+  // the original line avoids accidentally absorbing the next paragraph after
+  // several lines have already been merged.
   return left.length >= 50;
 }
 
