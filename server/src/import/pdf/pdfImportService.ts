@@ -560,25 +560,37 @@ function choosePairedNoteStarts(
   for (const marker of selectedMarkers) {
     const anchorLines = anchorLinesByMarker.get(marker) ?? [];
     if (!anchorLines.length) continue;
-    const anchorLine = Math.max(...anchorLines);
-    const candidates = possibleStarts.filter((item) => item.marker === marker && item.lineIndex > anchorLine);
+
+    const candidates = possibleStarts.filter((item) => item.marker === marker);
     if (!candidates.length) continue;
 
-    const ranked = [...candidates].sort((left, right) => {
-      const leftHeight = typicalWordHeight(left.line);
-      const rightHeight = typicalWordHeight(right.line);
-      const leftSmallness = leftHeight / Math.max(1, medianWordHeight);
-      const rightSmallness = rightHeight / Math.max(1, medianWordHeight);
-      if (Math.abs(leftSmallness - rightSmallness) > 0.04) return leftSmallness - rightSmallness;
+    const pairCandidates = candidates.flatMap((start) =>
+      anchorLines
+        .filter((anchorLine) => anchorLine < start.lineIndex)
+        .map((anchorLine) => {
+          const startHeight = typicalWordHeight(start.line);
+          const startSmallness = startHeight / Math.max(1, medianWordHeight);
+          const startVertical = start.line.pageHeight > 0 ? start.line.yMin / start.line.pageHeight : 0;
+          const separation = start.lineIndex - anchorLine;
+          return { start, anchorLine, startSmallness, startVertical, separation };
+        }),
+    );
+    if (!pairCandidates.length) continue;
 
-      const leftVertical = left.line.pageHeight > 0 ? left.line.yMin / left.line.pageHeight : 0;
-      const rightVertical = right.line.pageHeight > 0 ? right.line.yMin / right.line.pageHeight : 0;
-      if (Math.abs(leftVertical - rightVertical) > 0.04) return rightVertical - leftVertical;
-
-      return left.lineIndex - right.lineIndex || left.markerOffset - right.markerOffset;
+    pairCandidates.sort((left, right) => {
+      if (Math.abs(left.startSmallness - right.startSmallness) > 0.04) {
+        return left.startSmallness - right.startSmallness;
+      }
+      if (Math.abs(left.startVertical - right.startVertical) > 0.04) {
+        return right.startVertical - left.startVertical;
+      }
+      if (left.anchorLine !== right.anchorLine) return left.anchorLine - right.anchorLine;
+      if (left.separation !== right.separation) return left.separation - right.separation;
+      return left.start.lineIndex - right.start.lineIndex
+        || left.start.markerOffset - right.start.markerOffset;
     });
 
-    const chosen = ranked[0];
+    const chosen = pairCandidates[0]?.start;
     if (chosen) paired.push(chosen);
   }
 
