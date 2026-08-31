@@ -135,13 +135,16 @@ export async function loadOmpLaunchData(
   );
   const trustedApiBaseUrlString = trustedApiBaseUrl.toString().replace(/\/$/, '');
 
-  const submissionPromise = scopes.has('metadata.read')
+  const canReadSubmission = scopes.has('metadata.read') || scopes.has('review.metadata.read');
+  const canReadFiles = scopes.has('files.read') || scopes.has('review.files.read');
+
+  const submissionPromise = canReadSubmission
     ? readJson<OmpSubmissionResponse>(endpoint(trustedApiBaseUrlString, 'submission'), payload, signature)
     : Promise.resolve<OmpSubmissionResponse>({});
   const contributorsPromise = scopes.has('contributors.read')
     ? readJson<OmpContributorsResponse>(endpoint(trustedApiBaseUrlString, 'contributors'), payload, signature)
     : Promise.resolve<OmpContributorsResponse>({});
-  const filesPromise = scopes.has('files.read')
+  const filesPromise = canReadFiles
     ? readJson<OmpFilesResponse>(endpoint(trustedApiBaseUrlString, 'files'), payload, signature)
     : Promise.resolve<OmpFilesResponse>({});
 
