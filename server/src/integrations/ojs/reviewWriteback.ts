@@ -1,5 +1,6 @@
 import { createHash, createHmac } from 'node:crypto';
 
+import { ExternalPlatform } from '../../generated/prisma/client.js';
 import { getActiveInstallationWithSecret } from '../externalInstallations.js';
 import { prisma } from '../../lib/prisma.js';
 import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
@@ -26,7 +27,7 @@ export async function rememberOjsReviewWritebackEndpoint(
   `;
 }
 
-export async function writeBackSubmittedOjsReview(
+export async function writeBackSubmittedExternalReview(
   assignmentId: string,
   reviewerUserId: string,
 ): Promise<{ status: 'synced' | 'not_applicable' | 'failed'; message?: string }> {
@@ -54,12 +55,12 @@ export async function writeBackSubmittedOjsReview(
   `;
   const apiBaseUrl = rows[0]?.api_base_url;
   if (!apiBaseUrl) {
-    return { status: 'failed', message: 'No persisted OJS writeback endpoint is available for this review.' };
+    return { status: 'failed', message: 'No persisted external review writeback endpoint is available.' };
   }
 
   const installation = await getActiveInstallationWithSecret(assignment.externalInstallationId);
   if (!installation) {
-    return { status: 'failed', message: 'The linked OJS installation is unavailable or disabled.' };
+    return { status: 'failed', message: 'The linked external installation is unavailable or disabled.' };
   }
 
   try {
@@ -82,7 +83,9 @@ export async function writeBackSubmittedOjsReview(
       reviewAssignmentExternalId: assignment.externalAssignmentId,
       authorAndEditorComment: authorComments,
       editorOnlyComment: editorComments,
-      recommendation: assignment.recommendation ?? '',
+      ...(installation.platform === ExternalPlatform.OJS
+        ? { recommendation: assignment.recommendation ?? '' }
+        : {}),
       reviewFormResponses: reviewFormContext?.responses ?? [],
     });
 
@@ -113,16 +116,21 @@ export async function writeBackSubmittedOjsReview(
 
     if (!response.ok) {
       const text = (await response.text()).slice(0, 500);
+      const platform = installation.platform === ExternalPlatform.OMP ? 'OMP' : 'OJS';
       return {
         status: 'failed',
-        message: `OJS review writeback failed with HTTP ${response.status}${text ? `: ${text}` : ''}`,
+        message: `${platform} review writeback failed with HTTP ${response.status}${text ? `: ${text}` : ''}`,
       };
     }
     return { status: 'synced' };
   } catch (error) {
     return {
       status: 'failed',
-      message: error instanceof Error ? error.message : 'OJS review writeback failed.',
+      message: error instanceof Error ? error.message : 'External review writeback failed.',
     };
   }
 }
+
+// Backwards-compatible export for existing callers while the persistence table
+// names are migrated to platform-neutral terminology in a later schema change.
+export const writeBackSubmittedOjsReview = writeBackSubmittedExternalReview;
