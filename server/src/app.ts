@@ -25,6 +25,7 @@ import { integrationRouter } from './routes/integrationRoutes.js';
 import { linkedIdentityRouter } from './routes/linkedIdentityRoutes.js';
 import { ojsAssignmentRouter } from './routes/ojsAssignmentRoutes.js';
 import { ojsReviewRouter } from './routes/ojsReviewRoutes.js';
+import { ompReviewRouter } from './routes/ompReviewRoutes.js';
 import { oidcProviderRouter } from './routes/oidcProviderRoutes.js';
 import { orcidLinkStartRouter } from './routes/orcidLinkStartRoutes.js';
 import { orcidOidcRouter } from './routes/orcidOidcRoutes.js';
@@ -97,6 +98,7 @@ app.use('/api/reviews', reviewManuscriptRouter);
 app.use('/api/reviews', editorReviewOverviewRouter);
 app.use('/api/reviews', ojsAssignmentRouter);
 app.use('/integrations/ojs/review', ojsReviewRouter);
+app.use('/integrations/omp/review', ompReviewRouter);
 app.use('/integrations', integrationRouter);
 
 app.use((_request, response) => {
