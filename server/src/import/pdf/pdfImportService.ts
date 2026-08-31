@@ -367,6 +367,7 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
     blocks.push(...extraction.footnotes);
   }
   flushParagraph();
+  repairCrossPageHyphenation(blocks);
 
   const textCharacters = blocks.reduce((sum, block) => sum + block.text.length, 0);
   const kind: PdfImportResult['source']['kind'] = textCharacters < pageCount * 80 ? 'hybrid' : 'text';
@@ -508,12 +509,17 @@ function extractPageLocalFootnotes(
 
       if (!nextSameLine) {
         const hardEnd = nextPaired?.lineIndex ?? pageLines.length;
+        let previousAcceptedLine = line;
         for (let index = occurrence.lineIndex + 1; index < hardEnd; index += 1) {
           const candidate = pageLines[index]!;
           if (startsByLine.has(index)) break;
-          if (!isLikelyNoteContinuation(candidate, line, medianWordHeight)) break;
+          const forcedHyphenContinuation = isHyphenatedTextBreak(noteLines.at(-1) ?? '', candidate.text)
+            && isPlausibleHyphenContinuationLine(candidate, previousAcceptedLine, medianWordHeight);
+          if (!forcedHyphenContinuation
+            && !isLikelyNoteContinuation(candidate, previousAcceptedLine, medianWordHeight)) break;
           noteLines.push(candidate.text);
           consumedLineIndexes.add(index);
+          previousAcceptedLine = candidate;
         }
       }
 
@@ -613,18 +619,31 @@ function attachSelectedAnchors(
 
 function isLikelyNoteContinuation(
   line: LayoutLine,
-  startLine: LayoutLine,
+  previousLine: LayoutLine,
   medianWordHeight: number,
 ): boolean {
-  if (line.column !== startLine.column) return false;
-  const startHeight = typicalWordHeight(startLine);
+  if (line.column !== previousLine.column) return false;
+  const previousHeight = typicalWordHeight(previousLine);
   const lineHeight = typicalWordHeight(line);
-  const maximumHeight = Math.max(startHeight * 1.12, medianWordHeight * 0.98);
+  const maximumHeight = Math.max(previousHeight * 1.12, medianWordHeight * 0.98);
   if (lineHeight > maximumHeight) return false;
 
-  const verticalGap = line.yMin - startLine.yMax;
-  const generousGap = Math.max(startHeight * 3.2, 24);
-  return verticalGap <= generousGap;
+  const verticalGap = line.yMin - previousLine.yMax;
+  const generousGap = Math.max(previousHeight * 3.2, 24);
+  return verticalGap >= -2.5 && verticalGap <= generousGap;
+}
+
+function isPlausibleHyphenContinuationLine(
+  line: LayoutLine,
+  previousLine: LayoutLine,
+  medianWordHeight: number,
+): boolean {
+  if (line.column !== previousLine.column) return false;
+  const previousHeight = typicalWordHeight(previousLine);
+  const lineHeight = typicalWordHeight(line);
+  if (lineHeight > Math.max(previousHeight * 1.25, medianWordHeight * 1.08)) return false;
+  const verticalGap = line.yMin - previousLine.yMax;
+  return verticalGap >= -3 && verticalGap <= Math.max(previousHeight * 3.8, 30);
 }
 
 function selectSequentialNoteMarkers(
@@ -821,13 +840,53 @@ function joinLines(lines: string[]): string {
       result = line;
       continue;
     }
-    if (/\p{L}-$/u.test(result) && /^\p{Ll}/u.test(line)) {
-      result = `${result.slice(0, -1)}${line}`;
+    if (isHyphenatedTextBreak(result, line)) {
+      result = `${removeTerminalDiscretionaryHyphen(result)}${line}`;
     } else {
       result += ` ${line}`;
     }
   }
   return normalizeWhitespace(result);
+}
+
+function isHyphenatedTextBreak(previousText: string, nextText: string): boolean {
+  const previous = normalizeWhitespace(previousText);
+  const next = normalizeWhitespace(nextText);
+  if (!/[\p{L}\p{M}][-\u00ad\u2010]$/u.test(previous)) return false;
+  return /^[\p{Ll}\p{M}]/u.test(next);
+}
+
+function removeTerminalDiscretionaryHyphen(value: string): string {
+  return value.replace(/[-\u00ad\u2010]$/u, '');
+}
+
+function repairCrossPageHyphenation(blocks: PdfImportBlock[]): void {
+  const paragraphIndexesByPage = new Map<number, number[]>();
+  for (let index = 0; index < blocks.length; index += 1) {
+    const block = blocks[index]!;
+    if (block.kind !== 'paragraph') continue;
+    const indexes = paragraphIndexesByPage.get(block.page) ?? [];
+    indexes.push(index);
+    paragraphIndexesByPage.set(block.page, indexes);
+  }
+
+  const pages = [...paragraphIndexesByPage.keys()].sort((left, right) => left - right);
+  for (const page of pages) {
+    const currentIndexes = paragraphIndexesByPage.get(page) ?? [];
+    const nextIndexes = paragraphIndexesByPage.get(page + 1) ?? [];
+    const previousIndex = currentIndexes.at(-1);
+    const nextIndex = nextIndexes[0];
+    if (previousIndex === undefined || nextIndex === undefined) continue;
+
+    const previous = blocks[previousIndex]!;
+    const next = blocks[nextIndex]!;
+    if (!isHyphenatedTextBreak(previous.text, next.text)) continue;
+
+    const match = normalizeWhitespace(next.text).match(/^([\p{Ll}\p{M}][\p{L}\p{M}'’\-]*)(?:\s+|$)([\s\S]*)$/u);
+    if (!match?.[1]) continue;
+    previous.text = `${removeTerminalDiscretionaryHyphen(previous.text)}${match[1]}`;
+    next.text = normalizeWhitespace(match[2] ?? '');
+  }
 }
 
 function uniqueStrings(values: readonly string[]): string[] {
