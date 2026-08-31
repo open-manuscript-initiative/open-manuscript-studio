@@ -16,6 +16,11 @@ export interface CanonicalPdfWord {
 
 export interface CanonicalPdfLine<TWord extends CanonicalPdfWord = CanonicalPdfWord> {
   words: TWord[];
+  text?: string;
+  xMin?: number;
+  xMax?: number;
+  yMin?: number;
+  yMax?: number;
 }
 
 const SUPERSCRIPT_DIGITS: Record<string, string> = {
@@ -52,6 +57,7 @@ const SUBSCRIPT_DIGITS: Record<string, string> = {
  * evidence that a marker was printed as superscript/subscript.
  */
 export function canonicalizePdfPageTypography<TLine extends CanonicalPdfLine>(lines: TLine[]): TLine[] {
+  mergeSplitFootnoteStartLines(lines);
   for (const line of lines) canonicalizeLine(line);
   return lines;
 }
@@ -71,6 +77,81 @@ export function normalizeSubscriptDigits(value: string): string {
 export function parseCanonicalNoteMarker(value: string): string | null {
   const canonical = canonicalizePdfText(value).trim();
   return /^[1-9][0-9]{0,2}$/u.test(canonical) ? canonical : null;
+}
+
+/**
+ * Poppler's bbox-layout output frequently places a footnote number in its own
+ * flow/line while the corresponding note text is emitted as a separate line
+ * at the same vertical position. Recombine that purely presentational split
+ * before semantic note detection.
+ *
+ * A split marker is accepted only when it is a single numeric word, is clearly
+ * smaller than the text line beside it, overlaps that line vertically, and
+ * sits immediately to its left. Normal numbered paragraphs therefore remain
+ * untouched because their number normally has the same font height as the
+ * following text.
+ */
+function mergeSplitFootnoteStartLines<TLine extends CanonicalPdfLine>(lines: TLine[]): void {
+  const removeIndexes = new Set<number>();
+
+  for (let markerIndex = 0; markerIndex < lines.length; markerIndex += 1) {
+    const markerLine = lines[markerIndex]!;
+    if (markerLine.words.length !== 1) continue;
+
+    const markerWord = markerLine.words[0]!;
+    const marker = parseCanonicalNoteMarker(markerWord.text);
+    if (!marker) continue;
+
+    const markerHeight = Math.max(1, markerWord.yMax - markerWord.yMin);
+    const markerCenter = (markerWord.yMin + markerWord.yMax) / 2;
+
+    let bestTargetIndex = -1;
+    let bestScore = Number.POSITIVE_INFINITY;
+
+    for (let targetIndex = 0; targetIndex < lines.length; targetIndex += 1) {
+      if (targetIndex === markerIndex || removeIndexes.has(targetIndex)) continue;
+      const targetLine = lines[targetIndex]!;
+      if (!targetLine.words.length) continue;
+
+      const firstWord = targetLine.words[0]!;
+      const targetHeight = median(targetLine.words.map((word) => Math.max(1, word.yMax - word.yMin)))
+        ?? Math.max(1, firstWord.yMax - firstWord.yMin);
+      if (markerHeight > targetHeight * 0.78) continue;
+
+      const targetCenter = (firstWord.yMin + firstWord.yMax) / 2;
+      const centerDistance = Math.abs(markerCenter - targetCenter);
+      if (centerDistance > Math.max(3.2, targetHeight * 0.3)) continue;
+
+      const verticalOverlap = Math.min(markerWord.yMax, firstWord.yMax) - Math.max(markerWord.yMin, firstWord.yMin);
+      if (verticalOverlap < markerHeight * 0.45) continue;
+
+      const horizontalGap = firstWord.xMin - markerWord.xMax;
+      if (horizontalGap < 0 || horizontalGap > Math.max(18, targetHeight * 1.7)) continue;
+
+      const firstText = canonicalizePdfText(firstWord.text).trim();
+      if (!/^[\p{L}\p{M}"“„'‘(\[]/u.test(firstText)) continue;
+
+      const score = centerDistance + horizontalGap * 0.05;
+      if (score < bestScore) {
+        bestScore = score;
+        bestTargetIndex = targetIndex;
+      }
+    }
+
+    if (bestTargetIndex < 0) continue;
+    const targetLine = lines[bestTargetIndex]!;
+    targetLine.words.unshift(markerWord);
+    targetLine.text = targetLine.words.map((word) => word.text).join(' ').replace(/\s+/gu, ' ').trim();
+    if (typeof targetLine.xMin === 'number') targetLine.xMin = Math.min(targetLine.xMin, markerWord.xMin);
+    if (typeof targetLine.yMin === 'number') targetLine.yMin = Math.min(targetLine.yMin, markerWord.yMin);
+    if (typeof targetLine.yMax === 'number') targetLine.yMax = Math.max(targetLine.yMax, markerWord.yMax);
+    removeIndexes.add(markerIndex);
+  }
+
+  if (!removeIndexes.size) return;
+  for (const index of [...removeIndexes].sort((left, right) => right - left)) {
+    lines.splice(index, 1);
+  }
 }
 
 function canonicalizeLine<TLine extends CanonicalPdfLine>(line: TLine): void {
