@@ -424,9 +424,6 @@ function extractPageLocalFootnotes(
       geometricAnchors.set(index, markers);
     }
 
-    // No font-size or page-position gate here. Every line on the page is allowed
-    // to contribute a canonical numbered note start. Typography is evidence for
-    // ranking/validation later, never a prerequisite for seeing the candidate.
     const possibleStarts = pageLines.flatMap((line, lineIndex) =>
       findPossibleNoteStarts(line).map((occurrence) => ({ ...occurrence, line, lineIndex })),
     );
@@ -441,11 +438,18 @@ function extractPageLocalFootnotes(
     }
 
     const orderedMarkers: string[] = [];
+    const anchorLinesByMarker = new Map<string, number[]>();
     for (let index = 0; index < pageLines.length; index += 1) {
-      orderedMarkers.push(...uniqueStrings([
+      const markers = uniqueStrings([
         ...(geometricAnchors.get(index) ?? []),
         ...(attachedTextAnchors.get(index) ?? []),
-      ]));
+      ]);
+      orderedMarkers.push(...markers);
+      for (const marker of markers) {
+        const anchorLines = anchorLinesByMarker.get(marker) ?? [];
+        anchorLines.push(index);
+        anchorLinesByMarker.set(marker, anchorLines);
+      }
     }
 
     if (!orderedMarkers.length) {
@@ -459,94 +463,156 @@ function extractPageLocalFootnotes(
       possibleMarkerSet,
     );
 
-    // A candidate note start is only meaningful if its marker also exists as a
-    // selected body anchor. This prevents the removal of the old size gate from
-    // turning ordinary numbered paragraphs into notes.
-    const matchedStarts = possibleStarts
-      .filter((item) => selectedMarkerSet.has(item.marker))
-      .sort((a, b) => a.lineIndex - b.lineIndex || a.markerOffset - b.markerOffset);
+    const pairedStarts = choosePairedNoteStarts(
+      possibleStarts,
+      selectedMarkerSet,
+      anchorLinesByMarker,
+      medianWordHeight,
+    );
 
-    if (!matchedStarts.length) {
-      const bodyLines = pageLines.map((line, index) => {
-        const anchors = uniqueStrings([
-          ...(geometricAnchors.get(index) ?? []),
-          ...(attachedTextAnchors.get(index) ?? []),
-        ]).filter((marker) => selectedMarkerSet.has(marker));
-        return anchors.length ? { ...line, noteAnchors: anchors } : line;
-      });
+    if (!pairedStarts.length) {
+      const bodyLines = pageLines.map((line, index) => attachSelectedAnchors(
+        line,
+        index,
+        selectedMarkerSet,
+        geometricAnchors,
+        attachedTextAnchors,
+      ));
       results.push({ page, bodyLines, footnotes: [], leadingContinuation: [] });
       continue;
     }
 
-    const footnoteRunStart = matchedStarts[0]!.lineIndex;
     const startsByLine = new Map<number, NoteStartOccurrence[]>();
-    for (const occurrence of matchedStarts) {
+    for (const occurrence of pairedStarts) {
       const group = startsByLine.get(occurrence.lineIndex) ?? [];
       group.push(occurrence);
+      group.sort((left, right) => left.markerOffset - right.markerOffset);
       startsByLine.set(occurrence.lineIndex, group);
     }
 
-    const bodyLines = pageLines.slice(0, footnoteRunStart).map((line, index) => {
-      const anchors = uniqueStrings([
-        ...(geometricAnchors.get(index) ?? []),
-        ...(attachedTextAnchors.get(index) ?? []),
-      ]).filter((marker) => selectedMarkerSet.has(marker));
-      return anchors.length ? { ...line, noteAnchors: anchors } : line;
-    });
-
+    const consumedLineIndexes = new Set<number>();
     const footnotes: PdfImportBlock[] = [];
-    let currentMarker: string | null = null;
-    let currentLines: string[] = [];
 
-    const flushNote = () => {
-      if (!currentMarker || !currentLines.length) return;
-      const text = joinLines(currentLines);
+    for (let startIndex = 0; startIndex < pairedStarts.length; startIndex += 1) {
+      const occurrence = pairedStarts[startIndex]!;
+      const sameLineGroup = startsByLine.get(occurrence.lineIndex) ?? [];
+      const positionInLine = sameLineGroup.indexOf(occurrence);
+      const nextSameLine = sameLineGroup[positionInLine + 1];
+      const nextPaired = pairedStarts[startIndex + 1];
+      const line = pageLines[occurrence.lineIndex]!;
+      const segmentEnd = nextSameLine?.markerOffset ?? line.text.length;
+      const noteLines: string[] = [];
+      const firstSegment = normalizeWhitespace(line.text.slice(occurrence.contentOffset, segmentEnd));
+      if (firstSegment) noteLines.push(firstSegment);
+      consumedLineIndexes.add(occurrence.lineIndex);
+
+      if (!nextSameLine) {
+        const hardEnd = nextPaired?.lineIndex ?? pageLines.length;
+        for (let index = occurrence.lineIndex + 1; index < hardEnd; index += 1) {
+          const candidate = pageLines[index]!;
+          if (startsByLine.has(index)) break;
+          if (!isLikelyNoteContinuation(candidate, line, medianWordHeight)) break;
+          noteLines.push(candidate.text);
+          consumedLineIndexes.add(index);
+        }
+      }
+
+      const text = joinLines(noteLines);
       if (text) {
         footnotes.push({
           kind: 'footnote',
           text,
           page,
-          noteMarker: currentMarker,
-          confidence: 0.96,
+          noteMarker: occurrence.marker,
+          confidence: 0.94,
         });
       }
-      currentMarker = null;
-      currentLines = [];
-    };
-
-    for (let index = footnoteRunStart; index < pageLines.length; index += 1) {
-      const line = pageLines[index]!;
-      const occurrences = startsByLine.get(index) ?? [];
-      if (occurrences.length) {
-        let cursor = 0;
-        for (let occurrenceIndex = 0; occurrenceIndex < occurrences.length; occurrenceIndex += 1) {
-          const occurrence = occurrences[occurrenceIndex]!;
-          const prefix = normalizeWhitespace(line.text.slice(cursor, occurrence.markerOffset));
-          if (prefix && currentMarker) currentLines.push(prefix);
-          flushNote();
-          currentMarker = occurrence.marker;
-
-          const nextOccurrence = occurrences[occurrenceIndex + 1];
-          const segmentEnd = nextOccurrence?.markerOffset ?? line.text.length;
-          const segment = normalizeWhitespace(line.text.slice(occurrence.contentOffset, segmentEnd));
-          if (segment) currentLines.push(segment);
-          cursor = segmentEnd;
-        }
-        continue;
-      }
-
-      if (currentMarker) currentLines.push(line.text);
     }
-    flushNote();
 
-    const selectedInOrder = orderedMarkers.filter((marker) => selectedMarkerSet.has(marker));
-    const lastSelected = selectedInOrder.at(-1);
-    if (lastSelected) lastConfirmedMarker = Number(lastSelected);
+    const bodyLines = pageLines
+      .map((line, index) => ({ line, index }))
+      .filter(({ index }) => !consumedLineIndexes.has(index))
+      .map(({ line, index }) => attachSelectedAnchors(
+        line,
+        index,
+        selectedMarkerSet,
+        geometricAnchors,
+        attachedTextAnchors,
+      ));
+
+    const lastPaired = pairedStarts.at(-1)?.marker;
+    if (lastPaired) lastConfirmedMarker = Number(lastPaired);
 
     results.push({ page, bodyLines, footnotes, leadingContinuation: [] });
   }
 
   return results;
+}
+
+function choosePairedNoteStarts(
+  possibleStarts: readonly NoteStartOccurrence[],
+  selectedMarkers: ReadonlySet<string>,
+  anchorLinesByMarker: ReadonlyMap<string, readonly number[]>,
+  medianWordHeight: number,
+): NoteStartOccurrence[] {
+  const paired: NoteStartOccurrence[] = [];
+
+  for (const marker of selectedMarkers) {
+    const anchorLines = anchorLinesByMarker.get(marker) ?? [];
+    if (!anchorLines.length) continue;
+    const anchorLine = Math.max(...anchorLines);
+    const candidates = possibleStarts.filter((item) => item.marker === marker && item.lineIndex > anchorLine);
+    if (!candidates.length) continue;
+
+    const ranked = [...candidates].sort((left, right) => {
+      const leftHeight = typicalWordHeight(left.line);
+      const rightHeight = typicalWordHeight(right.line);
+      const leftSmallness = leftHeight / Math.max(1, medianWordHeight);
+      const rightSmallness = rightHeight / Math.max(1, medianWordHeight);
+      if (Math.abs(leftSmallness - rightSmallness) > 0.04) return leftSmallness - rightSmallness;
+
+      const leftVertical = left.line.pageHeight > 0 ? left.line.yMin / left.line.pageHeight : 0;
+      const rightVertical = right.line.pageHeight > 0 ? right.line.yMin / right.line.pageHeight : 0;
+      if (Math.abs(leftVertical - rightVertical) > 0.04) return rightVertical - leftVertical;
+
+      return left.lineIndex - right.lineIndex || left.markerOffset - right.markerOffset;
+    });
+
+    const chosen = ranked[0];
+    if (chosen) paired.push(chosen);
+  }
+
+  return paired.sort((left, right) => left.lineIndex - right.lineIndex || left.markerOffset - right.markerOffset);
+}
+
+function attachSelectedAnchors(
+  line: LayoutLine,
+  index: number,
+  selectedMarkers: ReadonlySet<string>,
+  geometricAnchors: ReadonlyMap<number, readonly string[]>,
+  attachedTextAnchors: ReadonlyMap<number, readonly string[]>,
+): LayoutLine {
+  const anchors = uniqueStrings([
+    ...(geometricAnchors.get(index) ?? []),
+    ...(attachedTextAnchors.get(index) ?? []),
+  ]).filter((marker) => selectedMarkers.has(marker));
+  return anchors.length ? { ...line, noteAnchors: anchors } : line;
+}
+
+function isLikelyNoteContinuation(
+  line: LayoutLine,
+  startLine: LayoutLine,
+  medianWordHeight: number,
+): boolean {
+  if (line.column !== startLine.column) return false;
+  const startHeight = typicalWordHeight(startLine);
+  const lineHeight = typicalWordHeight(line);
+  const maximumHeight = Math.max(startHeight * 1.12, medianWordHeight * 0.98);
+  if (lineHeight > maximumHeight) return false;
+
+  const verticalGap = line.yMin - startLine.yMax;
+  const generousGap = Math.max(startHeight * 3.2, 24);
+  return verticalGap <= generousGap;
 }
 
 function selectSequentialNoteMarkers(
@@ -604,9 +670,6 @@ function findPossibleNoteStarts(
 ): Array<Pick<NoteStartOccurrence, 'marker' | 'markerOffset' | 'contentOffset'>> {
   const results: Array<Pick<NoteStartOccurrence, 'marker' | 'markerOffset' | 'contentOffset'>> = [];
 
-  // Build the semantic text from canonical word values, but keep raw display
-  // offsets separately so footnote slicing still operates on line.text.
-  let canonicalCursor = 0;
   let rawCursor = 0;
   for (let index = 0; index < line.words.length; index += 1) {
     const word = line.words[index]!;
@@ -627,13 +690,9 @@ function findPossibleNoteStarts(
       }
     }
 
-    canonicalCursor += canonical.length + (index < line.words.length - 1 ? 1 : 0);
     rawCursor += raw.length + (index < line.words.length - 1 ? 1 : 0);
   }
 
-  // Poppler can merge several note starts and their text into one extracted line.
-  // Retain a canonical text fallback for those cases, without requiring a
-  // specific font size, vertical zone or ASCII-only source representation.
   const canonicalLine = normalizeWhitespace(line.words
     .map((word) => word.canonicalText ?? word.text.normalize('NFKC'))
     .join(' '));
@@ -706,6 +765,11 @@ function findAttachedInlineMarkers(
   }
 
   return [...matches];
+}
+
+function typicalWordHeight(line: LayoutLine): number {
+  return medianNumber(line.words.map((word) => word.fontHeight ?? Math.max(1, word.yMax - word.yMin)))
+    ?? Math.max(1, line.yMax - line.yMin);
 }
 
 function findRepeatedMarginLines(lines: LayoutLine[], pageCount: number): Set<string> {
