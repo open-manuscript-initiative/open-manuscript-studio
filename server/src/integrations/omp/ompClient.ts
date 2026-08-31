@@ -45,10 +45,11 @@ async function fetchWithSameOriginRedirects(
   const trustedOrigin = initialUrl.origin;
   const visited = new Set<string>();
   let currentUrl = new URL(initialUrl.toString());
+  const authorization = `OMI ${payload}.${signature}`;
 
   for (let redirectCount = 0; redirectCount <= 3; redirectCount += 1) {
-    currentUrl.searchParams.set('payload', payload);
-    currentUrl.searchParams.set('signature', signature);
+    currentUrl.searchParams.delete('payload');
+    currentUrl.searchParams.delete('signature');
 
     const currentKey = currentUrl.toString();
     if (visited.has(currentKey)) {
@@ -58,7 +59,10 @@ async function fetchWithSameOriginRedirects(
 
     const response = await fetch(currentUrl, {
       method: 'GET',
-      headers: { Accept: 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        Authorization: authorization,
+      },
       redirect: 'manual',
       signal: AbortSignal.timeout(30_000),
     });
