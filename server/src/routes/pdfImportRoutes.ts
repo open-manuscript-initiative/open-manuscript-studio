@@ -29,10 +29,12 @@ pdfImportRouter.post('/pdf', pdfBody, (request: AuthenticatedRequest, response) 
     return;
   }
 
+  const pdfBytes = Buffer.from(request.body);
+
   try {
     const rawName = String(request.header('X-OMI-File-Name') ?? 'document.pdf');
     const fileName = decodeURIComponent(rawName);
-    const job = createPdfImportJob(request.authUserId, fileName, request.body);
+    const job = createPdfImportJob(request.authUserId, fileName, pdfBytes);
     response.status(202).json({ job });
   } catch (error) {
     response.status(400).json({
