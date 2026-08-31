@@ -25,7 +25,7 @@ export interface PdfImportBlock {
   confidence: number;
   headingLevel?: number;
   noteMarker?: string;
-  /** Numeric note references detected from superscript PDF geometry. */
+  /** Numeric note references detected and page-locally matched in the PDF. */
   noteAnchors?: string[];
 }
 
@@ -80,6 +80,14 @@ interface LayoutLine {
   text: string;
   words: LayoutWord[];
   column: 'full' | 'left' | 'right';
+  noteAnchors?: string[];
+}
+
+interface PageFootnoteExtraction {
+  page: number;
+  bodyLines: LayoutLine[];
+  footnotes: PdfImportBlock[];
+  leadingContinuation: LayoutLine[];
 }
 
 const jobs = new Map<string, PdfImportJob>();
@@ -280,10 +288,16 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
   if (lines.length === 0) {
     throw new Error('The PDF contains no usable text after removing repeated page furniture.');
   }
+
   const heights = lines.map((line) => Math.max(1, line.yMax - line.yMin)).sort((a, b) => a - b);
   const medianHeight = heights[Math.floor(heights.length / 2)] ?? 10;
-  const wordHeights = lines.flatMap((line) => line.words.map((word) => Math.max(1, word.yMax - word.yMin))).sort((a, b) => a - b);
+  const wordHeights = lines
+    .flatMap((line) => line.words.map((word) => Math.max(1, word.yMax - word.yMin)))
+    .sort((a, b) => a - b);
   const medianWordHeight = wordHeights[Math.floor(wordHeights.length / 2)] ?? medianHeight;
+  const pageExtractions = extractPageLocalFootnotes(lines, pageCount, medianHeight, medianWordHeight);
+  attachCrossPageFootnoteContinuations(pageExtractions);
+
   const blocks: PdfImportBlock[] = [];
   let paragraph: LayoutLine[] = [];
 
@@ -291,70 +305,53 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
     if (!paragraph.length) return;
     const first = paragraph[0]!;
     const text = joinLines(paragraph.map((line) => line.text));
-    const noteAnchors = uniqueStrings(paragraph.flatMap((line) => findSuperscriptNoteMarkers(line, medianWordHeight)));
+    const noteAnchors = uniqueStrings(paragraph.flatMap((line) => line.noteAnchors ?? []));
     if (text) {
       blocks.push({
         kind: 'paragraph',
         text,
         page: first.page,
-        confidence: 0.86,
+        confidence: 0.88,
         ...(noteAnchors.length ? { noteAnchors } : {}),
       });
     }
     paragraph = [];
   };
 
-  const headingSizes = [...new Set(lines
+  const bodyLines = pageExtractions.flatMap((extraction) => extraction.bodyLines);
+  const headingSizes = [...new Set(bodyLines
     .filter((line) => isHeadingCandidate(line, medianHeight))
     .map((line) => roundHeight(line)))]
     .sort((a, b) => b - a)
     .slice(0, 6);
 
-  for (const line of lines) {
-    const height = Math.max(1, line.yMax - line.yMin);
-    const typicalWordHeight = medianNumber(line.words.map((word) => Math.max(1, word.yMax - word.yMin))) ?? height;
-    const inProbableNoteZone = line.yMin >= line.pageHeight * 0.45;
-    const noteSized = typicalWordHeight <= medianWordHeight * 0.9;
-    const footnote = inProbableNoteZone && noteSized
-      ? line.text.match(/^([0-9]{1,3}|[*†‡])(?:[.)]?\s+)(.+)$/u)
-      : null;
-    if (footnote) {
-      flushParagraph();
-      const noteMarker = footnote[1];
-      const footnoteText = footnote[2]?.trim() ?? '';
-      if (footnoteText) {
+  for (const extraction of pageExtractions) {
+    for (const line of extraction.bodyLines) {
+      const height = Math.max(1, line.yMax - line.yMin);
+      if (isHeadingCandidate(line, medianHeight)) {
+        flushParagraph();
+        const size = roundHeight(line);
+        const levelIndex = Math.max(0, headingSizes.indexOf(size));
         blocks.push({
-          kind: 'footnote',
-          text: footnoteText,
-          ...(noteMarker ? { noteMarker } : {}),
+          kind: 'heading',
+          text: line.text,
           page: line.page,
-          confidence: 0.82,
+          headingLevel: Math.min(6, levelIndex + 1),
+          confidence: Math.min(0.98, 0.76 + (height / medianHeight - 1) * 0.18),
         });
+        continue;
       }
-      continue;
-    }
 
-    if (isHeadingCandidate(line, medianHeight)) {
-      flushParagraph();
-      const size = roundHeight(line);
-      const levelIndex = Math.max(0, headingSizes.indexOf(size));
-      blocks.push({
-        kind: 'heading',
-        text: line.text,
-        page: line.page,
-        headingLevel: Math.min(6, levelIndex + 1),
-        confidence: Math.min(0.98, 0.76 + (height / medianHeight - 1) * 0.18),
-      });
-      continue;
+      const previous = paragraph.at(-1);
+      const gap = previous && previous.page === line.page && previous.column === line.column
+        ? line.yMin - previous.yMax
+        : Infinity;
+      const sameParagraph = Boolean(previous) && gap >= -2.5 && gap <= medianHeight * 1.15;
+      if (!sameParagraph) flushParagraph();
+      paragraph.push(line);
     }
-
-    const previous = paragraph.at(-1);
-    const gap = previous && previous.page === line.page && previous.column === line.column
-      ? line.yMin - previous.yMax
-      : Infinity;
-    const sameParagraph = Boolean(previous) && gap >= -1 && gap <= medianHeight * 1.05;
-    if (!sameParagraph) flushParagraph();
-    paragraph.push(line);
+    flushParagraph();
+    blocks.push(...extraction.footnotes);
   }
   flushParagraph();
 
@@ -370,7 +367,7 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
     if (block.kind === 'footnote') {
       warnings.push({
         code: 'footnote-review',
-        message: 'A probable footnote was reconstructed from page geometry and should be checked.',
+        message: 'A probable footnote was matched to an in-text marker on the same PDF page and should be checked.',
         page: block.page,
       });
     }
@@ -391,6 +388,190 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
   };
 }
 
+/**
+ * Reconstruct notes page-by-page. A note is accepted only when two independent
+ * signals agree on the same page:
+ *   1. the body contains the marker (preferably raised/smaller superscript), and
+ *   2. a smaller-text line below the body starts with the same marker.
+ *
+ * This avoids confusing years, list numbers and printed page numbers with note
+ * references. The transition from body type to the smaller bottom text run is
+ * also used as a separator cue. In many journal PDFs a thin vector rule is drawn
+ * at exactly this boundary; pdftotext does not expose vector paths, but its
+ * typographic gap remains useful evidence without adding a rendering dependency.
+ */
+function extractPageLocalFootnotes(
+  lines: LayoutLine[],
+  pageCount: number,
+  medianLineHeight: number,
+  medianWordHeight: number,
+): PageFootnoteExtraction[] {
+  const results: PageFootnoteExtraction[] = [];
+
+  for (let page = 1; page <= pageCount; page += 1) {
+    const pageLines = lines.filter((line) => line.page === page).sort(byPosition);
+    if (!pageLines.length) {
+      results.push({ page, bodyLines: [], footnotes: [], leadingContinuation: [] });
+      continue;
+    }
+
+    const possibleStarts = pageLines
+      .map((line, index) => ({ line, index, marker: leadingNoteMarker(line.text) }))
+      .filter((item): item is { line: LayoutLine; index: number; marker: string } => {
+        if (!item.marker) return false;
+        const typicalHeight = typicalWordHeight(item.line);
+        const noteSized = typicalHeight <= medianWordHeight * 0.96;
+        const belowTopFurniture = item.line.yMin >= item.line.pageHeight * 0.14;
+        return noteSized && belowTopFurniture;
+      });
+
+    if (!possibleStarts.length) {
+      const bodyLines = pageLines.map((line) => {
+        const anchors = findSuperscriptNoteMarkers(line, medianWordHeight);
+        return anchors.length ? { ...line, noteAnchors: anchors } : line;
+      });
+      results.push({ page, bodyLines, footnotes: [], leadingContinuation: [] });
+      continue;
+    }
+
+    const possibleMarkerSet = new Set(possibleStarts.map((item) => item.marker));
+    const geometricAnchors = new Map<number, string[]>();
+    const textualAnchors = new Map<number, string[]>();
+
+    for (let index = 0; index < pageLines.length; index += 1) {
+      const line = pageLines[index]!;
+      const raised = findSuperscriptNoteMarkers(line, medianWordHeight)
+        .filter((marker) => possibleMarkerSet.has(marker));
+      if (raised.length) geometricAnchors.set(index, raised);
+
+      const matchedText = findInlineMarkersMatching(line.text, possibleMarkerSet);
+      if (matchedText.length) textualAnchors.set(index, matchedText);
+    }
+
+    const confirmedMarkerSet = new Set<string>();
+    for (const markers of geometricAnchors.values()) markers.forEach((marker) => confirmedMarkerSet.add(marker));
+    for (const markers of textualAnchors.values()) markers.forEach((marker) => confirmedMarkerSet.add(marker));
+
+    const confirmedStarts = possibleStarts.filter((item) => confirmedMarkerSet.has(item.marker));
+    if (!confirmedStarts.length) {
+      const bodyLines = pageLines.map((line, index) => {
+        const anchors = geometricAnchors.get(index) ?? [];
+        return anchors.length ? { ...line, noteAnchors: anchors } : line;
+      });
+      results.push({ page, bodyLines, footnotes: [], leadingContinuation: [] });
+      continue;
+    }
+
+    const firstConfirmedIndex = Math.min(...confirmedStarts.map((item) => item.index));
+    const footnoteRunStart = findFootnoteRunStart(
+      pageLines,
+      firstConfirmedIndex,
+      medianLineHeight,
+      medianWordHeight,
+    );
+    const startByIndex = new Map(confirmedStarts.map((item) => [item.index, item.marker]));
+    const bodyLines: LayoutLine[] = [];
+
+    for (let index = 0; index < footnoteRunStart; index += 1) {
+      const line = pageLines[index]!;
+      const anchors = uniqueStrings([
+        ...(geometricAnchors.get(index) ?? []),
+        ...(textualAnchors.get(index) ?? []),
+      ].filter((marker) => confirmedMarkerSet.has(marker)));
+      bodyLines.push(anchors.length ? { ...line, noteAnchors: anchors } : line);
+    }
+
+    const leadingContinuation: LayoutLine[] = [];
+    for (let index = footnoteRunStart; index < firstConfirmedIndex; index += 1) {
+      const line = pageLines[index];
+      if (line && isNoteSizedLine(line, medianWordHeight)) leadingContinuation.push(line);
+    }
+
+    const footnotes: PdfImportBlock[] = [];
+    let currentMarker: string | null = null;
+    let currentLines: string[] = [];
+
+    const flushNote = () => {
+      if (!currentMarker || !currentLines.length) return;
+      const text = joinLines(currentLines);
+      if (text) {
+        footnotes.push({
+          kind: 'footnote',
+          text,
+          page,
+          noteMarker: currentMarker,
+          confidence: 0.94,
+        });
+      }
+      currentMarker = null;
+      currentLines = [];
+    };
+
+    for (let index = firstConfirmedIndex; index < pageLines.length; index += 1) {
+      const line = pageLines[index]!;
+      const marker = startByIndex.get(index);
+      if (marker) {
+        flushNote();
+        currentMarker = marker;
+        currentLines.push(stripLeadingNoteMarker(line.text, marker));
+        continue;
+      }
+
+      if (currentMarker && isNoteSizedLine(line, medianWordHeight)) {
+        currentLines.push(line.text);
+        continue;
+      }
+
+      // Publication footer metadata or other page furniture may follow notes.
+      // Do not absorb a body-sized/footer block into the scholarly note body.
+      if (currentMarker) flushNote();
+    }
+    flushNote();
+
+    results.push({ page, bodyLines, footnotes, leadingContinuation });
+  }
+
+  return results;
+}
+
+/**
+ * If a long note continues onto the next page, the continuation still appears
+ * in that page's note zone below the body. It can precede the first numbered
+ * note start there. Attach such a smaller-text run to the previous page's last
+ * reconstructed footnote instead of looking at the physical page top.
+ */
+function attachCrossPageFootnoteContinuations(extractions: PageFootnoteExtraction[]): void {
+  for (let index = 1; index < extractions.length; index += 1) {
+    const current = extractions[index]!;
+    if (!current.leadingContinuation.length) continue;
+    const previous = extractions[index - 1]!;
+    const target = previous.footnotes.at(-1);
+    if (!target) continue;
+    const continuation = joinLines(current.leadingContinuation.map((line) => line.text));
+    if (!continuation) continue;
+    target.text = joinLines([target.text, continuation]);
+    target.confidence = Math.min(target.confidence, 0.9);
+  }
+}
+
+function findFootnoteRunStart(
+  lines: LayoutLine[],
+  firstMarkerIndex: number,
+  medianLineHeight: number,
+  medianWordHeight: number,
+): number {
+  let start = firstMarkerIndex;
+  for (let index = firstMarkerIndex - 1; index >= 0; index -= 1) {
+    const line = lines[index]!;
+    const next = lines[index + 1]!;
+    if (!isNoteSizedLine(line, medianWordHeight)) break;
+    const gap = next.yMin - line.yMax;
+    if (gap > medianLineHeight * 1.8) break;
+    start = index;
+  }
+  return start;
+}
+
 function findSuperscriptNoteMarkers(line: LayoutLine, medianWordHeight: number): string[] {
   if (line.words.length < 2 || medianWordHeight <= 0) return [];
   const markers: string[] = [];
@@ -398,23 +579,57 @@ function findSuperscriptNoteMarkers(line: LayoutLine, medianWordHeight: number):
 
   for (let index = 0; index < line.words.length; index += 1) {
     const word = line.words[index]!;
-    if (!/^[1-9][0-9]{0,2}$/u.test(word.text)) continue;
+    const numericParts = word.text.match(/(?:^|\D)([1-9][0-9]{0,2})$/u);
+    const marker = numericParts?.[1];
+    if (!marker) continue;
 
     const wordHeight = Math.max(1, word.yMax - word.yMin);
     const baselineLift = lineBottom - word.yMax;
-    const smallEnough = wordHeight <= medianWordHeight * 0.86;
-    const raisedEnough = baselineLift >= Math.max(0.7, medianWordHeight * 0.07);
+    const smallEnough = wordHeight <= medianWordHeight * 0.9;
+    const raisedEnough = baselineLift >= Math.max(0.55, medianWordHeight * 0.055);
     if (!smallEnough || !raisedEnough) continue;
 
-    // A raised number embedded in a text line is a strong note-reference signal.
-    // Exclude a leading token to avoid interpreting numbered lists/headings as notes.
-    const hasTextBefore = line.words.slice(0, index).some((item) => /[\p{L}\p{N}]/u.test(item.text));
-    const hasTextAfter = line.words.slice(index + 1).some((item) => /[\p{L}\p{N}]/u.test(item.text));
+    const hasTextBefore = index > 0 || word.text.length > marker.length;
+    const hasTextAfter = index < line.words.length - 1;
     if (!hasTextBefore && !hasTextAfter) continue;
-    markers.push(word.text);
+    markers.push(marker);
   }
 
   return uniqueStrings(markers);
+}
+
+/**
+ * Poppler sometimes merges a superscript number into the preceding word
+ * (`year.24`). Once the same page has a smaller-text `24 ...` note start, an
+ * embedded non-leading occurrence is safe to use as a fallback body anchor.
+ */
+function findInlineMarkersMatching(text: string, candidates: ReadonlySet<string>): string[] {
+  const matches: string[] = [];
+  for (const marker of candidates) {
+    const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`(?:[\\p{L}\\p{M}\\p{P}])\\s*${escaped}(?=$|[\\s\\p{P}])`, 'u');
+    if (pattern.test(text)) matches.push(marker);
+  }
+  return matches;
+}
+
+function leadingNoteMarker(text: string): string | null {
+  const match = text.trim().match(/^([1-9][0-9]{0,2})(?:[.)]?\s+|$)/u);
+  return match?.[1] ?? null;
+}
+
+function stripLeadingNoteMarker(text: string, marker: string): string {
+  const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return normalizeWhitespace(text.replace(new RegExp(`^${escaped}(?:[.)]?\\s*)`, 'u'), ''));
+}
+
+function isNoteSizedLine(line: LayoutLine, medianWordHeight: number): boolean {
+  return typicalWordHeight(line) <= medianWordHeight * 0.97;
+}
+
+function typicalWordHeight(line: LayoutLine): number {
+  return medianNumber(line.words.map((word) => Math.max(1, word.yMax - word.yMin)))
+    ?? Math.max(1, line.yMax - line.yMin);
 }
 
 function findRepeatedMarginLines(lines: LayoutLine[], pageCount: number): Set<string> {
@@ -450,7 +665,10 @@ function joinLines(lines: string[]): string {
   for (const raw of lines) {
     const line = normalizeWhitespace(raw);
     if (!line) continue;
-    if (!result) { result = line; continue; }
+    if (!result) {
+      result = line;
+      continue;
+    }
     if (/\p{L}-$/u.test(result) && /^\p{Ll}/u.test(line)) {
       result = `${result.slice(0, -1)}${line}`;
     } else {
