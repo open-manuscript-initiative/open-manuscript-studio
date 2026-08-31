@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 
+import { claimOmpReviewLaunch } from '../services/ompReviewApi';
 import { claimOjsReviewLaunch } from '../services/peerReviewApi';
 import { AssignmentStudioMenu } from './AssignmentStudioMenu';
 import { EditorReviewMode, loadEditorReviewOverview } from './EditorReviewMode';
@@ -17,16 +18,25 @@ export function ReviewPortal() {
     void (async () => {
       try {
         const url = new URL(window.location.href);
-        if (url.searchParams.get('ojsReviewLaunch') === '1') {
+        const ojsLaunch = url.searchParams.get('ojsReviewLaunch') === '1';
+        const ompLaunch = url.searchParams.get('ompReviewLaunch') === '1';
+
+        if (ojsLaunch || ompLaunch) {
           const payload = url.searchParams.get('payload') ?? '';
           const signature = url.searchParams.get('signature') ?? '';
           if (!payload || !signature) {
-            throw new Error('The OJS reviewer launch data is incomplete.');
+            throw new Error(
+              ompLaunch
+                ? 'The OMP reviewer launch data is incomplete.'
+                : 'The OJS reviewer launch data is incomplete.',
+            );
           }
 
-          await claimOjsReviewLaunch(payload, signature);
+          if (ompLaunch) await claimOmpReviewLaunch(payload, signature);
+          else await claimOjsReviewLaunch(payload, signature);
 
           url.searchParams.delete('ojsReviewLaunch');
+          url.searchParams.delete('ompReviewLaunch');
           url.searchParams.delete('payload');
           url.searchParams.delete('signature');
           window.history.replaceState(
@@ -40,7 +50,9 @@ export function ReviewPortal() {
         if (active) setEditorReviews(reviews);
       } catch (error) {
         if (!active) return;
-        setLaunchError(error instanceof Error ? error.message : 'Unable to open the OJS review assignment.');
+        setLaunchError(
+          error instanceof Error ? error.message : 'Unable to open the external review assignment.',
+        );
         setEditorReviews([]);
       }
     })();
