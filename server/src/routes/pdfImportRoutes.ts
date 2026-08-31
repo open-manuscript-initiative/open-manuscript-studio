@@ -49,7 +49,12 @@ pdfImportRouter.get('/pdf/:jobId', (request: AuthenticatedRequest, response) => 
     response.status(401).json({ error: { code: 'UNAUTHENTICATED', message: 'Authentication is required.' } });
     return;
   }
-  const job = getPdfImportJob(request.authUserId, request.params.jobId);
+  const jobId = request.params.jobId;
+  if (typeof jobId !== 'string' || !jobId) {
+    response.status(400).json({ error: { code: 'PDF_IMPORT_JOB_ID_REQUIRED', message: 'A PDF import job id is required.' } });
+    return;
+  }
+  const job = getPdfImportJob(request.authUserId, jobId);
   if (!job) {
     response.status(404).json({ error: { code: 'PDF_IMPORT_NOT_FOUND', message: 'PDF import job not found.' } });
     return;
@@ -62,7 +67,12 @@ pdfImportRouter.get('/pdf/:jobId/result', (request: AuthenticatedRequest, respon
     response.status(401).json({ error: { code: 'UNAUTHENTICATED', message: 'Authentication is required.' } });
     return;
   }
-  const job = getPdfImportJob(request.authUserId, request.params.jobId);
+  const jobId = request.params.jobId;
+  if (typeof jobId !== 'string' || !jobId) {
+    response.status(400).json({ error: { code: 'PDF_IMPORT_JOB_ID_REQUIRED', message: 'A PDF import job id is required.' } });
+    return;
+  }
+  const job = getPdfImportJob(request.authUserId, jobId);
   if (!job) {
     response.status(404).json({ error: { code: 'PDF_IMPORT_NOT_FOUND', message: 'PDF import job not found.' } });
     return;
@@ -76,7 +86,7 @@ pdfImportRouter.get('/pdf/:jobId/result', (request: AuthenticatedRequest, respon
     });
     return;
   }
-  const result = getPdfImportResult(request.authUserId, request.params.jobId);
+  const result = getPdfImportResult(request.authUserId, jobId);
   if (!result) {
     response.status(404).json({ error: { code: 'PDF_IMPORT_RESULT_NOT_FOUND', message: 'PDF import result is unavailable.' } });
     return;
