@@ -25,6 +25,8 @@ export interface PdfImportBlock {
   confidence: number;
   headingLevel?: number;
   noteMarker?: string;
+  /** Numeric note references detected from superscript PDF geometry. */
+  noteAnchors?: string[];
 }
 
 export interface PdfImportResult {
@@ -59,6 +61,14 @@ interface PdfImportJob extends PdfImportJobSnapshot {
   result?: PdfImportResult;
 }
 
+interface LayoutWord {
+  text: string;
+  xMin: number;
+  xMax: number;
+  yMin: number;
+  yMax: number;
+}
+
 interface LayoutLine {
   page: number;
   pageWidth: number;
@@ -68,6 +78,7 @@ interface LayoutLine {
   yMin: number;
   yMax: number;
   text: string;
+  words: LayoutWord[];
   column: 'full' | 'left' | 'right';
 }
 
@@ -187,10 +198,22 @@ function parseBboxLayout(html: string): Array<{ width: number; height: number; l
     let lineMatch: RegExpExecArray | null;
     while ((lineMatch = linePattern.exec(body)) !== null) {
       const lineAttrs = lineMatch[1] ?? '';
-      const words = [...(lineMatch[2] ?? '').matchAll(/<word\b[^>]*>([\s\S]*?)<\/word>/gi)]
-        .map((match) => decodeXmlText(match[1] ?? ''))
-        .filter(Boolean);
-      const text = normalizeWhitespace(words.join(' '));
+      const words: LayoutWord[] = [];
+      const wordPattern = /<word\b([^>]*)>([\s\S]*?)<\/word>/gi;
+      let wordMatch: RegExpExecArray | null;
+      while ((wordMatch = wordPattern.exec(lineMatch[2] ?? '')) !== null) {
+        const wordAttrs = wordMatch[1] ?? '';
+        const text = normalizeWhitespace(decodeXmlText(wordMatch[2] ?? ''));
+        if (!text) continue;
+        words.push({
+          text,
+          xMin: attrNumber(wordAttrs, 'xMin'),
+          xMax: attrNumber(wordAttrs, 'xMax'),
+          yMin: attrNumber(wordAttrs, 'yMin'),
+          yMax: attrNumber(wordAttrs, 'yMax'),
+        });
+      }
+      const text = normalizeWhitespace(words.map((word) => word.text).join(' '));
       if (!text) continue;
       lines.push({
         page: pageNumber,
@@ -201,6 +224,7 @@ function parseBboxLayout(html: string): Array<{ width: number; height: number; l
         yMin: attrNumber(lineAttrs, 'yMin'),
         yMax: attrNumber(lineAttrs, 'yMax'),
         text,
+        words,
         column: 'full',
       });
     }
@@ -258,6 +282,8 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
   }
   const heights = lines.map((line) => Math.max(1, line.yMax - line.yMin)).sort((a, b) => a - b);
   const medianHeight = heights[Math.floor(heights.length / 2)] ?? 10;
+  const wordHeights = lines.flatMap((line) => line.words.map((word) => Math.max(1, word.yMax - word.yMin))).sort((a, b) => a - b);
+  const medianWordHeight = wordHeights[Math.floor(wordHeights.length / 2)] ?? medianHeight;
   const blocks: PdfImportBlock[] = [];
   let paragraph: LayoutLine[] = [];
 
@@ -265,7 +291,16 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
     if (!paragraph.length) return;
     const first = paragraph[0]!;
     const text = joinLines(paragraph.map((line) => line.text));
-    if (text) blocks.push({ kind: 'paragraph', text, page: first.page, confidence: 0.86 });
+    const noteAnchors = uniqueStrings(paragraph.flatMap((line) => findSuperscriptNoteMarkers(line, medianWordHeight)));
+    if (text) {
+      blocks.push({
+        kind: 'paragraph',
+        text,
+        page: first.page,
+        confidence: 0.86,
+        ...(noteAnchors.length ? { noteAnchors } : {}),
+      });
+    }
     paragraph = [];
   };
 
@@ -277,7 +312,10 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
 
   for (const line of lines) {
     const height = Math.max(1, line.yMax - line.yMin);
-    const footnote = line.yMin >= line.pageHeight * 0.76 && height <= medianHeight * 0.92
+    const typicalWordHeight = medianNumber(line.words.map((word) => Math.max(1, word.yMax - word.yMin))) ?? height;
+    const inProbableNoteZone = line.yMin >= line.pageHeight * 0.45;
+    const noteSized = typicalWordHeight <= medianWordHeight * 0.9;
+    const footnote = inProbableNoteZone && noteSized
       ? line.text.match(/^([0-9]{1,3}|[*†‡])(?:[.)]?\s+)(.+)$/u)
       : null;
     if (footnote) {
@@ -290,7 +328,7 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
           text: footnoteText,
           ...(noteMarker ? { noteMarker } : {}),
           page: line.page,
-          confidence: 0.72,
+          confidence: 0.82,
         });
       }
       continue;
@@ -353,6 +391,32 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
   };
 }
 
+function findSuperscriptNoteMarkers(line: LayoutLine, medianWordHeight: number): string[] {
+  if (line.words.length < 2 || medianWordHeight <= 0) return [];
+  const markers: string[] = [];
+  const lineBottom = Math.max(...line.words.map((word) => word.yMax));
+
+  for (let index = 0; index < line.words.length; index += 1) {
+    const word = line.words[index]!;
+    if (!/^[1-9][0-9]{0,2}$/u.test(word.text)) continue;
+
+    const wordHeight = Math.max(1, word.yMax - word.yMin);
+    const baselineLift = lineBottom - word.yMax;
+    const smallEnough = wordHeight <= medianWordHeight * 0.86;
+    const raisedEnough = baselineLift >= Math.max(0.7, medianWordHeight * 0.07);
+    if (!smallEnough || !raisedEnough) continue;
+
+    // A raised number embedded in a text line is a strong note-reference signal.
+    // Exclude a leading token to avoid interpreting numbered lists/headings as notes.
+    const hasTextBefore = line.words.slice(0, index).some((item) => /[\p{L}\p{N}]/u.test(item.text));
+    const hasTextAfter = line.words.slice(index + 1).some((item) => /[\p{L}\p{N}]/u.test(item.text));
+    if (!hasTextBefore && !hasTextAfter) continue;
+    markers.push(word.text);
+  }
+
+  return uniqueStrings(markers);
+}
+
 function findRepeatedMarginLines(lines: LayoutLine[], pageCount: number): Set<string> {
   const occurrences = new Map<string, Set<number>>();
   for (const line of lines) {
@@ -394,6 +458,16 @@ function joinLines(lines: string[]): string {
     }
   }
   return normalizeWhitespace(result);
+}
+
+function uniqueStrings(values: readonly string[]): string[] {
+  return [...new Set(values)];
+}
+
+function medianNumber(values: readonly number[]): number | null {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)] ?? null;
 }
 
 function byPosition(a: LayoutLine, b: LayoutLine): number {
