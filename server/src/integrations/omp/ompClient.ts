@@ -1,3 +1,10 @@
+import { applyDirectFormattingHeadingInference } from '../ojs/docxDirectHeading.js';
+import { applyInlineSemantics } from '../ojs/docxInlineSemantics.js';
+import { applyStyleInheritedLists } from '../ojs/docxListInheritance.js';
+import { applyNoteIntegrity } from '../ojs/docxNoteIntegrity.js';
+import { applyReferenceSemantics } from '../ojs/docxReferences.js';
+import { parseDocxSource, type OjsSourceDocument } from '../ojs/docxSource.js';
+import { applyStructuredContent } from '../ojs/docxStructuredContent.js';
 import type { OmpLaunchClaims } from './launchVerifier.js';
 import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
 
@@ -11,36 +18,47 @@ interface OmpContributorsResponse {
   contributors?: Array<Record<string, unknown>>;
 }
 
+interface OmpFileDescriptor extends Record<string, unknown> {
+  externalId?: string;
+  name?: string;
+  mediaType?: string;
+  size?: number | null;
+  stage?: number | null;
+  genreKey?: string | null;
+  genreName?: string | null;
+  revision?: number | null;
+  updatedAt?: string | null;
+  contentPath?: string;
+}
+
 interface OmpFilesResponse {
-  files?: Array<Record<string, unknown>>;
+  files?: OmpFileDescriptor[];
 }
 
 export interface OmpLaunchData {
   submission: Record<string, unknown> | null;
   contributors: Array<Record<string, unknown>>;
-  files: Array<Record<string, unknown>>;
+  files: OmpFileDescriptor[];
+  sourceDocument?: OjsSourceDocument;
 }
+
+const MAX_SOURCE_FILE_BYTES = 25 * 1024 * 1024;
 
 function endpoint(baseUrl: string, operation: string): string {
   let normalized = baseUrl;
-  while (normalized.endsWith('/')) {
-    normalized = normalized.slice(0, -1);
-  }
+  while (normalized.endsWith('/')) normalized = normalized.slice(0, -1);
   return `${normalized}/${operation}`;
 }
 
 function isRedirect(status: number): boolean {
-  return status === 301 ||
-    status === 302 ||
-    status === 303 ||
-    status === 307 ||
-    status === 308;
+  return [301, 302, 303, 307, 308].includes(status);
 }
 
 async function fetchWithSameOriginRedirects(
   initialUrl: URL,
   payload: string,
   signature: string,
+  accept = 'application/json',
 ): Promise<Response> {
   const trustedOrigin = initialUrl.origin;
   const visited = new Set<string>();
@@ -52,17 +70,12 @@ async function fetchWithSameOriginRedirects(
     currentUrl.searchParams.delete('signature');
 
     const currentKey = currentUrl.toString();
-    if (visited.has(currentKey)) {
-      throw new Error('OMP request entered a redirect loop.');
-    }
+    if (visited.has(currentKey)) throw new Error('OMP request entered a redirect loop.');
     visited.add(currentKey);
 
     const response = await fetch(currentUrl, {
       method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        Authorization: authorization,
-      },
+      headers: { Accept: accept, Authorization: authorization },
       redirect: 'manual',
       signal: AbortSignal.timeout(30_000),
     });
@@ -89,21 +102,82 @@ async function readJson<T>(
   payload: string,
   signature: string,
 ): Promise<T> {
-  const target = new URL(url);
-  const response = await fetchWithSameOriginRedirects(target, payload, signature);
+  const response = await fetchWithSameOriginRedirects(new URL(url), payload, signature);
 
   if (!response.ok) {
     const body = await response.json().catch(() => null) as
       | { error?: { message?: string }; message?: string }
       | null;
     throw new Error(
-      body?.error?.message ||
-      body?.message ||
-      `OMP request failed with HTTP ${response.status}.`,
+      body?.error?.message || body?.message || `OMP request failed with HTTP ${response.status}.`,
     );
   }
 
   return await response.json() as T;
+}
+
+function isDocx(file: OmpFileDescriptor): boolean {
+  const mediaType = (file.mediaType || '').toLowerCase();
+  const name = (file.name || '').toLowerCase();
+  return mediaType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+    name.endsWith('.docx');
+}
+
+function compareSourceFiles(a: OmpFileDescriptor, b: OmpFileDescriptor): number {
+  const revisionDifference = Number(b.revision || 0) - Number(a.revision || 0);
+  if (revisionDifference) return revisionDifference;
+  return Date.parse(b.updatedAt || '') - Date.parse(a.updatedAt || '');
+}
+
+async function loadSourceDocument(
+  files: OmpFileDescriptor[],
+  apiBaseUrl: string,
+  payload: string,
+  signature: string,
+): Promise<OjsSourceDocument | undefined> {
+  const candidate = files
+    .filter((file) => isDocx(file) && file.externalId && file.contentPath)
+    .filter((file) => !file.size || file.size <= MAX_SOURCE_FILE_BYTES)
+    .sort(compareSourceFiles)[0];
+  if (!candidate?.externalId || !candidate.contentPath) return undefined;
+
+  const base = new URL(`${apiBaseUrl.replace(/\/$/, '')}/`);
+  const contentUrl = new URL(candidate.contentPath.replace(/^\//, ''), base);
+  if (contentUrl.origin !== base.origin) {
+    throw new Error('OMP source file URL escaped the registered installation origin.');
+  }
+
+  const response = await fetchWithSameOriginRedirects(
+    contentUrl,
+    payload,
+    signature,
+    candidate.mediaType || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  );
+  if (!response.ok) {
+    throw new Error(`OMP source file ${candidate.externalId} request failed with HTTP ${response.status}.`);
+  }
+
+  const declaredLength = Number(response.headers.get('content-length') || 0);
+  if (declaredLength > MAX_SOURCE_FILE_BYTES) {
+    throw new Error('The OMP DOCX source file exceeds the 25 MB import limit.');
+  }
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (bytes.length > MAX_SOURCE_FILE_BYTES) {
+    throw new Error('The OMP DOCX source file exceeds the 25 MB import limit.');
+  }
+
+  const parsed = parseDocxSource(
+    bytes,
+    candidate.externalId,
+    candidate.name || `monograph-${candidate.externalId}.docx`,
+    candidate.mediaType || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  );
+  const withHeadings = applyDirectFormattingHeadingInference(bytes, parsed);
+  const withInlineSemantics = applyInlineSemantics(bytes, withHeadings);
+  const withStructuredContent = applyStructuredContent(bytes, withInlineSemantics);
+  const withLists = applyStyleInheritedLists(bytes, withStructuredContent);
+  const withNotes = applyNoteIntegrity(bytes, withLists);
+  return applyReferenceSemantics(bytes, withNotes);
 }
 
 export async function loadOmpLaunchData(
@@ -116,9 +190,7 @@ export async function loadOmpLaunchData(
 
   if (!apiBaseUrl) {
     return {
-      submission: claims.submission
-        ? { ...claims.submission }
-        : null,
+      submission: claims.submission ? { ...claims.submission } : null,
       contributors: [],
       files: [],
     };
@@ -129,12 +201,8 @@ export async function loadOmpLaunchData(
     throw new Error('The OMP launch assertion does not include externalBaseUrl.');
   }
 
-  const trustedApiBaseUrl = await assertTrustedIntegrationUrl(
-    apiBaseUrl,
-    externalBaseUrl,
-  );
+  const trustedApiBaseUrl = await assertTrustedIntegrationUrl(apiBaseUrl, externalBaseUrl);
   const trustedApiBaseUrlString = trustedApiBaseUrl.toString().replace(/\/$/, '');
-
   const canReadSubmission = scopes.has('metadata.read') || scopes.has('review.metadata.read');
   const canReadFiles = scopes.has('files.read') || scopes.has('review.files.read');
 
@@ -155,15 +223,21 @@ export async function loadOmpLaunchData(
   ]);
 
   if (
-    submission.protocol && submission.protocol !== 'omi-integration/1' ||
-    submission.profile && submission.profile !== 'omi-integration/1/omp'
+    (submission.protocol && submission.protocol !== 'omi-integration/1') ||
+    (submission.profile && submission.profile !== 'omi-integration/1/omp')
   ) {
     throw new Error('OMP submission endpoint returned an incompatible integration profile.');
   }
 
+  const fileItems = files.files ?? [];
+  const sourceDocument = canReadFiles
+    ? await loadSourceDocument(fileItems, trustedApiBaseUrlString, payload, signature)
+    : undefined;
+
   return {
     submission: submission.submission ?? (claims.submission ? { ...claims.submission } : null),
     contributors: contributors.contributors ?? [],
-    files: files.files ?? [],
+    files: fileItems,
+    ...(sourceDocument ? { sourceDocument } : {}),
   };
 }
