@@ -10,6 +10,13 @@ import type {
   OmiSection,
 } from '../types/omi';
 
+interface MaterializedPdfNote {
+  marker: string;
+  noteId: string;
+  anchorId: string;
+  body: string;
+}
+
 export function applyPdfImportResult(result: PdfImportResult): string {
   const current = useStudioStore.getState().manuscript;
   const timestamp = new Date().toISOString();
@@ -17,7 +24,8 @@ export function applyPdfImportResult(result: PdfImportResult): string {
   const annotations: OmiAnnotation[] = [];
   const sections: OmiSection[] = [];
   const importedBlocks = coalescePdfParagraphLines(result.blocks);
-  const noteTargets = new Map<string, OmiBlock>();
+  const footnotes = indexPdfFootnotes(importedBlocks);
+  const consumedFootnotes = new Set<string>();
 
   let section: OmiSection = createSection('Imported PDF');
   sections.push(section);
@@ -36,37 +44,53 @@ export function applyPdfImportResult(result: PdfImportResult): string {
     }
 
     if (imported.kind === 'footnote') {
-      const target = imported.noteMarker
-        ? noteTargets.get(noteTargetKey(imported.page, imported.noteMarker))
-        : undefined;
-      const targetBlock = target ?? previousTextBlock;
-      if (!targetBlock) continue;
+      const marker = imported.noteMarker?.trim();
+      if (marker && consumedFootnotes.has(noteTargetKey(imported.page, marker))) continue;
 
-      annotations.push({
-        id: crypto.randomUUID(),
-        type: 'note',
-        noteKind: 'footnote',
-        anchorId: crypto.randomUUID(),
-        targetBlockId: targetBlock.id,
-        ...(imported.noteMarker ? { targetText: imported.noteMarker } : {}),
-        body: imported.text,
-        renderingHint: 'footnote',
-        createdAt: timestamp,
-        modifiedAt: timestamp,
-      });
+      // Keep an unlinked note rather than dropping data if PDF reconstruction
+      // could not locate a trustworthy inline marker for it.
+      if (previousTextBlock) {
+        annotations.push({
+          id: crypto.randomUUID(),
+          type: 'note',
+          noteKind: 'footnote',
+          anchorId: crypto.randomUUID(),
+          targetBlockId: previousTextBlock.id,
+          ...(marker ? { targetText: marker } : {}),
+          body: imported.text,
+          renderingHint: 'footnote',
+          createdAt: timestamp,
+          modifiedAt: timestamp,
+        });
+      }
       continue;
     }
 
+    const blockId = crypto.randomUUID();
+    const notes = materializeNotesForBlock(imported, footnotes, consumedFootnotes);
     const block: OmiBlock = {
-      id: crypto.randomUUID(),
+      id: blockId,
       type: imported.kind === 'heading' ? 'heading' : 'paragraph',
-      content: imported.text,
+      content: notes.length > 0
+        ? createRichTextWithNoteAnchors(imported.text, notes)
+        : imported.text,
     };
     section.blocks.push(block);
     previousTextBlock = block;
 
-    for (const marker of imported.noteAnchors ?? []) {
-      noteTargets.set(noteTargetKey(imported.page, marker), block);
+    for (const note of notes) {
+      annotations.push({
+        id: note.noteId,
+        type: 'note',
+        noteKind: 'footnote',
+        anchorId: note.anchorId,
+        targetBlockId: block.id,
+        targetText: note.marker,
+        body: note.body,
+        renderingHint: 'footnote',
+        createdAt: timestamp,
+        modifiedAt: timestamp,
+      });
     }
   }
 
@@ -109,6 +133,95 @@ export function applyPdfImportResult(result: PdfImportResult): string {
   const manuscript: OmiManuscript = { ...state, ...envelope };
   useStudioStore.getState().loadManuscript(manuscript);
   return manuscriptId;
+}
+
+function indexPdfFootnotes(blocks: readonly PdfImportBlock[]): Map<string, PdfImportBlock> {
+  const footnotes = new Map<string, PdfImportBlock>();
+  for (const block of blocks) {
+    const marker = block.kind === 'footnote' ? block.noteMarker?.trim() : undefined;
+    if (!marker) continue;
+    footnotes.set(noteTargetKey(block.page, marker), block);
+  }
+  return footnotes;
+}
+
+function materializeNotesForBlock(
+  block: PdfImportBlock,
+  footnotes: ReadonlyMap<string, PdfImportBlock>,
+  consumed: Set<string>,
+): MaterializedPdfNote[] {
+  if (block.kind !== 'paragraph' || !block.noteAnchors?.length) return [];
+
+  const notes: MaterializedPdfNote[] = [];
+  for (const rawMarker of block.noteAnchors) {
+    const marker = rawMarker.trim();
+    const key = noteTargetKey(block.page, marker);
+    const footnote = footnotes.get(key);
+    if (!marker || !footnote || consumed.has(key)) continue;
+    if (findInlineMarkerOffset(block.text, marker) < 0) continue;
+
+    notes.push({
+      marker,
+      noteId: crypto.randomUUID(),
+      anchorId: crypto.randomUUID(),
+      body: footnote.text,
+    });
+    consumed.add(key);
+  }
+  return notes;
+}
+
+/**
+ * Convert a legacy text block into the same Tiptap structure produced by the
+ * native OmiNoteExtension. The printed marker is replaced by an atom node, so
+ * the editor renders a clickable note point instead of an unrelated number.
+ */
+function createRichTextWithNoteAnchors(
+  text: string,
+  notes: readonly MaterializedPdfNote[],
+): string {
+  const placements = notes
+    .map((note) => ({ note, offset: findInlineMarkerOffset(text, note.marker) }))
+    .filter((placement) => placement.offset >= 0)
+    .sort((left, right) => left.offset - right.offset);
+
+  const content: Array<Record<string, unknown>> = [];
+  let cursor = 0;
+  for (const placement of placements) {
+    if (placement.offset < cursor) continue;
+    const before = text.slice(cursor, placement.offset);
+    if (before) content.push({ type: 'text', text: before });
+    content.push({
+      type: 'omiNote',
+      attrs: {
+        noteId: placement.note.noteId,
+        anchorId: placement.note.anchorId,
+        label: placement.note.marker,
+        noteType: 'footnote',
+      },
+    });
+    cursor = placement.offset + placement.note.marker.length;
+  }
+  const after = text.slice(cursor);
+  if (after) content.push({ type: 'text', text: after });
+
+  return JSON.stringify({
+    type: 'doc',
+    content: [{ type: 'paragraph', content }],
+  });
+}
+
+function findInlineMarkerOffset(text: string, marker: string): number {
+  const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const expression = new RegExp(`(?:^|[^0-9])(${escaped})(?=$|[^0-9])`, 'gu');
+  let result = -1;
+  for (const match of text.matchAll(expression)) {
+    if (match.index === undefined) continue;
+    const capture = match[1];
+    if (!capture) continue;
+    result = match.index + match[0].indexOf(capture);
+  }
+  return result;
 }
 
 /**
@@ -205,10 +318,6 @@ function shouldJoinWrappedLine(previous: string, current: string): boolean {
   if (/[,;:–—]$/u.test(left)) return true;
   if (/^[\p{Ll}\p{M}]/u.test(right)) return true;
 
-  // A full journal line is usually a soft wrap. A short sentence-ending line
-  // is instead treated as a paragraph boundary. Keeping the decision tied to
-  // the original line avoids accidentally absorbing the next paragraph after
-  // several lines have already been merged.
   return left.length >= 50;
 }
 
