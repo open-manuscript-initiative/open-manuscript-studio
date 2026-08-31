@@ -4,6 +4,10 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import {
+  canonicalizePdfPageTypography,
+  parseCanonicalNoteMarker,
+} from './pdfCanonicalTypography.js';
 
 const execFileAsync = promisify(execFile);
 const MAX_PDF_BYTES = 100 * 1024 * 1024;
@@ -66,6 +70,12 @@ interface LayoutWord {
   xMax: number;
   yMin: number;
   yMax: number;
+  rawText?: string;
+  canonicalText?: string;
+  script?: 'normal' | 'superscript' | 'subscript';
+  fontHeight?: number;
+  baselineOffset?: number;
+  superscriptMarker?: string;
 }
 
 interface LayoutLine {
@@ -210,7 +220,7 @@ function parseBboxLayout(html: string): Array<{ width: number; height: number; l
 
       while ((wordMatch = wordPattern.exec(lineMatch[2] ?? '')) !== null) {
         const wordAttrs = wordMatch[1] ?? '';
-        const text = normalizeWhitespace(decodeXmlText(wordMatch[2] ?? ''));
+        const text = normalizeWhitespace(decodeXmlText(wordMatch[2] ?? '')).normalize('NFC');
         if (!text) continue;
         words.push({
           text,
@@ -236,6 +246,11 @@ function parseBboxLayout(html: string): Array<{ width: number; height: number; l
         column: 'full',
       });
     }
+
+    // Canonicalize the complete page before semantic reconstruction. This keeps
+    // raw glyphs and display text while deriving NFKC values and script position
+    // from page-local geometry. Footnote detection only runs after this stage.
+    canonicalizePdfPageTypography(lines);
     pages.push({ width, height, lines });
   }
 
@@ -293,7 +308,7 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
   const heights = lines.map((line) => Math.max(1, line.yMax - line.yMin)).sort((a, b) => a - b);
   const medianHeight = heights[Math.floor(heights.length / 2)] ?? 10;
   const wordHeights = lines
-    .flatMap((line) => line.words.map((word) => Math.max(1, word.yMax - word.yMin)))
+    .flatMap((line) => line.words.map((word) => word.fontHeight ?? Math.max(1, word.yMax - word.yMin)))
     .sort((a, b) => a - b);
   const medianWordHeight = wordHeights[Math.floor(wordHeights.length / 2)] ?? medianHeight;
   const pageExtractions = extractPageLocalFootnotes(lines, pageCount, medianHeight, medianWordHeight);
@@ -368,7 +383,7 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
     if (block.kind === 'footnote') {
       warnings.push({
         code: 'footnote-review',
-        message: 'A probable footnote was matched from a superscript marker to a same-page note start and should be checked.',
+        message: 'A probable footnote was matched after canonical page typography reconstruction and should be checked.',
         page: block.page,
       });
     }
@@ -405,6 +420,8 @@ function extractPageLocalFootnotes(
       continue;
     }
 
+    // Semantic note recognition starts only now, after every word on the page has
+    // canonical Unicode and preserved script-position metadata.
     const geometricAnchors = new Map<number, string[]>();
     for (let index = 0; index < pageLines.length; index += 1) {
       const markers = findSuperscriptNoteMarkers(pageLines[index]!, medianWordHeight);
@@ -602,34 +619,31 @@ function findPossibleNoteStarts(
 }
 
 function findSuperscriptNoteMarkers(line: LayoutLine, medianWordHeight: number): string[] {
-  if (line.words.length < 2 || medianWordHeight <= 0) return [];
+  if (!line.words.length || medianWordHeight <= 0) return [];
   const markers: string[] = [];
-  const bodyWords = line.words.filter((word) => parseStandaloneNoteMarker(word.text) === null);
-  const localHeight = medianNumber(bodyWords.map((word) => Math.max(1, word.yMax - word.yMin)))
-    ?? medianWordHeight;
-  const localBaseline = medianNumber(bodyWords.map((word) => word.yMax))
-    ?? Math.max(...line.words.map((word) => word.yMax));
 
   for (let index = 0; index < line.words.length; index += 1) {
     const word = line.words[index]!;
-    const exactMarker = parseStandaloneNoteMarker(word.text);
-    if (!exactMarker) continue;
+    const marker = word.superscriptMarker
+      ?? (word.script === 'superscript' ? parseCanonicalNoteMarker(word.canonicalText ?? word.text) : null);
+    if (!marker) continue;
+
+    // Explicit Unicode superscript suffixes survive even when Poppler merged the
+    // marker with the previous lexical token. Geometry-derived ASCII markers
+    // still require normal lexical attachment/proximity checks.
+    if (word.superscriptMarker && !parseCanonicalNoteMarker(word.canonicalText ?? '')) {
+      markers.push(marker);
+      continue;
+    }
 
     const previous = line.words[index - 1];
-    if (!previous || !/[\p{L}\p{M}\p{P}]$/u.test(previous.text)) continue;
-
-    const wordHeight = Math.max(1, word.yMax - word.yMin);
-    const baselineLift = localBaseline - word.yMax;
-    const unicodeSuperscript = /^[¹²³⁴⁵⁶⁷⁸⁹⁰]+$/u.test(word.text);
-    const smallEnough = wordHeight <= localHeight * 0.92;
-    const raisedEnough = baselineLift >= Math.max(0.45, localHeight * 0.045);
-    if (!unicodeSuperscript && !smallEnough && !raisedEnough) continue;
+    if (!previous || !/[\p{L}\p{M}\p{P}]$/u.test(previous.rawText ?? previous.text)) continue;
 
     const horizontalGap = Math.max(0, word.xMin - previous.xMax);
-    const attachedOrNarrowSpace = horizontalGap <= Math.max(5.5, localHeight * 0.65);
-    if (!attachedOrNarrowSpace) continue;
+    const localHeight = word.fontHeight ?? Math.max(1, word.yMax - word.yMin);
+    if (horizontalGap > Math.max(7, localHeight * 0.85)) continue;
 
-    markers.push(exactMarker);
+    markers.push(marker);
   }
 
   return uniqueStrings(markers);
@@ -647,37 +661,18 @@ function findAttachedInlineMarkers(
   }
 
   for (const word of line.words) {
-    const asciiMatch = word.text.match(/[\p{L}\p{M}\p{P}]([1-9][0-9]{0,2})$/u)?.[1];
-    const superscriptMatch = word.text.match(/[\p{L}\p{M}\p{P}]([¹²³⁴⁵⁶⁷⁸⁹⁰]{1,3})$/u)?.[1];
-    const marker = asciiMatch ?? normalizeSuperscriptDigits(superscriptMatch ?? '');
+    if (word.superscriptMarker && candidates.has(word.superscriptMarker)) {
+      matches.add(word.superscriptMarker);
+      continue;
+    }
+
+    const canonical = word.canonicalText ?? word.text.normalize('NFKC');
+    const match = canonical.match(/[\p{L}\p{M}\p{P}]([1-9][0-9]{0,2})$/u);
+    const marker = match?.[1];
     if (marker && candidates.has(marker)) matches.add(marker);
   }
 
   return [...matches];
-}
-
-function parseStandaloneNoteMarker(value: string): string | null {
-  const ascii = value.match(/^([1-9][0-9]{0,2})$/u)?.[1];
-  if (ascii) return ascii;
-  if (!/^[¹²³⁴⁵⁶⁷⁸⁹⁰]{1,3}$/u.test(value)) return null;
-  const normalized = normalizeSuperscriptDigits(value);
-  return /^[1-9][0-9]{0,2}$/u.test(normalized) ? normalized : null;
-}
-
-function normalizeSuperscriptDigits(value: string): string {
-  const map: Record<string, string> = {
-    '⁰': '0',
-    '¹': '1',
-    '²': '2',
-    '³': '3',
-    '⁴': '4',
-    '⁵': '5',
-    '⁶': '6',
-    '⁷': '7',
-    '⁸': '8',
-    '⁹': '9',
-  };
-  return [...value].map((character) => map[character] ?? character).join('');
 }
 
 function isNoteSizedLine(line: LayoutLine, medianWordHeight: number): boolean {
@@ -685,7 +680,7 @@ function isNoteSizedLine(line: LayoutLine, medianWordHeight: number): boolean {
 }
 
 function typicalWordHeight(line: LayoutLine): number {
-  return medianNumber(line.words.map((word) => Math.max(1, word.yMax - word.yMin)))
+  return medianNumber(line.words.map((word) => word.fontHeight ?? Math.max(1, word.yMax - word.yMin)))
     ?? Math.max(1, line.yMax - line.yMin);
 }
 

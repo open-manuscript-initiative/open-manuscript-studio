@@ -1,0 +1,132 @@
+export type PdfScriptPosition = 'normal' | 'superscript' | 'subscript';
+
+export interface CanonicalPdfWord {
+  text: string;
+  xMin: number;
+  xMax: number;
+  yMin: number;
+  yMax: number;
+  rawText?: string;
+  canonicalText?: string;
+  script?: PdfScriptPosition;
+  fontHeight?: number;
+  baselineOffset?: number;
+  superscriptMarker?: string;
+}
+
+export interface CanonicalPdfLine<TWord extends CanonicalPdfWord = CanonicalPdfWord> {
+  words: TWord[];
+}
+
+const SUPERSCRIPT_DIGITS: Record<string, string> = {
+  '⁰': '0',
+  '¹': '1',
+  '²': '2',
+  '³': '3',
+  '⁴': '4',
+  '⁵': '5',
+  '⁶': '6',
+  '⁷': '7',
+  '⁸': '8',
+  '⁹': '9',
+};
+
+const SUBSCRIPT_DIGITS: Record<string, string> = {
+  '₀': '0',
+  '₁': '1',
+  '₂': '2',
+  '₃': '3',
+  '₄': '4',
+  '₅': '5',
+  '₆': '6',
+  '₇': '7',
+  '₈': '8',
+  '₉': '9',
+};
+
+/**
+ * Build a page-local canonical typography representation before any semantic
+ * PDF reconstruction. `rawText` preserves the extractor output, `text` is NFC
+ * for stable display, and `canonicalText` is NFKC for semantic matching.
+ * Script position remains a separate property so normalization never destroys
+ * evidence that a marker was printed as superscript/subscript.
+ */
+export function canonicalizePdfPageTypography<TLine extends CanonicalPdfLine>(lines: TLine[]): TLine[] {
+  for (const line of lines) canonicalizeLine(line);
+  return lines;
+}
+
+export function canonicalizePdfText(value: string): string {
+  return value.normalize('NFKC');
+}
+
+export function normalizeSuperscriptDigits(value: string): string {
+  return [...value].map((character) => SUPERSCRIPT_DIGITS[character] ?? character).join('');
+}
+
+export function normalizeSubscriptDigits(value: string): string {
+  return [...value].map((character) => SUBSCRIPT_DIGITS[character] ?? character).join('');
+}
+
+export function parseCanonicalNoteMarker(value: string): string | null {
+  const canonical = canonicalizePdfText(value).trim();
+  return /^[1-9][0-9]{0,2}$/u.test(canonical) ? canonical : null;
+}
+
+function canonicalizeLine<TLine extends CanonicalPdfLine>(line: TLine): void {
+  if (!line.words.length) return;
+
+  const heights = line.words.map((word) => Math.max(1, word.yMax - word.yMin));
+  const typicalHeight = median(heights) ?? 1;
+  const explicitScriptWords = new Set(
+    line.words.filter((word) => hasExplicitScriptGlyph(word.text)),
+  );
+  const baselineCandidates = line.words
+    .filter((word) => !explicitScriptWords.has(word))
+    .map((word) => word.yMax);
+  const baseline = median(baselineCandidates) ?? median(line.words.map((word) => word.yMax)) ?? 0;
+
+  for (const word of line.words) {
+    const rawText = word.text;
+    const displayText = rawText.normalize('NFC');
+    const canonicalText = canonicalizePdfText(displayText);
+    const fontHeight = Math.max(1, word.yMax - word.yMin);
+    const baselineOffset = baseline - word.yMax;
+    const explicitSuperscript = extractSuperscriptMarker(rawText);
+    const explicitSubscript = /^[₀₁₂₃₄₅₆₇₈₉]+$/u.test(rawText);
+
+    const raised = baselineOffset >= Math.max(0.28, typicalHeight * 0.028);
+    const lowered = -baselineOffset >= Math.max(0.42, typicalHeight * 0.045);
+    const reduced = fontHeight <= typicalHeight * 0.95;
+
+    let script: PdfScriptPosition = 'normal';
+    if (explicitSuperscript || (raised && reduced)) script = 'superscript';
+    else if (explicitSubscript || (lowered && reduced)) script = 'subscript';
+
+    word.rawText = rawText;
+    word.text = displayText;
+    word.canonicalText = canonicalText;
+    word.script = script;
+    word.fontHeight = fontHeight;
+    word.baselineOffset = baselineOffset;
+    if (explicitSuperscript) word.superscriptMarker = explicitSuperscript;
+  }
+}
+
+function extractSuperscriptMarker(value: string): string | undefined {
+  const standalone = value.match(/^([⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/u)?.[1];
+  const suffix = standalone ?? value.match(/([⁰¹²³⁴⁵⁶⁷⁸⁹]{1,3})$/u)?.[1];
+  if (!suffix) return undefined;
+  const normalized = normalizeSuperscriptDigits(suffix);
+  return /^[1-9][0-9]{0,2}$/u.test(normalized) ? normalized : undefined;
+}
+
+function hasExplicitScriptGlyph(value: string): boolean {
+  return /[⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]/u.test(value);
+}
+
+function median(values: readonly number[]): number | null {
+  if (!values.length) return null;
+  const sorted = [...values].sort((left, right) => left - right);
+  return sorted[Math.floor(sorted.length / 2)] ?? null;
+}
