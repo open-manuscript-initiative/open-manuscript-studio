@@ -17,6 +17,7 @@ export function applyPdfImportResult(result: PdfImportResult): string {
   const annotations: OmiAnnotation[] = [];
   const sections: OmiSection[] = [];
   const importedBlocks = coalescePdfParagraphLines(result.blocks);
+  const noteTargets = new Map<string, OmiBlock>();
 
   let section: OmiSection = createSection('Imported PDF');
   sections.push(section);
@@ -35,13 +36,18 @@ export function applyPdfImportResult(result: PdfImportResult): string {
     }
 
     if (imported.kind === 'footnote') {
-      if (!previousTextBlock) continue;
+      const target = imported.noteMarker
+        ? noteTargets.get(noteTargetKey(imported.page, imported.noteMarker))
+        : undefined;
+      const targetBlock = target ?? previousTextBlock;
+      if (!targetBlock) continue;
+
       annotations.push({
         id: crypto.randomUUID(),
         type: 'note',
         noteKind: 'footnote',
         anchorId: crypto.randomUUID(),
-        targetBlockId: previousTextBlock.id,
+        targetBlockId: targetBlock.id,
         ...(imported.noteMarker ? { targetText: imported.noteMarker } : {}),
         body: imported.text,
         renderingHint: 'footnote',
@@ -58,6 +64,10 @@ export function applyPdfImportResult(result: PdfImportResult): string {
     };
     section.blocks.push(block);
     previousTextBlock = block;
+
+    for (const marker of imported.noteAnchors ?? []) {
+      noteTargets.set(noteTargetKey(imported.page, marker), block);
+    }
   }
 
   if (sections.length > 1 && sections[0]?.blocks.length === 0 && sections[0].title === 'Imported PDF') {
@@ -117,13 +127,23 @@ function coalescePdfParagraphLines(blocks: readonly PdfImportBlock[]): PdfImport
       previousMerged?.kind === 'paragraph' &&
       previousSourceLine?.kind === 'paragraph' &&
       previousSourceLine.page === current.page &&
+      !isStandaloneNoteMarker(previousSourceLine.text) &&
+      !isStandaloneNoteMarker(current.text) &&
       shouldJoinWrappedLine(previousSourceLine.text, current.text);
 
     if (canJoin) {
       previousMerged.text = joinWrappedText(previousMerged.text, current.text);
       previousMerged.confidence = Math.min(previousMerged.confidence, current.confidence);
+      const anchors = new Set([
+        ...(previousMerged.noteAnchors ?? []),
+        ...(current.noteAnchors ?? []),
+      ]);
+      if (anchors.size) previousMerged.noteAnchors = [...anchors];
     } else {
-      merged.push({ ...current });
+      merged.push({
+        ...current,
+        ...(current.noteAnchors ? { noteAnchors: [...current.noteAnchors] } : {}),
+      });
     }
 
     previousSourceLine = current;
@@ -155,6 +175,14 @@ function joinWrappedText(previous: string, current: string): string {
     return `${left.slice(0, -1)}${right}`;
   }
   return `${left} ${right}`.replace(/\s+/gu, ' ').trim();
+}
+
+function isStandaloneNoteMarker(text: string): boolean {
+  return /^[1-9][0-9]{0,2}$/u.test(text.trim());
+}
+
+function noteTargetKey(page: number, marker: string): string {
+  return `${page}:${marker}`;
 }
 
 function createSection(title: string): OmiSection {
