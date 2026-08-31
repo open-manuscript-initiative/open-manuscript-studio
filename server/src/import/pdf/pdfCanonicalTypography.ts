@@ -204,12 +204,13 @@ function canonicalizeLine<TLine extends CanonicalPdfLine>(line: TLine): void {
  *
  * We encode the soft candidate on the preceding word's canonical value only.
  * The semantic matcher later still requires a same-page note start with the
- * same marker before accepting it. Numbered list starts such as `6. Travel...`
- * are intentionally excluded because the marker word must contain digits only
- * and must have a lexical word immediately before it on the same line.
+ * same marker before accepting it. This lets us recover markers at the end of
+ * a Poppler line as well as markers followed by more text. Numbered list starts
+ * such as `6. Travel...` remain excluded because the marker must have a lexical
+ * word immediately before it on the same line.
  */
 function markSoftInlineReferenceCandidates<TLine extends CanonicalPdfLine>(line: TLine, typicalHeight: number): void {
-  for (let index = 1; index < line.words.length - 1; index += 1) {
+  for (let index = 1; index < line.words.length; index += 1) {
     const word = line.words[index]!;
     if (word.script !== 'normal') continue;
 
@@ -217,15 +218,17 @@ function markSoftInlineReferenceCandidates<TLine extends CanonicalPdfLine>(line:
     if (!marker) continue;
 
     const previous = line.words[index - 1]!;
-    const next = line.words[index + 1]!;
+    const next = line.words[index + 1];
     const previousText = previous.rawText ?? previous.text;
-    const nextCanonical = (next.canonicalText ?? next.text).trim();
 
     if (!/[\p{L}\p{M}\p{P}]$/u.test(previousText)) continue;
-    if (!/^[\p{L}\p{M}"“„'‘(\[]/u.test(nextCanonical)) continue;
+    if (next) {
+      const nextCanonical = (next.canonicalText ?? next.text).trim();
+      if (!/^[\p{L}\p{M}"“„'‘(\[]/u.test(nextCanonical)) continue;
+    }
 
     const horizontalGap = Math.max(0, word.xMin - previous.xMax);
-    if (horizontalGap > Math.max(9, typicalHeight * 0.9)) continue;
+    if (horizontalGap > Math.max(14, typicalHeight * 1.35)) continue;
 
     const previousCanonical = previous.canonicalText ?? canonicalizePdfText(previous.text);
     if (new RegExp(`${marker}$`, 'u').test(previousCanonical)) continue;
