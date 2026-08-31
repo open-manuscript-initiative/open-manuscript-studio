@@ -1,7 +1,7 @@
 import type { OmpLaunchClaims } from './launchVerifier.js';
 import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
 
-interface OmpMetadataResponse {
+interface OmpSubmissionResponse {
   protocol?: string;
   profile?: string;
   submission?: Record<string, unknown>;
@@ -135,9 +135,9 @@ export async function loadOmpLaunchData(
   );
   const trustedApiBaseUrlString = trustedApiBaseUrl.toString().replace(/\/$/, '');
 
-  const metadataPromise = scopes.has('metadata.read')
-    ? readJson<OmpMetadataResponse>(endpoint(trustedApiBaseUrlString, 'metadata'), payload, signature)
-    : Promise.resolve<OmpMetadataResponse>({});
+  const submissionPromise = scopes.has('metadata.read')
+    ? readJson<OmpSubmissionResponse>(endpoint(trustedApiBaseUrlString, 'submission'), payload, signature)
+    : Promise.resolve<OmpSubmissionResponse>({});
   const contributorsPromise = scopes.has('contributors.read')
     ? readJson<OmpContributorsResponse>(endpoint(trustedApiBaseUrlString, 'contributors'), payload, signature)
     : Promise.resolve<OmpContributorsResponse>({});
@@ -145,21 +145,21 @@ export async function loadOmpLaunchData(
     ? readJson<OmpFilesResponse>(endpoint(trustedApiBaseUrlString, 'files'), payload, signature)
     : Promise.resolve<OmpFilesResponse>({});
 
-  const [metadata, contributors, files] = await Promise.all([
-    metadataPromise,
+  const [submission, contributors, files] = await Promise.all([
+    submissionPromise,
     contributorsPromise,
     filesPromise,
   ]);
 
   if (
-    metadata.protocol && metadata.protocol !== 'omi-integration/1' ||
-    metadata.profile && metadata.profile !== 'omi-integration/1/omp'
+    submission.protocol && submission.protocol !== 'omi-integration/1' ||
+    submission.profile && submission.profile !== 'omi-integration/1/omp'
   ) {
-    throw new Error('OMP metadata endpoint returned an incompatible integration profile.');
+    throw new Error('OMP submission endpoint returned an incompatible integration profile.');
   }
 
   return {
-    submission: metadata.submission ?? (claims.submission ? { ...claims.submission } : null),
+    submission: submission.submission ?? (claims.submission ? { ...claims.submission } : null),
     contributors: contributors.contributors ?? [],
     files: files.files ?? [],
   };
