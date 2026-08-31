@@ -76,12 +76,9 @@ const jobs = new Map<string, PdfImportJob>();
 export function createPdfImportJob(
   ownerUserId: string,
   fileName: string,
-  bytes: unknown,
+  bytes: Buffer,
 ): PdfImportJobSnapshot {
   cleanupExpiredJobs();
-  if (!Buffer.isBuffer(bytes)) {
-    throw new Error('A PDF binary payload is required.');
-  }
   if (bytes.length < 5 || bytes.subarray(0, 5).toString('ascii') !== '%PDF-') {
     throw new Error('The uploaded file is not a valid PDF document.');
   }
