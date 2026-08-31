@@ -396,6 +396,8 @@ function extractPageLocalFootnotes(
   medianWordHeight: number,
 ): PageFootnoteExtraction[] {
   const results: PageFootnoteExtraction[] = [];
+  // Preserve the last trusted marker across page boundaries so N+1 becomes the
+  // preferred next note reference even when a new page starts.
   let lastConfirmedMarker: number | null = null;
 
   for (let page = 1; page <= pageCount; page += 1) {
@@ -578,6 +580,8 @@ function selectSequentialNoteMarkers(
     const item = ordered[index]!;
     if (!rawConfirmedMarkers.has(item.marker)) continue;
 
+    // The first high-confidence marker establishes the sequence, regardless of
+    // whether the document starts at 1, 8, 245, or another value.
     if (last === null) {
       selected.add(item.marker);
       last = item.value;
@@ -593,11 +597,15 @@ function selectSequentialNoteMarkers(
 
     if (item.value <= last) continue;
 
+    // If N+1 exists later on the same page, ignore the stray higher number and
+    // wait for the expected marker.
     const expectedAppearsLater = ordered
       .slice(index + 1)
       .some((candidate) => candidate.value === expected && rawConfirmedMarkers.has(candidate.marker));
     if (expectedAppearsLater) continue;
 
+    // Permit recovery from exactly one missing/garbled note marker. This keeps
+    // the sequence useful without letting an arbitrary jump become a new truth.
     if (item.value === expected + 1) {
       selected.add(item.marker);
       last = item.value;
