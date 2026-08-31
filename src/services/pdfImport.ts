@@ -15,6 +15,11 @@ export interface PdfImportBlock {
   noteAnchors?: string[];
 }
 
+export interface PdfImportMetadata {
+  dois: string[];
+  copyrightStatements: string[];
+}
+
 export interface PdfImportResult {
   source: {
     fileName: string;
@@ -24,6 +29,7 @@ export interface PdfImportResult {
   title: string;
   blocks: PdfImportBlock[];
   warnings: PdfImportWarning[];
+  metadata?: PdfImportMetadata;
   stats: {
     headings: number;
     paragraphs: number;
@@ -111,8 +117,113 @@ export async function importPdfForStudio(
     );
     if (!resultResponse.ok) throw await createApiError(resultResponse);
     const result = (await resultResponse.json() as ResultResponse).result;
-    return normalizePdfFootnotes(result);
+    return normalizePdfFootnotes(normalizePdfPageFurniture(result));
   }
+}
+
+/**
+ * Remove publication furniture before footnote reconstruction. PDF extraction
+ * often exposes running heads and page numbers as ordinary text blocks, which
+ * makes a page number indistinguishable from a footnote marker later in the
+ * pipeline. DOI and copyright lines are publication metadata rather than body
+ * prose: extract and preserve them before dropping the footer/header block.
+ */
+export function normalizePdfPageFurniture(result: PdfImportResult): PdfImportResult {
+  const pages = new Map<number, PdfImportBlock[]>();
+  for (const block of result.blocks) {
+    const list = pages.get(block.page) ?? [];
+    list.push(block);
+    pages.set(block.page, list);
+  }
+
+  const furnitureCounts = new Map<string, number>();
+  for (const pageBlocks of pages.values()) {
+    const edgeBlocks = pageEdgeBlocks(pageBlocks);
+    const signatures = new Set(edgeBlocks.map((block) => furnitureSignature(block.text)).filter(Boolean));
+    for (const signature of signatures) {
+      furnitureCounts.set(signature, (furnitureCounts.get(signature) ?? 0) + 1);
+    }
+  }
+
+  const repeatedThreshold = Math.max(2, Math.ceil(result.source.pageCount * 0.35));
+  const dois = new Set(result.metadata?.dois ?? []);
+  const copyrightStatements = new Set(result.metadata?.copyrightStatements ?? []);
+  const output: PdfImportBlock[] = [];
+  let removed = 0;
+
+  for (const pageBlocks of pages.values()) {
+    const edge = new Set(pageEdgeBlocks(pageBlocks));
+    for (const block of pageBlocks) {
+      const text = block.text.replace(/\s+/gu, ' ').trim();
+      if (!text) continue;
+
+      if (edge.has(block)) {
+        for (const doi of extractDois(text)) dois.add(doi);
+        if (isCopyrightStatement(text)) copyrightStatements.add(text);
+
+        const signature = furnitureSignature(text);
+        const repeatedFurniture = Boolean(signature && (furnitureCounts.get(signature) ?? 0) >= repeatedThreshold);
+        const pageNumber = isStandalonePageNumber(text);
+        const metadataLine = extractDois(text).length > 0 || isCopyrightStatement(text);
+
+        if (repeatedFurniture || pageNumber || metadataLine) {
+          removed += 1;
+          continue;
+        }
+      }
+
+      output.push(block);
+    }
+  }
+
+  return {
+    ...result,
+    blocks: output,
+    metadata: {
+      dois: [...dois],
+      copyrightStatements: [...copyrightStatements],
+    },
+    stats: {
+      ...result.stats,
+      removedRunningHeaders: result.stats.removedRunningHeaders + removed,
+    },
+    warnings: removed > 0
+      ? [
+          ...result.warnings,
+          {
+            code: 'page-furniture-removed',
+            message: `${removed} running-header, running-footer, page-number or publication-metadata block${removed === 1 ? '' : 's'} were removed from body flow. DOI and copyright metadata were preserved.`,
+          },
+        ]
+      : result.warnings,
+  };
+}
+
+function pageEdgeBlocks(blocks: readonly PdfImportBlock[]): PdfImportBlock[] {
+  if (blocks.length <= 8) return [...blocks];
+  return [...blocks.slice(0, 4), ...blocks.slice(-4)];
+}
+
+function furnitureSignature(text: string): string {
+  return text
+    .normalize('NFKC')
+    .toLocaleLowerCase()
+    .replace(/\b\d{1,4}\b/gu, '#')
+    .replace(/\s+/gu, ' ')
+    .trim();
+}
+
+function isStandalonePageNumber(text: string): boolean {
+  return /^\d{1,4}$/u.test(text.trim());
+}
+
+function extractDois(text: string): string[] {
+  const matches = text.match(/\b10\.\d{4,9}\/[-._;()/:A-Z0-9]+/giu) ?? [];
+  return matches.map((doi) => doi.replace(/[.,;:)]+$/u, ''));
+}
+
+function isCopyrightStatement(text: string): boolean {
+  return /(?:©|\bcopyright\b|\ball rights reserved\b)/iu.test(text);
 }
 
 /**
