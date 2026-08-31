@@ -91,7 +91,7 @@ export function applyPdfImportResult(result: PdfImportResult): string {
   const envelope = createInitialVersioningEnvelope(state, {
     summary: `Imported PDF manuscript: ${result.source.fileName}`,
     timestamp,
-    completeness: result.warnings.length > 0 ? 'partial' : 'complete',
+    completeness: result.warnings.length > 0 ? 'shallow' : 'complete',
   });
   const manuscript: OmiManuscript = { ...state, ...envelope };
   useStudioStore.getState().loadManuscript(manuscript);
