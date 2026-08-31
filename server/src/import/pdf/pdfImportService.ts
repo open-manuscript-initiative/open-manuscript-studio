@@ -25,7 +25,6 @@ export interface PdfImportBlock {
   confidence: number;
   headingLevel?: number;
   noteMarker?: string;
-  /** Numeric note references detected and page-locally matched in the PDF. */
   noteAnchors?: string[];
 }
 
@@ -90,6 +89,14 @@ interface PageFootnoteExtraction {
   leadingContinuation: LayoutLine[];
 }
 
+interface NoteStartOccurrence {
+  line: LayoutLine;
+  lineIndex: number;
+  marker: string;
+  markerOffset: number;
+  contentOffset: number;
+}
+
 const jobs = new Map<string, PdfImportJob>();
 
 export function createPdfImportJob(
@@ -119,19 +126,13 @@ export function createPdfImportJob(
   return publicSnapshot(job);
 }
 
-export function getPdfImportJob(
-  ownerUserId: string,
-  jobId: string,
-): PdfImportJobSnapshot | null {
+export function getPdfImportJob(ownerUserId: string, jobId: string): PdfImportJobSnapshot | null {
   cleanupExpiredJobs();
   const job = jobs.get(jobId);
   return job && job.ownerUserId === ownerUserId ? publicSnapshot(job) : null;
 }
 
-export function getPdfImportResult(
-  ownerUserId: string,
-  jobId: string,
-): PdfImportResult | null {
+export function getPdfImportResult(ownerUserId: string, jobId: string): PdfImportResult | null {
   cleanupExpiredJobs();
   const job = jobs.get(jobId);
   if (!job || job.ownerUserId !== ownerUserId || job.status !== 'completed') return null;
@@ -147,12 +148,7 @@ async function processJob(job: PdfImportJob, bytes: Buffer): Promise<void> {
   try {
     await writeFile(inputPath, bytes, { flag: 'wx' });
     try {
-      await execFileAsync('pdftotext', [
-        '-bbox-layout',
-        '-enc', 'UTF-8',
-        inputPath,
-        outputPath,
-      ], {
+      await execFileAsync('pdftotext', ['-bbox-layout', '-enc', 'UTF-8', inputPath, outputPath], {
         timeout: 120_000,
         maxBuffer: 4 * 1024 * 1024,
       });
@@ -195,6 +191,7 @@ function parseBboxLayout(html: string): Array<{ width: number; height: number; l
   const pagePattern = /<page\b([^>]*)>([\s\S]*?)<\/page>/gi;
   let pageMatch: RegExpExecArray | null;
   let pageNumber = 0;
+
   while ((pageMatch = pagePattern.exec(html)) !== null) {
     pageNumber += 1;
     const attrs = pageMatch[1] ?? '';
@@ -204,11 +201,13 @@ function parseBboxLayout(html: string): Array<{ width: number; height: number; l
     const lines: LayoutLine[] = [];
     const linePattern = /<line\b([^>]*)>([\s\S]*?)<\/line>/gi;
     let lineMatch: RegExpExecArray | null;
+
     while ((lineMatch = linePattern.exec(body)) !== null) {
       const lineAttrs = lineMatch[1] ?? '';
       const words: LayoutWord[] = [];
       const wordPattern = /<word\b([^>]*)>([\s\S]*?)<\/word>/gi;
       let wordMatch: RegExpExecArray | null;
+
       while ((wordMatch = wordPattern.exec(lineMatch[2] ?? '')) !== null) {
         const wordAttrs = wordMatch[1] ?? '';
         const text = normalizeWhitespace(decodeXmlText(wordMatch[2] ?? ''));
@@ -221,6 +220,7 @@ function parseBboxLayout(html: string): Array<{ width: number; height: number; l
           yMax: attrNumber(wordAttrs, 'yMax'),
         });
       }
+
       const text = normalizeWhitespace(words.map((word) => word.text).join(' '));
       if (!text) continue;
       lines.push({
@@ -238,6 +238,7 @@ function parseBboxLayout(html: string): Array<{ width: number; height: number; l
     }
     pages.push({ width, height, lines });
   }
+
   return pages;
 }
 
@@ -388,18 +389,6 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
   };
 }
 
-/**
- * Reconstruct notes page-by-page. A note is accepted only when two independent
- * signals agree on the same page:
- *   1. the body contains the marker (preferably raised/smaller superscript), and
- *   2. a smaller-text line below the body starts with the same marker.
- *
- * This avoids confusing years, list numbers and printed page numbers with note
- * references. The transition from body type to the smaller bottom text run is
- * also used as a separator cue. In many journal PDFs a thin vector rule is drawn
- * at exactly this boundary; pdftotext does not expose vector paths, but its
- * typographic gap remains useful evidence without adding a rendering dependency.
- */
 function extractPageLocalFootnotes(
   lines: LayoutLine[],
   pageCount: number,
@@ -415,15 +404,14 @@ function extractPageLocalFootnotes(
       continue;
     }
 
-    const possibleStarts = pageLines
-      .map((line, index) => ({ line, index, marker: leadingNoteMarker(line.text) }))
-      .filter((item): item is { line: LayoutLine; index: number; marker: string } => {
-        if (!item.marker) return false;
-        const typicalHeight = typicalWordHeight(item.line);
-        const noteSized = typicalHeight <= medianWordHeight * 0.96;
-        const belowTopFurniture = item.line.yMin >= item.line.pageHeight * 0.14;
-        return noteSized && belowTopFurniture;
-      });
+    const possibleStarts = pageLines.flatMap((line, lineIndex) => {
+      if (!isNoteSizedLine(line, medianWordHeight) || line.yMin < line.pageHeight * 0.14) return [];
+      return findPossibleNoteStarts(line).map((occurrence) => ({
+        ...occurrence,
+        line,
+        lineIndex,
+      }));
+    });
 
     if (!possibleStarts.length) {
       const bodyLines = pageLines.map((line) => {
@@ -444,15 +432,20 @@ function extractPageLocalFootnotes(
         .filter((marker) => possibleMarkerSet.has(marker));
       if (raised.length) geometricAnchors.set(index, raised);
 
-      const matchedText = findInlineMarkersMatching(line.text, possibleMarkerSet);
-      if (matchedText.length) textualAnchors.set(index, matchedText);
+      if (typicalWordHeight(line) >= medianWordHeight * 0.98) {
+        const matchedText = findInlineMarkersMatching(line.text, possibleMarkerSet);
+        if (matchedText.length) textualAnchors.set(index, matchedText);
+      }
     }
 
     const confirmedMarkerSet = new Set<string>();
     for (const markers of geometricAnchors.values()) markers.forEach((marker) => confirmedMarkerSet.add(marker));
     for (const markers of textualAnchors.values()) markers.forEach((marker) => confirmedMarkerSet.add(marker));
 
-    const confirmedStarts = possibleStarts.filter((item) => confirmedMarkerSet.has(item.marker));
+    const confirmedStarts = possibleStarts
+      .filter((item) => confirmedMarkerSet.has(item.marker))
+      .sort((a, b) => a.lineIndex - b.lineIndex || a.markerOffset - b.markerOffset);
+
     if (!confirmedStarts.length) {
       const bodyLines = pageLines.map((line, index) => {
         const anchors = geometricAnchors.get(index) ?? [];
@@ -462,16 +455,21 @@ function extractPageLocalFootnotes(
       continue;
     }
 
-    const firstConfirmedIndex = Math.min(...confirmedStarts.map((item) => item.index));
+    const firstConfirmedLineIndex = confirmedStarts[0]!.lineIndex;
     const footnoteRunStart = findFootnoteRunStart(
       pageLines,
-      firstConfirmedIndex,
+      firstConfirmedLineIndex,
       medianLineHeight,
       medianWordHeight,
     );
-    const startByIndex = new Map(confirmedStarts.map((item) => [item.index, item.marker]));
-    const bodyLines: LayoutLine[] = [];
+    const startsByLine = new Map<number, NoteStartOccurrence[]>();
+    for (const occurrence of confirmedStarts) {
+      const group = startsByLine.get(occurrence.lineIndex) ?? [];
+      group.push(occurrence);
+      startsByLine.set(occurrence.lineIndex, group);
+    }
 
+    const bodyLines: LayoutLine[] = [];
     for (let index = 0; index < footnoteRunStart; index += 1) {
       const line = pageLines[index]!;
       const anchors = uniqueStrings([
@@ -482,7 +480,7 @@ function extractPageLocalFootnotes(
     }
 
     const leadingContinuation: LayoutLine[] = [];
-    for (let index = footnoteRunStart; index < firstConfirmedIndex; index += 1) {
+    for (let index = footnoteRunStart; index < firstConfirmedLineIndex; index += 1) {
       const line = pageLines[index];
       if (line && isNoteSizedLine(line, medianWordHeight)) leadingContinuation.push(line);
     }
@@ -500,20 +498,32 @@ function extractPageLocalFootnotes(
           text,
           page,
           noteMarker: currentMarker,
-          confidence: 0.94,
+          confidence: 0.95,
         });
       }
       currentMarker = null;
       currentLines = [];
     };
 
-    for (let index = firstConfirmedIndex; index < pageLines.length; index += 1) {
+    for (let index = firstConfirmedLineIndex; index < pageLines.length; index += 1) {
       const line = pageLines[index]!;
-      const marker = startByIndex.get(index);
-      if (marker) {
-        flushNote();
-        currentMarker = marker;
-        currentLines.push(stripLeadingNoteMarker(line.text, marker));
+      const occurrences = startsByLine.get(index) ?? [];
+
+      if (occurrences.length) {
+        let cursor = 0;
+        for (let occurrenceIndex = 0; occurrenceIndex < occurrences.length; occurrenceIndex += 1) {
+          const occurrence = occurrences[occurrenceIndex]!;
+          const prefix = normalizeWhitespace(line.text.slice(cursor, occurrence.markerOffset));
+          if (prefix && currentMarker) currentLines.push(prefix);
+          flushNote();
+          currentMarker = occurrence.marker;
+
+          const nextOccurrence = occurrences[occurrenceIndex + 1];
+          const segmentEnd = nextOccurrence?.markerOffset ?? line.text.length;
+          const segment = normalizeWhitespace(line.text.slice(occurrence.contentOffset, segmentEnd));
+          if (segment) currentLines.push(segment);
+          cursor = segmentEnd;
+        }
         continue;
       }
 
@@ -522,8 +532,6 @@ function extractPageLocalFootnotes(
         continue;
       }
 
-      // Publication footer metadata or other page furniture may follow notes.
-      // Do not absorb a body-sized/footer block into the scholarly note body.
       if (currentMarker) flushNote();
     }
     flushNote();
@@ -534,12 +542,6 @@ function extractPageLocalFootnotes(
   return results;
 }
 
-/**
- * If a long note continues onto the next page, the continuation still appears
- * in that page's note zone below the body. It can precede the first numbered
- * note start there. Attach such a smaller-text run to the previous page's last
- * reconstructed footnote instead of looking at the physical page top.
- */
 function attachCrossPageFootnoteContinuations(extractions: PageFootnoteExtraction[]): void {
   for (let index = 1; index < extractions.length; index += 1) {
     const current = extractions[index]!;
@@ -572,6 +574,28 @@ function findFootnoteRunStart(
   return start;
 }
 
+function findPossibleNoteStarts(
+  line: LayoutLine,
+): Array<Pick<NoteStartOccurrence, 'marker' | 'markerOffset' | 'contentOffset'>> {
+  const results: Array<Pick<NoteStartOccurrence, 'marker' | 'markerOffset' | 'contentOffset'>> = [];
+  const pattern = /([1-9][0-9]{0,2})(?:[.)]?)[ \t]+(?=[\p{L}\p{M}"“„'‘])/gu;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(line.text)) !== null) {
+    const marker = match[1];
+    if (!marker) continue;
+    const markerOffset = match.index;
+    if (markerOffset > 0 && !/\s/u.test(line.text[markerOffset - 1] ?? '')) continue;
+    results.push({
+      marker,
+      markerOffset,
+      contentOffset: pattern.lastIndex,
+    });
+  }
+
+  return results;
+}
+
 function findSuperscriptNoteMarkers(line: LayoutLine, medianWordHeight: number): string[] {
   if (line.words.length < 2 || medianWordHeight <= 0) return [];
   const markers: string[] = [];
@@ -598,11 +622,6 @@ function findSuperscriptNoteMarkers(line: LayoutLine, medianWordHeight: number):
   return uniqueStrings(markers);
 }
 
-/**
- * Poppler sometimes merges a superscript number into the preceding word
- * (`year.24`). Once the same page has a smaller-text `24 ...` note start, an
- * embedded non-leading occurrence is safe to use as a fallback body anchor.
- */
 function findInlineMarkersMatching(text: string, candidates: ReadonlySet<string>): string[] {
   const matches: string[] = [];
   for (const marker of candidates) {
@@ -611,16 +630,6 @@ function findInlineMarkersMatching(text: string, candidates: ReadonlySet<string>
     if (pattern.test(text)) matches.push(marker);
   }
   return matches;
-}
-
-function leadingNoteMarker(text: string): string | null {
-  const match = text.trim().match(/^([1-9][0-9]{0,2})(?:[.)]?\s+|$)/u);
-  return match?.[1] ?? null;
-}
-
-function stripLeadingNoteMarker(text: string, marker: string): string {
-  const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return normalizeWhitespace(text.replace(new RegExp(`^${escaped}(?:[.)]?\\s*)`, 'u'), ''));
 }
 
 function isNoteSizedLine(line: LayoutLine, medianWordHeight: number): boolean {
