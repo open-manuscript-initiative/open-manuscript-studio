@@ -247,9 +247,6 @@ function parseBboxLayout(html: string): Array<{ width: number; height: number; l
       });
     }
 
-    // Canonicalize the complete page before semantic reconstruction. This keeps
-    // raw glyphs and display text while deriving NFKC values and script position
-    // from page-local geometry. Footnote detection only runs after this stage.
     canonicalizePdfPageTypography(lines);
     pages.push({ width, height, lines });
   }
@@ -420,8 +417,6 @@ function extractPageLocalFootnotes(
       continue;
     }
 
-    // Semantic note recognition starts only now, after every word on the page has
-    // canonical Unicode and preserved script-position metadata.
     const geometricAnchors = new Map<number, string[]>();
     for (let index = 0; index < pageLines.length; index += 1) {
       const markers = findSuperscriptNoteMarkers(pageLines[index]!, medianWordHeight);
@@ -429,16 +424,17 @@ function extractPageLocalFootnotes(
       geometricAnchors.set(index, markers);
     }
 
-    const possibleStarts = pageLines.flatMap((line, lineIndex) => {
-      if (!isNoteSizedLine(line, medianWordHeight) || line.yMin < line.pageHeight * 0.14) return [];
-      return findPossibleNoteStarts(line).map((occurrence) => ({ ...occurrence, line, lineIndex }));
-    });
+    // No font-size or page-position gate here. Every line on the page is allowed
+    // to contribute a canonical numbered note start. Typography is evidence for
+    // ranking/validation later, never a prerequisite for seeing the candidate.
+    const possibleStarts = pageLines.flatMap((line, lineIndex) =>
+      findPossibleNoteStarts(line).map((occurrence) => ({ ...occurrence, line, lineIndex })),
+    );
     const possibleMarkerSet = new Set(possibleStarts.map((item) => item.marker));
 
     const attachedTextAnchors = new Map<number, string[]>();
     for (let index = 0; index < pageLines.length; index += 1) {
       const line = pageLines[index]!;
-      if (typicalWordHeight(line) < medianWordHeight * 0.98) continue;
       const attached = findAttachedInlineMarkers(line, possibleMarkerSet, medianWordHeight)
         .filter((marker) => !(geometricAnchors.get(index) ?? []).includes(marker));
       if (attached.length) attachedTextAnchors.set(index, attached);
@@ -463,6 +459,9 @@ function extractPageLocalFootnotes(
       possibleMarkerSet,
     );
 
+    // A candidate note start is only meaningful if its marker also exists as a
+    // selected body anchor. This prevents the removal of the old size gate from
+    // turning ordinary numbered paragraphs into notes.
     const matchedStarts = possibleStarts
       .filter((item) => selectedMarkerSet.has(item.marker))
       .sort((a, b) => a.lineIndex - b.lineIndex || a.markerOffset - b.markerOffset);
@@ -604,18 +603,55 @@ function findPossibleNoteStarts(
   line: LayoutLine,
 ): Array<Pick<NoteStartOccurrence, 'marker' | 'markerOffset' | 'contentOffset'>> {
   const results: Array<Pick<NoteStartOccurrence, 'marker' | 'markerOffset' | 'contentOffset'>> = [];
-  const pattern = /([1-9][0-9]{0,2})(?:[.)]?)[ \t]+(?=[\p{L}\p{M}"“„'‘])/gu;
-  let match: RegExpExecArray | null;
 
-  while ((match = pattern.exec(line.text)) !== null) {
-    const marker = match[1];
-    if (!marker) continue;
-    const markerOffset = match.index;
-    if (markerOffset > 0 && !/\s/u.test(line.text[markerOffset - 1] ?? '')) continue;
-    results.push({ marker, markerOffset, contentOffset: pattern.lastIndex });
+  // Build the semantic text from canonical word values, but keep raw display
+  // offsets separately so footnote slicing still operates on line.text.
+  let canonicalCursor = 0;
+  let rawCursor = 0;
+  for (let index = 0; index < line.words.length; index += 1) {
+    const word = line.words[index]!;
+    const canonical = (word.canonicalText ?? word.text.normalize('NFKC')).trim();
+    const raw = word.text;
+    const marker = parseCanonicalNoteMarker(canonical.replace(/[.)]+$/u, ''));
+
+    if (marker) {
+      const next = line.words[index + 1];
+      const nextCanonical = (next?.canonicalText ?? next?.text ?? '').trim();
+      const plausibleContent = Boolean(nextCanonical) && /[\p{L}\p{M}\p{N}"“„'‘(\[]/u.test(nextCanonical);
+      if (plausibleContent) {
+        results.push({
+          marker,
+          markerOffset: rawCursor,
+          contentOffset: rawCursor + raw.length + (index < line.words.length - 1 ? 1 : 0),
+        });
+      }
+    }
+
+    canonicalCursor += canonical.length + (index < line.words.length - 1 ? 1 : 0);
+    rawCursor += raw.length + (index < line.words.length - 1 ? 1 : 0);
   }
 
-  return results;
+  // Poppler can merge several note starts and their text into one extracted line.
+  // Retain a canonical text fallback for those cases, without requiring a
+  // specific font size, vertical zone or ASCII-only source representation.
+  const canonicalLine = normalizeWhitespace(line.words
+    .map((word) => word.canonicalText ?? word.text.normalize('NFKC'))
+    .join(' '));
+  const pattern = /(?:^|\s)([1-9][0-9]{0,2})(?:[.)]?)[ \t]+(?=[\p{L}\p{M}\p{N}"“„'‘(\[])/gu;
+  for (const match of canonicalLine.matchAll(pattern)) {
+    const marker = match[1];
+    if (!marker || match.index === undefined) continue;
+    const markerOffsetCanonical = match.index + match[0].indexOf(marker);
+    const existing = results.some((item) => item.marker === marker && Math.abs(item.markerOffset - markerOffsetCanonical) <= 2);
+    if (existing) continue;
+    results.push({
+      marker,
+      markerOffset: markerOffsetCanonical,
+      contentOffset: markerOffsetCanonical + marker.length + (match[0].length - match[0].indexOf(marker) - marker.length),
+    });
+  }
+
+  return results.sort((left, right) => left.markerOffset - right.markerOffset);
 }
 
 function findSuperscriptNoteMarkers(line: LayoutLine, medianWordHeight: number): string[] {
@@ -628,9 +664,6 @@ function findSuperscriptNoteMarkers(line: LayoutLine, medianWordHeight: number):
       ?? (word.script === 'superscript' ? parseCanonicalNoteMarker(word.canonicalText ?? word.text) : null);
     if (!marker) continue;
 
-    // Explicit Unicode superscript suffixes survive even when Poppler merged the
-    // marker with the previous lexical token. Geometry-derived ASCII markers
-    // still require normal lexical attachment/proximity checks.
     if (word.superscriptMarker && !parseCanonicalNoteMarker(word.canonicalText ?? '')) {
       markers.push(marker);
       continue;
@@ -673,15 +706,6 @@ function findAttachedInlineMarkers(
   }
 
   return [...matches];
-}
-
-function isNoteSizedLine(line: LayoutLine, medianWordHeight: number): boolean {
-  return typicalWordHeight(line) <= medianWordHeight * 0.97;
-}
-
-function typicalWordHeight(line: LayoutLine): number {
-  return medianNumber(line.words.map((word) => word.fontHeight ?? Math.max(1, word.yMax - word.yMin)))
-    ?? Math.max(1, line.yMax - line.yMin);
 }
 
 function findRepeatedMarginLines(lines: LayoutLine[], pageCount: number): Set<string> {
