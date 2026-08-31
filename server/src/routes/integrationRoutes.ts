@@ -64,6 +64,7 @@ integrationRouter.get('/omp/launch', async (request, response) => {
       context: verified.claims.context ?? null,
       submission: ompData.submission,
       component: verified.claims.component ?? null,
+      reviewAssignment: verified.claims.reviewAssignment ?? null,
       contributors: ompData.contributors,
       files: ompData.files,
       actor: verified.claims.actor ?? null,
