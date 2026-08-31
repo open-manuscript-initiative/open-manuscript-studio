@@ -1,3 +1,4 @@
+import { mergeStackedFootnoteMarkerRows } from './pdfFootnoteGeometry.js';
 import { findSequentialFootnoteStartRun } from './pdfFootnoteSequence.js';
 
 export type PdfScriptPosition = 'normal' | 'superscript' | 'subscript';
@@ -59,6 +60,7 @@ const SUBSCRIPT_DIGITS: Record<string, string> = {
  * evidence that a marker was printed as superscript/subscript.
  */
 export function canonicalizePdfPageTypography<TLine extends CanonicalPdfLine>(lines: TLine[]): TLine[] {
+  mergeStackedFootnoteMarkerRows(lines);
   mergeSplitFootnoteStartLines(lines);
   for (const line of lines) canonicalizeLine(line);
   recoverAnchorsFromSequentialNoteStarts(lines);
