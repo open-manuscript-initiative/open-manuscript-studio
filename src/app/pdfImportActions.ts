@@ -47,8 +47,6 @@ export function applyPdfImportResult(result: PdfImportResult): string {
       const marker = imported.noteMarker?.trim();
       if (marker && consumedFootnotes.has(noteTargetKey(imported.page, marker))) continue;
 
-      // Keep an unlinked note rather than dropping data if PDF reconstruction
-      // could not locate a trustworthy inline marker for it.
       if (previousTextBlock) {
         annotations.push({
           id: crypto.randomUUID(),
@@ -171,11 +169,6 @@ function materializeNotesForBlock(
   return notes;
 }
 
-/**
- * Convert a legacy text block into the same Tiptap structure produced by the
- * native OmiNoteExtension. The printed marker is replaced by an atom node, so
- * the editor renders a clickable note point instead of an unrelated number.
- */
 function createRichTextWithNoteAnchors(
   text: string,
   notes: readonly MaterializedPdfNote[],
@@ -212,10 +205,13 @@ function createRichTextWithNoteAnchors(
 }
 
 function findInlineMarkerOffset(text: string, marker: string): number {
+  // Keep a same-length shadow string so offsets still address the original PDF
+  // text when Poppler emits Unicode superscript digits (¹²³) instead of ASCII.
+  const normalizedText = normalizeInlineSuperscriptDigits(text);
   const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const expression = new RegExp(`(?:^|[^0-9])(${escaped})(?=$|[^0-9])`, 'gu');
   let result = -1;
-  for (const match of text.matchAll(expression)) {
+  for (const match of normalizedText.matchAll(expression)) {
     if (match.index === undefined) continue;
     const capture = match[1];
     if (!capture) continue;
@@ -224,12 +220,22 @@ function findInlineMarkerOffset(text: string, marker: string): number {
   return result;
 }
 
-/**
- * The current OMI alpha schema has no manuscript-level rights/identifier bag.
- * Keep publication metadata losslessly as hidden semantic annotations instead
- * of leaving DOI/copyright footer lines in editable body text. A future
- * metadata-model migration can promote these values without reparsing the PDF.
- */
+function normalizeInlineSuperscriptDigits(value: string): string {
+  const map: Record<string, string> = {
+    '⁰': '0',
+    '¹': '1',
+    '²': '2',
+    '³': '3',
+    '⁴': '4',
+    '⁵': '5',
+    '⁶': '6',
+    '⁷': '7',
+    '⁸': '8',
+    '⁹': '9',
+  };
+  return [...value].map((character) => map[character] ?? character).join('');
+}
+
 function preservePdfPublicationMetadata(
   result: PdfImportResult,
   sections: readonly OmiSection[],
@@ -266,13 +272,6 @@ function preservePdfPublicationMetadata(
   }
 }
 
-/**
- * PDF extractors frequently expose each visual line as an independent text
- * block. Merge likely wrapped lines before materializing OMI paragraphs while
- * keeping headings, notes, page changes and likely short paragraph endings as
- * boundaries. Decisions are based on the previous original PDF line, not on
- * the already accumulated paragraph text.
- */
 function coalescePdfParagraphLines(blocks: readonly PdfImportBlock[]): PdfImportBlock[] {
   const merged: PdfImportBlock[] = [];
   let previousSourceLine: PdfImportBlock | null = null;
@@ -331,7 +330,7 @@ function joinWrappedText(previous: string, current: string): string {
 }
 
 function isStandaloneNoteMarker(text: string): boolean {
-  return /^[1-9][0-9]{0,2}$/u.test(text.trim());
+  return /^[1-9][0-9]{0,2}$/u.test(normalizeInlineSuperscriptDigits(text.trim()));
 }
 
 function noteTargetKey(page: number, marker: string): string {
