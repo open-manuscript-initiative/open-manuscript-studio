@@ -1,3 +1,4 @@
+import { normalizePdfDiscretionaryBreaks } from './pdfDiscretionaryBreaks.js';
 import { mergeStackedFootnoteMarkerRows } from './pdfFootnoteGeometry.js';
 import { findSequentialFootnoteStartRun } from './pdfFootnoteSequence.js';
 
@@ -174,7 +175,7 @@ function canonicalizeLine<TLine extends CanonicalPdfLine>(line: TLine): void {
 
   for (const word of line.words) {
     const rawText = word.text;
-    const displayText = rawText.normalize('NFC');
+    const displayText = normalizePdfDiscretionaryBreaks(rawText).normalize('NFC');
     const canonicalText = canonicalizePdfText(displayText);
     const fontHeight = Math.max(1, word.yMax - word.yMin);
     const baselineOffset = baseline - word.yMax;
@@ -198,6 +199,7 @@ function canonicalizeLine<TLine extends CanonicalPdfLine>(line: TLine): void {
     if (explicitSuperscript) word.superscriptMarker = explicitSuperscript;
   }
 
+  line.text = line.words.map((word) => word.text).join(' ').replace(/\s+/gu, ' ').trim();
   markSoftInlineReferenceCandidates(line, typicalHeight);
 }
 
