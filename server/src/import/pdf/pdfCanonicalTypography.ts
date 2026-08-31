@@ -1,3 +1,5 @@
+import { findSequentialFootnoteStartRun } from './pdfFootnoteSequence.js';
+
 export type PdfScriptPosition = 'normal' | 'superscript' | 'subscript';
 
 export interface CanonicalPdfWord {
@@ -59,6 +61,7 @@ const SUBSCRIPT_DIGITS: Record<string, string> = {
 export function canonicalizePdfPageTypography<TLine extends CanonicalPdfLine>(lines: TLine[]): TLine[] {
   mergeSplitFootnoteStartLines(lines);
   for (const line of lines) canonicalizeLine(line);
+  recoverAnchorsFromSequentialNoteStarts(lines);
   return lines;
 }
 
@@ -194,6 +197,97 @@ function canonicalizeLine<TLine extends CanonicalPdfLine>(line: TLine): void {
   }
 
   markSoftInlineReferenceCandidates(line, typicalHeight);
+}
+
+/**
+ * Use the numbered footnote paragraphs themselves as structural evidence.
+ * Three consecutive starts (or a longer run with one missing number) are a
+ * much stronger signal than Poppler's unreliable superscript geometry. Once
+ * such a run is found, recover the matching body reference before each note
+ * start by encoding it on the preceding lexical word. The downstream semantic
+ * matcher still requires the same-page numbered note start, so this does not
+ * turn arbitrary body numbers into notes.
+ */
+function recoverAnchorsFromSequentialNoteStarts<TLine extends CanonicalPdfLine>(lines: TLine[]): void {
+  if (lines.length < 3) return;
+
+  const ordered = lines
+    .map((line, sourceIndex) => ({ line, sourceIndex }))
+    .sort((left, right) => (left.line.yMin ?? 0) - (right.line.yMin ?? 0)
+      || (left.line.xMin ?? 0) - (right.line.xMin ?? 0));
+  const pageHeight = Math.max(...ordered.map(({ line }) => line.yMax ?? 0), 1);
+  const allWordHeights = ordered.flatMap(({ line }) => line.words
+    .map((word) => word.fontHeight ?? Math.max(1, word.yMax - word.yMin)));
+  const medianWordHeight = median(allWordHeights) ?? 1;
+
+  const startCandidates = ordered.flatMap(({ line }, lineIndex) => {
+    if (line.words.length < 2) return [];
+    const first = line.words[0]!;
+    const marker = parseCanonicalNoteMarker((first.canonicalText ?? first.text).replace(/[.)]+$/u, ''));
+    if (!marker) return [];
+    const secondText = (line.words[1]?.canonicalText ?? line.words[1]?.text ?? '').trim();
+    if (!/^[\p{L}\p{M}\p{N}"“„'‘(\[]/u.test(secondText)) return [];
+    return [{
+      marker,
+      lineIndex,
+      markerOffset: 0,
+      fontHeight: median(line.words.map((word) => word.fontHeight ?? Math.max(1, word.yMax - word.yMin))) ?? medianWordHeight,
+      xMin: first.xMin,
+      yMin: line.yMin ?? first.yMin,
+      pageHeight,
+    }];
+  });
+
+  const run = findSequentialFootnoteStartRun(startCandidates, null, medianWordHeight);
+  if (!run) return;
+
+  for (const marker of run.markers) {
+    const starts = startCandidates
+      .filter((candidate) => candidate.marker === marker && run.candidateIndexes.has(startCandidates.indexOf(candidate)))
+      .sort((left, right) => left.lineIndex - right.lineIndex);
+    const start = starts[0];
+    if (!start) continue;
+
+    const noteLine = ordered[start.lineIndex]?.line;
+    if (!noteLine) continue;
+    const noteHeight = median(noteLine.words.map((word) => word.fontHeight ?? Math.max(1, word.yMax - word.yMin)))
+      ?? medianWordHeight;
+
+    let best: { lineIndex: number; wordIndex: number; score: number } | null = null;
+    for (let lineIndex = 0; lineIndex < start.lineIndex; lineIndex += 1) {
+      const line = ordered[lineIndex]?.line;
+      if (!line?.words.length) continue;
+      const lineHeight = median(line.words.map((word) => word.fontHeight ?? Math.max(1, word.yMax - word.yMin)))
+        ?? medianWordHeight;
+
+      for (let wordIndex = 0; wordIndex < line.words.length; wordIndex += 1) {
+        const word = line.words[wordIndex]!;
+        const value = parseCanonicalNoteMarker((word.canonicalText ?? word.text).replace(/[.)]+$/u, ''));
+        if (value !== marker) continue;
+
+        const previous = line.words[wordIndex - 1];
+        if (!previous || !/[\p{L}\p{M}\p{P}]$/u.test(previous.rawText ?? previous.text)) continue;
+
+        const gap = Math.max(0, word.xMin - previous.xMax);
+        const scriptBonus = word.script === 'superscript' || word.superscriptMarker === marker ? 12 : 0;
+        const bodySizeBonus = lineHeight >= noteHeight * 1.08 ? 7 : 0;
+        const proximityBonus = gap <= Math.max(16, lineHeight * 1.5) ? 6 : 0;
+        const laterBodyBonus = lineIndex / Math.max(1, start.lineIndex);
+        const score = scriptBonus + bodySizeBonus + proximityBonus + laterBodyBonus;
+        if (!best || score > best.score) best = { lineIndex, wordIndex, score };
+      }
+    }
+
+    if (!best) continue;
+    const bodyLine = ordered[best.lineIndex]!.line;
+    const markerWord = bodyLine.words[best.wordIndex]!;
+    const previous = bodyLine.words[best.wordIndex - 1]!;
+    const previousCanonical = previous.canonicalText ?? canonicalizePdfText(previous.text);
+    if (!new RegExp(`${marker}$`, 'u').test(previousCanonical)) {
+      previous.canonicalText = `${previousCanonical}${marker}`;
+    }
+    markerWord.superscriptMarker = marker;
+  }
 }
 
 /**
