@@ -16,6 +16,7 @@ import {
   parseDocxForStudio,
   type DocxImportStage,
 } from '../services/docxImportStrategy';
+import { PdfImportPanel } from './PdfImportPanel';
 
 interface DocxImportPanelProps {
   onImported?: () => void;
@@ -64,56 +65,59 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
   }
 
   return (
-    <section className="docx-import-card" aria-labelledby="docx-import-title">
-      <div className="docx-import-card-header">
-        <div>
-          <h4 id="docx-import-title">{copy.title}</h4>
-          <p>{description}</p>
+    <>
+      <section className="docx-import-card" aria-labelledby="docx-import-title">
+        <div className="docx-import-card-header">
+          <div>
+            <h4 id="docx-import-title">{copy.title}</h4>
+            <p>{description}</p>
+          </div>
+          <FileUp size={22} aria-hidden="true" />
         </div>
-        <FileUp size={22} aria-hidden="true" />
-      </div>
 
-      <input
-        ref={inputRef}
-        className="docx-import-file-input"
-        type="file"
-        accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        onChange={(event) => void handleFile(event.target.files?.[0])}
-      />
+        <input
+          ref={inputRef}
+          className="docx-import-file-input"
+          type="file"
+          accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          onChange={(event) => void handleFile(event.target.files?.[0])}
+        />
 
-      <button
-        type="button"
-        className="studio-menu-secondary-action"
-        disabled={parsing}
-        onClick={() => inputRef.current?.click()}
-      >
-        {parsing ? (
-          <LoaderCircle className="docx-import-spinner" size={16} aria-hidden="true" />
-        ) : (
-          <FileUp size={16} aria-hidden="true" />
-        )}
-        {parsing ? copy.parsing : copy.chooseFile}
-      </button>
-
-      {parsing ? (
-        <p
-          className="docx-import-hint"
-          role="status"
-          aria-live="polite"
-          data-import-stage={importStage ?? undefined}
-          data-large-document-mode={largeDocumentMode ? 'true' : undefined}
+        <button
+          type="button"
+          className="studio-menu-secondary-action"
+          disabled={parsing}
+          onClick={() => inputRef.current?.click()}
         >
-          {copy.parsing}
-        </p>
-      ) : null}
+          {parsing ? (
+            <LoaderCircle className="docx-import-spinner" size={16} aria-hidden="true" />
+          ) : (
+            <FileUp size={16} aria-hidden="true" />
+          )}
+          {parsing ? copy.parsing : copy.chooseFile}
+        </button>
 
-      {error ? (
-        <div className="docx-import-error" role="alert">
-          <AlertTriangle size={16} aria-hidden="true" />
-          <span>{error}</span>
-        </div>
-      ) : null}
-    </section>
+        {parsing ? (
+          <p
+            className="docx-import-hint"
+            role="status"
+            aria-live="polite"
+            data-import-stage={importStage ?? undefined}
+            data-large-document-mode={largeDocumentMode ? 'true' : undefined}
+          >
+            {copy.parsing}
+          </p>
+        ) : null}
+
+        {error ? (
+          <div className="docx-import-error" role="alert">
+            <AlertTriangle size={16} aria-hidden="true" />
+            <span>{error}</span>
+          </div>
+        ) : null}
+      </section>
+      <PdfImportPanel onImported={onImported} />
+    </>
   );
 }
 
