@@ -29,6 +29,9 @@ export interface OmpLaunchClaims {
     externalId?: string;
     type?: string;
   };
+  reviewAssignment?: {
+    externalId?: string;
+  };
   actor?: {
     externalId?: string;
   };
@@ -44,6 +47,7 @@ export interface OmpLaunchClaims {
 function validateClaimsShape(value: unknown): value is OmpLaunchClaims {
   if (value === null || typeof value !== 'object') return false;
   const claims = value as Record<string, unknown>;
+  const reviewAssignment = claims.reviewAssignment;
   return (
     claims.protocol === 'omi-integration/1' &&
     typeof claims.installationId === 'string' &&
@@ -53,6 +57,17 @@ function validateClaimsShape(value: unknown): value is OmpLaunchClaims {
     (claims.profile === undefined || typeof claims.profile === 'string') &&
     (claims.externalBaseUrl === undefined || typeof claims.externalBaseUrl === 'string') &&
     (claims.apiBaseUrl === undefined || typeof claims.apiBaseUrl === 'string') &&
+    (
+      reviewAssignment === undefined ||
+      (
+        reviewAssignment !== null &&
+        typeof reviewAssignment === 'object' &&
+        (
+          !('externalId' in reviewAssignment) ||
+          typeof (reviewAssignment as Record<string, unknown>).externalId === 'string'
+        )
+      )
+    ) &&
     (
       claims.actorMode === undefined ||
       claims.actorMode === 'editor' ||
