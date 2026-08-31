@@ -396,6 +396,7 @@ function extractPageLocalFootnotes(
   medianWordHeight: number,
 ): PageFootnoteExtraction[] {
   const results: PageFootnoteExtraction[] = [];
+  let lastConfirmedMarker: number | null = null;
 
   for (let page = 1; page <= pageCount; page += 1) {
     const pageLines = lines.filter((line) => line.page === page).sort(byPosition);
@@ -438,9 +439,27 @@ function extractPageLocalFootnotes(
       }
     }
 
-    const confirmedMarkerSet = new Set<string>();
-    for (const markers of geometricAnchors.values()) markers.forEach((marker) => confirmedMarkerSet.add(marker));
-    for (const markers of attachedTextAnchors.values()) markers.forEach((marker) => confirmedMarkerSet.add(marker));
+    const rawConfirmedMarkerSet = new Set<string>();
+    const orderedConfirmedMarkers: string[] = [];
+    for (let index = 0; index < pageLines.length; index += 1) {
+      const markers = uniqueStrings([
+        ...(geometricAnchors.get(index) ?? []),
+        ...(attachedTextAnchors.get(index) ?? []),
+      ]).filter((marker) => possibleMarkerSet.has(marker));
+      for (const marker of markers) {
+        rawConfirmedMarkerSet.add(marker);
+        orderedConfirmedMarkers.push(marker);
+      }
+    }
+
+    const confirmedMarkerSet = selectSequentialNoteMarkers(
+      orderedConfirmedMarkers,
+      rawConfirmedMarkerSet,
+      lastConfirmedMarker,
+    );
+    const selectedInOrder = orderedConfirmedMarkers.filter((marker) => confirmedMarkerSet.has(marker));
+    const lastSelected = selectedInOrder.at(-1);
+    if (lastSelected) lastConfirmedMarker = Number(lastSelected);
 
     const confirmedStarts = possibleStarts
       .filter((item) => confirmedMarkerSet.has(item.marker))
@@ -448,7 +467,8 @@ function extractPageLocalFootnotes(
 
     if (!confirmedStarts.length) {
       const bodyLines = pageLines.map((line, index) => {
-        const anchors = geometricAnchors.get(index) ?? [];
+        const anchors = (geometricAnchors.get(index) ?? [])
+          .filter((marker) => confirmedMarkerSet.has(marker));
         return anchors.length ? { ...line, noteAnchors: anchors } : line;
       });
       results.push({ page, bodyLines, footnotes: [], leadingContinuation: [] });
@@ -542,6 +562,55 @@ function extractPageLocalFootnotes(
   return results;
 }
 
+function selectSequentialNoteMarkers(
+  orderedMarkers: readonly string[],
+  rawConfirmedMarkers: ReadonlySet<string>,
+  previousMarker: number | null,
+): Set<string> {
+  const selected = new Set<string>();
+  const ordered = orderedMarkers
+    .map((marker) => ({ marker, value: Number(marker) }))
+    .filter((item) => Number.isInteger(item.value) && item.value > 0);
+  if (!ordered.length) return selected;
+
+  let last = previousMarker;
+  for (let index = 0; index < ordered.length; index += 1) {
+    const item = ordered[index]!;
+    if (!rawConfirmedMarkers.has(item.marker)) continue;
+
+    if (last === null) {
+      selected.add(item.marker);
+      last = item.value;
+      continue;
+    }
+
+    const expected = last + 1;
+    if (item.value === expected) {
+      selected.add(item.marker);
+      last = item.value;
+      continue;
+    }
+
+    if (item.value <= last) continue;
+
+    // Prefer the expected N+1 marker if it appears later on the same page.
+    // This skips stray numeric superscripts without making the sequence brittle.
+    const expectedAppearsLater = ordered
+      .slice(index + 1)
+      .some((candidate) => candidate.value === expected && rawConfirmedMarkers.has(candidate.marker));
+    if (expectedAppearsLater) continue;
+
+    // Recover across a single missing/garbled marker only. Larger jumps remain
+    // unselected until a later page can re-establish a reliable sequence.
+    if (item.value === expected + 1) {
+      selected.add(item.marker);
+      last = item.value;
+    }
+  }
+
+  return selected;
+}
+
 function attachCrossPageFootnoteContinuations(extractions: PageFootnoteExtraction[]): void {
   for (let index = 1; index < extractions.length; index += 1) {
     const current = extractions[index]!;
@@ -619,9 +688,6 @@ function findSuperscriptNoteMarkers(line: LayoutLine, medianWordHeight: number):
     const raisedEnough = baselineLift >= Math.max(0.45, localHeight * 0.045);
     if (!smallEnough && !raisedEnough) continue;
 
-    // Footnote references normally touch the preceding word/punctuation. Some
-    // typesetters leave a narrow space, so allow a small physical gap while
-    // rejecting ordinary list/number tokens that sit farther away.
     const horizontalGap = Math.max(0, word.xMin - previous.xMax);
     const attachedOrNarrowSpace = horizontalGap <= Math.max(5.5, localHeight * 0.65);
     if (!attachedOrNarrowSpace) continue;
@@ -639,16 +705,10 @@ function findAttachedInlineMarkers(
 ): string[] {
   const matches = new Set<string>();
 
-  // First trust real superscript geometry, including the rare narrow-space case.
   for (const marker of findSuperscriptNoteMarkers(line, medianWordHeight)) {
     if (candidates.has(marker)) matches.add(marker);
   }
 
-  // Poppler occasionally merges a visually superscript marker into the same
-  // <word> token as the preceding text (for example "out.1"). In that case the
-  // sub-token has no independent bbox, but direct attachment plus an identical
-  // page-local footnote start is strong enough evidence. Do not accept a plain
-  // whitespace-separated body number here.
   for (const word of line.words) {
     const match = word.text.match(/[\p{L}\p{M}\p{P}]([1-9][0-9]{0,2})$/u);
     const marker = match?.[1];
