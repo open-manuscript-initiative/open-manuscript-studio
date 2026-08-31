@@ -76,9 +76,12 @@ const jobs = new Map<string, PdfImportJob>();
 export function createPdfImportJob(
   ownerUserId: string,
   fileName: string,
-  bytes: Buffer,
+  bytes: unknown,
 ): PdfImportJobSnapshot {
   cleanupExpiredJobs();
+  if (!Buffer.isBuffer(bytes)) {
+    throw new Error('A PDF binary payload is required.');
+  }
   if (bytes.length < 5 || bytes.subarray(0, 5).toString('ascii') !== '%PDF-') {
     throw new Error('The uploaded file is not a valid PDF document.');
   }
@@ -282,13 +285,17 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
       : null;
     if (footnote) {
       flushParagraph();
-      blocks.push({
-        kind: 'footnote',
-        text: footnote[2]!.trim(),
-        noteMarker: footnote[1],
-        page: line.page,
-        confidence: 0.72,
-      });
+      const noteMarker = footnote[1];
+      const footnoteText = footnote[2]?.trim() ?? '';
+      if (footnoteText) {
+        blocks.push({
+          kind: 'footnote',
+          text: footnoteText,
+          ...(noteMarker ? { noteMarker } : {}),
+          page: line.page,
+          confidence: 0.72,
+        });
+      }
       continue;
     }
 
@@ -407,15 +414,21 @@ function attrNumber(attrs: string, name: string): number {
 }
 
 function decodeXmlText(value: string): string {
-  return value
-    .replace(/<[^>]+>/g, '')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+  const withoutMarkupDelimiters = value.replace(/[<>]/g, '');
+  return withoutMarkupDelimiters
     .replace(/&quot;/g, '"')
     .replace(/&#39;|&apos;/g, "'")
-    .replace(/&#(\d+);/g, (_match, digits: string) => String.fromCodePoint(Number(digits)))
-    .replace(/&#x([0-9a-f]+);/gi, (_match, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)));
+    .replace(/&#(\d+);/g, (_match, digits: string) => decodeSafeCodePoint(Number(digits)))
+    .replace(/&#x([0-9a-f]+);/gi, (_match, hex: string) => decodeSafeCodePoint(Number.parseInt(hex, 16)))
+    .replace(/&amp;/g, '&');
+}
+
+function decodeSafeCodePoint(codePoint: number): string {
+  if (!Number.isInteger(codePoint) || codePoint < 0 || codePoint > 0x10ffff) return '';
+  if (codePoint === 0x3c) return '&lt;';
+  if (codePoint === 0x3e) return '&gt;';
+  if (codePoint >= 0xd800 && codePoint <= 0xdfff) return '';
+  return String.fromCodePoint(codePoint);
 }
 
 function normalizeWhitespace(value: string): string {
