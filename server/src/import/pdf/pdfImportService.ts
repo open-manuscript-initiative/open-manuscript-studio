@@ -368,7 +368,7 @@ function reconstructDocument(fileName: string, pageCount: number, sourceLines: L
     if (block.kind === 'footnote') {
       warnings.push({
         code: 'footnote-review',
-        message: 'A probable footnote was matched from a superscript body marker into the page footnote zone and should be checked.',
+        message: 'A probable footnote was matched to an in-text marker on the same PDF page and should be checked.',
         page: block.page,
       });
     }
@@ -396,6 +396,8 @@ function extractPageLocalFootnotes(
   medianWordHeight: number,
 ): PageFootnoteExtraction[] {
   const results: PageFootnoteExtraction[] = [];
+  // Preserve the last trusted marker across page boundaries so N+1 becomes the
+  // preferred next note reference even when a new page starts.
   let lastConfirmedMarker: number | null = null;
 
   for (let page = 1; page <= pageCount; page += 1) {
@@ -405,93 +407,104 @@ function extractPageLocalFootnotes(
       continue;
     }
 
-    // Priority 1: detect superscript references from the body geometry without
-    // requiring the footnote text to have been recognized first.
-    const rawAnchorsByLine = new Map<number, string[]>();
-    const orderedRawAnchors: string[] = [];
-    for (let index = 0; index < pageLines.length; index += 1) {
-      const line = pageLines[index]!;
-      const anchors = uniqueStrings([
-        ...findSuperscriptNoteMarkers(line, medianWordHeight),
-        ...findAttachedInlineMarkers(line, medianWordHeight),
-      ]);
-      if (!anchors.length) continue;
-      rawAnchorsByLine.set(index, anchors);
-      orderedRawAnchors.push(...anchors);
-    }
+    const possibleStarts = pageLines.flatMap((line, lineIndex) => {
+      if (!isNoteSizedLine(line, medianWordHeight) || line.yMin < line.pageHeight * 0.14) return [];
+      return findPossibleNoteStarts(line).map((occurrence) => ({
+        ...occurrence,
+        line,
+        lineIndex,
+      }));
+    });
 
-    // Priority 2: use numeric sequence as a strong prior after superscript
-    // recognition. The sequence is document-wide and survives page breaks.
-    const rawAnchorSet = new Set(orderedRawAnchors);
-    const selectedMarkerSet = selectSequentialNoteMarkers(
-      orderedRawAnchors,
-      rawAnchorSet,
-      lastConfirmedMarker,
-    );
-    const selectedInOrder = orderedRawAnchors.filter((marker) => selectedMarkerSet.has(marker));
-    const lastSelected = selectedInOrder.at(-1);
-    if (lastSelected) lastConfirmedMarker = Number(lastSelected);
-
-    if (!selectedMarkerSet.size) {
-      results.push({ page, bodyLines: pageLines, footnotes: [], leadingContinuation: [] });
-      continue;
-    }
-
-    // Priority 3: locate the separator boundary by its typographic effect. The
-    // current bbox extractor does not expose vector rules, but the common thin
-    // rule creates a transition/gap into a smaller note run. Once the boundary
-    // is found, every line below it belongs to the footnote zone; we do not keep
-    // re-testing each line for small type.
-    const footnoteRunStart = inferFootnoteZoneStart(
-      pageLines,
-      selectedMarkerSet,
-      medianLineHeight,
-      medianWordHeight,
-    );
-
-    if (footnoteRunStart === null) {
-      const bodyLines = pageLines.map((line, index) => {
-        const anchors = (rawAnchorsByLine.get(index) ?? [])
-          .filter((marker) => selectedMarkerSet.has(marker));
+    if (!possibleStarts.length) {
+      const bodyLines = pageLines.map((line) => {
+        const anchors = findSuperscriptNoteMarkers(line, medianWordHeight);
         return anchors.length ? { ...line, noteAnchors: anchors } : line;
       });
       results.push({ page, bodyLines, footnotes: [], leadingContinuation: [] });
       continue;
     }
 
-    const bodyLines = pageLines.slice(0, footnoteRunStart).map((line, index) => {
-      const anchors = (rawAnchorsByLine.get(index) ?? [])
-        .filter((marker) => selectedMarkerSet.has(marker));
-      return anchors.length ? { ...line, noteAnchors: anchors } : line;
-    });
-    const noteZoneLines = pageLines.slice(footnoteRunStart);
+    const possibleMarkerSet = new Set(possibleStarts.map((item) => item.marker));
+    const geometricAnchors = new Map<number, string[]>();
+    const attachedTextAnchors = new Map<number, string[]>();
 
-    const possibleStarts = noteZoneLines.flatMap((line, relativeIndex) =>
-      findPossibleNoteStarts(line)
-        .filter((occurrence) => selectedMarkerSet.has(occurrence.marker))
-        .map((occurrence) => ({
-          ...occurrence,
-          line,
-          lineIndex: footnoteRunStart + relativeIndex,
-        })),
-    ).sort((a, b) => a.lineIndex - b.lineIndex || a.markerOffset - b.markerOffset);
+    for (let index = 0; index < pageLines.length; index += 1) {
+      const line = pageLines[index]!;
+      const raised = findSuperscriptNoteMarkers(line, medianWordHeight)
+        .filter((marker) => possibleMarkerSet.has(marker));
+      if (raised.length) geometricAnchors.set(index, raised);
 
+      if (typicalWordHeight(line) >= medianWordHeight * 0.98) {
+        const attached = findAttachedInlineMarkers(line, possibleMarkerSet, medianWordHeight);
+        if (attached.length) attachedTextAnchors.set(index, attached);
+      }
+    }
+
+    const rawConfirmedMarkerSet = new Set<string>();
+    const orderedConfirmedMarkers: string[] = [];
+    for (let index = 0; index < pageLines.length; index += 1) {
+      const markers = uniqueStrings([
+        ...(geometricAnchors.get(index) ?? []),
+        ...(attachedTextAnchors.get(index) ?? []),
+      ]).filter((marker) => possibleMarkerSet.has(marker));
+      for (const marker of markers) {
+        rawConfirmedMarkerSet.add(marker);
+        orderedConfirmedMarkers.push(marker);
+      }
+    }
+
+    const confirmedMarkerSet = selectSequentialNoteMarkers(
+      orderedConfirmedMarkers,
+      rawConfirmedMarkerSet,
+      lastConfirmedMarker,
+    );
+    const selectedInOrder = orderedConfirmedMarkers.filter((marker) => confirmedMarkerSet.has(marker));
+    const lastSelected = selectedInOrder.at(-1);
+    if (lastSelected) lastConfirmedMarker = Number(lastSelected);
+
+    const confirmedStarts = possibleStarts
+      .filter((item) => confirmedMarkerSet.has(item.marker))
+      .sort((a, b) => a.lineIndex - b.lineIndex || a.markerOffset - b.markerOffset);
+
+    if (!confirmedStarts.length) {
+      const bodyLines = pageLines.map((line, index) => {
+        const anchors = (geometricAnchors.get(index) ?? [])
+          .filter((marker) => confirmedMarkerSet.has(marker));
+        return anchors.length ? { ...line, noteAnchors: anchors } : line;
+      });
+      results.push({ page, bodyLines, footnotes: [], leadingContinuation: [] });
+      continue;
+    }
+
+    const firstConfirmedLineIndex = confirmedStarts[0]!.lineIndex;
+    const footnoteRunStart = findFootnoteRunStart(
+      pageLines,
+      firstConfirmedLineIndex,
+      medianLineHeight,
+      medianWordHeight,
+    );
     const startsByLine = new Map<number, NoteStartOccurrence[]>();
-    for (const occurrence of possibleStarts) {
+    for (const occurrence of confirmedStarts) {
       const group = startsByLine.get(occurrence.lineIndex) ?? [];
       group.push(occurrence);
       startsByLine.set(occurrence.lineIndex, group);
     }
 
+    const bodyLines: LayoutLine[] = [];
+    for (let index = 0; index < footnoteRunStart; index += 1) {
+      const line = pageLines[index]!;
+      const anchors = uniqueStrings([
+        ...(geometricAnchors.get(index) ?? []),
+        ...(attachedTextAnchors.get(index) ?? []),
+      ].filter((marker) => confirmedMarkerSet.has(marker)));
+      bodyLines.push(anchors.length ? { ...line, noteAnchors: anchors } : line);
+    }
+
     const leadingContinuation: LayoutLine[] = [];
-    const firstStartIndex = possibleStarts[0]?.lineIndex;
-    if (firstStartIndex !== undefined) {
-      for (let index = footnoteRunStart; index < firstStartIndex; index += 1) {
-        const line = pageLines[index];
-        if (line) leadingContinuation.push(line);
-      }
-    } else {
-      leadingContinuation.push(...noteZoneLines);
+    for (let index = footnoteRunStart; index < firstConfirmedLineIndex; index += 1) {
+      const line = pageLines[index];
+      if (line && isNoteSizedLine(line, medianWordHeight)) leadingContinuation.push(line);
     }
 
     const footnotes: PdfImportBlock[] = [];
@@ -507,14 +520,14 @@ function extractPageLocalFootnotes(
           text,
           page,
           noteMarker: currentMarker,
-          confidence: 0.96,
+          confidence: 0.95,
         });
       }
       currentMarker = null;
       currentLines = [];
     };
 
-    for (let index = footnoteRunStart; index < pageLines.length; index += 1) {
+    for (let index = firstConfirmedLineIndex; index < pageLines.length; index += 1) {
       const line = pageLines[index]!;
       const occurrences = startsByLine.get(index) ?? [];
 
@@ -536,8 +549,12 @@ function extractPageLocalFootnotes(
         continue;
       }
 
-      // Everything below the inferred separator belongs to the footnote zone.
-      if (currentMarker) currentLines.push(line.text);
+      if (currentMarker && isNoteSizedLine(line, medianWordHeight)) {
+        currentLines.push(line.text);
+        continue;
+      }
+
+      if (currentMarker) flushNote();
     }
     flushNote();
 
@@ -545,43 +562,6 @@ function extractPageLocalFootnotes(
   }
 
   return results;
-}
-
-function inferFootnoteZoneStart(
-  lines: LayoutLine[],
-  selectedMarkers: ReadonlySet<string>,
-  medianLineHeight: number,
-  medianWordHeight: number,
-): number | null {
-  let best: { index: number; score: number } | null = null;
-
-  for (let index = 1; index < lines.length; index += 1) {
-    const line = lines[index]!;
-    if (line.yMin < line.pageHeight * 0.28) continue;
-
-    const previous = lines[index - 1]!;
-    const gap = Math.max(0, line.yMin - previous.yMax);
-    const noteSized = isNoteSizedLine(line, medianWordHeight);
-    const startsSelectedNote = findPossibleNoteStarts(line)
-      .some((occurrence) => selectedMarkers.has(occurrence.marker));
-    const next = lines[index + 1];
-    const noteRun = noteSized && Boolean(next && isNoteSizedLine(next, medianWordHeight));
-
-    if (!startsSelectedNote && !noteRun) continue;
-
-    let score = 0;
-    if (startsSelectedNote) score += 5;
-    if (noteSized) score += 2;
-    if (gap >= medianLineHeight * 0.35) score += 3;
-    if (gap >= medianLineHeight * 0.75) score += 2;
-    if (typicalWordHeight(previous) >= medianWordHeight * 0.98) score += 1;
-
-    if (!best || score > best.score || (score === best.score && index < best.index)) {
-      best = { index, score };
-    }
-  }
-
-  return best?.index ?? null;
 }
 
 function selectSequentialNoteMarkers(
@@ -600,6 +580,8 @@ function selectSequentialNoteMarkers(
     const item = ordered[index]!;
     if (!rawConfirmedMarkers.has(item.marker)) continue;
 
+    // The first high-confidence marker establishes the sequence, regardless of
+    // whether the document starts at 1, 8, 245, or another value.
     if (last === null) {
       selected.add(item.marker);
       last = item.value;
@@ -615,11 +597,15 @@ function selectSequentialNoteMarkers(
 
     if (item.value <= last) continue;
 
+    // If N+1 exists later on the same page, ignore the stray higher number and
+    // wait for the expected marker.
     const expectedAppearsLater = ordered
       .slice(index + 1)
       .some((candidate) => candidate.value === expected && rawConfirmedMarkers.has(candidate.marker));
     if (expectedAppearsLater) continue;
 
+    // Permit recovery from exactly one missing/garbled note marker. This keeps
+    // the sequence useful without letting an arbitrary jump become a new truth.
     if (item.value === expected + 1) {
       selected.add(item.marker);
       last = item.value;
@@ -641,6 +627,24 @@ function attachCrossPageFootnoteContinuations(extractions: PageFootnoteExtractio
     target.text = joinLines([target.text, continuation]);
     target.confidence = Math.min(target.confidence, 0.9);
   }
+}
+
+function findFootnoteRunStart(
+  lines: LayoutLine[],
+  firstMarkerIndex: number,
+  medianLineHeight: number,
+  medianWordHeight: number,
+): number {
+  let start = firstMarkerIndex;
+  for (let index = firstMarkerIndex - 1; index >= 0; index -= 1) {
+    const line = lines[index]!;
+    const next = lines[index + 1]!;
+    if (!isNoteSizedLine(line, medianWordHeight)) break;
+    const gap = next.yMin - line.yMax;
+    if (gap > medianLineHeight * 1.8) break;
+    start = index;
+  }
+  return start;
 }
 
 function findPossibleNoteStarts(
@@ -684,12 +688,12 @@ function findSuperscriptNoteMarkers(line: LayoutLine, medianWordHeight: number):
 
     const wordHeight = Math.max(1, word.yMax - word.yMin);
     const baselineLift = localBaseline - word.yMax;
-    const smallEnough = wordHeight <= localHeight * 0.94;
-    const raisedEnough = baselineLift >= Math.max(0.35, localHeight * 0.035);
+    const smallEnough = wordHeight <= localHeight * 0.92;
+    const raisedEnough = baselineLift >= Math.max(0.45, localHeight * 0.045);
     if (!smallEnough && !raisedEnough) continue;
 
     const horizontalGap = Math.max(0, word.xMin - previous.xMax);
-    const attachedOrNarrowSpace = horizontalGap <= Math.max(7, localHeight * 0.8);
+    const attachedOrNarrowSpace = horizontalGap <= Math.max(5.5, localHeight * 0.65);
     if (!attachedOrNarrowSpace) continue;
 
     markers.push(exactMarker);
@@ -700,20 +704,19 @@ function findSuperscriptNoteMarkers(line: LayoutLine, medianWordHeight: number):
 
 function findAttachedInlineMarkers(
   line: LayoutLine,
+  candidates: ReadonlySet<string>,
   medianWordHeight: number,
 ): string[] {
   const matches = new Set<string>();
 
   for (const marker of findSuperscriptNoteMarkers(line, medianWordHeight)) {
-    matches.add(marker);
+    if (candidates.has(marker)) matches.add(marker);
   }
 
-  // Poppler may merge a superscript into the preceding token. Direct attachment
-  // is allowed as a fallback; sequence filtering happens afterwards.
   for (const word of line.words) {
     const match = word.text.match(/[\p{L}\p{M}\p{P}]([1-9][0-9]{0,2})$/u);
     const marker = match?.[1];
-    if (marker) matches.add(marker);
+    if (marker && candidates.has(marker)) matches.add(marker);
   }
 
   return [...matches];
