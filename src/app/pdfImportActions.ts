@@ -75,6 +75,8 @@ export function applyPdfImportResult(result: PdfImportResult): string {
   }
   if (sections.length === 0) sections.push(createSection('Imported PDF'));
 
+  preservePdfPublicationMetadata(result, sections, annotations, timestamp);
+
   const state: OmiManuscriptState = {
     schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json',
     id: manuscriptId,
@@ -107,6 +109,48 @@ export function applyPdfImportResult(result: PdfImportResult): string {
   const manuscript: OmiManuscript = { ...state, ...envelope };
   useStudioStore.getState().loadManuscript(manuscript);
   return manuscriptId;
+}
+
+/**
+ * The current OMI alpha schema has no manuscript-level rights/identifier bag.
+ * Keep publication metadata losslessly as hidden semantic annotations instead
+ * of leaving DOI/copyright footer lines in editable body text. A future
+ * metadata-model migration can promote these values without reparsing the PDF.
+ */
+function preservePdfPublicationMetadata(
+  result: PdfImportResult,
+  sections: readonly OmiSection[],
+  annotations: OmiAnnotation[],
+  timestamp: string,
+): void {
+  const target = sections.flatMap((item) => item.blocks)[0];
+  if (!target || !result.metadata) return;
+
+  for (const doi of result.metadata.dois) {
+    annotations.push({
+      id: crypto.randomUUID(),
+      type: 'semantic',
+      targetBlockId: target.id,
+      targetText: 'doi',
+      body: doi,
+      renderingHint: 'hidden',
+      createdAt: timestamp,
+      modifiedAt: timestamp,
+    });
+  }
+
+  for (const statement of result.metadata.copyrightStatements) {
+    annotations.push({
+      id: crypto.randomUUID(),
+      type: 'semantic',
+      targetBlockId: target.id,
+      targetText: 'copyright',
+      body: statement,
+      renderingHint: 'hidden',
+      createdAt: timestamp,
+      modifiedAt: timestamp,
+    });
+  }
 }
 
 /**
