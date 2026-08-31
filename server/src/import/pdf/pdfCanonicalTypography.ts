@@ -111,6 +111,45 @@ function canonicalizeLine<TLine extends CanonicalPdfLine>(line: TLine): void {
     word.baselineOffset = baselineOffset;
     if (explicitSuperscript) word.superscriptMarker = explicitSuperscript;
   }
+
+  markSoftInlineReferenceCandidates(line, typicalHeight);
+}
+
+/**
+ * Poppler sometimes flattens a printed superscript marker into a normal-sized
+ * standalone numeric word. Keep superscript geometry as the primary signal,
+ * but expose these flattened inline numbers to the existing attached-marker
+ * matcher without changing their visible text or their `script` classification.
+ *
+ * We encode the soft candidate on the preceding word's canonical value only.
+ * The semantic matcher later still requires a same-page note start with the
+ * same marker before accepting it. Numbered list starts such as `6. Travel...`
+ * are intentionally excluded because the marker word must contain digits only
+ * and must have a lexical word immediately before it on the same line.
+ */
+function markSoftInlineReferenceCandidates<TLine extends CanonicalPdfLine>(line: TLine, typicalHeight: number): void {
+  for (let index = 1; index < line.words.length - 1; index += 1) {
+    const word = line.words[index]!;
+    if (word.script !== 'normal') continue;
+
+    const marker = parseCanonicalNoteMarker(word.canonicalText ?? word.text);
+    if (!marker) continue;
+
+    const previous = line.words[index - 1]!;
+    const next = line.words[index + 1]!;
+    const previousText = previous.rawText ?? previous.text;
+    const nextCanonical = (next.canonicalText ?? next.text).trim();
+
+    if (!/[\p{L}\p{M}\p{P}]$/u.test(previousText)) continue;
+    if (!/^[\p{L}\p{M}"“„'‘(\[]/u.test(nextCanonical)) continue;
+
+    const horizontalGap = Math.max(0, word.xMin - previous.xMax);
+    if (horizontalGap > Math.max(9, typicalHeight * 0.9)) continue;
+
+    const previousCanonical = previous.canonicalText ?? canonicalizePdfText(previous.text);
+    if (new RegExp(`${marker}$`, 'u').test(previousCanonical)) continue;
+    previous.canonicalText = `${previousCanonical}${marker}`;
+  }
 }
 
 function extractSuperscriptMarker(value: string): string | undefined {
