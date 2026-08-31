@@ -593,15 +593,11 @@ function selectSequentialNoteMarkers(
 
     if (item.value <= last) continue;
 
-    // Prefer the expected N+1 marker if it appears later on the same page.
-    // This skips stray numeric superscripts without making the sequence brittle.
     const expectedAppearsLater = ordered
       .slice(index + 1)
       .some((candidate) => candidate.value === expected && rawConfirmedMarkers.has(candidate.marker));
     if (expectedAppearsLater) continue;
 
-    // Recover across a single missing/garbled marker only. Larger jumps remain
-    // unselected until a later page can re-establish a reliable sequence.
     if (item.value === expected + 1) {
       selected.add(item.marker);
       last = item.value;
