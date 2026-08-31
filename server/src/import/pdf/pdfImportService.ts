@@ -405,28 +405,19 @@ function extractPageLocalFootnotes(
       continue;
     }
 
-    // 1. Superscript geometry is the primary signal. It is detected before and
-    // independently of footnote-text recognition.
     const geometricAnchors = new Map<number, string[]>();
-    const orderedGeometricMarkers: string[] = [];
     for (let index = 0; index < pageLines.length; index += 1) {
       const markers = findSuperscriptNoteMarkers(pageLines[index]!, medianWordHeight);
       if (!markers.length) continue;
       geometricAnchors.set(index, markers);
-      orderedGeometricMarkers.push(...markers);
     }
 
-    // Candidate note starts are secondary evidence. Small type is used only to
-    // identify a plausible start, never to decide whether a superscript exists.
     const possibleStarts = pageLines.flatMap((line, lineIndex) => {
       if (!isNoteSizedLine(line, medianWordHeight) || line.yMin < line.pageHeight * 0.14) return [];
       return findPossibleNoteStarts(line).map((occurrence) => ({ ...occurrence, line, lineIndex }));
     });
     const possibleMarkerSet = new Set(possibleStarts.map((item) => item.marker));
 
-    // Poppler can merge a superscript with the preceding token (e.g. "out.1").
-    // Such a fallback is accepted only when the same number also starts a
-    // plausible note on the page.
     const attachedTextAnchors = new Map<number, string[]>();
     for (let index = 0; index < pageLines.length; index += 1) {
       const line = pageLines[index]!;
@@ -449,9 +440,6 @@ function extractPageLocalFootnotes(
       continue;
     }
 
-    // 2. Sequence is a strong prior after superscript recognition. Exact N+1 is
-    // preferred. A jump is allowed only when a real same-page note start supports
-    // it, so one missed superscript does not destroy the remaining sequence.
     const selectedMarkerSet = selectSequentialNoteMarkers(
       orderedMarkers,
       lastConfirmedMarker,
@@ -474,8 +462,6 @@ function extractPageLocalFootnotes(
       continue;
     }
 
-    // 3. Never guess the horizontal separator. The footnote zone starts exactly
-    // at the first real note-start line whose number matches a selected marker.
     const footnoteRunStart = matchedStarts[0]!.lineIndex;
     const startsByLine = new Map<number, NoteStartOccurrence[]>();
     for (const occurrence of matchedStarts) {
@@ -533,9 +519,6 @@ function extractPageLocalFootnotes(
         continue;
       }
 
-      // Once a real matched note start establishes the zone, all remaining text
-      // on that page belongs to the footnote area (page furniture was filtered
-      // earlier). Do not drop continuation lines because of font-size variance.
       if (currentMarker) currentLines.push(line.text);
     }
     flushNote();
@@ -564,9 +547,6 @@ function selectSequentialNoteMarkers(
   let last = previousMarker;
   for (const item of ordered) {
     if (last === null) {
-      // Prefer an opening superscript that is independently backed by a note
-      // start, but never discard genuine superscript geometry solely because the
-      // note-start parser missed it.
       selected.add(item.marker);
       last = item.value;
       continue;
@@ -580,9 +560,6 @@ function selectSequentialNoteMarkers(
       continue;
     }
 
-    // Sequence is secondary, not a hard gate. If a later superscript has a real
-    // same-page note start, accept it as a recovery point after one or more
-    // missed markers and continue the sequence from there.
     if (samePageNoteStarts.has(item.marker)) {
       selected.add(item.marker);
       last = item.value;
@@ -627,7 +604,7 @@ function findPossibleNoteStarts(
 function findSuperscriptNoteMarkers(line: LayoutLine, medianWordHeight: number): string[] {
   if (line.words.length < 2 || medianWordHeight <= 0) return [];
   const markers: string[] = [];
-  const bodyWords = line.words.filter((word) => !/^[1-9][0-9]{0,2}$/u.test(word.text));
+  const bodyWords = line.words.filter((word) => parseStandaloneNoteMarker(word.text) === null);
   const localHeight = medianNumber(bodyWords.map((word) => Math.max(1, word.yMax - word.yMin)))
     ?? medianWordHeight;
   const localBaseline = medianNumber(bodyWords.map((word) => word.yMax))
@@ -635,7 +612,7 @@ function findSuperscriptNoteMarkers(line: LayoutLine, medianWordHeight: number):
 
   for (let index = 0; index < line.words.length; index += 1) {
     const word = line.words[index]!;
-    const exactMarker = word.text.match(/^([1-9][0-9]{0,2})$/u)?.[1];
+    const exactMarker = parseStandaloneNoteMarker(word.text);
     if (!exactMarker) continue;
 
     const previous = line.words[index - 1];
@@ -643,9 +620,10 @@ function findSuperscriptNoteMarkers(line: LayoutLine, medianWordHeight: number):
 
     const wordHeight = Math.max(1, word.yMax - word.yMin);
     const baselineLift = localBaseline - word.yMax;
+    const unicodeSuperscript = /^[¹²³⁴⁵⁶⁷⁸⁹⁰]+$/u.test(word.text);
     const smallEnough = wordHeight <= localHeight * 0.92;
     const raisedEnough = baselineLift >= Math.max(0.45, localHeight * 0.045);
-    if (!smallEnough && !raisedEnough) continue;
+    if (!unicodeSuperscript && !smallEnough && !raisedEnough) continue;
 
     const horizontalGap = Math.max(0, word.xMin - previous.xMax);
     const attachedOrNarrowSpace = horizontalGap <= Math.max(5.5, localHeight * 0.65);
@@ -669,12 +647,37 @@ function findAttachedInlineMarkers(
   }
 
   for (const word of line.words) {
-    const match = word.text.match(/[\p{L}\p{M}\p{P}]([1-9][0-9]{0,2})$/u);
-    const marker = match?.[1];
+    const asciiMatch = word.text.match(/[\p{L}\p{M}\p{P}]([1-9][0-9]{0,2})$/u)?.[1];
+    const superscriptMatch = word.text.match(/[\p{L}\p{M}\p{P}]([¹²³⁴⁵⁶⁷⁸⁹⁰]{1,3})$/u)?.[1];
+    const marker = asciiMatch ?? normalizeSuperscriptDigits(superscriptMatch ?? '');
     if (marker && candidates.has(marker)) matches.add(marker);
   }
 
   return [...matches];
+}
+
+function parseStandaloneNoteMarker(value: string): string | null {
+  const ascii = value.match(/^([1-9][0-9]{0,2})$/u)?.[1];
+  if (ascii) return ascii;
+  if (!/^[¹²³⁴⁵⁶⁷⁸⁹⁰]{1,3}$/u.test(value)) return null;
+  const normalized = normalizeSuperscriptDigits(value);
+  return /^[1-9][0-9]{0,2}$/u.test(normalized) ? normalized : null;
+}
+
+function normalizeSuperscriptDigits(value: string): string {
+  const map: Record<string, string> = {
+    '⁰': '0',
+    '¹': '1',
+    '²': '2',
+    '³': '3',
+    '⁴': '4',
+    '⁵': '5',
+    '⁶': '6',
+    '⁷': '7',
+    '⁸': '8',
+    '⁹': '9',
+  };
+  return [...value].map((character) => map[character] ?? character).join('');
 }
 
 function isNoteSizedLine(line: LayoutLine, medianWordHeight: number): boolean {
