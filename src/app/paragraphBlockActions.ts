@@ -1,3 +1,8 @@
+import {
+  findAdjacentManuscriptBlock,
+  findManuscriptBlock,
+  type ManuscriptBlockLocation,
+} from '../model/manuscriptEditingOrder';
 import { extractManuscriptState, type CreateChangeEventInput } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';
 import type { OmiBlock, OmiManuscriptState } from '../types/omi';
@@ -7,6 +12,8 @@ export interface ParagraphMergeResult {
   blockId: string;
   selectionPosition: number;
 }
+
+type ParagraphLocation = ManuscriptBlockLocation;
 
 export function splitParagraphBlock(
   blockId: string,
@@ -93,14 +100,15 @@ function mergeAdjacentParagraph(
     const location = findParagraphBlock(state.manuscript.sections, blockId);
     if (!location) return state;
 
-    const { sectionIndex, blockIndex, block } = location;
-    const section = state.manuscript.sections[sectionIndex];
-    if (!section) return state;
+    const adjacentLocation = findAdjacentManuscriptBlock(
+      state.manuscript.sections,
+      blockId,
+      direction,
+    );
+    if (!adjacentLocation || adjacentLocation.block.type !== 'paragraph') return state;
 
-    const adjacentIndex = direction === 'backward' ? blockIndex - 1 : blockIndex + 1;
-    const adjacent = section.blocks[adjacentIndex];
-    if (!adjacent || adjacent.type !== 'paragraph') return state;
-
+    const block = location.block;
+    const adjacent = adjacentLocation.block;
     const first = direction === 'backward' ? adjacent : block;
     const second = direction === 'backward' ? block : adjacent;
     const survivor = first;
@@ -108,15 +116,14 @@ function mergeAdjacentParagraph(
     const mergedContent = mergeStoredParagraphDocuments(first.content, second.content);
     const selectionPosition = paragraphDocumentEndPosition(first.content);
 
-    const nextSections = state.manuscript.sections.map((candidate, index) => {
-      if (index !== sectionIndex) return candidate;
-      const blocks = candidate.blocks
+    const nextSections = state.manuscript.sections.map((section) => ({
+      ...section,
+      blocks: section.blocks
         .filter((item) => item.id !== removed.id)
         .map((item) => item.id === survivor.id
           ? { ...item, content: mergedContent }
-          : item);
-      return { ...candidate, blocks };
-    });
+          : item),
+    }));
 
     const nextState = reassignAllBlockReferences(
       {
@@ -192,17 +199,9 @@ function checkpointStructuralChange(): void {
 function findParagraphBlock(
   sections: ReturnType<typeof useStudioStore.getState>['manuscript']['sections'],
   blockId: string,
-): { sectionIndex: number; blockIndex: number; block: OmiBlock } | null {
-  for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex += 1) {
-    const section = sections[sectionIndex];
-    if (!section) continue;
-    const blockIndex = section.blocks.findIndex((block) => block.id === blockId);
-    if (blockIndex < 0) continue;
-    const block = section.blocks[blockIndex];
-    if (!block || block.type !== 'paragraph') return null;
-    return { sectionIndex, blockIndex, block };
-  }
-  return null;
+): ParagraphLocation | null {
+  const location = findManuscriptBlock(sections, blockId);
+  return location?.block.type === 'paragraph' ? location : null;
 }
 
 function reassignAnchoredObjects(
