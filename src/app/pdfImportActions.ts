@@ -17,13 +17,18 @@ interface MaterializedPdfNote {
   body: string;
 }
 
+interface PendingPdfAnchor {
+  page: number;
+  blockIndex: number;
+}
+
 export function applyPdfImportResult(result: PdfImportResult): string {
   const current = useStudioStore.getState().manuscript;
   const timestamp = new Date().toISOString();
   const manuscriptId = crypto.randomUUID();
   const annotations: OmiAnnotation[] = [];
   const sections: OmiSection[] = [];
-  const importedBlocks = coalescePdfParagraphLines(result.blocks);
+  const importedBlocks = recoverAnchoredPdfFootnotes(coalescePdfParagraphLines(result.blocks));
   const footnotes = indexPdfFootnotes(importedBlocks);
   const consumedFootnotes = new Set<string>();
 
@@ -45,7 +50,7 @@ export function applyPdfImportResult(result: PdfImportResult): string {
 
     if (imported.kind === 'footnote') {
       const marker = imported.noteMarker?.trim();
-      if (marker && consumedFootnotes.has(noteTargetKey(imported.page, marker))) continue;
+      if (marker && consumedFootnotes.has(noteMarkerKey(marker))) continue;
 
       if (previousTextBlock) {
         annotations.push({
@@ -133,12 +138,78 @@ export function applyPdfImportResult(result: PdfImportResult): string {
   return manuscriptId;
 }
 
+/**
+ * Recover note bodies that the layout service left in the body stream.
+ *
+ * A common page-break case is: the body reference is the last anchor on page N
+ * while the numbered note paragraph starts on page N+1. The server's primary
+ * matcher is deliberately page-local, so an otherwise valid note start can
+ * survive as a paragraph or, when its marker expands the bbox, even as a false
+ * heading. We only recover a numbered body block when the same marker was seen
+ * earlier as an explicit PDF note anchor, no real footnote block for that marker
+ * exists, and the candidate begins on the anchor page or the immediately next
+ * page. This keeps ordinary numbered headings/lists out of the fallback.
+ */
+function recoverAnchoredPdfFootnotes(blocks: readonly PdfImportBlock[]): PdfImportBlock[] {
+  const recognizedMarkers = new Set(
+    blocks
+      .filter((block) => block.kind === 'footnote' && block.noteMarker?.trim())
+      .map((block) => block.noteMarker!.trim()),
+  );
+  const recoveredMarkers = new Set<string>();
+  const pendingAnchors = new Map<string, PendingPdfAnchor>();
+
+  return blocks.map((block, blockIndex) => {
+    if (block.kind !== 'footnote') {
+      const leading = parseLeadingPdfNoteStart(block.text);
+      if (leading && !recognizedMarkers.has(leading.marker) && !recoveredMarkers.has(leading.marker)) {
+        const pending = pendingAnchors.get(leading.marker);
+        const pageDistance = pending ? block.page - pending.page : Number.POSITIVE_INFINITY;
+        if (pending && blockIndex > pending.blockIndex && pageDistance >= 0 && pageDistance <= 1) {
+          recoveredMarkers.add(leading.marker);
+          pendingAnchors.delete(leading.marker);
+          return {
+            kind: 'footnote',
+            text: leading.body,
+            page: block.page,
+            confidence: Math.min(block.confidence, 0.86),
+            noteMarker: leading.marker,
+          };
+        }
+      }
+    }
+
+    if (block.kind !== 'footnote') {
+      for (const rawMarker of block.noteAnchors ?? []) {
+        const marker = rawMarker.trim();
+        if (!marker || recognizedMarkers.has(marker) || recoveredMarkers.has(marker)) continue;
+        pendingAnchors.set(marker, { page: block.page, blockIndex });
+      }
+    }
+
+    return {
+      ...block,
+      ...(block.noteAnchors ? { noteAnchors: [...block.noteAnchors] } : {}),
+    };
+  });
+}
+
+function parseLeadingPdfNoteStart(text: string): { marker: string; body: string } | null {
+  const normalized = normalizeInlineSuperscriptDigits(text.trim());
+  const match = normalized.match(/^([1-9][0-9]{0,2})(?:[.)])?\s+([\s\S]+)$/u);
+  if (!match?.[1] || !match[2]?.trim()) return null;
+  const body = match[2].trim();
+  if (body.length < 8 || !/[\p{L}\p{M}]/u.test(body)) return null;
+  return { marker: match[1], body };
+}
+
 function indexPdfFootnotes(blocks: readonly PdfImportBlock[]): Map<string, PdfImportBlock> {
   const footnotes = new Map<string, PdfImportBlock>();
   for (const block of blocks) {
     const marker = block.kind === 'footnote' ? block.noteMarker?.trim() : undefined;
     if (!marker) continue;
     footnotes.set(noteTargetKey(block.page, marker), block);
+    if (!footnotes.has(noteMarkerKey(marker))) footnotes.set(noteMarkerKey(marker), block);
   }
   return footnotes;
 }
@@ -153,9 +224,10 @@ function materializeNotesForBlock(
   const notes: MaterializedPdfNote[] = [];
   for (const rawMarker of block.noteAnchors) {
     const marker = rawMarker.trim();
-    const key = noteTargetKey(block.page, marker);
-    const footnote = footnotes.get(key);
-    if (!marker || !footnote || consumed.has(key)) continue;
+    const markerKey = noteMarkerKey(marker);
+    const footnote = footnotes.get(noteTargetKey(block.page, marker)) ?? footnotes.get(markerKey);
+    if (!marker || !footnote || consumed.has(markerKey)) continue;
+    if (footnote.page < block.page || footnote.page > block.page + 1) continue;
     if (findInlineMarkerOffset(block.text, marker) < 0) continue;
 
     notes.push({
@@ -164,7 +236,7 @@ function materializeNotesForBlock(
       anchorId: crypto.randomUUID(),
       body: footnote.text,
     });
-    consumed.add(key);
+    consumed.add(markerKey);
   }
   return notes;
 }
@@ -335,6 +407,10 @@ function isStandaloneNoteMarker(text: string): boolean {
 
 function noteTargetKey(page: number, marker: string): string {
   return `${page}:${marker}`;
+}
+
+function noteMarkerKey(marker: string): string {
+  return `marker:${marker}`;
 }
 
 function createSection(title: string): OmiSection {
