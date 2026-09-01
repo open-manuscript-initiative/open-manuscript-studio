@@ -1,4 +1,9 @@
 import type { OmiBlock, OmiSection } from '../types/omi';
+import { textFromAtomicBlock } from '../model/atomicTextBlocks';
+import {
+  getParentSectionId,
+  withParentSectionId,
+} from '../model/sectionStructure';
 
 export const OMI_MANUSCRIPT_CLIPBOARD_MIME =
   'application/x-open-manuscript-fragment+json';
@@ -96,42 +101,60 @@ export function cutManuscriptRange(
     }));
   }
 
-  return sections.map((section, sectionIndex) => ({
-    ...clone(section),
-    blocks: section.blocks.flatMap((block, blockIndex) => {
-      const globalIndex = ordered.findIndex(
-        (entry) =>
-          entry.sectionIndex === sectionIndex && entry.blockIndex === blockIndex,
-      );
-      if (globalIndex < startIndex || globalIndex > endIndex) return [clone(block)];
+  if (start.block.visual || end.block.visual) return cloneSections(sections);
 
-      if (globalIndex === startIndex) {
-        if (block.visual) return [];
-        return [
-          {
-            ...clone(block),
-            content: sliceStoredContent(block.content, 0, startOffset),
-          },
-        ];
-      }
+  const startRemainder: OmiBlock = {
+    ...clone(start.block),
+    content: sliceStoredContent(start.block.content, 0, startOffset),
+  };
+  const endRemainder: OmiBlock = {
+    ...clone(end.block),
+    content: sliceStoredContent(
+      end.block.content,
+      endOffset,
+      getStoredTextLength(end.block.content),
+    ),
+  };
+  const boundaryBlocks = mergeCompatibleBoundaryBlocks(
+    startRemainder,
+    endRemainder,
+  );
+  const startSection = sections[start.sectionIndex];
+  const endSection = sections[end.sectionIndex];
+  if (!startSection || !endSection) return cloneSections(sections);
 
-      if (globalIndex === endIndex) {
-        if (block.visual) return [];
-        return [
-          {
-            ...clone(block),
-            content: sliceStoredContent(
-              block.content,
-              endOffset,
-              getStoredTextLength(block.content),
-            ),
-          },
-        ];
-      }
+  const replacementBlocks = [
+    ...startSection.blocks.slice(0, start.blockIndex).map(clone),
+    ...boundaryBlocks,
+    ...endSection.blocks.slice(end.blockIndex + 1).map(clone),
+  ];
+  const mergedStartSection = synchronizeSectionHeading({
+    ...clone(startSection),
+    blocks: replacementBlocks,
+  });
 
-      return [];
-    }),
-  }));
+  if (start.sectionIndex === end.sectionIndex) {
+    return sections.map((section, sectionIndex) =>
+      sectionIndex === start.sectionIndex
+        ? mergedStartSection
+        : clone(section));
+  }
+
+  const removedSectionIds = new Set(
+    sections
+      .slice(start.sectionIndex + 1, end.sectionIndex + 1)
+      .map((section) => section.id),
+  );
+
+  return sections.flatMap((section, sectionIndex) => {
+    if (sectionIndex === start.sectionIndex) return [mergedStartSection];
+    if (removedSectionIds.has(section.id)) return [];
+
+    const copied = clone(section);
+    return removedSectionIds.has(getParentSectionId(copied) ?? '')
+      ? [withParentSectionId(copied, mergedStartSection.id)]
+      : [copied];
+  });
 }
 
 export function pasteManuscriptFragment(
@@ -255,6 +278,26 @@ function concatStoredContent(...parts: string[]): string {
       ? { ...clone(template), type: 'doc', content: nodes }
       : emptyDocumentLike(template),
   );
+}
+
+function mergeCompatibleBoundaryBlocks(
+  start: OmiBlock,
+  end: OmiBlock,
+): OmiBlock[] {
+  if (start.type !== end.type) return [start, end];
+  return [{
+    ...start,
+    content: concatStoredContent(start.content, end.content),
+  }];
+}
+
+function synchronizeSectionHeading(section: OmiSection): OmiSection {
+  const first = section.blocks[0];
+  if (first?.type !== 'heading') return section;
+  return {
+    ...section,
+    title: textFromAtomicBlock(first.content),
+  };
 }
 
 function appendMergedNode(nodes: JsonNode[], next: JsonNode): void {
