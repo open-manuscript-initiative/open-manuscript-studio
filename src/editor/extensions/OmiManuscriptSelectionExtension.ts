@@ -75,9 +75,10 @@ export const OmiManuscriptSelectionExtension = Extension.create({
               // "Select all" action at the active contenteditable boundary.
               // Because each OMI block has its own Tiptap editing host, that
               // native action initially selects only one block. Mobile Chrome
-              // does not always report exact 0..textLength DOM offsets, so the
-              // recognition below compares the selected DOM text with the full
-              // host text instead of requiring exact boundary offsets.
+              // can also omit contenteditable=false inline atoms (notes,
+              // citations, cross-references) from Selection#toString(), even
+              // though the whole paragraph is visibly selected. Accept either
+              // the complete DOM text or the selectable-text projection.
               if (range && isNativeMobileBlockSelectAll(root, range, nativeSelection)) {
                 const entireRange = getEntireManuscriptSelection(sections);
                 if (entireRange) {
@@ -138,14 +139,22 @@ function isNativeMobileBlockSelectAll(
   const fullTextRange = document.createRange();
   fullTextRange.selectNodeContents(selectedEditor);
   const fullText = normalizeSelectionText(fullTextRange.toString());
+  const selectableText = getSelectableEditorText(selectedEditor);
   const selectedText = normalizeSelectionText(nativeSelection.toString());
-  if (!fullText || !selectedText) return false;
+  if (!selectedText) return false;
 
-  // Comparing normalized text handles Chrome Android's boundary-point quirks:
-  // the native action can visually cover the complete contenteditable while
-  // reporting offsets that start/end just inside its DOM boundary. Partial
-  // selections still fail this equality check and are left untouched.
-  return selectedText === fullText;
+  // Android Chrome may exclude inline atom labels from the native selection
+  // string. This is common in scholarly text containing footnote markers.
+  // Matching either representation keeps genuine partial selections local.
+  return selectedText === fullText || selectedText === selectableText;
+}
+
+function getSelectableEditorText(editor: HTMLElement): string {
+  const clone = editor.cloneNode(true) as HTMLElement;
+  clone.querySelectorAll<HTMLElement>('[contenteditable="false"]').forEach((element) => {
+    element.remove();
+  });
+  return normalizeSelectionText(clone.textContent ?? '');
 }
 
 function normalizeSelectionText(value: string): string {
