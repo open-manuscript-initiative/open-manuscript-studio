@@ -1,0 +1,9 @@
+.omi-continuous-manuscript [data-manuscript-selected] {
+  outline: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  outline-offset: 2px;
+}
+
+.omi-continuous-manuscript .omi-tiptap-editor {
+  -webkit-user-select: text;
+  user-select: text;
+}
