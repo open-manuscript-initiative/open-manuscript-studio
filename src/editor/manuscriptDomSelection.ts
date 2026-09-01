@@ -72,13 +72,23 @@ export function renderManuscriptDomSelection(
   const editors = Array.from(
     root.querySelectorAll<HTMLElement>('.omi-tiptap-editor[data-block-id]'),
   );
-  const startEditor = editors.find((editor) => editor.dataset.blockId === range.start.blockId);
-  const endEditor = editors.find((editor) => editor.dataset.blockId === range.end.blockId);
+  if (editors.length === 0) return;
+
+  const startEditor = editors.find((editor) => editor.dataset.blockId === range.start.blockId)
+    ?? editors[0];
+  const endEditor = editors.find((editor) => editor.dataset.blockId === range.end.blockId)
+    ?? editors[editors.length - 1];
   if (!startEditor || !endEditor) return;
 
   const domRange = document.createRange();
-  const startPoint = textOffsetToDomPoint(startEditor, range.start.offset);
-  const endPoint = textOffsetToDomPoint(endEditor, range.end.offset);
+  const startOffset = startEditor.dataset.blockId === range.start.blockId
+    ? range.start.offset
+    : 0;
+  const endOffset = endEditor.dataset.blockId === range.end.blockId
+    ? range.end.offset
+    : Number.MAX_SAFE_INTEGER;
+  const startPoint = textOffsetToDomPoint(startEditor, startOffset);
+  const endPoint = textOffsetToDomPoint(endEditor, endOffset);
   if (!startPoint || !endPoint) return;
 
   domRange.setStart(startPoint.node, startPoint.offset);
