@@ -216,6 +216,7 @@ async function readLastSession(): Promise<PersistedStudioSession | null> {
       resolve(value?.version === 1 || value?.version === 2 ? value : null);
     };
     request.onerror = () => reject(request.error);
+    transaction.onabort = () => reject(transaction.error);
   });
 }
 
@@ -237,6 +238,11 @@ function openDatabase(): Promise<IDBDatabase> {
   databasePromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
+    const fail = (error: DOMException | null, fallback: string) => {
+      databasePromise = null;
+      reject(error ?? new Error(fallback));
+    };
+
     request.onupgradeneeded = () => {
       const database = request.result;
       if (!database.objectStoreNames.contains(STORE_NAME)) {
@@ -244,7 +250,8 @@ function openDatabase(): Promise<IDBDatabase> {
       }
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onerror = () => fail(request.error, 'IndexedDB session database could not be opened.');
+    request.onblocked = () => fail(null, 'IndexedDB session database open was blocked.');
   });
 
   return databasePromise;
