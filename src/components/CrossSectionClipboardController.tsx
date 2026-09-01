@@ -11,7 +11,12 @@ import {
   pasteManuscriptFragment,
 } from '../editor/manuscriptClipboard';
 import {
+  clearRenderedManuscriptSelection,
+  createManuscriptDomRange,
   decorateManuscriptSelection,
+  getManuscriptSelectionSegments,
+  getRenderedManuscriptSelection,
+  getRenderedManuscriptSelectionRoot,
   normalizeManuscriptSelectionRange,
   readManuscriptDomSelection,
   renderManuscriptDomSelection,
@@ -51,14 +56,17 @@ export function CrossSectionClipboardController() {
 
       let anchor = point;
       if (event.shiftKey) {
+        const rendered = getRenderedManuscriptSelection(root);
         const selection = window.getSelection();
-        const existing = selection && selection.rangeCount > 0
+        const existing = rendered?.start ?? (selection && selection.rangeCount > 0
           ? readSelectionEndpoint(root, sections, selection.anchorNode, selection.anchorOffset)
-          : null;
+          : null);
         if (existing) anchor = existing;
+      } else {
+        clearCrossEditorSelection(root, sections);
       }
 
-      drag = { root, anchor, active: false };
+      drag = { root, anchor, active: false, pointerId: event.pointerId };
       if (event.shiftKey && anchor.blockId !== point.blockId) {
         const range = normalizeManuscriptSelectionRange(sections, anchor, point);
         if (range) {
@@ -69,11 +77,7 @@ export function CrossSectionClipboardController() {
       }
     };
     const handlePointerMove = (event: PointerEvent) => {
-      if (!drag) return;
-      if ((event.buttons & 1) === 0) {
-        drag = null;
-        return;
-      }
+      if (!drag || event.pointerId !== drag.pointerId) return;
 
       const sections = useStudioStore.getState().manuscript.sections;
       const point = manuscriptPointAt(
@@ -97,7 +101,7 @@ export function CrossSectionClipboardController() {
       renderCrossEditorSelection(drag.root, sections, range);
     };
     const handlePointerUp = (event: PointerEvent) => {
-      if (!drag) return;
+      if (!drag || event.pointerId !== drag.pointerId) return;
       if (drag.active) {
         event.preventDefault();
         const sections = useStudioStore.getState().manuscript.sections;
@@ -159,28 +163,37 @@ interface CrossEditorDrag {
   root: HTMLElement;
   anchor: ManuscriptSelectionPoint;
   active: boolean;
+  pointerId: number;
 }
 
 function handleCrossBlockDeletion(event: globalThis.KeyboardEvent): void {
   if (event.key !== 'Backspace' && event.key !== 'Delete') return;
   if (event.altKey || event.ctrlKey || event.metaKey || event.isComposing) return;
 
-  const selection = window.getSelection();
-  if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
-  const anchorRoot = editorRootForNode(selection.anchorNode);
-  const focusRoot = editorRootForNode(selection.focusNode);
-  if (!anchorRoot || !focusRoot || anchorRoot === focusRoot) return;
-  if (!anchorRoot.isContentEditable || !focusRoot.isContentEditable) return;
-
-  const manuscriptRoot = anchorRoot.closest<HTMLElement>('.omi-continuous-manuscript');
-  if (!manuscriptRoot || !manuscriptRoot.contains(focusRoot)) return;
-
   const state = useStudioStore.getState();
-  const range = readManuscriptDomSelection(
+  const renderedRoot = getRenderedManuscriptSelectionRoot();
+  const renderedRange = renderedRoot
+    ? getRenderedManuscriptSelection(renderedRoot)
+    : null;
+  const selection = window.getSelection();
+  const anchorRoot = editorRootForNode(selection?.anchorNode ?? null);
+  const focusRoot = editorRootForNode(selection?.focusNode ?? null);
+  const manuscriptRoot = renderedRoot ?? anchorRoot?.closest<HTMLElement>(
+    '.omi-continuous-manuscript',
+  ) ?? null;
+  if (!manuscriptRoot) return;
+
+  const range = renderedRange ?? readManuscriptDomSelection(
     manuscriptRoot,
     state.manuscript.sections,
   );
   if (!range || range.start.blockId === range.end.blockId) return;
+  if (!renderedRange) {
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
+    if (!anchorRoot || !focusRoot || anchorRoot === focusRoot) return;
+    if (!anchorRoot.isContentEditable || !focusRoot.isContentEditable) return;
+    if (!manuscriptRoot.contains(focusRoot)) return;
+  }
 
   const nextSections = cutManuscriptRange(
     state.manuscript.sections,
@@ -193,15 +206,25 @@ function handleCrossBlockDeletion(event: globalThis.KeyboardEvent): void {
 
   event.preventDefault();
   event.stopPropagation();
-  selection.removeAllRanges();
-  decorateManuscriptSelection(manuscriptRoot, nextSections, null);
+  selection?.removeAllRanges();
+  clearCrossEditorSelection(manuscriptRoot, nextSections);
   requestBlockEditorFocus(range.start.blockId, 'end');
 }
 
 function handleCrossBlockCopyOrCut(event: ClipboardEvent, cut: boolean): void {
   const selection = window.getSelection();
-  if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
   if (!event.clipboardData) return;
+
+  const renderedRoot = getRenderedManuscriptSelectionRoot();
+  const renderedRange = renderedRoot
+    ? getRenderedManuscriptSelection(renderedRoot)
+    : null;
+  if (renderedRoot && renderedRange && renderedRange.start.blockId !== renderedRange.end.blockId) {
+    handleRenderedCopyOrCut(event, cut, renderedRoot, renderedRange);
+    return;
+  }
+
+  if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
 
   const range = selection.getRangeAt(0);
   const startRoot = editorRootForNode(range.startContainer);
@@ -265,9 +288,51 @@ function handleCrossBlockCopyOrCut(event: ClipboardEvent, cut: boolean): void {
     selection.removeAllRanges();
     const manuscriptRoot = startRoot.closest<HTMLElement>('.omi-continuous-manuscript');
     if (manuscriptRoot) {
-      decorateManuscriptSelection(manuscriptRoot, nextSections, null);
+      clearCrossEditorSelection(manuscriptRoot, nextSections);
     }
   }
+}
+
+function handleRenderedCopyOrCut(
+  event: ClipboardEvent,
+  cut: boolean,
+  root: HTMLElement,
+  range: ManuscriptSelectionRange,
+): void {
+  if (!event.clipboardData) return;
+  const state = useStudioStore.getState();
+  const fragment = createManuscriptClipboardFragment(
+    state.manuscript.sections,
+    range.start.blockId,
+    range.start.offset,
+    range.end.blockId,
+    range.end.offset,
+  );
+  if (!fragment) return;
+
+  const selectionText = renderedSelectionText(root, state.manuscript.sections, range);
+  const selectionMarkup = renderedSelectionHtml(root, state.manuscript.sections, range);
+  event.preventDefault();
+  event.clipboardData.setData(
+    OMI_MANUSCRIPT_CLIPBOARD_MIME,
+    JSON.stringify(fragment),
+  );
+  event.clipboardData.setData('text/plain', selectionText);
+  event.clipboardData.setData('text/html', selectionMarkup);
+
+  if (!cut) return;
+  const nextSections = cutManuscriptRange(
+    state.manuscript.sections,
+    range.start.blockId,
+    range.start.offset,
+    range.end.blockId,
+    range.end.offset,
+  );
+  if (!stageClipboardSectionChange(nextSections, 'Cut manuscript range')) return;
+
+  window.getSelection()?.removeAllRanges();
+  clearCrossEditorSelection(root, nextSections);
+  requestBlockEditorFocus(range.start.blockId, 'end');
 }
 
 function handleManuscriptPaste(event: ClipboardEvent): void {
@@ -321,8 +386,16 @@ function renderCrossEditorSelection(
   sections: ReturnType<typeof useStudioStore.getState>['manuscript']['sections'],
   range: ManuscriptSelectionRange,
 ): void {
-  renderManuscriptDomSelection(root, range);
+  renderManuscriptDomSelection(root, sections, range);
   decorateManuscriptSelection(root, sections, range);
+}
+
+function clearCrossEditorSelection(
+  root: HTMLElement,
+  sections: ReturnType<typeof useStudioStore.getState>['manuscript']['sections'],
+): void {
+  clearRenderedManuscriptSelection(root);
+  decorateManuscriptSelection(root, sections, null);
 }
 
 function manuscriptPointAt(
@@ -423,6 +496,35 @@ function selectionHtml(range: Range): string {
     )
     .forEach((element) => element.remove());
   return container.innerHTML;
+}
+
+function renderedSelectionText(
+  root: HTMLElement,
+  sections: ReturnType<typeof useStudioStore.getState>['manuscript']['sections'],
+  range: ManuscriptSelectionRange,
+): string {
+  return getManuscriptSelectionSegments(sections, range)
+    .map((segment) => createManuscriptDomRange(root, {
+      start: { blockId: segment.blockId, offset: segment.from },
+      end: { blockId: segment.blockId, offset: segment.to },
+    })?.toString() ?? '')
+    .join('\n\n');
+}
+
+function renderedSelectionHtml(
+  root: HTMLElement,
+  sections: ReturnType<typeof useStudioStore.getState>['manuscript']['sections'],
+  range: ManuscriptSelectionRange,
+): string {
+  return getManuscriptSelectionSegments(sections, range)
+    .map((segment) => {
+      const domRange = createManuscriptDomRange(root, {
+        start: { blockId: segment.blockId, offset: segment.from },
+        end: { blockId: segment.blockId, offset: segment.to },
+      });
+      return domRange ? `<div>${selectionHtml(domRange)}</div>` : '';
+    })
+    .join('');
 }
 
 function storedLengthForBlock(

@@ -7,3 +7,14 @@
   -webkit-user-select: text;
   user-select: text;
 }
+
+/*
+ * Each OMI paragraph is an independent contenteditable Tiptap host. Chromium
+ * and WebKit can clamp their native ::selection painting at that boundary, so
+ * the manuscript controller mirrors a cross-paragraph range through the CSS
+ * Custom Highlight API. Native selection remains in place where supported.
+ */
+.omi-continuous-manuscript ::highlight(omi-manuscript-selection) {
+  color: var(--omi-editor-accent-text);
+  background: var(--omi-editor-accent-soft);
+}

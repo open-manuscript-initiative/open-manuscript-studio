@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { cutManuscriptRange } from '../src/editor/manuscriptClipboard.ts';
-import { normalizeManuscriptSelectionRange } from '../src/editor/manuscriptDomSelection.ts';
+import {
+  getManuscriptSelectionSegments,
+  normalizeManuscriptSelectionRange,
+} from '../src/editor/manuscriptDomSelection.ts';
 import { getParentSectionId } from '../src/model/sectionStructure.ts';
 import type { OmiSection } from '../src/types/omi.ts';
 
@@ -39,6 +42,24 @@ test('normalizes a backward drag across independent section editors', () => {
       start: { blockId: 'a', offset: 2 },
       end: { blockId: 'b', offset: 3 },
     },
+  );
+});
+
+test('projects a selection across an adjacent paragraph boundary', () => {
+  const sections = [section('only', [
+    { id: 'a', content: 'Alpha' },
+    { id: 'b', content: 'Beta' },
+  ])];
+
+  assert.deepEqual(
+    getManuscriptSelectionSegments(sections, {
+      start: { blockId: 'a', offset: 2 },
+      end: { blockId: 'b', offset: 3 },
+    }),
+    [
+      { blockId: 'a', from: 2, to: 5 },
+      { blockId: 'b', from: 0, to: 3 },
+    ],
   );
 });
 
