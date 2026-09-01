@@ -23,7 +23,16 @@ import {
   reconcileNotesAfterBlockEdit,
   stageCreateNote,
 } from '../app/noteActions';
+import {
+  mergeParagraphBackward,
+  mergeParagraphForward,
+  splitParagraphBlock,
+} from '../app/paragraphBlockActions';
 import { useStudioStore } from '../app/useStudioStore';
+import {
+  registerBlockEditor,
+  requestBlockEditorFocus,
+} from '../editor/blockFocusRegistry';
 import {
   getEditorCapabilities,
   type EditorCapabilities,
@@ -191,6 +200,47 @@ export function BlockEditor({
         spellcheck: 'true',
       },
       transformPastedHTML: (html) => sanitizeRichTextPasteHtml(html),
+      handleKeyDown: (view, event) => {
+        if (!effectiveEditable || blockType !== 'paragraph' || event.isComposing) return false;
+        if (event.altKey || event.ctrlKey || event.metaKey) return false;
+
+        const { selection, doc } = view.state;
+        if (!selection.empty) return false;
+
+        if (event.key === 'Enter' && !event.shiftKey) {
+          const splitPosition = selection.from;
+          const left = doc.cut(0, splitPosition);
+          const right = doc.cut(splitPosition, doc.content.size);
+          const newBlockId = splitParagraphBlock(
+            blockId,
+            JSON.stringify(left.toJSON()),
+            JSON.stringify(right.toJSON()),
+          );
+          if (!newBlockId) return false;
+          requestBlockEditorFocus(newBlockId, 'start');
+          return true;
+        }
+
+        const { $from } = selection;
+        const atDocumentStart = $from.parentOffset === 0 && $from.index(0) === 0;
+        if (event.key === 'Backspace' && atDocumentStart) {
+          const merge = mergeParagraphBackward(blockId);
+          if (!merge) return false;
+          requestBlockEditorFocus(merge.blockId, merge.selectionPosition);
+          return true;
+        }
+
+        const atDocumentEnd = $from.parentOffset === $from.parent.content.size
+          && $from.indexAfter(0) === doc.childCount;
+        if (event.key === 'Delete' && atDocumentEnd) {
+          const merge = mergeParagraphForward(blockId);
+          if (!merge) return false;
+          requestBlockEditorFocus(merge.blockId, merge.selectionPosition);
+          return true;
+        }
+
+        return false;
+      },
       handleClick: (_view, _pos, event) => {
         const target = event.target;
         if (!(target instanceof Element)) return false;
@@ -264,6 +314,11 @@ export function BlockEditor({
     manuscriptLanguage ?? manuscript.locale,
   );
   proofreadingSelectRef.current = proofreading.selectIssue;
+
+  useEffect(() => {
+    if (!editor) return;
+    return registerBlockEditor(blockId, editor);
+  }, [blockId, editor]);
 
   useEffect(() => {
     editor?.setEditable(effectiveEditable);
