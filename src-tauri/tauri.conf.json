@@ -4,7 +4,7 @@
   "version": "0.1.0-beta.1",
   "identifier": "org.openmanuscript.studio",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "npm run dev -- --mode production",
     "devUrl": "http://localhost:5173",
     "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
