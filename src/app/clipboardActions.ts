@@ -49,6 +49,11 @@ export function stageClipboardSectionChange(
     const portableState = extractManuscriptState(state.manuscript);
 
     changed = true;
+    const selectedSectionId = synchronizedSections.some(
+      (section) => section.id === state.selectedSectionId,
+    )
+      ? state.selectedSectionId
+      : synchronizedSections[0]?.id ?? null;
     return {
       manuscript: {
         ...state.manuscript,
@@ -57,6 +62,7 @@ export function stageClipboardSectionChange(
         updatedAt: timestamp,
       },
       pendingChangeSet,
+      selectedSectionId,
     };
   });
 
