@@ -52,8 +52,26 @@ import './styles/account-profiles.css';
 initializeRevisionIntegrity();
 initializeFormattingToolbarPreference();
 
+const SESSION_RESTORE_BOOT_BUDGET_MS = 1200;
+
 async function bootstrap(): Promise<void> {
-  await initializeLastSessionPersistence();
+  const sessionRestore = initializeLastSessionPersistence();
+  await Promise.race([
+    sessionRestore,
+    new Promise<void>((resolve) => {
+      window.setTimeout(resolve, SESSION_RESTORE_BOOT_BUDGET_MS);
+    }),
+  ]).catch((error) => {
+    console.warn('Studio session restore failed during bootstrap.', error);
+  });
+
+  // A slow or blocked IndexedDB restore must never prevent the first frame.
+  // Keep it alive in the background so a late successful restore can still
+  // populate the Zustand store after the UI has mounted.
+  void sessionRestore.catch((error) => {
+    console.warn('Studio session restore could not complete.', error);
+  });
+
   const documentClosed = isDocumentClosedState();
 
   ReactDOM.createRoot(
