@@ -62,12 +62,20 @@ export function reconstructPdfVisualRows<TLine extends PdfVisualLine>(lines: TLi
 
     for (const band of bands) {
       const centerDistance = Math.abs(item.centerY - band.centerY);
-      const tolerance = Math.max(2.8, Math.min(item.height, band.height) * 0.42);
+      const minHeight = Math.max(1, Math.min(item.height, band.height));
+      const tolerance = Math.max(2.2, minHeight * 0.3);
       const overlap = verticalOverlap(item.word, band.items.map((entry) => entry.word));
-      const overlapRatio = overlap / Math.max(1, Math.min(item.height, band.height));
-      if (centerDistance > tolerance && overlapRatio < 0.38) continue;
+      const overlapRatio = overlap / minHeight;
 
-      const score = centerDistance - overlapRatio * 2;
+      // Tight scholarly footnotes often have adjacent rows whose glyph boxes
+      // overlap vertically. Treat overlap as corroborating evidence only: it may
+      // rescue a slightly shifted superscript/baseline fragment, but it must not
+      // merge two distinct rows merely because their bounding boxes intersect.
+      const overlapRescue = overlapRatio >= 0.7
+        && centerDistance <= Math.max(3.4, minHeight * 0.5);
+      if (centerDistance > tolerance && !overlapRescue) continue;
+
+      const score = centerDistance - overlapRatio * 1.25;
       if (score < bestScore) {
         best = band;
         bestScore = score;
