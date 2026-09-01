@@ -1,3 +1,5 @@
+import { isTauri } from '@tauri-apps/api/core';
+
 export interface PdfImportWarning {
   code: string;
   message: string;
@@ -62,7 +64,11 @@ interface ErrorResponse {
   error?: { message?: string };
 }
 
-const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL ?? '').trim().replace(/\/$/, '');
+const NATIVE_SESSION_KEY = 'omi_native_session_token';
+const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
+const IS_TAURI = isTauri();
+const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL?.trim()
+  || (IS_TAURI && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '')).replace(/\/$/, '');
 
 export async function importPdfForStudio(
   file: File,
@@ -78,11 +84,11 @@ export async function importPdfForStudio(
   const started = await fetch(`${API_BASE_URL}/api/import/pdf`, {
     method: 'POST',
     credentials: 'include',
-    headers: {
+    headers: buildPdfImportHeaders({
       Accept: 'application/json',
       'Content-Type': 'application/pdf',
       'X-OMI-File-Name': encodeURIComponent(file.name),
-    },
+    }),
     body: file,
   });
   if (!started.ok) throw await createApiError(started);
@@ -95,7 +101,7 @@ export async function importPdfForStudio(
     const response = await fetch(`${API_BASE_URL}/api/import/pdf/${encodeURIComponent(jobId)}`, {
       method: 'GET',
       credentials: 'include',
-      headers: { Accept: 'application/json' },
+      headers: buildPdfImportHeaders({ Accept: 'application/json' }),
       cache: 'no-store',
     });
     if (!response.ok) throw await createApiError(response);
@@ -111,7 +117,7 @@ export async function importPdfForStudio(
       {
         method: 'GET',
         credentials: 'include',
-        headers: { Accept: 'application/json' },
+        headers: buildPdfImportHeaders({ Accept: 'application/json' }),
         cache: 'no-store',
       },
     );
@@ -119,6 +125,21 @@ export async function importPdfForStudio(
     const result = (await resultResponse.json() as ResultResponse).result;
     return normalizePdfFootnotes(normalizePdfPageFurniture(result));
   }
+}
+
+export function buildPdfImportHeaders(
+  input: HeadersInit,
+  nativeRuntime = IS_TAURI,
+  sessionToken = nativeRuntime
+    ? globalThis.localStorage?.getItem(NATIVE_SESSION_KEY) ?? null
+    : null,
+): Headers {
+  const headers = new Headers(input);
+  if (!nativeRuntime) return headers;
+
+  headers.set('X-OMI-Native-Client', '1');
+  if (sessionToken) headers.set('Authorization', `Bearer ${sessionToken}`);
+  return headers;
 }
 
 /**
