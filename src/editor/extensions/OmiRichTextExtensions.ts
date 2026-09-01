@@ -10,6 +10,7 @@ import {
   normalizeExternalHref,
   normalizeInlineLanguageTag,
 } from '../../model/richText';
+import { OmiManuscriptBoundaryEditingExtension } from './OmiManuscriptBoundaryEditingExtension';
 import './OmiBlockTypeMenu.css';
 
 type HtmlAttributeMap = Record<string, unknown>;
@@ -249,6 +250,7 @@ export const OmiBlockTypeMenuExtension = Extension.create({
 });
 
 export const OMI_RICH_TEXT_EXTENSIONS = [
+  OmiManuscriptBoundaryEditingExtension,
   OmiLinkExtension,
   OmiSuperscriptExtension,
   OmiSubscriptExtension,
