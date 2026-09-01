@@ -71,9 +71,7 @@ export function splitParagraphBlock(
     );
   });
 
-  if (createdBlockId) {
-    checkpointStructuralChange();
-  }
+  if (createdBlockId) checkpointStructuralChange();
   return createdBlockId;
 }
 
@@ -156,9 +154,7 @@ function mergeAdjacentParagraph(
     );
   });
 
-  if (result) {
-    checkpointStructuralChange();
-  }
+  if (result) checkpointStructuralChange();
   return result;
 }
 
@@ -230,16 +226,24 @@ function reassignAnchoredObjects(
         ? { ...citation, targetBlockId: newBlockId }
         : citation,
     ),
-    citationClusters: state.citationClusters?.map((cluster) =>
-      cluster.targetBlockId === oldBlockId && containsAnchor(cluster.anchorId)
-        ? { ...cluster, targetBlockId: newBlockId }
-        : cluster,
-    ),
-    crossReferences: state.crossReferences?.map((reference) =>
-      reference.sourceBlockId === oldBlockId && containsAnchor(reference.anchorId)
-        ? { ...reference, sourceBlockId: newBlockId }
-        : reference,
-    ),
+    ...(state.citationClusters
+      ? {
+          citationClusters: state.citationClusters.map((cluster) =>
+            cluster.targetBlockId === oldBlockId && containsAnchor(cluster.anchorId)
+              ? { ...cluster, targetBlockId: newBlockId }
+              : cluster,
+          ),
+        }
+      : {}),
+    ...(state.crossReferences
+      ? {
+          crossReferences: state.crossReferences.map((reference) =>
+            reference.sourceBlockId === oldBlockId && containsAnchor(reference.anchorId)
+              ? { ...reference, sourceBlockId: newBlockId }
+              : reference,
+          ),
+        }
+      : {}),
   };
 }
 
@@ -260,16 +264,24 @@ function reassignAllBlockReferences(
         ? { ...citation, targetBlockId: newBlockId }
         : citation,
     ),
-    citationClusters: state.citationClusters?.map((cluster) =>
-      cluster.targetBlockId === oldBlockId
-        ? { ...cluster, targetBlockId: newBlockId }
-        : cluster,
-    ),
-    crossReferences: state.crossReferences?.map((reference) =>
-      reference.sourceBlockId === oldBlockId
-        ? { ...reference, sourceBlockId: newBlockId }
-        : reference,
-    ),
+    ...(state.citationClusters
+      ? {
+          citationClusters: state.citationClusters.map((cluster) =>
+            cluster.targetBlockId === oldBlockId
+              ? { ...cluster, targetBlockId: newBlockId }
+              : cluster,
+          ),
+        }
+      : {}),
+    ...(state.crossReferences
+      ? {
+          crossReferences: state.crossReferences.map((reference) =>
+            reference.sourceBlockId === oldBlockId
+              ? { ...reference, sourceBlockId: newBlockId }
+              : reference,
+          ),
+        }
+      : {}),
   };
 }
 
@@ -328,8 +340,17 @@ function parseStoredDocument(content: string): StoredNode | null {
 
 function jsonNodeSize(node: StoredNode): number {
   if (node.type === 'text') return node.text?.length ?? 0;
-  if (!node.content?.length) return 1;
-  return 2 + node.content.reduce((sum, child) => sum + jsonNodeSize(child), 0);
+  if (node.content?.length) {
+    return 2 + node.content.reduce((sum, child) => sum + jsonNodeSize(child), 0);
+  }
+  return isTextBlockType(node.type) ? 2 : 1;
+}
+
+function isTextBlockType(type: string | undefined): boolean {
+  return type === 'paragraph'
+    || type === 'heading'
+    || type === 'blockquote'
+    || type === 'codeBlock';
 }
 
 function plainText(content: string): string {
