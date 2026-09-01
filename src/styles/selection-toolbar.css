@@ -1,19 +1,14 @@
 .omi-selection-action-toolbar {
-  position: fixed;
-  z-index: 1300;
   display: flex;
+  align-items: center;
   gap: 0.25rem;
-  transform: translate(-50%, -100%);
+  max-width: min(32rem, calc(100vw - 2rem));
+  overflow-x: auto;
   padding: 0.35rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 999px;
-  background-color: #ffffff;
-  color: #0f172a;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
-}
-
-.omi-selection-action-toolbar--below {
-  transform: translate(-50%, 0);
+  border-top: 1px solid var(--omi-editor-border);
+  background: var(--omi-editor-surface);
+  color: var(--omi-editor-text);
+  scrollbar-width: thin;
 }
 
 .omi-selection-action-toolbar button {
@@ -21,8 +16,8 @@
   padding: 0.35rem 0.65rem;
   border: 0;
   border-radius: 999px;
-  background-color: #ffffff;
-  color: #0f172a;
+  background: transparent;
+  color: inherit;
   font: inherit;
   font-size: 0.82rem;
   font-weight: 650;
@@ -32,15 +27,40 @@
 
 .omi-selection-action-toolbar button:hover,
 .omi-selection-action-toolbar button:focus-visible {
-  background-color: #eef2f7;
+  background: var(--omi-editor-surface-hover);
+  color: var(--omi-editor-accent);
   outline: none;
+}
+
+.omi-selection-action-toolbar select {
+  min-height: 2rem;
+  max-width: 9rem;
+  padding: 0.3rem 1.6rem 0.3rem 0.5rem;
+  border: 1px solid var(--omi-editor-border);
+  border-radius: 999px;
+  background: var(--omi-editor-surface);
+  color: inherit;
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.omi-selection-action-toolbar button:focus-visible,
+.omi-selection-action-toolbar select:focus-visible {
+  outline: 2px solid var(--omi-editor-accent);
+  outline-offset: 1px;
 }
 
 @media (max-width: 640px) {
   .omi-selection-action-toolbar {
-    max-width: calc(100vw - 1rem);
-    overflow-x: auto;
+    width: 100%;
+    max-width: 100%;
+    overscroll-behavior-inline: contain;
     scrollbar-width: none;
+  }
+
+  .omi-selection-action-toolbar button,
+  .omi-selection-action-toolbar select {
+    flex: 0 0 auto;
   }
 
   .omi-selection-action-toolbar::-webkit-scrollbar {

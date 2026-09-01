@@ -2,8 +2,10 @@ import type { Editor } from '@tiptap/core';
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
 } from 'react';
 
 import { getRichTextCopy } from '../i18n/richText';
@@ -19,6 +21,7 @@ interface RichTextToolbarProps {
   editor: Editor;
   locale: SupportedLocale;
   manuscriptLanguage: string;
+  children?: ReactNode;
 }
 
 interface ToolbarPosition {
@@ -58,15 +61,18 @@ const SPECIAL_CHARACTERS: ReadonlyArray<{
   { label: 'Ω', value: 'Ω' },
 ];
 
+const TOUCH_LONG_PRESS_DELAY = 650;
+const TOUCH_MOVE_TOLERANCE = 12;
+
 export function RichTextToolbar({
   editor,
   locale,
   manuscriptLanguage,
+  children,
 }: RichTextToolbarProps) {
   const copy = getRichTextCopy(locale);
   const { manuscriptLanguages } = useContentLanguagePreferences();
   const [position, setPosition] = useState<ToolbarPosition | null>(null);
-  const [focused, setFocused] = useState(editor.isFocused);
   const [revision, setRevision] = useState(0);
   const [moreOpen, setMoreOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
@@ -74,66 +80,145 @@ export function RichTextToolbar({
   const [linkError, setLinkError] = useState(false);
   const [languageDraft, setLanguageDraft] = useState(manuscriptLanguage);
   const [languageError, setLanguageError] = useState(false);
+  const toolbarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const updatePosition = () => {
+    const editorDom = editor.view.dom;
+    const previousTouchCallout = editorDom.style.getPropertyValue('-webkit-touch-callout');
+    let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+    let touchStart: { x: number; y: number } | null = null;
+
+    if (isTouchSelectionEnvironment()) {
+      editorDom.style.setProperty('-webkit-touch-callout', 'none');
+    }
+
+    const closeToolbar = () => {
+      setPosition(null);
+      setMoreOpen(false);
+      setLinkOpen(false);
+      setLinkError(false);
+      setLanguageError(false);
+    };
+
+    const openToolbarAt = (left: number, top: number) => {
+      const below = top < 110;
+      setPosition({
+        left: Math.max(16, Math.min(window.innerWidth - 16, left)),
+        top: below ? top + 10 : top - 10,
+        below,
+      });
+      setRevision((value) => value + 1);
+    };
+
+    const openToolbarAtSelection = () => {
       try {
         const { from, to } = editor.state.selection;
         const start = editor.view.coordsAtPos(from);
         const end = editor.view.coordsAtPos(to);
-        const below = start.top < 110;
-
-        setPosition({
-          left: Math.max(16, Math.min(window.innerWidth - 16, (start.left + end.right) / 2)),
-          top: below ? Math.max(start.bottom, end.bottom) + 10 : Math.min(start.top, end.top) - 10,
-          below,
-        });
+        openToolbarAt(
+          (start.left + end.right) / 2,
+          Math.min(start.top, end.top) < 110
+            ? Math.max(start.bottom, end.bottom)
+            : Math.min(start.top, end.top),
+        );
       } catch {
-        setPosition(null);
+        closeToolbar();
       }
     };
 
-    const handleFocus = () => {
-      setFocused(true);
-      updatePosition();
-      setRevision((value) => value + 1);
+    const handleContextMenu = (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openToolbarAt(event.clientX, event.clientY);
     };
-    const handleBlur = () => {
-      setFocused(false);
-      setRevision((value) => value + 1);
+
+    const cancelLongPress = () => {
+      if (longPressTimer !== null) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+      touchStart = null;
     };
-    const handleSelection = () => {
-      updatePosition();
-      setRevision((value) => value + 1);
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType !== 'touch') return;
+      cancelLongPress();
+      touchStart = { x: event.clientX, y: event.clientY };
+      longPressTimer = setTimeout(() => {
+        longPressTimer = null;
+        const point = touchStart;
+        touchStart = null;
+        if (!point) return;
+        openToolbarAt(point.x, point.y);
+      }, TOUCH_LONG_PRESS_DELAY);
     };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!touchStart) return;
+      if (
+        Math.abs(event.clientX - touchStart.x) > TOUCH_MOVE_TOLERANCE
+        || Math.abs(event.clientY - touchStart.y) > TOUCH_MOVE_TOLERANCE
+      ) {
+        cancelLongPress();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+        event.preventDefault();
+        openToolbarAtSelection();
+        return;
+      }
+      if (event.key === 'Escape') closeToolbar();
+    };
+
+    const handleDocumentPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (toolbarRef.current?.contains(target)) return;
+      closeToolbar();
+    };
+
+    const handleScroll = (event: Event) => {
+      const target = event.target;
+      if (target instanceof Node && toolbarRef.current?.contains(target)) return;
+      closeToolbar();
+    };
+
     const handleTransaction = () => {
       setRevision((value) => value + 1);
     };
 
-    editor.on('focus', handleFocus);
-    editor.on('blur', handleBlur);
-    editor.on('selectionUpdate', handleSelection);
     editor.on('transaction', handleTransaction);
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
-
-    if (editor.isFocused) updatePosition();
+    editorDom.addEventListener('contextmenu', handleContextMenu);
+    editorDom.addEventListener('pointerdown', handlePointerDown);
+    editorDom.addEventListener('pointermove', handlePointerMove);
+    editorDom.addEventListener('pointerup', cancelLongPress);
+    editorDom.addEventListener('pointercancel', cancelLongPress);
+    editorDom.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('pointerdown', handleDocumentPointerDown, true);
+    window.addEventListener('resize', closeToolbar);
+    window.addEventListener('scroll', handleScroll, true);
 
     return () => {
-      editor.off('focus', handleFocus);
-      editor.off('blur', handleBlur);
-      editor.off('selectionUpdate', handleSelection);
+      cancelLongPress();
       editor.off('transaction', handleTransaction);
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
+      editorDom.removeEventListener('contextmenu', handleContextMenu);
+      editorDom.removeEventListener('pointerdown', handlePointerDown);
+      editorDom.removeEventListener('pointermove', handlePointerMove);
+      editorDom.removeEventListener('pointerup', cancelLongPress);
+      editorDom.removeEventListener('pointercancel', cancelLongPress);
+      editorDom.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('pointerdown', handleDocumentPointerDown, true);
+      window.removeEventListener('resize', closeToolbar);
+      window.removeEventListener('scroll', handleScroll, true);
+      if (previousTouchCallout) {
+        editorDom.style.setProperty('-webkit-touch-callout', previousTouchCallout);
+      } else {
+        editorDom.style.removeProperty('-webkit-touch-callout');
+      }
     };
   }, [editor]);
-
-  useEffect(() => {
-    if (!focused && !moreOpen && !linkOpen) {
-      setPosition(null);
-    }
-  }, [focused, linkOpen, moreOpen]);
 
   const currentLanguage = useMemo(() => {
     void revision;
@@ -156,7 +241,7 @@ export function RichTextToolbar({
     }));
   }, [currentLanguage, locale, manuscriptLanguage, manuscriptLanguages]);
 
-  if (!position || (!focused && !moreOpen && !linkOpen)) {
+  if (!position) {
     return null;
   }
 
@@ -250,6 +335,7 @@ export function RichTextToolbar({
 
   return (
     <div
+      ref={toolbarRef}
       className={`omi-rich-text-toolbar${
         position.below ? ' omi-rich-text-toolbar--below' : ''
       }${expanded ? ' omi-rich-text-toolbar--expanded' : ''}`}
@@ -325,6 +411,8 @@ export function RichTextToolbar({
           </button>
         ) : null}
       </div>
+
+      {children}
 
       {linkOpen ? (
         <div className="omi-rich-text-popover omi-rich-text-link-editor">
@@ -505,4 +593,10 @@ function CommandButton({
       {label}
     </button>
   );
+}
+
+function isTouchSelectionEnvironment(): boolean {
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') return false;
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent ?? '')) return true;
+  return navigator.maxTouchPoints > 1 && window.matchMedia('(pointer: coarse)').matches;
 }

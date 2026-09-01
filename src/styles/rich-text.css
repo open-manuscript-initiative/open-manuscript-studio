@@ -270,9 +270,20 @@
     right: auto !important;
     top: auto !important;
     bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
-    width: max-content;
+    width: min(32rem, calc(100vw - 1rem));
     max-width: calc(100vw - 1rem);
+    overflow: hidden;
     transform: translateX(-50%) !important;
+  }
+
+  .omi-rich-text-toolbar-row {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .omi-rich-text-toolbar-row::-webkit-scrollbar {
+    display: none;
   }
 
   .omi-rich-text-toolbar--expanded,

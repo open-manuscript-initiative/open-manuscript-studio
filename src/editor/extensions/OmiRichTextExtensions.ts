@@ -288,63 +288,124 @@ function createBlockTypeMenuView(editor: Editor) {
   container.className = 'omi-block-type-menu';
   container.dataset.blockTypeMenu = 'true';
 
-  const select = document.createElement('select');
-  select.className = 'omi-block-type-menu__select';
-  select.setAttribute('aria-label', copy.label);
-  select.title = copy.label;
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'omi-block-type-menu__trigger';
+  trigger.textContent = '¶';
+  trigger.setAttribute('aria-label', copy.label);
+  trigger.setAttribute('aria-haspopup', 'menu');
+  trigger.setAttribute('aria-expanded', 'false');
+  trigger.title = copy.label;
 
-  appendOption(select, 'paragraph', copy.paragraph);
-  const headings = document.createElement('optgroup');
-  headings.label = copy.headings;
+  const menu = document.createElement('div');
+  menu.className = 'omi-block-type-menu__popover';
+  menu.setAttribute('role', 'menu');
+  menu.setAttribute('aria-label', copy.label);
+  menu.hidden = true;
+
+  const items: HTMLButtonElement[] = [];
+  appendBlockTypeItem(menu, items, 'paragraph', copy.paragraph);
+  const headingLabel = document.createElement('span');
+  headingLabel.className = 'omi-block-type-menu__group-label';
+  headingLabel.textContent = copy.headings;
+  menu.append(headingLabel);
   for (const level of [1, 2, 3, 4, 5, 6] as HeadingLevel[]) {
-    appendOption(headings, `heading-${level}`, copy.heading(level));
+    appendBlockTypeItem(menu, items, `heading-${level}`, copy.heading(level));
   }
-  select.append(headings);
-  appendOption(select, 'blockquote', copy.quote);
-  appendOption(select, 'bulletList', copy.bulletList);
-  appendOption(select, 'orderedList', copy.orderedList);
-  appendOption(select, 'codeBlock', copy.codeBlock);
+  appendBlockTypeItem(menu, items, 'blockquote', copy.quote);
+  appendBlockTypeItem(menu, items, 'bulletList', copy.bulletList);
+  appendBlockTypeItem(menu, items, 'orderedList', copy.orderedList);
+  appendBlockTypeItem(menu, items, 'codeBlock', copy.codeBlock);
 
-  const onChange = () => {
-    applyBlockType(editor, select.value as BlockType);
-    syncBlockTypeSelect(editor, select);
+  const setOpen = (open: boolean, returnFocus = false) => {
+    container.classList.toggle('omi-block-type-menu--open', open);
+    trigger.setAttribute('aria-expanded', String(open));
+    menu.hidden = !open;
+    if (open) {
+      const activeItem = items.find((item) => item.getAttribute('aria-checked') === 'true');
+      requestAnimationFrame(() => (activeItem ?? items[0])?.focus());
+    } else if (returnFocus) {
+      trigger.focus();
+    }
   };
-  const preserveSelection = (event: MouseEvent) => {
+
+  const onTriggerMouseDown = (event: MouseEvent) => {
+    event.preventDefault();
     event.stopPropagation();
   };
+  const onTriggerClick = () => setOpen(menu.hidden !== false);
+  const onMenuClick = (event: MouseEvent) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const item = target.closest<HTMLButtonElement>('[data-block-type]');
+    if (!item) return;
+    applyBlockType(editor, item.dataset.blockType as BlockType);
+    syncBlockTypeMenu(editor, trigger, items);
+    setOpen(false);
+  };
+  const onMenuKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    setOpen(false, true);
+  };
+  const onDocumentPointerDown = (event: PointerEvent) => {
+    const target = event.target;
+    if (target instanceof Node && !container.contains(target)) setOpen(false);
+  };
 
-  select.addEventListener('change', onChange);
-  select.addEventListener('mousedown', preserveSelection);
-  container.append(select);
+  trigger.addEventListener('mousedown', onTriggerMouseDown);
+  trigger.addEventListener('click', onTriggerClick);
+  menu.addEventListener('click', onMenuClick);
+  menu.addEventListener('keydown', onMenuKeyDown);
+  document.addEventListener('pointerdown', onDocumentPointerDown, true);
+  container.append(trigger, menu);
   host.classList.add('omi-block-type-menu-host');
   host.append(container);
-  syncBlockTypeSelect(editor, select);
+  syncBlockTypeMenu(editor, trigger, items);
 
   return {
-    update: () => syncBlockTypeSelect(editor, select),
+    update: () => syncBlockTypeMenu(editor, trigger, items),
     destroy: () => {
-      select.removeEventListener('change', onChange);
-      select.removeEventListener('mousedown', preserveSelection);
+      trigger.removeEventListener('mousedown', onTriggerMouseDown);
+      trigger.removeEventListener('click', onTriggerClick);
+      menu.removeEventListener('click', onMenuClick);
+      menu.removeEventListener('keydown', onMenuKeyDown);
+      document.removeEventListener('pointerdown', onDocumentPointerDown, true);
       container.remove();
       host.classList.remove('omi-block-type-menu-host');
     },
   };
 }
 
-function appendOption(
-  parent: HTMLSelectElement | HTMLOptGroupElement,
+function appendBlockTypeItem(
+  parent: HTMLElement,
+  items: HTMLButtonElement[],
   value: BlockType,
   label: string,
 ): void {
-  const option = document.createElement('option');
-  option.value = value;
-  option.textContent = label;
-  parent.append(option);
+  const item = document.createElement('button');
+  item.type = 'button';
+  item.className = 'omi-block-type-menu__item';
+  item.dataset.blockType = value;
+  item.setAttribute('role', 'menuitemradio');
+  item.setAttribute('aria-checked', 'false');
+  item.textContent = label;
+  items.push(item);
+  parent.append(item);
 }
 
-function syncBlockTypeSelect(editor: Editor, select: HTMLSelectElement): void {
-  select.disabled = !editor.isEditable;
-  select.value = getActiveBlockType(editor);
+function syncBlockTypeMenu(
+  editor: Editor,
+  trigger: HTMLButtonElement,
+  items: HTMLButtonElement[],
+): void {
+  trigger.disabled = !editor.isEditable;
+  const activeType = getActiveBlockType(editor);
+  for (const item of items) {
+    const active = item.dataset.blockType === activeType;
+    item.classList.toggle('is-active', active);
+    item.setAttribute('aria-checked', String(active));
+  }
 }
 
 function getActiveBlockType(editor: Editor): BlockType {

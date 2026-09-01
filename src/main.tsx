@@ -7,7 +7,6 @@ import { initializeLastSessionPersistence } from './app/lastSessionPersistence';
 import { initializeRevisionIntegrity } from './app/revisionIntegrity';
 import { ClosedDocumentScreen } from './components/ClosedDocumentScreen';
 import { ProofreadingController } from './components/ProofreadingController';
-import { initializeFormattingToolbarPreference } from './editor/formattingToolbarPreference';
 import { I18nProvider } from './i18n';
 
 import './styles/global.css';
@@ -45,12 +44,10 @@ import './styles/academic-shell.css';
 import './styles/mobile-language-switcher.css';
 import './styles/desktop-fullscreen-panels.css';
 import './styles/desktop-document-tabs.css';
-import './styles/formatting-toolbar-preference.css';
 import './styles/proofreading.css';
 import './styles/account-profiles.css';
 
 initializeRevisionIntegrity();
-initializeFormattingToolbarPreference();
 
 const SESSION_RESTORE_BOOT_BUDGET_MS = 1200;
 
