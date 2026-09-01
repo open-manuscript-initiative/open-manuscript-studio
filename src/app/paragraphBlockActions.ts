@@ -1,3 +1,8 @@
+import {
+  findAdjacentManuscriptBlock,
+  findManuscriptBlock,
+  type ManuscriptBlockLocation,
+} from '../model/manuscriptEditingOrder';
 import { extractManuscriptState, type CreateChangeEventInput } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';
 import type { OmiBlock, OmiManuscriptState } from '../types/omi';
@@ -8,11 +13,7 @@ export interface ParagraphMergeResult {
   selectionPosition: number;
 }
 
-interface ParagraphLocation {
-  sectionIndex: number;
-  blockIndex: number;
-  block: OmiBlock;
-}
+type ParagraphLocation = ManuscriptBlockLocation;
 
 export function splitParagraphBlock(
   blockId: string,
@@ -99,9 +100,9 @@ function mergeAdjacentParagraph(
     const location = findParagraphBlock(state.manuscript.sections, blockId);
     if (!location) return state;
 
-    const adjacentLocation = findAdjacentBlock(
+    const adjacentLocation = findAdjacentManuscriptBlock(
       state.manuscript.sections,
-      location,
+      blockId,
       direction,
     );
     if (!adjacentLocation || adjacentLocation.block.type !== 'paragraph') return state;
@@ -199,57 +200,8 @@ function findParagraphBlock(
   sections: ReturnType<typeof useStudioStore.getState>['manuscript']['sections'],
   blockId: string,
 ): ParagraphLocation | null {
-  for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex += 1) {
-    const section = sections[sectionIndex];
-    if (!section) continue;
-    const blockIndex = section.blocks.findIndex((block) => block.id === blockId);
-    if (blockIndex < 0) continue;
-    const block = section.blocks[blockIndex];
-    if (!block || block.type !== 'paragraph') return null;
-    return { sectionIndex, blockIndex, block };
-  }
-  return null;
-}
-
-function findAdjacentBlock(
-  sections: ReturnType<typeof useStudioStore.getState>['manuscript']['sections'],
-  location: ParagraphLocation,
-  direction: 'backward' | 'forward',
-): ParagraphLocation | null {
-  const section = sections[location.sectionIndex];
-  if (!section) return null;
-
-  const sameSectionIndex = direction === 'backward'
-    ? location.blockIndex - 1
-    : location.blockIndex + 1;
-  const sameSectionBlock = section.blocks[sameSectionIndex];
-  if (sameSectionBlock) {
-    return {
-      sectionIndex: location.sectionIndex,
-      blockIndex: sameSectionIndex,
-      block: sameSectionBlock,
-    };
-  }
-
-  const step = direction === 'backward' ? -1 : 1;
-  for (
-    let sectionIndex = location.sectionIndex + step;
-    sectionIndex >= 0 && sectionIndex < sections.length;
-    sectionIndex += step
-  ) {
-    const adjacentSection = sections[sectionIndex];
-    if (!adjacentSection || adjacentSection.blocks.length === 0) continue;
-
-    const blockIndex = direction === 'backward'
-      ? adjacentSection.blocks.length - 1
-      : 0;
-    const block = adjacentSection.blocks[blockIndex];
-    if (!block) return null;
-
-    return { sectionIndex, blockIndex, block };
-  }
-
-  return null;
+  const location = findManuscriptBlock(sections, blockId);
+  return location?.block.type === 'paragraph' ? location : null;
 }
 
 function reassignAnchoredObjects(
