@@ -3,6 +3,7 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
 
 import { useStudioStore } from '../../app/useStudioStore';
 import {
+  clearRenderedManuscriptSelection,
   decorateManuscriptSelection,
   getEntireManuscriptSelection,
   readManuscriptDomSelection,
@@ -42,7 +43,7 @@ export const OmiManuscriptSelectionExtension = Extension.create({
             currentSelection = range;
             activeSelectionRoot = root;
             queueMicrotask(() => {
-              renderManuscriptDomSelection(root, range);
+              renderManuscriptDomSelection(root, sections, range);
               decorateManuscriptSelection(root, sections, range);
             });
             return true;
@@ -85,7 +86,7 @@ export const OmiManuscriptSelectionExtension = Extension.create({
                   range = entireRange;
                   currentSelection = range;
                   activeSelectionRoot = root;
-                  renderManuscriptDomSelection(root, range);
+                  renderManuscriptDomSelection(root, sections, range);
                   decorateManuscriptSelection(root, sections, range);
                   return;
                 }
@@ -109,6 +110,7 @@ export const OmiManuscriptSelectionExtension = Extension.create({
               if (activeSelectionRoot === root) {
                 currentSelection = null;
                 activeSelectionRoot = null;
+                clearRenderedManuscriptSelection(root);
               }
             },
           };
