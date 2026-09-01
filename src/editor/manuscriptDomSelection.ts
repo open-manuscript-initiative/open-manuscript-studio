@@ -12,6 +12,23 @@ export interface ManuscriptSelectionRange {
   end: ManuscriptSelectionPoint;
 }
 
+export function normalizeManuscriptSelectionRange(
+  sections: readonly OmiSection[],
+  anchor: ManuscriptSelectionPoint,
+  focus: ManuscriptSelectionPoint,
+): ManuscriptSelectionRange | null {
+  const order = getManuscriptBlockOrder(sections);
+  const anchorIndex = order.findIndex(({ block }) => block.id === anchor.blockId);
+  const focusIndex = order.findIndex(({ block }) => block.id === focus.blockId);
+  if (anchorIndex < 0 || focusIndex < 0) return null;
+
+  if (anchorIndex < focusIndex) return { start: anchor, end: focus };
+  if (anchorIndex > focusIndex) return { start: focus, end: anchor };
+  return anchor.offset <= focus.offset
+    ? { start: anchor, end: focus }
+    : { start: focus, end: anchor };
+}
+
 export function readManuscriptDomSelection(
   root: HTMLElement,
   sections: readonly OmiSection[],
@@ -27,11 +44,6 @@ export function readManuscriptDomSelection(
   const focusBlockId = focusEditor.dataset.blockId;
   if (!anchorBlockId || !focusBlockId) return null;
 
-  const order = getManuscriptBlockOrder(sections);
-  const anchorIndex = order.findIndex(({ block }) => block.id === anchorBlockId);
-  const focusIndex = order.findIndex(({ block }) => block.id === focusBlockId);
-  if (anchorIndex < 0 || focusIndex < 0) return null;
-
   const anchorOffset = domPointToTextOffset(
     anchorEditor,
     selection.anchorNode,
@@ -45,11 +57,7 @@ export function readManuscriptDomSelection(
 
   const anchor = { blockId: anchorBlockId, offset: anchorOffset };
   const focus = { blockId: focusBlockId, offset: focusOffset };
-  if (anchorIndex < focusIndex) return { start: anchor, end: focus };
-  if (anchorIndex > focusIndex) return { start: focus, end: anchor };
-  return anchorOffset <= focusOffset
-    ? { start: anchor, end: focus }
-    : { start: focus, end: anchor };
+  return normalizeManuscriptSelectionRange(sections, anchor, focus);
 }
 
 export function getEntireManuscriptSelection(
