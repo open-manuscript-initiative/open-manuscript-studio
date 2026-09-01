@@ -12,6 +12,25 @@ export interface ManuscriptSelectionRange {
   end: ManuscriptSelectionPoint;
 }
 
+export interface ManuscriptSelectionSegment {
+  blockId: string;
+  from: number;
+  to: number;
+}
+
+interface RenderedManuscriptSelection {
+  root: HTMLElement;
+  range: ManuscriptSelectionRange;
+}
+
+interface HighlightRegistry {
+  set: (name: string, highlight: unknown) => void;
+  delete: (name: string) => boolean;
+}
+
+const MANUSCRIPT_SELECTION_HIGHLIGHT = 'omi-manuscript-selection';
+let renderedSelection: RenderedManuscriptSelection | null = null;
+
 export function normalizeManuscriptSelectionRange(
   sections: readonly OmiSection[],
   anchor: ManuscriptSelectionPoint,
@@ -34,15 +53,16 @@ export function readManuscriptDomSelection(
   sections: readonly OmiSection[],
 ): ManuscriptSelectionRange | null {
   const selection = window.getSelection();
-  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
+  const fallback = getRenderedManuscriptSelection(root);
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return fallback;
 
   const anchorEditor = findBlockEditor(selection.anchorNode, root);
   const focusEditor = findBlockEditor(selection.focusNode, root);
-  if (!anchorEditor || !focusEditor) return null;
+  if (!anchorEditor || !focusEditor) return fallback;
 
   const anchorBlockId = anchorEditor.dataset.blockId;
   const focusBlockId = focusEditor.dataset.blockId;
-  if (!anchorBlockId || !focusBlockId) return null;
+  if (!anchorBlockId || !focusBlockId) return fallback;
 
   const anchorOffset = domPointToTextOffset(
     anchorEditor,
@@ -57,7 +77,37 @@ export function readManuscriptDomSelection(
 
   const anchor = { blockId: anchorBlockId, offset: anchorOffset };
   const focus = { blockId: focusBlockId, offset: focusOffset };
-  return normalizeManuscriptSelectionRange(sections, anchor, focus);
+  const nativeRange = normalizeManuscriptSelectionRange(sections, anchor, focus);
+  if (
+    fallback &&
+    fallback.start.blockId !== fallback.end.blockId &&
+    nativeRange?.start.blockId === nativeRange?.end.blockId
+  ) {
+    // Chromium/WebKit may clamp a DOM Selection to one contenteditable host.
+    // Preserve the manuscript-level range that the pointer controller rendered
+    // across the independent paragraph editors.
+    return fallback;
+  }
+  return nativeRange ?? fallback;
+}
+
+export function getManuscriptSelectionSegments(
+  sections: readonly OmiSection[],
+  range: ManuscriptSelectionRange,
+): ManuscriptSelectionSegment[] {
+  const order = getManuscriptBlockOrder(sections).filter(({ block }) => !block.visual);
+  const startIndex = order.findIndex(({ block }) => block.id === range.start.blockId);
+  const endIndex = order.findIndex(({ block }) => block.id === range.end.blockId);
+  if (startIndex < 0 || endIndex < startIndex) return [];
+
+  return order.slice(startIndex, endIndex + 1).map(({ block }, index, selected) => {
+    const length = getStoredTextLength(block.content);
+    const from = index === 0 ? clamp(range.start.offset, 0, length) : 0;
+    const to = index === selected.length - 1
+      ? clamp(range.end.offset, from, length)
+      : length;
+    return { blockId: block.id, from, to };
+  });
 }
 
 export function getEntireManuscriptSelection(
@@ -75,6 +125,7 @@ export function getEntireManuscriptSelection(
 
 export function renderManuscriptDomSelection(
   root: HTMLElement,
+  sections: readonly OmiSection[],
   range: ManuscriptSelectionRange,
 ): void {
   const editors = Array.from(
@@ -101,10 +152,61 @@ export function renderManuscriptDomSelection(
 
   domRange.setStart(startPoint.node, startPoint.offset);
   domRange.setEnd(endPoint.node, endPoint.offset);
+  renderedSelection = { root, range: cloneSelectionRange(range) };
+  renderSelectionHighlight(root, sections, range);
+
   const selection = window.getSelection();
   if (!selection) return;
-  selection.removeAllRanges();
-  selection.addRange(domRange);
+  try {
+    selection.removeAllRanges();
+    selection.addRange(domRange);
+  } catch {
+    // Some editing hosts reject a native range that crosses contenteditable
+    // roots. The CSS Highlight and stored manuscript range remain authoritative.
+  }
+}
+
+export function getRenderedManuscriptSelection(
+  root?: HTMLElement,
+): ManuscriptSelectionRange | null {
+  if (!renderedSelection || (root && renderedSelection.root !== root)) return null;
+  return cloneSelectionRange(renderedSelection.range);
+}
+
+export function getRenderedManuscriptSelectionRoot(): HTMLElement | null {
+  return renderedSelection?.root ?? null;
+}
+
+export function clearRenderedManuscriptSelection(root?: HTMLElement): void {
+  if (root && renderedSelection?.root !== root) return;
+  renderedSelection = null;
+  getHighlightRegistry()?.delete(MANUSCRIPT_SELECTION_HIGHLIGHT);
+}
+
+export function createManuscriptDomRange(
+  root: HTMLElement,
+  range: ManuscriptSelectionRange,
+): Range | null {
+  const startEditor = root.querySelector<HTMLElement>(
+    `.omi-tiptap-editor[data-block-id="${escapeAttributeValue(range.start.blockId)}"]`,
+  );
+  const endEditor = root.querySelector<HTMLElement>(
+    `.omi-tiptap-editor[data-block-id="${escapeAttributeValue(range.end.blockId)}"]`,
+  );
+  if (!startEditor || !endEditor) return null;
+
+  const startPoint = textOffsetToDomPoint(startEditor, range.start.offset);
+  const endPoint = textOffsetToDomPoint(endEditor, range.end.offset);
+  if (!startPoint || !endPoint) return null;
+
+  const domRange = document.createRange();
+  try {
+    domRange.setStart(startPoint.node, startPoint.offset);
+    domRange.setEnd(endPoint.node, endPoint.offset);
+  } catch {
+    return null;
+  }
+  return domRange;
 }
 
 export function decorateManuscriptSelection(
@@ -126,6 +228,69 @@ export function decorateManuscriptSelection(
     const blockId = element.dataset.blockId;
     element.toggleAttribute('data-manuscript-selected', Boolean(blockId && selected.has(blockId)));
   });
+}
+
+function renderSelectionHighlight(
+  root: HTMLElement,
+  sections: readonly OmiSection[],
+  range: ManuscriptSelectionRange,
+): void {
+  const registry = getHighlightRegistry();
+  const HighlightConstructor = getHighlightConstructor();
+  if (!registry || !HighlightConstructor) return;
+
+  const ranges = getManuscriptSelectionSegments(sections, range).flatMap((segment) => {
+    const editor = root.querySelector<HTMLElement>(
+      `.omi-tiptap-editor[data-block-id="${escapeAttributeValue(segment.blockId)}"]`,
+    );
+    if (!editor) return [];
+    const start = textOffsetToDomPoint(editor, segment.from);
+    const end = textOffsetToDomPoint(editor, segment.to);
+    if (!start || !end) return [];
+
+    const domRange = document.createRange();
+    try {
+      domRange.setStart(start.node, start.offset);
+      domRange.setEnd(end.node, end.offset);
+      return [domRange];
+    } catch {
+      return [];
+    }
+  });
+
+  registry.delete(MANUSCRIPT_SELECTION_HIGHLIGHT);
+  if (ranges.length > 0) {
+    registry.set(MANUSCRIPT_SELECTION_HIGHLIGHT, new HighlightConstructor(...ranges));
+  }
+}
+
+function getHighlightRegistry(): HighlightRegistry | null {
+  if (typeof CSS === 'undefined') return null;
+  return (CSS as typeof CSS & { highlights?: HighlightRegistry }).highlights ?? null;
+}
+
+function getHighlightConstructor(): (new (...ranges: Range[]) => unknown) | null {
+  return (globalThis as typeof globalThis & {
+    Highlight?: new (...ranges: Range[]) => unknown;
+  }).Highlight ?? null;
+}
+
+function escapeAttributeValue(value: string): string {
+  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+    return CSS.escape(value);
+  }
+  return value.replace(/["\\]/gu, '\\$&');
+}
+
+function cloneSelectionRange(range: ManuscriptSelectionRange): ManuscriptSelectionRange {
+  return {
+    start: { ...range.start },
+    end: { ...range.end },
+  };
+}
+
+function clamp(value: number, minimum: number, maximum: number): number {
+  return Math.min(Math.max(value, minimum), maximum);
 }
 
 function findBlockEditor(node: Node | null, root: HTMLElement): HTMLElement | null {
