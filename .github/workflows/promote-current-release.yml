@@ -1,0 +1,53 @@
+name: Promote current public release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'package.json'
+      - '.github/workflows/promote-current-release.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    name: Point GitHub latest release to current Studio version
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Resolve current release tag
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          tag="v${version}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Promote current public release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.id')"
+
+          # GitHub's /releases/latest and /releases/latest/download/... routes ignore
+          # prereleases. The Studio public beta is the current downloadable public
+          # release, so expose it as GitHub's latest release as well.
+          gh api \
+            --method PATCH \
+            "repos/$GITHUB_REPOSITORY/releases/$release_id" \
+            -F prerelease=false \
+            -F draft=false \
+            -f make_latest=true \
+            >/dev/null
+
+          echo "GitHub latest release now points to $RELEASE_TAG"
