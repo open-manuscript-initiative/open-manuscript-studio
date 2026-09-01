@@ -8,6 +8,12 @@ export interface ParagraphMergeResult {
   selectionPosition: number;
 }
 
+interface ParagraphLocation {
+  sectionIndex: number;
+  blockIndex: number;
+  block: OmiBlock;
+}
+
 export function splitParagraphBlock(
   blockId: string,
   leftContent: string,
@@ -93,14 +99,15 @@ function mergeAdjacentParagraph(
     const location = findParagraphBlock(state.manuscript.sections, blockId);
     if (!location) return state;
 
-    const { sectionIndex, blockIndex, block } = location;
-    const section = state.manuscript.sections[sectionIndex];
-    if (!section) return state;
+    const adjacentLocation = findAdjacentBlock(
+      state.manuscript.sections,
+      location,
+      direction,
+    );
+    if (!adjacentLocation || adjacentLocation.block.type !== 'paragraph') return state;
 
-    const adjacentIndex = direction === 'backward' ? blockIndex - 1 : blockIndex + 1;
-    const adjacent = section.blocks[adjacentIndex];
-    if (!adjacent || adjacent.type !== 'paragraph') return state;
-
+    const block = location.block;
+    const adjacent = adjacentLocation.block;
     const first = direction === 'backward' ? adjacent : block;
     const second = direction === 'backward' ? block : adjacent;
     const survivor = first;
@@ -108,15 +115,14 @@ function mergeAdjacentParagraph(
     const mergedContent = mergeStoredParagraphDocuments(first.content, second.content);
     const selectionPosition = paragraphDocumentEndPosition(first.content);
 
-    const nextSections = state.manuscript.sections.map((candidate, index) => {
-      if (index !== sectionIndex) return candidate;
-      const blocks = candidate.blocks
+    const nextSections = state.manuscript.sections.map((section) => ({
+      ...section,
+      blocks: section.blocks
         .filter((item) => item.id !== removed.id)
         .map((item) => item.id === survivor.id
           ? { ...item, content: mergedContent }
-          : item);
-      return { ...candidate, blocks };
-    });
+          : item),
+    }));
 
     const nextState = reassignAllBlockReferences(
       {
@@ -192,7 +198,7 @@ function checkpointStructuralChange(): void {
 function findParagraphBlock(
   sections: ReturnType<typeof useStudioStore.getState>['manuscript']['sections'],
   blockId: string,
-): { sectionIndex: number; blockIndex: number; block: OmiBlock } | null {
+): ParagraphLocation | null {
   for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex += 1) {
     const section = sections[sectionIndex];
     if (!section) continue;
@@ -202,6 +208,47 @@ function findParagraphBlock(
     if (!block || block.type !== 'paragraph') return null;
     return { sectionIndex, blockIndex, block };
   }
+  return null;
+}
+
+function findAdjacentBlock(
+  sections: ReturnType<typeof useStudioStore.getState>['manuscript']['sections'],
+  location: ParagraphLocation,
+  direction: 'backward' | 'forward',
+): ParagraphLocation | null {
+  const section = sections[location.sectionIndex];
+  if (!section) return null;
+
+  const sameSectionIndex = direction === 'backward'
+    ? location.blockIndex - 1
+    : location.blockIndex + 1;
+  const sameSectionBlock = section.blocks[sameSectionIndex];
+  if (sameSectionBlock) {
+    return {
+      sectionIndex: location.sectionIndex,
+      blockIndex: sameSectionIndex,
+      block: sameSectionBlock,
+    };
+  }
+
+  const step = direction === 'backward' ? -1 : 1;
+  for (
+    let sectionIndex = location.sectionIndex + step;
+    sectionIndex >= 0 && sectionIndex < sections.length;
+    sectionIndex += step
+  ) {
+    const adjacentSection = sections[sectionIndex];
+    if (!adjacentSection || adjacentSection.blocks.length === 0) continue;
+
+    const blockIndex = direction === 'backward'
+      ? adjacentSection.blocks.length - 1
+      : 0;
+    const block = adjacentSection.blocks[blockIndex];
+    if (!block) return null;
+
+    return { sectionIndex, blockIndex, block };
+  }
+
   return null;
 }
 
