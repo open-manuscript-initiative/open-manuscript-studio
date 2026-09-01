@@ -22,10 +22,17 @@ export interface EditorProofreadingState {
   ignoreActiveIssue: () => void;
 }
 
+export interface EditorProofreadingScope {
+  blockId: string;
+  text: string;
+  textOffsetBase: number;
+}
+
 export function useEditorProofreading(
   editor: Editor | null,
   blockId: string,
   language: string,
+  resolveScope?: (editor: Editor) => EditorProofreadingScope | null,
 ): EditorProofreadingState {
   const { languageCheckEnabled } = useProofreadingPreferences();
   const [issues, setIssues] = useState<ProofreadingIssue[]>([]);
@@ -56,7 +63,13 @@ export function useEditorProofreading(
       if (!editor.isFocused) return;
       controller?.abort();
       controller = new AbortController();
-      const text = editor.state.doc.textBetween(0, editor.state.doc.content.size, '');
+      const scope = resolveScope?.(editor) ?? {
+        blockId,
+        text: editor.state.doc.textBetween(0, editor.state.doc.content.size, ''),
+        textOffsetBase: 0,
+      };
+      if (!scope) return;
+      const { text } = scope;
       if (!text.trim()) {
         setIssues([]);
         setEditorIssues(editor, []);
@@ -73,15 +86,19 @@ export function useEditorProofreading(
         const result = await checkProofreading({
           language,
           text,
-          blockId,
+          blockId: scope.blockId,
           signal: controller.signal,
         });
         if (disposed || controller.signal.aborted) return;
-        setIssues(result.issues);
+        const scopedIssues = result.issues.map((issue) => ({
+          ...issue,
+          offset: issue.offset + scope.textOffsetBase,
+        }));
+        setIssues(scopedIssues);
         setActiveIssueId((current) =>
-          current && result.issues.some((issue) => issue.id === current) ? current : null,
+          current && scopedIssues.some((issue) => issue.id === current) ? current : null,
         );
-        setEditorIssues(editor, result.issues);
+        setEditorIssues(editor, scopedIssues);
       } catch (reason) {
         if (controller.signal.aborted || disposed) return;
         setIssues([]);
@@ -107,6 +124,7 @@ export function useEditorProofreading(
     if (editor.isFocused) schedule();
     editor.on('focus', schedule);
     editor.on('update', schedule);
+    if (resolveScope) editor.on('selectionUpdate', schedule);
     editor.on('blur', handleBlur);
     return () => {
       disposed = true;
@@ -114,9 +132,10 @@ export function useEditorProofreading(
       controller?.abort();
       editor.off('focus', schedule);
       editor.off('update', schedule);
+      if (resolveScope) editor.off('selectionUpdate', schedule);
       editor.off('blur', handleBlur);
     };
-  }, [blockId, editor, language, languageCheckEnabled]);
+  }, [blockId, editor, language, languageCheckEnabled, resolveScope]);
 
   function applyReplacement(replacement: string): void {
     if (!editor || !activeIssue) return;

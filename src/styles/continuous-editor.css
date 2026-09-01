@@ -147,6 +147,55 @@
   line-height: 1.78;
 }
 
+.omi-continuous-document-editor .omi-continuous-tiptap-editor {
+  min-height: 12rem;
+  padding: 0;
+}
+
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > * {
+  position: relative;
+}
+
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > p,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > blockquote,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > ul,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > ol,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > pre {
+  margin: 0 0 0.9rem;
+}
+
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h1,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h2,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h3,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h4,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h5,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h6 {
+  margin: 2.4rem 0 1rem;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h1:first-child,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h2:first-child,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h3:first-child,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h4:first-child,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h5:first-child,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h6:first-child {
+  margin-top: 0;
+}
+
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h1 { font-size: 1.55rem; }
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h2 { font-size: 1.38rem; }
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h3 { font-size: 1.22rem; }
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h4,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h5,
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > h6 { font-size: 1.08rem; }
+
+.omi-continuous-document-editor .omi-continuous-tiptap-editor > [data-section-number]::before {
+  content: attr(data-section-number) " ";
+  color: inherit;
+}
+
 /*
  * Block actions become contextual instead of permanently fragmenting the page.
  * They appear only while the current paragraph/block is active.

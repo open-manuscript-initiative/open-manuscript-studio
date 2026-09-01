@@ -9,6 +9,7 @@ import {
   type JSONContent,
   useEditor,
 } from '@tiptap/react';
+import type { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
 import {
@@ -31,8 +32,10 @@ import {
 import { useStudioStore } from '../app/useStudioStore';
 import {
   registerBlockEditor,
+  registerContinuousBlockEditor,
   requestBlockEditorFocus,
 } from '../editor/blockFocusRegistry';
+import { getTopLevelBlockAtPosition } from '../editor/continuousManuscriptDocument';
 import {
   getEditorCapabilities,
   type EditorCapabilities,
@@ -44,7 +47,12 @@ import {
   type OmiNoteAttributes,
 } from '../editor/extensions/OmiNoteExtension';
 import { OmiProofreadingExtension } from '../editor/extensions/OmiProofreadingExtension';
-import { OMI_RICH_TEXT_EXTENSIONS } from '../editor/extensions/OmiRichTextExtensions';
+import { OmiContinuousStructureExtension } from '../editor/extensions/OmiContinuousStructureExtension';
+import {
+  OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS,
+  OMI_RICH_TEXT_EXTENSIONS,
+} from '../editor/extensions/OmiRichTextExtensions';
+import { OmiVisualBlockExtension } from '../editor/extensions/OmiVisualBlockExtension';
 import { useEditorProofreading } from '../editor/useEditorProofreading';
 import { useTranslation } from '../i18n';
 import { getCrossReferenceCopy } from '../i18n/crossReferences';
@@ -84,6 +92,7 @@ interface BlockEditorProps {
   capabilities?: EditorCapabilities;
   manuscriptLanguage?: string;
   className?: string;
+  continuous?: boolean;
 }
 
 export function BlockEditor({
@@ -95,6 +104,7 @@ export function BlockEditor({
   capabilities = getEditorCapabilities('author'),
   manuscriptLanguage,
   className,
+  continuous = false,
 }: BlockEditorProps) {
   const { t, locale } = useTranslation();
   const crossReferenceCopy = getCrossReferenceCopy(locale);
@@ -108,6 +118,7 @@ export function BlockEditor({
   const onUpdateRef = useRef(onUpdate);
   const tRef = useRef(t);
   const proofreadingSelectRef = useRef<(id: string | null) => void>(() => undefined);
+  const activeBlockIdRef = useRef(blockId);
   const blockLabel = formatBlockType(blockType, t);
   const effectiveEditable = editable && capabilities.editText;
   const externalIntegrationsAllowed = effectiveEditable && capabilities.reconcileWorkspaceReferences;
@@ -165,7 +176,13 @@ export function BlockEditor({
           ? { horizontalRule: false }
           : { heading: false, horizontalRule: false },
       ),
-      ...OMI_RICH_TEXT_EXTENSIONS,
+      ...(continuous
+        ? [
+            OmiVisualBlockExtension,
+            OmiContinuousStructureExtension,
+            ...OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS,
+          ]
+        : OMI_RICH_TEXT_EXTENSIONS),
       OmiProofreadingExtension,
       ...(capabilities.insertNotes
         ? [
@@ -174,7 +191,7 @@ export function BlockEditor({
                 stageCreateNote({
                   id: attributes.noteId,
                   anchorId: attributes.anchorId,
-                  targetBlockId: blockId,
+                  targetBlockId: activeBlockIdRef.current,
                   kind: attributes.noteType,
                 });
                 setActiveNoteId(attributes.noteId);
@@ -193,15 +210,17 @@ export function BlockEditor({
     content: parseStoredContent(content),
     editorProps: {
       attributes: {
-        class: 'omi-tiptap-editor',
-        'data-block-id': blockId,
+        class: continuous
+          ? 'omi-tiptap-editor omi-continuous-tiptap-editor'
+          : 'omi-tiptap-editor',
+        ...(continuous ? {} : { 'data-block-id': blockId }),
         'data-block-type': blockType,
         'aria-label': `${blockLabel}: ${t('studio.editorAria')}`,
         spellcheck: 'true',
       },
       transformPastedHTML: (html) => sanitizeRichTextPasteHtml(html),
       handleKeyDown: (view, event) => {
-        if (!effectiveEditable || blockType !== 'paragraph' || event.isComposing) return false;
+        if (continuous || !effectiveEditable || blockType !== 'paragraph' || event.isComposing) return false;
         if (event.altKey || event.ctrlKey || event.metaKey) return false;
 
         const { selection, doc } = view.state;
@@ -312,13 +331,34 @@ export function BlockEditor({
     editor,
     blockId,
     manuscriptLanguage ?? manuscript.locale,
+    continuous ? resolveContinuousProofreadingScope : undefined,
   );
   proofreadingSelectRef.current = proofreading.selectIssue;
 
   useEffect(() => {
     if (!editor) return;
-    return registerBlockEditor(blockId, editor);
-  }, [blockId, editor]);
+    return continuous
+      ? registerContinuousBlockEditor(editor)
+      : registerBlockEditor(blockId, editor);
+  }, [blockId, continuous, editor]);
+
+  useEffect(() => {
+    if (!editor || !continuous) return;
+    const syncActiveBlock = () => {
+      const active = getTopLevelBlockAtPosition(
+        editor.state.doc,
+        editor.state.selection.from,
+      );
+      if (active) activeBlockIdRef.current = active.blockId;
+    };
+    syncActiveBlock();
+    editor.on('selectionUpdate', syncActiveBlock);
+    editor.on('transaction', syncActiveBlock);
+    return () => {
+      editor.off('selectionUpdate', syncActiveBlock);
+      editor.off('transaction', syncActiveBlock);
+    };
+  }, [continuous, editor]);
 
   useEffect(() => {
     editor?.setEditable(effectiveEditable);
@@ -392,7 +432,7 @@ export function BlockEditor({
         target: selection.recordId,
         locator: selection.locator,
       })),
-      blockId,
+      continuous ? activeBlockIdRef.current : blockId,
     );
     const label = renderCitationCluster(
       creation.citations,
@@ -438,7 +478,7 @@ export function BlockEditor({
     const reference = createCrossReference({
       targetId,
       targetKind,
-      sourceBlockId: blockId,
+      sourceBlockId: continuous ? activeBlockIdRef.current : blockId,
       displayStyle,
     });
     const label = formatCrossReferenceLabel(reference, target, manuscript.locale);
@@ -482,8 +522,8 @@ export function BlockEditor({
   return (
     <article
       className={`omi-block-editor${className ? ` ${className}` : ''}`}
-      data-block-id={blockId}
-      id={`omi-target-${blockId}`}
+      data-block-id={continuous ? undefined : blockId}
+      id={continuous ? undefined : `omi-target-${blockId}`}
       style={editorStyle}
     >
       <EditorContent editor={editor} />
@@ -525,7 +565,7 @@ export function BlockEditor({
       {integrationAction && externalIntegrationsAllowed ? (
         <SelectionIntegrationDialog
           editor={editor}
-          blockId={blockId}
+          blockId={continuous ? activeBlockIdRef.current : blockId}
           mode={integrationAction}
           sourceLanguage={manuscriptLanguage ?? manuscript.locale}
           onClose={() => setIntegrationAction(null)}
@@ -633,4 +673,17 @@ function getIntegrationActionLabels(locale: string): {
   if (locale === 'hu') return { translate: 'Fordítás', assistant: 'Asszisztens' };
   if (locale === 'de') return { translate: 'Übersetzen', assistant: 'Assistent' };
   return { translate: 'Translate', assistant: 'Assistant' };
+}
+
+function resolveContinuousProofreadingScope(editor: Editor) {
+  const active = getTopLevelBlockAtPosition(
+    editor.state.doc,
+    editor.state.selection.from,
+  );
+  if (!active) return null;
+  return {
+    blockId: active.blockId,
+    text: editor.state.doc.textBetween(active.start, active.end, ''),
+    textOffsetBase: editor.state.doc.textBetween(0, active.start, '').length,
+  };
 }

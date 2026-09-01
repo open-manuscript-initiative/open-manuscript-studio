@@ -49,6 +49,7 @@ export function CrossSectionClipboardController() {
       const editor = editorRootForNode(event.target instanceof Node ? event.target : null);
       const root = editor?.closest<HTMLElement>('.omi-continuous-manuscript');
       if (!editor || !root || !editor.isContentEditable) return;
+      if (editor.classList.contains('omi-continuous-tiptap-editor')) return;
 
       const sections = useStudioStore.getState().manuscript.sections;
       const point = manuscriptPointAt(root, sections, event.clientX, event.clientY);
@@ -350,6 +351,7 @@ function handleManuscriptPaste(event: ClipboardEvent): void {
   );
   const targetBlockId = targetRoot?.dataset.blockId;
   if (!targetRoot || !targetBlockId || !targetRoot.isContentEditable) return;
+  if (targetRoot.classList.contains('omi-continuous-tiptap-editor')) return;
 
   const selection = window.getSelection();
   const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;

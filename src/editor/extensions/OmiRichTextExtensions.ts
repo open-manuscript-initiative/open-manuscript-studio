@@ -262,6 +262,21 @@ export const OMI_RICH_TEXT_EXTENSIONS = [
   OmiBlockTypeMenuExtension,
 ];
 
+/**
+ * The continuous manuscript has one ProseMirror selection and one native
+ * editing surface. The legacy boundary and multi-host selection bridges must
+ * therefore stay out of this extension set.
+ */
+export const OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS = [
+  OmiLinkExtension,
+  OmiSuperscriptExtension,
+  OmiSubscriptExtension,
+  OmiSmallCapsExtension,
+  OmiUnderlineExtension,
+  OmiLanguageExtension,
+  OmiBlockTypeMenuExtension,
+];
+
 function createBlockTypeMenuView(editor: Editor) {
   const host = editor.view.dom.parentElement;
   if (!host) {
