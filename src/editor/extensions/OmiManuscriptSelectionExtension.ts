@@ -71,12 +71,14 @@ export const OmiManuscriptSelectionExtension = Extension.create({
               const sections = useStudioStore.getState().manuscript.sections;
               let range = readManuscriptDomSelection(root, sections);
 
-              // Android/iOS WebViews implement the native "Select all" action at
-              // the active contenteditable boundary. Because each OMI block has
-              // its own Tiptap editing host, that native action initially selects
-              // only one block. Detect that exact full-host selection on touch
-              // devices and promote it to the semantic whole-manuscript range.
-              if (range && isNativeMobileBlockSelectAll(root, range)) {
+              // Android/iOS browsers and WebViews implement the native
+              // "Select all" action at the active contenteditable boundary.
+              // Because each OMI block has its own Tiptap editing host, that
+              // native action initially selects only one block. Mobile Chrome
+              // does not always report exact 0..textLength DOM offsets, so the
+              // recognition below compares the selected DOM text with the full
+              // host text instead of requiring exact boundary offsets.
+              if (range && isNativeMobileBlockSelectAll(root, range, nativeSelection)) {
                 const entireRange = getEntireManuscriptSelection(sections);
                 if (entireRange) {
                   range = entireRange;
@@ -118,9 +120,10 @@ export const OmiManuscriptSelectionExtension = Extension.create({
 function isNativeMobileBlockSelectAll(
   root: HTMLElement,
   range: ManuscriptSelectionRange,
+  nativeSelection: Selection,
 ): boolean {
   if (!isMobileSelectionEnvironment()) return false;
-  if (range.start.blockId !== range.end.blockId || range.start.offset !== 0) return false;
+  if (range.start.blockId !== range.end.blockId) return false;
 
   const editors = Array.from(
     root.querySelectorAll<HTMLElement>('.omi-tiptap-editor[data-block-id]'),
@@ -132,14 +135,24 @@ function isNativeMobileBlockSelectAll(
   );
   if (!selectedEditor) return false;
 
-  // readManuscriptDomSelection measures offsets with Range#toString(), so use
-  // the same DOM text semantics here rather than stored JSON length.
-  const fullTextLength = document.createRange();
-  fullTextLength.selectNodeContents(selectedEditor);
-  const selectedEditorTextLength = fullTextLength.toString().length;
-  if (selectedEditorTextLength === 0) return false;
+  const fullTextRange = document.createRange();
+  fullTextRange.selectNodeContents(selectedEditor);
+  const fullText = normalizeSelectionText(fullTextRange.toString());
+  const selectedText = normalizeSelectionText(nativeSelection.toString());
+  if (!fullText || !selectedText) return false;
 
-  return range.end.offset >= selectedEditorTextLength;
+  // Comparing normalized text handles Chrome Android's boundary-point quirks:
+  // the native action can visually cover the complete contenteditable while
+  // reporting offsets that start/end just inside its DOM boundary. Partial
+  // selections still fail this equality check and are left untouched.
+  return selectedText === fullText;
+}
+
+function normalizeSelectionText(value: string): string {
+  return value
+    .replace(/[\u200b-\u200d\ufeff]/gu, '')
+    .replace(/[\u00a0\u202f\s]+/gu, ' ')
+    .trim();
 }
 
 function isMobileSelectionEnvironment(): boolean {
