@@ -9,9 +9,9 @@ export interface StructuralFootnoteStart {
 /**
  * Treat a strong sequential series of numbered note starts as structural
  * footnote evidence even when the corresponding body superscript was lost by
- * PDF extraction. This is intentionally page-local and conservative: the run
- * must already satisfy the shared sequence detector and occupy the compact,
- * lower-page typography typical of scholarly footnotes.
+ * PDF extraction. The sequence itself is the primary signal; typography,
+ * vertical position and marker alignment are only safeguards against ordinary
+ * numbered body lists.
  */
 export function findStructuralFootnoteStarts<TLine extends CanonicalPdfLine>(
   lines: readonly TLine[],
@@ -19,7 +19,7 @@ export function findStructuralFootnoteStarts<TLine extends CanonicalPdfLine>(
   if (lines.length < 3) return [];
 
   const ordered = lines
-    .map((line, sourceIndex) => ({ line, sourceIndex }))
+    .map((line) => ({ line }))
     .sort((left, right) => (left.line.yMin ?? 0) - (right.line.yMin ?? 0)
       || (left.line.xMin ?? 0) - (right.line.xMin ?? 0));
   const pageHeight = Math.max(...ordered.map(({ line }) => line.yMax ?? 0), 1);
@@ -50,7 +50,7 @@ export function findStructuralFootnoteStarts<TLine extends CanonicalPdfLine>(
   const run = findSequentialFootnoteStartRun(candidates, null, medianWordHeight);
   if (!run || run.markers.size < 3) return [];
 
-  const runCandidates = candidates.filter((candidate, index) => run.candidateIndexes.has(index));
+  const runCandidates = candidates.filter((_candidate, index) => run.candidateIndexes.has(index));
   if (runCandidates.length < 3) return [];
 
   const medianRunHeight = median(runCandidates.map((candidate) => candidate.fontHeight)) ?? medianWordHeight;
@@ -59,9 +59,10 @@ export function findStructuralFootnoteStarts<TLine extends CanonicalPdfLine>(
   const xValues = runCandidates.map((candidate) => candidate.xMin);
   const xSpread = Math.max(...xValues) - Math.min(...xValues);
 
-  if (medianRunHeight > medianWordHeight * 1.04) return [];
-  if (averageVertical < 0.52) return [];
-  if (xSpread > Math.max(18, medianWordHeight * 2.2)) return [];
+  const compactTypography = medianRunHeight <= medianWordHeight * 1.10;
+  const lowerPageSeries = averageVertical >= 0.42;
+  if (!compactTypography && !lowerPageSeries) return [];
+  if (xSpread > Math.max(30, medianWordHeight * 3)) return [];
 
   return runCandidates
     .map((candidate) => ({ marker: candidate.marker, lineIndex: candidate.lineIndex }))
