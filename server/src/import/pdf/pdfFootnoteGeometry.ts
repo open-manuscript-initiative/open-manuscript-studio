@@ -33,8 +33,11 @@ interface MarkerCandidate<TLine extends PdfGeometryLine> {
  * text in another line even though they are visually one row. The decisive
  * signal here is a vertical column of increasing markers at almost the same x.
  *
- * Only marker-only rows are merged. Ordinary numbered paragraphs are left
- * untouched and continue through the existing semantic detector.
+ * Once at least three sequential markers establish a real footnote column,
+ * marker-less visual rows between those starts are structural continuations of
+ * the preceding note. Fold them into that note before semantic reconstruction
+ * so Poppler flow breaks (including discretionary word breaks) cannot leak
+ * note text back into the body.
  */
 export function mergeStackedFootnoteMarkerRows<TLine extends PdfGeometryLine>(lines: TLine[]): void {
   if (lines.length < 3) return;
@@ -68,10 +71,95 @@ export function mergeStackedFootnoteMarkerRows<TLine extends PdfGeometryLine>(li
     reservedTargets.add(targetIndex);
   }
 
+  // A sequential, vertically aligned run is strong enough evidence to define
+  // the local footnote zone. Keep every plausible marker-less row between two
+  // confirmed starts with the preceding note instead of asking the later body
+  // continuation heuristic to rediscover that relationship.
+  mergeConfirmedZoneContinuations(lines, best.items, best.xCenter, removeIndexes);
+
   if (!removeIndexes.size) return;
   for (const index of [...removeIndexes].sort((left, right) => right - left)) {
     lines.splice(index, 1);
   }
+}
+
+function mergeConfirmedZoneContinuations<TLine extends PdfGeometryLine>(
+  lines: TLine[],
+  runItems: readonly MarkerCandidate<TLine>[],
+  markerColumnX: number,
+  removeIndexes: Set<number>,
+): void {
+  const starts = runItems
+    .map((item) => resolveMarkerStartLine(lines, item, removeIndexes))
+    .filter((item): item is { marker: MarkerCandidate<TLine>; lineIndex: number } => item !== null)
+    .sort((left, right) => left.marker.yCenter - right.marker.yCenter);
+  if (starts.length < 3) return;
+
+  for (let startIndex = 0; startIndex < starts.length - 1; startIndex += 1) {
+    const current = starts[startIndex]!;
+    const next = starts[startIndex + 1]!;
+    const target = lines[current.lineIndex]!;
+    const targetHeight = median(target.words.map((word) => Math.max(1, word.yMax - word.yMin))) ?? 8;
+    const contentX = target.words.length > 1 ? target.words[1]!.xMin : markerColumnX + targetHeight;
+
+    const continuations = lines
+      .map((line, lineIndex) => ({ line, lineIndex }))
+      .filter(({ line, lineIndex }) => {
+        if (lineIndex === current.lineIndex || lineIndex === next.lineIndex || removeIndexes.has(lineIndex)) return false;
+        if (!line.words.length) return false;
+        const first = line.words[0]!;
+        if (parseMarker(first.text)) return false;
+        const center = lineCenter(line);
+        if (center <= current.marker.yCenter || center >= next.marker.yCenter) return false;
+        const lineHeight = median(line.words.map((word) => Math.max(1, word.yMax - word.yMin))) ?? targetHeight;
+        if (lineHeight > targetHeight * 1.28) return false;
+        // Note continuations normally start at the note-text indent, not in the
+        // marker column or the main body margin.
+        return first.xMin >= markerColumnX + Math.max(4, targetHeight * 0.35)
+          && first.xMin <= contentX + Math.max(24, targetHeight * 2.5);
+      })
+      .sort((left, right) => lineCenter(left.line) - lineCenter(right.line));
+
+    for (const continuation of continuations) {
+      target.words.push(...continuation.line.words);
+      target.text = target.words.map((word) => word.text).join(' ').replace(/\s+/gu, ' ').trim();
+      if (typeof target.xMax === 'number' && typeof continuation.line.xMax === 'number') {
+        target.xMax = Math.max(target.xMax, continuation.line.xMax);
+      }
+      if (typeof target.yMax === 'number' && typeof continuation.line.yMax === 'number') {
+        target.yMax = Math.max(target.yMax, continuation.line.yMax);
+      }
+      removeIndexes.add(continuation.lineIndex);
+    }
+  }
+}
+
+function resolveMarkerStartLine<TLine extends PdfGeometryLine>(
+  lines: readonly TLine[],
+  marker: MarkerCandidate<TLine>,
+  removed: ReadonlySet<number>,
+): { marker: MarkerCandidate<TLine>; lineIndex: number } | null {
+  if (!removed.has(marker.lineIndex)) return { marker, lineIndex: marker.lineIndex };
+
+  let bestIndex = -1;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (let index = 0; index < lines.length; index += 1) {
+    if (removed.has(index)) continue;
+    const line = lines[index]!;
+    if (!line.words.length || line.words[0] !== marker.word) continue;
+    const distance = Math.abs(lineCenter(line) - marker.yCenter);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestIndex = index;
+    }
+  }
+  return bestIndex >= 0 ? { marker, lineIndex: bestIndex } : null;
+}
+
+function lineCenter(line: PdfGeometryLine): number {
+  if (typeof line.yMin === 'number' && typeof line.yMax === 'number') return (line.yMin + line.yMax) / 2;
+  if (!line.words.length) return 0;
+  return median(line.words.map((word) => (word.yMin + word.yMax) / 2)) ?? 0;
 }
 
 function collectCandidates<TLine extends PdfGeometryLine>(lines: TLine[]): MarkerCandidate<TLine>[] {
