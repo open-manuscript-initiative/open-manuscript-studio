@@ -120,6 +120,31 @@ export function SelectionActionToolbar({
     };
   }, [editor]);
 
+  useEffect(() => {
+    if (!isMobileSelectionEnvironment()) return;
+
+    const editorDom = editor.view.dom;
+    const previousTouchCallout = editorDom.style.getPropertyValue('-webkit-touch-callout');
+    editorDom.style.setProperty('-webkit-touch-callout', 'none');
+
+    const suppressNativeSelectionMenu = (event: Event) => {
+      const { from, to } = editor.state.selection;
+      if (from === to) return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
+    editorDom.addEventListener('contextmenu', suppressNativeSelectionMenu, true);
+    return () => {
+      editorDom.removeEventListener('contextmenu', suppressNativeSelectionMenu, true);
+      if (previousTouchCallout) {
+        editorDom.style.setProperty('-webkit-touch-callout', previousTouchCallout);
+      } else {
+        editorDom.style.removeProperty('-webkit-touch-callout');
+      }
+    };
+  }, [editor]);
+
   if (!position) return null;
 
   const style = { left: `${position.left}px`, top: `${position.top}px` } as CSSProperties;
@@ -128,10 +153,9 @@ export function SelectionActionToolbar({
   const runClipboardAction = async (action: 'copy' | 'cut') => {
     editor.commands.focus();
 
-    // execCommand deliberately remains the primary path here: unlike the
-    // text-only Clipboard API it preserves Tiptap/OMI HTML marks and works in
-    // Android WebView selection contexts. Native Ctrl/Cmd+C/X and the Android
-    // selection menu continue to use the browser's normal clipboard pipeline.
+    // Keep the system clipboard as the destination even when Studio suppresses
+    // the native mobile text-selection action menu. execCommand uses the
+    // WebView/browser clipboard pipeline and preserves rich editor markup.
     if (typeof document.execCommand === 'function' && document.execCommand(action)) return;
 
     const { from, to } = editor.state.selection;
@@ -200,4 +224,12 @@ export function SelectionActionToolbar({
       {onAssistant ? <button type="button" onMouseDown={preserveSelection} onClick={onAssistant}>{assistantLabel ?? 'Assistant'}</button> : null}
     </div>
   );
+}
+
+function isMobileSelectionEnvironment(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const userAgent = navigator.userAgent ?? '';
+  if (/Android|iPhone|iPad|iPod/i.test(userAgent)) return true;
+  return navigator.maxTouchPoints > 1 && typeof window !== 'undefined'
+    && window.matchMedia('(pointer: coarse)').matches;
 }
