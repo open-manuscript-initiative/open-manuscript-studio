@@ -1,11 +1,5 @@
 import { Plus, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-
-import {
-  getFormattingToolbarAutoShow,
-  setFormattingToolbarAutoShow,
-  subscribeFormattingToolbarPreference,
-} from '../editor/formattingToolbarPreference';
+import { useMemo, useState } from 'react';
 import {
   localeLabels,
   supportedLocales,
@@ -29,11 +23,6 @@ interface Copy {
   chooseLanguage: string;
   remove: string;
   minimum: string;
-  editorTitle: string;
-  editorDescription: string;
-  formattingToolbarTitle: string;
-  formattingToolbarDescription: string;
-  formattingToolbarToggle: string;
 }
 
 const COPY: Record<'en' | 'hu' | 'de', Copy> = {
@@ -48,11 +37,6 @@ const COPY: Record<'en' | 'hu' | 'de', Copy> = {
     chooseLanguage: 'Choose a language',
     remove: 'Remove',
     minimum: 'At least one language must remain enabled.',
-    editorTitle: 'Editor behavior',
-    editorDescription: 'Control how editing tools appear while you work.',
-    formattingToolbarTitle: 'Automatic formatting toolbar',
-    formattingToolbarDescription: 'Show the floating formatting toolbar automatically when the text editor receives focus.',
-    formattingToolbarToggle: 'Show automatically',
   },
   hu: {
     title: 'Nyelvi beállítások',
@@ -65,11 +49,6 @@ const COPY: Record<'en' | 'hu' | 'de', Copy> = {
     chooseLanguage: 'Válasszon nyelvet',
     remove: 'Eltávolítás',
     minimum: 'Legalább egy nyelvnek engedélyezve kell maradnia.',
-    editorTitle: 'Szerkesztő működése',
-    editorDescription: 'Állítsa be, hogyan jelenjenek meg a szerkesztési eszközök munka közben.',
-    formattingToolbarTitle: 'Automatikus formázó menü',
-    formattingToolbarDescription: 'A lebegő formázó menü automatikusan jelenjen meg, amikor a kurzort a szövegbe helyezi.',
-    formattingToolbarToggle: 'Automatikus megjelenítés',
   },
   de: {
     title: 'Spracheinstellungen',
@@ -82,11 +61,6 @@ const COPY: Record<'en' | 'hu' | 'de', Copy> = {
     chooseLanguage: 'Sprache auswählen',
     remove: 'Entfernen',
     minimum: 'Mindestens eine Sprache muss aktiviert bleiben.',
-    editorTitle: 'Editorverhalten',
-    editorDescription: 'Steuern Sie, wie Bearbeitungswerkzeuge während der Arbeit angezeigt werden.',
-    formattingToolbarTitle: 'Automatische Formatierungsleiste',
-    formattingToolbarDescription: 'Die schwebende Formatierungsleiste automatisch anzeigen, wenn der Texteditor den Fokus erhält.',
-    formattingToolbarToggle: 'Automatisch anzeigen',
   },
 };
 
@@ -201,44 +175,9 @@ export function ContentLanguageSettings() {
     setManuscriptLanguages,
     setMetadataLanguages,
   } = useContentLanguagePreferences();
-  const [formattingToolbarAutoShow, setFormattingToolbarAutoShowState] = useState(
-    getFormattingToolbarAutoShow,
-  );
-
-  useEffect(
-    () => subscribeFormattingToolbarPreference(setFormattingToolbarAutoShowState),
-    [],
-  );
 
   return (
     <>
-      <section className="studio-settings-card">
-        <div className="studio-settings-card-header">
-          <div>
-            <h4>{copy.editorTitle}</h4>
-            <p>{copy.editorDescription}</p>
-          </div>
-        </div>
-        <div className="studio-formatting-toolbar-setting">
-          <div>
-            <h5>{copy.formattingToolbarTitle}</h5>
-            <p>{copy.formattingToolbarDescription}</p>
-          </div>
-          <label className="studio-formatting-toolbar-toggle">
-            <input
-              type="checkbox"
-              checked={formattingToolbarAutoShow}
-              onChange={(event) => {
-                const enabled = event.target.checked;
-                setFormattingToolbarAutoShowState(enabled);
-                setFormattingToolbarAutoShow(enabled);
-              }}
-            />
-            <span>{copy.formattingToolbarToggle}</span>
-          </label>
-        </div>
-      </section>
-
       <section className="studio-settings-card studio-language-settings-card">
         <div className="studio-settings-card-header">
           <div>

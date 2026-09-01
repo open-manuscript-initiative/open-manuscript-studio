@@ -543,23 +543,23 @@ export function BlockEditor({
           editor={editor}
           locale={locale}
           manuscriptLanguage={manuscriptLanguage ?? manuscript.locale}
-        />
-      ) : null}
-
-      {showSelectionActions ? (
-        <SelectionActionToolbar
-          editor={editor}
-          citationLabel={t('editor.addCitation')}
-          noteLabel={t('editor.addNote')}
-          crossReferenceLabel={crossReferenceCopy.insert}
-          translateLabel={integrationLabels.translate}
-          assistantLabel={integrationLabels.assistant}
-          onCitation={capabilities.editCitations ? openCitationPicker : undefined}
-          onNote={capabilities.insertNotes ? insertNote : undefined}
-          onCrossReference={capabilities.editCrossReferences ? openCrossReferencePicker : undefined}
-          onTranslate={externalIntegrationsAllowed ? () => openIntegrationAction('translate') : undefined}
-          onAssistant={externalIntegrationsAllowed ? () => openIntegrationAction('agent') : undefined}
-        />
+        >
+          {showSelectionActions ? (
+            <SelectionActionToolbar
+              editor={editor}
+              citationLabel={t('editor.addCitation')}
+              noteLabel={t('editor.addNote')}
+              crossReferenceLabel={crossReferenceCopy.insert}
+              translateLabel={integrationLabels.translate}
+              assistantLabel={integrationLabels.assistant}
+              onCitation={capabilities.editCitations ? openCitationPicker : undefined}
+              onNote={capabilities.insertNotes ? insertNote : undefined}
+              onCrossReference={capabilities.editCrossReferences ? openCrossReferencePicker : undefined}
+              onTranslate={externalIntegrationsAllowed ? () => openIntegrationAction('translate') : undefined}
+              onAssistant={externalIntegrationsAllowed ? () => openIntegrationAction('agent') : undefined}
+            />
+          ) : null}
+        </RichTextToolbar>
       ) : null}
 
       {integrationAction && externalIntegrationsAllowed ? (

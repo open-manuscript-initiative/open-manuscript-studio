@@ -1,9 +1,7 @@
 import type { Editor } from '@tiptap/core';
 import {
-  useEffect,
   useMemo,
   useState,
-  type CSSProperties,
   type MouseEvent,
 } from 'react';
 
@@ -28,12 +26,6 @@ interface SelectionActionToolbarProps {
   onCrossReference?: () => void;
   onTranslate?: () => void;
   onAssistant?: () => void;
-}
-
-interface ToolbarPosition {
-  left: number;
-  top: number;
-  below: boolean;
 }
 
 const indexLabels: Record<string, { action: string; choose: string }> = {
@@ -63,7 +55,6 @@ export function SelectionActionToolbar({
 }: SelectionActionToolbarProps) {
   const { locale } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
-  const [position, setPosition] = useState<ToolbarPosition | null>(null);
   const indexCopy = indexLabels[locale] ?? indexLabels.en;
   const clipboardCopy = clipboardLabels[locale] ?? clipboardLabels.en;
   const indexDefinitions = useMemo(
@@ -75,80 +66,15 @@ export function SelectionActionToolbar({
     [locale, manuscript.indexDefinitions, manuscript.indexEntries],
   );
   const [selectedIndexId, setSelectedIndexId] = useState(DEFAULT_INDEX_ID);
+  const effectiveIndexId = indexDefinitions.some(
+    (definition) => definition.id === selectedIndexId,
+  )
+    ? selectedIndexId
+    : (indexDefinitions[0]?.id ?? DEFAULT_INDEX_ID);
+  const { from, to } = editor.state.selection;
 
-  useEffect(() => {
-    if (!indexDefinitions.some((definition) => definition.id === selectedIndexId)) {
-      setSelectedIndexId(indexDefinitions[0]?.id ?? DEFAULT_INDEX_ID);
-    }
-  }, [indexDefinitions, selectedIndexId]);
+  if (from === to) return null;
 
-  useEffect(() => {
-    const update = () => {
-      const { from, to } = editor.state.selection;
-      if (!editor.isFocused || from === to) {
-        setPosition(null);
-        return;
-      }
-
-      try {
-        const start = editor.view.coordsAtPos(from);
-        const end = editor.view.coordsAtPos(to);
-        const below = Math.min(start.top, end.top) < 96;
-        setPosition({
-          left: Math.max(16, Math.min(window.innerWidth - 16, (start.left + end.right) / 2)),
-          top: below ? Math.max(start.bottom, end.bottom) + 12 : Math.min(start.top, end.top) - 12,
-          below,
-        });
-      } catch {
-        setPosition(null);
-      }
-    };
-
-    const clear = () => setPosition(null);
-    editor.on('selectionUpdate', update);
-    editor.on('focus', update);
-    editor.on('blur', clear);
-    window.addEventListener('resize', update);
-    window.addEventListener('scroll', update, true);
-    update();
-
-    return () => {
-      editor.off('selectionUpdate', update);
-      editor.off('focus', update);
-      editor.off('blur', clear);
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, true);
-    };
-  }, [editor]);
-
-  useEffect(() => {
-    if (!isMobileSelectionEnvironment()) return;
-
-    const editorDom = editor.view.dom;
-    const previousTouchCallout = editorDom.style.getPropertyValue('-webkit-touch-callout');
-    editorDom.style.setProperty('-webkit-touch-callout', 'none');
-
-    const suppressNativeSelectionMenu = (event: Event) => {
-      const { from, to } = editor.state.selection;
-      if (from === to) return;
-      event.preventDefault();
-      event.stopPropagation();
-    };
-
-    editorDom.addEventListener('contextmenu', suppressNativeSelectionMenu, true);
-    return () => {
-      editorDom.removeEventListener('contextmenu', suppressNativeSelectionMenu, true);
-      if (previousTouchCallout) {
-        editorDom.style.setProperty('-webkit-touch-callout', previousTouchCallout);
-      } else {
-        editorDom.style.removeProperty('-webkit-touch-callout');
-      }
-    };
-  }, [editor]);
-
-  if (!position) return null;
-
-  const style = { left: `${position.left}px`, top: `${position.top}px` } as CSSProperties;
   const preserveSelection = (event: MouseEvent<HTMLElement>) => event.preventDefault();
 
   const runClipboardAction = async (action: 'copy' | 'cut') => {
@@ -184,14 +110,14 @@ export function SelectionActionToolbar({
       from,
       ' ',
     ).length;
-    const selectedDefinition = indexDefinitions.find((item) => item.id === selectedIndexId);
+    const selectedDefinition = indexDefinitions.find((item) => item.id === effectiveIndexId);
 
     const entry = createManualIndexEntry({
       term: selectedText,
       targetText: selectedText,
       targetTextOffset,
       targetBlockId: blockId,
-      indexId: selectedIndexId,
+      indexId: effectiveIndexId,
       kind: selectedDefinition?.kind ?? 'index',
     });
 
@@ -210,12 +136,12 @@ export function SelectionActionToolbar({
   };
 
   return (
-    <div className={`omi-selection-action-toolbar${position.below ? ' omi-selection-action-toolbar--below' : ''}`} style={style} role="toolbar" aria-label="Selection actions">
+    <div className="omi-selection-action-toolbar" role="group" aria-label="Selection actions">
       <button type="button" onMouseDown={preserveSelection} onClick={() => void runClipboardAction('cut')}>{clipboardCopy.cut}</button>
       <button type="button" onMouseDown={preserveSelection} onClick={() => void runClipboardAction('copy')}>{clipboardCopy.copy}</button>
       <select
         aria-label={indexCopy.choose}
-        value={selectedIndexId}
+        value={effectiveIndexId}
         onMouseDown={preserveSelection}
         onChange={(event) => setSelectedIndexId(event.target.value)}
       >
@@ -231,12 +157,4 @@ export function SelectionActionToolbar({
       {onAssistant ? <button type="button" onMouseDown={preserveSelection} onClick={onAssistant}>{assistantLabel ?? 'Assistant'}</button> : null}
     </div>
   );
-}
-
-function isMobileSelectionEnvironment(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  const userAgent = navigator.userAgent ?? '';
-  if (/Android|iPhone|iPad|iPod/i.test(userAgent)) return true;
-  return navigator.maxTouchPoints > 1 && typeof window !== 'undefined'
-    && window.matchMedia('(pointer: coarse)').matches;
 }
