@@ -9,8 +9,8 @@ updates:
       # glib 0.18.5 is pulled transitively by Tauri's Linux GTK/WebKit stack.
       # Tauri 2.11.5 still depends on gtk/webkit2gtk releases that require
       # glib 0.18.x, so Dependabot cannot resolve glib >= 0.20.0 on its own.
+      # Ignore the dependency itself: `versions` lists target versions, so
+      # ignoring only 0.18.5 does not suppress the attempted 0.20.0 update.
       # Keep the alert visible in Security and remove this ignore as soon as
       # upstream Tauri/gtk/webkit2gtk moves to a non-vulnerable glib series.
       - dependency-name: "glib"
-        versions:
-          - "0.18.5"
