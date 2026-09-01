@@ -62,7 +62,6 @@ import { ContentLanguageSettings } from './ContentLanguageSettings';
 import { CrossReferencePanel } from './CrossReferencePanel';
 import { DocxImportPanel } from './DocxImportPanel';
 import { ExportFormatsPanel } from './ExportFormatsPanel';
-import { Footer } from './Footer';
 import { HistoryPanel } from './HistoryPanel';
 import { KeywordEditor } from './KeywordEditor';
 import { ManuscriptLanguageField } from './ManuscriptLanguageField';
@@ -447,7 +446,7 @@ function ToolsView() {
     <ExportFormatsPanel />
     {platform !== 'android' ? nativeSaveCard : null}
     <AssetContainerPanel />
-    <details className="studio-technical-details"><summary>{t('studio.tools.technicalData')}</summary><p>{t('studio.tools.technicalDescription')}</p><div className="studio-json-header"><strong>{t('studio.tools.liveJson')}</strong><span>{t('studio.tools.synced')}</span></div><pre className="studio-json-view"><code>{JSON.stringify(semanticSection, null, 2)}</code></pre></details><div className="studio-menu-footer-wrap"><Footer /></div></section>;
+    <details className="studio-technical-details"><summary>{t('studio.tools.technicalData')}</summary><p>{t('studio.tools.technicalDescription')}</p><div className="studio-json-header"><strong>{t('studio.tools.liveJson')}</strong><span>{t('studio.tools.synced')}</span></div><pre className="studio-json-view"><code>{JSON.stringify(semanticSection, null, 2)}</code></pre></details></section>;
 }
 
 function SettingsView() {

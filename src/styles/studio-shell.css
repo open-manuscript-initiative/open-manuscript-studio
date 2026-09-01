@@ -469,20 +469,6 @@
   white-space: pre;
 }
 
-.studio-menu-footer-wrap {
-  margin-top: 1.25rem;
-  border-top: 1px solid #e2e8f0;
-}
-
-.studio-menu-footer-wrap .omi-footer {
-  border-top: 0;
-  background: transparent;
-}
-
-.studio-menu-footer-wrap .omi-footer-container {
-  padding-inline: 0;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .studio-menu-drawer {
     animation: none;

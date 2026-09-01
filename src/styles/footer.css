@@ -169,12 +169,6 @@
   content: "·";
 }
 
-/* The footer is an application-level landmark. Legacy copies embedded inside
-   individual Studio menu views must not be rendered as local content. */
-.studio-menu-footer-wrap {
-  display: none;
-}
-
 @media (max-width: 760px) {
   .app-layout-main {
     flex-basis: auto;
