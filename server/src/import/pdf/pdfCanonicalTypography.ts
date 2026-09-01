@@ -1,6 +1,7 @@
 import { normalizePdfDiscretionaryBreaks } from './pdfDiscretionaryBreaks.js';
 import { mergeStackedFootnoteMarkerRows } from './pdfFootnoteGeometry.js';
 import { findSequentialFootnoteStartRun } from './pdfFootnoteSequence.js';
+import { findStructuralFootnoteStarts } from './pdfStructuralFootnotes.js';
 
 export type PdfScriptPosition = 'normal' | 'superscript' | 'subscript';
 
@@ -204,13 +205,11 @@ function canonicalizeLine<TLine extends CanonicalPdfLine>(line: TLine): void {
 }
 
 /**
- * Use the numbered footnote paragraphs themselves as structural evidence.
- * Three consecutive starts (or a longer run with one missing number) are a
- * much stronger signal than Poppler's unreliable superscript geometry. Once
- * such a run is found, recover the matching body reference before each note
- * start by encoding it on the preceding lexical word. The downstream semantic
- * matcher still requires the same-page numbered note start, so this does not
- * turn arbitrary body numbers into notes.
+ * Use numbered footnote paragraphs themselves as structural evidence. A strong
+ * sequential run may establish footnotes even when Poppler loses one or more
+ * body superscripts. Real body references are still preferred; a synthetic
+ * preceding-line marker is used only as a transport signal for the downstream
+ * page-local matcher when the structural run is already independently proven.
  */
 function recoverAnchorsFromSequentialNoteStarts<TLine extends CanonicalPdfLine>(lines: TLine[]): void {
   if (lines.length < 3) return;
@@ -244,6 +243,7 @@ function recoverAnchorsFromSequentialNoteStarts<TLine extends CanonicalPdfLine>(
 
   const run = findSequentialFootnoteStartRun(startCandidates, null, medianWordHeight);
   if (!run) return;
+  const structuralMarkers = new Set(findStructuralFootnoteStarts(lines).map((item) => item.marker));
 
   for (const marker of run.markers) {
     const starts = startCandidates
@@ -282,7 +282,14 @@ function recoverAnchorsFromSequentialNoteStarts<TLine extends CanonicalPdfLine>(
       }
     }
 
-    if (!best) continue;
+    if (!best) {
+      if (!structuralMarkers.has(marker)) continue;
+      const fallback = findSyntheticStructuralAnchor(ordered, start.lineIndex);
+      if (!fallback) continue;
+      ordered[fallback.lineIndex]!.line.words[fallback.wordIndex]!.superscriptMarker = marker;
+      continue;
+    }
+
     const bodyLine = ordered[best.lineIndex]!.line;
     const markerWord = bodyLine.words[best.wordIndex]!;
     const previous = bodyLine.words[best.wordIndex - 1]!;
@@ -292,6 +299,22 @@ function recoverAnchorsFromSequentialNoteStarts<TLine extends CanonicalPdfLine>(
     }
     markerWord.superscriptMarker = marker;
   }
+}
+
+function findSyntheticStructuralAnchor<TLine extends CanonicalPdfLine>(
+  ordered: readonly { line: TLine; sourceIndex: number }[],
+  startLineIndex: number,
+): { lineIndex: number; wordIndex: number } | null {
+  for (let lineIndex = startLineIndex - 1; lineIndex >= 0; lineIndex -= 1) {
+    const line = ordered[lineIndex]?.line;
+    if (!line?.words.length) continue;
+    for (let wordIndex = line.words.length - 1; wordIndex >= 0; wordIndex -= 1) {
+      const word = line.words[wordIndex]!;
+      if (!/[\p{L}\p{M}\p{P}]$/u.test(word.rawText ?? word.text)) continue;
+      return { lineIndex, wordIndex };
+    }
+  }
+  return null;
 }
 
 /**
