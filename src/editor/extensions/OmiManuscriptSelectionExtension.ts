@@ -69,7 +69,25 @@ export const OmiManuscriptSelectionExtension = Extension.create({
               if (!anchorInside && !focusInside) return;
 
               const sections = useStudioStore.getState().manuscript.sections;
-              const range = readManuscriptDomSelection(root, sections);
+              let range = readManuscriptDomSelection(root, sections);
+
+              // Android/iOS WebViews implement the native "Select all" action at
+              // the active contenteditable boundary. Because each OMI block has
+              // its own Tiptap editing host, that native action initially selects
+              // only one block. Detect that exact full-host selection on touch
+              // devices and promote it to the semantic whole-manuscript range.
+              if (range && isNativeMobileBlockSelectAll(root, range)) {
+                const entireRange = getEntireManuscriptSelection(sections);
+                if (entireRange) {
+                  range = entireRange;
+                  currentSelection = range;
+                  activeSelectionRoot = root;
+                  renderManuscriptDomSelection(root, range);
+                  decorateManuscriptSelection(root, sections, range);
+                  return;
+                }
+              }
+
               currentSelection = range;
               activeSelectionRoot = range ? root : null;
               decorateManuscriptSelection(root, sections, range);
@@ -96,3 +114,38 @@ export const OmiManuscriptSelectionExtension = Extension.create({
     ];
   },
 });
+
+function isNativeMobileBlockSelectAll(
+  root: HTMLElement,
+  range: ManuscriptSelectionRange,
+): boolean {
+  if (!isMobileSelectionEnvironment()) return false;
+  if (range.start.blockId !== range.end.blockId || range.start.offset !== 0) return false;
+
+  const editors = Array.from(
+    root.querySelectorAll<HTMLElement>('.omi-tiptap-editor[data-block-id]'),
+  );
+  if (editors.length < 2) return false;
+
+  const selectedEditor = editors.find(
+    (editor) => editor.dataset.blockId === range.start.blockId,
+  );
+  if (!selectedEditor) return false;
+
+  // readManuscriptDomSelection measures offsets with Range#toString(), so use
+  // the same DOM text semantics here rather than stored JSON length.
+  const fullTextLength = document.createRange();
+  fullTextLength.selectNodeContents(selectedEditor);
+  const selectedEditorTextLength = fullTextLength.toString().length;
+  if (selectedEditorTextLength === 0) return false;
+
+  return range.end.offset >= selectedEditorTextLength;
+}
+
+function isMobileSelectionEnvironment(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const userAgent = navigator.userAgent ?? '';
+  if (/Android|iPhone|iPad|iPod/i.test(userAgent)) return true;
+  return navigator.maxTouchPoints > 1 && typeof window !== 'undefined'
+    && window.matchMedia('(pointer: coarse)').matches;
+}
