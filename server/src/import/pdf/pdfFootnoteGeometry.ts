@@ -1,3 +1,5 @@
+import { reconstructPdfVisualRows } from './pdfVisualRows.js';
+
 export interface PdfGeometryWord {
   text: string;
   xMin: number;
@@ -33,6 +35,10 @@ interface MarkerCandidate<TLine extends PdfGeometryLine> {
  * text in another line even though they are visually one row. The decisive
  * signal here is a vertical column of increasing markers at almost the same x.
  *
+ * Before any marker logic runs, rebuild visual rows directly from all bbox
+ * words. This deliberately ignores Poppler's logical <line>/<flow> grouping,
+ * which can flatten several printed footnote rows into one logical line.
+ *
  * Once at least three sequential markers establish a real footnote column,
  * marker-less visual rows between those starts are structural continuations of
  * the preceding note. Fold them into that note before semantic reconstruction
@@ -40,6 +46,9 @@ interface MarkerCandidate<TLine extends PdfGeometryLine> {
  * note text back into the body.
  */
 export function mergeStackedFootnoteMarkerRows<TLine extends PdfGeometryLine>(lines: TLine[]): void {
+  if (lines.length < 2) return;
+
+  reconstructPdfVisualRows(lines);
   if (lines.length < 3) return;
 
   const candidates = collectCandidates(lines);
