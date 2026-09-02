@@ -47,6 +47,7 @@ Editable typography groups include:
 
 - page width and height;
 - mirrored inner/outer and top/bottom margins;
+- binding gutter, print bleed, crop marks and starting page number;
 - body and note fonts;
 - font sizes and line heights;
 - paragraph indentation and spacing;
@@ -60,6 +61,12 @@ Editable typography groups include:
 - odd/even running headers and page numbering;
 - first-page metadata;
 - semantic-to-visual mappings.
+
+## Live publication editor
+
+The Publication menu renders the complete current manuscript inside the selected publication style instead of showing placeholder preview text. The surface remains a normal rich-text editor: changing a paragraph into a heading, quotation or list updates the structured OMI manuscript immediately, while page and typography changes update the active export style without rewriting manuscript semantics.
+
+The on-screen page width, trim ratio, margins, gutter, bleed, crop marks, running headers, type sizes, leading and paragraph indentation are read from the same style object used by the HTML/print export renderer. Page guides are an editing aid; the final PDF page fragmentation remains the responsibility of the print renderer and its CSS Paged Media rules.
 
 ## Fonts
 
