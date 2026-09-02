@@ -95,6 +95,8 @@ export function PublicationProfilePanel() {
 
       <div className="publication-profile-experimental-note">{copy.experimental}</div>
 
+      <PublicationStyleEditor key={styleRevision} />
+
       <section className="publication-profile-selector" aria-labelledby="publication-profile-choose">
         <div className="publication-profile-section-heading">
           <div>
@@ -133,7 +135,6 @@ export function PublicationProfilePanel() {
       </section>
 
       <PublisherProfileEditor baseProfile={activeProfile} />
-      <PublicationStyleEditor key={styleRevision} />
       <IdmlPublicationStyleImportPanel onImported={() => setStyleRevision((current) => current + 1)} />
       <PublicationStyleExportPanel />
       <PublisherExportStylesheetPanel profile={activeProfile} />

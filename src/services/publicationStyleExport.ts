@@ -24,10 +24,29 @@ export function clonePublicationPublisherTemplate(): PublicationPublisherIdentit
 export function loadPublicationStyle(): PublicationStyle {
   try {
     const saved = window.localStorage.getItem(PUBLICATION_STYLE_STORAGE_KEY);
-    return saved ? (JSON.parse(saved) as PublicationStyle) : clonePublicationStyleTemplate();
+    return saved
+      ? normalizePublicationStyle(JSON.parse(saved) as PublicationStyle)
+      : clonePublicationStyleTemplate();
   } catch {
     return clonePublicationStyleTemplate();
   }
+}
+
+/** Adds newly introduced print-page fields to previously saved style objects. */
+export function normalizePublicationStyle(style: PublicationStyle): PublicationStyle {
+  const fallback = clonePublicationStyleTemplate();
+  return {
+    ...fallback,
+    ...style,
+    page: {
+      ...fallback.page,
+      ...style.page,
+      margins: {
+        ...fallback.page.margins,
+        ...style.page?.margins,
+      },
+    },
+  };
 }
 
 export function loadPublicationPublisherIdentity(): PublicationPublisherIdentity {
@@ -114,25 +133,52 @@ body { padding: 2rem max(1rem, calc((100vw - 56rem) / 2)); }
   }
 
   const margins = style.page.margins;
+  const pageWidth = positive(style.page.width, 150);
+  const pageHeight = positive(style.page.height, 240);
+  const topMargin = nonNegative(margins.top, 18);
+  const bottomMargin = nonNegative(margins.bottom, 18);
+  const gutter = nonNegative(style.page.gutter, 0);
+  const bleed = nonNegative(style.page.bleed, 0);
+  const innerMargin = nonNegative(margins.inner, 0) + gutter;
+  const outerMargin = nonNegative(margins.outer, 0);
+  const pageNumberStart = Math.max(0, Math.trunc(style.page.pageNumberStart ?? 1));
+  const cropMarks = style.page.cropMarks ?? false;
+  const mirroredPageRules = style.page.mirroredMargins
+    ? `
+@page:left { margin-left: ${outerMargin}mm; margin-right: ${innerMargin}mm; }
+@page:right { margin-left: ${innerMargin}mm; margin-right: ${outerMargin}mm; }`
+    : '';
+  const printMarks = [
+    bleed > 0 ? `bleed: ${bleed}mm;` : '',
+    cropMarks ? 'marks: crop;' : '',
+  ].filter(Boolean).join(' ');
   const separator = style.footnotes.separator;
   return `${shared}
 @page {
-  size: ${style.page.width}mm ${style.page.height}mm;
-  margin: ${margins.top}mm ${margins.outer}mm ${margins.bottom}mm ${margins.inner}mm;
+  size: ${pageWidth}mm ${pageHeight}mm;
+  margin: ${topMargin}mm ${outerMargin}mm ${bottomMargin}mm ${innerMargin}mm;
+  ${printMarks}
 }
-@page:left { margin-left: ${margins.outer}mm; margin-right: ${margins.inner}mm; }
-@page:right { margin-left: ${margins.inner}mm; margin-right: ${margins.outer}mm; }
+${mirroredPageRules}
 html, body { width: auto; min-height: 0; }
-body { padding: 0; }
+body { padding: 0; counter-reset: page ${Math.max(0, pageNumberStart - 1)}; }
 .omi-scholarly-article { width: auto; }
 .article-body h2, .article-body h3 { break-after: avoid-page; page-break-after: avoid; }
 figure, table { break-inside: avoid-page; page-break-inside: avoid; }
 .article-notes, .footnotes { border-top: ${separator.enabled ? `${separator.width}pt solid currentColor` : '0'}; padding-top: 2mm; }
-.omi-print-running-header { display: flex; position: fixed; top: -11mm; left: 0; right: 0; align-items: center; justify-content: space-between; gap: 8mm; font-family: ${family}; font-size: ${style.runningHeaders.fontSize}pt; border-bottom: ${style.runningHeaders.rule.enabled ? `${style.runningHeaders.rule.width}pt solid currentColor` : '0'}; padding-bottom: 1.5mm; }
+.omi-print-running-header { display: flex; position: fixed; top: -${Math.max(4, topMargin - 5)}mm; left: 0; right: 0; align-items: center; justify-content: space-between; gap: 8mm; font-family: ${family}; font-size: ${style.runningHeaders.fontSize}pt; border-bottom: ${style.runningHeaders.rule.enabled ? `${style.runningHeaders.rule.width}pt solid currentColor` : '0'}; padding-bottom: 1.5mm; }
 .omi-print-page-number::after { content: counter(page); }
-@media screen { body { background: #e9e9e9; } .omi-scholarly-article { box-sizing: border-box; width: ${style.page.width}mm; min-height: ${style.page.height}mm; margin: 12mm auto; padding: ${margins.top}mm ${margins.outer}mm ${margins.bottom}mm ${margins.inner}mm; background: white; box-shadow: 0 2mm 7mm rgba(0,0,0,.18); } .omi-print-running-header { display: none; } }
+@media screen { body { background: #e9e9e9; } .omi-scholarly-article { box-sizing: border-box; width: ${pageWidth}mm; min-height: ${pageHeight}mm; margin: 12mm auto; padding: ${topMargin}mm ${outerMargin}mm ${bottomMargin}mm ${innerMargin}mm; background: white; box-shadow: 0 2mm 7mm rgba(0,0,0,.18); } .omi-print-running-header { display: none; } }
 @media print { .omi-print-running-header { display: flex; } }
 `;
+}
+
+function nonNegative(value: number | undefined, fallback: number): number {
+  return Number.isFinite(value) && Number(value) >= 0 ? Number(value) : fallback;
+}
+
+function positive(value: number | undefined, fallback: number): number {
+  return Number.isFinite(value) && Number(value) > 0 ? Number(value) : fallback;
 }
 
 export function withPublicationStyleCss(
@@ -146,13 +192,44 @@ export function withPublicationStyleCss(
 
 export function withPrintRunningHeader(
   html: string,
-  _manuscript: Pick<OmiManuscript, 'title'>,
+  manuscript: Pick<OmiManuscript, 'title' | 'updatedAt'>,
   style: PublicationStyle,
+  identity: PublicationPublisherIdentity = loadPublicationPublisherIdentity(),
 ): string {
   if (!style.runningHeaders.enabled) return html;
+  const values = {
+    articleTitle: manuscript.title,
+    shortArticleTitle: shortenText(manuscript.title, 72),
+    journalTitle: identity.journalTitle || style.name,
+    volume: identity.issue.volume,
+    issue: identity.issue.number,
+    year: identity.issue.year || manuscript.updatedAt.slice(0, 4),
+  };
+  const family = cssFontFamily(style.fonts.body.family, style.fonts.body.fallback);
+  const rule = style.runningHeaders.rule.enabled
+    ? `border-bottom: ${style.runningHeaders.rule.width}pt solid currentColor;`
+    : '';
+  const declarations = `font-family: ${family}; font-size: ${style.runningHeaders.fontSize}pt; vertical-align: bottom; padding-bottom: 1.5mm; ${rule}`;
+  const firstPageRule = style.firstPage.showRunningHeader
+    ? ''
+    : `
+@page:first {
+  @top-left { content: none; }
+  @top-right { content: none; }
+}`;
+  const headerCss = `
+@page:left {
+  @top-left { content: ${runningHeaderCssContent(style.runningHeaders.even.left, values)}; ${declarations} }
+  @top-right { content: ${runningHeaderCssContent(style.runningHeaders.even.right, values)}; text-align: right; ${declarations} }
+}
+@page:right {
+  @top-left { content: ${runningHeaderCssContent(style.runningHeaders.odd.left, values)}; ${declarations} }
+  @top-right { content: ${runningHeaderCssContent(style.runningHeaders.odd.right, values)}; text-align: right; ${declarations} }
+}${firstPageRule}
+`;
   return html.replace(
-    '<body>',
-    '<body>\n  <div class="omi-print-running-header" aria-hidden="true"><span data-omi-running-header-left></span><span><span data-omi-running-header-right></span> · <span class="omi-print-page-number"></span></span></div>',
+    '</head>',
+    `  <style data-omi-print-running-headers>${headerCss}</style>\n</head>`,
   );
 }
 
@@ -236,7 +313,7 @@ export async function renderStyleBasedHtml(
   const rendered = renderPublisherHtmlArticle(manuscript, profile);
   let html = withPublicationStyleCss(rendered.html, style, target);
   html = withPublisherIdentity(html, manuscript, target, identity);
-  if (target === 'print') html = withPrintRunningHeader(html, manuscript, style);
+  if (target === 'print') html = withPrintRunningHeader(html, manuscript, style, identity);
   return target === 'print' ? inlineManuscriptAssets(html, manuscript) : html;
 }
 
@@ -265,6 +342,41 @@ function cssFontFamily(family: string, fallback: string): string {
   const escapedFamily = family.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   const escapedFallback = fallback.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   return `"${escapedFamily}", "${escapedFallback}"`;
+}
+
+function runningHeaderCssContent(
+  template: string,
+  values: Record<string, string>,
+): string {
+  const pageMarker = '\u0000omi-page-number\u0000';
+  const rendered = template
+    .replace(
+      /\{\{([a-zA-Z][a-zA-Z0-9]*)\}\}/g,
+      (_match, key: string) => key === 'pageNumber' ? pageMarker : values[key] ?? '',
+    )
+    .replace(/\s*\/\s*(?=\()/g, ' ')
+    .replace(/\(\s*\)/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  if (!rendered) return 'none';
+
+  const parts = rendered.split(pageMarker);
+  const content: string[] = [];
+  parts.forEach((part, index) => {
+    if (part) content.push(cssContentString(part));
+    if (index < parts.length - 1) content.push('counter(page)');
+  });
+  return content.join(' ') || 'none';
+}
+
+function cssContentString(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]+/g, ' ')}"`;
+}
+
+function shortenText(value: string, maximumLength: number): string {
+  const normalized = value.replace(/\s+/g, ' ').trim();
+  if (normalized.length <= maximumLength) return normalized;
+  return `${normalized.slice(0, Math.max(1, maximumLength - 1)).trimEnd()}…`;
 }
 
 function escapeHtml(value: string): string {

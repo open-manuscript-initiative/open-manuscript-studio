@@ -17,7 +17,11 @@
       "inner": 19,
       "outer": 17
     },
-    "mirroredMargins": true
+    "mirroredMargins": true,
+    "gutter": 0,
+    "bleed": 0,
+    "cropMarks": false,
+    "pageNumberStart": 1
   },
   "fonts": {
     "body": {
