@@ -110,6 +110,15 @@ export function partitionManuscriptStudies(
   return [...studies.values()];
 }
 
+export function getStudyRootSectionId(
+  sections: readonly OmiSection[],
+  sectionId: string,
+): string | undefined {
+  const sectionMap = new Map(sections.map((section) => [section.id, section]));
+  const section = sectionMap.get(sectionId);
+  return section ? resolveStudyRootId(section, sectionMap) : undefined;
+}
+
 /** Replaces one study subtree without disturbing the other editor documents. */
 export function replaceManuscriptStudySections(
   sections: readonly OmiSection[],

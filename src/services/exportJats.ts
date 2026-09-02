@@ -4,6 +4,7 @@ import {
   type OmiCrossReferenceTarget,
 } from '../model/crossReferences';
 import { renderBibliography, renderCitationCluster } from '../model/cslRendering';
+import { buildNoteNumberMap } from '../model/notes';
 import { latexToMathMl } from '../model/equationRendering';
 import {
   buildPublicationRenderingContext,
@@ -884,20 +885,12 @@ function xmlIdForTarget(target: OmiCrossReferenceTarget): string {
 }
 
 function collectNoteLabels(manuscript: OmiManuscript): Map<string, string> {
-  const labels = new Map<string, string>();
-
-  for (const block of manuscript.sections.flatMap((section) => section.blocks)) {
-    const root = parseStructuredContent(block.content);
-    if (!root) continue;
-    walkJson(root, (node) => {
-      if (node.type !== 'omiNote') return;
-      const noteId = stringAttr(node.attrs, 'noteId');
-      const label = stringAttr(node.attrs, 'label');
-      if (noteId && label && !labels.has(noteId)) labels.set(noteId, label);
-    });
-  }
-
-  return labels;
+  return new Map(
+    [...buildNoteNumberMap(manuscript)].map(([noteId, number]) => [
+      noteId,
+      String(number),
+    ]),
+  );
 }
 
 function parseStructuredContent(content: string): JsonNode | undefined {

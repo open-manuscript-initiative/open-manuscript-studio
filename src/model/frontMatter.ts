@@ -14,8 +14,23 @@ import type {
 declare module '../types/omi.ts' {
   interface OmiManuscriptState {
     motto?: string;
+    titleMatter?: OmiTitleMatter;
   }
 }
+
+export interface OmiTitleMatter {
+  halfTitle?: string;
+  responsibilityStatement?: string;
+  editionStatement?: string;
+  publisherName?: string;
+  publicationPlace?: string;
+  publicationYear?: string;
+  isbn?: string;
+  copyrightStatement?: string;
+  colophon?: string;
+}
+
+export type OmiTitleMatterField = keyof OmiTitleMatter;
 
 export type OmiOptionalFrontMatterMode = 'optional';
 
@@ -92,6 +107,19 @@ export function frontMatterIsEmpty(
   manuscript: Pick<OmiManuscriptState, 'subtitle' | 'motto'>,
 ): boolean {
   return !(manuscript.subtitle ?? '').trim() && !(manuscript.motto ?? '').trim();
+}
+
+export function normalizeTitleMatter(
+  value: OmiTitleMatter | undefined,
+): OmiTitleMatter | undefined {
+  if (!value) return undefined;
+  const normalized = Object.fromEntries(
+    Object.entries(value)
+      .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+      .map(([key, item]) => [key, item.trim()])
+      .filter(([, item]) => Boolean(item)),
+  ) as OmiTitleMatter;
+  return Object.keys(normalized).length ? normalized : undefined;
 }
 
 /**

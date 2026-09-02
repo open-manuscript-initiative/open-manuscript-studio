@@ -52,7 +52,7 @@ interface StudioState {
   selectSection: (sectionId: string) => void;
   updateBlock: (blockId: string, content: string) => void;
   addSection: () => void;
-  addContributor: () => void;
+  addContributor: (targetId?: string) => void;
   updateContributor: (
     agentId: string,
     input: ContributorEditInput,
@@ -212,7 +212,7 @@ export const useStudioStore = create<StudioState>((set) => ({
       };
     }),
 
-  addContributor: () =>
+  addContributor: (targetId) =>
     set((state) => {
       const timestamp = new Date().toISOString();
       const agent = createPersonAgent(
@@ -226,16 +226,19 @@ export const useStudioStore = create<StudioState>((set) => ({
       );
       const contribution = createContribution(
         agent.id,
-        state.manuscript.id,
+        targetId ?? state.manuscript.id,
         ['author'],
-        state.manuscript.contributions.length + 1,
+        state.manuscript.contributions.filter(
+          (candidate) =>
+            candidate.targetId === (targetId ?? state.manuscript.id),
+        ).length + 1,
         crypto.randomUUID(),
         timestamp,
       );
       const nextState: OmiManuscriptState = {
         ...extractManuscriptState(state.manuscript),
         agents: [...state.manuscript.agents, agent],
-        contributions: normalizeContributionOrder([
+        contributions: normalizeContributionOrdersByTarget([
           ...state.manuscript.contributions,
           contribution,
         ]),
@@ -387,7 +390,7 @@ export const useStudioStore = create<StudioState>((set) => ({
               (agent) => agent.id !== removedAgent.id,
             )
           : state.manuscript.agents,
-        contributions: normalizeContributionOrder(contributions),
+        contributions: normalizeContributionOrdersByTarget(contributions),
       };
       const events: CreateChangeEventInput[] = [
         {
@@ -417,10 +420,19 @@ export const useStudioStore = create<StudioState>((set) => ({
 
   moveContributor: (contributionId, direction) =>
     set((state) => {
-      const contributions = normalizeContributionOrder(
-        state.manuscript.contributions,
+      const selected = state.manuscript.contributions.find(
+        (contribution) => contribution.id === contributionId,
       );
-      const currentIndex = contributions.findIndex(
+      if (!selected) return state;
+
+      const targetContributions = state.manuscript.contributions
+        .filter((contribution) => contribution.targetId === selected.targetId)
+        .sort(
+          (left, right) =>
+            (left.order ?? Number.MAX_SAFE_INTEGER) -
+            (right.order ?? Number.MAX_SAFE_INTEGER),
+        );
+      const currentIndex = targetContributions.findIndex(
         (contribution) => contribution.id === contributionId,
       );
       const targetIndex =
@@ -429,12 +441,12 @@ export const useStudioStore = create<StudioState>((set) => ({
       if (
         currentIndex < 0 ||
         targetIndex < 0 ||
-        targetIndex >= contributions.length
+        targetIndex >= targetContributions.length
       ) {
         return state;
       }
 
-      const nextContributions = [...contributions];
+      const nextContributions = [...targetContributions];
       const currentContribution = nextContributions[currentIndex];
       const targetContribution = nextContributions[targetIndex];
 
@@ -445,8 +457,17 @@ export const useStudioStore = create<StudioState>((set) => ({
       nextContributions[currentIndex] = targetContribution;
       nextContributions[targetIndex] = currentContribution;
 
-      const normalizedNextContributions = normalizeContributionOrder(
-        nextContributions,
+      const nextOrder = new Map(
+        nextContributions.map((contribution, index) => [
+          contribution.id,
+          index + 1,
+        ]),
+      );
+      const normalizedNextContributions = state.manuscript.contributions.map(
+        (contribution) => {
+          const order = nextOrder.get(contribution.id);
+          return order === undefined ? contribution : { ...contribution, order };
+        },
       );
 
       return stageWorkingChange(
@@ -461,8 +482,8 @@ export const useStudioStore = create<StudioState>((set) => ({
             operation: 'contribution.reorder',
             targetId: contributionId,
             path: '/contributions',
-            previousValue: contributions.map((item) => item.id),
-            nextValue: normalizedNextContributions.map((item) => item.id),
+            previousValue: targetContributions.map((item) => item.id),
+            nextValue: nextContributions.map((item) => item.id),
           },
         ],
       );
@@ -678,17 +699,31 @@ function normalizeOrcidForComparison(
     .toUpperCase();
 }
 
-function normalizeContributionOrder(
+function normalizeContributionOrdersByTarget(
   contributions: OmiContribution[],
 ): OmiContribution[] {
-  return [...contributions]
-    .sort(
-      (left, right) =>
-        (left.order ?? Number.MAX_SAFE_INTEGER) -
-        (right.order ?? Number.MAX_SAFE_INTEGER),
-    )
-    .map((contribution, index) => ({
-      ...contribution,
-      order: index + 1,
-    }));
+  const grouped = new Map<string, OmiContribution[]>();
+  for (const contribution of contributions) {
+    const target = grouped.get(contribution.targetId) ?? [];
+    target.push(contribution);
+    grouped.set(contribution.targetId, target);
+  }
+
+  const orderById = new Map<string, number>();
+  for (const target of grouped.values()) {
+    target
+      .sort(
+        (left, right) =>
+          (left.order ?? Number.MAX_SAFE_INTEGER) -
+          (right.order ?? Number.MAX_SAFE_INTEGER),
+      )
+      .forEach((contribution, index) => {
+        orderById.set(contribution.id, index + 1);
+      });
+  }
+
+  return contributions.map((contribution) => ({
+    ...contribution,
+    order: orderById.get(contribution.id) ?? contribution.order,
+  }));
 }

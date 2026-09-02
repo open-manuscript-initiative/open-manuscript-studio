@@ -6,6 +6,7 @@ import { resumeLastSessionPersistence } from '../app/lastSessionPersistence';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { StudioMenuWithHelp } from './StudioMenuWithHelp';
+import { NewDocumentActions } from './NewDocumentActions';
 
 export function ClosedDocumentScreen() {
   const { locale } = useTranslation();
@@ -35,6 +36,7 @@ export function ClosedDocumentScreen() {
           <p>{copy.description}</p>
         </div>
         <div className="auth-form">
+          <NewDocumentActions variant="empty-workspace" />
           <button
             type="button"
             className="auth-primary-button"

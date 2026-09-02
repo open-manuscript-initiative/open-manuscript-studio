@@ -66,6 +66,7 @@ import { HistoryPanel } from './HistoryPanel';
 import { KeywordEditor } from './KeywordEditor';
 import { ManuscriptLanguageField } from './ManuscriptLanguageField';
 import { NotesPanel } from './NotesPanel';
+import { NewDocumentActions } from './NewDocumentActions';
 import { OjsAssignmentPanel } from './OjsAssignmentPanel';
 import { PropertiesPanel } from './PropertiesPanel';
 import { PublicationProfilePanel } from './PublicationProfilePanel';
@@ -156,7 +157,7 @@ export function StudioMenu({
             {navigationAfterSettings}
           </nav>
           <div className="studio-menu-content">
-            {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} /> : null}
+            {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} onCreated={onClose} /> : null}
             {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={onClose} /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
             {activeView === 'notes' ? <NotesPanel onNavigate={onClose} /> : null}
@@ -203,7 +204,13 @@ function useOwnDeviceStorage(): boolean {
   return mode === 'own-device';
 }
 
-function DocumentMenuView({ documentCloseAction }: { documentCloseAction?: ReactNode }) {
+function DocumentMenuView({
+  documentCloseAction,
+  onCreated,
+}: {
+  documentCloseAction?: ReactNode;
+  onCreated: () => void;
+}) {
   const { t, locale } = useTranslation();
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
   const [localPath, setLocalPath] = useState(getCurrentManuscriptFilePath());
@@ -266,6 +273,7 @@ function DocumentMenuView({ documentCloseAction }: { documentCloseAction?: React
 
   return <section className="studio-menu-view">
     <div className="studio-menu-view-header"><div><h3>{t('studio.document.title')}</h3><p>{t('studio.document.description')}</p></div></div>
+    <NewDocumentActions onCreated={onCreated} />
     <div className="studio-tool-card" data-document-lifecycle="true">
       <div>
         <strong>{openTitle}</strong>

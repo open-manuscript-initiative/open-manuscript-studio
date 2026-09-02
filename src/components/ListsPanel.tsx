@@ -4,6 +4,10 @@ import { useMemo, useState } from 'react';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { buildCaptionListEntries, getGeneratedListDefinitions, type OmiGeneratedListKind } from '../model/generatedLists';
+import {
+  buildListPlacementGroups,
+  buildReferencePlacementGroups,
+} from '../model/backMatterPlacement';
 import type { OmiTableOfContents } from '../model/tableOfContents';
 import { AdvancedIndexEntryPanel } from './AdvancedIndexEntryPanel';
 import { CategorizedReferenceListsPanel } from './CategorizedReferenceListsPanel';
@@ -95,8 +99,53 @@ export function ListsPanel({ onNavigate }: { onNavigate?: () => void }) {
 
       {active === 'toc' ? <TableOfContentsPanel onNavigate={onNavigate} /> : null}
       {active === 'index' ? <><AdvancedIndexEntryPanel /><IndexPanel onNavigate={onNavigate} /></> : null}
-      {active === 'references' ? <CategorizedReferenceListsPanel /> : null}
+      {active === 'references' ? <><ReferencePlacementPreview /><CategorizedReferenceListsPanel /></> : null}
       {active === 'figures' || active === 'tables' ? <CaptionList kind={active} onNavigate={onNavigate} /> : null}
+    </section>
+  );
+}
+
+function ReferencePlacementPreview() {
+  const { locale } = useTranslation();
+  const copy = getCopy(locale);
+  const manuscript = useStudioStore((state) => state.manuscript);
+  const groups = useMemo(
+    () => buildReferencePlacementGroups(manuscript),
+    [manuscript],
+  );
+  const records = new Map(
+    (manuscript.bibliographicRecords ?? []).map((record) => [record.id, record]),
+  );
+  const entryCount = groups.reduce(
+    (count, group) => count + group.bibliographicRecordIds.length,
+    0,
+  );
+
+  return (
+    <section className="studio-menu-view omi-reference-placement-preview">
+      <div className="studio-menu-view-header">
+        <div>
+          <h3><BookMarked size={18} aria-hidden="true" />{copy.referencePlacement}</h3>
+          <p>{copy.referencePlacementDescription}</p>
+        </div>
+        <span className="omi-notes-count">{entryCount}</span>
+      </div>
+      {entryCount ? (
+        <div className="omi-notes-list">
+          {groups.map((group) => (
+            <section key={group.id} className="omi-list-placement-group">
+              <h4>{group.title || copy.untitledStudy}</h4>
+              {group.bibliographicRecordIds.map((recordId) => (
+                <div key={recordId} className="omi-note-editor-card omi-note-editor-card--compact">
+                  <strong>{records.get(recordId)?.title ?? recordId}</strong>
+                </div>
+              ))}
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div className="omi-notes-empty"><p>{copy.noReferences}</p></div>
+      )}
     </section>
   );
 }
@@ -105,7 +154,14 @@ function CaptionList({ kind, onNavigate }: { kind: 'figures' | 'tables'; onNavig
   const { locale } = useTranslation();
   const copy = getCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
-  const entries = useMemo(() => buildCaptionListEntries(manuscript.sections, kind), [kind, manuscript.sections]);
+  const groups = useMemo(
+    () => buildListPlacementGroups(manuscript).map((group) => ({
+      ...group,
+      entries: buildCaptionListEntries(group.sections, kind),
+    })),
+    [kind, manuscript],
+  );
+  const entries = groups.flatMap((group) => group.entries);
   const selectSection = useStudioStore((state) => state.selectSection);
   const title = kind === 'figures' ? copy.figures : copy.tables;
 
@@ -120,12 +176,12 @@ function CaptionList({ kind, onNavigate }: { kind: 'figures' | 'tables'; onNavig
 
   return <section className="studio-menu-view">
     <div className="studio-menu-view-header"><div><h3>{title}</h3><p>{copy.captionDescription}</p></div><span className="omi-notes-count">{entries.length}</span></div>
-    {entries.length ? <div className="omi-notes-list">{entries.map((entry) => <button key={entry.id} type="button" className="studio-menu-secondary-action" onClick={() => navigate(entry.blockId)}>{entry.label}</button>)}</div> : <div className="omi-notes-empty"><p>{copy.noCaptions}</p></div>}
+    {entries.length ? <div className="omi-notes-list">{groups.map((group) => group.entries.length ? <section key={group.id} className="omi-list-placement-group">{groups.length > 1 ? <h4>{group.title || copy.untitledStudy}</h4> : null}{group.entries.map((entry) => <button key={entry.id} type="button" className="studio-menu-secondary-action" onClick={() => navigate(entry.blockId)}>{entry.label}</button>)}</section> : null)}</div> : <div className="omi-notes-empty"><p>{copy.noCaptions}</p></div>}
   </section>;
 }
 
 function getCopy(locale: string) {
-  if (locale === 'hu') return { title: 'Közös jegyzékek', description: 'A teljes kötet strukturált jelöléseiből hozzon létre és kezeljen automatikusan frissülő jegyzékeket.', create: 'Új közös jegyzék létrehozása', available: 'Kötetjegyzékek', toc: 'Tartalomjegyzék', figures: 'Képek jegyzéke', tables: 'Táblázatok jegyzéke', indexes: 'Mutatók', references: 'Hivatkozásjegyzékek', custom: 'Egyéni jegyzék', customPlaceholder: 'Jegyzék neve', captionDescription: 'A kötet minden tanulmányának feliratozott elemeiből automatikusan generált közös jegyzék.', noCaptions: 'A kötetben még nincs ehhez a jegyzékhez használható feliratozott elem.' };
-  if (locale === 'de') return { title: 'Gemeinsame Verzeichnisse', description: 'Erstellen und verwalten Sie automatisch aktualisierte Verzeichnisse aus den strukturierten Markierungen des gesamten Bandes.', create: 'Gemeinsames Verzeichnis erstellen', available: 'Bandverzeichnisse', toc: 'Inhaltsverzeichnis', figures: 'Abbildungsverzeichnis', tables: 'Tabellenverzeichnis', indexes: 'Register', references: 'Referenzverzeichnisse', custom: 'Benutzerdefiniert', customPlaceholder: 'Name des Verzeichnisses', captionDescription: 'Automatisch aus beschrifteten Elementen aller Bandbeiträge erzeugtes gemeinsames Verzeichnis.', noCaptions: 'Der Band enthält noch keine passenden beschrifteten Elemente.' };
-  return { title: 'Shared lists', description: 'Create and manage automatically updated lists from structured markers across the whole volume.', create: 'Create shared list', available: 'Volume lists', toc: 'Table of contents', figures: 'List of figures', tables: 'List of tables', indexes: 'Indexes', references: 'Reference lists', custom: 'Custom list', customPlaceholder: 'List name', captionDescription: 'A shared list generated automatically from captioned elements in every study.', noCaptions: 'The volume does not yet contain captioned elements for this list.' };
+  if (locale === 'hu') return { title: 'Közös jegyzékek', description: 'A teljes kötet strukturált jelöléseiből hozzon létre és kezeljen automatikusan frissülő jegyzékeket.', create: 'Új közös jegyzék létrehozása', available: 'Kötetjegyzékek', toc: 'Tartalomjegyzék', figures: 'Képek jegyzéke', tables: 'Táblázatok jegyzéke', indexes: 'Mutatók', references: 'Hivatkozásjegyzékek', custom: 'Egyéni jegyzék', customPlaceholder: 'Jegyzék neve', captionDescription: 'A kötet szerkezeti beállítása szerint közös vagy tanulmányonként csoportosított jegyzék.', noCaptions: 'A kötetben még nincs ehhez a jegyzékhez használható feliratozott elem.', untitledStudy: 'Névtelen tanulmány', referencePlacement: 'A hivatkozásjegyzék szerkezete', referencePlacementDescription: 'Az idézett rekordok a kötetszerkezeti beállítás szerint a tanulmányokhoz vagy a teljes kötethez tartoznak.', noReferences: 'A dokumentumban még nincs hivatkozott bibliográfiai rekord.' };
+  if (locale === 'de') return { title: 'Gemeinsame Verzeichnisse', description: 'Erstellen und verwalten Sie automatisch aktualisierte Verzeichnisse aus den strukturierten Markierungen des gesamten Bandes.', create: 'Gemeinsames Verzeichnis erstellen', available: 'Bandverzeichnisse', toc: 'Inhaltsverzeichnis', figures: 'Abbildungsverzeichnis', tables: 'Tabellenverzeichnis', indexes: 'Register', references: 'Referenzverzeichnisse', custom: 'Benutzerdefiniert', customPlaceholder: 'Name des Verzeichnisses', captionDescription: 'Je nach Bandstruktur als gemeinsames oder beitragsweise gruppiertes Verzeichnis.', noCaptions: 'Der Band enthält noch keine passenden beschrifteten Elemente.', untitledStudy: 'Unbenannter Beitrag', referencePlacement: 'Struktur des Literaturverzeichnisses', referencePlacementDescription: 'Zitierte Datensätze gehören gemäß Bandstruktur zu einzelnen Beiträgen oder zum gesamten Band.', noReferences: 'Das Dokument enthält noch keine zitierten bibliografischen Datensätze.' };
+  return { title: 'Shared lists', description: 'Create and manage automatically updated lists from structured markers across the whole volume.', create: 'Create shared list', available: 'Volume lists', toc: 'Table of contents', figures: 'List of figures', tables: 'List of tables', indexes: 'Indexes', references: 'Reference lists', custom: 'Custom list', customPlaceholder: 'List name', captionDescription: 'A shared or per-study list, following the volume structure setting.', noCaptions: 'The volume does not yet contain captioned elements for this list.', untitledStudy: 'Untitled study', referencePlacement: 'Reference-list structure', referencePlacementDescription: 'Cited records belong to individual studies or to the whole volume according to the volume structure setting.', noReferences: 'The document does not yet contain cited bibliographic records.' };
 }

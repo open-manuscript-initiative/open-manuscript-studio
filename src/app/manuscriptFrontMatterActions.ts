@@ -2,6 +2,8 @@ import { useStudioStore } from './useStudioStore';
 import { getExternalIdentifierValue } from '../model/identity';
 import {
   normalizeOptionalFrontMatterValue,
+  normalizeTitleMatter,
+  type OmiTitleMatterField,
 } from '../model/frontMatter';
 import { extractManuscriptState } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';
@@ -32,6 +34,54 @@ export function stageMottoChange(value: string): void {
   );
 }
 
+export function stageTitleMatterChange(
+  field: OmiTitleMatterField,
+  value: string,
+): void {
+  let changed = false;
+
+  useStudioStore.setState((state) => {
+    const previousValue = state.manuscript.titleMatter?.[field];
+    const nextValue = normalizeOptionalFrontMatterValue(value);
+    if ((previousValue ?? '') === (nextValue ?? '')) return state;
+
+    const timestamp = new Date().toISOString();
+    const titleMatter = normalizeTitleMatter({
+      ...(state.manuscript.titleMatter ?? {}),
+      [field]: nextValue,
+    });
+    const pendingChangeSet = stagePendingChanges(
+      state.pendingChangeSet,
+      {
+        baseRevisionId: state.manuscript.headRevisionId,
+        summary: 'Changed volume title matter',
+        events: [{
+          operation: 'manuscript.titleMatter.set',
+          targetId: state.manuscript.id,
+          path: `/titleMatter/${field}`,
+          previousValue,
+          nextValue,
+        }],
+        actorAgentId: resolveCurrentActorAgentId(state.manuscript),
+        timestamp,
+      },
+    );
+
+    changed = true;
+    return {
+      manuscript: {
+        ...state.manuscript,
+        ...extractManuscriptState(state.manuscript),
+        titleMatter,
+        updatedAt: timestamp,
+      },
+      pendingChangeSet,
+    };
+  });
+
+  if (changed) scheduleFrontMatterCheckpoint();
+}
+
 function stageOptionalFrontMatterChange(
   field: 'subtitle' | 'motto',
   value: string,
@@ -55,7 +105,7 @@ function stageOptionalFrontMatterChange(
         summary,
         events: [
           {
-            operation: operation as never,
+            operation,
             targetId: state.manuscript.id,
             path: `/${field}`,
             previousValue,

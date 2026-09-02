@@ -26,6 +26,10 @@ export type OmiHistoryCompleteness =
 export type OmiChangeOperation =
   | 'manuscript.snapshot.create'
   | 'manuscript.title.set'
+  | 'manuscript.subtitle.set'
+  | 'manuscript.motto.set'
+  | 'manuscript.titleMatter.set'
+  | 'manuscript.structure.set'
   | 'manuscript.abstract.set'
   | 'section.create'
   | 'section.remove'
