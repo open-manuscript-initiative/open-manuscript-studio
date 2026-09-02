@@ -5,6 +5,10 @@ import { stageMottoChange, stageSubtitleChange } from '../app/manuscriptFrontMat
 import { stageUpdateNote } from '../app/noteActions';
 import { stageSectionTitleChange } from '../app/sectionActions';
 import { useStudioStore } from '../app/useStudioStore';
+import {
+  findRenderedBlockElement,
+  findRenderedSectionElement,
+} from '../editor/renderedManuscriptNavigation';
 import { useTranslation } from '../i18n';
 import {
   countMatchesInBlockContent,
@@ -304,12 +308,16 @@ function revealResult(result: SearchResult, query: string, options: ManuscriptSe
   if (result.target === 'motto') return selectTextareaMatch(document.querySelector<HTMLTextAreaElement>('#manuscript-motto'), query, result.occurrenceIndex, options);
   if (result.target === 'abstract') return selectTextareaMatch(document.querySelector<HTMLTextAreaElement>('#manuscript-abstract'), query, result.occurrenceIndex, options);
   if (result.target === 'section-title' && result.sectionId) {
-    const section = document.querySelector<HTMLElement>(`.omi-section-editor[data-section-id="${CSS.escape(result.sectionId)}"]`);
+    const section = findRenderedSectionElement(result.sectionId);
     section?.classList.add('omi-search-current-target');
-    return selectTextareaMatch(section?.querySelector<HTMLTextAreaElement>('.omi-section-title-input') ?? null, query, result.occurrenceIndex, options);
+    section?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    section
+      ?.closest<HTMLElement>('[contenteditable="true"]')
+      ?.focus({ preventScroll: true });
+    return;
   }
   if ((result.target === 'body' || result.target === 'object') && result.blockId) {
-    const block = document.querySelector<HTMLElement>(`.omi-block-editor[data-block-id="${CSS.escape(result.blockId)}"]`);
+    const block = findRenderedBlockElement(result.blockId);
     block?.classList.add('omi-search-current-target');
     block?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     return;

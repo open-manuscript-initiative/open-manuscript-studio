@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { useStudioStore } from '../app/useStudioStore';
+import { findRenderedSectionContentElements } from '../editor/renderedManuscriptNavigation';
 import { useTranslation } from '../i18n';
 import { findTextMatchRanges, type ManuscriptSearchOptions } from '../model/manuscriptSearch';
 import { SearchReplaceOverlay as SearchReplaceOverlayBase } from './SearchReplaceOverlayBase';
@@ -52,8 +53,7 @@ export function SearchReplaceOverlay() {
 
     let roots: HTMLElement[] = [];
     if (scope === 'current-section' && selectedSectionId) {
-      const section = document.querySelector<HTMLElement>(`.omi-continuous-section[data-section-id="${cssEscape(selectedSectionId)}"]`);
-      if (section) roots = [section];
+      roots = findRenderedSectionContentElements(selectedSectionId);
     } else if (scope === 'body') {
       roots = Array.from(document.querySelectorAll<HTMLElement>('.omi-continuous-blocks'));
     } else {
@@ -218,9 +218,4 @@ function getModeCopy(locale: string) {
   if (locale === 'hu') return { modeLabel: 'Keresési mód', find: 'Keresés', replace: 'Keresés és csere' };
   if (locale === 'de') return { modeLabel: 'Suchmodus', find: 'Suchen', replace: 'Suchen und Ersetzen' };
   return { modeLabel: 'Search mode', find: 'Find', replace: 'Find and replace' };
-}
-
-function cssEscape(value: string): string {
-  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value);
-  return value.replace(/["\\]/g, '\\$&');
 }

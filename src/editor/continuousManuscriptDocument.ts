@@ -20,10 +20,9 @@ export interface ProjectContinuousDocumentOptions {
 }
 
 /**
- * Builds one ProseMirror document for the complete manuscript body. OMI block
- * and section identifiers travel as node attributes, but they do not create
- * independent editing hosts: browser selection and editing therefore remain
- * native across every paragraph and heading boundary.
+ * Builds one ProseMirror document for the supplied study subtree. OMI block
+ * and section identifiers travel as node attributes, while paragraphs and
+ * descendant headings remain natively editable inside that study's host.
  */
 export function buildContinuousManuscriptDocument(
   sections: readonly OmiSection[],
@@ -36,7 +35,7 @@ export function buildContinuousManuscriptDocument(
     const firstBlock = section.blocks[0];
     const hasHeading = firstBlock?.type === 'heading';
 
-    if (!hasHeading && section.title) {
+    if (!hasHeading) {
       content.push({
         type: 'heading',
         attrs: structuralAttributes({
@@ -47,7 +46,9 @@ export function buildContinuousManuscriptDocument(
           omiSectionNumber: sectionNumbers.get(section.id) ?? null,
           level: depth + 1,
         }),
-        content: [{ type: 'text', text: section.title }],
+        ...(section.title
+          ? { content: [{ type: 'text', text: section.title }] }
+          : {}),
       });
     }
 
@@ -91,8 +92,8 @@ export function buildContinuousManuscriptDocument(
 }
 
 /**
- * Projects the live editor tree back into OMI. Headings define sections and
- * their levels define the parent hierarchy; all other nodes belong to the
+ * Projects one live study editor tree back into OMI. Headings define sections
+ * and their levels define the parent hierarchy; all other nodes belong to the
  * preceding heading. Existing identifiers and block metadata are retained
  * whenever possible, while newly split/created nodes receive stable IDs.
  */

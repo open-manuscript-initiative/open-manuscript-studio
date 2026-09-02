@@ -22,10 +22,10 @@ export interface SectionStructureCopy {
 
 const COPY: Record<SupportedLocale, SectionStructureCopy> = {
   en: {
-    title: 'Hierarchical document structure',
+    title: 'Edited volume structure',
     description:
-      'Build chapters and subsections at any depth. Stable section identities remain unchanged while the outline and generated numbering evolve.',
-    addTopLevel: 'Add top-level section',
+      'Each top-level study has its own editor; its chapters and subsections remain together at any depth. Stable section identities are preserved.',
+    addTopLevel: 'Add study',
     addSubsection: 'Add subsection',
     insertAfter: 'Insert sibling after this section',
     dragHint:
@@ -43,10 +43,10 @@ const COPY: Record<SupportedLocale, SectionStructureCopy> = {
     invalidHierarchy: 'The section hierarchy contains an invalid parent relationship.',
   },
   hu: {
-    title: 'Hierarchikus dokumentumszerkezet',
+    title: 'Tanulmánykötet szerkezete',
     description:
-      'Tetszőleges mélységű fejezetek és alszakaszok hozhatók létre. A stabil szakaszazonosítók változatlanok maradnak, miközben a szerkezet és az automatikus számozás módosul.',
-    addTopLevel: 'Felső szintű szakasz hozzáadása',
+      'Minden felső szintű tanulmány külön szerkesztőt kap; fejezetei és alszakaszai tetszőleges mélységben együtt maradnak. A stabil szakaszazonosítók megőrződnek.',
+    addTopLevel: 'Új tanulmány',
     addSubsection: 'Alszakasz hozzáadása',
     insertAfter: 'Azonos szintű szakasz beszúrása utána',
     dragHint:
@@ -64,10 +64,10 @@ const COPY: Record<SupportedLocale, SectionStructureCopy> = {
     invalidHierarchy: 'A szakaszhierarchia érvénytelen szülőkapcsolatot tartalmaz.',
   },
   de: {
-    title: 'Hierarchische Dokumentstruktur',
+    title: 'Struktur des Sammelbands',
     description:
-      'Kapitel und Unterabschnitte können in beliebiger Tiefe aufgebaut werden. Stabile Abschnittskennungen bleiben erhalten, während Gliederung und Nummerierung geändert werden.',
-    addTopLevel: 'Abschnitt auf oberster Ebene hinzufügen',
+      'Jeder Beitrag auf oberster Ebene erhält einen eigenen Editor; Kapitel und Unterabschnitte bleiben in beliebiger Tiefe zusammen. Stabile Abschnittskennungen bleiben erhalten.',
+    addTopLevel: 'Beitrag hinzufügen',
     addSubsection: 'Unterabschnitt hinzufügen',
     insertAfter: 'Gleichrangigen Abschnitt danach einfügen',
     dragHint:

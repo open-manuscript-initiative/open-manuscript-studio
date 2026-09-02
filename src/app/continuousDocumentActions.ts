@@ -30,7 +30,7 @@ export function stageContinuousDocumentChange(
       state.pendingChangeSet,
       {
         baseRevisionId: state.manuscript.headRevisionId,
-        summary: 'Edited continuous manuscript document',
+        summary: 'Edited manuscript study',
         events: [{
           operation: 'section.replace' as never,
           targetId: state.manuscript.id,

@@ -15,6 +15,7 @@ import { Footer } from '../../components/Footer';
 import { HeaderInsertMenu } from '../../components/HeaderInsertMenu';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 import { PropertiesPanel } from '../../components/PropertiesPanel';
+import { findRenderedSectionElement } from '../../editor/renderedManuscriptNavigation';
 import { useTranslation } from '../../i18n';
 import { useAuthStore } from '../../store/authStore';
 import '../styles/mobile.css';
@@ -56,14 +57,12 @@ export function MobileLayout({ children, onOpenMenu }: MobileLayoutProps) {
     let innerFrame = 0;
     const outerFrame = requestAnimationFrame(() => {
       innerFrame = requestAnimationFrame(() => {
-        const section = Array.from(
-          document.querySelectorAll<HTMLElement>('.omi-continuous-section[data-section-id]'),
-        ).find((element) => element.dataset.sectionId === pendingSectionNavigation);
+        const section = findRenderedSectionElement(pendingSectionNavigation);
 
         if (section) {
           section.scrollIntoView({ behavior: 'smooth', block: 'start' });
           section
-            .querySelector<HTMLTextAreaElement>('.omi-section-title-input')
+            .closest<HTMLElement>('[contenteditable="true"]')
             ?.focus({ preventScroll: true });
         }
 
