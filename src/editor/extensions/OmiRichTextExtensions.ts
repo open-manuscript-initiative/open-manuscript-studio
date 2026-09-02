@@ -231,9 +231,8 @@ export const OmiLanguageExtension = Mark.create({
 
 /**
  * Provides a compact structural menu for the current ProseMirror text block.
- * The menu deliberately operates on the editor selection rather than the OMI
- * section container, so it can turn one paragraph (or a multi-block selection)
- * into a heading, quotation or list without changing the surrounding section.
+ * The menu follows the paragraph containing the editor selection and collapses
+ * a wider selection to that paragraph before changing its structural type.
  */
 export const OmiBlockTypeMenuExtension = Extension.create({
   name: 'omiBlockTypeMenu',
@@ -317,6 +316,13 @@ function createBlockTypeMenuView(editor: Editor) {
   appendBlockTypeItem(menu, items, 'orderedList', copy.orderedList);
   appendBlockTypeItem(menu, items, 'codeBlock', copy.codeBlock);
 
+  let menuTargetPosition = editor.state.selection.head;
+
+  const sync = () => {
+    if (menu.hidden) menuTargetPosition = editor.state.selection.head;
+    syncBlockTypeMenu(editor, container, trigger, items, menuTargetPosition);
+  };
+
   const setOpen = (open: boolean, returnFocus = false) => {
     container.classList.toggle('omi-block-type-menu--open', open);
     trigger.setAttribute('aria-expanded', String(open));
@@ -333,15 +339,22 @@ function createBlockTypeMenuView(editor: Editor) {
     event.preventDefault();
     event.stopPropagation();
   };
-  const onTriggerClick = () => setOpen(menu.hidden !== false);
+  const onTriggerPointerDown = () => {
+    menuTargetPosition = editor.state.selection.head;
+  };
+  const onTriggerClick = () => {
+    const open = menu.hidden !== false;
+    if (open) sync();
+    setOpen(open);
+  };
   const onMenuClick = (event: MouseEvent) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
     const item = target.closest<HTMLButtonElement>('[data-block-type]');
     if (!item) return;
-    applyBlockType(editor, item.dataset.blockType as BlockType);
-    syncBlockTypeMenu(editor, trigger, items);
+    applyBlockType(editor, item.dataset.blockType as BlockType, menuTargetPosition);
     setOpen(false);
+    sync();
   };
   const onMenuKeyDown = (event: KeyboardEvent) => {
     if (event.key !== 'Escape') return;
@@ -354,6 +367,7 @@ function createBlockTypeMenuView(editor: Editor) {
   };
 
   trigger.addEventListener('mousedown', onTriggerMouseDown);
+  trigger.addEventListener('pointerdown', onTriggerPointerDown);
   trigger.addEventListener('click', onTriggerClick);
   menu.addEventListener('click', onMenuClick);
   menu.addEventListener('keydown', onMenuKeyDown);
@@ -361,12 +375,27 @@ function createBlockTypeMenuView(editor: Editor) {
   container.append(trigger, menu);
   host.classList.add('omi-block-type-menu-host');
   host.append(container);
-  syncBlockTypeMenu(editor, trigger, items);
+  sync();
+
+  let syncFrame = 0;
+  const scheduleSync = () => {
+    cancelAnimationFrame(syncFrame);
+    syncFrame = requestAnimationFrame(sync);
+  };
+  const resizeObserver = typeof ResizeObserver === 'undefined'
+    ? null
+    : new ResizeObserver(scheduleSync);
+  resizeObserver?.observe(editor.view.dom);
+  window.addEventListener('resize', scheduleSync);
 
   return {
-    update: () => syncBlockTypeMenu(editor, trigger, items),
+    update: sync,
     destroy: () => {
+      cancelAnimationFrame(syncFrame);
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', scheduleSync);
       trigger.removeEventListener('mousedown', onTriggerMouseDown);
+      trigger.removeEventListener('pointerdown', onTriggerPointerDown);
       trigger.removeEventListener('click', onTriggerClick);
       menu.removeEventListener('click', onMenuClick);
       menu.removeEventListener('keydown', onMenuKeyDown);
@@ -396,11 +425,27 @@ function appendBlockTypeItem(
 
 function syncBlockTypeMenu(
   editor: Editor,
+  container: HTMLDivElement,
   trigger: HTMLButtonElement,
   items: HTMLButtonElement[],
+  targetPosition: number,
 ): void {
   trigger.disabled = !editor.isEditable;
-  const activeType = getActiveBlockType(editor);
+  const target = resolveBlockTypeTarget(editor, targetPosition);
+  container.hidden = !editor.isEditable || !target?.element;
+  if (!target) return;
+
+  if (target.element) {
+    const host = container.parentElement;
+    if (host) {
+      const hostRect = host.getBoundingClientRect();
+      const targetRect = target.element.getBoundingClientRect();
+      const top = Math.max(0, targetRect.top - hostRect.top + host.scrollTop);
+      container.style.setProperty('--omi-block-type-menu-top', `${Math.round(top)}px`);
+    }
+  }
+
+  const activeType = getActiveBlockType(editor, target.selectionPosition);
   for (const item of items) {
     const active = item.dataset.blockType === activeType;
     item.classList.toggle('is-active', active);
@@ -408,19 +453,31 @@ function syncBlockTypeMenu(
   }
 }
 
-function getActiveBlockType(editor: Editor): BlockType {
-  if (editor.isActive('bulletList')) return 'bulletList';
-  if (editor.isActive('orderedList')) return 'orderedList';
-  if (editor.isActive('blockquote')) return 'blockquote';
-  if (editor.isActive('codeBlock')) return 'codeBlock';
-  for (const level of [1, 2, 3, 4, 5, 6] as HeadingLevel[]) {
-    if (editor.isActive('heading', { level })) return `heading-${level}`;
+function getActiveBlockType(editor: Editor, position: number): BlockType {
+  const resolved = editor.state.doc.resolve(clampDocumentPosition(editor, position));
+  for (let depth = resolved.depth; depth > 0; depth -= 1) {
+    const node = resolved.node(depth);
+    if (node.type.name === 'bulletList') return 'bulletList';
+    if (node.type.name === 'orderedList') return 'orderedList';
+    if (node.type.name === 'blockquote') return 'blockquote';
+    if (node.type.name === 'codeBlock') return 'codeBlock';
+    if (node.type.name === 'heading') {
+      const level = Number(node.attrs.level);
+      if (level >= 1 && level <= 6) return `heading-${level as HeadingLevel}`;
+    }
   }
   return 'paragraph';
 }
 
-function applyBlockType(editor: Editor, target: BlockType): void {
-  if (!editor.isEditable || getActiveBlockType(editor) === target) {
+function applyBlockType(editor: Editor, target: BlockType, targetPosition: number): void {
+  const blockTarget = resolveBlockTypeTarget(editor, targetPosition);
+  if (!editor.isEditable || !blockTarget) {
+    editor.commands.focus();
+    return;
+  }
+
+  editor.commands.setTextSelection(blockTarget.selectionPosition);
+  if (getActiveBlockType(editor, blockTarget.selectionPosition) === target) {
     editor.commands.focus();
     return;
   }
@@ -463,6 +520,42 @@ function applyBlockType(editor: Editor, target: BlockType): void {
 
   const level = Number(target.replace('heading-', '')) as HeadingLevel;
   chain.setHeading({ level }).run();
+}
+
+function resolveBlockTypeTarget(
+  editor: Editor,
+  position: number,
+): { selectionPosition: number; element: HTMLElement | null } | null {
+  const clamped = clampDocumentPosition(editor, position);
+  const resolved = editor.state.doc.resolve(clamped);
+  let depth = resolved.depth;
+
+  while (depth > 0 && !resolved.node(depth).isTextblock) depth -= 1;
+
+  if (depth === 0) {
+    const adjacent = resolved.nodeAfter;
+    if (!adjacent?.isTextblock) return null;
+    return {
+      selectionPosition: Math.min(editor.state.doc.content.size, clamped + 1),
+      element: asElement(editor.view.nodeDOM(clamped)),
+    };
+  }
+
+  const start = resolved.start(depth);
+  const end = resolved.end(depth);
+  return {
+    selectionPosition: Math.max(start, Math.min(clamped, end)),
+    element: asElement(editor.view.nodeDOM(resolved.before(depth))),
+  };
+}
+
+function clampDocumentPosition(editor: Editor, position: number): number {
+  return Math.max(0, Math.min(position, editor.state.doc.content.size));
+}
+
+function asElement(node: Node | null): HTMLElement | null {
+  if (node instanceof HTMLElement) return node;
+  return node?.parentElement ?? null;
 }
 
 function getBlockTypeCopy(): BlockTypeCopy {
