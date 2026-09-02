@@ -2,6 +2,10 @@ import { ListTree, X } from 'lucide-react';
 import { useEffect, useMemo, type CSSProperties } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
+import {
+  findRenderedSectionElement,
+  findRenderedSectionElements,
+} from '../editor/renderedManuscriptNavigation';
 import { useTranslation } from '../i18n';
 import { formatHierarchicalSectionHeading } from '../model/sectionNumbering';
 import { buildSectionOutline } from '../model/sectionStructure';
@@ -44,8 +48,8 @@ export function DesktopDocumentOutline({ onClose }: DesktopDocumentOutlineProps)
   );
 
   useEffect(() => {
-    const sections = Array.from(
-      document.querySelectorAll<HTMLElement>('.omi-continuous-section[data-section-id]'),
+    const sections = findRenderedSectionElements(
+      manuscript.sections.map((section) => section.id),
     );
     if (!sections.length || typeof IntersectionObserver === 'undefined') return;
 
@@ -75,10 +79,10 @@ export function DesktopDocumentOutline({ onClose }: DesktopDocumentOutlineProps)
   const navigateToSection = (sectionId: string) => {
     selectSection(sectionId);
     requestAnimationFrame(() => {
-      const section = Array.from(
-        document.querySelectorAll<HTMLElement>('.omi-continuous-section[data-section-id]'),
-      ).find((element) => element.dataset.sectionId === sectionId);
-      section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      findRenderedSectionElement(sectionId)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
     });
   };
 

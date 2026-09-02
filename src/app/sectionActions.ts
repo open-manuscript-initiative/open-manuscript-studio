@@ -3,6 +3,7 @@ import { synchronizeCrossReferenceLabels } from '../model/crossReferences.ts';
 import { getExternalIdentifierValue } from '../model/identity';
 import {
   createEmptySection,
+  createEmptyStudy,
   getParentSectionId,
   hierarchiesAreEqual,
   indentSection,
@@ -101,8 +102,11 @@ export function stageInsertSectionAtGap(
 }
 
 export function stageInsertTopLevelSection(): string | undefined {
-  return stageCreateSection((sections, section) =>
-    insertTopLevelSectionAtEnd(sections, section),
+  return stageCreateSection(
+    (sections, section) => insertTopLevelSectionAtEnd(sections, section),
+    undefined,
+    'Inserted manuscript study',
+    'study',
   );
 }
 
@@ -242,16 +246,23 @@ function stageCreateSection(
   insert: (sections: OmiSection[], section: OmiSection) => OmiSection[],
   parentSectionId?: string,
   summary = 'Inserted manuscript section',
+  kind: 'section' | 'study' = 'section',
 ): string | undefined {
   let insertedSectionId: string | undefined;
   let changed = false;
 
   useStudioStore.setState((state) => {
-    const section = createEmptySection(
-      crypto.randomUUID(),
-      crypto.randomUUID(),
-      parentSectionId,
-    );
+    const section = kind === 'study'
+      ? createEmptyStudy(
+          crypto.randomUUID(),
+          crypto.randomUUID(),
+          crypto.randomUUID(),
+        )
+      : createEmptySection(
+          crypto.randomUUID(),
+          crypto.randomUUID(),
+          parentSectionId,
+        );
     const insertedSections = insert(state.manuscript.sections, section);
     if (insertedSections === state.manuscript.sections) return state;
 

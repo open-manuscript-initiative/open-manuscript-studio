@@ -349,7 +349,14 @@ export function BlockEditor({
         editor.state.doc,
         editor.state.selection.from,
       );
-      if (active) activeBlockIdRef.current = active.blockId;
+      if (!active) return;
+      activeBlockIdRef.current = active.blockId;
+      if (
+        active.sectionId &&
+        useStudioStore.getState().selectedSectionId !== active.sectionId
+      ) {
+        useStudioStore.getState().selectSection(active.sectionId);
+      }
     };
     syncActiveBlock();
     editor.on('selectionUpdate', syncActiveBlock);

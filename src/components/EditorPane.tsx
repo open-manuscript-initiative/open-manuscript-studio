@@ -172,13 +172,12 @@ export function EditorPane({ ojsContributors = [] }: EditorPaneProps) {
           <EmbeddedTableOfContents />
 
           <div className="omi-continuous-sections">
-            {manuscript.sections.length > 0 ? (
-              <div className="omi-continuous-blocks">
-                <ContinuousManuscriptEditor />
-              </div>
-            ) : (
-              <p className="omi-empty-section">{t('studio.noSection')}</p>
-            )}
+            <div className="omi-continuous-blocks">
+              {manuscript.sections.length === 0 ? (
+                <p className="omi-empty-section">{t('studio.noSection')}</p>
+              ) : null}
+              <ContinuousManuscriptEditor />
+            </div>
           </div>
         </article>
       </section>

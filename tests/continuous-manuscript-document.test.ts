@@ -39,6 +39,18 @@ test('continuous document round-trip preserves hierarchical OMI structure', () =
   assert.equal(projected[1]?.title, 'Second');
 });
 
+test('an untitled legacy section receives an editable study heading', () => {
+  const sections = [section('section-a', '', [
+    textBlock('paragraph-a', 'paragraph', 'paragraph', 'Body'),
+  ])];
+
+  const document = buildContinuousManuscriptDocument(sections);
+
+  assert.equal(document.content?.[0]?.type, 'heading');
+  assert.equal(document.content?.[0]?.attrs?.omiSectionId, 'section-a');
+  assert.equal(document.content?.[1]?.attrs?.omiBlockId, 'paragraph-a');
+});
+
 test('a paragraph split keeps the original ID and assigns a new stable block ID', () => {
   const sections = [section('section-a', 'First', [
     textBlock('heading-a', 'heading', 'heading', 'First', { level: 1 }),

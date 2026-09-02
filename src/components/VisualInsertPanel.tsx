@@ -42,9 +42,8 @@ interface VisualInsertPanelProps {
 }
 
 /**
- * Inserts visual/document elements outside the manuscript surface. For now,
- * insertion targets the end of the selected section; once the manuscript uses
- * one Tiptap document this can consume the exact editor cursor position.
+ * Visual elements target the selected semantic section. Generated lists remain
+ * manuscript-level so they aggregate every independently edited study.
  */
 export function VisualInsertPanel({
   compact = false,
@@ -294,7 +293,7 @@ export function VisualInsertPanel({
 
 function getListInsertCopy(locale: string) {
   if (locale === 'hu') return {
-    title: 'Jegyzékek',
+    title: 'Közös jegyzékek',
     toc: 'Tartalomjegyzék',
     figures: 'Képek jegyzéke',
     tables: 'Táblázatok jegyzéke',
@@ -303,7 +302,7 @@ function getListInsertCopy(locale: string) {
     customPrompt: 'Jegyzék neve',
   };
   if (locale === 'de') return {
-    title: 'Verzeichnisse',
+    title: 'Gemeinsame Verzeichnisse',
     toc: 'Inhaltsverzeichnis',
     figures: 'Abbildungsverzeichnis',
     tables: 'Tabellenverzeichnis',
@@ -312,7 +311,7 @@ function getListInsertCopy(locale: string) {
     customPrompt: 'Name des Verzeichnisses',
   };
   return {
-    title: 'Lists',
+    title: 'Shared volume lists',
     toc: 'Table of contents',
     figures: 'List of figures',
     tables: 'List of tables',

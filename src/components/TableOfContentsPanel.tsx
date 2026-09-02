@@ -2,6 +2,7 @@ import { ListTree } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
+import { findRenderedSectionElement } from '../editor/renderedManuscriptNavigation';
 import { useTranslation } from '../i18n';
 import { buildTableOfContentsEntries } from '../model/tableOfContents';
 
@@ -14,21 +15,21 @@ const labels: Record<string, {
 }> = {
   en: {
     title: 'Table of contents',
-    description: 'Live table of contents generated from the manuscript heading hierarchy.',
+    description: 'Shared table of contents generated from every study in the volume.',
     empty: 'This manuscript does not contain a semantic table of contents.',
     imported: 'Recognized Word TOC field',
     levels: 'Heading levels',
   },
   hu: {
     title: 'Tartalomjegyzék',
-    description: 'A kézirat címsorhierarchiájából automatikusan frissülő tartalomjegyzék.',
+    description: 'A kötet minden tanulmányából automatikusan frissülő közös tartalomjegyzék.',
     empty: 'A kézirat nem tartalmaz szemantikus tartalomjegyzéket.',
     imported: 'Felismert Word TOC mező',
     levels: 'Címsorszintek',
   },
   de: {
     title: 'Inhaltsverzeichnis',
-    description: 'Automatisch aktualisiertes Inhaltsverzeichnis aus der Überschriftenhierarchie.',
+    description: 'Gemeinsames, automatisch aktualisiertes Inhaltsverzeichnis aller Bandbeiträge.',
     empty: 'Dieses Manuskript enthält kein semantisches Inhaltsverzeichnis.',
     imported: 'Erkanntes Word-TOC-Feld',
     levels: 'Überschriftenebenen',
@@ -64,11 +65,11 @@ export function TableOfContentsPanel({ onNavigate }: TableOfContentsPanelProps) 
     onNavigate?.();
     document.querySelector<HTMLButtonElement>('.studio-menu-close')?.click();
     window.setTimeout(() => {
-      const target = document.querySelector<HTMLElement>(
-        `.omi-continuous-section[data-section-id="${cssEscape(sectionId)}"]`,
-      );
+      const target = findRenderedSectionElement(sectionId);
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      target?.querySelector<HTMLElement>('.omi-section-title-input')?.focus({ preventScroll: true });
+      target
+        ?.closest<HTMLElement>('[contenteditable="true"]')
+        ?.focus({ preventScroll: true });
     }, 120);
   }
 
@@ -96,9 +97,4 @@ export function TableOfContentsPanel({ onNavigate }: TableOfContentsPanelProps) 
       </div>
     </section>
   );
-}
-
-function cssEscape(value: string): string {
-  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value);
-  return value.replace(/["\\]/g, '\\$&');
 }

@@ -2,6 +2,10 @@ import { Bookmark, ExternalLink, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
+import {
+  findRenderedBlockElement,
+  findRenderedSectionElement,
+} from '../editor/renderedManuscriptNavigation';
 import { useTranslation } from '../i18n';
 import {
   collectNamedAnchorTargets,
@@ -85,8 +89,10 @@ export function NamedAnchorsPanel({ onNavigate }: { onNavigate?: () => void }) {
     onNavigate?.();
     document.querySelector<HTMLButtonElement>('.studio-menu-close')?.click();
     window.setTimeout(() => {
-      const elementId = target.kind === 'section' ? `omi-section-${target.id}` : `omi-target-${target.id}`;
-      document.getElementById(elementId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const element = target.kind === 'section'
+        ? findRenderedSectionElement(target.id)
+        : findRenderedBlockElement(target.id);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 120);
   }
 

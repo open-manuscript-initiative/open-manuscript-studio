@@ -1,6 +1,7 @@
 import { useMemo, type CSSProperties } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
+import { findRenderedSectionElement } from '../editor/renderedManuscriptNavigation';
 import { useTranslation } from '../i18n';
 import { buildTableOfContentsEntries } from '../model/tableOfContents';
 import { EmbeddedDynamicIndex } from './EmbeddedDynamicIndex';
@@ -25,9 +26,7 @@ export function EmbeddedTableOfContents() {
   function navigate(sectionId: string): void {
     selectSection(sectionId);
     const attempt = (remaining: number) => {
-      const target = document.querySelector<HTMLElement>(
-        `.omi-continuous-section[data-section-id="${cssEscape(sectionId)}"]`,
-      );
+      const target = findRenderedSectionElement(sectionId);
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         target.classList.add('omi-toc-navigation-target');
@@ -61,9 +60,4 @@ export function EmbeddedTableOfContents() {
       ) : null}
     </>
   );
-}
-
-function cssEscape(value: string): string {
-  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value);
-  return value.replace(/["\\]/g, '\\$&');
 }

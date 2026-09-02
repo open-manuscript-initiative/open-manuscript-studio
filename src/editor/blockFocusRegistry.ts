@@ -4,7 +4,7 @@ type FocusTarget = 'start' | 'end' | number;
 
 const editors = new Map<string, Editor>();
 const pending = new Map<string, FocusTarget>();
-let continuousEditor: Editor | null = null;
+const continuousEditors = new Set<Editor>();
 
 export function registerBlockEditor(blockId: string, editor: Editor): () => void {
   editors.set(blockId, editor);
@@ -25,16 +25,12 @@ export function requestBlockEditorFocus(blockId: string, target: FocusTarget): v
     queueMicrotask(() => focusEditor(editor, target));
     return;
   }
-  if (continuousEditor && !continuousEditor.isDestroyed) {
+  for (const continuousEditor of continuousEditors) {
+    if (continuousEditor.isDestroyed) continue;
     const range = findContinuousBlockRange(continuousEditor, blockId);
     if (range) {
-      const position = target === 'start'
-        ? range.start
-        : target === 'end'
-          ? range.end
-          : Math.min(range.end, range.start + Math.max(0, target));
       const targetEditor = continuousEditor;
-      queueMicrotask(() => targetEditor.chain().focus().setTextSelection(position).run());
+      queueMicrotask(() => focusContinuousBlock(targetEditor, range, target));
       return;
     }
   }
@@ -42,22 +38,31 @@ export function requestBlockEditorFocus(blockId: string, target: FocusTarget): v
 }
 
 export function registerContinuousBlockEditor(editor: Editor): () => void {
-  continuousEditor = editor;
+  continuousEditors.add(editor);
   for (const [blockId, target] of pending) {
     const range = findContinuousBlockRange(editor, blockId);
     if (!range) continue;
     pending.delete(blockId);
-    const position = target === 'start'
-      ? range.start
-      : target === 'end'
-        ? range.end
-        : Math.min(range.end, range.start + Math.max(0, target));
-    queueMicrotask(() => editor.chain().focus().setTextSelection(position).run());
+    queueMicrotask(() => focusContinuousBlock(editor, range, target));
   }
 
   return () => {
-    if (continuousEditor === editor) continuousEditor = null;
+    continuousEditors.delete(editor);
   };
+}
+
+function focusContinuousBlock(
+  editor: Editor,
+  range: { start: number; end: number },
+  target: FocusTarget,
+): void {
+  if (editor.isDestroyed) return;
+  const position = target === 'start'
+    ? range.start
+    : target === 'end'
+      ? range.end
+      : Math.min(range.end, range.start + Math.max(0, target));
+  editor.chain().focus().setTextSelection(position).run();
 }
 
 function focusEditor(editor: Editor, target: FocusTarget): void {

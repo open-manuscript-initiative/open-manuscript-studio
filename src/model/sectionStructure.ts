@@ -20,9 +20,23 @@ export interface SectionHierarchyIssue {
   parentSectionId?: string;
 }
 
+/**
+ * One independently editable contribution in an edited volume. The root is a
+ * top-level section; every descendant section stays in the same Tiptap host.
+ */
+export interface ManuscriptStudy {
+  rootSectionId: string;
+  sections: OmiSection[];
+}
+
 export const EMPTY_SECTION_CONTENT = JSON.stringify({
   type: 'doc',
   content: [{ type: 'paragraph' }],
+});
+
+export const EMPTY_STUDY_HEADING_CONTENT = JSON.stringify({
+  type: 'doc',
+  content: [{ type: 'heading', attrs: { level: 1 } }],
 });
 
 export function createEmptySection(
@@ -47,6 +61,74 @@ export function createEmptySection(
   }
 
   return section;
+}
+
+/** Creates a new top-level study with an editable title and body paragraph. */
+export function createEmptyStudy(
+  id = crypto.randomUUID(),
+  headingBlockId = crypto.randomUUID(),
+  bodyBlockId = crypto.randomUUID(),
+): OmiSection {
+  return {
+    id,
+    title: '',
+    blocks: [
+      {
+        id: headingBlockId,
+        type: 'heading',
+        content: EMPTY_STUDY_HEADING_CONTENT,
+      },
+      {
+        id: bodyBlockId,
+        type: 'paragraph',
+        content: EMPTY_SECTION_CONTENT,
+      },
+    ],
+  };
+}
+
+/**
+ * Splits the linear OMI section array into top-level studies while preserving
+ * the exact order and object identity of every section.
+ */
+export function partitionManuscriptStudies(
+  sections: readonly OmiSection[],
+): ManuscriptStudy[] {
+  const sectionMap = new Map(sections.map((section) => [section.id, section]));
+  const studies = new Map<string, ManuscriptStudy>();
+
+  for (const section of sections) {
+    const rootSectionId = resolveStudyRootId(section, sectionMap);
+    const study = studies.get(rootSectionId);
+    if (study) {
+      study.sections.push(section);
+    } else {
+      studies.set(rootSectionId, { rootSectionId, sections: [section] });
+    }
+  }
+
+  return [...studies.values()];
+}
+
+/** Replaces one study subtree without disturbing the other editor documents. */
+export function replaceManuscriptStudySections(
+  sections: readonly OmiSection[],
+  rootSectionId: string,
+  replacement: readonly OmiSection[],
+): OmiSection[] {
+  const study = partitionManuscriptStudies(sections).find(
+    (candidate) => candidate.rootSectionId === rootSectionId,
+  );
+  if (!study) return [...sections];
+
+  const studyIds = new Set(study.sections.map((section) => section.id));
+  const insertionIndex = sections.findIndex((section) =>
+    studyIds.has(section.id),
+  );
+  const remaining = sections.filter((section) => !studyIds.has(section.id));
+  const next = [...remaining];
+  next.splice(Math.max(0, insertionIndex), 0, ...replacement);
+  return next;
 }
 
 export function getParentSectionId(
@@ -565,6 +647,25 @@ function hierarchyOrderIsValid(sections: readonly OmiSection[]): boolean {
   return validateSectionHierarchy(sections).every(
     (issue) => issue.type !== 'non-preorder',
   );
+}
+
+function resolveStudyRootId(
+  section: OmiSection,
+  sectionMap: ReadonlyMap<string, OmiSection>,
+): string {
+  let current = section;
+  const visited = new Set([section.id]);
+
+  while (true) {
+    const parentId = getParentSectionId(current);
+    if (!parentId) return current.id;
+    if (visited.has(parentId)) return section.id;
+
+    const parent = sectionMap.get(parentId);
+    if (!parent) return section.id;
+    visited.add(parentId);
+    current = parent;
+  }
 }
 
 function assertUniqueSectionId(

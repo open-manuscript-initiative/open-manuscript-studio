@@ -23,6 +23,8 @@ import {
   stageReparentSection,
 } from '../app/sectionActions';
 import { useStudioStore } from '../app/useStudioStore';
+import { requestBlockEditorFocus } from '../editor/blockFocusRegistry';
+import { findRenderedSectionElement } from '../editor/renderedManuscriptNavigation';
 import { useTranslation } from '../i18n';
 import { getSectionStructureCopy } from '../i18n/sectionStructure';
 import {
@@ -73,7 +75,20 @@ export function SectionStructurePanel({
 
   function insertTopLevel(): void {
     const sectionId = stageInsertTopLevelSection();
-    if (sectionId) onNavigate?.();
+    if (!sectionId) return;
+
+    const section = useStudioStore
+      .getState()
+      .manuscript.sections.find((candidate) => candidate.id === sectionId);
+    const firstBlockId = section?.blocks[0]?.id;
+    if (firstBlockId) requestBlockEditorFocus(firstBlockId, 'start');
+    onNavigate?.();
+    window.setTimeout(() => {
+      findRenderedSectionElement(sectionId)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 0);
   }
 
   function insertSubsection(parentId: string): void {
