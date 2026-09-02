@@ -4,13 +4,17 @@
 
 .omi-block-type-menu {
   position: absolute;
-  top: 0.45rem;
+  top: var(--omi-block-type-menu-top, 0.45rem);
   right: 0.45rem;
   z-index: 7;
   width: max-content;
   max-width: calc(100% - 0.9rem);
   opacity: 0.42;
   transition: opacity 120ms ease;
+}
+
+.omi-block-type-menu[hidden] {
+  display: none;
 }
 
 .omi-block-editor:hover .omi-block-type-menu,
@@ -112,10 +116,7 @@
 
 @media (max-width: 720px) {
   .omi-block-type-menu {
-    position: sticky;
-    top: 0.25rem;
-    right: auto;
-    margin: 0 0 0.3rem auto;
+    right: 0.25rem;
   }
 
   .omi-block-type-menu__trigger {
