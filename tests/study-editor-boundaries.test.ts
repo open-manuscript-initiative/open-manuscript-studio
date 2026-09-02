@@ -115,14 +115,32 @@ test('the UI mounts one Tiptap host per study and supports multiple focus target
     new URL('../src/components/SectionStructurePanel.tsx', import.meta.url),
     'utf8',
   );
+  const documentMenuSource = readFileSync(
+    new URL('../src/components/StudioMenu.tsx', import.meta.url),
+    'utf8',
+  );
+  const closedWorkspaceSource = readFileSync(
+    new URL('../src/components/ClosedDocumentScreen.tsx', import.meta.url),
+    'utf8',
+  );
+  const newDocumentSource = readFileSync(
+    new URL('../src/components/NewDocumentActions.tsx', import.meta.url),
+    'utf8',
+  );
 
   assert.match(editorSource, /studies\.map/);
   assert.match(editorSource, /blockId=\{`omi-study-\$\{study\.rootSectionId\}`\}/);
   assert.match(editorSource, /stageInsertTopLevelSection\(\)/);
+  assert.match(editorSource, /importOmiDocumentAsStudy\(file\)/);
   assert.match(focusRegistrySource, /const continuousEditors = new Set<Editor>\(\)/);
   assert.match(focusRegistrySource, /for \(const continuousEditor of continuousEditors\)/);
   assert.match(blockEditorSource, /selectSection\(active\.sectionId\)/);
   assert.match(structurePanelSource, /requestBlockEditorFocus\(firstBlockId, 'start'\)/);
+  assert.match(documentMenuSource, /<NewDocumentActions onCreated=\{onCreated\} \/>/);
+  assert.match(closedWorkspaceSource, /<NewDocumentActions variant="empty-workspace" \/>/);
+  assert.match(newDocumentSource, /Új OMI tanulmány/);
+  assert.match(newDocumentSource, /Új OMI monográfia/);
+  assert.match(newDocumentSource, /Új OMI tanulmánykötet/);
 });
 
 function volumeSections(): OmiSection[] {

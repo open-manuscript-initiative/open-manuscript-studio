@@ -4,6 +4,7 @@ import {
   type OmiCrossReferenceTarget,
 } from '../model/crossReferences.ts';
 import { renderBibliography, renderCitationCluster } from '../model/cslRendering.ts';
+import { buildNoteNumberMap } from '../model/notes.ts';
 import { latexToMathMl } from '../model/equationRendering.ts';
 import { assetPath } from '../model/assets.ts';
 import {
@@ -705,8 +706,10 @@ function renderNotes(
     placement,
   )}" aria-labelledby="notes-heading"><h2 id="notes-heading">${escapeHtml(labels.notes)}</h2><ol>${notes
     .map(
-      (note) =>
-        `<li id="${htmlId('note', note.id)}" role="doc-endnote">${escapeHtml(
+      (note, index) =>
+        `<li id="${htmlId('note', note.id)}" role="doc-endnote" value="${escapeAttribute(
+          state.noteLabels.get(note.id) ?? String(index + 1),
+        )}">${escapeHtml(
           note.body,
         )} <a class="note-backref" href="#${htmlId('noteref', note.id)}" aria-label="Back to note reference">↩</a></li>`,
     )
@@ -832,14 +835,12 @@ function parseStructuredContent(value: string): JsonNode | null {
 }
 
 function collectNoteLabels(manuscript: OmiManuscript): Map<string, string> {
-  const labels = new Map<string, string>();
-  let ordinal = 0;
-  for (const annotation of manuscript.annotations) {
-    if (annotation.type !== 'note') continue;
-    ordinal += 1;
-    labels.set(annotation.id, String(ordinal));
-  }
-  return labels;
+  return new Map(
+    [...buildNoteNumberMap(manuscript)].map(([noteId, number]) => [
+      noteId,
+      String(number),
+    ]),
+  );
 }
 
 function targetHtmlId(target: OmiCrossReferenceTarget, state: RenderState): string {

@@ -30,7 +30,7 @@ export function materializeSectionHeadingBlocks(
 export function createSectionHeadingBlock(
   title: string,
   level = 1,
-  id = crypto.randomUUID(),
+  id: string = crypto.randomUUID(),
 ): OmiBlock {
   const normalizedLevel = Math.max(1, Math.min(6, Math.trunc(level)));
   const text = title.replace(/[\r\n]+/g, ' ').trim();

@@ -3,6 +3,8 @@ import type {
   OmiManuscriptState,
   OmiSection,
 } from '../types/omi';
+import { getDocumentStructureProfile } from './documentProfile';
+import { getStudyRootSectionId } from './sectionStructure';
 
 export type OmiNoteKind =
   | 'footnote'
@@ -121,10 +123,7 @@ export function getNoteNumber(
   state: OmiManuscriptState,
   noteId: string,
 ): number | undefined {
-  const identifiers = uniqueNoteIdentifiers(collectNoteAnchors(state));
-  const index = identifiers.indexOf(noteId);
-
-  return index >= 0 ? index + 1 : undefined;
+  return buildNoteNumberMap(state).get(noteId);
 }
 
 export function sortNotesByDocumentOrder(
@@ -163,10 +162,7 @@ export function reconcileNoteState(
     }
   }
 
-  const noteOrder = uniqueNoteIdentifiers(occurrences);
-  const numberByNoteId = new Map(
-    noteOrder.map((id, index) => [id, index + 1]),
-  );
+  const numberByNoteId = buildNoteNumberMap(state, occurrences);
   const annotationById = new Map(
     state.annotations
       .filter(isNoteAnnotation)
@@ -453,6 +449,29 @@ function uniqueNoteIdentifiers(
       seen.add(occurrence.noteId);
       result.push(occurrence.noteId);
     }
+  }
+
+  return result;
+}
+
+export function buildNoteNumberMap(
+  state: OmiManuscriptState,
+  occurrences: NoteAnchorOccurrence[] = collectNoteAnchors(state),
+): Map<string, number> {
+  const scope = getDocumentStructureProfile(state).noteNumberingScope;
+  const counters = new Map<string, number>();
+  const result = new Map<string, number>();
+
+  for (const occurrence of occurrences) {
+    if (result.has(occurrence.noteId)) continue;
+    const scopeKey = scope === 'continuous'
+      ? 'document'
+      : scope === 'section'
+        ? `section:${occurrence.sectionId}`
+        : `study:${getStudyRootSectionId(state.sections, occurrence.sectionId) ?? occurrence.sectionId}`;
+    const number = (counters.get(scopeKey) ?? 0) + 1;
+    counters.set(scopeKey, number);
+    result.set(occurrence.noteId, number);
   }
 
   return result;
