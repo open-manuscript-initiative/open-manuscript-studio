@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -9,6 +10,28 @@ import {
   revertManuscriptToRevision,
 } from '../src/model/versioning.ts';
 import { serializeOmiJson } from '../src/services/exportOmi.ts';
+
+const releasePackage = JSON.parse(readFileSync(
+  new URL('../package.json', import.meta.url),
+  'utf8',
+)) as { version: string };
+const releasePackageLock = JSON.parse(readFileSync(
+  new URL('../package-lock.json', import.meta.url),
+  'utf8',
+)) as { version: string; packages?: Record<string, { version?: string }> };
+const tauriConfig = JSON.parse(readFileSync(
+  new URL('../src-tauri/tauri.conf.json', import.meta.url),
+  'utf8',
+)) as { version: string };
+const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+
+test('release-facing application versions stay aligned', () => {
+  assert.match(releasePackage.version, /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u);
+  assert.equal(releasePackageLock.version, releasePackage.version);
+  assert.equal(releasePackageLock.packages?.['']?.version, releasePackage.version);
+  assert.equal(tauriConfig.version, releasePackage.version);
+  assert.ok(readme.includes(`**Current status:** \`${releasePackage.version}\``));
+});
 
 function createState() {
   return {
