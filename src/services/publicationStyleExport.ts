@@ -4,6 +4,7 @@ import { assetPath } from '../model/assets';
 import type { OmiPublicationProfile } from '../model/publicationProfile';
 import type { OmiManuscript } from '../types/omi';
 import { getAssetPayload } from './assetRepository';
+import { cssStringLiteral } from './embeddedCss';
 import { renderPublisherHtmlArticle } from './exportPublisherHtmlPackage';
 import { hyphenatePrintHtml } from './printHyphenation';
 
@@ -332,12 +333,16 @@ export async function renderStyleBasedHtml(
   const style = loadPublicationStyle();
   const identity = loadPublicationPublisherIdentity();
   const rendered = renderPublisherHtmlArticle(manuscript, profile);
-  let html = withPublicationStyleCss(rendered.html, style, target);
-  html = withPublisherIdentity(html, manuscript, target, identity);
-  if (target === 'print') html = withPrintRunningHeader(html, manuscript, style, identity);
+  // Keep DOM parsing confined to the semantic article produced by our HTML
+  // renderer. Publication-style and publisher values can originate in local
+  // storage or an imported IDML package, so add them only after hyphenation.
+  let html = rendered.html;
   if (target === 'print' && style.styles.body.hyphenation) {
     html = await hyphenatePrintHtml(html, manuscript.locale);
   }
+  html = withPublicationStyleCss(html, style, target);
+  html = withPublisherIdentity(html, manuscript, target, identity);
+  if (target === 'print') html = withPrintRunningHeader(html, manuscript, style, identity);
   return target === 'print' ? inlineManuscriptAssets(html, manuscript) : html;
 }
 
@@ -363,9 +368,7 @@ function bytesToBase64(bytes: Uint8Array): string {
 }
 
 function cssFontFamily(family: string, fallback: string): string {
-  const escapedFamily = family.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  const escapedFallback = fallback.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  return `"${escapedFamily}", "${escapedFallback}"`;
+  return `${cssStringLiteral(family)}, ${cssStringLiteral(fallback)}`;
 }
 
 function runningHeaderCssContent(
@@ -394,7 +397,7 @@ function runningHeaderCssContent(
 }
 
 function cssContentString(value: string): string {
-  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]+/g, ' ')}"`;
+  return cssStringLiteral(value);
 }
 
 function shortenText(value: string, maximumLength: number): string {

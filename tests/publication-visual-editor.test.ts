@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { paginatePublicationBlocks } from '../src/components/publicationPageLayout.ts';
+import { cssStringLiteral } from '../src/services/embeddedCss.ts';
 import {
   hyphenatePrintText,
   resolvePrintHyphenationModule,
@@ -158,4 +159,23 @@ test('print hyphenation is optional and stays outside canonical manuscript state
   assert.match(exportRenderer, /target === 'print' && style\.styles\.body\.hyphenation/);
   assert.match(exportRenderer, /await hyphenatePrintHtml\(html, manuscript\.locale\)/);
   assert.match(exportRenderer, /\[data-omi-hyphenation-module\][\s\S]*hyphens: manual/);
+});
+
+test('print hyphenation parses only renderer-owned HTML before imported style data is embedded', () => {
+  const hyphenation = exportRenderer.indexOf('html = await hyphenatePrintHtml(html, manuscript.locale)');
+  const styleEmbedding = exportRenderer.indexOf('html = withPublicationStyleCss(html, style, target)');
+
+  assert.ok(hyphenation >= 0);
+  assert.ok(styleEmbedding > hyphenation);
+});
+
+test('publication CSS safely encodes imported values inside style elements', () => {
+  const payload = '</style><script>globalThis.compromised = true</script>';
+  const result = cssStringLiteral(payload);
+
+  assert.doesNotMatch(result, /<script\b/i);
+  assert.doesNotMatch(result, /<\/style><script/i);
+  assert.match(result, /\\3c \/style\\3e \\3c script\\3e /);
+  assert.match(exportRenderer, /cssFontFamily[\s\S]*cssStringLiteral\(family\)/);
+  assert.match(exportRenderer, /cssContentString[\s\S]*return cssStringLiteral\(value\)/);
 });
