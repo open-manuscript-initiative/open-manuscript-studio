@@ -40,15 +40,16 @@ ompReviewRouter.post(
     try {
       const verified = await verifyOmpLaunch(payload, signature);
       const submissionId = verified.claims.submission?.externalId;
+      const componentId = verified.claims.component?.externalId;
       const externalAssignmentId = verified.claims.reviewAssignment?.externalId;
       const contextId = verified.claims.context?.externalId;
 
       if (verified.claims.actorMode !== 'review') {
         throw new Error('The OMP launch assertion is not a reviewer launch.');
       }
-      if (!submissionId || !externalAssignmentId || !contextId) {
+      if (!submissionId || !componentId || !externalAssignmentId || !contextId) {
         throw new Error(
-          'The OMP review launch does not identify its monograph, review assignment, or press context.',
+          'The OMP review launch does not identify its monograph, assigned study, review assignment, or press context.',
         );
       }
       if (!verified.claims.scope?.includes('review.response.write')) {
@@ -71,6 +72,8 @@ ompReviewRouter.post(
         contextId,
         externalAssignmentId,
         externalSubmissionId: submissionId,
+        reviewDocumentId: componentId,
+        platform: 'omp',
       });
 
       await Promise.all([
@@ -90,8 +93,13 @@ ompReviewRouter.post(
         });
       }
 
-      const snapshot = createReviewSnapshotFromOjs(ompData);
-      await setReviewManuscriptFromOjs(assignment.id, submissionId, snapshot);
+      const snapshot = createReviewSnapshotFromOjs(ompData, {
+        title: getOmpStudyTitle(verified.claims.component),
+        // The submission endpoint describes the parent monograph. Reviewers
+        // receive only the assigned study body, never volume-level metadata.
+        includeSubmissionMetadata: false,
+      });
+      await setReviewManuscriptFromOjs(assignment.id, componentId, snapshot);
 
       response.setHeader('Cache-Control', 'no-store, max-age=0');
       response.status(200).json({
@@ -119,4 +127,11 @@ function getOmpSubmissionLocale(value: unknown): string | undefined {
   if (typeof raw !== 'string') return undefined;
   const normalized = raw.trim().replace('_', '-');
   return normalized ? normalized.slice(0, 32) : undefined;
+}
+
+function getOmpStudyTitle(
+  component: { externalId?: string; title?: string } | undefined,
+): string {
+  const title = component?.title?.trim();
+  return title || `Study ${component?.externalId ?? ''}`.trim();
 }

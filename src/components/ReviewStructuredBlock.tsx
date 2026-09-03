@@ -58,8 +58,8 @@ export function ReviewStructuredBlock({
     return (
       <figure className="review-structured-figure">
         <img src={block.src} alt={block.alt ?? ''} />
-        {block.alt || block.fileName ? (
-          <figcaption>{block.alt || block.fileName}</figcaption>
+        {block.alt ? (
+          <figcaption>{block.alt}</figcaption>
         ) : null}
       </figure>
     );

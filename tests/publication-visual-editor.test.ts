@@ -3,6 +3,11 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { paginatePublicationBlocks } from '../src/components/publicationPageLayout.ts';
+import { cssStringLiteral } from '../src/services/embeddedCss.ts';
+import {
+  hyphenatePrintText,
+  resolvePrintHyphenationModule,
+} from '../src/services/printHyphenation.ts';
 
 const styleEditor = readFileSync(
   new URL('../src/components/PublicationStyleEditor.tsx', import.meta.url),
@@ -20,6 +25,31 @@ const exportRenderer = readFileSync(
   new URL('../src/services/publicationStyleExport.ts', import.meta.url),
   'utf8',
 );
+const hyphenationRenderer = readFileSync(
+  new URL('../src/services/printHyphenation.ts', import.meta.url),
+  'utf8',
+);
+const studioMenu = readFileSync(
+  new URL('../src/components/StudioMenu.tsx', import.meta.url),
+  'utf8',
+);
+const publicationProfile = readFileSync(
+  new URL('../src/components/PublicationProfilePanel.tsx', import.meta.url),
+  'utf8',
+);
+const fullscreenPanels = readFileSync(
+  new URL('../src/styles/desktop-fullscreen-panels.css', import.meta.url),
+  'utf8',
+);
+
+test('live publication editor opens as its own full-screen menu workspace', () => {
+  assert.match(studioMenu, /'publication-editor'/);
+  assert.match(studioMenu, /supplementalCopy\.publicationEditor/);
+  assert.match(studioMenu, /activeView === 'publication-editor' \? <PublicationStyleEditor \/>/);
+  assert.doesNotMatch(publicationProfile, /<PublicationStyleEditor/);
+  assert.match(fullscreenPanels, /\.studio-menu-content--publication-editor[\s\S]*overflow: hidden/);
+  assert.match(fullscreenPanels, /\.studio-menu-content--publication-editor \.publication-style-editor[\s\S]*height: 100%/);
+});
 
 test('publication view edits the complete structured manuscript instead of a sample paragraph', () => {
   assert.match(styleEditor, /<PublicationDocumentCanvas style=\{style\}/);
@@ -99,4 +129,53 @@ test('screen pagination keeps a heading with the following text block', () => {
     { pageIndex: 1, translateY: 75 },
     { pageIndex: 1, translateY: 75 },
   ]);
+});
+
+test('print hyphenation selects lazy language modules from BCP 47 tags', () => {
+  assert.equal(resolvePrintHyphenationModule('hu-HU'), 'hu');
+  assert.equal(resolvePrintHyphenationModule('en-GB'), 'en-gb');
+  assert.equal(resolvePrintHyphenationModule('de-CH'), 'de');
+  assert.equal(resolvePrintHyphenationModule('sr-Latn'), 'sh-latn');
+  assert.equal(resolvePrintHyphenationModule('zh-Hant'), null);
+  assert.equal(resolvePrintHyphenationModule('und'), null);
+  assert.match(hyphenationRenderer, /const MODULE_LOADERS = \{/);
+  assert.match(hyphenationRenderer, /element\.closest\('\[lang\]'\)/);
+});
+
+test('Hungarian print module adds discretionary breaks without changing source text', async () => {
+  const source = 'megszentségteleníthetetlenségeskedéseitekért';
+  const hyphenated = await hyphenatePrintText(source, 'hu-HU');
+
+  assert.match(hyphenated, /\u00ad/);
+  assert.equal(hyphenated.replaceAll('\u00ad', ''), source);
+  assert.equal(await hyphenatePrintText(source, 'und'), source);
+});
+
+test('print hyphenation is optional and stays outside canonical manuscript state', () => {
+  assert.match(styleEditor, /checked=\{body\.hyphenation\}/);
+  assert.match(styleEditor, /setStyleValue\('body', 'hyphenation'/);
+  assert.match(documentCanvas, /lang=\{manuscript\.locale\}/);
+  assert.match(editorStyles, /--omi-publication-hyphens/);
+  assert.match(exportRenderer, /target === 'print' && style\.styles\.body\.hyphenation/);
+  assert.match(exportRenderer, /await hyphenatePrintHtml\(html, manuscript\.locale\)/);
+  assert.match(exportRenderer, /\[data-omi-hyphenation-module\][\s\S]*hyphens: manual/);
+});
+
+test('print hyphenation parses only renderer-owned HTML before imported style data is embedded', () => {
+  const hyphenation = exportRenderer.indexOf('html = await hyphenatePrintHtml(html, manuscript.locale)');
+  const styleEmbedding = exportRenderer.indexOf('html = withPublicationStyleCss(html, style, target)');
+
+  assert.ok(hyphenation >= 0);
+  assert.ok(styleEmbedding > hyphenation);
+});
+
+test('publication CSS safely encodes imported values inside style elements', () => {
+  const payload = '</style><script>globalThis.compromised = true</script>';
+  const result = cssStringLiteral(payload);
+
+  assert.doesNotMatch(result, /<script\b/i);
+  assert.doesNotMatch(result, /<\/style><script/i);
+  assert.match(result, /\\3c \/style\\3e \\3c script\\3e /);
+  assert.match(exportRenderer, /cssFontFamily[\s\S]*cssStringLiteral\(family\)/);
+  assert.match(exportRenderer, /cssContentString[\s\S]*return cssStringLiteral\(value\)/);
 });

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -9,6 +10,43 @@ import {
   toEditorVisibleReview,
   toReviewerVisibleReview,
 } from '../src/model/peerReview.ts';
+
+const reviewPortalSource = readFileSync(
+  new URL('../src/components/ReviewPortal.tsx', import.meta.url),
+  'utf8',
+);
+const reviewModeSource = readFileSync(
+  new URL('../src/components/ReviewMode.tsx', import.meta.url),
+  'utf8',
+);
+const reviewSnapshotSource = readFileSync(
+  new URL('../server/src/integrations/ojs/reviewSnapshot.ts', import.meta.url),
+  'utf8',
+);
+const reviewManuscriptServiceSource = readFileSync(
+  new URL('../server/src/services/reviewManuscriptService.ts', import.meta.url),
+  'utf8',
+);
+const ojsVerifierSource = readFileSync(
+  new URL('../server/src/integrations/ojs/launchVerifier.ts', import.meta.url),
+  'utf8',
+);
+const ojsClientSource = readFileSync(
+  new URL('../server/src/integrations/ojs/ojsClient.ts', import.meta.url),
+  'utf8',
+);
+const ompVerifierSource = readFileSync(
+  new URL('../server/src/integrations/omp/launchVerifier.ts', import.meta.url),
+  'utf8',
+);
+const ompClientSource = readFileSync(
+  new URL('../server/src/integrations/omp/ompClient.ts', import.meta.url),
+  'utf8',
+);
+const ompReviewRouteSource = readFileSync(
+  new URL('../server/src/routes/ompReviewRoutes.ts', import.meta.url),
+  'utf8',
+);
 
 test('creates double-blind review assignments by default', () => {
   const review = createPeerReviewAssignment(
@@ -135,4 +173,36 @@ test('double-blind identity policy hides each side from the other', () => {
       canSeeReviewerIdentity: true,
     },
   );
+});
+
+test('an external reviewer launch remains scoped to its one verified assignment', () => {
+  assert.match(reviewPortalSource, /url\.searchParams\.set\('reviewAssignment', claimedAssignmentId\)/);
+  assert.match(reviewPortalSource, /<ReviewMode assignmentId=\{externalAssignmentId\}/);
+  assert.match(reviewModeSource, /assignmentId\s*\? \[await getAssignedReview\(assignmentId\)\]/);
+  assert.match(reviewModeSource, /review-mode__layout--single/);
+});
+
+test('review snapshots are an anonymous article-only projection', () => {
+  assert.match(reviewSnapshotSource, /documentKind: 'article'/);
+  assert.match(reviewSnapshotSource, /authorIdentity: 'hidden'/);
+  assert.doesNotMatch(reviewSnapshotSource, /fileName: item\.fileName/);
+  assert.match(reviewManuscriptServiceSource, /documentKind: 'article'/);
+  assert.match(reviewManuscriptServiceSource, /authorIdentity: 'hidden'/);
+  assert.doesNotMatch(reviewManuscriptServiceSource, /fileName\?: string/);
+  assert.match(reviewManuscriptServiceSource, /anonymityMode: 'DOUBLE_BLIND'/);
+  assert.match(ojsVerifierSource, /REVIEWER_FORBIDDEN_SCOPES[\s\S]*'contributors\.read'/);
+  assert.match(ojsClientSource, /const hasContributorScope = !reviewerMode/);
+  assert.match(reviewModeSource, /manuscript: 'Cikk'/);
+});
+
+test('OMP reviewer access is bound to the assigned study instead of its parent monograph', () => {
+  assert.match(ompVerifierSource, /OMP reviewer launch does not identify the assigned study/);
+  assert.match(ompVerifierSource, /'contributors\.read'/);
+  assert.match(ompVerifierSource, /'review\.files\.read'/);
+  assert.match(ompClientSource, /fileComponentExternalId/);
+  assert.match(ompClientSource, /reviewerMode \? claims\.component\?\.externalId/);
+  assert.match(ompReviewRouteSource, /reviewDocumentId: componentId/);
+  assert.match(ompReviewRouteSource, /platform: 'omp'/);
+  assert.match(ompReviewRouteSource, /includeSubmissionMetadata: false/);
+  assert.match(ompReviewRouteSource, /setReviewManuscriptFromOjs\(assignment\.id, componentId, snapshot\)/);
 });

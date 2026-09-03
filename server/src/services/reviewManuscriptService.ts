@@ -60,10 +60,12 @@ export type ReviewManuscriptBlock =
   | { type: 'note'; text: string; richText?: ReviewInlineSpan[] }
   | { type: 'list'; text: string; ordered: boolean; listLevel: number; ordinal?: number; richText?: ReviewInlineSpan[] }
   | { type: 'table'; cells: string[][]; headerRows: number }
-  | { type: 'image'; src: string; mediaType: string; fileName?: string; alt?: string }
+  | { type: 'image'; src: string; mediaType: string; alt?: string }
   | { type: 'chart'; cells: string[][]; chartType: ReviewChartType; title?: string };
 
 export interface ReviewManuscriptSnapshot {
+  documentKind: 'article';
+  authorIdentity: 'hidden';
   title: string;
   subtitle?: string;
   abstract?: string;
@@ -84,12 +86,15 @@ export interface OjsReviewAssignmentInput {
   contextId: string;
   externalAssignmentId: string;
   externalSubmissionId: string;
+  reviewDocumentId?: string;
   reviewRound?: number;
+  platform?: 'ojs' | 'omp';
 }
 
 export async function upsertOjsReviewAssignment(
   input: OjsReviewAssignmentInput,
 ): Promise<{ id: string }> {
+  const reviewDocumentId = input.reviewDocumentId ?? input.externalSubmissionId;
   const existing = await prisma.peerReviewAssignment.findUnique({
     where: {
       externalInstallationId_externalAssignmentId: {
@@ -101,22 +106,38 @@ export async function upsertOjsReviewAssignment(
       id: true,
       reviewerUserId: true,
       manuscriptId: true,
+      externalSubmissionId: true,
     },
   });
 
   if (existing) {
+    const legacyParentBinding = existing.manuscriptId === input.externalSubmissionId
+      && (existing.externalSubmissionId === null
+        || existing.externalSubmissionId === input.externalSubmissionId);
     if (
       existing.reviewerUserId !== input.reviewerUserId ||
-      existing.manuscriptId !== input.externalSubmissionId
+      (!legacyParentBinding && existing.manuscriptId !== reviewDocumentId) ||
+      (!legacyParentBinding
+        && existing.externalSubmissionId !== null
+        && existing.externalSubmissionId !== input.externalSubmissionId)
     ) {
-      const error = new Error('The OJS review assignment is already linked to a different Studio account or manuscript.');
+      const error = new Error('The external review assignment is already linked to a different Studio account or article.');
       error.name = 'ForbiddenError';
       throw error;
     }
+
+    await prisma.peerReviewAssignment.update({
+      where: { id: existing.id },
+      data: {
+        manuscriptId: reviewDocumentId,
+        externalSubmissionId: input.externalSubmissionId,
+        anonymityMode: 'DOUBLE_BLIND',
+      },
+    });
     return { id: existing.id };
   }
 
-  const workspaceId = `ojs:${createHash('sha256')
+  const workspaceId = `${input.platform ?? 'ojs'}:${createHash('sha256')
     .update(`${input.installationId}:${input.contextId}`)
     .digest('hex')
     .slice(0, 40)}`;
@@ -127,11 +148,12 @@ export async function upsertOjsReviewAssignment(
   const assignment = await prisma.peerReviewAssignment.create({
     data: {
       workspaceId,
-      manuscriptId: input.externalSubmissionId,
+      manuscriptId: reviewDocumentId,
       reviewerUserId: input.reviewerUserId,
       assignedByUserId: null,
       externalInstallationId: input.installationId,
       externalAssignmentId: input.externalAssignmentId,
+      externalSubmissionId: input.externalSubmissionId,
       reviewerAlias: 'Reviewer',
       assignmentType: 'SCIENTIFIC_REVIEW',
       reviewRound,
@@ -161,7 +183,7 @@ export async function setReviewManuscript(
 
 export async function setReviewManuscriptFromOjs(
   assignmentId: string,
-  externalSubmissionId: string,
+  reviewDocumentId: string,
   input: unknown,
 ): Promise<ReviewManuscriptSnapshot> {
   const assignment = await prisma.peerReviewAssignment.findUnique({
@@ -170,8 +192,8 @@ export async function setReviewManuscriptFromOjs(
   });
 
   if (!assignment) throw notFound();
-  if (assignment.manuscriptId !== externalSubmissionId) {
-    const error = new Error('The OJS submission does not match this review assignment.');
+  if (assignment.manuscriptId !== reviewDocumentId) {
+    const error = new Error('The external article does not match this review assignment.');
     error.name = 'ForbiddenError';
     throw error;
   }
@@ -285,7 +307,7 @@ async function storeSnapshot(
 
 export function sanitizeReviewManuscript(input: unknown): ReviewManuscriptSnapshot {
   const record = asRecord(input);
-  const title = cleanText(record.title, 500) || 'Untitled manuscript';
+  const title = cleanText(record.title, 500) || 'Untitled article';
   const subtitle = cleanText(record.subtitle, 500);
   const abstract = cleanText(record.abstract, 20_000);
   const keywords = Array.isArray(record.keywords)
@@ -329,13 +351,11 @@ export function sanitizeReviewManuscript(input: unknown): ReviewManuscriptSnapsh
       const src = cleanImageSource(block.src);
       if (!src) continue;
       const mediaType = cleanText(block.mediaType, 200) || 'application/octet-stream';
-      const fileName = cleanText(block.fileName, 500);
       const alt = cleanText(block.alt, 4_000);
       blocks.push({
         type: 'image',
         src,
         mediaType,
-        ...(fileName ? { fileName } : {}),
         ...(alt ? { alt } : {}),
       });
       continue;
@@ -385,6 +405,11 @@ export function sanitizeReviewManuscript(input: unknown): ReviewManuscriptSnapsh
   }
 
   return {
+    // Reviewer snapshots are an allow-listed, article-only projection. These
+    // literals are deliberately not copied from input, so a stored payload
+    // cannot opt into book chrome or author identity disclosure.
+    documentKind: 'article',
+    authorIdentity: 'hidden',
     title,
     ...(subtitle ? { subtitle } : {}),
     ...(abstract ? { abstract } : {}),

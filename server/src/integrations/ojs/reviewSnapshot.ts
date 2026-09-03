@@ -32,6 +32,11 @@ interface BibliographyLocaleCopy {
   pages: string;
 }
 
+export interface ReviewSnapshotOptions {
+  title?: string;
+  includeSubmissionMetadata?: boolean;
+}
+
 const bibliographyLocaleCopy: Record<ReviewDocumentLocale, BibliographyLocaleCopy> = {
   en: {
     heading: 'References',
@@ -55,12 +60,22 @@ const bibliographyLocaleCopy: Record<ReviewDocumentLocale, BibliographyLocaleCop
 
 export function createReviewSnapshotFromOjs(
   data: OjsLaunchData,
+  options: ReviewSnapshotOptions = {},
 ): ReviewManuscriptSnapshot {
   const submission = asRecord(data.submission);
-  const title = pickLocalizedString(submission.title) ?? 'Untitled manuscript';
-  const subtitle = pickLocalizedString(submission.subtitle);
-  const abstract = pickLocalizedString(submission.abstract);
-  const keywords = collectKeywords(submission.keywords);
+  const includeSubmissionMetadata = options.includeSubmissionMetadata !== false;
+  const title = options.title?.trim()
+    || (includeSubmissionMetadata ? pickLocalizedString(submission.title) : undefined)
+    || 'Untitled article';
+  const subtitle = includeSubmissionMetadata
+    ? pickLocalizedString(submission.subtitle)
+    : undefined;
+  const abstract = includeSubmissionMetadata
+    ? pickLocalizedString(submission.abstract)
+    : undefined;
+  const keywords = includeSubmissionMetadata
+    ? collectKeywords(submission.keywords)
+    : [];
   const blocks: ReviewManuscriptBlock[] = [];
   const source = data.sourceDocument as StructuredSourceDocument | undefined;
   const documentLocale = pickDocumentLocale(submission);
@@ -135,7 +150,6 @@ export function createReviewSnapshotFromOjs(
           type: 'image',
           src: item.src,
           mediaType: item.mediaType,
-          fileName: item.fileName,
           ...(item.alt ? { alt: item.alt } : {}),
         });
         continue;
@@ -190,6 +204,8 @@ export function createReviewSnapshotFromOjs(
   }
 
   return {
+    documentKind: 'article',
+    authorIdentity: 'hidden',
     title,
     ...(subtitle ? { subtitle } : {}),
     ...(abstract ? { abstract } : {}),

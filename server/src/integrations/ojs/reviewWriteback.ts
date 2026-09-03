@@ -79,7 +79,7 @@ export async function writeBackSubmittedExternalReview(
     const reviewFormContext = await getOjsReviewFormContext(assignment.id);
 
     const body = JSON.stringify({
-      submissionExternalId: assignment.manuscriptId,
+      submissionExternalId: assignment.externalSubmissionId ?? assignment.manuscriptId,
       reviewAssignmentExternalId: assignment.externalAssignmentId,
       authorAndEditorComment: authorComments,
       editorOnlyComment: editorComments,

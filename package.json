@@ -59,6 +59,7 @@
     "@tiptap/pm": "3.31.0",
     "@tiptap/react": "3.31.0",
     "@tiptap/starter-kit": "3.31.0",
+    "hyphen": "^1.14.1",
     "i18next": "latest",
     "lucide-react": "latest",
     "react": "latest",

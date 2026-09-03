@@ -9,12 +9,15 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
+import { useStudioStore } from '../app/useStudioStore';
 import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json';
 import { useTranslation } from '../i18n';
+import { getManuscriptLanguageDisplayName } from '../model/manuscriptLanguage';
 import {
   buildPublicationStyleCss,
   type PublicationStyle,
 } from '../services/publicationStyleExport';
+import { resolvePrintHyphenationModule } from '../services/printHyphenation';
 import { PublicationDocumentCanvas } from './PublicationDocumentCanvas';
 import './PublicationStyleEditor.css';
 
@@ -101,6 +104,14 @@ function withCurrentPageDefaults(style: PublicationStyle): PublicationStyle {
         ...style.page?.margins,
       },
     },
+    styles: {
+      ...fallback.styles,
+      ...style.styles,
+      body: {
+        ...fallback.styles.body,
+        ...style.styles?.body,
+      },
+    },
   };
 }
 
@@ -116,24 +127,25 @@ function upsertStyle(
 
 function copyFor(locale: string) {
   if (locale === 'hu') return {
-    title: 'Vizuális kiadványszerkesztő',
+    title: 'Élő kiadványszerkesztő',
     description: 'A teljes tanulmány vagy kötet szerkeszthető nyomtatási képe. A tartalmi és tipográfiai módosítások azonnal megjelennek, és ugyanezeket az értékeket használja az export.',
     styles: 'Kiadványstílusok', styleName: 'Stílus neve', newStyle: 'Új stílus', duplicate: 'Másolat készítése', deleteStyle: 'Stílus törlése', cannotDeleteLast: 'Legalább egy kiadványstílusnak meg kell maradnia.',
     page: 'Nyomtatási oldal', preset: 'Oldalformátum', custom: 'Egyéni méret', orientation: 'Tájolás', portrait: 'Álló', landscape: 'Fekvő', width: 'Vágott szélesség', height: 'Vágott magasság', pageNumberStart: 'Első oldalszám', margins: 'Margók és nyomdai adatok', top: 'Felső', bottom: 'Alsó', inner: 'Belső', outer: 'Külső', gutter: 'Kötésmargó', bleed: 'Kifutó', mirroredMargins: 'Tükrözött margók páros és páratlan oldalakon', cropMarks: 'Vágójelek kérése a nyomdai exportban', runningHeaders: 'Élőfej megjelenítése', firstPageHeader: 'Élőfej az első oldalon is',
-    typography: 'Tipográfia', font: 'Betűcsalád', bodySize: 'Törzsszöveg mérete', bodyLeading: 'Törzsszöveg sorköze', indent: 'Első sor behúzása',
+    typography: 'Tipográfia', font: 'Betűcsalád', bodySize: 'Törzsszöveg mérete', bodyLeading: 'Törzsszöveg sorköze', indent: 'Első sor behúzása', hyphenation: 'Automatikus elválasztás a nyomtatható változatokban', hyphenationModule: 'Nyelvi modul', hyphenationInline: 'A nyelvjelölt szövegrészek automatikusan a saját moduljukat használják.', hyphenationFallback: 'Ehhez a nyelvhez nincs beépített minta; a nyomtató böngésző elválasztási szótára használható.',
     titleSize: 'Cím mérete', headingSize: 'Címsor mérete', footnoteSize: 'Lábjegyzet mérete', alignment: 'Igazítás', justify: 'Sorkizárt', alignLeft: 'Balra', alignCenter: 'Középre', alignRight: 'Jobbra',
     save: 'Stílus mentése', saved: 'A stílus mentve és aktív', reset: 'Sablonértékek visszaállítása', export: 'Stílus exportálása', exportCss: 'CSS letöltése', defaultNewName: 'Új kiadványstílus', copySuffix: 'másolat', liveApplied: 'A módosítások automatikusan az aktív exportstílusba kerülnek.',
   };
   if (locale === 'de') return {
-    title: 'Visueller Publikationseditor', description: 'Die vollständige, bearbeitbare Druckansicht des Beitrags oder Bandes. Inhaltliche und typografische Änderungen erscheinen sofort und werden für den Export verwendet.', styles: 'Publikationsstile', styleName: 'Stilname', newStyle: 'Neuer Stil', duplicate: 'Duplizieren', deleteStyle: 'Stil löschen', cannotDeleteLast: 'Mindestens ein Publikationsstil muss erhalten bleiben.', page: 'Druckseite', preset: 'Seitenformat', custom: 'Benutzerdefiniert', orientation: 'Ausrichtung', portrait: 'Hochformat', landscape: 'Querformat', width: 'Endbreite', height: 'Endhöhe', pageNumberStart: 'Erste Seitenzahl', margins: 'Ränder und Druckdaten', top: 'Oben', bottom: 'Unten', inner: 'Innen', outer: 'Außen', gutter: 'Bundsteg', bleed: 'Beschnitt', mirroredMargins: 'Gespiegelte Ränder für gerade und ungerade Seiten', cropMarks: 'Schnittmarken im Druckexport', runningHeaders: 'Kolumnentitel anzeigen', firstPageHeader: 'Kolumnentitel auch auf der ersten Seite', typography: 'Typografie', font: 'Schriftfamilie', bodySize: 'Grundschrift', bodyLeading: 'Zeilenabstand', indent: 'Erstzeileneinzug', titleSize: 'Titelgröße', headingSize: 'Überschriftgröße', footnoteSize: 'Fußnotengröße', alignment: 'Ausrichtung', justify: 'Blocksatz', alignLeft: 'Links', alignCenter: 'Zentriert', alignRight: 'Rechts', save: 'Stil speichern', saved: 'Stil gespeichert und aktiv', reset: 'Vorlagenwerte zurücksetzen', export: 'Stil exportieren', exportCss: 'CSS herunterladen', defaultNewName: 'Neuer Publikationsstil', copySuffix: 'Kopie', liveApplied: 'Änderungen werden automatisch auf den aktiven Exportstil angewendet.',
+    title: 'Live-Publikationseditor', description: 'Die vollständige, bearbeitbare Druckansicht des Beitrags oder Bandes. Inhaltliche und typografische Änderungen erscheinen sofort und werden für den Export verwendet.', styles: 'Publikationsstile', styleName: 'Stilname', newStyle: 'Neuer Stil', duplicate: 'Duplizieren', deleteStyle: 'Stil löschen', cannotDeleteLast: 'Mindestens ein Publikationsstil muss erhalten bleiben.', page: 'Druckseite', preset: 'Seitenformat', custom: 'Benutzerdefiniert', orientation: 'Ausrichtung', portrait: 'Hochformat', landscape: 'Querformat', width: 'Endbreite', height: 'Endhöhe', pageNumberStart: 'Erste Seitenzahl', margins: 'Ränder und Druckdaten', top: 'Oben', bottom: 'Unten', inner: 'Innen', outer: 'Außen', gutter: 'Bundsteg', bleed: 'Beschnitt', mirroredMargins: 'Gespiegelte Ränder für gerade und ungerade Seiten', cropMarks: 'Schnittmarken im Druckexport', runningHeaders: 'Kolumnentitel anzeigen', firstPageHeader: 'Kolumnentitel auch auf der ersten Seite', typography: 'Typografie', font: 'Schriftfamilie', bodySize: 'Grundschrift', bodyLeading: 'Zeilenabstand', indent: 'Erstzeileneinzug', hyphenation: 'Automatische Silbentrennung in Druckausgaben', hyphenationModule: 'Sprachmodul', hyphenationInline: 'Sprachmarkierte Textteile verwenden automatisch ihr eigenes Modul.', hyphenationFallback: 'Für diese Sprache ist kein Muster eingebaut; das Wörterbuch des Druckbrowsers kann verwendet werden.', titleSize: 'Titelgröße', headingSize: 'Überschriftgröße', footnoteSize: 'Fußnotengröße', alignment: 'Ausrichtung', justify: 'Blocksatz', alignLeft: 'Links', alignCenter: 'Zentriert', alignRight: 'Rechts', save: 'Stil speichern', saved: 'Stil gespeichert und aktiv', reset: 'Vorlagenwerte zurücksetzen', export: 'Stil exportieren', exportCss: 'CSS herunterladen', defaultNewName: 'Neuer Publikationsstil', copySuffix: 'Kopie', liveApplied: 'Änderungen werden automatisch auf den aktiven Exportstil angewendet.',
   };
   return {
-    title: 'Visual publication editor', description: 'The complete editable print view of the article or volume. Content and typography changes appear immediately and drive the same export settings.', styles: 'Publication styles', styleName: 'Style name', newStyle: 'New style', duplicate: 'Duplicate', deleteStyle: 'Delete style', cannotDeleteLast: 'At least one publication style must remain.', page: 'Print page', preset: 'Page format', custom: 'Custom size', orientation: 'Orientation', portrait: 'Portrait', landscape: 'Landscape', width: 'Trim width', height: 'Trim height', pageNumberStart: 'First page number', margins: 'Margins and print data', top: 'Top', bottom: 'Bottom', inner: 'Inner', outer: 'Outer', gutter: 'Gutter', bleed: 'Bleed', mirroredMargins: 'Mirror margins on facing pages', cropMarks: 'Include crop marks in print export', runningHeaders: 'Show running headers', firstPageHeader: 'Show running header on first page', typography: 'Typography', font: 'Font family', bodySize: 'Body size', bodyLeading: 'Body leading', indent: 'First-line indent', titleSize: 'Title size', headingSize: 'Heading size', footnoteSize: 'Footnote size', alignment: 'Alignment', justify: 'Justified', alignLeft: 'Left', alignCenter: 'Center', alignRight: 'Right', save: 'Save style', saved: 'Style saved and active', reset: 'Reset template values', export: 'Export style', exportCss: 'Download CSS', defaultNewName: 'New publication style', copySuffix: 'copy', liveApplied: 'Changes are applied to the active export style automatically.',
+    title: 'Live publication editor', description: 'The complete editable print view of the article or volume. Content and typography changes appear immediately and drive the same export settings.', styles: 'Publication styles', styleName: 'Style name', newStyle: 'New style', duplicate: 'Duplicate', deleteStyle: 'Delete style', cannotDeleteLast: 'At least one publication style must remain.', page: 'Print page', preset: 'Page format', custom: 'Custom size', orientation: 'Orientation', portrait: 'Portrait', landscape: 'Landscape', width: 'Trim width', height: 'Trim height', pageNumberStart: 'First page number', margins: 'Margins and print data', top: 'Top', bottom: 'Bottom', inner: 'Inner', outer: 'Outer', gutter: 'Gutter', bleed: 'Bleed', mirroredMargins: 'Mirror margins on facing pages', cropMarks: 'Include crop marks in print export', runningHeaders: 'Show running headers', firstPageHeader: 'Show running header on first page', typography: 'Typography', font: 'Font family', bodySize: 'Body size', bodyLeading: 'Body leading', indent: 'First-line indent', hyphenation: 'Automatic hyphenation in printable versions', hyphenationModule: 'Language module', hyphenationInline: 'Language-tagged passages automatically use their own module.', hyphenationFallback: 'No built-in pattern is available for this language; the print browser dictionary may be used.', titleSize: 'Title size', headingSize: 'Heading size', footnoteSize: 'Footnote size', alignment: 'Alignment', justify: 'Justified', alignLeft: 'Left', alignCenter: 'Center', alignRight: 'Right', save: 'Save style', saved: 'Style saved and active', reset: 'Reset template values', export: 'Export style', exportCss: 'Download CSS', defaultNewName: 'New publication style', copySuffix: 'copy', liveApplied: 'Changes are applied to the active export style automatically.',
   };
 }
 
 export function PublicationStyleEditor() {
   const { locale } = useTranslation();
+  const manuscriptLanguage = useStudioStore((state) => state.manuscript.locale);
   const copy = copyFor(locale);
   const initial = useMemo(loadInitialState, []);
   const [library, setLibrary] = useState<PublicationStyle[]>(initial.library);
@@ -178,7 +190,7 @@ export function PublicationStyleEditor() {
   function setStyleValue(
     styleKey: keyof PublicationStyle['styles'],
     property: string,
-    value: string | number,
+    value: string | number | boolean,
   ): void {
     patchStyle((current) => ({
       ...current,
@@ -311,6 +323,8 @@ export function PublicationStyleEditor() {
   const heading = style.styles.heading1;
   const footnote = style.styles.footnote;
   const selectedPreset = pagePresetId(style);
+  const hyphenationModule = resolvePrintHyphenationModule(manuscriptLanguage);
+  const manuscriptLanguageName = getManuscriptLanguageDisplayName(manuscriptLanguage, locale);
 
   return (
     <section className="publication-style-editor" aria-labelledby="publication-style-editor-title">
@@ -439,6 +453,19 @@ export function PublicationStyleEditor() {
                 </select>
               </label>
             </div>
+            <label className="publication-style-toggle">
+              <input
+                type="checkbox"
+                checked={body.hyphenation}
+                onChange={(event) => setStyleValue('body', 'hyphenation', event.target.checked)}
+              />
+              <span>{copy.hyphenation}</span>
+            </label>
+            <p className="publication-style-hyphenation-module">
+              {hyphenationModule
+                ? `${copy.hyphenationModule}: ${manuscriptLanguageName} (${hyphenationModule}). ${copy.hyphenationInline}`
+                : `${copy.hyphenationModule}: ${manuscriptLanguageName}. ${copy.hyphenationFallback}`}
+            </p>
           </fieldset>
 
           <div className="publication-style-actions publication-style-actions--footer">

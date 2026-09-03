@@ -1,5 +1,6 @@
 export interface StudioMenuSupplementalCopy {
   assignments: string;
+  publicationEditor: string;
   signatures: string;
 }
 
@@ -30,30 +31,30 @@ type StudioUiLocale =
   | 'sv';
 
 const studioMenuSupplementalTranslations: Record<StudioUiLocale, StudioMenuSupplementalCopy> = {
-  bg: { assignments: 'Задания', signatures: 'Подписи' },
-  cs: { assignments: 'Úkoly', signatures: 'Podpisy' },
-  da: { assignments: 'Opgaver', signatures: 'Signaturer' },
-  de: { assignments: 'Aufträge', signatures: 'Signaturen' },
-  el: { assignments: 'Αναθέσεις', signatures: 'Υπογραφές' },
-  en: { assignments: 'Assignments', signatures: 'Signatures' },
-  es: { assignments: 'Asignaciones', signatures: 'Firmas' },
-  et: { assignments: 'Ülesanded', signatures: 'Allkirjad' },
-  fi: { assignments: 'Tehtävät', signatures: 'Allekirjoitukset' },
-  fr: { assignments: 'Attributions', signatures: 'Signatures' },
-  ga: { assignments: 'Sannacháin', signatures: 'Sínithe' },
-  hr: { assignments: 'Zaduženja', signatures: 'Potpisi' },
-  hu: { assignments: 'Megbízások', signatures: 'Aláírások' },
-  it: { assignments: 'Incarichi', signatures: 'Firme' },
-  lt: { assignments: 'Užduotys', signatures: 'Parašai' },
-  lv: { assignments: 'Uzdevumi', signatures: 'Paraksti' },
-  mt: { assignments: 'Assenjazzjonijiet', signatures: 'Firem' },
-  nl: { assignments: 'Toewijzingen', signatures: 'Handtekeningen' },
-  pl: { assignments: 'Przydziały', signatures: 'Podpisy' },
-  pt: { assignments: 'Atribuições', signatures: 'Assinaturas' },
-  ro: { assignments: 'Sarcini', signatures: 'Semnături' },
-  sk: { assignments: 'Priradenia', signatures: 'Podpisy' },
-  sl: { assignments: 'Dodelitve', signatures: 'Podpisi' },
-  sv: { assignments: 'Uppdrag', signatures: 'Signaturer' },
+  bg: { assignments: 'Задания', publicationEditor: 'Жив редактор', signatures: 'Подписи' },
+  cs: { assignments: 'Úkoly', publicationEditor: 'Živý editor', signatures: 'Podpisy' },
+  da: { assignments: 'Opgaver', publicationEditor: 'Live-editor', signatures: 'Signaturer' },
+  de: { assignments: 'Aufträge', publicationEditor: 'Live-Publikationseditor', signatures: 'Signaturen' },
+  el: { assignments: 'Αναθέσεις', publicationEditor: 'Ζωντανός επεξεργαστής', signatures: 'Υπογραφές' },
+  en: { assignments: 'Assignments', publicationEditor: 'Live publication editor', signatures: 'Signatures' },
+  es: { assignments: 'Asignaciones', publicationEditor: 'Editor de publicación en vivo', signatures: 'Firmas' },
+  et: { assignments: 'Ülesanded', publicationEditor: 'Reaalajatoimetaja', signatures: 'Allkirjad' },
+  fi: { assignments: 'Tehtävät', publicationEditor: 'Reaaliaikainen julkaisueditori', signatures: 'Allekirjoitukset' },
+  fr: { assignments: 'Attributions', publicationEditor: 'Éditeur de publication en direct', signatures: 'Signatures' },
+  ga: { assignments: 'Sannacháin', publicationEditor: 'Eagarthóir beo', signatures: 'Sínithe' },
+  hr: { assignments: 'Zaduženja', publicationEditor: 'Uređivač publikacije uživo', signatures: 'Potpisi' },
+  hu: { assignments: 'Megbízások', publicationEditor: 'Élő kiadványszerkesztő', signatures: 'Aláírások' },
+  it: { assignments: 'Incarichi', publicationEditor: 'Editor di pubblicazione dal vivo', signatures: 'Firme' },
+  lt: { assignments: 'Užduotys', publicationEditor: 'Tiesioginis leidinio redaktorius', signatures: 'Parašai' },
+  lv: { assignments: 'Uzdevumi', publicationEditor: 'Tiešais publikācijas redaktors', signatures: 'Paraksti' },
+  mt: { assignments: 'Assenjazzjonijiet', publicationEditor: 'Editur tal-pubblikazzjoni dirett', signatures: 'Firem' },
+  nl: { assignments: 'Toewijzingen', publicationEditor: 'Live publicatie-editor', signatures: 'Handtekeningen' },
+  pl: { assignments: 'Przydziały', publicationEditor: 'Edytor publikacji na żywo', signatures: 'Podpisy' },
+  pt: { assignments: 'Atribuições', publicationEditor: 'Editor de publicação em direto', signatures: 'Assinaturas' },
+  ro: { assignments: 'Sarcini', publicationEditor: 'Editor de publicație live', signatures: 'Semnături' },
+  sk: { assignments: 'Priradenia', publicationEditor: 'Živý editor publikácie', signatures: 'Podpisy' },
+  sl: { assignments: 'Dodelitve', publicationEditor: 'Urejevalnik publikacije v živo', signatures: 'Podpisi' },
+  sv: { assignments: 'Uppdrag', publicationEditor: 'Livepubliceringsredigerare', signatures: 'Signaturer' },
 };
 
 export function getStudioMenuSupplementalCopy(

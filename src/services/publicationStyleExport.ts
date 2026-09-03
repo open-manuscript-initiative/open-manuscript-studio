@@ -4,7 +4,9 @@ import { assetPath } from '../model/assets';
 import type { OmiPublicationProfile } from '../model/publicationProfile';
 import type { OmiManuscript } from '../types/omi';
 import { getAssetPayload } from './assetRepository';
+import { cssStringLiteral } from './embeddedCss';
 import { renderPublisherHtmlArticle } from './exportPublisherHtmlPackage';
+import { hyphenatePrintHtml } from './printHyphenation';
 
 export type PublicationStyle = typeof templateJson;
 export type PublicationPublisherIdentity = typeof publisherJson;
@@ -32,7 +34,7 @@ export function loadPublicationStyle(): PublicationStyle {
   }
 }
 
-/** Adds newly introduced print-page fields to previously saved style objects. */
+/** Adds newly introduced print-page and typography fields to saved styles. */
 export function normalizePublicationStyle(style: PublicationStyle): PublicationStyle {
   const fallback = clonePublicationStyleTemplate();
   return {
@@ -44,6 +46,14 @@ export function normalizePublicationStyle(style: PublicationStyle): PublicationS
       margins: {
         ...fallback.page.margins,
         ...style.page?.margins,
+      },
+    },
+    styles: {
+      ...fallback.styles,
+      ...style.styles,
+      body: {
+        ...fallback.styles.body,
+        ...style.styles?.body,
       },
     },
   };
@@ -95,6 +105,7 @@ export function buildPublicationStyleCss(
   const bibliography = style.styles.bibliography;
   const family = cssFontFamily(style.fonts.body.family, style.fonts.body.fallback);
   const noteFamily = cssFontFamily(style.fonts.note.family, style.fonts.note.fallback);
+  const hyphenationEnabled = body.hyphenation ?? false;
 
   const shared = `
 :root { --omi-publication-font: ${family}; }
@@ -112,7 +123,7 @@ body { font-family: var(--omi-publication-font); font-size: ${body.fontSize}pt; 
 .article-front .affiliation { font-size: ${affiliation.fontSize}pt; line-height: ${affiliation.lineHeight}pt; text-align: ${affiliation.alignment}; margin-bottom: ${affiliation.spaceAfter}pt; }
 .abstract h2, .abstract-title { font-size: ${abstractHeading.fontSize}pt; line-height: ${abstractHeading.lineHeight}pt; text-align: ${abstractHeading.alignment}; margin: ${abstractHeading.spaceBefore}pt 0 ${abstractHeading.spaceAfter}pt; }
 .abstract p, .article-abstract p { font-size: ${abstractBody.fontSize}pt; line-height: ${abstractBody.lineHeight}pt; text-align: ${abstractBody.alignment}; text-indent: ${abstractBody.firstLineIndent}mm; }
-.article-body p { font-size: ${body.fontSize}pt; line-height: ${body.lineHeight}pt; text-align: ${body.alignment}; text-indent: ${body.firstLineIndent}mm; margin: ${body.spaceBefore}pt 0 ${body.spaceAfter}pt; hyphens: ${body.hyphenation ? 'auto' : 'none'}; }
+.article-body p { font-size: ${body.fontSize}pt; line-height: ${body.lineHeight}pt; text-align: ${body.alignment}; text-indent: ${body.firstLineIndent}mm; margin: ${body.spaceBefore}pt 0 ${body.spaceAfter}pt; }
 .article-body h2 { font-size: ${heading1.fontSize}pt; line-height: ${heading1.lineHeight}pt; font-weight: ${heading1.fontWeight}; text-align: ${heading1.alignment}; margin: ${heading1.spaceBefore}pt 0 ${heading1.spaceAfter}pt; }
 .article-body h3 { font-size: ${heading2.fontSize}pt; line-height: ${heading2.lineHeight}pt; font-weight: ${heading2.fontWeight}; text-align: ${heading2.alignment}; margin: ${heading2.spaceBefore}pt 0 ${heading2.spaceAfter}pt; }
 figure { margin-left: 0; margin-right: 0; }
@@ -125,10 +136,12 @@ img, svg, table { max-width: 100%; }
 
   if (target === 'html') {
     return `${shared}
+${publicationHyphenationCss(false)}
 body { padding: 2rem max(1rem, calc((100vw - 56rem) / 2)); }
 .omi-print-running-header, .omi-print-page-number { display: none !important; }
 *, *::before, *::after { break-before: auto !important; break-after: auto !important; page-break-before: auto !important; page-break-after: auto !important; }
 .omi-scholarly-article, section, figure, table, .article-notes { break-inside: auto; page-break-inside: auto; }
+@media print { ${publicationHyphenationCss(hyphenationEnabled)} }
 `;
   }
 
@@ -154,6 +167,7 @@ body { padding: 2rem max(1rem, calc((100vw - 56rem) / 2)); }
   ].filter(Boolean).join(' ');
   const separator = style.footnotes.separator;
   return `${shared}
+${publicationHyphenationCss(hyphenationEnabled)}
 @page {
   size: ${pageWidth}mm ${pageHeight}mm;
   margin: ${topMargin}mm ${outerMargin}mm ${bottomMargin}mm ${innerMargin}mm;
@@ -171,6 +185,14 @@ figure, table { break-inside: avoid-page; page-break-inside: avoid; }
 @media screen { body { background: #e9e9e9; } .omi-scholarly-article { box-sizing: border-box; width: ${pageWidth}mm; min-height: ${pageHeight}mm; margin: 12mm auto; padding: ${topMargin}mm ${outerMargin}mm ${bottomMargin}mm ${innerMargin}mm; background: white; box-shadow: 0 2mm 7mm rgba(0,0,0,.18); } .omi-print-running-header { display: none; } }
 @media print { .omi-print-running-header { display: flex; } }
 `;
+}
+
+function publicationHyphenationCss(enabled: boolean): string {
+  const value = enabled ? 'auto' : 'none';
+  const moduleOverride = enabled
+    ? '\n[data-omi-hyphenation-module] { -webkit-hyphens: manual; hyphens: manual; }'
+    : '';
+  return `.article-body p, .article-body li, .article-body blockquote, .abstract p, .article-abstract p, .abstract-body, figcaption, table caption, td, th, .article-notes li, .footnotes li, [role="doc-endnotes"] li, .bibliography p, .bibliography li, .references li { -webkit-hyphens: ${value}; hyphens: ${value}; }${moduleOverride}`;
 }
 
 function nonNegative(value: number | undefined, fallback: number): number {
@@ -311,7 +333,14 @@ export async function renderStyleBasedHtml(
   const style = loadPublicationStyle();
   const identity = loadPublicationPublisherIdentity();
   const rendered = renderPublisherHtmlArticle(manuscript, profile);
-  let html = withPublicationStyleCss(rendered.html, style, target);
+  // Keep DOM parsing confined to the semantic article produced by our HTML
+  // renderer. Publication-style and publisher values can originate in local
+  // storage or an imported IDML package, so add them only after hyphenation.
+  let html = rendered.html;
+  if (target === 'print' && style.styles.body.hyphenation) {
+    html = await hyphenatePrintHtml(html, manuscript.locale);
+  }
+  html = withPublicationStyleCss(html, style, target);
   html = withPublisherIdentity(html, manuscript, target, identity);
   if (target === 'print') html = withPrintRunningHeader(html, manuscript, style, identity);
   return target === 'print' ? inlineManuscriptAssets(html, manuscript) : html;
@@ -339,9 +368,7 @@ function bytesToBase64(bytes: Uint8Array): string {
 }
 
 function cssFontFamily(family: string, fallback: string): string {
-  const escapedFamily = family.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  const escapedFallback = fallback.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  return `"${escapedFamily}", "${escapedFallback}"`;
+  return `${cssStringLiteral(family)}, ${cssStringLiteral(fallback)}`;
 }
 
 function runningHeaderCssContent(
@@ -370,7 +397,7 @@ function runningHeaderCssContent(
 }
 
 function cssContentString(value: string): string {
-  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]+/g, ' ')}"`;
+  return cssStringLiteral(value);
 }
 
 function shortenText(value: string, maximumLength: number): string {
