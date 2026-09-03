@@ -10,6 +10,7 @@ import {
   FileText,
   Move,
   Palette,
+  Pilcrow,
   Plus,
   RotateCcw,
   Save,
@@ -25,16 +26,23 @@ import { useTranslation } from '../i18n';
 import { getManuscriptLanguageDisplayName } from '../model/manuscriptLanguage';
 import type { ProofingSelection } from '../model/proofing';
 import {
+  paragraphStyleWouldCreateCycle,
+  type PublicationParagraphStyleDefinition,
+  type PublicationParagraphStyleProperties,
+} from '../model/publicationParagraphStyles';
+import {
   buildPublicationStyleCss,
+  normalizePublicationStyle,
+  resolvePublicationParagraphStyle,
   type PublicationStyle,
 } from '../services/publicationStyleExport';
 import { resolvePrintHyphenationModule } from '../services/printHyphenation';
-import type { OmiPublicationCorrectionKind } from '../types/omi';
+import type { OmiBlock, OmiPublicationCorrectionKind } from '../types/omi';
 import { PublicationDocumentCanvas } from './PublicationDocumentCanvas';
 import './PublicationStyleEditor.css';
 
 type PageOrientation = 'portrait' | 'landscape';
-type PublicationRibbonPanel = 'styles' | 'page' | 'margins' | 'typography' | 'proofing' | 'export' | null;
+type PublicationRibbonPanel = 'styles' | 'paragraphStyles' | 'page' | 'margins' | 'typography' | 'proofing' | 'export' | null;
 
 const LEGACY_STORAGE_KEY = 'omi:publication-style:egyhaztorteneti-szemle';
 const LIBRARY_STORAGE_KEY = 'omi:publication-style-library:v1';
@@ -58,6 +66,10 @@ function cloneStyle(style: PublicationStyle): PublicationStyle {
 
 function makeStyleId(): string {
   return `publication-style:${crypto.randomUUID()}`;
+}
+
+function makeParagraphStyleId(): string {
+  return `paragraph-style:${crypto.randomUUID()}`;
 }
 
 function loadLibrary(): PublicationStyle[] {
@@ -104,27 +116,7 @@ function persistLibrary(library: PublicationStyle[], active: PublicationStyle): 
 }
 
 function withCurrentPageDefaults(style: PublicationStyle): PublicationStyle {
-  const fallback = cloneTemplate();
-  return {
-    ...fallback,
-    ...style,
-    page: {
-      ...fallback.page,
-      ...style.page,
-      margins: {
-        ...fallback.page.margins,
-        ...style.page?.margins,
-      },
-    },
-    styles: {
-      ...fallback.styles,
-      ...style.styles,
-      body: {
-        ...fallback.styles.body,
-        ...style.styles?.body,
-      },
-    },
-  };
+  return normalizePublicationStyle(style);
 }
 
 function upsertStyle(
@@ -146,12 +138,13 @@ function copyFor(locale: string) {
     typography: 'Tipográfia', font: 'Betűcsalád', bodySize: 'Törzsszöveg mérete', bodyLeading: 'Törzsszöveg sorköze', indent: 'Első sor behúzása', hyphenation: 'Automatikus elválasztás a nyomtatható változatokban', hyphenationModule: 'Nyelvi modul', hyphenationInline: 'A nyelvjelölt szövegrészek automatikusan a saját moduljukat használják.', hyphenationFallback: 'Ehhez a nyelvhez nincs beépített minta; a nyomtató böngésző elválasztási szótára használható.',
     titleSize: 'Cím mérete', headingSize: 'Címsor mérete', footnoteSize: 'Lábjegyzet mérete', alignment: 'Igazítás', justify: 'Sorkizárt', alignLeft: 'Balra', alignCenter: 'Középre', alignRight: 'Jobbra',
     save: 'Stílus mentése', saved: 'A stílus mentve és aktív', reset: 'Sablonértékek visszaállítása', export: 'Stílus exportálása', exportCss: 'CSS letöltése', defaultNewName: 'Új kiadványstílus', copySuffix: 'másolat', liveApplied: 'A módosítások automatikusan az aktív exportstílusba kerülnek.', proofing: 'Tördelési korrektúra', proofingHelp: 'A javítások csak a nyomtatási elrendezést módosítják; a kézirat szövege változatlan marad.', selectedText: 'Kijelölés', placeCursor: 'Helyezze a kurzort vagy jelöljön ki szöveget a nyomtatási képen.', optionalHyphen: 'Feltételes elválasztójel', nonbreaking: 'Egyben tartott kijelölés', forcedLineBreak: 'Kényszerített sortörés', pageBreakBefore: 'Oldaltörés elé', keepTogether: 'Bekezdés egyben tartása', keepWithNext: 'Együtt a következővel', corrections: 'Aktív tördelési javítások', noCorrections: 'Még nincs kézi tördelési javítás.', removeCorrection: 'Javítás eltávolítása', correctionAdded: 'A tördelési javítás hozzáadva.', selectRange: 'Ehhez a művelethez jelöljön ki szöveget.',
+    paragraphStyles: 'Bekezdésstílusok', paragraphStylesHelp: 'Az InDesignhoz hasonlóan az „Alapja” örökíti a formázást, a „Következő stílus” pedig új bekezdés létrehozásakor lép életbe.', selectedParagraphStyle: 'Kijelölt bekezdés stílusa', noParagraphSelected: 'Kattintson egy bekezdésbe a hozzárendeléshez.', paragraphStyleName: 'Stílus neve', newParagraphStyle: 'Új bekezdésstílus', deleteParagraphStyle: 'Bekezdésstílus törlése', defaultParagraphStyle: 'Az alapértelmezett stílus nem törölhető.', basedOn: 'Alapja', nextStyle: 'Következő stílus', noBaseStyle: '[Nincs bekezdésstílus]', characterFormatting: 'Alapvető karakterformátumok', paragraphFormatting: 'Behúzások és térközök', fontWeight: 'Betűvastagság', fontStyle: 'Betűstílus', normal: 'Normál', italic: 'Dőlt', leftIndent: 'Bal behúzás', rightIndent: 'Jobb behúzás', spaceBefore: 'Térköz előtte', spaceAfter: 'Térköz utána', widows: 'Fattyúsorok', orphans: 'Árvasorok', clearOverrides: 'Helyi felülírások törlése', styleApplied: 'A bekezdésstílus alkalmazva.', inheritedValues: 'A nem felülírt tulajdonságok az alapstílusból öröklődnek.',
   };
   if (locale === 'de') return {
-    title: 'Live-Publikationseditor', description: 'Die vollständige, bearbeitbare Druckansicht des Beitrags oder Bandes. Inhaltliche und typografische Änderungen erscheinen sofort und werden für den Export verwendet.', styles: 'Publikationsstile', styleName: 'Stilname', newStyle: 'Neuer Stil', duplicate: 'Duplizieren', deleteStyle: 'Stil löschen', cannotDeleteLast: 'Mindestens ein Publikationsstil muss erhalten bleiben.', page: 'Druckseite', preset: 'Seitenformat', custom: 'Benutzerdefiniert', orientation: 'Ausrichtung', portrait: 'Hochformat', landscape: 'Querformat', width: 'Endbreite', height: 'Endhöhe', pageNumberStart: 'Erste Seitenzahl', margins: 'Ränder und Druckdaten', top: 'Oben', bottom: 'Unten', inner: 'Innen', outer: 'Außen', gutter: 'Bundsteg', bleed: 'Beschnitt', mirroredMargins: 'Gespiegelte Ränder für gerade und ungerade Seiten', cropMarks: 'Schnittmarken im Druckexport', runningHeaders: 'Kolumnentitel anzeigen', firstPageHeader: 'Kolumnentitel auch auf der ersten Seite', typography: 'Typografie', font: 'Schriftfamilie', bodySize: 'Grundschrift', bodyLeading: 'Zeilenabstand', indent: 'Erstzeileneinzug', hyphenation: 'Automatische Silbentrennung in Druckausgaben', hyphenationModule: 'Sprachmodul', hyphenationInline: 'Sprachmarkierte Textteile verwenden automatisch ihr eigenes Modul.', hyphenationFallback: 'Für diese Sprache ist kein Muster eingebaut; das Wörterbuch des Druckbrowsers kann verwendet werden.', titleSize: 'Titelgröße', headingSize: 'Überschriftgröße', footnoteSize: 'Fußnotengröße', alignment: 'Ausrichtung', justify: 'Blocksatz', alignLeft: 'Links', alignCenter: 'Zentriert', alignRight: 'Rechts', save: 'Stil speichern', saved: 'Stil gespeichert und aktiv', reset: 'Vorlagenwerte zurücksetzen', export: 'Stil exportieren', exportCss: 'CSS herunterladen', defaultNewName: 'Neuer Publikationsstil', copySuffix: 'Kopie', liveApplied: 'Änderungen werden automatisch auf den aktiven Exportstil angewendet.', proofing: 'Satzkorrektur', proofingHelp: 'Korrekturen ändern nur den Drucksatz; der Manuskripttext bleibt unverändert.', selectedText: 'Auswahl', placeCursor: 'Setzen Sie den Cursor oder markieren Sie Text im Druckbild.', optionalHyphen: 'Bedingter Trennstrich', nonbreaking: 'Auswahl zusammenhalten', forcedLineBreak: 'Erzwungener Zeilenumbruch', pageBreakBefore: 'Seitenumbruch davor', keepTogether: 'Absatz zusammenhalten', keepWithNext: 'Mit nächstem zusammenhalten', corrections: 'Aktive Satzkorrekturen', noCorrections: 'Noch keine manuellen Satzkorrekturen.', removeCorrection: 'Korrektur entfernen', correctionAdded: 'Satzkorrektur hinzugefügt.', selectRange: 'Markieren Sie für diese Aktion Text.',
+    title: 'Live-Publikationseditor', description: 'Die vollständige, bearbeitbare Druckansicht des Beitrags oder Bandes. Inhaltliche und typografische Änderungen erscheinen sofort und werden für den Export verwendet.', styles: 'Publikationsstile', styleName: 'Stilname', newStyle: 'Neuer Stil', duplicate: 'Duplizieren', deleteStyle: 'Stil löschen', cannotDeleteLast: 'Mindestens ein Publikationsstil muss erhalten bleiben.', page: 'Druckseite', preset: 'Seitenformat', custom: 'Benutzerdefiniert', orientation: 'Ausrichtung', portrait: 'Hochformat', landscape: 'Querformat', width: 'Endbreite', height: 'Endhöhe', pageNumberStart: 'Erste Seitenzahl', margins: 'Ränder und Druckdaten', top: 'Oben', bottom: 'Unten', inner: 'Innen', outer: 'Außen', gutter: 'Bundsteg', bleed: 'Beschnitt', mirroredMargins: 'Gespiegelte Ränder für gerade und ungerade Seiten', cropMarks: 'Schnittmarken im Druckexport', runningHeaders: 'Kolumnentitel anzeigen', firstPageHeader: 'Kolumnentitel auch auf der ersten Seite', typography: 'Typografie', font: 'Schriftfamilie', bodySize: 'Grundschrift', bodyLeading: 'Zeilenabstand', indent: 'Erstzeileneinzug', hyphenation: 'Automatische Silbentrennung in Druckausgaben', hyphenationModule: 'Sprachmodul', hyphenationInline: 'Sprachmarkierte Textteile verwenden automatisch ihr eigenes Modul.', hyphenationFallback: 'Für diese Sprache ist kein Muster eingebaut; das Wörterbuch des Druckbrowsers kann verwendet werden.', titleSize: 'Titelgröße', headingSize: 'Überschriftgröße', footnoteSize: 'Fußnotengröße', alignment: 'Ausrichtung', justify: 'Blocksatz', alignLeft: 'Links', alignCenter: 'Zentriert', alignRight: 'Rechts', save: 'Stil speichern', saved: 'Stil gespeichert und aktiv', reset: 'Vorlagenwerte zurücksetzen', export: 'Stil exportieren', exportCss: 'CSS herunterladen', defaultNewName: 'Neuer Publikationsstil', copySuffix: 'Kopie', liveApplied: 'Änderungen werden automatisch auf den aktiven Exportstil angewendet.', proofing: 'Satzkorrektur', proofingHelp: 'Korrekturen ändern nur den Drucksatz; der Manuskripttext bleibt unverändert.', selectedText: 'Auswahl', placeCursor: 'Setzen Sie den Cursor oder markieren Sie Text im Druckbild.', optionalHyphen: 'Bedingter Trennstrich', nonbreaking: 'Auswahl zusammenhalten', forcedLineBreak: 'Erzwungener Zeilenumbruch', pageBreakBefore: 'Seitenumbruch davor', keepTogether: 'Absatz zusammenhalten', keepWithNext: 'Mit nächstem zusammenhalten', corrections: 'Aktive Satzkorrekturen', noCorrections: 'Noch keine manuellen Satzkorrekturen.', removeCorrection: 'Korrektur entfernen', correctionAdded: 'Satzkorrektur hinzugefügt.', selectRange: 'Markieren Sie für diese Aktion Text.', paragraphStyles: 'Absatzformate', paragraphStylesHelp: 'Wie in InDesign vererbt „Basiert auf“ die Formatierung; „Nächstes Format“ wird beim Erstellen eines neuen Absatzes angewendet.', selectedParagraphStyle: 'Format des ausgewählten Absatzes', noParagraphSelected: 'Klicken Sie zum Zuweisen in einen Absatz.', paragraphStyleName: 'Formatname', newParagraphStyle: 'Neues Absatzformat', deleteParagraphStyle: 'Absatzformat löschen', defaultParagraphStyle: 'Das Standardformat kann nicht gelöscht werden.', basedOn: 'Basiert auf', nextStyle: 'Nächstes Format', noBaseStyle: '[Kein Absatzformat]', characterFormatting: 'Grundlegende Zeichenformate', paragraphFormatting: 'Einzüge und Abstände', fontWeight: 'Schriftstärke', fontStyle: 'Schriftschnitt', normal: 'Normal', italic: 'Kursiv', leftIndent: 'Linker Einzug', rightIndent: 'Rechter Einzug', spaceBefore: 'Abstand davor', spaceAfter: 'Abstand danach', widows: 'Schusterjungen', orphans: 'Hurenkinder', clearOverrides: 'Lokale Überschreibungen löschen', styleApplied: 'Absatzformat angewendet.', inheritedValues: 'Nicht überschriebene Eigenschaften werden vom Basisformat geerbt.',
   };
   return {
-    title: 'Live publication editor', description: 'The complete editable print view of the article or volume. Content and typography changes appear immediately and drive the same export settings.', styles: 'Publication styles', styleName: 'Style name', newStyle: 'New style', duplicate: 'Duplicate', deleteStyle: 'Delete style', cannotDeleteLast: 'At least one publication style must remain.', page: 'Print page', preset: 'Page format', custom: 'Custom size', orientation: 'Orientation', portrait: 'Portrait', landscape: 'Landscape', width: 'Trim width', height: 'Trim height', pageNumberStart: 'First page number', margins: 'Margins and print data', top: 'Top', bottom: 'Bottom', inner: 'Inner', outer: 'Outer', gutter: 'Gutter', bleed: 'Bleed', mirroredMargins: 'Mirror margins on facing pages', cropMarks: 'Include crop marks in print export', runningHeaders: 'Show running headers', firstPageHeader: 'Show running header on first page', typography: 'Typography', font: 'Font family', bodySize: 'Body size', bodyLeading: 'Body leading', indent: 'First-line indent', hyphenation: 'Automatic hyphenation in printable versions', hyphenationModule: 'Language module', hyphenationInline: 'Language-tagged passages automatically use their own module.', hyphenationFallback: 'No built-in pattern is available for this language; the print browser dictionary may be used.', titleSize: 'Title size', headingSize: 'Heading size', footnoteSize: 'Footnote size', alignment: 'Alignment', justify: 'Justified', alignLeft: 'Left', alignCenter: 'Center', alignRight: 'Right', save: 'Save style', saved: 'Style saved and active', reset: 'Reset template values', export: 'Export style', exportCss: 'Download CSS', defaultNewName: 'New publication style', copySuffix: 'copy', liveApplied: 'Changes are applied to the active export style automatically.', proofing: 'Typesetting proofing', proofingHelp: 'Corrections affect only the print layout; the manuscript text remains unchanged.', selectedText: 'Selection', placeCursor: 'Place the cursor or select text in the print view.', optionalHyphen: 'Optional hyphen', nonbreaking: 'Keep selection together', forcedLineBreak: 'Forced line break', pageBreakBefore: 'Page break before', keepTogether: 'Keep paragraph together', keepWithNext: 'Keep with next', corrections: 'Active typesetting corrections', noCorrections: 'No manual typesetting corrections yet.', removeCorrection: 'Remove correction', correctionAdded: 'Typesetting correction added.', selectRange: 'Select text for this action.',
+    title: 'Live publication editor', description: 'The complete editable print view of the article or volume. Content and typography changes appear immediately and drive the same export settings.', styles: 'Publication styles', styleName: 'Style name', newStyle: 'New style', duplicate: 'Duplicate', deleteStyle: 'Delete style', cannotDeleteLast: 'At least one publication style must remain.', page: 'Print page', preset: 'Page format', custom: 'Custom size', orientation: 'Orientation', portrait: 'Portrait', landscape: 'Landscape', width: 'Trim width', height: 'Trim height', pageNumberStart: 'First page number', margins: 'Margins and print data', top: 'Top', bottom: 'Bottom', inner: 'Inner', outer: 'Outer', gutter: 'Gutter', bleed: 'Bleed', mirroredMargins: 'Mirror margins on facing pages', cropMarks: 'Include crop marks in print export', runningHeaders: 'Show running headers', firstPageHeader: 'Show running header on first page', typography: 'Typography', font: 'Font family', bodySize: 'Body size', bodyLeading: 'Body leading', indent: 'First-line indent', hyphenation: 'Automatic hyphenation in printable versions', hyphenationModule: 'Language module', hyphenationInline: 'Language-tagged passages automatically use their own module.', hyphenationFallback: 'No built-in pattern is available for this language; the print browser dictionary may be used.', titleSize: 'Title size', headingSize: 'Heading size', footnoteSize: 'Footnote size', alignment: 'Alignment', justify: 'Justified', alignLeft: 'Left', alignCenter: 'Center', alignRight: 'Right', save: 'Save style', saved: 'Style saved and active', reset: 'Reset template values', export: 'Export style', exportCss: 'Download CSS', defaultNewName: 'New publication style', copySuffix: 'copy', liveApplied: 'Changes are applied to the active export style automatically.', proofing: 'Typesetting proofing', proofingHelp: 'Corrections affect only the print layout; the manuscript text remains unchanged.', selectedText: 'Selection', placeCursor: 'Place the cursor or select text in the print view.', optionalHyphen: 'Optional hyphen', nonbreaking: 'Keep selection together', forcedLineBreak: 'Forced line break', pageBreakBefore: 'Page break before', keepTogether: 'Keep paragraph together', keepWithNext: 'Keep with next', corrections: 'Active typesetting corrections', noCorrections: 'No manual typesetting corrections yet.', removeCorrection: 'Remove correction', correctionAdded: 'Typesetting correction added.', selectRange: 'Select text for this action.', paragraphStyles: 'Paragraph styles', paragraphStylesHelp: 'As in InDesign, “Based on” inherits formatting and “Next style” applies when a new paragraph is created.', selectedParagraphStyle: 'Selected paragraph style', noParagraphSelected: 'Click inside a paragraph to assign a style.', paragraphStyleName: 'Style name', newParagraphStyle: 'New paragraph style', deleteParagraphStyle: 'Delete paragraph style', defaultParagraphStyle: 'The default style cannot be deleted.', basedOn: 'Based on', nextStyle: 'Next style', noBaseStyle: '[No paragraph style]', characterFormatting: 'Basic character formats', paragraphFormatting: 'Indents and spacing', fontWeight: 'Font weight', fontStyle: 'Font style', normal: 'Regular', italic: 'Italic', leftIndent: 'Left indent', rightIndent: 'Right indent', spaceBefore: 'Space before', spaceAfter: 'Space after', widows: 'Widow lines', orphans: 'Orphan lines', clearOverrides: 'Clear local overrides', styleApplied: 'Paragraph style applied.', inheritedValues: 'Properties without overrides inherit from the based-on style.',
   };
 }
 
@@ -166,6 +159,12 @@ export function PublicationStyleEditor() {
   const removePublicationCorrection = useStudioStore(
     (state) => state.removePublicationCorrection,
   );
+  const setBlockParagraphStyle = useStudioStore(
+    (state) => state.setBlockParagraphStyle,
+  );
+  const clearParagraphStyleAssignments = useStudioStore(
+    (state) => state.clearParagraphStyleAssignments,
+  );
   const copy = copyFor(locale);
   const initial = useMemo(loadInitialState, []);
   const [library, setLibrary] = useState<PublicationStyle[]>(initial.library);
@@ -175,6 +174,9 @@ export function PublicationStyleEditor() {
   const [message, setMessage] = useState('');
   const [openPanel, setOpenPanel] = useState<PublicationRibbonPanel>(null);
   const [proofingSelection, setProofingSelection] = useState<ProofingSelection | null>(null);
+  const [activeParagraphStyleId, setActiveParagraphStyleId] = useState(
+    initial.style.paragraphStyles.defaultStyleId,
+  );
   const ribbonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -250,6 +252,7 @@ export function PublicationStyleEditor() {
     setLibrary(currentLibrary);
     setActiveId(id);
     setStyle(cloneStyle(next));
+    setActiveParagraphStyleId(next.paragraphStyles.defaultStyleId);
     setSaved(true);
     setMessage('');
   }
@@ -277,6 +280,7 @@ export function PublicationStyleEditor() {
     setLibrary(nextLibrary);
     setActiveId(next.id);
     setStyle(next);
+    setActiveParagraphStyleId(next.paragraphStyles.defaultStyleId);
     persistLibrary(nextLibrary, next);
     setSaved(true);
     setMessage('');
@@ -290,6 +294,7 @@ export function PublicationStyleEditor() {
     setLibrary(nextLibrary);
     setActiveId(next.id);
     setStyle(next);
+    setActiveParagraphStyleId(next.paragraphStyles.defaultStyleId);
     persistLibrary(nextLibrary, next);
     setSaved(true);
     setMessage('');
@@ -306,6 +311,7 @@ export function PublicationStyleEditor() {
     setLibrary(nextLibrary);
     setActiveId(next.id);
     setStyle(cloneStyle(next));
+    setActiveParagraphStyleId(next.paragraphStyles.defaultStyleId);
     persistLibrary(nextLibrary, next);
     setSaved(true);
     setMessage('');
@@ -316,6 +322,7 @@ export function PublicationStyleEditor() {
     next.id = style.id;
     next.name = style.name;
     setStyle(next);
+    setActiveParagraphStyleId(next.paragraphStyles.defaultStyleId);
     setSaved(false);
     setMessage('');
   }
@@ -380,6 +387,124 @@ export function PublicationStyleEditor() {
     setMessage(copy.correctionAdded);
   }
 
+  function patchParagraphStyle(
+    styleId: string,
+    update: (definition: PublicationParagraphStyleDefinition) => PublicationParagraphStyleDefinition,
+  ): void {
+    patchStyle((current) => ({
+      ...current,
+      paragraphStyles: {
+        ...current.paragraphStyles,
+        items: current.paragraphStyles.items.map((definition) => (
+          definition.id === styleId ? update(definition) : definition
+        )),
+      },
+    }));
+  }
+
+  function setParagraphStyleProperty<K extends keyof PublicationParagraphStyleProperties>(
+    property: K,
+    value: PublicationParagraphStyleProperties[K],
+  ): void {
+    patchParagraphStyle(activeParagraphStyleId, (definition) => ({
+      ...definition,
+      properties: { ...definition.properties, [property]: value },
+    }));
+  }
+
+  function createParagraphStyle(): void {
+    const id = makeParagraphStyleId();
+    const ordinal = style.paragraphStyles.items.length + 1;
+    const definition: PublicationParagraphStyleDefinition = {
+      id,
+      name: `${copy.newParagraphStyle} ${ordinal}`,
+      basedOnId: activeParagraphStyleId || style.paragraphStyles.defaultStyleId,
+      nextStyleId: style.paragraphStyles.defaultStyleId,
+      properties: {},
+    };
+    patchStyle((current) => ({
+      ...current,
+      paragraphStyles: {
+        ...current.paragraphStyles,
+        items: [...current.paragraphStyles.items, definition],
+      },
+    }));
+    setActiveParagraphStyleId(id);
+  }
+
+  function duplicateParagraphStyle(): void {
+    const source = style.paragraphStyles.items.find(
+      (definition) => definition.id === activeParagraphStyleId,
+    );
+    if (!source) return;
+    const id = makeParagraphStyleId();
+    const definition: PublicationParagraphStyleDefinition = {
+      ...source,
+      id,
+      name: `${source.name} — ${copy.copySuffix}`,
+      properties: { ...source.properties },
+    };
+    patchStyle((current) => ({
+      ...current,
+      paragraphStyles: {
+        ...current.paragraphStyles,
+        items: [...current.paragraphStyles.items, definition],
+      },
+    }));
+    setActiveParagraphStyleId(id);
+  }
+
+  function deleteParagraphStyle(): void {
+    const collection = style.paragraphStyles;
+    if (activeParagraphStyleId === collection.defaultStyleId) {
+      setMessage(copy.defaultParagraphStyle);
+      return;
+    }
+    const removed = collection.items.find(
+      (definition) => definition.id === activeParagraphStyleId,
+    );
+    if (!removed) return;
+    patchStyle((current) => ({
+      ...current,
+      paragraphStyles: {
+        ...current.paragraphStyles,
+        items: current.paragraphStyles.items
+          .filter((definition) => definition.id !== activeParagraphStyleId)
+          .map((definition) => ({
+            ...definition,
+            basedOnId: definition.basedOnId === activeParagraphStyleId
+              ? removed.basedOnId
+              : definition.basedOnId,
+            nextStyleId: definition.nextStyleId === activeParagraphStyleId
+              ? current.paragraphStyles.defaultStyleId
+              : definition.nextStyleId,
+          })),
+      },
+    }));
+    clearParagraphStyleAssignments(activeParagraphStyleId);
+    setActiveParagraphStyleId(collection.defaultStyleId);
+  }
+
+  function assignParagraphStyle(styleId: string): void {
+    if (!selectedParagraphBlock || !paragraphStyleAssignable) {
+      setMessage(copy.noParagraphSelected);
+      return;
+    }
+    const storedStyleId = styleId === style.paragraphStyles.defaultStyleId
+      ? undefined
+      : styleId;
+    setBlockParagraphStyle(selectedParagraphBlock.id, storedStyleId);
+    setActiveParagraphStyleId(styleId);
+    setMessage(copy.styleApplied);
+  }
+
+  function clearParagraphStyleOverrides(): void {
+    patchParagraphStyle(activeParagraphStyleId, (definition) => ({
+      ...definition,
+      properties: {},
+    }));
+  }
+
   const body = style.styles.body;
   const title = style.styles.articleTitlePrimary;
   const heading = style.styles.heading1;
@@ -387,6 +512,32 @@ export function PublicationStyleEditor() {
   const selectedPreset = pagePresetId(style);
   const hyphenationModule = resolvePrintHyphenationModule(manuscriptLanguage);
   const manuscriptLanguageName = getManuscriptLanguageDisplayName(manuscriptLanguage, locale);
+  const selectedParagraphBlock = proofingSelection
+    ? findManuscriptBlock(
+        manuscript.sections.flatMap((section) => section.blocks),
+        proofingSelection.blockId,
+      )
+    : undefined;
+  const paragraphStyleAssignable = selectedParagraphBlock?.type === 'paragraph'
+    || selectedParagraphBlock?.type === 'quote';
+  const assignedParagraphStyleId = selectedParagraphBlock?.paragraphStyleId;
+  const selectedParagraphStyleId = style.paragraphStyles.items.some(
+    (definition) => definition.id === assignedParagraphStyleId,
+  )
+    ? assignedParagraphStyleId!
+    : style.paragraphStyles.defaultStyleId;
+  const activeParagraphStyle = style.paragraphStyles.items.find(
+    (definition) => definition.id === activeParagraphStyleId,
+  ) ?? style.paragraphStyles.items[0];
+  const resolvedParagraphStyle = resolvePublicationParagraphStyle(
+    style,
+    activeParagraphStyle?.id,
+  );
+
+  useEffect(() => {
+    if (!paragraphStyleAssignable) return;
+    setActiveParagraphStyleId(selectedParagraphStyleId);
+  }, [paragraphStyleAssignable, proofingSelection?.blockId, selectedParagraphStyleId]);
 
   return (
     <section className="publication-style-editor" aria-labelledby="publication-style-editor-title">
@@ -406,6 +557,13 @@ export function PublicationStyleEditor() {
               icon={<Palette size={18} aria-hidden="true" />}
               open={openPanel === 'styles'}
               onToggle={() => setOpenPanel((current) => current === 'styles' ? null : 'styles')}
+            />
+            <PublicationRibbonMenuButton
+              panelId="paragraphStyles"
+              label={copy.paragraphStyles}
+              icon={<Pilcrow size={18} aria-hidden="true" />}
+              open={openPanel === 'paragraphStyles'}
+              onToggle={() => setOpenPanel((current) => current === 'paragraphStyles' ? null : 'paragraphStyles')}
             />
             <PublicationRibbonMenuButton
               panelId="page"
@@ -476,6 +634,133 @@ export function PublicationStyleEditor() {
                 <button type="button" className="studio-menu-secondary-action" onClick={createStyle}><Plus size={16} aria-hidden="true" />{copy.newStyle}</button>
                 <button type="button" className="studio-menu-secondary-action" onClick={duplicateStyle}><Copy size={16} aria-hidden="true" />{copy.duplicate}</button>
                 <button type="button" className="studio-menu-secondary-action" disabled={library.length <= 1} onClick={deleteStyle}><Trash2 size={16} aria-hidden="true" />{copy.deleteStyle}</button>
+              </div>
+            </fieldset>
+          </div>
+        ) : null}
+
+        {openPanel === 'paragraphStyles' && activeParagraphStyle ? (
+          <div id="publication-style-ribbon-panel-paragraphStyles" className="publication-style-ribbon-panel publication-style-ribbon-panel--paragraph-styles" role="dialog" aria-label={copy.paragraphStyles}>
+            <fieldset>
+              <legend>{copy.paragraphStyles}</legend>
+              <p className="publication-paragraph-style-help">{copy.paragraphStylesHelp}</p>
+              <label className="publication-paragraph-style-assignment">
+                <span>{copy.selectedParagraphStyle}</span>
+                <select
+                  value={selectedParagraphStyleId}
+                  disabled={!paragraphStyleAssignable}
+                  onChange={(event) => assignParagraphStyle(event.target.value)}
+                >
+                  {style.paragraphStyles.items.map((definition) => (
+                    <option key={definition.id} value={definition.id}>{definition.name}</option>
+                  ))}
+                </select>
+                {!paragraphStyleAssignable ? <small>{copy.noParagraphSelected}</small> : null}
+              </label>
+
+              <div className="publication-paragraph-style-workspace">
+                <div className="publication-paragraph-style-list-column">
+                  <div className="publication-paragraph-style-list" role="listbox" aria-label={copy.paragraphStyles}>
+                    {style.paragraphStyles.items.map((definition) => (
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={definition.id === activeParagraphStyle.id}
+                        className={definition.id === activeParagraphStyle.id ? 'is-active' : ''}
+                        key={definition.id}
+                        onClick={() => setActiveParagraphStyleId(definition.id)}
+                      >
+                        <Pilcrow size={14} aria-hidden="true" />
+                        <span>{definition.name}</span>
+                        {definition.id === style.paragraphStyles.defaultStyleId ? <small>¶</small> : null}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="publication-paragraph-style-icon-actions">
+                    <button type="button" title={copy.newParagraphStyle} aria-label={copy.newParagraphStyle} onClick={createParagraphStyle}><Plus size={16} /></button>
+                    <button type="button" title={copy.duplicate} aria-label={copy.duplicate} onClick={duplicateParagraphStyle}><Copy size={16} /></button>
+                    <button type="button" title={copy.deleteParagraphStyle} aria-label={copy.deleteParagraphStyle} disabled={activeParagraphStyle.id === style.paragraphStyles.defaultStyleId} onClick={deleteParagraphStyle}><Trash2 size={16} /></button>
+                  </div>
+                </div>
+
+                <div className="publication-paragraph-style-settings">
+                  <div className="publication-style-grid">
+                    <label>
+                      <span>{copy.paragraphStyleName}</span>
+                      <input value={activeParagraphStyle.name} onChange={(event) => patchParagraphStyle(activeParagraphStyle.id, (definition) => ({ ...definition, name: event.target.value }))} />
+                    </label>
+                    <label>
+                      <span>{copy.basedOn}</span>
+                      <select
+                        value={activeParagraphStyle.basedOnId ?? ''}
+                        onChange={(event) => patchParagraphStyle(activeParagraphStyle.id, (definition) => ({ ...definition, basedOnId: event.target.value || null }))}
+                      >
+                        <option value="">{copy.noBaseStyle}</option>
+                        {style.paragraphStyles.items
+                          .filter((definition) => !paragraphStyleWouldCreateCycle(style.paragraphStyles, activeParagraphStyle.id, definition.id))
+                          .map((definition) => <option key={definition.id} value={definition.id}>{definition.name}</option>)}
+                      </select>
+                    </label>
+                    <label>
+                      <span>{copy.nextStyle}</span>
+                      <select value={activeParagraphStyle.nextStyleId ?? style.paragraphStyles.defaultStyleId} onChange={(event) => patchParagraphStyle(activeParagraphStyle.id, (definition) => ({ ...definition, nextStyleId: event.target.value }))}>
+                        {style.paragraphStyles.items.map((definition) => <option key={definition.id} value={definition.id}>{definition.name}</option>)}
+                      </select>
+                    </label>
+                  </div>
+
+                  <h5>{copy.characterFormatting}</h5>
+                  <div className="publication-style-grid">
+                    <label>
+                      <span>{copy.font}</span>
+                      <input value={resolvedParagraphStyle.fontFamily} onChange={(event) => setParagraphStyleProperty('fontFamily', event.target.value)} />
+                    </label>
+                    <NumberField label={`${copy.bodySize} (pt)`} value={resolvedParagraphStyle.fontSize} step={0.1} onChange={(value) => setParagraphStyleProperty('fontSize', value)} />
+                    <NumberField label={`${copy.bodyLeading} (pt)`} value={resolvedParagraphStyle.lineHeight} step={0.1} onChange={(value) => setParagraphStyleProperty('lineHeight', value)} />
+                    <label>
+                      <span>{copy.fontWeight}</span>
+                      <select value={String(resolvedParagraphStyle.fontWeight)} onChange={(event) => setParagraphStyleProperty('fontWeight', Number(event.target.value))}>
+                        <option value="300">300</option><option value="400">400</option><option value="500">500</option><option value="600">600</option><option value="700">700</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>{copy.fontStyle}</span>
+                      <select value={resolvedParagraphStyle.fontStyle} onChange={(event) => setParagraphStyleProperty('fontStyle', event.target.value as PublicationParagraphStyleProperties['fontStyle'])}>
+                        <option value="normal">{copy.normal}</option>
+                        <option value="italic">{copy.italic}</option>
+                      </select>
+                    </label>
+                    <div className="publication-style-alignment" role="group" aria-label={copy.alignment}>
+                      <span>{copy.alignment}</span>
+                      <div>
+                        <AlignmentButton label={copy.justify} active={resolvedParagraphStyle.alignment === 'justify'} onClick={() => setParagraphStyleProperty('alignment', 'justify')}><AlignJustify size={17} aria-hidden="true" /></AlignmentButton>
+                        <AlignmentButton label={copy.alignLeft} active={resolvedParagraphStyle.alignment === 'left'} onClick={() => setParagraphStyleProperty('alignment', 'left')}><AlignLeft size={17} aria-hidden="true" /></AlignmentButton>
+                        <AlignmentButton label={copy.alignCenter} active={resolvedParagraphStyle.alignment === 'center'} onClick={() => setParagraphStyleProperty('alignment', 'center')}><AlignCenter size={17} aria-hidden="true" /></AlignmentButton>
+                        <AlignmentButton label={copy.alignRight} active={resolvedParagraphStyle.alignment === 'right'} onClick={() => setParagraphStyleProperty('alignment', 'right')}><AlignRight size={17} aria-hidden="true" /></AlignmentButton>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h5>{copy.paragraphFormatting}</h5>
+                  <div className="publication-style-grid">
+                    <NumberField label={`${copy.indent} (mm)`} value={resolvedParagraphStyle.firstLineIndent} step={0.5} onChange={(value) => setParagraphStyleProperty('firstLineIndent', value)} />
+                    <NumberField label={`${copy.leftIndent} (mm)`} value={resolvedParagraphStyle.leftIndent} step={0.5} onChange={(value) => setParagraphStyleProperty('leftIndent', value)} />
+                    <NumberField label={`${copy.rightIndent} (mm)`} value={resolvedParagraphStyle.rightIndent} step={0.5} onChange={(value) => setParagraphStyleProperty('rightIndent', value)} />
+                    <NumberField label={`${copy.spaceBefore} (pt)`} value={resolvedParagraphStyle.spaceBefore} step={0.5} onChange={(value) => setParagraphStyleProperty('spaceBefore', value)} />
+                    <NumberField label={`${copy.spaceAfter} (pt)`} value={resolvedParagraphStyle.spaceAfter} step={0.5} onChange={(value) => setParagraphStyleProperty('spaceAfter', value)} />
+                    <NumberField label={copy.widows} value={resolvedParagraphStyle.widows} min={1} step={1} onChange={(value) => setParagraphStyleProperty('widows', Math.trunc(value))} />
+                    <NumberField label={copy.orphans} value={resolvedParagraphStyle.orphans} min={1} step={1} onChange={(value) => setParagraphStyleProperty('orphans', Math.trunc(value))} />
+                  </div>
+                  <div className="publication-style-toggle-grid">
+                    <label className="publication-style-toggle"><input type="checkbox" checked={resolvedParagraphStyle.hyphenation} onChange={(event) => setParagraphStyleProperty('hyphenation', event.target.checked)} /><span>{copy.hyphenation}</span></label>
+                    <label className="publication-style-toggle"><input type="checkbox" checked={resolvedParagraphStyle.keepTogether} onChange={(event) => setParagraphStyleProperty('keepTogether', event.target.checked)} /><span>{copy.keepTogether}</span></label>
+                    <label className="publication-style-toggle"><input type="checkbox" checked={resolvedParagraphStyle.keepWithNext} onChange={(event) => setParagraphStyleProperty('keepWithNext', event.target.checked)} /><span>{copy.keepWithNext}</span></label>
+                  </div>
+                  <div className="publication-style-actions">
+                    <button type="button" className="studio-menu-secondary-action" disabled={!Object.keys(activeParagraphStyle.properties).length} onClick={clearParagraphStyleOverrides}><RotateCcw size={16} />{copy.clearOverrides}</button>
+                    <small className="publication-paragraph-style-inheritance-note">{copy.inheritedValues}</small>
+                  </div>
+                </div>
               </div>
             </fieldset>
           </div>
@@ -709,6 +994,20 @@ function downloadBlob(blob: Blob, fileName: string): void {
   link.click();
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function findManuscriptBlock(
+  blocks: readonly OmiBlock[],
+  blockId: string,
+): OmiBlock | undefined {
+  for (const block of blocks) {
+    if (block.id === blockId) return block;
+    const nested = block.children
+      ? findManuscriptBlock(block.children, blockId)
+      : undefined;
+    if (nested) return nested;
+  }
+  return undefined;
 }
 
 function PublicationRibbonMenuButton({

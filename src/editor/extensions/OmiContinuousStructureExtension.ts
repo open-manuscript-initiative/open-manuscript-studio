@@ -68,6 +68,22 @@ export const OmiContinuousStructureExtension = Extension.create({
               ? { 'data-section-number': stringAttribute(attributes.omiSectionNumber) }
               : {},
         },
+        omiParagraphStyleId: {
+          default: null,
+          parseHTML: (element: HTMLElement) => element.dataset.paragraphStyleId ?? null,
+          renderHTML: (attributes: Record<string, unknown>) =>
+            stringAttribute(attributes.omiParagraphStyleId)
+              ? { 'data-paragraph-style-id': stringAttribute(attributes.omiParagraphStyleId) }
+              : {},
+        },
+        omiNextParagraphStyleId: {
+          default: null,
+          parseHTML: (element: HTMLElement) => element.dataset.nextParagraphStyleId ?? null,
+          renderHTML: (attributes: Record<string, unknown>) =>
+            stringAttribute(attributes.omiNextParagraphStyleId)
+              ? { 'data-next-paragraph-style-id': stringAttribute(attributes.omiNextParagraphStyleId) }
+              : {},
+        },
       },
     }];
   },
@@ -82,11 +98,14 @@ export const OmiContinuousStructureExtension = Extension.create({
           const usedBlockIds = new Set<string>();
           const usedSectionIds = new Set<string>();
           let currentSectionId = '';
+          let previousNextParagraphStyleId = '';
           let changed = false;
           const transaction = newState.tr;
 
           newState.doc.forEach((node, offset) => {
             const original = node.attrs as Record<string, unknown>;
+            const requestedBlockId = stringAttribute(original.omiBlockId);
+            const newlyCreated = !requestedBlockId || usedBlockIds.has(requestedBlockId);
             const blockId = uniqueAttribute(original.omiBlockId, usedBlockIds);
             const heading = node.type.name === 'heading';
             let sectionId = stringAttribute(original.omiSectionId);
@@ -102,6 +121,9 @@ export const OmiContinuousStructureExtension = Extension.create({
             }
 
             const blockType = blockTypeForNode(node, original.omiBlockType);
+            const ownNextParagraphStyleId = stringAttribute(
+              original.omiNextParagraphStyleId,
+            );
             const nextAttributes = {
               ...original,
               omiBlockId: blockId,
@@ -109,7 +131,17 @@ export const OmiContinuousStructureExtension = Extension.create({
               omiBlockType: blockType,
               omiAnchorId: heading ? sectionId : blockId,
               omiSectionNumber: heading ? original.omiSectionNumber ?? null : null,
+              omiParagraphStyleId: heading
+                ? null
+                : newlyCreated
+                  ? ownNextParagraphStyleId || previousNextParagraphStyleId || null
+                  : original.omiParagraphStyleId ?? null,
+              omiNextParagraphStyleId: heading
+                ? null
+                : original.omiNextParagraphStyleId ?? null,
             };
+
+            previousNextParagraphStyleId = heading ? '' : ownNextParagraphStyleId;
 
             if (!shallowEqual(original, nextAttributes)) {
               changed = true;

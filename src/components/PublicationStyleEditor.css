@@ -142,6 +142,10 @@
   width: min(25rem, calc(100% - 1.1rem));
 }
 
+.publication-style-ribbon-panel--paragraph-styles {
+  width: min(68rem, calc(100% - 1.1rem));
+}
+
 .publication-style-ribbon-panel fieldset {
   min-width: 0;
   margin: 0;
@@ -261,6 +265,146 @@
   flex-wrap: wrap;
   gap: 0.45rem;
   margin-top: 0.7rem;
+}
+
+.publication-paragraph-style-assignment {
+  display: grid;
+  grid-template-columns: minmax(9rem, 14rem) minmax(12rem, 22rem) minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #d8dee8;
+  border-radius: 0.4rem;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.publication-paragraph-style-help {
+  margin: -0.25rem 0 0.65rem;
+  color: #64748b;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.publication-paragraph-style-assignment select {
+  min-height: 2.1rem;
+}
+
+.publication-paragraph-style-assignment small {
+  color: #64748b;
+  font-weight: 400;
+}
+
+.publication-paragraph-style-workspace {
+  display: grid;
+  grid-template-columns: minmax(10.5rem, 13rem) minmax(0, 1fr);
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.publication-paragraph-style-list-column {
+  display: grid;
+  grid-template-rows: minmax(8rem, 1fr) auto;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.4rem;
+  background: #fff;
+}
+
+.publication-paragraph-style-list {
+  display: grid;
+  align-content: start;
+  max-height: 24rem;
+  overflow: auto;
+  padding: 0.25rem;
+}
+
+.publication-paragraph-style-list > button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.42rem;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.35rem 0.45rem;
+  border: 0;
+  border-radius: 0.28rem;
+  background: transparent;
+  color: #334155;
+  font: inherit;
+  font-size: 0.72rem;
+  text-align: left;
+}
+
+.publication-paragraph-style-list > button:hover,
+.publication-paragraph-style-list > button:focus-visible,
+.publication-paragraph-style-list > button.is-active {
+  background: #e8eef8;
+  color: #1e3a5f;
+  outline: none;
+}
+
+.publication-paragraph-style-list > button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.publication-paragraph-style-list > button small {
+  color: #64748b;
+}
+
+.publication-paragraph-style-icon-actions {
+  display: flex;
+  gap: 0.2rem;
+  padding: 0.3rem;
+  border-top: 1px solid #cbd5e1;
+  background: #f8fafc;
+}
+
+.publication-paragraph-style-icon-actions button {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 0.3rem;
+  background: transparent;
+  color: #475569;
+}
+
+.publication-paragraph-style-icon-actions button:hover:not(:disabled),
+.publication-paragraph-style-icon-actions button:focus-visible {
+  border-color: #b8c3d2;
+  background: #fff;
+  outline: none;
+}
+
+.publication-paragraph-style-icon-actions button:disabled {
+  opacity: 0.35;
+}
+
+.publication-paragraph-style-settings {
+  min-width: 0;
+}
+
+.publication-paragraph-style-settings h5 {
+  margin: 0.85rem 0 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.72rem;
+}
+
+.publication-paragraph-style-inheritance-note {
+  align-self: center;
+  color: #64748b;
+  font-size: 0.66rem;
+  line-height: 1.35;
 }
 
 .publication-style-saved,
@@ -714,8 +858,8 @@
 }
 
 .publication-layout-document-editor blockquote {
-  margin-block: calc(var(--omi-publication-body-leading) * 0.7) !important;
-  margin-inline: calc(var(--omi-publication-first-line) * 2) !important;
+  margin-block: calc(var(--omi-publication-body-leading) * 0.7);
+  margin-inline: calc(var(--omi-publication-first-line) * 2);
   font-style: italic;
 }
 
@@ -841,6 +985,18 @@
 .omi-publication-correction-keep-together { box-shadow: inset 2px 0 0 #4f7990; }
 .omi-publication-correction-keep-next { box-shadow: inset 2px 0 0 #72639a; }
 
+.omi-publication-flow-break {
+  display: block;
+  width: 100%;
+  height: var(--omi-publication-flow-break-height);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  line-height: 0;
+}
+
 @media (max-width: 1100px) {
   .publication-style-grid {
     grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
@@ -897,6 +1053,15 @@
 
   .publication-style-grid {
     grid-template-columns: 1fr;
+  }
+
+  .publication-paragraph-style-assignment,
+  .publication-paragraph-style-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .publication-paragraph-style-list {
+    max-height: 9rem;
   }
 
   .publication-proofing-actions,

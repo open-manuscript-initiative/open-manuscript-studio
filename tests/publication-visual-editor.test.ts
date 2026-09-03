@@ -3,6 +3,11 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { paginatePublicationBlocks } from '../src/components/publicationPageLayout.ts';
+import {
+  resolvePublicationParagraphStyle,
+  type PublicationParagraphStyleCollection,
+  type ResolvedPublicationParagraphStyle,
+} from '../src/model/publicationParagraphStyles.ts';
 import { cssStringLiteral } from '../src/services/embeddedCss.ts';
 import {
   hyphenatePrintText,
@@ -80,7 +85,7 @@ test('publication settings use a Word-like top ribbon instead of a permanent sid
 
 test('publication view edits the complete structured manuscript instead of a sample paragraph', () => {
   assert.match(styleEditor, /<PublicationDocumentCanvas style=\{style\}/);
-  assert.match(documentCanvas, /buildContinuousManuscriptDocument\(manuscript\.sections/);
+  assert.match(documentCanvas, /buildContinuousManuscriptDocument\([\s\S]*manuscript\.sections/);
   assert.match(documentCanvas, /projectContinuousManuscriptDocument\(parsed, currentSections\)/);
   assert.match(documentCanvas, /stageContinuousDocumentChange/);
   assert.match(documentCanvas, /<BlockEditor[\s\S]*continuous/);
@@ -159,6 +164,150 @@ test('screen pagination keeps a heading with the following text block', () => {
   ]);
 });
 
+test('a heading keeps only the opening line, not the entire following paragraph', () => {
+  const layout = paginatePublicationBlocks(
+    [
+      { top: 75, height: 10, keepWithNext: true },
+      {
+        top: 85,
+        height: 40,
+        leadingHeight: 10,
+        splittable: true,
+        lines: [
+          { textOffset: 0, top: 0, height: 10 },
+          { textOffset: 8, top: 10, height: 10 },
+          { textOffset: 16, top: 20, height: 10 },
+          { textOffset: 24, top: 30, height: 10 },
+        ],
+      },
+    ],
+    100,
+    50,
+  );
+
+  assert.equal(layout.placements[0]?.pageIndex, 0);
+  assert.equal(layout.placements[1]?.pageIndex, 0);
+  assert.deepEqual(layout.flowBreaks, [
+    { blockIndex: 1, textOffset: 8, height: 55 },
+  ]);
+});
+
+test('normal paragraphs continue line by line instead of moving as one block', () => {
+  const layout = paginatePublicationBlocks(
+    [
+      {
+        top: 60,
+        height: 60,
+        splittable: true,
+        lines: [
+          { textOffset: 0, top: 0, height: 20 },
+          { textOffset: 10, top: 20, height: 20 },
+          { textOffset: 20, top: 40, height: 20 },
+        ],
+      },
+      { top: 120, height: 20 },
+    ],
+    100,
+    50,
+  );
+
+  assert.deepEqual(layout.placements, [
+    { pageIndex: 0, translateY: 0 },
+    { pageIndex: 1, translateY: 0 },
+  ]);
+  assert.deepEqual(layout.flowBreaks, [
+    { blockIndex: 0, textOffset: 20, height: 50 },
+  ]);
+  assert.equal(layout.pageCount, 2);
+  assert.match(documentCanvas, /measurePublicationLines/);
+  assert.match(documentCanvas, /publicationFlowBreaks/);
+  assert.match(editorStyles, /\.omi-publication-flow-break \{/);
+});
+
+test('a line that would cross the footer resumes at the next page body', () => {
+  const layout = paginatePublicationBlocks(
+    [
+      {
+        top: 70,
+        height: 60,
+        splittable: true,
+        lines: [
+          { textOffset: 0, top: 0, height: 20 },
+          { textOffset: 10, top: 20, height: 20 },
+          { textOffset: 20, top: 40, height: 20 },
+        ],
+      },
+      { top: 130, height: 10 },
+    ],
+    100,
+    50,
+  );
+
+  assert.deepEqual(layout.flowBreaks, [
+    { blockIndex: 0, textOffset: 10, height: 60 },
+  ]);
+  assert.deepEqual(layout.placements, [
+    { pageIndex: 0, translateY: 0 },
+    { pageIndex: 1, translateY: 0 },
+  ]);
+});
+
+test('an explicit keep-together rule still moves a complete paragraph', () => {
+  const layout = paginatePublicationBlocks(
+    [{
+      top: 70,
+      height: 60,
+      splittable: true,
+      keepTogether: true,
+      lines: [
+        { textOffset: 0, top: 0, height: 20 },
+        { textOffset: 10, top: 20, height: 20 },
+        { textOffset: 20, top: 40, height: 20 },
+      ],
+    }],
+    100,
+    50,
+  );
+
+  assert.deepEqual(layout.placements, [{ pageIndex: 1, translateY: 80 }]);
+  assert.deepEqual(layout.flowBreaks, []);
+});
+
+test('InDesign-like paragraph styles inherit, assign, and feed print CSS', () => {
+  const collection: PublicationParagraphStyleCollection = {
+    defaultStyleId: 'body',
+    items: [
+      { id: 'body', name: 'Body', basedOnId: null, nextStyleId: 'body', properties: {} },
+      { id: 'first-paragraph', name: 'First', basedOnId: 'body', nextStyleId: 'body', properties: { firstLineIndent: 0 } },
+    ],
+  };
+  const defaults: ResolvedPublicationParagraphStyle = {
+    fontFamily: 'EB Garamond', fontSize: 10.5, lineHeight: 12.5,
+    fontWeight: 400, fontStyle: 'normal', alignment: 'justify',
+    firstLineIndent: 5, leftIndent: 0, rightIndent: 0,
+    spaceBefore: 0, spaceAfter: 0, hyphenation: true,
+    keepTogether: false, keepWithNext: false, widows: 2, orphans: 2,
+  };
+  const firstParagraph = resolvePublicationParagraphStyle(
+    collection,
+    'first-paragraph',
+    defaults,
+  );
+
+  assert.equal(firstParagraph.firstLineIndent, 0);
+  assert.equal(firstParagraph.fontSize, defaults.fontSize);
+  assert.equal(firstParagraph.keepTogether, false);
+  assert.match(exportRenderer, /buildPublicationParagraphStyleRules/);
+  assert.match(exportRenderer, /data-omi-paragraph-style-id/);
+  assert.match(exportRenderer, /text-block:not\(\[data-omi-paragraph-style-id\]\)/);
+  assert.match(styleEditor, /panelId="paragraphStyles"/);
+  assert.match(styleEditor, /paragraphStyleWouldCreateCycle/);
+  assert.match(styleEditor, /setBlockParagraphStyle/);
+  assert.match(styleEditor, /copy\.basedOn/);
+  assert.match(styleEditor, /copy\.nextStyle/);
+  assert.match(documentCanvas, /:not\(\[data-paragraph-style-id\]\)/);
+});
+
 test('print hyphenation selects lazy language modules from BCP 47 tags', () => {
   assert.equal(resolvePrintHyphenationModule('hu-HU'), 'hu');
   assert.equal(resolvePrintHyphenationModule('en-GB'), 'en-gb');
@@ -184,7 +333,7 @@ test('print hyphenation is optional and stays outside canonical manuscript state
   assert.match(styleEditor, /setStyleValue\('body', 'hyphenation'/);
   assert.match(documentCanvas, /lang=\{manuscript\.locale\}/);
   assert.match(editorStyles, /--omi-publication-hyphens/);
-  assert.match(exportRenderer, /target === 'print' && style\.styles\.body\.hyphenation/);
+  assert.match(exportRenderer, /target === 'print' && publicationHyphenationEnabled\(style\)/);
   assert.match(exportRenderer, /await hyphenatePrintHtml\(html, manuscript\.locale\)/);
   assert.match(exportRenderer, /\[data-omi-hyphenation-module\][\s\S]*hyphens: manual/);
 });

@@ -11,16 +11,24 @@ import type {
 
 export const PROOFING_MARKS_META = 'omiProofingMarks:set';
 
+export interface OmiPublicationFlowBreak {
+  targetBlockId: string;
+  textOffset: number;
+  height: number;
+}
+
 export interface OmiProofingMarksPayload {
   changes: readonly OmiProofingChange[];
   comments: readonly OmiAnnotation[];
   corrections: readonly OmiPublicationCorrection[];
+  pageFlowBreaks: readonly OmiPublicationFlowBreak[];
 }
 
 const emptyPayload = (): OmiProofingMarksPayload => ({
   changes: [],
   comments: [],
   corrections: [],
+  pageFlowBreaks: [],
 });
 
 const key = new PluginKey<OmiProofingMarksPayload>('omiProofingMarks');
@@ -54,6 +62,7 @@ export const OmiProofingMarksExtension = Extension.create({
               )),
             );
             const correctionsByBlock = groupByBlock(payload.corrections);
+            const pageFlowBreaksByBlock = groupByBlock(payload.pageFlowBreaks);
             const decorations: Decoration[] = [];
 
             state.doc.forEach((node, offset) => {
@@ -65,6 +74,7 @@ export const OmiProofingMarksExtension = Extension.create({
               const corrections = (correctionsByBlock.get(blockId) ?? []).filter(
                 (correction) => correctionSourceMatches(nodeText, correction),
               );
+              const pageFlowBreaks = pageFlowBreaksByBlock.get(blockId) ?? [];
 
               const nodeClasses = [
                 changes.length ? 'omi-proofing-change-block' : '',
@@ -103,6 +113,14 @@ export const OmiProofingMarksExtension = Extension.create({
               for (const correction of corrections) {
                 addCorrectionDecoration(decorations, node, offset, correction);
               }
+              for (const pageFlowBreak of pageFlowBreaks) {
+                addPageFlowBreakDecoration(
+                  decorations,
+                  node,
+                  offset,
+                  pageFlowBreak,
+                );
+              }
             });
 
             return DecorationSet.create(state.doc, decorations);
@@ -112,6 +130,32 @@ export const OmiProofingMarksExtension = Extension.create({
     ];
   },
 });
+
+function addPageFlowBreakDecoration(
+  decorations: Decoration[],
+  node: ProseMirrorNode,
+  offset: number,
+  pageFlowBreak: OmiPublicationFlowBreak,
+): void {
+  const position = textPositionInNode(node, offset, pageFlowBreak.textOffset);
+  if (position === null || pageFlowBreak.height <= 0) return;
+  decorations.push(Decoration.widget(position, () => {
+    const spacer = document.createElement('span');
+    spacer.className = 'omi-publication-flow-break';
+    spacer.dataset.publicationFlowBreak = 'true';
+    spacer.style.setProperty(
+      '--omi-publication-flow-break-height',
+      `${Math.round(pageFlowBreak.height * 100) / 100}px`,
+    );
+    spacer.contentEditable = 'false';
+    spacer.setAttribute('aria-hidden', 'true');
+    return spacer;
+  }, {
+    key: `page-flow:${pageFlowBreak.targetBlockId}:${pageFlowBreak.textOffset}:${Math.round(pageFlowBreak.height * 100)}`,
+    side: -1,
+    ignoreSelection: true,
+  }));
+}
 
 function addCorrectionDecoration(
   decorations: Decoration[],

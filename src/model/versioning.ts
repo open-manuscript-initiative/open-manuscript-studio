@@ -35,6 +35,7 @@ export type OmiChangeOperation =
   | 'section.remove'
   | 'section.restore'
   | 'block.content.set'
+  | 'block.paragraph-style.set'
   | 'block.remove'
   | 'block.restore'
   | 'agent.create'

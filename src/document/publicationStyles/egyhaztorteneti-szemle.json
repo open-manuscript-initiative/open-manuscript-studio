@@ -177,6 +177,41 @@
       "hangingIndent": 5
     }
   },
+  "paragraphStyles": {
+    "defaultStyleId": "body",
+    "items": [
+      {
+        "id": "body",
+        "name": "Törzsszöveg",
+        "basedOnId": null,
+        "nextStyleId": "body",
+        "properties": {}
+      },
+      {
+        "id": "first-paragraph",
+        "name": "Első bekezdés",
+        "basedOnId": "body",
+        "nextStyleId": "body",
+        "properties": {
+          "firstLineIndent": 0
+        }
+      },
+      {
+        "id": "quotation",
+        "name": "Idézet",
+        "basedOnId": "body",
+        "nextStyleId": "body",
+        "properties": {
+          "fontStyle": "italic",
+          "firstLineIndent": 0,
+          "leftIndent": 5,
+          "rightIndent": 5,
+          "spaceBefore": 4,
+          "spaceAfter": 4
+        }
+      }
+    ]
+  },
   "runningHeaders": {
     "enabled": true,
     "rule": {
