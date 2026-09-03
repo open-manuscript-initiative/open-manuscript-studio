@@ -41,6 +41,10 @@ const fullscreenPanels = readFileSync(
   new URL('../src/styles/desktop-fullscreen-panels.css', import.meta.url),
   'utf8',
 );
+const studioShellStyles = readFileSync(
+  new URL('../src/styles/studio-shell.css', import.meta.url),
+  'utf8',
+);
 
 test('live publication editor opens as its own full-screen menu workspace', () => {
   assert.match(studioMenu, /'publication-editor'/);
@@ -49,6 +53,29 @@ test('live publication editor opens as its own full-screen menu workspace', () =
   assert.doesNotMatch(publicationProfile, /<PublicationStyleEditor/);
   assert.match(fullscreenPanels, /\.studio-menu-content--publication-editor[\s\S]*overflow: hidden/);
   assert.match(fullscreenPanels, /\.studio-menu-content--publication-editor \.publication-style-editor[\s\S]*height: 100%/);
+});
+
+test('desktop Studio navigation opens from a compact top dropdown', () => {
+  assert.match(studioMenu, /const \[navigationOpen, setNavigationOpen\]/);
+  assert.match(studioMenu, /className="studio-menu-navigation-trigger"/);
+  assert.match(studioMenu, /aria-haspopup="menu"/);
+  assert.match(studioMenu, /hidden=\{!navigationOpen\}/);
+  assert.match(studioShellStyles, /\.studio-menu-body \{[\s\S]*display: block/);
+  assert.match(studioShellStyles, /\.studio-menu-navigation \{[\s\S]*position: absolute/);
+});
+
+test('publication settings use a Word-like top ribbon instead of a permanent sidebar', () => {
+  assert.match(styleEditor, /const \[openPanel, setOpenPanel\]/);
+  assert.match(styleEditor, /className="publication-style-ribbon"/);
+  assert.match(styleEditor, /panelId="styles"/);
+  assert.match(styleEditor, /panelId="page"/);
+  assert.match(styleEditor, /panelId="margins"/);
+  assert.match(styleEditor, /panelId="typography"/);
+  assert.match(styleEditor, /active=\{body\.alignment === 'justify'\}/);
+  assert.match(styleEditor, /aria-pressed=\{active\}/);
+  assert.doesNotMatch(styleEditor, /<aside className="publication-style-controls"/);
+  assert.match(editorStyles, /\.publication-style-ribbon-panel \{[\s\S]*position: absolute/);
+  assert.match(editorStyles, /\.publication-style-editor-layout \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
 });
 
 test('publication view edits the complete structured manuscript instead of a sample paragraph', () => {
@@ -86,9 +113,10 @@ test('the same print-page values feed generated export CSS', () => {
 });
 
 test('publication workspace remains usable on narrow screens', () => {
-  assert.match(editorStyles, /@media \(max-width: 860px\)[\s\S]*grid-template-columns: 1fr/);
-  assert.match(editorStyles, /@media \(max-width: 560px\)[\s\S]*flex-direction: column/);
-  assert.match(editorStyles, /overflow: auto/);
+  assert.match(editorStyles, /\.publication-style-ribbon-actions \{[\s\S]*overflow-x: auto/);
+  assert.match(editorStyles, /@media \(max-width: 560px\)[\s\S]*\.publication-style-ribbon-menu-button > span/);
+  assert.match(editorStyles, /@media \(max-width: 560px\)[\s\S]*max-height: calc\(100dvh - 9rem\)/);
+  assert.match(editorStyles, /\.publication-style-ribbon-panel \{[\s\S]*overflow: auto/);
 });
 
 test('screen pagination presents separate Word-like sheets without storing page breaks', () => {

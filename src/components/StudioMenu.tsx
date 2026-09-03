@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  ChevronDown,
   CircleX,
   FileText,
   Fingerprint,
@@ -7,6 +8,7 @@ import {
   History as HistoryIcon,
   LayoutTemplate,
   Library,
+  Menu,
   Printer,
   Save,
   SaveAll,
@@ -116,6 +118,8 @@ export function StudioMenu({
   const publicationCopy = getPublicationProfileCopy(locale);
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
   const [activeView, setActiveView] = useState<StudioMenuView>('document');
+  const [navigationOpen, setNavigationOpen] = useState(false);
+  const navigationMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -131,6 +135,31 @@ export function StudioMenu({
     };
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (!navigationOpen) return;
+    const closeOnPointerDown = (event: PointerEvent) => {
+      if (!navigationMenuRef.current?.contains(event.target as Node)) {
+        setNavigationOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      setNavigationOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOnPointerDown, true);
+    document.addEventListener('keydown', closeOnEscape, true);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnPointerDown, true);
+      document.removeEventListener('keydown', closeOnEscape, true);
+    };
+  }, [navigationOpen]);
+
+  useEffect(() => {
+    if (!open) setNavigationOpen(false);
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -140,26 +169,50 @@ export function StudioMenu({
       <aside className="studio-menu-drawer" role="dialog" aria-modal="true" aria-labelledby="studio-menu-title">
         <header className="studio-menu-header">
           <div><span className="studio-menu-eyebrow">Open Manuscript Studio</span><h2 id="studio-menu-title">{t('studio.menu')}</h2></div>
-          <button type="button" className="studio-menu-close" aria-label={t('studio.closeMenu')} title={t('studio.closeMenu')} onClick={onClose}><X size={20} aria-hidden="true" /></button>
+          <div className="studio-menu-header-actions">
+            <div className="studio-menu-navigation-menu" ref={navigationMenuRef}>
+              <button
+                type="button"
+                className="studio-menu-navigation-trigger"
+                aria-haspopup="menu"
+                aria-expanded={navigationOpen}
+                aria-controls="studio-menu-navigation"
+                onClick={() => setNavigationOpen((current) => !current)}
+              >
+                <Menu size={18} aria-hidden="true" />
+                <span>{t('studio.menu')}</span>
+                <ChevronDown size={15} aria-hidden="true" />
+              </button>
+              <nav
+                id="studio-menu-navigation"
+                className="studio-menu-navigation"
+                aria-label={t('studio.menu')}
+                hidden={!navigationOpen}
+                onClick={(event) => {
+                  if ((event.target as HTMLElement).closest('button')) setNavigationOpen(false);
+                }}
+              >
+                <MenuButton active={activeView === 'document'} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} />
+                <MenuButton active={activeView === 'manuscript'} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} />
+                <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} />
+                <MenuButton active={activeView === 'notes'} icon={<StickyNote size={18} aria-hidden="true" />} label={t('studio.navigation.notes')} onClick={() => setActiveView('notes')} />
+                <MenuButton active={activeView === 'references'} icon={<Library size={18} aria-hidden="true" />} label={t('studio.navigation.references')} onClick={() => setActiveView('references')} />
+                {navigationAfterReferences}
+                {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
+                <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} />
+                <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
+                <MenuButton active={activeView === 'publication-editor'} icon={<LayoutTemplate size={18} aria-hidden="true" />} label={supplementalCopy.publicationEditor} onClick={() => setActiveView('publication-editor')} />
+                <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} />
+                {navigationBeforeTools}
+                <MenuButton active={activeView === 'tools'} icon={<Wrench size={18} aria-hidden="true" />} label={t('studio.navigation.tools')} onClick={() => setActiveView('tools')} />
+                <MenuButton active={activeView === 'settings'} icon={<Settings2 size={18} aria-hidden="true" />} label={t('studio.navigation.settings')} onClick={() => setActiveView('settings')} />
+                {navigationAfterSettings}
+              </nav>
+            </div>
+            <button type="button" className="studio-menu-close" aria-label={t('studio.closeMenu')} title={t('studio.closeMenu')} onClick={onClose}><X size={20} aria-hidden="true" /></button>
+          </div>
         </header>
         <div className="studio-menu-body">
-          <nav className="studio-menu-navigation" aria-label={t('studio.menu')}>
-            <MenuButton active={activeView === 'document'} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} />
-            <MenuButton active={activeView === 'manuscript'} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} />
-            <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} />
-            <MenuButton active={activeView === 'notes'} icon={<StickyNote size={18} aria-hidden="true" />} label={t('studio.navigation.notes')} onClick={() => setActiveView('notes')} />
-            <MenuButton active={activeView === 'references'} icon={<Library size={18} aria-hidden="true" />} label={t('studio.navigation.references')} onClick={() => setActiveView('references')} />
-            {navigationAfterReferences}
-            {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
-            <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} />
-            <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
-            <MenuButton active={activeView === 'publication-editor'} icon={<LayoutTemplate size={18} aria-hidden="true" />} label={supplementalCopy.publicationEditor} onClick={() => setActiveView('publication-editor')} />
-            <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} />
-            {navigationBeforeTools}
-            <MenuButton active={activeView === 'tools'} icon={<Wrench size={18} aria-hidden="true" />} label={t('studio.navigation.tools')} onClick={() => setActiveView('tools')} />
-            <MenuButton active={activeView === 'settings'} icon={<Settings2 size={18} aria-hidden="true" />} label={t('studio.navigation.settings')} onClick={() => setActiveView('settings')} />
-            {navigationAfterSettings}
-          </nav>
           <div className={`studio-menu-content${activeView === 'publication-editor' ? ' studio-menu-content--publication-editor' : ''}`}>
             {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} onCreated={onClose} /> : null}
             {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={onClose} /> : null}

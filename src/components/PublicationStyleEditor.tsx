@@ -1,13 +1,22 @@
 import {
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  ChevronDown,
   Copy,
   Download,
   FileCode2,
+  FileText,
+  Move,
+  Palette,
   Plus,
   RotateCcw,
   Save,
   Trash2,
+  Type,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
 import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json';
@@ -21,8 +30,8 @@ import { resolvePrintHyphenationModule } from '../services/printHyphenation';
 import { PublicationDocumentCanvas } from './PublicationDocumentCanvas';
 import './PublicationStyleEditor.css';
 
-type Align = 'left' | 'center' | 'right' | 'justify';
 type PageOrientation = 'portrait' | 'landscape';
+type PublicationRibbonPanel = 'styles' | 'page' | 'margins' | 'typography' | 'export' | null;
 
 const LEGACY_STORAGE_KEY = 'omi:publication-style:egyhaztorteneti-szemle';
 const LIBRARY_STORAGE_KEY = 'omi:publication-style-library:v1';
@@ -153,10 +162,31 @@ export function PublicationStyleEditor() {
   const [style, setStyle] = useState<PublicationStyle>(initial.style);
   const [saved, setSaved] = useState(false);
   const [message, setMessage] = useState('');
+  const [openPanel, setOpenPanel] = useState<PublicationRibbonPanel>(null);
+  const ribbonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     persistLibrary(upsertStyle(library, activeId, style), style);
   }, [activeId, library, style]);
+
+  useEffect(() => {
+    if (!openPanel) return;
+    const closeOnPointerDown = (event: PointerEvent) => {
+      if (!ribbonRef.current?.contains(event.target as Node)) setOpenPanel(null);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopPropagation();
+      setOpenPanel(null);
+    };
+    document.addEventListener('pointerdown', closeOnPointerDown, true);
+    document.addEventListener('keydown', closeOnEscape, true);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnPointerDown, true);
+      document.removeEventListener('keydown', closeOnEscape, true);
+    };
+  }, [openPanel]);
 
   function patchStyle(update: (current: PublicationStyle) => PublicationStyle): void {
     setSaved(false);
@@ -335,150 +365,218 @@ export function PublicationStyleEditor() {
         </div>
       </div>
 
-      <div className="publication-style-editor-layout">
-        <aside className="publication-style-controls" aria-label={copy.page}>
-          <fieldset>
-            <legend>{copy.styles}</legend>
-            <div className="publication-style-grid">
-              <label>
-                <span>{copy.styles}</span>
-                <select value={activeId} onChange={(event) => selectStyle(event.target.value)}>
-                  {library.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-                </select>
-              </label>
-              <label>
-                <span>{copy.styleName}</span>
-                <input value={style.name} onChange={(event) => updateStyleName(event.target.value)} />
-              </label>
-            </div>
-            <div className="publication-style-actions">
-              <button type="button" className="studio-menu-secondary-action" onClick={createStyle}><Plus size={16} aria-hidden="true" />{copy.newStyle}</button>
-              <button type="button" className="studio-menu-secondary-action" onClick={duplicateStyle}><Copy size={16} aria-hidden="true" />{copy.duplicate}</button>
-              <button type="button" className="studio-menu-secondary-action" disabled={library.length <= 1} onClick={deleteStyle}><Trash2 size={16} aria-hidden="true" />{copy.deleteStyle}</button>
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend>{copy.page}</legend>
-            <div className="publication-style-grid">
-              <label>
-                <span>{copy.preset}</span>
-                <select value={selectedPreset} onChange={(event) => applyPagePreset(event.target.value)}>
-                  <option value="custom">{copy.custom}</option>
-                  {PAGE_PRESETS.map((preset) => <option key={preset.id} value={preset.id}>{preset.label}</option>)}
-                </select>
-              </label>
-              <label>
-                <span>{copy.orientation}</span>
-                <select value={pageOrientation(style)} onChange={(event) => setOrientation(event.target.value as PageOrientation)}>
-                  <option value="portrait">{copy.portrait}</option>
-                  <option value="landscape">{copy.landscape}</option>
-                </select>
-              </label>
-              <NumberField label={`${copy.width} (mm)`} value={style.page.width} min={50} onChange={(value) => setPage('width', value)} />
-              <NumberField label={`${copy.height} (mm)`} value={style.page.height} min={50} onChange={(value) => setPage('height', value)} />
-              <NumberField label={copy.pageNumberStart} value={style.page.pageNumberStart ?? 1} min={0} step={1} onChange={(value) => setPage('pageNumberStart', Math.trunc(value))} />
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend>{copy.margins}</legend>
-            <div className="publication-style-grid">
-              <NumberField label={`${copy.top} (mm)`} value={style.page.margins.top} onChange={(value) => setMargin('top', value)} />
-              <NumberField label={`${copy.bottom} (mm)`} value={style.page.margins.bottom} onChange={(value) => setMargin('bottom', value)} />
-              <NumberField label={`${copy.inner} (mm)`} value={style.page.margins.inner} onChange={(value) => setMargin('inner', value)} />
-              <NumberField label={`${copy.outer} (mm)`} value={style.page.margins.outer} onChange={(value) => setMargin('outer', value)} />
-              <NumberField label={`${copy.gutter} (mm)`} value={style.page.gutter ?? 0} step={0.5} onChange={(value) => setPage('gutter', value)} />
-              <NumberField label={`${copy.bleed} (mm)`} value={style.page.bleed ?? 0} step={0.5} onChange={(value) => setPage('bleed', value)} />
-            </div>
-            <label className="publication-style-toggle">
-              <input type="checkbox" checked={style.page.mirroredMargins} onChange={(event) => setPage('mirroredMargins', event.target.checked)} />
-              <span>{copy.mirroredMargins}</span>
-            </label>
-            <label className="publication-style-toggle">
-              <input type="checkbox" checked={style.page.cropMarks ?? false} onChange={(event) => setPage('cropMarks', event.target.checked)} />
-              <span>{copy.cropMarks}</span>
-            </label>
-            <label className="publication-style-toggle">
-              <input
-                type="checkbox"
-                checked={style.runningHeaders.enabled}
-                onChange={(event) => patchStyle((current) => ({
-                  ...current,
-                  runningHeaders: { ...current.runningHeaders, enabled: event.target.checked },
-                }))}
-              />
-              <span>{copy.runningHeaders}</span>
-            </label>
-            <label className="publication-style-toggle">
-              <input
-                type="checkbox"
-                checked={style.firstPage.showRunningHeader}
-                onChange={(event) => patchStyle((current) => ({
-                  ...current,
-                  firstPage: { ...current.firstPage, showRunningHeader: event.target.checked },
-                }))}
-              />
-              <span>{copy.firstPageHeader}</span>
-            </label>
-          </fieldset>
-
-          <fieldset>
-            <legend>{copy.typography}</legend>
-            <div className="publication-style-grid">
-              <label>
-                <span>{copy.font}</span>
-                <input value={style.fonts.body.family} onChange={(event) => patchStyle((current) => ({
-                  ...current,
-                  fonts: {
-                    ...current.fonts,
-                    body: { ...current.fonts.body, family: event.target.value },
-                    note: { ...current.fonts.note, family: event.target.value },
-                  },
-                }))} />
-              </label>
-              <NumberField label={`${copy.bodySize} (pt)`} value={body.fontSize} step={0.1} onChange={(value) => setStyleValue('body', 'fontSize', value)} />
-              <NumberField label={`${copy.bodyLeading} (pt)`} value={body.lineHeight} step={0.1} onChange={(value) => setStyleValue('body', 'lineHeight', value)} />
-              <NumberField label={`${copy.indent} (mm)`} value={body.firstLineIndent} step={0.5} onChange={(value) => setStyleValue('body', 'firstLineIndent', value)} />
-              <NumberField label={`${copy.titleSize} (pt)`} value={title.fontSize} step={0.1} onChange={(value) => setStyleValue('articleTitlePrimary', 'fontSize', value)} />
-              <NumberField label={`${copy.headingSize} (pt)`} value={heading.fontSize} step={0.1} onChange={(value) => setStyleValue('heading1', 'fontSize', value)} />
-              <NumberField label={`${copy.footnoteSize} (pt)`} value={footnote.fontSize} step={0.1} onChange={(value) => setStyleValue('footnote', 'fontSize', value)} />
-              <label>
-                <span>{copy.alignment}</span>
-                <select value={body.alignment} onChange={(event) => setStyleValue('body', 'alignment', event.target.value as Align)}>
-                  <option value="justify">{copy.justify}</option>
-                  <option value="left">{copy.alignLeft}</option>
-                  <option value="center">{copy.alignCenter}</option>
-                  <option value="right">{copy.alignRight}</option>
-                </select>
-              </label>
-            </div>
-            <label className="publication-style-toggle">
-              <input
-                type="checkbox"
-                checked={body.hyphenation}
-                onChange={(event) => setStyleValue('body', 'hyphenation', event.target.checked)}
-              />
-              <span>{copy.hyphenation}</span>
-            </label>
-            <p className="publication-style-hyphenation-module">
-              {hyphenationModule
-                ? `${copy.hyphenationModule}: ${manuscriptLanguageName} (${hyphenationModule}). ${copy.hyphenationInline}`
-                : `${copy.hyphenationModule}: ${manuscriptLanguageName}. ${copy.hyphenationFallback}`}
-            </p>
-          </fieldset>
-
-          <div className="publication-style-actions publication-style-actions--footer">
-            <button type="button" className="studio-menu-primary-action" onClick={save}><Save size={16} aria-hidden="true" />{copy.save}</button>
-            <button type="button" className="studio-menu-secondary-action" onClick={exportStyle}><Download size={16} aria-hidden="true" />{copy.export}</button>
-            <button type="button" className="studio-menu-secondary-action" onClick={exportCss}><FileCode2 size={16} aria-hidden="true" />{copy.exportCss}</button>
-            <button type="button" className="studio-menu-secondary-action" onClick={reset}><RotateCcw size={16} aria-hidden="true" />{copy.reset}</button>
+      <div className="publication-style-ribbon" ref={ribbonRef}>
+        <div className="publication-style-ribbon-row">
+          <div className="publication-style-ribbon-actions" role="toolbar" aria-label={copy.title}>
+            <PublicationRibbonMenuButton
+              panelId="styles"
+              label={copy.styles}
+              icon={<Palette size={18} aria-hidden="true" />}
+              open={openPanel === 'styles'}
+              onToggle={() => setOpenPanel((current) => current === 'styles' ? null : 'styles')}
+            />
+            <PublicationRibbonMenuButton
+              panelId="page"
+              label={copy.page}
+              icon={<FileText size={18} aria-hidden="true" />}
+              open={openPanel === 'page'}
+              onToggle={() => setOpenPanel((current) => current === 'page' ? null : 'page')}
+            />
+            <PublicationRibbonMenuButton
+              panelId="margins"
+              label={copy.margins}
+              icon={<Move size={18} aria-hidden="true" />}
+              open={openPanel === 'margins'}
+              onToggle={() => setOpenPanel((current) => current === 'margins' ? null : 'margins')}
+            />
+            <PublicationRibbonMenuButton
+              panelId="typography"
+              label={copy.typography}
+              icon={<Type size={18} aria-hidden="true" />}
+              open={openPanel === 'typography'}
+              onToggle={() => setOpenPanel((current) => current === 'typography' ? null : 'typography')}
+            />
+            <span className="publication-style-ribbon-separator" aria-hidden="true" />
+            <PublicationRibbonActionButton label={copy.save} onClick={() => { save(); setOpenPanel(null); }}>
+              <Save size={18} aria-hidden="true" />
+            </PublicationRibbonActionButton>
+            <PublicationRibbonMenuButton
+              panelId="export"
+              label={copy.export}
+              icon={<Download size={18} aria-hidden="true" />}
+              open={openPanel === 'export'}
+              onToggle={() => setOpenPanel((current) => current === 'export' ? null : 'export')}
+            />
+            <PublicationRibbonActionButton label={copy.reset} onClick={() => { reset(); setOpenPanel(null); }}>
+              <RotateCcw size={18} aria-hidden="true" />
+            </PublicationRibbonActionButton>
           </div>
-          <p className="publication-style-live-status">{copy.liveApplied}</p>
-          {saved ? <p className="publication-style-saved" role="status">{copy.saved}</p> : null}
-          {message ? <p className="publication-style-saved" role="status">{message}</p> : null}
-        </aside>
+          <div className="publication-style-ribbon-status" aria-live="polite">
+            <strong title={style.name}>{style.name || copy.defaultNewName}</strong>
+            <span>{message || (saved ? copy.saved : copy.liveApplied)}</span>
+          </div>
+        </div>
 
+        {openPanel === 'styles' ? (
+          <div id="publication-style-ribbon-panel-styles" className="publication-style-ribbon-panel" role="dialog" aria-label={copy.styles}>
+            <fieldset>
+              <legend>{copy.styles}</legend>
+              <div className="publication-style-grid">
+                <label>
+                  <span>{copy.styles}</span>
+                  <select value={activeId} onChange={(event) => selectStyle(event.target.value)}>
+                    {library.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                  </select>
+                </label>
+                <label>
+                  <span>{copy.styleName}</span>
+                  <input value={style.name} onChange={(event) => updateStyleName(event.target.value)} />
+                </label>
+              </div>
+              <div className="publication-style-actions">
+                <button type="button" className="studio-menu-secondary-action" onClick={createStyle}><Plus size={16} aria-hidden="true" />{copy.newStyle}</button>
+                <button type="button" className="studio-menu-secondary-action" onClick={duplicateStyle}><Copy size={16} aria-hidden="true" />{copy.duplicate}</button>
+                <button type="button" className="studio-menu-secondary-action" disabled={library.length <= 1} onClick={deleteStyle}><Trash2 size={16} aria-hidden="true" />{copy.deleteStyle}</button>
+              </div>
+            </fieldset>
+          </div>
+        ) : null}
+
+        {openPanel === 'page' ? (
+          <div id="publication-style-ribbon-panel-page" className="publication-style-ribbon-panel" role="dialog" aria-label={copy.page}>
+            <fieldset>
+              <legend>{copy.page}</legend>
+              <div className="publication-style-grid">
+                <label>
+                  <span>{copy.preset}</span>
+                  <select value={selectedPreset} onChange={(event) => applyPagePreset(event.target.value)}>
+                    <option value="custom">{copy.custom}</option>
+                    {PAGE_PRESETS.map((preset) => <option key={preset.id} value={preset.id}>{preset.label}</option>)}
+                  </select>
+                </label>
+                <label>
+                  <span>{copy.orientation}</span>
+                  <select value={pageOrientation(style)} onChange={(event) => setOrientation(event.target.value as PageOrientation)}>
+                    <option value="portrait">{copy.portrait}</option>
+                    <option value="landscape">{copy.landscape}</option>
+                  </select>
+                </label>
+                <NumberField label={`${copy.width} (mm)`} value={style.page.width} min={50} onChange={(value) => setPage('width', value)} />
+                <NumberField label={`${copy.height} (mm)`} value={style.page.height} min={50} onChange={(value) => setPage('height', value)} />
+                <NumberField label={copy.pageNumberStart} value={style.page.pageNumberStart ?? 1} min={0} step={1} onChange={(value) => setPage('pageNumberStart', Math.trunc(value))} />
+              </div>
+            </fieldset>
+          </div>
+        ) : null}
+
+        {openPanel === 'margins' ? (
+          <div id="publication-style-ribbon-panel-margins" className="publication-style-ribbon-panel" role="dialog" aria-label={copy.margins}>
+            <fieldset>
+              <legend>{copy.margins}</legend>
+              <div className="publication-style-grid">
+                <NumberField label={`${copy.top} (mm)`} value={style.page.margins.top} onChange={(value) => setMargin('top', value)} />
+                <NumberField label={`${copy.bottom} (mm)`} value={style.page.margins.bottom} onChange={(value) => setMargin('bottom', value)} />
+                <NumberField label={`${copy.inner} (mm)`} value={style.page.margins.inner} onChange={(value) => setMargin('inner', value)} />
+                <NumberField label={`${copy.outer} (mm)`} value={style.page.margins.outer} onChange={(value) => setMargin('outer', value)} />
+                <NumberField label={`${copy.gutter} (mm)`} value={style.page.gutter ?? 0} step={0.5} onChange={(value) => setPage('gutter', value)} />
+                <NumberField label={`${copy.bleed} (mm)`} value={style.page.bleed ?? 0} step={0.5} onChange={(value) => setPage('bleed', value)} />
+              </div>
+              <div className="publication-style-toggle-grid">
+                <label className="publication-style-toggle">
+                  <input type="checkbox" checked={style.page.mirroredMargins} onChange={(event) => setPage('mirroredMargins', event.target.checked)} />
+                  <span>{copy.mirroredMargins}</span>
+                </label>
+                <label className="publication-style-toggle">
+                  <input type="checkbox" checked={style.page.cropMarks ?? false} onChange={(event) => setPage('cropMarks', event.target.checked)} />
+                  <span>{copy.cropMarks}</span>
+                </label>
+                <label className="publication-style-toggle">
+                  <input
+                    type="checkbox"
+                    checked={style.runningHeaders.enabled}
+                    onChange={(event) => patchStyle((current) => ({
+                      ...current,
+                      runningHeaders: { ...current.runningHeaders, enabled: event.target.checked },
+                    }))}
+                  />
+                  <span>{copy.runningHeaders}</span>
+                </label>
+                <label className="publication-style-toggle">
+                  <input
+                    type="checkbox"
+                    checked={style.firstPage.showRunningHeader}
+                    onChange={(event) => patchStyle((current) => ({
+                      ...current,
+                      firstPage: { ...current.firstPage, showRunningHeader: event.target.checked },
+                    }))}
+                  />
+                  <span>{copy.firstPageHeader}</span>
+                </label>
+              </div>
+            </fieldset>
+          </div>
+        ) : null}
+
+        {openPanel === 'typography' ? (
+          <div id="publication-style-ribbon-panel-typography" className="publication-style-ribbon-panel" role="dialog" aria-label={copy.typography}>
+            <fieldset>
+              <legend>{copy.typography}</legend>
+              <div className="publication-style-grid">
+                <label>
+                  <span>{copy.font}</span>
+                  <input value={style.fonts.body.family} onChange={(event) => patchStyle((current) => ({
+                    ...current,
+                    fonts: {
+                      ...current.fonts,
+                      body: { ...current.fonts.body, family: event.target.value },
+                      note: { ...current.fonts.note, family: event.target.value },
+                    },
+                  }))} />
+                </label>
+                <NumberField label={`${copy.bodySize} (pt)`} value={body.fontSize} step={0.1} onChange={(value) => setStyleValue('body', 'fontSize', value)} />
+                <NumberField label={`${copy.bodyLeading} (pt)`} value={body.lineHeight} step={0.1} onChange={(value) => setStyleValue('body', 'lineHeight', value)} />
+                <NumberField label={`${copy.indent} (mm)`} value={body.firstLineIndent} step={0.5} onChange={(value) => setStyleValue('body', 'firstLineIndent', value)} />
+                <NumberField label={`${copy.titleSize} (pt)`} value={title.fontSize} step={0.1} onChange={(value) => setStyleValue('articleTitlePrimary', 'fontSize', value)} />
+                <NumberField label={`${copy.headingSize} (pt)`} value={heading.fontSize} step={0.1} onChange={(value) => setStyleValue('heading1', 'fontSize', value)} />
+                <NumberField label={`${copy.footnoteSize} (pt)`} value={footnote.fontSize} step={0.1} onChange={(value) => setStyleValue('footnote', 'fontSize', value)} />
+                <div className="publication-style-alignment" role="group" aria-label={copy.alignment}>
+                  <span>{copy.alignment}</span>
+                  <div>
+                    <AlignmentButton label={copy.justify} active={body.alignment === 'justify'} onClick={() => setStyleValue('body', 'alignment', 'justify')}><AlignJustify size={17} aria-hidden="true" /></AlignmentButton>
+                    <AlignmentButton label={copy.alignLeft} active={body.alignment === 'left'} onClick={() => setStyleValue('body', 'alignment', 'left')}><AlignLeft size={17} aria-hidden="true" /></AlignmentButton>
+                    <AlignmentButton label={copy.alignCenter} active={body.alignment === 'center'} onClick={() => setStyleValue('body', 'alignment', 'center')}><AlignCenter size={17} aria-hidden="true" /></AlignmentButton>
+                    <AlignmentButton label={copy.alignRight} active={body.alignment === 'right'} onClick={() => setStyleValue('body', 'alignment', 'right')}><AlignRight size={17} aria-hidden="true" /></AlignmentButton>
+                  </div>
+                </div>
+              </div>
+              <label className="publication-style-toggle">
+                <input
+                  type="checkbox"
+                  checked={body.hyphenation}
+                  onChange={(event) => setStyleValue('body', 'hyphenation', event.target.checked)}
+                />
+                <span>{copy.hyphenation}</span>
+              </label>
+              <p className="publication-style-hyphenation-module">
+                {hyphenationModule
+                  ? `${copy.hyphenationModule}: ${manuscriptLanguageName} (${hyphenationModule}). ${copy.hyphenationInline}`
+                  : `${copy.hyphenationModule}: ${manuscriptLanguageName}. ${copy.hyphenationFallback}`}
+              </p>
+            </fieldset>
+          </div>
+        ) : null}
+
+        {openPanel === 'export' ? (
+          <div id="publication-style-ribbon-panel-export" className="publication-style-ribbon-panel publication-style-ribbon-panel--compact" role="dialog" aria-label={copy.export}>
+            <div className="publication-style-actions">
+              <button type="button" className="studio-menu-secondary-action" onClick={() => { exportStyle(); setOpenPanel(null); }}><Download size={16} aria-hidden="true" />{copy.export}</button>
+              <button type="button" className="studio-menu-secondary-action" onClick={() => { exportCss(); setOpenPanel(null); }}><FileCode2 size={16} aria-hidden="true" />{copy.exportCss}</button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="publication-style-editor-layout">
         <PublicationDocumentCanvas style={style} />
       </div>
     </section>
@@ -512,6 +610,82 @@ function downloadBlob(blob: Blob, fileName: string): void {
   link.click();
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function PublicationRibbonMenuButton({
+  panelId,
+  label,
+  icon,
+  open,
+  onToggle,
+}: {
+  panelId: Exclude<PublicationRibbonPanel, null>;
+  label: string;
+  icon: ReactNode;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="publication-style-ribbon-menu-button"
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      aria-controls={`publication-style-ribbon-panel-${panelId}`}
+      title={label}
+      onClick={onToggle}
+    >
+      {icon}
+      <span>{label}</span>
+      <ChevronDown size={14} aria-hidden="true" />
+    </button>
+  );
+}
+
+function PublicationRibbonActionButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className="publication-style-ribbon-action-button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+function AlignmentButton({
+  label,
+  active,
+  onClick,
+  children,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      aria-pressed={active}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
 }
 
 function NumberField({
