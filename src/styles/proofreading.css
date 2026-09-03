@@ -1,3 +1,217 @@
+:root {
+  --omi-proofing-insertion: #147a3d;
+  --omi-proofing-insertion-tint: rgb(34 197 94 / 20%);
+  --omi-proofing-deletion: #b42332;
+  --omi-proofing-deletion-tint: rgb(239 68 68 / 18%);
+  --omi-proofing-replacement: #1d5fbf;
+  --omi-proofing-replacement-tint: rgb(59 130 246 / 16%);
+  --omi-proofing-comment: #946200;
+  --omi-proofing-comment-tint: rgb(250 204 21 / 28%);
+  --omi-proofing-hyphen: #b84c15;
+  --omi-proofing-hyphen-tint: rgb(249 115 22 / 19%);
+  --omi-proofing-nonbreaking: #7041a6;
+  --omi-proofing-nonbreaking-tint: rgb(139 92 246 / 19%);
+  --omi-proofing-line-break: #087d8b;
+  --omi-proofing-line-break-tint: rgb(6 182 212 / 20%);
+  --omi-proofing-page-break: #9c238f;
+  --omi-proofing-page-break-tint: rgb(217 70 239 / 17%);
+  --omi-proofing-keep-together: #0b766e;
+  --omi-proofing-keep-together-tint: rgb(20 184 166 / 17%);
+  --omi-proofing-keep-next: #4f46c8;
+  --omi-proofing-keep-next-tint: rgb(99 102 241 / 17%);
+}
+
+[data-proofing-kind='insertion'] {
+  --omi-proofing-mark: var(--omi-proofing-insertion);
+  --omi-proofing-mark-tint: var(--omi-proofing-insertion-tint);
+}
+
+[data-proofing-kind='deletion'] {
+  --omi-proofing-mark: var(--omi-proofing-deletion);
+  --omi-proofing-mark-tint: var(--omi-proofing-deletion-tint);
+}
+
+[data-proofing-kind='replacement'],
+[data-proofing-kind='formatting'] {
+  --omi-proofing-mark: var(--omi-proofing-replacement);
+  --omi-proofing-mark-tint: var(--omi-proofing-replacement-tint);
+}
+
+[data-proofing-kind='comment'] {
+  --omi-proofing-mark: var(--omi-proofing-comment);
+  --omi-proofing-mark-tint: var(--omi-proofing-comment-tint);
+}
+
+[data-proofing-kind='discretionary-hyphen'] {
+  --omi-proofing-mark: var(--omi-proofing-hyphen);
+  --omi-proofing-mark-tint: var(--omi-proofing-hyphen-tint);
+}
+
+[data-proofing-kind='nonbreaking'] {
+  --omi-proofing-mark: var(--omi-proofing-nonbreaking);
+  --omi-proofing-mark-tint: var(--omi-proofing-nonbreaking-tint);
+}
+
+[data-proofing-kind='forced-line-break'] {
+  --omi-proofing-mark: var(--omi-proofing-line-break);
+  --omi-proofing-mark-tint: var(--omi-proofing-line-break-tint);
+}
+
+[data-proofing-kind='page-break-before'] {
+  --omi-proofing-mark: var(--omi-proofing-page-break);
+  --omi-proofing-mark-tint: var(--omi-proofing-page-break-tint);
+}
+
+[data-proofing-kind='keep-together'] {
+  --omi-proofing-mark: var(--omi-proofing-keep-together);
+  --omi-proofing-mark-tint: var(--omi-proofing-keep-together-tint);
+}
+
+[data-proofing-kind='keep-with-next'] {
+  --omi-proofing-mark: var(--omi-proofing-keep-next);
+  --omi-proofing-mark-tint: var(--omi-proofing-keep-next-tint);
+}
+
+.proofing-color-legend {
+  margin: .65rem 0;
+  padding: .5rem .6rem;
+  border: 1px solid #ddd5ca;
+  border-radius: .38rem;
+  background: #fffefa;
+}
+
+.proofing-color-legend > strong {
+  display: block;
+  margin-bottom: .38rem;
+  color: #5e5851;
+  font-size: .66rem;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.proofing-color-legend ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem .65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.proofing-color-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  min-width: 0;
+  color: #4e4943;
+  font-size: .65rem;
+  line-height: 1.25;
+}
+
+.proofing-color-legend__swatch {
+  display: inline-grid;
+  width: 1.35rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--omi-proofing-mark);
+  border-radius: .22rem;
+  background: var(--omi-proofing-mark-tint);
+  color: var(--omi-proofing-mark);
+}
+
+.omi-proofing-diff del {
+  padding: 0 .08em;
+  background: var(--omi-proofing-deletion-tint);
+  color: #8d1724;
+  text-decoration-color: var(--omi-proofing-deletion);
+  text-decoration-thickness: 1.5px;
+}
+
+.omi-proofing-diff ins {
+  padding: 0 .08em;
+  border-bottom: 1.5px solid var(--omi-proofing-insertion);
+  background: var(--omi-proofing-insertion-tint);
+  color: #0d6330;
+  text-decoration: none;
+}
+
+.omi-proofing-change-block {
+  box-shadow: inset 4px 0 0 var(--omi-proofing-mark, var(--omi-proofing-replacement));
+  background-image: linear-gradient(90deg, var(--omi-proofing-mark-tint, var(--omi-proofing-replacement-tint)), transparent 3.25rem);
+}
+
+.omi-proofing-insertion-range {
+  border-bottom: 1.5px solid var(--omi-proofing-insertion);
+  background: var(--omi-proofing-insertion-tint);
+  color: #0d6330;
+}
+
+.omi-proofing-comment-block {
+  border-right: 3px solid var(--omi-proofing-comment) !important;
+}
+
+.omi-proofing-comment-range {
+  border-bottom: 1.5px dotted var(--omi-proofing-comment);
+  background: var(--omi-proofing-comment-tint);
+}
+
+.omi-publication-correction--nonbreaking {
+  white-space: nowrap;
+  border-bottom: 2px dotted var(--omi-proofing-nonbreaking);
+  background: var(--omi-proofing-nonbreaking-tint);
+}
+
+.omi-publication-correction--hyphen,
+.omi-publication-correction--line-break {
+  position: relative;
+}
+
+.omi-publication-correction--hyphen::after,
+.omi-publication-correction--line-break::after {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  min-width: .9rem;
+  height: .9rem;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: .2rem;
+  font: 800 .62rem/1 sans-serif;
+}
+
+.omi-publication-correction--hyphen::after {
+  bottom: -.9em;
+  left: -.12em;
+  content: '¬';
+  background: var(--omi-proofing-hyphen-tint);
+  color: var(--omi-proofing-hyphen);
+}
+
+.omi-publication-correction--line-break::after {
+  top: -.15em;
+  left: 0;
+  content: '↵';
+  background: var(--omi-proofing-line-break-tint);
+  color: var(--omi-proofing-line-break);
+}
+
+.omi-publication-correction-page-break {
+  border-top: 2px dashed var(--omi-proofing-page-break) !important;
+  background-image: linear-gradient(180deg, var(--omi-proofing-page-break-tint), transparent 1.25rem);
+}
+
+.omi-publication-correction-keep-together {
+  outline: 2px solid var(--omi-proofing-keep-together);
+  outline-offset: -2px;
+  background-color: var(--omi-proofing-keep-together-tint);
+}
+
+.omi-publication-correction-keep-next {
+  border-bottom: 3px double var(--omi-proofing-keep-next) !important;
+  background-image: linear-gradient(0deg, var(--omi-proofing-keep-next-tint), transparent 1.25rem);
+}
+
 .omi-proofreading-issue {
   text-decoration-line: underline;
   text-decoration-style: wavy;

@@ -44,6 +44,16 @@ test('renders deterministic semantic HTML5 with front matter and traceability me
   assert.match(first.html, /<section id="sec-section-one"/);
 });
 
+test('renders assigned paragraph styles as portable traceability attributes', () => {
+  const manuscript = createTestManuscript();
+  const block = manuscript.sections[0]?.blocks[0];
+  assert.ok(block);
+  block.paragraphStyleId = 'first-paragraph';
+
+  const result = renderHtmlArticle(manuscript);
+  assert.match(result.html, /data-omi-paragraph-style-id="first-paragraph"/);
+});
+
 test('renders semantic citations, notes and internal cross-references as navigable HTML links', () => {
   const manuscript = createTestManuscript();
   const section = manuscript.sections[0];

@@ -50,6 +50,7 @@ import { OmiProofreadingExtension } from '../editor/extensions/OmiProofreadingEx
 import {
   OmiProofingMarksExtension,
   PROOFING_MARKS_META,
+  type OmiPublicationFlowBreak,
 } from '../editor/extensions/OmiProofingMarksExtension';
 import { OmiContinuousStructureExtension } from '../editor/extensions/OmiContinuousStructureExtension';
 import {
@@ -101,10 +102,12 @@ interface BlockEditorProps {
   continuous?: boolean;
   proofingMode?: 'editor' | 'publication';
   publicationCorrections?: readonly OmiPublicationCorrection[];
+  publicationFlowBreaks?: readonly OmiPublicationFlowBreak[];
   onProofingSelection?: (selection: ProofingSelection | null) => void;
 }
 
 const EMPTY_PUBLICATION_CORRECTIONS: readonly OmiPublicationCorrection[] = [];
+const EMPTY_PUBLICATION_FLOW_BREAKS: readonly OmiPublicationFlowBreak[] = [];
 
 export function BlockEditor({
   blockId,
@@ -118,6 +121,7 @@ export function BlockEditor({
   continuous = false,
   proofingMode,
   publicationCorrections = EMPTY_PUBLICATION_CORRECTIONS,
+  publicationFlowBreaks = EMPTY_PUBLICATION_FLOW_BREAKS,
   onProofingSelection,
 }: BlockEditorProps) {
   const { t, locale } = useTranslation();
@@ -444,6 +448,9 @@ export function BlockEditor({
       changes,
       comments,
       corrections,
+      pageFlowBreaks: proofingMode === 'publication'
+        ? publicationFlowBreaks
+        : [],
     }));
   }, [
     editor,
@@ -451,6 +458,7 @@ export function BlockEditor({
     manuscript.proofing?.changes,
     proofingMode,
     publicationCorrections,
+    publicationFlowBreaks,
   ]);
 
   useEffect(() => {

@@ -75,10 +75,65 @@ test('a paragraph split keeps the original ID and assigns a new stable block ID'
   );
 });
 
+test('paragraph style assignments survive the continuous editor round-trip', () => {
+  const styled = {
+    ...textBlock('paragraph-a', 'paragraph', 'paragraph', 'Alpha'),
+    paragraphStyleId: 'first-paragraph',
+  };
+  const sections = [section('section-a', 'First', [styled])];
+  const document = buildContinuousManuscriptDocument(
+    sections,
+    new Map(),
+    new Map([['first-paragraph', 'body']]),
+  );
+
+  assert.equal(document.content?.[1]?.attrs?.omiParagraphStyleId, 'first-paragraph');
+  assert.equal(document.content?.[1]?.attrs?.omiNextParagraphStyleId, 'body');
+  const projected = projectContinuousManuscriptDocument(document, sections);
+  assert.equal(
+    projected[0]?.blocks.find((block) => block.id === 'paragraph-a')?.paragraphStyleId,
+    'first-paragraph',
+  );
+});
+
+test('the default paragraph style supplies its next style without becoming stored metadata', () => {
+  const firstParagraph = textBlock(
+    'paragraph-a',
+    'paragraph',
+    'paragraph',
+    'Alpha',
+  );
+  const sections = [section('section-a', 'First', [firstParagraph])];
+
+  const document = buildContinuousManuscriptDocument(
+    sections,
+    new Map(),
+    new Map([
+      ['body', 'first-paragraph'],
+      ['first-paragraph', 'body'],
+    ]),
+    'body',
+  );
+  const paragraph = document.content?.find(
+    (node) => node.attrs?.omiBlockId === firstParagraph.id,
+  );
+
+  assert.equal(paragraph?.attrs?.omiParagraphStyleId, null);
+  assert.equal(paragraph?.attrs?.omiNextParagraphStyleId, 'first-paragraph');
+  const projected = projectContinuousManuscriptDocument(document, sections);
+  const projectedParagraph = projected.flatMap((section) => section.blocks)
+    .find((block) => block.id === firstParagraph.id);
+  assert.equal(projectedParagraph?.paragraphStyleId, undefined);
+});
+
 test('turning a paragraph into a heading creates a subsection automatically', () => {
+  const styledParagraph = {
+    ...textBlock('paragraph-a', 'paragraph', 'paragraph', 'New subsection'),
+    paragraphStyleId: 'first-paragraph',
+  };
   const sections = [section('section-a', 'First', [
     textBlock('heading-a', 'heading', 'heading', 'First', { level: 1 }),
-    textBlock('paragraph-a', 'paragraph', 'paragraph', 'New subsection'),
+    styledParagraph,
   ])];
   const document = buildContinuousManuscriptDocument(sections);
   const paragraph = document.content?.[1];
@@ -95,6 +150,7 @@ test('turning a paragraph into a heading creates a subsection automatically', ()
   assert.equal(projected[1]?.title, 'New subsection');
   assert.equal(getParentSectionId(projected[1]!), 'section-a');
   assert.equal(projected[1]?.blocks[0]?.id, 'paragraph-a');
+  assert.equal(projected[1]?.blocks[0]?.paragraphStyleId, undefined);
 });
 
 test('deleting a heading merges its following blocks into the preceding section', () => {

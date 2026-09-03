@@ -29,6 +29,10 @@
 }
 
 .review-mode__proofing-toolbar > strong { font-size: .78rem; color: #5a1213; }
+.review-mode__revision-block.is-changed {
+  background: linear-gradient(90deg, var(--omi-proofing-mark-tint, rgb(59 130 246 / 16%)), transparent 3rem);
+  box-shadow: inset 4px 0 0 var(--omi-proofing-mark, #1d5fbf);
+}
 .review-mode__proofing-navigation { display: flex; align-items: center; gap: .3rem; }
 .review-mode__proofing-navigation button,
 .review-mode__change-actions > button,
@@ -57,8 +61,9 @@
   margin: .8rem 0 1rem;
   padding: .65rem;
   border: 1px solid #ddd4cd;
+  border-left: 4px solid var(--omi-proofing-mark, #946200);
   border-radius: 8px;
-  background: #fbf9f7;
+  background: linear-gradient(90deg, var(--omi-proofing-mark-tint, rgb(250 204 21 / 28%)), transparent 3rem), #fbf9f7;
 }
 .review-mode__selection-comment > div:first-child { border-left: 3px solid #7c4e42; padding: .4rem .55rem; color: #4e4640; font: italic .76rem/1.4 Georgia, serif; }
 .review-mode__selection-comment > div:first-child.is-empty { border-left-color: #bdb4ad; color: #746b65; font-family: inherit; font-style: normal; }

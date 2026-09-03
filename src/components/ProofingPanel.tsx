@@ -14,10 +14,12 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import {
+  classifyProofingTextChange,
   createProofingTextDiff,
   normalizeProofingState,
   storedContentText,
 } from '../model/proofing';
+import { ProofingColorLegend } from './ProofingColorLegend';
 import './ProofingPanel.css';
 
 export function ProofingPanel({ onClose }: { onClose: () => void }) {
@@ -77,6 +79,9 @@ export function ProofingPanel({ onClose }: { onClose: () => void }) {
         storedContentText(active.after),
       )
     : null;
+  const activeKind = active
+    ? classifyProofingTextChange(active.before, active.after)
+    : undefined;
 
   return (
     <aside id="omi-proofing-panel" className="proofing-panel" aria-labelledby="proofing-panel-title">
@@ -100,6 +105,8 @@ export function ProofingPanel({ onClose }: { onClose: () => void }) {
           <span><strong>{copy.trackChanges}</strong><small>{copy.trackChangesHelp}</small></span>
         </label>
 
+        <ProofingColorLegend locale={locale} mode="editor" />
+
         <section className="proofing-panel__section" aria-labelledby="proofing-changes-title">
           <div className="proofing-panel__section-heading">
             <h3 id="proofing-changes-title">{copy.changes}</h3>
@@ -107,7 +114,7 @@ export function ProofingPanel({ onClose }: { onClose: () => void }) {
           </div>
 
           {active && diff ? (
-            <article className="proofing-panel__change-card">
+            <article className="proofing-panel__change-card" data-proofing-kind={activeKind}>
               <div className="proofing-panel__change-nav">
                 <span>{activeIndex + 1} / {pending.length}</span>
                 <div>
@@ -115,7 +122,7 @@ export function ProofingPanel({ onClose }: { onClose: () => void }) {
                   <button type="button" onClick={() => navigate(1)} aria-label={copy.next} title={copy.next}><ChevronDown size={17} /></button>
                 </div>
               </div>
-              <p className="proofing-panel__diff">
+              <p className="proofing-panel__diff omi-proofing-diff">
                 <span>{diff.prefix}</span>
                 {diff.removed ? <del>{diff.removed}</del> : null}
                 {diff.inserted ? <ins>{diff.inserted}</ins> : null}
@@ -145,6 +152,7 @@ export function ProofingPanel({ onClose }: { onClose: () => void }) {
                   <button
                     type="button"
                     className={change.id === active?.id ? 'is-active' : ''}
+                    data-proofing-kind={classifyProofingTextChange(change.before, change.after)}
                     onClick={() => selectChange(change.id, change.targetBlockId)}
                   >
                     <span>{copy.changeNumber(index + 1)}</span>
@@ -185,7 +193,7 @@ export function ProofingPanel({ onClose }: { onClose: () => void }) {
           {comments.length ? (
             <ol className="proofing-panel__comments">
               {comments.map((comment) => (
-                <li key={comment.id} className={comment.status === 'resolved' ? 'is-resolved' : ''}>
+                <li key={comment.id} className={comment.status === 'resolved' ? 'is-resolved' : ''} data-proofing-kind="comment">
                   <button type="button" className="proofing-panel__comment-target" onClick={() => scrollToBlock(comment.targetBlockId)}>
                     {comment.targetText ? `“${comment.targetText.slice(0, 90)}”` : copy.comment}
                   </button>

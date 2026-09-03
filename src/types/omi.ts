@@ -407,6 +407,8 @@ export interface OmiBlock {
     | string;
   /** Tiptap JSON or legacy text for textual blocks; empty for structured visual blocks. */
   content: string;
+  /** Optional named publication paragraph style; manuscript semantics remain unchanged. */
+  paragraphStyleId?: string;
   visual?: OmiVisualBlockData;
   children?: OmiBlock[];
 }

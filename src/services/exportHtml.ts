@@ -413,18 +413,23 @@ function renderBlock(block: OmiBlock, state: RenderState): string {
   }
 
   const root = parseStructuredContent(block.content);
+  const paragraphStyleAttribute = block.paragraphStyleId?.trim()
+    ? ` data-omi-paragraph-style-id="${escapeAttribute(block.paragraphStyleId.trim())}"`
+    : '';
   if (!root) {
     const fallback = block.content.trim();
     return fallback
-      ? `<p id="${htmlId('block', block.id)}">${escapeHtml(fallback)}</p>`
+      ? `<p id="${htmlId('block', block.id)}" data-omi-block-id="${escapeAttribute(
+          block.id,
+        )}"${paragraphStyleAttribute}>${escapeHtml(fallback)}</p>`
       : '';
   }
 
   const rendered = renderJsonNode(root, state);
   return rendered
-    ? `<div id="${htmlId('block', block.id)}" class="text-block" data-omi-block-id="${escapeAttribute(
+      ? `<div id="${htmlId('block', block.id)}" class="text-block" data-omi-block-id="${escapeAttribute(
         block.id,
-      )}">${rendered}</div>`
+      )}"${paragraphStyleAttribute}>${rendered}</div>`
     : '';
 }
 

@@ -5,6 +5,7 @@ import test from 'node:test';
 import { paginatePublicationBlocks } from '../src/components/publicationPageLayout.ts';
 import {
   applyPublicationCorrectionsToStoredContent,
+  classifyProofingTextChange,
   createProofingComment,
   createProofingTextDiff,
   createPublicationCorrection,
@@ -38,6 +39,18 @@ const publicationExportSource = readFileSync(
 );
 const reviewModeSource = readFileSync(
   new URL('../src/components/ReviewMode.tsx', import.meta.url),
+  'utf8',
+);
+const proofingLegendSource = readFileSync(
+  new URL('../src/components/ProofingColorLegend.tsx', import.meta.url),
+  'utf8',
+);
+const proofingStylesSource = readFileSync(
+  new URL('../src/styles/proofreading.css', import.meta.url),
+  'utf8',
+);
+const proofingMarksSource = readFileSync(
+  new URL('../src/editor/extensions/OmiProofingMarksExtension.ts', import.meta.url),
   'utf8',
 );
 
@@ -107,6 +120,24 @@ test('the exact diff identifies the shared context and replacement', () => {
   assert.deepEqual(
     createProofingTextDiff('The old wording remains.', 'The new wording remains.'),
     { prefix: 'The ', removed: 'old', inserted: 'new', suffix: ' wording remains.' },
+  );
+});
+
+test('tracked changes are classified for consistent color highlighting', () => {
+  assert.equal(classifyProofingTextChange('', 'Inserted text'), 'insertion');
+  assert.equal(classifyProofingTextChange('Deleted text', ''), 'deletion');
+  assert.equal(classifyProofingTextChange('Old text', 'New text'), 'replacement');
+  const strongText = JSON.stringify({
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Same', marks: [{ type: 'bold' }] }] }],
+  });
+  const italicText = JSON.stringify({
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Same', marks: [{ type: 'italic' }] }] }],
+  });
+  assert.equal(
+    classifyProofingTextChange(strongText, italicText),
+    'formatting',
   );
 });
 
@@ -185,4 +216,16 @@ test('peer review compares against the anonymous source and supports scoped comm
   assert.match(reviewModeSource, /EDITOR_ONLY/);
   assert.match(reviewModeSource, /original=\{manuscript\}/);
   assert.match(reviewModeSource, /identityNotice/);
+});
+
+test('editor, peer review, and publication proofing share accessible color legends', () => {
+  assert.match(proofingPanelSource, /ProofingColorLegend locale=\{locale\} mode="editor"/);
+  assert.match(reviewModeSource, /ProofingColorLegend locale=\{locale\} mode="editor"/);
+  assert.match(publicationEditorSource, /ProofingColorLegend locale=\{locale\} mode="publication"/);
+  assert.match(proofingLegendSource, /data-proofing-kind=\{item\.kind\}/);
+  assert.match(proofingLegendSource, /MessageSquare/);
+  assert.match(proofingStylesSource, /omi-proofing-insertion-range/);
+  assert.match(proofingStylesSource, /data-proofing-kind='comment'/);
+  assert.match(proofingStylesSource, /data-proofing-kind='page-break-before'/);
+  assert.match(proofingMarksSource, /addTrackedChangeDecoration/);
 });

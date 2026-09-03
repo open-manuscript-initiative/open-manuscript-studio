@@ -15,8 +15,17 @@ import { getAssetPayload } from './assetRepository';
 import { cssStringLiteral } from './embeddedCss';
 import { renderPublisherHtmlArticle } from './exportPublisherHtmlPackage';
 import { hyphenatePrintHtml } from './printHyphenation';
+import {
+  normalizePublicationParagraphStyleCollection,
+  resolvePublicationParagraphStyle as resolveParagraphStyle,
+  type PublicationParagraphStyleCollection,
+  type ResolvedPublicationParagraphStyle,
+} from '../model/publicationParagraphStyles';
 
-export type PublicationStyle = typeof templateJson;
+type PublicationStyleTemplate = typeof templateJson;
+export type PublicationStyle = Omit<PublicationStyleTemplate, 'paragraphStyles'> & {
+  paragraphStyles: PublicationParagraphStyleCollection;
+};
 export type PublicationPublisherIdentity = typeof publisherJson;
 export type PublicationStyleTarget = 'html' | 'print';
 
@@ -64,7 +73,46 @@ export function normalizePublicationStyle(style: PublicationStyle): PublicationS
         ...style.styles?.body,
       },
     },
+    paragraphStyles: normalizePublicationParagraphStyleCollection(
+      style.paragraphStyles,
+      fallback.paragraphStyles,
+    ),
   };
+}
+
+export function publicationParagraphStyleDefaults(
+  style: PublicationStyle,
+): ResolvedPublicationParagraphStyle {
+  const body = style.styles.body;
+  return {
+    fontFamily: style.fonts.body.family,
+    fontSize: body.fontSize,
+    lineHeight: body.lineHeight,
+    fontWeight: 400,
+    fontStyle: 'normal',
+    alignment: body.alignment as ResolvedPublicationParagraphStyle['alignment'],
+    firstLineIndent: body.firstLineIndent,
+    leftIndent: 0,
+    rightIndent: 0,
+    spaceBefore: body.spaceBefore,
+    spaceAfter: body.spaceAfter,
+    hyphenation: body.hyphenation,
+    keepTogether: false,
+    keepWithNext: false,
+    widows: 2,
+    orphans: 2,
+  };
+}
+
+export function resolvePublicationParagraphStyle(
+  style: PublicationStyle,
+  styleId?: string | null,
+): ResolvedPublicationParagraphStyle {
+  return resolveParagraphStyle(
+    style.paragraphStyles,
+    styleId,
+    publicationParagraphStyleDefaults(style),
+  );
 }
 
 export function loadPublicationPublisherIdentity(): PublicationPublisherIdentity {
@@ -113,7 +161,8 @@ export function buildPublicationStyleCss(
   const bibliography = style.styles.bibliography;
   const family = cssFontFamily(style.fonts.body.family, style.fonts.body.fallback);
   const noteFamily = cssFontFamily(style.fonts.note.family, style.fonts.note.fallback);
-  const hyphenationEnabled = body.hyphenation ?? false;
+  const hyphenationEnabled = publicationHyphenationEnabled(style);
+  const paragraphStyleRules = buildPublicationParagraphStyleRules(style, target);
 
   const shared = `
 :root { --omi-publication-font: ${family}; }
@@ -140,6 +189,7 @@ table caption { font-size: ${tableCaption.fontSize}pt; line-height: ${tableCapti
 .article-notes, .footnotes, [role="doc-endnotes"] { font-family: ${noteFamily}; font-size: ${footnote.fontSize}pt; line-height: ${footnote.lineHeight}pt; }
 .bibliography p, .references li { font-size: ${bibliography.fontSize}pt; line-height: ${bibliography.lineHeight}pt; text-align: ${bibliography.alignment}; padding-left: ${bibliography.hangingIndent}mm; text-indent: -${bibliography.hangingIndent}mm; }
 img, svg, table { max-width: 100%; }
+${paragraphStyleRules}
 `;
 
   if (target === 'html') {
@@ -195,6 +245,32 @@ figure, table { break-inside: avoid-page; page-break-inside: avoid; }
 `;
 }
 
+export function buildPublicationParagraphStyleRules(
+  style: PublicationStyle,
+  target: PublicationStyleTarget,
+): string {
+  return style.paragraphStyles.items.map((definition) => {
+    const resolved = resolvePublicationParagraphStyle(style, definition.id);
+    const selectorValue = cssStringLiteral(definition.id);
+    const containerSelector = `.article-body [data-omi-paragraph-style-id=${selectorValue}]`;
+    const assignedParagraphSelector = `${containerSelector} > :is(p, blockquote, ul, ol, pre), .article-body :is(p, blockquote, ul, ol, pre)[data-omi-paragraph-style-id=${selectorValue}]`;
+    const paragraphSelector = definition.id === style.paragraphStyles.defaultStyleId
+      ? `${assignedParagraphSelector}, .article-body .text-block:not([data-omi-paragraph-style-id]) > :is(p, blockquote, ul, ol, pre), .article-body :is(p, blockquote, ul, ol, pre)[data-omi-block-id]:not([data-omi-paragraph-style-id])`
+      : assignedParagraphSelector;
+    const keepRules = target === 'print'
+      ? [
+          resolved.keepTogether
+            ? 'break-inside: avoid-page; page-break-inside: avoid;'
+            : '',
+          resolved.keepWithNext
+            ? 'break-after: avoid-page; page-break-after: avoid;'
+            : '',
+        ].filter(Boolean).join(' ')
+      : '';
+    return `${paragraphSelector} { font-family: ${cssFontFamily(resolved.fontFamily, style.fonts.body.fallback)}; font-size: ${finite(resolved.fontSize, 10.5)}pt; line-height: ${finite(resolved.lineHeight, 12.5)}pt; font-weight: ${finite(resolved.fontWeight, 400)}; font-style: ${fontStyle(resolved.fontStyle)}; text-align: ${alignment(resolved.alignment)}; text-indent: ${finite(resolved.firstLineIndent, 0)}mm; margin-top: ${finite(resolved.spaceBefore, 0)}pt; margin-bottom: ${finite(resolved.spaceAfter, 0)}pt; margin-left: ${finite(resolved.leftIndent, 0)}mm; margin-right: ${finite(resolved.rightIndent, 0)}mm; -webkit-hyphens: ${resolved.hyphenation ? 'auto' : 'none'}; hyphens: ${resolved.hyphenation ? 'auto' : 'none'}; widows: ${integer(resolved.widows, 2)}; orphans: ${integer(resolved.orphans, 2)}; ${keepRules} }\n${containerSelector} { ${keepRules} }`;
+  }).join('\n');
+}
+
 function publicationHyphenationCss(enabled: boolean): string {
   const value = enabled ? 'auto' : 'none';
   const moduleOverride = enabled
@@ -203,12 +279,36 @@ function publicationHyphenationCss(enabled: boolean): string {
   return `.article-body p, .article-body li, .article-body blockquote, .abstract p, .article-abstract p, .abstract-body, figcaption, table caption, td, th, .article-notes li, .footnotes li, [role="doc-endnotes"] li, .bibliography p, .bibliography li, .references li { -webkit-hyphens: ${value}; hyphens: ${value}; }${moduleOverride}`;
 }
 
+function publicationHyphenationEnabled(style: PublicationStyle): boolean {
+  return Boolean(style.styles.body.hyphenation) || style.paragraphStyles.items.some(
+    (definition) => resolvePublicationParagraphStyle(style, definition.id).hyphenation,
+  );
+}
+
 function nonNegative(value: number | undefined, fallback: number): number {
   return Number.isFinite(value) && Number(value) >= 0 ? Number(value) : fallback;
 }
 
 function positive(value: number | undefined, fallback: number): number {
   return Number.isFinite(value) && Number(value) > 0 ? Number(value) : fallback;
+}
+
+function finite(value: number | undefined, fallback: number): number {
+  return Number.isFinite(value) ? Number(value) : fallback;
+}
+
+function integer(value: number | undefined, fallback: number): number {
+  return Math.max(1, Math.trunc(finite(value, fallback)));
+}
+
+function alignment(value: string): 'left' | 'center' | 'right' | 'justify' {
+  return value === 'center' || value === 'right' || value === 'justify'
+    ? value
+    : 'left';
+}
+
+function fontStyle(value: string): 'normal' | 'italic' {
+  return value === 'italic' ? 'italic' : 'normal';
 }
 
 export function withPublicationStyleCss(
@@ -348,7 +448,7 @@ export async function renderStyleBasedHtml(
   // renderer. Publication-style and publisher values can originate in local
   // storage or an imported IDML package, so add them only after hyphenation.
   let html = rendered.html;
-  if (target === 'print' && style.styles.body.hyphenation) {
+  if (target === 'print' && publicationHyphenationEnabled(style)) {
     html = await hyphenatePrintHtml(html, manuscript.locale);
   }
   html = withPublicationStyleCss(html, style, target);

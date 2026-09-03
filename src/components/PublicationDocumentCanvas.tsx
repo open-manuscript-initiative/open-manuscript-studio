@@ -25,16 +25,29 @@ import type { ProofingSelection } from '../model/proofing';
 import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
 import {
   loadPublicationPublisherIdentity,
+  resolvePublicationParagraphStyle,
   type PublicationStyle,
 } from '../services/publicationStyleExport';
+import { cssStringLiteral } from '../services/embeddedCss';
+import type { OmiPublicationFlowBreak } from '../editor/extensions/OmiProofingMarksExtension';
 import { BlockEditor } from './BlockEditor';
-import { paginatePublicationBlocks } from './publicationPageLayout';
+import {
+  paginatePublicationBlocks,
+  type PublicationFlowLine,
+} from './publicationPageLayout';
 
 const PIXELS_PER_MM = 96 / 25.4;
 const PIXELS_PER_POINT = 96 / 72;
 
 type PublicationZoom = 'fit' | 50 | 75 | 100;
 const EMPTY_PUBLICATION_CORRECTIONS = [] as const;
+const EMPTY_PUBLICATION_FLOW_BREAKS: readonly OmiPublicationFlowBreak[] = [];
+
+interface PublicationPaginationState {
+  pageCount: number;
+  css: string;
+  flowBreaks: readonly OmiPublicationFlowBreak[];
+}
 
 interface PublicationDocumentCanvasProps {
   style: PublicationStyle;
@@ -74,7 +87,11 @@ export function PublicationDocumentCanvas({
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [stageWidth, setStageWidth] = useState(0);
-  const [pagination, setPagination] = useState({ pageCount: 1, css: '' });
+  const [pagination, setPagination] = useState<PublicationPaginationState>({
+    pageCount: 1,
+    css: '',
+    flowBreaks: EMPTY_PUBLICATION_FLOW_BREAKS,
+  });
   const [zoom, setZoom] = useState<PublicationZoom>('fit');
 
   const pageWidthMm = positive(style.page.width, 150);
@@ -123,9 +140,28 @@ export function PublicationDocumentCanvas({
     ),
     [manuscript.sectionNumberingStyle, manuscript.sections],
   );
+  const paragraphStyleNextById = useMemo(
+    () => new Map(
+      style.paragraphStyles.items.map((definition) => [
+        definition.id,
+        definition.nextStyleId ?? style.paragraphStyles.defaultStyleId,
+      ]),
+    ),
+    [style.paragraphStyles],
+  );
   const document = useMemo(
-    () => buildContinuousManuscriptDocument(manuscript.sections, sectionNumbers),
-    [manuscript.sections, sectionNumbers],
+    () => buildContinuousManuscriptDocument(
+      manuscript.sections,
+      sectionNumbers,
+      paragraphStyleNextById,
+      style.paragraphStyles.defaultStyleId,
+    ),
+    [
+      manuscript.sections,
+      paragraphStyleNextById,
+      sectionNumbers,
+      style.paragraphStyles.defaultStyleId,
+    ],
   );
   const contributors = useMemo(
     () => collectPublicationContributors(manuscript).map((contributor) => contributor.displayName),
@@ -160,22 +196,43 @@ export function PublicationDocumentCanvas({
     const update = () => {
       const flow = collectPublicationFlowElements(content);
       const corrections = publicationCorrections;
+      let existingFlowBreakHeight = 0;
       const layout = paginatePublicationBlocks(
         flow.map(({ element }) => {
           const blockId = element.dataset.blockId ?? '';
           const blockCorrections = corrections.filter(
             (correction) => correction.targetBlockId === blockId,
           );
-          return {
-            top: offsetTopWithin(element, content),
-            height: element.offsetHeight,
+          const splittable = isSplittablePublicationParagraph(element);
+          const lines = splittable ? measurePublicationLines(element) : [];
+          const ownFlowBreakHeight = publicationFlowBreakHeight(element);
+          const paragraphStyle = resolvePublicationParagraphStyle(
+            style,
+            element.dataset.paragraphStyleId,
+          );
+          const block = {
+            top: Math.max(
+              0,
+              offsetTopWithin(element, content) - existingFlowBreakHeight,
+            ),
+            height: Math.max(
+              0,
+              element.getBoundingClientRect().height - ownFlowBreakHeight,
+            ),
+            lines,
+            leadingHeight: lines[0]?.height,
+            splittable,
             keepWithNext: /^H[1-6]$/.test(element.tagName)
+              || paragraphStyle.keepWithNext
               || blockCorrections.some((item) => item.kind === 'keep-with-next'),
-            keepTogether: blockCorrections.some((item) => item.kind === 'keep-together'),
+            keepTogether: paragraphStyle.keepTogether
+              || blockCorrections.some((item) => item.kind === 'keep-together'),
             forcePageBreakBefore: blockCorrections.some(
               (item) => item.kind === 'page-break-before',
             ),
           };
+          existingFlowBreakHeight += ownFlowBreakHeight;
+          return block;
         }),
         usablePageHeight,
         pageOverhead,
@@ -190,11 +247,25 @@ export function PublicationDocumentCanvas({
         outerMargin,
         firstPageLeftMargin,
       });
+      const flowBreaks = layout.flowBreaks.flatMap<OmiPublicationFlowBreak>(
+        (flowBreak) => {
+          const targetBlockId = flow[flowBreak.blockIndex]?.element.dataset.blockId;
+          return targetBlockId
+            ? [{
+                targetBlockId,
+                textOffset: flowBreak.textOffset,
+                height: flowBreak.height,
+              }]
+            : [];
+        },
+      );
 
       setPagination((current) => (
-        current.pageCount === layout.pageCount && current.css === css
+        current.pageCount === layout.pageCount
+          && current.css === css
+          && publicationFlowBreaksEqual(current.flowBreaks, flowBreaks)
           ? current
-          : { pageCount: layout.pageCount, css }
+          : { pageCount: layout.pageCount, css, flowBreaks }
       ));
     };
     const schedule = () => {
@@ -235,7 +306,7 @@ export function PublicationDocumentCanvas({
     outerMargin,
     pageOverhead,
     style.page.mirroredMargins,
-    style.styles.body.hyphenation,
+    style,
     usablePageHeight,
   ]);
 
@@ -259,6 +330,7 @@ export function PublicationDocumentCanvas({
   const heading2 = style.styles.heading2;
   const note = style.styles.footnote;
   const pageCount = pagination.pageCount;
+  const paragraphStyleCss = buildLiveParagraphStyleCss(canvasId, style, scale);
   const runningHeaderValues = {
     articleTitle: manuscript.title,
     shortArticleTitle: shorten(manuscript.title, 72),
@@ -318,7 +390,9 @@ export function PublicationDocumentCanvas({
       className="publication-document-canvas"
       aria-labelledby="publication-document-canvas-title"
     >
-      {pagination.css ? <style>{pagination.css}</style> : null}
+      {pagination.css || paragraphStyleCss
+        ? <style>{`${paragraphStyleCss}\n${pagination.css}`}</style>
+        : null}
       <header className="publication-document-canvas-toolbar">
         <div>
           <strong id="publication-document-canvas-title">{copy.editor}</strong>
@@ -443,6 +517,7 @@ export function PublicationDocumentCanvas({
                   continuous
                   proofingMode="publication"
                   publicationCorrections={publicationCorrections}
+                  publicationFlowBreaks={pagination.flowBreaks}
                   onProofingSelection={onProofingSelection}
                 />
               </div>
@@ -610,6 +685,160 @@ function offsetTopWithin(element: HTMLElement, root: HTMLElement): number {
   }
 
   return current === root ? top : element.offsetTop;
+}
+
+function isSplittablePublicationParagraph(element: HTMLElement): boolean {
+  return (element.tagName === 'P' || element.tagName === 'BLOCKQUOTE')
+    && Boolean(element.closest('.omi-continuous-tiptap-editor'));
+}
+
+function measurePublicationLines(element: HTMLElement): PublicationFlowLine[] {
+  const ownerDocument = element.ownerDocument;
+  const elementRect = element.getBoundingClientRect();
+  const existingBreaks = Array.from(
+    element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'),
+  ).map((spacer) => ({
+    top: spacer.getBoundingClientRect().top,
+    height: spacer.getBoundingClientRect().height,
+  }));
+  const runs: Array<{ node: Text; start: number }> = [];
+  let textOffset = 0;
+
+  const visit = (node: Node): void => {
+    if (node instanceof HTMLElement) {
+      if (
+        node.dataset.publicationFlowBreak
+        || node.classList.contains('omi-publication-correction')
+        || node.contentEditable === 'false'
+      ) return;
+      if (node.tagName === 'BR') {
+        textOffset += 1;
+        return;
+      }
+    }
+    if (node.nodeType === Node.TEXT_NODE) {
+      const textNode = node as Text;
+      if (textNode.data.length) {
+        runs.push({ node: textNode, start: textOffset });
+        textOffset += textNode.data.length;
+      }
+      return;
+    }
+    node.childNodes.forEach(visit);
+  };
+  element.childNodes.forEach(visit);
+
+  const measured: PublicationFlowLine[] = [];
+  for (const run of runs) {
+    const range = ownerDocument.createRange();
+    range.selectNodeContents(run.node);
+    const rects = Array.from(range.getClientRects()).filter(
+      (rect) => rect.height > 0.5 && rect.width > 0.01,
+    );
+    const lineRects = rects.filter((rect, index) => (
+      index === 0 || Math.abs(rect.top - rects[index - 1]!.top) > 0.5
+    ));
+    for (const rect of lineRects) {
+      const localOffset = firstTextOffsetAtVerticalPosition(
+        ownerDocument,
+        run.node,
+        rect.top,
+      );
+      measured.push({
+        textOffset: run.start + localOffset,
+        top: Math.max(
+          0,
+          rect.top - elementRect.top - existingBreaks
+            .filter((spacer) => spacer.top < rect.top - 0.5)
+            .reduce((total, spacer) => total + spacer.height, 0),
+        ),
+        height: rect.height,
+      });
+    }
+  }
+
+  const lines = measured
+    .sort((left, right) => left.top - right.top || left.textOffset - right.textOffset)
+    .filter((line, index, values) => (
+      index === 0 || Math.abs(line.top - values[index - 1]!.top) > 0.5
+    ));
+  if (lines.length) return lines;
+
+  const lineHeight = Number.parseFloat(ownerDocument.defaultView?.getComputedStyle(element).lineHeight ?? '');
+  return [{
+    textOffset: 0,
+    top: 0,
+    height: Number.isFinite(lineHeight) && lineHeight > 0
+      ? lineHeight
+      : Math.max(
+          0,
+          element.getBoundingClientRect().height - publicationFlowBreakHeight(element),
+        ),
+  }];
+}
+
+function publicationFlowBreakHeight(element: HTMLElement): number {
+  return Array.from(
+    element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'),
+  ).reduce((total, spacer) => total + spacer.getBoundingClientRect().height, 0);
+}
+
+function firstTextOffsetAtVerticalPosition(
+  ownerDocument: Document,
+  textNode: Text,
+  targetTop: number,
+): number {
+  let lower = 0;
+  let upper = textNode.data.length;
+  while (lower < upper) {
+    const middle = Math.floor((lower + upper) / 2);
+    const top = textCharacterTop(ownerDocument, textNode, middle);
+    if (top < targetTop - 0.5) lower = middle + 1;
+    else upper = middle;
+  }
+  return Math.max(0, Math.min(textNode.data.length, lower));
+}
+
+function textCharacterTop(
+  ownerDocument: Document,
+  textNode: Text,
+  offset: number,
+): number {
+  if (!textNode.data.length) return 0;
+  const start = Math.max(0, Math.min(textNode.data.length - 1, offset));
+  const range = ownerDocument.createRange();
+  range.setStart(textNode, start);
+  range.setEnd(textNode, start + 1);
+  const rect = range.getClientRects()[0] ?? range.getBoundingClientRect();
+  return Number.isFinite(rect.top) ? rect.top : 0;
+}
+
+function publicationFlowBreaksEqual(
+  left: readonly OmiPublicationFlowBreak[],
+  right: readonly OmiPublicationFlowBreak[],
+): boolean {
+  return left.length === right.length && left.every((item, index) => {
+    const other = right[index];
+    return other?.targetBlockId === item.targetBlockId
+      && other.textOffset === item.textOffset
+      && Math.abs(other.height - item.height) < 0.01;
+  });
+}
+
+function buildLiveParagraphStyleCss(
+  canvasId: string,
+  style: PublicationStyle,
+  scale: number,
+): string {
+  return style.paragraphStyles.items.map((definition) => {
+    const resolved = resolvePublicationParagraphStyle(style, definition.id);
+    const editor = `#${canvasId} .omi-continuous-tiptap-editor`;
+    const assignedSelector = `${editor} > [data-paragraph-style-id=${cssStringLiteral(definition.id)}]`;
+    const selector = definition.id === style.paragraphStyles.defaultStyleId
+      ? `${assignedSelector}, ${editor} > :is(p, blockquote, ul, ol, pre):not([data-paragraph-style-id])`
+      : assignedSelector;
+    return `${selector} { font-family: ${cssStringLiteral(resolved.fontFamily)}, ${cssStringLiteral(style.fonts.body.fallback)}; font-size: ${cssPixel(resolved.fontSize * PIXELS_PER_POINT * scale)}; line-height: ${cssPixel(resolved.lineHeight * PIXELS_PER_POINT * scale)}; font-weight: ${resolved.fontWeight}; font-style: ${resolved.fontStyle}; text-align: ${resolved.alignment}; text-indent: ${cssPixel(resolved.firstLineIndent * PIXELS_PER_MM * scale)}; margin-top: ${cssPixel(resolved.spaceBefore * PIXELS_PER_POINT * scale)}; margin-bottom: ${cssPixel(resolved.spaceAfter * PIXELS_PER_POINT * scale)}; margin-left: ${cssPixel(resolved.leftIndent * PIXELS_PER_MM * scale)}; margin-right: ${cssPixel(resolved.rightIndent * PIXELS_PER_MM * scale)}; -webkit-hyphens: ${resolved.hyphenation ? 'auto' : 'none'}; hyphens: ${resolved.hyphenation ? 'auto' : 'none'}; widows: ${Math.max(1, Math.trunc(resolved.widows))}; orphans: ${Math.max(1, Math.trunc(resolved.orphans))}; }`;
+  }).join('\n');
 }
 
 function buildPaginationCss({

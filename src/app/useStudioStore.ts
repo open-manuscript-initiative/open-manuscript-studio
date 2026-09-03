@@ -87,6 +87,8 @@ interface StudioState {
     selection: ProofingSelection,
   ) => void;
   removePublicationCorrection: (correctionId: string) => void;
+  setBlockParagraphStyle: (blockId: string, styleId?: string) => void;
+  clearParagraphStyleAssignments: (styleId: string) => void;
   updateBlock: (blockId: string, content: string) => void;
   addSection: () => void;
   addContributor: (targetId?: string) => void;
@@ -347,6 +349,65 @@ export const useStudioStore = create<StudioState>((set) => ({
           path: `/publicationCorrections/${correctionId}`,
           previousValue: existing,
         }],
+      );
+    }),
+
+  setBlockParagraphStyle: (blockId, styleId) =>
+    set((state) => {
+      const previousBlock = findBlock(
+        state.manuscript.sections.flatMap((section) => section.blocks),
+        blockId,
+      );
+      const normalizedStyleId = styleId?.trim() || undefined;
+      if (!previousBlock || previousBlock.paragraphStyleId === normalizedStyleId) {
+        return state;
+      }
+      return stageWorkingChange(
+        state,
+        {
+          ...extractManuscriptState(state.manuscript),
+          sections: state.manuscript.sections.map((section) => ({
+            ...section,
+            blocks: replaceBlockParagraphStyle(
+              section.blocks,
+              blockId,
+              normalizedStyleId,
+            ),
+          })),
+        },
+        'Changed publication paragraph style',
+        [{
+          operation: 'block.paragraph-style.set',
+          targetId: blockId,
+          path: `/blocks/${blockId}/paragraphStyleId`,
+          previousValue: previousBlock.paragraphStyleId,
+          nextValue: normalizedStyleId,
+        }],
+      );
+    }),
+
+  clearParagraphStyleAssignments: (styleId) =>
+    set((state) => {
+      const assignedBlocks = collectBlocks(
+        state.manuscript.sections.flatMap((section) => section.blocks),
+      ).filter((block) => block.paragraphStyleId === styleId);
+      if (!assignedBlocks.length) return state;
+      return stageWorkingChange(
+        state,
+        {
+          ...extractManuscriptState(state.manuscript),
+          sections: state.manuscript.sections.map((section) => ({
+            ...section,
+            blocks: clearParagraphStyleFromBlocks(section.blocks, styleId),
+          })),
+        },
+        'Replaced deleted publication paragraph style',
+        assignedBlocks.map((block) => ({
+          operation: 'block.paragraph-style.set' as const,
+          targetId: block.id,
+          path: `/blocks/${block.id}/paragraphStyleId`,
+          previousValue: styleId,
+        })),
       );
     }),
 
@@ -1097,4 +1158,49 @@ function replaceBlock(
       ? { children: replaceBlock(block.children, blockId, content) }
       : {}),
   }));
+}
+
+function replaceBlockParagraphStyle(
+  blocks: readonly OmiBlock[],
+  blockId: string,
+  paragraphStyleId: string | undefined,
+): OmiBlock[] {
+  return blocks.map((block) => {
+    const next = { ...block };
+    if (block.id === blockId) {
+      if (paragraphStyleId) next.paragraphStyleId = paragraphStyleId;
+      else delete next.paragraphStyleId;
+    }
+    if (block.children) {
+      next.children = replaceBlockParagraphStyle(
+        block.children,
+        blockId,
+        paragraphStyleId,
+      );
+    }
+    return next;
+  });
+}
+
+function clearParagraphStyleFromBlocks(
+  blocks: readonly OmiBlock[],
+  styleId: string,
+): OmiBlock[] {
+  return blocks.map((block) => {
+    const next = { ...block };
+    if (block.paragraphStyleId === styleId) delete next.paragraphStyleId;
+    if (block.children) {
+      next.children = clearParagraphStyleFromBlocks(block.children, styleId);
+    }
+    return next;
+  });
+}
+
+function collectBlocks(blocks: readonly OmiBlock[]): OmiBlock[] {
+  const collected: OmiBlock[] = [];
+  for (const block of blocks) {
+    collected.push(block);
+    if (block.children) collected.push(...collectBlocks(block.children));
+  }
+  return collected;
 }

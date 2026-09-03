@@ -12,6 +12,8 @@ export interface ContinuousNodeAttributes {
   omiBlockType?: string | null;
   omiAnchorId?: string | null;
   omiSectionNumber?: string | null;
+  omiParagraphStyleId?: string | null;
+  omiNextParagraphStyleId?: string | null;
   omiVisual?: OmiVisualBlockData | null;
 }
 
@@ -27,6 +29,8 @@ export interface ProjectContinuousDocumentOptions {
 export function buildContinuousManuscriptDocument(
   sections: readonly OmiSection[],
   sectionNumbers: ReadonlyMap<string, string> = new Map(),
+  paragraphStyleNextById: ReadonlyMap<string, string> = new Map(),
+  defaultParagraphStyleId = '',
 ): JSONContent {
   const content: JSONContent[] = [];
 
@@ -79,6 +83,12 @@ export function buildContinuousManuscriptDocument(
           omiBlockType: nodeIndex === 0 ? block.type : blockTypeForNode(node),
           omiAnchorId: heading ? section.id : blockId,
           omiSectionNumber: heading ? sectionNumbers.get(section.id) ?? null : null,
+          omiParagraphStyleId: heading ? null : block.paragraphStyleId ?? null,
+          omiNextParagraphStyleId: heading
+            ? null
+            : paragraphStyleNextById.get(
+                block.paragraphStyleId ?? defaultParagraphStyleId,
+              ) ?? null,
         });
         content.push(node);
       });
@@ -224,6 +234,8 @@ export function stripContinuousAttributes(node: JSONContent): JSONContent {
     delete attrs.omiBlockType;
     delete attrs.omiAnchorId;
     delete attrs.omiSectionNumber;
+    delete attrs.omiParagraphStyleId;
+    delete attrs.omiNextParagraphStyleId;
     delete attrs.omiVisual;
     next.attrs = Object.keys(attrs).length ? attrs : undefined;
   }
@@ -252,6 +264,10 @@ function textBlockFromNode(
   previousBlock: OmiBlock | undefined,
   type: string,
 ): OmiBlock {
+  const attrs = (editorNode.attrs ?? {}) as ContinuousNodeAttributes;
+  const paragraphStyleId = type === 'heading'
+    ? undefined
+    : stringAttribute(attrs.omiParagraphStyleId) || undefined;
   return {
     ...(previousBlock ?? {}),
     id: blockId,
@@ -260,6 +276,7 @@ function textBlockFromNode(
       type: 'doc',
       content: [stripContinuousAttributes(editorNode)],
     }),
+    paragraphStyleId,
     visual: undefined,
   };
 }

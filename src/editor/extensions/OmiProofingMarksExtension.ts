@@ -3,6 +3,11 @@ import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 
+import {
+  classifyProofingTextChange,
+  createProofingTextDiff,
+  storedContentText,
+} from '../../model/proofing';
 import type {
   OmiAnnotation,
   OmiProofingChange,
@@ -11,16 +16,24 @@ import type {
 
 export const PROOFING_MARKS_META = 'omiProofingMarks:set';
 
+export interface OmiPublicationFlowBreak {
+  targetBlockId: string;
+  textOffset: number;
+  height: number;
+}
+
 export interface OmiProofingMarksPayload {
   changes: readonly OmiProofingChange[];
   comments: readonly OmiAnnotation[];
   corrections: readonly OmiPublicationCorrection[];
+  pageFlowBreaks: readonly OmiPublicationFlowBreak[];
 }
 
 const emptyPayload = (): OmiProofingMarksPayload => ({
   changes: [],
   comments: [],
   corrections: [],
+  pageFlowBreaks: [],
 });
 
 const key = new PluginKey<OmiProofingMarksPayload>('omiProofingMarks');
@@ -54,6 +67,7 @@ export const OmiProofingMarksExtension = Extension.create({
               )),
             );
             const correctionsByBlock = groupByBlock(payload.corrections);
+            const pageFlowBreaksByBlock = groupByBlock(payload.pageFlowBreaks);
             const decorations: Decoration[] = [];
 
             state.doc.forEach((node, offset) => {
@@ -65,9 +79,15 @@ export const OmiProofingMarksExtension = Extension.create({
               const corrections = (correctionsByBlock.get(blockId) ?? []).filter(
                 (correction) => correctionSourceMatches(nodeText, correction),
               );
+              const pageFlowBreaks = pageFlowBreaksByBlock.get(blockId) ?? [];
+              const primaryChange = changes[0];
+              const changeKind = primaryChange
+                ? classifyProofingTextChange(primaryChange.before, primaryChange.after)
+                : undefined;
 
               const nodeClasses = [
                 changes.length ? 'omi-proofing-change-block' : '',
+                changeKind ? `omi-proofing-change-block--${changeKind}` : '',
                 comments.length ? 'omi-proofing-comment-block' : '',
                 corrections.some((item) => item.kind === 'page-break-before')
                   ? 'omi-publication-correction-page-break'
@@ -83,10 +103,23 @@ export const OmiProofingMarksExtension = Extension.create({
               if (nodeClasses) {
                 decorations.push(Decoration.node(offset, offset + node.nodeSize, {
                   class: nodeClasses,
-                  ...(changes[0]
-                    ? { 'data-proofing-change-id': changes[0].id }
+                  ...(primaryChange
+                    ? {
+                        'data-proofing-change-id': primaryChange.id,
+                        'data-proofing-kind': changeKind,
+                      }
                     : {}),
                 }));
+              }
+
+              if (primaryChange) {
+                addTrackedChangeDecoration(
+                  decorations,
+                  node,
+                  offset,
+                  nodeText,
+                  primaryChange,
+                );
               }
 
               for (const comment of comments) {
@@ -103,6 +136,14 @@ export const OmiProofingMarksExtension = Extension.create({
               for (const correction of corrections) {
                 addCorrectionDecoration(decorations, node, offset, correction);
               }
+              for (const pageFlowBreak of pageFlowBreaks) {
+                addPageFlowBreakDecoration(
+                  decorations,
+                  node,
+                  offset,
+                  pageFlowBreak,
+                );
+              }
             });
 
             return DecorationSet.create(state.doc, decorations);
@@ -112,6 +153,60 @@ export const OmiProofingMarksExtension = Extension.create({
     ];
   },
 });
+
+function addTrackedChangeDecoration(
+  decorations: Decoration[],
+  node: ProseMirrorNode,
+  offset: number,
+  nodeText: string,
+  change: OmiProofingChange,
+): void {
+  const beforeText = storedContentText(change.before);
+  const afterText = storedContentText(change.after);
+  if (nodeText !== afterText) return;
+
+  const diff = createProofingTextDiff(beforeText, afterText);
+  if (!diff.inserted) return;
+  const range = textRangeInNode(
+    node,
+    offset,
+    diff.prefix.length,
+    diff.prefix.length + diff.inserted.length,
+  );
+  if (!range) return;
+
+  decorations.push(Decoration.inline(range.from, range.to, {
+    class: 'omi-proofing-insertion-range',
+    'data-proofing-change-id': change.id,
+    'data-proofing-kind': 'insertion',
+  }));
+}
+
+function addPageFlowBreakDecoration(
+  decorations: Decoration[],
+  node: ProseMirrorNode,
+  offset: number,
+  pageFlowBreak: OmiPublicationFlowBreak,
+): void {
+  const position = textPositionInNode(node, offset, pageFlowBreak.textOffset);
+  if (position === null || pageFlowBreak.height <= 0) return;
+  decorations.push(Decoration.widget(position, () => {
+    const spacer = document.createElement('span');
+    spacer.className = 'omi-publication-flow-break';
+    spacer.dataset.publicationFlowBreak = 'true';
+    spacer.style.setProperty(
+      '--omi-publication-flow-break-height',
+      `${Math.round(pageFlowBreak.height * 100) / 100}px`,
+    );
+    spacer.contentEditable = 'false';
+    spacer.setAttribute('aria-hidden', 'true');
+    return spacer;
+  }, {
+    key: `page-flow:${pageFlowBreak.targetBlockId}:${pageFlowBreak.textOffset}:${Math.round(pageFlowBreak.height * 100)}`,
+    side: -1,
+    ignoreSelection: true,
+  }));
+}
 
 function addCorrectionDecoration(
   decorations: Decoration[],
