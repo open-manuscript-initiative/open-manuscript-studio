@@ -13,6 +13,12 @@ import {
   hyphenatePrintText,
   resolvePrintHyphenationModule,
 } from '../src/services/printHyphenation.ts';
+import {
+  fallbackSystemFontFamilies,
+  groupSystemFontFaces,
+  inferSystemFontFaceStyle,
+  preferredSystemFontFace,
+} from '../src/services/systemFonts.ts';
 
 const styleEditor = readFileSync(
   new URL('../src/components/PublicationStyleEditor.tsx', import.meta.url),
@@ -32,6 +38,10 @@ const exportRenderer = readFileSync(
 );
 const hyphenationRenderer = readFileSync(
   new URL('../src/services/printHyphenation.ts', import.meta.url),
+  'utf8',
+);
+const systemFonts = readFileSync(
+  new URL('../src/services/systemFonts.ts', import.meta.url),
   'utf8',
 );
 const studioMenu = readFileSync(
@@ -81,6 +91,71 @@ test('publication settings use a Word-like top ribbon instead of a permanent sid
   assert.doesNotMatch(styleEditor, /<aside className="publication-style-controls"/);
   assert.match(editorStyles, /\.publication-style-ribbon-panel \{[\s\S]*position: absolute/);
   assert.match(editorStyles, /\.publication-style-editor-layout \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
+});
+
+test('font families come from a dropdown with permission-gated system discovery', () => {
+  assert.match(styleEditor, /<FontFamilySelect/);
+  assert.match(styleEditor, /<SystemFontCatalogControls/);
+  assert.match(styleEditor, /queryInstalledSystemFonts/);
+  assert.match(styleEditor, /copy\.loadSystemFonts/);
+  assert.match(styleEditor, /publication-font-option-sample/);
+  assert.match(styleEditor, /sampleText=\{copy\.fontSample\}/);
+  assert.match(styleEditor, /type="search"/);
+  assert.match(systemFonts, /queryLocalFonts/);
+  assert.match(systemFonts, /supportsLocalFontAccess/);
+  assert.doesNotMatch(
+    styleEditor,
+    /<input value=\{style\.fonts\.body\.family\}/,
+  );
+  assert.doesNotMatch(
+    styleEditor,
+    /<input value=\{resolvedParagraphStyle\.fontFamily\}/,
+  );
+});
+
+test('InDesign-like font faces infer weight and italic combinations', () => {
+  assert.deepEqual(inferSystemFontFaceStyle('Thin'), { weight: 100, fontStyle: 'normal' });
+  assert.deepEqual(inferSystemFontFaceStyle('ExtraLight Italic'), { weight: 200, fontStyle: 'italic' });
+  assert.deepEqual(inferSystemFontFaceStyle('Demi Bold Oblique'), { weight: 600, fontStyle: 'italic' });
+  assert.deepEqual(inferSystemFontFaceStyle('Ultra-Bold'), { weight: 800, fontStyle: 'normal' });
+  assert.deepEqual(inferSystemFontFaceStyle('Heavy Kursiv'), { weight: 900, fontStyle: 'italic' });
+
+  const fallback = fallbackSystemFontFamilies(['Publisher Serif']);
+  const publisher = fallback.find((family) => family.family === 'Publisher Serif');
+  assert.ok(publisher);
+  assert.ok(publisher.faces.some((face) => face.style === 'Light Italic'));
+  assert.ok(publisher.faces.some((face) => face.style === 'Semi Bold'));
+  assert.ok(publisher.faces.some((face) => face.style === 'Black Italic'));
+});
+
+test('system font catalog groups actual faces and keeps the closest valid face', () => {
+  const catalog = groupSystemFontFaces([
+    { family: 'Example Serif', fullName: 'Example Serif Regular', style: 'Regular' },
+    { family: 'Example Serif', fullName: 'Example Serif Medium', style: 'Medium' },
+    { family: 'Example Serif', fullName: 'Example Serif Semibold Italic', style: 'Semibold Italic' },
+    { family: 'Example Serif', fullName: 'Example Serif Bold', style: 'Bold' },
+    { family: 'Example Serif', fullName: 'Duplicate Bold', style: 'Bold' },
+  ]);
+
+  assert.equal(catalog.length, 1);
+  assert.deepEqual(
+    catalog[0]?.faces.map((face) => [face.weight, face.fontStyle]),
+    [[400, 'normal'], [500, 'normal'], [600, 'italic'], [700, 'normal']],
+  );
+  assert.equal(
+    preferredSystemFontFace(catalog, 'Example Serif', 600, 'italic').style,
+    'Semibold Italic',
+  );
+  assert.equal(
+    preferredSystemFontFace(catalog, 'Example Serif', 650, 'normal').style,
+    'Bold',
+  );
+  assert.match(styleEditor, /label=\{copy\.fontVariant\}/);
+  assert.doesNotMatch(styleEditor, /<option value="300">300<\/option>/);
+  assert.match(editorStyles, /\.publication-font-dropdown-list > button[\s\S]*grid-template-columns/);
+  assert.match(editorStyles, /\.publication-font-option-sample[\s\S]*font-size/);
+  assert.match(documentCanvas, /fontWeight: body\.fontWeight/);
+  assert.match(exportRenderer, /font-weight: \$\{body\.fontWeight\}/);
 });
 
 test('publication view edits the complete structured manuscript instead of a sample paragraph', () => {

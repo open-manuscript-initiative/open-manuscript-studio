@@ -23,6 +23,11 @@ the portable OMI document model and individual renderers.
   modules and per-paragraph language support.
 - Added InDesign-like paragraph styles with “Based on” inheritance, “Next
   style”, reusable definitions and portable block assignments.
+- Replaced manually typed font-family fields with dropdowns and added
+  permission-gated discovery of installed system fonts. Available Light,
+  Medium, Semibold, Bold, Black and italic faces now appear as an
+  InDesign-like font-style list, with searchable live type samples and a
+  portable fallback catalog.
 - Changed live pagination so ordinary paragraphs continue line by line onto
   the next page. Explicit keep rules and heading widow/orphan behaviour remain
   available where required.

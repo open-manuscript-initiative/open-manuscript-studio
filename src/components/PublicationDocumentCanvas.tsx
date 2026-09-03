@@ -345,6 +345,8 @@ export function PublicationDocumentCanvas({
     marginTop: `${Math.max(8, bleed + 8)}px`,
     marginBottom: `${Math.max(8, bleed + 8)}px`,
     fontFamily: `${style.fonts.body.family}, ${style.fonts.body.fallback}`,
+    fontWeight: body.fontWeight,
+    fontStyle: body.fontStyle,
     '--omi-publication-page-height': `${pageHeight}px`,
     '--omi-publication-page-gap': `${pageGap}px`,
     '--omi-publication-bleed': `${bleed}px`,
