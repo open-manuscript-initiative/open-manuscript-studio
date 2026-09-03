@@ -1,5 +1,6 @@
 import type { JSONContent } from '@tiptap/core';
 import {
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -26,6 +27,7 @@ import {
   type PublicationStyle,
 } from '../services/publicationStyleExport';
 import { BlockEditor } from './BlockEditor';
+import { paginatePublicationBlocks } from './publicationPageLayout';
 
 const PIXELS_PER_MM = 96 / 25.4;
 const PIXELS_PER_POINT = 96 / 72;
@@ -39,6 +41,7 @@ interface PublicationDocumentCanvasProps {
 interface PublicationCanvasCopy {
   editor: string;
   description: string;
+  printLayout: string;
   zoom: string;
   fit: string;
   pages: (count: number) => string;
@@ -55,6 +58,7 @@ interface PublicationCanvasCopy {
 export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasProps) {
   const { locale } = useTranslation();
   const copy = canvasCopy(locale);
+  const canvasId = `publication-canvas-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const manuscript = useStudioStore((state) => state.manuscript);
   const setTitle = useStudioStore((state) => state.setTitle);
   const setAbstract = useStudioStore((state) => state.setAbstract);
@@ -62,7 +66,7 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [stageWidth, setStageWidth] = useState(0);
-  const [pageCount, setPageCount] = useState(1);
+  const [pagination, setPagination] = useState({ pageCount: 1, css: '' });
   const [zoom, setZoom] = useState<PublicationZoom>('fit');
 
   const pageWidthMm = positive(style.page.width, 150);
@@ -80,10 +84,23 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
   const scale = zoom === 'fit' ? fitScale : zoom / 100;
   const pageWidth = physicalWidth * scale;
   const pageHeight = pageHeightMm * PIXELS_PER_MM * scale;
+  const topMargin = topMarginMm * PIXELS_PER_MM * scale;
+  const bottomMargin = bottomMarginMm * PIXELS_PER_MM * scale;
+  const innerMargin = innerMarginMm * PIXELS_PER_MM * scale;
+  const outerMargin = outerMarginMm * PIXELS_PER_MM * scale;
+  const bleed = bleedMm * PIXELS_PER_MM * scale;
+  const pageGap = Math.max(16, bleed * 2 + 12);
+  const pageStride = pageHeight + pageGap;
   const usablePageHeight = Math.max(
     80,
-    (pageHeightMm - topMarginMm - bottomMarginMm) * PIXELS_PER_MM * scale,
+    pageHeight - topMargin - bottomMargin,
   );
+  const firstPageNumber = Math.max(0, Math.trunc(style.page.pageNumberStart ?? 1));
+  const firstPageIsMirrored = style.page.mirroredMargins && firstPageNumber % 2 === 0;
+  const firstPageLeftMargin = firstPageIsMirrored ? outerMargin : innerMargin;
+  const firstPageRightMargin = firstPageIsMirrored ? innerMargin : outerMargin;
+  const contentWidth = Math.max(80, pageWidth - firstPageLeftMargin - firstPageRightMargin);
+  const pageOverhead = topMargin + bottomMargin + pageGap;
 
   const sectionNumbers = useMemo(
     () => new Map(
@@ -130,21 +147,75 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
   useLayoutEffect(() => {
     const content = contentRef.current;
     if (!content) return;
+
+    let frame = 0;
     const update = () => {
-      const next = Math.max(1, Math.ceil(content.scrollHeight / usablePageHeight));
-      setPageCount((current) => current === next ? current : next);
+      const flow = collectPublicationFlowElements(content);
+      const layout = paginatePublicationBlocks(
+        flow.map(({ element }) => ({
+          top: offsetTopWithin(element, content),
+          height: element.offsetHeight,
+          keepWithNext: /^H[1-6]$/.test(element.tagName),
+        })),
+        usablePageHeight,
+        pageOverhead,
+      );
+      const css = buildPaginationCss({
+        canvasId,
+        flow,
+        placements: layout.placements,
+        firstPageNumber,
+        mirroredMargins: style.page.mirroredMargins,
+        innerMargin,
+        outerMargin,
+        firstPageLeftMargin,
+      });
+
+      setPagination((current) => (
+        current.pageCount === layout.pageCount && current.css === css
+          ? current
+          : { pageCount: layout.pageCount, css }
+      ));
     };
-    const frame = requestAnimationFrame(update);
-    if (typeof ResizeObserver === 'undefined') {
-      return () => cancelAnimationFrame(frame);
-    }
-    const observer = new ResizeObserver(update);
-    observer.observe(content);
+    const schedule = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(update);
+    };
+
+    schedule();
+    const resizeObserver = typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver(schedule);
+    resizeObserver?.observe(content);
+    const mutationObserver = typeof MutationObserver === 'undefined'
+      ? null
+      : new MutationObserver(schedule);
+    mutationObserver?.observe(content, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+
     return () => {
       cancelAnimationFrame(frame);
-      observer.disconnect();
+      resizeObserver?.disconnect();
+      mutationObserver?.disconnect();
     };
-  }, [document, manuscript.abstract, manuscript.motto, manuscript.subtitle, notes, scale, style, usablePageHeight]);
+  }, [
+    canvasId,
+    document,
+    firstPageLeftMargin,
+    firstPageNumber,
+    innerMargin,
+    manuscript.abstract,
+    manuscript.motto,
+    manuscript.subtitle,
+    notes,
+    outerMargin,
+    pageOverhead,
+    style.page.mirroredMargins,
+    usablePageHeight,
+  ]);
 
   function updateDocument(_documentId: string, content: string): void {
     let parsed: JSONContent;
@@ -165,7 +236,7 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
   const heading1 = style.styles.heading1;
   const heading2 = style.styles.heading2;
   const note = style.styles.footnote;
-  const firstPageNumber = Math.max(0, Math.trunc(style.page.pageNumberStart ?? 1));
+  const pageCount = pagination.pageCount;
   const runningHeaderValues = {
     articleTitle: manuscript.title,
     shortArticleTitle: shorten(manuscript.title, 72),
@@ -176,16 +247,13 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
   };
   const pageStyle = {
     width: `${pageWidth}px`,
-    minHeight: `${pageHeight * pageCount}px`,
-    marginTop: `${Math.max(6, bleedMm * PIXELS_PER_MM * scale + 6)}px`,
-    marginBottom: `${Math.max(6, bleedMm * PIXELS_PER_MM * scale + 6)}px`,
-    paddingTop: `${topMarginMm * PIXELS_PER_MM * scale}px`,
-    paddingRight: `${outerMarginMm * PIXELS_PER_MM * scale}px`,
-    paddingBottom: `${bottomMarginMm * PIXELS_PER_MM * scale}px`,
-    paddingLeft: `${innerMarginMm * PIXELS_PER_MM * scale}px`,
+    height: `${pageHeight * pageCount + pageGap * Math.max(0, pageCount - 1)}px`,
+    marginTop: `${Math.max(8, bleed + 8)}px`,
+    marginBottom: `${Math.max(8, bleed + 8)}px`,
     fontFamily: `${style.fonts.body.family}, ${style.fonts.body.fallback}`,
     '--omi-publication-page-height': `${pageHeight}px`,
-    '--omi-publication-bleed': `${bleedMm * PIXELS_PER_MM * scale}px`,
+    '--omi-publication-page-gap': `${pageGap}px`,
+    '--omi-publication-bleed': `${bleed}px`,
     '--omi-publication-running-header-size': `${style.runningHeaders.fontSize * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-running-header-rule': style.runningHeaders.rule.enabled
       ? `${Math.max(0.5, style.runningHeaders.rule.width * PIXELS_PER_POINT * scale)}px`
@@ -209,15 +277,32 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
     '--omi-publication-heading-two-after': `${heading2.spaceAfter * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-body-align': body.alignment,
   } as CSSProperties;
+  const contentStyle = {
+    top: `${topMargin}px`,
+    left: `${firstPageLeftMargin}px`,
+    width: `${contentWidth}px`,
+  } as CSSProperties;
+  const rulerStyle = {
+    width: `${pageWidth}px`,
+    '--omi-publication-ruler-left': `${firstPageLeftMargin}px`,
+    '--omi-publication-ruler-right': `${firstPageRightMargin}px`,
+    '--omi-publication-ruler-step': `${5 * PIXELS_PER_MM * scale}px`,
+  } as CSSProperties;
 
   return (
-    <section className="publication-document-canvas" aria-labelledby="publication-document-canvas-title">
+    <section
+      id={canvasId}
+      className="publication-document-canvas"
+      aria-labelledby="publication-document-canvas-title"
+    >
+      {pagination.css ? <style>{pagination.css}</style> : null}
       <header className="publication-document-canvas-toolbar">
         <div>
           <strong id="publication-document-canvas-title">{copy.editor}</strong>
           <span>{copy.description}</span>
         </div>
         <div className="publication-document-canvas-status">
+          <span className="publication-document-view-mode">{copy.printLayout}</span>
           <span aria-live="polite">{copy.pages(pageCount)}</span>
           <label>
             <span>{copy.zoom}</span>
@@ -234,7 +319,15 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
         </div>
       </header>
 
-      <div ref={stageRef} className="publication-document-canvas-stage">
+      <div
+        ref={stageRef}
+        className="publication-document-canvas-stage"
+        aria-label={copy.printLayout}
+      >
+        <div className="publication-document-ruler" style={rulerStyle} aria-hidden="true">
+          <span className="publication-document-ruler-margin publication-document-ruler-margin--left" />
+          <span className="publication-document-ruler-margin publication-document-ruler-margin--right" />
+        </div>
         <article className="publication-document-paper" style={pageStyle}>
           <div className="publication-document-page-guides" aria-hidden="true">
             {Array.from({ length: pageCount }, (_, index) => {
@@ -252,7 +345,7 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
                   className={`publication-document-page-guide${style.page.cropMarks ? ' publication-document-page-guide--crop-marks' : ''}${bleedMm > 0 ? ' publication-document-page-guide--bleed' : ''}`}
                   key={index}
                   style={{
-                    top: `${index * pageHeight}px`,
+                    top: `${index * pageStride}px`,
                     height: `${pageHeight}px`,
                     '--omi-publication-page-left-margin': `${leftMargin * PIXELS_PER_MM * scale}px`,
                     '--omi-publication-page-right-margin': `${rightMargin * PIXELS_PER_MM * scale}px`,
@@ -280,7 +373,7 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
             })}
           </div>
 
-          <div ref={contentRef} className="publication-document-content">
+          <div ref={contentRef} className="publication-document-content" style={contentStyle}>
             <header className="publication-document-front-matter">
               <AutoGrowPublicationField
                 className="publication-document-title"
@@ -438,11 +531,103 @@ function shorten(value: string, maximumLength: number): string {
   return `${normalized.slice(0, Math.max(1, maximumLength - 1)).trimEnd()}…`;
 }
 
+interface PublicationFlowElement {
+  element: HTMLElement;
+  selector: string;
+}
+
+function collectPublicationFlowElements(root: HTMLElement): PublicationFlowElement[] {
+  const flow: PublicationFlowElement[] = [];
+  const frontMatter = directChild(root, 'publication-document-front-matter');
+  if (frontMatter) {
+    flow.push({ element: frontMatter, selector: '.publication-document-front-matter' });
+  }
+
+  const editor = root.querySelector<HTMLElement>('.omi-continuous-tiptap-editor');
+  if (editor) {
+    Array.from(editor.children).forEach((child, index) => {
+      if (!(child instanceof HTMLElement)) return;
+      flow.push({
+        element: child,
+        selector: `.omi-continuous-tiptap-editor > :nth-child(${index + 1})`,
+      });
+    });
+  }
+
+  const empty = directChild(root, 'publication-document-empty');
+  if (empty) {
+    flow.push({ element: empty, selector: '.publication-document-empty' });
+  }
+  const notes = directChild(root, 'publication-document-notes');
+  if (notes) {
+    flow.push({ element: notes, selector: '.publication-document-notes' });
+  }
+
+  return flow.sort(
+    (left, right) => offsetTopWithin(left.element, root) - offsetTopWithin(right.element, root),
+  );
+}
+
+function directChild(root: HTMLElement, className: string): HTMLElement | undefined {
+  return Array.from(root.children).find(
+    (child): child is HTMLElement => child instanceof HTMLElement && child.classList.contains(className),
+  );
+}
+
+function offsetTopWithin(element: HTMLElement, root: HTMLElement): number {
+  let top = 0;
+  let current: HTMLElement | null = element;
+
+  while (current && current !== root) {
+    top += current.offsetTop;
+    current = current.offsetParent instanceof HTMLElement ? current.offsetParent : null;
+  }
+
+  return current === root ? top : element.offsetTop;
+}
+
+function buildPaginationCss({
+  canvasId,
+  flow,
+  placements,
+  firstPageNumber,
+  mirroredMargins,
+  innerMargin,
+  outerMargin,
+  firstPageLeftMargin,
+}: {
+  canvasId: string;
+  flow: readonly PublicationFlowElement[];
+  placements: readonly { pageIndex: number; translateY: number }[];
+  firstPageNumber: number;
+  mirroredMargins: boolean;
+  innerMargin: number;
+  outerMargin: number;
+  firstPageLeftMargin: number;
+}): string {
+  return flow.map((block, index) => {
+    const placement = placements[index];
+    if (!placement) return '';
+    const pageNumber = firstPageNumber + placement.pageIndex;
+    const pageLeftMargin = mirroredMargins && pageNumber % 2 === 0
+      ? outerMargin
+      : innerMargin;
+    const translateX = pageLeftMargin - firstPageLeftMargin;
+    return `#${canvasId} ${block.selector} { translate: ${cssPixel(translateX)} ${cssPixel(placement.translateY)}; }`;
+  }).filter(Boolean).join('\n');
+}
+
+function cssPixel(value: number): string {
+  const rounded = Math.abs(value) < 0.005 ? 0 : Math.round(value * 100) / 100;
+  return `${rounded}px`;
+}
+
 function canvasCopy(locale: string): PublicationCanvasCopy {
   if (locale === 'hu') {
     return {
       editor: 'Élő kiadványszerkesztő',
       description: 'A kézirat tartalma és a nyomtatási stílus ugyanazon a szerkeszthető oldalon látható.',
+      printLayout: 'Nyomtatási elrendezés',
       zoom: 'Nagyítás',
       fit: 'Oldalszélesség',
       pages: (count) => `${count} becsült oldal`,
@@ -460,6 +645,7 @@ function canvasCopy(locale: string): PublicationCanvasCopy {
     return {
       editor: 'Live-Publikationseditor',
       description: 'Manuskriptinhalt und Druckstil erscheinen gemeinsam auf einer bearbeitbaren Seite.',
+      printLayout: 'Drucklayout',
       zoom: 'Zoom',
       fit: 'Seitenbreite',
       pages: (count) => `${count} geschätzte Seite${count === 1 ? '' : 'n'}`,
@@ -476,6 +662,7 @@ function canvasCopy(locale: string): PublicationCanvasCopy {
   return {
     editor: 'Live publication editor',
     description: 'Manuscript content and print styling appear together on the same editable page.',
+    printLayout: 'Print layout',
     zoom: 'Zoom',
     fit: 'Fit width',
     pages: (count) => `${count} estimated page${count === 1 ? '' : 's'}`,
