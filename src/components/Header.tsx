@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   CheckCircle2,
   Clock3,
+  FileCheck2,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -26,6 +27,7 @@ import { AccountPanel } from './AccountPanel';
 import { DesktopDocumentOutline } from './DesktopDocumentOutline';
 import { HeaderInsertMenu } from './HeaderInsertMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { ProofingPanel } from './ProofingPanel';
 
 interface HeaderProps {
   onOpenMenu: () => void;
@@ -47,6 +49,9 @@ export function Header({ onOpenMenu }: HeaderProps) {
   const toggleCurrentStudyNotes = useStudioStore(
     (state) => state.toggleCurrentStudyNotes,
   );
+  const proofingPanelOpen = useStudioStore((state) => state.proofingPanelOpen);
+  const toggleProofingPanel = useStudioStore((state) => state.toggleProofingPanel);
+  const closeProofingPanel = useStudioStore((state) => state.closeProofingPanel);
   const logout = useAuthStore((state) => state.logout);
   const loading = useAuthStore((state) => state.isLoading);
   const section = manuscript.sections.find((candidate) => candidate.id === selectedId);
@@ -58,6 +63,11 @@ export function Header({ onOpenMenu }: HeaderProps) {
   const notesLabel = currentStudyNotesVisible
     ? currentNotesCopy.hide
     : currentNotesCopy.show;
+  const proofingLabel = locale === 'hu'
+    ? 'Korrektúra és változáskövetés'
+    : locale === 'de'
+      ? 'Korrektur und Änderungsverfolgung'
+      : 'Proofing and tracked changes';
 
   useEffect(() => {
     const host = document.querySelector<HTMLElement>('.focus-workspace');
@@ -65,8 +75,12 @@ export function Header({ onOpenMenu }: HeaderProps) {
     if (!host) return;
 
     host.classList.toggle('focus-workspace--outline', outlineOpen);
-    return () => host.classList.remove('focus-workspace--outline');
-  }, [outlineOpen]);
+    host.classList.toggle('focus-workspace--proofing', proofingPanelOpen);
+    return () => {
+      host.classList.remove('focus-workspace--outline');
+      host.classList.remove('focus-workspace--proofing');
+    };
+  }, [outlineOpen, proofingPanelOpen]);
 
   const search = () =>
     window.dispatchEvent(
@@ -93,7 +107,10 @@ export function Header({ onOpenMenu }: HeaderProps) {
           <button
             type="button"
             className="focus-menu-button focus-outline-button"
-            onClick={() => setOutlineOpen((current) => !current)}
+            onClick={() => {
+              closeProofingPanel();
+              setOutlineOpen((current) => !current);
+            }}
             aria-label={outlineLabel}
             title={outlineLabel}
             aria-pressed={outlineOpen}
@@ -103,6 +120,24 @@ export function Header({ onOpenMenu }: HeaderProps) {
             ) : (
               <PanelLeftOpen size={18} aria-hidden="true" />
             )}
+          </button>
+
+          <button
+            type="button"
+            className={`focus-menu-button focus-proofing-button${
+              proofingPanelOpen ? ' is-active' : ''
+            }`}
+            onClick={() => {
+              setOutlineOpen(false);
+              toggleProofingPanel();
+            }}
+            aria-label={proofingLabel}
+            title={proofingLabel}
+            aria-pressed={proofingPanelOpen}
+            aria-expanded={proofingPanelOpen}
+            aria-controls="omi-proofing-panel"
+          >
+            <FileCheck2 size={18} aria-hidden="true" />
           </button>
 
           <button
@@ -199,6 +234,13 @@ export function Header({ onOpenMenu }: HeaderProps) {
       {outlineOpen && outlineHost
         ? createPortal(
             <DesktopDocumentOutline onClose={() => setOutlineOpen(false)} />,
+            outlineHost,
+          )
+        : null}
+
+      {proofingPanelOpen && outlineHost
+        ? createPortal(
+            <ProofingPanel onClose={closeProofingPanel} />,
             outlineHost,
           )
         : null}

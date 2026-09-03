@@ -118,6 +118,10 @@ function StudyEditor({
         manuscriptLanguage={manuscriptLanguage}
         className="omi-continuous-document-editor"
         continuous
+        proofingMode="editor"
+        onProofingSelection={(selection) =>
+          useStudioStore.getState().setProofingSelection(selection)
+        }
       />
     </section>
   );

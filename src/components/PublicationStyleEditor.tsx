@@ -13,6 +13,7 @@ import {
   Plus,
   RotateCcw,
   Save,
+  Scissors,
   Trash2,
   Type,
 } from 'lucide-react';
@@ -22,16 +23,18 @@ import { useStudioStore } from '../app/useStudioStore';
 import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json';
 import { useTranslation } from '../i18n';
 import { getManuscriptLanguageDisplayName } from '../model/manuscriptLanguage';
+import type { ProofingSelection } from '../model/proofing';
 import {
   buildPublicationStyleCss,
   type PublicationStyle,
 } from '../services/publicationStyleExport';
 import { resolvePrintHyphenationModule } from '../services/printHyphenation';
+import type { OmiPublicationCorrectionKind } from '../types/omi';
 import { PublicationDocumentCanvas } from './PublicationDocumentCanvas';
 import './PublicationStyleEditor.css';
 
 type PageOrientation = 'portrait' | 'landscape';
-type PublicationRibbonPanel = 'styles' | 'page' | 'margins' | 'typography' | 'export' | null;
+type PublicationRibbonPanel = 'styles' | 'page' | 'margins' | 'typography' | 'proofing' | 'export' | null;
 
 const LEGACY_STORAGE_KEY = 'omi:publication-style:egyhaztorteneti-szemle';
 const LIBRARY_STORAGE_KEY = 'omi:publication-style-library:v1';
@@ -142,19 +145,27 @@ function copyFor(locale: string) {
     page: 'Nyomtatási oldal', preset: 'Oldalformátum', custom: 'Egyéni méret', orientation: 'Tájolás', portrait: 'Álló', landscape: 'Fekvő', width: 'Vágott szélesség', height: 'Vágott magasság', pageNumberStart: 'Első oldalszám', margins: 'Margók és nyomdai adatok', top: 'Felső', bottom: 'Alsó', inner: 'Belső', outer: 'Külső', gutter: 'Kötésmargó', bleed: 'Kifutó', mirroredMargins: 'Tükrözött margók páros és páratlan oldalakon', cropMarks: 'Vágójelek kérése a nyomdai exportban', runningHeaders: 'Élőfej megjelenítése', firstPageHeader: 'Élőfej az első oldalon is',
     typography: 'Tipográfia', font: 'Betűcsalád', bodySize: 'Törzsszöveg mérete', bodyLeading: 'Törzsszöveg sorköze', indent: 'Első sor behúzása', hyphenation: 'Automatikus elválasztás a nyomtatható változatokban', hyphenationModule: 'Nyelvi modul', hyphenationInline: 'A nyelvjelölt szövegrészek automatikusan a saját moduljukat használják.', hyphenationFallback: 'Ehhez a nyelvhez nincs beépített minta; a nyomtató böngésző elválasztási szótára használható.',
     titleSize: 'Cím mérete', headingSize: 'Címsor mérete', footnoteSize: 'Lábjegyzet mérete', alignment: 'Igazítás', justify: 'Sorkizárt', alignLeft: 'Balra', alignCenter: 'Középre', alignRight: 'Jobbra',
-    save: 'Stílus mentése', saved: 'A stílus mentve és aktív', reset: 'Sablonértékek visszaállítása', export: 'Stílus exportálása', exportCss: 'CSS letöltése', defaultNewName: 'Új kiadványstílus', copySuffix: 'másolat', liveApplied: 'A módosítások automatikusan az aktív exportstílusba kerülnek.',
+    save: 'Stílus mentése', saved: 'A stílus mentve és aktív', reset: 'Sablonértékek visszaállítása', export: 'Stílus exportálása', exportCss: 'CSS letöltése', defaultNewName: 'Új kiadványstílus', copySuffix: 'másolat', liveApplied: 'A módosítások automatikusan az aktív exportstílusba kerülnek.', proofing: 'Tördelési korrektúra', proofingHelp: 'A javítások csak a nyomtatási elrendezést módosítják; a kézirat szövege változatlan marad.', selectedText: 'Kijelölés', placeCursor: 'Helyezze a kurzort vagy jelöljön ki szöveget a nyomtatási képen.', optionalHyphen: 'Feltételes elválasztójel', nonbreaking: 'Egyben tartott kijelölés', forcedLineBreak: 'Kényszerített sortörés', pageBreakBefore: 'Oldaltörés elé', keepTogether: 'Bekezdés egyben tartása', keepWithNext: 'Együtt a következővel', corrections: 'Aktív tördelési javítások', noCorrections: 'Még nincs kézi tördelési javítás.', removeCorrection: 'Javítás eltávolítása', correctionAdded: 'A tördelési javítás hozzáadva.', selectRange: 'Ehhez a művelethez jelöljön ki szöveget.',
   };
   if (locale === 'de') return {
-    title: 'Live-Publikationseditor', description: 'Die vollständige, bearbeitbare Druckansicht des Beitrags oder Bandes. Inhaltliche und typografische Änderungen erscheinen sofort und werden für den Export verwendet.', styles: 'Publikationsstile', styleName: 'Stilname', newStyle: 'Neuer Stil', duplicate: 'Duplizieren', deleteStyle: 'Stil löschen', cannotDeleteLast: 'Mindestens ein Publikationsstil muss erhalten bleiben.', page: 'Druckseite', preset: 'Seitenformat', custom: 'Benutzerdefiniert', orientation: 'Ausrichtung', portrait: 'Hochformat', landscape: 'Querformat', width: 'Endbreite', height: 'Endhöhe', pageNumberStart: 'Erste Seitenzahl', margins: 'Ränder und Druckdaten', top: 'Oben', bottom: 'Unten', inner: 'Innen', outer: 'Außen', gutter: 'Bundsteg', bleed: 'Beschnitt', mirroredMargins: 'Gespiegelte Ränder für gerade und ungerade Seiten', cropMarks: 'Schnittmarken im Druckexport', runningHeaders: 'Kolumnentitel anzeigen', firstPageHeader: 'Kolumnentitel auch auf der ersten Seite', typography: 'Typografie', font: 'Schriftfamilie', bodySize: 'Grundschrift', bodyLeading: 'Zeilenabstand', indent: 'Erstzeileneinzug', hyphenation: 'Automatische Silbentrennung in Druckausgaben', hyphenationModule: 'Sprachmodul', hyphenationInline: 'Sprachmarkierte Textteile verwenden automatisch ihr eigenes Modul.', hyphenationFallback: 'Für diese Sprache ist kein Muster eingebaut; das Wörterbuch des Druckbrowsers kann verwendet werden.', titleSize: 'Titelgröße', headingSize: 'Überschriftgröße', footnoteSize: 'Fußnotengröße', alignment: 'Ausrichtung', justify: 'Blocksatz', alignLeft: 'Links', alignCenter: 'Zentriert', alignRight: 'Rechts', save: 'Stil speichern', saved: 'Stil gespeichert und aktiv', reset: 'Vorlagenwerte zurücksetzen', export: 'Stil exportieren', exportCss: 'CSS herunterladen', defaultNewName: 'Neuer Publikationsstil', copySuffix: 'Kopie', liveApplied: 'Änderungen werden automatisch auf den aktiven Exportstil angewendet.',
+    title: 'Live-Publikationseditor', description: 'Die vollständige, bearbeitbare Druckansicht des Beitrags oder Bandes. Inhaltliche und typografische Änderungen erscheinen sofort und werden für den Export verwendet.', styles: 'Publikationsstile', styleName: 'Stilname', newStyle: 'Neuer Stil', duplicate: 'Duplizieren', deleteStyle: 'Stil löschen', cannotDeleteLast: 'Mindestens ein Publikationsstil muss erhalten bleiben.', page: 'Druckseite', preset: 'Seitenformat', custom: 'Benutzerdefiniert', orientation: 'Ausrichtung', portrait: 'Hochformat', landscape: 'Querformat', width: 'Endbreite', height: 'Endhöhe', pageNumberStart: 'Erste Seitenzahl', margins: 'Ränder und Druckdaten', top: 'Oben', bottom: 'Unten', inner: 'Innen', outer: 'Außen', gutter: 'Bundsteg', bleed: 'Beschnitt', mirroredMargins: 'Gespiegelte Ränder für gerade und ungerade Seiten', cropMarks: 'Schnittmarken im Druckexport', runningHeaders: 'Kolumnentitel anzeigen', firstPageHeader: 'Kolumnentitel auch auf der ersten Seite', typography: 'Typografie', font: 'Schriftfamilie', bodySize: 'Grundschrift', bodyLeading: 'Zeilenabstand', indent: 'Erstzeileneinzug', hyphenation: 'Automatische Silbentrennung in Druckausgaben', hyphenationModule: 'Sprachmodul', hyphenationInline: 'Sprachmarkierte Textteile verwenden automatisch ihr eigenes Modul.', hyphenationFallback: 'Für diese Sprache ist kein Muster eingebaut; das Wörterbuch des Druckbrowsers kann verwendet werden.', titleSize: 'Titelgröße', headingSize: 'Überschriftgröße', footnoteSize: 'Fußnotengröße', alignment: 'Ausrichtung', justify: 'Blocksatz', alignLeft: 'Links', alignCenter: 'Zentriert', alignRight: 'Rechts', save: 'Stil speichern', saved: 'Stil gespeichert und aktiv', reset: 'Vorlagenwerte zurücksetzen', export: 'Stil exportieren', exportCss: 'CSS herunterladen', defaultNewName: 'Neuer Publikationsstil', copySuffix: 'Kopie', liveApplied: 'Änderungen werden automatisch auf den aktiven Exportstil angewendet.', proofing: 'Satzkorrektur', proofingHelp: 'Korrekturen ändern nur den Drucksatz; der Manuskripttext bleibt unverändert.', selectedText: 'Auswahl', placeCursor: 'Setzen Sie den Cursor oder markieren Sie Text im Druckbild.', optionalHyphen: 'Bedingter Trennstrich', nonbreaking: 'Auswahl zusammenhalten', forcedLineBreak: 'Erzwungener Zeilenumbruch', pageBreakBefore: 'Seitenumbruch davor', keepTogether: 'Absatz zusammenhalten', keepWithNext: 'Mit nächstem zusammenhalten', corrections: 'Aktive Satzkorrekturen', noCorrections: 'Noch keine manuellen Satzkorrekturen.', removeCorrection: 'Korrektur entfernen', correctionAdded: 'Satzkorrektur hinzugefügt.', selectRange: 'Markieren Sie für diese Aktion Text.',
   };
   return {
-    title: 'Live publication editor', description: 'The complete editable print view of the article or volume. Content and typography changes appear immediately and drive the same export settings.', styles: 'Publication styles', styleName: 'Style name', newStyle: 'New style', duplicate: 'Duplicate', deleteStyle: 'Delete style', cannotDeleteLast: 'At least one publication style must remain.', page: 'Print page', preset: 'Page format', custom: 'Custom size', orientation: 'Orientation', portrait: 'Portrait', landscape: 'Landscape', width: 'Trim width', height: 'Trim height', pageNumberStart: 'First page number', margins: 'Margins and print data', top: 'Top', bottom: 'Bottom', inner: 'Inner', outer: 'Outer', gutter: 'Gutter', bleed: 'Bleed', mirroredMargins: 'Mirror margins on facing pages', cropMarks: 'Include crop marks in print export', runningHeaders: 'Show running headers', firstPageHeader: 'Show running header on first page', typography: 'Typography', font: 'Font family', bodySize: 'Body size', bodyLeading: 'Body leading', indent: 'First-line indent', hyphenation: 'Automatic hyphenation in printable versions', hyphenationModule: 'Language module', hyphenationInline: 'Language-tagged passages automatically use their own module.', hyphenationFallback: 'No built-in pattern is available for this language; the print browser dictionary may be used.', titleSize: 'Title size', headingSize: 'Heading size', footnoteSize: 'Footnote size', alignment: 'Alignment', justify: 'Justified', alignLeft: 'Left', alignCenter: 'Center', alignRight: 'Right', save: 'Save style', saved: 'Style saved and active', reset: 'Reset template values', export: 'Export style', exportCss: 'Download CSS', defaultNewName: 'New publication style', copySuffix: 'copy', liveApplied: 'Changes are applied to the active export style automatically.',
+    title: 'Live publication editor', description: 'The complete editable print view of the article or volume. Content and typography changes appear immediately and drive the same export settings.', styles: 'Publication styles', styleName: 'Style name', newStyle: 'New style', duplicate: 'Duplicate', deleteStyle: 'Delete style', cannotDeleteLast: 'At least one publication style must remain.', page: 'Print page', preset: 'Page format', custom: 'Custom size', orientation: 'Orientation', portrait: 'Portrait', landscape: 'Landscape', width: 'Trim width', height: 'Trim height', pageNumberStart: 'First page number', margins: 'Margins and print data', top: 'Top', bottom: 'Bottom', inner: 'Inner', outer: 'Outer', gutter: 'Gutter', bleed: 'Bleed', mirroredMargins: 'Mirror margins on facing pages', cropMarks: 'Include crop marks in print export', runningHeaders: 'Show running headers', firstPageHeader: 'Show running header on first page', typography: 'Typography', font: 'Font family', bodySize: 'Body size', bodyLeading: 'Body leading', indent: 'First-line indent', hyphenation: 'Automatic hyphenation in printable versions', hyphenationModule: 'Language module', hyphenationInline: 'Language-tagged passages automatically use their own module.', hyphenationFallback: 'No built-in pattern is available for this language; the print browser dictionary may be used.', titleSize: 'Title size', headingSize: 'Heading size', footnoteSize: 'Footnote size', alignment: 'Alignment', justify: 'Justified', alignLeft: 'Left', alignCenter: 'Center', alignRight: 'Right', save: 'Save style', saved: 'Style saved and active', reset: 'Reset template values', export: 'Export style', exportCss: 'Download CSS', defaultNewName: 'New publication style', copySuffix: 'copy', liveApplied: 'Changes are applied to the active export style automatically.', proofing: 'Typesetting proofing', proofingHelp: 'Corrections affect only the print layout; the manuscript text remains unchanged.', selectedText: 'Selection', placeCursor: 'Place the cursor or select text in the print view.', optionalHyphen: 'Optional hyphen', nonbreaking: 'Keep selection together', forcedLineBreak: 'Forced line break', pageBreakBefore: 'Page break before', keepTogether: 'Keep paragraph together', keepWithNext: 'Keep with next', corrections: 'Active typesetting corrections', noCorrections: 'No manual typesetting corrections yet.', removeCorrection: 'Remove correction', correctionAdded: 'Typesetting correction added.', selectRange: 'Select text for this action.',
   };
 }
 
 export function PublicationStyleEditor() {
   const { locale } = useTranslation();
-  const manuscriptLanguage = useStudioStore((state) => state.manuscript.locale);
+  const manuscript = useStudioStore((state) => state.manuscript);
+  const manuscriptLanguage = manuscript.locale;
+  const publicationCorrections = manuscript.publicationCorrections ?? [];
+  const addPublicationCorrection = useStudioStore(
+    (state) => state.addPublicationCorrection,
+  );
+  const removePublicationCorrection = useStudioStore(
+    (state) => state.removePublicationCorrection,
+  );
   const copy = copyFor(locale);
   const initial = useMemo(loadInitialState, []);
   const [library, setLibrary] = useState<PublicationStyle[]>(initial.library);
@@ -163,6 +174,7 @@ export function PublicationStyleEditor() {
   const [saved, setSaved] = useState(false);
   const [message, setMessage] = useState('');
   const [openPanel, setOpenPanel] = useState<PublicationRibbonPanel>(null);
+  const [proofingSelection, setProofingSelection] = useState<ProofingSelection | null>(null);
   const ribbonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -348,6 +360,26 @@ export function PublicationStyleEditor() {
     }));
   }
 
+  function addCorrection(kind: OmiPublicationCorrectionKind): void {
+    if (!proofingSelection) {
+      setMessage(copy.placeCursor);
+      return;
+    }
+    if (kind === 'nonbreaking' && !proofingSelection.text.trim()) {
+      setMessage(copy.selectRange);
+      return;
+    }
+    if (
+      (kind === 'discretionary-hyphen' || kind === 'forced-line-break')
+      && proofingSelection.from !== proofingSelection.to
+    ) {
+      setMessage(copy.placeCursor);
+      return;
+    }
+    addPublicationCorrection(kind, proofingSelection);
+    setMessage(copy.correctionAdded);
+  }
+
   const body = style.styles.body;
   const title = style.styles.articleTitlePrimary;
   const heading = style.styles.heading1;
@@ -395,6 +427,13 @@ export function PublicationStyleEditor() {
               icon={<Type size={18} aria-hidden="true" />}
               open={openPanel === 'typography'}
               onToggle={() => setOpenPanel((current) => current === 'typography' ? null : 'typography')}
+            />
+            <PublicationRibbonMenuButton
+              panelId="proofing"
+              label={copy.proofing}
+              icon={<Scissors size={18} aria-hidden="true" />}
+              open={openPanel === 'proofing'}
+              onToggle={() => setOpenPanel((current) => current === 'proofing' ? null : 'proofing')}
             />
             <span className="publication-style-ribbon-separator" aria-hidden="true" />
             <PublicationRibbonActionButton label={copy.save} onClick={() => { save(); setOpenPanel(null); }}>
@@ -574,13 +613,73 @@ export function PublicationStyleEditor() {
             </div>
           </div>
         ) : null}
+
+        {openPanel === 'proofing' ? (
+          <div id="publication-style-ribbon-panel-proofing" className="publication-style-ribbon-panel publication-style-ribbon-panel--proofing" role="dialog" aria-label={copy.proofing}>
+            <fieldset>
+              <legend>{copy.proofing}</legend>
+              <p className="publication-proofing-help">{copy.proofingHelp}</p>
+              <div className={`publication-proofing-selection${proofingSelection ? '' : ' is-empty'}`}>
+                <strong>{copy.selectedText}:</strong>{' '}
+                {proofingSelection
+                  ? proofingSelection.text.trim()
+                    ? `“${proofingSelection.text.trim().slice(0, 160)}”`
+                    : `${proofingSelection.blockId} · ${proofingSelection.from}`
+                  : copy.placeCursor}
+              </div>
+              <div className="publication-proofing-actions">
+                <button type="button" disabled={!proofingSelection || proofingSelection.from !== proofingSelection.to} onClick={() => addCorrection('discretionary-hyphen')}><Scissors size={16} />{copy.optionalHyphen}</button>
+                <button type="button" disabled={!proofingSelection?.text.trim()} onClick={() => addCorrection('nonbreaking')}><LinkIcon />{copy.nonbreaking}</button>
+                <button type="button" disabled={!proofingSelection || proofingSelection.from !== proofingSelection.to} onClick={() => addCorrection('forced-line-break')}><CornerIcon />{copy.forcedLineBreak}</button>
+                <button type="button" disabled={!proofingSelection} onClick={() => addCorrection('page-break-before')}><FileText size={16} />{copy.pageBreakBefore}</button>
+                <button type="button" disabled={!proofingSelection} onClick={() => addCorrection('keep-together')}><AlignJustify size={16} />{copy.keepTogether}</button>
+                <button type="button" disabled={!proofingSelection} onClick={() => addCorrection('keep-with-next')}><Move size={16} />{copy.keepWithNext}</button>
+              </div>
+              <div className="publication-proofing-corrections">
+                <h5>{copy.corrections} <span>{publicationCorrections.length}</span></h5>
+                {publicationCorrections.length ? (
+                  <ol>
+                    {publicationCorrections.map((correction) => (
+                      <li key={correction.id}>
+                        <span><strong>{publicationCorrectionLabel(correction.kind, copy)}</strong><small>{correction.sourceText?.trim() ? `“${correction.sourceText.trim().slice(0, 72)}”` : correction.targetBlockId}</small></span>
+                        <button type="button" onClick={() => removePublicationCorrection(correction.id)} aria-label={copy.removeCorrection} title={copy.removeCorrection}><Trash2 size={15} /></button>
+                      </li>
+                    ))}
+                  </ol>
+                ) : <p>{copy.noCorrections}</p>}
+              </div>
+            </fieldset>
+          </div>
+        ) : null}
       </div>
 
       <div className="publication-style-editor-layout">
-        <PublicationDocumentCanvas style={style} />
+        <PublicationDocumentCanvas style={style}
+          onProofingSelection={setProofingSelection}
+        />
       </div>
     </section>
   );
+}
+
+function LinkIcon() {
+  return <span className="publication-proofing-symbol" aria-hidden="true">↔</span>;
+}
+
+function CornerIcon() {
+  return <span className="publication-proofing-symbol" aria-hidden="true">↵</span>;
+}
+
+function publicationCorrectionLabel(
+  kind: OmiPublicationCorrectionKind,
+  copy: ReturnType<typeof copyFor>,
+): string {
+  if (kind === 'discretionary-hyphen') return copy.optionalHyphen;
+  if (kind === 'nonbreaking') return copy.nonbreaking;
+  if (kind === 'forced-line-break') return copy.forcedLineBreak;
+  if (kind === 'page-break-before') return copy.pageBreakBefore;
+  if (kind === 'keep-together') return copy.keepTogether;
+  return copy.keepWithNext;
 }
 
 function pageOrientation(style: PublicationStyle): PageOrientation {

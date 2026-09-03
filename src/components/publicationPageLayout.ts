@@ -2,6 +2,8 @@ export interface PublicationFlowBlock {
   top: number;
   height: number;
   keepWithNext?: boolean;
+  keepTogether?: boolean;
+  forcePageBreakBefore?: boolean;
 }
 
 export interface PublicationBlockPlacement {
@@ -45,7 +47,15 @@ export function paginatePublicationBlocks(
       : blockHeight;
     let logicalTop = naturalTop + insertedSpace;
     let pageIndex = Math.max(0, Math.floor(logicalTop / bodyHeight));
-    const positionOnPage = logicalTop - pageIndex * bodyHeight;
+    let positionOnPage = logicalTop - pageIndex * bodyHeight;
+
+    if (block.forcePageBreakBefore && positionOnPage > 0.5) {
+      const pageRemainder = bodyHeight - positionOnPage;
+      insertedSpace += pageRemainder;
+      logicalTop += pageRemainder;
+      pageIndex = Math.max(0, Math.floor((logicalTop + 0.5) / bodyHeight));
+      positionOnPage = 0;
+    }
 
     if (
       keptBlockHeight > 0

@@ -1,8 +1,16 @@
 import publisherJson from '../document/publicationStyles/egyhaztorteneti-szemle.publisher.json';
 import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json';
 import { assetPath } from '../model/assets';
+import {
+  applyPublicationCorrectionsToStoredContent,
+  applyTextPublicationCorrections,
+} from '../model/proofing';
 import type { OmiPublicationProfile } from '../model/publicationProfile';
-import type { OmiManuscript } from '../types/omi';
+import type {
+  OmiBlock,
+  OmiManuscript,
+  OmiPublicationCorrection,
+} from '../types/omi';
 import { getAssetPayload } from './assetRepository';
 import { cssStringLiteral } from './embeddedCss';
 import { renderPublisherHtmlArticle } from './exportPublisherHtmlPackage';
@@ -332,7 +340,10 @@ export async function renderStyleBasedHtml(
 ): Promise<string> {
   const style = loadPublicationStyle();
   const identity = loadPublicationPublisherIdentity();
-  const rendered = renderPublisherHtmlArticle(manuscript, profile);
+  const renderingManuscript = target === 'print'
+    ? applyPublicationCorrectionsForRendering(manuscript)
+    : manuscript;
+  const rendered = renderPublisherHtmlArticle(renderingManuscript, profile);
   // Keep DOM parsing confined to the semantic article produced by our HTML
   // renderer. Publication-style and publisher values can originate in local
   // storage or an imported IDML package, so add them only after hyphenation.
@@ -341,9 +352,80 @@ export async function renderStyleBasedHtml(
     html = await hyphenatePrintHtml(html, manuscript.locale);
   }
   html = withPublicationStyleCss(html, style, target);
+  if (target === 'print') {
+    html = withPublicationCorrectionCss(
+      html,
+      manuscript.publicationCorrections ?? [],
+    );
+  }
   html = withPublisherIdentity(html, manuscript, target, identity);
   if (target === 'print') html = withPrintRunningHeader(html, manuscript, style, identity);
   return target === 'print' ? inlineManuscriptAssets(html, manuscript) : html;
+}
+
+/** Returns a print-only clone containing inline correction characters. */
+export function applyPublicationCorrectionsForRendering(
+  manuscript: OmiManuscript,
+): OmiManuscript {
+  const corrections = manuscript.publicationCorrections ?? [];
+  if (!corrections.length) return manuscript;
+  const byBlock = new Map<string, OmiPublicationCorrection[]>();
+  for (const correction of corrections) {
+    const group = byBlock.get(correction.targetBlockId) ?? [];
+    group.push(correction);
+    byBlock.set(correction.targetBlockId, group);
+  }
+
+  const mapBlocks = (blocks: readonly OmiBlock[]): OmiBlock[] => blocks.map((block) => {
+    const blockCorrections = byBlock.get(block.id) ?? [];
+    return {
+      ...block,
+      content: applyPublicationCorrectionsToStoredContent(
+        block.content,
+        blockCorrections,
+      ),
+      ...(block.children ? { children: mapBlocks(block.children) } : {}),
+    };
+  });
+
+  return {
+    ...manuscript,
+    sections: manuscript.sections.map((section) => ({
+      ...section,
+      title: applyTextPublicationCorrections(
+        section.title,
+        byBlock.get(`${section.id}--heading`) ?? [],
+      ),
+      blocks: mapBlocks(section.blocks),
+    })),
+  };
+}
+
+export function withPublicationCorrectionCss(
+  html: string,
+  corrections: readonly OmiPublicationCorrection[],
+): string {
+  const rules = corrections.flatMap((correction) => {
+    const syntheticHeading = correction.targetBlockId.endsWith('--heading');
+    const selector = syntheticHeading
+      ? `[data-omi-section-id=${cssStringLiteral(correction.targetBlockId.slice(0, -'--heading'.length))}] > :is(h1, h2, h3, h4, h5, h6):first-child`
+      : `[data-omi-block-id=${cssStringLiteral(correction.targetBlockId)}]`;
+    if (correction.kind === 'page-break-before') {
+      return `${selector} { break-before: page; page-break-before: always; }`;
+    }
+    if (correction.kind === 'keep-together') {
+      return `${selector} { break-inside: avoid-page; page-break-inside: avoid; }`;
+    }
+    if (correction.kind === 'keep-with-next') {
+      return `${selector} { break-after: avoid-page; page-break-after: avoid; }`;
+    }
+    return [];
+  });
+  if (!rules.length) return html;
+  return html.replace(
+    '</head>',
+    `  <style data-omi-publication-corrections>\n${rules.join('\n')}\n  </style>\n</head>`,
+  );
 }
 
 async function inlineManuscriptAssets(html: string, manuscript: OmiManuscript): Promise<string> {

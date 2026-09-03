@@ -21,6 +21,7 @@ import {
 } from '../editor/continuousManuscriptDocument';
 import { useTranslation } from '../i18n';
 import { collectPublicationContributors } from '../model/publicationRendering';
+import type { ProofingSelection } from '../model/proofing';
 import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
 import {
   loadPublicationPublisherIdentity,
@@ -33,9 +34,11 @@ const PIXELS_PER_MM = 96 / 25.4;
 const PIXELS_PER_POINT = 96 / 72;
 
 type PublicationZoom = 'fit' | 50 | 75 | 100;
+const EMPTY_PUBLICATION_CORRECTIONS = [] as const;
 
 interface PublicationDocumentCanvasProps {
   style: PublicationStyle;
+  onProofingSelection?: (selection: ProofingSelection | null) => void;
 }
 
 interface PublicationCanvasCopy {
@@ -55,11 +58,16 @@ interface PublicationCanvasCopy {
   empty: string;
 }
 
-export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasProps) {
+export function PublicationDocumentCanvas({
+  style,
+  onProofingSelection,
+}: PublicationDocumentCanvasProps) {
   const { locale } = useTranslation();
   const copy = canvasCopy(locale);
   const canvasId = `publication-canvas-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const manuscript = useStudioStore((state) => state.manuscript);
+  const publicationCorrections = manuscript.publicationCorrections
+    ?? EMPTY_PUBLICATION_CORRECTIONS;
   const setTitle = useStudioStore((state) => state.setTitle);
   const setAbstract = useStudioStore((state) => state.setAbstract);
   const publisherIdentity = loadPublicationPublisherIdentity();
@@ -151,12 +159,24 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
     let frame = 0;
     const update = () => {
       const flow = collectPublicationFlowElements(content);
+      const corrections = publicationCorrections;
       const layout = paginatePublicationBlocks(
-        flow.map(({ element }) => ({
-          top: offsetTopWithin(element, content),
-          height: element.offsetHeight,
-          keepWithNext: /^H[1-6]$/.test(element.tagName),
-        })),
+        flow.map(({ element }) => {
+          const blockId = element.dataset.blockId ?? '';
+          const blockCorrections = corrections.filter(
+            (correction) => correction.targetBlockId === blockId,
+          );
+          return {
+            top: offsetTopWithin(element, content),
+            height: element.offsetHeight,
+            keepWithNext: /^H[1-6]$/.test(element.tagName)
+              || blockCorrections.some((item) => item.kind === 'keep-with-next'),
+            keepTogether: blockCorrections.some((item) => item.kind === 'keep-together'),
+            forcePageBreakBefore: blockCorrections.some(
+              (item) => item.kind === 'page-break-before',
+            ),
+          };
+        }),
         usablePageHeight,
         pageOverhead,
       );
@@ -209,6 +229,7 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
     innerMargin,
     manuscript.abstract,
     manuscript.motto,
+    publicationCorrections,
     manuscript.subtitle,
     notes,
     outerMargin,
@@ -420,6 +441,9 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
                   manuscriptLanguage={manuscript.locale}
                   className="publication-layout-document-editor"
                   continuous
+                  proofingMode="publication"
+                  publicationCorrections={publicationCorrections}
+                  onProofingSelection={onProofingSelection}
                 />
               </div>
             ) : (

@@ -73,6 +73,64 @@ export interface OmiAnnotation {
   creatorAgentId?: string;
   createdAt?: string;
   modifiedAt?: string;
+
+  /** Optional threaded-proofing metadata for comments and editorial notes. */
+  status?: 'open' | 'resolved';
+  visibility?: 'author_and_editor' | 'editor_only';
+  targetRange?: {
+    from: number;
+    to: number;
+  };
+  resolvedAt?: string;
+}
+
+export type OmiProofingChangeStatus = 'pending' | 'accepted' | 'rejected';
+
+/**
+ * One reviewable text replacement captured while change tracking is active.
+ *
+ * The live manuscript contains `after`; rejecting the change restores
+ * `before`. Keeping the raw Tiptap payload preserves inline scholarly marks.
+ */
+export interface OmiProofingChange {
+  id: string;
+  targetBlockId: string;
+  before: string;
+  after: string;
+  status: OmiProofingChangeStatus;
+  actorAgentId?: string;
+  createdAt: string;
+  modifiedAt: string;
+}
+
+export interface OmiProofingState {
+  trackChanges: boolean;
+  changes: OmiProofingChange[];
+}
+
+export type OmiPublicationCorrectionKind =
+  | 'discretionary-hyphen'
+  | 'nonbreaking'
+  | 'forced-line-break'
+  | 'page-break-before'
+  | 'keep-together'
+  | 'keep-with-next';
+
+/**
+ * Non-destructive publication correction layered over canonical manuscript
+ * text. Text offsets use UTF-16 code units, matching JavaScript and ProseMirror
+ * string positions in the addressed block.
+ */
+export interface OmiPublicationCorrection {
+  id: string;
+  targetBlockId: string;
+  kind: OmiPublicationCorrectionKind;
+  from?: number;
+  to?: number;
+  sourceText?: string;
+  createdAt: string;
+  modifiedAt: string;
+  creatorAgentId?: string;
 }
 
 export type OmiBibliographicResourceType =
@@ -422,6 +480,12 @@ export interface OmiManuscriptState {
 
   sections: OmiSection[];
   annotations: OmiAnnotation[];
+
+  /** Portable Word-like tracked changes. Optional for legacy documents. */
+  proofing?: OmiProofingState;
+
+  /** Print-only corrections created in the visual publication editor. */
+  publicationCorrections?: OmiPublicationCorrection[];
 
   /**
    * Manuscript-local OMI-SPEC-220 reference library. Optional while older

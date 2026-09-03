@@ -1,8 +1,12 @@
 import { synchronizeCrossReferenceLabels } from '../model/crossReferences';
+import { recordSectionTextChanges } from '../model/proofing';
 import { extractManuscriptState } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';
 import type { OmiSection } from '../types/omi';
-import { useStudioStore } from './useStudioStore';
+import {
+  resolveCurrentActorAgentId,
+  useStudioStore,
+} from './useStudioStore';
 
 const CONTINUOUS_DOCUMENT_CHECKPOINT_DELAY_MS = 2500;
 let checkpointTimer: ReturnType<typeof setTimeout> | null = null;
@@ -26,18 +30,36 @@ export function stageContinuousDocumentChange(
     }
 
     const timestamp = new Date().toISOString();
+    const proofing = recordSectionTextChanges(
+      state.manuscript.sections,
+      synchronizedSections,
+      state.manuscript.proofing,
+      resolveCurrentActorAgentId(state.manuscript),
+      timestamp,
+    );
+    const proofingChanged = JSON.stringify(proofing) !== JSON.stringify(state.manuscript.proofing);
     const pendingChangeSet = stagePendingChanges(
       state.pendingChangeSet,
       {
         baseRevisionId: state.manuscript.headRevisionId,
         summary: 'Edited manuscript study',
-        events: [{
-          operation: 'section.replace' as never,
-          targetId: state.manuscript.id,
-          path: '/sections',
-          previousValue: state.manuscript.sections,
-          nextValue: synchronizedSections,
-        }],
+        events: [
+          {
+            operation: 'section.replace' as never,
+            targetId: state.manuscript.id,
+            path: '/sections',
+            previousValue: state.manuscript.sections,
+            nextValue: synchronizedSections,
+          },
+          ...(proofingChanged ? [{
+            operation: 'proofing.change.record' as const,
+            targetId: state.manuscript.id,
+            path: '/proofing/changes',
+            previousValue: state.manuscript.proofing?.changes ?? [],
+            nextValue: proofing?.changes ?? [],
+          }] : []),
+        ],
+        actorAgentId: resolveCurrentActorAgentId(state.manuscript),
         timestamp,
       },
     );
@@ -54,6 +76,7 @@ export function stageContinuousDocumentChange(
         ...state.manuscript,
         ...portableState,
         sections: synchronizedSections,
+        ...(proofing ? { proofing } : {}),
         updatedAt: timestamp,
       },
       pendingChangeSet,

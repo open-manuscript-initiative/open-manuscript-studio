@@ -1,10 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
+import {
+  ChevronDown,
+  ChevronUp,
+  MessageSquarePlus,
+  RotateCcw,
+} from 'lucide-react';
 
 import {
   getEditorCapabilities,
   type EditorCapabilities,
   type EditorRole,
 } from '../editor/editorCapabilities';
+import {
+  createProofingTextDiff,
+  type ProofingSelection,
+} from '../model/proofing';
 import {
   acceptAssignedReview,
   addAssignedReviewFeedback,
@@ -179,14 +189,16 @@ export function ReviewMode({ assignmentId }: { assignmentId?: string }) {
     return () => { active = false; };
   }, [selected?.id, copy.unattached]);
 
-  async function run(action: () => Promise<ReviewerAssignment>) {
+  async function run(action: () => Promise<ReviewerAssignment>): Promise<boolean> {
     try {
       setBusy(true);
       setError(null);
       const updated = await action();
       setReviews((current) => current.map((item) => item.id === updated.id ? updated : item));
+      return true;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : copy.noTasks);
+      return false;
     } finally {
       setBusy(false);
     }
@@ -276,7 +288,23 @@ export function ReviewMode({ assignmentId }: { assignmentId?: string }) {
                 <div className="review-mode__identity-notice">{copy.identityNotice}</div>
                 {manuscriptLoading ? <p>{copy.loading}</p> : manuscript ? (
                   canWrite && revision ? (
-                    <RevisionEditor original={manuscript} revision={revision} disabled={busy} dirty={revisionDirty} saved={revisionSaved} label={assignmentLabel} capabilities={editorCapabilities} manuscriptLanguage={manuscriptLanguage} copy={copy} onChange={updateRevision} onSave={() => void saveRevision()} />
+                    <RevisionEditor
+                      original={manuscript}
+                      revision={revision}
+                      disabled={busy}
+                      dirty={revisionDirty}
+                      saved={revisionSaved}
+                      label={assignmentLabel}
+                      capabilities={editorCapabilities}
+                      manuscriptLanguage={manuscriptLanguage}
+                      locale={locale}
+                      copy={copy}
+                      onChange={updateRevision}
+                      onSave={() => void saveRevision()}
+                      onAddFeedback={(visibility, body) => run(() =>
+                        addAssignedReviewFeedback(selected.id, visibility, body)
+                      )}
+                    />
                   ) : <ManuscriptView manuscript={revision ?? manuscript} copy={copy} />
                 ) : <p>{copy.unattached}</p>}
               </section>
@@ -348,19 +376,184 @@ export function ReviewMode({ assignmentId }: { assignmentId?: string }) {
   );
 }
 
-function RevisionEditor({ original, revision, disabled, dirty, saved, label, capabilities, manuscriptLanguage, copy, onChange, onSave }: { original: ReviewManuscriptSnapshot; revision: ReviewManuscriptSnapshot; disabled: boolean; dirty: boolean; saved: boolean; label: string; capabilities: EditorCapabilities; manuscriptLanguage?: string; copy: ReviewCopy; onChange: (value: ReviewManuscriptSnapshot) => void; onSave: () => void; }) {
+function RevisionEditor({
+  original,
+  revision,
+  disabled,
+  dirty,
+  saved,
+  label,
+  capabilities,
+  manuscriptLanguage,
+  locale,
+  copy,
+  onChange,
+  onSave,
+  onAddFeedback,
+}: {
+  original: ReviewManuscriptSnapshot;
+  revision: ReviewManuscriptSnapshot;
+  disabled: boolean;
+  dirty: boolean;
+  saved: boolean;
+  label: string;
+  capabilities: EditorCapabilities;
+  manuscriptLanguage?: string;
+  locale: ReviewLocale;
+  copy: ReviewCopy;
+  onChange: (value: ReviewManuscriptSnapshot) => void;
+  onSave: () => void;
+  onAddFeedback: (
+    visibility: 'AUTHOR_AND_EDITOR' | 'EDITOR_ONLY',
+    body: string,
+  ) => Promise<boolean>;
+}) {
+  const proofingCopy = reviewProofingCopy(locale);
+  const [activeChangedIndex, setActiveChangedIndex] = useState(0);
+  const [selection, setSelection] = useState<(ProofingSelection & { blockIndex: number }) | null>(null);
+  const [comment, setComment] = useState('');
+  const [commentVisibility, setCommentVisibility] = useState<'AUTHOR_AND_EDITOR' | 'EDITOR_ONLY'>(
+    'AUTHOR_AND_EDITOR',
+  );
+  const changedIndices = revision.blocks.flatMap((block, index) =>
+    reviewBlocksEqual(block, original.blocks[index]) ? [] : [index],
+  );
+  const normalizedActiveIndex = changedIndices.length
+    ? Math.min(activeChangedIndex, changedIndices.length - 1)
+    : 0;
+
+  function navigateChanges(delta: number): void {
+    if (!changedIndices.length) return;
+    const nextIndex = (
+      normalizedActiveIndex + delta + changedIndices.length
+    ) % changedIndices.length;
+    setActiveChangedIndex(nextIndex);
+    document.getElementById(`review-change-${changedIndices[nextIndex]}`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function restoreBlock(index: number): void {
+    const source = original.blocks[index];
+    if (!source) return;
+    onChange({
+      ...revision,
+      blocks: revision.blocks.map((block, blockIndex) =>
+        blockIndex === index ? structuredClone(source) : block,
+      ),
+    });
+  }
+
+  function restoreAll(): void {
+    onChange({ ...revision, blocks: structuredClone(original.blocks) });
+    setActiveChangedIndex(0);
+  }
+
+  async function submitSelectionComment(): Promise<void> {
+    if (!selection?.text.trim() || !comment.trim()) return;
+    const block = revision.blocks[selection.blockIndex];
+    const body = `${proofingCopy.selectedExcerpt} (${block ? blockLabel(block, copy) : selection.blockIndex + 1}): “${selection.text.trim()}”\n\n${comment.trim()}`;
+    if (await onAddFeedback(commentVisibility, body)) setComment('');
+  }
+
   return (
     <div className="review-mode__revision">
-      <div className="review-mode__revision-toolbar"><div><h2>{label} – {copy.revision}</h2><p>{copy.revisionHelp}</p></div><div className="review-mode__revision-actions">{dirty ? <span>{copy.unsaved}</span> : saved ? <span>{copy.revisionSaved}</span> : null}<button disabled={disabled || !dirty} onClick={onSave}>{copy.saveRevision}</button></div></div>
+      <div className="review-mode__revision-toolbar">
+        <div><h2>{label} – {copy.revision}</h2><p>{copy.revisionHelp}</p></div>
+        <div className="review-mode__revision-actions">
+          {dirty ? <span>{copy.unsaved}</span> : saved ? <span>{copy.revisionSaved}</span> : null}
+          <button disabled={disabled || !dirty} onClick={onSave}>{copy.saveRevision}</button>
+        </div>
+      </div>
+
+      <div className="review-mode__proofing-toolbar" role="toolbar" aria-label={proofingCopy.proofing}>
+        <strong>{proofingCopy.tracked(changedIndices.length)}</strong>
+        <div className="review-mode__proofing-navigation">
+          <button type="button" disabled={!changedIndices.length} onClick={() => navigateChanges(-1)} aria-label={proofingCopy.previous} title={proofingCopy.previous}><ChevronUp size={17} /></button>
+          <button type="button" disabled={!changedIndices.length} onClick={() => navigateChanges(1)} aria-label={proofingCopy.next} title={proofingCopy.next}><ChevronDown size={17} /></button>
+          <button type="button" disabled={!changedIndices.length || disabled} onClick={restoreAll}><RotateCcw size={16} />{proofingCopy.restoreAll}</button>
+        </div>
+      </div>
+
+      <div className="review-mode__selection-comment">
+        <div className={selection?.text.trim() ? '' : 'is-empty'}>
+          {selection?.text.trim() ? `“${selection.text.trim().slice(0, 180)}”` : proofingCopy.selectText}
+        </div>
+        <textarea rows={2} value={comment} onChange={(event) => setComment(event.target.value)} disabled={disabled || !selection?.text.trim()} placeholder={proofingCopy.commentPlaceholder} />
+        <div>
+          <select value={commentVisibility} onChange={(event) => setCommentVisibility(event.target.value as typeof commentVisibility)} aria-label={proofingCopy.visibility}>
+            <option value="AUTHOR_AND_EDITOR">{proofingCopy.authorAndEditor}</option>
+            <option value="EDITOR_ONLY">{proofingCopy.editorOnly}</option>
+          </select>
+          <button type="button" disabled={disabled || !selection?.text.trim() || !comment.trim()} onClick={() => void submitSelectionComment()}><MessageSquarePlus size={16} />{proofingCopy.addComment}</button>
+        </div>
+      </div>
+
       {revision.blocks.map((block, index) => {
         const originalBlock = original.blocks[index];
         if (!isReviewTextBlock(block)) return <div key={index} className="review-mode__revision-block"><div className="review-mode__revision-label"><span>{blockLabel(block, copy)}</span></div><div className="review-mode__revision-structured"><ReviewStructuredBlock block={block} /><p className="review-mode__revision-structured-note">{copy.structuredPreserved}</p></div></div>;
         const originalText = originalBlock && isReviewTextBlock(originalBlock) ? originalBlock.text : '';
-        const changed = block.text !== originalText || JSON.stringify(block.richText ?? []) !== JSON.stringify(originalBlock && isReviewTextBlock(originalBlock) ? originalBlock.richText ?? [] : []);
-        return <div key={index} className={`review-mode__revision-block${changed ? ' is-changed' : ''}`}><div className="review-mode__revision-label"><span>{blockLabel(block, copy)}</span>{changed ? <strong>{copy.revised}</strong> : null}</div><ReviewerRichTextEditor block={block} disabled={disabled} capabilities={capabilities} manuscriptLanguage={manuscriptLanguage} onChange={(updated) => { const blocks = revision.blocks.map((item, itemIndex) => itemIndex === index ? updated as ReviewManuscriptBlock : item); onChange({ ...revision, blocks }); }} />{changed ? <details className="review-mode__original-text"><summary>{copy.showOriginal}</summary><ReviewStructuredBlock block={originalBlock && isReviewTextBlock(originalBlock) ? originalBlock : block} /></details> : null}</div>;
+        const changed = !reviewBlocksEqual(block, originalBlock);
+        const diff = changed ? createProofingTextDiff(originalText, block.text) : null;
+        return (
+          <div key={index} id={changed ? `review-change-${index}` : undefined} className={`review-mode__revision-block${changed ? ' is-changed' : ''}`}>
+            <div className="review-mode__revision-label">
+              <span>{blockLabel(block, copy)}</span>
+              {changed ? <strong>{copy.revised}</strong> : null}
+            </div>
+            <ReviewerRichTextEditor
+              block={block}
+              disabled={disabled}
+              capabilities={capabilities}
+              manuscriptLanguage={manuscriptLanguage}
+              onSelectionChange={(nextSelection) => setSelection(nextSelection
+                ? { ...nextSelection, blockIndex: index }
+                : null)}
+              onChange={(updated) => {
+                const blocks = revision.blocks.map((item, itemIndex) =>
+                  itemIndex === index ? updated as ReviewManuscriptBlock : item,
+                );
+                onChange({ ...revision, blocks });
+              }}
+            />
+            {changed && diff ? (
+              <div className="review-mode__inline-diff" aria-label={proofingCopy.exactChange}>
+                <span>{diff.prefix}</span>
+                {diff.removed ? <del>{diff.removed}</del> : null}
+                {diff.inserted ? <ins>{diff.inserted}</ins> : null}
+                <span>{diff.suffix}</span>
+                {!diff.removed && !diff.inserted ? <em>{proofingCopy.formattingChanged}</em> : null}
+              </div>
+            ) : null}
+            {changed ? (
+              <div className="review-mode__change-actions">
+                <details className="review-mode__original-text"><summary>{copy.showOriginal}</summary><ReviewStructuredBlock block={originalBlock && isReviewTextBlock(originalBlock) ? originalBlock : block} /></details>
+                <button type="button" disabled={disabled} onClick={() => restoreBlock(index)}><RotateCcw size={15} />{proofingCopy.restoreChange}</button>
+              </div>
+            ) : null}
+          </div>
+        );
       })}
     </div>
   );
+}
+
+function reviewBlocksEqual(
+  block: ReviewManuscriptBlock,
+  original: ReviewManuscriptBlock | undefined,
+): boolean {
+  return Boolean(original) && JSON.stringify(block) === JSON.stringify(original);
+}
+
+function reviewProofingCopy(locale: ReviewLocale) {
+  if (locale === 'hu') return {
+    proofing: 'Korrektúra és változáskövetés', tracked: (count: number) => `${count} követett változás`, previous: 'Előző változás', next: 'Következő változás', restoreChange: 'Javítás visszavonása', restoreAll: 'Összes visszavonása', selectText: 'Jelöljön ki szöveget a cikkben célzott lektori megjegyzéshez.', commentPlaceholder: 'Megjegyzés a kijelölt részhez…', visibility: 'Megjegyzés láthatósága', authorAndEditor: 'Szerzőnek és szerkesztőnek', editorOnly: 'Csak a szerkesztőnek', addComment: 'Megjegyzés', selectedExcerpt: 'Kijelölt rész', exactChange: 'Pontos szövegváltozás', formattingChanged: 'A szöveg formázása módosult.',
+  };
+  if (locale === 'de') return {
+    proofing: 'Korrektur und Änderungsverfolgung', tracked: (count: number) => `${count} nachverfolgte Änderungen`, previous: 'Vorherige Änderung', next: 'Nächste Änderung', restoreChange: 'Änderung zurücknehmen', restoreAll: 'Alle zurücknehmen', selectText: 'Markieren Sie Text für einen gezielten Gutachterkommentar.', commentPlaceholder: 'Kommentar zur Auswahl…', visibility: 'Sichtbarkeit', authorAndEditor: 'Autor und Redaktion', editorOnly: 'Nur Redaktion', addComment: 'Kommentar', selectedExcerpt: 'Markierter Text', exactChange: 'Genaue Textänderung', formattingChanged: 'Die Textformatierung wurde geändert.',
+  };
+  return {
+    proofing: 'Proofing and tracked changes', tracked: (count: number) => `${count} tracked changes`, previous: 'Previous change', next: 'Next change', restoreChange: 'Undo change', restoreAll: 'Undo all', selectText: 'Select text in the article for a targeted review comment.', commentPlaceholder: 'Comment on the selection…', visibility: 'Comment visibility', authorAndEditor: 'Author and editor', editorOnly: 'Editor only', addComment: 'Comment', selectedExcerpt: 'Selected excerpt', exactChange: 'Exact text change', formattingChanged: 'Text formatting changed.',
+  };
 }
 
 function ManuscriptView({ manuscript, copy }: { manuscript: ReviewManuscriptSnapshot; copy: ReviewCopy }) {
