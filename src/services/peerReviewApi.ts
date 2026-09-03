@@ -144,10 +144,12 @@ export type ReviewManuscriptBlock =
   | { type: 'note'; text: string; richText?: ReviewInlineSpan[] }
   | { type: 'list'; text: string; ordered: boolean; listLevel: number; ordinal?: number; richText?: ReviewInlineSpan[] }
   | { type: 'table'; cells: string[][]; headerRows: number }
-  | { type: 'image'; src: string; mediaType: string; fileName?: string; alt?: string }
+  | { type: 'image'; src: string; mediaType: string; alt?: string }
   | { type: 'chart'; cells: string[][]; chartType: ReviewChartType; title?: string };
 
 export interface ReviewManuscriptSnapshot {
+  documentKind: 'article';
+  authorIdentity: 'hidden';
   title: string;
   subtitle?: string;
   abstract?: string;
@@ -182,6 +184,12 @@ export async function claimOjsReviewLaunch(
 
 export async function listAssignedReviews(): Promise<ReviewerAssignment[]> {
   return (await request<ReviewListResponse>('/api/reviews/assigned')).reviews;
+}
+
+export async function getAssignedReview(id: string): Promise<ReviewerAssignment> {
+  return (await request<ReviewResponse>(
+    `/api/reviews/assigned/${encodeURIComponent(id)}`,
+  )).review;
 }
 
 export async function getAssignedReviewForm(id: string): Promise<ReviewFormContext | null> {

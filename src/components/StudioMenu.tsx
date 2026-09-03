@@ -5,6 +5,7 @@ import {
   Fingerprint,
   FolderOpen,
   History as HistoryIcon,
+  LayoutTemplate,
   Library,
   Printer,
   Save,
@@ -70,6 +71,7 @@ import { NewDocumentActions } from './NewDocumentActions';
 import { OjsAssignmentPanel } from './OjsAssignmentPanel';
 import { PropertiesPanel } from './PropertiesPanel';
 import { PublicationProfilePanel } from './PublicationProfilePanel';
+import { PublicationStyleEditor } from './PublicationStyleEditor';
 import { ReferencesPanel } from './ReferencesPanel';
 import { SectionNumberingControl } from './SectionNumberingControl';
 import { SectionStructurePanel } from './SectionStructurePanel';
@@ -81,6 +83,7 @@ type StudioMenuView =
   | 'references'
   | 'contributors'
   | 'assignments'
+  | 'publication-editor'
   | 'publication'
   | 'signatures'
   | 'history'
@@ -150,13 +153,14 @@ export function StudioMenu({
             {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
             <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} />
             <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
+            <MenuButton active={activeView === 'publication-editor'} icon={<LayoutTemplate size={18} aria-hidden="true" />} label={supplementalCopy.publicationEditor} onClick={() => setActiveView('publication-editor')} />
             <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} />
             {navigationBeforeTools}
             <MenuButton active={activeView === 'tools'} icon={<Wrench size={18} aria-hidden="true" />} label={t('studio.navigation.tools')} onClick={() => setActiveView('tools')} />
             <MenuButton active={activeView === 'settings'} icon={<Settings2 size={18} aria-hidden="true" />} label={t('studio.navigation.settings')} onClick={() => setActiveView('settings')} />
             {navigationAfterSettings}
           </nav>
-          <div className="studio-menu-content">
+          <div className={`studio-menu-content${activeView === 'publication-editor' ? ' studio-menu-content--publication-editor' : ''}`}>
             {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} onCreated={onClose} /> : null}
             {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={onClose} /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
@@ -165,6 +169,7 @@ export function StudioMenu({
             {activeView === 'assignments' && ojsAssignment ? <OjsAssignmentPanel actorMode={ojsAssignment.actorMode} context={ojsAssignment.context} /> : null}
             {activeView === 'signatures' ? <AuthorSignaturePanel /> : null}
             {activeView === 'history' ? <HistoryPanel /> : null}
+            {activeView === 'publication-editor' ? <PublicationStyleEditor /> : null}
             {activeView === 'publication' ? <PublicationProfilePanel /> : null}
             {activeView === 'tools' ? <ToolsView /> : null}
             {activeView === 'settings' ? <SettingsView /> : null}

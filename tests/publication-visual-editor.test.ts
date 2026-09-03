@@ -28,6 +28,27 @@ const hyphenationRenderer = readFileSync(
   new URL('../src/services/printHyphenation.ts', import.meta.url),
   'utf8',
 );
+const studioMenu = readFileSync(
+  new URL('../src/components/StudioMenu.tsx', import.meta.url),
+  'utf8',
+);
+const publicationProfile = readFileSync(
+  new URL('../src/components/PublicationProfilePanel.tsx', import.meta.url),
+  'utf8',
+);
+const fullscreenPanels = readFileSync(
+  new URL('../src/styles/desktop-fullscreen-panels.css', import.meta.url),
+  'utf8',
+);
+
+test('live publication editor opens as its own full-screen menu workspace', () => {
+  assert.match(studioMenu, /'publication-editor'/);
+  assert.match(studioMenu, /supplementalCopy\.publicationEditor/);
+  assert.match(studioMenu, /activeView === 'publication-editor' \? <PublicationStyleEditor \/>/);
+  assert.doesNotMatch(publicationProfile, /<PublicationStyleEditor/);
+  assert.match(fullscreenPanels, /\.studio-menu-content--publication-editor[\s\S]*overflow: hidden/);
+  assert.match(fullscreenPanels, /\.studio-menu-content--publication-editor \.publication-style-editor[\s\S]*height: 100%/);
+});
 
 test('publication view edits the complete structured manuscript instead of a sample paragraph', () => {
   assert.match(styleEditor, /<PublicationDocumentCanvas style=\{style\}/);

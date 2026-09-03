@@ -28,6 +28,7 @@ export interface OmpLaunchClaims {
   component?: {
     externalId?: string;
     type?: string;
+    title?: string;
   };
   reviewAssignment?: {
     externalId?: string;
@@ -44,9 +45,38 @@ export interface OmpLaunchClaims {
   apiBaseUrl?: string;
 }
 
+const REVIEWER_REQUIRED_SCOPES = [
+  'review.metadata.read',
+  'review.files.read',
+  'review.manuscript.read',
+  'review.revision.write',
+  'review.response.write',
+  'review.form.read',
+  'review.form.write',
+] as const;
+
+const REVIEWER_FORBIDDEN_SCOPES = [
+  'metadata.read',
+  'metadata.write',
+  'contributors.read',
+  'contributors.write',
+  'files.read',
+  'files.write',
+  'manuscript.write',
+  'revision.read',
+  'revision.write',
+  'author.manuscript.write',
+  'author.revision.write',
+  'review.assignment.read',
+  'review.assignment.write',
+  'review.identity.read',
+  'review.response.read',
+] as const;
+
 function validateClaimsShape(value: unknown): value is OmpLaunchClaims {
   if (value === null || typeof value !== 'object') return false;
   const claims = value as Record<string, unknown>;
+  const component = claims.component;
   const reviewAssignment = claims.reviewAssignment;
   return (
     claims.protocol === 'omi-integration/1' &&
@@ -57,6 +87,16 @@ function validateClaimsShape(value: unknown): value is OmpLaunchClaims {
     (claims.profile === undefined || typeof claims.profile === 'string') &&
     (claims.externalBaseUrl === undefined || typeof claims.externalBaseUrl === 'string') &&
     (claims.apiBaseUrl === undefined || typeof claims.apiBaseUrl === 'string') &&
+    (
+      component === undefined ||
+      (
+        component !== null &&
+        typeof component === 'object' &&
+        (!('externalId' in component) || typeof (component as Record<string, unknown>).externalId === 'string') &&
+        (!('type' in component) || typeof (component as Record<string, unknown>).type === 'string') &&
+        (!('title' in component) || typeof (component as Record<string, unknown>).title === 'string')
+      )
+    ) &&
     (
       reviewAssignment === undefined ||
       (
@@ -140,6 +180,8 @@ export async function verifyOmpLaunch(payload: string, signature: string) {
     throw new Error('Invalid OMP launch nonce.');
   }
 
+  if (claims.actorMode === 'review') validateReviewerBoundary(claims);
+
   if (claims.apiBaseUrl) {
     const trustedApiBaseUrl = await assertTrustedIntegrationUrl(
       claims.apiBaseUrl,
@@ -174,4 +216,37 @@ export async function verifyOmpLaunch(payload: string, signature: string) {
       baseUrl: installation.baseUrl,
     },
   };
+}
+
+function validateReviewerBoundary(claims: OmpLaunchClaims): void {
+  if (!claims.context?.externalId?.trim()) {
+    throw new Error('OMP reviewer launch does not identify a press context.');
+  }
+  if (!claims.submission?.externalId?.trim()) {
+    throw new Error('OMP reviewer launch does not identify a submission.');
+  }
+  if (!claims.component?.externalId?.trim()) {
+    throw new Error('OMP reviewer launch does not identify the assigned study.');
+  }
+  if (!claims.reviewAssignment?.externalId?.trim()) {
+    throw new Error('OMP reviewer launch does not identify a review assignment.');
+  }
+  if (!claims.actor?.externalId?.trim()) {
+    throw new Error('OMP reviewer launch does not identify the reviewer.');
+  }
+  if (!claims.apiBaseUrl?.trim()) {
+    throw new Error('OMP reviewer launch does not identify its assignment-scoped API.');
+  }
+
+  const scopes = new Set(claims.scope ?? []);
+  for (const required of REVIEWER_REQUIRED_SCOPES) {
+    if (!scopes.has(required)) {
+      throw new Error(`OMP reviewer launch is missing required scope: ${required}.`);
+    }
+  }
+  for (const forbidden of REVIEWER_FORBIDDEN_SCOPES) {
+    if (scopes.has(forbidden)) {
+      throw new Error(`OMP reviewer launch contains forbidden scope: ${forbidden}.`);
+    }
+  }
 }

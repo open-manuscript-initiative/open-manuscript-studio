@@ -20,6 +20,9 @@ interface OmpContributorsResponse {
 
 interface OmpFileDescriptor extends Record<string, unknown> {
   externalId?: string;
+  componentExternalId?: string | null;
+  componentId?: string | null;
+  chapterExternalId?: string | null;
   name?: string;
   mediaType?: string;
   size?: number | null;
@@ -134,10 +137,21 @@ async function loadSourceDocument(
   apiBaseUrl: string,
   payload: string,
   signature: string,
+  componentExternalId?: string,
 ): Promise<OjsSourceDocument | undefined> {
-  const candidate = files
+  const eligible = files
     .filter((file) => isDocx(file) && file.externalId && file.contentPath)
-    .filter((file) => !file.size || file.size <= MAX_SOURCE_FILE_BYTES)
+    .filter((file) => !file.size || file.size <= MAX_SOURCE_FILE_BYTES);
+  const componentTagged = eligible.filter((file) => Boolean(fileComponentExternalId(file)));
+  const componentScoped = componentExternalId && componentTagged.length
+    ? componentTagged.filter((file) => fileComponentExternalId(file) === componentExternalId)
+    : eligible;
+
+  if (componentExternalId && componentTagged.length && !componentScoped.length) {
+    throw new Error('OMP did not return a source document for the assigned study.');
+  }
+
+  const candidate = componentScoped
     .sort(compareSourceFiles)[0];
   if (!candidate?.externalId || !candidate.contentPath) return undefined;
 
@@ -169,7 +183,9 @@ async function loadSourceDocument(
   const parsed = parseDocxSource(
     bytes,
     candidate.externalId,
-    candidate.name || `monograph-${candidate.externalId}.docx`,
+    componentExternalId
+      ? `review-article-${candidate.externalId}.docx`
+      : candidate.name || `monograph-${candidate.externalId}.docx`,
     candidate.mediaType || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   );
   const withHeadings = applyDirectFormattingHeadingInference(bytes, parsed);
@@ -186,6 +202,7 @@ export async function loadOmpLaunchData(
   signature: string,
 ): Promise<OmpLaunchData> {
   const scopes = new Set(claims.scope ?? []);
+  const reviewerMode = claims.actorMode === 'review';
   const apiBaseUrl = claims.apiBaseUrl?.trim();
 
   if (!apiBaseUrl) {
@@ -203,13 +220,17 @@ export async function loadOmpLaunchData(
 
   const trustedApiBaseUrl = await assertTrustedIntegrationUrl(apiBaseUrl, externalBaseUrl);
   const trustedApiBaseUrlString = trustedApiBaseUrl.toString().replace(/\/$/, '');
-  const canReadSubmission = scopes.has('metadata.read') || scopes.has('review.metadata.read');
-  const canReadFiles = scopes.has('files.read') || scopes.has('review.files.read');
+  const canReadSubmission = reviewerMode
+    ? scopes.has('review.metadata.read')
+    : scopes.has('metadata.read');
+  const canReadFiles = reviewerMode
+    ? scopes.has('review.files.read')
+    : scopes.has('files.read');
 
   const submissionPromise = canReadSubmission
     ? readJson<OmpSubmissionResponse>(endpoint(trustedApiBaseUrlString, 'submission'), payload, signature)
     : Promise.resolve<OmpSubmissionResponse>({});
-  const contributorsPromise = scopes.has('contributors.read')
+  const contributorsPromise = !reviewerMode && scopes.has('contributors.read')
     ? readJson<OmpContributorsResponse>(endpoint(trustedApiBaseUrlString, 'contributors'), payload, signature)
     : Promise.resolve<OmpContributorsResponse>({});
   const filesPromise = canReadFiles
@@ -231,7 +252,13 @@ export async function loadOmpLaunchData(
 
   const fileItems = files.files ?? [];
   const sourceDocument = canReadFiles
-    ? await loadSourceDocument(fileItems, trustedApiBaseUrlString, payload, signature)
+    ? await loadSourceDocument(
+        fileItems,
+        trustedApiBaseUrlString,
+        payload,
+        signature,
+        reviewerMode ? claims.component?.externalId : undefined,
+      )
     : undefined;
 
   return {
@@ -240,4 +267,15 @@ export async function loadOmpLaunchData(
     files: fileItems,
     ...(sourceDocument ? { sourceDocument } : {}),
   };
+}
+
+function fileComponentExternalId(file: OmpFileDescriptor): string | undefined {
+  for (const candidate of [
+    file.componentExternalId,
+    file.componentId,
+    file.chapterExternalId,
+  ]) {
+    if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+  }
+  return undefined;
 }

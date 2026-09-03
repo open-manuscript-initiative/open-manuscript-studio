@@ -205,6 +205,7 @@ model PeerReviewAssignment {
   assignedByUserId         String?               @map("assigned_by_user_id") @db.Uuid
   externalInstallationId   String?               @map("external_installation_id") @db.VarChar(128)
   externalAssignmentId     String?               @map("external_assignment_id") @db.VarChar(128)
+  externalSubmissionId     String?               @map("external_submission_id") @db.VarChar(128)
   reviewerAlias            String                @map("reviewer_alias") @db.VarChar(64)
   assignmentType           ReviewAssignmentType  @default(SCIENTIFIC_REVIEW) @map("assignment_type")
   sourceLanguage           String?               @map("source_language") @db.VarChar(32)
@@ -226,11 +227,12 @@ model PeerReviewAssignment {
   assignedBy               User?                 @relation("ReviewAssigner", fields: [assignedByUserId], references: [id], onDelete: Restrict)
   feedback                 PeerReviewFeedback[]
 
-  @@unique([workspaceId, reviewerUserId, reviewRound, assignmentType])
+  @@unique([workspaceId, manuscriptId, reviewerUserId, reviewRound, assignmentType])
   @@unique([externalInstallationId, externalAssignmentId])
   @@index([workspaceId, status])
   @@index([workspaceId, assignmentType, status])
   @@index([manuscriptId])
+  @@index([externalSubmissionId])
   @@index([reviewerUserId, status])
   @@map("peer_review_assignments")
 }

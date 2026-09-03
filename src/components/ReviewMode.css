@@ -2,6 +2,7 @@
 
 /* Reviewer manuscript typography: keep the working copy visually continuous and align list markers with their text. */
 .review-mode__revision-block+.review-mode__revision-block{margin-top:0}
+.review-mode__layout--single{grid-template-columns:minmax(0,1fr)}
 .review-mode__shared-block-editor--list{display:grid;grid-template-columns:1.35rem minmax(0,1fr);column-gap:.35rem;align-items:start;padding-left:0}
 .review-mode__shared-block-editor--list .review-structured-list-marker{position:static;grid-column:1;grid-row:1;min-width:0;padding-top:.22rem;text-align:right;line-height:1.55;color:#5f5751}
 .review-mode__shared-block-editor--list>.review-mode__shared-editor,.review-mode__shared-block-editor--list>div:not(.omi-rich-text-toolbar){grid-column:2;grid-row:1;min-width:0}
