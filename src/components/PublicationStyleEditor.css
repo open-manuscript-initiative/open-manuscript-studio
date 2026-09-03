@@ -113,9 +113,10 @@
   gap: 0;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.7rem;
-  background: #e5e7eb;
+  border: 1px solid #b8bec8;
+  border-radius: 0.45rem;
+  background: #d5d9df;
+  box-shadow: 0 0.15rem 0.55rem rgba(15, 23, 42, 0.12);
 }
 
 .publication-document-canvas-toolbar {
@@ -160,6 +161,15 @@
   white-space: nowrap;
 }
 
+.publication-document-canvas-status .publication-document-view-mode {
+  padding: 0.22rem 0.46rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  color: #475569;
+  font-weight: 600;
+}
+
 .publication-document-canvas-status label {
   display: flex;
   align-items: center;
@@ -179,35 +189,74 @@
 .publication-document-canvas-stage {
   min-width: 0;
   min-height: 42rem;
-  padding: 1.1rem;
+  padding: 0 1.35rem 1.75rem;
   overflow: auto;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.22) 25%, transparent 25%) 0 0 / 18px 18px,
-    #d9dde3;
+  background: #d5d9df;
+  scrollbar-color: #94a3b8 #d5d9df;
+}
+
+.publication-document-ruler {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  height: 1.35rem;
+  box-sizing: border-box;
+  margin: 0 auto 0.7rem;
+  border: 1px solid #b8bec8;
+  border-top: 0;
+  background-color: #fff;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent calc(var(--omi-publication-ruler-step) - 1px),
+      #94a3b8 calc(var(--omi-publication-ruler-step) - 1px),
+      #94a3b8 var(--omi-publication-ruler-step)
+    );
+  box-shadow: 0 0.08rem 0.25rem rgba(15, 23, 42, 0.16);
+}
+
+.publication-document-ruler::after {
+  position: absolute;
+  right: var(--omi-publication-ruler-right);
+  bottom: 0;
+  left: var(--omi-publication-ruler-left);
+  height: 0.35rem;
+  border-right: 1px solid #2563eb;
+  border-left: 1px solid #2563eb;
+  content: '';
+}
+
+.publication-document-ruler-margin {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(203, 213, 225, 0.72);
+}
+
+.publication-document-ruler-margin--left {
+  left: 0;
+  width: var(--omi-publication-ruler-left);
+}
+
+.publication-document-ruler-margin--right {
+  right: 0;
+  width: var(--omi-publication-ruler-right);
 }
 
 .publication-document-paper {
   position: relative;
+  isolation: isolate;
   box-sizing: border-box;
   margin: 0 auto;
   overflow: visible;
-  background: #fff;
+  background: transparent;
   color: #171717;
-  box-shadow: 0 0.25rem 1.3rem rgba(15, 23, 42, 0.2);
-}
-
-.publication-document-paper::before {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  content: '';
-  pointer-events: none;
 }
 
 .publication-document-page-guides {
   position: absolute;
-  z-index: 4;
+  z-index: 0;
   inset: 0;
   pointer-events: none;
 }
@@ -216,17 +265,22 @@
   position: absolute;
   left: 0;
   right: 0;
-  border-top: 1px dashed rgba(100, 116, 139, 0.34);
+  box-sizing: border-box;
+  border: 1px solid rgba(71, 85, 105, 0.24);
+  background: #fff;
+  box-shadow:
+    0 0.16rem 0.3rem rgba(15, 23, 42, 0.18),
+    0 0.8rem 1.6rem rgba(15, 23, 42, 0.12);
 }
 
 .publication-document-page-guide::after {
   position: absolute;
-  top: 0.25rem;
-  right: 0.35rem;
-  padding: 0.08rem 0.25rem;
+  top: calc(100% + var(--omi-publication-page-gap) * 0.16);
+  right: 0;
+  padding: 0.08rem 0.32rem;
   border-radius: 0.2rem;
-  background: rgba(248, 250, 252, 0.88);
-  color: #94a3b8;
+  background: rgba(71, 85, 105, 0.82);
+  color: #fff;
   content: attr(data-page-label);
   font-family: system-ui, sans-serif;
   font-size: 0.55rem;
@@ -300,9 +354,24 @@
 }
 
 .publication-document-content {
-  position: relative;
+  position: absolute;
   z-index: 3;
   min-width: 0;
+  box-sizing: border-box;
+}
+
+.publication-document-front-matter,
+.publication-document-empty,
+.publication-document-notes,
+.publication-layout-document-editor .omi-continuous-tiptap-editor > * {
+  translate: 0 0;
+}
+
+.publication-document-paper:focus-within .publication-document-page-guide {
+  box-shadow:
+    0 0 0 1px rgba(37, 99, 235, 0.34),
+    0 0.2rem 0.38rem rgba(15, 23, 42, 0.18),
+    0 0.9rem 1.7rem rgba(15, 23, 42, 0.13);
 }
 
 .publication-document-front-matter {
@@ -560,6 +629,15 @@
 
   .publication-document-canvas-stage {
     min-height: 32rem;
-    padding: 0.55rem;
+    padding-inline: 0.55rem;
+    padding-bottom: 1rem;
+  }
+
+  .publication-document-ruler {
+    display: none;
+  }
+
+  .publication-document-paper {
+    margin-top: 0.7rem !important;
   }
 }
