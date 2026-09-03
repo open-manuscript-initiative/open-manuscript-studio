@@ -138,11 +138,14 @@ jobs:
 
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.2
+        env:
+          DEPLOY_REPOSITORY_TOKEN: ${{ github.token }}
         with:
           host: 85.215.185.85
           port: 22
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
+          envs: DEPLOY_REPOSITORY_TOKEN
           script: |
             set -euo pipefail
 
@@ -150,12 +153,36 @@ jobs:
 
             cd /var/www/vhosts/openmanuscript.org/studio/repository
 
-            git fetch origin main
-            git reset --hard origin/main
+            COMMIT_SHA="${{ github.sha }}"
+
+            if [[ -z "${DEPLOY_REPOSITORY_TOKEN:-}" ]]; then
+              echo 'The short-lived GitHub deployment token is missing.' >&2
+              exit 1
+            fi
+
+            REPOSITORY_URL='https://github.com/open-manuscript-initiative/open-manuscript-studio.git'
+            GIT_AUTH_HEADER="$(
+              printf 'x-access-token:%s' "$DEPLOY_REPOSITORY_TOKEN" |
+                base64 |
+                tr -d '\n'
+            )"
+
+            git remote set-url origin "$REPOSITORY_URL"
+            GIT_TERMINAL_PROMPT=0 git \
+              -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $GIT_AUTH_HEADER" \
+              fetch --no-tags origin '+refs/heads/main:refs/remotes/origin/main'
+
+            unset GIT_AUTH_HEADER DEPLOY_REPOSITORY_TOKEN
+
+            if ! git merge-base --is-ancestor "$COMMIT_SHA" refs/remotes/origin/main; then
+              echo "Deployment commit $COMMIT_SHA is not reachable from origin/main." >&2
+              exit 1
+            fi
+
+            git reset --hard "$COMMIT_SHA"
 
             APP_VERSION="$(node -p "require('./package.json').version")"
             BUILD_NUMBER="${{ github.run_number }}"
-            COMMIT_SHA="${{ github.sha }}"
             COMMIT_SHORT="${COMMIT_SHA:0:7}"
             BUILD_DATE="$(date -u '+%Y-%m-%d %H:%M UTC')"
 
