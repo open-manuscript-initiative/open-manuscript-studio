@@ -38,6 +38,7 @@ import {
 } from '../services/publicationStyleExport';
 import { resolvePrintHyphenationModule } from '../services/printHyphenation';
 import type { OmiBlock, OmiPublicationCorrectionKind } from '../types/omi';
+import { ProofingColorLegend } from './ProofingColorLegend';
 import { PublicationDocumentCanvas } from './PublicationDocumentCanvas';
 import './PublicationStyleEditor.css';
 
@@ -904,6 +905,7 @@ export function PublicationStyleEditor() {
             <fieldset>
               <legend>{copy.proofing}</legend>
               <p className="publication-proofing-help">{copy.proofingHelp}</p>
+              <ProofingColorLegend locale={locale} mode="publication" />
               <div className={`publication-proofing-selection${proofingSelection ? '' : ' is-empty'}`}>
                 <strong>{copy.selectedText}:</strong>{' '}
                 {proofingSelection
@@ -913,19 +915,19 @@ export function PublicationStyleEditor() {
                   : copy.placeCursor}
               </div>
               <div className="publication-proofing-actions">
-                <button type="button" disabled={!proofingSelection || proofingSelection.from !== proofingSelection.to} onClick={() => addCorrection('discretionary-hyphen')}><Scissors size={16} />{copy.optionalHyphen}</button>
-                <button type="button" disabled={!proofingSelection?.text.trim()} onClick={() => addCorrection('nonbreaking')}><LinkIcon />{copy.nonbreaking}</button>
-                <button type="button" disabled={!proofingSelection || proofingSelection.from !== proofingSelection.to} onClick={() => addCorrection('forced-line-break')}><CornerIcon />{copy.forcedLineBreak}</button>
-                <button type="button" disabled={!proofingSelection} onClick={() => addCorrection('page-break-before')}><FileText size={16} />{copy.pageBreakBefore}</button>
-                <button type="button" disabled={!proofingSelection} onClick={() => addCorrection('keep-together')}><AlignJustify size={16} />{copy.keepTogether}</button>
-                <button type="button" disabled={!proofingSelection} onClick={() => addCorrection('keep-with-next')}><Move size={16} />{copy.keepWithNext}</button>
+                <button type="button" data-proofing-kind="discretionary-hyphen" disabled={!proofingSelection || proofingSelection.from !== proofingSelection.to} onClick={() => addCorrection('discretionary-hyphen')}><Scissors size={16} />{copy.optionalHyphen}</button>
+                <button type="button" data-proofing-kind="nonbreaking" disabled={!proofingSelection?.text.trim()} onClick={() => addCorrection('nonbreaking')}><LinkIcon />{copy.nonbreaking}</button>
+                <button type="button" data-proofing-kind="forced-line-break" disabled={!proofingSelection || proofingSelection.from !== proofingSelection.to} onClick={() => addCorrection('forced-line-break')}><CornerIcon />{copy.forcedLineBreak}</button>
+                <button type="button" data-proofing-kind="page-break-before" disabled={!proofingSelection} onClick={() => addCorrection('page-break-before')}><FileText size={16} />{copy.pageBreakBefore}</button>
+                <button type="button" data-proofing-kind="keep-together" disabled={!proofingSelection} onClick={() => addCorrection('keep-together')}><AlignJustify size={16} />{copy.keepTogether}</button>
+                <button type="button" data-proofing-kind="keep-with-next" disabled={!proofingSelection} onClick={() => addCorrection('keep-with-next')}><Move size={16} />{copy.keepWithNext}</button>
               </div>
               <div className="publication-proofing-corrections">
                 <h5>{copy.corrections} <span>{publicationCorrections.length}</span></h5>
                 {publicationCorrections.length ? (
                   <ol>
                     {publicationCorrections.map((correction) => (
-                      <li key={correction.id}>
+                      <li key={correction.id} data-proofing-kind={correction.kind}>
                         <span><strong>{publicationCorrectionLabel(correction.kind, copy)}</strong><small>{correction.sourceText?.trim() ? `“${correction.sourceText.trim().slice(0, 72)}”` : correction.targetBlockId}</small></span>
                         <button type="button" onClick={() => removePublicationCorrection(correction.id)} aria-label={copy.removeCorrection} title={copy.removeCorrection}><Trash2 size={15} /></button>
                       </li>

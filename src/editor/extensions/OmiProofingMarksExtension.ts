@@ -3,6 +3,11 @@ import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 
+import {
+  classifyProofingTextChange,
+  createProofingTextDiff,
+  storedContentText,
+} from '../../model/proofing';
 import type {
   OmiAnnotation,
   OmiProofingChange,
@@ -75,9 +80,14 @@ export const OmiProofingMarksExtension = Extension.create({
                 (correction) => correctionSourceMatches(nodeText, correction),
               );
               const pageFlowBreaks = pageFlowBreaksByBlock.get(blockId) ?? [];
+              const primaryChange = changes[0];
+              const changeKind = primaryChange
+                ? classifyProofingTextChange(primaryChange.before, primaryChange.after)
+                : undefined;
 
               const nodeClasses = [
                 changes.length ? 'omi-proofing-change-block' : '',
+                changeKind ? `omi-proofing-change-block--${changeKind}` : '',
                 comments.length ? 'omi-proofing-comment-block' : '',
                 corrections.some((item) => item.kind === 'page-break-before')
                   ? 'omi-publication-correction-page-break'
@@ -93,10 +103,23 @@ export const OmiProofingMarksExtension = Extension.create({
               if (nodeClasses) {
                 decorations.push(Decoration.node(offset, offset + node.nodeSize, {
                   class: nodeClasses,
-                  ...(changes[0]
-                    ? { 'data-proofing-change-id': changes[0].id }
+                  ...(primaryChange
+                    ? {
+                        'data-proofing-change-id': primaryChange.id,
+                        'data-proofing-kind': changeKind,
+                      }
                     : {}),
                 }));
+              }
+
+              if (primaryChange) {
+                addTrackedChangeDecoration(
+                  decorations,
+                  node,
+                  offset,
+                  nodeText,
+                  primaryChange,
+                );
               }
 
               for (const comment of comments) {
@@ -130,6 +153,34 @@ export const OmiProofingMarksExtension = Extension.create({
     ];
   },
 });
+
+function addTrackedChangeDecoration(
+  decorations: Decoration[],
+  node: ProseMirrorNode,
+  offset: number,
+  nodeText: string,
+  change: OmiProofingChange,
+): void {
+  const beforeText = storedContentText(change.before);
+  const afterText = storedContentText(change.after);
+  if (nodeText !== afterText) return;
+
+  const diff = createProofingTextDiff(beforeText, afterText);
+  if (!diff.inserted) return;
+  const range = textRangeInNode(
+    node,
+    offset,
+    diff.prefix.length,
+    diff.prefix.length + diff.inserted.length,
+  );
+  if (!range) return;
+
+  decorations.push(Decoration.inline(range.from, range.to, {
+    class: 'omi-proofing-insertion-range',
+    'data-proofing-change-id': change.id,
+    'data-proofing-kind': 'insertion',
+  }));
+}
 
 function addPageFlowBreakDecoration(
   decorations: Decoration[],

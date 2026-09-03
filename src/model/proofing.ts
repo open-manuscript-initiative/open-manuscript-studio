@@ -16,6 +16,12 @@ export interface ProofingTextDiff {
   suffix: string;
 }
 
+export type ProofingTextChangeKind =
+  | 'insertion'
+  | 'deletion'
+  | 'replacement'
+  | 'formatting';
+
 export interface ProofingSelection {
   blockId: string;
   from: number;
@@ -232,6 +238,18 @@ export function createProofingTextDiff(before: string, after: string): ProofingT
     inserted: after.slice(prefixLength, after.length - suffixLength),
     suffix: before.slice(before.length - suffixLength),
   };
+}
+
+export function classifyProofingTextChange(
+  before: string,
+  after: string,
+): ProofingTextChangeKind {
+  const beforeText = storedContentText(before);
+  const afterText = storedContentText(after);
+  if (!beforeText && afterText) return 'insertion';
+  if (beforeText && !afterText) return 'deletion';
+  if (beforeText === afterText) return 'formatting';
+  return 'replacement';
 }
 
 export function storedContentText(value: string): string {

@@ -12,6 +12,7 @@ import {
   type EditorRole,
 } from '../editor/editorCapabilities';
 import {
+  classifyProofingTextChange,
   createProofingTextDiff,
   type ProofingSelection,
 } from '../model/proofing';
@@ -30,6 +31,7 @@ import {
   type ReviewManuscriptSnapshot,
 } from '../services/peerReviewApi';
 import { OjsReviewFormCard } from './OjsReviewFormCard';
+import { ProofingColorLegend } from './ProofingColorLegend';
 import { ReviewerRichTextEditor } from './ReviewerRichTextEditor';
 import { isReviewTextBlock, ReviewStructuredBlock } from './ReviewStructuredBlock';
 import './ReviewMode.css';
@@ -474,7 +476,9 @@ function RevisionEditor({
         </div>
       </div>
 
-      <div className="review-mode__selection-comment">
+      <ProofingColorLegend locale={locale} mode="editor" />
+
+      <div className="review-mode__selection-comment" data-proofing-kind="comment">
         <div className={selection?.text.trim() ? '' : 'is-empty'}>
           {selection?.text.trim() ? `“${selection.text.trim().slice(0, 180)}”` : proofingCopy.selectText}
         </div>
@@ -494,8 +498,11 @@ function RevisionEditor({
         const originalText = originalBlock && isReviewTextBlock(originalBlock) ? originalBlock.text : '';
         const changed = !reviewBlocksEqual(block, originalBlock);
         const diff = changed ? createProofingTextDiff(originalText, block.text) : null;
+        const changeKind = changed
+          ? classifyProofingTextChange(originalText, block.text)
+          : undefined;
         return (
-          <div key={index} id={changed ? `review-change-${index}` : undefined} className={`review-mode__revision-block${changed ? ' is-changed' : ''}`}>
+          <div key={index} id={changed ? `review-change-${index}` : undefined} className={`review-mode__revision-block${changed ? ' is-changed' : ''}`} data-proofing-kind={changeKind}>
             <div className="review-mode__revision-label">
               <span>{blockLabel(block, copy)}</span>
               {changed ? <strong>{copy.revised}</strong> : null}
@@ -516,7 +523,7 @@ function RevisionEditor({
               }}
             />
             {changed && diff ? (
-              <div className="review-mode__inline-diff" aria-label={proofingCopy.exactChange}>
+              <div className="review-mode__inline-diff omi-proofing-diff" aria-label={proofingCopy.exactChange}>
                 <span>{diff.prefix}</span>
                 {diff.removed ? <del>{diff.removed}</del> : null}
                 {diff.inserted ? <ins>{diff.inserted}</ins> : null}
