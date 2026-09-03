@@ -291,10 +291,145 @@
   background: #fff;
 }
 
-.omi-study-editor + .omi-study-editor {
+.omi-study-editor ~ .omi-study-editor {
   margin-top: 3.25rem;
   padding-top: 3.25rem;
   border-top: 1px solid var(--omi-border, #d8dde6);
+}
+
+/*
+ * Optional page-bottom note overview for the currently active editing unit.
+ * Its natural flow height deliberately reserves exactly the space required by
+ * the note text; there is no fixed-height pane or nested scrollbar.
+ */
+.omi-current-study-notes {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  box-sizing: border-box;
+  margin: 2.5rem 0 0;
+  overflow: visible;
+  color: #30343a;
+  font-family: var(--omi-academic-serif, Georgia, "Times New Roman", serif);
+}
+
+.omi-current-study-notes::before {
+  content: '';
+  display: block;
+  width: min(8rem, 30%);
+  margin-bottom: 0.8rem;
+  border-top: 1px solid #77716a;
+}
+
+.omi-current-study-notes__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  font-family: var(--omi-academic-sans, sans-serif);
+}
+
+.omi-current-study-notes__header h2 {
+  margin: 0;
+  color: var(--omi-academic-burgundy, #6d2130);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+}
+
+.omi-current-study-notes__header p {
+  margin: 0.18rem 0 0;
+  color: #69717c;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.omi-current-study-notes__count {
+  display: inline-flex;
+  min-width: 1.45rem;
+  height: 1.45rem;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 0.35rem;
+  border: 1px solid #d7d1c8;
+  border-radius: 999px;
+  background: #faf8f4;
+  color: #555b63;
+  font-size: 0.67rem;
+  font-weight: 750;
+}
+
+.omi-current-study-notes__list {
+  display: grid;
+  gap: 0.48rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.omi-current-study-note {
+  display: grid;
+  grid-template-columns: 1.45rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.45rem;
+  font-size: 0.75rem;
+  line-height: 1.48;
+}
+
+.omi-current-study-note__number {
+  min-width: 1.35rem;
+  min-height: 1.35rem;
+  padding: 0.08rem 0.2rem;
+  border: 0;
+  border-radius: 0.2rem;
+  background: transparent;
+  color: var(--omi-academic-burgundy, #6d2130);
+  font: inherit;
+  font-weight: 750;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.omi-current-study-note__number:hover,
+.omi-current-study-note__number:focus-visible {
+  background: var(--omi-academic-burgundy-soft, #f6ecee);
+  outline: 1px solid rgba(109, 33, 48, 0.3);
+  outline-offset: 1px;
+}
+
+.omi-current-study-note__content {
+  min-width: 0;
+}
+
+.omi-current-study-note__content p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.omi-current-study-note__kind {
+  float: inline-start;
+  margin: 0.06rem 0.4rem 0 0;
+  padding: 0.05rem 0.25rem;
+  border: 1px solid #ded8cf;
+  border-radius: 0.2rem;
+  color: #69717c;
+  font-family: var(--omi-academic-sans, sans-serif);
+  font-size: 0.61rem;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+}
+
+.omi-current-study-notes__empty {
+  margin: 0;
+  color: #69717c;
+  font-size: 0.75rem;
+  font-style: italic;
+  line-height: 1.45;
 }
 
 .omi-continuous-section-title {
@@ -664,9 +799,13 @@
     font-size: 1.2rem;
   }
 
-  .omi-study-editor + .omi-study-editor {
+  .omi-study-editor ~ .omi-study-editor {
     margin-top: 2.25rem;
     padding-top: 2.25rem;
+  }
+
+  .omi-current-study-notes {
+    display: none;
   }
 
   .omi-add-study-row {

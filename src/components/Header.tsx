@@ -8,13 +8,19 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Search,
+  StickyNote,
   UserRound,
   X,
 } from 'lucide-react';
 
 import { useStudioStore } from '../app/useStudioStore';
+import { getCurrentStudyNotesCopy } from '../i18n/currentStudyNotes';
 import { getHeaderSupplementalCopy } from '../i18n/headerSupplementalTranslations';
 import { useTranslation } from '../i18n';
+import {
+  countStudyNotes,
+  resolveCurrentStudy,
+} from '../model/currentStudyNotes';
 import { useAuthStore } from '../store/authStore';
 import { AccountPanel } from './AccountPanel';
 import { DesktopDocumentOutline } from './DesktopDocumentOutline';
@@ -28,16 +34,30 @@ interface HeaderProps {
 export function Header({ onOpenMenu }: HeaderProps) {
   const { t, locale } = useTranslation();
   const headerCopy = getHeaderSupplementalCopy(locale);
+  const currentNotesCopy = getCurrentStudyNotesCopy(locale);
   const [accountOpen, setAccountOpen] = useState(false);
   const [outlineOpen, setOutlineOpen] = useState(false);
   const [outlineHost, setOutlineHost] = useState<HTMLElement | null>(null);
   const manuscript = useStudioStore((state) => state.manuscript);
   const pending = useStudioStore((state) => state.pendingChangeSet);
   const selectedId = useStudioStore((state) => state.selectedSectionId);
+  const currentStudyNotesVisible = useStudioStore(
+    (state) => state.currentStudyNotesVisible,
+  );
+  const toggleCurrentStudyNotes = useStudioStore(
+    (state) => state.toggleCurrentStudyNotes,
+  );
   const logout = useAuthStore((state) => state.logout);
   const loading = useAuthStore((state) => state.isLoading);
   const section = manuscript.sections.find((candidate) => candidate.id === selectedId);
   const outlineLabel = outlineOpen ? headerCopy.hideOutline : headerCopy.showOutline;
+  const currentStudy = resolveCurrentStudy(manuscript, selectedId);
+  const currentStudyNoteCount = currentStudy
+    ? countStudyNotes(manuscript, currentStudy)
+    : 0;
+  const notesLabel = currentStudyNotesVisible
+    ? currentNotesCopy.hide
+    : currentNotesCopy.show;
 
   useEffect(() => {
     const host = document.querySelector<HTMLElement>('.focus-workspace');
@@ -83,6 +103,24 @@ export function Header({ onOpenMenu }: HeaderProps) {
             ) : (
               <PanelLeftOpen size={18} aria-hidden="true" />
             )}
+          </button>
+
+          <button
+            type="button"
+            className={`focus-menu-button focus-current-notes-button${
+              currentStudyNotesVisible ? ' is-active' : ''
+            }`}
+            onClick={toggleCurrentStudyNotes}
+            aria-label={notesLabel}
+            title={notesLabel}
+            aria-pressed={currentStudyNotesVisible}
+            aria-expanded={currentStudyNotesVisible}
+            aria-controls="omi-current-study-notes"
+          >
+            <StickyNote size={18} aria-hidden="true" />
+            <span className="focus-current-notes-button__count" aria-hidden="true">
+              {currentStudyNoteCount}
+            </span>
           </button>
 
           <button

@@ -128,8 +128,9 @@ export function getNoteNumber(
 
 export function sortNotesByDocumentOrder(
   state: OmiManuscriptState,
+  occurrences: NoteAnchorOccurrence[] = collectNoteAnchors(state),
 ): OmiAnnotation[] {
-  const order = uniqueNoteIdentifiers(collectNoteAnchors(state));
+  const order = uniqueNoteIdentifiers(occurrences);
   const indexById = new Map(
     order.map((id, index) => [id, index]),
   );

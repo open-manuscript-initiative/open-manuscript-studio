@@ -1,5 +1,11 @@
 import { FileUp, Plus } from 'lucide-react';
-import { useMemo, useRef, useState, type ChangeEvent } from 'react';
+import {
+  Fragment,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from 'react';
 import type { JSONContent } from '@tiptap/core';
 
 import { stageContinuousDocumentChange } from '../app/continuousDocumentActions';
@@ -13,6 +19,10 @@ import {
 } from '../editor/continuousManuscriptDocument';
 import { findRenderedSectionElement } from '../editor/renderedManuscriptNavigation';
 import { useTranslation } from '../i18n';
+import {
+  collectStudyNoteOverview,
+  resolveCurrentStudy,
+} from '../model/currentStudyNotes';
 import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
 import { getDocumentStructureProfile } from '../model/documentProfile';
 import {
@@ -22,6 +32,7 @@ import {
 } from '../model/sectionStructure';
 import { BlockEditor } from './BlockEditor';
 import { ContributorEditor } from './ContributorEditor';
+import { CurrentStudyNotesFooter } from './CurrentStudyNotesFooter';
 
 interface StudyEditorProps {
   study: ManuscriptStudy;
@@ -116,6 +127,12 @@ export function ContinuousManuscriptEditor() {
   const { locale } = useTranslation();
   const copy = getStudyEditorCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
+  const selectedSectionId = useStudioStore(
+    (state) => state.selectedSectionId,
+  );
+  const currentStudyNotesVisible = useStudioStore(
+    (state) => state.currentStudyNotesVisible,
+  );
   const structure = getDocumentStructureProfile(manuscript);
   const studies = useMemo(() => {
     if (structure.kind === 'study' && manuscript.sections.length > 0) {
@@ -126,6 +143,21 @@ export function ContinuousManuscriptEditor() {
     }
     return partitionManuscriptStudies(manuscript.sections);
   }, [manuscript.sections, structure.kind]);
+  const currentStudy = useMemo(
+    () => resolveCurrentStudy(manuscript, selectedSectionId),
+    [manuscript.documentStructure, manuscript.sections, selectedSectionId],
+  );
+  const currentStudyNoteOverview = useMemo(
+    () => currentStudyNotesVisible && currentStudy
+      ? collectStudyNoteOverview(manuscript, currentStudy)
+      : null,
+    [
+      currentStudy,
+      currentStudyNotesVisible,
+      manuscript.annotations,
+      manuscript.sections,
+    ],
+  );
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState('');
   const [importBusy, setImportBusy] = useState(false);
@@ -195,21 +227,31 @@ export function ContinuousManuscriptEditor() {
           (section) => section.id === study.rootSectionId,
         );
         const title = root?.title.trim() || copy.untitled;
+        const showNotes = currentStudyNotesVisible
+          && currentStudy?.rootSectionId === study.rootSectionId;
         return (
-          <StudyEditor
-            key={study.rootSectionId}
-            study={study}
-            sectionNumbers={sectionNumbers}
-            manuscriptLanguage={manuscript.locale}
-            ariaLabel={`${copy.study}: ${title}`}
-            documentWide={structure.kind === 'study'}
-            showContributors={
-              structure.kind === 'volume'
-              && structure.volumeKind === 'edited-volume'
-            }
-            contributorTitle={copy.contributorTitle}
-            contributorDescription={copy.contributorDescription}
-          />
+          <Fragment key={study.rootSectionId}>
+            <StudyEditor
+              study={study}
+              sectionNumbers={sectionNumbers}
+              manuscriptLanguage={manuscript.locale}
+              ariaLabel={`${copy.study}: ${title}`}
+              documentWide={structure.kind === 'study'}
+              showContributors={
+                structure.kind === 'volume'
+                && structure.volumeKind === 'edited-volume'
+              }
+              contributorTitle={copy.contributorTitle}
+              contributorDescription={copy.contributorDescription}
+            />
+            {showNotes && currentStudyNoteOverview ? (
+              <CurrentStudyNotesFooter
+                study={study}
+                notes={currentStudyNoteOverview.notes}
+                numberByNoteId={currentStudyNoteOverview.numberByNoteId}
+              />
+            ) : null}
+          </Fragment>
         );
       })}
 
