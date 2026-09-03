@@ -47,6 +47,10 @@ import {
   type OmiNoteAttributes,
 } from '../editor/extensions/OmiNoteExtension';
 import { OmiProofreadingExtension } from '../editor/extensions/OmiProofreadingExtension';
+import {
+  OmiProofingMarksExtension,
+  PROOFING_MARKS_META,
+} from '../editor/extensions/OmiProofingMarksExtension';
 import { OmiContinuousStructureExtension } from '../editor/extensions/OmiContinuousStructureExtension';
 import {
   OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS,
@@ -65,9 +69,11 @@ import {
 } from '../model/crossReferences';
 import { renderCitationCluster } from '../model/cslRendering';
 import { sanitizeRichTextPasteHtml } from '../model/richText';
+import type { ProofingSelection } from '../model/proofing';
 import type {
   OmiCrossReferenceDisplayStyle,
   OmiCrossReferenceTargetKind,
+  OmiPublicationCorrection,
 } from '../types/omi';
 import { CitationClusterEditorCard } from './CitationClusterEditorCard';
 import { CitationEditorCard } from './CitationEditorCard';
@@ -93,7 +99,12 @@ interface BlockEditorProps {
   manuscriptLanguage?: string;
   className?: string;
   continuous?: boolean;
+  proofingMode?: 'editor' | 'publication';
+  publicationCorrections?: readonly OmiPublicationCorrection[];
+  onProofingSelection?: (selection: ProofingSelection | null) => void;
 }
+
+const EMPTY_PUBLICATION_CORRECTIONS: readonly OmiPublicationCorrection[] = [];
 
 export function BlockEditor({
   blockId,
@@ -105,6 +116,9 @@ export function BlockEditor({
   manuscriptLanguage,
   className,
   continuous = false,
+  proofingMode,
+  publicationCorrections = EMPTY_PUBLICATION_CORRECTIONS,
+  onProofingSelection,
 }: BlockEditorProps) {
   const { t, locale } = useTranslation();
   const crossReferenceCopy = getCrossReferenceCopy(locale);
@@ -116,6 +130,7 @@ export function BlockEditor({
   const [crossReferencePickerOpen, setCrossReferencePickerOpen] = useState(false);
   const [integrationAction, setIntegrationAction] = useState<'translate' | 'agent' | null>(null);
   const onUpdateRef = useRef(onUpdate);
+  const onProofingSelectionRef = useRef(onProofingSelection);
   const tRef = useRef(t);
   const proofreadingSelectRef = useRef<(id: string | null) => void>(() => undefined);
   const activeBlockIdRef = useRef(blockId);
@@ -139,6 +154,10 @@ export function BlockEditor({
   useEffect(() => {
     onUpdateRef.current = onUpdate;
   }, [onUpdate]);
+
+  useEffect(() => {
+    onProofingSelectionRef.current = onProofingSelection;
+  }, [onProofingSelection]);
 
   useEffect(() => {
     tRef.current = t;
@@ -184,6 +203,7 @@ export function BlockEditor({
           ]
         : OMI_RICH_TEXT_EXTENSIONS),
       OmiProofreadingExtension,
+      OmiProofingMarksExtension,
       ...(capabilities.insertNotes
         ? [
             OmiNoteExtension.configure({
@@ -272,6 +292,25 @@ export function BlockEditor({
           return true;
         }
 
+        if (proofingMode === 'editor') {
+          const proofingChangeId = target
+            .closest<HTMLElement>('[data-proofing-change-id]')
+            ?.dataset.proofingChangeId;
+          if (proofingChangeId) {
+            useStudioStore.getState().setActiveProofingChange(proofingChangeId);
+            return false;
+          }
+          const proofingCommentId = target
+            .closest<HTMLElement>('[data-proofing-comment-id]')
+            ?.dataset.proofingCommentId;
+          if (proofingCommentId) {
+            if (!useStudioStore.getState().proofingPanelOpen) {
+              useStudioStore.getState().toggleProofingPanel();
+            }
+            return false;
+          }
+        }
+
         if (capabilities.editCrossReferences) {
           const crossReferenceId = target
             .closest<HTMLElement>('[data-omi-cross-reference][data-cross-reference-id]')
@@ -357,6 +396,9 @@ export function BlockEditor({
       ) {
         useStudioStore.getState().selectSection(active.sectionId);
       }
+      onProofingSelectionRef.current?.(
+        resolveProofingSelection(editor, active.blockId),
+      );
     };
     syncActiveBlock();
     editor.on('selectionUpdate', syncActiveBlock);
@@ -366,6 +408,50 @@ export function BlockEditor({
       editor.off('transaction', syncActiveBlock);
     };
   }, [continuous, editor]);
+
+  useEffect(() => {
+    if (!editor || continuous || !onProofingSelectionRef.current) return;
+    const syncSelection = () => {
+      const { doc, selection } = editor.state;
+      onProofingSelectionRef.current?.({
+        blockId,
+        from: doc.textBetween(0, selection.from, '\n', '\n').length,
+        to: doc.textBetween(0, selection.to, '\n', '\n').length,
+        text: doc.textBetween(selection.from, selection.to, '\n', '\n'),
+      });
+    };
+    syncSelection();
+    editor.on('selectionUpdate', syncSelection);
+    editor.on('transaction', syncSelection);
+    return () => {
+      editor.off('selectionUpdate', syncSelection);
+      editor.off('transaction', syncSelection);
+    };
+  }, [blockId, continuous, editor]);
+
+  useEffect(() => {
+    if (!editor) return;
+    const changes = proofingMode === 'editor'
+      ? manuscript.proofing?.changes ?? []
+      : [];
+    const comments = proofingMode === 'editor'
+      ? manuscript.annotations
+      : [];
+    const corrections = proofingMode === 'publication'
+      ? publicationCorrections
+      : [];
+    editor.view.dispatch(editor.state.tr.setMeta(PROOFING_MARKS_META, {
+      changes,
+      comments,
+      corrections,
+    }));
+  }, [
+    editor,
+    manuscript.annotations,
+    manuscript.proofing?.changes,
+    proofingMode,
+    publicationCorrections,
+  ]);
 
   useEffect(() => {
     editor?.setEditable(effectiveEditable);
@@ -692,5 +778,32 @@ function resolveContinuousProofreadingScope(editor: Editor) {
     blockId: active.blockId,
     text: editor.state.doc.textBetween(active.start, active.end, ''),
     textOffsetBase: editor.state.doc.textBetween(0, active.start, '').length,
+  };
+}
+
+function resolveProofingSelection(
+  editor: Editor,
+  activeBlockId: string,
+): ProofingSelection | null {
+  const { doc, selection } = editor.state;
+  const fromBlock = getTopLevelBlockAtPosition(doc, selection.from);
+  const targetTo = selection.empty
+    ? selection.to
+    : Math.max(selection.from, selection.to - 1);
+  const toBlock = getTopLevelBlockAtPosition(doc, targetTo);
+  if (
+    !fromBlock
+    || !toBlock
+    || fromBlock.blockId !== activeBlockId
+    || toBlock.blockId !== activeBlockId
+  ) return null;
+
+  const from = doc.textBetween(fromBlock.start, selection.from, '\n', '\n').length;
+  const to = doc.textBetween(fromBlock.start, selection.to, '\n', '\n').length;
+  return {
+    blockId: activeBlockId,
+    from,
+    to,
+    text: doc.textBetween(selection.from, selection.to, '\n', '\n'),
   };
 }

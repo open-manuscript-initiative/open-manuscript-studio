@@ -8,6 +8,7 @@ import type {
   ReviewInlineSpan,
   ReviewManuscriptBlock,
 } from '../services/peerReviewApi';
+import type { ProofingSelection } from '../model/proofing';
 import { BlockEditor } from './BlockEditor';
 
 export type ReviewTextBlock = Extract<
@@ -26,12 +27,14 @@ export function ReviewerRichTextEditor({
   capabilities,
   manuscriptLanguage,
   onChange,
+  onSelectionChange,
 }: {
   block: ReviewTextBlock;
   disabled: boolean;
   capabilities: EditorCapabilities;
   manuscriptLanguage?: string;
   onChange: (block: ReviewTextBlock) => void;
+  onSelectionChange?: (selection: ProofingSelection | null) => void;
 }) {
   const { locale } = useTranslation();
   const reactId = useId();
@@ -64,6 +67,7 @@ export function ReviewerRichTextEditor({
         className={`review-mode__studio-block-editor review-mode__studio-block-editor--${block.type}${
           block.type === 'note' ? ' omi-note-rich-editor' : ''
         }`}
+        onProofingSelection={onSelectionChange}
       />
     </div>
   );

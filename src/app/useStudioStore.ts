@@ -24,6 +24,17 @@ import {
   type RevisionId,
 } from '../model/versioning';
 import {
+  createProofingComment,
+  createPublicationCorrection,
+  decideProofingChange,
+  normalizeProofingState,
+  recordBlockTextChange,
+  restoreProofingChange,
+  setProofingCommentResolved,
+  setProofingTracking,
+  type ProofingSelection,
+} from '../model/proofing';
+import {
   createCheckpointDescriptor,
   stagePendingChanges,
   type CheckpointReason,
@@ -34,8 +45,10 @@ import {
   useAuthStore,
 } from '../store/authStore';
 import type {
+  OmiBlock,
   OmiManuscript,
   OmiManuscriptState,
+  OmiPublicationCorrectionKind,
 } from '../types/omi';
 
 interface ContributionEditInput {
@@ -48,10 +61,32 @@ interface StudioState {
   pendingChangeSet: OmiPendingChangeSet | null;
   selectedSectionId: string | null;
   currentStudyNotesVisible: boolean;
+  proofingPanelOpen: boolean;
+  activeProofingChangeId: string | null;
+  proofingSelection: ProofingSelection | null;
   setTitle: (title: string) => void;
   setAbstract: (abstractText: string) => void;
   selectSection: (sectionId: string) => void;
   toggleCurrentStudyNotes: () => void;
+  toggleProofingPanel: () => void;
+  closeProofingPanel: () => void;
+  setActiveProofingChange: (changeId: string | null) => void;
+  setProofingSelection: (selection: ProofingSelection | null) => void;
+  setTrackChanges: (enabled: boolean) => void;
+  acceptProofingChange: (changeId: string) => void;
+  rejectProofingChange: (changeId: string) => void;
+  acceptAllProofingChanges: () => void;
+  rejectAllProofingChanges: () => void;
+  addProofingComment: (
+    body: string,
+    visibility: 'author_and_editor' | 'editor_only',
+  ) => void;
+  setProofingCommentResolved: (commentId: string, resolved: boolean) => void;
+  addPublicationCorrection: (
+    kind: OmiPublicationCorrectionKind,
+    selection: ProofingSelection,
+  ) => void;
+  removePublicationCorrection: (correctionId: string) => void;
   updateBlock: (blockId: string, content: string) => void;
   addSection: () => void;
   addContributor: (targetId?: string) => void;
@@ -85,6 +120,9 @@ export const useStudioStore = create<StudioState>((set) => ({
   pendingChangeSet: null,
   selectedSectionId: initial.sections[0]?.id ?? null,
   currentStudyNotesVisible: false,
+  proofingPanelOpen: false,
+  activeProofingChangeId: null,
+  proofingSelection: null,
 
   setTitle: (title) =>
     set((state) => {
@@ -143,30 +181,206 @@ export const useStudioStore = create<StudioState>((set) => ({
       currentStudyNotesVisible: !state.currentStudyNotesVisible,
     })),
 
+  toggleProofingPanel: () =>
+    set((state) => ({ proofingPanelOpen: !state.proofingPanelOpen })),
+
+  closeProofingPanel: () => set({ proofingPanelOpen: false }),
+
+  setActiveProofingChange: (changeId) => set({
+    activeProofingChangeId: changeId,
+    ...(changeId ? { proofingPanelOpen: true } : {}),
+  }),
+
+  setProofingSelection: (selection) => set({ proofingSelection: selection }),
+
+  setTrackChanges: (enabled) =>
+    set((state) => {
+      const current = normalizeProofingState(state.manuscript.proofing);
+      if (current.trackChanges === enabled) return state;
+      const proofing = setProofingTracking(state.manuscript.proofing, enabled);
+      return stageWorkingChange(
+        state,
+        { ...extractManuscriptState(state.manuscript), proofing },
+        enabled ? 'Enabled tracked changes' : 'Disabled tracked changes',
+        [{
+          operation: 'proofing.tracking.set',
+          targetId: state.manuscript.id,
+          path: '/proofing/trackChanges',
+          previousValue: current.trackChanges,
+          nextValue: enabled,
+        }],
+      );
+    }),
+
+  acceptProofingChange: (changeId) =>
+    set((state) => decideTrackedChange(state, changeId, 'accepted')),
+
+  rejectProofingChange: (changeId) =>
+    set((state) => decideTrackedChange(state, changeId, 'rejected')),
+
+  acceptAllProofingChanges: () =>
+    set((state) => decideAllTrackedChanges(state, 'accepted')),
+
+  rejectAllProofingChanges: () =>
+    set((state) => decideAllTrackedChanges(state, 'rejected')),
+
+  addProofingComment: (body, visibility) =>
+    set((state) => {
+      const selection = state.proofingSelection;
+      if (!selection || !selection.text.trim() || !body.trim()) return state;
+      const timestamp = new Date().toISOString();
+      const comment = createProofingComment(
+        selection,
+        body,
+        visibility,
+        resolveCurrentActorAgentId(state.manuscript),
+        timestamp,
+      );
+      return {
+        ...stageWorkingChange(
+          state,
+          {
+            ...extractManuscriptState(state.manuscript),
+            annotations: [...state.manuscript.annotations, comment],
+          },
+          'Added proofreading comment',
+          [{
+            operation: 'proofing.comment.create',
+            targetId: comment.id,
+            path: '/annotations/-',
+            nextValue: comment,
+          }],
+          timestamp,
+        ),
+        proofingSelection: null,
+      };
+    }),
+
+  setProofingCommentResolved: (commentId, resolved) =>
+    set((state) => {
+      const existing = state.manuscript.annotations.find(
+        (annotation) => annotation.id === commentId && annotation.type === 'comment',
+      );
+      if (!existing || (existing.status === 'resolved') === resolved) return state;
+      const timestamp = new Date().toISOString();
+      const next = setProofingCommentResolved(existing, resolved, timestamp);
+      return stageWorkingChange(
+        state,
+        {
+          ...extractManuscriptState(state.manuscript),
+          annotations: state.manuscript.annotations.map((annotation) =>
+            annotation.id === commentId ? next : annotation,
+          ),
+        },
+        resolved ? 'Resolved proofreading comment' : 'Reopened proofreading comment',
+        [{
+          operation: 'proofing.comment.resolve',
+          targetId: commentId,
+          path: `/annotations/${commentId}/status`,
+          previousValue: existing.status ?? 'open',
+          nextValue: next.status,
+        }],
+        timestamp,
+      );
+    }),
+
+  addPublicationCorrection: (kind, selection) =>
+    set((state) => {
+      const blockLevel = kind === 'page-break-before'
+        || kind === 'keep-together'
+        || kind === 'keep-with-next';
+      const duplicate = (state.manuscript.publicationCorrections ?? []).some(
+        (correction) => correction.targetBlockId === selection.blockId
+          && correction.kind === kind
+          && (blockLevel || (
+            correction.from === selection.from
+            && correction.to === selection.to
+          )),
+      );
+      if (duplicate) return state;
+      const timestamp = new Date().toISOString();
+      const correction = createPublicationCorrection({
+        targetBlockId: selection.blockId,
+        kind,
+        from: selection.from,
+        to: selection.to,
+        sourceText: selection.text,
+        creatorAgentId: resolveCurrentActorAgentId(state.manuscript),
+      }, timestamp);
+      return stageWorkingChange(
+        state,
+        {
+          ...extractManuscriptState(state.manuscript),
+          publicationCorrections: [
+            ...(state.manuscript.publicationCorrections ?? []),
+            correction,
+          ],
+        },
+        'Added publication proofreading correction',
+        [{
+          operation: 'publication.correction.create',
+          targetId: correction.id,
+          path: '/publicationCorrections/-',
+          nextValue: correction,
+        }],
+        timestamp,
+      );
+    }),
+
+  removePublicationCorrection: (correctionId) =>
+    set((state) => {
+      const existing = (state.manuscript.publicationCorrections ?? []).find(
+        (correction) => correction.id === correctionId,
+      );
+      if (!existing) return state;
+      return stageWorkingChange(
+        state,
+        {
+          ...extractManuscriptState(state.manuscript),
+          publicationCorrections: (state.manuscript.publicationCorrections ?? [])
+            .filter((correction) => correction.id !== correctionId),
+        },
+        'Removed publication proofreading correction',
+        [{
+          operation: 'publication.correction.remove',
+          targetId: correctionId,
+          path: `/publicationCorrections/${correctionId}`,
+          previousValue: existing,
+        }],
+      );
+    }),
+
   updateBlock: (blockId, content) =>
     set((state) => {
-      const previousBlock = state.manuscript.sections
-        .flatMap((section) => section.blocks)
-        .find((block) => block.id === blockId);
+      const previousBlock = findBlock(state.manuscript.sections.flatMap((section) => section.blocks), blockId);
 
       if (!previousBlock || previousBlock.content === content) {
         return state;
       }
 
+      const previousProofing = normalizeProofingState(state.manuscript.proofing);
+      const proofing = state.manuscript.proofing?.trackChanges
+        ? {
+            ...previousProofing,
+            changes: recordBlockTextChange(
+              previousProofing.changes,
+              blockId,
+              previousBlock.content,
+              content,
+              resolveCurrentActorAgentId(state.manuscript),
+            ),
+          }
+        : state.manuscript.proofing;
       const nextState: OmiManuscriptState = {
         ...extractManuscriptState(state.manuscript),
         sections: state.manuscript.sections.map((section) => ({
           ...section,
-          blocks: section.blocks.map((block) =>
-            block.id === blockId
-              ? {
-                  ...block,
-                  content,
-                }
-              : block,
-          ),
+          blocks: replaceBlock(section.blocks, blockId, content),
         })),
+        proofing,
       };
+      const proofingChanged = state.manuscript.proofing?.trackChanges
+        && JSON.stringify(previousProofing.changes) !== JSON.stringify(proofing?.changes);
 
       return stageWorkingChange(
         state,
@@ -180,6 +394,13 @@ export const useStudioStore = create<StudioState>((set) => ({
             previousValue: previousBlock.content,
             nextValue: content,
           },
+          ...(proofingChanged ? [{
+            operation: 'proofing.change.record' as const,
+            targetId: blockId,
+            path: '/proofing/changes',
+            previousValue: previousProofing.changes,
+            nextValue: proofing?.changes ?? [],
+          }] : []),
         ],
       );
     }),
@@ -580,6 +801,9 @@ export const useStudioStore = create<StudioState>((set) => ({
       manuscript: migrated,
       pendingChangeSet: null,
       selectedSectionId: migrated.sections[0]?.id ?? null,
+      proofingPanelOpen: false,
+      activeProofingChangeId: null,
+      proofingSelection: null,
     });
   },
 
@@ -591,6 +815,9 @@ export const useStudioStore = create<StudioState>((set) => ({
       manuscript: sample,
       pendingChangeSet: null,
       selectedSectionId: sample.sections[0]?.id ?? null,
+      proofingPanelOpen: false,
+      activeProofingChangeId: null,
+      proofingSelection: null,
     });
   },
 }));
@@ -662,7 +889,7 @@ function restoreCommittedHead(
   };
 }
 
-function resolveCurrentActorAgentId(
+export function resolveCurrentActorAgentId(
   manuscript: OmiManuscript,
 ): string | undefined {
   const currentUser = getCurrentUser(useAuthStore.getState());
@@ -733,5 +960,141 @@ function normalizeContributionOrdersByTarget(
   return contributions.map((contribution) => ({
     ...contribution,
     order: orderById.get(contribution.id) ?? contribution.order,
+  }));
+}
+
+function decideTrackedChange(
+  state: StudioState,
+  changeId: string,
+  decision: 'accepted' | 'rejected',
+): Partial<StudioState> | StudioState {
+  const proofing = normalizeProofingState(state.manuscript.proofing);
+  const change = proofing.changes.find(
+    (candidate) => candidate.id === changeId && candidate.status === 'pending',
+  );
+  if (!change) return state;
+
+  const timestamp = new Date().toISOString();
+  const nextProofing = decideProofingChange(
+    proofing,
+    changeId,
+    decision,
+    timestamp,
+  );
+  const sections = decision === 'rejected'
+    ? restoreProofingChange(state.manuscript.sections, change)
+    : state.manuscript.sections;
+
+  return {
+    ...stageWorkingChange(
+      state,
+      {
+        ...extractManuscriptState(state.manuscript),
+        sections,
+        proofing: nextProofing,
+      },
+      decision === 'accepted'
+        ? 'Accepted tracked proofreading change'
+        : 'Rejected tracked proofreading change',
+      [{
+        operation: decision === 'accepted'
+          ? 'proofing.change.accept'
+          : 'proofing.change.reject',
+        targetId: changeId,
+        path: `/proofing/changes/${changeId}/status`,
+        previousValue: 'pending',
+        nextValue: decision,
+      }],
+      timestamp,
+    ),
+    activeProofingChangeId: nextPendingChangeId(nextProofing, changeId),
+  };
+}
+
+function decideAllTrackedChanges(
+  state: StudioState,
+  decision: 'accepted' | 'rejected',
+): Partial<StudioState> | StudioState {
+  const proofing = normalizeProofingState(state.manuscript.proofing);
+  const pending = proofing.changes.filter((change) => change.status === 'pending');
+  if (!pending.length) return state;
+
+  const timestamp = new Date().toISOString();
+  const nextProofing = pending.reduce(
+    (current, change) => decideProofingChange(
+      current,
+      change.id,
+      decision,
+      timestamp,
+    ),
+    proofing,
+  );
+  const sections = decision === 'rejected'
+    ? pending.reduce(
+        (current, change) => restoreProofingChange(current, change),
+        state.manuscript.sections,
+      )
+    : state.manuscript.sections;
+
+  return {
+    ...stageWorkingChange(
+      state,
+      {
+        ...extractManuscriptState(state.manuscript),
+        sections,
+        proofing: nextProofing,
+      },
+      decision === 'accepted'
+        ? 'Accepted all tracked proofreading changes'
+        : 'Rejected all tracked proofreading changes',
+      pending.map((change) => ({
+        operation: decision === 'accepted'
+          ? 'proofing.change.accept' as const
+          : 'proofing.change.reject' as const,
+        targetId: change.id,
+        path: `/proofing/changes/${change.id}/status`,
+        previousValue: 'pending',
+        nextValue: decision,
+      })),
+      timestamp,
+    ),
+    activeProofingChangeId: null,
+  };
+}
+
+function nextPendingChangeId(
+  proofing: ReturnType<typeof normalizeProofingState>,
+  currentId: string,
+): string | null {
+  const pending = proofing.changes.filter((change) => change.status === 'pending');
+  if (!pending.length) return null;
+  const currentIndex = proofing.changes.findIndex((change) => change.id === currentId);
+  return proofing.changes
+    .slice(currentIndex + 1)
+    .find((change) => change.status === 'pending')?.id
+    ?? pending[0]?.id
+    ?? null;
+}
+
+function findBlock(blocks: readonly OmiBlock[], blockId: string): OmiBlock | undefined {
+  for (const block of blocks) {
+    if (block.id === blockId) return block;
+    const nested = block.children ? findBlock(block.children, blockId) : undefined;
+    if (nested) return nested;
+  }
+  return undefined;
+}
+
+function replaceBlock(
+  blocks: readonly OmiBlock[],
+  blockId: string,
+  content: string,
+): OmiBlock[] {
+  return blocks.map((block) => ({
+    ...block,
+    ...(block.id === blockId ? { content } : {}),
+    ...(block.children
+      ? { children: replaceBlock(block.children, blockId, content) }
+      : {}),
   }));
 }

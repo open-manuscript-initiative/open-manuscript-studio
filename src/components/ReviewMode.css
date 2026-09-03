@@ -12,3 +12,82 @@
 .review-mode__revision-structured{margin:.55rem 0;padding:.45rem 0}
 .review-mode__shared-block-editor--note{margin:.5rem 0}
 @media(max-width:760px){.review-mode__shared-block-editor--list{grid-template-columns:1.2rem minmax(0,1fr);column-gap:.3rem}.review-mode__shared-block-editor--list .review-structured-list-marker{padding-top:.18rem}.review-mode__shared-editor p{line-height:1.55}.review-mode__shared-editor h1,.review-mode__shared-editor h2,.review-mode__shared-editor h3,.review-mode__shared-editor h4,.review-mode__shared-editor h5,.review-mode__shared-editor h6{margin:.9rem 0 .3rem}}
+
+.review-mode__proofing-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin: 0 -20px;
+  padding: .55rem 20px;
+  border-bottom: 1px solid #ddd4cd;
+  background: rgba(250, 247, 243, .97);
+  backdrop-filter: blur(8px);
+}
+
+.review-mode__proofing-toolbar > strong { font-size: .78rem; color: #5a1213; }
+.review-mode__proofing-navigation { display: flex; align-items: center; gap: .3rem; }
+.review-mode__proofing-navigation button,
+.review-mode__change-actions > button,
+.review-mode__selection-comment button {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  border: 1px solid #cfc6bf;
+  border-radius: 6px;
+  background: #fff;
+  color: #541719;
+  padding: .35rem .55rem;
+  font-size: .72rem;
+}
+.review-mode__proofing-navigation button:disabled,
+.review-mode__change-actions > button:disabled,
+.review-mode__selection-comment button:disabled { opacity: .45; }
+.review-mode__proofing-navigation button:first-child,
+.review-mode__proofing-navigation button:nth-child(2) { width: 2rem; padding: 0; }
+
+.review-mode__selection-comment {
+  display: grid;
+  gap: .45rem;
+  margin: .8rem 0 1rem;
+  padding: .65rem;
+  border: 1px solid #ddd4cd;
+  border-radius: 8px;
+  background: #fbf9f7;
+}
+.review-mode__selection-comment > div:first-child { border-left: 3px solid #7c4e42; padding: .4rem .55rem; color: #4e4640; font: italic .76rem/1.4 Georgia, serif; }
+.review-mode__selection-comment > div:first-child.is-empty { border-left-color: #bdb4ad; color: #746b65; font-family: inherit; font-style: normal; }
+.review-mode__selection-comment textarea { min-height: 3.2rem; margin: 0; padding: .55rem .65rem; font-size: .8rem; }
+.review-mode__selection-comment > div:last-child { display: flex; justify-content: flex-end; gap: .4rem; }
+.review-mode__selection-comment select { width: auto; min-width: 12rem; margin: 0; padding: .4rem .5rem; font-size: .72rem; }
+
+.review-mode__inline-diff {
+  margin: .15rem 0 .3rem;
+  padding: .45rem .65rem;
+  border-left: 3px solid #b98e76;
+  background: #faf6f2;
+  color: #564d47;
+  font: .74rem/1.5 Georgia, serif;
+  white-space: pre-wrap;
+}
+.review-mode__inline-diff del { background: #f9dddd; color: #8f2d35; }
+.review-mode__inline-diff ins { background: #dff1e3; color: #24633a; text-decoration: none; border-bottom: 1px solid #49815a; }
+.review-mode__inline-diff em { color: #70655e; }
+.review-mode__change-actions { display: flex; align-items: center; justify-content: space-between; gap: .65rem; margin: .15rem 0 .6rem; }
+.review-mode__change-actions .review-mode__original-text { flex: 1; margin: 0; }
+.review-mode__studio-block-editor { border: 0; background: transparent; box-shadow: none; }
+.review-mode__studio-block-editor .omi-tiptap-editor { min-height: 0; border: 0; background: transparent; padding: .2rem 0; box-shadow: none; }
+
+@media(max-width:760px) {
+  .review-mode__proofing-toolbar { align-items: flex-start; flex-direction: column; }
+  .review-mode__proofing-navigation { width: 100%; }
+  .review-mode__proofing-navigation button:last-child { margin-left: auto; }
+  .review-mode__selection-comment > div:last-child { align-items: stretch; flex-direction: column; }
+  .review-mode__selection-comment select { width: 100%; }
+  .review-mode__change-actions { align-items: flex-start; flex-direction: column; }
+}
