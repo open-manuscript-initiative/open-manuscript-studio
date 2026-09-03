@@ -3,6 +3,10 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { paginatePublicationBlocks } from '../src/components/publicationPageLayout.ts';
+import {
+  hyphenatePrintText,
+  resolvePrintHyphenationModule,
+} from '../src/services/printHyphenation.ts';
 
 const styleEditor = readFileSync(
   new URL('../src/components/PublicationStyleEditor.tsx', import.meta.url),
@@ -18,6 +22,10 @@ const editorStyles = readFileSync(
 );
 const exportRenderer = readFileSync(
   new URL('../src/services/publicationStyleExport.ts', import.meta.url),
+  'utf8',
+);
+const hyphenationRenderer = readFileSync(
+  new URL('../src/services/printHyphenation.ts', import.meta.url),
   'utf8',
 );
 
@@ -99,4 +107,34 @@ test('screen pagination keeps a heading with the following text block', () => {
     { pageIndex: 1, translateY: 75 },
     { pageIndex: 1, translateY: 75 },
   ]);
+});
+
+test('print hyphenation selects lazy language modules from BCP 47 tags', () => {
+  assert.equal(resolvePrintHyphenationModule('hu-HU'), 'hu');
+  assert.equal(resolvePrintHyphenationModule('en-GB'), 'en-gb');
+  assert.equal(resolvePrintHyphenationModule('de-CH'), 'de');
+  assert.equal(resolvePrintHyphenationModule('sr-Latn'), 'sh-latn');
+  assert.equal(resolvePrintHyphenationModule('zh-Hant'), null);
+  assert.equal(resolvePrintHyphenationModule('und'), null);
+  assert.match(hyphenationRenderer, /const MODULE_LOADERS = \{/);
+  assert.match(hyphenationRenderer, /element\.closest\('\[lang\]'\)/);
+});
+
+test('Hungarian print module adds discretionary breaks without changing source text', async () => {
+  const source = 'megszentségteleníthetetlenségeskedéseitekért';
+  const hyphenated = await hyphenatePrintText(source, 'hu-HU');
+
+  assert.match(hyphenated, /\u00ad/);
+  assert.equal(hyphenated.replaceAll('\u00ad', ''), source);
+  assert.equal(await hyphenatePrintText(source, 'und'), source);
+});
+
+test('print hyphenation is optional and stays outside canonical manuscript state', () => {
+  assert.match(styleEditor, /checked=\{body\.hyphenation\}/);
+  assert.match(styleEditor, /setStyleValue\('body', 'hyphenation'/);
+  assert.match(documentCanvas, /lang=\{manuscript\.locale\}/);
+  assert.match(editorStyles, /--omi-publication-hyphens/);
+  assert.match(exportRenderer, /target === 'print' && style\.styles\.body\.hyphenation/);
+  assert.match(exportRenderer, /await hyphenatePrintHtml\(html, manuscript\.locale\)/);
+  assert.match(exportRenderer, /\[data-omi-hyphenation-module\][\s\S]*hyphens: manual/);
 });

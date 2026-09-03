@@ -214,6 +214,7 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
     outerMargin,
     pageOverhead,
     style.page.mirroredMargins,
+    style.styles.body.hyphenation,
     usablePageHeight,
   ]);
 
@@ -276,6 +277,7 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
     '--omi-publication-heading-two-before': `${heading2.spaceBefore * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-heading-two-after': `${heading2.spaceAfter * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-body-align': body.alignment,
+    '--omi-publication-hyphens': body.hyphenation ? 'auto' : 'none',
   } as CSSProperties;
   const contentStyle = {
     top: `${topMargin}px`,
@@ -328,7 +330,7 @@ export function PublicationDocumentCanvas({ style }: PublicationDocumentCanvasPr
           <span className="publication-document-ruler-margin publication-document-ruler-margin--left" />
           <span className="publication-document-ruler-margin publication-document-ruler-margin--right" />
         </div>
-        <article className="publication-document-paper" style={pageStyle}>
+        <article className="publication-document-paper" style={pageStyle} lang={manuscript.locale}>
           <div className="publication-document-page-guides" aria-hidden="true">
             {Array.from({ length: pageCount }, (_, index) => {
               const pageNumber = firstPageNumber + index;
