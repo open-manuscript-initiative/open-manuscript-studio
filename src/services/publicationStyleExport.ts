@@ -88,8 +88,8 @@ export function publicationParagraphStyleDefaults(
     fontFamily: style.fonts.body.family,
     fontSize: body.fontSize,
     lineHeight: body.lineHeight,
-    fontWeight: 400,
-    fontStyle: 'normal',
+    fontWeight: body.fontWeight,
+    fontStyle: fontStyle(body.fontStyle),
     alignment: body.alignment as ResolvedPublicationParagraphStyle['alignment'],
     firstLineIndent: body.firstLineIndent,
     leftIndent: 0,
@@ -167,7 +167,7 @@ export function buildPublicationStyleCss(
   const shared = `
 :root { --omi-publication-font: ${family}; }
 html, body { margin: 0; padding: 0; }
-body { font-family: var(--omi-publication-font); font-size: ${body.fontSize}pt; line-height: ${body.lineHeight}pt; }
+body { font-family: var(--omi-publication-font); font-size: ${body.fontSize}pt; line-height: ${body.lineHeight}pt; font-weight: ${body.fontWeight}; font-style: ${fontStyle(body.fontStyle)}; }
 .omi-scholarly-article { max-width: none; margin: 0 auto; }
 .omi-publisher-branding { display: flex; justify-content: center; align-items: center; margin: 0 0 6mm; }
 .omi-publisher-logo { display: block; height: auto; max-width: 100%; }

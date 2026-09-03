@@ -1,6 +1,6 @@
 {
   "name": "open-manuscript-studio",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.2",
   "private": false,
   "type": "module",
   "description": "Reference implementation of the Open Manuscript Initiative Studio.",

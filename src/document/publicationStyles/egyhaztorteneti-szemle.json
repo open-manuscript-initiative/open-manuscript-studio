@@ -39,6 +39,8 @@
       "font": "body",
       "fontSize": 10.5,
       "lineHeight": 12.5,
+      "fontWeight": 400,
+      "fontStyle": "normal",
       "alignment": "justify",
       "firstLineIndent": 5,
       "spaceBefore": 0,
