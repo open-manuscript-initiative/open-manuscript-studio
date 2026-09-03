@@ -47,9 +47,11 @@ interface StudioState {
   manuscript: OmiManuscript;
   pendingChangeSet: OmiPendingChangeSet | null;
   selectedSectionId: string | null;
+  currentStudyNotesVisible: boolean;
   setTitle: (title: string) => void;
   setAbstract: (abstractText: string) => void;
   selectSection: (sectionId: string) => void;
+  toggleCurrentStudyNotes: () => void;
   updateBlock: (blockId: string, content: string) => void;
   addSection: () => void;
   addContributor: (targetId?: string) => void;
@@ -82,6 +84,7 @@ export const useStudioStore = create<StudioState>((set) => ({
   manuscript: initial,
   pendingChangeSet: null,
   selectedSectionId: initial.sections[0]?.id ?? null,
+  currentStudyNotesVisible: false,
 
   setTitle: (title) =>
     set((state) => {
@@ -134,6 +137,11 @@ export const useStudioStore = create<StudioState>((set) => ({
     }),
 
   selectSection: (sectionId) => set({ selectedSectionId: sectionId }),
+
+  toggleCurrentStudyNotes: () =>
+    set((state) => ({
+      currentStudyNotesVisible: !state.currentStudyNotesVisible,
+    })),
 
   updateBlock: (blockId, content) =>
     set((state) => {
