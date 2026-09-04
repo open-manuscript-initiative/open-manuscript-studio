@@ -68,6 +68,17 @@ export default tseslint.config(
     },
   },
   {
+    name: 'omi/playwright',
+    files: ['e2e/**/*.{ts,tsx,mts,cts}'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2024,
+      },
+    },
+  },
+  {
     name: 'omi/react-hooks',
     files: ['src/**/*.{ts,tsx}'],
     plugins: reactHooks.configs.flat.recommended.plugins,
