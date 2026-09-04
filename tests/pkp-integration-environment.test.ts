@@ -2,18 +2,26 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-const composeSource = readFileSync(
-  new URL('./pkp-integration/compose.yml', import.meta.url),
-  'utf8',
+const normalizeLineEndings = (source: string): string =>
+  source.replace(/\r\n?/g, '\n');
+
+const readSource = (relativePath: string): string =>
+  normalizeLineEndings(
+    readFileSync(new URL(relativePath, import.meta.url), 'utf8'),
+  );
+
+const composeSource = readSource('./pkp-integration/compose.yml');
+const pkpDockerfileSource = readSource('./pkp-integration/Dockerfile.pkp');
+const environmentScriptSource = readSource(
+  './pkp-integration/scripts/pkp-env.sh',
 );
-const pkpDockerfileSource = readFileSync(
-  new URL('./pkp-integration/Dockerfile.pkp', import.meta.url),
-  'utf8',
-);
-const environmentScriptSource = readFileSync(
-  new URL('./pkp-integration/scripts/pkp-env.sh', import.meta.url),
-  'utf8',
-);
+
+test('configuration checks are independent of checkout line endings', () => {
+  assert.equal(
+    normalizeLineEndings('networks:\r\n  - pkp-private\r\n'),
+    'networks:\n  - pkp-private\n',
+  );
+});
 
 test('PKP integration environment supports pinned OJS and OMP images', () => {
   assert.match(pkpDockerfileSource, /ARG PKP_PLATFORM=ojs/);
