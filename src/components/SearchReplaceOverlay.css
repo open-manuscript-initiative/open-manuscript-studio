@@ -13,7 +13,7 @@
 
 .omi-search-replace__row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   gap: 8px;
   align-items: center;
 }
@@ -155,7 +155,7 @@ textarea.omi-search-current-target {
 
 @media (max-width: 640px) {
   .omi-search-replace {
-    top: 64px;
+    top: calc(env(safe-area-inset-top) + 118px);
     right: 16px;
     left: 16px;
     width: auto;

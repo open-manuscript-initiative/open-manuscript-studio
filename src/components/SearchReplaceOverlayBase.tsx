@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Replace, Search, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Replace, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { stageMottoChange, stageSubtitleChange } from '../app/manuscriptFrontMatterActions';
@@ -23,6 +23,10 @@ import {
 import { isNoteAnnotation } from '../model/notes';
 import type { OmiBlock } from '../types/omi';
 import './SearchReplaceOverlay.css';
+import {
+  announceSearchOverlayState,
+  SEARCH_OVERLAY_TOGGLE_EVENT,
+} from './searchOverlayEvents';
 
 type SearchMode = 'find' | 'replace';
 type ObjectScope = 'visuals' | 'images' | 'tables' | 'charts' | 'equations';
@@ -84,6 +88,18 @@ export function SearchReplaceOverlay() {
   }, []);
 
   useEffect(() => {
+    const toggle = () => setMode((current) => current ? null : 'find');
+    window.addEventListener(SEARCH_OVERLAY_TOGGLE_EVENT, toggle);
+    return () => window.removeEventListener(SEARCH_OVERLAY_TOGGLE_EVENT, toggle);
+  }, []);
+
+  useEffect(() => {
+    announceSearchOverlayState(Boolean(mode));
+  }, [mode]);
+
+  useEffect(() => () => announceSearchOverlayState(false), []);
+
+  useEffect(() => {
     if (!mode) return;
     requestAnimationFrame(() => { queryRef.current?.focus(); queryRef.current?.select(); });
   }, [mode]);
@@ -131,7 +147,7 @@ export function SearchReplaceOverlay() {
   const mutators = { setTitle, setAbstract, updateBlock };
 
   return (
-    <aside className="omi-search-replace" role="search" aria-label={mode === 'replace' ? copy.replaceTitle : copy.findTitle}>
+    <aside id="omi-search-replace" className="omi-search-replace" role="search" aria-label={mode === 'replace' ? copy.replaceTitle : copy.findTitle}>
       <div className="omi-search-replace__row">
         {mode === 'replace' ? <Replace size={17} aria-hidden="true" /> : <Search size={17} aria-hidden="true" />}
         <input
@@ -159,7 +175,6 @@ export function SearchReplaceOverlay() {
           <button type="button" className="omi-search-replace__icon-button" disabled={!results.length} aria-label={copy.previous} title={copy.previous} onClick={() => move(-1)}><ChevronUp size={17} aria-hidden="true" /></button>
           <button type="button" className="omi-search-replace__icon-button" disabled={!results.length} aria-label={copy.next} title={copy.next} onClick={() => move(1)}><ChevronDown size={17} aria-hidden="true" /></button>
         </div>
-        <button type="button" className="omi-search-replace__icon-button" aria-label={copy.close} title={copy.close} onClick={() => setMode(null)}><X size={17} aria-hidden="true" /></button>
       </div>
 
       {mode === 'replace' && !objectMode ? (

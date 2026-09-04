@@ -143,7 +143,8 @@ body {
   position: relative;
 }
 
-.focus-current-notes-button.is-active {
+.focus-current-notes-button.is-active,
+.focus-search-button.is-active {
   border-color: var(--omi-academic-burgundy);
   background: var(--omi-academic-burgundy-soft);
   color: var(--omi-academic-burgundy-dark);
@@ -470,12 +471,17 @@ body {
 
 .studio-menu-header {
   min-height: 4.65rem;
-  padding: .75rem 1rem;
+  padding: .65rem clamp(.8rem, 2vw, 1.5rem);
   border: 0;
   border-top: 3px solid var(--omi-academic-burgundy);
   border-bottom: 1px solid var(--omi-academic-line);
   background: var(--omi-academic-paper);
   color: var(--omi-academic-ink);
+}
+
+.studio-menu-header-spacer {
+  width: 2.35rem;
+  height: 2.35rem;
 }
 
 .studio-menu-header h2 {
@@ -761,7 +767,25 @@ body {
   }
 
   .studio-menu-header {
-    min-height: 4.15rem;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: 8px;
+    min-height: 56px;
+    padding: env(safe-area-inset-top) 10px 0;
+  }
+
+  .studio-menu-close {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .studio-menu-header-actions,
+  .studio-menu-header-spacer {
+    width: 44px;
+    justify-content: center;
   }
 
   .studio-menu-body {

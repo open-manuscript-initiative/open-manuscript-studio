@@ -52,10 +52,6 @@ export function AssignmentStudioMenu({
         aria-labelledby="assignment-studio-menu-title"
       >
         <header className="studio-menu-header">
-          <div>
-            <span className="studio-menu-eyebrow">Open Manuscript Studio</span>
-            <h2 id="assignment-studio-menu-title">{t('studio.menu')}</h2>
-          </div>
           <button
             type="button"
             className="studio-menu-close"
@@ -65,6 +61,11 @@ export function AssignmentStudioMenu({
           >
             <X size={20} aria-hidden="true" />
           </button>
+          <div className="studio-menu-heading">
+            <span className="studio-menu-eyebrow">Open Manuscript Studio</span>
+            <h2 id="assignment-studio-menu-title">{t('studio.menu')}</h2>
+          </div>
+          <span className="studio-menu-header-spacer" aria-hidden="true" />
         </header>
 
         <div className="studio-menu-body">

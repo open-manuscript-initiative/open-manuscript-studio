@@ -168,7 +168,8 @@ export function StudioMenu({
     }}>
       <aside className="studio-menu-drawer" role="dialog" aria-modal="true" aria-labelledby="studio-menu-title">
         <header className="studio-menu-header">
-          <div><span className="studio-menu-eyebrow">Open Manuscript Studio</span><h2 id="studio-menu-title">{t('studio.menu')}</h2></div>
+          <button type="button" className="studio-menu-close" aria-label={t('studio.closeMenu')} title={t('studio.closeMenu')} onClick={onClose}><X size={20} aria-hidden="true" /></button>
+          <div className="studio-menu-heading"><span className="studio-menu-eyebrow">Open Manuscript Studio</span><h2 id="studio-menu-title">{t('studio.menu')}</h2></div>
           <div className="studio-menu-header-actions">
             <div className="studio-menu-navigation-menu" ref={navigationMenuRef}>
               <button
@@ -209,7 +210,6 @@ export function StudioMenu({
                 {navigationAfterSettings}
               </nav>
             </div>
-            <button type="button" className="studio-menu-close" aria-label={t('studio.closeMenu')} title={t('studio.closeMenu')} onClick={onClose}><X size={20} aria-hidden="true" /></button>
           </div>
         </header>
         <div className="studio-menu-body">

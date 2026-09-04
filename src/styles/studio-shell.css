@@ -194,15 +194,24 @@
 .studio-menu-header {
   position: relative;
   z-index: 40;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
   min-height: 4.25rem;
   padding: .8rem 1rem;
   border-bottom: 1px solid #334155;
   background: #111827;
   color: #f8fafc;
+}
+
+.studio-menu-heading {
+  min-width: 0;
+}
+
+.studio-menu-header-spacer {
+  width: 2.4rem;
+  height: 2.4rem;
 }
 
 .studio-menu-header-actions {
@@ -581,6 +590,28 @@
 
   .studio-menu-drawer {
     width: 100%;
+  }
+
+  .studio-menu-header {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: 8px;
+    min-height: 56px;
+    padding: env(safe-area-inset-top) 10px 0;
+  }
+
+  .studio-menu-close {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .studio-menu-header-actions,
+  .studio-menu-header-spacer {
+    width: 44px;
+    justify-content: center;
   }
 
   .studio-menu-body {

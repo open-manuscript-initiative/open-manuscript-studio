@@ -28,6 +28,11 @@ import { DesktopDocumentOutline } from './DesktopDocumentOutline';
 import { HeaderInsertMenu } from './HeaderInsertMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ProofingPanel } from './ProofingPanel';
+import {
+  getCloseSearchLabel,
+  subscribeSearchOverlayState,
+  toggleSearchOverlay,
+} from './searchOverlayEvents';
 
 interface HeaderProps {
   onOpenMenu: () => void;
@@ -39,6 +44,7 @@ export function Header({ onOpenMenu }: HeaderProps) {
   const currentNotesCopy = getCurrentStudyNotesCopy(locale);
   const [accountOpen, setAccountOpen] = useState(false);
   const [outlineOpen, setOutlineOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [outlineHost, setOutlineHost] = useState<HTMLElement | null>(null);
   const manuscript = useStudioStore((state) => state.manuscript);
   const pending = useStudioStore((state) => state.pendingChangeSet);
@@ -82,14 +88,11 @@ export function Header({ onOpenMenu }: HeaderProps) {
     };
   }, [outlineOpen, proofingPanelOpen]);
 
-  const search = () =>
-    window.dispatchEvent(
-      new KeyboardEvent('keydown', {
-        key: 'f',
-        ctrlKey: true,
-        bubbles: true,
-      }),
-    );
+  useEffect(() => subscribeSearchOverlayState(setSearchOpen), []);
+
+  const searchLabel = searchOpen
+    ? getCloseSearchLabel(locale)
+    : headerCopy.search;
 
   return (
     <>
@@ -160,12 +163,19 @@ export function Header({ onOpenMenu }: HeaderProps) {
 
           <button
             type="button"
-            className="focus-menu-button focus-search-button"
-            onClick={search}
-            aria-label={headerCopy.search}
-            title={headerCopy.search}
+            className={`focus-menu-button focus-search-button${searchOpen ? ' is-active' : ''}`}
+            onClick={toggleSearchOverlay}
+            aria-label={searchLabel}
+            title={searchLabel}
+            aria-pressed={searchOpen}
+            aria-expanded={searchOpen}
+            aria-controls="omi-search-replace"
           >
-            <Search size={18} aria-hidden="true" />
+            {searchOpen ? (
+              <X size={18} aria-hidden="true" />
+            ) : (
+              <Search size={18} aria-hidden="true" />
+            )}
           </button>
 
           <div className="focus-brand-lockup">

@@ -341,8 +341,6 @@ export function RegisterPage({
               {t('auth.register.loginLink')}
             </button>
           </footer>
-
-          <p className="auth-alpha-notice auth-login-notice auth-register-notice">{t('auth.alphaNotice')}</p>
         </section>
       </div>
     </main>
