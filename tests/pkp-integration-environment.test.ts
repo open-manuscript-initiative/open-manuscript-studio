@@ -47,6 +47,10 @@ test('plugin registration uses PKP application tooling instead of direct SQL', (
     environmentScriptSource,
     /lib\/pkp\/tools\/installPluginVersion\.php/,
   );
-  assert.match(environmentScriptSource, /PluginRegistry::loadCategory/);
+  assert.match(
+    environmentScriptSource,
+    /require_once "plugins\/generic\/studioIntegration\/StudioIntegrationPlugin\.php"/,
+  );
+  assert.match(environmentScriptSource, /is_subclass_of/);
   assert.doesNotMatch(environmentScriptSource, /mysql\s+-|mariadb\s+-|psql\s+-/);
 });

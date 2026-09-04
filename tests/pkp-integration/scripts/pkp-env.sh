@@ -173,14 +173,16 @@ verify_environment() {
         fwrite(STDERR, "studioIntegration plugin descriptor is not registered\n");
         exit(1);
     }
-    $plugins = \PKP\plugins\PluginRegistry::loadCategory("generic", false);
-    foreach ($plugins as $plugin) {
-        if ($plugin instanceof \APP\plugins\generic\studioIntegration\StudioIntegrationPlugin) {
-            fwrite(STDOUT, "studioIntegration plugin loaded\n");
-            exit(0);
-        }
+    require_once "plugins/generic/studioIntegration/StudioIntegrationPlugin.php";
+    $class = \APP\plugins\generic\studioIntegration\StudioIntegrationPlugin::class;
+    if (
+        class_exists($class, false)
+        && is_subclass_of($class, \PKP\plugins\GenericPlugin::class)
+    ) {
+        fwrite(STDOUT, "studioIntegration plugin class loaded\n");
+        exit(0);
     }
-    fwrite(STDERR, "studioIntegration plugin did not load\n");
+    fwrite(STDERR, "studioIntegration plugin class did not load\n");
     exit(1);
   '
 

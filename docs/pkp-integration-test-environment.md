@@ -115,8 +115,8 @@ This first layer verifies:
 
 1. native PKP installation succeeds;
 2. Studio migrations and `/api/health` succeed;
-3. the selected plugin profile is present and its class loads through PKP's
-   `PluginRegistry`;
+3. the selected plugin profile is present, its descriptor is registered, and
+   its class loads inside PKP's application bootstrap;
 4. PKP can reach Studio and Studio can reach PKP on the internal network; and
 5. Playwright can render the installed PKP application outside the installer.
 
