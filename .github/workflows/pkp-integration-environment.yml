@@ -12,11 +12,6 @@ on:
           - both
           - ojs
           - omp
-      plugin_ref:
-        description: Plugin branch or tag
-        required: true
-        default: main
-        type: string
   pull_request:
     branches:
       - main
@@ -104,7 +99,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: ${{ matrix.platform == 'ojs' && 'open-manuscript-initiative/omi-ojs-plugin' || 'open-manuscript-initiative/omi-omp-plugin' }}
-          ref: ${{ inputs.plugin_ref || 'main' }}
+          ref: main
           path: tests/pkp-integration/runtime/plugin
           persist-credentials: false
 

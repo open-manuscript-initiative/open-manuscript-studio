@@ -96,7 +96,8 @@ Logs remain under `tests/pkp-integration/runtime/logs/`.
 
 `pkp:up` clones the corresponding plugin's `main` branch into the ignored
 `runtime/plugin` directory when it is absent. Set `PKP_PLUGIN_REF` before the
-first start to test a tag or branch. CI checks out the requested ref directly.
+first local start to test a tag or branch. CI deliberately ignores this local
+override and always checks out `main`.
 
 To switch between OJS and OMP locally, tear down the current environment and
 remove or move `tests/pkp-integration/runtime/plugin`; the harness refuses to
@@ -105,16 +106,19 @@ silently overwrite an existing checkout.
 ## GitHub Actions
 
 The **PKP integration environment** workflow runs both platforms for relevant
-pull requests and pushes. A manual run can select `ojs`, `omp` or `both`, and
-can choose a plugin branch/tag through `plugin_ref`. Each platform receives
-separate Compose project names, volumes and diagnostic artifacts.
+pull requests and pushes. A manual run can select `ojs`, `omp` or `both`.
+CI always checks out the matching plugin's protected `main` branch; arbitrary
+plugin refs are intentionally not accepted by `workflow_dispatch`. Each
+platform receives separate Compose project names, volumes and diagnostic
+artifacts.
 
-Because `plugin_ref` may select code that is not yet trusted, this workflow
-explicitly disables both configured and automatic package-manager caching.
-Both checkouts also remove their persisted GitHub credentials, and the plugin
-is checked out only after the trusted Studio and Playwright dependencies have
-been installed. This keeps manual plugin tests from poisoning a later
-default-branch build cache or reusing the job token.
+The workflow explicitly disables both configured and automatic package-manager
+caching. Both checkouts also remove their persisted GitHub credentials, and the
+plugin is checked out only after the trusted Studio and Playwright dependencies
+have been installed. Together with the fixed plugin ref, this keeps integration
+tests from poisoning a later default-branch build cache or reusing the job
+token. Local disposable environments may still select a branch or tag through
+`PKP_PLUGIN_REF` as described above.
 
 ## Current smoke boundary
 

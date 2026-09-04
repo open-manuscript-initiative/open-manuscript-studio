@@ -38,7 +38,10 @@ test('PKP integration environment supports pinned OJS and OMP images', () => {
   assert.match(environmentScriptSource, /omi-omp-plugin\.git/);
 });
 
-test('manual plugin refs cannot poison shared caches or reuse checkout credentials', () => {
+test('CI only executes the fixed plugin branch without shared credentials or caches', () => {
+  assert.doesNotMatch(workflowSource, /^\s+plugin_ref:/m);
+  assert.doesNotMatch(workflowSource, /inputs\.plugin_ref/);
+  assert.match(workflowSource, /^\s+ref:\s*main\s*$/m);
   assert.doesNotMatch(workflowSource, /^\s+cache:\s*npm\s*$/m);
   assert.match(
     workflowSource,
