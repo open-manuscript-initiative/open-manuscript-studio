@@ -1,0 +1,12 @@
+ARG PKP_PLATFORM=ojs
+ARG PKP_VERSION=3_5_0-4
+FROM docker.io/pkpofficial/${PKP_PLATFORM}:${PKP_VERSION}
+
+USER root
+
+COPY --chown=www-data:www-data runtime/plugin/ /var/www/html/plugins/generic/studioIntegration/
+
+RUN test -f /var/www/html/plugins/generic/studioIntegration/version.xml \
+    && test -f /var/www/html/plugins/generic/studioIntegration/StudioIntegrationPlugin.php
+
+USER www-data

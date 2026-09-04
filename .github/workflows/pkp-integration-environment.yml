@@ -1,0 +1,136 @@
+name: PKP integration environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: PKP platform to exercise
+        required: true
+        default: both
+        type: choice
+        options:
+          - both
+          - ojs
+          - omp
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/pkp-integration-environment.yml
+      - docs/pkp-integration-test-environment.md
+      - package.json
+      - package-lock.json
+      - playwright.pkp.config.ts
+      - server/**
+      - tests/pkp-integration/**
+      - tests/pkp-integration-environment.test.ts
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/pkp-integration-environment.yml
+      - package.json
+      - package-lock.json
+      - playwright.pkp.config.ts
+      - server/**
+      - tests/pkp-integration/**
+      - tests/pkp-integration-environment.test.ts
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pkp-integration-${{ github.workflow }}-${{ github.ref }}-${{ inputs.platform || 'both' }}
+  cancel-in-progress: true
+
+jobs:
+  select-platforms:
+    name: Select platforms
+    runs-on: ubuntu-latest
+    outputs:
+      platforms: ${{ steps.matrix.outputs.platforms }}
+    steps:
+      - name: Build platform matrix
+        id: matrix
+        env:
+          REQUESTED_PLATFORM: ${{ inputs.platform || 'both' }}
+        shell: bash
+        run: |
+          case "$REQUESTED_PLATFORM" in
+            ojs) platforms='["ojs"]' ;;
+            omp) platforms='["omp"]' ;;
+            both) platforms='["ojs","omp"]' ;;
+            *)
+              echo "Unsupported platform: $REQUESTED_PLATFORM" >&2
+              exit 1
+              ;;
+          esac
+          printf 'platforms=%s\n' "$platforms" >> "$GITHUB_OUTPUT"
+
+  environment-smoke:
+    name: ${{ matrix.platform }} environment
+    needs: select-platforms
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON(needs.select-platforms.outputs.platforms) }}
+
+    steps:
+      - name: Checkout Studio
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install Studio test dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps --only-shell chromium
+
+      - name: Checkout matching integration plugin
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ matrix.platform == 'ojs' && 'open-manuscript-initiative/omi-ojs-plugin' || 'open-manuscript-initiative/omi-omp-plugin' }}
+          ref: main
+          path: tests/pkp-integration/runtime/plugin
+          persist-credentials: false
+
+      - name: Validate Compose configuration
+        run: npm run pkp:config -- ${{ matrix.platform }} > /tmp/pkp-compose.yml
+
+      - name: Start integration environment
+        run: npm run pkp:up -- ${{ matrix.platform }}
+
+      - name: Verify service and plugin boundaries
+        run: npm run pkp:verify -- ${{ matrix.platform }}
+
+      - name: Run Playwright environment smoke tests
+        run: npm run pkp:test -- ${{ matrix.platform }}
+
+      - name: Collect container diagnostics
+        if: ${{ always() && !cancelled() }}
+        run: npm run pkp:logs -- ${{ matrix.platform }}
+
+      - name: Upload diagnostics
+        if: ${{ always() && !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: pkp-${{ matrix.platform }}-diagnostics-${{ github.run_attempt }}
+          path: |
+            tests/pkp-integration/runtime/logs/
+            playwright-report/pkp-${{ matrix.platform }}/
+            test-results/pkp-${{ matrix.platform }}/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Stop integration environment
+        if: ${{ always() }}
+        run: npm run pkp:down -- ${{ matrix.platform }}
