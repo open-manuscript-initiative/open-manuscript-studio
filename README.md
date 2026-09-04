@@ -301,6 +301,15 @@ Run tests:
 npm test
 ```
 
+Run the Playwright browser smoke suite after installing its pinned headless browser:
+
+```bash
+npm run playwright:install
+npm run test:e2e
+```
+
+See [docs/playwright-browser-tests.md](docs/playwright-browser-tests.md) for covered journeys, interactive debugging commands and CI diagnostics.
+
 Build the web client:
 
 ```bash

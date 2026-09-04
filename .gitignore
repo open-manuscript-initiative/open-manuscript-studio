@@ -25,6 +25,11 @@ coverage
 # nyc test coverage
 .nyc_output
 
+# Playwright browser-test artifacts
+playwright-report/
+test-results/
+blob-report/
+
 # Grunt intermediate storage
 .grunt
 
