@@ -92,4 +92,8 @@ test('search opens and closes through the same persistent trigger', () => {
     academicShell,
     /@media \(max-width: 760px\)[\s\S]*?grid-template-areas:\s*\n\s*"identity context actions"\s*\n\s*"primary primary primary";/,
   );
+  assert.match(
+    academicShell,
+    /@media \(max-width: 760px\)[\s\S]*?\.app-header\.focus-header\s*\{[\s\S]*?align-items:\s*start;/,
+  );
 });

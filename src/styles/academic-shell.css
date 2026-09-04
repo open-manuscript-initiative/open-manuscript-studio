@@ -684,6 +684,7 @@ body {
     grid-template-areas:
       "identity context actions"
       "primary primary primary";
+    align-items: start;
     min-height: 4.15rem;
     gap: .45rem;
     padding: .5rem .6rem;
