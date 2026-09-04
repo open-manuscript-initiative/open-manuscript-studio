@@ -775,6 +775,7 @@ body {
 
   .studio-menu-header {
     grid-template-columns: 2.35rem minmax(0, 1fr) 2.35rem;
+    align-items: start;
     gap: .45rem;
     min-height: 4.15rem;
     padding: .5rem .6rem;
