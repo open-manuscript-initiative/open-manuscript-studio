@@ -117,6 +117,8 @@ export function StudioMenu({
   const { t, locale } = useTranslation();
   const publicationCopy = getPublicationProfileCopy(locale);
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
+  const platform = getStudioPlatform();
+  const nativeMobile = platform === 'android' || platform === 'ios';
   const [activeView, setActiveView] = useState<StudioMenuView>('document');
   const [navigationOpen, setNavigationOpen] = useState(false);
   const navigationMenuRef = useRef<HTMLDivElement>(null);
@@ -163,7 +165,7 @@ export function StudioMenu({
   if (!open) return null;
 
   return (
-    <div className="studio-menu-backdrop" onMouseDown={(event) => {
+    <div className={`studio-menu-backdrop${nativeMobile ? ' studio-menu-backdrop--native-mobile' : ''}`} onMouseDown={(event) => {
       if (event.target === event.currentTarget) onClose();
     }}>
       <aside className="studio-menu-drawer" role="dialog" aria-modal="true" aria-labelledby="studio-menu-title">

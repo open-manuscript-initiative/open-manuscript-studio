@@ -7,6 +7,7 @@ import {
   useTranslation,
 } from '../i18n';
 import { getHelpCopy } from '../i18n/help';
+import { getStudioPlatform } from '../mobile/platform/platform';
 import { HelpPanel } from './HelpPanel';
 
 type AssignmentMenuView = 'settings' | 'help';
@@ -20,6 +21,8 @@ export function AssignmentStudioMenu({
 }) {
   const { t, locale, enabledLocales, setLocaleEnabled } = useTranslation();
   const helpCopy = getHelpCopy(locale);
+  const platform = getStudioPlatform();
+  const nativeMobile = platform === 'android' || platform === 'ios';
   const [activeView, setActiveView] = useState<AssignmentMenuView>('settings');
 
   useEffect(() => {
@@ -40,7 +43,7 @@ export function AssignmentStudioMenu({
 
   return (
     <div
-      className="studio-menu-backdrop"
+      className={`studio-menu-backdrop${nativeMobile ? ' studio-menu-backdrop--native-mobile' : ''}`}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}

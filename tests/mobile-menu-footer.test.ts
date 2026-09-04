@@ -63,7 +63,11 @@ test('Studio menus close from the same left-side control position that opens the
   );
   assert.match(
     academicShell,
-    /@media \(max-width: 760px\)[\s\S]*?\.studio-menu-header\s*\{[\s\S]*?grid-template-columns:\s*44px minmax\(0, 1fr\) 44px;/,
+    /@media \(max-width: 760px\)[\s\S]*?\.studio-menu-header\s*\{[\s\S]*?grid-template-columns:\s*2\.35rem minmax\(0, 1fr\) 2\.35rem;/,
+  );
+  assert.match(
+    academicShell,
+    /\.studio-menu-backdrop--native-mobile \.studio-menu-header\s*\{[\s\S]*?grid-template-columns:\s*44px minmax\(0, 1fr\) 44px;/,
   );
   assert.match(
     academicShell,
