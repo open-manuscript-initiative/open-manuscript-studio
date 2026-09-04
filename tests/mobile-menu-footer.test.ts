@@ -69,6 +69,10 @@ test('Studio menus close from the same left-side control position that opens the
     academicShell,
     /\.studio-menu-header\s*\{[\s\S]*?padding:\s*\.65rem clamp\(\.8rem, 2vw, 1\.5rem\);/,
   );
+  assert.match(
+    studioShell,
+    /@media \(max-width: 760px\)[\s\S]*?\.studio-menu-drawer\s*\{[\s\S]*?animation:\s*none;/,
+  );
 });
 
 test('the registration page does not show the obsolete alpha notice', () => {

@@ -590,6 +590,7 @@
 
   .studio-menu-drawer {
     width: 100%;
+    animation: none;
   }
 
   .studio-menu-header {
