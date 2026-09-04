@@ -15,6 +15,9 @@ const pkpDockerfileSource = readSource('./pkp-integration/Dockerfile.pkp');
 const environmentScriptSource = readSource(
   './pkp-integration/scripts/pkp-env.sh',
 );
+const workflowSource = readSource(
+  '../.github/workflows/pkp-integration-environment.yml',
+);
 
 test('configuration checks are independent of checkout line endings', () => {
   assert.equal(
@@ -33,6 +36,19 @@ test('PKP integration environment supports pinned OJS and OMP images', () => {
   assert.match(environmentScriptSource, /PLATFORM.*ojs/);
   assert.match(environmentScriptSource, /omi-ojs-plugin\.git/);
   assert.match(environmentScriptSource, /omi-omp-plugin\.git/);
+});
+
+test('manual plugin refs cannot poison shared caches or reuse checkout credentials', () => {
+  assert.doesNotMatch(workflowSource, /^\s+cache:\s*npm\s*$/m);
+  assert.equal(
+    workflowSource.match(/persist-credentials:\s*false/g)?.length,
+    2,
+  );
+  assert.match(workflowSource, /permissions:\n\s+contents: read/);
+  assert.ok(
+    workflowSource.indexOf('- name: Checkout matching integration plugin') >
+      workflowSource.indexOf('- name: Install Playwright Chromium'),
+  );
 });
 
 test('Studio and PKP retain separate database boundaries', () => {

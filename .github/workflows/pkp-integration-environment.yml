@@ -85,6 +85,19 @@ jobs:
     steps:
       - name: Checkout Studio
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Studio test dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps --only-shell chromium
 
       - name: Checkout matching integration plugin
         uses: actions/checkout@v4
@@ -92,18 +105,7 @@ jobs:
           repository: ${{ matrix.platform == 'ojs' && 'open-manuscript-initiative/omi-ojs-plugin' || 'open-manuscript-initiative/omi-omp-plugin' }}
           ref: ${{ inputs.plugin_ref || 'main' }}
           path: tests/pkp-integration/runtime/plugin
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install Studio test dependencies
-        run: npm ci
-
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps --only-shell chromium
+          persist-credentials: false
 
       - name: Validate Compose configuration
         run: npm run pkp:config -- ${{ matrix.platform }} > /tmp/pkp-compose.yml
