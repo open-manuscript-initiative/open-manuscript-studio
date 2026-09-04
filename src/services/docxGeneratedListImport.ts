@@ -120,10 +120,10 @@ export function normalizeGeneratedDisplayText(value: string): string {
     // tab stop. Remove the tab and following layout leaders/page number, but do
     // not consume punctuation that belongs to the entry itself (for example
     // the final period in "Apaffi György I.").
-    .replace(/\t[.·•…_\-\s]*\d+\s*$/u, '')
+    .replace(/\t[-.·•…_\s]*\d+\s*$/u, '')
     // Some producers flatten tab stops to visible leaders. Require at least two
     // leader characters so an entry-ending period is never mistaken for layout.
-    .replace(/(?:[.·•…_\-]\s*){2,}\d+\s*$/u, '')
+    .replace(/(?:[-.·•…_]\s*){2,}\d+\s*$/u, '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLocaleLowerCase();

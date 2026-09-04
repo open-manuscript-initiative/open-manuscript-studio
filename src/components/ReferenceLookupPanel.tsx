@@ -73,7 +73,10 @@ export function ReferenceLookupPanel() {
   const [issues, setIssues] = useState<BibliographicLookupIssue[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
-  const records = manuscript.bibliographicRecords ?? [];
+  const records = useMemo(
+    () => manuscript.bibliographicRecords ?? [],
+    [manuscript.bibliographicRecords],
+  );
   const providerCount = settings.enabledProviders.length;
   const enabledWebProviders = webProviders.filter((provider) => provider.enabled);
   const canSearch =

@@ -490,7 +490,9 @@ function coalesceTextNodes(nodes: readonly TiptapNode[]): TiptapNode[] {
 async function maybeYield(index: number, total: number, options: MonographImportOptions): Promise<void> {
   if ((index + 1) % 64 !== 0 && index + 1 !== total) return;
   options.onProgress?.({ processedParagraphs: index + 1, totalParagraphs: total });
-  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, 0);
+  });
 }
 
 function makeWarning(code: string, message: string): DocxImportWarning {

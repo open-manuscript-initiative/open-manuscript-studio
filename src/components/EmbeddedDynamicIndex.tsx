@@ -9,11 +9,10 @@ import './EmbeddedDynamicIndex.css';
 export function EmbeddedDynamicIndex() {
   const { locale } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
-  const entries = manuscript.indexEntries ?? [];
   const generatedIndexes = manuscript.generatedIndexes ?? [];
   const navigableEntries = useMemo(
-    () => entries.filter((entry) => Boolean(entry.targetBlockId)),
-    [entries],
+    () => (manuscript.indexEntries ?? []).filter((entry) => Boolean(entry.targetBlockId)),
+    [manuscript.indexEntries],
   );
   const groups = useMemo(() => groupIndexEntries(navigableEntries), [navigableEntries]);
   const [host, setHost] = useState<HTMLElement | null>(null);

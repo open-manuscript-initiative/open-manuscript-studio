@@ -47,6 +47,9 @@ web_modules/
 # TypeScript cache
 *.tsbuildinfo
 
+# Prisma clients are recreated from the schemas during install/build.
+server/src/generated/
+
 # Optional npm cache directory
 .npm
 

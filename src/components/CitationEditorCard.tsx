@@ -5,7 +5,7 @@ import {
   stageUpdateCitation,
 } from '../app/citationActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { type AppTranslationKey, useTranslation } from '../i18n';
 import {
   CITATION_LOCATOR_TYPES,
   formatBibliographyEntry,
@@ -186,7 +186,7 @@ export function CitationEditorCard({
 
 function locatorTypeLabel(
   type: OmiCitationLocatorType,
-  t: (key: any) => string,
+  t: (key: AppTranslationKey) => string,
 ): string {
-  return t(`citations.locators.${type}`);
+  return t(`citations.locators.${type}` as AppTranslationKey);
 }

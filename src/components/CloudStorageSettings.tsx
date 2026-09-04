@@ -9,7 +9,7 @@ import {
   Trash2,
   Usb,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { applyOmiContainerImportPlan } from '../app/omiContainerImportActions';
 import { useStudioStore } from '../app/useStudioStore';
@@ -155,7 +155,7 @@ export function CloudStorageSettings() {
     [selectedProvider, oauthProviders],
   );
 
-  async function refresh(): Promise<void> {
+  const refresh = useCallback(async (): Promise<void> => {
     try {
       const [nextConnections, nextBackups, nextOauthProviders] = await Promise.all([
         listCloudConnections(),
@@ -173,11 +173,11 @@ export function CloudStorageSettings() {
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
     }
-  }
+  }, [manuscript.id]);
 
   useEffect(() => {
     void refresh();
-  }, [manuscript.id]);
+  }, [refresh]);
 
   useEffect(() => {
     const exposeResult = (result: { status: 'connected' | 'error'; provider?: string; error?: string }) => {
@@ -214,7 +214,15 @@ export function CloudStorageSettings() {
       active = false;
       dispose?.();
     };
-  }, [locale, oauthProviders, selectedProvider]);
+  }, [
+    oauthCopy.accessDenied,
+    oauthCopy.authorizationFailed,
+    oauthCopy.connected,
+    oauthCopy.exchangeFailed,
+    oauthProviders,
+    refresh,
+    selectedProvider,
+  ]);
 
   function changeOwnDevice(checked: boolean): void {
     const nextMode = checked ? 'own-device' : 'shared-device';

@@ -12,8 +12,7 @@ import {
   saveEnabledUiLocales,
   saveUiLocale,
 } from './storage';
-import { translate } from './translate';
-import type { AppTranslationKey } from './translate';
+import { translate, type AppTranslationKey } from './translate';
 import type { SupportedLocale } from './types';
 
 export interface I18nContextValue {

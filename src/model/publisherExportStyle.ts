@@ -36,7 +36,7 @@ export function validatePublisherExportCss(cssText: string): string | undefined 
   if (bytes > MAX_PUBLISHER_EXPORT_CSS_BYTES) {
     return `CSS stylesheet exceeds the ${MAX_PUBLISHER_EXPORT_CSS_BYTES / 1024} KB limit.`;
   }
-  if (/\@import\b/i.test(cssText)) {
+  if (/@import\b/i.test(cssText)) {
     return 'CSS @import rules are not allowed in portable publisher stylesheets.';
   }
   if (/<\/style\s*>/i.test(cssText)) {

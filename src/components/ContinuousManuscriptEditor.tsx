@@ -149,7 +149,7 @@ export function ContinuousManuscriptEditor() {
   }, [manuscript.sections, structure.kind]);
   const currentStudy = useMemo(
     () => resolveCurrentStudy(manuscript, selectedSectionId),
-    [manuscript.documentStructure, manuscript.sections, selectedSectionId],
+    [manuscript, selectedSectionId],
   );
   const currentStudyNoteOverview = useMemo(
     () => currentStudyNotesVisible && currentStudy
@@ -158,8 +158,7 @@ export function ContinuousManuscriptEditor() {
     [
       currentStudy,
       currentStudyNotesVisible,
-      manuscript.annotations,
-      manuscript.sections,
+      manuscript,
     ],
   );
   const importInputRef = useRef<HTMLInputElement>(null);

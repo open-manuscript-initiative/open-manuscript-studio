@@ -3,9 +3,9 @@ import { Languages } from 'lucide-react';
 import {
   localeLabels,
   supportedLocales,
+  type SupportedLocale,
   useTranslation,
 } from '../i18n';
-import type { SupportedLocale } from '../i18n';
 
 interface LanguageSwitcherProps {
   showAllLocales?: boolean;

@@ -1,6 +1,5 @@
 import {
   defaultCustomPageLayout,
-  type CustomExportPageLayout,
   type CustomExportPageNumbering,
   type CustomExportRunningContent,
   type CustomExportTemplate,

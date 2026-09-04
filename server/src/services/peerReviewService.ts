@@ -1,3 +1,4 @@
+import type { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 
 export type ReviewWorkspaceRole = 'AUTHOR' | 'EDITOR';
@@ -333,10 +334,9 @@ const reviewInclude = {
   },
 } as const;
 
-type ReviewRecord = Awaited<ReturnType<typeof getReviewShape>>;
-async function getReviewShape() {
-  return prisma.peerReviewAssignment.findFirstOrThrow({ include: reviewInclude });
-}
+type ReviewRecord = Prisma.PeerReviewAssignmentGetPayload<{
+  include: typeof reviewInclude;
+}>;
 
 function serializeFeedback(feedback: ReviewRecord['feedback'][number]) {
   return {

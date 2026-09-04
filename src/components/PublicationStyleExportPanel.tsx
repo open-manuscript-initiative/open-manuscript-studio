@@ -16,7 +16,6 @@ import {
 export function PublicationStyleExportPanel() {
   const { locale } = useTranslation();
   const copy = copyFor(locale);
-  const manuscript = useStudioStore((state) => state.manuscript);
   const checkpoint = useStudioStore((state) => state.checkpoint);
   const [busy, setBusy] = useState<'pdf' | 'html' | null>(null);
   const [message, setMessage] = useState('');

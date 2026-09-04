@@ -83,7 +83,9 @@ export function ExportFormatsPanel() {
     setError('');
     setNotice('');
     setBusy(id);
-    await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 0);
+    });
     try {
       checkpoint('export');
       const manuscript = useStudioStore.getState().manuscript;

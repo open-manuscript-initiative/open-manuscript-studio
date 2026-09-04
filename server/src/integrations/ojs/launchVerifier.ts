@@ -5,7 +5,6 @@ import {
 
 import {
   ExternalPlatform,
-  Prisma,
 } from '../../generated/prisma/client.js';
 
 import {
@@ -152,9 +151,11 @@ export async function verifyOjsLaunch(payload: string, signature: string) {
     });
   } catch (error: unknown) {
     const prismaError = error as { code?: string };
-    if (prismaError.code === 'P2002') throw new Error('Launch assertion has already been used.');
+    if (prismaError.code === 'P2002') {
+      throw new Error('Launch assertion has already been used.', { cause: error });
+    }
     const message = error instanceof Error ? `: ${error.message}` : '.';
-    throw new Error(`Unable to persist the launch nonce${message}`);
+    throw new Error(`Unable to persist the launch nonce${message}`, { cause: error });
   }
 
   return {

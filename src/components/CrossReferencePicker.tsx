@@ -47,11 +47,7 @@ export function CrossReferencePicker({
     useState<OmiCrossReferenceDisplayStyle>('label-number');
   const targets = useMemo(
     () => collectCrossReferenceTargets(manuscript),
-    [
-      manuscript.sections,
-      manuscript.crossReferenceNumbering,
-      manuscript.namedAnchors,
-    ],
+    [manuscript],
   );
   const normalizedQuery = query.trim().toLocaleLowerCase(locale);
   const filteredTargets = targets.filter((target) => {

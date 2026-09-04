@@ -6,7 +6,7 @@ import {
   stageUpdateBibliographicRecord,
 } from '../app/citationActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { type AppTranslationKey, useTranslation } from '../i18n';
 import {
   BIBLIOGRAPHIC_RESOURCE_TYPES,
   createBibliographicContributor,
@@ -333,6 +333,9 @@ function cloneRecord(record: OmiBibliographicRecord): OmiBibliographicRecord {
   return JSON.parse(JSON.stringify(record)) as OmiBibliographicRecord;
 }
 
-function resourceTypeLabel(type: string, t: (key: any) => string): string {
-  return t(`citations.resourceTypes.${type}`);
+function resourceTypeLabel(
+  type: string,
+  t: (key: AppTranslationKey) => string,
+): string {
+  return t(`citations.resourceTypes.${type}` as AppTranslationKey);
 }

@@ -102,7 +102,10 @@ export function OjsReviewFormCard({
     return () => { active = false; };
   }, [assignmentId, labels.loading, onError]);
 
-  const elements = context?.definition?.elements ?? [];
+  const elements = useMemo(
+    () => context?.definition?.elements ?? [],
+    [context?.definition?.elements],
+  );
   const responses = useMemo<ReviewFormResponseValue[]>(
     () => elements.map((element) => ({
       elementExternalId: element.externalId,

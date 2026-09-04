@@ -49,6 +49,9 @@ jobs:
       - name: Verify generated runtime locales
         run: node scripts/verify-generated-runtime-locales.mjs
 
+      - name: Lint
+        run: npm run lint
+
       - name: Run tests
         run: npm test
 

@@ -40,7 +40,7 @@ function readLegacyBranchLocale(locale) {
     );
   } catch {
     throw new Error(
-      `Could not read ${locale} from ${legacyBranch}. Run \"git fetch origin\" first.`,
+      `Could not read ${locale} from ${legacyBranch}. Run "git fetch origin" first.`,
     );
   }
 }

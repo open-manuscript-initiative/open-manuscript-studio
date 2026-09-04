@@ -167,9 +167,15 @@ async function processJob(job: PdfImportJob, bytes: Buffer): Promise<void> {
         ? String((error as { code?: unknown }).code)
         : '';
       if (code === 'ENOENT') {
-        throw new Error('PDF import requires the Poppler pdftotext utility on the Studio server.');
+        throw new Error(
+          'PDF import requires the Poppler pdftotext utility on the Studio server.',
+          { cause: error },
+        );
       }
-      throw new Error('The PDF text/layout extraction process failed.');
+      throw new Error(
+        'The PDF text/layout extraction process failed.',
+        { cause: error },
+      );
     }
 
     const html = await readFile(outputPath, 'utf8');
@@ -711,7 +717,7 @@ function findPossibleNoteStarts(
     if (marker) {
       const next = line.words[index + 1];
       const nextCanonical = (next?.canonicalText ?? next?.text ?? '').trim();
-      const plausibleContent = Boolean(nextCanonical) && /[\p{L}\p{M}\p{N}"“„'‘(\[]/u.test(nextCanonical);
+      const plausibleContent = Boolean(nextCanonical) && /[\p{L}\p{M}\p{N}"“„'‘([]/u.test(nextCanonical);
       if (plausibleContent) {
         results.push({
           marker,
@@ -727,7 +733,7 @@ function findPossibleNoteStarts(
   const canonicalLine = normalizeWhitespace(line.words
     .map((word) => word.canonicalText ?? word.text.normalize('NFKC'))
     .join(' '));
-  const pattern = /(?:^|\s)([1-9][0-9]{0,2})(?:[.)]?)[ \t]+(?=[\p{L}\p{M}\p{N}"“„'‘(\[])/gu;
+  const pattern = /(?:^|\s)([1-9][0-9]{0,2})(?:[.)]?)[ \t]+(?=[\p{L}\p{M}\p{N}"“„'‘([])/gu;
   for (const match of canonicalLine.matchAll(pattern)) {
     const marker = match[1];
     if (!marker || match.index === undefined) continue;
@@ -882,7 +888,7 @@ function repairCrossPageHyphenation(blocks: PdfImportBlock[]): void {
     const next = blocks[nextIndex]!;
     if (!isHyphenatedTextBreak(previous.text, next.text)) continue;
 
-    const match = normalizeWhitespace(next.text).match(/^([\p{Ll}\p{M}][\p{L}\p{M}'’\-]*)(?:\s+|$)([\s\S]*)$/u);
+    const match = normalizeWhitespace(next.text).match(/^([\p{Ll}\p{M}][\p{L}\p{M}'’-]*)(?:\s+|$)([\s\S]*)$/u);
     if (!match?.[1]) continue;
     previous.text = `${removeTerminalDiscretionaryHyphen(previous.text)}${match[1]}`;
     next.text = normalizeWhitespace(match[2] ?? '');
