@@ -33,7 +33,7 @@ export function findStructuralFootnoteStarts<TLine extends CanonicalPdfLine>(
     const marker = normalizeMarker(first.canonicalText ?? first.text);
     if (!marker) return [];
     const second = (line.words[1]?.canonicalText ?? line.words[1]?.text ?? '').trim();
-    if (!/^[\p{L}\p{M}\p{N}"“„'‘(\[]/u.test(second)) return [];
+    if (!/^[\p{L}\p{M}\p{N}"“„'‘([]/u.test(second)) return [];
     const fontHeight = median(line.words.map((word) => word.fontHeight ?? Math.max(1, word.yMax - word.yMin)))
       ?? medianWordHeight;
     return [{

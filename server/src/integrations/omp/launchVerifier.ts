@@ -201,10 +201,10 @@ export async function verifyOmpLaunch(payload: string, signature: string) {
   } catch (error: unknown) {
     const prismaError = error as { code?: string };
     if (prismaError.code === 'P2002') {
-      throw new Error('OMP launch assertion has already been used.');
+      throw new Error('OMP launch assertion has already been used.', { cause: error });
     }
     const message = error instanceof Error ? `: ${error.message}` : '.';
-    throw new Error(`Unable to persist the OMP launch nonce${message}`);
+    throw new Error(`Unable to persist the OMP launch nonce${message}`, { cause: error });
   }
 
   return {

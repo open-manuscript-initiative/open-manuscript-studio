@@ -1,4 +1,4 @@
-import type { OmiBlock, OmiManuscript } from '../../types/omi';
+import type { OmiManuscript } from '../../types/omi';
 import type { OjsLaunchPayload } from './importOjsLaunch';
 
 type OjsInlineSemantic =

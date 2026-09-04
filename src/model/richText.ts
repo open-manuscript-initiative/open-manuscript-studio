@@ -237,7 +237,7 @@ export function detectWordHeadingLevel(
   const classes = (className ?? '').toLowerCase();
   const css = (style ?? '').toLowerCase();
   const classMatch = classes.match(/(?:mso)?heading\s*([1-6])|msoheading([1-6])/i);
-  const styleNameMatch = css.match(/mso-style-name\s*:\s*['\"]?heading\s*([1-6])/i);
+  const styleNameMatch = css.match(/mso-style-name\s*:\s*['"]?heading\s*([1-6])/i);
   const outlineMatch = css.match(/mso-outline-level\s*:\s*([0-5])/i);
   const raw = classMatch?.[1] ?? classMatch?.[2] ?? styleNameMatch?.[1];
 

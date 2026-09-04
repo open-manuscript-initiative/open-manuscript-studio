@@ -705,7 +705,7 @@ function renderEquation(block: OmiBlock, state: RenderState): string {
   const label = target ? objectLabel(target, state) : '';
   const latex = block.visual.latex?.trim() ||
     (block.visual.notation === 'latex' ? block.visual.source.trim() : '');
-  let math = '';
+  let math: string;
 
   if (latex) {
     math = prefixMathMl(latexToMathMl(latex));
@@ -900,11 +900,6 @@ function parseStructuredContent(content: string): JsonNode | undefined {
   } catch {
     return undefined;
   }
-}
-
-function walkJson(node: JsonNode, visitor: (node: JsonNode) => void): void {
-  visitor(node);
-  for (const child of node.content ?? []) walkJson(child, visitor);
 }
 
 function textContent(node: JsonNode): string {

@@ -136,7 +136,7 @@ function mergeSplitFootnoteStartLines<TLine extends CanonicalPdfLine>(lines: TLi
       if (horizontalGap < 0 || horizontalGap > Math.max(18, targetHeight * 1.7)) continue;
 
       const firstText = canonicalizePdfText(firstWord.text).trim();
-      if (!/^[\p{L}\p{M}"“„'‘(\[]/u.test(firstText)) continue;
+      if (!/^[\p{L}\p{M}"“„'‘([]/u.test(firstText)) continue;
 
       const score = centerDistance + horizontalGap * 0.05;
       if (score < bestScore) {
@@ -229,7 +229,7 @@ function recoverAnchorsFromSequentialNoteStarts<TLine extends CanonicalPdfLine>(
     const marker = parseCanonicalNoteMarker((first.canonicalText ?? first.text).replace(/[.)]+$/u, ''));
     if (!marker) return [];
     const secondText = (line.words[1]?.canonicalText ?? line.words[1]?.text ?? '').trim();
-    if (!/^[\p{L}\p{M}\p{N}"“„'‘(\[]/u.test(secondText)) return [];
+    if (!/^[\p{L}\p{M}\p{N}"“„'‘([]/u.test(secondText)) return [];
     return [{
       marker,
       lineIndex,
@@ -345,7 +345,7 @@ function markSoftInlineReferenceCandidates<TLine extends CanonicalPdfLine>(line:
     if (!/[\p{L}\p{M}\p{P}]$/u.test(previousText)) continue;
     if (next) {
       const nextCanonical = (next.canonicalText ?? next.text).trim();
-      if (!/^[\p{L}\p{M}"“„'‘(\[]/u.test(nextCanonical)) continue;
+      if (!/^[\p{L}\p{M}"“„'‘([]/u.test(nextCanonical)) continue;
     }
 
     const horizontalGap = Math.max(0, word.xMin - previous.xMax);

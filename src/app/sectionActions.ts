@@ -15,7 +15,6 @@ import {
   outdentSection,
   reparentSection,
   sectionOrder,
-  sectionParentMap,
 } from '../model/sectionStructure.ts';
 import { extractManuscriptState } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';

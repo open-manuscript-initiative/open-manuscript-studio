@@ -255,7 +255,6 @@ function applySpans(
       const span = sorted[spanIndex];
       if (!span || span.start >= absolute + textItem.text.length) {
         result.push({ ...textItem, text: textItem.text.slice(local) });
-        local = textItem.text.length;
         break;
       }
 

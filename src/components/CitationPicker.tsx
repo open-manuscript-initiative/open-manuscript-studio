@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { type AppTranslationKey, useTranslation } from '../i18n';
 import { getCslRenderingCopy } from '../i18n/cslRendering';
 import {
   CITATION_LOCATOR_TYPES,
@@ -249,12 +249,12 @@ export function CitationPicker({
 
 function locatorTypeLabel(
   type: OmiCitationLocatorType,
-  t: (key: any) => string,
+  t: (key: AppTranslationKey) => string,
 ): string {
   const key = `citations.locators.${type}`;
 
   try {
-    return t(key);
+    return t(key as AppTranslationKey);
   } catch {
     return type;
   }

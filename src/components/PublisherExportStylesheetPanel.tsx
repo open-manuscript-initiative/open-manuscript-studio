@@ -28,7 +28,13 @@ export function PublisherExportStylesheetPanel({
     setFileName(profile.exportStylesheet?.fileName ?? 'publisher.css');
     setCssText(profile.exportStylesheet?.cssText ?? '');
     setMessage('');
-  }, [profile.id, profile.version, profile.exportStylesheet?.addedAt]);
+  }, [
+    profile.id,
+    profile.version,
+    profile.exportStylesheet?.addedAt,
+    profile.exportStylesheet?.cssText,
+    profile.exportStylesheet?.fileName,
+  ]);
 
   function handleCssFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];

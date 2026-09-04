@@ -19,7 +19,10 @@ export function AdvancedIndexEntryPanel() {
   const { locale } = useTranslation();
   const copy = getCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
-  const allEntries = manuscript.indexEntries ?? [];
+  const allEntries = useMemo(
+    () => manuscript.indexEntries ?? [],
+    [manuscript.indexEntries],
+  );
   const definitions = useMemo(() => getDocumentIndexDefinitions({
     locale,
     indexDefinitions: manuscript.indexDefinitions,
@@ -29,8 +32,11 @@ export function AdvancedIndexEntryPanel() {
   const indexId = definitions.some((definition) => definition.id === selectedIndexId)
     ? selectedIndexId
     : definitions[0]?.id ?? DEFAULT_INDEX_ID;
-  const entries = allEntries.filter((entry) =>
-    entry.indexId ? entry.indexId === indexId : indexId === DEFAULT_INDEX_ID,
+  const entries = useMemo(
+    () => allEntries.filter((entry) =>
+      entry.indexId ? entry.indexId === indexId : indexId === DEFAULT_INDEX_ID,
+    ),
+    [allEntries, indexId],
   );
   const [term, setTerm] = useState('');
   const [parentEntryId, setParentEntryId] = useState('');

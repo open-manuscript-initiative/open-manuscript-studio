@@ -1,6 +1,5 @@
 import { authSupplementalTranslations } from './authSupplementalTranslations';
-import { authTranslations } from './authTranslations';
-import type { AuthTranslationKey } from './authTranslations';
+import { authTranslations, type AuthTranslationKey } from './authTranslations';
 import { DEFAULT_LOCALE, translations } from './config';
 import type {
   SupportedLocale,

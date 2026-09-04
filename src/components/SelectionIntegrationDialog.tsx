@@ -46,8 +46,8 @@ export function SelectionIntegrationDialog({
   sourceLanguage,
   onClose,
 }: SelectionIntegrationDialogProps) {
-  const selection = useMemo(() => collectSelectedTextParts(editor), [editor, mode]);
-  const wholeBlock = useMemo(() => collectWholeBlockTextParts(editor), [editor, mode]);
+  const selection = useMemo(() => collectSelectedTextParts(editor), [editor]);
+  const wholeBlock = useMemo(() => collectWholeBlockTextParts(editor), [editor]);
   const [translationScope, setTranslationScope] = useState<'selection' | 'block'>(
     selection.length ? 'selection' : 'block',
   );

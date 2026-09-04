@@ -79,7 +79,10 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
   const copy = labels[locale] ?? labels.en;
   const manuscript = useStudioStore((state) => state.manuscript);
   const selectSection = useStudioStore((state) => state.selectSection);
-  const entries = manuscript.indexEntries ?? [];
+  const entries = useMemo(
+    () => manuscript.indexEntries ?? [],
+    [manuscript.indexEntries],
+  );
   const generatedIndexes = manuscript.generatedIndexes ?? [];
   const definitions = useMemo(
     () => getDocumentIndexDefinitions({

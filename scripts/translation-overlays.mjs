@@ -6,7 +6,7 @@ const overlayDir = (root) => path.join(root, 'locale', 'completion-overlays');
 export async function loadTranslationOverlay(root, locale) {
   const bySource = new Map();
   const byPointer = new Map();
-  let files = [];
+  let files;
   try {
     files = await fs.readdir(overlayDir(root));
   } catch (error) {

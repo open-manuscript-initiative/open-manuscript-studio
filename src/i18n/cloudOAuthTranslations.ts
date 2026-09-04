@@ -121,11 +121,6 @@ const translations: Record<string, CloudOAuthCopy> = {
   },
 };
 
-// Reuse close linguistic neighbours only where Studio already treats these as
-// distinct locales but this module still needs explicit entries. They remain
-// independent objects so the completeness test can require all supported keys.
-translations['pt'] = translations.pt;
-
 export function getCloudOAuthCopy(locale: string): CloudOAuthCopy {
   return translations[locale] ?? en;
 }

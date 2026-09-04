@@ -6,8 +6,10 @@ import type {
   OmiManuscriptState,
   OmiSection,
 } from '../types/omi.ts';
-import type { OmiNamedAnchor } from './namedAnchors.ts';
-import { resolveNamedAnchorTarget } from './namedAnchors.ts';
+import {
+  resolveNamedAnchorTarget,
+  type OmiNamedAnchor,
+} from './namedAnchors.ts';
 import { getSectionNumberToken } from './sectionNumbering.ts';
 
 export interface OmiCrossReferenceTarget {

@@ -87,7 +87,10 @@ function parseQuoted(value, lineNumber) {
   try {
     return JSON.parse(value);
   } catch (error) {
-    throw new Error(`Invalid PO string at line ${lineNumber}: ${error.message}`);
+    throw new Error(
+      `Invalid PO string at line ${lineNumber}: ${error.message}`,
+      { cause: error },
+    );
   }
 }
 

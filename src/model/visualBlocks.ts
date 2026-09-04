@@ -1,11 +1,9 @@
 import type {
   OmiBlock,
-  OmiChartBlockData,
   OmiChartType,
   OmiEquationBlockData,
   OmiImageBlockData,
   OmiImportProvenance,
-  OmiTableBlockData,
   OmiVisualBlockData,
 } from '../types/omi';
 

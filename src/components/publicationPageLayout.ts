@@ -112,7 +112,7 @@ export function paginatePublicationBlocks(
         let linePage = Math.max(0, Math.floor((logicalLineTop + 0.5) / bodyHeight));
         let breakHeight = Math.max(0, linePage - renderedPage) * chromeHeight;
         renderedPage = Math.max(renderedPage, linePage);
-        let linePosition = logicalLineTop - linePage * bodyHeight;
+        const linePosition = logicalLineTop - linePage * bodyHeight;
         const keepWithNextHeight = block.keepWithNext
           && lineIndex === lines.length - 1
           && nextBlock
@@ -133,7 +133,6 @@ export function paginatePublicationBlocks(
           breakHeight += pageRemainder
             + Math.max(1, linePage - renderedPage) * chromeHeight;
           renderedPage = Math.max(renderedPage + 1, linePage);
-          linePosition = 0;
         }
 
         if (breakHeight > 0.5) {

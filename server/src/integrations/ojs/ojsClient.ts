@@ -147,6 +147,7 @@ async function fetchWithExplicitRedirects(
             : '';
       throw new Error(
         `OJS ${operation} request failed before an HTTP response${causeMessage ? `: ${causeMessage}` : ''}. URL: ${currentKey}`,
+        { cause: error },
       );
     }
 

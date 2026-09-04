@@ -13,7 +13,7 @@ import {
   stageUpdateCitation,
 } from '../app/citationActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { type AppTranslationKey, useTranslation } from '../i18n';
 import { getCslRenderingCopy } from '../i18n/cslRendering';
 import {
   CITATION_LOCATOR_TYPES,
@@ -171,7 +171,7 @@ export function CitationClusterEditorCard({
                   >
                     {CITATION_LOCATOR_TYPES.map((type) => (
                       <option value={type} key={type}>
-                        {t(`citations.locators.${type}` as any)}
+                        {t(`citations.locators.${type}` as AppTranslationKey)}
                       </option>
                     ))}
                   </select>

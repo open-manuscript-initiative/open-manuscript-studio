@@ -47,7 +47,13 @@ export function PublisherPrintStylesheetPanel({
     setFileName(profile.printStylesheet?.fileName ?? 'publisher-print.css');
     setCssText(profile.printStylesheet?.cssText ?? '');
     setMessage('');
-  }, [profile.id, profile.version, profile.printStylesheet?.addedAt]);
+  }, [
+    profile.id,
+    profile.version,
+    profile.printStylesheet?.addedAt,
+    profile.printStylesheet?.cssText,
+    profile.printStylesheet?.fileName,
+  ]);
 
   function handleCssFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];

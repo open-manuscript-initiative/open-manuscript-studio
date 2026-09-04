@@ -12,7 +12,7 @@ const gradlePath = path.resolve(
 
 if (!fs.existsSync(gradlePath)) {
   throw new Error(
-    `Android Gradle project not found at ${gradlePath}. Run \"npm run android:init\" first.`,
+    `Android Gradle project not found at ${gradlePath}. Run "npm run android:init" first.`,
   );
 }
 

@@ -86,7 +86,10 @@ export function ScholarlyMetadataPanel() {
   const manuscript = useStudioStore((state) => state.manuscript);
   const [metadataLocale, setMetadataLocale] = useState(manuscript.locale);
   const copy = LABELS[interfaceLocale as keyof typeof LABELS] ?? LABELS.en;
-  const metadata = manuscript.metadata ?? {};
+  const metadata = useMemo(
+    () => manuscript.metadata ?? {},
+    [manuscript.metadata],
+  );
   const openScience = manuscript.extensions?.['org.pkp.ojs']?.openScience ?? {};
 
   const locales = useMemo(() => {

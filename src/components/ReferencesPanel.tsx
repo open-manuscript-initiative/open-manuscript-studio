@@ -49,7 +49,10 @@ export function ReferencesPanel() {
   const { t, locale } = useTranslation();
   const copy = getCslRenderingCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
-  const records = manuscript.bibliographicRecords ?? [];
+  const records = useMemo(
+    () => manuscript.bibliographicRecords ?? [],
+    [manuscript.bibliographicRecords],
+  );
   const citationStyle = manuscript.citationStyle ?? DEFAULT_CITATION_STYLE;
   const [query, setQuery] = useState('');
   const [styleQuery, setStyleQuery] = useState('');
