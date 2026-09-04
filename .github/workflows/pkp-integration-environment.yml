@@ -84,14 +84,15 @@ jobs:
 
     steps:
       - name: Checkout Studio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
+          package-manager-cache: false
 
       - name: Install Studio test dependencies
         run: npm ci
@@ -100,7 +101,7 @@ jobs:
         run: npx playwright install --with-deps --only-shell chromium
 
       - name: Checkout matching integration plugin
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ matrix.platform == 'ojs' && 'open-manuscript-initiative/omi-ojs-plugin' || 'open-manuscript-initiative/omi-omp-plugin' }}
           ref: ${{ inputs.plugin_ref || 'main' }}

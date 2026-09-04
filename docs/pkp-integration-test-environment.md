@@ -110,11 +110,11 @@ can choose a plugin branch/tag through `plugin_ref`. Each platform receives
 separate Compose project names, volumes and diagnostic artifacts.
 
 Because `plugin_ref` may select code that is not yet trusted, this workflow
-does not restore or save a shared dependency cache. Both checkouts also remove
-their persisted GitHub credentials, and the plugin is checked out only after
-the trusted Studio and Playwright dependencies have been installed. This keeps
-manual plugin tests from poisoning a later default-branch build cache or
-reusing the job token.
+explicitly disables both configured and automatic package-manager caching.
+Both checkouts also remove their persisted GitHub credentials, and the plugin
+is checked out only after the trusted Studio and Playwright dependencies have
+been installed. This keeps manual plugin tests from poisoning a later
+default-branch build cache or reusing the job token.
 
 ## Current smoke boundary
 

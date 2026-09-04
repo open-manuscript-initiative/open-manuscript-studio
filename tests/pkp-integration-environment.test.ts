@@ -40,6 +40,10 @@ test('PKP integration environment supports pinned OJS and OMP images', () => {
 
 test('manual plugin refs cannot poison shared caches or reuse checkout credentials', () => {
   assert.doesNotMatch(workflowSource, /^\s+cache:\s*npm\s*$/m);
+  assert.match(
+    workflowSource,
+    /uses: actions\/setup-node@v7[\s\S]*?package-manager-cache:\s*false/,
+  );
   assert.equal(
     workflowSource.match(/persist-credentials:\s*false/g)?.length,
     2,
