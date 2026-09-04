@@ -88,4 +88,8 @@ test('search opens and closes through the same persistent trigger', () => {
   assert.match(mobileLayout, /searchOpen \? \(\s*<X/);
   assert.match(searchOverlay, /SEARCH_OVERLAY_TOGGLE_EVENT/);
   assert.doesNotMatch(searchOverlay, /aria-label=\{copy\.close\}/);
+  assert.match(
+    academicShell,
+    /@media \(max-width: 760px\)[\s\S]*?grid-template-areas:\s*\n\s*"identity context actions"\s*\n\s*"primary primary primary";/,
+  );
 });
