@@ -1,0 +1,115 @@
+name: omi-pkp-${PKP_PLATFORM:-ojs}
+
+services:
+  pkp-db:
+    image: mariadb:11.8
+    environment:
+      MARIADB_ROOT_PASSWORD: omi_pkp_root_test_only
+      MARIADB_DATABASE: pkp
+      MARIADB_USER: pkp
+      MARIADB_PASSWORD: omi_pkp_test_only
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - pkp-database:/var/lib/mysql
+    networks:
+      - pkp-private
+
+  pkp:
+    build:
+      context: .
+      dockerfile: Dockerfile.pkp
+      args:
+        PKP_PLATFORM: ${PKP_PLATFORM:-ojs}
+        PKP_VERSION: ${PKP_VERSION:-3_5_0-4}
+    environment:
+      SERVERNAME: pkp
+      PKP_CLI_INSTALL: "0"
+      PKP_DB_DRIVER: mariadb
+      PKP_DB_HOST: pkp-db
+      PKP_DB_NAME: pkp
+      PKP_DB_USER: pkp
+      PKP_DB_PASSWORD: omi_pkp_test_only
+      PKP_WEB_CONF: /etc/apache2/conf-enabled/pkp.conf
+      PKP_CONF: /var/www/html/config.inc.php
+    depends_on:
+      pkp-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1/index/install >/dev/null || curl -fsS http://127.0.0.1/ >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 36
+    ports:
+      - "${PKP_HTTP_PORT:-8080}:80"
+    volumes:
+      - pkp-files:/var/www/files
+      - pkp-public:/var/www/html/public
+    networks:
+      - pkp-private
+      - integration
+
+  studio-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: omi_studio
+      POSTGRES_USER: omi_test
+      POSTGRES_PASSWORD: omi_test_only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U omi_test -d omi_studio"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - studio-database:/var/lib/postgresql/data
+      - ./postgres/init-databases.sql:/docker-entrypoint-initdb.d/10-identity-database.sql:ro
+    networks:
+      - studio-private
+
+  studio-api:
+    build:
+      context: ../../server
+      dockerfile: Dockerfile.integration-test
+    environment:
+      NODE_ENV: test
+      PORT: "3001"
+      DATABASE_URL: postgresql://omi_test:omi_test_only@studio-db:5432/omi_studio
+      IDENTITY_DATABASE_URL: postgresql://omi_test:omi_test_only@studio-db:5432/omi_identity
+      FRONTEND_ORIGIN: http://127.0.0.1:5173
+      DEPLOYMENT_MODE: personal
+      INTEGRATION_MASTER_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    depends_on:
+      studio-db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:3001/api/health').then(response=>process.exit(response.ok?0:1)).catch(()=>process.exit(1))
+      interval: 5s
+      timeout: 5s
+      retries: 36
+      start_period: 15s
+    ports:
+      - "${STUDIO_API_HTTP_PORT:-3001}:3001"
+    networks:
+      - studio-private
+      - integration
+
+volumes:
+  pkp-database:
+  pkp-files:
+  pkp-public:
+  studio-database:
+
+networks:
+  pkp-private:
+    internal: true
+  studio-private:
+    internal: true
+  integration:
+    driver: bridge

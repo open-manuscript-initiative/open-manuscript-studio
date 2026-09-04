@@ -1,0 +1,24 @@
+FROM node:24-bookworm-slim
+
+WORKDIR /opt/omi-studio/server
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . ./
+
+# Prisma reads both datasource URLs while generating the clients. These are
+# test-network addresses only; Compose supplies the same values at runtime.
+ENV DATABASE_URL=postgresql://omi_test:omi_test_only@studio-db:5432/omi_studio
+ENV IDENTITY_DATABASE_URL=postgresql://omi_test:omi_test_only@studio-db:5432/omi_identity
+
+RUN npm run build
+
+ENV NODE_ENV=test
+ENV PORT=3001
+
+EXPOSE 3001
+
+USER node
+
+CMD ["sh", "-c", "npm run prisma:migrate:deploy && npm run prisma:migrate:identity:deploy && npm run start"]

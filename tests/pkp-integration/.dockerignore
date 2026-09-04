@@ -1,0 +1,4 @@
+runtime/*
+!runtime/plugin/
+!runtime/plugin/**
+runtime/plugin/.git/

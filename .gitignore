@@ -29,6 +29,7 @@ coverage
 playwright-report/
 test-results/
 blob-report/
+tests/pkp-integration/runtime/
 
 # Grunt intermediate storage
 .grunt
