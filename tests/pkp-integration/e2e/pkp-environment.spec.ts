@@ -274,7 +274,12 @@ test('reviewer receives one anonymous article and can return corrections', async
   const manuscriptText = JSON.stringify(manuscriptEnvelope);
   expect(manuscriptText).toContain(fixture.contentSentinels.assigned);
   expect(manuscriptText).not.toContain(fixture.contentSentinels.forbidden);
-  expect(manuscriptText).not.toContain('PARENT METADATA SENTINEL');
+  if (platform === 'omp') {
+    // OMP reviewers receive one assigned study and must not see metadata from
+    // the parent monograph. In OJS, the submission is the reviewed article
+    // itself, so its reviewer-visible metadata is expected here.
+    expect(manuscriptText).not.toContain('PARENT METADATA SENTINEL');
+  }
   assertNoAuthorIdentity(manuscriptEnvelope);
 
   const accepted = await request.post(
@@ -350,9 +355,9 @@ test('reviewer receives one anonymous article and can return corrections', async
   const submitted = await request.post(
     `${studioApiBaseUrl}/api/reviews/assigned/${assignmentId}/submit`,
     {
-      data: platform === 'ojs'
-        ? { recommendation: 'MINOR_REVISION' }
-        : {},
+      // PKP 3.5 requires an editorial recommendation when a scientific review
+      // is completed in both OJS and OMP.
+      data: { recommendation: 'MINOR_REVISION' },
     },
   );
   await expectApiStatus(submitted, 200);
