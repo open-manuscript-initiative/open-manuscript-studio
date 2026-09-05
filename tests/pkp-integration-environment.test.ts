@@ -46,6 +46,8 @@ test('PKP integration environment supports pinned OJS and OMP images', () => {
   assert.match(environmentScriptSource, /PLATFORM.*ojs/);
   assert.match(environmentScriptSource, /omi-ojs-plugin\.git/);
   assert.match(environmentScriptSource, /omi-omp-plugin\.git/);
+  assert.match(pkpDockerfileSource, /SetEnvIf Authorization/);
+  assert.match(pkpDockerfileSource, /HTTP_AUTHORIZATION/);
 });
 
 test('CI only executes the fixed plugin branch without shared credentials or caches', () => {

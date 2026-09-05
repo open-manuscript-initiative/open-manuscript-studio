@@ -11,4 +11,10 @@ RUN test -f /var/www/html/plugins/generic/studioIntegration/version.xml \
     && test -f /var/www/html/plugins/generic/studioIntegration/StudioIntegrationPlugin.php \
     && test -f /var/www/html/tools/omiIntegrationFixture.php
 
+# PHP in the PKP Apache image does not reliably expose Authorization to the
+# application. Preserve the signed OMI header for the integration API.
+RUN printf '%s\n' \
+      'SetEnvIf Authorization "(.+)" HTTP_AUTHORIZATION=$1' \
+      > /etc/apache2/conf-enabled/omi-authorization.conf
+
 USER www-data
