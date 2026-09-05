@@ -71,10 +71,11 @@ to the published local port, while the Studio container maps it to Docker's
 host gateway. The Studio SSRF guard accepts this hostname only when
 `NODE_ENV=test` and it is explicitly listed in
 `INTEGRATION_TEST_ALLOWED_HOSTS`. The disposable PKP configuration likewise
-allowlists `pkp.test`, loopback and the internal `pkp` service name, so PKP's
-host-header protection remains enabled throughout the browser workflow. The
-PKP container is reloaded after installation and the exact browser `Host`
-header is probed before Playwright starts.
+allowlists `pkp.test`, loopback and the internal `pkp` service name in the
+active (non-commented) setting, so PKP's host-header protection remains enabled
+throughout the browser workflow. The PKP container is reloaded after
+installation and the exact browser `Host` header is probed before Playwright
+starts.
 Production behavior is unchanged.
 
 Override the ports or pinned PKP release when required:

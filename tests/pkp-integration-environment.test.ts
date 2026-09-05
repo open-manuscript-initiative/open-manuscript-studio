@@ -134,6 +134,18 @@ test('private test routing is an explicit test-only exception', () => {
     environmentScriptSource,
     /allowed_hosts = [\s\S]*?pkp\.test[\s\S]*?127\.0\.0\.1/,
   );
+  assert.match(
+    environmentScriptSource,
+    /\^\[ \\\\t\]\*allowed_hosts\[ \\\\t\]\*=\.\*\$\/m/,
+  );
+  assert.doesNotMatch(
+    environmentScriptSource,
+    /\^\[;\[:space:\]\]\*allowed_hosts/,
+  );
+  assert.match(
+    environmentScriptSource,
+    /\^\[\[:space:\]\]\*allowed_hosts\[\[:space:\]\]\*=\.\*pkp\\\.test/,
+  );
   assert.match(environmentScriptSource, /compose restart pkp/);
   assert.match(environmentScriptSource, /Host: pkp\.test/);
   assert.match(waitForHttpSource, /response\.status < 400/);

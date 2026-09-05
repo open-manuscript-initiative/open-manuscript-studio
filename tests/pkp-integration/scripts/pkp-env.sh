@@ -149,8 +149,10 @@ configure_pkp_test_hosts() {
     $replacement = "allowed_hosts = " . chr(39)
         . "[\"pkp.test\", \"127.0.0.1\", \"localhost\", \"pkp\"]"
         . chr(39);
+    // Match only the active setting. The template contains a commented
+    // allowed_hosts example immediately before it, which must remain ignored.
     $updated = preg_replace(
-        "/^[;[:space:]]*allowed_hosts[[:space:]]*=.*$/m",
+        "/^[ \\t]*allowed_hosts[ \\t]*=.*$/m",
         $replacement,
         $config,
         1,
@@ -161,6 +163,11 @@ configure_pkp_test_hosts() {
         exit(1);
     }
   '
+
+  compose exec -T pkp grep -Eq \
+    '^[[:space:]]*allowed_hosts[[:space:]]*=.*pkp\.test' \
+    /var/www/html/config.inc.php \
+    || fail "PKP active allowed_hosts setting was not updated"
 
   # Apache may keep config.inc.php in OPcache after the CLI installer has
   # completed. Restart the disposable container so browser requests observe
@@ -246,7 +253,9 @@ verify_environment() {
 
   is_pkp_installed || fail "PKP is not installed"
 
-  compose exec -T pkp grep -F -q 'pkp.test' /var/www/html/config.inc.php
+  compose exec -T pkp grep -Eq \
+    '^[[:space:]]*allowed_hosts[[:space:]]*=.*pkp\.test' \
+    /var/www/html/config.inc.php
 
   compose exec -T pkp sh -c \
     "grep -R -F -q 'omi-integration/1/$PLATFORM' /var/www/html/plugins/generic/studioIntegration"
