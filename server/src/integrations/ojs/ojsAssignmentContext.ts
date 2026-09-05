@@ -1,4 +1,5 @@
 import type { LaunchClaims } from './launchVerifier.js';
+import { assertTrustedIntegrationUrl } from '../security/trustedRemoteUrl.js';
 
 export interface OjsAssignmentCandidate {
   externalId: string;
@@ -16,13 +17,15 @@ export async function loadOjsAssignmentContext(
   claims: LaunchClaims,
   payload: string,
   signature: string,
+  installationBaseUrl: string,
 ): Promise<OjsAssignmentContextData> {
   if (!claims.apiBaseUrl || !['editor', 'author'].includes(claims.actorMode ?? '')) {
     return { candidates: [] };
   }
 
   const authorization = `OMI ${payload}.${signature}`;
-  const baseUrl = getTrustedApiBaseUrl(claims.apiBaseUrl);
+  const baseUrl = await assertTrustedIntegrationUrl(claims.apiBaseUrl, installationBaseUrl);
+  baseUrl.pathname = baseUrl.pathname.replace(/\/?$/, '/');
   const submissionUrl = new URL('submission', baseUrl);
   const submission = await readJson(submissionUrl, authorization);
   const actor = asRecord(submission.actor);
@@ -71,27 +74,6 @@ function isRedirect(status: number): boolean {
     status === 303 ||
     status === 307 ||
     status === 308;
-}
-
-function getTrustedApiBaseUrl(apiBaseUrl: string): URL {
-  let parsed: URL;
-  try {
-    parsed = new URL(apiBaseUrl);
-  } catch {
-    throw new Error('Invalid OJS API base URL.');
-  }
-
-  if (parsed.protocol !== 'https:') {
-    throw new Error('OJS API base URL must use HTTPS.');
-  }
-  if (parsed.username || parsed.password) {
-    throw new Error('OJS API base URL must not include credentials.');
-  }
-
-  parsed.pathname = parsed.pathname.replace(/\/?$/, '/');
-  parsed.search = '';
-  parsed.hash = '';
-  return parsed;
 }
 
 async function readJson(url: URL, authorization: string): Promise<Record<string, unknown>> {

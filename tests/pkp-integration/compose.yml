@@ -81,6 +81,7 @@ services:
       FRONTEND_ORIGIN: http://127.0.0.1:5173
       DEPLOYMENT_MODE: personal
       INTEGRATION_MASTER_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      INTEGRATION_TEST_ALLOWED_HOSTS: pkp.test
     depends_on:
       studio-db:
         condition: service_healthy
@@ -96,6 +97,8 @@ services:
       start_period: 15s
     ports:
       - "${STUDIO_API_HTTP_PORT:-3001}:3001"
+    extra_hosts:
+      - "pkp.test:host-gateway"
     networks:
       - studio-private
       - integration

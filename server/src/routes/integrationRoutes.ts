@@ -143,6 +143,7 @@ integrationRouter.get(
         verified.claims,
         payload,
         signature,
+        verified.installation.baseUrl,
       );
 
       const actorMode = verified.claims.actorMode === 'editor' || verified.claims.actorMode === 'author'

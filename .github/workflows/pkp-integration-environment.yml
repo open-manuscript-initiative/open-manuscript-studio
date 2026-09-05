@@ -67,11 +67,11 @@ jobs:
           esac
           printf 'platforms=%s\n' "$platforms" >> "$GITHUB_OUTPUT"
 
-  environment-smoke:
-    name: ${{ matrix.platform }} environment
+  workflow-e2e:
+    name: ${{ matrix.platform }} workflow E2E
     needs: select-platforms
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -112,7 +112,7 @@ jobs:
       - name: Verify service and plugin boundaries
         run: npm run pkp:verify -- ${{ matrix.platform }}
 
-      - name: Run Playwright environment smoke tests
+      - name: Run Playwright workflow tests
         run: npm run pkp:test -- ${{ matrix.platform }}
 
       - name: Collect container diagnostics
@@ -126,6 +126,7 @@ jobs:
           name: pkp-${{ matrix.platform }}-diagnostics-${{ github.run_attempt }}
           path: |
             tests/pkp-integration/runtime/logs/
+            tests/pkp-integration/runtime/fixture-${{ matrix.platform }}.json
             playwright-report/pkp-${{ matrix.platform }}/
             test-results/pkp-${{ matrix.platform }}/
           if-no-files-found: ignore

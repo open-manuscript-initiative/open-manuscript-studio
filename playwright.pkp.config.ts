@@ -7,7 +7,9 @@ export default defineConfig({
   outputDir: `test-results/pkp-${platform}`,
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
-  retries: process.env.CI ? 1 : 0,
+  // The suite deliberately advances a real review assignment through its
+  // lifecycle. Retrying against the same state would not be deterministic.
+  retries: 0,
   workers: 1,
   timeout: 60_000,
   expect: {
@@ -29,6 +31,11 @@ export default defineConfig({
       name: `${platform}-integration-environment`,
       use: {
         ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: [
+            '--host-resolver-rules=MAP pkp.test 127.0.0.1',
+          ],
+        },
       },
     },
   ],

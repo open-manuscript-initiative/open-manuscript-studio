@@ -95,8 +95,8 @@ ompReviewRouter.post(
 
       const snapshot = createReviewSnapshotFromOjs(ompData, {
         title: getOmpStudyTitle(verified.claims.component),
-        // The submission endpoint describes the parent monograph. Reviewers
-        // receive only the assigned study body, never volume-level metadata.
+        // The plugin projects the assigned chapter as an article. Keep the
+        // signed component title authoritative and omit all parent metadata.
         includeSubmissionMetadata: false,
       });
       await setReviewManuscriptFromOjs(assignment.id, componentId, snapshot);
