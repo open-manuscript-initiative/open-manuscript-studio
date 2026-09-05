@@ -1,0 +1,1 @@
+[Open Manuscript Studio](https://github.com/open-manuscript-initiative/open-manuscript-studio) · [Open Manuscript Initiative](https://openmanuscript.org/) · [MIT License](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/LICENSE)
