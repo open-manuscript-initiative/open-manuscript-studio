@@ -1,0 +1,71 @@
+name: Publish GitHub Wiki
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'wiki/**'
+      - '.github/workflows/publish-wiki.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-github-wiki
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Sync wiki directory
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Publish versioned Wiki source
+        shell: bash
+        env:
+          WIKI_GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          test -s wiki/Home.md
+
+          wiki_remote="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.wiki.git"
+          wiki_directory="${RUNNER_TEMP}/open-manuscript-studio-wiki"
+          credential_key="http.${GITHUB_SERVER_URL}/.extraheader"
+          auth_header="$({
+            printf 'x-access-token:%s' "$WIKI_GITHUB_TOKEN" |
+              base64 |
+              tr -d '\n'
+          })"
+
+          git -c "${credential_key}=AUTHORIZATION: basic ${auth_header}" \
+            clone "$wiki_remote" "$wiki_directory"
+
+          rsync -a --delete --exclude='.git/' \
+            "${GITHUB_WORKSPACE}/wiki/" \
+            "${wiki_directory}/"
+
+          cd "$wiki_directory"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+
+          if git diff --cached --quiet; then
+            echo 'GitHub Wiki is already up to date.'
+            exit 0
+          fi
+
+          git commit -m "Sync Wiki from ${GITHUB_SHA::7}"
+          git -c "${credential_key}=AUTHORIZATION: basic ${auth_header}" \
+            push origin HEAD:master
+
+          unset auth_header WIKI_GITHUB_TOKEN
