@@ -25,6 +25,7 @@ export async function loadOjsAssignmentContext(
 
   const authorization = `OMI ${payload}.${signature}`;
   const baseUrl = await assertTrustedIntegrationUrl(claims.apiBaseUrl, installationBaseUrl);
+  baseUrl.pathname = baseUrl.pathname.replace(/\/?$/, '/');
   const submissionUrl = new URL('submission', baseUrl);
   const submission = await readJson(submissionUrl, authorization);
   const actor = asRecord(submission.actor);

@@ -419,7 +419,7 @@ async function consumeStandardLaunch(
 async function authenticateStudioReviewer(request: APIRequestContext): Promise<void> {
   const credentials = {
     email: `pkp-${platform}-reviewer@studio.test`,
-    password: 'omi-studio-reviewer',
+    password: 'omi-studio-reviewer-1',
   };
   const registered = await request.post(`${studioApiBaseUrl}/api/auth/register`, {
     data: {
