@@ -34,6 +34,10 @@ const academicShell = readFileSync(
   new URL('../src/styles/academic-shell.css', import.meta.url),
   'utf8',
 );
+const footer = readFileSync(
+  new URL('../src/components/Footer.tsx', import.meta.url),
+  'utf8',
+);
 
 test('Studio menu views never embed the application footer', () => {
   assert.doesNotMatch(menu, /from ['"]\.\/Footer['"]/);
@@ -46,6 +50,13 @@ test('Studio menu views never embed the application footer', () => {
 test('the mobile application keeps exactly one footer outside menu content', () => {
   assert.match(mobileLayout, /from ['"]\.\.\/\.\.\/components\/Footer['"]/);
   assert.equal(mobileLayout.match(/<Footer\s*\/>/g)?.length, 1);
+});
+
+test('the application footer links to the Studio wiki', () => {
+  assert.equal(
+    footer.match(/https:\/\/github\.com\/open-manuscript-initiative\/open-manuscript-studio\/wiki/g)?.length,
+    1,
+  );
 });
 
 test('Studio menus close from the same left-side control position that opens them', () => {
