@@ -143,7 +143,8 @@ body {
   position: relative;
 }
 
-.focus-current-notes-button.is-active {
+.focus-current-notes-button.is-active,
+.focus-search-button.is-active {
   border-color: var(--omi-academic-burgundy);
   background: var(--omi-academic-burgundy-soft);
   color: var(--omi-academic-burgundy-dark);
@@ -470,12 +471,17 @@ body {
 
 .studio-menu-header {
   min-height: 4.65rem;
-  padding: .75rem 1rem;
+  padding: .65rem clamp(.8rem, 2vw, 1.5rem);
   border: 0;
   border-top: 3px solid var(--omi-academic-burgundy);
   border-bottom: 1px solid var(--omi-academic-line);
   background: var(--omi-academic-paper);
   color: var(--omi-academic-ink);
+}
+
+.studio-menu-header-spacer {
+  width: 2.35rem;
+  height: 2.35rem;
 }
 
 .studio-menu-header h2 {
@@ -674,13 +680,18 @@ body {
 @media (max-width: 760px) {
   .app-header.focus-header {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "identity context actions"
+      "primary primary primary";
+    align-items: start;
     min-height: 4.15rem;
     gap: .45rem;
     padding: .5rem .6rem;
   }
 
   .focus-header-identity {
+    grid-area: identity;
     gap: .4rem;
   }
 
@@ -693,6 +704,7 @@ body {
   }
 
   .focus-header-context {
+    grid-area: context;
     display: block;
     min-width: 0;
     padding-left: .5rem;
@@ -706,11 +718,12 @@ body {
   }
 
   .focus-header-primary-action {
-    order: 3;
+    grid-area: primary;
+    justify-content: flex-end;
   }
 
   .focus-header-actions {
-    order: 4;
+    grid-area: actions;
   }
 
   .focus-save-state {
@@ -761,7 +774,38 @@ body {
   }
 
   .studio-menu-header {
+    grid-template-columns: 2.35rem minmax(0, 1fr) 2.35rem;
+    align-items: start;
+    gap: .45rem;
     min-height: 4.15rem;
+    padding: .5rem .6rem;
+  }
+
+  .studio-menu-header-actions,
+  .studio-menu-header-spacer {
+    width: 2.35rem;
+    justify-content: center;
+  }
+
+  .studio-menu-backdrop--native-mobile .studio-menu-header {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: 8px;
+    min-height: 56px;
+    padding: env(safe-area-inset-top) 10px 0;
+  }
+
+  .studio-menu-backdrop--native-mobile .studio-menu-close {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .studio-menu-backdrop--native-mobile .studio-menu-header-actions,
+  .studio-menu-backdrop--native-mobile .studio-menu-header-spacer {
+    width: 44px;
   }
 
   .studio-menu-body {

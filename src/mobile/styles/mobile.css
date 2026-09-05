@@ -101,6 +101,11 @@
   white-space: nowrap;
 }
 
+.mobile-action-button.is-active {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
 .mobile-insert-action {
   min-width: 0;
   display: flex;

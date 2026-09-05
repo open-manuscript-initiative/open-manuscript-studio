@@ -7,6 +7,7 @@ import {
   useTranslation,
 } from '../i18n';
 import { getHelpCopy } from '../i18n/help';
+import { getStudioPlatform } from '../mobile/platform/platform';
 import { HelpPanel } from './HelpPanel';
 
 type AssignmentMenuView = 'settings' | 'help';
@@ -20,6 +21,8 @@ export function AssignmentStudioMenu({
 }) {
   const { t, locale, enabledLocales, setLocaleEnabled } = useTranslation();
   const helpCopy = getHelpCopy(locale);
+  const platform = getStudioPlatform();
+  const nativeMobile = platform === 'android' || platform === 'ios';
   const [activeView, setActiveView] = useState<AssignmentMenuView>('settings');
 
   useEffect(() => {
@@ -40,7 +43,7 @@ export function AssignmentStudioMenu({
 
   return (
     <div
-      className="studio-menu-backdrop"
+      className={`studio-menu-backdrop${nativeMobile ? ' studio-menu-backdrop--native-mobile' : ''}`}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -52,10 +55,6 @@ export function AssignmentStudioMenu({
         aria-labelledby="assignment-studio-menu-title"
       >
         <header className="studio-menu-header">
-          <div>
-            <span className="studio-menu-eyebrow">Open Manuscript Studio</span>
-            <h2 id="assignment-studio-menu-title">{t('studio.menu')}</h2>
-          </div>
           <button
             type="button"
             className="studio-menu-close"
@@ -65,6 +64,11 @@ export function AssignmentStudioMenu({
           >
             <X size={20} aria-hidden="true" />
           </button>
+          <div className="studio-menu-heading">
+            <span className="studio-menu-eyebrow">Open Manuscript Studio</span>
+            <h2 id="assignment-studio-menu-title">{t('studio.menu')}</h2>
+          </div>
+          <span className="studio-menu-header-spacer" aria-hidden="true" />
         </header>
 
         <div className="studio-menu-body">

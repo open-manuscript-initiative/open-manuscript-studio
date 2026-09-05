@@ -7,6 +7,7 @@ import {
   Search,
   SlidersHorizontal,
   User,
+  X,
 } from 'lucide-react';
 
 import { AccountPanel } from '../../components/AccountPanel';
@@ -15,6 +16,11 @@ import { Footer } from '../../components/Footer';
 import { HeaderInsertMenu } from '../../components/HeaderInsertMenu';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
 import { PropertiesPanel } from '../../components/PropertiesPanel';
+import {
+  getCloseSearchLabel,
+  subscribeSearchOverlayState,
+  toggleSearchOverlay,
+} from '../../components/searchOverlayEvents';
 import { findRenderedSectionElement } from '../../editor/renderedManuscriptNavigation';
 import { useTranslation } from '../../i18n';
 import { useAuthStore } from '../../store/authStore';
@@ -47,8 +53,12 @@ export function MobileLayout({ children, onOpenMenu }: MobileLayoutProps) {
   const logout = useAuthStore((state) => state.logout);
   const isAuthLoading = useAuthStore((state) => state.isLoading);
   const [view, setView] = useState<MobileView>('editor');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [pendingSectionNavigation, setPendingSectionNavigation] = useState<string | null>(null);
-  const searchLabel = searchLabels[locale] ?? searchLabels.en;
+  const searchButtonText = searchLabels[locale] ?? searchLabels.en;
+  const searchLabel = searchOpen
+    ? getCloseSearchLabel(locale)
+    : searchButtonText;
   const nav = navLabels[locale] ?? navLabels.en;
 
   useEffect(() => {
@@ -76,15 +86,7 @@ export function MobileLayout({ children, onOpenMenu }: MobileLayoutProps) {
     };
   }, [pendingSectionNavigation, view]);
 
-  const handleSearch = () => {
-    window.dispatchEvent(
-      new KeyboardEvent('keydown', {
-        key: 'f',
-        ctrlKey: true,
-        bubbles: true,
-      }),
-    );
-  };
+  useEffect(() => subscribeSearchOverlayState(setSearchOpen), []);
 
   const handleDocumentNavigate = (sectionId: string) => {
     setPendingSectionNavigation(sectionId);
@@ -130,12 +132,19 @@ export function MobileLayout({ children, onOpenMenu }: MobileLayoutProps) {
         <div className="mobile-action-bar">
           <button
             type="button"
-            className="mobile-action-button"
-            onClick={handleSearch}
+            className={`mobile-action-button${searchOpen ? ' is-active' : ''}`}
+            onClick={toggleSearchOverlay}
             aria-label={searchLabel}
+            aria-pressed={searchOpen}
+            aria-expanded={searchOpen}
+            aria-controls="omi-search-replace"
           >
-            <Search size={18} aria-hidden="true" />
-            <span>{searchLabel}</span>
+            {searchOpen ? (
+              <X size={18} aria-hidden="true" />
+            ) : (
+              <Search size={18} aria-hidden="true" />
+            )}
+            <span>{searchButtonText}</span>
           </button>
           <div className="mobile-insert-action">
             <HeaderInsertMenu />
