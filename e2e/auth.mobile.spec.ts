@@ -23,6 +23,7 @@ test('the responsive login and editor fit a phone viewport', async ({ page }) =>
 
   const menuClose = page.getByRole('button', { name: 'Close manuscript menu', exact: true });
   await expect(menuClose).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Manuscript menu' })).toBeVisible();
   const closePosition = await menuClose.boundingBox();
   expect(closePosition).not.toBeNull();
   expect(Math.abs((closePosition?.x ?? 0) - (triggerPosition?.x ?? 0))).toBeLessThanOrEqual(1);

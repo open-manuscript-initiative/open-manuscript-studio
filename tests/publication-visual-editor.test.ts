@@ -70,13 +70,20 @@ test('live publication editor opens as its own full-screen menu workspace', () =
   assert.match(fullscreenPanels, /\.studio-menu-content--publication-editor \.publication-style-editor[\s\S]*height: 100%/);
 });
 
-test('desktop Studio navigation opens from a compact top dropdown', () => {
-  assert.match(studioMenu, /const \[navigationOpen, setNavigationOpen\]/);
-  assert.match(studioMenu, /className="studio-menu-navigation-trigger"/);
-  assert.match(studioMenu, /aria-haspopup="menu"/);
-  assert.match(studioMenu, /hidden=\{!navigationOpen\}/);
-  assert.match(studioShellStyles, /\.studio-menu-body \{[\s\S]*display: block/);
-  assert.match(studioShellStyles, /\.studio-menu-navigation \{[\s\S]*position: absolute/);
+test('Studio navigation is visible immediately without an intermediate menu trigger', () => {
+  assert.doesNotMatch(studioMenu, /navigationOpen|studio-menu-navigation-trigger|aria-haspopup="menu"/);
+  assert.match(
+    studioMenu,
+    /<div className="studio-menu-body">\s*<nav id="studio-menu-navigation" className="studio-menu-navigation"/,
+  );
+  assert.match(
+    studioShellStyles,
+    /\.studio-menu-body \{[\s\S]*display: grid;[\s\S]*grid-template-columns: 14rem minmax\(0, 1fr\)/,
+  );
+  assert.doesNotMatch(
+    studioShellStyles,
+    /\.studio-menu-navigation \{[\s\S]*position: absolute/,
+  );
 });
 
 test('publication settings use a Word-like top ribbon instead of a permanent sidebar', () => {
