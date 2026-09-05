@@ -115,6 +115,7 @@ export function Footer() {
             <a href="https://openmanuscript.org/support/" target="_blank" rel="noopener noreferrer">Support</a>
             <a href="https://github.com/sponsors/open-manuscript-initiative" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a>
             <a href="https://github.com/open-manuscript-initiative/open-manuscript-studio" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://github.com/open-manuscript-initiative/open-manuscript-studio/wiki" target="_blank" rel="noopener noreferrer">Wiki</a>
             <a href="https://www.facebook.com/share/19AmDMBVoe/" target="_blank" rel="noopener noreferrer">Facebook</a>
           </section>
 
