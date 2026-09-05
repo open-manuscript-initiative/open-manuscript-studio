@@ -20,7 +20,7 @@ import {
   type DesktopDocumentTabId,
   type DesktopDocumentTabItem,
 } from './components/DesktopDocumentTabs';
-import { DesktopUpdatePrompt } from './components/DesktopUpdatePrompt';
+import { StudioUpdatePrompt } from './components/DesktopUpdatePrompt';
 import { EditorPane } from './components/EditorPane';
 import { ReviewPortal } from './components/ReviewPortal';
 import { SearchReplaceOverlay } from './components/SearchReplaceOverlay';
@@ -125,7 +125,12 @@ export function App() {
     <RegisterPage onShowLogin={() => setAuthView('login')} />
   );
 
-  return <AuthGate fallback={authScreen}><StudioApplication /></AuthGate>;
+  return (
+    <>
+      <AuthGate fallback={authScreen}><StudioApplication /></AuthGate>
+      <StudioUpdatePrompt />
+    </>
+  );
 }
 
 function StudioApplication() {
@@ -473,7 +478,6 @@ function StudioApplication() {
       />
       <div className="focus-workspace"><EditorPane ojsContributors={ojsContributors} /></div>
       <SearchReplaceOverlay />
-      <DesktopUpdatePrompt />
       <StudioMenuWithHelp
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
