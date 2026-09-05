@@ -161,6 +161,22 @@ configure_pkp_test_hosts() {
         exit(1);
     }
   '
+
+  # Apache may keep config.inc.php in OPcache after the CLI installer has
+  # completed. Restart the disposable container so browser requests observe
+  # the updated allowlist, then prove the exact Host header before continuing.
+  compose restart pkp
+  for _attempt in {1..60}; do
+    if compose exec -T pkp curl -fsS \
+      -H 'Host: pkp.test' \
+      http://127.0.0.1/ \
+      >/dev/null 2>&1; then
+      printf 'PKP accepts the isolated browser test host.\n'
+      return
+    fi
+    sleep 2
+  done
+  fail "PKP did not accept the isolated browser test host after restart"
 }
 
 install_plugin_descriptor() {

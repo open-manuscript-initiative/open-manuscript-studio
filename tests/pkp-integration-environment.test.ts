@@ -19,6 +19,9 @@ const e2eSource = readSource('./pkp-integration/e2e/pkp-environment.spec.ts');
 const environmentScriptSource = readSource(
   './pkp-integration/scripts/pkp-env.sh',
 );
+const waitForHttpSource = readSource(
+  './pkp-integration/scripts/wait-for-http.mjs',
+);
 const workflowSource = readSource(
   '../.github/workflows/pkp-integration-environment.yml',
 );
@@ -131,6 +134,9 @@ test('private test routing is an explicit test-only exception', () => {
     environmentScriptSource,
     /allowed_hosts = [\s\S]*?pkp\.test[\s\S]*?127\.0\.0\.1/,
   );
+  assert.match(environmentScriptSource, /compose restart pkp/);
+  assert.match(environmentScriptSource, /Host: pkp\.test/);
+  assert.match(waitForHttpSource, /response\.status < 400/);
   assert.match(trustedRemoteUrlSource, /process\.env\.NODE_ENV !== 'test'/);
   assert.match(trustedRemoteUrlSource, /INTEGRATION_TEST_ALLOWED_HOSTS/);
   assert.match(trustedRemoteUrlSource, /allowed\.includes\(url\.hostname\.toLowerCase\(\)\)/);

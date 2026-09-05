@@ -25,7 +25,7 @@ while (Date.now() < deadline) {
       signal: AbortSignal.timeout(5_000),
     });
 
-    if (response.status < 500) {
+    if (response.status < 400) {
       console.log(`${url} is reachable (HTTP ${response.status}).`);
       process.exit(0);
     }
