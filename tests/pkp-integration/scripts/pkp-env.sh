@@ -137,6 +137,32 @@ install_pkp() {
   is_pkp_installed || fail "PKP CLI installation did not set installed = On"
 }
 
+configure_pkp_test_hosts() {
+  printf 'Allowing the isolated PKP test host...\n'
+  compose exec -T pkp php -r '
+    $path = "/var/www/html/config.inc.php";
+    $config = file_get_contents($path);
+    if ($config === false) {
+        fwrite(STDERR, "Unable to read PKP configuration\n");
+        exit(1);
+    }
+    $replacement = "allowed_hosts = " . chr(39)
+        . "[\"pkp.test\", \"127.0.0.1\", \"localhost\", \"pkp\"]"
+        . chr(39);
+    $updated = preg_replace(
+        "/^[;[:space:]]*allowed_hosts[[:space:]]*=.*$/m",
+        $replacement,
+        $config,
+        1,
+        $count
+    );
+    if ($updated === null || $count !== 1 || file_put_contents($path, $updated) === false) {
+        fwrite(STDERR, "Unable to configure PKP test hosts\n");
+        exit(1);
+    }
+  '
+}
+
 install_plugin_descriptor() {
   printf 'Registering the studioIntegration plugin descriptor...\n'
   compose exec -T pkp php \
@@ -203,6 +229,8 @@ verify_environment() {
     120000
 
   is_pkp_installed || fail "PKP is not installed"
+
+  compose exec -T pkp grep -F -q 'pkp.test' /var/www/html/config.inc.php
 
   compose exec -T pkp sh -c \
     "grep -R -F -q 'omi-integration/1/$PLATFORM' /var/www/html/plugins/generic/studioIntegration"
@@ -281,6 +309,7 @@ case "$ACTION" in
     compose up --detach --build
     wait_for_services
     install_pkp
+    configure_pkp_test_hosts
     install_plugin_descriptor
     create_workflow_fixture
     register_studio_integration

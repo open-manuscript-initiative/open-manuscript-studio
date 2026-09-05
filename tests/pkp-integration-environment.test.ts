@@ -126,6 +126,11 @@ test('Playwright exercises signed roles, anonymous article review and writeback'
 test('private test routing is an explicit test-only exception', () => {
   assert.match(composeSource, /INTEGRATION_TEST_ALLOWED_HOSTS: pkp\.test/);
   assert.match(composeSource, /pkp\.test:host-gateway/);
+  assert.match(environmentScriptSource, /configure_pkp_test_hosts/);
+  assert.match(
+    environmentScriptSource,
+    /allowed_hosts = [\s\S]*?pkp\.test[\s\S]*?127\.0\.0\.1/,
+  );
   assert.match(trustedRemoteUrlSource, /process\.env\.NODE_ENV !== 'test'/);
   assert.match(trustedRemoteUrlSource, /INTEGRATION_TEST_ALLOWED_HOSTS/);
   assert.match(trustedRemoteUrlSource, /allowed\.includes\(url\.hostname\.toLowerCase\(\)\)/);

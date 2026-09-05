@@ -70,7 +70,10 @@ Playwright addresses PKP as `http://pkp.test:8080`. Chromium maps that hostname
 to the published local port, while the Studio container maps it to Docker's
 host gateway. The Studio SSRF guard accepts this hostname only when
 `NODE_ENV=test` and it is explicitly listed in
-`INTEGRATION_TEST_ALLOWED_HOSTS`; production behavior is unchanged.
+`INTEGRATION_TEST_ALLOWED_HOSTS`. The disposable PKP configuration likewise
+allowlists `pkp.test`, loopback and the internal `pkp` service name, so PKP's
+host-header protection remains enabled throughout the browser workflow.
+Production behavior is unchanged.
 
 Override the ports or pinned PKP release when required:
 
