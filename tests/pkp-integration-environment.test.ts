@@ -120,6 +120,7 @@ test('Playwright exercises signed roles, anonymous article review and writeback'
   assert.match(e2eSource, /actorMode: 'review'/);
   assert.match(e2eSource, /contributors\.read/);
   assert.match(e2eSource, /forbiddenFileId/);
+  assert.match(e2eSource, /visibleFiles\.map\(\(file\) => file\.externalId\)/);
   assert.match(e2eSource, /authorIdentity: 'hidden'/);
   assert.match(e2eSource, /documentKind: 'article'/);
   assert.match(e2eSource, /Corrected line break and hyphenation/);

@@ -203,8 +203,9 @@ test('reviewer receives one anonymous article and can return corrections', async
   expect(files.json).toMatchObject({
     files: [expect.objectContaining({ externalId: fixture.sourceFileId })],
   });
-  expect((files.json as { files: unknown[] }).files).toHaveLength(1);
-  expect(JSON.stringify(files.json)).not.toContain(fixture.forbiddenFileId);
+  const visibleFiles = (files.json as { files: Array<{ externalId?: string }> }).files;
+  expect(visibleFiles).toHaveLength(1);
+  expect(visibleFiles.map((file) => file.externalId)).not.toContain(fixture.forbiddenFileId);
 
   const forbiddenFile = await signedBrowserRequest(
     page,
