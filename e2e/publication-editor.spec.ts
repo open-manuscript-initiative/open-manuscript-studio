@@ -18,7 +18,7 @@ test('the full-screen menu opens the live publication editor', async ({ page }) 
   expect(menuBox?.width).toBeGreaterThanOrEqual((viewport?.width ?? 0) - 1);
   expect(menuBox?.height).toBeGreaterThanOrEqual((viewport?.height ?? 0) - 1);
 
-  await menu.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
+  await expect(menu.getByRole('navigation', { name: 'Manuscript menu' })).toBeVisible();
   await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
 
   await expect(menu.getByRole('heading', { name: 'Live publication editor' })).toBeVisible();
