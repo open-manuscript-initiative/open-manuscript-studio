@@ -12,11 +12,18 @@ const readSource = (relativePath: string): string =>
 
 const composeSource = readSource('./pkp-integration/compose.yml');
 const pkpDockerfileSource = readSource('./pkp-integration/Dockerfile.pkp');
+const fixtureSource = readSource(
+  './pkp-integration/pkp/omiIntegrationFixture.php',
+);
+const e2eSource = readSource('./pkp-integration/e2e/pkp-environment.spec.ts');
 const environmentScriptSource = readSource(
   './pkp-integration/scripts/pkp-env.sh',
 );
 const workflowSource = readSource(
   '../.github/workflows/pkp-integration-environment.yml',
+);
+const trustedRemoteUrlSource = readSource(
+  '../server/src/integrations/security/trustedRemoteUrl.ts',
 );
 
 test('configuration checks are independent of checkout line endings', () => {
@@ -84,4 +91,42 @@ test('plugin registration uses PKP application tooling instead of direct SQL', (
   );
   assert.match(environmentScriptSource, /is_subclass_of/);
   assert.doesNotMatch(environmentScriptSource, /mysql\s+-|mariadb\s+-|psql\s+-/);
+});
+
+test('workflow fixtures use PKP services and preserve reviewer file isolation', () => {
+  assert.match(pkpDockerfileSource, /tools\/omiIntegrationFixture\.php/);
+  assert.match(fixtureSource, /app\(\)->get\('context'\)->add/);
+  assert.match(fixtureSource, /Repo::submission\(\)->add/);
+  assert.match(fixtureSource, /Repo::stageAssignment\(\)->build/);
+  assert.match(fixtureSource, /ReviewRoundDAO/);
+  assert.match(fixtureSource, /ReviewFilesDAO/);
+  assert.match(fixtureSource, /ReviewFormDAO/);
+  assert.match(fixtureSource, /ReviewFormResponseDAO/);
+  assert.match(fixtureSource, /SUBMISSION_REVIEW_METHOD_DOUBLEANONYMOUS/);
+  assert.match(fixtureSource, /'chapterId'\s*=>/);
+  assert.doesNotMatch(fixtureSource, /DB::|INSERT\s+INTO|UPDATE\s+\w+\s+SET/i);
+  assert.match(environmentScriptSource, /dist\/cli\/addIntegration\.js/);
+  assert.match(environmentScriptSource, /verify-review/);
+});
+
+test('Playwright exercises signed roles, anonymous article review and writeback', () => {
+  assert.match(e2eSource, /actorMode: 'editor'/);
+  assert.match(e2eSource, /actorMode: 'author'/);
+  assert.match(e2eSource, /actorMode: 'review'/);
+  assert.match(e2eSource, /contributors\.read/);
+  assert.match(e2eSource, /forbiddenFileId/);
+  assert.match(e2eSource, /authorIdentity: 'hidden'/);
+  assert.match(e2eSource, /documentKind: 'article'/);
+  assert.match(e2eSource, /Corrected line break and hyphenation/);
+  assert.match(e2eSource, /assigned\/\$\{assignmentId\}\/review-form/);
+  assert.match(e2eSource, /ojsWriteback: \{ status: 'synced' \}/);
+  assert.match(e2eSource, /expectApiStatus\(replay, 401\)/);
+});
+
+test('private test routing is an explicit test-only exception', () => {
+  assert.match(composeSource, /INTEGRATION_TEST_ALLOWED_HOSTS: pkp\.test/);
+  assert.match(composeSource, /pkp\.test:host-gateway/);
+  assert.match(trustedRemoteUrlSource, /process\.env\.NODE_ENV !== 'test'/);
+  assert.match(trustedRemoteUrlSource, /INTEGRATION_TEST_ALLOWED_HOSTS/);
+  assert.match(trustedRemoteUrlSource, /allowed\.includes\(url\.hostname\.toLowerCase\(\)\)/);
 });

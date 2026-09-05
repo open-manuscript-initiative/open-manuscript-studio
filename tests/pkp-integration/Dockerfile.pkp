@@ -5,8 +5,10 @@ FROM docker.io/pkpofficial/${PKP_PLATFORM}:${PKP_VERSION}
 USER root
 
 COPY --chown=www-data:www-data runtime/plugin/ /var/www/html/plugins/generic/studioIntegration/
+COPY --chown=www-data:www-data pkp/omiIntegrationFixture.php /var/www/html/tools/omiIntegrationFixture.php
 
 RUN test -f /var/www/html/plugins/generic/studioIntegration/version.xml \
-    && test -f /var/www/html/plugins/generic/studioIntegration/StudioIntegrationPlugin.php
+    && test -f /var/www/html/plugins/generic/studioIntegration/StudioIntegrationPlugin.php \
+    && test -f /var/www/html/tools/omiIntegrationFixture.php
 
 USER www-data

@@ -26,10 +26,12 @@ The boundary is intentional:
 
 The PKP application is installed through its native `tools/install.php` CLI.
 The plugin descriptor is registered through PKP's
-`lib/pkp/tools/installPluginVersion.php`; the harness does not write PKP tables
-directly. The plugin is deliberately not enabled yet because a fresh PKP site
-has no journal or press context. Context creation, plugin configuration and
-author/editor/reviewer workflows belong to the next E2E layer.
+`lib/pkp/tools/installPluginVersion.php`. A dedicated PKP CLI fixture then uses
+PKP repositories, services and DAOs to create the journal/press, enable and
+configure the plugin, create editor/author/reviewer accounts, submit a DOCX,
+create a required native review form, open an external review round and grant
+exactly one file to the review. The
+harness does not write application tables directly.
 
 ## Requirements
 
@@ -64,6 +66,12 @@ Use `omp` in place of `ojs` for OMP. The default endpoints are:
 - PKP: `http://127.0.0.1:8080`
 - Studio API: `http://127.0.0.1:3001`
 
+Playwright addresses PKP as `http://pkp.test:8080`. Chromium maps that hostname
+to the published local port, while the Studio container maps it to Docker's
+host gateway. The Studio SSRF guard accepts this hostname only when
+`NODE_ENV=test` and it is explicitly listed in
+`INTEGRATION_TEST_ALLOWED_HOSTS`; production behavior is unchanged.
+
 Override the ports or pinned PKP release when required:
 
 ```bash
@@ -78,6 +86,11 @@ username: omiadmin
 password: omi-test-admin
 ```
 
+The generated role accounts all use the test-only password
+`omi-test-user`: `omi-editor`, `omi-author` and `omi-reviewer`. Fixture IDs and
+sentinels are written to the ignored
+`tests/pkp-integration/runtime/fixture-<platform>.json` file for Playwright.
+
 They may be overridden with `PKP_ADMIN_USERNAME`, `PKP_ADMIN_PASSWORD` and
 `PKP_ADMIN_EMAIL`. These credentials and the database passwords in Compose are
 for disposable local/CI environments only.
@@ -91,6 +104,8 @@ npm run pkp:down -- ojs
 
 `pkp:down` removes the selected environment's containers and test volumes.
 Logs remain under `tests/pkp-integration/runtime/logs/`.
+The test action also stores the PKP-side review writeback assertion as
+`review-writeback-<platform>.json`.
 
 ## Plugin source selection
 
@@ -120,17 +135,24 @@ tests from poisoning a later default-branch build cache or reusing the job
 token. Local disposable environments may still select a branch or tag through
 `PKP_PLUGIN_REF` as described above.
 
-## Current smoke boundary
+## Tested workflow boundary
 
-This first layer verifies:
+The suite verifies:
 
-1. native PKP installation succeeds;
-2. Studio migrations and `/api/health` succeed;
-3. the selected plugin profile is present, its descriptor is registered, and
-   its class loads inside PKP's application bootstrap;
-4. PKP can reach Studio and Studio can reach PKP on the internal network; and
-5. Playwright can render the installed PKP application outside the installer.
+1. native PKP installation, Studio migrations and both health boundaries;
+2. plugin descriptor loading, capability discovery and Studio registration;
+3. signed editor and author launches with different least-privilege scopes;
+4. a current double-anonymous reviewer assignment and nonce replay rejection;
+5. denial of contributor identity and non-granted file access for reviewers;
+6. DOCX import into a Studio snapshot that is always `documentKind: article`
+   and `authorIdentity: hidden`;
+7. OMP review binding to one assigned chapter, excluding the parent monograph
+   and sibling chapter metadata/files;
+8. reviewer language/typesetting corrections, a required native PKP review
+   form, and separate author-visible and editor-only feedback; and
+9. signed Studio-to-PKP review-result writeback, followed by PKP-native DAO
+   assertions that both comments and the form response were actually persisted.
 
-It does not yet create a journal/press, submission, review round or users. Those
-fixtures and the signed author/editor/reviewer journeys will be added on top of
-this environment without weakening the database and identity boundaries above.
+The suite is stateful and therefore deliberately has no Playwright retries. A
+failure keeps traces, screenshots, video, Compose logs, install logs and the
+fixture metadata in the uploaded diagnostics artifact.

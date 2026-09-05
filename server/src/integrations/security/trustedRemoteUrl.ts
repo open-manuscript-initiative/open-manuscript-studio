@@ -59,6 +59,15 @@ function isDevelopmentLocalhost(url: URL): boolean {
   );
 }
 
+function isExplicitTestHost(url: URL): boolean {
+  if (process.env.NODE_ENV !== 'test') return false;
+  const allowed = (process.env.INTEGRATION_TEST_ALLOWED_HOSTS ?? '')
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+  return allowed.includes(url.hostname.toLowerCase());
+}
+
 function normalizedBasePath(pathname: string): string {
   if (!pathname || pathname === '/') return '/';
   return pathname.replace(/\/+$/, '') || '/';
@@ -90,7 +99,7 @@ function canonicalizePathname(pathname: string): string {
 }
 
 async function assertPublicHost(url: URL): Promise<void> {
-  if (isDevelopmentLocalhost(url)) return;
+  if (isDevelopmentLocalhost(url) || isExplicitTestHost(url)) return;
 
   const addresses = await lookup(url.hostname, { all: true, verbatim: true });
   if (addresses.length === 0 || addresses.some(({ address }) => isPrivateAddress(address))) {
@@ -129,8 +138,13 @@ export async function assertTrustedIntegrationUrl(
   }
 
   const allowDevelopmentHttp =
-    isDevelopmentLocalhost(candidate) &&
-    isDevelopmentLocalhost(installation);
+    (
+      isDevelopmentLocalhost(candidate) &&
+      isDevelopmentLocalhost(installation)
+    ) || (
+      isExplicitTestHost(candidate) &&
+      isExplicitTestHost(installation)
+    );
 
   if (
     candidate.protocol !== installation.protocol ||
