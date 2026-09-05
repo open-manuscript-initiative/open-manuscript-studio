@@ -126,10 +126,12 @@ export function StudioUpdatePrompt() {
   if (!update) return null;
 
   async function apply(): Promise<void> {
+    if (!update) return;
+    const selectedUpdate = update;
     setBusy(true);
     setError('');
     try {
-      await applyStudioUpdate(update);
+      await applyStudioUpdate(selectedUpdate);
     } catch (reason) {
       const detail = reason instanceof Error ? reason.message : String(reason);
       setError(`${copy.failed} ${detail}`);
@@ -138,6 +140,7 @@ export function StudioUpdatePrompt() {
   }
 
   function dismiss(): void {
+    if (!update) return;
     rememberDismissal(update.version);
     setUpdate(null);
   }
