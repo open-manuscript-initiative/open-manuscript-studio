@@ -9,7 +9,7 @@ import {
 import { resolvePublicationProfile } from '../src/model/publicationProfile.ts';
 import { buildDocxExport } from '../src/services/exportDocx.ts';
 import { buildEpubExport } from '../src/services/exportEpub.ts';
-import { buildPdfPrintDocument } from '../src/services/exportPdf.ts';
+import { buildPdfPrintDocument, pdfDocumentTitle } from '../src/services/exportPdf.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
 
 test('DOCX export contains Word heading and named character styles', () => {
@@ -91,6 +91,8 @@ test('PDF print document applies profile page settings and publisher print CSS i
   const html = buildPdfPrintDocument(manuscript, profile);
 
   assert.match(html, /meta name="omi-output-format" content="pdf-print"/);
+  assert.match(html, /data-omi-pdf-mode="print"/);
+  assert.match(html, /data-omi-pdf-content="publication"/);
   assert.match(html, /size: Letter/);
   assert.match(html, /margin: 18mm 19mm 20mm 21mm/);
   assert.match(html, /font-family: Georgia, serif/);
@@ -101,6 +103,94 @@ test('PDF print document applies profile page settings and publisher print CSS i
       html.indexOf('@page { margin: 12mm; }'),
     'publisher print CSS must load after generated page defaults',
   );
+});
+
+test('PDF editorial view removes publication geometry while preserving semantic manuscript content', () => {
+  const manuscript = createVersionedTestManuscript();
+  const base = resolvePublicationProfile(manuscript);
+  const profile = {
+    ...base,
+    id: 'publisher:test-editorial-pdf',
+    version: '3',
+    rules: {
+      ...base.rules,
+      layout: {
+        ...base.rules.layout,
+        pageSize: 'Letter' as const,
+        marginMm: { top: 11, right: 12, bottom: 13, left: 14 },
+      },
+      outputs: [...new Set([...base.rules.outputs, 'pdf' as const])],
+    },
+    exportStylesheet: createPublisherExportStylesheet(
+      'publisher-editorial-test.css',
+      '.omi-scholarly-article { border: 17px solid magenta; }',
+      '2026-09-06T00:00:00Z',
+    ),
+    printStylesheet: createPublisherPrintStylesheet(
+      'publisher-editorial-test-print.css',
+      '@page { margin: 3mm; }',
+      '2026-09-06T00:00:00Z',
+    ),
+  };
+
+  const publicationHtml = buildPdfPrintDocument(manuscript, profile, 'print', 'publication');
+  const editorialHtml = buildPdfPrintDocument(manuscript, profile, 'print', 'editorial');
+
+  assert.match(publicationHtml, /data-omi-pdf-content="publication"/);
+  assert.match(publicationHtml, /size: Letter/);
+  assert.match(publicationHtml, /border: 17px solid magenta/);
+  assert.match(publicationHtml, /@page \{ margin: 3mm; \}/);
+
+  assert.match(editorialHtml, /data-omi-pdf-content="editorial"/);
+  assert.match(editorialHtml, /data-omi-print-style data-omi-pdf-content="editorial"/);
+  assert.match(editorialHtml, /@page \{\s*size: auto;\s*margin: 20mm;/);
+  assert.match(editorialHtml, /Test manuscript/);
+  assert.doesNotMatch(editorialHtml, /size: Letter/);
+  assert.doesNotMatch(editorialHtml, /border: 17px solid magenta/);
+  assert.doesNotMatch(editorialHtml, /@page \{ margin: 3mm; \}/);
+});
+
+test('PDF variants remove hyperlinks from print output and retain them in interactive output', () => {
+  const manuscript = createVersionedTestManuscript();
+  const block = manuscript.sections[0]?.blocks[0];
+  if (!block) throw new Error('PDF link test requires a text block.');
+  block.content = JSON.stringify({
+    type: 'doc',
+    content: [{
+      type: 'paragraph',
+      content: [{
+        type: 'text',
+        text: 'Open Manuscript Initiative',
+        marks: [{ type: 'omiLink', attrs: { href: 'https://openmanuscript.org' } }],
+      }],
+    }],
+  });
+
+  const base = resolvePublicationProfile(manuscript);
+  const profile = {
+    ...base,
+    rules: {
+      ...base.rules,
+      outputs: [...new Set([...base.rules.outputs, 'pdf' as const])],
+    },
+  };
+
+  const printHtml = buildPdfPrintDocument(manuscript, profile, 'print');
+  const interactiveHtml = buildPdfPrintDocument(manuscript, profile, 'interactive');
+  const editorialInteractiveHtml = buildPdfPrintDocument(manuscript, profile, 'interactive', 'editorial');
+
+  assert.match(printHtml, /meta name="omi-output-format" content="pdf-print"/);
+  assert.match(printHtml, /class="omi-pdf-output omi-pdf-mode-print omi-pdf-content-publication"/);
+  assert.doesNotMatch(printHtml, /<a\b/i);
+
+  assert.match(interactiveHtml, /meta name="omi-output-format" content="pdf-interactive"/);
+  assert.match(interactiveHtml, /class="omi-pdf-output omi-pdf-mode-interactive omi-pdf-content-publication"/);
+  assert.match(interactiveHtml, /href="https:\/\/openmanuscript\.org\/"/);
+  assert.match(interactiveHtml, /body\[data-omi-pdf-mode="interactive"\] a\[href\]/);
+  assert.match(editorialInteractiveHtml, /data-omi-pdf-content="editorial"/);
+  assert.match(editorialInteractiveHtml, /href="https:\/\/openmanuscript\.org\/"/);
+  assert.equal(pdfDocumentTitle(manuscript, 'print'), 'Test manuscript');
+  assert.equal(pdfDocumentTitle(manuscript, 'interactive'), 'Test manuscript – interactive');
 });
 
 test('publisher CSS validator rejects markup escape from inline print style', () => {

@@ -31,6 +31,16 @@ export interface ExportFormatCopy {
   epubDescription: string;
   pdf: string;
   pdfDescription: string;
+  pdfContent: string;
+  pdfPublication: string;
+  pdfPublicationDescription: string;
+  pdfEditorial: string;
+  pdfEditorialDescription: string;
+  pdfMode: string;
+  pdfPrint: string;
+  pdfPrintDescription: string;
+  pdfInteractive: string;
+  pdfInteractiveDescription: string;
   export: string;
   preparing: string;
   saved: string;
@@ -70,13 +80,23 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     epub: 'EPUB 3',
     epubDescription: 'Hordozható e-könyv kiadvány EPUB 3 csomagként.',
     pdf: 'PDF',
-    pdfDescription: 'A publikációs profil alapján formázott nyomtatási nézet; PDF-ként a rendszer nyomtatási párbeszédablakából menthető.',
+    pdfDescription: 'PDF-kimenet tördelt kiadványból vagy semleges szerkesztői nézetből, nyomtatott vagy interaktív változatban.',
+    pdfContent: 'Nyomtatási nézet',
+    pdfPublication: 'Tördelt kiadvány',
+    pdfPublicationDescription: 'A publikációs profil teljes tipográfiájával, oldalméretével, margóival és kiadói tördelési szabályaival készül.',
+    pdfEditorial: 'Nyers / szerkesztői',
+    pdfEditorialDescription: 'A kézirat szerkezetét, jegyzeteit és hivatkozásait megtartó semleges nyomat, kiadói tipográfia és végleges oldaltördelés nélkül.',
+    pdfMode: 'PDF változat',
+    pdfPrint: 'Nyomtatott PDF',
+    pdfPrintDescription: 'Nyomtatásra és archiválásra optimalizált változat aktív hiperhivatkozások nélkül.',
+    pdfInteractive: 'Interaktív PDF',
+    pdfInteractiveDescription: 'Megőrzi a belső és külső hiperhivatkozásokat, így a hivatkozások, jegyzetek, ORCID/ROR és webes linkek a PDF-ben kattinthatók maradnak.',
     export: 'Exportálás',
     preparing: 'Előkészítés…',
     saved: 'Az export elkészült.',
     cancelled: 'A fájl mentése megszakítva.',
     failed: 'Az export nem sikerült.',
-    pdfHint: 'A megnyíló nyomtatási ablakban válassza a Mentés PDF-ként lehetőséget.',
+    pdfHint: 'A megnyíló nyomtatási ablakban közvetlenül nyomtathat, vagy választhatja a Mentés PDF-ként lehetőséget.',
   },
   en: {
     title: 'Export',
@@ -108,13 +128,23 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     epub: 'EPUB 3',
     epubDescription: 'Portable EPUB 3 ebook publication package.',
     pdf: 'PDF',
-    pdfDescription: 'Publication-profile print view that can be saved as PDF from the system print dialog.',
+    pdfDescription: 'PDF output from either the typeset publication or a neutral editorial view, as a print or interactive variant.',
+    pdfContent: 'Print view',
+    pdfPublication: 'Typeset publication',
+    pdfPublicationDescription: 'Uses the publication profile typography, page size, margins and publisher layout rules.',
+    pdfEditorial: 'Editorial / manuscript',
+    pdfEditorialDescription: 'A neutral manuscript print that keeps structure, notes and references without publisher typography or final pagination.',
+    pdfMode: 'PDF variant',
+    pdfPrint: 'Print PDF',
+    pdfPrintDescription: 'Print- and archive-oriented output without active hyperlinks.',
+    pdfInteractive: 'Interactive PDF',
+    pdfInteractiveDescription: 'Keeps internal and external hyperlinks so citations, notes, ORCID/ROR identifiers and web links remain clickable in the PDF.',
     export: 'Export',
     preparing: 'Preparing…',
     saved: 'Export completed.',
     cancelled: 'File save cancelled.',
     failed: 'Export failed.',
-    pdfHint: 'Choose Save as PDF in the print dialog that opens.',
+    pdfHint: 'Print directly in the dialog that opens, or choose Save as PDF.',
   },
   de: {
     title: 'Export',
@@ -146,13 +176,23 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     epub: 'EPUB 3',
     epubDescription: 'Portables E-Book als EPUB-3-Paket.',
     pdf: 'PDF',
-    pdfDescription: 'Druckansicht nach Publikationsprofil, die über den Systemdruckdialog als PDF gespeichert werden kann.',
+    pdfDescription: 'PDF-Ausgabe entweder aus der gesetzten Publikation oder einer neutralen redaktionellen Ansicht, als Druck- oder interaktive Variante.',
+    pdfContent: 'Druckansicht',
+    pdfPublication: 'Gesetzte Publikation',
+    pdfPublicationDescription: 'Verwendet Typografie, Seitengröße, Ränder und Satzregeln des Publikationsprofils.',
+    pdfEditorial: 'Redaktionell / Manuskript',
+    pdfEditorialDescription: 'Neutraler Manuskriptausdruck mit Struktur, Anmerkungen und Literaturangaben, jedoch ohne Verlagstypografie oder endgültigen Satz.',
+    pdfMode: 'PDF-Variante',
+    pdfPrint: 'Druck-PDF',
+    pdfPrintDescription: 'Für Druck und Archivierung optimierte Ausgabe ohne aktive Hyperlinks.',
+    pdfInteractive: 'Interaktives PDF',
+    pdfInteractiveDescription: 'Behält interne und externe Hyperlinks bei, sodass Zitate, Anmerkungen, ORCID/ROR-Kennungen und Weblinks im PDF anklickbar bleiben.',
     export: 'Exportieren',
     preparing: 'Wird vorbereitet…',
     saved: 'Export abgeschlossen.',
     cancelled: 'Dateispeichern abgebrochen.',
     failed: 'Export fehlgeschlagen.',
-    pdfHint: 'Wählen Sie im geöffneten Druckdialog Als PDF speichern.',
+    pdfHint: 'Drucken Sie direkt im geöffneten Dialog oder wählen Sie Als PDF speichern.',
   },
 };
 

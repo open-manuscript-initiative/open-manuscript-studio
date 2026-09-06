@@ -8,6 +8,12 @@ import { createPublisherExportStylesheet } from '../model/publisherExportStyle';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import { buildPublisherHtmlPackage } from '../services/exportPublisherHtmlPackage';
 import {
+  applyPdfInteractionMode,
+  buildPdfPrintDocument,
+  type PdfContentMode,
+  type PdfExportMode,
+} from '../services/exportPdf';
+import {
   buildPublicationStyleCss,
   loadPublicationStyle,
   renderStyleBasedHtml,
@@ -18,7 +24,15 @@ export function PublicationStyleExportPanel() {
   const copy = copyFor(locale);
   const checkpoint = useStudioStore((state) => state.checkpoint);
   const [busy, setBusy] = useState<'pdf' | 'html' | null>(null);
+  const [pdfContentMode, setPdfContentMode] = useState<PdfContentMode>('publication');
+  const [pdfMode, setPdfMode] = useState<PdfExportMode>('print');
   const [message, setMessage] = useState('');
+  const selectedContentDescription = pdfContentMode === 'publication'
+    ? copy.pdfPublicationDescription
+    : copy.pdfEditorialDescription;
+  const selectedModeDescription = pdfMode === 'print'
+    ? copy.pdfPrintDescription
+    : copy.pdfInteractiveDescription;
 
   async function exportHtml(): Promise<void> {
     if (busy) return;
@@ -77,7 +91,13 @@ export function PublicationStyleExportPanel() {
       checkpoint('export');
       const committed = useStudioStore.getState().manuscript;
       const profile = resolvePublicationProfile(committed);
-      const html = await renderStyleBasedHtml(committed, profile, 'print');
+      const html = pdfContentMode === 'publication'
+        ? applyPdfInteractionMode(
+            await renderStyleBasedHtml(committed, profile, 'print'),
+            pdfMode,
+            'publication',
+          )
+        : buildPdfPrintDocument(committed, profile, pdfMode, 'editorial');
 
       printUrl = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
       await navigatePrintWindow(printWindow, printUrl);
@@ -111,8 +131,26 @@ export function PublicationStyleExportPanel() {
         <article className="publication-style-export-option">
           <FileText size={22} aria-hidden="true" />
           <div>
-            <strong>PDF</strong>
+            <strong>PDF / {copy.print}</strong>
             <p>{copy.pdfDescription}</p>
+            <div className="studio-manuscript-fields">
+              <label>
+                <span>{copy.pdfContent}</span>
+                <select value={pdfContentMode} disabled={busy !== null} onChange={(event) => setPdfContentMode(event.target.value as PdfContentMode)}>
+                  <option value="publication">{copy.pdfPublication}</option>
+                  <option value="editorial">{copy.pdfEditorial}</option>
+                </select>
+              </label>
+              <label>
+                <span>{copy.pdfMode}</span>
+                <select value={pdfMode} disabled={busy !== null} onChange={(event) => setPdfMode(event.target.value as PdfExportMode)}>
+                  <option value="print">{copy.pdfPrint}</option>
+                  <option value="interactive">{copy.pdfInteractive}</option>
+                </select>
+              </label>
+            </div>
+            <p className="studio-settings-hint" data-pdf-content={pdfContentMode}>{selectedContentDescription}</p>
+            <p className="studio-settings-hint" data-pdf-mode={pdfMode}>{selectedModeDescription}</p>
           </div>
           <button type="button" className="studio-menu-primary-action" disabled={busy !== null} onClick={() => void exportPdf()}>
             <Download size={16} aria-hidden="true" />
@@ -141,33 +179,58 @@ export function PublicationStyleExportPanel() {
 
 function copyFor(locale: string) {
   if (locale === 'hu') return {
-    title: 'Export a kiadványstílus alapján',
-    description: 'A két export ugyanazokat a Stílus szerkesztőben mentett tipográfiai beállításokat használja.',
-    pdfDescription: 'Nyomdai nézet: lapméret, margók, oldaltörések, élőfej és lapalji jegyzetek. A rendszer PDF/nyomtatási párbeszédet nyit.',
+    title: 'Nyomtatás és export',
+    description: 'Nyomtatás előtt kiválasztható a semleges szerkesztői kéziratnézet vagy az Élő kiadványszerkesztőben kialakított tördelt kiadvány.',
+    print: 'nyomtatás',
+    pdfDescription: 'A választott nézetet a rendszer nyomtatási/PDF párbeszédben nyitja meg, így közvetlenül nyomtatható vagy PDF-ként menthető.',
+    pdfContent: 'Nyomtatási nézet',
+    pdfPublication: 'Tördelt kiadvány',
+    pdfEditorial: 'Nyers / szerkesztői',
+    pdfPublicationDescription: 'A Stílus szerkesztőben látható WYSIWYG tördelést, oldalméretet, margókat, élőfejet, jegyzeteket és tördelési korrektúrákat használja.',
+    pdfEditorialDescription: 'Semleges kéziratnyomat: a tartalmi szerkezet, jegyzetek és hivatkozások megmaradnak, a kiadói tipográfia és végleges oldaltördelés nem.',
+    pdfMode: 'PDF változat',
+    pdfPrint: 'Nyomtatott',
+    pdfInteractive: 'Interaktív',
+    pdfPrintDescription: 'A fizikai nyomtatásra és archiválásra szánt változat nem tartalmaz aktív hiperhivatkozásokat.',
+    pdfInteractiveDescription: 'A belső és külső hivatkozások kattinthatók maradnak a PDF-ben.',
     htmlDescription: 'Folyamatos webes nézet ugyanazzal a tipográfiával, de élőfej, oldalszám, lapméret és oldaltörés nélkül.',
-    exportPdf: 'PDF export', exportHtml: 'HTML export', preparing: 'Előkészítés…', preparingPdf: 'PDF előkészítése…',
+    exportPdf: 'Nyomtatás / PDF', exportHtml: 'HTML export', preparing: 'Előkészítés…', preparingPdf: 'Nyomtatási nézet előkészítése…',
     pdfReady: 'A nyomtatási/PDF párbeszéd megnyílt.', htmlReady: 'A stílusozott HTML-csomag elkészült.',
-    popupBlocked: 'A böngésző blokkolta a PDF-ablakot. Engedélyezze a felugró ablakokat ehhez az oldalhoz.',
-    exportError: 'Az export nem készíthető el.',
-    note: 'A HTML export szándékosan nem tartalmaz nyomdai oldalszerkezetet. A PDF export a mentett stílus nyomdai geometriáját használja.'
+    popupBlocked: 'A böngésző blokkolta a nyomtatási/PDF ablakot. Engedélyezze a felugró ablakokat ehhez az oldalhoz.',
+    exportError: 'A nyomtatási/export nézet nem készíthető el.',
+    note: 'A tördelt változat a mentett kiadványstílus nyomdai geometriáját használja. A nyers/szerkesztői változat csak a dokumentum szemantikai szerkezetét és tartalmát formázza olvasható nyomattá.'
   };
   if (locale === 'de') return {
-    title: 'Export nach Publikationsstil', description: 'Beide Exporte verwenden die im Stil-Editor gespeicherten typografischen Einstellungen.',
-    pdfDescription: 'Druckansicht mit Seitengröße, Rändern, Seitenumbrüchen, Kolumnentitel und Fußnoten. Öffnet den PDF-/Druckdialog.',
+    title: 'Drucken und Exportieren', description: 'Vor dem Drucken kann zwischen einer neutralen redaktionellen Manuskriptansicht und der im Live-Publikationseditor gesetzten Publikation gewählt werden.',
+    print: 'Drucken',
+    pdfDescription: 'Die gewählte Ansicht wird im Druck-/PDF-Dialog geöffnet und kann direkt gedruckt oder als PDF gespeichert werden.',
+    pdfContent: 'Druckansicht', pdfPublication: 'Gesetzte Publikation', pdfEditorial: 'Redaktionell / Manuskript',
+    pdfPublicationDescription: 'Verwendet den im Stil-Editor sichtbaren WYSIWYG-Satz einschließlich Seitengröße, Rändern, Kolumnentiteln, Fußnoten und Satzkorrekturen.',
+    pdfEditorialDescription: 'Neutraler Manuskriptausdruck: Struktur, Anmerkungen und Verweise bleiben erhalten, Verlagstypografie und endgültiger Satz werden nicht angewendet.',
+    pdfMode: 'PDF-Variante', pdfPrint: 'Druck', pdfInteractive: 'Interaktiv',
+    pdfPrintDescription: 'Die für physischen Druck und Archivierung bestimmte Variante enthält keine aktiven Hyperlinks.',
+    pdfInteractiveDescription: 'Interne und externe Verweise bleiben im PDF anklickbar.',
     htmlDescription: 'Fortlaufende Webansicht mit derselben Typografie, jedoch ohne Kolumnentitel, Seitenzahlen, Seitengröße oder Seitenumbrüche.',
-    exportPdf: 'PDF exportieren', exportHtml: 'HTML exportieren', preparing: 'Wird vorbereitet…', preparingPdf: 'PDF wird vorbereitet…',
+    exportPdf: 'Drucken / PDF', exportHtml: 'HTML exportieren', preparing: 'Wird vorbereitet…', preparingPdf: 'Druckansicht wird vorbereitet…',
     pdfReady: 'Der Druck-/PDF-Dialog wurde geöffnet.', htmlReady: 'Das formatierte HTML-Paket wurde erstellt.',
-    popupBlocked: 'Das PDF-Fenster wurde vom Browser blockiert. Bitte Pop-ups für diese Seite zulassen.', exportError: 'Der Export konnte nicht erstellt werden.',
-    note: 'Der HTML-Export enthält bewusst keine Druckseitenstruktur. Der PDF-Export verwendet die gespeicherte Druckgeometrie.'
+    popupBlocked: 'Das Druck-/PDF-Fenster wurde vom Browser blockiert. Bitte Pop-ups für diese Seite zulassen.', exportError: 'Die Druck-/Exportansicht konnte nicht erstellt werden.',
+    note: 'Die gesetzte Variante verwendet die gespeicherte Druckgeometrie des Publikationsstils. Die redaktionelle Variante formatiert nur die semantische Struktur und den Inhalt als lesbaren Ausdruck.'
   };
   return {
-    title: 'Export from publication style', description: 'Both exports use the typographic settings saved in the Publication Style editor.',
-    pdfDescription: 'Print view with page size, margins, page breaks, running header and footnotes. Opens the PDF/print dialog.',
+    title: 'Print and export', description: 'Before printing, choose either a neutral editorial manuscript view or the typeset publication created in the Live Publication Editor.',
+    print: 'print',
+    pdfDescription: 'The selected view opens in the print/PDF dialog and can be printed directly or saved as PDF.',
+    pdfContent: 'Print view', pdfPublication: 'Typeset publication', pdfEditorial: 'Editorial / manuscript',
+    pdfPublicationDescription: 'Uses the WYSIWYG layout shown in the Style editor, including page size, margins, running headers, notes and typesetting corrections.',
+    pdfEditorialDescription: 'Neutral manuscript print: structure, notes and references remain, while publisher typography and final pagination are not applied.',
+    pdfMode: 'PDF variant', pdfPrint: 'Print', pdfInteractive: 'Interactive',
+    pdfPrintDescription: 'The physical-print and archive variant contains no active hyperlinks.',
+    pdfInteractiveDescription: 'Internal and external references remain clickable in the PDF.',
     htmlDescription: 'Continuous web view with the same typography, but no running header, page numbers, page size or page breaks.',
-    exportPdf: 'Export PDF', exportHtml: 'Export HTML', preparing: 'Preparing…', preparingPdf: 'Preparing PDF…',
+    exportPdf: 'Print / PDF', exportHtml: 'Export HTML', preparing: 'Preparing…', preparingPdf: 'Preparing print view…',
     pdfReady: 'The print/PDF dialog has opened.', htmlReady: 'The styled HTML package is ready.',
-    popupBlocked: 'The browser blocked the PDF window. Allow pop-ups for this site and try again.', exportError: 'The export could not be created.',
-    note: 'HTML intentionally has no print-page structure. PDF uses the saved publication-style page geometry.'
+    popupBlocked: 'The browser blocked the print/PDF window. Allow pop-ups for this site and try again.', exportError: 'The print/export view could not be created.',
+    note: 'The typeset variant uses the saved publication-style print geometry. The editorial variant formats only the document semantic structure and content as a readable printout.'
   };
 }
 
