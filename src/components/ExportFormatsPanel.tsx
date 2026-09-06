@@ -13,7 +13,7 @@ import { jatsFileName, renderJatsArticle } from '../services/exportJats';
 import { buildLatexExport } from '../services/exportLatex';
 import { buildMifExport } from '../services/exportMif';
 import { omiJsonFileName, serializeOmiJson } from '../services/exportOmi';
-import { openPdfPrintView } from '../services/exportPdf';
+import { openPdfPrintView, type PdfExportMode } from '../services/exportPdf';
 import { buildSlaExport } from '../services/exportSla';
 import { buildXtgExport } from '../services/exportXtg';
 import { buildOmiContainer } from '../services/omiContainer';
@@ -42,6 +42,7 @@ export function ExportFormatsPanel() {
   const platform = getStudioPlatform();
   const mobile = platform === 'android' || platform === 'ios';
   const [selectedId, setSelectedId] = useState<ExportId | ''>('');
+  const [pdfMode, setPdfMode] = useState<PdfExportMode>('print');
   const [busy, setBusy] = useState<ExportId | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -64,11 +65,15 @@ export function ExportFormatsPanel() {
     { id: 'sla', group: 'publication', label: copy.sla, description: copy.slaDescription, extension: '.sla' },
     { id: 'latex', group: 'publication', label: copy.latex, description: copy.latexDescription, extension: '.tex' },
     { id: 'epub', group: 'publication', label: copy.epub, description: copy.epubDescription, extension: '.epub' },
-    { id: 'pdf', group: 'publication', label: copy.pdf, description: `${copy.pdfDescription} ${copy.pdfHint}`, extension: '.pdf' },
+    { id: 'pdf', group: 'publication', label: copy.pdf, description: copy.pdfDescription, extension: '.pdf' },
   ];
   const visibleFormats = mobile ? formats.filter((format) => MOBILE_EXPORT_IDS.has(format.id)) : formats;
   const selectedFormat = selectedId ? visibleFormats.find((format) => format.id === selectedId) ?? null : null;
   const busyFormat = busy ? visibleFormats.find((format) => format.id === busy) ?? null : null;
+  const pdfModeLabel = pdfMode === 'interactive' ? copy.pdfInteractive : copy.pdfPrint;
+  const pdfModeDescription = pdfMode === 'interactive'
+    ? copy.pdfInteractiveDescription
+    : copy.pdfPrintDescription;
 
   const reportDelivery = (delivery: ExportDeliveryResult): void => {
     if (!delivery.saved) {
@@ -147,7 +152,7 @@ export function ExportFormatsPanel() {
           break;
         }
         case 'pdf':
-          openPdfPrintView(manuscript);
+          openPdfPrintView(manuscript, pdfMode);
           break;
       }
     } catch (cause) {
@@ -166,8 +171,10 @@ export function ExportFormatsPanel() {
           <optgroup label={copy.portable}>{visibleFormats.filter((format) => format.group === 'portable').map((format) => <option value={format.id} key={format.id}>{format.label} ({format.extension})</option>)}</optgroup>
           <optgroup label={copy.publication}>{visibleFormats.filter((format) => format.group === 'publication').map((format) => <option value={format.id} key={format.id}>{format.label} ({format.extension})</option>)}</optgroup>
         </select></label>
+        {selectedId === 'pdf' ? <label><span>{copy.pdfMode}</span><select value={pdfMode} disabled={busy !== null} onChange={(event) => setPdfMode(event.target.value as PdfExportMode)}><option value="print">{copy.pdfPrint}</option><option value="interactive">{copy.pdfInteractive}</option></select></label> : null}
       </div>
       {selectedFormat ? <div className="studio-settings-hint"><strong>{selectedFormat.label}</strong><p>{selectedFormat.description}</p></div> : null}
+      {selectedId === 'pdf' ? <div className="studio-settings-hint" data-pdf-mode={pdfMode}><strong>{pdfModeLabel}</strong><p>{pdfModeDescription} {copy.pdfHint}</p></div> : null}
       {selectedId === 'custom' ? <CustomExportPanel /> : (
         <div className="studio-tool-actions"><button type="button" className="studio-menu-primary-action" disabled={!selectedId || busy !== null} onClick={() => { if (selectedId) void run(selectedId); }}>{busy ? copy.preparing : copy.export}</button></div>
       )}
