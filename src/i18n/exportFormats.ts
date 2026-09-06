@@ -31,6 +31,11 @@ export interface ExportFormatCopy {
   epubDescription: string;
   pdf: string;
   pdfDescription: string;
+  pdfMode: string;
+  pdfPrint: string;
+  pdfPrintDescription: string;
+  pdfInteractive: string;
+  pdfInteractiveDescription: string;
   export: string;
   preparing: string;
   saved: string;
@@ -70,7 +75,12 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     epub: 'EPUB 3',
     epubDescription: 'Hordozható e-könyv kiadvány EPUB 3 csomagként.',
     pdf: 'PDF',
-    pdfDescription: 'A publikációs profil alapján formázott nyomtatási nézet; PDF-ként a rendszer nyomtatási párbeszédablakából menthető.',
+    pdfDescription: 'A publikációs profil alapján formázott PDF-kimenet nyomtatott vagy interaktív változatban.',
+    pdfMode: 'PDF változat',
+    pdfPrint: 'Nyomtatott PDF',
+    pdfPrintDescription: 'Nyomtatásra és archiválásra optimalizált változat aktív hiperhivatkozások nélkül. A kiadványprofil oldalmérete, margói és nyomtatási stílusai érvényesülnek.',
+    pdfInteractive: 'Interaktív PDF',
+    pdfInteractiveDescription: 'Megőrzi a belső és külső hiperhivatkozásokat, így a hivatkozások, jegyzetek, ORCID/ROR és webes linkek a PDF-ben kattinthatók maradnak.',
     export: 'Exportálás',
     preparing: 'Előkészítés…',
     saved: 'Az export elkészült.',
@@ -108,7 +118,12 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     epub: 'EPUB 3',
     epubDescription: 'Portable EPUB 3 ebook publication package.',
     pdf: 'PDF',
-    pdfDescription: 'Publication-profile print view that can be saved as PDF from the system print dialog.',
+    pdfDescription: 'Publication-profile PDF output available as a print or interactive variant.',
+    pdfMode: 'PDF variant',
+    pdfPrint: 'Print PDF',
+    pdfPrintDescription: 'Print- and archive-oriented output without active hyperlinks. Publication-profile page size, margins and print styles remain authoritative.',
+    pdfInteractive: 'Interactive PDF',
+    pdfInteractiveDescription: 'Keeps internal and external hyperlinks so citations, notes, ORCID/ROR identifiers and web links remain clickable in the PDF.',
     export: 'Export',
     preparing: 'Preparing…',
     saved: 'Export completed.',
@@ -146,7 +161,12 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     epub: 'EPUB 3',
     epubDescription: 'Portables E-Book als EPUB-3-Paket.',
     pdf: 'PDF',
-    pdfDescription: 'Druckansicht nach Publikationsprofil, die über den Systemdruckdialog als PDF gespeichert werden kann.',
+    pdfDescription: 'PDF-Ausgabe nach Publikationsprofil als Druck- oder interaktive Variante.',
+    pdfMode: 'PDF-Variante',
+    pdfPrint: 'Druck-PDF',
+    pdfPrintDescription: 'Für Druck und Archivierung optimierte Ausgabe ohne aktive Hyperlinks. Seitengröße, Ränder und Druckstile des Publikationsprofils bleiben maßgeblich.',
+    pdfInteractive: 'Interaktives PDF',
+    pdfInteractiveDescription: 'Behält interne und externe Hyperlinks bei, sodass Zitate, Anmerkungen, ORCID/ROR-Kennungen und Weblinks im PDF anklickbar bleiben.',
     export: 'Exportieren',
     preparing: 'Wird vorbereitet…',
     saved: 'Export abgeschlossen.',
