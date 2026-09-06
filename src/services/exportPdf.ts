@@ -137,8 +137,9 @@ export function openPdfPrintView(
   mode: PdfExportMode = 'print',
 ): void {
   const printable = buildPdfPrintDocument(manuscript, undefined, mode);
-  const target = window.open('', '_blank', 'noopener,noreferrer');
+  const target = window.open('', '_blank');
   if (!target) throw new Error('The browser blocked the PDF print window.');
+  target.opener = null;
   target.document.open();
   target.document.write(printable);
   target.document.close();
