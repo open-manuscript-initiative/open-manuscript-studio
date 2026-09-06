@@ -27,7 +27,10 @@ export function buildPdfPrintDocument(
   mode: PdfExportMode = 'print',
   contentMode: PdfContentMode = 'publication',
 ): string {
-  if (contentMode === 'publication' && !profileSupportsOutput(profile, 'pdf')) {
+  const normalizedMode = normalizePdfExportMode(mode);
+  const normalizedContentMode = normalizePdfContentMode(contentMode);
+
+  if (normalizedContentMode === 'publication' && !profileSupportsOutput(profile, 'pdf')) {
     throw new Error(
       `Publication profile ${profile.id}@${profile.version} does not declare PDF output support.`,
     );
@@ -46,18 +49,18 @@ export function buildPdfPrintDocument(
     );
   }
 
-  const stylesheet = contentMode === 'publication'
+  const stylesheet = normalizedContentMode === 'publication'
     ? buildPublicationPrintStylesheet(profile)
     : buildEditorialPrintStylesheet();
-  const sourceHtml = contentMode === 'publication'
+  const sourceHtml = normalizedContentMode === 'publication'
     ? result.html
     : stripEmbeddedProfileStyle(result.html);
   const styledHtml = sourceHtml.replace(
     '</head>',
-    `  <style data-omi-print-style data-omi-pdf-content="${contentMode}">\n${stylesheet}\n  </style>\n</head>`,
+    `  <style data-omi-print-style data-omi-pdf-content="${normalizedContentMode}">\n${stylesheet}\n  </style>\n</head>`,
   );
 
-  return applyPdfInteractionMode(styledHtml, mode, contentMode);
+  return applyPdfInteractionMode(styledHtml, normalizedMode, normalizedContentMode);
 }
 
 /**
@@ -69,15 +72,22 @@ export function applyPdfInteractionMode(
   mode: PdfExportMode,
   contentMode: PdfContentMode = 'publication',
 ): string {
-  const outputFormat = mode === 'interactive' ? 'pdf-interactive' : 'pdf-print';
+  const normalizedMode = normalizePdfExportMode(mode);
+  const normalizedContentMode = normalizePdfContentMode(contentMode);
+  const outputFormat = normalizedMode === 'interactive' ? 'pdf-interactive' : 'pdf-print';
   const bodyClass = [
     'omi-pdf-output',
-    `omi-pdf-mode-${mode}`,
-    `omi-pdf-content-${contentMode}`,
+    `omi-pdf-mode-${normalizedMode}`,
+    `omi-pdf-content-${normalizedContentMode}`,
   ].join(' ');
-  const sourceHtml = mode === 'print' ? stripPdfHyperlinks(html) : html;
-  const modeAnnotatedHtml = annotatePdfBody(sourceHtml, bodyClass, mode, contentMode);
-  const interactionCss = mode === 'interactive'
+  const sourceHtml = normalizedMode === 'print' ? stripPdfHyperlinks(html) : html;
+  const modeAnnotatedHtml = annotatePdfBody(
+    sourceHtml,
+    bodyClass,
+    normalizedMode,
+    normalizedContentMode,
+  );
+  const interactionCss = normalizedMode === 'interactive'
     ? `
 @media print {
   body[data-omi-pdf-mode="interactive"] a[href] {
@@ -95,29 +105,50 @@ export function applyPdfInteractionMode(
 
   return modeAnnotatedHtml.replace(
     '</head>',
-    `  <meta name="omi-output-format" content="${outputFormat}">\n  <meta name="omi-pdf-mode" content="${mode}">\n  <meta name="omi-pdf-content" content="${contentMode}">\n${interactionStyle}</head>`,
+    `  <meta name="omi-output-format" content="${outputFormat}">\n  <meta name="omi-pdf-mode" content="${normalizedMode}">\n  <meta name="omi-pdf-content" content="${normalizedContentMode}">\n${interactionStyle}</head>`,
   );
 }
 
 /**
  * Opens the selected manuscript representation in a dedicated print window.
  * Browsers can print it directly or save the same print job as PDF.
+ *
+ * The generated HTML is navigated through an isolated Blob URL instead of
+ * being reinterpreted through document.write(). This keeps DOM-derived selector
+ * values away from HTML-writing sinks and preserves the popup's opener isolation.
  */
 export function openPdfPrintView(
   manuscript: OmiManuscript,
   mode: PdfExportMode = 'print',
   contentMode: PdfContentMode = 'publication',
 ): void {
-  const printable = buildPdfPrintDocument(manuscript, undefined, mode, contentMode);
+  const normalizedMode = normalizePdfExportMode(mode);
+  const normalizedContentMode = normalizePdfContentMode(contentMode);
+  const printable = buildPdfPrintDocument(
+    manuscript,
+    undefined,
+    normalizedMode,
+    normalizedContentMode,
+  );
   const target = window.open('', '_blank');
   if (!target) throw new Error('The browser blocked the PDF print window.');
   target.opener = null;
-  target.document.open();
-  target.document.write(printable);
-  target.document.close();
-  target.document.title = pdfDocumentTitle(manuscript, mode);
-  target.focus();
-  target.setTimeout(() => target.print(), 250);
+
+  const printUrl = URL.createObjectURL(
+    new Blob([printable], { type: 'text/html;charset=utf-8' }),
+  );
+  target.addEventListener('load', () => {
+    target.document.title = pdfDocumentTitle(manuscript, normalizedMode);
+    target.focus();
+    target.setTimeout(() => {
+      try {
+        target.print();
+      } finally {
+        URL.revokeObjectURL(printUrl);
+      }
+    }, 250);
+  }, { once: true });
+  target.location.replace(printUrl);
 }
 
 export function pdfDocumentTitle(
@@ -125,7 +156,15 @@ export function pdfDocumentTitle(
   mode: PdfExportMode = 'print',
 ): string {
   const title = manuscript.title.trim() || manuscript.id || 'manuscript';
-  return mode === 'interactive' ? `${title} – interactive` : title;
+  return normalizePdfExportMode(mode) === 'interactive' ? `${title} – interactive` : title;
+}
+
+function normalizePdfExportMode(mode: PdfExportMode): PdfExportMode {
+  return mode === 'interactive' ? 'interactive' : 'print';
+}
+
+function normalizePdfContentMode(contentMode: PdfContentMode): PdfContentMode {
+  return contentMode === 'editorial' ? 'editorial' : 'publication';
 }
 
 function buildPublicationPrintStylesheet(profile: OmiPublicationProfile): string {
