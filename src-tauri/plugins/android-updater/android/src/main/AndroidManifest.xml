@@ -5,7 +5,7 @@
 
     <application>
         <provider
-            android:name="androidx.core.content.FileProvider"
+            android:name="org.openmanuscript.studio.updater.OmiUpdateFileProvider"
             android:authorities="${applicationId}.omi_updates"
             android:exported="false"
             android:grantUriPermissions="true">
