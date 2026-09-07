@@ -22,6 +22,9 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_persisted_scope::init());
 
+    #[cfg(target_os = "android")]
+    let builder = builder.plugin(tauri_plugin_android_updater::init());
+
     #[cfg(desktop)]
     let builder = builder.invoke_handler(tauri::generate_handler![
         updater::check_for_update,

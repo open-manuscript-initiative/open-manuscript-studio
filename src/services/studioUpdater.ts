@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
 import { getStudioPlatform, type StudioPlatform } from '../mobile/platform/platform';
@@ -19,6 +20,7 @@ const LATEST_RELEASE_PAGE =
 type ReleaseAsset = {
   name?: string;
   browser_download_url?: string;
+  digest?: string;
 };
 
 type GitHubRelease = {
@@ -29,7 +31,11 @@ type GitHubRelease = {
   assets?: ReleaseAsset[];
 };
 
-export type StudioUpdateAction = 'native-install' | 'reload' | 'download';
+export type StudioUpdateAction =
+  | 'native-install'
+  | 'android-install'
+  | 'reload'
+  | 'download';
 
 export interface StudioUpdateInfo {
   currentVersion: string;
@@ -38,6 +44,7 @@ export interface StudioUpdateInfo {
   date?: string | null;
   action: StudioUpdateAction;
   targetUrl?: string;
+  targetDigest?: string;
 }
 
 function currentVersion(): string {
@@ -47,7 +54,7 @@ function currentVersion(): string {
 function preferredReleaseAsset(
   release: GitHubRelease,
   platform: StudioPlatform,
-): string | undefined {
+): ReleaseAsset | undefined {
   const assets = release.assets ?? [];
   const userAgent = typeof navigator === 'undefined' ? '' : navigator.userAgent;
   let pattern: RegExp | null = null;
@@ -61,8 +68,11 @@ function preferredReleaseAsset(
   }
 
   if (!pattern) return undefined;
-  return assets.find((asset) => pattern?.test(asset.name ?? ''))
-    ?.browser_download_url;
+  return assets.find((asset) => pattern?.test(asset.name ?? ''));
+}
+
+function isSha256Digest(value: string | undefined): value is string {
+  return /^sha256:[0-9a-f]{64}$/i.test(value ?? '');
 }
 
 async function fetchLatestRelease(): Promise<GitHubRelease> {
@@ -110,17 +120,31 @@ export async function checkForStudioUpdate(): Promise<StudioUpdateInfo | null> {
     return null;
   }
 
-  const targetUrl = preferredReleaseAsset(release, platform)
+  const asset = preferredReleaseAsset(release, platform);
+  const targetUrl = asset?.browser_download_url
     ?? release.html_url
     ?? LATEST_RELEASE_PAGE;
+  const targetDigest = asset?.digest;
+
+  let action: StudioUpdateAction = 'download';
+  if (platform === 'web') {
+    action = 'reload';
+  } else if (
+    platform === 'android'
+    && asset?.browser_download_url
+    && isSha256Digest(targetDigest)
+  ) {
+    action = 'android-install';
+  }
 
   return {
     currentVersion: installedVersion,
     version: latestVersion,
     body: release.body,
     date: release.published_at,
-    action: platform === 'web' ? 'reload' : 'download',
+    action,
     targetUrl,
+    targetDigest,
   };
 }
 
@@ -129,6 +153,17 @@ export async function applyStudioUpdate(
 ): Promise<void> {
   if (update.action === 'native-install') {
     await installDesktopUpdate();
+    return;
+  }
+
+  if (update.action === 'android-install') {
+    if (!update.targetUrl || !isSha256Digest(update.targetDigest)) {
+      throw new Error('The Android update asset is missing its verified release digest.');
+    }
+    await invoke('plugin:android-updater|install_update', {
+      url: update.targetUrl,
+      sha256: update.targetDigest,
+    });
     return;
   }
 

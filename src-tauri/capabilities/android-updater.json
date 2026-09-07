@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "android-updater",
+  "description": "Allow the trusted Studio main window to download a verified Open Manuscript Studio release APK and hand it to the Android package installer.",
+  "windows": [
+    "main"
+  ],
+  "platforms": [
+    "android"
+  ],
+  "permissions": [
+    "android-updater:allow-install-update"
+  ]
+}
