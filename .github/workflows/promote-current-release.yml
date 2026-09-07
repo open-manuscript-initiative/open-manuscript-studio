@@ -2,6 +2,11 @@ name: Promote current public release
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing release tag to promote, e.g. v0.1.0-beta.4'
+        required: true
+        type: string
   workflow_run:
     workflows:
       - Tauri Builds and Releases
@@ -13,31 +18,78 @@ permissions:
 
 jobs:
   promote:
-    name: Point GitHub latest release to current Studio version
+    name: Point GitHub latest release to exact tagged Studio build
     if: >-
       ${{
         github.event_name == 'workflow_dispatch' ||
         (
           github.event.workflow_run.conclusion == 'success' &&
-          github.event.workflow_run.event == 'push' &&
-          github.event.workflow_run.head_branch == 'main'
+          github.event.workflow_run.event != 'pull_request'
         )
       }}
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
+      - name: Checkout exact source commit
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || 'main' }}
+          fetch-depth: 0
 
-      - name: Resolve current release tag
+      - name: Resolve and verify release provenance
         id: release
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.release_tag }}
+          WORKFLOW_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
-          version="$(node -p "require('./package.json').version")"
-          tag="v${version}"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
-      - name: Promote current public release
+          sanitize_tag() {
+            local value="$1"
+            value="$(printf '%s' "$value" | tr -d '\r\n\t ' )"
+            printf '%s' "$value"
+          }
+
+          git fetch --tags --force
+
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            tag="$(sanitize_tag "$INPUT_TAG")"
+            expected_sha="$(git rev-list -n 1 "$tag" 2>/dev/null || true)"
+            if [[ -z "$expected_sha" ]]; then
+              echo "Release tag does not exist: $tag" >&2
+              exit 1
+            fi
+          else
+            version="$(node -p "require('./package.json').version")"
+            version="$(sanitize_tag "$version")"
+            tag="v${version}"
+            expected_sha="$WORKFLOW_SHA"
+          fi
+
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+            echo "Invalid release tag resolved: '$tag'" >&2
+            exit 1
+          fi
+
+          tag_sha="$(git rev-list -n 1 "$tag" 2>/dev/null || true)"
+          if [[ -z "$tag_sha" || "$tag_sha" != "$expected_sha" ]]; then
+            echo "Skipping promotion: $tag does not resolve to the exact workflow source commit $expected_sha."
+            echo "promote=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Skipping promotion: no published/draft release exists for $tag."
+            echo "promote=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "promote=true" >> "$GITHUB_OUTPUT"
+
+      - name: Promote exact tagged public release
+        if: steps.release.outputs.promote == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
@@ -47,9 +99,10 @@ jobs:
 
           release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.id')"
 
-          # GitHub's /releases/latest and /releases/latest/download/... routes ignore
-          # prereleases. The Studio public beta is the current downloadable public
-          # release, so expose it as GitHub's latest release as well.
+          # Public beta releases are intentionally exposed through GitHub's
+          # /releases/latest routes for the cross-platform updater fallback.
+          # This step only changes release visibility/latest metadata. It never
+          # retargets the release and never touches downloadable assets.
           gh api \
             --method PATCH \
             "repos/$GITHUB_REPOSITORY/releases/$release_id" \
@@ -58,4 +111,4 @@ jobs:
             -f make_latest=true \
             >/dev/null
 
-          echo "GitHub latest release now points to $RELEASE_TAG"
+          echo "GitHub latest release now points to immutable $RELEASE_TAG"
