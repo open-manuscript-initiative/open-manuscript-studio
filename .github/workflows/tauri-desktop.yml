@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Optional release tag, e.g. v0.1.0-beta.2. Leave empty to use package.json version.'
+        description: 'Optional new release tag, e.g. v0.1.0-beta.4. Must match package.json; existing releases are immutable.'
         required: false
         type: string
   pull_request:
@@ -322,7 +322,7 @@ jobs:
           if-no-files-found: error
 
   publish-release:
-    name: Publish downloadable builds
+    name: Publish immutable downloadable builds
     needs:
       - build-desktop
       - build-android
@@ -332,8 +332,10 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout release metadata
+      - name: Checkout exact release source
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Download build artifacts
         uses: actions/download-artifact@v8
@@ -374,10 +376,11 @@ jobs:
           (cd release-assets && sha256sum * > SHA256SUMS.txt)
           ls -lh release-assets
 
-      - name: Resolve release target
+      - name: Resolve immutable release target
         id: release
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           INPUT_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
@@ -388,17 +391,16 @@ jobs:
             printf '%s' "$value"
           }
 
+          version="$(node -p "require('./package.json').version")"
+          version="$(sanitize_tag "$version")"
+          expected_tag="v${version}"
+
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             tag="$(sanitize_tag "${GITHUB_REF#refs/tags/}")"
-            prerelease=false
           elif [[ -n "${INPUT_TAG:-}" ]]; then
             tag="$(sanitize_tag "$INPUT_TAG")"
-            prerelease=false
           else
-            version="$(node -p "require('./package.json').version")"
-            version="$(sanitize_tag "$version")"
-            tag="v${version}"
-            prerelease=true
+            tag="$expected_tag"
           fi
 
           if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
@@ -406,13 +408,52 @@ jobs:
             exit 1
           fi
 
+          if [[ "$tag" != "$expected_tag" ]]; then
+            echo "Release tag $tag does not match package.json version $version ($expected_tag)." >&2
+            exit 1
+          fi
+
+          prerelease=false
+          if [[ "$version" == *-* ]]; then
+            prerelease=true
+          fi
+
+          git fetch --tags --force
+          tag_sha="$(git rev-list -n 1 "$tag" 2>/dev/null || true)"
+
+          if [[ -n "$tag_sha" && "$tag_sha" != "$GITHUB_SHA" ]]; then
+            echo "Skipping publication: immutable tag $tag already points to $tag_sha, not this build commit $GITHUB_SHA."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Skipping publication: release $tag already exists and is immutable."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ -z "$tag_sha" ]]; then
+            echo "Creating release tag $tag at exact build commit $GITHUB_SHA"
+            git tag "$tag" "$GITHUB_SHA"
+            git push origin "refs/tags/$tag"
+            tag_sha="$GITHUB_SHA"
+          fi
+
+          if [[ "$tag_sha" != "$GITHUB_SHA" ]]; then
+            echo "Refusing release: tag/build SHA mismatch after tag creation." >&2
+            exit 1
+          fi
+
           title="Open Manuscript Studio $tag"
-          echo "Resolved release tag: $tag"
+          echo "Resolved immutable release tag: $tag -> $tag_sha"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "title=$title" >> "$GITHUB_OUTPUT"
           echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+          echo "publish=true" >> "$GITHUB_OUTPUT"
 
-      - name: Create or update GitHub Release
+      - name: Create immutable GitHub Release
+        if: steps.release.outputs.publish == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -422,32 +463,20 @@ jobs:
         run: |
           set -euo pipefail
 
-          if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            args=(
-              release create "$RELEASE_TAG"
-              --repo "$GITHUB_REPOSITORY"
-              --target "$GITHUB_SHA"
-              --title "$RELEASE_TITLE"
-              --generate-notes
-            )
-            if [[ "$PRERELEASE" == "true" ]]; then
-              args+=(--prerelease)
-            else
-              args+=(--latest)
-            fi
-            gh "${args[@]}"
+          args=(
+            release create "$RELEASE_TAG"
+            release-assets/*
+            --repo "$GITHUB_REPOSITORY"
+            --verify-tag
+            --title "$RELEASE_TITLE"
+            --generate-notes
+          )
+          if [[ "$PRERELEASE" == "true" ]]; then
+            args+=(--prerelease)
           else
-            release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.id')"
-            gh api \
-              --method PATCH \
-              "repos/$GITHUB_REPOSITORY/releases/$release_id" \
-              -f target_commitish="$GITHUB_SHA" \
-              -f name="$RELEASE_TITLE" \
-              -F prerelease="$PRERELEASE" \
-              -F draft=false \
-              >/dev/null
+            args+=(--latest)
           fi
 
-          gh release upload "$RELEASE_TAG" release-assets/* \
-            --repo "$GITHUB_REPOSITORY" \
-            --clobber
+          # New releases are created once. Existing releases are never patched,
+          # retargeted, or uploaded with --clobber.
+          gh "${args[@]}"
