@@ -32,7 +32,7 @@ const COPY: Record<string, UpdateCopy> = {
   et: { title: 'Saadaval on OMI Studio uus versioon', update: 'Uuenda', later: 'Hiljem', applying: 'Uuendamine…', failed: 'Uuendamine ebaõnnestus.' },
   fi: { title: 'OMI Studiosta on saatavilla uusi versio', update: 'Päivitä', later: 'Myöhemmin', applying: 'Päivitetään…', failed: 'Päivitys epäonnistui.' },
   fr: { title: 'Une nouvelle version d’OMI Studio est disponible', update: 'Mettre à jour', later: 'Plus tard', applying: 'Mise à jour…', failed: 'La mise à jour a échoué.' },
-  ga: { title: 'Tá leagan nua de OMI Studio ar fáil', update: 'Nuashonraigh', later: 'Níos déanaí', applying: 'Á nuashonrú…', failed: 'Níor éirigh leis an nuashonrú.' },
+  ga: { title: 'Tá leagan nua OMI Studio ar fáil', update: 'Nuashonraigh', later: 'Níos déanaí', applying: 'Á nuashonrú…', failed: 'Níor éirigh leis an nuashonrú.' },
   hr: { title: 'Dostupna je nova verzija OMI Studija', update: 'Ažuriraj', later: 'Kasnije', applying: 'Ažuriranje…', failed: 'Ažuriranje nije uspjelo.' },
   hu: { title: 'Új OMI Studio-verzió érhető el', update: 'Frissítés', later: 'Később', applying: 'Frissítés…', failed: 'A frissítés nem sikerült.' },
   it: { title: 'È disponibile una nuova versione di OMI Studio', update: 'Aggiorna', later: 'Più tardi', applying: 'Aggiornamento…', failed: 'Impossibile completare l’aggiornamento.' },
@@ -132,6 +132,7 @@ export function StudioUpdatePrompt() {
     setError('');
     try {
       await applyStudioUpdate(selectedUpdate);
+      setBusy(false);
     } catch (reason) {
       const detail = reason instanceof Error ? reason.message : String(reason);
       setError(`${copy.failed} ${detail}`);
