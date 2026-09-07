@@ -2,6 +2,11 @@ name: Promote current public release
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing release tag to promote, e.g. v0.1.0-beta.4'
+        required: true
+        type: string
   workflow_run:
     workflows:
       - Tauri Builds and Releases
@@ -9,47 +14,120 @@ on:
       - completed
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  promote:
-    name: Point GitHub latest release to current Studio version
+  verify:
+    name: Verify exact tagged Studio build
     if: >-
       ${{
         github.event_name == 'workflow_dispatch' ||
         (
           github.event.workflow_run.conclusion == 'success' &&
-          github.event.workflow_run.event == 'push' &&
-          github.event.workflow_run.head_branch == 'main'
+          github.event.workflow_run.event != 'pull_request'
         )
       }}
     runs-on: ubuntu-22.04
+    outputs:
+      promote: ${{ steps.release.outputs.promote }}
+      tag: ${{ steps.release.outputs.tag }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Resolve current release tag
+      - name: Resolve and verify release provenance through GitHub API
         id: release
         shell: bash
-        run: |
-          set -euo pipefail
-          version="$(node -p "require('./package.json').version")"
-          tag="v${version}"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-
-      - name: Promote current public release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          INPUT_TAG: ${{ inputs.release_tag }}
+          WORKFLOW_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          sanitize_tag() {
+            local value="$1"
+            value="$(printf '%s' "$value" | tr -d '\r\n\t ' )"
+            printf '%s' "$value"
+          }
+
+          resolve_tag_commit() {
+            local tag="$1"
+            local object_sha object_type
+            object_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha' 2>/dev/null || true)"
+            object_type="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.type' 2>/dev/null || true)"
+            if [[ -z "$object_sha" ]]; then
+              return 1
+            fi
+            while [[ "$object_type" == "tag" ]]; do
+              object_type="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$object_sha" --jq '.object.type')"
+              object_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$object_sha" --jq '.object.sha')"
+            done
+            [[ "$object_type" == "commit" ]] || return 1
+            printf '%s' "$object_sha"
+          }
+
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            tag="$(sanitize_tag "$INPUT_TAG")"
+            expected_sha="$(resolve_tag_commit "$tag" || true)"
+            if [[ -z "$expected_sha" ]]; then
+              echo "Release tag does not exist or does not resolve to a commit: $tag" >&2
+              exit 1
+            fi
+          else
+            expected_sha="$WORKFLOW_SHA"
+            package_json="$(gh api "repos/$GITHUB_REPOSITORY/contents/package.json?ref=$expected_sha" --jq '.content' | tr -d '\n' | base64 --decode)"
+            version="$(printf '%s' "$package_json" | jq -er '.version | strings')"
+            version="$(sanitize_tag "$version")"
+            tag="v${version}"
+          fi
+
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+            echo "Invalid release tag resolved: '$tag'" >&2
+            exit 1
+          fi
+
+          tag_sha="$(resolve_tag_commit "$tag" || true)"
+          if [[ -z "$tag_sha" || "$tag_sha" != "$expected_sha" ]]; then
+            echo "Skipping promotion: $tag does not resolve to the exact workflow source commit $expected_sha."
+            echo "promote=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" >/dev/null 2>&1; then
+            echo "Skipping promotion: no published/draft release exists for $tag."
+            echo "promote=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "promote=true" >> "$GITHUB_OUTPUT"
+
+  promote:
+    name: Point GitHub latest release to verified immutable build
+    needs: verify
+    if: needs.verify.outputs.promote == 'true'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Promote exact tagged public release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.verify.outputs.tag }}
         shell: bash
         run: |
           set -euo pipefail
+
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
+            echo "Invalid verified release tag: '$RELEASE_TAG'" >&2
+            exit 1
+          fi
 
           release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.id')"
 
-          # GitHub's /releases/latest and /releases/latest/download/... routes ignore
-          # prereleases. The Studio public beta is the current downloadable public
-          # release, so expose it as GitHub's latest release as well.
+          # Public beta releases are intentionally exposed through GitHub's
+          # /releases/latest routes for the cross-platform updater fallback.
+          # This step only changes visibility/latest metadata. It never checks
+          # out or executes workflow-run code, retargets a release, or touches
+          # downloadable assets.
           gh api \
             --method PATCH \
             "repos/$GITHUB_REPOSITORY/releases/$release_id" \
@@ -58,4 +136,4 @@ jobs:
             -f make_latest=true \
             >/dev/null
 
-          echo "GitHub latest release now points to $RELEASE_TAG"
+          echo "GitHub latest release now points to immutable $RELEASE_TAG"

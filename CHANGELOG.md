@@ -4,6 +4,41 @@ Notable changes to Open Manuscript Studio are documented in this file.
 Application release numbers are independent from the version identifiers of
 the portable OMI document model and individual renderers.
 
+## 0.1.0-beta.4 — 2026-09-07
+
+### Updates and navigation
+
+- Added cross-platform update notifications for hosted, desktop and mobile
+  Studio clients, including GitHub release fallback when signed updater
+  metadata is unavailable.
+- Simplified Studio navigation to a one-step menu on desktop and mobile while
+  preserving the same-position close control and responsive behavior.
+
+### PDF and print export
+
+- Added independent publication-content and PDF-behavior choices: typeset
+  publication or neutral editorial manuscript, combined with print/archive or
+  interactive PDF output.
+- Preserved clickable internal and external links in interactive PDFs while
+  removing active hyperlinks from print/archive output.
+- Exposed the same PDF choices in the general Export panel and the publication
+  print/export panel with regression coverage.
+
+### Release engineering
+
+- Made published releases immutable in CI: later `main` builds can no longer
+  retarget an existing release or replace its downloadable assets.
+- Release publication now requires the release tag to resolve to the exact
+  build commit; a pre-existing release is never patched or uploaded with
+  `--clobber`.
+- Hardened current-release promotion so it only promotes a release whose tag
+  resolves to the workflow run's exact source commit.
+
+### Compatibility
+
+- No OMI document migration is required. OJS and OMP integration packages are
+  released separately on their own version lines.
+
 ## 0.1.0-beta.3 — 2026-09-05
 
 ### PKP workflow integration
