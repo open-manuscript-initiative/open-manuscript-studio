@@ -1,0 +1,132 @@
+name: CodeQL
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '23 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+  packages: read
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: actions
+            build-mode: none
+          - language: javascript-typescript
+            build-mode: none
+          - language: rust
+            build-mode: none
+          - language: java-kotlin
+            build-mode: manual
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - name: Set up Node.js for Android build
+        if: matrix.language == 'java-kotlin'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Set up Java for Android build
+        if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Install Rust with Android targets
+        if: matrix.language == 'java-kotlin'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: Cache Rust Android build
+        if: matrix.language == 'java-kotlin'
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        if: matrix.language == 'java-kotlin'
+        run: npm ci
+
+      - name: Configure Android SDK and NDK
+        if: matrix.language == 'java-kotlin'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          android_home="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          ndk_home="${ANDROID_NDK_HOME:-${ANDROID_NDK_ROOT:-${ANDROID_NDK:-}}}"
+
+          if [[ -z "$android_home" || ! -d "$android_home" ]]; then
+            echo 'Android SDK not found on the runner.' >&2
+            exit 1
+          fi
+
+          if [[ -z "$ndk_home" || ! -f "$ndk_home/source.properties" ]]; then
+            if [[ -d "$android_home/ndk" ]]; then
+              ndk_home="$(find "$android_home/ndk" -mindepth 1 -maxdepth 1 -type d -print | sort -V | tail -n 1)"
+            fi
+          fi
+
+          if [[ -z "$ndk_home" || ! -f "$ndk_home/source.properties" ]]; then
+            echo 'Android NDK not found on the runner.' >&2
+            exit 1
+          fi
+
+          echo "ANDROID_HOME=$android_home" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$android_home" >> "$GITHUB_ENV"
+          echo "NDK_HOME=$ndk_home" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_HOME=$ndk_home" >> "$GITHUB_ENV"
+
+      - name: Initialize Tauri Android project
+        if: matrix.language == 'java-kotlin'
+        env:
+          CI: 'true'
+        run: npm run tauri -- android init --ci
+
+      - name: Generate Android launcher icons
+        if: matrix.language == 'java-kotlin'
+        run: npm run icons:generate
+
+      - name: Build Android code for CodeQL
+        if: matrix.language == 'java-kotlin'
+        env:
+          CI: 'true'
+        run: npm run tauri -- android build --debug --apk --ci
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
