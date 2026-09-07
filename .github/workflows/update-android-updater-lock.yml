@@ -1,0 +1,43 @@
+name: Sync Android updater lockfile
+
+on:
+  push:
+    branches:
+      - fix/android-native-updater
+    paths:
+      - src-tauri/Cargo.toml
+      - src-tauri/plugins/android-updater/**
+      - .github/workflows/update-android-updater-lock.yml
+
+permissions:
+  contents: write
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          ref: fix/android-native-updater
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Resolve path dependency without dependency upgrades
+        working-directory: src-tauri
+        run: cargo metadata --format-version 1 > /dev/null
+
+      - name: Commit lockfile change
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- src-tauri/Cargo.lock; then
+            echo "Cargo.lock is already synchronized."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src-tauri/Cargo.lock
+          git commit -m "Sync lockfile for Android native updater"
+          git push origin HEAD:fix/android-native-updater
