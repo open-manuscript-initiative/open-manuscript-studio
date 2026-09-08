@@ -1,4 +1,5 @@
 import type { IdentityMigratedManuscript } from './migrateIdentityModel';
+import { createDocumentStructureProfile } from '../model/documentProfile';
 import {
   OMI_VERSIONING_MODEL_VERSION,
   createInitialVersioningEnvelope,
@@ -24,8 +25,11 @@ import type {
 export function migrateVersioningModel(
   manuscript: IdentityMigratedManuscript,
 ): OmiManuscript {
-  const state = extractState(manuscript);
   const existingHistory = manuscript.revisionHistory;
+  const state = migrateKnownStandaloneDocumentStructure(
+    extractState(manuscript),
+    existingHistory,
+  );
 
   if (
     existingHistory &&
@@ -47,6 +51,21 @@ export function migrateVersioningModel(
       completeness: 'shallow',
     }),
   });
+}
+
+function migrateKnownStandaloneDocumentStructure(
+  state: OmiManuscriptState,
+  history: IdentityMigratedManuscript['revisionHistory'],
+): OmiManuscriptState {
+  if (state.documentStructure) return state;
+
+  const rootSummary = history?.revisions[0]?.summary ?? '';
+  if (!rootSummary.startsWith('Imported DOCX manuscript:')) return state;
+
+  return {
+    ...state,
+    documentStructure: createDocumentStructureProfile('study'),
+  };
 }
 
 function extractState(
