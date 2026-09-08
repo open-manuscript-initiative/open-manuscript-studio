@@ -111,6 +111,7 @@ model User {
   cloudConnections          CloudConnection[]
   cloudBackups              CloudBackup[]
   integrations              UserIntegration[]
+  directSubmissions         DirectSubmission[]
 
   @@map("users")
 }
@@ -268,6 +269,7 @@ model IntegrationProviderConfig {
 }
 
 model UserIntegration {
+  directSubmissions  DirectSubmission[]
   id                 String    @id @default(uuid()) @db.Uuid
   userId             String    @map("user_id") @db.Uuid
   providerId         String    @map("provider_id") @db.VarChar(128)
@@ -355,4 +357,24 @@ model CloudBackup {
   @@index([manuscriptId, userId, createdAt])
   @@index([connectionId])
   @@map("cloud_backups")
+}
+
+// One new submission per manuscript and destination. Credentials are never persisted here.
+model DirectSubmission {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  connectionId   String   @map("connection_id") @db.Uuid
+  manuscriptId   String   @map("manuscript_id") @db.VarChar(128)
+  digest         String   @db.VarChar(64)
+  baseUrl        String   @map("base_url") @db.VarChar(2048)
+  status         String   @default("NEW") @db.VarChar(32)
+  externalId     Int?     @map("external_id")
+  publicationId  Int?     @map("publication_id")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connection     UserIntegration @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, connectionId, manuscriptId])
+  @@map("direct_submissions")
 }

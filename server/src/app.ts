@@ -34,6 +34,7 @@ import { peerReviewRouter } from './routes/peerReviewRoutes.js';
 import { proofreadingRouter } from './routes/proofreadingRoutes.js';
 import { publishingConnectionRouter } from './routes/publishingConnectionRoutes.js';
 import { reviewManuscriptRouter } from './routes/reviewManuscriptRoutes.js';
+import { directSubmissionRouter } from './routes/directSubmissionRoutes.js';
 import { userIntegrationRouter } from './routes/userIntegrationRoutes.js';
 
 export const app = express();
@@ -62,6 +63,7 @@ app.use(
   }),
 );
 
+app.use('/api/integrations/connections/:connectionId/direct-submission', express.json({ limit: '25mb' }));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/api', (_request, response) => {
@@ -90,6 +92,7 @@ app.use('/api', authorSignatureRouter);
 app.use('/api', cloudOAuthRouter);
 app.use('/api', cloudRouter);
 app.use('/api', userIntegrationRouter);
+app.use('/api', directSubmissionRouter);
 app.use('/api', agentReviewRouter);
 app.use('/api', integrationExecutionRouter);
 app.use('/api', proofreadingRouter);
