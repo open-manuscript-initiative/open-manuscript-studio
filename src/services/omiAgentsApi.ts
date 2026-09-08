@@ -1,4 +1,5 @@
 import { isTauri } from '@tauri-apps/api/core';
+import { normalizeIntegrationApiBaseUrl } from './integrationApiBaseUrl';
 
 import type {
   AgentRunRequest,
@@ -8,7 +9,7 @@ import type {
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
 const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org/api';
 const IS_TAURI = detectTauriRuntime();
-const API_BASE_URL = normalizeBaseUrl(
+const API_BASE_URL = normalizeIntegrationApiBaseUrl(
   import.meta.env.VITE_API_BASE_URL ??
     (IS_TAURI && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '/api'),
 );
@@ -175,8 +176,4 @@ function detectTauriRuntime(): boolean {
   const location = globalThis.location;
   if (!location) return false;
   return location.protocol === 'tauri:' || location.hostname === 'tauri.localhost';
-}
-
-function normalizeBaseUrl(value: string): string {
-  return value.trim().replace(/\/$/, '');
 }
