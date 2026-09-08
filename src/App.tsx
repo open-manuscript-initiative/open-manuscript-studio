@@ -179,6 +179,9 @@ function StudioApplication() {
   const activeDesktopTabIdRef = useRef(activeDesktopTabId);
   const switchingDesktopTabRef = useRef(false);
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
+  // Effect cleanup must not discard a redeemed one-time token. Reuse the
+  // request when React replays the effect while its first fetch is pending.
+  const ojsHandoffRequests = useRef(new Map<string, Promise<AssignmentAwareLaunch | null>>());
 
   useEffect(() => {
     if (reviewMode || mobileStudio) return;
@@ -341,7 +344,12 @@ function StudioApplication() {
 
         let launch: AssignmentAwareLaunch | null = null;
         if (ojsHandoffToken && ojsHandoffToken !== '1') {
-          launch = await fetchOjsHandoff(ojsHandoffToken);
+          let request = ojsHandoffRequests.current.get(ojsHandoffToken);
+          if (!request) {
+            request = fetchOjsHandoff(ojsHandoffToken);
+            ojsHandoffRequests.current.set(ojsHandoffToken, request);
+          }
+          launch = await request;
         } else {
           launch = readOjsLaunchPayload() as AssignmentAwareLaunch | null;
         }
