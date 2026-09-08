@@ -1,5 +1,6 @@
 import { getHelpCopy, type HelpCopy } from './help';
 import { getAdditionalHelpCopy } from './helpAdditional';
+import { appendDirectSubmissionHelp } from './helpDirectSubmission';
 import { enrichAdditionalHelp } from './helpEnrichment';
 import { italianHelp } from './helpItalian';
 import {
@@ -25,15 +26,23 @@ const fullHelpByLocale: Partial<Record<string, HelpCopy>> = {
 };
 
 export function getLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy {
-  if (locale === 'it') return italianHelp;
+  let copy: HelpCopy;
 
-  const full = fullHelpByLocale[locale];
-  if (full) return full;
+  if (locale === 'it') {
+    copy = italianHelp;
+  } else {
+    const full = fullHelpByLocale[locale];
+    if (full) {
+      copy = full;
+    } else {
+      // Compatibility path for any locale source introduced before it is promoted
+      // into the explicit full-help map above.
+      const additional = getAdditionalHelpCopy(locale);
+      copy = additional
+        ? enrichAdditionalHelp(locale, additional)
+        : enrichAdditionalHelp(locale, getHelpCopy(locale as SupportedLocale));
+    }
+  }
 
-  // Compatibility path for any locale source introduced before it is promoted
-  // into the explicit full-help map above.
-  const additional = getAdditionalHelpCopy(locale);
-  if (additional) return enrichAdditionalHelp(locale, additional);
-
-  return enrichAdditionalHelp(locale, getHelpCopy(locale as SupportedLocale));
+  return appendDirectSubmissionHelp(locale, copy);
 }
