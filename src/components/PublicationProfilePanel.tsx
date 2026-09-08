@@ -26,6 +26,7 @@ import {
   validateManuscriptForPublication,
   type OmiPublicationProfile,
 } from '../model/publicationProfile';
+import { DirectSubmissionPanel } from './DirectSubmissionPanel';
 import { HtmlExportPanel } from './HtmlExportPanel';
 import { IdmlPublicationStyleImportPanel } from './IdmlPublicationStyleImportPanel';
 import { JatsExportPanel } from './JatsExportPanel';
@@ -90,6 +91,8 @@ export function PublicationProfilePanel() {
         </div>
         <LayoutTemplate size={22} aria-hidden="true" />
       </div>
+
+      <DirectSubmissionPanel />
 
       <div className="publication-profile-experimental-note">{copy.experimental}</div>
 

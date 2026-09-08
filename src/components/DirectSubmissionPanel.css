@@ -1,0 +1,11 @@
+.omi-direct-submission { border: 1px solid var(--border-color, #d8d5d2); border-radius: 12px; padding: 1rem; margin: 1rem 0; overflow-wrap: anywhere; }
+.omi-direct-submission label { display: grid; gap: .35rem; margin: .65rem 0; }
+.omi-direct-submission input, .omi-direct-submission textarea, .omi-direct-submission select { box-sizing: border-box; width: 100%; min-width: 0; padding: .55rem; font: inherit; }
+.omi-direct-submission fieldset { border: 0; padding: 0; min-width: 0; }
+.omi-direct-submission textarea { min-height: 7rem; }
+.omi-direct-submission-author { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; border-bottom: 1px solid #ddd; }
+.omi-direct-submission button { margin: .5rem .5rem .5rem 0; padding: .6rem .8rem; font: inherit; }
+.omi-direct-submission .omi-direct-submission-confirm { display: flex; align-items: flex-start; }
+.omi-direct-submission-confirm input { width: auto; flex: none; }
+.omi-direct-submission-terms { white-space: pre-wrap; max-height: 20rem; overflow-y: auto; padding: .5rem; }
+@media (max-width: 640px) { .omi-direct-submission-author { grid-template-columns: minmax(0, 1fr); } }

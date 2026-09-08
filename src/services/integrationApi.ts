@@ -320,3 +320,17 @@ function detectTauriRuntime(): boolean {
 
   return location.protocol === 'tauri:' || location.hostname === 'tauri.localhost';
 }
+
+export async function requestDirectSubmission(
+  connectionId: string,
+  input: import('./directSubmissionTypes').DirectSubmissionRequest,
+): Promise<import('./directSubmissionTypes').DirectSubmissionResponse> {
+  const response = await fetch(`${API_BASE_URL}/integrations/connections/${encodeURIComponent(connectionId)}/direct-submission`, {
+    method: 'POST', credentials: 'include', cache: 'no-store',
+    headers: integrationHeaders({ Accept: 'application/json', 'Content-Type': 'application/json' }),
+    body: JSON.stringify(input),
+  });
+  const result = await parseJsonResponse<import('./directSubmissionTypes').DirectSubmissionResponse>(response);
+  if (!response.ok && !result.error) throw new Error(`Submission request failed: HTTP ${response.status}.`);
+  return result;
+}
