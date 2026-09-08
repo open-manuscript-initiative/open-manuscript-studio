@@ -13,6 +13,7 @@ import { useTranslation } from '../i18n';
 import { getAccountPanelCopy } from '../i18n/accountPanelTranslations';
 import { getCentralAdminContext, type CentralAdminRole } from '../services/centralAdminApi';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
+import { AccountDeletionSection } from './AccountDeletionSection';
 import { CentralAdministrationSettings } from './CentralAdministrationSettings';
 import { InstitutionalProfilesSettings } from './InstitutionalProfilesSettings';
 import { LinkedIdentitiesSettings } from './LinkedIdentitiesSettings';
@@ -222,6 +223,8 @@ export function AccountPanel() {
             <LogOut size={17} aria-hidden="true" />
             {labels.logout}
           </button>
+
+          <AccountDeletionSection email={user.email} />
         </aside>
       </div>
     </section>
