@@ -1,4 +1,5 @@
 import { useStudioStore } from './useStudioStore';
+import { createDocumentStructureProfile } from '../model/documentProfile';
 import {
   createContribution,
   createPersonAgent,
@@ -53,6 +54,7 @@ export function applyDocxImportPlan(
     title: plan.title,
     abstract: plan.abstract,
     keywords: plan.keywords,
+    documentStructure: createDocumentStructureProfile('study'),
     sectionNumberingStyle: 'decimal',
     citationStyle: current.citationStyle ?? 'apa-7',
     crossReferenceNumbering: 'document',

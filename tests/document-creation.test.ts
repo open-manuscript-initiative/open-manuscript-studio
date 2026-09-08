@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { createBlankManuscript } from '../src/document/createBlankManuscript.ts';
+import { migrateVersioningModel } from '../src/document/migrateVersioningModel.ts';
 import {
   getDocumentStructureProfile,
 } from '../src/model/documentProfile.ts';
@@ -66,6 +67,24 @@ test('legacy manuscripts keep continuous apparatus while using volume editor bou
     referencesPlacement: 'volume-end',
     listsPlacement: 'volume-end',
   });
+});
+
+test('legacy DOCX imports recover their standalone study profile on load', () => {
+  const legacy = structuredClone(createBlankManuscript({
+    kind: 'study',
+    locale: 'hu',
+  }));
+  delete legacy.documentStructure;
+
+  const rootRevision = legacy.revisionHistory.revisions[0];
+  assert.ok(rootRevision);
+  rootRevision.summary = 'Imported DOCX manuscript: article.docx';
+  rootRevision.changeSet.summary = rootRevision.summary;
+  delete rootRevision.snapshot.state.documentStructure;
+  delete (rootRevision as typeof rootRevision & { stateDigest?: unknown }).stateDigest;
+
+  const migrated = migrateVersioningModel(legacy);
+  assert.equal(getDocumentStructureProfile(migrated).kind, 'study');
 });
 
 test('empty title-matter fields are removed without affecting populated fields', () => {
