@@ -1,4 +1,5 @@
 import { createSampleManuscript } from '../../document/sampleManuscript';
+import { createDocumentStructureProfile } from '../../model/documentProfile';
 import {
   createContribution,
   createPersonAgent,
@@ -238,6 +239,8 @@ export function createManuscriptFromOjsLaunch(
 
   return {
     ...base,
+    // An OJS submission is one study, even when its source has many sections.
+    documentStructure: createDocumentStructureProfile('study'),
     locale,
     title,
     subtitle: subtitle || undefined,

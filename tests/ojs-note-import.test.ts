@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { getDocumentStructureProfile } from '../src/model/documentProfile.ts';
+import { createManuscriptFromOjsLaunch as importLocalizedLaunch } from '../src/integrations/ojs/importOjsLaunchLocalized.ts';
 
 import {
   createManuscriptFromOjsLaunch,
@@ -25,6 +27,33 @@ function launchWithSource(
     sourceDocument,
   };
 }
+
+test('OJS articles remain standalone studies through both import paths', () => {
+  for (const importer of [createManuscriptFromOjsLaunch, importLocalizedLaunch]) {
+    const launch = launchWithSource({
+      kind: 'docx',
+      paragraphs: [
+        { text: 'Bevezetés', headingLevel: 1 },
+        { text: 'Első szakasz.' },
+        { text: 'Eredmények', headingLevel: 1 },
+        { text: 'Második szakasz.' },
+      ],
+    });
+    const manuscript = importer(launch);
+    assert.ok(manuscript);
+    assert.equal(manuscript.sections.length, 2);
+    assert.equal(manuscript.title, 'Teszt kézirat');
+    const profile = getDocumentStructureProfile(manuscript);
+    assert.equal(profile.kind, 'study');
+    assert.equal(profile.volumeKind, undefined);
+    assert.equal(profile.noteNumberingScope, 'continuous');
+
+    delete launch.sourceDocument;
+    const fallback = importer(launch);
+    assert.ok(fallback);
+    assert.equal(getDocumentStructureProfile(fallback).kind, 'study');
+  }
+});
 
 test('OJS DOCX footnote becomes an OMI note marker and annotation', () => {
   const manuscript = createManuscriptFromOjsLaunch(
