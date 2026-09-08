@@ -44,7 +44,7 @@ In GitHub, open:
 
 Create these secrets:
 
-- `ANDROID_KEY_BASE64` — complete Base64 content of the upload keystore.
+- `ANDROID_KEYSTORE_BASE64` — complete Base64 content of the upload keystore.
 - `ANDROID_KEY_ALIAS` — normally `upload`.
 - `ANDROID_KEYSTORE_PASSWORD` — keystore password.
 - `ANDROID_KEY_PASSWORD` — key password. This is optional; when omitted, the workflow uses `ANDROID_KEYSTORE_PASSWORD`.
@@ -62,7 +62,7 @@ For the first test, leave **Upload the signed AAB to Google Play after building*
 
 The workflow will:
 
-1. install Node.js 24 and JDK 21;
+1. install Node.js 24 and JDK 17;
 2. install the Android SDK/NDK and Rust Android targets;
 3. regenerate the Tauri Android project;
 4. configure release signing from GitHub Secrets;
@@ -78,7 +78,7 @@ The first release for package `org.openmanuscript.studio` must be created in Goo
 
 Create the Open Manuscript Studio application in Play Console, enable Play App Signing, create an **Internal testing** release, and manually upload the signed AAB produced by the workflow.
 
-Google Play records the package identifier and upload certificate during this initial setup.
+Google Play records the package identifier and upload certificate during this initial setup. Once this application/release foundation exists, subsequent testing releases can use the automated upload path described below.
 
 ## 6. Configure automated Play uploads
 
