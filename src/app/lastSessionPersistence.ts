@@ -49,8 +49,12 @@ export async function initializeLastSessionPersistence(): Promise<void> {
   persistenceStarted = true;
   sessionClosed = isDocumentClosedState();
 
+  const initialManuscript = useStudioStore.getState().manuscript;
   const restored = sessionClosed ? null : await readLastSession().catch(() => null);
-  if (restored?.manuscript) {
+  // Bootstrap can mount the app before IndexedDB finishes. A newer import or
+  // edit must take precedence over the persisted snapshot captured at startup.
+  if (restored?.manuscript && !sessionClosed
+    && useStudioStore.getState().manuscript === initialManuscript) {
     const desktopSession = restored.version === 2
       ? normalizeDesktopSession(restored.desktopSession)
       : null;
