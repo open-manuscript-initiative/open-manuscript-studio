@@ -5,6 +5,7 @@ import { clearDocumentClosedState } from '../app/documentCloseState';
 import { resumeLastSessionPersistence } from '../app/lastSessionPersistence';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import '../styles/closed-document.css';
 import { StudioMenuWithHelp } from './StudioMenuWithHelp';
 import { NewDocumentActions } from './NewDocumentActions';
 
@@ -25,8 +26,8 @@ export function ClosedDocumentScreen() {
   }, []);
 
   return (
-    <main className="auth-page" aria-labelledby="closed-document-title">
-      <section className="auth-card">
+    <main className="auth-page closed-document-page" aria-labelledby="closed-document-title">
+      <section className="auth-card closed-document-card">
         <div className="auth-brand">
           <div className="auth-brand-name">OMI Studio</div>
           <div className="auth-brand-description">{copy.brand}</div>

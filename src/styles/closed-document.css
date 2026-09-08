@@ -1,0 +1,99 @@
+.closed-document-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: clamp(1rem, 3vw, 3rem);
+}
+
+.closed-document-page .closed-document-card {
+  width: min(100%, 68rem);
+  max-width: 68rem;
+  padding: clamp(1.5rem, 3vw, 2.75rem);
+}
+
+.closed-document-card .auth-brand {
+  margin-bottom: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.closed-document-card .auth-header {
+  width: min(100%, 48rem);
+  margin: 0 auto clamp(1.25rem, 2vw, 1.75rem);
+  text-align: center;
+}
+
+.closed-document-card .auth-header h1 {
+  font-size: clamp(1.75rem, 3vw, 2.4rem);
+}
+
+.closed-document-card .auth-form,
+.closed-document-card .omi-new-document-actions--empty-workspace {
+  width: 100%;
+}
+
+.closed-document-card .omi-new-document-heading {
+  margin-bottom: 0.9rem;
+}
+
+.closed-document-card .omi-new-document-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.closed-document-card .omi-new-document-grid > button {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+}
+
+.closed-document-card .auth-primary-button {
+  min-height: 3rem;
+}
+
+.closed-document-card .auth-field-hint {
+  margin: 0;
+  text-align: center;
+}
+
+@media (max-width: 56rem) {
+  .closed-document-page .closed-document-card {
+    width: min(100%, 46rem);
+  }
+
+  .closed-document-card .omi-new-document-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .closed-document-card .omi-new-document-grid > button:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 40rem) {
+  .closed-document-page {
+    align-items: flex-start;
+    padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+    background: #ffffff;
+  }
+
+  .closed-document-page .closed-document-card {
+    width: 100%;
+    max-width: none;
+    padding: 0.75rem 0.25rem 1.5rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .closed-document-card .auth-header {
+    text-align: left;
+  }
+
+  .closed-document-card .omi-new-document-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .closed-document-card .omi-new-document-grid > button:last-child {
+    grid-column: auto;
+  }
+}
