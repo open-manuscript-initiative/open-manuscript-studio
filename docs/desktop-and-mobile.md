@@ -138,7 +138,7 @@ Build a signed App Store Connect IPA after configuring the required Apple signin
 npm run ios:build:app-store
 ```
 
-The iOS-specific Tauri configuration uses the bundle identifier `org.openmanuscript.studio`, minimum system version 14.0, App Store short version `0.1.0` and build number `4`. The Studio release line remains `0.1.0-alpha.4` in product/release metadata.
+The iOS-specific Tauri configuration uses the bundle identifier `org.openmanuscript.studio`, minimum system version 14.0, App Store short version `0.1.0` and build number `6`. The Studio release line remains `0.1.0-beta.6` in product/release metadata.
 
 ### iOS/iPadOS document storage
 

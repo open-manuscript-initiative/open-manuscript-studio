@@ -4,6 +4,67 @@ Notable changes to Open Manuscript Studio are documented in this file.
 Application release numbers are independent from the version identifiers of
 the portable OMI document model and individual renderers.
 
+## 0.1.0-beta.6 — 2026-09-09
+
+### Account lifecycle and privacy
+
+- Added permanent, user-initiated Studio account deletion with explicit
+  confirmation and safeguards for the final institutional or central owner.
+- Removed account-scoped sessions, profiles, integration credentials, cloud
+  metadata and submission records while retaining shared scholarly history
+  only through an anonymized disabled principal.
+- Added a responsive account-deletion interface for web, desktop and mobile.
+
+### OJS and OMP launch continuity
+
+- Preserved pending OJS and OMP manuscript launches while users authenticate,
+  including password and federated sign-in returns.
+- Added localized sign-in guidance and bounded tab-scoped token recovery
+  without weakening launch signatures, permissions or server-side expiry.
+- Added browser regression coverage for delayed launch consumption and
+  automatic manuscript opening after authentication.
+
+### DOCX import fidelity and performance
+
+- Preserved Word content controls in document order and retained text boxes,
+  note-only paragraphs, tables, images, notes and inline semantics across the
+  standard and monograph import paths.
+- Corrected generated-index cleanup while preserving exact index-entry
+  locations.
+- Reduced large-document memory pressure by caching the DOCX source buffer and
+  replacing serialization-based revision cloning with detached structural
+  cloning.
+- Added complex DOCX integration fixtures and revision-detachment regression
+  coverage.
+
+### Compatibility
+
+- No OMI document migration is required. OJS and OMP integration packages
+  remain on their independent release lines.
+
+## 0.1.0-beta.5 — 2026-09-08
+
+### Direct publishing integration
+
+- Added direct author submission from Studio to configured OJS and OMP
+  installations with stored submission receipts and localized guidance.
+- Opened imported OJS articles as standalone studies and preserved first-launch
+  manuscripts during session restoration.
+- Restored the production `/api` integration prefix and documented the complete
+  direct-submission workflow.
+
+### Android and release quality
+
+- Added the native Android package-installer handoff for verified Studio
+  updates.
+- Aligned Android SDK, signing and release-build configuration and extended
+  CodeQL analysis to the Tauri Android Kotlin sources.
+
+### Compatibility
+
+- No OMI document migration is required. OJS and OMP integration packages
+  remain on their independent release lines.
+
 ## 0.1.0-beta.4 — 2026-09-07
 
 ### Updates and navigation
