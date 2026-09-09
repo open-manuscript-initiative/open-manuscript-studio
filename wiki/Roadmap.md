@@ -1,6 +1,6 @@
 # Roadmap
 
-Open Manuscript Studio is on the `0.1.0-beta.2` public beta line. The authoring, account, review, import/export, native packaging, and institutional administration layers are implemented; the next milestone is a stable release candidate.
+Open Manuscript Studio is on the `0.1.0-beta.6` public beta line. The authoring, account, review, import/export, native packaging, and institutional administration layers are implemented; the next milestone is a stable release candidate.
 
 This page records direction rather than promising dates. The [issue tracker](https://github.com/open-manuscript-initiative/open-manuscript-studio/issues), pull requests, and [CHANGELOG](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/CHANGELOG.md) are the authoritative sources for individual work items.
 
