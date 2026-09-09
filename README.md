@@ -40,7 +40,7 @@ The iOS/iPadOS target is no longer only architectural planning: Tauri/Xcode proj
 - manuscript, metadata and interface language handling;
 - 24 supported European UI languages with localized help;
 - IANA time-zone preferences and portable account settings;
-- large DOCX import with deferred editor mounting for improved long-document responsiveness;
+- large DOCX import with monograph mode and one buffered package read per import;
 - direct DOCX-to-OMI opening with structural preservation of headings, inline semantics, notes, lists, references and tables.
 
 ### Accounts, identities and profiles

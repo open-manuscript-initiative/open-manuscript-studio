@@ -701,7 +701,7 @@ const RESTORATION_OPERATION_TYPES: Partial<
 function cloneManuscriptState(
   state: OmiManuscriptState,
 ): OmiManuscriptState {
-  const cloned = JSON.parse(JSON.stringify(state)) as OmiManuscriptState;
+  const cloned = cloneJsonSerializable(state) as OmiManuscriptState;
 
   return {
     ...cloned,
@@ -714,5 +714,40 @@ function clonePortableValue(value: unknown): unknown {
     return undefined;
   }
 
-  return JSON.parse(JSON.stringify(value)) as unknown;
+  return cloneJsonSerializable(value);
+}
+
+/**
+ * Deep-clones the JSON data model without creating a second full serialized
+ * manuscript string. Immutable primitive strings are safely shared, while
+ * every object and array receives a detached identity for revision snapshots.
+ */
+function cloneJsonSerializable(value: unknown, arrayItem = false): unknown {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'bigint') {
+    throw new TypeError('BigInt values cannot be stored in portable manuscript JSON.');
+  }
+  if (value === undefined || typeof value === 'function' || typeof value === 'symbol') {
+    return arrayItem ? null : undefined;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => cloneJsonSerializable(item, true));
+  }
+
+  const output: Record<string, unknown> = {};
+  for (const key of Object.keys(value)) {
+    const cloned = cloneJsonSerializable((value as Record<string, unknown>)[key]);
+    if (cloned === undefined) continue;
+    Object.defineProperty(output, key, {
+      value: cloned,
+      enumerable: true,
+      configurable: true,
+      writable: true,
+    });
+  }
+  return output;
 }
