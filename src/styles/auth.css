@@ -222,6 +222,51 @@
   text-align: center;
 }
 
+.auth-pending-launch-shell {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  background:
+    linear-gradient(
+      180deg,
+      #f8fafc 0%,
+      #eef2f7 100%
+    );
+}
+
+.auth-pending-launch-shell > .auth-page {
+  min-height: 0;
+  flex: 1;
+  padding-top: 1rem;
+}
+
+.auth-pending-external-launch {
+  width: min(42rem, calc(100% - 2rem));
+  box-sizing: border-box;
+  margin: max(0.75rem, env(safe-area-inset-top)) auto 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid #a8c7fa;
+  border-radius: 0.75rem;
+  background: #eff6ff;
+  color: #1e3a8a;
+  box-shadow: 0 0.4rem 1.2rem rgb(30 58 138 / 8%);
+  line-height: 1.45;
+}
+
+.auth-pending-external-launch strong,
+.auth-pending-external-launch span {
+  display: block;
+}
+
+.auth-pending-external-launch strong {
+  margin-bottom: 0.2rem;
+  font-size: 0.925rem;
+}
+
+.auth-pending-external-launch span {
+  font-size: 0.85rem;
+}
+
 @media (max-width: 40rem) {
   .auth-page {
     align-items: flex-start;
@@ -248,5 +293,18 @@
     height: 4rem;
     margin-bottom: 0.75rem;
     border-radius: 0.875rem;
+  }
+
+  .auth-pending-launch-shell {
+    background: #ffffff;
+  }
+
+  .auth-pending-launch-shell > .auth-page {
+    padding-top: 0.5rem;
+  }
+
+  .auth-pending-external-launch {
+    width: calc(100% - 1.5rem);
+    margin-top: max(0.5rem, env(safe-area-inset-top));
   }
 }
