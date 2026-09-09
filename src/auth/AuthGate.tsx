@@ -7,9 +7,15 @@ import {
 import { listenForNativeOrcidHandoff } from '../services/authApi';
 import { isNativeStudio } from '../services/nativeManuscriptFile';
 import {
+  clearPendingExternalLaunchStorageIfLocationMatches,
+  getPendingExternalLaunchFromLocation,
+  rememberPendingExternalLaunchFromLocation,
+} from '../services/pendingExternalLaunch';
+import {
   getCurrentUser,
   useAuthStore,
 } from '../store/authStore';
+import { PendingExternalLaunchNotice } from './PendingExternalLaunchNotice';
 
 interface AuthGateProps {
   children: ReactNode;
@@ -33,6 +39,21 @@ export function AuthGate({
   const handledNativeUrls = useRef(new Set<string>());
   const passwordResetRequested = new URLSearchParams(window.location.search)
     .has('resetPassword');
+  const pendingExternalLaunch = getPendingExternalLaunchFromLocation();
+
+  useEffect(() => {
+    if (!pendingExternalLaunch) return;
+
+    if (currentUser) {
+      clearPendingExternalLaunchStorageIfLocationMatches();
+    } else {
+      rememberPendingExternalLaunchFromLocation();
+    }
+  }, [
+    currentUser,
+    pendingExternalLaunch?.platform,
+    pendingExternalLaunch?.token,
+  ]);
 
   useEffect(() => {
     let active = true;
@@ -126,6 +147,15 @@ export function AuthGate({
     };
   }, [completeNativeOrcidHandoff, initializeSession]);
 
+  const unauthenticatedFallback = pendingExternalLaunch ? (
+    <div className="auth-pending-launch-shell">
+      <PendingExternalLaunchNotice platform={pendingExternalLaunch.platform} />
+      {fallback}
+    </div>
+  ) : (
+    <>{fallback}</>
+  );
+
   if (!isInitialized) {
     // On the hosted web Studio, render the real public login page immediately
     // while the session check runs. This keeps the first meaningful paint and
@@ -134,7 +164,7 @@ export function AuthGate({
     // retain the compact startup state while their deep-link/session bootstrap
     // completes.
     if (!isNativeStudio()) {
-      return <>{fallback}</>;
+      return unauthenticatedFallback;
     }
 
     return (
@@ -151,7 +181,7 @@ export function AuthGate({
   }
 
   if (!currentUser || passwordResetRequested) {
-    return <>{fallback}</>;
+    return unauthenticatedFallback;
   }
 
   return <>{children}</>;
