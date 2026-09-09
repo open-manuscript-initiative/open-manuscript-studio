@@ -93,6 +93,12 @@ export async function parseDocxMonograph(
   if (/<w:commentReference\b/i.test(documentXml)) {
     warnings.push(makeWarning('comments-not-imported', 'Word comments are not imported in large-document mode.'));
   }
+  if (/<w:sdt\b/i.test(documentXml)) {
+    warnings.push(makeWarning('content-controls-flattened', 'Word content-control metadata is flattened while its manuscript content is preserved.'));
+  }
+  if (/<w:txbxContent\b/i.test(documentXml)) {
+    warnings.push(makeWarning('text-boxes-flattened', 'Text-box content is flattened into the main text flow.'));
+  }
   if (/<w:del\b/i.test(documentXml)) {
     warnings.push(makeWarning('tracked-deletions', 'Tracked deletions are ignored during import.'));
   }
@@ -118,7 +124,11 @@ export async function parseDocxMonograph(
   let keywords: string[] = [];
   let frontMatter = true;
 
-  const paragraphMatches = Array.from(documentXml.matchAll(/<w:p\b[\s\S]*?<\/w:p>/gi));
+  // Nested w:p elements inside text boxes break the intentionally lightweight
+  // paragraph matcher. Replace each text-box subtree with its visible text
+  // first, so large-document mode preserves the content in reading order.
+  const flattenedDocumentXml = flattenWordTextBoxes(documentXml);
+  const paragraphMatches = Array.from(flattenedDocumentXml.matchAll(/<w:p\b[\s\S]*?<\/w:p>/gi));
   const totalParagraphs = paragraphMatches.length;
 
   for (let index = 0; index < paragraphMatches.length; index += 1) {
@@ -180,15 +190,24 @@ export async function parseDocxMonograph(
     }
 
     const visuals = await extractImages(paragraphXml, archive, relationships, provenance, stats);
-    if (!plainText && visuals.length === 0) {
+    const blockId = crypto.randomUUID();
+    const inline = parseInline(
+      paragraphXml,
+      blockId,
+      footnotes,
+      endnotes,
+      annotations,
+      relationships,
+      stats,
+    );
+    const hasInlineContent = hasMeaningfulInlineContent(inline);
+    if (!hasInlineContent && visuals.length === 0) {
       await maybeYield(index, totalParagraphs, options);
       continue;
     }
 
     const section = ensureSection(sections);
-    if (plainText) {
-      const blockId = crypto.randomUUID();
-      const inline = parseInline(paragraphXml, blockId, footnotes, endnotes, annotations, relationships, stats);
+    if (hasInlineContent) {
       section.blocks.push({
         id: blockId,
         type: 'paragraph',
@@ -415,6 +434,29 @@ function extractVisibleText(xml: string): string {
   return Array.from(xml.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gi), (match) => decodeXml(match[1] ?? '')).join('');
 }
 
+function flattenWordTextBoxes(xml: string): string {
+  return xml.replace(
+    /<w:txbxContent\b[^>]*>([\s\S]*?)<\/w:txbxContent>/gi,
+    (_match, content: string) => {
+      const paragraphs = Array.from(
+        content.matchAll(/<w:p\b[\s\S]*?<\/w:p>/gi),
+        (paragraph) => extractVisibleText(paragraph[0]).trim(),
+      ).filter(Boolean);
+      const text = paragraphs.length > 0
+        ? paragraphs.join('\n')
+        : extractVisibleText(content).trim();
+      return `<w:txbxContent><w:t xml:space="preserve">${encodeXmlText(text)}</w:t></w:txbxContent>`;
+    },
+  );
+}
+
+function encodeXmlText(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 function extractRunText(run: string): string {
   return Array.from(run.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gi), (match) => decodeXml(match[1] ?? '')).join('');
 }
@@ -485,6 +527,14 @@ function coalesceTextNodes(nodes: readonly TiptapNode[]): TiptapNode[] {
     }
   }
   return output;
+}
+
+function hasMeaningfulInlineContent(nodes: readonly TiptapNode[]): boolean {
+  return nodes.some((node) => {
+    if (node.type === 'hardBreak') return false;
+    if (node.type === 'text') return Boolean(node.text?.trim());
+    return true;
+  });
 }
 
 async function maybeYield(index: number, total: number, options: MonographImportOptions): Promise<void> {

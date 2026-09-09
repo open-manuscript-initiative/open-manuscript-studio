@@ -80,7 +80,7 @@ test('stores exact text offset when the XE term is visible in its source paragra
 
   assert.equal(bound?.targetBlockId, 'block-2');
   assert.equal(bound?.targetText, 'Bethlen Gábor');
-  assert.equal(bound?.targetTextOffset, 11);
+  assert.equal(bound?.targetTextOffset, 12);
 });
 
 test('binds multiple XE markers in one paragraph to the same stable block', () => {

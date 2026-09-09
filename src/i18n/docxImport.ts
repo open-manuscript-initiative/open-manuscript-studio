@@ -72,7 +72,8 @@ const en: DocxImportCopy = {
   warningText: {
     'tracked-deletions': 'Tracked deletions are not imported; accepted/visible text is preferred.',
     'comments-not-imported': 'Word comments are not yet converted into OMI review annotations.',
-    'text-boxes-flattened': 'Text-box content may be flattened into the main text flow.',
+    'text-boxes-flattened': 'Text-box content was flattened into the main text flow.',
+    'content-controls-flattened': 'Word content-control metadata was removed while its manuscript content was preserved.',
     'conflicting-title-metadata': 'DOCX core title and the styled document title differ; the core title is retained.',
     'merged-table-cells': 'Merged Word table cells are flattened into the editable rectangular OMI table model.',
     'missing-note-body': 'A note reference was found without a readable note body.',
@@ -104,7 +105,8 @@ const hu: DocxImportCopy = {
   warningText: {
     'tracked-deletions': 'A követett törlések nem kerülnek be; a látható/elfogadott szöveg kap elsőbbséget.',
     'comments-not-imported': 'A Word-megjegyzések még nem alakulnak OMI lektori annotációvá.',
-    'text-boxes-flattened': 'A szövegdobozok tartalma a fő szövegfolyamba lapulhat.',
+    'text-boxes-flattened': 'A szövegdobozok tartalma bekerült a fő szövegfolyamba.',
+    'content-controls-flattened': 'A Word tartalomvezérlőinek metaadata kimaradt, de a kézirattartalmuk megmaradt.',
     'conflicting-title-metadata': 'A DOCX alapmetaadatában és a dokumentumban szereplő cím eltér; az alapmetaadat címe marad meg.',
     'merged-table-cells': 'A Word egyesített cellái az OMI szerkeszthető, téglalap alakú táblázatmodelljében kilapításra kerülnek.',
     'missing-note-body': 'Jegyzethivatkozás található, de a jegyzet törzse nem olvasható.',
@@ -136,7 +138,8 @@ const de: DocxImportCopy = {
   warningText: {
     'tracked-deletions': 'Nachverfolgte Löschungen werden nicht importiert; sichtbarer/akzeptierter Text wird bevorzugt.',
     'comments-not-imported': 'Word-Kommentare werden noch nicht in OMI-Review-Annotationen umgewandelt.',
-    'text-boxes-flattened': 'Textfeldinhalte können in den Haupttextfluss abgeflacht werden.',
+    'text-boxes-flattened': 'Textfeldinhalte wurden in den Haupttextfluss übernommen.',
+    'content-controls-flattened': 'Metadaten von Word-Inhaltssteuerelementen wurden entfernt, der Manuskriptinhalt blieb jedoch erhalten.',
     'conflicting-title-metadata': 'Kernmetadaten und formatierter Dokumenttitel unterscheiden sich; der Kerntitel bleibt erhalten.',
     'merged-table-cells': 'Zusammengeführte Word-Zellen werden in das rechteckige editierbare OMI-Tabellenmodell abgeflacht.',
     'missing-note-body': 'Eine Notenreferenz wurde gefunden, aber ihr Inhalt ist nicht lesbar.',
