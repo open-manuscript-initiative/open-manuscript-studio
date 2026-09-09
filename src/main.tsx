@@ -8,6 +8,7 @@ import { initializeRevisionIntegrity } from './app/revisionIntegrity';
 import { ClosedDocumentScreen } from './components/ClosedDocumentScreen';
 import { ProofreadingController } from './components/ProofreadingController';
 import { I18nProvider } from './i18n';
+import { restorePendingExternalLaunchToLocation } from './services/pendingExternalLaunch';
 
 import './styles/global.css';
 import './styles/editor.css';
@@ -47,6 +48,7 @@ import './styles/desktop-document-tabs.css';
 import './styles/proofreading.css';
 import './styles/account-profiles.css';
 
+restorePendingExternalLaunchToLocation();
 initializeRevisionIntegrity();
 
 const SESSION_RESTORE_BOOT_BUDGET_MS = 1200;
