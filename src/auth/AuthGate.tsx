@@ -40,9 +40,11 @@ export function AuthGate({
   const passwordResetRequested = new URLSearchParams(window.location.search)
     .has('resetPassword');
   const pendingExternalLaunch = getPendingExternalLaunchFromLocation();
+  const pendingExternalLaunchPlatform = pendingExternalLaunch?.platform;
+  const pendingExternalLaunchToken = pendingExternalLaunch?.token;
 
   useEffect(() => {
-    if (!pendingExternalLaunch) return;
+    if (!pendingExternalLaunchPlatform || !pendingExternalLaunchToken) return;
 
     if (currentUser) {
       clearPendingExternalLaunchStorageIfLocationMatches();
@@ -51,8 +53,8 @@ export function AuthGate({
     }
   }, [
     currentUser,
-    pendingExternalLaunch?.platform,
-    pendingExternalLaunch?.token,
+    pendingExternalLaunchPlatform,
+    pendingExternalLaunchToken,
   ]);
 
   useEffect(() => {
