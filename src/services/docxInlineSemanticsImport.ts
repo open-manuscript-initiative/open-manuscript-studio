@@ -75,7 +75,7 @@ async function readRichParagraphCandidates(file: File): Promise<RichParagraphCan
   if (!body) return [];
 
   const candidates: RichParagraphCandidate[] = [];
-  for (const paragraph of directChildrenByLocalName(body, 'p')) {
+  for (const paragraph of structuredBodyParagraphs(body)) {
     const segments = parseParagraphRuns(paragraph, styles);
     const text = segments.map((segment) => segment.text).join('');
     if (!text.trim()) continue;
@@ -311,6 +311,24 @@ function descendantsByLocalName(root: Document | Element, name: string): Element
 
 function directChildrenByLocalName(root: Element, name: string): Element[] {
   return Array.from(root.children).filter((element) => element.localName === name);
+}
+
+function structuredBodyParagraphs(container: Element): Element[] {
+  const result: Element[] = [];
+  for (const child of Array.from(container.children)) {
+    if (child.localName === 'p') {
+      result.push(child);
+      continue;
+    }
+    if (child.localName !== 'sdt' && child.localName !== 'sdtContent') continue;
+    const contentContainers = child.localName === 'sdtContent'
+      ? [child]
+      : directChildrenByLocalName(child, 'sdtContent');
+    for (const content of contentContainers) {
+      result.push(...structuredBodyParagraphs(content));
+    }
+  }
+  return result;
 }
 
 function attributeByLocalName(element: Element, name: string): string | undefined {

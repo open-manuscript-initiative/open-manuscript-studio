@@ -150,6 +150,39 @@ test('creates a valid immutable root revision for a new manuscript', () => {
   );
 });
 
+test('keeps nested root-revision data detached without serializing the full state', () => {
+  const state = {
+    ...createState(),
+    sections: [{
+      id: 'section-1',
+      title: 'Original section',
+      blocks: [{
+        id: 'block-1',
+        type: 'paragraph',
+        content: '{"type":"doc","content":[{"type":"paragraph"}]}',
+      }],
+    }],
+  };
+  const envelope = createInitialVersioningEnvelope(state, {
+    summary: 'Created detached snapshot',
+    timestamp: state.createdAt,
+    completeness: 'complete',
+  });
+  const snapshot = envelope.revisionHistory.revisions[0]?.snapshot.state;
+
+  state.sections[0]!.title = 'Mutated section';
+  state.sections[0]!.blocks[0]!.content = 'Mutated block';
+
+  assert.notStrictEqual(snapshot?.sections, state.sections);
+  assert.notStrictEqual(snapshot?.sections[0], state.sections[0]);
+  assert.notStrictEqual(snapshot?.sections[0]?.blocks, state.sections[0]?.blocks);
+  assert.equal(snapshot?.sections[0]?.title, 'Original section');
+  assert.equal(
+    snapshot?.sections[0]?.blocks[0]?.content,
+    '{"type":"doc","content":[{"type":"paragraph"}]}',
+  );
+});
+
 test('commits a new revision without mutating the parent revision', () => {
   const manuscript = createManuscript();
   const originalJson = JSON.stringify(manuscript);

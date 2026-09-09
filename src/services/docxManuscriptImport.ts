@@ -180,6 +180,9 @@ export async function parseDocxManuscript(
   if (descendantsByLocalName(body, 'txbxContent').length > 0) {
     warnings.push(warning('text-boxes-flattened'));
   }
+  if (descendantsByLocalName(body, 'sdt').length > 0) {
+    warnings.push(warning('content-controls-flattened'));
+  }
 
   const sections: OmiSection[] = [];
   const annotations: OmiAnnotation[] = [];
@@ -199,7 +202,10 @@ export async function parseDocxManuscript(
   let keywords: string[] = [];
   let frontMatter = true;
 
-  const children = Array.from(body.children);
+  // Word content controls (w:sdt) are transparent containers for manuscript
+  // content. Flatten only their block-level sdtContent children here, keeping
+  // document order and leaving inline controls to the inline parser.
+  const children = structuredBlockChildren(body);
   let index = 0;
 
   while (index < children.length) {
@@ -358,30 +364,35 @@ export async function parseDocxManuscript(
       stats,
     );
 
-    if (!plainText && visuals.length === 0) {
+    // Parse inline content before deciding that a paragraph is empty. A Word
+    // paragraph may consist solely of a semantic atom such as a footnote or
+    // endnote reference and therefore have no w:t text at all.
+    const blockId = crypto.randomUUID();
+    const context: InlineContext = {
+      blockId,
+      footnotes,
+      endnotes,
+      bibliographyByTag,
+      annotations,
+      citations,
+      citationClusters,
+      warnings,
+      stats,
+    };
+    const inline = parseParagraphInline(child, relationships, context);
+    const hasInlineContent = hasMeaningfulInlineContent(inline);
+
+    if (!hasInlineContent && visuals.length === 0) {
       index += 1;
       continue;
     }
 
     const section = ensureSection(sections);
-    if (plainText) {
-      const blockId = crypto.randomUUID();
-      const context: InlineContext = {
-        blockId,
-        footnotes,
-        endnotes,
-        bibliographyByTag,
-        annotations,
-        citations,
-        citationClusters,
-        warnings,
-        stats,
-      };
-      const inline = parseParagraphInline(child, relationships, context);
+    if (hasInlineContent) {
       const type = isQuoteStyle(style?.id, style?.name)
         ? 'quote'
         : 'paragraph';
-      const tiptapContent = isCodeStyle(style?.id, style?.name)
+      const tiptapContent = isCodeStyle(style?.id, style?.name) && plainText
         ? {
             type: 'doc',
             content: [{ type: 'codeBlock', content: plainText ? [{ type: 'text', text: plainText }] : [] }],
@@ -476,6 +487,30 @@ function ensureSection(sections: OmiSection[]): OmiSection {
   return section;
 }
 
+function structuredBlockChildren(container: Element): Element[] {
+  const result: Element[] = [];
+
+  for (const child of Array.from(container.children)) {
+    if (child.localName === 'p' || child.localName === 'tbl') {
+      result.push(child);
+      continue;
+    }
+
+    if (child.localName !== 'sdt' && child.localName !== 'sdtContent') {
+      continue;
+    }
+
+    const contentContainers = child.localName === 'sdtContent'
+      ? [child]
+      : directChildrenByLocalName(child, 'sdtContent');
+    for (const content of contentContainers) {
+      result.push(...structuredBlockChildren(content));
+    }
+  }
+
+  return result;
+}
+
 function createEmptyParagraphBlock(): OmiBlock {
   return {
     id: crypto.randomUUID(),
@@ -504,6 +539,59 @@ function parseParagraphInline(
     if (!field) return;
     output.push(...renderField(field, context));
     field = undefined;
+  };
+
+  const appendHardBreakIfNeeded = () => {
+    const target = field?.phase === 'result' ? field.result : field ? undefined : output;
+    if (target?.length && target.at(-1)?.type !== 'hardBreak') {
+      target.push({ type: 'hardBreak' });
+    }
+  };
+
+  const hasImportableInline = (element: Element) =>
+    descendantsByLocalName(element, 't').some((node) => Boolean(node.textContent))
+    || descendantsByLocalName(element, 'footnoteReference').length > 0
+    || descendantsByLocalName(element, 'endnoteReference').length > 0;
+
+  const handleTextBoxTable = (table: Element, inheritedMarks: TiptapMark[]) => {
+    const rows = directChildrenByLocalName(table, 'tr');
+    rows.forEach((row, rowIndex) => {
+      if (rowIndex > 0) appendHardBreakIfNeeded();
+      const cells = directChildrenByLocalName(row, 'tc');
+      cells.forEach((cell, cellIndex) => {
+        if (cellIndex > 0) append([{ type: 'text', text: '\t' }]);
+        const blocks = structuredBlockChildren(cell);
+        blocks.forEach((block, blockIndex) => {
+          if (blockIndex > 0) appendHardBreakIfNeeded();
+          if (block.localName === 'p') {
+            for (const child of Array.from(block.children)) {
+              visitElement(child, inheritedMarks);
+            }
+          } else {
+            handleTextBoxTable(block, inheritedMarks);
+          }
+        });
+      });
+    });
+  };
+
+  const handleTextBoxContent = (content: Element, inheritedMarks: TiptapMark[]) => {
+    const blocks = structuredBlockChildren(content).filter(hasImportableInline);
+    if (blocks.length === 0) return;
+
+    // Text boxes have no portable positioning in the manuscript model. Keep
+    // their content in reading order and separate it from surrounding text.
+    appendHardBreakIfNeeded();
+    blocks.forEach((block, blockIndex) => {
+      if (blockIndex > 0) appendHardBreakIfNeeded();
+      if (block.localName === 'p') {
+        for (const child of Array.from(block.children)) {
+          visitElement(child, inheritedMarks);
+        }
+      } else {
+        handleTextBoxTable(block, inheritedMarks);
+      }
+    });
   };
 
   const handleRun = (run: Element, inheritedMarks: TiptapMark[] = []) => {
@@ -582,42 +670,53 @@ function parseParagraphInline(
 
       if (node.localName === 'br' || node.localName === 'cr') {
         append([{ type: 'hardBreak' }]);
+        continue;
       }
+
+      if (node.localName !== 'rPr') visitElement(node, marks);
     }
   };
 
-  for (const child of Array.from(paragraph.children)) {
-    if (child.localName === 'r') {
-      handleRun(child);
-      continue;
+  function visitElement(element: Element, inheritedMarks: TiptapMark[] = []): void {
+    if (element.localName === 'r') {
+      handleRun(element, inheritedMarks);
+      return;
     }
 
-    if (child.localName === 'hyperlink') {
-      const relationshipId = attributeByLocalName(child, 'id');
+    if (element.localName === 'hyperlink') {
+      const relationshipId = attributeByLocalName(element, 'id');
       const target = relationshipId ? relationships.get(relationshipId)?.target : undefined;
       const href = normalizeExternalHref(target);
-      const marks: TiptapMark[] = href
-        ? [{ type: 'omiLink', attrs: { href } }]
-        : [];
+      const marks = href
+        ? mergeMarks(inheritedMarks, [{ type: 'omiLink', attrs: { href } }])
+        : inheritedMarks;
       if (href) context.stats.links += 1;
-      for (const run of directChildrenByLocalName(child, 'r')) handleRun(run, marks);
-      continue;
+      for (const child of Array.from(element.children)) visitElement(child, marks);
+      return;
     }
 
-    if (child.localName === 'fldSimple') {
-      const instruction = attributeByLocalName(child, 'instr') ?? '';
-      const result: TiptapNode[] = [];
+    if (element.localName === 'fldSimple') {
+      const instruction = attributeByLocalName(element, 'instr') ?? '';
       const previousField = field;
-      field = { instruction, result, phase: 'result' };
-      for (const run of directChildrenByLocalName(child, 'r')) handleRun(run);
+      field = { instruction, result: [], phase: 'result' };
+      for (const child of Array.from(element.children)) visitElement(child, inheritedMarks);
       const completed = field;
       field = previousField;
-      if (completed) output.push(...renderField(completed, context));
-      continue;
+      if (completed) append(renderField(completed, context));
+      return;
     }
 
-    for (const run of descendantsByLocalName(child, 'r')) handleRun(run);
+    if (element.localName === 'txbxContent') {
+      handleTextBoxContent(element, inheritedMarks);
+      return;
+    }
+
+    for (const child of Array.from(element.children)) {
+      visitElement(child, inheritedMarks);
+    }
   }
+
+  for (const child of Array.from(paragraph.children)) visitElement(child);
 
   if (field) finishField();
   return coalesceTextNodes(output);
@@ -1124,6 +1223,14 @@ function inlinePlainText(nodes: readonly TiptapNode[]): string {
   return nodes
     .map((node) => node.text ?? (node.content ? inlinePlainText(node.content) : ''))
     .join('');
+}
+
+function hasMeaningfulInlineContent(nodes: readonly TiptapNode[]): boolean {
+  return nodes.some((node) => {
+    if (node.type === 'hardBreak') return false;
+    if (node.type === 'text') return Boolean(node.text?.trim());
+    return node.content ? hasMeaningfulInlineContent(node.content) : true;
+  });
 }
 
 function applyMarkToInline(nodes: readonly TiptapNode[], mark: TiptapMark): TiptapNode[] {

@@ -64,12 +64,14 @@ export function insertIndexLetterNumberSpacing(value: string): string {
 export function stripGeneratedIndexPageNumbers(value: string): string {
   return value
     .replace(/\u00a0/g, ' ')
-    .replace(/\t[-.·•…_\s]*\d+(?:\s*[-–—,]\s*\d+)*\s*$/u, '')
     // The pre-import spacing normalizer turns flattened Word INDEX rows into
     // e.g. "Acsády Ignác 376, 391". Keep the compact fallback for legacy OMI
     // documents that may already contain the older flattened representation.
-    .replace(/\s+\d+(?:\s*,\s*\d+)*\s*$/u, '')
-    .replace(/(?<=[\p{L}\p{M}.)])\d+(?:\s*,\s*\d+)*\s*$/u, '')
+    // Run this fallback first; otherwise removing only the final spaced page
+    // number would leave a dangling comma after a compact first page number.
+    .replace(/(?<=[\p{L}\p{M}.)])\d+(?:\s*[-–—,]\s*\d+)*\s*$/u, '')
+    .replace(/\t[-.·•…_\s]*\d+(?:\s*[-–—,]\s*\d+)*\s*$/u, '')
+    .replace(/\s+\d+(?:\s*[-–—,]\s*\d+)*\s*$/u, '')
     .replace(/\s+/g, ' ')
     .trim();
 }

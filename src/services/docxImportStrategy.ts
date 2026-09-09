@@ -50,7 +50,12 @@ export async function parseDocxForStudio(
   }
 
   const largeDocumentMode = isLargeDocx(file);
-  const documentXmlBytes = largeDocumentMode ? await inspectDocumentXmlUncompressedBytes(file) : 0;
+  // Every DOCX analysis stage reads the same immutable package. Cache the
+  // browser-provided ArrayBuffer once so preflights, parsers and semantic
+  // attachers do not each allocate another complete copy of a large file.
+  const packageBuffer = await file.arrayBuffer();
+  const bufferedFile = createBufferedDocxFacade(file, packageBuffer);
+  const documentXmlBytes = largeDocumentMode ? inspectDocumentXmlUncompressedBytes(packageBuffer) : 0;
   const monographMode = isMonographComplexity({ fileSize: file.size, documentXmlBytes });
 
   options.onProgress?.({ stage: 'preparing', largeDocumentMode, monographMode });
@@ -59,22 +64,22 @@ export async function parseDocxForStudio(
   // pagination-dependent cached paragraphs. Detect all of them before the body
   // parser starts so only their semantic OMI definitions survive the import.
   const [tocPreflight, generatedListPreflight] = await Promise.all([
-    preflightWordTableOfContents(file),
-    preflightWordGeneratedLists(file),
+    preflightWordTableOfContents(bufferedFile),
+    preflightWordGeneratedLists(bufferedFile),
   ]);
 
   await yieldToBrowser();
   options.onProgress?.({ stage: 'parsing', largeDocumentMode, monographMode });
 
   const parsedPlan = monographMode
-    ? await parseDocxMonograph(file, {
+    ? await parseDocxMonograph(bufferedFile, {
         onProgress: ({ processedParagraphs, totalParagraphs }) => options.onProgress?.({
           stage: 'parsing', largeDocumentMode, monographMode, processedParagraphs, totalParagraphs,
         }),
       })
     : largeDocumentMode
-      ? await parseDocxManuscript(createLargeDocxFacade(file))
-      : await parseDocxManuscriptWithInlineSemantics(file);
+      ? await parseDocxManuscript(createLargeDocxFacade(bufferedFile))
+      : await parseDocxManuscriptWithInlineSemantics(bufferedFile);
   const plan: DocxManuscriptImportPlan = {
     ...parsedPlan,
     sections: materializeSectionHeadingBlocks(parsedPlan.sections),
@@ -86,9 +91,9 @@ export async function parseDocxForStudio(
   // can flatten the boundary between a name and its cached Arabic page number
   // ("Ignác376" -> "Ignác 376"). Do this before importing XE/index semantics.
   const spacedPlan = normalizeWordGeneratedIndexSpacing(plan);
-  const indexedPlan = await attachWordIndexData(file, spacedPlan);
-  const locatedIndexPlan = await attachWordIndexLocations(file, indexedPlan);
-  const tocPlan = await attachWordTableOfContents(file, locatedIndexPlan, tocPreflight);
+  const indexedPlan = await attachWordIndexData(bufferedFile, spacedPlan);
+  const locatedIndexPlan = await attachWordIndexLocations(bufferedFile, indexedPlan);
+  const tocPlan = await attachWordTableOfContents(bufferedFile, locatedIndexPlan, tocPreflight);
   const semanticPlan = attachWordGeneratedLists(tocPlan, generatedListPreflight);
   const cleanPlan = removeWordGeneratedIndexCache(semanticPlan);
   await yieldToBrowser();
@@ -103,9 +108,8 @@ export function isMonographComplexity(input: { fileSize: number; documentXmlByte
   return input.fileSize >= MONOGRAPH_DOCX_THRESHOLD_BYTES || input.documentXmlBytes >= MONOGRAPH_DOCUMENT_XML_THRESHOLD_BYTES;
 }
 
-async function inspectDocumentXmlUncompressedBytes(file: File): Promise<number> {
+function inspectDocumentXmlUncompressedBytes(buffer: ArrayBuffer): number {
   try {
-    const buffer = await file.arrayBuffer();
     const view = new DataView(buffer);
     const bytes = new Uint8Array(buffer);
     const minimum = Math.max(0, bytes.length - 0xffff - 22);
@@ -129,6 +133,16 @@ async function inspectDocumentXmlUncompressedBytes(file: File): Promise<number> 
     }
   } catch {}
   return 0;
+}
+
+function createBufferedDocxFacade(file: File, buffer: ArrayBuffer): File {
+  return new Proxy(file, {
+    get(target, property) {
+      if (property === 'arrayBuffer') return async () => buffer;
+      const value = Reflect.get(target, property, target);
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  });
 }
 
 function createLargeDocxFacade(file: File): File {
