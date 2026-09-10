@@ -1,3 +1,11 @@
+export const RENDERED_MANUSCRIPT_CHANGE_EVENT = 'omi:rendered-manuscript-change';
+
+/** Announces that deferred manuscript sections have entered the DOM. */
+export function announceRenderedManuscriptChange(): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new Event(RENDERED_MANUSCRIPT_CHANGE_EVENT));
+}
+
 /** Finds the rendered heading (or first block fallback) for an OMI section. */
 export function findRenderedSectionElement(
   sectionId: string,

@@ -1,6 +1,7 @@
 import { FileUp, Plus } from 'lucide-react';
 import {
   Fragment,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -12,12 +13,22 @@ import { stageContinuousDocumentChange } from '../app/continuousDocumentActions'
 import { stageInsertTopLevelSection } from '../app/sectionActions';
 import { importOmiDocumentAsStudy } from '../app/studyImportActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { requestBlockEditorFocus } from '../editor/blockFocusRegistry';
+import {
+  registerDeferredBlockEditorActivator,
+  requestBlockEditorFocus,
+} from '../editor/blockFocusRegistry';
 import {
   buildContinuousManuscriptDocument,
   projectContinuousManuscriptDocument,
 } from '../editor/continuousManuscriptDocument';
-import { findRenderedSectionElement } from '../editor/renderedManuscriptNavigation';
+import {
+  announceRenderedManuscriptChange,
+  findRenderedSectionElement,
+} from '../editor/renderedManuscriptNavigation';
+import {
+  estimateDeferredStudyHeight,
+  shouldProgressivelyMountStudyEditors,
+} from '../editor/progressiveStudyMounting';
 import { useTranslation } from '../i18n';
 import {
   collectStudyNoteOverview,
@@ -43,6 +54,13 @@ interface StudyEditorProps {
   showContributors?: boolean;
   contributorTitle: string;
   contributorDescription: string;
+}
+
+interface ProgressiveStudyEditorProps extends StudyEditorProps {
+  defer: boolean;
+  selected: boolean;
+  title: string;
+  deferredLabel: string;
 }
 
 function StudyEditor({
@@ -127,6 +145,89 @@ function StudyEditor({
   );
 }
 
+function ProgressiveStudyEditor({
+  defer,
+  selected,
+  title,
+  deferredLabel,
+  study,
+  ...editorProps
+}: ProgressiveStudyEditorProps) {
+  const hostRef = useRef<HTMLElement>(null);
+  const studyRef = useRef(study);
+  const [mounted, setMounted] = useState(!defer || selected);
+  const activatedRef = useRef(!defer || selected);
+  if (!defer || selected || mounted) activatedRef.current = true;
+  const active = activatedRef.current;
+  const placeholderHeight = useMemo(
+    () => estimateDeferredStudyHeight(study),
+    [study],
+  );
+  studyRef.current = study;
+
+  useEffect(() => {
+    if (active) return;
+    return registerDeferredBlockEditorActivator((blockId) => {
+      const containsBlock = studyRef.current.sections.some((section) =>
+        section.blocks.some((block) => block.id === blockId),
+      );
+      if (!containsBlock) return false;
+      setMounted(true);
+      return true;
+    });
+  }, [active]);
+
+  useEffect(() => {
+    if (active) return;
+    const host = hostRef.current;
+    if (!host || typeof IntersectionObserver === 'undefined') {
+      setMounted(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        setMounted(true);
+        observer.disconnect();
+      },
+      { rootMargin: '1800px 0px' },
+    );
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, [active]);
+
+  useEffect(() => {
+    if (active) announceRenderedManuscriptChange();
+  }, [active]);
+
+  if (active) {
+    return (
+      <StudyEditor
+        {...editorProps}
+        study={study}
+      />
+    );
+  }
+
+  return (
+    <section
+      ref={hostRef}
+      className="omi-study-editor omi-study-editor--deferred"
+      data-study-id={study.rootSectionId}
+      data-section-id={study.rootSectionId}
+      data-progressive-study-placeholder="true"
+      style={{ minHeight: `${placeholderHeight}px` }}
+      aria-label={editorProps.ariaLabel}
+    >
+      <div className="omi-study-editor__deferred-label">
+        <strong>{title}</strong>
+        <span>{deferredLabel}</span>
+      </div>
+    </section>
+  );
+}
+
 export function ContinuousManuscriptEditor() {
   const { locale } = useTranslation();
   const copy = getStudyEditorCopy(locale);
@@ -176,6 +277,11 @@ export function ContinuousManuscriptEditor() {
       ]),
     ),
     [manuscript.sectionNumberingStyle, manuscript.sections],
+  );
+  const progressiveStudyMounting = useMemo(
+    () => structure.kind === 'volume'
+      && shouldProgressivelyMountStudyEditors(studies),
+    [structure.kind, studies],
   );
 
   const insertStudy = () => {
@@ -234,11 +340,23 @@ export function ContinuousManuscriptEditor() {
           && currentStudy?.rootSectionId === study.rootSectionId;
         return (
           <Fragment key={study.rootSectionId}>
-            <StudyEditor
+            <ProgressiveStudyEditor
               study={study}
               sectionNumbers={sectionNumbers}
               manuscriptLanguage={manuscript.locale}
               ariaLabel={`${copy.study}: ${title}`}
+              defer={progressiveStudyMounting}
+              selected={study.sections.some(
+                (section) => section.id === selectedSectionId,
+              )}
+              title={title}
+              deferredLabel={copy.deferredStudy(
+                study.sections.length,
+                study.sections.reduce(
+                  (total, section) => total + section.blocks.length,
+                  0,
+                ),
+              )}
               documentWide={structure.kind === 'study'}
               showContributors={
                 structure.kind === 'volume'
@@ -302,6 +420,7 @@ function getStudyEditorCopy(locale: string): {
   imported: (title: string) => string;
   contributorTitle: string;
   contributorDescription: string;
+  deferredStudy: (sections: number, blocks: number) => string;
 } {
   if (locale === 'hu') {
     return {
@@ -316,6 +435,7 @@ function getStudyEditorCopy(locale: string): {
       imported: (title) => `A(z) „${title}” tanulmány külön szerkesztőben megnyílt.`,
       contributorTitle: 'Tanulmány szerzői',
       contributorDescription: 'A tanulmányhoz tartozó szerzők és szerepek; az importált OMI-adatok itt szerkeszthetők.',
+      deferredStudy: (sections, blocks) => `${sections} szakasz, ${blocks} blokk — betöltés görgetéskor vagy navigáláskor`,
     };
   }
   if (locale === 'de') {
@@ -331,6 +451,7 @@ function getStudyEditorCopy(locale: string): {
       imported: (title) => `„${title}“ wurde in einem eigenen Editor geöffnet.`,
       contributorTitle: 'Autorinnen und Autoren des Beitrags',
       contributorDescription: 'Beitragsbezogene Autorinnen, Autoren und Rollen; importierte OMI-Daten können hier bearbeitet werden.',
+      deferredStudy: (sections, blocks) => `${sections} Abschnitte, ${blocks} Blöcke — Laden beim Scrollen oder Navigieren`,
     };
   }
   return {
@@ -345,5 +466,6 @@ function getStudyEditorCopy(locale: string): {
     imported: (title) => `“${title}” opened in its own study editor.`,
     contributorTitle: 'Study authors',
     contributorDescription: 'Authors and roles attached to this study; imported OMI identities remain editable here.',
+    deferredStudy: (sections, blocks) => `${sections} sections, ${blocks} blocks — loads on scroll or navigation`,
   };
 }
