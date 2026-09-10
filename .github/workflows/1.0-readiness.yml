@@ -1,0 +1,146 @@
+name: 1.0 Readiness
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/1.0-readiness.yml'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/codeql.yml'
+      - '.github/workflows/pkp-integration-environment.yml'
+      - '.github/workflows/tauri-desktop.yml'
+      - 'docs/release/**'
+      - 'scripts/benchmark-docx-import.ts'
+      - 'scripts/generate-docx-stress-fixture.ts'
+      - 'scripts/register-source-loader.mjs'
+      - 'scripts/release-readiness.mjs'
+      - 'scripts/source-loader.mjs'
+      - 'src/app/docxImportActions.ts'
+      - 'src/app/useStudioStore.ts'
+      - 'src/services/docx*.ts'
+      - 'src/services/simpleZip.ts'
+      - 'src/editor/**'
+      - 'src/components/*Editor*.tsx'
+      - 'src/types/omi.ts'
+      - 'tests/docx*.test.ts'
+      - 'tests/release-readiness.test.mjs'
+      - 'tests/ts-extension-loader.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/1.0-readiness.yml'
+      - 'docs/release/**'
+      - 'scripts/benchmark-docx-import.ts'
+      - 'scripts/generate-docx-stress-fixture.ts'
+      - 'scripts/register-source-loader.mjs'
+      - 'scripts/release-readiness.mjs'
+      - 'scripts/source-loader.mjs'
+      - 'src/app/docxImportActions.ts'
+      - 'src/app/useStudioStore.ts'
+      - 'src/services/docx*.ts'
+      - 'src/services/simpleZip.ts'
+      - 'src/editor/**'
+      - 'src/components/*Editor*.tsx'
+      - 'src/types/omi.ts'
+      - 'tests/docx*.test.ts'
+      - 'tests/release-readiness.test.mjs'
+      - 'tests/ts-extension-loader.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: omi-1-0-readiness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evidence:
+    name: Build release evidence
+    runs-on: ubuntu-22.04
+    env:
+      DATABASE_URL: postgresql://omi_ci:omi_ci@localhost:5432/omi_ci
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Run frontend verification
+        run: |
+          npm test
+          npm run build
+
+      - name: Install and verify server
+        run: |
+          npm --prefix server ci
+          npm --prefix server run prisma:generate:all
+          npm --prefix server run typecheck
+          npm run test:direct-submission
+
+      - name: Generate content-neutral benchmark fixtures
+        run: |
+          mkdir -p benchmark-results
+          npm run benchmark:docx:generate -- --output benchmark-results/synthetic-small.docx --words 10000
+          npm run benchmark:docx:generate -- --output benchmark-results/synthetic-medium.docx --words 120000
+          npm run benchmark:docx:generate -- --output benchmark-results/synthetic-large.docx --words 500000
+
+      - name: Measure DOCX import and editor round-trip
+        run: |
+          npm run benchmark:docx -- --input benchmark-results/synthetic-small.docx --label synthetic-small --json benchmark-results/synthetic-small.json --markdown benchmark-results/synthetic-small.md --assert-roundtrip > /dev/null
+          npm run benchmark:docx -- --input benchmark-results/synthetic-medium.docx --label synthetic-medium --json benchmark-results/synthetic-medium.json --markdown benchmark-results/synthetic-medium.md --assert-roundtrip > /dev/null
+          npm run benchmark:docx -- --input benchmark-results/synthetic-large.docx --label synthetic-large --json benchmark-results/synthetic-large.json --markdown benchmark-results/synthetic-large.md --assert-roundtrip > /dev/null
+          rm benchmark-results/*.docx
+
+      - name: Generate dependency SBOMs
+        run: |
+          npm sbom --sbom-format cyclonedx > benchmark-results/frontend.cdx.json
+          npm --prefix server sbom --sbom-format cyclonedx > benchmark-results/server.cdx.json
+
+      - name: Build web dry-run artifact
+        run: tar -C dist -czf benchmark-results/open-manuscript-studio-web.tgz .
+
+      - name: Generate readiness report
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          npm run release:readiness --
+          --strict-local
+          --github
+          --json benchmark-results/readiness.json
+          --markdown benchmark-results/readiness.md
+          > /dev/null
+
+      - name: Record source and SHA-256 manifest
+        shell: bash
+        run: |
+          node -e "require('node:fs').writeFileSync('benchmark-results/source.json', JSON.stringify({repository: process.env.GITHUB_REPOSITORY, commit: process.env.GITHUB_SHA, runId: process.env.GITHUB_RUN_ID}, null, 2) + '\n')"
+          find benchmark-results -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            | sed 's#benchmark-results/##' \
+            > benchmark-results/SHA256SUMS.txt
+
+      - name: Upload 1.0 evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: omi-1.0-readiness-${{ github.run_attempt }}
+          path: benchmark-results/
+          if-no-files-found: error
+          retention-days: 30

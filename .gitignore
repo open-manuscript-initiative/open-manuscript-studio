@@ -31,6 +31,10 @@ test-results/
 blob-report/
 tests/pkp-integration/runtime/
 
+# Release-readiness measurements. Real manuscripts must stay outside Git.
+benchmark-results/
+tests/private-fixtures/
+
 # Grunt intermediate storage
 .grunt
 
