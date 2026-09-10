@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "1.0.0",
+  "route": "A",
+  "minimumScore": 90,
+  "redGateLabels": [
+    "release-blocker"
+  ],
+  "requiredIssueLabels": [
+    "release-blocker",
+    "rc-required",
+    "manual-test",
+    "automation",
+    "external-dependency"
+  ],
+  "requiredFiles": [
+    "docs/release/1.0-scope.md",
+    "docs/release/1.0-blocker-policy.md",
+    ".github/workflows/ci.yml",
+    ".github/workflows/codeql.yml",
+    ".github/workflows/pkp-integration-environment.yml",
+    ".github/workflows/tauri-desktop.yml",
+    ".github/workflows/1.0-readiness.yml",
+    "scripts/benchmark-docx-import.ts",
+    "scripts/generate-docx-stress-fixture.ts"
+  ],
+  "workflowMarkers": {
+    ".github/workflows/ci.yml": [
+      "npm test",
+      "npm run test:e2e",
+      "npm run test:direct-submission"
+    ],
+    ".github/workflows/codeql.yml": [
+      "github/codeql-action"
+    ],
+    ".github/workflows/pkp-integration-environment.yml": [
+      "matrix.platform"
+    ],
+    ".github/workflows/tauri-desktop.yml": [
+      "windows-x86_64",
+      "linux-x86_64",
+      "Android universal APK"
+    ],
+    ".github/workflows/1.0-readiness.yml": [
+      "release:readiness",
+      "benchmark:docx",
+      "cyclonedx",
+      "SHA256SUMS"
+    ]
+  }
+}
