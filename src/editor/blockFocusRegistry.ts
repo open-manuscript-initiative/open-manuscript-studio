@@ -1,10 +1,12 @@
 import type { Editor } from '@tiptap/core';
 
 type FocusTarget = 'start' | 'end' | number;
+type BlockEditorActivator = (blockId: string) => boolean;
 
 const editors = new Map<string, Editor>();
 const pending = new Map<string, FocusTarget>();
 const continuousEditors = new Set<Editor>();
+const deferredActivators = new Set<BlockEditorActivator>();
 
 export function registerBlockEditor(blockId: string, editor: Editor): () => void {
   editors.set(blockId, editor);
@@ -34,7 +36,22 @@ export function requestBlockEditorFocus(blockId: string, target: FocusTarget): v
       return;
     }
   }
+  for (const activate of deferredActivators) {
+    if (activate(blockId)) break;
+  }
   pending.set(blockId, target);
+}
+
+/**
+ * Lets a deferred editor host mount itself when another workspace asks to
+ * focus one of its blocks. The normal pending-focus queue then completes the
+ * request as soon as the editor registers.
+ */
+export function registerDeferredBlockEditorActivator(
+  activate: BlockEditorActivator,
+): () => void {
+  deferredActivators.add(activate);
+  return () => deferredActivators.delete(activate);
 }
 
 export function registerContinuousBlockEditor(editor: Editor): () => void {

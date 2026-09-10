@@ -322,25 +322,44 @@ function revealResult(result: SearchResult, query: string, options: ManuscriptSe
   if (result.target === 'subtitle') return selectTextareaMatch(document.querySelector<HTMLTextAreaElement>('#manuscript-subtitle'), query, result.occurrenceIndex, options);
   if (result.target === 'motto') return selectTextareaMatch(document.querySelector<HTMLTextAreaElement>('#manuscript-motto'), query, result.occurrenceIndex, options);
   if (result.target === 'abstract') return selectTextareaMatch(document.querySelector<HTMLTextAreaElement>('#manuscript-abstract'), query, result.occurrenceIndex, options);
+
+  const state = useStudioStore.getState();
+  const sectionId = result.sectionId ?? (result.blockId
+    ? state.manuscript.sections.find((section) =>
+        flattenBlocks(section.blocks).some((block) => block.id === result.blockId),
+      )?.id
+    : undefined);
+  if (sectionId) state.selectSection(sectionId);
+  window.setTimeout(() => revealRenderedResult(result, 0), 0);
+}
+
+function revealRenderedResult(result: SearchResult, attempt: number): void {
+  let target: HTMLElement | null = null;
   if (result.target === 'section-title' && result.sectionId) {
-    const section = findRenderedSectionElement(result.sectionId);
-    section?.classList.add('omi-search-current-target');
-    section?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    section
-      ?.closest<HTMLElement>('[contenteditable="true"]')
-      ?.focus({ preventScroll: true });
-    return;
+    target = findRenderedSectionElement(result.sectionId);
   }
   if ((result.target === 'body' || result.target === 'object') && result.blockId) {
-    const block = findRenderedBlockElement(result.blockId);
-    block?.classList.add('omi-search-current-target');
-    block?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    return;
+    target = findRenderedBlockElement(result.blockId);
   }
   if (result.target === 'note' && result.noteId) {
-    const anchor = document.querySelector<HTMLElement>(`[data-omi-note][data-note-id="${CSS.escape(result.noteId)}"]`);
-    anchor?.classList.add('omi-search-current-target');
-    anchor?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    target = document.querySelector<HTMLElement>(
+      `[data-omi-note][data-note-id="${CSS.escape(result.noteId)}"]`,
+    );
+  }
+
+  if (!target) {
+    if (attempt < 24) {
+      window.setTimeout(() => revealRenderedResult(result, attempt + 1), 80);
+    }
+    return;
+  }
+
+  target.classList.add('omi-search-current-target');
+  target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  if (result.target === 'section-title') {
+    target
+      .closest<HTMLElement>('[contenteditable="true"]')
+      ?.focus({ preventScroll: true });
   }
 }
 function selectTextareaMatch(element: HTMLTextAreaElement | null, query: string, occurrenceIndex: number, options: ManuscriptSearchOptions): void {

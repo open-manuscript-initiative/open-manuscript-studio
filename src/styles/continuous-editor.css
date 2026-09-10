@@ -255,6 +255,36 @@
   scroll-margin-top: 5rem;
 }
 
+.omi-study-editor--deferred {
+  display: flex;
+  align-items: flex-start;
+  box-sizing: border-box;
+  border-top: 1px solid transparent;
+  contain: layout style;
+}
+
+.omi-study-editor__deferred-label {
+  position: sticky;
+  top: 5rem;
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.85rem 1rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 0.45rem;
+  background: rgba(248, 250, 252, 0.96);
+  color: #64748b;
+  font-family: var(--omi-academic-sans, sans-serif);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.omi-study-editor__deferred-label strong {
+  color: #334155;
+  font-size: 0.82rem;
+}
+
 .omi-study-contributors {
   margin: 0 0 1rem;
   border: 1px solid #e2e8f0;

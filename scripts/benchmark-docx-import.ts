@@ -32,6 +32,11 @@ import {
   OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS,
 } from '../src/editor/extensions/OmiRichTextExtensions.ts';
 import {
+  measureStudyMountWork,
+  shouldProgressivelyMountStudyEditors,
+} from '../src/editor/progressiveStudyMounting.ts';
+import { partitionManuscriptStudies } from '../src/model/sectionStructure.ts';
+import {
   isLargeDocx,
   isMonographComplexity,
   parseDocxForStudio,
@@ -139,6 +144,14 @@ export async function benchmarkDocxImport(options: CliOptions) {
   const sectionNumbers = new Map(
     applied.sections.map((section, index) => [section.id, String(index + 1)]),
   );
+  const editingUnits = partitionManuscriptStudies(applied.sections);
+  const editingUnitJsonBytes = editingUnits.map((study) =>
+    Buffer.byteLength(JSON.stringify(buildContinuousManuscriptDocument(
+      study.sections,
+      sectionNumbers,
+    ))),
+  );
+  const mountWork = measureStudyMountWork(editingUnits);
   const editorJsonStarted = performance.now();
   const editorDocument = buildContinuousManuscriptDocument(
     applied.sections,
@@ -275,6 +288,19 @@ export async function benchmarkDocxImport(options: CliOptions) {
       jsonBytes: editorJsonBytes,
       prosemirrorNodeSize: prosemirrorDocument.nodeSize,
       domNodeCount,
+    },
+    editorMounting: {
+      progressiveRecommended: shouldProgressivelyMountStudyEditors(editingUnits),
+      editingUnits: editingUnits.length,
+      initiallySelectedUnitJsonBytes: editingUnitJsonBytes[0] ?? 0,
+      largestUnitJsonBytes: Math.max(0, ...editingUnitJsonBytes),
+      allUnitsJsonBytes: editingUnitJsonBytes.reduce(
+        (total, bytes) => total + bytes,
+        0,
+      ),
+      measuredSections: mountWork.sections,
+      measuredBlocks: mountWork.blocks,
+      estimatedModelBytes: mountWork.estimatedModelBytes,
     },
     sourceMetrics,
     projectedMetrics,
@@ -585,6 +611,8 @@ function markdownReport(result: Awaited<ReturnType<typeof benchmarkDocxImport>>)
     `- First editable model: ${timing.firstEditableModelMs} ms`,
     `- Maximum observed RSS: ${result.memory.maximumObservedRssMiB} MiB`,
     `- Sections / blocks: ${result.sourceMetrics.sections} / ${result.sourceMetrics.blocks}`,
+    `- Editing units: ${result.editorMounting.editingUnits}; progressive mounting: ${result.editorMounting.progressiveRecommended ? 'YES' : 'NO'}`,
+    `- Initially selected / all editing-unit JSON: ${result.editorMounting.initiallySelectedUnitJsonBytes} / ${result.editorMounting.allUnitsJsonBytes} bytes`,
     `- Notes / index entries: ${result.import.annotations} / ${result.import.indexEntries}`,
     `- Semantic editor round-trip: ${result.roundTrip.ok ? 'PASS' : 'FAIL'}`,
     '',

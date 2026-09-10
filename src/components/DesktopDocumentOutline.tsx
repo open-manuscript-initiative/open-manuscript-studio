@@ -5,6 +5,7 @@ import { useStudioStore } from '../app/useStudioStore';
 import {
   findRenderedSectionElement,
   findRenderedSectionElements,
+  RENDERED_MANUSCRIPT_CHANGE_EVENT,
 } from '../editor/renderedManuscriptNavigation';
 import { useTranslation } from '../i18n';
 import { formatHierarchicalSectionHeading } from '../model/sectionNumbering';
@@ -48,32 +49,49 @@ export function DesktopDocumentOutline({ onClose }: DesktopDocumentOutlineProps)
   );
 
   useEffect(() => {
-    const sections = findRenderedSectionElements(
-      manuscript.sections.map((section) => section.id),
-    );
-    if (!sections.length || typeof IntersectionObserver === 'undefined') return;
+    let observer: IntersectionObserver | null = null;
+    const observeRenderedSections = () => {
+      observer?.disconnect();
+      if (typeof IntersectionObserver === 'undefined') return;
+      const sections = findRenderedSectionElements(
+        manuscript.sections.map((section) => section.id),
+      );
+      if (!sections.length) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort(
-            (left, right) =>
-              Math.abs(left.boundingClientRect.top - 120) -
-              Math.abs(right.boundingClientRect.top - 120),
-          )[0];
-        const sectionId = (visible?.target as HTMLElement | undefined)?.dataset.sectionId;
-        if (sectionId && sectionId !== selectedSectionId) selectSection(sectionId);
-      },
-      {
-        root: null,
-        rootMargin: '-12% 0px -72% 0px',
-        threshold: [0, 0.1, 0.5],
-      },
-    );
+      observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort(
+              (left, right) =>
+                Math.abs(left.boundingClientRect.top - 120) -
+                Math.abs(right.boundingClientRect.top - 120),
+            )[0];
+          const sectionId = (visible?.target as HTMLElement | undefined)?.dataset.sectionId;
+          if (sectionId && sectionId !== selectedSectionId) selectSection(sectionId);
+        },
+        {
+          root: null,
+          rootMargin: '-12% 0px -72% 0px',
+          threshold: [0, 0.1, 0.5],
+        },
+      );
 
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
+      sections.forEach((section) => observer?.observe(section));
+    };
+
+    observeRenderedSections();
+    window.addEventListener(
+      RENDERED_MANUSCRIPT_CHANGE_EVENT,
+      observeRenderedSections,
+    );
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener(
+        RENDERED_MANUSCRIPT_CHANGE_EVENT,
+        observeRenderedSections,
+      );
+    };
   }, [manuscript.sections, selectSection, selectedSectionId]);
 
   const navigateToSection = (sectionId: string) => {

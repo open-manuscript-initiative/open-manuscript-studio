@@ -33,6 +33,12 @@ test('synthetic DOCX benchmark reports only metrics and preserves editor semanti
     assert.equal(result.privacy.contentEmitted, false);
     assert.equal(result.roundTrip.ok, true);
     assert.equal(result.import.annotations, 7);
+    assert.equal(result.editorMounting.progressiveRecommended, false);
+    assert.ok(result.editorMounting.editingUnits > 0);
+    assert.ok(
+      result.editorMounting.initiallySelectedUnitJsonBytes
+        <= result.editorMounting.allUnitsJsonBytes,
+    );
     assert.ok(result.sourceMetrics.words >= 1_600);
     assert.doesNotMatch(serialized, /private-title-and-author/);
     assert.doesNotMatch(serialized, /Synthetic chapter/);
