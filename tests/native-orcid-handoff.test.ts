@@ -99,30 +99,34 @@ test('production Android App Links trust direct and Google Play signed builds', 
     new URL('../.github/workflows/ci.yml', import.meta.url),
     'utf8',
   );
-  const assetLinksTemplate = workflow.match(
-    /cat > "\$APP_LINK_ROOT\/\.well-known\/assetlinks\.json" <<'JSON'\n([\s\S]*?)\n\s+JSON/,
-  );
+  const windowsWorkflow = workflow.replace(/\r?\n/g, '\r\n');
   const directReleaseFingerprint = Array.from({ length: 32 }, () => 'AA').join(':');
 
   assert.match(GOOGLE_PLAY_APP_SIGNING_SHA256, /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/);
-  assert.ok(assetLinksTemplate, 'assetlinks.json deployment template is missing');
-  const assetLinks = JSON.parse(
-    assetLinksTemplate[1].replace(
-      '${{ steps.android_app_link.outputs.fingerprint }}',
-      directReleaseFingerprint,
-    ),
-  ) as Array<{
-    target?: {
-      package_name?: string;
-      sha256_cert_fingerprints?: string[];
-    };
-  }>;
+  for (const workflowSource of [workflow, windowsWorkflow]) {
+    const assetLinksTemplate = workflowSource.match(
+      /cat > "\$APP_LINK_ROOT\/\.well-known\/assetlinks\.json" <<'JSON'\r?\n([\s\S]*?)\r?\n\s+JSON/,
+    );
 
-  assert.equal(assetLinks[0]?.target?.package_name, 'org.openmanuscript.studio');
-  assert.deepEqual(assetLinks[0]?.target?.sha256_cert_fingerprints, [
-    directReleaseFingerprint,
-    GOOGLE_PLAY_APP_SIGNING_SHA256,
-  ]);
+    assert.ok(assetLinksTemplate, 'assetlinks.json deployment template is missing');
+    const assetLinks = JSON.parse(
+      assetLinksTemplate[1].replace(
+        '${{ steps.android_app_link.outputs.fingerprint }}',
+        directReleaseFingerprint,
+      ),
+    ) as Array<{
+      target?: {
+        package_name?: string;
+        sha256_cert_fingerprints?: string[];
+      };
+    }>;
+
+    assert.equal(assetLinks[0]?.target?.package_name, 'org.openmanuscript.studio');
+    assert.deepEqual(assetLinks[0]?.target?.sha256_cert_fingerprints, [
+      directReleaseFingerprint,
+      GOOGLE_PLAY_APP_SIGNING_SHA256,
+    ]);
+  }
   assert.ok(workflow.includes(`grep -Fq '"${GOOGLE_PLAY_APP_SIGNING_SHA256}"'`));
 });
 
