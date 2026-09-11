@@ -61,13 +61,13 @@ Desktop Tauri clients may use one of these exact local application return origin
 - `https://tauri.localhost`;
 - `tauri://localhost`.
 
-Android and iOS do not navigate the application WebView away from the bundled Studio UI for ORCID authentication. The app opens the ORCID authorization URL in the system browser and requests the exact registered mobile return target `openmanuscript://auth`. Tauri registers the `openmanuscript` custom URI scheme for mobile builds and delivers the return URL to the running app, or exposes it on cold start.
+Android and iOS do not navigate the application WebView away from the bundled Studio UI for ORCID authentication. The app opens the ORCID authorization URL in the system browser and requests the exact registered mobile return target `https://app.openmanuscript.org/auth/orcid`. Tauri registers that verified HTTPS App Link and the `openmanuscript://auth` custom URI scheme used as its fallback, delivering either return URL to the running app or exposing it on cold start.
 
-After ORCID authentication succeeds, the server does **not** place a Studio session token in a redirect URL. Instead it creates a random, two-minute, single-use handoff code and stores only its SHA-256 digest. Desktop flows return the code to the validated local Tauri origin; mobile flows return it through `openmanuscript://auth`. The handoff code is carried in the URL fragment rather than the query string.
+After ORCID authentication succeeds, the server does **not** place a Studio session token in a redirect URL. Instead it creates a random, two-minute, single-use handoff code and stores only its SHA-256 digest. Desktop flows return the code to the validated local Tauri origin; mobile flows return it through the verified HTTPS App Link, with `openmanuscript://auth` available as a fallback. The handoff code is carried in the URL fragment rather than the query string.
 
 The bundled frontend then calls `POST /api/auth/orcid/native/exchange` with the one-time code and the native-client header. The server atomically consumes the handoff, creates the normal native Studio session, and returns the native bearer token. The client persists that token in the same native session storage already used by e-mail/password login.
 
-The server accepts only the exact native return targets listed above, including the exact `openmanuscript://auth` mobile target, so caller-controlled return URLs cannot be used as an open redirect.
+The server accepts only the exact native return targets listed above, including the verified HTTPS mobile target and the exact `openmanuscript://auth` fallback, so caller-controlled return URLs cannot be used as an open redirect.
 
 ## Integrations panel
 
@@ -172,9 +172,10 @@ curl -sS https://studio.openmanuscript.org/api/auth/providers
 12. Test **Disconnect ORCID** and confirm that only the external identity link is removed.
 13. Repeat the ORCID sign-in in an installed desktop application and confirm that the native bearer session is created and persists after restart.
 14. On Android, tap **Sign in with ORCID** and confirm that the system browser opens the ORCID authorization page.
-15. Complete authentication and confirm that `openmanuscript://auth` returns to the installed Studio app and that the user is signed in without seeing the web login page.
-16. Repeat the mobile return test with the app already running and with the app fully closed before the browser returns.
-17. Repeat the mobile test on iOS when a release build is available.
+15. Complete authentication and confirm that the verified `https://app.openmanuscript.org/auth/orcid` return opens the installed Studio app and that the user is signed in without seeing the web login page.
+16. Disable supported-link handling temporarily, repeat the sign-in, tap the fallback-page button and confirm that `openmanuscript://auth` opens the installed application.
+17. Repeat the mobile return test with the app already running and with the app fully closed before the browser returns.
+18. Repeat the mobile test on iOS when a release build is available.
 
 ## Database
 

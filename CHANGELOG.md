@@ -4,6 +4,16 @@ Notable changes to Open Manuscript Studio are documented in this file.
 Application release numbers are independent from the version identifiers of
 the portable OMI document model and individual renderers.
 
+## Unreleased
+
+### Android authentication
+
+- Added the Google Play App Signing certificate to the verified Android App
+  Link association alongside the direct-release certificate.
+- Replaced the browser-specific Android ORCID fallback intent with the
+  registered `openmanuscript://auth` scheme, improving the return to Studio on
+  Redmi/Chrome devices.
+
 ## 0.1.0-beta.6 — 2026-09-09
 
 ### Account lifecycle and privacy
