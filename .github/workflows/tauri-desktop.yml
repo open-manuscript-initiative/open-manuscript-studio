@@ -11,9 +11,12 @@ on:
     branches:
       - main
     paths:
+      - '.github/workflows/ci.yml'
       - 'package.json'
+      - 'app-link-site/**'
       - 'public/android-chrome-512x512.png'
       - 'public/studio-icon.svg'
+      - 'tests/native-orcid-handoff.test.ts'
       - 'src-tauri/icons/icon.svg'
       - 'src-tauri/Cargo.toml'
       - 'src-tauri/Cargo.lock'
