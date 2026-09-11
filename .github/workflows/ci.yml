@@ -252,6 +252,8 @@ jobs:
 
             rsync -a --delete app-link-site/ "$APP_LINK_ROOT/"
             mkdir -p "$APP_LINK_ROOT/.well-known"
+            # Google Play re-signs distributed APKs with its App Signing key.
+            # Certificate fingerprints are public association data, not secrets.
             cat > "$APP_LINK_ROOT/.well-known/assetlinks.json" <<'JSON'
             [
               {
@@ -260,7 +262,8 @@ jobs:
                   "namespace": "android_app",
                   "package_name": "org.openmanuscript.studio",
                   "sha256_cert_fingerprints": [
-                    "${{ steps.android_app_link.outputs.fingerprint }}"
+                    "${{ steps.android_app_link.outputs.fingerprint }}",
+                    "14:B1:C7:D7:0A:3D:47:6F:0A:14:71:D1:A9:FD:90:76:AF:1E:C6:DA:09:9F:45:48:60:0F:52:07:E1:D0:72:45"
                   ]
                 }
               }
@@ -304,7 +307,14 @@ jobs:
               exit 1
             fi
 
-            assetlinks_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://app.openmanuscript.org/.well-known/assetlinks.json)"
-            fallback_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' https://app.openmanuscript.org/auth/orcid/)"
-            test "$assetlinks_status" = '200'
-            test "$fallback_status" = '200'
+            assetlinks_body="$(curl --fail --silent --show-error https://app.openmanuscript.org/.well-known/assetlinks.json)"
+            printf '%s' "$assetlinks_body" | grep -Fq '"package_name": "org.openmanuscript.studio"'
+            printf '%s' "$assetlinks_body" | grep -Fq '"${{ steps.android_app_link.outputs.fingerprint }}"'
+            printf '%s' "$assetlinks_body" | grep -Fq '"14:B1:C7:D7:0A:3D:47:6F:0A:14:71:D1:A9:FD:90:76:AF:1E:C6:DA:09:9F:45:48:60:0F:52:07:E1:D0:72:45"'
+
+            fallback_body="$(curl --fail --silent --show-error https://app.openmanuscript.org/auth/orcid/)"
+            printf '%s' "$fallback_body" | grep -Fq 'openmanuscript://auth/'
+            if printf '%s' "$fallback_body" | grep -Fq 'intent://auth'; then
+              echo 'The deployed Android fallback still uses the unreliable Chrome intent URL.' >&2
+              exit 1
+            fi

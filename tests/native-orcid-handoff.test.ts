@@ -9,6 +9,9 @@ import {
   normalizeNativeReturnOrigin,
 } from '../server/src/integrations/nativeAuthHandoff.ts';
 
+const GOOGLE_PLAY_APP_SIGNING_SHA256 =
+  '14:B1:C7:D7:0A:3D:47:6F:0A:14:71:D1:A9:FD:90:76:AF:1E:C6:DA:09:9F:45:48:60:0F:52:07:E1:D0:72:45';
+
 test('native ORCID handoff accepts only registered Studio return targets', () => {
   assert.equal(normalizeNativeReturnOrigin('tauri://localhost'), 'tauri://localhost');
   assert.equal(normalizeNativeReturnOrigin('http://tauri.localhost/'), 'http://tauri.localhost');
@@ -75,6 +78,52 @@ test('legacy custom-scheme mobile return remains available as fallback', () => {
     handoffCode: 'fallback-code',
   });
   assert.equal(url, 'openmanuscript://auth/#nativeAuthCode=fallback-code');
+});
+
+test('Android ORCID fallback uses the registered custom scheme directly', () => {
+  const fallbackPage = readFileSync(
+    new URL('../app-link-site/auth/orcid/index.html', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(fallbackPage, /const nativeUrl = `openmanuscript:\/\/auth\/\$\{fragment\}`;/);
+  assert.match(
+    fallbackPage,
+    /document\.getElementById\('open-app'\)\.href = nativeUrl;/,
+  );
+  assert.doesNotMatch(fallbackPage, /intent:\/\/auth/);
+});
+
+test('production Android App Links trust direct and Google Play signed builds', () => {
+  const workflow = readFileSync(
+    new URL('../.github/workflows/ci.yml', import.meta.url),
+    'utf8',
+  );
+  const assetLinksTemplate = workflow.match(
+    /cat > "\$APP_LINK_ROOT\/\.well-known\/assetlinks\.json" <<'JSON'\n([\s\S]*?)\n\s+JSON/,
+  );
+  const directReleaseFingerprint = Array.from({ length: 32 }, () => 'AA').join(':');
+
+  assert.match(GOOGLE_PLAY_APP_SIGNING_SHA256, /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/);
+  assert.ok(assetLinksTemplate, 'assetlinks.json deployment template is missing');
+  const assetLinks = JSON.parse(
+    assetLinksTemplate[1].replace(
+      '${{ steps.android_app_link.outputs.fingerprint }}',
+      directReleaseFingerprint,
+    ),
+  ) as Array<{
+    target?: {
+      package_name?: string;
+      sha256_cert_fingerprints?: string[];
+    };
+  }>;
+
+  assert.equal(assetLinks[0]?.target?.package_name, 'org.openmanuscript.studio');
+  assert.deepEqual(assetLinks[0]?.target?.sha256_cert_fingerprints, [
+    directReleaseFingerprint,
+    GOOGLE_PLAY_APP_SIGNING_SHA256,
+  ]);
+  assert.ok(workflow.includes(`grep -Fq '"${GOOGLE_PLAY_APP_SIGNING_SHA256}"'`));
 });
 
 test('native ORCID errors return to the local Tauri application', () => {
