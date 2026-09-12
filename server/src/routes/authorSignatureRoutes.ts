@@ -10,6 +10,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { env } from '../config/env.js';
+import { identityPrisma } from '../lib/identityPrisma.js';
 import { prisma } from '../lib/prisma.js';
 import { getUserIdForSession } from '../services/authService.js';
 import {
@@ -418,11 +419,11 @@ async function authenticatedOrcidIdentity(
   const userId = await getUserIdForSession(token);
   if (!userId) return null;
   const [identity, user] = await Promise.all([
-    prisma.userIdentity.findFirst({
+    identityPrisma.userIdentity.findFirst({
       where: { userId, provider: 'ORCID' },
       orderBy: { lastUsedAt: 'desc' },
     }),
-    prisma.user.findUnique({ where: { id: userId }, select: { fullName: true } }),
+    identityPrisma.user.findUnique({ where: { id: userId }, select: { fullName: true } }),
   ]);
   if (!identity) return null;
   return {
