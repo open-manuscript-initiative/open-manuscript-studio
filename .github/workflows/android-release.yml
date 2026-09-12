@@ -58,6 +58,7 @@ jobs:
         run: |
           npm run test:android-update
           python3 tests/verify-play-bundle.test.py
+          python3 tests/android-page-size.test.py
 
       - name: Configure Rust Android targets
         run: |
@@ -160,6 +161,9 @@ jobs:
             https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar \
             --output "$RUNNER_TEMP/bundletool.jar"
           python3 scripts/verify-play-bundle.py "$RUNNER_TEMP/bundletool.jar"
+
+      - name: Verify 16 KB native libraries and Play packaging
+        run: python3 scripts/verify-android-page-size.py artifacts/play --bundletool "$RUNNER_TEMP/bundletool.jar"
 
       - name: Build signed universal APK
         env:
