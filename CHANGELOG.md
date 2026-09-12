@@ -6,6 +6,25 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+## 0.1.0-beta.7 — 2026-09-12
+
+### Author signatures
+
+- Fixed verified ORCID identity lookup to use the Identity database, matching
+  the ORCID sign-in and linking flow.
+- The owner confirmed the complete ORCID, passkey registration and manuscript
+  revision signing flow on Android Chrome. This is a web-client acceptance
+  check; the new packaged Android build still requires its own smoke test.
+
+### Packaging
+
+- Aligned application and installer versions for this beta.
+- Set Android versionCode to 1007 so beta builds can advance beyond the
+  semver-derived 1000 used by version 0.1.0. Confirm the highest code in Play
+  Console before uploading if any build has been numbered manually.
+- The ORCID correction requires an updated Studio API; client installation
+  alone does not update a self-hosted server.
+
 ### Android authentication
 
 - Added the Google Play App Signing certificate to the verified Android App

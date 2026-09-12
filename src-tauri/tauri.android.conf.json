@@ -3,7 +3,8 @@
   "productName": "OMI Studio",
   "bundle": {
     "android": {
-      "minSdkVersion": 24
+      "minSdkVersion": 24,
+      "versionCode": 1007
     }
   }
 }
