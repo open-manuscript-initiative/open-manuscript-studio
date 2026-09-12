@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "test:continuous": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/continuous-manuscript-document.test.ts",
     "test:current-study-notes": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/current-study-notes.test.ts",
-    "test:android-update": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/android-update-installer.test.ts",
+    "test:android-update": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/android-update-installer.test.ts && node --experimental-vm-modules --test tests/android-distribution.test.mjs",
     "pretest": "npm run test:continuous && npm run test:current-study-notes && npm run test:android-update",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -65,7 +65,9 @@
     "mobile:android:build": "npm run android:build",
     "mobile:ios:init": "npm run ios:init",
     "mobile:ios:dev": "npm run ios:dev",
-    "mobile:ios:build": "npm run ios:build"
+    "mobile:ios:build": "npm run ios:build",
+    "android:build:play": "node scripts/build-android-distribution.mjs play",
+    "android:build:direct": "node scripts/build-android-distribution.mjs direct"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

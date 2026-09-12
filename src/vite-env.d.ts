@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
+  readonly VITE_ANDROID_DISTRIBUTION?: 'play' | 'direct';
   readonly VITE_APP_VERSION: string;
   readonly VITE_BUILD_NUMBER: string;
   readonly VITE_COMMIT_SHA: string;

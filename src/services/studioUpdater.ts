@@ -17,6 +17,14 @@ const LATEST_RELEASE_API =
 const LATEST_RELEASE_PAGE =
   'https://github.com/open-manuscript-initiative/open-manuscript-studio/releases/latest';
 
+const PLAY_STORE_URL =
+  'https://play.google.com/store/apps/details?id=org.openmanuscript.studio';
+
+function isPlayDistribution(): boolean {
+  return getStudioPlatform() === 'android'
+    && import.meta.env.VITE_ANDROID_DISTRIBUTION === 'play';
+}
+
 type ReleaseAsset = {
   name?: string;
   browser_download_url?: string;
@@ -121,7 +129,7 @@ export async function checkForStudioUpdate(): Promise<StudioUpdateInfo | null> {
   }
 
   const asset = preferredReleaseAsset(release, platform);
-  const targetUrl = asset?.browser_download_url
+  const targetUrl = isPlayDistribution() ? PLAY_STORE_URL : asset?.browser_download_url
     ?? release.html_url
     ?? LATEST_RELEASE_PAGE;
   const targetDigest = asset?.digest;
@@ -131,6 +139,7 @@ export async function checkForStudioUpdate(): Promise<StudioUpdateInfo | null> {
     action = 'reload';
   } else if (
     platform === 'android'
+    && !isPlayDistribution()
     && asset?.browser_download_url
     && isSha256Digest(targetDigest)
   ) {
@@ -151,6 +160,12 @@ export async function checkForStudioUpdate(): Promise<StudioUpdateInfo | null> {
 export async function applyStudioUpdate(
   update: StudioUpdateInfo,
 ): Promise<void> {
+  // Enforce the distribution even for stale update state or a supplied APK URL.
+  if (isPlayDistribution()) {
+    await openUrl(PLAY_STORE_URL);
+    return;
+  }
+
   if (update.action === 'native-install') {
     await installDesktopUpdate();
     return;
