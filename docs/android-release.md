@@ -111,3 +111,35 @@ Google Play Protect may still show a reputation warning for directly downloaded 
 - Do not commit `src-tauri/gen/`, `*.jks`, `*.keystore`, or `keystore.properties`.
 - Keep Google Play Console access and service-account permissions minimal.
 - Use Play App Signing for Play-distributed builds.
+
+## Play and direct-download update channels
+
+Use `npm run android:build:play` for the signed Play AAB and
+`npm run android:build:direct` for the signed direct-download APK, after Android
+initialization and signing setup. The Android Release workflow runs both.
+
+The Play command temporarily adds a release manifest overlay that removes
+`REQUEST_INSTALL_PACKAGES` and the updater FileProvider. It builds the frontend
+with `VITE_ANDROID_DISTRIBUTION=play`, so update actions open the app's Play listing,
+including stale APK update actions. The native installer also refuses requests
+when the installation permission is absent. The overlay is removed after the
+build, including on failure, so the subsequent direct APK retains its updater.
+An existing developer-owned release manifest is never overwritten.
+
+CI uses bundletool to inspect every module's manifest in the finished AAB, and
+checks the package identifier and versionCode before any Play upload. A failed
+check blocks publication. The direct APK is not a Play upload artifact.
+
+The beta.8 Play rebuild uses Android versionCode **1009** (previously 1008);
+the displayed application version remains 0.1.0-beta.8. Increment versionCode
+again for any later upload. Replace the previous bundle in the Play release
+draft with this newly built AAB. If Play still requests a declaration, inspect
+the version codes of other retained bundles and active testing releases too.
+
+Update discovery still uses public release metadata; Play review or testing
+track availability can lag behind it. The Play build always delegates installation
+to Google Play and never downloads the GitHub APK.
+
+References:
+- [Google Play installation permission policy](https://support.google.com/googleplay/android-developer/answer/12085295)
+- [Android bundletool](https://developer.android.com/tools/bundletool)

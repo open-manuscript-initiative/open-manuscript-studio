@@ -54,6 +54,11 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Test Android distribution
+        run: |
+          npm run test:android-update
+          python3 tests/verify-play-bundle.test.py
+
       - name: Configure Rust Android targets
         run: |
           rustup update stable
@@ -145,12 +150,21 @@ jobs:
       - name: Build signed Android App Bundle
         env:
           CI: 'true'
-        run: npm run tauri -- android build --aab --ci
+        run: npm run android:build:play
+
+      - name: Verify Google Play bundle permissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar \
+            --output "$RUNNER_TEMP/bundletool.jar"
+          python3 scripts/verify-play-bundle.py "$RUNNER_TEMP/bundletool.jar"
 
       - name: Build signed universal APK
         env:
           CI: 'true'
-        run: npm run tauri -- android build --apk --ci
+        run: npm run android:build:direct
 
       - name: Upload signed Android artifacts
         uses: actions/upload-artifact@v7
@@ -159,7 +173,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           path: |
-            src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
+            artifacts/play/*.aab
             src-tauri/gen/android/app/build/outputs/apk/**/*.apk
 
       - name: Validate Google Play credentials
@@ -179,6 +193,6 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: ${{ env.ANDROID_PACKAGE_NAME }}
-          releaseFiles: src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
+          releaseFiles: artifacts/play/*.aab
           tracks: ${{ inputs.play_track }}
           status: completed

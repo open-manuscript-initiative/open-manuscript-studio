@@ -1,5 +1,7 @@
 package org.openmanuscript.studio.updater
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -28,6 +30,16 @@ class InstallUpdateArgs {
 class AndroidUpdaterPlugin(private val activity: Activity) : Plugin(activity) {
     @Command
     fun installUpdate(invoke: Invoke) {
+        // Play builds remove this permission in the merged application manifest.
+        // Reject before downloading, even if frontend code invokes us directly.
+        @Suppress("DEPRECATION")
+        val permissions = activity.packageManager.getPackageInfo(
+            activity.packageName, PackageManager.GET_PERMISSIONS,
+        ).requestedPermissions
+        if (permissions?.contains(Manifest.permission.REQUEST_INSTALL_PACKAGES) != true) {
+            invoke.reject("Update this installation through Google Play.")
+            return
+        }
         val args = invoke.parseArgs(InstallUpdateArgs::class.java)
 
         Thread {
