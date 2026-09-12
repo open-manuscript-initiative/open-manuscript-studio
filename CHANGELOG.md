@@ -6,6 +6,23 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+## 0.1.0-beta.9 — 2026-09-12
+
+### Google Play and Android compatibility
+
+- Includes the Play-specific update channel: Play builds open Google Play for
+  updates and omit the APK installation permission; direct APK builds retain
+  the verified native updater.
+- Includes 16 KB link alignment for the arm64-v8a and x86_64 Studio libraries.
+- Android Release verifies the actual AAB permissions, versionCode, 64-bit ELF
+  alignment and 16 KB packaging before Play upload.
+- Advances Android versionCode from 1010 to **1011**, above previously uploaded
+  versionCode 1009. The displayed version is **0.1.0-beta.9**.
+- Synchronizes npm, Cargo and Tauri versions, Windows MSI version 0.1.0.11,
+  and iOS build number 8.
+- The Android release must pass its artifact checks and device testing before
+  rollout. Android edge-to-edge warnings remain a separate follow-up.
+
 ## 0.1.0-beta.7 — 2026-09-12
 
 ### Author signatures
