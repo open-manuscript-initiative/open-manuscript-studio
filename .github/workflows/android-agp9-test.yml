@@ -23,7 +23,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        toolchain: [baseline, agp9]
+        include:
+          - toolchain: baseline
+            version_code: 1015
+          - toolchain: agp9
+            version_code: 1016
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -53,16 +57,6 @@ jobs:
         run: |
           npm run tauri -- android init --ci
           npm run icons:generate
-      - name: Probe AGP 9 default Kotlin and DSL
-        if: matrix.toolchain == 'agp9'
-        id: defaults
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euo pipefail
-          node scripts/configure-android-agp9-test.mjs defaults
-          cd src-tauri/gen/android
-          ./gradlew help --no-daemon --stacktrace 2>&1 | tee "$RUNNER_TEMP/agp9-defaults.log"
       - name: Enable AGP 9 compatibility mode
         if: matrix.toolchain == 'agp9'
         run: node scripts/configure-android-agp9-test.mjs compatibility
@@ -79,7 +73,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm run tauri -- android build --target aarch64 --aab --apk --ci 2>&1 | tee "$RUNNER_TEMP/agp-release-build.log"
+          npm run tauri -- android build --target aarch64 --aab --apk --ci --config '{"bundle":{"android":{"versionCode":${{ matrix.version_code }}}}}' 2>&1 | tee "$RUNNER_TEMP/agp-release-build.log"
+      - name: Probe AGP 9 default Kotlin and DSL
+        if: matrix.toolchain == 'agp9'
+        id: defaults
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/configure-android-agp9-test.mjs defaults
+          cd src-tauri/gen/android
+          ./gradlew help --no-daemon --stacktrace 2>&1 | tee "$RUNNER_TEMP/agp9-defaults.log"
       - name: Verify ARM64 native 16 KB page alignment
         run: |
           python3 - <<'PYTHON'

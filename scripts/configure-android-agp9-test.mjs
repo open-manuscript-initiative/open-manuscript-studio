@@ -1,5 +1,5 @@
 // Experimental only: deliberately not called by release workflows.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const mode = process.argv[2];
@@ -24,5 +24,22 @@ if (/^distributionSha256Sum=/m.test(readFileSync(resolve(root, 'gradle/wrapper/g
 }
 const clean = source.replace(/^android\.(builtInKotlin|newDsl)=.*\r?\n?/gm, '').trimEnd();
 updates.push([properties, `${clean}\nandroid.builtInKotlin=${mode === 'defaults'}\nandroid.newDsl=${mode === 'defaults'}\n`]);
+// Gradle 9 removed Project.exec; Tauri 2.11.4 still generates it.
+const tasks = readdirSync(resolve(root, 'buildSrc/src'), { recursive: true })
+  .filter(file => file.endsWith('BuildTask.kt'));
+if (tasks.length !== 1) throw new Error('Expected exactly one generated BuildTask.kt');
+const taskPath = resolve(root, 'buildSrc/src', tasks[0]);
+let task = readFileSync(taskPath, 'utf8');
+if (task.includes('project.exec {')) {
+  if (!task.includes('open class BuildTask : DefaultTask() {')) {
+    throw new Error('Unexpected Tauri BuildTask class declaration');
+  }
+  task = task.replace('open class BuildTask : DefaultTask() {',
+    'open class BuildTask @javax.inject.Inject constructor(private val execOperations: org.gradle.process.ExecOperations) : DefaultTask() {')
+    .replaceAll('project.exec {', 'execOperations.exec {');
+} else if (!task.includes('execOperations.exec {')) {
+  throw new Error('Expected a known Tauri BuildTask execution API');
+}
+updates.push([taskPath, task]);
 for (const [file, content] of updates) writeFileSync(file, content);
 console.log(`Experimental AGP 9.0.1 / Gradle 9.1.0: ${mode}`);

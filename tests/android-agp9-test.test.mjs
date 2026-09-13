@@ -9,7 +9,8 @@ const script = resolve('scripts/configure-android-agp9-test.mjs');
 function fixture() {
   const cwd = mkdtempSync(join(tmpdir(), 'omi-agp9-'));
   const root = join(cwd, 'src-tauri/gen/android');
-  mkdirSync(join(root, 'buildSrc'), { recursive: true });
+  mkdirSync(join(root, 'buildSrc/src/main/kotlin'), { recursive: true });
+  writeFileSync(join(root, 'buildSrc/src/main/kotlin/BuildTask.kt'), 'open class BuildTask : DefaultTask() { fun run() { project.exec { executable("npm") } } }');
   mkdirSync(join(root, 'gradle/wrapper'), { recursive: true });
   for (const path of ['build.gradle.kts', 'buildSrc/build.gradle.kts']) {
     writeFileSync(join(root, path), 'classpath("com.android.tools.build:gradle:8.11.0")\n');
@@ -23,6 +24,10 @@ test('both AGP classpaths and wrapper change; default probe can switch to repeat
   try {
     const defaults = f.run('defaults');
     assert.equal(defaults.status, 0, defaults.stderr);
+    const task = readFileSync(join(f.root, 'buildSrc/src/main/kotlin/BuildTask.kt'), 'utf8');
+    assert.match(task, /javax.inject.Inject/);
+    assert.match(task, /execOperations.exec/);
+    assert.ok(!task.includes('project.exec'));
     for (const path of ['build.gradle.kts', 'buildSrc/build.gradle.kts']) {
       assert.match(readFileSync(join(f.root, path), 'utf8'), /gradle:9\.0\.1/);
     }
