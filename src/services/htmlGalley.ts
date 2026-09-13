@@ -23,7 +23,7 @@ export interface HtmlGalleyReceipt {
   published: false;
 }
 export type HtmlGalleyRequest = {
-  manuscriptId: string; submissionId: number; apiKey: string;
+  manuscriptId: string; submissionId: number;
 } & ({ action: 'inspect' } | {
   action: 'transfer'; publicationId: number; locale: string; genreId: number; html: string; confirmed: true;
 });
@@ -32,11 +32,11 @@ export type HtmlGalleyRequest = {
 export async function buildHtmlGalley(manuscript: OmiManuscript): Promise<string> {
   if (getDocumentStructureProfile(manuscript).kind !== 'study') throw new Error('Open a standalone study first.');
   const result = renderHtmlArticle(manuscript);
-  if (!result.validForExport) throw new Error(result.diagnostics.filter((d) => d.severity === 'error').map((d) => d.message).join('\n'));
+  if (!result.validForExport) throw new Error(result.diagnostics.filter((d) => d.severity === 'error').map((d) => d.message).join('\\n'));
   let html = result.html;
   for (const id of collectReferencedAssetIds(manuscript.sections.flatMap((s) => s.blocks))) {
     const asset = manuscript.assets?.find((a) => a.id === id);
-    if (!asset || !/^image\/(png|jpeg|gif|webp)$/.test(asset.mediaType)) throw new Error(`Unsupported or missing image: ${id}`);
+    if (!asset || !/^image\\/(png|jpeg|gif|webp)$/.test(asset.mediaType)) throw new Error(`Unsupported or missing image: ${id}`);
     const bytes = await getAssetPayload(manuscript.id, id);
     if (!bytes || bytes.byteLength !== asset.size || await sha256Hex(bytes) !== asset.checksum.value.toLowerCase()) throw new Error(`Image integrity check failed: ${id}`);
     let binary = '';
@@ -44,8 +44,8 @@ export async function buildHtmlGalley(manuscript: OmiManuscript): Promise<string
     const escaped = assetPath(asset).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     html = html.replaceAll(`src="${escaped}"`, `src="data:${asset.mediaType};base64,${btoa(binary)}"`);
   }
-  for (const image of html.matchAll(/<img\b[^>]*\bsrc="([^"]*)"/g)) {
-    if (!/^data:image\/(png|jpeg|gif|webp);base64,[a-zA-Z0-9+/=]+$/.test(image[1] ?? '')) {
+  for (const image of html.matchAll(/<img\\b[^>]*\\bsrc="([^"]*)"/g)) {
+    if (!/^data:image\\/(png|jpeg|gif|webp);base64,[a-zA-Z0-9+/=]+$/.test(image[1] ?? '')) {
       throw new Error('HTML galley images must be embedded PNG, JPEG, GIF or WebP files. Import remote images first.');
     }
   }
