@@ -401,6 +401,8 @@ function renderBlock(block: OmiBlock, state: RenderState): string {
         return renderChart(block, state);
       case 'equation':
         return renderEquation(block, state);
+      case 'music-score':
+        return renderMusicScore(block, state);
     }
   }
 
@@ -724,6 +726,15 @@ function renderEquation(block: OmiBlock, state: RenderState): string {
   return `<disp-formula id="${xmlId('eq', block.id)}">${
     label ? `<label>${escapeXml(label)}</label>` : ''
   }${math}</disp-formula>`;
+}
+
+function renderMusicScore(block: OmiBlock, state: RenderState): string {
+  if (block.visual?.kind !== 'music-score') return '';
+  const target = state.targetMap.get(block.id);
+  const label = target ? objectLabel(target, state) : '';
+  const title = block.visual.caption?.trim() || block.visual.title?.trim() || '';
+  const notes = block.visual.notes.slice(0, 256).map((note) => note.rest ? 'rest' : `${note.step}${note.alter === 1 ? '#' : note.alter === -1 ? 'b' : ''}${note.octave}`).join(' ');
+  return `<fig id="${xmlId('music', block.id)}"><label>${escapeXml(label)}</label>${title ? `<caption><p>${escapeXml(title)}</p></caption>` : ''}<p content-type="${escapeXml(block.visual.format)}">${escapeXml(notes)}</p></fig>`;
 }
 
 function renderBack(state: RenderState): string {

@@ -3,6 +3,7 @@ import type {
   OmiChartType,
   OmiEquationBlockData,
   OmiImageBlockData,
+  OmiMusicScoreBlockData,
   OmiImportProvenance,
   OmiVisualBlockData,
 } from '../types/omi';
@@ -100,6 +101,13 @@ export function createEquationBlock(
       provenance: options.provenance,
     },
   };
+}
+
+export function createMusicScoreBlock(
+  data: Omit<OmiMusicScoreBlockData, 'kind'>,
+  id = crypto.randomUUID(),
+): OmiBlock {
+  return { id, type: 'music-score', content: '', visual: { kind: 'music-score', ...data } };
 }
 
 export function isVisualBlock(

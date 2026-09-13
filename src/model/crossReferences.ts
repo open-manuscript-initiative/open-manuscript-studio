@@ -396,6 +396,8 @@ export function targetKindForBlock(
       return 'chart';
     case 'equation':
       return 'equation';
+    case 'music-score':
+      return 'figure';
     default:
       return undefined;
   }
@@ -417,6 +419,8 @@ function targetTitle(
       return visual.title?.trim() || visual.caption?.trim() || '';
     case 'equation':
       return visual.label?.trim() || visual.caption?.trim() || '';
+    case 'music-score':
+      return visual.caption?.trim() || visual.title?.trim() || '';
   }
 }
 

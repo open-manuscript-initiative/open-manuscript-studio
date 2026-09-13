@@ -12,6 +12,8 @@ import type {
   OmiChartType,
   OmiImportProvenance,
 } from '../types/omi';
+import { importMusicFile } from './musicImport';
+import { importFormatEnabled } from './importSettings';
 
 interface ZipEntry {
   name: string;
@@ -30,31 +32,44 @@ export async function importVisualBlocksFromFile(file: File): Promise<OmiBlock[]
   const provenance = createProvenance(file.name, inferSourceFormat(lowerName));
 
   if (file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(lowerName)) {
+    if (!importFormatEnabled('images')) throw new Error('Image import is disabled in Settings.');
     return [await imageFileToBlock(file, provenance)];
   }
 
+  if (/\.(musicxml?|xml)$/i.test(lowerName)) {
+    const format = /\.midi?$/i.test(lowerName) ? 'midi' : 'musicXml';
+    if (!importFormatEnabled(format)) throw new Error(`${format === 'midi' ? 'MIDI' : 'MusicXML'} import is disabled in Settings.`);
+    return [await importMusicFile(file, provenance)];
+  }
+
   if (/\.csv$/i.test(lowerName)) {
+    if (!importFormatEnabled('csv')) throw new Error('CSV import is disabled in Settings.');
     return [createTableBlock(parseDelimitedTable(await file.text(), ','), { provenance })];
   }
 
   if (/\.(tsv|txt)$/i.test(lowerName)) {
+    if (!importFormatEnabled('csv')) throw new Error('CSV/TSV import is disabled in Settings.');
     return [createTableBlock(parseDelimitedTable(await file.text(), '\t'), { provenance })];
   }
 
   if (/\.tex$/i.test(lowerName)) {
+    if (!importFormatEnabled('tex')) throw new Error('TeX import is disabled in Settings.');
     const latex = (await file.text()).trim();
     return [createEquationBlock(latex, { notation: 'latex', latex, provenance })];
   }
 
   if (/\.html?$/i.test(lowerName)) {
+    if (!importFormatEnabled('html')) throw new Error('HTML import is disabled in Settings.');
     return importVisualBlocksFromHtml(await file.text(), provenance);
   }
 
   if (/\.xlsx$/i.test(lowerName)) {
+    if (!importFormatEnabled('xlsx')) throw new Error('XLSX import is disabled in Settings.');
     return importXlsx(await file.arrayBuffer(), provenance);
   }
 
   if (/\.docx$/i.test(lowerName)) {
+    if (!importFormatEnabled('docx')) throw new Error('DOCX import is disabled in Settings.');
     return importDocx(await file.arrayBuffer(), provenance);
   }
 
