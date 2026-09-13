@@ -51,6 +51,10 @@ model User {
   orcid                  String?                 @unique @db.VarChar(19)
   bio                    String?                 @db.VarChar(2000)
   timeZone               String?                 @map("time_zone") @db.VarChar(64)
+  ojsApiKeyCiphertext    String?                 @map("ojs_api_key_ciphertext") @db.Text
+  ojsApiKeyIv             String?                 @map("ojs_api_key_iv") @db.VarChar(64)
+  ojsApiKeyAuthTag        String?                 @map("ojs_api_key_auth_tag") @db.VarChar(64)
+  ojsApiBaseUrl           String?                 @map("ojs_api_base_url") @db.VarChar(2048)
   interfaceLanguage      String                  @default("en") @map("interface_language") @db.VarChar(16)
   status                 UserStatus              @default(ACTIVE)
   createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
