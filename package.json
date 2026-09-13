@@ -67,7 +67,8 @@
     "mobile:ios:dev": "npm run ios:dev",
     "mobile:ios:build": "npm run ios:build",
     "android:build:play": "node scripts/build-android-distribution.mjs play",
-    "android:build:direct": "node scripts/build-android-distribution.mjs direct"
+    "android:build:direct": "node scripts/build-android-distribution.mjs direct",
+    "test:html-galley": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/html-galley.test.ts && node --test --experimental-test-module-mocks tests/html-galley-routes.test.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

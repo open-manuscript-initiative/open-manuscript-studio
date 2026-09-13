@@ -87,6 +87,9 @@ jobs:
       - name: Test direct publishing submissions
         run: npm run test:direct-submission
 
+      - name: Test HTML galley transfer
+        run: npm run test:html-galley
+
       - name: Read package version
         id: package
         shell: bash
