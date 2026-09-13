@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { importMusicFile } from '../src/services/musicImport.ts';
+import { importMusicBytes, importMusicFile } from '../src/services/musicImport.ts';
 import { renderHtmlArticle } from '../src/services/exportHtml.ts';
 import { createTestManuscript } from './testManuscriptFixture.ts';
 
@@ -16,6 +16,15 @@ test('imports MusicXML without a browser DOM, including namespaces and an extern
     assert.equal(block.visual.notes[0].step, 'C');
     assert.equal(block.visual.divisions, 2);
   }
+});
+
+test('recognizes MusicXML from bytes when Android does not provide a useful file extension', () => {
+  const bytes = new TextEncoder().encode(score('Android score'));
+  const block = importMusicBytes(bytes, 'selected-document', provenance);
+  assert.equal(block.visual?.kind, 'music-score');
+  if (block.visual?.kind !== 'music-score') throw new Error('Missing score');
+  assert.equal(block.visual.title, 'Android score');
+  assert.equal(block.visual.notes[0].step, 'C');
 });
 
 test('keeps encoded and CDATA markup as text and escapes HTML export', async () => {

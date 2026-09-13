@@ -3,14 +3,37 @@ import { createMusicScoreBlock } from '../model/visualBlocks';
 import type { OmiMusicScoreBlockData, OmiMusicScoreNote, OmiBlock, OmiImportProvenance } from '../types/omi';
 
 const MAX_NOTES = 20_000;
+const XML_SNIFF_BYTES = 4_096;
 
 export async function importMusicFile(file: File, provenance: OmiImportProvenance): Promise<OmiBlock> {
-  if (/\.musicxml?$|\.xml$/i.test(file.name)) {
-    const source = await file.text();
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  return importMusicBytes(bytes, file.name, provenance);
+}
+
+export function importMusicBytes(
+  bytes: Uint8Array,
+  fileName: string,
+  provenance: OmiImportProvenance,
+): OmiBlock {
+  if (/\.(?:musicxml|xml)$/i.test(fileName) || looksLikeMusicXml(bytes)) {
+    const source = new TextDecoder('utf-8').decode(bytes);
     return createMusicBlock(parseMusicXml(source), provenance, 'musicxml', source);
   }
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  return createMusicBlock(parseMidi(bytes), provenance, 'midi', `data:audio/midi;base64,${bytesToBase64(bytes)}`);
+
+  if (/\.midi?$/i.test(fileName) || readAscii(bytes, 0, 4) === 'MThd') {
+    return createMusicBlock(parseMidi(bytes), provenance, 'midi', `data:audio/midi;base64,${bytesToBase64(bytes)}`);
+  }
+
+  throw new Error(`Unsupported music import format: ${fileName}`);
+}
+
+function looksLikeMusicXml(bytes: Uint8Array): boolean {
+  if (bytes.length === 0) return false;
+  const prefix = new TextDecoder('utf-8')
+    .decode(bytes.subarray(0, Math.min(bytes.length, XML_SNIFF_BYTES)))
+    .replace(/^\uFEFF/, '')
+    .trimStart();
+  return /^(?:<\?xml\b[^>]*>\s*)?(?:<!DOCTYPE\s+score-partwise\b[^>]*>\s*)?<score-partwise\b/i.test(prefix);
 }
 
 function createMusicBlock(

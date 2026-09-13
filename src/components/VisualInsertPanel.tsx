@@ -263,7 +263,7 @@ export function VisualInsertPanel({
         className="omi-visually-hidden-input"
         type="file"
         multiple
-        accept=".docx,.xlsx,.csv,.tsv,.txt,.html,.htm,.tex,.musicxml,.xml,.mid,.midi,image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+        accept=".docx,.xlsx,.csv,.tsv,.txt,.html,.htm,.tex,.musicxml,.xml,.mid,.midi,application/vnd.recordare.musicxml+xml,application/xml,text/xml,audio/midi,audio/x-midi,image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
         onChange={importFiles}
       />
     </>
