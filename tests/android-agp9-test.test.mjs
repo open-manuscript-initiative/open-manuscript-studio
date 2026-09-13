@@ -9,6 +9,8 @@ const script = resolve('scripts/configure-android-agp9-test.mjs');
 function fixture() {
   const cwd = mkdtempSync(join(tmpdir(), 'omi-agp9-'));
   const root = join(cwd, 'src-tauri/gen/android');
+  mkdirSync(join(root, 'app'), { recursive: true });
+  writeFileSync(join(root, 'app/build.gradle.kts'), 'android { kotlinOptions { jvmTarget = "1.8" } }');
   mkdirSync(join(root, 'buildSrc/src/main/kotlin'), { recursive: true });
   writeFileSync(join(root, 'buildSrc/src/main/kotlin/BuildTask.kt'), 'open class BuildTask : DefaultTask() { fun run() { project.exec { executable("npm") } } }');
   mkdirSync(join(root, 'gradle/wrapper'), { recursive: true });
@@ -28,6 +30,7 @@ test('both AGP classpaths and wrapper change; default probe can switch to repeat
     assert.match(task, /javax.inject.Inject/);
     assert.match(task, /execOperations.exec/);
     assert.ok(!task.includes('project.exec'));
+    assert.match(readFileSync(join(f.root, 'app/build.gradle.kts'), 'utf8'), /targetCompatibility = JavaVersion.VERSION_1_8/);
     for (const path of ['build.gradle.kts', 'buildSrc/build.gradle.kts']) {
       assert.match(readFileSync(join(f.root, path), 'utf8'), /gradle:9\.0\.1/);
     }

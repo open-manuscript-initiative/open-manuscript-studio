@@ -41,5 +41,21 @@ if (task.includes('project.exec {')) {
   throw new Error('Expected a known Tauri BuildTask execution API');
 }
 updates.push([taskPath, task]);
+// Preserve the generated Kotlin JVM 1.8 target when AGP 9 defaults Java to 11.
+const appPath = resolve(root, 'app/build.gradle.kts');
+let app = readFileSync(appPath, 'utf8');
+const marker = '// OMI AGP 9 Java and Kotlin target alignment';
+if (!app.includes(marker)) {
+  if (!/jvmTarget\s*=\s*"1\.8"/.test(app)) throw new Error('Expected generated Kotlin JVM target 1.8');
+  app += `\n${marker}
+android {
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+}
+`;
+}
+updates.push([appPath, app]);
 for (const [file, content] of updates) writeFileSync(file, content);
 console.log(`Experimental AGP 9.0.1 / Gradle 9.1.0: ${mode}`);
