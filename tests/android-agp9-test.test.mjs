@@ -18,7 +18,7 @@ function fixture() {
     writeFileSync(join(root, path), 'classpath("com.android.tools.build:gradle:8.11.0")\n');
   }
   writeFileSync(join(root, 'gradle/wrapper/gradle-wrapper.properties'), 'distributionUrl=https\\://services.gradle.org/distributions/gradle-8.14.3-bin.zip\n');
-  writeFileSync(join(root, 'gradle.properties'), 'org.gradle.jvmargs=-Xmx2048m\nandroid.useAndroidX=true\n');
+  writeFileSync(join(root, 'gradle.properties'), 'org.gradle.jvmargs=-Xmx2048m\nandroid.useAndroidX=true\nandroid.nonFinalResIds=false\n');
   return { cwd, root, run: mode => spawnSync(process.execPath, [script, mode], { cwd, encoding: 'utf8' }) };
 }
 test('both AGP classpaths and wrapper change; default probe can switch to repeatable compatibility mode', () => {
@@ -41,6 +41,9 @@ test('both AGP classpaths and wrapper change; default probe can switch to repeat
     const properties = readFileSync(join(f.root, 'gradle.properties'), 'utf8');
     assert.match(properties, /android.builtInKotlin=false/);
     assert.match(properties, /android.newDsl=false/);
+    assert.match(properties, /android.nonFinalResIds=true/);
+    assert.match(properties, /android.r8.optimizedResourceShrinking=true/);
+    assert.ok(!properties.includes('android.nonFinalResIds=false'));
     assert.match(properties, /android.useAndroidX=true/);
     assert.equal(f.run('compatibility').status, 0);
     assert.equal(readFileSync(join(f.root, 'gradle.properties'), 'utf8'), properties);

@@ -22,8 +22,8 @@ const source = readFileSync(properties, 'utf8');
 if (/^distributionSha256Sum=/m.test(readFileSync(resolve(root, 'gradle/wrapper/gradle-wrapper.properties'), 'utf8'))) {
   throw new Error('Update the pinned wrapper checksum explicitly before changing Gradle.');
 }
-const clean = source.replace(/^android\.(builtInKotlin|newDsl)=.*\r?\n?/gm, '').trimEnd();
-updates.push([properties, `${clean}\nandroid.builtInKotlin=${mode === 'defaults'}\nandroid.newDsl=${mode === 'defaults'}\n`]);
+const clean = source.replace(/^android\.(builtInKotlin|newDsl|nonFinalResIds|r8\.optimizedResourceShrinking)=.*\r?\n?/gm, '').trimEnd();
+updates.push([properties, `${clean}\nandroid.builtInKotlin=${mode === 'defaults'}\nandroid.newDsl=${mode === 'defaults'}\nandroid.nonFinalResIds=true\nandroid.r8.optimizedResourceShrinking=true\n`]);
 // Gradle 9 removed Project.exec; Tauri 2.11.4 still generates it.
 const tasks = readdirSync(resolve(root, 'buildSrc/src'), { recursive: true })
   .filter(file => file.endsWith('BuildTask.kt'));
