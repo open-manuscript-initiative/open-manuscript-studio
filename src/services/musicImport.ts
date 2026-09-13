@@ -22,7 +22,8 @@ function createMusicBlock(
 }
 
 function parseMusicXml(source: string): Omit<OmiMusicScoreBlockData, 'kind' | 'format' | 'source' | 'provenance'> {
-  const xml = new DOMParser().parseFromString(source, 'application/xml');
+  // XML mode keeps the uploaded score as inert data; it is never parsed as HTML.
+  const xml = new DOMParser().parseFromString(source, 'text/xml');
   if (xml.querySelector('parsererror')) throw new Error('The MusicXML file could not be parsed.');
   const title = text(xml, 'work-title') || text(xml, 'movement-title') || undefined;
   const composer = Array.from(xml.querySelectorAll('creator[type="composer"], creator')).map((node) => node.textContent?.trim()).find(Boolean);
@@ -78,7 +79,11 @@ function midiPitch(value: number): OmiMusicScoreNote {
   return { step: names[index] ?? 'C', octave: Math.floor(value / 12) - 1, alter: alters[index] || undefined };
 }
 
-function text(root: ParentNode, selector: string): string { return root.querySelector(selector)?.textContent?.trim() ?? ''; }
+function text(root: ParentNode, selector: string): string {
+  // Normalize DOM text before it enters the portable model. Renderers still
+  // escape it at their output boundary, so imported XML cannot become markup.
+  return root.querySelector(selector)?.textContent?.replace(/[<>]/g, '').trim() ?? '';
+}
 function number(root: ParentNode | null, selector: string): number | undefined { const value = root ? Number(text(root, selector)) : NaN; return Number.isFinite(value) && value > 0 ? value : undefined; }
 function readAscii(bytes: Uint8Array, offset: number, length: number): string { return String.fromCharCode(...bytes.subarray(offset, offset + length)); }
 function readU16(bytes: Uint8Array, offset: number): number { return ((bytes[offset] ?? 0) << 8) | (bytes[offset + 1] ?? 0); }
