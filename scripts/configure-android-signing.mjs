@@ -80,5 +80,22 @@ if (!source.includes(signingLine)) {
     source.slice(insertionPoint);
 }
 
+
+// Apply after the generated build types so Tauri defaults cannot disable shrinking.
+// Keep the generated ProGuard rules: native/plugin entry points depend on them.
+const optimizationMarker = '// OMI Android release resource shrinking';
+if (!source.includes(optimizationMarker)) {
+  source += `\n${optimizationMarker}
+android {
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = true
+            isShrinkResources = true
+        }
+    }
+}
+`;
+}
+
 fs.writeFileSync(gradlePath, source, 'utf8');
 console.log(`Configured Android release signing in ${gradlePath}`);
