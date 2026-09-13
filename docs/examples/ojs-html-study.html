@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="generator" content="Open Manuscript Studio HTML renderer 0.1.0-alpha.1">
+  <meta name="omi-rendering-profile" content="semantic-html5-alpha-0.1">
+  <meta name="omi-manuscript-id" content="manuscript-test">
+  <meta name="omi-head-revision" content="revision-root">
+  <meta name="omi-publication-profile" content="omi-generic-scholarly@0.1.0">
+  <title>A strukturált kézirattól az olvasható webes tanulmányig: Az OJS HTML-átadásának mintatanulmánya</title>
+  <style>
+    :root { color-scheme: light; font-family: Georgia, "Times New Roman", serif; font-size: 11pt; line-height: 1.45; }
+    @page { size: A4; margin: 25mm 25mm 25mm 25mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #fff; color: #111; }
+    a { color: inherit; text-decoration-thickness: .08em; text-underline-offset: .12em; }
+    .omi-scholarly-article { max-width: 76rem; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+    .article-front { text-align: center; border-bottom: 1px solid #bbb; padding-bottom: 2rem; margin-bottom: 2rem; }
+    .article-front h1 { font-size: 2.15em; line-height: 1.15; margin: 0 0 .55em; }
+    .article-subtitle { font-size: 1.28em; margin: -.2em 0 1.2em; }
+    .article-motto { max-width: 38rem; margin: 1.4rem auto; border: 0; padding: 0; }
+    .motto-left { text-align: left; } .motto-center { text-align: center; } .motto-right { text-align: right; }
+    .motto-italic { font-style: italic; }
+    .authors, .affiliations, .article-keywords ul { list-style: none; padding: 0; }
+    .authors { display: flex; flex-wrap: wrap; justify-content: center; gap: .55rem 1.5rem; }
+    .author-affiliation-inline, .author-orcid { display: block; font-size: .9em; }
+    .affiliations { font-size: .9em; }
+    .article-abstract, .article-keywords { text-align: left; max-width: 52rem; margin: 1.5rem auto 0; }
+    .article-abstract h2, .article-keywords h2 { font-size: 1em; margin-bottom: .35em; }
+    .article-keywords ul { display: flex; flex-wrap: wrap; gap: .35em .8em; margin: 0; }
+    .article-body { column-count: 1; column-gap: 2.2rem; text-align: left; }
+    .manuscript-section, .scholarly-figure, .scholarly-table, .scholarly-chart, .scholarly-equation { break-inside: avoid; }
+    .manuscript-section > h2, .manuscript-section > h3, .manuscript-section > h4, .manuscript-section > h5, .manuscript-section > h6 { break-after: avoid; text-align: left; }
+    .section-number { margin-right: .45em; }
+    p { orphans: 3; widows: 3; }
+    figure { margin: 1.5rem 0; }
+    figcaption { font-size: .92em; margin: .45rem 0; }
+    img { display: block; max-width: 100%; height: auto; margin-inline: auto; }
+    table { width: 100%; border-collapse: collapse; margin: .75rem 0; }
+    th, td { border: 1px solid #999; padding: .35rem .5rem; vertical-align: top; }
+    th { text-align: left; }
+    math { overflow-x: auto; max-width: 100%; }
+    .article-notes, .article-bibliography { margin-top: 2.5rem; text-align: left; }
+    .article-bibliography li, .article-notes li { margin-bottom: .65em; }
+    .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    @media (max-width: 760px) { .omi-scholarly-article { padding: 1.25rem 1rem 2rem; } .article-body { column-count: 1; } }
+    @media print { .omi-scholarly-article { max-width: none; padding: 0; } a { text-decoration: none; } }
+  </style>
+</head>
+<body>
+  <article class="omi-scholarly-article" data-omi-manuscript-id="manuscript-test" data-omi-head-revision="revision-root">
+    <header class="article-front">
+      <h1 id="article-title">A strukturált kézirattól az olvasható webes tanulmányig</h1>
+      <p class="article-subtitle">Az OJS HTML-átadásának mintatanulmánya</p>
+      <section class="article-contributors" aria-label="Authors"><ol class="authors"><li id="contrib-contribution-author"><span class="author-name">Mintaszerző (fiktív)</span></li></ol></section>
+      <section class="article-abstract" aria-labelledby="abstract-heading"><h2 id="abstract-heading">Absztrakt</h2><p>Ez a bemutató a címek, bekezdések és táblázatok megőrzését szemlélteti a kézirat HTML-változatában. Kizárólag tesztelésre készült; nem közöl kutatási eredményeket.</p></section>
+      <section class="article-keywords" aria-labelledby="keywords-heading"><h2 id="keywords-heading">Kulcsszavak</h2><ul><li>mintatanulmány</li><li>HTML</li><li>OJS</li></ul></section>
+    </header>
+    <div class="article-body">
+      <section id="sec-demo-introduction" class="manuscript-section" data-omi-section-id="demo-introduction">
+        <h2><span class="section-number" aria-hidden="true">1.</span><span class="section-title">A bemutató célja</span></h2>
+        <div id="block-demo-p1" class="text-block" data-omi-block-id="demo-p1"><p>A kézirat szerkezete a böngészőben is követhető marad: a főcím, az összefoglaló és a fejezetcímek külön elemekként jelennek meg. Az ékezetes szöveg és a hosszabb bekezdések mobilon is olvashatók.</p></div>
+      </section>
+      <section id="sec-demo-method" class="manuscript-section" data-omi-section-id="demo-method">
+        <h2><span class="section-number" aria-hidden="true">2.</span><span class="section-title">Az átadás menete</span></h2>
+        <div id="block-demo-p2" class="text-block" data-omi-block-id="demo-p2"><p>A szerkesztő ellenőrzi a célcikket és az előnézetet, majd átadja a HTML-változatot. Az OJS-ben külön olvasói fájl keletkezik. Ennek közzétételéről továbbra is a folyóirat szerkesztősége dönt.</p></div>
+        <figure id="tbl-demo-table" class="scholarly-table" data-omi-block-id="demo-table">
+          <figcaption>A bemutató ellenőrzési pontjai</figcaption>
+          <table><thead><tr><th scope="col">Elem</th><th scope="col">Elvárt viselkedés</th></tr></thead><tbody><tr><td>Cím és fejezetek</td><td>Szemantikus HTML</td></tr><tr><td>Táblázat</td><td>Olvasható fejléc és sorok</td></tr><tr><td>Ismételt átadás</td><td>Ugyanazon HTML-változat frissítése</td></tr><tr><td>Közzététel</td><td>Külön szerkesztői lépés</td></tr></tbody></table>
+        </figure>
+      </section>
+      <section id="sec-demo-conclusion" class="manuscript-section" data-omi-section-id="demo-conclusion">
+        <h2><span class="section-number" aria-hidden="true">3.</span><span class="section-title">Ellenőrzés</span></h2>
+        <div id="block-demo-p3" class="text-block" data-omi-block-id="demo-p3"><p>A teszt akkor teljes, ha a HTML az OJS-ben megnyitható, egy módosított bekezdés ismételt átadása ugyanazt a változatot frissíti, és a közzétett cikket a rendszer nem engedi felülírni.</p></div>
+      </section>
+    </div>
+  </article>
+</body>
+</html>

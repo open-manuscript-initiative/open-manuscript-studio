@@ -27,6 +27,7 @@ import {
   type OmiPublicationProfile,
 } from '../model/publicationProfile';
 import { DirectSubmissionPanel } from './DirectSubmissionPanel';
+import { HtmlGalleyPanel } from './HtmlGalleyPanel';
 import { HtmlExportPanel } from './HtmlExportPanel';
 import { IdmlPublicationStyleImportPanel } from './IdmlPublicationStyleImportPanel';
 import { JatsExportPanel } from './JatsExportPanel';
@@ -93,6 +94,7 @@ export function PublicationProfilePanel() {
       </div>
 
       <DirectSubmissionPanel />
+      <HtmlGalleyPanel />
 
       <div className="publication-profile-experimental-note">{copy.experimental}</div>
 

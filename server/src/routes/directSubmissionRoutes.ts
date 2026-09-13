@@ -23,7 +23,7 @@ function publicReceipt(row: { id: string; status: string; externalId: number | n
 }
 function nativeClient(baseUrl: string, apiKey?: string): RemoteRequest {
   return async (method, path, body) => {
-    if (!/^(omi-integration\/submission-options|submissions(?:\/\d+(?:\/(?:files(?:\/\d+)?|submit|publications\/\d+(?:\/contributors(?:\/\d+)?)?))?)?)$/.test(path)) {
+    if (!/^(omi-integration\/(?:submission-options|html-galley)|submissions(?:\/\d+(?:\/(?:files(?:\/\d+)?|submit|publications\/\d+(?:\/contributors(?:\/\d+)?)?))?)?)$/.test(path)) {
       throw new Error('Invalid publishing operation.');
     }
     const url = await assertTrustedIntegrationUrl(`${baseUrl}/api/v1/${path}`, baseUrl);
@@ -44,6 +44,40 @@ function nativeClient(baseUrl: string, apiKey?: string): RemoteRequest {
     return result;
   };
 }
+
+const htmlGalleySchema = z.object({
+  action: z.enum(['inspect', 'transfer']), manuscriptId: z.string().min(1).max(128),
+  submissionId: z.number().int().positive(), apiKey: z.string().trim().min(1).max(4096),
+  publicationId: z.number().int().positive().optional(), locale: z.string().min(2).max(32).optional(),
+  genreId: z.number().int().positive().optional(), html: z.string().max(8 * 1024 * 1024).optional(),
+  confirmed: z.literal(true).optional(),
+});
+directSubmissionRouter.post('/integrations/connections/:connectionId/html-galley', requireSession, async (request: AuthenticatedRequest, response) => {
+  response.setHeader('Cache-Control', 'no-store');
+  const body = htmlGalleySchema.safeParse(request.body);
+  const id = z.string().uuid().safeParse(request.params.connectionId);
+  if (!body.success || !id.success) { response.status(400).json({ error: { message: 'Invalid HTML transfer request.' } }); return; }
+  const { apiKey, ...data } = body.data;
+  if (data.action === 'transfer' && (!data.confirmed || !data.publicationId || !data.genreId || !data.locale || !data.html
+      || Buffer.byteLength(data.html) > 8 * 1024 * 1024 || !/^<!doctype html>/i.test(data.html))) {
+    response.status(400).json({ error: { message: 'Confirm an inspected destination and a standalone HTML document of at most 8 MiB.' } }); return;
+  }
+  try {
+    const connection = await prisma.userIntegration.findFirst({ where: {
+      id: id.data, userId: request.authUserId!, enabled: true, providerId: 'ojs',
+    } });
+    const configuredBase = record(connection?.config).baseUrl;
+    if (!connection || typeof configuredBase !== 'string') { response.status(404).json({ error: { message: 'Enabled OJS connection not found.' } }); return; }
+    const baseUrl = (await assertTrustedIntegrationUrl(configuredBase, configuredBase)).toString().replace(/\/+$/, '');
+    const result = record(await nativeClient(baseUrl, apiKey)('POST', 'omi-integration/html-galley', data));
+    if (result.protocol !== 'omi-html-galley/1' || result.submissionId !== data.submissionId) throw new Error('Update the OJS Studio Integration plugin to a version supporting HTML galleys.');
+    response.json(data.action === 'inspect' ? { target: result } : { receipt: result });
+  } catch (error) {
+    const status = error instanceof RemoteError && [403, 404, 409, 422].includes(error.status) ? error.status : 502;
+    const message = (error instanceof Error ? error.message : 'HTML transfer failed.').split(apiKey).join('[redacted]');
+    response.status(status).json({ error: { message } });
+  }
+});
 
 directSubmissionRouter.post('/integrations/connections/:connectionId/direct-submission', requireSession, async (request: AuthenticatedRequest, response) => {
   response.setHeader('Cache-Control', 'no-store');
