@@ -259,7 +259,7 @@ function flattenBlocks(blocks: OmiBlock[]): OmiBlock[] { return blocks.flatMap((
 function objectKind(block: OmiBlock): string { return block.visual?.kind ?? block.type; }
 function matchesObjectScope(block: OmiBlock, scope: ObjectScope): boolean {
   const kind = objectKind(block);
-  if (scope === 'visuals') return ['figure', 'image', 'table', 'chart', 'equation'].includes(kind) || ['figure', 'image', 'table', 'chart', 'equation'].includes(block.type);
+  if (scope === 'visuals') return ['figure', 'image', 'table', 'chart', 'equation', 'music-score'].includes(kind) || ['figure', 'image', 'table', 'chart', 'equation', 'music-score'].includes(block.type);
   if (scope === 'images') return kind === 'image' || block.type === 'image' || block.type === 'figure';
   if (scope === 'tables') return kind === 'table' || block.type === 'table';
   if (scope === 'charts') return kind === 'chart' || block.type === 'chart';
@@ -271,6 +271,7 @@ function objectSearchText(block: OmiBlock): string {
   if (visual.kind === 'image') return [visual.fileName, visual.alt, visual.caption].filter(Boolean).join('\n');
   if (visual.kind === 'table') return [visual.caption, ...visual.cells.flat()].filter(Boolean).join('\n');
   if (visual.kind === 'chart') return [visual.title, visual.caption, ...visual.cells.flat()].filter(Boolean).join('\n');
+  if (visual.kind === 'music-score') return [visual.title, visual.composer, visual.caption, ...visual.notes.map((note) => `${note.step}${note.octave}`)].filter(Boolean).join('\n');
   return [visual.label, visual.caption, visual.latex, visual.source].filter(Boolean).join('\n');
 }
 

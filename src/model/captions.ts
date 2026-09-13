@@ -38,6 +38,7 @@ const DEFAULT_LABELS: Record<OmiVisualBlockData['kind'], string> = {
   table: 'Table',
   chart: 'Figure',
   equation: 'Equation',
+  'music-score': 'Music',
 };
 
 export function defaultCaptionLabel(kind: OmiVisualBlockData['kind']): string {
@@ -164,6 +165,10 @@ declare module '../types/omi' {
   }
 
   interface OmiEquationBlockData {
+    semanticCaption?: OmiCaption;
+  }
+
+  interface OmiMusicScoreBlockData {
     semanticCaption?: OmiCaption;
   }
 }

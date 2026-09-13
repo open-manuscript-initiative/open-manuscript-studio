@@ -409,6 +409,8 @@ function renderBlock(block: OmiBlock, state: RenderState): string {
         return renderChart(block, state);
       case 'equation':
         return renderEquation(block, state);
+      case 'music-score':
+        return renderMusicScore(block, state);
     }
   }
 
@@ -571,6 +573,16 @@ function renderEquation(block: OmiBlock, state: RenderState): string {
   return `<figure id="${htmlId('eq', block.id)}" class="scholarly-equation" data-omi-block-id="${escapeAttribute(
     block.id,
   )}">${equation}${caption}</figure>`;
+}
+
+function renderMusicScore(block: OmiBlock, state: RenderState): string {
+  if (block.visual?.kind !== 'music-score') return '';
+  const visual = block.visual;
+  const target = state.targetMap.get(block.id);
+  const label = target ? `${localizedLabels(state.context.locale).figure} ${target.number}` : '';
+  const title = visual.caption?.trim() || visual.title?.trim() || label;
+  const notes = visual.notes.slice(0, 256).map((note) => note.rest ? 'rest' : `${note.step}${note.alter === 1 ? '♯' : note.alter === -1 ? '♭' : ''}${note.octave}`).join(' ');
+  return `<figure id="${htmlId('music', block.id)}" class="scholarly-music-score" data-omi-block-id="${escapeAttribute(block.id)}"><div class="music-score-data" data-format="${escapeAttribute(visual.format)}">${escapeHtml(notes)}</div>${title ? `<figcaption>${escapeHtml(title)}</figcaption>` : ''}</figure>`;
 }
 
 function renderJsonNode(node: JsonNode, state: RenderState): string {
@@ -947,6 +959,7 @@ function localizedLabels(locale: string) {
       notes: 'Jegyzetek',
       references: 'Hivatkozások',
       equation: 'Egyenlet',
+      figure: 'Ábra',
     };
   }
   if (language === 'de') {
@@ -956,6 +969,7 @@ function localizedLabels(locale: string) {
       notes: 'Anmerkungen',
       references: 'Literatur',
       equation: 'Gleichung',
+      figure: 'Abbildung',
     };
   }
   return {
@@ -964,6 +978,7 @@ function localizedLabels(locale: string) {
     notes: 'Notes',
     references: 'References',
     equation: 'Equation',
+    figure: 'Figure',
   };
 }
 

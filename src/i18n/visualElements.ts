@@ -5,6 +5,7 @@ export interface VisualElementsCopy {
   table: string;
   chart: string;
   equation: string;
+  musicScore: string;
   import: string;
   paste: string;
   pasteHint: string;
@@ -37,7 +38,7 @@ export interface VisualElementsCopy {
 
 const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
   en: {
-    insertMenu: 'Insert', insertElement: 'Insert element', image: 'Image', table: 'Table', chart: 'Chart', equation: 'Equation', import: 'Import',
+    insertMenu: 'Insert', insertElement: 'Insert element', image: 'Image', table: 'Table', chart: 'Chart', equation: 'Equation', musicScore: 'Music score', import: 'Import',
     paste: 'Paste from Word / Excel', pasteHint: 'Paste a table, image or equation here from Word, Excel or another application.',
     importing: 'Importing…', importFailed: 'The file could not be imported.', noImportableElements: 'No supported visual elements were found.',
     chooseFile: 'Choose file', caption: 'Caption', altText: 'Alternative text', chartType: 'Chart type', chartBar: 'Bar', chartLine: 'Line',
@@ -47,7 +48,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     importedFrom: 'Imported from', fileFormats: 'Images, DOCX, XLSX, CSV/TSV, HTML and TeX are supported.',
   },
   hu: {
-    insertMenu: 'Beszúrás', insertElement: 'Elem beszúrása', image: 'Kép', table: 'Táblázat', chart: 'Grafikon', equation: 'Egyenlet', import: 'Importálás',
+    insertMenu: 'Beszúrás', insertElement: 'Elem beszúrása', image: 'Kép', table: 'Táblázat', chart: 'Grafikon', equation: 'Egyenlet', musicScore: 'Kotta', import: 'Importálás',
     paste: 'Beillesztés Wordből / Excelből', pasteHint: 'Illesszen be ide táblázatot, képet vagy egyenletet Wordből, Excelből vagy más alkalmazásból.',
     importing: 'Importálás…', importFailed: 'A fájlt nem sikerült importálni.', noImportableElements: 'Nem található támogatott vizuális elem.',
     chooseFile: 'Fájl kiválasztása', caption: 'Képaláírás / felirat', altText: 'Alternatív szöveg', chartType: 'Grafikon típusa', chartBar: 'Oszlop', chartLine: 'Vonal',
@@ -57,7 +58,7 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
     importedFrom: 'Importálva innen', fileFormats: 'Támogatott: képek, DOCX, XLSX, CSV/TSV, HTML és TeX.',
   },
   de: {
-    insertMenu: 'Einfügen', insertElement: 'Element einfügen', image: 'Bild', table: 'Tabelle', chart: 'Diagramm', equation: 'Gleichung', import: 'Importieren',
+    insertMenu: 'Einfügen', insertElement: 'Element einfügen', image: 'Bild', table: 'Tabelle', chart: 'Diagramm', equation: 'Gleichung', musicScore: 'Notensatz', import: 'Importieren',
     paste: 'Aus Word / Excel einfügen', pasteHint: 'Fügen Sie hier eine Tabelle, ein Bild oder eine Gleichung aus Word, Excel oder einer anderen Anwendung ein.',
     importing: 'Importieren…', importFailed: 'Die Datei konnte nicht importiert werden.', noImportableElements: 'Keine unterstützten visuellen Elemente gefunden.',
     chooseFile: 'Datei auswählen', caption: 'Beschriftung', altText: 'Alternativtext', chartType: 'Diagrammtyp', chartBar: 'Balken', chartLine: 'Linie',

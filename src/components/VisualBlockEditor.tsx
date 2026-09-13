@@ -30,6 +30,7 @@ import type {
   OmiChartType,
   OmiTableBlockData,
   OmiVisualBlockData,
+  OmiMusicScoreBlockData,
 } from '../types/omi';
 import { AssetBackedImage } from './AssetBackedImage';
 
@@ -206,6 +207,8 @@ export function VisualBlockEditor({
         </div>
       ) : null}
 
+      {visual.kind === 'music-score' ? <MusicScorePreview visual={visual} /> : null}
+
       {visual.provenance ? (
         <small className="omi-import-provenance">
           {copy.importedFrom}: {visual.provenance.fileName ?? visual.provenance.sourceFormat}
@@ -214,6 +217,27 @@ export function VisualBlockEditor({
       ) : null}
     </article>
   );
+}
+
+function MusicScorePreview({ visual }: { visual: OmiMusicScoreBlockData }) {
+  const notes = visual.notes.slice(0, 64);
+  const width = Math.max(520, notes.length * 26 + 40);
+  return <figure className="omi-music-score-block">
+    <div className="omi-music-score-meta"><strong>{visual.title || (visual.format === 'midi' ? 'MIDI-score' : 'MusicXML-score')}</strong>{visual.composer ? <span> · {visual.composer}</span> : null}</div>
+    <div className="omi-music-score-scroll" role="img" aria-label={visual.title || 'Imported music score'}>
+      <svg viewBox={`0 0 ${width} 150`} width={width} height="150" xmlns="http://www.w3.org/2000/svg">
+        {[45, 57, 69, 81, 93].map((y) => <line key={y} x1="20" x2={width - 20} y1={y} y2={y} stroke="currentColor" strokeWidth="1" />)}
+        <text x="25" y="82" fontSize="44" fontFamily="serif">𝄞</text>
+        {notes.map((note, index) => note.rest ? <rect key={index} x={78 + index * 24} y="66" width="10" height="8" fill="currentColor" /> : <g key={index}><ellipse cx={82 + index * 24} cy={pitchY(note)} rx="6" ry="4" fill="currentColor" transform={`rotate(-12  ${82 + index * 24} ${pitchY(note)})`} /><line x1={88 + index * 24} x2={88 + index * 24} y1={pitchY(note)} y2={pitchY(note) - 28} stroke="currentColor" /></g>)}
+      </svg>
+    </div>
+    <figcaption>{visual.caption || `${visual.notes.length} note events · ${visual.format.toUpperCase()}`}</figcaption>
+  </figure>;
+}
+
+function pitchY(note: OmiMusicScoreBlockData['notes'][number]): number {
+  const order: Record<string, number> = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
+  return 93 - ((note.octave - 4) * 7 + (order[note.step] ?? 0)) * 3;
 }
 
 function EditableGrid({
@@ -430,5 +454,6 @@ function visualLabel(
     case 'table': return copy.table;
     case 'chart': return copy.chart;
     case 'equation': return copy.equation;
+    case 'music-score': return copy.musicScore;
   }
 }

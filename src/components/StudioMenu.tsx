@@ -59,6 +59,7 @@ import type { OmiManuscript } from '../types/omi';
 import { AssetContainerPanel } from './AssetContainerPanel';
 import { AuthorSignaturePanel } from './AuthorSignaturePanel';
 import { CloudStorageSettings } from './CloudStorageSettings';
+import { ImportFormatSettings } from './ImportFormatSettings';
 import { ContentLanguageSettings } from './ContentLanguageSettings';
 import { CrossReferencePanel } from './CrossReferencePanel';
 import { DocxImportPanel } from './DocxImportPanel';
@@ -467,7 +468,7 @@ function ToolsView() {
 
 function SettingsView() {
   const { t } = useTranslation();
-  return <section className="studio-menu-view"><div className="studio-menu-view-header"><div><h3>{t('studio.settings.title')}</h3><p>{t('studio.settings.description')}</p></div></div><ContentLanguageSettings /><CloudStorageSettings /></section>;
+  return <section className="studio-menu-view"><div className="studio-menu-view-header"><div><h3>{t('studio.settings.title')}</h3><p>{t('studio.settings.description')}</p></div></div><ContentLanguageSettings /><ImportFormatSettings /><CloudStorageSettings /></section>;
 }
 
 function formatNativeLocation(

@@ -387,11 +387,35 @@ export interface OmiEquationBlockData {
   provenance?: OmiImportProvenance;
 }
 
+export interface OmiMusicScoreNote {
+  step: string;
+  octave: number;
+  alter?: number;
+  duration?: number;
+  type?: string;
+  rest?: boolean;
+}
+
+export interface OmiMusicScoreBlockData {
+  kind: 'music-score';
+  format: 'musicxml' | 'midi';
+  source: string;
+  title?: string;
+  composer?: string;
+  divisions?: number;
+  beats?: number;
+  beatType?: number;
+  notes: OmiMusicScoreNote[];
+  caption?: string;
+  provenance?: OmiImportProvenance;
+}
+
 export type OmiVisualBlockData =
   | OmiImageBlockData
   | OmiTableBlockData
   | OmiChartBlockData
-  | OmiEquationBlockData;
+  | OmiEquationBlockData
+  | OmiMusicScoreBlockData;
 
 export interface OmiBlock {
   id: string;
@@ -404,6 +428,7 @@ export interface OmiBlock {
     | 'table'
     | 'chart'
     | 'equation'
+    | 'music-score'
     | string;
   /** Tiptap JSON or legacy text for textual blocks; empty for structured visual blocks. */
   content: string;

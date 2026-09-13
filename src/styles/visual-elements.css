@@ -330,3 +330,22 @@
     padding: 0.7rem;
   }
 }
+
+.omi-music-score-block {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--omi-border, #d8d2c8);
+  border-radius: .55rem;
+  background: var(--omi-surface, #fffdf8);
+}
+
+.omi-music-score-meta { margin-bottom: .45rem; }
+.omi-music-score-scroll { overflow-x: auto; color: #29231e; }
+.omi-music-score-scroll svg { display: block; min-width: 520px; }
+.omi-music-score-block figcaption { margin-top: .45rem; color: var(--omi-muted, #6d655e); font-size: .85rem; }
+.omi-import-format-settings { display: grid; gap: .5rem; margin: .75rem 0 1rem; }
+.omi-setting-toggle { display: flex; align-items: center; gap: .75rem; padding: .65rem .75rem; border: 1px solid var(--omi-border, #d8d2c8); border-radius: .45rem; }
+.omi-setting-toggle input { width: 1rem; height: 1rem; flex: 0 0 auto; }
+.omi-setting-toggle span { display: grid; gap: .15rem; flex: 1; min-width: 0; }
+.omi-setting-toggle small { color: var(--omi-muted, #6d655e); }
+.omi-setting-toggle em { color: var(--omi-muted, #6d655e); font-size: .8rem; font-style: normal; }
