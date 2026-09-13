@@ -1,3 +1,4 @@
+import { DOMParser as XmlParser, type Document as XmlDocument, type Element as XmlElement } from '@xmldom/xmldom';
 import { createMusicScoreBlock } from '../model/visualBlocks';
 import type { OmiMusicScoreBlockData, OmiMusicScoreNote, OmiBlock, OmiImportProvenance } from '../types/omi';
 
@@ -22,22 +23,24 @@ function createMusicBlock(
 }
 
 function parseMusicXml(source: string): Omit<OmiMusicScoreBlockData, 'kind' | 'format' | 'source' | 'provenance'> {
-  // XML mode keeps the uploaded score as inert data; it is never parsed as HTML.
-  const xml = new DOMParser().parseFromString(source, 'text/xml');
-  if (xml.querySelector('parsererror')) throw new Error('The MusicXML file could not be parsed.');
+  // Use an isolated XML tree, never the browser DOM or an HTML parsing sink.
+  // External DTD identifiers in ordinary MusicXML are retained but never fetched.
+  if (/<!ENTITY\b/i.test(source)) throw new Error('MusicXML entity declarations are not supported.');
+  const xml = new XmlParser({ onError: () => { throw new Error('Invalid MusicXML.'); } }).parseFromString(source, 'application/xml');
+  if (xml.documentElement?.localName !== 'score-partwise') throw new Error('Expected a score-partwise MusicXML document.');
   const title = text(xml, 'work-title') || text(xml, 'movement-title') || undefined;
-  const composer = Array.from(xml.querySelectorAll('creator[type="composer"], creator')).map((node) => node.textContent?.trim()).find(Boolean);
-  const attributes = xml.querySelector('measure attributes');
+  const composer = findElements(xml, 'creator').map((node) => node.textContent?.trim()).find(Boolean);
+  const attributes = findElements(xml, 'measure attributes')[0] ?? null;
   const divisions = number(attributes, 'divisions') || 1;
   const beats = number(attributes, 'time beats');
   const beatType = number(attributes, 'time beat-type');
-  const notes: OmiMusicScoreNote[] = Array.from(xml.querySelectorAll('part > measure note')).map((note) => ({
+  const notes: OmiMusicScoreNote[] = findElements(xml, 'part measure note').map((note) => ({
     step: text(note, 'pitch step') || 'C',
     octave: number(note, 'pitch octave') || 4,
     alter: number(note, 'pitch alter') || undefined,
     duration: number(note, 'duration') || undefined,
     type: text(note, 'type') || undefined,
-    rest: Boolean(note.querySelector('rest')),
+    rest: findElements(note, 'rest').length > 0,
   })).slice(0, MAX_NOTES);
   if (notes.length === 0) throw new Error('The MusicXML file contains no notes.');
   return { title, composer, divisions, beats, beatType, notes };
@@ -79,12 +82,18 @@ function midiPitch(value: number): OmiMusicScoreNote {
   return { step: names[index] ?? 'C', octave: Math.floor(value / 12) - 1, alter: alters[index] || undefined };
 }
 
-function text(root: ParentNode, selector: string): string {
-  // Normalize DOM text before it enters the portable model. Renderers still
-  // escape it at their output boundary, so imported XML cannot become markup.
-  return root.querySelector(selector)?.textContent?.replace(/[<>]/g, '').trim() ?? '';
+function findElements(root: XmlDocument | XmlElement, path: string): XmlElement[] {
+  let roots: Array<XmlDocument | XmlElement> = [root];
+  for (const name of path.split(' ')) {
+    roots = roots.flatMap((node) => Array.from(node.getElementsByTagNameNS('*', name)));
+  }
+  return roots as XmlElement[];
 }
-function number(root: ParentNode | null, selector: string): number | undefined { const value = root ? Number(text(root, selector)) : NaN; return Number.isFinite(value) && value > 0 ? value : undefined; }
+function text(root: XmlDocument | XmlElement, selector: string): string {
+  // Keep scholarly text intact; React and exporters escape at the output boundary.
+  return findElements(root, selector)[0]?.textContent?.trim() ?? '';
+}
+function number(root: XmlDocument | XmlElement | null, selector: string): number | undefined { const value = root ? Number(text(root, selector)) : NaN; return Number.isFinite(value) && value > 0 ? value : undefined; }
 function readAscii(bytes: Uint8Array, offset: number, length: number): string { return String.fromCharCode(...bytes.subarray(offset, offset + length)); }
 function readU16(bytes: Uint8Array, offset: number): number { return ((bytes[offset] ?? 0) << 8) | (bytes[offset + 1] ?? 0); }
 function readU32(bytes: Uint8Array, offset: number): number { return ((bytes[offset] ?? 0) * 0x1000000) + ((bytes[offset + 1] ?? 0) << 16) + ((bytes[offset + 2] ?? 0) << 8) + (bytes[offset + 3] ?? 0); }
