@@ -1,0 +1,122 @@
+name: Android AGP 9 compatibility test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/android-agp9-test.yml'
+      - 'scripts/configure-android-agp9-test.mjs'
+      - 'tests/android-agp9-test.test.mjs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-agp9-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Android release smoke (${{ matrix.toolchain }})
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [baseline, agp9]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Test toolchain setup
+        run: node --test tests/android-agp9-test.test.mjs tests/android-release-optimization.test.mjs
+      - name: Configure Android SDK and NDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358'
+          echo "NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+      - name: Generate Android project
+        env:
+          CI: 'true'
+        run: |
+          npm run tauri -- android init --ci
+          npm run icons:generate
+      - name: Probe AGP 9 default Kotlin and DSL
+        if: matrix.toolchain == 'agp9'
+        id: defaults
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/configure-android-agp9-test.mjs defaults
+          cd src-tauri/gen/android
+          ./gradlew help --no-daemon --stacktrace 2>&1 | tee "$RUNNER_TEMP/agp9-defaults.log"
+      - name: Enable AGP 9 compatibility mode
+        if: matrix.toolchain == 'agp9'
+        run: node scripts/configure-android-agp9-test.mjs compatibility
+      - name: Configure disposable test signing and resource shrinking
+        shell: bash
+        run: |
+          set -euo pipefail
+          keytool -genkeypair -keystore "$RUNNER_TEMP/agp-test.jks" -storepass android -keypass android -alias agp-test -dname 'CN=OMI AGP compatibility test' -keyalg RSA -keysize 2048 -validity 2
+          printf 'storeFile=%s\nstorePassword=android\nkeyPassword=android\nkeyAlias=agp-test\n' "$RUNNER_TEMP/agp-test.jks" > src-tauri/gen/android/keystore.properties
+          node scripts/configure-android-signing.mjs
+      - name: Build ARM64 release AAB and APK with R8
+        env:
+          CI: 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run tauri -- android build --target aarch64 --aab --apk --ci 2>&1 | tee "$RUNNER_TEMP/agp-release-build.log"
+      - name: Verify ARM64 native 16 KB page alignment
+        run: |
+          python3 - <<'PYTHON'
+          import importlib.util
+          from pathlib import Path
+          import zipfile
+          spec = importlib.util.spec_from_file_location("alignment", "scripts/verify-android-page-size.py")
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          outputs = Path("src-tauri/gen/android/app/build/outputs")
+          for suffix in ("*.aab", "*.apk"):
+              archives = list(outputs.rglob(suffix))
+              assert archives, f"Missing {suffix}"
+              for path in archives:
+                  with zipfile.ZipFile(path) as archive:
+                      libraries = [n for n in archive.namelist() if "/arm64-v8a/" in n and n.endswith(".so")]
+                      assert any(n.endswith("libopen_manuscript_studio_lib.so") for n in libraries)
+                      for name in libraries:
+                          module.verify_elf(archive.read(name), 183)
+                  print(f"ARM64 ELF alignment passed: {path}")
+          PYTHON
+      - name: Record test outcome
+        if: always()
+        env:
+          TOOLCHAIN: ${{ matrix.toolchain }}
+          DEFAULT_OUTCOME: ${{ steps.defaults.outcome }}
+        run: |
+          printf 'Toolchain: %s\n\nAGP 9 default probe: %s\n\nTest artifacts use a disposable key; do not upload them to Google Play. Device behavior is not covered.\n' "$TOOLCHAIN" "$DEFAULT_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload build evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-toolchain-${{ matrix.toolchain }}
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/agp9-defaults.log
+            ${{ runner.temp }}/agp-release-build.log
+            src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
+            src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+            src-tauri/gen/android/app/build/outputs/mapping/**
