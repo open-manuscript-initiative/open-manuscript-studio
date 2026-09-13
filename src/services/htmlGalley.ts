@@ -36,7 +36,7 @@ export async function buildHtmlGalley(manuscript: OmiManuscript): Promise<string
   let html = result.html;
   for (const id of collectReferencedAssetIds(manuscript.sections.flatMap((s) => s.blocks))) {
     const asset = manuscript.assets?.find((a) => a.id === id);
-    if (!asset || !/^image\/(png|jpeg|gif|webp)$/.test(asset.mediaType)) throw new Error(`Unsupported or missing image: ${id}`);
+    if (!asset || !['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(asset.mediaType)) throw new Error(`Unsupported or missing image: ${id}`);
     const bytes = await getAssetPayload(manuscript.id, id);
     if (!bytes || bytes.byteLength !== asset.size || await sha256Hex(bytes) !== asset.checksum.value.toLowerCase()) throw new Error(`Image integrity check failed: ${id}`);
     let binary = '';
