@@ -10,7 +10,7 @@ import './DirectSubmissionPanel.css';
 const text = {
   hu: {
     title: 'HTML-változat átadása az OJS-nek', intro: 'Egy meglévő, még nem publikált, előállítási szakaszban lévő cikkhez. Az OJS szerkesztője ellenőrzi és teszi közzé a HTML-t.',
-    connection: 'OJS-kapcsolat', choose: 'Válassz…', key: 'Szerkesztői OJS API-kulcs (nem mentjük el)',
+    connection: 'OJS-kapcsolat', choose: 'Válassz…', key: 'A személyes profilban mentett OJS-kulcsot használjuk',
     id: 'Az OJS-beküldés azonosítója', inspect: 'Célcikk ellenőrzése és HTML-előnézet',
     locale: 'HTML-változat nyelve', genre: 'Cikkfájl típusa', confirm: 'Ellenőriztem a célcikket és az előnézetet. Átadom a HTML-t; a korábban innen átadott, azonos nyelvű változat frissül.',
     transfer: 'HTML átadása', preview: 'HTML-előnézet', busy: 'Feldolgozás…',
@@ -43,7 +43,6 @@ function HtmlGalleyForm({ manuscript }: { manuscript: OmiManuscript }) {
   const copy = uiLocale === 'hu' ? text.hu : text.en;
   const [connections, setConnections] = useState<IntegrationConnection[]>([]);
   const [connectionId, setConnectionId] = useState('');
-  const [apiKey, setApiKey] = useState('');
   const [submissionId, setSubmissionId] = useState('');
   const [prepared, setPrepared] = useState<{ html: string; target: HtmlGalleyTarget; source: OmiManuscript }>();
   const [locale, setLocale] = useState('');
@@ -65,7 +64,7 @@ function HtmlGalleyForm({ manuscript }: { manuscript: OmiManuscript }) {
     try {
       const [html, result] = await Promise.all([
         buildHtmlGalley(manuscript),
-        requestHtmlGalley(connectionId, { action: 'inspect', manuscriptId: manuscript.id, submissionId: Number(submissionId), apiKey }),
+        requestHtmlGalley(connectionId, { action: 'inspect', manuscriptId: manuscript.id, submissionId: Number(submissionId) }),
       ]);
       if (!result.target) throw new Error('OJS returned no destination.');
       setPrepared({ html, target: result.target, source: manuscript });
@@ -80,7 +79,7 @@ function HtmlGalleyForm({ manuscript }: { manuscript: OmiManuscript }) {
     try {
       const result = await requestHtmlGalley(connectionId, {
         action: 'transfer', manuscriptId: manuscript.id, submissionId: prepared.target.submissionId,
-        publicationId: prepared.target.publicationId, apiKey, locale, genreId: Number(genreId), html: prepared.html, confirmed: true,
+        publicationId: prepared.target.publicationId, locale, genreId: Number(genreId), html: prepared.html, confirmed: true,
       });
       if (!result.receipt) throw new Error('OJS returned no receipt.');
       setReceipt(result.receipt); setConfirmed(false);
@@ -96,9 +95,8 @@ function HtmlGalleyForm({ manuscript }: { manuscript: OmiManuscript }) {
         <label>{copy.connection}<select value={connectionId} onChange={(e) => { invalidate(); setConnectionId(e.target.value); }}>
           <option value="">{copy.choose}</option>{connections.map((c) => <option key={c.id} value={c.id}>{c.displayName}</option>)}
         </select></label>
-        <label>{copy.key}<input type="password" autoComplete="off" value={apiKey} onChange={(e) => { invalidate(); setApiKey(e.target.value); }} /></label>
         <label>{copy.id}<input type="number" min="1" step="1" value={submissionId} onChange={(e) => { invalidate(); setSubmissionId(e.target.value); }} /></label>
-        <button type="button" disabled={!connectionId || !apiKey.trim() || !valid} onClick={() => void inspect()}>{copy.inspect}</button>
+        <p>{copy.key}</p><button type="button" disabled={!connectionId || !valid} onClick={() => void inspect()}>{copy.inspect}</button>
         {prepared && <>
           <p><strong>{prepared.target.title}</strong> · OJS #{prepared.target.submissionId} · {copy.publication}: {prepared.target.publicationId}</p>
           <iframe title={copy.preview} sandbox="" srcDoc={prepared.html} style={{ width: '100%', height: '24rem', background: 'white', border: '1px solid #ccc' }} />

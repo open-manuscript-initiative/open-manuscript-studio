@@ -16,6 +16,9 @@ mock.module(new URL('../server/dist/middleware/requireSession.js', import.meta.u
 mock.module(new URL('../server/dist/integrations/security/trustedRemoteUrl.js', import.meta.url).href, { namedExports: {
   assertTrustedIntegrationUrl: async (url) => { if (!trusted) throw new Error('Untrusted destination'); return new URL(url); },
 } });
+mock.module(new URL('../server/dist/routes/authRoutes.js', import.meta.url).href, { namedExports: {
+  resolvePersonalOjsCredential: async () => ({ apiKey: 'editorial-test-key', baseUrl: destination }),
+} });
 const { directSubmissionRouter } = await import('../server/dist/routes/directSubmissionRoutes.js');
 const app = express(); app.use(express.json({ limit: '25mb' })); app.use(directSubmissionRouter);
 const server = await new Promise((resolve) => { const listener = app.listen(0, '127.0.0.1', () => resolve(listener)); });
@@ -44,7 +47,7 @@ test('HTML transfer proxy authorization and protocol', async (t) => {
     assert.equal(calls.length, 0);
   });
   await t.test('rejects missing confirmation, version, key and untrusted destinations', async () => {
-    for (const bad of [{ ...transfer, confirmed: undefined }, { ...transfer, publicationId: undefined }, { ...transfer, apiKey: '' }]) assert.equal((await request(bad)).status, 400);
+    for (const bad of [{ ...transfer, confirmed: undefined }, { ...transfer, publicationId: undefined }]) assert.equal((await request(bad)).status, 400);
     trusted = false; assert.equal((await request()).status, 502); trusted = true;
     assert.equal(calls.length, 0);
   });

@@ -1,5 +1,8 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
+import { decryptSecret, encryptSecret, type EncryptedSecret } from '../integrations/secretCrypto.js';
+import { identityPrisma } from '../lib/identityPrisma.js';
+import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
 
 import {
   destroySession,
@@ -230,6 +233,41 @@ authRouter.patch('/me', async (request, response) => {
     response.status(400).json({ error: { code: 'PROFILE_UPDATE_FAILED', message } });
   }
 });
+
+const ojsCredentialSchema = z.object({
+  apiKey: z.string().trim().min(1).max(4096),
+  baseUrl: z.string().trim().url().max(2048),
+});
+
+authRouter.get('/me/ojs-credential', requireSession, async (request: AuthenticatedRequest, response) => {
+  const user = await identityPrisma.user.findUnique({ where: { id: request.authUserId! }, select: { ojsApiBaseUrl: true, ojsApiKeyCiphertext: true } });
+  response.json({ configured: Boolean(user?.ojsApiKeyCiphertext && user.ojsApiBaseUrl), baseUrl: user?.ojsApiBaseUrl ?? null });
+});
+
+authRouter.put('/me/ojs-credential', requireSession, async (request: AuthenticatedRequest, response) => {
+  try {
+    const input = ojsCredentialSchema.parse(request.body);
+    const encrypted = encryptSecret(input.apiKey);
+    await identityPrisma.user.update({ where: { id: request.authUserId! }, data: {
+      ojsApiKeyCiphertext: encrypted.ciphertext, ojsApiKeyIv: encrypted.iv,
+      ojsApiKeyAuthTag: encrypted.authTag, ojsApiBaseUrl: input.baseUrl.replace(/\/+$/, ''),
+    } });
+    response.json({ configured: true, baseUrl: input.baseUrl.replace(/\/+$/, '') });
+  } catch (error) {
+    response.status(400).json({ error: { code: 'OJS_CREDENTIAL_SAVE_FAILED', message: error instanceof Error ? error.message : 'The OJS credential could not be saved.' } });
+  }
+});
+
+authRouter.delete('/me/ojs-credential', requireSession, async (request: AuthenticatedRequest, response) => {
+  await identityPrisma.user.update({ where: { id: request.authUserId! }, data: { ojsApiKeyCiphertext: null, ojsApiKeyIv: null, ojsApiKeyAuthTag: null, ojsApiBaseUrl: null } });
+  response.status(204).end();
+});
+
+export async function resolvePersonalOjsCredential(userId: string): Promise<{ apiKey: string; baseUrl: string } | null> {
+  const user = await identityPrisma.user.findUnique({ where: { id: userId }, select: { ojsApiKeyCiphertext: true, ojsApiKeyIv: true, ojsApiKeyAuthTag: true, ojsApiBaseUrl: true } });
+  if (!user?.ojsApiKeyCiphertext || !user.ojsApiKeyIv || !user.ojsApiKeyAuthTag || !user.ojsApiBaseUrl) return null;
+  return { apiKey: decryptSecret({ ciphertext: user.ojsApiKeyCiphertext, iv: user.ojsApiKeyIv, authTag: user.ojsApiKeyAuthTag } as EncryptedSecret), baseUrl: user.ojsApiBaseUrl };
+}
 
 authRouter.post('/logout', async (request, response) => {
   const token = readSessionToken(request);

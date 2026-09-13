@@ -23,6 +23,8 @@ jobs:
     
     env:
       DATABASE_URL: postgresql://omi_ci:omi_ci@localhost:5432/omi_ci
+      IDENTITY_DATABASE_URL: postgresql://omi_ci:omi_ci@localhost:5432/omi_ci
+      INTEGRATION_MASTER_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 
     steps:
       - name: Checkout repository

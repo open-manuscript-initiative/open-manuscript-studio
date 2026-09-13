@@ -343,6 +343,24 @@ export async function updateCurrentAccount(
   return response.user;
 }
 
+export interface PersonalOjsCredentialState { configured: boolean; baseUrl: string | null; }
+
+export async function getPersonalOjsCredential(): Promise<PersonalOjsCredentialState> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/me/ojs-credential`, { credentials: 'include', headers: authHeaders({ Accept: 'application/json' }) });
+  if (!response.ok) throw await createApiError(response);
+  return parseJsonResponse<PersonalOjsCredentialState>(response);
+}
+
+export async function savePersonalOjsCredential(input: { apiKey: string; baseUrl: string }): Promise<PersonalOjsCredentialState> {
+  const response = await request<PersonalOjsCredentialState>('/api/auth/me/ojs-credential', { method: 'PUT', body: JSON.stringify(input) });
+  return response;
+}
+
+export async function deletePersonalOjsCredential(): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/me/ojs-credential`, { method: 'DELETE', credentials: 'include', headers: authHeaders({ Accept: 'application/json' }) });
+  if (!response.ok && response.status !== 204) throw await createApiError(response);
+}
+
 export async function logoutAccount(): Promise<void> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {

@@ -65,6 +65,7 @@ app.use(
 );
 
 app.use('/api/integrations/connections/:connectionId/direct-submission', express.json({ limit: '25mb' }));
+app.use('/api/integrations/connections/:connectionId/html-galley', express.json({ limit: '9mb' }));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/api', (_request, response) => {

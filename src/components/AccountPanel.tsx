@@ -14,6 +14,7 @@ import { getAccountPanelCopy } from '../i18n/accountPanelTranslations';
 import { getCentralAdminContext, type CentralAdminRole } from '../services/centralAdminApi';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { AccountDeletionSection } from './AccountDeletionSection';
+import { deletePersonalOjsCredential, getPersonalOjsCredential, savePersonalOjsCredential } from '../services/authApi';
 import { CentralAdministrationSettings } from './CentralAdministrationSettings';
 import { InstitutionalProfilesSettings } from './InstitutionalProfilesSettings';
 import { LinkedIdentitiesSettings } from './LinkedIdentitiesSettings';
@@ -45,6 +46,9 @@ export function AccountPanel() {
     bio: '',
     timeZone: getSystemTimeZone(),
   });
+  const [ojsCredential, setOjsCredential] = useState({ apiKey: '', baseUrl: '' });
+  const [ojsConfigured, setOjsConfigured] = useState(false);
+  const [ojsSaved, setOjsSaved] = useState(false);
   const timeZoneOptions = useMemo(
     () => getTimeZoneOptions(form.timeZone),
     [form.timeZone],
@@ -61,6 +65,7 @@ export function AccountPanel() {
     void getCentralAdminContext()
       .then((context) => setCentralRole(context.centralAdmin ? context.role : null))
       .catch(() => setCentralRole(null));
+    void getPersonalOjsCredential().then((state) => { setOjsConfigured(state.configured); setOjsCredential((current) => ({ ...current, baseUrl: state.baseUrl ?? '' })); }).catch(() => undefined);
   }, [user]);
 
   if (!user) return null;
@@ -186,6 +191,18 @@ export function AccountPanel() {
                 <Save size={17} aria-hidden="true" />
                 {labels.save}
               </button>
+              <section className="account-ojs-credential" aria-labelledby="account-ojs-credential-title">
+                <h2 id="account-ojs-credential-title">{labels.ojsCredentialTitle ?? 'OJS editor API key'}</h2>
+                <p>{labels.ojsCredentialDescription ?? 'The key is encrypted in your separate personal profile.'}</p>
+                <label>{labels.ojsBaseUrl ?? 'OJS installation URL'}<input type="url" value={ojsCredential.baseUrl} onChange={(event) => setOjsCredential({ ...ojsCredential, baseUrl: event.target.value })} placeholder="https://journal.example.org/ojs" /></label>
+                <label>{labels.ojsApiKey ?? 'OJS editor API key'}<input type="password" autoComplete="new-password" value={ojsCredential.apiKey} onChange={(event) => { setOjsSaved(false); setOjsCredential({ ...ojsCredential, apiKey: event.target.value }); }} placeholder={ojsConfigured ? '••••••••••••' : ''} /></label>
+                {ojsConfigured && !ojsCredential.apiKey ? <small>{labels.ojsApiKeyConfigured ?? 'Personal OJS key configured.'}</small> : null}
+                {ojsSaved ? <div className="account-success" role="status">{labels.ojsApiKeySaved ?? 'OJS key saved.'}</div> : null}
+                <div className="account-actions">
+                  <button className="account-primary" type="button" disabled={loading || !ojsCredential.apiKey.trim() || !ojsCredential.baseUrl.trim()} onClick={() => void savePersonalOjsCredential(ojsCredential).then((state) => { setOjsConfigured(state.configured); setOjsCredential({ apiKey: '', baseUrl: state.baseUrl ?? ojsCredential.baseUrl }); setOjsSaved(true); })}>{labels.ojsApiKeySave ?? 'Save OJS key'}</button>
+                  {ojsConfigured ? <button type="button" onClick={() => void deletePersonalOjsCredential().then(() => { setOjsConfigured(false); setOjsCredential({ apiKey: '', baseUrl: '' }); setOjsSaved(false); })}>{labels.ojsApiKeyRemove ?? 'Remove saved OJS key'}</button> : null}
+                </div>
+              </section>
             </form>
           ) : profileView === 'institutional' ? (
             <div className="account-card">
