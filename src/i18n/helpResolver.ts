@@ -2,6 +2,7 @@ import { getHelpCopy, type HelpCopy } from './help';
 import { getAdditionalHelpCopy } from './helpAdditional';
 import { appendDirectSubmissionHelp } from './helpDirectSubmission';
 import { enrichAdditionalHelp } from './helpEnrichment';
+import { appendMusicImportHelp } from './helpMusicImport';
 import { italianHelp } from './helpItalian';
 import {
   dutchHelp,
@@ -44,5 +45,5 @@ export function getLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy
     }
   }
 
-  return appendDirectSubmissionHelp(locale, copy);
+  return appendMusicImportHelp(locale, appendDirectSubmissionHelp(locale, copy));
 }
