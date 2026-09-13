@@ -56,6 +56,7 @@ jobs:
 
       - name: Test Android distribution
         run: |
+          node --test tests/android-release-optimization.test.mjs
           npm run test:android-update
           python3 tests/verify-play-bundle.test.py
           python3 tests/android-page-size.test.py
