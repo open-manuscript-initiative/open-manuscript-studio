@@ -94,23 +94,25 @@ test('Android modern UI configuration patches a generated project idempotently',
     const app = join(root, 'app');
     const day = join(app, 'src/main/res/values');
     const night = join(app, 'src/main/res/values-night');
+    const activityPath = join(app, 'src/main/java/org/openmanuscript/studio/MainActivity.kt');
     mkdirSync(day, { recursive: true });
     mkdirSync(night, { recursive: true });
+    mkdirSync(join(activityPath, '..'), { recursive: true });
     writeFileSync(join(root, 'build.gradle.kts'), generatedRootBuildGradle);
-    writeFileSync(join(root, 'app/src/main/MainActivity.kt'), generatedActivity);
+    writeFileSync(activityPath, generatedActivity);
     writeFileSync(join(app, 'build.gradle.kts'), generatedBuildGradle);
     writeFileSync(join(day, 'themes.xml'), generatedTheme);
     writeFileSync(join(night, 'themes.xml'), generatedTheme);
 
     configureAndroidModernUi(root);
     const rootOnce = readFileSync(join(root, 'build.gradle.kts'), 'utf8');
-    const activityOnce = readFileSync(join(root, 'app/src/main/MainActivity.kt'), 'utf8');
+    const activityOnce = readFileSync(activityPath, 'utf8');
     const once = readFileSync(join(app, 'build.gradle.kts'), 'utf8');
     const dayOnce = readFileSync(join(day, 'themes.xml'), 'utf8');
     configureAndroidModernUi(root);
 
     assert.equal(readFileSync(join(root, 'build.gradle.kts'), 'utf8'), rootOnce);
-    assert.equal(readFileSync(join(root, 'app/src/main/MainActivity.kt'), 'utf8'), activityOnce);
+    assert.equal(readFileSync(activityPath, 'utf8'), activityOnce);
     assert.match(activityOnce, /WindowCompat\.setDecorFitsSystemWindows/);
     assert.doesNotMatch(activityOnce, /enableEdgeToEdge\(\)/);
     assert.match(rootOnce, /kotlin-gradle-plugin:2\.1\.20/);
