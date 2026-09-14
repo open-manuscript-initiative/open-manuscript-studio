@@ -25,7 +25,7 @@ const generatedBuildGradle = `dependencies {
 const generatedRootBuildGradle = `buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:8.11.0")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25")
+  assert.doesNotMatch(patched, /kotlin-gradle-plugin:1\.9\.25/);
     }
 }
 `;
@@ -85,7 +85,7 @@ test('Android modern UI configuration patches a generated project idempotently',
     configureAndroidModernUi(root);
 
     assert.equal(readFileSync(join(root, 'build.gradle.kts'), 'utf8'), rootOnce);
-    assert.match(rootOnce, /kotlin-gradle-plugin:2\\.1\\.20/);
+    assert.match(rootOnce, /kotlin-gradle-plugin:2\.1\.20/);
     assert.equal(readFileSync(join(app, 'build.gradle.kts'), 'utf8'), once);
     assert.equal(readFileSync(join(day, 'themes.xml'), 'utf8'), dayOnce);
     assert.match(once, /com\.google\.android\.material:material:1\.14\.0/);
