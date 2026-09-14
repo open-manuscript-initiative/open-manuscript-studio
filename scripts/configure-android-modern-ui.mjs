@@ -136,7 +136,7 @@ function findGeneratedMainActivity(root) {
   return matches[0];
 }
 
-function updateFile
+function updateFile(path, transform) {
   if (!existsSync(path)) throw new Error(`Generated Android file is missing: ${path}`);
   const source = readFileSync(path, 'utf8');
   const next = transform(source);
