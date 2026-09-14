@@ -56,6 +56,16 @@ android {
 }
 `;
 }
+// Lint's K2 analysis crashes on a string-based applied Kotlin script.
+// Use Gradle's File overload, preserving the same generated dependency script.
+// https://issuetracker.google.com/issues/430991549
+const scriptApply = 'apply(from = "tauri.build.gradle.kts")';
+const fileApply = 'apply(from = file("tauri.build.gradle.kts"))';
+if (app.includes(scriptApply)) {
+  app = app.replace(scriptApply, fileApply);
+} else if (!app.includes(fileApply)) {
+  throw new Error('Expected the generated Tauri dependency script application');
+}
 updates.push([appPath, app]);
 for (const [file, content] of updates) writeFileSync(file, content);
 console.log(`Experimental AGP 9.0.1 / Gradle 9.1.0: ${mode}`);
