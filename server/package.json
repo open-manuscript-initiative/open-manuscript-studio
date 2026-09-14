@@ -40,5 +40,10 @@
     "prisma": "^7.9.1",
     "tsx": "^4.0.0",
     "typescript": "^5.9.0"
+  },
+  "overrides": {
+    "prisma": {
+      "mysql2": "3.23.1"
+    }
   }
 }
