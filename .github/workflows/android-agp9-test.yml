@@ -6,7 +6,9 @@ on:
     paths:
       - '.github/workflows/android-agp9-test.yml'
       - 'scripts/configure-android-agp9-test.mjs'
+      - 'scripts/configure-android-modern-ui.mjs'
       - 'tests/android-agp9-test.test.mjs'
+      - 'tests/android-modern-ui.test.mjs'
 
 permissions:
   contents: read
@@ -55,6 +57,9 @@ jobs:
         run: |
           npm run tauri -- android init --ci
           npm run icons:generate
+      - name: Configure Android modern UI
+        run: node scripts/configure-android-modern-ui.mjs
+
       - name: Enable AGP 9 compatibility mode
         if: matrix.toolchain == 'agp9'
         run: node scripts/configure-android-agp9-test.mjs compatibility

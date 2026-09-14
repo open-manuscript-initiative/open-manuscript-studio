@@ -22,6 +22,8 @@ on:
       - 'src-tauri/Cargo.lock'
       - 'src-tauri/tauri.conf.json'
       - 'src-tauri/tauri.android.conf.json'
+      - 'scripts/configure-android-modern-ui.mjs'
+      - 'tests/android-modern-ui.test.mjs'
       - '.github/workflows/tauri-desktop.yml'
   push:
     branches:
@@ -201,6 +203,9 @@ jobs:
         run: npm run tauri -- android init --ci
 
       # Mobile icons can only be written after gen/android exists.
+      - name: Configure Android modern UI
+        run: node scripts/configure-android-modern-ui.mjs
+
       - name: Generate Android launcher icons
         run: npm run icons:generate
 

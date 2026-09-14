@@ -116,6 +116,10 @@ jobs:
           CI: 'true'
         run: npm run tauri -- android init --ci
 
+      - name: Configure Android modern UI
+        if: matrix.language == 'java-kotlin'
+        run: node scripts/configure-android-modern-ui.mjs
+
       - name: Generate Android launcher icons
         if: matrix.language == 'java-kotlin'
         run: npm run icons:generate
