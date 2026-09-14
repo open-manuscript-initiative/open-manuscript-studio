@@ -110,6 +110,7 @@ jobs:
           CI: 'true'
         run: |
           npm run tauri -- android init --ci
+          node scripts/configure-android-modern-ui.mjs
           npm run icons:generate
 
       - name: Validate Android signing secrets
