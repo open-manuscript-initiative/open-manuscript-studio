@@ -54,6 +54,25 @@ Never place any of these values in source files, workflow YAML, issues, pull req
 
 ## 4. Build a signed release in GitHub
 
+### Reserve a fresh Android build number
+
+Before starting every new Android build, increase `bundle.android.versionCode`
+in `src-tauri/tauri.android.conf.json` above all previously reserved, built, or
+uploaded codes. The visible version name may remain unchanged. A failed build
+also consumes its reserved number for this project's release process.
+
+AAB and APK outputs from the same release build share that release's code.
+Independent comparison builds use different codes. If a workflow supplies a
+`--config` override, check that override too: it takes precedence over the file.
+Do not use GitHub's **Re-run jobs** on an old commit to produce a new upload;
+first reserve a higher code and start a new build from the updated revision.
+The workflows do not automatically increment a checked-in code.
+
+The AGP 9 experiment reserved codes 1015 through 1019. The next new Android
+build must use **1020 or higher**, also checking any intervening builds or Play
+uploads before choosing it.
+
+
 Open:
 
 `Actions -> Android Release -> Run workflow`
