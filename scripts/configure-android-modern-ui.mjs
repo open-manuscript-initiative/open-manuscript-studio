@@ -14,7 +14,7 @@ const LEGACY_THEME = 'Theme.MaterialComponents.DayNight.NoActionBar';
 const MODERN_THEME = 'Theme.Material3.DayNight.NoActionBar';
 
 function escapeRegExp(value) {
-  return value.replace(/[.*+?^\${}()|[\]\\]/g, '\\$&');
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function compareVersions(left, right) {
