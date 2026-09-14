@@ -58,7 +58,7 @@
     "longDescription": "Open Manuscript Studio is the reference authoring environment for portable, structured scholarly manuscripts using the Open Manuscript Initiative model.",
     "windows": {
       "wix": {
-        "version": "0.1.0.11"
+        "version": "0.1.0.12"
       }
     }
   }
