@@ -52,7 +52,7 @@ test('Kotlin compiler patch aligns the generated template with modern AndroidX m
     patched,
     new RegExp(`kotlin-gradle-plugin:${ANDROID_KOTLIN_VERSION.replaceAll('.', '\\.')}`),
   );
-    assert.match(rootOnce, /kotlin-gradle-plugin:1\.9\.25/);
+  assert.doesNotMatch(patched, /kotlin-gradle-plugin:1\.9\.25/);
   assert.equal(patchAndroidKotlinVersion(patched), patched);
 
   const newerTemplate = generatedRootBuildGradle.replace('1.9.25', '2.2.10');
