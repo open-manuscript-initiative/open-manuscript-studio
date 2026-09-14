@@ -53,7 +53,7 @@ export function patchAndroidDependencies(source) {
   let result = source;
   for (const [coordinate, version] of Object.entries(ANDROID_UI_DEPENDENCIES)) {
     const pattern = new RegExp(
-      'implementation\\("' + escapeRegExp(coordinate) + ':[^"]+\\)"',
+      'implementation\\("' + escapeRegExp(coordinate) + ':[^"]+"\\)',
     );
     if (!pattern.test(result)) {
       throw new Error(`Expected generated Android dependency is missing: ${coordinate}`);
