@@ -8,6 +8,7 @@ import {
   ANDROID_KOTLIN_VERSION,
   ANDROID_UI_DEPENDENCIES,
   configureAndroidModernUi,
+  patchAndroidActivity,
   patchAndroidDependencies,
   patchAndroidKotlinVersion,
   patchAndroidTheme,
@@ -29,6 +30,18 @@ const generatedRootBuildGradle = `buildscript {
     }
 }
 `;
+const generatedActivity = `package org.openmanuscript.studio
+
+import android.os.Bundle
+import androidx.activity.enableEdgeToEdge
+
+class MainActivity : TauriActivity() {
+  override fun onCreate(savedInstanceState: Bundle?) {
+    enableEdgeToEdge()
+    super.onCreate(savedInstanceState)
+  }
+}
+`;
 const generatedTheme = `<resources>
     <style name="Theme.omi_studio" parent="Theme.MaterialComponents.DayNight.NoActionBar">
     </style>
@@ -43,9 +56,19 @@ test('Android dependency patch pins Android 15-compatible stable UI libraries', 
   assert.doesNotMatch(patched, /appcompat:1\.7\.1/);
   assert.doesNotMatch(patched, /activity-ktx:1\.10\.1/);
   assert.doesNotMatch(patched, /material:1\.12\.0/);
+  assert.doesNotMatch(patched, /com\.google\.android\.material:material/);
   assert.equal(patchAndroidDependencies(patched), patched);
 });
 
+test('Android Activity patch uses non-deprecated edge-to-edge APIs', () => {
+  const patched = patchAndroidActivity(generatedActivity);
+  assert.match(patched, /androidx\.core\.view\.WindowCompat/);
+  assert.match(patched, /LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS/);
+  assert.doesNotMatch(patched, /androidx\.activity\.enableEdgeToEdge/);
+  assert.doesNotMatch(patched, /LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES/);
+  assert.doesNotMatch(patched, /enableEdgeToEdge\(\)/);
+  assert.equal(patchAndroidActivity(patched), patched);
+});
 test('Kotlin compiler patch aligns the generated template with modern AndroidX metadata', () => {
   const patched = patchAndroidKotlinVersion(generatedRootBuildGradle);
   assert.match(
@@ -58,9 +81,9 @@ test('Kotlin compiler patch aligns the generated template with modern AndroidX m
   const newerTemplate = generatedRootBuildGradle.replace('1.9.25', '2.2.10');
   assert.equal(patchAndroidKotlinVersion(newerTemplate), newerTemplate);
 });
-test('Android theme patch migrates generated Tauri theme to Material 3', () => {
+test('Android theme patch migrates generated Tauri theme to AppCompat', () => {
   const patched = patchAndroidTheme(generatedTheme);
-  assert.match(patched, /Theme\.Material3\.DayNight\.NoActionBar/);
+  assert.match(patched, /Theme\.AppCompat\.DayNight\.NoActionBar/);
   assert.doesNotMatch(patched, /Theme\.MaterialComponents\.DayNight\.NoActionBar/);
   assert.equal(patchAndroidTheme(patched), patched);
 });
@@ -74,26 +97,37 @@ test('Android modern UI configuration patches a generated project idempotently',
     mkdirSync(day, { recursive: true });
     mkdirSync(night, { recursive: true });
     writeFileSync(join(root, 'build.gradle.kts'), generatedRootBuildGradle);
+    writeFileSync(join(root, 'app/src/main/MainActivity.kt'), generatedActivity);
     writeFileSync(join(app, 'build.gradle.kts'), generatedBuildGradle);
     writeFileSync(join(day, 'themes.xml'), generatedTheme);
     writeFileSync(join(night, 'themes.xml'), generatedTheme);
 
     configureAndroidModernUi(root);
     const rootOnce = readFileSync(join(root, 'build.gradle.kts'), 'utf8');
+    const activityOnce = readFileSync(join(root, 'app/src/main/MainActivity.kt'), 'utf8');
     const once = readFileSync(join(app, 'build.gradle.kts'), 'utf8');
     const dayOnce = readFileSync(join(day, 'themes.xml'), 'utf8');
     configureAndroidModernUi(root);
 
     assert.equal(readFileSync(join(root, 'build.gradle.kts'), 'utf8'), rootOnce);
+    assert.equal(readFileSync(join(root, 'app/src/main/MainActivity.kt'), 'utf8'), activityOnce);
+    assert.match(activityOnce, /WindowCompat\.setDecorFitsSystemWindows/);
+    assert.doesNotMatch(activityOnce, /enableEdgeToEdge\(\)/);
     assert.match(rootOnce, /kotlin-gradle-plugin:2\.1\.20/);
     assert.equal(readFileSync(join(app, 'build.gradle.kts'), 'utf8'), once);
     assert.equal(readFileSync(join(day, 'themes.xml'), 'utf8'), dayOnce);
-    assert.match(once, /com\.google\.android\.material:material:1\.14\.0/);
-    assert.match(dayOnce, /Theme\.Material3\.DayNight\.NoActionBar/);
-    assert.match(readFileSync(join(night, 'themes.xml'), 'utf8'), /Theme\.Material3\.DayNight\.NoActionBar/);
+    assert.match(dayOnce, /Theme\.AppCompat\.DayNight\.NoActionBar/);
+    assert.match(readFileSync(join(night, 'themes.xml'), 'utf8'), /Theme\.AppCompat\.DayNight\.NoActionBar/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('Android activity patch fails closed when the Tauri template changes unexpectedly', () => {
+  assert.throws(
+    () => patchAndroidActivity(generatedActivity.replace('enableEdgeToEdge()', 'legacyFullscreenSetup()')),
+    /Expected generated Tauri edge-to-edge Activity is missing/,
+  );
 });
 
 test('Android dependency patch fails closed when the Tauri template changes unexpectedly', () => {
