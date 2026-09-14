@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -113,7 +113,30 @@ export function patchAndroidTheme(source) {
   return source.replaceAll(LEGACY_THEME, MODERN_THEME);
 }
 
-function updateFile(path, transform) {
+function findGeneratedMainActivity(root) {
+  const directPath = resolve(root, 'app/src/main/MainActivity.kt');
+  if (existsSync(directPath)) return directPath;
+
+  const matches = [];
+  const visit = (directory) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        if (entry.name === 'build' || entry.name === '.gradle') continue;
+        visit(resolve(directory, entry.name));
+      } else if (entry.isFile() && entry.name === 'MainActivity.kt') {
+        matches.push(resolve(directory, entry.name));
+      }
+    }
+  };
+  visit(root);
+
+  if (matches.length !== 1) {
+    throw new Error(`Expected exactly one generated Tauri MainActivity.kt, found ${matches.length}.`);
+  }
+  return matches[0];
+}
+
+function updateFile
   if (!existsSync(path)) throw new Error(`Generated Android file is missing: ${path}`);
   const source = readFileSync(path, 'utf8');
   const next = transform(source);
@@ -129,7 +152,7 @@ export function configureAndroidModernUi(root = resolve('src-tauri/gen/android')
   const rootBuildGradle = resolve(root, 'build.gradle.kts');
   if (updateFile(rootBuildGradle, patchAndroidKotlinVersion)) changes.push('build.gradle.kts');
 
-  const activity = resolve(root, 'app/src/main/MainActivity.kt');
+  const activity = findGeneratedMainActivity(root);
   if (updateFile(activity, patchAndroidActivity)) changes.push('MainActivity.kt');
 
   const buildGradle = resolve(root, 'app/build.gradle.kts');
