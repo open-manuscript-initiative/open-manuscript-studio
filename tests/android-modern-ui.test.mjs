@@ -5,9 +5,11 @@ import { join } from 'node:path';
 import test from 'node:test';
 
 import {
+  ANDROID_KOTLIN_VERSION,
   ANDROID_UI_DEPENDENCIES,
   configureAndroidModernUi,
   patchAndroidDependencies,
+  patchAndroidKotlinVersion,
   patchAndroidTheme,
 } from '../scripts/configure-android-modern-ui.mjs';
 
@@ -20,6 +22,13 @@ const generatedBuildGradle = `dependencies {
 }
 `;
 
+const generatedRootBuildGradle = `buildscript {
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.11.0")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25")
+    }
+}
+`;
 const generatedTheme = `<resources>
     <style name="Theme.omi_studio" parent="Theme.MaterialComponents.DayNight.NoActionBar">
     </style>
@@ -37,6 +46,18 @@ test('Android dependency patch pins Android 15-compatible stable UI libraries', 
   assert.equal(patchAndroidDependencies(patched), patched);
 });
 
+test('Kotlin compiler patch aligns the generated template with modern AndroidX metadata', () => {
+  const patched = patchAndroidKotlinVersion(generatedRootBuildGradle);
+  assert.match(
+    patched,
+    new RegExp(`kotlin-gradle-plugin:${ANDROID_KOTLIN_VERSION.replaceAll('.', '\\.')}`),
+  );
+  assert.doesNotMatch(patched, /kotlin-gradle-plugin:1\\.9\\.25/);
+  assert.equal(patchAndroidKotlinVersion(patched), patched);
+
+  const newerTemplate = generatedRootBuildGradle.replace('1.9.25', '2.2.10');
+  assert.equal(patchAndroidKotlinVersion(newerTemplate), newerTemplate);
+});
 test('Android theme patch migrates generated Tauri theme to Material 3', () => {
   const patched = patchAndroidTheme(generatedTheme);
   assert.match(patched, /Theme\.Material3\.DayNight\.NoActionBar/);
@@ -52,15 +73,19 @@ test('Android modern UI configuration patches a generated project idempotently',
     const night = join(app, 'src/main/res/values-night');
     mkdirSync(day, { recursive: true });
     mkdirSync(night, { recursive: true });
+    writeFileSync(join(root, 'build.gradle.kts'), generatedRootBuildGradle);
     writeFileSync(join(app, 'build.gradle.kts'), generatedBuildGradle);
     writeFileSync(join(day, 'themes.xml'), generatedTheme);
     writeFileSync(join(night, 'themes.xml'), generatedTheme);
 
     configureAndroidModernUi(root);
+    const rootOnce = readFileSync(join(root, 'build.gradle.kts'), 'utf8');
     const once = readFileSync(join(app, 'build.gradle.kts'), 'utf8');
     const dayOnce = readFileSync(join(day, 'themes.xml'), 'utf8');
     configureAndroidModernUi(root);
 
+    assert.equal(readFileSync(join(root, 'build.gradle.kts'), 'utf8'), rootOnce);
+    assert.match(rootOnce, /kotlin-gradle-plugin:2\\.1\\.20/);
     assert.equal(readFileSync(join(app, 'build.gradle.kts'), 'utf8'), once);
     assert.equal(readFileSync(join(day, 'themes.xml'), 'utf8'), dayOnce);
     assert.match(once, /com\.google\.android\.material:material:1\.14\.0/);
