@@ -52,11 +52,16 @@ export function patchAndroidKotlinVersion(source) {
 export function patchAndroidDependencies(source) {
   let result = source;
   for (const [coordinate, version] of Object.entries(ANDROID_UI_DEPENDENCIES)) {
-    const pattern = new RegExp(`implementation\\("\${escapeRegExp(coordinate)}:[^"]+"\\)`);
+    const pattern = new RegExp(
+      'implementation\\("' + escapeRegExp(coordinate) + ':[^"]+\\)"',
+    );
     if (!pattern.test(result)) {
       throw new Error(`Expected generated Android dependency is missing: ${coordinate}`);
     }
-    result = result.replace(pattern, `implementation("\${coordinate}:${version}")`);
+    result = result.replace(
+      pattern,
+      'implementation("' + coordinate + ':' + version + '")',
+    );
   }
   return result;
 }
