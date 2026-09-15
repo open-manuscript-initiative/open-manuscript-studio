@@ -81,9 +81,13 @@ ojsReviewRouter.post(
         ...(verified.claims.reviewAssignment?.round
           ? { reviewRound: verified.claims.reviewAssignment.round }
           : {}),
-        recommendationOptions: recommendations.options,
-        recommendationExternalId: recommendations.selectedExternalId,
-        recommendationStorage: recommendations.storage,
+        ...(recommendations
+          ? {
+              recommendationOptions: recommendations.options,
+              recommendationExternalId: recommendations.selectedExternalId,
+              recommendationStorage: recommendations.storage,
+            }
+          : {}),
       });
 
       await Promise.all([
@@ -112,11 +116,13 @@ ojsReviewRouter.post(
         reviewForm: reviewForm
           ? { externalId: reviewForm.externalId, elementCount: reviewForm.elements.length }
           : null,
-        reviewerRecommendations: {
-          storage: recommendations.storage,
-          optionCount: recommendations.options.length,
-          selectedExternalId: recommendations.selectedExternalId,
-        },
+        reviewerRecommendations: recommendations
+          ? {
+              storage: recommendations.storage,
+              optionCount: recommendations.options.length,
+              selectedExternalId: recommendations.selectedExternalId,
+            }
+          : null,
       });
     } catch (error) {
       const name = error instanceof Error ? error.name : '';
