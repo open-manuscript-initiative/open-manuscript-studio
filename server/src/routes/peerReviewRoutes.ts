@@ -76,6 +76,7 @@ const submitSchema = z.object({
     'MAJOR_REVISION',
     'REJECT',
   ]).optional(),
+  recommendationExternalId: z.string().trim().min(1).max(128).optional(),
 });
 
 peerReviewRouter.post(
@@ -248,9 +249,12 @@ peerReviewRouter.post(
       const parsed = submitSchema.parse(request.body ?? {});
       await getReviewerAssignment(reviewerUserId, assignmentId);
       await validateOjsReviewFormComplete(assignmentId);
-      const review = parsed.recommendation === undefined
-        ? await submitReview(reviewerUserId, assignmentId)
-        : await submitReview(reviewerUserId, assignmentId, parsed.recommendation);
+      const review = await submitReview(
+        reviewerUserId,
+        assignmentId,
+        parsed.recommendation,
+        parsed.recommendationExternalId,
+      );
       const ojsWriteback = await writeBackSubmittedOjsReview(assignmentId, reviewerUserId);
       response.status(200).json({ review, ojsWriteback });
     } catch (error) {
