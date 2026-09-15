@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { loadOjsLaunchData } from '../integrations/ojs/ojsClient.js';
+import { loadOjsReviewRecommendations } from '../integrations/ojs/reviewRecommendations.js';
 import { verifyOjsLaunch } from '../integrations/ojs/launchVerifier.js';
 import {
   loadOjsReviewForm,
@@ -50,7 +51,7 @@ ojsReviewRouter.post(
         throw new Error('The OJS review launch does not identify its submission, review assignment, or context.');
       }
 
-      const [ojsData, reviewForm] = await Promise.all([
+      const [ojsData, reviewForm, recommendations] = await Promise.all([
         loadOjsLaunchData(
           verified.claims,
           payload,
@@ -58,6 +59,12 @@ ojsReviewRouter.post(
           verified.installation.baseUrl,
         ),
         loadOjsReviewForm(
+          verified.claims,
+          payload,
+          signature,
+          verified.installation.baseUrl,
+        ),
+        loadOjsReviewRecommendations(
           verified.claims,
           payload,
           signature,
@@ -74,6 +81,9 @@ ojsReviewRouter.post(
         ...(verified.claims.reviewAssignment?.round
           ? { reviewRound: verified.claims.reviewAssignment.round }
           : {}),
+        recommendationOptions: recommendations.options,
+        recommendationExternalId: recommendations.selectedExternalId,
+        recommendationStorage: recommendations.storage,
       });
 
       await Promise.all([
@@ -102,6 +112,11 @@ ojsReviewRouter.post(
         reviewForm: reviewForm
           ? { externalId: reviewForm.externalId, elementCount: reviewForm.elements.length }
           : null,
+        reviewerRecommendations: {
+          storage: recommendations.storage,
+          optionCount: recommendations.options.length,
+          selectedExternalId: recommendations.selectedExternalId,
+        },
       });
     } catch (error) {
       const name = error instanceof Error ? error.name : '';
