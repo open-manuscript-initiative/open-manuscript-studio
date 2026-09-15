@@ -107,7 +107,7 @@ export async function upsertOjsReviewAssignment(
     : {
         externalRecommendationStorage: input.recommendationStorage,
         externalRecommendationId: input.recommendationExternalId ?? null,
-        externalRecommendationOptions: (input.recommendationOptions ?? []) as Prisma.InputJsonValue,
+        externalRecommendationOptions: (input.recommendationOptions ?? []) as unknown as Prisma.InputJsonValue,
       };
   const existing = await prisma.peerReviewAssignment.findUnique({
     where: {
