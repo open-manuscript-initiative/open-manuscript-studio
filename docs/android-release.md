@@ -102,9 +102,33 @@ Google Play records the package identifier and upload certificate during this in
 
 ## 6. Configure automated Play uploads
 
+### Canonical Google Cloud project
+
+Open Manuscript Studio uses **`open-manuscript-studio-508703`** as its
+canonical Google Cloud project. The restored project must have project number
+**`258278693067`**; verify that pairing in Google Cloud Console before changing
+credentials.
+
+Keep these integrations in the same project, while retaining separate
+credentials and OAuth clients:
+
+- **Google Play Developer API** — the dedicated service account stored in
+  `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`;
+- **Google OIDC login** — the server-side `GOOGLE_OIDC_*` client;
+- **Google Drive storage** — the server-side `GOOGLE_DRIVE_OAUTH_*` client.
+
+The OIDC and Drive clients must not be merged into one OAuth client: they use
+different scopes and callback URIs. The Android workflow validates the
+service-account JSON `project_id` against the canonical project before it
+attempts a Play upload.
+
+When consolidating the older projects, keep them intact until the canonical
+project has passed a Play upload and the affected OIDC/Drive flows have been
+tested. Only then remove unused clients or projects.
+
 After the application exists in Play Console:
 
-1. enable the Google Play Android Developer API for the Google Cloud project used by the Play Console integration;
+1. enable the Google Play Android Developer API in the canonical `open-manuscript-studio-508703` project;
 2. create a dedicated service account;
 3. grant it only the Play Console permissions required to create testing releases;
 4. store the service-account JSON as `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` in GitHub Actions secrets.
