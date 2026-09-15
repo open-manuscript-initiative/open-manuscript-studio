@@ -63,7 +63,8 @@ export function setPublicationVenue(
   });
 }
 
-export function setScholarlyScalar(  key: 'publisherId' | 'licenseUrl' | 'copyrightYear',
+export function setScholarlyScalar(
+  key: 'publisherId' | 'licenseUrl' | 'copyrightYear',
   value: string,
 ): void {
   updateMetadata(key, (metadata) => {

@@ -14,7 +14,8 @@ export interface OmiPublicationVenueReference {
   isbnPrefix?: string;
 }
 
-export interface OmiScholarlyMetadata {  subjects?: OmiLocalizedTerms;
+export interface OmiScholarlyMetadata {
+  subjects?: OmiLocalizedTerms;
   disciplines?: OmiLocalizedTerms;
   supportingAgencies?: OmiLocalizedTerms;
   coverage?: OmiLocalizedText;

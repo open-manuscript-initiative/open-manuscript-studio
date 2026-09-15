@@ -172,7 +172,8 @@ export function ScholarlyMetadataPanel() {
           onChange={setPublicationVenue}
         />
 
-        <TextField label={copy.publisherId} value={metadata.publisherId ?? ''}          onChange={(value) => setScholarlyScalar('publisherId', value)} />
+        <TextField label={copy.publisherId} value={metadata.publisherId ?? ''}
+          onChange={(value) => setScholarlyScalar('publisherId', value)} />
         <TextField label={copy.licenseUrl} value={metadata.licenseUrl ?? ''}
           onChange={(value) => setScholarlyScalar('licenseUrl', value)} />
         <TextField label={copy.copyrightYear} value={metadata.copyrightYear?.toString() ?? ''}
