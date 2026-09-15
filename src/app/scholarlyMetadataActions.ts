@@ -3,6 +3,7 @@ import { stagePendingChanges } from '../model/workingState';
 import type {
   OmiLocalizedTerms,
   OmiLocalizedText,
+  OmiPublicationVenueReference,
   OmiScholarlyMetadata,
 } from '../model/scholarlyMetadata';
 import { useStudioStore } from './useStudioStore';
@@ -51,8 +52,18 @@ export function setScholarlyLocalizedTerms(
   });
 }
 
-export function setScholarlyScalar(
-  key: 'publisherId' | 'licenseUrl' | 'copyrightYear',
+export function setPublicationVenue(
+  value: OmiPublicationVenueReference | undefined,
+): void {
+  updateMetadata('publicationVenue', (metadata) => {
+    const next = { ...metadata };
+    if (value) next.publicationVenue = value;
+    else delete next.publicationVenue;
+    return next;
+  });
+}
+
+export function setScholarlyScalar(  key: 'publisherId' | 'licenseUrl' | 'copyrightYear',
   value: string,
 ): void {
   updateMetadata(key, (metadata) => {

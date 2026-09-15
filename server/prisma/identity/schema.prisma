@@ -20,6 +20,11 @@ enum IdentityProvider {
   SAML
 }
 
+enum PublicationVenueType {
+  JOURNAL
+  BOOK_PUBLISHER
+}
+
 enum InstitutionStatus {
   ACTIVE
   DISABLED
@@ -67,6 +72,7 @@ model User {
   centralAdminGrant      CentralAdminGrant?
   oauthStates            OAuthLoginState[]
   passwordResetTokens    PasswordResetToken[]
+  publicationVenues      PublicationVenue[]
 
   @@map("users")
 }
@@ -134,6 +140,24 @@ model UserIdentity {
   @@unique([provider, issuer, subject])
   @@index([userId, provider])
   @@map("user_identities")
+}
+
+model PublicationVenue {
+  id             String               @id @default(uuid()) @db.Uuid
+  type           PublicationVenueType
+  name           String               @db.VarChar(300)
+  normalizedName String               @map("normalized_name") @db.VarChar(300)
+  website        String?              @db.VarChar(2048)
+  issn           String?              @db.VarChar(32)
+  isbnPrefix     String?              @map("isbn_prefix") @db.VarChar(64)
+  createdByUserId String?             @map("created_by_user_id") @db.Uuid
+  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy      User?                @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([type, normalizedName])
+  @@index([type, normalizedName])
+  @@map("publication_venues")
 }
 
 model Institution {

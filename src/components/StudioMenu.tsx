@@ -75,6 +75,7 @@ import { PublicationProfilePanel } from './PublicationProfilePanel';
 import { PublicationStyleEditor } from './PublicationStyleEditor';
 import { ReferencesPanel } from './ReferencesPanel';
 import { SectionNumberingControl } from './SectionNumberingControl';
+import { ScholarlyMetadataPanel } from './ScholarlyMetadataPanel';
 import { SectionStructurePanel } from './SectionStructurePanel';
 
 type StudioMenuView =
@@ -322,7 +323,32 @@ function ManuscriptDataView({ onNavigate }: { onNavigate: () => void }) {
   const { t } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
   const setAbstract = useStudioStore((state) => state.setAbstract);
-  return <section className="studio-menu-view"><div className="studio-menu-view-header"><div><h3>{t('studio.manuscript.title')}</h3><p>{t('studio.manuscript.description')}</p></div></div><div className="studio-manuscript-fields"><label><span>{t('manuscript.abstract')}</span><textarea value={manuscript.abstract ?? ''} onChange={(event) => setAbstract(event.target.value)} /></label><KeywordEditor /><ManuscriptLanguageField /></div><SectionNumberingControl /><div className="studio-menu-mobile-structure"><SectionStructurePanel onNavigate={onNavigate} /></div></section>;
+  return (
+    <section className="studio-menu-view">
+      <div className="studio-menu-view-header">
+        <div>
+          <h3>{t('studio.manuscript.title')}</h3>
+          <p>{t('studio.manuscript.description')}</p>
+        </div>
+      </div>
+      <div className="studio-manuscript-fields">
+        <label>
+          <span>{t('manuscript.abstract')}</span>
+          <textarea
+            value={manuscript.abstract ?? ''}
+            onChange={(event) => setAbstract(event.target.value)}
+          />
+        </label>
+        <KeywordEditor />
+        <ManuscriptLanguageField />
+      </div>
+      <SectionNumberingControl />
+      <ScholarlyMetadataPanel />
+      <div className="studio-menu-mobile-structure">
+        <SectionStructurePanel onNavigate={onNavigate} />
+      </div>
+    </section>
+  );
 }
 
 function ReferencesView() {

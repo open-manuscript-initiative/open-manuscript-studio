@@ -3,8 +3,18 @@ import type { OmiLocale } from '../types/omi';
 export type OmiLocalizedText = Partial<Record<OmiLocale, string>>;
 export type OmiLocalizedTerms = Partial<Record<OmiLocale, string[]>>;
 
-export interface OmiScholarlyMetadata {
-  subjects?: OmiLocalizedTerms;
+export type OmiPublicationVenueType = 'JOURNAL' | 'BOOK_PUBLISHER';
+
+export interface OmiPublicationVenueReference {
+  id: string;
+  type: OmiPublicationVenueType;
+  name: string;
+  website?: string;
+  issn?: string;
+  isbnPrefix?: string;
+}
+
+export interface OmiScholarlyMetadata {  subjects?: OmiLocalizedTerms;
   disciplines?: OmiLocalizedTerms;
   supportingAgencies?: OmiLocalizedTerms;
   coverage?: OmiLocalizedText;
@@ -13,6 +23,7 @@ export interface OmiScholarlyMetadata {
   type?: OmiLocalizedText;
   dataAvailability?: OmiLocalizedText;
   languages?: OmiLocalizedText;
+  publicationVenue?: OmiPublicationVenueReference;
   publisherId?: string;
   licenseUrl?: string;
   copyrightHolder?: OmiLocalizedText;
@@ -67,4 +78,45 @@ export function normalizeLocalizedTerms(value: unknown): OmiLocalizedTerms {
     if (terms.length) result[normalizeLocale(locale)] = [...new Set(terms)];
   }
   return result;
+}
+
+export function normalizePublicationVenue(
+  value: unknown,
+): OmiPublicationVenueReference | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  const id = typeof record.id === 'string' ? record.id.trim() : '';
+  const name = typeof record.name === 'string'
+    ? normalizePublicationVenueName(record.name)
+    : '';
+  const type = record.type === 'JOURNAL' || record.type === 'BOOK_PUBLISHER'
+    ? record.type
+    : undefined;
+  if (!id || !name || !type) return undefined;
+
+  const website = optionalVenueString(record.website);
+  const issn = optionalVenueString(record.issn);
+  const isbnPrefix = optionalVenueString(record.isbnPrefix);
+
+  return {
+    id,
+    type,
+    name,
+    ...(website ? { website } : {}),
+    ...(issn ? { issn } : {}),
+    ...(isbnPrefix ? { isbnPrefix } : {}),
+  };
+}
+
+function normalizePublicationVenueName(value: string): string {
+  return value.normalize('NFKC').trim().replace(/\s+/gu, ' ');
+}
+
+function optionalVenueString(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim();
+  return normalized || undefined;
 }

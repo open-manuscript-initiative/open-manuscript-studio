@@ -2,12 +2,14 @@ import { useMemo, useState } from 'react';
 
 import {
   setOjsOpenScienceField,
+  setPublicationVenue,
   setScholarlyLocalizedTerms,
   setScholarlyLocalizedText,
   setScholarlyScalar,
 } from '../app/scholarlyMetadataActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { PublicationVenueField } from './PublicationVenueField';
 
 const LABELS = {
   en: {
@@ -165,8 +167,12 @@ export function ScholarlyMetadataPanel() {
             onChange={(event) => setScholarlyLocalizedText('dataAvailability', metadataLocale, event.target.value)} />
         </label>
 
-        <TextField label={copy.publisherId} value={metadata.publisherId ?? ''}
-          onChange={(value) => setScholarlyScalar('publisherId', value)} />
+        <PublicationVenueField
+          value={metadata.publicationVenue}
+          onChange={setPublicationVenue}
+        />
+
+        <TextField label={copy.publisherId} value={metadata.publisherId ?? ''}          onChange={(value) => setScholarlyScalar('publisherId', value)} />
         <TextField label={copy.licenseUrl} value={metadata.licenseUrl ?? ''}
           onChange={(value) => setScholarlyScalar('licenseUrl', value)} />
         <TextField label={copy.copyrightYear} value={metadata.copyrightYear?.toString() ?? ''}

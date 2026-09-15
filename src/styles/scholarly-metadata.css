@@ -110,3 +110,110 @@
     grid-column: auto;
   }
 }
+
+.studio-publication-venue-field {
+  gap: .45rem;
+}
+
+.studio-publication-venue-controls {
+  display: grid;
+  grid-template-columns: minmax(9rem, .75fr) minmax(12rem, 1fr) minmax(14rem, 1.35fr) auto;
+  align-items: end;
+  gap: .65rem;
+}
+
+.studio-publication-venue-controls > label,
+.studio-publication-venue-create-grid > label {
+  display: grid;
+  gap: .3rem;
+}
+
+.studio-publication-venue-controls > label > span,
+.studio-publication-venue-create-grid > label > span {
+  color: #64748b;
+  font-size: .7rem;
+  font-weight: 700;
+}
+
+.studio-publication-venue-controls select,
+.studio-publication-venue-controls input,
+.studio-publication-venue-create-grid select,
+.studio-publication-venue-create-grid input {
+  min-width: 0;
+}
+
+.studio-publication-venue-add {
+  min-height: 2.35rem;
+  border: 1px solid #0369a1;
+  border-radius: .55rem;
+  background: #f0f9ff;
+  color: #075985;
+  padding: .5rem .7rem;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.studio-publication-venue-add:hover {
+  background: #e0f2fe;
+}
+
+.studio-publication-venue-error {
+  color: #b91c1c !important;
+}
+
+.studio-publication-venue-create {
+  display: grid;
+  gap: .75rem;
+  margin-top: .25rem;
+  border: 1px solid #bae6fd;
+  border-radius: .7rem;
+  background: #f8fcff;
+  padding: .85rem;
+}
+
+.studio-publication-venue-create > strong {
+  color: #0f172a;
+  font-size: .85rem;
+}
+
+.studio-publication-venue-create-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .7rem;
+}
+
+.studio-publication-venue-create-grid select,
+.studio-publication-venue-create-grid input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: .55rem;
+  background: #fff;
+  color: #1e293b;
+  padding: .55rem .6rem;
+  font: inherit;
+}
+
+.studio-publication-venue-create-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+}
+
+@media (max-width: 1020px) {
+  .studio-publication-venue-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .studio-publication-venue-controls,
+  .studio-publication-venue-create-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-publication-venue-add {
+    width: 100%;
+  }
+}
