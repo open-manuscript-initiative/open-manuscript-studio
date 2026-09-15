@@ -53,5 +53,5 @@ different.
 
 The Android Release workflow checks the Play credential JSON before uploading.
 It rejects a secret whose `project_id` is not
-0`open-manuscript-studio-508703`. This prevents a deleted or unrelated Cloud
+`open-manuscript-studio-508703`. This prevents a deleted or unrelated Cloud
 project from silently being used again.
