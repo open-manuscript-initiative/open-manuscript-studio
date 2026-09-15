@@ -12,6 +12,12 @@ export type ReviewRecommendation =
   | 'MINOR_REVISION'
   | 'MAJOR_REVISION'
   | 'REJECT';
+export type ReviewRecommendationStorage = 'native' | 'legacy' | 'unavailable';
+
+export interface ReviewRecommendationOption {
+  externalId: string;
+  label: string;
+}
 export type ReviewFeedbackVisibility =
   | 'AUTHOR_AND_EDITOR'
   | 'EDITOR_ONLY';
@@ -253,6 +259,7 @@ export async function submitReview(
   reviewerUserId: string,
   assignmentId: string,
   recommendation?: ReviewRecommendation,
+  recommendationExternalId?: string,
 ) {
   const assignment = await getOwnedAssignment(reviewerUserId, assignmentId);
   if (!['ACCEPTED', 'IN_PROGRESS'].includes(assignment.status)) {
@@ -260,19 +267,41 @@ export async function submitReview(
   }
 
   const policy = assignmentPolicies[assignment.assignmentType];
-  if (policy.requiresRecommendation && !recommendation) {
-    throw new Error('A scientific review requires an editorial recommendation.');
+  const externalStorage = normalizeRecommendationStorage(assignment.externalRecommendationStorage);
+  const hasExternalRecommendations = externalStorage !== null;
+  let externalRecommendationValue: string | null = null;
+
+  if (hasExternalRecommendations) {
+    if (!recommendationExternalId?.trim()) {
+      throw new Error('Select an OJS reviewer recommendation before submitting.');
+    }
+    const externalRecommendation = getExternalRecommendationOptions(assignment)
+      .find((option) => option.externalId === recommendationExternalId.trim());
+    if (!externalRecommendation) {
+      throw new Error('The selected OJS reviewer recommendation is not offered for this assignment.');
+    }
+    externalRecommendationValue = externalRecommendation.externalId;
+  } else {
+    if (recommendationExternalId !== undefined) {
+      throw new Error('An external reviewer recommendation is only valid for an OJS assignment.');
+    }
+    if (policy.requiresRecommendation && !recommendation) {
+      throw new Error('A scientific review requires an editorial recommendation.');
+    }
   }
 
-  const recommendationValue: ReviewRecommendation | null = policy.requiresRecommendation
-    ? recommendation ?? null
-    : null;
+  const recommendationValue: ReviewRecommendation | null = hasExternalRecommendations
+    ? null
+    : policy.requiresRecommendation
+      ? recommendation ?? null
+      : null;
 
   const updated = await prisma.peerReviewAssignment.update({
     where: { id: assignmentId },
     data: {
       status: 'SUBMITTED',
       recommendation: recommendationValue,
+      ...(hasExternalRecommendations ? { externalRecommendationId: externalRecommendationValue } : {}),
       submittedAt: new Date(),
     },
     include: reviewInclude,
@@ -386,6 +415,7 @@ function serializeForAuthor(assignment: ReviewRecord) {
 function serializeForReviewer(assignment: ReviewRecord) {
   return {
     ...commonReview(assignment),
+    ...serializeExternalRecommendation(assignment),
     feedback: assignment.feedback.map(serializeFeedback),
   };
 }
@@ -393,6 +423,7 @@ function serializeForReviewer(assignment: ReviewRecord) {
 function serializeForEditor(assignment: ReviewRecord) {
   return {
     ...commonReview(assignment),
+    ...serializeExternalRecommendation(assignment),
     reviewer: {
       userId: assignment.reviewer.id,
       email: assignment.reviewer.email,
@@ -409,6 +440,47 @@ function serializeForEditor(assignment: ReviewRecord) {
       : null,
     feedback: assignment.feedback.map(serializeFeedback),
   };
+}
+
+function serializeExternalRecommendation(assignment: ReviewRecord): {
+  recommendationStorage?: ReviewRecommendationStorage;
+  recommendationOptions?: ReviewRecommendationOption[];
+  recommendationExternalId?: string;
+} {
+  const storage = normalizeRecommendationStorage(assignment.externalRecommendationStorage);
+  if (!storage) return {};
+
+  const options = getExternalRecommendationOptions(assignment);
+  return {
+    recommendationStorage: storage,
+    recommendationOptions: options,
+    ...(assignment.externalRecommendationId
+      ? { recommendationExternalId: assignment.externalRecommendationId }
+      : {}),
+  };
+}
+
+function getExternalRecommendationOptions(assignment: ReviewRecord): ReviewRecommendationOption[] {
+  if (!Array.isArray(assignment.externalRecommendationOptions)) return [];
+
+  const options: ReviewRecommendationOption[] = [];
+  const seen = new Set<string>();
+  for (const value of assignment.externalRecommendationOptions) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
+    const option = value as Record<string, unknown>;
+    const externalId = typeof option.externalId === 'string' ? option.externalId.trim() : '';
+    const label = typeof option.label === 'string' ? option.label.trim() : '';
+    if (!externalId || externalId.length > 128 || !label || label.length > 500 || seen.has(externalId)) continue;
+    seen.add(externalId);
+    options.push({ externalId, label });
+  }
+  return options;
+}
+
+function normalizeRecommendationStorage(value: string | null): ReviewRecommendationStorage | null {
+  return value === 'native' || value === 'legacy' || value === 'unavailable'
+    ? value
+    : null;
 }
 
 function validateAssignmentLanguages(input: CreateAssignmentInput): void {
