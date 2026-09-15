@@ -16,7 +16,7 @@ export async function loadOjsReviewRecommendations(
   payload: string,
   signature: string,
   installationBaseUrl: string,
-): Promise<OjsReviewRecommendations> {
+): Promise<OjsReviewRecommendations | null> {
   if (claims.actorMode !== 'review') {
     throw new Error('OJS reviewer recommendations require a reviewer launch.');
   }
@@ -44,7 +44,9 @@ export async function loadOjsReviewRecommendations(
   });
 
   if (response.status === 404 || response.status === 405) {
-    return { storage: 'unavailable', options: [], selectedExternalId: null };
+    // Older OJS plugins do not expose this route. Leave the assignment on the
+    // pre-native legacy string path until the paired plugin is deployed.
+    return null;
   }
   if (!response.ok) {
     const text = (await response.text()).slice(0, 500);
