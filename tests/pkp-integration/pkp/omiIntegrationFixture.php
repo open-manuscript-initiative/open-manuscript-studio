@@ -564,7 +564,7 @@ final class OmiIntegrationFixtureTool extends CommandLineTool
                             break;
                         }
                     }
-                } catch (\\Throwable) {
+                } catch (\Throwable) {
                     // Older OJS versions may not expose the native recommendation repository.
                 }
             }
