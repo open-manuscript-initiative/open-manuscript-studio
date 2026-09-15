@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { parseOjsReviewRecommendations } from '../server/src/integrations/ojs/reviewRecommendations.ts';
+import { parseOjsReviewRecommendations } from '../server/src/integrations/ojs/reviewRecommendationModel.ts';
 import {
   createPeerReviewAssignment,
   createPeerReviewFeedback,
