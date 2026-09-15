@@ -4,7 +4,7 @@ Open Manuscript Studio keeps its Google integrations in one canonical Google
 Cloud project:
 
 - **Project ID:** `open-manuscript-studio-508703`
-- **Expected project number:** `258278693067`
+- **Expected project number:** `452031980278`
 
 The project ID and project number must be checked together in Google Cloud
 Console. A matching project ID alone is not enough to prove that the restored
@@ -25,7 +25,7 @@ different.
 ## Migration sequence
 
 1. In Google Cloud Console, select `open-manuscript-studio-508703` and verify
-   that it is `ACTIVE` and has project number `258278693067`.
+   that it is `ACTIVE` and has project number `452031980278`.
 2. Enable the Google Play Developer API and Google Drive API in that project.
    Configure the OAuth consent screen there as required.
 3. Confirm that the Play service account is present and that its existing key
