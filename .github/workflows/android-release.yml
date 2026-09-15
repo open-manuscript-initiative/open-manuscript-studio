@@ -27,6 +27,7 @@ concurrency:
 
 env:
   ANDROID_PACKAGE_NAME: org.openmanuscript.studio
+  GOOGLE_CLOUD_PROJECT_ID: open-manuscript-studio-508703
 
 jobs:
   build:
@@ -188,10 +189,45 @@ jobs:
         env:
           GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
+          set -euo pipefail
+
           if [ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]; then
             echo "::error::Missing required GitHub secret: GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"
             exit 1
           fi
+
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          raw = os.environ["GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"]
+          expected_project = os.environ["GOOGLE_CLOUD_PROJECT_ID"]
+
+          try:
+              credentials = json.loads(raw)
+          except json.JSONDecodeError as error:
+              print(f"::error::GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is not valid JSON: {error}")
+              sys.exit(1)
+
+          actual_project = credentials.get("project_id")
+          if actual_project != expected_project:
+              print(
+                  "::error::GOOGLE_PLAY_SERVICE_ACCOUNT_JSON targets "
+                  f"{actual_project!r}; expected canonical project {expected_project!r}."
+              )
+              sys.exit(1)
+
+          for required_field in ("client_email", "private_key"):
+              if not credentials.get(required_field):
+                  print(
+                      "::error::GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is missing "
+                      f"required field: {required_field}"
+                  )
+                  sys.exit(1)
+
+          print(f"Google Play credentials target canonical project: {actual_project}")
+          PY
 
       - name: Upload AAB to Google Play
         if: ${{ inputs.publish_to_play }}
