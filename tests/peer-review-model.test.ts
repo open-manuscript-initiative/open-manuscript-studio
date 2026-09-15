@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+import { parseOjsReviewRecommendations } from '../server/src/integrations/ojs/reviewRecommendationModel.ts';
 import {
   createPeerReviewAssignment,
   createPeerReviewFeedback,
@@ -47,6 +48,35 @@ const ompReviewRouteSource = readFileSync(
   new URL('../server/src/routes/ompReviewRoutes.ts', import.meta.url),
   'utf8',
 );
+
+
+test('normalizes OJS recommendation options without deriving or accepting arbitrary IDs', () => {
+  const native = parseOjsReviewRecommendations({
+    recommendationStorage: 'native',
+    options: [
+      { externalId: 12, label: 'Accept' },
+      { externalId: '12', label: 'Duplicate' },
+      { externalId: '19', label: 'Request revisions' },
+    ],
+    selectedExternalId: '19',
+  });
+
+  assert.deepEqual(native, {
+    storage: 'native',
+    options: [
+      { externalId: '12', label: 'Accept' },
+      { externalId: '19', label: 'Request revisions' },
+    ],
+    selectedExternalId: '19',
+  });
+
+  const invalidSelection = parseOjsReviewRecommendations({
+    recommendationStorage: 'legacy',
+    options: [{ externalId: '5', label: 'Decline' }],
+    selectedExternalId: '999',
+  });
+  assert.equal(invalidSelection.selectedExternalId, null);
+});
 
 test('creates double-blind review assignments by default', () => {
   const review = createPeerReviewAssignment(

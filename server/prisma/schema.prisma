@@ -215,6 +215,9 @@ model PeerReviewAssignment {
   anonymityMode            ReviewAnonymityMode   @default(DOUBLE_BLIND) @map("anonymity_mode")
   status                   ReviewStatus          @default(INVITED)
   recommendation           ReviewRecommendation?
+  externalRecommendationId String?               @map("external_recommendation_id") @db.VarChar(128)
+  externalRecommendationStorage String?           @map("external_recommendation_storage") @db.VarChar(16)
+  externalRecommendationOptions Json?             @map("external_recommendation_options") @db.JsonB
   manuscriptSnapshot       Json?                 @map("manuscript_snapshot") @db.JsonB
   reviewRevisionSnapshot   Json?                 @map("review_revision_snapshot") @db.JsonB
   revisionUpdatedAt        DateTime?             @map("revision_updated_at") @db.Timestamptz(6)

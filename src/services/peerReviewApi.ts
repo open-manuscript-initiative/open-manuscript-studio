@@ -18,6 +18,13 @@ export type ReviewRecommendation =
   | 'major_revision'
   | 'reject';
 
+export type ReviewRecommendationStorage = 'native' | 'legacy' | 'unavailable';
+
+export interface ReviewRecommendationOption {
+  externalId: string;
+  label: string;
+}
+
 export type ReviewFeedbackVisibility =
   | 'author_and_editor'
   | 'editor_only';
@@ -43,6 +50,9 @@ export interface ReviewerAssignment {
   status: ReviewStatus;
   requiresRecommendation: boolean;
   recommendation?: ReviewRecommendation;
+  recommendationStorage?: ReviewRecommendationStorage;
+  recommendationOptions?: ReviewRecommendationOption[];
+  recommendationExternalId?: string;
   feedback: ReviewerFeedback[];
   invitedAt: string;
   acceptedAt?: string;
@@ -256,8 +266,12 @@ export async function addAssignedReviewFeedback(
 export async function submitAssignedReview(
   id: string,
   recommendation?: 'ACCEPT' | 'MINOR_REVISION' | 'MAJOR_REVISION' | 'REJECT',
+  recommendationExternalId?: string,
 ): Promise<ReviewerAssignment> {
-  const body = recommendation ? { recommendation } : {};
+  const body = {
+    ...(recommendation ? { recommendation } : {}),
+    ...(recommendationExternalId ? { recommendationExternalId } : {}),
+  };
   return (await request<ReviewResponse>(`/api/reviews/assigned/${encodeURIComponent(id)}/submit`, {
     method: 'POST',
     body: JSON.stringify(body),
