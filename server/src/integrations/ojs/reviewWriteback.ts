@@ -84,7 +84,12 @@ export async function writeBackSubmittedExternalReview(
       authorAndEditorComment: authorComments,
       editorOnlyComment: editorComments,
       ...(installation.platform === ExternalPlatform.OJS
-        ? { recommendation: assignment.recommendation ?? '' }
+        ? {
+            recommendation: assignment.recommendation ?? '',
+            ...(assignment.externalRecommendationId
+              ? { reviewerRecommendationExternalId: assignment.externalRecommendationId }
+              : {}),
+          }
         : {}),
       reviewFormResponses: reviewFormContext?.responses ?? [],
     });
