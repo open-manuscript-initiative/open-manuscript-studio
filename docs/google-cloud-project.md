@@ -28,14 +28,15 @@ different.
    that it is `ACTIVE` and has project number `452031980278`.
 2. Enable the Google Play Developer API and Google Drive API in that project.
    Configure the OAuth consent screen there as required.
-3. Confirm that the Play service account is present and that its existing key
-   is active. In Play Console, keep that service account invited with the
-   minimum release permissions required by the Android workflow.
-4. Create or move the Google OIDC client into this project. Preserve the exact
+3. Create a dedicated Play service account in this project and create a new
+   JSON key. The old service account/key from project 258278693067 remains
+   tied to that old project. In Play Console, invite the new service account
+   and grant only the minimum release permissions required by the workflow.
+4. Create a new Google OIDC client in this project. Preserve the exact
    callback URI:
    `https://studio.example.org/api/auth/oidc/google/callback`
    (replace the host only when the deployment uses another configured origin).
-5. Create or move the Google Drive OAuth client into this project. Preserve the
+5. Create a new Google Drive OAuth client in this project. Preserve the
    exact callback URI:
    `https://studio.example.org/api/cloud/oauth/google-drive/callback`.
 6. Update the server's `GOOGLE_OIDC_*` and `GOOGLE_DRIVE_OAUTH_*` values
