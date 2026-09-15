@@ -219,7 +219,7 @@ jobs:
             export VITE_COMMIT_SHA="$COMMIT_SHORT"
             export VITE_BUILD_DATE="$BUILD_DATE"
 
-            npm ci
+            npm ci --include=dev
             npm run i18n:po:compile
             npm run i18n:validate-json
             npm run i18n:po:audit
@@ -227,7 +227,7 @@ jobs:
             npm run build
 
             cd server
-            npm ci
+            npm ci --include=dev
             npm run build
             npm run prisma:migrate:deploy
             npm run prisma:migrate:identity:deploy
