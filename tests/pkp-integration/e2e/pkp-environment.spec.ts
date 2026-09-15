@@ -184,6 +184,23 @@ test('reviewer receives one anonymous article and can return corrections', async
   }
 
   const apiBaseUrl = requiredApiBase(launch.claims);
+  const ojsRecommendationResponse = platform === 'ojs'
+    ? await signedBrowserRequest(page, `${apiBaseUrl}/review-recommendations`, launch)
+    : null;
+  let directOjsRecommendation: { externalId: string; label: string } | undefined;
+  if (ojsRecommendationResponse?.status === 200) {
+    const recommendationBody = ojsRecommendationResponse.json as {
+      options?: Array<{ externalId: string; label: string }>;
+    };
+    expect(recommendationBody.options).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        externalId: expect.any(String),
+        label: expect.any(String),
+      }),
+    ]));
+    directOjsRecommendation = recommendationBody.options?.[0];
+  }
+
   const submission = await signedBrowserRequest(page, `${apiBaseUrl}/submission`, launch);
   expect(submission.status).toBe(200);
   assertNoAuthorIdentity(submission.json);
@@ -360,9 +377,10 @@ test('reviewer receives one anonymous article and can return corrections', async
     await expectApiStatus(response, 201);
   }
 
-  const reviewerRecommendation = assignment.review.recommendationStorage
-    ? assignment.review.recommendationOptions?.[0]
-    : undefined;
+  const reviewerRecommendation = directOjsRecommendation
+    ?? (assignment.review.recommendationStorage
+      ? assignment.review.recommendationOptions?.[0]
+      : undefined);
   if (assignment.review.recommendationStorage && !reviewerRecommendation) {
     throw new Error('The OJS fixture did not return an assignment-scoped reviewer recommendation option.');
   }
