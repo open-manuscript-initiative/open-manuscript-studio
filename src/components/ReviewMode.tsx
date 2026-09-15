@@ -171,7 +171,7 @@ export function ReviewMode({ assignmentId }: { assignmentId?: string }) {
       return;
     }
     setRecommendation(selected.recommendation?.toUpperCase() ?? defaultLocalRecommendation);
-  }, [selected?.id, selected?.recommendationExternalId, selected?.recommendation, selected?.recommendationStorage]);
+  }, [selected]);
 
   useEffect(() => {
     document.documentElement.lang = locale;
