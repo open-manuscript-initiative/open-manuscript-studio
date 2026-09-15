@@ -3,7 +3,11 @@ import { createHash } from 'node:crypto';
 import { Prisma } from '../generated/prisma/client.js';
 
 import { prisma } from '../lib/prisma.js';
-import { requireWorkspaceRole } from './peerReviewService.js';
+import {
+  requireWorkspaceRole,
+  type ReviewRecommendationOption,
+  type ReviewRecommendationStorage,
+} from './peerReviewService.js';
 
 export type ReviewInlineSemantic =
   | 'strong'
@@ -89,12 +93,22 @@ export interface OjsReviewAssignmentInput {
   reviewDocumentId?: string;
   reviewRound?: number;
   platform?: 'ojs' | 'omp';
+  recommendationOptions?: ReviewRecommendationOption[];
+  recommendationExternalId?: string | null;
+  recommendationStorage?: ReviewRecommendationStorage;
 }
 
 export async function upsertOjsReviewAssignment(
   input: OjsReviewAssignmentInput,
 ): Promise<{ id: string }> {
   const reviewDocumentId = input.reviewDocumentId ?? input.externalSubmissionId;
+  const recommendationData = input.recommendationStorage === undefined
+    ? {}
+    : {
+        externalRecommendationStorage: input.recommendationStorage,
+        externalRecommendationId: input.recommendationExternalId ?? null,
+        externalRecommendationOptions: (input.recommendationOptions ?? []) as Prisma.InputJsonValue,
+      };
   const existing = await prisma.peerReviewAssignment.findUnique({
     where: {
       externalInstallationId_externalAssignmentId: {
@@ -132,6 +146,7 @@ export async function upsertOjsReviewAssignment(
         manuscriptId: reviewDocumentId,
         externalSubmissionId: input.externalSubmissionId,
         anonymityMode: 'DOUBLE_BLIND',
+        ...recommendationData,
       },
     });
     return { id: existing.id };
@@ -159,6 +174,7 @@ export async function upsertOjsReviewAssignment(
       reviewRound,
       anonymityMode: 'DOUBLE_BLIND',
       status: 'INVITED',
+      ...recommendationData,
     },
     select: { id: true },
   });
