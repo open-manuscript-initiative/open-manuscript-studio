@@ -396,7 +396,7 @@ test('reviewer receives one anonymous article and can return corrections', async
       // OJS-backed reviews must submit an offered external recommendation ID.
       // Non-OJS/local assignments retain the legacy Studio enum path.
       data: reviewerRecommendation
-        ? { reviewerRecommendationExternalId: reviewerRecommendation.externalId }
+        ? { recommendationExternalId: reviewerRecommendation.externalId }
         : { recommendation: 'MINOR_REVISION' },
     },
   );
