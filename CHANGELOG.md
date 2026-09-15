@@ -6,6 +6,17 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+## 0.1.1-beta.1 — 2026-09-15
+
+### Google Play and Android release
+
+- Advances the visible Studio version to **0.1.1-beta.1** after
+  Google Play **0.1.0-beta.10**.
+- Reserves Android versionCode **1025**, above the previously uploaded
+  versionCode **1024**.
+- Keeps the Android version name and build number consistent across the
+  npm, Cargo and Tauri release metadata.
+
 ## 0.1.0-beta.9 — 2026-09-12
 
 ### Google Play and Android compatibility
