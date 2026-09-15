@@ -370,15 +370,17 @@ export function ReviewMode({ assignmentId }: { assignmentId?: string }) {
                   <section className="review-mode__card">
                     <h2>{selected.requiresRecommendation ? copy.recommendation : copy.complete}</h2>
                     {selected.requiresRecommendation ? (
-                      <select
-                        value={recommendation}
-                        disabled={isExternalRecommendation && recommendationOptions.length === 0}
-                        onChange={(event) => setRecommendation(event.target.value)}
-                      >
-                        {isExternalRecommendation ? <option value="" disabled>{copy.chooseRecommendation}</option> : null}
-                        {recommendationOptions.map((option) => <option key={option.externalId} value={option.externalId}>{option.label}</option>)}
-                      </select>
-                      {isExternalRecommendation && recommendationOptions.length === 0 ? <p className="review-mode__warning">{copy.externalRecommendationUnavailable}</p> : null}
+                      <>
+                        <select
+                          value={recommendation}
+                          disabled={isExternalRecommendation && recommendationOptions.length === 0}
+                          onChange={(event) => setRecommendation(event.target.value)}
+                        >
+                          {isExternalRecommendation ? <option value="" disabled>{copy.chooseRecommendation}</option> : null}
+                          {recommendationOptions.map((option) => <option key={option.externalId} value={option.externalId}>{option.label}</option>)}
+                        </select>
+                        {isExternalRecommendation && recommendationOptions.length === 0 ? <p className="review-mode__warning">{copy.externalRecommendationUnavailable}</p> : null}
+                      </>
                     ) : <p>{copy.noRecommendation}</p>}
                     {revisionDirty ? <p className="review-mode__warning">{copy.saveBeforeSubmit}</p> : null}
                     <button
