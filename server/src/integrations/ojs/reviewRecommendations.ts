@@ -11,6 +11,12 @@ function hasScope(claims: LaunchClaims, scope: string): boolean {
   return claims.scope?.includes(scope) ?? false;
 }
 
+function isMissingReviewRecommendationsRoute(status: number, body: string): boolean {
+  if (status === 404 || status === 405) return true;
+  // OJS 3.5's router reports an unknown plugin route as HTTP 500.
+  return status === 500 && /route[^\n]*review-recommendations[^\n]*could not be found/i.test(body);
+}
+
 export async function loadOjsReviewRecommendations(
   claims: LaunchClaims,
   payload: string,
@@ -43,15 +49,16 @@ export async function loadOjsReviewRecommendations(
     signal: AbortSignal.timeout(30_000),
   });
 
-  if (response.status === 404 || response.status === 405) {
+  const responseBody = response.ok ? '' : await response.text();
+  if (isMissingReviewRecommendationsRoute(response.status, responseBody)) {
     // Older OJS plugins do not expose this route. Leave the assignment on the
     // pre-native legacy string path until the paired plugin is deployed.
     return null;
   }
   if (!response.ok) {
-    const text = (await response.text()).slice(0, 500);
     throw new Error(
-      'OJS reviewer recommendation request failed with HTTP ' + response.status + (text ? ': ' + text : ''),
+      'OJS reviewer recommendation request failed with HTTP ' + response.status +
+        (responseBody ? ': ' + responseBody.slice(0, 500) : ''),
     );
   }
 
