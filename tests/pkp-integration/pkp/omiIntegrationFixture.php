@@ -543,33 +543,53 @@ final class OmiIntegrationFixtureTool extends CommandLineTool
         }
         $recommendationWritten = false;
         if ($this->platform === 'ojs') {
-            $legacyRecommendationWritten = str_contains($editorText, '[OMI recommendation: MINOR_REVISION]');
+            $legacyCommentRecommendationWritten = str_contains($editorText, '[OMI recommendation: MINOR_REVISION]');
+            $legacyAssignmentRecommendationWritten = false;
             $nativeRecommendationWritten = false;
             $assignment = Repo::reviewAssignment()->get($assignmentId, $submissionId);
 
-            if (
-                $assignment instanceof ReviewAssignment
-                && method_exists(Repo::class, 'reviewerRecommendation')
-                && method_exists(ReviewAssignment::class, 'getReviewerRecommendationId')
-            ) {
-                try {
-                    $selected = $assignment->getReviewerRecommendationId();
-                    $options = Repo::reviewerRecommendation()->getRecommendationOptions(
-                        context: $context,
-                        reviewAssignment: $assignment
-                    );
-                    foreach (is_array($options) ? $options : [] as $externalId => $_label) {
-                        if ((string)$externalId === (string)$selected) {
-                            $nativeRecommendationWritten = true;
-                            break;
+            if ($assignment instanceof ReviewAssignment) {
+                if (
+                    method_exists(Repo::class, 'reviewerRecommendation')
+                    && method_exists(ReviewAssignment::class, 'getReviewerRecommendationId')
+                ) {
+                    try {
+                        $selected = $assignment->getReviewerRecommendationId();
+                        $options = Repo::reviewerRecommendation()->getRecommendationOptions(
+                            context: $context,
+                            reviewAssignment: $assignment
+                        );
+                        foreach (is_array($options) ? $options : [] as $externalId => $_label) {
+                            if ((string)$externalId === (string)$selected) {
+                                $nativeRecommendationWritten = true;
+                                break;
+                            }
                         }
+                    } catch (\Throwable) {
+                        // Older OJS versions may not expose the native recommendation repository.
                     }
-                } catch (\Throwable) {
-                    // Older OJS versions may not expose the native recommendation repository.
+                }
+
+                if (
+                    method_exists(ReviewAssignment::class, 'getRecommendation')
+                    && method_exists(ReviewAssignment::class, 'getReviewerRecommendationOptions')
+                ) {
+                    try {
+                        $selected = $assignment->getRecommendation();
+                        $options = ReviewAssignment::getReviewerRecommendationOptions();
+                        $legacyAssignmentRecommendationWritten = is_scalar($selected)
+                            && array_key_exists((string)$selected, $options);
+                    } catch (\Throwable) {
+                        // Keep the comment fallback for older PKP versions.
+                    }
                 }
             }
 
-            if (!$legacyRecommendationWritten && !$nativeRecommendationWritten) {
+            if (
+                !$legacyCommentRecommendationWritten
+                && !$legacyAssignmentRecommendationWritten
+                && !$nativeRecommendationWritten
+            ) {
                 $this->fail('The OJS reviewer recommendation was not written to PKP.');
             }
             $recommendationWritten = true;
