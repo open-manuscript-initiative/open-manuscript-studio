@@ -63,7 +63,7 @@ final class OmiIntegrationFixtureTool extends CommandLineTool
             if (!$existing) $this->fail('The workflow fixture context does not exist.');
             $stored = $this->loadStoredFixture((int)$existing->getId());
             if ($stored === null) $this->fail('The workflow fixture metadata does not exist.');
-            $this->verifyReviewWriteback($stored);
+            $this->verifyReviewWriteback($stored, $existing);
             return;
         }
         if ($existing) {
@@ -517,7 +517,7 @@ final class OmiIntegrationFixtureTool extends CommandLineTool
         );
     }
 
-    private function verifyReviewWriteback(array $fixture): void
+    private function verifyReviewWriteback(array $fixture, object $context): void
     {
         $submissionId = (int)($fixture['submission']['id'] ?? 0);
         $assignmentId = (int)($fixture['reviewAssignmentId'] ?? 0);
@@ -541,8 +541,38 @@ final class OmiIntegrationFixtureTool extends CommandLineTool
         if (!str_contains($editorText, 'Editor-only E2E review comment.')) {
             $this->fail('The editor-only Studio review comment was not written to PKP.');
         }
-        if ($this->platform === 'ojs' && !str_contains($editorText, '[OMI recommendation: MINOR_REVISION]')) {
-            $this->fail('The OJS recommendation was not written to the editor-only review comment.');
+        $recommendationWritten = false;
+        if ($this->platform === 'ojs') {
+            $legacyRecommendationWritten = str_contains($editorText, '[OMI recommendation: MINOR_REVISION]');
+            $nativeRecommendationWritten = false;
+            $assignment = Repo::reviewAssignment()->get($assignmentId, $submissionId);
+
+            if (
+                $assignment instanceof ReviewAssignment
+                && method_exists(Repo::class, 'reviewerRecommendation')
+                && method_exists(ReviewAssignment::class, 'getReviewerRecommendationId')
+            ) {
+                try {
+                    $selected = $assignment->getReviewerRecommendationId();
+                    $options = Repo::reviewerRecommendation()->getRecommendationOptions(
+                        context: $context,
+                        reviewAssignment: $assignment
+                    );
+                    foreach (is_array($options) ? $options : [] as $externalId => $_label) {
+                        if ((string)$externalId === (string)$selected) {
+                            $nativeRecommendationWritten = true;
+                            break;
+                        }
+                    }
+                } catch (\\Throwable) {
+                    // Older OJS versions may not expose the native recommendation repository.
+                }
+            }
+
+            if (!$legacyRecommendationWritten && !$nativeRecommendationWritten) {
+                $this->fail('The OJS reviewer recommendation was not written to PKP.');
+            }
+            $recommendationWritten = true;
         }
 
         $reviewForm = is_array($fixture['reviewForm'] ?? null) ? $fixture['reviewForm'] : [];
