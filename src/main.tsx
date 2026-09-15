@@ -47,6 +47,7 @@ import './styles/desktop-fullscreen-panels.css';
 import './styles/desktop-document-tabs.css';
 import './styles/proofreading.css';
 import './styles/account-profiles.css';
+import './styles/scholarly-metadata.css';
 
 restorePendingExternalLaunchToLocation();
 initializeRevisionIntegrity();

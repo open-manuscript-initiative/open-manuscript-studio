@@ -3,6 +3,7 @@ import {
   normalizeLocalizedTerms,
   normalizeLocalizedText,
   normalizeLocale,
+  normalizePublicationVenue,
   type OmiIntegrationExtensions,
   type OmiScholarlyMetadata,
 } from '../../model/scholarlyMetadata';
@@ -252,6 +253,7 @@ function normalizeScholarlyMetadata(
 ): OmiScholarlyMetadata | undefined {
   if (!value) return undefined;
 
+  const publicationVenue = normalizePublicationVenue(value.publicationVenue);
   const metadata: OmiScholarlyMetadata = {
     subjects: normalizeLocalizedTerms(value.subjects),
     disciplines: normalizeLocalizedTerms(value.disciplines),
@@ -263,6 +265,7 @@ function normalizeScholarlyMetadata(
     dataAvailability: normalizeLocalizedText(value.dataAvailability),
     languages: normalizeLocalizedText(value.languages),
     copyrightHolder: normalizeLocalizedText(value.copyrightHolder),
+    ...(publicationVenue ? { publicationVenue } : {}),
   };
 
   if (typeof value.publisherId === 'string' && value.publisherId.trim()) {
