@@ -184,6 +184,28 @@ test('reviewer receives one anonymous article and can return corrections', async
   }
 
   const apiBaseUrl = requiredApiBase(launch.claims);
+  const ojsRecommendationResponse = platform === 'ojs'
+    ? await signedBrowserRequest(page, `${apiBaseUrl}/review-recommendations`, launch)
+    : null;
+  let directOjsRecommendation: { externalId: string; label: string } | undefined;
+  if (platform === 'ojs') {
+    if (ojsRecommendationResponse?.status !== 200) {
+      throw new Error(
+        `OJS reviewer recommendation endpoint returned ${ojsRecommendationResponse?.status ?? 'no response'}: ${JSON.stringify(ojsRecommendationResponse?.json)}`,
+      );
+    }
+    const recommendationBody = ojsRecommendationResponse.json as {
+      options?: Array<{ externalId: string; label: string }>;
+    };
+    expect(recommendationBody.options).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        externalId: expect.any(String),
+        label: expect.any(String),
+      }),
+    ]));
+    directOjsRecommendation = recommendationBody.options?.[0];
+  }
+
   const submission = await signedBrowserRequest(page, `${apiBaseUrl}/submission`, launch);
   expect(submission.status).toBe(200);
   assertNoAuthorIdentity(submission.json);
@@ -241,7 +263,15 @@ test('reviewer receives one anonymous article and can return corrections', async
     `${studioApiBaseUrl}/api/reviews/assigned/${assignmentId}`,
   );
   await expectApiStatus(assignmentResponse, 200);
-  const assignment = await assignmentResponse.json();
+  const assignment = await assignmentResponse.json() as {
+    review: {
+      id: string;
+      anonymityMode: string;
+      status: string;
+      recommendationStorage?: 'native' | 'legacy' | 'unavailable';
+      recommendationOptions?: Array<{ externalId: string; label: string }>;
+    };
+  };
   expect(assignment).toMatchObject({
     review: {
       id: assignmentId,
@@ -352,12 +382,22 @@ test('reviewer receives one anonymous article and can return corrections', async
     await expectApiStatus(response, 201);
   }
 
+  const reviewerRecommendation = directOjsRecommendation
+    ?? (assignment.review.recommendationStorage
+      ? assignment.review.recommendationOptions?.[0]
+      : undefined);
+  if (assignment.review.recommendationStorage && !reviewerRecommendation) {
+    throw new Error('The OJS fixture did not return an assignment-scoped reviewer recommendation option.');
+  }
+
   const submitted = await request.post(
     `${studioApiBaseUrl}/api/reviews/assigned/${assignmentId}/submit`,
     {
-      // PKP 3.5 requires an editorial recommendation when a scientific review
-      // is completed in both OJS and OMP.
-      data: { recommendation: 'MINOR_REVISION' },
+      // OJS-backed reviews must submit an offered external recommendation ID.
+      // Non-OJS/local assignments retain the legacy Studio enum path.
+      data: reviewerRecommendation
+        ? { recommendationExternalId: reviewerRecommendation.externalId }
+        : { recommendation: 'MINOR_REVISION' },
     },
   );
   await expectApiStatus(submitted, 200);
