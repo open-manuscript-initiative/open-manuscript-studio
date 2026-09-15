@@ -106,7 +106,7 @@ Google Play records the package identifier and upload certificate during this in
 
 Open Manuscript Studio uses **`open-manuscript-studio-508703`** as its
 canonical Google Cloud project. The restored project must have project number
-**`258278693067`**; verify that pairing in Google Cloud Console before changing
+**`452031980278`**; verify that pairing in Google Cloud Console before changing
 credentials.
 
 Keep these integrations in the same project, while retaining separate
