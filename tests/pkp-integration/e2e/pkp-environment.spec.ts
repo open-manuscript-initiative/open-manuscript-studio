@@ -188,7 +188,12 @@ test('reviewer receives one anonymous article and can return corrections', async
     ? await signedBrowserRequest(page, `${apiBaseUrl}/review-recommendations`, launch)
     : null;
   let directOjsRecommendation: { externalId: string; label: string } | undefined;
-  if (ojsRecommendationResponse?.status === 200) {
+  if (platform === 'ojs') {
+    if (ojsRecommendationResponse?.status !== 200) {
+      throw new Error(
+        `OJS reviewer recommendation endpoint returned ${ojsRecommendationResponse?.status ?? 'no response'}: ${JSON.stringify(ojsRecommendationResponse?.json)}`,
+      );
+    }
     const recommendationBody = ojsRecommendationResponse.json as {
       options?: Array<{ externalId: string; label: string }>;
     };
