@@ -25,6 +25,7 @@ export function PasswordRecoveryPage({
 }: PasswordRecoveryPageProps) {
   const { locale } = useTranslation();
   const copy = getCopy(locale);
+  const productName = locale === 'hu' ? 'OMI Stúdió' : 'OMI Studio';
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -81,7 +82,7 @@ export function PasswordRecoveryPage({
   return (
     <main className="auth-page auth-page-login auth-recovery-page">
       <div className="auth-login-shell auth-recovery-shell">
-        <aside className="auth-login-hero" aria-label="OMI Studio">
+        <aside className="auth-login-hero" aria-label={productName}>
           <div className="auth-login-hero-content">
             <div className="auth-login-lockup">
               <img
@@ -89,7 +90,7 @@ export function PasswordRecoveryPage({
                 src="/android-chrome-512x512.png"
                 alt=""
               />
-              <div className="auth-login-product-name">OMI Studio</div>
+              <div className="auth-login-product-name">{productName}</div>
             </div>
             <p className="auth-login-tagline">Write naturally. Structure once. Publish everywhere.</p>
             <p className="auth-login-intro">{copy.securityIntro}</p>
@@ -208,14 +209,14 @@ function getCopy(locale: string) {
   if (locale === 'hu') {
     return {
       forgotTitle: 'Elfelejtette a jelszavát?',
-      forgotDescription: 'Adja meg a Studio-fiókjához tartozó e-mail-címet. Ha létezik ilyen fiók, elküldjük a jelszó-visszaállító hivatkozást.',
+      forgotDescription: 'Adja meg a Stúdió-fiókjához tartozó e-mail-címet. Ha létezik ilyen fiók, elküldjük a jelszó-visszaállító hivatkozást.',
       resetTitle: 'Új jelszó beállítása',
-      resetDescription: 'Adjon meg egy új jelszót az OMI Studio-fiókjához.',
+      resetDescription: 'Adjon meg egy új jelszót az OMI Stúdió-fiókjához.',
       email: 'E-mail-cím',
       sendLink: 'Visszaállító hivatkozás küldése',
       sending: 'Küldés…',
       sentTitle: 'Ellenőrizze a postafiókját',
-      sentDescription: 'Ha az e-mail-címhez tartozik aktív Studio-fiók, elküldtük a jelszó-visszaállító hivatkozást. A hivatkozás egyszer használható és korlátozott ideig érvényes.',
+      sentDescription: 'Ha az e-mail-címhez tartozik aktív Stúdió-fiók, elküldtük a jelszó-visszaállító hivatkozást. A hivatkozás egyszer használható és korlátozott ideig érvényes.',
       newPassword: 'Új jelszó',
       confirmPassword: 'Új jelszó megerősítése',
       savePassword: 'Új jelszó mentése',
@@ -226,7 +227,7 @@ function getCopy(locale: string) {
       invalidEmail: 'Érvénytelen e-mail-cím.',
       invalidLink: 'A jelszó-visszaállító hivatkozás érvénytelen vagy lejárt.',
       genericError: 'A jelszó-visszaállítás nem sikerült.',
-      securityIntro: 'A jelszó-visszaállítás a központi OMI Studio-fiókot frissíti, ezért az új jelszó minden támogatott eszközön használható.',
+      securityIntro: 'A jelszó-visszaállítás a központi OMI Stúdió-fiókot frissíti, ezért az új jelszó minden támogatott eszközön használható.',
       securityNote: 'Sikeres jelszócsere után a korábbi bejelentkezések biztonsági okból megszűnnek.',
     };
   }
