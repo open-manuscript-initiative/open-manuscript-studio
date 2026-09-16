@@ -150,9 +150,9 @@ async function sendPasswordResetMail(input: {
   const locale = input.interfaceLanguage.toLowerCase();
   const copy = locale === 'hu'
     ? {
-        subject: 'OMI Studio – jelszó visszaállítása',
+        subject: 'OMI Stúdió – jelszó visszaállítása',
         greeting: `Kedves ${input.fullName || 'Felhasználó'}!`,
-        intro: 'Jelszó-visszaállítási kérelmet kaptunk az OMI Studio-fiókjához.',
+        intro: 'Jelszó-visszaállítási kérelmet kaptunk az OMI Stúdió-fiókjához.',
         action: 'Az új jelszó beállításához nyissa meg az alábbi hivatkozást:',
         expiry: `A hivatkozás ${input.expiresAt.toISOString()} időpontig érvényes, és csak egyszer használható.`,
         ignore: 'Ha nem Ön kérte a jelszó visszaállítását, ezt az üzenetet figyelmen kívül hagyhatja.',
@@ -186,7 +186,7 @@ async function sendPasswordResetMail(input: {
     copy.expiry,
     copy.ignore,
     '',
-    'Open Manuscript Studio',
+    locale === 'hu' ? 'Open Manuscript Stúdió' : 'Open Manuscript Studio',
     'https://openmanuscript.org/',
   ].join('\n');
 

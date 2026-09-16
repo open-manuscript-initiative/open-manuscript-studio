@@ -157,7 +157,7 @@ const hu: PublicationProfileCopy = {
   navigation: 'Publikáció',
   title: 'Publikációs profil',
   description: 'Válaszd ki a célkiadvány megjelenítési, metaadat- és akadálymentességi szabályait.',
-  experimental: 'Studio implementációs profil. Az OMI-SPEC-240 még Reserved állapotú; ez nem jelent specifikációs megfelelőségi állítást.',
+  experimental: 'Stúdió implementációs profil. Az OMI-SPEC-240 még Reserved állapotú; ez nem jelent specifikációs megfelelőségi állítást.',
   selectedProfile: 'Kiválasztott profil',
   chooseProfile: 'Profil kiválasztása',
   applyProfile: 'Profil alkalmazása',

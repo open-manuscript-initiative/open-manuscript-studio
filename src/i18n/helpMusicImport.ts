@@ -3,7 +3,7 @@ import type { HelpCopy, HelpTopic } from './help';
 const musicImportTopic: Partial<Record<string, HelpTopic>> = {
   hu: {
     title: 'MusicXML és MIDI import',
-    body: 'A Studio MusicXML (.musicxml, .xml) és MIDI (.mid, .midi) fájlokból kottablokkot tud létrehozni. A MusicXML-import strukturált kottaadatokat olvas be, többek között a címet, az elérhető szerzői/zeneszerzői adatot, az ütemmutatót, a hangmagasságot, az alterációt, az oktávot, az időtartamot, a hangjegytípust és a szüneteket. A MIDI-import elsősorban a hangmagasság-alapú hangjegyeseményeket veszi át, ezért nem őrzi meg a kottakép teljes szemantikáját és tipográfiáját.',
+    body: 'A Stúdió MusicXML (.musicxml, .xml) és MIDI (.mid, .midi) fájlokból kottablokkot tud létrehozni. A MusicXML-import strukturált kottaadatokat olvas be, többek között a címet, az elérhető szerzői/zeneszerzői adatot, az ütemmutatót, a hangmagasságot, az alterációt, az oktávot, az időtartamot, a hangjegytípust és a szüneteket. A MIDI-import elsősorban a hangmagasság-alapú hangjegyeseményeket veszi át, ezért nem őrzi meg a kottakép teljes szemantikáját és tipográfiáját.',
     tips: [
       'Szerkeszthető, strukturált kotta átviteléhez lehetőség szerint MusicXML-t használjon; a MIDI inkább hangmagasság-adatok átvitelére alkalmas.',
       'A MusicXML és a MIDI import külön-külön kikapcsolható a Beállítások importformátumai között.',

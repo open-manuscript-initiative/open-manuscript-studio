@@ -37,15 +37,20 @@ function resolveAuthTranslation(
   );
 }
 
+export function localizeStudioName(locale: string, value: string): string {
+  return locale === 'hu' ? value.replace(/\bStudio\b/g, 'Stúdió') : value;
+}
+
 export function translate(
   locale: SupportedLocale,
   key: AppTranslationKey,
 ): string {
-  return (
+  const value =
     resolveAuthTranslation(locale, key) ??
     resolveTranslation(translations[locale], key as TranslationKey) ??
     resolveAuthTranslation(DEFAULT_LOCALE, key) ??
     resolveTranslation(translations[DEFAULT_LOCALE], key as TranslationKey) ??
-    key
-  );
+    key;
+
+  return localizeStudioName(locale, value);
 }

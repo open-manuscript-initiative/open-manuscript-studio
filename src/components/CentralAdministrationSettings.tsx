@@ -8,8 +8,12 @@ import {
 } from 'lucide-react';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
-import { getCentralAdministrationCopy } from '../i18n/centralAdministrationTranslations';
+import {
+  getCentralAdministrationCopy,
+  type CentralAdministrationCopy,
+} from '../i18n/centralAdministrationTranslations';
 import { getInstitutionalProfilesCopy } from '../i18n/institutionalProfilesTranslations';
+import { localizeStudioName } from '../i18n/translate';
 import {
   addCentralInstitutionAdmin,
   createCentralInstitution,
@@ -43,7 +47,7 @@ const API_SCOPES: InstitutionApiScope[] = [
 ];
 
 export function CentralAdministrationSettings({ locale, role }: CentralAdministrationSettingsProps) {
-  const labels = getCentralAdministrationCopy(locale);
+  const labels = localizeCopy(locale, getCentralAdministrationCopy(locale));
   const institutionCopy = getInstitutionalProfilesCopy(locale);
   const [institutions, setInstitutions] = useState<CentralInstitution[]>([]);
   const [selectedId, setSelectedId] = useState<string>('');
@@ -266,6 +270,14 @@ export function CentralAdministrationSettings({ locale, role }: CentralAdministr
       ) : null}
     </section>
   );
+}
+
+function localizeCopy(locale: string, copy: CentralAdministrationCopy): CentralAdministrationCopy {
+  if (locale.trim().toLowerCase().split('-')[0] !== 'hu') return copy;
+
+  return Object.fromEntries(
+    Object.entries(copy).map(([key, value]) => [key, localizeStudioName('hu', value)]),
+  ) as unknown as CentralAdministrationCopy;
 }
 
 function errorText(reason: unknown, fallback: string): string {

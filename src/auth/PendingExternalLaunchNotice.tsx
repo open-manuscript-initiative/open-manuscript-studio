@@ -29,7 +29,7 @@ function getCopy(locale: string, platform: PendingExternalLaunchPlatform) {
   if (locale === 'hu') {
     return {
       title: `${source}-kézirat megnyitása folyamatban`,
-      description: `Az ${source} rendszerből kiválasztott kézirat megnyitásához jelentkezzen be. Sikeres bejelentkezés után a Studio automatikusan megnyitja a kéziratot.`,
+      description: `Az ${source} rendszerből kiválasztott kézirat megnyitásához jelentkezzen be. Sikeres bejelentkezés után a Stúdió automatikusan megnyitja a kéziratot.`,
     };
   }
 
