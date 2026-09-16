@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { normalizePublicationVenue } from '../src/model/scholarlyMetadata.ts';
+import {
+  isVerifiedPublicationVenue,
+  normalizePublicationVenue,
+} from '../src/model/scholarlyMetadata.ts';
 
 test('normalizes a portable publication venue reference', () => {
   assert.deepEqual(
@@ -26,4 +29,37 @@ test('rejects incomplete or unknown publication venue references', () => {
   assert.equal(normalizePublicationVenue({ id: 'venue-1', name: 'Missing type' }), undefined);
   assert.equal(normalizePublicationVenue({ id: 'venue-1', type: 'MAGAZINE', name: 'Unknown type' }), undefined);
   assert.equal(normalizePublicationVenue({ id: '', type: 'JOURNAL', name: 'Missing id' }), undefined);
+});
+
+test('preserves verified integration metadata and rejects unverified selection', () => {
+  const verified = normalizePublicationVenue({
+    id: 'venue-2',
+    type: 'BOOK_PUBLISHER',
+    name: 'Open Manuscript Press',
+    integrationProvider: 'OMP',
+    integrationStatus: 'VERIFIED',
+  });
+  assert.deepEqual(verified, {
+    id: 'venue-2',
+    type: 'BOOK_PUBLISHER',
+    name: 'Open Manuscript Press',
+    integrationProvider: 'OMP',
+    integrationStatus: 'VERIFIED',
+  });
+  assert.equal(isVerifiedPublicationVenue(verified), true);
+  assert.equal(
+    isVerifiedPublicationVenue({
+      ...verified!,
+      integrationStatus: 'DISABLED',
+    }),
+    false,
+  );
+  assert.equal(
+    isVerifiedPublicationVenue({
+      id: 'venue-3',
+      type: 'JOURNAL',
+      name: 'Unverified Journal',
+    }),
+    false,
+  );
 });

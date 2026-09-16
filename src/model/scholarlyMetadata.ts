@@ -4,6 +4,8 @@ export type OmiLocalizedText = Partial<Record<OmiLocale, string>>;
 export type OmiLocalizedTerms = Partial<Record<OmiLocale, string[]>>;
 
 export type OmiPublicationVenueType = 'JOURNAL' | 'BOOK_PUBLISHER';
+export type OmiPublicationVenueIntegrationProvider = 'OJS' | 'OMP';
+export type OmiPublicationVenueIntegrationStatus = 'VERIFIED' | 'DISABLED';
 
 export interface OmiPublicationVenueReference {
   id: string;
@@ -12,6 +14,8 @@ export interface OmiPublicationVenueReference {
   website?: string;
   issn?: string;
   isbnPrefix?: string;
+  integrationProvider?: OmiPublicationVenueIntegrationProvider;
+  integrationStatus?: OmiPublicationVenueIntegrationStatus;
 }
 
 export interface OmiScholarlyMetadata {
@@ -101,6 +105,14 @@ export function normalizePublicationVenue(
   const website = optionalVenueString(record.website);
   const issn = optionalVenueString(record.issn);
   const isbnPrefix = optionalVenueString(record.isbnPrefix);
+  const integrationProvider = record.integrationProvider === 'OJS'
+    || record.integrationProvider === 'OMP'
+    ? record.integrationProvider
+    : undefined;
+  const integrationStatus = record.integrationStatus === 'VERIFIED'
+    || record.integrationStatus === 'DISABLED'
+    ? record.integrationStatus
+    : undefined;
 
   return {
     id,
@@ -109,7 +121,18 @@ export function normalizePublicationVenue(
     ...(website ? { website } : {}),
     ...(issn ? { issn } : {}),
     ...(isbnPrefix ? { isbnPrefix } : {}),
+    ...(integrationProvider ? { integrationProvider } : {}),
+    ...(integrationStatus ? { integrationStatus } : {}),
   };
+}
+
+export function isVerifiedPublicationVenue(
+  value: OmiPublicationVenueReference | undefined,
+): boolean {
+  return Boolean(
+    value?.integrationStatus === 'VERIFIED'
+      && (value.integrationProvider === 'OJS' || value.integrationProvider === 'OMP'),
+  );
 }
 
 function normalizePublicationVenueName(value: string): string {

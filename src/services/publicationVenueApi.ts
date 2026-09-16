@@ -14,6 +14,7 @@ export interface CreatePublicationVenueInput {
   website?: string;
   issn?: string;
   isbnPrefix?: string;
+  integrationConnectionId: string;
 }
 
 export async function getPublicationVenues(

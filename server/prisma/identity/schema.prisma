@@ -25,6 +25,16 @@ enum PublicationVenueType {
   BOOK_PUBLISHER
 }
 
+enum PublicationVenueIntegrationProvider {
+  OJS
+  OMP
+}
+
+enum PublicationVenueIntegrationStatus {
+  VERIFIED
+  DISABLED
+}
+
 enum InstitutionStatus {
   ACTIVE
   DISABLED
@@ -143,20 +153,27 @@ model UserIdentity {
 }
 
 model PublicationVenue {
-  id             String               @id @default(uuid()) @db.Uuid
-  type           PublicationVenueType
-  name           String               @db.VarChar(300)
-  normalizedName String               @map("normalized_name") @db.VarChar(300)
-  website        String?              @db.VarChar(2048)
-  issn           String?              @db.VarChar(32)
-  isbnPrefix     String?              @map("isbn_prefix") @db.VarChar(64)
-  createdByUserId String?             @map("created_by_user_id") @db.Uuid
-  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
-  createdBy      User?                @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  id                        String                              @id @default(uuid()) @db.Uuid
+  type                      PublicationVenueType
+  name                      String                              @db.VarChar(300)
+  normalizedName            String                              @map("normalized_name") @db.VarChar(300)
+  website                   String?                             @db.VarChar(2048)
+  issn                      String?                             @db.VarChar(32)
+  isbnPrefix                String?                             @map("isbn_prefix") @db.VarChar(64)
+  integrationProvider       PublicationVenueIntegrationProvider? @map("integration_provider")
+  integrationStatus         PublicationVenueIntegrationStatus    @default(DISABLED) @map("integration_status")
+  integrationInstallationId String?                             @map("integration_installation_id") @db.VarChar(128)
+  integrationBaseUrl        String?                             @map("integration_base_url") @db.VarChar(2048)
+  integrationVerifiedAt     DateTime?                           @map("integration_verified_at") @db.Timestamptz(6)
+  createdByUserId           String?                             @map("created_by_user_id") @db.Uuid
+  createdAt                 DateTime                            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime                            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy                 User?                               @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   @@unique([type, normalizedName])
   @@index([type, normalizedName])
+  @@index([type, integrationStatus])
+  @@index([integrationInstallationId])
   @@map("publication_venues")
 }
 
