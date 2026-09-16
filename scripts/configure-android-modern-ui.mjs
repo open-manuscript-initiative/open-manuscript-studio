@@ -105,6 +105,20 @@ export function patchAndroidDependencies(source) {
   return result;
 }
 
+export function patchAndroidNativeDebugSymbols(source) {
+  if (/debugSymbolLevel\s*=\s*["']FULL["']/.test(source)) return source;
+
+  const releasePattern = /(getByName\(["']release["']\)\s*\{)/;
+  if (!releasePattern.test(source)) {
+    throw new Error('Expected generated Android release build type is missing.');
+  }
+
+  return source.replace(
+    releasePattern,
+    `$1\n            ndk {\n                debugSymbolLevel = "FULL"\n            }`,
+  );
+}
+
 export function patchAndroidTheme(source) {
   if (source.includes(MODERN_THEME)) return source;
   if (!source.includes(LEGACY_THEME)) {
@@ -156,7 +170,13 @@ export function configureAndroidModernUi(root = resolve('src-tauri/gen/android')
   if (updateFile(activity, patchAndroidActivity)) changes.push('MainActivity.kt');
 
   const buildGradle = resolve(root, 'app/build.gradle.kts');
-  if (updateFile(buildGradle, patchAndroidDependencies)) changes.push('app/build.gradle.kts');
+  if (
+    updateFile(buildGradle, (source) =>
+      patchAndroidNativeDebugSymbols(patchAndroidDependencies(source)),
+    )
+  ) {
+    changes.push('app/build.gradle.kts');
+  }
 
   for (const relative of [
     'app/src/main/res/values/themes.xml',
@@ -170,8 +190,8 @@ export function configureAndroidModernUi(root = resolve('src-tauri/gen/android')
     .join(', ');
   console.log(
     changes.length > 0
-      ? `Android UI compatibility updated (${changes.join(', ')}): Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}`
-      : `Android UI compatibility already current: Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}`,
+      ? `Android compatibility updated (${changes.join(', ')}): Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}; release native debug symbols FULL`
+      : `Android compatibility already current: Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}; release native debug symbols FULL`,
   );
 }
 
