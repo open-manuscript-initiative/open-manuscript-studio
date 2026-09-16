@@ -13,6 +13,14 @@ export const ANDROID_REMOVED_UI_DEPENDENCIES = Object.freeze([
   'com.google.android.material:material',
 ]);
 
+const TAURI_DEBUG_SYMBOL_GLOBS = Object.freeze([
+  '*/arm64-v8a/*.so',
+  '*/armeabi-v7a/*.so',
+  '*/x86/*.so',
+  '*/x86_64/*.so',
+]);
+const DEBUG_SYMBOL_SCOPE_MARKER = '// OMI: scope Tauri keepDebugSymbols to debug variants only';
+
 const LEGACY_THEME = 'Theme.MaterialComponents.DayNight.NoActionBar';
 const MODERN_THEME = 'Theme.AppCompat.DayNight.NoActionBar';
 const LEGACY_ACTIVITY_IMPORT = 'import androidx.activity.enableEdgeToEdge';
@@ -105,6 +113,46 @@ export function patchAndroidDependencies(source) {
   return result;
 }
 
+export function patchTauriDebugSymbolScoping(source) {
+  const alreadyScoped =
+    source.includes(DEBUG_SYMBOL_SCOPE_MARKER) &&
+    source.includes('withBuildType("debug")') &&
+    source.includes('variant.packaging.jniLibs.keepDebugSymbols.add(it)');
+  if (alreadyScoped) return source;
+
+  // Tauri's Handlebars template uses whitespace trimming around the ABI loop.
+  // Depending on rendering, `packaging {` and the first keepDebugSymbols call can
+  // land on the same physical line, so patch the calls themselves rather than
+  // relying on line/block formatting.
+  const keepPattern = /jniLibs\.keepDebugSymbols\.add\(\s*["']([^"']+)["']\s*\)/g;
+  const configuredGlobs = [...source.matchAll(keepPattern)].map((match) => match[1]);
+
+  if (configuredGlobs.length === 0) {
+    // Upstream may eventually fix the template. In that case there is nothing to
+    // remove; the release debugSymbolLevel patch can operate independently.
+    return source;
+  }
+
+  const uniqueGlobs = [...new Set(configuredGlobs)];
+  const unexpected = uniqueGlobs.filter((glob) => !TAURI_DEBUG_SYMBOL_GLOBS.includes(glob));
+  if (unexpected.length > 0) {
+    throw new Error(
+      `Generated Tauri keepDebugSymbols contains unexpected ABI patterns: ${unexpected.join(', ')}`,
+    );
+  }
+
+  let result = source.replace(keepPattern, '');
+  // Clean up whitespace left by rendered one-line Handlebars output without
+  // removing the surrounding packaging block or any unrelated packaging rules.
+  result = result
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trimEnd();
+
+  const globs = uniqueGlobs.map((glob) => `"${glob}"`).join(', ');
+  return `${result}\n\n${DEBUG_SYMBOL_SCOPE_MARKER}\nandroidComponents {\n    onVariants(selector().withBuildType("debug")) { variant ->\n        listOf(${globs})\n            .forEach { variant.packaging.jniLibs.keepDebugSymbols.add(it) }\n    }\n}\n`;
+}
+
 export function patchAndroidNativeDebugSymbols(source) {
   if (/debugSymbolLevel\s*=\s*["']FULL["']/.test(source)) return source;
 
@@ -172,7 +220,9 @@ export function configureAndroidModernUi(root = resolve('src-tauri/gen/android')
   const buildGradle = resolve(root, 'app/build.gradle.kts');
   if (
     updateFile(buildGradle, (source) =>
-      patchAndroidNativeDebugSymbols(patchAndroidDependencies(source)),
+      patchAndroidNativeDebugSymbols(
+        patchTauriDebugSymbolScoping(patchAndroidDependencies(source)),
+      ),
     )
   ) {
     changes.push('app/build.gradle.kts');
@@ -190,8 +240,8 @@ export function configureAndroidModernUi(root = resolve('src-tauri/gen/android')
     .join(', ');
   console.log(
     changes.length > 0
-      ? `Android compatibility updated (${changes.join(', ')}): Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}; release native debug symbols FULL`
-      : `Android compatibility already current: Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}; release native debug symbols FULL`,
+      ? `Android compatibility updated (${changes.join(', ')}): Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}; debug-only native keep symbols; release native debug symbols FULL`
+      : `Android compatibility already current: Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}; debug-only native keep symbols; release native debug symbols FULL`,
   );
 }
 
