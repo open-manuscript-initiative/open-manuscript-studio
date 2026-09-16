@@ -248,7 +248,7 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
                   <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
                   <div className="auth-field-hint auth-login-orcid-hint">
                     {locale === 'hu'
-                      ? 'Az ORCID-hitelesítés a Studio-fiókhoz kapcsolt, ellenőrzött ORCID iD-t használja.'
+                      ? 'Az ORCID-hitelesítés a Stúdió-fiókhoz kapcsolt, ellenőrzött ORCID iD-t használja.'
                       : locale === 'de'
                         ? 'Die ORCID-Anmeldung verwendet die verifizierte ORCID iD, die mit Ihrem Studio-Konto verknüpft ist.'
                         : 'ORCID sign-in uses the verified ORCID iD linked to your Studio account.'}
@@ -371,9 +371,9 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
 function getLoginHeroCopy(locale: string) {
   if (locale === 'hu') {
     return {
-      welcome: 'Üdvözöljük az OMI Studióban!',
-      intro: 'Az OMI Studio segít a kéziratok létrehozásában, szerkesztésében és publikálásra való felkészítésében.',
-      featuresLabel: 'Az OMI Studio fő előnyei',
+      welcome: 'Üdvözöljük az OMI Stúdióban!',
+      intro: 'Az OMI Stúdió segít a kéziratok létrehozásában, szerkesztésében és publikálásra való felkészítésében.',
+      featuresLabel: 'Az OMI Stúdió fő előnyei',
       write: 'Írjon szabadon',
       structure: 'Strukturáljon egyszer',
       publish: 'Publikáljon bárhol',
@@ -414,9 +414,9 @@ function getInstitutionAdminCopy(locale: string) {
       personalMode: 'Személyes',
       adminMode: 'Intézményi adminisztrátor',
       welcome: 'Intézményi adminisztrátor',
-      description: 'Csak olyan Studio-fiókkal használható, amelyhez az intézmény ADMIN vagy OWNER jogosultságot rendelt.',
+      description: 'Csak olyan Stúdió-fiókkal használható, amelyhez az intézmény ADMIN vagy OWNER jogosultságot rendelt.',
       hero: 'Az intézményi adminisztrátor a szervezet tagjait, szerepköreit és intézményi kapcsolatokat kezeli; a személyes szerzői profil ettől elkülönül.',
-      federatedHint: 'Az intézményi azonosítóval történő belépés után a Studio szerveroldalon ellenőrzi az adminisztrátori jogosultságot.',
+      federatedHint: 'Az intézményi azonosítóval történő belépés után a Stúdió szerveroldalon ellenőrzi az adminisztrátori jogosultságot.',
       submit: 'Adminisztrátori bejelentkezés',
       noRegistration: 'Adminisztrátori jogosultság itt nem hozható létre.',
       backToPersonal: 'Vissza a személyes belépéshez',
@@ -480,7 +480,7 @@ function federatedErrorMessage(code: string, locale: string): string {
     orcid_callback_invalid: ['The ORCID response is invalid.', 'Az ORCID válasza érvénytelen.', 'Die ORCID-Antwort ist ungültig.'],
     oidc_account_exists: [
       'A Studio account already exists with this e-mail address. Sign in with e-mail first and connect the provider from Account settings.',
-      'Ezzel az e-mail-címmel már létezik Studio-fiók. Először jelentkezzen be e-maillel, majd a Fiók beállításainál kapcsolja hozzá a szolgáltatót.',
+      'Ezzel az e-mail-címmel már létezik Stúdió-fiók. Először jelentkezzen be e-maillel, majd a Fiók beállításainál kapcsolja hozzá a szolgáltatót.',
       'Für diese E-Mail-Adresse existiert bereits ein Studio-Konto. Melden Sie sich zuerst per E-Mail an und verbinden Sie den Anbieter in den Kontoeinstellungen.',
     ],
     oidc_state_expired: ['The external sign-in request expired. Please try again.', 'A külső bejelentkezési kérés lejárt. Próbálja újra.', 'Die externe Anmeldung ist abgelaufen. Bitte versuchen Sie es erneut.'],
