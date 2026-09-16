@@ -92,7 +92,7 @@ export const authTranslations: Record<SupportedLocale, AuthTranslations> = {
     'auth.alphaNotice': 'Alpha version – authentication is currently for testing purposes.'
   },
   hu: {
-    'auth.brand.name': 'Open Manuscript Studio',
+    'auth.brand.name': 'Open Manuscript Stúdió',
     'auth.brand.description': 'Kollaboratív tudományos kéziratszerkesztő',
     'auth.login.title': 'Bejelentkezés',
     'auth.login.description': 'A folytatáshoz jelentkezzen be.',
@@ -102,7 +102,7 @@ export const authTranslations: Record<SupportedLocale, AuthTranslations> = {
     'auth.login.registerLink': 'Regisztráció',
     'auth.logout': 'Kijelentkezés',
     'auth.register.title': 'Fiók létrehozása',
-    'auth.register.description': 'Hozza létre Open Manuscript Studio-fiókját.',
+    'auth.register.description': 'Hozza létre Open Manuscript Stúdió-fiókját.',
     'auth.register.submit': 'Fiók létrehozása',
     'auth.register.submitting': 'Fiók létrehozása…',
     'auth.register.hasAccount': 'Már van fiókja?',
@@ -139,7 +139,7 @@ export const authTranslations: Record<SupportedLocale, AuthTranslations> = {
     'auth.brand.name': 'Open Manuscript Studio',
     'auth.brand.description': 'Kollaboratives wissenschaftliches Schreiben',
     'auth.login.title': 'Anmelden',
-    'auth.login.description': 'Melden Sie sich an, um fortzufahren.',
+    'auth.login.description': 'Melden Sie sich an, um fortzuffahren.',
     'auth.login.submit': 'Anmelden',
     'auth.login.submitting': 'Anmeldung…',
     'auth.login.noAccount': 'Noch kein Konto?',
