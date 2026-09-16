@@ -169,16 +169,18 @@ publicationVenueRouter.post(
     }
 
     const expected = expectedPublishingIntegration(parsed.data.type);
-    let connection: { id: string; config: unknown } | null = null;
-    let installation: {
-      installationId: string;
-      platform: ExternalPlatform;
-      baseUrl: string;
-      status: ExternalInstallationStatus;
-    } | null = null;
+    let integrationLookup: {
+      connection: { id: string; config: unknown } | null;
+      installation: {
+        installationId: string;
+        platform: ExternalPlatform;
+        baseUrl: string;
+        status: ExternalInstallationStatus;
+      } | null;
+    };
 
     try {
-      connection = await prisma.userIntegration.findFirst({
+      const connection = await prisma.userIntegration.findFirst({
         where: {
           id: parsed.data.integrationConnectionId,
           userId: request.authUserId!,
@@ -188,7 +190,7 @@ publicationVenueRouter.post(
         select: { id: true, config: true },
       });
       const installationId = readConfigString(connection?.config, 'installationId');
-      installation = installationId
+      const installation = installationId
         ? await prisma.externalInstallation.findUnique({
             where: { installationId },
             select: {
@@ -199,6 +201,7 @@ publicationVenueRouter.post(
             },
           })
         : null;
+      integrationLookup = { connection, installation };
     } catch (error) {
       console.error('[OMI publication venues] integration lookup failed', error);
       response.status(500).json({
@@ -210,6 +213,7 @@ publicationVenueRouter.post(
       return;
     }
 
+    const { connection, installation } = integrationLookup;
     if (
       !connection ||
       !installation ||
