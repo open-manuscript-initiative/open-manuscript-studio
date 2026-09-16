@@ -445,7 +445,7 @@ function blockIdFromSegmentId(segmentId: string): string | null {
 
 function getCopy(locale: string) {
   if (locale === 'hu') return {
-    description: 'Az aktív kéziratot a Studio szerverén futó OMI agentekkel elemezheted. A mobilalkalmazás nem tárol AI API-kulcsot.',
+    description: 'Az aktív kéziratot a Stúdió szerverén futó OMI agentekkel elemezheted. A mobilalkalmazás nem tárol AI API-kulcsot.',
     safety: 'Az agent eredménye javaslat. A kéziratot nem módosítja automatikusan; a szerző dönt a felhasználásáról.',
     statusUnknown: 'Kapcsolat még nincs ellenőrizve.', ready: 'OMI Agents használatra kész.', notReady: 'OMI Agents nincs használatra kész.',
     checking: 'Ellenőrzés…', check: 'Kapcsolat ellenőrzése', agent: 'Agent', scope: 'Hatókör', currentSection: 'Aktuális szakasz', untitled: 'Névtelen szakasz',
