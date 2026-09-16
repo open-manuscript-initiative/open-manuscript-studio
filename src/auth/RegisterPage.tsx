@@ -198,7 +198,7 @@ export function RegisterPage({
               <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
               <div className="auth-field-hint">
                 {locale === 'hu'
-                  ? 'Az ORCID-hitelesítés aktiválja a meghívott Studio-fiókot; külön Studio-jelszó létrehozása nem szükséges.'
+                  ? 'Az ORCID-hitelesítés aktiválja a meghívott Stúdió-fiókot; külön Stúdió-jelszó létrehozása nem szükséges.'
                   : locale === 'de'
                     ? 'Die ORCID-Authentifizierung aktiviert das eingeladene Studio-Konto; ein separates Studio-Passwort ist nicht erforderlich.'
                     : 'ORCID authentication activates the invited Studio account; a separate Studio password is not required.'}
@@ -350,8 +350,8 @@ export function RegisterPage({
 function getRegisterHeroCopy(locale: string) {
   if (locale === 'hu') {
     return {
-      intro: 'Hozzon létre egy Studio-fiókot, és készítse elő kéziratait szerkesztésre, együttműködésre és publikálásra.',
-      featuresLabel: 'Az OMI Studio fő előnyei',
+      intro: 'Hozzon létre egy Stúdió-fiókot, és készítse elő kéziratait szerkesztésre, együttműködésre és publikálásra.',
+      featuresLabel: 'Az OMI Stúdió fő előnyei',
       write: 'Írjon szabadon',
       structure: 'Strukturáljon egyszer',
       publish: 'Publikáljon bárhol',
