@@ -56,7 +56,7 @@ export function prepareAndroidVersionCode({
   try {
     config = JSON.parse(readFileSync(configPath, 'utf8'));
   } catch (error) {
-    throw new Error('Could not read or parse ' + configPath + ': ' + error.message);
+    throw new Error('Could not read or parse ' + configPath + ': ' + error.message, { cause: error });
   }
 
   const current = config?.bundle?.android?.versionCode;
