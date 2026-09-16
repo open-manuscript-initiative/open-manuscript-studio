@@ -139,7 +139,7 @@ export const authTranslations: Record<SupportedLocale, AuthTranslations> = {
     'auth.brand.name': 'Open Manuscript Studio',
     'auth.brand.description': 'Kollaboratives wissenschaftliches Schreiben',
     'auth.login.title': 'Anmelden',
-    'auth.login.description': 'Melden Sie sich an, um fortzuffahren.',
+    'auth.login.description': 'Melden Sie sich an, um fortzufahren.',
     'auth.login.submit': 'Anmelden',
     'auth.login.submitting': 'Anmeldung…',
     'auth.login.noAccount': 'Noch kein Konto?',
