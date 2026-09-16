@@ -18,7 +18,7 @@ export const apiRateLimit = rateLimit({
 });
 
 export const authRateLimit = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 5 * 60 * 1000,
   limit: 60,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
