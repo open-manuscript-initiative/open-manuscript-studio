@@ -16,8 +16,8 @@ test('creates a standalone OMI study with one independent editor root', () => {
 
   assert.equal(manuscript.locale, 'hu');
   assert.equal(manuscript.sections.length, 1);
-  assert.equal(manuscript.sections[0]?.blocks[0]?.type, 'heading');
-  assert.equal(manuscript.sections[0]?.blocks[1]?.type, 'paragraph');
+  assert.equal(manuscript.sections[0]?.blocks.length, 1);
+  assert.equal(manuscript.sections[0]?.blocks[0]?.type, 'paragraph');
   assert.deepEqual(getDocumentStructureProfile(manuscript), {
     modelVersion: '0.1.0-alpha.1',
     kind: 'study',

@@ -4,6 +4,7 @@ import { installMockStudioApi } from './support/mockStudioApi';
 test('first OJS launch survives effect replay and a late saved-session restore', async ({ page }) => {
   await installMockStudioApi(page, { authenticated: true });
   await page.goto('/');
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
   await expect(page.locator('section.editor')).toBeVisible();
   // Seed the real session database with the blank document from this visit.
   await page.evaluate(async () => {

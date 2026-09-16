@@ -5,6 +5,7 @@ import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
 test('the full-screen menu opens the live publication editor', async ({ page }) => {
   const api = await installMockStudioApi(page);
   await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
 
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
 

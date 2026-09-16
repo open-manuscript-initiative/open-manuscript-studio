@@ -255,7 +255,6 @@ function stageCreateSection(
       ? createEmptyStudy(
           crypto.randomUUID(),
           crypto.randomUUID(),
-          crypto.randomUUID(),
         )
       : createEmptySection(
           crypto.randomUUID(),

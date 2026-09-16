@@ -39,16 +39,17 @@ test('continuous document round-trip preserves hierarchical OMI structure', () =
   assert.equal(projected[1]?.title, 'Second');
 });
 
-test('an untitled legacy section receives an editable study heading', () => {
+test('an untitled section retains its body without an artificial heading', () => {
   const sections = [section('section-a', '', [
     textBlock('paragraph-a', 'paragraph', 'paragraph', 'Body'),
   ])];
 
   const document = buildContinuousManuscriptDocument(sections);
 
-  assert.equal(document.content?.[0]?.type, 'heading');
+  assert.equal(document.content?.length, 1);
+  assert.equal(document.content?.[0]?.type, 'paragraph');
   assert.equal(document.content?.[0]?.attrs?.omiSectionId, 'section-a');
-  assert.equal(document.content?.[1]?.attrs?.omiBlockId, 'paragraph-a');
+  assert.equal(document.content?.[0]?.attrs?.omiBlockId, 'paragraph-a');
 });
 
 test('a paragraph split keeps the original ID and assigns a new stable block ID', () => {
@@ -216,3 +217,29 @@ function textBlock(
     }),
   };
 }
+
+
+test('a named legacy section still receives its heading', () => {
+  const document = buildContinuousManuscriptDocument([
+    section('section-a', 'Chapter title', [
+      textBlock('paragraph-a', 'paragraph', 'paragraph', 'Body'),
+    ]),
+  ]);
+  assert.equal(document.content?.[0]?.type, 'heading');
+  assert.equal(document.content?.[0]?.content?.[0]?.text, 'Chapter title');
+});
+
+test('deleting the first heading does not recreate it when the document reopens', () => {
+  const sections = [section('section-a', 'Chapter title', [
+    textBlock('heading-a', 'heading', 'heading', 'Chapter title', { level: 1 }),
+    textBlock('paragraph-a', 'paragraph', 'paragraph', 'Keep this body'),
+  ])];
+  const document = buildContinuousManuscriptDocument(sections);
+  document.content = document.content?.filter((node) => node.type !== 'heading');
+  const projected = projectContinuousManuscriptDocument(document, sections);
+  const reopened = buildContinuousManuscriptDocument(projected);
+  assert.equal(projected[0]?.title, '');
+  assert.equal(reopened.content?.length, 1);
+  assert.equal(reopened.content?.[0]?.type, 'paragraph');
+  assert.equal(reopened.content?.[0]?.content?.[0]?.text, 'Keep this body');
+});

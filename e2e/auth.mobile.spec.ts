@@ -13,6 +13,7 @@ test('the responsive login and editor fit a phone viewport', async ({ page }) =>
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
   await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
   await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 

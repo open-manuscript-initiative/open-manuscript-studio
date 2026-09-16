@@ -1,9 +1,6 @@
 import { FolderOpen, Menu } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
-import { clearDocumentClosedState } from '../app/documentCloseState';
-import { resumeLastSessionPersistence } from '../app/lastSessionPersistence';
-import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import '../styles/closed-document.css';
 import { StudioMenuWithHelp } from './StudioMenuWithHelp';
@@ -13,18 +10,6 @@ export function ClosedDocumentScreen() {
   const { locale } = useTranslation();
   const copy = getClosedDocumentCopy(locale);
   const [menuOpen, setMenuOpen] = useState(false);
-  const closedManuscript = useRef(useStudioStore.getState().manuscript);
-  const reopening = useRef(false);
-
-  useEffect(() => {
-    return useStudioStore.subscribe((state) => {
-      if (reopening.current || state.manuscript === closedManuscript.current) return;
-      reopening.current = true;
-      clearDocumentClosedState();
-      void resumeLastSessionPersistence().finally(() => window.location.reload());
-    });
-  }, []);
-
   return (
     <main className="auth-page closed-document-page" aria-labelledby="closed-document-title">
       <section className="auth-card closed-document-card">
@@ -65,7 +50,7 @@ function getClosedDocumentCopy(locale: string) {
     return {
       brand: 'Dokumentum nélküli munkatér',
       title: 'Nincs megnyitott dokumentum',
-      description: 'Az előző dokumentum bezárult, és a következő indításkor sem nyílik meg automatikusan.',
+      description: 'Hozzon létre új tanulmányt vagy kötetet, vagy nyisson meg egy meglévő dokumentumot.',
       open: 'Dokumentum megnyitása vagy importálása',
       hint: 'A menüből OMI- vagy Word-dokumentumot is megnyithat.',
     };
@@ -75,7 +60,7 @@ function getClosedDocumentCopy(locale: string) {
     return {
       brand: 'Arbeitsbereich ohne geöffnetes Dokument',
       title: 'Kein Dokument geöffnet',
-      description: 'Das vorherige Dokument wurde geschlossen und wird beim nächsten Start nicht automatisch wieder geöffnet.',
+      description: 'Erstellen Sie einen neuen Beitrag oder Band, oder öffnen Sie ein vorhandenes Dokument.',
       open: 'Dokument öffnen oder importieren',
       hint: 'Über das Menü können Sie OMI- oder Word-Dokumente öffnen.',
     };
@@ -84,7 +69,7 @@ function getClosedDocumentCopy(locale: string) {
   return {
     brand: 'Workspace without an open document',
     title: 'No document is open',
-    description: 'The previous document was closed and will not reopen automatically on the next launch.',
+    description: 'Create a new study or volume, or open an existing document.',
     open: 'Open or import a document',
     hint: 'Use the menu to open an OMI or Word document.',
   };

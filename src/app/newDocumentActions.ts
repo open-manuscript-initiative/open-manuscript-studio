@@ -1,4 +1,4 @@
-import { clearDocumentClosedState, isDocumentClosedState } from './documentCloseState';
+import { clearDocumentClosedState } from './documentCloseState';
 import { useStudioStore } from './useStudioStore';
 import { createBlankManuscript } from '../document/createBlankManuscript';
 import type { OmiDocumentKind, OmiVolumeKind } from '../model/documentProfile';
@@ -10,7 +10,7 @@ export function createAndOpenBlankOmiDocument(input: {
   volumeKind?: OmiVolumeKind;
   locale: string;
 }): OmiManuscript {
-  if (!isDocumentClosedState()) {
+  if (useStudioStore.getState().hasOpenDocument) {
     useStudioStore.getState().checkpoint('manual');
   }
 

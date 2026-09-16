@@ -15,6 +15,8 @@ import {
 } from './app/lastSessionPersistence';
 import { useStudioStore } from './app/useStudioStore';
 import { AppLayout } from './components/AppLayout';
+import { ClosedDocumentScreen } from './components/ClosedDocumentScreen';
+import { ProofreadingController } from './components/ProofreadingController';
 import {
   DesktopDocumentTabs,
   type DesktopDocumentTabId,
@@ -136,6 +138,7 @@ export function App() {
 function StudioApplication() {
   const reviewMode = new URLSearchParams(window.location.search).get('review') === '1';
   const mobileStudio = isMobileStudio();
+  const hasOpenDocument = useStudioStore((state) => state.hasOpenDocument);
   const restoredDesktopSession = useRef(
     !mobileStudio && !reviewMode ? getRestoredDesktopSession() : null,
   );
@@ -164,6 +167,8 @@ function StudioApplication() {
         manuscript: tab.manuscript,
       }));
     }
+
+    if (!useStudioStore.getState().hasOpenDocument) return [];
 
     return [{
       id: initialDesktopTabId.current,
@@ -206,7 +211,15 @@ function StudioApplication() {
       setDesktopTabs((tabs) => {
         const activeId = activeDesktopTabIdRef.current;
         const activeIndex = tabs.findIndex((tab) => tab.id === activeId);
-        if (activeIndex < 0) return tabs;
+        if (activeIndex < 0) {
+          if (!state.hasOpenDocument) return tabs;
+          const nextTab = createDesktopTabSession(crypto.randomUUID(), state.manuscript);
+          const nextTabs = [nextTab];
+          desktopTabsRef.current = nextTabs;
+          activeDesktopTabIdRef.current = nextTab.id;
+          setActiveDesktopTabId(nextTab.id);
+          return nextTabs;
+        }
 
         const activeTab = tabs[activeIndex];
         if (!activeTab) return tabs;
@@ -422,6 +435,7 @@ function StudioApplication() {
         });
         return;
       }
+      if (!useStudioStore.getState().hasOpenDocument) return;
       const manuscript = useStudioStore.getState().manuscript;
       if (event.shiftKey) void saveLocalManuscriptAs(manuscript);
       else void saveLocalManuscript(manuscript);
@@ -458,9 +472,12 @@ function StudioApplication() {
     );
   }
 
+  if (!hasOpenDocument) return <ClosedDocumentScreen />;
+
   if (mobileStudio) {
     return (
       <>
+        <ProofreadingController />
         <MobileLayout onOpenMenu={() => setMenuOpen(true)}>
           <div className="focus-workspace">
             <EditorPane ojsContributors={ojsContributors} />
@@ -478,6 +495,7 @@ function StudioApplication() {
 
   return (
     <AppLayout onOpenMenu={() => setMenuOpen(true)}>
+      <ProofreadingController />
       <DesktopDocumentTabs
         tabs={desktopTabs}
         activeTabId={activeDesktopTabId}

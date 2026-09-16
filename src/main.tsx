@@ -2,11 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 
 import { App } from './App';
-import { isDocumentClosedState } from './app/documentCloseState';
 import { initializeLastSessionPersistence } from './app/lastSessionPersistence';
 import { initializeRevisionIntegrity } from './app/revisionIntegrity';
-import { ClosedDocumentScreen } from './components/ClosedDocumentScreen';
-import { ProofreadingController } from './components/ProofreadingController';
 import { I18nProvider } from './i18n';
 import { restorePendingExternalLaunchToLocation } from './services/pendingExternalLaunch';
 
@@ -72,21 +69,12 @@ async function bootstrap(): Promise<void> {
     console.warn('Studio session restore could not complete.', error);
   });
 
-  const documentClosed = isDocumentClosedState();
-
   ReactDOM.createRoot(
     document.getElementById('root') as HTMLElement
   ).render(
     <React.StrictMode>
       <I18nProvider>
-        {documentClosed ? (
-          <ClosedDocumentScreen />
-        ) : (
-          <>
-            <ProofreadingController />
-            <App />
-          </>
-        )}
+        <App />
       </I18nProvider>
     </React.StrictMode>
   );

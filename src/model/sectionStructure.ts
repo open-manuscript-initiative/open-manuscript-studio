@@ -34,11 +34,6 @@ export const EMPTY_SECTION_CONTENT = JSON.stringify({
   content: [{ type: 'paragraph' }],
 });
 
-export const EMPTY_STUDY_HEADING_CONTENT = JSON.stringify({
-  type: 'doc',
-  content: [{ type: 'heading', attrs: { level: 1 } }],
-});
-
 export function createEmptySection(
   id = crypto.randomUUID(),
   blockId = crypto.randomUUID(),
@@ -63,28 +58,12 @@ export function createEmptySection(
   return section;
 }
 
-/** Creates a new top-level study with an editable title and body paragraph. */
+/** Creates a new top-level study with one empty body paragraph. */
 export function createEmptyStudy(
   id = crypto.randomUUID(),
-  headingBlockId = crypto.randomUUID(),
   bodyBlockId = crypto.randomUUID(),
 ): OmiSection {
-  return {
-    id,
-    title: '',
-    blocks: [
-      {
-        id: headingBlockId,
-        type: 'heading',
-        content: EMPTY_STUDY_HEADING_CONTENT,
-      },
-      {
-        id: bodyBlockId,
-        type: 'paragraph',
-        content: EMPTY_SECTION_CONTENT,
-      },
-    ],
-  };
+  return createEmptySection(id, bodyBlockId);
 }
 
 /**
