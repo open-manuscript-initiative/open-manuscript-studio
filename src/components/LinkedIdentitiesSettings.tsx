@@ -1,7 +1,11 @@
 import { BadgeCheck, KeyRound, Link2, RefreshCw, Unlink } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { getLinkedIdentitiesCopy } from '../i18n/linkedIdentitiesTranslations';
+import {
+  getLinkedIdentitiesCopy,
+  type LinkedIdentitiesCopy,
+} from '../i18n/linkedIdentitiesTranslations';
+import { localizeStudioName } from '../i18n/translate';
 import {
   getAuthProviders,
   getOrcidLinkUrl,
@@ -27,7 +31,7 @@ export function LinkedIdentitiesSettings({
   locale,
   email,
 }: LinkedIdentitiesSettingsProps) {
-  const labels = getLinkedIdentitiesCopy(locale);
+  const labels = localizeCopy(locale, getLinkedIdentitiesCopy(locale));
   const [settings, setSettings] = useState<LinkedIdentitySettings | null>(null);
   const [providers, setProviders] = useState<AuthProviders | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -214,6 +218,14 @@ export function LinkedIdentitiesSettings({
       {error ? <div className="account-error" role="alert">{error || labels.error}</div> : null}
     </div>
   );
+}
+
+function localizeCopy(locale: string, copy: LinkedIdentitiesCopy): LinkedIdentitiesCopy {
+  if (locale.trim().toLowerCase().split('-')[0] !== 'hu') return copy;
+
+  return Object.fromEntries(
+    Object.entries(copy).map(([key, value]) => [key, localizeStudioName('hu', value)]),
+  ) as unknown as LinkedIdentitiesCopy;
 }
 
 async function openAuthUrl(url: string): Promise<void> {
