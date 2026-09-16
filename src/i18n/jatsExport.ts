@@ -59,10 +59,10 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
     diagnostics: 'JATS diagnosztika',
     noDiagnostics: 'Nincs JATS-specifikus diagnosztika.',
     workingPreview:
-      'Az előnézet az aktuális munkapéldányt mutatja. Letöltéskor a Studio előbb checkpointot készít, így az XML egy konkrét committed revízióhoz visszavezethető.',
+      'Az előnézet az aktuális munkapéldányt mutatja. Letöltéskor a Stúdió előbb checkpointot készít, így az XML egy konkrét committed revízióhoz visszavezethető.',
     unsupportedProfile: 'Az aktív profil nem jelöli támogatott kimenetként a JATS formátumot.',
     schemaNote:
-      'A Studio ellenőrzi a kötelező szerkezetet, az XML-azonosítókat és a belső rid célokat. A teljes külső JATS DTD/XSD/RNG validáció külön megfelelőségi lépés marad.',
+      'A Stúdió ellenőrzi a kötelező szerkezetet, az XML-azonosítókat és a belső rid célokat. A teljes külső JATS DTD/XSD/RNG validáció külön megfelelőségi lépés marad.',
   },
   de: {
     title: 'JATS XML',
