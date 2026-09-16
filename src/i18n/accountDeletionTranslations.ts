@@ -30,7 +30,7 @@ const copy: Record<string, AccountDeletionCopy> = {
   },
   hu: {
     title: 'Fiók törlése',
-    description: 'Véglegesen törli az Open Manuscript Studio-fiókot, a bejelentkezési identitásokat, profiladatokat, munkameneteket, integrációs hitelesítő adatokat, felhőkapcsolati metaadatokat és a közvetlen beküldések helyi nyilvántartását.',
+    description: 'Véglegesen törli az Open Manuscript Stúdió-fiókot, a bejelentkezési identitásokat, profiladatokat, munkameneteket, integrációs hitelesítő adatokat, felhőkapcsolati metaadatokat és a közvetlen beküldések helyi nyilvántartását.',
     retained: 'A tudományos lektori vagy publikációs történet koherenciájához szükséges adatok csak anonimizált formában maradnak meg, és többé nem kapcsolódnak a fiókazonosságodhoz.',
     external: 'Az OJS/OMP-rendszerbe már elküldött, illetve saját külső felhőfiókodban tárolt példányokat az adott szolgáltatás kezeli; ezeket ott kell külön törölni.',
     learnMore: 'Fióktörlési és adatmegőrzési részletek',
