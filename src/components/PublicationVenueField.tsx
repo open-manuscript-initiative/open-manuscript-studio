@@ -1,14 +1,19 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
-import type {
-  OmiPublicationVenueReference,
-  OmiPublicationVenueType,
+import {
+  isVerifiedPublicationVenue,
+  type OmiPublicationVenueReference,
+  type OmiPublicationVenueType,
 } from '../model/scholarlyMetadata';
 import {
   createPublicationVenue,
   getPublicationVenues,
   type CreatePublicationVenueInput,
 } from '../services/publicationVenueApi';
+import {
+  getIntegrationCatalog,
+  type IntegrationConnection,
+} from '../services/integrationApi';
 import { useTranslation } from '../i18n';
 
 const LABELS = {
@@ -34,6 +39,10 @@ const LABELS = {
     cancel: 'Cancel',
     required: 'Enter a name first.',
     saveFailed: 'The new entry could not be saved.',
+    integration: 'Verified publishing connection',
+    chooseIntegration: 'Select an active OJS/OMP connection',
+    noConnections: 'No active publishing connection is available. Configure and test an OJS or OMP connection in Integrations first.',
+    connectionRequired: 'Select an active publishing connection first.',
   },
   hu: {
     label: 'Folyóirat vagy könyvkiadó',
@@ -57,6 +66,10 @@ const LABELS = {
     cancel: 'Mégse',
     required: 'Előbb add meg a nevet.',
     saveFailed: 'Az új bejegyzés nem menthető.',
+    integration: 'Ellenőrzött kiadói kapcsolat',
+    chooseIntegration: 'Válassz aktív OJS/OMP-kapcsolatot',
+    noConnections: 'Nincs aktív kiadói kapcsolat. Előbb állíts be és tesztelj egy OJS- vagy OMP-kapcsolatot az Integrációk menüben.',
+    connectionRequired: 'Előbb válassz aktív kiadói kapcsolatot.',
   },
   de: {
     label: 'Zeitschrift oder Buchverlag',
@@ -80,8 +93,24 @@ const LABELS = {
     cancel: 'Abbrechen',
     required: 'Bitte zuerst einen Namen eingeben.',
     saveFailed: 'Der neue Eintrag konnte nicht gespeichert werden.',
+    integration: 'Verifizierte Verlagsverbindung',
+    chooseIntegration: 'Aktive OJS/OMP-Verbindung auswählen',
+    noConnections: 'Keine aktive Verlagsverbindung verfügbar. Zuerst eine OJS- oder OMP-Verbindung unter Integrationen konfigurieren und testen.',
+    connectionRequired: 'Bitte zuerst eine aktive Verlagsverbindung auswählen.',
   },
 } as const;
+
+function publishingProviderId(type: OmiPublicationVenueType): 'ojs' | 'omp' {
+  return type === 'JOURNAL' ? 'ojs' : 'omp';
+}
+
+function publishingConnectionLabel(connection: IntegrationConnection): string {
+  const configuredBaseUrl = connection.config
+    && typeof connection.config.baseUrl === 'string'
+    ? connection.config.baseUrl.trim()
+    : '';
+  return connection.displayName?.trim() || configuredBaseUrl || connection.connectionKey;
+}
 
 export function PublicationVenueField({
   value,
@@ -96,6 +125,7 @@ export function PublicationVenueField({
     value?.type ?? 'JOURNAL',
   );
   const [venues, setVenues] = useState<OmiPublicationVenueReference[]>([]);
+  const [publishingConnections, setPublishingConnections] = useState<IntegrationConnection[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -103,6 +133,8 @@ export function PublicationVenueField({
   const [createType, setCreateType] = useState<OmiPublicationVenueType>(
     value?.type ?? 'JOURNAL',
   );
+  const [createConnectionId, setCreateConnectionId] = useState('');
+  const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [createName, setCreateName] = useState('');
   const [createWebsite, setCreateWebsite] = useState('');
   const [createIssn, setCreateIssn] = useState('');
@@ -115,11 +147,37 @@ export function PublicationVenueField({
   }, [value?.type, venueType]);
 
   useEffect(() => {
+    if (!createOpen) return;
+    let active = true;
+    setConnectionsLoading(true);
+    void getIntegrationCatalog()
+      .then((catalog) => {
+        if (!active) return;
+        const connections = catalog
+          .filter((provider) => provider.id === 'ojs' || provider.id === 'omp')
+          .flatMap((provider) => provider.connections)
+          .filter((connection) =>
+            connection.enabled && connection.status.toLowerCase() === 'connected',
+          );
+        setPublishingConnections(connections);
+      })
+      .catch(() => {
+        if (active) setPublishingConnections([]);
+      })
+      .finally(() => {
+        if (active) setConnectionsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [createOpen]);
+
+  useEffect(() => {
     const currentRequestId = ++requestId.current;
     const timer = window.setTimeout(() => {
       setLoading(true);
       setError('');
-      void getPublicationVenues(venueType, query)
+      void getPublicationVenues(venueType)
         .then((nextVenues) => {
           if (currentRequestId !== requestId.current) return;
           setVenues(nextVenues);
@@ -131,17 +189,35 @@ export function PublicationVenueField({
         .finally(() => {
           if (currentRequestId === requestId.current) setLoading(false);
         });
-    }, query.trim() ? 250 : 0);
+    }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [copy.loadFailed, query, venueType]);
+  }, [copy.loadFailed, venueType]);
 
   const options = useMemo(() => {
-    const byId = new Map<string, OmiPublicationVenueReference>();
-    if (value && value.type === venueType) byId.set(value.id, value);
-    venues.forEach((venue) => byId.set(venue.id, venue));
-    return [...byId.values()];
-  }, [value, venues, venueType]);
+    const normalizedQuery = query.trim().toLocaleLowerCase();
+    const verifiedVenues = venues.filter(isVerifiedPublicationVenue);
+    const filtered = verifiedVenues.filter((venue) =>
+      !normalizedQuery
+      || venue.name.toLocaleLowerCase().includes(normalizedQuery),
+    );
+    const selected = isVerifiedPublicationVenue(value) && value?.type === venueType
+      ? verifiedVenues.find((venue) => venue.id === value.id)
+      : undefined;
+    if (selected && !filtered.some((venue) => venue.id === selected.id)) {
+      return [selected, ...filtered];
+    }
+    return filtered;
+  }, [query, value, venues, venueType]);
+
+  const availablePublishingConnections = useMemo(
+    () => publishingConnections.filter((connection) =>
+      connection.providerId === publishingProviderId(createType)
+      && connection.enabled
+      && connection.status.toLowerCase() === 'connected',
+    ),
+    [createType, publishingConnections],
+  );
 
   function handleTypeChange(nextType: OmiPublicationVenueType): void {
     setVenueType(nextType);
@@ -151,6 +227,9 @@ export function PublicationVenueField({
 
   function openCreateForm(): void {
     setCreateType(venueType);
+    setCreateConnectionId('');
+    setPublishingConnections([]);
+    setConnectionsLoading(false);
     setCreateName('');
     setCreateWebsite('');
     setCreateIssn('');
@@ -170,6 +249,10 @@ export function PublicationVenueField({
       setError(copy.required);
       return;
     }
+    if (!createConnectionId) {
+      setError(copy.connectionRequired);
+      return;
+    }
 
     const input: CreatePublicationVenueInput = {
       type: createType,
@@ -181,6 +264,7 @@ export function PublicationVenueField({
       ...(createType === 'BOOK_PUBLISHER' && createIsbnPrefix.trim()
         ? { isbnPrefix: createIsbnPrefix.trim() }
         : {}),
+      integrationConnectionId: createConnectionId,
     };
 
     setSaving(true);
@@ -196,8 +280,8 @@ export function PublicationVenueField({
       onChange(venue);
       setCreateOpen(false);
       setCreateName('');
-    } catch {
-      setError(copy.saveFailed);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : copy.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -231,7 +315,11 @@ export function PublicationVenueField({
         <label>
           <span>{copy.selection}</span>
           <select
-            value={value?.type === venueType ? value.id : ''}
+            value={
+              value?.type === venueType && options.some((venue) => venue.id === value.id)
+                ? value.id
+                : ''
+            }
             aria-label={copy.selection}
             onChange={(event) => {
               const selected = options.find((venue) => venue.id === event.target.value);
@@ -240,7 +328,10 @@ export function PublicationVenueField({
           >
             <option value="">{copy.none}</option>
             {options.map((venue) => (
-              <option key={venue.id} value={venue.id}>{venue.name}</option>
+              <option key={venue.id} value={venue.id}>
+                {venue.name}
+                {venue.integrationProvider ? ' (' + venue.integrationProvider + ')' : ''}
+              </option>
             ))}
           </select>
         </label>
@@ -260,10 +351,29 @@ export function PublicationVenueField({
           <strong>{copy.addTitle}</strong>
           <div className="studio-publication-venue-create-grid">
             <label>
+              <span>{copy.integration}</span>
+              <select
+                required
+                value={createConnectionId}
+                disabled={!availablePublishingConnections.length}
+                onChange={(event) => setCreateConnectionId(event.target.value)}
+              >
+                <option value="">{copy.chooseIntegration}</option>
+                {availablePublishingConnections.map((connection) => (
+                  <option key={connection.id} value={connection.id}>
+                    {publishingConnectionLabel(connection)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
               <span>{copy.kind}</span>
               <select
                 value={createType}
-                onChange={(event) => setCreateType(event.target.value as OmiPublicationVenueType)}
+                onChange={(event) => {
+                  setCreateType(event.target.value as OmiPublicationVenueType);
+                  setCreateConnectionId('');
+                }}
               >
                 <option value="JOURNAL">{copy.journal}</option>
                 <option value="BOOK_PUBLISHER">{copy.bookPublisher}</option>
@@ -310,8 +420,18 @@ export function PublicationVenueField({
               </label>
             )}
           </div>
+          {connectionsLoading ? <small aria-live="polite">{copy.loading}</small> : null}
+          {!connectionsLoading && !availablePublishingConnections.length ? (
+            <small className="studio-publication-venue-error" role="alert">
+              {copy.noConnections}
+            </small>
+          ) : null}
           <div className="studio-publication-venue-create-actions">
-            <button type="submit" className="studio-menu-primary-action" disabled={saving}>
+            <button
+              type="submit"
+              className="studio-menu-primary-action"
+              disabled={saving || !createConnectionId || !availablePublishingConnections.length}
+            >
               {copy.save}
             </button>
             <button type="button" className="studio-menu-secondary-action" disabled={saving} onClick={closeCreateForm}>
