@@ -8,6 +8,7 @@ export const ANDROID_UI_DEPENDENCIES = Object.freeze({
 });
 
 export const ANDROID_KOTLIN_VERSION = '2.1.20';
+export const ANDROID_NDK_VERSION = '27.3.13750724';
 
 export const ANDROID_REMOVED_UI_DEPENDENCIES = Object.freeze([
   'com.google.android.material:material',
@@ -70,6 +71,23 @@ export function patchAndroidKotlinVersion(source) {
   }
 
   return source.replace(pattern, `$1${ANDROID_KOTLIN_VERSION}$3`);
+}
+
+export function patchAndroidNdkVersion(source) {
+  const declarationPattern = /(^[ \t]*ndkVersion\s*=\s*)["'][^"']+["']/m;
+  if (declarationPattern.test(source)) {
+    return source.replace(declarationPattern, `$1"${ANDROID_NDK_VERSION}"`);
+  }
+
+  const androidBlockPattern = /^android\s*\{\s*$/m;
+  if (!androidBlockPattern.test(source)) {
+    throw new Error('Expected generated Android application block is missing.');
+  }
+
+  return source.replace(
+    androidBlockPattern,
+    `$&\n    ndkVersion = "${ANDROID_NDK_VERSION}"`,
+  );
 }
 
 export function patchAndroidActivity(source) {
@@ -221,7 +239,9 @@ export function configureAndroidModernUi(root = resolve('src-tauri/gen/android')
   if (
     updateFile(buildGradle, (source) =>
       patchAndroidNativeDebugSymbols(
-        patchTauriDebugSymbolScoping(patchAndroidDependencies(source)),
+        patchAndroidNdkVersion(
+          patchTauriDebugSymbolScoping(patchAndroidDependencies(source)),
+        ),
       ),
     )
   ) {
@@ -240,8 +260,8 @@ export function configureAndroidModernUi(root = resolve('src-tauri/gen/android')
     .join(', ');
   console.log(
     changes.length > 0
-      ? `Android compatibility updated (${changes.join(', ')}): Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}; debug-only native keep symbols; release native debug symbols FULL`
-      : `Android compatibility already current: Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}; debug-only native keep symbols; release native debug symbols FULL`,
+      ? `Android compatibility updated (${changes.join(', ')}): Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; NDK ${ANDROID_NDK_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}; debug-only native keep symbols; release native debug symbols FULL`
+      : `Android compatibility already current: Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; NDK ${ANDROID_NDK_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}; debug-only native keep symbols; release native debug symbols FULL`,
   );
 }
 

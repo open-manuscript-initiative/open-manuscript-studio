@@ -28,6 +28,7 @@ concurrency:
 env:
   ANDROID_PACKAGE_NAME: org.openmanuscript.studio
   GOOGLE_CLOUD_PROJECT_ID: open-manuscript-studio-508703
+  ANDROID_NDK_VERSION: '27.3.13750724'
 
 jobs:
   build:
@@ -87,22 +88,29 @@ jobs:
           set -euo pipefail
 
           android_home="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
-          ndk_home="${ANDROID_NDK_HOME:-${ANDROID_NDK_ROOT:-${ANDROID_NDK:-}}}"
-
           if [[ -z "$android_home" || ! -d "$android_home" ]]; then
             echo 'Android SDK not found on the runner.' >&2
             exit 1
           fi
 
-          if [[ -z "$ndk_home" || ! -f "$ndk_home/source.properties" ]]; then
-            if [[ -d "$android_home/ndk" ]]; then
-              ndk_home="$(find "$android_home/ndk" -mindepth 1 -maxdepth 1 -type d -print | sort -V | tail -n 1)"
+          ndk_home="$android_home/ndk/$ANDROID_NDK_VERSION"
+          if [[ ! -f "$ndk_home/source.properties" ]]; then
+            if ! command -v sdkmanager >/dev/null 2>&1; then
+              echo 'sdkmanager is unavailable, so the pinned Android NDK cannot be installed.' >&2
+              exit 1
             fi
+            yes | sdkmanager "ndk;$ANDROID_NDK_VERSION" >/dev/null 2>&1 || true
           fi
 
-          if [[ -z "$ndk_home" || ! -f "$ndk_home/source.properties" ]]; then
-            echo 'Android NDK not found on the runner.' >&2
-            find "$android_home" -maxdepth 3 -type f -name source.properties -print || true
+          if [[ ! -f "$ndk_home/source.properties" ]]; then
+            echo "Android NDK $ANDROID_NDK_VERSION was not installed at $ndk_home." >&2
+            find "$android_home/ndk" -mindepth 1 -maxdepth 2 -name source.properties -print 2>/dev/null || true
+            exit 1
+          fi
+
+          actual_ndk_version="$(sed -n 's/^Pkg.Revision[[:space:]]*=[[:space:]]*//p' "$ndk_home/source.properties" | head -n 1)"
+          if [[ "$actual_ndk_version" != "$ANDROID_NDK_VERSION" ]]; then
+            echo "Pinned Android NDK mismatch: expected $ANDROID_NDK_VERSION, found $actual_ndk_version." >&2
             exit 1
           fi
 
@@ -110,10 +118,13 @@ jobs:
           echo "ANDROID_SDK_ROOT=$android_home" >> "$GITHUB_ENV"
           echo "NDK_HOME=$ndk_home" >> "$GITHUB_ENV"
           echo "ANDROID_NDK_HOME=$ndk_home" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=$ndk_home" >> "$GITHUB_ENV"
 
           echo "Using Android SDK: $android_home"
-          echo "Using Android NDK: $ndk_home"
+          echo "Using pinned Android NDK: $ndk_home"
           grep '^Pkg.Revision' "$ndk_home/source.properties"
+          "$ndk_home/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip" --version | head -n 1
+          "$ndk_home/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-objcopy" --version | head -n 1
 
       - name: Generate Tauri Android project
         env:
@@ -121,6 +132,7 @@ jobs:
         run: |
           npm run tauri -- android init --ci
           node scripts/configure-android-modern-ui.mjs
+          grep -nE 'ndkVersion|debugSymbolLevel' src-tauri/gen/android/app/build.gradle.kts
           npm run icons:generate
 
       - name: Validate Android signing secrets
