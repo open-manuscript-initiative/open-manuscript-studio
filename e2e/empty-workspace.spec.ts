@@ -27,6 +27,16 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 393, height: 851 
     await page.reload();
     await expect(page.getByRole('heading', { name: 'No document is open' })).toBeVisible();
     await expect(page.locator('section.editor')).toHaveCount(0);
+    await expect.poll(() => page.evaluate(() => ({
+      heightFits: document.documentElement.scrollHeight <= window.innerHeight,
+      widthFits: document.documentElement.scrollWidth <= window.innerWidth,
+    }))).toEqual({ heightFits: true, widthFits: true });
+
+    const logoutButton = page.getByRole('button', { name: 'Sign out', exact: true });
+    await expect.poll(() => logoutButton.evaluate((button) => (
+      button.scrollWidth <= button.clientWidth && button.scrollHeight <= button.clientHeight
+    ))).toBe(true);
+
     await page.getByRole('button', { name: /^New OMI study/ }).click();
     await expect(page.locator('section.editor')).toBeVisible();
     // Explicit creation persists; even a deliberately blank document is open.
