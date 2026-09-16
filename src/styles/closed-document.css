@@ -97,3 +97,15 @@
     grid-column: auto;
   }
 }
+
+.closed-document-account-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.closed-document-account-actions button {
+  min-height: 2.75rem;
+  max-width: 100%;
+  white-space: normal;
+}

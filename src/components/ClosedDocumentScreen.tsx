@@ -1,18 +1,32 @@
-import { FolderOpen, Menu } from 'lucide-react';
+import { FolderOpen, LogOut, Menu } from 'lucide-react';
 import { useState } from 'react';
 
 import { useTranslation } from '../i18n';
+import { useAuthStore } from '../store/authStore';
 import '../styles/closed-document.css';
 import { StudioMenuWithHelp } from './StudioMenuWithHelp';
 import { NewDocumentActions } from './NewDocumentActions';
 
 export function ClosedDocumentScreen() {
-  const { locale } = useTranslation();
+  const { locale, t } = useTranslation();
+  const logout = useAuthStore((state) => state.logout);
+  const loading = useAuthStore((state) => state.isLoading);
   const copy = getClosedDocumentCopy(locale);
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <main className="auth-page closed-document-page" aria-labelledby="closed-document-title">
       <section className="auth-card closed-document-card">
+        <div className="closed-document-account-actions">
+          <button
+            type="button"
+            className="focus-menu-button"
+            onClick={() => void logout().catch(() => {})}
+            disabled={loading}
+          >
+            <LogOut size={18} aria-hidden="true" />
+            <span>{t('auth.logout')}</span>
+          </button>
+        </div>
         <div className="auth-brand">
           <div className="auth-brand-name">OMI Studio</div>
           <div className="auth-brand-description">{copy.brand}</div>
