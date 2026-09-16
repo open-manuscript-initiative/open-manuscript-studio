@@ -13,6 +13,14 @@ export const ANDROID_REMOVED_UI_DEPENDENCIES = Object.freeze([
   'com.google.android.material:material',
 ]);
 
+const TAURI_DEBUG_SYMBOL_GLOBS = Object.freeze([
+  '*/arm64-v8a/*.so',
+  '*/armeabi-v7a/*.so',
+  '*/x86/*.so',
+  '*/x86_64/*.so',
+]);
+const DEBUG_SYMBOL_SCOPE_MARKER = '// OMI: scope Tauri keepDebugSymbols to debug variants only';
+
 const LEGACY_THEME = 'Theme.MaterialComponents.DayNight.NoActionBar';
 const MODERN_THEME = 'Theme.AppCompat.DayNight.NoActionBar';
 const LEGACY_ACTIVITY_IMPORT = 'import androidx.activity.enableEdgeToEdge';
@@ -105,6 +113,67 @@ export function patchAndroidDependencies(source) {
   return result;
 }
 
+export function patchTauriDebugSymbolScoping(source) {
+  const alreadyScoped =
+    source.includes('androidComponents {') &&
+    source.includes('withBuildType("debug")') &&
+    source.includes('variant.packaging.jniLibs.keepDebugSymbols.add(it)');
+  if (alreadyScoped) return source;
+
+  const lines = source.split('\n');
+  let blockStart = -1;
+  let blockEnd = -1;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    if (lines[index].trim() !== 'packaging {') continue;
+
+    let depth = 0;
+    let end = index;
+    for (; end < lines.length; end += 1) {
+      depth += (lines[end].match(/\{/g) ?? []).length;
+      depth -= (lines[end].match(/\}/g) ?? []).length;
+      if (depth === 0) break;
+    }
+
+    const block = lines.slice(index, end + 1);
+    if (block.some((line) => line.includes('jniLibs.keepDebugSymbols.add('))) {
+      blockStart = index;
+      blockEnd = end;
+      break;
+    }
+  }
+
+  if (blockStart === -1) {
+    if (source.includes('jniLibs.keepDebugSymbols.add(')) {
+      throw new Error('Tauri keepDebugSymbols configuration changed unexpectedly.');
+    }
+    return source;
+  }
+
+  const block = lines.slice(blockStart, blockEnd + 1);
+  const configuredGlobs = block
+    .map((line) => line.match(/jniLibs\.keepDebugSymbols\.add\("([^"]+)"\)/)?.[1])
+    .filter(Boolean);
+  const nonSymbolLines = block
+    .slice(1, -1)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('jniLibs.keepDebugSymbols.add('));
+
+  if (
+    nonSymbolLines.length > 0 ||
+    configuredGlobs.length !== TAURI_DEBUG_SYMBOL_GLOBS.length ||
+    TAURI_DEBUG_SYMBOL_GLOBS.some((glob) => !configuredGlobs.includes(glob))
+  ) {
+    throw new Error('Generated Tauri packaging block no longer matches the expected debug-symbol template.');
+  }
+
+  lines.splice(blockStart, blockEnd - blockStart + 1);
+  const result = lines.join('\n').trimEnd();
+  const globs = TAURI_DEBUG_SYMBOL_GLOBS.map((glob) => `"${glob}"`).join(', ');
+
+  return `${result}\n\n${DEBUG_SYMBOL_SCOPE_MARKER}\nandroidComponents {\n    onVariants(selector().withBuildType("debug")) { variant ->\n        listOf(${globs})\n            .forEach { variant.packaging.jniLibs.keepDebugSymbols.add(it) }\n    }\n}\n`;
+}
+
 export function patchAndroidNativeDebugSymbols(source) {
   if (/debugSymbolLevel\s*=\s*["']FULL["']/.test(source)) return source;
 
@@ -172,7 +241,9 @@ export function configureAndroidModernUi(root = resolve('src-tauri/gen/android')
   const buildGradle = resolve(root, 'app/build.gradle.kts');
   if (
     updateFile(buildGradle, (source) =>
-      patchAndroidNativeDebugSymbols(patchAndroidDependencies(source)),
+      patchAndroidNativeDebugSymbols(
+        patchTauriDebugSymbolScoping(patchAndroidDependencies(source)),
+      ),
     )
   ) {
     changes.push('app/build.gradle.kts');
@@ -190,8 +261,8 @@ export function configureAndroidModernUi(root = resolve('src-tauri/gen/android')
     .join(', ');
   console.log(
     changes.length > 0
-      ? `Android compatibility updated (${changes.join(', ')}): Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}; release native debug symbols FULL`
-      : `Android compatibility already current: Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}; release native debug symbols FULL`,
+      ? `Android compatibility updated (${changes.join(', ')}): Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}; debug-only native keep symbols; release native debug symbols FULL`
+      : `Android compatibility already current: Kotlin Gradle plugin ${ANDROID_KOTLIN_VERSION}; ${dependencySummary}; removed ${ANDROID_REMOVED_UI_DEPENDENCIES.join(', ')}; ${MODERN_THEME}; debug-only native keep symbols; release native debug symbols FULL`,
   );
 }
 
