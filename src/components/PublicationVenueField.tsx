@@ -196,7 +196,9 @@ export function PublicationVenueField({
 
   const options = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
-    const verifiedVenues = venues.filter(isVerifiedPublicationVenue);
+    const verifiedVenues = venues.filter((venue) =>
+      venue.type === venueType && isVerifiedPublicationVenue(venue),
+    );
     const filtered = verifiedVenues.filter((venue) =>
       !normalizedQuery
       || venue.name.toLocaleLowerCase().includes(normalizedQuery),
