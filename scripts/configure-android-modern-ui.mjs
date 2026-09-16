@@ -115,62 +115,41 @@ export function patchAndroidDependencies(source) {
 
 export function patchTauriDebugSymbolScoping(source) {
   const alreadyScoped =
-    source.includes('androidComponents {') &&
+    source.includes(DEBUG_SYMBOL_SCOPE_MARKER) &&
     source.includes('withBuildType("debug")') &&
     source.includes('variant.packaging.jniLibs.keepDebugSymbols.add(it)');
   if (alreadyScoped) return source;
 
-  const lines = source.split('\n');
-  let blockStart = -1;
-  let blockEnd = -1;
+  // Tauri's Handlebars template uses whitespace trimming around the ABI loop.
+  // Depending on rendering, `packaging {` and the first keepDebugSymbols call can
+  // land on the same physical line, so patch the calls themselves rather than
+  // relying on line/block formatting.
+  const keepPattern = /jniLibs\.keepDebugSymbols\.add\(\s*["']([^"']+)["']\s*\)/g;
+  const configuredGlobs = [...source.matchAll(keepPattern)].map((match) => match[1]);
 
-  for (let index = 0; index < lines.length; index += 1) {
-    if (lines[index].trim() !== 'packaging {') continue;
-
-    let depth = 0;
-    let end = index;
-    for (; end < lines.length; end += 1) {
-      depth += (lines[end].match(/\{/g) ?? []).length;
-      depth -= (lines[end].match(/\}/g) ?? []).length;
-      if (depth === 0) break;
-    }
-
-    const block = lines.slice(index, end + 1);
-    if (block.some((line) => line.includes('jniLibs.keepDebugSymbols.add('))) {
-      blockStart = index;
-      blockEnd = end;
-      break;
-    }
-  }
-
-  if (blockStart === -1) {
-    if (source.includes('jniLibs.keepDebugSymbols.add(')) {
-      throw new Error('Tauri keepDebugSymbols configuration changed unexpectedly.');
-    }
+  if (configuredGlobs.length === 0) {
+    // Upstream may eventually fix the template. In that case there is nothing to
+    // remove; the release debugSymbolLevel patch can operate independently.
     return source;
   }
 
-  const block = lines.slice(blockStart, blockEnd + 1);
-  const configuredGlobs = block
-    .map((line) => line.match(/jniLibs\.keepDebugSymbols\.add\("([^"]+)"\)/)?.[1])
-    .filter(Boolean);
-  const nonSymbolLines = block
-    .slice(1, -1)
-    .map((line) => line.trim())
-    .filter((line) => line && !line.startsWith('jniLibs.keepDebugSymbols.add('));
-
-  if (
-    nonSymbolLines.length > 0 ||
-    configuredGlobs.length !== TAURI_DEBUG_SYMBOL_GLOBS.length ||
-    TAURI_DEBUG_SYMBOL_GLOBS.some((glob) => !configuredGlobs.includes(glob))
-  ) {
-    throw new Error('Generated Tauri packaging block no longer matches the expected debug-symbol template.');
+  const uniqueGlobs = [...new Set(configuredGlobs)];
+  const unexpected = uniqueGlobs.filter((glob) => !TAURI_DEBUG_SYMBOL_GLOBS.includes(glob));
+  if (unexpected.length > 0) {
+    throw new Error(
+      `Generated Tauri keepDebugSymbols contains unexpected ABI patterns: ${unexpected.join(', ')}`,
+    );
   }
 
-  lines.splice(blockStart, blockEnd - blockStart + 1);
-  const result = lines.join('\n').trimEnd();
-  const globs = TAURI_DEBUG_SYMBOL_GLOBS.map((glob) => `"${glob}"`).join(', ');
+  let result = source.replace(keepPattern, '');
+  // Clean up whitespace left by rendered one-line Handlebars output without
+  // removing the surrounding packaging block or any unrelated packaging rules.
+  result = result
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trimEnd();
 
+  const globs = uniqueGlobs.map((glob) => `"${glob}"`).join(', ');
   return `${result}\n\n${DEBUG_SYMBOL_SCOPE_MARKER}\nandroidComponents {\n    onVariants(selector().withBuildType("debug")) { variant ->\n        listOf(${globs})\n            .forEach { variant.packaging.jniLibs.keepDebugSymbols.add(it) }\n    }\n}\n`;
 }
 
