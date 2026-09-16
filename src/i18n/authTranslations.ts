@@ -93,7 +93,7 @@ export const authTranslations: Record<SupportedLocale, AuthTranslations> = {
   },
   hu: {
     'auth.brand.name': 'Open Manuscript Studio',
-    'auth.brand.description': 'Együttműködésre épülő tudományos kéziratszerkesztő',
+    'auth.brand.description': 'Kollaboratív tudományos kéziratszerkesztő',
     'auth.login.title': 'Bejelentkezés',
     'auth.login.description': 'A folytatáshoz jelentkezzen be.',
     'auth.login.submit': 'Bejelentkezés',
