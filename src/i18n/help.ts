@@ -17,18 +17,18 @@ export interface HelpCopy {
 const copy: Record<SupportedLocale, HelpCopy> = {
   hu: {
     navigation: 'Súgó',
-    title: 'Open Manuscript Studio súgó',
-    description: 'Útmutató a Studio 0.1.0-alpha.1 jelenlegi kézirat-, lektorálási, publikációs és exportfunkcióihoz.',
-    gettingStarted: 'A Studio szemantikus kéziratot szerkeszt: a címek, szakaszok, jegyzetek, hivatkozások, ábrák, táblázatok, képletek és metaadatok nem pusztán formázásként, hanem strukturált elemekként maradnak meg. Az OJS-ből megnyitott kéziratnál a Studio az integráción keresztül átveszi az elérhető dokumentumot és publikációs adatokat.',
+    title: 'Open Manuscript Stúdió súgó',
+    description: 'Útmutató a Stúdió 0.1.0-alpha.1 jelenlegi kézirat-, lektorálási, publikációs és exportfunkcióihoz.',
+    gettingStarted: 'A Stúdió szemantikus kéziratot szerkeszt: a címek, szakaszok, jegyzetek, hivatkozások, ábrák, táblázatok, képletek és metaadatok nem pusztán formázásként, hanem strukturált elemekként maradnak meg. Az OJS-ből megnyitott kéziratnál a Stúdió az integráción keresztül átveszi az elérhető dokumentumot és publikációs adatokat.',
     topics: [
       {
         title: '1. Kézirat szerkesztése és szemantikus formázás',
-        body: 'A fő szerkesztőben a kézirat szövegét és belső szerkezetét módosíthatja. A Studio megőrzi a bekezdések, címsorok és támogatott karakterformázások jelentését, ezért a szerkezet később más formátumokba is átvihető.',
+        body: 'A fő szerkesztőben a kézirat szövegét és belső szerkezetét módosíthatja. A Stúdió megőrzi a bekezdések, címsorok és támogatott karakterformázások jelentését, ezért a szerkezet később más formátumokba is átvihető.',
         tips: ['A fejezetcímekhez valódi címsorszintet használjon.', 'A szerkezeti jelentést ne pusztán félkövér, dőlt vagy nagyobb betűvel fejezze ki.', 'A közvetlen formázás helyett lehetőség szerint szemantikus elemet válasszon.'],
       },
       {
         title: '2. Szakaszok, hierarchia és számozás',
-        body: 'A dokumentum szakaszai hierarchikus szerkezetet alkotnak. A Studio kezeli a szakaszszinteket és a publikációs profil által meghatározott számozást, így a fejezetstruktúra exportkor is megőrizhető.',
+        body: 'A dokumentum szakaszai hierarchikus szerkezetet alkotnak. A Stúdió kezeli a szakaszszinteket és a publikációs profil által meghatározott számozást, így a fejezetstruktúra exportkor is megőrizhető.',
         tips: ['A szinteket következetesen használja: egy alfejezet a megfelelő szülőszakasz alá kerüljön.', 'A kézzel begépelt fejezetszám helyett használja a strukturális számozást, amikor az aktív profil ezt biztosítja.'],
       },
       {
@@ -48,7 +48,7 @@ const copy: Record<SupportedLocale, HelpCopy> = {
       },
       {
         title: '6. Hivatkozások, bibliográfia és idézési stílus',
-        body: 'Az idézett művek strukturált bibliográfiai rekordokként tárolódnak. Egy rekord több szövegközi vagy jegyzetbeli idézésben újra felhasználható. A Studio idézési klasztereket és CSL-alapú megjelenítést is kezel, valamint támogat bibliográfiai keresést.',
+        body: 'Az idézett művek strukturált bibliográfiai rekordokként tárolódnak. Egy rekord több szövegközi vagy jegyzetbeli idézésben újra felhasználható. A Stúdió idézési klasztereket és CSL-alapú megjelenítést is kezel, valamint támogat bibliográfiai keresést.',
         tips: ['Ugyanazt a művet ne vegye fel többször; használja újra a meglévő rekordot.', 'Export előtt ellenőrizze a rekord szerző-, cím-, év- és azonosítóadatait.'],
       },
       {
@@ -58,7 +58,7 @@ const copy: Record<SupportedLocale, HelpCopy> = {
       },
       {
         title: '8. Ábrák, táblázatok és képletek',
-        body: 'A Studio a vizuális tudományos elemeket strukturált blokkokként kezeli. Az ábrákhoz médiaeszköz, képaláírás és azonosítható cél tartozhat; a táblázatok szerkezete és a képletek szemantikus reprezentációja exportkor is feldolgozható.',
+        body: 'A Stúdió a vizuális tudományos elemeket strukturált blokkokként kezeli. Az ábrákhoz médiaeszköz, képaláírás és azonosítható cél tartozhat; a táblázatok szerkezete és a képletek szemantikus reprezentációja exportkor is feldolgozható.',
         tips: ['A táblázatot ne szóközökkel vagy tabulátorokkal építse fel.', 'Ábráknál használjon beszédes képaláírást és megfelelő alternatív szöveget, amikor rendelkezésre áll.', 'A képleteket a képletelemben adja meg, ne képként, ha nincs rá külön ok.'],
       },
       {
@@ -68,22 +68,22 @@ const copy: Record<SupportedLocale, HelpCopy> = {
       },
       {
         title: '10. DOCX import',
-        body: 'Word-dokumentum importálásakor a Studio a szöveg mellett a címsorokat, támogatott karakterformázásokat, jegyzeteket, táblázatokat és más felismerhető szerkezeti elemeket is igyekszik szemantikus OMI-elemekké alakítani.',
+        body: 'Word-dokumentum importálásakor a Stúdió a szöveg mellett a címsorokat, támogatott karakterformázásokat, jegyzeteket, táblázatokat és más felismerhető szerkezeti elemeket is igyekszik szemantikus OMI-elemekké alakítani.',
         tips: ['A fejezetcímeket Word Címsor 1, Címsor 2 stb. stílussal jelölje.', 'A közvetlen formázás felismerése csak tartalék módszer.', 'Import után ellenőrizze a szakaszhierarchiát, jegyzeteket, táblázatokat és hivatkozásokat.'],
       },
       {
         title: '11. OJS-integráció',
-        body: 'OJS-ből indított munkamenetben a Studio az engedélyezett integrációs hatókör szerint képes átvenni a kéziratot és a rendelkezésre álló publikációs metaadatokat. A Studio és az OJS közötti adatmozgás mindig az adott assignment és jogosultság kontextusában történik.',
-        tips: ['Csak az OJS-ben ténylegesen tárolt adat importálható.', 'Ha egy metaadat hiányzik a Studioból, először ellenőrizze az OJS Publication adatait és a megfelelő nyelvi változatot.', 'Integrációs munkamenetben figyeljen arra, hogy a megfelelő szerepkörrel és assignmenttel nyitotta-e meg a dokumentumot.'],
+        body: 'OJS-ből indított munkamenetben a Stúdió az engedélyezett integrációs hatókör szerint képes átvenni a kéziratot és a rendelkezésre álló publikációs metaadatokat. A Stúdió és az OJS közötti adatmozgás mindig az adott assignment és jogosultság kontextusában történik.',
+        tips: ['Csak az OJS-ben ténylegesen tárolt adat importálható.', 'Ha egy metaadat hiányzik a Stúdióból, először ellenőrizze az OJS Publication adatait és a megfelelő nyelvi változatot.', 'Integrációs munkamenetben figyeljen arra, hogy a megfelelő szerepkörrel és assignmenttel nyitotta-e meg a dokumentumot.'],
       },
       {
         title: '12. Lektori munka és peer review',
-        body: 'A Studio peer-review modellje elkülöníti a kéziratot, a lektori assignmentet és a lektori munkát. OJS-integrációban a lektori hozzáférés az assignmenthez kötődik, így a lektor a számára engedélyezett tartalmat és műveleteket kapja meg.',
-        tips: ['Lektori munkánál mindig az assignmentből indított Studio-munkamenetet használja.', 'A double-blind munkafolyamatban ne adjon hozzá olyan információt, amely szükségtelenül felfedi a szerző vagy a lektor személyazonosságát.'],
+        body: 'A Stúdió peer-review modellje elkülöníti a kéziratot, a lektori assignmentet és a lektori munkát. OJS-integrációban a lektori hozzáférés az assignmenthez kötődik, így a lektor a számára engedélyezett tartalmat és műveleteket kapja meg.',
+        tips: ['Lektori munkánál mindig az assignmentből indított Stúdió-munkamenetet használja.', 'A double-blind munkafolyamatban ne adjon hozzá olyan információt, amely szükségtelenül felfedi a szerző vagy a lektor személyazonosságát.'],
       },
       {
         title: '13. Revíziók, előzmények és integritás',
-        body: 'A Studio a kézirat állapotváltozásait revíziókban követi. A revíziókhoz állapotazonosító és integritási lenyomat kapcsolódhat, a törölt szerkezeti elemek pedig tombstone-adatokkal követhetők. Ez segíti a változások auditálhatóságát és a hordozható állapotellenőrzést.',
+        body: 'A Stúdió a kézirat állapotváltozásait revíziókban követi. A revíziókhoz állapotazonosító és integritási lenyomat kapcsolódhat, a törölt szerkezeti elemek pedig tombstone-adatokkal követhetők. Ez segíti a változások auditálhatóságát és a hordozható állapotellenőrzést.',
         tips: ['Nagyobb szerkezeti módosítás előtt érdemes egy egyértelmű revíziós állapotot létrehozni.', 'Export előtt ellenőrizze, hogy a kézirat aktuális állapota a kívánt revízió.'],
       },
       {
@@ -99,7 +99,7 @@ const copy: Record<SupportedLocale, HelpCopy> = {
       {
         title: '16. Export CSS és Nyomtatási/PDF CSS',
         body: 'Egy saját kiadói profilhoz általános publikációs Export CSS és külön Nyomtatási/PDF CSS kapcsolható. Az általános CSS a publikációs HTML megjelenését szabályozza, a nyomtatási réteg pedig erre épülve @page, margó-, oldaltörés- és más print szabályokat adhat a PDF-kimenethez.',
-        tips: ['A CSS csak a publikációs kimenetet módosítja, a Studio szerkesztőfelületét nem.', 'A Nyomtatási/PDF CSS később kerül alkalmazásra, ezért felülírhatja az általános exportstílust.', 'A fejlett paged-media fejléc/lábléc szabályok támogatása a használt PDF- vagy böngészőmotortól is függ.'],
+        tips: ['A CSS csak a publikációs kimenetet módosítja, a Stúdió szerkesztőfelületét nem.', 'A Nyomtatási/PDF CSS később kerül alkalmazásra, ezért felülírhatja az általános exportstílust.', 'A fejlett paged-media fejléc/lábléc szabályok támogatása a használt PDF- vagy böngészőmotortól is függ.'],
       },
       {
         title: '17. Exportformátumok',
@@ -108,12 +108,12 @@ const copy: Record<SupportedLocale, HelpCopy> = {
       },
       {
         title: '18. HTML és publikációs ellenőrzés',
-        body: 'A szemantikus HTML export script nélküli, publikációs célú dokumentumot állít elő. Az export előtt a Studio a publikációs profillal együtt ellenőrzi a kéziratot, és hibákat vagy figyelmeztetéseket jelezhet például hiányzó kötelező metaadat, hibás belső kapcsolat vagy más publikációs probléma esetén.',
+        body: 'A szemantikus HTML export script nélküli, publikációs célú dokumentumot állít elő. Az export előtt a Stúdió a publikációs profillal együtt ellenőrzi a kéziratot, és hibákat vagy figyelmeztetéseket jelezhet például hiányzó kötelező metaadat, hibás belső kapcsolat vagy más publikációs probléma esetén.',
         tips: ['A piros hibákat export előtt javítsa.', 'A figyelmeztetések nem minden esetben blokkolják az exportot, de érdemes őket egyenként ellenőrizni.'],
       },
       {
         title: '19. Felhő- és fájltárolás',
-        body: 'A Studio támogat helyi és konfigurálható külső tárolási munkafolyamatokat is. A WebDAV/Nextcloud kapcsolat használata a telepítés és a felhasználói beállítások függvénye; a szemantikus OMI-formátum célja, hogy a kézirat ne kötődjön egyetlen tárolási szolgáltatóhoz.',
+        body: 'A Stúdió támogat helyi és konfigurálható külső tárolási munkafolyamatokat is. A WebDAV/Nextcloud kapcsolat használata a telepítés és a felhasználói beállítások függvénye; a szemantikus OMI-formátum célja, hogy a kézirat ne kötődjön egyetlen tárolási szolgáltatóhoz.',
         tips: ['Külső tárhely használata előtt ellenőrizze a kapcsolat beállításait.', 'Áttelepítéshez vagy biztonsági másolathoz készítsen hordozható OMI-csomagot.'],
       },
       {
