@@ -70,7 +70,7 @@ const COPY: Record<'en' | 'hu' | 'de', HtmlExportCopy> = {
     diagnostics: 'HTML diagnosztika',
     noDiagnostics: 'Nincs HTML-specifikus diagnosztika.',
     workingPreview:
-      'Az előnézet az aktuális munkapéldányt mutatja. Csomagletöltéskor a Studio előbb checkpointot készít, így a kimenet konkrét committed revízióhoz visszavezethető.',
+      'Az előnézet az aktuális munkapéldányt mutatja. Csomagletöltéskor a Stúdió előbb checkpointot készít, így a kimenet konkrét committed revízióhoz visszavezethető.',
     unsupportedProfile:
       'Az aktív profil nem jelöli támogatott kimenetként a HTML formátumot.',
     accessibilityNote:
