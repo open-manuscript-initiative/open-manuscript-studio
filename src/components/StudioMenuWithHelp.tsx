@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 
 import {
   clearDocumentClosedState,
-  isDocumentClosedState,
 } from '../app/documentCloseState';
 import { closeCurrentDocument } from '../app/documentLifecycle';
 import { useStudioStore } from '../app/useStudioStore';
@@ -43,7 +42,7 @@ export function StudioMenuWithHelp({ open, onClose, ojsAssignment = null }: Stud
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
   const previousManuscriptRef = useRef(manuscript);
   const browserFileInputRef = useRef<HTMLInputElement>(null);
-  const [documentAlreadyClosed, setDocumentAlreadyClosed] = useState(() => isDocumentClosedState());
+  const [documentAlreadyClosed, setDocumentAlreadyClosed] = useState(() => !useStudioStore.getState().hasOpenDocument);
   const [browserOpenMessage, setBrowserOpenMessage] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
   const [integrationsOpen, setIntegrationsOpen] = useState(false);

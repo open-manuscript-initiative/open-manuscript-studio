@@ -1,3 +1,4 @@
+import { clearDocumentClosedState } from './documentCloseState';
 import { create } from 'zustand';
 
 import { createSampleManuscript } from '../document/sampleManuscript';
@@ -57,6 +58,7 @@ interface ContributionEditInput {
 }
 
 interface StudioState {
+  hasOpenDocument: boolean;
   manuscript: OmiManuscript;
   pendingChangeSet: OmiPendingChangeSet | null;
   selectedSectionId: string | null;
@@ -118,6 +120,7 @@ let autoCheckpointTimer: ReturnType<typeof setTimeout> | null = null;
 const initial = createSampleManuscript();
 
 export const useStudioStore = create<StudioState>((set) => ({
+  hasOpenDocument: false,
   manuscript: initial,
   pendingChangeSet: null,
   selectedSectionId: initial.sections[0]?.id ?? null,
@@ -858,7 +861,9 @@ export const useStudioStore = create<StudioState>((set) => ({
     const identityMigrated = migrateIdentityModel(manuscript);
     const migrated = migrateVersioningModel(identityMigrated);
 
+    clearDocumentClosedState();
     set({
+      hasOpenDocument: true,
       manuscript: migrated,
       pendingChangeSet: null,
       selectedSectionId: migrated.sections[0]?.id ?? null,
@@ -872,7 +877,9 @@ export const useStudioStore = create<StudioState>((set) => ({
     cancelAutomaticCheckpoint();
     const sample = createSampleManuscript();
 
+    clearDocumentClosedState();
     set({
+      hasOpenDocument: true,
       manuscript: sample,
       pendingChangeSet: null,
       selectedSectionId: sample.sections[0]?.id ?? null,

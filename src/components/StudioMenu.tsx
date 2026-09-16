@@ -27,7 +27,6 @@ import {
 
 import {
   clearDocumentClosedState,
-  isDocumentClosedState,
 } from '../app/documentCloseState';
 import { closeCurrentDocument } from '../app/documentLifecycle';
 import { useStudioStore } from '../app/useStudioStore';
@@ -225,7 +224,7 @@ function DocumentMenuView({
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
   const [localPath, setLocalPath] = useState(getCurrentManuscriptFilePath());
   const [fileMessage, setFileMessage] = useState('');
-  const [documentClosed, setDocumentClosed] = useState(() => isDocumentClosedState());
+  const [documentClosed, setDocumentClosed] = useState(() => !useStudioStore.getState().hasOpenDocument);
   const browserFileInputRef = useRef<HTMLInputElement>(null);
   const native = isNativeStudio();
   const ownDevice = useOwnDeviceStorage();

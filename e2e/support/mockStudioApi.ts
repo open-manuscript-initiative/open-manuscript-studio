@@ -95,7 +95,7 @@ export async function signInToStudio(page: Page): Promise<void> {
   await page.getByLabel('Email address').fill('editor@example.test');
   await page.getByLabel('Password').fill('correct-horse-battery-staple');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await page.locator('section.editor[aria-label="Manuscript editor"]').waitFor();
+  await page.getByRole('heading', { name: 'No document is open' }).waitFor();
 }
 
 async function fulfillJson(route: Route, status: number, payload: unknown): Promise<void> {

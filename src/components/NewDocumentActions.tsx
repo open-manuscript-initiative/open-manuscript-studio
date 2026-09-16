@@ -1,7 +1,7 @@
 import { BookOpen, FilePlus2, LibraryBig } from 'lucide-react';
 
 import { createAndOpenBlankOmiDocument } from '../app/newDocumentActions';
-import { isDocumentClosedState } from '../app/documentCloseState';
+import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { isMobileStudio } from '../mobile/platform/platform';
 import type { OmiVolumeKind } from '../model/documentProfile';
@@ -19,7 +19,7 @@ export function NewDocumentActions({
   const copy = getCopy(locale);
 
   const confirmSingleDocumentReplacement = () => {
-    if (isDocumentClosedState() || !isMobileStudio()) return true;
+    if (!useStudioStore.getState().hasOpenDocument || !isMobileStudio()) return true;
     return window.confirm(copy.replaceConfirm);
   };
 

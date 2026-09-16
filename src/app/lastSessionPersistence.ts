@@ -80,6 +80,10 @@ export async function initializeLastSessionPersistence(): Promise<void> {
     }
   }
 
+  if (!useStudioStore.getState().hasOpenDocument) {
+    sessionClosed = true;
+  }
+
   useStudioStore.subscribe((state, previousState) => {
     if (
       state.manuscript === previousState.manuscript &&
@@ -88,7 +92,8 @@ export async function initializeLastSessionPersistence(): Promise<void> {
       return;
     }
 
-    if (sessionClosed) return;
+    if (!state.hasOpenDocument) return;
+    sessionClosed = false;
 
     if (currentDesktopSession) {
       currentDesktopSession = {
@@ -197,6 +202,7 @@ function saveCurrentSession(): void {
 
 async function writeCurrentSession(): Promise<void> {
   const state = useStudioStore.getState();
+  if (!state.hasOpenDocument) return;
   const session: PersistedStudioSessionV2 = {
     version: 2,
     manuscript: state.manuscript,

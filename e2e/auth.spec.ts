@@ -6,6 +6,7 @@ test('a user can sign in to and sign out of Studio', async ({ page }) => {
   const api = await installMockStudioApi(page);
 
   await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
 
   await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
   expect(api.loginRequests).toEqual([{
