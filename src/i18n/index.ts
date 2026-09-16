@@ -1,3 +1,7 @@
+import { normalizeLegacyHungarianTerminology } from './hungarianTerminology';
+
+normalizeLegacyHungarianTerminology();
+
 export * from './authTranslations';
 export * from './config';
 export * from './I18nProvider';
