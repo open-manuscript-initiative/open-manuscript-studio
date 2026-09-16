@@ -6,11 +6,13 @@ import test from 'node:test';
 
 import {
   ANDROID_KOTLIN_VERSION,
+  ANDROID_NDK_VERSION,
   ANDROID_UI_DEPENDENCIES,
   configureAndroidModernUi,
   patchAndroidActivity,
   patchAndroidDependencies,
   patchAndroidKotlinVersion,
+  patchAndroidNdkVersion,
   patchAndroidNativeDebugSymbols,
   patchAndroidTheme,
   patchTauriDebugSymbolScoping,
@@ -76,6 +78,23 @@ test('Android dependency patch pins Android 15-compatible stable UI libraries', 
   assert.doesNotMatch(patched, /material:1\.12\.0/);
   assert.doesNotMatch(patched, /com\.google\.android\.material:material/);
   assert.equal(patchAndroidDependencies(patched), patched);
+});
+
+test('Android NDK patch pins the generated application module idempotently', () => {
+  const patched = patchAndroidNdkVersion(generatedBuildGradle);
+  assert.match(
+    patched,
+    new RegExp(`ndkVersion\\s*=\\s*"${ANDROID_NDK_VERSION.replaceAll('.', '\\.')}"`),
+  );
+  assert.equal(patchAndroidNdkVersion(patched), patched);
+
+  const stale = generatedBuildGradle.replace(
+    'android {',
+    'android {\n    ndkVersion = "26.3.11579264"',
+  );
+  const updated = patchAndroidNdkVersion(stale);
+  assert.match(updated, new RegExp(`ndkVersion\\s*=\\s*"${ANDROID_NDK_VERSION.replaceAll('.', '\\.')}"`));
+  assert.doesNotMatch(updated, /ndkVersion\s*=\s*"26\.3\.11579264"/);
 });
 
 test('Tauri keepDebugSymbols is scoped to debug variants only', () => {
@@ -150,12 +169,13 @@ test('Android modern UI configuration patches a generated project idempotently',
     assert.doesNotMatch(activityOnce, /enableEdgeToEdge\(\)/);
     assert.match(rootOnce, /kotlin-gradle-plugin:2\.1\.20/);
     assert.equal(readFileSync(join(app, 'build.gradle.kts'), 'utf8'), once);
+    assert.match(once, new RegExp(`ndkVersion\\s*=\\s*"${ANDROID_NDK_VERSION.replaceAll('.', '\\.')}"`));
     assert.match(once, /debugSymbolLevel\s*=\s*"FULL"/);
     assert.match(once, /withBuildType\("debug"\)/);
     assert.match(once, /variant\.packaging\.jniLibs\.keepDebugSymbols\.add\(it\)/);
     assert.doesNotMatch(once, /^\s*jniLibs\.keepDebugSymbols\.add\(/m);
     assert.equal(readFileSync(join(day, 'themes.xml'), 'utf8'), dayOnce);
-    assert.match(dayOnce, /Theme\.AppCompat\.DayNight\.NoActionBar/);
+    assert.match(dayOnce, /Theme\.AppCompat\.DayNight.NoActionBar/);
     assert.match(readFileSync(join(night, 'themes.xml'), 'utf8'), /Theme\.AppCompat\.DayNight\.NoActionBar/);
   } finally {
     rmSync(root, { recursive: true, force: true });
