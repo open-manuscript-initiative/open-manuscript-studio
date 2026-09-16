@@ -63,6 +63,7 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
   const resetToken = new URLSearchParams(window.location.search).get('resetPassword')?.trim() ?? '';
   const heroCopy = getLoginHeroCopy(locale);
   const adminCopy = getInstitutionAdminCopy(locale);
+  const productName = locale === 'hu' ? 'OMI Stúdió' : 'OMI Studio';
 
   useEffect(() => {
     clearError();
@@ -147,7 +148,7 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
           <div className="auth-login-hero-content">
             <div className="auth-login-lockup">
               <img className="auth-login-logo" src="/android-chrome-512x512.png" alt="" />
-              <div className="auth-login-product-name">OMI Studio</div>
+              <div className="auth-login-product-name">{productName}</div>
             </div>
 
             <p className="auth-login-tagline">
@@ -472,7 +473,7 @@ function federatedErrorMessage(code: string, locale: string): string {
   const messages: Record<string, [string, string, string]> = {
     orcid_not_linked: [
       'This ORCID iD is not linked to a Studio account yet. Sign in with e-mail first and link ORCID from your profile.',
-      'Ez az ORCID iD még nincs Studio-fiókhoz kapcsolva. Jelentkezzen be e-maillel, majd kapcsolja hozzá az ORCID-ot a profiljában.',
+      'Ez az ORCID iD még nincs Stúdió-fiókhoz kapcsolva. Jelentkezzen be e-maillel, majd kapcsolja hozzá az ORCID-ot a profiljában.',
       'Diese ORCID iD ist noch nicht mit einem Studio-Konto verknüpft. Melden Sie sich zuerst per E-Mail an und verknüpfen Sie ORCID im Profil.',
     ],
     orcid_state_expired: ['The ORCID sign-in request expired. Please try again.', 'Az ORCID-bejelentkezési kérés lejárt. Próbálja újra.', 'Die ORCID-Anmeldung ist abgelaufen. Bitte versuchen Sie es erneut.'],
