@@ -164,6 +164,20 @@ jobs:
           CI: 'true'
         run: npm run android:build:play
 
+      - name: Collect native debug symbols
+        shell: bash
+        run: |
+          set -euo pipefail
+          symbols_zip="$(find src-tauri/gen/android/app/build/outputs -type f -name 'native-debug-symbols.zip' -print -quit)"
+          if [[ -z "$symbols_zip" ]]; then
+            echo '::error::Gradle did not generate native-debug-symbols.zip for the release bundle.'
+            find src-tauri/gen/android/app/build/outputs -maxdepth 6 -type f -print || true
+            exit 1
+          fi
+          mkdir -p artifacts/play
+          cp "$symbols_zip" "artifacts/play/native-debug-symbols-${{ steps.android_version.outputs.version_code }}.zip"
+          echo "Native debug symbols: $symbols_zip"
+
       - name: Verify Google Play bundle permissions
         shell: bash
         run: |
@@ -189,6 +203,7 @@ jobs:
           retention-days: 30
           path: |
             artifacts/play/*.aab
+            artifacts/play/native-debug-symbols-*.zip
             src-tauri/gen/android/app/build/outputs/apk/**/*.apk
 
       - name: Validate Google Play credentials
