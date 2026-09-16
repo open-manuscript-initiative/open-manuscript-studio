@@ -60,12 +60,15 @@ test('projecting one study leaves every other study untouched', () => {
   assert.deepEqual(merged[2], sections[2]);
 });
 
-test('a new study starts with its own editable heading and body', () => {
-  const created = createEmptyStudy('study-new', 'heading-new', 'body-new');
+test('a new study starts with only an empty body paragraph', () => {
+  const created = createEmptyStudy('study-new', 'body-new');
 
-  assert.equal(created.blocks[0]?.type, 'heading');
-  assert.equal(created.blocks[1]?.type, 'paragraph');
-  assert.match(created.blocks[0]!.content, /"level":1/);
+  assert.equal(created.blocks.length, 1);
+  assert.equal(created.blocks[0]?.type, 'paragraph');
+  assert.equal(created.blocks[0]?.id, 'body-new');
+  assert.deepEqual(JSON.parse(created.blocks[0]!.content), {
+    type: 'doc', content: [{ type: 'paragraph' }],
+  });
   assert.equal(partitionManuscriptStudies([created])[0]?.rootSectionId, 'study-new');
 });
 

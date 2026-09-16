@@ -39,7 +39,9 @@ export function buildContinuousManuscriptDocument(
     const firstBlock = section.blocks[0];
     const hasHeading = firstBlock?.type === 'heading';
 
-    if (!hasHeading) {
+    // Preserve named legacy sections, but do not recreate a heading for an
+    // untitled body section after the author deletes or converts its heading.
+    if (!hasHeading && section.title.trim()) {
       content.push({
         type: 'heading',
         attrs: structuralAttributes({
