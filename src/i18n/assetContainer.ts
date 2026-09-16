@@ -86,14 +86,14 @@ const COPY: Record<'en' | 'hu' | 'de', AssetContainerCopy> = {
     prepared: 'A beágyazott képek stabil assetként regisztrálva vannak.',
     download: '.omi csomag letöltése',
     downloading: 'Csomag készítése…',
-    ready: 'A konténer átment a Studio integritás-ellenőrzésén.',
+    ready: 'A konténer átment a Stúdió integritás-ellenőrzésén.',
     blocked: 'A csomag blokkoló integritási hibákat tartalmaz.',
     diagnostics: 'Konténerdiagnosztika',
     noDiagnostics: 'Nincs konténer-specifikus diagnosztika.',
     integrity: 'SHA-256 integritás',
     format: 'OMI-SPEC-320 / OMI-SPEC-330 Draft csomag',
     privacyNote:
-      'Az asset-alapú kép-előnézetet a Studio a helyi bináris tárból oldja fel. Külső assetté alakítás után a hordozható kéziratállapotnak már nincs szüksége Base64-előnézetre.',
+      'Az asset-alapú kép-előnézetet a Stúdió a helyi bináris tárból oldja fel. Külső assetté alakítás után a hordozható kéziratállapotnak már nincs szüksége Base64-előnézetre.',
     importTitle: 'OMI-csomag megnyitása',
     importDescription:
       'A nem megbízhatónak tekintett .omi konténer ZIP-szerkezetének, manifestjének, revízióazonosítóinak, assetjeinek és SHA-256 ellenőrzőösszegeinek vizsgálata betöltés előtt.',
