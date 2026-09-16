@@ -13,10 +13,19 @@ import {
   patchAndroidKotlinVersion,
   patchAndroidNativeDebugSymbols,
   patchAndroidTheme,
+  patchTauriDebugSymbolScoping,
 } from '../scripts/configure-android-modern-ui.mjs';
 
 const generatedBuildGradle = `android {
     buildTypes {
+        getByName("debug") {
+            packaging {
+                jniLibs.keepDebugSymbols.add("*/arm64-v8a/*.so")
+                jniLibs.keepDebugSymbols.add("*/armeabi-v7a/*.so")
+                jniLibs.keepDebugSymbols.add("*/x86/*.so")
+                jniLibs.keepDebugSymbols.add("*/x86_64/*.so")
+            }
+        }
         getByName("release") {
             isMinifyEnabled = true
         }
@@ -67,6 +76,15 @@ test('Android dependency patch pins Android 15-compatible stable UI libraries', 
   assert.doesNotMatch(patched, /material:1\.12\.0/);
   assert.doesNotMatch(patched, /com\.google\.android\.material:material/);
   assert.equal(patchAndroidDependencies(patched), patched);
+});
+
+test('Tauri keepDebugSymbols is scoped to debug variants only', () => {
+  const patched = patchTauriDebugSymbolScoping(generatedBuildGradle);
+  assert.match(patched, /androidComponents\s*\{/);
+  assert.match(patched, /withBuildType\("debug"\)/);
+  assert.match(patched, /variant\.packaging\.jniLibs\.keepDebugSymbols\.add\(it\)/);
+  assert.doesNotMatch(patched, /^\s*jniLibs\.keepDebugSymbols\.add\(/m);
+  assert.equal(patchTauriDebugSymbolScoping(patched), patched);
 });
 
 test('Android native debug symbol patch enables full release symbols idempotently', () => {
@@ -133,6 +151,9 @@ test('Android modern UI configuration patches a generated project idempotently',
     assert.match(rootOnce, /kotlin-gradle-plugin:2\.1\.20/);
     assert.equal(readFileSync(join(app, 'build.gradle.kts'), 'utf8'), once);
     assert.match(once, /debugSymbolLevel\s*=\s*"FULL"/);
+    assert.match(once, /withBuildType\("debug"\)/);
+    assert.match(once, /variant\.packaging\.jniLibs\.keepDebugSymbols\.add\(it\)/);
+    assert.doesNotMatch(once, /^\s*jniLibs\.keepDebugSymbols\.add\(/m);
     assert.equal(readFileSync(join(day, 'themes.xml'), 'utf8'), dayOnce);
     assert.match(dayOnce, /Theme\.AppCompat\.DayNight\.NoActionBar/);
     assert.match(readFileSync(join(night, 'themes.xml'), 'utf8'), /Theme\.AppCompat\.DayNight\.NoActionBar/);
