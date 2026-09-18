@@ -129,6 +129,9 @@ export function validateVivliostyleHtmlInput(html: string): string | undefined {
   if (/<\s*link\b/i.test(html)) {
     return 'PDF source HTML must not load external link resources.';
   }
+  if (/<\s*meta\b[^>]*http-equiv\s*=\s*(["'])?refresh\1?/i.test(html)) {
+    return 'PDF source HTML must not contain refresh navigation.';
+  }
   if (/@import\b/i.test(html)) {
     return 'PDF source CSS must not import external stylesheets.';
   }
@@ -137,6 +140,13 @@ export function validateVivliostyleHtmlInput(html: string): string | undefined {
     const value = (match[2] ?? '').trim();
     if (!isEmbeddedResource(value)) {
       return `PDF source contains a non-embedded resource: ${safeExcerpt(value)}.`;
+    }
+  }
+
+  for (const match of html.matchAll(/<\s*(?:image|use)\b[^>]*\bhref\s*=\s*(["'])(.*?)\1/gi)) {
+    const value = (match[2] ?? '').trim();
+    if (!isEmbeddedResource(value)) {
+      return `PDF source SVG contains a non-embedded resource: ${safeExcerpt(value)}.`;
     }
   }
 
