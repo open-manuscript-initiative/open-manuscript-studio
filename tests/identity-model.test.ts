@@ -9,6 +9,7 @@ import {
   getPrimaryAffiliation,
   isValidOrcid,
   normalizeContributionRoles,
+  normalizeCreditRoles,
   updatePersonAgent,
 } from '../src/model/identity.ts';
 
@@ -29,6 +30,13 @@ test('creates a portable person agent independently from an account', () => {
       givenName: 'Ada',
       familyName: 'Lovelace',
       affiliation: 'Open Manuscript Initiative',
+      affiliationRorId: 'https://ror.org/03yrm5c26',
+      department: 'Research',
+      position: 'Senior researcher',
+      email: 'ada@example.test',
+      country: 'HU',
+      url: 'https://example.test/ada',
+      biography: { en: 'Researcher' },
       orcid: '0000-0002-1825-0097',
       language: 'en',
     },
@@ -47,6 +55,12 @@ test('creates a portable person agent independently from an account', () => {
     getExternalIdentifierValue(agent, 'orcid'),
     '0000-0002-1825-0097',
   );
+  assert.equal(agent.affiliations[0]?.department, 'Research');
+  assert.equal(agent.affiliations[0]?.position, 'Senior researcher');
+  assert.equal(agent.email, 'ada@example.test');
+  assert.equal(agent.country, 'HU');
+  assert.equal(agent.url, 'https://example.test/ada');
+  assert.equal(agent.biography?.en, 'Researcher');
   assert.equal(agent.createdAt, timestamp);
 });
 
@@ -65,6 +79,8 @@ test('represents contribution role and order independently from identity', () =>
   assert.deepEqual(contribution.roles, ['author', 'methodology']);
   assert.equal(contribution.order, 2);
   assert.equal(contribution.corresponding, false);
+  assert.equal(contribution.includeInPublicationList, true);
+  assert.deepEqual(contribution.creditRoles, []);
 });
 
 test('normalizes empty and duplicate contribution roles', () => {
@@ -72,6 +88,17 @@ test('normalizes empty and duplicate contribution roles', () => {
   assert.deepEqual(
     normalizeContributionRoles(['author', 'author', 'software']),
     ['author', 'software'],
+  );
+});
+
+test('normalizes CRediT roles without changing their semantic identifiers', () => {
+  assert.deepEqual(
+    normalizeCreditRoles([
+      'conceptualization',
+      'writing-original-draft',
+      'conceptualization',
+    ]),
+    ['conceptualization', 'writing-original-draft'],
   );
 });
 
