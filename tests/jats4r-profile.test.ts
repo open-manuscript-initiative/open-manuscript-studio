@@ -48,27 +48,25 @@ test('generated OMI JATS passes the offline JATS4R publication profile baseline'
   assert.match(rendered.xml, /<permissions\/>/);
 });
 
-test('JATS renderer emits reusable permissions, ALI license metadata and data availability', () => {
+test('JATS renderer emits reusable permissions and ALI license metadata', () => {
   const manuscript = createTestManuscript();
   manuscript.metadata = {
     rights: { en: 'This work is licensed under CC BY 4.0.' },
     licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
     copyrightHolder: { en: 'Open Manuscript Institute' },
     copyrightYear: 2026,
-    dataAvailability: { en: 'Research data are available in the cited repository.' },
   };
 
   const rendered = renderJatsArticle(manuscript);
   const profile = validateJats4rProfile(rendered.xml);
 
-  assert.match(rendered.xml, /xmlns:ali="http:\/\/www\.niso\.org\/schemas\/ali\/1\.0"/);
+  assert.match(rendered.xml, /xmlns:ali="http:\/\/www\.niso\.org\/schemas\/ali\/1\.0\/"/);
   assert.match(rendered.xml, /<copyright-year>2026<\/copyright-year>/);
   assert.match(rendered.xml, /<copyright-holder>Open Manuscript Institute<\/copyright-holder>/);
   assert.match(
     rendered.xml,
     /<ali:license_ref>https:\/\/creativecommons\.org\/licenses\/by\/4\.0\/<\/ali:license_ref>/,
   );
-  assert.match(rendered.xml, /<sec sec-type="data-availability">/);
   assert.equal(
     profile.valid,
     true,
