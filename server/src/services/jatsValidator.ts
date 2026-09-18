@@ -3,13 +3,10 @@ import { dirname, join } from 'node:path';
 import { readdir, readFile } from 'node:fs/promises';
 
 import {
-  DtdValidator,
   ParseOption,
   XmlBufferInputProvider,
   XmlDocument,
   XmlParseError,
-  XmlValidateError,
-  xmlCleanupInputProvider,
   xmlRegisterInputProvider,
   type ErrorDetail,
 } from 'libxml2-wasm';
@@ -48,16 +45,15 @@ interface SchemaFile {
   contents: string;
 }
 
-let dtdValidatorPromise: Promise<DtdValidator> | undefined;
-let _pinnedSchemaDocument: XmlDocument | undefined;
+let schemaProviderPromise: Promise<void> | undefined;
 
 /**
  * Validates JATS 1.4 Article Authoring XML against the pinned MathML 3 DTD.
  *
- * The submitted document never controls the DTD used for validation. Input-side
- * entity declarations/internal subsets are rejected, any external DOCTYPE is
- * stripped before parsing, and the trusted JATS DTD is loaded separately from
- * the local @jats4r/dtds package through an in-memory libxml2 resource provider.
+ * The submitted document never controls the DTD used for validation.
+ * Input-side entity declarations/internal subsets are rejected, any submitted
+ * external DOCTYPE is replaced, and libxml2 validates against the trusted JATS
+ * DTD loaded from the local @jats4r/dtds package through an in-memory provider.
  */
 export async function validateJats14ArticleAuthoring(
   xml: string,
@@ -76,19 +72,21 @@ export async function validateJats14ArticleAuthoring(
   const unsafe = unsafeXmlReason(xml);
   if (unsafe) return invalid('unsafe-xml', unsafe);
 
-  const validator = await loadPinnedDtdValidator();
-  let document: XmlDocument | undefined;
+  await ensurePinnedSchemaProvider();
 
+  let document: XmlDocument | undefined;
   try {
-    document = XmlDocument.fromString(stripDoctypeDeclaration(xml), {
+    document = XmlDocument.fromString(usePinnedDoctype(xml), {
+      url: 'article.xml',
       option:
+        ParseOption.XML_PARSE_DTDLOAD |
+        ParseOption.XML_PARSE_DTDVALID |
         ParseOption.XML_PARSE_NONET |
-        ParseOption.XML_PARSE_NO_XXE |
+        ParseOption.XML_PARSE_NO_SYS_CATALOG |
         ParseOption.XML_PARSE_BIG_LINES,
     });
-    validator.validate(document);
   } catch (error) {
-    if (error instanceof XmlValidateError || error instanceof XmlParseError) {
+    if (error instanceof XmlParseError) {
       return {
         ...baseResult(),
         valid: false,
@@ -165,6 +163,20 @@ function unsafeXmlReason(xml: string): string | undefined {
   return undefined;
 }
 
+function usePinnedDoctype(xml: string): string {
+  const withoutDoctype = stripDoctypeDeclaration(xml);
+  const doctype = `<!DOCTYPE article SYSTEM "${JATS_VALIDATION_DTD_FILE}">`;
+  const declaration = /^\s*<\?xml[^>]*\?>/i;
+  const match = withoutDoctype.match(declaration);
+
+  if (!match || match.index === undefined) {
+    return `${doctype}\n${withoutDoctype}`;
+  }
+
+  const offset = match.index + match[0].length;
+  return `${withoutDoctype.slice(0, offset)}\n${doctype}${withoutDoctype.slice(offset)}`;
+}
+
 function stripDoctypeDeclaration(xml: string): string {
   const match = /<!DOCTYPE\b/i.exec(xml);
   if (!match || match.index === undefined) return xml;
@@ -188,12 +200,12 @@ function stripDoctypeDeclaration(xml: string): string {
   return xml;
 }
 
-async function loadPinnedDtdValidator(): Promise<DtdValidator> {
-  dtdValidatorPromise ??= createPinnedDtdValidator();
-  return dtdValidatorPromise;
+async function ensurePinnedSchemaProvider(): Promise<void> {
+  schemaProviderPromise ??= registerPinnedSchemaProvider();
+  return schemaProviderPromise;
 }
 
-async function createPinnedDtdValidator(): Promise<DtdValidator> {
+async function registerPinnedSchemaProvider(): Promise<void> {
   const files = await loadCompleteSchemaSet();
   const resources: Record<string, Uint8Array> = {};
   const encoder = new TextEncoder();
@@ -213,43 +225,6 @@ async function createPinnedDtdValidator(): Promise<DtdValidator> {
   const provider = new XmlBufferInputProvider(resources);
   if (!xmlRegisterInputProvider(provider)) {
     throw new Error('Unable to register the in-memory JATS DTD resource provider.');
-  }
-
-  let schemaDocument: XmlDocument | undefined;
-  try {
-    // XmlDtd.fromBuffer() has no base URI, so relative external parameter
-    // entities in modular JATS DTDs cannot be resolved. Parse a trusted
-    // bootstrap document instead: libxml2 then resolves the top-level DTD and
-    // every nested module through the registered in-memory provider.
-    schemaDocument = XmlDocument.fromString(
-      `<?xml version="1.0"?>
-<!DOCTYPE article SYSTEM "${JATS_VALIDATION_DTD_FILE}">
-<article/>`,
-      {
-        url: 'jats-validator-bootstrap.xml',
-        option:
-          ParseOption.XML_PARSE_DTDLOAD |
-          ParseOption.XML_PARSE_NONET |
-          ParseOption.XML_PARSE_BIG_LINES,
-      },
-    );
-
-    const dtd = schemaDocument.dtd;
-    if (!dtd) {
-      schemaDocument.dispose();
-      schemaDocument = undefined;
-      throw new Error('Pinned JATS DTD could not be loaded.');
-    }
-
-    // The DTD is owned by its bootstrap document. Keep that document alive for
-    // as long as the cached validator exists.
-    _pinnedSchemaDocument = schemaDocument;
-    return new DtdValidator(dtd);
-  } catch (error) {
-    schemaDocument?.dispose();
-    throw error;
-  } finally {
-    xmlCleanupInputProvider();
   }
 }
 
