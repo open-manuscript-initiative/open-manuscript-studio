@@ -22,6 +22,7 @@ import {
   OMI_JATS_VERSION,
   renderJatsArticle,
 } from '../services/exportJats';
+import { validateJats4rProfile } from '../services/jats4rProfileValidator';
 import {
   evaluateJatsPublicationRelease,
   jatsPublicationReleaseFailureMessage,
@@ -61,6 +62,16 @@ export function JatsExportPanel() {
     (diagnostic) => diagnostic.severity === 'error',
   );
   const warnings = result.diagnostics.filter(
+    (diagnostic) => diagnostic.severity === 'warning',
+  );
+  const jats4r = useMemo(
+    () => validateJats4rProfile(result.xml),
+    [result.xml],
+  );
+  const jats4rErrors = jats4r.diagnostics.filter(
+    (diagnostic) => diagnostic.severity === 'error',
+  );
+  const jats4rWarnings = jats4r.diagnostics.filter(
     (diagnostic) => diagnostic.severity === 'warning',
   );
   const currentSchemaValidation =
@@ -112,9 +123,11 @@ export function JatsExportPanel() {
     const validation = await validateXml(committedResult.xml);
     if (!validation) return;
 
+    const committedJats4r = validateJats4rProfile(committedResult.xml);
     const release = evaluateJatsPublicationRelease(
       committedResult,
       validation,
+      committedJats4r,
     );
     if (!release.releasable) {
       setSchemaError({
@@ -205,6 +218,22 @@ export function JatsExportPanel() {
           </dd>
         </div>
         <div>
+          <dt>{copy.jats4rValidation}</dt>
+          <dd>
+            {jats4r.valid ? (
+              <CheckCircle2 size={14} aria-hidden="true" />
+            ) : (
+              <AlertTriangle size={14} aria-hidden="true" />
+            )}
+            {' '}
+            {jats4r.valid
+              ? jats4rWarnings.length
+                ? `${copy.jats4rValidWithWarnings}: ${jats4rWarnings.length}`
+                : copy.jats4rValid
+              : `${copy.jats4rInvalid}: ${jats4rErrors.length}`}
+          </dd>
+        </div>
+        <div>
           <dt>{copy.schemaValidation}</dt>
           <dd>
             {currentSchemaValidation?.valid ? (
@@ -242,6 +271,32 @@ export function JatsExportPanel() {
           {copy.noDiagnostics}
         </p>
       )}
+
+      {jats4r.diagnostics.length ? (
+        <div>
+          <p className="jats-export-schema-note">
+            <strong>{copy.jats4rDiagnostics}</strong>
+          </p>
+          <ul className="jats-export-diagnostics">
+            {jats4r.diagnostics.slice(0, 30).map((diagnostic, index) => (
+              <li
+                className={`jats-export-diagnostic jats-export-diagnostic--${
+                  diagnostic.severity === 'error' ? 'error' : 'warning'
+                }`}
+                key={`jats4r:${diagnostic.code}:${diagnostic.path ?? ''}:${index}`}
+              >
+                <AlertTriangle size={14} aria-hidden="true" />
+                <span>
+                  <strong>{diagnostic.code}</strong>
+                  {' — '}
+                  {diagnostic.message}
+                  {diagnostic.path ? ` (${diagnostic.path})` : ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {currentSchemaValidation && !currentSchemaValidation.valid ? (
         <div>
@@ -306,6 +361,7 @@ export function JatsExportPanel() {
         </pre>
       ) : null}
 
+      <p className="jats-export-schema-note">{copy.jats4rNote}</p>
       <p className="jats-export-schema-note">{copy.schemaNote}</p>
     </section>
   );
