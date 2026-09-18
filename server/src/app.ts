@@ -37,6 +37,7 @@ import { publishingConnectionRouter } from './routes/publishingConnectionRoutes.
 import { publicationVenueRouter } from './routes/publicationVenueRoutes.js';
 import { publicationPdfRouter } from './routes/publicationPdfRoutes.js';
 import { publicationValidationRouter } from './routes/publicationValidationRoutes.js';
+import { referenceManagerRouter } from './routes/referenceManagerRoutes.js';
 import { reviewManuscriptRouter } from './routes/reviewManuscriptRoutes.js';
 import { directSubmissionRouter } from './routes/directSubmissionRoutes.js';
 import { userIntegrationRouter } from './routes/userIntegrationRoutes.js';
@@ -101,6 +102,7 @@ app.use('/api', authorSignatureRouter);
 app.use('/api', cloudOAuthRouter);
 app.use('/api', cloudRouter);
 app.use('/api', userIntegrationRouter);
+app.use('/api', referenceManagerRouter);
 app.use('/api', directSubmissionRouter);
 app.use('/api', agentReviewRouter);
 app.use('/api', integrationExecutionRouter);
