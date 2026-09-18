@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -213,3 +214,28 @@ test('profile export is deterministic JSON and advertises only configured output
   assert.ok(serialized.endsWith('\n'));
 });
 
+
+
+test('publisher profile editors start without misleading example field content', () => {
+  const publisherEditor = readFileSync(
+    new URL('../src/components/PublisherProfileEditor.tsx', import.meta.url),
+    'utf8',
+  );
+  const exportCssEditor = readFileSync(
+    new URL('../src/components/PublisherExportStylesheetPanel.tsx', import.meta.url),
+    'utf8',
+  );
+  const printCssEditor = readFileSync(
+    new URL('../src/components/PublisherPrintStylesheetPanel.tsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.doesNotMatch(publisherEditor, /publisherPlaceholder|namePlaceholder/);
+  assert.doesNotMatch(publisherEditor, /placeholder="https:\/\/…"/);
+  assert.match(
+    publisherEditor,
+    /description: profile\.publisher === 'Open Manuscript Initiative' \? '' : profile\.description/,
+  );
+  assert.doesNotMatch(exportCssEditor, /\.omi-scholarly-article \{ … \}/);
+  assert.doesNotMatch(printCssEditor, /PRINT_CSS_TEMPLATE|Insert template|Minta beszúrása|Vorlage einfügen/);
+});
