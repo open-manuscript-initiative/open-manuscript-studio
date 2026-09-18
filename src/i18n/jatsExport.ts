@@ -15,6 +15,12 @@ export interface JatsExportCopy {
   noDiagnostics: string;
   workingPreview: string;
   unsupportedProfile: string;
+  jats4rValidation: string;
+  jats4rValid: string;
+  jats4rValidWithWarnings: string;
+  jats4rInvalid: string;
+  jats4rDiagnostics: string;
+  jats4rNote: string;
   schemaValidation: string;
   validateSchema: string;
   validatingSchema: string;
@@ -47,6 +53,13 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
     workingPreview:
       'The preview reflects the current working state. Download creates a checkpoint and validates the committed XML before saving it.',
     unsupportedProfile: 'The active profile does not declare JATS as a supported output.',
+    jats4rValidation: 'JATS4R profile',
+    jats4rValid: 'Pass',
+    jats4rValidWithWarnings: 'Pass with warnings',
+    jats4rInvalid: 'Blocking errors',
+    jats4rDiagnostics: 'JATS4R profile diagnostics',
+    jats4rNote:
+      'Studio evaluates the JATS4R best-practice subset relevant to its Article Authoring output offline. The rules are traced to JATS4R/jats-schematrons v0.0.17; this does not claim to replace the complete official JATS4R validator.',
     schemaValidation: 'JATS 1.4 DTD',
     validateSchema: 'Validate JATS 1.4 DTD',
     validatingSchema: 'Validating…',
@@ -79,6 +92,13 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
     workingPreview:
       'Az előnézet az aktuális munkapéldányt mutatja. Letöltéskor a Stúdió checkpointot készít, majd mentés előtt a committed XML teljes DTD-validációját is lefuttatja.',
     unsupportedProfile: 'Az aktív profil nem jelöli támogatott kimenetként a JATS formátumot.',
+    jats4rValidation: 'JATS4R profil',
+    jats4rValid: 'Megfelel',
+    jats4rValidWithWarnings: 'Megfelel figyelmeztetésekkel',
+    jats4rInvalid: 'Blokkoló hibák',
+    jats4rDiagnostics: 'JATS4R profil diagnosztika',
+    jats4rNote:
+      'A Studio helyben, hálózati továbbítás nélkül ellenőrzi a JATS4R ajánlásoknak az Article Authoring kimenetére releváns részhalmazát. A szabályok a JATS4R/jats-schematrons v0.0.17 verziójához vannak kötve; ez nem állítja, hogy kiváltja a teljes hivatalos JATS4R validátort.',
     schemaValidation: 'JATS 1.4 DTD',
     validateSchema: 'JATS 1.4 DTD ellenőrzése',
     validatingSchema: 'Validálás…',
@@ -111,6 +131,13 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
     workingPreview:
       'Die Vorschau zeigt den aktuellen Arbeitsstand. Beim Download erzeugt Studio einen Checkpoint und validiert das festgeschriebene XML vor dem Speichern vollständig gegen die DTD.',
     unsupportedProfile: 'Das aktive Profil deklariert JATS nicht als unterstütztes Ausgabeformat.',
+    jats4rValidation: 'JATS4R-Profil',
+    jats4rValid: 'Bestanden',
+    jats4rValidWithWarnings: 'Bestanden mit Warnungen',
+    jats4rInvalid: 'Blockierende Fehler',
+    jats4rDiagnostics: 'JATS4R-Profil-Diagnostik',
+    jats4rNote:
+      'Studio prüft offline den für die Article-Authoring-Ausgabe relevanten Teil der JATS4R-Empfehlungen. Die Regeln sind auf JATS4R/jats-schematrons v0.0.17 zurückgeführt; dies ersetzt nicht den vollständigen offiziellen JATS4R-Validator.',
     schemaValidation: 'JATS 1.4 DTD',
     validateSchema: 'JATS-1.4-DTD validieren',
     validatingSchema: 'Validierung…',

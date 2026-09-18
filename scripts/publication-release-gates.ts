@@ -12,6 +12,13 @@ import {
   OMI_JATS_CONFORMANCE_VERSION,
   OMI_JATS_RELEASE_BLOCKING_DIAGNOSTICS,
 } from '../src/model/jatsConformance.ts';
+import {
+  getJatsPublicationProfile,
+  OMI_JATS4R_PROFILE_SCOPE,
+  OMI_JATS4R_PROFILE_VERSION,
+  OMI_JATS4R_UPSTREAM_REPOSITORY,
+  OMI_JATS4R_UPSTREAM_SCHEMATRON_VERSION,
+} from '../src/model/jatsPublicationProfiles.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -31,6 +38,13 @@ interface PublicationReleaseGateReport {
     dtd: string;
     rendererVersion: string;
     matrixVersion: string;
+    publicationProfile: {
+      id: string;
+      profileVersion: string;
+      scope: string;
+      upstreamRepository: string;
+      upstreamSchematronVersion: string;
+    };
   };
   capabilities: {
     total: number;
@@ -124,6 +138,10 @@ export async function evaluatePublicationReleaseGates(
     'src/services/publicationBuildSidecar.ts',
     'tests/jats-conformance.test.ts',
     'tests/jats-schema-validation.test.ts',
+    'docs/architecture/jats4r-publication-profile.md',
+    'src/model/jatsPublicationProfiles.ts',
+    'src/services/jats4rProfileValidator.ts',
+    'tests/jats4r-profile.test.ts',
   ];
   const missingFiles: string[] = [];
   for (const path of requiredFiles) {
@@ -148,11 +166,13 @@ export async function evaluatePublicationReleaseGates(
   );
   const ciMarkers = [
     'npm run test:jats-validation',
+    'npm run test:jats4r-profile',
     'npm run test:vivliostyle-pdf',
     'npm run test:publication-release',
   ];
   const readinessMarkers = [
     'npm run test:jats-validation',
+    'npm run test:jats4r-profile',
     'npm run test:publication-release',
     'publication-release.json',
   ];
@@ -181,6 +201,7 @@ export async function evaluatePublicationReleaseGates(
     'utf8',
   );
   const exportMarkers = [
+    'validateJats4rProfile',
     'evaluateJatsPublicationRelease',
     'savePublicationArtifactWithBuildSidecar',
   ];
@@ -194,6 +215,18 @@ export async function evaluatePublicationReleaseGates(
     exportMissing.length === 0
       ? 'Both JATS export surfaces enforce release policy before provenance delivery.'
       : `Missing runtime release markers: ${exportMissing.join('; ')}.`,
+  ));
+
+  const jats4r = getJatsPublicationProfile('jats4r');
+  gates.push(gate(
+    'jats4r-profile-definition',
+    jats4r.implemented &&
+      jats4r.releaseBlocking &&
+      jats4r.source === OMI_JATS4R_UPSTREAM_REPOSITORY &&
+      jats4r.sourceVersion === OMI_JATS4R_UPSTREAM_SCHEMATRON_VERSION,
+    jats4r.implemented
+      ? `JATS4R profile ${OMI_JATS4R_PROFILE_VERSION} is pinned to ${OMI_JATS4R_UPSTREAM_REPOSITORY}@${OMI_JATS4R_UPSTREAM_SCHEMATRON_VERSION}.`
+      : 'The JATS4R publication profile is not implemented.',
   ));
 
   const counts = {
@@ -214,6 +247,13 @@ export async function evaluatePublicationReleaseGates(
       dtd: OMI_JATS_CONFORMANCE_DTD,
       rendererVersion: OMI_JATS_CONFORMANCE_RENDERER_VERSION,
       matrixVersion: OMI_JATS_CONFORMANCE_MATRIX_VERSION,
+      publicationProfile: {
+        id: 'jats4r',
+        profileVersion: OMI_JATS4R_PROFILE_VERSION,
+        scope: OMI_JATS4R_PROFILE_SCOPE,
+        upstreamRepository: OMI_JATS4R_UPSTREAM_REPOSITORY,
+        upstreamSchematronVersion: OMI_JATS4R_UPSTREAM_SCHEMATRON_VERSION,
+      },
     },
     capabilities: counts,
     blockingDiagnostics: [...OMI_JATS_RELEASE_BLOCKING_DIAGNOSTICS],
@@ -234,6 +274,8 @@ function markdown(report: PublicationReleaseGateReport): string {
     `Target: ${report.target.standard} ${report.target.version} / ${report.target.tagSet} / ${report.target.dtd}`,
     `Conformance matrix: ${report.target.matrixVersion}`,
     `JATS renderer: ${report.target.rendererVersion}`,
+    `Publication profile: ${report.target.publicationProfile.id}@${report.target.publicationProfile.profileVersion} (${report.target.publicationProfile.scope})`,
+    `Profile source: ${report.target.publicationProfile.upstreamRepository}@${report.target.publicationProfile.upstreamSchematronVersion}`,
     '',
     `Capabilities: ${report.capabilities.total} total; ${report.capabilities.stable} stable; ${report.capabilities.conditional} conditional; ${report.capabilities.fallback} fallback; ${report.capabilities.unsupported} unsupported.`,
     '',

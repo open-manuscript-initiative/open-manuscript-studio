@@ -125,7 +125,7 @@ test('public contributor ORCID and affiliation ROR map to JATS without exposing 
   );
   assert.match(
     result.xml,
-    /<ext-link ext-link-type="uri" xlink:href="https:\/\/ror\.org\/01jsq2704">https:\/\/ror\.org\/01jsq2704<\/ext-link>/,
+    /<ext-link ext-link-type="uri" xlink:href="https:\/\/ror\.org\/01jsq2704" xlink:title="ROR identifier">ROR<\/ext-link>/,
   );
   assert.doesNotMatch(result.xml, /private-identifier/);
 });

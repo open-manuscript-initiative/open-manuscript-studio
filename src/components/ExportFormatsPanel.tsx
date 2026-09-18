@@ -18,6 +18,7 @@ import {
   OMI_JATS_RENDERER_VERSION,
   renderJatsArticle,
 } from '../services/exportJats';
+import { validateJats4rProfile } from '../services/jats4rProfileValidator';
 import {
   evaluateJatsPublicationRelease,
   jatsPublicationReleaseFailureMessage,
@@ -134,7 +135,12 @@ export function ExportFormatsPanel() {
           const result = renderJatsArticle(manuscript, profile);
           if (!result.validForExport) throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
           const validation = await validateJatsSchema(result.xml);
-          const release = evaluateJatsPublicationRelease(result, validation);
+          const jats4r = validateJats4rProfile(result.xml);
+          const release = evaluateJatsPublicationRelease(
+            result,
+            validation,
+            jats4r,
+          );
           if (!release.releasable) {
             throw new Error(jatsPublicationReleaseFailureMessage(release));
           }

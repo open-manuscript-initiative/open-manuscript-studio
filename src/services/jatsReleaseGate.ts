@@ -4,6 +4,7 @@ import {
   OMI_JATS_CONFORMANCE_VERSION,
 } from '../model/jatsConformance';
 import type { JatsExportResult } from './exportJats';
+import type { Jats4rProfileValidationResult } from './jats4rProfileValidator';
 import type { JatsSchemaValidationResult } from './jatsValidationApi';
 
 export type PublicationReleaseGateStatus = 'pass' | 'fail';
@@ -12,6 +13,7 @@ export interface PublicationReleaseGate {
   id:
     | 'renderer-diagnostics'
     | 'semantic-fidelity'
+    | 'publication-profile'
     | 'jats-target'
     | 'dtd-validation';
   status: PublicationReleaseGateStatus;
@@ -22,6 +24,7 @@ export interface JatsPublicationReleaseResult {
   releasable: boolean;
   gates: PublicationReleaseGate[];
   blockingDiagnosticCodes: string[];
+  profileDiagnosticCodes: string[];
 }
 
 /**
@@ -36,6 +39,7 @@ export interface JatsPublicationReleaseResult {
 export function evaluateJatsPublicationRelease(
   render: Pick<JatsExportResult, 'diagnostics'>,
   validation: JatsSchemaValidationResult,
+  profileValidation?: Jats4rProfileValidationResult,
 ): JatsPublicationReleaseResult {
   const rendererErrors = render.diagnostics.filter(
     (diagnostic) => diagnostic.severity === 'error',
@@ -45,6 +49,13 @@ export function evaluateJatsPublicationRelease(
   );
   const blockingDiagnosticCodes = Array.from(
     new Set(blockingDiagnostics.map((diagnostic) => diagnostic.code)),
+  );
+
+  const profileErrors = profileValidation?.diagnostics.filter(
+    (diagnostic) => diagnostic.severity === 'error',
+  ) ?? [];
+  const profileDiagnosticCodes = Array.from(
+    new Set(profileErrors.map((diagnostic) => diagnostic.code)),
   );
 
   const targetMatches =
@@ -69,6 +80,15 @@ export function evaluateJatsPublicationRelease(
         ? 'No conformance-matrix fidelity fallback is present.'
         : `Release-blocking JATS fidelity diagnostics: ${blockingDiagnosticCodes.join(', ')}.`,
     },
+    ...(profileValidation
+      ? [{
+          id: 'publication-profile' as const,
+          status: profileValidation.valid ? 'pass' as const : 'fail' as const,
+          detail: profileValidation.valid
+            ? `JATS4R profile ${profileValidation.profileVersion} passed with ${profileValidation.diagnostics.filter((item) => item.severity === 'warning').length} warning(s).`
+            : `JATS4R profile failed with ${profileErrors.length} error(s): ${profileDiagnosticCodes.join(', ')}.`,
+        }]
+      : []),
     {
       id: 'jats-target',
       status: targetMatches ? 'pass' : 'fail',
@@ -89,6 +109,7 @@ export function evaluateJatsPublicationRelease(
     releasable: gates.every((gate) => gate.status === 'pass'),
     gates,
     blockingDiagnosticCodes,
+    profileDiagnosticCodes,
   };
 }
 
