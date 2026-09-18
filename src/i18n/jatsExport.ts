@@ -15,6 +15,15 @@ export interface JatsExportCopy {
   noDiagnostics: string;
   workingPreview: string;
   unsupportedProfile: string;
+  schemaValidation: string;
+  validateSchema: string;
+  validatingSchema: string;
+  schemaValid: string;
+  schemaInvalid: string;
+  schemaNotChecked: string;
+  schemaUnavailable: string;
+  schemaDiagnostics: string;
+  line: string;
   schemaNote: string;
 }
 
@@ -28,7 +37,7 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
     currentRevision: 'Manuscript revision',
     preview: 'Preview XML',
     hidePreview: 'Hide XML',
-    download: 'Download JATS XML',
+    download: 'Download validated JATS XML',
     exportReady: 'The JATS rendering has no blocking diagnostics.',
     exportHasErrors: 'The XML can be inspected, but blocking diagnostics must be resolved before publication.',
     errors: 'errors',
@@ -36,10 +45,19 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
     diagnostics: 'JATS diagnostics',
     noDiagnostics: 'No JATS-specific diagnostics.',
     workingPreview:
-      'The preview reflects the current working state. Download creates a checkpoint first so the exported XML is traceable to a committed revision.',
+      'The preview reflects the current working state. Download creates a checkpoint and validates the committed XML before saving it.',
     unsupportedProfile: 'The active profile does not declare JATS as a supported output.',
+    schemaValidation: 'JATS 1.4 DTD',
+    validateSchema: 'Validate JATS 1.4 DTD',
+    validatingSchema: 'Validating…',
+    schemaValid: 'Valid · Article Authoring MathML 3',
+    schemaInvalid: 'Invalid · resolve DTD errors before export',
+    schemaNotChecked: 'Not checked for this working state',
+    schemaUnavailable: 'Full JATS schema validation is unavailable.',
+    schemaDiagnostics: 'JATS 1.4 DTD diagnostics',
+    line: 'line',
     schemaNote:
-      'Studio checks required structure, XML identifiers and internal rid targets. Full external JATS DTD/XSD/RNG validation remains a separate conformance step.',
+      'Full validation uses the pinned NISO JATS 1.4 Article Authoring MathML 3 DTD locally on the Studio server with network access disabled.',
   },
   hu: {
     title: 'JATS XML',
@@ -50,7 +68,7 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
     currentRevision: 'Kéziratrevízió',
     preview: 'XML előnézet',
     hidePreview: 'XML elrejtése',
-    download: 'JATS XML letöltése',
+    download: 'Validált JATS XML letöltése',
     exportReady: 'A JATS-renderelésben nincs blokkoló diagnosztika.',
     exportHasErrors:
       'Az XML ellenőrizhető, de a blokkoló hibákat publikálás előtt meg kell oldani.',
@@ -59,10 +77,19 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
     diagnostics: 'JATS diagnosztika',
     noDiagnostics: 'Nincs JATS-specifikus diagnosztika.',
     workingPreview:
-      'Az előnézet az aktuális munkapéldányt mutatja. Letöltéskor a Stúdió előbb checkpointot készít, így az XML egy konkrét committed revízióhoz visszavezethető.',
+      'Az előnézet az aktuális munkapéldányt mutatja. Letöltéskor a Stúdió checkpointot készít, majd mentés előtt a committed XML teljes DTD-validációját is lefuttatja.',
     unsupportedProfile: 'Az aktív profil nem jelöli támogatott kimenetként a JATS formátumot.',
+    schemaValidation: 'JATS 1.4 DTD',
+    validateSchema: 'JATS 1.4 DTD ellenőrzése',
+    validatingSchema: 'Validálás…',
+    schemaValid: 'Érvényes · Article Authoring MathML 3',
+    schemaInvalid: 'Érvénytelen · export előtt javítani kell',
+    schemaNotChecked: 'Ehhez a munkapéldányhoz még nincs ellenőrizve',
+    schemaUnavailable: 'A teljes JATS séma-validáció nem érhető el.',
+    schemaDiagnostics: 'JATS 1.4 DTD diagnosztika',
+    line: 'sor',
     schemaNote:
-      'A Stúdió ellenőrzi a kötelező szerkezetet, az XML-azonosítókat és a belső rid célokat. A teljes külső JATS DTD/XSD/RNG validáció külön megfelelőségi lépés marad.',
+      'A teljes ellenőrzés a pinnelt NISO JATS 1.4 Article Authoring MathML 3 DTD-t használja helyben a Studio szerverén, letiltott hálózati hozzáféréssel.',
   },
   de: {
     title: 'JATS XML',
@@ -73,7 +100,7 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
     currentRevision: 'Manuskriptrevision',
     preview: 'XML-Vorschau',
     hidePreview: 'XML ausblenden',
-    download: 'JATS XML herunterladen',
+    download: 'Validiertes JATS XML herunterladen',
     exportReady: 'Das JATS-Rendering enthält keine blockierenden Diagnosen.',
     exportHasErrors:
       'Das XML kann geprüft werden, blockierende Fehler müssen jedoch vor der Publikation behoben werden.',
@@ -82,10 +109,19 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
     diagnostics: 'JATS-Diagnostik',
     noDiagnostics: 'Keine JATS-spezifischen Diagnosen.',
     workingPreview:
-      'Die Vorschau zeigt den aktuellen Arbeitsstand. Vor dem Download erzeugt Studio einen Checkpoint, damit das XML auf eine festgeschriebene Revision zurückgeführt werden kann.',
+      'Die Vorschau zeigt den aktuellen Arbeitsstand. Beim Download erzeugt Studio einen Checkpoint und validiert das festgeschriebene XML vor dem Speichern vollständig gegen die DTD.',
     unsupportedProfile: 'Das aktive Profil deklariert JATS nicht als unterstütztes Ausgabeformat.',
+    schemaValidation: 'JATS 1.4 DTD',
+    validateSchema: 'JATS-1.4-DTD validieren',
+    validatingSchema: 'Validierung…',
+    schemaValid: 'Gültig · Article Authoring MathML 3',
+    schemaInvalid: 'Ungültig · DTD-Fehler vor Export beheben',
+    schemaNotChecked: 'Für diesen Arbeitsstand noch nicht geprüft',
+    schemaUnavailable: 'Die vollständige JATS-Schemavalidierung ist nicht verfügbar.',
+    schemaDiagnostics: 'JATS-1.4-DTD-Diagnostik',
+    line: 'Zeile',
     schemaNote:
-      'Studio prüft Pflichtstruktur, XML-IDs und interne rid-Ziele. Eine vollständige externe JATS-DTD/XSD/RNG-Validierung bleibt ein separater Konformitätsschritt.',
+      'Die vollständige Prüfung verwendet die gepinnte NISO JATS 1.4 Article Authoring MathML 3 DTD lokal auf dem Studio-Server bei deaktiviertem Netzwerkzugriff.',
   },
 };
 
