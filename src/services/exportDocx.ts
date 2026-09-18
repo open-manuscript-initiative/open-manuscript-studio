@@ -4,7 +4,8 @@ import {
   type OmiInlineSemanticKind,
 } from '../model/inlineSemantics';
 import type { OmiIndexEntry } from '../model/indexing';
-import { buildPublicationRenderingContext } from '../model/publicationRendering';
+import { contributorNameParts } from '../model/contributorName';
+import { buildPublicationRenderingContext, type OmiRenderedContributor } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type { OmiBlock, OmiManuscript } from '../types/omi';
 import { createStoreZip, textZipEntry } from './simpleZip';
@@ -35,7 +36,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   body.push(paragraph(context.title, 'Title'));
   if (context.subtitle) body.push(paragraph(context.subtitle, 'Subtitle'));
   if (context.contributors.length) {
-    body.push(paragraph(context.contributors.map((item) => item.displayName).join(', '), 'Author'));
+    body.push(authorParagraph(context.contributors));
   }
   if (context.abstract) {
     body.push(paragraph(localizedLabel(context.locale, 'abstract'), 'Heading1'));
@@ -125,6 +126,33 @@ function paragraph(value: string, styleId?: string, suffix = ''): string {
   return `<w:p>${pPr}<w:r><w:t xml:space="preserve">${xml(value)}</w:t></w:r>${suffix}</w:p>`;
 }
 
+function authorParagraph(
+  contributors: readonly OmiRenderedContributor[],
+): string {
+  const runs: string[] = [];
+  contributors.forEach((contributor, contributorIndex) => {
+    contributorNameParts(contributor).forEach((part, partIndex) => {
+      if (partIndex > 0) runs.push(wordStyledText(' '));
+      const styleId =
+        part.kind === 'given'
+          ? 'OMIAuthorGivenName'
+          : part.kind === 'family'
+            ? 'OMIAuthorFamilyName'
+            : undefined;
+      runs.push(wordStyledText(part.text, styleId));
+    });
+    if (contributorIndex < contributors.length - 1) {
+      runs.push(wordStyledText(', '));
+    }
+  });
+  return `<w:p><w:pPr><w:pStyle w:val="Author"/></w:pPr>${runs.join('')}</w:p>`;
+}
+
+function wordStyledText(value: string, styleId?: string): string {
+  const rPr = styleId ? `<w:rPr><w:rStyle w:val="${xml(styleId)}"/></w:rPr>` : '';
+  return `<w:r>${rPr}<w:t xml:space="preserve">${xml(value)}</w:t></w:r>`;
+}
+
 function richParagraph(runs: readonly OmiInlineRun[], suffix = ''): string {
   const rendered = runs.map(wordRun).join('');
   return `<w:p>${rendered}${suffix}</w:p>`;
@@ -207,6 +235,8 @@ function characterStylesXml(): string {
     characterStyle('OMISuperscript', 'OMI Superscript', '<w:vertAlign w:val="superscript"/>'),
     characterStyle('OMISubscript', 'OMI Subscript', '<w:vertAlign w:val="subscript"/>'),
     characterStyle('OMICode', 'OMI Code', '<w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/>'),
+    characterStyle('OMIAuthorGivenName', 'OMI Author Given Name', ''),
+    characterStyle('OMIAuthorFamilyName', 'OMI Author Family Name', ''),
   ].join('');
 }
 
