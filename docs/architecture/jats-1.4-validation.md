@@ -22,14 +22,16 @@ The validation endpoint:
 - requires an authenticated Studio session;
 - limits XML input size;
 - rejects input-side custom entity declarations and internal DTD subsets;
-- ignores the submitted external DOCTYPE for validation;
-- parses submitted XML with network and external-entity loading disabled;
-- loads the pinned JATS DTD and all of its modules separately through an
-  in-memory resource provider;
+- replaces any submitted external DOCTYPE with the pinned JATS 1.4
+  Article Authoring MathML 3 DTD;
+- disables network access and the system XML catalog;
+- resolves the trusted modular JATS DTD only through the in-memory schema set;
 - returns at most 100 validation diagnostics.
 
-The submitted document therefore cannot choose a DTD, entity source, local file,
-or network resource used by the validator.
+DTD module/entity loading is enabled because modular JATS requires external
+parameter entities, but the submitted document cannot choose those resources:
+its entity declarations are rejected and its DOCTYPE is replaced before
+validation.
 
 ## Export behavior
 
