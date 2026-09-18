@@ -34,7 +34,7 @@ const author = z.object({
   primaryContact: z.boolean().optional(),
   includeInBrowse: z.boolean().optional(),
   creditRoles: z.array(creditRole).max(14).optional(),
-  competingInterestsStatus: z.enum(['none', 'declared']).optional(),
+  competingInterestsStatus: z.enum(['none', 'declared', 'unclassified']).optional(),
   competingInterests: z.string().max(100000).optional(),
 });
 export const directSubmissionInput = z.object({
