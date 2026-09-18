@@ -27,7 +27,8 @@
     "scripts/publication-release-gates.ts",
     "src/model/jatsConformance.ts",
     "src/services/jatsReleaseGate.ts",
-    "tests/jats-conformance.test.ts"
+    "tests/jats-conformance.test.ts",
+    "tests/publication-release-gates.test.ts"
   ],
   "workflowMarkers": {
     ".github/workflows/ci.yml": [
