@@ -89,6 +89,9 @@ jobs:
       - name: Test JATS 1.4 schema validation
         run: npm run test:jats-validation
 
+      - name: Test JATS4R publication profile
+        run: npm run test:jats4r-profile
+
       - name: Install pinned Vivliostyle renderer
         shell: bash
         run: |
