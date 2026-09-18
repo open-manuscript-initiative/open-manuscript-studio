@@ -30,7 +30,14 @@ function nativeClient(baseUrl: string, apiKey?: string): RemoteRequest {
     const url = await assertTrustedIntegrationUrl(`${baseUrl}/api/v1/${path}`, baseUrl);
     const headers = new Headers({ Accept: 'application/json' });
     if (apiKey) headers.set('Authorization', `Bearer ${apiKey}`);
-    const init: RequestInit = { method, headers, redirect: 'error', signal: AbortSignal.timeout(30000) };
+    const timeoutMs =
+      path === 'omi-integration/publication-artifact' ? 120000 : 30000;
+    const init: RequestInit = {
+      method,
+      headers,
+      redirect: 'error',
+      signal: AbortSignal.timeout(timeoutMs),
+    };
     if (body instanceof FormData) init.body = body;
     else if (body) { headers.set('Content-Type', 'application/json'); init.body = JSON.stringify(body); }
     const response = await fetch(url, init);
