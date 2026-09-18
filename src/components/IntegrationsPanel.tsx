@@ -19,6 +19,7 @@ import {
 } from '../services/integrationApi';
 import { CloudStorageSettings } from './CloudStorageSettings';
 import { OmiAgentsSettings } from './OmiAgentsSettings';
+import { ReferenceManagerSettings } from './ReferenceManagerSettings';
 import './IntegrationsPanel.css';
 
 export function IntegrationsPanel() {
@@ -56,6 +57,7 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
   const isPublishing = entry.id === 'ojs' || entry.id === 'omp';
   const isCloudStorage = entry.id === 'cloud-storage';
   const isOmiAgents = entry.id === 'omi-agents';
+  const isReferenceManager = entry.id === 'zotero' || entry.id === 'mendeley';
 
   useEffect(() => {
     if (entry.id !== 'orcid') return;
@@ -69,7 +71,7 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
   }, [entry.id]);
 
   useEffect(() => {
-    if ((entry.id !== 'deepl' && !isOmiAgents) || !expanded) return;
+    if ((entry.id !== 'deepl' && !isOmiAgents && !isReferenceManager) || !expanded) return;
     let cancelled = false;
     setBusy(true);
     setError('');
@@ -78,7 +80,7 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
       .catch((reason: unknown) => { if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason)); })
       .finally(() => { if (!cancelled) setBusy(false); });
     return () => { cancelled = true; };
-  }, [entry.id, expanded, isOmiAgents]);
+  }, [entry.id, expanded, isOmiAgents, isReferenceManager]);
 
   useEffect(() => {
     if (!isPublishing || !expanded) return;
@@ -112,7 +114,13 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
         : remoteStatus?.healthy === false
           ? 'available'
           : entry.status;
-  const configurableNow = entry.id === 'deepl' || entry.id === 'orcid' || isOmiAgents || isPublishing || isCloudStorage;
+  const configurableNow =
+    entry.id === 'deepl' ||
+    entry.id === 'orcid' ||
+    isOmiAgents ||
+    isPublishing ||
+    isCloudStorage ||
+    isReferenceManager;
 
   async function refreshPublishingConnections() {
     const catalog = await getIntegrationCatalog();
@@ -320,6 +328,14 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
         <div className="omi-integration-config">
           <OmiAgentsSettings />
         </div>
+      ) : null}
+
+      {isReferenceManager && expanded ? (
+        <ReferenceManagerSettings
+          provider={entry.id as 'zotero' | 'mendeley'}
+          locale={locale}
+          onStatus={setRemoteStatus}
+        />
       ) : null}
 
       {entry.id === 'deepl' && expanded ? (
