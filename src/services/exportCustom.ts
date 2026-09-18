@@ -54,6 +54,16 @@ export function buildCustomHtmlExport(manuscript: OmiManuscript, template: Custo
   };
 }
 
+export function buildCustomPdfSource(
+  manuscript: OmiManuscript,
+  template: CustomExportTemplate,
+): { html: string; fileName: string } {
+  return {
+    html: renderCustomHtmlDocument(manuscript, template, true),
+    fileName: `${fileStem(manuscript)}-custom.pdf`,
+  };
+}
+
 export function openCustomPdfPrintView(manuscript: OmiManuscript, template: CustomExportTemplate): void {
   const html = renderCustomHtmlDocument(manuscript, template, true);
   const target = window.open('', '_blank', 'noopener,noreferrer');
