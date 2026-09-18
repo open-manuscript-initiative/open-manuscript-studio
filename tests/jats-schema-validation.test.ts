@@ -30,6 +30,29 @@ test('generated OMI JATS passes the pinned JATS 1.4 Article Authoring MathML3 DT
 });
 
 
+test('JATS4R-oriented permissions and data availability remain valid against the pinned DTD', async () => {
+  const manuscript = createVersionedTestManuscript();
+  manuscript.metadata = {
+    rights: { en: 'This work is licensed under CC BY 4.0.' },
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    copyrightHolder: { en: 'Open Manuscript Institute' },
+    copyrightYear: 2026,
+    dataAvailability: { en: 'Research data are available in the cited repository.' },
+  };
+
+  const rendered = renderJatsArticle(manuscript);
+  assert.match(rendered.xml, /<permissions>/);
+  assert.match(rendered.xml, /<ali:license_ref>/);
+  assert.match(rendered.xml, /<sec sec-type="data-availability">/);
+
+  const validation = await validateJats14ArticleAuthoring(rendered.xml);
+  assert.equal(
+    validation.valid,
+    true,
+    validation.diagnostics.map((item) => item.message).join('\n'),
+  );
+});
+
 test('conformance-matrix stable rich-text constructs remain valid against the pinned DTD', async () => {
   const manuscript = createVersionedTestManuscript();
   const section = manuscript.sections[0];
