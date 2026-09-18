@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { getPublicationProfileCopy } from '../src/i18n/publicationProfile.ts';
+
 import {
   BUILTIN_PUBLICATION_PROFILES,
   applyPublicationProfileDefaults,
@@ -211,4 +213,13 @@ test('profile export is deterministic JSON and advertises only configured output
   assert.equal(profileSupportsOutput(profile, 'jats'), true);
   assert.equal(profileSupportsOutput(profile, 'html'), true);
   assert.ok(serialized.endsWith('\n'));
+});
+
+test('Studio identifies SPEC-240 as an active Draft without claiming conformance', () => {
+  for (const locale of ['en', 'hu', 'de']) {
+    const notice = getPublicationProfileCopy(locale).experimental;
+    assert.match(notice, /OMI-SPEC-240@0\.1\.0 Draft/);
+    assert.doesNotMatch(notice, /Reserved|reserviert/i);
+    assert.match(notice, /conformance|megfelelőségi|Konformitäts/i);
+  }
 });
