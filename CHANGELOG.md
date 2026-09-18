@@ -6,6 +6,60 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+## 0.2.0-beta.1 — 2026-09-18
+
+### Validated publication pipeline
+
+- Adds full offline **NISO JATS 1.4 Article Authoring / MathML 3 DTD**
+  validation with a pinned local schema package and hardened XML trust boundary.
+- Adds a machine-readable OMI → JATS conformance matrix and publication release
+  gates so known semantic-fidelity fallbacks block release even when the XML is
+  technically DTD-valid.
+- Adds an offline **JATS4R** publication profile for the Article Authoring
+  surface emitted by Studio, with release-blocking errors and advisory
+  warnings.
+- Adds deterministic JATS, semantic HTML and PDF publication-build provenance
+  through portable `.omi-build.json` sidecars containing committed revision,
+  state/profile digests, exact artifact SHA-256 and renderer identity.
+
+### PDF and HTML artifacts
+
+- Replaces the standard browser print-dialog PDF path with pinned
+  **Vivliostyle CLI 11.0.4** server-side artifact generation.
+- Keeps print/archive and interactive PDF behavior separate while rendering
+  both through the same controlled paged-media pipeline.
+- Fingerprints the exact self-contained HTML supplied to Vivliostyle for PDF
+  provenance.
+- Makes semantic HTML ZIP output reproducible by deriving package timestamps
+  from the committed manuscript revision.
+
+### Scholarly publishing metadata
+
+- Adds the publication-venue registry and reusable publication-venue metadata
+  workflow for integrated scholarly publishing destinations.
+- Improves JATS contributor, affiliation, ORCID/ROR, permissions, licence and
+  accessibility-oriented output required by the new validation profiles.
+- Keeps private review/editorial annotations outside publication-facing JATS
+  note output.
+
+### Release quality and platform hardening
+
+- Extends the 1.0 readiness evidence with JATS validation, JATS4R profile
+  checks, publication release gates and a real Vivliostyle PDF smoke render.
+- Strengthens Android release preparation, modern UI configuration and version
+  code handling.
+- Advances the shared application version to **0.2.0-beta.1**.
+- Reserves Android versionCode **1030** and advances the iOS marketing/build
+  identity to **0.2.0 / 9**.
+
+### Compatibility
+
+- No OMI manuscript migration is required by this application release.
+- OJS and OMP integration packages remain independently versioned.
+- JATS4R validation is intentionally scoped to Studio's current Article
+  Authoring output and does not claim to replace the complete official JATS4R
+  Schematron validator.
+
 ## 0.1.1-beta.1 — 2026-09-15
 
 ### Google Play and Android release
