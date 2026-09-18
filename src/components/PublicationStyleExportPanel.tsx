@@ -51,11 +51,15 @@ export function PublicationStyleExportPanel() {
       const profile = resolvePublicationProfile(committed);
       const style = loadPublicationStyle();
       const htmlCss = buildPublicationStyleCss(style, 'html');
+      const head = committed.revisionHistory.revisions.find(
+        (revision) => revision.id === committed.headRevisionId,
+      );
       const styledProfile = {
         ...profile,
         exportStylesheet: createPublisherExportStylesheet(
           `${style.id}-html.css`,
           htmlCss,
+          head?.createdAt ?? committed.updatedAt,
         ),
       };
       const result = await buildPublisherHtmlPackage(committed, styledProfile);
