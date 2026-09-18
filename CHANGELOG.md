@@ -19,8 +19,8 @@ the portable OMI document model and individual renderers.
   deterministic build identifier before persistence.
 - Keeps the personal OJS editorial API key server-side and forwards it only as
   native Bearer authorization to the fixed trusted plugin endpoint.
-- Keeps the legacy HTML-galley proxy for backwards compatibility while the
-  Publication UI uses the new multi-format protocol.
+- Removes the obsolete HTML-only transfer endpoint and compatibility facade; the
+  Publication UI and server now use only the shared multi-format protocol.
 - Blocks direct JATS transfer when the XML depends on package-local binary media
   that the single-artifact protocol cannot carry.
 - Extends the same protocol to OMP Integration 1.4.0.0 while preserving native
