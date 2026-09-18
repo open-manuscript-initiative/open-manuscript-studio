@@ -89,11 +89,12 @@ digest.
 
 ## Compatibility
 
-The Studio server keeps the older HTML-only proxy for backwards compatibility,
-but the Publication UI uses `omi-publication-artifact/1` when working with OJS
-Integration 1.5.0.0 or newer.
+The Publication UI and Studio server use `omi-publication-artifact/1`
+directly. The earlier HTML-only transfer endpoint is intentionally removed
+because the integration is still in internal testing and does not require a
+compatibility layer.
 
-The same Publication panel now supports OMP Integration 1.4.0.0 or newer through
+The same Publication panel supports OMP Integration 1.4.0.0 or newer through
 the provider-neutral artifact client. OJS and OMP credentials and native
 representation semantics remain separate.
 
