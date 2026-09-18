@@ -73,6 +73,18 @@ const providers: IntegrationProviderDescriptor[] = [
     supportsPerUserAuthentication: true, supportsMultipleConnections: true, configurable: true,
   },
   {
+    id: 'zotero', kind: 'scholarly-service', displayName: 'Zotero',
+    description: 'Personal Zotero reference-library integration.',
+    authenticationModes: ['user_api_key'], preferredAuthenticationMode: 'user_api_key',
+    supportsPerUserAuthentication: true, supportsMultipleConnections: false, configurable: true,
+  },
+  {
+    id: 'mendeley', kind: 'scholarly-service', displayName: 'Mendeley',
+    description: 'Personal Mendeley reference-library integration.',
+    authenticationModes: ['oauth2'], preferredAuthenticationMode: 'oauth2',
+    supportsPerUserAuthentication: true, supportsMultipleConnections: false, configurable: true,
+  },
+  {
     id: 'orcid', kind: 'identity', displayName: 'ORCID',
     description: 'Researcher identity and profile linking.',
     authenticationModes: ['oauth2'], preferredAuthenticationMode: 'oauth2',
