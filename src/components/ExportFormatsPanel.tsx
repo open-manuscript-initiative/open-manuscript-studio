@@ -4,12 +4,21 @@ import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getExportFormatCopy } from '../i18n/exportFormats';
 import { getStudioPlatform } from '../mobile/platform/platform';
+import { resolvePublicationProfile } from '../model/publicationProfile';
 import { buildDocxExport } from '../services/exportDocx';
 import { buildEpubExport } from '../services/exportEpub';
 import { saveExportBlob, saveExportText, type ExportDeliveryResult } from '../services/exportFileDelivery';
-import { buildHtmlPackage } from '../services/exportHtmlPackage';
+import {
+  buildHtmlPackage,
+  OMI_HTML_PACKAGE_VERSION,
+} from '../services/exportHtmlPackage';
 import { buildIdmlExport } from '../services/exportIdml';
-import { jatsFileName, renderJatsArticle } from '../services/exportJats';
+import {
+  jatsFileName,
+  OMI_JATS_RENDERER_VERSION,
+  renderJatsArticle,
+} from '../services/exportJats';
+import { validateJatsSchema } from '../services/jatsValidationApi';
 import { buildLatexExport } from '../services/exportLatex';
 import { buildMifExport } from '../services/exportMif';
 import { omiJsonFileName, serializeOmiJson } from '../services/exportOmi';
@@ -23,6 +32,7 @@ import { renderPdfArtifact } from '../services/vivliostylePdfApi';
 import { buildSlaExport } from '../services/exportSla';
 import { buildXtgExport } from '../services/exportXtg';
 import { buildOmiContainer } from '../services/omiContainer';
+import { savePublicationArtifactWithBuildSidecar } from '../services/publicationBuildSidecar';
 import { CustomExportPanel } from './CustomExportPanel';
 import { LongTaskStatus } from './LongTaskStatus';
 
@@ -116,15 +126,47 @@ export function ExportFormatsPanel() {
           reportDelivery(await saveExportText(serializeOmiJson(manuscript), omiJsonFileName(manuscript), 'application/vnd.openmanuscript+json;charset=utf-8'));
           break;
         case 'jats': {
-          const result = renderJatsArticle(manuscript);
+          const profile = resolvePublicationProfile(manuscript);
+          const result = renderJatsArticle(manuscript, profile);
           if (!result.validForExport) throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
-          reportDelivery(await saveExportText(result.xml, jatsFileName(manuscript), 'application/xml;charset=utf-8'));
+          const validation = await validateJatsSchema(result.xml);
+          if (!validation.valid) {
+            throw new Error(
+              validation.diagnostics.map((item) => item.message).join('\n') ||
+                'JATS 1.4 schema validation failed.',
+            );
+          }
+          const fileName = jatsFileName(manuscript);
+          const saved = await savePublicationArtifactWithBuildSidecar({
+            manuscript,
+            profile,
+            artifact: new Blob([result.xml], {
+              type: 'application/xml;charset=utf-8',
+            }),
+            fileName,
+            format: 'jats',
+            mediaType: 'application/xml',
+            renderer: 'open-manuscript-studio-jats',
+            rendererVersion: OMI_JATS_RENDERER_VERSION,
+          });
+          reportDelivery(saved.delivery);
           break;
         }
         case 'html': {
-          const result = await buildHtmlPackage(manuscript);
+          const profile = resolvePublicationProfile(manuscript);
+          const result = await buildHtmlPackage(manuscript, profile);
           if (!result.validForExport) throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
-          reportDelivery(await saveExportBlob(result.blob, result.fileName));
+          const saved = await savePublicationArtifactWithBuildSidecar({
+            manuscript,
+            profile,
+            artifact: result.blob,
+            fileName: result.fileName,
+            format: 'html',
+            mediaType: 'application/zip',
+            renderer: 'open-manuscript-studio-html-package',
+            rendererVersion: OMI_HTML_PACKAGE_VERSION,
+          });
+          reportDelivery(saved.delivery);
           break;
         }
         case 'docx': {
@@ -163,15 +205,30 @@ export function ExportFormatsPanel() {
           break;
         }
         case 'pdf': {
+          const profile = resolvePublicationProfile(manuscript);
           const fileName = pdfFileName(manuscript, pdfMode);
           const html = await buildPdfArtifactDocument(
             manuscript,
-            undefined,
+            profile,
             pdfMode,
             pdfContentMode,
           );
           const artifact = await renderPdfArtifact(html, fileName);
-          reportDelivery(await saveExportBlob(artifact.blob, fileName));
+          const saved = await savePublicationArtifactWithBuildSidecar({
+            manuscript,
+            profile,
+            artifact: artifact.blob,
+            fileName,
+            format: pdfMode === 'interactive' ? 'pdf-interactive' : 'pdf-print',
+            mediaType: 'application/pdf',
+            renderer: artifact.renderer,
+            rendererVersion: artifact.rendererVersion,
+            rendererInput: {
+              value: html,
+              mediaType: 'text/html;charset=utf-8',
+            },
+          });
+          reportDelivery(saved.delivery);
           break;
         }
       }
