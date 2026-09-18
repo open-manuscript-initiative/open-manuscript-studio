@@ -344,8 +344,12 @@ function createBlockTypeMenuView(editor: Editor) {
   };
   const onTriggerClick = () => {
     const open = menu.hidden !== false;
-    if (open) sync();
+    // The pointerdown handler captured the editor selection before the menu
+    // control could take focus. Open the popover first so sync() keeps that
+    // captured paragraph instead of replacing it with a blur/focus-induced
+    // editor selection (which may resolve to the end of a long document).
     setOpen(open);
+    if (open) sync();
   };
   const onMenuClick = (event: MouseEvent) => {
     const target = event.target;
