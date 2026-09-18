@@ -33,13 +33,21 @@
     "src/model/jatsPublicationProfiles.ts",
     "src/services/jats4rProfileValidator.ts",
     "tests/jats4r-profile.test.ts",
-    "src/services/ojsPublicationArtifact.ts",
     "src/components/PublicationArtifactPanel.tsx",
     "server/src/routes/directSubmissionRoutes.ts",
-    "tests/ojs-publication-artifact.test.ts",
     "tests/publication-artifact-routes.test.mjs",
     "docs/ojs-publication-artifact-transfer.md",
-    "server/src/app.ts"
+    "server/src/app.ts",
+    "src/services/publicationArtifact.ts",
+    "docs/omp-publication-artifact-transfer.md",
+    "server/prisma/identity/schema.prisma",
+    "server/prisma/identity/migrations/20260918163000_add_personal_omp_api_key/migration.sql",
+    "server/src/routes/authRoutes.ts",
+    "src/services/authApi.ts",
+    "src/components/AccountPanel.tsx",
+    "src/services/publicationHtmlArtifact.ts",
+    "tests/publication-html-artifact.test.ts",
+    "tests/publication-artifact.test.ts"
   ],
   "workflowMarkers": {
     ".github/workflows/ci.yml": [

@@ -1,4 +1,5 @@
 import type { OmiPublicationBuild } from '../model/publicationBuild';
+import { getDocumentStructureProfile } from '../model/documentProfile';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type { OmiManuscript } from '../types/omi';
 import { BUILD_INFO } from '../version';
@@ -13,10 +14,10 @@ import {
   renderJatsArticle,
 } from './exportJats';
 import {
-  buildHtmlGalley,
-  htmlGalleyFileName,
-  OMI_HTML_GALLEY_RENDERER_VERSION,
-} from './htmlGalley';
+  buildPublicationHtmlArtifact,
+  publicationHtmlFileName,
+  OMI_HTML_PUBLICATION_RENDERER_VERSION,
+} from './publicationHtmlArtifact';
 import { validateJats4rProfile } from './jats4rProfileValidator';
 import {
   evaluateJatsPublicationRelease,
@@ -26,14 +27,16 @@ import { validateJatsSchema } from './jatsValidationApi';
 import { createPublicationBuildManifest } from './publicationBuildManifest';
 import { renderPdfArtifact } from './vivliostylePdfApi';
 
-export type OjsPublicationArtifactFormat =
+export type PublicationArtifactProvider = 'ojs' | 'omp';
+
+export type PublicationArtifactFormat =
   | 'html'
   | 'jats'
   | 'pdf-print'
   | 'pdf-interactive';
 
-export interface OjsPublicationArtifactFormatCapability {
-  id: OjsPublicationArtifactFormat;
+export interface PublicationArtifactFormatCapability {
+  id: PublicationArtifactFormat;
   label: string;
   mediaType: string;
   extension: string;
@@ -42,40 +45,52 @@ export interface OjsPublicationArtifactFormatCapability {
   requires: string | null;
 }
 
-export interface OjsPublicationArtifactTarget {
+export interface PublicationArtifactAuthority {
+  representation?: 'galley' | 'publicationFormat';
+  formatApprovedByDefault?: boolean;
+  formatAvailableByDefault?: boolean;
+  proofViewableByDefault?: boolean;
+}
+
+export interface PublicationArtifactTarget {
   protocol: 'omi-publication-artifact/1';
   submissionId: number;
   publicationId: number;
   title: string;
   locales: string[];
   genres: { id: number; label: string }[];
-  formats: OjsPublicationArtifactFormatCapability[];
+  formats: PublicationArtifactFormatCapability[];
   provenance: {
     required: true;
     model: 'omi-publication-build';
     version: '0.1.0';
     digest: 'sha256';
   };
+  authority?: PublicationArtifactAuthority;
   published: false;
 }
 
-export interface OjsPublicationArtifactReceipt {
+export interface PublicationArtifactReceipt {
   protocol: 'omi-publication-artifact/1';
   submissionId: number;
   publicationId: number;
-  format: OjsPublicationArtifactFormat;
+  format: PublicationArtifactFormat;
   mediaType: string;
   artifactFileName: string;
-  galleyId: number;
+  galleyId?: number;
+  publicationFormatId?: number;
   submissionFileId: number;
   sha256: string;
   buildId: string;
   provenanceVerified: true;
   unchanged: boolean;
+  formatApproved?: boolean;
+  formatAvailable?: boolean;
+  proofViewable?: boolean;
   published: false;
 }
 
-export type OjsPublicationArtifactRequest = {
+export type PublicationArtifactRequest = {
   manuscriptId: string;
   submissionId: number;
 } & (
@@ -87,7 +102,7 @@ export type OjsPublicationArtifactRequest = {
       publicationId: number;
       locale: string;
       genreId: number;
-      format: OjsPublicationArtifactFormat;
+      format: PublicationArtifactFormat;
       mediaType: string;
       fileName: string;
       artifactBase64: string;
@@ -96,8 +111,8 @@ export type OjsPublicationArtifactRequest = {
     }
 );
 
-export interface PreparedOjsPublicationArtifact {
-  format: OjsPublicationArtifactFormat;
+export interface PreparedPublicationArtifact {
+  format: PublicationArtifactFormat;
   mediaType: string;
   fileName: string;
   bytes: Uint8Array;
@@ -106,16 +121,30 @@ export interface PreparedOjsPublicationArtifact {
   previewText?: string;
 }
 
-export async function prepareOjsPublicationArtifact(
+export function publicationArtifactFormatAvailableForDocument(
   manuscript: OmiManuscript,
-  format: OjsPublicationArtifactFormat,
-): Promise<PreparedOjsPublicationArtifact> {
+  format: PublicationArtifactFormat,
+): boolean {
+  if (getDocumentStructureProfile(manuscript).kind === 'study') return true;
+  return format === 'pdf-print' || format === 'pdf-interactive';
+}
+
+export async function preparePublicationArtifact(
+  manuscript: OmiManuscript,
+  format: PublicationArtifactFormat,
+): Promise<PreparedPublicationArtifact> {
+  if (!publicationArtifactFormatAvailableForDocument(manuscript, format)) {
+    throw new Error(
+      'HTML and JATS publication-artifact transfer currently require a standalone study. Use print or interactive PDF for an OMI volume.',
+    );
+  }
+
   const profile = resolvePublicationProfile(manuscript);
 
   if (format === 'html') {
-    const html = await buildHtmlGalley(manuscript, profile);
+    const html = await buildPublicationHtmlArtifact(manuscript, profile);
     const bytes = new TextEncoder().encode(html);
-    const fileName = htmlGalleyFileName(manuscript);
+    const fileName = publicationHtmlFileName(manuscript);
     const mediaType = 'text/html;charset=utf-8';
     return {
       format,
@@ -130,8 +159,8 @@ export async function prepareOjsPublicationArtifact(
         format,
         mediaType,
         fileName,
-        renderer: 'open-manuscript-studio-html-galley',
-        rendererVersion: OMI_HTML_GALLEY_RENDERER_VERSION,
+        renderer: 'open-manuscript-studio-html-publication',
+        rendererVersion: OMI_HTML_PUBLICATION_RENDERER_VERSION,
       }),
       previewText: html,
     };
@@ -210,16 +239,12 @@ export async function prepareOjsPublicationArtifact(
   };
 }
 
-
 export function assertJatsDirectTransferHasNoPackageLocalAssets(xml: string): void {
   for (const match of xml.matchAll(
     /<(?:graphic|media)\b[^>]*\bxlink:href="([^"]+)"/gi,
   )) {
     const href = (match[1] ?? '').trim();
-    if (
-      href &&
-      !/^(?:https?:|mailto:|#)/i.test(href)
-    ) {
+    if (href && !/^(?:https?:|mailto:|#)/i.test(href)) {
       throw new Error(
         'JATS direct transfer cannot yet carry package-local binary assets. Export a self-contained HTML/PDF artifact or remove the local JATS media dependency.',
       );
@@ -231,7 +256,7 @@ function createBuild(input: {
   manuscript: OmiManuscript;
   profile: ReturnType<typeof resolvePublicationProfile>;
   bytes: Uint8Array;
-  format: OjsPublicationArtifactFormat;
+  format: PublicationArtifactFormat;
   mediaType: string;
   fileName: string;
   renderer: string;

@@ -68,13 +68,12 @@
     "mobile:ios:build": "npm run ios:build",
     "android:build:play": "node scripts/configure-android-modern-ui.mjs && node scripts/build-android-distribution.mjs play",
     "android:build:direct": "node scripts/configure-android-modern-ui.mjs && node scripts/build-android-distribution.mjs direct",
-    "test:html-galley": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/html-galley.test.ts && node --test --experimental-test-module-mocks tests/html-galley-routes.test.mjs",
     "test:jats-validation": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/jats-schema-validation.test.ts && node --test --experimental-test-module-mocks tests/jats-schema-validation-routes.test.mjs",
     "test:vivliostyle-pdf": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/vivliostyle-pdf.test.ts && node --test --experimental-test-module-mocks tests/vivliostyle-pdf-routes.test.mjs",
     "publication:release:gate": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/publication-release-gates.ts",
     "test:publication-release": "npm run publication:release:gate -- --strict && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/jats-conformance.test.ts tests/jats4r-profile.test.ts tests/publication-build.test.ts tests/publication-release-gates.test.ts",
     "test:jats4r-profile": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/jats4r-profile.test.ts",
-    "test:publication-artifact": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/ojs-publication-artifact.test.ts && node --test --experimental-test-module-mocks tests/publication-artifact-routes.test.mjs"
+    "test:publication-artifact": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/publication-html-artifact.test.ts tests/publication-artifact.test.ts && node --test --experimental-test-module-mocks tests/publication-artifact-routes.test.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

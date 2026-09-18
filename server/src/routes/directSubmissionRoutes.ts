@@ -4,7 +4,10 @@ import { prisma } from '../lib/prisma.js';
 import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
 import { assertTrustedIntegrationUrl } from '../integrations/security/trustedRemoteUrl.js';
 import { createRemoteSubmission, directSubmissionInput, finalizeRemoteSubmission, prepareRemoteSubmission, record, submissionDigest, type RemoteRequest } from '../integrations/publishing/directSubmission.js';
-import { resolvePersonalOjsCredential } from './authRoutes.js';
+import {
+  resolvePersonalOjsCredential,
+  resolvePersonalOmpCredential,
+} from './authRoutes.js';
 
 export const directSubmissionRouter = Router();
 const requestSchema = z.object({
@@ -24,7 +27,7 @@ function publicReceipt(row: { id: string; status: string; externalId: number | n
 }
 function nativeClient(baseUrl: string, apiKey?: string): RemoteRequest {
   return async (method, path, body) => {
-    if (!/^(omi-integration\/(?:submission-options|html-galley|publication-artifact)|submissions(?:\/\d+(?:\/(?:files(?:\/\d+)?|submit|publications\/\d+(?:\/contributors(?:\/\d+)?)?))?)?)$/.test(path)) {
+    if (!/^(omi-integration\/(?:submission-options|publication-artifact)|submissions(?:\/\d+(?:\/(?:files(?:\/\d+)?|submit|publications\/\d+(?:\/contributors(?:\/\d+)?)?))?)?)$/.test(path)) {
       throw new Error('Invalid publishing operation.');
     }
     const url = await assertTrustedIntegrationUrl(`${baseUrl}/api/v1/${path}`, baseUrl);
@@ -74,13 +77,6 @@ const publicationArtifactSchema = z.object({
   confirmed: z.literal(true).optional(),
 });
 
-const htmlGalleySchema = z.object({
-  action: z.enum(['inspect', 'transfer']), manuscriptId: z.string().min(1).max(128),
-  submissionId: z.number().int().positive(),
-  publicationId: z.number().int().positive().optional(), locale: z.string().min(2).max(32).optional(),
-  genreId: z.number().int().positive().optional(), html: z.string().max(8 * 1024 * 1024).optional(),
-  confirmed: z.literal(true).optional(),
-});
 directSubmissionRouter.post('/integrations/connections/:connectionId/publication-artifact', requireSession, async (request: AuthenticatedRequest, response) => {
   response.setHeader('Cache-Control', 'no-store');
   const body = publicationArtifactSchema.safeParse(request.body);
@@ -120,25 +116,27 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
         id: id.data,
         userId: request.authUserId!,
         enabled: true,
-        providerId: 'ojs',
+        providerId: { in: ['ojs', 'omp'] },
       },
     });
     const configuredBase = record(connection?.config).baseUrl;
     if (!connection || typeof configuredBase !== 'string') {
       response.status(404).json({
-        error: { message: 'Enabled OJS connection not found.' },
+        error: { message: 'Enabled OJS/OMP connection not found.' },
       });
       return;
     }
 
-    const credential = await resolvePersonalOjsCredential(
-      request.authUserId!,
-    );
+    const platform = connection.providerId === 'omp' ? 'OMP' : 'OJS';
+    const credential =
+      connection.providerId === 'omp'
+        ? await resolvePersonalOmpCredential(request.authUserId!)
+        : await resolvePersonalOjsCredential(request.authUserId!);
     if (!credential) {
       response.status(400).json({
         error: {
           message:
-            'Save a personal OJS editor API key in Account → Personal profile first.',
+            `Save a personal ${platform} editor API key in Account → Personal profile first.`,
         },
       });
       return;
@@ -151,7 +149,7 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
       response.status(409).json({
         error: {
           message:
-            'The saved personal OJS key belongs to a different OJS installation.',
+            `The saved personal ${platform} key belongs to a different ${platform} installation.`,
         },
       });
       return;
@@ -169,7 +167,9 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
       result.submissionId !== data.submissionId
     ) {
       throw new Error(
-        'Update the OJS Studio Integration plugin to version 1.5.0.0 or newer.',
+        connection.providerId === 'omp'
+          ? 'Update the OMP Studio Integration plugin to version 1.4.0.0 or newer.'
+          : 'Update the OJS Studio Integration plugin to version 1.5.0.0 or newer.',
       );
     }
 
@@ -186,36 +186,6 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
       error instanceof Error
         ? error.message
         : 'Publication artifact transfer failed.';
-    response.status(status).json({ error: { message } });
-  }
-});
-
-directSubmissionRouter.post('/integrations/connections/:connectionId/html-galley', requireSession, async (request: AuthenticatedRequest, response) => {
-  response.setHeader('Cache-Control', 'no-store');
-  const body = htmlGalleySchema.safeParse(request.body);
-  const id = z.string().uuid().safeParse(request.params.connectionId);
-  if (!body.success || !id.success) { response.status(400).json({ error: { message: 'Invalid HTML transfer request.' } }); return; }
-  const data = body.data;
-  if (data.action === 'transfer' && (!data.confirmed || !data.publicationId || !data.genreId || !data.locale || !data.html
-      || Buffer.byteLength(data.html) > 8 * 1024 * 1024 || !/^<!doctype html>/i.test(data.html))) {
-    response.status(400).json({ error: { message: 'Confirm an inspected destination and a standalone HTML document of at most 8 MiB.' } }); return;
-  }
-  try {
-    const connection = await prisma.userIntegration.findFirst({ where: {
-      id: id.data, userId: request.authUserId!, enabled: true, providerId: 'ojs',
-    } });
-    const configuredBase = record(connection?.config).baseUrl;
-    if (!connection || typeof configuredBase !== 'string') { response.status(404).json({ error: { message: 'Enabled OJS connection not found.' } }); return; }
-    const credential = await resolvePersonalOjsCredential(request.authUserId!);
-    if (!credential) { response.status(400).json({ error: { message: 'Save a personal OJS editor API key in Account → Personal profile first.' } }); return; }
-    const baseUrl = (await assertTrustedIntegrationUrl(configuredBase, configuredBase)).toString().replace(/\/+$/, '');
-    if (credential.baseUrl !== baseUrl) { response.status(409).json({ error: { message: 'The saved personal OJS key belongs to a different OJS installation.' } }); return; }
-    const result = record(await nativeClient(baseUrl, credential.apiKey)('POST', 'omi-integration/html-galley', data));
-    if (result.protocol !== 'omi-html-galley/1' || result.submissionId !== data.submissionId) throw new Error('Update the OJS Studio Integration plugin to a version supporting HTML galleys.');
-    response.json(data.action === 'inspect' ? { target: result } : { receipt: result });
-  } catch (error) {
-    const status = error instanceof RemoteError && [403, 404, 409, 422].includes(error.status) ? error.status : 502;
-    const message = error instanceof Error ? error.message : 'HTML transfer failed.';
     response.status(status).json({ error: { message } });
   }
 });

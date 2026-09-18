@@ -337,10 +337,10 @@ export async function requestDirectSubmission(
 
 export async function requestPublicationArtifact(
   connectionId: string,
-  input: import('./ojsPublicationArtifact').OjsPublicationArtifactRequest,
+  input: import('./publicationArtifact').PublicationArtifactRequest,
 ): Promise<{
-  target?: import('./ojsPublicationArtifact').OjsPublicationArtifactTarget;
-  receipt?: import('./ojsPublicationArtifact').OjsPublicationArtifactReceipt;
+  target?: import('./publicationArtifact').PublicationArtifactTarget;
+  receipt?: import('./publicationArtifact').PublicationArtifactReceipt;
 }> {
   const response = await fetch(
     `${API_BASE_URL}/integrations/connections/${encodeURIComponent(connectionId)}/publication-artifact`,
@@ -356,8 +356,8 @@ export async function requestPublicationArtifact(
     },
   );
   const result = await parseJsonResponse<{
-    target?: import('./ojsPublicationArtifact').OjsPublicationArtifactTarget;
-    receipt?: import('./ojsPublicationArtifact').OjsPublicationArtifactReceipt;
+    target?: import('./publicationArtifact').PublicationArtifactTarget;
+    receipt?: import('./publicationArtifact').PublicationArtifactReceipt;
     error?: { message: string };
   }>(response);
   if (!response.ok || result.error) {
@@ -366,20 +366,5 @@ export async function requestPublicationArtifact(
         `Publication artifact transfer failed: HTTP ${response.status}.`,
     );
   }
-  return result;
-}
-
-export async function requestHtmlGalley(connectionId: string, input: import('./htmlGalley').HtmlGalleyRequest) {
-  const response = await fetch(`${API_BASE_URL}/integrations/connections/${encodeURIComponent(connectionId)}/html-galley`, {
-    method: 'POST', credentials: 'include', cache: 'no-store',
-    headers: integrationHeaders({ Accept: 'application/json', 'Content-Type': 'application/json' }),
-    body: JSON.stringify(input),
-  });
-  const result = await parseJsonResponse<{
-    target?: import('./htmlGalley').HtmlGalleyTarget;
-    receipt?: import('./htmlGalley').HtmlGalleyReceipt;
-    error?: { message: string };
-  }>(response);
-  if (!response.ok || result.error) throw new Error(result.error?.message ?? `HTML transfer failed: HTTP ${response.status}.`);
   return result;
 }
