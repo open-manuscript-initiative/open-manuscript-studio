@@ -6,6 +6,7 @@ import {
   extractManuscriptState,
 } from '../src/model/versioning.ts';
 import {
+  assertJatsDirectTransferHasNoPackageLocalAssets,
   prepareOjsPublicationArtifact,
 } from '../src/services/ojsPublicationArtifact.ts';
 import type { OmiManuscript } from '../src/types/omi.ts';
@@ -16,7 +17,7 @@ function createCommittedHtmlStudy(): OmiManuscript {
   const state = extractManuscriptState(draft);
   const envelope = createInitialVersioningEnvelope(state, {
     summary: 'Created publication artifact fixture',
-    timestamp: '2026-09-18T12:00:00.000Z',
+    timestamp: state.updatedAt,
     completeness: 'complete',
   });
   return { ...state, ...envelope };
@@ -59,5 +60,21 @@ test('publication artifact preparation rejects non-study HTML targets', async ()
   await assert.rejects(
     prepareOjsPublicationArtifact(manuscript, 'html'),
     /standalone study/i,
+  );
+});
+
+
+test('JATS direct transfer rejects package-local binary references', () => {
+  assert.doesNotThrow(() =>
+    assertJatsDirectTransferHasNoPackageLocalAssets(
+      '<article><graphic xlink:href="https://cdn.example.test/figure.png"/></article>',
+    ),
+  );
+  assert.rejects(
+    async () =>
+      assertJatsDirectTransferHasNoPackageLocalAssets(
+        '<article><graphic xlink:href="omi-assets/figure.png"/></article>',
+      ),
+    /package-local binary assets/i,
   );
 });
