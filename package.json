@@ -73,7 +73,8 @@
     "test:vivliostyle-pdf": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/vivliostyle-pdf.test.ts && node --test --experimental-test-module-mocks tests/vivliostyle-pdf-routes.test.mjs",
     "publication:release:gate": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/publication-release-gates.ts",
     "test:publication-release": "npm run publication:release:gate -- --strict && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/jats-conformance.test.ts tests/jats4r-profile.test.ts tests/publication-build.test.ts tests/publication-release-gates.test.ts",
-    "test:jats4r-profile": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/jats4r-profile.test.ts"
+    "test:jats4r-profile": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/jats4r-profile.test.ts",
+    "test:publication-artifact": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/ojs-publication-artifact.test.ts && node --test --experimental-test-module-mocks tests/publication-artifact-routes.test.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

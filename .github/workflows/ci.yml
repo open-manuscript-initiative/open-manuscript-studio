@@ -115,6 +115,9 @@ jobs:
       - name: Test HTML galley transfer
         run: npm run test:html-galley
 
+      - name: Test OJS publication artifact client
+        run: npm run test:publication-artifact
+
       - name: Read package version
         id: package
         shell: bash

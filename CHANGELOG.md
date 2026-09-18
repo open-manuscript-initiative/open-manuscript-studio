@@ -6,6 +6,25 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+### OJS publication artifact transfer
+
+- Replaces the Publication panel's legacy HTML-only OJS transfer client with the
+  `omi-publication-artifact/1` client introduced by OJS Integration 1.5.0.0.
+- Discovers destination-supported publication formats and size limits before
+  transfer instead of assuming HTML availability.
+- Builds and transfers provenance-bound self-contained HTML, validated JATS XML,
+  print PDF and interactive PDF artifacts.
+- Sends the exact `omi-publication-build@0.1.0` manifest with the artifact so
+  OJS can independently verify byte length, SHA-256, renderer metadata and the
+  deterministic build identifier before persistence.
+- Keeps the personal OJS editorial API key server-side and forwards it only as
+  native Bearer authorization to the fixed trusted plugin endpoint.
+- Keeps the legacy HTML-galley proxy for backwards compatibility while the
+  Publication UI uses the new multi-format protocol.
+- Blocks direct JATS transfer when the XML depends on package-local binary media
+  that the single-artifact protocol cannot carry.
+
+
 ## 0.2.0-beta.1 — 2026-09-18
 
 ### Validated publication pipeline
