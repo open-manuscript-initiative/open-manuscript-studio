@@ -49,7 +49,7 @@ interface SchemaFile {
 }
 
 let dtdValidatorPromise: Promise<DtdValidator> | undefined;
-let pinnedSchemaDocument: XmlDocument | undefined;
+let _pinnedSchemaDocument: XmlDocument | undefined;
 
 /**
  * Validates JATS 1.4 Article Authoring XML against the pinned MathML 3 DTD.
@@ -243,7 +243,7 @@ async function createPinnedDtdValidator(): Promise<DtdValidator> {
 
     // The DTD is owned by its bootstrap document. Keep that document alive for
     // as long as the cached validator exists.
-    pinnedSchemaDocument = schemaDocument;
+    _pinnedSchemaDocument = schemaDocument;
     return new DtdValidator(dtd);
   } catch (error) {
     schemaDocument?.dispose();
