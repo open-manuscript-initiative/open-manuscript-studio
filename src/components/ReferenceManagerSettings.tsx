@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { IntegrationProviderStatus } from '../integrations/contracts';
 import {
@@ -27,7 +27,7 @@ export function ReferenceManagerSettings({
   locale,
   onStatus,
 }: ReferenceManagerSettingsProps) {
-  const copy = getCopy(locale);
+  const copy = useMemo(() => getCopy(locale), [locale]);
   const [apiKey, setApiKey] = useState('');
   const [connection, setConnection] = useState<IntegrationConnection | null>(null);
   const [status, setStatus] = useState<IntegrationProviderStatus | null>(null);
@@ -35,7 +35,7 @@ export function ReferenceManagerSettings({
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const [catalog, nextStatus] = await Promise.all([
       getIntegrationCatalog(),
       getIntegrationStatus(provider),
@@ -47,25 +47,12 @@ export function ReferenceManagerSettings({
     setConnection(nextConnection);
     setStatus(nextStatus);
     onStatus?.(nextStatus);
-  }
+  }, [provider, onStatus]);
 
   useEffect(() => {
     let cancelled = false;
     setBusy(true);
-    void Promise.all([
-      getIntegrationCatalog(),
-      getIntegrationStatus(provider),
-    ])
-      .then(([catalog, nextStatus]) => {
-        if (cancelled) return;
-        setConnection(
-          catalog
-            .find((entry) => entry.id === provider)
-            ?.connections.find((candidate) => candidate.enabled) ?? null,
-        );
-        setStatus(nextStatus);
-        onStatus?.(nextStatus);
-      })
+    void refresh()
       .catch((reason: unknown) => {
         if (!cancelled) {
           setError(reason instanceof Error ? reason.message : String(reason));
@@ -77,7 +64,7 @@ export function ReferenceManagerSettings({
     return () => {
       cancelled = true;
     };
-  }, [provider, onStatus]);
+  }, [refresh]);
 
   useEffect(() => {
     if (provider !== 'mendeley') return;
@@ -103,7 +90,7 @@ export function ReferenceManagerSettings({
       dispose = unsubscribe;
     });
     return () => dispose();
-  }, [provider]);
+  }, [provider, refresh, copy.connected, copy.oauthFailed]);
 
   async function saveZotero() {
     const key = apiKey.trim();
