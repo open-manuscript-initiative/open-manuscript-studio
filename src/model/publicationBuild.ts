@@ -34,6 +34,12 @@ export interface OmiPublicationBuildProfileDigest
   canonicalization: typeof OMI_PUBLICATION_PROFILE_DIGEST_CANONICALIZATION;
 }
 
+export interface OmiPublicationBuildRendererInput {
+  mediaType: string;
+  byteLength: number;
+  digest: OmiPublicationBuildDigest;
+}
+
 export interface OmiPublicationBuild {
   model: typeof OMI_PUBLICATION_BUILD_MODEL;
   version: typeof OMI_PUBLICATION_BUILD_VERSION;
@@ -56,6 +62,7 @@ export interface OmiPublicationBuild {
     byteLength: number;
     digest: OmiPublicationBuildDigest;
   };
+  rendererInput?: OmiPublicationBuildRendererInput;
   generator: {
     application: 'open-manuscript-studio';
     applicationVersion: string;
