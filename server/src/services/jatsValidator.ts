@@ -7,7 +7,6 @@ import {
   ParseOption,
   XmlBufferInputProvider,
   XmlDocument,
-  XmlDtd,
   XmlParseError,
   XmlValidateError,
   xmlCleanupInputProvider,
@@ -50,6 +49,7 @@ interface SchemaFile {
 }
 
 let dtdValidatorPromise: Promise<DtdValidator> | undefined;
+let pinnedSchemaDocument: XmlDocument | undefined;
 
 /**
  * Validates JATS 1.4 Article Authoring XML against the pinned MathML 3 DTD.
@@ -204,8 +204,7 @@ async function createPinnedDtdValidator(): Promise<DtdValidator> {
     resources[`./${file.fileName}`] = bytes;
   }
 
-  const mainDtd = resources[JATS_VALIDATION_DTD_FILE];
-  if (!mainDtd) {
+  if (!resources[JATS_VALIDATION_DTD_FILE]) {
     throw new Error(
       `Pinned JATS schema package does not contain ${JATS_VALIDATION_DTD_FILE}.`,
     );
@@ -216,9 +215,39 @@ async function createPinnedDtdValidator(): Promise<DtdValidator> {
     throw new Error('Unable to register the in-memory JATS DTD resource provider.');
   }
 
+  let schemaDocument: XmlDocument | undefined;
   try {
-    const dtd = XmlDtd.fromBuffer(mainDtd);
+    // XmlDtd.fromBuffer() has no base URI, so relative external parameter
+    // entities in modular JATS DTDs cannot be resolved. Parse a trusted
+    // bootstrap document instead: libxml2 then resolves the top-level DTD and
+    // every nested module through the registered in-memory provider.
+    schemaDocument = XmlDocument.fromString(
+      `<?xml version="1.0"?>
+<!DOCTYPE article SYSTEM "${JATS_VALIDATION_DTD_FILE}">
+<article/>`,
+      {
+        url: 'jats-validator-bootstrap.xml',
+        option:
+          ParseOption.XML_PARSE_DTDLOAD |
+          ParseOption.XML_PARSE_NONET |
+          ParseOption.XML_PARSE_BIG_LINES,
+      },
+    );
+
+    const dtd = schemaDocument.dtd;
+    if (!dtd) {
+      schemaDocument.dispose();
+      schemaDocument = undefined;
+      throw new Error('Pinned JATS DTD could not be loaded.');
+    }
+
+    // The DTD is owned by its bootstrap document. Keep that document alive for
+    // as long as the cached validator exists.
+    pinnedSchemaDocument = schemaDocument;
     return new DtdValidator(dtd);
+  } catch (error) {
+    schemaDocument?.dispose();
+    throw error;
   } finally {
     xmlCleanupInputProvider();
   }
