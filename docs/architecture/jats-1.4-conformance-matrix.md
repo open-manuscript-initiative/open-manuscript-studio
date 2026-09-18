@@ -81,13 +81,15 @@ A JATS artifact is releasable only when all of these gates pass:
    diagnostics.
 2. **Semantic fidelity** — no active diagnostic owned by a
    `blocks-on-use` conformance capability.
-3. **Pinned target** — validation evidence identifies JATS 1.4 Article
+3. **JATS4R publication profile** — the generated XML passes the pinned,
+   offline reuse-oriented profile for Studio's Article Authoring output.
+4. **Pinned target** — validation evidence identifies JATS 1.4 Article
    Authoring, DTD, MathML 3.
-4. **DTD validation** — the exact generated XML passes the pinned offline DTD.
-5. **Build provenance** — the artifact is delivered with a publication-build
+5. **DTD validation** — the exact generated XML passes the pinned offline DTD.
+6. **Build provenance** — the artifact is delivered with a publication-build
    sidecar tied to the committed head revision.
 
-The first four gates run before JATS delivery. The provenance sidecar is created
+The first five gates run before JATS delivery. The provenance sidecar is created
 from the exact released bytes and is part of the same export workflow.
 
 ## Privacy boundary
@@ -104,6 +106,7 @@ The primary CI pipeline must pass:
 ```text
 npm test
 npm run test:jats-validation
+npm run test:jats4r-profile
 npm run test:publication-release
 ```
 
