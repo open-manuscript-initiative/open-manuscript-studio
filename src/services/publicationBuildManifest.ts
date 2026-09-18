@@ -158,7 +158,7 @@ export function createPublicationBuildManifest(
     manuscript,
     profile,
     output,
-    rendererInput,
+    ...(rendererInput ? { rendererInput } : {}),
     generator,
   };
 }
