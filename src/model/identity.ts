@@ -202,10 +202,10 @@ export function createPersonAgent(
     affiliations.push({
       id: crypto.randomUUID(),
       organizationName: affiliation,
-      organizationIdentifier: input.affiliationRorId
+      organizationIdentifier: normalizeRorId(input.affiliationRorId ?? '')
         ? createExternalIdentifierAssertion(
             'ror',
-            input.affiliationRorId,
+            input.affiliationRorId ?? '',
             'self-asserted',
             timestamp,
             ROR_API_SOURCE,
