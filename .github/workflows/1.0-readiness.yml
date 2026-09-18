@@ -22,12 +22,17 @@ on:
       - 'src/services/jatsReleaseGate.ts'
       - 'src/services/jats4rProfileValidator.ts'
       - 'src/services/jatsValidationApi.ts'
+      - 'src/services/ojsPublicationArtifact.ts'
+      - 'server/src/routes/directSubmissionRoutes.ts'
       - 'src/components/JatsExportPanel.tsx'
+      - 'src/components/PublicationArtifactPanel.tsx'
       - 'src/components/ExportFormatsPanel.tsx'
       - 'tests/jats*.test.ts'
       - 'docs/architecture/jats4r-publication-profile.md'
       - 'tests/publication-build.test.ts'
       - 'tests/publication-release-gates.test.ts'
+      - 'tests/ojs-publication-artifact.test.ts'
+      - 'tests/publication-artifact-routes.test.mjs'
       - 'scripts/benchmark-docx-import.ts'
       - 'scripts/generate-docx-stress-fixture.ts'
       - 'scripts/register-source-loader.mjs'
@@ -67,12 +72,17 @@ on:
       - 'src/services/jatsReleaseGate.ts'
       - 'src/services/jats4rProfileValidator.ts'
       - 'src/services/jatsValidationApi.ts'
+      - 'src/services/ojsPublicationArtifact.ts'
+      - 'server/src/routes/directSubmissionRoutes.ts'
       - 'src/components/JatsExportPanel.tsx'
+      - 'src/components/PublicationArtifactPanel.tsx'
       - 'src/components/ExportFormatsPanel.tsx'
       - 'tests/jats*.test.ts'
       - 'docs/architecture/jats4r-publication-profile.md'
       - 'tests/publication-build.test.ts'
       - 'tests/publication-release-gates.test.ts'
+      - 'tests/ojs-publication-artifact.test.ts'
+      - 'tests/publication-artifact-routes.test.mjs'
       - 'scripts/benchmark-docx-import.ts'
       - 'scripts/generate-docx-stress-fixture.ts'
       - 'scripts/register-source-loader.mjs'
@@ -138,6 +148,7 @@ jobs:
           npm --prefix server run prisma:generate:all
           npm --prefix server run typecheck
           npm run test:direct-submission
+          npm run test:publication-artifact
 
       - name: Install pinned Vivliostyle renderer
         shell: bash
