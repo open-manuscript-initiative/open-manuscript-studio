@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { externalizeActiveManuscriptAssets } from '../app/assetActions';
 import { useStudioStore } from '../app/useStudioStore';
@@ -170,10 +170,6 @@ function PublicationArtifactForm({
     };
   }, []);
 
-  const availableFormats = useMemo(
-    () => target?.formats.filter((item) => item.available) ?? [],
-    [target],
-  );
   const selectedCapability = target?.formats.find(
     (item) => item.id === format,
   );
