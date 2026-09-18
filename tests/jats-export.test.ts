@@ -22,6 +22,7 @@ test('renders deterministic JATS 1.4 authoring XML with title block and traceabi
 
   assert.equal(first.xml, second.xml);
   assert.match(first.xml, /dtd-version="1\.4"/);
+  assert.match(first.xml, /JATS-articleauthoring1-4-mathml3\.dtd/);
   assert.match(first.xml, /base-tagset="authoring"/);
   assert.match(first.xml, /<article-title>Meaning &lt; Structure &amp; Publication<\/article-title>/);
   assert.match(first.xml, /<subtitle>A portable subtitle<\/subtitle>/);
