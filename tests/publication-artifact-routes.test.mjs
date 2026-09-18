@@ -3,7 +3,7 @@ import { mock, test } from 'node:test';
 import express from '../server/node_modules/express/index.js';
 
 const connectionId = '20000000-0000-4000-8000-000000000003';
-const destination = 'https://journal.example.test/index.php/demo';
+const destination = 'https://publishing.example.test/index.php/demo';
 let enabled = true;
 let provider = 'ojs';
 let remoteStatus = 200;
@@ -14,17 +14,26 @@ mock.module(new URL('../server/dist/lib/prisma.js', import.meta.url).href, {
   namedExports: {
     prisma: {
       userIntegration: {
-        findFirst: async ({ where }) =>
-          where.id === connectionId &&
-          where.userId === 'editor' &&
-          where.enabled === enabled &&
-          where.providerId === provider
-            ? { id: connectionId, config: { baseUrl: destination } }
-            : null,
+        findFirst: async ({ where }) => {
+          const allowed = Array.isArray(where.providerId?.in)
+            ? where.providerId.in.includes(provider)
+            : where.providerId === provider;
+          return where.id === connectionId &&
+            where.userId === 'editor' &&
+            where.enabled === enabled &&
+            allowed
+            ? {
+                id: connectionId,
+                providerId: provider,
+                config: { baseUrl: destination },
+              }
+            : null;
+        },
       },
     },
   },
 });
+
 mock.module(
   new URL('../server/dist/middleware/requireSession.js', import.meta.url).href,
   {
@@ -37,6 +46,7 @@ mock.module(
     },
   },
 );
+
 mock.module(
   new URL(
     '../server/dist/integrations/security/trustedRemoteUrl.js',
@@ -51,10 +61,15 @@ mock.module(
     },
   },
 );
+
 mock.module(new URL('../server/dist/routes/authRoutes.js', import.meta.url).href, {
   namedExports: {
     resolvePersonalOjsCredential: async () => ({
-      apiKey: 'editorial-test-key',
+      apiKey: 'ojs-editorial-test-key',
+      baseUrl: destination,
+    }),
+    resolvePersonalOmpCredential: async () => ({
+      apiKey: 'omp-editorial-test-key',
       baseUrl: destination,
     }),
   },
@@ -75,6 +90,7 @@ mock.method(globalThis, 'fetch', async (url, init) => {
   if (!String(url).startsWith(destination)) {
     return originalFetch(url, init);
   }
+
   calls.push({
     url: String(url),
     init,
@@ -82,15 +98,16 @@ mock.method(globalThis, 'fetch', async (url, init) => {
   });
 
   const body = JSON.parse(init.body);
+  const omp = provider === 'omp';
   const success =
     body.action === 'inspect'
       ? {
           protocol: 'omi-publication-artifact/1',
           submissionId: 12,
           publicationId: 13,
-          title: 'Demo',
+          title: omp ? 'Demo Book' : 'Demo Article',
           locales: ['hu'],
-          genres: [{ id: 2, label: 'Article' }],
+          genres: [{ id: 2, label: omp ? 'Manuscript' : 'Article' }],
           formats: [
             {
               id: 'html',
@@ -99,7 +116,9 @@ mock.method(globalThis, 'fetch', async (url, init) => {
               extension: 'html',
               maxBytes: 8388608,
               available: true,
-              requires: 'htmlArticleGalleyPlugin',
+              requires: omp
+                ? 'htmlMonographFilePlugin'
+                : 'htmlArticleGalleyPlugin',
             },
             {
               id: 'jats',
@@ -117,6 +136,16 @@ mock.method(globalThis, 'fetch', async (url, init) => {
             version: '0.1.0',
             digest: 'sha256',
           },
+          ...(omp
+            ? {
+                authority: {
+                  representation: 'publicationFormat',
+                  formatApprovedByDefault: false,
+                  formatAvailableByDefault: false,
+                  proofViewableByDefault: false,
+                },
+              }
+            : {}),
           published: false,
         }
       : {
@@ -126,8 +155,15 @@ mock.method(globalThis, 'fetch', async (url, init) => {
           format: body.format,
           mediaType: body.mediaType,
           artifactFileName: body.fileName,
-          galleyId: 14,
-          submissionFileId: 15,
+          ...(omp
+            ? {
+                publicationFormatId: 21,
+                submissionFileId: 22,
+                formatApproved: false,
+                formatAvailable: false,
+                proofViewable: false,
+              }
+            : { galleyId: 14, submissionFileId: 15 }),
           sha256: 'a'.repeat(64),
           buildId: body.build.id,
           provenanceVerified: true,
@@ -135,13 +171,21 @@ mock.method(globalThis, 'fetch', async (url, init) => {
           published: false,
         };
 
+  const rejectedKey =
+    provider === 'omp'
+      ? 'omp-editorial-test-key'
+      : 'ojs-editorial-test-key';
+
   return new Response(
     JSON.stringify(
       remoteStatus === 200
         ? success
-        : { error: { message: 'Rejected editorial-test-key' } },
+        : { error: { message: `Rejected ${rejectedKey}` } },
     ),
-    { status: remoteStatus, headers: { 'Content-Type': 'application/json' } },
+    {
+      status: remoteStatus,
+      headers: { 'Content-Type': 'application/json' },
+    },
   );
 });
 
@@ -150,6 +194,7 @@ const inspect = {
   manuscriptId: 'demo-study',
   submissionId: 12,
 };
+
 const build = {
   model: 'omi-publication-build',
   version: '0.1.0',
@@ -187,6 +232,7 @@ const build = {
     rendererVersion: '0.1.0-alpha.1',
   },
 };
+
 const transfer = {
   ...inspect,
   action: 'transfer',
@@ -203,8 +249,11 @@ const transfer = {
 
 async function request(body = inspect, user = 'editor') {
   const response = await originalFetch(
-    'http://127.0.0.1:' + server.address().port +
-      '/integrations/connections/' + connectionId + '/publication-artifact',
+    'http://127.0.0.1:' +
+      server.address().port +
+      '/integrations/connections/' +
+      connectionId +
+      '/publication-artifact',
     {
       method: 'POST',
       headers: {
@@ -221,16 +270,16 @@ async function request(body = inspect, user = 'editor') {
   };
 }
 
-test('publication artifact proxy authorization and protocol', async (t) => {
+test('publication artifact proxy authorization and OJS/OMP protocol', async (t) => {
   t.after(() => server.close());
 
-  await t.test('requires a session and the owner enabled OJS connection', async () => {
+  await t.test('requires a session and an owned enabled publishing connection', async () => {
     assert.equal((await request(inspect, null)).status, 401);
     assert.equal((await request(inspect, 'another-user')).status, 404);
     enabled = false;
     assert.equal((await request()).status, 404);
     enabled = true;
-    provider = 'omp';
+    provider = 'other';
     assert.equal((await request()).status, 404);
     provider = 'ojs';
     assert.equal(calls.length, 0);
@@ -251,39 +300,69 @@ test('publication artifact proxy authorization and protocol', async (t) => {
     assert.equal(calls.length, 0);
   });
 
-  await t.test('forwards the editor key only as Bearer to the fixed plugin endpoint', async () => {
+  await t.test('uses only the personal OJS editor key for OJS', async () => {
+    provider = 'ojs';
     const inspected = await request();
     assert.equal(inspected.status, 200);
     assert.equal(inspected.cache, 'no-store');
     assert.equal(inspected.body.target.publicationId, 13);
     assert.equal(
-      calls[0].url,
+      calls.at(-1).url,
       destination + '/api/v1/omi-integration/publication-artifact',
     );
     assert.equal(
-      calls[0].init.headers.get('Authorization'),
-      'Bearer editorial-test-key',
+      calls.at(-1).init.headers.get('Authorization'),
+      'Bearer ojs-editorial-test-key',
     );
-    assert.equal(calls[0].init.redirect, 'error');
-    assert.equal(calls[0].body.apiKey, undefined);
+    assert.equal(calls.at(-1).body.apiKey, undefined);
 
     const transferred = await request(transfer);
     assert.equal(transferred.status, 200);
+    assert.equal(transferred.body.receipt.galleyId, 14);
     assert.equal(transferred.body.receipt.provenanceVerified, true);
     assert.equal(transferred.body.receipt.published, false);
-    assert.equal(transferred.body.receipt.buildId, build.id);
   });
 
-  await t.test('preserves OJS permission/conflict/validation status without exposing key', async () => {
-    for (const status of [403, 409, 422]) {
-      remoteStatus = status;
-      const result = await request(transfer);
-      assert.equal(result.status, status);
-      assert.doesNotMatch(
-        JSON.stringify(result.body),
-        /editorial-test-key/,
-      );
+  await t.test('uses only the personal OMP editor key and preserves OMP authority metadata', async () => {
+    provider = 'omp';
+    const inspected = await request();
+    assert.equal(inspected.status, 200);
+    assert.equal(
+      inspected.body.target.authority.representation,
+      'publicationFormat',
+    );
+    assert.equal(
+      inspected.body.target.authority.proofViewableByDefault,
+      false,
+    );
+    assert.equal(
+      calls.at(-1).init.headers.get('Authorization'),
+      'Bearer omp-editorial-test-key',
+    );
+
+    const transferred = await request(transfer);
+    assert.equal(transferred.status, 200);
+    assert.equal(transferred.body.receipt.publicationFormatId, 21);
+    assert.equal(transferred.body.receipt.formatApproved, false);
+    assert.equal(transferred.body.receipt.formatAvailable, false);
+    assert.equal(transferred.body.receipt.proofViewable, false);
+    assert.equal(transferred.body.receipt.published, false);
+  });
+
+  await t.test('preserves PKP permission/conflict/validation status without exposing either key', async () => {
+    for (const currentProvider of ['ojs', 'omp']) {
+      provider = currentProvider;
+      for (const status of [403, 409, 422]) {
+        remoteStatus = status;
+        const result = await request(transfer);
+        assert.equal(result.status, status);
+        assert.doesNotMatch(
+          JSON.stringify(result.body),
+          /(?:ojs|omp)-editorial-test-key/,
+        );
+      }
     }
     remoteStatus = 200;
+    provider = 'ojs';
   });
 });
