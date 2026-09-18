@@ -267,6 +267,16 @@ export const OMI_JATS_CONFORMANCE_MATRIX: readonly JatsConformanceCapability[] =
     evidence: ['tests/jats-conformance.test.ts'],
   },
   {
+    id: 'validation.jats4r-profile',
+    area: 'validation',
+    omi: 'Generated publication-facing JATS artifact',
+    jats: 'Offline JATS4R reuse-oriented publication profile',
+    status: 'conditional',
+    releaseGate: 'required',
+    notes: 'Studio implements the pinned JATS4R subset relevant to its Article Authoring output and treats profile errors as release blockers.',
+    evidence: ['tests/jats4r-profile.test.ts'],
+  },
+  {
     id: 'validation.dtd',
     area: 'validation',
     omi: 'Generated JATS artifact',
