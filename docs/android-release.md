@@ -68,10 +68,12 @@ Do not use GitHub's **Re-run jobs** on an old commit to produce a new upload;
 first reserve a higher code and start a new build from the updated revision.
 The workflows do not automatically increment a checked-in code.
 
-The AGP 9 experiment reserved codes 1015 through 1019. Google Play now
-contains versionCode **1024** for **0.1.0-beta.10**. The next new Android build
-must use **1025 or higher**, also checking any intervening builds or Play
-uploads before choosing it.
+The AGP 9 experiment reserved codes 1015 through 1019. Google Play contains
+versionCode **1024** for **0.1.0-beta.10**, and later development builds have
+reserved higher values. The **0.2.0-beta.1** source tree reserves versionCode
+**1030**. Any subsequent Android build must use a value above every previously
+reserved, built or uploaded code; the Android Release workflow may select an
+even higher run-derived code without lowering this committed baseline.
 
 
 Open:
