@@ -1,10 +1,41 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 
+const creditRole = z.enum([
+  'conceptualization',
+  'data-curation',
+  'formal-analysis',
+  'funding-acquisition',
+  'investigation',
+  'methodology',
+  'project-administration',
+  'resources',
+  'software',
+  'supervision',
+  'validation',
+  'visualization',
+  'writing-original-draft',
+  'writing-review-editing',
+]);
 const author = z.object({
   givenName: z.string().trim().min(1).max(200),
   familyName: z.string().trim().max(200),
   email: z.string().trim().email().max(254),
+  preferredPublicName: z.string().trim().max(400).optional(),
+  country: z.string().trim().toUpperCase().regex(/^[A-Z]{2}$/).optional(),
+  url: z.string().trim().url().max(2048).optional(),
+  biography: z.string().max(100000).optional(),
+  affiliation: z.string().trim().max(1000).optional(),
+  affiliationRorId: z.string().trim().url().max(512).optional(),
+  department: z.string().trim().max(500).optional(),
+  position: z.string().trim().max(500).optional(),
+  orcid: z.string().trim().max(64).optional(),
+  role: z.string().trim().max(64).optional(),
+  primaryContact: z.boolean().optional(),
+  includeInBrowse: z.boolean().optional(),
+  creditRoles: z.array(creditRole).max(14).optional(),
+  competingInterestsStatus: z.enum(['none', 'declared']).optional(),
+  competingInterests: z.string().max(100000).optional(),
 });
 export const directSubmissionInput = z.object({
   manuscriptId: z.string().min(1).max(128),
@@ -65,14 +96,37 @@ export async function prepareRemoteSubmission(remote: RemoteRequest, ids: { exte
   for (const [index, author] of input.authors.entries()) {
     const existing = contributors.find((a) => String(a.email).toLowerCase() === author.email.toLowerCase());
     const body = {
-      givenName: { [input.locale]: author.givenName }, familyName: { [input.locale]: author.familyName },
-      email: author.email, userGroupId: authorGroup, includeInBrowse: true, seq: index,
+      givenName: { [input.locale]: author.givenName },
+      familyName: { [input.locale]: author.familyName },
+      email: author.email,
+      userGroupId: authorGroup,
+      includeInBrowse: author.includeInBrowse ?? true,
+      seq: index,
+      ...(author.preferredPublicName
+        ? { preferredPublicName: { [input.locale]: author.preferredPublicName } }
+        : {}),
+      ...(author.country ? { country: author.country } : {}),
+      ...(author.url ? { url: author.url } : {}),
+      ...(author.biography
+        ? { biography: { [input.locale]: author.biography } }
+        : {}),
+      ...(author.competingInterests
+        ? { competingInterests: { [input.locale]: author.competingInterests } }
+        : {}),
+      ...(author.orcid
+        ? {
+            orcid: /^https?:\/\/orcid\.org\//i.test(author.orcid)
+              ? author.orcid
+              : `https://orcid.org/${author.orcid}`,
+          }
+        : {}),
     };
     const result = record(await remote(existing ? 'PUT' : 'POST',
       `${publicationPath}/contributors${existing ? `/${positiveId(existing.id)}` : ''}`, body));
     const id = positiveId(result.id);
     retained.add(id);
-    primaryContactId ??= id;
+    if (author.primaryContact) primaryContactId ??= id;
+    if (primaryContactId === undefined && index === 0) primaryContactId = id;
   }
   // Never silently retain an unexpected account as an author or delete other authors.
   // The native wizard can resolve existing contributors before validation is retried.
