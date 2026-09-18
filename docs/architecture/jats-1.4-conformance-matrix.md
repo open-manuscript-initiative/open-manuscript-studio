@@ -47,6 +47,7 @@ A release must also pass the semantic-fidelity gate.
 | Charts | Structured chart data | `fig/media` with OMI chart JSON | Fallback | Blocks release |
 | Music scores | MusicXML/MIDI semantic block | Textual note-sequence `fig` fallback | Fallback | Blocks release |
 | Unknown rich-text blocks | Unknown block node | Flattened `p` | Fallback | Blocks release |
+| JATS4R publication profile | Generated publication-facing JATS | Offline pinned JATS4R reuse-oriented profile | Conditional | Required |
 | Full schema validation | Generated JATS | Pinned JATS 1.4 Article Authoring MathML 3 DTD | Stable | Required |
 | Build provenance | Committed revision + artifact | `<artifact>.omi-build.json` | Stable | Required |
 
