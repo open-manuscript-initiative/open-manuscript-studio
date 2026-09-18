@@ -89,6 +89,9 @@ jobs:
       - name: Test JATS 1.4 schema validation
         run: npm run test:jats-validation
 
+      - name: Test Vivliostyle PDF artifact pipeline
+        run: npm run test:vivliostyle-pdf
+
       - name: Test direct publishing submissions
         run: npm run test:direct-submission
 
