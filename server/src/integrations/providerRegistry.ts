@@ -2,6 +2,7 @@ import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
 import { requestAiText, resolveAiEndpoint } from './aiProviderClient.js';
 import { loadOmiAgentsConfiguration } from './omiAgentsConfig.js';
+import { testReferenceManagerConnection } from './referenceManagers/referenceManagerService.js';
 import { decryptSecret, type EncryptedSecret } from './secretCrypto.js';
 
 export type IntegrationProviderKind =
@@ -277,6 +278,10 @@ export async function testIntegrationProvider(
       return testAiProvider(userId);
     case 'omi-agents':
       return testOmiAgents(userId);
+    case 'zotero':
+      return testReferenceManagerConnection(userId, 'zotero');
+    case 'mendeley':
+      return testReferenceManagerConnection(userId, 'mendeley');
     case 'orcid': {
       const identity = await prisma.userIdentity.findFirst({
         where: { userId, provider: 'ORCID' }, select: { id: true },
