@@ -165,6 +165,21 @@ test('system font catalog groups actual faces and keeps the closest valid face',
   assert.match(exportRenderer, /font-weight: \$\{body\.fontWeight\}/);
 });
 
+test('author given and family names have independent publication typography', () => {
+  assert.match(styleEditor, /style\.styles\.authorGivenName/);
+  assert.match(styleEditor, /style\.styles\.authorFamilyName/);
+  assert.match(styleEditor, /authorGivenName', 'fontVariantCaps'/);
+  assert.match(styleEditor, /authorFamilyName', 'fontVariantCaps'/);
+  assert.match(styleEditor, /authorGivenName', 'textTransform'/);
+  assert.match(styleEditor, /authorFamilyName', 'textTransform'/);
+  assert.match(documentCanvas, /publication-document-author-given-name/);
+  assert.match(documentCanvas, /publication-document-author-family-name/);
+  assert.match(editorStyles, /--omi-publication-author-given-weight/);
+  assert.match(editorStyles, /--omi-publication-author-family-weight/);
+  assert.match(exportRenderer, /\.article-front \.author-given-name/);
+  assert.match(exportRenderer, /\.article-front \.author-family-name/);
+});
+
 test('publication view edits the complete structured manuscript instead of a sample paragraph', () => {
   assert.match(styleEditor, /<PublicationDocumentCanvas style=\{style\}/);
   assert.match(documentCanvas, /buildContinuousManuscriptDocument\([\s\S]*manuscript\.sections/);
