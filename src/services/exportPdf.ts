@@ -1,3 +1,4 @@
+import { assetPath } from '../model/assets';
 import { combinedPublisherPrintCss } from '../model/publisherExportStyle';
 import {
   profileSupportsOutput,
@@ -5,6 +6,7 @@ import {
   type OmiPublicationProfile,
 } from '../model/publicationProfile';
 import type { OmiManuscript } from '../types/omi';
+import { getAssetPayload } from './assetRepository';
 import { renderHtmlArticle } from './exportHtml';
 
 export type PdfExportMode = 'print' | 'interactive';
@@ -61,6 +63,54 @@ export function buildPdfPrintDocument(
   );
 
   return applyPdfInteractionMode(styledHtml, normalizedMode, normalizedContentMode);
+}
+
+/**
+ * Builds the self-contained HTML source sent to the server-side paged-media
+ * renderer. Referenced manuscript assets are converted to data URLs so the
+ * renderer never needs filesystem, cloud-storage or network access.
+ */
+export async function buildPdfArtifactDocument(
+  manuscript: OmiManuscript,
+  profile: OmiPublicationProfile = resolvePublicationProfile(manuscript),
+  mode: PdfExportMode = 'print',
+  contentMode: PdfContentMode = 'publication',
+): Promise<string> {
+  let html = buildPdfPrintDocument(manuscript, profile, mode, contentMode);
+
+  for (const asset of manuscript.assets ?? []) {
+    const path = assetPath(asset);
+    if (!html.includes(path)) continue;
+
+    const bytes = await getAssetPayload(manuscript.id, asset.id);
+    if (!bytes) {
+      throw new Error(
+        \`PDF source references unavailable asset payload \${asset.id}.\`,
+      );
+    }
+
+    const dataUrl = \`data:\${asset.mediaType};base64,\${bytesToBase64(bytes)}\`;
+    const escapedPath = path.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
+    html = html.replace(
+      new RegExp(\`(["'])\${escapedPath}\\\\1\`, 'g'),
+      (_match, quote: string) => \`\${quote}\${dataUrl}\${quote}\`,
+    );
+  }
+
+  return html;
+}
+
+export function pdfFileName(
+  manuscript: Pick<OmiManuscript, 'title' | 'id'>,
+  mode: PdfExportMode = 'print',
+): string {
+  const stem = (manuscript.title.trim() || manuscript.id || 'manuscript')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'manuscript';
+  return mode === 'interactive' ? \`\${stem}.interactive.pdf\` : \`\${stem}.pdf\`;
 }
 
 /**
@@ -331,4 +381,14 @@ function annotatePdfBody(
       : `${attributes} class="${bodyClass}"`;
     return `<body${nextAttributes} data-omi-pdf-mode="${mode}" data-omi-pdf-content="${contentMode}">`;
   });
+}
+
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+  }
+  return globalThis.btoa(binary);
 }
