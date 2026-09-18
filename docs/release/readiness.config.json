@@ -37,7 +37,9 @@
     "src/components/PublicationArtifactPanel.tsx",
     "server/src/routes/directSubmissionRoutes.ts",
     "tests/ojs-publication-artifact.test.ts",
-    "tests/publication-artifact-routes.test.mjs"
+    "tests/publication-artifact-routes.test.mjs",
+    "docs/ojs-publication-artifact-transfer.md",
+    "server/src/app.ts"
   ],
   "workflowMarkers": {
     ".github/workflows/ci.yml": [
