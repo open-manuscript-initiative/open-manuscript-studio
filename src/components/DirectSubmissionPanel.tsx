@@ -3,6 +3,7 @@ import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getDocumentStructureProfile } from '../model/documentProfile';
 import { createDirectSubmissionSnapshot } from '../model/directSubmissionSnapshot';
+import { getExternalIdentifierValue, getPrimaryAffiliationRorId } from '../model/identity';
 import { buildDocxExport } from '../services/exportDocx';
 import { getIntegrationCatalog, requestDirectSubmission, type IntegrationConnection } from '../services/integrationApi';
 import type { SubmissionAuthor, SubmissionOptions, SubmissionReceipt, SubmissionSnapshot } from '../services/directSubmissionTypes';
@@ -16,7 +17,7 @@ const text = {
     key: 'Szerzői API-kulcs a célrendszerből', keyHelp: 'Az OJS/OMP szerzői profilod API-kulcsa szükséges. A kulcsot nem mentjük el; a plugin megosztott titka nem helyettesíti.',
     language: 'A tanulmány nyelve', section: 'Rovat / sorozat', genre: 'Kéziratfájl típusa', heading: 'Cím', abstract: 'Összefoglaló', keywords: 'Kulcsszavak (pontosvesszővel elválasztva)',
     authors: 'Szerzők, megjelenési sorrendben', given: 'Utónév', family: 'Családnév', email: 'E-mail', add: 'Szerző hozzáadása', remove: 'Eltávolítás',
-    authorHelp: 'Az első szerző lesz a kapcsolattartó. Az API-kulcshoz tartozó szerző is szerepeljen a listában. Ellenőrizd minden szerző nevét és e-mail-címét.',
+    authorHelp: 'A teljes szerzői adatlapot a Közreműködők panelen lehet szerkeszteni; az OJS/OMP-beküldés ezeket az adatokat is átveszi. Az API-kulcshoz tartozó szerző szerepeljen a listában.',
     requirements: 'A célrendszer beküldési feltételei', consent: 'Elolvastam és elfogadom a célrendszer beküldési, szerzői jogi és adatkezelési feltételeit; jogosult vagyok a kézirat beküldésére.',
     prepare: 'Piszkozat átadása és ellenőrzése', submit: 'Beküldés véglegesítése', busy: 'Feldolgozás…', ready: 'A piszkozat és a DOCX + OMI fájlok átadva. A célrendszer ellenőrzése sikeres. A beküldés még nincs véglegesítve.',
     submitted: 'A tanulmány beküldése sikeres.', open: 'Beküldés megnyitása a célrendszerben', refresh: 'Állapot lekérdezése',
@@ -33,7 +34,7 @@ const text = {
     key: 'Author API key from the destination', keyHelp: 'Use the API key from your OJS/OMP author profile. The key is not saved. The plugin shared secret is not an author credential.',
     language: 'Submission language', section: 'Section / series', genre: 'Manuscript file component', heading: 'Title', abstract: 'Abstract', keywords: 'Keywords (separated by semicolons)',
     authors: 'Authors in publication order', given: 'Given name', family: 'Family name', email: 'Email', add: 'Add author', remove: 'Remove',
-    authorHelp: 'The first author will be the primary contact. Include the author who owns the API key. Check every author’s name and email.',
+    authorHelp: 'Edit the full contributor record in the Contributors panel; OJS/OMP submission reuses that metadata. Include the author who owns the API key.',
     requirements: 'Destination submission requirements', consent: 'I have read and accept the destination’s submission, copyright and privacy terms and am authorized to submit this manuscript.',
     prepare: 'Transfer and validate draft', submit: 'Finalize submission', busy: 'Processing…', ready: 'The draft and DOCX + OMI files were transferred and validated. The submission has not been finalized yet.',
     submitted: 'The manuscript was submitted successfully.', open: 'Open submission in publishing system', refresh: 'Check status',
@@ -49,7 +50,7 @@ const text = {
     key: 'API-Schlüssel des Autorenkontos im Zielsystem', keyHelp: 'Verwenden Sie den Schlüssel Ihres OJS/OMP-Autorenprofils. Er wird nicht gespeichert. Das gemeinsame Plugin-Geheimnis ist kein Autorenschlüssel.',
     language: 'Sprache des Beitrags', section: 'Rubrik / Reihe', genre: 'Dateikomponente', heading: 'Titel', abstract: 'Zusammenfassung', keywords: 'Schlagwörter (durch Semikolon getrennt)',
     authors: 'Autoren in Veröffentlichungsreihenfolge', given: 'Vorname', family: 'Nachname', email: 'E-Mail', add: 'Autor hinzufügen', remove: 'Entfernen',
-    authorHelp: 'Der erste Autor wird Kontaktperson. Nehmen Sie den Inhaber des API-Schlüssels auf. Prüfen Sie alle Namen und E-Mail-Adressen.',
+    authorHelp: 'Bearbeiten Sie den vollständigen Mitwirkendendatensatz im Bereich Mitwirkende; OJS/OMP übernimmt diese Metadaten. Nehmen Sie den Inhaber des API-Schlüssels auf.',
     requirements: 'Einreichungsbedingungen des Zielsystems', consent: 'Ich habe die Einreichungs-, Urheberrechts- und Datenschutzbedingungen gelesen und akzeptiert und bin zur Einreichung berechtigt.',
     prepare: 'Entwurf übertragen und prüfen', submit: 'Einreichung abschließen', busy: 'Verarbeitung…', ready: 'Entwurf und DOCX- sowie OMI-Dateien wurden übertragen und geprüft. Die Einreichung ist noch nicht abgeschlossen.',
     submitted: 'Der Beitrag wurde erfolgreich eingereicht.', open: 'Einreichung im Zielsystem öffnen', refresh: 'Status prüfen', changed: 'Dokument oder Angaben wurden geändert. Übertragen Sie den Entwurf erneut.',
@@ -61,12 +62,42 @@ const text = {
   },
 };
 function authorsFrom(manuscript: OmiManuscript): SubmissionAuthor[] {
-  const authors = manuscript.contributions.filter((c) => c.roles.includes('author')).sort((a,b) => (a.order ?? 0) - (b.order ?? 0)).map((c) => {
-    const agent = manuscript.agents.find((a) => a.id === c.agentId);
-    const name = agent?.names.find((n) => n.preferred) ?? agent?.names[0];
-    return { agentId: c.agentId, givenName: name?.givenName ?? name?.value ?? '', familyName: name?.familyName ?? '', email: '' };
-  });
-  return authors.length ? authors : [{ givenName: '', familyName: '', email: '' }];
+  const authors = manuscript.contributions
+    .filter((contribution) => contribution.roles.includes('author'))
+    .sort((left, right) => (left.order ?? 0) - (right.order ?? 0))
+    .map((contribution) => {
+      const agent = manuscript.agents.find(
+        (candidate) => candidate.id === contribution.agentId,
+      );
+      const name = agent?.names.find((candidate) => candidate.preferred)
+        ?? agent?.names[0];
+      const affiliation = agent?.affiliations[0];
+      return {
+        agentId: contribution.agentId,
+        givenName: name?.givenName ?? name?.value ?? '',
+        familyName: name?.familyName ?? '',
+        email: agent?.email ?? '',
+        preferredPublicName: contribution.attributionName,
+        country: agent?.country,
+        url: agent?.url,
+        biography: agent?.biography?.[manuscript.locale],
+        affiliation: affiliation?.organizationName,
+        affiliationRorId: agent ? getPrimaryAffiliationRorId(agent) || undefined : undefined,
+        department: affiliation?.department,
+        position: affiliation?.position,
+        orcid: agent ? getExternalIdentifierValue(agent, 'orcid') || undefined : undefined,
+        role: contribution.roles[0] ?? 'author',
+        primaryContact: contribution.corresponding ?? false,
+        includeInBrowse: contribution.includeInPublicationList ?? true,
+        creditRoles: [...(contribution.creditRoles ?? [])],
+        competingInterestsStatus: contribution.competingInterests?.status,
+        competingInterests:
+          contribution.competingInterests?.statements?.[manuscript.locale],
+      };
+    });
+  return authors.length
+    ? authors
+    : [{ givenName: '', familyName: '', email: '', primaryContact: true }];
 }
 function readable(value: unknown): string {
   if (typeof value === 'string') return value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
