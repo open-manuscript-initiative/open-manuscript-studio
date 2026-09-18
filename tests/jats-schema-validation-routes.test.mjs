@@ -33,7 +33,7 @@ mock.module(
           schema: 'DTD',
           schemaVariant: 'MathML3',
           schemaPackage: '@jats4r/dtds@0.0.10',
-          engine: 'xmllint-wasm@5.3.0',
+          engine: 'libxml2-wasm@0.7.2',
           valid: true,
           diagnostics: [],
         };

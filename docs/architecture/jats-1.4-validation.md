@@ -8,7 +8,8 @@ Article Authoring DTD with MathML 3 before a validated export is delivered.
 Studio keeps two complementary checks:
 
 1. the fast renderer-side structural diagnostics in `exportJats.ts`;
-2. full server-side DTD validation using libxml2 through `xmllint-wasm`.
+2. full server-side DTD validation using libxml2 through
+   `libxml2-wasm@0.7.2`.
 
 The server uses the JATS 1.4 schema files from the pinned
 `@jats4r/dtds@0.0.10` package. Validation does not download DTDs or entities
@@ -21,12 +22,14 @@ The validation endpoint:
 - requires an authenticated Studio session;
 - limits XML input size;
 - rejects input-side custom entity declarations and internal DTD subsets;
-- replaces the submitted external DOCTYPE with the pinned local MathML 3 DTD;
-- invokes xmllint with `--nonet --valid`;
+- ignores the submitted external DOCTYPE for validation;
+- parses submitted XML with network and external-entity loading disabled;
+- loads the pinned JATS DTD and all of its modules separately through an
+  in-memory resource provider;
 - returns at most 100 validation diagnostics.
 
-The validator therefore never treats a submitted remote SYSTEM identifier as a
-network resource.
+The submitted document therefore cannot choose a DTD, entity source, local file,
+or network resource used by the validator.
 
 ## Export behavior
 
