@@ -469,6 +469,17 @@ export function BlockEditor({
     if (!editor) return;
     const incomingDocument = parseStoredContent(content);
     if (documentsAreEqual(editor.getJSON(), incomingDocument)) return;
+
+    if (editor.isFocused) {
+      const { from, to } = editor.state.selection;
+      editor
+        .chain()
+        .setContent(incomingDocument, { emitUpdate: false })
+        .setTextSelection({ from, to })
+        .run();
+      return;
+    }
+
     editor.commands.setContent(incomingDocument, { emitUpdate: false });
   }, [content, editor]);
 
