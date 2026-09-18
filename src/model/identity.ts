@@ -41,6 +41,27 @@ export type ContributionRole =
   | 'visualization'
   | 'other';
 
+export type CreditRole =
+  | 'conceptualization'
+  | 'data-curation'
+  | 'formal-analysis'
+  | 'funding-acquisition'
+  | 'investigation'
+  | 'methodology'
+  | 'project-administration'
+  | 'resources'
+  | 'software'
+  | 'supervision'
+  | 'validation'
+  | 'visualization'
+  | 'writing-original-draft'
+  | 'writing-review-editing';
+
+export interface OmiCompetingInterestsDeclaration {
+  status: 'none' | 'declared';
+  statements: Record<string, string>;
+}
+
 export interface OmiNameForm {
   id: NameFormId;
   value: string;
@@ -83,6 +104,10 @@ export interface OmiAgent {
   names: OmiNameForm[];
   identifiers: OmiExternalIdentifierAssertion[];
   affiliations: OmiAffiliationAssertion[];
+  email?: string;
+  country?: string;
+  url?: string;
+  biography?: Record<string, string>;
   createdAt: string;
   updatedAt: string;
 }
@@ -95,6 +120,9 @@ export interface OmiContribution {
   order?: number;
   corresponding?: boolean;
   attributionName?: string;
+  includeInPublicationList?: boolean;
+  creditRoles?: CreditRole[];
+  competingInterests?: OmiCompetingInterestsDeclaration;
   visibility: IdentityVisibility;
   createdAt: string;
   updatedAt: string;
@@ -106,6 +134,13 @@ export interface CreatePersonAgentInput {
   displayName?: string;
   language?: string;
   affiliation?: string;
+  affiliationRorId?: string;
+  department?: string;
+  position?: string;
+  email?: string;
+  country?: string;
+  url?: string;
+  biography?: Record<string, string>;
   orcid?: string;
 }
 
@@ -113,6 +148,12 @@ export interface ContributorEditInput {
   givenName?: string;
   familyName?: string;
   affiliation?: string;
+  department?: string;
+  position?: string;
+  email?: string;
+  country?: string;
+  url?: string;
+  biography?: Record<string, string>;
 
   /**
    * Preferred full ROR URL for the selected affiliation organization.
@@ -161,6 +202,17 @@ export function createPersonAgent(
     affiliations.push({
       id: crypto.randomUUID(),
       organizationName: affiliation,
+      organizationIdentifier: input.affiliationRorId
+        ? createExternalIdentifierAssertion(
+            'ror',
+            input.affiliationRorId,
+            'self-asserted',
+            timestamp,
+            ROR_API_SOURCE,
+          )
+        : undefined,
+      department: input.department?.trim() || undefined,
+      position: input.position?.trim() || undefined,
       visibility: 'public',
     });
   }
@@ -181,6 +233,10 @@ export function createPersonAgent(
     ],
     identifiers,
     affiliations,
+    email: input.email?.trim() || undefined,
+    country: input.country?.trim().toUpperCase() || undefined,
+    url: input.url?.trim() || undefined,
+    biography: input.biography,
     createdAt: timestamp,
     updatedAt: timestamp,
   };
@@ -211,6 +267,8 @@ export function createContribution(
     roles: normalizeContributionRoles(roles),
     order,
     corresponding: false,
+    includeInPublicationList: true,
+    creditRoles: [],
     visibility: 'public',
     createdAt: timestamp,
     updatedAt: timestamp,
@@ -308,8 +366,14 @@ export function updatePersonAgent(
             id: currentAffiliation?.id ?? crypto.randomUUID(),
             organizationName,
             organizationIdentifier,
-            department: currentAffiliation?.department,
-            position: currentAffiliation?.position,
+            department:
+              input.department !== undefined
+                ? input.department.trim() || undefined
+                : currentAffiliation?.department,
+            position:
+              input.position !== undefined
+                ? input.position.trim() || undefined
+                : currentAffiliation?.position,
             validFrom: currentAffiliation?.validFrom,
             validUntil: currentAffiliation?.validUntil,
             source,
@@ -325,6 +389,22 @@ export function updatePersonAgent(
     names: [nextName, ...otherNames],
     identifiers,
     affiliations,
+    email:
+      input.email !== undefined
+        ? input.email.trim() || undefined
+        : agent.email,
+    country:
+      input.country !== undefined
+        ? input.country.trim().toUpperCase() || undefined
+        : agent.country,
+    url:
+      input.url !== undefined
+        ? input.url.trim() || undefined
+        : agent.url,
+    biography:
+      input.biography !== undefined
+        ? input.biography
+        : agent.biography,
     updatedAt: timestamp,
   };
 }
@@ -373,6 +453,10 @@ export function normalizeContributionRoles(
   const normalized = Array.from(new Set(roles));
 
   return normalized.length > 0 ? normalized : ['author'];
+}
+
+export function normalizeCreditRoles(roles: CreditRole[]): CreditRole[] {
+  return Array.from(new Set(roles));
 }
 
 export function normalizeOrcid(orcid: string): string {
