@@ -141,6 +141,18 @@ const environmentSchema = z.object({
   DROPBOX_OAUTH_CLIENT_ID: z.string().trim().optional(),
   DROPBOX_OAUTH_CLIENT_SECRET: z.string().trim().optional(),
   DROPBOX_OAUTH_REDIRECT_URI: z.string().url().optional(),
+
+  // Vivliostyle is an external, separately installed renderer. Keeping the
+  // executable outside the Studio dependency graph lets deployments pin and
+  // audit the paged-media engine independently.
+  VIVLIOSTYLE_BIN: z.string().trim().min(1).default('vivliostyle'),
+  VIVLIOSTYLE_EXECUTABLE_BROWSER: z.string().trim().min(1).optional(),
+  VIVLIOSTYLE_TIMEOUT_SECONDS: z.coerce
+    .number()
+    .int()
+    .min(15)
+    .max(600)
+    .default(180),
 });
 
 const result = environmentSchema.safeParse(
