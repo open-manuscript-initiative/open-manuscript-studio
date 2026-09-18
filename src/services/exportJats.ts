@@ -30,7 +30,7 @@ export const OMI_JATS_RENDERER_VERSION = '0.1.0-alpha.1' as const;
 export const OMI_JATS_VERSION = '1.4' as const;
 export const OMI_JATS_TAGSET = 'articleauthoring' as const;
 export const OMI_JATS_DTD_URL =
-  'https://jats.nlm.nih.gov/articleauthoring/1.4/JATS-articleauthoring1-4.dtd' as const;
+  'https://jats.nlm.nih.gov/articleauthoring/1.4/JATS-articleauthoring1-4-mathml3.dtd' as const;
 
 export type JatsDiagnosticSeverity = 'error' | 'warning';
 
