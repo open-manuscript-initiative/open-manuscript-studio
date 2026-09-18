@@ -2,12 +2,28 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  createInitialVersioningEnvelope,
+  extractManuscriptState,
+} from '../src/model/versioning.ts';
+import {
   prepareOjsPublicationArtifact,
 } from '../src/services/ojsPublicationArtifact.ts';
+import type { OmiManuscript } from '../src/types/omi.ts';
 import { createHtmlGalleyStudy } from './fixtures/htmlGalleyStudy.ts';
 
+function createCommittedHtmlStudy(): OmiManuscript {
+  const draft = createHtmlGalleyStudy();
+  const state = extractManuscriptState(draft);
+  const envelope = createInitialVersioningEnvelope(state, {
+    summary: 'Created publication artifact fixture',
+    timestamp: '2026-09-18T12:00:00.000Z',
+    completeness: 'complete',
+  });
+  return { ...state, ...envelope };
+}
+
 test('HTML publication artifact carries exact OMI build provenance', async () => {
-  const manuscript = createHtmlGalleyStudy();
+  const manuscript = createCommittedHtmlStudy();
   const prepared = await prepareOjsPublicationArtifact(manuscript, 'html');
 
   assert.equal(prepared.format, 'html');
@@ -34,7 +50,7 @@ test('HTML publication artifact carries exact OMI build provenance', async () =>
 });
 
 test('publication artifact preparation rejects non-study HTML targets', async () => {
-  const manuscript = createHtmlGalleyStudy();
+  const manuscript = createCommittedHtmlStudy();
   manuscript.documentStructure = {
     ...manuscript.documentStructure!,
     kind: 'volume',
