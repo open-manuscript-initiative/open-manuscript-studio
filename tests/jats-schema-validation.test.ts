@@ -29,6 +29,68 @@ test('generated OMI JATS passes the pinned JATS 1.4 Article Authoring MathML3 DT
   assert.equal(validation.schemaVariant, 'MathML3');
 });
 
+
+test('conformance-matrix stable rich-text constructs remain valid against the pinned DTD', async () => {
+  const manuscript = createVersionedTestManuscript();
+  const section = manuscript.sections[0];
+  assert.ok(section);
+
+  section.blocks = [{
+    id: 'conformance-rich-text',
+    type: 'paragraph',
+    content: JSON.stringify({
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'Bold', marks: [{ type: 'bold' }] },
+            { type: 'text', text: ' underline', marks: [{ type: 'omiUnderline' }] },
+            { type: 'text', text: ' small caps', marks: [{ type: 'omiSmallCaps' }] },
+            { type: 'text', text: ' code', marks: [{ type: 'code' }] },
+          ],
+        },
+        {
+          type: 'blockquote',
+          content: [{
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Quoted text' }],
+          }],
+        },
+        {
+          type: 'orderedList',
+          content: [{
+            type: 'listItem',
+            content: [{
+              type: 'paragraph',
+              content: [{ type: 'text', text: 'First item' }],
+            }],
+          }],
+        },
+        {
+          type: 'codeBlock',
+          content: [{ type: 'text', text: 'const answer = 42;' }],
+        },
+      ],
+    }),
+  }];
+
+  const rendered = renderJatsArticle(manuscript);
+  assert.equal(rendered.validForExport, true);
+  assert.match(rendered.xml, /<underline>/);
+  assert.match(rendered.xml, /<sc>/);
+  assert.match(rendered.xml, /<disp-quote/);
+  assert.match(rendered.xml, /<list[^>]+list-type="order"/);
+  assert.match(rendered.xml, /<preformat/);
+
+  const validation = await validateJats14ArticleAuthoring(rendered.xml);
+  assert.equal(
+    validation.valid,
+    true,
+    validation.diagnostics.map((item) => item.message).join('\n'),
+  );
+});
+
 test('DTD validation rejects structurally invalid but well-formed JATS', async () => {
   const manuscript = createVersionedTestManuscript();
   const rendered = renderJatsArticle(manuscript);
