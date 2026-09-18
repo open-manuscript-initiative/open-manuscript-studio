@@ -20,6 +20,7 @@ import {
   projectContinuousManuscriptDocument,
 } from '../editor/continuousManuscriptDocument';
 import { useTranslation } from '../i18n';
+import { contributorNameParts } from '../model/contributorName';
 import { collectPublicationContributors } from '../model/publicationRendering';
 import type { ProofingSelection } from '../model/proofing';
 import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
@@ -164,7 +165,7 @@ export function PublicationDocumentCanvas({
     ],
   );
   const contributors = useMemo(
-    () => collectPublicationContributors(manuscript).map((contributor) => contributor.displayName),
+    () => collectPublicationContributors(manuscript),
     [manuscript],
   );
   const notes = useMemo(
@@ -326,6 +327,9 @@ export function PublicationDocumentCanvas({
   const body = style.styles.body;
   const title = style.styles.articleTitlePrimary;
   const subtitle = style.styles.articleSubtitlePrimary;
+  const author = style.styles.author;
+  const authorGivenName = style.styles.authorGivenName;
+  const authorFamilyName = style.styles.authorFamilyName;
   const heading1 = style.styles.heading1;
   const heading2 = style.styles.heading2;
   const note = style.styles.footnote;
@@ -361,6 +365,18 @@ export function PublicationDocumentCanvas({
     '--omi-publication-title-leading': `${title.lineHeight * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-subtitle-size': `${subtitle.fontSize * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-subtitle-leading': `${subtitle.lineHeight * PIXELS_PER_POINT * scale}px`,
+    '--omi-publication-author-size': `${author.fontSize * PIXELS_PER_POINT * scale}px`,
+    '--omi-publication-author-leading': `${author.lineHeight * PIXELS_PER_POINT * scale}px`,
+    '--omi-publication-author-weight': String(author.fontWeight),
+    '--omi-publication-author-align': author.alignment,
+    '--omi-publication-author-given-weight': String(authorGivenName.fontWeight),
+    '--omi-publication-author-given-style': authorGivenName.fontStyle,
+    '--omi-publication-author-given-caps': authorGivenName.fontVariantCaps,
+    '--omi-publication-author-given-transform': authorGivenName.textTransform,
+    '--omi-publication-author-family-weight': String(authorFamilyName.fontWeight),
+    '--omi-publication-author-family-style': authorFamilyName.fontStyle,
+    '--omi-publication-author-family-caps': authorFamilyName.fontVariantCaps,
+    '--omi-publication-author-family-transform': authorFamilyName.textTransform,
     '--omi-publication-heading-one-size': `${heading1.fontSize * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-heading-one-leading': `${heading1.lineHeight * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-heading-two-size': `${heading2.fontSize * PIXELS_PER_POINT * scale}px`,
@@ -489,7 +505,28 @@ export function PublicationDocumentCanvas({
                 onChange={stageSubtitleChange}
               />
               {contributors.length ? (
-                <p className="publication-document-authors">{contributors.join(', ')}</p>
+                <p className="publication-document-authors">
+                  {contributors.map((contributor, contributorIndex) => (
+                    <span className="publication-document-author" key={contributor.contributionId}>
+                      {contributorNameParts(contributor).map((part, partIndex) => (
+                        <span
+                          className={
+                            part.kind === 'given'
+                              ? 'publication-document-author-given-name'
+                              : part.kind === 'family'
+                                ? 'publication-document-author-family-name'
+                                : 'publication-document-author-literal-name'
+                          }
+                          key={`${part.kind}-${partIndex}`}
+                        >
+                          {partIndex > 0 ? ' ' : ''}
+                          {part.text}
+                        </span>
+                      ))}
+                      {contributorIndex < contributors.length - 1 ? ', ' : ''}
+                    </span>
+                  ))}
+                </p>
               ) : null}
               <AutoGrowPublicationField
                 className="publication-document-motto"
