@@ -4,7 +4,10 @@ import { prisma } from '../lib/prisma.js';
 import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
 import { assertTrustedIntegrationUrl } from '../integrations/security/trustedRemoteUrl.js';
 import { createRemoteSubmission, directSubmissionInput, finalizeRemoteSubmission, prepareRemoteSubmission, record, submissionDigest, type RemoteRequest } from '../integrations/publishing/directSubmission.js';
-import { resolvePersonalOjsCredential } from './authRoutes.js';
+import {
+  resolvePersonalOjsCredential,
+  resolvePersonalOmpCredential,
+} from './authRoutes.js';
 
 export const directSubmissionRouter = Router();
 const requestSchema = z.object({
@@ -120,25 +123,27 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
         id: id.data,
         userId: request.authUserId!,
         enabled: true,
-        providerId: 'ojs',
+        providerId: { in: ['ojs', 'omp'] },
       },
     });
     const configuredBase = record(connection?.config).baseUrl;
     if (!connection || typeof configuredBase !== 'string') {
       response.status(404).json({
-        error: { message: 'Enabled OJS connection not found.' },
+        error: { message: 'Enabled OJS/OMP connection not found.' },
       });
       return;
     }
 
-    const credential = await resolvePersonalOjsCredential(
-      request.authUserId!,
-    );
+    const platform = connection.providerId === 'omp' ? 'OMP' : 'OJS';
+    const credential =
+      connection.providerId === 'omp'
+        ? await resolvePersonalOmpCredential(request.authUserId!)
+        : await resolvePersonalOjsCredential(request.authUserId!);
     if (!credential) {
       response.status(400).json({
         error: {
           message:
-            'Save a personal OJS editor API key in Account → Personal profile first.',
+            `Save a personal ${platform} editor API key in Account → Personal profile first.`,
         },
       });
       return;
@@ -151,7 +156,7 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
       response.status(409).json({
         error: {
           message:
-            'The saved personal OJS key belongs to a different OJS installation.',
+            `The saved personal ${platform} key belongs to a different ${platform} installation.`,
         },
       });
       return;
@@ -169,7 +174,9 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
       result.submissionId !== data.submissionId
     ) {
       throw new Error(
-        'Update the OJS Studio Integration plugin to version 1.5.0.0 or newer.',
+        connection.providerId === 'omp'
+          ? 'Update the OMP Studio Integration plugin to version 1.4.0.0 or newer.'
+          : 'Update the OJS Studio Integration plugin to version 1.5.0.0 or newer.',
       );
     }
 
