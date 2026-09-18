@@ -247,6 +247,49 @@ test('known fidelity fallbacks block publication release even when DTD evidence 
       }),
     },
     {
+      id: 'unknown-block',
+      type: 'paragraph',
+      content: JSON.stringify({
+        type: 'doc',
+        content: [{
+          type: 'futureBlock',
+          content: [{ type: 'text', text: 'future block content' }],
+        }],
+      }),
+    },
+    {
+      id: 'image-missing',
+      type: 'image',
+      content: '',
+      visual: {
+        kind: 'image',
+        src: '',
+        mediaType: 'image/png',
+        fileName: 'missing.png',
+        alt: 'Missing source',
+      },
+    },
+    {
+      id: 'equation-fallback',
+      type: 'equation',
+      content: '',
+      visual: {
+        kind: 'equation',
+        notation: 'omml',
+        source: '<m:oMath>not converted</m:oMath>',
+      },
+    },
+    {
+      id: 'equation-unsafe-mathml',
+      type: 'equation',
+      content: '',
+      visual: {
+        kind: 'equation',
+        notation: 'mathml',
+        source: '<math><script>alert(1)</script></math>',
+      },
+    },
+    {
       id: 'chart-one',
       type: 'chart',
       content: '',
@@ -319,8 +362,12 @@ test('known fidelity fallbacks block publication release even when DTD evidence 
 
   for (const code of [
     'unsupported-inline-mark',
+    'unsupported-rich-text-block',
+    'missing-image-source',
     'chart-semantic-media',
     'embedded-image-data-uri',
+    'equation-representation-fallback',
+    'unsafe-or-unsupported-mathml',
     'music-score-semantic-fallback',
     'jats-note-rich-text-fallback',
     'jats-note-citations-fallback',
