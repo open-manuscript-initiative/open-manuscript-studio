@@ -7,8 +7,9 @@ import {
 } from '../src/model/versioning.ts';
 import {
   assertJatsDirectTransferHasNoPackageLocalAssets,
-  prepareOjsPublicationArtifact,
-} from '../src/services/ojsPublicationArtifact.ts';
+  preparePublicationArtifact,
+  publicationArtifactFormatAvailableForDocument,
+} from '../src/services/publicationArtifact.ts';
 import type { OmiManuscript } from '../src/types/omi.ts';
 import { createHtmlGalleyStudy } from './fixtures/htmlGalleyStudy.ts';
 
@@ -25,7 +26,7 @@ function createCommittedHtmlStudy(): OmiManuscript {
 
 test('HTML publication artifact carries exact OMI build provenance', async () => {
   const manuscript = createCommittedHtmlStudy();
-  const prepared = await prepareOjsPublicationArtifact(manuscript, 'html');
+  const prepared = await preparePublicationArtifact(manuscript, 'html');
 
   assert.equal(prepared.format, 'html');
   assert.equal(prepared.mediaType, 'text/html;charset=utf-8');
@@ -58,8 +59,36 @@ test('publication artifact preparation rejects non-study HTML targets', async ()
   };
 
   await assert.rejects(
-    prepareOjsPublicationArtifact(manuscript, 'html'),
+    preparePublicationArtifact(manuscript, 'html'),
     /standalone study/i,
+  );
+});
+
+test('OMP volume publication transfer exposes only PDF-capable Studio outputs', () => {
+  const manuscript = createCommittedHtmlStudy();
+  manuscript.documentStructure = {
+    ...manuscript.documentStructure!,
+    kind: 'volume',
+  };
+
+  assert.equal(
+    publicationArtifactFormatAvailableForDocument(manuscript, 'html'),
+    false,
+  );
+  assert.equal(
+    publicationArtifactFormatAvailableForDocument(manuscript, 'jats'),
+    false,
+  );
+  assert.equal(
+    publicationArtifactFormatAvailableForDocument(manuscript, 'pdf-print'),
+    true,
+  );
+  assert.equal(
+    publicationArtifactFormatAvailableForDocument(
+      manuscript,
+      'pdf-interactive',
+    ),
+    true,
   );
 });
 
