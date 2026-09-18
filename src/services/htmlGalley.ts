@@ -1,5 +1,9 @@
 import { assetPath, collectReferencedAssetIds, sha256Hex } from '../model/assets';
 import { getDocumentStructureProfile } from '../model/documentProfile';
+import {
+  resolvePublicationProfile,
+  type OmiPublicationProfile,
+} from '../model/publicationProfile';
 import type { OmiManuscript } from '../types/omi';
 import { getAssetPayload } from './assetRepository';
 import { renderHtmlArticle } from './exportHtml';
@@ -28,10 +32,28 @@ export type HtmlGalleyRequest = {
   action: 'transfer'; publicationId: number; locale: string; genreId: number; html: string; confirmed: true;
 });
 
+export const OMI_HTML_GALLEY_RENDERER_VERSION = '0.1.0' as const;
+
+export function htmlGalleyFileName(
+  manuscript: Pick<OmiManuscript, 'title' | 'id'>,
+): string {
+  const stem = (manuscript.title.trim() || manuscript.id || 'manuscript')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 72) || 'manuscript';
+  return `${stem}.html`;
+}
+
 /** Use the semantic exporter, embedding only integrity-checked raster assets. */
-export async function buildHtmlGalley(manuscript: OmiManuscript): Promise<string> {
+export async function buildHtmlGalley(
+  manuscript: OmiManuscript,
+  profile: OmiPublicationProfile = resolvePublicationProfile(manuscript),
+): Promise<string> {
   if (getDocumentStructureProfile(manuscript).kind !== 'study') throw new Error('Open a standalone study first.');
-  const result = renderHtmlArticle(manuscript);
+  const result = renderHtmlArticle(manuscript, profile);
   if (!result.validForExport) throw new Error(result.diagnostics.filter((d) => d.severity === 'error').map((d) => d.message).join('\n'));
   let html = result.html;
   for (const id of collectReferencedAssetIds(manuscript.sections.flatMap((s) => s.blocks))) {
