@@ -111,6 +111,9 @@ The OJS integration supports configuration-dependent connected workflows includi
 - structured file import;
 - author/editor/reviewer context;
 - peer-review assignment context;
+- direct author submission;
+- editor-authenticated transfer of validated HTML, JATS, print PDF and
+  interactive PDF publication artifacts with OMI build provenance;
 - return through the integration workflow.
 
 OJS remains authoritative for submission workflow state, assignments, rounds and editorial decisions. Studio acts as the structured authoring/review workspace rather than coupling directly to the OJS database.
