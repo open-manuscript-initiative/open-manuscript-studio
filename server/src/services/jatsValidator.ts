@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
-import { dirname, isAbsolute, join, normalize, relative, sep } from 'node:path';
-import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { readdir, readFile } from 'node:fs/promises';
 
 import { validateXML } from 'xmllint-wasm';
 
@@ -144,76 +144,65 @@ function usePinnedDoctype(xml: string): string {
 }
 
 async function loadJatsSchemaFiles(): Promise<PreloadFile[]> {
-  schemaFilesPromise ??= loadSchemaClosure();
+  schemaFilesPromise ??= loadCompleteSchemaSet();
   return schemaFilesPromise;
 }
 
-async function loadSchemaClosure(): Promise<PreloadFile[]> {
+/**
+ * Preloads the complete pinned JATS 1.4 DTD resource tree.
+ *
+ * Static reference chasing is deliberately avoided. The MathML modules use
+ * parameter-entity overrides where a generic SYSTEM identifier in one module
+ * is replaced by a JATS-specific local filename in another. libxml2 resolves
+ * those declarations correctly at parse time as long as every local resource
+ * is available in its virtual filesystem.
+ */
+async function loadCompleteSchemaSet(): Promise<PreloadFile[]> {
   const require = createRequire(import.meta.url);
   const packageJson = require.resolve('@jats4r/dtds/package.json');
   const root = join(dirname(packageJson), 'schema', JATS_VALIDATION_VERSION);
-  const queue: string[] = [JATS_VALIDATION_DTD_FILE];
-  const visited = new Set<string>();
   const files: PreloadFile[] = [];
 
-  while (queue.length) {
-    const current = queue.shift()!;
-    const normalized = normalizeRelativeSchemaPath(current);
-    if (visited.has(normalized)) continue;
-    visited.add(normalized);
+  await collectSchemaFiles(root, '', files);
+  files.sort((left, right) => left.fileName.localeCompare(right.fileName));
 
-    const absolute = join(root, ...normalized.split('/'));
-    assertInsideSchemaRoot(root, absolute);
-    const contents = await readFile(absolute, 'utf8');
-    files.push({ fileName: normalized, contents });
-
-    for (const reference of collectExternalSchemaReferences(contents)) {
-      const next = normalizeRelativeSchemaPath(
-        join(dirname(normalized), reference).split(sep).join('/'),
-      );
-      if (!visited.has(next)) queue.push(next);
-    }
+  if (!files.some((file) => file.fileName === JATS_VALIDATION_DTD_FILE)) {
+    throw new Error(
+      `Pinned JATS schema package does not contain ${JATS_VALIDATION_DTD_FILE}.`,
+    );
   }
 
   return files;
 }
 
-function collectExternalSchemaReferences(contents: string): string[] {
-  const references = new Set<string>();
-  const declarations = contents.replace(/<!--[\s\S]*?-->/g, '');
-  const pattern = /["']([^"'<>]+\.(?:dtd|ent|mod))["']/gi;
-  for (const match of declarations.matchAll(pattern)) {
-    const reference = match[1]?.trim();
-    if (
-      reference &&
-      !reference.includes('://') &&
-      !isAbsolute(reference)
-    ) {
-      references.add(reference);
-    }
-  }
-  return [...references];
-}
+async function collectSchemaFiles(
+  directory: string,
+  relativeDirectory: string,
+  files: PreloadFile[],
+): Promise<void> {
+  const entries = await readdir(directory, { withFileTypes: true });
 
-function normalizeRelativeSchemaPath(value: string): string {
-  const normalized = normalize(value).split(sep).join('/').replace(/^\.\//, '');
-  if (
-    !normalized ||
-    normalized === '..' ||
-    normalized.startsWith('../') ||
-    normalized.includes('/../')
-  ) {
-    throw new Error('JATS schema package contains an unsafe relative reference.');
-  }
-  return normalized;
-}
+  for (const entry of entries) {
+    if (entry.isSymbolicLink()) continue;
 
-function assertInsideSchemaRoot(root: string, target: string): void {
-  const child = relative(root, target);
-  if (!child || child === '..' || child.startsWith(`..${sep}`) || isAbsolute(child)) {
-    if (child) {
-      throw new Error('JATS schema reference escaped the pinned schema directory.');
+    const absolute = join(directory, entry.name);
+    const relativeName = relativeDirectory
+      ? `${relativeDirectory}/${entry.name}`
+      : entry.name;
+
+    if (entry.isDirectory()) {
+      await collectSchemaFiles(absolute, relativeName, files);
+      continue;
     }
+
+    if (!entry.isFile() || !/\.(?:dtd|ent|mod)$/i.test(entry.name)) {
+      continue;
+    }
+
+    files.push({
+      fileName: relativeName,
+      contents: await readFile(absolute, 'utf8'),
+    });
   }
 }
 
