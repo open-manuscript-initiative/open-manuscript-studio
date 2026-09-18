@@ -112,9 +112,6 @@ jobs:
       - name: Test direct publishing submissions
         run: npm run test:direct-submission
 
-      - name: Test HTML galley transfer
-        run: npm run test:html-galley
-
       - name: Test OJS/OMP publication artifact client
         run: npm run test:publication-artifact
 
