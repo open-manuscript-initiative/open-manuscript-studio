@@ -1,11 +1,11 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "OMI Studio",
-  "version": "0.1.1-beta.1",
+  "version": "0.2.0-beta.1",
   "bundle": {
     "android": {
       "minSdkVersion": 24,
-      "versionCode": 1029
+      "versionCode": 1030
     }
   }
 }

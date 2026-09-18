@@ -167,9 +167,9 @@ test('iOS configuration uses App Store-compatible versioning and the shared bund
   };
 
   assert.equal(baseConfig.identifier, 'org.openmanuscript.studio');
-  assert.equal(iosConfig.version, '0.1.0');
+  assert.equal(iosConfig.version, '0.2.0');
   assert.equal(iosConfig.bundle?.iOS?.minimumSystemVersion, '14.0');
-  assert.equal(iosConfig.bundle?.iOS?.bundleVersion, '8');
+  assert.equal(iosConfig.bundle?.iOS?.bundleVersion, '9');
   assert.equal(iosConfig.bundle?.iOS?.infoPlist, 'Info.ios.plist');
 
   const mobileLinks = baseConfig.plugins?.['deep-link']?.mobile ?? [];
