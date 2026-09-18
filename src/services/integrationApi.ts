@@ -337,10 +337,10 @@ export async function requestDirectSubmission(
 
 export async function requestPublicationArtifact(
   connectionId: string,
-  input: import('./ojsPublicationArtifact').OjsPublicationArtifactRequest,
+  input: import('./publicationArtifact').PublicationArtifactRequest,
 ): Promise<{
-  target?: import('./ojsPublicationArtifact').OjsPublicationArtifactTarget;
-  receipt?: import('./ojsPublicationArtifact').OjsPublicationArtifactReceipt;
+  target?: import('./publicationArtifact').PublicationArtifactTarget;
+  receipt?: import('./publicationArtifact').PublicationArtifactReceipt;
 }> {
   const response = await fetch(
     `${API_BASE_URL}/integrations/connections/${encodeURIComponent(connectionId)}/publication-artifact`,
@@ -356,8 +356,8 @@ export async function requestPublicationArtifact(
     },
   );
   const result = await parseJsonResponse<{
-    target?: import('./ojsPublicationArtifact').OjsPublicationArtifactTarget;
-    receipt?: import('./ojsPublicationArtifact').OjsPublicationArtifactReceipt;
+    target?: import('./publicationArtifact').PublicationArtifactTarget;
+    receipt?: import('./publicationArtifact').PublicationArtifactReceipt;
     error?: { message: string };
   }>(response);
   if (!response.ok || result.error) {
