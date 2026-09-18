@@ -610,7 +610,7 @@ function renderNoteMarker(node: JsonNode, state: RenderState): string {
   if (!annotation) {
     state.diagnostics.push({
       code: 'unresolved-note-marker',
-      severity: 'warning',
+      severity: 'error',
       message: 'Inline note marker does not resolve to an annotation.',
       targetId: noteId,
     });
