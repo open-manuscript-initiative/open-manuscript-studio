@@ -6,7 +6,7 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
-### OJS publication artifact transfer
+### OJS/OMP publication artifact transfer
 
 - Replaces the Publication panel's legacy HTML-only OJS transfer client with the
   `omi-publication-artifact/1` client introduced by OJS Integration 1.5.0.0.
@@ -23,6 +23,16 @@ the portable OMI document model and individual renderers.
   Publication UI uses the new multi-format protocol.
 - Blocks direct JATS transfer when the XML depends on package-local binary media
   that the single-artifact protocol cannot carry.
+- Extends the same protocol to OMP Integration 1.4.0.0 while preserving native
+  OMP Publication Format and proof-file semantics instead of emulating OJS
+  galleys.
+- Stores a separate personal OMP editor API key in the identity/profile
+  database and keeps OJS/OMP credentials isolated at the server proxy.
+- Requires OMP to advertise unapproved/unavailable/non-viewable authority
+  defaults before the client enables transfer.
+- Supports OMP studies with HTML/JATS/PDF and OMP volumes with print or
+  interactive PDF; article-only HTML/JATS renderers are not reused for a whole
+  volume.
 
 
 ## 0.2.0-beta.1 — 2026-09-18
