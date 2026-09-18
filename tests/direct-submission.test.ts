@@ -50,6 +50,45 @@ test('preparation transfers metadata, both source files and validates without fi
   const uploads = calls.filter((c) => c.body instanceof FormData);
   assert.ok(uploads.every((c) => (c.body as FormData).get('fileStage') === '2'));
 });
+test('preparation transfers PKP contributor fields supported by the native author API', async () => {
+  const { remote, calls } = fake();
+  const extended: DirectSubmissionInput = {
+    ...input,
+    authors: [{
+      ...input.authors[0],
+      preferredPublicName: 'Dr Ada Author',
+      country: 'HU',
+      url: 'https://example.test/ada',
+      biography: 'Researcher',
+      orcid: '0000-0002-1825-0097',
+      includeInBrowse: false,
+      primaryContact: true,
+      competingInterestsStatus: 'none',
+      competingInterests: 'No competing interests.',
+      affiliation: 'Example University',
+      affiliationRorId: 'https://ror.org/03yrm5c26',
+      department: 'History',
+      position: 'Professor',
+      creditRoles: ['conceptualization', 'writing-original-draft'],
+    }],
+  };
+  await prepareRemoteSubmission(remote, { externalId: 12, publicationId: 13 }, extended);
+  assert.deepEqual(calls.find((call) => call.path.endsWith('/contributors/14'))?.body, {
+    givenName: { en: 'Ada' },
+    familyName: { en: 'Author' },
+    email: 'ada@example.test',
+    userGroupId: 15,
+    includeInBrowse: false,
+    seq: 0,
+    preferredPublicName: { en: 'Dr Ada Author' },
+    country: 'HU',
+    url: 'https://example.test/ada',
+    biography: { en: 'Researcher' },
+    competingInterests: { en: 'No competing interests.' },
+    orcid: 'https://orcid.org/0000-0002-1825-0097',
+  });
+});
+
 test('resuming an interrupted transfer reuses existing files and never creates a second submission', async () => {
   const { remote, calls, files } = fake();
   let fail = true;
@@ -102,6 +141,51 @@ test('exported metadata and authors match the reviewed snapshot without editing 
   const authorId = snapshot.contributions.find((c) => c.roles.includes('author'))?.agentId;
   assert.equal(snapshot.agents.find((a) => a.id === authorId)?.names[0]?.value, 'Ada Author');
   assert.equal(snapshot.contributions.find((c) => c.agentId === authorId)?.corresponding, true);
+
+  const enriched = createDirectSubmissionSnapshot(manuscript, {
+    ...input,
+    authors: [{
+      givenName: 'Ada',
+      familyName: 'Author',
+      email: 'ada@example.test',
+      preferredPublicName: 'Dr Ada Author',
+      affiliation: 'Example University',
+      affiliationRorId: 'https://ror.org/03yrm5c26',
+      department: 'History',
+      position: 'Professor',
+      country: 'HU',
+      url: 'https://example.test/ada',
+      biography: 'Researcher',
+      orcid: '0000-0002-1825-0097',
+      primaryContact: true,
+      includeInBrowse: false,
+      creditRoles: ['conceptualization', 'writing-original-draft'],
+      competingInterestsStatus: 'none',
+      competingInterests: 'No competing interests.',
+    }],
+  });
+  const enrichedContribution = enriched.contributions.find((candidate) =>
+    candidate.roles.includes('author'),
+  );
+  const enrichedAgent = enriched.agents.find(
+    (candidate) => candidate.id === enrichedContribution?.agentId,
+  );
+  assert.equal(enrichedContribution?.attributionName, 'Dr Ada Author');
+  assert.equal(enrichedContribution?.includeInPublicationList, false);
+  assert.deepEqual(enrichedContribution?.creditRoles, [
+    'conceptualization',
+    'writing-original-draft',
+  ]);
+  assert.equal(
+    enrichedContribution?.competingInterests?.statements.en,
+    'No competing interests.',
+  );
+  assert.equal(enrichedAgent?.email, 'ada@example.test');
+  assert.equal(enrichedAgent?.country, 'HU');
+  assert.equal(enrichedAgent?.affiliations[0]?.organizationName, 'Example University');
+  assert.equal(enrichedAgent?.affiliations[0]?.department, 'History');
+  assert.equal(enrichedAgent?.affiliations[0]?.position, 'Professor');
+
   const docx = buildDocxExport(snapshot);
   assert.equal(Buffer.from(docx.bytes).subarray(0,4).toString('hex'), '504b0304');
 });
