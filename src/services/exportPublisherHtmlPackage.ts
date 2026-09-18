@@ -185,7 +185,10 @@ export async function buildPublisherHtmlPackage(
     bytes: new TextEncoder().encode(`${JSON.stringify(manifest, null, 2)}\n`),
   });
 
-  const bytes = createStoreZip(entries.map((entry) => ({ name: entry.path, bytes: entry.bytes })));
+  const bytes = createStoreZip(
+    entries.map((entry) => ({ name: entry.path, bytes: entry.bytes })),
+    head?.createdAt ?? manuscript.updatedAt,
+  );
   const blobBytes = new Uint8Array(bytes.byteLength);
   blobBytes.set(bytes);
   return {
@@ -227,11 +230,14 @@ function escapeAttribute(value: string): string {
     .replace(/>/g, '&gt;');
 }
 
-function createStoreZip(entries: readonly { name: string; bytes: Uint8Array }[]): Uint8Array {
+function createStoreZip(
+  entries: readonly { name: string; bytes: Uint8Array }[],
+  timestamp: string,
+): Uint8Array {
   const localParts: Uint8Array[] = [];
   const centralParts: Uint8Array[] = [];
   let offset = 0;
-  const { time, date } = dosDateTime(new Date());
+  const { time, date } = dosDateTime(new Date(timestamp));
 
   for (const entry of entries) {
     const name = new TextEncoder().encode(entry.name);
@@ -314,10 +320,13 @@ function crc32(bytes: Uint8Array): number {
 }
 
 function dosDateTime(value: Date): { time: number; date: number } {
-  const year = Math.max(1980, value.getFullYear());
+  const valid = Number.isFinite(value.getTime())
+    ? value
+    : new Date('1980-01-01T00:00:00.000Z');
+  const year = Math.max(1980, valid.getUTCFullYear());
   return {
-    time: (value.getHours() << 11) | (value.getMinutes() << 5) | Math.floor(value.getSeconds() / 2),
-    date: ((year - 1980) << 9) | ((value.getMonth() + 1) << 5) | value.getDate(),
+    time: (valid.getUTCHours() << 11) | (valid.getUTCMinutes() << 5) | Math.floor(valid.getUTCSeconds() / 2),
+    date: ((year - 1980) << 9) | ((valid.getUTCMonth() + 1) << 5) | valid.getUTCDate(),
   };
 }
 

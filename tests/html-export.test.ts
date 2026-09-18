@@ -331,9 +331,15 @@ test('builds an offline HTML ZIP package with manifest and verified relative ass
   await putAssetPayload(committed.id, asset.id, bytes);
 
   const result = await buildHtmlPackage(committed);
+  const repeated = await buildHtmlPackage(committed);
   const entries = readStoreZipEntries(result.bytes);
 
   assert.equal(result.validForExport, true);
+  assert.deepEqual(
+    result.bytes,
+    repeated.bytes,
+    'HTML package bytes must be reproducible for the same committed revision',
+  );
   assert.equal(entries.has('index.html'), true);
   assert.equal(entries.has('manifest.json'), true);
   assert.equal(

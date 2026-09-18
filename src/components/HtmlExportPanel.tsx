@@ -22,8 +22,10 @@ import {
 } from '../services/exportHtml';
 import {
   buildPublisherHtmlPackage,
+  OMI_PUBLISHER_HTML_PACKAGE_VERSION,
   renderPublisherHtmlArticle,
 } from '../services/exportPublisherHtmlPackage';
+import { savePublicationArtifactWithBuildSidecar } from '../services/publicationBuildSidecar';
 
 export function HtmlExportPanel() {
   const { locale } = useTranslation();
@@ -74,14 +76,16 @@ export function HtmlExportPanel() {
       setPackageDiagnostics(packageOnlyDiagnostics);
       if (!packageResult.validForExport) return;
 
-      const url = URL.createObjectURL(packageResult.blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = packageResult.fileName;
-      document.body.append(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      await savePublicationArtifactWithBuildSidecar({
+        manuscript: committedManuscript,
+        profile: committedProfile,
+        artifact: packageResult.blob,
+        fileName: packageResult.fileName,
+        format: 'html',
+        mediaType: 'application/zip',
+        renderer: 'open-manuscript-studio-publisher-html-package',
+        rendererVersion: OMI_PUBLISHER_HTML_PACKAGE_VERSION,
+      });
     } finally {
       setBusy(false);
     }

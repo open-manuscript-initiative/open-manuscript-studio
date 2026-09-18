@@ -147,6 +147,50 @@ test('profile or artifact changes produce a distinct publication-build identity'
   assert.notEqual(base.id, artifactChanged.id);
 });
 
+test('fingerprints the exact renderer input for paged PDF builds', () => {
+  const manuscript = createVersionedTestManuscript();
+  const profile = resolvePublicationProfile(manuscript);
+  const common = {
+    manuscript,
+    profile,
+    artifact: new TextEncoder().encode('%PDF-1.7\nartifact'),
+    output: {
+      format: 'pdf-print' as const,
+      mediaType: 'application/pdf',
+      fileName: 'article.pdf',
+    },
+    generator: {
+      ...GENERATOR,
+      renderer: 'vivliostyle-cli',
+      rendererVersion: '11.0.4',
+    },
+    createdAt: '2026-09-18T05:00:00.000Z',
+  };
+
+  const first = createPublicationBuildManifest({
+    ...common,
+    rendererInput: {
+      value: '<html><body>first</body></html>',
+      mediaType: 'text/html;charset=utf-8',
+    },
+  });
+  const second = createPublicationBuildManifest({
+    ...common,
+    rendererInput: {
+      value: '<html><body>second</body></html>',
+      mediaType: 'text/html;charset=utf-8',
+    },
+  });
+
+  assert.equal(first.rendererInput?.mediaType, 'text/html;charset=utf-8');
+  assert.match(first.rendererInput?.digest.value ?? '', /^[a-f0-9]{64}$/);
+  assert.notEqual(
+    first.rendererInput?.digest.value,
+    second.rendererInput?.digest.value,
+  );
+  assert.notEqual(first.id, second.id);
+});
+
 test('serializes a portable sidecar manifest with a predictable filename', () => {
   const manuscript = createVersionedTestManuscript();
   const profile = resolvePublicationProfile(manuscript);
