@@ -83,8 +83,12 @@ publicationPdfRouter.post(
 
 function safePdfFileName(value: string | undefined): string {
   const normalized = (value ?? 'manuscript.pdf')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[\u0000-\u001f\u007f]/g, '')
+    .replace(/[^a-zA-Z0-9._ -]+/g, '-')
     .replace(/[\\/:"<>|?*]+/g, '-')
+    .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 180);
   const base = normalized || 'manuscript.pdf';
