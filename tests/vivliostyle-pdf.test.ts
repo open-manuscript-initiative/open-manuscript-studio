@@ -5,7 +5,7 @@ import {
   MAX_VIVLIOSTYLE_HTML_BYTES,
   renderVivliostylePdf,
   validateVivliostyleHtmlInput,
-} from '../server/src/services/vivliostylePdfRenderer.ts';
+} from '../server/dist/services/vivliostylePdfRenderer.js';
 
 test('Vivliostyle PDF source accepts self-contained resources and interactive links', () => {
   const html = `<!doctype html>
