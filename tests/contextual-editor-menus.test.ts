@@ -10,6 +10,10 @@ const selectionActions = readFileSync(
   new URL('../src/components/SelectionActionToolbar.tsx', import.meta.url),
   'utf8',
 );
+const blockEditor = readFileSync(
+  new URL('../src/components/BlockEditor.tsx', import.meta.url),
+  'utf8',
+);
 const blockTypeExtension = readFileSync(
   new URL('../src/editor/extensions/OmiRichTextExtensions.ts', import.meta.url),
   'utf8',
@@ -68,6 +72,17 @@ test('paragraph type actions follow and affect only the active text block', () =
   assert.match(blockTypeExtension, /--omi-block-type-menu-top/);
   assert.match(blockTypeStyles, /top: var\(--omi-block-type-menu-top, 0\.45rem\)/);
   assert.doesNotMatch(blockTypeStyles, /position:\s*sticky/);
+});
+
+test('focused editor content resync preserves the active selection atomically', () => {
+  assert.match(
+    blockEditor,
+    /if \(editor\.isFocused\) \{[\s\S]*const \{ from, to \} = editor\.state\.selection;[\s\S]*\.chain\(\)[\s\S]*\.setContent\(incomingDocument, \{ emitUpdate: false \}\)[\s\S]*\.setTextSelection\(\{ from, to \}\)[\s\S]*\.run\(\);[\s\S]*return;/,
+  );
+  assert.match(
+    blockEditor,
+    /editor\.commands\.setContent\(incomingDocument, \{ emitUpdate: false \}\);/,
+  );
 });
 
 test('contextual menus stay inside narrow mobile viewports', () => {
