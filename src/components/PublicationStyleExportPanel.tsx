@@ -6,10 +6,12 @@ import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { createPublisherExportStylesheet } from '../model/publisherExportStyle';
 import { resolvePublicationProfile } from '../model/publicationProfile';
+import { saveExportBlob } from '../services/exportFileDelivery';
 import { buildPublisherHtmlPackage } from '../services/exportPublisherHtmlPackage';
 import {
   applyPdfInteractionMode,
-  buildPdfPrintDocument,
+  buildPdfArtifactDocument,
+  pdfFileName,
   type PdfContentMode,
   type PdfExportMode,
 } from '../services/exportPdf';
@@ -18,6 +20,7 @@ import {
   loadPublicationStyle,
   renderStyleBasedHtml,
 } from '../services/publicationStyleExport';
+import { renderPdfArtifact } from '../services/vivliostylePdfApi';
 
 export function PublicationStyleExportPanel() {
   const { locale } = useTranslation();
@@ -75,16 +78,8 @@ export function PublicationStyleExportPanel() {
 
   async function exportPdf(): Promise<void> {
     if (busy) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      setMessage(copy.popupBlocked);
-      return;
-    }
-
-    showPreparingPdf(printWindow, copy.preparingPdf);
     setBusy('pdf');
     setMessage('');
-    let printUrl: string | null = null;
 
     try {
       await externalizeActiveManuscriptAssets();
@@ -97,20 +92,17 @@ export function PublicationStyleExportPanel() {
             pdfMode,
             'publication',
           )
-        : buildPdfPrintDocument(committed, profile, pdfMode, 'editorial');
-
-      printUrl = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
-      await navigatePrintWindow(printWindow, printUrl);
-
-      printWindow.focus();
-      window.setTimeout(() => {
-        printWindow.print();
-        if (printUrl) URL.revokeObjectURL(printUrl);
-      }, 350);
-      setMessage(copy.pdfReady);
+        : await buildPdfArtifactDocument(
+            committed,
+            profile,
+            pdfMode,
+            'editorial',
+          );
+      const fileName = pdfFileName(committed, pdfMode);
+      const artifact = await renderPdfArtifact(html, fileName);
+      const delivery = await saveExportBlob(artifact.blob, fileName);
+      setMessage(delivery.saved ? copy.pdfReady : copy.saveCancelled);
     } catch (error) {
-      if (printUrl) URL.revokeObjectURL(printUrl);
-      printWindow.close();
       setMessage(error instanceof Error ? error.message : copy.exportError);
     } finally {
       setBusy(null);
@@ -182,7 +174,7 @@ function copyFor(locale: string) {
     title: 'Nyomtatás és export',
     description: 'Nyomtatás előtt kiválasztható a semleges szerkesztői kéziratnézet vagy az Élő kiadványszerkesztőben kialakított tördelt kiadvány.',
     print: 'nyomtatás',
-    pdfDescription: 'A választott nézetet a rendszer nyomtatási/PDF párbeszédben nyitja meg, így közvetlenül nyomtatható vagy PDF-ként menthető.',
+    pdfDescription: 'A választott nézetből a Studio Vivliostyle segítségével tényleges, lapozott PDF-fájlt készít.',
     pdfContent: 'Nyomtatási nézet',
     pdfPublication: 'Tördelt kiadvány',
     pdfEditorial: 'Nyers / szerkesztői',
@@ -194,16 +186,15 @@ function copyFor(locale: string) {
     pdfPrintDescription: 'A fizikai nyomtatásra és archiválásra szánt változat nem tartalmaz aktív hiperhivatkozásokat.',
     pdfInteractiveDescription: 'A belső és külső hivatkozások kattinthatók maradnak a PDF-ben.',
     htmlDescription: 'Folyamatos webes nézet ugyanazzal a tipográfiával, de élőfej, oldalszám, lapméret és oldaltörés nélkül.',
-    exportPdf: 'Nyomtatás / PDF', exportHtml: 'HTML export', preparing: 'Előkészítés…', preparingPdf: 'Nyomtatási nézet előkészítése…',
-    pdfReady: 'A nyomtatási/PDF párbeszéd megnyílt.', htmlReady: 'A stílusozott HTML-csomag elkészült.',
-    popupBlocked: 'A böngésző blokkolta a nyomtatási/PDF ablakot. Engedélyezze a felugró ablakokat ehhez az oldalhoz.',
+    exportPdf: 'PDF készítése', exportHtml: 'HTML export', preparing: 'Előkészítés…', preparingPdf: 'PDF előkészítése…',
+    pdfReady: 'A PDF-fájl elkészült.', saveCancelled: 'A PDF mentése megszakítva.', htmlReady: 'A stílusozott HTML-csomag elkészült.',
     exportError: 'A nyomtatási/export nézet nem készíthető el.',
     note: 'A tördelt változat a mentett kiadványstílus nyomdai geometriáját használja. A nyers/szerkesztői változat csak a dokumentum szemantikai szerkezetét és tartalmát formázza olvasható nyomattá.'
   };
   if (locale === 'de') return {
     title: 'Drucken und Exportieren', description: 'Vor dem Drucken kann zwischen einer neutralen redaktionellen Manuskriptansicht und der im Live-Publikationseditor gesetzten Publikation gewählt werden.',
     print: 'Drucken',
-    pdfDescription: 'Die gewählte Ansicht wird im Druck-/PDF-Dialog geöffnet und kann direkt gedruckt oder als PDF gespeichert werden.',
+    pdfDescription: 'Studio erzeugt aus der gewählten Ansicht mit Vivliostyle eine echte paginierte PDF-Datei.',
     pdfContent: 'Druckansicht', pdfPublication: 'Gesetzte Publikation', pdfEditorial: 'Redaktionell / Manuskript',
     pdfPublicationDescription: 'Verwendet den im Stil-Editor sichtbaren WYSIWYG-Satz einschließlich Seitengröße, Rändern, Kolumnentiteln, Fußnoten und Satzkorrekturen.',
     pdfEditorialDescription: 'Neutraler Manuskriptausdruck: Struktur, Anmerkungen und Verweise bleiben erhalten, Verlagstypografie und endgültiger Satz werden nicht angewendet.',
@@ -211,15 +202,15 @@ function copyFor(locale: string) {
     pdfPrintDescription: 'Die für physischen Druck und Archivierung bestimmte Variante enthält keine aktiven Hyperlinks.',
     pdfInteractiveDescription: 'Interne und externe Verweise bleiben im PDF anklickbar.',
     htmlDescription: 'Fortlaufende Webansicht mit derselben Typografie, jedoch ohne Kolumnentitel, Seitenzahlen, Seitengröße oder Seitenumbrüche.',
-    exportPdf: 'Drucken / PDF', exportHtml: 'HTML exportieren', preparing: 'Wird vorbereitet…', preparingPdf: 'Druckansicht wird vorbereitet…',
-    pdfReady: 'Der Druck-/PDF-Dialog wurde geöffnet.', htmlReady: 'Das formatierte HTML-Paket wurde erstellt.',
-    popupBlocked: 'Das Druck-/PDF-Fenster wurde vom Browser blockiert. Bitte Pop-ups für diese Seite zulassen.', exportError: 'Die Druck-/Exportansicht konnte nicht erstellt werden.',
+    exportPdf: 'PDF erstellen', exportHtml: 'HTML exportieren', preparing: 'Wird vorbereitet…', preparingPdf: 'PDF wird vorbereitet…',
+    pdfReady: 'Die PDF-Datei wurde erstellt.', saveCancelled: 'Das Speichern der PDF-Datei wurde abgebrochen.', htmlReady: 'Das formatierte HTML-Paket wurde erstellt.',
+    exportError: 'Die PDF-/Exportausgabe konnte nicht erstellt werden.',
     note: 'Die gesetzte Variante verwendet die gespeicherte Druckgeometrie des Publikationsstils. Die redaktionelle Variante formatiert nur die semantische Struktur und den Inhalt als lesbaren Ausdruck.'
   };
   return {
     title: 'Print and export', description: 'Before printing, choose either a neutral editorial manuscript view or the typeset publication created in the Live Publication Editor.',
     print: 'print',
-    pdfDescription: 'The selected view opens in the print/PDF dialog and can be printed directly or saved as PDF.',
+    pdfDescription: 'Studio uses Vivliostyle to produce a real paginated PDF artifact from the selected view.',
     pdfContent: 'Print view', pdfPublication: 'Typeset publication', pdfEditorial: 'Editorial / manuscript',
     pdfPublicationDescription: 'Uses the WYSIWYG layout shown in the Style editor, including page size, margins, running headers, notes and typesetting corrections.',
     pdfEditorialDescription: 'Neutral manuscript print: structure, notes and references remain, while publisher typography and final pagination are not applied.',
@@ -227,39 +218,10 @@ function copyFor(locale: string) {
     pdfPrintDescription: 'The physical-print and archive variant contains no active hyperlinks.',
     pdfInteractiveDescription: 'Internal and external references remain clickable in the PDF.',
     htmlDescription: 'Continuous web view with the same typography, but no running header, page numbers, page size or page breaks.',
-    exportPdf: 'Print / PDF', exportHtml: 'Export HTML', preparing: 'Preparing…', preparingPdf: 'Preparing print view…',
-    pdfReady: 'The print/PDF dialog has opened.', htmlReady: 'The styled HTML package is ready.',
-    popupBlocked: 'The browser blocked the print/PDF window. Allow pop-ups for this site and try again.', exportError: 'The print/export view could not be created.',
+    exportPdf: 'Create PDF', exportHtml: 'Export HTML', preparing: 'Preparing…', preparingPdf: 'Preparing PDF…',
+    pdfReady: 'The PDF file is ready.', saveCancelled: 'PDF file save cancelled.', htmlReady: 'The styled HTML package is ready.',
+    exportError: 'The PDF/export output could not be created.',
     note: 'The typeset variant uses the saved publication-style print geometry. The editorial variant formats only the document semantic structure and content as a readable printout.'
   };
 }
 
-function showPreparingPdf(target: Window, message: string): void {
-  target.document.title = message;
-  const paragraph = target.document.createElement('p');
-  paragraph.style.fontFamily = 'sans-serif';
-  paragraph.style.padding = '2rem';
-  paragraph.textContent = message;
-  target.document.body.replaceChildren(paragraph);
-}
-
-function navigatePrintWindow(target: Window, url: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const handleLoad = () => {
-      cleanup();
-      resolve();
-    };
-    const handleError = () => {
-      cleanup();
-      reject(new Error('Failed to load the generated print document.'));
-    };
-    const cleanup = () => {
-      target.removeEventListener('load', handleLoad);
-      target.removeEventListener('error', handleError);
-    };
-
-    target.addEventListener('load', handleLoad, { once: true });
-    target.addEventListener('error', handleError, { once: true });
-    target.location.replace(url);
-  });
-}
