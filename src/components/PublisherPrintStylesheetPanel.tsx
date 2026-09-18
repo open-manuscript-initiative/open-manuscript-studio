@@ -11,25 +11,6 @@ import {
 import type { OmiPublicationProfile } from '../model/publicationProfile';
 import { savePublisherProfile } from '../services/publisherProfileStorage';
 
-const PRINT_CSS_TEMPLATE = `@page {
-  /* size and margins come from the publisher profile unless overridden here */
-}
-
-@media print {
-  .omi-scholarly-article {
-    /* print-specific publisher rules */
-  }
-
-  h1, h2, h3, h4 {
-    break-after: avoid;
-  }
-
-  figure, table, blockquote, pre {
-    break-inside: avoid;
-  }
-}
-`;
-
 export function PublisherPrintStylesheetPanel({
   profile,
 }: {
@@ -133,7 +114,6 @@ export function PublisherPrintStylesheetPanel({
               value={cssText}
               spellCheck={false}
               onChange={(event) => setCssText(event.target.value)}
-              placeholder={PRINT_CSS_TEMPLATE}
             />
           </label>
         </div>
@@ -146,11 +126,6 @@ export function PublisherPrintStylesheetPanel({
           {message ? <span role="status">{message}</span> : null}
         </div>
         <div className="publisher-profile-action-buttons">
-          {!cssText.trim() && !profile.printStylesheet ? (
-            <button type="button" className="studio-menu-secondary-action" disabled={!customProfile || readOnly} onClick={() => setCssText(PRINT_CSS_TEMPLATE)}>
-              {labels.template}
-            </button>
-          ) : null}
           {profile.printStylesheet ? (
             <button type="button" className="studio-menu-secondary-action" disabled={!customProfile || readOnly} onClick={removeStylesheet}>
               <Trash2 size={16} aria-hidden="true" />{labels.remove}
@@ -173,7 +148,7 @@ function copy(locale: string) {
     readOnly: 'Az írásvédett profil nyomtatási CSS-e nem módosítható. Készítsen új profilverziót.',
     file: 'Nyomtatási CSS-fájl', choose: 'CSS kiválasztása', editor: 'Nyomtatási CSS szerkesztése', cssOnly: 'Csak .css fájl tölthető fel.',
     tooLarge: 'A CSS-fájl legfeljebb 256 KB lehet.', save: 'Nyomtatási CSS mentése', saved: 'A nyomtatási CSS új profilverzióhoz mentve és alkalmazva.',
-    failed: 'A nyomtatási CSS mentése nem sikerült.', remove: 'CSS eltávolítása', removed: 'A nyomtatási CSS eltávolítva az új profilverzióból.', none: 'Nincs kapcsolt nyomtatási CSS.', template: 'Minta beszúrása',
+    failed: 'A nyomtatási CSS mentése nem sikerült.', remove: 'CSS eltávolítása', removed: 'A nyomtatási CSS eltávolítva az új profilverzióból.', none: 'Nincs kapcsolt nyomtatási CSS.',
     hint: 'Támogatottak a szabványos nyomtatási szabályok, például @page, break-before, break-after és break-inside. A profil oldalmérete és margói automatikusan alapértékként kerülnek a PDF nézetbe; saját @page szabállyal felülírhatók.',
   };
   if (locale === 'de') return {
@@ -183,7 +158,7 @@ function copy(locale: string) {
     readOnly: 'Das Druck-CSS eines schreibgeschützten Profils kann nicht geändert werden. Erstellen Sie eine neue Profilversion.',
     file: 'Druck-CSS-Datei', choose: 'CSS auswählen', editor: 'Druck-CSS bearbeiten', cssOnly: 'Nur .css-Dateien können hochgeladen werden.',
     tooLarge: 'Die CSS-Datei darf höchstens 256 KB groß sein.', save: 'Druck-CSS speichern', saved: 'Druck-CSS in einer neuen Profilversion gespeichert und angewendet.',
-    failed: 'Druck-CSS konnte nicht gespeichert werden.', remove: 'CSS entfernen', removed: 'Druck-CSS aus der neuen Profilversion entfernt.', none: 'Kein Druck-CSS verknüpft.', template: 'Vorlage einfügen',
+    failed: 'Druck-CSS konnte nicht gespeichert werden.', remove: 'CSS entfernen', removed: 'Druck-CSS aus der neuen Profilversion entfernt.', none: 'Kein Druck-CSS verknüpft.',
     hint: 'Standard-Druckregeln wie @page, break-before, break-after und break-inside werden unterstützt. Seitengröße und Ränder des Profils werden automatisch als PDF-Grundwerte gesetzt und können durch eine eigene @page-Regel überschrieben werden.',
   };
   return {
@@ -193,7 +168,7 @@ function copy(locale: string) {
     readOnly: 'Print CSS on a read-only profile cannot be changed. Create a new profile version first.',
     file: 'Print CSS file', choose: 'Choose CSS', editor: 'Edit print CSS', cssOnly: 'Only .css files can be uploaded.',
     tooLarge: 'The CSS file must be 256 KB or smaller.', save: 'Save print CSS', saved: 'Print CSS saved in a new profile version and applied.',
-    failed: 'Could not save print CSS.', remove: 'Remove CSS', removed: 'Print CSS removed in the new profile version.', none: 'No print CSS attached.', template: 'Insert template',
+    failed: 'Could not save print CSS.', remove: 'Remove CSS', removed: 'Print CSS removed in the new profile version.', none: 'No print CSS attached.',
     hint: 'Standard print rules such as @page, break-before, break-after and break-inside are supported. Profile page size and margins are injected as PDF defaults and can be overridden with your own @page rule.',
   };
 }

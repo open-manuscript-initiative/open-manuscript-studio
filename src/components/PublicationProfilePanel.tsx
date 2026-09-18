@@ -96,8 +96,6 @@ export function PublicationProfilePanel() {
       <DirectSubmissionPanel />
       <PublicationArtifactPanel />
 
-      <div className="publication-profile-experimental-note">{copy.experimental}</div>
-
       <section className="publication-profile-selector" aria-labelledby="publication-profile-choose">
         <div className="publication-profile-section-heading">
           <div>
