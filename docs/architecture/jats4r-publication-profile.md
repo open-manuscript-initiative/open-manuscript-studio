@@ -59,11 +59,14 @@ The JATS renderer now emits several structures needed by the profile:
 - `copyright-year`, `copyright-holder`, licence text and canonical
   `ali:license_ref` where manuscript metadata provides them;
 - explicit `institution` markup inside affiliations;
-- descriptive ROR and reference links;
-- a back-matter `sec sec-type="data-availability"` when the manuscript
-  contains a data-availability statement.
+- descriptive ROR and reference links.
 
-No copyright or licence values are fabricated. When none are present,
+No copyright or licence values are fabricated. Data-availability statements
+are intentionally not mapped to the JATS4R-recommended
+`back/sec[@sec-type='data-availability']` in this profile because the pinned
+JATS 1.4 **Article Authoring** DTD does not permit `sec` directly in
+`back`. That rule belongs to a later Publishing/downstream profile rather
+than being emitted as DTD-invalid XML. When none are present,
 `<permissions/>` is emitted because JATS4R requires the wrapper but does not
 require Studio to invent rights assertions.
 
