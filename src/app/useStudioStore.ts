@@ -12,8 +12,11 @@ import {
   createPersonAgent,
   getExternalIdentifierValue,
   normalizeContributionRoles,
+  normalizeCreditRoles,
   updatePersonAgent,
   type ContributionRole,
+  type CreditRole,
+  type OmiCompetingInterestsDeclaration,
   type ContributorEditInput,
   type OmiContribution,
 } from '../model/identity';
@@ -55,6 +58,10 @@ import type {
 interface ContributionEditInput {
   roles?: ContributionRole[];
   corresponding?: boolean;
+  attributionName?: string;
+  includeInPublicationList?: boolean;
+  creditRoles?: CreditRole[];
+  competingInterests?: OmiCompetingInterestsDeclaration;
 }
 
 interface StudioState {
@@ -617,6 +624,22 @@ export const useStudioStore = create<StudioState>((set) => ({
           input.corresponding !== undefined
             ? input.corresponding
             : previousContribution.corresponding,
+        attributionName:
+          input.attributionName !== undefined
+            ? input.attributionName.trim() || undefined
+            : previousContribution.attributionName,
+        includeInPublicationList:
+          input.includeInPublicationList !== undefined
+            ? input.includeInPublicationList
+            : previousContribution.includeInPublicationList ?? true,
+        creditRoles:
+          input.creditRoles !== undefined
+            ? normalizeCreditRoles(input.creditRoles)
+            : previousContribution.creditRoles ?? [],
+        competingInterests:
+          input.competingInterests !== undefined
+            ? input.competingInterests
+            : previousContribution.competingInterests,
         updatedAt: timestamp,
       };
 
@@ -624,7 +647,15 @@ export const useStudioStore = create<StudioState>((set) => ({
         JSON.stringify(previousContribution.roles) ===
           JSON.stringify(nextContribution.roles) &&
         previousContribution.corresponding ===
-          nextContribution.corresponding
+          nextContribution.corresponding &&
+        previousContribution.attributionName ===
+          nextContribution.attributionName &&
+        (previousContribution.includeInPublicationList ?? true) ===
+          (nextContribution.includeInPublicationList ?? true) &&
+        JSON.stringify(previousContribution.creditRoles ?? []) ===
+          JSON.stringify(nextContribution.creditRoles ?? []) &&
+        JSON.stringify(previousContribution.competingInterests) ===
+          JSON.stringify(nextContribution.competingInterests)
       ) {
         return state;
       }
