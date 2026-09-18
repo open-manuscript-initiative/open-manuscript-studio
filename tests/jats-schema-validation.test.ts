@@ -14,7 +14,7 @@ test('generated OMI JATS passes the pinned JATS 1.4 Article Authoring MathML3 DT
   assert.equal(rendered.validForExport, true);
   assert.match(
     rendered.xml,
-    new RegExp(JATS_VALIDATION_DTD_FILE.replace(/[.*+?^$\{\}()|[\]\\]/g, '\\$&')),
+    new RegExp(JATS_VALIDATION_DTD_FILE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
   );
 
   const validation = await validateJats14ArticleAuthoring(rendered.xml);
