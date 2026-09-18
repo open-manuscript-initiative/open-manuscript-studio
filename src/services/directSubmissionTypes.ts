@@ -21,7 +21,7 @@ export interface SubmissionAuthor {
   primaryContact?: boolean;
   includeInBrowse?: boolean;
   creditRoles?: CreditRole[];
-  competingInterestsStatus?: 'none' | 'declared';
+  competingInterestsStatus?: 'none' | 'declared' | 'unclassified';
   competingInterests?: string;
 }
 
