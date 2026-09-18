@@ -13,7 +13,7 @@ import {
 } from '../model/jatsPublicationProfiles';
 
 const XLINK_NS = 'http://www.w3.org/1999/xlink';
-const ALI_NS = 'http://www.niso.org/schemas/ali/1.0';
+const ALI_NS = 'http://www.niso.org/schemas/ali/1.0/';
 
 export type Jats4rDiagnosticSeverity = 'error' | 'warning' | 'info';
 
