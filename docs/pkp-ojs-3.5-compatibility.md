@@ -1,6 +1,6 @@
 # OMI Studio ↔ OJS 3.5 compatibility matrix
 
-Status: implementation audit, 2026-08-29
+Status: implementation audit, 2026-09-18
 
 This document records the integration boundary between Open Manuscript Studio and Open Journal Systems (OJS) 3.5. It is an engineering compatibility matrix, not a claim of PKP certification. OJS remains the workflow and authorization authority; Studio acts as a specialized scholarly document editing and review client.
 
@@ -43,6 +43,7 @@ Studio MAY cache assignment-bound data required for editing, but MUST NOT invent
 | Multiple review rounds | ⚠️ Partially modeled | `reviewRound` is stored per assignment. | Complete two-round E2E test and ensure files/forms/comments/recommendations never cross rounds. |
 | Editorial decisions | ✅ Correctly retained in OJS | Studio does not become the editorial decision authority. | Do not move accept/reject editorial decisions into Studio. |
 | OJS notifications/email | ✅ Correctly retained in OJS | Studio does not replace OJS notification workflow. | Keep this boundary. |
+| Publication artifact transfer | ✅ Implemented | Studio can transfer provenance-verified HTML, JATS, print PDF and interactive PDF to the current unpublished Production publication through OJS Integration 1.5.0.0. OJS independently verifies the publication-build digest and keeps the galley unapproved. | Complete a real OJS 3.5 Production-stage acceptance run for HTML/JATS/PDF. |
 | Publication workflow | ✅ Correctly retained in OJS | OJS remains publication system of record. | Keep this boundary. |
 
 ## Security invariants
