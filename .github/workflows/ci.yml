@@ -89,6 +89,20 @@ jobs:
       - name: Test JATS 1.4 schema validation
         run: npm run test:jats-validation
 
+      - name: Install pinned Vivliostyle renderer
+        shell: bash
+        run: |
+          npm install --global @vivliostyle/cli@11.0.4
+          vivliostyle --version
+          browser="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [[ -n "$browser" ]]; then
+            echo "VIVLIOSTYLE_EXECUTABLE_BROWSER=$browser" >> "$GITHUB_ENV"
+          fi
+          echo "OMI_RUN_VIVLIOSTYLE_SMOKE=1" >> "$GITHUB_ENV"
+
+      - name: Test Vivliostyle PDF artifact pipeline
+        run: npm run test:vivliostyle-pdf
+
       - name: Test direct publishing submissions
         run: npm run test:direct-submission
 

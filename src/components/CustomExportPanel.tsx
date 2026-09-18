@@ -23,8 +23,9 @@ import { saveExportBlob } from '../services/exportFileDelivery';
 import {
   buildCustomDocxExport,
   buildCustomHtmlExport,
-  openCustomPdfPrintView,
+  buildCustomPdfSource,
 } from '../services/exportCustom';
+import { renderPdfArtifact } from '../services/vivliostylePdfApi';
 import { useTranslation } from '../i18n';
 
 const STORAGE_KEY = 'omi.custom-export.templates.v1';
@@ -89,8 +90,11 @@ export function CustomExportPanel() {
     try {
       useStudioStore.getState().checkpoint('export');
       const normalized = normalizeCustomExportTemplate(template);
-      if (normalized.output === 'pdf') openCustomPdfPrintView(manuscript, normalized);
-      else {
+      if (normalized.output === 'pdf') {
+        const source = buildCustomPdfSource(manuscript, normalized);
+        const artifact = await renderPdfArtifact(source.html, source.fileName);
+        await saveExportBlob(artifact.blob, source.fileName);
+      } else {
         const result = normalized.output === 'docx' ? buildCustomDocxExport(manuscript, normalized) : buildCustomHtmlExport(manuscript, normalized);
         await saveExportBlob(result.blob, result.fileName);
       }

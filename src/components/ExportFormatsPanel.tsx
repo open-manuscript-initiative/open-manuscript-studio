@@ -14,10 +14,12 @@ import { buildLatexExport } from '../services/exportLatex';
 import { buildMifExport } from '../services/exportMif';
 import { omiJsonFileName, serializeOmiJson } from '../services/exportOmi';
 import {
-  openPdfPrintView,
+  buildPdfArtifactDocument,
+  pdfFileName,
   type PdfContentMode,
   type PdfExportMode,
 } from '../services/exportPdf';
+import { renderPdfArtifact } from '../services/vivliostylePdfApi';
 import { buildSlaExport } from '../services/exportSla';
 import { buildXtgExport } from '../services/exportXtg';
 import { buildOmiContainer } from '../services/omiContainer';
@@ -36,7 +38,7 @@ interface ExportFormatOption {
 }
 
 const MOBILE_EXPORT_IDS: ReadonlySet<ExportId> = new Set([
-  'omi', 'omi-json', 'jats', 'html', 'docx', 'latex', 'epub', 'custom',
+  'omi', 'omi-json', 'jats', 'html', 'docx', 'latex', 'epub', 'pdf', 'custom',
 ]);
 
 export function ExportFormatsPanel() {
@@ -160,9 +162,18 @@ export function ExportFormatsPanel() {
           reportDelivery(await saveExportBlob(result.blob, result.fileName));
           break;
         }
-        case 'pdf':
-          openPdfPrintView(manuscript, pdfMode, pdfContentMode);
+        case 'pdf': {
+          const fileName = pdfFileName(manuscript, pdfMode);
+          const html = await buildPdfArtifactDocument(
+            manuscript,
+            undefined,
+            pdfMode,
+            pdfContentMode,
+          );
+          const artifact = await renderPdfArtifact(html, fileName);
+          reportDelivery(await saveExportBlob(artifact.blob, fileName));
           break;
+        }
       }
     } catch (cause) {
       setError(cause instanceof Error && cause.message ? cause.message : copy.failed);

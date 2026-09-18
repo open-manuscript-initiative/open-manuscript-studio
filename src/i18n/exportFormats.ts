@@ -96,7 +96,7 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     saved: 'Az export elkészült.',
     cancelled: 'A fájl mentése megszakítva.',
     failed: 'Az export nem sikerült.',
-    pdfHint: 'A megnyíló nyomtatási ablakban közvetlenül nyomtathat, vagy választhatja a Mentés PDF-ként lehetőséget.',
+    pdfHint: 'A Studio a lapozott PDF-fájlt a szerveren, a rögzített Vivliostyle renderelővel készíti el.',
   },
   en: {
     title: 'Export',
@@ -144,7 +144,7 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     saved: 'Export completed.',
     cancelled: 'File save cancelled.',
     failed: 'Export failed.',
-    pdfHint: 'Print directly in the dialog that opens, or choose Save as PDF.',
+    pdfHint: 'Studio creates the paginated PDF artifact on the server with the pinned Vivliostyle renderer.',
   },
   de: {
     title: 'Export',
@@ -192,7 +192,7 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     saved: 'Export abgeschlossen.',
     cancelled: 'Dateispeichern abgebrochen.',
     failed: 'Export fehlgeschlagen.',
-    pdfHint: 'Drucken Sie direkt im geöffneten Dialog oder wählen Sie Als PDF speichern.',
+    pdfHint: 'Studio erzeugt das paginierte PDF-Artefakt serverseitig mit der festgelegten Vivliostyle-Version.',
   },
 };
 
