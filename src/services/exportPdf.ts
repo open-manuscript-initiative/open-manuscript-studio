@@ -13,7 +13,7 @@ export type PdfExportMode = 'print' | 'interactive';
 export type PdfContentMode = 'editorial' | 'publication';
 
 /**
- * Builds the isolated print document used by browser PDF output.
+ * Builds the isolated paged-media source used by browser print and PDF artifact output.
  *
  * Publication mode keeps the selected publication profile authoritative for
  * typography and page geometry. Editorial mode deliberately removes that
@@ -92,7 +92,7 @@ export async function buildPdfArtifactDocument(
     const dataUrl = `data:${asset.mediaType};base64,${bytesToBase64(bytes)}`;
     const escapedPath = path.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
     html = html.replace(
-      new RegExp(`(["'])${escapedPath}\\\\1`, 'g'),
+      new RegExp(`(["'])${escapedPath}\\1`, 'g'),
       (_match, quote: string) => `${quote}${dataUrl}${quote}`,
     );
   }
