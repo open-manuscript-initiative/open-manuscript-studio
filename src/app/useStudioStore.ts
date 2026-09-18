@@ -61,7 +61,7 @@ interface ContributionEditInput {
   attributionName?: string;
   includeInPublicationList?: boolean;
   creditRoles?: CreditRole[];
-  competingInterests?: OmiCompetingInterestsDeclaration;
+  competingInterests?: OmiCompetingInterestsDeclaration | null;
 }
 
 interface StudioState {
@@ -638,7 +638,7 @@ export const useStudioStore = create<StudioState>((set) => ({
             : previousContribution.creditRoles ?? [],
         competingInterests:
           input.competingInterests !== undefined
-            ? input.competingInterests
+            ? input.competingInterests ?? undefined
             : previousContribution.competingInterests,
         updatedAt: timestamp,
       };
