@@ -938,11 +938,25 @@
 
 .publication-document-authors {
   margin: calc(var(--omi-publication-body-leading) * 0.8) 0 0;
-  font-size: calc(var(--omi-publication-body-size) * 1.12);
-  font-weight: 600;
-  line-height: var(--omi-publication-body-leading);
-  text-align: center;
+  font-size: var(--omi-publication-author-size);
+  font-weight: var(--omi-publication-author-weight);
+  line-height: var(--omi-publication-author-leading);
+  text-align: var(--omi-publication-author-align);
   text-indent: 0;
+}
+
+.publication-document-author-given-name {
+  font-weight: var(--omi-publication-author-given-weight);
+  font-style: var(--omi-publication-author-given-style);
+  font-variant-caps: var(--omi-publication-author-given-caps);
+  text-transform: var(--omi-publication-author-given-transform);
+}
+
+.publication-document-author-family-name {
+  font-weight: var(--omi-publication-author-family-weight);
+  font-style: var(--omi-publication-author-family-style);
+  font-variant-caps: var(--omi-publication-author-family-caps);
+  text-transform: var(--omi-publication-author-family-transform);
 }
 
 .publication-document-motto {
