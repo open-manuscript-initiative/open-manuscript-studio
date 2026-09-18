@@ -69,7 +69,6 @@ app.use(
 
 app.use('/api/integrations/connections/:connectionId/direct-submission', express.json({ limit: '25mb' }));
 app.use('/api/integrations/connections/:connectionId/publication-artifact', express.json({ limit: '48mb' }));
-app.use('/api/integrations/connections/:connectionId/html-galley', express.json({ limit: '9mb' }));
 app.use('/api/publication/render/pdf', express.json({ limit: '64mb' }));
 app.use('/api/publication/validate/jats', express.json({ limit: '7mb' }));
 app.use(express.json({ limit: '1mb' }));
