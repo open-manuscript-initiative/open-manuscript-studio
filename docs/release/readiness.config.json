@@ -22,13 +22,21 @@
     ".github/workflows/tauri-desktop.yml",
     ".github/workflows/1.0-readiness.yml",
     "scripts/benchmark-docx-import.ts",
-    "scripts/generate-docx-stress-fixture.ts"
+    "scripts/generate-docx-stress-fixture.ts",
+    "docs/architecture/jats-1.4-conformance-matrix.md",
+    "scripts/publication-release-gates.ts",
+    "src/model/jatsConformance.ts",
+    "src/services/jatsReleaseGate.ts",
+    "tests/jats-conformance.test.ts"
   ],
   "workflowMarkers": {
     ".github/workflows/ci.yml": [
       "npm test",
       "npm run test:e2e",
-      "npm run test:direct-submission"
+      "npm run test:direct-submission",
+      "npm run test:jats-validation",
+      "npm run test:vivliostyle-pdf",
+      "npm run test:publication-release"
     ],
     ".github/workflows/codeql.yml": [
       "github/codeql-action"
@@ -45,7 +53,11 @@
       "release:readiness",
       "benchmark:docx",
       "cyclonedx",
-      "SHA256SUMS"
+      "SHA256SUMS",
+      "test:jats-validation",
+      "test:vivliostyle-pdf",
+      "test:publication-release",
+      "publication-release.json"
     ]
   }
 }
