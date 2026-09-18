@@ -5,11 +5,12 @@ Article Authoring DTD with MathML 3 before a validated export is delivered.
 
 ## Validation layers
 
-Studio keeps three complementary checks:
+Studio keeps four complementary checks:
 
 1. the fast renderer-side structural diagnostics in `exportJats.ts`;
 2. semantic-fidelity policy from the JATS conformance matrix;
-3. full server-side DTD validation using libxml2 through
+3. the offline JATS4R publication profile for reuse-oriented best practices;
+4. full server-side DTD validation using libxml2 through
    `libxml2-wasm@0.7.2`.
 
 The conformance matrix is documented in
@@ -49,10 +50,12 @@ is not delivered as a validated JATS export.
 
 Before delivery, `evaluateJatsPublicationRelease()` also requires zero
 error-level renderer diagnostics, no active release-blocking fallback
-diagnostics, and validation evidence for the exact pinned JATS target. The
+diagnostics, a passing JATS4R publication profile, and validation evidence for
+the exact pinned JATS target. The
 released XML is then paired with its `.omi-build.json` provenance sidecar.
 
 DTD validation is a standards-conformance check, not a complete semantic
-coverage claim. Publisher-specific profiles
-or downstream services may impose additional constraints such as JATS4R,
-Crossref, PubMed Central, or journal-specific requirements.
+coverage claim. Studio's JATS4R layer is documented separately in
+`jats4r-publication-profile.md`. Downstream services may still impose
+additional constraints such as Crossref, PubMed Central, OJS, or
+journal-specific requirements.
