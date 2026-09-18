@@ -10,6 +10,7 @@ import { resolvePublicationProfile } from '../src/model/publicationProfile.ts';
 import { buildDocxExport } from '../src/services/exportDocx.ts';
 import { buildEpubExport } from '../src/services/exportEpub.ts';
 import { buildPdfPrintDocument, pdfDocumentTitle } from '../src/services/exportPdf.ts';
+import { buildPublisherHtmlPackage } from '../src/services/exportPublisherHtmlPackage.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
 
 test('DOCX export contains Word heading and named character styles', () => {
@@ -58,6 +59,17 @@ test('EPUB export contains EPUB 3 package essentials', () => {
   const opf = new TextDecoder().decode(entries.get('EPUB/package.opf'));
   assert.match(opf, /<package[^>]+version="3.0"/);
   assert.match(opf, /properties="nav"/);
+});
+
+test('publisher HTML package bytes are reproducible for a committed revision', async () => {
+  const manuscript = createVersionedTestManuscript();
+  const profile = resolvePublicationProfile(manuscript);
+
+  const first = await buildPublisherHtmlPackage(manuscript, profile);
+  const second = await buildPublisherHtmlPackage(manuscript, profile);
+
+  assert.equal(first.validForExport, true);
+  assert.deepEqual(first.bytes, second.bytes);
 });
 
 test('PDF print document applies profile page settings and publisher print CSS in override order', () => {
