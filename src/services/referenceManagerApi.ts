@@ -58,7 +58,7 @@ const IS_MOBILE_TAURI =
     globalThis.navigator?.userAgent ?? '',
   );
 const API_BASE_URL = normalizeIntegrationApiBaseUrl(
-  import.meta.env.VITE_API_BASE_URL ??
+  import.meta.env?.VITE_API_BASE_URL ??
     (IS_TAURI && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '/api'),
 );
 
