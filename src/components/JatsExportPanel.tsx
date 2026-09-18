@@ -21,6 +21,20 @@ import {
   OMI_JATS_VERSION,
   renderJatsArticle,
 } from '../services/exportJats';
+import {
+  validateJatsSchema,
+  type JatsSchemaValidationResult,
+} from '../services/jatsValidationApi';
+
+interface SchemaValidationState {
+  xml: string;
+  result: JatsSchemaValidationResult;
+}
+
+interface SchemaValidationErrorState {
+  xml: string;
+  message: string;
+}
 
 export function JatsExportPanel() {
   const { locale } = useTranslation();
@@ -34,15 +48,48 @@ export function JatsExportPanel() {
     [manuscript, profile],
   );
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [schemaState, setSchemaState] = useState<SchemaValidationState | null>(null);
+  const [schemaError, setSchemaError] = useState<SchemaValidationErrorState | null>(null);
+  const [schemaBusy, setSchemaBusy] = useState(false);
   const errors = result.diagnostics.filter(
     (diagnostic) => diagnostic.severity === 'error',
   );
   const warnings = result.diagnostics.filter(
     (diagnostic) => diagnostic.severity === 'warning',
   );
+  const currentSchemaValidation =
+    schemaState?.xml === result.xml ? schemaState.result : null;
+  const currentSchemaError =
+    schemaError?.xml === result.xml ? schemaError.message : '';
 
-  function downloadJats(): void {
-    if (!supported) return;
+  async function validateXml(
+    xml: string,
+  ): Promise<JatsSchemaValidationResult | null> {
+    setSchemaBusy(true);
+    setSchemaError(null);
+    try {
+      const validation = await validateJatsSchema(xml);
+      setSchemaState({ xml, result: validation });
+      return validation;
+    } catch (error) {
+      setSchemaState(null);
+      setSchemaError({
+        xml,
+        message: error instanceof Error ? error.message : copy.schemaUnavailable,
+      });
+      return null;
+    } finally {
+      setSchemaBusy(false);
+    }
+  }
+
+  async function validateWorkingJats(): Promise<void> {
+    if (!supported || errors.length) return;
+    await validateXml(result.xml);
+  }
+
+  async function downloadJats(): Promise<void> {
+    if (!supported || errors.length || schemaBusy) return;
 
     checkpoint('export');
     const committedManuscript = useStudioStore.getState().manuscript;
@@ -51,6 +98,14 @@ export function JatsExportPanel() {
       committedManuscript,
       committedProfile,
     );
+    const committedErrors = committedResult.diagnostics.filter(
+      (diagnostic) => diagnostic.severity === 'error',
+    );
+    if (committedErrors.length) return;
+
+    const validation = await validateXml(committedResult.xml);
+    if (!validation?.valid) return;
+
     const blob = new Blob([committedResult.xml], {
       type: 'application/xml;charset=utf-8',
     });
@@ -63,6 +118,16 @@ export function JatsExportPanel() {
     link.remove();
     URL.revokeObjectURL(url);
   }
+
+  const schemaStatus = schemaBusy
+    ? copy.validatingSchema
+    : currentSchemaError
+      ? currentSchemaError
+      : currentSchemaValidation?.valid
+        ? copy.schemaValid
+        : currentSchemaValidation
+          ? copy.schemaInvalid
+          : copy.schemaNotChecked;
 
   return (
     <section className="jats-export-panel" aria-labelledby="jats-export-title">
@@ -119,6 +184,18 @@ export function JatsExportPanel() {
             {errors.length} {copy.errors} · {warnings.length} {copy.warnings}
           </dd>
         </div>
+        <div>
+          <dt>{copy.schemaValidation}</dt>
+          <dd>
+            {currentSchemaValidation?.valid ? (
+              <CheckCircle2 size={14} aria-hidden="true" />
+            ) : currentSchemaValidation || currentSchemaError ? (
+              <AlertTriangle size={14} aria-hidden="true" />
+            ) : null}
+            {' '}
+            {schemaStatus}
+          </dd>
+        </div>
       </dl>
 
       <p className="jats-export-hint">{copy.workingPreview}</p>
@@ -146,6 +223,28 @@ export function JatsExportPanel() {
         </p>
       )}
 
+      {currentSchemaValidation && !currentSchemaValidation.valid ? (
+        <div>
+          <p className="jats-export-schema-note">
+            <strong>{copy.schemaDiagnostics}</strong>
+          </p>
+          <ul className="jats-export-diagnostics">
+            {currentSchemaValidation.diagnostics.slice(0, 30).map((diagnostic, index) => (
+              <li
+                className="jats-export-diagnostic jats-export-diagnostic--error"
+                key={`${diagnostic.code}:${diagnostic.line ?? ''}:${index}`}
+              >
+                <AlertTriangle size={14} aria-hidden="true" />
+                <span>
+                  {diagnostic.line ? `${copy.line} ${diagnostic.line}: ` : ''}
+                  {diagnostic.message}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="jats-export-actions">
         <button
           type="button"
@@ -162,12 +261,22 @@ export function JatsExportPanel() {
 
         <button
           type="button"
+          className="studio-menu-secondary-action"
+          disabled={!supported || Boolean(errors.length) || schemaBusy}
+          onClick={() => void validateWorkingJats()}
+        >
+          <CheckCircle2 size={16} aria-hidden="true" />
+          {schemaBusy ? copy.validatingSchema : copy.validateSchema}
+        </button>
+
+        <button
+          type="button"
           className="studio-menu-primary-action"
-          disabled={!supported}
-          onClick={downloadJats}
+          disabled={!supported || Boolean(errors.length) || schemaBusy}
+          onClick={() => void downloadJats()}
         >
           <Download size={16} aria-hidden="true" />
-          {copy.download}
+          {schemaBusy ? copy.validatingSchema : copy.download}
         </button>
       </div>
 
