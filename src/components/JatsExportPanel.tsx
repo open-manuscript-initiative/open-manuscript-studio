@@ -22,6 +22,10 @@ import {
   OMI_JATS_VERSION,
   renderJatsArticle,
 } from '../services/exportJats';
+import {
+  evaluateJatsPublicationRelease,
+  jatsPublicationReleaseFailureMessage,
+} from '../services/jatsReleaseGate';
 import { savePublicationArtifactWithBuildSidecar } from '../services/publicationBuildSidecar';
 import {
   validateJatsSchema,
@@ -106,7 +110,19 @@ export function JatsExportPanel() {
     if (committedErrors.length) return;
 
     const validation = await validateXml(committedResult.xml);
-    if (!validation?.valid) return;
+    if (!validation) return;
+
+    const release = evaluateJatsPublicationRelease(
+      committedResult,
+      validation,
+    );
+    if (!release.releasable) {
+      setSchemaError({
+        xml: committedResult.xml,
+        message: jatsPublicationReleaseFailureMessage(release),
+      });
+      return;
+    }
 
     const fileName = jatsFileName(committedManuscript);
     await savePublicationArtifactWithBuildSidecar({

@@ -103,6 +103,9 @@ jobs:
       - name: Test Vivliostyle PDF artifact pipeline
         run: npm run test:vivliostyle-pdf
 
+      - name: Test publication release gates
+        run: npm run test:publication-release
+
       - name: Test direct publishing submissions
         run: npm run test:direct-submission
 

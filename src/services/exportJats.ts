@@ -1,4 +1,9 @@
 import {
+  OMI_JATS_CONFORMANCE_RENDERER_VERSION,
+  OMI_JATS_CONFORMANCE_TAG_SET,
+  OMI_JATS_CONFORMANCE_VERSION,
+} from '../model/jatsConformance';
+import {
   collectCrossReferenceTargets,
   formatCrossReferenceLabel,
   type OmiCrossReferenceTarget,
@@ -26,9 +31,10 @@ import type {
   OmiManuscript,
 } from '../types/omi';
 
-export const OMI_JATS_RENDERER_VERSION = '0.1.0-alpha.1' as const;
-export const OMI_JATS_VERSION = '1.4' as const;
-export const OMI_JATS_TAGSET = 'articleauthoring' as const;
+export const OMI_JATS_RENDERER_VERSION =
+  OMI_JATS_CONFORMANCE_RENDERER_VERSION;
+export const OMI_JATS_VERSION = OMI_JATS_CONFORMANCE_VERSION;
+export const OMI_JATS_TAGSET = OMI_JATS_CONFORMANCE_TAG_SET;
 export const OMI_JATS_DTD_URL =
   'https://jats.nlm.nih.gov/articleauthoring/1.4/JATS-articleauthoring1-4-mathml3.dtd' as const;
 
@@ -448,7 +454,11 @@ function renderInlineChildren(nodes: readonly JsonNode[], state: RenderState): s
 function renderInlineNode(node: JsonNode, state: RenderState): string {
   switch (node.type) {
     case 'text':
-      return applyMarks(escapeXml(node.text ?? ''), node.marks ?? []);
+      return applyMarks(
+        escapeXml(node.text ?? ''),
+        node.marks ?? [],
+        state,
+      );
     case 'hardBreak':
       return '\n';
     case 'omiCitation':
@@ -465,6 +475,7 @@ function renderInlineNode(node: JsonNode, state: RenderState): string {
 function applyMarks(
   input: string,
   marks: readonly { type?: string; attrs?: Record<string, unknown> }[],
+  state: RenderState,
 ): string {
   let output = input;
 
@@ -478,6 +489,12 @@ function applyMarks(
         break;
       case 'strike':
         output = `<strike>${output}</strike>`;
+        break;
+      case 'omiUnderline':
+        output = `<underline>${output}</underline>`;
+        break;
+      case 'omiSmallCaps':
+        output = `<sc>${output}</sc>`;
         break;
       case 'code':
         output = `<monospace>${output}</monospace>`;
@@ -500,6 +517,15 @@ function applyMarks(
         }
         break;
       }
+      default:
+        if (mark.type) {
+          state.diagnostics.push({
+            code: 'unsupported-inline-mark',
+            severity: 'warning',
+            message: `Unsupported inline mark was omitted from JATS: ${mark.type}`,
+          });
+        }
+        break;
     }
   }
 
@@ -584,7 +610,7 @@ function renderNoteMarker(node: JsonNode, state: RenderState): string {
   if (!annotation) {
     state.diagnostics.push({
       code: 'unresolved-note-marker',
-      severity: 'warning',
+      severity: 'error',
       message: 'Inline note marker does not resolve to an annotation.',
       targetId: noteId,
     });
@@ -606,11 +632,18 @@ function renderImage(block: OmiBlock, state: RenderState): string {
       : ''
   }</graphic>`;
 
-  if (block.visual.src.startsWith('data:')) {
+  if (!block.visual.src.trim()) {
+    state.diagnostics.push({
+      code: 'missing-image-source',
+      severity: 'warning',
+      message: 'Image has no portable graphic reference for JATS publication.',
+      targetId: block.id,
+    });
+  } else if (block.visual.src.startsWith('data:')) {
     state.diagnostics.push({
       code: 'embedded-image-data-uri',
       severity: 'warning',
-      message: 'Image is preserved as a data URI; a future JATS package exporter should externalize binary assets.',
+      message: 'Image is preserved as a data URI; a publication JATS package should externalize binary assets.',
       targetId: block.id,
     });
   }
@@ -695,6 +728,14 @@ function renderMusicScore(block: OmiBlock, state: RenderState): string {
   const label = target ? objectLabel(target, state) : '';
   const title = block.visual.caption?.trim() || block.visual.title?.trim() || '';
   const notes = block.visual.notes.slice(0, 256).map((note) => note.rest ? 'rest' : `${note.step}${note.alter === 1 ? '#' : note.alter === -1 ? 'b' : ''}${note.octave}`).join(' ');
+
+  state.diagnostics.push({
+    code: 'music-score-semantic-fallback',
+    severity: 'warning',
+    message: 'Music score is preserved as a textual note sequence; publication-ready score media is not yet generated.',
+    targetId: block.id,
+  });
+
   return `<fig id="${xmlId('music', block.id)}"><label>${escapeXml(label)}</label>${title ? `<caption><p>${escapeXml(title)}</p></caption>` : ''}<p content-type="${escapeXml(block.visual.format)}">${escapeXml(notes)}</p></fig>`;
 }
 
@@ -706,11 +747,31 @@ function renderBack(state: RenderState): string {
 }
 
 function renderFootnoteGroup(state: RenderState): string {
-  if (!state.manuscript.annotations.length) return '';
+  const notes = state.manuscript.annotations.filter(
+    (annotation) => annotation.type === 'note',
+  );
+  if (!notes.length) return '';
 
   return `<fn-group>\n${indent(
-    state.manuscript.annotations
+    notes
       .map((annotation, index) => {
+        if (annotation.bodyContent?.trim()) {
+          state.diagnostics.push({
+            code: 'jats-note-rich-text-fallback',
+            severity: 'warning',
+            message: 'Rich note content is reduced to its plain-text compatibility projection in JATS.',
+            targetId: annotation.id,
+          });
+        }
+        if ((annotation.noteCitations ?? []).length > 0) {
+          state.diagnostics.push({
+            code: 'jats-note-citations-fallback',
+            severity: 'warning',
+            message: 'Semantic citations inside note bodies are not yet emitted as structured JATS citations.',
+            targetId: annotation.id,
+          });
+        }
+
         const label = state.noteLabels.get(annotation.id) || String(index + 1);
         const fnType = annotation.noteKind === 'author-note' ? 'author' : 'other';
         return `<fn id="${xmlId('fn', annotation.id)}" fn-type="${fnType}"><label>${escapeXml(label)}</label><p>${escapeXml(annotation.body)}</p></fn>`;
