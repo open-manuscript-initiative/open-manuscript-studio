@@ -17,10 +17,12 @@ import {
 } from '../model/publicationProfile';
 import {
   jatsFileName,
+  OMI_JATS_RENDERER_VERSION,
   OMI_JATS_TAGSET,
   OMI_JATS_VERSION,
   renderJatsArticle,
 } from '../services/exportJats';
+import { savePublicationArtifactWithBuildSidecar } from '../services/publicationBuildSidecar';
 import {
   validateJatsSchema,
   type JatsSchemaValidationResult,
@@ -106,17 +108,19 @@ export function JatsExportPanel() {
     const validation = await validateXml(committedResult.xml);
     if (!validation?.valid) return;
 
-    const blob = new Blob([committedResult.xml], {
-      type: 'application/xml;charset=utf-8',
+    const fileName = jatsFileName(committedManuscript);
+    await savePublicationArtifactWithBuildSidecar({
+      manuscript: committedManuscript,
+      profile: committedProfile,
+      artifact: new Blob([committedResult.xml], {
+        type: 'application/xml;charset=utf-8',
+      }),
+      fileName,
+      format: 'jats',
+      mediaType: 'application/xml',
+      renderer: 'open-manuscript-studio-jats',
+      rendererVersion: OMI_JATS_RENDERER_VERSION,
     });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = jatsFileName(committedManuscript);
-    document.body.append(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
   }
 
   const schemaStatus = schemaBusy
