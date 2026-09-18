@@ -3,6 +3,7 @@ import { createDocumentStructureProfile } from '../../model/documentProfile';
 import {
   createContribution,
   createPersonAgent,
+  type CreditRole,
 } from '../../model/identity';
 import type { OmiAnnotation, OmiManuscript } from '../../types/omi';
 
@@ -15,11 +16,22 @@ type OjsKeywordValue = OjsLocalizedValue | unknown[];
 interface OjsContributor {
   externalId?: string;
   name?: { given?: string; family?: string };
+  preferredPublicName?: string | OjsLocalizedValue;
   email?: string;
   affiliation?: string;
+  affiliations?: Array<{
+    name?: string | OjsLocalizedValue;
+    ror?: string | null;
+  }>;
   country?: string | null;
+  url?: string | null;
+  biography?: OjsLocalizedValue;
+  competingInterests?: OjsLocalizedValue;
   sequence?: number;
   primaryContact?: boolean;
+  includeInBrowse?: boolean;
+  roles?: string[];
+  creditRoles?: Array<{ role?: string; degree?: string }>;
   identifiers?: Array<{ scheme?: string; value?: string }>;
 }
 
@@ -101,9 +113,10 @@ export interface OjsLaunchPayload {
 const STORAGE_KEY = 'omi:ojs-launch';
 
 function localizedString(
-  value: OjsLocalizedValue | undefined,
+  value: string | OjsLocalizedValue | undefined,
   locale: string,
 ): string {
+  if (typeof value === 'string') return value.trim();
   if (!value) return '';
   const preferred = value[locale];
   if (typeof preferred === 'string') return preferred;
@@ -156,6 +169,33 @@ function plainText(value: string): string {
   return document.body.textContent?.trim() ?? '';
 }
 
+const CREDIT_ROLE_IDS: readonly CreditRole[] = [
+  'conceptualization',
+  'data-curation',
+  'formal-analysis',
+  'funding-acquisition',
+  'investigation',
+  'methodology',
+  'project-administration',
+  'resources',
+  'software',
+  'supervision',
+  'validation',
+  'visualization',
+  'writing-original-draft',
+  'writing-review-editing',
+];
+
+function importedCreditRoles(
+  values: OjsContributor['creditRoles'],
+): CreditRole[] {
+  if (!values) return [];
+  const allowed = new Set<string>(CREDIT_ROLE_IDS);
+  return values
+    .map((item) => item.role?.split('/').filter(Boolean).at(-1) ?? '')
+    .filter((role): role is CreditRole => allowed.has(role));
+}
+
 export function readOjsLaunchPayload(): OjsLaunchPayload | null {
   const raw = sessionStorage.getItem(STORAGE_KEY);
   if (!raw) return null;
@@ -201,15 +241,29 @@ export function createManuscriptFromOjsLaunch(
   const abstract = plainText(localizedString(submission.abstract, locale));
   const keywords = localizedStrings(submission.keywords, locale);
 
-  const agents = (launch.contributors ?? []).map((contributor) => {
+  const sourceContributors = launch.contributors ?? [];
+  const agents = sourceContributors.map((contributor) => {
     const orcid = contributor.identifiers?.find(
       (identifier) => identifier.scheme?.toLowerCase() === 'orcid',
     )?.value;
+    const primaryAffiliation = contributor.affiliations?.[0];
+    const affiliation =
+      localizedString(primaryAffiliation?.name, locale) ||
+      contributor.affiliation ||
+      '';
+    const biography = plainText(
+      localizedString(contributor.biography, locale),
+    );
     return createPersonAgent(
       {
         givenName: contributor.name?.given ?? '',
         familyName: contributor.name?.family ?? '',
-        affiliation: contributor.affiliation ?? '',
+        affiliation,
+        affiliationRorId: primaryAffiliation?.ror || undefined,
+        email: contributor.email,
+        country: contributor.country || undefined,
+        url: contributor.url || undefined,
+        biography: biography ? { [locale]: biography } : undefined,
         orcid: orcid || undefined,
         language: locale,
       },
@@ -218,16 +272,32 @@ export function createManuscriptFromOjsLaunch(
     );
   });
 
-  const contributions = agents.map((agent, index) =>
-    createContribution(
+  const contributions = agents.map((agent, index) => {
+    const source = sourceContributors[index];
+    const contribution = createContribution(
       agent.id,
       base.id,
       ['author'],
-      index + 1,
+      source?.sequence ?? index + 1,
       crypto.randomUUID(),
       now,
-    ),
-  );
+    );
+    contribution.corresponding = source?.primaryContact ?? false;
+    contribution.attributionName =
+      localizedString(source?.preferredPublicName, locale) || undefined;
+    contribution.includeInPublicationList = source?.includeInBrowse ?? true;
+    contribution.creditRoles = importedCreditRoles(source?.creditRoles);
+    const competingInterests = plainText(
+      localizedString(source?.competingInterests, locale),
+    );
+    if (competingInterests) {
+      contribution.competingInterests = {
+        status: 'unclassified',
+        statements: { [locale]: competingInterests },
+      };
+    }
+    return contribution;
+  });
 
   const imported = buildSourceContent(
     launch.sourceDocument,

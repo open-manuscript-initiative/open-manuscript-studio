@@ -1,4 +1,30 @@
-export interface SubmissionAuthor { agentId?: string; givenName: string; familyName: string; email: string }
+import type {
+  ContributionRole,
+  CreditRole,
+} from '../model/identity';
+
+export interface SubmissionAuthor {
+  agentId?: string;
+  givenName: string;
+  familyName: string;
+  email: string;
+  preferredPublicName?: string;
+  country?: string;
+  url?: string;
+  biography?: string;
+  affiliation?: string;
+  affiliationRorId?: string;
+  department?: string;
+  position?: string;
+  orcid?: string;
+  role?: ContributionRole;
+  primaryContact?: boolean;
+  includeInBrowse?: boolean;
+  creditRoles?: CreditRole[];
+  competingInterestsStatus?: 'none' | 'declared' | 'unclassified';
+  competingInterests?: string;
+}
+
 export interface SubmissionOptions {
   protocol: 'omi-direct-submission/1'; platform: 'ojs' | 'omp'; name: string;
   acceptingSubmissions: boolean; locales: string[];

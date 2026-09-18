@@ -2,6 +2,7 @@ import { createSampleManuscript } from '../../document/sampleManuscript';
 import {
   createContribution,
   createPersonAgent,
+  type CreditRole,
 } from '../../model/identity';
 import type { OmiManuscript } from '../../types/omi';
 
@@ -12,12 +13,22 @@ interface LocalizedValue {
 interface OmpContributor {
   externalId?: string;
   name?: { given?: string; family?: string };
+  preferredPublicName?: string | LocalizedValue;
   email?: string;
   affiliation?: string;
+  affiliations?: Array<{
+    name?: string | LocalizedValue;
+    ror?: string | null;
+  }>;
   country?: string | null;
+  url?: string | null;
+  biography?: LocalizedValue;
+  competingInterests?: LocalizedValue;
   sequence?: number;
   primaryContact?: boolean;
+  includeInBrowse?: boolean;
   isEditor?: boolean;
+  creditRoles?: Array<{ role?: string; degree?: string }>;
   identifiers?: Array<{ scheme?: string; value?: string }>;
 }
 
@@ -113,6 +124,39 @@ function fileName(file: OmpFile, locale: string): string {
   return localizedString(file.name, locale) || `OMP file ${file.externalId ?? file.fileId ?? ''}`.trim();
 }
 
+function plainText(value: string): string {
+  if (!value.includes('<')) return value;
+  const document = new DOMParser().parseFromString(value, 'text/html');
+  return document.body.textContent?.trim() ?? '';
+}
+
+const CREDIT_ROLE_IDS: readonly CreditRole[] = [
+  'conceptualization',
+  'data-curation',
+  'formal-analysis',
+  'funding-acquisition',
+  'investigation',
+  'methodology',
+  'project-administration',
+  'resources',
+  'software',
+  'supervision',
+  'validation',
+  'visualization',
+  'writing-original-draft',
+  'writing-review-editing',
+];
+
+function importedCreditRoles(
+  values: OmpContributor['creditRoles'],
+): CreditRole[] {
+  if (!values) return [];
+  const allowed = new Set<string>(CREDIT_ROLE_IDS);
+  return values
+    .map((item) => item.role?.split('/').filter(Boolean).at(-1) ?? '')
+    .filter((role): role is CreditRole => allowed.has(role));
+}
+
 export async function fetchOmpHandoff(token: string): Promise<OmpLaunchPayload> {
   const response = await fetch(
     `/integrations/omp/handoff/${encodeURIComponent(token)}`,
@@ -164,11 +208,24 @@ export function createManuscriptFromOmpLaunch(
     const orcid = contributor.identifiers?.find(
       (identifier) => identifier.scheme?.toLowerCase() === 'orcid',
     )?.value;
+    const primaryAffiliation = contributor.affiliations?.[0];
+    const affiliation =
+      localizedString(primaryAffiliation?.name, locale) ||
+      contributor.affiliation ||
+      '';
+    const biography = plainText(
+      localizedString(contributor.biography, locale),
+    );
     return createPersonAgent(
       {
         givenName: contributor.name?.given ?? '',
         familyName: contributor.name?.family ?? '',
-        affiliation: contributor.affiliation ?? '',
+        affiliation,
+        affiliationRorId: primaryAffiliation?.ror || undefined,
+        email: contributor.email,
+        country: contributor.country || undefined,
+        url: contributor.url || undefined,
+        biography: biography ? { [locale]: biography } : undefined,
         orcid: orcid || undefined,
         language: locale,
       },
@@ -176,16 +233,32 @@ export function createManuscriptFromOmpLaunch(
       now,
     );
   });
-  const contributions = agents.map((agent, index) =>
-    createContribution(
+  const contributions = agents.map((agent, index) => {
+    const source = contributors[index];
+    const contribution = createContribution(
       agent.id,
       base.id,
-      [contributors[index]?.isEditor ? 'editor' : 'author'],
-      contributors[index]?.sequence ?? index + 1,
+      [source?.isEditor ? 'editor' : 'author'],
+      source?.sequence ?? index + 1,
       crypto.randomUUID(),
       now,
-    ),
-  );
+    );
+    contribution.corresponding = source?.primaryContact ?? false;
+    contribution.attributionName =
+      localizedString(source?.preferredPublicName, locale) || undefined;
+    contribution.includeInPublicationList = source?.includeInBrowse ?? true;
+    contribution.creditRoles = importedCreditRoles(source?.creditRoles);
+    const competingInterests = plainText(
+      localizedString(source?.competingInterests, locale),
+    );
+    if (competingInterests) {
+      contribution.competingInterests = {
+        status: 'unclassified',
+        statements: { [locale]: competingInterests },
+      };
+    }
+    return contribution;
+  });
 
   const files = launch.files ?? [];
   const sections = files.length
