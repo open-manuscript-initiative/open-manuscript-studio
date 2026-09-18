@@ -9,7 +9,8 @@ publication-build foundation:
 1. publication build provenance;
 2. JATS 1.4 Article Authoring DTD validation;
 3. **Vivliostyle PDF artifacts**;
-4. artifact sidecars and broader conformance/release gates.
+4. **HTML/JATS/PDF build sidecars**;
+5. broader conformance and release gates.
 
 The authoritative source remains the committed OMI manuscript. PDF is a derived
 publication artifact.
@@ -27,8 +28,8 @@ The Studio client:
 
 The API executes Vivliostyle CLI as a separate process in an isolated temporary
 directory. The renderer version is pinned to **11.0.4**. Its identifier and
-version are returned in response headers so the next provenance phase can record
-the exact PDF generator.
+version are returned in response headers and are recorded in the exported
+publication-build sidecar.
 
 ## Server requirement
 
@@ -87,9 +88,14 @@ Print/archive mode strips active hyperlinks. Interactive mode keeps scholarly
 links such as citations, note targets, ORCID/ROR identifiers and normal web
 links.
 
-## Provenance follow-up
+## Provenance sidecar
 
-This phase creates the deterministic PDF artifact and exposes the exact renderer
-identity. The next publication-output phase will attach
-`.pdf.omi-build.json` sidecars using the publication-build model already
-present in Studio.
+Every PDF artifact exported through the standard or live-publication workflow
+is accompanied by `<filename>.omi-build.json`. The manifest records the
+committed manuscript revision, state digest, publication-profile digest, exact
+PDF digest, Studio build identity, Vivliostyle version and a SHA-256 digest of
+the exact self-contained HTML sent to the renderer.
+
+The renderer-input digest is important for live publication output because it
+captures the final pagination source after style, publisher identity,
+typesetting corrections, hyphenation and asset inlining have been applied.
