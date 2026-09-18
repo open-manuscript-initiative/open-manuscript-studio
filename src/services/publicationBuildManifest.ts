@@ -143,7 +143,7 @@ export function createPublicationBuildManifest(
     manuscript,
     profile,
     output,
-    rendererInput,
+    ...(rendererInput ? { rendererInput } : {}),
     generator,
   };
   const identityDigest = sha256HexSync(
