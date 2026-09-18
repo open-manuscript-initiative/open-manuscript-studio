@@ -39,7 +39,14 @@
     "tests/ojs-publication-artifact.test.ts",
     "tests/publication-artifact-routes.test.mjs",
     "docs/ojs-publication-artifact-transfer.md",
-    "server/src/app.ts"
+    "server/src/app.ts",
+    "src/services/publicationArtifact.ts",
+    "docs/omp-publication-artifact-transfer.md",
+    "server/prisma/identity/schema.prisma",
+    "server/prisma/identity/migrations/20260918163000_add_personal_omp_api_key/migration.sql",
+    "server/src/routes/authRoutes.ts",
+    "src/services/authApi.ts",
+    "src/components/AccountPanel.tsx"
   ],
   "workflowMarkers": {
     ".github/workflows/ci.yml": [
