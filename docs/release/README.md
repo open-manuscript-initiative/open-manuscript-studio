@@ -17,6 +17,7 @@ Run the publication-output release gates with:
 
 ```bash
 npm run test:jats-validation
+npm run test:jats4r-profile
 npm run test:vivliostyle-pdf
 npm run test:publication-release
 ```
@@ -49,7 +50,7 @@ The resulting identifier is then a short SHA-256 digest. The harness never
 prints the file name, path, manuscript text, metadata, notes, or images.
 
 The **1.0 Readiness** GitHub workflow runs the local checks, tests, web build,
-server typecheck, JATS 1.4 DTD/conformance release gates, a real pinned
+server typecheck, JATS 1.4 DTD/JATS4R/conformance release gates, a real pinned
 Vivliostyle PDF smoke render, three content-neutral DOCX benchmarks, SBOM
 generation, and a SHA-256 evidence manifest. The artifact contains
 `publication-release.json` and `publication-release.md` alongside the other
