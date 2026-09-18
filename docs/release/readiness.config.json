@@ -32,7 +32,12 @@
     "docs/architecture/jats4r-publication-profile.md",
     "src/model/jatsPublicationProfiles.ts",
     "src/services/jats4rProfileValidator.ts",
-    "tests/jats4r-profile.test.ts"
+    "tests/jats4r-profile.test.ts",
+    "src/services/ojsPublicationArtifact.ts",
+    "src/components/PublicationArtifactPanel.tsx",
+    "server/src/routes/directSubmissionRoutes.ts",
+    "tests/ojs-publication-artifact.test.ts",
+    "tests/publication-artifact-routes.test.mjs"
   ],
   "workflowMarkers": {
     ".github/workflows/ci.yml": [
@@ -42,7 +47,8 @@
       "npm run test:jats-validation",
       "npm run test:vivliostyle-pdf",
       "npm run test:publication-release",
-      "npm run test:jats4r-profile"
+      "npm run test:jats4r-profile",
+      "npm run test:publication-artifact"
     ],
     ".github/workflows/codeql.yml": [
       "github/codeql-action"
@@ -64,7 +70,8 @@
       "test:vivliostyle-pdf",
       "test:publication-release",
       "publication-release.json",
-      "test:jats4r-profile"
+      "test:jats4r-profile",
+      "test:publication-artifact"
     ]
   }
 }
