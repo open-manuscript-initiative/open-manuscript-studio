@@ -131,7 +131,7 @@ export function renderJatsArticle(
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     `<!DOCTYPE article SYSTEM "${OMI_JATS_DTD_URL}">`,
-    `<article article-type="research-article" dtd-version="${OMI_JATS_VERSION}" xml:lang="${escapeAttribute(normalizeLanguage(manuscript.locale))}" xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink">`,
+    `<article article-type="research-article" dtd-version="${OMI_JATS_VERSION}" xml:lang="${escapeAttribute(normalizeLanguage(manuscript.locale))}" xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ali="http://www.niso.org/schemas/ali/1.0">`,
     indent(renderProcessingMeta(state), 1),
     indent(renderFront(state), 1),
     context.sections.length ? indent(renderBody(context.sections, state), 1) : '  <body/>',
@@ -272,6 +272,7 @@ function renderFront(state: RenderState): string {
     `<title-group>\n${indent(titleGroup, 1)}\n</title-group>`,
     contributors,
     `<content-language>${escapeXml(normalizeLanguage(manuscript.locale))}</content-language>`,
+    renderPermissions(state),
     abstract,
     keywords,
   ]
@@ -279,6 +280,96 @@ function renderFront(state: RenderState): string {
     .join('\n');
 
   return `<front>\n${indent(`<article-meta>\n${indent(articleMeta, 1)}\n</article-meta>`, 1)}\n</front>`;
+}
+
+
+function renderPermissions(state: RenderState): string {
+  const metadata = state.manuscript.metadata;
+  const locale = state.context.locale;
+  const holder = localizedMetadataText(metadata?.copyrightHolder, locale);
+  const rights = localizedMetadataText(metadata?.rights, locale);
+  const year =
+    typeof metadata?.copyrightYear === 'number' &&
+    Number.isInteger(metadata.copyrightYear)
+      ? String(metadata.copyrightYear)
+      : '';
+  const licenseUrl = metadata?.licenseUrl?.trim() ?? '';
+  const copyrightStatement =
+    holder && year
+      ? `<copyright-statement>© ${escapeXml(year)} ${escapeXml(holder)}</copyright-statement>`
+      : '';
+  const copyrightYear = year
+    ? `<copyright-year>${escapeXml(year)}</copyright-year>`
+    : '';
+  const copyrightHolder = holder
+    ? `<copyright-holder>${escapeXml(holder)}</copyright-holder>`
+    : '';
+  const license =
+    licenseUrl || rights
+      ? `<license${licenseUrl ? ` xlink:href="${escapeAttribute(licenseUrl)}"` : ''}>${
+          licenseUrl
+            ? `<ali:license_ref>${escapeXml(licenseUrl)}</ali:license_ref>`
+            : ''
+        }${rights ? `<license-p>${escapeXml(rights)}</license-p>` : ''}</license>`
+      : '';
+
+  const content = [
+    copyrightStatement,
+    copyrightYear,
+    copyrightHolder,
+    license,
+  ]
+    .filter(Boolean)
+    .join('');
+
+  return content ? `<permissions>${content}</permissions>` : '<permissions/>';
+}
+
+function renderDataAvailability(state: RenderState): string {
+  const metadataText = localizedMetadataText(
+    state.manuscript.metadata?.dataAvailability,
+    state.context.locale,
+  );
+  const semanticField = (state.manuscript.semanticFields ?? []).find(
+    (field) =>
+      field.role === 'data-availability' &&
+      field.scope !== 'section' &&
+      typeof field.value === 'string' &&
+      field.value.trim(),
+  );
+  const value = metadataText || (
+    typeof semanticField?.value === 'string' ? semanticField.value.trim() : ''
+  );
+  if (!value) return '';
+
+  return `<sec sec-type="data-availability"><title>Data Availability</title><p>${escapeXml(
+    stripRichTextValue(value),
+  )}</p></sec>`;
+}
+
+function localizedMetadataText(
+  value: Partial<Record<string, string>> | undefined,
+  locale: string,
+): string {
+  if (!value) return '';
+  const normalized = normalizeLanguage(locale).toLowerCase();
+  const language = normalized.split('-')[0] ?? normalized;
+  const direct = value[normalized]?.trim() || value[language]?.trim();
+  if (direct) return direct;
+  return Object.values(value)
+    .map((item) => item?.trim() ?? '')
+    .find(Boolean) ?? '';
+}
+
+function stripRichTextValue(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('{')) return trimmed;
+  try {
+    const parsed = JSON.parse(trimmed) as JsonNode;
+    return textContent(parsed).trim() || trimmed;
+  } catch {
+    return trimmed;
+  }
 }
 
 function renderContributors(state: RenderState): string {
@@ -312,20 +403,22 @@ function renderContributors(state: RenderState): string {
           : '';
         const affiliations = contributor.affiliations
           .map((affiliation) => {
-            const text = [
-              affiliation.department,
-              affiliation.organizationName,
-              affiliation.position,
-            ]
-              .filter((value): value is string => Boolean(value?.trim()))
-              .map((value) => escapeXml(value.trim()))
-              .join(', ');
+            const department = affiliation.department?.trim();
+            const organization = affiliation.organizationName?.trim();
+            const position = affiliation.position?.trim();
+            const parts = [
+              department ? escapeXml(department) : '',
+              organization
+                ? `<institution>${escapeXml(organization)}</institution>`
+                : '',
+              position ? escapeXml(position) : '',
+            ].filter(Boolean);
             const ror = affiliation.organizationIdentifier?.trim()
               ? ` <ext-link ext-link-type="uri" xlink:href="${escapeAttribute(
                   affiliation.organizationIdentifier.trim(),
-                )}">${escapeXml(affiliation.organizationIdentifier.trim())}</ext-link>`
+                )}" xlink:title="ROR identifier">ROR</ext-link>`
               : '';
-            return `<aff>${text}${ror}</aff>`;
+            return `<aff>${parts.join(', ')}${ror}</aff>`;
           })
           .join('');
 
@@ -740,10 +833,14 @@ function renderMusicScore(block: OmiBlock, state: RenderState): string {
 }
 
 function renderBack(state: RenderState): string {
+  const dataAvailability = renderDataAvailability(state);
   const references = renderReferenceList(state);
   const notes = renderFootnoteGroup(state);
-  if (!references && !notes) return '';
-  return `<back>\n${indent([notes, references].filter(Boolean).join('\n'), 1)}\n</back>`;
+  if (!dataAvailability && !references && !notes) return '';
+  return `<back>\n${indent(
+    [dataAvailability, notes, references].filter(Boolean).join('\n'),
+    1,
+  )}\n</back>`;
 }
 
 function renderFootnoteGroup(state: RenderState): string {
@@ -840,7 +937,7 @@ function renderReference(record: OmiBibliographicRecord, number: number): string
     })
     .join('');
   const url = record.url?.trim()
-    ? `<ext-link ext-link-type="uri" xlink:href="${escapeAttribute(record.url.trim())}">${escapeXml(record.url.trim())}</ext-link>`
+    ? `<ext-link ext-link-type="uri" xlink:href="${escapeAttribute(record.url.trim())}" xlink:title="Reference URL">${escapeXml(record.url.trim())}</ext-link>`
     : '';
   const citation = [
     contributors,
