@@ -114,7 +114,6 @@ export function PublisherExportStylesheetPanel({
               value={cssText}
               spellCheck={false}
               onChange={(event) => setCssText(event.target.value)}
-              placeholder=".omi-scholarly-article { … }"
             />
           </label>
         </div>
