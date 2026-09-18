@@ -180,8 +180,9 @@ async function loadSchemaClosure(): Promise<PreloadFile[]> {
 
 function collectExternalSchemaReferences(contents: string): string[] {
   const references = new Set<string>();
+  const declarations = contents.replace(/<!--[\s\S]*?-->/g, '');
   const pattern = /["']([^"'<>]+\.(?:dtd|ent|mod))["']/gi;
-  for (const match of contents.matchAll(pattern)) {
+  for (const match of declarations.matchAll(pattern)) {
     const reference = match[1]?.trim();
     if (
       reference &&
