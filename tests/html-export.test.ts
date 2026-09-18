@@ -44,6 +44,18 @@ test('renders deterministic semantic HTML5 with front matter and traceability me
   assert.match(first.html, /<section id="sec-section-one"/);
 });
 
+test('preserves given and family author names as separate semantic spans', () => {
+  const manuscript = createTestManuscript();
+  const result = renderHtmlArticle(manuscript);
+
+  assert.match(result.html, /class="author-given-name">Ada<\/span>/);
+  assert.match(result.html, /class="author-family-name">Scholar<\/span>/);
+  assert.match(
+    result.html,
+    /class="author-name"><span class="author-given-name">Ada<\/span> <span class="author-family-name">Scholar<\/span><\/span>/,
+  );
+});
+
 test('renders assigned paragraph styles as portable traceability attributes', () => {
   const manuscript = createTestManuscript();
   const block = manuscript.sections[0]?.blocks[0];
