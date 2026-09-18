@@ -178,7 +178,7 @@ body { font-family: var(--omi-publication-font); font-size: ${body.fontSize}pt; 
 .omi-publisher-legal a { color: inherit; text-decoration: none; }
 .article-front h1 { font-size: ${title.fontSize}pt; line-height: ${title.lineHeight}pt; font-weight: ${title.fontWeight}; text-align: ${title.alignment}; margin: 0 0 ${title.spaceAfter}pt; }
 .article-front .article-subtitle, .article-front .subtitle { font-size: ${subtitle.fontSize}pt; line-height: ${subtitle.lineHeight}pt; text-align: ${subtitle.alignment}; margin: 0 0 ${subtitle.spaceAfter}pt; }
-.article-front .contributor-name, .article-front .author { font-size: ${author.fontSize}pt; line-height: ${author.lineHeight}pt; font-weight: ${author.fontWeight}; text-align: ${author.alignment}; }
+.article-front .contributor-name, .article-front .author, .article-front .author-name { font-size: ${author.fontSize}pt; line-height: ${author.lineHeight}pt; font-weight: ${author.fontWeight}; text-align: ${author.alignment}; }
 .article-front .author-given-name { font-weight: ${authorGivenName.fontWeight}; font-style: ${fontStyle(authorGivenName.fontStyle)}; font-variant-caps: ${fontVariantCaps(authorGivenName.fontVariantCaps)}; text-transform: ${textTransform(authorGivenName.textTransform)}; }
 .article-front .author-family-name { font-weight: ${authorFamilyName.fontWeight}; font-style: ${fontStyle(authorFamilyName.fontStyle)}; font-variant-caps: ${fontVariantCaps(authorFamilyName.fontVariantCaps)}; text-transform: ${textTransform(authorFamilyName.textTransform)}; }
 .article-front .affiliation { font-size: ${affiliation.fontSize}pt; line-height: ${affiliation.lineHeight}pt; text-align: ${affiliation.alignment}; margin-bottom: ${affiliation.spaceAfter}pt; }
