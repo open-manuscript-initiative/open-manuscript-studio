@@ -6,8 +6,10 @@ import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { createPublisherExportStylesheet } from '../model/publisherExportStyle';
 import { resolvePublicationProfile } from '../model/publicationProfile';
-import { saveExportBlob } from '../services/exportFileDelivery';
-import { buildPublisherHtmlPackage } from '../services/exportPublisherHtmlPackage';
+import {
+  buildPublisherHtmlPackage,
+  OMI_PUBLISHER_HTML_PACKAGE_VERSION,
+} from '../services/exportPublisherHtmlPackage';
 import {
   applyPdfInteractionMode,
   buildPdfArtifactDocument,
@@ -20,6 +22,7 @@ import {
   loadPublicationStyle,
   renderStyleBasedHtml,
 } from '../services/publicationStyleExport';
+import { savePublicationArtifactWithBuildSidecar } from '../services/publicationBuildSidecar';
 import { renderPdfArtifact } from '../services/vivliostylePdfApi';
 
 export function PublicationStyleExportPanel() {
@@ -60,15 +63,25 @@ export function PublicationStyleExportPanel() {
         setMessage(copy.exportError);
         return;
       }
-      const url = URL.createObjectURL(result.blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = result.fileName.replace(/\.html\.zip$/i, '.styled-html.zip');
-      document.body.append(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 0);
-      setMessage(copy.htmlReady);
+      const fileName = result.fileName.replace(
+        /\.html\.zip$/i,
+        '.styled-html.zip',
+      );
+      const saved = await savePublicationArtifactWithBuildSidecar({
+        manuscript: committed,
+        profile: styledProfile,
+        artifact: result.blob,
+        fileName,
+        format: 'html',
+        mediaType: 'application/zip',
+        renderer: 'open-manuscript-studio-publisher-html-package',
+        rendererVersion: OMI_PUBLISHER_HTML_PACKAGE_VERSION,
+      });
+      setMessage(
+        saved.delivery.saved && saved.delivery.sidecarSaved
+          ? copy.htmlReady
+          : copy.saveCancelled,
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : copy.exportError);
     } finally {
@@ -100,8 +113,25 @@ export function PublicationStyleExportPanel() {
           );
       const fileName = pdfFileName(committed, pdfMode);
       const artifact = await renderPdfArtifact(html, fileName);
-      const delivery = await saveExportBlob(artifact.blob, fileName);
-      setMessage(delivery.saved ? copy.pdfReady : copy.saveCancelled);
+      const saved = await savePublicationArtifactWithBuildSidecar({
+        manuscript: committed,
+        profile,
+        artifact: artifact.blob,
+        fileName,
+        format: pdfMode === 'interactive' ? 'pdf-interactive' : 'pdf-print',
+        mediaType: 'application/pdf',
+        renderer: artifact.renderer,
+        rendererVersion: artifact.rendererVersion,
+        rendererInput: {
+          value: html,
+          mediaType: 'text/html;charset=utf-8',
+        },
+      });
+      setMessage(
+        saved.delivery.saved && saved.delivery.sidecarSaved
+          ? copy.pdfReady
+          : copy.saveCancelled,
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : copy.exportError);
     } finally {
