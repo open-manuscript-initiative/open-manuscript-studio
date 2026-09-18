@@ -30,6 +30,10 @@ export interface CreatePublicationBuildManifestInput {
   manuscript: OmiManuscript;
   profile: OmiPublicationProfile;
   artifact: string | Uint8Array;
+  rendererInput?: {
+    value: string | Uint8Array;
+    mediaType: string;
+  };
   output: {
     format: OmiPublicationBuildFormat;
     mediaType: string;
@@ -112,6 +116,9 @@ export function createPublicationBuildManifest(
       value: outputDigest,
     },
   };
+  const rendererInput = input.rendererInput
+    ? createRendererInput(input.rendererInput.value, input.rendererInput.mediaType)
+    : undefined;
   const profile = {
     id: requireValue(input.profile.id, 'profile.id'),
     version: requireValue(input.profile.version, 'profile.version'),
@@ -136,6 +143,7 @@ export function createPublicationBuildManifest(
     manuscript,
     profile,
     output,
+    rendererInput,
     generator,
   };
   const identityDigest = sha256HexSync(
@@ -150,7 +158,23 @@ export function createPublicationBuildManifest(
     manuscript,
     profile,
     output,
+    rendererInput,
     generator,
+  };
+}
+
+function createRendererInput(
+  value: string | Uint8Array,
+  mediaType: string,
+): NonNullable<OmiPublicationBuild['rendererInput']> {
+  const bytes = toBytes(value);
+  return {
+    mediaType: requireValue(mediaType, 'rendererInput.mediaType'),
+    byteLength: bytes.byteLength,
+    digest: {
+      algorithm: 'sha256',
+      value: sha256HexSync(bytes),
+    },
   };
 }
 
