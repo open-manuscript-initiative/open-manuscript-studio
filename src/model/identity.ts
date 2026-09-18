@@ -58,7 +58,7 @@ export type CreditRole =
   | 'writing-review-editing';
 
 export interface OmiCompetingInterestsDeclaration {
-  status: 'none' | 'declared';
+  status: 'none' | 'declared' | 'unclassified';
   statements: Record<string, string>;
 }
 
