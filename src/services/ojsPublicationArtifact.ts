@@ -211,7 +211,7 @@ export async function prepareOjsPublicationArtifact(
 }
 
 
-function assertJatsDirectTransferHasNoPackageLocalAssets(xml: string): void {
+export function assertJatsDirectTransferHasNoPackageLocalAssets(xml: string): void {
   for (const match of xml.matchAll(
     /<(?:graphic|media)\b[^>]*\bxlink:href="([^"]+)"/gi,
   )) {
