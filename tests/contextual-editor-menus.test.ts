@@ -57,6 +57,14 @@ test('paragraph type actions follow and affect only the active text block', () =
   assert.match(blockTypeExtension, /menuTargetPosition = editor\.state\.selection\.head/);
   assert.match(blockTypeExtension, /resolveBlockTypeTarget\(editor, targetPosition\)/);
   assert.match(blockTypeExtension, /editor\.commands\.setTextSelection\(blockTarget\.selectionPosition\)/);
+  assert.match(
+    blockTypeExtension,
+    /const onTriggerClick = \(\) => \{[\s\S]*setOpen\(open\);[\s\S]*if \(open\) sync\(\);[\s\S]*\};/,
+  );
+  assert.doesNotMatch(
+    blockTypeExtension,
+    /const onTriggerClick = \(\) => \{[\s\S]*if \(open\) sync\(\);[\s\S]*setOpen\(open\);[\s\S]*\};/,
+  );
   assert.match(blockTypeExtension, /--omi-block-type-menu-top/);
   assert.match(blockTypeStyles, /top: var\(--omi-block-type-menu-top, 0\.45rem\)/);
   assert.doesNotMatch(blockTypeStyles, /position:\s*sticky/);
