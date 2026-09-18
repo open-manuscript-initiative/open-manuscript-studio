@@ -82,10 +82,9 @@ publicationPdfRouter.post(
 );
 
 function safePdfFileName(value: string | undefined): string {
-  const normalized = (value ?? 'manuscript.pdf')
+  const normalized = stripControlCharacters(value ?? 'manuscript.pdf')
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[\u0000-\u001f\u007f]/g, '')
     .replace(/[^a-zA-Z0-9._ -]+/g, '-')
     .replace(/[\\/:"<>|?*]+/g, '-')
     .replace(/\s+/g, ' ')
@@ -93,4 +92,13 @@ function safePdfFileName(value: string | undefined): string {
     .slice(0, 180);
   const base = normalized || 'manuscript.pdf';
   return base.toLowerCase().endsWith('.pdf') ? base : `${base}.pdf`;
+}
+
+function stripControlCharacters(value: string): string {
+  return Array.from(value)
+    .filter((character) => {
+      const code = character.charCodeAt(0);
+      return code > 0x1f && code !== 0x7f;
+    })
+    .join('');
 }
