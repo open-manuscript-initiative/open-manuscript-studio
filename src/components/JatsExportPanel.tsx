@@ -74,6 +74,7 @@ export function JatsExportPanel() {
   const jats4rWarnings = jats4r.diagnostics.filter(
     (diagnostic) => diagnostic.severity === 'warning',
   );
+  const hasBlockingDiagnostics = errors.length > 0 || jats4rErrors.length > 0;
   const currentSchemaValidation =
     schemaState?.xml === result.xml ? schemaState.result : null;
   const currentSchemaError =
@@ -101,12 +102,12 @@ export function JatsExportPanel() {
   }
 
   async function validateWorkingJats(): Promise<void> {
-    if (!supported || errors.length) return;
+    if (!supported || hasBlockingDiagnostics) return;
     await validateXml(result.xml);
   }
 
   async function downloadJats(): Promise<void> {
-    if (!supported || errors.length || schemaBusy) return;
+    if (!supported || hasBlockingDiagnostics || schemaBusy) return;
 
     checkpoint('export');
     const committedManuscript = useStudioStore.getState().manuscript;
@@ -186,18 +187,18 @@ export function JatsExportPanel() {
       ) : (
         <div
           className={`jats-export-status ${
-            errors.length
+            hasBlockingDiagnostics
               ? 'jats-export-status--error'
               : 'jats-export-status--ready'
           }`}
         >
-          {errors.length ? (
+          {hasBlockingDiagnostics ? (
             <AlertTriangle size={16} aria-hidden="true" />
           ) : (
             <CheckCircle2 size={16} aria-hidden="true" />
           )}
           <span>
-            {errors.length ? copy.exportHasErrors : copy.exportReady}
+            {hasBlockingDiagnostics ? copy.exportHasErrors : copy.exportReady}
           </span>
         </div>
       )}
@@ -337,7 +338,7 @@ export function JatsExportPanel() {
         <button
           type="button"
           className="studio-menu-secondary-action"
-          disabled={!supported || Boolean(errors.length) || schemaBusy}
+          disabled={!supported || hasBlockingDiagnostics || schemaBusy}
           onClick={() => void validateWorkingJats()}
         >
           <CheckCircle2 size={16} aria-hidden="true" />
@@ -347,7 +348,7 @@ export function JatsExportPanel() {
         <button
           type="button"
           className="studio-menu-primary-action"
-          disabled={!supported || Boolean(errors.length) || schemaBusy}
+          disabled={!supported || hasBlockingDiagnostics || schemaBusy}
           onClick={() => void downloadJats()}
         >
           <Download size={16} aria-hidden="true" />
