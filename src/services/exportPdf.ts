@@ -85,15 +85,15 @@ export async function buildPdfArtifactDocument(
     const bytes = await getAssetPayload(manuscript.id, asset.id);
     if (!bytes) {
       throw new Error(
-        \`PDF source references unavailable asset payload \${asset.id}.\`,
+        `PDF source references unavailable asset payload ${asset.id}.`,
       );
     }
 
-    const dataUrl = \`data:\${asset.mediaType};base64,\${bytesToBase64(bytes)}\`;
+    const dataUrl = `data:${asset.mediaType};base64,${bytesToBase64(bytes)}`;
     const escapedPath = path.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
     html = html.replace(
-      new RegExp(\`(["'])\${escapedPath}\\\\1\`, 'g'),
-      (_match, quote: string) => \`\${quote}\${dataUrl}\${quote}\`,
+      new RegExp(`(["'])${escapedPath}\\\\1`, 'g'),
+      (_match, quote: string) => `${quote}${dataUrl}${quote}`,
     );
   }
 
@@ -110,7 +110,7 @@ export function pdfFileName(
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '') || 'manuscript';
-  return mode === 'interactive' ? \`\${stem}.interactive.pdf\` : \`\${stem}.pdf\`;
+  return mode === 'interactive' ? `${stem}.interactive.pdf` : `${stem}.pdf`;
 }
 
 /**
