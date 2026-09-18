@@ -128,7 +128,7 @@ export function ContributorEditor({
           const creditRoles = contribution.creditRoles ?? [];
 
           const setCompetingStatus = (
-            status: '' | 'none' | 'declared',
+            status: '' | 'none' | 'declared' | 'unclassified',
           ) => {
             if (!status) {
               updateContribution(contribution.id, {
@@ -144,9 +144,7 @@ export function ContributorEditor({
                   [manuscript.locale]:
                     status === 'none'
                       ? defaultNoConflictStatement(manuscript.locale)
-                      : competingStatus === 'declared'
-                        ? competingStatement
-                        : '',
+                      : competingStatement,
                 },
               },
             });
@@ -414,13 +412,18 @@ export function ContributorEditor({
                     value={competingStatus}
                     onChange={(event) =>
                       setCompetingStatus(
-                        event.target.value as '' | 'none' | 'declared',
+                        event.target.value as
+                          | ''
+                          | 'none'
+                          | 'declared'
+                          | 'unclassified',
                       )
                     }
                   >
                     <option value="">{copy.notSpecified}</option>
                     <option value="none">{copy.noConflict}</option>
                     <option value="declared">{copy.hasConflict}</option>
+                    <option value="unclassified">{copy.unclassifiedConflict}</option>
                   </select>
                 </label>
                 {competingStatus ? (
@@ -506,8 +509,10 @@ function contributorMetadataCopy(locale: string) {
     competingInterestsStatement: 'Nyilatkozat szövege',
     noConflict: 'Nincs összeférhetetlenség – alapnyilatkozat használata',
     hasConflict: 'Van bejelentendő összeférhetetlenség',
+    unclassifiedConflict: 'Meglévő/importált nyilatkozat – nincs besorolva',
     noConflictHint: 'Az alapnyilatkozat szerkeszthető, mielőtt a kéziratot beküldi.',
     hasConflictHint: 'Írja le a pénzügyi vagy egyéb releváns érdekeltséget.',
+    unclassifiedConflictHint: 'A nyilatkozat szövege megmaradt a forrásrendszerből. Szükség esetén sorolja be vagy szerkessze.',
     creditRoles: 'CRediT szerepek',
     creditRolesHint: 'Jelölje meg a közreműködő tényleges hozzájárulásait a CRediT taxonómia szerint.',
     notSpecified: 'Nincs megadva',
@@ -528,8 +533,10 @@ function contributorMetadataCopy(locale: string) {
     competingInterestsStatement: 'Text der Erklärung',
     noConflict: 'Kein Interessenkonflikt – Standarderklärung verwenden',
     hasConflict: 'Interessenkonflikt anzugeben',
+    unclassifiedConflict: 'Vorhandene/importierte Erklärung – nicht klassifiziert',
     noConflictHint: 'Die Standarderklärung kann vor der Einreichung bearbeitet werden.',
     hasConflictHint: 'Beschreiben Sie die relevanten finanziellen oder sonstigen Interessen.',
+    unclassifiedConflictHint: 'Die Erklärung wurde aus dem Quellsystem übernommen. Sie kann bei Bedarf klassifiziert oder bearbeitet werden.',
     creditRoles: 'CRediT-Rollen',
     creditRolesHint: 'Wählen Sie die tatsächlichen Beiträge gemäß der CRediT-Taxonomie.',
     notSpecified: 'Nicht angegeben',
@@ -550,8 +557,10 @@ function contributorMetadataCopy(locale: string) {
     competingInterestsStatement: 'Declaration text',
     noConflict: 'No conflict of interest – use default declaration',
     hasConflict: 'Competing interest to declare',
+    unclassifiedConflict: 'Existing/imported statement – not classified',
     noConflictHint: 'The default declaration can be edited before submission.',
     hasConflictHint: 'Describe the relevant financial or other competing interest.',
+    unclassifiedConflictHint: 'The statement was preserved from the source system. Classify or edit it if needed.',
     creditRoles: 'CRediT roles',
     creditRolesHint: 'Select the contributor’s actual contributions according to the CRediT taxonomy.',
     notSpecified: 'Not specified',
