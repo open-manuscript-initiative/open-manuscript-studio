@@ -77,7 +77,7 @@ test('JATS validation API enforces session, input and no-store semantics', async
   t.after(() => server.close());
 
   await t.test('requires an authenticated Studio session', async () => {
-    assert.equal((await request({ xml: '<article/>" }, null)).status, 401);
+    assert.equal((await request({ xml: '<article/>' }, null)).status, 401);
     assert.equal(calls, 0);
   });
 
