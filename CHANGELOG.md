@@ -49,8 +49,9 @@ the portable OMI document model and individual renderers.
 - Strengthens Android release preparation, modern UI configuration and version
   code handling.
 - Advances the shared application version to **0.2.0-beta.1**.
-- Reserves Android versionCode **1030** and advances the iOS marketing/build
-  identity to **0.2.0 / 9**.
+- Reserves Android versionCode **1030**, advances the Windows MSI product
+  version to **0.2.0.1**, and advances the iOS marketing/build identity to
+  **0.2.0 / 9**.
 
 ### Compatibility
 
