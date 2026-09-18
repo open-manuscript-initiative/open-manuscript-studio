@@ -131,6 +131,17 @@ export const OMI_JATS_CONFORMANCE_MATRIX: readonly JatsConformanceCapability[] =
     evidence: ['tests/jats-conformance.test.ts', 'tests/inline-semantics.test.ts'],
   },
   {
+    id: 'inline.unknown-mark',
+    area: 'inline',
+    omi: 'Unknown or future inline semantic mark',
+    jats: 'No guaranteed mapping',
+    status: 'fallback',
+    releaseGate: 'blocks-on-use',
+    notes: 'Unknown marks are preserved as text but cannot be silently claimed as semantically conformant.',
+    blockingDiagnostics: ['unsupported-inline-mark'],
+    evidence: ['tests/jats-conformance.test.ts'],
+  },
+  {
     id: 'inline.language-links',
     area: 'inline',
     omi: 'Inline language and external HTTP(S)/mailto link',
