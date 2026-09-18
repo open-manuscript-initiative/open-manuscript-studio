@@ -68,7 +68,8 @@
     "mobile:ios:build": "npm run ios:build",
     "android:build:play": "node scripts/configure-android-modern-ui.mjs && node scripts/build-android-distribution.mjs play",
     "android:build:direct": "node scripts/configure-android-modern-ui.mjs && node scripts/build-android-distribution.mjs direct",
-    "test:html-galley": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/html-galley.test.ts && node --test --experimental-test-module-mocks tests/html-galley-routes.test.mjs"
+    "test:html-galley": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/html-galley.test.ts && node --test --experimental-test-module-mocks tests/html-galley-routes.test.mjs",
+    "test:jats-validation": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/jats-schema-validation.test.ts && node --test --experimental-test-module-mocks tests/jats-schema-validation-routes.test.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
