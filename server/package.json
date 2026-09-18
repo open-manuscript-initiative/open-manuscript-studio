@@ -19,9 +19,11 @@
     "prisma:migrate:identity:dev": "prisma migrate dev --config prisma.identity.config.ts",
     "prisma:migrate:identity:deploy": "prisma migrate deploy --config prisma.identity.config.ts",
     "prisma:studio": "prisma studio",
-    "prisma:studio:identity": "prisma studio --config prisma.identity.config.ts"
+    "prisma:studio:identity": "prisma studio --config prisma.identity.config.ts",
+    "test:jats-validation": "node --import tsx --test ../tests/jats-schema-validation.test.ts"
   },
   "dependencies": {
+    "@jats4r/dtds": "0.0.10",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "cors": "^2.8.5",
@@ -30,6 +32,7 @@
     "express-rate-limit": "^8.6.2",
     "helmet": "^8.0.0",
     "jose": "^6.1.0",
+    "libxml2-wasm": "0.7.2",
     "pg": "^8.23.0",
     "zod": "^4.0.0"
   },

@@ -30,7 +30,7 @@ export const OMI_JATS_RENDERER_VERSION = '0.1.0-alpha.1' as const;
 export const OMI_JATS_VERSION = '1.4' as const;
 export const OMI_JATS_TAGSET = 'articleauthoring' as const;
 export const OMI_JATS_DTD_URL =
-  'https://jats.nlm.nih.gov/articleauthoring/1.4/JATS-articleauthoring1-4.dtd' as const;
+  'https://jats.nlm.nih.gov/articleauthoring/1.4/JATS-articleauthoring1-4-mathml3.dtd' as const;
 
 export type JatsDiagnosticSeverity = 'error' | 'warning';
 
@@ -212,7 +212,7 @@ export function validateJatsStructure(xml: string): JatsDiagnostic[] {
 
 function renderProcessingMeta(state: RenderState): string {
   const { context } = state;
-  const metadata = [
+  const metadata: Array<[string, string]> = [
     ['omi-renderer', `open-manuscript-studio-jats@${OMI_JATS_RENDERER_VERSION}`],
     ['omi-rendering-context', context.model],
     ['omi-manuscript-id', context.manuscriptId],
@@ -220,6 +220,15 @@ function renderProcessingMeta(state: RenderState): string {
     ['omi-head-revision', context.headRevisionId],
     ['omi-publication-profile', `${context.profile.id}@${context.profile.version}`],
   ];
+
+  if (context.motto) {
+    metadata.push(
+      ['omi-motto', context.motto],
+      ['omi-motto-position', context.frontMatterRules.motto.position],
+      ['omi-motto-style', context.frontMatterRules.motto.style],
+      ['omi-motto-alignment', context.frontMatterRules.motto.alignment],
+    );
+  }
 
   return `<processing-meta tagset-family="jats" base-tagset="authoring" mathml-version="3.0" table-model="xhtml">\n${indent(
     `<custom-meta-group>\n${indent(
@@ -244,54 +253,26 @@ function renderFront(state: RenderState): string {
     .filter(Boolean)
     .join('\n');
   const contributors = renderContributors(state);
-  const affiliations = renderAffiliations(context);
   const abstract = context.abstract
     ? `<abstract><p>${escapeXml(context.abstract)}</p></abstract>`
-    : '';
+    : '<abstract/>';
   const keywords = context.keywords.length
     ? `<kwd-group kwd-group-type="author-generated">${context.keywords
         .map((keyword) => `<kwd>${escapeXml(keyword)}</kwd>`)
         .join('')}</kwd-group>`
     : '';
-  const customMeta = renderArticleCustomMeta(state);
 
   const articleMeta = [
-    `<article-id pub-id-type="publisher-id">${escapeXml(manuscript.id)}</article-id>`,
     `<title-group>\n${indent(titleGroup, 1)}\n</title-group>`,
     contributors,
-    affiliations,
+    `<content-language>${escapeXml(normalizeLanguage(manuscript.locale))}</content-language>`,
     abstract,
     keywords,
-    customMeta,
   ]
     .filter(Boolean)
     .join('\n');
 
   return `<front>\n${indent(`<article-meta>\n${indent(articleMeta, 1)}\n</article-meta>`, 1)}\n</front>`;
-}
-
-function renderArticleCustomMeta(state: RenderState): string {
-  const { context } = state;
-  const items: Array<[string, string]> = [];
-
-  if (context.motto) {
-    items.push(['omi-motto', context.motto]);
-    items.push(['omi-motto-position', context.frontMatterRules.motto.position]);
-    items.push(['omi-motto-style', context.frontMatterRules.motto.style]);
-    items.push(['omi-motto-alignment', context.frontMatterRules.motto.alignment]);
-  }
-
-  if (!items.length) return '';
-
-  return `<custom-meta-group>\n${indent(
-    items
-      .map(
-        ([name, value]) =>
-          `<custom-meta><meta-name>${escapeXml(name)}</meta-name><meta-value>${escapeXml(value)}</meta-value></custom-meta>`,
-      )
-      .join('\n'),
-    1,
-  )}\n</custom-meta-group>`;
 }
 
 function renderContributors(state: RenderState): string {
@@ -301,6 +282,9 @@ function renderContributors(state: RenderState): string {
   return `<contrib-group content-type="authors">\n${indent(
     context.contributors
       .map((contributor) => {
+        const identifiers = contributor.orcid
+          ? `<contrib-id contrib-id-type="orcid">${escapeXml(contributor.orcid)}</contrib-id>`
+          : '';
         const name =
           contributor.familyName || contributor.givenName
             ? `<name name-style="western">${
@@ -313,15 +297,6 @@ function renderContributors(state: RenderState): string {
                   : ''
               }</name>`
             : `<string-name>${escapeXml(contributor.displayName)}</string-name>`;
-        const identifiers = contributor.orcid
-          ? `<contrib-id contrib-id-type="orcid">${escapeXml(contributor.orcid)}</contrib-id>`
-          : '';
-        const affiliationRids = contributor.affiliations
-          .map((affiliation) => xmlId('aff', affiliation.id))
-          .join(' ');
-        const affXref = affiliationRids
-          ? `<xref ref-type="aff" rid="${escapeAttribute(affiliationRids)}"/>`
-          : '';
         const roles = contributor.roles
           .filter((role) => role !== 'author')
           .map((role) => `<role>${escapeXml(role)}</role>`)
@@ -329,39 +304,30 @@ function renderContributors(state: RenderState): string {
         const corresponding = contributor.corresponding
           ? '<role content-type="corresponding-author">corresponding author</role>'
           : '';
+        const affiliations = contributor.affiliations
+          .map((affiliation) => {
+            const text = [
+              affiliation.department,
+              affiliation.organizationName,
+              affiliation.position,
+            ]
+              .filter((value): value is string => Boolean(value?.trim()))
+              .map((value) => escapeXml(value.trim()))
+              .join(', ');
+            const ror = affiliation.organizationIdentifier?.trim()
+              ? ` <ext-link ext-link-type="uri" xlink:href="${escapeAttribute(
+                  affiliation.organizationIdentifier.trim(),
+                )}">${escapeXml(affiliation.organizationIdentifier.trim())}</ext-link>`
+              : '';
+            return `<aff>${text}${ror}</aff>`;
+          })
+          .join('');
 
-        return `<contrib contrib-type="author" id="${xmlId('contrib', contributor.contributionId)}">${name}${identifiers}${affXref}${roles}${corresponding}</contrib>`;
+        return `<contrib contrib-type="author" id="${xmlId('contrib', contributor.contributionId)}">${identifiers}${name}${roles}${corresponding}${affiliations}</contrib>`;
       })
       .join('\n'),
     1,
   )}\n</contrib-group>`;
-}
-
-function renderAffiliations(context: OmiPublicationRenderingContext): string {
-  const seen = new Set<string>();
-  const affiliations = context.contributors.flatMap((contributor) => contributor.affiliations);
-
-  return affiliations
-    .filter((affiliation) => {
-      if (seen.has(affiliation.id)) return false;
-      seen.add(affiliation.id);
-      return true;
-    })
-    .map((affiliation) => {
-      const institutionId = affiliation.organizationIdentifier
-        ? `<institution-id institution-id-type="ror">${escapeXml(affiliation.organizationIdentifier)}</institution-id>`
-        : '';
-      const department = affiliation.department
-        ? `<institution content-type="department">${escapeXml(affiliation.department)}</institution>`
-        : '';
-      const institution = `<institution>${escapeXml(affiliation.organizationName)}</institution>`;
-      const position = affiliation.position
-        ? `<named-content content-type="position">${escapeXml(affiliation.position)}</named-content>`
-        : '';
-
-      return `<aff id="${xmlId('aff', affiliation.id)}"><institution-wrap>${institutionId}${department}${institution}</institution-wrap>${position}</aff>`;
-    })
-    .join('\n');
 }
 
 function renderBody(
@@ -372,12 +338,7 @@ function renderBody(
 }
 
 function renderSection(section: OmiRenderedSection, state: RenderState): string {
-  const heading = [
-    section.number ? `<label>${escapeXml(section.number)}</label>` : '',
-    `<title>${escapeXml(section.title)}</title>`,
-  ]
-    .filter(Boolean)
-    .join('\n');
+  const heading = `<title>${escapeXml(section.title)}</title>`;
   const blocks = section.blocks
     .map((block) => renderBlock(block, state))
     .filter(Boolean)

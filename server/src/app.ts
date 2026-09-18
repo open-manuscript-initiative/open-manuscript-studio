@@ -35,6 +35,7 @@ import { peerReviewRouter } from './routes/peerReviewRoutes.js';
 import { proofreadingRouter } from './routes/proofreadingRoutes.js';
 import { publishingConnectionRouter } from './routes/publishingConnectionRoutes.js';
 import { publicationVenueRouter } from './routes/publicationVenueRoutes.js';
+import { publicationValidationRouter } from './routes/publicationValidationRoutes.js';
 import { reviewManuscriptRouter } from './routes/reviewManuscriptRoutes.js';
 import { directSubmissionRouter } from './routes/directSubmissionRoutes.js';
 import { userIntegrationRouter } from './routes/userIntegrationRoutes.js';
@@ -67,6 +68,7 @@ app.use(
 
 app.use('/api/integrations/connections/:connectionId/direct-submission', express.json({ limit: '25mb' }));
 app.use('/api/integrations/connections/:connectionId/html-galley', express.json({ limit: '9mb' }));
+app.use('/api/publication/validate/jats', express.json({ limit: '7mb' }));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/api', (_request, response) => {
@@ -102,6 +104,7 @@ app.use('/api', agentReviewRouter);
 app.use('/api', integrationExecutionRouter);
 app.use('/api', proofreadingRouter);
 app.use('/api', publishingConnectionRouter);
+app.use('/api/publication', publicationValidationRouter);
 app.use('/api/import', pdfImportRouter);
 app.use('/api/reviews', peerReviewRouter);
 app.use('/api/reviews', reviewManuscriptRouter);
