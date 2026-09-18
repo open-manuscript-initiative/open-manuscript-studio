@@ -335,6 +335,40 @@ export async function requestDirectSubmission(
   return result;
 }
 
+export async function requestPublicationArtifact(
+  connectionId: string,
+  input: import('./ojsPublicationArtifact').OjsPublicationArtifactRequest,
+): Promise<{
+  target?: import('./ojsPublicationArtifact').OjsPublicationArtifactTarget;
+  receipt?: import('./ojsPublicationArtifact').OjsPublicationArtifactReceipt;
+}> {
+  const response = await fetch(
+    `${API_BASE_URL}/integrations/connections/${encodeURIComponent(connectionId)}/publication-artifact`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: integrationHeaders({
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify(input),
+    },
+  );
+  const result = await parseJsonResponse<{
+    target?: import('./ojsPublicationArtifact').OjsPublicationArtifactTarget;
+    receipt?: import('./ojsPublicationArtifact').OjsPublicationArtifactReceipt;
+    error?: { message: string };
+  }>(response);
+  if (!response.ok || result.error) {
+    throw new Error(
+      result.error?.message ??
+        `Publication artifact transfer failed: HTTP ${response.status}.`,
+    );
+  }
+  return result;
+}
+
 export async function requestHtmlGalley(connectionId: string, input: import('./htmlGalley').HtmlGalleyRequest) {
   const response = await fetch(`${API_BASE_URL}/integrations/connections/${encodeURIComponent(connectionId)}/html-galley`, {
     method: 'POST', credentials: 'include', cache: 'no-store',
