@@ -14,10 +14,10 @@ import {
   renderJatsArticle,
 } from './exportJats';
 import {
-  buildHtmlGalley,
-  htmlGalleyFileName,
-  OMI_HTML_GALLEY_RENDERER_VERSION,
-} from './htmlGalley';
+  buildPublicationHtmlArtifact,
+  publicationHtmlFileName,
+  OMI_HTML_PUBLICATION_RENDERER_VERSION,
+} from './publicationHtmlArtifact';
 import { validateJats4rProfile } from './jats4rProfileValidator';
 import {
   evaluateJatsPublicationRelease,
@@ -142,9 +142,9 @@ export async function preparePublicationArtifact(
   const profile = resolvePublicationProfile(manuscript);
 
   if (format === 'html') {
-    const html = await buildHtmlGalley(manuscript, profile);
+    const html = await buildPublicationHtmlArtifact(manuscript, profile);
     const bytes = new TextEncoder().encode(html);
-    const fileName = htmlGalleyFileName(manuscript);
+    const fileName = publicationHtmlFileName(manuscript);
     const mediaType = 'text/html;charset=utf-8';
     return {
       format,
@@ -159,8 +159,8 @@ export async function preparePublicationArtifact(
         format,
         mediaType,
         fileName,
-        renderer: 'open-manuscript-studio-html-galley',
-        rendererVersion: OMI_HTML_GALLEY_RENDERER_VERSION,
+        renderer: 'open-manuscript-studio-html-publication',
+        rendererVersion: OMI_HTML_PUBLICATION_RENDERER_VERSION,
       }),
       previewText: html,
     };
