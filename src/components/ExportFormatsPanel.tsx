@@ -18,6 +18,10 @@ import {
   OMI_JATS_RENDERER_VERSION,
   renderJatsArticle,
 } from '../services/exportJats';
+import {
+  evaluateJatsPublicationRelease,
+  jatsPublicationReleaseFailureMessage,
+} from '../services/jatsReleaseGate';
 import { validateJatsSchema } from '../services/jatsValidationApi';
 import { buildLatexExport } from '../services/exportLatex';
 import { buildMifExport } from '../services/exportMif';
@@ -130,11 +134,9 @@ export function ExportFormatsPanel() {
           const result = renderJatsArticle(manuscript, profile);
           if (!result.validForExport) throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
           const validation = await validateJatsSchema(result.xml);
-          if (!validation.valid) {
-            throw new Error(
-              validation.diagnostics.map((item) => item.message).join('\n') ||
-                'JATS 1.4 schema validation failed.',
-            );
+          const release = evaluateJatsPublicationRelease(result, validation);
+          if (!release.releasable) {
+            throw new Error(jatsPublicationReleaseFailureMessage(release));
           }
           const fileName = jatsFileName(manuscript);
           const saved = await savePublicationArtifactWithBuildSidecar({
