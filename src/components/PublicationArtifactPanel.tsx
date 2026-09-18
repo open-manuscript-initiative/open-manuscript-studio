@@ -198,6 +198,15 @@ function PublicationArtifactForm({
       if (!result.target) {
         throw new Error('OJS returned no publication artifact destination.');
       }
+      if (
+        result.target.provenance.model !== 'omi-publication-build' ||
+        result.target.provenance.version !== '0.1.0' ||
+        result.target.provenance.digest !== 'sha256'
+      ) {
+        throw new Error(
+          'The OJS plugin advertises an incompatible publication provenance model.',
+        );
+      }
       setTarget(result.target);
       setLocale(
         result.target.locales.includes(manuscript.locale)
