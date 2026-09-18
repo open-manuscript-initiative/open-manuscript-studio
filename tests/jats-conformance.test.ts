@@ -84,6 +84,52 @@ test('JATS conformance matrix is internally consistent and backed by repository 
   }
 });
 
+test('public contributor ORCID and affiliation ROR map to JATS without exposing private identity data', () => {
+  const manuscript = createTestManuscript();
+  const author = manuscript.agents[0];
+  assert.ok(author);
+  author.identifiers = [
+    {
+      id: 'orcid-public',
+      scheme: 'orcid',
+      value: '0000-0002-1825-0097',
+      normalizedValue: '0000-0002-1825-0097',
+      verificationStatus: 'verified',
+      visibility: 'public',
+    },
+    {
+      id: 'orcid-private',
+      scheme: 'orcid-private',
+      value: 'private-identifier',
+      normalizedValue: 'private-identifier',
+      verificationStatus: 'verified',
+      visibility: 'private',
+    },
+  ];
+  const affiliation = author.affiliations[0];
+  assert.ok(affiliation);
+  affiliation.organizationIdentifier = {
+    id: 'ror-public',
+    scheme: 'ror',
+    value: 'https://ror.org/01jsq2704',
+    normalizedValue: 'https://ror.org/01jsq2704',
+    verificationStatus: 'verified',
+    visibility: 'public',
+  };
+
+  const result = renderJatsArticle(manuscript);
+
+  assert.match(
+    result.xml,
+    /<contrib-id contrib-id-type="orcid">https:\/\/orcid\.org\/0000-0002-1825-0097<\/contrib-id>/,
+  );
+  assert.match(
+    result.xml,
+    /<ext-link ext-link-type="uri" xlink:href="https:\/\/ror\.org\/01jsq2704">https:\/\/ror\.org\/01jsq2704<\/ext-link>/,
+  );
+  assert.doesNotMatch(result.xml, /private-identifier/);
+});
+
 test('stable rich-text and block semantics map to explicit JATS elements', () => {
   const manuscript = createTestManuscript();
   const section = manuscript.sections[0];
