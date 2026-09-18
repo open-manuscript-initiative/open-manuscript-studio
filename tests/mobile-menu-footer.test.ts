@@ -6,6 +6,10 @@ const menu = readFileSync(
   new URL('../src/components/StudioMenu.tsx', import.meta.url),
   'utf8',
 );
+const keywordEditor = readFileSync(
+  new URL('../src/components/KeywordEditor.tsx', import.meta.url),
+  'utf8',
+);
 const menuWithHelp = readFileSync(
   new URL('../src/components/StudioMenuWithHelp.tsx', import.meta.url),
   'utf8',
@@ -107,4 +111,9 @@ test('search opens and closes through the same persistent trigger', () => {
     academicShell,
     /@media \(max-width: 760px\)[\s\S]*?\.app-header\.focus-header\s*\{[\s\S]*?align-items:\s*start;/,
   );
+});
+
+test('manuscript data renders extended scholarly metadata exactly once', () => {
+  assert.equal(menu.match(/<ScholarlyMetadataPanel \/>/g)?.length, 1);
+  assert.doesNotMatch(keywordEditor, /ScholarlyMetadataPanel/);
 });

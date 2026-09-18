@@ -19,7 +19,6 @@ import {
 } from '../model/keywords';
 import '../styles/scholarly-metadata.css';
 import type { OmiLocale } from '../types/omi';
-import { ScholarlyMetadataPanel } from './ScholarlyMetadataPanel';
 
 export function KeywordEditor() {
   const { t } = useTranslation();
@@ -87,8 +86,7 @@ export function KeywordEditor() {
   }
 
   return (
-    <>
-      <div className="omi-keyword-editor">
+    <div className="omi-keyword-editor">
         <label>
           <span>{t('common.language')}</span>
           <select
@@ -168,9 +166,6 @@ export function KeywordEditor() {
             {t('common.add')}
           </button>
         </div>
-      </div>
-
-      <ScholarlyMetadataPanel />
-    </>
+    </div>
   );
 }
