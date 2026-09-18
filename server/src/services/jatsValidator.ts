@@ -98,7 +98,7 @@ export async function validateJats14ArticleAuthoring(
       code: 'dtd-validity-error',
       severity: 'error',
       message: sanitizeDiagnosticMessage(error.message),
-      line: error.loc?.lineNumber,
+      ...(error.loc ? { line: error.loc.lineNumber } : {}),
     })),
   };
 }
@@ -152,7 +152,7 @@ async function loadSchemaClosure(): Promise<PreloadFile[]> {
   const require = createRequire(import.meta.url);
   const packageJson = require.resolve('@jats4r/dtds/package.json');
   const root = join(dirname(packageJson), 'schema', JATS_VALIDATION_VERSION);
-  const queue = [JATS_VALIDATION_DTD_FILE];
+  const queue: string[] = [JATS_VALIDATION_DTD_FILE];
   const visited = new Set<string>();
   const files: PreloadFile[] = [];
 
