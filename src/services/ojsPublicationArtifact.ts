@@ -12,7 +12,11 @@ import {
   OMI_JATS_RENDERER_VERSION,
   renderJatsArticle,
 } from './exportJats';
-import { buildHtmlGalley, htmlGalleyFileName, OMI_HTML_GALLEY_RENDERER_VERSION } from './htmlGalley';
+import {
+  buildHtmlGalley,
+  htmlGalleyFileName,
+  OMI_HTML_GALLEY_RENDERER_VERSION,
+} from './htmlGalley';
 import { validateJats4rProfile } from './jats4rProfileValidator';
 import {
   evaluateJatsPublicationRelease,
@@ -145,6 +149,7 @@ export async function prepareOjsPublicationArtifact(
     if (!release.releasable) {
       throw new Error(jatsPublicationReleaseFailureMessage(release));
     }
+    assertJatsDirectTransferHasNoPackageLocalAssets(rendered.xml);
 
     const bytes = new TextEncoder().encode(rendered.xml);
     const fileName = jatsFileName(manuscript);
@@ -203,6 +208,23 @@ export async function prepareOjsPublicationArtifact(
       },
     }),
   };
+}
+
+
+function assertJatsDirectTransferHasNoPackageLocalAssets(xml: string): void {
+  for (const match of xml.matchAll(
+    /<(?:graphic|media)\b[^>]*\bxlink:href="([^"]+)"/gi,
+  )) {
+    const href = (match[1] ?? '').trim();
+    if (
+      href &&
+      !/^(?:https?:|mailto:|#)/i.test(href)
+    ) {
+      throw new Error(
+        'JATS direct transfer cannot yet carry package-local binary assets. Export a self-contained HTML/PDF artifact or remove the local JATS media dependency.',
+      );
+    }
+  }
 }
 
 function createBuild(input: {
