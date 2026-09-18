@@ -17,12 +17,15 @@ on:
       - 'docs/architecture/jats-1.4-*.md'
       - 'scripts/publication-release-gates.ts'
       - 'src/model/jatsConformance.ts'
+      - 'src/model/jatsPublicationProfiles.ts'
       - 'src/services/exportJats.ts'
       - 'src/services/jatsReleaseGate.ts'
+      - 'src/services/jats4rProfileValidator.ts'
       - 'src/services/jatsValidationApi.ts'
       - 'src/components/JatsExportPanel.tsx'
       - 'src/components/ExportFormatsPanel.tsx'
       - 'tests/jats*.test.ts'
+      - 'docs/architecture/jats4r-publication-profile.md'
       - 'tests/publication-build.test.ts'
       - 'tests/publication-release-gates.test.ts'
       - 'scripts/benchmark-docx-import.ts'
@@ -59,12 +62,15 @@ on:
       - 'docs/architecture/jats-1.4-*.md'
       - 'scripts/publication-release-gates.ts'
       - 'src/model/jatsConformance.ts'
+      - 'src/model/jatsPublicationProfiles.ts'
       - 'src/services/exportJats.ts'
       - 'src/services/jatsReleaseGate.ts'
+      - 'src/services/jats4rProfileValidator.ts'
       - 'src/services/jatsValidationApi.ts'
       - 'src/components/JatsExportPanel.tsx'
       - 'src/components/ExportFormatsPanel.tsx'
       - 'tests/jats*.test.ts'
+      - 'docs/architecture/jats4r-publication-profile.md'
       - 'tests/publication-build.test.ts'
       - 'tests/publication-release-gates.test.ts'
       - 'scripts/benchmark-docx-import.ts'
@@ -148,6 +154,7 @@ jobs:
         run: |
           mkdir -p benchmark-results
           npm run test:jats-validation
+          npm run test:jats4r-profile
           npm run test:vivliostyle-pdf
           npm run test:publication-release
           npm run publication:release:gate -- --strict --json benchmark-results/publication-release.json --markdown benchmark-results/publication-release.md > /dev/null
