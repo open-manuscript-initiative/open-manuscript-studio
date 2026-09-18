@@ -14,7 +14,14 @@ import { getAccountPanelCopy } from '../i18n/accountPanelTranslations';
 import { getCentralAdminContext, type CentralAdminRole } from '../services/centralAdminApi';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { AccountDeletionSection } from './AccountDeletionSection';
-import { deletePersonalOjsCredential, getPersonalOjsCredential, savePersonalOjsCredential } from '../services/authApi';
+import {
+  deletePersonalOjsCredential,
+  deletePersonalOmpCredential,
+  getPersonalOjsCredential,
+  getPersonalOmpCredential,
+  savePersonalOjsCredential,
+  savePersonalOmpCredential,
+} from '../services/authApi';
 import { CentralAdministrationSettings } from './CentralAdministrationSettings';
 import { InstitutionalProfilesSettings } from './InstitutionalProfilesSettings';
 import { LinkedIdentitiesSettings } from './LinkedIdentitiesSettings';
@@ -32,6 +39,30 @@ type ProfileView = 'personal' | 'institutional' | 'central';
 export function AccountPanel() {
   const { locale } = useTranslation();
   const labels = getAccountPanelCopy(locale);
+  const ompLabels =
+    locale === 'hu'
+      ? {
+          title: 'OMP-szerkesztői API-kulcs',
+          description:
+            'A kulcs a különálló személyes profiladatbázisban titkosítva tárolódik, és soha nem jelenítjük meg.',
+          baseUrl: 'OMP-telepítés URL-je',
+          apiKey: 'Szerkesztői OMP API-kulcs',
+          configured: 'Személyes OMP-kulcs beállítva.',
+          saved: 'Az OMP-kulcs mentve.',
+          save: 'OMP-kulcs mentése',
+          remove: 'Mentett OMP-kulcs törlése',
+        }
+      : {
+          title: 'OMP editor API key',
+          description:
+            'The key is encrypted in your separate personal profile database and is never displayed again.',
+          baseUrl: 'OMP installation URL',
+          apiKey: 'OMP editor API key',
+          configured: 'Personal OMP key configured.',
+          saved: 'OMP key saved.',
+          save: 'Save OMP key',
+          remove: 'Remove saved OMP key',
+        };
   const user = useAuthStore(getCurrentUser);
   const update = useAuthStore((state) => state.updateCurrentUser);
   const logout = useAuthStore((state) => state.logout);
@@ -49,6 +80,9 @@ export function AccountPanel() {
   const [ojsCredential, setOjsCredential] = useState({ apiKey: '', baseUrl: '' });
   const [ojsConfigured, setOjsConfigured] = useState(false);
   const [ojsSaved, setOjsSaved] = useState(false);
+  const [ompCredential, setOmpCredential] = useState({ apiKey: '', baseUrl: '' });
+  const [ompConfigured, setOmpConfigured] = useState(false);
+  const [ompSaved, setOmpSaved] = useState(false);
   const timeZoneOptions = useMemo(
     () => getTimeZoneOptions(form.timeZone),
     [form.timeZone],
@@ -66,6 +100,15 @@ export function AccountPanel() {
       .then((context) => setCentralRole(context.centralAdmin ? context.role : null))
       .catch(() => setCentralRole(null));
     void getPersonalOjsCredential().then((state) => { setOjsConfigured(state.configured); setOjsCredential((current) => ({ ...current, baseUrl: state.baseUrl ?? '' })); }).catch(() => undefined);
+    void getPersonalOmpCredential()
+      .then((state) => {
+        setOmpConfigured(state.configured);
+        setOmpCredential((current) => ({
+          ...current,
+          baseUrl: state.baseUrl ?? '',
+        }));
+      })
+      .catch(() => undefined);
   }, [user]);
 
   if (!user) return null;
@@ -201,6 +244,87 @@ export function AccountPanel() {
                 <div className="account-actions">
                   <button className="account-primary" type="button" disabled={loading || !ojsCredential.apiKey.trim() || !ojsCredential.baseUrl.trim()} onClick={() => void savePersonalOjsCredential(ojsCredential).then((state) => { setOjsConfigured(state.configured); setOjsCredential({ apiKey: '', baseUrl: state.baseUrl ?? ojsCredential.baseUrl }); setOjsSaved(true); })}>{labels.ojsApiKeySave ?? 'Save OJS key'}</button>
                   {ojsConfigured ? <button type="button" onClick={() => void deletePersonalOjsCredential().then(() => { setOjsConfigured(false); setOjsCredential({ apiKey: '', baseUrl: '' }); setOjsSaved(false); })}>{labels.ojsApiKeyRemove ?? 'Remove saved OJS key'}</button> : null}
+                </div>
+              </section>
+              <section className="account-ojs-credential" aria-labelledby="account-omp-credential-title">
+                <h2 id="account-omp-credential-title">{ompLabels.title}</h2>
+                <p>{ompLabels.description}</p>
+                <label>
+                  {ompLabels.baseUrl}
+                  <input
+                    type="url"
+                    value={ompCredential.baseUrl}
+                    onChange={(event) =>
+                      setOmpCredential({
+                        ...ompCredential,
+                        baseUrl: event.target.value,
+                      })
+                    }
+                    placeholder="https://press.example.org/omp"
+                  />
+                </label>
+                <label>
+                  {ompLabels.apiKey}
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    value={ompCredential.apiKey}
+                    onChange={(event) => {
+                      setOmpSaved(false);
+                      setOmpCredential({
+                        ...ompCredential,
+                        apiKey: event.target.value,
+                      });
+                    }}
+                    placeholder={ompConfigured ? '••••••••••••' : ''}
+                  />
+                </label>
+                {ompConfigured && !ompCredential.apiKey ? (
+                  <small>{ompLabels.configured}</small>
+                ) : null}
+                {ompSaved ? (
+                  <div className="account-success" role="status">
+                    {ompLabels.saved}
+                  </div>
+                ) : null}
+                <div className="account-actions">
+                  <button
+                    className="account-primary"
+                    type="button"
+                    disabled={
+                      loading ||
+                      !ompCredential.apiKey.trim() ||
+                      !ompCredential.baseUrl.trim()
+                    }
+                    onClick={() =>
+                      void savePersonalOmpCredential(ompCredential).then(
+                        (state) => {
+                          setOmpConfigured(state.configured);
+                          setOmpCredential({
+                            apiKey: '',
+                            baseUrl: state.baseUrl ?? ompCredential.baseUrl,
+                          });
+                          setOmpSaved(true);
+                        },
+                      )
+                    }
+                  >
+                    {ompLabels.save}
+                  </button>
+                  {ompConfigured ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void deletePersonalOmpCredential().then(() => {
+                          setOmpConfigured(false);
+                          setOmpCredential({ apiKey: '', baseUrl: '' });
+                          setOmpSaved(false);
+                        })
+                      }
+                    >
+                      {ompLabels.remove}
+                    </button>
+                  ) : null}
                 </div>
               </section>
             </form>
