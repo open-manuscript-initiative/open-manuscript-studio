@@ -99,15 +99,7 @@ export function toPortableOmiManuscript(
     omi: createOmiFileFormatEnvelope(true),
     versioningModelVersion,
     headRevisionId,
-    revisionHistory: {
-      ...revisionHistory,
-      ...(revisionHistory.completeness === 'shallow'
-        ? {
-            omissionNotice:
-              'Revision history is intentionally shallow in this Studio manuscript.',
-          }
-        : {}),
-    },
+    revisionHistory: portableRevisionHistory(manuscript, revisionHistory),
   } as PortableOmiManuscript;
 
   assertPortableOmiManuscript(portable);
@@ -168,7 +160,9 @@ export function parsePortableOmiManuscript(value: unknown): OmiManuscript {
     publicationSignatures: _publicationSignatures,
     ...manuscript
   } = record;
-  return stripPortableTombstoneIds(manuscript) as OmiManuscript;
+  return restoreHistoricalRevisionActors(
+    stripPortableTombstoneIds(manuscript),
+  ) as OmiManuscript;
 }
 
 export function assertPortableOmiManuscript(
@@ -500,6 +494,70 @@ function rejectCredentialFields(value: unknown, path = ''): void {
     }
     rejectCredentialFields(child, childPath);
   }
+}
+
+function portableRevisionHistory(
+  manuscript: OmiManuscript,
+  revisionHistory: OmiManuscript['revisionHistory'],
+): OmiManuscript['revisionHistory'] & { omissionNotice?: string } {
+  const activeAgentIds = new Set(manuscript.agents.map((agent) => agent.id));
+  const revisions = revisionHistory.revisions.map((revision) => {
+    if (
+      revision.actorAgentId === undefined
+      || activeAgentIds.has(revision.actorAgentId)
+    ) {
+      return revision;
+    }
+
+    // OMI-SPEC-320 requires revision.actorAgentId to resolve against the
+    // portable root agent collection. Studio retains the same attribution in
+    // the revision changeSet, so an actor deleted from current state can omit
+    // this optional wire-level shortcut without losing history.
+    const { actorAgentId: _unresolvedActorAgentId, ...portableRevision } =
+      revision;
+    return portableRevision;
+  });
+
+  return {
+    ...revisionHistory,
+    revisions,
+    ...(revisionHistory.completeness === 'shallow'
+      ? {
+          omissionNotice:
+            'Revision history is intentionally shallow in this Studio manuscript.',
+        }
+      : {}),
+  };
+}
+
+function restoreHistoricalRevisionActors<T extends Record<string, unknown>>(
+  value: T,
+): T {
+  if (!isRecord(value.revisionHistory)) return value;
+  const history = value.revisionHistory;
+  if (!Array.isArray(history.revisions)) return value;
+
+  return {
+    ...value,
+    revisionHistory: {
+      ...history,
+      revisions: history.revisions.map((revision) => {
+        if (!isRecord(revision) || revision.actorAgentId !== undefined) {
+          return revision;
+        }
+        if (
+          !isRecord(revision.changeSet)
+          || typeof revision.changeSet.actorAgentId !== 'string'
+        ) {
+          return revision;
+        }
+        return {
+          ...revision,
+          actorAgentId: revision.changeSet.actorAgentId,
+        };
+      }),
+    },
+  } as T;
 }
 
 function stripPortableTombstoneIds<T extends Record<string, unknown>>(
