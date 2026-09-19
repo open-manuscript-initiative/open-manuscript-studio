@@ -215,13 +215,17 @@ referenceManagerRouter.get(
   },
 );
 
+type OAuthReturnOrigin =
+  | 'https://app.openmanuscript.org/auth/orcid'
+  | 'openmanuscript://auth';
+
 interface OAuthState {
   provider: ReferenceManagerProvider;
   userId: string;
   nonce: string;
   expiresAt: number;
   returnPath: string;
-  returnOrigin?: string;
+  returnOrigin?: OAuthReturnOrigin;
 }
 
 function issueOAuthState(state: OAuthState): string {
@@ -260,7 +264,23 @@ function verifyOAuthState(value: string): OAuthState {
   ) {
     throw new Error('Expired or malformed OAuth state.');
   }
-  return decoded as OAuthState;
+
+  const returnOrigin =
+    typeof decoded.returnOrigin === 'string'
+      ? normalizeReturnOrigin(decoded.returnOrigin)
+      : undefined;
+  if (decoded.returnOrigin !== undefined && !returnOrigin) {
+    throw new Error('OAuth state contains an unsupported return origin.');
+  }
+
+  return {
+    provider: 'mendeley',
+    userId: decoded.userId,
+    nonce: decoded.nonce,
+    expiresAt: decoded.expiresAt,
+    returnPath: safeReturnPath(decoded.returnPath),
+    ...(returnOrigin ? { returnOrigin } : {}),
+  };
 }
 
 function sign(value: string): string {
@@ -272,14 +292,16 @@ function sign(value: string): string {
     .digest('base64url');
 }
 
-function normalizeReturnOrigin(value: string | undefined): string | undefined {
+function normalizeReturnOrigin(
+  value: string | undefined,
+): OAuthReturnOrigin | undefined {
   if (!value) return undefined;
   const normalized = value.replace(/\/$/, '');
-  if (
-    normalized === 'https://app.openmanuscript.org/auth/orcid' ||
-    normalized === 'openmanuscript://auth'
-  ) {
-    return normalized;
+  if (normalized === 'https://app.openmanuscript.org/auth/orcid') {
+    return 'https://app.openmanuscript.org/auth/orcid';
+  }
+  if (normalized === 'openmanuscript://auth') {
+    return 'openmanuscript://auth';
   }
   return undefined;
 }
@@ -300,10 +322,17 @@ function redirectResult(
   });
   if (result.error) params.set('referenceManagerOAuthError', result.error);
 
-  if (state.returnOrigin) {
+  if (state.returnOrigin === 'https://app.openmanuscript.org/auth/orcid') {
     response.redirect(
       302,
-      `${state.returnOrigin}/#${params.toString()}`.replace('auth//#', 'auth/#'),
+      `https://app.openmanuscript.org/auth/orcid/#${params.toString()}`,
+    );
+    return;
+  }
+  if (state.returnOrigin === 'openmanuscript://auth') {
+    response.redirect(
+      302,
+      `openmanuscript://auth/#${params.toString()}`,
     );
     return;
   }
