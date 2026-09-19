@@ -679,7 +679,7 @@ function interchangeContributor(
 function normalizeIssued(value: string | undefined): string | undefined {
   if (!value) return undefined;
   const year = value.match(/\b(1[5-9]\d{2}|20\d{2}|21\d{2})\b/)?.[1];
-  return year ?? value.trim() || undefined;
+  return year ?? (value.trim() || undefined);
 }
 
 function pushIdentifier(
