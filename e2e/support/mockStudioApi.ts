@@ -30,6 +30,7 @@ const AUTH_PROVIDERS = {
 
 export interface MockStudioApi {
   loginRequests: Array<Record<string, unknown>>;
+  publicationRequests: string[];
   unhandledRequests: string[];
 }
 
@@ -39,6 +40,7 @@ export async function installMockStudioApi(
 ): Promise<MockStudioApi> {
   let authenticated = options.authenticated ?? false;
   const loginRequests: Array<Record<string, unknown>> = [];
+  const publicationRequests: string[] = [];
   const unhandledRequests: string[] = [];
 
   await page.route('**/api/**', async (route) => {
@@ -79,6 +81,42 @@ export async function installMockStudioApi(
       return;
     }
 
+    if (
+      request.method() === 'POST'
+      && url.pathname === '/api/publication/validate/jats'
+    ) {
+      publicationRequests.push(requestKey);
+      await fulfillJson(route, 200, {
+        standard: 'NISO JATS',
+        version: '1.4',
+        tagSet: 'articleauthoring',
+        schema: 'DTD',
+        schemaVariant: 'MathML3',
+        schemaPackage: '@jats4r/dtds@0.0.10',
+        engine: 'libxml2-wasm@0.7.2',
+        valid: true,
+        diagnostics: [],
+      });
+      return;
+    }
+
+    if (
+      request.method() === 'POST'
+      && url.pathname === '/api/publication/render/pdf'
+    ) {
+      publicationRequests.push(requestKey);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/pdf',
+        headers: {
+          'x-omi-pdf-renderer': 'e2e-vivliostyle',
+          'x-omi-pdf-renderer-version': '1.0.0-test',
+        },
+        body: '%PDF-1.4\n% OMI E2E synthetic PDF artifact\n%%EOF\n',
+      });
+      return;
+    }
+
     unhandledRequests.push(requestKey);
     await fulfillJson(route, 404, {
       error: {
@@ -88,7 +126,7 @@ export async function installMockStudioApi(
     });
   });
 
-  return { loginRequests, unhandledRequests };
+  return { loginRequests, publicationRequests, unhandledRequests };
 }
 
 export async function signInToStudio(page: Page): Promise<void> {
