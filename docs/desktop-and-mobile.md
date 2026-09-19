@@ -6,7 +6,7 @@ Open Manuscript Studio uses one React/Vite application for the web and native sh
 
 The web application remains the canonical Studio frontend. `src-tauri/` contains only the native shell and platform integration layer. This separation allows normal Studio development to continue without maintaining separate Windows, macOS, Linux, Android, iOS, or iPadOS application forks.
 
-The OMI manuscript schema version is intentionally independent from the Studio application version. Native applications must continue to read older supported OMI documents and migrate them explicitly when a schema migration is required.
+The OMI manuscript schema version is intentionally independent from the Studio application version. Studio currently supports the canonical OMI-SPEC-320@0.2.0 standalone working-file boundary. The earlier experimental 0.1 standalone representation is rejected rather than migrated because no production compatibility commitment was made for it. Compatibility guarantees begin with the stable production format boundary.
 
 ## Web development
 
@@ -138,7 +138,7 @@ Build a signed App Store Connect IPA after configuring the required Apple signin
 npm run ios:build:app-store
 ```
 
-The iOS-specific Tauri configuration uses the bundle identifier `org.openmanuscript.studio`, minimum system version 14.0, App Store short version `0.1.0` and build number `6`. The Studio release line remains `0.1.0-beta.6` in product/release metadata.
+The iOS-specific Tauri configuration uses the bundle identifier `org.openmanuscript.studio`, minimum system version 14.0, App Store short version `0.2.0` and build number `10`. The Studio release line is `0.2.0-beta.2` in product/release metadata.
 
 ### iOS/iPadOS document storage
 
@@ -224,4 +224,7 @@ Keep these versions conceptually separate:
 - platform store/build number: Apple/Google packaging requirement
 - OMI schema/model version: portable document contract
 
-A Studio release may change without changing the OMI schema. An OMI schema change must have an explicit migration path.
+A Studio release may change without changing the OMI schema. The experimental pre-0.2 format has no compatibility guarantee; after the production format boundary is established, every incompatible OMI schema change must have an explicit versioned migration path.
+
+
+See [OMI file-format boundary in Studio](./omi-file-format.md) for the exact schema URI, profiles, validation rules, and compatibility policy.
