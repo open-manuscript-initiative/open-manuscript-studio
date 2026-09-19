@@ -1,0 +1,44 @@
+name: Studio documentation screenshots
+
+on:
+  push:
+    branches:
+      - docs/studio-screenshot-capture
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile runtime locales
+        run: npm run i18n:po:compile
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Capture current Studio UI
+        run: npx playwright test e2e/docs-screenshots.spec.ts --project=desktop-chromium
+
+      - name: Upload documentation screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-docs-screenshots
+          path: artifacts/studio-docs-screenshots/*.png
+          if-no-files-found: error
+          retention-days: 7
