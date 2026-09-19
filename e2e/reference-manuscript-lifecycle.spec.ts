@@ -136,7 +136,16 @@ async function openManuscriptThroughUi(
   page: Page,
   filePath: string,
 ): Promise<void> {
-  await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
+  const emptyWorkspaceOpen = page.getByRole('button', {
+    name: 'Open or import a document',
+    exact: true,
+  });
+  if (await emptyWorkspaceOpen.isVisible()) {
+    await emptyWorkspaceOpen.click();
+  } else {
+    await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
+  }
+
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
   await expect(menu).toBeVisible();
   await menu.getByRole('button', { name: 'Document', exact: true }).click();
