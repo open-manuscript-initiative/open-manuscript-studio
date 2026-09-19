@@ -2,6 +2,52 @@
   gap: .55rem;
 }
 
+.auth-login-path {
+  display: grid;
+  gap: .45rem;
+  padding: .7rem;
+  border: 1px solid #e2e6ec;
+  border-radius: .7rem;
+  background: #fbfcfd;
+}
+
+.auth-login-path-copy {
+  display: grid;
+  gap: .18rem;
+}
+
+.auth-login-path-copy strong {
+  color: #344054;
+  font-size: .84rem;
+}
+
+.auth-login-path-copy span,
+.auth-login-secondary-label,
+.auth-login-local-heading span {
+  color: #667085;
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+.auth-login-secondary-providers {
+  display: grid;
+  gap: .4rem;
+}
+
+.auth-login-secondary-label {
+  font-weight: 700;
+}
+
+.auth-login-local-heading {
+  display: grid;
+  gap: .16rem;
+}
+
+.auth-login-local-heading strong {
+  color: #344054;
+  font-size: .84rem;
+}
+
 .auth-login-provider-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -22,6 +68,19 @@
 .auth-provider-button:hover:not(:disabled) {
   border-color: #b9ad9e;
   background: #faf7f2;
+}
+
+.auth-provider-button--omi {
+  border-color: #7b4f57;
+  background: #5a1213;
+  color: #fff;
+  font-weight: 700;
+}
+
+.auth-provider-button--omi:hover:not(:disabled) {
+  border-color: #5a1213;
+  background: #711b1d;
+  color: #fff;
 }
 
 .auth-provider-button--google {

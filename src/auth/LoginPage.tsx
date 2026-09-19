@@ -52,16 +52,22 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
 
   const providers = useAuthProviders();
   const orcidProvider = providers?.orcid ?? null;
-  const oidcProviders = providers
-    ? (['google', 'microsoft', 'oidc'] as const)
+  const omiProvider = providers?.omi ?? null;
+  const institutionalProvider = providers?.oidc ?? null;
+  const auxiliaryOidcProviders = providers
+    ? (['google', 'microsoft'] as const)
         .map((key) => ({ key, provider: providers[key] }))
         .filter(({ provider }) => provider?.enabled)
     : [];
+  const showOmi = !adminMode && Boolean(omiProvider?.enabled);
+  const showInstitutional = Boolean(institutionalProvider?.enabled);
   const showOrcid = !adminMode && Boolean(orcidProvider?.enabled);
-  const hasFederatedProvider = showOrcid || oidcProviders.length > 0;
+  const hasFederatedProvider =
+    showOmi || showInstitutional || showOrcid || auxiliaryOidcProviders.length > 0;
   const authErrorCode = getAuthErrorCodeFromLocation();
   const resetToken = new URLSearchParams(window.location.search).get('resetPassword')?.trim() ?? '';
   const heroCopy = getLoginHeroCopy(locale);
+  const pathwayCopy = getLoginPathwayCopy(locale);
   const adminCopy = getInstitutionAdminCopy(locale);
   const productName = locale === 'hu' ? 'OMI Stúdió' : 'OMI Studio';
 
@@ -220,29 +226,68 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
 
           {hasFederatedProvider ? (
             <div className="auth-form auth-login-federated">
-              <div className="auth-login-provider-grid">
-                {showOrcid ? (
+              {showOmi && omiProvider ? (
+                <div className="auth-login-path auth-login-path--omi">
+                  <div className="auth-login-path-copy">
+                    <strong>{pathwayCopy.omiTitle}</strong>
+                    <span>{pathwayCopy.omiHint}</span>
+                  </div>
                   <button
-                    className="auth-primary-button auth-provider-button auth-orcid-button"
+                    className="auth-primary-button auth-provider-button auth-provider-button--omi"
                     type="button"
-                    onClick={() => void handleOrcidSignIn()}
+                    onClick={() => void handleOidcSignIn('omi', omiProvider.label)}
                   >
-                    {providerButtonLabel('ORCID', locale)}
+                    {pathwayCopy.omiAction}
                   </button>
-                ) : null}
-                {oidcProviders.map(({ key, provider }) => (
+                </div>
+              ) : null}
+
+              {showInstitutional && institutionalProvider ? (
+                <div className="auth-login-path auth-login-path--institutional">
+                  <div className="auth-login-path-copy">
+                    <strong>{pathwayCopy.institutionTitle}</strong>
+                    <span>{adminMode ? adminCopy.federatedHint : pathwayCopy.institutionHint}</span>
+                  </div>
                   <button
-                    className={`auth-primary-button auth-provider-button auth-provider-button--${key}`}
+                    className="auth-primary-button auth-provider-button auth-provider-button--oidc"
                     type="button"
-                    key={key}
-                    onClick={() => void handleOidcSignIn(key, provider.label)}
+                    onClick={() => void handleOidcSignIn('oidc', institutionalProvider.label)}
                   >
                     {adminMode
-                      ? adminProviderButtonLabel(provider.label, locale)
-                      : providerButtonLabel(provider.label, locale)}
+                      ? adminProviderButtonLabel(institutionalProvider.label, locale)
+                      : pathwayCopy.institutionAction}
                   </button>
-                ))}
-              </div>
+                </div>
+              ) : null}
+
+              {showOrcid || auxiliaryOidcProviders.length > 0 ? (
+                <div className="auth-login-secondary-providers">
+                  <div className="auth-login-secondary-label">{pathwayCopy.otherProviders}</div>
+                  <div className="auth-login-provider-grid">
+                    {showOrcid ? (
+                      <button
+                        className="auth-primary-button auth-provider-button auth-orcid-button"
+                        type="button"
+                        onClick={() => void handleOrcidSignIn()}
+                      >
+                        {providerButtonLabel('ORCID', locale)}
+                      </button>
+                    ) : null}
+                    {auxiliaryOidcProviders.map(({ key, provider }) => (
+                      <button
+                        className={`auth-primary-button auth-provider-button auth-provider-button--${key}`}
+                        type="button"
+                        key={key}
+                        onClick={() => void handleOidcSignIn(key, provider.label)}
+                      >
+                        {adminMode
+                          ? adminProviderButtonLabel(provider.label, locale)
+                          : providerButtonLabel(provider.label, locale)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               {showOrcid && orcidProvider ? (
                 <div className="auth-login-orcid-meta">
@@ -257,12 +302,6 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
                 </div>
               ) : null}
 
-              {adminMode ? (
-                <div className="auth-field-hint auth-admin-login-hint">
-                  {adminCopy.federatedHint}
-                </div>
-              ) : null}
-
               {federatedStartError ? <div className="auth-error" role="alert">{federatedStartError}</div> : null}
             </div>
           ) : null}
@@ -272,6 +311,11 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
               <span>{heroCopy.orEmail}</span>
             </div>
           ) : null}
+
+          <div className="auth-login-local-heading">
+            <strong>{pathwayCopy.localTitle}</strong>
+            <span>{adminMode ? adminCopy.description : pathwayCopy.localHint}</span>
+          </div>
 
           <form className="auth-form auth-login-email-form" onSubmit={handleSubmit}>
             <div className="auth-field">
@@ -408,6 +452,46 @@ function getLoginHeroCopy(locale: string) {
   };
 }
 
+function getLoginPathwayCopy(locale: string) {
+  if (locale === 'hu') {
+    return {
+      omiTitle: 'Központi OMI-fiók',
+      omiHint: 'Egy hordozható OMI-azonosság több Stúdió-telepítéshez. A dokumentum- és szerepkör-jogosultságok továbbra is helyben maradnak.',
+      omiAction: 'Bejelentkezés OMI-fiókkal',
+      institutionTitle: 'Intézményi bejelentkezés',
+      institutionHint: 'Használja az egyetem vagy más intézmény saját bejelentkezési szolgáltatását.',
+      institutionAction: 'Bejelentkezés az intézményen keresztül',
+      localTitle: 'Helyi Stúdió-fiók',
+      localHint: 'Jelentkezzen be a Stúdióban létrehozott e-mail-címmel és jelszóval.',
+      otherProviders: 'További kapcsolt azonosítók',
+    };
+  }
+  if (locale === 'de') {
+    return {
+      omiTitle: 'Zentrales OMI-Konto',
+      omiHint: 'Eine portable OMI-Identität für mehrere Studio-Installationen. Dokument- und Rollenrechte bleiben lokal.',
+      omiAction: 'Mit OMI-Konto anmelden',
+      institutionTitle: 'Institutionelle Anmeldung',
+      institutionHint: 'Verwenden Sie den Anmeldedienst Ihrer Universität oder Organisation.',
+      institutionAction: 'Über die Institution anmelden',
+      localTitle: 'Lokales Studio-Konto',
+      localHint: 'Melden Sie sich mit der im Studio registrierten E-Mail-Adresse und dem Passwort an.',
+      otherProviders: 'Weitere verknüpfte Identitäten',
+    };
+  }
+  return {
+    omiTitle: 'Central OMI account',
+    omiHint: 'One portable OMI identity across Studio installations. Document and role authorization remains local.',
+    omiAction: 'Sign in with OMI account',
+    institutionTitle: 'Institutional sign-in',
+    institutionHint: 'Use the identity service provided by your university or organization.',
+    institutionAction: 'Sign in through your institution',
+    localTitle: 'Local Studio account',
+    localHint: 'Use the e-mail address and password registered directly with this Studio installation.',
+    otherProviders: 'Other linked identities',
+  };
+}
+
 function getInstitutionAdminCopy(locale: string) {
   if (locale === 'hu') {
     return {
@@ -479,6 +563,11 @@ function federatedErrorMessage(code: string, locale: string): string {
     orcid_state_expired: ['The ORCID sign-in request expired. Please try again.', 'Az ORCID-bejelentkezési kérés lejárt. Próbálja újra.', 'Die ORCID-Anmeldung ist abgelaufen. Bitte versuchen Sie es erneut.'],
     orcid_signin_failed: ['ORCID sign-in failed.', 'Az ORCID-bejelentkezés nem sikerült.', 'Die ORCID-Anmeldung ist fehlgeschlagen.'],
     orcid_callback_invalid: ['The ORCID response is invalid.', 'Az ORCID válasza érvénytelen.', 'Die ORCID-Antwort ist ungültig.'],
+    omi_account_not_linked: [
+      'This OMI account is not linked to this Studio account yet. Sign in locally first, then connect the OMI account under Account → Connected identities.',
+      'Ez az OMI-fiók még nincs ehhez a Stúdió-fiókhoz kapcsolva. Először jelentkezzen be helyben, majd a Fiók → Kapcsolt identitások alatt kapcsolja hozzá az OMI-fiókot.',
+      'Dieses OMI-Konto ist noch nicht mit diesem Studio-Konto verbunden. Melden Sie sich zuerst lokal an und verbinden Sie danach das OMI-Konto unter Konto → Verknüpfte Identitäten.',
+    ],
     oidc_account_exists: [
       'A Studio account already exists with this e-mail address. Sign in with e-mail first and connect the provider from Account settings.',
       'Ezzel az e-mail-címmel már létezik Stúdió-fiók. Először jelentkezzen be e-maillel, majd a Fiók beállításainál kapcsolja hozzá a szolgáltatót.',

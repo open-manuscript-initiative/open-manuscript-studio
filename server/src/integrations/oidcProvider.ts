@@ -4,7 +4,7 @@ import { createRemoteJWKSet, decodeJwt, jwtVerify, type JWTPayload } from 'jose'
 
 import { env } from '../config/env.js';
 
-export type OidcProviderKey = 'google' | 'microsoft' | 'oidc';
+export type OidcProviderKey = 'omi' | 'google' | 'microsoft' | 'oidc';
 
 export interface OidcProviderConfig {
   key: OidcProviderKey;
@@ -47,6 +47,23 @@ const discoveryCache = new Map<string, Promise<DiscoveryDocument>>();
 
 export function listOidcProviderConfigs(): OidcProviderConfig[] {
   const providers: OidcProviderConfig[] = [];
+
+  if (
+    env.OMI_IDENTITY_ISSUER
+    && env.OMI_IDENTITY_CLIENT_ID
+    && env.OMI_IDENTITY_CLIENT_SECRET
+    && env.OMI_IDENTITY_REDIRECT_URI
+  ) {
+    providers.push({
+      key: 'omi',
+      label: 'OMI account',
+      issuer: env.OMI_IDENTITY_ISSUER.replace(/\/$/, ''),
+      clientId: env.OMI_IDENTITY_CLIENT_ID,
+      clientSecret: env.OMI_IDENTITY_CLIENT_SECRET,
+      redirectUri: env.OMI_IDENTITY_REDIRECT_URI,
+      requireVerifiedEmail: false,
+    });
+  }
 
   if (env.GOOGLE_OIDC_CLIENT_ID && env.GOOGLE_OIDC_CLIENT_SECRET && env.GOOGLE_OIDC_REDIRECT_URI) {
     providers.push({
@@ -102,7 +119,7 @@ export async function buildOidcAuthorization(input: {
   const authorizeUrl = new URL(discovery.authorization_endpoint);
   authorizeUrl.searchParams.set('client_id', input.provider.clientId);
   authorizeUrl.searchParams.set('response_type', 'code');
-  authorizeUrl.searchParams.set('scope', 'openid profile email');
+  authorizeUrl.searchParams.set('scope', input.provider.key === 'omi' ? 'openid profile email orcid' : 'openid profile email');
   authorizeUrl.searchParams.set('redirect_uri', input.provider.redirectUri);
   authorizeUrl.searchParams.set('state', input.state);
   authorizeUrl.searchParams.set('nonce', input.nonce);

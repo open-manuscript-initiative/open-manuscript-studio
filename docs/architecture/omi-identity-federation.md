@@ -1,6 +1,6 @@
 # OMI Federated Identity Architecture
 
-Status: draft architecture for the central `omi-identity` service.
+Status: implemented federation baseline; central OMI Identity service and Studio relying-party integration are available behind deployment configuration.
 
 ## Goal
 
@@ -60,7 +60,7 @@ This boundary is mandatory. A central identity outage or data breach must not re
 
 ## Local Studio model
 
-A Studio installation keeps a local user projection and all local authorization. The future local account shape is:
+A Studio installation keeps a local user projection and all local authorization. The local account projection now includes:
 
 ```text
 LocalUser
@@ -172,13 +172,15 @@ It must not contain local editorial roles or manuscript relationships.
 
 Current Studio contains local `UserIdentity` rows created by the direct ORCID implementation. Migration is staged:
 
-### Phase 1: compatibility
+### Phase 1: compatibility — implemented
 
-Keep local login and direct ORCID login. Add optional OMI Identity configuration. No existing account is changed automatically.
+Local login and direct ORCID login remain available. OMI Identity configuration is optional and no existing account is changed automatically.
 
-### Phase 2: global account enrollment
+### Phase 2: global account enrollment — implemented baseline
 
-For each local account, the user authenticates to OMI Identity. Studio receives `sub` and stores it as the local account's `omiUserId`. If the local account has a verified ORCID identity, OMI Identity can link it only after normal authentication/linking checks.
+An authenticated local Studio user can explicitly connect the central OMI provider under **Account → Connected identities**. Studio receives the immutable OIDC `sub`, stores it in the unique local `omiUserId` field and retains the associated OIDC identity record.
+
+A central OMI sign-in is accepted only after this explicit link exists. Studio never creates or merges a local account from OMI e-mail or ORCID claims alone.
 
 ### Phase 3: OMI Identity becomes preferred
 
@@ -187,6 +189,16 @@ New sign-ins and assignment invitations use OMI Identity. Direct ORCID remains a
 ### Phase 4: retire duplicate authentication
 
 Once migration is complete, Studio may remove direct ORCID credentials and local external identity secrets. The local `UserIdentity` table can then become historical/migration data or be removed in a later schema version.
+
+## User-facing sign-in paths
+
+Studio deliberately presents authentication and authorization as separate concepts:
+
+1. **Central OMI account** — portable authentication through `omi-identity`; requires an explicit one-time link to the local Studio account before it can be used for sign-in.
+2. **Institutional sign-in** — the configured organization OIDC provider; the institution proves identity while Studio keeps local manuscript and role authorization.
+3. **Local Studio account** — e-mail and password maintained by the current Studio installation.
+
+ORCID, Google and Microsoft remain available as additional linked identities when configured. Institution administrator and central administrator capabilities are authorization contexts, not separate user identities.
 
 ## Degraded operation
 
@@ -199,18 +211,18 @@ If OMI Identity is unavailable:
 - new central sign-ins and new global identity links are unavailable;
 - Studio must not silently fall back to e-mail matching to establish identity.
 
-## Configuration reserved in Studio
+## Studio configuration
 
-The Studio server accepts optional configuration keys for the future OIDC client:
+The Studio server accepts optional configuration keys for the central OMI OIDC client:
 
 ```env
 OMI_IDENTITY_ISSUER=https://identity.openmanuscript.org
 OMI_IDENTITY_CLIENT_ID=...
 OMI_IDENTITY_CLIENT_SECRET=...
-OMI_IDENTITY_REDIRECT_URI=https://studio.example.org/api/auth/omi/callback
+OMI_IDENTITY_REDIRECT_URI=https://studio.example.org/api/auth/oidc/omi/callback
 ```
 
-They are intentionally optional until the `omi-identity` service exists and the OIDC integration PR is completed.
+They remain optional so self-hosted or institution-managed Studio deployments can operate without the central service. When configured, the login page exposes **Central OMI account** as a distinct sign-in path.
 
 ## Repository boundary
 

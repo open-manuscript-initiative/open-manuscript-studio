@@ -117,6 +117,18 @@ linkedIdentityRouter.delete('/identities/:identityId', async (request, response)
 
   await identityPrisma.userIdentity.delete({ where: { id: identity.id } });
 
+  const profile = asProfile(identity.profile);
+  if (
+    identity.provider === 'OIDC'
+    && profile?.providerKey === 'omi'
+    && user.omiUserId === identity.subject
+  ) {
+    await identityPrisma.user.update({
+      where: { id: userId },
+      data: { omiUserId: null },
+    });
+  }
+
   if (
     identity.provider === 'ORCID'
     && identity.issuer === ORCID_ISSUER
@@ -160,11 +172,11 @@ function asProfile(value: unknown): IdentityProfile | null {
 function readProviderKey(
   provider: 'ORCID' | 'OIDC' | 'SAML',
   profile: IdentityProfile | null,
-): 'orcid' | 'google' | 'microsoft' | 'oidc' | 'saml' {
+): 'orcid' | 'omi' | 'google' | 'microsoft' | 'oidc' | 'saml' {
   if (provider === 'ORCID') return 'orcid';
   if (provider === 'SAML') return 'saml';
   const key = profile?.providerKey;
-  if (key === 'google' || key === 'microsoft' || key === 'oidc') return key;
+  if (key === 'omi' || key === 'google' || key === 'microsoft' || key === 'oidc') return key;
   return 'oidc';
 }
 
