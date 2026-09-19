@@ -1,7 +1,10 @@
-import { Edit3, ExternalLink, Plus, Search, Settings2, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Edit3, ExternalLink, Plus, Search, Settings2, Trash2, Upload } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 
-import { stageSetCitationStyle } from '../app/citationActions';
+import {
+  stageAddBibliographicRecords,
+  stageSetCitationStyle,
+} from '../app/citationActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getCslRenderingCopy } from '../i18n/cslRendering';
@@ -20,6 +23,7 @@ import {
   renderBibliography,
   type CustomCitationStyleConfig,
 } from '../model/cslRendering';
+import { parseReferenceInterchange } from '../services/referenceInterchange';
 import type { OmiCitationStyleId } from '../types/omi';
 import { BibliographicRecordEditor } from './BibliographicRecordEditor';
 import { ReferenceLookupPanel } from './ReferenceLookupPanel';
@@ -45,9 +49,47 @@ function writeSavedCustomStyles(styles: readonly string[]): void {
   window.localStorage.setItem(CUSTOM_STYLE_STORAGE_KEY, JSON.stringify(styles));
 }
 
+function referenceInterchangeCopy(locale: string) {
+  const formatLabel = (format: string) =>
+    format === 'csl-json' ? 'CSL JSON' : format === 'bibtex' ? 'BibTeX' : 'RIS';
+
+  if (locale === 'hu') {
+    return {
+      title: 'Referenciakezelő-fájlok',
+      description:
+        'RIS, BibTeX vagy CSL JSON könyvtár importálható. A Stúdió a már meglévő DOI- vagy azonos bibliográfiai rekordokat nem duplikálja.',
+      importLibrary: 'Könyvtár importálása',
+      imported: (added: number, skipped: number, format: string, issues: number) =>
+        `${formatLabel(format)}: ${added} rekord importálva, ${skipped} kihagyva${issues ? `, ${issues} figyelmeztetéssel` : ''}.`,
+      failed: 'A referenciakönyvtár importálása sikertelen.',
+    };
+  }
+  if (locale === 'de') {
+    return {
+      title: 'Literaturverwaltungsdateien',
+      description:
+        'RIS-, BibTeX- oder CSL-JSON-Bibliotheken können importiert werden. Vorhandene DOI- oder übereinstimmende bibliografische Datensätze werden nicht dupliziert.',
+      importLibrary: 'Bibliothek importieren',
+      imported: (added: number, skipped: number, format: string, issues: number) =>
+        `${formatLabel(format)}: ${added} Datensätze importiert, ${skipped} übersprungen${issues ? `, ${issues} Warnungen` : ''}.`,
+      failed: 'Die Literaturbibliothek konnte nicht importiert werden.',
+    };
+  }
+  return {
+    title: 'Reference-manager files',
+    description:
+      'Import RIS, BibTeX, or CSL JSON libraries. Existing DOI or matching bibliographic records are not duplicated.',
+    importLibrary: 'Import library',
+    imported: (added: number, skipped: number, format: string, issues: number) =>
+      `${formatLabel(format)}: ${added} records imported, ${skipped} skipped${issues ? `, ${issues} warnings` : ''}.`,
+    failed: 'The reference library could not be imported.',
+  };
+}
+
 export function ReferencesPanel() {
   const { t, locale } = useTranslation();
   const copy = getCslRenderingCopy(locale);
+  const interchangeCopy = referenceInterchangeCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const records = useMemo(
     () => manuscript.bibliographicRecords ?? [],
@@ -69,6 +111,9 @@ export function ReferencesPanel() {
   const [bibliographyPrefix, setBibliographyPrefix] = useState('');
   const [bibliographySuffix, setBibliographySuffix] = useState('');
   const [uppercaseAuthors, setUppercaseAuthors] = useState(false);
+  const interchangeInputRef = useRef<HTMLInputElement>(null);
+  const [interchangeStatus, setInterchangeStatus] = useState<string | null>(null);
+  const [interchangeError, setInterchangeError] = useState<string | null>(null);
 
   useEffect(() => {
     setSavedCustomStyles(readSavedCustomStyles());
@@ -110,6 +155,37 @@ export function ReferencesPanel() {
     [filteredStyles],
   );
   const activeDescriptor = getCitationStyleDescriptor(String(citationStyle));
+
+  async function importReferenceLibrary(
+    event: ChangeEvent<HTMLInputElement>,
+  ): Promise<void> {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setInterchangeStatus(null);
+    setInterchangeError(null);
+    try {
+      const parsed = parseReferenceInterchange(
+        await file.text(),
+        undefined,
+        file.name,
+      );
+      const imported = stageAddBibliographicRecords(parsed.records);
+      setInterchangeStatus(
+        interchangeCopy.imported(
+          imported.added,
+          imported.skipped,
+          parsed.format,
+          parsed.issues.length,
+        ),
+      );
+    } catch (reason) {
+      setInterchangeError(
+        reason instanceof Error ? reason.message : interchangeCopy.failed,
+      );
+    }
+  }
 
   function saveCustomStyle(): void {
     if (!customName.trim()) {
@@ -170,11 +246,39 @@ export function ReferencesPanel() {
           <h3>{t('citations.referencesTitle')}</h3>
           <p>{t('citations.referencesDescription')}</p>
         </div>
-        <button type="button" className="studio-menu-primary-action" onClick={() => setCreating(true)}>
-          <Plus size={16} aria-hidden="true" />
-          {t('citations.addReference')}
-        </button>
+        <div className="omi-reference-item-actions">
+          <input
+            ref={interchangeInputRef}
+            type="file"
+            hidden
+            accept=".ris,.bib,.bibtex,.json,.csljson,application/json,text/plain"
+            onChange={(event) => void importReferenceLibrary(event)}
+          />
+          <button
+            type="button"
+            className="studio-menu-secondary-action"
+            onClick={() => interchangeInputRef.current?.click()}
+          >
+            <Upload size={16} aria-hidden="true" />
+            {interchangeCopy.importLibrary}
+          </button>
+          <button type="button" className="studio-menu-primary-action" onClick={() => setCreating(true)}>
+            <Plus size={16} aria-hidden="true" />
+            {t('citations.addReference')}
+          </button>
+        </div>
       </div>
+
+      <section className="omi-reference-interchange-note">
+        <strong>{interchangeCopy.title}</strong>
+        <p>{interchangeCopy.description}</p>
+        {interchangeStatus ? <small role="status">{interchangeStatus}</small> : null}
+        {interchangeError ? (
+          <small className="omi-integration-error" role="alert">
+            {interchangeError}
+          </small>
+        ) : null}
+      </section>
 
       <section className="omi-csl-style-panel">
         <div>

@@ -134,15 +134,32 @@ test('editor and author launches enforce their signed role boundaries', async ({
     actorMode: 'author',
     actor: { externalId: fixture.users.author.id },
   });
-  expect(author.claims.scope).toContain('metadata.read');
-  expect(author.claims.scope).not.toContain('contributors.read');
+  expect(author.claims.scope).toEqual(expect.arrayContaining([
+    'metadata.read',
+    'contributors.read',
+    'files.read',
+  ]));
+  // OMP imports manuscript content through its scoped file API. The
+  // manuscript.read capability is part of the OJS integration contract.
+  if (platform === 'ojs') {
+    expect(author.claims.scope).toContain('manuscript.read');
+  }
+  for (const forbiddenScope of [
+    'metadata.write',
+    'contributors.write',
+    'files.write',
+    'manuscript.write',
+    'review.identity.read',
+  ]) {
+    expect(author.claims.scope).not.toContain(forbiddenScope);
+  }
 
-  const denied = await signedBrowserRequest(
+  const contributors = await signedBrowserRequest(
     page,
     `${requiredApiBase(author.claims)}/contributors`,
     author,
   );
-  expect(denied.status).toBe(403);
+  expect(contributors.status).toBe(200);
 });
 
 test('reviewer receives one anonymous article and can return corrections', async ({ page, request }) => {

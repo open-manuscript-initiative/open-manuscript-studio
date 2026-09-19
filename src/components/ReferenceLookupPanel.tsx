@@ -8,7 +8,7 @@ import {
   Settings2,
   Trash2,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { stageAddBibliographicRecord } from '../app/citationActions';
 import { useStudioStore } from '../app/useStudioStore';
@@ -20,6 +20,7 @@ import {
 } from '../model/citations';
 import {
   BIBLIOGRAPHIC_PROVIDERS,
+  deduplicateCandidates,
   loadBibliographicLookupSettings,
   normalizeLookupDoi,
   saveBibliographicLookupSettings,
@@ -28,7 +29,14 @@ import {
   type BibliographicLookupIssue,
   type BibliographicLookupSettings,
   type BibliographicProviderId,
+  type BibliographicSourceId,
 } from '../services/bibliographicLookup';
+import { getIntegrationCatalog } from '../services/integrationApi';
+import {
+  referenceManagerRecordToOmi,
+  searchPersonalReferenceManager,
+  type ReferenceManagerProviderId,
+} from '../services/referenceManagerApi';
 import {
   ACADEMIA_WEB_PROVIDER,
   clearWebBibliographicSession,
@@ -71,18 +79,50 @@ export function ReferenceLookupPanel() {
   } | null>(null);
   const [results, setResults] = useState<BibliographicLookupCandidate[]>([]);
   const [issues, setIssues] = useState<BibliographicLookupIssue[]>([]);
+  const [availableReferenceManagers, setAvailableReferenceManagers] = useState<
+    ReferenceManagerProviderId[]
+  >([]);
+  const [enabledReferenceManagers, setEnabledReferenceManagers] = useState<
+    ReferenceManagerProviderId[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const records = useMemo(
     () => manuscript.bibliographicRecords ?? [],
     [manuscript.bibliographicRecords],
   );
-  const providerCount = settings.enabledProviders.length;
+  const providerCount =
+    settings.enabledProviders.length + enabledReferenceManagers.length;
   const enabledWebProviders = webProviders.filter((provider) => provider.enabled);
   const canSearch =
     query.trim().length >= 2 &&
     providerCount + enabledWebProviders.length > 0 &&
     !loading;
+  useEffect(() => {
+    let cancelled = false;
+    void getIntegrationCatalog()
+      .then((catalog) => {
+        if (cancelled) return;
+        const connected = (['zotero', 'mendeley'] as const).filter(
+          (providerId) =>
+            catalog
+              .find((provider) => provider.id === providerId)
+              ?.connections.some((connection) => connection.enabled),
+        );
+        setAvailableReferenceManagers(connected);
+        setEnabledReferenceManagers(connected);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAvailableReferenceManagers([]);
+          setEnabledReferenceManagers([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const importedKeys = useMemo(
     () =>
       new Set(
@@ -114,6 +154,17 @@ export function ReferenceLookupPanel() {
         enabledProviders.includes(candidate),
       ),
     });
+  }
+
+  function toggleReferenceManager(
+    provider: ReferenceManagerProviderId,
+    enabled: boolean,
+  ): void {
+    setEnabledReferenceManagers((current) =>
+      enabled
+        ? [...new Set([...current, provider])]
+        : current.filter((candidate) => candidate !== provider),
+    );
   }
 
   function toggleWebProvider(providerId: string, enabled: boolean): void {
@@ -228,16 +279,58 @@ export function ReferenceLookupPanel() {
 
     try {
       const apiSearch =
-        providerCount > 0
+        settings.enabledProviders.length > 0
           ? searchBibliographicProviders(query, settings)
           : Promise.resolve({ candidates: [], issues: [] });
-      const [response, webSearchResults] = await Promise.all([
+      const managerSearches = enabledReferenceManagers.map(
+        async (provider): Promise<{
+          provider: ReferenceManagerProviderId;
+          candidates: BibliographicLookupCandidate[];
+          issue?: BibliographicLookupIssue;
+        }> => {
+        try {
+          const response = await searchPersonalReferenceManager(provider, query);
+          const candidates: BibliographicLookupCandidate[] = response.records.map(
+            (source) => ({
+              key: `${provider}:${source.externalId}`,
+              record: referenceManagerRecordToOmi(source),
+              providers: [provider],
+              sourceUrls: [`${provider}:${source.externalId}`],
+            }),
+          );
+          return { provider, candidates, issue: undefined };
+        } catch (reason) {
+          return {
+            provider,
+            candidates: [] as BibliographicLookupCandidate[],
+            issue: {
+              provider,
+              code: 'request-failed' as const,
+              message: reason instanceof Error ? reason.message : String(reason),
+            } satisfies BibliographicLookupIssue,
+          };
+        }
+      },
+      );
+
+      const [response, managerResults, webSearchResults] = await Promise.all([
         apiSearch,
+        Promise.all(managerSearches),
         Promise.allSettled(webSearchTasks),
       ]);
 
-      setResults(response.candidates);
-      setIssues(response.issues);
+      setResults(
+        deduplicateCandidates([
+          ...response.candidates,
+          ...managerResults.flatMap((result) => result.candidates),
+        ]),
+      );
+      setIssues([
+        ...response.issues,
+        ...managerResults
+          .map((result) => result.issue)
+          .filter((issue): issue is BibliographicLookupIssue => Boolean(issue)),
+      ]);
 
       if (webSearchResults.length > 0) {
         const failed = webSearchResults.some((result) => result.status === 'rejected');
@@ -303,6 +396,19 @@ export function ReferenceLookupPanel() {
               {provider === 'openalex' && !settings.openAlexApiKey?.trim() ? (
                 <small>{copy.apiKeyRequired}</small>
               ) : null}
+            </label>
+          ))}
+          {availableReferenceManagers.map((provider) => (
+            <label className="omi-provider-toggle" key={provider}>
+              <input
+                type="checkbox"
+                checked={enabledReferenceManagers.includes(provider)}
+                onChange={(event) =>
+                  toggleReferenceManager(provider, event.target.checked)
+                }
+              />
+              <span>{providerLabel(provider)}</span>
+              <small>{personalLibraryLabel(locale)}</small>
             </label>
           ))}
           {webProviders.map((provider) => (
@@ -593,7 +699,7 @@ export function ReferenceLookupPanel() {
   );
 }
 
-function providerLabel(provider: BibliographicProviderId): string {
+function providerLabel(provider: BibliographicSourceId): string {
   switch (provider) {
     case 'crossref':
       return 'Crossref';
@@ -603,7 +709,17 @@ function providerLabel(provider: BibliographicProviderId): string {
       return 'OpenAlex';
     case 'mtmt':
       return 'MTMT';
+    case 'zotero':
+      return 'Zotero';
+    case 'mendeley':
+      return 'Mendeley';
   }
+}
+
+function personalLibraryLabel(locale: string): string {
+  if (locale === 'hu') return 'saját könyvtár';
+  if (locale === 'de') return 'eigene Bibliothek';
+  return 'personal library';
 }
 
 function providerHost(provider: WebBibliographicProvider): string {

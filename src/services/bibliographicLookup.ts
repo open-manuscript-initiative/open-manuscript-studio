@@ -16,6 +16,11 @@ export type BibliographicProviderId =
   | 'openalex'
   | 'mtmt';
 
+export type BibliographicSourceId =
+  | BibliographicProviderId
+  | 'zotero'
+  | 'mendeley';
+
 export interface BibliographicLookupSettings {
   enabledProviders: BibliographicProviderId[];
   crossrefMailto?: string;
@@ -25,7 +30,7 @@ export interface BibliographicLookupSettings {
 export interface BibliographicLookupCandidate {
   key: string;
   record: OmiBibliographicRecord;
-  providers: BibliographicProviderId[];
+  providers: BibliographicSourceId[];
   sourceUrls: string[];
 }
 
@@ -35,7 +40,7 @@ export type BibliographicLookupIssueCode =
   | 'invalid-response';
 
 export interface BibliographicLookupIssue {
-  provider: BibliographicProviderId;
+  provider: BibliographicSourceId;
   code: BibliographicLookupIssueCode;
   message: string;
 }

@@ -142,6 +142,12 @@ const environmentSchema = z.object({
   DROPBOX_OAUTH_CLIENT_SECRET: z.string().trim().optional(),
   DROPBOX_OAUTH_REDIRECT_URI: z.string().url().optional(),
 
+  // Reference-manager OAuth applications. Zotero initially uses a dedicated
+  // personal API key; Mendeley uses the server-side authorization-code flow.
+  MENDELEY_CLIENT_ID: z.string().trim().optional(),
+  MENDELEY_CLIENT_SECRET: z.string().trim().optional(),
+  MENDELEY_REDIRECT_URI: z.string().url().optional(),
+
   // Vivliostyle is an external, separately installed renderer. Keeping the
   // executable outside the Studio dependency graph lets deployments pin and
   // audit the paged-media engine independently.

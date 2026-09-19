@@ -2,6 +2,7 @@ import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
 import { requestAiText, resolveAiEndpoint } from './aiProviderClient.js';
 import { loadOmiAgentsConfiguration } from './omiAgentsConfig.js';
+import { testReferenceManagerConnection } from './referenceManagers/referenceManagerService.js';
 import { decryptSecret, type EncryptedSecret } from './secretCrypto.js';
 
 export type IntegrationProviderKind =
@@ -71,6 +72,18 @@ const providers: IntegrationProviderDescriptor[] = [
     description: 'Monograph publishing integration for books, chapters, contributors, files and editorial workflow.',
     authenticationModes: ['integration_token'], preferredAuthenticationMode: 'integration_token',
     supportsPerUserAuthentication: true, supportsMultipleConnections: true, configurable: true,
+  },
+  {
+    id: 'zotero', kind: 'scholarly-service', displayName: 'Zotero',
+    description: 'Personal Zotero reference-library integration.',
+    authenticationModes: ['user_api_key'], preferredAuthenticationMode: 'user_api_key',
+    supportsPerUserAuthentication: true, supportsMultipleConnections: false, configurable: true,
+  },
+  {
+    id: 'mendeley', kind: 'scholarly-service', displayName: 'Mendeley',
+    description: 'Personal Mendeley reference-library integration.',
+    authenticationModes: ['oauth2'], preferredAuthenticationMode: 'oauth2',
+    supportsPerUserAuthentication: true, supportsMultipleConnections: false, configurable: true,
   },
   {
     id: 'orcid', kind: 'identity', displayName: 'ORCID',
@@ -265,6 +278,10 @@ export async function testIntegrationProvider(
       return testAiProvider(userId);
     case 'omi-agents':
       return testOmiAgents(userId);
+    case 'zotero':
+      return testReferenceManagerConnection(userId, 'zotero');
+    case 'mendeley':
+      return testReferenceManagerConnection(userId, 'mendeley');
     case 'orcid': {
       const identity = await prisma.userIdentity.findFirst({
         where: { userId, provider: 'ORCID' }, select: { id: true },

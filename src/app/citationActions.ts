@@ -7,6 +7,7 @@ import {
   type CitationClusterCreation,
 } from '../model/citationClusters.ts';
 import {
+  findLikelyDuplicateRecord,
   normalizeBibliographicRecord,
 } from '../model/citations';
 import {
@@ -86,6 +87,88 @@ export function stageAddBibliographicRecord(
 
   if (changed) scheduleCitationCheckpoint();
   return changed;
+}
+
+export interface BibliographicBulkImportResult {
+  added: number;
+  skipped: number;
+}
+
+export function stageAddBibliographicRecords(
+  incoming: readonly OmiBibliographicRecord[],
+): BibliographicBulkImportResult {
+  let result: BibliographicBulkImportResult = { added: 0, skipped: incoming.length };
+
+  useStudioStore.setState((state) => {
+    if (!incoming.length) return state;
+
+    const existing = state.manuscript.bibliographicRecords ?? [];
+    const accepted: OmiBibliographicRecord[] = [];
+    const timestamp = new Date().toISOString();
+
+    for (const record of incoming) {
+      const normalized = normalizeBibliographicRecord({
+        ...record,
+        createdAt: record.createdAt ?? timestamp,
+        modifiedAt: timestamp,
+      });
+
+      if (
+        !normalized.title ||
+        existing.some((candidate) => candidate.id === normalized.id) ||
+        accepted.some((candidate) => candidate.id === normalized.id) ||
+        findLikelyDuplicateRecord([...existing, ...accepted], normalized)
+      ) {
+        continue;
+      }
+      accepted.push(normalized);
+    }
+
+    if (!accepted.length) {
+      result = { added: 0, skipped: incoming.length };
+      return state;
+    }
+
+    const nextState: OmiManuscriptState = {
+      ...extractManuscriptState(state.manuscript),
+      bibliographicRecords: [...existing, ...accepted],
+    };
+    const pendingChangeSet = stagePendingChanges(
+      state.pendingChangeSet,
+      {
+        baseRevisionId: state.manuscript.headRevisionId,
+        summary:
+          accepted.length === 1
+            ? 'Imported bibliographic record'
+            : `Imported ${accepted.length} bibliographic records`,
+        events: accepted.map((record) => ({
+          operation: 'bibliographic.record.create' as never,
+          targetId: record.id,
+          path: '/bibliographicRecords/-',
+          nextValue: record,
+        })),
+        actorAgentId: resolveCurrentActorAgentId(state.manuscript),
+        timestamp,
+      },
+    );
+
+    result = {
+      added: accepted.length,
+      skipped: incoming.length - accepted.length,
+    };
+
+    return {
+      manuscript: {
+        ...state.manuscript,
+        ...nextState,
+        updatedAt: timestamp,
+      },
+      pendingChangeSet,
+    };
+  });
+
+  if (result.added > 0) scheduleCitationCheckpoint();
+  return result;
 }
 
 export function stageUpdateBibliographicRecord(
