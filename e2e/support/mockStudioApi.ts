@@ -22,6 +22,7 @@ const TEST_USER = {
 
 const AUTH_PROVIDERS = {
   orcid: { enabled: false, label: 'ORCID' },
+  omi: { enabled: false, label: 'OMI account' },
   google: { enabled: false, label: 'Google' },
   microsoft: { enabled: false, label: 'Microsoft' },
   oidc: { enabled: false, label: 'Institutional sign-in' },
