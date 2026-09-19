@@ -330,6 +330,9 @@ async function linkOidcIdentity(
 ): Promise<void> {
   const user = await identityPrisma.user.findUnique({ where: { id: userId } });
   if (!user || user.status !== 'ACTIVE') throw new Error('The Studio account is not active.');
+  if (provider.key === 'omi' && user.omiUserId && user.omiUserId !== profile.subject) {
+    throw new Error('This Studio account is already linked to a different OMI account.');
+  }
 
   const existing = await identityPrisma.userIdentity.findUnique({
     where: {
@@ -367,6 +370,13 @@ async function linkOidcIdentity(
       lastUsedAt: new Date(),
     },
   });
+
+  if (provider.key === 'omi' && user.omiUserId !== profile.subject) {
+    await identityPrisma.user.update({
+      where: { id: userId },
+      data: { omiUserId: profile.subject },
+    });
+  }
 }
 
 async function redirectNativeHandoff(
@@ -402,7 +412,7 @@ function decodeStateMetadata(value: string | null | undefined): OidcStateMetadat
   try {
     const parsed = JSON.parse(value) as Partial<OidcStateMetadata>;
     if (
-      (parsed.providerKey !== 'google' && parsed.providerKey !== 'microsoft' && parsed.providerKey !== 'oidc') ||
+      (parsed.providerKey !== 'omi' && parsed.providerKey !== 'google' && parsed.providerKey !== 'microsoft' && parsed.providerKey !== 'oidc') ||
       typeof parsed.expectedNonceHash !== 'string' || !/^[0-9a-f]{64}$/i.test(parsed.expectedNonceHash) ||
       typeof parsed.codeVerifier !== 'string' || parsed.codeVerifier.length < 43
     ) {
