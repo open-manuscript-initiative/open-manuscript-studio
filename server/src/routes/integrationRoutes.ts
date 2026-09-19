@@ -1,8 +1,13 @@
 import { Router } from 'express';
 
 import { createOmpHandoff, consumeOmpHandoff } from '../integrations/omp/handoffStore.js';
-import { loadOmpLaunchData } from '../integrations/omp/ompClient.js';
+import {
+  loadOmpAuthorContext,
+  loadOmpLaunchData,
+  loadOmpPlatformCapabilities,
+} from '../integrations/omp/ompClient.js';
 import { verifyOmpLaunch } from '../integrations/omp/launchVerifier.js';
+import { createPendingAuthorOmpNativeContext } from '../integrations/omp/nativeContext.js';
 import { createOjsHandoff, consumeOjsHandoff } from '../integrations/ojs/handoffStore.js';
 import { issueOjsAssignmentGrant } from '../integrations/ojs/ojsAssignmentGrant.js';
 import { loadOjsAssignmentContext } from '../integrations/ojs/ojsAssignmentContext.js';
@@ -55,7 +60,74 @@ integrationRouter.get('/omp/launch', async (request, response) => {
 
   try {
     const verified = await verifyOmpLaunch(payload, signature);
-    const ompData = await loadOmpLaunchData(verified.claims, payload, signature);
+    const [ompData, platformCapabilities] = await Promise.all([
+      loadOmpLaunchData(verified.claims, payload, signature),
+      loadOmpPlatformCapabilities(verified.claims, payload, signature),
+    ]);
+
+    const submissionExternalId = verified.claims.submission?.externalId?.trim();
+    const actorExternalId = verified.claims.actor?.externalId?.trim();
+    const apiBaseUrl = verified.claims.apiBaseUrl?.trim();
+    let nativeContext: Record<string, unknown> | null = null;
+
+    const nativeAuthorWriteAvailable = Boolean(
+      platformCapabilities.nativeApis?.authorRevisions?.supported &&
+      platformCapabilities.nativeApis?.serviceWriteback?.supported &&
+      platformCapabilities.nativeApis?.serviceWriteback?.authentication ===
+        'omi-hmac-sha256',
+    );
+    if (verified.claims.actorMode === 'author' && nativeAuthorWriteAvailable) {
+      if (!submissionExternalId || !actorExternalId || !apiBaseUrl) {
+        throw new Error('The OMP author launch is missing its native workflow identifiers.');
+      }
+      const authorContext = await loadOmpAuthorContext(
+        verified.claims,
+        payload,
+        signature,
+      );
+      if (authorContext.submissionExternalId !== submissionExternalId) {
+        throw new Error('OMP returned an author context for a different submission.');
+      }
+
+      const sourceFileExternalId = ompData.sourceDocument?.fileExternalId;
+      const sourceFile = sourceFileExternalId
+        ? ompData.files.find((item) => item.externalId === sourceFileExternalId)
+        : ompData.files[0];
+
+      const stored = await createPendingAuthorOmpNativeContext({
+        installationId: verified.installation.installationId,
+        apiBaseUrl,
+        externalSubmissionId: submissionExternalId,
+        externalActorId: actorExternalId,
+        ...(authorContext.reviewRoundExternalId
+          ? { externalReviewRoundId: authorContext.reviewRoundExternalId }
+          : {}),
+        ...(Number.isInteger(authorContext.round)
+          ? { reviewRound: authorContext.round }
+          : {}),
+        ...(Number.isInteger(authorContext.stageId)
+          ? { stageId: authorContext.stageId }
+          : {}),
+        ...(sourceFile?.externalId
+          ? { sourceSubmissionFileExternalId: sourceFile.externalId }
+          : {}),
+        ...(sourceFile?.genreExternalId
+          ? { sourceGenreExternalId: sourceFile.genreExternalId }
+          : {}),
+        capabilities: platformCapabilities as unknown as Record<string, unknown>,
+        writable: Boolean(authorContext.writable),
+      });
+      nativeContext = {
+        id: stored.id,
+        actorMode: 'author',
+        writable: stored.writable,
+        reason: authorContext.reason ?? null,
+        reviewRoundExternalId: stored.externalReviewRoundId,
+        reviewRound: stored.reviewRound,
+        stageId: stored.stageId,
+      };
+    }
+
     const launchData = {
       protocol: 'omi-integration/1',
       profile: 'omi-integration/1/omp',
@@ -67,11 +139,11 @@ integrationRouter.get('/omp/launch', async (request, response) => {
       reviewAssignment: verified.claims.reviewAssignment ?? null,
       contributors: ompData.contributors,
       files: ompData.files,
+      sourceDocument: ompData.sourceDocument,
       actor: verified.claims.actor ?? null,
       actorMode: verified.claims.actorMode ?? null,
       scope: verified.claims.scope ?? [],
-      externalBaseUrl: verified.claims.externalBaseUrl ?? null,
-      apiBaseUrl: verified.claims.apiBaseUrl ?? null,
+      nativeContext,
       expiresAt: new Date(verified.claims.exp * 1000).toISOString(),
     };
 
