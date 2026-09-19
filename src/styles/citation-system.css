@@ -196,7 +196,18 @@
 }
 
 .omi-references-panel {
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
+}
+
+.omi-reference-interchange-note {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
 }
 
 .omi-reference-search {
@@ -266,6 +277,8 @@
 
 .omi-reference-item-actions {
   display: flex;
+  max-width: 100%;
+  min-width: 0;
   gap: 0.4rem;
   flex: 0 0 auto;
 }
@@ -338,7 +351,33 @@
   }
 
   .omi-reference-item-actions {
+    width: 100%;
+    flex-wrap: wrap;
     justify-content: flex-end;
+  }
+
+  .omi-reference-item-actions > .studio-menu-primary-action,
+  .omi-reference-item-actions > .studio-menu-secondary-action {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-top: 0.5rem;
+    flex: 1 1 100%;
+  }
+
+  .omi-reference-search,
+  .omi-reference-search input,
+  .omi-reference-list,
+  .omi-reference-item,
+  .omi-reference-item-main,
+  .omi-bibliography-preview {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .omi-reference-search {
+    width: 100%;
   }
 
   .omi-citation-picker-actions,
