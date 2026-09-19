@@ -18,7 +18,7 @@ interface OmpContributorsResponse {
   contributors?: Array<Record<string, unknown>>;
 }
 
-interface OmpFileDescriptor extends Record<string, unknown> {
+export interface OmpFileDescriptor extends Record<string, unknown> {
   externalId?: string;
   componentExternalId?: string | null;
   componentId?: string | null;
@@ -27,6 +27,7 @@ interface OmpFileDescriptor extends Record<string, unknown> {
   mediaType?: string;
   size?: number | null;
   stage?: number | null;
+  genreExternalId?: string | null;
   genreKey?: string | null;
   genreName?: string | null;
   revision?: number | null;
@@ -36,6 +37,63 @@ interface OmpFileDescriptor extends Record<string, unknown> {
 
 interface OmpFilesResponse {
   files?: OmpFileDescriptor[];
+}
+
+export interface OmpPlatformCapabilities {
+  protocol?: string;
+  profile?: string;
+  implementation?: Record<string, unknown>;
+  nativeApis?: {
+    reviewRecommendations?: { supported?: boolean };
+    reviewAttachments?: { supported?: boolean };
+    authorRevisions?: { supported?: boolean };
+    serviceWriteback?: {
+      supported?: boolean;
+      authentication?: string;
+      reviewAttachments?: string;
+      authorRevisions?: string;
+      reviewResult?: string;
+    };
+  };
+}
+
+export interface OmpReviewContext {
+  protocol?: string;
+  profile?: string;
+  submissionExternalId?: string;
+  reviewAssignment?: {
+    externalId?: string;
+    reviewRoundExternalId?: string;
+    round?: number;
+    stageId?: number;
+    dateCompleted?: string | null;
+    cancelled?: boolean;
+    declined?: boolean;
+  };
+  reviewRecommendations?: {
+    supported?: boolean;
+    options?: Array<{ externalId?: string; label?: string }>;
+    selectedExternalId?: string | null;
+  };
+}
+
+export interface OmpAuthorContext {
+  protocol?: string;
+  profile?: string;
+  submissionExternalId?: string;
+  writable?: boolean;
+  reason?: string | null;
+  reviewRoundExternalId?: string | null;
+  round?: number;
+  stageId?: number;
+}
+
+export interface OmpReviewAttachments {
+  protocol?: string;
+  profile?: string;
+  submissionExternalId?: string;
+  reviewAssignmentExternalId?: string;
+  items?: Array<Record<string, unknown>>;
 }
 
 export interface OmpLaunchData {
@@ -194,6 +252,98 @@ async function loadSourceDocument(
   const withLists = applyStyleInheritedLists(bytes, withStructuredContent);
   const withNotes = applyNoteIntegrity(bytes, withLists);
   return applyReferenceSemantics(bytes, withNotes);
+}
+
+async function trustedOmpApiBaseUrl(claims: OmpLaunchClaims): Promise<string> {
+  const apiBaseUrl = claims.apiBaseUrl?.trim();
+  const externalBaseUrl = claims.externalBaseUrl?.trim();
+  if (!apiBaseUrl || !externalBaseUrl) {
+    throw new Error('The OMP launch assertion does not identify a trusted integration API.');
+  }
+  const trusted = await assertTrustedIntegrationUrl(apiBaseUrl, externalBaseUrl);
+  return trusted.toString().replace(/\/$/, '');
+}
+
+async function readNativeOmpJson<T>(
+  claims: OmpLaunchClaims,
+  payload: string,
+  signature: string,
+  operation: string,
+): Promise<T> {
+  const base = await trustedOmpApiBaseUrl(claims);
+  return readJson<T>(endpoint(base, operation), payload, signature);
+}
+
+export async function loadOmpPlatformCapabilities(
+  claims: OmpLaunchClaims,
+  payload: string,
+  signature: string,
+): Promise<OmpPlatformCapabilities> {
+  const capabilities = await readNativeOmpJson<OmpPlatformCapabilities>(
+    claims,
+    payload,
+    signature,
+    'platform-capabilities',
+  );
+  assertNativeProfile(capabilities, 'platform-capabilities');
+  return capabilities;
+}
+
+export async function loadOmpReviewContext(
+  claims: OmpLaunchClaims,
+  payload: string,
+  signature: string,
+): Promise<OmpReviewContext> {
+  const context = await readNativeOmpJson<OmpReviewContext>(
+    claims,
+    payload,
+    signature,
+    'review-context',
+  );
+  assertNativeProfile(context, 'review-context');
+  return context;
+}
+
+export async function loadOmpAuthorContext(
+  claims: OmpLaunchClaims,
+  payload: string,
+  signature: string,
+): Promise<OmpAuthorContext> {
+  const context = await readNativeOmpJson<OmpAuthorContext>(
+    claims,
+    payload,
+    signature,
+    'author-context',
+  );
+  assertNativeProfile(context, 'author-context');
+  return context;
+}
+
+export async function loadOmpReviewAttachments(
+  claims: OmpLaunchClaims,
+  payload: string,
+  signature: string,
+): Promise<OmpReviewAttachments> {
+  const attachments = await readNativeOmpJson<OmpReviewAttachments>(
+    claims,
+    payload,
+    signature,
+    'review-attachments',
+  );
+  assertNativeProfile(attachments, 'review-attachments');
+  return attachments;
+}
+
+function assertNativeProfile(
+  value: { protocol?: string; profile?: string },
+  operation: string,
+): void {
+  if (
+    value.protocol !== 'omi-integration/1' ||
+    value.profile !== 'omi-integration/1/omp'
+  ) {
+    throw new Error(`OMP ${operation} returned an incompatible integration profile.`);
+  }
 }
 
 export async function loadOmpLaunchData(
