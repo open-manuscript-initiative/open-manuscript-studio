@@ -60,6 +60,14 @@ const studioShellStyles = readFileSync(
   new URL('../src/styles/studio-shell.css', import.meta.url),
   'utf8',
 );
+const citationSystemStyles = readFileSync(
+  new URL('../src/styles/citation-system.css', import.meta.url),
+  'utf8',
+);
+const cslRenderingStyles = readFileSync(
+  new URL('../src/styles/csl-rendering.css', import.meta.url),
+  'utf8',
+);
 
 test('live publication editor opens as its own full-screen menu workspace', () => {
   assert.match(studioMenu, /'publication-editor'/);
@@ -83,6 +91,33 @@ test('Studio navigation is visible immediately without an intermediate menu trig
   assert.doesNotMatch(
     studioShellStyles,
     /\.studio-menu-navigation \{[\s\S]*position: absolute/,
+  );
+});
+
+test('mobile manuscript menu scrolls navigation without widening reference content', () => {
+  assert.match(
+    studioShellStyles,
+    /@media \(max-width: 760px\)[\s\S]*\.studio-menu-navigation \{[\s\S]*overflow-x: auto;[\s\S]*overscroll-behavior-x: contain;[\s\S]*touch-action: pan-x;/,
+  );
+  assert.match(
+    studioShellStyles,
+    /\.studio-menu-content \{[\s\S]*max-width: 100%;[\s\S]*overflow-x: hidden;/,
+  );
+  assert.match(
+    studioShellStyles,
+    /@media \(max-width: 760px\)[\s\S]*padding: \.85rem \.85rem calc\(1\.25rem \+ env\(safe-area-inset-bottom\)\)/,
+  );
+  assert.match(
+    citationSystemStyles,
+    /@media \(max-width: 720px\)[\s\S]*\.omi-reference-item-actions \{[\s\S]*flex-wrap: wrap;[\s\S]*\.omi-reference-item-actions > \.studio-menu-primary-action,[\s\S]*width: 100%;/,
+  );
+  assert.match(
+    cslRenderingStyles,
+    /\.omi-csl-style-panel \{[\s\S]*max-width: 100%;[\s\S]*min-width: 0;/,
+  );
+  assert.match(
+    cslRenderingStyles,
+    /\.omi-csl-style-panel input,[\s\S]*\.omi-csl-style-panel select \{[\s\S]*max-width: 100%;[\s\S]*min-width: 0;/,
   );
 });
 
