@@ -78,7 +78,7 @@ export function ReferenceManagerSettings({
       }
     }
 
-    let dispose = () => undefined;
+    let dispose: () => void = () => undefined;
     void listenForReferenceManagerOAuthReturn((result) => {
       if (result.status === 'connected') {
         setNotice(copy.connected);
