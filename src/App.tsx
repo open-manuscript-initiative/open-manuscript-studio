@@ -30,6 +30,7 @@ import { StudioMenuWithHelp } from './components/StudioMenuWithHelp';
 import {
   createManuscriptFromOmpLaunch,
   fetchOmpHandoff,
+  type OmpNativeAuthorContext,
 } from './integrations/omp/importOmpLaunch';
 import {
   clearOjsLaunchPayload,
@@ -139,6 +140,7 @@ function StudioApplication() {
   const reviewMode = new URLSearchParams(window.location.search).get('review') === '1';
   const mobileStudio = isMobileStudio();
   const hasOpenDocument = useStudioStore((state) => state.hasOpenDocument);
+  const activeManuscriptId = useStudioStore((state) => state.manuscript.id);
   const restoredDesktopSession = useRef(
     !mobileStudio && !reviewMode ? getRestoredDesktopSession() : null,
   );
@@ -156,6 +158,10 @@ function StudioApplication() {
   const [ojsAssignment, setOjsAssignment] = useState<{
     actorMode: 'editor' | 'author';
     context: OjsAssignmentLaunchContext;
+  } | null>(null);
+  const [ompAuthorAssignment, setOmpAuthorAssignment] = useState<{
+    manuscriptId: string;
+    context: OmpNativeAuthorContext;
   } | null>(null);
   const [desktopTabs, setDesktopTabs] = useState<DesktopTabSession[]>(() => {
     const restored = restoredDesktopSession.current;
@@ -312,6 +318,7 @@ function StudioApplication() {
     if (reviewMode) {
       setOjsContributors([]);
       setOjsAssignment(null);
+      setOmpAuthorAssignment(null);
       setExternalImportState({ status: 'idle' });
       return;
     }
@@ -344,6 +351,11 @@ function StudioApplication() {
 
           setOjsContributors([]);
           setOjsAssignment(null);
+          setOmpAuthorAssignment(
+            launch.actorMode === 'author' && launch.nativeContext?.actorMode === 'author'
+              ? { manuscriptId: manuscript.id, context: launch.nativeContext }
+              : null,
+          );
           loadManuscript(manuscript);
           url.searchParams.delete('omiOmpLaunch');
           window.history.replaceState(
@@ -380,6 +392,7 @@ function StudioApplication() {
         setOjsContributors(
           launch.scope?.includes('contributors.read') ? launch.contributors ?? [] : [],
         );
+        setOmpAuthorAssignment(null);
         if (
           (launch.actorMode === 'editor' || launch.actorMode === 'author') &&
           launch.assignmentContext?.grant
@@ -488,6 +501,11 @@ function StudioApplication() {
           open={menuOpen}
           onClose={() => setMenuOpen(false)}
           ojsAssignment={ojsAssignment}
+          ompAuthorContext={
+            ompAuthorAssignment?.manuscriptId === activeManuscriptId
+              ? ompAuthorAssignment.context
+              : null
+          }
         />
       </>
     );
@@ -508,6 +526,11 @@ function StudioApplication() {
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
         ojsAssignment={ojsAssignment}
+        ompAuthorContext={
+          ompAuthorAssignment?.manuscriptId === activeManuscriptId
+            ? ompAuthorAssignment.context
+            : null
+        }
       />
     </AppLayout>
   );
