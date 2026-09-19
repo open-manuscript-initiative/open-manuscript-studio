@@ -1,4 +1,4 @@
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
@@ -16,6 +16,11 @@ import {
   normalizeBibliographicRecord,
   setBibliographicIdentifier,
 } from '../model/citations';
+import {
+  fetchPersonalReferenceManagerRecord,
+  getReferenceManagerSource,
+  mergeReferenceManagerRecord,
+} from '../services/referenceManagerApi';
 import type {
   OmiBibliographicContributor,
   OmiBibliographicRecord,
@@ -30,7 +35,8 @@ export function BibliographicRecordEditor({
   recordId,
   onDone,
 }: BibliographicRecordEditorProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const managerCopy = referenceManagerRefreshCopy(locale);
   const records = useStudioStore(
     (state) => state.manuscript.bibliographicRecords ?? [],
   );
@@ -46,6 +52,13 @@ export function BibliographicRecordEditor({
   );
   const [draft, setDraft] = useState<OmiBibliographicRecord>(initial);
   const [duplicateTitle, setDuplicateTitle] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState('');
+  const [refreshError, setRefreshError] = useState('');
+  const managerSource = useMemo(
+    () => existing ? getReferenceManagerSource(existing) : null,
+    [existing],
+  );
   const doi = getBibliographicIdentifier(draft, 'doi') ?? '';
 
   function update(patch: Partial<OmiBibliographicRecord>): void {
@@ -64,6 +77,28 @@ export function BibliographicRecordEditor({
           : contributor,
       ),
     });
+  }
+
+  async function refreshFromReferenceManager(): Promise<void> {
+    if (!existing || !managerSource) return;
+    setRefreshing(true);
+    setRefreshNotice('');
+    setRefreshError('');
+    try {
+      const source = await fetchPersonalReferenceManagerRecord(
+        managerSource.provider,
+        managerSource.externalId,
+      );
+      setDraft(mergeReferenceManagerRecord(existing, source));
+      setDuplicateTitle(null);
+      setRefreshNotice(managerCopy.loaded);
+    } catch (reason) {
+      setRefreshError(
+        reason instanceof Error ? reason.message : managerCopy.failed,
+      );
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   function save(): void {
@@ -103,7 +138,34 @@ export function BibliographicRecordEditor({
           </h4>
           <p>{t('citations.referenceEditorDescription')}</p>
         </div>
+        {managerSource ? (
+          <button
+            type="button"
+            className="studio-menu-secondary-action"
+            disabled={refreshing}
+            onClick={() => void refreshFromReferenceManager()}
+          >
+            <RefreshCw
+              size={15}
+              aria-hidden="true"
+              className={refreshing ? 'is-loading' : undefined}
+            />
+            {refreshing
+              ? managerCopy.refreshing
+              : managerCopy.refreshFrom(managerSource.provider)}
+          </button>
+        ) : null}
       </header>
+
+      {managerSource ? (
+        <p className="omi-integration-secret-note">
+          {managerCopy.linkedTo(managerSource.provider)}
+        </p>
+      ) : null}
+      {refreshNotice ? <p role="status">{refreshNotice}</p> : null}
+      {refreshError ? (
+        <p className="omi-integration-error" role="alert">{refreshError}</p>
+      ) : null}
 
       <div className="omi-reference-form-grid">
         <label>
@@ -327,6 +389,43 @@ export function BibliographicRecordEditor({
       </footer>
     </section>
   );
+}
+
+function referenceManagerRefreshCopy(locale: string) {
+  const providerName = (provider: 'zotero' | 'mendeley') =>
+    provider === 'zotero' ? 'Zotero' : 'Mendeley';
+
+  if (locale === 'hu') {
+    return {
+      refreshFrom: (provider: 'zotero' | 'mendeley') =>
+        `Frissítés innen: ${providerName(provider)}`,
+      refreshing: 'Frissítés…',
+      linkedTo: (provider: 'zotero' | 'mendeley') =>
+        `Ez a rekord egy ${providerName(provider)}-rekordhoz kapcsolódik. A frissítés betölti a külső metaadatokat a szerkesztőbe; a módosítás csak a Mentés gombbal kerül a kéziratba.`,
+      loaded: 'A külső rekord friss adatai betöltve. Ellenőrizd, majd mentsd a módosítást.',
+      failed: 'A külső bibliográfiai rekord frissítése sikertelen.',
+    };
+  }
+  if (locale === 'de') {
+    return {
+      refreshFrom: (provider: 'zotero' | 'mendeley') =>
+        `Aus ${providerName(provider)} aktualisieren`,
+      refreshing: 'Aktualisierung…',
+      linkedTo: (provider: 'zotero' | 'mendeley') =>
+        `Dieser Datensatz ist mit einem ${providerName(provider)}-Datensatz verknüpft. Die Aktualisierung lädt externe Metadaten in den Editor; erst Speichern übernimmt die Änderung ins Manuskript.`,
+      loaded: 'Die aktuellen externen Daten wurden geladen. Prüfen und speichern Sie die Änderung.',
+      failed: 'Der externe bibliografische Datensatz konnte nicht aktualisiert werden.',
+    };
+  }
+  return {
+    refreshFrom: (provider: 'zotero' | 'mendeley') =>
+      `Refresh from ${providerName(provider)}`,
+    refreshing: 'Refreshing…',
+    linkedTo: (provider: 'zotero' | 'mendeley') =>
+      `This record is linked to a ${providerName(provider)} record. Refresh loads external metadata into the editor; the manuscript changes only after Save.`,
+    loaded: 'Fresh external metadata loaded. Review it, then save the change.',
+    failed: 'The external bibliographic record could not be refreshed.',
+  };
 }
 
 function cloneRecord(record: OmiBibliographicRecord): OmiBibliographicRecord {
