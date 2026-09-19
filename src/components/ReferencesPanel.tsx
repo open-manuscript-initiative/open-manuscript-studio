@@ -1,5 +1,5 @@
 import { Edit3, ExternalLink, Plus, Search, Settings2, Trash2, Upload } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 
 import {
   stageAddBibliographicRecords,
@@ -157,7 +157,7 @@ export function ReferencesPanel() {
   const activeDescriptor = getCitationStyleDescriptor(String(citationStyle));
 
   async function importReferenceLibrary(
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: ChangeEvent<HTMLInputElement>,
   ): Promise<void> {
     const file = event.target.files?.[0];
     event.target.value = '';
