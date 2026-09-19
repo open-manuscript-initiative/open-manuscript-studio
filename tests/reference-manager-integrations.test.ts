@@ -180,3 +180,24 @@ test('reference-manager integrations are read-only at the declared permission bo
   assert.match(relevant, /references\.read/);
   assert.doesNotMatch(relevant, /references\.write/);
 });
+
+test('pins Mendeley OAuth callback redirects to explicit native allowlist targets', () => {
+  const routes = readFileSync(
+    'server/src/routes/referenceManagerRoutes.ts',
+    'utf8',
+  );
+
+  assert.match(
+    routes,
+    /state\.returnOrigin === 'https:\/\/app\.openmanuscript\.org\/auth\/orcid'/,
+  );
+  assert.match(
+    routes,
+    /state\.returnOrigin === 'openmanuscript:\/\/auth'/,
+  );
+  assert.match(
+    routes,
+    /OAuth state contains an unsupported return origin\./,
+  );
+  assert.doesNotMatch(routes, /\$\{state\.returnOrigin\}\/#/);
+});
