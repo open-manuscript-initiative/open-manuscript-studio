@@ -1,6 +1,9 @@
 import type { OmiManuscript } from '../types/omi';
 import { getPublicationSignatures } from './authorSignatureApi';
-import { toPortableOmiManuscript } from './omiPortableFormat';
+import {
+  assertPortableOmiManuscript,
+  toPortableOmiManuscript,
+} from './omiPortableFormat';
 
 export function serializeOmiJson(
   manuscript: OmiManuscript,
@@ -10,6 +13,7 @@ export function serializeOmiJson(
     publicationSignatures: getPublicationSignatures(manuscript.id),
   };
 
+  assertPortableOmiManuscript(portableManuscript);
   return JSON.stringify(portableManuscript, null, 2);
 }
 
