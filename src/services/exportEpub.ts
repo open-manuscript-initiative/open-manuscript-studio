@@ -1,3 +1,4 @@
+import { contributorNameParts } from '../model/contributorName';
 import { buildPublicationRenderingContext } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type { OmiBlock, OmiManuscript } from '../types/omi';
@@ -19,7 +20,7 @@ export function buildEpubExport(manuscript: OmiManuscript): EpubExportResult {
   const body = context.sections.map(renderSection).join('\n');
   const xhtml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="${escapeXml(language)}" lang="${escapeXml(language)}"><head><meta charset="utf-8"/><title>${escapeXml(context.title)}</title><link rel="stylesheet" type="text/css" href="styles.css"/></head><body><article><header><h1>${escapeXml(context.title)}</h1>${context.subtitle ? `<p class="subtitle">${escapeXml(context.subtitle)}</p>` : ''}${context.contributors.length ? `<p class="authors">${context.contributors.map((item) => escapeXml(item.displayName)).join(', ')}</p>` : ''}${context.abstract ? `<section class="abstract"><h2>${label(language, 'abstract')}</h2><p>${escapeXml(context.abstract)}</p></section>` : ''}${context.keywords.length ? `<p class="keywords"><strong>${label(language, 'keywords')}:</strong> ${context.keywords.map(escapeXml).join('; ')}</p>` : ''}</header>${body}</article></body></html>`;
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="${escapeXml(language)}" lang="${escapeXml(language)}"><head><meta charset="utf-8"/><title>${escapeXml(context.title)}</title><link rel="stylesheet" type="text/css" href="styles.css"/></head><body><article><header><h1>${escapeXml(context.title)}</h1>${context.subtitle ? `<p class="subtitle">${escapeXml(context.subtitle)}</p>` : ''}${context.contributors.length ? `<p class="authors">${context.contributors.map((item) => contributorNameParts(item).map((part) => `<span class="author-${part.kind}-name">${escapeXml(part.text)}</span>`).join(' ')).join(', ')}</p>` : ''}${context.abstract ? `<section class="abstract"><h2>${label(language, 'abstract')}</h2><p>${escapeXml(context.abstract)}</p></section>` : ''}${context.keywords.length ? `<p class="keywords"><strong>${label(language, 'keywords')}:</strong> ${context.keywords.map(escapeXml).join('; ')}</p>` : ''}</header>${body}</article></body></html>`;
 
   const nav = `<?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${escapeXml(language)}"><head><title>Contents</title></head><body><nav epub:type="toc"><h1>Contents</h1><ol>${context.sections.map((section) => `<li><a href="article.xhtml#sec-${escapeXml(section.id)}">${escapeXml(section.title)}</a></li>`).join('')}</ol></nav></body></html>`;
@@ -29,7 +30,7 @@ export function buildEpubExport(manuscript: OmiManuscript): EpubExportResult {
 
   const container = `<?xml version="1.0" encoding="UTF-8"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="EPUB/package.opf" media-type="application/oebps-package+xml"/></rootfiles></container>`;
-  const css = `body{font-family:serif;line-height:1.5;max-width:42em;margin:0 auto;padding:1.5em}h1,h2,h3,h4,h5,h6{line-height:1.2}.subtitle{font-size:1.15em}.authors{font-style:italic}.abstract{margin:1.5em 0}.keywords{margin-bottom:2em}section{margin-top:1.75em}`;
+  const css = `body{font-family:serif;line-height:1.5;max-width:42em;margin:0 auto;padding:1.5em}h1,h2,h3,h4,h5,h6{line-height:1.2}.subtitle{font-size:1.15em}.authors{font-style:italic}.author-given-name,.author-family-name,.author-literal-name{font:inherit}.abstract{margin:1.5em 0}.keywords{margin-bottom:2em}section{margin-top:1.75em}`;
 
   const entries = [
     textZipEntry('mimetype', 'application/epub+zip'),

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { contributorNameParts } from '../src/model/contributorName.ts';
 import {
   buildPublicationRenderingContext,
   collectPublicationContributors,
@@ -60,6 +61,28 @@ test('turns flat preorder section storage into a hierarchical publication tree',
   assert.equal(context.sections[0]?.children[0]?.children[0]?.title, 'Grandchild');
   assert.equal(context.sections[0]?.children[0]?.number, '1.1.');
   assert.equal(context.sections[0]?.children[0]?.children[0]?.number, '1.1.1.');
+});
+
+test('publication contributor name parts preserve order and custom attribution forms', () => {
+  const manuscript = createTestManuscript();
+  const [contributor] = collectPublicationContributors(manuscript);
+  assert.ok(contributor);
+
+  assert.deepEqual(contributorNameParts(contributor), [
+    { kind: 'given', text: 'Ada' },
+    { kind: 'family', text: 'Scholar' },
+  ]);
+
+  contributor.displayName = 'Scholar Ada';
+  assert.deepEqual(contributorNameParts(contributor), [
+    { kind: 'family', text: 'Scholar' },
+    { kind: 'given', text: 'Ada' },
+  ]);
+
+  contributor.displayName = 'A. Scholar';
+  assert.deepEqual(contributorNameParts(contributor), [
+    { kind: 'literal', text: 'A. Scholar' },
+  ]);
 });
 
 test('publication contributors respect public contribution visibility', () => {

@@ -36,11 +36,21 @@ test('builds an IDML package with paragraph and character styles', () => {
   assert.match(story, /AppliedParagraphStyle="ParagraphStyle\/OMI Heading 1"/);
   assert.match(story, /AppliedCharacterStyle="CharacterStyle\/OMI Emphasis"/);
   assert.match(story, /AppliedCharacterStyle="CharacterStyle\/OMI Strong Emphasis"/);
+  assert.match(
+    story,
+    /AppliedCharacterStyle="CharacterStyle\/OMI Author Given Name"><Content>Ada<\/Content>/,
+  );
+  assert.match(
+    story,
+    /AppliedCharacterStyle="CharacterStyle\/OMI Author Family Name"><Content>Scholar<\/Content>/,
+  );
 
   const styles = new TextDecoder().decode(entries.get('Resources/Styles.xml'));
   assert.match(styles, /Name="OMI Emphasis"/);
   assert.match(styles, /Name="OMI Strong"/);
   assert.match(styles, /Name="OMI Small Caps"/);
+  assert.match(styles, /Name="OMI Author Given Name"/);
+  assert.match(styles, /Name="OMI Author Family Name"/);
 
   const spread = new TextDecoder().decode(entries.get('Spreads/Spread_u2.xml'));
   assert.match(spread, /ParentStory="u3"/);
