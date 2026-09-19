@@ -511,7 +511,7 @@ function stripPortableTombstoneIds<T extends Record<string, unknown>>(
       const { id: _wireId, ...internalTombstone } = tombstone;
       return internalTombstone;
     }),
-  };
+  } as T;
 }
 
 function tombstoneId(tombstone: OmiManuscriptState['tombstones'][number]): string {
