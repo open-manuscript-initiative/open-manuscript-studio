@@ -42,6 +42,10 @@ const footer = readFileSync(
   new URL('../src/components/Footer.tsx', import.meta.url),
   'utf8',
 );
+const header = readFileSync(
+  new URL('../src/components/Header.tsx', import.meta.url),
+  'utf8',
+);
 
 test('Studio menu views never embed the application footer', () => {
   assert.doesNotMatch(menu, /from ['"]\.\/Footer['"]/);
@@ -105,7 +109,7 @@ test('search opens and closes through the same persistent trigger', () => {
   assert.doesNotMatch(searchOverlay, /aria-label=\{copy\.close\}/);
   assert.match(
     academicShell,
-    /@media \(max-width: 760px\)[\s\S]*?grid-template-areas:\s*\n\s*"identity context actions"\s*\n\s*"primary primary primary";/,
+    /@media \(max-width: 760px\)[\s\S]*?grid-template-areas:\s*\n\s*"identity \. actions"\s*\n\s*"primary primary primary";/,
   );
   assert.match(
     academicShell,
@@ -116,4 +120,12 @@ test('search opens and closes through the same persistent trigger', () => {
 test('manuscript data renders extended scholarly metadata exactly once', () => {
   assert.equal(menu.match(/<ScholarlyMetadataPanel \/>/g)?.length, 1);
   assert.doesNotMatch(keywordEditor, /ScholarlyMetadataPanel/);
+});
+
+test('the application header leaves document titles to the document tabs', () => {
+  assert.doesNotMatch(header, /focus-header-context/);
+  assert.doesNotMatch(header, /focus-header-manuscript-title/);
+  assert.doesNotMatch(header, /\{manuscript\.title\}/);
+  assert.doesNotMatch(academicShell, /\.focus-header-context/);
+  assert.doesNotMatch(academicShell, /\.focus-header-manuscript-title/);
 });

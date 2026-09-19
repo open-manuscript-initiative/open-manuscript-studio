@@ -48,7 +48,7 @@ body {
   top: 0;
   z-index: 60;
   display: grid;
-  grid-template-columns: auto minmax(10rem, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: .9rem 1.25rem;
   min-height: 4.65rem;
@@ -169,51 +169,6 @@ body {
   font-size: 0.57rem;
   font-weight: 800;
   line-height: 1;
-}
-
-.focus-header-context {
-  display: flex;
-  align-items: baseline;
-  gap: .5rem;
-  min-width: 0;
-  padding-left: 1.1rem;
-  border-left: 1px solid var(--omi-academic-line);
-}
-
-.focus-header-context-label {
-  flex: 0 0 auto;
-  color: var(--omi-academic-burgundy);
-  font-size: .61rem;
-  font-weight: 750;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.focus-header-manuscript-title {
-  min-width: 0;
-  max-width: 32rem;
-  overflow: hidden;
-  color: #30343a;
-  font-family: var(--omi-academic-serif);
-  font-size: .9rem;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.focus-header-context-divider {
-  flex: 0 0 auto;
-  color: #b6afa5;
-  font-family: var(--omi-academic-serif);
-}
-
-.focus-header-section {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--omi-academic-muted);
-  font-size: .76rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .focus-header-primary-action {
@@ -636,7 +591,7 @@ body {
 
 @media (max-width: 1020px) {
   .app-header.focus-header {
-    grid-template-columns: auto minmax(8rem, 1fr) auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     gap: .65rem .8rem;
   }
 
@@ -648,18 +603,6 @@ body {
     margin-top: 0;
   }
 
-  .focus-header-context-label {
-    display: none;
-  }
-
-  .focus-header-context {
-    padding-left: .8rem;
-  }
-
-  .focus-header-section,
-  .focus-header-context-divider {
-    display: none;
-  }
 }
 
 @media (max-width: 760px) {
@@ -667,7 +610,7 @@ body {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas:
-      "identity context actions"
+      "identity . actions"
       "primary primary primary";
     align-items: start;
     min-height: 4.15rem;
@@ -686,20 +629,6 @@ body {
 
   .focus-brand-lockup {
     display: none;
-  }
-
-  .focus-header-context {
-    grid-area: context;
-    display: block;
-    min-width: 0;
-    padding-left: .5rem;
-    border-left: 0;
-  }
-
-  .focus-header-manuscript-title {
-    display: block;
-    max-width: none;
-    font-size: .79rem;
   }
 
   .focus-header-primary-action {
