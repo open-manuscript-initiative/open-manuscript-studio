@@ -60,7 +60,6 @@ export function Header({ onOpenMenu }: HeaderProps) {
   const closeProofingPanel = useStudioStore((state) => state.closeProofingPanel);
   const logout = useAuthStore((state) => state.logout);
   const loading = useAuthStore((state) => state.isLoading);
-  const section = manuscript.sections.find((candidate) => candidate.id === selectedId);
   const outlineLabel = outlineOpen ? headerCopy.hideOutline : headerCopy.showOutline;
   const currentStudy = resolveCurrentStudy(manuscript, selectedId);
   const currentStudyNoteCount = currentStudy
@@ -191,17 +190,6 @@ export function Header({ onOpenMenu }: HeaderProps) {
               <strong>Studio</strong>
             </span>
           </div>
-        </div>
-
-        <div className="focus-header-context" title={section?.title ?? manuscript.title}>
-          <span className="focus-header-context-label">{headerCopy.manuscript}</span>
-          <span className="focus-header-manuscript-title">{manuscript.title}</span>
-          {section?.title && section.title !== manuscript.title ? (
-            <>
-              <span className="focus-header-context-divider">/</span>
-              <span className="focus-header-section">{section.title}</span>
-            </>
-          ) : null}
         </div>
 
         <div className="focus-header-primary-action">
