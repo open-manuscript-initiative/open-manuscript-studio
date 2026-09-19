@@ -138,8 +138,12 @@ test('editor and author launches enforce their signed role boundaries', async ({
     'metadata.read',
     'contributors.read',
     'files.read',
-    'manuscript.read',
   ]));
+  // OMP imports manuscript content through its scoped file API. The
+  // manuscript.read capability is part of the OJS integration contract.
+  if (platform === 'ojs') {
+    expect(author.claims.scope).toContain('manuscript.read');
+  }
   for (const forbiddenScope of [
     'metadata.write',
     'contributors.write',
