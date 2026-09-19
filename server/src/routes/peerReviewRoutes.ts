@@ -8,6 +8,10 @@ import {
 } from '../integrations/ojs/reviewForm.js';
 import { writeBackSubmittedOjsReview } from '../integrations/ojs/reviewWriteback.js';
 import {
+  uploadOmpReviewerRevision,
+  writeBackSubmittedOmpReview,
+} from '../integrations/omp/nativeWriteback.js';
+import {
   requireSession,
   type AuthenticatedRequest,
 } from '../middleware/requireSession.js';
@@ -255,8 +259,26 @@ peerReviewRouter.post(
         parsed.recommendation,
         parsed.recommendationExternalId,
       );
-      const ojsWriteback = await writeBackSubmittedOjsReview(assignmentId, reviewerUserId);
-      response.status(200).json({ review, ojsWriteback });
+      const ompReviewerAttachment = await uploadOmpReviewerRevision(
+        assignmentId,
+        reviewerUserId,
+      );
+      const ompWriteback = await writeBackSubmittedOmpReview(
+        assignmentId,
+        reviewerUserId,
+      );
+      const externalWriteback = ompWriteback.status === 'not_applicable'
+        ? await writeBackSubmittedOjsReview(assignmentId, reviewerUserId)
+        : ompWriteback;
+      response.status(200).json({
+        review,
+        externalWriteback,
+        // Compatibility alias for existing clients and integration tests.
+        ojsWriteback: externalWriteback,
+        ...(ompReviewerAttachment.status !== 'not_applicable'
+          ? { ompReviewerAttachment }
+          : {}),
+      });
     } catch (error) {
       sendError(response, error, 'REVIEW_SUBMIT_FAILED');
     }

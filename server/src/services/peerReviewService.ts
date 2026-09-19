@@ -268,33 +268,39 @@ export async function submitReview(
 
   const policy = assignmentPolicies[assignment.assignmentType];
   const externalStorage = normalizeRecommendationStorage(assignment.externalRecommendationStorage);
-  const hasExternalRecommendations = externalStorage !== null;
+  const hasExternalRecommendations = externalStorage === 'native' || externalStorage === 'legacy';
+  const externalRecommendationsUnavailable = externalStorage === 'unavailable';
   let externalRecommendationValue: string | null = null;
 
   if (hasExternalRecommendations) {
     if (!recommendationExternalId?.trim()) {
-      throw new Error('Select an OJS reviewer recommendation before submitting.');
+      throw new Error('Select an external reviewer recommendation before submitting.');
     }
     const externalRecommendation = getExternalRecommendationOptions(assignment)
       .find((option) => option.externalId === recommendationExternalId.trim());
     if (!externalRecommendation) {
-      throw new Error('The selected OJS reviewer recommendation is not offered for this assignment.');
+      throw new Error('The selected external reviewer recommendation is not offered for this assignment.');
     }
     externalRecommendationValue = externalRecommendation.externalId;
+  } else if (externalRecommendationsUnavailable) {
+    if (recommendationExternalId !== undefined || recommendation !== undefined) {
+      throw new Error('This external review host does not support reviewer recommendation values.');
+    }
   } else {
     if (recommendationExternalId !== undefined) {
-      throw new Error('An external reviewer recommendation is only valid for an OJS assignment.');
+      throw new Error('An external reviewer recommendation is only valid for an external review assignment.');
     }
     if (policy.requiresRecommendation && !recommendation) {
       throw new Error('A scientific review requires an editorial recommendation.');
     }
   }
 
-  const recommendationValue: ReviewRecommendation | null = hasExternalRecommendations
-    ? null
-    : policy.requiresRecommendation
-      ? recommendation ?? null
-      : null;
+  const recommendationValue: ReviewRecommendation | null =
+    hasExternalRecommendations || externalRecommendationsUnavailable
+      ? null
+      : policy.requiresRecommendation
+        ? recommendation ?? null
+        : null;
 
   const updated = await prisma.peerReviewAssignment.update({
     where: { id: assignmentId },
@@ -389,7 +395,10 @@ function commonReview(assignment: ReviewRecord) {
     reviewRound: assignment.reviewRound,
     anonymityMode: assignment.anonymityMode.toLowerCase(),
     status: assignment.status.toLowerCase(),
-    requiresRecommendation: assignmentPolicies[assignment.assignmentType].requiresRecommendation,
+    requiresRecommendation:
+      normalizeRecommendationStorage(assignment.externalRecommendationStorage) === 'unavailable'
+        ? false
+        : assignmentPolicies[assignment.assignmentType].requiresRecommendation,
     ...(assignment.recommendation
       ? { recommendation: assignment.recommendation.toLowerCase() }
       : {}),

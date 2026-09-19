@@ -5,6 +5,10 @@ import {
   type CreditRole,
 } from '../../model/identity';
 import type { OmiManuscript } from '../../types/omi';
+import {
+  buildSourceContent,
+  type OjsSourceDocument,
+} from '../ojs/importOjsLaunch';
 
 interface LocalizedValue {
   [locale: string]: unknown;
@@ -37,9 +41,20 @@ interface OmpFile {
   fileId?: string;
   name?: string | LocalizedValue;
   mediaType?: string;
-  fileStage?: number;
-  genreId?: number;
+  stage?: number;
+  genreExternalId?: string | null;
+  componentExternalId?: string | null;
   updatedAt?: string | null;
+}
+
+export interface OmpNativeAuthorContext {
+  id: string;
+  actorMode: 'author';
+  writable: boolean;
+  reason?: string | null;
+  reviewRoundExternalId?: string | null;
+  reviewRound?: number | null;
+  stageId?: number | null;
 }
 
 export interface OmpLaunchPayload {
@@ -77,11 +92,11 @@ export interface OmpLaunchPayload {
   } | null;
   contributors?: OmpContributor[];
   files?: OmpFile[];
+  sourceDocument?: OjsSourceDocument;
+  nativeContext?: OmpNativeAuthorContext | null;
   actor?: { externalId?: string } | null;
   actorMode?: 'editor' | 'author' | 'review' | null;
   scope?: string[];
-  externalBaseUrl?: string | null;
-  apiBaseUrl?: string | null;
   expiresAt?: string;
 }
 
@@ -261,7 +276,14 @@ export function createManuscriptFromOmpLaunch(
   });
 
   const files = launch.files ?? [];
-  const sections = files.length
+  const imported = buildSourceContent(
+    launch.sourceDocument,
+    locale,
+    title,
+    subtitle,
+    now,
+  );
+  const fallbackSections = files.length
     ? [{
         id: crypto.randomUUID(),
         title: locale.toLowerCase().startsWith('hu')
@@ -286,7 +308,8 @@ export function createManuscriptFromOmpLaunch(
     keywords,
     agents,
     contributions,
-    sections,
+    sections: imported.sections.length ? imported.sections : fallbackSections,
+    annotations: imported.annotations,
     createdAt: now,
     updatedAt: launch.submission?.updatedAt || now,
   };

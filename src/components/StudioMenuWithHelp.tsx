@@ -1,4 +1,4 @@
-import { Bot, CircleHelp, CircleX, FolderOpen, ListTree, Plug } from 'lucide-react';
+import { Bot, CircleHelp, CircleX, FolderOpen, ListTree, Plug, UploadCloud } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -13,6 +13,8 @@ import { getLocalFileLabels } from '../i18n/nativeStorageTranslations';
 import { getStudioPlatform } from '../mobile/platform/platform';
 import { isNativeStudio } from '../services/nativeManuscriptFile';
 import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
+import type { OmpNativeAuthorContext } from '../integrations/omp/importOmpLaunch';
+import { sendAuthorRevisionToOmp } from '../services/ompNativeApi';
 import type { OmiManuscript } from '../types/omi';
 import { HelpPanel } from './HelpPanel';
 import { IntegrationExecutionWorkspace } from './IntegrationExecutionWorkspace';
@@ -26,9 +28,15 @@ interface StudioMenuWithHelpProps {
   open: boolean;
   onClose: () => void;
   ojsAssignment?: { actorMode: 'editor' | 'author'; context: OjsAssignmentLaunchContext } | null;
+  ompAuthorContext?: OmpNativeAuthorContext | null;
 }
 
-export function StudioMenuWithHelp({ open, onClose, ojsAssignment = null }: StudioMenuWithHelpProps) {
+export function StudioMenuWithHelp({
+  open,
+  onClose,
+  ojsAssignment = null,
+  ompAuthorContext = null,
+}: StudioMenuWithHelpProps) {
   const { locale } = useTranslation();
   const copy = getLocalizedHelpCopy(locale);
   const integrationsLabel = getIntegrationsLabel(locale);
@@ -44,6 +52,8 @@ export function StudioMenuWithHelp({ open, onClose, ojsAssignment = null }: Stud
   const browserFileInputRef = useRef<HTMLInputElement>(null);
   const [documentAlreadyClosed, setDocumentAlreadyClosed] = useState(() => !useStudioStore.getState().hasOpenDocument);
   const [browserOpenMessage, setBrowserOpenMessage] = useState('');
+  const [ompRevisionBusy, setOmpRevisionBusy] = useState(false);
+  const [ompRevisionMessage, setOmpRevisionMessage] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
   const [integrationsOpen, setIntegrationsOpen] = useState(false);
   const [agentsOpen, setAgentsOpen] = useState(false);
@@ -105,6 +115,29 @@ export function StudioMenuWithHelp({ open, onClose, ojsAssignment = null }: Stud
   const closeExternalViews = () => { setHelpOpen(false); setIntegrationsOpen(false); setAgentsOpen(false); setListsOpen(false); };
   const requestDocumentClose = () => { if (window.confirm(closeDocumentCopy.confirm)) void closeCurrentDocument(); };
 
+  async function sendOmpRevision(): Promise<void> {
+    if (!ompAuthorContext?.writable || ompRevisionBusy) return;
+    setOmpRevisionBusy(true);
+    setOmpRevisionMessage('');
+    try {
+      const result = await sendAuthorRevisionToOmp(
+        ompAuthorContext.id,
+        useStudioStore.getState().manuscript,
+      );
+      setOmpRevisionMessage(
+        result.written
+          ? getOmpRevisionCopy(locale).sent
+          : getOmpRevisionCopy(locale).failed,
+      );
+    } catch (error) {
+      setOmpRevisionMessage(
+        error instanceof Error ? error.message : getOmpRevisionCopy(locale).failed,
+      );
+    } finally {
+      setOmpRevisionBusy(false);
+    }
+  }
+
   async function openBrowserDocument(file: File | undefined): Promise<void> {
     if (!file) return;
     setBrowserOpenMessage('');
@@ -155,6 +188,21 @@ export function StudioMenuWithHelp({ open, onClose, ojsAssignment = null }: Stud
           {browserOpenMessage ? <span role="status" aria-live="polite">{browserOpenMessage}</span> : null}
         </>
       ) : null}
+      {ompAuthorContext ? (
+        <>
+          <button
+            type="button"
+            className="studio-menu-primary-action"
+            disabled={!ompAuthorContext.writable || ompRevisionBusy}
+            onClick={() => void sendOmpRevision()}
+            title={!ompAuthorContext.writable ? getOmpRevisionCopy(locale).notWritable : undefined}
+          >
+            <UploadCloud size={16} aria-hidden="true" />
+            <span>{ompRevisionBusy ? getOmpRevisionCopy(locale).sending : getOmpRevisionCopy(locale).label}</span>
+          </button>
+          {ompRevisionMessage ? <span role="status" aria-live="polite">{ompRevisionMessage}</span> : null}
+        </>
+      ) : null}
       {!documentAlreadyClosed ? (
         <button type="button" data-document-close="true" className="studio-menu-secondary-action studio-menu-danger-action" onClick={requestDocumentClose}><CircleX size={16} aria-hidden="true" /><span>{closeDocumentCopy.label}</span></button>
       ) : null}
@@ -184,6 +232,34 @@ function isOmiManuscript(value: unknown): value is OmiManuscript {
   return typeof candidate.id === 'string'
     && typeof candidate.title === 'string'
     && Array.isArray(candidate.sections);
+}
+
+function getOmpRevisionCopy(locale: string) {
+  if (locale === 'hu') {
+    return {
+      label: 'Javított kézirat küldése az OMP-be',
+      sending: 'Küldés az OMP-be…',
+      sent: 'A javított kézirat bekerült az aktuális OMP lektorálási fordulóba.',
+      failed: 'A javított kéziratot nem sikerült elküldeni az OMP-be.',
+      notWritable: 'Az OMP jelenlegi munkafolyamata nem enged szerzői javításfeltöltést.',
+    };
+  }
+  if (locale === 'de') {
+    return {
+      label: 'Überarbeitete Fassung an OMP senden',
+      sending: 'Wird an OMP gesendet…',
+      sent: 'Die überarbeitete Fassung wurde in die aktuelle OMP-Begutachtungsrunde übertragen.',
+      failed: 'Die überarbeitete Fassung konnte nicht an OMP gesendet werden.',
+      notWritable: 'Der aktuelle OMP-Workflow erlaubt keine Autorenüberarbeitung.',
+    };
+  }
+  return {
+    label: 'Send revised manuscript to OMP',
+    sending: 'Sending to OMP…',
+    sent: 'The revised manuscript was added to the current OMP review round.',
+    failed: 'The revised manuscript could not be sent to OMP.',
+    notWritable: 'The current OMP workflow does not allow an author revision upload.',
+  };
 }
 
 function getInvalidDocumentMessage(locale: string): string {

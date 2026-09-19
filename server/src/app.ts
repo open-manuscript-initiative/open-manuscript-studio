@@ -27,6 +27,7 @@ import { linkedIdentityRouter } from './routes/linkedIdentityRoutes.js';
 import { ojsAssignmentRouter } from './routes/ojsAssignmentRoutes.js';
 import { ojsReviewRouter } from './routes/ojsReviewRoutes.js';
 import { ompReviewRouter } from './routes/ompReviewRoutes.js';
+import { ompNativeRouter } from './routes/ompNativeRoutes.js';
 import { oidcProviderRouter } from './routes/oidcProviderRoutes.js';
 import { orcidLinkStartRouter } from './routes/orcidLinkStartRoutes.js';
 import { orcidOidcRouter } from './routes/orcidOidcRoutes.js';
@@ -70,6 +71,7 @@ app.use(
 
 app.use('/api/integrations/connections/:connectionId/direct-submission', express.json({ limit: '25mb' }));
 app.use('/api/integrations/connections/:connectionId/publication-artifact', express.json({ limit: '48mb' }));
+app.use('/integrations/omp/native/author/:contextId/revision', express.json({ limit: '36mb' }));
 app.use('/api/publication/render/pdf', express.json({ limit: '64mb' }));
 app.use('/api/publication/validate/jats', express.json({ limit: '7mb' }));
 app.use(express.json({ limit: '1mb' }));
@@ -117,6 +119,7 @@ app.use('/api/reviews', editorReviewOverviewRouter);
 app.use('/api/reviews', ojsAssignmentRouter);
 app.use('/integrations/ojs/review', ojsReviewRouter);
 app.use('/integrations/omp/review', ompReviewRouter);
+app.use('/integrations/omp/native', ompNativeRouter);
 app.use('/integrations', integrationRouter);
 
 app.use((_request, response) => {

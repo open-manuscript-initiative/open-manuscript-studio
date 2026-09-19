@@ -399,22 +399,27 @@ test('reviewer receives one anonymous article and can return corrections', async
     await expectApiStatus(response, 201);
   }
 
+  const usesExternalRecommendation =
+    assignment.review.recommendationStorage === 'native' ||
+    assignment.review.recommendationStorage === 'legacy';
   const reviewerRecommendation = directOjsRecommendation
-    ?? (assignment.review.recommendationStorage
+    ?? (usesExternalRecommendation
       ? assignment.review.recommendationOptions?.[0]
       : undefined);
-  if (assignment.review.recommendationStorage && !reviewerRecommendation) {
-    throw new Error('The OJS fixture did not return an assignment-scoped reviewer recommendation option.');
+  if (usesExternalRecommendation && !reviewerRecommendation) {
+    throw new Error('The external fixture did not return an assignment-scoped reviewer recommendation option.');
   }
 
   const submitted = await request.post(
     `${studioApiBaseUrl}/api/reviews/assigned/${assignmentId}/submit`,
     {
-      // OJS-backed reviews must submit an offered external recommendation ID.
-      // Non-OJS/local assignments retain the legacy Studio enum path.
+      // Native external recommendations use the identifier offered by PKP.
+      // OMP hosts without customizable recommendations submit no invented value.
       data: reviewerRecommendation
         ? { recommendationExternalId: reviewerRecommendation.externalId }
-        : { recommendation: 'MINOR_REVISION' },
+        : assignment.review.requiresRecommendation
+          ? { recommendation: 'MINOR_REVISION' }
+          : {},
     },
   );
   await expectApiStatus(submitted, 200);

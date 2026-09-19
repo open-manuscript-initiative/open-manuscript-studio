@@ -8,6 +8,7 @@
  */
 
 use APP\core\Application;
+use APP\decision\Decision;
 use APP\facades\Repo;
 use PKP\cliTool\CommandLineTool;
 use PKP\core\Core;
@@ -124,6 +125,14 @@ final class OmiIntegrationFixtureTool extends CommandLineTool
         );
         $reviewFilesDao = DAORegistry::getDAO('ReviewFilesDAO');
         $reviewFilesDao->grant((int)$reviewAssignment->getId(), $sourceFileId);
+
+        if ($this->platform === 'omp') {
+            $this->createPendingRevisionDecision(
+                $submissionId,
+                (int)$users['editor']->getId(),
+                $reviewAssignment
+            );
+        }
 
         $installationId = 'omi-e2e-' . $this->platform;
         $this->configurePlugin($contextId, $installationId);
@@ -430,6 +439,30 @@ final class OmiIntegrationFixtureTool extends CommandLineTool
             $this->fail('PKP failed to persist the review assignment.');
         }
         return $stored;
+    }
+
+    private function createPendingRevisionDecision(
+        int $submissionId,
+        int $editorId,
+        ReviewAssignment $assignment
+    ): void {
+        $decision = Repo::decision()->newDataObject([
+            'dateDecided' => Core::getCurrentDate(),
+            'decision' => Decision::PENDING_REVISIONS,
+            'editorId' => $editorId,
+            'reviewRoundId' => (int)$assignment->getReviewRoundId(),
+            'round' => (int)$assignment->getRound(),
+            'stageId' => WORKFLOW_STAGE_ID_EXTERNAL_REVIEW,
+            'submissionId' => $submissionId,
+        ]);
+
+        // This is synthetic E2E fixture state, not an editorial action. Insert
+        // it through the native Decision DAO so the repository collector sees
+        // the real PKP object without firing editor-decision notifications.
+        // Repo::decision()->add() triggers OMP notification delegates which
+        // require a fully interactive editorial request context and are not
+        // part of this isolated integration fixture.
+        Repo::decision()->dao->insert($decision);
     }
 
     private function configurePlugin(int $contextId, string $installationId): void

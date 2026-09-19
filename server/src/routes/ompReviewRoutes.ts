@@ -1,12 +1,18 @@
 import { Router } from 'express';
 
-import { loadOmpLaunchData } from '../integrations/omp/ompClient.js';
+import {
+  loadOmpLaunchData,
+  loadOmpPlatformCapabilities,
+  loadOmpReviewAttachments,
+  loadOmpReviewContext,
+} from '../integrations/omp/ompClient.js';
 import { verifyOmpLaunch } from '../integrations/omp/launchVerifier.js';
 import {
   loadOmpReviewForm,
   rememberOmpReviewForm,
 } from '../integrations/omp/reviewForm.js';
 import { createReviewSnapshotFromOjs } from '../integrations/ojs/reviewSnapshot.js';
+import { persistReviewerOmpNativeContext } from '../integrations/omp/nativeContext.js';
 import { rememberOjsReviewWritebackEndpoint } from '../integrations/ojs/reviewWriteback.js';
 import { prisma } from '../lib/prisma.js';
 import {
@@ -56,15 +62,63 @@ ompReviewRouter.post(
         throw new Error('The OMP review launch does not grant review.response.write.');
       }
 
-      const [ompData, reviewForm] = await Promise.all([
-        loadOmpLaunchData(verified.claims, payload, signature),
-        loadOmpReviewForm(
-          verified.claims,
-          payload,
-          signature,
-          verified.installation.baseUrl,
-        ),
-      ]);
+      const [ompData, reviewForm, platformCapabilities, reviewContext, attachments] =
+        await Promise.all([
+          loadOmpLaunchData(verified.claims, payload, signature),
+          loadOmpReviewForm(
+            verified.claims,
+            payload,
+            signature,
+            verified.installation.baseUrl,
+          ),
+          loadOmpPlatformCapabilities(verified.claims, payload, signature),
+          loadOmpReviewContext(verified.claims, payload, signature),
+          loadOmpReviewAttachments(verified.claims, payload, signature),
+        ]);
+
+      const nativeAssignment = reviewContext.reviewAssignment;
+      const nativeReviewRoundExternalId = nativeAssignment?.reviewRoundExternalId;
+      const nativeReviewRound = nativeAssignment?.round;
+      const nativeStageId = nativeAssignment?.stageId;
+      if (
+        reviewContext.submissionExternalId !== submissionId ||
+        nativeAssignment?.externalId !== externalAssignmentId ||
+        !nativeReviewRoundExternalId ||
+        typeof nativeReviewRound !== 'number' ||
+        !Number.isInteger(nativeReviewRound) ||
+        typeof nativeStageId !== 'number' ||
+        !Number.isInteger(nativeStageId) ||
+        nativeAssignment.cancelled ||
+        nativeAssignment.declined
+      ) {
+        throw new Error('OMP returned a review context that does not match the signed assignment.');
+      }
+      if (
+        attachments.submissionExternalId !== submissionId ||
+        attachments.reviewAssignmentExternalId !== externalAssignmentId
+      ) {
+        throw new Error('OMP reviewer attachments escaped the signed assignment boundary.');
+      }
+
+      const serviceWriteback = platformCapabilities.nativeApis?.serviceWriteback;
+      const nativeWritesAvailable = Boolean(
+        serviceWriteback?.supported &&
+        serviceWriteback.authentication === 'omi-hmac-sha256' &&
+        serviceWriteback.reviewAttachments === 'review-attachments' &&
+        serviceWriteback.reviewResult === 'review-result-v2',
+      );
+      const recommendationSupported = Boolean(
+        platformCapabilities.nativeApis?.reviewRecommendations?.supported &&
+        reviewContext.reviewRecommendations?.supported,
+      );
+      const recommendationOptions = recommendationSupported
+        ? normalizeRecommendationOptions(reviewContext.reviewRecommendations?.options)
+        : [];
+      const selectedRecommendation = recommendationOptions.some(
+        (option) => option.externalId === reviewContext.reviewRecommendations?.selectedExternalId,
+      )
+        ? reviewContext.reviewRecommendations?.selectedExternalId ?? null
+        : null;
 
       const assignment = await upsertOjsReviewAssignment({
         reviewerUserId: request.authUserId,
@@ -73,15 +127,52 @@ ompReviewRouter.post(
         externalAssignmentId,
         externalSubmissionId: submissionId,
         reviewDocumentId: componentId,
+        reviewRound: nativeReviewRound,
         platform: 'omp',
+        recommendationStorage: recommendationSupported ? 'native' : 'unavailable',
+        recommendationOptions,
+        ...(selectedRecommendation
+          ? { recommendationExternalId: selectedRecommendation }
+          : {}),
       });
 
+      const apiBaseUrl = verified.claims.apiBaseUrl?.trim();
+      const actorExternalId = verified.claims.actor?.externalId?.trim();
+      if (!apiBaseUrl || !actorExternalId) {
+        throw new Error('The OMP reviewer launch is missing its server-side workflow context.');
+      }
+      const sourceFileExternalId = ompData.sourceDocument?.fileExternalId;
+      const sourceFile = sourceFileExternalId
+        ? ompData.files.find((item) => item.externalId === sourceFileExternalId)
+        : undefined;
+
       await Promise.all([
-        rememberOjsReviewWritebackEndpoint(
-          assignment.id,
-          verified.claims.apiBaseUrl,
-          verified.installation.baseUrl,
-        ),
+        nativeWritesAvailable
+          ? persistReviewerOmpNativeContext({
+              assignmentId: assignment.id,
+              installationId: verified.installation.installationId,
+              apiBaseUrl,
+              externalSubmissionId: submissionId,
+              externalActorId: actorExternalId,
+              externalAssignmentId,
+              externalReviewRoundId: nativeReviewRoundExternalId,
+              reviewRound: nativeReviewRound,
+              stageId: nativeStageId,
+              componentExternalId: componentId,
+              ...(sourceFileExternalId
+                ? { sourceSubmissionFileExternalId: sourceFileExternalId }
+                : {}),
+              ...(sourceFile?.genreExternalId
+                ? { sourceGenreExternalId: sourceFile.genreExternalId }
+                : {}),
+              capabilities: platformCapabilities as unknown as Record<string, unknown>,
+              writable: !nativeAssignment.dateCompleted,
+            })
+          : rememberOjsReviewWritebackEndpoint(
+              assignment.id,
+              verified.claims.apiBaseUrl,
+              verified.installation.baseUrl,
+            ),
         rememberOmpReviewForm(assignment.id, reviewForm),
       ]);
 
@@ -119,6 +210,21 @@ ompReviewRouter.post(
     }
   },
 );
+
+function normalizeRecommendationOptions(
+  value: Array<{ externalId?: string; label?: string }> | undefined,
+): Array<{ externalId: string; label: string }> {
+  const result: Array<{ externalId: string; label: string }> = [];
+  const seen = new Set<string>();
+  for (const item of value ?? []) {
+    const externalId = item.externalId?.trim() ?? '';
+    const label = item.label?.trim() ?? '';
+    if (!externalId || !label || seen.has(externalId)) continue;
+    seen.add(externalId);
+    result.push({ externalId, label });
+  }
+  return result;
+}
 
 function getOmpSubmissionLocale(value: unknown): string | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
