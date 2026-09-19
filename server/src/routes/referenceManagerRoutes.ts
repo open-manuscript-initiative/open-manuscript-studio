@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { env } from '../config/env.js';
 import {
   exchangeMendeleyAuthorizationCode,
+  getReferenceManagerRecord,
   mendeleyRedirectUri,
   mendeleyServerConfigured,
   searchReferenceManager,
@@ -60,6 +61,48 @@ referenceManagerRouter.get(
             error instanceof Error
               ? error.message
               : 'Reference-manager search failed.',
+        },
+      });
+    }
+  },
+);
+
+referenceManagerRouter.get(
+  '/integrations/reference-managers/:provider/records/:externalId',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    const provider = providerSchema.safeParse(request.params.provider);
+    const externalId = z.string().trim().min(1).max(256).safeParse(
+      request.params.externalId,
+    );
+    if (!provider.success || !externalId.success) {
+      response.status(400).json({
+        error: {
+          code: 'INVALID_REFERENCE_MANAGER_RECORD',
+          message: 'A supported reference manager and record identifier are required.',
+        },
+      });
+      return;
+    }
+
+    try {
+      const record = await getReferenceManagerRecord(
+        request.authUserId!,
+        provider.data,
+        externalId.data,
+      );
+      response.status(200).json({
+        provider: provider.data,
+        record,
+      });
+    } catch (error) {
+      response.status(502).json({
+        error: {
+          code: 'REFERENCE_MANAGER_RECORD_FAILED',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Reference-manager record request failed.',
         },
       });
     }
