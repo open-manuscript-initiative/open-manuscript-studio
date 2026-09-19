@@ -71,7 +71,7 @@ export function LinkedIdentitiesSettings({
     if (providers.orcid.enabled && !linkedKeys.has('orcid')) {
       candidates.push({ key: 'orcid', label: providers.orcid.label, issuer: providers.orcid.issuer });
     }
-    for (const key of ['google', 'microsoft', 'oidc'] as const) {
+    for (const key of ['omi', 'google', 'microsoft', 'oidc'] as const) {
       const provider = providers[key];
       if (provider.enabled && !linkedKeys.has(key)) {
         candidates.push({ key, label: provider.label, issuer: provider.issuer });
@@ -170,7 +170,7 @@ export function LinkedIdentitiesSettings({
                 <span>{identity.displayName || identity.email || identity.subject}</span>
                 <small>{labels.connectedAt}: {formatDate(identity.connectedAt, locale)}</small>
                 {identity.lastUsedAt ? <small>{labels.lastUsed}: {formatDate(identity.lastUsedAt, locale)}</small> : null}
-                {identity.providerKey === 'oidc' || identity.providerKey === 'saml'
+                {identity.providerKey === 'omi' || identity.providerKey === 'oidc' || identity.providerKey === 'saml'
                   ? <small>{labels.issuer}: {identity.issuer}</small>
                   : null}
                 {!identity.canUnlink ? <small className="account-identity-warning">{labels.cannotDisconnect}</small> : null}

@@ -2,6 +2,7 @@ import { isTauri } from '@tauri-apps/api/core';
 
 export type LinkedIdentityProviderKey =
   | 'orcid'
+  | 'omi'
   | 'google'
   | 'microsoft'
   | 'oidc'

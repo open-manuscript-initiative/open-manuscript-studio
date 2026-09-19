@@ -27,7 +27,7 @@ export interface LoginRequest {
   password: string;
 }
 
-export type OidcProviderKey = 'google' | 'microsoft' | 'oidc';
+export type OidcProviderKey = 'omi' | 'google' | 'microsoft' | 'oidc';
 
 export interface ExternalAuthProvider {
   enabled: boolean;
@@ -52,6 +52,7 @@ export interface AuthProviders {
       connectedAt: string;
     } | null;
   };
+  omi: ExternalAuthProvider;
   google: ExternalAuthProvider;
   microsoft: ExternalAuthProvider;
   oidc: ExternalAuthProvider;

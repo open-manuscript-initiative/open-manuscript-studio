@@ -33,7 +33,7 @@ federatedAuthRouter.get('/providers', async (request, response) => {
     const profile = identity.profile;
     if (!profile || typeof profile !== 'object' || Array.isArray(profile)) continue;
     const key = (profile as Record<string, unknown>).providerKey;
-    if (key === 'google' || key === 'microsoft' || key === 'oidc') linkedKeys.add(key);
+    if (key === 'omi' || key === 'google' || key === 'microsoft' || key === 'oidc') linkedKeys.add(key);
   }
   const configuredOidc = new Map(listOidcProviderConfigs().map((provider) => [provider.key, provider]));
 
@@ -72,6 +72,7 @@ federatedAuthRouter.get('/providers', async (request, response) => {
             }
           : null,
       },
+      omi: externalProvider('omi', 'OMI account'),
       google: externalProvider('google', 'Google'),
       microsoft: externalProvider('microsoft', 'Microsoft'),
       oidc: externalProvider('oidc', 'Institutional sign-in'),

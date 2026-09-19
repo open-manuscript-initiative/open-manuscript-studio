@@ -182,7 +182,11 @@ oidcProviderRouter.get('/oidc/:provider/callback', async (request, response) => 
 
     const userId = await resolveLoginUser(provider, profile, metadata.locale);
     if (!userId) {
-      redirectError(response, 'oidc_account_exists', metadata.nativeReturnOrigin);
+      redirectError(
+        response,
+        provider.key === 'omi' ? 'omi_account_not_linked' : 'oidc_account_exists',
+        metadata.nativeReturnOrigin,
+      );
       return;
     }
 
@@ -275,6 +279,10 @@ async function resolveLoginUser(
   });
   if (identity) return identity.userId;
 
+  // OMI Identity is portable authentication, not authority to create or merge
+  // a local Studio account implicitly. It must be linked explicitly first.
+  if (provider.key === 'omi') return null;
+
   if (!profile.email) throw new Error('The external identity provider did not return an e-mail address.');
   if (provider.requireVerifiedEmail && !profile.emailVerified) {
     throw new Error('The external identity provider did not verify the e-mail address.');
@@ -322,6 +330,9 @@ async function linkOidcIdentity(
 ): Promise<void> {
   const user = await identityPrisma.user.findUnique({ where: { id: userId } });
   if (!user || user.status !== 'ACTIVE') throw new Error('The Studio account is not active.');
+  if (provider.key === 'omi' && user.omiUserId && user.omiUserId !== profile.subject) {
+    throw new Error('This Studio account is already linked to a different OMI account.');
+  }
 
   const existing = await identityPrisma.userIdentity.findUnique({
     where: {
@@ -359,6 +370,13 @@ async function linkOidcIdentity(
       lastUsedAt: new Date(),
     },
   });
+
+  if (provider.key === 'omi' && user.omiUserId !== profile.subject) {
+    await identityPrisma.user.update({
+      where: { id: userId },
+      data: { omiUserId: profile.subject },
+    });
+  }
 }
 
 async function redirectNativeHandoff(
@@ -394,7 +412,7 @@ function decodeStateMetadata(value: string | null | undefined): OidcStateMetadat
   try {
     const parsed = JSON.parse(value) as Partial<OidcStateMetadata>;
     if (
-      (parsed.providerKey !== 'google' && parsed.providerKey !== 'microsoft' && parsed.providerKey !== 'oidc') ||
+      (parsed.providerKey !== 'omi' && parsed.providerKey !== 'google' && parsed.providerKey !== 'microsoft' && parsed.providerKey !== 'oidc') ||
       typeof parsed.expectedNonceHash !== 'string' || !/^[0-9a-f]{64}$/i.test(parsed.expectedNonceHash) ||
       typeof parsed.codeVerifier !== 'string' || parsed.codeVerifier.length < 43
     ) {

@@ -266,17 +266,17 @@ They must not log OAuth tokens, authorization codes, client secrets, or editoria
 
 ## Initial delivery milestones
 
-### M1 — account core
+### M1 — account core — implemented baseline
 
-Prisma schema, global user, verified e-mail, sessions, ORCID identity linking.
+Prisma schema, global user, sessions and ORCID identity linking are implemented in `omi-identity`. Verified e-mail lifecycle remains follow-up work.
 
-### M2 — OIDC provider
+### M2 — OIDC provider — implemented
 
-Discovery, JWKS, authorization code + PKCE, token endpoint, Studio client registry.
+Discovery, JWKS, Authorization Code + PKCE, token endpoint, `/userinfo`, signed ID tokens and the Studio client-registry CLI are implemented.
 
-### M3 — Studio integration
+### M3 — Studio integration — implemented baseline
 
-Studio uses OMI Identity as an OIDC client and stores `omiUserId` locally while retaining the current local authorization model.
+Studio can use OMI Identity as a dedicated OIDC provider, stores the immutable `sub` in the unique local `omiUserId` field, and retains all manuscript/workflow authorization locally. Existing accounts must explicitly connect their OMI account before central sign-in is accepted; e-mail or ORCID equality never silently merges accounts.
 
 ### M4 — invitation integration
 
