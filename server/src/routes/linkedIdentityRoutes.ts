@@ -117,6 +117,18 @@ linkedIdentityRouter.delete('/identities/:identityId', async (request, response)
 
   await identityPrisma.userIdentity.delete({ where: { id: identity.id } });
 
+  const profile = asProfile(identity.profile);
+  if (
+    identity.provider === 'OIDC'
+    && profile?.providerKey === 'omi'
+    && user.omiUserId === identity.subject
+  ) {
+    await identityPrisma.user.update({
+      where: { id: userId },
+      data: { omiUserId: null },
+    });
+  }
+
   if (
     identity.provider === 'ORCID'
     && identity.issuer === ORCID_ISSUER
