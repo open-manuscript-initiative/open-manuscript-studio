@@ -7,6 +7,7 @@ import {
   type OmiContainerDiagnostic,
   type OmiContainerManifest,
 } from './omiContainer';
+import { parsePortableOmiState } from './omiPortableFormat';
 import type { OmiAsset } from '../types/assets';
 import type {
   OmiBlock,
@@ -137,11 +138,24 @@ export async function inspectOmiContainer(
     'META-INF/checksums.json',
     diagnostics,
   );
-  const documentState = parseJsonEntry<OmiManuscriptState>(
+  const portableDocumentState = parseJsonEntry<unknown>(
     entries,
     'manuscript/document.json',
     diagnostics,
   );
+  let documentState: OmiManuscriptState | undefined;
+  if (portableDocumentState !== undefined) {
+    try {
+      documentState = parsePortableOmiState(portableDocumentState);
+    } catch (error) {
+      diagnostics.push(errorDiagnostic(
+        'invalid-manuscript-document',
+        error instanceof Error
+          ? error.message
+          : 'The packaged manuscript document does not conform to OMI-SPEC-320@0.2.0.',
+      ));
+    }
+  }
   const historyEnvelope = parseJsonEntry<{
     versioningModelVersion: OmiManuscript['versioningModelVersion'];
     headRevisionId: OmiManuscript['headRevisionId'];

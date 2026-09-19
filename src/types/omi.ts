@@ -3,6 +3,7 @@ import type {
   OmiContribution,
 } from '../model/identity';
 import type { OmiTombstone } from '../model/tombstone';
+import type { OmiManuscriptSchemaUri } from '../model/omiFormatConstants';
 import type {
   OmiRevisionHistory,
   RevisionId,
@@ -41,7 +42,7 @@ export interface OmiIdentifier {
  * Legacy embedded person representation.
  *
  * New documents use OmiAgent and OmiContribution. This interface remains
- * available only for importing pre-OMI-SPEC-150 manuscript data.
+ * an internal compatibility shape and is never emitted by canonical OMI JSON.
  */
 export interface OmiPerson {
   id: string;
@@ -451,7 +452,7 @@ export interface OmiSection {
  * recursively contain the complete revision history.
  */
 export interface OmiManuscriptState {
-  schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json';
+  schema: OmiManuscriptSchemaUri;
   id: string;
   version: string;
   identityModelVersion: 'OMI-SPEC-150@0.1.0';

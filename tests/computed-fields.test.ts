@@ -11,7 +11,7 @@ import { createSemanticField } from '../src/model/semanticFields.ts';
 
 function manuscript() {
   return {
-    schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json' as const,
+    schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json' as const,
     id: 'm1', version: '0.1.0', identityModelVersion: 'OMI-SPEC-150@0.1.0' as const,
     locale: 'en', title: 'A semantic title', subtitle: 'Subtitle', abstract: 'Short abstract', keywords: [],
     agents: [], contributions: [], tombstones: [], annotations: [], citations: [],

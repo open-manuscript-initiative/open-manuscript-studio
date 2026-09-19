@@ -9,7 +9,7 @@ const TIMESTAMP = '2026-08-07T12:00:00.000Z';
 /** Deterministic, dependency-free manuscript fixture for Node ESM model tests. */
 export function createTestManuscript(): OmiManuscript {
   return {
-    schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json',
+    schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json',
     id: 'manuscript-test',
     version: '0.1.0-alpha.1',
     identityModelVersion: 'OMI-SPEC-150@0.1.0',

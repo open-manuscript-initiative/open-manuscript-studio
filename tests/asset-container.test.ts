@@ -213,7 +213,7 @@ async function createCommittedAssetManuscript(): Promise<{
   };
   const committed = commitManuscriptRevision(manuscript, nextState, {
     summary: 'Attached test figure asset',
-    timestamp: '2026-08-07T00:01:00.000Z',
+    timestamp: '2026-08-07T12:01:00.000Z',
     events: [
       {
         operation: 'asset.attach' as never,

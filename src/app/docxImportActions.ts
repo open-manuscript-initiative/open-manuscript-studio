@@ -1,4 +1,5 @@
 import { useStudioStore } from './useStudioStore';
+import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import { createDocumentStructureProfile } from '../model/documentProfile';
 import {
   createContribution,
@@ -46,7 +47,7 @@ export function applyDocxImportPlan(
   );
 
   const state: OmiManuscriptState = {
-    schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json',
+    schema: OMI_MANUSCRIPT_SCHEMA_URI,
     id: manuscriptId,
     version: current.version,
     identityModelVersion: OMI_IDENTITY_MODEL_VERSION,

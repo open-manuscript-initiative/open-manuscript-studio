@@ -1,6 +1,6 @@
 # Roadmap
 
-Open Manuscript Studio is on the `0.1.0-beta.6` public beta line. The authoring, account, review, import/export, native packaging, and institutional administration layers are implemented; the next milestone is a stable release candidate.
+Open Manuscript Studio is on the `0.2.0-beta.2` public beta line. The authoring, account, review, import/export, native packaging, and institutional administration layers are implemented; the next milestone is a stable release candidate.
 
 This page records direction rather than promising dates. The [issue tracker](https://github.com/open-manuscript-initiative/open-manuscript-studio/issues), pull requests, and [CHANGELOG](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/CHANGELOG.md) are the authoritative sources for individual work items.
 
@@ -25,7 +25,8 @@ This page records direction rather than promising dates. The [issue tracker](htt
 - eliminate regressions in responsive menus, document tabs, and mobile open/close behavior;
 - improve large-manuscript performance and progressive editor mounting;
 - continue DOCX/PDF structural fidelity for headings, notes, lists, tables, references, and inline semantics;
-- harden recovery, autosave, multi-document session restoration, and migration behavior.
+- harden recovery, autosave, and multi-document session restoration;
+- enforce the canonical OMI-SPEC-320@0.2.0 schema/version boundary and begin compatibility guarantees from the first production-stable format rather than the experimental pre-0.2 representation.
 
 ### Publishing and review interoperability
 
@@ -52,7 +53,7 @@ This page records direction rather than promising dates. The [issue tracker](htt
 ## Release-candidate exit criteria
 
 - all required CI and platform matrices are green for the candidate commit;
-- no known data-loss, authorization, anonymity, or format-migration blocker remains;
+- no known data-loss, authorization, anonymity, or OMI schema-conformance blocker remains;
 - supported import/export round trips preserve the required semantic structure;
 - deployment and recovery procedures have been exercised from clean installations;
 - official artifacts have verifiable provenance and the required platform signatures;
