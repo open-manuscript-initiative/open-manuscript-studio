@@ -178,7 +178,7 @@ referenceManagerRouter.get(
     const providerError =
       typeof request.query.error === 'string' ? request.query.error : '';
 
-    let state: OAuthState | null = null;
+    let state: OAuthState | null;
     try {
       state = verifyOAuthState(stateValue);
     } catch {
