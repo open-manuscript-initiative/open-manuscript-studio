@@ -4,6 +4,9 @@ import type { OmiManuscript, OmiManuscriptState } from '../src/types/omi.ts';
 export const REFERENCE_TIMESTAMP_ROOT = '2026-09-19T12:00:00.000Z';
 export const REFERENCE_TIMESTAMP_HEAD = '2026-09-19T12:30:00.000Z';
 
+export const REFERENCE_IMAGE_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+
 export const REFERENCE_MANUSCRIPT_FEATURES = [
   'canonical OMI-SPEC-320@0.2.0 manuscript envelope',
   'complete revision history with state digests and tombstone evidence',
@@ -1178,7 +1181,7 @@ function buildCurrentState(): OmiManuscriptState {
         role: 'figure',
         checksum: {
           algorithm: 'sha256',
-          value: '0000000000000000000000000000000000000000000000000000000000000001',
+          value: '431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460',
           scope: 'raw-bytes',
         },
         provenance: {
