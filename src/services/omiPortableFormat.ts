@@ -31,12 +31,15 @@ export type OmiPortableFormatErrorCode =
   | 'unsupported-version';
 
 export class OmiPortableFormatError extends Error {
+  readonly code: OmiPortableFormatErrorCode;
+
   constructor(
-    public readonly code: OmiPortableFormatErrorCode,
+    code: OmiPortableFormatErrorCode,
     message: string,
   ) {
     super(message);
     this.name = 'OmiPortableFormatError';
+    this.code = code;
   }
 }
 
