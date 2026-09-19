@@ -40,17 +40,17 @@ test('capture current desktop Studio surfaces for documentation', async ({ page 
     'Authors can write, revise, manage metadata, review changes, and prepare publication artifacts from the same manuscript model.',
   );
 
-  await page.screenshot({ path: `${OUTPUT}/03-manuscript-editor.png`, fullPage: true });
+  await page.screenshot({ path: `${OUTPUT}/03-manuscript-editor.png` });
 
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
   await expect(menu).toBeVisible();
-  await page.screenshot({ path: `${OUTPUT}/04-manuscript-menu.png`, fullPage: true });
+  await page.screenshot({ path: `${OUTPUT}/04-manuscript-menu.png` });
 
   await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
   await expect(menu.getByRole('heading', { name: 'Live publication editor' })).toBeVisible();
   await expect(menu.locator('.publication-document-canvas')).toBeVisible();
-  await page.screenshot({ path: `${OUTPUT}/05-live-publication-editor.png`, fullPage: true });
+  await page.screenshot({ path: `${OUTPUT}/05-live-publication-editor.png` });
 });
 
 test('capture current mobile Studio editor', async ({ page }) => {
@@ -67,5 +67,5 @@ test('capture current mobile Studio editor', async ({ page }) => {
   await page.keyboard.press('Enter');
   await page.keyboard.type('The same Studio document model is available on compact screens.');
 
-  await page.screenshot({ path: `${OUTPUT}/06-mobile-editor.png`, fullPage: true });
+  await page.screenshot({ path: `${OUTPUT}/06-mobile-editor.png` });
 });
