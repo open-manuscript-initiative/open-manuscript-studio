@@ -749,6 +749,25 @@ function buildCurrentState(): OmiManuscriptState {
             content: documentNode(
               paragraph(
                 text('A portable manuscript should preserve scholarly meaning through save, reopen and export.'),
+                {
+                  type: 'omiNote',
+                  attrs: {
+                    noteId: 'note-endnote',
+                    anchorId: 'anchor-note-endnote',
+                    label: '2',
+                    noteType: 'endnote',
+                  },
+                },
+                text(' '),
+                {
+                  type: 'omiNote',
+                  attrs: {
+                    noteId: 'note-author',
+                    anchorId: 'anchor-note-author',
+                    label: 'A',
+                    noteType: 'author-note',
+                  },
+                },
               ),
             ),
           },
