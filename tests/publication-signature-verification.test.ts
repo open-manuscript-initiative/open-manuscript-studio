@@ -38,7 +38,7 @@ function b64url(value: Buffer | string): string {
 function manuscriptFixture(): OmiManuscript {
   const createdAt = '2026-08-22T12:00:00.000Z';
   const state = {
-    schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json',
+    schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json',
     id: 'manuscript-1',
     version: '0.1.0',
     identityModelVersion: 'OMI-SPEC-150@0.1.0',
