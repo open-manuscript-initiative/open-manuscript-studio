@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
+  getReferenceManagerSource,
+  mergeReferenceManagerRecord,
   referenceManagerRecordToOmi,
 } from '../src/services/referenceManagerApi.ts';
 
@@ -45,6 +47,86 @@ test('maps a personal reference-manager record to the portable OMI citation mode
     ),
     true,
   );
+});
+
+test('keeps imported reference-manager links refreshable without changing the OMI record identity', () => {
+  const original = referenceManagerRecordToOmi({
+    provider: 'zotero',
+    externalId: 'ABCD1234',
+    type: 'journal-article',
+    title: 'Old title',
+    contributors: [{ role: 'author', familyName: 'Example' }],
+    identifiers: [
+      { scheme: 'zotero', value: 'ABCD1234' },
+      { scheme: 'doi', value: '10.1000/old' },
+      { scheme: 'local', value: 'editorial-note-1' },
+    ],
+  });
+  original.id = 'record-stable';
+  original.status = 'verified';
+
+  assert.deepEqual(getReferenceManagerSource(original), {
+    provider: 'zotero',
+    externalId: 'ABCD1234',
+  });
+
+  const refreshed = mergeReferenceManagerRecord(original, {
+    provider: 'zotero',
+    externalId: 'ABCD1234',
+    type: 'journal-article',
+    title: 'Updated title',
+    contributors: [
+      { role: 'author', givenName: 'Ada', familyName: 'Example' },
+    ],
+    identifiers: [
+      { scheme: 'zotero', value: 'ABCD1234' },
+      { scheme: 'doi', value: '10.1000/new' },
+    ],
+    issued: '2026',
+  });
+
+  assert.equal(refreshed.id, 'record-stable');
+  assert.equal(refreshed.status, 'verified');
+  assert.equal(refreshed.title, 'Updated title');
+  assert.equal(
+    refreshed.identifiers.find((item) => item.scheme === 'doi')?.value,
+    '10.1000/new',
+  );
+  assert.equal(
+    refreshed.identifiers.find((item) => item.scheme === 'local')?.value,
+    'editorial-note-1',
+  );
+});
+
+test('exposes exact provider-record lookup for safe metadata refresh', () => {
+  const service = readFileSync(
+    'server/src/integrations/referenceManagers/referenceManagerService.ts',
+    'utf8',
+  );
+  const routes = readFileSync(
+    'server/src/routes/referenceManagerRoutes.ts',
+    'utf8',
+  );
+  const editor = readFileSync(
+    'src/components/BibliographicRecordEditor.tsx',
+    'utf8',
+  );
+
+  assert.match(
+    routes,
+    /reference-managers\/:provider\/records\/:externalId/,
+  );
+  assert.match(
+    service,
+    /api\.zotero\.org\/users\/.*\/items\//,
+  );
+  assert.match(
+    service,
+    /api\.mendeley\.com\/documents\//,
+  );
+  assert.match(editor, /getReferenceManagerSource/);
+  assert.match(editor, /fetchPersonalReferenceManagerRecord/);
+  assert.match(editor, /mergeReferenceManagerRecord/);
 });
 
 test('keeps Zotero credentials out of URLs and pins Web API v3', () => {
