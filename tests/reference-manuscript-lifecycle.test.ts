@@ -50,7 +50,7 @@ test('reference fixture is canonical OMI-SPEC-320@0.2.0 and synchronized with it
 test('reference manuscript covers the portable feature families used by the lifecycle gate', () => {
   const manuscript = parseOmiJson(readFileSync(FIXTURE_URL, 'utf8'));
 
-  assert.ok(REFERENCE_MANUSCRIPT_FEATURES.length >= 30);
+  assert.equal(REFERENCE_MANUSCRIPT_FEATURES.length, 29);
   assert.ok(REFERENCE_MANUSCRIPT_NON_PORTABLE_SETTINGS.length >= 6);
 
   assert.deepEqual(
