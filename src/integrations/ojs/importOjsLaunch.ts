@@ -82,7 +82,7 @@ interface OjsSourceNote {
   text?: string;
 }
 
-interface OjsSourceDocument {
+export interface OjsSourceDocument {
   kind?: 'docx';
   fileExternalId?: string;
   fileName?: string;
@@ -327,7 +327,7 @@ export function createManuscriptFromOjsLaunch(
   };
 }
 
-function buildSourceContent(
+export function buildSourceContent(
   source: OjsSourceDocument | undefined,
   locale: string,
   manuscriptTitle: string,
