@@ -90,7 +90,7 @@ function structureFixture(): OmiManuscriptState {
   ];
 
   return {
-    schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json',
+    schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json',
     id: 'volume',
     version: '0.1.0-alpha.1',
     identityModelVersion: 'OMI-SPEC-150@0.1.0',
