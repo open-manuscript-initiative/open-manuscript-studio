@@ -54,6 +54,22 @@ export interface ReferenceManagerSearchResult {
   truncated: boolean;
 }
 
+type ReferenceManagerRequiredRecordKey =
+  | 'provider'
+  | 'externalId'
+  | 'type'
+  | 'title'
+  | 'contributors'
+  | 'identifiers';
+
+type ReferenceManagerRecordDraft =
+  Pick<ReferenceManagerRecord, ReferenceManagerRequiredRecordKey> & {
+    [K in Exclude<
+      keyof ReferenceManagerRecord,
+      ReferenceManagerRequiredRecordKey
+    >]?: ReferenceManagerRecord[K] | undefined;
+  };
+
 interface MendeleyTokenSet {
   accessToken: string;
   refreshToken: string;
@@ -797,10 +813,12 @@ async function timedFetch(
   });
 }
 
-function compactRecord<T extends ReferenceManagerRecord>(record: T): T {
+function compactRecord(
+  record: ReferenceManagerRecordDraft,
+): ReferenceManagerRecord {
   return Object.fromEntries(
     Object.entries(record).filter(([, value]) => value !== undefined),
-  ) as T;
+  ) as ReferenceManagerRecord;
 }
 
 function compactIdentifiers(
