@@ -61,6 +61,8 @@ on:
       - 'tests/progressive-study-mounting.test.ts'
       - 'tests/release-readiness.test.mjs'
       - 'tests/reference-manuscript-lifecycle.test.ts'
+      - 'e2e/reference-manuscript-lifecycle.spec.ts'
+      - 'e2e/support/mockStudioApi.ts'
       - 'tests/referenceManuscriptFixture.ts'
       - 'tests/fixtures/reference-manuscript-all-features.omi.json'
       - 'scripts/generate-reference-manuscript.ts'
@@ -124,6 +126,8 @@ on:
       - 'tests/progressive-study-mounting.test.ts'
       - 'tests/release-readiness.test.mjs'
       - 'tests/reference-manuscript-lifecycle.test.ts'
+      - 'e2e/reference-manuscript-lifecycle.spec.ts'
+      - 'e2e/support/mockStudioApi.ts'
       - 'tests/referenceManuscriptFixture.ts'
       - 'tests/fixtures/reference-manuscript-all-features.omi.json'
       - 'scripts/generate-reference-manuscript.ts'
@@ -167,6 +171,12 @@ jobs:
         run: |
           npm test
           npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run reference manuscript UI lifecycle gate
+        run: npx playwright test e2e/reference-manuscript-lifecycle.spec.ts --project=desktop-chromium
 
       - name: Install and verify server
         run: |
