@@ -541,7 +541,7 @@ function parseCslJson(content: string): ReferenceInterchangeImportResult {
     records.push(markResolved(createBibliographicRecord({
       type: mapCslType(text(item.type) ?? ''),
       title,
-      subtitle: text(item['title-short']),
+      subtitle: text(item.subtitle),
       contributors,
       containerTitle: joinedText(item['container-title']),
       issued: cslDate(item.issued),
@@ -626,10 +626,9 @@ function cslDate(value: unknown): string | undefined {
   const root = asRecord(value);
   const raw = text(root?.raw);
   if (raw) return raw;
-  const parts = Array.isArray(root?.['date-parts'])
-    ? root?.['date-parts']
-    : undefined;
-  const first = Array.isArray(parts?.[0]) ? parts?.[0] : undefined;
+  const dateParts = root?.['date-parts'];
+  const parts = Array.isArray(dateParts) ? dateParts : undefined;
+  const first = Array.isArray(parts?.[0]) ? parts[0] : undefined;
   if (!first?.length) return undefined;
   const values = first
     .slice(0, 3)
@@ -712,7 +711,12 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
 }
 
 function text(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+  if (typeof value === 'string') {
+    return value.trim() || undefined;
+  }
+  return typeof value === 'number' && Number.isFinite(value)
+    ? String(value)
+    : undefined;
 }
 
 function joinedText(value: unknown): string | undefined {
