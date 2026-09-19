@@ -455,7 +455,14 @@ final class OmiIntegrationFixtureTool extends CommandLineTool
             'stageId' => WORKFLOW_STAGE_ID_EXTERNAL_REVIEW,
             'submissionId' => $submissionId,
         ]);
-        Repo::decision()->add($decision);
+
+        // This is synthetic E2E fixture state, not an editorial action. Insert
+        // it through the native Decision DAO so the repository collector sees
+        // the real PKP object without firing editor-decision notifications.
+        // Repo::decision()->add() triggers OMP notification delegates which
+        // require a fully interactive editorial request context and are not
+        // part of this isolated integration fixture.
+        Repo::decision()->dao->insert($decision);
     }
 
     private function configurePlugin(int $contextId, string $installationId): void
