@@ -1,9 +1,11 @@
 import { assetPath, collectReferencedAssetIds, sha256Hex } from '../model/assets';
+import { OMI_FILE_FORMAT_SPECIFICATION } from '../model/omiFormatConstants';
 import { extractManuscriptState } from '../model/versioning';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import { renderHtmlArticle } from './exportHtml';
 import { renderJatsArticle } from './exportJats';
 import { getAssetPayload } from './assetRepository';
+import { toPortableOmiState } from './omiPortableFormat';
 import type { OmiAsset } from '../types/assets';
 import type { OmiBlock, OmiManuscript, OmiManuscriptState } from '../types/omi';
 
@@ -34,7 +36,7 @@ export interface OmiContainerManifest {
   headRevisionId: string;
   createdAt: string;
   specifications: {
-    fileFormat: 'OMI-SPEC-320@0.1.0';
+    fileFormat: typeof OMI_FILE_FORMAT_SPECIFICATION;
     containerArchitecture: 'OMI-SPEC-330@0.1.0';
   };
   entries: OmiContainerManifestEntry[];
@@ -160,7 +162,7 @@ export async function buildOmiContainer(
     textEntry('META-INF/mimetype', OMI_CONTAINER_MEDIA_TYPE, 'text/plain', 'container-mimetype'),
     textEntry(
       'manuscript/document.json',
-      stableJson(packagedState),
+      stableJson(toPortableOmiState(packagedState)),
       'application/json',
       'manuscript-document',
     ),
@@ -254,7 +256,7 @@ export async function buildOmiContainer(
     headRevisionId: manuscript.headRevisionId,
     createdAt,
     specifications: {
-      fileFormat: 'OMI-SPEC-320@0.1.0',
+      fileFormat: OMI_FILE_FORMAT_SPECIFICATION,
       containerArchitecture: 'OMI-SPEC-330@0.1.0',
     },
     entries: manifestEntries,
