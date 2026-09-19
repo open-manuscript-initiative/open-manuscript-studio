@@ -6,34 +6,64 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
-### OJS/OMP publication artifact transfer
+## 0.2.0-beta.2 — 2026-09-19
 
-- Replaces the Publication panel's legacy HTML-only OJS transfer client with the
-  `omi-publication-artifact/1` client introduced by OJS Integration 1.5.0.0.
-- Discovers destination-supported publication formats and size limits before
-  transfer instead of assuming HTML availability.
-- Builds and transfers provenance-bound self-contained HTML, validated JATS XML,
-  print PDF and interactive PDF artifacts.
-- Sends the exact `omi-publication-build@0.1.0` manifest with the artifact so
-  OJS can independently verify byte length, SHA-256, renderer metadata and the
-  deterministic build identifier before persistence.
-- Keeps the personal OJS editorial API key server-side and forwards it only as
-  native Bearer authorization to the fixed trusted plugin endpoint.
-- Removes the obsolete HTML-only transfer endpoint and compatibility facade; the
-  Publication UI and server now use only the shared multi-format protocol.
-- Blocks direct JATS transfer when the XML depends on package-local binary media
-  that the single-artifact protocol cannot carry.
-- Extends the same protocol to OMP Integration 1.4.0.0 while preserving native
-  OMP Publication Format and proof-file semantics instead of emulating OJS
-  galleys.
-- Stores a separate personal OMP editor API key in the identity/profile
-  database and keeps OJS/OMP credentials isolated at the server proxy.
-- Requires OMP to advertise unapproved/unavailable/non-viewable authority
-  defaults before the client enables transfer.
-- Supports OMP studies with HTML/JATS/PDF and OMP volumes with print or
-  interactive PDF; article-only HTML/JATS renderers are not reused for a whole
-  volume.
+### OJS/OMP publication workflow
 
+- Replaces the legacy HTML-only publication transfer with the shared
+  `omi-publication-artifact/1` protocol for provenance-bound HTML, validated
+  JATS XML, print PDF and interactive PDF artifacts.
+- Discovers destination-supported formats and size limits before transfer and
+  keeps personal OJS/OMP editorial credentials server-side.
+- Preserves native OJS galley and OMP Publication Format/proof semantics instead
+  of flattening both systems into one generic upload model.
+- Adds the native OMP Studio client for capability discovery, author revision
+  upload, assignment-scoped reviewer attachments, review-form responses and
+  `review-result-v2` writeback while keeping OMP authoritative for workflow
+  completion and editorial decisions.
+- Keeps OJS and OMP reviewer/author access bound to the concrete submission,
+  assignment, review round and allowed file stages, with regression coverage for
+  double-role accounts and cross-assignment/cross-round access.
+
+### Reference management and scholarly metadata
+
+- Adds a reference-manager integration layer with RIS, BibTeX and CSL JSON
+  interchange, bulk import, deduplication and linked-record refresh support.
+- Adds Mendeley OAuth integration with allowlisted callback handling and
+  server-side redirect validation.
+- Expands PKP-compatible contributor and submission metadata used by OJS/OMP,
+  including structured contributor identity, affiliations, ORCID-compatible
+  fields and conflict-of-interest metadata.
+- Preserves given and family names separately so publication typography can
+  format author names without losing contributor identity structure.
+
+### Editing and interface
+
+- Removes developer-facing implementation wording and placeholder/example text
+  from end-user publication forms.
+- Fixes paragraph-type changes that could move the selection to the end of the
+  document and preserves the active paragraph after block-type changes.
+- Removes the duplicate extended-metadata panel and keeps the publication
+  metadata surface aligned with the PKP integration model.
+
+### Security, compatibility and testing
+
+- Adds OMP 3.5 native integration contract tests and full PKP E2E coverage for
+  capability discovery, reviewer/author role boundaries and server-side
+  writeback.
+- Hardens OAuth callback redirects and native PKP workflow identifiers instead
+  of trusting browser-supplied remote destinations or file associations.
+- Keeps OMP 3.5.0-4 compatibility through feature detection where later PKP
+  application APIs are unavailable.
+- No OMI manuscript migration is required by this application release.
+
+### Release metadata
+
+- Advances the shared Studio version to **0.2.0-beta.2**.
+- Reserves Android versionCode **1031**.
+- Advances the Windows MSI product version to **0.2.0.2**.
+- Keeps the iOS marketing version at **0.2.0** and advances the iOS build number
+  to **10**.
 
 ## 0.2.0-beta.1 — 2026-09-18
 

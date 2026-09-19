@@ -8,10 +8,10 @@ Open Manuscript Studio uses the same React/TypeScript application core, OMI manu
 - Minimum iOS/iPadOS version: 14.0
 - Native shell: Tauri 2
 - App Store short version: `0.2.0`
-- Current beta build number: `9`
-- Public Studio development line: `0.2.0-beta.1`
+- Current beta build number: `10`
+- Public Studio development line: `0.2.0-beta.2`
 
-The numeric Apple short version is intentionally separated from the prerelease label because Apple bundle version fields require store-compatible version values. The Studio UI and release metadata identify this development line as `0.2.0-beta.1` while the Apple short version remains numeric.
+The numeric Apple short version is intentionally separated from the prerelease label because Apple bundle version fields require store-compatible version values. The Studio UI and release metadata identify this development line as `0.2.0-beta.2` while the Apple short version remains numeric.
 
 ## Development prerequisites
 

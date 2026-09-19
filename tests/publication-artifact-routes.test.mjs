@@ -227,7 +227,7 @@ const build = {
   },
   generator: {
     application: 'open-manuscript-studio',
-    applicationVersion: '0.2.0-beta.1',
+    applicationVersion: '0.2.0-beta.2',
     renderer: 'open-manuscript-studio-jats',
     rendererVersion: '0.1.0-alpha.1',
   },
