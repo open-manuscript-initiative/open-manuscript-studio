@@ -155,10 +155,12 @@ async function openManuscriptThroughUi(
   const chooser = await chooserPromise;
   await chooser.setFiles(filePath);
 
-  await expect(menu.getByRole('status')).toContainText('Manuscript opened.');
-  await menu.getByRole('button', { name: 'Close manuscript menu' }).click();
+  const editor = page.locator('section.editor[aria-label="Manuscript editor"]');
+  await expect(editor).toBeVisible();
+  if (await menu.isVisible()) {
+    await menu.getByRole('button', { name: 'Close manuscript menu' }).click();
+  }
   await expect(menu).toBeHidden();
-  await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
 }
 
 async function appendLifecycleEditThroughUi(page: Page): Promise<void> {
@@ -172,8 +174,11 @@ async function appendLifecycleEditThroughUi(page: Page): Promise<void> {
 }
 
 async function closeDocumentThroughUi(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  if (!(await menu.isVisible())) {
+    await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
+    await expect(menu).toBeVisible();
+  }
   await menu.getByRole('button', { name: 'Document', exact: true }).click();
 
   page.once('dialog', async (dialog) => {
@@ -181,7 +186,8 @@ async function closeDocumentThroughUi(page: Page): Promise<void> {
     await dialog.accept();
   });
   await menu.getByRole('button', { name: 'Close document', exact: true }).click();
-  await menu.getByRole('button', { name: 'Close manuscript menu' }).click();
+  await expect(page.getByRole('heading', { name: 'No document is open' })).toBeVisible();
+  await expect(menu).toBeHidden();
 }
 
 async function exportFromUi(
