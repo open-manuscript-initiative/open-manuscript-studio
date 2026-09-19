@@ -5,7 +5,7 @@ import {
   OMI_MANUSCRIPT_SCHEMA_URI,
   type OmiManuscriptSchemaUri,
 } from '../model/omiFormatConstants';
-import type { OmiManuscript } from '../types/omi';
+import type { OmiManuscript, OmiManuscriptState } from '../types/omi';
 
 export interface OmiFileFormatEnvelope {
   format: 'manuscript';
@@ -13,6 +13,11 @@ export interface OmiFileFormatEnvelope {
   profiles: string[];
   specifications: Record<string, string>;
 }
+
+export type PortableOmiState = Omit<OmiManuscriptState, 'schema'> & {
+  schema: OmiManuscriptSchemaUri;
+  omi: OmiFileFormatEnvelope;
+};
 
 export type PortableOmiManuscript = Omit<OmiManuscript, 'schema'> & {
   schema: OmiManuscriptSchemaUri;
@@ -35,11 +40,15 @@ export class OmiPortableFormatError extends Error {
   }
 }
 
-export function createOmiFileFormatEnvelope(): OmiFileFormatEnvelope {
+export function createOmiFileFormatEnvelope(
+  includeHistory = true,
+): OmiFileFormatEnvelope {
   return {
     format: 'manuscript',
     version: OMI_FILE_FORMAT_VERSION,
-    profiles: [...OMI_FILE_FORMAT_PROFILES],
+    profiles: includeHistory
+      ? [...OMI_FILE_FORMAT_PROFILES]
+      : ['core-snapshot'],
     specifications: { ...OMI_FILE_FORMAT_SPECIFICATIONS },
   };
 }
@@ -52,31 +61,51 @@ export function createOmiFileFormatEnvelope(): OmiFileFormatEnvelope {
  * application release version and the portable file-format version are
  * independent values.
  */
+export function toPortableOmiState(
+  state: OmiManuscriptState,
+): PortableOmiState {
+  const portable = {
+    ...state,
+    schema: OMI_MANUSCRIPT_SCHEMA_URI,
+    omi: createOmiFileFormatEnvelope(false),
+    tombstones: state.tombstones.map((tombstone) => ({
+      ...tombstone,
+      id: tombstoneId(tombstone),
+    })),
+  } as PortableOmiState & { authors?: unknown };
+
+  // The legacy embedded-author representation is not part of the canonical
+  // Studio 0.2 wire format.
+  delete portable.authors;
+
+  assertPortableOmiManuscript(portable);
+  return portable;
+}
+
 export function toPortableOmiManuscript(
   manuscript: OmiManuscript,
 ): PortableOmiManuscript {
+  const {
+    versioningModelVersion,
+    headRevisionId,
+    revisionHistory,
+    ...state
+  } = manuscript;
   const portable = {
-    ...manuscript,
-    schema: OMI_MANUSCRIPT_SCHEMA_URI,
-    omi: createOmiFileFormatEnvelope(),
-    tombstones: manuscript.tombstones.map((tombstone) => ({
-      id: tombstoneId(tombstone),
-      ...tombstone,
-    })),
+    ...toPortableOmiState(state),
+    omi: createOmiFileFormatEnvelope(true),
+    versioningModelVersion,
+    headRevisionId,
     revisionHistory: {
-      ...manuscript.revisionHistory,
-      ...(manuscript.revisionHistory.completeness === 'shallow'
+      ...revisionHistory,
+      ...(revisionHistory.completeness === 'shallow'
         ? {
             omissionNotice:
               'Revision history is intentionally shallow in this Studio manuscript.',
           }
         : {}),
     },
-  } as PortableOmiManuscript & { authors?: unknown };
-
-  // The legacy embedded-author representation is not part of the canonical
-  // Studio 0.2 wire format.
-  delete portable.authors;
+  } as PortableOmiManuscript;
 
   assertPortableOmiManuscript(portable);
   return portable;
@@ -100,6 +129,21 @@ export function parseOmiJson(raw: string): OmiManuscript {
  * Accepts only the exact canonical file-format generation implemented by this
  * Studio build. Earlier experimental JSON layouts are not auto-migrated.
  */
+export function parsePortableOmiState(value: unknown): OmiManuscriptState {
+  assertPortableOmiManuscript(value);
+  const record = value as PortableOmiState & Record<string, unknown>;
+  const {
+    omi: _omi,
+    publicationSignatures: _publicationSignatures,
+    versioningModelVersion: _versioningModelVersion,
+    headRevisionId: _headRevisionId,
+    revisionHistory: _revisionHistory,
+    ...state
+  } = record;
+
+  return stripPortableTombstoneIds(state) as OmiManuscriptState;
+}
+
 export function parsePortableOmiManuscript(value: unknown): OmiManuscript {
   assertPortableOmiManuscript(value);
   const record = value as PortableOmiManuscript & Record<string, unknown>;
@@ -116,8 +160,12 @@ export function parsePortableOmiManuscript(value: unknown): OmiManuscript {
     );
   }
 
-  const { omi: _omi, publicationSignatures: _publicationSignatures, ...manuscript } = record;
-  return manuscript as OmiManuscript;
+  const {
+    omi: _omi,
+    publicationSignatures: _publicationSignatures,
+    ...manuscript
+  } = record;
+  return stripPortableTombstoneIds(manuscript) as OmiManuscript;
 }
 
 export function assertPortableOmiManuscript(
@@ -451,7 +499,22 @@ function rejectCredentialFields(value: unknown, path = ''): void {
   }
 }
 
-function tombstoneId(tombstone: OmiManuscript['tombstones'][number]): string {
+function stripPortableTombstoneIds<T extends Record<string, unknown>>(
+  value: T,
+): T {
+  if (!Array.isArray(value.tombstones)) return value;
+
+  return {
+    ...value,
+    tombstones: value.tombstones.map((tombstone) => {
+      if (!isRecord(tombstone)) return tombstone;
+      const { id: _wireId, ...internalTombstone } = tombstone;
+      return internalTombstone;
+    }),
+  };
+}
+
+function tombstoneId(tombstone: OmiManuscriptState['tombstones'][number]): string {
   return [
     'tombstone',
     tombstone.objectId,
