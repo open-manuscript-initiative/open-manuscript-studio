@@ -160,11 +160,11 @@ function asProfile(value: unknown): IdentityProfile | null {
 function readProviderKey(
   provider: 'ORCID' | 'OIDC' | 'SAML',
   profile: IdentityProfile | null,
-): 'orcid' | 'google' | 'microsoft' | 'oidc' | 'saml' {
+): 'orcid' | 'omi' | 'google' | 'microsoft' | 'oidc' | 'saml' {
   if (provider === 'ORCID') return 'orcid';
   if (provider === 'SAML') return 'saml';
   const key = profile?.providerKey;
-  if (key === 'google' || key === 'microsoft' || key === 'oidc') return key;
+  if (key === 'omi' || key === 'google' || key === 'microsoft' || key === 'oidc') return key;
   return 'oidc';
 }
 
