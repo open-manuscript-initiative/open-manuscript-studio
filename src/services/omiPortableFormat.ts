@@ -223,6 +223,13 @@ export function assertPortableOmiManuscript(
 
   requireNonEmptyString(value.id, 'id');
   requireNonEmptyString(value.locale, 'locale');
+  if (
+    typeof value.locale !== 'string'
+    || value.locale.length > 255
+    || !/^(?:[A-Za-z]{2,8}|(?:[A-Za-z]{1,8}|[xX])(?:-[A-Za-z0-9]{1,8})+)$/u.test(value.locale)
+  ) {
+    invalid('locale must be a valid OMI language tag.');
+  }
   requireNonEmptyString(value.title, 'title');
   requireTimestamp(value.createdAt, 'createdAt');
   requireTimestamp(value.updatedAt, 'updatedAt');
@@ -376,7 +383,11 @@ function validateReferences(
 
 function validateHistory(
   document: Record<string, unknown>,
-  indexes: { revisions: Map<string, string>; agents: Map<string, string> },
+  indexes: {
+    all: Map<string, string>;
+    revisions: Map<string, string>;
+    agents: Map<string, string>;
+  },
 ): void {
   if (document.revisionHistory === undefined) return;
   const history = document.revisionHistory;
@@ -400,6 +411,7 @@ function validateHistory(
     if (!Array.isArray(revision.parentRevisionIds)) {
       invalid(`${path}/parentRevisionIds must be an array.`);
     }
+    addAddressable(revision, path, indexes.all);
     addAddressable(revision, path, indexes.revisions);
   });
 
@@ -474,8 +486,12 @@ function requireNonEmptyString(value: unknown, path: string): void {
 
 function requireTimestamp(value: unknown, path: string): void {
   requireNonEmptyString(value, path);
-  if (Number.isNaN(Date.parse(value as string))) {
-    invalid(`${path} must be an RFC 3339 timestamp.`);
+  if (
+    typeof value !== 'string'
+    || !/[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$/u.test(value)
+    || Number.isNaN(Date.parse(value))
+  ) {
+    invalid(`${path} must be an RFC 3339 timestamp with an explicit timezone.`);
   }
 }
 
