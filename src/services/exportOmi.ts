@@ -1,19 +1,14 @@
 import type { OmiManuscript } from '../types/omi';
 import { getPublicationSignatures } from './authorSignatureApi';
+import { toPortableOmiManuscript } from './omiPortableFormat';
 
 export function serializeOmiJson(
   manuscript: OmiManuscript,
 ): string {
   const portableManuscript = {
-    ...manuscript,
+    ...toPortableOmiManuscript(manuscript),
     publicationSignatures: getPublicationSignatures(manuscript.id),
-  } as OmiManuscript & {
-    publicationSignatures: ReturnType<typeof getPublicationSignatures>;
   };
-
-  // `authors` is retained only as an import compatibility field.
-  // Canonical exports use agents and contextual contributions.
-  delete portableManuscript.authors;
 
   return JSON.stringify(portableManuscript, null, 2);
 }
