@@ -151,7 +151,7 @@ referenceManagerRouter.post(
       nonce: randomBytes(24).toString('base64url'),
       expiresAt: Date.now() + 10 * 60 * 1000,
       returnPath: safeReturnPath(body.data.returnPath),
-      returnOrigin,
+      ...(returnOrigin ? { returnOrigin } : {}),
     });
     const url = new URL('https://api.mendeley.com/oauth/authorize');
     url.searchParams.set('client_id', env.MENDELEY_CLIENT_ID!);
