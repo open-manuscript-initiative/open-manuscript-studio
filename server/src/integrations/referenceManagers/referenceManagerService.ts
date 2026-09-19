@@ -77,6 +77,26 @@ export async function searchReferenceManager(
     : searchMendeley(userId, normalized);
 }
 
+export async function getReferenceManagerRecord(
+  userId: string,
+  provider: ReferenceManagerProvider,
+  externalId: string,
+): Promise<ReferenceManagerRecord> {
+  const normalizedId = externalId.trim();
+  if (!normalizedId) {
+    throw new Error('Reference-manager record identifier is required.');
+  }
+
+  const record = provider === 'zotero'
+    ? await fetchZoteroRecord(userId, normalizedId)
+    : await fetchMendeleyRecord(userId, normalizedId);
+
+  if (!record) {
+    throw new Error(`${provider} did not return a supported bibliographic record.`);
+  }
+  return record;
+}
+
 export async function testReferenceManagerConnection(
   userId: string,
   provider: ReferenceManagerProvider,
@@ -296,6 +316,35 @@ async function searchZotero(
   };
 }
 
+async function fetchZoteroRecord(
+  userId: string,
+  externalId: string,
+): Promise<ReferenceManagerRecord | undefined> {
+  const credentials = await resolveZoteroCredentials(userId);
+  if (!credentials) throw new Error('Connect Zotero in Integrations first.');
+
+  const keyInfo = await zoteroKeyInfo(credentials.apiKey);
+  if (!keyInfo.userID) {
+    throw new Error('The Zotero key does not expose a personal-library user ID.');
+  }
+
+  const url = new URL(
+    `https://api.zotero.org/users/${encodeURIComponent(String(keyInfo.userID))}/items/${encodeURIComponent(externalId)}`,
+  );
+  url.searchParams.set('format', 'json');
+
+  const response = await timedFetch(url, {
+    headers: zoteroHeaders(credentials.apiKey),
+  });
+  if (response.status === 404) {
+    throw new Error('The Zotero record no longer exists or is not accessible.');
+  }
+  if (!response.ok) {
+    throw new Error(`Zotero record request failed with HTTP ${response.status}.`);
+  }
+  return mapZoteroItem(await response.json());
+}
+
 async function zoteroKeyInfo(
   apiKey: string,
 ): Promise<{ userID?: number | string }> {
@@ -347,6 +396,31 @@ async function searchMendeley(
       .filter((record): record is ReferenceManagerRecord => Boolean(record)),
     truncated: truncated || matching.length > 50,
   };
+}
+
+async function fetchMendeleyRecord(
+  userId: string,
+  externalId: string,
+): Promise<ReferenceManagerRecord | undefined> {
+  const token = await resolveMendeleyAccessToken(userId);
+  if (!token) throw new Error('Connect Mendeley in Integrations first.');
+
+  const url = new URL(
+    `https://api.mendeley.com/documents/${encodeURIComponent(externalId)}`,
+  );
+  const response = await timedFetch(url, {
+    headers: {
+      Accept: 'application/vnd.mendeley-document.1+json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (response.status === 404) {
+    throw new Error('The Mendeley record no longer exists or is not accessible.');
+  }
+  if (!response.ok) {
+    throw new Error(`Mendeley record request failed with HTTP ${response.status}.`);
+  }
+  return mapMendeleyDocument(await response.json());
 }
 
 async function fetchMendeleyDocuments(
