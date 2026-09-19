@@ -103,8 +103,20 @@ export function parseOmiJson(raw: string): OmiManuscript {
 export function parsePortableOmiManuscript(value: unknown): OmiManuscript {
   assertPortableOmiManuscript(value);
   const record = value as PortableOmiManuscript & Record<string, unknown>;
-  const { omi: _omi, publicationSignatures: _publicationSignatures, ...manuscript } = record;
 
+  if (
+    !record.revisionHistory
+    || !record.headRevisionId
+    || !record.versioningModelVersion
+    || !record.omi.profiles.includes('history-exchange')
+  ) {
+    throw new OmiPortableFormatError(
+      'invalid-document',
+      'Studio working manuscripts require the OMI history-exchange profile.',
+    );
+  }
+
+  const { omi: _omi, publicationSignatures: _publicationSignatures, ...manuscript } = record;
   return manuscript as OmiManuscript;
 }
 
