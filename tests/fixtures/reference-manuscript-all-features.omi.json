@@ -799,7 +799,7 @@
           "id": "block-conclusion",
           "type": "paragraph",
           "paragraphStyleId": "body-reference",
-          "content": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"A portable manuscript should preserve scholarly meaning through save, reopen and export.\"}]}]}"
+          "content": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"A portable manuscript should preserve scholarly meaning through save, reopen and export.\"},{\"type\":\"omiNote\",\"attrs\":{\"noteId\":\"note-endnote\",\"anchorId\":\"anchor-note-endnote\",\"label\":\"2\",\"noteType\":\"endnote\"}},{\"type\":\"text\",\"text\":\" \"},{\"type\":\"omiNote\",\"attrs\":{\"noteId\":\"note-author\",\"anchorId\":\"anchor-note-author\",\"label\":\"A\",\"noteType\":\"author-note\"}}]}]}"
         }
       ]
     }
@@ -2660,7 +2660,7 @@
                     "id": "block-conclusion",
                     "type": "paragraph",
                     "paragraphStyleId": "body-reference",
-                    "content": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"A portable manuscript should preserve scholarly meaning through save, reopen and export.\"}]}]}"
+                    "content": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"A portable manuscript should preserve scholarly meaning through save, reopen and export.\"},{\"type\":\"omiNote\",\"attrs\":{\"noteId\":\"note-endnote\",\"anchorId\":\"anchor-note-endnote\",\"label\":\"2\",\"noteType\":\"endnote\"}},{\"type\":\"text\",\"text\":\" \"},{\"type\":\"omiNote\",\"attrs\":{\"noteId\":\"note-author\",\"anchorId\":\"anchor-note-author\",\"label\":\"A\",\"noteType\":\"author-note\"}}]}]}"
                   }
                 ]
               }
@@ -3681,7 +3681,7 @@
         },
         "stateDigest": {
           "algorithm": "sha256",
-          "value": "e180a3e3cb589bb125b53ace2b998612856b0c3d7a82a38167a86a6a98c2836c",
+          "value": "8462f6e66efba368051ecbf2b8cc2e7d45f317720094b84ae98592b156ded1a8",
           "canonicalization": "omi-manuscript-state-json-v1",
           "scope": "revision.snapshot.state",
           "exclusions": [
@@ -4523,7 +4523,7 @@
                     "id": "block-conclusion",
                     "type": "paragraph",
                     "paragraphStyleId": "body-reference",
-                    "content": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"A portable manuscript should preserve scholarly meaning through save, reopen and export.\"}]}]}"
+                    "content": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"A portable manuscript should preserve scholarly meaning through save, reopen and export.\"},{\"type\":\"omiNote\",\"attrs\":{\"noteId\":\"note-endnote\",\"anchorId\":\"anchor-note-endnote\",\"label\":\"2\",\"noteType\":\"endnote\"}},{\"type\":\"text\",\"text\":\" \"},{\"type\":\"omiNote\",\"attrs\":{\"noteId\":\"note-author\",\"anchorId\":\"anchor-note-author\",\"label\":\"A\",\"noteType\":\"author-note\"}}]}]}"
                   }
                 ]
               }
@@ -5544,7 +5544,7 @@
         },
         "stateDigest": {
           "algorithm": "sha256",
-          "value": "bd7641e95502f31d647f82124e55f79ba62645305ec872d47d2bcf708cdd5b7c",
+          "value": "2f2e9f96c5813eb18638d44434bd6eb1dffba668d295e2779289bb46d39d5b91",
           "canonicalization": "omi-manuscript-state-json-v1",
           "scope": "revision.snapshot.state",
           "exclusions": [
