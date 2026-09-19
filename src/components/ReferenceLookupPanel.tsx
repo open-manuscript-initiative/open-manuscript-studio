@@ -282,7 +282,12 @@ export function ReferenceLookupPanel() {
         settings.enabledProviders.length > 0
           ? searchBibliographicProviders(query, settings)
           : Promise.resolve({ candidates: [], issues: [] });
-      const managerSearches = enabledReferenceManagers.map(async (provider) => {
+      const managerSearches = enabledReferenceManagers.map(
+        async (provider): Promise<{
+          provider: ReferenceManagerProviderId;
+          candidates: BibliographicLookupCandidate[];
+          issue?: BibliographicLookupIssue;
+        }> => {
         try {
           const response = await searchPersonalReferenceManager(provider, query);
           const candidates: BibliographicLookupCandidate[] = response.records.map(
@@ -305,7 +310,8 @@ export function ReferenceLookupPanel() {
             } satisfies BibliographicLookupIssue,
           };
         }
-      });
+      },
+      );
 
       const [response, managerResults, webSearchResults] = await Promise.all([
         apiSearch,
