@@ -33,7 +33,7 @@ export function detectReferenceInterchangeFormat(
   if (extension === 'json' || extension === 'csljson') return 'csl-json';
 
   const text = content.trimStart();
-  if (/^TY  - /m.test(text)) return 'ris';
+  if (/^TY {2}- /m.test(text)) return 'ris';
   if (/^@[a-z]+\s*[({]/i.test(text)) return 'bibtex';
   if (text.startsWith('{') || text.startsWith('[')) return 'csl-json';
   return null;
@@ -130,7 +130,7 @@ function collectRisBlocks(content: string): Array<Map<string, string[]>> {
   };
 
   for (const rawLine of content.replace(/\r\n?/g, '\n').split('\n')) {
-    const match = rawLine.match(/^([A-Z0-9]{2})  -\s?(.*)$/);
+    const match = rawLine.match(/^([A-Z0-9]{2}) {2}-\s?(.*)$/);
     if (match) {
       const tag = match[1]!;
       const value = match[2] ?? '';
