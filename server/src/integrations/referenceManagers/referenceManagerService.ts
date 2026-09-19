@@ -816,9 +816,25 @@ async function timedFetch(
 function compactRecord(
   record: ReferenceManagerRecordDraft,
 ): ReferenceManagerRecord {
-  return Object.fromEntries(
-    Object.entries(record).filter(([, value]) => value !== undefined),
-  ) as ReferenceManagerRecord;
+  return {
+    provider: record.provider,
+    externalId: record.externalId,
+    type: record.type,
+    title: record.title,
+    contributors: record.contributors,
+    identifiers: record.identifiers,
+    ...(record.subtitle ? { subtitle: record.subtitle } : {}),
+    ...(record.containerTitle ? { containerTitle: record.containerTitle } : {}),
+    ...(record.issued ? { issued: record.issued } : {}),
+    ...(record.publisher ? { publisher: record.publisher } : {}),
+    ...(record.place ? { place: record.place } : {}),
+    ...(record.volume ? { volume: record.volume } : {}),
+    ...(record.issue ? { issue: record.issue } : {}),
+    ...(record.pages ? { pages: record.pages } : {}),
+    ...(record.language ? { language: record.language } : {}),
+    ...(record.url ? { url: record.url } : {}),
+    ...(record.accessed ? { accessed: record.accessed } : {}),
+  };
 }
 
 function compactIdentifiers(
