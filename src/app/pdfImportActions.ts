@@ -1,4 +1,5 @@
 import { useStudioStore } from './useStudioStore';
+import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import { OMI_IDENTITY_MODEL_VERSION } from '../model/identity';
 import { createInitialVersioningEnvelope } from '../model/versioning';
 import type { PdfImportBlock, PdfImportResult } from '../services/pdfImport';
@@ -105,7 +106,7 @@ export function applyPdfImportResult(result: PdfImportResult): string {
   preservePdfPublicationMetadata(result, sections, annotations, timestamp);
 
   const state: OmiManuscriptState = {
-    schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json',
+    schema: OMI_MANUSCRIPT_SCHEMA_URI,
     id: manuscriptId,
     version: current.version,
     identityModelVersion: OMI_IDENTITY_MODEL_VERSION,
