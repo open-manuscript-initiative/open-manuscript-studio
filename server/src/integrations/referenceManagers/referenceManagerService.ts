@@ -530,18 +530,23 @@ function mapZoteroItem(raw: unknown): ReferenceManagerRecord | undefined {
   if (!title || !key) return undefined;
 
   const contributors = array(data.creators)
-    .map((creator) => {
+    .map((creator): ReferenceManagerContributor | undefined => {
       const value = isRecord(creator) ? creator : undefined;
       if (!value) return undefined;
       const creatorType = text(value.creatorType) || 'author';
+      const givenName = text(value.firstName);
+      const familyName = text(value.lastName);
+      const literalName = text(value.name);
       return {
         role: mapCreatorRole(creatorType),
-        givenName: text(value.firstName),
-        familyName: text(value.lastName),
-        literalName: text(value.name),
-      } satisfies ReferenceManagerContributor;
+        ...(givenName ? { givenName } : {}),
+        ...(familyName ? { familyName } : {}),
+        ...(literalName ? { literalName } : {}),
+      };
     })
-    .filter((value): value is ReferenceManagerContributor => Boolean(value));
+    .filter(
+      (value): value is ReferenceManagerContributor => value !== undefined,
+    );
 
   const doi = normalizeDoi(text(data.DOI));
   const identifiers = compactIdentifiers([
@@ -582,18 +587,24 @@ function mapMendeleyDocument(raw: unknown): ReferenceManagerRecord | undefined {
   if (!id || !title) return undefined;
 
   const contributors = array(data.authors)
-    .map((creator) => {
+    .map((creator): ReferenceManagerContributor | undefined => {
       const value = isRecord(creator) ? creator : undefined;
       if (!value) return undefined;
+      const givenName = text(value.first_name);
+      const familyName = text(value.last_name);
       return {
-        role: 'author' as const,
-        givenName: text(value.first_name),
-        familyName: text(value.last_name),
+        role: 'author',
+        ...(givenName ? { givenName } : {}),
+        ...(familyName ? { familyName } : {}),
       };
     })
-    .filter((value): value is ReferenceManagerContributor => Boolean(value));
+    .filter(
+      (value): value is ReferenceManagerContributor => value !== undefined,
+    );
 
-  const identifiersObject = isRecord(data.identifiers);
+  const identifiersObject = isRecord(data.identifiers)
+    ? data.identifiers
+    : undefined;
   const doi = normalizeDoi(text(identifiersObject?.doi));
   const identifiers = compactIdentifiers([
     { scheme: 'mendeley', value: id },
