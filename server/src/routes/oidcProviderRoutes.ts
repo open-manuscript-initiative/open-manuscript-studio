@@ -182,7 +182,11 @@ oidcProviderRouter.get('/oidc/:provider/callback', async (request, response) => 
 
     const userId = await resolveLoginUser(provider, profile, metadata.locale);
     if (!userId) {
-      redirectError(response, 'oidc_account_exists', metadata.nativeReturnOrigin);
+      redirectError(
+        response,
+        provider.key === 'omi' ? 'omi_account_not_linked' : 'oidc_account_exists',
+        metadata.nativeReturnOrigin,
+      );
       return;
     }
 
@@ -274,6 +278,10 @@ async function resolveLoginUser(
     },
   });
   if (identity) return identity.userId;
+
+  // OMI Identity is portable authentication, not authority to create or merge
+  // a local Studio account implicitly. It must be linked explicitly first.
+  if (provider.key === 'omi') return null;
 
   if (!profile.email) throw new Error('The external identity provider did not return an e-mail address.');
   if (provider.requireVerifiedEmail && !profile.emailVerified) {
