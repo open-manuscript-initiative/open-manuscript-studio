@@ -1,6 +1,7 @@
 import { getStudioPlatform } from '../mobile/platform/platform';
 import type { OmiManuscript } from '../types/omi';
 import { serializeOmiJson } from './exportOmi';
+import { parseOmiJson } from './omiPortableFormat';
 
 const DESKTOP_OMI_FILTERS = [
   {
@@ -99,7 +100,7 @@ async function openManuscriptWithPicker(
   }
 
   const raw = await readTextFile(selected);
-  const manuscript = JSON.parse(raw) as OmiManuscript;
+  const manuscript = parseOmiJson(raw);
   currentFilePath = rememberPath ? selected : null;
 
   return { manuscript, path: selected };
