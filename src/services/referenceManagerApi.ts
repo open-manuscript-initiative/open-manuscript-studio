@@ -76,6 +76,73 @@ export async function searchPersonalReferenceManager(
   return readJson<ReferenceManagerSearchResponse>(response);
 }
 
+export interface ReferenceManagerSourceReference {
+  provider: ReferenceManagerProviderId;
+  externalId: string;
+}
+
+export function getReferenceManagerSource(
+  record: Pick<OmiBibliographicRecord, 'identifiers'>,
+): ReferenceManagerSourceReference | null {
+  for (const provider of ['zotero', 'mendeley'] as const) {
+    const identifier = record.identifiers.find(
+      (candidate) => candidate.scheme.trim().toLowerCase() === provider,
+    );
+    const externalId = identifier?.value.trim();
+    if (externalId) return { provider, externalId };
+  }
+  return null;
+}
+
+export async function fetchPersonalReferenceManagerRecord(
+  provider: ReferenceManagerProviderId,
+  externalId: string,
+): Promise<ReferenceManagerRecordPayload> {
+  const response = await apiFetch(
+    `/integrations/reference-managers/${encodeURIComponent(provider)}/records/${encodeURIComponent(externalId)}`,
+    {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    },
+  );
+  const payload = await readJson<{
+    provider: ReferenceManagerProviderId;
+    record: ReferenceManagerRecordPayload;
+  }>(response);
+  return payload.record;
+}
+
+export function mergeReferenceManagerRecord(
+  existing: OmiBibliographicRecord,
+  source: ReferenceManagerRecordPayload,
+): OmiBibliographicRecord {
+  const refreshed = referenceManagerRecordToOmi(source);
+  const managedSchemes = new Set([
+    source.provider,
+    'doi',
+    'isbn',
+    'issn',
+    'pmid',
+    'arxiv',
+  ]);
+  const preservedIdentifiers = existing.identifiers.filter(
+    (identifier) =>
+      !managedSchemes.has(identifier.scheme.trim().toLowerCase()),
+  );
+
+  return {
+    ...refreshed,
+    id: existing.id,
+    identifiers: [
+      ...preservedIdentifiers,
+      ...refreshed.identifiers,
+    ],
+    status: existing.status === 'verified' ? 'verified' : refreshed.status,
+    createdAt: existing.createdAt,
+    modifiedAt: new Date().toISOString(),
+  };
+}
+
 export async function startMendeleyOAuth(): Promise<void> {
   const returnOrigin = IS_TAURI
     ? IS_MOBILE_TAURI
