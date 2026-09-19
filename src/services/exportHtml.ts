@@ -5,6 +5,7 @@ import {
 } from '../model/crossReferences.ts';
 import { renderBibliography, renderCitationCluster } from '../model/cslRendering.ts';
 import { buildNoteNumberMap } from '../model/notes.ts';
+import { contributorNameParts } from '../model/contributorName.ts';
 import { latexToMathMl } from '../model/equationRendering.ts';
 import { assetPath } from '../model/assets.ts';
 import {
@@ -338,9 +339,19 @@ function renderContributors(state: RenderState): string {
         ? '<span class="corresponding" aria-label="Corresponding author">*</span>'
         : '';
 
-      return `<li id="${htmlId('contrib', contributor.contributionId)}"><span class="author-name">${escapeHtml(
-        contributor.displayName,
-      )}</span>${corresponding}${affiliationMarkers ? `<sup>${affiliationMarkers}</sup>` : ''}${
+      const name = contributorNameParts(contributor)
+        .map((part) => {
+          const className =
+            part.kind === 'given'
+              ? 'author-given-name'
+              : part.kind === 'family'
+                ? 'author-family-name'
+                : 'author-literal-name';
+          return `<span class="${className}">${escapeHtml(part.text)}</span>`;
+        })
+        .join(' ');
+
+      return `<li id="${htmlId('contrib', contributor.contributionId)}"><span class="author-name">${name}</span>${corresponding}${affiliationMarkers ? `<sup>${affiliationMarkers}</sup>` : ''}${
         inlineAffiliations ? `<span class="author-affiliation-inline">${escapeHtml(inlineAffiliations)}</span>` : ''
       }${orcid ? `<span class="author-orcid">${orcid}</span>` : ''}</li>`;
     })

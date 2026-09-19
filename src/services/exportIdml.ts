@@ -4,7 +4,8 @@ import {
   OMI_CHARACTER_STYLE_NAMES,
   type OmiInlineRun,
 } from '../model/inlineSemantics';
-import { buildPublicationRenderingContext } from '../model/publicationRendering';
+import { contributorNameParts } from '../model/contributorName';
+import { buildPublicationRenderingContext, type OmiRenderedContributor } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type { OmiBlock, OmiManuscript } from '../types/omi';
 import { createStoreZip, textZipEntry } from './simpleZip';
@@ -34,7 +35,7 @@ export function buildIdmlExport(manuscript: OmiManuscript): IdmlExportResult {
   storyParts.push(styledParagraph(context.title, 'OMI Title'));
   if (context.subtitle) storyParts.push(styledParagraph(context.subtitle, 'OMI Subtitle'));
   if (context.contributors.length) {
-    storyParts.push(styledParagraph(context.contributors.map((item) => item.displayName).join(', '), 'OMI Authors'));
+    storyParts.push(styledContributorNamesParagraph(context.contributors));
   }
   if (context.abstract) {
     storyParts.push(styledParagraph(localizedLabel(context.locale, 'abstract'), 'OMI Heading 1'));
@@ -175,6 +176,8 @@ function buildStylesXml(): string {
     characterStyle(OMI_CHARACTER_STYLE_NAMES.superscript, undefined, 'Position="Superscript"'),
     characterStyle(OMI_CHARACTER_STYLE_NAMES.subscript, undefined, 'Position="Subscript"'),
     characterStyle(OMI_CHARACTER_STYLE_NAMES.code, undefined, undefined, 'Courier New'),
+    characterStyle('OMI Author Given Name'),
+    characterStyle('OMI Author Family Name'),
   ].join('\n    ');
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -201,6 +204,30 @@ function style(name: string, size: number, bold: boolean, justification: string,
 
 function styledParagraph(value: string, styleName: string): string {
   return styledRunsParagraph([{ text: value, semantics: [] }], styleName);
+}
+
+function styledContributorNamesParagraph(
+  contributors: readonly OmiRenderedContributor[],
+): string {
+  const ranges: string[] = [];
+  contributors.forEach((contributor, contributorIndex) => {
+    contributorNameParts(contributor).forEach((part, partIndex) => {
+      if (partIndex > 0) {
+        ranges.push('<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Content> </Content></CharacterStyleRange>');
+      }
+      const styleName =
+        part.kind === 'given'
+          ? 'OMI Author Given Name'
+          : part.kind === 'family'
+            ? 'OMI Author Family Name'
+            : '$ID/[None]';
+      ranges.push(`<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/${xml(styleName)}"><Content>${xml(part.text)}</Content></CharacterStyleRange>`);
+    });
+    if (contributorIndex < contributors.length - 1) {
+      ranges.push('<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Content>, </Content></CharacterStyleRange>');
+    }
+  });
+  return `<ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/OMI Authors">${ranges.join('')}<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Br/></CharacterStyleRange></ParagraphStyleRange>`;
 }
 
 function styledRunsParagraph(runs: readonly OmiInlineRun[], styleName: string): string {

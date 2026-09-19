@@ -85,6 +85,20 @@
       "alignment": "center",
       "spaceAfter": 1
     },
+    "authorGivenName": {
+      "font": "body",
+      "fontWeight": 600,
+      "fontStyle": "normal",
+      "fontVariantCaps": "normal",
+      "textTransform": "none"
+    },
+    "authorFamilyName": {
+      "font": "body",
+      "fontWeight": 600,
+      "fontStyle": "normal",
+      "fontVariantCaps": "normal",
+      "textTransform": "none"
+    },
     "affiliation": {
       "font": "body",
       "fontSize": 10.5,
@@ -257,6 +271,8 @@
     "article-title-secondary": "articleTitleSecondary",
     "article-subtitle-secondary": "articleSubtitleSecondary",
     "author": "author",
+    "author-given-name": "authorGivenName",
+    "author-family-name": "authorFamilyName",
     "affiliation": "affiliation",
     "abstract-heading": "abstractHeading",
     "abstract": "abstractBody",
