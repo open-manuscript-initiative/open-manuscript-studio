@@ -1,6 +1,7 @@
 import {
   OMI_IDENTITY_MODEL_VERSION,
 } from '../model/identity';
+import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import { ensureManuscriptRevisionStateDigests } from '../model/revisionIntegrity';
 import {
   createInitialVersioningEnvelope,
@@ -14,7 +15,7 @@ export const createSampleManuscript = (): OmiManuscript => {
   const now = new Date().toISOString();
   const manuscriptId = crypto.randomUUID();
   const state: OmiManuscriptState = {
-    schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json',
+    schema: OMI_MANUSCRIPT_SCHEMA_URI,
     id: manuscriptId,
     version: '0.1.0-alpha.1',
     identityModelVersion: OMI_IDENTITY_MODEL_VERSION,
