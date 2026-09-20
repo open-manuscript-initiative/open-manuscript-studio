@@ -39,7 +39,7 @@ ON CONFLICT ("user_id", "email") DO NOTHING;
 CREATE OR REPLACE FUNCTION "create_primary_user_profile_email"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $
+AS $profile_email$
 BEGIN
     INSERT INTO "user_profile_emails" (
         "id",
@@ -58,7 +58,7 @@ BEGIN
 
     RETURN NEW;
 END;
-$;
+$profile_email$;
 
 CREATE TRIGGER "users_create_primary_profile_email"
 AFTER INSERT ON "users"
