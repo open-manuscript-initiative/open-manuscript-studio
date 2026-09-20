@@ -215,7 +215,7 @@ export function IndexPanel({ onNavigate }: IndexPanelProps) {
     );
     if (section) selectSection(section.id);
     onNavigate?.();
-    document.querySelector<HTMLButtonElement>('.studio-menu-close')?.click();
+    document.querySelector<HTMLButtonElement>('[data-home-navigation="true"]')?.click();
     revealTarget(resolved, 0);
   }
 
