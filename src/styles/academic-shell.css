@@ -63,7 +63,7 @@ body {
 
 .focus-header-top-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: .75rem;
   min-width: 0;
