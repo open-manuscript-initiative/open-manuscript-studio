@@ -96,12 +96,16 @@ proof file.
 
 ## Credentials and trust boundary
 
-The personal OMP API key is resolved only on the Studio server and sent as a
-Bearer header to the fixed trusted OMP endpoint. It is never placed in the
-artifact body or publication-build manifest.
+Personal OMP API keys are stored per installation in the separate Studio
+identity/profile database. A user may register more than one OMP installation.
+When an OMP connection is selected, Studio resolves only the key whose
+normalized installation URL exactly matches that connection and sends it as a
+Bearer header to the fixed trusted OMP endpoint. It is never returned to the
+browser or placed in the artifact body or publication-build manifest.
 
-OJS and OMP editor credentials are stored separately. Selecting an OMP
-connection can never cause Studio to forward the saved OJS key, and vice versa.
+OJS and OMP credentials remain provider-specific even though they share the
+same credential collection. Selecting one connection cannot cause Studio to
+forward a key saved for another provider or another installation URL.
 
 ## Verification
 
