@@ -67,6 +67,11 @@ export async function installMockStudioApi(
       return;
     }
 
+    if (request.method() === 'GET' && url.pathname === '/api/integrations/catalog') {
+      await fulfillJson(route, 200, { providers: [] });
+      return;
+    }
+
     if (request.method() === 'POST' && url.pathname === '/api/auth/login') {
       const payload = request.postDataJSON() as Record<string, unknown>;
       loginRequests.push(payload);
