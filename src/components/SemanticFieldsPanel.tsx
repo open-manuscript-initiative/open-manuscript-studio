@@ -112,7 +112,7 @@ export function SemanticFieldsPanel() {
           <div className="studio-manuscript-fields">
             <label>
               <span>{copy.role}</span>
-              <input value={customRole} onChange={(event) => setCustomRole(event.target.value)} placeholder="e.g. archival-source-note" />
+              <input value={customRole} onChange={(event) => setCustomRole(event.target.value)} />
             </label>
             <label>
               <span>{copy.label}</span>
