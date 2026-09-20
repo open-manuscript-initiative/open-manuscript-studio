@@ -62,9 +62,9 @@ the portable OMI document model and individual renderers.
 - Advances the Windows MSI product version to **0.2.0.3**.
 - Keeps the iOS marketing version at **0.2.0** and advances the experimental
   iOS build number to **11**.
-- Google Play already contains Android versionCode **1050** for
-  **0.2.0-beta.2**; the beta.3 Play build must use a strictly higher
-  run-derived versionCode.
+- Raises the checked-in Android versionCode floor to **1050**, matching the
+  latest Google Play upload for **0.2.0-beta.2**; the beta.3 Play build must use
+  a strictly higher run-derived versionCode.
 - No OMI manuscript-format migration is required by this application release.
 
 ## 0.2.0-beta.2 — 2026-09-19
