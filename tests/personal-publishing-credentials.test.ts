@@ -41,6 +41,7 @@ test('personal profile supports multiple e-mail addresses', () => {
   assert.match(identitySchema, /@@unique\(\[userId, email\]\)/);
   assert.match(profileEmailMigration, /CREATE TABLE "user_profile_emails"/);
   assert.match(profileEmailMigration, /lower\("email"\)/);
+  assert.match(profileEmailMigration, /CREATE TRIGGER "users_create_primary_profile_email"/);
   assert.match(authRoutes, /get\('\/me\/profile-emails'/);
   assert.match(authRoutes, /post\('\/me\/profile-emails'/);
   assert.match(authRoutes, /delete\('\/me\/profile-emails\/:profileEmailId'/);
