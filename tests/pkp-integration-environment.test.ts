@@ -42,8 +42,8 @@ test('PKP integration environment supports the stable OJS matrix and preview OMP
   assert.match(workflowSource, /"platform":"ojs","version":"3_5_0-4","release_tier":"stable"/);
   assert.match(workflowSource, /"platform":"ojs","version":"3_5_0-5","release_tier":"stable"/);
   assert.match(workflowSource, /"platform":"omp","version":"3_5_0-4","release_tier":"preview"/);
-  assert.match(workflowSource, /PKP_VERSION: \${{ matrix\.target\.version }}/);
-  assert.match(workflowSource, /PKP_RELEASE_TIER: \${{ matrix\.target\.release_tier }}/);
+  assert.ok(workflowSource.includes('PKP_VERSION: $' + '{{ matrix.target.version }}'));
+  assert.ok(workflowSource.includes('PKP_RELEASE_TIER: $' + '{{ matrix.target.release_tier }}'));
   assert.match(
     pkpDockerfileSource,
     /docker\.io\/pkpofficial\/\$\{PKP_PLATFORM\}:\$\{PKP_VERSION\}/,
