@@ -122,7 +122,6 @@ export function CitationEditorCard({
                   : undefined,
               })
             }
-            placeholder={t('citations.locatorPlaceholder')}
           />
         </label>
 
@@ -135,7 +134,6 @@ export function CitationEditorCard({
                 prefix: event.target.value,
               })
             }
-            placeholder={t('citations.prefixPlaceholder')}
           />
         </label>
 
@@ -148,7 +146,6 @@ export function CitationEditorCard({
                 suffix: event.target.value,
               })
             }
-            placeholder={t('citations.suffixPlaceholder')}
           />
         </label>
       </div>
