@@ -6,6 +6,10 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Keeps the current Studio workspace active when the manuscript navigation is
+  opened and closed. Returning to the editor is now an explicit localized Home
+  menu action instead of an automatic side effect of closing navigation.
+
 - Collapses manuscript-menu navigation after choosing any workspace, including
   Help, Lists and Integrations. A header toggle reopens it without losing the
   current view; desktop and mobile content reclaim the navigation space.
