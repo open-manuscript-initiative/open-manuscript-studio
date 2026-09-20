@@ -237,7 +237,7 @@ export function AccountPanel() {
               <section className="account-ojs-credential" aria-labelledby="account-ojs-credential-title">
                 <h2 id="account-ojs-credential-title">{labels.ojsCredentialTitle ?? 'OJS editor API key'}</h2>
                 <p>{labels.ojsCredentialDescription ?? 'The key is encrypted in your separate personal profile.'}</p>
-                <label>{labels.ojsBaseUrl ?? 'OJS installation URL'}<input type="url" value={ojsCredential.baseUrl} onChange={(event) => setOjsCredential({ ...ojsCredential, baseUrl: event.target.value })} placeholder="https://journal.example.org/ojs" /></label>
+                <label>{labels.ojsBaseUrl ?? 'OJS installation URL'}<input type="url" value={ojsCredential.baseUrl} onChange={(event) => setOjsCredential({ ...ojsCredential, baseUrl: event.target.value })}  /></label>
                 <label>{labels.ojsApiKey ?? 'OJS editor API key'}<input type="password" autoComplete="new-password" value={ojsCredential.apiKey} onChange={(event) => { setOjsSaved(false); setOjsCredential({ ...ojsCredential, apiKey: event.target.value }); }} placeholder={ojsConfigured ? '••••••••••••' : ''} /></label>
                 {ojsConfigured && !ojsCredential.apiKey ? <small>{labels.ojsApiKeyConfigured ?? 'Personal OJS key configured.'}</small> : null}
                 {ojsSaved ? <div className="account-success" role="status">{labels.ojsApiKeySaved ?? 'OJS key saved.'}</div> : null}
@@ -260,7 +260,7 @@ export function AccountPanel() {
                         baseUrl: event.target.value,
                       })
                     }
-                    placeholder="https://press.example.org/omp"
+                    
                   />
                 </label>
                 <label>
