@@ -120,7 +120,7 @@ export function PublicationDocumentCanvas({
   const innerMargin = innerMarginMm * PIXELS_PER_MM * scale;
   const outerMargin = outerMarginMm * PIXELS_PER_MM * scale;
   const bleed = bleedMm * PIXELS_PER_MM * scale;
-  const pageGap = Math.max(16, bleed * 2 + 12);
+  const pageGap = Math.max(28, bleed * 2 + 12);
   const pageStride = pageHeight + pageGap;
   const usablePageHeight = Math.max(
     80,
