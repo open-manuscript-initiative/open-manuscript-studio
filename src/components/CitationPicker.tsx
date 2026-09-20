@@ -212,7 +212,6 @@ export function CitationPicker({
                               locatorValue: event.target.value,
                             })
                           }
-                          placeholder={t('citations.locatorPlaceholder')}
                         />
                       </label>
                     </div>
