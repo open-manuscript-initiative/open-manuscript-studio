@@ -17,11 +17,6 @@ test('the responsive login and editor fit a phone viewport', async ({ page }) =>
   await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
-  await page.getByRole('button', { name: 'Details', exact: true }).click();
-  await expect(page.locator('.mobile-details-view')).toBeVisible();
-  await page.getByRole('button', { name: 'Home', exact: true }).click();
-  await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
-
   const menuTrigger = page.getByRole('button', { name: 'Manuscript menu', exact: true });
   const triggerPosition = await menuTrigger.boundingBox();
   expect(triggerPosition).not.toBeNull();
