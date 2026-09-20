@@ -6,6 +6,10 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Keeps live-publication page boundaries visible across the full sheet width,
+  including while editing on mobile, with clearer outlines and wider page gaps.
+  The mobile print-layout status and zoom controls wrap within the viewport.
+
 - Places live-publication footnotes at the bottom of the sheet containing their
   reference, reserving space during pagination and preserving manuscript note
   numbering. Long notes continue on subsequent sheets; endnotes remain at the

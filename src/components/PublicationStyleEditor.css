@@ -654,6 +654,8 @@
 }
 
 .publication-document-canvas-toolbar > div:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: grid;
   gap: 0.14rem;
 }
@@ -788,7 +790,7 @@
   left: 0;
   right: 0;
   box-sizing: border-box;
-  border: 1px solid rgba(71, 85, 105, 0.24);
+  border: 1px solid rgba(71, 85, 105, 0.5);
   background: #fff;
   box-shadow:
     0 0.16rem 0.3rem rgba(15, 23, 42, 0.18),
@@ -998,9 +1000,11 @@
   opacity: 0.35;
 }
 
-.publication-layout-document-editor,
-.publication-layout-document-editor:hover,
-.publication-layout-document-editor:focus-within {
+/* The continuous editor spans every sheet. Its ordinary card background and
+   mobile border must never paint over the page guides or the gaps. */
+.publication-document-content .publication-layout-document-editor,
+.publication-document-content .publication-layout-document-editor:hover,
+.publication-document-content .publication-layout-document-editor:focus-within {
   margin: 0;
   padding: 0;
   border: 0;
@@ -1310,7 +1314,21 @@
 
   .publication-document-canvas-status {
     width: 100%;
-    justify-content: space-between;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 0.45rem 0.7rem;
+  }
+
+  .publication-document-canvas-status label {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .publication-document-canvas-status select {
+    min-width: 0;
+    max-width: 100%;
+    flex: 1 1 auto;
   }
 
   .publication-document-canvas-stage {
