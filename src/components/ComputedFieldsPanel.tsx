@@ -101,7 +101,7 @@ export function ComputedFieldsPanel() {
       {targets.length ? <div className="studio-tool-card"><div style={{ width: '100%' }}>
         <strong>{copy.crossReference}</strong><p>{copy.crossReferenceDescription}</p>
         <div className="studio-tool-actions" style={{ flexWrap: 'wrap' }}>
-          <select value={crossReferenceTargetId} onChange={(event) => setCrossReferenceTargetId(event.target.value)}><option value="">—</option>{targets.map((target) => <option key={`${target.kind}:${target.id}`} value={target.id}>{formatCrossReferenceTargetOption(target, locale)}</option>)}</select>
+          <select data-computed-cross-reference-target value={crossReferenceTargetId} onChange={(event) => setCrossReferenceTargetId(event.target.value)}><option value="">—</option>{targets.map((target) => <option key={`${target.kind}:${target.id}`} value={target.id}>{formatCrossReferenceTargetOption(target, locale)}</option>)}</select>
           <button type="button" className="studio-menu-secondary-action" disabled={!crossReferenceTargetId} onClick={addCrossReference}><Link2 size={15} aria-hidden="true" />{copy.add}</button>
         </div>
       </div></div> : null}

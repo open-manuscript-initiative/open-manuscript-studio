@@ -466,6 +466,38 @@
   color: #1e293b;
 }
 
+.studio-tool-actions {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.studio-tool-actions > input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.studio-tool-actions > select,
+.studio-tool-actions > textarea {
+  flex: 1 1 12rem;
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.studio-tool-actions > button {
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+}
+
+.studio-menu-content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.studio-menu-content select,
+.studio-menu-content textarea {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .studio-technical-details {
   margin-top: 1rem;
   border: 1px solid #e2e8f0;

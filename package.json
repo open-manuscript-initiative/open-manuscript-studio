@@ -79,7 +79,7 @@
     "test:release-security": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/integration-auth-modes.test.ts tests/omi-identity-login.test.ts tests/native-orcid-handoff.test.ts tests/release-security.test.ts",
     "test:release-recovery": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/working-state.test.ts tests/late-session-restore.test.ts tests/empty-session-startup.test.ts",
     "test:release-update": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/android-update-installer.test.ts && node --experimental-vm-modules --test tests/android-distribution.test.mjs tests/desktop-update-routing.test.mjs",
-    "test:release-accessibility": "playwright test e2e/release-accessibility.spec.ts e2e/release-accessibility.mobile.spec.ts",
+    "test:release-accessibility": "playwright test e2e/release-accessibility.spec.ts e2e/release-accessibility.mobile.spec.ts e2e/menu-responsive.mobile.spec.ts",
     "test:release-recovery:e2e": "playwright test e2e/release-recovery.spec.ts --project=desktop-chromium",
     "test:release-hardening": "npm run test:release-security && npm run test:release-recovery && npm run test:release-update"
   },
