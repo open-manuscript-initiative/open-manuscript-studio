@@ -149,7 +149,7 @@ export function AdvancedIndexEntryPanel() {
           </label>
           <label>
             <span>{copy.term}</span>
-            <input value={term} onChange={(event) => setTerm(event.target.value)} placeholder={copy.termPlaceholder} />
+            <input value={term} onChange={(event) => setTerm(event.target.value)} />
           </label>
           <label>
             <span>{copy.parent}</span>
@@ -280,14 +280,14 @@ function getCopy(locale: string) {
   const language = locale.toLowerCase().split('-')[0];
   if (language === 'hu') return {
     title: 'Fejlett mutatóbejegyzés', description: 'Hozzon létre fő- és albejegyzéseket, Lásd/Lásd még kapcsolatokat, illetve stabil szövegtartományhoz kötött bejegyzéseket.',
-    index: 'Mutató', term: 'Bejegyzés', termPlaceholder: 'Pl. Bethlen Gábor', parent: 'Szint', mainEntry: 'Főbejegyzés', relation: 'Kapcsolat', location: 'Előfordulás', see: 'Lásd', seeAlso: 'Lásd még', related: 'Kapcsolódó bejegyzés', captureSelection: 'Kijelölt szöveg rögzítése', range: 'Szövegtartomány', selectedRange: 'kijelölt tartomány', addEntry: 'Bejegyzés hozzáadása', addSubentry: 'Albejegyzés hozzáadása', created: 'Mutatóbejegyzés létrehozva.', noSelection: 'Előbb jelöljön ki szöveget a dokumentumban.', selectionCaptured: 'A kijelölt szövegtartomány rögzítve.', delete: 'Törlés', validation: 'Ellenőrzési problémák',
+    index: 'Mutató', term: 'Bejegyzés', parent: 'Szint', mainEntry: 'Főbejegyzés', relation: 'Kapcsolat', location: 'Előfordulás', see: 'Lásd', seeAlso: 'Lásd még', related: 'Kapcsolódó bejegyzés', captureSelection: 'Kijelölt szöveg rögzítése', range: 'Szövegtartomány', selectedRange: 'kijelölt tartomány', addEntry: 'Bejegyzés hozzáadása', addSubentry: 'Albejegyzés hozzáadása', created: 'Mutatóbejegyzés létrehozva.', noSelection: 'Előbb jelöljön ki szöveget a dokumentumban.', selectionCaptured: 'A kijelölt szövegtartomány rögzítve.', delete: 'Törlés', validation: 'Ellenőrzési problémák',
   };
   if (language === 'de') return {
     title: 'Erweiterter Registereintrag', description: 'Erstellen Sie Haupt- und Untereinträge, Siehe/Siehe-auch-Verweise und Einträge für stabile Textbereiche.',
-    index: 'Register', term: 'Eintrag', termPlaceholder: 'z. B. Bethlen Gábor', parent: 'Ebene', mainEntry: 'Haupteintrag', relation: 'Beziehung', location: 'Vorkommen', see: 'Siehe', seeAlso: 'Siehe auch', related: 'Verknüpfter Eintrag', captureSelection: 'Textauswahl übernehmen', range: 'Textbereich', selectedRange: 'ausgewählter Bereich', addEntry: 'Eintrag hinzufügen', addSubentry: 'Untereintrag hinzufügen', created: 'Registereintrag erstellt.', noSelection: 'Markieren Sie zuerst Text im Dokument.', selectionCaptured: 'Der ausgewählte Textbereich wurde übernommen.', delete: 'Löschen', validation: 'Validierungsprobleme',
+    index: 'Register', term: 'Eintrag', parent: 'Ebene', mainEntry: 'Haupteintrag', relation: 'Beziehung', location: 'Vorkommen', see: 'Siehe', seeAlso: 'Siehe auch', related: 'Verknüpfter Eintrag', captureSelection: 'Textauswahl übernehmen', range: 'Textbereich', selectedRange: 'ausgewählter Bereich', addEntry: 'Eintrag hinzufügen', addSubentry: 'Untereintrag hinzufügen', created: 'Registereintrag erstellt.', noSelection: 'Markieren Sie zuerst Text im Dokument.', selectionCaptured: 'Der ausgewählte Textbereich wurde übernommen.', delete: 'Löschen', validation: 'Validierungsprobleme',
   };
   return {
     title: 'Advanced index entry', description: 'Create main entries, subentries, See/See also relations, and entries bound to stable text ranges.',
-    index: 'Index', term: 'Entry', termPlaceholder: 'e.g. Bethlen Gábor', parent: 'Level', mainEntry: 'Main entry', relation: 'Relation', location: 'Occurrence', see: 'See', seeAlso: 'See also', related: 'Related entry', captureSelection: 'Capture selected text', range: 'Text range', selectedRange: 'selected range', addEntry: 'Add entry', addSubentry: 'Add subentry', created: 'Index entry created.', noSelection: 'Select text in the document first.', selectionCaptured: 'Selected text range captured.', delete: 'Delete', validation: 'Validation issues',
+    index: 'Index', term: 'Entry', parent: 'Level', mainEntry: 'Main entry', relation: 'Relation', location: 'Occurrence', see: 'See', seeAlso: 'See also', related: 'Related entry', captureSelection: 'Capture selected text', range: 'Text range', selectedRange: 'selected range', addEntry: 'Add entry', addSubentry: 'Add subentry', created: 'Index entry created.', noSelection: 'Select text in the document first.', selectionCaptured: 'Selected text range captured.', delete: 'Delete', validation: 'Validation issues',
   };
 }
