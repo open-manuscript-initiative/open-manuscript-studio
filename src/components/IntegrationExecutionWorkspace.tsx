@@ -34,16 +34,14 @@ import './IntegrationExecutionWorkspace.css';
 const DEFAULT_EXTENSION_MANIFEST = JSON.stringify({
   model: 'omi-integration-extension',
   apiVersion: '1',
-  id: 'org.example.scholar-service',
-  name: 'Example scholarly service',
-  version: '0.1.0',
+  id: '',
+  name: '',
+  version: '',
   kind: 'scholarly-service',
-  authenticationModes: ['oauth2'],
-  permissions: ['metadata.read'],
-  capabilities: ['metadata.lookup'],
-  endpoints: {
-    lookup: 'https://example.org/api/lookup',
-  },
+  authenticationModes: [],
+  permissions: [],
+  capabilities: [],
+  endpoints: {},
 }, null, 2);
 
 const TARGET_LANGUAGES = [
@@ -338,9 +336,9 @@ export function IntegrationExecutionWorkspace() {
       <section className="omi-integration-workspace-card">
         <header><Sparkles size={18} aria-hidden="true" /><div><h4>AI provider configuration</h4><p>Configure an OpenAI-compatible chat-completions endpoint. The API secret is encrypted server-side and is never returned to the browser.</p></div></header>
         <div className="omi-integration-workspace-grid">
-          <label><span>HTTPS endpoint</span><input type="url" value={aiEndpoint} onChange={(event) => setAiEndpoint(event.target.value)} placeholder="https://provider.example/v1/chat/completions" /></label>
-          <label><span>Model</span><input value={aiModel} onChange={(event) => setAiModel(event.target.value)} placeholder="model-name" /></label>
-          <label><span>API secret</span><input type="password" autoComplete="off" value={aiSecret} onChange={(event) => setAiSecret(event.target.value)} placeholder="API key" /></label>
+          <label><span>HTTPS endpoint</span><input type="url" value={aiEndpoint} onChange={(event) => setAiEndpoint(event.target.value)} /></label>
+          <label><span>Model</span><input value={aiModel} onChange={(event) => setAiModel(event.target.value)} /></label>
+          <label><span>API secret</span><input type="password" autoComplete="off" value={aiSecret} onChange={(event) => setAiSecret(event.target.value)} /></label>
         </div>
         <div className="omi-integration-card__actions">
           <button type="button" className="studio-menu-primary-action" disabled={aiConfigBusy} onClick={() => void saveAiConfiguration()}>{aiConfigBusy ? 'Saving…' : 'Save AI provider'}</button>
