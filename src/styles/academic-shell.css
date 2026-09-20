@@ -76,6 +76,28 @@ body {
   min-width: 0;
 }
 
+.focus-brand-home {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.focus-brand-home:hover .focus-brand-mark,
+.focus-brand-home:focus-visible .focus-brand-mark {
+  border-color: var(--omi-academic-burgundy);
+  background: #f2e1e4;
+}
+
+.focus-brand-home:focus-visible {
+  outline: 2px solid rgba(109, 33, 48, .32);
+  outline-offset: 4px;
+  border-radius: .38rem;
+}
+
 .focus-brand-mark {
   display: inline-flex;
   align-items: center;

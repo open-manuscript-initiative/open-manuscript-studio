@@ -24,6 +24,12 @@ test('login and editor satisfy the 1.0 keyboard and accessible-name contract', a
   await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
   await expectBasicAccessibilityContract(page);
 
+  const brandHome = page.getByRole('button', { name: 'Home', exact: true });
+  await expect(brandHome).toBeVisible();
+  await brandHome.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
+
   const menuTrigger = page.getByRole('button', { name: 'Manuscript menu', exact: true });
   await menuTrigger.focus();
   await page.keyboard.press('Enter');

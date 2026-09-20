@@ -17,6 +17,7 @@ import {
 import { useStudioStore } from '../app/useStudioStore';
 import { getCurrentStudyNotesCopy } from '../i18n/currentStudyNotes';
 import { getHeaderSupplementalCopy } from '../i18n/headerSupplementalTranslations';
+import { getStudioMenuSupplementalCopy } from '../i18n/studioMenuSupplementalTranslations';
 import { useTranslation } from '../i18n';
 import {
   countStudyNotes,
@@ -36,11 +37,13 @@ import {
 
 interface HeaderProps {
   onOpenMenu: () => void;
+  onHome: () => void;
 }
 
-export function Header({ onOpenMenu }: HeaderProps) {
+export function Header({ onOpenMenu, onHome }: HeaderProps) {
   const { t, locale } = useTranslation();
   const headerCopy = getHeaderSupplementalCopy(locale);
+  const menuCopy = getStudioMenuSupplementalCopy(locale);
   const currentNotesCopy = getCurrentStudyNotesCopy(locale);
   const [accountOpen, setAccountOpen] = useState(false);
   const [outlineOpen, setOutlineOpen] = useState(false);
@@ -177,7 +180,19 @@ export function Header({ onOpenMenu }: HeaderProps) {
             )}
           </button>
 
-          <div className="focus-brand-lockup">
+          <button
+            type="button"
+            className="focus-brand-lockup focus-brand-home"
+            onClick={() => {
+              setOutlineOpen(false);
+              closeProofingPanel();
+              if (searchOpen) toggleSearchOverlay();
+              onHome();
+            }}
+            aria-label={menuCopy.home}
+            title={menuCopy.home}
+            data-app-home-navigation="true"
+          >
             <img
               className="focus-brand-mark"
               src="/studio-icon.svg"
@@ -189,7 +204,7 @@ export function Header({ onOpenMenu }: HeaderProps) {
               <span className="focus-brand-initiative">Open Manuscript Initiative</span>
               <strong>Studio</strong>
             </span>
-          </div>
+          </button>
         </div>
 
         <div className="focus-header-primary-action">

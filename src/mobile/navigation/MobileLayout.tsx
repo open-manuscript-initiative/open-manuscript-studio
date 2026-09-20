@@ -22,6 +22,7 @@ import {
   toggleSearchOverlay,
 } from '../../components/searchOverlayEvents';
 import { findRenderedSectionElement } from '../../editor/renderedManuscriptNavigation';
+import { getStudioMenuSupplementalCopy } from '../../i18n/studioMenuSupplementalTranslations';
 import { useTranslation } from '../../i18n';
 import { useAuthStore } from '../../store/authStore';
 import '../styles/mobile.css';
@@ -29,6 +30,7 @@ import '../styles/mobile.css';
 interface MobileLayoutProps {
   children: ReactNode;
   onOpenMenu: () => void;
+  onHome: () => void;
 }
 
 type MobileView = 'document' | 'editor' | 'details' | 'account';
@@ -48,8 +50,9 @@ const navLabels: Record<
   de: { document: 'Dokument', editor: 'Editor', details: 'Details', account: 'Konto' },
 };
 
-export function MobileLayout({ children, onOpenMenu }: MobileLayoutProps) {
+export function MobileLayout({ children, onOpenMenu, onHome }: MobileLayoutProps) {
   const { t, locale } = useTranslation();
+  const menuCopy = getStudioMenuSupplementalCopy(locale);
   const logout = useAuthStore((state) => state.logout);
   const isAuthLoading = useAuthStore((state) => state.isLoading);
   const [view, setView] = useState<MobileView>('editor');
@@ -112,10 +115,20 @@ export function MobileLayout({ children, onOpenMenu }: MobileLayoutProps) {
           <Menu size={22} aria-hidden="true" />
         </button>
 
-        <div className="mobile-header-title">
+        <button
+          type="button"
+          className="mobile-header-title mobile-header-home"
+          onClick={() => {
+            setView('editor');
+            onHome();
+          }}
+          aria-label={menuCopy.home}
+          title={menuCopy.home}
+          data-app-home-navigation="true"
+        >
           <img src="/studio-icon.svg" width="28" height="28" alt="" aria-hidden="true" />
           <span>Open Manuscript Studio</span>
-        </div>
+        </button>
 
         <button
           type="button"

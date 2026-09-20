@@ -6,6 +6,9 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Makes the OMI/Studio brand in the desktop and mobile header a keyboard-accessible
+  Home control, matching the explicit Home action in manuscript navigation.
+
 - Allows a personal profile to store separate encrypted OJS and OMP API keys
   for multiple publishing installations. Credentials are selected by provider
   and exact normalized installation URL; existing single OJS/OMP keys migrate

@@ -33,6 +33,21 @@
   font-weight: 600;
 }
 
+.mobile-header-home {
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mobile-header-home:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+
 .mobile-header-title img {
   flex: 0 0 auto;
   border-radius: 7px;

@@ -149,6 +149,7 @@ function StudioApplication() {
     restoredDesktopSession.current?.activeTabId ?? crypto.randomUUID(),
   );
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigateHome = useCallback(() => setMenuOpen(false), []);
   const [externalImportState, setExternalImportState] = useState<ExternalImportState>(() =>
     !reviewMode && (hasInitialOjsLaunch() || hasInitialOmpLaunch())
       ? { status: 'loading' }
@@ -491,7 +492,10 @@ function StudioApplication() {
     return (
       <>
         <ProofreadingController />
-        <MobileLayout onOpenMenu={() => setMenuOpen(true)}>
+        <MobileLayout
+          onOpenMenu={() => setMenuOpen(true)}
+          onHome={navigateHome}
+        >
           <div className="focus-workspace">
             <EditorPane ojsContributors={ojsContributors} />
           </div>
@@ -499,7 +503,7 @@ function StudioApplication() {
         </MobileLayout>
         <StudioMenuWithHelp
           open={menuOpen}
-          onClose={() => setMenuOpen(false)}
+          onClose={navigateHome}
           ojsAssignment={ojsAssignment}
           ompAuthorContext={
             ompAuthorAssignment?.manuscriptId === activeManuscriptId
@@ -512,7 +516,10 @@ function StudioApplication() {
   }
 
   return (
-    <AppLayout onOpenMenu={() => setMenuOpen(true)}>
+    <AppLayout
+      onOpenMenu={() => setMenuOpen(true)}
+      onHome={navigateHome}
+    >
       <ProofreadingController />
       <DesktopDocumentTabs
         tabs={desktopTabs}
@@ -524,7 +531,7 @@ function StudioApplication() {
       <SearchReplaceOverlay />
       <StudioMenuWithHelp
         open={menuOpen}
-        onClose={() => setMenuOpen(false)}
+        onClose={navigateHome}
         ojsAssignment={ojsAssignment}
         ompAuthorContext={
           ompAuthorAssignment?.manuscriptId === activeManuscriptId
