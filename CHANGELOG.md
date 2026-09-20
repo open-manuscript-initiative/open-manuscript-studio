@@ -6,6 +6,12 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Reorganizes the Studio header into two persistent rows: manuscript menu, OMI
+  Home brand, and personal account stay in the top row at every responsive
+  width, while editing, search, insert, save, language, and logout controls
+  remain in the secondary row. Native mobile moves Account from bottom
+  navigation to the permanent top row as well.
+
 - Makes the OMI/Studio brand in the desktop and mobile header a keyboard-accessible
   Home control, matching the explicit Home action in manuscript navigation.
 
