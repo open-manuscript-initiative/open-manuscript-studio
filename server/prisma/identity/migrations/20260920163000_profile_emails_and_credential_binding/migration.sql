@@ -34,6 +34,37 @@ SELECT
 FROM "users"
 ON CONFLICT ("user_id", "email") DO NOTHING;
 
+-- Keep future account creation consistent regardless of whether it comes from
+-- password registration, ORCID, OIDC, invitation acceptance or legacy import.
+CREATE OR REPLACE FUNCTION "create_primary_user_profile_email"()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $
+BEGIN
+    INSERT INTO "user_profile_emails" (
+        "id",
+        "user_id",
+        "email",
+        "is_primary"
+    )
+    VALUES (
+        md5(NEW."id"::text || ':profile-email:' || lower(NEW."email"))::uuid,
+        NEW."id",
+        lower(NEW."email"),
+        true
+    )
+    ON CONFLICT ("user_id", "email")
+    DO UPDATE SET "is_primary" = true;
+
+    RETURN NEW;
+END;
+$;
+
+CREATE TRIGGER "users_create_primary_profile_email"
+AFTER INSERT ON "users"
+FOR EACH ROW
+EXECUTE FUNCTION "create_primary_user_profile_email"();
+
 ALTER TABLE "personal_publishing_credentials"
     ADD COLUMN "profile_email_id" UUID;
 
