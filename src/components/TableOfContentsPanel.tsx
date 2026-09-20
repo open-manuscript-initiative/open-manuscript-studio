@@ -63,7 +63,7 @@ export function TableOfContentsPanel({ onNavigate }: TableOfContentsPanelProps) 
   function navigate(sectionId: string): void {
     selectSection(sectionId);
     onNavigate?.();
-    document.querySelector<HTMLButtonElement>('.studio-menu-close')?.click();
+    document.querySelector<HTMLButtonElement>('[data-home-navigation="true"]')?.click();
     window.setTimeout(() => {
       const target = findRenderedSectionElement(sectionId);
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
