@@ -5,6 +5,7 @@ import {
   Fingerprint,
   FolderOpen,
   History as HistoryIcon,
+  House,
   LayoutTemplate,
   Library,
   Menu,
@@ -17,7 +18,6 @@ import {
   UserPlus,
   Users,
   Wrench,
-  X,
 } from 'lucide-react';
 import {
   useEffect,
@@ -128,7 +128,9 @@ export function StudioMenu({
     setNavigationOpen(true);
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Escape') return;
+      setNavigationOpen(false);
+      navigationToggleRef.current?.focus({ preventScroll: true });
     };
     document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', closeOnEscape);
@@ -136,18 +138,16 @@ export function StudioMenu({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', closeOnEscape);
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
   return (
     <div className={`studio-menu-backdrop${nativeMobile ? ' studio-menu-backdrop--native-mobile' : ''}`} onMouseDown={(event) => {
-      if (event.target === event.currentTarget) onClose();
+      if (event.target === event.currentTarget) setNavigationOpen(false);
     }}>
       <aside className="studio-menu-drawer" role="dialog" aria-modal="true" aria-labelledby="studio-menu-title">
         <header className="studio-menu-header">
-          <button type="button" className="studio-menu-close" aria-label={t('studio.closeMenu')} title={t('studio.closeMenu')} onClick={onClose}><X size={20} aria-hidden="true" /></button>
-          <div className="studio-menu-heading"><span className="studio-menu-eyebrow">Open Manuscript Studio</span><h2 id="studio-menu-title">{t('studio.menu')}</h2></div>
           <button
             ref={navigationToggleRef}
             type="button"
@@ -158,6 +158,8 @@ export function StudioMenu({
             aria-expanded={navigationOpen}
             onClick={() => setNavigationOpen((current) => !current)}
           ><Menu size={20} aria-hidden="true" /></button>
+          <div className="studio-menu-heading"><span className="studio-menu-eyebrow">Open Manuscript Studio</span><h2 id="studio-menu-title">{t('studio.menu')}</h2></div>
+          <span className="studio-menu-header-spacer" aria-hidden="true" />
         </header>
         <div className={`studio-menu-body${navigationOpen ? '' : ' studio-menu-body--navigation-collapsed'}`}>
           <nav id="studio-menu-navigation" className="studio-menu-navigation" aria-label={t('studio.menu')}
@@ -169,6 +171,12 @@ export function StudioMenu({
               navigationToggleRef.current?.focus({ preventScroll: true });
             }}
           >
+            <button
+              type="button"
+              data-home-navigation="true"
+              className="studio-menu-nav-button"
+              onClick={onClose}
+            ><House size={18} aria-hidden="true" /><span>{supplementalCopy.home}</span></button>
             <MenuButton active={activeView === 'document'} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} />
             <MenuButton active={activeView === 'manuscript'} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} />
             <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} />
