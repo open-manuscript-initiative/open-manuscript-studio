@@ -488,3 +488,67 @@ test('publication CSS safely encodes imported values inside style elements', () 
   assert.match(exportRenderer, /cssFontFamily[\s\S]*cssStringLiteral\(family\)/);
   assert.match(exportRenderer, /cssContentString[\s\S]*return cssStringLiteral\(value\)/);
 });
+
+test('footnotes reserve space and travel with the reference line across a split paragraph', () => {
+  const layout = paginatePublicationBlocks([{
+    top: 0, height: 100, splittable: true,
+    lines: Array.from({ length: 10 }, (_, index) => ({
+      top: index * 10, height: 10, textOffset: index * 8,
+      noteIds: index === 7 ? ['note-1'] : [],
+    })),
+  }, { top: 100, height: 10 }], 100, 40, {
+    heights: new Map([['note-1', 30]]), lineHeight: 10, separatorHeight: 10,
+  });
+  assert.equal(layout.pageCount, 2);
+  assert.deepEqual(layout.pageNotes?.[1], [{ id: 'note-1', offset: 0, height: 30 }]);
+  assert.deepEqual(layout.flowBreaks, [{ blockIndex: 0, textOffset: 56, height: 70 }]);
+  // The inline spacer already shifts the next block: do not shift it twice.
+  assert.deepEqual(layout.placements[1], { pageIndex: 1, translateY: 0 });
+});
+
+test('multiple notes retain their reference order and repeated anchors do not duplicate notes', () => {
+  const layout = paginatePublicationBlocks([
+    { top: 0, height: 10, noteIds: ['b', 'a'] },
+    { top: 10, height: 10, noteIds: ['a'] },
+    { top: 20, height: 10, forcePageBreakBefore: true, noteIds: ['c'] },
+  ], 100, 40, {
+    heights: new Map([['a', 10], ['b', 10], ['c', 10]]), lineHeight: 10, separatorHeight: 10,
+  });
+  assert.deepEqual(layout.pageNotes?.map((notes) => notes.map((note) => note.id)), [['b', 'a'], ['c']]);
+  assert.equal(layout.placements[2]?.pageIndex, 1);
+});
+
+test('long footnotes continue in complete lines without dropping any content', () => {
+  const layout = paginatePublicationBlocks([{ top: 0, height: 10, noteIds: ['long'] }], 100, 40, {
+    heights: new Map([['long', 130]]), lineHeight: 10, separatorHeight: 10,
+  });
+  assert.equal(layout.pageCount, 4);
+  assert.deepEqual(layout.pageNotes?.flat(), [
+    { id: 'long', offset: 0, height: 40 },
+    { id: 'long', offset: 40, height: 40 },
+    { id: 'long', offset: 80, height: 40 },
+    { id: 'long', offset: 120, height: 10 },
+  ]);
+});
+
+test('a heading follows its first text line when that line introduces a footnote', () => {
+  const layout = paginatePublicationBlocks([
+    { top: 0, height: 50 },
+    { top: 50, height: 10, keepWithNext: true },
+    { top: 60, height: 10, noteIds: ['note'] },
+  ], 100, 40, { heights: new Map([['note', 30]]), lineHeight: 10, separatorHeight: 10 });
+  assert.equal(layout.placements[1]?.pageIndex, 1);
+  assert.equal(layout.placements[2]?.pageIndex, 1);
+  assert.equal(layout.pageNotes?.[1]?.[0]?.id, 'note');
+});
+
+test('a new reference waits for a page with room to start its note beside a carried note', () => {
+  const layout = paginatePublicationBlocks([
+    { top: 0, height: 10, noteIds: ['long'] },
+    { top: 10, height: 10, noteIds: ['next'] },
+  ], 100, 40, {
+    heights: new Map([['long', 80], ['next', 10]]), lineHeight: 10, separatorHeight: 10,
+  });
+  assert.equal(layout.placements[1]?.pageIndex, 2);
+  assert.deepEqual(layout.pageNotes?.[2], [{ id: 'next', offset: 0, height: 10 }]);
+});

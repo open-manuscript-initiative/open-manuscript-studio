@@ -1327,3 +1327,42 @@
     margin-top: 0.7rem !important;
   }
 }
+
+
+.publication-page-footnotes {
+  position: absolute;
+  z-index: 4;
+  box-sizing: border-box;
+  border-top: 1px solid currentColor;
+  padding-top: calc(var(--omi-publication-note-separator) - 1px);
+  font-size: var(--omi-publication-note-size);
+  line-height: var(--omi-publication-note-leading);
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.publication-page-footnotes--measure {
+  visibility: hidden;
+  pointer-events: none;
+  top: 0;
+  left: 0;
+  border: 0;
+  padding: 0;
+}
+
+.publication-page-note {
+  position: relative;
+  padding-left: 2.5em;
+  white-space: pre-wrap;
+}
+
+.publication-page-note-label {
+  position: absolute;
+  left: 0;
+  width: 2em;
+  text-align: right;
+}
+
+.publication-page-note-fragment {
+  overflow: hidden;
+}

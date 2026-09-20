@@ -20,6 +20,7 @@ import {
   projectContinuousManuscriptDocument,
 } from '../editor/continuousManuscriptDocument';
 import { useTranslation } from '../i18n';
+import { buildNoteNumberMap, getNoteKind } from '../model/notes';
 import { contributorNameParts } from '../model/contributorName';
 import { collectPublicationContributors } from '../model/publicationRendering';
 import type { ProofingSelection } from '../model/proofing';
@@ -35,6 +36,7 @@ import { BlockEditor } from './BlockEditor';
 import {
   paginatePublicationBlocks,
   type PublicationFlowLine,
+  type PublicationPageNote,
 } from './publicationPageLayout';
 
 const PIXELS_PER_MM = 96 / 25.4;
@@ -47,6 +49,7 @@ const EMPTY_PUBLICATION_FLOW_BREAKS: readonly OmiPublicationFlowBreak[] = [];
 interface PublicationPaginationState {
   pageCount: number;
   css: string;
+  pageNotes: PublicationPageNote[][];
   flowBreaks: readonly OmiPublicationFlowBreak[];
 }
 
@@ -87,10 +90,12 @@ export function PublicationDocumentCanvas({
   const publisherIdentity = loadPublicationPublisherIdentity();
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const noteMeasureRef = useRef<HTMLDivElement>(null);
   const [stageWidth, setStageWidth] = useState(0);
   const [pagination, setPagination] = useState<PublicationPaginationState>({
     pageCount: 1,
     css: '',
+    pageNotes: [],
     flowBreaks: EMPTY_PUBLICATION_FLOW_BREAKS,
   });
   const [zoom, setZoom] = useState<PublicationZoom>('fit');
@@ -168,15 +173,18 @@ export function PublicationDocumentCanvas({
     () => collectPublicationContributors(manuscript),
     [manuscript],
   );
-  const notes = useMemo(
-    () => manuscript.annotations.filter(
-      (annotation) => annotation.noteKind === 'footnote'
-        || annotation.noteKind === 'endnote'
-        || annotation.renderingHint === 'footnote'
-        || annotation.renderingHint === 'endnote',
-    ),
-    [manuscript.annotations],
-  );
+  const notes = useMemo(() => {
+    const numbers = buildNoteNumberMap(manuscript);
+    return manuscript.annotations
+      .filter((annotation) => getNoteKind(annotation) === 'footnote' && numbers.has(annotation.id))
+      .map((annotation) => ({ id: annotation.id, label: numbers.get(annotation.id), text: plainText(annotation.body) }));
+  }, [manuscript]);
+  const noteById = useMemo(() => new Map(notes.map((note) => [note.id, note])), [notes]);
+  const endnotes = useMemo(() => manuscript.annotations.filter(
+    (annotation) => getNoteKind(annotation) === 'endnote',
+  ), [manuscript.annotations]);
+  const noteLineHeight = positive(style.styles.footnote.lineHeight * PIXELS_PER_POINT * scale, 1);
+  const noteSeparatorHeight = 8 * scale + 1;
 
   useLayoutEffect(() => {
     const stage = stageRef.current;
@@ -197,6 +205,11 @@ export function PublicationDocumentCanvas({
     const update = () => {
       const flow = collectPublicationFlowElements(content);
       const corrections = publicationCorrections;
+      const noteHeights = new Map(Array.from(
+        noteMeasureRef.current?.querySelectorAll<HTMLElement>('[data-publication-note-id]') ?? [],
+      ).map((element) => [element.dataset.publicationNoteId!,
+        Math.max(noteLineHeight, Math.round(element.getBoundingClientRect().height / noteLineHeight) * noteLineHeight),
+      ]));
       let existingFlowBreakHeight = 0;
       const layout = paginatePublicationBlocks(
         flow.map(({ element }) => {
@@ -207,6 +220,19 @@ export function PublicationDocumentCanvas({
           const splittable = isSplittablePublicationParagraph(element);
           const lines = splittable ? measurePublicationLines(element) : [];
           const ownFlowBreakHeight = publicationFlowBreakHeight(element);
+          const anchors = Array.from(element.querySelectorAll<HTMLElement>('[data-omi-note][data-note-id]'))
+            .filter((anchor) => noteHeights.has(anchor.dataset.noteId!));
+          for (const anchor of anchors) {
+            const rect = anchor.getBoundingClientRect();
+            const removedSpace = Array.from(element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'))
+              .filter((spacer) => spacer.getBoundingClientRect().top < rect.top - 0.5)
+              .reduce((sum, spacer) => sum + spacer.getBoundingClientRect().height, 0);
+            const top = rect.top - element.getBoundingClientRect().top - removedSpace;
+            const line = lines.reduce<PublicationFlowLine | undefined>((nearest, candidate) => (
+              !nearest || Math.abs(candidate.top - top) < Math.abs(nearest.top - top) ? candidate : nearest
+            ), undefined);
+            if (line) line.noteIds = [...(line.noteIds ?? []), anchor.dataset.noteId!];
+          }
           const paragraphStyle = resolvePublicationParagraphStyle(
             style,
             element.dataset.paragraphStyleId,
@@ -221,6 +247,7 @@ export function PublicationDocumentCanvas({
               element.getBoundingClientRect().height - ownFlowBreakHeight,
             ),
             lines,
+            noteIds: anchors.map((anchor) => anchor.dataset.noteId!),
             leadingHeight: lines[0]?.height,
             splittable,
             keepWithNext: /^H[1-6]$/.test(element.tagName)
@@ -237,6 +264,7 @@ export function PublicationDocumentCanvas({
         }),
         usablePageHeight,
         pageOverhead,
+        { heights: noteHeights, lineHeight: noteLineHeight, separatorHeight: noteSeparatorHeight },
       );
       const css = buildPaginationCss({
         canvasId,
@@ -263,10 +291,11 @@ export function PublicationDocumentCanvas({
 
       setPagination((current) => (
         current.pageCount === layout.pageCount
+          && JSON.stringify(current.pageNotes) === JSON.stringify(layout.pageNotes ?? [])
           && current.css === css
           && publicationFlowBreaksEqual(current.flowBreaks, flowBreaks)
           ? current
-          : { pageCount: layout.pageCount, css, flowBreaks }
+          : { pageCount: layout.pageCount, css, flowBreaks, pageNotes: layout.pageNotes ?? [] }
       ));
     };
     const schedule = () => {
@@ -279,6 +308,9 @@ export function PublicationDocumentCanvas({
       ? null
       : new ResizeObserver(schedule);
     resizeObserver?.observe(content);
+    if (noteMeasureRef.current) resizeObserver?.observe(noteMeasureRef.current);
+    const fonts = content.ownerDocument.fonts;
+    fonts?.addEventListener('loadingdone', schedule);
     const mutationObserver = typeof MutationObserver === 'undefined'
       ? null
       : new MutationObserver(schedule);
@@ -291,6 +323,7 @@ export function PublicationDocumentCanvas({
     return () => {
       cancelAnimationFrame(frame);
       resizeObserver?.disconnect();
+      fonts?.removeEventListener('loadingdone', schedule);
       mutationObserver?.disconnect();
     };
   }, [
@@ -304,6 +337,9 @@ export function PublicationDocumentCanvas({
     publicationCorrections,
     manuscript.subtitle,
     notes,
+    endnotes,
+    noteLineHeight,
+    noteSeparatorHeight,
     outerMargin,
     pageOverhead,
     style.page.mirroredMargins,
@@ -381,6 +417,7 @@ export function PublicationDocumentCanvas({
     '--omi-publication-heading-one-leading': `${heading1.lineHeight * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-heading-two-size': `${heading2.fontSize * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-heading-two-leading': `${heading2.lineHeight * PIXELS_PER_POINT * scale}px`,
+    '--omi-publication-note-separator': `${noteSeparatorHeight}px`,
     '--omi-publication-note-size': `${note.fontSize * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-note-leading': `${note.lineHeight * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-heading-one-before': `${heading1.spaceBefore * PIXELS_PER_POINT * scale}px`,
@@ -564,16 +601,50 @@ export function PublicationDocumentCanvas({
               <p className="publication-document-empty">{copy.empty}</p>
             )}
 
-            {notes.length ? (
+            {endnotes.length ? (
               <section className="publication-document-notes" aria-label={copy.notes}>
                 <ol>
-                  {notes.map((annotation) => (
+                  {endnotes.map((annotation) => (
                     <li key={annotation.id}>{plainText(annotation.body)}</li>
                   ))}
                 </ol>
               </section>
             ) : null}
           </div>
+          <div ref={noteMeasureRef} className="publication-page-footnotes publication-page-footnotes--measure" aria-hidden="true" style={{ width: contentWidth }}>
+            {notes.map((note) => (
+              <div className="publication-page-note" data-publication-note-id={note.id} key={note.id}>
+                <span className="publication-page-note-label">{note.label}</span>{note.text}
+              </div>
+            ))}
+          </div>
+          {pagination.pageNotes.map((fragments, pageIndex) => {
+            if (!fragments?.length) return null;
+            const mirrored = style.page.mirroredMargins && (firstPageNumber + pageIndex) % 2 === 0;
+            return (
+              <section key={pageIndex} className="publication-page-footnotes" data-footnote-page={pageIndex}
+                aria-label={`${copy.notes} — ${copy.page(firstPageNumber + pageIndex)}`}
+                style={{
+                  left: mirrored ? outerMargin : innerMargin,
+                  width: contentWidth,
+                  top: pageIndex * pageStride + pageHeight - bottomMargin - noteSeparatorHeight
+                    - fragments.reduce((sum, fragment) => sum + fragment.height, 0),
+                }}>
+                {fragments.map((fragment) => {
+                  const note = noteById.get(fragment.id);
+                  return note ? (
+                    <div key={`${fragment.id}-${fragment.offset}`} className="publication-page-note-fragment"
+                      data-publication-note-id={note.id} data-note-continuation={fragment.offset > 0 || undefined}
+                      style={{ height: fragment.height }}>
+                      <div className="publication-page-note" style={{ transform: `translateY(-${fragment.offset}px)` }}>
+                        <span className="publication-page-note-label">{note.label}</span>{note.text}
+                      </div>
+                    </div>
+                  ) : null;
+                })}
+              </section>
+            );
+          })}
         </article>
       </div>
     </section>
