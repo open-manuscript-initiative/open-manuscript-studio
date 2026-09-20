@@ -152,12 +152,13 @@ jobs:
           if (-not $msi) { throw 'No MSI installer was produced.' }
           if (-not $nsis) { throw 'No NSIS installer was produced.' }
 
-          $install = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i', $msi.FullName, '/qn', '/norestart') -Wait -PassThru
+          $quotedMsi = '"' + $msi.FullName + '"'
+          $install = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i', $quotedMsi, '/qn', '/norestart') -Wait -PassThru
           if ($install.ExitCode -notin @(0, 3010)) {
             throw "MSI installation failed with exit code $($install.ExitCode)."
           }
 
-          $uninstall = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/x', $msi.FullName, '/qn', '/norestart') -Wait -PassThru
+          $uninstall = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/x', $quotedMsi, '/qn', '/norestart') -Wait -PassThru
           if ($uninstall.ExitCode -notin @(0, 3010)) {
             throw "MSI uninstall failed with exit code $($uninstall.ExitCode)."
           }
