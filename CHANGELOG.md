@@ -6,6 +6,67 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+## 0.2.0-beta.3 — 2026-09-20
+
+### Final stabilization beta
+
+- Establishes this release as the final planned beta before the 1.0 release
+  candidate, with Route A feature scope frozen around the already implemented
+  authoring, review, publishing, identity and native-client capabilities.
+- Removes the manuscript title from the application header so long titles no
+  longer compress or collide with the Studio brand and global controls.
+- Adds explicit central OMI-account, institutional OIDC and local Studio
+  sign-in paths while keeping document and role authorization local to each
+  Studio installation.
+
+### OMI lifecycle and publication fidelity
+
+- Adds a canonical all-features reference manuscript covering the portable OMI
+  model and a real browser lifecycle gate for open/import, edit, save, close,
+  reopen and export.
+- Distinguishes portable-model completeness from publication-format fidelity:
+  the all-features corpus must be blocked by the JATS publication release gate
+  when fallback-only semantics would otherwise be silently reduced.
+- Adds deterministic readiness evidence around the reference-manuscript
+  lifecycle and existing publication release gates.
+
+### OJS Stable acceptance
+
+- Promotes the tested OJS integration baseline to a release-blocking Stable
+  acceptance matrix for OJS 3.5.0-4 and 3.5.0-5.
+- Verifies signed editor/author/reviewer launches, replay protection,
+  double-anonymous reviewer projection, assignment-scoped file access,
+  required native review forms, native recommendation persistence and
+  separation of author-visible versus editor-only review feedback.
+- Keeps OMP 3.5.x explicitly Preview; shared test infrastructure does not
+  silently promote OMP to the OJS Stable support tier.
+
+### Security, accessibility, recovery and distribution
+
+- Adds a release-hardening gate for portable credential exclusion, identity and
+  integration trust boundaries, native-auth return allowlisting and updater
+  integrity.
+- Adds desktop and mobile browser accessibility regression checks for labelled
+  controls, accessible dialogs, image alternatives, duplicate IDs, tabindex
+  policy and keyboard operation.
+- Adds a real browser crash/session recovery round trip backed by IndexedDB.
+- Adds Windows MSI install/uninstall, Linux DEB install/uninstall plus AppImage
+  extraction, and Android APK package/signature checks to the native build
+  matrix.
+- Physical Android install → update → uninstall acceptance completed
+  successfully on the recorded Redmi Note 13 Pro+ 5G reference device.
+
+### Release metadata
+
+- Advances the shared Studio version to **0.2.0-beta.3**.
+- Advances the Windows MSI product version to **0.2.0.3**.
+- Keeps the iOS marketing version at **0.2.0** and advances the experimental
+  iOS build number to **11**.
+- Raises the checked-in Android versionCode floor to **1050**, matching the
+  latest Google Play upload for **0.2.0-beta.2**; the beta.3 Play build must use
+  a strictly higher run-derived versionCode.
+- No OMI manuscript-format migration is required by this application release.
+
 ## 0.2.0-beta.2 — 2026-09-19
 
 ### OJS/OMP publication workflow
