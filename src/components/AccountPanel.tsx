@@ -17,6 +17,7 @@ import { AccountDeletionSection } from './AccountDeletionSection';
 import { CentralAdministrationSettings } from './CentralAdministrationSettings';
 import { InstitutionalProfilesSettings } from './InstitutionalProfilesSettings';
 import { LinkedIdentitiesSettings } from './LinkedIdentitiesSettings';
+import { PersonalEmailsSettings } from './PersonalEmailsSettings';
 import { PersonalPublishingCredentialsSettings } from './PersonalPublishingCredentialsSettings';
 import '../styles/account.css';
 
@@ -40,6 +41,7 @@ export function AccountPanel() {
   const [profileView, setProfileView] = useState<ProfileView>('personal');
   const [centralRole, setCentralRole] = useState<CentralAdminRole | null>(null);
   const [saved, setSaved] = useState(false);
+  const [emailRevision, setEmailRevision] = useState(0);
   const [form, setForm] = useState<AccountFormState>({
     fullName: '',
     orcid: '',
@@ -187,7 +189,14 @@ export function AccountPanel() {
                 <Save size={17} aria-hidden="true" />
                 {labels.save}
               </button>
-              <PersonalPublishingCredentialsSettings locale={locale} />
+              <PersonalEmailsSettings
+                locale={locale}
+                onChanged={() => setEmailRevision((value) => value + 1)}
+              />
+              <PersonalPublishingCredentialsSettings
+                locale={locale}
+                emailRevision={emailRevision}
+              />
             </form>
           ) : profileView === 'institutional' ? (
             <div className="account-card">

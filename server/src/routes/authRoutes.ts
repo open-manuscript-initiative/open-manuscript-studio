@@ -235,8 +235,151 @@ authRouter.patch('/me', async (request, response) => {
   }
 });
 
+const profileEmailSchema = z.object({
+  email: z.string().trim().email().max(320),
+});
+
+const profileEmailIdSchema = z.string().uuid();
+
+function normalizeProfileEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function publicProfileEmail(profileEmail: {
+  id: string;
+  email: string;
+  isPrimary: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    id: profileEmail.id,
+    email: profileEmail.email,
+    isPrimary: profileEmail.isPrimary,
+    createdAt: profileEmail.createdAt.toISOString(),
+    updatedAt: profileEmail.updatedAt.toISOString(),
+  };
+}
+
+async function ensurePrimaryProfileEmail(userId: string): Promise<void> {
+  const existing = await identityPrisma.userProfileEmail.findFirst({
+    where: { userId, isPrimary: true },
+  });
+  if (existing) return;
+
+  const user = await identityPrisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true },
+  });
+  if (!user) return;
+
+  const email = normalizeProfileEmail(user.email);
+  await identityPrisma.userProfileEmail.upsert({
+    where: { userId_email: { userId, email } },
+    update: { isPrimary: true },
+    create: { userId, email, isPrimary: true },
+  });
+}
+
+authRouter.get('/me/profile-emails', requireSession, async (request: AuthenticatedRequest, response) => {
+  await ensurePrimaryProfileEmail(request.authUserId!);
+  const emails = await identityPrisma.userProfileEmail.findMany({
+    where: { userId: request.authUserId! },
+    orderBy: [{ isPrimary: 'desc' }, { email: 'asc' }],
+  });
+  response.json({ emails: emails.map(publicProfileEmail) });
+});
+
+authRouter.post('/me/profile-emails', requireSession, async (request: AuthenticatedRequest, response) => {
+  try {
+    await ensurePrimaryProfileEmail(request.authUserId!);
+    const input = profileEmailSchema.parse(request.body);
+    const email = normalizeProfileEmail(input.email);
+    const profileEmail = await identityPrisma.userProfileEmail.upsert({
+      where: {
+        userId_email: {
+          userId: request.authUserId!,
+          email,
+        },
+      },
+      update: {},
+      create: {
+        userId: request.authUserId!,
+        email,
+        isPrimary: false,
+      },
+    });
+    response.json({ email: publicProfileEmail(profileEmail) });
+  } catch (error) {
+    response.status(400).json({
+      error: {
+        code: 'PROFILE_EMAIL_SAVE_FAILED',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'The e-mail address could not be added to the personal profile.',
+      },
+    });
+  }
+});
+
+authRouter.delete('/me/profile-emails/:profileEmailId', requireSession, async (request: AuthenticatedRequest, response) => {
+  const parsed = profileEmailIdSchema.safeParse(request.params.profileEmailId);
+  if (!parsed.success) {
+    response.status(400).json({
+      error: {
+        code: 'INVALID_PROFILE_EMAIL_ID',
+        message: 'Invalid profile e-mail identifier.',
+      },
+    });
+    return;
+  }
+
+  const profileEmail = await identityPrisma.userProfileEmail.findFirst({
+    where: {
+      id: parsed.data,
+      userId: request.authUserId!,
+    },
+  });
+  if (!profileEmail) {
+    response.status(404).json({
+      error: {
+        code: 'PROFILE_EMAIL_NOT_FOUND',
+        message: 'The profile e-mail address was not found.',
+      },
+    });
+    return;
+  }
+  if (profileEmail.isPrimary) {
+    response.status(409).json({
+      error: {
+        code: 'PRIMARY_PROFILE_EMAIL',
+        message: 'The primary account e-mail address cannot be removed here.',
+      },
+    });
+    return;
+  }
+
+  const credentialCount = await identityPrisma.personalPublishingCredential.count({
+    where: { profileEmailId: profileEmail.id },
+  });
+  if (credentialCount > 0) {
+    response.status(409).json({
+      error: {
+        code: 'PROFILE_EMAIL_IN_USE',
+        message: 'Remove the API keys associated with this e-mail address before removing the address.',
+      },
+    });
+    return;
+  }
+
+  await identityPrisma.userProfileEmail.delete({ where: { id: profileEmail.id } });
+  response.status(204).end();
+});
+
 const publishingCredentialSchema = z.object({
   provider: z.enum(['ojs', 'omp']),
+  profileEmailId: z.string().uuid(),
   apiKey: z.string().trim().min(1).max(4096),
   baseUrl: z.string().trim().url().max(2048),
   label: z.string().trim().max(200).optional(),
@@ -252,14 +395,18 @@ function publishingProvider(value: 'ojs' | 'omp'): PublicationVenueIntegrationPr
 
 function publicPublishingCredential(credential: {
   id: string;
+  profileEmailId: string;
   provider: PublicationVenueIntegrationProvider;
   label: string | null;
   baseUrl: string;
   createdAt: Date;
   updatedAt: Date;
+  profileEmail: { email: string };
 }) {
   return {
     id: credential.id,
+    profileEmailId: credential.profileEmailId,
+    email: credential.profileEmail.email,
     provider: credential.provider === PublicationVenueIntegrationProvider.OMP ? 'omp' : 'ojs',
     label: credential.label,
     baseUrl: credential.baseUrl,
@@ -276,6 +423,7 @@ function normalizePublishingBaseUrl(baseUrl: string): string {
 authRouter.get('/me/publishing-credentials', requireSession, async (request: AuthenticatedRequest, response) => {
   const credentials = await identityPrisma.personalPublishingCredential.findMany({
     where: { userId: request.authUserId! },
+    include: { profileEmail: true },
     orderBy: [{ provider: 'asc' }, { baseUrl: 'asc' }],
   });
   response.json({
@@ -286,16 +434,33 @@ authRouter.get('/me/publishing-credentials', requireSession, async (request: Aut
 authRouter.put('/me/publishing-credentials', requireSession, async (request: AuthenticatedRequest, response) => {
   try {
     const input = publishingCredentialSchema.parse(request.body);
+    const profileEmail = await identityPrisma.userProfileEmail.findFirst({
+      where: {
+        id: input.profileEmailId,
+        userId: request.authUserId!,
+      },
+    });
+    if (!profileEmail) {
+      response.status(400).json({
+        error: {
+          code: 'PROFILE_EMAIL_NOT_FOUND',
+          message: 'Choose an e-mail address from the personal profile.',
+        },
+      });
+      return;
+    }
+
     const encrypted = encryptSecret(input.apiKey);
     const provider = publishingProvider(input.provider);
     const baseUrl = normalizePublishingBaseUrl(input.baseUrl);
     const label = input.label?.trim() || null;
     const credential = await identityPrisma.personalPublishingCredential.upsert({
       where: {
-        userId_provider_baseUrl: {
+        userId_provider_baseUrl_profileEmailId: {
           userId: request.authUserId!,
           provider,
           baseUrl,
+          profileEmailId: profileEmail.id,
         },
       },
       update: {
@@ -306,6 +471,7 @@ authRouter.put('/me/publishing-credentials', requireSession, async (request: Aut
       },
       create: {
         userId: request.authUserId!,
+        profileEmailId: profileEmail.id,
         provider,
         label,
         baseUrl,
@@ -313,6 +479,7 @@ authRouter.put('/me/publishing-credentials', requireSession, async (request: Aut
         apiKeyIv: encrypted.iv,
         apiKeyAuthTag: encrypted.authTag,
       },
+      include: { profileEmail: true },
     });
     response.json({ credential: publicPublishingCredential(credential) });
   } catch (error) {
@@ -353,17 +520,34 @@ async function resolvePersonalPublishingCredential(
   userId: string,
   provider: PublicationVenueIntegrationProvider,
   baseUrl: string,
-): Promise<{ apiKey: string; baseUrl: string } | null> {
+  email?: string,
+): Promise<{ apiKey: string; baseUrl: string; email: string } | null> {
   const normalizedBaseUrl = normalizePublishingBaseUrl(baseUrl);
-  const credential = await identityPrisma.personalPublishingCredential.findUnique({
+  const normalizedEmail = email ? normalizeProfileEmail(email) : undefined;
+
+  let credential = await identityPrisma.personalPublishingCredential.findFirst({
     where: {
-      userId_provider_baseUrl: {
+      userId,
+      provider,
+      baseUrl: normalizedBaseUrl,
+      profileEmail: normalizedEmail
+        ? { email: normalizedEmail }
+        : { isPrimary: true },
+    },
+    include: { profileEmail: true },
+  });
+
+  if (!credential && !normalizedEmail) {
+    credential = await identityPrisma.personalPublishingCredential.findFirst({
+      where: {
         userId,
         provider,
         baseUrl: normalizedBaseUrl,
       },
-    },
-  });
+      include: { profileEmail: true },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
   if (!credential) return null;
 
   return {
@@ -373,28 +557,33 @@ async function resolvePersonalPublishingCredential(
       authTag: credential.apiKeyAuthTag,
     } as EncryptedSecret),
     baseUrl: credential.baseUrl,
+    email: credential.profileEmail.email,
   };
 }
 
 export async function resolvePersonalOjsCredential(
   userId: string,
   baseUrl: string,
-): Promise<{ apiKey: string; baseUrl: string } | null> {
+  email?: string,
+): Promise<{ apiKey: string; baseUrl: string; email: string } | null> {
   return resolvePersonalPublishingCredential(
     userId,
     PublicationVenueIntegrationProvider.OJS,
     baseUrl,
+    email,
   );
 }
 
 export async function resolvePersonalOmpCredential(
   userId: string,
   baseUrl: string,
-): Promise<{ apiKey: string; baseUrl: string } | null> {
+  email?: string,
+): Promise<{ apiKey: string; baseUrl: string; email: string } | null> {
   return resolvePersonalPublishingCredential(
     userId,
     PublicationVenueIntegrationProvider.OMP,
     baseUrl,
+    email,
   );
 }
 

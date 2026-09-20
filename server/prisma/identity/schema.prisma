@@ -80,6 +80,7 @@ model User {
   oauthStates            OAuthLoginState[]
   passwordResetTokens    PasswordResetToken[]
   publicationVenues      PublicationVenue[]
+  profileEmails          UserProfileEmail[]
   publishingCredentials  PersonalPublishingCredential[]
 
   @@map("users")
@@ -150,9 +151,25 @@ model UserIdentity {
   @@map("user_identities")
 }
 
+model UserProfileEmail {
+  id                    String                         @id @default(uuid()) @db.Uuid
+  userId                String                         @map("user_id") @db.Uuid
+  email                 String                         @db.VarChar(320)
+  isPrimary             Boolean                        @default(false) @map("is_primary")
+  createdAt             DateTime                       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime                       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user                  User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publishingCredentials PersonalPublishingCredential[]
+
+  @@unique([userId, email])
+  @@index([userId, isPrimary])
+  @@map("user_profile_emails")
+}
+
 model PersonalPublishingCredential {
   id               String                              @id @default(uuid()) @db.Uuid
   userId           String                              @map("user_id") @db.Uuid
+  profileEmailId   String                              @map("profile_email_id") @db.Uuid
   provider         PublicationVenueIntegrationProvider
   label            String?                             @db.VarChar(200)
   baseUrl          String                              @map("base_url") @db.VarChar(2048)
@@ -162,9 +179,11 @@ model PersonalPublishingCredential {
   createdAt        DateTime                            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime                            @updatedAt @map("updated_at") @db.Timestamptz(6)
   user             User                                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileEmail     UserProfileEmail                    @relation(fields: [profileEmailId], references: [id], onDelete: Restrict)
 
-  @@unique([userId, provider, baseUrl])
-  @@index([userId, provider])
+  @@unique([userId, provider, baseUrl, profileEmailId])
+  @@index([userId, provider, baseUrl])
+  @@index([profileEmailId])
   @@map("personal_publishing_credentials")
 }
 

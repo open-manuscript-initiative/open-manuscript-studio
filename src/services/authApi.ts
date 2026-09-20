@@ -344,10 +344,53 @@ export async function updateCurrentAccount(
   return response.user;
 }
 
+export interface PersonalProfileEmailState {
+  id: string;
+  email: string;
+  isPrimary: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getPersonalProfileEmails(): Promise<PersonalProfileEmailState[]> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/me/profile-emails`, {
+    credentials: 'include',
+    headers: authHeaders({ Accept: 'application/json' }),
+  });
+  if (!response.ok) throw await createApiError(response);
+  const payload = await parseJsonResponse<{ emails: PersonalProfileEmailState[] }>(response);
+  return payload.emails;
+}
+
+export async function addPersonalProfileEmail(email: string): Promise<PersonalProfileEmailState> {
+  const payload = await request<{ email: PersonalProfileEmailState }>(
+    '/api/auth/me/profile-emails',
+    {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    },
+  );
+  return payload.email;
+}
+
+export async function deletePersonalProfileEmail(profileEmailId: string): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/auth/me/profile-emails/${encodeURIComponent(profileEmailId)}`,
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: authHeaders({ Accept: 'application/json' }),
+    },
+  );
+  if (!response.ok && response.status !== 204) throw await createApiError(response);
+}
+
 export type PersonalPublishingCredentialProvider = 'ojs' | 'omp';
 
 export interface PersonalPublishingCredentialState {
   id: string;
+  profileEmailId: string;
+  email: string;
   provider: PersonalPublishingCredentialProvider;
   label: string | null;
   baseUrl: string;
@@ -368,6 +411,7 @@ export async function getPersonalPublishingCredentials(): Promise<PersonalPublis
 
 export async function savePersonalPublishingCredential(input: {
   provider: PersonalPublishingCredentialProvider;
+  profileEmailId: string;
   apiKey: string;
   baseUrl: string;
   label?: string;
