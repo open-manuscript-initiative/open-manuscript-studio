@@ -14,7 +14,21 @@ test('mobile login and editor retain the same accessibility contract', async ({ 
   await expectBasicAccessibilityContract(page);
 
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Manuscript menu' })).toBeVisible();
+  const dialog = page.getByRole('dialog', { name: 'Manuscript menu' });
+  await expect(dialog).toBeVisible();
   await expectBasicAccessibilityContract(page);
+
+  await dialog.getByRole('button', { name: 'References', exact: true }).click();
+  const targetSelect = dialog.locator('[data-named-anchor-target]');
+  await expect(targetSelect).toBeVisible();
+  await targetSelect.scrollIntoViewIfNeeded();
+
+  const targetBox = await targetSelect.boundingBox();
+  const viewport = page.viewportSize();
+  expect(targetBox).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(targetBox!.x).toBeGreaterThanOrEqual(0);
+  expect(targetBox!.x + targetBox!.width).toBeLessThanOrEqual(viewport!.width + 1);
+
   expect(api.unhandledRequests).toEqual([]);
 });

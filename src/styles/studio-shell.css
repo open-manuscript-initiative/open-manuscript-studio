@@ -376,6 +376,25 @@
 .studio-manuscript-fields {
   display: grid;
   gap: 1rem;
+  min-width: 0;
+}
+
+.studio-manuscript-fields > label {
+  min-width: 0;
+}
+
+.studio-manuscript-fields input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.studio-manuscript-fields select,
+.studio-manuscript-fields textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.studio-manuscript-fields select {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .studio-manuscript-fields label > span,
@@ -388,7 +407,6 @@
 }
 
 .studio-manuscript-fields textarea {
-  width: 100%;
   min-height: 12rem;
   border: 1px solid #cbd5e1;
   border-radius: .7rem;

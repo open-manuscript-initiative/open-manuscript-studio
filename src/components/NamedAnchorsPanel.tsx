@@ -109,7 +109,7 @@ export function NamedAnchorsPanel({ onNavigate }: { onNavigate?: () => void }) {
           <p>{copy.createDescription}</p>
           <div className="studio-manuscript-fields">
             <label><span>{copy.name}</span><input value={name} onChange={(event) => { setName(event.target.value); setMessage(''); }} /></label>
-            <label><span>{copy.target}</span><select value={targetKey} onChange={(event) => setTargetKey(event.target.value)}>{targets.map((target) => <option key={`${target.kind}:${target.id}`} value={`${target.kind}:${target.id}`}>{target.kind === 'section' ? `${copy.section}: ${target.label}` : `${copy.block}: ${target.label}`}</option>)}</select></label>
+            <label><span>{copy.target}</span><select data-named-anchor-target value={targetKey} onChange={(event) => setTargetKey(event.target.value)}>{targets.map((target) => <option key={`${target.kind}:${target.id}`} value={`${target.kind}:${target.id}`}>{target.kind === 'section' ? `${copy.section}: ${target.label}` : `${copy.block}: ${target.label}`}</option>)}</select></label>
           </div>
           <div className="studio-tool-actions"><button type="button" className="studio-menu-primary-action" disabled={!name.trim() || !targetKey} onClick={addAnchor}><Plus size={16} aria-hidden="true" />{copy.add}</button></div>
           {message ? <p role="status">{message}</p> : null}
