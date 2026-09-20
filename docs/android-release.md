@@ -56,24 +56,21 @@ Never place any of these values in source files, workflow YAML, issues, pull req
 
 ### Reserve a fresh Android build number
 
-Before starting every new Android build, increase `bundle.android.versionCode`
-in `src-tauri/tauri.android.conf.json` above all previously reserved, built, or
-uploaded codes. The visible version name may remain unchanged. A failed build
-also consumes its reserved number for this project's release process.
+The checked-in `bundle.android.versionCode` is the repository floor. The
+**Android Release** workflow derives a fresh build code from its GitHub Actions
+run number before packaging and refuses to continue if that code is not higher
+than the checked-in floor. AAB and APK outputs from the same release run share
+the derived code.
 
-AAB and APK outputs from the same release build share that release's code.
-Independent comparison builds use different codes. If a workflow supplies a
-`--config` override, check that override too: it takes precedence over the file.
-Do not use GitHub's **Re-run jobs** on an old commit to produce a new upload;
-first reserve a higher code and start a new build from the updated revision.
-The workflows do not automatically increment a checked-in code.
+Do not use **Re-run jobs** from an already uploaded Android Release run as a new
+Play upload: retries deliberately keep the same derived code. Start a new
+workflow run so the next release receives a higher code.
 
-The AGP 9 experiment reserved codes 1015 through 1019. Google Play contains
-versionCode **1024** for **0.1.0-beta.10**, and later development builds have
-reserved higher values. The **0.2.0-beta.2** source tree reserves versionCode
-**1031**. Any subsequent Android build must use a value above every previously
-reserved, built or uploaded code; the Android Release workflow may select an
-even higher run-derived code without lowering this committed baseline.
+The AGP 9 experiment reserved codes 1015 through 1019. Google Play currently
+contains versionCode **1050** for **0.2.0-beta.2**. The final stabilization
+beta, **0.2.0-beta.3**, must therefore be uploaded with versionCode **greater
+than 1050**. The Android Release workflow is expected to derive that higher
+value without modifying the protected main branch.
 
 
 Open:
