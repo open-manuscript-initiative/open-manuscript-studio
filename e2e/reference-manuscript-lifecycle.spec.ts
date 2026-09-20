@@ -94,7 +94,7 @@ test('opens, edits, saves, closes and reopens the complete reference manuscript 
   expect(api.unhandledRequests).toEqual([]);
 });
 
-test('starts all stable publication exports for the reference manuscript from Export and tools', async ({ page }) => {
+test('exports release-compatible publication formats and enforces the JATS release gate for the complete reference manuscript', async ({ page }) => {
   const api = await installMockStudioApi(page);
   await signInToStudio(page);
   await openManuscriptThroughUi(page, REFERENCE_FIXTURE);
@@ -103,7 +103,9 @@ test('starts all stable publication exports for the reference manuscript from Ex
   const docx = await exportFromUi(page, 'docx', /\.docx$/);
   const epub = await exportFromUi(page, 'epub', /\.epub$/);
   const html = await exportFromUi(page, 'html', /\.html\.zip$/);
-  const jats = await exportFromUi(page, 'jats', /\.jats\.xml$/);
+
+  await expectJatsReleaseBlocked(page);
+
   const printPdf = await exportFromUi(page, 'pdf', /\.pdf$/, {
     content: 'publication',
     mode: 'print',
@@ -113,7 +115,7 @@ test('starts all stable publication exports for the reference manuscript from Ex
     mode: 'interactive',
   });
 
-  for (const download of [docx, epub, html, jats, printPdf, interactivePdf]) {
+  for (const download of [docx, epub, html, printPdf, interactivePdf]) {
     const path = await download.path();
     assertDownloadPath(path);
     expect(readFileSync(path).byteLength).toBeGreaterThan(10);
@@ -221,6 +223,26 @@ async function exportFromUi(
   await expect(menu.getByRole('status').filter({ hasText: 'Export completed.' })).toBeVisible();
   expect(download.suggestedFilename()).toMatch(fileName);
   return download;
+}
+
+async function expectJatsReleaseBlocked(page: Page): Promise<void> {
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  if (!(await menu.isVisible())) {
+    await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
+    await expect(menu).toBeVisible();
+  }
+
+  await menu.getByRole('button', { name: 'Export and tools', exact: true }).click();
+  await menu.getByLabel('Export format').selectOption('jats');
+  await menu.getByRole('button', { name: 'Export', exact: true }).click();
+
+  const alert = menu.getByRole('alert');
+  await expect(alert).toBeVisible();
+  await expect(alert).toContainText('Release-blocking JATS fidelity diagnostics:');
+  await expect(alert).toContainText('chart-semantic-media');
+  await expect(alert).toContainText('music-score-semantic-fallback');
+  await expect(alert).toContainText('jats-note-rich-text-fallback');
+  await expect(alert).toContainText('jats-note-citations-fallback');
 }
 
 async function installReferenceAssetPayload(page: Page): Promise<void> {
