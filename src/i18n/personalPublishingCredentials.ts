@@ -42,7 +42,7 @@ const en: PersonalPublishingCredentialsCopy = {
   removeConfirmation: (name) => `Remove the saved API key for ${name}?`,
 };
 
-const translations: Record<string, PersonalPublishingCredentialsCopy> = {
+export const personalPublishingCredentialsTranslations: Record<string, PersonalPublishingCredentialsCopy> = {
   bg: { ...en, title: 'OJS / OMP API ключове', description: 'Запазете отделен личен API ключ за всяка OJS или OMP инсталация.', savedConnections: 'Запазени инсталации', none: 'Все още няма запазен личен API ключ.', addTitle: 'Добавяне или замяна на API ключ', provider: 'Система за публикуване', label: 'Име', labelPlaceholder: 'Незадължително име', baseUrl: 'URL на инсталацията', apiKey: 'Личен API ключ', apiKeyPlaceholder: 'API ключ', save: 'Запази API ключа', saved: 'API ключът е запазен.', remove: 'Премахни', security: 'Ключовете се съхраняват криптирано в отделната база данни на личния профил и никога не се показват отново.', replaceHint: 'Повторното запазване на същата система и URL заменя само ключа за тази инсталация.', removeConfirmation: (name) => `Премахване на запазения API ключ за ${name}?` },
   cs: { ...en, title: 'API klíče OJS / OMP', description: 'Uložte samostatný osobní API klíč pro každou instalaci OJS nebo OMP.', savedConnections: 'Uložené instalace', none: 'Zatím není uložen žádný osobní publikační API klíč.', addTitle: 'Přidat nebo nahradit API klíč', provider: 'Publikační systém', label: 'Název', labelPlaceholder: 'Volitelný název', baseUrl: 'URL instalace', apiKey: 'Osobní API klíč', apiKeyPlaceholder: 'API klíč', save: 'Uložit API klíč', saved: 'API klíč byl uložen.', remove: 'Odebrat', security: 'Klíče jsou šifrovány v oddělené databázi osobního profilu a nikdy se znovu nezobrazují.', replaceHint: 'Opětovné uložení stejného systému a URL nahradí pouze klíč této instalace.', removeConfirmation: (name) => `Odebrat uložený API klíč pro ${name}?` },
   da: { ...en, title: 'OJS / OMP API-nøgler', description: 'Gem en separat personlig API-nøgle for hver OJS- eller OMP-installation.', savedConnections: 'Gemte installationer', none: 'Der er endnu ikke gemt en personlig publicerings-API-nøgle.', addTitle: 'Tilføj eller erstat en API-nøgle', provider: 'Publiceringssystem', label: 'Navn', labelPlaceholder: 'Valgfrit navn', baseUrl: 'Installations-URL', apiKey: 'Personlig API-nøgle', apiKeyPlaceholder: 'API-nøgle', save: 'Gem API-nøgle', saved: 'API-nøglen er gemt.', remove: 'Fjern', security: 'Nøgler krypteres i den separate personlige profildatabase og vises aldrig igen.', replaceHint: 'Hvis samme system og URL gemmes igen, erstattes kun nøglen for den installation.', removeConfirmation: (name) => `Fjern den gemte API-nøgle for ${name}?` },
@@ -70,5 +70,5 @@ const translations: Record<string, PersonalPublishingCredentialsCopy> = {
 };
 
 export function getPersonalPublishingCredentialsCopy(locale: string): PersonalPublishingCredentialsCopy {
-  return translations[locale] ?? en;
+  return personalPublishingCredentialsTranslations[locale] ?? en;
 }
