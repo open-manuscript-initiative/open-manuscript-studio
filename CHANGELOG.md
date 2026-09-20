@@ -6,6 +6,11 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Places live-publication footnotes at the bottom of the sheet containing their
+  reference, reserving space during pagination and preserving manuscript note
+  numbering. Long notes continue on subsequent sheets; endnotes remain at the
+  end. Layout recalculates after edits, zoom changes and font loading.
+
 ## 0.2.0-beta.3 — 2026-09-20
 
 ### Final stabilization beta

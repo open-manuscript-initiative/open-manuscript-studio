@@ -1,6 +1,7 @@
 export interface PublicationFlowBlock {
   top: number;
   height: number;
+  noteIds?: readonly string[];
   lines?: readonly PublicationFlowLine[];
   leadingHeight?: number;
   splittable?: boolean;
@@ -10,6 +11,7 @@ export interface PublicationFlowBlock {
 }
 
 export interface PublicationFlowLine {
+  noteIds?: readonly string[];
   textOffset: number;
   top: number;
   height: number;
@@ -30,6 +32,7 @@ export interface PublicationPageLayout {
   pageCount: number;
   placements: PublicationBlockPlacement[];
   flowBreaks: PublicationFlowBreak[];
+  pageNotes?: PublicationPageNote[][];
 }
 
 /**
@@ -44,7 +47,11 @@ export function paginatePublicationBlocks(
   blocks: readonly PublicationFlowBlock[],
   usablePageHeight: number,
   pageOverhead: number,
+  footnotes?: PublicationFootnotes,
 ): PublicationPageLayout {
+  if (footnotes && blocks.some((block) => block.noteIds?.length || block.lines?.some((line) => line.noteIds?.length))) {
+    return paginateWithFootnotes(blocks, usablePageHeight, pageOverhead, footnotes);
+  }
   const bodyHeight = positive(usablePageHeight, 1);
   const chromeHeight = nonNegative(pageOverhead);
   let insertedSpace = 0;
@@ -180,6 +187,7 @@ function normalizeLines(
   if (!lines?.length) return [];
   return lines
     .map((line) => ({
+      noteIds: line.noteIds,
       textOffset: Math.max(0, Math.trunc(nonNegative(line.textOffset))),
       top: Math.min(blockHeight, nonNegative(line.top)),
       height: nonNegative(line.height),
@@ -198,4 +206,136 @@ function positive(value: number, fallback: number): number {
 
 function nonNegative(value: number): number {
   return Number.isFinite(value) && value >= 0 ? value : 0;
+}
+
+
+export interface PublicationPageNote {
+  id: string;
+  offset: number;
+  height: number;
+}
+
+export interface PublicationFootnotes {
+  heights: ReadonlyMap<string, number>;
+  lineHeight: number;
+  separatorHeight: number;
+}
+
+/** Reserve footnote space while placing each reference line, before committing
+ * the page. Long notes continue on subsequent sheets in whole measured lines.
+ * The manuscript and its semantic note numbering remain untouched.
+ */
+function paginateWithFootnotes(
+  blocks: readonly PublicationFlowBlock[],
+  usablePageHeight: number,
+  pageOverhead: number,
+  notes: PublicationFootnotes,
+): PublicationPageLayout {
+  const bodyHeight = positive(usablePageHeight, 1);
+  const stride = bodyHeight + nonNegative(pageOverhead);
+  // offsetTop is integer-rounded while DOM ranges and CSS spacers are fractional.
+  // Keep that rounding from putting the final glyph against the footnote rule.
+  const bodyLimit = Math.max(1, bodyHeight - 2);
+  const lineHeight = positive(notes.lineHeight, 1);
+  const separator = nonNegative(notes.separatorHeight);
+  const noteCapacity = Math.max(lineHeight, Math.floor((bodyHeight * 0.55 - separator) / lineHeight) * lineHeight);
+  const pageNotes: PublicationPageNote[][] = [];
+  const seen = new Set<string>();
+  const placements: PublicationBlockPlacement[] = [];
+  const flowBreaks: PublicationFlowBreak[] = [];
+  const units = blocks.flatMap((block, blockIndex) => {
+    const lines = normalizeLines(block.lines, block.height);
+    const split = block.splittable && !block.keepTogether && lines.length;
+    return (split ? lines : [{ top: 0, height: block.height, textOffset: 0, noteIds: block.noteIds }]).map((line, index, all) => ({
+      blockIndex,
+      textOffset: line.textOffset,
+      top: nonNegative(block.top) + line.top,
+      height: line.height,
+      noteIds: line.noteIds ?? [],
+      first: index === 0,
+      forceBreak: index === 0 && block.forcePageBreakBefore,
+      keepNext: index === all.length - 1 && block.keepWithNext,
+    }));
+  });
+  const reserved = (page: number) => {
+    const fragments = pageNotes[page] ?? [];
+    return fragments.length ? separator + fragments.reduce((sum, fragment) => sum + fragment.height, 0) : 0;
+  };
+  let page = 0;
+  let position = 0;
+  let naturalBottom = 0;
+  let inlineHeight = 0;
+  let previousDelta = 0;
+
+  for (let index = 0; index < units.length; index += 1) {
+    const first = units[index]!;
+    const group = [first];
+    while (group[group.length - 1]!.keepNext && units[index + group.length]) {
+      group.push(units[index + group.length]!);
+    }
+    // Impossible keep chains must not force ordinary text outside a sheet.
+    if (group[group.length - 1]!.top + group[group.length - 1]!.height - first.top > bodyHeight) {
+      group.splice(1);
+    }
+    const last = group[group.length - 1]!;
+    const height = last.top + last.height - first.top;
+    const ids = [...new Set(group.flatMap((unit) => [...unit.noteIds]))]
+      .filter((id) => !seen.has(id) && notes.heights.has(id));
+    const newNoteHeight = ids.reduce((sum, id) => sum + nonNegative(notes.heights.get(id) ?? 0), 0);
+    position += Math.max(0, first.top - naturalBottom);
+    if (first.forceBreak && position > 0.5) {
+      page += 1;
+      position = 0;
+    }
+    const requiredReservation = () => {
+      const existing = reserved(page);
+      return newNoteHeight ? separator + Math.min(noteCapacity, Math.max(0, existing - separator) + newNoteHeight) : existing;
+    };
+    if (position > 0.5 && position + height + requiredReservation() > bodyLimit) {
+      page += 1;
+      position = 0;
+    }
+    // A carried note may fill much of the next sheet. Advance until this unit fits.
+    while (reserved(page) > 0 && (position + height + requiredReservation() > bodyLimit
+      || reserved(page) - separator + ids.length * lineHeight > noteCapacity + 0.5)) {
+      page += 1;
+      position = 0;
+    }
+    for (const [noteIndex, id] of ids.entries()) {
+      seen.add(id);
+      let remaining = nonNegative(notes.heights.get(id) ?? 0);
+      let offset = 0;
+      let notePage = page;
+      while (remaining > 0.01) {
+        const fragments = pageNotes[notePage] ??= [];
+        const used = fragments.reduce((sum, fragment) => sum + fragment.height, 0);
+        // Leave at least one line for every other reference introduced here.
+        const followingStarts = notePage === page ? (ids.length - noteIndex - 1) * lineHeight : 0;
+        const available = Math.max(0, noteCapacity - used - followingStarts);
+        const slice = Math.min(remaining, available);
+        if (slice > 0.01) {
+          fragments.push({ id, offset, height: slice });
+          offset += slice;
+          remaining -= slice;
+        }
+        notePage += 1;
+      }
+    }
+    for (const unit of group) {
+      const actualTop = page * stride + position + unit.top - first.top;
+      const delta = actualTop - unit.top;
+      if (unit.first) {
+        placements[unit.blockIndex] = { pageIndex: page, translateY: delta - inlineHeight };
+      } else if (delta > previousDelta + 0.5) {
+        const height = delta - previousDelta;
+        flowBreaks.push({ blockIndex: unit.blockIndex, textOffset: unit.textOffset, height });
+        inlineHeight += height;
+      }
+      previousDelta = delta;
+    }
+    position += height;
+    naturalBottom = last.top + last.height;
+    index += group.length - 1;
+  }
+  return { pageCount: Math.max(1, page + 1, pageNotes.length), placements, flowBreaks, pageNotes };
 }
