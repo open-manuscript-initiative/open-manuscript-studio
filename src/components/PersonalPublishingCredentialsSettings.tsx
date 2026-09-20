@@ -210,7 +210,6 @@ export function PersonalPublishingCredentialsSettings({
               setSaved(false);
               setDraft({ ...draft, baseUrl: event.target.value });
             }}
-            placeholder="https://example.org/index.php/journal"
           />
         </label>
         <label>
