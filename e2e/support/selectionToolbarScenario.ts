@@ -54,7 +54,11 @@ export function selectionToolbarScenario(): void {
     await page.keyboard.press('Escape');
     await expect(editor).toBeFocused();
     // Tiptap restores focus/selection on the next animation frame after a popover.
-    await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve());
+      });
+    }));
     await editor.press('ArrowRight');
     await expect(toolbar).toHaveCount(0);
     await editor.press('Shift+F10');
