@@ -48,7 +48,14 @@
     "src/components/AccountPanel.tsx",
     "src/services/publicationHtmlArtifact.ts",
     "tests/publication-html-artifact.test.ts",
-    "tests/publication-artifact.test.ts"
+    "tests/publication-artifact.test.ts",
+    "docs/release/1.0-hardening.md",
+    "tests/release-security.test.ts",
+    "tests/desktop-update-routing.test.mjs",
+    "e2e/release-accessibility.spec.ts",
+    "e2e/release-accessibility.mobile.spec.ts",
+    "e2e/release-recovery.spec.ts",
+    "e2e/support/accessibilityAssertions.ts"
   ],
   "workflowMarkers": {
     ".github/workflows/ci.yml": [
@@ -59,7 +66,8 @@
       "npm run test:vivliostyle-pdf",
       "npm run test:publication-release",
       "npm run test:jats4r-profile",
-      "npm run test:publication-artifact"
+      "npm run test:publication-artifact",
+      "npm run test:release-hardening"
     ],
     ".github/workflows/codeql.yml": [
       "github/codeql-action"
@@ -74,7 +82,10 @@
     ".github/workflows/tauri-desktop.yml": [
       "windows-x86_64",
       "linux-x86_64",
-      "Android universal APK"
+      "Android universal APK",
+      "Verify Linux installer round trip",
+      "Verify Windows MSI install round trip",
+      "Verify Android install package contract"
     ],
     ".github/workflows/1.0-readiness.yml": [
       "release:readiness",
@@ -86,7 +97,11 @@
       "test:publication-release",
       "publication-release.json",
       "test:jats4r-profile",
-      "test:publication-artifact"
+      "test:publication-artifact",
+      "test:release-hardening",
+      "test:release-accessibility",
+      "test:release-recovery:e2e",
+      "release-hardening.json"
     ]
   }
 }

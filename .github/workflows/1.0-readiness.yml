@@ -67,6 +67,13 @@ on:
       - 'tests/fixtures/reference-manuscript-all-features.omi.json'
       - 'scripts/generate-reference-manuscript.ts'
       - 'docs/reference-manuscript-corpus.md'
+      - 'docs/release/1.0-hardening.md'
+      - 'tests/release-security.test.ts'
+      - 'tests/desktop-update-routing.test.mjs'
+      - 'e2e/release-accessibility.spec.ts'
+      - 'e2e/release-accessibility.mobile.spec.ts'
+      - 'e2e/release-recovery.spec.ts'
+      - 'e2e/support/accessibilityAssertions.ts'
       - 'tests/ts-extension-loader.mjs'
       - 'package.json'
       - 'package-lock.json'
@@ -132,6 +139,13 @@ on:
       - 'tests/fixtures/reference-manuscript-all-features.omi.json'
       - 'scripts/generate-reference-manuscript.ts'
       - 'docs/reference-manuscript-corpus.md'
+      - 'docs/release/1.0-hardening.md'
+      - 'tests/release-security.test.ts'
+      - 'tests/desktop-update-routing.test.mjs'
+      - 'e2e/release-accessibility.spec.ts'
+      - 'e2e/release-accessibility.mobile.spec.ts'
+      - 'e2e/release-recovery.spec.ts'
+      - 'e2e/support/accessibilityAssertions.ts'
       - 'tests/ts-extension-loader.mjs'
       - 'package.json'
       - 'package-lock.json'
@@ -172,11 +186,25 @@ jobs:
           npm test
           npm run build
 
+      - name: Run release hardening unit gates
+        run: npm run test:release-hardening
+
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
       - name: Run reference manuscript UI lifecycle gate
         run: npx playwright test e2e/reference-manuscript-lifecycle.spec.ts --project=desktop-chromium
+
+      - name: Run accessibility and crash-recovery browser gates
+        run: |
+          npm run test:release-accessibility
+          npm run test:release-recovery:e2e
+
+      - name: Record release hardening evidence
+        shell: bash
+        run: |
+          mkdir -p benchmark-results
+          node -e "require('node:fs').writeFileSync('benchmark-results/release-hardening.json', JSON.stringify({schemaVersion:1, commit:process.env.GITHUB_SHA, security:true, accessibility:true, recovery:true, update:true, installerWorkflow:'.github/workflows/tauri-desktop.yml'}, null, 2) + '\\n')"
 
       - name: Install and verify server
         run: |

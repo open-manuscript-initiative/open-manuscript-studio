@@ -57,6 +57,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Run release hardening unit gates
+        run: npm run test:release-hardening
+
       - name: Install Playwright browser
         run: npx playwright install --with-deps --only-shell chromium
 
