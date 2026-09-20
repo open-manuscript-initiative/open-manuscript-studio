@@ -47,12 +47,11 @@ body {
   position: sticky;
   top: 0;
   z-index: 60;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: .9rem 1.25rem;
-  min-height: 4.65rem;
-  padding: .65rem clamp(.8rem, 2vw, 1.5rem);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: .45rem;
+  padding: .55rem clamp(.8rem, 2vw, 1.5rem) .6rem;
   border: 0;
   border-top: 3px solid var(--omi-academic-burgundy);
   border-bottom: 1px solid var(--omi-academic-line);
@@ -62,18 +61,69 @@ body {
   backdrop-filter: blur(10px);
 }
 
-.focus-header-identity {
-  display: flex;
+.focus-header-top-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: .75rem;
   min-width: 0;
+  width: 100%;
+}
+
+.focus-header-secondary-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .7rem 1rem;
+  min-width: 0;
+  width: 100%;
+  padding-top: .45rem;
+  border-top: 1px solid rgba(220, 214, 204, .72);
+}
+
+.focus-header-tools,
+.focus-header-actions {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  min-width: 0;
+}
+
+.focus-header-tools {
+  justify-content: flex-start;
+}
+
+.focus-header-actions {
+  justify-content: flex-end;
 }
 
 .focus-brand-lockup {
   display: flex;
   align-items: center;
+  justify-self: center;
   gap: .65rem;
   min-width: 0;
+}
+
+.focus-primary-menu-button {
+  justify-self: start;
+}
+
+.focus-account-button {
+  justify-self: end;
+  width: auto;
+  min-width: 2.35rem;
+  padding: 0 .7rem;
+  gap: .42rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.focus-account-label {
+  white-space: nowrap;
+  font-size: .74rem;
+  font-weight: 700;
 }
 
 .focus-brand-home {
@@ -226,9 +276,6 @@ body {
   box-shadow: 0 18px 44px rgba(54, 45, 39, .16);
 }
 
-.focus-header-actions {
-  gap: .55rem;
-}
 
 .focus-save-state {
   min-height: 2rem;
@@ -612,11 +659,6 @@ body {
 /* -------------------------------------------------------------------------- */
 
 @media (max-width: 1020px) {
-  .app-header.focus-header {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: .65rem .8rem;
-  }
-
   .focus-brand-initiative {
     display: none;
   }
@@ -625,53 +667,79 @@ body {
     margin-top: 0;
   }
 
+  .focus-account-label,
+  .focus-logout-label {
+    display: none;
+  }
+
+  .focus-account-button {
+    width: 2.35rem;
+    padding: 0;
+  }
 }
 
 @media (max-width: 760px) {
   .app-header.focus-header {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-areas:
-      "identity . actions"
-      "primary primary primary";
-    align-items: start;
-    min-height: 4.15rem;
-    gap: .45rem;
-    padding: .5rem .6rem;
-  }
-
-  .focus-header-identity {
-    grid-area: identity;
     gap: .4rem;
+    padding: .45rem .6rem .5rem;
   }
 
-  .focus-current-notes-button {
+  .focus-header-top-row {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: 8px;
+    min-height: 44px;
+  }
+
+  .focus-primary-menu-button,
+  .focus-account-button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 10px;
+  }
+
+  .focus-brand-copy {
     display: none;
   }
 
-  .focus-brand-lockup {
+  .focus-brand-mark {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .focus-header-secondary-row {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    padding-top: .4rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .focus-header-secondary-row::-webkit-scrollbar {
     display: none;
+  }
+
+  .focus-header-tools,
+  .focus-header-primary-action,
+  .focus-header-actions {
+    flex: 0 0 auto;
   }
 
   .focus-header-primary-action {
-    grid-area: primary;
-    justify-content: flex-end;
-  }
-
-  .focus-header-actions {
-    grid-area: actions;
+    justify-content: center;
   }
 
   .focus-save-state {
-    width: 2rem;
-    min-height: 2rem;
+    width: 2.35rem;
+    min-height: 2.35rem;
     justify-content: center;
     padding: 0;
   }
 
-  .focus-save-state span,
-  .focus-language-switcher,
-  .focus-logout-button {
+  .focus-save-state span {
     display: none;
   }
 
