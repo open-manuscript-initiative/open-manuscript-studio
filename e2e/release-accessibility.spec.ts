@@ -33,6 +33,12 @@ test('login and editor satisfy the 1.0 keyboard and accessible-name contract', a
   await expectBasicAccessibilityContract(page);
 
   await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('navigation', { name: 'Manuscript menu' })).toBeHidden();
+  await expect(dialog.getByRole('button', { name: 'Manuscript menu', exact: true })).toBeFocused();
+
+  await dialog.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Home', exact: true }).click();
   await expect(dialog).toBeHidden();
   expect(api.unhandledRequests).toEqual([]);
 });

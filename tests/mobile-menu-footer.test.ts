@@ -67,11 +67,12 @@ test('the application footer links to the Studio wiki', () => {
   );
 });
 
-test('Studio menus close from the same left-side control position that opens them', () => {
+test('Studio menu header controls keep the established left-side trigger position', () => {
   assert.match(
     menu,
-    /<header className="studio-menu-header">\s*<button[^>]+className="studio-menu-close"/,
+    /<header className="studio-menu-header">\s*<button[^>]+className="studio-menu-close studio-menu-navigation-toggle"/,
   );
+  assert.match(menu, /aria-expanded=\{navigationOpen\}/);
   assert.match(
     assignmentMenu,
     /<header className="studio-menu-header">\s*<button[^>]+className="studio-menu-close"/,

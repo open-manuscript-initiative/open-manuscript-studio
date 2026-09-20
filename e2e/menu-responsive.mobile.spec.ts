@@ -12,7 +12,7 @@ test('every manuscript-menu view stays inside the mobile viewport', async ({ pag
   const content = dialog.locator('.studio-menu-content');
   await expect(dialog).toBeVisible();
 
-  const navButtons = dialog.locator('.studio-menu-nav-button');
+  const navButtons = dialog.locator('.studio-menu-nav-button:not([data-home-navigation="true"])');
   const navCount = await navButtons.count();
 
   for (let index = 0; index < navCount; index += 1) {
@@ -42,6 +42,18 @@ test('every manuscript-menu view stays inside the mobile viewport', async ({ pag
   expect(viewport).not.toBeNull();
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width + 1);
+
+  const toggle = dialog.getByRole('button', { name: 'Manuscript menu', exact: true });
+  await toggle.click();
+  await expect(dialog.getByRole('navigation', { name: 'Manuscript menu' })).toBeVisible();
+  await toggle.click();
+  await expect(dialog.getByRole('navigation', { name: 'Manuscript menu' })).toBeHidden();
+  await expect(computedCrossReference).toBeVisible();
+
+  await toggle.click();
+  await dialog.getByRole('button', { name: 'Home', exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
 });
 
 async function settleLayout(content: Locator): Promise<void> {

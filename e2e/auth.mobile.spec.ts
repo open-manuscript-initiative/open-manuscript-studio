@@ -22,16 +22,24 @@ test('the responsive login and editor fit a phone viewport', async ({ page }) =>
   expect(triggerPosition).not.toBeNull();
   await menuTrigger.click();
 
-  const menuClose = page.getByRole('button', { name: 'Close manuscript menu', exact: true });
-  await expect(menuClose).toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Manuscript menu' })).toBeVisible();
-  const closePosition = await menuClose.boundingBox();
-  expect(closePosition).not.toBeNull();
-  expect(Math.abs((closePosition?.x ?? 0) - (triggerPosition?.x ?? 0))).toBeLessThanOrEqual(1);
-  expect(Math.abs((closePosition?.y ?? 0) - (triggerPosition?.y ?? 0))).toBeLessThanOrEqual(1);
+  const dialog = page.getByRole('dialog', { name: 'Manuscript menu' });
+  const menuToggle = dialog.getByRole('button', { name: 'Manuscript menu', exact: true });
+  const menuNavigation = dialog.getByRole('navigation', { name: 'Manuscript menu' });
+  await expect(menuToggle).toBeVisible();
+  await expect(menuNavigation).toBeVisible();
+  const togglePosition = await menuToggle.boundingBox();
+  expect(togglePosition).not.toBeNull();
+  expect(Math.abs((togglePosition?.x ?? 0) - (triggerPosition?.x ?? 0))).toBeLessThanOrEqual(1);
+  expect(Math.abs((togglePosition?.y ?? 0) - (triggerPosition?.y ?? 0))).toBeLessThanOrEqual(1);
 
-  await menuClose.click();
-  await expect(menuClose).toBeHidden();
+  await menuToggle.click();
+  await expect(dialog).toBeVisible();
+  await expect(menuNavigation).toBeHidden();
+  await expect(menuToggle).toBeVisible();
+
+  await menuToggle.click();
+  await dialog.getByRole('button', { name: 'Home', exact: true }).click();
+  await expect(dialog).toBeHidden();
 
   const searchTrigger = page.getByRole('button', { name: 'Search', exact: true });
   const searchTriggerPosition = await searchTrigger.boundingBox();

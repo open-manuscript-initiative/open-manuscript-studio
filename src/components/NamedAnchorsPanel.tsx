@@ -87,7 +87,7 @@ export function NamedAnchorsPanel({ onNavigate }: { onNavigate?: () => void }) {
     if (!target) return;
     selectSection(target.sectionId);
     onNavigate?.();
-    document.querySelector<HTMLButtonElement>('.studio-menu-close')?.click();
+    document.querySelector<HTMLButtonElement>('[data-home-navigation="true"]')?.click();
     window.setTimeout(() => {
       const element = target.kind === 'section'
         ? findRenderedSectionElement(target.id)

@@ -170,7 +170,7 @@ function CaptionList({ kind, onNavigate }: { kind: 'figures' | 'tables'; onNavig
     const section = manuscript.sections.find((item) => item.blocks.some((block) => block.id === blockId));
     if (section) selectSection(section.id);
     onNavigate?.();
-    document.querySelector<HTMLButtonElement>('.studio-menu-close')?.click();
+    document.querySelector<HTMLButtonElement>('[data-home-navigation="true"]')?.click();
     window.setTimeout(() => document.getElementById(`omi-target-${blockId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120);
   }
 
