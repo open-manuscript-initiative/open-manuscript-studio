@@ -60,6 +60,20 @@ test('the mobile application keeps exactly one footer outside menu content', () 
   assert.equal(mobileLayout.match(/<Footer\s*\/>/g)?.length, 1);
 });
 
+test('the native mobile OMI brand is an explicit Home control', () => {
+  assert.match(mobileLayout, /className="mobile-header-title mobile-header-home"/);
+  assert.match(mobileLayout, /data-app-home-navigation="true"/);
+  assert.match(mobileLayout, /aria-label=\{menuCopy\.home\}/);
+  assert.match(mobileLayout, /setView\('editor'\);[\s\S]*?onHome\(\);/);
+});
+
+test('the desktop OMI brand is an explicit Home control', () => {
+  assert.match(header, /className="focus-brand-lockup focus-brand-home"/);
+  assert.match(header, /data-app-home-navigation="true"/);
+  assert.match(header, /aria-label=\{menuCopy\.home\}/);
+  assert.match(header, /onHome\(\);/);
+});
+
 test('the application footer links to the Studio wiki', () => {
   assert.equal(
     footer.match(/https:\/\/github\.com\/open-manuscript-initiative\/open-manuscript-studio\/wiki/g)?.length,
