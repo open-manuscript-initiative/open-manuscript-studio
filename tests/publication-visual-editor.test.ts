@@ -78,11 +78,15 @@ test('live publication editor opens as its own full-screen menu workspace', () =
   assert.match(fullscreenPanels, /\.studio-menu-content--publication-editor \.publication-style-editor[\s\S]*height: 100%/);
 });
 
-test('Studio navigation starts visible and collapses after choosing a workspace', () => {
+test('Studio navigation collapses without leaving the active workspace and Home is explicit', () => {
   assert.match(studioMenu, /const \[navigationOpen, setNavigationOpen\] = useState\(true\)/);
   assert.match(studioMenu, /hidden=\{!navigationOpen\}/);
   assert.match(studioMenu, /aria-expanded=\{navigationOpen\}/);
   assert.match(studioMenu, /setNavigationOpen\(false\)/);
+  assert.match(studioMenu, /data-home-navigation="true"/);
+  assert.match(studioMenu, /supplementalCopy\.home/);
+  assert.match(studioMenu, /if \(event\.key !== 'Escape'\) return;[\s\S]*setNavigationOpen\(false\)/);
+  assert.doesNotMatch(studioMenu, /onClick=\{onClose\}><X/);
   assert.match(studioShellStyles, /\.studio-menu-navigation\[hidden\] \{\s*display: none/);
   assert.match(studioShellStyles, /\.studio-menu-body\.studio-menu-body--navigation-collapsed \{\s*grid-template-columns: minmax\(0, 1fr\)/);
 });
