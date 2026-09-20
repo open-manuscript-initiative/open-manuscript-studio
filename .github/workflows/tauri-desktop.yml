@@ -105,6 +105,66 @@ jobs:
         with:
           args: ${{ matrix.args }}
 
+      - name: Verify Linux installer round trip
+        if: matrix.artifact == 'linux-x86_64'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          deb="$(find "$GITHUB_WORKSPACE/src-tauri/target" -type f -path '*/release/bundle/deb/*.deb' -print -quit)"
+          appimage="$(find "$GITHUB_WORKSPACE/src-tauri/target" -type f -path '*/release/bundle/appimage/*.AppImage' -print -quit)"
+          test -n "$deb"
+          test -n "$appimage"
+
+          package="$(dpkg-deb -f "$deb" Package)"
+          test -n "$package"
+          dpkg-deb --info "$deb" >/dev/null
+          dpkg-deb --contents "$deb" >/dev/null
+
+          sudo dpkg -i "$deb"
+          dpkg-query -W -f='${Status}\n' "$package" | grep -Fx 'install ok installed'
+          dpkg -L "$package" | tee "$RUNNER_TEMP/linux-installed-files.txt"
+          sudo dpkg -r "$package"
+          if dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -Fq 'install ok installed'; then
+            echo "Linux package remained installed after uninstall: $package" >&2
+            exit 1
+          fi
+
+          chmod +x "$appimage"
+          extract_dir="$(mktemp -d)"
+          (
+            cd "$extract_dir"
+            "$appimage" --appimage-extract >/dev/null
+          )
+          test -x "$extract_dir/squashfs-root/AppRun"
+
+      - name: Verify Windows MSI install round trip
+        if: matrix.artifact == 'windows-x86_64'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $msi = Get-ChildItem -Path "$env:GITHUB_WORKSPACE\src-tauri\target" -Recurse -Filter '*.msi' |
+            Select-Object -First 1
+          $nsis = Get-ChildItem -Path "$env:GITHUB_WORKSPACE\src-tauri\target" -Recurse -Filter '*.exe' |
+            Where-Object { $_.FullName -match '\\bundle\\nsis\\' } |
+            Select-Object -First 1
+
+          if (-not $msi) { throw 'No MSI installer was produced.' }
+          if (-not $nsis) { throw 'No NSIS installer was produced.' }
+
+          $install = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i', $msi.FullName, '/qn', '/norestart') -Wait -PassThru
+          if ($install.ExitCode -notin @(0, 3010)) {
+            throw "MSI installation failed with exit code $($install.ExitCode)."
+          }
+
+          $uninstall = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/x', $msi.FullName, '/qn', '/norestart') -Wait -PassThru
+          if ($uninstall.ExitCode -notin @(0, 3010)) {
+            throw "MSI uninstall failed with exit code $($uninstall.ExitCode)."
+          }
+
+          if ($nsis.Length -le 0) { throw 'NSIS installer is empty.' }
+          Write-Host "Verified MSI install/uninstall and NSIS artifact: $($nsis.Name)"
+
       - name: Upload desktop installers
         uses: actions/upload-artifact@v7
         with:
@@ -321,6 +381,22 @@ jobs:
             --verbose \
             --print-certs \
             "$apk"
+
+      - name: Verify Android install package contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="$GITHUB_WORKSPACE/android-artifact/Open-Manuscript-Studio-Android-universal.apk"
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d -print | sort -V | tail -n 1)"
+          aapt="$build_tools/aapt"
+          apksigner="$build_tools/apksigner"
+
+          test -x "$aapt"
+          test -x "$apksigner"
+          "$aapt" dump badging "$apk" | tee "$RUNNER_TEMP/android-badging.txt"
+          grep -Fq "package: name='org.openmanuscript.studio'" "$RUNNER_TEMP/android-badging.txt"
+          grep -Fq "sdkVersion:'24'" "$RUNNER_TEMP/android-badging.txt"
+          "$apksigner" verify --verbose "$apk"
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v7
