@@ -132,12 +132,13 @@ export function MobileLayout({ children, onOpenMenu, onHome }: MobileLayoutProps
 
         <button
           type="button"
-          className="mobile-icon-button"
-          onClick={() => void logout().catch(() => {})}
-          aria-label={t('auth.logout')}
-          disabled={isAuthLoading}
+          className={`mobile-icon-button mobile-account-button${view === 'account' ? ' is-active' : ''}`}
+          onClick={() => setView('account')}
+          aria-label={nav.account}
+          title={nav.account}
+          aria-pressed={view === 'account'}
         >
-          <LogOut size={20} aria-hidden="true" />
+          <User size={20} aria-hidden="true" />
         </button>
       </header>
 
@@ -163,11 +164,33 @@ export function MobileLayout({ children, onOpenMenu, onHome }: MobileLayoutProps
             <HeaderInsertMenu />
           </div>
           <LanguageSwitcher />
+          <button
+            type="button"
+            className="mobile-icon-button mobile-secondary-logout"
+            onClick={() => void logout().catch(() => {})}
+            aria-label={t('auth.logout')}
+            title={t('auth.logout')}
+            disabled={isAuthLoading}
+          >
+            <LogOut size={20} aria-hidden="true" />
+          </button>
         </div>
       ) : (
         <div className="mobile-account-bar">
           <strong>{secondaryBarTitle}</strong>
-          <LanguageSwitcher />
+          <div className="mobile-account-bar-actions">
+            <LanguageSwitcher />
+            <button
+              type="button"
+              className="mobile-icon-button mobile-secondary-logout"
+              onClick={() => void logout().catch(() => {})}
+              aria-label={t('auth.logout')}
+              title={t('auth.logout')}
+              disabled={isAuthLoading}
+            >
+              <LogOut size={20} aria-hidden="true" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -219,15 +242,6 @@ export function MobileLayout({ children, onOpenMenu, onHome }: MobileLayoutProps
           <span>{nav.details}</span>
         </button>
 
-        <button
-          type="button"
-          className={`mobile-nav-item${view === 'account' ? ' mobile-nav-item--active' : ''}`}
-          aria-current={view === 'account' ? 'page' : undefined}
-          onClick={() => setView('account')}
-        >
-          <User size={20} aria-hidden="true" />
-          <span>{nav.account}</span>
-        </button>
       </nav>
     </div>
   );
