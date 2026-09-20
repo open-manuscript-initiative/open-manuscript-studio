@@ -326,7 +326,6 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
                 type="email"
                 value={email}
                 autoComplete="email"
-                placeholder={t('auth.fields.email.placeholder')}
                 required
                 disabled={isLoading}
                 onChange={(event) => {
