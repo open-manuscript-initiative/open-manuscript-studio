@@ -53,7 +53,7 @@ test('Account surfaces have explicit copy in all 24 supported locales', () => {
     const copy = personalPublishingCredentialsTranslations[locale];
     assert.ok(copy, `personalPublishingCredentials is missing ${locale}`);
     for (const [key, value] of Object.entries(copy)) {
-      if (key === 'removeConfirmation') {
+      if (key === 'removeConfirmation' || key === 'profileEmailRemoveConfirmation') {
         assert.equal(typeof value, 'function');
         continue;
       }

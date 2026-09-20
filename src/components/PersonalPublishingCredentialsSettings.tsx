@@ -4,18 +4,22 @@ import { useEffect, useMemo, useState } from 'react';
 import { getPersonalPublishingCredentialsCopy } from '../i18n/personalPublishingCredentials';
 import {
   deletePersonalPublishingCredential,
+  getPersonalProfileEmails,
   getPersonalPublishingCredentials,
   savePersonalPublishingCredential,
+  type PersonalProfileEmailState,
   type PersonalPublishingCredentialProvider,
   type PersonalPublishingCredentialState,
 } from '../services/authApi';
 
 interface PersonalPublishingCredentialsSettingsProps {
   locale: string;
+  emailRevision?: number;
 }
 
 interface CredentialDraft {
   provider: PersonalPublishingCredentialProvider;
+  profileEmailId: string;
   label: string;
   baseUrl: string;
   apiKey: string;
@@ -23,6 +27,7 @@ interface CredentialDraft {
 
 const emptyDraft: CredentialDraft = {
   provider: 'ojs',
+  profileEmailId: '',
   label: '',
   baseUrl: '',
   apiKey: '',
@@ -30,8 +35,10 @@ const emptyDraft: CredentialDraft = {
 
 export function PersonalPublishingCredentialsSettings({
   locale,
+  emailRevision = 0,
 }: PersonalPublishingCredentialsSettingsProps) {
   const copy = getPersonalPublishingCredentialsCopy(locale);
+  const [emails, setEmails] = useState<PersonalProfileEmailState[]>([]);
   const [credentials, setCredentials] = useState<PersonalPublishingCredentialState[]>([]);
   const [draft, setDraft] = useState<CredentialDraft>(emptyDraft);
   const [busy, setBusy] = useState(false);
@@ -40,19 +47,36 @@ export function PersonalPublishingCredentialsSettings({
 
   const sortedCredentials = useMemo(
     () =>
-      [...credentials].sort((left, right) =>
-        left.provider === right.provider
-          ? left.baseUrl.localeCompare(right.baseUrl)
-          : left.provider.localeCompare(right.provider),
-      ),
+      [...credentials].sort((left, right) => {
+        const platform = left.provider.localeCompare(right.provider);
+        if (platform) return platform;
+        const installation = left.baseUrl.localeCompare(right.baseUrl);
+        return installation || left.email.localeCompare(right.email);
+      }),
     [credentials],
   );
 
   useEffect(() => {
     let cancelled = false;
-    void getPersonalPublishingCredentials()
-      .then((items) => {
-        if (!cancelled) setCredentials(items);
+    void Promise.all([
+      getPersonalProfileEmails(),
+      getPersonalPublishingCredentials(),
+    ])
+      .then(([profileEmails, items]) => {
+        if (cancelled) return;
+        setEmails(profileEmails);
+        setCredentials(items);
+        setDraft((current) => {
+          if (profileEmails.some((item) => item.id === current.profileEmailId)) {
+            return current;
+          }
+          const preferred =
+            profileEmails.find((item) => item.isPrimary) ?? profileEmails[0];
+          return {
+            ...current,
+            profileEmailId: preferred?.id ?? '',
+          };
+        });
       })
       .catch((reason) => {
         if (!cancelled) {
@@ -62,7 +86,7 @@ export function PersonalPublishingCredentialsSettings({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [emailRevision]);
 
   async function saveCredential(): Promise<void> {
     setBusy(true);
@@ -71,6 +95,7 @@ export function PersonalPublishingCredentialsSettings({
     try {
       const credential = await savePersonalPublishingCredential({
         provider: draft.provider,
+        profileEmailId: draft.profileEmailId,
         label: draft.label.trim() || undefined,
         baseUrl: draft.baseUrl.trim(),
         apiKey: draft.apiKey,
@@ -81,6 +106,7 @@ export function PersonalPublishingCredentialsSettings({
       ]);
       setDraft((current) => ({
         provider: current.provider,
+        profileEmailId: current.profileEmailId,
         label: '',
         baseUrl: '',
         apiKey: '',
@@ -150,6 +176,7 @@ export function PersonalPublishingCredentialsSettings({
                   {credential.label?.trim() ? (
                     <small>{credential.baseUrl}</small>
                   ) : null}
+                  <small>{credential.email}</small>
                 </div>
                 <button
                   type="button"
@@ -186,6 +213,24 @@ export function PersonalPublishingCredentialsSettings({
             <option value="ojs">{copy.ojs}</option>
             <option value="omp">{copy.omp}</option>
           </select>
+        </label>
+        <label>
+          {copy.credentialEmail}
+          <select
+            value={draft.profileEmailId}
+            disabled={busy || !emails.length}
+            onChange={(event) => {
+              setSaved(false);
+              setDraft({ ...draft, profileEmailId: event.target.value });
+            }}
+          >
+            {emails.map((email) => (
+              <option value={email.id} key={email.id}>
+                {email.email}{email.isPrimary ? ` — ${copy.primaryEmail}` : ''}
+              </option>
+            ))}
+          </select>
+          <small className="account-field-hint">{copy.credentialEmailHint}</small>
         </label>
         <label>
           {copy.label}
@@ -240,6 +285,7 @@ export function PersonalPublishingCredentialsSettings({
           type="button"
           disabled={
             busy ||
+            !draft.profileEmailId ||
             !draft.baseUrl.trim() ||
             !draft.apiKey.trim()
           }

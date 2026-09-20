@@ -18,6 +18,17 @@ export interface PersonalPublishingCredentialsCopy {
   ojs: string;
   omp: string;
   removeConfirmation: (name: string) => string;
+  profileEmailsTitle: string;
+  profileEmailsDescription: string;
+  profileEmailsNone: string;
+  profileEmail: string;
+  profileEmailPlaceholder: string;
+  addProfileEmail: string;
+  profileEmailSaved: string;
+  primaryEmail: string;
+  profileEmailRemoveConfirmation: (email: string) => string;
+  credentialEmail: string;
+  credentialEmailHint: string;
 }
 
 const en: PersonalPublishingCredentialsCopy = {
@@ -40,6 +51,17 @@ const en: PersonalPublishingCredentialsCopy = {
   ojs: 'OJS',
   omp: 'OMP',
   removeConfirmation: (name) => `Remove the saved API key for ${name}?`,
+  profileEmailsTitle: 'E-mail addresses',
+  profileEmailsDescription: 'Associate every e-mail address you use for scholarly publishing with your personal Studio profile.',
+  profileEmailsNone: 'No profile e-mail address is available yet.',
+  profileEmail: 'E-mail address',
+  profileEmailPlaceholder: 'name@example.org',
+  addProfileEmail: 'Add e-mail address',
+  profileEmailSaved: 'The e-mail address was added.',
+  primaryEmail: 'Primary',
+  profileEmailRemoveConfirmation: (email) => `Remove ${email} from the personal profile?`,
+  credentialEmail: 'E-mail address for this API key',
+  credentialEmailHint: 'Choose the e-mail address used by the corresponding OJS or OMP account.',
 };
 
 export const personalPublishingCredentialsTranslations: Record<string, PersonalPublishingCredentialsCopy> = {
@@ -68,6 +90,37 @@ export const personalPublishingCredentialsTranslations: Record<string, PersonalP
   sl: { ...en, title: 'API-ključi OJS / OMP', description: 'Za vsako namestitev OJS ali OMP shranite ločen osebni API-ključ.', savedConnections: 'Shranjene namestitve', none: 'Osebni API-ključ za objavljanje še ni shranjen.', addTitle: 'Dodaj ali zamenjaj API-ključ', provider: 'Sistem za objavljanje', label: 'Ime', labelPlaceholder: 'Izbirno ime', baseUrl: 'URL namestitve', apiKey: 'Osebni API-ključ', apiKeyPlaceholder: 'API-ključ', save: 'Shrani API-ključ', saved: 'API-ključ je shranjen.', remove: 'Odstrani', security: 'Ključi so šifrirano shranjeni v ločeni podatkovni zbirki osebnega profila in se nikoli več ne prikažejo.', replaceHint: 'Ponovno shranjevanje istega sistema in URL-ja zamenja samo ključ te namestitve.', removeConfirmation: (name) => `Odstranim shranjeni API-ključ za ${name}?` },
   sv: { ...en, title: 'OJS / OMP API-nycklar', description: 'Spara en separat personlig API-nyckel för varje OJS- eller OMP-installation du använder.', savedConnections: 'Sparade installationer', none: 'Ingen personlig publicerings-API-nyckel har sparats ännu.', addTitle: 'Lägg till eller ersätt en API-nyckel', provider: 'Publiceringssystem', label: 'Namn', labelPlaceholder: 'Valfritt namn', baseUrl: 'Installations-URL', apiKey: 'Personlig API-nyckel', apiKeyPlaceholder: 'API-nyckel', save: 'Spara API-nyckel', saved: 'API-nyckeln har sparats.', remove: 'Ta bort', security: 'Nycklar lagras krypterade i den separata personliga profildatabasen och visas aldrig igen.', replaceHint: 'Om samma system och URL sparas igen ersätts bara nyckeln för den installationen.', removeConfirmation: (name) => `Ta bort den sparade API-nyckeln för ${name}?` },
 };
+
+
+Object.assign(personalPublishingCredentialsTranslations.hu, {
+  profileEmailsTitle: 'E-mail-címek',
+  profileEmailsDescription: 'A személyes Stúdió-profilhoz több, tudományos publikáláshoz használt e-mail-cím is társítható.',
+  profileEmailsNone: 'Még nincs a profilhoz társított e-mail-cím.',
+  profileEmail: 'E-mail-cím',
+  profileEmailPlaceholder: 'nev@pelda.hu',
+  addProfileEmail: 'E-mail-cím hozzáadása',
+  profileEmailSaved: 'Az e-mail-cím hozzáadva.',
+  primaryEmail: 'Elsődleges',
+  profileEmailRemoveConfirmation: (email: string) => `Törlöd a(z) ${email} címet a személyes profilból?`,
+  credentialEmail: 'Az API-kulcshoz tartozó e-mail-cím',
+  credentialEmailHint: 'Azt az e-mail-címet válaszd, amellyel az adott OJS- vagy OMP-fiókot használod.',
+  replaceHint: 'Ugyanazt a rendszert, URL-t és e-mail-címet újra mentve csak az adott kulcs cserélődik.',
+});
+
+Object.assign(personalPublishingCredentialsTranslations.de, {
+  profileEmailsTitle: 'E-Mail-Adressen',
+  profileEmailsDescription: 'Dem persönlichen Studio-Profil können mehrere für wissenschaftliches Publizieren verwendete E-Mail-Adressen zugeordnet werden.',
+  profileEmailsNone: 'Noch keine E-Mail-Adresse dem Profil zugeordnet.',
+  profileEmail: 'E-Mail-Adresse',
+  profileEmailPlaceholder: 'name@beispiel.de',
+  addProfileEmail: 'E-Mail-Adresse hinzufügen',
+  profileEmailSaved: 'Die E-Mail-Adresse wurde hinzugefügt.',
+  primaryEmail: 'Primär',
+  profileEmailRemoveConfirmation: (email: string) => `${email} aus dem persönlichen Profil entfernen?`,
+  credentialEmail: 'E-Mail-Adresse für diesen API-Schlüssel',
+  credentialEmailHint: 'Wählen Sie die E-Mail-Adresse des entsprechenden OJS- oder OMP-Kontos.',
+  replaceHint: 'Erneutes Speichern desselben Systems, derselben URL und E-Mail-Adresse ersetzt nur diesen Schlüssel.',
+});
 
 export function getPersonalPublishingCredentialsCopy(locale: string): PersonalPublishingCredentialsCopy {
   return personalPublishingCredentialsTranslations[locale] ?? en;
