@@ -383,7 +383,7 @@
   min-width: 0;
 }
 
-.studio-manuscript-fields input,
+.studio-manuscript-fields input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
 .studio-manuscript-fields select,
 .studio-manuscript-fields textarea {
   width: 100%;
