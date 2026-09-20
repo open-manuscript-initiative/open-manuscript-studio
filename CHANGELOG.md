@@ -6,6 +6,12 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Shows the document selection toolbar after completed text selections,
+  including delayed native touch selection and selection-handle changes.
+  Scrolling repositions the menu instead of dismissing it; Escape, outside
+  clicks and collapsed selections still dismiss it, while toolbar fields keep
+  their focus and selection.
+
 - Keeps live-publication page boundaries visible across the full sheet width,
   including while editing on mobile, with clearer outlines and wider page gaps.
   The mobile print-layout status and zoom controls wrap within the viewport.
