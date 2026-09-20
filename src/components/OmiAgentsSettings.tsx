@@ -28,12 +28,12 @@ type AgentPermission =
 
 type AiProviderPreset = 'openai' | 'mistral' | 'groq' | 'openrouter' | 'custom';
 
-const AI_PROVIDER_PRESETS: Record<AiProviderPreset, { endpoint: string; modelPlaceholder: string }> = {
-  openai: { endpoint: 'https://api.openai.com/v1/responses', modelPlaceholder: 'gpt-5.4' },
-  mistral: { endpoint: 'https://api.mistral.ai/v1/chat/completions', modelPlaceholder: 'mistral-large-latest' },
-  groq: { endpoint: 'https://api.groq.com/openai/v1/chat/completions', modelPlaceholder: 'openai/gpt-oss-120b' },
-  openrouter: { endpoint: 'https://openrouter.ai/api/v1/chat/completions', modelPlaceholder: 'openai/gpt-5.4' },
-  custom: { endpoint: '', modelPlaceholder: 'model-name' },
+const AI_PROVIDER_PRESETS: Record<AiProviderPreset, { endpoint: string }> = {
+  openai: { endpoint: 'https://api.openai.com/v1/responses' },
+  mistral: { endpoint: 'https://api.mistral.ai/v1/chat/completions' },
+  groq: { endpoint: 'https://api.groq.com/openai/v1/chat/completions' },
+  openrouter: { endpoint: 'https://openrouter.ai/api/v1/chat/completions' },
+  custom: { endpoint: '' },
 };
 
 const SAFE_PERMISSIONS: AgentPermission[] = [
@@ -71,7 +71,6 @@ export function OmiAgentsSettings() {
   const directWriteEnabled = permissions.includes('document.write') || permissions.includes('metadata.write');
   const canSave = enabledAgents.length > 0 && permissions.includes('document.suggest');
   const canSaveAi = Boolean(aiEndpoint.trim() && aiModel.trim() && (aiApiKey.trim() || aiHasSecret));
-  const aiModelPlaceholder = AI_PROVIDER_PRESETS[aiProviderPreset].modelPlaceholder;
   const aiEndpointLabel = aiProviderPreset === 'openai' ? copy.aiResponsesEndpoint : copy.aiEndpoint;
   const visibleNotice = notice && notice !== aiStatus?.message && notice !== status?.message ? notice : '';
 
@@ -279,7 +278,6 @@ export function OmiAgentsSettings() {
             autoCorrect="off"
             value={aiEndpoint}
             readOnly={aiProviderPreset !== 'custom'}
-            placeholder="https://api.example.org/v1/chat/completions"
             onChange={(event) => setAiEndpoint(event.target.value)}
           />
         </label>
@@ -290,7 +288,6 @@ export function OmiAgentsSettings() {
             autoCapitalize="none"
             autoCorrect="off"
             value={aiModel}
-            placeholder={aiModelPlaceholder}
             onChange={(event) => setAiModel(event.target.value)}
           />
         </label>
