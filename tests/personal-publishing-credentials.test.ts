@@ -14,6 +14,10 @@ const profileEmailMigration = readFileSync(
   new URL('../server/prisma/identity/migrations/20260920163000_profile_emails_and_credential_binding/migration.sql', import.meta.url),
   'utf8',
 );
+const profileEmailUuidRepairMigration = readFileSync(
+  new URL('../server/prisma/identity/migrations/20260920172500_repair_profile_email_rfc_uuid/migration.sql', import.meta.url),
+  'utf8',
+);
 const authRoutes = readFileSync(
   new URL('../server/src/routes/authRoutes.ts', import.meta.url),
   'utf8',
@@ -49,6 +53,20 @@ test('personal profile supports multiple e-mail addresses', () => {
   assert.match(authRoutes, /PROFILE_EMAIL_IN_USE/);
   assert.match(emailSettings, /addPersonalProfileEmail/);
   assert.match(emailSettings, /deletePersonalProfileEmail/);
+});
+
+test('profile e-mail IDs satisfy the public RFC UUID contract', () => {
+  assert.match(profileEmailMigration, /md5\("id"::text/);
+  assert.match(profileEmailUuidRepairMigration, /SET "id" = gen_random_uuid\(\)/);
+  assert.match(
+    profileEmailUuidRepairMigration,
+    /\[1-8\]\[0-9a-f\]\{3\}.*\[89ab\]\[0-9a-f\]\{3\}/,
+  );
+  assert.match(
+    profileEmailUuidRepairMigration,
+    /CREATE OR REPLACE FUNCTION "create_primary_user_profile_email"\(\)/,
+  );
+  assert.match(profileEmailUuidRepairMigration, /VALUES \(\s*gen_random_uuid\(\)/);
 });
 
 test('personal publishing credentials are stored per user, provider, installation URL and e-mail', () => {
