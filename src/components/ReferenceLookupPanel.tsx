@@ -437,7 +437,6 @@ export function ReferenceLookupPanel() {
               <input
                 type="email"
                 value={settings.crossrefMailto ?? ''}
-                placeholder="name@example.org"
                 onChange={(event) =>
                   updateSettings({
                     ...settings,

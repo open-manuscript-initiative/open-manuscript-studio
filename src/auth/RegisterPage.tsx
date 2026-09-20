@@ -233,7 +233,6 @@ export function RegisterPage({
                 type="email"
                 value={email}
                 autoComplete="email"
-                placeholder={t('auth.fields.email.placeholder')}
                 required
                 readOnly={Boolean(invitedEmail)}
                 disabled={registrationDisabled}

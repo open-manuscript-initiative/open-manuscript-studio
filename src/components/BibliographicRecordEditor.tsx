@@ -303,7 +303,6 @@ export function BibliographicRecordEditor({
           <input
             value={draft.issued ?? ''}
             onChange={(event) => update({ issued: event.target.value })}
-            placeholder="2026"
           />
         </label>
         <label>
@@ -350,7 +349,6 @@ export function BibliographicRecordEditor({
                 setBibliographicIdentifier(current, 'doi', event.target.value),
               )
             }
-            placeholder="10.1234/example"
           />
         </label>
         <label className="omi-reference-field-wide">

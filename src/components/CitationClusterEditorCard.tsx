@@ -191,7 +191,6 @@ export function CitationClusterEditorCard({
                           : undefined,
                       })
                     }
-                    placeholder={t('citations.locatorPlaceholder')}
                   />
                 </label>
 
@@ -204,7 +203,6 @@ export function CitationClusterEditorCard({
                         prefix: event.target.value,
                       })
                     }
-                    placeholder={t('citations.prefixPlaceholder')}
                   />
                 </label>
 
@@ -217,7 +215,6 @@ export function CitationClusterEditorCard({
                         suffix: event.target.value,
                       })
                     }
-                    placeholder={t('citations.suffixPlaceholder')}
                   />
                 </label>
               </div>
