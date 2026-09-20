@@ -87,6 +87,12 @@ export function RichTextToolbar({
     const previousTouchCallout = editorDom.style.getPropertyValue('-webkit-touch-callout');
     let longPressTimer: ReturnType<typeof setTimeout> | null = null;
     let touchStart: { x: number; y: number } | null = null;
+    let selectionTimer: ReturnType<typeof setTimeout> | null = null;
+    let selecting = false;
+    let dismissedSelection: string | null = null;
+    let explicitMenu = false;
+    const selectionKey = () => `${editor.state.selection.from}:${editor.state.selection.to}`;
+    const toolbarHasFocus = () => Boolean(toolbarRef.current?.contains(document.activeElement));
 
     if (isTouchSelectionEnvironment()) {
       editorDom.style.setProperty('-webkit-touch-callout', 'none');
@@ -126,9 +132,42 @@ export function RichTextToolbar({
       }
     };
 
+    // Native touch selection can settle after pointerup/pointercancel. Wait for
+    // both DOM selection and ProseMirror state, and never open another editor's menu.
+    const syncSelectionToolbar = () => {
+      selectionTimer = null;
+      if (editor.isDestroyed || selecting || toolbarHasFocus()) return;
+      const selection = editorDom.ownerDocument.getSelection();
+      const ownsSelection = Boolean(selection?.anchorNode && selection.focusNode
+        && editorDom.contains(selection.anchorNode) && editorDom.contains(selection.focusNode));
+      if (!ownsSelection || selection?.isCollapsed || editor.state.selection.empty) {
+        if (!explicitMenu) closeToolbar();
+        return;
+      }
+      if (dismissedSelection === selectionKey()) return;
+      explicitMenu = false;
+      openToolbarAtSelection();
+    };
+    const scheduleSelectionToolbar = () => {
+      if (selectionTimer !== null) clearTimeout(selectionTimer);
+      selectionTimer = setTimeout(syncSelectionToolbar, 100);
+    };
+    const handleSelectionUpdate = () => {
+      if (dismissedSelection !== selectionKey()) dismissedSelection = null;
+      explicitMenu = false;
+      scheduleSelectionToolbar();
+    };
+    const handlePointerEnd = () => {
+      cancelLongPress();
+      selecting = false;
+      scheduleSelectionToolbar();
+    };
+
     const handleContextMenu = (event: MouseEvent) => {
       event.preventDefault();
       event.stopPropagation();
+      explicitMenu = true;
+      dismissedSelection = null;
       openToolbarAt(event.clientX, event.clientY);
     };
 
@@ -141,6 +180,8 @@ export function RichTextToolbar({
     };
 
     const handlePointerDown = (event: PointerEvent) => {
+      selecting = true;
+      dismissedSelection = null;
       if (event.pointerType !== 'touch') return;
       cancelLongPress();
       touchStart = { x: event.clientX, y: event.clientY };
@@ -149,6 +190,7 @@ export function RichTextToolbar({
         const point = touchStart;
         touchStart = null;
         if (!point) return;
+        explicitMenu = true;
         openToolbarAt(point.x, point.y);
       }, TOUCH_LONG_PRESS_DELAY);
     };
@@ -166,23 +208,33 @@ export function RichTextToolbar({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
         event.preventDefault();
+        explicitMenu = true;
+        dismissedSelection = null;
         openToolbarAtSelection();
         return;
       }
-      if (event.key === 'Escape') closeToolbar();
+      if (event.key === 'Escape') {
+        dismissedSelection = selectionKey();
+        explicitMenu = false;
+        closeToolbar();
+      }
     };
 
     const handleDocumentPointerDown = (event: PointerEvent) => {
       const target = event.target;
       if (!(target instanceof Node)) return;
       if (toolbarRef.current?.contains(target)) return;
+      dismissedSelection = editorDom.contains(target) ? null : selectionKey();
+      explicitMenu = false;
       closeToolbar();
     };
 
     const handleScroll = (event: Event) => {
       const target = event.target;
       if (target instanceof Node && toolbarRef.current?.contains(target)) return;
-      closeToolbar();
+      if (toolbarHasFocus()) return;
+      if (editor.state.selection.empty) closeToolbar();
+      else scheduleSelectionToolbar();
     };
 
     const handleTransaction = () => {
@@ -190,27 +242,34 @@ export function RichTextToolbar({
     };
 
     editor.on('transaction', handleTransaction);
+    editor.on('selectionUpdate', handleSelectionUpdate);
+    document.addEventListener('selectionchange', scheduleSelectionToolbar);
+    document.addEventListener('pointerup', handlePointerEnd);
+    document.addEventListener('pointercancel', handlePointerEnd);
+    editorDom.addEventListener('touchend', handlePointerEnd);
     editorDom.addEventListener('contextmenu', handleContextMenu);
     editorDom.addEventListener('pointerdown', handlePointerDown);
     editorDom.addEventListener('pointermove', handlePointerMove);
-    editorDom.addEventListener('pointerup', cancelLongPress);
-    editorDom.addEventListener('pointercancel', cancelLongPress);
     editorDom.addEventListener('keydown', handleKeyDown);
     document.addEventListener('pointerdown', handleDocumentPointerDown, true);
-    window.addEventListener('resize', closeToolbar);
+    window.addEventListener('resize', handleScroll);
     window.addEventListener('scroll', handleScroll, true);
 
     return () => {
       cancelLongPress();
+      if (selectionTimer !== null) clearTimeout(selectionTimer);
+      editor.off('selectionUpdate', handleSelectionUpdate);
+      document.removeEventListener('selectionchange', scheduleSelectionToolbar);
+      document.removeEventListener('pointerup', handlePointerEnd);
+      document.removeEventListener('pointercancel', handlePointerEnd);
+      editorDom.removeEventListener('touchend', handlePointerEnd);
       editor.off('transaction', handleTransaction);
       editorDom.removeEventListener('contextmenu', handleContextMenu);
       editorDom.removeEventListener('pointerdown', handlePointerDown);
       editorDom.removeEventListener('pointermove', handlePointerMove);
-      editorDom.removeEventListener('pointerup', cancelLongPress);
-      editorDom.removeEventListener('pointercancel', cancelLongPress);
       editorDom.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('pointerdown', handleDocumentPointerDown, true);
-      window.removeEventListener('resize', closeToolbar);
+      window.removeEventListener('resize', handleScroll);
       window.removeEventListener('scroll', handleScroll, true);
       if (previousTouchCallout) {
         editorDom.style.setProperty('-webkit-touch-callout', previousTouchCallout);

@@ -31,14 +31,15 @@ const selectionStyles = readFileSync(
   'utf8',
 );
 
-test('rich-text actions open only after an explicit context-menu gesture', () => {
+test('rich-text actions support selection changes as well as explicit context-menu gestures', () => {
   assert.match(richTextToolbar, /addEventListener\('contextmenu', handleContextMenu\)/);
   assert.match(richTextToolbar, /event\.key === 'ContextMenu'/);
   assert.match(richTextToolbar, /event\.shiftKey && event\.key === 'F10'/);
   assert.match(richTextToolbar, /event\.pointerType !== 'touch'/);
   assert.match(richTextToolbar, /TOUCH_LONG_PRESS_DELAY = 650/);
   assert.doesNotMatch(richTextToolbar, /editor\.on\('focus'/);
-  assert.doesNotMatch(richTextToolbar, /editor\.on\('selectionUpdate'/);
+  assert.match(richTextToolbar, /editor\.on\('selectionUpdate'/);
+  assert.match(richTextToolbar, /addEventListener\('selectionchange', scheduleSelectionToolbar\)/);
 });
 
 test('selection actions share the explicit contextual toolbar', () => {
