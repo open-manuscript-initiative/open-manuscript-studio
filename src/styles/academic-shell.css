@@ -681,7 +681,7 @@ body {
 @media (max-width: 760px) {
   .app-header.focus-header {
     gap: .4rem;
-    padding: .45rem .6rem .5rem;
+    padding: .5rem .6rem;
   }
 
   .focus-header-top-row {
