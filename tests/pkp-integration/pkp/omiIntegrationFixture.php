@@ -574,6 +574,9 @@ final class OmiIntegrationFixtureTool extends CommandLineTool
         if (!str_contains($editorText, 'Editor-only E2E review comment.')) {
             $this->fail('The editor-only Studio review comment was not written to PKP.');
         }
+        if (str_contains($authorText, 'Editor-only E2E review comment.')) {
+            $this->fail('The editor-only Studio review comment leaked into the author-visible PKP comment.');
+        }
         $recommendationWritten = false;
         if ($this->platform === 'ojs') {
             $legacyCommentRecommendationWritten = str_contains($editorText, '[OMI recommendation: MINOR_REVISION]');
@@ -642,6 +645,7 @@ final class OmiIntegrationFixtureTool extends CommandLineTool
             'reviewAssignmentId' => (string)$assignmentId,
             'authorVisibleCommentWritten' => true,
             'editorOnlyCommentWritten' => true,
+            'editorOnlyHiddenFromAuthor' => true,
             'reviewFormResponseWritten' => true,
             'recommendationWritten' => $this->platform === 'ojs',
         ]);
