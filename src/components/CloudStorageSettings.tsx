@@ -601,7 +601,7 @@ export function CloudStorageSettings() {
             <div className="studio-manuscript-fields">
               <label><span>{copy.providerLabel}</span><input value={selectedProvider.displayName} disabled /></label>
               <label><span>{copy.displayName}</span><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></label>
-              <label><span>{copy.serverUrl}</span><input type="url" placeholder="https://cloud.example.org/remote.php/dav/files/user/" value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} /></label>
+              <label><span>{copy.serverUrl}</span><input type="url" value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} /></label>
               <label><span>{copy.username}</span><input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} /></label>
               <label><span>{copy.password}</span><input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
               <label><span>{copy.rootPath}</span><input value={rootPath} onChange={(event) => setRootPath(event.target.value)} /></label>
