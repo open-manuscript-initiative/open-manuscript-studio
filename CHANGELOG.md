@@ -6,6 +6,10 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Collapses manuscript-menu navigation after choosing any workspace, including
+  Help, Lists and Integrations. A header toggle reopens it without losing the
+  current view; desktop and mobile content reclaim the navigation space.
+
 - Shows the document selection toolbar after completed text selections,
   including delayed native touch selection and selection-handle changes.
   Scrolling repositions the menu instead of dismissing it; Escape, outside

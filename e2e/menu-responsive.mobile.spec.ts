@@ -20,12 +20,17 @@ test('every manuscript-menu view stays inside the mobile viewport', async ({ pag
     const label = (await button.innerText()).trim() || `menu item ${index + 1}`;
 
     await test.step(label, async () => {
+      const toggle = dialog.getByRole('button', { name: 'Manuscript menu', exact: true });
+      if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
       await button.click();
+      await expect(dialog.getByRole('navigation', { name: 'Manuscript menu' })).toBeHidden();
+      await expect(toggle).toBeFocused();
       await settleLayout(content);
       await expectNoMenuOverflow(content);
     });
   }
 
+  await dialog.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
   await dialog.getByRole('button', { name: 'References', exact: true }).click();
   const computedCrossReference = dialog.locator('[data-computed-cross-reference-target]');
   await expect(computedCrossReference).toBeVisible();
