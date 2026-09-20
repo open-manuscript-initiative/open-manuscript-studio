@@ -59,13 +59,24 @@ case "$PLATFORM" in
     ;;
 esac
 
-FIXTURE_FILE="$RUNTIME_DIR/fixture-$PLATFORM.json"
-
 export PKP_PLATFORM="$PLATFORM"
 export PKP_VERSION="${PKP_VERSION:-3_5_0-4}"
+if [[ -z "${PKP_RELEASE_TIER:-}" ]]; then
+  if [[ "$PLATFORM" == "ojs" && ( "$PKP_VERSION" == "3_5_0-4" || "$PKP_VERSION" == "3_5_0-5" ) ]]; then
+    PKP_RELEASE_TIER="stable"
+  else
+    PKP_RELEASE_TIER="preview"
+  fi
+fi
+export PKP_RELEASE_TIER
+
+VERSION_SLUG="${PKP_VERSION//_/-}"
+FIXTURE_FILE="$RUNTIME_DIR/fixture-$PLATFORM-$PKP_VERSION.json"
+ACCEPTANCE_FILE="$RUNTIME_DIR/acceptance-$PLATFORM-$PKP_VERSION.json"
+
 export PKP_HTTP_PORT="${PKP_HTTP_PORT:-8080}"
 export STUDIO_API_HTTP_PORT="${STUDIO_API_HTTP_PORT:-3001}"
-export COMPOSE_PROJECT_NAME="${PKP_COMPOSE_PROJECT_NAME:-omi-pkp-$PLATFORM}"
+export COMPOSE_PROJECT_NAME="${PKP_COMPOSE_PROJECT_NAME:-omi-pkp-$PLATFORM-$VERSION_SLUG}"
 export PKP_PUBLIC_BASE_URL="${PKP_PUBLIC_BASE_URL:-http://pkp.test:$PKP_HTTP_PORT}"
 export STUDIO_PUBLIC_BASE_URL="${STUDIO_PUBLIC_BASE_URL:-http://127.0.0.1:$STUDIO_API_HTTP_PORT}"
 export PKP_INTEGRATION_SHARED_SECRET="${PKP_INTEGRATION_SHARED_SECRET:-89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567}"
@@ -228,7 +239,56 @@ verify_review_writeback() {
     "$STUDIO_PUBLIC_BASE_URL" \
     "$PKP_INTEGRATION_SHARED_SECRET" \
     verify-review \
-    | tee "$LOG_DIR/review-writeback-$PLATFORM.json"
+    | tee "$LOG_DIR/review-writeback-$PLATFORM-$PKP_VERSION.json"
+}
+
+write_acceptance_evidence() {
+  require_command git
+  require_command node
+
+  local studio_commit
+  local plugin_commit
+  studio_commit="$(git -C "$REPOSITORY_DIR" rev-parse HEAD)"
+  plugin_commit="$(git -C "$PLUGIN_DIR" rev-parse HEAD)"
+
+  node - "$ACCEPTANCE_FILE" "$PLATFORM" "$PKP_VERSION" "$PKP_RELEASE_TIER" "$studio_commit" "$plugin_commit" <<'NODE'
+const fs = require('node:fs');
+const [
+  outputPath,
+  platform,
+  pkpVersion,
+  releaseTier,
+  studioCommit,
+  pluginCommit,
+] = process.argv.slice(2);
+
+const evidence = {
+  schemaVersion: 1,
+  platform,
+  pkpVersion,
+  releaseTier,
+  studioCommit,
+  pluginCommit,
+  protocol: `omi-integration/1/${platform}`,
+  generatedAt: new Date().toISOString(),
+  checks: {
+    installationAndHealth: true,
+    capabilityDiscovery: true,
+    signedEditorAndAuthorLaunches: true,
+    reviewerDoubleAnonymousIsolation: true,
+    assignmentScopedFileAccess: true,
+    replayProtection: true,
+    requiredReviewFormGate: true,
+    authorAndEditorFeedbackSeparation: true,
+    reviewFormPersistenceInPkp: true,
+    reviewerRecommendationPersistenceInPkp: platform === 'ojs',
+  },
+};
+
+fs.writeFileSync(outputPath, JSON.stringify(evidence, null, 2) + '\n');
+NODE
+
+  printf 'Acceptance evidence saved to %s.\n' "$ACCEPTANCE_FILE"
 }
 
 wait_for_services() {
@@ -350,8 +410,10 @@ case "$ACTION" in
       STUDIO_API_BASE_URL="http://127.0.0.1:$STUDIO_API_HTTP_PORT" \
       PKP_FIXTURE_FILE="$FIXTURE_FILE" \
       PKP_PLATFORM="$PLATFORM" \
+      PKP_VERSION="$PKP_VERSION" \
       npx playwright test --config=playwright.pkp.config.ts
     verify_review_writeback
+    write_acceptance_evidence
     ;;
   logs)
     collect_logs

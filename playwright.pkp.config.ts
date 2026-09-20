@@ -1,10 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const platform = process.env.PKP_PLATFORM ?? 'ojs';
+const version = process.env.PKP_VERSION ?? '3_5_0-4';
+const target = `${platform}-${version}`;
 
 export default defineConfig({
   testDir: './tests/pkp-integration/e2e',
-  outputDir: `test-results/pkp-${platform}`,
+  outputDir: `test-results/pkp-${target}`,
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   // The suite deliberately advances a real review assignment through its
@@ -17,7 +19,7 @@ export default defineConfig({
   },
   reporter: [
     ['list'],
-    ['html', { open: 'never', outputFolder: `playwright-report/pkp-${platform}` }],
+    ['html', { open: 'never', outputFolder: `playwright-report/pkp-${target}` }],
   ],
   use: {
     ...devices['Desktop Chrome'],
@@ -28,7 +30,7 @@ export default defineConfig({
   },
   projects: [
     {
-      name: `${platform}-integration-environment`,
+      name: `${target}-integration-environment`,
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: {

@@ -352,6 +352,15 @@ test('reviewer receives one anonymous article and can return corrections', async
     },
   });
 
+  const incompleteSubmit = await request.post(
+    `${studioApiBaseUrl}/api/reviews/assigned/${assignmentId}/submit`,
+    { data: {} },
+  );
+  await expectApiStatus(incompleteSubmit, 400);
+  await expect(incompleteSubmit.json()).resolves.toMatchObject({
+    error: { code: 'REVIEW_SUBMIT_FAILED' },
+  });
+
   const savedReviewForm = await request.put(
     `${studioApiBaseUrl}/api/reviews/assigned/${assignmentId}/review-form`,
     {

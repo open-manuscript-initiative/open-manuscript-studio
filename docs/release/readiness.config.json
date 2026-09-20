@@ -19,6 +19,7 @@
     ".github/workflows/ci.yml",
     ".github/workflows/codeql.yml",
     ".github/workflows/pkp-integration-environment.yml",
+    "docs/release/ojs-3.5-stable-acceptance.md",
     ".github/workflows/tauri-desktop.yml",
     ".github/workflows/1.0-readiness.yml",
     "scripts/benchmark-docx-import.ts",
@@ -64,7 +65,11 @@
       "github/codeql-action"
     ],
     ".github/workflows/pkp-integration-environment.yml": [
-      "matrix.platform"
+      "matrix.target",
+      "3_5_0-4",
+      "3_5_0-5",
+      "release_tier",
+      "acceptance-*.json"
     ],
     ".github/workflows/tauri-desktop.yml": [
       "windows-x86_64",

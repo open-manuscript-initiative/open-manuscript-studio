@@ -19,7 +19,7 @@ The boundary is intentional:
 
 | Service | Purpose |
 | --- | --- |
-| `pkp` | OJS or OMP 3.5.0-4 with the matching OMI plugin source |
+| `pkp` | OJS 3.5.0-4/3.5.0-5 (Stable acceptance) or OMP 3.5.0-4 (Preview) with the matching OMI plugin source |
 | `pkp-db` | Isolated MariaDB for OJS/OMP |
 | `studio-api` | The real Open Manuscript Studio API after both Prisma migrations |
 | `studio-db` | Isolated PostgreSQL databases for Studio and OMI Identity |
@@ -53,15 +53,16 @@ npm ci
 npm run playwright:install
 ```
 
-Start and install OJS:
+Start and install the OJS 3.5.0-4 Stable target:
 
 ```bash
-npm run pkp:up -- ojs
-npm run pkp:verify -- ojs
-npm run pkp:test -- ojs
+PKP_VERSION=3_5_0-4 npm run pkp:up -- ojs
+PKP_VERSION=3_5_0-4 npm run pkp:verify -- ojs
+PKP_VERSION=3_5_0-4 npm run pkp:test -- ojs
 ```
 
-Use `omp` in place of `ojs` for OMP. The default endpoints are:
+Repeat with `PKP_VERSION=3_5_0-5` for the second Stable OJS target.
+Use `omp` with `PKP_VERSION=3_5_0-4` for the Preview OMP target. The default endpoints are:
 
 - PKP: `http://127.0.0.1:8080`
 - Studio API: `http://127.0.0.1:3001`
@@ -81,8 +82,8 @@ Production behavior is unchanged.
 Override the ports or pinned PKP release when required:
 
 ```bash
-PKP_HTTP_PORT=8180 STUDIO_API_HTTP_PORT=3101 PKP_VERSION=3_5_0-4 \
-  npm run pkp:up -- omp
+PKP_HTTP_PORT=8180 STUDIO_API_HTTP_PORT=3101 PKP_VERSION=3_5_0-5 \
+  npm run pkp:up -- ojs
 ```
 
 The initial test-only PKP administrator credentials are:
@@ -95,7 +96,7 @@ password: omi-test-admin
 The generated role accounts all use the test-only password
 `omi-test-user`: `omi-editor`, `omi-author` and `omi-reviewer`. Fixture IDs and
 sentinels are written to the ignored
-`tests/pkp-integration/runtime/fixture-<platform>.json` file for Playwright.
+`tests/pkp-integration/runtime/fixture-<platform>-<pkp-version>.json` file for Playwright.
 
 They may be overridden with `PKP_ADMIN_USERNAME`, `PKP_ADMIN_PASSWORD` and
 `PKP_ADMIN_EMAIL`. These credentials and the database passwords in Compose are
@@ -111,7 +112,7 @@ npm run pkp:down -- ojs
 `pkp:down` removes the selected environment's containers and test volumes.
 Logs remain under `tests/pkp-integration/runtime/logs/`.
 The test action also stores the PKP-side review writeback assertion as
-`review-writeback-<platform>.json`.
+`review-writeback-<platform>-<pkp-version>.json`. A successful stateful run also writes `acceptance-<platform>-<pkp-version>.json`, containing the Studio commit, plugin commit, release tier and the acceptance checks proven by that run.
 
 ## Plugin source selection
 
@@ -126,12 +127,18 @@ silently overwrite an existing checkout.
 
 ## GitHub Actions
 
-The **PKP integration environment** workflow runs both platforms for relevant
-pull requests and pushes. A manual run can select `ojs`, `omp` or `both`.
-CI always checks out the matching plugin's protected `main` branch; arbitrary
-plugin refs are intentionally not accepted by `workflow_dispatch`. Each
-platform receives separate Compose project names, volumes and diagnostic
-artifacts.
+The **PKP integration environment** workflow runs an explicit release matrix
+for relevant pull requests and pushes:
+
+- OJS 3.5.0-4 — **Stable**, release-blocking acceptance target;
+- OJS 3.5.0-5 — **Stable**, release-blocking acceptance target;
+- OMP 3.5.0-4 — **Preview**, retained as a clearly labelled compatibility target.
+
+A manual run can select `ojs`, `omp` or `both`. CI always checks out the
+matching plugin's protected `main` branch; arbitrary plugin refs are
+intentionally not accepted by `workflow_dispatch`. Every matrix target receives
+a version-specific Compose project, fixture, Playwright report and acceptance
+artifact.
 
 The workflow explicitly disables both configured and automatic package-manager
 caching. Both checkouts also remove their persisted GitHub credentials, and the
@@ -155,10 +162,25 @@ The suite verifies:
 7. OMP review binding to one assigned chapter, excluding the parent monograph
    and sibling chapter metadata/files;
 8. reviewer language/typesetting corrections, a required native PKP review
-   form, and separate author-visible and editor-only feedback; and
-9. signed Studio-to-PKP review-result writeback, followed by PKP-native DAO
-   assertions that both comments and the form response were actually persisted.
+   form, and a negative submit assertion proving the required form cannot be
+   bypassed;
+9. separate author-visible and editor-only feedback, including a PKP-side
+   assertion that editor-only text never enters the author-visible comment;
+10. OJS-native reviewer recommendation options/identifiers without inventing a
+    Studio replacement; and
+11. signed Studio-to-PKP review-result writeback, followed by PKP-native DAO
+    assertions that comments, form responses and the OJS recommendation were
+    actually persisted.
 
 The suite is stateful and therefore deliberately has no Playwright retries. A
 failure keeps traces, screenshots, video, Compose logs, install logs and the
 fixture metadata in the uploaded diagnostics artifact.
+
+
+## 1.0 OJS Stable acceptance
+
+The release-level acceptance contract is documented in
+`docs/release/ojs-3.5-stable-acceptance.md`. The two OJS matrix jobs are
+mandatory evidence for the Route A Stable claim. OMP remains Preview and does
+not inherit the OJS Stable label merely because it executes the same shared
+harness.

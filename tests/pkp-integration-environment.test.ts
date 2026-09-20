@@ -36,9 +36,14 @@ test('configuration checks are independent of checkout line endings', () => {
   );
 });
 
-test('PKP integration environment supports pinned OJS and OMP images', () => {
+test('PKP integration environment supports the stable OJS matrix and preview OMP target', () => {
   assert.match(pkpDockerfileSource, /ARG PKP_PLATFORM=ojs/);
   assert.match(pkpDockerfileSource, /ARG PKP_VERSION=3_5_0-4/);
+  assert.match(workflowSource, /"platform":"ojs","version":"3_5_0-4","release_tier":"stable"/);
+  assert.match(workflowSource, /"platform":"ojs","version":"3_5_0-5","release_tier":"stable"/);
+  assert.match(workflowSource, /"platform":"omp","version":"3_5_0-4","release_tier":"preview"/);
+  assert.ok(workflowSource.includes('PKP_VERSION: $' + '{{ matrix.target.version }}'));
+  assert.ok(workflowSource.includes('PKP_RELEASE_TIER: $' + '{{ matrix.target.release_tier }}'));
   assert.match(
     pkpDockerfileSource,
     /docker\.io\/pkpofficial\/\$\{PKP_PLATFORM\}:\$\{PKP_VERSION\}/,
@@ -112,6 +117,9 @@ test('workflow fixtures use PKP services and preserve reviewer file isolation', 
   assert.doesNotMatch(fixtureSource, /DB::|INSERT\s+INTO|UPDATE\s+\w+\s+SET/i);
   assert.match(environmentScriptSource, /dist\/cli\/addIntegration\.js/);
   assert.match(environmentScriptSource, /verify-review/);
+  assert.match(environmentScriptSource, /write_acceptance_evidence/);
+  assert.match(environmentScriptSource, /requiredReviewFormGate: true/);
+  assert.match(environmentScriptSource, /reviewerDoubleAnonymousIsolation: true/);
 });
 
 test('Playwright exercises signed roles, anonymous article review and writeback', () => {
@@ -125,8 +133,11 @@ test('Playwright exercises signed roles, anonymous article review and writeback'
   assert.match(e2eSource, /documentKind: 'article'/);
   assert.match(e2eSource, /Corrected line break and hyphenation/);
   assert.match(e2eSource, /assigned\/\$\{assignmentId\}\/review-form/);
+  assert.match(e2eSource, /incompleteSubmit/);
+  assert.match(e2eSource, /REVIEW_SUBMIT_FAILED/);
   assert.match(e2eSource, /ojsWriteback: \{ status: 'synced' \}/);
   assert.match(e2eSource, /expectApiStatus\(replay, 401\)/);
+  assert.match(fixtureSource, /editor-only Studio review comment leaked into the author-visible PKP comment/);
 });
 
 test('private test routing is an explicit test-only exception', () => {
