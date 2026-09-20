@@ -19,15 +19,25 @@ canonical OMI save
         ↓
 close / parse / reopen
         ↓
-HTML · JATS · DOCX · EPUB · print-PDF source · interactive-PDF source
+HTML · DOCX · EPUB · print-PDF · interactive-PDF
+        +
+JATS publication-release gate (expected block for fallback-only features)
 ~~~
 
-The test is tests/reference-manuscript-lifecycle.test.ts.
+The model/service lifecycle test is tests/reference-manuscript-lifecycle.test.ts.
 
-Run it independently with:
+The browser-level UI lifecycle gate is e2e/reference-manuscript-lifecycle.spec.ts. It opens the committed reference file through Document → Open, edits the real Tiptap surface, exports OMI JSON through Export and tools, closes the document, reopens the downloaded file, and starts the release-compatible publication exports from the same UI. Because the complete corpus deliberately contains fallback-only JATS constructs (including chart/music-score semantics and rich note content), the same browser test also verifies that the JATS publication-release gate blocks that artifact instead of silently exporting reduced-fidelity XML.
+
+Run the model/service gate independently with:
 
 ~~~bash
 npm run test:reference-manuscript
+~~~
+
+Run the browser UI lifecycle independently with:
+
+~~~bash
+npx playwright test e2e/reference-manuscript-lifecycle.spec.ts --project=desktop-chromium
 ~~~
 
 Regenerate the committed canonical fixture from the typed builder with:
@@ -36,7 +46,7 @@ Regenerate the committed canonical fixture from the typed builder with:
 npm run fixture:reference-manuscript
 ~~~
 
-The lifecycle test compares the committed JSON fixture with the builder output. A feature change that changes the canonical reference corpus therefore requires an explicit fixture regeneration in the same PR.
+The lifecycle tests compare the committed JSON fixture with the builder output and then exercise the same manuscript through both service-level and user-visible browser workflows. A feature change that changes the canonical reference corpus therefore requires an explicit fixture regeneration in the same PR.
 
 ## Portable coverage
 

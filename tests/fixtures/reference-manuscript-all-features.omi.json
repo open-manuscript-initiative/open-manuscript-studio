@@ -1254,7 +1254,7 @@
       "role": "figure",
       "checksum": {
         "algorithm": "sha256",
-        "value": "0000000000000000000000000000000000000000000000000000000000000001",
+        "value": "431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460",
         "scope": "raw-bytes"
       },
       "provenance": {
@@ -3115,7 +3115,7 @@
                 "role": "figure",
                 "checksum": {
                   "algorithm": "sha256",
-                  "value": "0000000000000000000000000000000000000000000000000000000000000001",
+                  "value": "431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460",
                   "scope": "raw-bytes"
                 },
                 "provenance": {
@@ -3681,7 +3681,7 @@
         },
         "stateDigest": {
           "algorithm": "sha256",
-          "value": "8462f6e66efba368051ecbf2b8cc2e7d45f317720094b84ae98592b156ded1a8",
+          "value": "dae69b3b1845a361d48a721f4e4ce2dfb1d90c2885a115a941d41f2f99130673",
           "canonicalization": "omi-manuscript-state-json-v1",
           "scope": "revision.snapshot.state",
           "exclusions": [
@@ -4978,7 +4978,7 @@
                 "role": "figure",
                 "checksum": {
                   "algorithm": "sha256",
-                  "value": "0000000000000000000000000000000000000000000000000000000000000001",
+                  "value": "431ced6916a2a21a156e38701afe55bbd7f88969fbbfc56d7fe099d47f265460",
                   "scope": "raw-bytes"
                 },
                 "provenance": {
@@ -5544,7 +5544,7 @@
         },
         "stateDigest": {
           "algorithm": "sha256",
-          "value": "2f2e9f96c5813eb18638d44434bd6eb1dffba668d295e2779289bb46d39d5b91",
+          "value": "9f404d1de517d7033f44ed995080f6031135ae5987f097c01a5c224f774d7197",
           "canonicalization": "omi-manuscript-state-json-v1",
           "scope": "revision.snapshot.state",
           "exclusions": [
