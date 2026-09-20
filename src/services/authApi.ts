@@ -344,57 +344,54 @@ export async function updateCurrentAccount(
   return response.user;
 }
 
-export interface PersonalOjsCredentialState { configured: boolean; baseUrl: string | null; }
+export type PersonalPublishingCredentialProvider = 'ojs' | 'omp';
 
-export async function getPersonalOjsCredential(): Promise<PersonalOjsCredentialState> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/me/ojs-credential`, { credentials: 'include', headers: authHeaders({ Accept: 'application/json' }) });
-  if (!response.ok) throw await createApiError(response);
-  return parseJsonResponse<PersonalOjsCredentialState>(response);
+export interface PersonalPublishingCredentialState {
+  id: string;
+  provider: PersonalPublishingCredentialProvider;
+  label: string | null;
+  baseUrl: string;
+  configured: true;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export async function savePersonalOjsCredential(input: { apiKey: string; baseUrl: string }): Promise<PersonalOjsCredentialState> {
-  const response = await request<PersonalOjsCredentialState>('/api/auth/me/ojs-credential', { method: 'PUT', body: JSON.stringify(input) });
-  return response;
-}
-
-export async function deletePersonalOjsCredential(): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/me/ojs-credential`, { method: 'DELETE', credentials: 'include', headers: authHeaders({ Accept: 'application/json' }) });
-  if (!response.ok && response.status !== 204) throw await createApiError(response);
-}
-
-export type PersonalPublishingCredentialState = PersonalOjsCredentialState;
-
-export async function getPersonalOmpCredential(): Promise<PersonalPublishingCredentialState> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/me/omp-credential`, {
+export async function getPersonalPublishingCredentials(): Promise<PersonalPublishingCredentialState[]> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/me/publishing-credentials`, {
     credentials: 'include',
     headers: authHeaders({ Accept: 'application/json' }),
   });
   if (!response.ok) throw await createApiError(response);
-  return parseJsonResponse<PersonalPublishingCredentialState>(response);
+  const payload = await parseJsonResponse<{ credentials: PersonalPublishingCredentialState[] }>(response);
+  return payload.credentials;
 }
 
-export async function savePersonalOmpCredential(input: {
+export async function savePersonalPublishingCredential(input: {
+  provider: PersonalPublishingCredentialProvider;
   apiKey: string;
   baseUrl: string;
+  label?: string;
 }): Promise<PersonalPublishingCredentialState> {
-  return request<PersonalPublishingCredentialState>(
-    '/api/auth/me/omp-credential',
+  const payload = await request<{ credential: PersonalPublishingCredentialState }>(
+    '/api/auth/me/publishing-credentials',
     {
       method: 'PUT',
       body: JSON.stringify(input),
     },
   );
+  return payload.credential;
 }
 
-export async function deletePersonalOmpCredential(): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/me/omp-credential`, {
-    method: 'DELETE',
-    credentials: 'include',
-    headers: authHeaders({ Accept: 'application/json' }),
-  });
-  if (!response.ok && response.status !== 204) {
-    throw await createApiError(response);
-  }
+export async function deletePersonalPublishingCredential(credentialId: string): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/auth/me/publishing-credentials/${encodeURIComponent(credentialId)}`,
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: authHeaders({ Accept: 'application/json' }),
+    },
+  );
+  if (!response.ok && response.status !== 204) throw await createApiError(response);
 }
 
 export async function logoutAccount(): Promise<void> {

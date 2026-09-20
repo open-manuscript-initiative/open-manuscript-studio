@@ -17,14 +17,6 @@ export interface AccountPanelCopy {
   save: string;
   saved: string;
   logout: string;
-  ojsCredentialTitle?: string;
-  ojsCredentialDescription?: string;
-  ojsBaseUrl?: string;
-  ojsApiKey?: string;
-  ojsApiKeySaved?: string;
-  ojsApiKeySave?: string;
-  ojsApiKeyRemove?: string;
-  ojsApiKeyConfigured?: string;
 }
 
 export const accountPanelTranslations: Record<string, AccountPanelCopy> = {
@@ -41,7 +33,7 @@ export const accountPanelTranslations: Record<string, AccountPanelCopy> = {
   da: {
     title: 'Konto', subtitle: 'Personlig identitet, institutionelle roller og loginmetoder', personal: 'Personlig profil', institutional: 'Institutionelle profiler', central: 'Central administration',
     personalDescription: 'Din varige akademiske identitet. Organisationsspecifikke tilknytninger administreres separat.', name: 'Fulde navn', orcid: 'ORCID iD', bio: 'Kort biografi', preferences: 'Personlige indstillinger', timezone: 'Tidszone',
-    timezoneHint: 'Standard IANA-tidszone-id; den aktuelle UTC-forskydning vises som reference.', identity: 'Kontoidentitet', verified: 'Bekræftet e-mail', unverified: 'E-mail ikke bekræftet', save: 'Gem personlig profil', saved: 'Den personlige profil er gemt.', logout: 'Log ud', ojsCredentialTitle: 'OJS-szerkesztői API-kulcs', ojsCredentialDescription: 'A kulcs a személyes, különálló profiladatbázisban titkosítva tárolódik; magát a kulcsot nem jelenítjük meg vissza.', ojsBaseUrl: 'OJS-telepítés URL-je', ojsApiKey: 'Szerkesztői OJS API-kulcs', ojsApiKeySaved: 'Az OJS-kulcs mentve.', ojsApiKeySave: 'OJS-kulcs mentése', ojsApiKeyRemove: 'Mentett OJS-kulcs törlése', ojsApiKeyConfigured: 'Személyes OJS-kulcs beállítva.',
+    timezoneHint: 'Standard IANA-tidszone-id; den aktuelle UTC-forskydning vises som reference.', identity: 'Kontoidentitet', verified: 'Bekræftet e-mail', unverified: 'E-mail ikke bekræftet', save: 'Gem personlig profil', saved: 'Den personlige profil er gemt.', logout: 'Log ud',
   },
   de: {
     title: 'Konto', subtitle: 'Persönliche Identität, institutionelle Rollen und Anmeldemethoden', personal: 'Persönliches Profil', institutional: 'Institutionelle Profile', central: 'Zentrale Administration',
@@ -56,7 +48,7 @@ export const accountPanelTranslations: Record<string, AccountPanelCopy> = {
   en: {
     title: 'Account', subtitle: 'Personal identity, institutional roles and sign-in methods', personal: 'Personal profile', institutional: 'Institutional profiles', central: 'Central administration',
     personalDescription: 'Your durable scholarly identity. Organization-specific affiliations are managed separately.', name: 'Full name', orcid: 'ORCID iD', bio: 'Short biography', preferences: 'Personal preferences', timezone: 'Time zone',
-    timezoneHint: 'Standard IANA time-zone identifier; the current UTC offset is shown for reference.', identity: 'Account identity', verified: 'Verified e-mail', unverified: 'E-mail not verified', save: 'Save personal profile', saved: 'Personal profile saved.', logout: 'Sign out', ojsCredentialTitle: 'OJS editor API key', ojsCredentialDescription: 'The key is encrypted in the separate personal profile database and is never returned or displayed.', ojsBaseUrl: 'OJS installation URL', ojsApiKey: 'OJS editor API key', ojsApiKeySaved: 'OJS key saved.', ojsApiKeySave: 'Save OJS key', ojsApiKeyRemove: 'Remove saved OJS key', ojsApiKeyConfigured: 'Personal OJS key configured.',
+    timezoneHint: 'Standard IANA time-zone identifier; the current UTC offset is shown for reference.', identity: 'Account identity', verified: 'Verified e-mail', unverified: 'E-mail not verified', save: 'Save personal profile', saved: 'Personal profile saved.', logout: 'Sign out',
   },
   es: {
     title: 'Cuenta', subtitle: 'Identidad personal, funciones institucionales y métodos de inicio de sesión', personal: 'Perfil personal', institutional: 'Perfiles institucionales', central: 'Administración central',
@@ -91,7 +83,7 @@ export const accountPanelTranslations: Record<string, AccountPanelCopy> = {
   hu: {
     title: 'Fiók', subtitle: 'Személyes identitás, intézményi szerepek és bejelentkezési módok', personal: 'Személyes profil', institutional: 'Intézményi profilok', central: 'Központi adminisztráció',
     personalDescription: 'A tartós személyes tudományos identitásod. Az intézményi affiliációk külön kezelhetők.', name: 'Teljes név', orcid: 'ORCID iD', bio: 'Rövid bemutatkozás', preferences: 'Személyes beállítások', timezone: 'Időzóna',
-    timezoneHint: 'Szabványos IANA-időzóna; tájékoztatásként az aktuális UTC-eltolás is látható.', identity: 'Fiókazonosság', verified: 'Ellenőrzött e-mail-cím', unverified: 'Nem ellenőrzött e-mail-cím', save: 'Személyes profil mentése', saved: 'A személyes profil elmentve.', logout: 'Kijelentkezés', ojsCredentialTitle: 'OJS-szerkesztői API-kulcs', ojsCredentialDescription: 'A kulcs a különálló személyes profiladatbázisban titkosítva tárolódik, és soha nem jelenítjük meg.', ojsBaseUrl: 'OJS-telepítés URL-je', ojsApiKey: 'Szerkesztői OJS API-kulcs', ojsApiKeySaved: 'Az OJS-kulcs mentve.', ojsApiKeySave: 'OJS-kulcs mentése', ojsApiKeyRemove: 'Mentett OJS-kulcs törlése', ojsApiKeyConfigured: 'Személyes OJS-kulcs beállítva.',
+    timezoneHint: 'Szabványos IANA-időzóna; tájékoztatásként az aktuális UTC-eltolás is látható.', identity: 'Fiókazonosság', verified: 'Ellenőrzött e-mail-cím', unverified: 'Nem ellenőrzött e-mail-cím', save: 'Személyes profil mentése', saved: 'A személyes profil elmentve.', logout: 'Kijelentkezés',
   },
   it: {
     title: 'Account', subtitle: 'Identità personale, ruoli istituzionali e metodi di accesso', personal: 'Profilo personale', institutional: 'Profili istituzionali', central: 'Amministrazione centrale',

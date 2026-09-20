@@ -6,6 +6,7 @@ import { centralAdministrationTranslations } from '../src/i18n/centralAdministra
 import { cloudStorageTranslations } from '../src/i18n/cloudStorageTranslations.ts';
 import { institutionalProfilesTranslations } from '../src/i18n/institutionalProfilesTranslations.ts';
 import { linkedIdentitiesTranslations } from '../src/i18n/linkedIdentitiesTranslations.ts';
+import { personalPublishingCredentialsTranslations } from '../src/i18n/personalPublishingCredentials.ts';
 import {
   getLocalFileLabels,
   nativeStorageTranslationLocales,
@@ -42,6 +43,24 @@ test('Account surfaces have explicit copy in all 24 supported locales', () => {
   assertCompleteLocaleMap('linkedIdentities', linkedIdentitiesTranslations);
   assertCompleteLocaleMap('institutionalProfiles', institutionalProfilesTranslations);
   assertCompleteLocaleMap('centralAdministration', centralAdministrationTranslations);
+
+  assert.deepEqual(
+    Object.keys(personalPublishingCredentialsTranslations).sort(),
+    [...SUPPORTED_LOCALES].sort(),
+    'personal publishing credentials must have an explicit entry for every supported locale',
+  );
+  for (const locale of SUPPORTED_LOCALES) {
+    const copy = personalPublishingCredentialsTranslations[locale];
+    assert.ok(copy, `personalPublishingCredentials is missing ${locale}`);
+    for (const [key, value] of Object.entries(copy)) {
+      if (key === 'removeConfirmation') {
+        assert.equal(typeof value, 'function');
+        continue;
+      }
+      assert.equal(typeof value, 'string');
+      assert.ok((value as string).trim().length > 0);
+    }
+  }
 });
 
 test('Storage and cloud settings have explicit copy in all 24 supported locales', () => {

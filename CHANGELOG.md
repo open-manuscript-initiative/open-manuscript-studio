@@ -6,6 +6,11 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Allows a personal profile to store separate encrypted OJS and OMP API keys
+  for multiple publishing installations. Credentials are selected by provider
+  and exact normalized installation URL; existing single OJS/OMP keys migrate
+  automatically into the new collection.
+
 - Keeps the current Studio workspace active when the manuscript navigation is
   opened and closed. Returning to the editor is now an explicit localized Home
   menu action instead of an automatic side effect of closing navigation.

@@ -67,14 +67,6 @@ model User {
   orcid                  String?                 @unique @db.VarChar(19)
   bio                    String?                 @db.VarChar(2000)
   timeZone               String?                 @map("time_zone") @db.VarChar(64)
-  ojsApiKeyCiphertext    String?                 @map("ojs_api_key_ciphertext") @db.Text
-  ojsApiKeyIv             String?                 @map("ojs_api_key_iv") @db.VarChar(64)
-  ojsApiKeyAuthTag        String?                 @map("ojs_api_key_auth_tag") @db.VarChar(64)
-  ojsApiBaseUrl           String?                 @map("ojs_api_base_url") @db.VarChar(2048)
-  ompApiKeyCiphertext    String?                 @map("omp_api_key_ciphertext") @db.Text
-  ompApiKeyIv             String?                 @map("omp_api_key_iv") @db.VarChar(64)
-  ompApiKeyAuthTag        String?                 @map("omp_api_key_auth_tag") @db.VarChar(64)
-  ompApiBaseUrl           String?                 @map("omp_api_base_url") @db.VarChar(2048)
   interfaceLanguage      String                  @default("en") @map("interface_language") @db.VarChar(16)
   status                 UserStatus              @default(ACTIVE)
   createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -88,6 +80,7 @@ model User {
   oauthStates            OAuthLoginState[]
   passwordResetTokens    PasswordResetToken[]
   publicationVenues      PublicationVenue[]
+  publishingCredentials  PersonalPublishingCredential[]
 
   @@map("users")
 }
@@ -155,6 +148,24 @@ model UserIdentity {
   @@unique([provider, issuer, subject])
   @@index([userId, provider])
   @@map("user_identities")
+}
+
+model PersonalPublishingCredential {
+  id               String                              @id @default(uuid()) @db.Uuid
+  userId           String                              @map("user_id") @db.Uuid
+  provider         PublicationVenueIntegrationProvider
+  label            String?                             @db.VarChar(200)
+  baseUrl          String                              @map("base_url") @db.VarChar(2048)
+  apiKeyCiphertext String                              @map("api_key_ciphertext") @db.Text
+  apiKeyIv         String                              @map("api_key_iv") @db.VarChar(64)
+  apiKeyAuthTag    String                              @map("api_key_auth_tag") @db.VarChar(64)
+  createdAt        DateTime                            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime                            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user             User                                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider, baseUrl])
+  @@index([userId, provider])
+  @@map("personal_publishing_credentials")
 }
 
 model PublicationVenue {

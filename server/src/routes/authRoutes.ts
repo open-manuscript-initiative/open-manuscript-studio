@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { decryptSecret, encryptSecret, type EncryptedSecret } from '../integrations/secretCrypto.js';
+import { PublicationVenueIntegrationProvider } from '../generated/identity-prisma/client.js';
 import { identityPrisma } from '../lib/identityPrisma.js';
 import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
 
@@ -235,172 +236,166 @@ authRouter.patch('/me', async (request, response) => {
 });
 
 const publishingCredentialSchema = z.object({
+  provider: z.enum(['ojs', 'omp']),
   apiKey: z.string().trim().min(1).max(4096),
   baseUrl: z.string().trim().url().max(2048),
+  label: z.string().trim().max(200).optional(),
 });
 
-authRouter.get('/me/ojs-credential', requireSession, async (request: AuthenticatedRequest, response) => {
-  const user = await identityPrisma.user.findUnique({
-    where: { id: request.authUserId! },
-    select: { ojsApiBaseUrl: true, ojsApiKeyCiphertext: true },
+const publishingCredentialIdSchema = z.string().uuid();
+
+function publishingProvider(value: 'ojs' | 'omp'): PublicationVenueIntegrationProvider {
+  return value === 'omp'
+    ? PublicationVenueIntegrationProvider.OMP
+    : PublicationVenueIntegrationProvider.OJS;
+}
+
+function publicPublishingCredential(credential: {
+  id: string;
+  provider: PublicationVenueIntegrationProvider;
+  label: string | null;
+  baseUrl: string;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    id: credential.id,
+    provider: credential.provider === PublicationVenueIntegrationProvider.OMP ? 'omp' : 'ojs',
+    label: credential.label,
+    baseUrl: credential.baseUrl,
+    configured: true,
+    createdAt: credential.createdAt.toISOString(),
+    updatedAt: credential.updatedAt.toISOString(),
+  };
+}
+
+function normalizePublishingBaseUrl(baseUrl: string): string {
+  return baseUrl.trim().replace(/\/+$/, '');
+}
+
+authRouter.get('/me/publishing-credentials', requireSession, async (request: AuthenticatedRequest, response) => {
+  const credentials = await identityPrisma.personalPublishingCredential.findMany({
+    where: { userId: request.authUserId! },
+    orderBy: [{ provider: 'asc' }, { baseUrl: 'asc' }],
   });
   response.json({
-    configured: Boolean(user?.ojsApiKeyCiphertext && user.ojsApiBaseUrl),
-    baseUrl: user?.ojsApiBaseUrl ?? null,
+    credentials: credentials.map(publicPublishingCredential),
   });
 });
 
-authRouter.put('/me/ojs-credential', requireSession, async (request: AuthenticatedRequest, response) => {
+authRouter.put('/me/publishing-credentials', requireSession, async (request: AuthenticatedRequest, response) => {
   try {
     const input = publishingCredentialSchema.parse(request.body);
     const encrypted = encryptSecret(input.apiKey);
-    const baseUrl = input.baseUrl.replace(/\/+$/, '');
-    await identityPrisma.user.update({
-      where: { id: request.authUserId! },
-      data: {
-        ojsApiKeyCiphertext: encrypted.ciphertext,
-        ojsApiKeyIv: encrypted.iv,
-        ojsApiKeyAuthTag: encrypted.authTag,
-        ojsApiBaseUrl: baseUrl,
+    const provider = publishingProvider(input.provider);
+    const baseUrl = normalizePublishingBaseUrl(input.baseUrl);
+    const label = input.label?.trim() || null;
+    const credential = await identityPrisma.personalPublishingCredential.upsert({
+      where: {
+        userId_provider_baseUrl: {
+          userId: request.authUserId!,
+          provider,
+          baseUrl,
+        },
+      },
+      update: {
+        label,
+        apiKeyCiphertext: encrypted.ciphertext,
+        apiKeyIv: encrypted.iv,
+        apiKeyAuthTag: encrypted.authTag,
+      },
+      create: {
+        userId: request.authUserId!,
+        provider,
+        label,
+        baseUrl,
+        apiKeyCiphertext: encrypted.ciphertext,
+        apiKeyIv: encrypted.iv,
+        apiKeyAuthTag: encrypted.authTag,
       },
     });
-    response.json({ configured: true, baseUrl });
+    response.json({ credential: publicPublishingCredential(credential) });
   } catch (error) {
     response.status(400).json({
       error: {
-        code: 'OJS_CREDENTIAL_SAVE_FAILED',
+        code: 'PUBLISHING_CREDENTIAL_SAVE_FAILED',
         message:
           error instanceof Error
             ? error.message
-            : 'The OJS credential could not be saved.',
+            : 'The publishing credential could not be saved.',
       },
     });
   }
 });
 
-authRouter.delete('/me/ojs-credential', requireSession, async (request: AuthenticatedRequest, response) => {
-  await identityPrisma.user.update({
-    where: { id: request.authUserId! },
-    data: {
-      ojsApiKeyCiphertext: null,
-      ojsApiKeyIv: null,
-      ojsApiKeyAuthTag: null,
-      ojsApiBaseUrl: null,
-    },
-  });
-  response.status(204).end();
-});
-
-authRouter.get('/me/omp-credential', requireSession, async (request: AuthenticatedRequest, response) => {
-  const user = await identityPrisma.user.findUnique({
-    where: { id: request.authUserId! },
-    select: { ompApiBaseUrl: true, ompApiKeyCiphertext: true },
-  });
-  response.json({
-    configured: Boolean(user?.ompApiKeyCiphertext && user.ompApiBaseUrl),
-    baseUrl: user?.ompApiBaseUrl ?? null,
-  });
-});
-
-authRouter.put('/me/omp-credential', requireSession, async (request: AuthenticatedRequest, response) => {
-  try {
-    const input = publishingCredentialSchema.parse(request.body);
-    const encrypted = encryptSecret(input.apiKey);
-    const baseUrl = input.baseUrl.replace(/\/+$/, '');
-    await identityPrisma.user.update({
-      where: { id: request.authUserId! },
-      data: {
-        ompApiKeyCiphertext: encrypted.ciphertext,
-        ompApiKeyIv: encrypted.iv,
-        ompApiKeyAuthTag: encrypted.authTag,
-        ompApiBaseUrl: baseUrl,
-      },
-    });
-    response.json({ configured: true, baseUrl });
-  } catch (error) {
+authRouter.delete('/me/publishing-credentials/:credentialId', requireSession, async (request: AuthenticatedRequest, response) => {
+  const parsed = publishingCredentialIdSchema.safeParse(request.params.credentialId);
+  if (!parsed.success) {
     response.status(400).json({
       error: {
-        code: 'OMP_CREDENTIAL_SAVE_FAILED',
-        message:
-          error instanceof Error
-            ? error.message
-            : 'The OMP credential could not be saved.',
+        code: 'INVALID_PUBLISHING_CREDENTIAL_ID',
+        message: 'Invalid publishing credential identifier.',
       },
     });
+    return;
   }
-});
 
-authRouter.delete('/me/omp-credential', requireSession, async (request: AuthenticatedRequest, response) => {
-  await identityPrisma.user.update({
-    where: { id: request.authUserId! },
-    data: {
-      ompApiKeyCiphertext: null,
-      ompApiKeyIv: null,
-      ompApiKeyAuthTag: null,
-      ompApiBaseUrl: null,
+  await identityPrisma.personalPublishingCredential.deleteMany({
+    where: {
+      id: parsed.data,
+      userId: request.authUserId!,
     },
   });
   response.status(204).end();
 });
+
+async function resolvePersonalPublishingCredential(
+  userId: string,
+  provider: PublicationVenueIntegrationProvider,
+  baseUrl: string,
+): Promise<{ apiKey: string; baseUrl: string } | null> {
+  const normalizedBaseUrl = normalizePublishingBaseUrl(baseUrl);
+  const credential = await identityPrisma.personalPublishingCredential.findUnique({
+    where: {
+      userId_provider_baseUrl: {
+        userId,
+        provider,
+        baseUrl: normalizedBaseUrl,
+      },
+    },
+  });
+  if (!credential) return null;
+
+  return {
+    apiKey: decryptSecret({
+      ciphertext: credential.apiKeyCiphertext,
+      iv: credential.apiKeyIv,
+      authTag: credential.apiKeyAuthTag,
+    } as EncryptedSecret),
+    baseUrl: credential.baseUrl,
+  };
+}
 
 export async function resolvePersonalOjsCredential(
   userId: string,
+  baseUrl: string,
 ): Promise<{ apiKey: string; baseUrl: string } | null> {
-  const user = await identityPrisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      ojsApiKeyCiphertext: true,
-      ojsApiKeyIv: true,
-      ojsApiKeyAuthTag: true,
-      ojsApiBaseUrl: true,
-    },
-  });
-  if (
-    !user?.ojsApiKeyCiphertext ||
-    !user.ojsApiKeyIv ||
-    !user.ojsApiKeyAuthTag ||
-    !user.ojsApiBaseUrl
-  ) {
-    return null;
-  }
-  return {
-    apiKey: decryptSecret({
-      ciphertext: user.ojsApiKeyCiphertext,
-      iv: user.ojsApiKeyIv,
-      authTag: user.ojsApiKeyAuthTag,
-    } as EncryptedSecret),
-    baseUrl: user.ojsApiBaseUrl,
-  };
+  return resolvePersonalPublishingCredential(
+    userId,
+    PublicationVenueIntegrationProvider.OJS,
+    baseUrl,
+  );
 }
 
 export async function resolvePersonalOmpCredential(
   userId: string,
+  baseUrl: string,
 ): Promise<{ apiKey: string; baseUrl: string } | null> {
-  const user = await identityPrisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      ompApiKeyCiphertext: true,
-      ompApiKeyIv: true,
-      ompApiKeyAuthTag: true,
-      ompApiBaseUrl: true,
-    },
-  });
-  if (
-    !user?.ompApiKeyCiphertext ||
-    !user.ompApiKeyIv ||
-    !user.ompApiKeyAuthTag ||
-    !user.ompApiBaseUrl
-  ) {
-    return null;
-  }
-  return {
-    apiKey: decryptSecret({
-      ciphertext: user.ompApiKeyCiphertext,
-      iv: user.ompApiKeyIv,
-      authTag: user.ompApiKeyAuthTag,
-    } as EncryptedSecret),
-    baseUrl: user.ompApiBaseUrl,
-  };
+  return resolvePersonalPublishingCredential(
+    userId,
+    PublicationVenueIntegrationProvider.OMP,
+    baseUrl,
+  );
 }
 
 authRouter.post('/logout', async (request, response) => {

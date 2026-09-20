@@ -98,10 +98,13 @@ The same Publication panel supports OMP Integration 1.4.0.0 or newer through
 the provider-neutral artifact client. OJS and OMP credentials and native
 representation semantics remain separate.
 
-The personal OJS API key is resolved on the Studio server and is sent only as
-the native Bearer authorization header to the fixed, trusted OJS endpoint. It
-is not placed in the artifact request body or stored in the publication-build
-manifest.
+Personal OJS API keys are stored per installation in the separate Studio
+identity/profile database. A user may register more than one OJS installation.
+When an OJS connection is selected, the Studio server resolves only the key
+whose normalized installation URL exactly matches that connection. The key is
+sent only as the native Bearer authorization header to the fixed, trusted OJS
+endpoint; it is never returned to the browser, placed in the artifact request
+body, or stored in the publication-build manifest.
 
 ## Verification
 
