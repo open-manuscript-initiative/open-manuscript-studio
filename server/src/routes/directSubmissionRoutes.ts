@@ -128,28 +128,18 @@ directSubmissionRouter.post('/integrations/connections/:connectionId/publication
     }
 
     const platform = connection.providerId === 'omp' ? 'OMP' : 'OJS';
+    const baseUrl = (
+      await assertTrustedIntegrationUrl(configuredBase, configuredBase)
+    ).toString().replace(/\/+$/, '');
     const credential =
       connection.providerId === 'omp'
-        ? await resolvePersonalOmpCredential(request.authUserId!)
-        : await resolvePersonalOjsCredential(request.authUserId!);
+        ? await resolvePersonalOmpCredential(request.authUserId!, baseUrl)
+        : await resolvePersonalOjsCredential(request.authUserId!, baseUrl);
     if (!credential) {
       response.status(400).json({
         error: {
           message:
-            `Save a personal ${platform} editor API key in Account → Personal profile first.`,
-        },
-      });
-      return;
-    }
-
-    const baseUrl = (
-      await assertTrustedIntegrationUrl(configuredBase, configuredBase)
-    ).toString().replace(/\/+$/, '');
-    if (credential.baseUrl !== baseUrl) {
-      response.status(409).json({
-        error: {
-          message:
-            `The saved personal ${platform} key belongs to a different ${platform} installation.`,
+            `Save a personal ${platform} API key for this installation in Account → Personal profile first.`,
         },
       });
       return;
