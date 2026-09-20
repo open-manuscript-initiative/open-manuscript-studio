@@ -150,6 +150,9 @@ async function openManuscriptThroughUi(
 
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
   await expect(menu).toBeVisible();
+  if (await menu.locator('.studio-menu-navigation').isHidden()) {
+    await menu.locator('.studio-menu-navigation-toggle').click();
+  }
   await menu.getByRole('button', { name: 'Document', exact: true }).click();
 
   const chooserPromise = page.waitForEvent('filechooser');
@@ -181,6 +184,9 @@ async function closeDocumentThroughUi(page: Page): Promise<void> {
     await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
     await expect(menu).toBeVisible();
   }
+  if (await menu.locator('.studio-menu-navigation').isHidden()) {
+    await menu.locator('.studio-menu-navigation-toggle').click();
+  }
   await menu.getByRole('button', { name: 'Document', exact: true }).click();
 
   page.once('dialog', async (dialog) => {
@@ -207,6 +213,9 @@ async function exportFromUi(
     await expect(menu).toBeVisible();
   }
 
+  if (await menu.locator('.studio-menu-navigation').isHidden()) {
+    await menu.locator('.studio-menu-navigation-toggle').click();
+  }
   await menu.getByRole('button', { name: 'Export and tools', exact: true }).click();
   const formatSelect = menu.getByLabel('Export format');
   await formatSelect.selectOption(format);
@@ -232,6 +241,9 @@ async function expectJatsReleaseBlocked(page: Page): Promise<void> {
     await expect(menu).toBeVisible();
   }
 
+  if (await menu.locator('.studio-menu-navigation').isHidden()) {
+    await menu.locator('.studio-menu-navigation-toggle').click();
+  }
   await menu.getByRole('button', { name: 'Export and tools', exact: true }).click();
   await menu.getByLabel('Export format').selectOption('jats');
   await menu.getByRole('button', { name: 'Export', exact: true }).click();

@@ -7,6 +7,7 @@ import {
   History as HistoryIcon,
   LayoutTemplate,
   Library,
+  Menu,
   Printer,
   Save,
   SaveAll,
@@ -118,10 +119,13 @@ export function StudioMenu({
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
   const platform = getStudioPlatform();
   const nativeMobile = platform === 'android' || platform === 'ios';
+  const [navigationOpen, setNavigationOpen] = useState(true);
+  const navigationToggleRef = useRef<HTMLButtonElement>(null);
   const [activeView, setActiveView] = useState<StudioMenuView>('document');
 
   useEffect(() => {
     if (!open) return;
+    setNavigationOpen(true);
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -144,10 +148,27 @@ export function StudioMenu({
         <header className="studio-menu-header">
           <button type="button" className="studio-menu-close" aria-label={t('studio.closeMenu')} title={t('studio.closeMenu')} onClick={onClose}><X size={20} aria-hidden="true" /></button>
           <div className="studio-menu-heading"><span className="studio-menu-eyebrow">Open Manuscript Studio</span><h2 id="studio-menu-title">{t('studio.menu')}</h2></div>
-          <span className="studio-menu-header-spacer" aria-hidden="true" />
+          <button
+            ref={navigationToggleRef}
+            type="button"
+            className="studio-menu-close studio-menu-navigation-toggle"
+            aria-label={t('studio.menu')}
+            title={t('studio.menu')}
+            aria-controls="studio-menu-navigation"
+            aria-expanded={navigationOpen}
+            onClick={() => setNavigationOpen((current) => !current)}
+          ><Menu size={20} aria-hidden="true" /></button>
         </header>
-        <div className="studio-menu-body">
-          <nav id="studio-menu-navigation" className="studio-menu-navigation" aria-label={t('studio.menu')}>
+        <div className={`studio-menu-body${navigationOpen ? '' : ' studio-menu-body--navigation-collapsed'}`}>
+          <nav id="studio-menu-navigation" className="studio-menu-navigation" aria-label={t('studio.menu')}
+            hidden={!navigationOpen}
+            onClick={(event) => {
+              const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.studio-menu-nav-button');
+              if (!button || button.disabled) return;
+              setNavigationOpen(false);
+              navigationToggleRef.current?.focus({ preventScroll: true });
+            }}
+          >
             <MenuButton active={activeView === 'document'} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} />
             <MenuButton active={activeView === 'manuscript'} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} />
             <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} />

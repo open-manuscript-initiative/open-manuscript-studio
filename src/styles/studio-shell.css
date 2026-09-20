@@ -688,3 +688,14 @@
     box-sizing: border-box;
   }
 }
+
+
+/* Keep the selected workspace mounted while reclaiming the navigation area. */
+.studio-menu-navigation[hidden] {
+  display: none;
+}
+
+.studio-menu-body.studio-menu-body--navigation-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
