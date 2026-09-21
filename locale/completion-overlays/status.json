@@ -1,3 +1,12 @@
 {
-  "completeLocales": ["it", "fr", "es", "pt", "nl", "pl"]
+  "completeLocales": [
+    "es",
+    "fr",
+    "ga",
+    "it",
+    "mt",
+    "nl",
+    "pl",
+    "pt"
+  ]
 }
