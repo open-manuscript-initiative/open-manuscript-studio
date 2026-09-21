@@ -10,7 +10,7 @@ test('every manuscript-menu view stays inside the mobile viewport', async ({ pag
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Manuscript menu' });
   const content = dialog.locator('.studio-menu-content');
-  const navigation = navigation;
+  const navigation = dialog.getByRole('navigation', { name: 'Manuscript menu' });
   await expect(dialog).toBeVisible();
   await expect(navigation).toBeVisible();
   await expectFullScreenScrollFreeNavigation(dialog, navigation);
