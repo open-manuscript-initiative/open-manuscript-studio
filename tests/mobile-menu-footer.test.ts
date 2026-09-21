@@ -30,6 +30,18 @@ const mobileLayout = readFileSync(
   new URL('../src/mobile/navigation/MobileLayout.tsx', import.meta.url),
   'utf8',
 );
+const mobileStyles = readFileSync(
+  new URL('../src/mobile/styles/mobile.css', import.meta.url),
+  'utf8',
+);
+const editorZoom = readFileSync(
+  new URL('../src/components/EditorZoomControl.tsx', import.meta.url),
+  'utf8',
+);
+const editorZoomStyles = readFileSync(
+  new URL('../src/components/EditorZoomControl.css', import.meta.url),
+  'utf8',
+);
 const studioShell = readFileSync(
   new URL('../src/styles/studio-shell.css', import.meta.url),
   'utf8',
@@ -79,6 +91,32 @@ test('native mobile keeps menu, OMI brand, language, personal account and logout
   assert.doesNotMatch(mobileLayout, /mobile-secondary-logout/);
   assert.doesNotMatch(mobileLayout, /mobile-bottom-nav/);
   assert.doesNotMatch(mobileLayout, /mobile-nav-item/);
+});
+
+test('native mobile removes the obsolete bottom navigation and reserves only the system safe-area inset', () => {
+  assert.doesNotMatch(mobileLayout, /mobile-bottom-nav|mobile-nav-item/);
+  assert.doesNotMatch(mobileStyles, /\.mobile-bottom-nav|\.mobile-nav-item/);
+  assert.match(
+    mobileStyles,
+    /\.mobile-shell\s*\{[\s\S]*?grid-template-rows:\s*auto auto minmax\(0, 1fr\);/,
+  );
+  assert.match(
+    mobileStyles,
+    /\.mobile-workspace\s*\{[\s\S]*?padding-bottom:\s*env\(safe-area-inset-bottom, 0px\);/,
+  );
+});
+
+test('normal manuscript editing exposes a Word-style document zoom without changing manuscript data', () => {
+  assert.match(editorZoom, /MIN_ZOOM = 50/);
+  assert.match(editorZoom, /MAX_ZOOM = 200/);
+  assert.match(editorZoom, /type="range"/);
+  assert.match(editorZoom, /setZoom\(100\)/);
+  assert.match(editorZoom, /localStorage\.setItem\(STORAGE_KEY/);
+  assert.match(editorZoomStyles, /\.omi-manuscript-page\s*\{\s*zoom:\s*var\(--omi-editor-zoom, 1\);/);
+  assert.match(
+    editorZoomStyles,
+    /@media \(max-width: 760px\)[\s\S]*?\.omi-editor-zoom__toggle\s*\{[\s\S]*?display:\s*inline-flex;/,
+  );
 });
 
 test('the desktop OMI brand is an explicit Home control', () => {
