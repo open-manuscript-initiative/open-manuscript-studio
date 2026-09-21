@@ -81,6 +81,8 @@ test('live publication editor opens as its own full-screen menu workspace', () =
 test('Studio navigation collapses without leaving the active workspace and Home is explicit', () => {
   assert.match(studioMenu, /const \[navigationOpen, setNavigationOpen\] = useState\(true\)/);
   assert.match(studioMenu, /useState<StudioMenuView \| null>\(null\)/);
+  assert.match(studioMenu, /externalContentActive = false/);
+  assert.match(studioMenu, /const hasActiveContent = activeView !== null \|\| externalContentActive/);
   assert.match(studioMenu, /studio-menu-drawer--navigation-only/);
   assert.match(studioMenu, /hidden=\{!navigationOpen\}/);
   assert.match(studioMenu, /aria-expanded=\{navigationOpen\}/);
@@ -100,7 +102,11 @@ test('mobile manuscript menu uses a full-window scroll-free navigation grid', ()
   );
   assert.match(
     studioShellStyles,
-    /@media \(max-width: 760px\)[\s\S]*\.studio-menu-navigation \{[\s\S]*position: absolute;[\s\S]*inset: 0;[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);[\s\S]*overflow: hidden;/,
+    /@media \(max-width: 760px\)[\s\S]*\.studio-menu-navigation \{[\s\S]*position: absolute;[\s\S]*inset: 0;[\s\S]*z-index: 120;[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);[\s\S]*overflow: hidden;/,
+  );
+  assert.match(
+    studioShellStyles,
+    /\.studio-menu-body--navigation-open > \.studio-menu-content \{\s*display: none;/,
   );
   assert.doesNotMatch(
     studioShellStyles,
