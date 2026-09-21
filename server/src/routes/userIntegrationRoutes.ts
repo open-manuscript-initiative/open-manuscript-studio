@@ -309,7 +309,10 @@ userIntegrationRouter.post(
     const secretRequired =
       body.data.authenticationMode === 'user_api_key' ||
       body.data.authenticationMode === 'integration_token';
-    if (secretRequired && !body.data.secret && !existingSameConnection?.encryptedSecret) {
+    if (
+      secretRequired &&
+      (body.data.clearSecret || (!body.data.secret && !existingSameConnection?.encryptedSecret))
+    ) {
       response.status(400).json({
         error: {
           code: 'INTEGRATION_SECRET_REQUIRED',
