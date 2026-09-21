@@ -140,7 +140,36 @@ Then run the **Android Release** workflow with Play upload enabled and select a 
 
 The workflow intentionally does not publish directly to the production track.
 
-## 7. Direct APK distribution
+## 7. Complete Studio translations from Google Play
+
+The shared Studio frontend keeps its source strings in PO/JSON catalogues rather
+than native Android resources. Play AAB builds therefore add a temporary
+translation bridge containing every unique English Studio UI source string as a
+translatable Android string resource.
+
+After an AAB has been uploaded with Play publishing enabled:
+
+1. wait for Google Play **App strings** automatic translation to finish;
+2. note the uploaded Android `versionCode` from the Android Release run;
+3. open **Actions -> Google Play Translation Sync**;
+4. run it with that `versionCode`.
+
+The sync job downloads the Play-generated universal APK with the existing
+`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, extracts the localized bridge strings,
+and backfills only values that are still effectively English. Existing PO
+translations and reviewed completion overlays always take precedence.
+
+The job deliberately fails instead of creating a partial completion PR if any
+configured Play language is still missing translated bridge strings. It retries
+while Play is processing the bundle. On success it compiles and audits every
+locale and opens a reviewable pull request with the generated completion
+overlays and runtime JSON dictionaries.
+
+Irish and Maltese are retained Studio languages outside the configured Play
+translation matrix; their reviewed completion data is maintained directly in
+the repository.
+
+## 8. Direct APK distribution
 
 The workflow also produces a signed universal APK. It can be used for direct installation outside Google Play while preserving a stable signing identity across releases.
 
