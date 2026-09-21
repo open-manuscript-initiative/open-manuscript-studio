@@ -2,6 +2,7 @@ import {
   createContext,
   type PropsWithChildren,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -12,6 +13,7 @@ import {
   saveEnabledUiLocales,
   saveUiLocale,
 } from './storage';
+import { getStudioLocaleDirection } from './platformLocales';
 import { translate, type AppTranslationKey } from './translate';
 import type { SupportedLocale } from './types';
 
@@ -59,7 +61,6 @@ export function I18nProvider({ children }: PropsWithChildren) {
 
     setLocaleState(nextLocale);
     saveUiLocale(nextLocale);
-    document.documentElement.lang = nextLocale;
   }, []);
 
   const setLocaleEnabled = useCallback(
@@ -87,6 +88,11 @@ export function I18nProvider({ children }: PropsWithChildren) {
     },
     [locale],
   );
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    document.documentElement.dir = getStudioLocaleDirection(locale);
+  }, [locale]);
 
   const t = useCallback(
     (key: AppTranslationKey) => translate(locale, key),

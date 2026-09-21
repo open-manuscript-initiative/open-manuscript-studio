@@ -1,3 +1,8 @@
+import {
+  localeLabels,
+  STUDIO_UI_LOCALES,
+  type StudioUiLocale,
+} from './platformLocales';
 import type { SupportedLocale, TranslationDictionary } from './types';
 
 export const DEFAULT_LOCALE: SupportedLocale = 'en';
@@ -22,39 +27,10 @@ export const translations = Object.fromEntries(
   }),
 ) as Record<string, TranslationDictionary>;
 
-export const localeLabels: Record<string, string> = {
-  bg: 'Български',
-  cs: 'Čeština',
-  da: 'Dansk',
-  de: 'Deutsch',
-  el: 'Ελληνικά',
-  en: 'English',
-  es: 'Español',
-  et: 'Eesti',
-  fi: 'Suomi',
-  fr: 'Français',
-  ga: 'Gaeilge',
-  hr: 'Hrvatski',
-  hu: 'Magyar',
-  it: 'Italiano',
-  lt: 'Lietuvių',
-  lv: 'Latviešu',
-  mt: 'Malti',
-  nl: 'Nederlands',
-  pl: 'Polski',
-  pt: 'Português',
-  ro: 'Română',
-  sk: 'Slovenčina',
-  sl: 'Slovenščina',
-  sv: 'Svenska',
-};
+export { localeLabels };
 
-const localeOrder = Object.keys(localeLabels);
-
-export const supportedLocales = localeOrder.filter((locale) =>
-  Object.prototype.hasOwnProperty.call(translations, locale),
-) as SupportedLocale[];
+export const supportedLocales = [...STUDIO_UI_LOCALES] as SupportedLocale[];
 
 export function isSupportedLocale(value: string): value is SupportedLocale {
-  return supportedLocales.includes(value as SupportedLocale);
+  return STUDIO_UI_LOCALES.includes(value as StudioUiLocale);
 }
