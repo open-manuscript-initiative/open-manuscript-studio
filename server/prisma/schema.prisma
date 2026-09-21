@@ -295,6 +295,24 @@ model UserIntegration {
   @@map("user_integrations")
 }
 
+model WebPublication {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  connectionId  String   @map("connection_id") @db.Uuid
+  manuscriptId  String   @map("manuscript_id") @db.VarChar(128)
+  externalId    String?  @map("external_id") @db.VarChar(191)
+  externalUrl   String?  @map("external_url") @db.Text
+  contentDigest String   @map("content_digest") @db.VarChar(64)
+  status        String   @default("DRAFT") @db.VarChar(32)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([userId, connectionId, manuscriptId])
+  @@index([connectionId])
+  @@index([userId, updatedAt])
+  @@map("web_publications")
+}
+
 model ExternalInstallation {
   id                     String                     @id @default(uuid()) @db.Uuid
   installationId         String                     @unique @map("installation_id") @db.VarChar(128)
