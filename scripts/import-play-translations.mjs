@@ -138,7 +138,7 @@ export function parseAapt2StudioTranslations(dump, reference) {
 
   for (const rawLine of dump.split(/\r?\n/)) {
     const resourceMatch = rawLine.match(
-      /^\s*resource\s+\S+\s+string\/(omi_i18n_[a-f0-9]+)\s*$/,
+      /^\s*resource\s+\S+\s+string\/(omi_i18n_[a-f0-9]+)(?::|\s|$)/,
     );
     if (resourceMatch) {
       activeResource = sourceByResource.has(resourceMatch[1])
