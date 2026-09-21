@@ -1,9 +1,9 @@
 {
   "locale": "nl",
   "byPointer": {
+    "/citations/locator": "Verwijzing",
+    "/citations/resourceTypes/manuscript": "Manuscript",
     "/navigation/metadata": "Metadata",
-    "/studio/navigation/document": "Document",
-    "/citations/locator": "Plaatsaanduiding",
-    "/citations/resourceTypes/manuscript": "Manuscript"
+    "/studio/navigation/document": "Document"
   }
 }
