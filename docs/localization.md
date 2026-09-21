@@ -44,10 +44,43 @@ Irish (`ga`) and Maltese (`mt`) remain available from the earlier EU
 localization set, so the shared UI registry exposes 47 selectable locale
 choices while covering all 49 Google Play locale entries.
 
-The existing 24 PO/JSON catalogues remain the reviewed translation baseline.
-Newly exposed Play languages without a reviewed catalogue currently use the
-English reference strings through the normal runtime fallback path. They must
-receive PO catalogues before being promoted as fully translated locales.
+All 47 canonical Studio UI locales have PO catalogues. Existing translator
+work remains authoritative. Google Play translation sync is used only to
+backfill source strings that still resolve to English, including gaps in the
+older partially translated catalogues.
+
+Irish (`ga`) already has a reviewed completion overlay. Maltese (`mt`), which
+is not one of the configured Google Play translation targets, is completed
+through reviewed manual completion overlays.
+
+## Google Play translation bridge
+
+The Studio UI is React-based, so its canonical strings are not normally Android
+`strings.xml` resources. Google Play automatic **App strings** translation
+therefore cannot see the complete Studio interface by default.
+
+For Play AAB builds, `scripts/generate-play-translation-resources.mjs`
+temporarily mirrors every unique English Studio source string into generated,
+translatable Android resources. These bridge resources are included only in the
+Play bundle and are removed immediately after the build; the direct APK is not
+changed.
+
+After Google Play has processed the uploaded AAB and generated App strings
+translations, run **Google Play Translation Sync** with that Android
+`versionCode`. The workflow:
+
+1. downloads the Play-generated universal APK through the Google Play Developer
+   API;
+2. reads the localized bridge resources with `aapt2`;
+3. maps Play region variants to the canonical Studio locale;
+4. preserves every existing non-English PO translation and reviewed overlay;
+5. writes only missing English-identical values to
+   `locale/completion-overlays/<locale>.play.json`;
+6. recompiles the runtime JSON dictionaries and runs the completeness audit;
+7. opens a reviewable translation pull request.
+
+This means Play-generated translations can complete both newly added languages
+and gaps in older catalogues without overwriting prior human translation work.
 
 ## PO mapping
 
