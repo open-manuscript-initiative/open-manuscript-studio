@@ -1,0 +1,723 @@
+ID	English source
+OMI0001	Save
+OMI0002	Cancel
+OMI0003	Close
+OMI0004	Delete
+OMI0005	Edit
+OMI0006	Add
+OMI0007	Loading…
+OMI0008	Language
+OMI0009	Documents
+OMI0010	Editor
+OMI0011	Metadata
+OMI0012	Preview
+OMI0013	Settings
+OMI0014	Manuscript menu
+OMI0015	Close manuscript menu
+OMI0016	Interface language
+OMI0017	Saved
+OMI0018	Saving…
+OMI0019	Manuscript editor
+OMI0020	Enter the manuscript title
+OMI0021	No section is selected.
+OMI0022	Document
+OMI0023	Manuscript data
+OMI0024	Notes
+OMI0025	References
+OMI0026	Contributors
+OMI0027	History
+OMI0028	Export and tools
+OMI0029	Settings
+OMI0030	Document structure
+OMI0031	Choose the section you want to work on. Structural and object information stays out of the writing surface until you need it.
+OMI0032	Add section
+OMI0033	Sections
+OMI0034	Objects
+OMI0035	Annotations
+OMI0036	Citations
+OMI0037	Manuscript data
+OMI0038	Edit manuscript-level information separately from the writing surface.
+OMI0039	Export and tools
+OMI0040	Secondary, technical and potentially destructive actions are kept outside the writing surface.
+OMI0041	Export .omi.json
+OMI0042	Create a canonical portable OMI manuscript file after checkpointing pending edits.
+OMI0043	Reset sample
+OMI0044	Replace the current alpha sample with a new clean sample manuscript.
+OMI0045	Reset the current sample manuscript? Unsaved and current sample data will be replaced.
+OMI0046	Technical data
+OMI0047	Inspect the semantic representation only when technical details are needed.
+OMI0048	Current section JSON
+OMI0049	Synced
+OMI0050	Interface settings
+OMI0051	Choose which interface languages you want available while working. These preferences are stored on this device.
+OMI0052	Available interface languages
+OMI0053	Enabled languages appear in the quick language switcher in the editor header.
+OMI0054	Current interface language
+OMI0055	The language currently in use must remain enabled. Switch to another language before disabling it.
+OMI0056	Available in quick switcher
+OMI0057	Hidden from quick switcher
+OMI0058	The language registry is extensible. Future translation dictionaries can be added without redesigning this settings screen.
+OMI0059	New manuscript
+OMI0060	Document title
+OMI0061	Abstract
+OMI0062	Keywords
+OMI0063	Contributors
+OMI0064	Sections
+OMI0065	Notes
+OMI0066	Citations
+OMI0067	Bibliography
+OMI0068	Document language
+OMI0069	Original language
+OMI0070	Notes
+OMI0071	Manage semantic manuscript notes. Note bodies remain independent annotation objects while their inline anchors stay in the text.
+OMI0072	This manuscript has no notes yet.
+OMI0073	Place the cursor in the text and use the Note button or Ctrl/Cmd+Alt+N.
+OMI0074	Note
+OMI0075	Note type
+OMI0076	Note text
+OMI0077	Write the note…
+OMI0078	Footnote
+OMI0079	Endnote
+OMI0080	Author note
+OMI0081	Delete note
+OMI0082	Delete this note and its inline anchor from the manuscript?
+OMI0083	Close note editor
+OMI0084	Go to note
+OMI0085	Saved with manuscript revisions
+OMI0086	References
+OMI0087	Add a work once to the manuscript reference library, then reuse it in as many citation occurrences as needed.
+OMI0088	Add reference
+OMI0089	Edit reference
+OMI0090	Store structured bibliographic metadata independently from any one citation or output style.
+OMI0091	The manuscript reference library is empty.
+OMI0092	Add a book, article, archival source, web resource or another cited work before inserting citations in the text.
+OMI0093	Search references
+OMI0094	Search by title, creator, year, DOI…
+OMI0095	Untitled reference
+OMI0096	citations
+OMI0097	Neutral preview of records currently cited in the manuscript. Final formatting belongs to the publication profile.
+OMI0098	Resource type
+OMI0099	Title
+OMI0100	Title of the cited work
+OMI0101	Subtitle
+OMI0102	Creators and contributors
+OMI0103	Keep contributor names structured so citation styles and exports can render them correctly.
+OMI0104	Add creator
+OMI0105	Remove creator
+OMI0106	No creator has been added.
+OMI0107	Role
+OMI0108	Given name
+OMI0109	Family name
+OMI0110	Journal, book or container title
+OMI0111	Publication date / year
+OMI0112	Volume
+OMI0113	Issue
+OMI0114	Pages / extent
+OMI0115	Publisher
+OMI0116	Place of publication
+OMI0117	A likely duplicate already exists in the reference library:
+OMI0118	Insert citation
+OMI0119	Choose a work from the manuscript reference library and optionally specify the cited location.
+OMI0120	No reference is available yet.
+OMI0121	Add the work from Manuscript menu → References, then return here to cite it.
+OMI0122	Insert citation
+OMI0123	Citation
+OMI0124	Cited work
+OMI0125	Locator type
+OMI0126	Locator
+OMI0127	e.g. 45–47, 12r–13v, chapter 4
+OMI0128	Prefix
+OMI0129	e.g. see also
+OMI0130	Suffix
+OMI0131	e.g. emphasis added
+OMI0132	Open source
+OMI0133	Close citation editor
+OMI0134	Delete citation
+OMI0135	Delete this citation occurrence from the manuscript? The bibliographic record will remain in the reference library.
+OMI0136	The cited bibliographic record is unresolved or missing.
+OMI0137	Author
+OMI0138	Editor
+OMI0139	Translator
+OMI0140	Compiler
+OMI0141	Contributor
+OMI0142	Journal article
+OMI0143	Book
+OMI0144	Book chapter
+OMI0145	Conference paper
+OMI0146	Thesis
+OMI0147	Dissertation
+OMI0148	Report
+OMI0149	Preprint
+OMI0150	Dataset
+OMI0151	Software
+OMI0152	Standard
+OMI0153	Archival source
+OMI0154	Manuscript
+OMI0155	Web page
+OMI0156	Page
+OMI0157	Page range
+OMI0158	Chapter
+OMI0159	Section
+OMI0160	Paragraph
+OMI0161	Figure
+OMI0162	Table
+OMI0163	Folio
+OMI0164	Line
+OMI0165	Timestamp
+OMI0166	Manage portable scholarly identities and their manuscript-specific contribution roles.
+OMI0167	Add contributor
+OMI0168	No contributors have been added to this manuscript.
+OMI0169	Remove contributor
+OMI0170	Move contributor up
+OMI0171	Move contributor down
+OMI0172	Given name
+OMI0173	Family name
+OMI0174	Affiliation
+OMI0175	ORCID
+OMI0176	The ORCID checksum or format is invalid.
+OMI0177	Contribution role
+OMI0178	Corresponding contributor
+OMI0179	Author
+OMI0180	Editor
+OMI0181	Translator
+OMI0182	Reviewer
+OMI0183	Data curator
+OMI0184	Software
+OMI0185	Methodology
+OMI0186	Visualization
+OMI0187	Other
+OMI0188	Revision history
+OMI0189	Immutable OMI-SPEC-160 revisions recorded for this manuscript.
+OMI0190	No revisions have been recorded.
+OMI0191	Current
+OMI0192	Revision
+OMI0193	events
+OMI0194	grouped changes
+OMI0195	Unknown actor
+OMI0196	Complete history
+OMI0197	Shallow history
+OMI0198	Uncommitted working state
+OMI0199	Recent edits are being batched and will become one immutable checkpoint revision.
+OMI0200	Pending
+OMI0201	Save checkpoint
+OMI0202	Discard changes
+OMI0203	Discard all uncommitted changes and restore the latest committed revision?
+OMI0204	Revert
+OMI0205	Create a new revision that restores this earlier manuscript state?
+OMI0206	Save or discard the pending working state before reverting a committed revision.
+OMI0207	Deleted object records
+OMI0208	Persistent OMI-SPEC-160 tombstones preserve deleted object identifiers and restoration evidence.
+OMI0209	Deleted
+OMI0210	Restored
+OMI0211	Manuscript snapshot created
+OMI0212	Manuscript title changed
+OMI0213	Manuscript abstract changed
+OMI0214	Section added
+OMI0215	Block content changed
+OMI0216	Contributor added
+OMI0217	Contributor identity changed
+OMI0218	Contributor removed
+OMI0219	Contribution role changed
+OMI0220	Contributors reordered
+OMI0221	Earlier revision restored
+OMI0222	Add section
+OMI0223	Add paragraph
+OMI0224	Note
+OMI0225	Citation
+OMI0226	Untitled section
+OMI0227	Start writing…
+OMI0228	Paragraph
+OMI0229	Heading
+OMI0230	Quote
+OMI0231	Insert semantic manuscript note
+OMI0232	Insert semantic citation
+OMI0233	Loading editor…
+OMI0234	Draft
+OMI0235	Submitted
+OMI0236	Accepted
+OMI0237	Published
+OMI0238	This field is required.
+OMI0239	The document structure is invalid.
+OMI0240	The document schema version is not supported.
+OMI0241	English
+OMI0242	Hungarian
+OMI0243	German
+OMI0244	Open Manuscript Studio
+OMI0245	Collaborative scholarly writing
+OMI0246	Sign in
+OMI0247	Please sign in to continue.
+OMI0248	Sign in
+OMI0249	Signing in…
+OMI0250	Do not have an account yet?
+OMI0251	Register
+OMI0252	Create account
+OMI0253	Create your account.
+OMI0254	Register
+OMI0255	Already have an account?
+OMI0256	Sign in
+OMI0257	Full name
+OMI0258	Your full name
+OMI0259	Email
+OMI0260	name@example.com
+OMI0261	Password
+OMI0262	Enter your password
+OMI0263	Invalid e-mail address.
+OMI0264	Incorrect e-mail address or password.
+OMI0265	The user account could not be found.
+OMI0266	The user account is not active.
+OMI0267	Authentication is required.
+OMI0268	Alpha version – authentication is currently for testing purposes.
+OMI0269	OMI package
+OMI0270	Externalize binary resources and package the manuscript, history, publication profile, checksums, assets and valid JATS output as a portable .omi container.
+OMI0271	registered assets
+OMI0272	embedded images awaiting externalization
+OMI0273	Prepare assets
+OMI0274	Preparing assets…
+OMI0275	Embedded image payloads are registered as stable assets.
+OMI0276	Download .omi package
+OMI0277	Building package…
+OMI0278	The container passed Studio integrity checks.
+OMI0279	The package has blocking integrity errors.
+OMI0280	Container diagnostics
+OMI0281	No container-specific diagnostics.
+OMI0282	SHA-256 integrity
+OMI0283	OMI-SPEC-320 / OMI-SPEC-330 Draft package
+OMI0284	Asset-backed image previews are resolved from the local binary repository. Portable manuscript state no longer needs Base64 preview data after externalization.
+OMI0285	Open OMI package
+OMI0286	Inspect an untrusted .omi container, verify its manifest, ZIP structure, revision identities, assets and SHA-256 checksums before loading it.
+OMI0287	Choose .omi package
+OMI0288	Verifying package…
+OMI0289	Open verified manuscript
+OMI0290	Opening manuscript…
+OMI0291	The package passed integrity verification and can be opened.
+OMI0292	The package cannot be opened until its blocking integrity errors are resolved.
+OMI0293	The verified OMI manuscript was opened with its original identity and revision history.
+OMI0294	entries
+OMI0295	revisions
+OMI0296	checksums verified
+OMI0297	assets
+OMI0298	Manuscript ID
+OMI0299	Head revision
+OMI0300	Opening the package replaces the active workspace manuscript. It does not create a new manuscript ID or revision root.
+OMI0301	Open this verified OMI manuscript and replace the currently active workspace document?
+OMI0302	Cross-reference
+OMI0303	Link to a section, figure, table, chart or equation by stable object identity.
+OMI0304	Choose target
+OMI0305	Search document objects…
+OMI0306	No matching document objects.
+OMI0307	Cancel
+OMI0308	Display
+OMI0309	Label and number
+OMI0310	Number only
+OMI0311	Title or caption
+OMI0312	Label, number and title
+OMI0313	Edit cross-reference
+OMI0314	Target
+OMI0315	Go to target
+OMI0316	Delete reference
+OMI0317	Delete this internal cross-reference?
+OMI0318	The target object no longer exists.
+OMI0319	Object numbering
+OMI0320	Choose whether figures, tables, charts and equations are numbered through the manuscript or restart in each section.
+OMI0321	Continuous through document
+OMI0322	Restart in each section
+OMI0323	Internal references
+OMI0324	Semantic references remain attached to stable object IDs when document order changes.
+OMI0325	All internal references resolve correctly.
+OMI0326	Internal reference issues
+OMI0327	Missing target
+OMI0328	Missing text anchor
+OMI0329	Sections
+OMI0330	Figures
+OMI0331	Tables
+OMI0332	Charts
+OMI0333	Equations
+OMI0334	Citation style
+OMI0335	Choose how citations and the bibliography are rendered while authoring. The semantic citation data remain unchanged.
+OMI0336	Studio currently uses CSL-JSON-compatible built-in profiles. A publication profile may override this presentation preference later.
+OMI0337	Formatted bibliography
+OMI0338	Generated from cited bibliographic records using the selected presentation profile.
+OMI0339	Selected sources
+OMI0340	Select one or more works. Multiple selections are inserted as one semantic citation cluster.
+OMI0341	Add to cluster
+OMI0342	Remove from cluster
+OMI0343	Citation cluster
+OMI0344	Each item remains an independent citation occurrence with its own locator, prefix and suffix.
+OMI0345	Delete cluster
+OMI0346	Delete this complete citation cluster from the manuscript? Bibliographic records remain in the reference library.
+OMI0347	Move earlier
+OMI0348	Move later
+OMI0349	APA 7
+OMI0350	Chicago Author-Date
+OMI0351	Chicago Notes & Bibliography
+OMI0352	MLA 9
+OMI0353	ISO 690
+OMI0354	Import Word manuscript
+OMI0355	Convert a DOCX manuscript into semantic OMI structure locally in your browser.
+OMI0356	Choose DOCX file
+OMI0357	Reading and analysing DOCX…
+OMI0358	Choose another file
+OMI0359	Import preview
+OMI0360	Review the reconstructed structure before opening it as a new OMI manuscript.
+OMI0361	Detected metadata
+OMI0362	Title
+OMI0363	Language
+OMI0364	Title source
+OMI0365	DOCX core properties
+OMI0366	Word Title style
+OMI0367	File name fallback
+OMI0368	Detected authors
+OMI0369	Import detected authors
+OMI0370	DOCX creator/Author-style metadata can be ambiguous. Imported names remain editable and are not identity-verified.
+OMI0371	core metadata
+OMI0372	Author style
+OMI0373	Reconstructed outline
+OMI0374	Review items
+OMI0375	No structural warnings were detected.
+OMI0376	Open as new OMI manuscript
+OMI0377	The DOCX manuscript has been opened.
+OMI0378	Open this DOCX as a new OMI manuscript? The current active manuscript will leave the single-document workspace.
+OMI0379	Import creates a new manuscript identity and a new root revision. It does not rewrite the current manuscript history.
+OMI0380	Sections
+OMI0381	Paragraphs
+OMI0382	Lists
+OMI0383	Notes
+OMI0384	Images
+OMI0385	Tables
+OMI0386	Equations
+OMI0387	Citations
+OMI0388	Reference records
+OMI0389	Tracked deletions are not imported; accepted/visible text is preferred.
+OMI0390	Word comments are not yet converted into OMI review annotations.
+OMI0391	Text-box content may be flattened into the main text flow.
+OMI0392	DOCX core title and the styled document title differ; the core title is retained.
+OMI0393	Merged Word table cells are flattened into the editable rectangular OMI table model.
+OMI0394	A note reference was found without a readable note body.
+OMI0395	A Word citation field references a source that could not be matched to embedded bibliography metadata.
+OMI0396	A Word REF/PAGEREF field is preserved as visible text; semantic OMI target mapping needs review.
+OMI0397	An inline Word equation was promoted to a separate editable equation block.
+OMI0398	No explicit document title was found; the file name is used as the manuscript title.
+OMI0399	Author names were inferred from DOCX metadata and should be reviewed.
+OMI0400	Headers and footers are not imported into scholarly manuscript content.
+OMI0401	Export formats
+OMI0402	Export the manuscript from the same semantic OMI model into portable and publication formats.
+OMI0403	Portable OMI formats
+OMI0404	Publication formats
+OMI0405	OMI container
+OMI0406	Complete portable package containing manuscript state, history, metadata, publication profile, JATS/HTML and assets.
+OMI0407	OMI JSON
+OMI0408	Canonical human- and machine-readable JSON representation of the OMI manuscript model.
+OMI0409	JATS XML 1.4
+OMI0410	NISO JATS Article Authoring XML for journal and publisher workflows.
+OMI0411	Semantic HTML5
+OMI0412	Standalone, script-free accessible HTML publication view.
+OMI0413	Microsoft Word (DOCX)
+OMI0414	Editable Word document with real heading styles and the core manuscript structure.
+OMI0415	Adobe InDesign (IDML)
+OMI0416	Editable InDesign Markup Language package with OMI paragraph styles, section hierarchy and publisher-oriented text structure.
+OMI0417	QuarkXPress (XPress Tags)
+OMI0418	UTF-8 XPress Tags file for QuarkXPress import with OMI paragraph and heading styles.
+OMI0419	Adobe FrameMaker (MIF)
+OMI0420	Editable Maker Interchange Format document for FrameMaker workflows.
+OMI0421	Scribus (SLA)
+OMI0422	Editable Scribus document with OMI paragraph styles and a continuous text frame.
+OMI0423	LaTeX
+OMI0424	UTF-8 LaTeX source for scientific and automated TeX-based publishing workflows.
+OMI0425	EPUB 3
+OMI0426	Portable EPUB 3 ebook publication package.
+OMI0427	PDF
+OMI0428	Publication-profile print view that can be saved as PDF in the browser.
+OMI0429	Export
+OMI0430	Preparing…
+OMI0431	Export failed.
+OMI0432	Choose Save as PDF in the print dialog that opens.
+OMI0433	Subtitle
+OMI0434	Subtitle (optional)
+OMI0435	Add an optional subtitle
+OMI0436	Motto
+OMI0437	Motto (optional)
+OMI0438	Add an optional motto or epigraph
+OMI0439	Title block
+OMI0440	Subtitle and motto are independent optional scholarly front-matter fields.
+OMI0441	Optional
+OMI0442	Below title
+OMI0443	Below subtitle
+OMI0444	Italic
+OMI0445	Normal
+OMI0446	Left
+OMI0447	Center
+OMI0448	Right
+OMI0449	Help
+OMI0450	Help for authors
+OMI0451	A short guide to editing manuscripts and using the main Studio features.
+OMI0452	When a manuscript is opened from OJS, Studio imports the document and available publication metadata. Editing then takes place in the Studio manuscript model.
+OMI0453	Editing the manuscript
+OMI0454	Edit manuscript text in the main editor. Review its structure under Manuscript menu → Document.
+OMI0455	Use real heading styles for section headings.
+OMI0456	Do not rely on bold text or font size alone to express structure.
+OMI0457	Manuscript data and languages
+OMI0458	Abstracts, keywords and other scholarly metadata are edited under Manuscript data. Multilingual fields can be maintained separately in HU, EN and DE.
+OMI0459	The manuscript language and metadata language are separate concepts.
+OMI0460	A Hungarian article may also have English and German abstracts and keywords.
+OMI0461	Notes
+OMI0462	Footnotes and endnotes are retained as semantic note objects. Review and edit them under Notes.
+OMI0463	References
+OMI0464	Cited works are stored as structured bibliographic records. Add a work once and reuse it in multiple citations.
+OMI0465	Contributors
+OMI0466	Manage authors and other contributors, roles, affiliations and ORCID identifiers here.
+OMI0467	Revisions and saving
+OMI0468	Studio tracks important changes as revisions. Use History to review changes and, where supported, return to an earlier state.
+OMI0469	Import from OJS
+OMI0470	Studio can import the document, abstracts, keywords and other publication metadata from OJS. Only metadata actually present in OJS can be imported.
+OMI0471	DOCX import
+OMI0472	When importing Word documents, Studio also attempts to recover document structure.
+OMI0473	Use Word Heading 1, Heading 2, etc. for section headings.
+OMI0474	Direct-formatting recognition is only a fallback.
+OMI0475	Export
+OMI0476	Export & tools can create a portable .omi.json manuscript file containing the semantic document structure and OMI metadata.
+OMI0477	If something looks wrong
+OMI0478	Check the manuscript language, selected metadata language and, for Word imports, heading styles. For OJS imports, also verify that the value is actually filled in under the OJS Publication metadata.
+OMI0479	Semantic HTML5
+OMI0480	Render the semantic manuscript through the active Publication Profile as an accessible, script-free HTML5 scholarly article.
+OMI0481	Output profile
+OMI0482	Rendering context
+OMI0483	Manuscript revision
+OMI0484	Preview source
+OMI0485	Hide source
+OMI0486	Open rendered preview
+OMI0487	Download HTML package
+OMI0488	Preparing package…
+OMI0489	The HTML rendering has no blocking diagnostics.
+OMI0490	The HTML can be inspected, but blocking diagnostics must be resolved before a publication package is created.
+OMI0491	errors
+OMI0492	warnings
+OMI0493	HTML diagnostics
+OMI0494	No HTML-specific diagnostics.
+OMI0495	The preview reflects the current working state. Package download creates a checkpoint first so the output is traceable to a committed revision.
+OMI0496	The active profile does not declare HTML as a supported output.
+OMI0497	The renderer uses semantic headings, figures, tables, document-note roles, bibliography links and explicit image alt attributes. External accessibility auditing remains a separate publication step.
+OMI0498	The ZIP package contains index.html, a manifest and referenced media assets under relative media/ paths. No script or external stylesheet is required.
+OMI0499	JATS XML
+OMI0500	Render the semantic manuscript through the active Publication Profile as NISO JATS 1.4 Article Authoring XML.
+OMI0501	Target standard
+OMI0502	Rendering context
+OMI0503	Manuscript revision
+OMI0504	Preview XML
+OMI0505	Hide XML
+OMI0506	Download JATS XML
+OMI0507	The JATS rendering has no blocking diagnostics.
+OMI0508	The XML can be inspected, but blocking diagnostics must be resolved before publication.
+OMI0509	errors
+OMI0510	warnings
+OMI0511	JATS diagnostics
+OMI0512	No JATS-specific diagnostics.
+OMI0513	The preview reflects the current working state. Download creates a checkpoint first so the exported XML is traceable to a committed revision.
+OMI0514	The active profile does not declare JATS as a supported output.
+OMI0515	Studio checks required structure, XML identifiers and internal rid targets. Full external JATS DTD/XSD/RNG validation remains a separate conformance step.
+OMI0516	Insert reference
+OMI0517	References in this note
+OMI0518	No bibliographic references have been added to this note yet.
+OMI0519	Remove reference
+OMI0520	Choose from the manuscript bibliography. Page, chapter, section and other locators are supported.
+OMI0521	Searching ORCID…
+OMI0522	No matching public ORCID records found.
+OMI0523	ORCID search is temporarily unavailable. You can still enter an ORCID iD manually.
+OMI0524	ORCID suggestions
+OMI0525	ORCID iD
+OMI0526	Open ORCID record
+OMI0527	Selected from the ORCID Registry
+OMI0528	Registry match — not OAuth-authenticated
+OMI0529	You can also enter an ORCID iD manually.
+OMI0530	Search powered by the public ORCID Registry
+OMI0531	Publication
+OMI0532	Publication profile
+OMI0533	Choose the rendering, metadata and accessibility rules for the intended publication target.
+OMI0534	Studio implementation profile. OMI-SPEC-240 is still Reserved; this does not claim specification conformance.
+OMI0535	Selected profile
+OMI0536	Choose a profile
+OMI0537	Apply profile
+OMI0538	Profile defaults applied.
+OMI0539	Active
+OMI0540	Version
+OMI0541	Publisher
+OMI0542	Rendering rules
+OMI0543	Layout
+OMI0544	Sections
+OMI0545	Citations
+OMI0546	Notes
+OMI0547	Figures, tables and equations
+OMI0548	Contributors
+OMI0549	Accessibility
+OMI0550	Output targets
+OMI0551	Page
+OMI0552	Columns
+OMI0553	Typography
+OMI0554	Margins
+OMI0555	Numbering
+OMI0556	Numbered depth
+OMI0557	Citation style
+OMI0558	Note placement
+OMI0559	Object numbering
+OMI0560	Figure caption
+OMI0561	Table caption
+OMI0562	Show ORCID
+OMI0563	Show affiliations
+OMI0564	Yes
+OMI0565	No
+OMI0566	Above
+OMI0567	Below
+OMI0568	Whole document
+OMI0569	Per section
+OMI0570	Footnotes
+OMI0571	Endnotes
+OMI0572	Interactive notes
+OMI0573	Publication readiness
+OMI0574	Ready for profile-based rendering
+OMI0575	Publication requirements still need attention
+OMI0576	errors
+OMI0577	warnings
+OMI0578	No profile-specific readiness issues were found.
+OMI0579	Metadata requirements
+OMI0580	Not required
+OMI0581	Recommended
+OMI0582	Required
+OMI0583	A manuscript title is required.
+OMI0584	An abstract is required by this profile.
+OMI0585	The manuscript has fewer keywords than this profile requires.
+OMI0586	At least one author contribution is required.
+OMI0587	A contributor has no affiliation.
+OMI0588	A contributor has no ORCID identifier.
+OMI0589	A figure is missing alternative text.
+OMI0590	A table has no declared header row.
+OMI0591	A citation points to a missing bibliographic record.
+OMI0592	An internal cross-reference points to a missing target.
+OMI0593	A manuscript presentation preference overrides the selected profile default.
+OMI0594	Export profile JSON
+OMI0595	Save the exact profile definition used for reproducible future rendering.
+OMI0596	The profile changes presentation and publication requirements, not scholarly content. Profile selection and explicit presentation overrides are revisioned separately from text edits.
+OMI0597	This manuscript currently contains presentation overrides that differ from the selected profile.
+OMI0598	Reapply profile defaults
+OMI0599	OMI Generic Scholarly
+OMI0600	Neutral scholarly rendering for general-purpose publishing.
+OMI0601	OMI Journal — Author-Date
+OMI0602	Journal profile with author-date citations and stricter metadata requirements.
+OMI0603	OMI Humanities — Notes & Bibliography
+OMI0604	Humanities profile with Chicago notes, bibliography and footnotes.
+OMI0605	Search external bibliographic services
+OMI0606	Search Crossref, DataCite, OpenAlex and MTMT, then add a normalized record to this manuscript’s reference library.
+OMI0607	Bibliographic query
+OMI0608	DOI, title, author or keywords…
+OMI0609	Search
+OMI0610	Searching…
+OMI0611	Bibliographic providers
+OMI0612	API key required
+OMI0613	Service settings
+OMI0614	Crossref contact email (optional)
+OMI0615	When provided, Crossref receives it through the recommended mailto parameter for polite API access.
+OMI0616	OpenAlex API key
+OMI0617	OpenAlex currently requires an API key. The key is stored only in this browser and is never written to the manuscript.
+OMI0618	Queries are sent only to the providers you enable. Service credentials and contact settings are local interface preferences and are not exported in .omi.json.
+OMI0619	This provider was skipped because its required API key is not configured.
+OMI0620	The provider could not be queried. Other provider results are still shown.
+OMI0621	No matching bibliographic records were returned by the selected providers.
+OMI0622	Add to library
+OMI0623	Already added
+OMI0624	Bold / strong
+OMI0625	Italic / emphasis
+OMI0626	Superscript
+OMI0627	Subscript
+OMI0628	Small caps
+OMI0629	Underline
+OMI0630	External link
+OMI0631	Remove link
+OMI0632	More text tools
+OMI0633	Strikethrough
+OMI0634	Bullet list
+OMI0635	Numbered list
+OMI0636	Block quotation
+OMI0637	Inline code
+OMI0638	Code block
+OMI0639	Line break
+OMI0640	Text language
+OMI0641	Remove language mark
+OMI0642	BCP 47 tag, e.g. la, de, en-GB
+OMI0643	Apply
+OMI0644	Cancel
+OMI0645	External address
+OMI0646	https://…
+OMI0647	Enter a valid http, https or mailto address.
+OMI0648	Special characters
+OMI0649	Clear inline formatting
+OMI0650	Semantic text tools
+OMI0651	Searching ROR…
+OMI0652	ROR organization suggestions
+OMI0653	No ROR organization found. You can keep the affiliation as free text.
+OMI0654	ROR search is temporarily unavailable. You can keep editing the affiliation manually.
+OMI0655	Linked to ROR
+OMI0656	Remove ROR link
+OMI0657	Open ROR record
+OMI0658	Location not specified
+OMI0659	Organization data from ROR
+OMI0660	Hierarchical document structure
+OMI0661	Build chapters and subsections at any depth. Stable section identities remain unchanged while the outline and generated numbering evolve.
+OMI0662	Add top-level section
+OMI0663	Add subsection
+OMI0664	Insert sibling after this section
+OMI0665	Drag a section onto another section to make it a subsection. Use the arrows and indent/outdent controls for keyboard- and touch-friendly restructuring.
+OMI0666	Drop here to make this section a subsection
+OMI0667	Open section
+OMI0668	Move before previous sibling
+OMI0669	Move after next sibling
+OMI0670	Make subsection of previous sibling
+OMI0671	Promote one level
+OMI0672	Drag section subtree
+OMI0673	Selected
+OMI0674	Untitled section
+OMI0675	Level
+OMI0676	The section hierarchy contains an invalid parent relationship.
+OMI0677	Revision state integrity
+OMI0678	Verified
+OMI0679	Digest not recorded
+OMI0680	Digest mismatch
+OMI0681	Unsupported digest profile
+OMI0682	State digest
+OMI0683	Canonicalization
+OMI0684	Committed manuscript snapshot
+OMI0685	Canonical SHA-256 evidence for immutable manuscript revisions.
+OMI0686	All declared revision state digests are verified.
+OMI0687	This package contains revisions without state digests. They can be backfilled locally after import.
+OMI0688	The package contains an invalid or incompatible revision state digest.
+OMI0689	Insert
+OMI0690	Insert element
+OMI0691	Image
+OMI0692	Table
+OMI0693	Chart
+OMI0694	Equation
+OMI0695	Import
+OMI0696	Paste from Word / Excel
+OMI0697	Paste a table, image or equation here from Word, Excel or another application.
+OMI0698	Importing…
+OMI0699	The file could not be imported.
+OMI0700	No supported visual elements were found.
+OMI0701	Choose file
+OMI0702	Caption
+OMI0703	Alternative text
+OMI0704	Chart type
+OMI0705	Bar
+OMI0706	Line
+OMI0707	Pie
+OMI0708	Scatter
+OMI0709	Chart title
+OMI0710	LaTeX source
+OMI0711	Equation label
+OMI0712	Add row
+OMI0713	Add column
+OMI0714	Remove last row
+OMI0715	Remove last column
+OMI0716	Create chart from table
+OMI0717	Delete element
+OMI0718	Delete this element from the manuscript?
+OMI0719	Source data
+OMI0720	Add numeric source data to render the chart.
+OMI0721	Imported from
+OMI0722	Images, DOCX, XLSX, CSV/TSV, HTML and TeX are supported.
