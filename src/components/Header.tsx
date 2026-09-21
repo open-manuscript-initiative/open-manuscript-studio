@@ -136,16 +136,30 @@ export function Header({ onOpenMenu, onHome }: HeaderProps) {
             </span>
           </button>
 
-          <button
-            type="button"
-            className="focus-menu-button focus-account-button"
-            onClick={() => setAccountOpen(true)}
-            aria-label={headerCopy.account}
-            title={headerCopy.account}
-          >
-            <UserRound size={18} aria-hidden="true" />
-            <span className="focus-account-label">{headerCopy.account}</span>
-          </button>
+          <div className="focus-header-top-actions">
+            <LanguageSwitcher />
+            <button
+              type="button"
+              className="focus-menu-button focus-account-button"
+              onClick={() => setAccountOpen(true)}
+              aria-label={headerCopy.account}
+              title={headerCopy.account}
+            >
+              <UserRound size={18} aria-hidden="true" />
+              <span className="focus-account-label">{headerCopy.account}</span>
+            </button>
+            <button
+              type="button"
+              className="focus-menu-button focus-logout-button"
+              onClick={() => void logout().catch(() => {})}
+              disabled={loading}
+              aria-label={t('auth.logout')}
+              title={t('auth.logout')}
+            >
+              <LogOut size={18} aria-hidden="true" />
+              <span className="focus-logout-label">{t('auth.logout')}</span>
+            </button>
+          </div>
         </div>
 
         <div className="focus-header-secondary-row">
@@ -231,18 +245,6 @@ export function Header({ onOpenMenu, onHome }: HeaderProps) {
               )}
               <span>{pending ? t('studio.pending') : t('studio.saved')}</span>
             </div>
-            <LanguageSwitcher />
-            <button
-              type="button"
-              className="focus-menu-button focus-logout-button"
-              onClick={() => void logout().catch(() => {})}
-              disabled={loading}
-              aria-label={t('auth.logout')}
-              title={t('auth.logout')}
-            >
-              <LogOut size={18} aria-hidden="true" />
-              <span className="focus-logout-label">{t('auth.logout')}</span>
-            </button>
           </div>
         </div>
       </header>
