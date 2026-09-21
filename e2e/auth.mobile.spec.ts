@@ -40,7 +40,7 @@ test('the responsive login and editor fit a phone viewport', async ({ page }) =>
   expect(Math.abs((togglePosition?.x ?? 0) - (triggerPosition?.x ?? 0))).toBeLessThanOrEqual(1);
   expect(Math.abs((togglePosition?.y ?? 0) - (triggerPosition?.y ?? 0))).toBeLessThanOrEqual(1);
 
-  await expect(dialog.locator('.studio-menu-content')).toHaveCount(0);
+  await expect(dialog.locator('.studio-menu-content')).toBeHidden();
   await expect(dialog.getByRole('button', { name: 'Document', exact: true })).not.toHaveAttribute('aria-current', 'page');
 
   await menuToggle.click();

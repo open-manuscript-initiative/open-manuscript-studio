@@ -13,7 +13,7 @@ test('every manuscript-menu view stays inside the mobile viewport', async ({ pag
   const navigation = dialog.getByRole('navigation', { name: 'Manuscript menu' });
   await expect(dialog).toBeVisible();
   await expect(navigation).toBeVisible();
-  await expectFullScreenScrollFreeNavigation(dialog, navigation);
+  await expectFullScreenVerticalScrollNavigation(dialog, navigation);
 
   const navButtons = dialog.locator('.studio-menu-nav-button:not([data-home-navigation="true"])');
   const navCount = await navButtons.count();
@@ -25,15 +25,20 @@ test('every manuscript-menu view stays inside the mobile viewport', async ({ pag
     await test.step(label, async () => {
       const toggle = dialog.getByRole('button', { name: 'Manuscript menu', exact: true });
       if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
+      await expect(navigation).toBeVisible();
       await button.click();
       await expect(navigation).toBeHidden();
       await expect(toggle).toBeFocused();
       await settleLayout(content);
       await expectNoMenuOverflow(content);
+
+      await toggle.click();
+      await expect(navigation).toBeVisible();
+      await expect(content).toBeHidden();
+      await expectFullScreenVerticalScrollNavigation(dialog, navigation);
     });
   }
 
-  await dialog.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
   await dialog.getByRole('button', { name: 'References', exact: true }).click();
   const computedCrossReference = dialog.locator('[data-computed-cross-reference-target]');
   await expect(computedCrossReference).toBeVisible();
@@ -59,7 +64,41 @@ test('every manuscript-menu view stays inside the mobile viewport', async ({ pag
   await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
 });
 
-async function expectFullScreenScrollFreeNavigation(
+test('external manuscript-menu workspaces open correctly as the first selection', async ({ page }) => {
+  await installMockStudioApi(page);
+  await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+
+  const menuTrigger = page.getByRole('button', { name: 'Manuscript menu', exact: true });
+  const externalEntries = ['Lists', 'OMI Agents', 'Integrations', 'Help'];
+
+  for (const label of externalEntries) {
+    await test.step(label, async () => {
+      await menuTrigger.click();
+      const dialog = page.getByRole('dialog', { name: 'Manuscript menu' });
+      const navigation = dialog.getByRole('navigation', { name: 'Manuscript menu' });
+      const content = dialog.locator('.studio-menu-content');
+      await expect(navigation).toBeVisible();
+
+      await dialog.getByRole('button', { name: label, exact: true }).click();
+      await expect(navigation).toBeHidden();
+      await expect(content).toBeVisible();
+      await expect(content.locator('.studio-help-portal')).toBeVisible();
+      await expectNoMenuOverflow(content);
+
+      const toggle = dialog.getByRole('button', { name: 'Manuscript menu', exact: true });
+      await toggle.click();
+      await expect(navigation).toBeVisible();
+      await expect(content).toBeHidden();
+      await expectFullScreenVerticalScrollNavigation(dialog, navigation);
+
+      await dialog.getByRole('button', { name: 'Home', exact: true }).click();
+      await expect(dialog).toBeHidden();
+    });
+  }
+});
+
+async function expectFullScreenVerticalScrollNavigation(
   dialog: Locator,
   navigation: Locator,
 ): Promise<void> {
@@ -70,11 +109,14 @@ async function expectFullScreenScrollFreeNavigation(
     const rect = element.getBoundingClientRect();
     const dialogRect = dialogElement?.getBoundingClientRect();
     const headerRect = header?.getBoundingClientRect();
+    const style = getComputedStyle(element);
     return {
       clientWidth: element.clientWidth,
       scrollWidth: element.scrollWidth,
       clientHeight: element.clientHeight,
       scrollHeight: element.scrollHeight,
+      overflowX: style.overflowX,
+      overflowY: style.overflowY,
       top: rect.top,
       bottom: rect.bottom,
       dialogTop: dialogRect?.top ?? null,
@@ -86,7 +128,8 @@ async function expectFullScreenScrollFreeNavigation(
   const viewport = navigation.page().viewportSize();
   expect(viewport).not.toBeNull();
   expect(audit.scrollWidth).toBeLessThanOrEqual(audit.clientWidth + 1);
-  expect(audit.scrollHeight).toBeLessThanOrEqual(audit.clientHeight + 1);
+  expect(audit.overflowX).toBe('hidden');
+  expect(audit.overflowY).toBe('auto');
   expect(audit.dialogTop).toBeGreaterThanOrEqual(-1);
   expect(audit.dialogBottom).toBeLessThanOrEqual(viewport!.height + 1);
   expect(audit.top).toBeGreaterThanOrEqual((audit.headerBottom ?? 0) - 1);

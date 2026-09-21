@@ -6,10 +6,15 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Isolates the full-screen mobile manuscript navigation from the currently
+  mounted workspace so sticky toolbars, popovers, and editor controls cannot
+  bleed through the menu. External workspaces such as Lists, OMI Agents,
+  Integrations, and Help now also open correctly as the first menu selection.
+
 - Replaces the horizontally scrolling manuscript navigation on phone-sized views
-  with a full-window, scroll-free grid. Opening the menu covers the available
-  mobile window; selecting a workspace dismisses the navigation and reveals
-  that workspace.
+  with a full-window grid. Horizontal scrolling is prevented; vertical scrolling
+  remains available when the menu items exceed the available height. Selecting
+  a workspace dismisses the navigation and reveals that workspace.
 
 - Keeps interface language and logout controls in the persistent top header row,
   alongside menu, OMI Home, and personal account. Opening the manuscript menu

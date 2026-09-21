@@ -38,7 +38,7 @@ test('login and editor satisfy the 1.0 keyboard and accessible-name contract', a
   await expect(dialog.getByRole('navigation', { name: 'Manuscript menu' })).toBeVisible();
   await expectBasicAccessibilityContract(page);
 
-  await expect(dialog.locator('.studio-menu-content')).toHaveCount(0);
+  await expect(dialog.locator('.studio-menu-content')).toBeHidden();
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
