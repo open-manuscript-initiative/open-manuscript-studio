@@ -121,6 +121,7 @@ export async function saveIntegrationConnection(
     displayName?: string;
     authenticationMode: IntegrationAuthenticationMode;
     secret?: string;
+    clearSecret?: boolean;
     config?: Record<string, unknown>;
     enabled?: boolean;
   },
@@ -367,4 +368,47 @@ export async function requestPublicationArtifact(
     );
   }
   return result;
+}
+
+
+export interface NewsletterPublicationReceipt {
+  connectionId: string;
+  providerId: 'wordpress' | 'web-publishing';
+  manuscriptId: string;
+  externalId: string | null;
+  externalUrl: string | null;
+  contentDigest: string;
+  status: 'draft' | 'publish';
+  updatedAt: string;
+}
+
+export async function requestNewsletterPublication(input: {
+  connectionId: string;
+  manuscriptId: string;
+  title: string;
+  html: string;
+  status: 'draft' | 'publish';
+  approved: true;
+}): Promise<NewsletterPublicationReceipt> {
+  const response = await fetch(`${API_BASE_URL}/publication/newsletter/publish`, {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: integrationHeaders({
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify(input),
+  });
+  const payload = await parseJsonResponse<{
+    publication?: NewsletterPublicationReceipt;
+    error?: { message?: string };
+  }>(response);
+  if (!response.ok || !payload.publication) {
+    throw new Error(
+      payload.error?.message ??
+        `Website publication failed with HTTP ${response.status}.`,
+    );
+  }
+  return payload.publication;
 }

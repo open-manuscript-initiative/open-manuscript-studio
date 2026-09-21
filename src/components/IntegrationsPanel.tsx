@@ -20,6 +20,7 @@ import {
 import { CloudStorageSettings } from './CloudStorageSettings';
 import { OmiAgentsSettings } from './OmiAgentsSettings';
 import { ReferenceManagerSettings } from './ReferenceManagerSettings';
+import { WebPublishingSettings } from './WebPublishingSettings';
 import './IntegrationsPanel.css';
 
 export function IntegrationsPanel() {
@@ -58,6 +59,7 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
   const isCloudStorage = entry.id === 'cloud-storage';
   const isOmiAgents = entry.id === 'omi-agents';
   const isReferenceManager = entry.id === 'zotero' || entry.id === 'mendeley';
+  const isWebPublishing = entry.id === 'wordpress' || entry.id === 'web-publishing';
 
   useEffect(() => {
     if (entry.id !== 'orcid') return;
@@ -119,6 +121,7 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
     entry.id === 'orcid' ||
     isOmiAgents ||
     isPublishing ||
+    isWebPublishing ||
     isCloudStorage ||
     isReferenceManager;
 
@@ -316,6 +319,10 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
           {notice ? <p>{notice}</p> : null}
           {error ? <p className="omi-integration-error" role="alert">{error}</p> : null}
         </div>
+      ) : null}
+
+      {isWebPublishing && expanded ? (
+        <WebPublishingSettings providerId={entry.id as 'wordpress' | 'web-publishing'} />
       ) : null}
 
       {isCloudStorage && expanded ? (

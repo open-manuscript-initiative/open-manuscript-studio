@@ -37,6 +37,7 @@ const connectionSchema = z.object({
     'integration_token',
   ]),
   secret: z.string().min(1).max(16384).optional(),
+  clearSecret: z.boolean().default(false),
   config: z.record(z.string(), z.unknown()).optional(),
   enabled: z.boolean().default(true),
 });
@@ -239,6 +240,16 @@ userIntegrationRouter.post(
       return;
     }
 
+    if (body.data.secret && body.data.clearSecret) {
+      response.status(400).json({
+        error: {
+          code: 'INTEGRATION_SECRET_CLEAR_CONFLICT',
+          message: 'A connection secret cannot be supplied and cleared in the same request.',
+        },
+      });
+      return;
+    }
+
     const provider = getIntegrationProvider(providerId.data);
     if (!provider) {
       response.status(404).json({
@@ -285,10 +296,23 @@ userIntegrationRouter.post(
       }
     }
 
+    const existingSameConnection = await prisma.userIntegration.findUnique({
+      where: {
+        userId_providerId_connectionKey: {
+          userId: request.authUserId!,
+          providerId: provider.id,
+          connectionKey: body.data.connectionKey,
+        },
+      },
+      select: { encryptedSecret: true },
+    });
     const secretRequired =
       body.data.authenticationMode === 'user_api_key' ||
       body.data.authenticationMode === 'integration_token';
-    if (secretRequired && !body.data.secret) {
+    if (
+      secretRequired &&
+      (body.data.clearSecret || (!body.data.secret && !existingSameConnection?.encryptedSecret))
+    ) {
       response.status(400).json({
         error: {
           code: 'INTEGRATION_SECRET_REQUIRED',
@@ -319,7 +343,11 @@ userIntegrationRouter.post(
         authenticationMode: body.data.authenticationMode,
         enabled: body.data.enabled,
         ...(config !== undefined ? { config } : {}),
-        ...(encryptedSecret ? { encryptedSecret } : {}),
+        ...(body.data.clearSecret
+          ? { encryptedSecret: null }
+          : encryptedSecret
+            ? { encryptedSecret }
+            : {}),
         status: 'CONFIGURED',
         lastError: null,
       },

@@ -24,6 +24,7 @@ import { institutionalProfileRouter } from './routes/institutionalProfileRoutes.
 import { integrationExecutionRouter } from './routes/integrationExecutionRoutes.js';
 import { integrationRouter } from './routes/integrationRoutes.js';
 import { linkedIdentityRouter } from './routes/linkedIdentityRoutes.js';
+import { newsletterPublishingRouter } from './routes/newsletterPublishingRoutes.js';
 import { ojsAssignmentRouter } from './routes/ojsAssignmentRoutes.js';
 import { ojsReviewRouter } from './routes/ojsReviewRoutes.js';
 import { ompReviewRouter } from './routes/ompReviewRoutes.js';
@@ -73,6 +74,7 @@ app.use('/api/integrations/connections/:connectionId/direct-submission', express
 app.use('/api/integrations/connections/:connectionId/publication-artifact', express.json({ limit: '48mb' }));
 app.use('/integrations/omp/native/author/:contextId/revision', express.json({ limit: '36mb' }));
 app.use('/api/publication/render/pdf', express.json({ limit: '64mb' }));
+app.use('/api/publication/newsletter', express.json({ limit: '12mb' }));
 app.use('/api/publication/validate/jats', express.json({ limit: '7mb' }));
 app.use(express.json({ limit: '1mb' }));
 
@@ -111,6 +113,7 @@ app.use('/api', integrationExecutionRouter);
 app.use('/api', proofreadingRouter);
 app.use('/api', publishingConnectionRouter);
 app.use('/api/publication', publicationPdfRouter);
+app.use('/api/publication', newsletterPublishingRouter);
 app.use('/api/publication', publicationValidationRouter);
 app.use('/api/import', pdfImportRouter);
 app.use('/api/reviews', peerReviewRouter);

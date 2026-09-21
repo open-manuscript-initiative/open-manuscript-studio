@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import {
@@ -7,6 +8,27 @@ import {
 } from '../src/integrations/cloudStorageProviders.ts';
 import { integrationCatalog } from '../src/integrations/registry.ts';
 import { hasNativeSystemStorage } from '../src/mobile/platform/platform.ts';
+
+const newsletterPublishingRoutes = readFileSync(
+  new URL('../server/src/routes/newsletterPublishingRoutes.ts', import.meta.url),
+  'utf8',
+);
+const newsletterPublishingPanel = readFileSync(
+  new URL('../src/components/NewsletterPublishingPanel.tsx', import.meta.url),
+  'utf8',
+);
+const webPublishingSettings = readFileSync(
+  new URL('../src/components/WebPublishingSettings.tsx', import.meta.url),
+  'utf8',
+);
+const serverSchema = readFileSync(
+  new URL('../server/prisma/schema.prisma', import.meta.url),
+  'utf8',
+);
+const userIntegrationRoutes = readFileSync(
+  new URL('../server/src/routes/userIntegrationRoutes.ts', import.meta.url),
+  'utf8',
+);
 
 test('every integration declares at least one authentication mode and a valid preferred mode', () => {
   for (const entry of integrationCatalog) {
@@ -79,4 +101,38 @@ test('OJS and OMP retain purpose-built integration token authentication', () => 
   assert.deepEqual(omp.authenticationModes, ['integration_token']);
   assert.equal(ojs.supportsMultipleConnections, true);
   assert.equal(omp.supportsMultipleConnections, true);
+});
+
+
+test('WordPress publishing uses application-password credentials and generic web publishing stays provider-neutral', () => {
+  const wordpress = integrationCatalog.find((entry) => entry.id === 'wordpress');
+  const generic = integrationCatalog.find((entry) => entry.id === 'web-publishing');
+
+  assert.ok(wordpress);
+  assert.ok(generic);
+  assert.deepEqual(wordpress.authenticationModes, ['user_api_key']);
+  assert.deepEqual(generic.authenticationModes, ['none', 'user_api_key']);
+  assert.equal(wordpress.supportsMultipleConnections, true);
+  assert.equal(generic.supportsMultipleConnections, true);
+  assert.match(webPublishingSettings, /WordPress application password/);
+  assert.match(webPublishingSettings, /authScheme/);
+  assert.match(webPublishingSettings, /x-api-key/);
+  assert.match(webPublishingSettings, /leave blank to keep the existing secret/i);
+  assert.match(webPublishingSettings, /clearSecret: true/);
+  assert.match(userIntegrationRoutes, /clearSecret: z\.boolean\(\)\.default\(false\)/);
+  assert.match(userIntegrationRoutes, /encryptedSecret: null/);
+});
+
+test('website publication requires preview approval and keeps idempotent external receipts', () => {
+  assert.match(newsletterPublishingPanel, /buildPublicationHtmlArtifact/);
+  assert.match(newsletterPublishingPanel, /sandbox=""/);
+  assert.match(newsletterPublishingPanel, /approved: true/);
+  assert.match(newsletterPublishingRoutes, /approved: z\.literal\(true\)/);
+  assert.match(newsletterPublishingRoutes, /omi-newsletter-publish\/1/);
+  assert.match(newsletterPublishingRoutes, /wp-json\/wp\/v2\/media/);
+  assert.match(newsletterPublishingRoutes, /wp-json\/wp\/v2\/posts/);
+  assert.match(newsletterPublishingRoutes, /assertTrustedIntegrationUrl/);
+  assert.match(newsletterPublishingRoutes, /redirect: 'error'/);
+  assert.match(serverSchema, /model WebPublication \{/);
+  assert.match(serverSchema, /@@unique\(\[userId, connectionId, manuscriptId\]\)/);
 });

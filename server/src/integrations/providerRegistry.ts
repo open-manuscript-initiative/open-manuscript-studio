@@ -4,6 +4,7 @@ import { requestAiText, resolveAiEndpoint } from './aiProviderClient.js';
 import { loadOmiAgentsConfiguration } from './omiAgentsConfig.js';
 import { testReferenceManagerConnection } from './referenceManagers/referenceManagerService.js';
 import { decryptSecret, type EncryptedSecret } from './secretCrypto.js';
+import { assertTrustedIntegrationUrl } from './security/trustedRemoteUrl.js';
 
 export type IntegrationProviderKind =
   | 'translation'
@@ -71,6 +72,18 @@ const providers: IntegrationProviderDescriptor[] = [
     id: 'omp', kind: 'publishing', displayName: 'Open Monograph Press (OMP)',
     description: 'Monograph publishing integration for books, chapters, contributors, files and editorial workflow.',
     authenticationModes: ['integration_token'], preferredAuthenticationMode: 'integration_token',
+    supportsPerUserAuthentication: true, supportsMultipleConnections: true, configurable: true,
+  },
+  {
+    id: 'wordpress', kind: 'publishing', displayName: 'WordPress',
+    description: 'Publish semantic HTML5 articles or newsletters through the WordPress REST API using a personal application password.',
+    authenticationModes: ['user_api_key'], preferredAuthenticationMode: 'user_api_key',
+    supportsPerUserAuthentication: true, supportsMultipleConnections: true, configurable: true,
+  },
+  {
+    id: 'web-publishing', kind: 'publishing', displayName: 'Generic web publishing endpoint',
+    description: 'Publish semantic HTML5 through the omi-newsletter-publish/1 JSON contract using no authentication, Bearer, X-API-Key, or Basic authentication.',
+    authenticationModes: ['none', 'user_api_key'], preferredAuthenticationMode: 'user_api_key',
     supportsPerUserAuthentication: true, supportsMultipleConnections: true, configurable: true,
   },
   {
@@ -267,6 +280,70 @@ async function testPublishingProvider(
   };
 }
 
+async function testWebPublishingProvider(
+  providerId: 'wordpress' | 'web-publishing',
+  userId: string,
+): Promise<IntegrationConnectionStatus> {
+  const connections = await prisma.userIntegration.findMany({
+    where: { userId, providerId, enabled: true },
+  });
+  if (connections.length === 0) {
+    return {
+      configured: false,
+      healthy: false,
+      message: providerId === 'wordpress'
+        ? 'No WordPress publishing target is configured.'
+        : 'No generic web publishing target is configured.',
+    };
+  }
+
+  try {
+    for (const connection of connections) {
+      const config = readConfigRecord(connection.config) ?? {};
+      const endpoint = providerId === 'wordpress'
+        ? (typeof config.baseUrl === 'string' ? config.baseUrl.trim() : '')
+        : (typeof config.endpoint === 'string' ? config.endpoint.trim() : '');
+      if (!endpoint) {
+        throw new Error('A configured web publishing target is missing its HTTPS URL.');
+      }
+      await assertTrustedIntegrationUrl(endpoint, endpoint);
+
+      const secret = connection.encryptedSecret
+        ? decryptSecret(parseEncryptedSecret(connection.encryptedSecret))
+        : null;
+      if (providerId === 'wordpress') {
+        const username = typeof config.username === 'string' ? config.username.trim() : '';
+        if (!username || !secret) {
+          throw new Error('WordPress publishing requires a username and application password.');
+        }
+      } else {
+        const scheme = typeof config.authScheme === 'string' ? config.authScheme : 'bearer';
+        if (scheme !== 'none' && connection.authenticationMode !== 'none' && !secret) {
+          throw new Error('The generic publishing target is missing its stored credential.');
+        }
+        if (!['none', 'bearer', 'x-api-key', 'basic'].includes(scheme)) {
+          throw new Error('The generic publishing authentication scheme is invalid.');
+        }
+        if (scheme === 'basic') {
+          const username = typeof config.username === 'string' ? config.username.trim() : '';
+          if (!username) throw new Error('Basic authentication requires a username.');
+        }
+      }
+    }
+    return {
+      configured: true,
+      healthy: true,
+      message: `${connections.length} web publishing target(s) have valid encrypted configuration and a public HTTPS endpoint.`,
+    };
+  } catch (error) {
+    return {
+      configured: true,
+      healthy: false,
+      message: error instanceof Error ? error.message : 'Web publishing configuration validation failed.',
+    };
+  }
+}
+
 export async function testIntegrationProvider(
   providerId: string,
   userId: string,
@@ -301,6 +378,10 @@ export async function testIntegrationProvider(
       return testPublishingProvider('ojs', userId);
     case 'omp':
       return testPublishingProvider('omp', userId);
+    case 'wordpress':
+      return testWebPublishingProvider('wordpress', userId);
+    case 'web-publishing':
+      return testWebPublishingProvider('web-publishing', userId);
     case 'cloud-storage': {
       const count = await prisma.cloudConnection.count({ where: { userId, status: 'CONNECTED' } });
       return {
