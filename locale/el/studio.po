@@ -3529,7 +3529,7 @@ msgstr "Τύπος γραφήματος"
 #. OMI translation key: /modules/visualElements/chartBar
 msgctxt "/modules/visualElements/chartBar"
 msgid "Bar"
-msgstr "Ψηφοδέλτιο"
+msgstr "Ραβδόγραμμα"
 
 #. OMI translation key: /modules/visualElements/chartLine
 msgctxt "/modules/visualElements/chartLine"
