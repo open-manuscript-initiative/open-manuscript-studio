@@ -11,7 +11,7 @@ Website credentials are personal integration credentials stored in the Studio AP
 - All production targets must use public HTTPS URLs. Studio applies the same DNS/private-network SSRF restrictions used by the publishing integration layer.
 - Redirects are rejected for server-side publishing requests.
 
-Targets are configured under the user's **Integrations** profile surface.
+Targets are personal account settings. They can be configured under **Personal profile** and are also visible from the central **Integrations** surface.
 
 ## Two-step publication flow
 
