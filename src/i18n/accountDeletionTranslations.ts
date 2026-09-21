@@ -1,3 +1,5 @@
+import { localizeSupplementalCopy } from './supplementalSourceTranslations';
+
 export interface AccountDeletionCopy {
   title: string;
   description: string;
@@ -59,5 +61,5 @@ const copy: Record<string, AccountDeletionCopy> = {
 };
 
 export function getAccountDeletionCopy(locale: string): AccountDeletionCopy {
-  return copy[locale] ?? copy.en;
+  return localizeSupplementalCopy(locale, copy.en, copy[locale]);
 }
