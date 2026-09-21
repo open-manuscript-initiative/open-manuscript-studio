@@ -289,6 +289,10 @@
   color: #075985;
 }
 
+.studio-menu-content--empty {
+  display: none;
+}
+
 .studio-menu-content {
   width: 100%;
   max-width: 100%;
@@ -648,7 +652,7 @@
   .studio-menu-navigation {
     position: absolute;
     inset: 0;
-    z-index: 20;
+    z-index: 120;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-rows: minmax(0, 1fr);
@@ -704,6 +708,10 @@
     padding: .85rem .85rem calc(1.25rem + env(safe-area-inset-bottom));
     overflow-x: hidden;
     overscroll-behavior-x: none;
+  }
+
+  .studio-menu-body--navigation-open > .studio-menu-content {
+    display: none;
   }
 
   .studio-menu-view,
