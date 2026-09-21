@@ -285,10 +285,20 @@ userIntegrationRouter.post(
       }
     }
 
+    const existingSameConnection = await prisma.userIntegration.findUnique({
+      where: {
+        userId_providerId_connectionKey: {
+          userId: request.authUserId!,
+          providerId: provider.id,
+          connectionKey: body.data.connectionKey,
+        },
+      },
+      select: { encryptedSecret: true },
+    });
     const secretRequired =
       body.data.authenticationMode === 'user_api_key' ||
       body.data.authenticationMode === 'integration_token';
-    if (secretRequired && !body.data.secret) {
+    if (secretRequired && !body.data.secret && !existingSameConnection?.encryptedSecret) {
       response.status(400).json({
         error: {
           code: 'INTEGRATION_SECRET_REQUIRED',
