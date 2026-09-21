@@ -18,6 +18,7 @@ import { InstitutionalProfilesSettings } from './InstitutionalProfilesSettings';
 import { LinkedIdentitiesSettings } from './LinkedIdentitiesSettings';
 import { PersonalEmailsSettings } from './PersonalEmailsSettings';
 import { PersonalPublishingCredentialsSettings } from './PersonalPublishingCredentialsSettings';
+import { WebPublishingSettings } from './WebPublishingSettings';
 import '../styles/account.css';
 
 type AccountFormState = {
@@ -195,6 +196,8 @@ export function AccountPanel() {
                 locale={locale}
                 emailRevision={emailRevision}
               />
+              <WebPublishingSettings providerId="wordpress" />
+              <WebPublishingSettings providerId="web-publishing" />
             </form>
           ) : profileView === 'institutional' ? (
             <div className="account-card">
