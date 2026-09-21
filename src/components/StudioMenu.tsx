@@ -121,7 +121,12 @@ export function StudioMenu({
   const nativeMobile = platform === 'android' || platform === 'ios';
   const [navigationOpen, setNavigationOpen] = useState(true);
   const navigationToggleRef = useRef<HTMLButtonElement>(null);
-  const [activeView, setActiveView] = useState<StudioMenuView>('document');
+  const [activeView, setActiveView] = useState<StudioMenuView | null>(null);
+
+  const returnHome = () => {
+    setActiveView(null);
+    onClose();
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -129,6 +134,10 @@ export function StudioMenu({
     const previousOverflow = document.body.style.overflow;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
+      if (activeView === null) {
+        onClose();
+        return;
+      }
       setNavigationOpen(false);
       navigationToggleRef.current?.focus({ preventScroll: true });
     };
@@ -138,15 +147,17 @@ export function StudioMenu({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', closeOnEscape);
     };
-  }, [open]);
+  }, [activeView, onClose, open]);
 
   if (!open) return null;
 
   return (
     <div className={`studio-menu-backdrop${nativeMobile ? ' studio-menu-backdrop--native-mobile' : ''}`} onMouseDown={(event) => {
-      if (event.target === event.currentTarget) setNavigationOpen(false);
+      if (event.target !== event.currentTarget) return;
+      if (activeView === null) onClose();
+      else setNavigationOpen(false);
     }}>
-      <aside className="studio-menu-drawer" role="dialog" aria-modal="true" aria-labelledby="studio-menu-title">
+      <aside className={`studio-menu-drawer${activeView === null ? ' studio-menu-drawer--navigation-only' : ''}`} role="dialog" aria-modal="true" aria-labelledby="studio-menu-title">
         <header className="studio-menu-header">
           <button
             ref={navigationToggleRef}
@@ -156,7 +167,13 @@ export function StudioMenu({
             title={t('studio.menu')}
             aria-controls="studio-menu-navigation"
             aria-expanded={navigationOpen}
-            onClick={() => setNavigationOpen((current) => !current)}
+            onClick={() => {
+              if (activeView === null && navigationOpen) {
+                onClose();
+                return;
+              }
+              setNavigationOpen((current) => !current);
+            }}
           ><Menu size={20} aria-hidden="true" /></button>
           <div className="studio-menu-heading"><span className="studio-menu-eyebrow">Open Manuscript Studio</span><h2 id="studio-menu-title">{t('studio.menu')}</h2></div>
           <span className="studio-menu-header-spacer" aria-hidden="true" />
@@ -175,7 +192,7 @@ export function StudioMenu({
               type="button"
               data-home-navigation="true"
               className="studio-menu-nav-button"
-              onClick={onClose}
+              onClick={returnHome}
             ><House size={18} aria-hidden="true" /><span>{supplementalCopy.home}</span></button>
             <MenuButton active={activeView === 'document'} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} />
             <MenuButton active={activeView === 'manuscript'} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} />
@@ -193,11 +210,11 @@ export function StudioMenu({
             <MenuButton active={activeView === 'settings'} icon={<Settings2 size={18} aria-hidden="true" />} label={t('studio.navigation.settings')} onClick={() => setActiveView('settings')} />
             {navigationAfterSettings}
           </nav>
-          <div className={`studio-menu-content${activeView === 'publication-editor' ? ' studio-menu-content--publication-editor' : ''}`}>
-            {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} onCreated={onClose} /> : null}
-            {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={onClose} /> : null}
+          {activeView !== null ? <div className={`studio-menu-content${activeView === 'publication-editor' ? ' studio-menu-content--publication-editor' : ''}`}>
+            {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} onCreated={returnHome} /> : null}
+            {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={returnHome} /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
-            {activeView === 'notes' ? <NotesPanel onNavigate={onClose} /> : null}
+            {activeView === 'notes' ? <NotesPanel onNavigate={returnHome} /> : null}
             {activeView === 'references' ? <ReferencesView /> : null}
             {activeView === 'assignments' && ojsAssignment ? <OjsAssignmentPanel actorMode={ojsAssignment.actorMode} context={ojsAssignment.context} /> : null}
             {activeView === 'signatures' ? <AuthorSignaturePanel /> : null}
@@ -206,7 +223,7 @@ export function StudioMenu({
             {activeView === 'publication' ? <PublicationProfilePanel /> : null}
             {activeView === 'tools' ? <ToolsView /> : null}
             {activeView === 'settings' ? <SettingsView /> : null}
-          </div>
+          </div> : null}
         </div>
       </aside>
     </div>
