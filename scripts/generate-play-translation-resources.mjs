@@ -3,11 +3,13 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, extname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import ts from 'typescript';
 
 export const PLAY_TRANSLATION_RESOURCE_PREFIX = 'omi_i18n_';
 export const PLAY_TRANSLATION_VALUES_FILE =
@@ -46,6 +48,79 @@ export function flattenTranslationStrings(value, pointer = '') {
   return entries;
 }
 
+function propertyNameText(name) {
+  if (!name) return null;
+  if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name)) {
+    return name.text;
+  }
+  return null;
+}
+
+function collectLiteralStrings(node, out) {
+  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+    if (node.text.trim()) out.add(node.text);
+    return;
+  }
+
+  // Dynamic formatter functions are intentionally not flattened into a source
+  // string because their final value depends on runtime data.
+  if (
+    ts.isArrowFunction(node) ||
+    ts.isFunctionExpression(node) ||
+    ts.isFunctionDeclaration(node)
+  ) {
+    return;
+  }
+
+  node.forEachChild((child) => collectLiteralStrings(child, out));
+}
+
+export function collectSupplementalEnglishSources(root = resolve('.')) {
+  const i18nRoot = resolve(root, 'src/i18n');
+  const sources = new Set();
+
+  for (const entry of readdirSync(i18nRoot, { withFileTypes: true })) {
+    if (!entry.isFile() || extname(entry.name) !== '.ts') continue;
+    if (entry.name === 'platformLocales.ts') continue;
+
+    const filePath = join(i18nRoot, entry.name);
+    const source = readFileSync(filePath, 'utf8');
+    const sourceFile = ts.createSourceFile(
+      filePath,
+      source,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS,
+    );
+
+    const visit = (node) => {
+      if (
+        ts.isPropertyAssignment(node) &&
+        propertyNameText(node.name) === 'en' &&
+        ts.isObjectLiteralExpression(node.initializer)
+      ) {
+        collectLiteralStrings(node.initializer, sources);
+      }
+
+      if (
+        ts.isVariableDeclaration(node) &&
+        ts.isIdentifier(node.name) &&
+        node.name.text === 'en' &&
+        node.initializer &&
+        ts.isObjectLiteralExpression(node.initializer)
+      ) {
+        collectLiteralStrings(node.initializer, sources);
+      }
+
+      node.forEachChild(visit);
+    };
+
+    visit(sourceFile);
+  }
+
+  return [...sources].sort();
+}
+
 export function playTranslationResourceName(source) {
   const digest = createHash('sha256').update(source, 'utf8').digest('hex').slice(0, 20);
   return `${PLAY_TRANSLATION_RESOURCE_PREFIX}${digest}`;
@@ -69,7 +144,7 @@ export function encodeAndroidStringResource(value) {
   return xmlEscape(`"${escaped}"`);
 }
 
-export function buildPlayTranslationResourceCatalog(reference) {
+export function buildPlayTranslationResourceCatalog(reference, supplementalSources = []) {
   const bySource = new Map();
 
   for (const [pointer, source] of flattenTranslationStrings(reference)) {
@@ -86,6 +161,15 @@ export function buildPlayTranslationResourceCatalog(reference) {
     });
   }
 
+  for (const source of supplementalSources) {
+    if (!source || bySource.has(source)) continue;
+    bySource.set(source, {
+      resource: playTranslationResourceName(source),
+      source,
+      pointers: [],
+    });
+  }
+
   const entries = [...bySource.values()].sort((left, right) =>
     left.resource.localeCompare(right.resource),
   );
@@ -98,8 +182,8 @@ export function buildPlayTranslationResourceCatalog(reference) {
   return entries;
 }
 
-export function renderPlayTranslationResources(reference) {
-  const entries = buildPlayTranslationResourceCatalog(reference);
+export function renderPlayTranslationResources(reference, supplementalSources = []) {
+  const entries = buildPlayTranslationResourceCatalog(reference, supplementalSources);
   const rows = entries.map(
     ({ resource, source }) =>
       `    <string name="${resource}" formatted="false" translatable="true">${encodeAndroidStringResource(source)}</string>`,
@@ -110,7 +194,7 @@ export function renderPlayTranslationResources(reference) {
     xml: [
       '<?xml version="1.0" encoding="utf-8"?>',
       '<resources>',
-      '    <!-- Generated from the canonical English Studio dictionary for Google Play Gemini translation. -->',
+      '    <!-- Generated from canonical Studio UI sources for Google Play Gemini translation. -->',
       ...rows,
       '</resources>',
       '',
@@ -133,7 +217,11 @@ export function writePlayTranslationResources({
 } = {}) {
   const referencePath = resolve(root, 'src/i18n/locales/en/studio.json');
   const reference = JSON.parse(readFileSync(referencePath, 'utf8'));
-  const { entries, xml } = renderPlayTranslationResources(reference);
+  const supplementalSources = collectSupplementalEnglishSources(root);
+  const { entries, xml } = renderPlayTranslationResources(
+    reference,
+    supplementalSources,
+  );
 
   const valuesPath = resolve(androidRoot, PLAY_TRANSLATION_VALUES_FILE);
   const keepPath = resolve(androidRoot, PLAY_TRANSLATION_KEEP_FILE);
