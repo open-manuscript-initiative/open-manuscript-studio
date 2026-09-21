@@ -41,7 +41,7 @@ test('Play translation bridge exports every unique English Studio source once', 
 test('Play translation bridge renders safe Android XML resources', () => {
   assert.equal(
     encodeAndroidStringResource(`Author's "draft" & <review>`),
-    `&quot;Author\\'s \\&quot;draft\\&quot; &amp; &lt;review&gt;&quot;`,
+    `"Author\\'s \\"draft\\" &amp; &lt;review&gt;"`,
   );
 
   const rendered = renderPlayTranslationResources(reference);
