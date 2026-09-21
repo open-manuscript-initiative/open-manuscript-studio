@@ -25,15 +25,20 @@ test('every manuscript-menu view stays inside the mobile viewport', async ({ pag
     await test.step(label, async () => {
       const toggle = dialog.getByRole('button', { name: 'Manuscript menu', exact: true });
       if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
+      await expect(navigation).toBeVisible();
       await button.click();
       await expect(navigation).toBeHidden();
       await expect(toggle).toBeFocused();
       await settleLayout(content);
       await expectNoMenuOverflow(content);
+
+      await toggle.click();
+      await expect(navigation).toBeVisible();
+      await expect(content).toBeHidden();
+      await expectFullScreenScrollFreeNavigation(dialog, navigation);
     });
   }
 
-  await dialog.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
   await dialog.getByRole('button', { name: 'References', exact: true }).click();
   const computedCrossReference = dialog.locator('[data-computed-cross-reference-target]');
   await expect(computedCrossReference).toBeVisible();
@@ -57,6 +62,40 @@ test('every manuscript-menu view stays inside the mobile viewport', async ({ pag
   await dialog.getByRole('button', { name: 'Home', exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
+});
+
+test('external manuscript-menu workspaces open correctly as the first selection', async ({ page }) => {
+  await installMockStudioApi(page);
+  await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+
+  const menuTrigger = page.getByRole('button', { name: 'Manuscript menu', exact: true });
+  const externalEntries = ['Lists', 'OMI Agents', 'Integrations', 'Help'];
+
+  for (const label of externalEntries) {
+    await test.step(label, async () => {
+      await menuTrigger.click();
+      const dialog = page.getByRole('dialog', { name: 'Manuscript menu' });
+      const navigation = dialog.getByRole('navigation', { name: 'Manuscript menu' });
+      const content = dialog.locator('.studio-menu-content');
+      await expect(navigation).toBeVisible();
+
+      await dialog.getByRole('button', { name: label, exact: true }).click();
+      await expect(navigation).toBeHidden();
+      await expect(content).toBeVisible();
+      await expect(content.locator('.studio-help-portal')).toBeVisible();
+      await expectNoMenuOverflow(content);
+
+      const toggle = dialog.getByRole('button', { name: 'Manuscript menu', exact: true });
+      await toggle.click();
+      await expect(navigation).toBeVisible();
+      await expect(content).toBeHidden();
+      await expectFullScreenScrollFreeNavigation(dialog, navigation);
+
+      await dialog.getByRole('button', { name: 'Home', exact: true }).click();
+      await expect(dialog).toBeHidden();
+    });
+  }
 });
 
 async function expectFullScreenScrollFreeNavigation(
