@@ -65,7 +65,7 @@ test('a standalone study treats all of its sections as one editing unit', () => 
   );
 });
 
-test('the desktop UI exposes one toggle and a natural-height note footer', () => {
+test('the Studio UI exposes one responsive toggle and a natural-height note footer', () => {
   const headerSource = readFileSync(
     new URL('../src/components/Header.tsx', import.meta.url),
     'utf8',
@@ -99,6 +99,10 @@ test('the desktop UI exposes one toggle and a natural-height note footer', () =>
     /\.omi-current-study-notes \{[\s\S]*?height: auto;[\s\S]*?max-height: none;[\s\S]*?overflow: visible;/,
   );
   assert.match(
+    headerSource,
+    /<div className="focus-header-secondary-row">[\s\S]*?focus-current-notes-button/,
+  );
+  assert.doesNotMatch(
     shellStyles,
     /@media \(max-width: 760px\)[\s\S]*?\.focus-current-notes-button \{\s*display: none;/,
   );

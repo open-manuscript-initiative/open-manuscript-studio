@@ -99,85 +99,15 @@ export function Header({ onOpenMenu, onHome }: HeaderProps) {
   return (
     <>
       <header className="app-header focus-header">
-        <div className="focus-header-identity">
+        <div className="focus-header-top-row">
           <button
             type="button"
-            className="focus-menu-button"
+            className="focus-menu-button focus-primary-menu-button"
             onClick={onOpenMenu}
             aria-label={t('studio.menu')}
+            title={t('studio.menu')}
           >
             <Menu size={19} aria-hidden="true" />
-          </button>
-
-          <button
-            type="button"
-            className="focus-menu-button focus-outline-button"
-            onClick={() => {
-              closeProofingPanel();
-              setOutlineOpen((current) => !current);
-            }}
-            aria-label={outlineLabel}
-            title={outlineLabel}
-            aria-pressed={outlineOpen}
-          >
-            {outlineOpen ? (
-              <PanelLeftClose size={18} aria-hidden="true" />
-            ) : (
-              <PanelLeftOpen size={18} aria-hidden="true" />
-            )}
-          </button>
-
-          <button
-            type="button"
-            className={`focus-menu-button focus-proofing-button${
-              proofingPanelOpen ? ' is-active' : ''
-            }`}
-            onClick={() => {
-              setOutlineOpen(false);
-              toggleProofingPanel();
-            }}
-            aria-label={proofingLabel}
-            title={proofingLabel}
-            aria-pressed={proofingPanelOpen}
-            aria-expanded={proofingPanelOpen}
-            aria-controls="omi-proofing-panel"
-          >
-            <FileCheck2 size={18} aria-hidden="true" />
-          </button>
-
-          <button
-            type="button"
-            className={`focus-menu-button focus-current-notes-button${
-              currentStudyNotesVisible ? ' is-active' : ''
-            }`}
-            onClick={toggleCurrentStudyNotes}
-            aria-label={notesLabel}
-            title={notesLabel}
-            aria-pressed={currentStudyNotesVisible}
-            aria-expanded={currentStudyNotesVisible}
-            aria-controls="omi-current-study-notes"
-          >
-            <StickyNote size={18} aria-hidden="true" />
-            <span className="focus-current-notes-button__count" aria-hidden="true">
-              {currentStudyNoteCount}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className={`focus-menu-button focus-search-button${searchOpen ? ' is-active' : ''}`}
-            onClick={toggleSearchOverlay}
-            aria-label={searchLabel}
-            title={searchLabel}
-            aria-pressed={searchOpen}
-            aria-expanded={searchOpen}
-            aria-controls="omi-search-replace"
-          >
-            {searchOpen ? (
-              <X size={18} aria-hidden="true" />
-            ) : (
-              <Search size={18} aria-hidden="true" />
-            )}
           </button>
 
           <button
@@ -205,42 +135,115 @@ export function Header({ onOpenMenu, onHome }: HeaderProps) {
               <strong>Studio</strong>
             </span>
           </button>
-        </div>
 
-        <div className="focus-header-primary-action">
-          <HeaderInsertMenu />
-        </div>
-
-        <div className="focus-header-actions">
-          <div className={`focus-save-state${pending ? ' focus-save-state--pending' : ''}`}>
-            {pending ? (
-              <Clock3 size={15} aria-hidden="true" />
-            ) : (
-              <CheckCircle2 size={15} aria-hidden="true" />
-            )}
-            <span>{pending ? t('studio.pending') : t('studio.saved')}</span>
-          </div>
-          <LanguageSwitcher />
           <button
             type="button"
-            className="focus-menu-button"
+            className="focus-menu-button focus-account-button"
             onClick={() => setAccountOpen(true)}
             aria-label={headerCopy.account}
             title={headerCopy.account}
           >
             <UserRound size={18} aria-hidden="true" />
-            <span className="focus-logout-label">{headerCopy.account}</span>
+            <span className="focus-account-label">{headerCopy.account}</span>
           </button>
-          <button
-            type="button"
-            className="focus-menu-button focus-logout-button"
-            onClick={() => void logout().catch(() => {})}
-            disabled={loading}
-            aria-label={t('auth.logout')}
-          >
-            <LogOut size={18} aria-hidden="true" />
-            <span className="focus-logout-label">{t('auth.logout')}</span>
-          </button>
+        </div>
+
+        <div className="focus-header-secondary-row">
+          <div className="focus-header-tools">
+            <button
+              type="button"
+              className="focus-menu-button focus-outline-button"
+              onClick={() => {
+                closeProofingPanel();
+                setOutlineOpen((current) => !current);
+              }}
+              aria-label={outlineLabel}
+              title={outlineLabel}
+              aria-pressed={outlineOpen}
+            >
+              {outlineOpen ? (
+                <PanelLeftClose size={18} aria-hidden="true" />
+              ) : (
+                <PanelLeftOpen size={18} aria-hidden="true" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              className={`focus-menu-button focus-proofing-button${proofingPanelOpen ? ' is-active' : ''}`}
+              onClick={() => {
+                setOutlineOpen(false);
+                toggleProofingPanel();
+              }}
+              aria-label={proofingLabel}
+              title={proofingLabel}
+              aria-pressed={proofingPanelOpen}
+              aria-expanded={proofingPanelOpen}
+              aria-controls="omi-proofing-panel"
+            >
+              <FileCheck2 size={18} aria-hidden="true" />
+            </button>
+
+            <button
+              type="button"
+              className={`focus-menu-button focus-current-notes-button${currentStudyNotesVisible ? ' is-active' : ''}`}
+              onClick={toggleCurrentStudyNotes}
+              aria-label={notesLabel}
+              title={notesLabel}
+              aria-pressed={currentStudyNotesVisible}
+              aria-expanded={currentStudyNotesVisible}
+              aria-controls="omi-current-study-notes"
+            >
+              <StickyNote size={18} aria-hidden="true" />
+              <span className="focus-current-notes-button__count" aria-hidden="true">
+                {currentStudyNoteCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={`focus-menu-button focus-search-button${searchOpen ? ' is-active' : ''}`}
+              onClick={toggleSearchOverlay}
+              aria-label={searchLabel}
+              title={searchLabel}
+              aria-pressed={searchOpen}
+              aria-expanded={searchOpen}
+              aria-controls="omi-search-replace"
+            >
+              {searchOpen ? (
+                <X size={18} aria-hidden="true" />
+              ) : (
+                <Search size={18} aria-hidden="true" />
+              )}
+            </button>
+          </div>
+
+          <div className="focus-header-primary-action">
+            <HeaderInsertMenu />
+          </div>
+
+          <div className="focus-header-actions">
+            <div className={`focus-save-state${pending ? ' focus-save-state--pending' : ''}`}>
+              {pending ? (
+                <Clock3 size={15} aria-hidden="true" />
+              ) : (
+                <CheckCircle2 size={15} aria-hidden="true" />
+              )}
+              <span>{pending ? t('studio.pending') : t('studio.saved')}</span>
+            </div>
+            <LanguageSwitcher />
+            <button
+              type="button"
+              className="focus-menu-button focus-logout-button"
+              onClick={() => void logout().catch(() => {})}
+              disabled={loading}
+              aria-label={t('auth.logout')}
+              title={t('auth.logout')}
+            >
+              <LogOut size={18} aria-hidden="true" />
+              <span className="focus-logout-label">{t('auth.logout')}</span>
+            </button>
+          </div>
         </div>
       </header>
 

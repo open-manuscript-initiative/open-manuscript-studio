@@ -83,8 +83,19 @@
 }
 
 .mobile-action-bar {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-action-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-action-bar > * {
+  flex: 0 0 auto;
 }
 
 .mobile-account-bar {
@@ -92,6 +103,13 @@
   justify-content: space-between;
   min-height: 48px;
   box-sizing: border-box;
+}
+
+.mobile-account-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .mobile-account-bar strong {
@@ -116,13 +134,14 @@
   white-space: nowrap;
 }
 
-.mobile-action-button.is-active {
+.mobile-action-button.is-active,
+.mobile-account-button.is-active {
   border-color: currentColor;
   background: color-mix(in srgb, currentColor 10%, transparent);
 }
 
 .mobile-insert-action {
-  min-width: 0;
+  min-width: 10rem;
   display: flex;
   justify-content: center;
 }
@@ -300,7 +319,7 @@
 .mobile-bottom-nav {
   min-height: 62px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: stretch;
   padding-bottom: env(safe-area-inset-bottom);
   border-top: 1px solid rgba(127, 127, 127, 0.25);

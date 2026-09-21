@@ -67,6 +67,18 @@ test('the native mobile OMI brand is an explicit Home control', () => {
   assert.match(mobileLayout, /setView\('editor'\);[\s\S]*?onHome\(\);/);
 });
 
+test('native mobile keeps menu, OMI brand and personal account in the permanent top row', () => {
+  assert.match(
+    mobileLayout,
+    /<header className="mobile-header">[\s\S]*?onClick=\{onOpenMenu\}[\s\S]*?mobile-header-title mobile-header-home[\s\S]*?mobile-account-button[\s\S]*?setView\('account'\)/,
+  );
+  assert.match(mobileLayout, /className="mobile-icon-button mobile-secondary-logout"/);
+  assert.equal(
+    mobileLayout.match(/mobile-nav-item--active/g)?.length,
+    3,
+  );
+});
+
 test('the desktop OMI brand is an explicit Home control', () => {
   assert.match(header, /className="focus-brand-lockup focus-brand-home"/);
   assert.match(header, /data-app-home-navigation="true"/);
@@ -122,13 +134,28 @@ test('search opens and closes through the same persistent trigger', () => {
   assert.match(mobileLayout, /searchOpen \? \(\s*<X/);
   assert.match(searchOverlay, /SEARCH_OVERLAY_TOGGLE_EVENT/);
   assert.doesNotMatch(searchOverlay, /aria-label=\{copy\.close\}/);
+});
+
+test('responsive application header reserves the first row for menu, brand and personal account', () => {
   assert.match(
-    academicShell,
-    /@media \(max-width: 760px\)[\s\S]*?grid-template-areas:\s*\n\s*"identity \. actions"\s*\n\s*"primary primary primary";/,
+    header,
+    /<div className="focus-header-top-row">[\s\S]*?focus-primary-menu-button[\s\S]*?focus-brand-lockup focus-brand-home[\s\S]*?focus-account-button/,
+  );
+  assert.match(
+    header,
+    /<div className="focus-header-secondary-row">[\s\S]*?focus-header-tools[\s\S]*?focus-header-primary-action[\s\S]*?focus-header-actions/,
   );
   assert.match(
     academicShell,
-    /@media \(max-width: 760px\)[\s\S]*?\.app-header\.focus-header\s*\{[\s\S]*?align-items:\s*start;/,
+    /\.app-header\.focus-header\s*\{[\s\S]*?position:\s*sticky;[\s\S]*?flex-direction:\s*column;/,
+  );
+  assert.match(
+    academicShell,
+    /@media \(max-width: 760px\)[\s\S]*?\.focus-header-top-row\s*\{[\s\S]*?grid-template-columns:\s*44px minmax\(0, 1fr\) 44px;/,
+  );
+  assert.match(
+    academicShell,
+    /@media \(max-width: 760px\)[\s\S]*?\.focus-header-secondary-row\s*\{[\s\S]*?display:\s*flex;[\s\S]*?overflow-x:\s*auto;/,
   );
 });
 
