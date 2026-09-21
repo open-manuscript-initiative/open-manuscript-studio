@@ -2,6 +2,44 @@ import { expect, test } from '@playwright/test';
 
 import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
 
+test('mobile Account keeps the persistent header visible and has no duplicate logout', async ({ page }) => {
+  await installMockStudioApi(page);
+  await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
+
+  const header = page.locator('.focus-header');
+  const topRow = header.locator('.focus-header-top-row');
+  await topRow.getByRole('button', { name: 'Account', exact: true }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Account', exact: true });
+  await expect(dialog).toBeVisible();
+  await expect(header).toBeVisible();
+  await expect(topRow.getByRole('button', { name: 'Sign out', exact: true })).toBeVisible();
+  await expect(dialog.locator('.account-logout')).toHaveCount(0);
+
+  const headerBox = await header.boundingBox();
+  expect(headerBox).not.toBeNull();
+  const headerOwnsTopLayer = await page.evaluate(({ x, y }) => {
+    const element = document.elementFromPoint(x, y);
+    return Boolean(element?.closest('.focus-header'));
+  }, {
+    x: (headerBox?.x ?? 0) + Math.min((headerBox?.width ?? 0) / 2, 120),
+    y: (headerBox?.y ?? 0) + Math.min((headerBox?.height ?? 0) / 2, 40),
+  });
+  expect(headerOwnsTopLayer).toBe(true);
+
+  const accountHeading = dialog.getByRole('heading', { name: 'Account', exact: true });
+  const accountHeadingBox = await accountHeading.boundingBox();
+  expect(accountHeadingBox).not.toBeNull();
+  expect(accountHeadingBox!.y).toBeGreaterThanOrEqual(
+    (headerBox?.y ?? 0) + (headerBox?.height ?? 0) - 1,
+  );
+
+  await topRow.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(dialog).toBeHidden();
+});
+
 test('the responsive login and editor fit a phone viewport', async ({ page }) => {
   const api = await installMockStudioApi(page);
 

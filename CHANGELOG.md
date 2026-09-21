@@ -6,6 +6,10 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Keeps the persistent mobile Studio header visible above the full-width Account
+  workspace and removes the duplicate Account-local logout action; logout
+  remains available only in the persistent top header.
+
 - Makes the Account workspace use the full mobile viewport width, removing the
   side gutter/backdrop and constraining account cards and profile content to
   the phone width without horizontal overflow. The duplicate in-panel mobile
