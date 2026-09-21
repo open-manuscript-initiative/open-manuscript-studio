@@ -121,6 +121,7 @@ export async function saveIntegrationConnection(
     displayName?: string;
     authenticationMode: IntegrationAuthenticationMode;
     secret?: string;
+    clearSecret?: boolean;
     config?: Record<string, unknown>;
     enabled?: boolean;
   },
