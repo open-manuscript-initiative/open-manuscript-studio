@@ -71,16 +71,14 @@ test('the native mobile OMI brand is an explicit Home control', () => {
   assert.match(mobileLayout, /setView\('editor'\);[\s\S]*?onHome\(\);/);
 });
 
-test('native mobile keeps menu, OMI brand, language, personal account and logout in the permanent top row', () => {
+test('native mobile keeps menu, OMI brand, language, personal account and logout in the permanent top row without a redundant bottom bar', () => {
   assert.match(
     mobileLayout,
     /<header className="mobile-header">[\s\S]*?onClick=\{onOpenMenu\}[\s\S]*?mobile-header-title mobile-header-home[\s\S]*?mobile-header-actions[\s\S]*?<LanguageSwitcher \/>[\s\S]*?mobile-account-button[\s\S]*?setView\('account'\)[\s\S]*?mobile-top-logout/,
   );
   assert.doesNotMatch(mobileLayout, /mobile-secondary-logout/);
-  assert.equal(
-    mobileLayout.match(/mobile-nav-item--active/g)?.length,
-    3,
-  );
+  assert.doesNotMatch(mobileLayout, /mobile-bottom-nav/);
+  assert.doesNotMatch(mobileLayout, /mobile-nav-item/);
 });
 
 test('the desktop OMI brand is an explicit Home control', () => {
