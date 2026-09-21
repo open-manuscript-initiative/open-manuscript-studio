@@ -1,27 +1,21 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import {
-  FileText,
   LogOut,
   Menu,
-  Pencil,
   Search,
-  SlidersHorizontal,
   User,
   X,
 } from 'lucide-react';
 
 import { AccountPanel } from '../../components/AccountPanel';
-import { DocumentTree } from '../../components/DocumentTree';
 import { Footer } from '../../components/Footer';
 import { HeaderInsertMenu } from '../../components/HeaderInsertMenu';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher';
-import { PropertiesPanel } from '../../components/PropertiesPanel';
 import {
   getCloseSearchLabel,
   subscribeSearchOverlayState,
   toggleSearchOverlay,
 } from '../../components/searchOverlayEvents';
-import { findRenderedSectionElement } from '../../editor/renderedManuscriptNavigation';
 import { getStudioMenuSupplementalCopy } from '../../i18n/studioMenuSupplementalTranslations';
 import { useTranslation } from '../../i18n';
 import { useAuthStore } from '../../store/authStore';
@@ -33,7 +27,7 @@ interface MobileLayoutProps {
   onHome: () => void;
 }
 
-type MobileView = 'document' | 'editor' | 'details' | 'account';
+type MobileView = 'editor' | 'account';
 
 const searchLabels: Record<string, string> = {
   de: 'Suchen',
@@ -43,11 +37,11 @@ const searchLabels: Record<string, string> = {
 
 const navLabels: Record<
   string,
-  { document: string; editor: string; details: string; account: string }
+  { account: string }
 > = {
-  en: { document: 'Document', editor: 'Editor', details: 'Details', account: 'Account' },
-  hu: { document: 'Dokumentum', editor: 'Szerkesztő', details: 'Részletek', account: 'Fiók' },
-  de: { document: 'Dokument', editor: 'Editor', details: 'Details', account: 'Konto' },
+  en: { account: 'Account' },
+  hu: { account: 'Fiók' },
+  de: { account: 'Konto' },
 };
 
 export function MobileLayout({ children, onOpenMenu, onHome }: MobileLayoutProps) {
@@ -57,51 +51,14 @@ export function MobileLayout({ children, onOpenMenu, onHome }: MobileLayoutProps
   const isAuthLoading = useAuthStore((state) => state.isLoading);
   const [view, setView] = useState<MobileView>('editor');
   const [searchOpen, setSearchOpen] = useState(false);
-  const [pendingSectionNavigation, setPendingSectionNavigation] = useState<string | null>(null);
   const searchButtonText = searchLabels[locale] ?? searchLabels.en;
   const searchLabel = searchOpen
     ? getCloseSearchLabel(locale)
     : searchButtonText;
   const nav = navLabels[locale] ?? navLabels.en;
 
-  useEffect(() => {
-    if (view !== 'editor' || !pendingSectionNavigation) return;
-
-    let innerFrame = 0;
-    const outerFrame = requestAnimationFrame(() => {
-      innerFrame = requestAnimationFrame(() => {
-        const section = findRenderedSectionElement(pendingSectionNavigation);
-
-        if (section) {
-          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          section
-            .closest<HTMLElement>('[contenteditable="true"]')
-            ?.focus({ preventScroll: true });
-        }
-
-        setPendingSectionNavigation(null);
-      });
-    });
-
-    return () => {
-      cancelAnimationFrame(outerFrame);
-      if (innerFrame) cancelAnimationFrame(innerFrame);
-    };
-  }, [pendingSectionNavigation, view]);
-
   useEffect(() => subscribeSearchOverlayState(setSearchOpen), []);
 
-  const handleDocumentNavigate = (sectionId: string) => {
-    setPendingSectionNavigation(sectionId);
-    setView('editor');
-  };
-
-  const secondaryBarTitle =
-    view === 'document'
-      ? nav.document
-      : view === 'details'
-        ? nav.details
-        : nav.account;
 
   return (
     <div className="mobile-shell">
@@ -179,59 +136,15 @@ export function MobileLayout({ children, onOpenMenu, onHome }: MobileLayoutProps
         </div>
       ) : (
         <div className="mobile-account-bar">
-          <strong>{secondaryBarTitle}</strong>
+          <strong>{nav.account}</strong>
         </div>
       )}
 
       <main className="mobile-workspace">
-        {view === 'document' ? (
-          <div className="mobile-document-view">
-            <DocumentTree onNavigate={handleDocumentNavigate} />
-          </div>
-        ) : view === 'details' ? (
-          <div className="mobile-details-view">
-            <PropertiesPanel />
-          </div>
-        ) : view === 'account' ? (
-          <AccountPanel />
-        ) : (
-          children
-        )}
+        {view === 'account' ? <AccountPanel /> : children}
         <Footer />
       </main>
 
-      <nav className="mobile-bottom-nav" aria-label="Mobile Studio navigation">
-        <button
-          type="button"
-          className={`mobile-nav-item${view === 'document' ? ' mobile-nav-item--active' : ''}`}
-          aria-current={view === 'document' ? 'page' : undefined}
-          onClick={() => setView('document')}
-        >
-          <FileText size={20} aria-hidden="true" />
-          <span>{nav.document}</span>
-        </button>
-
-        <button
-          type="button"
-          className={`mobile-nav-item${view === 'editor' ? ' mobile-nav-item--active' : ''}`}
-          aria-current={view === 'editor' ? 'page' : undefined}
-          onClick={() => setView('editor')}
-        >
-          <Pencil size={20} aria-hidden="true" />
-          <span>{nav.editor}</span>
-        </button>
-
-        <button
-          type="button"
-          className={`mobile-nav-item${view === 'details' ? ' mobile-nav-item--active' : ''}`}
-          aria-current={view === 'details' ? 'page' : undefined}
-          onClick={() => setView('details')}
-        >
-          <SlidersHorizontal size={20} aria-hidden="true" />
-          <span>{nav.details}</span>
-        </button>
-
-      </nav>
     </div>
   );
 }
