@@ -21,7 +21,7 @@ test('the responsive login and editor fit a phone viewport', async ({ page }) =>
   await expect(primaryHeader.getByRole('button', { name: 'Manuscript menu', exact: true })).toBeVisible();
   await expect(primaryHeader.getByRole('button', { name: 'Home', exact: true })).toBeVisible();
   await expect(primaryHeader.getByRole('button', { name: 'Account', exact: true })).toBeVisible();
-  await expect(primaryHeader.getByLabel('Language')).toBeVisible();
+  await expect(primaryHeader.getByRole('combobox', { name: 'Interface language', exact: true })).toBeVisible();
   await expect(primaryHeader.getByRole('button', { name: 'Sign out', exact: true })).toBeVisible();
   await expect(page.locator('.focus-header-secondary-row').getByRole('button', { name: 'Search', exact: true })).toBeVisible();
 
