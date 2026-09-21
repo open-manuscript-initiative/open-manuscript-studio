@@ -3,6 +3,7 @@ import { useTranslation } from '../i18n';
 import type { OjsLaunchPayload } from '../integrations/ojs/importOjsLaunch';
 import { ContinuousManuscriptEditor } from './ContinuousManuscriptEditor';
 import { EmbeddedTableOfContents } from './EmbeddedTableOfContents';
+import { EditorZoomControl } from './EditorZoomControl';
 import { VolumeFrontMatterEditor } from './VolumeFrontMatterEditor';
 
 type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
@@ -39,6 +40,7 @@ export function EditorPane({ ojsContributors = [] }: EditorPaneProps) {
           </div>
         </article>
       </section>
+      <EditorZoomControl />
     </section>
   );
 }
