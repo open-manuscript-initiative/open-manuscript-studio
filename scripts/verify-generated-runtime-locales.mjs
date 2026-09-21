@@ -10,8 +10,13 @@ const overlayRoot = path.join(root, 'locale', 'completion-overlays');
 const allowedLocales = new Set();
 try {
   for (const entry of await fs.readdir(overlayRoot, { withFileTypes: true })) {
-    if (entry.isFile() && entry.name.endsWith('.json')) {
-      allowedLocales.add(entry.name.slice(0, -'.json'.length));
+    if (
+      entry.isFile() &&
+      entry.name.endsWith('.json') &&
+      entry.name !== 'status.json'
+    ) {
+      const overlayStem = entry.name.slice(0, -'.json'.length);
+      allowedLocales.add(overlayStem.split('.')[0]);
     }
   }
 } catch (error) {
