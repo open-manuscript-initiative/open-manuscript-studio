@@ -22,7 +22,10 @@ export function loadUiLocale(): SupportedLocale {
   if (typeof window === 'undefined') return DEFAULT_LOCALE;
 
   const stored = window.localStorage.getItem(UI_LOCALE_STORAGE_KEY);
-  if (stored && isSupportedLocale(stored)) return stored;
+  const storedLocale = resolveStudioUiLocale(stored);
+  if (storedLocale && isSupportedLocale(storedLocale)) {
+    return storedLocale as SupportedLocale;
+  }
 
   const browserLocale = resolveStudioUiLocale(window.navigator.language);
   return browserLocale && isSupportedLocale(browserLocale)
