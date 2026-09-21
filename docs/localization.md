@@ -23,6 +23,32 @@ src/i18n/locales/<locale>/studio.json
 
 This keeps the React/i18next runtime simple while allowing translators to use gettext-compatible tools such as Weblate, Poedit and other PO editors.
 
+## Platform language parity
+
+The shared Studio frontend is used by the web, Windows, Linux, macOS, Android
+and iOS/iPadOS builds, so interface-language availability is defined once in
+`src/i18n/platformLocales.ts`.
+
+The platform registry covers the 49 Google Play locale entries. Regional store
+variants that intentionally share one UI dictionary are canonicalized:
+
+- `en-US`, `en-GB` → `en`;
+- `es-ES`, `es-419` → `es`;
+- `fr-CA`, `fr-FR` → `fr`;
+- `pt-BR`, `pt-PT` → `pt`.
+
+Chinese variants remain separate UI locales because script/region differences
+are user-visible: `zh-CN`, `zh-TW`, and `zh-HK`.
+
+Irish (`ga`) and Maltese (`mt`) remain available from the earlier EU
+localization set, so the shared UI registry exposes 47 selectable locale
+choices while covering all 49 Google Play locale entries.
+
+The existing 24 PO/JSON catalogues remain the reviewed translation baseline.
+Newly exposed Play languages without a reviewed catalogue currently use the
+English reference strings through the normal runtime fallback path. They must
+receive PO catalogues before being promoted as fully translated locales.
+
 ## PO mapping
 
 Every translatable string has three relevant fields:
