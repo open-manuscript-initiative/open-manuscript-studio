@@ -2,6 +2,13 @@
 
 Snapshot: 2026-08-23
 
+> Registry update (2026-09-21): the shared runtime selector now exposes 47
+> canonical UI locales covering all 49 Google Play locale entries, while
+> retaining Irish and Maltese. The audit snapshot below still describes the 24
+> PO/JSON catalogues that currently have maintained translation content; newly
+> exposed Play locales use the English reference fallback until their catalogues
+> are completed.
+
 This inventory tracks user-visible Studio strings that are not yet fully routed through the 24-locale translation system. The canonical PO audit alone is not sufficient: recent product work introduced component-local EN/HU/DE dictionaries and direct JSX/user-message strings that never entered the PO catalogue.
 
 ## Supported UI locales
