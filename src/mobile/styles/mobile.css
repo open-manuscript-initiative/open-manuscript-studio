@@ -178,6 +178,8 @@
   min-width: 0;
   min-height: 0;
   height: 100%;
+  box-sizing: border-box;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: auto;
