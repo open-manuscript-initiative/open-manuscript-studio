@@ -69,6 +69,7 @@ jobs:
           node --test tests/android-release-optimization.test.mjs
           node --test tests/android-version-code.test.mjs
           npm run test:android-update
+          node --test tests/play-translation-bridge.test.mjs
           python3 tests/verify-play-bundle.test.py
           python3 tests/android-page-size.test.py
 
