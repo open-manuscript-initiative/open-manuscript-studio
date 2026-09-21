@@ -21,6 +21,8 @@ test('the responsive login and editor fit a phone viewport', async ({ page }) =>
   await expect(primaryHeader.getByRole('button', { name: 'Manuscript menu', exact: true })).toBeVisible();
   await expect(primaryHeader.getByRole('button', { name: 'Home', exact: true })).toBeVisible();
   await expect(primaryHeader.getByRole('button', { name: 'Account', exact: true })).toBeVisible();
+  await expect(primaryHeader.getByRole('combobox', { name: 'Interface language', exact: true })).toBeVisible();
+  await expect(primaryHeader.getByRole('button', { name: 'Sign out', exact: true })).toBeVisible();
   await expect(page.locator('.focus-header-secondary-row').getByRole('button', { name: 'Search', exact: true })).toBeVisible();
 
   const menuTrigger = page.getByRole('button', { name: 'Manuscript menu', exact: true });
@@ -38,16 +40,26 @@ test('the responsive login and editor fit a phone viewport', async ({ page }) =>
   expect(Math.abs((togglePosition?.x ?? 0) - (triggerPosition?.x ?? 0))).toBeLessThanOrEqual(1);
   expect(Math.abs((togglePosition?.y ?? 0) - (triggerPosition?.y ?? 0))).toBeLessThanOrEqual(1);
 
-  await menuToggle.click();
-  await expect(dialog).toBeVisible();
-  await expect(menuNavigation).toBeHidden();
-  await expect(menuToggle).toBeVisible();
+  await expect(dialog.locator('.studio-menu-content')).toHaveCount(0);
+  await expect(dialog.getByRole('button', { name: 'Document', exact: true })).not.toHaveAttribute('aria-current', 'page');
 
   await menuToggle.click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
+
+  await menuTrigger.click();
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'References', exact: true }).click();
+  await expect(dialog.locator('.studio-menu-content')).toBeVisible();
+  await expect(menuNavigation).toBeHidden();
+
+  await menuToggle.click();
+  await expect(menuNavigation).toBeVisible();
   await dialog.getByRole('button', { name: 'Home', exact: true }).click();
   await expect(dialog).toBeHidden();
+  await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
 
-  const searchTrigger = page.getByRole('button', { name: 'Search', exact: true });
+  const searchTrigger = page.locator('.focus-header-secondary-row').getByRole('button', { name: 'Search', exact: true });
   const searchTriggerPosition = await searchTrigger.boundingBox();
   expect(searchTriggerPosition).not.toBeNull();
   await searchTrigger.click();

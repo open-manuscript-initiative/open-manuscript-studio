@@ -67,12 +67,12 @@ test('the native mobile OMI brand is an explicit Home control', () => {
   assert.match(mobileLayout, /setView\('editor'\);[\s\S]*?onHome\(\);/);
 });
 
-test('native mobile keeps menu, OMI brand and personal account in the permanent top row', () => {
+test('native mobile keeps menu, OMI brand, language, personal account and logout in the permanent top row', () => {
   assert.match(
     mobileLayout,
-    /<header className="mobile-header">[\s\S]*?onClick=\{onOpenMenu\}[\s\S]*?mobile-header-title mobile-header-home[\s\S]*?mobile-account-button[\s\S]*?setView\('account'\)/,
+    /<header className="mobile-header">[\s\S]*?onClick=\{onOpenMenu\}[\s\S]*?mobile-header-title mobile-header-home[\s\S]*?mobile-header-actions[\s\S]*?<LanguageSwitcher \/>[\s\S]*?mobile-account-button[\s\S]*?setView\('account'\)[\s\S]*?mobile-top-logout/,
   );
-  assert.match(mobileLayout, /className="mobile-icon-button mobile-secondary-logout"/);
+  assert.doesNotMatch(mobileLayout, /mobile-secondary-logout/);
   assert.equal(
     mobileLayout.match(/mobile-nav-item--active/g)?.length,
     3,
@@ -136,10 +136,10 @@ test('search opens and closes through the same persistent trigger', () => {
   assert.doesNotMatch(searchOverlay, /aria-label=\{copy\.close\}/);
 });
 
-test('responsive application header reserves the first row for menu, brand and personal account', () => {
+test('responsive application header reserves the first row for menu, brand, language, account and logout', () => {
   assert.match(
     header,
-    /<div className="focus-header-top-row">[\s\S]*?focus-primary-menu-button[\s\S]*?focus-brand-lockup focus-brand-home[\s\S]*?focus-account-button/,
+    /<div className="focus-header-top-row">[\s\S]*?focus-primary-menu-button[\s\S]*?focus-brand-lockup focus-brand-home[\s\S]*?focus-header-top-actions[\s\S]*?<LanguageSwitcher \/>[\s\S]*?focus-account-button[\s\S]*?focus-logout-button/,
   );
   assert.match(
     header,
@@ -151,7 +151,7 @@ test('responsive application header reserves the first row for menu, brand and p
   );
   assert.match(
     academicShell,
-    /@media \(max-width: 760px\)[\s\S]*?\.focus-header-top-row\s*\{[\s\S]*?grid-template-columns:\s*44px minmax\(0, 1fr\) 44px;/,
+    /@media \(max-width: 760px\)[\s\S]*?\.focus-header-top-row\s*\{[\s\S]*?grid-template-columns:\s*44px minmax\(0, 1fr\) auto;/,
   );
   assert.match(
     academicShell,

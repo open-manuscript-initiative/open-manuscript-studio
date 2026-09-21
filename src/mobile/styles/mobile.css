@@ -11,7 +11,7 @@
 .mobile-header {
   min-height: 56px;
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   padding: env(safe-area-inset-top) 10px 0;
@@ -59,6 +59,26 @@
   text-overflow: ellipsis;
 }
 
+.mobile-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mobile-header-actions .focus-language-switcher {
+  min-height: 44px;
+  margin: 0;
+  padding: 0 2px 0 5px;
+}
+
+.mobile-header-actions .focus-language-switcher select {
+  width: 72px;
+  max-width: 72px;
+  padding-inline: 1px;
+}
+
 .mobile-icon-button {
   width: 44px;
   height: 44px;
@@ -103,13 +123,6 @@
   justify-content: space-between;
   min-height: 48px;
   box-sizing: border-box;
-}
-
-.mobile-account-bar-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 0 0 auto;
 }
 
 .mobile-account-bar strong {

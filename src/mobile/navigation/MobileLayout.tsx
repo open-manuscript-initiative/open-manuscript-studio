@@ -130,16 +130,29 @@ export function MobileLayout({ children, onOpenMenu, onHome }: MobileLayoutProps
           <span>Open Manuscript Studio</span>
         </button>
 
-        <button
-          type="button"
-          className={`mobile-icon-button mobile-account-button${view === 'account' ? ' is-active' : ''}`}
-          onClick={() => setView('account')}
-          aria-label={nav.account}
-          title={nav.account}
-          aria-pressed={view === 'account'}
-        >
-          <User size={20} aria-hidden="true" />
-        </button>
+        <div className="mobile-header-actions">
+          <LanguageSwitcher />
+          <button
+            type="button"
+            className={`mobile-icon-button mobile-account-button${view === 'account' ? ' is-active' : ''}`}
+            onClick={() => setView('account')}
+            aria-label={nav.account}
+            title={nav.account}
+            aria-pressed={view === 'account'}
+          >
+            <User size={20} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="mobile-icon-button mobile-top-logout"
+            onClick={() => void logout().catch(() => {})}
+            aria-label={t('auth.logout')}
+            title={t('auth.logout')}
+            disabled={isAuthLoading}
+          >
+            <LogOut size={20} aria-hidden="true" />
+          </button>
+        </div>
       </header>
 
       {view === 'editor' ? (
@@ -163,34 +176,10 @@ export function MobileLayout({ children, onOpenMenu, onHome }: MobileLayoutProps
           <div className="mobile-insert-action">
             <HeaderInsertMenu />
           </div>
-          <LanguageSwitcher />
-          <button
-            type="button"
-            className="mobile-icon-button mobile-secondary-logout"
-            onClick={() => void logout().catch(() => {})}
-            aria-label={t('auth.logout')}
-            title={t('auth.logout')}
-            disabled={isAuthLoading}
-          >
-            <LogOut size={20} aria-hidden="true" />
-          </button>
         </div>
       ) : (
         <div className="mobile-account-bar">
           <strong>{secondaryBarTitle}</strong>
-          <div className="mobile-account-bar-actions">
-            <LanguageSwitcher />
-            <button
-              type="button"
-              className="mobile-icon-button mobile-secondary-logout"
-              onClick={() => void logout().catch(() => {})}
-              aria-label={t('auth.logout')}
-              title={t('auth.logout')}
-              disabled={isAuthLoading}
-            >
-              <LogOut size={20} aria-hidden="true" />
-            </button>
-          </div>
         </div>
       )}
 

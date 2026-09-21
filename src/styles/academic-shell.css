@@ -109,6 +109,14 @@ body {
   justify-self: start;
 }
 
+.focus-header-top-actions {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  min-width: 0;
+}
+
 .focus-account-button {
   justify-self: end;
   width: auto;
@@ -493,6 +501,10 @@ body {
   box-shadow: 18px 0 50px rgba(40, 34, 30, .2);
 }
 
+.studio-menu-drawer--navigation-only {
+  width: min(18rem, 92vw);
+}
+
 .studio-menu-header {
   min-height: 4.65rem;
   padding: .65rem clamp(.8rem, 2vw, 1.5rem);
@@ -672,7 +684,8 @@ body {
     display: none;
   }
 
-  .focus-account-button {
+  .focus-account-button,
+  .focus-header-top-actions .focus-logout-button {
     width: 2.35rem;
     padding: 0;
   }
@@ -685,13 +698,29 @@ body {
   }
 
   .focus-header-top-row {
-    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
     gap: 8px;
     min-height: 44px;
   }
 
+  .focus-header-top-actions {
+    gap: 4px;
+  }
+
+  .focus-header-top-actions .focus-language-switcher {
+    min-height: 44px;
+    padding: 0 .2rem 0 .35rem;
+  }
+
+  .focus-header-top-actions .focus-language-switcher select {
+    width: 4.75rem;
+    max-width: 4.75rem;
+    padding-inline: .1rem;
+  }
+
   .focus-primary-menu-button,
-  .focus-account-button {
+  .focus-account-button,
+  .focus-header-top-actions .focus-logout-button {
     width: 44px;
     height: 44px;
     padding: 0;
