@@ -132,6 +132,14 @@ export function StudioMenu({
     if (!open) return;
     setNavigationOpen(true);
     const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       if (activeView === null) {
@@ -141,10 +149,8 @@ export function StudioMenu({
       setNavigationOpen(false);
       navigationToggleRef.current?.focus({ preventScroll: true });
     };
-    document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', closeOnEscape);
     return () => {
-      document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', closeOnEscape);
     };
   }, [activeView, onClose, open]);
