@@ -98,7 +98,7 @@ export function Header({ onOpenMenu, onHome }: HeaderProps) {
 
   return (
     <>
-      <header className="app-header focus-header">
+      <header className={`app-header focus-header${accountOpen ? ' focus-header--account-open' : ''}`}>
         <div className="focus-header-top-row">
           <button
             type="button"
@@ -140,12 +140,17 @@ export function Header({ onOpenMenu, onHome }: HeaderProps) {
             <LanguageSwitcher />
             <button
               type="button"
-              className="focus-menu-button focus-account-button"
-              onClick={() => setAccountOpen(true)}
-              aria-label={headerCopy.account}
-              title={headerCopy.account}
+              className={`focus-menu-button focus-account-button${accountOpen ? ' is-open' : ''}`}
+              onClick={() => setAccountOpen((current) => !current)}
+              aria-label={accountOpen ? t('common.close') : headerCopy.account}
+              title={accountOpen ? t('common.close') : headerCopy.account}
+              aria-expanded={accountOpen}
             >
-              <UserRound size={18} aria-hidden="true" />
+              {accountOpen ? (
+                <X size={18} aria-hidden="true" />
+              ) : (
+                <UserRound size={18} aria-hidden="true" />
+              )}
               <span className="focus-account-label">{headerCopy.account}</span>
             </button>
             <button

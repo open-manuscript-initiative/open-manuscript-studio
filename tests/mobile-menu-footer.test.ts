@@ -38,6 +38,10 @@ const academicShell = readFileSync(
   new URL('../src/styles/academic-shell.css', import.meta.url),
   'utf8',
 );
+const accountStyles = readFileSync(
+  new URL('../src/styles/account.css', import.meta.url),
+  'utf8',
+);
 const footer = readFileSync(
   new URL('../src/components/Footer.tsx', import.meta.url),
   'utf8',
@@ -84,6 +88,29 @@ test('the desktop OMI brand is an explicit Home control', () => {
   assert.match(header, /data-app-home-navigation="true"/);
   assert.match(header, /aria-label=\{menuCopy\.home\}/);
   assert.match(header, /onHome\(\);/);
+});
+
+test('mobile account overlay fills the viewport width and uses only the persistent top close control', () => {
+  assert.match(
+    accountStyles,
+    /@media\(max-width:720px\)\{[\s\S]*?\.focus-header--account-open\{z-index:1100\}[\s\S]*?\.account-overlay\{display:block\}[\s\S]*?\.account-overlay-backdrop\{display:none\}[\s\S]*?\.account-drawer\{width:100vw;max-width:none;height:100dvh;[\s\S]*?overflow-x:hidden;box-shadow:none\}/,
+  );
+  assert.match(
+    accountStyles,
+    /@media\(max-width:720px\)\{[\s\S]*?\.account-close\{display:none\}/,
+  );
+  assert.match(
+    header,
+    /focus-account-button\$\{accountOpen \? ' is-open' : ''\}[\s\S]*?setAccountOpen\(\(current\) => !current\)[\s\S]*?accountOpen \? \(\s*<X size=\{18\}/,
+  );
+  assert.match(
+    accountStyles,
+    /@media\(max-width:720px\)\{[\s\S]*?\.account-page\{width:100%;max-width:none;margin:0;/,
+  );
+  assert.match(
+    accountStyles,
+    /@media\(max-width:720px\)\{[\s\S]*?\.account-card\{width:100%;max-width:none;box-sizing:border-box;/,
+  );
 });
 
 test('the application footer links to the Studio wiki', () => {
