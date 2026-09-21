@@ -143,6 +143,9 @@ export function WebPublishingSettings({ providerId }: { providerId: ProviderId }
             ? 'none'
             : 'user_api_key',
         ...(secret.trim() ? { secret: secret.trim() } : {}),
+        ...(providerId === 'web-publishing' && authScheme === 'none'
+          ? { clearSecret: true }
+          : {}),
         config,
         enabled: true,
       });
