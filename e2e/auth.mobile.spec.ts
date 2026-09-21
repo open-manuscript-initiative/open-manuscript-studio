@@ -5,6 +5,8 @@ import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
 test('mobile Account keeps the persistent header visible and has no duplicate logout', async ({ page }) => {
   await installMockStudioApi(page);
   await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
 
   const header = page.locator('.focus-header');
   const topRow = header.locator('.focus-header-top-row');
