@@ -11,7 +11,7 @@ import {
 } from './translation-overlays.mjs';
 import {
   buildPlayTranslationResourceCatalog,
-  playTranslationResourceName,
+  collectSupplementalEnglishSources,
 } from './generate-play-translation-resources.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -128,8 +128,15 @@ function localePreferenceScore(config, locale) {
   return region ? 80 : 100;
 }
 
-export function parseAapt2StudioTranslations(dump, reference) {
-  const catalog = buildPlayTranslationResourceCatalog(reference);
+export function parseAapt2StudioTranslations(
+  dump,
+  reference,
+  supplementalSources = [],
+) {
+  const catalog = buildPlayTranslationResourceCatalog(
+    reference,
+    supplementalSources,
+  );
   const sourceByResource = new Map(
     catalog.map((entry) => [entry.resource, entry.source]),
   );
@@ -273,6 +280,57 @@ async function writeOverlayPlan(plans) {
   }
 }
 
+async function writeSupplementalSourceMaps(
+  playTranslations,
+  supplementalSources,
+) {
+  const sourceRoot = path.join(root, 'src', 'i18n', 'play-source-locales');
+  await fs.mkdir(sourceRoot, { recursive: true });
+  const supplementalSet = new Set(supplementalSources);
+
+  for (const [locale, translations] of playTranslations) {
+    if (locale === 'en') continue;
+    const payload = {};
+    for (const [source, value] of translations) {
+      if (!supplementalSet.has(source)) continue;
+      if (typeof value !== 'string' || !value.trim()) continue;
+      payload[source] = value;
+    }
+
+    await fs.writeFile(
+      path.join(sourceRoot, `${locale}.json`),
+      `${JSON.stringify(
+        Object.fromEntries(
+          Object.entries(payload).sort(([left], [right]) =>
+            left.localeCompare(right),
+          ),
+        ),
+        null,
+        2,
+      )}\n`,
+      'utf8',
+    );
+  }
+}
+
+function findMissingSupplementalTranslations(
+  playTranslations,
+  supplementalSources,
+  localeCodes,
+) {
+  const failures = [];
+  for (const locale of localeCodes) {
+    if (PLAY_UNAVAILABLE_STUDIO_LOCALES.has(locale)) continue;
+    const translations = playTranslations.get(locale);
+    const missing = supplementalSources.filter((source) => {
+      const value = translations?.get(source);
+      return typeof value !== 'string' || !value.trim();
+    });
+    if (missing.length) failures.push({ locale, missing });
+  }
+  return failures;
+}
+
 async function updateCompletionStatus(unresolvedByLocale) {
   const statusPath = path.join(
     root,
@@ -311,6 +369,8 @@ export async function importPlayTranslations({
     ),
   );
 
+  const supplementalSources = collectSupplementalEnglishSources(root);
+
   const dump = execFileSync(
     aapt2Path,
     ['dump', 'resources', path.resolve(apkPath)],
@@ -320,22 +380,41 @@ export async function importPlayTranslations({
     },
   );
 
-  const playTranslations = parseAapt2StudioTranslations(dump, reference);
+  const playTranslations = parseAapt2StudioTranslations(
+    dump,
+    reference,
+    supplementalSources,
+  );
   const { plans, unresolvedByLocale } = await buildOverlayPlan(
     playTranslations,
     reference,
   );
 
+  const localeCodes = await readLocaleCodes();
   const playRequiredFailures = plans.filter(
     (plan) =>
       !PLAY_UNAVAILABLE_STUDIO_LOCALES.has(plan.locale) &&
       plan.unresolved.length > 0,
   );
+  const supplementalFailures = findMissingSupplementalTranslations(
+    playTranslations,
+    supplementalSources,
+    localeCodes,
+  );
 
-  if (requireComplete && playRequiredFailures.length > 0) {
-    const summary = playRequiredFailures
-      .map((plan) => `${plan.locale}: ${plan.unresolved.length}`)
+  if (
+    requireComplete &&
+    (playRequiredFailures.length > 0 || supplementalFailures.length > 0)
+  ) {
+    const baseSummary = playRequiredFailures
+      .map((plan) => `${plan.locale}: base=${plan.unresolved.length}`)
       .join(', ');
+    const supplementalSummary = supplementalFailures
+      .map((item) => `${item.locale}: supplemental=${item.missing.length}`)
+      .join(', ');
+    const summary = [baseSummary, supplementalSummary]
+      .filter(Boolean)
+      .join('; ');
     throw new Error(
       `Google Play translation payload is incomplete for Studio locales: ${summary}. ` +
         'Confirm automatic App strings translation is enabled for all configured Play languages and retry after Play processing completes.',
@@ -344,6 +423,10 @@ export async function importPlayTranslations({
 
   if (write) {
     await writeOverlayPlan(plans);
+    await writeSupplementalSourceMaps(
+      playTranslations,
+      supplementalSources,
+    );
     await updateCompletionStatus(unresolvedByLocale);
   }
 
@@ -351,6 +434,8 @@ export async function importPlayTranslations({
     translatedLocales: [...playTranslations.keys()].sort(),
     plans,
     unresolvedByLocale,
+    supplementalSources,
+    supplementalFailures,
   };
 }
 
