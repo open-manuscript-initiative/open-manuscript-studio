@@ -1,0 +1,172 @@
+name: Google Play Translation Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: Android versionCode already uploaded to Play with the Studio translation bridge
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: play-translation-sync
+  cancel-in-progress: false
+
+env:
+  ANDROID_PACKAGE_NAME: org.openmanuscript.studio
+
+jobs:
+  sync:
+    name: Import Google Play UI translations
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate Play sync inputs
+        shell: bash
+        env:
+          VERSION_CODE: ${{ inputs.version_code }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$VERSION_CODE" =~ ^[0-9]+$ ]]; then
+            echo "::error::version_code must be a positive integer."
+            exit 1
+          fi
+          if [[ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]]; then
+            echo "::error::Missing GOOGLE_PLAY_SERVICE_ACCOUNT_JSON."
+            exit 1
+          fi
+          node -e '
+            const value = JSON.parse(process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON);
+            if (!value.client_email || !value.private_key) {
+              throw new Error("Google Play service account is missing client_email/private_key.");
+            }
+          '
+
+      - name: Wait for Play translations and import overlays
+        id: import
+        shell: bash
+        env:
+          VERSION_CODE: ${{ inputs.version_code }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          apk="$RUNNER_TEMP/open-manuscript-studio-play-universal.apk"
+          success=0
+
+          for attempt in $(seq 1 24); do
+            echo "Play translation import attempt $attempt/24"
+            rm -f "$apk"
+
+            if node scripts/download-play-universal-apk.mjs                 --version-code "$VERSION_CODE"                 --package "$ANDROID_PACKAGE_NAME"                 --output "$apk"               && node scripts/import-play-translations.mjs                 --apk "$apk"                 --write; then
+              success=1
+              break
+            fi
+
+            # The bundle can be processed before automatic string translations
+            # have been injected. Give Play time and retry the generated APK.
+            git checkout -- locale/completion-overlays 2>/dev/null || true
+            sleep 30
+          done
+
+          if [[ "$success" != "1" ]]; then
+            echo "::error::Google Play translations were not complete after 12 minutes."
+            exit 1
+          fi
+
+      - name: Compile and audit translated locales
+        run: |
+          npm run i18n:po:compile
+          npm run i18n:validate-json
+          npm run i18n:po:audit
+          node --test tests/play-translation-bridge.test.mjs
+          node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/platform-language-parity.test.ts
+
+      - name: Verify generated runtime dictionaries
+        run: node scripts/verify-generated-runtime-locales.mjs
+
+      - name: Review translation changes
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git status --short
+
+          if git diff --quiet -- locale/completion-overlays src/i18n/locales; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit translated dictionaries
+        if: steps.changes.outputs.changed == 'true'
+        id: commit
+        shell: bash
+        env:
+          VERSION_CODE: ${{ inputs.version_code }}
+        run: |
+          set -euo pipefail
+          branch="i18n/play-sync-${VERSION_CODE}-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add locale/completion-overlays src/i18n/locales
+          git commit -m "i18n: sync complete Google Play translations"
+          git push --set-upstream origin "$branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Open translation pull request
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.commit.outputs.branch }}
+          VERSION_CODE: ${{ inputs.version_code }}
+        run: |
+          set -euo pipefail
+          body=$(cat <<EOF
+          ## Google Play translation sync
+
+          Imports Google Play Gemini-generated App strings translations from Android versionCode **$VERSION_CODE** into the Studio PO completion-overlay pipeline.
+
+          Existing translator-authored PO values and reviewed overlays are preserved. Only entries that still resolve to the English source are backfilled from Play.
+
+          Validation performed by the workflow:
+
+          - PO → JSON compilation;
+          - JSON key parity;
+          - effective translation completeness audit;
+          - generated-runtime verification;
+          - Google Play translation bridge tests;
+          - platform locale parity tests.
+
+          Google Play is used as the machine-translation source; the resulting repository changes remain reviewable before merge.
+          EOF
+          )
+
+          gh pr create             --base main             --head "$BRANCH"             --title "Complete Studio translations from Google Play"             --body "$body"
+
+      - name: No translation changes
+        if: steps.changes.outputs.changed != 'true'
+        run: echo "No new Google Play translation values were required."
