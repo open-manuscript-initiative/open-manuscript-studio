@@ -37,6 +37,7 @@ const connectionSchema = z.object({
     'integration_token',
   ]),
   secret: z.string().min(1).max(16384).optional(),
+  clearSecret: z.boolean().default(false),
   config: z.record(z.string(), z.unknown()).optional(),
   enabled: z.boolean().default(true),
 });
@@ -239,6 +240,16 @@ userIntegrationRouter.post(
       return;
     }
 
+    if (body.data.secret && body.data.clearSecret) {
+      response.status(400).json({
+        error: {
+          code: 'INTEGRATION_SECRET_CLEAR_CONFLICT',
+          message: 'A connection secret cannot be supplied and cleared in the same request.',
+        },
+      });
+      return;
+    }
+
     const provider = getIntegrationProvider(providerId.data);
     if (!provider) {
       response.status(404).json({
@@ -329,7 +340,11 @@ userIntegrationRouter.post(
         authenticationMode: body.data.authenticationMode,
         enabled: body.data.enabled,
         ...(config !== undefined ? { config } : {}),
-        ...(encryptedSecret ? { encryptedSecret } : {}),
+        ...(body.data.clearSecret
+          ? { encryptedSecret: null }
+          : encryptedSecret
+            ? { encryptedSecret }
+            : {}),
         status: 'CONFIGURED',
         lastError: null,
       },
