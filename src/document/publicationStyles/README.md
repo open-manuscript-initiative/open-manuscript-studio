@@ -64,7 +64,14 @@ Editable typography groups include:
 
 ## Live publication editor
 
-The Publication menu renders the complete current manuscript inside the selected publication style instead of showing placeholder preview text. The surface remains a normal rich-text editor: changing a paragraph into a heading, quotation or list updates the structured OMI manuscript immediately, while page and typography changes update the active export style without rewriting manuscript semantics.
+The Publication menu renders the complete current manuscript inside the selected publication style instead of showing placeholder preview text. The surface remains a normal rich-text editor: changing a paragraph into a heading, quotation or list updates the structured OMI manuscript immediately, while visual changes update the active export style without rewriting manuscript semantics.
+
+The view switch keeps one editor and one canonical OMI document behind two live presentations:
+
+- **Print layout** shows page size, margins, page gaps, running headers, page footnotes and print-only typesetting corrections.
+- **HTML5 visual editor** shows the same editable content as one responsive semantic article without page geometry, running headers, page numbers or stored page breaks. Notes are collected into the semantic notes section, and editorial tracked changes and comments remain visible.
+
+Switching views never serializes presentation HTML back into the manuscript. Edits made in either view are projected through the same continuous Tiptap document and therefore remain available after switching.
 
 The on-screen page width, trim ratio, margins, gutter, bleed, crop marks, running headers, type sizes, leading and paragraph indentation are read from the same style object used by the HTML/print export renderer. Page guides are an editing aid; the final PDF page fragmentation remains the responsibility of the print renderer and its CSS Paged Media rules.
 

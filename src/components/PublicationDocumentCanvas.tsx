@@ -1,4 +1,5 @@
 import type { JSONContent } from '@tiptap/core';
+import { FileCode2, FileText } from 'lucide-react';
 import {
   useId,
   useLayoutEffect,
@@ -43,6 +44,7 @@ const PIXELS_PER_MM = 96 / 25.4;
 const PIXELS_PER_POINT = 96 / 72;
 
 type PublicationZoom = 'fit' | 50 | 75 | 100;
+export type PublicationDocumentViewMode = 'print' | 'html';
 const EMPTY_PUBLICATION_CORRECTIONS = [] as const;
 const EMPTY_PUBLICATION_FLOW_BREAKS: readonly OmiPublicationFlowBreak[] = [];
 
@@ -55,13 +57,19 @@ interface PublicationPaginationState {
 
 interface PublicationDocumentCanvasProps {
   style: PublicationStyle;
+  viewMode: PublicationDocumentViewMode;
+  onViewModeChange: (mode: PublicationDocumentViewMode) => void;
   onProofingSelection?: (selection: ProofingSelection | null) => void;
 }
 
 interface PublicationCanvasCopy {
   editor: string;
-  description: string;
+  printDescription: string;
+  htmlDescription: string;
+  view: string;
   printLayout: string;
+  htmlLayout: string;
+  responsiveWidth: string;
   zoom: string;
   fit: string;
   pages: (count: number) => string;
@@ -77,6 +85,8 @@ interface PublicationCanvasCopy {
 
 export function PublicationDocumentCanvas({
   style,
+  viewMode,
+  onViewModeChange,
   onProofingSelection,
 }: PublicationDocumentCanvasProps) {
   const { locale } = useTranslation();
@@ -112,7 +122,11 @@ export function PublicationDocumentCanvas({
   const fitScale = stageWidth > 0
     ? Math.min(1, Math.max(0.25, (stageWidth - 34) / physicalWidth))
     : 0.75;
-  const scale = zoom === 'fit' ? fitScale : zoom / 100;
+  const scale = viewMode === 'html'
+    ? 1
+    : zoom === 'fit'
+      ? fitScale
+      : zoom / 100;
   const pageWidth = physicalWidth * scale;
   const pageHeight = pageHeightMm * PIXELS_PER_MM * scale;
   const topMargin = topMarginMm * PIXELS_PER_MM * scale;
@@ -179,6 +193,16 @@ export function PublicationDocumentCanvas({
       .filter((annotation) => getNoteKind(annotation) === 'footnote' && numbers.has(annotation.id))
       .map((annotation) => ({ id: annotation.id, label: numbers.get(annotation.id), text: plainText(annotation.body) }));
   }, [manuscript]);
+  const semanticNotes = useMemo(() => {
+    const numbers = buildNoteNumberMap(manuscript);
+    return manuscript.annotations
+      .filter((annotation) => annotation.type === 'note')
+      .map((annotation, index) => ({
+        id: annotation.id,
+        label: numbers.get(annotation.id) ?? index + 1,
+        text: plainText(annotation.body),
+      }));
+  }, [manuscript]);
   const noteById = useMemo(() => new Map(notes.map((note) => [note.id, note])), [notes]);
   const endnotes = useMemo(() => manuscript.annotations.filter(
     (annotation) => getNoteKind(annotation) === 'endnote',
@@ -198,6 +222,22 @@ export function PublicationDocumentCanvas({
   }, []);
 
   useLayoutEffect(() => {
+    if (viewMode !== 'print') {
+      setPagination((current) => (
+        current.pageCount === 1
+          && current.css === ''
+          && current.pageNotes.length === 0
+          && current.flowBreaks.length === 0
+          ? current
+          : {
+              pageCount: 1,
+              css: '',
+              pageNotes: [],
+              flowBreaks: EMPTY_PUBLICATION_FLOW_BREAKS,
+            }
+      ));
+      return;
+    }
     const content = contentRef.current;
     if (!content) return;
 
@@ -345,6 +385,7 @@ export function PublicationDocumentCanvas({
     style.page.mirroredMargins,
     style,
     usablePageHeight,
+    viewMode,
   ]);
 
   function updateDocument(_documentId: string, content: string): void {
@@ -369,8 +410,13 @@ export function PublicationDocumentCanvas({
   const heading1 = style.styles.heading1;
   const heading2 = style.styles.heading2;
   const note = style.styles.footnote;
-  const pageCount = pagination.pageCount;
-  const paragraphStyleCss = buildLiveParagraphStyleCss(canvasId, style, scale);
+  const pageCount = viewMode === 'print' ? pagination.pageCount : 1;
+  const paragraphStyleCss = buildLiveParagraphStyleCss(
+    canvasId,
+    style,
+    scale,
+    viewMode,
+  );
   const runningHeaderValues = {
     articleTitle: manuscript.title,
     shortArticleTitle: shorten(manuscript.title, 72),
@@ -379,11 +425,7 @@ export function PublicationDocumentCanvas({
     issue: publisherIdentity.issue.number,
     year: publisherIdentity.issue.year || manuscript.updatedAt.slice(0, 4),
   };
-  const pageStyle = {
-    width: `${pageWidth}px`,
-    height: `${pageHeight * pageCount + pageGap * Math.max(0, pageCount - 1)}px`,
-    marginTop: `${Math.max(8, bleed + 8)}px`,
-    marginBottom: `${Math.max(8, bleed + 8)}px`,
+  const publicationStyleVariables = {
     fontFamily: `${style.fonts.body.family}, ${style.fonts.body.fallback}`,
     fontWeight: body.fontWeight,
     fontStyle: body.fontStyle,
@@ -425,13 +467,24 @@ export function PublicationDocumentCanvas({
     '--omi-publication-heading-two-before': `${heading2.spaceBefore * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-heading-two-after': `${heading2.spaceAfter * PIXELS_PER_POINT * scale}px`,
     '--omi-publication-body-align': body.alignment,
-    '--omi-publication-hyphens': body.hyphenation ? 'auto' : 'none',
+    '--omi-publication-hyphens': viewMode === 'print' && body.hyphenation ? 'auto' : 'none',
   } as CSSProperties;
-  const contentStyle = {
-    top: `${topMargin}px`,
-    left: `${firstPageLeftMargin}px`,
-    width: `${contentWidth}px`,
-  } as CSSProperties;
+  const pageStyle = viewMode === 'print'
+    ? {
+        ...publicationStyleVariables,
+        width: `${pageWidth}px`,
+        height: `${pageHeight * pageCount + pageGap * Math.max(0, pageCount - 1)}px`,
+        marginTop: `${Math.max(8, bleed + 8)}px`,
+        marginBottom: `${Math.max(8, bleed + 8)}px`,
+      }
+    : publicationStyleVariables;
+  const contentStyle = viewMode === 'print'
+    ? {
+        top: `${topMargin}px`,
+        left: `${firstPageLeftMargin}px`,
+        width: `${contentWidth}px`,
+      } as CSSProperties
+    : undefined;
   const rulerStyle = {
     width: `${pageWidth}px`,
     '--omi-publication-ruler-left': `${firstPageLeftMargin}px`,
@@ -442,46 +495,77 @@ export function PublicationDocumentCanvas({
   return (
     <section
       id={canvasId}
-      className="publication-document-canvas"
+      className={`publication-document-canvas publication-document-canvas--${viewMode}`}
       aria-labelledby="publication-document-canvas-title"
     >
       {pagination.css || paragraphStyleCss
-        ? <style>{`${paragraphStyleCss}\n${pagination.css}`}</style>
+        ? <style>{`${paragraphStyleCss}\n${viewMode === 'print' ? pagination.css : ''}`}</style>
         : null}
       <header className="publication-document-canvas-toolbar">
         <div>
           <strong id="publication-document-canvas-title">{copy.editor}</strong>
-          <span>{copy.description}</span>
+          <span>{viewMode === 'print' ? copy.printDescription : copy.htmlDescription}</span>
         </div>
         <div className="publication-document-canvas-status">
-          <span className="publication-document-view-mode">{copy.printLayout}</span>
-          <span aria-live="polite">{copy.pages(pageCount)}</span>
-          <label>
-            <span>{copy.zoom}</span>
-            <select
-              value={String(zoom)}
-              onChange={(event) => setZoom(parseZoom(event.target.value))}
+          <div className="publication-document-view-switch" role="group" aria-label={copy.view}>
+            <button
+              type="button"
+              aria-pressed={viewMode === 'print'}
+              onClick={() => onViewModeChange('print')}
             >
-              <option value="fit">{copy.fit}</option>
-              <option value="50">50%</option>
-              <option value="75">75%</option>
-              <option value="100">100%</option>
-            </select>
-          </label>
+              <FileText size={15} aria-hidden="true" />
+              <span>{copy.printLayout}</span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={viewMode === 'html'}
+              onClick={() => onViewModeChange('html')}
+            >
+              <FileCode2 size={15} aria-hidden="true" />
+              <span>{copy.htmlLayout}</span>
+            </button>
+          </div>
+          {viewMode === 'print' ? (
+            <>
+              <span aria-live="polite">{copy.pages(pageCount)}</span>
+              <label>
+                <span>{copy.zoom}</span>
+                <select
+                  value={String(zoom)}
+                  onChange={(event) => setZoom(parseZoom(event.target.value))}
+                >
+                  <option value="fit">{copy.fit}</option>
+                  <option value="50">50%</option>
+                  <option value="75">75%</option>
+                  <option value="100">100%</option>
+                </select>
+              </label>
+            </>
+          ) : (
+            <span className="publication-document-responsive-status">{copy.responsiveWidth}</span>
+          )}
         </div>
       </header>
 
       <div
         ref={stageRef}
-        className="publication-document-canvas-stage"
-        aria-label={copy.printLayout}
+        className={`publication-document-canvas-stage publication-document-canvas-stage--${viewMode}`}
+        aria-label={viewMode === 'print' ? copy.printLayout : copy.htmlLayout}
       >
-        <div className="publication-document-ruler" style={rulerStyle} aria-hidden="true">
-          <span className="publication-document-ruler-margin publication-document-ruler-margin--left" />
-          <span className="publication-document-ruler-margin publication-document-ruler-margin--right" />
-        </div>
-        <article className="publication-document-paper" style={pageStyle} lang={manuscript.locale}>
-          <div className="publication-document-page-guides" aria-hidden="true">
+        {viewMode === 'print' ? (
+          <div className="publication-document-ruler" style={rulerStyle} aria-hidden="true">
+            <span className="publication-document-ruler-margin publication-document-ruler-margin--left" />
+            <span className="publication-document-ruler-margin publication-document-ruler-margin--right" />
+          </div>
+        ) : null}
+        <article
+          className={`publication-document-paper publication-document-paper--${viewMode}`}
+          data-publication-view={viewMode}
+          style={pageStyle}
+          lang={manuscript.locale}
+        >
+          {viewMode === 'print' ? (
+            <div className="publication-document-page-guides" aria-hidden="true">
             {Array.from({ length: pageCount }, (_, index) => {
               const pageNumber = firstPageNumber + index;
               const evenPage = pageNumber % 2 === 0;
@@ -523,9 +607,14 @@ export function PublicationDocumentCanvas({
                 </div>
               );
             })}
-          </div>
+            </div>
+          ) : null}
 
-          <div ref={contentRef} className="publication-document-content" style={contentStyle}>
+          <div
+            ref={contentRef}
+            className={`publication-document-content publication-document-content--${viewMode}`}
+            style={contentStyle}
+          >
             <header className="publication-document-front-matter">
               <AutoGrowPublicationField
                 className="publication-document-title"
@@ -591,17 +680,37 @@ export function PublicationDocumentCanvas({
                   manuscriptLanguage={manuscript.locale}
                   className="publication-layout-document-editor"
                   continuous
-                  proofingMode="publication"
-                  publicationCorrections={publicationCorrections}
-                  publicationFlowBreaks={pagination.flowBreaks}
-                  onProofingSelection={onProofingSelection}
+                  proofingMode={viewMode === 'print' ? 'publication' : 'editor'}
+                  publicationCorrections={viewMode === 'print' ? publicationCorrections : undefined}
+                  publicationFlowBreaks={viewMode === 'print' ? pagination.flowBreaks : undefined}
+                  onProofingSelection={viewMode === 'print' ? onProofingSelection : undefined}
                 />
               </div>
             ) : (
               <p className="publication-document-empty">{copy.empty}</p>
             )}
 
-            {endnotes.length ? (
+            {viewMode === 'html' && semanticNotes.length ? (
+              <section
+                className="publication-document-notes publication-document-html-notes"
+                role="doc-endnotes"
+                aria-labelledby={`${canvasId}-notes-heading`}
+              >
+                <h2 id={`${canvasId}-notes-heading`}>{copy.notes}</h2>
+                <ol>
+                  {semanticNotes.map((annotation) => (
+                    <li
+                      id={`${canvasId}-note-${annotation.id}`}
+                      role="doc-endnote"
+                      value={annotation.label}
+                      key={annotation.id}
+                    >
+                      {annotation.text}
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            ) : viewMode === 'print' && endnotes.length ? (
               <section className="publication-document-notes" aria-label={copy.notes}>
                 <ol>
                   {endnotes.map((annotation) => (
@@ -611,14 +720,16 @@ export function PublicationDocumentCanvas({
               </section>
             ) : null}
           </div>
-          <div ref={noteMeasureRef} className="publication-page-footnotes publication-page-footnotes--measure" aria-hidden="true" style={{ width: contentWidth }}>
-            {notes.map((note) => (
-              <div className="publication-page-note" data-publication-note-id={note.id} key={note.id}>
-                <span className="publication-page-note-label">{note.label}</span>{note.text}
-              </div>
-            ))}
-          </div>
-          {pagination.pageNotes.map((fragments, pageIndex) => {
+          {viewMode === 'print' ? (
+            <div ref={noteMeasureRef} className="publication-page-footnotes publication-page-footnotes--measure" aria-hidden="true" style={{ width: contentWidth }}>
+              {notes.map((note) => (
+                <div className="publication-page-note" data-publication-note-id={note.id} key={note.id}>
+                  <span className="publication-page-note-label">{note.label}</span>{note.text}
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {viewMode === 'print' ? pagination.pageNotes.map((fragments, pageIndex) => {
             if (!fragments?.length) return null;
             const mirrored = style.page.mirroredMargins && (firstPageNumber + pageIndex) % 2 === 0;
             return (
@@ -644,7 +755,7 @@ export function PublicationDocumentCanvas({
                 })}
               </section>
             );
-          })}
+          }) : null}
         </article>
       </div>
     </section>
@@ -939,6 +1050,7 @@ function buildLiveParagraphStyleCss(
   canvasId: string,
   style: PublicationStyle,
   scale: number,
+  viewMode: PublicationDocumentViewMode,
 ): string {
   return style.paragraphStyles.items.map((definition) => {
     const resolved = resolvePublicationParagraphStyle(style, definition.id);
@@ -947,7 +1059,8 @@ function buildLiveParagraphStyleCss(
     const selector = definition.id === style.paragraphStyles.defaultStyleId
       ? `${assignedSelector}, ${editor} > :is(p, blockquote, ul, ol, pre):not([data-paragraph-style-id])`
       : assignedSelector;
-    return `${selector} { font-family: ${cssStringLiteral(resolved.fontFamily)}, ${cssStringLiteral(style.fonts.body.fallback)}; font-size: ${cssPixel(resolved.fontSize * PIXELS_PER_POINT * scale)}; line-height: ${cssPixel(resolved.lineHeight * PIXELS_PER_POINT * scale)}; font-weight: ${resolved.fontWeight}; font-style: ${resolved.fontStyle}; text-align: ${resolved.alignment}; text-indent: ${cssPixel(resolved.firstLineIndent * PIXELS_PER_MM * scale)}; margin-top: ${cssPixel(resolved.spaceBefore * PIXELS_PER_POINT * scale)}; margin-bottom: ${cssPixel(resolved.spaceAfter * PIXELS_PER_POINT * scale)}; margin-left: ${cssPixel(resolved.leftIndent * PIXELS_PER_MM * scale)}; margin-right: ${cssPixel(resolved.rightIndent * PIXELS_PER_MM * scale)}; -webkit-hyphens: ${resolved.hyphenation ? 'auto' : 'none'}; hyphens: ${resolved.hyphenation ? 'auto' : 'none'}; widows: ${Math.max(1, Math.trunc(resolved.widows))}; orphans: ${Math.max(1, Math.trunc(resolved.orphans))}; }`;
+    const hyphenation = viewMode === 'print' && resolved.hyphenation ? 'auto' : 'none';
+    return `${selector} { font-family: ${cssStringLiteral(resolved.fontFamily)}, ${cssStringLiteral(style.fonts.body.fallback)}; font-size: ${cssPixel(resolved.fontSize * PIXELS_PER_POINT * scale)}; line-height: ${cssPixel(resolved.lineHeight * PIXELS_PER_POINT * scale)}; font-weight: ${resolved.fontWeight}; font-style: ${resolved.fontStyle}; text-align: ${resolved.alignment}; text-indent: ${cssPixel(resolved.firstLineIndent * PIXELS_PER_MM * scale)}; margin-top: ${cssPixel(resolved.spaceBefore * PIXELS_PER_POINT * scale)}; margin-bottom: ${cssPixel(resolved.spaceAfter * PIXELS_PER_POINT * scale)}; margin-left: ${cssPixel(resolved.leftIndent * PIXELS_PER_MM * scale)}; margin-right: ${cssPixel(resolved.rightIndent * PIXELS_PER_MM * scale)}; -webkit-hyphens: ${hyphenation}; hyphens: ${hyphenation}; widows: ${Math.max(1, Math.trunc(resolved.widows))}; orphans: ${Math.max(1, Math.trunc(resolved.orphans))}; }`;
   }).join('\n');
 }
 
@@ -991,8 +1104,12 @@ function canvasCopy(locale: string): PublicationCanvasCopy {
   if (locale === 'hu') {
     return {
       editor: 'Élő kiadványszerkesztő',
-      description: 'A kézirat tartalma és a nyomtatási stílus ugyanazon a szerkeszthető oldalon látható.',
+      printDescription: 'A kézirat tartalma és a nyomtatási stílus ugyanazon a szerkeszthető oldalon látható.',
+      htmlDescription: 'A szemantikus HTML5-kiadvány folyamatos, reszponzív nézete közvetlenül szerkeszthető.',
+      view: 'Vizuális szerkesztő nézete',
       printLayout: 'Nyomtatási elrendezés',
+      htmlLayout: 'HTML5 vizuális szerkesztő',
+      responsiveWidth: 'Reszponzív szélesség',
       zoom: 'Nagyítás',
       fit: 'Oldalszélesség',
       pages: (count) => `${count} becsült oldal`,
@@ -1009,8 +1126,12 @@ function canvasCopy(locale: string): PublicationCanvasCopy {
   if (locale === 'de') {
     return {
       editor: 'Live-Publikationseditor',
-      description: 'Manuskriptinhalt und Druckstil erscheinen gemeinsam auf einer bearbeitbaren Seite.',
+      printDescription: 'Manuskriptinhalt und Druckstil erscheinen gemeinsam auf einer bearbeitbaren Seite.',
+      htmlDescription: 'Die fortlaufende, responsive Ansicht der semantischen HTML5-Publikation ist direkt bearbeitbar.',
+      view: 'Ansicht des visuellen Editors',
       printLayout: 'Drucklayout',
+      htmlLayout: 'Visueller HTML5-Editor',
+      responsiveWidth: 'Responsive Breite',
       zoom: 'Zoom',
       fit: 'Seitenbreite',
       pages: (count) => `${count} geschätzte Seite${count === 1 ? '' : 'n'}`,
@@ -1026,8 +1147,12 @@ function canvasCopy(locale: string): PublicationCanvasCopy {
   }
   return {
     editor: 'Live publication editor',
-    description: 'Manuscript content and print styling appear together on the same editable page.',
+    printDescription: 'Manuscript content and print styling appear together on the same editable page.',
+    htmlDescription: 'The continuous, responsive semantic HTML5 publication view is directly editable.',
+    view: 'Visual editor view',
     printLayout: 'Print layout',
+    htmlLayout: 'HTML5 visual editor',
+    responsiveWidth: 'Responsive width',
     zoom: 'Zoom',
     fit: 'Fit width',
     pages: (count) => `${count} estimated page${count === 1 ? '' : 's'}`,
