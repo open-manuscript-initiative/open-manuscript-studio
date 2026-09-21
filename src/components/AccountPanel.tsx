@@ -2,7 +2,6 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   BadgeCheck,
   Building2,
-  LogOut,
   Save,
   ShieldCheck,
   UserRound,
@@ -35,7 +34,6 @@ export function AccountPanel() {
   const labels = getAccountPanelCopy(locale);
   const user = useAuthStore(getCurrentUser);
   const update = useAuthStore((state) => state.updateCurrentUser);
-  const logout = useAuthStore((state) => state.logout);
   const loading = useAuthStore((state) => state.isLoading);
   const error = useAuthStore((state) => state.error);
   const [profileView, setProfileView] = useState<ProfileView>('personal');
@@ -224,16 +222,6 @@ export function AccountPanel() {
           </div>
 
           <LinkedIdentitiesSettings locale={locale} email={user.email} />
-
-          <button
-            type="button"
-            className="account-logout"
-            onClick={() => void logout()}
-            disabled={loading}
-          >
-            <LogOut size={17} aria-hidden="true" />
-            {labels.logout}
-          </button>
 
           <AccountDeletionSection email={user.email} />
         </aside>
