@@ -80,6 +80,8 @@ test('live publication editor opens as its own full-screen menu workspace', () =
 
 test('Studio navigation collapses without leaving the active workspace and Home is explicit', () => {
   assert.match(studioMenu, /const \[navigationOpen, setNavigationOpen\] = useState\(true\)/);
+  assert.match(studioMenu, /useState<StudioMenuView \| null>\(null\)/);
+  assert.match(studioMenu, /studio-menu-drawer--navigation-only/);
   assert.match(studioMenu, /hidden=\{!navigationOpen\}/);
   assert.match(studioMenu, /aria-expanded=\{navigationOpen\}/);
   assert.match(studioMenu, /setNavigationOpen\(false\)/);
