@@ -6,6 +6,14 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Adds one shared cross-platform interface-language registry covering all 49
+  Google Play locale entries. Regional English, Spanish, French and Portuguese
+  store locales map to canonical Studio UI locales; Chinese variants remain
+  distinct. The existing Irish and Maltese locales are retained, yielding 47
+  selectable UI locales across web, desktop and mobile builds. Newly exposed
+  locales without reviewed PO catalogues currently use the English reference
+  fallback.
+
 - Keeps the persistent mobile Studio header visible above the full-width Account
   workspace and removes the duplicate Account-local logout action; logout
   remains available only in the persistent top header.
