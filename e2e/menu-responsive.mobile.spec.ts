@@ -10,7 +10,10 @@ test('every manuscript-menu view stays inside the mobile viewport', async ({ pag
   await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Manuscript menu' });
   const content = dialog.locator('.studio-menu-content');
+  const navigation = dialog.getByRole('navigation', { name: 'Manuscript menu' });
   await expect(dialog).toBeVisible();
+  await expect(navigation).toBeVisible();
+  await expectFullScreenScrollFreeNavigation(dialog, navigation);
 
   const navButtons = dialog.locator('.studio-menu-nav-button:not([data-home-navigation="true"])');
   const navCount = await navButtons.count();
@@ -23,7 +26,7 @@ test('every manuscript-menu view stays inside the mobile viewport', async ({ pag
       const toggle = dialog.getByRole('button', { name: 'Manuscript menu', exact: true });
       if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
       await button.click();
-      await expect(dialog.getByRole('navigation', { name: 'Manuscript menu' })).toBeHidden();
+      await expect(navigation).toBeHidden();
       await expect(toggle).toBeFocused();
       await settleLayout(content);
       await expectNoMenuOverflow(content);
@@ -45,9 +48,9 @@ test('every manuscript-menu view stays inside the mobile viewport', async ({ pag
 
   const toggle = dialog.getByRole('button', { name: 'Manuscript menu', exact: true });
   await toggle.click();
-  await expect(dialog.getByRole('navigation', { name: 'Manuscript menu' })).toBeVisible();
+  await expect(navigation).toBeVisible();
   await toggle.click();
-  await expect(dialog.getByRole('navigation', { name: 'Manuscript menu' })).toBeHidden();
+  await expect(navigation).toBeHidden();
   await expect(computedCrossReference).toBeVisible();
 
   await toggle.click();
@@ -55,6 +58,51 @@ test('every manuscript-menu view stays inside the mobile viewport', async ({ pag
   await expect(dialog).toBeHidden();
   await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
 });
+
+async function expectFullScreenScrollFreeNavigation(
+  dialog: Locator,
+  navigation: Locator,
+): Promise<void> {
+  const audit = await navigation.evaluate((node) => {
+    const element = node as HTMLElement;
+    const dialogElement = element.closest<HTMLElement>('.studio-menu-drawer');
+    const header = dialogElement?.querySelector<HTMLElement>('.studio-menu-header');
+    const rect = element.getBoundingClientRect();
+    const dialogRect = dialogElement?.getBoundingClientRect();
+    const headerRect = header?.getBoundingClientRect();
+    return {
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+      top: rect.top,
+      bottom: rect.bottom,
+      dialogTop: dialogRect?.top ?? null,
+      dialogBottom: dialogRect?.bottom ?? null,
+      headerBottom: headerRect?.bottom ?? null,
+    };
+  });
+
+  const viewport = navigation.page().viewportSize();
+  expect(viewport).not.toBeNull();
+  expect(audit.scrollWidth).toBeLessThanOrEqual(audit.clientWidth + 1);
+  expect(audit.scrollHeight).toBeLessThanOrEqual(audit.clientHeight + 1);
+  expect(audit.dialogTop).toBeGreaterThanOrEqual(-1);
+  expect(audit.dialogBottom).toBeLessThanOrEqual(viewport!.height + 1);
+  expect(audit.top).toBeGreaterThanOrEqual((audit.headerBottom ?? 0) - 1);
+  expect(audit.bottom).toBeLessThanOrEqual(viewport!.height + 1);
+
+  const dialogAudit = await dialog.evaluate((node) => {
+    const element = node as HTMLElement;
+    const rect = element.getBoundingClientRect();
+    return {
+      width: rect.width,
+      height: rect.height,
+    };
+  });
+  expect(dialogAudit.width).toBeGreaterThanOrEqual(viewport!.width - 1);
+  expect(dialogAudit.height).toBeGreaterThanOrEqual(viewport!.height - 1);
+}
 
 async function settleLayout(content: Locator): Promise<void> {
   await expect(content).toBeVisible();
