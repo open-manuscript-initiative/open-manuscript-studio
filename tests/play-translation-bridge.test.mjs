@@ -75,7 +75,7 @@ test('aapt2 resource dump is normalized into canonical Studio locales', () => {
 
   const dump = [
     'Binary APK',
-    `    resource 0x7f120001 string/${save.resource}`,
+    `    resource 0x7f120001 string/${save.resource}: t=0x03 d=0x00000001 (s=0x0008 r=0x00)`,
     '      () "Save"',
     '      (af) "Stoor"',
     '      (fr-rCA) "Enregistrer CA"',
@@ -85,7 +85,7 @@ test('aapt2 resource dump is normalized into canonical Studio locales', () => {
     '      (b+zh+Hans+CN) "保存"',
     '      (b+zh+Hant+TW) "儲存"',
     '      (b+zh+Hant+HK) "儲存"',
-    `    resource 0x7f120002 string/${close.resource}`,
+    `    resource 0x7f120002 string/${close.resource}: t=0x03 d=0x00000002 (s=0x0008 r=0x00)`,
     '      () "Close"',
     '      (iw) "סגירה"',
     '      (in) "Tutup"',
