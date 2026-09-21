@@ -1,0 +1,118 @@
+.omi-editor-zoom {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  z-index: 210;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--omi-academic-sans, system-ui, sans-serif);
+}
+
+.omi-editor-zoom__toggle,
+.omi-editor-zoom__controls {
+  border: 1px solid rgba(100, 116, 139, 0.35);
+  background: rgba(255, 255, 255, 0.96);
+  color: #334155;
+  box-shadow: 0 0.35rem 1.1rem rgba(15, 23, 42, 0.16);
+  backdrop-filter: blur(8px);
+}
+
+.omi-editor-zoom__toggle {
+  display: none;
+  min-height: 2.35rem;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.omi-editor-zoom__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-height: 2.35rem;
+  padding: 0.25rem 0.35rem;
+  border-radius: 999px;
+}
+
+.omi-editor-zoom__controls > button {
+  display: inline-grid;
+  min-width: 2rem;
+  height: 2rem;
+  place-items: center;
+  padding: 0 0.35rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.omi-editor-zoom__controls > button:hover:not(:disabled),
+.omi-editor-zoom__controls > button:focus-visible,
+.omi-editor-zoom__toggle:hover,
+.omi-editor-zoom__toggle:focus-visible {
+  background: #eef2f7;
+  color: #521721;
+  outline: none;
+}
+
+.omi-editor-zoom__controls > button:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.omi-editor-zoom__controls input[type='range'] {
+  width: clamp(6rem, 12vw, 10rem);
+  accent-color: var(--omi-academic-burgundy, #6d2130);
+}
+
+.omi-editor-zoom__percent {
+  min-width: 3.2rem !important;
+  font-size: 0.72rem !important;
+  font-weight: 750 !important;
+}
+
+.omi-manuscript-page {
+  zoom: var(--omi-editor-zoom, 1);
+}
+
+@media (max-width: 760px) {
+  .omi-editor-zoom {
+    right: max(0.65rem, env(safe-area-inset-right, 0px));
+    bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
+    align-items: flex-end;
+    flex-direction: column-reverse;
+  }
+
+  .omi-editor-zoom__toggle {
+    display: inline-flex;
+  }
+
+  .omi-editor-zoom__controls {
+    display: none;
+    width: min(20rem, calc(100vw - 1.3rem));
+    box-sizing: border-box;
+    justify-content: center;
+  }
+
+  .omi-editor-zoom[data-open='true'] .omi-editor-zoom__controls {
+    display: flex;
+  }
+
+  .omi-editor-zoom__controls input[type='range'] {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 4.5rem;
+  }
+
+  .omi-document-canvas {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+}
