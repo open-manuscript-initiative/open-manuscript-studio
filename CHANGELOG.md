@@ -6,6 +6,16 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Adds complete translation infrastructure for all 47 canonical Studio UI
+  locales. Twenty-three newly exposed Play locales receive canonical PO
+  catalogues; Play AAB builds mirror all 665 unique English UI strings into
+  temporary Android translation resources, and the Google Play Translation Sync
+  workflow imports Play-generated translations into reviewed completion
+  overlays without overwriting existing translator work. Older partially
+  translated catalogues are completed by the same backfill path; Irish is kept
+  complete from its reviewed overlay and Maltese is completed by reviewed
+  repository overlays outside the Play matrix.
+
 - Adds one shared cross-platform interface-language registry covering all 49
   Google Play locale entries. Regional English, Spanish, French and Portuguese
   store locales map to canonical Studio UI locales; Chinese variants remain
