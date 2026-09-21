@@ -655,7 +655,7 @@
     z-index: 120;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-rows: minmax(0, 1fr);
+    grid-auto-rows: minmax(4.25rem, auto);
     width: 100%;
     height: 100%;
     max-width: 100vw;
@@ -665,7 +665,7 @@
     overflow: hidden;
     padding: .7rem;
     background: #f5f2ec;
-    touch-action: manipulation;
+    touch-action: pan-y;
   }
 
   .studio-menu-nav-button {
