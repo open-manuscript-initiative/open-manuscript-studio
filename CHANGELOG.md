@@ -6,6 +6,10 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Makes the Account workspace use the full mobile viewport width, removing the
+  side gutter/backdrop and constraining account cards and profile content to
+  the phone width without horizontal overflow.
+
 - Isolates the full-screen mobile manuscript navigation from the currently
   mounted workspace so sticky toolbars, popovers, and editor controls cannot
   bleed through the menu. External workspaces such as Lists, OMI Agents,
