@@ -1,3 +1,17 @@
 {
-  "completeLocales": ["it", "fr", "es", "pt", "nl", "pl"]
+  "completeLocales": [
+    "el",
+    "es",
+    "fi",
+    "fr",
+    "ga",
+    "hr",
+    "it",
+    "lt",
+    "lv",
+    "mt",
+    "nl",
+    "pl",
+    "pt"
+  ]
 }
