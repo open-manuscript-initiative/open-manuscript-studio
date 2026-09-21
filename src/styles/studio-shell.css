@@ -662,7 +662,11 @@
     box-sizing: border-box;
     gap: .45rem;
     border: 0;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
     padding: .7rem;
     background: #f5f2ec;
     touch-action: pan-y;
@@ -671,12 +675,12 @@
   .studio-menu-nav-button {
     width: 100%;
     min-width: 0;
-    min-height: 0;
-    height: 100%;
+    min-height: 4.25rem;
+    height: auto;
     flex: none;
     justify-content: flex-start;
     gap: .5rem;
-    padding: .35rem .45rem;
+    padding: .55rem .6rem;
     border: 1px solid #e2ddd4;
     border-radius: .65rem;
     background: rgba(255, 255, 255, .72);
