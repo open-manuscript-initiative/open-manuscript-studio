@@ -45,7 +45,7 @@ jobs:
       - name: Set Android version code for this release run
         id: android_version
         env:
-          ANDROID_VERSION_CODE_RUN_OFFSET: '1001'
+          ANDROID_VERSION_CODE_RUN_OFFSET: '1200'
         run: node scripts/prepare-android-version-code.mjs
 
       - name: Set up Node.js

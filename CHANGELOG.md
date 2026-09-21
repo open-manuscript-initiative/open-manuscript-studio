@@ -6,6 +6,10 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+## 0.2.0-beta.4 — 2026-09-21
+
+### Cross-platform catch-up and mobile stabilization
+
 - Adds one shared cross-platform interface-language registry covering all 49
   Google Play locale entries. Regional English, Spanish, French and Portuguese
   store locales map to canonical Studio UI locales; Chinese variants remain
@@ -75,6 +79,31 @@ the portable OMI document model and individual renderers.
   reference, reserving space during pagination and preserving manuscript note
   numbering. Long notes continue on subsequent sheets; endnotes remain at the
   end. Layout recalculates after edits, zoom changes and font loading.
+
+- Adds direct WordPress and generic website/newsletter publishing from the
+  semantic HTML5 publication path. Personal credentials remain encrypted
+  server-side; WordPress uses application passwords, preview/approval precedes
+  external writes, and repeated sends update the same external post.
+
+- Removes the obsolete native-mobile bottom navigation bar now that manuscript
+  navigation and Account access live in the persistent top/menu surfaces. The
+  editor reclaims the released viewport area and respects the device safe-area
+  inset at the bottom.
+
+- Adds a Word-style zoom control to normal manuscript editing: 50–200%,
+  minus/slider/percentage/plus controls, one-click 100% reset, a compact mobile
+  magnifier trigger, and device-local persistence without changing OMI
+  manuscript data.
+
+### Release metadata
+
+- Advances the shared Studio version to **0.2.0-beta.4**.
+- Advances the Windows MSI product version to **0.2.0.4**.
+- Keeps the iOS marketing version at **0.2.0** and advances the experimental
+  iOS build number to **12**.
+- Raises the checked-in Android versionCode floor to **1100** and reserves
+  beta.4 workflow-generated release codes above that floor.
+- No OMI manuscript-format migration is required by this application release.
 
 ## 0.2.0-beta.3 — 2026-09-20
 
