@@ -6,6 +6,11 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Keeps interface language and logout controls in the persistent top header row,
+  alongside menu, OMI Home, and personal account. Opening the manuscript menu
+  from the editor now shows navigation only and does not implicitly activate
+  Document; closing it returns to the unchanged editor workspace.
+
 - Reorganizes the Studio header into two persistent rows: manuscript menu, OMI
   Home brand, and personal account stay in the top row at every responsive
   width, while editing, search, insert, save, language, and logout controls
