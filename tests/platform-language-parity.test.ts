@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import type { SupportedLocale } from '../src/i18n/types.ts';
 import {
   GOOGLE_PLAY_LOCALES,
   GOOGLE_PLAY_TO_STUDIO_LOCALE,
