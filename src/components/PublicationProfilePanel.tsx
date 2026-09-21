@@ -31,6 +31,7 @@ import { PublicationArtifactPanel } from './PublicationArtifactPanel';
 import { HtmlExportPanel } from './HtmlExportPanel';
 import { IdmlPublicationStyleImportPanel } from './IdmlPublicationStyleImportPanel';
 import { JatsExportPanel } from './JatsExportPanel';
+import { NewsletterPublishingPanel } from './NewsletterPublishingPanel';
 import { PublicationStyleExportPanel } from './PublicationStyleExportPanel';
 import { PublisherExportStylesheetPanel } from './PublisherExportStylesheetPanel';
 import { PublisherPrintStylesheetPanel } from './PublisherPrintStylesheetPanel';
@@ -95,6 +96,7 @@ export function PublicationProfilePanel() {
 
       <DirectSubmissionPanel />
       <PublicationArtifactPanel />
+      <NewsletterPublishingPanel />
 
       <section className="publication-profile-selector" aria-labelledby="publication-profile-choose">
         <div className="publication-profile-section-heading">
