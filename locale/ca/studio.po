@@ -1,0 +1,3617 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Open Manuscript Studio\n"
+"Language: ca\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. OMI translation key: /common/save
+msgctxt "/common/save"
+msgid "Save"
+msgstr "Desa"
+
+#. OMI translation key: /common/cancel
+msgctxt "/common/cancel"
+msgid "Cancel"
+msgstr "Desfer"
+
+#. OMI translation key: /common/close
+msgctxt "/common/close"
+msgid "Close"
+msgstr "Tanca"
+
+#. OMI translation key: /common/delete
+msgctxt "/common/delete"
+msgid "Delete"
+msgstr "Elimina"
+
+#. OMI translation key: /common/edit
+msgctxt "/common/edit"
+msgid "Edit"
+msgstr "Edita"
+
+#. OMI translation key: /common/add
+msgctxt "/common/add"
+msgid "Add"
+msgstr "Afegeix"
+
+#. OMI translation key: /common/loading
+msgctxt "/common/loading"
+msgid "Loading…"
+msgstr "Carregant…"
+
+#. OMI translation key: /common/language
+msgctxt "/common/language"
+msgid "Language"
+msgstr "Idioma"
+
+#. OMI translation key: /navigation/documents
+msgctxt "/navigation/documents"
+msgid "Documents"
+msgstr "Documents"
+
+#. OMI translation key: /navigation/editor
+msgctxt "/navigation/editor"
+msgid "Editor"
+msgstr "Editor"
+
+#. OMI translation key: /navigation/metadata
+msgctxt "/navigation/metadata"
+msgid "Metadata"
+msgstr "Mètadades"
+
+#. OMI translation key: /navigation/preview
+msgctxt "/navigation/preview"
+msgid "Preview"
+msgstr "Previsualització"
+
+#. OMI translation key: /navigation/settings
+msgctxt "/navigation/settings"
+msgid "Settings"
+msgstr "Configuració"
+
+#. OMI translation key: /studio/menu
+msgctxt "/studio/menu"
+msgid "Manuscript menu"
+msgstr "Menú de manuscrit"
+
+#. OMI translation key: /studio/closeMenu
+msgctxt "/studio/closeMenu"
+msgid "Close manuscript menu"
+msgstr "Tanca el menú de manuscrit"
+
+#. OMI translation key: /studio/languageSwitcher
+msgctxt "/studio/languageSwitcher"
+msgid "Interface language"
+msgstr "Idioma de la interfície"
+
+#. OMI translation key: /studio/saved
+msgctxt "/studio/saved"
+msgid "Saved"
+msgstr "Desat"
+
+#. OMI translation key: /studio/pending
+msgctxt "/studio/pending"
+msgid "Saving…"
+msgstr "Desant…"
+
+#. OMI translation key: /studio/editorAria
+msgctxt "/studio/editorAria"
+msgid "Manuscript editor"
+msgstr "Editor de manuscrits"
+
+#. OMI translation key: /studio/titlePlaceholder
+msgctxt "/studio/titlePlaceholder"
+msgid "Enter the manuscript title"
+msgstr "Introduïu el títol del manuscrit"
+
+#. OMI translation key: /studio/noSection
+msgctxt "/studio/noSection"
+msgid "No section is selected."
+msgstr "No s'ha seleccionat cap secció."
+
+#. OMI translation key: /studio/navigation/document
+msgctxt "/studio/navigation/document"
+msgid "Document"
+msgstr "Document"
+
+#. OMI translation key: /studio/navigation/manuscript
+msgctxt "/studio/navigation/manuscript"
+msgid "Manuscript data"
+msgstr "Dades del manuscrit"
+
+#. OMI translation key: /studio/navigation/notes
+msgctxt "/studio/navigation/notes"
+msgid "Notes"
+msgstr "Notes"
+
+#. OMI translation key: /studio/navigation/references
+msgctxt "/studio/navigation/references"
+msgid "References"
+msgstr "Referències"
+
+#. OMI translation key: /studio/navigation/contributors
+msgctxt "/studio/navigation/contributors"
+msgid "Contributors"
+msgstr "Col·laboradors"
+
+#. OMI translation key: /studio/navigation/history
+msgctxt "/studio/navigation/history"
+msgid "History"
+msgstr "Historial"
+
+#. OMI translation key: /studio/navigation/tools
+msgctxt "/studio/navigation/tools"
+msgid "Export and tools"
+msgstr "Exportació i eines"
+
+#. OMI translation key: /studio/navigation/settings
+msgctxt "/studio/navigation/settings"
+msgid "Settings"
+msgstr "Configuració"
+
+#. OMI translation key: /studio/document/title
+msgctxt "/studio/document/title"
+msgid "Document structure"
+msgstr "Estructura del document"
+
+#. OMI translation key: /studio/document/description
+msgctxt "/studio/document/description"
+msgid "Choose the section you want to work on. Structural and object information stays out of the writing surface until you need it."
+msgstr "Trieu la secció amb què voleu treballar. La informació estructural i d'objectes es manté fora de l'àrea d'escriptura fins que la necessiteu."
+
+#. OMI translation key: /studio/document/addSection
+msgctxt "/studio/document/addSection"
+msgid "Add section"
+msgstr "Afegeix secció"
+
+#. OMI translation key: /studio/document/sections
+msgctxt "/studio/document/sections"
+msgid "Sections"
+msgstr "Seccions"
+
+#. OMI translation key: /studio/document/objects
+msgctxt "/studio/document/objects"
+msgid "Objects"
+msgstr "Objectes"
+
+#. OMI translation key: /studio/document/annotations
+msgctxt "/studio/document/annotations"
+msgid "Annotations"
+msgstr "Anotacions"
+
+#. OMI translation key: /studio/document/citations
+msgctxt "/studio/document/citations"
+msgid "Citations"
+msgstr "Citacions"
+
+#. OMI translation key: /studio/manuscript/title
+msgctxt "/studio/manuscript/title"
+msgid "Manuscript data"
+msgstr "Dades del manuscrit"
+
+#. OMI translation key: /studio/manuscript/description
+msgctxt "/studio/manuscript/description"
+msgid "Edit manuscript-level information separately from the writing surface."
+msgstr "Editeu la informació a nivell de manuscrit per separat de la superfície d'escriptura."
+
+#. OMI translation key: /studio/tools/title
+msgctxt "/studio/tools/title"
+msgid "Export and tools"
+msgstr "Exportació i eines"
+
+#. OMI translation key: /studio/tools/description
+msgctxt "/studio/tools/description"
+msgid "Secondary, technical and potentially destructive actions are kept outside the writing surface."
+msgstr "Les accions secundàries, tècniques i potencialment destructives es mantenen fora de la superfície d'escriptura."
+
+#. OMI translation key: /studio/tools/export
+msgctxt "/studio/tools/export"
+msgid "Export .omi.json"
+msgstr "Exporta .omi.json"
+
+#. OMI translation key: /studio/tools/exportDescription
+msgctxt "/studio/tools/exportDescription"
+msgid "Create a canonical portable OMI manuscript file after checkpointing pending edits."
+msgstr "Crea un fitxer de manuscrit OMI portàtil i canònic després de desar els canvis pendents."
+
+#. OMI translation key: /studio/tools/reset
+msgctxt "/studio/tools/reset"
+msgid "Reset sample"
+msgstr "Restablix la mostra"
+
+#. OMI translation key: /studio/tools/resetDescription
+msgctxt "/studio/tools/resetDescription"
+msgid "Replace the current alpha sample with a new clean sample manuscript."
+msgstr "Substitueix la mostra de mostra actual per un nou manuscrit de mostra net."
+
+#. OMI translation key: /studio/tools/confirmReset
+msgctxt "/studio/tools/confirmReset"
+msgid "Reset the current sample manuscript? Unsaved and current sample data will be replaced."
+msgstr "Restablix el manuscrit de mostra actual? Les dades no desades i les de la mostra actual seran substituïdes."
+
+#. OMI translation key: /studio/tools/technicalData
+msgctxt "/studio/tools/technicalData"
+msgid "Technical data"
+msgstr "Dades tècniques"
+
+#. OMI translation key: /studio/tools/technicalDescription
+msgctxt "/studio/tools/technicalDescription"
+msgid "Inspect the semantic representation only when technical details are needed."
+msgstr "Inspeccionar la representació semàntica només quan es necessiten detalls tècnics."
+
+#. OMI translation key: /studio/tools/liveJson
+msgctxt "/studio/tools/liveJson"
+msgid "Current section JSON"
+msgstr "JSON de la secció actual"
+
+#. OMI translation key: /studio/tools/synced
+msgctxt "/studio/tools/synced"
+msgid "Synced"
+msgstr "Sincronitzat"
+
+#. OMI translation key: /studio/settings/title
+msgctxt "/studio/settings/title"
+msgid "Interface settings"
+msgstr "Configuració de la interfície"
+
+#. OMI translation key: /studio/settings/description
+msgctxt "/studio/settings/description"
+msgid "Choose which interface languages you want available while working. These preferences are stored on this device."
+msgstr "Trieu quins idiomes de la interfície voleu tenir disponibles mentre treballeu. Aquestes preferències s'emmagatzemen en aquest dispositiu."
+
+#. OMI translation key: /studio/settings/interfaceLanguages
+msgctxt "/studio/settings/interfaceLanguages"
+msgid "Available interface languages"
+msgstr "Idiomes de la interfície disponibles"
+
+#. OMI translation key: /studio/settings/interfaceLanguagesDescription
+msgctxt "/studio/settings/interfaceLanguagesDescription"
+msgid "Enabled languages appear in the quick language switcher in the editor header."
+msgstr "Els idiomes activats apareixen al canviador d'idiomes ràpid del capçal de l'editor."
+
+#. OMI translation key: /studio/settings/currentLanguage
+msgctxt "/studio/settings/currentLanguage"
+msgid "Current interface language"
+msgstr "Idioma de la interfície actual"
+
+#. OMI translation key: /studio/settings/currentLanguageHint
+msgctxt "/studio/settings/currentLanguageHint"
+msgid "The language currently in use must remain enabled. Switch to another language before disabling it."
+msgstr "L'idioma que s'està utilitzant actualment ha de romandre activat. Canvieu a un altre idioma abans de desactivar-lo."
+
+#. OMI translation key: /studio/settings/enabledLanguage
+msgctxt "/studio/settings/enabledLanguage"
+msgid "Available in quick switcher"
+msgstr "Disponible al canviador ràpid"
+
+#. OMI translation key: /studio/settings/disabledLanguage
+msgctxt "/studio/settings/disabledLanguage"
+msgid "Hidden from quick switcher"
+msgstr "Amagat del canviador ràpid"
+
+#. OMI translation key: /studio/settings/futureLanguages
+msgctxt "/studio/settings/futureLanguages"
+msgid "The language registry is extensible. Future translation dictionaries can be added without redesigning this settings screen."
+msgstr "El registre de llengües és extensible. Es poden afegir diccionaris de traducció futurs sense redissenyar aquesta pantalla de configuració."
+
+#. OMI translation key: /manuscript/newDocument
+msgctxt "/manuscript/newDocument"
+msgid "New manuscript"
+msgstr "Nou manuscrit"
+
+#. OMI translation key: /manuscript/documentTitle
+msgctxt "/manuscript/documentTitle"
+msgid "Document title"
+msgstr "Títol del document"
+
+#. OMI translation key: /manuscript/abstract
+msgctxt "/manuscript/abstract"
+msgid "Abstract"
+msgstr "Resum"
+
+#. OMI translation key: /manuscript/keywords
+msgctxt "/manuscript/keywords"
+msgid "Keywords"
+msgstr "Paraules clau"
+
+#. OMI translation key: /manuscript/contributors
+msgctxt "/manuscript/contributors"
+msgid "Contributors"
+msgstr "Col·laboradors"
+
+#. OMI translation key: /manuscript/sections
+msgctxt "/manuscript/sections"
+msgid "Sections"
+msgstr "Seccions"
+
+#. OMI translation key: /manuscript/annotations
+msgctxt "/manuscript/annotations"
+msgid "Notes"
+msgstr "Notes"
+
+#. OMI translation key: /manuscript/citations
+msgctxt "/manuscript/citations"
+msgid "Citations"
+msgstr "Citacions"
+
+#. OMI translation key: /manuscript/bibliography
+msgctxt "/manuscript/bibliography"
+msgid "Bibliography"
+msgstr "Bibliografia"
+
+#. OMI translation key: /manuscript/documentLanguage
+msgctxt "/manuscript/documentLanguage"
+msgid "Document language"
+msgstr "Idioma del document"
+
+#. OMI translation key: /manuscript/originalLanguage
+msgctxt "/manuscript/originalLanguage"
+msgid "Original language"
+msgstr "Idioma original"
+
+#. OMI translation key: /notes/title
+msgctxt "/notes/title"
+msgid "Notes"
+msgstr "Notes"
+
+#. OMI translation key: /notes/description
+msgctxt "/notes/description"
+msgid "Manage semantic manuscript notes. Note bodies remain independent annotation objects while their inline anchors stay in the text."
+msgstr "Gestió de les notes semàntiques del manuscrit. Els cossos de les notes es mantenen com a objectes d'anotació independents, mentre que els seus ancoratges en línia romanen al text."
+
+#. OMI translation key: /notes/empty
+msgctxt "/notes/empty"
+msgid "This manuscript has no notes yet."
+msgstr "Aquest manuscrit encara no té notes."
+
+#. OMI translation key: /notes/emptyHint
+msgctxt "/notes/emptyHint"
+msgid "Place the cursor in the text and use the Note button or Ctrl/Cmd+Alt+N."
+msgstr "Col·loqueu el cursor al text i feu servir el botó de Nota o Ctrl/Cmd+Alt+N."
+
+#. OMI translation key: /notes/note
+msgctxt "/notes/note"
+msgid "Note"
+msgstr "Nota"
+
+#. OMI translation key: /notes/type
+msgctxt "/notes/type"
+msgid "Note type"
+msgstr "Tipus de nota"
+
+#. OMI translation key: /notes/body
+msgctxt "/notes/body"
+msgid "Note text"
+msgstr "Text de la nota"
+
+#. OMI translation key: /notes/bodyPlaceholder
+msgctxt "/notes/bodyPlaceholder"
+msgid "Write the note…"
+msgstr "Escriviu la nota…"
+
+#. OMI translation key: /notes/footnote
+msgctxt "/notes/footnote"
+msgid "Footnote"
+msgstr "Nota a peu de pàgina"
+
+#. OMI translation key: /notes/endnote
+msgctxt "/notes/endnote"
+msgid "Endnote"
+msgstr "Nota final"
+
+#. OMI translation key: /notes/authorNote
+msgctxt "/notes/authorNote"
+msgid "Author note"
+msgstr "Nota de l'autor"
+
+#. OMI translation key: /notes/delete
+msgctxt "/notes/delete"
+msgid "Delete note"
+msgstr "Suprimeix la nota"
+
+#. OMI translation key: /notes/confirmDelete
+msgctxt "/notes/confirmDelete"
+msgid "Delete this note and its inline anchor from the manuscript?"
+msgstr "Suprimeix aquesta nota i l'ancora en línia del manuscrit?"
+
+#. OMI translation key: /notes/closeEditor
+msgctxt "/notes/closeEditor"
+msgid "Close note editor"
+msgstr "Tanca l'editor de notes"
+
+#. OMI translation key: /notes/goToNote
+msgctxt "/notes/goToNote"
+msgid "Go to note"
+msgstr "Ves a la nota"
+
+#. OMI translation key: /notes/autoSave
+msgctxt "/notes/autoSave"
+msgid "Saved with manuscript revisions"
+msgstr "Desa amb les revisions del manuscrit"
+
+#. OMI translation key: /citations/referencesTitle
+msgctxt "/citations/referencesTitle"
+msgid "References"
+msgstr "Referències"
+
+#. OMI translation key: /citations/referencesDescription
+msgctxt "/citations/referencesDescription"
+msgid "Add a work once to the manuscript reference library, then reuse it in as many citation occurrences as needed."
+msgstr "Afegeix una obra un sol cop a la biblioteca de referències del manuscrit i reutilitza-la tantes vegades com calgui en les citacions."
+
+#. OMI translation key: /citations/addReference
+msgctxt "/citations/addReference"
+msgid "Add reference"
+msgstr "Afegeix referència"
+
+#. OMI translation key: /citations/editReference
+msgctxt "/citations/editReference"
+msgid "Edit reference"
+msgstr "Edita referència"
+
+#. OMI translation key: /citations/referenceEditorDescription
+msgctxt "/citations/referenceEditorDescription"
+msgid "Store structured bibliographic metadata independently from any one citation or output style."
+msgstr "Desa metadades bibliogràfiques estructurades de manera independent de qualsevol estil de citació o de sortida."
+
+#. OMI translation key: /citations/emptyLibrary
+msgctxt "/citations/emptyLibrary"
+msgid "The manuscript reference library is empty."
+msgstr "La biblioteca de referències del manuscrit està buida."
+
+#. OMI translation key: /citations/emptyLibraryHint
+msgctxt "/citations/emptyLibraryHint"
+msgid "Add a book, article, archival source, web resource or another cited work before inserting citations in the text."
+msgstr "Afegiu un llibre, un article, una font d'arxiu, un recurs web o una altra obra citada abans d'inserir cites al text."
+
+#. OMI translation key: /citations/searchReferences
+msgctxt "/citations/searchReferences"
+msgid "Search references"
+msgstr "Cerca de referències"
+
+#. OMI translation key: /citations/searchPlaceholder
+msgctxt "/citations/searchPlaceholder"
+msgid "Search by title, creator, year, DOI…"
+msgstr "Cerca per títol, autor, any, DOI…"
+
+#. OMI translation key: /citations/untitledReference
+msgctxt "/citations/untitledReference"
+msgid "Untitled reference"
+msgstr "Referència sense títol"
+
+#. OMI translation key: /citations/occurrences
+msgctxt "/citations/occurrences"
+msgid "citations"
+msgstr "cites"
+
+#. OMI translation key: /citations/bibliographyPreviewDescription
+msgctxt "/citations/bibliographyPreviewDescription"
+msgid "Neutral preview of records currently cited in the manuscript. Final formatting belongs to the publication profile."
+msgstr "Previsualització neutral dels registres citats actualment al manuscrit. El format final pertany al perfil de publicació."
+
+#. OMI translation key: /citations/resourceType
+msgctxt "/citations/resourceType"
+msgid "Resource type"
+msgstr "Tipus de recurs"
+
+#. OMI translation key: /citations/title
+msgctxt "/citations/title"
+msgid "Title"
+msgstr "Títol"
+
+#. OMI translation key: /citations/titlePlaceholder
+msgctxt "/citations/titlePlaceholder"
+msgid "Title of the cited work"
+msgstr "Títol de l'obra citada"
+
+#. OMI translation key: /citations/subtitle
+msgctxt "/citations/subtitle"
+msgid "Subtitle"
+msgstr "Subtítol"
+
+#. OMI translation key: /citations/creators
+msgctxt "/citations/creators"
+msgid "Creators and contributors"
+msgstr "Creadors i col·laboradors"
+
+#. OMI translation key: /citations/creatorsDescription
+msgctxt "/citations/creatorsDescription"
+msgid "Keep contributor names structured so citation styles and exports can render them correctly."
+msgstr "Mantingueu els noms dels col·laboradors estructurats perquè els estils de citació i les exportacions els puguin mostrar correctament."
+
+#. OMI translation key: /citations/addCreator
+msgctxt "/citations/addCreator"
+msgid "Add creator"
+msgstr "Afegeix creador"
+
+#. OMI translation key: /citations/removeCreator
+msgctxt "/citations/removeCreator"
+msgid "Remove creator"
+msgstr "Elimina creador"
+
+#. OMI translation key: /citations/noCreators
+msgctxt "/citations/noCreators"
+msgid "No creator has been added."
+msgstr "No s'ha afegit cap creador."
+
+#. OMI translation key: /citations/creatorRole
+msgctxt "/citations/creatorRole"
+msgid "Role"
+msgstr "Rol"
+
+#. OMI translation key: /citations/givenName
+msgctxt "/citations/givenName"
+msgid "Given name"
+msgstr "Nom"
+
+#. OMI translation key: /citations/familyName
+msgctxt "/citations/familyName"
+msgid "Family name"
+msgstr "Cognom"
+
+#. OMI translation key: /citations/containerTitle
+msgctxt "/citations/containerTitle"
+msgid "Journal, book or container title"
+msgstr "Títol de la revista, llibre o contenidor"
+
+#. OMI translation key: /citations/issued
+msgctxt "/citations/issued"
+msgid "Publication date / year"
+msgstr "Data / any de publicació"
+
+#. OMI translation key: /citations/volume
+msgctxt "/citations/volume"
+msgid "Volume"
+msgstr "Volum"
+
+#. OMI translation key: /citations/issue
+msgctxt "/citations/issue"
+msgid "Issue"
+msgstr "Número"
+
+#. OMI translation key: /citations/pages
+msgctxt "/citations/pages"
+msgid "Pages / extent"
+msgstr "Pàgines / extensió"
+
+#. OMI translation key: /citations/publisher
+msgctxt "/citations/publisher"
+msgid "Publisher"
+msgstr "Editor"
+
+#. OMI translation key: /citations/place
+msgctxt "/citations/place"
+msgid "Place of publication"
+msgstr "Lloc de publicació"
+
+#. OMI translation key: /citations/duplicateReference
+msgctxt "/citations/duplicateReference"
+msgid "A likely duplicate already exists in the reference library:"
+msgstr "És probable que ja existeixi un duplicat a la biblioteca de referències:"
+
+#. OMI translation key: /citations/insertTitle
+msgctxt "/citations/insertTitle"
+msgid "Insert citation"
+msgstr "Inserir citació"
+
+#. OMI translation key: /citations/insertDescription
+msgctxt "/citations/insertDescription"
+msgid "Choose a work from the manuscript reference library and optionally specify the cited location."
+msgstr "Trieu una obra de la biblioteca de referència de manuscrits i, opcionalment, especifiqueu la ubicació citada."
+
+#. OMI translation key: /citations/noReferences
+msgctxt "/citations/noReferences"
+msgid "No reference is available yet."
+msgstr "Encara no hi ha cap referència disponible."
+
+#. OMI translation key: /citations/noReferencesHint
+msgctxt "/citations/noReferencesHint"
+msgid "Add the work from Manuscript menu → References, then return here to cite it."
+msgstr "Afegiu l'obra des del menú Manuscrits → Referències i, a continuació, torneu aquí per citar-la."
+
+#. OMI translation key: /citations/insert
+msgctxt "/citations/insert"
+msgid "Insert citation"
+msgstr "Inseriu la citació"
+
+#. OMI translation key: /citations/citation
+msgctxt "/citations/citation"
+msgid "Citation"
+msgstr "Citació"
+
+#. OMI translation key: /citations/reference
+msgctxt "/citations/reference"
+msgid "Cited work"
+msgstr "Obra citada"
+
+#. OMI translation key: /citations/locatorType
+msgctxt "/citations/locatorType"
+msgid "Locator type"
+msgstr "Tipus de localitzador"
+
+#. OMI translation key: /citations/locator
+msgctxt "/citations/locator"
+msgid "Locator"
+msgstr "Localitzador"
+
+#. OMI translation key: /citations/locatorPlaceholder
+msgctxt "/citations/locatorPlaceholder"
+msgid "e.g. 45–47, 12r–13v, chapter 4"
+msgstr "p. ex. 45–47, 12r–13v, capítol 4"
+
+#. OMI translation key: /citations/prefix
+msgctxt "/citations/prefix"
+msgid "Prefix"
+msgstr "Prefix"
+
+#. OMI translation key: /citations/prefixPlaceholder
+msgctxt "/citations/prefixPlaceholder"
+msgid "e.g. see also"
+msgstr "p. ex. vegeu també"
+
+#. OMI translation key: /citations/suffix
+msgctxt "/citations/suffix"
+msgid "Suffix"
+msgstr "Sufix"
+
+#. OMI translation key: /citations/suffixPlaceholder
+msgctxt "/citations/suffixPlaceholder"
+msgid "e.g. emphasis added"
+msgstr "p. ex. emfatitzat"
+
+#. OMI translation key: /citations/openSource
+msgctxt "/citations/openSource"
+msgid "Open source"
+msgstr "Codi obert"
+
+#. OMI translation key: /citations/closeEditor
+msgctxt "/citations/closeEditor"
+msgid "Close citation editor"
+msgstr "Tanca l'editor de cites"
+
+#. OMI translation key: /citations/deleteCitation
+msgctxt "/citations/deleteCitation"
+msgid "Delete citation"
+msgstr "Elimina la cita"
+
+#. OMI translation key: /citations/confirmDeleteCitation
+msgctxt "/citations/confirmDeleteCitation"
+msgid "Delete this citation occurrence from the manuscript? The bibliographic record will remain in the reference library."
+msgstr "Elimina aquesta aparició de la cita del manuscrit? L'entrada bibliogràfica es mantindrà a la biblioteca de referències."
+
+#. OMI translation key: /citations/unresolvedReference
+msgctxt "/citations/unresolvedReference"
+msgid "The cited bibliographic record is unresolved or missing."
+msgstr "L'entrada bibliogràfica citada no s'ha pogut resoldre o és incorrecta."
+
+#. OMI translation key: /citations/roles/author
+msgctxt "/citations/roles/author"
+msgid "Author"
+msgstr "Autor"
+
+#. OMI translation key: /citations/roles/editor
+msgctxt "/citations/roles/editor"
+msgid "Editor"
+msgstr "Editor"
+
+#. OMI translation key: /citations/roles/translator
+msgctxt "/citations/roles/translator"
+msgid "Translator"
+msgstr "Traductor"
+
+#. OMI translation key: /citations/roles/compiler
+msgctxt "/citations/roles/compiler"
+msgid "Compiler"
+msgstr "Compilador"
+
+#. OMI translation key: /citations/roles/contributor
+msgctxt "/citations/roles/contributor"
+msgid "Contributor"
+msgstr "Col·laborador"
+
+#. OMI translation key: /citations/resourceTypes/journal-article
+msgctxt "/citations/resourceTypes/journal-article"
+msgid "Journal article"
+msgstr "Article de revista"
+
+#. OMI translation key: /citations/resourceTypes/book
+msgctxt "/citations/resourceTypes/book"
+msgid "Book"
+msgstr "Llibre"
+
+#. OMI translation key: /citations/resourceTypes/book-chapter
+msgctxt "/citations/resourceTypes/book-chapter"
+msgid "Book chapter"
+msgstr "Capítol de llibre"
+
+#. OMI translation key: /citations/resourceTypes/conference-paper
+msgctxt "/citations/resourceTypes/conference-paper"
+msgid "Conference paper"
+msgstr "Comunicació de congrés"
+
+#. OMI translation key: /citations/resourceTypes/thesis
+msgctxt "/citations/resourceTypes/thesis"
+msgid "Thesis"
+msgstr "Tesi doctoral"
+
+#. OMI translation key: /citations/resourceTypes/dissertation
+msgctxt "/citations/resourceTypes/dissertation"
+msgid "Dissertation"
+msgstr "Tesi doctoral"
+
+#. OMI translation key: /citations/resourceTypes/report
+msgctxt "/citations/resourceTypes/report"
+msgid "Report"
+msgstr "Informe"
+
+#. OMI translation key: /citations/resourceTypes/preprint
+msgctxt "/citations/resourceTypes/preprint"
+msgid "Preprint"
+msgstr "Preimpressió"
+
+#. OMI translation key: /citations/resourceTypes/dataset
+msgctxt "/citations/resourceTypes/dataset"
+msgid "Dataset"
+msgstr "Conjunt de dades"
+
+#. OMI translation key: /citations/resourceTypes/software
+msgctxt "/citations/resourceTypes/software"
+msgid "Software"
+msgstr "Programari"
+
+#. OMI translation key: /citations/resourceTypes/standard
+msgctxt "/citations/resourceTypes/standard"
+msgid "Standard"
+msgstr "Estàndard"
+
+#. OMI translation key: /citations/resourceTypes/archival-source
+msgctxt "/citations/resourceTypes/archival-source"
+msgid "Archival source"
+msgstr "Font d'arxiu"
+
+#. OMI translation key: /citations/resourceTypes/manuscript
+msgctxt "/citations/resourceTypes/manuscript"
+msgid "Manuscript"
+msgstr "Manuscrit"
+
+#. OMI translation key: /citations/resourceTypes/web-page
+msgctxt "/citations/resourceTypes/web-page"
+msgid "Web page"
+msgstr "Pàgina web"
+
+#. OMI translation key: /citations/locators/page
+msgctxt "/citations/locators/page"
+msgid "Page"
+msgstr "Pàgina"
+
+#. OMI translation key: /citations/locators/page-range
+msgctxt "/citations/locators/page-range"
+msgid "Page range"
+msgstr "Interval de pàgines"
+
+#. OMI translation key: /citations/locators/chapter
+msgctxt "/citations/locators/chapter"
+msgid "Chapter"
+msgstr "Capítol"
+
+#. OMI translation key: /citations/locators/section
+msgctxt "/citations/locators/section"
+msgid "Section"
+msgstr "Secció"
+
+#. OMI translation key: /citations/locators/paragraph
+msgctxt "/citations/locators/paragraph"
+msgid "Paragraph"
+msgstr "Pàrraf"
+
+#. OMI translation key: /citations/locators/figure
+msgctxt "/citations/locators/figure"
+msgid "Figure"
+msgstr "Figura"
+
+#. OMI translation key: /citations/locators/table
+msgctxt "/citations/locators/table"
+msgid "Table"
+msgstr "Taula"
+
+#. OMI translation key: /citations/locators/folio
+msgctxt "/citations/locators/folio"
+msgid "Folio"
+msgstr "Foli"
+
+#. OMI translation key: /citations/locators/line
+msgctxt "/citations/locators/line"
+msgid "Line"
+msgstr "Línia"
+
+#. OMI translation key: /citations/locators/timestamp
+msgctxt "/citations/locators/timestamp"
+msgid "Timestamp"
+msgstr "Segell de temps"
+
+#. OMI translation key: /contributors/description
+msgctxt "/contributors/description"
+msgid "Manage portable scholarly identities and their manuscript-specific contribution roles."
+msgstr "Gestionar identitats acadèmiques portàtils i els seus rols de contribució específics per a manuscrits."
+
+#. OMI translation key: /contributors/add
+msgctxt "/contributors/add"
+msgid "Add contributor"
+msgstr "Afegir col·laborador"
+
+#. OMI translation key: /contributors/empty
+msgctxt "/contributors/empty"
+msgid "No contributors have been added to this manuscript."
+msgstr "No s'ha afegit cap col·laborador a aquest manuscrit."
+
+#. OMI translation key: /contributors/remove
+msgctxt "/contributors/remove"
+msgid "Remove contributor"
+msgstr "Elimina col·laborador"
+
+#. OMI translation key: /contributors/moveUp
+msgctxt "/contributors/moveUp"
+msgid "Move contributor up"
+msgstr "Mou el col·laborador cap amunt"
+
+#. OMI translation key: /contributors/moveDown
+msgctxt "/contributors/moveDown"
+msgid "Move contributor down"
+msgstr "Mou el col·laborador cap avall"
+
+#. OMI translation key: /contributors/givenName
+msgctxt "/contributors/givenName"
+msgid "Given name"
+msgstr "Nom"
+
+#. OMI translation key: /contributors/familyName
+msgctxt "/contributors/familyName"
+msgid "Family name"
+msgstr "Cognom"
+
+#. OMI translation key: /contributors/affiliation
+msgctxt "/contributors/affiliation"
+msgid "Affiliation"
+msgstr "Afiliació"
+
+#. OMI translation key: /contributors/orcid
+msgctxt "/contributors/orcid"
+msgid "ORCID"
+msgstr "ORCID"
+
+#. OMI translation key: /contributors/invalidOrcid
+msgctxt "/contributors/invalidOrcid"
+msgid "The ORCID checksum or format is invalid."
+msgstr "El sumari de comprovació o el format de l'ORCID és invàlid."
+
+#. OMI translation key: /contributors/role
+msgctxt "/contributors/role"
+msgid "Contribution role"
+msgstr "Rol de contribució"
+
+#. OMI translation key: /contributors/corresponding
+msgctxt "/contributors/corresponding"
+msgid "Corresponding contributor"
+msgstr "Contribuïdor corresponent"
+
+#. OMI translation key: /contributors/roles/author
+msgctxt "/contributors/roles/author"
+msgid "Author"
+msgstr "Autor"
+
+#. OMI translation key: /contributors/roles/editor
+msgctxt "/contributors/roles/editor"
+msgid "Editor"
+msgstr "Editor"
+
+#. OMI translation key: /contributors/roles/translator
+msgctxt "/contributors/roles/translator"
+msgid "Translator"
+msgstr "Traductor"
+
+#. OMI translation key: /contributors/roles/reviewer
+msgctxt "/contributors/roles/reviewer"
+msgid "Reviewer"
+msgstr "Revisor"
+
+#. OMI translation key: /contributors/roles/dataCurator
+msgctxt "/contributors/roles/dataCurator"
+msgid "Data curator"
+msgstr "Curador de dades"
+
+#. OMI translation key: /contributors/roles/software
+msgctxt "/contributors/roles/software"
+msgid "Software"
+msgstr "Programari"
+
+#. OMI translation key: /contributors/roles/methodology
+msgctxt "/contributors/roles/methodology"
+msgid "Methodology"
+msgstr "Metodologia"
+
+#. OMI translation key: /contributors/roles/visualization
+msgctxt "/contributors/roles/visualization"
+msgid "Visualization"
+msgstr "Visualització"
+
+#. OMI translation key: /contributors/roles/other
+msgctxt "/contributors/roles/other"
+msgid "Other"
+msgstr "Altre"
+
+#. OMI translation key: /history/title
+msgctxt "/history/title"
+msgid "Revision history"
+msgstr "Historial de revisions"
+
+#. OMI translation key: /history/description
+msgctxt "/history/description"
+msgid "Immutable OMI-SPEC-160 revisions recorded for this manuscript."
+msgstr "Revisions immutables OMI-SPEC-160 registrades per a aquest manuscrit."
+
+#. OMI translation key: /history/empty
+msgctxt "/history/empty"
+msgid "No revisions have been recorded."
+msgstr "No s'han registrat revisions."
+
+#. OMI translation key: /history/current
+msgctxt "/history/current"
+msgid "Current"
+msgstr "Actual"
+
+#. OMI translation key: /history/revision
+msgctxt "/history/revision"
+msgid "Revision"
+msgstr "Revisió"
+
+#. OMI translation key: /history/events
+msgctxt "/history/events"
+msgid "events"
+msgstr "esdeveniments"
+
+#. OMI translation key: /history/groupedChanges
+msgctxt "/history/groupedChanges"
+msgid "grouped changes"
+msgstr "canvis agrupats"
+
+#. OMI translation key: /history/unknownActor
+msgctxt "/history/unknownActor"
+msgid "Unknown actor"
+msgstr "Actor desconegut"
+
+#. OMI translation key: /history/completeHistory
+msgctxt "/history/completeHistory"
+msgid "Complete history"
+msgstr "Historial complet"
+
+#. OMI translation key: /history/shallowHistory
+msgctxt "/history/shallowHistory"
+msgid "Shallow history"
+msgstr "Historial superficial"
+
+#. OMI translation key: /history/pendingTitle
+msgctxt "/history/pendingTitle"
+msgid "Uncommitted working state"
+msgstr "Estat de treball no compromès"
+
+#. OMI translation key: /history/pendingDescription
+msgctxt "/history/pendingDescription"
+msgid "Recent edits are being batched and will become one immutable checkpoint revision."
+msgstr "Les edicions recents s'estan agrupant i es convertiran en una única revisió de punt de control immutable."
+
+#. OMI translation key: /history/pendingBadge
+msgctxt "/history/pendingBadge"
+msgid "Pending"
+msgstr "Pendents"
+
+#. OMI translation key: /history/checkpoint
+msgctxt "/history/checkpoint"
+msgid "Save checkpoint"
+msgstr "Desar el punt de control"
+
+#. OMI translation key: /history/discard
+msgctxt "/history/discard"
+msgid "Discard changes"
+msgstr "Descartar canvis"
+
+#. OMI translation key: /history/confirmDiscard
+msgctxt "/history/confirmDiscard"
+msgid "Discard all uncommitted changes and restore the latest committed revision?"
+msgstr "Descartar tots els canvis no compromesos i restaurar la revisió compromesa més recent?"
+
+#. OMI translation key: /history/revert
+msgctxt "/history/revert"
+msgid "Revert"
+msgstr "Revertir"
+
+#. OMI translation key: /history/confirmRevert
+msgctxt "/history/confirmRevert"
+msgid "Create a new revision that restores this earlier manuscript state?"
+msgstr "Criar una nova revisió que restauri aquest estat anterior del manuscrit?"
+
+#. OMI translation key: /history/revertBlocked
+msgctxt "/history/revertBlocked"
+msgid "Save or discard the pending working state before reverting a committed revision."
+msgstr "Desar o descartar l'estat de treball pendent abans de revertir una revisió compromesa."
+
+#. OMI translation key: /history/tombstonesTitle
+msgctxt "/history/tombstonesTitle"
+msgid "Deleted object records"
+msgstr "Registres d'objectes eliminats"
+
+#. OMI translation key: /history/tombstonesDescription
+msgctxt "/history/tombstonesDescription"
+msgid "Persistent OMI-SPEC-160 tombstones preserve deleted object identifiers and restoration evidence."
+msgstr "Les tombstones persistents OMI-SPEC-160 preserven els identificadors d'objectes eliminats i les proves de restauració."
+
+#. OMI translation key: /history/tombstoneActive
+msgctxt "/history/tombstoneActive"
+msgid "Deleted"
+msgstr "Eliminat"
+
+#. OMI translation key: /history/tombstoneRestored
+msgctxt "/history/tombstoneRestored"
+msgid "Restored"
+msgstr "Restaurat"
+
+#. OMI translation key: /history/operations/snapshotCreated
+msgctxt "/history/operations/snapshotCreated"
+msgid "Manuscript snapshot created"
+msgstr "S'ha creat una instantània del manuscrit"
+
+#. OMI translation key: /history/operations/titleChanged
+msgctxt "/history/operations/titleChanged"
+msgid "Manuscript title changed"
+msgstr "S'ha canviat el títol del manuscrit"
+
+#. OMI translation key: /history/operations/abstractChanged
+msgctxt "/history/operations/abstractChanged"
+msgid "Manuscript abstract changed"
+msgstr "S'ha canviat el resum del manuscrit"
+
+#. OMI translation key: /history/operations/sectionCreated
+msgctxt "/history/operations/sectionCreated"
+msgid "Section added"
+msgstr "S'ha afegit una secció"
+
+#. OMI translation key: /history/operations/blockChanged
+msgctxt "/history/operations/blockChanged"
+msgid "Block content changed"
+msgstr "S'ha canviat el contingut del bloc"
+
+#. OMI translation key: /history/operations/contributorAdded
+msgctxt "/history/operations/contributorAdded"
+msgid "Contributor added"
+msgstr "S'ha afegit un col·laborador"
+
+#. OMI translation key: /history/operations/contributorChanged
+msgctxt "/history/operations/contributorChanged"
+msgid "Contributor identity changed"
+msgstr "S'ha canviat la identitat d'un col·laborador"
+
+#. OMI translation key: /history/operations/contributorRemoved
+msgctxt "/history/operations/contributorRemoved"
+msgid "Contributor removed"
+msgstr "S'ha eliminat un col·laborador"
+
+#. OMI translation key: /history/operations/contributionChanged
+msgctxt "/history/operations/contributionChanged"
+msgid "Contribution role changed"
+msgstr "Canvi de paper de contribució"
+
+#. OMI translation key: /history/operations/contributorsReordered
+msgctxt "/history/operations/contributorsReordered"
+msgid "Contributors reordered"
+msgstr "Reordenació de contribuïdors"
+
+#. OMI translation key: /history/operations/reverted
+msgctxt "/history/operations/reverted"
+msgid "Earlier revision restored"
+msgstr "Restabliment de la revisió anterior"
+
+#. OMI translation key: /editor/addSection
+msgctxt "/editor/addSection"
+msgid "Add section"
+msgstr "Afegir secció"
+
+#. OMI translation key: /editor/addParagraph
+msgctxt "/editor/addParagraph"
+msgid "Add paragraph"
+msgstr "Afegir paràgraf"
+
+#. OMI translation key: /editor/addNote
+msgctxt "/editor/addNote"
+msgid "Note"
+msgstr "Nota"
+
+#. OMI translation key: /editor/addCitation
+msgctxt "/editor/addCitation"
+msgid "Citation"
+msgstr "Cita"
+
+#. OMI translation key: /editor/untitledSection
+msgctxt "/editor/untitledSection"
+msgid "Untitled section"
+msgstr "Secció sense títol"
+
+#. OMI translation key: /editor/emptyParagraph
+msgctxt "/editor/emptyParagraph"
+msgid "Start writing…"
+msgstr "Començar a escriure…"
+
+#. OMI translation key: /editor/paragraph
+msgctxt "/editor/paragraph"
+msgid "Paragraph"
+msgstr "Paràgraf"
+
+#. OMI translation key: /editor/heading
+msgctxt "/editor/heading"
+msgid "Heading"
+msgstr "Títol"
+
+#. OMI translation key: /editor/quote
+msgctxt "/editor/quote"
+msgid "Quote"
+msgstr "Cita"
+
+#. OMI translation key: /editor/insertNote
+msgctxt "/editor/insertNote"
+msgid "Insert semantic manuscript note"
+msgstr "Inserir nota semàntica de manuscrit"
+
+#. OMI translation key: /editor/insertCitation
+msgctxt "/editor/insertCitation"
+msgid "Insert semantic citation"
+msgstr "Inserir cita semàntica"
+
+#. OMI translation key: /editor/loading
+msgctxt "/editor/loading"
+msgid "Loading editor…"
+msgstr "Carregant l'editor…"
+
+#. OMI translation key: /status/draft
+msgctxt "/status/draft"
+msgid "Draft"
+msgstr "Borrador"
+
+#. OMI translation key: /status/submitted
+msgctxt "/status/submitted"
+msgid "Submitted"
+msgstr "Presentat"
+
+#. OMI translation key: /status/accepted
+msgctxt "/status/accepted"
+msgid "Accepted"
+msgstr "Acceptat"
+
+#. OMI translation key: /status/published
+msgctxt "/status/published"
+msgid "Published"
+msgstr "Publicat"
+
+#. OMI translation key: /validation/requiredField
+msgctxt "/validation/requiredField"
+msgid "This field is required."
+msgstr "Aquest camp és obligatori."
+
+#. OMI translation key: /validation/invalidDocument
+msgctxt "/validation/invalidDocument"
+msgid "The document structure is invalid."
+msgstr "L'estructura del document és invàlida."
+
+#. OMI translation key: /validation/unsupportedSchema
+msgctxt "/validation/unsupportedSchema"
+msgid "The document schema version is not supported."
+msgstr "La versió de l'esquema del document no està suportada."
+
+#. OMI translation key: /languages/en
+msgctxt "/languages/en"
+msgid "English"
+msgstr "Anglès"
+
+#. OMI translation key: /languages/hu
+msgctxt "/languages/hu"
+msgid "Hungarian"
+msgstr "Hongarès"
+
+#. OMI translation key: /languages/de
+msgctxt "/languages/de"
+msgid "German"
+msgstr "Alemany"
+
+#. OMI translation key: /auth/brand/name
+msgctxt "/auth/brand/name"
+msgid "Open Manuscript Studio"
+msgstr "Open Manuscript Studio"
+
+#. OMI translation key: /auth/brand/description
+msgctxt "/auth/brand/description"
+msgid "Collaborative scholarly writing"
+msgstr "Escriptura acadèmica col·laborativa"
+
+#. OMI translation key: /auth/login/title
+msgctxt "/auth/login/title"
+msgid "Sign in"
+msgstr "Inicia la sessió"
+
+#. OMI translation key: /auth/login/description
+msgctxt "/auth/login/description"
+msgid "Please sign in to continue."
+msgstr "Inicia la sessió per continuar."
+
+#. OMI translation key: /auth/login/submit
+msgctxt "/auth/login/submit"
+msgid "Sign in"
+msgstr "Inicia la sessió"
+
+#. OMI translation key: /auth/login/submitting
+msgctxt "/auth/login/submitting"
+msgid "Signing in…"
+msgstr "Iniciant la sessió…"
+
+#. OMI translation key: /auth/login/noAccount
+msgctxt "/auth/login/noAccount"
+msgid "Do not have an account yet?"
+msgstr "Encara no tens compte?"
+
+#. OMI translation key: /auth/login/registerLink
+msgctxt "/auth/login/registerLink"
+msgid "Register"
+msgstr "Registra't"
+
+#. OMI translation key: /auth/register/title
+msgctxt "/auth/register/title"
+msgid "Create account"
+msgstr "Crea un compte"
+
+#. OMI translation key: /auth/register/description
+msgctxt "/auth/register/description"
+msgid "Create your account."
+msgstr "Crea el teu compte."
+
+#. OMI translation key: /auth/register/submit
+msgctxt "/auth/register/submit"
+msgid "Register"
+msgstr "Registra't"
+
+#. OMI translation key: /auth/register/hasAccount
+msgctxt "/auth/register/hasAccount"
+msgid "Already have an account?"
+msgstr "Ja tens un compte?"
+
+#. OMI translation key: /auth/register/loginLink
+msgctxt "/auth/register/loginLink"
+msgid "Sign in"
+msgstr "Inicia la sessió"
+
+#. OMI translation key: /auth/fields/name/label
+msgctxt "/auth/fields/name/label"
+msgid "Full name"
+msgstr "Nom complet"
+
+#. OMI translation key: /auth/fields/name/placeholder
+msgctxt "/auth/fields/name/placeholder"
+msgid "Your full name"
+msgstr "El teu nom complet"
+
+#. OMI translation key: /auth/fields/email/label
+msgctxt "/auth/fields/email/label"
+msgid "Email"
+msgstr "Correu electrònic"
+
+#. OMI translation key: /auth/fields/email/placeholder
+msgctxt "/auth/fields/email/placeholder"
+msgid "name@example.com"
+msgstr "name@example.com"
+
+#. OMI translation key: /auth/fields/password/label
+msgctxt "/auth/fields/password/label"
+msgid "Password"
+msgstr "Contrasenya"
+
+#. OMI translation key: /auth/fields/password/placeholder
+msgctxt "/auth/fields/password/placeholder"
+msgid "Enter your password"
+msgstr "Introduïu la vostra contrasenya"
+
+#. OMI translation key: /auth/errors/invalidEmail
+msgctxt "/auth/errors/invalidEmail"
+msgid "Invalid e-mail address."
+msgstr "Adreça de correu electrònic incorrecta."
+
+#. OMI translation key: /auth/errors/invalidCredentials
+msgctxt "/auth/errors/invalidCredentials"
+msgid "Incorrect e-mail address or password."
+msgstr "Adreça de correu electrònic o contrasenya incorrectes."
+
+#. OMI translation key: /auth/errors/userNotFound
+msgctxt "/auth/errors/userNotFound"
+msgid "The user account could not be found."
+msgstr "No s'ha pogut trobar el compte d'usuari."
+
+#. OMI translation key: /auth/errors/accountNotActive
+msgctxt "/auth/errors/accountNotActive"
+msgid "The user account is not active."
+msgstr "El compte d'usuari no està actiu."
+
+#. OMI translation key: /auth/errors/authenticationRequired
+msgctxt "/auth/errors/authenticationRequired"
+msgid "Authentication is required."
+msgstr "Es requereix autenticació."
+
+#. OMI translation key: /auth/alphaNotice
+msgctxt "/auth/alphaNotice"
+msgid "Alpha version – authentication is currently for testing purposes."
+msgstr "Versió alfa – l'autenticació és actualment per a finalitats de prova."
+
+#. OMI translation key: /modules/assetContainer/title
+msgctxt "/modules/assetContainer/title"
+msgid "OMI package"
+msgstr "Paquet OMI"
+
+#. OMI translation key: /modules/assetContainer/description
+msgctxt "/modules/assetContainer/description"
+msgid "Externalize binary resources and package the manuscript, history, publication profile, checksums, assets and valid JATS output as a portable .omi container."
+msgstr "Externalitzar recursos binaris i empaquetar el manuscrit, l'historial, el perfil de publicació, els sumaris de comprovació, els actius i la sortida JATS vàlida com a contenidor .omi portàtil."
+
+#. OMI translation key: /modules/assetContainer/assets
+msgctxt "/modules/assetContainer/assets"
+msgid "registered assets"
+msgstr "actius registrats"
+
+#. OMI translation key: /modules/assetContainer/embedded
+msgctxt "/modules/assetContainer/embedded"
+msgid "embedded images awaiting externalization"
+msgstr "imatges incrustades pendents d'externalització"
+
+#. OMI translation key: /modules/assetContainer/prepare
+msgctxt "/modules/assetContainer/prepare"
+msgid "Prepare assets"
+msgstr "Preparar actius"
+
+#. OMI translation key: /modules/assetContainer/preparing
+msgctxt "/modules/assetContainer/preparing"
+msgid "Preparing assets…"
+msgstr "Preparant actius…"
+
+#. OMI translation key: /modules/assetContainer/prepared
+msgctxt "/modules/assetContainer/prepared"
+msgid "Embedded image payloads are registered as stable assets."
+msgstr "Les càrregues útils d'imatges incrustades es registren com a actius estables."
+
+#. OMI translation key: /modules/assetContainer/download
+msgctxt "/modules/assetContainer/download"
+msgid "Download .omi package"
+msgstr "Descarregar paquet .omi"
+
+#. OMI translation key: /modules/assetContainer/downloading
+msgctxt "/modules/assetContainer/downloading"
+msgid "Building package…"
+msgstr "Construint el paquet…"
+
+#. OMI translation key: /modules/assetContainer/ready
+msgctxt "/modules/assetContainer/ready"
+msgid "The container passed Studio integrity checks."
+msgstr "El contenidor ha passat les comprovacions d'integritat de Studio."
+
+#. OMI translation key: /modules/assetContainer/blocked
+msgctxt "/modules/assetContainer/blocked"
+msgid "The package has blocking integrity errors."
+msgstr "El paquet té errors d'integritat de bloqueig."
+
+#. OMI translation key: /modules/assetContainer/diagnostics
+msgctxt "/modules/assetContainer/diagnostics"
+msgid "Container diagnostics"
+msgstr "Diagnòstics del contenidor"
+
+#. OMI translation key: /modules/assetContainer/noDiagnostics
+msgctxt "/modules/assetContainer/noDiagnostics"
+msgid "No container-specific diagnostics."
+msgstr "Cap diagnòstic específic del contenidor."
+
+#. OMI translation key: /modules/assetContainer/integrity
+msgctxt "/modules/assetContainer/integrity"
+msgid "SHA-256 integrity"
+msgstr "Integritat SHA-256"
+
+#. OMI translation key: /modules/assetContainer/format
+msgctxt "/modules/assetContainer/format"
+msgid "OMI-SPEC-320 / OMI-SPEC-330 Draft package"
+msgstr "Paquet de l'esborrany OMI-SPEC-320 / OMI-SPEC-330"
+
+#. OMI translation key: /modules/assetContainer/privacyNote
+msgctxt "/modules/assetContainer/privacyNote"
+msgid "Asset-backed image previews are resolved from the local binary repository. Portable manuscript state no longer needs Base64 preview data after externalization."
+msgstr "Les previsualitzacions d'imatges basades en actius es resolen des del repositori binari local. L'estat de manuscrit portàtil ja no necessita les dades de previsualització Base64 després de l'externalització."
+
+#. OMI translation key: /modules/assetContainer/importTitle
+msgctxt "/modules/assetContainer/importTitle"
+msgid "Open OMI package"
+msgstr "Obre el paquet OMI"
+
+#. OMI translation key: /modules/assetContainer/importDescription
+msgctxt "/modules/assetContainer/importDescription"
+msgid "Inspect an untrusted .omi container, verify its manifest, ZIP structure, revision identities, assets and SHA-256 checksums before loading it."
+msgstr "Inspecciona un contenidor .omi no de confiança, verifica el seu manifest, l'estructura ZIP, les identitats de revisió, els actius i els sumaris de comprovació SHA-256 abans de carregar-lo."
+
+#. OMI translation key: /modules/assetContainer/choosePackage
+msgctxt "/modules/assetContainer/choosePackage"
+msgid "Choose .omi package"
+msgstr "Tria el paquet .omi"
+
+#. OMI translation key: /modules/assetContainer/inspecting
+msgctxt "/modules/assetContainer/inspecting"
+msgid "Verifying package…"
+msgstr "Verificant el paquet…"
+
+#. OMI translation key: /modules/assetContainer/importPackage
+msgctxt "/modules/assetContainer/importPackage"
+msgid "Open verified manuscript"
+msgstr "Obre el manuscrit verificat"
+
+#. OMI translation key: /modules/assetContainer/importing
+msgctxt "/modules/assetContainer/importing"
+msgid "Opening manuscript…"
+msgstr "Obren el manuscrit…"
+
+#. OMI translation key: /modules/assetContainer/verified
+msgctxt "/modules/assetContainer/verified"
+msgid "The package passed integrity verification and can be opened."
+msgstr "El paquet ha passat la verificació d'integritat i es pot obrir."
+
+#. OMI translation key: /modules/assetContainer/invalid
+msgctxt "/modules/assetContainer/invalid"
+msgid "The package cannot be opened until its blocking integrity errors are resolved."
+msgstr "El paquet no es pot obrir fins que no es resolguin els errors d'integritat que el bloquegen."
+
+#. OMI translation key: /modules/assetContainer/imported
+msgctxt "/modules/assetContainer/imported"
+msgid "The verified OMI manuscript was opened with its original identity and revision history."
+msgstr "El manuscrit OMI verificat s'ha obert amb la seva identitat original i el seu historial de revisions."
+
+#. OMI translation key: /modules/assetContainer/entries
+msgctxt "/modules/assetContainer/entries"
+msgid "entries"
+msgstr "entrades"
+
+#. OMI translation key: /modules/assetContainer/revisions
+msgctxt "/modules/assetContainer/revisions"
+msgid "revisions"
+msgstr "revisions"
+
+#. OMI translation key: /modules/assetContainer/checksums
+msgctxt "/modules/assetContainer/checksums"
+msgid "checksums verified"
+msgstr "sumaris de comprovació verificats"
+
+#. OMI translation key: /modules/assetContainer/packageAssets
+msgctxt "/modules/assetContainer/packageAssets"
+msgid "assets"
+msgstr "actius"
+
+#. OMI translation key: /modules/assetContainer/manuscriptId
+msgctxt "/modules/assetContainer/manuscriptId"
+msgid "Manuscript ID"
+msgstr "ID del manuscrit"
+
+#. OMI translation key: /modules/assetContainer/headRevision
+msgctxt "/modules/assetContainer/headRevision"
+msgid "Head revision"
+msgstr "Revisió principal"
+
+#. OMI translation key: /modules/assetContainer/replaceWarning
+msgctxt "/modules/assetContainer/replaceWarning"
+msgid "Opening the package replaces the active workspace manuscript. It does not create a new manuscript ID or revision root."
+msgstr "L'obertura del paquet substitueix el manuscrit de l'espai de treball actiu. No crea un nou ID de manuscrit ni una nova arrel de revisió."
+
+#. OMI translation key: /modules/assetContainer/confirmImport
+msgctxt "/modules/assetContainer/confirmImport"
+msgid "Open this verified OMI manuscript and replace the currently active workspace document?"
+msgstr "Obrir aquest manuscrit OMI verificat i substituir el document de l'espai de treball actiu actual?"
+
+#. OMI translation key: /modules/crossReferences/insert
+msgctxt "/modules/crossReferences/insert"
+msgid "Cross-reference"
+msgstr "Creu-referència"
+
+#. OMI translation key: /modules/crossReferences/insertDescription
+msgctxt "/modules/crossReferences/insertDescription"
+msgid "Link to a section, figure, table, chart or equation by stable object identity."
+msgstr "Enllaçar a una secció, figura, taula, gràfic o equació mitjançant la identitat d'objecte estable."
+
+#. OMI translation key: /modules/crossReferences/chooseTarget
+msgctxt "/modules/crossReferences/chooseTarget"
+msgid "Choose target"
+msgstr "Tria l'objectiu"
+
+#. OMI translation key: /modules/crossReferences/searchPlaceholder
+msgctxt "/modules/crossReferences/searchPlaceholder"
+msgid "Search document objects…"
+msgstr "Cerca objectes de document…"
+
+#. OMI translation key: /modules/crossReferences/noTargets
+msgctxt "/modules/crossReferences/noTargets"
+msgid "No matching document objects."
+msgstr "No s'han trobat objectes de document coincidents."
+
+#. OMI translation key: /modules/crossReferences/cancel
+msgctxt "/modules/crossReferences/cancel"
+msgid "Cancel"
+msgstr "Cancel·la"
+
+#. OMI translation key: /modules/crossReferences/display
+msgctxt "/modules/crossReferences/display"
+msgid "Display"
+msgstr "Mostra"
+
+#. OMI translation key: /modules/crossReferences/displayLabelNumber
+msgctxt "/modules/crossReferences/displayLabelNumber"
+msgid "Label and number"
+msgstr "Etiqueta i número"
+
+#. OMI translation key: /modules/crossReferences/displayNumber
+msgctxt "/modules/crossReferences/displayNumber"
+msgid "Number only"
+msgstr "Només número"
+
+#. OMI translation key: /modules/crossReferences/displayTitle
+msgctxt "/modules/crossReferences/displayTitle"
+msgid "Title or caption"
+msgstr "Títol o peu de foto"
+
+#. OMI translation key: /modules/crossReferences/displayLabelNumberTitle
+msgctxt "/modules/crossReferences/displayLabelNumberTitle"
+msgid "Label, number and title"
+msgstr "Etiqueta, número i títol"
+
+#. OMI translation key: /modules/crossReferences/edit
+msgctxt "/modules/crossReferences/edit"
+msgid "Edit cross-reference"
+msgstr "Edita la referència creuada"
+
+#. OMI translation key: /modules/crossReferences/target
+msgctxt "/modules/crossReferences/target"
+msgid "Target"
+msgstr "Destinació"
+
+#. OMI translation key: /modules/crossReferences/goToTarget
+msgctxt "/modules/crossReferences/goToTarget"
+msgid "Go to target"
+msgstr "Ves a la destinació"
+
+#. OMI translation key: /modules/crossReferences/deleteReference
+msgctxt "/modules/crossReferences/deleteReference"
+msgid "Delete reference"
+msgstr "Suprimeix la referència"
+
+#. OMI translation key: /modules/crossReferences/confirmDelete
+msgctxt "/modules/crossReferences/confirmDelete"
+msgid "Delete this internal cross-reference?"
+msgstr "Suprimir aquesta referència creuada interna?"
+
+#. OMI translation key: /modules/crossReferences/unresolved
+msgctxt "/modules/crossReferences/unresolved"
+msgid "The target object no longer exists."
+msgstr "L'objecte d'destí ja no existeix."
+
+#. OMI translation key: /modules/crossReferences/numbering
+msgctxt "/modules/crossReferences/numbering"
+msgid "Object numbering"
+msgstr "Numeració d'objectes"
+
+#. OMI translation key: /modules/crossReferences/numberingDescription
+msgctxt "/modules/crossReferences/numberingDescription"
+msgid "Choose whether figures, tables, charts and equations are numbered through the manuscript or restart in each section."
+msgstr "Trieu si les figures, les taules, els gràfics i les equacions s'han de numerar al llarg de tot el manuscrit o si la numeració ha de reiniciar-se a cada secció."
+
+#. OMI translation key: /modules/crossReferences/numberingDocument
+msgctxt "/modules/crossReferences/numberingDocument"
+msgid "Continuous through document"
+msgstr "Continuïtat a través del document"
+
+#. OMI translation key: /modules/crossReferences/numberingSection
+msgctxt "/modules/crossReferences/numberingSection"
+msgid "Restart in each section"
+msgstr "Reinici a cada secció"
+
+#. OMI translation key: /modules/crossReferences/statusTitle
+msgctxt "/modules/crossReferences/statusTitle"
+msgid "Internal references"
+msgstr "Referències internes"
+
+#. OMI translation key: /modules/crossReferences/statusDescription
+msgctxt "/modules/crossReferences/statusDescription"
+msgid "Semantic references remain attached to stable object IDs when document order changes."
+msgstr "Les referències semàntiques es mantenen unides als identificadors d'objecte estables quan canvia l'ordre del document."
+
+#. OMI translation key: /modules/crossReferences/statusHealthy
+msgctxt "/modules/crossReferences/statusHealthy"
+msgid "All internal references resolve correctly."
+msgstr "Totes les referències internes es resolen correctament."
+
+#. OMI translation key: /modules/crossReferences/statusIssues
+msgctxt "/modules/crossReferences/statusIssues"
+msgid "Internal reference issues"
+msgstr "Problemes de referència interna"
+
+#. OMI translation key: /modules/crossReferences/missingTarget
+msgctxt "/modules/crossReferences/missingTarget"
+msgid "Missing target"
+msgstr "Destinació absent"
+
+#. OMI translation key: /modules/crossReferences/missingAnchor
+msgctxt "/modules/crossReferences/missingAnchor"
+msgid "Missing text anchor"
+msgstr "Àncora de text absent"
+
+#. OMI translation key: /modules/crossReferences/section
+msgctxt "/modules/crossReferences/section"
+msgid "Sections"
+msgstr "Seccions"
+
+#. OMI translation key: /modules/crossReferences/figure
+msgctxt "/modules/crossReferences/figure"
+msgid "Figures"
+msgstr "Figures"
+
+#. OMI translation key: /modules/crossReferences/table
+msgctxt "/modules/crossReferences/table"
+msgid "Tables"
+msgstr "Taules"
+
+#. OMI translation key: /modules/crossReferences/chart
+msgctxt "/modules/crossReferences/chart"
+msgid "Charts"
+msgstr "Gráfics"
+
+#. OMI translation key: /modules/crossReferences/equation
+msgctxt "/modules/crossReferences/equation"
+msgid "Equations"
+msgstr "Equacions"
+
+#. OMI translation key: /modules/cslRendering/styleTitle
+msgctxt "/modules/cslRendering/styleTitle"
+msgid "Citation style"
+msgstr "Estil de citació"
+
+#. OMI translation key: /modules/cslRendering/styleDescription
+msgctxt "/modules/cslRendering/styleDescription"
+msgid "Choose how citations and the bibliography are rendered while authoring. The semantic citation data remain unchanged."
+msgstr "Trieu com es mostren les citacions i la bibliografia mentre escriviu. Les dades de la citació semàntica no canvien."
+
+#. OMI translation key: /modules/cslRendering/styleProfileNote
+msgctxt "/modules/cslRendering/styleProfileNote"
+msgid "Studio currently uses CSL-JSON-compatible built-in profiles. A publication profile may override this presentation preference later."
+msgstr "Actualment, Studio utilitza perfils integrats compatibles amb CSL-JSON. Un perfil de publicació pot sobreescriure aquesta preferència de presentació més endavant."
+
+#. OMI translation key: /modules/cslRendering/bibliographyTitle
+msgctxt "/modules/cslRendering/bibliographyTitle"
+msgid "Formatted bibliography"
+msgstr "Bibliografia formatada"
+
+#. OMI translation key: /modules/cslRendering/bibliographyDescription
+msgctxt "/modules/cslRendering/bibliographyDescription"
+msgid "Generated from cited bibliographic records using the selected presentation profile."
+msgstr "Generada a partir dels registres bibliogràfics citats utilitzant el perfil de presentació seleccionat."
+
+#. OMI translation key: /modules/cslRendering/selectedSources
+msgctxt "/modules/cslRendering/selectedSources"
+msgid "Selected sources"
+msgstr "Fonts seleccionades"
+
+#. OMI translation key: /modules/cslRendering/clusterHint
+msgctxt "/modules/cslRendering/clusterHint"
+msgid "Select one or more works. Multiple selections are inserted as one semantic citation cluster."
+msgstr "Seleccioneu una o més obres. Les seleccions múltiples s'insereixen com un sol clúster de citació semàntica."
+
+#. OMI translation key: /modules/cslRendering/addToCluster
+msgctxt "/modules/cslRendering/addToCluster"
+msgid "Add to cluster"
+msgstr "Afegeix al clúster"
+
+#. OMI translation key: /modules/cslRendering/removeFromCluster
+msgctxt "/modules/cslRendering/removeFromCluster"
+msgid "Remove from cluster"
+msgstr "Treu del clúster"
+
+#. OMI translation key: /modules/cslRendering/clusterTitle
+msgctxt "/modules/cslRendering/clusterTitle"
+msgid "Citation cluster"
+msgstr "Clúster de citació"
+
+#. OMI translation key: /modules/cslRendering/clusterDescription
+msgctxt "/modules/cslRendering/clusterDescription"
+msgid "Each item remains an independent citation occurrence with its own locator, prefix and suffix."
+msgstr "Cada element continua sent una instància de citació independent amb el seu propi localitzador, prefix i sufix."
+
+#. OMI translation key: /modules/cslRendering/deleteCluster
+msgctxt "/modules/cslRendering/deleteCluster"
+msgid "Delete cluster"
+msgstr "Suprimeix el clúster"
+
+#. OMI translation key: /modules/cslRendering/confirmDeleteCluster
+msgctxt "/modules/cslRendering/confirmDeleteCluster"
+msgid "Delete this complete citation cluster from the manuscript? Bibliographic records remain in the reference library."
+msgstr "Suprimeix aquest clúster de citació complet del manuscrit? Els registres bibliogràfics es mantenen a la biblioteca de referència."
+
+#. OMI translation key: /modules/cslRendering/moveUp
+msgctxt "/modules/cslRendering/moveUp"
+msgid "Move earlier"
+msgstr "Mou enrere"
+
+#. OMI translation key: /modules/cslRendering/moveDown
+msgctxt "/modules/cslRendering/moveDown"
+msgid "Move later"
+msgstr "Mou endavant"
+
+#. OMI translation key: /modules/cslRendering/styleNames/apa-7
+msgctxt "/modules/cslRendering/styleNames/apa-7"
+msgid "APA 7"
+msgstr "APA 7"
+
+#. OMI translation key: /modules/cslRendering/styleNames/chicago-author-date
+msgctxt "/modules/cslRendering/styleNames/chicago-author-date"
+msgid "Chicago Author-Date"
+msgstr "Chicago Autor-Data"
+
+#. OMI translation key: /modules/cslRendering/styleNames/chicago-notes-bibliography
+msgctxt "/modules/cslRendering/styleNames/chicago-notes-bibliography"
+msgid "Chicago Notes & Bibliography"
+msgstr "Notes i bibliografia de Chicago"
+
+#. OMI translation key: /modules/cslRendering/styleNames/mla-9
+msgctxt "/modules/cslRendering/styleNames/mla-9"
+msgid "MLA 9"
+msgstr "MLA 9"
+
+#. OMI translation key: /modules/cslRendering/styleNames/iso-690
+msgctxt "/modules/cslRendering/styleNames/iso-690"
+msgid "ISO 690"
+msgstr "ISO 690"
+
+#. OMI translation key: /modules/docxImport/title
+msgctxt "/modules/docxImport/title"
+msgid "Import Word manuscript"
+msgstr "Importa manuscrit de Word"
+
+#. OMI translation key: /modules/docxImport/description
+msgctxt "/modules/docxImport/description"
+msgid "Convert a DOCX manuscript into semantic OMI structure locally in your browser."
+msgstr "Converteix un manuscrit DOCX en una estructura OMI semàntica localment al teu navegador."
+
+#. OMI translation key: /modules/docxImport/chooseFile
+msgctxt "/modules/docxImport/chooseFile"
+msgid "Choose DOCX file"
+msgstr "Tria un fitxer DOCX"
+
+#. OMI translation key: /modules/docxImport/parsing
+msgctxt "/modules/docxImport/parsing"
+msgid "Reading and analysing DOCX…"
+msgstr "Llegint i analitzant el DOCX…"
+
+#. OMI translation key: /modules/docxImport/replaceFile
+msgctxt "/modules/docxImport/replaceFile"
+msgid "Choose another file"
+msgstr "Tria un altre fitxer"
+
+#. OMI translation key: /modules/docxImport/previewTitle
+msgctxt "/modules/docxImport/previewTitle"
+msgid "Import preview"
+msgstr "Previsualització d'importació"
+
+#. OMI translation key: /modules/docxImport/previewDescription
+msgctxt "/modules/docxImport/previewDescription"
+msgid "Review the reconstructed structure before opening it as a new OMI manuscript."
+msgstr "Revisa l'estructura reconstruïda abans d'obrir-la com un nou manuscrit OMI."
+
+#. OMI translation key: /modules/docxImport/detectedMetadata
+msgctxt "/modules/docxImport/detectedMetadata"
+msgid "Detected metadata"
+msgstr "Metadades detectades"
+
+#. OMI translation key: /modules/docxImport/manuscriptTitle
+msgctxt "/modules/docxImport/manuscriptTitle"
+msgid "Title"
+msgstr "Títol"
+
+#. OMI translation key: /modules/docxImport/language
+msgctxt "/modules/docxImport/language"
+msgid "Language"
+msgstr "Idioma"
+
+#. OMI translation key: /modules/docxImport/titleSource
+msgctxt "/modules/docxImport/titleSource"
+msgid "Title source"
+msgstr "Font del títol"
+
+#. OMI translation key: /modules/docxImport/sourceCore
+msgctxt "/modules/docxImport/sourceCore"
+msgid "DOCX core properties"
+msgstr "Propietats principals de DOCX"
+
+#. OMI translation key: /modules/docxImport/sourceStyle
+msgctxt "/modules/docxImport/sourceStyle"
+msgid "Word Title style"
+msgstr "Estil de títol de Word"
+
+#. OMI translation key: /modules/docxImport/sourceFilename
+msgctxt "/modules/docxImport/sourceFilename"
+msgid "File name fallback"
+msgstr "Recursos alternatius pel nom del fitxer"
+
+#. OMI translation key: /modules/docxImport/authors
+msgctxt "/modules/docxImport/authors"
+msgid "Detected authors"
+msgstr "Autors detectats"
+
+#. OMI translation key: /modules/docxImport/importAuthors
+msgctxt "/modules/docxImport/importAuthors"
+msgid "Import detected authors"
+msgstr "Importar autors detectats"
+
+#. OMI translation key: /modules/docxImport/importAuthorsHint
+msgctxt "/modules/docxImport/importAuthorsHint"
+msgid "DOCX creator/Author-style metadata can be ambiguous. Imported names remain editable and are not identity-verified."
+msgstr "Les metadades d'estil del creador/autor de DOCX poden ser ambigües. Els noms importats continuen sent editables i no se'n verifica la identitat."
+
+#. OMI translation key: /modules/docxImport/coreAuthorSource
+msgctxt "/modules/docxImport/coreAuthorSource"
+msgid "core metadata"
+msgstr "metadades bàsiques"
+
+#. OMI translation key: /modules/docxImport/styleAuthorSource
+msgctxt "/modules/docxImport/styleAuthorSource"
+msgid "Author style"
+msgstr "estil de l'autor"
+
+#. OMI translation key: /modules/docxImport/outline
+msgctxt "/modules/docxImport/outline"
+msgid "Reconstructed outline"
+msgstr "esquema reconstruït"
+
+#. OMI translation key: /modules/docxImport/warnings
+msgctxt "/modules/docxImport/warnings"
+msgid "Review items"
+msgstr "punts de revisió"
+
+#. OMI translation key: /modules/docxImport/noWarnings
+msgctxt "/modules/docxImport/noWarnings"
+msgid "No structural warnings were detected."
+msgstr "No s'han detectat advertiments estructurals."
+
+#. OMI translation key: /modules/docxImport/importButton
+msgctxt "/modules/docxImport/importButton"
+msgid "Open as new OMI manuscript"
+msgstr "Obre com a manuscrit OMI nou"
+
+#. OMI translation key: /modules/docxImport/imported
+msgctxt "/modules/docxImport/imported"
+msgid "The DOCX manuscript has been opened."
+msgstr "S'ha obert el manuscrit DOCX."
+
+#. OMI translation key: /modules/docxImport/confirmReplace
+msgctxt "/modules/docxImport/confirmReplace"
+msgid "Open this DOCX as a new OMI manuscript? The current active manuscript will leave the single-document workspace."
+msgstr "Obre aquest DOCX com a manuscrit OMI nou? El manuscrit actiu actual deixarà l'espai de treball d'un sol document."
+
+#. OMI translation key: /modules/docxImport/currentWorkspaceWarning
+msgctxt "/modules/docxImport/currentWorkspaceWarning"
+msgid "Import creates a new manuscript identity and a new root revision. It does not rewrite the current manuscript history."
+msgstr "La importació crea una nova identitat de manuscrit i una nova revisió arrel. No reescriu el historial del manuscrit actual."
+
+#. OMI translation key: /modules/docxImport/stats/sections
+msgctxt "/modules/docxImport/stats/sections"
+msgid "Sections"
+msgstr "Seccions"
+
+#. OMI translation key: /modules/docxImport/stats/paragraphs
+msgctxt "/modules/docxImport/stats/paragraphs"
+msgid "Paragraphs"
+msgstr "Pàrags"
+
+#. OMI translation key: /modules/docxImport/stats/lists
+msgctxt "/modules/docxImport/stats/lists"
+msgid "Lists"
+msgstr "Llistes"
+
+#. OMI translation key: /modules/docxImport/stats/notes
+msgctxt "/modules/docxImport/stats/notes"
+msgid "Notes"
+msgstr "Notes"
+
+#. OMI translation key: /modules/docxImport/stats/images
+msgctxt "/modules/docxImport/stats/images"
+msgid "Images"
+msgstr "Imatges"
+
+#. OMI translation key: /modules/docxImport/stats/tables
+msgctxt "/modules/docxImport/stats/tables"
+msgid "Tables"
+msgstr "Taules"
+
+#. OMI translation key: /modules/docxImport/stats/equations
+msgctxt "/modules/docxImport/stats/equations"
+msgid "Equations"
+msgstr "Equacions"
+
+#. OMI translation key: /modules/docxImport/stats/citations
+msgctxt "/modules/docxImport/stats/citations"
+msgid "Citations"
+msgstr "Cites"
+
+#. OMI translation key: /modules/docxImport/stats/references
+msgctxt "/modules/docxImport/stats/references"
+msgid "Reference records"
+msgstr "Registres de referència"
+
+#. OMI translation key: /modules/docxImport/warningText/tracked-deletions
+msgctxt "/modules/docxImport/warningText/tracked-deletions"
+msgid "Tracked deletions are not imported; accepted/visible text is preferred."
+msgstr "Les supressions seguides no s'importen; es prefereix el text acceptat/visible."
+
+#. OMI translation key: /modules/docxImport/warningText/comments-not-imported
+msgctxt "/modules/docxImport/warningText/comments-not-imported"
+msgid "Word comments are not yet converted into OMI review annotations."
+msgstr "Els comentaris de Word encara no s'han convertit en anotacions de revisió d'OMI."
+
+#. OMI translation key: /modules/docxImport/warningText/text-boxes-flattened
+msgctxt "/modules/docxImport/warningText/text-boxes-flattened"
+msgid "Text-box content may be flattened into the main text flow."
+msgstr "El contingut de les caixes de text es pot aplanar al flux de text principal."
+
+#. OMI translation key: /modules/docxImport/warningText/conflicting-title-metadata
+msgctxt "/modules/docxImport/warningText/conflicting-title-metadata"
+msgid "DOCX core title and the styled document title differ; the core title is retained."
+msgstr "El títol principal de DOCX i el títol d'estil del document difereixen; es conserva el títol principal."
+
+#. OMI translation key: /modules/docxImport/warningText/merged-table-cells
+msgctxt "/modules/docxImport/warningText/merged-table-cells"
+msgid "Merged Word table cells are flattened into the editable rectangular OMI table model."
+msgstr "Les cel·les de taula fusionades de Word s'aplanen en el model de taula rectangular editable d'OMI."
+
+#. OMI translation key: /modules/docxImport/warningText/missing-note-body
+msgctxt "/modules/docxImport/warningText/missing-note-body"
+msgid "A note reference was found without a readable note body."
+msgstr "S'ha trobat una referència a una nota sense el cos de la nota llegible."
+
+#. OMI translation key: /modules/docxImport/warningText/unresolved-word-citation
+msgctxt "/modules/docxImport/warningText/unresolved-word-citation"
+msgid "A Word citation field references a source that could not be matched to embedded bibliography metadata."
+msgstr "Un camp de citació de Word fa referència a una font que no s'ha pogut associar als metadades de bibliografia incrustats."
+
+#. OMI translation key: /modules/docxImport/warningText/word-cross-reference-flattened
+msgctxt "/modules/docxImport/warningText/word-cross-reference-flattened"
+msgid "A Word REF/PAGEREF field is preserved as visible text; semantic OMI target mapping needs review."
+msgstr "Un camp REF/PAGEREF de Word es conserva com a text visible; cal revisar la correspondència semàntica de destinacions d'OMI."
+
+#. OMI translation key: /modules/docxImport/warningText/inline-equation-promoted
+msgctxt "/modules/docxImport/warningText/inline-equation-promoted"
+msgid "An inline Word equation was promoted to a separate editable equation block."
+msgstr "Una equació de Word en línia s'ha convertit en un bloc d'equació editable i independent."
+
+#. OMI translation key: /modules/docxImport/warningText/title-from-filename
+msgctxt "/modules/docxImport/warningText/title-from-filename"
+msgid "No explicit document title was found; the file name is used as the manuscript title."
+msgstr "No s'ha trobat cap títol de document explícit; s'utilitza el nom del fitxer com a títol del manuscrit."
+
+#. OMI translation key: /modules/docxImport/warningText/authors-from-docx-metadata
+msgctxt "/modules/docxImport/warningText/authors-from-docx-metadata"
+msgid "Author names were inferred from DOCX metadata and should be reviewed."
+msgstr "Els noms dels autors s'han deduït dels metadades del DOCX i s'haurien de revisar."
+
+#. OMI translation key: /modules/docxImport/warningText/headers-footers-not-imported
+msgctxt "/modules/docxImport/warningText/headers-footers-not-imported"
+msgid "Headers and footers are not imported into scholarly manuscript content."
+msgstr "Els encapçalaments i els peu de pàgina no s'importen al contingut del manuscrit acadèmic."
+
+#. OMI translation key: /modules/exportFormats/title
+msgctxt "/modules/exportFormats/title"
+msgid "Export formats"
+msgstr "Formats d'exportació"
+
+#. OMI translation key: /modules/exportFormats/description
+msgctxt "/modules/exportFormats/description"
+msgid "Export the manuscript from the same semantic OMI model into portable and publication formats."
+msgstr "Exportar el manuscrit des del mateix model OMI semàntic en formats portàtils i de publicació."
+
+#. OMI translation key: /modules/exportFormats/portable
+msgctxt "/modules/exportFormats/portable"
+msgid "Portable OMI formats"
+msgstr "Formats OMI portàtils"
+
+#. OMI translation key: /modules/exportFormats/publication
+msgctxt "/modules/exportFormats/publication"
+msgid "Publication formats"
+msgstr "Formats de publicació"
+
+#. OMI translation key: /modules/exportFormats/omi
+msgctxt "/modules/exportFormats/omi"
+msgid "OMI container"
+msgstr "Contenidor OMI"
+
+#. OMI translation key: /modules/exportFormats/omiDescription
+msgctxt "/modules/exportFormats/omiDescription"
+msgid "Complete portable package containing manuscript state, history, metadata, publication profile, JATS/HTML and assets."
+msgstr "Paquet portàtil complet que conté l'estat del manuscrit, el seu historial, metadades, el perfil de publicació, JATS/HTML i actius."
+
+#. OMI translation key: /modules/exportFormats/omiJson
+msgctxt "/modules/exportFormats/omiJson"
+msgid "OMI JSON"
+msgstr "OMI JSON"
+
+#. OMI translation key: /modules/exportFormats/omiJsonDescription
+msgctxt "/modules/exportFormats/omiJsonDescription"
+msgid "Canonical human- and machine-readable JSON representation of the OMI manuscript model."
+msgstr "Representació JSON canònica, llegible per a humans i màquines, del model de manuscrit OMI."
+
+#. OMI translation key: /modules/exportFormats/jats
+msgctxt "/modules/exportFormats/jats"
+msgid "JATS XML 1.4"
+msgstr "JATS XML 1.4"
+
+#. OMI translation key: /modules/exportFormats/jatsDescription
+msgctxt "/modules/exportFormats/jatsDescription"
+msgid "NISO JATS Article Authoring XML for journal and publisher workflows."
+msgstr "NISO JATS Article Authoring XML per a fluxos de treball de revistes i editors."
+
+#. OMI translation key: /modules/exportFormats/html
+msgctxt "/modules/exportFormats/html"
+msgid "Semantic HTML5"
+msgstr "HTML5 semàntic"
+
+#. OMI translation key: /modules/exportFormats/htmlDescription
+msgctxt "/modules/exportFormats/htmlDescription"
+msgid "Standalone, script-free accessible HTML publication view."
+msgstr "Vista de publicació HTML accessible, autònoma i sense scripts."
+
+#. OMI translation key: /modules/exportFormats/docx
+msgctxt "/modules/exportFormats/docx"
+msgid "Microsoft Word (DOCX)"
+msgstr "Microsoft Word (DOCX)"
+
+#. OMI translation key: /modules/exportFormats/docxDescription
+msgctxt "/modules/exportFormats/docxDescription"
+msgid "Editable Word document with real heading styles and the core manuscript structure."
+msgstr "Document de Word editable amb estils de títol reals i l'estructura bàsica del manuscrit."
+
+#. OMI translation key: /modules/exportFormats/idml
+msgctxt "/modules/exportFormats/idml"
+msgid "Adobe InDesign (IDML)"
+msgstr "Adobe InDesign (IDML)"
+
+#. OMI translation key: /modules/exportFormats/idmlDescription
+msgctxt "/modules/exportFormats/idmlDescription"
+msgid "Editable InDesign Markup Language package with OMI paragraph styles, section hierarchy and publisher-oriented text structure."
+msgstr "Paquet editable de l'InDesign Markup Language amb estils de paràgraf OMI, jerarquia de seccions i estructura de text orientada a l'editor."
+
+#. OMI translation key: /modules/exportFormats/xtg
+msgctxt "/modules/exportFormats/xtg"
+msgid "QuarkXPress (XPress Tags)"
+msgstr "QuarkXPress (XPress Tags)"
+
+#. OMI translation key: /modules/exportFormats/xtgDescription
+msgctxt "/modules/exportFormats/xtgDescription"
+msgid "UTF-8 XPress Tags file for QuarkXPress import with OMI paragraph and heading styles."
+msgstr "Fitxer de XPress Tags en UTF-8 per a la importació a QuarkXPress amb estils de paràgraf i de rètol OMI."
+
+#. OMI translation key: /modules/exportFormats/mif
+msgctxt "/modules/exportFormats/mif"
+msgid "Adobe FrameMaker (MIF)"
+msgstr "Adobe FrameMaker (MIF)"
+
+#. OMI translation key: /modules/exportFormats/mifDescription
+msgctxt "/modules/exportFormats/mifDescription"
+msgid "Editable Maker Interchange Format document for FrameMaker workflows."
+msgstr "Document editable del format d'intercanvi Maker per a fluxos de treball de FrameMaker."
+
+#. OMI translation key: /modules/exportFormats/sla
+msgctxt "/modules/exportFormats/sla"
+msgid "Scribus (SLA)"
+msgstr "Scribus (SLA)"
+
+#. OMI translation key: /modules/exportFormats/slaDescription
+msgctxt "/modules/exportFormats/slaDescription"
+msgid "Editable Scribus document with OMI paragraph styles and a continuous text frame."
+msgstr "Document editable de Scribus amb estils de paràgraf OMI i un marc de text continu."
+
+#. OMI translation key: /modules/exportFormats/latex
+msgctxt "/modules/exportFormats/latex"
+msgid "LaTeX"
+msgstr "LaTeX"
+
+#. OMI translation key: /modules/exportFormats/latexDescription
+msgctxt "/modules/exportFormats/latexDescription"
+msgid "UTF-8 LaTeX source for scientific and automated TeX-based publishing workflows."
+msgstr "Codi font LaTeX en UTF-8 per a fluxos de treball de publicació científica i automatitzada basats en TeX."
+
+#. OMI translation key: /modules/exportFormats/epub
+msgctxt "/modules/exportFormats/epub"
+msgid "EPUB 3"
+msgstr "EPUB 3"
+
+#. OMI translation key: /modules/exportFormats/epubDescription
+msgctxt "/modules/exportFormats/epubDescription"
+msgid "Portable EPUB 3 ebook publication package."
+msgstr "Paquet de publicació de llibre electrònic EPUB 3 portàtil."
+
+#. OMI translation key: /modules/exportFormats/pdf
+msgctxt "/modules/exportFormats/pdf"
+msgid "PDF"
+msgstr "PDF"
+
+#. OMI translation key: /modules/exportFormats/pdfDescription
+msgctxt "/modules/exportFormats/pdfDescription"
+msgid "Publication-profile print view that can be saved as PDF in the browser."
+msgstr "Vista d'impressió de perfil de publicació que es pot desar com a PDF al navegador."
+
+#. OMI translation key: /modules/exportFormats/export
+msgctxt "/modules/exportFormats/export"
+msgid "Export"
+msgstr "Exportació"
+
+#. OMI translation key: /modules/exportFormats/preparing
+msgctxt "/modules/exportFormats/preparing"
+msgid "Preparing…"
+msgstr "Preparant…"
+
+#. OMI translation key: /modules/exportFormats/failed
+msgctxt "/modules/exportFormats/failed"
+msgid "Export failed."
+msgstr "L'exportació ha fallat."
+
+#. OMI translation key: /modules/exportFormats/pdfHint
+msgctxt "/modules/exportFormats/pdfHint"
+msgid "Choose Save as PDF in the print dialog that opens."
+msgstr "Trieu «Desa com a PDF» al diàleg d'impressió que s'obre."
+
+#. OMI translation key: /modules/frontMatter/subtitle
+msgctxt "/modules/frontMatter/subtitle"
+msgid "Subtitle"
+msgstr "Subtítol"
+
+#. OMI translation key: /modules/frontMatter/subtitleOptional
+msgctxt "/modules/frontMatter/subtitleOptional"
+msgid "Subtitle (optional)"
+msgstr "Subtítol (opcional)"
+
+#. OMI translation key: /modules/frontMatter/subtitlePlaceholder
+msgctxt "/modules/frontMatter/subtitlePlaceholder"
+msgid "Add an optional subtitle"
+msgstr "Afegiu un subtítol opcional"
+
+#. OMI translation key: /modules/frontMatter/motto
+msgctxt "/modules/frontMatter/motto"
+msgid "Motto"
+msgstr "Lema"
+
+#. OMI translation key: /modules/frontMatter/mottoOptional
+msgctxt "/modules/frontMatter/mottoOptional"
+msgid "Motto (optional)"
+msgstr "Lema (opcional)"
+
+#. OMI translation key: /modules/frontMatter/mottoPlaceholder
+msgctxt "/modules/frontMatter/mottoPlaceholder"
+msgid "Add an optional motto or epigraph"
+msgstr "Afegiu un lema o epígraf opcional"
+
+#. OMI translation key: /modules/frontMatter/frontMatter
+msgctxt "/modules/frontMatter/frontMatter"
+msgid "Title block"
+msgstr "Bloc de títol"
+
+#. OMI translation key: /modules/frontMatter/frontMatterDescription
+msgctxt "/modules/frontMatter/frontMatterDescription"
+msgid "Subtitle and motto are independent optional scholarly front-matter fields."
+msgstr "El subtítol i el lema són camps independents i opcionals de material introductori acadèmic."
+
+#. OMI translation key: /modules/frontMatter/optional
+msgctxt "/modules/frontMatter/optional"
+msgid "Optional"
+msgstr "Opcional"
+
+#. OMI translation key: /modules/frontMatter/belowTitle
+msgctxt "/modules/frontMatter/belowTitle"
+msgid "Below title"
+msgstr "Sota el títol"
+
+#. OMI translation key: /modules/frontMatter/belowSubtitle
+msgctxt "/modules/frontMatter/belowSubtitle"
+msgid "Below subtitle"
+msgstr "Sota el subtítol"
+
+#. OMI translation key: /modules/frontMatter/italic
+msgctxt "/modules/frontMatter/italic"
+msgid "Italic"
+msgstr "Cursiva"
+
+#. OMI translation key: /modules/frontMatter/normal
+msgctxt "/modules/frontMatter/normal"
+msgid "Normal"
+msgstr "Normal"
+
+#. OMI translation key: /modules/frontMatter/alignLeft
+msgctxt "/modules/frontMatter/alignLeft"
+msgid "Left"
+msgstr "Esquerra"
+
+#. OMI translation key: /modules/frontMatter/alignCenter
+msgctxt "/modules/frontMatter/alignCenter"
+msgid "Center"
+msgstr "Centre"
+
+#. OMI translation key: /modules/frontMatter/alignRight
+msgctxt "/modules/frontMatter/alignRight"
+msgid "Right"
+msgstr "Dreta"
+
+#. OMI translation key: /modules/help/navigation
+msgctxt "/modules/help/navigation"
+msgid "Help"
+msgstr "Ajuda"
+
+#. OMI translation key: /modules/help/title
+msgctxt "/modules/help/title"
+msgid "Help for authors"
+msgstr "Ajuda per a autors"
+
+#. OMI translation key: /modules/help/description
+msgctxt "/modules/help/description"
+msgid "A short guide to editing manuscripts and using the main Studio features."
+msgstr "Una guia breu per editar manuscrits i utilitzar les funcions principals de Studio."
+
+#. OMI translation key: /modules/help/gettingStarted
+msgctxt "/modules/help/gettingStarted"
+msgid "When a manuscript is opened from OJS, Studio imports the document and available publication metadata. Editing then takes place in the Studio manuscript model."
+msgstr "Quan s'obre un manuscrit des de l'OJS, l'Studio importa el document i les metadades de publicació disponibles. L'edició es fa aleshores al model de manuscrit de l'Studio."
+
+#. OMI translation key: /modules/help/topics/0/title
+msgctxt "/modules/help/topics/0/title"
+msgid "Editing the manuscript"
+msgstr "Edició del manuscrit"
+
+#. OMI translation key: /modules/help/topics/0/body
+msgctxt "/modules/help/topics/0/body"
+msgid "Edit manuscript text in the main editor. Review its structure under Manuscript menu → Document."
+msgstr "Editeu el text del manuscrit a l'editor principal. Reviseu-ne l'estructura al menú Manuscrit → Document."
+
+#. OMI translation key: /modules/help/topics/0/tips/0
+msgctxt "/modules/help/topics/0/tips/0"
+msgid "Use real heading styles for section headings."
+msgstr "Utilitzeu estils de títol reals per als títols de secció."
+
+#. OMI translation key: /modules/help/topics/0/tips/1
+msgctxt "/modules/help/topics/0/tips/1"
+msgid "Do not rely on bold text or font size alone to express structure."
+msgstr "No us refieu només en el text en negreta o la mida de la lletra per expressar l'estructura."
+
+#. OMI translation key: /modules/help/topics/1/title
+msgctxt "/modules/help/topics/1/title"
+msgid "Manuscript data and languages"
+msgstr "Dades del manuscrit i idiomes"
+
+#. OMI translation key: /modules/help/topics/1/body
+msgctxt "/modules/help/topics/1/body"
+msgid "Abstracts, keywords and other scholarly metadata are edited under Manuscript data. Multilingual fields can be maintained separately in HU, EN and DE."
+msgstr "Els resums, les paraules clau i altres metadades acadèmiques s'editen a les dades del manuscrit. Els camps multilingües es poden mantenir per separat en hongarès, anglès i alemany."
+
+#. OMI translation key: /modules/help/topics/1/tips/0
+msgctxt "/modules/help/topics/1/tips/0"
+msgid "The manuscript language and metadata language are separate concepts."
+msgstr "L'idioma del manuscrit i l'idioma de les metadades són conceptes separats."
+
+#. OMI translation key: /modules/help/topics/1/tips/1
+msgctxt "/modules/help/topics/1/tips/1"
+msgid "A Hungarian article may also have English and German abstracts and keywords."
+msgstr "Un article hongarès també pot tenir resums i paraules clau en anglès i alemany."
+
+#. OMI translation key: /modules/help/topics/2/title
+msgctxt "/modules/help/topics/2/title"
+msgid "Notes"
+msgstr "Notes"
+
+#. OMI translation key: /modules/help/topics/2/body
+msgctxt "/modules/help/topics/2/body"
+msgid "Footnotes and endnotes are retained as semantic note objects. Review and edit them under Notes."
+msgstr "Les notes a peu de pàgina i les notes finals es conserven com a objectes de nota semàntica. Reviseu-les i editeu-les a Notes."
+
+#. OMI translation key: /modules/help/topics/3/title
+msgctxt "/modules/help/topics/3/title"
+msgid "References"
+msgstr "Referències"
+
+#. OMI translation key: /modules/help/topics/3/body
+msgctxt "/modules/help/topics/3/body"
+msgid "Cited works are stored as structured bibliographic records. Add a work once and reuse it in multiple citations."
+msgstr "Les obres citades s'emmagatzemen com a registres bibliogràfics estructurats. Afegiu una obra un cop i reutilitzeu-la en múltiples citacions."
+
+#. OMI translation key: /modules/help/topics/4/title
+msgctxt "/modules/help/topics/4/title"
+msgid "Contributors"
+msgstr "Col·laboradors"
+
+#. OMI translation key: /modules/help/topics/4/body
+msgctxt "/modules/help/topics/4/body"
+msgid "Manage authors and other contributors, roles, affiliations and ORCID identifiers here."
+msgstr "Gestioneu aquí els autors i altres col·laboradors, els rols, les afiliacions i els identificadors ORCID."
+
+#. OMI translation key: /modules/help/topics/5/title
+msgctxt "/modules/help/topics/5/title"
+msgid "Revisions and saving"
+msgstr "Revisions i desat"
+
+#. OMI translation key: /modules/help/topics/5/body
+msgctxt "/modules/help/topics/5/body"
+msgid "Studio tracks important changes as revisions. Use History to review changes and, where supported, return to an earlier state."
+msgstr "L'Studio fa un seguiment dels canvis importants com a revisions. Feu servir l'Historial per revisar els canvis i, si es permet, tornar a un estat anterior."
+
+#. OMI translation key: /modules/help/topics/6/title
+msgctxt "/modules/help/topics/6/title"
+msgid "Import from OJS"
+msgstr "Importació des de l'OJS"
+
+#. OMI translation key: /modules/help/topics/6/body
+msgctxt "/modules/help/topics/6/body"
+msgid "Studio can import the document, abstracts, keywords and other publication metadata from OJS. Only metadata actually present in OJS can be imported."
+msgstr "Studio pot importar el document, els resums, les paraules clau i altres metadades de publicació des d'OJS. Només es poden importar les metadades que estiguin realment presents a OJS."
+
+#. OMI translation key: /modules/help/topics/7/title
+msgctxt "/modules/help/topics/7/title"
+msgid "DOCX import"
+msgstr "Importació de DOCX"
+
+#. OMI translation key: /modules/help/topics/7/body
+msgctxt "/modules/help/topics/7/body"
+msgid "When importing Word documents, Studio also attempts to recover document structure."
+msgstr "En importar documents de Word, Studio també intenta recuperar l'estructura del document."
+
+#. OMI translation key: /modules/help/topics/7/tips/0
+msgctxt "/modules/help/topics/7/tips/0"
+msgid "Use Word Heading 1, Heading 2, etc. for section headings."
+msgstr "Utilitzeu els encapçalaments 1, 2, etc. de Word per als títols de secció."
+
+#. OMI translation key: /modules/help/topics/7/tips/1
+msgctxt "/modules/help/topics/7/tips/1"
+msgid "Direct-formatting recognition is only a fallback."
+msgstr "El reconeixement de format directe és només una opció de fallback."
+
+#. OMI translation key: /modules/help/topics/8/title
+msgctxt "/modules/help/topics/8/title"
+msgid "Export"
+msgstr "Exportació"
+
+#. OMI translation key: /modules/help/topics/8/body
+msgctxt "/modules/help/topics/8/body"
+msgid "Export & tools can create a portable .omi.json manuscript file containing the semantic document structure and OMI metadata."
+msgstr "L'exportació i les eines poden crear un fitxer de manuscrit .omi.json portàtil que conté l'estructura semàntica del document i els metadades OMI."
+
+#. OMI translation key: /modules/help/topics/9/title
+msgctxt "/modules/help/topics/9/title"
+msgid "If something looks wrong"
+msgstr "Si alguna cosa sembla malament"
+
+#. OMI translation key: /modules/help/topics/9/body
+msgctxt "/modules/help/topics/9/body"
+msgid "Check the manuscript language, selected metadata language and, for Word imports, heading styles. For OJS imports, also verify that the value is actually filled in under the OJS Publication metadata."
+msgstr "Verifiqueu l'idioma del manuscrit, l'idioma dels metadades seleccionat i, per a les importacions de Word, els estils de títol. Per a les importacions d'OJS, també verifiqueu que el valor estigui realment omplert a les metadades de publicació d'OJS."
+
+#. OMI translation key: /modules/htmlExport/title
+msgctxt "/modules/htmlExport/title"
+msgid "Semantic HTML5"
+msgstr "HTML5 semàntic"
+
+#. OMI translation key: /modules/htmlExport/description
+msgctxt "/modules/htmlExport/description"
+msgid "Render the semantic manuscript through the active Publication Profile as an accessible, script-free HTML5 scholarly article."
+msgstr "Rendiu el manuscrit semàntic a través del perfil de publicació actiu com un article acadèmic accessible en HTML5 sense scripts."
+
+#. OMI translation key: /modules/htmlExport/standard
+msgctxt "/modules/htmlExport/standard"
+msgid "Output profile"
+msgstr "Perfil de sortida"
+
+#. OMI translation key: /modules/htmlExport/renderingContext
+msgctxt "/modules/htmlExport/renderingContext"
+msgid "Rendering context"
+msgstr "Context de renderització"
+
+#. OMI translation key: /modules/htmlExport/currentRevision
+msgctxt "/modules/htmlExport/currentRevision"
+msgid "Manuscript revision"
+msgstr "Revisió del manuscrit"
+
+#. OMI translation key: /modules/htmlExport/preview
+msgctxt "/modules/htmlExport/preview"
+msgid "Preview source"
+msgstr "Previsualització de la font"
+
+#. OMI translation key: /modules/htmlExport/hidePreview
+msgctxt "/modules/htmlExport/hidePreview"
+msgid "Hide source"
+msgstr "Amaga la font"
+
+#. OMI translation key: /modules/htmlExport/openPreview
+msgctxt "/modules/htmlExport/openPreview"
+msgid "Open rendered preview"
+msgstr "Obre la previsualització renderitzada"
+
+#. OMI translation key: /modules/htmlExport/downloadPackage
+msgctxt "/modules/htmlExport/downloadPackage"
+msgid "Download HTML package"
+msgstr "Descarrega el paquet HTML"
+
+#. OMI translation key: /modules/htmlExport/preparingPackage
+msgctxt "/modules/htmlExport/preparingPackage"
+msgid "Preparing package…"
+msgstr "Preparant el paquet…"
+
+#. OMI translation key: /modules/htmlExport/exportReady
+msgctxt "/modules/htmlExport/exportReady"
+msgid "The HTML rendering has no blocking diagnostics."
+msgstr "La renderització HTML no té diagnòstics de bloqueig."
+
+#. OMI translation key: /modules/htmlExport/exportHasErrors
+msgctxt "/modules/htmlExport/exportHasErrors"
+msgid "The HTML can be inspected, but blocking diagnostics must be resolved before a publication package is created."
+msgstr "L'HTML es pot inspeccionar, però els diagnòstics de bloqueig s'han de resoldre abans de crear un paquet de publicació."
+
+#. OMI translation key: /modules/htmlExport/errors
+msgctxt "/modules/htmlExport/errors"
+msgid "errors"
+msgstr "errors"
+
+#. OMI translation key: /modules/htmlExport/warnings
+msgctxt "/modules/htmlExport/warnings"
+msgid "warnings"
+msgstr "advertiments"
+
+#. OMI translation key: /modules/htmlExport/diagnostics
+msgctxt "/modules/htmlExport/diagnostics"
+msgid "HTML diagnostics"
+msgstr "Diagnòstics de l'HTML"
+
+#. OMI translation key: /modules/htmlExport/noDiagnostics
+msgctxt "/modules/htmlExport/noDiagnostics"
+msgid "No HTML-specific diagnostics."
+msgstr "No hi ha diagnòstics específics d'HTML."
+
+#. OMI translation key: /modules/htmlExport/workingPreview
+msgctxt "/modules/htmlExport/workingPreview"
+msgid "The preview reflects the current working state. Package download creates a checkpoint first so the output is traceable to a committed revision."
+msgstr "La previsualització reflecteix l'estat de treball actual. La descàrrega del paquet crea primer un punt de control perquè la sortida sigui rastrejable fins a una revisió compromesa."
+
+#. OMI translation key: /modules/htmlExport/unsupportedProfile
+msgctxt "/modules/htmlExport/unsupportedProfile"
+msgid "The active profile does not declare HTML as a supported output."
+msgstr "El perfil actiu no declara l'HTML com una sortida admesa."
+
+#. OMI translation key: /modules/htmlExport/accessibilityNote
+msgctxt "/modules/htmlExport/accessibilityNote"
+msgid "The renderer uses semantic headings, figures, tables, document-note roles, bibliography links and explicit image alt attributes. External accessibility auditing remains a separate publication step."
+msgstr "El renderitzador utilitza encapçalaments semàntics, figures, taules, rols de nota de document, enllaços de bibliografia i atributs explícits alt per a imatges. L'auditoria d'accessibilitat externa continua sent un pas de publicació separat."
+
+#. OMI translation key: /modules/htmlExport/packageNote
+msgctxt "/modules/htmlExport/packageNote"
+msgid "The ZIP package contains index.html, a manifest and referenced media assets under relative media/ paths. No script or external stylesheet is required."
+msgstr "El paquet ZIP conté index.html, un manifest i els recursos multimèdia referenciats en les rutes relatives media/. No es requereix cap script ni full d'estil extern."
+
+#. OMI translation key: /modules/jatsExport/title
+msgctxt "/modules/jatsExport/title"
+msgid "JATS XML"
+msgstr "JATS XML"
+
+#. OMI translation key: /modules/jatsExport/description
+msgctxt "/modules/jatsExport/description"
+msgid "Render the semantic manuscript through the active Publication Profile as NISO JATS 1.4 Article Authoring XML."
+msgstr "Rendir el manuscrit semàntic a través del Perfil de publicació actiu com a XML d'autor d'articles NISO JATS 1.4."
+
+#. OMI translation key: /modules/jatsExport/standard
+msgctxt "/modules/jatsExport/standard"
+msgid "Target standard"
+msgstr "Estàndard objectiu"
+
+#. OMI translation key: /modules/jatsExport/renderingContext
+msgctxt "/modules/jatsExport/renderingContext"
+msgid "Rendering context"
+msgstr "Context de renderització"
+
+#. OMI translation key: /modules/jatsExport/currentRevision
+msgctxt "/modules/jatsExport/currentRevision"
+msgid "Manuscript revision"
+msgstr "Revisió del manuscrit"
+
+#. OMI translation key: /modules/jatsExport/preview
+msgctxt "/modules/jatsExport/preview"
+msgid "Preview XML"
+msgstr "Previsualització XML"
+
+#. OMI translation key: /modules/jatsExport/hidePreview
+msgctxt "/modules/jatsExport/hidePreview"
+msgid "Hide XML"
+msgstr "Amaga XML"
+
+#. OMI translation key: /modules/jatsExport/download
+msgctxt "/modules/jatsExport/download"
+msgid "Download JATS XML"
+msgstr "Descarregar JATS XML"
+
+#. OMI translation key: /modules/jatsExport/exportReady
+msgctxt "/modules/jatsExport/exportReady"
+msgid "The JATS rendering has no blocking diagnostics."
+msgstr "La renderització JATS no té diagnòstics bloquejadors."
+
+#. OMI translation key: /modules/jatsExport/exportHasErrors
+msgctxt "/modules/jatsExport/exportHasErrors"
+msgid "The XML can be inspected, but blocking diagnostics must be resolved before publication."
+msgstr "L'XML es pot inspeccionar, però els diagnòstics bloquejadors s'han de resoldre abans de la publicació."
+
+#. OMI translation key: /modules/jatsExport/errors
+msgctxt "/modules/jatsExport/errors"
+msgid "errors"
+msgstr "errors"
+
+#. OMI translation key: /modules/jatsExport/warnings
+msgctxt "/modules/jatsExport/warnings"
+msgid "warnings"
+msgstr "advertiments"
+
+#. OMI translation key: /modules/jatsExport/diagnostics
+msgctxt "/modules/jatsExport/diagnostics"
+msgid "JATS diagnostics"
+msgstr "Diagnòstics JATS"
+
+#. OMI translation key: /modules/jatsExport/noDiagnostics
+msgctxt "/modules/jatsExport/noDiagnostics"
+msgid "No JATS-specific diagnostics."
+msgstr "No hi ha diagnòstics específics de JATS."
+
+#. OMI translation key: /modules/jatsExport/workingPreview
+msgctxt "/modules/jatsExport/workingPreview"
+msgid "The preview reflects the current working state. Download creates a checkpoint first so the exported XML is traceable to a committed revision."
+msgstr "La previsualització reflecteix l'estat de treball actual. La descàrrega primer crea un punt de control perquè l'XML exportat sigui rastrejable fins a una revisió compromesa."
+
+#. OMI translation key: /modules/jatsExport/unsupportedProfile
+msgctxt "/modules/jatsExport/unsupportedProfile"
+msgid "The active profile does not declare JATS as a supported output."
+msgstr "El perfil actiu no declara JATS com un format de sortida admès."
+
+#. OMI translation key: /modules/jatsExport/schemaNote
+msgctxt "/modules/jatsExport/schemaNote"
+msgid "Studio checks required structure, XML identifiers and internal rid targets. Full external JATS DTD/XSD/RNG validation remains a separate conformance step."
+msgstr "L'Studio comprova l'estructura necessària, els identificadors XML i els objectius RNG interns. La validació externa completa de la DTD/XSD/RNG de JATS continua sent un pas de conformitat independent."
+
+#. OMI translation key: /modules/noteCitations/addCitation
+msgctxt "/modules/noteCitations/addCitation"
+msgid "Insert reference"
+msgstr "Inserir referència"
+
+#. OMI translation key: /modules/noteCitations/citations
+msgctxt "/modules/noteCitations/citations"
+msgid "References in this note"
+msgstr "Referències en aquesta nota"
+
+#. OMI translation key: /modules/noteCitations/noCitations
+msgctxt "/modules/noteCitations/noCitations"
+msgid "No bibliographic references have been added to this note yet."
+msgstr "Encara no s'ha afegit cap referència bibliogràfica a aquesta nota."
+
+#. OMI translation key: /modules/noteCitations/removeCitation
+msgctxt "/modules/noteCitations/removeCitation"
+msgid "Remove reference"
+msgstr "Eliminar referència"
+
+#. OMI translation key: /modules/noteCitations/citationHint
+msgctxt "/modules/noteCitations/citationHint"
+msgid "Choose from the manuscript bibliography. Page, chapter, section and other locators are supported."
+msgstr "Trieu de la bibliografia del manuscrit. Es suporten pàgina, capítol, secció i altres localitzadors."
+
+#. OMI translation key: /modules/orcidLookup/searching
+msgctxt "/modules/orcidLookup/searching"
+msgid "Searching ORCID…"
+msgstr "Cercant ORCID…"
+
+#. OMI translation key: /modules/orcidLookup/noResults
+msgctxt "/modules/orcidLookup/noResults"
+msgid "No matching public ORCID records found."
+msgstr "No s'han trobat registres ORCID públics coincidents."
+
+#. OMI translation key: /modules/orcidLookup/unavailable
+msgctxt "/modules/orcidLookup/unavailable"
+msgid "ORCID search is temporarily unavailable. You can still enter an ORCID iD manually."
+msgstr "La cerca d'ORCID no està disponible temporalment. Tot i així, podeu introduir un ID d'ORCID manualment."
+
+#. OMI translation key: /modules/orcidLookup/suggestions
+msgctxt "/modules/orcidLookup/suggestions"
+msgid "ORCID suggestions"
+msgstr "Suggeriments d'ORCID"
+
+#. OMI translation key: /modules/orcidLookup/selected
+msgctxt "/modules/orcidLookup/selected"
+msgid "ORCID iD"
+msgstr "ID d'ORCID"
+
+#. OMI translation key: /modules/orcidLookup/openProfile
+msgctxt "/modules/orcidLookup/openProfile"
+msgid "Open ORCID record"
+msgstr "Obre el registre d'ORCID"
+
+#. OMI translation key: /modules/orcidLookup/registryMatch
+msgctxt "/modules/orcidLookup/registryMatch"
+msgid "Selected from the ORCID Registry"
+msgstr "Seleccionat del registre d'ORCID"
+
+#. OMI translation key: /modules/orcidLookup/notAuthenticated
+msgctxt "/modules/orcidLookup/notAuthenticated"
+msgid "Registry match — not OAuth-authenticated"
+msgstr "Coincidència al registre — no autenticada amb OAuth"
+
+#. OMI translation key: /modules/orcidLookup/manualEntry
+msgctxt "/modules/orcidLookup/manualEntry"
+msgid "You can also enter an ORCID iD manually."
+msgstr "També podeu introduir un ID d'ORCID manualment."
+
+#. OMI translation key: /modules/orcidLookup/poweredBy
+msgctxt "/modules/orcidLookup/poweredBy"
+msgid "Search powered by the public ORCID Registry"
+msgstr "Cerca impulsada pel registre públic d'ORCID"
+
+#. OMI translation key: /modules/publicationProfile/navigation
+msgctxt "/modules/publicationProfile/navigation"
+msgid "Publication"
+msgstr "Publicació"
+
+#. OMI translation key: /modules/publicationProfile/title
+msgctxt "/modules/publicationProfile/title"
+msgid "Publication profile"
+msgstr "Perfil de publicació"
+
+#. OMI translation key: /modules/publicationProfile/description
+msgctxt "/modules/publicationProfile/description"
+msgid "Choose the rendering, metadata and accessibility rules for the intended publication target."
+msgstr "Trieu les regles de renderització, metadades i accessibilitat per al públic objectiu de la publicació."
+
+#. OMI translation key: /modules/publicationProfile/experimental
+msgctxt "/modules/publicationProfile/experimental"
+msgid "Studio implementation profile. OMI-SPEC-240 is still Reserved; this does not claim specification conformance."
+msgstr "Perfil d'implementació de l'estudi. OMI-SPEC-240 encara està reservat; això no afirma la conformitat amb l'especificació."
+
+#. OMI translation key: /modules/publicationProfile/selectedProfile
+msgctxt "/modules/publicationProfile/selectedProfile"
+msgid "Selected profile"
+msgstr "Perfil seleccionat"
+
+#. OMI translation key: /modules/publicationProfile/chooseProfile
+msgctxt "/modules/publicationProfile/chooseProfile"
+msgid "Choose a profile"
+msgstr "Tria d'un perfil"
+
+#. OMI translation key: /modules/publicationProfile/applyProfile
+msgctxt "/modules/publicationProfile/applyProfile"
+msgid "Apply profile"
+msgstr "Aplica el perfil"
+
+#. OMI translation key: /modules/publicationProfile/reapplied
+msgctxt "/modules/publicationProfile/reapplied"
+msgid "Profile defaults applied."
+msgstr "Aplicat el perfil per defecte."
+
+#. OMI translation key: /modules/publicationProfile/active
+msgctxt "/modules/publicationProfile/active"
+msgid "Active"
+msgstr "Actiu"
+
+#. OMI translation key: /modules/publicationProfile/profileVersion
+msgctxt "/modules/publicationProfile/profileVersion"
+msgid "Version"
+msgstr "Versió"
+
+#. OMI translation key: /modules/publicationProfile/profilePublisher
+msgctxt "/modules/publicationProfile/profilePublisher"
+msgid "Publisher"
+msgstr "Editor"
+
+#. OMI translation key: /modules/publicationProfile/rules
+msgctxt "/modules/publicationProfile/rules"
+msgid "Rendering rules"
+msgstr "Regles de renderització"
+
+#. OMI translation key: /modules/publicationProfile/layout
+msgctxt "/modules/publicationProfile/layout"
+msgid "Layout"
+msgstr "Maquetació"
+
+#. OMI translation key: /modules/publicationProfile/sections
+msgctxt "/modules/publicationProfile/sections"
+msgid "Sections"
+msgstr "Seccions"
+
+#. OMI translation key: /modules/publicationProfile/citations
+msgctxt "/modules/publicationProfile/citations"
+msgid "Citations"
+msgstr "Cites"
+
+#. OMI translation key: /modules/publicationProfile/notes
+msgctxt "/modules/publicationProfile/notes"
+msgid "Notes"
+msgstr "Notes"
+
+#. OMI translation key: /modules/publicationProfile/objects
+msgctxt "/modules/publicationProfile/objects"
+msgid "Figures, tables and equations"
+msgstr "Figures, taules i equacions"
+
+#. OMI translation key: /modules/publicationProfile/contributors
+msgctxt "/modules/publicationProfile/contributors"
+msgid "Contributors"
+msgstr "Col·laboradors"
+
+#. OMI translation key: /modules/publicationProfile/accessibility
+msgctxt "/modules/publicationProfile/accessibility"
+msgid "Accessibility"
+msgstr "Accessibilitat"
+
+#. OMI translation key: /modules/publicationProfile/outputs
+msgctxt "/modules/publicationProfile/outputs"
+msgid "Output targets"
+msgstr "Objectius de sortida"
+
+#. OMI translation key: /modules/publicationProfile/page
+msgctxt "/modules/publicationProfile/page"
+msgid "Page"
+msgstr "Pàgina"
+
+#. OMI translation key: /modules/publicationProfile/columns
+msgctxt "/modules/publicationProfile/columns"
+msgid "Columns"
+msgstr "Columnes"
+
+#. OMI translation key: /modules/publicationProfile/typography
+msgctxt "/modules/publicationProfile/typography"
+msgid "Typography"
+msgstr "Tipografia"
+
+#. OMI translation key: /modules/publicationProfile/margins
+msgctxt "/modules/publicationProfile/margins"
+msgid "Margins"
+msgstr "Marges"
+
+#. OMI translation key: /modules/publicationProfile/numbering
+msgctxt "/modules/publicationProfile/numbering"
+msgid "Numbering"
+msgstr "Numeració"
+
+#. OMI translation key: /modules/publicationProfile/maxDepth
+msgctxt "/modules/publicationProfile/maxDepth"
+msgid "Numbered depth"
+msgstr "Profunditat numerada"
+
+#. OMI translation key: /modules/publicationProfile/citationStyle
+msgctxt "/modules/publicationProfile/citationStyle"
+msgid "Citation style"
+msgstr "Estil de citació"
+
+#. OMI translation key: /modules/publicationProfile/notePlacement
+msgctxt "/modules/publicationProfile/notePlacement"
+msgid "Note placement"
+msgstr "Col·locació de les notes"
+
+#. OMI translation key: /modules/publicationProfile/objectNumbering
+msgctxt "/modules/publicationProfile/objectNumbering"
+msgid "Object numbering"
+msgstr "Numeració d'objectes"
+
+#. OMI translation key: /modules/publicationProfile/figureCaption
+msgctxt "/modules/publicationProfile/figureCaption"
+msgid "Figure caption"
+msgstr "Peu de figura"
+
+#. OMI translation key: /modules/publicationProfile/tableCaption
+msgctxt "/modules/publicationProfile/tableCaption"
+msgid "Table caption"
+msgstr "Peu de taula"
+
+#. OMI translation key: /modules/publicationProfile/showOrcid
+msgctxt "/modules/publicationProfile/showOrcid"
+msgid "Show ORCID"
+msgstr "Mostra l'ORCID"
+
+#. OMI translation key: /modules/publicationProfile/showAffiliations
+msgctxt "/modules/publicationProfile/showAffiliations"
+msgid "Show affiliations"
+msgstr "Mostra les afiliacions"
+
+#. OMI translation key: /modules/publicationProfile/yes
+msgctxt "/modules/publicationProfile/yes"
+msgid "Yes"
+msgstr "Sí"
+
+#. OMI translation key: /modules/publicationProfile/no
+msgctxt "/modules/publicationProfile/no"
+msgid "No"
+msgstr "No"
+
+#. OMI translation key: /modules/publicationProfile/above
+msgctxt "/modules/publicationProfile/above"
+msgid "Above"
+msgstr "A dalt"
+
+#. OMI translation key: /modules/publicationProfile/below
+msgctxt "/modules/publicationProfile/below"
+msgid "Below"
+msgstr "A sota"
+
+#. OMI translation key: /modules/publicationProfile/document
+msgctxt "/modules/publicationProfile/document"
+msgid "Whole document"
+msgstr "Document complet"
+
+#. OMI translation key: /modules/publicationProfile/section
+msgctxt "/modules/publicationProfile/section"
+msgid "Per section"
+msgstr "Per secció"
+
+#. OMI translation key: /modules/publicationProfile/footnotes
+msgctxt "/modules/publicationProfile/footnotes"
+msgid "Footnotes"
+msgstr "Notes a peu de pàgina"
+
+#. OMI translation key: /modules/publicationProfile/endnotes
+msgctxt "/modules/publicationProfile/endnotes"
+msgid "Endnotes"
+msgstr "Notes finals"
+
+#. OMI translation key: /modules/publicationProfile/interactive
+msgctxt "/modules/publicationProfile/interactive"
+msgid "Interactive notes"
+msgstr "Notes interactives"
+
+#. OMI translation key: /modules/publicationProfile/readiness
+msgctxt "/modules/publicationProfile/readiness"
+msgid "Publication readiness"
+msgstr "Llistesa per a la publicació"
+
+#. OMI translation key: /modules/publicationProfile/ready
+msgctxt "/modules/publicationProfile/ready"
+msgid "Ready for profile-based rendering"
+msgstr "Llesta per a la renderització basada en el perfil"
+
+#. OMI translation key: /modules/publicationProfile/notReady
+msgctxt "/modules/publicationProfile/notReady"
+msgid "Publication requirements still need attention"
+msgstr "Els requisits de publicació encara requereixen atenció"
+
+#. OMI translation key: /modules/publicationProfile/errors
+msgctxt "/modules/publicationProfile/errors"
+msgid "errors"
+msgstr "errors"
+
+#. OMI translation key: /modules/publicationProfile/warnings
+msgctxt "/modules/publicationProfile/warnings"
+msgid "warnings"
+msgstr "advertiments"
+
+#. OMI translation key: /modules/publicationProfile/noIssues
+msgctxt "/modules/publicationProfile/noIssues"
+msgid "No profile-specific readiness issues were found."
+msgstr "No s'han trobat problemes de preparació específics del perfil."
+
+#. OMI translation key: /modules/publicationProfile/requirements
+msgctxt "/modules/publicationProfile/requirements"
+msgid "Metadata requirements"
+msgstr "Requisits de metadades"
+
+#. OMI translation key: /modules/publicationProfile/requirementLabels/off
+msgctxt "/modules/publicationProfile/requirementLabels/off"
+msgid "Not required"
+msgstr "No requerit"
+
+#. OMI translation key: /modules/publicationProfile/requirementLabels/recommended
+msgctxt "/modules/publicationProfile/requirementLabels/recommended"
+msgid "Recommended"
+msgstr "Recomanat"
+
+#. OMI translation key: /modules/publicationProfile/requirementLabels/required
+msgctxt "/modules/publicationProfile/requirementLabels/required"
+msgid "Required"
+msgstr "Requerit"
+
+#. OMI translation key: /modules/publicationProfile/issueText/missing-title
+msgctxt "/modules/publicationProfile/issueText/missing-title"
+msgid "A manuscript title is required."
+msgstr "Es requereix un títol del manuscrit."
+
+#. OMI translation key: /modules/publicationProfile/issueText/missing-abstract
+msgctxt "/modules/publicationProfile/issueText/missing-abstract"
+msgid "An abstract is required by this profile."
+msgstr "Aquest perfil requereix un resum."
+
+#. OMI translation key: /modules/publicationProfile/issueText/too-few-keywords
+msgctxt "/modules/publicationProfile/issueText/too-few-keywords"
+msgid "The manuscript has fewer keywords than this profile requires."
+msgstr "El manuscrit té menys paraules clau de les que requereix aquest perfil."
+
+#. OMI translation key: /modules/publicationProfile/issueText/missing-contributor
+msgctxt "/modules/publicationProfile/issueText/missing-contributor"
+msgid "At least one author contribution is required."
+msgstr "Es requereix com a mínim una contribució de l'autor."
+
+#. OMI translation key: /modules/publicationProfile/issueText/missing-affiliation
+msgctxt "/modules/publicationProfile/issueText/missing-affiliation"
+msgid "A contributor has no affiliation."
+msgstr "Un col·laborador no té cap afiliació."
+
+#. OMI translation key: /modules/publicationProfile/issueText/missing-orcid
+msgctxt "/modules/publicationProfile/issueText/missing-orcid"
+msgid "A contributor has no ORCID identifier."
+msgstr "Un col·laborador no té cap identificador ORCID."
+
+#. OMI translation key: /modules/publicationProfile/issueText/missing-figure-alt
+msgctxt "/modules/publicationProfile/issueText/missing-figure-alt"
+msgid "A figure is missing alternative text."
+msgstr "A una figura li falta text alternatiu."
+
+#. OMI translation key: /modules/publicationProfile/issueText/missing-table-header
+msgctxt "/modules/publicationProfile/issueText/missing-table-header"
+msgid "A table has no declared header row."
+msgstr "Una taula no té cap fila d'encapçalament declarada."
+
+#. OMI translation key: /modules/publicationProfile/issueText/unresolved-citation
+msgctxt "/modules/publicationProfile/issueText/unresolved-citation"
+msgid "A citation points to a missing bibliographic record."
+msgstr "Una citació fa referència a un registre bibliogràfic que falta."
+
+#. OMI translation key: /modules/publicationProfile/issueText/unresolved-cross-reference
+msgctxt "/modules/publicationProfile/issueText/unresolved-cross-reference"
+msgid "An internal cross-reference points to a missing target."
+msgstr "Una referència creuada interna fa referència a un destinatari que falta."
+
+#. OMI translation key: /modules/publicationProfile/issueText/profile-override
+msgctxt "/modules/publicationProfile/issueText/profile-override"
+msgid "A manuscript presentation preference overrides the selected profile default."
+msgstr "Una preferència de presentació del manuscrit anula el valor per defecte del perfil seleccionat."
+
+#. OMI translation key: /modules/publicationProfile/exportProfile
+msgctxt "/modules/publicationProfile/exportProfile"
+msgid "Export profile JSON"
+msgstr "Exporta el perfil JSON"
+
+#. OMI translation key: /modules/publicationProfile/exportDescription
+msgctxt "/modules/publicationProfile/exportDescription"
+msgid "Save the exact profile definition used for reproducible future rendering."
+msgstr "Desar la definició exacta del perfil utilitzada per a una presentació reproduïble en el futur."
+
+#. OMI translation key: /modules/publicationProfile/profileSeparation
+msgctxt "/modules/publicationProfile/profileSeparation"
+msgid "The profile changes presentation and publication requirements, not scholarly content. Profile selection and explicit presentation overrides are revisioned separately from text edits."
+msgstr "El perfil canvia la presentació i els requisits de publicació, no el contingut acadèmic. La selecció del perfil i les sobreescriptures de presentació explícites es revisen per separat de les edicions de text."
+
+#. OMI translation key: /modules/publicationProfile/profileOverrides
+msgctxt "/modules/publicationProfile/profileOverrides"
+msgid "This manuscript currently contains presentation overrides that differ from the selected profile."
+msgstr "Aquest manuscrit actualment conté sobreescriptures de presentació que difereixen del perfil seleccionat."
+
+#. OMI translation key: /modules/publicationProfile/resetDefaults
+msgctxt "/modules/publicationProfile/resetDefaults"
+msgid "Reapply profile defaults"
+msgstr "Torna a aplicar els valors predeterminats del perfil"
+
+#. OMI translation key: /modules/publicationProfile/profileNames/omi-generic-scholarly/name
+msgctxt "/modules/publicationProfile/profileNames/omi-generic-scholarly/name"
+msgid "OMI Generic Scholarly"
+msgstr "OMI Acadèmic genèric"
+
+#. OMI translation key: /modules/publicationProfile/profileNames/omi-generic-scholarly/description
+msgctxt "/modules/publicationProfile/profileNames/omi-generic-scholarly/description"
+msgid "Neutral scholarly rendering for general-purpose publishing."
+msgstr "Maquetació acadèmica neutral per a l'edició general."
+
+#. OMI translation key: /modules/publicationProfile/profileNames/omi-journal-author-date/name
+msgctxt "/modules/publicationProfile/profileNames/omi-journal-author-date/name"
+msgid "OMI Journal — Author-Date"
+msgstr "OMI Revista — Autor-Data"
+
+#. OMI translation key: /modules/publicationProfile/profileNames/omi-journal-author-date/description
+msgctxt "/modules/publicationProfile/profileNames/omi-journal-author-date/description"
+msgid "Journal profile with author-date citations and stricter metadata requirements."
+msgstr "Perfil de revista amb citacions d'autor-data i requisits de metadades més estrictes."
+
+#. OMI translation key: /modules/publicationProfile/profileNames/omi-humanities-notes/name
+msgctxt "/modules/publicationProfile/profileNames/omi-humanities-notes/name"
+msgid "OMI Humanities — Notes & Bibliography"
+msgstr "OMI Humanitats — Notes i Bibliografia"
+
+#. OMI translation key: /modules/publicationProfile/profileNames/omi-humanities-notes/description
+msgctxt "/modules/publicationProfile/profileNames/omi-humanities-notes/description"
+msgid "Humanities profile with Chicago notes, bibliography and footnotes."
+msgstr "Perfil de humanitats amb notes de Chicago, bibliografia i notes a peu de pàgina."
+
+#. OMI translation key: /modules/referenceLookup/title
+msgctxt "/modules/referenceLookup/title"
+msgid "Search external bibliographic services"
+msgstr "Cerca de serveis bibliogràfics externs"
+
+#. OMI translation key: /modules/referenceLookup/description
+msgctxt "/modules/referenceLookup/description"
+msgid "Search Crossref, DataCite, OpenAlex and MTMT, then add a normalized record to this manuscript’s reference library."
+msgstr "Cerca a Crossref, DataCite, OpenAlex i MTMT, i afegeix un registre normalitzat a la biblioteca de referències d'aquest manuscrit."
+
+#. OMI translation key: /modules/referenceLookup/queryLabel
+msgctxt "/modules/referenceLookup/queryLabel"
+msgid "Bibliographic query"
+msgstr "Consulta bibliogràfica"
+
+#. OMI translation key: /modules/referenceLookup/queryPlaceholder
+msgctxt "/modules/referenceLookup/queryPlaceholder"
+msgid "DOI, title, author or keywords…"
+msgstr "DOI, títol, autor o paraules clau…"
+
+#. OMI translation key: /modules/referenceLookup/search
+msgctxt "/modules/referenceLookup/search"
+msgid "Search"
+msgstr "Cerca"
+
+#. OMI translation key: /modules/referenceLookup/searching
+msgctxt "/modules/referenceLookup/searching"
+msgid "Searching…"
+msgstr "Cercant…"
+
+#. OMI translation key: /modules/referenceLookup/providers
+msgctxt "/modules/referenceLookup/providers"
+msgid "Bibliographic providers"
+msgstr "Proveïdors bibliogràfics"
+
+#. OMI translation key: /modules/referenceLookup/apiKeyRequired
+msgctxt "/modules/referenceLookup/apiKeyRequired"
+msgid "API key required"
+msgstr "Es necessita clau d'API"
+
+#. OMI translation key: /modules/referenceLookup/serviceSettings
+msgctxt "/modules/referenceLookup/serviceSettings"
+msgid "Service settings"
+msgstr "Configuració del servei"
+
+#. OMI translation key: /modules/referenceLookup/crossrefEmail
+msgctxt "/modules/referenceLookup/crossrefEmail"
+msgid "Crossref contact email (optional)"
+msgstr "Correu electrònic de contacte de Crossref (opcional)"
+
+#. OMI translation key: /modules/referenceLookup/crossrefEmailHint
+msgctxt "/modules/referenceLookup/crossrefEmailHint"
+msgid "When provided, Crossref receives it through the recommended mailto parameter for polite API access."
+msgstr "Quan es proporciona, Crossref la rep a través del paràmetre mailto recomanat per a un accés educat a l'API."
+
+#. OMI translation key: /modules/referenceLookup/openAlexApiKey
+msgctxt "/modules/referenceLookup/openAlexApiKey"
+msgid "OpenAlex API key"
+msgstr "Clau de l'API d'OpenAlex"
+
+#. OMI translation key: /modules/referenceLookup/openAlexApiKeyHint
+msgctxt "/modules/referenceLookup/openAlexApiKeyHint"
+msgid "OpenAlex currently requires an API key. The key is stored only in this browser and is never written to the manuscript."
+msgstr "OpenAlex actualment requereix una clau de l'API. La clau s'emmagatzema només en aquest navegador i mai no s'escriu al manuscrit."
+
+#. OMI translation key: /modules/referenceLookup/privacyNote
+msgctxt "/modules/referenceLookup/privacyNote"
+msgid "Queries are sent only to the providers you enable. Service credentials and contact settings are local interface preferences and are not exported in .omi.json."
+msgstr "Les consultes s'envien només als proveïdors que activeu. Les credencials del servei i la configuració de contacte són preferències de la interfície local i no s'exporten a .omi.json."
+
+#. OMI translation key: /modules/referenceLookup/missingApiKey
+msgctxt "/modules/referenceLookup/missingApiKey"
+msgid "This provider was skipped because its required API key is not configured."
+msgstr "S'ha omès aquest proveïdor perquè la clau d'API necessària no està configurada."
+
+#. OMI translation key: /modules/referenceLookup/providerUnavailable
+msgctxt "/modules/referenceLookup/providerUnavailable"
+msgid "The provider could not be queried. Other provider results are still shown."
+msgstr "No s'ha pogut consultar el proveïdor. Els resultats dels altres proveïdors encara es mostren."
+
+#. OMI translation key: /modules/referenceLookup/noResults
+msgctxt "/modules/referenceLookup/noResults"
+msgid "No matching bibliographic records were returned by the selected providers."
+msgstr "Els proveïdors seleccionats no han retornat cap registre bibliogràfic coincident."
+
+#. OMI translation key: /modules/referenceLookup/addToLibrary
+msgctxt "/modules/referenceLookup/addToLibrary"
+msgid "Add to library"
+msgstr "Afegeix a la biblioteca"
+
+#. OMI translation key: /modules/referenceLookup/alreadyAdded
+msgctxt "/modules/referenceLookup/alreadyAdded"
+msgid "Already added"
+msgstr "Ja s'ha afegit"
+
+#. OMI translation key: /modules/richText/bold
+msgctxt "/modules/richText/bold"
+msgid "Bold / strong"
+msgstr "Negreta / fort"
+
+#. OMI translation key: /modules/richText/italic
+msgctxt "/modules/richText/italic"
+msgid "Italic / emphasis"
+msgstr "Cursiva / èmfasi"
+
+#. OMI translation key: /modules/richText/superscript
+msgctxt "/modules/richText/superscript"
+msgid "Superscript"
+msgstr "Superíndex"
+
+#. OMI translation key: /modules/richText/subscript
+msgctxt "/modules/richText/subscript"
+msgid "Subscript"
+msgstr "Subíndex"
+
+#. OMI translation key: /modules/richText/smallCaps
+msgctxt "/modules/richText/smallCaps"
+msgid "Small caps"
+msgstr "Majúscules petites"
+
+#. OMI translation key: /modules/richText/underline
+msgctxt "/modules/richText/underline"
+msgid "Underline"
+msgstr "Subratllat"
+
+#. OMI translation key: /modules/richText/link
+msgctxt "/modules/richText/link"
+msgid "External link"
+msgstr "Enllaç extern"
+
+#. OMI translation key: /modules/richText/unlink
+msgctxt "/modules/richText/unlink"
+msgid "Remove link"
+msgstr "Elimina l'enllaç"
+
+#. OMI translation key: /modules/richText/more
+msgctxt "/modules/richText/more"
+msgid "More text tools"
+msgstr "Més eines de text"
+
+#. OMI translation key: /modules/richText/strike
+msgctxt "/modules/richText/strike"
+msgid "Strikethrough"
+msgstr "Relleu"
+
+#. OMI translation key: /modules/richText/bulletList
+msgctxt "/modules/richText/bulletList"
+msgid "Bullet list"
+msgstr "Llista amb punts"
+
+#. OMI translation key: /modules/richText/orderedList
+msgctxt "/modules/richText/orderedList"
+msgid "Numbered list"
+msgstr "Llista numerada"
+
+#. OMI translation key: /modules/richText/blockquote
+msgctxt "/modules/richText/blockquote"
+msgid "Block quotation"
+msgstr "Cita en bloc"
+
+#. OMI translation key: /modules/richText/inlineCode
+msgctxt "/modules/richText/inlineCode"
+msgid "Inline code"
+msgstr "Codi en línia"
+
+#. OMI translation key: /modules/richText/codeBlock
+msgctxt "/modules/richText/codeBlock"
+msgid "Code block"
+msgstr "Bloc de codi"
+
+#. OMI translation key: /modules/richText/hardBreak
+msgctxt "/modules/richText/hardBreak"
+msgid "Line break"
+msgstr "Canvi de línia"
+
+#. OMI translation key: /modules/richText/language
+msgctxt "/modules/richText/language"
+msgid "Text language"
+msgstr "Idioma del text"
+
+#. OMI translation key: /modules/richText/removeLanguage
+msgctxt "/modules/richText/removeLanguage"
+msgid "Remove language mark"
+msgstr "Elimina la marca d'idioma"
+
+#. OMI translation key: /modules/richText/languagePlaceholder
+msgctxt "/modules/richText/languagePlaceholder"
+msgid "BCP 47 tag, e.g. la, de, en-GB"
+msgstr "Etiqueta BCP 47, p. ex. la, de, en-GB"
+
+#. OMI translation key: /modules/richText/apply
+msgctxt "/modules/richText/apply"
+msgid "Apply"
+msgstr "Aplica"
+
+#. OMI translation key: /modules/richText/cancel
+msgctxt "/modules/richText/cancel"
+msgid "Cancel"
+msgstr "Cancel·la"
+
+#. OMI translation key: /modules/richText/linkAddress
+msgctxt "/modules/richText/linkAddress"
+msgid "External address"
+msgstr "Adreça externa"
+
+#. OMI translation key: /modules/richText/linkPlaceholder
+msgctxt "/modules/richText/linkPlaceholder"
+msgid "https://…"
+msgstr "https://…"
+
+#. OMI translation key: /modules/richText/invalidLink
+msgctxt "/modules/richText/invalidLink"
+msgid "Enter a valid http, https or mailto address."
+msgstr "Introduïu una adreça http, https o mailto vàlida."
+
+#. OMI translation key: /modules/richText/specialCharacters
+msgctxt "/modules/richText/specialCharacters"
+msgid "Special characters"
+msgstr "Caràcters especials"
+
+#. OMI translation key: /modules/richText/clearMarks
+msgctxt "/modules/richText/clearMarks"
+msgid "Clear inline formatting"
+msgstr "Esborrar l'estil de línia"
+
+#. OMI translation key: /modules/richText/toolbar
+msgctxt "/modules/richText/toolbar"
+msgid "Semantic text tools"
+msgstr "Eines de text semàntic"
+
+#. OMI translation key: /modules/rorAffiliation/searching
+msgctxt "/modules/rorAffiliation/searching"
+msgid "Searching ROR…"
+msgstr "Cercant a ROR…"
+
+#. OMI translation key: /modules/rorAffiliation/suggestions
+msgctxt "/modules/rorAffiliation/suggestions"
+msgid "ROR organization suggestions"
+msgstr "Suggeriments d'organitzacions ROR"
+
+#. OMI translation key: /modules/rorAffiliation/noResults
+msgctxt "/modules/rorAffiliation/noResults"
+msgid "No ROR organization found. You can keep the affiliation as free text."
+msgstr "No s'ha trobat cap organització ROR. Podeu deixar l'afiliació com a text lliure."
+
+#. OMI translation key: /modules/rorAffiliation/searchUnavailable
+msgctxt "/modules/rorAffiliation/searchUnavailable"
+msgid "ROR search is temporarily unavailable. You can keep editing the affiliation manually."
+msgstr "La cerca de ROR no està disponible temporalment. Pots continuar editant l'afiliació manualment."
+
+#. OMI translation key: /modules/rorAffiliation/selected
+msgctxt "/modules/rorAffiliation/selected"
+msgid "Linked to ROR"
+msgstr "Enllaçat a ROR"
+
+#. OMI translation key: /modules/rorAffiliation/removeLink
+msgctxt "/modules/rorAffiliation/removeLink"
+msgid "Remove ROR link"
+msgstr "Elimina l'enllaç de ROR"
+
+#. OMI translation key: /modules/rorAffiliation/openRor
+msgctxt "/modules/rorAffiliation/openRor"
+msgid "Open ROR record"
+msgstr "Obre l'entrada de ROR"
+
+#. OMI translation key: /modules/rorAffiliation/locationUnknown
+msgctxt "/modules/rorAffiliation/locationUnknown"
+msgid "Location not specified"
+msgstr "Ubicació no especificada"
+
+#. OMI translation key: /modules/rorAffiliation/poweredBy
+msgctxt "/modules/rorAffiliation/poweredBy"
+msgid "Organization data from ROR"
+msgstr "Dades de l'organització del ROR"
+
+#. OMI translation key: /modules/sectionStructure/title
+msgctxt "/modules/sectionStructure/title"
+msgid "Hierarchical document structure"
+msgstr "Estructura documental jerarquica"
+
+#. OMI translation key: /modules/sectionStructure/description
+msgctxt "/modules/sectionStructure/description"
+msgid "Build chapters and subsections at any depth. Stable section identities remain unchanged while the outline and generated numbering evolve."
+msgstr "Creeu capítols i subseccions a qualsevol profunditat. Les identitats de les seccions estables no canvien mentre l'esquema i el numerotació generats evolucionen."
+
+#. OMI translation key: /modules/sectionStructure/addTopLevel
+msgctxt "/modules/sectionStructure/addTopLevel"
+msgid "Add top-level section"
+msgstr "Afegiu una secció de nivell superior"
+
+#. OMI translation key: /modules/sectionStructure/addSubsection
+msgctxt "/modules/sectionStructure/addSubsection"
+msgid "Add subsection"
+msgstr "Afegiu una subsecció"
+
+#. OMI translation key: /modules/sectionStructure/insertAfter
+msgctxt "/modules/sectionStructure/insertAfter"
+msgid "Insert sibling after this section"
+msgstr "Inserir un germà després d'aquesta secció"
+
+#. OMI translation key: /modules/sectionStructure/dragHint
+msgctxt "/modules/sectionStructure/dragHint"
+msgid "Drag a section onto another section to make it a subsection. Use the arrows and indent/outdent controls for keyboard- and touch-friendly restructuring."
+msgstr "Arrossegueu una secció sobre una altra per convertir-la en una subsecció. Feu servir les fletxes i els controls d'indentació/desindentació per a una reorganització amb el teclat i el tacte."
+
+#. OMI translation key: /modules/sectionStructure/dropAsChild
+msgctxt "/modules/sectionStructure/dropAsChild"
+msgid "Drop here to make this section a subsection"
+msgstr "Deixar anar aquí per convertir aquesta secció en una subsecció"
+
+#. OMI translation key: /modules/sectionStructure/openSection
+msgctxt "/modules/sectionStructure/openSection"
+msgid "Open section"
+msgstr "Obre la secció"
+
+#. OMI translation key: /modules/sectionStructure/moveUp
+msgctxt "/modules/sectionStructure/moveUp"
+msgid "Move before previous sibling"
+msgstr "Mou abans del germà anterior"
+
+#. OMI translation key: /modules/sectionStructure/moveDown
+msgctxt "/modules/sectionStructure/moveDown"
+msgid "Move after next sibling"
+msgstr "Mou després del germà següent"
+
+#. OMI translation key: /modules/sectionStructure/indent
+msgctxt "/modules/sectionStructure/indent"
+msgid "Make subsection of previous sibling"
+msgstr "Fes subapartat del germà anterior"
+
+#. OMI translation key: /modules/sectionStructure/outdent
+msgctxt "/modules/sectionStructure/outdent"
+msgid "Promote one level"
+msgstr "Passa a un nivell superior"
+
+#. OMI translation key: /modules/sectionStructure/dragSection
+msgctxt "/modules/sectionStructure/dragSection"
+msgid "Drag section subtree"
+msgstr "Arrossega el subarbre de la secció"
+
+#. OMI translation key: /modules/sectionStructure/selected
+msgctxt "/modules/sectionStructure/selected"
+msgid "Selected"
+msgstr "Seleccionat"
+
+#. OMI translation key: /modules/sectionStructure/emptyTitle
+msgctxt "/modules/sectionStructure/emptyTitle"
+msgid "Untitled section"
+msgstr "Secció sense títol"
+
+#. OMI translation key: /modules/sectionStructure/level
+msgctxt "/modules/sectionStructure/level"
+msgid "Level"
+msgstr "Nivell"
+
+#. OMI translation key: /modules/sectionStructure/invalidHierarchy
+msgctxt "/modules/sectionStructure/invalidHierarchy"
+msgid "The section hierarchy contains an invalid parent relationship."
+msgstr "La jerarquia de seccions conté una relació de pare invàlida."
+
+#. OMI translation key: /modules/stateDigest/integrity
+msgctxt "/modules/stateDigest/integrity"
+msgid "Revision state integrity"
+msgstr "Integritat de l'estat de la revisió"
+
+#. OMI translation key: /modules/stateDigest/verified
+msgctxt "/modules/stateDigest/verified"
+msgid "Verified"
+msgstr "Verificat"
+
+#. OMI translation key: /modules/stateDigest/missing
+msgctxt "/modules/stateDigest/missing"
+msgid "Digest not recorded"
+msgstr "Resum no registrat"
+
+#. OMI translation key: /modules/stateDigest/mismatch
+msgctxt "/modules/stateDigest/mismatch"
+msgid "Digest mismatch"
+msgstr "Incompatibilitat de resum"
+
+#. OMI translation key: /modules/stateDigest/unsupported
+msgctxt "/modules/stateDigest/unsupported"
+msgid "Unsupported digest profile"
+msgstr "Perfil de resum no admès"
+
+#. OMI translation key: /modules/stateDigest/digest
+msgctxt "/modules/stateDigest/digest"
+msgid "State digest"
+msgstr "Resum d'estat"
+
+#. OMI translation key: /modules/stateDigest/canonicalization
+msgctxt "/modules/stateDigest/canonicalization"
+msgid "Canonicalization"
+msgstr "Canonicalització"
+
+#. OMI translation key: /modules/stateDigest/scope
+msgctxt "/modules/stateDigest/scope"
+msgid "Committed manuscript snapshot"
+msgstr "Captura de manuscrit compromesa"
+
+#. OMI translation key: /modules/stateDigest/summary
+msgctxt "/modules/stateDigest/summary"
+msgid "Canonical SHA-256 evidence for immutable manuscript revisions."
+msgstr "Prova canònica SHA-256 per a revisions de manuscrit immutables."
+
+#. OMI translation key: /modules/stateDigest/importVerified
+msgctxt "/modules/stateDigest/importVerified"
+msgid "All declared revision state digests are verified."
+msgstr "Tots els resums d'estat de revisió declarats estan verificats."
+
+#. OMI translation key: /modules/stateDigest/importLegacy
+msgctxt "/modules/stateDigest/importLegacy"
+msgid "This package contains revisions without state digests. They can be backfilled locally after import."
+msgstr "Aquest paquet conté revisions sense resums d'estat. Es poden afegir localment després de la importació."
+
+#. OMI translation key: /modules/stateDigest/importInvalid
+msgctxt "/modules/stateDigest/importInvalid"
+msgid "The package contains an invalid or incompatible revision state digest."
+msgstr "El paquet conté un resum d'estat de revisió invàlid o incompatible."
+
+#. OMI translation key: /modules/visualElements/insertMenu
+msgctxt "/modules/visualElements/insertMenu"
+msgid "Insert"
+msgstr "Inserir"
+
+#. OMI translation key: /modules/visualElements/insertElement
+msgctxt "/modules/visualElements/insertElement"
+msgid "Insert element"
+msgstr "Inserir element"
+
+#. OMI translation key: /modules/visualElements/image
+msgctxt "/modules/visualElements/image"
+msgid "Image"
+msgstr "Imatge"
+
+#. OMI translation key: /modules/visualElements/table
+msgctxt "/modules/visualElements/table"
+msgid "Table"
+msgstr "Taula"
+
+#. OMI translation key: /modules/visualElements/chart
+msgctxt "/modules/visualElements/chart"
+msgid "Chart"
+msgstr "Gràfic"
+
+#. OMI translation key: /modules/visualElements/equation
+msgctxt "/modules/visualElements/equation"
+msgid "Equation"
+msgstr "Equació"
+
+#. OMI translation key: /modules/visualElements/import
+msgctxt "/modules/visualElements/import"
+msgid "Import"
+msgstr "Importa"
+
+#. OMI translation key: /modules/visualElements/paste
+msgctxt "/modules/visualElements/paste"
+msgid "Paste from Word / Excel"
+msgstr "Pega des de Word / Excel"
+
+#. OMI translation key: /modules/visualElements/pasteHint
+msgctxt "/modules/visualElements/pasteHint"
+msgid "Paste a table, image or equation here from Word, Excel or another application."
+msgstr "Pega aquí una taula, una imatge o una equació des de Word, Excel o una altra aplicació."
+
+#. OMI translation key: /modules/visualElements/importing
+msgctxt "/modules/visualElements/importing"
+msgid "Importing…"
+msgstr "S'està important…"
+
+#. OMI translation key: /modules/visualElements/importFailed
+msgctxt "/modules/visualElements/importFailed"
+msgid "The file could not be imported."
+msgstr "El fitxer no s'ha pogut importar."
+
+#. OMI translation key: /modules/visualElements/noImportableElements
+msgctxt "/modules/visualElements/noImportableElements"
+msgid "No supported visual elements were found."
+msgstr "No s'ha trobat cap element visual compatible."
+
+#. OMI translation key: /modules/visualElements/chooseFile
+msgctxt "/modules/visualElements/chooseFile"
+msgid "Choose file"
+msgstr "Tria el fitxer"
+
+#. OMI translation key: /modules/visualElements/caption
+msgctxt "/modules/visualElements/caption"
+msgid "Caption"
+msgstr "Peu de foto"
+
+#. OMI translation key: /modules/visualElements/altText
+msgctxt "/modules/visualElements/altText"
+msgid "Alternative text"
+msgstr "Text alternatiu"
+
+#. OMI translation key: /modules/visualElements/chartType
+msgctxt "/modules/visualElements/chartType"
+msgid "Chart type"
+msgstr "Tipus de gràfic"
+
+#. OMI translation key: /modules/visualElements/chartBar
+msgctxt "/modules/visualElements/chartBar"
+msgid "Bar"
+msgstr "De barres"
+
+#. OMI translation key: /modules/visualElements/chartLine
+msgctxt "/modules/visualElements/chartLine"
+msgid "Line"
+msgstr "De línia"
+
+#. OMI translation key: /modules/visualElements/chartPie
+msgctxt "/modules/visualElements/chartPie"
+msgid "Pie"
+msgstr "De pastís"
+
+#. OMI translation key: /modules/visualElements/chartScatter
+msgctxt "/modules/visualElements/chartScatter"
+msgid "Scatter"
+msgstr "Esparsit"
+
+#. OMI translation key: /modules/visualElements/chartTitle
+msgctxt "/modules/visualElements/chartTitle"
+msgid "Chart title"
+msgstr "Títol del gràfic"
+
+#. OMI translation key: /modules/visualElements/equationLatex
+msgctxt "/modules/visualElements/equationLatex"
+msgid "LaTeX source"
+msgstr "Codi font LaTeX"
+
+#. OMI translation key: /modules/visualElements/equationLabel
+msgctxt "/modules/visualElements/equationLabel"
+msgid "Equation label"
+msgstr "Etiqueta de l'equació"
+
+#. OMI translation key: /modules/visualElements/addRow
+msgctxt "/modules/visualElements/addRow"
+msgid "Add row"
+msgstr "Afegeix fila"
+
+#. OMI translation key: /modules/visualElements/addColumn
+msgctxt "/modules/visualElements/addColumn"
+msgid "Add column"
+msgstr "Afegeix columna"
+
+#. OMI translation key: /modules/visualElements/removeRow
+msgctxt "/modules/visualElements/removeRow"
+msgid "Remove last row"
+msgstr "Elimina l'última fila"
+
+#. OMI translation key: /modules/visualElements/removeColumn
+msgctxt "/modules/visualElements/removeColumn"
+msgid "Remove last column"
+msgstr "Elimina l'última columna"
+
+#. OMI translation key: /modules/visualElements/createChart
+msgctxt "/modules/visualElements/createChart"
+msgid "Create chart from table"
+msgstr "Crea un gràfic a partir d'una taula"
+
+#. OMI translation key: /modules/visualElements/deleteElement
+msgctxt "/modules/visualElements/deleteElement"
+msgid "Delete element"
+msgstr "Suprimir element"
+
+#. OMI translation key: /modules/visualElements/confirmDelete
+msgctxt "/modules/visualElements/confirmDelete"
+msgid "Delete this element from the manuscript?"
+msgstr "Suprimir aquest element del manuscrit?"
+
+#. OMI translation key: /modules/visualElements/source
+msgctxt "/modules/visualElements/source"
+msgid "Source data"
+msgstr "Dades de la font"
+
+#. OMI translation key: /modules/visualElements/emptyChart
+msgctxt "/modules/visualElements/emptyChart"
+msgid "Add numeric source data to render the chart."
+msgstr "Afegir dades de font numèriques per generar el gràfic."
+
+#. OMI translation key: /modules/visualElements/importedFrom
+msgctxt "/modules/visualElements/importedFrom"
+msgid "Imported from"
+msgstr "Importat de"
+
+#. OMI translation key: /modules/visualElements/fileFormats
+msgctxt "/modules/visualElements/fileFormats"
+msgid "Images, DOCX, XLSX, CSV/TSV, HTML and TeX are supported."
+msgstr "Es admeten imatges, DOCX, XLSX, CSV/TSV, HTML i TeX."

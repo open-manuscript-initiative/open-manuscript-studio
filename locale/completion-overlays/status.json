@@ -1,5 +1,7 @@
 {
   "completeLocales": [
+    "af",
+    "ca",
     "el",
     "es",
     "fi",
@@ -12,6 +14,10 @@
     "mt",
     "nl",
     "pl",
-    "pt"
+    "pt",
+    "ro",
+    "sk",
+    "sl",
+    "sv"
   ]
 }

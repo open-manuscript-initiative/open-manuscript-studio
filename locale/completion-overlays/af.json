@@ -1,0 +1,27 @@
+{
+  "locale": "af",
+  "bySource": {
+    "Adobe FrameMaker (MIF)": "Adobe FrameMaker (MIF)",
+    "Adobe InDesign (IDML)": "Adobe InDesign (IDML)",
+    "APA 7": "APA 7",
+    "EPUB 3": "EPUB 3",
+    "Folio": "Folio",
+    "https://…": "https://…",
+    "ISO 690": "ISO 690",
+    "JATS XML": "JATS XML",
+    "JATS XML 1.4": "JATS XML 1.4",
+    "LaTeX": "LaTeX",
+    "Microsoft Word (DOCX)": "Microsoft Word (DOCX)",
+    "MLA 9": "MLA 9",
+    "Motto": "Motto",
+    "name@example.com": "name@example.com",
+    "OMI JSON": "OMI JSON",
+    "Open Manuscript Studio": "Open Manuscript Studio",
+    "ORCID": "ORCID",
+    "ORCID iD": "ORCID iD",
+    "PDF": "PDF",
+    "QuarkXPress (XPress Tags)": "QuarkXPress (XPress Tags)",
+    "Scribus (SLA)": "Scribus (SLA)"
+  },
+  "byPointer": {}
+}
