@@ -182,6 +182,14 @@
   animation: studio-menu-enter 160ms ease-out;
 }
 
+.studio-menu-drawer--navigation-only {
+  width: min(18rem, 92vw);
+}
+
+.studio-menu-drawer--navigation-only .studio-menu-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 @keyframes studio-menu-enter {
   from {
     transform: translateX(-1.5rem);
