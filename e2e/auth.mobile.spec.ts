@@ -51,8 +51,15 @@ test('the responsive login and editor fit a phone viewport', async ({ page }) =>
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'References', exact: true }).click();
   await expect(dialog.locator('.studio-menu-content')).toBeVisible();
+  await expect(menuNavigation).toBeHidden();
 
-  const searchTrigger = page.getByRole('button', { name: 'Search', exact: true });
+  await menuToggle.click();
+  await expect(menuNavigation).toBeVisible();
+  await dialog.getByRole('button', { name: 'Home', exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator('section.editor[aria-label="Manuscript editor"]')).toBeVisible();
+
+  const searchTrigger = page.locator('.focus-header-secondary-row').getByRole('button', { name: 'Search', exact: true });
   const searchTriggerPosition = await searchTrigger.boundingBox();
   expect(searchTriggerPosition).not.toBeNull();
   await searchTrigger.click();
