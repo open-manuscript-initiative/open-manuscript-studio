@@ -25,6 +25,10 @@ const serverSchema = readFileSync(
   new URL('../server/prisma/schema.prisma', import.meta.url),
   'utf8',
 );
+const userIntegrationRoutes = readFileSync(
+  new URL('../server/src/routes/userIntegrationRoutes.ts', import.meta.url),
+  'utf8',
+);
 
 test('every integration declares at least one authentication mode and a valid preferred mode', () => {
   for (const entry of integrationCatalog) {
@@ -114,6 +118,9 @@ test('WordPress publishing uses application-password credentials and generic web
   assert.match(webPublishingSettings, /authScheme/);
   assert.match(webPublishingSettings, /x-api-key/);
   assert.match(webPublishingSettings, /leave blank to keep the existing secret/i);
+  assert.match(webPublishingSettings, /clearSecret: true/);
+  assert.match(userIntegrationRoutes, /clearSecret: z\.boolean\(\)\.default\(false\)/);
+  assert.match(userIntegrationRoutes, /encryptedSecret: null/);
 });
 
 test('website publication requires preview approval and keeps idempotent external receipts', () => {
