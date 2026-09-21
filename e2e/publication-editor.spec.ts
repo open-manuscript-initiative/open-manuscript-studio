@@ -26,7 +26,47 @@ test('the full-screen menu opens the live publication editor', async ({ page }) 
   await expect(menu.getByRole('toolbar', { name: 'Live publication editor' })).toBeVisible();
   await expect(menu.getByRole('button', { name: 'Paragraph styles', exact: true })).toBeVisible();
   await expect(menu.getByRole('button', { name: 'Typesetting proofing', exact: true })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'HTML5 visual editor', exact: true })).toBeVisible();
   await expect(menu.locator('.publication-document-canvas')).toBeVisible();
+  expect(api.unhandledRequests).toEqual([]);
+});
+
+test('HTML5 visual editing is responsive and preserves changes when returning to print', async ({ page }) => {
+  const api = await installMockStudioApi(page);
+  await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
+  await page.getByRole('button', { name: 'Manuscript menu', exact: true }).first().click();
+
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
+  const canvas = menu.locator('.publication-document-canvas');
+  const printView = canvas.getByRole('button', { name: 'Print layout', exact: true });
+  const htmlView = canvas.getByRole('button', { name: 'HTML5 visual editor', exact: true });
+
+  await expect(printView).toHaveAttribute('aria-pressed', 'true');
+  await expect(canvas.locator('.publication-document-page-guide')).not.toHaveCount(0);
+  await expect(canvas.getByRole('combobox', { name: 'Zoom', exact: true })).toBeVisible();
+
+  await htmlView.click();
+  await expect(htmlView).toHaveAttribute('aria-pressed', 'true');
+  await expect(canvas.locator('[data-publication-view="html"]')).toBeVisible();
+  await expect(canvas.locator('.publication-document-page-guide')).toHaveCount(0);
+  await expect(canvas.locator('.publication-document-ruler')).toHaveCount(0);
+  await expect(canvas.getByRole('combobox', { name: 'Zoom', exact: true })).toHaveCount(0);
+  await expect(canvas.getByText('Responsive width', { exact: true })).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Print page', exact: true })).toHaveCount(0);
+  await expect(menu.getByRole('button', { name: 'Typesetting proofing', exact: true })).toHaveCount(0);
+
+  const title = canvas.getByRole('textbox', { name: 'Document title', exact: true });
+  await title.fill('Edited in the HTML5 visual editor');
+  expect(await canvas.locator('.publication-document-canvas-stage--html').evaluate(
+    (element) => element.scrollWidth <= element.clientWidth + 1,
+  )).toBe(true);
+
+  await printView.click();
+  await expect(printView).toHaveAttribute('aria-pressed', 'true');
+  await expect(canvas.locator('.publication-document-page-guide')).not.toHaveCount(0);
+  await expect(title).toHaveValue('Edited in the HTML5 visual editor');
   expect(api.unhandledRequests).toEqual([]);
 });
 

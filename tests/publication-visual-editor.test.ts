@@ -152,6 +152,21 @@ test('publication settings use a Word-like top ribbon instead of a permanent sid
   assert.match(editorStyles, /\.publication-style-editor-layout \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
 });
 
+test('live publication editor switches between print and semantic HTML5 visual editing', () => {
+  assert.match(styleEditor, /useState<PublicationDocumentViewMode>\('print'\)/);
+  assert.match(styleEditor, /documentViewMode === 'print'/);
+  assert.match(styleEditor, /viewMode=\{documentViewMode\}/);
+  assert.match(styleEditor, /onViewModeChange=\{changeDocumentViewMode\}/);
+  assert.match(documentCanvas, /export type PublicationDocumentViewMode = 'print' \| 'html'/);
+  assert.match(documentCanvas, /className="publication-document-view-switch"/);
+  assert.match(documentCanvas, /data-publication-view=\{viewMode\}/);
+  assert.match(documentCanvas, /proofingMode=\{viewMode === 'print' \? 'publication' : 'editor'\}/);
+  assert.match(documentCanvas, /viewMode === 'html' && semanticNotes\.length/);
+  assert.match(editorStyles, /\.publication-document-paper--html \{[\s\S]*width: min\(100%, 56rem\)/);
+  assert.match(editorStyles, /\.publication-document-content--html \{[\s\S]*position: relative/);
+  assert.match(editorStyles, /\.publication-document-view-switch button\[aria-pressed='true'\]/);
+});
+
 test('font families come from a dropdown with permission-gated system discovery', () => {
   assert.match(styleEditor, /<FontFamilySelect/);
   assert.match(styleEditor, /<SystemFontCatalogControls/);
@@ -233,7 +248,7 @@ test('author given and family names have independent publication typography', ()
 });
 
 test('publication view edits the complete structured manuscript instead of a sample paragraph', () => {
-  assert.match(styleEditor, /<PublicationDocumentCanvas style=\{style\}/);
+  assert.match(styleEditor, /<PublicationDocumentCanvas[\s\S]*style=\{style\}/);
   assert.match(documentCanvas, /buildContinuousManuscriptDocument\([\s\S]*manuscript\.sections/);
   assert.match(documentCanvas, /projectContinuousManuscriptDocument\(parsed, currentSections\)/);
   assert.match(documentCanvas, /stageContinuousDocumentChange/);
