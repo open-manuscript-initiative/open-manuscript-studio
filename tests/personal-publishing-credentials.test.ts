@@ -123,6 +123,8 @@ test('credential resolution defaults to the primary e-mail and supports an expli
 test('personal profile renders e-mail management and e-mail-aware credential settings', () => {
   assert.match(accountPanel, /<PersonalEmailsSettings/);
   assert.match(accountPanel, /<PersonalPublishingCredentialsSettings/);
+  assert.match(accountPanel, /<WebPublishingSettings providerId="wordpress"/);
+  assert.match(accountPanel, /<WebPublishingSettings providerId="web-publishing"/);
   assert.match(credentialSettings, /getPersonalProfileEmails/);
   assert.match(credentialSettings, /profileEmailId/);
   assert.match(credentialSettings, /credential\.email/);
