@@ -2,6 +2,11 @@ import { mkdirSync, existsSync, writeFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
+import {
+  removePlayTranslationResources,
+  writePlayTranslationResources,
+} from './generate-play-translation-resources.mjs';
+
 const channel = process.argv[2];
 if (!['play', 'direct'].includes(channel) || process.argv.length !== 3) {
   throw new Error('Usage: node scripts/build-android-distribution.mjs play|direct');
@@ -18,6 +23,10 @@ if (existsSync(manifest)) {
 
 try {
   if (channel === 'play') {
+    const translationBridge = writePlayTranslationResources();
+    console.log(
+      `Google Play translation bridge: ${translationBridge.entries.length} unique Studio UI strings.`,
+    );
     mkdirSync(dirname(manifest), { recursive: true });
     writeFileSync(manifest, `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -41,5 +50,12 @@ try {
   if (result.error) throw result.error;
   process.exitCode = result.status ?? 1;
 } finally {
-  if (channel === 'play') rmSync(manifest, { force: true });
+  if (channel === 'play') {
+    rmSync(manifest, { force: true });
+    removePlayTranslationResources();
+  } else {
+    // A direct APK must never inherit temporary Play-only translation bridge
+    // resources from an interrupted or manually prepared Play build.
+    removePlayTranslationResources();
+  }
 }
