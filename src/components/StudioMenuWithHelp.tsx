@@ -60,6 +60,7 @@ export function StudioMenuWithHelp({
   const [listsOpen, setListsOpen] = useState(false);
   const [navigationHost, setNavigationHost] = useState<HTMLElement | null>(null);
   const [contentHost, setContentHost] = useState<HTMLElement | null>(null);
+  const externalContentActive = helpOpen || integrationsOpen || agentsOpen || listsOpen;
 
   useEffect(() => {
     if (previousManuscriptRef.current === manuscript) return;
@@ -218,6 +219,7 @@ export function StudioMenuWithHelp({
       navigationBeforeTools={workflowServicesNavigation}
       navigationAfterSettings={utilityNavigation}
       documentCloseAction={documentCloseAction}
+      externalContentActive={externalContentActive}
     />
     {contentHost && listsOpen ? createPortal(<div className="studio-help-portal studio-lists-portal"><ListsPanel onNavigate={onClose} /></div>, contentHost) : null}
     {contentHost && agentsOpen ? createPortal(<div className="studio-help-portal studio-agents-portal"><OmiAgentsWorkspace /></div>, contentHost) : null}
