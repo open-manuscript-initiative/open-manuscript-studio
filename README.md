@@ -38,7 +38,7 @@ The iOS/iPadOS target is no longer only architectural planning: Tauri/Xcode proj
 - optional Word-like document outline for long-form navigation;
 - structured search and replace with scoped result navigation;
 - manuscript, metadata and interface language handling;
-- 24 supported European UI languages with localized help;
+- 47 selectable UI locales across every shared web/desktop/mobile build, covering all 49 Google Play locale entries through canonical regional mapping; the existing 24 translation catalogues remain the reviewed localization baseline while the newly added Play languages use English fallback until their PO catalogues are completed;
 - IANA time-zone preferences and portable account settings;
 - large DOCX import with monograph mode and one buffered package read per import;
 - direct DOCX-to-OMI opening with structural preservation of headings, inline semantics, notes, lists, references and tables.
