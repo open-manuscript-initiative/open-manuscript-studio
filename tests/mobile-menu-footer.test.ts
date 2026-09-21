@@ -93,7 +93,7 @@ test('the desktop OMI brand is an explicit Home control', () => {
 test('mobile account overlay fills the viewport width and uses only the persistent top close control', () => {
   assert.match(
     accountStyles,
-    /@media\(max-width:720px\)\{[\s\S]*?\.focus-header--account-open\{z-index:1100\}[\s\S]*?\.account-overlay\{display:block\}[\s\S]*?\.account-overlay-backdrop\{display:none\}[\s\S]*?\.account-drawer\{width:100vw;max-width:none;height:100dvh;[\s\S]*?overflow-x:hidden;box-shadow:none\}/,
+    /@media\(max-width:720px\)\{[\s\S]*?\.app-header\.focus-header\.focus-header--account-open\{z-index:1100\}[\s\S]*?\.account-overlay\{display:block\}[\s\S]*?\.account-overlay-backdrop\{display:none\}[\s\S]*?\.account-drawer\{width:100vw;max-width:none;height:100dvh;[\s\S]*?overflow-x:hidden;box-shadow:none\}/,
   );
   assert.match(
     accountStyles,
@@ -111,6 +111,15 @@ test('mobile account overlay fills the viewport width and uses only the persiste
     accountStyles,
     /@media\(max-width:720px\)\{[\s\S]*?\.account-card\{width:100%;max-width:none;box-sizing:border-box;/,
   );
+});
+
+test('Account no longer contains its own logout action', () => {
+  const accountPanel = readFileSync(
+    new URL('../src/components/AccountPanel.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.doesNotMatch(accountPanel, /className="account-logout"/);
+  assert.doesNotMatch(accountPanel, /<LogOut/);
 });
 
 test('the application footer links to the Studio wiki', () => {
