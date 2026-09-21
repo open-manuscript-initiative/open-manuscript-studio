@@ -501,6 +501,10 @@ body {
   box-shadow: 18px 0 50px rgba(40, 34, 30, .2);
 }
 
+.studio-menu-drawer--navigation-only {
+  width: min(18rem, 92vw);
+}
+
 .studio-menu-header {
   min-height: 4.65rem;
   padding: .65rem clamp(.8rem, 2vw, 1.5rem);
