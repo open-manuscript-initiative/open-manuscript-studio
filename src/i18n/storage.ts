@@ -3,6 +3,7 @@ import {
   isSupportedLocale,
   supportedLocales,
 } from './config';
+import { resolveStudioUiLocale } from './platformLocales';
 import type { SupportedLocale } from './types';
 
 const UI_LOCALE_STORAGE_KEY = 'omi-studio-ui-locale';
@@ -10,8 +11,12 @@ const UI_ENABLED_LOCALES_STORAGE_KEY =
   'omi-studio-ui-enabled-locales';
 const UI_LOCALE_REGISTRY_VERSION_KEY =
   'omi-studio-ui-locale-registry-version';
-const UI_LOCALE_REGISTRY_VERSION = '3';
+const UI_LOCALE_REGISTRY_VERSION = '4';
 const LEGACY_UI_LOCALES = new Set(['en', 'hu', 'de']);
+const PREVIOUS_UI_LOCALES = new Set([
+  'bg', 'cs', 'da', 'de', 'el', 'en', 'es', 'et', 'fi', 'fr', 'ga', 'hr',
+  'hu', 'it', 'lt', 'lv', 'mt', 'nl', 'pl', 'pt', 'ro', 'sk', 'sl', 'sv',
+]);
 
 export function loadUiLocale(): SupportedLocale {
   if (typeof window === 'undefined') return DEFAULT_LOCALE;
@@ -19,9 +24,9 @@ export function loadUiLocale(): SupportedLocale {
   const stored = window.localStorage.getItem(UI_LOCALE_STORAGE_KEY);
   if (stored && isSupportedLocale(stored)) return stored;
 
-  const browserLocale = window.navigator.language.split('-')[0];
-  return isSupportedLocale(browserLocale)
-    ? browserLocale
+  const browserLocale = resolveStudioUiLocale(window.navigator.language);
+  return browserLocale && isSupportedLocale(browserLocale)
+    ? (browserLocale as SupportedLocale)
     : DEFAULT_LOCALE;
 }
 
@@ -89,13 +94,13 @@ export function saveEnabledUiLocales(
 }
 
 /**
- * Early Studio releases exposed only EN/HU/DE. A browser can therefore have
- * a persisted enabled-locale list containing only that legacy set. Version 2
- * was intentionally conservative and could miss such browsers if its marker
- * had already been written. Version 3 performs one final migration: while the
- * stored list contains no locale outside the legacy set, expand it to the
- * complete current registry. Once the v3 marker exists, later user choices are
- * preserved exactly.
+ * Locale-registry migration.
+ *
+ * Early releases exposed EN/HU/DE, then the 24 EU interface locales. Version 4
+ * adds the Google Play parity matrix. Existing users who still have either the
+ * original three-language default or the complete previous 24-language default
+ * are upgraded to the new full registry. Explicit user customizations remain
+ * untouched.
  */
 function migrateLegacyEnabledUiLocales(): void {
   const version = window.localStorage.getItem(
@@ -115,14 +120,22 @@ function migrateLegacyEnabledUiLocales(): void {
   if (stored !== null) {
     try {
       const parsed = JSON.parse(stored) as unknown;
-      shouldExpand =
-        Array.isArray(parsed) &&
-        parsed.length > 0 &&
-        parsed.every(
-          (locale) =>
-            typeof locale === 'string' &&
-            LEGACY_UI_LOCALES.has(locale),
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const localeValues = parsed.filter(
+          (locale): locale is string => typeof locale === 'string',
         );
+        const localeSet = new Set(localeValues);
+        const legacyDefault =
+          localeValues.length === parsed.length &&
+          localeValues.every((locale) => LEGACY_UI_LOCALES.has(locale));
+        const previousFullDefault =
+          localeValues.length === PREVIOUS_UI_LOCALES.size &&
+          localeValues.every((locale) => PREVIOUS_UI_LOCALES.has(locale)) &&
+          [...PREVIOUS_UI_LOCALES].every((locale) => localeSet.has(locale));
+        shouldExpand = legacyDefault || previousFullDefault;
+      } else {
+        shouldExpand = true;
+      }
     } catch {
       shouldExpand = true;
     }
