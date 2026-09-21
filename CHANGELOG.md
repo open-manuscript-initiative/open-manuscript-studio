@@ -8,7 +8,9 @@ the portable OMI document model and individual renderers.
 
 - Makes the Account workspace use the full mobile viewport width, removing the
   side gutter/backdrop and constraining account cards and profile content to
-  the phone width without horizontal overflow.
+  the phone width without horizontal overflow. The duplicate in-panel mobile
+  close button is removed; the persistent top Account control becomes the only
+  mobile close control while Account is open.
 
 - Isolates the full-screen mobile manuscript navigation from the currently
   mounted workspace so sticky toolbars, popovers, and editor controls cannot
