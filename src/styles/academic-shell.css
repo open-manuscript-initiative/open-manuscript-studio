@@ -851,7 +851,7 @@ body {
   .studio-menu-navigation {
     position: absolute;
     inset: 0;
-    z-index: 20;
+    z-index: 120;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-rows: minmax(0, 1fr);
@@ -880,6 +880,10 @@ body {
 
   .studio-menu-nav-button--active {
     box-shadow: inset 3px 0 0 var(--omi-academic-burgundy);
+  }
+
+  .studio-menu-body--navigation-open > .studio-menu-content {
+    display: none;
   }
 }
 
