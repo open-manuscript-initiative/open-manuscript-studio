@@ -1,0 +1,3617 @@
+{
+  "sourceLocale": "en",
+  "sourceCommit": "33a87539387a05eeecd8dc822f5657c3b0916fc0",
+  "stringCount": 722,
+  "entries": [
+    {
+      "id": "OMI0001",
+      "pointer": "/common/save",
+      "english": "Save"
+    },
+    {
+      "id": "OMI0002",
+      "pointer": "/common/cancel",
+      "english": "Cancel"
+    },
+    {
+      "id": "OMI0003",
+      "pointer": "/common/close",
+      "english": "Close"
+    },
+    {
+      "id": "OMI0004",
+      "pointer": "/common/delete",
+      "english": "Delete"
+    },
+    {
+      "id": "OMI0005",
+      "pointer": "/common/edit",
+      "english": "Edit"
+    },
+    {
+      "id": "OMI0006",
+      "pointer": "/common/add",
+      "english": "Add"
+    },
+    {
+      "id": "OMI0007",
+      "pointer": "/common/loading",
+      "english": "Loading…"
+    },
+    {
+      "id": "OMI0008",
+      "pointer": "/common/language",
+      "english": "Language"
+    },
+    {
+      "id": "OMI0009",
+      "pointer": "/navigation/documents",
+      "english": "Documents"
+    },
+    {
+      "id": "OMI0010",
+      "pointer": "/navigation/editor",
+      "english": "Editor"
+    },
+    {
+      "id": "OMI0011",
+      "pointer": "/navigation/metadata",
+      "english": "Metadata"
+    },
+    {
+      "id": "OMI0012",
+      "pointer": "/navigation/preview",
+      "english": "Preview"
+    },
+    {
+      "id": "OMI0013",
+      "pointer": "/navigation/settings",
+      "english": "Settings"
+    },
+    {
+      "id": "OMI0014",
+      "pointer": "/studio/menu",
+      "english": "Manuscript menu"
+    },
+    {
+      "id": "OMI0015",
+      "pointer": "/studio/closeMenu",
+      "english": "Close manuscript menu"
+    },
+    {
+      "id": "OMI0016",
+      "pointer": "/studio/languageSwitcher",
+      "english": "Interface language"
+    },
+    {
+      "id": "OMI0017",
+      "pointer": "/studio/saved",
+      "english": "Saved"
+    },
+    {
+      "id": "OMI0018",
+      "pointer": "/studio/pending",
+      "english": "Saving…"
+    },
+    {
+      "id": "OMI0019",
+      "pointer": "/studio/editorAria",
+      "english": "Manuscript editor"
+    },
+    {
+      "id": "OMI0020",
+      "pointer": "/studio/titlePlaceholder",
+      "english": "Enter the manuscript title"
+    },
+    {
+      "id": "OMI0021",
+      "pointer": "/studio/noSection",
+      "english": "No section is selected."
+    },
+    {
+      "id": "OMI0022",
+      "pointer": "/studio/navigation/document",
+      "english": "Document"
+    },
+    {
+      "id": "OMI0023",
+      "pointer": "/studio/navigation/manuscript",
+      "english": "Manuscript data"
+    },
+    {
+      "id": "OMI0024",
+      "pointer": "/studio/navigation/notes",
+      "english": "Notes"
+    },
+    {
+      "id": "OMI0025",
+      "pointer": "/studio/navigation/references",
+      "english": "References"
+    },
+    {
+      "id": "OMI0026",
+      "pointer": "/studio/navigation/contributors",
+      "english": "Contributors"
+    },
+    {
+      "id": "OMI0027",
+      "pointer": "/studio/navigation/history",
+      "english": "History"
+    },
+    {
+      "id": "OMI0028",
+      "pointer": "/studio/navigation/tools",
+      "english": "Export and tools"
+    },
+    {
+      "id": "OMI0029",
+      "pointer": "/studio/navigation/settings",
+      "english": "Settings"
+    },
+    {
+      "id": "OMI0030",
+      "pointer": "/studio/document/title",
+      "english": "Document structure"
+    },
+    {
+      "id": "OMI0031",
+      "pointer": "/studio/document/description",
+      "english": "Choose the section you want to work on. Structural and object information stays out of the writing surface until you need it."
+    },
+    {
+      "id": "OMI0032",
+      "pointer": "/studio/document/addSection",
+      "english": "Add section"
+    },
+    {
+      "id": "OMI0033",
+      "pointer": "/studio/document/sections",
+      "english": "Sections"
+    },
+    {
+      "id": "OMI0034",
+      "pointer": "/studio/document/objects",
+      "english": "Objects"
+    },
+    {
+      "id": "OMI0035",
+      "pointer": "/studio/document/annotations",
+      "english": "Annotations"
+    },
+    {
+      "id": "OMI0036",
+      "pointer": "/studio/document/citations",
+      "english": "Citations"
+    },
+    {
+      "id": "OMI0037",
+      "pointer": "/studio/manuscript/title",
+      "english": "Manuscript data"
+    },
+    {
+      "id": "OMI0038",
+      "pointer": "/studio/manuscript/description",
+      "english": "Edit manuscript-level information separately from the writing surface."
+    },
+    {
+      "id": "OMI0039",
+      "pointer": "/studio/tools/title",
+      "english": "Export and tools"
+    },
+    {
+      "id": "OMI0040",
+      "pointer": "/studio/tools/description",
+      "english": "Secondary, technical and potentially destructive actions are kept outside the writing surface."
+    },
+    {
+      "id": "OMI0041",
+      "pointer": "/studio/tools/export",
+      "english": "Export .omi.json"
+    },
+    {
+      "id": "OMI0042",
+      "pointer": "/studio/tools/exportDescription",
+      "english": "Create a canonical portable OMI manuscript file after checkpointing pending edits."
+    },
+    {
+      "id": "OMI0043",
+      "pointer": "/studio/tools/reset",
+      "english": "Reset sample"
+    },
+    {
+      "id": "OMI0044",
+      "pointer": "/studio/tools/resetDescription",
+      "english": "Replace the current alpha sample with a new clean sample manuscript."
+    },
+    {
+      "id": "OMI0045",
+      "pointer": "/studio/tools/confirmReset",
+      "english": "Reset the current sample manuscript? Unsaved and current sample data will be replaced."
+    },
+    {
+      "id": "OMI0046",
+      "pointer": "/studio/tools/technicalData",
+      "english": "Technical data"
+    },
+    {
+      "id": "OMI0047",
+      "pointer": "/studio/tools/technicalDescription",
+      "english": "Inspect the semantic representation only when technical details are needed."
+    },
+    {
+      "id": "OMI0048",
+      "pointer": "/studio/tools/liveJson",
+      "english": "Current section JSON"
+    },
+    {
+      "id": "OMI0049",
+      "pointer": "/studio/tools/synced",
+      "english": "Synced"
+    },
+    {
+      "id": "OMI0050",
+      "pointer": "/studio/settings/title",
+      "english": "Interface settings"
+    },
+    {
+      "id": "OMI0051",
+      "pointer": "/studio/settings/description",
+      "english": "Choose which interface languages you want available while working. These preferences are stored on this device."
+    },
+    {
+      "id": "OMI0052",
+      "pointer": "/studio/settings/interfaceLanguages",
+      "english": "Available interface languages"
+    },
+    {
+      "id": "OMI0053",
+      "pointer": "/studio/settings/interfaceLanguagesDescription",
+      "english": "Enabled languages appear in the quick language switcher in the editor header."
+    },
+    {
+      "id": "OMI0054",
+      "pointer": "/studio/settings/currentLanguage",
+      "english": "Current interface language"
+    },
+    {
+      "id": "OMI0055",
+      "pointer": "/studio/settings/currentLanguageHint",
+      "english": "The language currently in use must remain enabled. Switch to another language before disabling it."
+    },
+    {
+      "id": "OMI0056",
+      "pointer": "/studio/settings/enabledLanguage",
+      "english": "Available in quick switcher"
+    },
+    {
+      "id": "OMI0057",
+      "pointer": "/studio/settings/disabledLanguage",
+      "english": "Hidden from quick switcher"
+    },
+    {
+      "id": "OMI0058",
+      "pointer": "/studio/settings/futureLanguages",
+      "english": "The language registry is extensible. Future translation dictionaries can be added without redesigning this settings screen."
+    },
+    {
+      "id": "OMI0059",
+      "pointer": "/manuscript/newDocument",
+      "english": "New manuscript"
+    },
+    {
+      "id": "OMI0060",
+      "pointer": "/manuscript/documentTitle",
+      "english": "Document title"
+    },
+    {
+      "id": "OMI0061",
+      "pointer": "/manuscript/abstract",
+      "english": "Abstract"
+    },
+    {
+      "id": "OMI0062",
+      "pointer": "/manuscript/keywords",
+      "english": "Keywords"
+    },
+    {
+      "id": "OMI0063",
+      "pointer": "/manuscript/contributors",
+      "english": "Contributors"
+    },
+    {
+      "id": "OMI0064",
+      "pointer": "/manuscript/sections",
+      "english": "Sections"
+    },
+    {
+      "id": "OMI0065",
+      "pointer": "/manuscript/annotations",
+      "english": "Notes"
+    },
+    {
+      "id": "OMI0066",
+      "pointer": "/manuscript/citations",
+      "english": "Citations"
+    },
+    {
+      "id": "OMI0067",
+      "pointer": "/manuscript/bibliography",
+      "english": "Bibliography"
+    },
+    {
+      "id": "OMI0068",
+      "pointer": "/manuscript/documentLanguage",
+      "english": "Document language"
+    },
+    {
+      "id": "OMI0069",
+      "pointer": "/manuscript/originalLanguage",
+      "english": "Original language"
+    },
+    {
+      "id": "OMI0070",
+      "pointer": "/notes/title",
+      "english": "Notes"
+    },
+    {
+      "id": "OMI0071",
+      "pointer": "/notes/description",
+      "english": "Manage semantic manuscript notes. Note bodies remain independent annotation objects while their inline anchors stay in the text."
+    },
+    {
+      "id": "OMI0072",
+      "pointer": "/notes/empty",
+      "english": "This manuscript has no notes yet."
+    },
+    {
+      "id": "OMI0073",
+      "pointer": "/notes/emptyHint",
+      "english": "Place the cursor in the text and use the Note button or Ctrl/Cmd+Alt+N."
+    },
+    {
+      "id": "OMI0074",
+      "pointer": "/notes/note",
+      "english": "Note"
+    },
+    {
+      "id": "OMI0075",
+      "pointer": "/notes/type",
+      "english": "Note type"
+    },
+    {
+      "id": "OMI0076",
+      "pointer": "/notes/body",
+      "english": "Note text"
+    },
+    {
+      "id": "OMI0077",
+      "pointer": "/notes/bodyPlaceholder",
+      "english": "Write the note…"
+    },
+    {
+      "id": "OMI0078",
+      "pointer": "/notes/footnote",
+      "english": "Footnote"
+    },
+    {
+      "id": "OMI0079",
+      "pointer": "/notes/endnote",
+      "english": "Endnote"
+    },
+    {
+      "id": "OMI0080",
+      "pointer": "/notes/authorNote",
+      "english": "Author note"
+    },
+    {
+      "id": "OMI0081",
+      "pointer": "/notes/delete",
+      "english": "Delete note"
+    },
+    {
+      "id": "OMI0082",
+      "pointer": "/notes/confirmDelete",
+      "english": "Delete this note and its inline anchor from the manuscript?"
+    },
+    {
+      "id": "OMI0083",
+      "pointer": "/notes/closeEditor",
+      "english": "Close note editor"
+    },
+    {
+      "id": "OMI0084",
+      "pointer": "/notes/goToNote",
+      "english": "Go to note"
+    },
+    {
+      "id": "OMI0085",
+      "pointer": "/notes/autoSave",
+      "english": "Saved with manuscript revisions"
+    },
+    {
+      "id": "OMI0086",
+      "pointer": "/citations/referencesTitle",
+      "english": "References"
+    },
+    {
+      "id": "OMI0087",
+      "pointer": "/citations/referencesDescription",
+      "english": "Add a work once to the manuscript reference library, then reuse it in as many citation occurrences as needed."
+    },
+    {
+      "id": "OMI0088",
+      "pointer": "/citations/addReference",
+      "english": "Add reference"
+    },
+    {
+      "id": "OMI0089",
+      "pointer": "/citations/editReference",
+      "english": "Edit reference"
+    },
+    {
+      "id": "OMI0090",
+      "pointer": "/citations/referenceEditorDescription",
+      "english": "Store structured bibliographic metadata independently from any one citation or output style."
+    },
+    {
+      "id": "OMI0091",
+      "pointer": "/citations/emptyLibrary",
+      "english": "The manuscript reference library is empty."
+    },
+    {
+      "id": "OMI0092",
+      "pointer": "/citations/emptyLibraryHint",
+      "english": "Add a book, article, archival source, web resource or another cited work before inserting citations in the text."
+    },
+    {
+      "id": "OMI0093",
+      "pointer": "/citations/searchReferences",
+      "english": "Search references"
+    },
+    {
+      "id": "OMI0094",
+      "pointer": "/citations/searchPlaceholder",
+      "english": "Search by title, creator, year, DOI…"
+    },
+    {
+      "id": "OMI0095",
+      "pointer": "/citations/untitledReference",
+      "english": "Untitled reference"
+    },
+    {
+      "id": "OMI0096",
+      "pointer": "/citations/occurrences",
+      "english": "citations"
+    },
+    {
+      "id": "OMI0097",
+      "pointer": "/citations/bibliographyPreviewDescription",
+      "english": "Neutral preview of records currently cited in the manuscript. Final formatting belongs to the publication profile."
+    },
+    {
+      "id": "OMI0098",
+      "pointer": "/citations/resourceType",
+      "english": "Resource type"
+    },
+    {
+      "id": "OMI0099",
+      "pointer": "/citations/title",
+      "english": "Title"
+    },
+    {
+      "id": "OMI0100",
+      "pointer": "/citations/titlePlaceholder",
+      "english": "Title of the cited work"
+    },
+    {
+      "id": "OMI0101",
+      "pointer": "/citations/subtitle",
+      "english": "Subtitle"
+    },
+    {
+      "id": "OMI0102",
+      "pointer": "/citations/creators",
+      "english": "Creators and contributors"
+    },
+    {
+      "id": "OMI0103",
+      "pointer": "/citations/creatorsDescription",
+      "english": "Keep contributor names structured so citation styles and exports can render them correctly."
+    },
+    {
+      "id": "OMI0104",
+      "pointer": "/citations/addCreator",
+      "english": "Add creator"
+    },
+    {
+      "id": "OMI0105",
+      "pointer": "/citations/removeCreator",
+      "english": "Remove creator"
+    },
+    {
+      "id": "OMI0106",
+      "pointer": "/citations/noCreators",
+      "english": "No creator has been added."
+    },
+    {
+      "id": "OMI0107",
+      "pointer": "/citations/creatorRole",
+      "english": "Role"
+    },
+    {
+      "id": "OMI0108",
+      "pointer": "/citations/givenName",
+      "english": "Given name"
+    },
+    {
+      "id": "OMI0109",
+      "pointer": "/citations/familyName",
+      "english": "Family name"
+    },
+    {
+      "id": "OMI0110",
+      "pointer": "/citations/containerTitle",
+      "english": "Journal, book or container title"
+    },
+    {
+      "id": "OMI0111",
+      "pointer": "/citations/issued",
+      "english": "Publication date / year"
+    },
+    {
+      "id": "OMI0112",
+      "pointer": "/citations/volume",
+      "english": "Volume"
+    },
+    {
+      "id": "OMI0113",
+      "pointer": "/citations/issue",
+      "english": "Issue"
+    },
+    {
+      "id": "OMI0114",
+      "pointer": "/citations/pages",
+      "english": "Pages / extent"
+    },
+    {
+      "id": "OMI0115",
+      "pointer": "/citations/publisher",
+      "english": "Publisher"
+    },
+    {
+      "id": "OMI0116",
+      "pointer": "/citations/place",
+      "english": "Place of publication"
+    },
+    {
+      "id": "OMI0117",
+      "pointer": "/citations/duplicateReference",
+      "english": "A likely duplicate already exists in the reference library:"
+    },
+    {
+      "id": "OMI0118",
+      "pointer": "/citations/insertTitle",
+      "english": "Insert citation"
+    },
+    {
+      "id": "OMI0119",
+      "pointer": "/citations/insertDescription",
+      "english": "Choose a work from the manuscript reference library and optionally specify the cited location."
+    },
+    {
+      "id": "OMI0120",
+      "pointer": "/citations/noReferences",
+      "english": "No reference is available yet."
+    },
+    {
+      "id": "OMI0121",
+      "pointer": "/citations/noReferencesHint",
+      "english": "Add the work from Manuscript menu → References, then return here to cite it."
+    },
+    {
+      "id": "OMI0122",
+      "pointer": "/citations/insert",
+      "english": "Insert citation"
+    },
+    {
+      "id": "OMI0123",
+      "pointer": "/citations/citation",
+      "english": "Citation"
+    },
+    {
+      "id": "OMI0124",
+      "pointer": "/citations/reference",
+      "english": "Cited work"
+    },
+    {
+      "id": "OMI0125",
+      "pointer": "/citations/locatorType",
+      "english": "Locator type"
+    },
+    {
+      "id": "OMI0126",
+      "pointer": "/citations/locator",
+      "english": "Locator"
+    },
+    {
+      "id": "OMI0127",
+      "pointer": "/citations/locatorPlaceholder",
+      "english": "e.g. 45–47, 12r–13v, chapter 4"
+    },
+    {
+      "id": "OMI0128",
+      "pointer": "/citations/prefix",
+      "english": "Prefix"
+    },
+    {
+      "id": "OMI0129",
+      "pointer": "/citations/prefixPlaceholder",
+      "english": "e.g. see also"
+    },
+    {
+      "id": "OMI0130",
+      "pointer": "/citations/suffix",
+      "english": "Suffix"
+    },
+    {
+      "id": "OMI0131",
+      "pointer": "/citations/suffixPlaceholder",
+      "english": "e.g. emphasis added"
+    },
+    {
+      "id": "OMI0132",
+      "pointer": "/citations/openSource",
+      "english": "Open source"
+    },
+    {
+      "id": "OMI0133",
+      "pointer": "/citations/closeEditor",
+      "english": "Close citation editor"
+    },
+    {
+      "id": "OMI0134",
+      "pointer": "/citations/deleteCitation",
+      "english": "Delete citation"
+    },
+    {
+      "id": "OMI0135",
+      "pointer": "/citations/confirmDeleteCitation",
+      "english": "Delete this citation occurrence from the manuscript? The bibliographic record will remain in the reference library."
+    },
+    {
+      "id": "OMI0136",
+      "pointer": "/citations/unresolvedReference",
+      "english": "The cited bibliographic record is unresolved or missing."
+    },
+    {
+      "id": "OMI0137",
+      "pointer": "/citations/roles/author",
+      "english": "Author"
+    },
+    {
+      "id": "OMI0138",
+      "pointer": "/citations/roles/editor",
+      "english": "Editor"
+    },
+    {
+      "id": "OMI0139",
+      "pointer": "/citations/roles/translator",
+      "english": "Translator"
+    },
+    {
+      "id": "OMI0140",
+      "pointer": "/citations/roles/compiler",
+      "english": "Compiler"
+    },
+    {
+      "id": "OMI0141",
+      "pointer": "/citations/roles/contributor",
+      "english": "Contributor"
+    },
+    {
+      "id": "OMI0142",
+      "pointer": "/citations/resourceTypes/journal-article",
+      "english": "Journal article"
+    },
+    {
+      "id": "OMI0143",
+      "pointer": "/citations/resourceTypes/book",
+      "english": "Book"
+    },
+    {
+      "id": "OMI0144",
+      "pointer": "/citations/resourceTypes/book-chapter",
+      "english": "Book chapter"
+    },
+    {
+      "id": "OMI0145",
+      "pointer": "/citations/resourceTypes/conference-paper",
+      "english": "Conference paper"
+    },
+    {
+      "id": "OMI0146",
+      "pointer": "/citations/resourceTypes/thesis",
+      "english": "Thesis"
+    },
+    {
+      "id": "OMI0147",
+      "pointer": "/citations/resourceTypes/dissertation",
+      "english": "Dissertation"
+    },
+    {
+      "id": "OMI0148",
+      "pointer": "/citations/resourceTypes/report",
+      "english": "Report"
+    },
+    {
+      "id": "OMI0149",
+      "pointer": "/citations/resourceTypes/preprint",
+      "english": "Preprint"
+    },
+    {
+      "id": "OMI0150",
+      "pointer": "/citations/resourceTypes/dataset",
+      "english": "Dataset"
+    },
+    {
+      "id": "OMI0151",
+      "pointer": "/citations/resourceTypes/software",
+      "english": "Software"
+    },
+    {
+      "id": "OMI0152",
+      "pointer": "/citations/resourceTypes/standard",
+      "english": "Standard"
+    },
+    {
+      "id": "OMI0153",
+      "pointer": "/citations/resourceTypes/archival-source",
+      "english": "Archival source"
+    },
+    {
+      "id": "OMI0154",
+      "pointer": "/citations/resourceTypes/manuscript",
+      "english": "Manuscript"
+    },
+    {
+      "id": "OMI0155",
+      "pointer": "/citations/resourceTypes/web-page",
+      "english": "Web page"
+    },
+    {
+      "id": "OMI0156",
+      "pointer": "/citations/locators/page",
+      "english": "Page"
+    },
+    {
+      "id": "OMI0157",
+      "pointer": "/citations/locators/page-range",
+      "english": "Page range"
+    },
+    {
+      "id": "OMI0158",
+      "pointer": "/citations/locators/chapter",
+      "english": "Chapter"
+    },
+    {
+      "id": "OMI0159",
+      "pointer": "/citations/locators/section",
+      "english": "Section"
+    },
+    {
+      "id": "OMI0160",
+      "pointer": "/citations/locators/paragraph",
+      "english": "Paragraph"
+    },
+    {
+      "id": "OMI0161",
+      "pointer": "/citations/locators/figure",
+      "english": "Figure"
+    },
+    {
+      "id": "OMI0162",
+      "pointer": "/citations/locators/table",
+      "english": "Table"
+    },
+    {
+      "id": "OMI0163",
+      "pointer": "/citations/locators/folio",
+      "english": "Folio"
+    },
+    {
+      "id": "OMI0164",
+      "pointer": "/citations/locators/line",
+      "english": "Line"
+    },
+    {
+      "id": "OMI0165",
+      "pointer": "/citations/locators/timestamp",
+      "english": "Timestamp"
+    },
+    {
+      "id": "OMI0166",
+      "pointer": "/contributors/description",
+      "english": "Manage portable scholarly identities and their manuscript-specific contribution roles."
+    },
+    {
+      "id": "OMI0167",
+      "pointer": "/contributors/add",
+      "english": "Add contributor"
+    },
+    {
+      "id": "OMI0168",
+      "pointer": "/contributors/empty",
+      "english": "No contributors have been added to this manuscript."
+    },
+    {
+      "id": "OMI0169",
+      "pointer": "/contributors/remove",
+      "english": "Remove contributor"
+    },
+    {
+      "id": "OMI0170",
+      "pointer": "/contributors/moveUp",
+      "english": "Move contributor up"
+    },
+    {
+      "id": "OMI0171",
+      "pointer": "/contributors/moveDown",
+      "english": "Move contributor down"
+    },
+    {
+      "id": "OMI0172",
+      "pointer": "/contributors/givenName",
+      "english": "Given name"
+    },
+    {
+      "id": "OMI0173",
+      "pointer": "/contributors/familyName",
+      "english": "Family name"
+    },
+    {
+      "id": "OMI0174",
+      "pointer": "/contributors/affiliation",
+      "english": "Affiliation"
+    },
+    {
+      "id": "OMI0175",
+      "pointer": "/contributors/orcid",
+      "english": "ORCID"
+    },
+    {
+      "id": "OMI0176",
+      "pointer": "/contributors/invalidOrcid",
+      "english": "The ORCID checksum or format is invalid."
+    },
+    {
+      "id": "OMI0177",
+      "pointer": "/contributors/role",
+      "english": "Contribution role"
+    },
+    {
+      "id": "OMI0178",
+      "pointer": "/contributors/corresponding",
+      "english": "Corresponding contributor"
+    },
+    {
+      "id": "OMI0179",
+      "pointer": "/contributors/roles/author",
+      "english": "Author"
+    },
+    {
+      "id": "OMI0180",
+      "pointer": "/contributors/roles/editor",
+      "english": "Editor"
+    },
+    {
+      "id": "OMI0181",
+      "pointer": "/contributors/roles/translator",
+      "english": "Translator"
+    },
+    {
+      "id": "OMI0182",
+      "pointer": "/contributors/roles/reviewer",
+      "english": "Reviewer"
+    },
+    {
+      "id": "OMI0183",
+      "pointer": "/contributors/roles/dataCurator",
+      "english": "Data curator"
+    },
+    {
+      "id": "OMI0184",
+      "pointer": "/contributors/roles/software",
+      "english": "Software"
+    },
+    {
+      "id": "OMI0185",
+      "pointer": "/contributors/roles/methodology",
+      "english": "Methodology"
+    },
+    {
+      "id": "OMI0186",
+      "pointer": "/contributors/roles/visualization",
+      "english": "Visualization"
+    },
+    {
+      "id": "OMI0187",
+      "pointer": "/contributors/roles/other",
+      "english": "Other"
+    },
+    {
+      "id": "OMI0188",
+      "pointer": "/history/title",
+      "english": "Revision history"
+    },
+    {
+      "id": "OMI0189",
+      "pointer": "/history/description",
+      "english": "Immutable OMI-SPEC-160 revisions recorded for this manuscript."
+    },
+    {
+      "id": "OMI0190",
+      "pointer": "/history/empty",
+      "english": "No revisions have been recorded."
+    },
+    {
+      "id": "OMI0191",
+      "pointer": "/history/current",
+      "english": "Current"
+    },
+    {
+      "id": "OMI0192",
+      "pointer": "/history/revision",
+      "english": "Revision"
+    },
+    {
+      "id": "OMI0193",
+      "pointer": "/history/events",
+      "english": "events"
+    },
+    {
+      "id": "OMI0194",
+      "pointer": "/history/groupedChanges",
+      "english": "grouped changes"
+    },
+    {
+      "id": "OMI0195",
+      "pointer": "/history/unknownActor",
+      "english": "Unknown actor"
+    },
+    {
+      "id": "OMI0196",
+      "pointer": "/history/completeHistory",
+      "english": "Complete history"
+    },
+    {
+      "id": "OMI0197",
+      "pointer": "/history/shallowHistory",
+      "english": "Shallow history"
+    },
+    {
+      "id": "OMI0198",
+      "pointer": "/history/pendingTitle",
+      "english": "Uncommitted working state"
+    },
+    {
+      "id": "OMI0199",
+      "pointer": "/history/pendingDescription",
+      "english": "Recent edits are being batched and will become one immutable checkpoint revision."
+    },
+    {
+      "id": "OMI0200",
+      "pointer": "/history/pendingBadge",
+      "english": "Pending"
+    },
+    {
+      "id": "OMI0201",
+      "pointer": "/history/checkpoint",
+      "english": "Save checkpoint"
+    },
+    {
+      "id": "OMI0202",
+      "pointer": "/history/discard",
+      "english": "Discard changes"
+    },
+    {
+      "id": "OMI0203",
+      "pointer": "/history/confirmDiscard",
+      "english": "Discard all uncommitted changes and restore the latest committed revision?"
+    },
+    {
+      "id": "OMI0204",
+      "pointer": "/history/revert",
+      "english": "Revert"
+    },
+    {
+      "id": "OMI0205",
+      "pointer": "/history/confirmRevert",
+      "english": "Create a new revision that restores this earlier manuscript state?"
+    },
+    {
+      "id": "OMI0206",
+      "pointer": "/history/revertBlocked",
+      "english": "Save or discard the pending working state before reverting a committed revision."
+    },
+    {
+      "id": "OMI0207",
+      "pointer": "/history/tombstonesTitle",
+      "english": "Deleted object records"
+    },
+    {
+      "id": "OMI0208",
+      "pointer": "/history/tombstonesDescription",
+      "english": "Persistent OMI-SPEC-160 tombstones preserve deleted object identifiers and restoration evidence."
+    },
+    {
+      "id": "OMI0209",
+      "pointer": "/history/tombstoneActive",
+      "english": "Deleted"
+    },
+    {
+      "id": "OMI0210",
+      "pointer": "/history/tombstoneRestored",
+      "english": "Restored"
+    },
+    {
+      "id": "OMI0211",
+      "pointer": "/history/operations/snapshotCreated",
+      "english": "Manuscript snapshot created"
+    },
+    {
+      "id": "OMI0212",
+      "pointer": "/history/operations/titleChanged",
+      "english": "Manuscript title changed"
+    },
+    {
+      "id": "OMI0213",
+      "pointer": "/history/operations/abstractChanged",
+      "english": "Manuscript abstract changed"
+    },
+    {
+      "id": "OMI0214",
+      "pointer": "/history/operations/sectionCreated",
+      "english": "Section added"
+    },
+    {
+      "id": "OMI0215",
+      "pointer": "/history/operations/blockChanged",
+      "english": "Block content changed"
+    },
+    {
+      "id": "OMI0216",
+      "pointer": "/history/operations/contributorAdded",
+      "english": "Contributor added"
+    },
+    {
+      "id": "OMI0217",
+      "pointer": "/history/operations/contributorChanged",
+      "english": "Contributor identity changed"
+    },
+    {
+      "id": "OMI0218",
+      "pointer": "/history/operations/contributorRemoved",
+      "english": "Contributor removed"
+    },
+    {
+      "id": "OMI0219",
+      "pointer": "/history/operations/contributionChanged",
+      "english": "Contribution role changed"
+    },
+    {
+      "id": "OMI0220",
+      "pointer": "/history/operations/contributorsReordered",
+      "english": "Contributors reordered"
+    },
+    {
+      "id": "OMI0221",
+      "pointer": "/history/operations/reverted",
+      "english": "Earlier revision restored"
+    },
+    {
+      "id": "OMI0222",
+      "pointer": "/editor/addSection",
+      "english": "Add section"
+    },
+    {
+      "id": "OMI0223",
+      "pointer": "/editor/addParagraph",
+      "english": "Add paragraph"
+    },
+    {
+      "id": "OMI0224",
+      "pointer": "/editor/addNote",
+      "english": "Note"
+    },
+    {
+      "id": "OMI0225",
+      "pointer": "/editor/addCitation",
+      "english": "Citation"
+    },
+    {
+      "id": "OMI0226",
+      "pointer": "/editor/untitledSection",
+      "english": "Untitled section"
+    },
+    {
+      "id": "OMI0227",
+      "pointer": "/editor/emptyParagraph",
+      "english": "Start writing…"
+    },
+    {
+      "id": "OMI0228",
+      "pointer": "/editor/paragraph",
+      "english": "Paragraph"
+    },
+    {
+      "id": "OMI0229",
+      "pointer": "/editor/heading",
+      "english": "Heading"
+    },
+    {
+      "id": "OMI0230",
+      "pointer": "/editor/quote",
+      "english": "Quote"
+    },
+    {
+      "id": "OMI0231",
+      "pointer": "/editor/insertNote",
+      "english": "Insert semantic manuscript note"
+    },
+    {
+      "id": "OMI0232",
+      "pointer": "/editor/insertCitation",
+      "english": "Insert semantic citation"
+    },
+    {
+      "id": "OMI0233",
+      "pointer": "/editor/loading",
+      "english": "Loading editor…"
+    },
+    {
+      "id": "OMI0234",
+      "pointer": "/status/draft",
+      "english": "Draft"
+    },
+    {
+      "id": "OMI0235",
+      "pointer": "/status/submitted",
+      "english": "Submitted"
+    },
+    {
+      "id": "OMI0236",
+      "pointer": "/status/accepted",
+      "english": "Accepted"
+    },
+    {
+      "id": "OMI0237",
+      "pointer": "/status/published",
+      "english": "Published"
+    },
+    {
+      "id": "OMI0238",
+      "pointer": "/validation/requiredField",
+      "english": "This field is required."
+    },
+    {
+      "id": "OMI0239",
+      "pointer": "/validation/invalidDocument",
+      "english": "The document structure is invalid."
+    },
+    {
+      "id": "OMI0240",
+      "pointer": "/validation/unsupportedSchema",
+      "english": "The document schema version is not supported."
+    },
+    {
+      "id": "OMI0241",
+      "pointer": "/languages/en",
+      "english": "English"
+    },
+    {
+      "id": "OMI0242",
+      "pointer": "/languages/hu",
+      "english": "Hungarian"
+    },
+    {
+      "id": "OMI0243",
+      "pointer": "/languages/de",
+      "english": "German"
+    },
+    {
+      "id": "OMI0244",
+      "pointer": "/auth/brand/name",
+      "english": "Open Manuscript Studio"
+    },
+    {
+      "id": "OMI0245",
+      "pointer": "/auth/brand/description",
+      "english": "Collaborative scholarly writing"
+    },
+    {
+      "id": "OMI0246",
+      "pointer": "/auth/login/title",
+      "english": "Sign in"
+    },
+    {
+      "id": "OMI0247",
+      "pointer": "/auth/login/description",
+      "english": "Please sign in to continue."
+    },
+    {
+      "id": "OMI0248",
+      "pointer": "/auth/login/submit",
+      "english": "Sign in"
+    },
+    {
+      "id": "OMI0249",
+      "pointer": "/auth/login/submitting",
+      "english": "Signing in…"
+    },
+    {
+      "id": "OMI0250",
+      "pointer": "/auth/login/noAccount",
+      "english": "Do not have an account yet?"
+    },
+    {
+      "id": "OMI0251",
+      "pointer": "/auth/login/registerLink",
+      "english": "Register"
+    },
+    {
+      "id": "OMI0252",
+      "pointer": "/auth/register/title",
+      "english": "Create account"
+    },
+    {
+      "id": "OMI0253",
+      "pointer": "/auth/register/description",
+      "english": "Create your account."
+    },
+    {
+      "id": "OMI0254",
+      "pointer": "/auth/register/submit",
+      "english": "Register"
+    },
+    {
+      "id": "OMI0255",
+      "pointer": "/auth/register/hasAccount",
+      "english": "Already have an account?"
+    },
+    {
+      "id": "OMI0256",
+      "pointer": "/auth/register/loginLink",
+      "english": "Sign in"
+    },
+    {
+      "id": "OMI0257",
+      "pointer": "/auth/fields/name/label",
+      "english": "Full name"
+    },
+    {
+      "id": "OMI0258",
+      "pointer": "/auth/fields/name/placeholder",
+      "english": "Your full name"
+    },
+    {
+      "id": "OMI0259",
+      "pointer": "/auth/fields/email/label",
+      "english": "Email"
+    },
+    {
+      "id": "OMI0260",
+      "pointer": "/auth/fields/email/placeholder",
+      "english": "name@example.com"
+    },
+    {
+      "id": "OMI0261",
+      "pointer": "/auth/fields/password/label",
+      "english": "Password"
+    },
+    {
+      "id": "OMI0262",
+      "pointer": "/auth/fields/password/placeholder",
+      "english": "Enter your password"
+    },
+    {
+      "id": "OMI0263",
+      "pointer": "/auth/errors/invalidEmail",
+      "english": "Invalid e-mail address."
+    },
+    {
+      "id": "OMI0264",
+      "pointer": "/auth/errors/invalidCredentials",
+      "english": "Incorrect e-mail address or password."
+    },
+    {
+      "id": "OMI0265",
+      "pointer": "/auth/errors/userNotFound",
+      "english": "The user account could not be found."
+    },
+    {
+      "id": "OMI0266",
+      "pointer": "/auth/errors/accountNotActive",
+      "english": "The user account is not active."
+    },
+    {
+      "id": "OMI0267",
+      "pointer": "/auth/errors/authenticationRequired",
+      "english": "Authentication is required."
+    },
+    {
+      "id": "OMI0268",
+      "pointer": "/auth/alphaNotice",
+      "english": "Alpha version – authentication is currently for testing purposes."
+    },
+    {
+      "id": "OMI0269",
+      "pointer": "/modules/assetContainer/title",
+      "english": "OMI package"
+    },
+    {
+      "id": "OMI0270",
+      "pointer": "/modules/assetContainer/description",
+      "english": "Externalize binary resources and package the manuscript, history, publication profile, checksums, assets and valid JATS output as a portable .omi container."
+    },
+    {
+      "id": "OMI0271",
+      "pointer": "/modules/assetContainer/assets",
+      "english": "registered assets"
+    },
+    {
+      "id": "OMI0272",
+      "pointer": "/modules/assetContainer/embedded",
+      "english": "embedded images awaiting externalization"
+    },
+    {
+      "id": "OMI0273",
+      "pointer": "/modules/assetContainer/prepare",
+      "english": "Prepare assets"
+    },
+    {
+      "id": "OMI0274",
+      "pointer": "/modules/assetContainer/preparing",
+      "english": "Preparing assets…"
+    },
+    {
+      "id": "OMI0275",
+      "pointer": "/modules/assetContainer/prepared",
+      "english": "Embedded image payloads are registered as stable assets."
+    },
+    {
+      "id": "OMI0276",
+      "pointer": "/modules/assetContainer/download",
+      "english": "Download .omi package"
+    },
+    {
+      "id": "OMI0277",
+      "pointer": "/modules/assetContainer/downloading",
+      "english": "Building package…"
+    },
+    {
+      "id": "OMI0278",
+      "pointer": "/modules/assetContainer/ready",
+      "english": "The container passed Studio integrity checks."
+    },
+    {
+      "id": "OMI0279",
+      "pointer": "/modules/assetContainer/blocked",
+      "english": "The package has blocking integrity errors."
+    },
+    {
+      "id": "OMI0280",
+      "pointer": "/modules/assetContainer/diagnostics",
+      "english": "Container diagnostics"
+    },
+    {
+      "id": "OMI0281",
+      "pointer": "/modules/assetContainer/noDiagnostics",
+      "english": "No container-specific diagnostics."
+    },
+    {
+      "id": "OMI0282",
+      "pointer": "/modules/assetContainer/integrity",
+      "english": "SHA-256 integrity"
+    },
+    {
+      "id": "OMI0283",
+      "pointer": "/modules/assetContainer/format",
+      "english": "OMI-SPEC-320 / OMI-SPEC-330 Draft package"
+    },
+    {
+      "id": "OMI0284",
+      "pointer": "/modules/assetContainer/privacyNote",
+      "english": "Asset-backed image previews are resolved from the local binary repository. Portable manuscript state no longer needs Base64 preview data after externalization."
+    },
+    {
+      "id": "OMI0285",
+      "pointer": "/modules/assetContainer/importTitle",
+      "english": "Open OMI package"
+    },
+    {
+      "id": "OMI0286",
+      "pointer": "/modules/assetContainer/importDescription",
+      "english": "Inspect an untrusted .omi container, verify its manifest, ZIP structure, revision identities, assets and SHA-256 checksums before loading it."
+    },
+    {
+      "id": "OMI0287",
+      "pointer": "/modules/assetContainer/choosePackage",
+      "english": "Choose .omi package"
+    },
+    {
+      "id": "OMI0288",
+      "pointer": "/modules/assetContainer/inspecting",
+      "english": "Verifying package…"
+    },
+    {
+      "id": "OMI0289",
+      "pointer": "/modules/assetContainer/importPackage",
+      "english": "Open verified manuscript"
+    },
+    {
+      "id": "OMI0290",
+      "pointer": "/modules/assetContainer/importing",
+      "english": "Opening manuscript…"
+    },
+    {
+      "id": "OMI0291",
+      "pointer": "/modules/assetContainer/verified",
+      "english": "The package passed integrity verification and can be opened."
+    },
+    {
+      "id": "OMI0292",
+      "pointer": "/modules/assetContainer/invalid",
+      "english": "The package cannot be opened until its blocking integrity errors are resolved."
+    },
+    {
+      "id": "OMI0293",
+      "pointer": "/modules/assetContainer/imported",
+      "english": "The verified OMI manuscript was opened with its original identity and revision history."
+    },
+    {
+      "id": "OMI0294",
+      "pointer": "/modules/assetContainer/entries",
+      "english": "entries"
+    },
+    {
+      "id": "OMI0295",
+      "pointer": "/modules/assetContainer/revisions",
+      "english": "revisions"
+    },
+    {
+      "id": "OMI0296",
+      "pointer": "/modules/assetContainer/checksums",
+      "english": "checksums verified"
+    },
+    {
+      "id": "OMI0297",
+      "pointer": "/modules/assetContainer/packageAssets",
+      "english": "assets"
+    },
+    {
+      "id": "OMI0298",
+      "pointer": "/modules/assetContainer/manuscriptId",
+      "english": "Manuscript ID"
+    },
+    {
+      "id": "OMI0299",
+      "pointer": "/modules/assetContainer/headRevision",
+      "english": "Head revision"
+    },
+    {
+      "id": "OMI0300",
+      "pointer": "/modules/assetContainer/replaceWarning",
+      "english": "Opening the package replaces the active workspace manuscript. It does not create a new manuscript ID or revision root."
+    },
+    {
+      "id": "OMI0301",
+      "pointer": "/modules/assetContainer/confirmImport",
+      "english": "Open this verified OMI manuscript and replace the currently active workspace document?"
+    },
+    {
+      "id": "OMI0302",
+      "pointer": "/modules/crossReferences/insert",
+      "english": "Cross-reference"
+    },
+    {
+      "id": "OMI0303",
+      "pointer": "/modules/crossReferences/insertDescription",
+      "english": "Link to a section, figure, table, chart or equation by stable object identity."
+    },
+    {
+      "id": "OMI0304",
+      "pointer": "/modules/crossReferences/chooseTarget",
+      "english": "Choose target"
+    },
+    {
+      "id": "OMI0305",
+      "pointer": "/modules/crossReferences/searchPlaceholder",
+      "english": "Search document objects…"
+    },
+    {
+      "id": "OMI0306",
+      "pointer": "/modules/crossReferences/noTargets",
+      "english": "No matching document objects."
+    },
+    {
+      "id": "OMI0307",
+      "pointer": "/modules/crossReferences/cancel",
+      "english": "Cancel"
+    },
+    {
+      "id": "OMI0308",
+      "pointer": "/modules/crossReferences/display",
+      "english": "Display"
+    },
+    {
+      "id": "OMI0309",
+      "pointer": "/modules/crossReferences/displayLabelNumber",
+      "english": "Label and number"
+    },
+    {
+      "id": "OMI0310",
+      "pointer": "/modules/crossReferences/displayNumber",
+      "english": "Number only"
+    },
+    {
+      "id": "OMI0311",
+      "pointer": "/modules/crossReferences/displayTitle",
+      "english": "Title or caption"
+    },
+    {
+      "id": "OMI0312",
+      "pointer": "/modules/crossReferences/displayLabelNumberTitle",
+      "english": "Label, number and title"
+    },
+    {
+      "id": "OMI0313",
+      "pointer": "/modules/crossReferences/edit",
+      "english": "Edit cross-reference"
+    },
+    {
+      "id": "OMI0314",
+      "pointer": "/modules/crossReferences/target",
+      "english": "Target"
+    },
+    {
+      "id": "OMI0315",
+      "pointer": "/modules/crossReferences/goToTarget",
+      "english": "Go to target"
+    },
+    {
+      "id": "OMI0316",
+      "pointer": "/modules/crossReferences/deleteReference",
+      "english": "Delete reference"
+    },
+    {
+      "id": "OMI0317",
+      "pointer": "/modules/crossReferences/confirmDelete",
+      "english": "Delete this internal cross-reference?"
+    },
+    {
+      "id": "OMI0318",
+      "pointer": "/modules/crossReferences/unresolved",
+      "english": "The target object no longer exists."
+    },
+    {
+      "id": "OMI0319",
+      "pointer": "/modules/crossReferences/numbering",
+      "english": "Object numbering"
+    },
+    {
+      "id": "OMI0320",
+      "pointer": "/modules/crossReferences/numberingDescription",
+      "english": "Choose whether figures, tables, charts and equations are numbered through the manuscript or restart in each section."
+    },
+    {
+      "id": "OMI0321",
+      "pointer": "/modules/crossReferences/numberingDocument",
+      "english": "Continuous through document"
+    },
+    {
+      "id": "OMI0322",
+      "pointer": "/modules/crossReferences/numberingSection",
+      "english": "Restart in each section"
+    },
+    {
+      "id": "OMI0323",
+      "pointer": "/modules/crossReferences/statusTitle",
+      "english": "Internal references"
+    },
+    {
+      "id": "OMI0324",
+      "pointer": "/modules/crossReferences/statusDescription",
+      "english": "Semantic references remain attached to stable object IDs when document order changes."
+    },
+    {
+      "id": "OMI0325",
+      "pointer": "/modules/crossReferences/statusHealthy",
+      "english": "All internal references resolve correctly."
+    },
+    {
+      "id": "OMI0326",
+      "pointer": "/modules/crossReferences/statusIssues",
+      "english": "Internal reference issues"
+    },
+    {
+      "id": "OMI0327",
+      "pointer": "/modules/crossReferences/missingTarget",
+      "english": "Missing target"
+    },
+    {
+      "id": "OMI0328",
+      "pointer": "/modules/crossReferences/missingAnchor",
+      "english": "Missing text anchor"
+    },
+    {
+      "id": "OMI0329",
+      "pointer": "/modules/crossReferences/section",
+      "english": "Sections"
+    },
+    {
+      "id": "OMI0330",
+      "pointer": "/modules/crossReferences/figure",
+      "english": "Figures"
+    },
+    {
+      "id": "OMI0331",
+      "pointer": "/modules/crossReferences/table",
+      "english": "Tables"
+    },
+    {
+      "id": "OMI0332",
+      "pointer": "/modules/crossReferences/chart",
+      "english": "Charts"
+    },
+    {
+      "id": "OMI0333",
+      "pointer": "/modules/crossReferences/equation",
+      "english": "Equations"
+    },
+    {
+      "id": "OMI0334",
+      "pointer": "/modules/cslRendering/styleTitle",
+      "english": "Citation style"
+    },
+    {
+      "id": "OMI0335",
+      "pointer": "/modules/cslRendering/styleDescription",
+      "english": "Choose how citations and the bibliography are rendered while authoring. The semantic citation data remain unchanged."
+    },
+    {
+      "id": "OMI0336",
+      "pointer": "/modules/cslRendering/styleProfileNote",
+      "english": "Studio currently uses CSL-JSON-compatible built-in profiles. A publication profile may override this presentation preference later."
+    },
+    {
+      "id": "OMI0337",
+      "pointer": "/modules/cslRendering/bibliographyTitle",
+      "english": "Formatted bibliography"
+    },
+    {
+      "id": "OMI0338",
+      "pointer": "/modules/cslRendering/bibliographyDescription",
+      "english": "Generated from cited bibliographic records using the selected presentation profile."
+    },
+    {
+      "id": "OMI0339",
+      "pointer": "/modules/cslRendering/selectedSources",
+      "english": "Selected sources"
+    },
+    {
+      "id": "OMI0340",
+      "pointer": "/modules/cslRendering/clusterHint",
+      "english": "Select one or more works. Multiple selections are inserted as one semantic citation cluster."
+    },
+    {
+      "id": "OMI0341",
+      "pointer": "/modules/cslRendering/addToCluster",
+      "english": "Add to cluster"
+    },
+    {
+      "id": "OMI0342",
+      "pointer": "/modules/cslRendering/removeFromCluster",
+      "english": "Remove from cluster"
+    },
+    {
+      "id": "OMI0343",
+      "pointer": "/modules/cslRendering/clusterTitle",
+      "english": "Citation cluster"
+    },
+    {
+      "id": "OMI0344",
+      "pointer": "/modules/cslRendering/clusterDescription",
+      "english": "Each item remains an independent citation occurrence with its own locator, prefix and suffix."
+    },
+    {
+      "id": "OMI0345",
+      "pointer": "/modules/cslRendering/deleteCluster",
+      "english": "Delete cluster"
+    },
+    {
+      "id": "OMI0346",
+      "pointer": "/modules/cslRendering/confirmDeleteCluster",
+      "english": "Delete this complete citation cluster from the manuscript? Bibliographic records remain in the reference library."
+    },
+    {
+      "id": "OMI0347",
+      "pointer": "/modules/cslRendering/moveUp",
+      "english": "Move earlier"
+    },
+    {
+      "id": "OMI0348",
+      "pointer": "/modules/cslRendering/moveDown",
+      "english": "Move later"
+    },
+    {
+      "id": "OMI0349",
+      "pointer": "/modules/cslRendering/styleNames/apa-7",
+      "english": "APA 7"
+    },
+    {
+      "id": "OMI0350",
+      "pointer": "/modules/cslRendering/styleNames/chicago-author-date",
+      "english": "Chicago Author-Date"
+    },
+    {
+      "id": "OMI0351",
+      "pointer": "/modules/cslRendering/styleNames/chicago-notes-bibliography",
+      "english": "Chicago Notes & Bibliography"
+    },
+    {
+      "id": "OMI0352",
+      "pointer": "/modules/cslRendering/styleNames/mla-9",
+      "english": "MLA 9"
+    },
+    {
+      "id": "OMI0353",
+      "pointer": "/modules/cslRendering/styleNames/iso-690",
+      "english": "ISO 690"
+    },
+    {
+      "id": "OMI0354",
+      "pointer": "/modules/docxImport/title",
+      "english": "Import Word manuscript"
+    },
+    {
+      "id": "OMI0355",
+      "pointer": "/modules/docxImport/description",
+      "english": "Convert a DOCX manuscript into semantic OMI structure locally in your browser."
+    },
+    {
+      "id": "OMI0356",
+      "pointer": "/modules/docxImport/chooseFile",
+      "english": "Choose DOCX file"
+    },
+    {
+      "id": "OMI0357",
+      "pointer": "/modules/docxImport/parsing",
+      "english": "Reading and analysing DOCX…"
+    },
+    {
+      "id": "OMI0358",
+      "pointer": "/modules/docxImport/replaceFile",
+      "english": "Choose another file"
+    },
+    {
+      "id": "OMI0359",
+      "pointer": "/modules/docxImport/previewTitle",
+      "english": "Import preview"
+    },
+    {
+      "id": "OMI0360",
+      "pointer": "/modules/docxImport/previewDescription",
+      "english": "Review the reconstructed structure before opening it as a new OMI manuscript."
+    },
+    {
+      "id": "OMI0361",
+      "pointer": "/modules/docxImport/detectedMetadata",
+      "english": "Detected metadata"
+    },
+    {
+      "id": "OMI0362",
+      "pointer": "/modules/docxImport/manuscriptTitle",
+      "english": "Title"
+    },
+    {
+      "id": "OMI0363",
+      "pointer": "/modules/docxImport/language",
+      "english": "Language"
+    },
+    {
+      "id": "OMI0364",
+      "pointer": "/modules/docxImport/titleSource",
+      "english": "Title source"
+    },
+    {
+      "id": "OMI0365",
+      "pointer": "/modules/docxImport/sourceCore",
+      "english": "DOCX core properties"
+    },
+    {
+      "id": "OMI0366",
+      "pointer": "/modules/docxImport/sourceStyle",
+      "english": "Word Title style"
+    },
+    {
+      "id": "OMI0367",
+      "pointer": "/modules/docxImport/sourceFilename",
+      "english": "File name fallback"
+    },
+    {
+      "id": "OMI0368",
+      "pointer": "/modules/docxImport/authors",
+      "english": "Detected authors"
+    },
+    {
+      "id": "OMI0369",
+      "pointer": "/modules/docxImport/importAuthors",
+      "english": "Import detected authors"
+    },
+    {
+      "id": "OMI0370",
+      "pointer": "/modules/docxImport/importAuthorsHint",
+      "english": "DOCX creator/Author-style metadata can be ambiguous. Imported names remain editable and are not identity-verified."
+    },
+    {
+      "id": "OMI0371",
+      "pointer": "/modules/docxImport/coreAuthorSource",
+      "english": "core metadata"
+    },
+    {
+      "id": "OMI0372",
+      "pointer": "/modules/docxImport/styleAuthorSource",
+      "english": "Author style"
+    },
+    {
+      "id": "OMI0373",
+      "pointer": "/modules/docxImport/outline",
+      "english": "Reconstructed outline"
+    },
+    {
+      "id": "OMI0374",
+      "pointer": "/modules/docxImport/warnings",
+      "english": "Review items"
+    },
+    {
+      "id": "OMI0375",
+      "pointer": "/modules/docxImport/noWarnings",
+      "english": "No structural warnings were detected."
+    },
+    {
+      "id": "OMI0376",
+      "pointer": "/modules/docxImport/importButton",
+      "english": "Open as new OMI manuscript"
+    },
+    {
+      "id": "OMI0377",
+      "pointer": "/modules/docxImport/imported",
+      "english": "The DOCX manuscript has been opened."
+    },
+    {
+      "id": "OMI0378",
+      "pointer": "/modules/docxImport/confirmReplace",
+      "english": "Open this DOCX as a new OMI manuscript? The current active manuscript will leave the single-document workspace."
+    },
+    {
+      "id": "OMI0379",
+      "pointer": "/modules/docxImport/currentWorkspaceWarning",
+      "english": "Import creates a new manuscript identity and a new root revision. It does not rewrite the current manuscript history."
+    },
+    {
+      "id": "OMI0380",
+      "pointer": "/modules/docxImport/stats/sections",
+      "english": "Sections"
+    },
+    {
+      "id": "OMI0381",
+      "pointer": "/modules/docxImport/stats/paragraphs",
+      "english": "Paragraphs"
+    },
+    {
+      "id": "OMI0382",
+      "pointer": "/modules/docxImport/stats/lists",
+      "english": "Lists"
+    },
+    {
+      "id": "OMI0383",
+      "pointer": "/modules/docxImport/stats/notes",
+      "english": "Notes"
+    },
+    {
+      "id": "OMI0384",
+      "pointer": "/modules/docxImport/stats/images",
+      "english": "Images"
+    },
+    {
+      "id": "OMI0385",
+      "pointer": "/modules/docxImport/stats/tables",
+      "english": "Tables"
+    },
+    {
+      "id": "OMI0386",
+      "pointer": "/modules/docxImport/stats/equations",
+      "english": "Equations"
+    },
+    {
+      "id": "OMI0387",
+      "pointer": "/modules/docxImport/stats/citations",
+      "english": "Citations"
+    },
+    {
+      "id": "OMI0388",
+      "pointer": "/modules/docxImport/stats/references",
+      "english": "Reference records"
+    },
+    {
+      "id": "OMI0389",
+      "pointer": "/modules/docxImport/warningText/tracked-deletions",
+      "english": "Tracked deletions are not imported; accepted/visible text is preferred."
+    },
+    {
+      "id": "OMI0390",
+      "pointer": "/modules/docxImport/warningText/comments-not-imported",
+      "english": "Word comments are not yet converted into OMI review annotations."
+    },
+    {
+      "id": "OMI0391",
+      "pointer": "/modules/docxImport/warningText/text-boxes-flattened",
+      "english": "Text-box content may be flattened into the main text flow."
+    },
+    {
+      "id": "OMI0392",
+      "pointer": "/modules/docxImport/warningText/conflicting-title-metadata",
+      "english": "DOCX core title and the styled document title differ; the core title is retained."
+    },
+    {
+      "id": "OMI0393",
+      "pointer": "/modules/docxImport/warningText/merged-table-cells",
+      "english": "Merged Word table cells are flattened into the editable rectangular OMI table model."
+    },
+    {
+      "id": "OMI0394",
+      "pointer": "/modules/docxImport/warningText/missing-note-body",
+      "english": "A note reference was found without a readable note body."
+    },
+    {
+      "id": "OMI0395",
+      "pointer": "/modules/docxImport/warningText/unresolved-word-citation",
+      "english": "A Word citation field references a source that could not be matched to embedded bibliography metadata."
+    },
+    {
+      "id": "OMI0396",
+      "pointer": "/modules/docxImport/warningText/word-cross-reference-flattened",
+      "english": "A Word REF/PAGEREF field is preserved as visible text; semantic OMI target mapping needs review."
+    },
+    {
+      "id": "OMI0397",
+      "pointer": "/modules/docxImport/warningText/inline-equation-promoted",
+      "english": "An inline Word equation was promoted to a separate editable equation block."
+    },
+    {
+      "id": "OMI0398",
+      "pointer": "/modules/docxImport/warningText/title-from-filename",
+      "english": "No explicit document title was found; the file name is used as the manuscript title."
+    },
+    {
+      "id": "OMI0399",
+      "pointer": "/modules/docxImport/warningText/authors-from-docx-metadata",
+      "english": "Author names were inferred from DOCX metadata and should be reviewed."
+    },
+    {
+      "id": "OMI0400",
+      "pointer": "/modules/docxImport/warningText/headers-footers-not-imported",
+      "english": "Headers and footers are not imported into scholarly manuscript content."
+    },
+    {
+      "id": "OMI0401",
+      "pointer": "/modules/exportFormats/title",
+      "english": "Export formats"
+    },
+    {
+      "id": "OMI0402",
+      "pointer": "/modules/exportFormats/description",
+      "english": "Export the manuscript from the same semantic OMI model into portable and publication formats."
+    },
+    {
+      "id": "OMI0403",
+      "pointer": "/modules/exportFormats/portable",
+      "english": "Portable OMI formats"
+    },
+    {
+      "id": "OMI0404",
+      "pointer": "/modules/exportFormats/publication",
+      "english": "Publication formats"
+    },
+    {
+      "id": "OMI0405",
+      "pointer": "/modules/exportFormats/omi",
+      "english": "OMI container"
+    },
+    {
+      "id": "OMI0406",
+      "pointer": "/modules/exportFormats/omiDescription",
+      "english": "Complete portable package containing manuscript state, history, metadata, publication profile, JATS/HTML and assets."
+    },
+    {
+      "id": "OMI0407",
+      "pointer": "/modules/exportFormats/omiJson",
+      "english": "OMI JSON"
+    },
+    {
+      "id": "OMI0408",
+      "pointer": "/modules/exportFormats/omiJsonDescription",
+      "english": "Canonical human- and machine-readable JSON representation of the OMI manuscript model."
+    },
+    {
+      "id": "OMI0409",
+      "pointer": "/modules/exportFormats/jats",
+      "english": "JATS XML 1.4"
+    },
+    {
+      "id": "OMI0410",
+      "pointer": "/modules/exportFormats/jatsDescription",
+      "english": "NISO JATS Article Authoring XML for journal and publisher workflows."
+    },
+    {
+      "id": "OMI0411",
+      "pointer": "/modules/exportFormats/html",
+      "english": "Semantic HTML5"
+    },
+    {
+      "id": "OMI0412",
+      "pointer": "/modules/exportFormats/htmlDescription",
+      "english": "Standalone, script-free accessible HTML publication view."
+    },
+    {
+      "id": "OMI0413",
+      "pointer": "/modules/exportFormats/docx",
+      "english": "Microsoft Word (DOCX)"
+    },
+    {
+      "id": "OMI0414",
+      "pointer": "/modules/exportFormats/docxDescription",
+      "english": "Editable Word document with real heading styles and the core manuscript structure."
+    },
+    {
+      "id": "OMI0415",
+      "pointer": "/modules/exportFormats/idml",
+      "english": "Adobe InDesign (IDML)"
+    },
+    {
+      "id": "OMI0416",
+      "pointer": "/modules/exportFormats/idmlDescription",
+      "english": "Editable InDesign Markup Language package with OMI paragraph styles, section hierarchy and publisher-oriented text structure."
+    },
+    {
+      "id": "OMI0417",
+      "pointer": "/modules/exportFormats/xtg",
+      "english": "QuarkXPress (XPress Tags)"
+    },
+    {
+      "id": "OMI0418",
+      "pointer": "/modules/exportFormats/xtgDescription",
+      "english": "UTF-8 XPress Tags file for QuarkXPress import with OMI paragraph and heading styles."
+    },
+    {
+      "id": "OMI0419",
+      "pointer": "/modules/exportFormats/mif",
+      "english": "Adobe FrameMaker (MIF)"
+    },
+    {
+      "id": "OMI0420",
+      "pointer": "/modules/exportFormats/mifDescription",
+      "english": "Editable Maker Interchange Format document for FrameMaker workflows."
+    },
+    {
+      "id": "OMI0421",
+      "pointer": "/modules/exportFormats/sla",
+      "english": "Scribus (SLA)"
+    },
+    {
+      "id": "OMI0422",
+      "pointer": "/modules/exportFormats/slaDescription",
+      "english": "Editable Scribus document with OMI paragraph styles and a continuous text frame."
+    },
+    {
+      "id": "OMI0423",
+      "pointer": "/modules/exportFormats/latex",
+      "english": "LaTeX"
+    },
+    {
+      "id": "OMI0424",
+      "pointer": "/modules/exportFormats/latexDescription",
+      "english": "UTF-8 LaTeX source for scientific and automated TeX-based publishing workflows."
+    },
+    {
+      "id": "OMI0425",
+      "pointer": "/modules/exportFormats/epub",
+      "english": "EPUB 3"
+    },
+    {
+      "id": "OMI0426",
+      "pointer": "/modules/exportFormats/epubDescription",
+      "english": "Portable EPUB 3 ebook publication package."
+    },
+    {
+      "id": "OMI0427",
+      "pointer": "/modules/exportFormats/pdf",
+      "english": "PDF"
+    },
+    {
+      "id": "OMI0428",
+      "pointer": "/modules/exportFormats/pdfDescription",
+      "english": "Publication-profile print view that can be saved as PDF in the browser."
+    },
+    {
+      "id": "OMI0429",
+      "pointer": "/modules/exportFormats/export",
+      "english": "Export"
+    },
+    {
+      "id": "OMI0430",
+      "pointer": "/modules/exportFormats/preparing",
+      "english": "Preparing…"
+    },
+    {
+      "id": "OMI0431",
+      "pointer": "/modules/exportFormats/failed",
+      "english": "Export failed."
+    },
+    {
+      "id": "OMI0432",
+      "pointer": "/modules/exportFormats/pdfHint",
+      "english": "Choose Save as PDF in the print dialog that opens."
+    },
+    {
+      "id": "OMI0433",
+      "pointer": "/modules/frontMatter/subtitle",
+      "english": "Subtitle"
+    },
+    {
+      "id": "OMI0434",
+      "pointer": "/modules/frontMatter/subtitleOptional",
+      "english": "Subtitle (optional)"
+    },
+    {
+      "id": "OMI0435",
+      "pointer": "/modules/frontMatter/subtitlePlaceholder",
+      "english": "Add an optional subtitle"
+    },
+    {
+      "id": "OMI0436",
+      "pointer": "/modules/frontMatter/motto",
+      "english": "Motto"
+    },
+    {
+      "id": "OMI0437",
+      "pointer": "/modules/frontMatter/mottoOptional",
+      "english": "Motto (optional)"
+    },
+    {
+      "id": "OMI0438",
+      "pointer": "/modules/frontMatter/mottoPlaceholder",
+      "english": "Add an optional motto or epigraph"
+    },
+    {
+      "id": "OMI0439",
+      "pointer": "/modules/frontMatter/frontMatter",
+      "english": "Title block"
+    },
+    {
+      "id": "OMI0440",
+      "pointer": "/modules/frontMatter/frontMatterDescription",
+      "english": "Subtitle and motto are independent optional scholarly front-matter fields."
+    },
+    {
+      "id": "OMI0441",
+      "pointer": "/modules/frontMatter/optional",
+      "english": "Optional"
+    },
+    {
+      "id": "OMI0442",
+      "pointer": "/modules/frontMatter/belowTitle",
+      "english": "Below title"
+    },
+    {
+      "id": "OMI0443",
+      "pointer": "/modules/frontMatter/belowSubtitle",
+      "english": "Below subtitle"
+    },
+    {
+      "id": "OMI0444",
+      "pointer": "/modules/frontMatter/italic",
+      "english": "Italic"
+    },
+    {
+      "id": "OMI0445",
+      "pointer": "/modules/frontMatter/normal",
+      "english": "Normal"
+    },
+    {
+      "id": "OMI0446",
+      "pointer": "/modules/frontMatter/alignLeft",
+      "english": "Left"
+    },
+    {
+      "id": "OMI0447",
+      "pointer": "/modules/frontMatter/alignCenter",
+      "english": "Center"
+    },
+    {
+      "id": "OMI0448",
+      "pointer": "/modules/frontMatter/alignRight",
+      "english": "Right"
+    },
+    {
+      "id": "OMI0449",
+      "pointer": "/modules/help/navigation",
+      "english": "Help"
+    },
+    {
+      "id": "OMI0450",
+      "pointer": "/modules/help/title",
+      "english": "Help for authors"
+    },
+    {
+      "id": "OMI0451",
+      "pointer": "/modules/help/description",
+      "english": "A short guide to editing manuscripts and using the main Studio features."
+    },
+    {
+      "id": "OMI0452",
+      "pointer": "/modules/help/gettingStarted",
+      "english": "When a manuscript is opened from OJS, Studio imports the document and available publication metadata. Editing then takes place in the Studio manuscript model."
+    },
+    {
+      "id": "OMI0453",
+      "pointer": "/modules/help/topics/0/title",
+      "english": "Editing the manuscript"
+    },
+    {
+      "id": "OMI0454",
+      "pointer": "/modules/help/topics/0/body",
+      "english": "Edit manuscript text in the main editor. Review its structure under Manuscript menu → Document."
+    },
+    {
+      "id": "OMI0455",
+      "pointer": "/modules/help/topics/0/tips/0",
+      "english": "Use real heading styles for section headings."
+    },
+    {
+      "id": "OMI0456",
+      "pointer": "/modules/help/topics/0/tips/1",
+      "english": "Do not rely on bold text or font size alone to express structure."
+    },
+    {
+      "id": "OMI0457",
+      "pointer": "/modules/help/topics/1/title",
+      "english": "Manuscript data and languages"
+    },
+    {
+      "id": "OMI0458",
+      "pointer": "/modules/help/topics/1/body",
+      "english": "Abstracts, keywords and other scholarly metadata are edited under Manuscript data. Multilingual fields can be maintained separately in HU, EN and DE."
+    },
+    {
+      "id": "OMI0459",
+      "pointer": "/modules/help/topics/1/tips/0",
+      "english": "The manuscript language and metadata language are separate concepts."
+    },
+    {
+      "id": "OMI0460",
+      "pointer": "/modules/help/topics/1/tips/1",
+      "english": "A Hungarian article may also have English and German abstracts and keywords."
+    },
+    {
+      "id": "OMI0461",
+      "pointer": "/modules/help/topics/2/title",
+      "english": "Notes"
+    },
+    {
+      "id": "OMI0462",
+      "pointer": "/modules/help/topics/2/body",
+      "english": "Footnotes and endnotes are retained as semantic note objects. Review and edit them under Notes."
+    },
+    {
+      "id": "OMI0463",
+      "pointer": "/modules/help/topics/3/title",
+      "english": "References"
+    },
+    {
+      "id": "OMI0464",
+      "pointer": "/modules/help/topics/3/body",
+      "english": "Cited works are stored as structured bibliographic records. Add a work once and reuse it in multiple citations."
+    },
+    {
+      "id": "OMI0465",
+      "pointer": "/modules/help/topics/4/title",
+      "english": "Contributors"
+    },
+    {
+      "id": "OMI0466",
+      "pointer": "/modules/help/topics/4/body",
+      "english": "Manage authors and other contributors, roles, affiliations and ORCID identifiers here."
+    },
+    {
+      "id": "OMI0467",
+      "pointer": "/modules/help/topics/5/title",
+      "english": "Revisions and saving"
+    },
+    {
+      "id": "OMI0468",
+      "pointer": "/modules/help/topics/5/body",
+      "english": "Studio tracks important changes as revisions. Use History to review changes and, where supported, return to an earlier state."
+    },
+    {
+      "id": "OMI0469",
+      "pointer": "/modules/help/topics/6/title",
+      "english": "Import from OJS"
+    },
+    {
+      "id": "OMI0470",
+      "pointer": "/modules/help/topics/6/body",
+      "english": "Studio can import the document, abstracts, keywords and other publication metadata from OJS. Only metadata actually present in OJS can be imported."
+    },
+    {
+      "id": "OMI0471",
+      "pointer": "/modules/help/topics/7/title",
+      "english": "DOCX import"
+    },
+    {
+      "id": "OMI0472",
+      "pointer": "/modules/help/topics/7/body",
+      "english": "When importing Word documents, Studio also attempts to recover document structure."
+    },
+    {
+      "id": "OMI0473",
+      "pointer": "/modules/help/topics/7/tips/0",
+      "english": "Use Word Heading 1, Heading 2, etc. for section headings."
+    },
+    {
+      "id": "OMI0474",
+      "pointer": "/modules/help/topics/7/tips/1",
+      "english": "Direct-formatting recognition is only a fallback."
+    },
+    {
+      "id": "OMI0475",
+      "pointer": "/modules/help/topics/8/title",
+      "english": "Export"
+    },
+    {
+      "id": "OMI0476",
+      "pointer": "/modules/help/topics/8/body",
+      "english": "Export & tools can create a portable .omi.json manuscript file containing the semantic document structure and OMI metadata."
+    },
+    {
+      "id": "OMI0477",
+      "pointer": "/modules/help/topics/9/title",
+      "english": "If something looks wrong"
+    },
+    {
+      "id": "OMI0478",
+      "pointer": "/modules/help/topics/9/body",
+      "english": "Check the manuscript language, selected metadata language and, for Word imports, heading styles. For OJS imports, also verify that the value is actually filled in under the OJS Publication metadata."
+    },
+    {
+      "id": "OMI0479",
+      "pointer": "/modules/htmlExport/title",
+      "english": "Semantic HTML5"
+    },
+    {
+      "id": "OMI0480",
+      "pointer": "/modules/htmlExport/description",
+      "english": "Render the semantic manuscript through the active Publication Profile as an accessible, script-free HTML5 scholarly article."
+    },
+    {
+      "id": "OMI0481",
+      "pointer": "/modules/htmlExport/standard",
+      "english": "Output profile"
+    },
+    {
+      "id": "OMI0482",
+      "pointer": "/modules/htmlExport/renderingContext",
+      "english": "Rendering context"
+    },
+    {
+      "id": "OMI0483",
+      "pointer": "/modules/htmlExport/currentRevision",
+      "english": "Manuscript revision"
+    },
+    {
+      "id": "OMI0484",
+      "pointer": "/modules/htmlExport/preview",
+      "english": "Preview source"
+    },
+    {
+      "id": "OMI0485",
+      "pointer": "/modules/htmlExport/hidePreview",
+      "english": "Hide source"
+    },
+    {
+      "id": "OMI0486",
+      "pointer": "/modules/htmlExport/openPreview",
+      "english": "Open rendered preview"
+    },
+    {
+      "id": "OMI0487",
+      "pointer": "/modules/htmlExport/downloadPackage",
+      "english": "Download HTML package"
+    },
+    {
+      "id": "OMI0488",
+      "pointer": "/modules/htmlExport/preparingPackage",
+      "english": "Preparing package…"
+    },
+    {
+      "id": "OMI0489",
+      "pointer": "/modules/htmlExport/exportReady",
+      "english": "The HTML rendering has no blocking diagnostics."
+    },
+    {
+      "id": "OMI0490",
+      "pointer": "/modules/htmlExport/exportHasErrors",
+      "english": "The HTML can be inspected, but blocking diagnostics must be resolved before a publication package is created."
+    },
+    {
+      "id": "OMI0491",
+      "pointer": "/modules/htmlExport/errors",
+      "english": "errors"
+    },
+    {
+      "id": "OMI0492",
+      "pointer": "/modules/htmlExport/warnings",
+      "english": "warnings"
+    },
+    {
+      "id": "OMI0493",
+      "pointer": "/modules/htmlExport/diagnostics",
+      "english": "HTML diagnostics"
+    },
+    {
+      "id": "OMI0494",
+      "pointer": "/modules/htmlExport/noDiagnostics",
+      "english": "No HTML-specific diagnostics."
+    },
+    {
+      "id": "OMI0495",
+      "pointer": "/modules/htmlExport/workingPreview",
+      "english": "The preview reflects the current working state. Package download creates a checkpoint first so the output is traceable to a committed revision."
+    },
+    {
+      "id": "OMI0496",
+      "pointer": "/modules/htmlExport/unsupportedProfile",
+      "english": "The active profile does not declare HTML as a supported output."
+    },
+    {
+      "id": "OMI0497",
+      "pointer": "/modules/htmlExport/accessibilityNote",
+      "english": "The renderer uses semantic headings, figures, tables, document-note roles, bibliography links and explicit image alt attributes. External accessibility auditing remains a separate publication step."
+    },
+    {
+      "id": "OMI0498",
+      "pointer": "/modules/htmlExport/packageNote",
+      "english": "The ZIP package contains index.html, a manifest and referenced media assets under relative media/ paths. No script or external stylesheet is required."
+    },
+    {
+      "id": "OMI0499",
+      "pointer": "/modules/jatsExport/title",
+      "english": "JATS XML"
+    },
+    {
+      "id": "OMI0500",
+      "pointer": "/modules/jatsExport/description",
+      "english": "Render the semantic manuscript through the active Publication Profile as NISO JATS 1.4 Article Authoring XML."
+    },
+    {
+      "id": "OMI0501",
+      "pointer": "/modules/jatsExport/standard",
+      "english": "Target standard"
+    },
+    {
+      "id": "OMI0502",
+      "pointer": "/modules/jatsExport/renderingContext",
+      "english": "Rendering context"
+    },
+    {
+      "id": "OMI0503",
+      "pointer": "/modules/jatsExport/currentRevision",
+      "english": "Manuscript revision"
+    },
+    {
+      "id": "OMI0504",
+      "pointer": "/modules/jatsExport/preview",
+      "english": "Preview XML"
+    },
+    {
+      "id": "OMI0505",
+      "pointer": "/modules/jatsExport/hidePreview",
+      "english": "Hide XML"
+    },
+    {
+      "id": "OMI0506",
+      "pointer": "/modules/jatsExport/download",
+      "english": "Download JATS XML"
+    },
+    {
+      "id": "OMI0507",
+      "pointer": "/modules/jatsExport/exportReady",
+      "english": "The JATS rendering has no blocking diagnostics."
+    },
+    {
+      "id": "OMI0508",
+      "pointer": "/modules/jatsExport/exportHasErrors",
+      "english": "The XML can be inspected, but blocking diagnostics must be resolved before publication."
+    },
+    {
+      "id": "OMI0509",
+      "pointer": "/modules/jatsExport/errors",
+      "english": "errors"
+    },
+    {
+      "id": "OMI0510",
+      "pointer": "/modules/jatsExport/warnings",
+      "english": "warnings"
+    },
+    {
+      "id": "OMI0511",
+      "pointer": "/modules/jatsExport/diagnostics",
+      "english": "JATS diagnostics"
+    },
+    {
+      "id": "OMI0512",
+      "pointer": "/modules/jatsExport/noDiagnostics",
+      "english": "No JATS-specific diagnostics."
+    },
+    {
+      "id": "OMI0513",
+      "pointer": "/modules/jatsExport/workingPreview",
+      "english": "The preview reflects the current working state. Download creates a checkpoint first so the exported XML is traceable to a committed revision."
+    },
+    {
+      "id": "OMI0514",
+      "pointer": "/modules/jatsExport/unsupportedProfile",
+      "english": "The active profile does not declare JATS as a supported output."
+    },
+    {
+      "id": "OMI0515",
+      "pointer": "/modules/jatsExport/schemaNote",
+      "english": "Studio checks required structure, XML identifiers and internal rid targets. Full external JATS DTD/XSD/RNG validation remains a separate conformance step."
+    },
+    {
+      "id": "OMI0516",
+      "pointer": "/modules/noteCitations/addCitation",
+      "english": "Insert reference"
+    },
+    {
+      "id": "OMI0517",
+      "pointer": "/modules/noteCitations/citations",
+      "english": "References in this note"
+    },
+    {
+      "id": "OMI0518",
+      "pointer": "/modules/noteCitations/noCitations",
+      "english": "No bibliographic references have been added to this note yet."
+    },
+    {
+      "id": "OMI0519",
+      "pointer": "/modules/noteCitations/removeCitation",
+      "english": "Remove reference"
+    },
+    {
+      "id": "OMI0520",
+      "pointer": "/modules/noteCitations/citationHint",
+      "english": "Choose from the manuscript bibliography. Page, chapter, section and other locators are supported."
+    },
+    {
+      "id": "OMI0521",
+      "pointer": "/modules/orcidLookup/searching",
+      "english": "Searching ORCID…"
+    },
+    {
+      "id": "OMI0522",
+      "pointer": "/modules/orcidLookup/noResults",
+      "english": "No matching public ORCID records found."
+    },
+    {
+      "id": "OMI0523",
+      "pointer": "/modules/orcidLookup/unavailable",
+      "english": "ORCID search is temporarily unavailable. You can still enter an ORCID iD manually."
+    },
+    {
+      "id": "OMI0524",
+      "pointer": "/modules/orcidLookup/suggestions",
+      "english": "ORCID suggestions"
+    },
+    {
+      "id": "OMI0525",
+      "pointer": "/modules/orcidLookup/selected",
+      "english": "ORCID iD"
+    },
+    {
+      "id": "OMI0526",
+      "pointer": "/modules/orcidLookup/openProfile",
+      "english": "Open ORCID record"
+    },
+    {
+      "id": "OMI0527",
+      "pointer": "/modules/orcidLookup/registryMatch",
+      "english": "Selected from the ORCID Registry"
+    },
+    {
+      "id": "OMI0528",
+      "pointer": "/modules/orcidLookup/notAuthenticated",
+      "english": "Registry match — not OAuth-authenticated"
+    },
+    {
+      "id": "OMI0529",
+      "pointer": "/modules/orcidLookup/manualEntry",
+      "english": "You can also enter an ORCID iD manually."
+    },
+    {
+      "id": "OMI0530",
+      "pointer": "/modules/orcidLookup/poweredBy",
+      "english": "Search powered by the public ORCID Registry"
+    },
+    {
+      "id": "OMI0531",
+      "pointer": "/modules/publicationProfile/navigation",
+      "english": "Publication"
+    },
+    {
+      "id": "OMI0532",
+      "pointer": "/modules/publicationProfile/title",
+      "english": "Publication profile"
+    },
+    {
+      "id": "OMI0533",
+      "pointer": "/modules/publicationProfile/description",
+      "english": "Choose the rendering, metadata and accessibility rules for the intended publication target."
+    },
+    {
+      "id": "OMI0534",
+      "pointer": "/modules/publicationProfile/experimental",
+      "english": "Studio implementation profile. OMI-SPEC-240 is still Reserved; this does not claim specification conformance."
+    },
+    {
+      "id": "OMI0535",
+      "pointer": "/modules/publicationProfile/selectedProfile",
+      "english": "Selected profile"
+    },
+    {
+      "id": "OMI0536",
+      "pointer": "/modules/publicationProfile/chooseProfile",
+      "english": "Choose a profile"
+    },
+    {
+      "id": "OMI0537",
+      "pointer": "/modules/publicationProfile/applyProfile",
+      "english": "Apply profile"
+    },
+    {
+      "id": "OMI0538",
+      "pointer": "/modules/publicationProfile/reapplied",
+      "english": "Profile defaults applied."
+    },
+    {
+      "id": "OMI0539",
+      "pointer": "/modules/publicationProfile/active",
+      "english": "Active"
+    },
+    {
+      "id": "OMI0540",
+      "pointer": "/modules/publicationProfile/profileVersion",
+      "english": "Version"
+    },
+    {
+      "id": "OMI0541",
+      "pointer": "/modules/publicationProfile/profilePublisher",
+      "english": "Publisher"
+    },
+    {
+      "id": "OMI0542",
+      "pointer": "/modules/publicationProfile/rules",
+      "english": "Rendering rules"
+    },
+    {
+      "id": "OMI0543",
+      "pointer": "/modules/publicationProfile/layout",
+      "english": "Layout"
+    },
+    {
+      "id": "OMI0544",
+      "pointer": "/modules/publicationProfile/sections",
+      "english": "Sections"
+    },
+    {
+      "id": "OMI0545",
+      "pointer": "/modules/publicationProfile/citations",
+      "english": "Citations"
+    },
+    {
+      "id": "OMI0546",
+      "pointer": "/modules/publicationProfile/notes",
+      "english": "Notes"
+    },
+    {
+      "id": "OMI0547",
+      "pointer": "/modules/publicationProfile/objects",
+      "english": "Figures, tables and equations"
+    },
+    {
+      "id": "OMI0548",
+      "pointer": "/modules/publicationProfile/contributors",
+      "english": "Contributors"
+    },
+    {
+      "id": "OMI0549",
+      "pointer": "/modules/publicationProfile/accessibility",
+      "english": "Accessibility"
+    },
+    {
+      "id": "OMI0550",
+      "pointer": "/modules/publicationProfile/outputs",
+      "english": "Output targets"
+    },
+    {
+      "id": "OMI0551",
+      "pointer": "/modules/publicationProfile/page",
+      "english": "Page"
+    },
+    {
+      "id": "OMI0552",
+      "pointer": "/modules/publicationProfile/columns",
+      "english": "Columns"
+    },
+    {
+      "id": "OMI0553",
+      "pointer": "/modules/publicationProfile/typography",
+      "english": "Typography"
+    },
+    {
+      "id": "OMI0554",
+      "pointer": "/modules/publicationProfile/margins",
+      "english": "Margins"
+    },
+    {
+      "id": "OMI0555",
+      "pointer": "/modules/publicationProfile/numbering",
+      "english": "Numbering"
+    },
+    {
+      "id": "OMI0556",
+      "pointer": "/modules/publicationProfile/maxDepth",
+      "english": "Numbered depth"
+    },
+    {
+      "id": "OMI0557",
+      "pointer": "/modules/publicationProfile/citationStyle",
+      "english": "Citation style"
+    },
+    {
+      "id": "OMI0558",
+      "pointer": "/modules/publicationProfile/notePlacement",
+      "english": "Note placement"
+    },
+    {
+      "id": "OMI0559",
+      "pointer": "/modules/publicationProfile/objectNumbering",
+      "english": "Object numbering"
+    },
+    {
+      "id": "OMI0560",
+      "pointer": "/modules/publicationProfile/figureCaption",
+      "english": "Figure caption"
+    },
+    {
+      "id": "OMI0561",
+      "pointer": "/modules/publicationProfile/tableCaption",
+      "english": "Table caption"
+    },
+    {
+      "id": "OMI0562",
+      "pointer": "/modules/publicationProfile/showOrcid",
+      "english": "Show ORCID"
+    },
+    {
+      "id": "OMI0563",
+      "pointer": "/modules/publicationProfile/showAffiliations",
+      "english": "Show affiliations"
+    },
+    {
+      "id": "OMI0564",
+      "pointer": "/modules/publicationProfile/yes",
+      "english": "Yes"
+    },
+    {
+      "id": "OMI0565",
+      "pointer": "/modules/publicationProfile/no",
+      "english": "No"
+    },
+    {
+      "id": "OMI0566",
+      "pointer": "/modules/publicationProfile/above",
+      "english": "Above"
+    },
+    {
+      "id": "OMI0567",
+      "pointer": "/modules/publicationProfile/below",
+      "english": "Below"
+    },
+    {
+      "id": "OMI0568",
+      "pointer": "/modules/publicationProfile/document",
+      "english": "Whole document"
+    },
+    {
+      "id": "OMI0569",
+      "pointer": "/modules/publicationProfile/section",
+      "english": "Per section"
+    },
+    {
+      "id": "OMI0570",
+      "pointer": "/modules/publicationProfile/footnotes",
+      "english": "Footnotes"
+    },
+    {
+      "id": "OMI0571",
+      "pointer": "/modules/publicationProfile/endnotes",
+      "english": "Endnotes"
+    },
+    {
+      "id": "OMI0572",
+      "pointer": "/modules/publicationProfile/interactive",
+      "english": "Interactive notes"
+    },
+    {
+      "id": "OMI0573",
+      "pointer": "/modules/publicationProfile/readiness",
+      "english": "Publication readiness"
+    },
+    {
+      "id": "OMI0574",
+      "pointer": "/modules/publicationProfile/ready",
+      "english": "Ready for profile-based rendering"
+    },
+    {
+      "id": "OMI0575",
+      "pointer": "/modules/publicationProfile/notReady",
+      "english": "Publication requirements still need attention"
+    },
+    {
+      "id": "OMI0576",
+      "pointer": "/modules/publicationProfile/errors",
+      "english": "errors"
+    },
+    {
+      "id": "OMI0577",
+      "pointer": "/modules/publicationProfile/warnings",
+      "english": "warnings"
+    },
+    {
+      "id": "OMI0578",
+      "pointer": "/modules/publicationProfile/noIssues",
+      "english": "No profile-specific readiness issues were found."
+    },
+    {
+      "id": "OMI0579",
+      "pointer": "/modules/publicationProfile/requirements",
+      "english": "Metadata requirements"
+    },
+    {
+      "id": "OMI0580",
+      "pointer": "/modules/publicationProfile/requirementLabels/off",
+      "english": "Not required"
+    },
+    {
+      "id": "OMI0581",
+      "pointer": "/modules/publicationProfile/requirementLabels/recommended",
+      "english": "Recommended"
+    },
+    {
+      "id": "OMI0582",
+      "pointer": "/modules/publicationProfile/requirementLabels/required",
+      "english": "Required"
+    },
+    {
+      "id": "OMI0583",
+      "pointer": "/modules/publicationProfile/issueText/missing-title",
+      "english": "A manuscript title is required."
+    },
+    {
+      "id": "OMI0584",
+      "pointer": "/modules/publicationProfile/issueText/missing-abstract",
+      "english": "An abstract is required by this profile."
+    },
+    {
+      "id": "OMI0585",
+      "pointer": "/modules/publicationProfile/issueText/too-few-keywords",
+      "english": "The manuscript has fewer keywords than this profile requires."
+    },
+    {
+      "id": "OMI0586",
+      "pointer": "/modules/publicationProfile/issueText/missing-contributor",
+      "english": "At least one author contribution is required."
+    },
+    {
+      "id": "OMI0587",
+      "pointer": "/modules/publicationProfile/issueText/missing-affiliation",
+      "english": "A contributor has no affiliation."
+    },
+    {
+      "id": "OMI0588",
+      "pointer": "/modules/publicationProfile/issueText/missing-orcid",
+      "english": "A contributor has no ORCID identifier."
+    },
+    {
+      "id": "OMI0589",
+      "pointer": "/modules/publicationProfile/issueText/missing-figure-alt",
+      "english": "A figure is missing alternative text."
+    },
+    {
+      "id": "OMI0590",
+      "pointer": "/modules/publicationProfile/issueText/missing-table-header",
+      "english": "A table has no declared header row."
+    },
+    {
+      "id": "OMI0591",
+      "pointer": "/modules/publicationProfile/issueText/unresolved-citation",
+      "english": "A citation points to a missing bibliographic record."
+    },
+    {
+      "id": "OMI0592",
+      "pointer": "/modules/publicationProfile/issueText/unresolved-cross-reference",
+      "english": "An internal cross-reference points to a missing target."
+    },
+    {
+      "id": "OMI0593",
+      "pointer": "/modules/publicationProfile/issueText/profile-override",
+      "english": "A manuscript presentation preference overrides the selected profile default."
+    },
+    {
+      "id": "OMI0594",
+      "pointer": "/modules/publicationProfile/exportProfile",
+      "english": "Export profile JSON"
+    },
+    {
+      "id": "OMI0595",
+      "pointer": "/modules/publicationProfile/exportDescription",
+      "english": "Save the exact profile definition used for reproducible future rendering."
+    },
+    {
+      "id": "OMI0596",
+      "pointer": "/modules/publicationProfile/profileSeparation",
+      "english": "The profile changes presentation and publication requirements, not scholarly content. Profile selection and explicit presentation overrides are revisioned separately from text edits."
+    },
+    {
+      "id": "OMI0597",
+      "pointer": "/modules/publicationProfile/profileOverrides",
+      "english": "This manuscript currently contains presentation overrides that differ from the selected profile."
+    },
+    {
+      "id": "OMI0598",
+      "pointer": "/modules/publicationProfile/resetDefaults",
+      "english": "Reapply profile defaults"
+    },
+    {
+      "id": "OMI0599",
+      "pointer": "/modules/publicationProfile/profileNames/omi-generic-scholarly/name",
+      "english": "OMI Generic Scholarly"
+    },
+    {
+      "id": "OMI0600",
+      "pointer": "/modules/publicationProfile/profileNames/omi-generic-scholarly/description",
+      "english": "Neutral scholarly rendering for general-purpose publishing."
+    },
+    {
+      "id": "OMI0601",
+      "pointer": "/modules/publicationProfile/profileNames/omi-journal-author-date/name",
+      "english": "OMI Journal — Author-Date"
+    },
+    {
+      "id": "OMI0602",
+      "pointer": "/modules/publicationProfile/profileNames/omi-journal-author-date/description",
+      "english": "Journal profile with author-date citations and stricter metadata requirements."
+    },
+    {
+      "id": "OMI0603",
+      "pointer": "/modules/publicationProfile/profileNames/omi-humanities-notes/name",
+      "english": "OMI Humanities — Notes & Bibliography"
+    },
+    {
+      "id": "OMI0604",
+      "pointer": "/modules/publicationProfile/profileNames/omi-humanities-notes/description",
+      "english": "Humanities profile with Chicago notes, bibliography and footnotes."
+    },
+    {
+      "id": "OMI0605",
+      "pointer": "/modules/referenceLookup/title",
+      "english": "Search external bibliographic services"
+    },
+    {
+      "id": "OMI0606",
+      "pointer": "/modules/referenceLookup/description",
+      "english": "Search Crossref, DataCite, OpenAlex and MTMT, then add a normalized record to this manuscript’s reference library."
+    },
+    {
+      "id": "OMI0607",
+      "pointer": "/modules/referenceLookup/queryLabel",
+      "english": "Bibliographic query"
+    },
+    {
+      "id": "OMI0608",
+      "pointer": "/modules/referenceLookup/queryPlaceholder",
+      "english": "DOI, title, author or keywords…"
+    },
+    {
+      "id": "OMI0609",
+      "pointer": "/modules/referenceLookup/search",
+      "english": "Search"
+    },
+    {
+      "id": "OMI0610",
+      "pointer": "/modules/referenceLookup/searching",
+      "english": "Searching…"
+    },
+    {
+      "id": "OMI0611",
+      "pointer": "/modules/referenceLookup/providers",
+      "english": "Bibliographic providers"
+    },
+    {
+      "id": "OMI0612",
+      "pointer": "/modules/referenceLookup/apiKeyRequired",
+      "english": "API key required"
+    },
+    {
+      "id": "OMI0613",
+      "pointer": "/modules/referenceLookup/serviceSettings",
+      "english": "Service settings"
+    },
+    {
+      "id": "OMI0614",
+      "pointer": "/modules/referenceLookup/crossrefEmail",
+      "english": "Crossref contact email (optional)"
+    },
+    {
+      "id": "OMI0615",
+      "pointer": "/modules/referenceLookup/crossrefEmailHint",
+      "english": "When provided, Crossref receives it through the recommended mailto parameter for polite API access."
+    },
+    {
+      "id": "OMI0616",
+      "pointer": "/modules/referenceLookup/openAlexApiKey",
+      "english": "OpenAlex API key"
+    },
+    {
+      "id": "OMI0617",
+      "pointer": "/modules/referenceLookup/openAlexApiKeyHint",
+      "english": "OpenAlex currently requires an API key. The key is stored only in this browser and is never written to the manuscript."
+    },
+    {
+      "id": "OMI0618",
+      "pointer": "/modules/referenceLookup/privacyNote",
+      "english": "Queries are sent only to the providers you enable. Service credentials and contact settings are local interface preferences and are not exported in .omi.json."
+    },
+    {
+      "id": "OMI0619",
+      "pointer": "/modules/referenceLookup/missingApiKey",
+      "english": "This provider was skipped because its required API key is not configured."
+    },
+    {
+      "id": "OMI0620",
+      "pointer": "/modules/referenceLookup/providerUnavailable",
+      "english": "The provider could not be queried. Other provider results are still shown."
+    },
+    {
+      "id": "OMI0621",
+      "pointer": "/modules/referenceLookup/noResults",
+      "english": "No matching bibliographic records were returned by the selected providers."
+    },
+    {
+      "id": "OMI0622",
+      "pointer": "/modules/referenceLookup/addToLibrary",
+      "english": "Add to library"
+    },
+    {
+      "id": "OMI0623",
+      "pointer": "/modules/referenceLookup/alreadyAdded",
+      "english": "Already added"
+    },
+    {
+      "id": "OMI0624",
+      "pointer": "/modules/richText/bold",
+      "english": "Bold / strong"
+    },
+    {
+      "id": "OMI0625",
+      "pointer": "/modules/richText/italic",
+      "english": "Italic / emphasis"
+    },
+    {
+      "id": "OMI0626",
+      "pointer": "/modules/richText/superscript",
+      "english": "Superscript"
+    },
+    {
+      "id": "OMI0627",
+      "pointer": "/modules/richText/subscript",
+      "english": "Subscript"
+    },
+    {
+      "id": "OMI0628",
+      "pointer": "/modules/richText/smallCaps",
+      "english": "Small caps"
+    },
+    {
+      "id": "OMI0629",
+      "pointer": "/modules/richText/underline",
+      "english": "Underline"
+    },
+    {
+      "id": "OMI0630",
+      "pointer": "/modules/richText/link",
+      "english": "External link"
+    },
+    {
+      "id": "OMI0631",
+      "pointer": "/modules/richText/unlink",
+      "english": "Remove link"
+    },
+    {
+      "id": "OMI0632",
+      "pointer": "/modules/richText/more",
+      "english": "More text tools"
+    },
+    {
+      "id": "OMI0633",
+      "pointer": "/modules/richText/strike",
+      "english": "Strikethrough"
+    },
+    {
+      "id": "OMI0634",
+      "pointer": "/modules/richText/bulletList",
+      "english": "Bullet list"
+    },
+    {
+      "id": "OMI0635",
+      "pointer": "/modules/richText/orderedList",
+      "english": "Numbered list"
+    },
+    {
+      "id": "OMI0636",
+      "pointer": "/modules/richText/blockquote",
+      "english": "Block quotation"
+    },
+    {
+      "id": "OMI0637",
+      "pointer": "/modules/richText/inlineCode",
+      "english": "Inline code"
+    },
+    {
+      "id": "OMI0638",
+      "pointer": "/modules/richText/codeBlock",
+      "english": "Code block"
+    },
+    {
+      "id": "OMI0639",
+      "pointer": "/modules/richText/hardBreak",
+      "english": "Line break"
+    },
+    {
+      "id": "OMI0640",
+      "pointer": "/modules/richText/language",
+      "english": "Text language"
+    },
+    {
+      "id": "OMI0641",
+      "pointer": "/modules/richText/removeLanguage",
+      "english": "Remove language mark"
+    },
+    {
+      "id": "OMI0642",
+      "pointer": "/modules/richText/languagePlaceholder",
+      "english": "BCP 47 tag, e.g. la, de, en-GB"
+    },
+    {
+      "id": "OMI0643",
+      "pointer": "/modules/richText/apply",
+      "english": "Apply"
+    },
+    {
+      "id": "OMI0644",
+      "pointer": "/modules/richText/cancel",
+      "english": "Cancel"
+    },
+    {
+      "id": "OMI0645",
+      "pointer": "/modules/richText/linkAddress",
+      "english": "External address"
+    },
+    {
+      "id": "OMI0646",
+      "pointer": "/modules/richText/linkPlaceholder",
+      "english": "https://…"
+    },
+    {
+      "id": "OMI0647",
+      "pointer": "/modules/richText/invalidLink",
+      "english": "Enter a valid http, https or mailto address."
+    },
+    {
+      "id": "OMI0648",
+      "pointer": "/modules/richText/specialCharacters",
+      "english": "Special characters"
+    },
+    {
+      "id": "OMI0649",
+      "pointer": "/modules/richText/clearMarks",
+      "english": "Clear inline formatting"
+    },
+    {
+      "id": "OMI0650",
+      "pointer": "/modules/richText/toolbar",
+      "english": "Semantic text tools"
+    },
+    {
+      "id": "OMI0651",
+      "pointer": "/modules/rorAffiliation/searching",
+      "english": "Searching ROR…"
+    },
+    {
+      "id": "OMI0652",
+      "pointer": "/modules/rorAffiliation/suggestions",
+      "english": "ROR organization suggestions"
+    },
+    {
+      "id": "OMI0653",
+      "pointer": "/modules/rorAffiliation/noResults",
+      "english": "No ROR organization found. You can keep the affiliation as free text."
+    },
+    {
+      "id": "OMI0654",
+      "pointer": "/modules/rorAffiliation/searchUnavailable",
+      "english": "ROR search is temporarily unavailable. You can keep editing the affiliation manually."
+    },
+    {
+      "id": "OMI0655",
+      "pointer": "/modules/rorAffiliation/selected",
+      "english": "Linked to ROR"
+    },
+    {
+      "id": "OMI0656",
+      "pointer": "/modules/rorAffiliation/removeLink",
+      "english": "Remove ROR link"
+    },
+    {
+      "id": "OMI0657",
+      "pointer": "/modules/rorAffiliation/openRor",
+      "english": "Open ROR record"
+    },
+    {
+      "id": "OMI0658",
+      "pointer": "/modules/rorAffiliation/locationUnknown",
+      "english": "Location not specified"
+    },
+    {
+      "id": "OMI0659",
+      "pointer": "/modules/rorAffiliation/poweredBy",
+      "english": "Organization data from ROR"
+    },
+    {
+      "id": "OMI0660",
+      "pointer": "/modules/sectionStructure/title",
+      "english": "Hierarchical document structure"
+    },
+    {
+      "id": "OMI0661",
+      "pointer": "/modules/sectionStructure/description",
+      "english": "Build chapters and subsections at any depth. Stable section identities remain unchanged while the outline and generated numbering evolve."
+    },
+    {
+      "id": "OMI0662",
+      "pointer": "/modules/sectionStructure/addTopLevel",
+      "english": "Add top-level section"
+    },
+    {
+      "id": "OMI0663",
+      "pointer": "/modules/sectionStructure/addSubsection",
+      "english": "Add subsection"
+    },
+    {
+      "id": "OMI0664",
+      "pointer": "/modules/sectionStructure/insertAfter",
+      "english": "Insert sibling after this section"
+    },
+    {
+      "id": "OMI0665",
+      "pointer": "/modules/sectionStructure/dragHint",
+      "english": "Drag a section onto another section to make it a subsection. Use the arrows and indent/outdent controls for keyboard- and touch-friendly restructuring."
+    },
+    {
+      "id": "OMI0666",
+      "pointer": "/modules/sectionStructure/dropAsChild",
+      "english": "Drop here to make this section a subsection"
+    },
+    {
+      "id": "OMI0667",
+      "pointer": "/modules/sectionStructure/openSection",
+      "english": "Open section"
+    },
+    {
+      "id": "OMI0668",
+      "pointer": "/modules/sectionStructure/moveUp",
+      "english": "Move before previous sibling"
+    },
+    {
+      "id": "OMI0669",
+      "pointer": "/modules/sectionStructure/moveDown",
+      "english": "Move after next sibling"
+    },
+    {
+      "id": "OMI0670",
+      "pointer": "/modules/sectionStructure/indent",
+      "english": "Make subsection of previous sibling"
+    },
+    {
+      "id": "OMI0671",
+      "pointer": "/modules/sectionStructure/outdent",
+      "english": "Promote one level"
+    },
+    {
+      "id": "OMI0672",
+      "pointer": "/modules/sectionStructure/dragSection",
+      "english": "Drag section subtree"
+    },
+    {
+      "id": "OMI0673",
+      "pointer": "/modules/sectionStructure/selected",
+      "english": "Selected"
+    },
+    {
+      "id": "OMI0674",
+      "pointer": "/modules/sectionStructure/emptyTitle",
+      "english": "Untitled section"
+    },
+    {
+      "id": "OMI0675",
+      "pointer": "/modules/sectionStructure/level",
+      "english": "Level"
+    },
+    {
+      "id": "OMI0676",
+      "pointer": "/modules/sectionStructure/invalidHierarchy",
+      "english": "The section hierarchy contains an invalid parent relationship."
+    },
+    {
+      "id": "OMI0677",
+      "pointer": "/modules/stateDigest/integrity",
+      "english": "Revision state integrity"
+    },
+    {
+      "id": "OMI0678",
+      "pointer": "/modules/stateDigest/verified",
+      "english": "Verified"
+    },
+    {
+      "id": "OMI0679",
+      "pointer": "/modules/stateDigest/missing",
+      "english": "Digest not recorded"
+    },
+    {
+      "id": "OMI0680",
+      "pointer": "/modules/stateDigest/mismatch",
+      "english": "Digest mismatch"
+    },
+    {
+      "id": "OMI0681",
+      "pointer": "/modules/stateDigest/unsupported",
+      "english": "Unsupported digest profile"
+    },
+    {
+      "id": "OMI0682",
+      "pointer": "/modules/stateDigest/digest",
+      "english": "State digest"
+    },
+    {
+      "id": "OMI0683",
+      "pointer": "/modules/stateDigest/canonicalization",
+      "english": "Canonicalization"
+    },
+    {
+      "id": "OMI0684",
+      "pointer": "/modules/stateDigest/scope",
+      "english": "Committed manuscript snapshot"
+    },
+    {
+      "id": "OMI0685",
+      "pointer": "/modules/stateDigest/summary",
+      "english": "Canonical SHA-256 evidence for immutable manuscript revisions."
+    },
+    {
+      "id": "OMI0686",
+      "pointer": "/modules/stateDigest/importVerified",
+      "english": "All declared revision state digests are verified."
+    },
+    {
+      "id": "OMI0687",
+      "pointer": "/modules/stateDigest/importLegacy",
+      "english": "This package contains revisions without state digests. They can be backfilled locally after import."
+    },
+    {
+      "id": "OMI0688",
+      "pointer": "/modules/stateDigest/importInvalid",
+      "english": "The package contains an invalid or incompatible revision state digest."
+    },
+    {
+      "id": "OMI0689",
+      "pointer": "/modules/visualElements/insertMenu",
+      "english": "Insert"
+    },
+    {
+      "id": "OMI0690",
+      "pointer": "/modules/visualElements/insertElement",
+      "english": "Insert element"
+    },
+    {
+      "id": "OMI0691",
+      "pointer": "/modules/visualElements/image",
+      "english": "Image"
+    },
+    {
+      "id": "OMI0692",
+      "pointer": "/modules/visualElements/table",
+      "english": "Table"
+    },
+    {
+      "id": "OMI0693",
+      "pointer": "/modules/visualElements/chart",
+      "english": "Chart"
+    },
+    {
+      "id": "OMI0694",
+      "pointer": "/modules/visualElements/equation",
+      "english": "Equation"
+    },
+    {
+      "id": "OMI0695",
+      "pointer": "/modules/visualElements/import",
+      "english": "Import"
+    },
+    {
+      "id": "OMI0696",
+      "pointer": "/modules/visualElements/paste",
+      "english": "Paste from Word / Excel"
+    },
+    {
+      "id": "OMI0697",
+      "pointer": "/modules/visualElements/pasteHint",
+      "english": "Paste a table, image or equation here from Word, Excel or another application."
+    },
+    {
+      "id": "OMI0698",
+      "pointer": "/modules/visualElements/importing",
+      "english": "Importing…"
+    },
+    {
+      "id": "OMI0699",
+      "pointer": "/modules/visualElements/importFailed",
+      "english": "The file could not be imported."
+    },
+    {
+      "id": "OMI0700",
+      "pointer": "/modules/visualElements/noImportableElements",
+      "english": "No supported visual elements were found."
+    },
+    {
+      "id": "OMI0701",
+      "pointer": "/modules/visualElements/chooseFile",
+      "english": "Choose file"
+    },
+    {
+      "id": "OMI0702",
+      "pointer": "/modules/visualElements/caption",
+      "english": "Caption"
+    },
+    {
+      "id": "OMI0703",
+      "pointer": "/modules/visualElements/altText",
+      "english": "Alternative text"
+    },
+    {
+      "id": "OMI0704",
+      "pointer": "/modules/visualElements/chartType",
+      "english": "Chart type"
+    },
+    {
+      "id": "OMI0705",
+      "pointer": "/modules/visualElements/chartBar",
+      "english": "Bar"
+    },
+    {
+      "id": "OMI0706",
+      "pointer": "/modules/visualElements/chartLine",
+      "english": "Line"
+    },
+    {
+      "id": "OMI0707",
+      "pointer": "/modules/visualElements/chartPie",
+      "english": "Pie"
+    },
+    {
+      "id": "OMI0708",
+      "pointer": "/modules/visualElements/chartScatter",
+      "english": "Scatter"
+    },
+    {
+      "id": "OMI0709",
+      "pointer": "/modules/visualElements/chartTitle",
+      "english": "Chart title"
+    },
+    {
+      "id": "OMI0710",
+      "pointer": "/modules/visualElements/equationLatex",
+      "english": "LaTeX source"
+    },
+    {
+      "id": "OMI0711",
+      "pointer": "/modules/visualElements/equationLabel",
+      "english": "Equation label"
+    },
+    {
+      "id": "OMI0712",
+      "pointer": "/modules/visualElements/addRow",
+      "english": "Add row"
+    },
+    {
+      "id": "OMI0713",
+      "pointer": "/modules/visualElements/addColumn",
+      "english": "Add column"
+    },
+    {
+      "id": "OMI0714",
+      "pointer": "/modules/visualElements/removeRow",
+      "english": "Remove last row"
+    },
+    {
+      "id": "OMI0715",
+      "pointer": "/modules/visualElements/removeColumn",
+      "english": "Remove last column"
+    },
+    {
+      "id": "OMI0716",
+      "pointer": "/modules/visualElements/createChart",
+      "english": "Create chart from table"
+    },
+    {
+      "id": "OMI0717",
+      "pointer": "/modules/visualElements/deleteElement",
+      "english": "Delete element"
+    },
+    {
+      "id": "OMI0718",
+      "pointer": "/modules/visualElements/confirmDelete",
+      "english": "Delete this element from the manuscript?"
+    },
+    {
+      "id": "OMI0719",
+      "pointer": "/modules/visualElements/source",
+      "english": "Source data"
+    },
+    {
+      "id": "OMI0720",
+      "pointer": "/modules/visualElements/emptyChart",
+      "english": "Add numeric source data to render the chart."
+    },
+    {
+      "id": "OMI0721",
+      "pointer": "/modules/visualElements/importedFrom",
+      "english": "Imported from"
+    },
+    {
+      "id": "OMI0722",
+      "pointer": "/modules/visualElements/fileFormats",
+      "english": "Images, DOCX, XLSX, CSV/TSV, HTML and TeX are supported."
+    }
+  ]
+}
