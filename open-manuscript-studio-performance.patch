@@ -1,0 +1,850 @@
+From 797bc0a31fcd4c39d8e0e9d9fc904f7ea3620896 Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Tue, 22 Sep 2026 00:01:24 +0200
+Subject: [PATCH] perf: keep large publication editor responsive
+
+---
+ src/app/continuousDocumentActions.ts         |  38 ++--
+ src/app/noteActions.ts                       |   6 +-
+ src/components/BlockEditor.tsx               |  97 +++++++++-
+ src/components/PublicationDocumentCanvas.tsx | 194 +++++++++++++++++--
+ src/editor/continuousManuscriptDocument.ts   |   6 +-
+ src/model/crossReferences.ts                 |   2 +
+ src/model/notes.ts                           |  30 +--
+ src/model/workingState.ts                    |  33 +++-
+ tests/working-state.test.ts                  |  25 +++
+ 9 files changed, 357 insertions(+), 74 deletions(-)
+
+diff --git a/src/app/continuousDocumentActions.ts b/src/app/continuousDocumentActions.ts
+index df6fbca..3d6b2e1 100644
+--- a/src/app/continuousDocumentActions.ts
++++ b/src/app/continuousDocumentActions.ts
+@@ -1,6 +1,5 @@
+ import { synchronizeCrossReferenceLabels } from '../model/crossReferences';
+ import { recordSectionTextChanges } from '../model/proofing';
+-import { extractManuscriptState } from '../model/versioning';
+ import { stagePendingChanges } from '../model/workingState';
+ import type { OmiSection } from '../types/omi';
+ import {
+@@ -18,16 +17,15 @@ export function stageContinuousDocumentChange(
+   let changed = false;
+ 
+   useStudioStore.setState((state) => {
+-    const synchronizedSections = synchronizeCrossReferenceLabels(
+-      nextSections,
+-      state.manuscript.crossReferences ?? [],
+-      state.manuscript.crossReferenceNumbering,
+-      state.manuscript.locale,
+-    );
+-
+-    if (documentsAreEqual(state.manuscript.sections, synchronizedSections)) {
+-      return state;
+-    }
++    const crossReferences = state.manuscript.crossReferences ?? [];
++    const synchronizedSections = crossReferences.length > 0
++      ? synchronizeCrossReferenceLabels(
++          nextSections,
++          crossReferences,
++          state.manuscript.crossReferenceNumbering,
++          state.manuscript.locale,
++        )
++      : [...nextSections];
+ 
+     const timestamp = new Date().toISOString();
+     const proofing = recordSectionTextChanges(
+@@ -61,9 +59,12 @@ export function stageContinuousDocumentChange(
+         ],
+         actorAgentId: resolveCurrentActorAgentId(state.manuscript),
+         timestamp,
++        // The projection is a newly-created immutable tree. Deep-cloning it
++        // for every keystroke made large documents effectively uneditable;
++        // the checkpoint path still clones the final event payload.
++        cloneEventValues: false,
+       },
+     );
+-    const portableState = extractManuscriptState(state.manuscript);
+     const selectedSectionId = synchronizedSections.some(
+       (section) => section.id === state.selectedSectionId,
+     )
+@@ -71,10 +72,12 @@ export function stageContinuousDocumentChange(
+       : synchronizedSections[0]?.id ?? null;
+ 
+     changed = true;
++    const { authors: _legacyAuthors, ...manuscriptWithoutLegacyAuthors } =
++      state.manuscript;
+     return {
+       manuscript: {
+-        ...state.manuscript,
+-        ...portableState,
++        ...manuscriptWithoutLegacyAuthors,
++        tombstones: state.manuscript.tombstones ?? [],
+         sections: synchronizedSections,
+         ...(proofing ? { proofing } : {}),
+         updatedAt: timestamp,
+@@ -95,10 +98,3 @@ function scheduleCheckpoint(): void {
+     useStudioStore.getState().checkpoint('idle');
+   }, CONTINUOUS_DOCUMENT_CHECKPOINT_DELAY_MS);
+ }
+-
+-function documentsAreEqual(
+-  first: readonly OmiSection[],
+-  second: readonly OmiSection[],
+-): boolean {
+-  return JSON.stringify(first) === JSON.stringify(second);
+-}
+diff --git a/src/app/noteActions.ts b/src/app/noteActions.ts
+index 0989146..0fb6e80 100644
+--- a/src/app/noteActions.ts
++++ b/src/app/noteActions.ts
+@@ -246,8 +246,10 @@ export function reconcileNotesAfterBlockEdit(): void {
+   let changed = false;
+ 
+   useStudioStore.setState((state) => {
+-    const portableState = extractManuscriptState(state.manuscript);
+-    const reconciled = reconcileNoteState(portableState, {
++    // The store already holds immutable sections from the editor projection.
++    // Reusing them avoids cloning the complete manuscript before checking
++    // whether a note anchor actually changed.
++    const reconciled = reconcileNoteState(state.manuscript, {
+       removeOrphanAnnotations: true,
+     });
+     const semanticEvents = [
+diff --git a/src/components/BlockEditor.tsx b/src/components/BlockEditor.tsx
+index 1e512a2..87dab6d 100644
+--- a/src/components/BlockEditor.tsx
++++ b/src/components/BlockEditor.tsx
+@@ -10,6 +10,7 @@ import {
+   useEditor,
+ } from '@tiptap/react';
+ import type { Editor } from '@tiptap/core';
++import type { Transaction } from '@tiptap/pm/state';
+ import StarterKit from '@tiptap/starter-kit';
+ 
+ import {
+@@ -94,7 +95,11 @@ interface BlockEditorProps {
+   blockId: string;
+   blockType: string;
+   content: string;
+-  onUpdate: (blockId: string, content: string) => void;
++  onUpdate: (
++    blockId: string,
++    content: string,
++    changedReferences?: ReadonlySet<WorkspaceReferenceKind>,
++  ) => void;
+   editable?: boolean;
+   capabilities?: EditorCapabilities;
+   manuscriptLanguage?: string;
+@@ -103,9 +108,12 @@ interface BlockEditorProps {
+   proofingMode?: 'editor' | 'publication';
+   publicationCorrections?: readonly OmiPublicationCorrection[];
+   publicationFlowBreaks?: readonly OmiPublicationFlowBreak[];
++  deferWorkspaceReconciliation?: boolean;
+   onProofingSelection?: (selection: ProofingSelection | null) => void;
+ }
+ 
++export type WorkspaceReferenceKind = 'note' | 'citation' | 'cross-reference';
++
+ const EMPTY_PUBLICATION_CORRECTIONS: readonly OmiPublicationCorrection[] = [];
+ const EMPTY_PUBLICATION_FLOW_BREAKS: readonly OmiPublicationFlowBreak[] = [];
+ 
+@@ -122,6 +130,7 @@ export function BlockEditor({
+   proofingMode,
+   publicationCorrections = EMPTY_PUBLICATION_CORRECTIONS,
+   publicationFlowBreaks = EMPTY_PUBLICATION_FLOW_BREAKS,
++  deferWorkspaceReconciliation = false,
+   onProofingSelection,
+ }: BlockEditorProps) {
+   const { t, locale } = useTranslation();
+@@ -134,6 +143,7 @@ export function BlockEditor({
+   const [crossReferencePickerOpen, setCrossReferencePickerOpen] = useState(false);
+   const [integrationAction, setIntegrationAction] = useState<'translate' | 'agent' | null>(null);
+   const onUpdateRef = useRef(onUpdate);
++  const lastEmittedContentRef = useRef<string | null>(null);
+   const onProofingSelectionRef = useRef(onProofingSelection);
+   const tRef = useRef(t);
+   const proofreadingSelectRef = useRef<(id: string | null) => void>(() => undefined);
+@@ -360,13 +370,29 @@ export function BlockEditor({
+         return true;
+       },
+     },
+-    onUpdate: ({ editor: currentEditor }) => {
+-      onUpdateRef.current(blockId, JSON.stringify(currentEditor.getJSON()));
++    onUpdate: ({ editor: currentEditor, transaction, appendedTransactions }) => {
++      const serializedContent = JSON.stringify(currentEditor.getJSON());
++      lastEmittedContentRef.current = serializedContent;
+       if (capabilities.reconcileWorkspaceReferences) {
+-        reconcileNotesAfterBlockEdit();
+-        reconcileCitationsAfterBlockEdit();
+-        reconcileCrossReferencesAfterBlockEdit();
++        const changedReferences = collectChangedWorkspaceReferences([
++          transaction,
++          ...appendedTransactions,
++        ]);
++        onUpdateRef.current(blockId, serializedContent, changedReferences);
++        if (!deferWorkspaceReconciliation) {
++          if (changedReferences.has('note')) {
++            reconcileNotesAfterBlockEdit();
++          }
++          if (changedReferences.has('citation')) {
++            reconcileCitationsAfterBlockEdit();
++          }
++          if (changedReferences.has('cross-reference')) {
++            reconcileCrossReferencesAfterBlockEdit();
++          }
++        }
++        return;
+       }
++      onUpdateRef.current(blockId, serializedContent);
+     },
+   });
+ 
+@@ -467,6 +493,10 @@ export function BlockEditor({
+ 
+   useEffect(() => {
+     if (!editor) return;
++    if (content === lastEmittedContentRef.current) {
++      lastEmittedContentRef.current = null;
++      return;
++    }
+     const incomingDocument = parseStoredContent(content);
+     if (documentsAreEqual(editor.getJSON(), incomingDocument)) return;
+ 
+@@ -762,6 +792,61 @@ function documentsAreEqual(first: JSONContent, second: JSONContent): boolean {
+   return JSON.stringify(first) === JSON.stringify(second);
+ }
+ 
++const WORKSPACE_REFERENCE_KIND_BY_NODE_NAME: Record<string, WorkspaceReferenceKind> = {
++  omiNote: 'note',
++  omiCitation: 'citation',
++  omiCrossReference: 'cross-reference',
++};
++
++function collectChangedWorkspaceReferences(
++  transactions: readonly Transaction[],
++): Set<WorkspaceReferenceKind> {
++  const changed = new Set<WorkspaceReferenceKind>();
++
++  for (const transaction of transactions) {
++    if (!transaction.docChanged) continue;
++
++    transaction.steps.forEach((step, stepIndex) => {
++      const before = transaction.docs[stepIndex];
++      if (!before) return;
++
++      step.getMap().forEach((oldStart, oldEnd, newStart, newEnd) => {
++        collectReferenceNodesInRange(before, oldStart, oldEnd, changed);
++        collectReferenceNodesInRange(transaction.doc, newStart, newEnd, changed);
++      });
++
++      if (changed.size === 3) return;
++    });
++
++    if (changed.size === 3) break;
++  }
++
++  return changed;
++}
++
++function collectReferenceNodesInRange(
++  document: Transaction['doc'],
++  from: number,
++  to: number,
++  changed: Set<WorkspaceReferenceKind>,
++): void {
++  const start = Math.max(0, Math.min(document.content.size, from - 1));
++  const end = Math.max(start, Math.min(document.content.size, to + 1));
++  document.nodesBetween(start, end, (node) => {
++    const kind = WORKSPACE_REFERENCE_KIND_BY_NODE_NAME[node.type.name];
++    if (kind) changed.add(kind);
++  });
++
++  for (const position of [from, to, from - 1]) {
++    if (position < 0 || position > document.content.size) continue;
++    const node = document.nodeAt(position);
++    const kind = node
++      ? WORKSPACE_REFERENCE_KIND_BY_NODE_NAME[node.type.name]
++      : undefined;
++    if (kind) changed.add(kind);
++  }
++}
++
+ function formatBlockType(
+   blockType: string,
+   t: (key: TranslationKey) => string,
+diff --git a/src/components/PublicationDocumentCanvas.tsx b/src/components/PublicationDocumentCanvas.tsx
+index 07ae28e..e32c929 100644
+--- a/src/components/PublicationDocumentCanvas.tsx
++++ b/src/components/PublicationDocumentCanvas.tsx
+@@ -1,6 +1,7 @@
+ import type { JSONContent } from '@tiptap/core';
+ import {
+   useId,
++  useEffect,
+   useLayoutEffect,
+   useMemo,
+   useRef,
+@@ -10,6 +11,9 @@ import {
+ } from 'react';
+ 
+ import { stageContinuousDocumentChange } from '../app/continuousDocumentActions';
++import { reconcileCitationsAfterBlockEdit } from '../app/citationActions';
++import { reconcileCrossReferencesAfterBlockEdit } from '../app/crossReferenceActions';
++import { reconcileNotesAfterBlockEdit } from '../app/noteActions';
+ import {
+   stageMottoChange,
+   stageSubtitleChange,
+@@ -20,7 +24,12 @@ import {
+   projectContinuousManuscriptDocument,
+ } from '../editor/continuousManuscriptDocument';
+ import { useTranslation } from '../i18n';
+-import { buildNoteNumberMap, getNoteKind } from '../model/notes';
++import {
++  buildNoteNumberMap,
++  collectNoteAnchorsInBlock,
++  getNoteKind,
++  type NoteAnchorOccurrence,
++} from '../model/notes';
+ import { contributorNameParts } from '../model/contributorName';
+ import { collectPublicationContributors } from '../model/publicationRendering';
+ import type { ProofingSelection } from '../model/proofing';
+@@ -32,7 +41,7 @@ import {
+ } from '../services/publicationStyleExport';
+ import { cssStringLiteral } from '../services/embeddedCss';
+ import type { OmiPublicationFlowBreak } from '../editor/extensions/OmiProofingMarksExtension';
+-import { BlockEditor } from './BlockEditor';
++import { BlockEditor, type WorkspaceReferenceKind } from './BlockEditor';
+ import {
+   paginatePublicationBlocks,
+   type PublicationFlowLine,
+@@ -45,6 +54,9 @@ const PIXELS_PER_POINT = 96 / 72;
+ type PublicationZoom = 'fit' | 50 | 75 | 100;
+ const EMPTY_PUBLICATION_CORRECTIONS = [] as const;
+ const EMPTY_PUBLICATION_FLOW_BREAKS: readonly OmiPublicationFlowBreak[] = [];
++const PUBLICATION_DOCUMENT_CHANGE_DEBOUNCE_MS = 120;
++const LARGE_PUBLICATION_DOCUMENT_NODE_COUNT = 400;
++const LARGE_PUBLICATION_PAGINATION_DEBOUNCE_MS = 120;
+ 
+ interface PublicationPaginationState {
+   pageCount: number;
+@@ -75,6 +87,17 @@ interface PublicationCanvasCopy {
+   empty: string;
+ }
+ 
++interface NoteAnchorCacheEntry {
++  content: string;
++  sectionId: string;
++  occurrences: NoteAnchorOccurrence[];
++}
++
++interface NoteBodyCacheEntry {
++  body: string;
++  text: string;
++}
++
+ export function PublicationDocumentCanvas({
+   style,
+   onProofingSelection,
+@@ -83,6 +106,14 @@ export function PublicationDocumentCanvas({
+   const copy = canvasCopy(locale);
+   const canvasId = `publication-canvas-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+   const manuscript = useStudioStore((state) => state.manuscript);
++  const {
++    id: manuscriptId,
++    agents: manuscriptAgents,
++    contributions: manuscriptContributions,
++    annotations: manuscriptAnnotations,
++    sections: manuscriptSections,
++    documentStructure: manuscriptDocumentStructure,
++  } = manuscript;
+   const publicationCorrections = manuscript.publicationCorrections
+     ?? EMPTY_PUBLICATION_CORRECTIONS;
+   const setTitle = useStudioStore((state) => state.setTitle);
+@@ -91,6 +122,11 @@ export function PublicationDocumentCanvas({
+   const stageRef = useRef<HTMLDivElement>(null);
+   const contentRef = useRef<HTMLDivElement>(null);
+   const noteMeasureRef = useRef<HTMLDivElement>(null);
++  const noteAnchorCacheRef = useRef(new Map<string, NoteAnchorCacheEntry>());
++  const noteBodyCacheRef = useRef(new Map<string, NoteBodyCacheEntry>());
++  const pendingDocumentContentRef = useRef<string | null>(null);
++  const pendingReferenceKindsRef = useRef(new Set<WorkspaceReferenceKind>());
++  const documentChangeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+   const [stageWidth, setStageWidth] = useState(0);
+   const [pagination, setPagination] = useState<PublicationPaginationState>({
+     pageCount: 1,
+@@ -169,16 +205,64 @@ export function PublicationDocumentCanvas({
+       style.paragraphStyles.defaultStyleId,
+     ],
+   );
++  const paginationDebounceMs = (document.content?.length ?? 0) > LARGE_PUBLICATION_DOCUMENT_NODE_COUNT
++    ? LARGE_PUBLICATION_PAGINATION_DEBOUNCE_MS
++    : 0;
+   const contributors = useMemo(
+-    () => collectPublicationContributors(manuscript),
+-    [manuscript],
++    () => collectPublicationContributors({
++      id: manuscriptId,
++      agents: manuscriptAgents,
++      contributions: manuscriptContributions,
++    }),
++    [manuscriptAgents, manuscriptContributions, manuscriptId],
+   );
+   const notes = useMemo(() => {
+-    const numbers = buildNoteNumberMap(manuscript);
+-    return manuscript.annotations
++    const cache = noteAnchorCacheRef.current;
++    const activeBlockIds = new Set<string>();
++    const occurrences: NoteAnchorOccurrence[] = [];
++    for (const section of manuscriptSections) {
++      for (const block of section.blocks) {
++        activeBlockIds.add(block.id);
++        const cached = cache.get(block.id);
++        const entry = cached
++          && cached.content === block.content
++          && cached.sectionId === section.id
++          ? cached
++          : {
++              content: block.content,
++              sectionId: section.id,
++              occurrences: collectNoteAnchorsInBlock(
++                block.content,
++                section.id,
++                block.id,
++              ),
++            };
++        cache.set(block.id, entry);
++        occurrences.push(...entry.occurrences);
++      }
++    }
++    for (const blockId of cache.keys()) {
++      if (!activeBlockIds.has(blockId)) cache.delete(blockId);
++    }
++
++    const numbers = buildNoteNumberMap({
++      sections: manuscriptSections,
++      documentStructure: manuscriptDocumentStructure,
++    }, occurrences);
++    return manuscriptAnnotations
+       .filter((annotation) => getNoteKind(annotation) === 'footnote' && numbers.has(annotation.id))
+-      .map((annotation) => ({ id: annotation.id, label: numbers.get(annotation.id), text: plainText(annotation.body) }));
+-  }, [manuscript]);
++      .map((annotation) => {
++        const cached = noteBodyCacheRef.current.get(annotation.id);
++        const text = cached?.body === annotation.body
++          ? cached.text
++          : plainText(annotation.body);
++        noteBodyCacheRef.current.set(annotation.id, {
++          body: annotation.body,
++          text,
++        });
++        return { id: annotation.id, label: numbers.get(annotation.id), text };
++      });
++  }, [manuscriptAnnotations, manuscriptDocumentStructure, manuscriptSections]);
+   const noteById = useMemo(() => new Map(notes.map((note) => [note.id, note])), [notes]);
+   const endnotes = useMemo(() => manuscript.annotations.filter(
+     (annotation) => getNoteKind(annotation) === 'endnote',
+@@ -202,6 +286,7 @@ export function PublicationDocumentCanvas({
+     if (!content) return;
+ 
+     let frame = 0;
++    let scheduleTimer: ReturnType<typeof setTimeout> | null = null;
+     const update = () => {
+       const flow = collectPublicationFlowElements(content);
+       const corrections = publicationCorrections;
+@@ -299,6 +384,15 @@ export function PublicationDocumentCanvas({
+       ));
+     };
+     const schedule = () => {
++      if (paginationDebounceMs > 0) {
++        if (scheduleTimer !== null) clearTimeout(scheduleTimer);
++        scheduleTimer = setTimeout(() => {
++          scheduleTimer = null;
++          cancelAnimationFrame(frame);
++          frame = requestAnimationFrame(update);
++        }, paginationDebounceMs);
++        return;
++      }
+       cancelAnimationFrame(frame);
+       frame = requestAnimationFrame(update);
+     };
+@@ -321,6 +415,7 @@ export function PublicationDocumentCanvas({
+     });
+ 
+     return () => {
++      if (scheduleTimer !== null) clearTimeout(scheduleTimer);
+       cancelAnimationFrame(frame);
+       resizeObserver?.disconnect();
+       fonts?.removeEventListener('loadingdone', schedule);
+@@ -341,23 +436,41 @@ export function PublicationDocumentCanvas({
+     noteLineHeight,
+     noteSeparatorHeight,
+     outerMargin,
++    paginationDebounceMs,
+     pageOverhead,
+     style.page.mirroredMargins,
+     style,
+     usablePageHeight,
+   ]);
+ 
+-  function updateDocument(_documentId: string, content: string): void {
+-    let parsed: JSONContent;
+-    try {
+-      parsed = JSON.parse(content) as JSONContent;
+-    } catch {
+-      return;
+-    }
+-    const currentSections = useStudioStore.getState().manuscript.sections;
+-    stageContinuousDocumentChange(
+-      projectContinuousManuscriptDocument(parsed, currentSections),
++  useEffect(() => () => {
++    flushPublicationDocumentChange(
++      pendingDocumentContentRef,
++      pendingReferenceKindsRef,
++      documentChangeTimerRef,
+     );
++  }, []);
++
++  function updateDocument(
++    _documentId: string,
++    content: string,
++    changedReferences: ReadonlySet<WorkspaceReferenceKind> = new Set(),
++  ): void {
++    pendingDocumentContentRef.current = content;
++    for (const referenceKind of changedReferences) {
++      pendingReferenceKindsRef.current.add(referenceKind);
++    }
++    if (documentChangeTimerRef.current !== null) {
++      clearTimeout(documentChangeTimerRef.current);
++    }
++    documentChangeTimerRef.current = setTimeout(() => {
++      documentChangeTimerRef.current = null;
++      flushPublicationDocumentChange(
++        pendingDocumentContentRef,
++        pendingReferenceKindsRef,
++        documentChangeTimerRef,
++      );
++    }, PUBLICATION_DOCUMENT_CHANGE_DEBOUNCE_MS);
+   }
+ 
+   const body = style.styles.body;
+@@ -432,6 +545,7 @@ export function PublicationDocumentCanvas({
+     left: `${firstPageLeftMargin}px`,
+     width: `${contentWidth}px`,
+   } as CSSProperties;
++  const editorContent = pendingDocumentContentRef.current ?? JSON.stringify(document);
+   const rulerStyle = {
+     width: `${pageWidth}px`,
+     '--omi-publication-ruler-left': `${firstPageLeftMargin}px`,
+@@ -586,12 +700,13 @@ export function PublicationDocumentCanvas({
+                 <BlockEditor
+                   blockId={`omi-publication-document-${manuscript.id}`}
+                   blockType="manuscript"
+-                  content={JSON.stringify(document)}
++                  content={editorContent}
+                   onUpdate={updateDocument}
+                   manuscriptLanguage={manuscript.locale}
+                   className="publication-layout-document-editor"
+                   continuous
+                   proofingMode="publication"
++                  deferWorkspaceReconciliation
+                   publicationCorrections={publicationCorrections}
+                   publicationFlowBreaks={pagination.flowBreaks}
+                   onProofingSelection={onProofingSelection}
+@@ -651,6 +766,47 @@ export function PublicationDocumentCanvas({
+   );
+ }
+ 
++function flushPublicationDocumentChange(
++  pendingDocumentContentRef: { current: string | null },
++  pendingReferenceKindsRef: { current: Set<WorkspaceReferenceKind> },
++  documentChangeTimerRef: { current: ReturnType<typeof setTimeout> | null },
++): void {
++  if (documentChangeTimerRef.current !== null) {
++    clearTimeout(documentChangeTimerRef.current);
++    documentChangeTimerRef.current = null;
++  }
++
++  const content = pendingDocumentContentRef.current;
++  if (!content) return;
++
++  const changedReferences = new Set(pendingReferenceKindsRef.current);
++  pendingDocumentContentRef.current = null;
++  pendingReferenceKindsRef.current.clear();
++  persistPublicationDocument(content, changedReferences);
++}
++
++function persistPublicationDocument(
++  content: string,
++  changedReferences: ReadonlySet<WorkspaceReferenceKind>,
++): void {
++  let parsed: JSONContent;
++  try {
++    parsed = JSON.parse(content) as JSONContent;
++  } catch {
++    return;
++  }
++
++  const currentSections = useStudioStore.getState().manuscript.sections;
++  stageContinuousDocumentChange(
++    projectContinuousManuscriptDocument(parsed, currentSections),
++  );
++  if (changedReferences.has('note')) reconcileNotesAfterBlockEdit();
++  if (changedReferences.has('citation')) reconcileCitationsAfterBlockEdit();
++  if (changedReferences.has('cross-reference')) {
++    reconcileCrossReferencesAfterBlockEdit();
++  }
++}
++
+ function AutoGrowPublicationField({
+   className,
+   value,
+diff --git a/src/editor/continuousManuscriptDocument.ts b/src/editor/continuousManuscriptDocument.ts
+index 4d2dbba..0940a5c 100644
+--- a/src/editor/continuousManuscriptDocument.ts
++++ b/src/editor/continuousManuscriptDocument.ts
+@@ -116,7 +116,9 @@ export function projectContinuousManuscriptDocument(
+ ): OmiSection[] {
+   const createId = options.createId ?? (() => crypto.randomUUID());
+   const previousBlocks = new Map<string, OmiBlock>();
++  const previousSectionsById = new Map<string, OmiSection>();
+   for (const section of previousSections) {
++    previousSectionsById.set(section.id, section);
+     for (const block of section.blocks) previousBlocks.set(block.id, block);
+   }
+ 
+@@ -153,7 +155,7 @@ export function projectContinuousManuscriptDocument(
+         headingStack.pop();
+       }
+       const parentSectionId = headingStack[headingStack.length - 1]?.id;
+-      const previousSection = previousSections.find((section) => section.id === sectionId);
++      const previousSection = previousSectionsById.get(sectionId);
+       const headingBlock = textBlockFromNode(
+         editorNode,
+         blockId,
+@@ -176,7 +178,7 @@ export function projectContinuousManuscriptDocument(
+ 
+     if (!currentSection) {
+       const sectionId = uniqueId(attrs.omiSectionId, usedSectionIds);
+-      const previousSection = previousSections.find((section) => section.id === sectionId);
++      const previousSection = previousSectionsById.get(sectionId);
+       currentSection = withParentSectionId(
+         {
+           ...(previousSection ?? {}),
+diff --git a/src/model/crossReferences.ts b/src/model/crossReferences.ts
+index 0bd83ee..a2c01ef 100644
+--- a/src/model/crossReferences.ts
++++ b/src/model/crossReferences.ts
+@@ -235,6 +235,8 @@ export function synchronizeCrossReferenceLabels(
+   locale = 'en',
+   namedAnchors: readonly OmiNamedAnchor[] = [],
+ ): OmiSection[] {
++  if (crossReferences.length === 0) return [...sections];
++
+   const manuscript = {
+     sections: sections as OmiSection[],
+     crossReferenceNumbering: numbering,
+diff --git a/src/model/notes.ts b/src/model/notes.ts
+index c8c927f..207b035 100644
+--- a/src/model/notes.ts
++++ b/src/model/notes.ts
+@@ -95,30 +95,32 @@ export function getNoteKind(
+ }
+ 
+ export function collectNoteAnchors(
+-  state: OmiManuscriptState,
++  state: Pick<OmiManuscriptState, 'sections'>,
+ ): NoteAnchorOccurrence[] {
+   const result: NoteAnchorOccurrence[] = [];
+ 
+   for (const section of state.sections) {
+     for (const block of section.blocks) {
+-      const document = parseStructuredContent(block.content);
+-
+-      if (!document) {
+-        continue;
+-      }
+-
+-      collectNoteNodes(
+-        document,
+-        section.id,
+-        block.id,
+-        result,
+-      );
++      result.push(...collectNoteAnchorsInBlock(block.content, section.id, block.id));
+     }
+   }
+ 
+   return result;
+ }
+ 
++export function collectNoteAnchorsInBlock(
++  content: string,
++  sectionId: string,
++  blockId: string,
++): NoteAnchorOccurrence[] {
++  const document = parseStructuredContent(content);
++  if (!document) return [];
++
++  const result: NoteAnchorOccurrence[] = [];
++  collectNoteNodes(document, sectionId, blockId, result);
++  return result;
++}
++
+ export function getNoteNumber(
+   state: OmiManuscriptState,
+   noteId: string,
+@@ -456,7 +458,7 @@ function uniqueNoteIdentifiers(
+ }
+ 
+ export function buildNoteNumberMap(
+-  state: OmiManuscriptState,
++  state: Pick<OmiManuscriptState, 'sections' | 'documentStructure'>,
+   occurrences: NoteAnchorOccurrence[] = collectNoteAnchors(state),
+ ): Map<string, number> {
+   const scope = getDocumentStructureProfile(state).noteNumberingScope;
+diff --git a/src/model/workingState.ts b/src/model/workingState.ts
+index fd39645..c40e91e 100644
+--- a/src/model/workingState.ts
++++ b/src/model/workingState.ts
+@@ -30,6 +30,12 @@ export interface StagePendingChangesInput {
+   events: CreateChangeEventInput[];
+   actorAgentId?: AgentId;
+   timestamp?: string;
++  /**
++   * Continuous editors already produce fresh immutable section trees. They
++   * can retain those references until the checkpoint, where the revision
++   * snapshot performs the authoritative deep clone.
++   */
++  cloneEventValues?: boolean;
+ }
+ 
+ export interface CheckpointDescriptor {
+@@ -47,6 +53,7 @@ export function stagePendingChanges(
+   }
+ 
+   const timestamp = input.timestamp ?? new Date().toISOString();
++  const cloneEventValues = input.cloneEventValues !== false;
+ 
+   if (!pending) {
+     return {
+@@ -56,7 +63,7 @@ export function stagePendingChanges(
+       actorAgentId: input.actorAgentId,
+       mixedActors: false,
+       summaries: [input.summary],
+-      events: coalesceEvents([], input.events),
++      events: coalesceEvents([], input.events, cloneEventValues),
+     };
+   }
+ 
+@@ -78,7 +85,7 @@ export function stagePendingChanges(
+     actorAgentId: actorState.actorAgentId,
+     mixedActors: actorState.mixedActors,
+     summaries: appendUnique(pending.summaries, input.summary),
+-    events: coalesceEvents(pending.events, input.events),
++    events: coalesceEvents(pending.events, input.events, cloneEventValues),
+   };
+ }
+ 
+@@ -94,7 +101,7 @@ export function createCheckpointDescriptor(
+ 
+   return {
+     summary: createCheckpointSummary(pending),
+-    events: pending.events.map(cloneEvent),
++    events: pending.events.map((event) => cloneEvent(event)),
+     actorAgentId: pending.mixedActors
+       ? undefined
+       : pending.actorAgentId,
+@@ -118,8 +125,9 @@ export function createCheckpointSummary(
+ export function coalesceEvents(
+   existing: CreateChangeEventInput[],
+   incoming: CreateChangeEventInput[],
++  cloneEventValues = true,
+ ): CreateChangeEventInput[] {
+-  const result = existing.map(cloneEvent);
++  const result = existing.map((event) => cloneEvent(event, cloneEventValues));
+ 
+   for (const event of incoming) {
+     const key = eventKey(event);
+@@ -128,20 +136,20 @@ export function coalesceEvents(
+     );
+ 
+     if (index < 0) {
+-      result.push(cloneEvent(event));
++      result.push(cloneEvent(event, cloneEventValues));
+       continue;
+     }
+ 
+     const previous = result[index];
+ 
+     if (!previous) {
+-      result.push(cloneEvent(event));
++      result.push(cloneEvent(event, cloneEventValues));
+       continue;
+     }
+ 
+     result[index] = {
+       ...previous,
+-      nextValue: cloneValue(event.nextValue),
++      nextValue: cloneEventValue(event.nextValue, cloneEventValues),
+     };
+   }
+ 
+@@ -188,15 +196,20 @@ function appendUnique(values: string[], value: string): string[] {
+ 
+ function cloneEvent(
+   event: CreateChangeEventInput,
++  cloneEventValues = true,
+ ): CreateChangeEventInput {
+   return {
+     ...event,
+-    previousValue: cloneValue(event.previousValue),
+-    nextValue: cloneValue(event.nextValue),
++    previousValue: cloneEventValue(event.previousValue, cloneEventValues),
++    nextValue: cloneEventValue(event.nextValue, cloneEventValues),
+   };
+ }
+ 
+-function cloneValue<T>(value: T): T {
++function cloneEventValue<T>(value: T, cloneValue = true): T {
++  return cloneValue ? cloneEventPayload(value) : value;
++}
++
++function cloneEventPayload<T>(value: T): T {
+   if (value === undefined || value === null) {
+     return value;
+   }
+diff --git a/tests/working-state.test.ts b/tests/working-state.test.ts
+index 83aaee5..ecc09b0 100644
+--- a/tests/working-state.test.ts
++++ b/tests/working-state.test.ts
+@@ -168,3 +168,28 @@ test('checkpoint descriptors are detached from mutable pending arrays', () => {
+ 
+   assert.deepEqual(pending.events[0]?.nextValue, { value: 'New' });
+ });
++
++test('continuous editor can retain immutable event values until checkpoint', () => {
++  const previous = { sections: ['old'] };
++  const next = { sections: ['new'] };
++  const pending = stagePendingChanges(null, {
++    baseRevisionId: 'revision-1',
++    summary: 'Edited manuscript study',
++    cloneEventValues: false,
++    events: [
++      {
++        operation: 'section.replace' as never,
++        targetId: 'manuscript-1',
++        path: '/sections',
++        previousValue: previous,
++        nextValue: next,
++      },
++    ],
++  });
++
++  assert.equal(pending.events[0]?.nextValue, next);
++
++  const descriptor = createCheckpointDescriptor(pending);
++  assert.notEqual(descriptor.events[0]?.nextValue, next);
++  assert.deepEqual(descriptor.events[0]?.nextValue, next);
++});
+-- 
+2.51.1
+
