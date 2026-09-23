@@ -227,41 +227,53 @@ export async function assignNativeEditorialReviewer(
     );
   }
 
+  const normalizedReviewerEmail = reviewerEmail.trim().toLowerCase();
+  if (submission.author.email.toLowerCase() === normalizedReviewerEmail) {
+    throw conflict('The submitting author cannot review their own manuscript.');
+  }
+  const reviewSnapshot = sanitizeReviewManuscript(submission.reviewSnapshot);
   const review = await createReviewAssignment(editorUserId, {
     workspaceId: submission.workspaceId,
     manuscriptId: submission.manuscriptId,
-    reviewerEmail,
+    reviewerEmail: normalizedReviewerEmail,
     reviewRound: submission.reviewRound,
     assignmentType: 'SCIENTIFIC_REVIEW',
     anonymityMode: 'DOUBLE_BLIND',
   });
-  await setReviewManuscript(
-    editorUserId,
-    review.id,
-    submission.reviewSnapshot,
-  );
-  const updated = await prisma.$transaction(async (transaction) => {
-    const next = await transaction.nativeEditorialSubmission.update({
-      where: { id: submission.id },
-      data: { status: 'IN_REVIEW' },
+  try {
+    await setReviewManuscript(
+      editorUserId,
+      review.id,
+      reviewSnapshot,
+    );
+    const updated = await prisma.$transaction(async (transaction) => {
+      const next = await transaction.nativeEditorialSubmission.update({
+        where: { id: submission.id },
+        data: { status: 'IN_REVIEW' },
+      });
+      await transaction.nativeEditorialSubmissionEvent.create({
+        data: {
+          submissionId: submission.id,
+          actorUserId: editorUserId,
+          type: 'REVIEWER_ASSIGNED',
+          reviewRound: submission.reviewRound,
+          revisionId: submission.revisionId,
+          stateDigest: submission.stateDigest,
+          note: review.reviewerAlias,
+        },
+      });
+      return next;
     });
-    await transaction.nativeEditorialSubmissionEvent.create({
-      data: {
-        submissionId: submission.id,
-        actorUserId: editorUserId,
-        type: 'REVIEWER_ASSIGNED',
-        reviewRound: submission.reviewRound,
-        revisionId: submission.revisionId,
-        stateDigest: submission.stateDigest,
-        note: review.reviewerAlias,
-      },
-    });
-    return next;
-  });
-  return {
-    submission: serializeSubmissionSummary(updated),
-    review,
-  };
+    return {
+      submission: serializeSubmissionSummary(updated),
+      review,
+    };
+  } catch (error) {
+    await prisma.peerReviewAssignment.delete({
+      where: { id: review.id },
+    }).catch(() => undefined);
+    throw error;
+  }
 }
 
 export async function completeNativeEditorialReview(
