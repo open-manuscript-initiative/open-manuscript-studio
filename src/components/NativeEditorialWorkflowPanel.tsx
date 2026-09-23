@@ -50,7 +50,28 @@ export function NativeEditorialWorkflowPanel() {
   const currentSubmission = mine[0] ?? null;
 
   useEffect(() => {
-    void refresh();
+    let cancelled = false;
+    setError('');
+    void Promise.all([
+      listMyNativeEditorialSubmissions(manuscript.id),
+      listNativeEditorialInbox(),
+    ])
+      .then(([nextMine, nextInbox]) => {
+        if (cancelled) return;
+        setMine(nextMine);
+        setInbox(nextInbox);
+        setSelectedId((current) =>
+          current && nextInbox.some((item) => item.id === current)
+            ? current
+            : nextInbox[0]?.id ?? '',
+        );
+      })
+      .catch((reason) => {
+        if (!cancelled) setError(errorMessage(reason));
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [manuscript.id]);
 
   useEffect(() => {
