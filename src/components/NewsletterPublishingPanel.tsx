@@ -182,6 +182,10 @@ export function NewsletterPublishingPanel() {
           revisionId: prepared.artifact.build.manuscript.revisionId,
           stateDigest: prepared.artifact.build.manuscript.stateDigest.value,
           publicationContentDigest: prepared.artifact.publicationContentDigest,
+          ...(prepared.source.metadata?.publicationVenue?.authority?.method === 'DNS_TXT' &&
+          prepared.source.metadata.publicationVenue.authority.status === 'VERIFIED'
+            ? { publicationVenueId: prepared.source.metadata.publicationVenue.id }
+            : {}),
           reviewRound: reviewRound.reviewRound,
           basisAssignmentIds: reviewRound.basisAssignmentIds,
           confirmation: OMI_EDITORIAL_ACCEPTANCE_CONFIRMATION,
@@ -320,7 +324,9 @@ export function NewsletterPublishingPanel() {
                 {' · '}{copy.assurance}:{' '}
                 <strong>
                   {prepared.artifact.assurance.reviewStatus === 'peer-reviewed'
-                    ? copy.peerReviewed
+                    ? prepared.artifact.assurance.evidence.authority
+                      ? copy.publisherVerified
+                      : copy.peerReviewed
                     : copy.notPeerReviewed}
                 </strong>
               </p>
@@ -338,7 +344,10 @@ export function NewsletterPublishingPanel() {
                   <option value="not-peer-reviewed">{copy.notPeerReviewed}</option>
                   {assuranceEvidence.decisions.map((decision) => (
                     <option value={decision.decisionId} key={decision.decisionId}>
-                      {copy.peerReviewed} · {copy.round} {decision.reviewRound} ·{' '}
+                      {decision.authority
+                        ? `${copy.publisherVerified} · ${decision.authority.venueName}`
+                        : copy.peerReviewed}
+                      {' · '}{copy.round} {decision.reviewRound} ·{' '}
                       {new Date(decision.decidedAt).toLocaleDateString(locale)}
                     </option>
                   ))}
@@ -475,10 +484,11 @@ function getCopy(locale: string) {
       assurance: 'Közzétételi minősítés',
       notPeerReviewed: 'nem szaklektorált',
       peerReviewed: 'szaklektorált — Studio által igazolt',
+      publisherVerified: 'szaklektorált — hitelesített folyóirati döntés',
       round: 'forduló',
       noVerifiedReview: 'Ehhez a pontos revízióhoz nincs Studio által igazolt szerkesztői elfogadó döntés. A publikáció csak „nem szaklektorált” jelöléssel küldhető.',
       editorialAcceptanceTitle: 'Studio-lektorálás lezárása',
-      editorialAcceptanceHelp: 'A teljes Studio-natív tudományos lektori forduló elkészült. A „lektorált” pecséthez egy szerkesztőnek külön el kell fogadnia ezt a pontos, rögzített revíziót.',
+      editorialAcceptanceHelp: 'A teljes Studio-natív tudományos lektori forduló elkészült. A „lektorált” pecséthez egy szerkesztőnek külön el kell fogadnia ezt a pontos, rögzített revíziót. DNS-sel hitelesített folyóirat esetén csak az adott folyóirat aktív szerkesztője rögzíthet hitelesített folyóirati döntést.',
       reviewRound: 'Lektori forduló',
       completedReviews: 'lezárt tudományos lektori vélemény',
       editorialAcceptanceConfirmation: 'Szerkesztőként ellenőriztem a lezárt lektori fordulót, és ezt a pontos revíziót publikálásra elfogadom.',
@@ -518,10 +528,11 @@ function getCopy(locale: string) {
       assurance: 'Veröffentlichungseinstufung',
       notPeerReviewed: 'nicht wissenschaftlich begutachtet',
       peerReviewed: 'begutachtet — durch Studio verifiziert',
+      publisherVerified: 'begutachtet — durch verifizierte Publikationsstelle bestätigt',
       round: 'Runde',
       noVerifiedReview: 'Für diese genaue Revision liegt keine durch Studio verifizierte redaktionelle Annahmeentscheidung vor. Sie kann nur als „nicht begutachtet“ versendet werden.',
       editorialAcceptanceTitle: 'Studio-Begutachtung abschließen',
-      editorialAcceptanceHelp: 'Die vollständige Studio-interne wissenschaftliche Begutachtungsrunde ist abgeschlossen. Für das Begutachtungssiegel muss eine Redakteurin oder ein Redakteur diese genaue Revision ausdrücklich annehmen.',
+      editorialAcceptanceHelp: 'Die vollständige Studio-interne wissenschaftliche Begutachtungsrunde ist abgeschlossen. Für das Begutachtungssiegel muss eine Redakteurin oder ein Redakteur diese genaue Revision ausdrücklich annehmen. Bei einer per DNS verifizierten Publikationsstelle kann nur eine aktive Redakteurin oder ein aktiver Redakteur dieser Stelle eine verifizierte Entscheidung erfassen.',
       reviewRound: 'Begutachtungsrunde',
       completedReviews: 'abgeschlossene wissenschaftliche Gutachten',
       editorialAcceptanceConfirmation: 'Ich habe als Redakteurin oder Redakteur die abgeschlossene Begutachtungsrunde geprüft und nehme diese genaue Revision zur Veröffentlichung an.',
@@ -560,10 +571,11 @@ function getCopy(locale: string) {
     assurance: 'Publication assurance',
     notPeerReviewed: 'not peer reviewed',
     peerReviewed: 'peer reviewed — Studio verified',
+    publisherVerified: 'peer reviewed — verified publication venue decision',
     round: 'round',
     noVerifiedReview: 'No Studio-verified editorial acceptance exists for this exact revision. It can be sent only with a “not peer reviewed” disclosure.',
     editorialAcceptanceTitle: 'Complete Studio peer review',
-    editorialAcceptanceHelp: 'A complete Studio-native scientific review round is available. An editor must separately accept this exact committed revision before it may carry the peer-reviewed seal.',
+    editorialAcceptanceHelp: 'A complete Studio-native scientific review round is available. An editor must separately accept this exact committed revision before it may carry the peer-reviewed seal. For a DNS-verified publication venue, only an active editor of that venue can record a publisher-verified decision.',
     reviewRound: 'Review round',
     completedReviews: 'completed scientific reviews',
     editorialAcceptanceConfirmation: 'As an editor, I reviewed the completed review round and accept this exact revision for publication.',
