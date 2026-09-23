@@ -344,7 +344,28 @@ function EditorSubmission(props: {
   const { submission, reviews } = detail;
   const terminal = ['accepted', 'rejected', 'published'].includes(submission.status);
   const assignable = ['submitted', 'revision_submitted', 'in_review'].includes(submission.status);
-  const hasCompleted = reviews.some((review) => review.assignmentType === 'scientific_review' && review.status === 'completed');
+  const completedScientificReviews = reviews.filter(
+    (review) =>
+      review.assignmentType === 'scientific_review' &&
+      review.status === 'completed',
+  );
+  const currentRoundScientificReviews = reviews.filter(
+    (review) =>
+      review.assignmentType === 'scientific_review' &&
+      review.reviewRound === submission.reviewRound,
+  );
+  const currentRoundCompleted =
+    currentRoundScientificReviews.length > 0 &&
+    currentRoundScientificReviews.every((review) => review.status === 'completed');
+  const canRequestRevision =
+    submission.status === 'in_review' &&
+    currentRoundCompleted;
+  const canAccept =
+    submission.status === 'in_review'
+      ? currentRoundCompleted
+      : submission.status === 'revision_submitted'
+        ? completedScientificReviews.length > 0
+        : false;
 
   return (
     <div className="publication-profile-options">
@@ -385,10 +406,10 @@ function EditorSubmission(props: {
         <div className="publication-profile-options">
           <label><span>{copy.editorialMessage}</span><textarea value={props.editorialNote} onChange={(event) => props.setEditorialNote(event.target.value)} /></label>
           <div className="publication-profile-actions">
-            <button type="button" className="studio-menu-secondary-action" disabled={busy || !hasCompleted || !props.editorialNote.trim()} onClick={() => void props.onRevision()}>
+            <button type="button" className="studio-menu-secondary-action" disabled={busy || !canRequestRevision || !props.editorialNote.trim()} onClick={() => void props.onRevision()}>
               <RotateCcw size={16} aria-hidden="true" />{copy.requestRevision}
             </button>
-            <button type="button" className="studio-menu-primary-action" disabled={busy || !hasCompleted} onClick={() => void props.onAccept()}>
+            <button type="button" className="studio-menu-primary-action" disabled={busy || !canAccept} onClick={() => void props.onAccept()}>
               <CheckCircle2 size={16} aria-hidden="true" />{copy.accept}
             </button>
             <button type="button" className="studio-menu-secondary-action studio-menu-danger-action" disabled={busy} onClick={() => void props.onReject()}>
