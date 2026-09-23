@@ -98,3 +98,11 @@ npm run prisma:migrate:deploy
 - 20260923072000_bind_editorial_decisions_to_verified_venues
 
 Ezután a szerveralkalmazást újra kell indítani a frissen generált Prisma kliensekkel.
+
+## Studio-native szerkesztőségi workflow
+
+DNS-hitelesített, OJS/OMP nélküli publikációs helynél a Studio a teljes szerkesztőségi folyamatot is kezelheti: szerzői beküldés, szerkesztői inbox, lektor kijelölése, lektori fordulók, javítás kérése, új revízió beküldése, külön szerkesztői elfogadás és végül publikálás.
+
+A szerkesztői `ACCEPT` döntés **nem azonos a publikálással**. Először az exact revízióhoz kötött `EditorialDecision` jön létre; a publikációs réteg ezt később csak felhasználja.
+
+Részletesen: [Studio-native submission and editorial workflow](./studio-native-editorial-workflow.md).
