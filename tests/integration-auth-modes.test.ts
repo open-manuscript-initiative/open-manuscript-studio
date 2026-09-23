@@ -25,6 +25,14 @@ const editorialDecisionService = readFileSync(
   new URL('../server/src/services/editorialDecisionService.ts', import.meta.url),
   'utf8',
 );
+const publicationVenueAuthorityService = readFileSync(
+  new URL('../server/src/services/publicationVenueAuthorityService.ts', import.meta.url),
+  'utf8',
+);
+const identitySchema = readFileSync(
+  new URL('../server/prisma/identity/schema.prisma', import.meta.url),
+  'utf8',
+);
 const webPublishingSettings = readFileSync(
   new URL('../src/components/WebPublishingSettings.tsx', import.meta.url),
   'utf8',
@@ -155,6 +163,14 @@ test('website publication binds assurance to a committed artifact and keeps idem
   assert.match(editorialDecisionService, /externalInstallationId === null/);
   assert.match(editorialDecisionService, /manuscriptSnapshot !== null/);
   assert.match(editorialDecisionService, /sourceSnapshotDigest/);
+  assert.match(editorialDecisionService, /authoritySnapshot/);
+  assert.match(editorialDecisionService, /publicationVenueId/);
+  assert.match(publicationVenueAuthorityService, /resolveTxt/);
+  assert.match(publicationVenueAuthorityService, /DOMAIN_ADMIN/);
+  assert.match(publicationVenueAuthorityService, /EDITOR_IN_CHIEF/);
+  assert.match(publicationVenueAuthorityService, /DNS_TXT/);
+  assert.match(identitySchema, /model PublicationVenueDomainVerification \{/);
+  assert.match(identitySchema, /model PublicationVenueMembership \{/);
   assert.match(serverSchema, /model WebPublication \{/);
   assert.match(serverSchema, /model WebPublicationDelivery \{/);
   assert.match(serverSchema, /model WebPublicationApprovalGrant \{/);
