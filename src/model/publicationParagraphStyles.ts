@@ -15,6 +15,54 @@ export type PublicationParagraphStart =
   | 'next-even-page';
 export type PublicationSpanColumnMode = 'single' | 'span' | 'split';
 export type PublicationListType = 'none' | 'bullets' | 'numbers';
+export type PublicationKerningMode = 'metrics' | 'optical' | 'manual';
+export type PublicationCharacterPosition =
+  | 'normal'
+  | 'superscript'
+  | 'subscript'
+  | 'superior'
+  | 'inferior';
+export type PublicationWidthMode = 'column' | 'text';
+export type PublicationStrokeCap = 'butt' | 'round' | 'projecting';
+export type PublicationStrokeJoin = 'miter' | 'round' | 'bevel';
+export type PublicationBaselineGridAlignment =
+  | 'none'
+  | 'all-lines'
+  | 'first-line'
+  | 'last-line';
+export type PublicationComposer =
+  | 'adobe-paragraph'
+  | 'adobe-single-line'
+  | 'world-ready-paragraph'
+  | 'world-ready-single-line';
+export type PublicationFigureStyle =
+  | 'default'
+  | 'lining-proportional'
+  | 'lining-tabular'
+  | 'oldstyle-proportional'
+  | 'oldstyle-tabular';
+export type PublicationPositionalForm =
+  | 'general'
+  | 'initial'
+  | 'medial'
+  | 'final'
+  | 'isolated';
+export type PublicationEdgeReference =
+  | 'paragraph'
+  | 'text'
+  | 'cap-height'
+  | 'x-height'
+  | 'baseline'
+  | 'leading'
+  | 'ascent'
+  | 'descent';
+export type PublicationCornerShape =
+  | 'square'
+  | 'rounded'
+  | 'bevel'
+  | 'inset'
+  | 'inverse-rounded';
+export type PublicationIdmlPrimitive = string | number | boolean;
 
 export interface PublicationParagraphTabStop {
   positionMm: number;
@@ -27,35 +75,81 @@ export interface PublicationParagraphRule {
   enabled?: boolean;
   widthPt?: number;
   style?: PublicationRuleStyle;
+  strokeName?: string;
   color?: string;
   tint?: number;
+  overprint?: boolean;
+  gapColor?: string;
+  gapTint?: number;
+  gapOverprint?: boolean;
+  widthMode?: PublicationWidthMode;
   offsetPt?: number;
   leftIndentMm?: number;
   rightIndentMm?: number;
-  overprint?: boolean;
+  keepInFrame?: boolean;
+}
+
+export interface PublicationEdgeWidths {
+  topPt?: number;
+  rightPt?: number;
+  bottomPt?: number;
+  leftPt?: number;
+}
+
+export interface PublicationCorner {
+  radiusMm?: number;
+  shape?: PublicationCornerShape;
+}
+
+export interface PublicationCorners {
+  topLeft?: PublicationCorner;
+  topRight?: PublicationCorner;
+  bottomRight?: PublicationCorner;
+  bottomLeft?: PublicationCorner;
+}
+
+export interface PublicationOffsets {
+  topMm?: number;
+  rightMm?: number;
+  bottomMm?: number;
+  leftMm?: number;
 }
 
 export interface PublicationParagraphBorder {
   enabled?: boolean;
   widthPt?: number;
+  widths?: PublicationEdgeWidths;
   style?: PublicationRuleStyle;
+  strokeName?: string;
   color?: string;
   tint?: number;
-  radiusMm?: number;
-  topOffsetMm?: number;
-  rightOffsetMm?: number;
-  bottomOffsetMm?: number;
-  leftOffsetMm?: number;
+  overprint?: boolean;
+  gapColor?: string;
+  gapTint?: number;
+  gapOverprint?: boolean;
+  cap?: PublicationStrokeCap;
+  join?: PublicationStrokeJoin;
+  corners?: PublicationCorners;
+  offsets?: PublicationOffsets;
+  topEdgeReference?: PublicationEdgeReference;
+  bottomEdgeReference?: PublicationEdgeReference;
+  widthMode?: PublicationWidthMode;
+  displayAcrossFrames?: boolean;
+  mergeConsecutive?: boolean;
 }
 
 export interface PublicationParagraphShading {
   enabled?: boolean;
   color?: string;
   tint?: number;
-  topOffsetMm?: number;
-  rightOffsetMm?: number;
-  bottomOffsetMm?: number;
-  leftOffsetMm?: number;
+  overprint?: boolean;
+  corners?: PublicationCorners;
+  offsets?: PublicationOffsets;
+  topEdgeReference?: PublicationEdgeReference;
+  bottomEdgeReference?: PublicationEdgeReference;
+  widthMode?: PublicationWidthMode;
+  clipToFrame?: boolean;
+  suppressInExport?: boolean;
 }
 
 export interface PublicationHyphenationSettings {
@@ -67,6 +161,7 @@ export interface PublicationHyphenationSettings {
   hyphenateCapitalizedWords?: boolean;
   hyphenateLastWord?: boolean;
   hyphenateAcrossColumns?: boolean;
+  preference?: number;
 }
 
 export interface PublicationParagraphJustification {
@@ -80,6 +175,8 @@ export interface PublicationParagraphJustification {
   glyphScalingDesired?: number;
   glyphScalingMaximum?: number;
   singleWordAlignment?: PublicationParagraphAlignment;
+  autoLeadingPercent?: number;
+  composer?: PublicationComposer;
 }
 
 export interface PublicationSpanColumns {
@@ -93,6 +190,8 @@ export interface PublicationDropCaps {
   lines?: number;
   characters?: number;
   characterStyleId?: string;
+  alignLeftEdge?: boolean;
+  scaleForDescenders?: boolean;
 }
 
 export interface PublicationNestedStyleRule {
@@ -101,6 +200,12 @@ export interface PublicationNestedStyleRule {
   repeat?: number;
   through?: boolean;
   delimiter?: string;
+}
+
+export interface PublicationNestedLineStyleRule {
+  id: string;
+  characterStyleId: string;
+  lines: number;
 }
 
 export interface PublicationGrepStyleRule {
@@ -122,32 +227,57 @@ export interface PublicationBulletsAndNumbering {
   firstLineIndentMm?: number;
   tabPositionMm?: number;
   characterStyleId?: string;
+  alignment?: PublicationParagraphAlignment;
 }
 
 export interface PublicationOpenTypeSettings {
   ligatures?: boolean;
+  titlingAlternates?: boolean;
+  swash?: boolean;
   discretionaryLigatures?: boolean;
   contextualAlternates?: boolean;
   fractions?: boolean;
   ordinals?: boolean;
   slashedZero?: boolean;
+  figureStyle?: PublicationFigureStyle;
+  positionalForm?: PublicationPositionalForm;
   stylisticSet?: number;
+  stylisticSets?: number[];
 }
 
 export interface PublicationTextDecoration {
   enabled?: boolean;
-  color?: string;
-  tint?: number;
   weightPt?: number;
   offsetPt?: number;
+  style?: PublicationRuleStyle;
+  strokeName?: string;
+  color?: string;
+  tint?: number;
+  overprint?: boolean;
+  gapColor?: string;
+  gapTint?: number;
+  gapOverprint?: boolean;
+}
+
+export interface PublicationCharacterStroke {
+  widthPt?: number;
+  color?: string;
+  tint?: number;
+  overprint?: boolean;
+  miterLimit?: number;
+  alignment?: 'center' | 'inside' | 'outside';
 }
 
 export interface PublicationExportTagging {
   htmlTag?: string;
   epubTag?: string;
+  ariaRole?: string;
+  applyHtmlClass?: boolean;
   cssClass?: string;
+  emitCss?: boolean;
   splitDocument?: boolean;
   emitTag?: boolean;
+  pdfTag?: string;
 }
 
 export interface PublicationParagraphStyleProperties {
@@ -160,6 +290,9 @@ export interface PublicationParagraphStyleProperties {
   capitalization?: PublicationParagraphCapitalization;
   tracking?: number;
   kerning?: number;
+  kerningMode?: PublicationKerningMode;
+  position?: PublicationCharacterPosition;
+  noBreak?: boolean;
   horizontalScale?: number;
   verticalScale?: number;
   baselineShift?: number;
@@ -167,6 +300,8 @@ export interface PublicationParagraphStyleProperties {
   language?: string;
   fillColor?: string;
   fillTint?: number;
+  fillOverprint?: boolean;
+  characterStroke?: PublicationCharacterStroke;
 
   // Paragraph geometry.
   alignment?: PublicationParagraphAlignment;
@@ -176,6 +311,10 @@ export interface PublicationParagraphStyleProperties {
   lastLineIndent?: number;
   spaceBefore?: number;
   spaceAfter?: number;
+  spaceBetweenSameStyle?: number;
+  balanceRaggedLines?: boolean;
+  ignoreOpticalMargin?: boolean;
+  baselineGridAlignment?: PublicationBaselineGridAlignment;
   tabStops?: PublicationParagraphTabStop[];
 
   // Paragraph rules, border and shading.
@@ -188,7 +327,9 @@ export interface PublicationParagraphStyleProperties {
   hyphenation?: boolean;
   hyphenationSettings?: PublicationHyphenationSettings;
   keepTogether?: boolean;
+  keepWithPrevious?: boolean;
   keepWithNext?: boolean;
+  keepWithNextLines?: number;
   keepFirstLines?: number;
   keepLastLines?: number;
   startParagraph?: PublicationParagraphStart;
@@ -200,6 +341,7 @@ export interface PublicationParagraphStyleProperties {
   spanColumns?: PublicationSpanColumns;
   dropCaps?: PublicationDropCaps;
   nestedStyles?: PublicationNestedStyleRule[];
+  nestedLineStyles?: PublicationNestedLineStyleRule[];
   grepStyles?: PublicationGrepStyleRule[];
   bulletsAndNumbering?: PublicationBulletsAndNumbering;
 
@@ -219,6 +361,7 @@ export interface PublicationParagraphStyleDefinition {
   nextStyleId: string | null;
   shortcut?: string | null;
   properties: PublicationParagraphStyleProperties;
+  preservedIdml?: Record<string, PublicationIdmlPrimitive>;
 }
 
 export interface PublicationParagraphStyleCollection {
