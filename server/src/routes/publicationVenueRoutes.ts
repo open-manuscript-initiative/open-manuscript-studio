@@ -435,13 +435,11 @@ publicationVenueRouter.get(
             verifiedAt: claim.verifiedAt?.toISOString() ?? null,
             lastCheckedAt: claim.lastCheckedAt?.toISOString() ?? null,
           })),
-          currentMembership: overview.currentMembership
-            ? {
-                id: overview.currentMembership.id,
-                role: overview.currentMembership.role,
-                active: overview.currentMembership.active,
-              }
-            : null,
+          currentMemberships: overview.currentMemberships.map((membership) => ({
+            id: membership.id,
+            role: membership.role,
+            active: membership.active,
+          })),
           canManageEditors: overview.isDomainAdmin,
           members: overview.members.map((membership) => ({
             id: membership.id,
