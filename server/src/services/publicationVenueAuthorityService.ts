@@ -78,18 +78,6 @@ export async function createPublicationVenueDomainClaim(
       }
       assertWebsiteMatchesDomain(existing.website, domain);
     }
-    const activeForeignClaim = existing.domainVerifications.find(
-      (claim) =>
-        claim.domain === domain &&
-        claim.status === 'PENDING' &&
-        claim.expiresAt.getTime() > Date.now() &&
-        claim.requestedByUserId !== userId,
-    );
-    if (activeForeignClaim) {
-      throw conflict(
-        'Another account already has an active DNS verification challenge for this publication venue domain.',
-      );
-    }
   }
 
   const venue = existing ?? await identityPrisma.publicationVenue.create({
@@ -108,7 +96,13 @@ export async function createPublicationVenueDomainClaim(
   const txtValue = TXT_PREFIX + token;
   const expiresAt = new Date(Date.now() + DOMAIN_CLAIM_TTL_MS);
   const claim = await identityPrisma.publicationVenueDomainVerification.upsert({
-    where: { venueId_domain: { venueId: venue.id, domain } },
+    where: {
+      venueId_domain_requestedByUserId: {
+        venueId: venue.id,
+        domain,
+        requestedByUserId: userId,
+      },
+    },
     update: {
       txtRecordName: txtRecordName(domain),
       tokenHash: sha256(txtValue),
@@ -149,6 +143,20 @@ export async function verifyPublicationVenueDomainClaim(userId: string, claimId:
   });
   if (!claim) throw notFound('The publication-venue domain claim was not found.');
   if (claim.requestedByUserId !== userId) await requireDomainAdmin(userId, claim.venueId);
+  const competingVerifiedClaim =
+    await identityPrisma.publicationVenueDomainVerification.findFirst({
+      where: {
+        venueId: claim.venueId,
+        status: 'VERIFIED',
+        id: { not: claim.id },
+      },
+      select: { id: true, domain: true },
+    });
+  if (competingVerifiedClaim) {
+    throw conflict(
+      'This publication venue already has a verified DNS authority. A separate authority-change workflow is required.',
+    );
+  }
   if (claim.status !== 'VERIFIED' && claim.expiresAt.getTime() <= Date.now()) {
     throw conflict('The DNS verification challenge expired. Request a new challenge.');
   }
