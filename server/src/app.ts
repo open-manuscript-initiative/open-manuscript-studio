@@ -28,6 +28,7 @@ import {
   newsletterPublishingRouter,
   webPublicationV1Router,
 } from './routes/newsletterPublishingRoutes.js';
+import { nativeEditorialWorkflowRouter } from './routes/nativeEditorialWorkflowRoutes.js';
 import { ojsAssignmentRouter } from './routes/ojsAssignmentRoutes.js';
 import { ojsReviewRouter } from './routes/ojsReviewRoutes.js';
 import { ompReviewRouter } from './routes/ompReviewRoutes.js';
@@ -82,6 +83,7 @@ app.use('/integrations/omp/native/author/:contextId/revision', express.json({ li
 app.use('/api/publication/render/pdf', express.json({ limit: '64mb' }));
 app.use('/api/publication/newsletter', express.json({ limit: '12mb' }));
 app.use('/api/v1/publications/web', express.json({ limit: '12mb' }));
+app.use('/api/v1/native-submissions', express.json({ limit: '36mb' }));
 app.use('/api/publication/validate/jats', express.json({ limit: '7mb' }));
 app.use(express.json({ limit: '1mb' }));
 
@@ -122,6 +124,7 @@ app.use('/api', publishingConnectionRouter);
 app.use('/api/publication', publicationPdfRouter);
 app.use('/api/publication', newsletterPublishingRouter);
 app.use('/api/v1/publications', webPublicationV1Router);
+app.use('/api/v1/native-submissions', nativeEditorialWorkflowRouter);
 app.use('/api/publication', publicationValidationRouter);
 app.use('/api/import', pdfImportRouter);
 app.use('/api/reviews', peerReviewRouter);
