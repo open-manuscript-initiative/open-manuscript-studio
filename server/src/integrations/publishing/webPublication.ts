@@ -41,11 +41,24 @@ export interface UnreviewedWebPublicationAssurance
   approvalAuthority: 'authenticated-account-holder';
 }
 
+export interface VerifiedPublicationVenueAuthority {
+  type: 'verified-publication-venue';
+  venueId: string;
+  venueName: string;
+  venueType: 'JOURNAL' | 'BOOK_PUBLISHER';
+  domain: string;
+  verificationMethod: 'DNS_TXT';
+  verificationId: string;
+  verifiedAt: string;
+  editorRole: 'EDITOR' | 'EDITOR_IN_CHIEF';
+}
+
 export interface EditorialDecisionEvidence {
   type: 'studio-editorial-decision';
   decisionId: string;
   evidenceDigest: string;
   publicationContentDigest: string;
+  authority?: VerifiedPublicationVenueAuthority;
   reviewRound: number;
   decidedAt: string;
 }
@@ -349,6 +362,12 @@ export async function issueWebPublicationApproval(
         ? {
             editorialDecisionId: input.assurance.evidence.decisionId,
             editorialEvidenceDigest: input.assurance.evidence.evidenceDigest,
+            ...(input.assurance.evidence.authority
+              ? {
+                  publicationVenueId: input.assurance.evidence.authority.venueId,
+                  publicationVenueDomain: input.assurance.evidence.authority.domain,
+                }
+              : {}),
           }
         : {}),
       targetStatus: input.status,
@@ -575,7 +594,15 @@ export async function executeWebPublicationDelivery(
         intent: delivery.intent,
         reviewStatus: storedAssurance.reviewStatus,
         ...(storedAssurance.reviewStatus === 'peer-reviewed'
-          ? { editorialDecisionId: storedAssurance.evidence.decisionId }
+          ? {
+              editorialDecisionId: storedAssurance.evidence.decisionId,
+              ...(storedAssurance.evidence.authority
+                ? {
+                    publicationVenueId: storedAssurance.evidence.authority.venueId,
+                    publicationVenueDomain: storedAssurance.evidence.authority.domain,
+                  }
+                : {}),
+            }
           : {}),
         targetStatus: delivery.targetStatus.toLowerCase(),
         externalId: result.externalId,
@@ -619,7 +646,15 @@ export async function executeWebPublicationDelivery(
         idempotencyKey: delivery.idempotencyKey,
         reviewStatus: storedAssurance.reviewStatus,
         ...(storedAssurance.reviewStatus === 'peer-reviewed'
-          ? { editorialDecisionId: storedAssurance.evidence.decisionId }
+          ? {
+              editorialDecisionId: storedAssurance.evidence.decisionId,
+              ...(storedAssurance.evidence.authority
+                ? {
+                    publicationVenueId: storedAssurance.evidence.authority.venueId,
+                    publicationVenueDomain: storedAssurance.evidence.authority.domain,
+                  }
+                : {}),
+            }
           : {}),
         deliveryState: state.toLowerCase(),
         error: message,
@@ -753,6 +788,24 @@ function validatePublicationHtml(
     ) {
       throw invalidArtifact('The peer-review seal does not match its editorial-decision evidence.');
     }
+    const authority = input.assurance.evidence.authority;
+    if (authority) {
+      if (
+        metaContent(html, 'omi-publication-authority') !== 'verified-publication-venue' ||
+        metaContent(html, 'omi-publication-venue-id') !== authority.venueId ||
+        metaContent(html, 'omi-publication-venue-domain') !== authority.domain ||
+        metaContent(html, 'omi-publication-venue-verification') !== 'dns-txt'
+      ) {
+        throw invalidArtifact('The verified publication-venue authority metadata does not match the editorial decision.');
+      }
+    } else if (
+      metaContent(html, 'omi-publication-authority') !== undefined ||
+      metaContent(html, 'omi-publication-venue-id') !== undefined ||
+      metaContent(html, 'omi-publication-venue-domain') !== undefined ||
+      metaContent(html, 'omi-publication-venue-verification') !== undefined
+    ) {
+      throw invalidArtifact('The artifact may not claim verified publication-venue authority without server evidence.');
+    }
   } else if (
     metaContent(html, 'omi-editorial-decision-id') !== undefined ||
     metaContent(html, 'omi-editorial-evidence-sha256') !== undefined
@@ -829,7 +882,9 @@ async function verifyReviewedAssurance(
   }
   if (
     verified.reviewRound !== assurance.evidence.reviewRound ||
-    verified.decidedAt !== assurance.evidence.decidedAt
+    verified.decidedAt !== assurance.evidence.decidedAt ||
+    canonicalJson(verified.authority ?? null) !==
+      canonicalJson(assurance.evidence.authority ?? null)
   ) {
     throw new WebPublicationServiceError(
       'WEB_PUBLICATION_ASSURANCE_INVALID',
@@ -846,8 +901,30 @@ function validEditorialEvidence(value: unknown): value is EditorialDecisionEvide
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(evidence.decisionId) &&
     isSha256(evidence.evidenceDigest) &&
     isSha256(evidence.publicationContentDigest) &&
+    (evidence.authority === undefined ||
+      validPublicationVenueAuthority(evidence.authority)) &&
     Number.isInteger(evidence.reviewRound) && Number(evidence.reviewRound) > 0 &&
     isIsoDate(evidence.decidedAt);
+}
+
+function validPublicationVenueAuthority(
+  value: unknown,
+): value is VerifiedPublicationVenueAuthority {
+  const authority = record(value);
+  return authority.type === 'verified-publication-venue' &&
+    typeof authority.venueId === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(authority.venueId) &&
+    typeof authority.venueName === 'string' &&
+    authority.venueName.trim().length > 0 &&
+    authority.venueName.length <= 300 &&
+    (authority.venueType === 'JOURNAL' || authority.venueType === 'BOOK_PUBLISHER') &&
+    typeof authority.domain === 'string' &&
+    /^[a-z0-9](?:[a-z0-9.-]{1,251}[a-z0-9])$/i.test(authority.domain) &&
+    authority.verificationMethod === 'DNS_TXT' &&
+    typeof authority.verificationId === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(authority.verificationId) &&
+    isIsoDate(authority.verifiedAt) &&
+    (authority.editorRole === 'EDITOR' || authority.editorRole === 'EDITOR_IN_CHIEF');
 }
 
 function hasVisibleAssuranceDisclosure(
@@ -900,7 +977,16 @@ function hasVisibleAssuranceDisclosure(
     !hiddenStyle.test(sealStyle) &&
     (seal[1] ?? '').replace(/\s+/g, ' ').trim() === expectedSeal &&
     (assurance.reviewStatus === 'not-peer-reviewed' ||
-      attribute(opening, 'data-omi-editorial-decision-id') === assurance.evidence.decisionId);
+      (
+        attribute(opening, 'data-omi-editorial-decision-id') === assurance.evidence.decisionId &&
+        (
+          !assurance.evidence.authority ||
+          (
+            attribute(opening, 'data-omi-publication-venue-id') === assurance.evidence.authority.venueId &&
+            attribute(opening, 'data-omi-publication-venue-domain') === assurance.evidence.authority.domain
+          )
+        )
+      ));
 }
 
 function digestPublicationArticle(html: string): string {
