@@ -58,7 +58,7 @@ export interface EditorialDecisionEvidence {
   decisionId: string;
   evidenceDigest: string;
   publicationContentDigest: string;
-  authority?: VerifiedPublicationVenueAuthority;
+  authority?: VerifiedPublicationVenueAuthority | undefined;
   reviewRound: number;
   decidedAt: string;
 }
