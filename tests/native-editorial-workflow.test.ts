@@ -72,6 +72,8 @@ test('native reviewer assignment reuses the blind review engine with an assigned
   assert.match(service, /setReviewManuscript/);
   assert.match(service, /authorIdentity: 'hidden'/);
   assert.match(service, /toAnonymousReviewSnapshot/);
+  assert.match(service, /submission\.status === 'REVISION_SUBMITTED'/);
+  assert.match(service, /submission\.reviewRound \+ 1/);
 });
 
 test('editorial acceptance is a separate exact-revision decision before publishing', () => {
@@ -92,6 +94,9 @@ test('author revision and editor inbox are both surfaced in the Studio-native UI
   assert.match(editorInbox, /assignNativeReviewer/);
   assert.match(editorInbox, /requestNativeRevision/);
   assert.match(editorInbox, /rejectNativeSubmission/);
+  assert.match(editorInbox, /markNativeSubmissionPublished/);
+  assert.match(service, /markNativeSubmissionPublished/);
+  assert.match(service, /requireAssignedEditor\(editorUserId, submissionId\)/);
   assert.match(reviewPortal, /NativeEditorialInbox/);
 });
 
