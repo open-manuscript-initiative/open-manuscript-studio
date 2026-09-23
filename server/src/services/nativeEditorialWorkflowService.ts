@@ -40,6 +40,12 @@ export async function createNativeSubmission(
 ) {
   assertDigest(input.stateDigest);
   assertSnapshot(input.manuscriptSnapshot);
+  assertSnapshotBinding(
+    input.manuscriptSnapshot,
+    input.manuscriptId,
+    input.revisionId,
+    input.stateDigest,
+  );
   await assertVerifiedNativePublicationVenue(input.publicationVenueId);
 
   const workspaceId = randomUUID();
@@ -324,6 +330,12 @@ export async function submitNativeRevision(
     include: submissionInclude,
   });
   if (!submission) throw notFound();
+  assertSnapshotBinding(
+    input.manuscriptSnapshot,
+    submission.manuscriptId,
+    input.revisionId,
+    input.stateDigest,
+  );
   if (submission.status !== 'REVISION_REQUESTED') {
     throw conflict('A revised manuscript can be submitted only after an editor requested revision.');
   }
@@ -636,6 +648,38 @@ function asRecord(value: unknown): Record<string, unknown> {
 
 function textValue(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function assertSnapshotBinding(
+  value: unknown,
+  manuscriptId: string,
+  revisionId: string,
+  stateDigest: string,
+): void {
+  const manuscript = asRecord(value);
+  if (textValue(manuscript.id) !== manuscriptId.trim()) {
+    throw conflict('The submitted snapshot belongs to a different manuscript.');
+  }
+  if (textValue(manuscript.headRevisionId) !== revisionId.trim()) {
+    throw conflict('The submitted snapshot head does not match the submitted revision.');
+  }
+  const revisionHistory = asRecord(manuscript.revisionHistory);
+  const revisions = Array.isArray(revisionHistory.revisions)
+    ? revisionHistory.revisions
+    : [];
+  const head = revisions
+    .map(asRecord)
+    .find((revision) => textValue(revision.id) === revisionId.trim());
+  if (!head) {
+    throw conflict('The submitted revision is missing from the manuscript revision history.');
+  }
+  const digest = asRecord(head.stateDigest);
+  if (
+    digest.algorithm !== 'sha256' ||
+    textValue(digest.value).toLowerCase() !== stateDigest.toLowerCase()
+  ) {
+    throw conflict('The submitted manuscript-state digest does not match the head revision evidence.');
+  }
 }
 
 function assertDigest(value: string): void {
