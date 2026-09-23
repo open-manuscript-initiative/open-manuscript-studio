@@ -105,6 +105,12 @@ test('new review round cannot be bypassed by older completed evidence', () => {
     service,
     /A revision can be requested only after the current review round has been completed/,
   );
+  assert.match(panel, /currentRoundScientificReviews/);
+  assert.match(panel, /currentRoundCompleted/);
+  assert.match(panel, /submission\.status === 'in_review'/);
+  assert.match(panel, /submission\.status === 'revision_submitted'/);
+  assert.match(panel, /disabled=\{busy \|\| !canRequestRevision/);
+  assert.match(panel, /disabled=\{busy \|\| !canAccept\}/);
 });
 
 test('submission assets are self-contained and checksum verified', () => {
