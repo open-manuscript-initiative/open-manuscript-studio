@@ -10,6 +10,10 @@ import {
   submitNativeRevision,
   type NativeSubmission,
 } from '../services/nativeEditorialWorkflowApi';
+import {
+  listAuthorReviews,
+  type ReviewerAssignment,
+} from '../services/peerReviewApi';
 
 const COPY = {
   en: {
@@ -26,6 +30,9 @@ const COPY = {
     submitted: 'The exact committed manuscript revision was submitted to the publication venue.',
     revised: 'The revised committed manuscript was returned to the editor.',
     openEditorial: 'Open editorial workspace',
+    reviews: 'Review feedback',
+    recommendation: 'Recommendation',
+    noReviews: 'No author-visible review feedback is available yet.',
   },
   hu: {
     title: 'Beküldés hitelesített folyóirathoz / kiadóhoz',
@@ -41,6 +48,9 @@ const COPY = {
     submitted: 'A pontos, rögzített kéziratrevíziót a Studio beküldte a publikációs helyhez.',
     revised: 'A javított, rögzített kéziratrevízió visszakerült a szerkesztőhöz.',
     openEditorial: 'Szerkesztőségi munkatér megnyitása',
+    reviews: 'Lektori visszajelzés',
+    recommendation: 'Javaslat',
+    noReviews: 'Még nincs a szerző számára látható lektori visszajelzés.',
   },
   de: {
     title: 'Bei verifizierter Publikationsstelle einreichen',
@@ -56,6 +66,9 @@ const COPY = {
     submitted: 'Die exakte festgeschriebene Manuskriptrevision wurde eingereicht.',
     revised: 'Die überarbeitete festgeschriebene Revision wurde an die Redaktion zurückgesendet.',
     openEditorial: 'Redaktionellen Arbeitsbereich öffnen',
+    reviews: 'Gutachterliche Rückmeldung',
+    recommendation: 'Empfehlung',
+    noReviews: 'Noch keine für die Autorin/den Autor sichtbare Rückmeldung verfügbar.',
   },
 } as const;
 
@@ -65,6 +78,7 @@ export function NativeSubmissionPanel() {
   const manuscript = useStudioStore((state) => state.manuscript);
   const venue = manuscript.metadata?.publicationVenue;
   const [submission, setSubmission] = useState<NativeSubmission | null>(null);
+  const [authorReviews, setAuthorReviews] = useState<ReviewerAssignment[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -81,14 +95,19 @@ export function NativeSubmissionPanel() {
     setError('');
     if (!venue?.id || !dnsNative) return;
     void listMyNativeSubmissions()
-      .then((items) => {
+      .then(async (items) => {
         if (!active) return;
-        setSubmission(
-          items.find((item) =>
-            item.manuscriptId === manuscript.id &&
-            item.publicationVenueId === venue.id
-          ) ?? null,
-        );
+        const nextSubmission = items.find((item) =>
+          item.manuscriptId === manuscript.id &&
+          item.publicationVenueId === venue.id
+        ) ?? null;
+        setSubmission(nextSubmission);
+        if (nextSubmission) {
+          const reviews = await listAuthorReviews(nextSubmission.workspaceId);
+          if (active) setAuthorReviews(reviews);
+        } else {
+          setAuthorReviews([]);
+        }
       })
       .catch((reason) => {
         if (active) setError(reason instanceof Error ? reason.message : String(reason));
@@ -164,6 +183,24 @@ export function NativeSubmissionPanel() {
               {submission.latestEditorialNote ? (
                 <p><strong>{copy.note}:</strong> {submission.latestEditorialNote}</p>
               ) : null}
+              <div>
+                <strong>{copy.reviews}</strong>
+                {authorReviews.length ? (
+                  <ul>
+                    {authorReviews.map((review) => (
+                      <li key={review.id}>
+                        <strong>{review.reviewerAlias}</strong>
+                        {review.recommendation
+                          ? ` · ${copy.recommendation}: ${review.recommendation.replaceAll('_', ' ')}`
+                          : ''}
+                        {review.feedback.map((feedback) => (
+                          <p key={feedback.id}>{feedback.body}</p>
+                        ))}
+                      </li>
+                    ))}
+                  </ul>
+                ) : <p>{copy.noReviews}</p>}
+              </div>
             </div>
           ) : null}
 
