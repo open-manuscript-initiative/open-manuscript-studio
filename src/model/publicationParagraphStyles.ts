@@ -597,7 +597,6 @@ function normalizeProperties(
     'verticalScale',
     'baselineShift',
     'skew',
-    'fillTint',
     'firstLineIndent',
     'leftIndent',
     'rightIndent',
@@ -608,6 +607,7 @@ function normalizeProperties(
   ] as const) {
     if (finite(value[property])) result[property] = Number(value[property]);
   }
+  copyNumber(result, value, 'fillTint', 0, 100);
   for (const property of ['language', 'fillColor'] as const) {
     const normalized = cleanText(value[property]);
     if (normalized) result[property] = normalized;
