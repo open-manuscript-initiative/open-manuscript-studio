@@ -1,10 +1,14 @@
 import {
   createAccountHolderApprovedAssurance,
 } from '../integrations/webPublicationContract';
+import { ensureManuscriptRevisionStateDigests } from '../model/revisionIntegrity';
 import { createManuscriptStateDigest } from '../model/stateDigest';
-import { extractManuscriptState } from '../model/versioning';
+import {
+  extractManuscriptState,
+  OMI_VERSIONING_MODEL_VERSION,
+} from '../model/versioning';
 import type { OmiBibliographicRecord, OmiBlock, OmiManuscript } from '../types/omi';
-import { getAssetPayload } from './assetRepository';
+import { getAssetPayload, putAssetPayload } from './assetRepository';
 import { prepareWebPublicationArtifact } from './webPublicationArtifact';
 
 export interface NativeEditorialAssetPayload {
@@ -61,6 +65,66 @@ export async function prepareNativeEditorialRevision(
     reviewSnapshot,
     assets,
   };
+}
+
+export async function restoreNativeEditorialManuscript(input: {
+  revisionId: string;
+  manuscriptStateSnapshot: ReturnType<typeof extractManuscriptState>;
+  assets: Array<{
+    assetId: string;
+    bytesBase64: string;
+  }>;
+}): Promise<OmiManuscript> {
+  const state = JSON.parse(
+    JSON.stringify(input.manuscriptStateSnapshot),
+  ) as ReturnType<typeof extractManuscriptState>;
+  for (const asset of input.assets) {
+    await putAssetPayload(
+      state.id,
+      asset.assetId,
+      base64ToBytes(asset.bytesBase64),
+    );
+  }
+  const createdAt = state.updatedAt || state.createdAt || new Date().toISOString();
+  const summary = 'Studio-native editorial submission snapshot';
+  const manuscript = {
+    ...state,
+    versioningModelVersion: OMI_VERSIONING_MODEL_VERSION,
+    headRevisionId: input.revisionId,
+    revisionHistory: {
+      profile: 'core-revision-history',
+      completeness: 'shallow',
+      rootRevisionId: input.revisionId,
+      headRevisionId: input.revisionId,
+      revisions: [{
+        id: input.revisionId,
+        parentRevisionIds: [],
+        createdAt,
+        summary,
+        changeSet: {
+          id: crypto.randomUUID(),
+          summary,
+          createdAt,
+          events: [{
+            id: crypto.randomUUID(),
+            operation: 'manuscript.snapshot.create',
+            targetId: state.id,
+            path: '/',
+            nextValue: {
+              manuscriptId: state.id,
+              title: state.title,
+            },
+            createdAt,
+          }],
+        },
+        snapshot: {
+          manuscriptId: state.id,
+          state,
+        },
+      }],
+    },
+  } as OmiManuscript;
+  return ensureManuscriptRevisionStateDigests(manuscript);
 }
 
 export async function createNativeReviewSnapshot(
@@ -245,6 +309,15 @@ function normalizeContributorRole(
     return role;
   }
   return 'contributor';
+}
+
+function base64ToBytes(value: string): Uint8Array {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
 }
 
 function bytesToBase64(bytes: Uint8Array): string {
