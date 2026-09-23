@@ -52,6 +52,7 @@ import {
   type SystemFontFamily,
 } from '../services/systemFonts';
 import type { OmiBlock, OmiPublicationCorrectionKind } from '../types/omi';
+import { InDesignParagraphStyleSettings } from './InDesignParagraphStyleSettings';
 import { ProofingColorLegend } from './ProofingColorLegend';
 import {
   PublicationDocumentCanvas,
@@ -833,88 +834,57 @@ export function PublicationStyleEditor() {
                 </div>
 
                 <div className="publication-paragraph-style-settings">
-                  <div className="publication-style-grid">
-                    <label>
-                      <span>{copy.paragraphStyleName}</span>
-                      <input value={activeParagraphStyle.name} onChange={(event) => patchParagraphStyle(activeParagraphStyle.id, (definition) => ({ ...definition, name: event.target.value }))} />
-                    </label>
-                    <label>
-                      <span>{copy.basedOn}</span>
-                      <select
-                        value={activeParagraphStyle.basedOnId ?? ''}
-                        onChange={(event) => patchParagraphStyle(activeParagraphStyle.id, (definition) => ({ ...definition, basedOnId: event.target.value || null }))}
-                      >
-                        <option value="">{copy.noBaseStyle}</option>
-                        {style.paragraphStyles.items
-                          .filter((definition) => !paragraphStyleWouldCreateCycle(style.paragraphStyles, activeParagraphStyle.id, definition.id))
-                          .map((definition) => <option key={definition.id} value={definition.id}>{definition.name}</option>)}
-                      </select>
-                    </label>
-                    <label>
-                      <span>{copy.nextStyle}</span>
-                      <select value={activeParagraphStyle.nextStyleId ?? style.paragraphStyles.defaultStyleId} onChange={(event) => patchParagraphStyle(activeParagraphStyle.id, (definition) => ({ ...definition, nextStyleId: event.target.value }))}>
-                        {style.paragraphStyles.items.map((definition) => <option key={definition.id} value={definition.id}>{definition.name}</option>)}
-                      </select>
-                    </label>
-                  </div>
-
-                  <h5>{copy.characterFormatting}</h5>
-                  <SystemFontCatalogControls
-                    status={systemFontLoadStatus}
-                    statusText={fontCatalogStatusText}
-                    loadLabel={systemFontLoadStatus === 'loaded' ? copy.refreshSystemFonts : copy.loadSystemFonts}
-                    onLoad={() => void loadSystemFonts()}
+                  <InDesignParagraphStyleSettings
+                    locale={locale}
+                    collection={style.paragraphStyles}
+                    definition={activeParagraphStyle}
+                    resolved={resolvedParagraphStyle}
+                    onPatchDefinition={(update) => patchParagraphStyle(activeParagraphStyle.id, update)}
+                    onSetProperty={setParagraphStyleProperty}
+                    fontControls={(
+                      <>
+                        <SystemFontCatalogControls
+                          status={systemFontLoadStatus}
+                          statusText={fontCatalogStatusText}
+                          loadLabel={systemFontLoadStatus === 'loaded' ? copy.refreshSystemFonts : copy.loadSystemFonts}
+                          onLoad={() => void loadSystemFonts()}
+                        />
+                        <div className="publication-style-grid">
+                          <FontFamilySelect
+                            label={copy.font}
+                            value={resolvedParagraphStyle.fontFamily}
+                            families={availableFontFamilies}
+                            sampleText={copy.fontSample}
+                            searchLabel={copy.searchFonts}
+                            noResults={copy.noMatchingFonts}
+                            onChange={setParagraphFontFamily}
+                          />
+                          <FontFaceSelect
+                            label={copy.fontVariant}
+                            family={resolvedParagraphStyle.fontFamily}
+                            faces={paragraphFontFaces}
+                            weight={resolvedParagraphStyle.fontWeight}
+                            fontStyle={resolvedParagraphStyle.fontStyle}
+                            sampleText={copy.fontSample}
+                            onChange={setParagraphFontFace}
+                          />
+                        </div>
+                      </>
+                    )}
                   />
-                  <div className="publication-style-grid">
-                    <FontFamilySelect
-                      label={copy.font}
-                      value={resolvedParagraphStyle.fontFamily}
-                      families={availableFontFamilies}
-                      sampleText={copy.fontSample}
-                      searchLabel={copy.searchFonts}
-                      noResults={copy.noMatchingFonts}
-                      onChange={setParagraphFontFamily}
-                    />
-                    <FontFaceSelect
-                      label={copy.fontVariant}
-                      family={resolvedParagraphStyle.fontFamily}
-                      faces={paragraphFontFaces}
-                      weight={resolvedParagraphStyle.fontWeight}
-                      fontStyle={resolvedParagraphStyle.fontStyle}
-                      sampleText={copy.fontSample}
-                      onChange={setParagraphFontFace}
-                    />
-                    <NumberField label={`${copy.bodySize} (pt)`} value={resolvedParagraphStyle.fontSize} step={0.1} onChange={(value) => setParagraphStyleProperty('fontSize', value)} />
-                    <NumberField label={`${copy.bodyLeading} (pt)`} value={resolvedParagraphStyle.lineHeight} step={0.1} onChange={(value) => setParagraphStyleProperty('lineHeight', value)} />
-                    <div className="publication-style-alignment" role="group" aria-label={copy.alignment}>
-                      <span>{copy.alignment}</span>
-                      <div>
-                        <AlignmentButton label={copy.justify} active={resolvedParagraphStyle.alignment === 'justify'} onClick={() => setParagraphStyleProperty('alignment', 'justify')}><AlignJustify size={17} aria-hidden="true" /></AlignmentButton>
-                        <AlignmentButton label={copy.alignLeft} active={resolvedParagraphStyle.alignment === 'left'} onClick={() => setParagraphStyleProperty('alignment', 'left')}><AlignLeft size={17} aria-hidden="true" /></AlignmentButton>
-                        <AlignmentButton label={copy.alignCenter} active={resolvedParagraphStyle.alignment === 'center'} onClick={() => setParagraphStyleProperty('alignment', 'center')}><AlignCenter size={17} aria-hidden="true" /></AlignmentButton>
-                        <AlignmentButton label={copy.alignRight} active={resolvedParagraphStyle.alignment === 'right'} onClick={() => setParagraphStyleProperty('alignment', 'right')}><AlignRight size={17} aria-hidden="true" /></AlignmentButton>
-                      </div>
-                    </div>
-                  </div>
-
-                  <h5>{copy.paragraphFormatting}</h5>
-                  <div className="publication-style-grid">
-                    <NumberField label={`${copy.indent} (mm)`} value={resolvedParagraphStyle.firstLineIndent} step={0.5} onChange={(value) => setParagraphStyleProperty('firstLineIndent', value)} />
-                    <NumberField label={`${copy.leftIndent} (mm)`} value={resolvedParagraphStyle.leftIndent} step={0.5} onChange={(value) => setParagraphStyleProperty('leftIndent', value)} />
-                    <NumberField label={`${copy.rightIndent} (mm)`} value={resolvedParagraphStyle.rightIndent} step={0.5} onChange={(value) => setParagraphStyleProperty('rightIndent', value)} />
-                    <NumberField label={`${copy.spaceBefore} (pt)`} value={resolvedParagraphStyle.spaceBefore} step={0.5} onChange={(value) => setParagraphStyleProperty('spaceBefore', value)} />
-                    <NumberField label={`${copy.spaceAfter} (pt)`} value={resolvedParagraphStyle.spaceAfter} step={0.5} onChange={(value) => setParagraphStyleProperty('spaceAfter', value)} />
-                    <NumberField label={copy.widows} value={resolvedParagraphStyle.widows} min={1} step={1} onChange={(value) => setParagraphStyleProperty('widows', Math.trunc(value))} />
-                    <NumberField label={copy.orphans} value={resolvedParagraphStyle.orphans} min={1} step={1} onChange={(value) => setParagraphStyleProperty('orphans', Math.trunc(value))} />
-                  </div>
-                  <div className="publication-style-toggle-grid">
-                    <label className="publication-style-toggle"><input type="checkbox" checked={resolvedParagraphStyle.hyphenation} onChange={(event) => setParagraphStyleProperty('hyphenation', event.target.checked)} /><span>{copy.hyphenation}</span></label>
-                    <label className="publication-style-toggle"><input type="checkbox" checked={resolvedParagraphStyle.keepTogether} onChange={(event) => setParagraphStyleProperty('keepTogether', event.target.checked)} /><span>{copy.keepTogether}</span></label>
-                    <label className="publication-style-toggle"><input type="checkbox" checked={resolvedParagraphStyle.keepWithNext} onChange={(event) => setParagraphStyleProperty('keepWithNext', event.target.checked)} /><span>{copy.keepWithNext}</span></label>
-                  </div>
                   <div className="publication-style-actions">
-                    <button type="button" className="studio-menu-secondary-action" disabled={!Object.keys(activeParagraphStyle.properties).length} onClick={clearParagraphStyleOverrides}><RotateCcw size={16} />{copy.clearOverrides}</button>
-                    <small className="publication-paragraph-style-inheritance-note">{copy.inheritedValues}</small>
+                    <button
+                      type="button"
+                      className="studio-menu-secondary-action"
+                      disabled={!Object.keys(activeParagraphStyle.properties).length}
+                      onClick={clearParagraphStyleOverrides}
+                    >
+                      <RotateCcw size={16} />
+                      {copy.clearOverrides}
+                    </button>
+                    <small className="publication-paragraph-style-inheritance-note">
+                      {copy.inheritedValues}
+                    </small>
                   </div>
                 </div>
               </div>
