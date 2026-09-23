@@ -171,7 +171,7 @@ export function NativeSubmissionPanel() {
       {venue && venue.integrationStatus === 'VERIFIED' ? <p>{copy.external}</p> : null}
       {venue && !dnsNative && venue.integrationStatus !== 'VERIFIED' ? <p>{copy.unavailable}</p> : null}
 
-      {dnsNative ? (
+      {dnsNative && venue ? (
         <>
           <p><strong>{venue.name}</strong>{venue.authority?.domain ? ` · ${venue.authority.domain}` : ''}</p>
           {submission ? (
