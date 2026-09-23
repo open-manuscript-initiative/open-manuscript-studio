@@ -521,10 +521,10 @@ test('InDesign-like paragraph styles inherit, assign, and feed print CSS', () =>
   assert.match(exportRenderer, /data-omi-paragraph-style-id/);
   assert.match(exportRenderer, /text-block:not\(\[data-omi-paragraph-style-id\]\)/);
   assert.match(styleEditor, /panelId="paragraphStyles"/);
-  assert.match(styleEditor, /paragraphStyleWouldCreateCycle/);
+  assert.match(inDesignParagraphStyles, /paragraphStyleWouldCreateCycle/);
   assert.match(styleEditor, /setBlockParagraphStyle/);
-  assert.match(styleEditor, /copy\.basedOn/);
-  assert.match(styleEditor, /copy\.nextStyle/);
+  assert.match(inDesignParagraphStyles, /copy\.basedOn/);
+  assert.match(inDesignParagraphStyles, /copy\.nextStyle/);
   assert.match(documentCanvas, /:not\(\[data-paragraph-style-id\]\)/);
 });
 
