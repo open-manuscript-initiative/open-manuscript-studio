@@ -35,6 +35,18 @@ enum PublicationVenueIntegrationStatus {
   DISABLED
 }
 
+enum PublicationVenueDomainVerificationStatus {
+  PENDING
+  VERIFIED
+  REVOKED
+}
+
+enum PublicationVenueRole {
+  DOMAIN_ADMIN
+  EDITOR_IN_CHIEF
+  EDITOR
+}
+
 enum InstitutionStatus {
   ACTIVE
   DISABLED
@@ -80,6 +92,9 @@ model User {
   oauthStates            OAuthLoginState[]
   passwordResetTokens    PasswordResetToken[]
   publicationVenues      PublicationVenue[]
+  publicationVenueDomainVerifications PublicationVenueDomainVerification[] @relation("PublicationVenueDomainVerificationRequester")
+  publicationVenueMemberships PublicationVenueMembership[] @relation("PublicationVenueMember")
+  publicationVenueMembershipGrants PublicationVenueMembership[] @relation("PublicationVenueMembershipGrantor")
   profileEmails          UserProfileEmail[]
   publishingCredentials  PersonalPublishingCredential[]
 
@@ -204,12 +219,55 @@ model PublicationVenue {
   createdAt                 DateTime                            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt                 DateTime                            @updatedAt @map("updated_at") @db.Timestamptz(6)
   createdBy                 User?                               @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  domainVerifications        PublicationVenueDomainVerification[]
+  memberships               PublicationVenueMembership[]
 
   @@unique([type, normalizedName])
   @@index([type, normalizedName])
   @@index([type, integrationStatus])
   @@index([integrationInstallationId])
   @@map("publication_venues")
+}
+
+model PublicationVenueDomainVerification {
+  id                String                                   @id @default(uuid()) @db.Uuid
+  venueId           String                                   @map("venue_id") @db.Uuid
+  domain            String                                   @db.VarChar(253)
+  txtRecordName     String                                   @map("txt_record_name") @db.VarChar(300)
+  tokenHash         String                                   @map("token_hash") @db.VarChar(64)
+  status            PublicationVenueDomainVerificationStatus @default(PENDING)
+  requestedByUserId String                                   @map("requested_by_user_id") @db.Uuid
+  expiresAt         DateTime                                 @map("expires_at") @db.Timestamptz(6)
+  verifiedAt        DateTime?                                @map("verified_at") @db.Timestamptz(6)
+  lastCheckedAt     DateTime?                                @map("last_checked_at") @db.Timestamptz(6)
+  createdAt         DateTime                                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime                                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  venue             PublicationVenue                         @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  requestedBy       User                                     @relation("PublicationVenueDomainVerificationRequester", fields: [requestedByUserId], references: [id], onDelete: Cascade)
+
+  @@unique([venueId, domain])
+  @@index([domain, status])
+  @@index([requestedByUserId, status])
+  @@map("publication_venue_domain_verifications")
+}
+
+model PublicationVenueMembership {
+  id              String               @id @default(uuid()) @db.Uuid
+  venueId         String               @map("venue_id") @db.Uuid
+  userId          String               @map("user_id") @db.Uuid
+  role            PublicationVenueRole
+  active          Boolean              @default(true)
+  grantedByUserId String               @map("granted_by_user_id") @db.Uuid
+  createdAt       DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  venue           PublicationVenue     @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  user            User                 @relation("PublicationVenueMember", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy       User                 @relation("PublicationVenueMembershipGrantor", fields: [grantedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([venueId, userId])
+  @@index([venueId, role, active])
+  @@index([userId, active])
+  @@map("publication_venue_memberships")
 }
 
 model Institution {
