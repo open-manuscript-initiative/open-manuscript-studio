@@ -185,6 +185,7 @@ export async function listEditorialPublicationEvidence(
     groups.set(key, group);
   }
   const eligibleReviewRounds = Array.from(groups.values())
+    .map(decisionBearingScientificAssignments)
     .filter(isCompletedNativeScientificRound)
     .map((assignments) => ({
       workspaceId: assignments[0]!.workspaceId,
@@ -240,16 +241,29 @@ async function loadAcceptanceAssignments(
       assignmentType: 'SCIENTIFIC_REVIEW',
     },
   });
-  const completeAssignmentIds = assignments.map((assignment) => assignment.id).sort();
+  const evidenceAssignments = decisionBearingScientificAssignments(assignments)
+    .sort((left, right) => left.id.localeCompare(right.id));
+  const completeAssignmentIds = evidenceAssignments
+    .map((assignment) => assignment.id)
+    .sort();
   if (
     !sameStrings(completeAssignmentIds, assignmentIds) ||
-    !isCompletedNativeScientificRound(assignments)
+    !isCompletedNativeScientificRound(evidenceAssignments)
   ) {
     throw new Error(
-      'Editorial acceptance requires every scientific assignment in the selected Studio-native round to be completed with a recommendation and an assigned manuscript snapshot.',
+      'Editorial acceptance requires every decision-bearing scientific assignment in the selected Studio-native round to be completed with a recommendation and an assigned manuscript snapshot.',
     );
   }
-  return assignments.sort((left, right) => left.id.localeCompare(right.id));
+  return evidenceAssignments;
+}
+
+function decisionBearingScientificAssignments(
+  assignments: PeerReviewAssignment[],
+): PeerReviewAssignment[] {
+  return assignments.filter((assignment) =>
+    assignment.assignmentType === 'SCIENTIFIC_REVIEW' &&
+    assignment.status !== 'DECLINED'
+  );
 }
 
 function isCompletedNativeScientificRound(
