@@ -230,13 +230,18 @@ export async function completeNativeReview(
   assignmentId: string,
 ) {
   const submission = await requireAssignedEditor(editorUserId, submissionId);
-  const review = await completeReview(editorUserId, assignmentId);
+  const assignment = await prisma.peerReviewAssignment.findUnique({
+    where: { id: assignmentId },
+    select: { workspaceId: true, manuscriptId: true },
+  });
   if (
-    review.workspaceId !== submission.workspaceId ||
-    review.manuscriptId !== submission.manuscriptId
+    !assignment ||
+    assignment.workspaceId !== submission.workspaceId ||
+    assignment.manuscriptId !== submission.manuscriptId
   ) {
     throw forbidden('The review assignment does not belong to this submission.');
   }
+  const review = await completeReview(editorUserId, assignmentId);
   await prisma.nativeSubmissionEvent.create({
     data: {
       submissionId: submission.id,
@@ -591,9 +596,9 @@ function collectJsonText(value: unknown): string {
   return [own, content].filter(Boolean).join(' ');
 }
 
-function asRecord(value: unknown): Record<string, any> {
+function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
-    ? value as Record<string, any>
+    ? value as Record<string, unknown>
     : {};
 }
 
