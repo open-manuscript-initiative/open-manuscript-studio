@@ -245,7 +245,7 @@ model PublicationVenueDomainVerification {
   venue             PublicationVenue                         @relation(fields: [venueId], references: [id], onDelete: Cascade)
   requestedBy       User                                     @relation("PublicationVenueDomainVerificationRequester", fields: [requestedByUserId], references: [id], onDelete: Cascade)
 
-  @@unique([venueId, domain])
+  @@unique([venueId, domain, requestedByUserId])
   @@index([domain, status])
   @@index([requestedByUserId, status])
   @@map("publication_venue_domain_verifications")
