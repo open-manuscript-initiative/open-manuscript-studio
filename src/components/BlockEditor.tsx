@@ -263,9 +263,12 @@ export function BlockEditor({
           && !event.metaKey
           && !event.isComposing
         ) {
+          const tabType = view.state.schema.nodes.omiTab;
+          if (!tabType) return false;
           event.preventDefault();
-          const { from, to } = view.state.selection;
-          view.dispatch(view.state.tr.insertText('\t', from, to));
+          view.dispatch(
+            view.state.tr.replaceSelectionWith(tabType.create()),
+          );
           return true;
         }
 
@@ -568,7 +571,12 @@ export function BlockEditor({
     const { from, to } = editor.state.selection;
     if (from === to) return;
 
-    const selectedText = editor.state.doc.textBetween(from, to, '\n', '\n');
+    const selectedText = editor.state.doc.textBetween(
+      from,
+      to,
+      '\n',
+      (leaf) => leaf.type.name === 'omiTab' ? '\t' : '',
+    );
     if (!selectedText.trim()) return;
 
     const table = createTableBlock(
