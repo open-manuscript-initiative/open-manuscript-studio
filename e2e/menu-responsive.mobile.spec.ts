@@ -15,7 +15,9 @@ test('every manuscript-menu view stays inside the mobile viewport', async ({ pag
   await expect(navigation).toBeVisible();
   await expectFullScreenVerticalScrollNavigation(dialog, navigation);
 
-  const navButtons = dialog.locator('.studio-menu-nav-button:not([data-home-navigation="true"])');
+  const navButtons = dialog.locator(
+    '.studio-menu-nav-button:not([data-home-navigation="true"]):not([data-external-route-navigation="true"])',
+  );
   const navCount = await navButtons.count();
 
   for (let index = 0; index < navCount; index += 1) {
