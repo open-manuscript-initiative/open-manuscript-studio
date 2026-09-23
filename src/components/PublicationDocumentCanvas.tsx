@@ -30,6 +30,7 @@ import {
 import { contributorNameParts } from '../model/contributorName';
 import { collectPublicationContributors } from '../model/publicationRendering';
 import type { ProofingSelection } from '../model/proofing';
+import type { OmiSection } from '../types/omi';
 import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
 import {
   loadPublicationPublisherIdentity,
@@ -505,6 +506,11 @@ export function PublicationDocumentCanvas({
     scale,
     viewMode,
   );
+  const sectionLayoutCss = buildLiveSectionLayoutCss(
+    canvasId,
+    manuscript.sections,
+    scale,
+  );
   const runningHeaderValues = {
     articleTitle: manuscript.title,
     shortArticleTitle: shorten(manuscript.title, 72),
@@ -579,8 +585,8 @@ export function PublicationDocumentCanvas({
       className={`publication-document-canvas publication-document-canvas--${viewMode}`}
       aria-labelledby="publication-document-canvas-title"
     >
-      {pagination.css || paragraphStyleCss
-        ? <style>{`${paragraphStyleCss}\n${viewMode === 'print' ? pagination.css : ''}`}</style>
+      {pagination.css || paragraphStyleCss || sectionLayoutCss
+        ? <style>{`${paragraphStyleCss}\n${sectionLayoutCss}\n${viewMode === 'print' ? pagination.css : ''}`}</style>
         : null}
       <header className="publication-document-canvas-toolbar">
         <div>
@@ -1129,6 +1135,20 @@ function publicationFlowBreaksEqual(
       && other.textOffset === item.textOffset
       && Math.abs(other.height - item.height) < 0.01;
   });
+}
+
+function buildLiveSectionLayoutCss(
+  canvasId: string,
+  sections: readonly OmiSection[],
+  scale: number,
+): string {
+  const editor = `#${canvasId} .omi-continuous-tiptap-editor`;
+  return sections.map((section) => {
+    const firstTabStopMm = section.layout?.tabStopsMm?.[0] ?? 12.5;
+    const tabSize = Math.max(2.5, firstTabStopMm) * PIXELS_PER_MM * scale;
+    const selector = `${editor} > [data-section-id=${cssStringLiteral(section.id)}]`;
+    return `${selector} { tab-size: ${cssPixel(tabSize)}; white-space: pre-wrap; }`;
+  }).join('\n');
 }
 
 function buildLiveParagraphStyleCss(
