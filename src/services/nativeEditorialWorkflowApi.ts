@@ -240,7 +240,7 @@ export async function rejectNativeEditorialSubmission(
 export async function markNativeEditorialPublished(
   submissionId: string,
   revisionId: string,
-  note?: string,
+  externalUrl: string,
 ): Promise<NativeEditorialSubmissionSummary> {
   return (await request<{ submission: NativeEditorialSubmissionSummary }>(
     `/api/native-editorial/submissions/${encodeURIComponent(submissionId)}/published`,
@@ -248,7 +248,7 @@ export async function markNativeEditorialPublished(
       method: 'POST',
       body: JSON.stringify({
         revisionId,
-        ...(note?.trim() ? { note: note.trim() } : {}),
+        externalUrl,
       }),
     },
   )).submission;
