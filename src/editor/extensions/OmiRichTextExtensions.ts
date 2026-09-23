@@ -275,6 +275,7 @@ export const OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS = [
   OmiSmallCapsExtension,
   OmiUnderlineExtension,
   OmiLanguageExtension,
+  OmiTabExtension,
   OmiBlockTypeMenuExtension,
 ];
 
