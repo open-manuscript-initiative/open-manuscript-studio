@@ -694,9 +694,14 @@ export function PublicationVenueField({
             <small aria-live="polite">{copy.authorityLoading}</small>
           ) : authorityOverview ? (
             <>
-              {authorityOverview.currentMembership ? (
+              {authorityOverview.currentMemberships.length ? (
                 <p>
-                  {copy.currentRole}: <strong>{authorityOverview.currentMembership.role}</strong>
+                  {copy.currentRole}:{' '}
+                  <strong>
+                    {authorityOverview.currentMemberships
+                      .map((membership) => membership.role)
+                      .join(', ')}
+                  </strong>
                 </p>
               ) : null}
               {authorityOverview.canManageEditors ? (
