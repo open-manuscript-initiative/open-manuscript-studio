@@ -1,0 +1,598 @@
+/*
+ * OMI Studio density layer
+ *
+ * Keeps interaction targets accessible while reducing non-functional whitespace.
+ * This stylesheet is intentionally imported last so density can be tuned in one
+ * place without duplicating responsive overrides across feature stylesheets.
+ */
+
+:root {
+  --omi-density-control-height-desktop: 2rem;
+  --omi-density-touch-target: 44px;
+  --omi-density-gap-xs: .3rem;
+  --omi-density-gap-sm: .5rem;
+  --omi-density-gap-md: .7rem;
+  --omi-density-panel-padding: .65rem;
+}
+
+/* Desktop / pointer-oriented workspaces ------------------------------------ */
+@media (min-width: 761px) {
+  .workspace {
+    gap: .65rem;
+    padding: .65rem;
+  }
+
+  .panel {
+    border-radius: .65rem;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, .045);
+  }
+
+  .sidebar,
+  .properties {
+    padding: .7rem;
+  }
+
+  .editor {
+    padding: .8rem;
+  }
+
+  .focus-workspace {
+    padding: .45rem .65rem .9rem;
+  }
+
+  .focus-editor {
+    width: min(100%, 88rem);
+  }
+
+  .omi-editor-header {
+    padding: .7rem 1rem;
+  }
+
+  .omi-editor-header .field-label {
+    margin-bottom: .25rem;
+  }
+
+  .omi-editor-header .title-input {
+    padding: .15rem 0 .3rem;
+    font-size: clamp(1.35rem, 2.1vw, 2.05rem);
+  }
+
+  .omi-writing-pane {
+    padding: .9rem clamp(.8rem, 2vw, 2rem) 1.6rem;
+  }
+
+  .omi-section-editor {
+    width: min(100%, 64rem);
+  }
+
+  .omi-section-heading {
+    margin-bottom: .9rem;
+    font-size: clamp(1.1rem, 1.5vw, 1.35rem);
+  }
+
+  .omi-block-editor {
+    margin-bottom: .6rem;
+    padding: .4rem .65rem .55rem;
+    border-radius: .55rem;
+  }
+
+  .omi-block-toolbar {
+    min-height: 1.55rem;
+    gap: .55rem;
+    margin-bottom: .15rem;
+  }
+
+  .omi-block-editor .tiptap,
+  .omi-tiptap-editor {
+    min-height: 2.75rem;
+    padding: .2rem 0;
+    font-size: 1rem;
+    line-height: 1.62;
+  }
+
+  .omi-block-editor .tiptap p + p,
+  .omi-tiptap-editor p + p {
+    margin-top: .55rem;
+  }
+
+  .omi-document-canvas {
+    padding: .65rem .5rem 1.5rem;
+  }
+
+  .omi-manuscript-page {
+    width: min(100%, 68rem);
+    min-height: calc(100vh - 6.75rem);
+    padding:
+      clamp(1.45rem, 3vw, 2.6rem)
+      clamp(1.25rem, 4vw, 3.6rem)
+      2.4rem;
+  }
+
+  .omi-continuous-front-matter {
+    margin-bottom: 1.45rem;
+    padding-bottom: 1.35rem;
+  }
+
+  .omi-continuous-front-matter .omi-document-title {
+    font-size: clamp(1.65rem, 3vw, 2.35rem);
+  }
+
+  .omi-continuous-front-matter .omi-document-subtitle {
+    margin-top: .55rem;
+  }
+
+  .omi-continuous-front-matter .omi-document-motto {
+    margin-top: 1rem;
+  }
+
+  .omi-ojs-contributors {
+    margin-top: 1rem;
+    padding: .65rem .8rem;
+  }
+
+  .omi-continuous-sections {
+    gap: 1.55rem;
+  }
+
+  .omi-continuous-section-title {
+    margin-bottom: .65rem;
+  }
+
+  .omi-study-editor ~ .omi-study-editor {
+    margin-top: 1.75rem;
+    padding-top: 1.75rem;
+  }
+
+  .omi-current-study-notes {
+    margin-top: 1.4rem;
+  }
+
+  .omi-volume-front-matter-workspace {
+    margin-bottom: 1.25rem;
+  }
+
+  .omi-volume-workspace-header {
+    gap: .65rem;
+    padding: .65rem .8rem 0;
+  }
+
+  .omi-volume-workspace-header p {
+    margin: .2rem 0 .55rem;
+  }
+
+  .omi-volume-front-matter-workspace > [role='tabpanel'] {
+    padding: .8rem;
+  }
+
+  .omi-volume-front-matter-workspace .omi-title-matter-panel {
+    padding: .9rem .75rem .8rem;
+  }
+
+  .omi-title-matter-details {
+    margin-top: 1.1rem;
+    padding-top: .75rem;
+  }
+
+  .studio-menu-header {
+    min-height: 3.45rem;
+    gap: .65rem;
+    padding: .4rem .65rem;
+  }
+
+  .studio-menu-header h2 {
+    margin-top: 0;
+    font-size: 1rem;
+  }
+
+  .studio-menu-body {
+    grid-template-columns: 12.5rem minmax(0, 1fr);
+  }
+
+  .studio-menu-navigation {
+    gap: .18rem;
+    padding: .45rem;
+  }
+
+  .studio-menu-nav-button {
+    min-height: 2.1rem;
+    gap: .45rem;
+    padding: .35rem .5rem;
+    border-radius: .35rem;
+    font-size: .76rem;
+  }
+
+  .studio-menu-content {
+    padding: .65rem;
+  }
+
+  .studio-menu-view {
+    width: min(100%, 82rem);
+  }
+
+  .studio-menu-view-header {
+    gap: .65rem;
+    margin-bottom: .6rem;
+    padding-bottom: .45rem;
+  }
+
+  .studio-menu-view-header h3 {
+    margin-bottom: .15rem;
+    font-size: 1.1rem;
+  }
+
+  .studio-menu-view-header p,
+  .studio-tool-card p,
+  .studio-technical-details > p {
+    line-height: 1.4;
+  }
+
+  .studio-manuscript-fields {
+    gap: .6rem;
+  }
+
+  .studio-manuscript-fields label > span,
+  .studio-readonly-field > span {
+    margin-bottom: .25rem;
+  }
+
+  .studio-manuscript-fields textarea {
+    min-height: 7rem;
+    padding: .55rem;
+    line-height: 1.45;
+  }
+
+  .studio-readonly-field,
+  .studio-tool-card,
+  .studio-settings-card,
+  .property-card,
+  .contributor-card {
+    padding: .6rem;
+  }
+
+  .studio-tool-card {
+    gap: .65rem;
+    margin-bottom: .5rem;
+  }
+
+  .property-card,
+  .contributor-card {
+    margin-bottom: .55rem;
+  }
+
+  .contributor-card-header,
+  .omi-properties-panel-header {
+    margin-bottom: .55rem;
+  }
+
+  .studio-menu-primary-action,
+  .studio-menu-secondary-action {
+    min-height: var(--omi-density-control-height-desktop);
+    gap: .3rem;
+    padding: .32rem .55rem;
+  }
+
+  .studio-technical-details {
+    margin-top: .6rem;
+  }
+
+  .studio-technical-details summary {
+    padding: .55rem .65rem;
+  }
+
+  .studio-technical-details > p {
+    padding: 0 .65rem .6rem;
+  }
+
+  .studio-json-header {
+    padding: .5rem .65rem;
+  }
+
+  .studio-json-view {
+    max-height: 18rem;
+    padding: .65rem;
+    line-height: 1.45;
+  }
+
+  .studio-settings-card {
+    border-radius: .45rem;
+  }
+
+  .studio-language-settings-card {
+    padding: .55rem .65rem;
+  }
+
+  .studio-language-setting-row {
+    gap: .5rem;
+    padding: .4rem 0;
+  }
+
+  .studio-language-preference-list {
+    gap: .4rem;
+    margin-top: .6rem;
+  }
+
+  .studio-language-preference {
+    gap: .5rem;
+    min-height: 2.65rem;
+    padding: .4rem .55rem;
+  }
+
+  .studio-settings-hint {
+    margin-top: .55rem;
+  }
+
+  .studio-settings-future-note {
+    margin-top: .6rem;
+    padding: .5rem .65rem;
+    line-height: 1.4;
+  }
+
+  .studio-menu-content--publication-editor .publication-style-editor {
+    padding: .55rem;
+  }
+
+  .account-page {
+    max-width: 1440px;
+  }
+}
+
+/* Compact desktop/laptop viewport heights need another vertical pass. */
+@media (min-width: 761px) and (max-height: 850px) {
+  .focus-workspace {
+    padding-top: .3rem;
+    padding-bottom: .55rem;
+  }
+
+  .omi-document-canvas {
+    padding-top: .35rem;
+    padding-bottom: .85rem;
+  }
+
+  .omi-manuscript-page {
+    min-height: calc(100vh - 5.5rem);
+    padding-top: 1.2rem;
+    padding-bottom: 1.6rem;
+  }
+
+  .studio-menu-header {
+    min-height: 3.15rem;
+    padding-block: .3rem;
+  }
+
+  .studio-menu-content {
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+  }
+
+  .studio-menu-view-header {
+    margin-bottom: .45rem;
+  }
+}
+
+/* Mobile: preserve touch targets, remove surrounding whitespace. ------------ */
+@media (max-width: 760px) {
+  .mobile-header {
+    min-height: 52px;
+    gap: 4px;
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+
+  .mobile-header-title {
+    gap: 4px;
+    font-size: .9rem;
+  }
+
+  .mobile-action-bar,
+  .mobile-account-bar {
+    gap: 4px;
+    padding: 4px 6px;
+  }
+
+  .mobile-account-bar {
+    min-height: 44px;
+  }
+
+  .mobile-action-button {
+    min-height: var(--omi-density-touch-target);
+    gap: 4px;
+    padding-inline: 8px;
+    border-radius: 8px;
+  }
+
+  .mobile-document-view,
+  .mobile-details-view {
+    padding: 10px 10px 16px;
+  }
+
+  .mobile-document-view .tree-group-title {
+    margin-bottom: 4px;
+    padding: 6px 2px 4px;
+  }
+
+  .mobile-document-view .tree-item {
+    min-height: var(--omi-density-touch-target);
+    margin-bottom: 2px;
+    border-radius: 8px;
+  }
+
+  .mobile-details-view .omi-properties-panel-header {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .mobile-details-view .omi-properties-panel-content {
+    gap: 8px;
+  }
+
+  .mobile-details-view .contributor-card {
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  .mobile-workspace .omi-footer {
+    margin-top: 12px;
+  }
+
+  .studio-menu-header {
+    min-height: 52px;
+    gap: 4px;
+    /* Keep the drawer toggle pixel-aligned with the primary header menu trigger. */
+    padding-right: .6rem;
+    padding-left: .6rem;
+  }
+
+  .studio-menu-navigation {
+    grid-auto-rows: minmax(3.25rem, auto);
+    gap: .3rem;
+    padding: .4rem;
+  }
+
+  .studio-menu-nav-button {
+    min-height: 3.25rem;
+    gap: .35rem;
+    padding: .35rem .45rem;
+    border-radius: .5rem;
+    line-height: 1.1;
+  }
+
+  .studio-menu-content {
+    padding: .6rem .65rem calc(.8rem + env(safe-area-inset-bottom));
+  }
+
+  .studio-menu-view-header {
+    gap: .5rem;
+    margin-bottom: .6rem;
+  }
+
+  .studio-menu-view-header h3 {
+    margin-bottom: .15rem;
+    font-size: 1.05rem;
+  }
+
+  .studio-menu-primary-action,
+  .studio-menu-secondary-action {
+    min-height: var(--omi-density-touch-target);
+    margin-top: .4rem;
+  }
+
+  .studio-tool-card,
+  .studio-settings-card,
+  .studio-readonly-field,
+  .property-card,
+  .contributor-card {
+    padding: .6rem;
+  }
+
+  .studio-tool-card,
+  .property-card,
+  .contributor-card {
+    margin-bottom: .5rem;
+  }
+
+  .studio-manuscript-fields {
+    gap: .65rem;
+  }
+
+  .studio-manuscript-fields textarea {
+    min-height: 8rem;
+    padding: .6rem;
+    line-height: 1.5;
+  }
+
+  .mobile-workspace .omi-document-canvas {
+    padding: 0;
+  }
+
+  .mobile-workspace .omi-manuscript-page {
+    min-height: 0;
+    padding: .9rem .75rem 1.4rem;
+    border-right: 0;
+    border-left: 0;
+    box-shadow: none;
+  }
+
+  .mobile-workspace .omi-continuous-front-matter {
+    margin-bottom: 1.15rem;
+    padding-bottom: 1rem;
+  }
+
+  .mobile-workspace .omi-continuous-front-matter .omi-document-title {
+    font-size: clamp(1.45rem, 7vw, 2rem);
+  }
+
+  .mobile-workspace .omi-continuous-front-matter .omi-document-subtitle {
+    margin-top: .45rem;
+  }
+
+  .mobile-workspace .omi-continuous-front-matter .omi-document-motto {
+    margin-top: .75rem;
+  }
+
+  .mobile-workspace .omi-ojs-contributors {
+    margin-top: .75rem;
+    padding: .55rem .65rem;
+  }
+
+  .mobile-workspace .omi-continuous-sections {
+    gap: 1.25rem;
+  }
+
+  .mobile-workspace .omi-study-editor ~ .omi-study-editor {
+    margin-top: 1.35rem;
+    padding-top: 1.35rem;
+  }
+
+  .mobile-workspace .omi-current-study-notes {
+    margin-top: 1rem;
+  }
+
+  .mobile-workspace .omi-block-editor {
+    margin-bottom: .45rem;
+    padding: .35rem .2rem .45rem;
+  }
+
+  .mobile-workspace .omi-block-editor .tiptap,
+  .mobile-workspace .omi-tiptap-editor {
+    min-height: 2.5rem;
+    padding-block: .15rem;
+    line-height: 1.58;
+  }
+
+  .studio-language-preference-list {
+    gap: .4rem;
+    margin-top: .6rem;
+  }
+
+  .studio-language-preference {
+    gap: .5rem;
+    min-height: var(--omi-density-touch-target);
+    padding: .45rem .55rem;
+  }
+
+  .studio-settings-hint,
+  .studio-settings-future-note {
+    margin-top: .55rem;
+  }
+
+  .studio-settings-future-note {
+    padding: .55rem .65rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .studio-menu-navigation {
+    gap: .25rem;
+    padding: .3rem;
+  }
+
+  .studio-menu-nav-button {
+    min-height: 3rem;
+    padding: .3rem .4rem;
+  }
+
+  .studio-menu-content {
+    padding-right: .55rem;
+    padding-left: .55rem;
+  }
+}
