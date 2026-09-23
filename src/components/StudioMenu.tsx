@@ -6,6 +6,7 @@ import {
   FolderOpen,
   History as HistoryIcon,
   House,
+  Inbox,
   LayoutTemplate,
   Library,
   Menu,
@@ -68,6 +69,7 @@ import { HistoryPanel } from './HistoryPanel';
 import { KeywordEditor } from './KeywordEditor';
 import { ManuscriptLanguageField } from './ManuscriptLanguageField';
 import { NotesPanel } from './NotesPanel';
+import { NativeEditorialWorkflowPanel } from './NativeEditorialWorkflowPanel';
 import { NewDocumentActions } from './NewDocumentActions';
 import { OjsAssignmentPanel } from './OjsAssignmentPanel';
 import { PropertiesPanel } from './PropertiesPanel';
@@ -84,6 +86,7 @@ type StudioMenuView =
   | 'notes'
   | 'references'
   | 'contributors'
+  | 'editorial-workflow'
   | 'assignments'
   | 'publication-editor'
   | 'publication'
@@ -119,6 +122,7 @@ export function StudioMenu({
   const { t, locale } = useTranslation();
   const publicationCopy = getPublicationProfileCopy(locale);
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
+  const editorialWorkflowLabel = supplementalCopy.editorialWorkspace;
   const platform = getStudioPlatform();
   const nativeMobile = platform === 'android' || platform === 'ios';
   const [navigationOpen, setNavigationOpen] = useState(true);
@@ -209,6 +213,7 @@ export function StudioMenu({
             <MenuButton active={activeView === 'notes'} icon={<StickyNote size={18} aria-hidden="true" />} label={t('studio.navigation.notes')} onClick={() => setActiveView('notes')} />
             <MenuButton active={activeView === 'references'} icon={<Library size={18} aria-hidden="true" />} label={t('studio.navigation.references')} onClick={() => setActiveView('references')} />
             {navigationAfterReferences}
+            <MenuButton active={activeView === 'editorial-workflow'} icon={<Inbox size={18} aria-hidden="true" />} label={editorialWorkflowLabel} onClick={() => setActiveView('editorial-workflow')} />
             {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
             <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} />
             <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
@@ -225,6 +230,7 @@ export function StudioMenu({
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
             {activeView === 'notes' ? <NotesPanel onNavigate={returnHome} /> : null}
             {activeView === 'references' ? <ReferencesView /> : null}
+            {activeView === 'editorial-workflow' ? <NativeEditorialWorkflowPanel /> : null}
             {activeView === 'assignments' && ojsAssignment ? <OjsAssignmentPanel actorMode={ojsAssignment.actorMode} context={ojsAssignment.context} /> : null}
             {activeView === 'signatures' ? <AuthorSignaturePanel /> : null}
             {activeView === 'history' ? <HistoryPanel /> : null}
@@ -598,3 +604,4 @@ function parseBlockContent(content: string): unknown {
     return { legacyText: content };
   }
 }
+

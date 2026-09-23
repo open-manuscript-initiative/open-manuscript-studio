@@ -69,6 +69,28 @@ enum ReviewWorkspaceRole {
   EDITOR
 }
 
+enum NativeEditorialSubmissionStatus {
+  SUBMITTED
+  IN_REVIEW
+  REVISION_REQUESTED
+  REVISION_SUBMITTED
+  ACCEPTED
+  REJECTED
+  PUBLISHED
+}
+
+enum NativeEditorialEventType {
+  SUBMITTED
+  EDITOR_ASSIGNED
+  REVIEWER_ASSIGNED
+  REVIEW_COMPLETED
+  REVISION_REQUESTED
+  REVISION_SUBMITTED
+  ACCEPTED
+  REJECTED
+  PUBLISHED
+}
+
 enum CloudProviderType {
   WEBDAV
   NEXTCLOUD
@@ -108,6 +130,9 @@ model User {
   reviewAssignments         PeerReviewAssignment[]  @relation("ReviewerAssignments")
   assignedReviewAssignments PeerReviewAssignment[]  @relation("ReviewAssigner")
   editorialDecisions        EditorialDecision[]     @relation("EditorialDecisionMaker")
+  nativeEditorialSubmissions NativeEditorialSubmission[] @relation("NativeEditorialSubmissionAuthor")
+  assignedNativeEditorialSubmissions NativeEditorialSubmission[] @relation("NativeEditorialSubmissionEditor")
+  nativeEditorialEvents     NativeEditorialSubmissionEvent[] @relation("NativeEditorialEventActor")
   reviewWorkspaceAccess     ReviewWorkspaceAccess[]
   cloudConnections          CloudConnection[]
   cloudBackups              CloudBackup[]
@@ -284,6 +309,84 @@ model EditorialDecision {
   @@index([publicationVenueId, decidedAt])
   @@index([decidedByUserId, decidedAt])
   @@map("editorial_decisions")
+}
+
+
+/// Studio-owned submission workflow for DNS-verified publication venues that
+/// do not delegate workflow authority to OJS or OMP.
+model NativeEditorialSubmission {
+  id                       String                         @id @default(uuid()) @db.Uuid
+  workspaceId              String                         @unique @map("workspace_id") @db.VarChar(128)
+  manuscriptId             String                         @map("manuscript_id") @db.VarChar(128)
+  publicationVenueId       String                         @map("publication_venue_id") @db.Uuid
+  publicationVenueName     String                         @map("publication_venue_name") @db.VarChar(300)
+  publicationVenueDomain   String                         @map("publication_venue_domain") @db.VarChar(253)
+  authorUserId             String                         @map("author_user_id") @db.Uuid
+  editorUserId             String?                        @map("editor_user_id") @db.Uuid
+  title                    String                         @db.VarChar(500)
+  revisionId               String                         @map("revision_id") @db.VarChar(128)
+  stateDigest              String                         @map("state_digest") @db.VarChar(64)
+  publicationContentDigest String                         @map("publication_content_digest") @db.VarChar(64)
+  manuscriptStateSnapshot  Json                           @map("manuscript_state_snapshot") @db.JsonB
+  reviewSnapshot           Json                           @map("review_snapshot") @db.JsonB
+  status                   NativeEditorialSubmissionStatus @default(SUBMITTED)
+  reviewRound              Int                            @default(1) @map("review_round")
+  editorialNote            String?                        @map("editorial_note") @db.Text
+  submittedAt              DateTime                       @default(now()) @map("submitted_at") @db.Timestamptz(6)
+  editorAssignedAt         DateTime?                      @map("editor_assigned_at") @db.Timestamptz(6)
+  revisionRequestedAt      DateTime?                      @map("revision_requested_at") @db.Timestamptz(6)
+  revisionSubmittedAt      DateTime?                      @map("revision_submitted_at") @db.Timestamptz(6)
+  acceptedAt               DateTime?                      @map("accepted_at") @db.Timestamptz(6)
+  rejectedAt               DateTime?                      @map("rejected_at") @db.Timestamptz(6)
+  publishedAt              DateTime?                      @map("published_at") @db.Timestamptz(6)
+  createdAt                DateTime                       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime                       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  author                   User                           @relation("NativeEditorialSubmissionAuthor", fields: [authorUserId], references: [id], onDelete: Restrict)
+  editor                   User?                          @relation("NativeEditorialSubmissionEditor", fields: [editorUserId], references: [id], onDelete: SetNull)
+  events                   NativeEditorialSubmissionEvent[]
+  assets                   NativeEditorialSubmissionAsset[]
+
+  @@unique([authorUserId, publicationVenueId, manuscriptId])
+  @@index([publicationVenueId, status, updatedAt])
+  @@index([authorUserId, status, updatedAt])
+  @@index([editorUserId, status, updatedAt])
+  @@index([manuscriptId, revisionId])
+  @@map("native_editorial_submissions")
+}
+
+/// Append-only audit trail for the Studio-native editorial workflow.
+model NativeEditorialSubmissionEvent {
+  id           String                   @id @default(uuid()) @db.Uuid
+  submissionId String                   @map("submission_id") @db.Uuid
+  actorUserId  String                   @map("actor_user_id") @db.Uuid
+  type         NativeEditorialEventType
+  reviewRound  Int                      @map("review_round")
+  revisionId   String?                  @map("revision_id") @db.VarChar(128)
+  stateDigest  String?                  @map("state_digest") @db.VarChar(64)
+  note         String?                  @db.Text
+  createdAt    DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  submission   NativeEditorialSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  actor        User                     @relation("NativeEditorialEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([submissionId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@map("native_editorial_submission_events")
+}
+
+model NativeEditorialSubmissionAsset {
+  id           String                    @id @default(uuid()) @db.Uuid
+  submissionId String                    @map("submission_id") @db.Uuid
+  assetId      String                    @map("asset_id") @db.VarChar(128)
+  mediaType    String                    @map("media_type") @db.VarChar(200)
+  checksum     String                    @db.VarChar(64)
+  size         Int
+  bytes        Bytes
+  createdAt    DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  submission   NativeEditorialSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, assetId])
+  @@index([submissionId])
+  @@map("native_editorial_submission_assets")
 }
 
 model IntegrationProviderConfig {
