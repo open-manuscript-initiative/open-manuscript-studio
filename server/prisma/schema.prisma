@@ -267,6 +267,8 @@ model EditorialDecision {
   revisionId         String   @map("revision_id") @db.VarChar(128)
   stateDigest        String   @map("state_digest") @db.VarChar(64)
   publicationContentDigest String @map("publication_content_digest") @db.VarChar(64)
+  publicationVenueId String?  @map("publication_venue_id") @db.Uuid
+  authoritySnapshot  Json?    @map("authority_snapshot") @db.JsonB
   reviewRound        Int      @map("review_round")
   decision           String   @db.VarChar(32)
   basisAssignmentIds Json     @map("basis_assignment_ids") @db.JsonB
@@ -279,6 +281,7 @@ model EditorialDecision {
 
   @@unique([workspaceId, manuscriptId, revisionId])
   @@index([manuscriptId, revisionId, decision])
+  @@index([publicationVenueId, decidedAt])
   @@index([decidedByUserId, decidedAt])
   @@map("editorial_decisions")
 }
