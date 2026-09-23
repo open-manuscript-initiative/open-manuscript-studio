@@ -24,6 +24,7 @@ import { institutionalProfileRouter } from './routes/institutionalProfileRoutes.
 import { integrationExecutionRouter } from './routes/integrationExecutionRoutes.js';
 import { integrationRouter } from './routes/integrationRoutes.js';
 import { linkedIdentityRouter } from './routes/linkedIdentityRoutes.js';
+import { nativeEditorialWorkflowRouter } from './routes/nativeEditorialWorkflowRoutes.js';
 import {
   newsletterPublishingRouter,
   webPublicationV1Router,
@@ -78,6 +79,7 @@ app.use(
 
 app.use('/api/integrations/connections/:connectionId/direct-submission', express.json({ limit: '25mb' }));
 app.use('/api/integrations/connections/:connectionId/publication-artifact', express.json({ limit: '48mb' }));
+app.use('/api/native-editorial/submissions', express.json({ limit: '36mb' }));
 app.use('/integrations/omp/native/author/:contextId/revision', express.json({ limit: '36mb' }));
 app.use('/api/publication/render/pdf', express.json({ limit: '64mb' }));
 app.use('/api/publication/newsletter', express.json({ limit: '12mb' }));
@@ -117,6 +119,7 @@ app.use('/api', referenceManagerRouter);
 app.use('/api', directSubmissionRouter);
 app.use('/api', agentReviewRouter);
 app.use('/api', integrationExecutionRouter);
+app.use('/api/native-editorial', nativeEditorialWorkflowRouter);
 app.use('/api', proofreadingRouter);
 app.use('/api', publishingConnectionRouter);
 app.use('/api/publication', publicationPdfRouter);
