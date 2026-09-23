@@ -40,6 +40,13 @@ test('short desktop viewports receive an additional vertical compaction pass', (
   );
 });
 
+test('mobile menu toggle remains aligned with the primary header trigger', () => {
+  assert.match(
+    densityCss,
+    /\.studio-menu-header \{[\s\S]*padding-right: \.6rem;[\s\S]*padding-left: \.6rem;/,
+  );
+});
+
 test('mobile density preserves primary touch targets while removing surrounding whitespace', () => {
   assert.match(
     densityCss,
