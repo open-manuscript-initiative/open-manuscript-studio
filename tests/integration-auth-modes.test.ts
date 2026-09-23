@@ -207,9 +207,22 @@ test('website publication binds assurance to a committed artifact and keeps idem
     webPublicationMigration.match(/CREATE TABLE "editorial_decisions"/g)?.length,
     1,
   );
-  assert.match(
-    webPublicationMigration,
-    /"state_digest" ~ '\^\[0-9a-f\]\{64\}\  assert.match(serverSchema, /model WebPublication \{/);
+  assert.ok(
+    webPublicationMigration.includes(
+      `"state_digest" ~ '^[0-9a-f]{64}$'`,
+    ),
+  );
+  assert.ok(
+    webPublicationMigration.includes(
+      `"publication_content_digest" ~ '^[0-9a-f]{64}$'`,
+    ),
+  );
+  assert.ok(
+    webPublicationMigration.includes(
+      `"evidence_digest" ~ '^[0-9a-f]{64}$'`,
+    ),
+  );
+  assert.match(serverSchema, /model WebPublication \{/);
   assert.match(serverSchema, /model WebPublicationDelivery \{/);
   assert.match(serverSchema, /model WebPublicationApprovalGrant \{/);
   assert.match(serverSchema, /model EditorialDecision \{/);
