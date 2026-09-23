@@ -62,6 +62,11 @@ test('HTML5 visual editing is responsive and preserves changes when returning to
       (section) => section.id === selected,
     )?.layout?.columns ?? 1;
   })).toBe(2);
+  const activeHtmlSection = canvas.locator('.publication-html-section-editor').first();
+  await expect(activeHtmlSection).toHaveAttribute('data-publication-columns', '2');
+  await expect.poll(() => activeHtmlSection.locator('.omi-continuous-tiptap-editor').evaluate(
+    (element) => getComputedStyle(element).columnCount,
+  )).toBe('2');
 
   const ruler = canvas.locator('.publication-document-ruler');
   const rulerBox = await ruler.boundingBox();
