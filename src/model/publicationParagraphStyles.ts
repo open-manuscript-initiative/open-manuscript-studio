@@ -848,6 +848,8 @@ function normalizeOpenType(value: PublicationOpenTypeSettings | undefined): Publ
   const result: PublicationOpenTypeSettings = {};
   for (const key of [
     'ligatures',
+    'titlingAlternates',
+    'swash',
     'discretionaryLigatures',
     'contextualAlternates',
     'fractions',
@@ -856,7 +858,30 @@ function normalizeOpenType(value: PublicationOpenTypeSettings | undefined): Publ
   ] as const) {
     if (typeof value[key] === 'boolean') result[key] = value[key];
   }
-  if (finite(value.stylisticSet)) result.stylisticSet = Math.max(0, Math.min(20, Math.trunc(Number(value.stylisticSet))));
+  if (
+    value.figureStyle === 'default'
+    || value.figureStyle === 'lining-proportional'
+    || value.figureStyle === 'lining-tabular'
+    || value.figureStyle === 'oldstyle-proportional'
+    || value.figureStyle === 'oldstyle-tabular'
+  ) result.figureStyle = value.figureStyle;
+  if (
+    value.positionalForm === 'general'
+    || value.positionalForm === 'initial'
+    || value.positionalForm === 'medial'
+    || value.positionalForm === 'final'
+    || value.positionalForm === 'isolated'
+  ) result.positionalForm = value.positionalForm;
+  if (finite(value.stylisticSet)) {
+    result.stylisticSet = Math.max(0, Math.min(20, Math.trunc(Number(value.stylisticSet))));
+  }
+  if (Array.isArray(value.stylisticSets)) {
+    result.stylisticSets = [...new Set(
+      value.stylisticSets
+        .filter(finite)
+        .map((item) => Math.max(1, Math.min(20, Math.trunc(Number(item))))),
+    )].sort((a, b) => a - b);
+  }
   return Object.keys(result).length ? result : undefined;
 }
 
@@ -864,20 +889,141 @@ function normalizeDecoration(value: PublicationTextDecoration | undefined): Publ
   if (!value) return undefined;
   const result: PublicationTextDecoration = {};
   if (typeof value.enabled === 'boolean') result.enabled = value.enabled;
-  copyText(result, value, 'color');
-  copyNumber(result, value, 'tint', 0, 100);
   copyNumber(result, value, 'weightPt', 0);
   copyNumber(result, value, 'offsetPt');
+  copyStrokeStyle(result, value);
+  copyText(result, value, 'strokeName');
+  copyText(result, value, 'color');
+  copyNumber(result, value, 'tint', 0, 100);
+  if (typeof value.overprint === 'boolean') result.overprint = value.overprint;
+  copyText(result, value, 'gapColor');
+  copyNumber(result, value, 'gapTint', 0, 100);
+  if (typeof value.gapOverprint === 'boolean') result.gapOverprint = value.gapOverprint;
   return Object.keys(result).length ? result : undefined;
 }
 
 function normalizeExportTagging(value: PublicationExportTagging | undefined): PublicationExportTagging | undefined {
   if (!value) return undefined;
   const result: PublicationExportTagging = {};
-  for (const key of ['htmlTag', 'epubTag', 'cssClass'] as const) copyText(result, value, key);
-  if (typeof value.splitDocument === 'boolean') result.splitDocument = value.splitDocument;
-  if (typeof value.emitTag === 'boolean') result.emitTag = value.emitTag;
+  for (const key of ['htmlTag', 'epubTag', 'ariaRole', 'cssClass', 'pdfTag'] as const) {
+    copyText(result, value, key);
+  }
+  for (const key of ['applyHtmlClass', 'emitCss', 'splitDocument', 'emitTag'] as const) {
+    if (typeof value[key] === 'boolean') result[key] = value[key];
+  }
   return Object.keys(result).length ? result : undefined;
+}
+
+function normalizeCharacterStroke(
+  value: PublicationCharacterStroke | undefined,
+): PublicationCharacterStroke | undefined {
+  if (!value) return undefined;
+  const result: PublicationCharacterStroke = {};
+  copyNumber(result, value, 'widthPt', 0);
+  copyText(result, value, 'color');
+  copyNumber(result, value, 'tint', 0, 100);
+  if (typeof value.overprint === 'boolean') result.overprint = value.overprint;
+  copyNumber(result, value, 'miterLimit', 0);
+  if (
+    value.alignment === 'center'
+    || value.alignment === 'inside'
+    || value.alignment === 'outside'
+  ) result.alignment = value.alignment;
+  return Object.keys(result).length ? result : undefined;
+}
+
+function normalizeEdgeWidths(
+  value: PublicationEdgeWidths | undefined,
+): PublicationEdgeWidths | undefined {
+  if (!value) return undefined;
+  const result: PublicationEdgeWidths = {};
+  for (const key of ['topPt', 'rightPt', 'bottomPt', 'leftPt'] as const) {
+    copyNumber(result, value, key, 0);
+  }
+  return Object.keys(result).length ? result : undefined;
+}
+
+function normalizeCorners(
+  value: PublicationCorners | undefined,
+): PublicationCorners | undefined {
+  if (!value) return undefined;
+  const result: PublicationCorners = {};
+  for (const key of ['topLeft', 'topRight', 'bottomRight', 'bottomLeft'] as const) {
+    const corner = normalizeCorner(value[key]);
+    if (corner) result[key] = corner;
+  }
+  return Object.keys(result).length ? result : undefined;
+}
+
+function normalizeCorner(value: PublicationCorner | undefined): PublicationCorner | undefined {
+  if (!value) return undefined;
+  const result: PublicationCorner = {};
+  copyNumber(result, value, 'radiusMm', 0);
+  if (
+    value.shape === 'square'
+    || value.shape === 'rounded'
+    || value.shape === 'bevel'
+    || value.shape === 'inset'
+    || value.shape === 'inverse-rounded'
+  ) result.shape = value.shape;
+  return Object.keys(result).length ? result : undefined;
+}
+
+function normalizeOffsets(
+  value: PublicationOffsets | undefined,
+): PublicationOffsets | undefined {
+  if (!value) return undefined;
+  const result: PublicationOffsets = {};
+  for (const key of ['topMm', 'rightMm', 'bottomMm', 'leftMm'] as const) {
+    copyNumber(result, value, key);
+  }
+  return Object.keys(result).length ? result : undefined;
+}
+
+function normalizePreservedIdml(
+  value: Record<string, PublicationIdmlPrimitive> | undefined,
+): Record<string, PublicationIdmlPrimitive> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const entries = Object.entries(value)
+    .filter(([key, item]) => cleanText(key) && (
+      typeof item === 'string'
+      || typeof item === 'number' && Number.isFinite(item)
+      || typeof item === 'boolean'
+    ))
+    .map(([key, item]) => [key, item] as const);
+  return entries.length ? Object.fromEntries(entries) : undefined;
+}
+
+function copyStrokeStyle<
+  T extends { style?: PublicationRuleStyle },
+>(
+  target: T,
+  source: T,
+): void {
+  if (
+    source.style === 'solid'
+    || source.style === 'dashed'
+    || source.style === 'dotted'
+    || source.style === 'double'
+  ) target.style = source.style;
+}
+
+function isEdgeReference(value: unknown): value is PublicationEdgeReference {
+  return value === 'paragraph'
+    || value === 'text'
+    || value === 'cap-height'
+    || value === 'x-height'
+    || value === 'baseline'
+    || value === 'leading'
+    || value === 'ascent'
+    || value === 'descent';
+}
+
+function removeUndefinedRecord<T extends object>(value: T): T | undefined {
+  for (const [key, item] of Object.entries(value)) {
+    if (item === undefined) delete (value as Record<string, unknown>)[key];
+  }
+  return Object.keys(value).length ? value : undefined;
 }
 
 function removeUndefinedObjects(
