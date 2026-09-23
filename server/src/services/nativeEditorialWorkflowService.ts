@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 import { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
@@ -23,6 +23,13 @@ import {
   listStudioNativePublicationVenuesForEditor,
 } from './publicationVenueAuthorityService.js';
 
+export interface NativeEditorialAssetInput {
+  assetId: string;
+  mediaType: string;
+  checksum: string;
+  bytesBase64: string;
+}
+
 export interface NativeEditorialRevisionInput {
   manuscriptId: string;
   title: string;
@@ -31,6 +38,7 @@ export interface NativeEditorialRevisionInput {
   publicationContentDigest: string;
   manuscriptStateSnapshot: unknown;
   reviewSnapshot: unknown;
+  assets?: NativeEditorialAssetInput[] | undefined;
 }
 
 export interface NativeEditorialSubmissionInput extends NativeEditorialRevisionInput {
@@ -81,6 +89,18 @@ export async function submitNativeEditorialManuscript(
           role: 'AUTHOR',
         },
       });
+      if (revision.assets.length) {
+        await transaction.nativeEditorialSubmissionAsset.createMany({
+          data: revision.assets.map((asset) => ({
+            submissionId: created.id,
+            assetId: asset.assetId,
+            mediaType: asset.mediaType,
+            checksum: asset.checksum,
+            size: asset.bytes.byteLength,
+            bytes: asset.bytes,
+          })),
+        });
+      }
       await transaction.nativeEditorialSubmissionEvent.create({
         data: {
           submissionId: created.id,
@@ -339,6 +359,21 @@ export async function submitNativeEditorialRevision(
         revisionSubmittedAt: new Date(),
       },
     });
+    await transaction.nativeEditorialSubmissionAsset.deleteMany({
+      where: { submissionId: submission.id },
+    });
+    if (revision.assets.length) {
+      await transaction.nativeEditorialSubmissionAsset.createMany({
+        data: revision.assets.map((asset) => ({
+          submissionId: submission.id,
+          assetId: asset.assetId,
+          mediaType: asset.mediaType,
+          checksum: asset.checksum,
+          size: asset.bytes.byteLength,
+          bytes: asset.bytes,
+        })),
+      });
+    }
     await transaction.nativeEditorialSubmissionEvent.create({
       data: {
         submissionId: submission.id,
@@ -622,6 +657,7 @@ async function loadSubmission(submissionId: string) {
         },
       },
       events: { orderBy: { createdAt: 'asc' } },
+      assets: { orderBy: { assetId: 'asc' } },
     },
   });
   if (!submission) throw notFound('The Studio-native submission was not found.');
@@ -657,6 +693,10 @@ function validateRevisionInput(input: NativeEditorialRevisionInput) {
     throw conflict('The submitted manuscript-state digest does not match the supplied snapshot.');
   }
   const reviewSnapshot = sanitizeReviewManuscript(input.reviewSnapshot);
+  const assets = validateSubmissionAssets(
+    manuscriptStateSnapshot,
+    input.assets ?? [],
+  );
   return {
     manuscriptId,
     title: title || reviewSnapshot.title || 'Untitled manuscript',
@@ -665,6 +705,7 @@ function validateRevisionInput(input: NativeEditorialRevisionInput) {
     publicationContentDigest,
     manuscriptStateSnapshot,
     reviewSnapshot,
+    assets,
   };
 }
 
@@ -735,6 +776,13 @@ function serializeSubmissionDetail(
     manuscriptStateSnapshot: submission.manuscriptStateSnapshot,
     reviewSnapshot: submission.reviewSnapshot,
     author: serializePerson(submission.author),
+    assets: submission.assets.map((asset) => ({
+      assetId: asset.assetId,
+      mediaType: asset.mediaType,
+      checksum: asset.checksum,
+      size: asset.size,
+      bytesBase64: Buffer.from(asset.bytes).toString('base64'),
+    })),
     events: submission.events.map((event) => ({
       id: event.id,
       type: event.type.toLowerCase(),
@@ -762,6 +810,101 @@ function serializePerson(person: {
     ...(person.affiliation ? { affiliation: person.affiliation } : {}),
     ...(person.orcid ? { orcid: person.orcid } : {}),
   };
+}
+
+function validateSubmissionAssets(
+  manuscriptStateSnapshot: Record<string, unknown>,
+  inputs: NativeEditorialAssetInput[],
+): Array<{
+  assetId: string;
+  mediaType: string;
+  checksum: string;
+  bytes: Uint8Array;
+}> {
+  const declared = new Map<string, {
+    mediaType: string;
+    size: number;
+    checksum: string;
+  }>();
+  const rawAssets = Array.isArray(manuscriptStateSnapshot.assets)
+    ? manuscriptStateSnapshot.assets
+    : [];
+  for (const raw of rawAssets) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
+    const asset = raw as Record<string, unknown>;
+    const checksumRecord =
+      asset.checksum && typeof asset.checksum === 'object' && !Array.isArray(asset.checksum)
+        ? asset.checksum as Record<string, unknown>
+        : null;
+    const assetId = typeof asset.id === 'string' ? asset.id.trim() : '';
+    const mediaType = typeof asset.mediaType === 'string' ? asset.mediaType.trim() : '';
+    const size = typeof asset.size === 'number' && Number.isInteger(asset.size)
+      ? asset.size
+      : -1;
+    const checksum = checksumRecord?.algorithm === 'sha256' &&
+      typeof checksumRecord.value === 'string'
+      ? checksumRecord.value.toLowerCase()
+      : '';
+    if (!assetId || !mediaType || size < 0 || !/^[a-f0-9]{64}$/.test(checksum)) {
+      throw new Error('Submitted manuscript asset metadata is invalid.');
+    }
+    declared.set(assetId, { mediaType, size, checksum });
+  }
+
+  const supplied = new Map<string, NativeEditorialAssetInput>();
+  for (const input of inputs) {
+    const assetId = input.assetId.trim();
+    if (!assetId || supplied.has(assetId)) {
+      throw new Error('Submitted manuscript assets contain a duplicate or empty identifier.');
+    }
+    supplied.set(assetId, input);
+  }
+  if (declared.size !== supplied.size) {
+    throw conflict(
+      'The submitted asset payload set does not match the manuscript asset metadata.',
+    );
+  }
+
+  const result: Array<{
+    assetId: string;
+    mediaType: string;
+    checksum: string;
+    bytes: Uint8Array;
+  }> = [];
+  let totalBytes = 0;
+  for (const [assetId, metadata] of declared) {
+    const input = supplied.get(assetId);
+    if (!input) {
+      throw conflict(`The submitted manuscript is missing asset payload ${assetId}.`);
+    }
+    let bytes: Uint8Array;
+    try {
+      bytes = new Uint8Array(Buffer.from(input.bytesBase64, 'base64'));
+    } catch {
+      throw new Error(`Asset ${assetId} is not valid base64 data.`);
+    }
+    totalBytes += bytes.byteLength;
+    if (bytes.byteLength !== metadata.size) {
+      throw conflict(`Asset ${assetId} does not match its declared size.`);
+    }
+    const checksum = createHash('sha256').update(bytes).digest('hex');
+    if (checksum !== metadata.checksum || input.checksum.toLowerCase() !== checksum) {
+      throw conflict(`Asset ${assetId} does not match its declared SHA-256 checksum.`);
+    }
+    if (input.mediaType.trim() !== metadata.mediaType) {
+      throw conflict(`Asset ${assetId} does not match its declared media type.`);
+    }
+    result.push({
+      assetId,
+      mediaType: metadata.mediaType,
+      checksum,
+      bytes,
+    });
+  }
+  if (totalBytes > 48 * 1024 * 1024) {
+    throw new Error('The submitted manuscript assets exceed the 48 MiB Studio-native workflow limit.');
+  }
+  return result;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
