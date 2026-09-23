@@ -982,6 +982,14 @@
   break-inside: avoid;
 }
 
+.omi-tab-node {
+  display: inline-block;
+  min-width: 2px;
+  height: 1em;
+  vertical-align: baseline;
+  user-select: none;
+}
+
 .publication-html-section-editor + .publication-html-section-editor {
   padding-top: 0.2rem;
   border-top: 1px solid rgba(148, 163, 184, 0.24);
