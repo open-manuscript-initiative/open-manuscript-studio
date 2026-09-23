@@ -24,6 +24,10 @@ import {
   requestWebPublicationApproval,
   type IntegrationConnection,
 } from '../services/integrationApi';
+import {
+  findNativeEditorialSubmissionForManuscript,
+  markNativeEditorialPublished,
+} from '../services/nativeEditorialWorkflowApi';
 import { prepareWebPublicationArtifact } from '../services/webPublicationArtifact';
 import type { OmiManuscript } from '../types/omi';
 
@@ -243,6 +247,21 @@ export function NewsletterPublishingPanel() {
         approval.grant.executionToken,
       );
       setReceipt(next);
+      if (publicationStatus === 'publish') {
+        const nativeSubmission = await findNativeEditorialSubmissionForManuscript(
+          prepared.source.id,
+        );
+        if (
+          nativeSubmission?.status === 'accepted' &&
+          nativeSubmission.revisionId === prepared.artifact.build.manuscript.revisionId
+        ) {
+          await markNativeEditorialPublished(
+            nativeSubmission.id,
+            nativeSubmission.revisionId,
+            next.externalUrl ?? undefined,
+          );
+        }
+      }
       setMessage(
         publicationStatus === 'draft'
           ? copy.sentDraft
@@ -354,10 +373,15 @@ export function NewsletterPublishingPanel() {
                 </select>
               </label>
               {assuranceEvidence.decisions.length === 0 ? (
-                <p className="publication-profile-status">{copy.noVerifiedReview}</p>
+                <p className="publication-profile-status">
+                  {isStudioNativeDnsVenue(prepared.source)
+                    ? copy.nativeEditorialDecisionRequired
+                    : copy.noVerifiedReview}
+                </p>
               ) : null}
               {assuranceEvidence.eligibleReviewRounds.length > 0 &&
-              assuranceEvidence.decisions.length === 0 ? (
+              assuranceEvidence.decisions.length === 0 &&
+              !isStudioNativeDnsVenue(prepared.source) ? (
                 <fieldset className="publication-profile-options">
                   <legend>{copy.editorialAcceptanceTitle}</legend>
                   <p>{copy.editorialAcceptanceHelp}</p>
@@ -453,6 +477,18 @@ export function NewsletterPublishingPanel() {
   );
 }
 
+function isStudioNativeDnsVenue(manuscript: OmiManuscript): boolean {
+  const venue = manuscript.metadata?.publicationVenue;
+  return Boolean(
+    venue?.authority?.method === 'DNS_TXT' &&
+    venue.authority.status === 'VERIFIED' &&
+    !(
+      venue.integrationStatus === 'VERIFIED' &&
+      (venue.integrationProvider === 'OJS' || venue.integrationProvider === 'OMP')
+    ),
+  );
+}
+
 function reviewRoundKey(reviewRound: EligibleEditorialReviewRound): string {
   return `${reviewRound.workspaceId}\u0000${reviewRound.reviewRound}`;
 }
@@ -487,6 +523,7 @@ function getCopy(locale: string) {
       publisherVerified: 'szaklektorált — hitelesített folyóirati döntés',
       round: 'forduló',
       noVerifiedReview: 'Ehhez a pontos revízióhoz nincs Studio által igazolt szerkesztői elfogadó döntés. A publikáció csak „nem szaklektorált” jelöléssel küldhető.',
+      nativeEditorialDecisionRequired: 'Ehhez a pontos revízióhoz még nincs szerkesztői elfogadó döntés. DNS-hitelesített Studio-native folyóiratnál ezt a Szerkesztőségi munkafolyamat menüben kell rögzíteni, a publikálástól elkülönítve.',
       editorialAcceptanceTitle: 'Studio-lektorálás lezárása',
       editorialAcceptanceHelp: 'A teljes Studio-natív tudományos lektori forduló elkészült. A „lektorált” pecséthez egy szerkesztőnek külön el kell fogadnia ezt a pontos, rögzített revíziót. DNS-sel hitelesített folyóirat esetén csak az adott folyóirat aktív szerkesztője rögzíthet hitelesített folyóirati döntést.',
       reviewRound: 'Lektori forduló',
@@ -531,6 +568,7 @@ function getCopy(locale: string) {
       publisherVerified: 'begutachtet — durch verifizierte Publikationsstelle bestätigt',
       round: 'Runde',
       noVerifiedReview: 'Für diese genaue Revision liegt keine durch Studio verifizierte redaktionelle Annahmeentscheidung vor. Sie kann nur als „nicht begutachtet“ versendet werden.',
+      nativeEditorialDecisionRequired: 'Für diese genaue Revision liegt noch keine redaktionelle Annahme vor. Bei einer DNS-verifizierten Studio-nativen Publikationsstelle wird sie im redaktionellen Workflow getrennt von der Veröffentlichung erfasst.',
       editorialAcceptanceTitle: 'Studio-Begutachtung abschließen',
       editorialAcceptanceHelp: 'Die vollständige Studio-interne wissenschaftliche Begutachtungsrunde ist abgeschlossen. Für das Begutachtungssiegel muss eine Redakteurin oder ein Redakteur diese genaue Revision ausdrücklich annehmen. Bei einer per DNS verifizierten Publikationsstelle kann nur eine aktive Redakteurin oder ein aktiver Redakteur dieser Stelle eine verifizierte Entscheidung erfassen.',
       reviewRound: 'Begutachtungsrunde',
@@ -574,6 +612,7 @@ function getCopy(locale: string) {
     publisherVerified: 'peer reviewed — verified publication venue decision',
     round: 'round',
     noVerifiedReview: 'No Studio-verified editorial acceptance exists for this exact revision. It can be sent only with a “not peer reviewed” disclosure.',
+    nativeEditorialDecisionRequired: 'No editorial acceptance exists for this exact revision. For a DNS-verified Studio-native venue, record it in Editorial workflow separately from publication.',
     editorialAcceptanceTitle: 'Complete Studio peer review',
     editorialAcceptanceHelp: 'A complete Studio-native scientific review round is available. An editor must separately accept this exact committed revision before it may carry the peer-reviewed seal. For a DNS-verified publication venue, only an active editor of that venue can record a publisher-verified decision.',
     reviewRound: 'Review round',
