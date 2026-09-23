@@ -65,8 +65,16 @@ test('converts table data to tab-separated text blocks without losing cell order
   assert.equal(blocks.length, 2);
   assert.equal(blocks[0]?.id, 'table-1');
   assert.equal(blocks[1]?.id, 'generated-1');
-  assert.match(blocks[0]?.content ?? '', /Name\\tValue/);
-  assert.match(blocks[1]?.content ?? '', /Alpha\\t12/);
+  const first = JSON.parse(blocks[0]?.content ?? '{}');
+  const second = JSON.parse(blocks[1]?.content ?? '{}');
+  assert.deepEqual(
+    first.content?.[0]?.content?.map((node: { type?: string; text?: string }) => [node.type, node.text]),
+    [['text', 'Name'], ['omiTab', undefined], ['text', 'Value']],
+  );
+  assert.deepEqual(
+    second.content?.[0]?.content?.map((node: { type?: string; text?: string }) => [node.type, node.text]),
+    [['text', 'Alpha'], ['omiTab', undefined], ['text', '12']],
+  );
 });
 
 test('keeps table data rectangular while editing rows and columns', () => {
