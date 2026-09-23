@@ -164,31 +164,40 @@ export async function verifyPublicationVenueDomainClaim(userId: string, claimId:
     throw conflict('The required DNS TXT value was not found. DNS propagation may still be in progress.');
   }
   const now = new Date();
-  return identityPrisma.$transaction(async (transaction) => {
-    const verified = await transaction.publicationVenueDomainVerification.update({
-      where: { id: claim.id },
-      data: { status: 'VERIFIED', verifiedAt: claim.verifiedAt ?? now, lastCheckedAt: now },
-      include: { venue: true },
-    });
-    await transaction.publicationVenueMembership.upsert({
-      where: {
-        venueId_userId_role: {
+  try {
+    return await identityPrisma.$transaction(async (transaction) => {
+      const verified = await transaction.publicationVenueDomainVerification.update({
+        where: { id: claim.id },
+        data: { status: 'VERIFIED', verifiedAt: claim.verifiedAt ?? now, lastCheckedAt: now },
+        include: { venue: true },
+      });
+      await transaction.publicationVenueMembership.upsert({
+        where: {
+          venueId_userId_role: {
+            venueId: claim.venueId,
+            userId: claim.requestedByUserId,
+            role: 'DOMAIN_ADMIN',
+          },
+        },
+        update: { active: true, grantedByUserId: userId },
+        create: {
           venueId: claim.venueId,
           userId: claim.requestedByUserId,
           role: 'DOMAIN_ADMIN',
+          active: true,
+          grantedByUserId: userId,
         },
-      },
-      update: { active: true, grantedByUserId: userId },
-      create: {
-        venueId: claim.venueId,
-        userId: claim.requestedByUserId,
-        role: 'DOMAIN_ADMIN',
-        active: true,
-        grantedByUserId: userId,
-      },
+      });
+      return verified;
     });
-    return verified;
-  });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      throw conflict(
+        'Another DNS challenge established publication-venue authority first. Reload the venue authority before retrying.',
+      );
+    }
+    throw error;
+  }
 }
 
 export async function getPublicationVenueAuthorityOverview(userId: string, venueId: string) {
@@ -358,6 +367,14 @@ function sha256(value: string): string { return createHash('sha256').update(valu
 function safeHashEqual(left: string, right: string): boolean {
   if (!/^[a-f0-9]{64}$/iu.test(left) || !/^[a-f0-9]{64}$/iu.test(right)) return false;
   return timingSafeEqual(Buffer.from(left, 'hex'), Buffer.from(right, 'hex'));
+}
+function isUniqueConstraintError(error: unknown): boolean {
+  return Boolean(
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    (error as { code?: unknown }).code === 'P2002',
+  );
 }
 function forbidden(message: string): Error { const error = new Error(message); error.name = 'ForbiddenError'; return error; }
 function conflict(message: string): Error { const error = new Error(message); error.name = 'ConflictError'; return error; }
