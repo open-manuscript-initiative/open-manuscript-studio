@@ -9,8 +9,10 @@ import {
   type IdmlPublicationStyleImportResult,
   type IdmlStylePatch,
 } from '../services/idmlPublicationStyleImport';
-
-type PublicationStyle = typeof templateJson;
+import {
+  normalizePublicationStyle,
+  type PublicationStyle,
+} from '../services/publicationStyleExport';
 
 const LEGACY_STORAGE_KEY = 'omi:publication-style:egyhaztorteneti-szemle';
 const LIBRARY_STORAGE_KEY = 'omi:publication-style-library:v1';
@@ -107,12 +109,23 @@ function createPublicationStyle(imported: IdmlPublicationStyleImportResult): Pub
   if (margins?.inner !== undefined) next.page.margins.inner = margins.inner;
   if (margins?.outer !== undefined) next.page.margins.outer = margins.outer;
 
+  if (imported.paragraphStyles.length) {
+    const importedIds = new Set(imported.paragraphStyles.map((style) => style.id));
+    const mappedBodyId = imported.mappedStyles.find(
+      (mapping) => mapping.target === 'body' && importedIds.has(mapping.sourceId),
+    )?.sourceId;
+    next.paragraphStyles = {
+      defaultStyleId: mappedBodyId ?? imported.paragraphStyles[0].id,
+      items: imported.paragraphStyles,
+    };
+  }
+
   let bodyFont: string | undefined;
   let noteFont: string | undefined;
   for (const [key, patch] of Object.entries(imported.styles) as Array<[keyof PublicationStyle['styles'], IdmlStylePatch]>) {
     if (!(key in next.styles)) continue;
-    const { fontFamily, ...stylePatch } = patch;
-    Object.assign(next.styles[key] as object, stylePatch);
+    const fontFamily = patch.fontFamily;
+    Object.assign(next.styles[key] as object, semanticStylePatch(patch));
     if (fontFamily) {
       if (key === 'footnote') noteFont = fontFamily;
       else bodyFont ??= fontFamily;
@@ -124,7 +137,27 @@ function createPublicationStyle(imported: IdmlPublicationStyleImportResult): Pub
     if (!noteFont) next.fonts.note.family = bodyFont;
   }
   if (noteFont) next.fonts.note.family = noteFont;
-  return next;
+  return normalizePublicationStyle(next);
+}
+
+function semanticStylePatch(patch: IdmlStylePatch): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const key of [
+    'fontSize',
+    'lineHeight',
+    'fontWeight',
+    'fontStyle',
+    'alignment',
+    'firstLineIndent',
+    'spaceBefore',
+    'spaceAfter',
+    'hyphenation',
+    'keepWithNext',
+  ] as const) {
+    const value = patch[key];
+    if (value !== undefined) result[key] = value;
+  }
+  return result;
 }
 
 function loadLibrary(): PublicationStyle[] {

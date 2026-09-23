@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { buildIdmlExport, IDML_MEDIA_TYPE } from '../src/services/exportIdml.ts';
+import type { PublicationStyle } from '../src/services/publicationStyleExport.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
 
 test('builds an IDML package with paragraph and character styles', () => {
@@ -54,6 +55,84 @@ test('builds an IDML package with paragraph and character styles', () => {
 
   const spread = new TextDecoder().decode(entries.get('Spreads/Spread_u2.xml'));
   assert.match(spread, /ParentStory="u3"/);
+});
+
+
+test('exports assigned Studio paragraph styles as real IDML paragraph styles', () => {
+  const manuscript = createVersionedTestManuscript();
+  const block = manuscript.sections[0]?.blocks[0];
+  assert.ok(block);
+  block.paragraphStyleId = 'chapter-title';
+
+  const publicationStyle = {
+    paragraphStyles: {
+      defaultStyleId: 'body',
+      items: [
+        {
+          id: 'body',
+          name: 'Body',
+          basedOnId: null,
+          nextStyleId: 'body',
+          properties: {
+            fontFamily: 'Garamond Premier Pro',
+            fontSize: 11,
+          },
+        },
+        {
+          id: 'chapter-title',
+          name: 'Szakaszcím',
+          basedOnId: 'body',
+          nextStyleId: 'body',
+          properties: {
+            fontFamily: 'Garamond Premier Pro',
+            fontSize: 18,
+            fontStyle: 'italic',
+            tracking: 100,
+            tabStops: [{
+              positionMm: 25.4,
+              alignment: 'right',
+              leader: '.',
+            }],
+            nestedStyles: [{
+              id: 'nested-1',
+              characterStyleId: 'OMI Small Caps',
+              repeat: 1,
+              through: false,
+              delimiter: ':',
+            }],
+            grepStyles: [{
+              id: 'grep-1',
+              characterStyleId: 'OMI Emphasis',
+              expression: '\\d+',
+            }],
+            hyphenation: false,
+            openType: {
+              ligatures: true,
+              contextualAlternates: true,
+              stylisticSets: [1, 3],
+            },
+          },
+        },
+      ],
+    },
+  } as unknown as PublicationStyle;
+
+  const result = buildIdmlExport(manuscript, publicationStyle);
+  const entries = readStoreZipEntries(result.bytes);
+  const styles = new TextDecoder().decode(entries.get('Resources/Styles.xml'));
+  const story = new TextDecoder().decode(entries.get('Stories/Story_u3.xml'));
+
+  assert.match(styles, /Self="ParagraphStyle\/chapter-title"/);
+  assert.match(styles, /Name="Szakaszcím"/);
+  assert.match(styles, /NextStyle="ParagraphStyle\/body"/);
+  assert.match(styles, /<BasedOn type="object">ParagraphStyle\/body<\/BasedOn>/);
+  assert.match(styles, /PointSize="18"/);
+  assert.match(styles, /Tracking="100"/);
+  assert.match(styles, /<TabStop[^>]*Position="72"[^>]*Alignment="RightAlign"/);
+  assert.match(styles, /<AllNestedStyles type="list">/);
+  assert.match(styles, /<AllGREPStyles type="list">/);
+  assert.match(styles, /OtfStylisticSets="5"/);
+  assert.match(story, /AppliedParagraphStyle="ParagraphStyle\/chapter-title"/);
 });
 
 function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {

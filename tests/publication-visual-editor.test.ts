@@ -24,6 +24,10 @@ const styleEditor = readFileSync(
   new URL('../src/components/PublicationStyleEditor.tsx', import.meta.url),
   'utf8',
 );
+const inDesignParagraphStyles = readFileSync(
+  new URL('../src/components/InDesignParagraphStyleSettings.tsx', import.meta.url),
+  'utf8',
+);
 const documentCanvas = readFileSync(
   new URL('../src/components/PublicationDocumentCanvas.tsx', import.meta.url),
   'utf8',
@@ -158,6 +162,41 @@ test('publication settings use a Word-like top ribbon instead of a permanent sid
   assert.doesNotMatch(styleEditor, /<aside className="publication-style-controls"/);
   assert.match(editorStyles, /\.publication-style-ribbon-panel \{[\s\S]*position: absolute/);
   assert.match(editorStyles, /\.publication-style-editor-layout \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
+});
+
+test('paragraph style editor exposes the complete InDesign-compatible category set', () => {
+  assert.match(styleEditor, /<InDesignParagraphStyleSettings/);
+  for (const category of [
+    'general',
+    'basic',
+    'advanced',
+    'indents',
+    'tabs',
+    'rules',
+    'border',
+    'shading',
+    'keep',
+    'hyphenation',
+    'justification',
+    'columns',
+    'nested',
+    'grep',
+    'bullets',
+    'color',
+    'opentype',
+    'underline',
+    'strikethrough',
+    'export',
+  ]) {
+    assert.match(inDesignParagraphStyles, new RegExp("id: '" + category + "'"));
+  }
+  assert.match(inDesignParagraphStyles, /paragraphStyleWouldCreateCycle/);
+  assert.match(inDesignParagraphStyles, /onSetProperty\('tabStops'/);
+  assert.match(inDesignParagraphStyles, /onSetProperty\('grepStyles'/);
+  assert.match(inDesignParagraphStyles, /onSetProperty\('openType'/);
+  assert.match(inDesignParagraphStyles, /onSetProperty\('exportTagging'/);
+  assert.match(editorStyles, /\.indesign-paragraph-style-settings \{[\s\S]*grid-template-columns:/);
+  assert.match(editorStyles, /@media \(max-width: 900px\)[\s\S]*\.indesign-paragraph-style-settings \{[\s\S]*grid-template-columns: 1fr/);
 });
 
 test('live publication editor switches between print and semantic HTML5 visual editing', () => {
@@ -482,10 +521,10 @@ test('InDesign-like paragraph styles inherit, assign, and feed print CSS', () =>
   assert.match(exportRenderer, /data-omi-paragraph-style-id/);
   assert.match(exportRenderer, /text-block:not\(\[data-omi-paragraph-style-id\]\)/);
   assert.match(styleEditor, /panelId="paragraphStyles"/);
-  assert.match(styleEditor, /paragraphStyleWouldCreateCycle/);
+  assert.match(inDesignParagraphStyles, /paragraphStyleWouldCreateCycle/);
   assert.match(styleEditor, /setBlockParagraphStyle/);
-  assert.match(styleEditor, /copy\.basedOn/);
-  assert.match(styleEditor, /copy\.nextStyle/);
+  assert.match(inDesignParagraphStyles, /copy\.basedOn/);
+  assert.match(inDesignParagraphStyles, /copy\.nextStyle/);
   assert.match(documentCanvas, /:not\(\[data-paragraph-style-id\]\)/);
 });
 

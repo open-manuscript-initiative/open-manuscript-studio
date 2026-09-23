@@ -598,6 +598,166 @@
   font-size: 0.72rem;
 }
 
+
+.indesign-paragraph-style-settings {
+  display: grid;
+  grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr);
+  gap: 0.8rem;
+  min-width: 0;
+  min-height: 27rem;
+}
+
+.indesign-paragraph-style-categories {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  max-height: 31rem;
+  overflow: auto;
+  padding: 0.28rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.38rem;
+  background: #f8fafc;
+  scrollbar-width: thin;
+}
+
+.indesign-paragraph-style-categories > button {
+  width: 100%;
+  min-height: 1.8rem;
+  padding: 0.3rem 0.45rem;
+  border: 0;
+  border-radius: 0.24rem;
+  background: transparent;
+  color: #334155;
+  font: inherit;
+  font-size: 0.7rem;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.indesign-paragraph-style-categories > button:hover,
+.indesign-paragraph-style-categories > button:focus-visible,
+.indesign-paragraph-style-categories > button.is-active {
+  background: #5f7f9e;
+  color: #fff;
+  outline: none;
+}
+
+.indesign-paragraph-style-category-pane {
+  min-width: 0;
+  max-height: 31rem;
+  overflow: auto;
+  padding: 0.1rem 0.35rem 0.6rem;
+  scrollbar-width: thin;
+}
+
+.indesign-paragraph-style-category-pane > header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #dbe2ea;
+}
+
+.indesign-paragraph-style-category-pane > header strong {
+  color: #334155;
+  font-size: 0.78rem;
+}
+
+.indesign-paragraph-style-category-pane > header span {
+  min-width: 0;
+  overflow: hidden;
+  color: #64748b;
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.indesign-paragraph-style-summary,
+.indesign-subpanel {
+  margin-top: 0.75rem;
+  padding: 0.6rem;
+  border: 1px solid #d7dee8;
+  border-radius: 0.38rem;
+  background: #fbfcfe;
+}
+
+.indesign-paragraph-style-summary p {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.indesign-paragraph-style-stack,
+.indesign-repeatable-editor {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.indesign-repeatable-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(7rem, 1fr)) auto;
+  gap: 0.45rem;
+  align-items: end;
+  padding: 0.45rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.35rem;
+  background: #fff;
+}
+
+.indesign-repeatable-row > button {
+  min-height: 2.05rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.3rem;
+  background: #fff;
+  color: #475569;
+  font: inherit;
+  font-size: 0.68rem;
+}
+
+.indesign-number-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.indesign-number-field small {
+  color: #64748b;
+  font-size: 0.65rem;
+}
+
+@media (max-width: 900px) {
+  .publication-paragraph-style-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .publication-paragraph-style-list {
+    max-height: 11rem;
+  }
+
+  .indesign-paragraph-style-settings {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .indesign-paragraph-style-categories {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: 13rem;
+  }
+
+  .indesign-paragraph-style-category-pane {
+    max-height: none;
+  }
+
+  .indesign-repeatable-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .publication-paragraph-style-inheritance-note {
   align-self: center;
   color: #64748b;

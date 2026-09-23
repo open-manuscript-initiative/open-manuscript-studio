@@ -13,6 +13,7 @@ import {
   OMI_HTML_PACKAGE_VERSION,
 } from '../services/exportHtmlPackage';
 import { buildIdmlExport } from '../services/exportIdml';
+import { loadPublicationStyle } from '../services/publicationStyleExport';
 import {
   jatsFileName,
   OMI_JATS_RENDERER_VERSION,
@@ -183,7 +184,7 @@ export function ExportFormatsPanel() {
           break;
         }
         case 'idml': {
-          const result = buildIdmlExport(manuscript);
+          const result = buildIdmlExport(manuscript, loadPublicationStyle());
           reportDelivery(await saveExportBlob(result.blob, result.fileName));
           break;
         }
