@@ -14,7 +14,7 @@ import { verifyPublicationBuildArtifact } from '../src/services/publicationBuild
 import { prepareWebPublicationArtifact } from '../src/services/webPublicationArtifact.ts';
 import { createHtmlGalleyStudy } from './fixtures/htmlGalleyStudy.ts';
 
-const editorialEvidence = {
+const editorialEvidenceBase = {
   type: 'studio-editorial-decision' as const,
   decisionId: '4c8140f0-57e5-41ff-b9f4-ebdd5262a931',
   evidenceDigest: '7'.repeat(64),
@@ -29,6 +29,7 @@ test('unreviewed web publication carries a visible and machine-readable disclosu
   );
 
   assert.equal(artifact.assurance.reviewStatus, 'not-peer-reviewed');
+  assert.match(artifact.publicationContentDigest, /^[a-f0-9]{64}$/);
   assert.match(artifact.html, /<meta name="omi-review-status" content="not-peer-reviewed">/);
   assert.match(artifact.html, /data-omi-review-status="not-peer-reviewed"/);
   assert.match(artifact.html, /data-omi-assurance-version="1"/);
@@ -40,12 +41,22 @@ test('unreviewed web publication carries a visible and machine-readable disclosu
 });
 
 test('peer-reviewed seal carries only revision-bound editorial evidence, never reviewer identity', async () => {
+  const manuscript = createCommittedHtmlGalleyStudy();
+  const unreviewed = await prepareWebPublicationArtifact(
+    manuscript,
+    createAccountHolderApprovedAssurance('scholarly-article'),
+  );
+  const editorialEvidence = {
+    ...editorialEvidenceBase,
+    publicationContentDigest: unreviewed.publicationContentDigest,
+  };
   const artifact = await prepareWebPublicationArtifact(
-    createCommittedHtmlGalleyStudy(),
+    manuscript,
     createStudioReviewedAssurance('scholarly-article', editorialEvidence),
   );
 
   assert.equal(artifact.assurance.reviewStatus, 'peer-reviewed');
+  assert.equal(artifact.publicationContentDigest, editorialEvidence.publicationContentDigest);
   assert.match(artifact.html, /<meta name="omi-review-status" content="peer-reviewed">/);
   assert.match(artifact.html, /data-omi-review-status="peer-reviewed"/);
   assert.match(artifact.html, />OMI\nPEER REVIEW\nVERIFIED</);
@@ -55,12 +66,38 @@ test('peer-reviewed seal carries only revision-bound editorial evidence, never r
   assert.equal(verifyPublicationBuildArtifact(artifact.build, artifact.html), true);
 });
 
+test('peer-reviewed assurance cannot be reused after publication content changes', async () => {
+  const manuscript = createCommittedHtmlGalleyStudy();
+  const unreviewed = await prepareWebPublicationArtifact(
+    manuscript,
+    createAccountHolderApprovedAssurance('scholarly-article'),
+  );
+  const evidence = {
+    ...editorialEvidenceBase,
+    publicationContentDigest: unreviewed.publicationContentDigest,
+  };
+  const changed = structuredClone(manuscript);
+  changed.title = `${changed.title} changed after acceptance`;
+
+  await assert.rejects(
+    prepareWebPublicationArtifact(
+      changed,
+      createStudioReviewedAssurance('scholarly-article', evidence),
+    ),
+    /different publication content/i,
+  );
+});
+
 test('review assurance changes the artifact and delivery idempotency identity', async () => {
   const manuscript = createCommittedHtmlGalleyStudy();
   const unreviewed = await prepareWebPublicationArtifact(
     manuscript,
     createAccountHolderApprovedAssurance('scholarly-article'),
   );
+  const editorialEvidence = {
+    ...editorialEvidenceBase,
+    publicationContentDigest: unreviewed.publicationContentDigest,
+  };
   const reviewed = await prepareWebPublicationArtifact(
     manuscript,
     createStudioReviewedAssurance('scholarly-article', editorialEvidence),
