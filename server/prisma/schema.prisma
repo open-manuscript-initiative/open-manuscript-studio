@@ -339,6 +339,7 @@ model NativeEditorialSubmission {
   updatedAt                DateTime                       @updatedAt @map("updated_at") @db.Timestamptz(6)
   author                   User                           @relation("NativeEditorialSubmissionAuthor", fields: [authorUserId], references: [id], onDelete: Restrict)
   events                   NativeEditorialSubmissionEvent[]
+  assets                   NativeEditorialSubmissionAsset[]
 
   @@unique([authorUserId, publicationVenueId, manuscriptId])
   @@index([publicationVenueId, status, updatedAt])
@@ -364,6 +365,22 @@ model NativeEditorialSubmissionEvent {
   @@index([submissionId, createdAt])
   @@index([actorUserId, createdAt])
   @@map("native_editorial_submission_events")
+}
+
+model NativeEditorialSubmissionAsset {
+  id           String                    @id @default(uuid()) @db.Uuid
+  submissionId String                    @map("submission_id") @db.Uuid
+  assetId      String                    @map("asset_id") @db.VarChar(128)
+  mediaType    String                    @map("media_type") @db.VarChar(200)
+  checksum     String                    @db.VarChar(64)
+  size         Int
+  bytes        Bytes
+  createdAt    DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  submission   NativeEditorialSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, assetId])
+  @@index([submissionId])
+  @@map("native_editorial_submission_assets")
 }
 
 model IntegrationProviderConfig {
