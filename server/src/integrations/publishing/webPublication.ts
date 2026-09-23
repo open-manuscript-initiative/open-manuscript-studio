@@ -45,6 +45,7 @@ export interface EditorialDecisionEvidence {
   type: 'studio-editorial-decision';
   decisionId: string;
   evidenceDigest: string;
+  publicationContentDigest: string;
   reviewRound: number;
   decidedAt: string;
 }
@@ -208,7 +209,14 @@ export async function issueWebPublicationApproval(
   assertConnectionVersion(connection.updatedAt, input.connectionVersion);
 
   const build = validatePublicationArtifact(input);
-  await verifyReviewedAssurance(userId, input.manuscriptId, build, input.assurance);
+  const publicationContentDigest = digestPublicationArticle(input.artifact.html);
+  await verifyReviewedAssurance(
+    userId,
+    input.manuscriptId,
+    build,
+    input.assurance,
+    publicationContentDigest,
+  );
   const contentDigest = digest(input.artifact.html);
   const requestDigest = digest(canonicalJson({
     connectionId: input.connectionId,
@@ -238,6 +246,13 @@ export async function issueWebPublicationApproval(
   }
   if (existing?.state === 'SUCCEEDED') {
     return { receipt: receiptFromDelivery(existing, connection.providerId) };
+  }
+  if (existing?.state === 'UNKNOWN' || existing?.state === 'IN_FLIGHT') {
+    throw new WebPublicationServiceError(
+      'WEB_PUBLICATION_RECONCILIATION_REQUIRED',
+      409,
+      'The previous delivery may already have reached the remote target. Reconcile its remote outcome before any retry.',
+    );
   }
 
   const rawToken = randomBytes(32).toString('base64url');
@@ -282,6 +297,13 @@ export async function issueWebPublicationApproval(
     }
     if (delivery.state === 'SUCCEEDED') {
       return { delivery, grant: null };
+    }
+    if (delivery.state === 'UNKNOWN' || delivery.state === 'IN_FLIGHT') {
+      throw new WebPublicationServiceError(
+        'WEB_PUBLICATION_RECONCILIATION_REQUIRED',
+        409,
+        'The previous delivery may already have reached the remote target. Reconcile its remote outcome before any retry.',
+      );
     }
     if (!delivery.artifactHtml || !delivery.title) {
       throw new WebPublicationServiceError(
@@ -400,6 +422,33 @@ export async function executeWebPublicationDelivery(
   if (initial.state === 'SUCCEEDED') {
     return receiptFromDelivery(initial, connection.providerId);
   }
+  if (initial.state === 'UNKNOWN') {
+    throw new WebPublicationServiceError(
+      'WEB_PUBLICATION_RECONCILIATION_REQUIRED',
+      409,
+      'The previous delivery has an unknown remote outcome. Reconcile the target before any retry.',
+    );
+  }
+  if (initial.state === 'IN_FLIGHT') {
+    const staleBefore = new Date(Date.now() - IN_FLIGHT_RECONCILIATION_MS);
+    throw new WebPublicationServiceError(
+      initial.updatedAt < staleBefore
+        ? 'WEB_PUBLICATION_RECONCILIATION_REQUIRED'
+        : 'WEB_PUBLICATION_DELIVERY_BUSY',
+      409,
+      initial.updatedAt < staleBefore
+        ? 'The previous delivery did not complete locally and may have reached the remote target. Reconciliation is required.'
+        : 'This publication delivery is already in progress.',
+    );
+  }
+  const artifactHtmlForVerification = initial.artifactHtml;
+  if (!artifactHtmlForVerification) {
+    throw new WebPublicationServiceError(
+      'WEB_PUBLICATION_PAYLOAD_UNAVAILABLE',
+      409,
+      'The retained publication payload is unavailable.',
+    );
+  }
   const storedAssurance = initial.assurance as unknown as WebPublicationAssurance;
   assertAssurance(storedAssurance);
   await verifyReviewedAssurance(
@@ -407,17 +456,14 @@ export async function executeWebPublicationDelivery(
     initial.manuscriptId,
     parsePublicationBuild(initial.artifactBuild),
     storedAssurance,
+    digestPublicationArticle(artifactHtmlForVerification),
   );
 
-  const staleBefore = new Date(Date.now() - IN_FLIGHT_RECONCILIATION_MS);
   const acquired = await prisma.webPublicationDelivery.updateMany({
     where: {
       id: initial.id,
       userId,
-      OR: [
-        { state: { in: ['PENDING', 'FAILED', 'UNKNOWN'] } },
-        { state: 'IN_FLIGHT', updatedAt: { lt: staleBefore } },
-      ],
+      state: { in: ['PENDING', 'FAILED'] },
     },
     data: {
       state: 'IN_FLIGHT',
@@ -532,6 +578,16 @@ export async function executeWebPublicationDelivery(
 
     return receiptFromDelivery(updated, connection.providerId);
   } catch (error) {
+    const persisted = await prisma.webPublicationDelivery.findUnique({
+      where: { id: delivery.id },
+    });
+    if (persisted?.state === 'SUCCEEDED') {
+      throw new WebPublicationServiceError(
+        'WEB_PUBLICATION_AUDIT_FAILED_AFTER_DELIVERY',
+        502,
+        'The remote delivery succeeded and its receipt was stored, but follow-up audit logging failed. Do not retry this delivery; reload its stored receipt.',
+      );
+    }
     const uncertain = !(error instanceof RemotePublicationError) ||
       error.status === null || error.status >= 500;
     const state = uncertain ? 'UNKNOWN' : 'FAILED';
@@ -645,13 +701,15 @@ function validatePublicationHtml(
   if (!lower.startsWith('<!doctype html>') || !lower.includes('<article ')) {
     throw invalidArtifact('The web publication is not a complete semantic HTML artifact.');
   }
-  for (const forbidden of ['<script', '<iframe', '<object', '<embed', '<form', '<base', '<link']) {
-    if (lower.includes(forbidden)) {
-      throw invalidArtifact(`The web publication contains forbidden active content: ${forbidden}.`);
-    }
+  const forbiddenTag = html.match(/<(?:script|iframe|object|embed|form|base|link)\b/i)?.[0];
+  if (forbiddenTag) {
+    throw invalidArtifact(`The web publication contains forbidden active content: ${forbiddenTag}.`);
   }
-  if (/\son[a-z]+\s*=|javascript\s*:/i.test(html)) {
-    throw invalidArtifact('The web publication contains an executable HTML handler or URL.');
+  if (
+    /\son[a-z]+\s*=|(?:javascript|vbscript)\s*:|<meta\b[^>]*\bhttp-equiv\s*=|\s(?:srcset|ping|formaction)\s*=/i.test(html) ||
+    /@import\b|expression\s*\(|behavior\s*:|-moz-binding\s*:/i.test(html)
+  ) {
+    throw invalidArtifact('The web publication contains executable, navigational, or externally loadable HTML/CSS content.');
   }
   for (const source of html.matchAll(/\s(?:src|poster)=["']([^"']+)["']/gi)) {
     if (!/^data:image\/(?:png|jpeg|gif|webp);base64,[a-z0-9+/=]+$/i.test(source[1] ?? '')) {
@@ -728,8 +786,19 @@ async function verifyReviewedAssurance(
   manuscriptId: string,
   build: PublicationBuild,
   assurance: WebPublicationAssurance,
+  publicationContentDigest: string,
 ): Promise<void> {
   if (assurance.reviewStatus !== 'peer-reviewed') return;
+  if (
+    assurance.evidence.publicationContentDigest.toLowerCase() !==
+    publicationContentDigest.toLowerCase()
+  ) {
+    throw new WebPublicationServiceError(
+      'WEB_PUBLICATION_ASSURANCE_INVALID',
+      409,
+      'The editorial decision belongs to different publication content. Record a new acceptance for this exact article.',
+    );
+  }
   let verified: EditorialDecisionEvidence;
   try {
     verified = await assertEditorialDecisionEvidence({
@@ -737,6 +806,7 @@ async function verifyReviewedAssurance(
       manuscriptId,
       revisionId: build.manuscript.revisionId,
       stateDigest: build.manuscript.stateDigest.value,
+      publicationContentDigest,
       decisionId: assurance.evidence.decisionId,
       evidenceDigest: assurance.evidence.evidenceDigest,
     });
@@ -768,6 +838,7 @@ function validEditorialEvidence(value: unknown): value is EditorialDecisionEvide
     typeof evidence.decisionId === 'string' &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(evidence.decisionId) &&
     isSha256(evidence.evidenceDigest) &&
+    isSha256(evidence.publicationContentDigest) &&
     Number.isInteger(evidence.reviewRound) && Number(evidence.reviewRound) > 0 &&
     isIsoDate(evidence.decidedAt);
 }
@@ -787,16 +858,33 @@ function hasVisibleAssuranceDisclosure(
   if (!opening || !seal) return false;
   const openingStyle = attribute(opening, 'style')?.toLowerCase() ?? '';
   const sealStyle = attribute(seal[0], 'style')?.toLowerCase() ?? '';
+  const htmlOpening = html.match(/<html\b[^>]*>/i)?.[0] ?? '';
+  const bodyOpening = html.match(/<body\b[^>]*>/i)?.[0] ?? '';
+  const articleOpening = html.match(
+    /<article\b[^>]*class="[^"]*omi-scholarly-article[^"]*"[^>]*>/i,
+  )?.[0] ?? '';
   const expectedSeal = assurance.reviewStatus === 'peer-reviewed'
     ? 'OMI PEER REVIEW VERIFIED'
     : 'OMI PEER REVIEW NOT VERIFIED';
-  const hiddenStyle = /(?:display\s*:\s*none|visibility\s*:\s*hidden|content-visibility\s*:\s*hidden|opacity\s*:\s*0(?:\D|$)|color\s*:\s*transparent|font-size\s*:\s*0|transform\s*:|clip-path\s*:(?!\s*none)|position\s*:\s*(?:absolute|fixed))/i;
+  const hiddenStyle = /(?:display\s*:\s*none|visibility\s*:\s*hidden|content-visibility\s*:\s*hidden|opacity\s*:\s*0(?:\D|$)|filter\s*:\s*opacity\(\s*0|color\s*:\s*transparent|font-size\s*:\s*0|transform\s*:|clip-path\s*:(?!\s*none)|position\s*:\s*(?:absolute|fixed))/i;
+  const hiddenContainer = [htmlOpening, bodyOpening, articleOpening].some(
+    (tag) =>
+      /\s(?:hidden|inert)(?:\s|=|>)/i.test(tag) ||
+      attribute(tag, 'aria-hidden') === 'true' ||
+      hiddenStyle.test(attribute(tag, 'style')?.toLowerCase() ?? ''),
+  );
+  const hiddenByStylesheet = Array.from(html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi))
+    .some((match) =>
+      /(?:^|[},])\s*(?:html|body|article|\.omi-scholarly-article|\.omi-publication-assurance)(?:\s|[.#:[>+~,{])[^{}]*\{[^{}]*(?:display\s*:\s*none|visibility\s*:\s*hidden|content-visibility\s*:\s*hidden|opacity\s*:\s*0(?:\D|$)|filter\s*:\s*opacity\(\s*0|font-size\s*:\s*0|color\s*:\s*transparent)/i.test(match[1] ?? ''),
+    );
   return attribute(opening, 'data-omi-assurance-version') === '1' &&
     attribute(opening, 'data-omi-publication-intent') === assurance.intent &&
     attribute(opening, 'data-omi-review-status') === assurance.reviewStatus &&
     attribute(opening, 'role') === 'note' &&
     !/\shidden(?:\s|=|>)/i.test(opening) &&
     attribute(opening, 'aria-hidden') !== 'true' &&
+    !hiddenContainer &&
+    !hiddenByStylesheet &&
     openingStyle.includes('display:flex!important') &&
     openingStyle.includes('visibility:visible!important') &&
     sealStyle.includes('display:inline-grid!important') &&
@@ -806,6 +894,25 @@ function hasVisibleAssuranceDisclosure(
     (seal[1] ?? '').replace(/\s+/g, ' ').trim() === expectedSeal &&
     (assurance.reviewStatus === 'not-peer-reviewed' ||
       attribute(opening, 'data-omi-editorial-decision-id') === assurance.evidence.decisionId);
+}
+
+function digestPublicationArticle(html: string): string {
+  const article = html.match(
+    /<article\b[^>]*class="[^"]*omi-scholarly-article[^"]*"[^>]*>[\s\S]*?<\/article>/i,
+  )?.[0];
+  if (!article) {
+    throw invalidArtifact('The publication content digest requires the semantic article element.');
+  }
+  const disclosureMatches = Array.from(
+    article.matchAll(
+      /\n {4}<aside\b[^>]*class="[^"]*omi-publication-assurance[^"]*"[^>]*>[\s\S]*?<\/aside>/gi,
+    ),
+  );
+  if (disclosureMatches.length !== 1) {
+    throw invalidArtifact('The publication must contain exactly one OMI assurance disclosure.');
+  }
+  const assuranceNeutralArticle = article.replace(disclosureMatches[0]![0], '');
+  return digest(assuranceNeutralArticle);
 }
 
 function attribute(tag: string, name: string): string | undefined {
