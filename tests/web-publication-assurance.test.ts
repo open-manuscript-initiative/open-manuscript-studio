@@ -76,8 +76,7 @@ test('peer-reviewed assurance cannot be reused after publication content changes
     ...editorialEvidenceBase,
     publicationContentDigest: unreviewed.publicationContentDigest,
   };
-  const changed = structuredClone(manuscript);
-  changed.title = `${changed.title} changed after acceptance`;
+  const changed = createCommittedHtmlGalleyStudy(' changed after acceptance');
 
   await assert.rejects(
     prepareWebPublicationArtifact(
@@ -136,8 +135,9 @@ test('review assurance changes the artifact and delivery idempotency identity', 
   );
 });
 
-function createCommittedHtmlGalleyStudy() {
+function createCommittedHtmlGalleyStudy(titleSuffix = '') {
   const draft = createHtmlGalleyStudy();
+  draft.title = `${draft.title}${titleSuffix}`;
   const state = extractManuscriptState(draft);
   return {
     ...state,
