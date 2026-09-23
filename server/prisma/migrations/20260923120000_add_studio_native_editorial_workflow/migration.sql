@@ -98,3 +98,27 @@ CREATE INDEX "native_editorial_submission_events_submission_created_idx"
   ON "native_editorial_submission_events"("submission_id", "created_at");
 CREATE INDEX "native_editorial_submission_events_actor_created_idx"
   ON "native_editorial_submission_events"("actor_user_id", "created_at");
+
+CREATE TABLE "native_editorial_submission_assets" (
+  "id" UUID NOT NULL,
+  "submission_id" UUID NOT NULL,
+  "asset_id" VARCHAR(128) NOT NULL,
+  "media_type" VARCHAR(200) NOT NULL,
+  "checksum" VARCHAR(64) NOT NULL,
+  "size" INTEGER NOT NULL,
+  "bytes" BYTEA NOT NULL,
+  "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "native_editorial_submission_assets_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "native_editorial_submission_assets_size_check"
+    CHECK ("size" >= 0 AND "size" <= 104857600),
+  CONSTRAINT "native_editorial_submission_assets_checksum_check"
+    CHECK ("checksum" ~ '^[0-9a-f]{64}$'),
+  CONSTRAINT "native_editorial_submission_assets_submission_id_fkey"
+    FOREIGN KEY ("submission_id") REFERENCES "native_editorial_submissions"("id")
+    ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX "native_editorial_submission_assets_submission_asset_key"
+  ON "native_editorial_submission_assets"("submission_id", "asset_id");
+CREATE INDEX "native_editorial_submission_assets_submission_idx"
+  ON "native_editorial_submission_assets"("submission_id");
