@@ -14,6 +14,13 @@ export function ReviewPortal() {
   const [nativeSubmissions, setNativeSubmissions] = useState<NativeSubmission[]>([]);
   const [externalAssignmentId, setExternalAssignmentId] = useState<string | null>(null);
   const [launchError, setLaunchError] = useState<string | null>(null);
+
+  const nativeWorkspaceIds = new Set(
+    nativeSubmissions.map((submission) => submission.workspaceId),
+  );
+  const externalEditorReviews = editorReviews?.filter(
+    (review) => !nativeWorkspaceIds.has(review.workspaceId),
+  ) ?? [];
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -100,14 +107,14 @@ export function ReviewPortal() {
         </div>
       </main>
     );
-  } else if (nativeSubmissions.length > 0 || editorReviews.length > 0) {
+  } else if (nativeSubmissions.length > 0 || externalEditorReviews.length > 0) {
     content = (
       <>
         {nativeSubmissions.length > 0
           ? <NativeEditorialInbox initialSubmissions={nativeSubmissions} />
           : null}
-        {editorReviews.length > 0
-          ? <EditorReviewMode initialReviews={editorReviews} />
+        {externalEditorReviews.length > 0
+          ? <EditorReviewMode initialReviews={externalEditorReviews} />
           : null}
       </>
     );
