@@ -84,6 +84,14 @@ function addAssuranceDisclosure(
       ? [
           `  <meta name="omi-editorial-decision-id" content="${escapeHtml(assurance.evidence.decisionId)}">`,
           `  <meta name="omi-editorial-evidence-sha256" content="${escapeHtml(assurance.evidence.evidenceDigest)}">`,
+          ...(assurance.evidence.authority
+            ? [
+                '  <meta name="omi-publication-authority" content="verified-publication-venue">',
+                `  <meta name="omi-publication-venue-id" content="${escapeHtml(assurance.evidence.authority.venueId)}">`,
+                `  <meta name="omi-publication-venue-domain" content="${escapeHtml(assurance.evidence.authority.domain)}">`,
+                '  <meta name="omi-publication-venue-verification" content="dns-txt">',
+              ]
+            : []),
         ]
       : []),
   ].join('\n');
@@ -97,7 +105,15 @@ function addAssuranceDisclosure(
     `      data-omi-publication-intent="${assurance.intent}"`,
     `      data-omi-review-status="${assurance.reviewStatus}"`,
     ...(assurance.reviewStatus === 'peer-reviewed'
-      ? [`      data-omi-editorial-decision-id="${escapeHtml(assurance.evidence.decisionId)}"`]
+      ? [
+          `      data-omi-editorial-decision-id="${escapeHtml(assurance.evidence.decisionId)}"`,
+          ...(assurance.evidence.authority
+            ? [
+                `      data-omi-publication-venue-id="${escapeHtml(assurance.evidence.authority.venueId)}"`,
+                `      data-omi-publication-venue-domain="${escapeHtml(assurance.evidence.authority.domain)}"`,
+              ]
+            : []),
+        ]
       : []),
     `      style="display:flex!important;visibility:visible!important;opacity:1!important;position:static!important;width:auto!important;height:auto!important;clip:auto!important;clip-path:none!important;overflow:visible!important;gap:.8rem;align-items:center;margin:0 0 1.5rem;padding:.75rem 1rem;border:1px solid ${palette.border};border-inline-start-width:.3rem;border-radius:.35rem;background:${palette.background}!important;color:${palette.color}!important;font:.95rem/1.45 system-ui,sans-serif!important"`,
     '      role="note">',
@@ -105,7 +121,14 @@ function addAssuranceDisclosure(
     '      <span class="omi-publication-assurance__copy" style="display:grid;gap:.2rem">',
     `        <strong>${escapeHtml(copy.label)}</strong> ${escapeHtml(copy.text)}`,
     ...(assurance.reviewStatus === 'peer-reviewed'
-      ? [`        <small>${escapeHtml(copy.evidence)} ${escapeHtml(shortEvidence(assurance.evidence.decisionId))}</small>`]
+      ? [
+          `        <small>${escapeHtml(copy.evidence)} ${escapeHtml(shortEvidence(assurance.evidence.decisionId))}</small>`,
+          ...(assurance.evidence.authority
+            ? [
+                `        <small>${escapeHtml(copy.venue)} ${escapeHtml(assurance.evidence.authority.venueName)} · ${escapeHtml(assurance.evidence.authority.domain)}</small>`,
+              ]
+            : []),
+        ]
       : []),
     '      </span>',
     '    </aside>',
@@ -131,7 +154,7 @@ function addAssuranceDisclosure(
 function disclosureCopy(
   locale: string,
   assurance: WebPublicationAssurance,
-): { label: string; text: string; evidence: string } {
+): { label: string; text: string; evidence: string; venue: string } {
   const language = locale.toLowerCase().split(/[-_]/)[0];
   const reviewed = assurance.reviewStatus === 'peer-reviewed';
   if (language === 'hu') {
@@ -149,6 +172,7 @@ function disclosureCopy(
         ? 'A Studio lezárt tudományos lektori fordulót és ehhez a forrásrevízióhoz kötött szerkesztői elfogadó döntést ellenőrzött.'
         : 'A közzétevő fiók tulajdonosa jóváhagyta a közzétételt; ehhez a revízióhoz nincs igazolt tudományos lektorálás.',
       evidence: 'Szerkesztői döntési bizonyíték:',
+      venue: 'Hitelesített folyóirati/kiadói autoritás:',
     };
   }
   if (language === 'de') {
@@ -166,6 +190,7 @@ function disclosureCopy(
         ? 'Studio hat eine abgeschlossene wissenschaftliche Begutachtungsrunde und eine an diese Quellrevision gebundene redaktionelle Annahmeentscheidung verifiziert.'
         : 'Die Inhaberin bzw. der Inhaber des veröffentlichenden Kontos hat die Veröffentlichung freigegeben; für diese Revision ist keine wissenschaftliche Begutachtung nachgewiesen.',
       evidence: 'Redaktioneller Entscheidungsnachweis:',
+      venue: 'Verifizierte Publikationsstellen-Autorität:',
     };
   }
   return {
@@ -182,6 +207,7 @@ function disclosureCopy(
       ? 'Studio verified a completed scholarly review round and an editorial acceptance decision bound to this source revision.'
       : 'The publishing account holder approved this publication; no scholarly peer review is verified for this revision.',
     evidence: 'Editorial-decision evidence:',
+    venue: 'Verified publication venue authority:',
   };
 }
 
