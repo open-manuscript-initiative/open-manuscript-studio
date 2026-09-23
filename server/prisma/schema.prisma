@@ -266,6 +266,7 @@ model EditorialDecision {
   manuscriptId       String   @map("manuscript_id") @db.VarChar(128)
   revisionId         String   @map("revision_id") @db.VarChar(128)
   stateDigest        String   @map("state_digest") @db.VarChar(64)
+  publicationContentDigest String @map("publication_content_digest") @db.VarChar(64)
   reviewRound        Int      @map("review_round")
   decision           String   @db.VarChar(32)
   basisAssignmentIds Json     @map("basis_assignment_ids") @db.JsonB
