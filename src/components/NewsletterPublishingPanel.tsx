@@ -181,6 +181,7 @@ export function NewsletterPublishingPanel() {
           manuscriptId: prepared.source.id,
           revisionId: prepared.artifact.build.manuscript.revisionId,
           stateDigest: prepared.artifact.build.manuscript.stateDigest.value,
+          publicationContentDigest: prepared.artifact.publicationContentDigest,
           reviewRound: reviewRound.reviewRound,
           basisAssignmentIds: reviewRound.basisAssignmentIds,
           confirmation: OMI_EDITORIAL_ACCEPTANCE_CONFIRMATION,
