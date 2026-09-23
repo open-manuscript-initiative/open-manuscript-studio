@@ -38,11 +38,24 @@ export interface UnreviewedWebPublicationAssurance
   approvalAuthority: 'authenticated-account-holder';
 }
 
+export interface VerifiedPublicationVenueAuthority {
+  type: 'verified-publication-venue';
+  venueId: string;
+  venueName: string;
+  venueType: 'JOURNAL' | 'BOOK_PUBLISHER';
+  domain: string;
+  verificationMethod: 'DNS_TXT';
+  verificationId: string;
+  verifiedAt: string;
+  editorRole: 'EDITOR' | 'EDITOR_IN_CHIEF';
+}
+
 export interface EditorialDecisionEvidence {
   type: 'studio-editorial-decision';
   decisionId: string;
   evidenceDigest: string;
   publicationContentDigest: string;
+  authority?: VerifiedPublicationVenueAuthority;
   reviewRound: number;
   decidedAt: string;
 }
@@ -64,6 +77,7 @@ export interface EditorialAcceptanceRequest {
   revisionId: string;
   stateDigest: string;
   publicationContentDigest: string;
+  publicationVenueId?: string;
   reviewRound: number;
   basisAssignmentIds: string[];
   confirmation: typeof OMI_EDITORIAL_ACCEPTANCE_CONFIRMATION;
