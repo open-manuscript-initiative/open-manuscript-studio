@@ -5,6 +5,7 @@ import test from 'node:test';
 const schema = read('../server/prisma/schema.prisma');
 const migration = read('../server/prisma/migrations/20260923120000_add_studio_native_editorial_workflow/migration.sql');
 const service = read('../server/src/services/nativeEditorialWorkflowService.ts');
+const editorialDecisionService = read('../server/src/services/editorialDecisionService.ts');
 const venueAuthority = read('../server/src/services/publicationVenueAuthorityService.ts');
 const routes = read('../server/src/routes/nativeEditorialWorkflowRoutes.ts');
 const app = read('../server/src/app.ts');
@@ -105,12 +106,29 @@ test('new review round cannot be bypassed by older completed evidence', () => {
     service,
     /A revision can be requested only after the current review round has been completed/,
   );
-  assert.match(panel, /currentRoundScientificReviews/);
+  assert.match(panel, /currentRoundDecisionReviews/);
   assert.match(panel, /currentRoundCompleted/);
   assert.match(panel, /submission\.status === 'in_review'/);
   assert.match(panel, /submission\.status === 'revision_submitted'/);
   assert.match(panel, /disabled=\{busy \|\| !canRequestRevision/);
   assert.match(panel, /disabled=\{busy \|\| !canAccept\}/);
+});
+
+test('declined reviewer invitations stay auditable without blocking replacement review evidence', () => {
+  assert.match(
+    editorialDecisionService,
+    /decisionBearingScientificAssignments/,
+  );
+  assert.match(
+    editorialDecisionService,
+    /assignment\.status !== 'DECLINED'/,
+  );
+  assert.match(
+    service,
+    /filter\(\(assignment\) => assignment\.status !== 'DECLINED'\)/,
+  );
+  assert.match(panel, /review\.status !== 'declined'/);
+  assert.match(panel, /currentRoundDecisionReviews/);
 });
 
 test('submission assets are self-contained and checksum verified', () => {
