@@ -84,6 +84,14 @@ export const OmiContinuousStructureExtension = Extension.create({
               ? { 'data-next-paragraph-style-id': stringAttribute(attributes.omiNextParagraphStyleId) }
               : {},
         },
+        omiTabStopsMm: {
+          default: null,
+          parseHTML: (element: HTMLElement) => element.dataset.tabStopsMm ?? null,
+          renderHTML: (attributes: Record<string, unknown>) =>
+            stringAttribute(attributes.omiTabStopsMm)
+              ? { 'data-tab-stops-mm': stringAttribute(attributes.omiTabStopsMm) }
+              : {},
+        },
       },
     }];
   },
