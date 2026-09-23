@@ -657,14 +657,19 @@ function normalizeRule(value: PublicationParagraphRule | undefined): Publication
   const result: PublicationParagraphRule = {};
   if (typeof value.enabled === 'boolean') result.enabled = value.enabled;
   copyNumber(result, value, 'widthPt', 0);
-  if (value.style === 'dashed' || value.style === 'dotted' || value.style === 'double') result.style = value.style;
-  else if (value.style === 'solid') result.style = 'solid';
+  copyStrokeStyle(result, value);
+  copyText(result, value, 'strokeName');
   copyText(result, value, 'color');
   copyNumber(result, value, 'tint', 0, 100);
+  if (typeof value.overprint === 'boolean') result.overprint = value.overprint;
+  copyText(result, value, 'gapColor');
+  copyNumber(result, value, 'gapTint', 0, 100);
+  if (typeof value.gapOverprint === 'boolean') result.gapOverprint = value.gapOverprint;
+  if (value.widthMode === 'column' || value.widthMode === 'text') result.widthMode = value.widthMode;
   copyNumber(result, value, 'offsetPt');
   copyNumber(result, value, 'leftIndentMm');
   copyNumber(result, value, 'rightIndentMm');
-  if (typeof value.overprint === 'boolean') result.overprint = value.overprint;
+  if (typeof value.keepInFrame === 'boolean') result.keepInFrame = value.keepInFrame;
   return Object.keys(result).length ? result : undefined;
 }
 
@@ -673,15 +678,25 @@ function normalizeBorder(value: PublicationParagraphBorder | undefined): Publica
   const result: PublicationParagraphBorder = {};
   if (typeof value.enabled === 'boolean') result.enabled = value.enabled;
   copyNumber(result, value, 'widthPt', 0);
-  if (value.style === 'dashed' || value.style === 'dotted' || value.style === 'double') result.style = value.style;
-  else if (value.style === 'solid') result.style = 'solid';
+  result.widths = normalizeEdgeWidths(value.widths);
+  copyStrokeStyle(result, value);
+  copyText(result, value, 'strokeName');
   copyText(result, value, 'color');
   copyNumber(result, value, 'tint', 0, 100);
-  copyNumber(result, value, 'radiusMm', 0);
-  for (const key of ['topOffsetMm', 'rightOffsetMm', 'bottomOffsetMm', 'leftOffsetMm'] as const) {
-    copyNumber(result, value, key);
-  }
-  return Object.keys(result).length ? result : undefined;
+  if (typeof value.overprint === 'boolean') result.overprint = value.overprint;
+  copyText(result, value, 'gapColor');
+  copyNumber(result, value, 'gapTint', 0, 100);
+  if (typeof value.gapOverprint === 'boolean') result.gapOverprint = value.gapOverprint;
+  if (value.cap === 'butt' || value.cap === 'round' || value.cap === 'projecting') result.cap = value.cap;
+  if (value.join === 'miter' || value.join === 'round' || value.join === 'bevel') result.join = value.join;
+  result.corners = normalizeCorners(value.corners);
+  result.offsets = normalizeOffsets(value.offsets);
+  if (isEdgeReference(value.topEdgeReference)) result.topEdgeReference = value.topEdgeReference;
+  if (isEdgeReference(value.bottomEdgeReference)) result.bottomEdgeReference = value.bottomEdgeReference;
+  if (value.widthMode === 'column' || value.widthMode === 'text') result.widthMode = value.widthMode;
+  if (typeof value.displayAcrossFrames === 'boolean') result.displayAcrossFrames = value.displayAcrossFrames;
+  if (typeof value.mergeConsecutive === 'boolean') result.mergeConsecutive = value.mergeConsecutive;
+  return removeUndefinedRecord(result);
 }
 
 function normalizeShading(value: PublicationParagraphShading | undefined): PublicationParagraphShading | undefined {
@@ -690,10 +705,15 @@ function normalizeShading(value: PublicationParagraphShading | undefined): Publi
   if (typeof value.enabled === 'boolean') result.enabled = value.enabled;
   copyText(result, value, 'color');
   copyNumber(result, value, 'tint', 0, 100);
-  for (const key of ['topOffsetMm', 'rightOffsetMm', 'bottomOffsetMm', 'leftOffsetMm'] as const) {
-    copyNumber(result, value, key);
-  }
-  return Object.keys(result).length ? result : undefined;
+  if (typeof value.overprint === 'boolean') result.overprint = value.overprint;
+  result.corners = normalizeCorners(value.corners);
+  result.offsets = normalizeOffsets(value.offsets);
+  if (isEdgeReference(value.topEdgeReference)) result.topEdgeReference = value.topEdgeReference;
+  if (isEdgeReference(value.bottomEdgeReference)) result.bottomEdgeReference = value.bottomEdgeReference;
+  if (value.widthMode === 'column' || value.widthMode === 'text') result.widthMode = value.widthMode;
+  if (typeof value.clipToFrame === 'boolean') result.clipToFrame = value.clipToFrame;
+  if (typeof value.suppressInExport === 'boolean') result.suppressInExport = value.suppressInExport;
+  return removeUndefinedRecord(result);
 }
 
 function normalizeHyphenationSettings(
@@ -708,6 +728,7 @@ function normalizeHyphenationSettings(
   for (const key of ['hyphenateCapitalizedWords', 'hyphenateLastWord', 'hyphenateAcrossColumns'] as const) {
     if (typeof value[key] === 'boolean') result[key] = value[key];
   }
+  copyNumber(result, value, 'preference', 0, 100);
   return Object.keys(result).length ? result : undefined;
 }
 
@@ -733,6 +754,13 @@ function normalizeJustification(
     || value.singleWordAlignment === 'right'
     || value.singleWordAlignment === 'justify'
   ) result.singleWordAlignment = value.singleWordAlignment;
+  copyNumber(result, value, 'autoLeadingPercent', 0, 1000);
+  if (
+    value.composer === 'adobe-paragraph'
+    || value.composer === 'adobe-single-line'
+    || value.composer === 'world-ready-paragraph'
+    || value.composer === 'world-ready-single-line'
+  ) result.composer = value.composer;
   return Object.keys(result).length ? result : undefined;
 }
 
@@ -752,6 +780,8 @@ function normalizeDropCaps(value: PublicationDropCaps | undefined): PublicationD
   if (finite(value.lines)) result.lines = integerAtLeast(value.lines, 0);
   if (finite(value.characters)) result.characters = integerAtLeast(value.characters, 0);
   copyText(result, value, 'characterStyleId');
+  if (typeof value.alignLeftEdge === 'boolean') result.alignLeftEdge = value.alignLeftEdge;
+  if (typeof value.scaleForDescenders === 'boolean') result.scaleForDescenders = value.scaleForDescenders;
   return Object.keys(result).length ? result : undefined;
 }
 
@@ -765,6 +795,19 @@ function normalizeNestedStyle(value: PublicationNestedStyleRule): PublicationNes
     ...(finite(value.repeat) ? { repeat: integerAtLeast(value.repeat, 1) } : {}),
     ...(typeof value.through === 'boolean' ? { through: value.through } : {}),
     ...(cleanText(value.delimiter) ? { delimiter: cleanText(value.delimiter) } : {}),
+  };
+}
+
+function normalizeNestedLineStyle(
+  value: PublicationNestedLineStyleRule,
+): PublicationNestedLineStyleRule | null {
+  const id = cleanText(value?.id);
+  const characterStyleId = cleanText(value?.characterStyleId);
+  if (!id || !characterStyleId || !finite(value?.lines)) return null;
+  return {
+    id,
+    characterStyleId,
+    lines: integerAtLeast(value.lines, 1),
   };
 }
 
@@ -791,6 +834,12 @@ function normalizeBulletsAndNumbering(
   for (const key of ['leftIndentMm', 'firstLineIndentMm', 'tabPositionMm'] as const) {
     copyNumber(result, value, key);
   }
+  if (
+    value.alignment === 'left'
+    || value.alignment === 'center'
+    || value.alignment === 'right'
+    || value.alignment === 'justify'
+  ) result.alignment = value.alignment;
   return Object.keys(result).length ? result : undefined;
 }
 
