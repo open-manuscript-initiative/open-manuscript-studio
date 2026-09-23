@@ -56,7 +56,7 @@ export async function prepareWebPublicationArtifact(
 
 function digestPublicationArticle(html: string): string {
   const article = html.match(
-    /<article\\b[^>]*class="[^"]*omi-scholarly-article[^"]*"[^>]*>[\\s\\S]*?<\\/article>/i,
+    /<article\b[^>]*class="[^"]*omi-scholarly-article[^"]*"[^>]*>[\s\S]*?<\/article>/i,
   )?.[0];
   if (!article) {
     throw new Error('Web publication content digest requires the semantic article element.');
