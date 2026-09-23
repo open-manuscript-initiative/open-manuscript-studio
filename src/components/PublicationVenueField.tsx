@@ -10,11 +10,12 @@ import {
   createPublicationVenueDomainClaim,
   getPublicationVenueAuthority,
   getPublicationVenues,
-  grantPublicationVenueEditor,
-  revokePublicationVenueEditor,
+  grantPublicationVenueMember,
+  revokePublicationVenueMembership,
   verifyPublicationVenueDomainClaim,
   type CreatePublicationVenueInput,
   type PublicationVenueAuthorityOverview,
+  type PublicationVenueAuthorityRole,
   type PublicationVenueDomainChallenge,
 } from '../services/publicationVenueApi';
 import {
@@ -63,13 +64,14 @@ const LABELS = {
     dnsVerified: 'Domain verified. You are now the domain administrator for this publication venue.',
     authorityTitle: 'Publication venue authority',
     currentRole: 'Your venue role',
-    editorEmail: 'Editor Studio e-mail',
-    editorRole: 'Editor role',
+    memberEmail: 'Studio e-mail',
+    memberRole: 'Venue role',
+    domainAdmin: 'Domain administrator',
     editor: 'Editor',
     editorInChief: 'Editor-in-chief',
-    addEditor: 'Authorize editor',
-    revokeEditor: 'Revoke',
-    noEditors: 'No editors have been authorized yet.',
+    addMember: 'Authorize member',
+    revokeMember: 'Revoke',
+    noMembers: 'No additional administrators or editors have been authorized yet.',
     authorityLoading: 'Loading publication venue authority…',
   },
   hu: {
@@ -111,13 +113,14 @@ const LABELS = {
     dnsVerified: 'A domain hitelesítve. Mostantól te vagy ennek a publikációs helynek a domain-adminisztrátora.',
     authorityTitle: 'Folyóirati / kiadói autoritás',
     currentRole: 'Saját szerepköröd',
-    editorEmail: 'Szerkesztő Studio e-mail-címe',
-    editorRole: 'Szerkesztői szerepkör',
+    memberEmail: 'Studio e-mail-cím',
+    memberRole: 'Folyóirati / kiadói szerepkör',
+    domainAdmin: 'Domain-adminisztrátor',
     editor: 'Szerkesztő',
     editorInChief: 'Főszerkesztő',
-    addEditor: 'Szerkesztő felhatalmazása',
-    revokeEditor: 'Visszavonás',
-    noEditors: 'Még nincs felhatalmazott szerkesztő.',
+    addMember: 'Jogosultság megadása',
+    revokeMember: 'Visszavonás',
+    noMembers: 'Még nincs további felhatalmazott adminisztrátor vagy szerkesztő.',
     authorityLoading: 'A folyóirati autoritás betöltése…',
   },
   de: {
@@ -159,13 +162,14 @@ const LABELS = {
     dnsVerified: 'Domain verifiziert. Sie sind jetzt Domain-Administrator dieser Publikationsstelle.',
     authorityTitle: 'Autorität der Publikationsstelle',
     currentRole: 'Ihre Rolle',
-    editorEmail: 'Studio-E-Mail der Redaktion',
-    editorRole: 'Redaktionelle Rolle',
+    memberEmail: 'Studio-E-Mail',
+    memberRole: 'Rolle der Publikationsstelle',
+    domainAdmin: 'Domain-Administrator/in',
     editor: 'Redakteur/in',
     editorInChief: 'Chefredakteur/in',
-    addEditor: 'Redaktion autorisieren',
-    revokeEditor: 'Widerrufen',
-    noEditors: 'Noch keine Redaktionsmitglieder autorisiert.',
+    addMember: 'Berechtigung erteilen',
+    revokeMember: 'Widerrufen',
+    noMembers: 'Noch keine weiteren Administratoren oder Redaktionsmitglieder autorisiert.',
     authorityLoading: 'Autorität der Publikationsstelle wird geladen…',
   },
 } as const;
@@ -212,9 +216,9 @@ export function PublicationVenueField({
   const [authorityOverview, setAuthorityOverview] =
     useState<PublicationVenueAuthorityOverview | null>(null);
   const [authorityLoading, setAuthorityLoading] = useState(false);
-  const [editorEmail, setEditorEmail] = useState('');
-  const [editorRole, setEditorRole] =
-    useState<'EDITOR' | 'EDITOR_IN_CHIEF'>('EDITOR');
+  const [memberEmail, setMemberEmail] = useState('');
+  const [memberRole, setMemberRole] =
+    useState<PublicationVenueAuthorityRole>('EDITOR');
   const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [createName, setCreateName] = useState('');
   const [createWebsite, setCreateWebsite] = useState('');
@@ -444,16 +448,16 @@ export function PublicationVenueField({
     }
   }
 
-  async function authorizeEditor(): Promise<void> {
-    if (!value || !editorEmail.trim()) return;
+  async function authorizeVenueMember(): Promise<void> {
+    if (!value || !memberEmail.trim()) return;
     setSaving(true);
     setError('');
     try {
-      await grantPublicationVenueEditor(value.id, {
-        email: editorEmail.trim(),
-        role: editorRole,
+      await grantPublicationVenueMember(value.id, {
+        email: memberEmail.trim(),
+        role: memberRole,
       });
-      setEditorEmail('');
+      setMemberEmail('');
       setAuthorityOverview(await getPublicationVenueAuthority(value.id));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : copy.saveFailed);
@@ -462,12 +466,12 @@ export function PublicationVenueField({
     }
   }
 
-  async function revokeEditorMembership(membershipId: string): Promise<void> {
+  async function revokeVenueMembership(membershipId: string): Promise<void> {
     if (!value) return;
     setSaving(true);
     setError('');
     try {
-      await revokePublicationVenueEditor(value.id, membershipId);
+      await revokePublicationVenueMembership(value.id, membershipId);
       setAuthorityOverview(await getPublicationVenueAuthority(value.id));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : copy.saveFailed);
@@ -704,24 +708,25 @@ export function PublicationVenueField({
                   </strong>
                 </p>
               ) : null}
-              {authorityOverview.canManageEditors ? (
+              {authorityOverview.canManageMembers ? (
                 <>
                   <div className="studio-publication-venue-create-grid">
                     <label>
-                      <span>{copy.editorEmail}</span>
+                      <span>{copy.memberEmail}</span>
                       <input
                         type="email"
-                        value={editorEmail}
-                        onChange={(event) => setEditorEmail(event.target.value)}
+                        value={memberEmail}
+                        onChange={(event) => setMemberEmail(event.target.value)}
                       />
                     </label>
                     <label>
-                      <span>{copy.editorRole}</span>
+                      <span>{copy.memberRole}</span>
                       <select
-                        value={editorRole}
+                        value={memberRole}
                         onChange={(event) =>
-                          setEditorRole(event.target.value as 'EDITOR' | 'EDITOR_IN_CHIEF')}
+                          setMemberRole(event.target.value as PublicationVenueAuthorityRole)}
                       >
+                        <option value="DOMAIN_ADMIN">{copy.domainAdmin}</option>
                         <option value="EDITOR">{copy.editor}</option>
                         <option value="EDITOR_IN_CHIEF">{copy.editorInChief}</option>
                       </select>
@@ -730,34 +735,28 @@ export function PublicationVenueField({
                   <button
                     type="button"
                     className="studio-menu-secondary-action"
-                    disabled={saving || !editorEmail.trim()}
-                    onClick={() => void authorizeEditor()}
+                    disabled={saving || !memberEmail.trim()}
+                    onClick={() => void authorizeVenueMember()}
                   >
-                    {copy.addEditor}
+                    {copy.addMember}
                   </button>
-                  {authorityOverview.members.filter((member) =>
-                    member.role === 'EDITOR' || member.role === 'EDITOR_IN_CHIEF'
-                  ).length ? (
+                  {authorityOverview.members.length ? (
                     <ul>
-                      {authorityOverview.members
-                        .filter((member) =>
-                          member.role === 'EDITOR' || member.role === 'EDITOR_IN_CHIEF'
-                        )
-                        .map((member) => (
+                      {authorityOverview.members.map((member) => (
                           <li key={member.id}>
                             {member.user.fullName} · {member.user.email} · {member.role}{' '}
                             <button
                               type="button"
                               disabled={saving}
-                              onClick={() => void revokeEditorMembership(member.id)}
+                              onClick={() => void revokeVenueMembership(member.id)}
                             >
-                              {copy.revokeEditor}
+                              {copy.revokeMember}
                             </button>
                           </li>
                         ))}
                     </ul>
                   ) : (
-                    <small>{copy.noEditors}</small>
+                    <small>{copy.noMembers}</small>
                   )}
                 </>
               ) : null}
