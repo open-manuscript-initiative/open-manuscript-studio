@@ -466,6 +466,38 @@ export function mergePublicationParagraphStyleProperties(
     }
   }
 
+  if (patch.border !== undefined) {
+    merged.border = {
+      ...(base.border ?? {}),
+      ...patch.border,
+      ...(patch.border.widths !== undefined
+        ? { widths: { ...(base.border?.widths ?? {}), ...patch.border.widths } }
+        : {}),
+      ...(patch.border.corners !== undefined
+        ? {
+            corners: mergeCorners(base.border?.corners, patch.border.corners),
+          }
+        : {}),
+      ...(patch.border.offsets !== undefined
+        ? { offsets: { ...(base.border?.offsets ?? {}), ...patch.border.offsets } }
+        : {}),
+    };
+  }
+  if (patch.shading !== undefined) {
+    merged.shading = {
+      ...(base.shading ?? {}),
+      ...patch.shading,
+      ...(patch.shading.corners !== undefined
+        ? {
+            corners: mergeCorners(base.shading?.corners, patch.shading.corners),
+          }
+        : {}),
+      ...(patch.shading.offsets !== undefined
+        ? { offsets: { ...(base.shading?.offsets ?? {}), ...patch.shading.offsets } }
+        : {}),
+    };
+  }
+
   if (patch.tabStops !== undefined) {
     merged.tabStops = patch.tabStops.map((stop) => ({ ...stop }));
   }
@@ -498,6 +530,19 @@ export function paragraphStyleWouldCreateCycle(
     currentId = byId.get(currentId)?.basedOnId ?? null;
   }
   return false;
+}
+
+function mergeCorners(
+  base: PublicationCorners | undefined,
+  patch: PublicationCorners,
+): PublicationCorners {
+  const result: PublicationCorners = { ...(base ?? {}), ...patch };
+  for (const key of ['topLeft', 'topRight', 'bottomRight', 'bottomLeft'] as const) {
+    if (patch[key] !== undefined) {
+      result[key] = { ...(base?.[key] ?? {}), ...patch[key] };
+    }
+  }
+  return result;
 }
 
 function normalizeDefinition(
@@ -984,12 +1029,20 @@ function normalizePreservedIdml(
   value: Record<string, PublicationIdmlPrimitive> | undefined,
 ): Record<string, PublicationIdmlPrimitive> | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const forbidden = new Set(['__proto__', 'prototype', 'constructor']);
   const entries = Object.entries(value)
-    .filter(([key, item]) => cleanText(key) && (
-      typeof item === 'string'
-      || typeof item === 'number' && Number.isFinite(item)
-      || typeof item === 'boolean'
-    ))
+    .filter(([key, item]) => {
+      const normalizedKey = cleanText(key);
+      return Boolean(normalizedKey)
+        && normalizedKey.length <= 128
+        && !forbidden.has(normalizedKey)
+        && (
+          typeof item === 'string'
+          || typeof item === 'number' && Number.isFinite(item)
+          || typeof item === 'boolean'
+        );
+    })
+    .slice(0, 256)
     .map(([key, item]) => [key, item] as const);
   return entries.length ? Object.fromEntries(entries) : undefined;
 }
