@@ -295,12 +295,54 @@ function validateSection(
   if (!Array.isArray(value.blocks)) invalid(`${path}/blocks must be an array.`);
   addAddressable(value, path, indexes.all);
 
+  if (value.layout !== undefined) {
+    validateSectionLayout(value.layout, `${path}/layout`);
+  }
+
   value.blocks.forEach((block, index) =>
     validateBlock(block, `${path}/blocks/${index}`, indexes),
   );
   optionalArray(value.children, `${path}/children`).forEach((child, index) =>
     validateSection(child, `${path}/children/${index}`, indexes),
   );
+}
+
+function validateSectionLayout(
+  value: unknown,
+  path: string,
+): void {
+  if (!isRecord(value)) invalid(`${path} must be an object.`);
+
+  if (value.columns !== undefined) {
+    const columns = Number(value.columns);
+    if (!Number.isInteger(columns) || columns < 1 || columns > 3) {
+      invalid(`${path}/columns must be 1, 2, or 3.`);
+    }
+  }
+
+  if (value.columnGapMm !== undefined) {
+    const gap = Number(value.columnGapMm);
+    if (!Number.isFinite(gap) || gap < 0 || gap > 50) {
+      invalid(`${path}/columnGapMm must be between 0 and 50 millimetres.`);
+    }
+  }
+
+  if (value.tabStopsMm !== undefined) {
+    if (!Array.isArray(value.tabStopsMm)) {
+      invalid(`${path}/tabStopsMm must be an array.`);
+    }
+    let previous = 0;
+    for (const [index, raw] of value.tabStopsMm.entries()) {
+      const stop = Number(raw);
+      if (!Number.isFinite(stop) || stop <= 0 || stop > 240) {
+        invalid(`${path}/tabStopsMm/${index} must be between 0 and 240 millimetres.`);
+      }
+      if (stop <= previous) {
+        invalid(`${path}/tabStopsMm must be strictly increasing.`);
+      }
+      previous = stop;
+    }
+  }
 }
 
 function validateBlock(

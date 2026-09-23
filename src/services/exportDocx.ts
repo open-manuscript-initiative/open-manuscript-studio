@@ -159,7 +159,6 @@ function richParagraph(runs: readonly OmiInlineRun[], suffix = ''): string {
 }
 
 function wordRun(run: OmiInlineRun): string {
-  if (run.text === '\n') return '<w:r><w:br/></w:r>';
   const styleId = wordCharacterStyleId(run.semantics);
   const lang = run.language
     ? `<w:lang w:val="${xml(run.language)}"/>`
@@ -167,7 +166,16 @@ function wordRun(run: OmiInlineRun): string {
   const rPr = styleId || lang
     ? `<w:rPr>${styleId ? `<w:rStyle w:val="${styleId}"/>` : ''}${lang}</w:rPr>`
     : '';
-  return `<w:r>${rPr}<w:t xml:space="preserve">${xml(run.text)}</w:t></w:r>`;
+
+  return run.text
+    .split(/([\n\t])/)
+    .filter((part) => part.length > 0)
+    .map((part) => {
+      if (part === '\n') return `<w:r>${rPr}<w:br/></w:r>`;
+      if (part === '\t') return `<w:r>${rPr}<w:tab/></w:r>`;
+      return `<w:r>${rPr}<w:t xml:space="preserve">${xml(part)}</w:t></w:r>`;
+    })
+    .join('');
 }
 
 function collectIndexEntriesByBlock(entries: readonly OmiIndexEntry[]): Map<string, OmiIndexEntry[]> {

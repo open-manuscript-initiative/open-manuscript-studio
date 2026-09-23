@@ -312,6 +312,52 @@ export function removeTableColumn(
   );
 }
 
+export function tableToDelimitedText(
+  cells: readonly (readonly string[])[],
+  delimiter = '\t',
+): string {
+  return normalizeCellMatrix(cells.map((row) => [...row]))
+    .map((row) => row.map((cell) => normalizeTableTextCell(cell, delimiter)).join(delimiter))
+    .join('\n');
+}
+
+export function tableRowsToParagraphBlocks(
+  cells: readonly (readonly string[])[],
+  firstBlockId?: string,
+  createId: () => string = () => crypto.randomUUID(),
+): OmiBlock[] {
+  const normalized = normalizeCellMatrix(cells.map((row) => [...row]));
+  return normalized.map((row, index) => {
+    const normalizedRow = row.map((cell) => normalizeTableTextCell(cell, '\t'));
+    const inlineContent = normalizedRow.flatMap((cell, columnIndex) => [
+      ...(columnIndex > 0 ? [{ type: 'omiTab' }] : []),
+      ...(cell ? [{ type: 'text', text: cell }] : []),
+    ]);
+    return {
+      id: index === 0 && firstBlockId ? firstBlockId : createId(),
+      type: 'paragraph',
+      content: JSON.stringify({
+        type: 'doc',
+        content: [{
+          type: 'paragraph',
+          ...(inlineContent.length ? { content: inlineContent } : {}),
+        }],
+      }),
+    };
+  });
+}
+
+function normalizeTableTextCell(value: string, delimiter: string): string {
+  return String(value)
+    .replace(/[\r\n]+/g, ' ')
+    .replace(delimiter === '\t' ? /\t/g : new RegExp(escapeRegExp(delimiter), 'g'), ' ')
+    .trim();
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export function cloneVisualData<T extends OmiVisualBlockData>(data: T): T {
   return JSON.parse(JSON.stringify(data)) as T;
 }

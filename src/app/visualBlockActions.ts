@@ -1,4 +1,5 @@
 import { synchronizeCrossReferenceLabels } from '../model/crossReferences.ts';
+import { tableRowsToParagraphBlocks } from '../model/visualBlocks';
 import { getExternalIdentifierValue } from '../model/identity';
 import { extractManuscriptState } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';
@@ -169,6 +170,83 @@ export function stageUpdateVisualBlock(
         updatedAt: timestamp,
       },
       pendingChangeSet,
+    };
+  });
+
+  if (changed) scheduleVisualCheckpoint();
+  return changed;
+}
+
+export function stageConvertTableToText(blockId: string): boolean {
+  let changed = false;
+
+  useStudioStore.setState((state) => {
+    const located = findBlock(state.manuscript, blockId);
+    if (!located || located.block.visual?.kind !== 'table') return state;
+
+    const replacement = tableRowsToParagraphBlocks(
+      located.block.visual.cells,
+      located.block.id,
+    );
+    const section = state.manuscript.sections.find(
+      (candidate) => candidate.id === located.sectionId,
+    );
+    if (!section) return state;
+
+    const nextBlocks = [...section.blocks];
+    nextBlocks.splice(located.blockIndex, 1, ...replacement);
+    const unsynchronizedSections = state.manuscript.sections.map(
+      (candidate) => candidate.id === located.sectionId
+        ? { ...candidate, blocks: nextBlocks }
+        : candidate,
+    );
+    const nextSections = synchronizeForManuscript(
+      state.manuscript,
+      unsynchronizedSections,
+    );
+    const timestamp = new Date().toISOString();
+    const firstReplacement = replacement[0];
+    const events = [
+      ...(firstReplacement ? [{
+        operation: 'block.update' as never,
+        targetId: blockId,
+        path: `/sections/${located.sectionId}/blocks/${located.blockIndex}`,
+        previousValue: located.block,
+        nextValue: firstReplacement,
+      }] : []),
+      ...replacement.slice(1).map((block, index) => ({
+        operation: 'block.create' as never,
+        targetId: block.id,
+        path: `/sections/${located.sectionId}/blocks/${located.blockIndex + index + 1}`,
+        nextValue: block,
+      })),
+      ...collectBlockContentChanges(
+        state.manuscript.sections,
+        nextSections,
+      ),
+    ];
+    const pendingChangeSet = stagePendingChanges(
+      state.pendingChangeSet,
+      {
+        baseRevisionId: state.manuscript.headRevisionId,
+        summary: 'Converted manuscript table to text',
+        events,
+        actorAgentId: resolveCurrentActorAgentId(state.manuscript),
+        timestamp,
+      },
+    );
+    const portableState = extractManuscriptState(state.manuscript);
+
+    changed = true;
+    return {
+      manuscript: {
+        ...state.manuscript,
+        ...portableState,
+        sections: nextSections,
+        updatedAt: timestamp,
+      },
+      pendingChangeSet,
+      selectedSectionId: located.sectionId,
     };
   });
 

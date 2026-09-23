@@ -30,6 +30,7 @@ import {
 import { contributorNameParts } from '../model/contributorName';
 import { collectPublicationContributors } from '../model/publicationRendering';
 import type { ProofingSelection } from '../model/proofing';
+import type { OmiSection } from '../types/omi';
 import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
 import {
   loadPublicationPublisherIdentity,
@@ -39,6 +40,8 @@ import {
 import { cssStringLiteral } from '../services/embeddedCss';
 import type { OmiPublicationFlowBreak } from '../editor/extensions/OmiProofingMarksExtension';
 import { BlockEditor } from './BlockEditor';
+import { PublicationHtmlSectionsEditor } from './PublicationHtmlSectionsEditor';
+import { PublicationSectionRuler } from './PublicationSectionRuler';
 import {
   paginatePublicationBlocks,
   type PublicationFlowLine,
@@ -170,8 +173,10 @@ export function PublicationDocumentCanvas({
   );
   const firstPageNumber = Math.max(0, Math.trunc(style.page.pageNumberStart ?? 1));
   const firstPageIsMirrored = style.page.mirroredMargins && firstPageNumber % 2 === 0;
-  const firstPageLeftMargin = firstPageIsMirrored ? outerMargin : innerMargin;
-  const firstPageRightMargin = firstPageIsMirrored ? innerMargin : outerMargin;
+  const firstPageLeftMarginMm = firstPageIsMirrored ? outerMarginMm : innerMarginMm;
+  const firstPageRightMarginMm = firstPageIsMirrored ? innerMarginMm : outerMarginMm;
+  const firstPageLeftMargin = firstPageLeftMarginMm * PIXELS_PER_MM * scale;
+  const firstPageRightMargin = firstPageRightMarginMm * PIXELS_PER_MM * scale;
   const contentWidth = Math.max(80, pageWidth - firstPageLeftMargin - firstPageRightMargin);
   const pageOverhead = topMargin + bottomMargin + pageGap;
 
@@ -502,6 +507,11 @@ export function PublicationDocumentCanvas({
     scale,
     viewMode,
   );
+  const sectionLayoutCss = buildLiveSectionLayoutCss(
+    canvasId,
+    manuscript.sections,
+    scale,
+  );
   const runningHeaderValues = {
     articleTitle: manuscript.title,
     shortArticleTitle: shorten(manuscript.title, 72),
@@ -570,21 +580,14 @@ export function PublicationDocumentCanvas({
         width: `${contentWidth}px`,
       } as CSSProperties
     : undefined;
-  const rulerStyle = {
-    width: `${pageWidth}px`,
-    '--omi-publication-ruler-left': `${firstPageLeftMargin}px`,
-    '--omi-publication-ruler-right': `${firstPageRightMargin}px`,
-    '--omi-publication-ruler-step': `${5 * PIXELS_PER_MM * scale}px`,
-  } as CSSProperties;
-
   return (
     <section
       id={canvasId}
       className={`publication-document-canvas publication-document-canvas--${viewMode}`}
       aria-labelledby="publication-document-canvas-title"
     >
-      {pagination.css || paragraphStyleCss
-        ? <style>{`${paragraphStyleCss}\n${viewMode === 'print' ? pagination.css : ''}`}</style>
+      {pagination.css || paragraphStyleCss || sectionLayoutCss
+        ? <style>{`${paragraphStyleCss}\n${sectionLayoutCss}\n${viewMode === 'print' ? pagination.css : ''}`}</style>
         : null}
       <header className="publication-document-canvas-toolbar">
         <div>
@@ -637,12 +640,15 @@ export function PublicationDocumentCanvas({
         className={`publication-document-canvas-stage publication-document-canvas-stage--${viewMode}`}
         aria-label={viewMode === 'print' ? copy.printLayout : copy.htmlLayout}
       >
-        {viewMode === 'print' ? (
-          <div className="publication-document-ruler" style={rulerStyle} aria-hidden="true">
-            <span className="publication-document-ruler-margin publication-document-ruler-margin--left" />
-            <span className="publication-document-ruler-margin publication-document-ruler-margin--right" />
-          </div>
-        ) : null}
+        <PublicationSectionRuler
+          locale={locale}
+          viewMode={viewMode}
+          widthPx={pageWidth}
+          pageWidthMm={pageWidthMm}
+          leftMarginMm={firstPageLeftMarginMm}
+          rightMarginMm={firstPageRightMarginMm}
+          rulerStepPx={5 * PIXELS_PER_MM * scale}
+        />
         <article
           className={`publication-document-paper publication-document-paper--${viewMode}`}
           data-publication-view={viewMode}
@@ -757,19 +763,29 @@ export function PublicationDocumentCanvas({
 
             {manuscript.sections.length ? (
               <div className="publication-document-body" aria-label={copy.body}>
-                <BlockEditor
-                  blockId={`omi-publication-document-${manuscript.id}`}
-                  blockType="manuscript"
-                  content={JSON.stringify(document)}
-                  onUpdate={updateDocument}
-                  manuscriptLanguage={manuscript.locale}
-                  className="publication-layout-document-editor"
-                  continuous
-                  proofingMode={viewMode === 'print' ? 'publication' : 'editor'}
-                  publicationCorrections={viewMode === 'print' ? publicationCorrections : undefined}
-                  publicationFlowBreaks={viewMode === 'print' ? pagination.flowBreaks : undefined}
-                  onProofingSelection={viewMode === 'print' ? onProofingSelection : undefined}
-                />
+                {viewMode === 'html' ? (
+                  <PublicationHtmlSectionsEditor
+                    sections={manuscript.sections}
+                    sectionNumbers={sectionNumbers}
+                    paragraphStyleNextById={paragraphStyleNextById}
+                    defaultParagraphStyleId={style.paragraphStyles.defaultStyleId}
+                    manuscriptLanguage={manuscript.locale}
+                  />
+                ) : (
+                  <BlockEditor
+                    blockId={`omi-publication-document-${manuscript.id}`}
+                    blockType="manuscript"
+                    content={JSON.stringify(document)}
+                    onUpdate={updateDocument}
+                    manuscriptLanguage={manuscript.locale}
+                    className="publication-layout-document-editor"
+                    continuous
+                    proofingMode="publication"
+                    publicationCorrections={publicationCorrections}
+                    publicationFlowBreaks={pagination.flowBreaks}
+                    onProofingSelection={onProofingSelection}
+                  />
+                )}
               </div>
             ) : (
               <p className="publication-document-empty">{copy.empty}</p>
@@ -1130,6 +1146,20 @@ function publicationFlowBreaksEqual(
       && other.textOffset === item.textOffset
       && Math.abs(other.height - item.height) < 0.01;
   });
+}
+
+function buildLiveSectionLayoutCss(
+  canvasId: string,
+  sections: readonly OmiSection[],
+  scale: number,
+): string {
+  const editor = `#${canvasId} .omi-continuous-tiptap-editor`;
+  return sections.map((section) => {
+    const firstTabStopMm = section.layout?.tabStopsMm?.[0] ?? 12.5;
+    const tabSize = Math.max(2.5, firstTabStopMm) * PIXELS_PER_MM * scale;
+    const selector = `${editor} > [data-section-id=${cssStringLiteral(section.id)}]`;
+    return `${selector} { tab-size: ${cssPixel(tabSize)}; white-space: pre-wrap; }`;
+  }).join('\n');
 }
 
 function buildLiveParagraphStyleCss(

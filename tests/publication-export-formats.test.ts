@@ -45,6 +45,28 @@ test('DOCX export contains Word heading and named character styles', () => {
   assert.match(document, /w:rStyle w:val="OMIEmphasis"/);
 });
 
+test('DOCX export preserves semantic ruler tabs as Word tab runs', () => {
+  const manuscript = createVersionedTestManuscript();
+  const block = manuscript.sections[0]?.blocks[0];
+  assert.ok(block);
+  block.content = JSON.stringify({
+    type: 'doc',
+    content: [{
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Name' },
+        { type: 'omiTab' },
+        { type: 'text', text: 'Value' },
+      ],
+    }],
+  });
+
+  const result = buildDocxExport(manuscript);
+  const entries = readStoreZipEntries(result.bytes);
+  const document = new TextDecoder().decode(entries.get('word/document.xml'));
+  assert.match(document, /<w:tab\/>/);
+});
+
 test('EPUB export contains EPUB 3 package essentials', () => {
   const manuscript = createVersionedTestManuscript();
   const result = buildEpubExport(manuscript);

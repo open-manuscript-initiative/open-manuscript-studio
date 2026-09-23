@@ -45,3 +45,19 @@ test('extracts styled text runs without flattening semantics', () => {
   assert.deepEqual(runs[1]?.semantics, ['emphasis']);
   assert.equal(omiCharacterStyleName(runs[2]?.semantics ?? []), 'OMI Strong Emphasis');
 });
+
+test('preserves ruler tab nodes as tab characters for text-based exports', () => {
+  const content = JSON.stringify({
+    type: 'doc',
+    content: [{
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Name' },
+        { type: 'omiTab' },
+        { type: 'text', text: 'Value' },
+      ],
+    }],
+  });
+  const runs = extractOmiInlineRuns(content);
+  assert.equal(runs.map((run) => run.text).join('').trimEnd(), 'Name\tValue');
+});

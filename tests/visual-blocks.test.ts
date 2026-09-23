@@ -13,7 +13,9 @@ import {
   createImageBlock,
   createTableBlock,
   parseDelimitedTable,
+  tableRowsToParagraphBlocks,
   tableToChartDataset,
+  tableToDelimitedText,
   updateTableCell,
 } from '../src/model/visualBlocks.ts';
 
@@ -45,6 +47,33 @@ test('parses quoted CSV and tab-separated Excel clipboard data', () => {
   assert.deepEqual(
     parseDelimitedTable('Name\tValue\nAlpha\t12'),
     [['Name', 'Value'], ['Alpha', '12']],
+  );
+});
+
+test('converts table data to tab-separated text blocks without losing cell order', () => {
+  const cells = [['Name', 'Value'], ['Alpha', '12']];
+  assert.equal(tableToDelimitedText(cells), 'Name\tValue\nAlpha\t12');
+
+  const blocks = tableRowsToParagraphBlocks(
+    cells,
+    'table-1',
+    (() => {
+      let index = 0;
+      return () => `generated-${++index}`;
+    })(),
+  );
+  assert.equal(blocks.length, 2);
+  assert.equal(blocks[0]?.id, 'table-1');
+  assert.equal(blocks[1]?.id, 'generated-1');
+  const first = JSON.parse(blocks[0]?.content ?? '{}');
+  const second = JSON.parse(blocks[1]?.content ?? '{}');
+  assert.deepEqual(
+    first.content?.[0]?.content?.map((node: { type?: string; text?: string }) => [node.type, node.text]),
+    [['text', 'Name'], ['omiTab', undefined], ['text', 'Value']],
+  );
+  assert.deepEqual(
+    second.content?.[0]?.content?.map((node: { type?: string; text?: string }) => [node.type, node.text]),
+    [['text', 'Alpha'], ['omiTab', undefined], ['text', '12']],
   );
 });
 

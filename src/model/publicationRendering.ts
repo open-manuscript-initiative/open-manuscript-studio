@@ -15,10 +15,12 @@ import {
 } from './publicationProfile.ts';
 import { formatHierarchicalSectionNumber } from './sectionNumbering.ts';
 import { getParentSectionId } from './sectionStructure.ts';
+import { normalizeSectionLayout } from './sectionLayout';
 import type {
   OmiBlock,
   OmiManuscript,
   OmiSection,
+  OmiSectionLayout,
 } from '../types/omi.ts';
 
 export const OMI_PUBLICATION_RENDERING_MODEL =
@@ -53,6 +55,7 @@ export interface OmiRenderedSection {
   number?: string;
   depth: number;
   blocks: OmiBlock[];
+  layout?: OmiSectionLayout;
   children: OmiRenderedSection[];
 }
 
@@ -210,6 +213,7 @@ export function buildRenderedSectionTree(
       number: number || undefined,
       depth,
       blocks: section.blocks,
+      layout: normalizeSectionLayout(section.layout),
       children: [],
     });
   }

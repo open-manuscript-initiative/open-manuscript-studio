@@ -179,6 +179,27 @@ test('deleting a heading merges its following blocks into the preceding section'
   );
 });
 
+test('section tab stops are projected into editor DOM metadata without becoming block data', () => {
+  const sections = [{
+    ...section('section-a', 'First', [
+      textBlock('heading-a', 'heading', 'heading', 'First', { level: 1 }),
+      textBlock('paragraph-a', 'paragraph', 'paragraph', 'Name'),
+    ]),
+    layout: { tabStopsMm: [20, 45, 80] },
+  }];
+  const document = buildContinuousManuscriptDocument(sections);
+
+  assert.equal(document.content?.[0]?.attrs?.omiTabStopsMm, '20 45 80');
+  assert.equal(document.content?.[1]?.attrs?.omiTabStopsMm, '20 45 80');
+
+  const projected = projectContinuousManuscriptDocument(document, sections);
+  assert.deepEqual(projected[0]?.layout?.tabStopsMm, [20, 45, 80]);
+  assert.equal(
+    JSON.parse(projected[0]?.blocks[1]?.content ?? '{}').content?.[0]?.attrs?.omiTabStopsMm,
+    undefined,
+  );
+});
+
 test('structured visual blocks remain atomic nodes and preserve their data', () => {
   const table = createTableBlock([['Name', 'Value'], ['A', '1']], {}, 'table-a');
   const sections = [section('section-a', 'First', [

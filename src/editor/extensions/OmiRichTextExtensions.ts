@@ -12,6 +12,7 @@ import {
 } from '../../model/richText';
 import { OmiManuscriptBoundaryEditingExtension } from './OmiManuscriptBoundaryEditingExtension';
 import { OmiManuscriptSelectionExtension } from './OmiManuscriptSelectionExtension';
+import { OmiTabExtension } from './OmiTabExtension';
 import './OmiBlockTypeMenu.css';
 
 type HtmlAttributeMap = Record<string, unknown>;
@@ -258,6 +259,7 @@ export const OMI_RICH_TEXT_EXTENSIONS = [
   OmiSmallCapsExtension,
   OmiUnderlineExtension,
   OmiLanguageExtension,
+  OmiTabExtension,
   OmiBlockTypeMenuExtension,
 ];
 
@@ -273,6 +275,7 @@ export const OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS = [
   OmiSmallCapsExtension,
   OmiUnderlineExtension,
   OmiLanguageExtension,
+  OmiTabExtension,
   OmiBlockTypeMenuExtension,
 ];
 

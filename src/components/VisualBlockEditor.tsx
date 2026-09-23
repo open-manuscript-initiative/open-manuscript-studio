@@ -1,10 +1,12 @@
 import {
   BarChart3,
+  FileText,
   Plus,
   Trash2,
 } from 'lucide-react';
 
 import {
+  stageConvertTableToText,
   stageInsertBlocks,
   stageRemoveBlock,
   stageUpdateVisualBlock,
@@ -114,6 +116,17 @@ export function VisualBlockEditor({
             >
               <BarChart3 size={15} aria-hidden="true" />
               {copy.createChart}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm(copy.confirmTableToText)) {
+                  stageConvertTableToText(block.id);
+                }
+              }}
+            >
+              <FileText size={15} aria-hidden="true" />
+              {copy.tableToText}
             </button>
           </div>
         </>

@@ -1,6 +1,7 @@
 import { useStudioStore } from './useStudioStore';
 import { synchronizeCrossReferenceLabels } from '../model/crossReferences.ts';
 import { getExternalIdentifierValue } from '../model/identity';
+import { normalizeSectionLayout } from '../model/sectionLayout';
 import {
   createEmptySection,
   createEmptyStudy,
@@ -25,6 +26,7 @@ import {
 import type {
   OmiManuscript,
   OmiSection,
+  OmiSectionLayout,
   OmiSectionNumberingStyle,
 } from '../types/omi';
 
@@ -194,6 +196,64 @@ export function stageMoveSectionToIndex(
   const index = sections.findIndex((section) => section.id === sectionId);
   if (index < 0 || index === targetIndex) return false;
   return stageMoveSectionSibling(sectionId, targetIndex < index ? -1 : 1);
+}
+
+export function stageSectionLayoutChange(
+  sectionId: string,
+  layout: OmiSectionLayout | undefined,
+): boolean {
+  let changed = false;
+
+  useStudioStore.setState((state) => {
+    const previousSection = state.manuscript.sections.find(
+      (section) => section.id === sectionId,
+    );
+    if (!previousSection) return state;
+
+    const normalized = normalizeSectionLayout(layout);
+    const previous = normalizeSectionLayout(previousSection.layout);
+    if (JSON.stringify(previous) === JSON.stringify(normalized)) return state;
+
+    const nextSections = state.manuscript.sections.map((section) => {
+      if (section.id !== sectionId) return section;
+      const next = { ...section };
+      if (normalized) next.layout = normalized;
+      else delete next.layout;
+      return next;
+    });
+    const timestamp = new Date().toISOString();
+    const pendingChangeSet = stagePendingChanges(
+      state.pendingChangeSet,
+      {
+        baseRevisionId: state.manuscript.headRevisionId,
+        summary: 'Changed section publication layout',
+        events: [{
+          operation: 'section.layout.set' as never,
+          targetId: sectionId,
+          path: `/sections/${sectionId}/layout`,
+          previousValue: previous,
+          nextValue: normalized,
+        }],
+        actorAgentId: resolveCurrentActorAgentId(state.manuscript),
+        timestamp,
+      },
+    );
+    const portableState = extractManuscriptState(state.manuscript);
+
+    changed = true;
+    return {
+      manuscript: {
+        ...state.manuscript,
+        ...portableState,
+        sections: nextSections,
+        updatedAt: timestamp,
+      },
+      pendingChangeSet,
+    };
+  });
+
+  if (changed) scheduleSectionCheckpoint();
+  return changed;
 }
 
 export function stageSectionNumberingStyleChange(

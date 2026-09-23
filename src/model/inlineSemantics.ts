@@ -141,6 +141,11 @@ function walk(node: JsonNode, runs: OmiInlineRun[]): void {
     return;
   }
 
+  if (node.type === 'omiTab') {
+    runs.push({ text: '\t', semantics: [] });
+    return;
+  }
+
   // Atomic semantic objects keep their visible label when one is available.
   if (node.type === 'omiCitation' || node.type === 'omiCrossReference' || node.type === 'omiNote') {
     const label = node.attrs?.label;

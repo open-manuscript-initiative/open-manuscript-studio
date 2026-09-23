@@ -439,10 +439,23 @@ export interface OmiBlock {
   children?: OmiBlock[];
 }
 
+export type OmiSectionColumnCount = 1 | 2 | 3;
+
+export interface OmiSectionLayout {
+  /** Number of text columns used when this section is rendered for publication. */
+  columns?: OmiSectionColumnCount;
+  /** Gap between publication columns in millimetres. */
+  columnGapMm?: number;
+  /** Word-like tab stops measured from the section text area's left edge. */
+  tabStopsMm?: number[];
+}
+
 export interface OmiSection {
   id: string;
   title: string;
   blocks: OmiBlock[];
+  /** Optional section-scoped publication layout retained in portable OMI state. */
+  layout?: OmiSectionLayout;
 }
 
 /**
