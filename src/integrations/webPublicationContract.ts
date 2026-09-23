@@ -42,6 +42,7 @@ export interface EditorialDecisionEvidence {
   type: 'studio-editorial-decision';
   decisionId: string;
   evidenceDigest: string;
+  publicationContentDigest: string;
   reviewRound: number;
   decidedAt: string;
 }
@@ -62,6 +63,7 @@ export interface EditorialAcceptanceRequest {
   manuscriptId: string;
   revisionId: string;
   stateDigest: string;
+  publicationContentDigest: string;
   reviewRound: number;
   basisAssignmentIds: string[];
   confirmation: typeof OMI_EDITORIAL_ACCEPTANCE_CONFIRMATION;
@@ -80,6 +82,7 @@ export type WebPublicationAssurance =
 
 export interface PreparedWebPublicationArtifact {
   html: string;
+  publicationContentDigest: string;
   build: OmiPublicationBuild;
   assurance: WebPublicationAssurance;
 }
