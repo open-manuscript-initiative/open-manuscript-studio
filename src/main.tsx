@@ -45,6 +45,7 @@ import './styles/desktop-document-tabs.css';
 import './styles/proofreading.css';
 import './styles/account-profiles.css';
 import './styles/scholarly-metadata.css';
+import './styles/ui-density.css';
 
 restorePendingExternalLaunchToLocation();
 initializeRevisionIntegrity();
