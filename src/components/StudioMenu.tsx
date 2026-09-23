@@ -122,7 +122,7 @@ export function StudioMenu({
   const { t, locale } = useTranslation();
   const publicationCopy = getPublicationProfileCopy(locale);
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
-  const editorialWorkflowLabel = getNativeEditorialWorkflowLabel(locale);
+  const editorialWorkflowLabel = supplementalCopy.editorialWorkspace;
   const platform = getStudioPlatform();
   const nativeMobile = platform === 'android' || platform === 'ios';
   const [navigationOpen, setNavigationOpen] = useState(true);
@@ -605,8 +605,3 @@ function parseBlockContent(content: string): unknown {
   }
 }
 
-function getNativeEditorialWorkflowLabel(locale: string): string {
-  if (locale === 'hu') return 'Szerkesztőségi munkafolyamat';
-  if (locale === 'de') return 'Redaktioneller Workflow';
-  return 'Editorial workflow';
-}
