@@ -3,6 +3,8 @@ import { useState, type ReactNode } from 'react';
 
 import {
   paragraphStyleWouldCreateCycle,
+  type PublicationCorners,
+  type PublicationOffsets,
   type PublicationParagraphStyleCollection,
   type PublicationParagraphStyleDefinition,
   type PublicationParagraphStyleProperties,
@@ -679,6 +681,87 @@ function RepeatableRules({
   );
 }
 
+function CornerFields({
+  copy,
+  value,
+  onChange,
+}: {
+  copy: Copy;
+  value: PublicationCorners;
+  onChange: (value: PublicationCorners) => void;
+}) {
+  return (
+    <fieldset className="indesign-subpanel">
+      <legend>{copy.corners}</legend>
+      <Grid>
+        {([
+          ['topLeft', copy.topLeft],
+          ['topRight', copy.topRight],
+          ['bottomRight', copy.bottomRight],
+          ['bottomLeft', copy.bottomLeft],
+        ] as const).flatMap(([key, label]) => {
+          const corner = value[key] ?? {};
+          return [
+            <NumberField
+              key={key + '-radius'}
+              label={label + ' — ' + copy.radius}
+              value={corner.radiusMm ?? 0}
+              min={0}
+              step={0.5}
+              suffix="mm"
+              onChange={(radiusMm) => onChange({
+                ...value,
+                [key]: { ...corner, radiusMm },
+              })}
+            />,
+            <SelectField
+              key={key + '-shape'}
+              label={label + ' — ' + copy.cornerShape}
+              value={corner.shape ?? 'square'}
+              options={[
+                ['square', copy.cornerSquare],
+                ['rounded', copy.cornerRounded],
+                ['bevel', copy.cornerBevel],
+                ['inset', copy.cornerInset],
+                ['inverse-rounded', copy.cornerInverseRounded],
+              ]}
+              onChange={(shape) => onChange({
+                ...value,
+                [key]: {
+                  ...corner,
+                  shape: shape as NonNullable<typeof corner.shape>,
+                },
+              })}
+            />,
+          ];
+        })}
+      </Grid>
+    </fieldset>
+  );
+}
+
+function OffsetFields({
+  copy,
+  value,
+  onChange,
+}: {
+  copy: Copy;
+  value: PublicationOffsets;
+  onChange: (value: PublicationOffsets) => void;
+}) {
+  return (
+    <fieldset className="indesign-subpanel">
+      <legend>{copy.offsets}</legend>
+      <Grid>
+        <NumberField label={copy.top} value={value.topMm ?? 0} step={0.5} suffix="mm" onChange={(topMm) => onChange({ ...value, topMm })} />
+        <NumberField label={copy.right} value={value.rightMm ?? 0} step={0.5} suffix="mm" onChange={(rightMm) => onChange({ ...value, rightMm })} />
+        <NumberField label={copy.bottom} value={value.bottomMm ?? 0} step={0.5} suffix="mm" onChange={(bottomMm) => onChange({ ...value, bottomMm })} />
+        <NumberField label={copy.left} value={value.leftMm ?? 0} step={0.5} suffix="mm" onChange={(leftMm) => onChange({ ...value, leftMm })} />
+      </Grid>
+    </fieldset>
+  );
+}
+
 function Grid({ children }: { children: ReactNode }) {
   return <div className="publication-style-grid indesign-field-grid">{children}</div>;
 }
@@ -899,8 +982,13 @@ function copyFor(locale: string) {
     sameStyleSpacing: t('Azonos stílusú bekezdések közötti térköz', 'Abstand zwischen gleichem Format', 'Same-style spacing'),
     balanceRagged: t('Szabad sorvégek kiegyenlítése', 'Unausgeglichene Zeilen ausgleichen', 'Balance ragged lines'),
     ignoreOpticalMargin: t('Optikai margó kihagyása', 'Optischen Randausgleich ignorieren', 'Ignore optical margin'),
+    baselineGrid: t('Rácshoz igazítás', 'Am Grundlinienraster ausrichten', 'Align to baseline grid'),
+    gridAllLines: t('Minden sor', 'Alle Zeilen', 'All lines'),
+    gridFirstLine: t('Első sor', 'Erste Zeile', 'First line'),
+    gridLastLine: t('Utolsó sor', 'Letzte Zeile', 'Last line'),
     decimal: t('Igazítás karakterhez', 'Am Zeichen ausrichten', 'Align on character'),
     leader: t('Sorkitöltés', 'Füllzeichen', 'Leader'),
+    alignOn: t('Igazítás be', 'Ausrichten an', 'Align on'),
     delete: t('Törlés', 'Löschen', 'Delete'),
     add: t('Hozzáadás', 'Hinzufügen', 'Add'),
     ruleAbove: t('Felső lénia', 'Linie darüber', 'Rule above'),
@@ -912,6 +1000,36 @@ function copyFor(locale: string) {
     tint: t('Színárnyalat', 'Farbton', 'Tint'),
     offset: t('Eltolás', 'Versatz', 'Offset'),
     overprint: t('Felülnyomás', 'Überdrucken', 'Overprint'),
+    gapColor: t('Köz színe', 'Lückenfarbe', 'Gap color'),
+    gapTint: t('Köz színárnyalata', 'Lückenfarbton', 'Gap tint'),
+    gapOverprint: t('Térköz felülnyomása', 'Lücke überdrucken', 'Overprint gap'),
+    strokeName: t('Vonalstílus', 'Konturstil', 'Stroke style'),
+    widthMode: t('Szélesség', 'Breite', 'Width'),
+    column: t('Oszlop', 'Spalte', 'Column'),
+    text: t('Szöveg', 'Text', 'Text'),
+    keepInFrame: t('Kereten belül marad', 'Im Rahmen halten', 'Keep in frame'),
+    cap: t('Vonalvég', 'Linienende', 'Cap'),
+    capButt: t('Tompa', 'Abgeschnitten', 'Butt'),
+    capRound: t('Kerek', 'Rund', 'Round'),
+    capProjecting: t('Kinyúló', 'Projizierend', 'Projecting'),
+    join: t('Egyesítés', 'Eckenverbindung', 'Join'),
+    joinMiter: t('Gér', 'Gehrung', 'Miter'),
+    joinRound: t('Kerek', 'Rund', 'Round'),
+    joinBevel: t('Levágott', 'Abgeschrägt', 'Bevel'),
+    corners: t('Sarok mérete és alakja', 'Eckgröße und -form', 'Corner size and shape'),
+    radius: t('Méret', 'Größe', 'Radius'),
+    cornerShape: t('Alak', 'Form', 'Shape'),
+    cornerSquare: t('Négyzetes', 'Eckig', 'Square'),
+    cornerRounded: t('Lekerekített', 'Abgerundet', 'Rounded'),
+    cornerBevel: t('Levágott', 'Abgeschrägt', 'Bevel'),
+    cornerInset: t('Belső', 'Eingezogen', 'Inset'),
+    cornerInverseRounded: t('Fordított kerek', 'Umgekehrt rund', 'Inverse rounded'),
+    topLeft: t('Bal felső', 'Oben links', 'Top left'),
+    topRight: t('Jobb felső', 'Oben rechts', 'Top right'),
+    bottomRight: t('Jobb alsó', 'Unten rechts', 'Bottom right'),
+    bottomLeft: t('Bal alsó', 'Unten links', 'Bottom left'),
+    offsets: t('Eltolások', 'Versätze', 'Offsets'),
+    displayAcrossFrames: t('Szegély megjelenítése kereteken/oszlopokon át', 'Rahmen über Textrahmen/Spalten hinweg anzeigen', 'Display border across frames/columns'),
     solid: t('Folytonos', 'Durchgezogen', 'Solid'),
     dashed: t('Szaggatott', 'Gestrichelt', 'Dashed'),
     dotted: t('Pontozott', 'Gepunktet', 'Dotted'),
