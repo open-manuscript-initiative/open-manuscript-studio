@@ -69,6 +69,14 @@ Példa DNS-kihíváskérés:
 
 A domain-admin csak már létező Studio-fióknak adhat DOMAIN_ADMIN, EDITOR vagy EDITOR_IN_CHIEF szerepet. Egy felhasználó ugyanannál a venue-nál több szereppel is rendelkezhet. DOMAIN_ADMIN kiosztásához nincs új DNS challenge: a meglévő domain-admin delegálja a jogosultságot.
 
+## Studio-native szerkesztőségi workflow
+
+A DNS-sel hitelesített, OJS/OMP integrációt nem használó folyóiratok és kiadók a Studio saját beküldési és szerkesztőségi workflow-ját használhatják. A folyamat külön kezeli a kézirat beküldését, a szerkesztői inboxot, a lektor kijelölését, a javítási kört, az elfogadó/elutasító szerkesztői döntést és a publikálást.
+
+OJS/OMP-integrált publikációs hely esetén ez a natív út le van tiltva: a submission state, review assignment, review round és editorial decision továbbra is az OJS/OMP authoritative adata.
+
+A részletes folyamat: [Studio-native submission and editorial workflow](./native-editorial-workflow.md).
+
 ## Peer-review autoritás
 
 DNS-hitelesített folyóirat esetén a Studio-native szerkesztői döntés publicationVenueId mezőt kap. A szerver egyidejűleg ellenőrzi:
