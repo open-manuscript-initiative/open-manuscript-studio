@@ -30,6 +30,13 @@ const venueIdSchema = z.string().uuid();
 const submissionIdSchema = z.string().uuid();
 const assignmentIdSchema = z.string().uuid();
 
+const assetSchema = z.object({
+  assetId: z.string().trim().min(1).max(128),
+  mediaType: z.string().trim().min(1).max(200),
+  checksum: digestSchema,
+  bytesBase64: z.string().min(1).max(70_000_000),
+}).strict();
+
 const revisionSchema = z.object({
   manuscriptId: manuscriptIdSchema,
   title: z.string().trim().max(500),
@@ -38,6 +45,7 @@ const revisionSchema = z.object({
   publicationContentDigest: digestSchema,
   manuscriptStateSnapshot: z.record(z.string(), z.unknown()),
   reviewSnapshot: z.record(z.string(), z.unknown()),
+  assets: z.array(assetSchema).max(2_000).optional(),
 }).strict();
 
 const submissionSchema = revisionSchema.extend({
