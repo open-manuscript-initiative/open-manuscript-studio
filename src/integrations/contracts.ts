@@ -24,6 +24,7 @@ export type IntegrationPermission =
   | 'references.read'
   | 'references.write'
   | 'review.read'
+  | 'publication.deliver'
   | 'files.read'
   | 'files.write';
 

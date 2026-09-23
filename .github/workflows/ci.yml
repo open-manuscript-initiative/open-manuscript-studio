@@ -118,6 +118,9 @@ jobs:
       - name: Test OJS/OMP publication artifact client
         run: npm run test:publication-artifact
 
+      - name: Test website publication assurance and delivery
+        run: npm run test:web-publication
+
       - name: Read package version
         id: package
         shell: bash

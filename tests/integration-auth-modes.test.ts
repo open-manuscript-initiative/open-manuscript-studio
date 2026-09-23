@@ -17,6 +17,14 @@ const newsletterPublishingPanel = readFileSync(
   new URL('../src/components/NewsletterPublishingPanel.tsx', import.meta.url),
   'utf8',
 );
+const webPublicationService = readFileSync(
+  new URL('../server/src/integrations/publishing/webPublication.ts', import.meta.url),
+  'utf8',
+);
+const editorialDecisionService = readFileSync(
+  new URL('../server/src/services/editorialDecisionService.ts', import.meta.url),
+  'utf8',
+);
 const webPublishingSettings = readFileSync(
   new URL('../src/components/WebPublishingSettings.tsx', import.meta.url),
   'utf8',
@@ -123,16 +131,30 @@ test('WordPress publishing uses application-password credentials and generic web
   assert.match(userIntegrationRoutes, /encryptedSecret: null/);
 });
 
-test('website publication requires preview approval and keeps idempotent external receipts', () => {
-  assert.match(newsletterPublishingPanel, /buildPublicationHtmlArtifact/);
+test('website publication binds assurance to a committed artifact and keeps idempotent external receipts', () => {
+  assert.match(newsletterPublishingPanel, /prepareWebPublicationArtifact/);
   assert.match(newsletterPublishingPanel, /sandbox=""/);
-  assert.match(newsletterPublishingPanel, /approved: true/);
-  assert.match(newsletterPublishingRoutes, /approved: z\.literal\(true\)/);
-  assert.match(newsletterPublishingRoutes, /omi-newsletter-publish\/1/);
-  assert.match(newsletterPublishingRoutes, /wp-json\/wp\/v2\/media/);
-  assert.match(newsletterPublishingRoutes, /wp-json\/wp\/v2\/posts/);
-  assert.match(newsletterPublishingRoutes, /assertTrustedIntegrationUrl/);
-  assert.match(newsletterPublishingRoutes, /redirect: 'error'/);
+  assert.match(newsletterPublishingPanel, /OMI_WEB_PUBLICATION_APPROVAL_STATEMENT/);
+  assert.match(newsletterPublishingPanel, /createStudioReviewedAssurance/);
+  assert.doesNotMatch(newsletterPublishingPanel, /approved:\s*true/);
+  assert.match(newsletterPublishingRoutes, /z\.discriminatedUnion\('reviewStatus'/);
+  assert.match(newsletterPublishingRoutes, /\/web\/approval-grants/);
+  assert.match(newsletterPublishingRoutes, /\/web\/assurance-evidence/);
+  assert.match(webPublicationService, /omi-web-publication\/1/);
+  assert.match(webPublicationService, /wp-json\/wp\/v2\/media/);
+  assert.match(webPublicationService, /wp-json\/wp\/v2\/posts/);
+  assert.match(webPublicationService, /assertTrustedIntegrationUrl/);
+  assert.match(webPublicationService, /redirect: 'error'/);
+  assert.match(webPublicationService, /Idempotency-Key/);
+  assert.match(webPublicationService, /WEB_PUBLICATION_TARGET_CHANGED/);
+  assert.match(webPublicationService, /deliveredContentDigest/);
+  assert.match(webPublicationService, /assertEditorialDecisionEvidence/);
+  assert.match(editorialDecisionService, /externalInstallationId === null/);
+  assert.match(editorialDecisionService, /manuscriptSnapshot !== null/);
+  assert.match(editorialDecisionService, /sourceSnapshotDigest/);
   assert.match(serverSchema, /model WebPublication \{/);
+  assert.match(serverSchema, /model WebPublicationDelivery \{/);
+  assert.match(serverSchema, /model WebPublicationApprovalGrant \{/);
+  assert.match(serverSchema, /model EditorialDecision \{/);
   assert.match(serverSchema, /@@unique\(\[userId, connectionId, manuscriptId\]\)/);
 });
