@@ -1,14 +1,17 @@
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { claimOmpReviewLaunch } from '../services/ompReviewApi';
+import { listNativeEditorialInbox, type NativeSubmission } from '../services/nativeEditorialWorkflowApi';
 import { claimOjsReviewLaunch } from '../services/peerReviewApi';
 import { AssignmentStudioMenu } from './AssignmentStudioMenu';
 import { EditorReviewMode, loadEditorReviewOverview } from './EditorReviewMode';
+import { NativeEditorialInbox } from './NativeEditorialInbox';
 import { ReviewMode } from './ReviewMode';
 import { ReviewPortalHeader } from './ReviewPortalHeader';
 
 export function ReviewPortal() {
   const [editorReviews, setEditorReviews] = useState<Awaited<ReturnType<typeof loadEditorReviewOverview>> | null>(null);
+  const [nativeSubmissions, setNativeSubmissions] = useState<NativeSubmission[]>([]);
   const [externalAssignmentId, setExternalAssignmentId] = useState<string | null>(null);
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -58,8 +61,14 @@ export function ReviewPortal() {
           return;
         }
 
-        const reviews = await loadEditorReviewOverview();
-        if (active) setEditorReviews(reviews);
+        const [reviews, submissions] = await Promise.all([
+          loadEditorReviewOverview(),
+          listNativeEditorialInbox(),
+        ]);
+        if (active) {
+          setEditorReviews(reviews);
+          setNativeSubmissions(submissions);
+        }
       } catch (error) {
         if (!active) return;
         setLaunchError(
@@ -91,8 +100,17 @@ export function ReviewPortal() {
         </div>
       </main>
     );
-  } else if (editorReviews.length > 0) {
-    content = <EditorReviewMode initialReviews={editorReviews} />;
+  } else if (nativeSubmissions.length > 0 || editorReviews.length > 0) {
+    content = (
+      <>
+        {nativeSubmissions.length > 0
+          ? <NativeEditorialInbox initialSubmissions={nativeSubmissions} />
+          : null}
+        {editorReviews.length > 0
+          ? <EditorReviewMode initialReviews={editorReviews} />
+          : null}
+      </>
+    );
   } else {
     content = externalAssignmentId
       ? <ReviewMode assignmentId={externalAssignmentId} />
