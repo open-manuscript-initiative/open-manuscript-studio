@@ -264,7 +264,7 @@ model PublicationVenueMembership {
   user            User                 @relation("PublicationVenueMember", fields: [userId], references: [id], onDelete: Cascade)
   grantedBy       User                 @relation("PublicationVenueMembershipGrantor", fields: [grantedByUserId], references: [id], onDelete: Restrict)
 
-  @@unique([venueId, userId])
+  @@unique([venueId, userId, role])
   @@index([venueId, role, active])
   @@index([userId, active])
   @@map("publication_venue_memberships")
