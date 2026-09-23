@@ -560,7 +560,7 @@ export async function markNativeEditorialSubmissionPublished(
   editorUserId: string,
   submissionId: string,
   revisionId: string,
-  note?: string,
+  externalUrl: string,
 ) {
   const submission = await loadSubmission(submissionId);
   await ensureSubmissionEditorAccess(editorUserId, submission);
@@ -583,6 +583,7 @@ export async function markNativeEditorialSubmissionPublished(
   if (!decision || decision.decision !== 'ACCEPT') {
     throw conflict('Publisher-verified editorial acceptance is required before publication.');
   }
+  assertPublicationUrlMatchesVenue(externalUrl, submission.publicationVenueDomain);
   const updated = await prisma.$transaction(async (transaction) => {
     const next = await transaction.nativeEditorialSubmission.update({
       where: { id: submission.id },
@@ -608,13 +609,35 @@ export async function markNativeEditorialSubmissionPublished(
           reviewRound: submission.reviewRound,
           revisionId,
           stateDigest: submission.stateDigest,
-          ...(note?.trim() ? { note: note.trim() } : {}),
+          note: externalUrl,
         },
       });
     }
     return next;
   });
   return serializeSubmissionSummary(updated);
+}
+
+function assertPublicationUrlMatchesVenue(
+  externalUrl: string,
+  publicationVenueDomain: string,
+): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(externalUrl);
+  } catch {
+    throw conflict('A valid external publication URL is required.');
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw conflict('The external publication URL must use HTTP or HTTPS.');
+  }
+  const hostname = parsed.hostname.toLowerCase().replace(/\.$/u, '');
+  const domain = publicationVenueDomain.toLowerCase().replace(/\.$/u, '');
+  if (hostname !== domain && !hostname.endsWith(`.${domain}`)) {
+    throw conflict(
+      'The published URL is outside the verified publication-venue domain.',
+    );
+  }
 }
 
 async function ensureSubmissionEditorAccess(
