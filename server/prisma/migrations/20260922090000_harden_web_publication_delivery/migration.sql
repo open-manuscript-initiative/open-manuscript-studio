@@ -87,6 +87,7 @@ CREATE TABLE "editorial_decisions" (
   "manuscript_id" VARCHAR(128) NOT NULL,
   "revision_id" VARCHAR(128) NOT NULL,
   "state_digest" VARCHAR(64) NOT NULL,
+  "publication_content_digest" VARCHAR(64) NOT NULL,
   "review_round" INTEGER NOT NULL,
   "decision" VARCHAR(32) NOT NULL,
   "basis_assignment_ids" JSONB NOT NULL,
@@ -100,8 +101,63 @@ CREATE TABLE "editorial_decisions" (
     CHECK (
       "decision" = 'ACCEPT'
       AND "review_round" BETWEEN 1 AND 99
-      AND "state_digest" ~ '^[0-9a-f]{64}$'
-      AND "evidence_digest" ~ '^[0-9a-f]{64}$'
+      AND "state_digest" ~ '^[0-9a-f]{64}
+      AND CASE
+        WHEN jsonb_typeof("basis_assignment_ids") = 'array'
+          THEN jsonb_array_length("basis_assignment_ids") BETWEEN 1 AND 100
+        ELSE FALSE
+      END
+    ),
+  CONSTRAINT "editorial_decisions_decided_by_user_id_fkey"
+    FOREIGN KEY ("decided_by_user_id") REFERENCES "users"("id")
+    ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX "editorial_decisions_workspace_manuscript_revision_key"
+  ON "editorial_decisions"("workspace_id", "manuscript_id", "revision_id");
+CREATE INDEX "editorial_decisions_manuscript_revision_decision_idx"
+  ON "editorial_decisions"("manuscript_id", "revision_id", "decision");
+CREATE INDEX "editorial_decisions_decided_by_decided_at_idx"
+  ON "editorial_decisions"("decided_by_user_id", "decided_at");
+
+      AND "publication_content_digest" ~ '^[0-9a-f]{64}
+      AND CASE
+        WHEN jsonb_typeof("basis_assignment_ids") = 'array'
+          THEN jsonb_array_length("basis_assignment_ids") BETWEEN 1 AND 100
+        ELSE FALSE
+      END
+    ),
+  CONSTRAINT "editorial_decisions_decided_by_user_id_fkey"
+    FOREIGN KEY ("decided_by_user_id") REFERENCES "users"("id")
+    ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX "editorial_decisions_workspace_manuscript_revision_key"
+  ON "editorial_decisions"("workspace_id", "manuscript_id", "revision_id");
+CREATE INDEX "editorial_decisions_manuscript_revision_decision_idx"
+  ON "editorial_decisions"("manuscript_id", "revision_id", "decision");
+CREATE INDEX "editorial_decisions_decided_by_decided_at_idx"
+  ON "editorial_decisions"("decided_by_user_id", "decided_at");
+
+      AND "evidence_digest" ~ '^[0-9a-f]{64}
+      AND CASE
+        WHEN jsonb_typeof("basis_assignment_ids") = 'array'
+          THEN jsonb_array_length("basis_assignment_ids") BETWEEN 1 AND 100
+        ELSE FALSE
+      END
+    ),
+  CONSTRAINT "editorial_decisions_decided_by_user_id_fkey"
+    FOREIGN KEY ("decided_by_user_id") REFERENCES "users"("id")
+    ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX "editorial_decisions_workspace_manuscript_revision_key"
+  ON "editorial_decisions"("workspace_id", "manuscript_id", "revision_id");
+CREATE INDEX "editorial_decisions_manuscript_revision_decision_idx"
+  ON "editorial_decisions"("manuscript_id", "revision_id", "decision");
+CREATE INDEX "editorial_decisions_decided_by_decided_at_idx"
+  ON "editorial_decisions"("decided_by_user_id", "decided_at");
+
       AND CASE
         WHEN jsonb_typeof("basis_assignment_ids") = 'array'
           THEN jsonb_array_length("basis_assignment_ids") BETWEEN 1 AND 100
