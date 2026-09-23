@@ -149,6 +149,9 @@ test('website publication binds assurance to a committed artifact and keeps idem
   assert.match(webPublicationService, /WEB_PUBLICATION_TARGET_CHANGED/);
   assert.match(webPublicationService, /deliveredContentDigest/);
   assert.match(webPublicationService, /assertEditorialDecisionEvidence/);
+  assert.match(webPublicationService, /WEB_PUBLICATION_RECONCILIATION_REQUIRED/);
+  assert.match(webPublicationService, /publicationContentDigest/);
+  assert.match(editorialDecisionService, /publicationContentDigest/);
   assert.match(editorialDecisionService, /externalInstallationId === null/);
   assert.match(editorialDecisionService, /manuscriptSnapshot !== null/);
   assert.match(editorialDecisionService, /sourceSnapshotDigest/);
