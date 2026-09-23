@@ -104,7 +104,9 @@ export async function listAuthorNativeSubmissions(authorUserId: string) {
     include: submissionInclude,
     orderBy: { updatedAt: 'desc' },
   });
-  return submissions.map(serializeSubmission);
+  return submissions.map((submission) =>
+    serializeSubmission(submission, authorUserId)
+  );
 }
 
 export async function listNativeEditorialInbox(editorUserId: string) {
@@ -226,11 +228,14 @@ export async function assignNativeReviewer(
   ) {
     throw conflict('A reviewer cannot be assigned from the current submission state.');
   }
+  const reviewRound = submission.status === 'REVISION_SUBMITTED'
+    ? Math.min(99, submission.reviewRound + 1)
+    : submission.reviewRound;
   const review = await createReviewAssignment(editorUserId, {
     workspaceId: submission.workspaceId,
     manuscriptId: submission.manuscriptId,
     reviewerEmail: input.reviewerEmail,
-    reviewRound: submission.reviewRound,
+    reviewRound,
     assignmentType: 'SCIENTIFIC_REVIEW',
     ...(input.anonymityMode ? { anonymityMode: input.anonymityMode } : {}),
   });
@@ -243,7 +248,10 @@ export async function assignNativeReviewer(
   await prisma.$transaction([
     prisma.nativeSubmission.update({
       where: { id: submission.id },
-      data: { status: 'UNDER_REVIEW' },
+      data: {
+        status: 'UNDER_REVIEW',
+        ...(reviewRound !== submission.reviewRound ? { reviewRound } : {}),
+      },
     }),
     prisma.nativeSubmissionEvent.create({
       data: {
@@ -252,7 +260,7 @@ export async function assignNativeReviewer(
         kind: 'REVIEWER_ASSIGNED',
         detail: {
           assignmentId: review.id,
-          reviewRound: submission.reviewRound,
+          reviewRound,
         },
       },
     }),
@@ -312,7 +320,7 @@ export async function requestNativeRevision(
       submissionId: submission.id,
       actorUserId: editorUserId,
       kind: 'REVISION_REQUESTED',
-      detail: note.trim() ? { note: note.trim() } : undefined,
+      ...(note.trim() ? { detail: { note: note.trim() } } : {}),
     },
   });
   return serializeSubmission(updated, editorUserId);
@@ -388,7 +396,7 @@ export async function rejectNativeSubmission(
       submissionId: submission.id,
       actorUserId: editorUserId,
       kind: 'REJECTED',
-      detail: note.trim() ? { note: note.trim() } : undefined,
+      ...(note.trim() ? { detail: { note: note.trim() } } : {}),
     },
   });
   return serializeSubmission(updated, editorUserId);
@@ -437,10 +445,10 @@ export async function acceptNativeSubmission(
 }
 
 export async function markNativeSubmissionPublished(
-  userId: string,
+  editorUserId: string,
   submissionId: string,
 ) {
-  const submission = await requireParticipantSubmission(userId, submissionId);
+  const submission = await requireAssignedEditor(editorUserId, submissionId);
   if (submission.status !== 'ACCEPTED') {
     throw conflict('Only an accepted Studio-native submission can be marked as published.');
   }
@@ -452,11 +460,11 @@ export async function markNativeSubmissionPublished(
   await prisma.nativeSubmissionEvent.create({
     data: {
       submissionId: submission.id,
-      actorUserId: userId,
+      actorUserId: editorUserId,
       kind: 'PUBLISHED',
     },
   });
-  return serializeSubmission(updated, userId);
+  return serializeSubmission(updated, editorUserId);
 }
 
 async function requireAssignedEditor(editorUserId: string, submissionId: string) {
