@@ -845,7 +845,7 @@ function validateSubmissionAssets(
   assetId: string;
   mediaType: string;
   checksum: string;
-  bytes: Uint8Array;
+  bytes: Uint8Array<ArrayBuffer>;
 }> {
   const declared = new Map<string, {
     mediaType: string;
@@ -903,9 +903,11 @@ function validateSubmissionAssets(
     if (!input) {
       throw conflict(`The submitted manuscript is missing asset payload ${assetId}.`);
     }
-    let bytes: Uint8Array;
+    let bytes: Uint8Array<ArrayBuffer>;
     try {
-      bytes = new Uint8Array(Buffer.from(input.bytesBase64, 'base64'));
+      const decoded = Buffer.from(input.bytesBase64, 'base64');
+      bytes = new Uint8Array(decoded.byteLength);
+      bytes.set(decoded);
     } catch {
       throw new Error(`Asset ${assetId} is not valid base64 data.`);
     }
