@@ -142,6 +142,17 @@ test('HTML5 visual editing is responsive and preserves changes when returning to
   await expect(printView).toHaveAttribute('aria-pressed', 'true');
   await expect(canvas.locator('.publication-document-page-guide')).not.toHaveCount(0);
   await expect(title).toHaveValue('Edited in the HTML5 visual editor');
+
+  const printPaper = canvas.locator('.publication-document-paper--print');
+  const printWidthAt100 = await printPaper.evaluate(
+    (element) => Number.parseFloat(getComputedStyle(element).width),
+  );
+  await zoomSlider.fill('150');
+  await expect.poll(() => printPaper.evaluate(
+    (element) => Number.parseFloat(getComputedStyle(element).width),
+  )).toBeGreaterThan(printWidthAt100 * 1.45);
+  await zoomSlider.fill('100');
+
   expect(api.unhandledRequests).toEqual([]);
 });
 
