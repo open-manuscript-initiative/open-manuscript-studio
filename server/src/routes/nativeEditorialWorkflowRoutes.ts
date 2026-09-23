@@ -9,6 +9,7 @@ import {
   acceptNativeEditorialSubmission,
   assignNativeEditorialReviewer,
   completeNativeEditorialReview,
+  findNativeEditorialSubmissionForUser,
   getNativeEditorialSubmission,
   listNativeEditorialInbox,
   listNativeEditorialSubmissionsForAuthor,
@@ -99,6 +100,22 @@ nativeEditorialWorkflowRouter.get(
       response.status(200).json({ submissions });
     } catch (error) {
       sendError(response, error, 'NATIVE_EDITORIAL_AUTHOR_LIST_FAILED');
+    }
+  },
+);
+
+nativeEditorialWorkflowRouter.get(
+  '/submissions/for-manuscript/:manuscriptId',
+  async (request: AuthenticatedRequest, response) => {
+    try {
+      const manuscriptId = parseId(request.params.manuscriptId, manuscriptIdSchema);
+      const submission = await findNativeEditorialSubmissionForUser(
+        requireUserId(request),
+        manuscriptId,
+      );
+      response.status(200).json({ submission });
+    } catch (error) {
+      sendError(response, error, 'NATIVE_EDITORIAL_MANUSCRIPT_LOOKUP_FAILED');
     }
   },
 );
