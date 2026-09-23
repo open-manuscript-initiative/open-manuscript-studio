@@ -32,6 +32,7 @@ import { HtmlExportPanel } from './HtmlExportPanel';
 import { IdmlPublicationStyleImportPanel } from './IdmlPublicationStyleImportPanel';
 import { JatsExportPanel } from './JatsExportPanel';
 import { NewsletterPublishingPanel } from './NewsletterPublishingPanel';
+import { NativeSubmissionPanel } from './NativeSubmissionPanel';
 import { PublicationStyleExportPanel } from './PublicationStyleExportPanel';
 import { PublisherExportStylesheetPanel } from './PublisherExportStylesheetPanel';
 import { PublisherPrintStylesheetPanel } from './PublisherPrintStylesheetPanel';
@@ -94,6 +95,7 @@ export function PublicationProfilePanel() {
         <LayoutTemplate size={22} aria-hidden="true" />
       </div>
 
+      <NativeSubmissionPanel />
       <DirectSubmissionPanel />
       <PublicationArtifactPanel />
       <NewsletterPublishingPanel />
