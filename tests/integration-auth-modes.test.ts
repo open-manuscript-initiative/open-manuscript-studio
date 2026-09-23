@@ -45,6 +45,13 @@ const identitySchema = readFileSync(
   new URL('../server/prisma/identity/schema.prisma', import.meta.url),
   'utf8',
 );
+const webPublicationMigration = readFileSync(
+  new URL(
+    '../server/prisma/migrations/20260922090000_harden_web_publication_delivery/migration.sql',
+    import.meta.url,
+  ),
+  'utf8',
+);
 const webPublishingSettings = readFileSync(
   new URL('../src/components/WebPublishingSettings.tsx', import.meta.url),
   'utf8',
@@ -196,6 +203,40 @@ test('website publication binds assurance to a committed artifact and keeps idem
   assert.match(publicationVenueField, /copy\.domainAdmin/);
   assert.match(identitySchema, /model PublicationVenueDomainVerification \{/);
   assert.match(identitySchema, /model PublicationVenueMembership \{/);
+  assert.equal(
+    webPublicationMigration.match(/CREATE TABLE "editorial_decisions"/g)?.length,
+    1,
+  );
+  assert.match(
+    webPublicationMigration,
+    /"state_digest" ~ '\^\[0-9a-f\]\{64\}\  assert.match(serverSchema, /model WebPublication \{/);
+  assert.match(serverSchema, /model WebPublicationDelivery \{/);
+  assert.match(serverSchema, /model WebPublicationApprovalGrant \{/);
+  assert.match(serverSchema, /model EditorialDecision \{/);
+  assert.match(serverSchema, /@@unique\(\[userId, connectionId, manuscriptId\]\)/);
+});
+/,
+  );
+  assert.match(
+    webPublicationMigration,
+    /"publication_content_digest" ~ '\^\[0-9a-f\]\{64\}\  assert.match(serverSchema, /model WebPublication \{/);
+  assert.match(serverSchema, /model WebPublicationDelivery \{/);
+  assert.match(serverSchema, /model WebPublicationApprovalGrant \{/);
+  assert.match(serverSchema, /model EditorialDecision \{/);
+  assert.match(serverSchema, /@@unique\(\[userId, connectionId, manuscriptId\]\)/);
+});
+/,
+  );
+  assert.match(
+    webPublicationMigration,
+    /"evidence_digest" ~ '\^\[0-9a-f\]\{64\}\  assert.match(serverSchema, /model WebPublication \{/);
+  assert.match(serverSchema, /model WebPublicationDelivery \{/);
+  assert.match(serverSchema, /model WebPublicationApprovalGrant \{/);
+  assert.match(serverSchema, /model EditorialDecision \{/);
+  assert.match(serverSchema, /@@unique\(\[userId, connectionId, manuscriptId\]\)/);
+});
+/,
+  );
   assert.match(serverSchema, /model WebPublication \{/);
   assert.match(serverSchema, /model WebPublicationDelivery \{/);
   assert.match(serverSchema, /model WebPublicationApprovalGrant \{/);
