@@ -39,6 +39,7 @@ import {
 import { cssStringLiteral } from '../services/embeddedCss';
 import type { OmiPublicationFlowBreak } from '../editor/extensions/OmiProofingMarksExtension';
 import { BlockEditor } from './BlockEditor';
+import { PublicationSectionRuler } from './PublicationSectionRuler';
 import {
   paginatePublicationBlocks,
   type PublicationFlowLine,
@@ -170,8 +171,10 @@ export function PublicationDocumentCanvas({
   );
   const firstPageNumber = Math.max(0, Math.trunc(style.page.pageNumberStart ?? 1));
   const firstPageIsMirrored = style.page.mirroredMargins && firstPageNumber % 2 === 0;
-  const firstPageLeftMargin = firstPageIsMirrored ? outerMargin : innerMargin;
-  const firstPageRightMargin = firstPageIsMirrored ? innerMargin : outerMargin;
+  const firstPageLeftMarginMm = firstPageIsMirrored ? outerMarginMm : innerMarginMm;
+  const firstPageRightMarginMm = firstPageIsMirrored ? innerMarginMm : outerMarginMm;
+  const firstPageLeftMargin = firstPageLeftMarginMm * PIXELS_PER_MM * scale;
+  const firstPageRightMargin = firstPageRightMarginMm * PIXELS_PER_MM * scale;
   const contentWidth = Math.max(80, pageWidth - firstPageLeftMargin - firstPageRightMargin);
   const pageOverhead = topMargin + bottomMargin + pageGap;
 
@@ -570,13 +573,6 @@ export function PublicationDocumentCanvas({
         width: `${contentWidth}px`,
       } as CSSProperties
     : undefined;
-  const rulerStyle = {
-    width: `${pageWidth}px`,
-    '--omi-publication-ruler-left': `${firstPageLeftMargin}px`,
-    '--omi-publication-ruler-right': `${firstPageRightMargin}px`,
-    '--omi-publication-ruler-step': `${5 * PIXELS_PER_MM * scale}px`,
-  } as CSSProperties;
-
   return (
     <section
       id={canvasId}
@@ -637,12 +633,15 @@ export function PublicationDocumentCanvas({
         className={`publication-document-canvas-stage publication-document-canvas-stage--${viewMode}`}
         aria-label={viewMode === 'print' ? copy.printLayout : copy.htmlLayout}
       >
-        {viewMode === 'print' ? (
-          <div className="publication-document-ruler" style={rulerStyle} aria-hidden="true">
-            <span className="publication-document-ruler-margin publication-document-ruler-margin--left" />
-            <span className="publication-document-ruler-margin publication-document-ruler-margin--right" />
-          </div>
-        ) : null}
+        <PublicationSectionRuler
+          locale={locale}
+          viewMode={viewMode}
+          widthPx={pageWidth}
+          pageWidthMm={pageWidthMm}
+          leftMarginMm={firstPageLeftMarginMm}
+          rightMarginMm={firstPageRightMarginMm}
+          rulerStepPx={5 * PIXELS_PER_MM * scale}
+        />
         <article
           className={`publication-document-paper publication-document-paper--${viewMode}`}
           data-publication-view={viewMode}
