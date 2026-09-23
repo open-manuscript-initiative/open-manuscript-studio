@@ -51,7 +51,36 @@ test('HTML5 visual editing is responsive and preserves changes when returning to
   await expect(htmlView).toHaveAttribute('aria-pressed', 'true');
   await expect(canvas.locator('[data-publication-view="html"]')).toBeVisible();
   await expect(canvas.locator('.publication-document-page-guide')).toHaveCount(0);
-  await expect(canvas.locator('.publication-document-ruler')).toHaveCount(0);
+  await expect(canvas.locator('.publication-document-ruler')).toBeVisible();
+  const sectionColumns = canvas.getByRole('combobox', { name: 'Columns', exact: true });
+  await expect(sectionColumns).toBeVisible();
+  await sectionColumns.selectOption('2');
+  await expect.poll(() => page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const selected = useStudioStore.getState().selectedSectionId;
+    return useStudioStore.getState().manuscript.sections.find(
+      (section) => section.id === selected,
+    )?.layout?.columns ?? 1;
+  })).toBe(2);
+
+  const ruler = canvas.locator('.publication-document-ruler');
+  const rulerBox = await ruler.boundingBox();
+  expect(rulerBox).not.toBeNull();
+  if (rulerBox) {
+    await ruler.click({
+      position: {
+        x: rulerBox.width * 0.6,
+        y: rulerBox.height * 0.55,
+      },
+    });
+  }
+  await expect.poll(() => page.evaluate(async () => {
+    const { useStudioStore } = await import('/src/app/useStudioStore.ts');
+    const selected = useStudioStore.getState().selectedSectionId;
+    return useStudioStore.getState().manuscript.sections.find(
+      (section) => section.id === selected,
+    )?.layout?.tabStopsMm?.length ?? 0;
+  })).toBeGreaterThan(0);
   await expect(canvas.getByRole('combobox', { name: 'Zoom', exact: true })).toHaveCount(0);
   await expect(canvas.getByText('Responsive width', { exact: true })).toBeVisible();
   await expect(menu.getByRole('button', { name: 'Print page', exact: true })).toHaveCount(0);
