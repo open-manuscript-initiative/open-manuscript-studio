@@ -34,6 +34,7 @@ export interface NativeSubmission {
   manuscriptSnapshot: OmiManuscript;
   reviewRound: number;
   status: NativeSubmissionStatus;
+  viewerIsAssignedEditor: boolean;
   latestEditorialNote: string | null;
   author: { id: string; email: string; fullName: string };
   editor: { id: string; email: string; fullName: string } | null;
