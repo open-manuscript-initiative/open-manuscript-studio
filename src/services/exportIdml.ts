@@ -12,10 +12,7 @@ import type {
   PublicationParagraphStyleProperties,
 } from '../model/publicationParagraphStyles';
 import type { OmiBlock, OmiManuscript } from '../types/omi';
-import {
-  loadPublicationStyle,
-  type PublicationStyle,
-} from './publicationStyleExport';
+import type { PublicationStyle } from './publicationStyleExport';
 import { createStoreZip, textZipEntry } from './simpleZip';
 
 export const IDML_MEDIA_TYPE = 'application/vnd.adobe.indesign-idml-package' as const;
@@ -36,7 +33,7 @@ export interface IdmlExportResult {
  */
 export function buildIdmlExport(
   manuscript: OmiManuscript,
-  publicationStyle: PublicationStyle = loadPublicationStyle(),
+  publicationStyle?: PublicationStyle,
 ): IdmlExportResult {
   const profile = resolvePublicationProfile(manuscript);
   const context = buildPublicationRenderingContext(manuscript, profile);
@@ -170,7 +167,7 @@ export function buildIdmlExport(
   };
 }
 
-function buildStylesXml(publicationStyle: PublicationStyle): string {
+function buildStylesXml(publicationStyle?: PublicationStyle): string {
   const fallbackParagraphStyles = [
     style('OMI Title', 24, true, 'CenterAlign', 12, 8),
     style('OMI Subtitle', 16, false, 'CenterAlign', 4, 10),
@@ -181,9 +178,11 @@ function buildStylesXml(publicationStyle: PublicationStyle): string {
     style('OMI Figure Caption', 9, false, 'CenterAlign', 4, 8),
     ...[1, 2, 3, 4, 5, 6].map((level) => style(`OMI Heading ${level}`, Math.max(11, 17 - level), true, 'LeftAlign', level === 1 ? 12 : 8, 4)),
   ];
-  const studioParagraphStyles = publicationStyle.paragraphStyles.items.map(
-    (definition) => paragraphStyle(definition, publicationStyle),
-  );
+  const studioParagraphStyles = publicationStyle
+    ? publicationStyle.paragraphStyles.items.map(
+        (definition) => paragraphStyle(definition, publicationStyle),
+      )
+    : [];
   const paragraphStyles = [
     ...fallbackParagraphStyles,
     ...studioParagraphStyles,
@@ -218,8 +217,9 @@ function buildStylesXml(publicationStyle: PublicationStyle): string {
 
 function resolveIdmlParagraphStyleId(
   block: OmiBlock,
-  publicationStyle: PublicationStyle,
+  publicationStyle: PublicationStyle | undefined,
 ): string {
+  if (!publicationStyle) return 'OMI Body';
   const requested = block.paragraphStyleId?.trim();
   if (
     requested
