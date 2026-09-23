@@ -30,6 +30,7 @@ test('Studio-native workflow is explicitly DNS-only and does not replace OJS/OMP
   );
   assert.match(authorPanel, /authority\?\.method === 'DNS_TXT'/);
   assert.match(authorPanel, /integrationStatus !== 'VERIFIED'/);
+  assert.match(authorPanel, /ensureManuscriptRevisionStateDigests/);
 });
 
 test('native submission schema preserves workflow state and immutable audit events', () => {
