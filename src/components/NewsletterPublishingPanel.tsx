@@ -59,6 +59,11 @@ export function NewsletterPublishingPanel() {
     () => targets.find((target) => target.id === targetId) ?? null,
     [targetId, targets],
   );
+  const isDnsNativeVenue = Boolean(
+    manuscript.metadata?.publicationVenue?.authority?.method === 'DNS_TXT' &&
+    manuscript.metadata.publicationVenue.authority.status === 'VERIFIED' &&
+    manuscript.metadata.publicationVenue.integrationStatus !== 'VERIFIED'
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -354,10 +359,18 @@ export function NewsletterPublishingPanel() {
                 </select>
               </label>
               {assuranceEvidence.decisions.length === 0 ? (
-                <p className="publication-profile-status">{copy.noVerifiedReview}</p>
+                <>
+                  <p className="publication-profile-status">{copy.noVerifiedReview}</p>
+                  {isDnsNativeVenue ? (
+                    <p className="publication-profile-status">
+                      {copy.nativeEditorialDecisionRequired}
+                    </p>
+                  ) : null}
+                </>
               ) : null}
               {assuranceEvidence.eligibleReviewRounds.length > 0 &&
-              assuranceEvidence.decisions.length === 0 ? (
+              assuranceEvidence.decisions.length === 0 &&
+              !isDnsNativeVenue ? (
                 <fieldset className="publication-profile-options">
                   <legend>{copy.editorialAcceptanceTitle}</legend>
                   <p>{copy.editorialAcceptanceHelp}</p>
@@ -487,6 +500,7 @@ function getCopy(locale: string) {
       publisherVerified: 'szaklektorált — hitelesített folyóirati döntés',
       round: 'forduló',
       noVerifiedReview: 'Ehhez a pontos revízióhoz nincs Studio által igazolt szerkesztői elfogadó döntés. A publikáció csak „nem szaklektorált” jelöléssel küldhető.',
+      nativeEditorialDecisionRequired: 'DNS-hitelesített Studio-native folyóiratnál a publikálás előtt a Szerkesztőségi munkatérben rögzítsd a szerkesztői döntést.',
       editorialAcceptanceTitle: 'Studio-lektorálás lezárása',
       editorialAcceptanceHelp: 'A teljes Studio-natív tudományos lektori forduló elkészült. A „lektorált” pecséthez egy szerkesztőnek külön el kell fogadnia ezt a pontos, rögzített revíziót. DNS-sel hitelesített folyóirat esetén csak az adott folyóirat aktív szerkesztője rögzíthet hitelesített folyóirati döntést.',
       reviewRound: 'Lektori forduló',
@@ -531,6 +545,7 @@ function getCopy(locale: string) {
       publisherVerified: 'begutachtet — durch verifizierte Publikationsstelle bestätigt',
       round: 'Runde',
       noVerifiedReview: 'Für diese genaue Revision liegt keine durch Studio verifizierte redaktionelle Annahmeentscheidung vor. Sie kann nur als „nicht begutachtet“ versendet werden.',
+      nativeEditorialDecisionRequired: 'Bei einer DNS-verifizierten Studio-nativen Publikationsstelle muss die redaktionelle Entscheidung vor der Veröffentlichung im Redaktionsbereich erfasst werden.',
       editorialAcceptanceTitle: 'Studio-Begutachtung abschließen',
       editorialAcceptanceHelp: 'Die vollständige Studio-interne wissenschaftliche Begutachtungsrunde ist abgeschlossen. Für das Begutachtungssiegel muss eine Redakteurin oder ein Redakteur diese genaue Revision ausdrücklich annehmen. Bei einer per DNS verifizierten Publikationsstelle kann nur eine aktive Redakteurin oder ein aktiver Redakteur dieser Stelle eine verifizierte Entscheidung erfassen.',
       reviewRound: 'Begutachtungsrunde',
@@ -574,6 +589,7 @@ function getCopy(locale: string) {
     publisherVerified: 'peer reviewed — verified publication venue decision',
     round: 'round',
     noVerifiedReview: 'No Studio-verified editorial acceptance exists for this exact revision. It can be sent only with a “not peer reviewed” disclosure.',
+    nativeEditorialDecisionRequired: 'For a DNS-verified Studio-native venue, record the editorial decision in the editorial workspace before publishing.',
     editorialAcceptanceTitle: 'Complete Studio peer review',
     editorialAcceptanceHelp: 'A complete Studio-native scientific review round is available. An editor must separately accept this exact committed revision before it may carry the peer-reviewed seal. For a DNS-verified publication venue, only an active editor of that venue can record a publisher-verified decision.',
     reviewRound: 'Review round',
