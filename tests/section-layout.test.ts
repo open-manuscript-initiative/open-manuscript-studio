@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  nextTabStopMm,
   normalizeSectionLayout,
   normalizeTabStops,
   toggleTabStop,
@@ -28,4 +29,11 @@ test('normalizes portable section layout and keeps ordered tab stops', () => {
 test('ruler tab stop toggling snaps by proximity without duplicating positions', () => {
   assert.deepEqual(toggleTabStop([20, 40], 60), [20, 40, 60]);
   assert.deepEqual(toggleTabStop([20, 40], 40.8), [20]);
+});
+
+test('resolves the next explicit tab stop and falls back to the default interval', () => {
+  assert.equal(nextTabStopMm([20, 45, 80], 12), 20);
+  assert.equal(nextTabStopMm([20, 45, 80], 20), 45);
+  assert.equal(nextTabStopMm([20, 45, 80], 82), 87.5);
+  assert.equal(nextTabStopMm(undefined, 0), 12.5);
 });
