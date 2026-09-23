@@ -168,3 +168,28 @@ test('checkpoint descriptors are detached from mutable pending arrays', () => {
 
   assert.deepEqual(pending.events[0]?.nextValue, { value: 'New' });
 });
+
+test('continuous editor can retain immutable event values until checkpoint', () => {
+  const previous = { sections: ['old'] };
+  const next = { sections: ['new'] };
+  const pending = stagePendingChanges(null, {
+    baseRevisionId: 'revision-1',
+    summary: 'Edited manuscript study',
+    cloneEventValues: false,
+    events: [
+      {
+        operation: 'section.replace' as never,
+        targetId: 'manuscript-1',
+        path: '/sections',
+        previousValue: previous,
+        nextValue: next,
+      },
+    ],
+  });
+
+  assert.equal(pending.events[0]?.nextValue, next);
+
+  const descriptor = createCheckpointDescriptor(pending);
+  assert.notEqual(descriptor.events[0]?.nextValue, next);
+  assert.deepEqual(descriptor.events[0]?.nextValue, next);
+});

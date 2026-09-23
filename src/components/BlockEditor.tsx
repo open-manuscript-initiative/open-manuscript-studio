@@ -10,6 +10,7 @@ import {
   useEditor,
 } from '@tiptap/react';
 import type { Editor } from '@tiptap/core';
+import { collectChangedWorkspaceReferences } from '../editor/changedWorkspaceReferences';
 import StarterKit from '@tiptap/starter-kit';
 
 import {
@@ -134,6 +135,7 @@ export function BlockEditor({
   const [crossReferencePickerOpen, setCrossReferencePickerOpen] = useState(false);
   const [integrationAction, setIntegrationAction] = useState<'translate' | 'agent' | null>(null);
   const onUpdateRef = useRef(onUpdate);
+  const lastEmittedContentRef = useRef<string | null>(null);
   const onProofingSelectionRef = useRef(onProofingSelection);
   const tRef = useRef(t);
   const proofreadingSelectRef = useRef<(id: string | null) => void>(() => undefined);
@@ -360,13 +362,27 @@ export function BlockEditor({
         return true;
       },
     },
-    onUpdate: ({ editor: currentEditor }) => {
-      onUpdateRef.current(blockId, JSON.stringify(currentEditor.getJSON()));
+    onUpdate: ({ editor: currentEditor, transaction, appendedTransactions }) => {
+      const serializedContent = JSON.stringify(currentEditor.getJSON());
+      lastEmittedContentRef.current = serializedContent;
       if (capabilities.reconcileWorkspaceReferences) {
-        reconcileNotesAfterBlockEdit();
-        reconcileCitationsAfterBlockEdit();
-        reconcileCrossReferencesAfterBlockEdit();
+        const changedReferences = collectChangedWorkspaceReferences([
+          transaction,
+          ...appendedTransactions,
+        ]);
+        onUpdateRef.current(blockId, serializedContent);
+        if (changedReferences.has('note')) {
+          reconcileNotesAfterBlockEdit();
+        }
+        if (changedReferences.has('citation')) {
+          reconcileCitationsAfterBlockEdit();
+        }
+        if (changedReferences.has('cross-reference')) {
+          reconcileCrossReferencesAfterBlockEdit();
+        }
+        return;
       }
+      onUpdateRef.current(blockId, serializedContent);
     },
   });
 
@@ -467,6 +483,9 @@ export function BlockEditor({
 
   useEffect(() => {
     if (!editor) return;
+    const emittedContent = lastEmittedContentRef.current;
+    lastEmittedContentRef.current = null;
+    if (content === emittedContent) return;
     const incomingDocument = parseStoredContent(content);
     if (documentsAreEqual(editor.getJSON(), incomingDocument)) return;
 
@@ -761,6 +780,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function documentsAreEqual(first: JSONContent, second: JSONContent): boolean {
   return JSON.stringify(first) === JSON.stringify(second);
 }
+
 
 function formatBlockType(
   blockType: string,
