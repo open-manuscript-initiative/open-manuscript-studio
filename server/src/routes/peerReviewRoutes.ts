@@ -93,6 +93,7 @@ const editorialAcceptanceSchema = z.object({
   manuscriptId: z.string().trim().min(1).max(128),
   revisionId: z.string().trim().min(1).max(128),
   stateDigest: z.string().regex(/^[a-f0-9]{64}$/i),
+  publicationContentDigest: z.string().regex(/^[a-f0-9]{64}$/i),
   reviewRound: z.number().int().min(1).max(99),
   basisAssignmentIds: z.array(z.string().uuid()).min(1).max(100),
   confirmation: z.literal(EDITORIAL_ACCEPTANCE_CONFIRMATION),
