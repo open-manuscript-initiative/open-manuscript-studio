@@ -437,8 +437,9 @@
   .studio-menu-header {
     min-height: 52px;
     gap: 4px;
-    padding-right: 6px;
-    padding-left: 6px;
+    /* Keep the drawer toggle pixel-aligned with the primary header menu trigger. */
+    padding-right: .6rem;
+    padding-left: .6rem;
   }
 
   .studio-menu-navigation {
