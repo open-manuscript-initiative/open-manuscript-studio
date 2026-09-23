@@ -1,6 +1,7 @@
 export interface StudioMenuSupplementalCopy {
   home: string;
   assignments: string;
+  editorialWorkspace?: string;
   publicationEditor: string;
   signatures: string;
 }
@@ -35,16 +36,16 @@ const studioMenuSupplementalTranslations: Record<StudioUiLocale, StudioMenuSuppl
   bg: { home: 'Начало', assignments: 'Задания', publicationEditor: 'Жив редактор', signatures: 'Подписи' },
   cs: { home: 'Domů', assignments: 'Úkoly', publicationEditor: 'Živý editor', signatures: 'Podpisy' },
   da: { home: 'Hjem', assignments: 'Opgaver', publicationEditor: 'Live-editor', signatures: 'Signaturer' },
-  de: { home: 'Startseite', assignments: 'Aufträge', publicationEditor: 'Live-Publikationseditor', signatures: 'Signaturen' },
+  de: { home: 'Startseite', assignments: 'Aufträge', editorialWorkspace: 'Redaktionsbereich', publicationEditor: 'Live-Publikationseditor', signatures: 'Signaturen' },
   el: { home: 'Αρχική', assignments: 'Αναθέσεις', publicationEditor: 'Ζωντανός επεξεργαστής', signatures: 'Υπογραφές' },
-  en: { home: 'Home', assignments: 'Assignments', publicationEditor: 'Live publication editor', signatures: 'Signatures' },
+  en: { home: 'Home', assignments: 'Assignments', editorialWorkspace: 'Editorial workflow', publicationEditor: 'Live publication editor', signatures: 'Signatures' },
   es: { home: 'Inicio', assignments: 'Asignaciones', publicationEditor: 'Editor de publicación en vivo', signatures: 'Firmas' },
   et: { home: 'Avaleht', assignments: 'Ülesanded', publicationEditor: 'Reaalajatoimetaja', signatures: 'Allkirjad' },
   fi: { home: 'Etusivu', assignments: 'Tehtävät', publicationEditor: 'Reaaliaikainen julkaisueditori', signatures: 'Allekirjoitukset' },
   fr: { home: 'Accueil', assignments: 'Attributions', publicationEditor: 'Éditeur de publication en direct', signatures: 'Signatures' },
   ga: { home: 'Baile', assignments: 'Sannacháin', publicationEditor: 'Eagarthóir beo', signatures: 'Sínithe' },
   hr: { home: 'Početna', assignments: 'Zaduženja', publicationEditor: 'Uređivač publikacije uživo', signatures: 'Potpisi' },
-  hu: { home: 'Főoldal', assignments: 'Megbízások', publicationEditor: 'Élő kiadványszerkesztő', signatures: 'Aláírások' },
+  hu: { home: 'Főoldal', assignments: 'Megbízások', editorialWorkspace: 'Szerkesztőségi munkatér', publicationEditor: 'Élő kiadványszerkesztő', signatures: 'Aláírások' },
   it: { home: 'Pagina iniziale', assignments: 'Incarichi', publicationEditor: 'Editor di pubblicazione dal vivo', signatures: 'Firme' },
   lt: { home: 'Pradžia', assignments: 'Užduotys', publicationEditor: 'Tiesioginis leidinio redaktorius', signatures: 'Parašai' },
   lv: { home: 'Sākums', assignments: 'Uzdevumi', publicationEditor: 'Tiešais publikācijas redaktors', signatures: 'Paraksti' },
