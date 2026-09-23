@@ -33,6 +33,8 @@ export function NativeEditorialWorkflowPanel() {
   const [inbox, setInbox] = useState<NativeEditorialSubmissionSummary[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [detail, setDetail] = useState<NativeEditorialSubmissionDetailResponse | null>(null);
+  const [authorDetail, setAuthorDetail] =
+    useState<NativeEditorialSubmissionDetailResponse | null>(null);
   const [reviewerEmail, setReviewerEmail] = useState('');
   const [editorialNote, setEditorialNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -56,7 +58,7 @@ export function NativeEditorialWorkflowPanel() {
       listMyNativeEditorialSubmissions(manuscript.id),
       listNativeEditorialInbox(),
     ])
-      .then(([nextMine, nextInbox]) => {
+      .then(async ([nextMine, nextInbox]) => {
         if (cancelled) return;
         setMine(nextMine);
         setInbox(nextInbox);
@@ -65,6 +67,13 @@ export function NativeEditorialWorkflowPanel() {
             ? current
             : nextInbox[0]?.id ?? '',
         );
+        const own = nextMine[0];
+        if (own) {
+          const nextAuthorDetail = await getNativeEditorialSubmission(own.id);
+          if (!cancelled) setAuthorDetail(nextAuthorDetail);
+        } else {
+          setAuthorDetail(null);
+        }
       })
       .catch((reason) => {
         if (!cancelled) setError(errorMessage(reason));
@@ -97,6 +106,11 @@ export function NativeEditorialWorkflowPanel() {
       ]);
       setMine(nextMine);
       setInbox(nextInbox);
+      setAuthorDetail(
+        nextMine[0]
+          ? await getNativeEditorialSubmission(nextMine[0].id)
+          : null,
+      );
       const nextSelected =
         preferredId && nextInbox.some((item) => item.id === preferredId)
           ? preferredId
@@ -235,6 +249,27 @@ export function NativeEditorialWorkflowPanel() {
               <button type="button" className="studio-menu-primary-action" disabled={busy} onClick={() => void submitRevision()}>
                 <RotateCcw size={16} aria-hidden="true" />{copy.submitRevision}
               </button>
+            ) : null}
+            {authorDetail?.actorMode === 'author' && authorDetail.reviews.length ? (
+              <div className="publication-profile-options">
+                <h5>{copy.authorReviews}</h5>
+                {authorDetail.reviews.map((review) => (
+                  <article key={review.id} className="review-mode__feedback">
+                    <strong>{review.reviewerAlias}</strong>
+                    <p>
+                      {copy.round} {review.reviewRound}
+                      {' · '}{review.status.replaceAll('_', ' ')}
+                      {review.recommendation
+                        ? ' · ' + copy.recommendation + ': ' +
+                          review.recommendation.replaceAll('_', ' ')
+                        : ''}
+                    </p>
+                    {review.feedback.length ? review.feedback.map((feedback) => (
+                      <p key={feedback.id}>{feedback.body}</p>
+                    )) : <p>{copy.noAuthorVisibleFeedback}</p>}
+                  </article>
+                ))}
+              </div>
             ) : null}
             {currentSubmission.status === 'accepted' ? <p className="publication-ready"><CheckCircle2 size={16} aria-hidden="true" /> {copy.publishable}</p> : null}
           </div>
@@ -402,6 +437,8 @@ const enCopy = {
   refresh: 'Refresh', submission: 'Submission', status: 'Status', round: 'round', revision: 'Revision', author: 'Author',
   reviewerEmail: 'Reviewer Studio e-mail', assignReviewer: 'Assign reviewer', reviewerAssigned: 'The review assignment was created.',
   reviews: 'Review assignments', noReviews: 'No reviewer has been assigned yet.', recommendation: 'recommendation',
+  authorReviews: 'Reviewer feedback available to the author',
+  noAuthorVisibleFeedback: 'No author-visible reviewer comment was supplied.',
   completeReview: 'Complete review assignment', reviewCompleted: 'The submitted review assignment was completed.',
   editorialMessage: 'Editorial message', requestRevision: 'Request revision', revisionRequested: 'The revision request was sent to the author.',
   accept: 'Accept manuscript', accepted: 'The editorial acceptance was recorded for this exact revision.',
@@ -427,6 +464,8 @@ const huCopy = {
   emptyInbox: 'Nincs kezelhető Studio-native beküldés.', refresh: 'Frissítés', submission: 'Beküldés', status: 'Állapot', round: 'forduló',
   revision: 'Revízió', author: 'Szerző', reviewerEmail: 'Lektor Studio e-mail-címe', assignReviewer: 'Lektor kijelölése',
   reviewerAssigned: 'A lektori feladat létrejött.', reviews: 'Lektori feladatok', noReviews: 'Még nincs lektor kijelölve.',
+  authorReviews: 'A szerző számára látható lektori vélemények',
+  noAuthorVisibleFeedback: 'Ehhez a lektori véleményhez nincs a szerző számára látható megjegyzés.',
   recommendation: 'javaslat', completeReview: 'Lektori feladat lezárása', reviewCompleted: 'A beadott lektori feladat lezárult.',
   editorialMessage: 'Szerkesztői üzenet', requestRevision: 'Javítás kérése', revisionRequested: 'A szerző megkapta a javítási kérést.',
   accept: 'Kézirat elfogadása', accepted: 'A szerkesztői elfogadó döntés rögzült ehhez a pontos revízióhoz.',
@@ -451,6 +490,8 @@ const deCopy = {
   emptyInbox: 'Keine Studio-nativen Einreichungen verfügbar.', refresh: 'Aktualisieren', submission: 'Einreichung', status: 'Status', round: 'Runde',
   revision: 'Revision', author: 'Autor/in', reviewerEmail: 'Studio-E-Mail des Gutachters', assignReviewer: 'Gutachter zuweisen',
   reviewerAssigned: 'Der Begutachtungsauftrag wurde erstellt.', reviews: 'Begutachtungsaufträge', noReviews: 'Noch kein Gutachter zugewiesen.',
+  authorReviews: 'Für Autorinnen und Autoren sichtbare Gutachten',
+  noAuthorVisibleFeedback: 'Für dieses Gutachten liegt kein für Autorinnen und Autoren sichtbarer Kommentar vor.',
   recommendation: 'Empfehlung', completeReview: 'Begutachtung abschließen', reviewCompleted: 'Die eingereichte Begutachtung wurde abgeschlossen.',
   editorialMessage: 'Redaktionelle Nachricht', requestRevision: 'Überarbeitung anfordern', revisionRequested: 'Die Überarbeitungsanforderung wurde an den Autor übermittelt.',
   accept: 'Manuskript annehmen', accepted: 'Die redaktionelle Annahme wurde an diese exakte Revision gebunden.',
