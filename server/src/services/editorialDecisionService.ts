@@ -14,6 +14,7 @@ export interface CreateEditorialAcceptanceInput {
   manuscriptId: string;
   revisionId: string;
   stateDigest: string;
+  publicationContentDigest: string;
   reviewRound: number;
   basisAssignmentIds: string[];
 }
@@ -22,6 +23,7 @@ export interface EditorialDecisionEvidence {
   type: 'studio-editorial-decision';
   decisionId: string;
   evidenceDigest: string;
+  publicationContentDigest: string;
   reviewRound: number;
   decidedAt: string;
 }
@@ -38,6 +40,7 @@ export async function createEditorialAcceptance(
   input: CreateEditorialAcceptanceInput,
 ): Promise<EditorialDecisionEvidence> {
   assertDigest(input.stateDigest);
+  assertDigest(input.publicationContentDigest);
   if (!input.revisionId.trim()) throw new Error('A committed revision is required.');
   if (!Number.isInteger(input.reviewRound) || input.reviewRound < 1) {
     throw new Error('A valid review round is required.');
@@ -72,6 +75,7 @@ export async function createEditorialAcceptance(
     if (
       existing.decision !== 'ACCEPT' ||
       existing.stateDigest.toLowerCase() !== input.stateDigest.toLowerCase() ||
+      existing.publicationContentDigest.toLowerCase() !== input.publicationContentDigest.toLowerCase() ||
       existing.evidenceDigest !== evidenceDigest
     ) {
       throw conflict('This revision already has a different editorial decision or evidence set.');
@@ -85,6 +89,7 @@ export async function createEditorialAcceptance(
       manuscriptId: input.manuscriptId,
       revisionId: input.revisionId,
       stateDigest: input.stateDigest.toLowerCase(),
+      publicationContentDigest: input.publicationContentDigest.toLowerCase(),
       reviewRound: input.reviewRound,
       decision: 'ACCEPT',
       basisAssignmentIds: assignmentIds as Prisma.InputJsonValue,
@@ -174,6 +179,7 @@ export async function assertEditorialDecisionEvidence(input: {
   manuscriptId: string;
   revisionId: string;
   stateDigest: string;
+  publicationContentDigest: string;
   decisionId: string;
   evidenceDigest: string;
 }): Promise<EditorialDecisionEvidence> {
@@ -183,6 +189,7 @@ export async function assertEditorialDecisionEvidence(input: {
       manuscriptId: input.manuscriptId,
       revisionId: input.revisionId,
       stateDigest: input.stateDigest.toLowerCase(),
+      publicationContentDigest: input.publicationContentDigest.toLowerCase(),
       evidenceDigest: input.evidenceDigest.toLowerCase(),
       decision: 'ACCEPT',
     },
@@ -251,6 +258,7 @@ async function decisionEvidenceIsCurrent(decision: {
   manuscriptId: string;
   revisionId: string;
   stateDigest: string;
+  publicationContentDigest: string;
   reviewRound: number;
   decision: string;
   basisAssignmentIds: unknown;
@@ -287,6 +295,7 @@ function calculateEvidenceDigest(
     manuscriptId: input.manuscriptId,
     revisionId: input.revisionId,
     stateDigest: input.stateDigest.toLowerCase(),
+    publicationContentDigest: input.publicationContentDigest.toLowerCase(),
     reviewRound: input.reviewRound,
     decidedByUserId: input.editorUserId,
     reviews: assignments.map((assignment) => ({
@@ -338,6 +347,7 @@ async function requireAnyManuscriptWorkspaceRole(
 function serializeEvidence(decision: {
   id: string;
   evidenceDigest: string;
+  publicationContentDigest: string;
   workspaceId: string;
   reviewRound: number;
   decidedAt: Date;
@@ -346,6 +356,7 @@ function serializeEvidence(decision: {
     type: 'studio-editorial-decision',
     decisionId: decision.id,
     evidenceDigest: decision.evidenceDigest,
+    publicationContentDigest: decision.publicationContentDigest,
     reviewRound: decision.reviewRound,
     decidedAt: decision.decidedAt.toISOString(),
   };
