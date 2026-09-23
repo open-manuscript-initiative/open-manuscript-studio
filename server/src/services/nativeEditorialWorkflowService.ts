@@ -171,9 +171,13 @@ export async function listNativeEditorialInbox(editorUserId: string) {
 export async function findNativeEditorialSubmissionForUser(
   userId: string,
   manuscriptId: string,
+  publicationVenueId?: string,
 ) {
   const submissions = await prisma.nativeEditorialSubmission.findMany({
-    where: { manuscriptId },
+    where: {
+      manuscriptId,
+      ...(publicationVenueId ? { publicationVenueId } : {}),
+    },
     orderBy: { updatedAt: 'desc' },
   });
   const authored = submissions.find((submission) => submission.authorUserId === userId);
