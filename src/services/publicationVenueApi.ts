@@ -59,11 +59,11 @@ export interface PublicationVenueAuthorityOverview {
     verifiedAt: string | null;
     lastCheckedAt: string | null;
   }>;
-  currentMembership: {
+  currentMemberships: Array<{
     id: string;
     role: PublicationVenueAuthorityRole;
     active: boolean;
-  } | null;
+  }>;
   canManageEditors: boolean;
   members: PublicationVenueAuthorityMember[];
 }
