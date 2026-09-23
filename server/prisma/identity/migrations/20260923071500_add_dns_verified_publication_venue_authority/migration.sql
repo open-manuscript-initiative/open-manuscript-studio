@@ -30,6 +30,9 @@ CREATE TABLE "publication_venue_memberships" (
 CREATE UNIQUE INDEX "publication_venue_domain_verifications_venue_id_domain_key" ON "publication_venue_domain_verifications"("venue_id", "domain");
 CREATE INDEX "publication_venue_domain_verifications_domain_status_idx" ON "publication_venue_domain_verifications"("domain", "status");
 CREATE INDEX "publication_venue_domain_verifications_requested_by_user_id_status_idx" ON "publication_venue_domain_verifications"("requested_by_user_id", "status");
+CREATE UNIQUE INDEX "publication_venue_domain_verifications_one_verified_domain_per_venue_key"
+  ON "publication_venue_domain_verifications"("venue_id")
+  WHERE "status" = 'VERIFIED';
 CREATE UNIQUE INDEX "publication_venue_memberships_venue_id_user_id_role_key" ON "publication_venue_memberships"("venue_id", "user_id", "role");
 CREATE INDEX "publication_venue_memberships_venue_id_role_active_idx" ON "publication_venue_memberships"("venue_id", "role", "active");
 CREATE INDEX "publication_venue_memberships_user_id_active_idx" ON "publication_venue_memberships"("user_id", "active");
