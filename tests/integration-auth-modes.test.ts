@@ -172,6 +172,10 @@ test('website publication binds assurance to a committed artifact and keeps idem
   assert.match(publicationVenueAuthorityService, /claim\.requestedByUserId !== userId/);
   assert.match(publicationVenueAuthorityService, /claim\.status !== 'PENDING'/);
   assert.match(publicationVenueAuthorityService, /already been consumed or revoked/);
+  assert.match(publicationVenueAuthorityService, /grantPublicationVenueMember/);
+  assert.match(publicationVenueAuthorityService, /role: 'DOMAIN_ADMIN'/);
+  assert.match(publicationVenueAuthorityService, /last active domain administrator cannot be revoked/i);
+  assert.match(publicationVenueAuthorityService, /isolationLevel: 'Serializable'/);
   assert.match(identitySchema, /model PublicationVenueDomainVerification \{/);
   assert.match(identitySchema, /model PublicationVenueMembership \{/);
   assert.match(serverSchema, /model WebPublication \{/);
