@@ -57,6 +57,10 @@ export async function submitNativeEditorialManuscript(
 ) {
   const venue = await assertStudioNativePublicationVenue(input.publicationVenueId);
   const revision = validateRevisionInput(input);
+  assertRevisionPublicationVenue(
+    revision.manuscriptStateSnapshot,
+    input.publicationVenueId,
+  );
   const workspaceId = `native:${randomUUID()}`;
 
   try {
@@ -353,6 +357,10 @@ export async function submitNativeEditorialRevision(
   }
   await assertStudioNativePublicationVenue(submission.publicationVenueId);
   const revision = validateRevisionInput(input);
+  assertRevisionPublicationVenue(
+    revision.manuscriptStateSnapshot,
+    submission.publicationVenueId,
+  );
   if (revision.revisionId === submission.revisionId) {
     throw conflict('The revised manuscript must be a new committed revision.');
   }
@@ -836,6 +844,29 @@ function serializePerson(person: {
     ...(person.affiliation ? { affiliation: person.affiliation } : {}),
     ...(person.orcid ? { orcid: person.orcid } : {}),
   };
+}
+
+function assertRevisionPublicationVenue(
+  manuscriptStateSnapshot: Record<string, unknown>,
+  publicationVenueId: string,
+): void {
+  const metadata = asOptionalRecord(manuscriptStateSnapshot.metadata);
+  const venue = asOptionalRecord(metadata?.publicationVenue);
+  const embeddedVenueId =
+    typeof venue?.id === 'string' ? venue.id.trim() : '';
+  if (embeddedVenueId !== publicationVenueId) {
+    throw conflict(
+      'The submitted manuscript revision is not bound to the selected publication venue.',
+    );
+  }
+}
+
+function asOptionalRecord(
+  value: unknown,
+): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
 }
 
 function validateSubmissionAssets(
