@@ -12,6 +12,7 @@ const app = read('../server/src/app.ts');
 const panel = read('../src/components/NativeEditorialWorkflowPanel.tsx');
 const publishing = read('../src/components/NewsletterPublishingPanel.tsx');
 const snapshot = read('../src/services/nativeEditorialSnapshot.ts');
+const nativeApi = read('../src/services/nativeEditorialWorkflowApi.ts');
 
 test('Studio-native workflow is explicit persistent editorial state', () => {
   assert.match(schema, /enum NativeEditorialSubmissionStatus \{/);
@@ -129,6 +130,26 @@ test('declined reviewer invitations stay auditable without blocking replacement 
   );
   assert.match(panel, /review\.status !== 'declined'/);
   assert.match(panel, /currentRoundDecisionReviews/);
+});
+
+test('manuscript lookup and published transition remain scoped to the selected venue', () => {
+  assert.match(service, /publicationVenueId\?: string/);
+  assert.match(
+    service,
+    /\.\.\.\(publicationVenueId \? \{ publicationVenueId \} : \{\}\)/,
+  );
+  assert.match(routes, /request\.query\.publicationVenueId/);
+  assert.match(nativeApi, /publicationVenueId\?: string/);
+  assert.match(nativeApi, /\?publicationVenueId=/);
+  assert.match(panel, /submission\.publicationVenueId === venue\.id/);
+  assert.match(
+    publishing,
+    /findNativeEditorialSubmissionForManuscript\([\s\S]*?publicationVenueId/,
+  );
+  assert.match(
+    publishing,
+    /publicationStatus === 'publish' && isStudioNativeDnsVenue\(prepared\.source\)/,
+  );
 });
 
 test('submission assets are self-contained and checksum verified', () => {
