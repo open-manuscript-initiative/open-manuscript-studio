@@ -453,6 +453,7 @@ export function mergePublicationParagraphStyleProperties(
     'openType',
     'underline',
     'strikethrough',
+    'characterStroke',
     'exportTagging',
   ] as const) {
     const next = patch[key];
@@ -470,6 +471,9 @@ export function mergePublicationParagraphStyleProperties(
   }
   if (patch.nestedStyles !== undefined) {
     merged.nestedStyles = patch.nestedStyles.map((rule) => ({ ...rule }));
+  }
+  if (patch.nestedLineStyles !== undefined) {
+    merged.nestedLineStyles = patch.nestedLineStyles.map((rule) => ({ ...rule }));
   }
   if (patch.grepStyles !== undefined) {
     merged.grepStyles = patch.grepStyles.map((rule) => ({ ...rule }));
@@ -508,6 +512,7 @@ function normalizeDefinition(
     nextStyleId: cleanText(value?.nextStyleId) || null,
     shortcut: cleanText(value?.shortcut) || null,
     properties: normalizeProperties(value?.properties),
+    preservedIdml: normalizePreservedIdml(value?.preservedIdml),
   };
 }
 
@@ -522,6 +527,19 @@ function normalizeProperties(
   if (finite(value.lineHeight) && Number(value.lineHeight) > 0) result.lineHeight = Number(value.lineHeight);
   if (finite(value.fontWeight)) result.fontWeight = Math.max(100, Math.min(900, Number(value.fontWeight)));
   if (value.fontStyle === 'normal' || value.fontStyle === 'italic') result.fontStyle = value.fontStyle;
+  if (
+    value.kerningMode === 'metrics'
+    || value.kerningMode === 'optical'
+    || value.kerningMode === 'manual'
+  ) result.kerningMode = value.kerningMode;
+  if (
+    value.position === 'normal'
+    || value.position === 'superscript'
+    || value.position === 'subscript'
+    || value.position === 'superior'
+    || value.position === 'inferior'
+  ) result.position = value.position;
+  if (typeof value.noBreak === 'boolean') result.noBreak = value.noBreak;
   if (
     value.capitalization === 'normal'
     || value.capitalization === 'small-caps'
@@ -541,6 +559,7 @@ function normalizeProperties(
     'lastLineIndent',
     'spaceBefore',
     'spaceAfter',
+    'spaceBetweenSameStyle',
   ] as const) {
     if (finite(value[property])) result[property] = Number(value[property]);
   }
@@ -548,6 +567,16 @@ function normalizeProperties(
     const normalized = cleanText(value[property]);
     if (normalized) result[property] = normalized;
   }
+  if (typeof value.fillOverprint === 'boolean') result.fillOverprint = value.fillOverprint;
+  result.characterStroke = normalizeCharacterStroke(value.characterStroke);
+  if (typeof value.balanceRaggedLines === 'boolean') result.balanceRaggedLines = value.balanceRaggedLines;
+  if (typeof value.ignoreOpticalMargin === 'boolean') result.ignoreOpticalMargin = value.ignoreOpticalMargin;
+  if (
+    value.baselineGridAlignment === 'none'
+    || value.baselineGridAlignment === 'all-lines'
+    || value.baselineGridAlignment === 'first-line'
+    || value.baselineGridAlignment === 'last-line'
+  ) result.baselineGridAlignment = value.baselineGridAlignment;
   if (
     value.alignment === 'left'
     || value.alignment === 'center'
@@ -565,7 +594,9 @@ function normalizeProperties(
   if (typeof value.hyphenation === 'boolean') result.hyphenation = value.hyphenation;
   result.hyphenationSettings = normalizeHyphenationSettings(value.hyphenationSettings);
   if (typeof value.keepTogether === 'boolean') result.keepTogether = value.keepTogether;
+  if (typeof value.keepWithPrevious === 'boolean') result.keepWithPrevious = value.keepWithPrevious;
   if (typeof value.keepWithNext === 'boolean') result.keepWithNext = value.keepWithNext;
+  if (finite(value.keepWithNextLines)) result.keepWithNextLines = integerAtLeast(value.keepWithNextLines, 0);
   if (finite(value.keepFirstLines)) result.keepFirstLines = integerAtLeast(value.keepFirstLines, 0);
   if (finite(value.keepLastLines)) result.keepLastLines = integerAtLeast(value.keepLastLines, 0);
   if (
@@ -586,6 +617,11 @@ function normalizeProperties(
     result.nestedStyles = value.nestedStyles
       .map(normalizeNestedStyle)
       .filter((item): item is PublicationNestedStyleRule => item !== null);
+  }
+  if (Array.isArray(value.nestedLineStyles)) {
+    result.nestedLineStyles = value.nestedLineStyles
+      .map(normalizeNestedLineStyle)
+      .filter((item): item is PublicationNestedLineStyleRule => item !== null);
   }
   if (Array.isArray(value.grepStyles)) {
     result.grepStyles = value.grepStyles
