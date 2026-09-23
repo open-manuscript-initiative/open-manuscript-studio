@@ -500,7 +500,7 @@ export function buildPublicationParagraphStyleRules(
       .join(', ');
     if ((resolved.dropCaps.lines ?? 0) > 1 && (resolved.dropCaps.characters ?? 0) > 0) {
       extraRules.push(
-        `${firstLetterSelectors} { float: left; font-size: ${Math.max(1, resolved.dropCaps.lines)}em; line-height: .82; margin-right: .12em; }`,
+        `${firstLetterSelectors} { float: left; font-size: ${Math.max(1, finite(resolved.dropCaps.lines, 1))}em; line-height: .82; margin-right: .12em; }`,
       );
     }
     if (finite(resolved.spaceBetweenSameStyle, 0) !== 0) {
