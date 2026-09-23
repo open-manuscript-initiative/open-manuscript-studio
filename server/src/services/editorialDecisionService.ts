@@ -19,7 +19,7 @@ export interface CreateEditorialAcceptanceInput {
   revisionId: string;
   stateDigest: string;
   publicationContentDigest: string;
-  publicationVenueId?: string;
+  publicationVenueId?: string | undefined;
   reviewRound: number;
   basisAssignmentIds: string[];
 }
