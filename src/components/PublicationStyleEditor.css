@@ -832,6 +832,7 @@
   margin: 1.25rem auto 2rem;
   padding: clamp(1.25rem, 4vw, 3rem) clamp(1rem, 5vw, 4rem) clamp(2rem, 6vw, 4.5rem);
   overflow: hidden;
+  zoom: var(--omi-editor-zoom, 1);
   border: 1px solid rgba(100, 116, 139, 0.38);
   border-radius: 0.45rem;
   background: #fff;
