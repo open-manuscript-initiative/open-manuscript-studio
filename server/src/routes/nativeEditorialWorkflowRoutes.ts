@@ -67,7 +67,7 @@ const optionalNoteSchema = z.object({
 
 const publishedSchema = z.object({
   revisionId: revisionIdSchema,
-  note: z.string().trim().max(10_000).optional(),
+  externalUrl: z.string().trim().url().max(2_048),
 }).strict();
 
 nativeEditorialWorkflowRouter.post(
@@ -268,7 +268,7 @@ nativeEditorialWorkflowRouter.post(
         requireUserId(request),
         submissionId,
         input.revisionId,
-        input.note,
+        input.externalUrl,
       );
       response.status(200).json({ submission });
     } catch (error) {
