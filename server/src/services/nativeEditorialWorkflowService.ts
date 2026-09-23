@@ -122,7 +122,7 @@ export async function getNativeSubmissionForParticipant(
   submissionId: string,
 ) {
   const submission = await requireParticipantSubmission(userId, submissionId);
-  return serializeSubmission(submission);
+  return serializeSubmission(submission, userId);
 }
 
 export async function claimNativeSubmission(
@@ -421,7 +421,7 @@ export async function acceptNativeSubmission(
       },
     },
   });
-  return { submission: serializeSubmission(updated), evidence };
+  return { submission: serializeSubmission(updated, editorUserId), evidence };
 }
 
 export async function markNativeSubmissionPublished(
@@ -444,7 +444,7 @@ export async function markNativeSubmissionPublished(
       kind: 'PUBLISHED',
     },
   });
-  return serializeSubmission(updated, editorUserId);
+  return serializeSubmission(updated, userId);
 }
 
 async function requireAssignedEditor(editorUserId: string, submissionId: string) {
