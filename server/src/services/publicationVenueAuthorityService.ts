@@ -30,9 +30,9 @@ export interface PublicationVenueDomainClaimInput {
   type: 'JOURNAL' | 'BOOK_PUBLISHER';
   name: string;
   domain: string;
-  website?: string;
-  issn?: string;
-  isbnPrefix?: string;
+  website?: string | undefined;
+  issn?: string | undefined;
+  isbnPrefix?: string | undefined;
 }
 
 export async function createPublicationVenueDomainClaim(userId: string, input: PublicationVenueDomainClaimInput) {
