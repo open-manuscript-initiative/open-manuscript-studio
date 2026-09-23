@@ -57,6 +57,15 @@ test('HTML5 visual editing is responsive and preserves changes when returning to
   await expect(menu.getByRole('button', { name: 'Print page', exact: true })).toHaveCount(0);
   await expect(menu.getByRole('button', { name: 'Typesetting proofing', exact: true })).toHaveCount(0);
 
+  const visualPaper = canvas.locator('.publication-document-paper--html');
+  const zoomSlider = page.locator('.omi-editor-zoom input[type="range"]').first();
+  await expect(zoomSlider).toBeVisible();
+  await zoomSlider.fill('150');
+  await expect.poll(() => visualPaper.evaluate(
+    (element) => getComputedStyle(element).zoom,
+  )).toBe('1.5');
+  await zoomSlider.fill('100');
+
   const title = canvas.getByRole('textbox', { name: 'Document title', exact: true });
   await title.fill('Edited in the HTML5 visual editor');
   expect(await canvas.locator('.publication-document-canvas-stage--html').evaluate(

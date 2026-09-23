@@ -163,6 +163,7 @@ test('live publication editor switches between print and semantic HTML5 visual e
   assert.match(documentCanvas, /proofingMode=\{viewMode === 'print' \? 'publication' : 'editor'\}/);
   assert.match(documentCanvas, /viewMode === 'html' && semanticNotes\.length/);
   assert.match(editorStyles, /\.publication-document-paper--html \{[\s\S]*width: min\(100%, 56rem\)/);
+  assert.match(editorStyles, /\.publication-document-paper--html \{[\s\S]*zoom: var\(--omi-editor-zoom, 1\)/);
   assert.match(editorStyles, /\.publication-document-content--html \{[\s\S]*position: relative/);
   assert.match(editorStyles, /\.publication-document-view-switch button\[aria-pressed='true'\]/);
 });
