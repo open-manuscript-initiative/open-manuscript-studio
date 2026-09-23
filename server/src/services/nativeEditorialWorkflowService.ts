@@ -245,7 +245,7 @@ export async function assignNativeEditorialReviewer(
         reviewRound: submission.reviewRound,
         revisionId: submission.revisionId,
         stateDigest: submission.stateDigest,
-        note: reviewerEmail.trim().toLowerCase(),
+        note: review.reviewerAlias,
       },
     });
     return next;
