@@ -349,14 +349,15 @@ function EditorSubmission(props: {
       review.assignmentType === 'scientific_review' &&
       review.status === 'completed',
   );
-  const currentRoundScientificReviews = reviews.filter(
+  const currentRoundDecisionReviews = reviews.filter(
     (review) =>
       review.assignmentType === 'scientific_review' &&
-      review.reviewRound === submission.reviewRound,
+      review.reviewRound === submission.reviewRound &&
+      review.status !== 'declined',
   );
   const currentRoundCompleted =
-    currentRoundScientificReviews.length > 0 &&
-    currentRoundScientificReviews.every((review) => review.status === 'completed');
+    currentRoundDecisionReviews.length > 0 &&
+    currentRoundDecisionReviews.every((review) => review.status === 'completed');
   const canRequestRevision =
     submission.status === 'in_review' &&
     currentRoundCompleted;
