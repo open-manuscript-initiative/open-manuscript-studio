@@ -422,6 +422,13 @@ export async function executeWebPublicationDelivery(
   if (initial.state === 'SUCCEEDED') {
     return receiptFromDelivery(initial, connection.providerId);
   }
+  if (grant.consumedAt) {
+    throw new WebPublicationServiceError(
+      'WEB_PUBLICATION_GRANT_CONSUMED',
+      409,
+      'This web-publication execution grant was already used. Review the current delivery state and request a new approval grant when a retry is safe.',
+    );
+  }
   if (initial.state === 'UNKNOWN') {
     throw new WebPublicationServiceError(
       'WEB_PUBLICATION_RECONCILIATION_REQUIRED',
@@ -875,7 +882,7 @@ function hasVisibleAssuranceDisclosure(
   );
   const hiddenByStylesheet = Array.from(html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi))
     .some((match) =>
-      /(?:^|[},])\s*(?:html|body|article|\.omi-scholarly-article|\.omi-publication-assurance)(?:\s|[.#:[>+~,{])[^{}]*\{[^{}]*(?:display\s*:\s*none|visibility\s*:\s*hidden|content-visibility\s*:\s*hidden|opacity\s*:\s*0(?:\D|$)|filter\s*:\s*opacity\(\s*0|font-size\s*:\s*0|color\s*:\s*transparent)/i.test(match[1] ?? ''),
+      /(?:\*|:root|html|body|article|\.omi-scholarly-article|\.omi-publication-assurance)[^{}]*\{[^{}]*(?:display\s*:\s*none|visibility\s*:\s*hidden|content-visibility\s*:\s*hidden|opacity\s*:\s*0(?:\D|$)|filter\s*:\s*opacity\(\s*0|font-size\s*:\s*0|color\s*:\s*transparent)/i.test(match[1] ?? ''),
     );
   return attribute(opening, 'data-omi-assurance-version') === '1' &&
     attribute(opening, 'data-omi-publication-intent') === assurance.intent &&
