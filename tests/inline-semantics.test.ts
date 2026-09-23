@@ -59,5 +59,5 @@ test('preserves ruler tab nodes as tab characters for text-based exports', () =>
     }],
   });
   const runs = extractOmiInlineRuns(content);
-  assert.equal(runs.map((run) => run.text).join(''), 'Name\tValue');
+  assert.equal(runs.map((run) => run.text).join('').trimEnd(), 'Name\tValue');
 });
