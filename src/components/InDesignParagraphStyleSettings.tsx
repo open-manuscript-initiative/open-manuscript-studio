@@ -146,6 +146,12 @@ export function InDesignParagraphStyleSettings({
               <NumberField label={copy.spaceBefore} value={resolved.spaceBefore} step={0.5} suffix="pt" onChange={(value) => onSetProperty('spaceBefore', value)} />
               <NumberField label={copy.spaceAfter} value={resolved.spaceAfter} step={0.5} suffix="pt" onChange={(value) => onSetProperty('spaceAfter', value)} />
               <NumberField label={copy.sameStyleSpacing} value={resolved.spaceBetweenSameStyle} step={0.5} suffix="pt" onChange={(value) => onSetProperty('spaceBetweenSameStyle', value)} />
+              <SelectField label={copy.baselineGrid} value={resolved.baselineGridAlignment} options={[
+                ['none', copy.none],
+                ['all-lines', copy.gridAllLines],
+                ['first-line', copy.gridFirstLine],
+                ['last-line', copy.gridLastLine],
+              ]} onChange={(value) => onSetProperty('baselineGridAlignment', value as PublicationParagraphStyleProperties['baselineGridAlignment'])} />
             </Grid>
             <ToggleGrid>
               <Toggle label={copy.balanceRagged} checked={resolved.balanceRaggedLines} onChange={(checked) => onSetProperty('balanceRaggedLines', checked)} />
@@ -277,6 +283,7 @@ function TabPane({ copy, resolved, onSetProperty }: PaneProps) {
             ['left', copy.left], ['center', copy.center], ['right', copy.right], ['decimal', copy.decimal],
           ]} onChange={(value) => onSetProperty('tabStops', stops.map((item, i) => i === index ? { ...item, alignment: value as 'left' | 'center' | 'right' | 'decimal' } : item))} />
           <TextField label={copy.leader} value={stop.leader ?? ''} onChange={(value) => onSetProperty('tabStops', stops.map((item, i) => i === index ? { ...item, leader: value } : item))} />
+          <TextField label={copy.alignOn} value={stop.decimalCharacter ?? ''} onChange={(value) => onSetProperty('tabStops', stops.map((item, i) => i === index ? { ...item, decimalCharacter: value } : item))} />
           <button type="button" onClick={() => onSetProperty('tabStops', stops.filter((_, i) => i !== index))}>{copy.delete}</button>
         </div>
       ))}
@@ -312,10 +319,23 @@ function RuleGroup({
       <Grid>
         <NumberField label={copy.weight} value={value.widthPt ?? 0.5} min={0} step={0.1} suffix="pt" onChange={(next) => onChange({ ...value, widthPt: next })} />
         <SelectField label={copy.type} value={value.style ?? 'solid'} options={strokeOptions(copy)} onChange={(next) => onChange({ ...value, style: next as typeof value.style })} />
+        <TextField label={copy.strokeName} value={value.strokeName ?? ''} onChange={(next) => onChange({ ...value, strokeName: next })} />
         <TextField label={copy.color} value={value.color ?? 'currentColor'} onChange={(next) => onChange({ ...value, color: next })} />
         <NumberField label={copy.tint} value={value.tint ?? 100} min={0} max={100} suffix="%" onChange={(next) => onChange({ ...value, tint: next })} />
+        <TextField label={copy.gapColor} value={value.gapColor ?? 'transparent'} onChange={(next) => onChange({ ...value, gapColor: next })} />
+        <NumberField label={copy.gapTint} value={value.gapTint ?? 100} min={0} max={100} suffix="%" onChange={(next) => onChange({ ...value, gapTint: next })} />
+        <SelectField label={copy.widthMode} value={value.widthMode ?? 'column'} options={[
+          ['column', copy.column], ['text', copy.text],
+        ]} onChange={(next) => onChange({ ...value, widthMode: next as 'column' | 'text' })} />
         <NumberField label={copy.offset} value={value.offsetPt ?? 0} step={0.1} suffix="pt" onChange={(next) => onChange({ ...value, offsetPt: next })} />
+        <NumberField label={copy.leftIndent} value={value.leftIndentMm ?? 0} step={0.5} suffix="mm" onChange={(next) => onChange({ ...value, leftIndentMm: next })} />
+        <NumberField label={copy.rightIndent} value={value.rightIndentMm ?? 0} step={0.5} suffix="mm" onChange={(next) => onChange({ ...value, rightIndentMm: next })} />
       </Grid>
+      <ToggleGrid>
+        <Toggle label={copy.overprint} checked={value.overprint === true} onChange={(checked) => onChange({ ...value, overprint: checked })} />
+        <Toggle label={copy.gapOverprint} checked={value.gapOverprint === true} onChange={(checked) => onChange({ ...value, gapOverprint: checked })} />
+        <Toggle label={copy.keepInFrame} checked={value.keepInFrame === true} onChange={(checked) => onChange({ ...value, keepInFrame: checked })} />
+      </ToggleGrid>
     </fieldset>
   );
 }
@@ -331,10 +351,30 @@ function BorderPane({ copy, resolved, onSetProperty }: PaneProps) {
         <NumberField label={copy.right} value={widths.rightPt ?? value.widthPt ?? 0.5} min={0} suffix="pt" onChange={(next) => onSetProperty('border', { ...value, widths: { ...widths, rightPt: next } })} />
         <NumberField label={copy.bottom} value={widths.bottomPt ?? value.widthPt ?? 0.5} min={0} suffix="pt" onChange={(next) => onSetProperty('border', { ...value, widths: { ...widths, bottomPt: next } })} />
         <NumberField label={copy.left} value={widths.leftPt ?? value.widthPt ?? 0.5} min={0} suffix="pt" onChange={(next) => onSetProperty('border', { ...value, widths: { ...widths, leftPt: next } })} />
+        <SelectField label={copy.type} value={value.style ?? 'solid'} options={strokeOptions(copy)} onChange={(next) => onSetProperty('border', { ...value, style: next as typeof value.style })} />
+        <TextField label={copy.strokeName} value={value.strokeName ?? ''} onChange={(next) => onSetProperty('border', { ...value, strokeName: next })} />
         <TextField label={copy.color} value={value.color ?? 'currentColor'} onChange={(next) => onSetProperty('border', { ...value, color: next })} />
         <NumberField label={copy.tint} value={value.tint ?? 100} min={0} max={100} suffix="%" onChange={(next) => onSetProperty('border', { ...value, tint: next })} />
+        <TextField label={copy.gapColor} value={value.gapColor ?? 'transparent'} onChange={(next) => onSetProperty('border', { ...value, gapColor: next })} />
+        <NumberField label={copy.gapTint} value={value.gapTint ?? 100} min={0} max={100} suffix="%" onChange={(next) => onSetProperty('border', { ...value, gapTint: next })} />
+        <SelectField label={copy.cap} value={value.cap ?? 'butt'} options={[
+          ['butt', copy.capButt], ['round', copy.capRound], ['projecting', copy.capProjecting],
+        ]} onChange={(next) => onSetProperty('border', { ...value, cap: next as NonNullable<typeof value.cap> })} />
+        <SelectField label={copy.join} value={value.join ?? 'miter'} options={[
+          ['miter', copy.joinMiter], ['round', copy.joinRound], ['bevel', copy.joinBevel],
+        ]} onChange={(next) => onSetProperty('border', { ...value, join: next as NonNullable<typeof value.join> })} />
+        <SelectField label={copy.widthMode} value={value.widthMode ?? 'column'} options={[
+          ['column', copy.column], ['text', copy.text],
+        ]} onChange={(next) => onSetProperty('border', { ...value, widthMode: next as 'column' | 'text' })} />
       </Grid>
-      <Toggle label={copy.mergeConsecutive} checked={value.mergeConsecutive === true} onChange={(checked) => onSetProperty('border', { ...value, mergeConsecutive: checked })} />
+      <CornerFields copy={copy} value={value.corners ?? {}} onChange={(corners) => onSetProperty('border', { ...value, corners })} />
+      <OffsetFields copy={copy} value={value.offsets ?? {}} onChange={(offsets) => onSetProperty('border', { ...value, offsets })} />
+      <ToggleGrid>
+        <Toggle label={copy.overprint} checked={value.overprint === true} onChange={(checked) => onSetProperty('border', { ...value, overprint: checked })} />
+        <Toggle label={copy.gapOverprint} checked={value.gapOverprint === true} onChange={(checked) => onSetProperty('border', { ...value, gapOverprint: checked })} />
+        <Toggle label={copy.displayAcrossFrames} checked={value.displayAcrossFrames === true} onChange={(checked) => onSetProperty('border', { ...value, displayAcrossFrames: checked })} />
+        <Toggle label={copy.mergeConsecutive} checked={value.mergeConsecutive === true} onChange={(checked) => onSetProperty('border', { ...value, mergeConsecutive: checked })} />
+      </ToggleGrid>
     </>
   );
 }
@@ -347,7 +387,12 @@ function ShadingPane({ copy, resolved, onSetProperty }: PaneProps) {
       <Grid>
         <TextField label={copy.color} value={value.color ?? 'transparent'} onChange={(next) => onSetProperty('shading', { ...value, color: next })} />
         <NumberField label={copy.tint} value={value.tint ?? 100} min={0} max={100} suffix="%" onChange={(next) => onSetProperty('shading', { ...value, tint: next })} />
+        <SelectField label={copy.widthMode} value={value.widthMode ?? 'column'} options={[
+          ['column', copy.column], ['text', copy.text],
+        ]} onChange={(next) => onSetProperty('shading', { ...value, widthMode: next as 'column' | 'text' })} />
       </Grid>
+      <CornerFields copy={copy} value={value.corners ?? {}} onChange={(corners) => onSetProperty('shading', { ...value, corners })} />
+      <OffsetFields copy={copy} value={value.offsets ?? {}} onChange={(offsets) => onSetProperty('shading', { ...value, offsets })} />
       <ToggleGrid>
         <Toggle label={copy.overprint} checked={value.overprint === true} onChange={(checked) => onSetProperty('shading', { ...value, overprint: checked })} />
         <Toggle label={copy.clipToFrame} checked={value.clipToFrame === true} onChange={(checked) => onSetProperty('shading', { ...value, clipToFrame: checked })} />
