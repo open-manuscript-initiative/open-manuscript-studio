@@ -33,7 +33,10 @@ CREATE TABLE "web_publication_deliveries" (
     CHECK (
       "request_digest" ~ '^[0-9a-f]{64}$'
       AND "content_digest" ~ '^[0-9a-f]{64}$'
-      AND ("delivered_content_digest" IS NULL OR "delivered_content_digest" ~ '^[0-9a-f]{64}$')
+      AND (
+        "delivered_content_digest" IS NULL
+        OR "delivered_content_digest" ~ '^[0-9a-f]{64}$'
+      )
     ),
   CONSTRAINT "web_publication_deliveries_user_id_fkey"
     FOREIGN KEY ("user_id") REFERENCES "users"("id")
@@ -62,7 +65,10 @@ CREATE TABLE "web_publication_approval_grants" (
   "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "web_publication_approval_grants_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "web_publication_approval_grants_digest_check"
-    CHECK ("token_hash" ~ '^[0-9a-f]{64}$' AND "request_digest" ~ '^[0-9a-f]{64}$'),
+    CHECK (
+      "token_hash" ~ '^[0-9a-f]{64}$'
+      AND "request_digest" ~ '^[0-9a-f]{64}$'
+    ),
   CONSTRAINT "web_publication_approval_grants_user_id_fkey"
     FOREIGN KEY ("user_id") REFERENCES "users"("id")
     ON DELETE CASCADE ON UPDATE CASCADE,
@@ -101,68 +107,16 @@ CREATE TABLE "editorial_decisions" (
     CHECK (
       "decision" = 'ACCEPT'
       AND "review_round" BETWEEN 1 AND 99
-      AND "state_digest" ~ '^[0-9a-f]{64}
-      AND CASE
-        WHEN jsonb_typeof("basis_assignment_ids") = 'array'
-          THEN jsonb_array_length("basis_assignment_ids") BETWEEN 1 AND 100
-        ELSE FALSE
-      END
-    ),
-  CONSTRAINT "editorial_decisions_decided_by_user_id_fkey"
-    FOREIGN KEY ("decided_by_user_id") REFERENCES "users"("id")
-    ON DELETE RESTRICT ON UPDATE CASCADE
-);
-
-CREATE UNIQUE INDEX "editorial_decisions_workspace_manuscript_revision_key"
-  ON "editorial_decisions"("workspace_id", "manuscript_id", "revision_id");
-CREATE INDEX "editorial_decisions_manuscript_revision_decision_idx"
-  ON "editorial_decisions"("manuscript_id", "revision_id", "decision");
-CREATE INDEX "editorial_decisions_decided_by_decided_at_idx"
-  ON "editorial_decisions"("decided_by_user_id", "decided_at");
-
-      AND "publication_content_digest" ~ '^[0-9a-f]{64}
-      AND CASE
-        WHEN jsonb_typeof("basis_assignment_ids") = 'array'
-          THEN jsonb_array_length("basis_assignment_ids") BETWEEN 1 AND 100
-        ELSE FALSE
-      END
-    ),
-  CONSTRAINT "editorial_decisions_decided_by_user_id_fkey"
-    FOREIGN KEY ("decided_by_user_id") REFERENCES "users"("id")
-    ON DELETE RESTRICT ON UPDATE CASCADE
-);
-
-CREATE UNIQUE INDEX "editorial_decisions_workspace_manuscript_revision_key"
-  ON "editorial_decisions"("workspace_id", "manuscript_id", "revision_id");
-CREATE INDEX "editorial_decisions_manuscript_revision_decision_idx"
-  ON "editorial_decisions"("manuscript_id", "revision_id", "decision");
-CREATE INDEX "editorial_decisions_decided_by_decided_at_idx"
-  ON "editorial_decisions"("decided_by_user_id", "decided_at");
-
-      AND "evidence_digest" ~ '^[0-9a-f]{64}
-      AND CASE
-        WHEN jsonb_typeof("basis_assignment_ids") = 'array'
-          THEN jsonb_array_length("basis_assignment_ids") BETWEEN 1 AND 100
-        ELSE FALSE
-      END
-    ),
-  CONSTRAINT "editorial_decisions_decided_by_user_id_fkey"
-    FOREIGN KEY ("decided_by_user_id") REFERENCES "users"("id")
-    ON DELETE RESTRICT ON UPDATE CASCADE
-);
-
-CREATE UNIQUE INDEX "editorial_decisions_workspace_manuscript_revision_key"
-  ON "editorial_decisions"("workspace_id", "manuscript_id", "revision_id");
-CREATE INDEX "editorial_decisions_manuscript_revision_decision_idx"
-  ON "editorial_decisions"("manuscript_id", "revision_id", "decision");
-CREATE INDEX "editorial_decisions_decided_by_decided_at_idx"
-  ON "editorial_decisions"("decided_by_user_id", "decided_at");
-
-      AND CASE
-        WHEN jsonb_typeof("basis_assignment_ids") = 'array'
-          THEN jsonb_array_length("basis_assignment_ids") BETWEEN 1 AND 100
-        ELSE FALSE
-      END
+      AND "state_digest" ~ '^[0-9a-f]{64}$'
+      AND "publication_content_digest" ~ '^[0-9a-f]{64}$'
+      AND "evidence_digest" ~ '^[0-9a-f]{64}$'
+      AND (
+        CASE
+          WHEN jsonb_typeof("basis_assignment_ids") = 'array'
+            THEN jsonb_array_length("basis_assignment_ids") BETWEEN 1 AND 100
+          ELSE FALSE
+        END
+      )
     ),
   CONSTRAINT "editorial_decisions_decided_by_user_id_fkey"
     FOREIGN KEY ("decided_by_user_id") REFERENCES "users"("id")
