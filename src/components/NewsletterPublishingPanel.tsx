@@ -247,9 +247,14 @@ export function NewsletterPublishingPanel() {
         approval.grant.executionToken,
       );
       setReceipt(next);
-      if (publicationStatus === 'publish') {
+      if (publicationStatus === 'publish' && isStudioNativeDnsVenue(prepared.source)) {
+        const publicationVenueId = prepared.source.metadata?.publicationVenue?.id;
+        if (!publicationVenueId) {
+          throw new Error('The Studio-native publication venue identifier is missing.');
+        }
         const nativeSubmission = await findNativeEditorialSubmissionForManuscript(
           prepared.source.id,
+          publicationVenueId,
         );
         if (
           nativeSubmission?.status === 'accepted' &&
