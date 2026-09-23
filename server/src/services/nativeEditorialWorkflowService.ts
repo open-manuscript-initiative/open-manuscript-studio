@@ -926,7 +926,7 @@ function validateSubmissionAssets(
     assetId: string;
     mediaType: string;
     checksum: string;
-    bytes: Uint8Array;
+    bytes: Uint8Array<ArrayBuffer>;
   }> = [];
   let totalBytes = 0;
   for (const [assetId, metadata] of declared) {
