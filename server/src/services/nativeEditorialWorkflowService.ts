@@ -165,6 +165,25 @@ export async function listNativeEditorialInbox(editorUserId: string) {
   }));
 }
 
+export async function findNativeEditorialSubmissionForUser(
+  userId: string,
+  manuscriptId: string,
+) {
+  const submissions = await prisma.nativeEditorialSubmission.findMany({
+    where: { manuscriptId },
+    orderBy: { updatedAt: 'desc' },
+  });
+  const authored = submissions.find((submission) => submission.authorUserId === userId);
+  if (authored) return serializeSubmissionSummary(authored);
+
+  const venues = await listStudioNativePublicationVenuesForEditor(userId);
+  const venueIds = new Set(venues.map((venue) => venue.venueId));
+  const editorial = submissions.find((submission) =>
+    venueIds.has(submission.publicationVenueId)
+  );
+  return editorial ? serializeSubmissionSummary(editorial) : null;
+}
+
 export async function getNativeEditorialSubmission(
   userId: string,
   submissionId: string,
