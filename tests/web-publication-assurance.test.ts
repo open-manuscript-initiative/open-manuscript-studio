@@ -79,8 +79,7 @@ test('peer-reviewed seal carries only revision-bound editorial evidence, never r
   assert.match(artifact.html, new RegExp(publicationVenueAuthority.venueId));
   assert.match(artifact.html, new RegExp(publicationVenueAuthority.domain));
   assert.match(artifact.html, new RegExp(publicationVenueAuthority.verificationId));
-  assert.match(artifact.html, new RegExp(publicationVenueAuthority.verifiedAt.replace(/[.*+?^${}()|[\]\\]/g, '\\  assert.match(artifact.html, new RegExp(publicationVenueAuthority.domain));
-')));
+  assert.ok(artifact.html.includes(publicationVenueAuthority.verifiedAt));
   assert.match(artifact.html, new RegExp(publicationVenueAuthority.editorRole));
   assert.match(artifact.html, /Verified publication venue authority|Hitelesített folyóirati\/kiadói autoritás/);
   assert.doesNotMatch(artifact.html, /reviewer(?:Name|Email|UserId)/i);
