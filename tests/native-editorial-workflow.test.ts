@@ -57,6 +57,9 @@ test('author submission creates review access and editor claim creates editor ac
   assert.match(service, /claimNativeSubmission/);
   assert.match(service, /role: 'EDITOR'/);
   assert.match(service, /assertVerifiedPublicationVenueEditorAuthority/);
+  assert.match(service, /nativeSubmission\.updateMany/);
+  assert.match(service, /editorUserId: null/);
+  assert.match(service, /isolationLevel: 'Serializable'/);
   assert.match(service, /nativeSubmissionEvent\.create/);
 });
 
