@@ -42,7 +42,7 @@ const revisionSchema = submissionSnapshotSchema.omit({
 
 const reviewerSchema = z.object({
   reviewerEmail: z.string().trim().email(),
-  anonymityMode: z.enum(['DOUBLE_BLIND', 'SINGLE_BLIND', 'OPEN']).optional(),
+  anonymityMode: z.enum(['DOUBLE_BLIND', 'SINGLE_BLIND', 'OPEN']).default('DOUBLE_BLIND'),
 }).strict();
 
 const noteSchema = z.object({
