@@ -20,7 +20,9 @@ TXT név:   _omi-publication.folyoirat.hu
 TXT érték: omi-publication-verification=<random-token>
 ~~~
 
-A nyers token csak a felhasználónak jelenik meg; a Studio az érték SHA-256 lenyomatát tárolja. A kihívás 7 napig érvényes. Sikeres ellenőrzés után a domain VERIFIED állapotú lesz. Új publisher-verified szerkesztői döntés előtt a Studio legfeljebb 24 órás DNS-ellenőrzési eredményt fogad el; régebbi eredménynél újra ellenőrzi a TXT rekordot.
+A DNS TXT rekord nyilvános adat. A challenge értéke ezért **nem titkos hitelesítő adat és nem személyazonosító**. A bizonyíték abból áll, hogy a Studio egy friss, előre nem ismert kihívást köt egy konkrét bejelentkezett fiókhoz, és ez a kihívás a megadott DNS-név alatt megjelenik. A Studio a challenge SHA-256 lenyomatát tárolja, és ugyanazt a challenge-et csak a létrehozó fiók, csak PENDING állapotban, egyszer használhatja fel. A nyilvánosan kiolvasható érték más fióknak nem ad DOMAIN_ADMIN vagy EDITOR jogosultságot.
+
+A kihívás 7 napig érvényes. Sikeres ellenőrzés után a domain VERIFIED állapotú lesz. A későbbi DNS-lekérdezés csak azt ellenőrzi, hogy a domain továbbra is nyilvánosan fenntartja ezt a venue-kötést; nem használja a TXT-értéket új fiók vagy szerkesztő hitelesítésére. Új publisher-verified szerkesztői döntés előtt a Studio legfeljebb 24 órás DNS-ellenőrzési eredményt fogad el; régebbi eredménynél újra ellenőrzi a TXT rekordot.
 
 A már rögzített szerkesztői döntés történeti bizonyítékát későbbi DNS- vagy szerepkörváltozás nem írja át: a döntés az akkori venue-autoritás snapshotját őrzi.
 
