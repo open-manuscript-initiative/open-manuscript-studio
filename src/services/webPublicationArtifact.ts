@@ -1,4 +1,5 @@
 import { resolvePublicationProfile } from '../model/publicationProfile';
+import { sha256HexSync } from '../model/stateDigest';
 import type { OmiManuscript } from '../types/omi';
 import {
   type PreparedWebPublicationArtifact,
@@ -20,6 +21,15 @@ export async function prepareWebPublicationArtifact(
 ): Promise<PreparedWebPublicationArtifact> {
   const profile = resolvePublicationProfile(manuscript);
   const rendered = await buildPublicationHtmlArtifact(manuscript, profile);
+  const publicationContentDigest = digestPublicationArticle(rendered);
+  if (
+    assurance.reviewStatus === 'peer-reviewed' &&
+    assurance.evidence.publicationContentDigest.toLowerCase() !== publicationContentDigest
+  ) {
+    throw new Error(
+      'The selected editorial decision belongs to different publication content. Record a new acceptance for this exact article.',
+    );
+  }
   const html = addAssuranceDisclosure(rendered, manuscript.locale, assurance);
   const bytes = new TextEncoder().encode(html);
   const fileName = publicationHtmlFileName(manuscript);
@@ -41,7 +51,17 @@ export async function prepareWebPublicationArtifact(
     },
   });
 
-  return { html, build, assurance };
+  return { html, publicationContentDigest, build, assurance };
+}
+
+function digestPublicationArticle(html: string): string {
+  const article = html.match(
+    /<article\\b[^>]*class="[^"]*omi-scholarly-article[^"]*"[^>]*>[\\s\\S]*?<\\/article>/i,
+  )?.[0];
+  if (!article) {
+    throw new Error('Web publication content digest requires the semantic article element.');
+  }
+  return sha256HexSync(new TextEncoder().encode(article));
 }
 
 function addAssuranceDisclosure(
