@@ -22,6 +22,18 @@ const editorialEvidenceBase = {
   decidedAt: '2026-09-22T08:00:00.000Z',
 };
 
+const publicationVenueAuthority = {
+  type: 'verified-publication-venue' as const,
+  venueId: '50000000-0000-4000-8000-000000000005',
+  venueName: 'Open Manuscript Review',
+  venueType: 'JOURNAL' as const,
+  domain: 'review.example.org',
+  verificationMethod: 'DNS_TXT' as const,
+  verificationId: '60000000-0000-4000-8000-000000000006',
+  verifiedAt: '2026-09-23T07:15:00.000Z',
+  editorRole: 'EDITOR_IN_CHIEF' as const,
+};
+
 test('unreviewed web publication carries a visible and machine-readable disclosure', async () => {
   const artifact = await prepareWebPublicationArtifact(
     createCommittedHtmlGalleyStudy(),
@@ -49,6 +61,7 @@ test('peer-reviewed seal carries only revision-bound editorial evidence, never r
   const editorialEvidence = {
     ...editorialEvidenceBase,
     publicationContentDigest: unreviewed.publicationContentDigest,
+    authority: publicationVenueAuthority,
   };
   const artifact = await prepareWebPublicationArtifact(
     manuscript,
@@ -62,6 +75,10 @@ test('peer-reviewed seal carries only revision-bound editorial evidence, never r
   assert.match(artifact.html, />OMI\nPEER REVIEW\nVERIFIED</);
   assert.match(artifact.html, new RegExp(editorialEvidence.decisionId));
   assert.match(artifact.html, new RegExp(editorialEvidence.evidenceDigest));
+  assert.match(artifact.html, /<meta name="omi-publication-authority" content="verified-publication-venue">/);
+  assert.match(artifact.html, new RegExp(publicationVenueAuthority.venueId));
+  assert.match(artifact.html, new RegExp(publicationVenueAuthority.domain));
+  assert.match(artifact.html, /Verified publication venue authority|Hitelesített folyóirati\/kiadói autoritás/);
   assert.doesNotMatch(artifact.html, /reviewer(?:Name|Email|UserId)/i);
   assert.equal(verifyPublicationBuildArtifact(artifact.build, artifact.html), true);
 });
