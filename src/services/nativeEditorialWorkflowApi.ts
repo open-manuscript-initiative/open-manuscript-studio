@@ -140,6 +140,14 @@ export async function listMyNativeEditorialSubmissions(
   )).submissions;
 }
 
+export async function findNativeEditorialSubmissionForManuscript(
+  manuscriptId: string,
+): Promise<NativeEditorialSubmissionSummary | null> {
+  return (await request<{ submission: NativeEditorialSubmissionSummary | null }>(
+    `/api/native-editorial/submissions/for-manuscript/${encodeURIComponent(manuscriptId)}`,
+  )).submission;
+}
+
 export async function listNativeEditorialInbox(): Promise<NativeEditorialSubmissionSummary[]> {
   return (await request<{ submissions: NativeEditorialSubmissionSummary[] }>(
     '/api/native-editorial/inbox',
