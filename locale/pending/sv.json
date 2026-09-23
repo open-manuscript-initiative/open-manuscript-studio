@@ -2,6 +2,14 @@
   "locale": "sv",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Svenska",
+    "deepLName": "Swedish",
+    "code": "sv",
+    "apiTargetCode": "SV",
+    "supported": true
+  },
   "pendingCount": 464,
   "instructions": [
     "Translate only the translation field.",

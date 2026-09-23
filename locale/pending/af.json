@@ -1,16 +1,16 @@
 {
-  "locale": "de",
+  "locale": "af",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
   "translationService": "DeepL",
   "deepL": {
-    "appName": "Deutsch",
-    "deepLName": "German",
-    "code": "de",
-    "apiTargetCode": "DE",
-    "supported": true
+    "appName": "Afrikaans",
+    "deepLName": null,
+    "code": null,
+    "apiTargetCode": null,
+    "supported": false
   },
-  "pendingCount": 37,
+  "pendingCount": 21,
   "instructions": [
     "Translate only the translation field.",
     "Do not change key or source.",
@@ -19,83 +19,23 @@
   ],
   "entries": [
     {
-      "key": "/navigation/editor",
-      "source": "Editor",
-      "translation": "Editor",
-      "protectedTerms": []
-    },
-    {
-      "key": "/studio/tools/export",
-      "source": "Export .omi.json",
-      "translation": "Export .omi.json",
-      "protectedTerms": []
-    },
-    {
-      "key": "/notes/endnote",
-      "source": "Endnote",
-      "translation": "Endnote",
-      "protectedTerms": []
-    },
-    {
-      "key": "/citations/suffix",
-      "source": "Suffix",
-      "translation": "Suffix",
-      "protectedTerms": []
-    },
-    {
-      "key": "/citations/resourceTypes/dissertation",
-      "source": "Dissertation",
-      "translation": "Dissertation",
-      "protectedTerms": []
-    },
-    {
-      "key": "/citations/resourceTypes/preprint",
-      "source": "Preprint",
-      "translation": "Preprint",
-      "protectedTerms": []
-    },
-    {
-      "key": "/citations/resourceTypes/software",
-      "source": "Software",
-      "translation": "Software",
-      "protectedTerms": []
-    },
-    {
       "key": "/citations/locators/folio",
       "source": "Folio",
-      "translation": "Folio",
-      "protectedTerms": []
-    },
-    {
-      "key": "/contributors/affiliation",
-      "source": "Affiliation",
-      "translation": "Affiliation",
+      "translation": "",
       "protectedTerms": []
     },
     {
       "key": "/contributors/orcid",
       "source": "ORCID",
-      "translation": "ORCID",
+      "translation": "",
       "protectedTerms": [
         "ORCID"
       ]
     },
     {
-      "key": "/contributors/roles/software",
-      "source": "Software",
-      "translation": "Software",
-      "protectedTerms": []
-    },
-    {
-      "key": "/history/revision",
-      "source": "Revision",
-      "translation": "Revision",
-      "protectedTerms": []
-    },
-    {
       "key": "/auth/brand/name",
       "source": "Open Manuscript Studio",
-      "translation": "Open Manuscript Studio",
+      "translation": "",
       "protectedTerms": [
         "Open Manuscript Studio"
       ]
@@ -103,31 +43,31 @@
     {
       "key": "/auth/fields/email/placeholder",
       "source": "name@example.com",
-      "translation": "name@example.com",
+      "translation": "",
       "protectedTerms": []
     },
     {
       "key": "/modules/cslRendering/styleNames/apa-7",
       "source": "APA 7",
-      "translation": "APA 7",
+      "translation": "",
       "protectedTerms": []
     },
     {
       "key": "/modules/cslRendering/styleNames/mla-9",
       "source": "MLA 9",
-      "translation": "MLA 9",
+      "translation": "",
       "protectedTerms": []
     },
     {
       "key": "/modules/cslRendering/styleNames/iso-690",
       "source": "ISO 690",
-      "translation": "ISO 690",
+      "translation": "",
       "protectedTerms": []
     },
     {
       "key": "/modules/exportFormats/omiJson",
       "source": "OMI JSON",
-      "translation": "OMI JSON",
+      "translation": "",
       "protectedTerms": [
         "OMI",
         "JSON"
@@ -136,7 +76,7 @@
     {
       "key": "/modules/exportFormats/jats",
       "source": "JATS XML 1.4",
-      "translation": "JATS XML 1.4",
+      "translation": "",
       "protectedTerms": [
         "JATS",
         "JATS XML",
@@ -146,7 +86,7 @@
     {
       "key": "/modules/exportFormats/docx",
       "source": "Microsoft Word (DOCX)",
-      "translation": "Microsoft Word (DOCX)",
+      "translation": "",
       "protectedTerms": [
         "DOCX"
       ]
@@ -154,7 +94,7 @@
     {
       "key": "/modules/exportFormats/idml",
       "source": "Adobe InDesign (IDML)",
-      "translation": "Adobe InDesign (IDML)",
+      "translation": "",
       "protectedTerms": [
         "Adobe InDesign",
         "IDML"
@@ -163,7 +103,7 @@
     {
       "key": "/modules/exportFormats/xtg",
       "source": "QuarkXPress (XPress Tags)",
-      "translation": "QuarkXPress (XPress Tags)",
+      "translation": "",
       "protectedTerms": [
         "QuarkXPress",
         "XPress Tags"
@@ -172,7 +112,7 @@
     {
       "key": "/modules/exportFormats/mif",
       "source": "Adobe FrameMaker (MIF)",
-      "translation": "Adobe FrameMaker (MIF)",
+      "translation": "",
       "protectedTerms": [
         "Adobe FrameMaker",
         "MIF"
@@ -181,7 +121,7 @@
     {
       "key": "/modules/exportFormats/sla",
       "source": "Scribus (SLA)",
-      "translation": "Scribus (SLA)",
+      "translation": "",
       "protectedTerms": [
         "Scribus",
         "SLA"
@@ -190,7 +130,7 @@
     {
       "key": "/modules/exportFormats/latex",
       "source": "LaTeX",
-      "translation": "LaTeX",
+      "translation": "",
       "protectedTerms": [
         "LaTeX",
         "TeX"
@@ -199,7 +139,7 @@
     {
       "key": "/modules/exportFormats/epub",
       "source": "EPUB 3",
-      "translation": "EPUB 3",
+      "translation": "",
       "protectedTerms": [
         "EPUB"
       ]
@@ -207,43 +147,19 @@
     {
       "key": "/modules/exportFormats/pdf",
       "source": "PDF",
-      "translation": "PDF",
+      "translation": "",
       "protectedTerms": []
     },
     {
       "key": "/modules/frontMatter/motto",
       "source": "Motto",
-      "translation": "Motto",
-      "protectedTerms": []
-    },
-    {
-      "key": "/modules/frontMatter/mottoOptional",
-      "source": "Motto (optional)",
-      "translation": "Motto (optional)",
-      "protectedTerms": []
-    },
-    {
-      "key": "/modules/frontMatter/optional",
-      "source": "Optional",
-      "translation": "Optional",
-      "protectedTerms": []
-    },
-    {
-      "key": "/modules/frontMatter/normal",
-      "source": "Normal",
-      "translation": "Normal",
-      "protectedTerms": []
-    },
-    {
-      "key": "/modules/help/topics/8/title",
-      "source": "Export",
-      "translation": "Export",
+      "translation": "",
       "protectedTerms": []
     },
     {
       "key": "/modules/jatsExport/title",
       "source": "JATS XML",
-      "translation": "JATS XML",
+      "translation": "",
       "protectedTerms": [
         "JATS",
         "JATS XML",
@@ -253,27 +169,15 @@
     {
       "key": "/modules/orcidLookup/selected",
       "source": "ORCID iD",
-      "translation": "ORCID iD",
+      "translation": "",
       "protectedTerms": [
         "ORCID"
       ]
     },
     {
-      "key": "/modules/publicationProfile/profileVersion",
-      "source": "Version",
-      "translation": "Version",
-      "protectedTerms": []
-    },
-    {
-      "key": "/modules/publicationProfile/layout",
-      "source": "Layout",
-      "translation": "Layout",
-      "protectedTerms": []
-    },
-    {
       "key": "/modules/richText/linkPlaceholder",
       "source": "https://…",
-      "translation": "https://…",
+      "translation": "",
       "protectedTerms": []
     }
   ]

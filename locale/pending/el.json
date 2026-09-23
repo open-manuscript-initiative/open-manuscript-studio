@@ -2,6 +2,14 @@
   "locale": "el",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Ελληνικά",
+    "deepLName": "Greek",
+    "code": "el",
+    "apiTargetCode": "EL",
+    "supported": true
+  },
   "pendingCount": 457,
   "instructions": [
     "Translate only the translation field.",

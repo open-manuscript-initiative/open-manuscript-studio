@@ -2,6 +2,14 @@
   "locale": "hr",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Hrvatski",
+    "deepLName": null,
+    "code": null,
+    "apiTargetCode": null,
+    "supported": false
+  },
   "pendingCount": 456,
   "instructions": [
     "Translate only the translation field.",

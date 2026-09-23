@@ -2,6 +2,14 @@
   "locale": "mt",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Malti",
+    "deepLName": null,
+    "code": null,
+    "apiTargetCode": null,
+    "supported": false
+  },
   "pendingCount": 465,
   "instructions": [
     "Translate only the translation field.",
