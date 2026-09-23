@@ -86,6 +86,10 @@ test('review workflow reuses anonymous assignments with exact submitted snapshot
   assert.doesNotMatch(snapshot, /manuscript\.authors/);
   assert.match(panel, /completeNativeEditorialReview/);
   assert.match(panel, /requestNativeEditorialRevision/);
+  assert.match(panel, /authorDetail\.reviews/);
+  assert.match(panel, /noAuthorVisibleFeedback/);
+  assert.match(service, /note: review\.reviewerAlias/);
+  assert.doesNotMatch(service, /note: reviewerEmail\.trim/);
 });
 
 test('new review round cannot be bypassed by older completed evidence', () => {
