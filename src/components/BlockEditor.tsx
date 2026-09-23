@@ -36,7 +36,10 @@ import {
   registerContinuousBlockEditor,
   requestBlockEditorFocus,
 } from '../editor/blockFocusRegistry';
-import { getTopLevelBlockAtPosition } from '../editor/continuousManuscriptDocument';
+import {
+  getTopLevelBlockAtPosition,
+  OMI_VISUAL_NODE,
+} from '../editor/continuousManuscriptDocument';
 import {
   getEditorCapabilities,
   type EditorCapabilities,
@@ -71,6 +74,10 @@ import {
 } from '../model/crossReferences';
 import { renderCitationCluster } from '../model/cslRendering';
 import { sanitizeRichTextPasteHtml } from '../model/richText';
+import {
+  createTableBlock,
+  parseDelimitedTable,
+} from '../model/visualBlocks';
 import type { ProofingSelection } from '../model/proofing';
 import type {
   OmiCrossReferenceDisplayStyle,
@@ -246,6 +253,22 @@ export function BlockEditor({
       },
       transformPastedHTML: (html) => sanitizeRichTextPasteHtml(html),
       handleKeyDown: (view, event) => {
+        if (
+          continuous
+          && effectiveEditable
+          && event.key === 'Tab'
+          && !event.shiftKey
+          && !event.altKey
+          && !event.ctrlKey
+          && !event.metaKey
+          && !event.isComposing
+        ) {
+          event.preventDefault();
+          const { from, to } = view.state.selection;
+          view.dispatch(view.state.tr.insertText('\t', from, to));
+          return true;
+        }
+
         if (continuous || !effectiveEditable || blockType !== 'paragraph' || event.isComposing) return false;
         if (event.altKey || event.ctrlKey || event.metaKey) return false;
 
@@ -540,6 +563,49 @@ export function BlockEditor({
     setIntegrationAction(action);
   }
 
+  function convertSelectionToTable(): void {
+    if (!editor || !continuous || !capabilities.editStructure) return;
+    const { from, to } = editor.state.selection;
+    if (from === to) return;
+
+    const selectedText = editor.state.doc.textBetween(from, to, '\n', '\n');
+    if (!selectedText.trim()) return;
+
+    const table = createTableBlock(
+      parseDelimitedTable(selectedText),
+      {
+        headerRows: 0,
+        provenance: {
+          sourceFormat: 'clipboard',
+          importedAt: new Date().toISOString(),
+          sourcePart: 'text-selection',
+        },
+      },
+    );
+    const active = getTopLevelBlockAtPosition(editor.state.doc, from);
+    const sectionId = active?.sectionId
+      ?? useStudioStore.getState().selectedSectionId
+      ?? manuscript.sections[0]?.id
+      ?? null;
+    if (!sectionId || !table.visual) return;
+
+    editor
+      .chain()
+      .focus()
+      .deleteSelection()
+      .insertContent({
+        type: OMI_VISUAL_NODE,
+        attrs: {
+          omiBlockId: table.id,
+          omiSectionId: sectionId,
+          omiBlockType: 'table',
+          omiAnchorId: table.id,
+          omiVisual: table.visual,
+        },
+      })
+      .run();
+  }
+
   function insertNote(): void {
     if (!editor || !capabilities.insertNotes) return;
     collapseSelectionToEnd();
@@ -644,6 +710,7 @@ export function BlockEditor({
   }
 
   const showSelectionActions = effectiveEditable && (
+    (continuous && capabilities.editStructure) ||
     capabilities.editCitations ||
     capabilities.insertNotes ||
     capabilities.editCrossReferences ||
@@ -683,6 +750,8 @@ export function BlockEditor({
               crossReferenceLabel={crossReferenceCopy.insert}
               translateLabel={integrationLabels.translate}
               assistantLabel={integrationLabels.assistant}
+              textToTableLabel={textToTableLabel(locale)}
+              onTextToTable={continuous && capabilities.editStructure ? convertSelectionToTable : undefined}
               onCitation={capabilities.editCitations ? openCitationPicker : undefined}
               onNote={capabilities.insertNotes ? insertNote : undefined}
               onCrossReference={capabilities.editCrossReferences ? openCrossReferencePicker : undefined}
@@ -741,6 +810,13 @@ export function BlockEditor({
       ) : null}
     </article>
   );
+}
+
+function textToTableLabel(locale: string): string {
+  const language = locale.toLowerCase().split('-')[0];
+  if (language === 'hu') return 'Szövegből táblázat';
+  if (language === 'de') return 'Text in Tabelle umwandeln';
+  return 'Convert text to table';
 }
 
 function parseStoredContent(content: string): JSONContent {
