@@ -128,7 +128,9 @@ An accepted native submission becomes **publishable**. Acceptance does not itsel
 
 The web publication panel consumes the existing editorial decision. For a Studio-native DNS venue it does not create the acceptance as part of the publication action.
 
-After an accepted exact revision is actually published through a supported web target, Studio marks the native submission `PUBLISHED` and records that transition in the workflow event log.
+After an accepted exact revision is actually published through a supported web target **under the verified publication-venue domain (or one of its subdomains)**, Studio marks the native submission `PUBLISHED` and records the external URL in the workflow event log.
+
+Publishing the same accepted article to an unrelated website does not change the venue submission from `ACCEPTED` to `PUBLISHED`. The external delivery can still succeed; it is simply not treated as publication by the verified journal or press.
 
 ## OJS/OMP boundary
 
