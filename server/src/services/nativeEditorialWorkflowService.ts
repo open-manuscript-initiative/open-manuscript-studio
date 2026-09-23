@@ -48,7 +48,6 @@ export interface NativeEditorialSubmissionInput extends NativeEditorialRevisionI
 const ACTIVE_EDITOR_STATUSES = new Set([
   'SUBMITTED',
   'IN_REVIEW',
-  'REVISION_REQUESTED',
   'REVISION_SUBMITTED',
 ]);
 
@@ -295,12 +294,13 @@ export async function requestNativeEditorialRevision(
 ) {
   const submission = await loadSubmission(submissionId);
   await ensureSubmissionEditorAccess(editorUserId, submission);
-  if (!ACTIVE_EDITOR_STATUSES.has(submission.status)) {
-    throw conflict('This submission can no longer be returned for revision.');
+  if (submission.status !== 'IN_REVIEW') {
+    throw conflict('A revision can be requested only after the current review round has been completed.');
   }
   const round = await latestCompletedScientificRound(
     submission.workspaceId,
     submission.manuscriptId,
+    submission.reviewRound,
   );
   if (!round) {
     throw conflict(
@@ -473,6 +473,9 @@ export async function acceptNativeEditorialSubmission(
   const round = await latestCompletedScientificRound(
     submission.workspaceId,
     submission.manuscriptId,
+    submission.status === 'IN_REVIEW'
+      ? submission.reviewRound
+      : undefined,
   );
   if (!round) {
     throw conflict(
@@ -495,7 +498,7 @@ export async function acceptNativeEditorialSubmission(
     const next = await transaction.nativeEditorialSubmission.update({
       where: { id: submission.id },
       data: {
-        status: 'ACCEPTED',
+        status: submission.status === 'PUBLISHED' ? 'PUBLISHED' : 'ACCEPTED',
         acceptedAt: submission.acceptedAt ?? new Date(),
         editorialNote: null,
       },
@@ -623,6 +626,7 @@ async function ensureSubmissionEditorAccess(
 async function latestCompletedScientificRound(
   workspaceId: string,
   manuscriptId: string,
+  requiredRound?: number,
 ): Promise<{ reviewRound: number; assignmentIds: string[] } | null> {
   const assignments = await prisma.peerReviewAssignment.findMany({
     where: {
@@ -638,7 +642,10 @@ async function latestCompletedScientificRound(
     group.push(assignment);
     byRound.set(assignment.reviewRound, group);
   }
-  for (const reviewRound of Array.from(byRound.keys()).sort((a, b) => b - a)) {
+  const reviewRounds = requiredRound === undefined
+    ? Array.from(byRound.keys()).sort((a, b) => b - a)
+    : [requiredRound];
+  for (const reviewRound of reviewRounds) {
     const group = byRound.get(reviewRound) ?? [];
     if (
       group.length > 0 &&
