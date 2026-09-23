@@ -793,16 +793,24 @@ function validatePublicationHtml(
       if (
         metaContent(html, 'omi-publication-authority') !== 'verified-publication-venue' ||
         metaContent(html, 'omi-publication-venue-id') !== authority.venueId ||
+        metaContent(html, 'omi-publication-venue-name') !== authority.venueName ||
         metaContent(html, 'omi-publication-venue-domain') !== authority.domain ||
-        metaContent(html, 'omi-publication-venue-verification') !== 'dns-txt'
+        metaContent(html, 'omi-publication-venue-verification') !== 'dns-txt' ||
+        metaContent(html, 'omi-publication-venue-verification-id') !== authority.verificationId ||
+        metaContent(html, 'omi-publication-venue-verified-at') !== authority.verifiedAt ||
+        metaContent(html, 'omi-publication-venue-editor-role') !== authority.editorRole
       ) {
         throw invalidArtifact('The verified publication-venue authority metadata does not match the editorial decision.');
       }
     } else if (
       metaContent(html, 'omi-publication-authority') !== undefined ||
       metaContent(html, 'omi-publication-venue-id') !== undefined ||
+      metaContent(html, 'omi-publication-venue-name') !== undefined ||
       metaContent(html, 'omi-publication-venue-domain') !== undefined ||
-      metaContent(html, 'omi-publication-venue-verification') !== undefined
+      metaContent(html, 'omi-publication-venue-verification') !== undefined ||
+      metaContent(html, 'omi-publication-venue-verification-id') !== undefined ||
+      metaContent(html, 'omi-publication-venue-verified-at') !== undefined ||
+      metaContent(html, 'omi-publication-venue-editor-role') !== undefined
     ) {
       throw invalidArtifact('The artifact may not claim verified publication-venue authority without server evidence.');
     }
