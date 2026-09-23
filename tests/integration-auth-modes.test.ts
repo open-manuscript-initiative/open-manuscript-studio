@@ -29,6 +29,18 @@ const publicationVenueAuthorityService = readFileSync(
   new URL('../server/src/services/publicationVenueAuthorityService.ts', import.meta.url),
   'utf8',
 );
+const publicationVenueRoutes = readFileSync(
+  new URL('../server/src/routes/publicationVenueRoutes.ts', import.meta.url),
+  'utf8',
+);
+const publicationVenueApi = readFileSync(
+  new URL('../src/services/publicationVenueApi.ts', import.meta.url),
+  'utf8',
+);
+const publicationVenueField = readFileSync(
+  new URL('../src/components/PublicationVenueField.tsx', import.meta.url),
+  'utf8',
+);
 const identitySchema = readFileSync(
   new URL('../server/prisma/identity/schema.prisma', import.meta.url),
   'utf8',
@@ -176,6 +188,12 @@ test('website publication binds assurance to a committed artifact and keeps idem
   assert.match(publicationVenueAuthorityService, /role: 'DOMAIN_ADMIN'/);
   assert.match(publicationVenueAuthorityService, /last active domain administrator cannot be revoked/i);
   assert.match(publicationVenueAuthorityService, /isolationLevel: 'Serializable'/);
+  assert.match(publicationVenueRoutes, /z\.enum\(\['DOMAIN_ADMIN', 'EDITOR', 'EDITOR_IN_CHIEF'\]\)/);
+  assert.match(publicationVenueRoutes, /canManageMembers/);
+  assert.match(publicationVenueApi, /grantPublicationVenueMember/);
+  assert.match(publicationVenueApi, /revokePublicationVenueMembership/);
+  assert.match(publicationVenueField, /option value="DOMAIN_ADMIN"/);
+  assert.match(publicationVenueField, /copy\.domainAdmin/);
   assert.match(identitySchema, /model PublicationVenueDomainVerification \{/);
   assert.match(identitySchema, /model PublicationVenueMembership \{/);
   assert.match(serverSchema, /model WebPublication \{/);
