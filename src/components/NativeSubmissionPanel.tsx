@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
+import { ensureManuscriptRevisionStateDigests } from '../model/revisionIntegrity';
 import { calculateManuscriptStateDigestValue } from '../model/stateDigest';
 import { extractManuscriptState } from '../model/versioning';
 import {
@@ -126,6 +127,7 @@ export function NativeSubmissionPanel() {
     try {
       useStudioStore.getState().checkpoint('manual');
       const committed = useStudioStore.getState().manuscript;
+      const submissionSnapshot = ensureManuscriptRevisionStateDigests(committed);
       const stateDigest = calculateManuscriptStateDigestValue(
         extractManuscriptState(committed),
       );
@@ -134,7 +136,7 @@ export function NativeSubmissionPanel() {
             title: committed.title,
             revisionId: committed.headRevisionId,
             stateDigest,
-            manuscriptSnapshot: committed,
+            manuscriptSnapshot: submissionSnapshot,
           })
         : await createNativeSubmission({
             publicationVenueId: venue.id,
@@ -142,7 +144,7 @@ export function NativeSubmissionPanel() {
             title: committed.title,
             revisionId: committed.headRevisionId,
             stateDigest,
-            manuscriptSnapshot: committed,
+            manuscriptSnapshot: submissionSnapshot,
           });
       setSubmission(next);
       setMessage(revision ? copy.revised : copy.submitted);
