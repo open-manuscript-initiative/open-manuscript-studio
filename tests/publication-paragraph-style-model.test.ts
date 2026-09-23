@@ -201,7 +201,7 @@ test('clamps unsafe or out-of-range compatibility values', () => {
   }, fallback);
 
   const properties = collection.items[0].properties;
-  assert.equal(properties.fillTint, 140);
+  assert.equal(properties.fillTint, 100);
   assert.equal(properties.openType?.stylisticSet, 20);
   assert.deepEqual(properties.openType?.stylisticSets, [1, 20]);
   assert.equal(properties.hyphenationSettings?.preference, 100);
