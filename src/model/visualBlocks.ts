@@ -351,7 +351,7 @@ function normalizeTableTextCell(value: string, delimiter: string): string {
 }
 
 function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\export function cloneVisualData<T extends OmiVisualBlockData>(data: T): T {');
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 export function cloneVisualData<T extends OmiVisualBlockData>(data: T): T {
