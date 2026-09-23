@@ -488,9 +488,31 @@ export function buildPublicationParagraphStyleRules(
           resolved.keepWithNext
             ? 'break-after: avoid-page; page-break-after: avoid;'
             : '',
+          resolved.keepWithPrevious
+            ? 'break-before: avoid-page; page-break-before: avoid;'
+            : '',
         ].filter(Boolean).join(' ')
       : '';
-    return `${paragraphSelector} { font-family: ${cssFontFamily(resolved.fontFamily, style.fonts.body.fallback)}; font-size: ${finite(resolved.fontSize, 10.5)}pt; line-height: ${finite(resolved.lineHeight, 12.5)}pt; font-weight: ${finite(resolved.fontWeight, 400)}; font-style: ${fontStyle(resolved.fontStyle)}; text-align: ${alignment(resolved.alignment)}; text-indent: ${finite(resolved.firstLineIndent, 0)}mm; margin-top: ${finite(resolved.spaceBefore, 0)}pt; margin-bottom: ${finite(resolved.spaceAfter, 0)}pt; margin-left: ${finite(resolved.leftIndent, 0)}mm; margin-right: ${finite(resolved.rightIndent, 0)}mm; -webkit-hyphens: ${resolved.hyphenation ? 'auto' : 'none'}; hyphens: ${resolved.hyphenation ? 'auto' : 'none'}; widows: ${integer(resolved.widows, 2)}; orphans: ${integer(resolved.orphans, 2)}; ${keepRules} ${extendedParagraphStyleCss(resolved, target)} }\n${containerSelector} { ${keepRules} }`;
+    const extraRules: string[] = [];
+    const firstLetterSelectors = paragraphSelector
+      .split(',')
+      .map((selector) => `${selector.trim()}::first-letter`)
+      .join(', ');
+    if ((resolved.dropCaps.lines ?? 0) > 1 && (resolved.dropCaps.characters ?? 0) > 0) {
+      extraRules.push(
+        `${firstLetterSelectors} { float: left; font-size: ${Math.max(1, resolved.dropCaps.lines)}em; line-height: .82; margin-right: .12em; }`,
+      );
+    }
+    if (finite(resolved.spaceBetweenSameStyle, 0) !== 0) {
+      extraRules.push(
+        `${containerSelector} + ${containerSelector} > :is(p, blockquote, ul, ol, pre) { margin-top: ${finite(resolved.spaceBetweenSameStyle, 0)}pt; }`,
+      );
+    }
+    return [
+      `${paragraphSelector} { font-family: ${cssFontFamily(resolved.fontFamily, style.fonts.body.fallback)}; font-size: ${finite(resolved.fontSize, 10.5)}pt; line-height: ${finite(resolved.lineHeight, 12.5)}pt; font-weight: ${finite(resolved.fontWeight, 400)}; font-style: ${fontStyle(resolved.fontStyle)}; text-align: ${alignment(resolved.alignment)}; text-indent: ${finite(resolved.firstLineIndent, 0)}mm; margin-top: ${finite(resolved.spaceBefore, 0)}pt; margin-bottom: ${finite(resolved.spaceAfter, 0)}pt; margin-left: ${finite(resolved.leftIndent, 0)}mm; margin-right: ${finite(resolved.rightIndent, 0)}mm; color: ${cssColorValue(resolved.fillColor, 'currentColor')}; -webkit-hyphens: ${resolved.hyphenation ? 'auto' : 'none'}; hyphens: ${resolved.hyphenation ? 'auto' : 'none'}; widows: ${integer(resolved.widows, 2)}; orphans: ${integer(resolved.orphans, 2)}; ${keepRules} ${extendedParagraphStyleCss(resolved, target)} }`,
+      `${containerSelector} { ${keepRules} }`,
+      ...extraRules,
+    ].join('\n');
   }).join('\n');
 }
 
@@ -514,6 +536,26 @@ function extendedParagraphStyleCss(
   if (resolved.noBreak) declarations.push('white-space: nowrap;');
   if (resolved.balanceRaggedLines) declarations.push('text-wrap: balance;');
 
+  if (resolved.position === 'superscript' || resolved.position === 'superior') {
+    declarations.push('font-variant-position: super;');
+  } else if (resolved.position === 'subscript' || resolved.position === 'inferior') {
+    declarations.push('font-variant-position: sub;');
+  }
+  if (finite(resolved.baselineShift, 0) !== 0) {
+    declarations.push('position: relative;');
+    declarations.push('top: ' + (-finite(resolved.baselineShift, 0)) + 'pt;');
+  }
+
+  const strokeWidth = Math.max(0, finite(resolved.characterStroke.widthPt, 0));
+  if (strokeWidth > 0) {
+    declarations.push('-webkit-text-stroke-width: ' + strokeWidth + 'pt;');
+    declarations.push(
+      '-webkit-text-stroke-color: '
+      + cssColorValue(resolved.characterStroke.color, 'currentColor')
+      + ';',
+    );
+  }
+
   const decorations: string[] = [];
   if (resolved.underline.enabled) decorations.push('underline');
   if (resolved.strikethrough.enabled) decorations.push('line-through');
@@ -531,6 +573,11 @@ function extendedParagraphStyleCss(
       'text-decoration-thickness: '
       + Math.max(0, finite(decoration.weightPt, 0.5))
       + 'pt;',
+    );
+    declarations.push(
+      'text-decoration-style: '
+      + cssBorderStyle(decoration.style)
+      + ';',
     );
     if (resolved.underline.enabled) {
       declarations.push(
@@ -588,6 +635,18 @@ function extendedParagraphStyleCss(
     );
   }
 
+  if (border.enabled || shading.enabled) {
+    const offsets = border.enabled ? border.offsets : shading.offsets;
+    declarations.push(
+      'padding: '
+      + finite(offsets?.topMm, 0) + 'mm '
+      + finite(offsets?.rightMm, 0) + 'mm '
+      + finite(offsets?.bottomMm, 0) + 'mm '
+      + finite(offsets?.leftMm, 0) + 'mm;',
+    );
+    declarations.push('box-decoration-break: clone; -webkit-box-decoration-break: clone;');
+  }
+
   const openTypeFeatures = [
     ['liga', resolved.openType.ligatures],
     ['dlig', resolved.openType.discretionaryLigatures],
@@ -613,6 +672,8 @@ function extendedParagraphStyleCss(
       + ';',
     );
   }
+  const numericVariant = cssFontVariantNumeric(resolved.openType.figureStyle);
+  if (numericVariant) declarations.push('font-variant-numeric: ' + numericVariant + ';');
 
   if (resolved.spanColumns.mode === 'span') {
     declarations.push('column-span: all;');
@@ -648,6 +709,14 @@ function cssColorValue(
     /^(rgb|rgba|hsl|hsla)\([0-9.,%+\-\s]+\)$/i.test(normalized)
   ) return normalized;
   return fallback;
+}
+
+function cssFontVariantNumeric(value: string | undefined): string {
+  if (value === 'lining-proportional') return 'lining-nums proportional-nums';
+  if (value === 'lining-tabular') return 'lining-nums tabular-nums';
+  if (value === 'oldstyle-proportional') return 'oldstyle-nums proportional-nums';
+  if (value === 'oldstyle-tabular') return 'oldstyle-nums tabular-nums';
+  return '';
 }
 
 function cssBorderStyle(value: string | undefined): string {
