@@ -142,7 +142,11 @@ export async function verifyPublicationVenueDomainClaim(userId: string, claimId:
     include: { venue: true },
   });
   if (!claim) throw notFound('The publication-venue domain claim was not found.');
-  if (claim.requestedByUserId !== userId) await requireDomainAdmin(userId, claim.venueId);
+  if (claim.requestedByUserId !== userId) {
+    throw forbidden(
+      'Only the authenticated account that requested this DNS challenge may consume it.',
+    );
+  }
   const competingVerifiedClaim =
     await identityPrisma.publicationVenueDomainVerification.findFirst({
       where: {
@@ -157,11 +161,18 @@ export async function verifyPublicationVenueDomainClaim(userId: string, claimId:
       'This publication venue already has a verified DNS authority. A separate authority-change workflow is required.',
     );
   }
-  if (claim.status !== 'VERIFIED' && claim.expiresAt.getTime() <= Date.now()) {
+  if (claim.status !== 'PENDING') {
+    throw conflict(
+      'This DNS verification challenge has already been consumed or revoked.',
+    );
+  }
+  if (claim.expiresAt.getTime() <= Date.now()) {
     throw conflict('The DNS verification challenge expired. Request a new challenge.');
   }
   if (!(await dnsClaimMatches(claim.txtRecordName, claim.tokenHash))) {
-    throw conflict('The required DNS TXT value was not found. DNS propagation may still be in progress.');
+    throw conflict(
+      'The required public DNS TXT challenge was not found. DNS propagation may still be in progress.',
+    );
   }
   const now = new Date();
   try {
