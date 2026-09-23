@@ -394,11 +394,25 @@ function renderSection(section: OmiRenderedSection, state: RenderState): string 
     .filter(Boolean)
     .join('\n');
   const children = section.children.map((child) => renderSection(child, state)).join('\n');
+  const defaultColumns = Math.max(
+    1,
+    Math.min(3, Math.trunc(state.context.profile.rules.layout.columns || 1)),
+  );
+  const columns = section.layout?.columns ?? defaultColumns;
+  const columnGapMm = section.layout?.columnGapMm ?? 8;
+  const tabStops = section.layout?.tabStopsMm ?? [];
+  const tabIntervalMm = tabStops[0] ?? 12.5;
+  const tabStopsAttribute = tabStops.length
+    ? ` data-omi-tab-stops-mm="${escapeAttribute(tabStops.join(' '))}"`
+    : '';
+  const body = blocks
+    ? `<div class="manuscript-section-body" data-omi-columns="${columns}"${tabStopsAttribute} style="column-count:${columns};column-gap:${columnGapMm}mm;tab-size:${tabIntervalMm}mm">\n${indent(blocks, 1)}\n</div>`
+    : '';
   const content = [
     `<h${headingLevel}${ariaLevel}>${number}<span class="section-title">${escapeHtml(
       section.title,
     )}</span></h${headingLevel}>`,
-    blocks,
+    body,
     children,
   ]
     .filter(Boolean)
@@ -623,7 +637,7 @@ function renderJsonNode(node: JsonNode, state: RenderState): string {
     case 'hardBreak':
       return '<br>';
     case 'text':
-      return applyMarks(escapeHtml(node.text ?? ''), node.marks ?? []);
+      return applyMarks(renderTextWithTabs(node.text ?? ''), node.marks ?? []);
     case 'omiCitation':
       return renderCitationMarker(node, state);
     case 'omiCrossReference':
@@ -773,6 +787,13 @@ function renderBibliographySection(
     .join('')}</ol></section>`;
 }
 
+function renderTextWithTabs(value: string): string {
+  return value
+    .split('\t')
+    .map((part) => escapeHtml(part))
+    .join('<span class="omi-tab" aria-hidden="true">\t</span>');
+}
+
 function applyMarks(
   escapedText: string,
   marks: Array<{ type?: string; attrs?: Record<string, unknown> }>,
@@ -832,8 +853,10 @@ a { color: inherit; text-decoration-thickness: .08em; text-underline-offset: .12
 .article-abstract, .article-keywords { text-align: left; max-width: 52rem; margin: 1.5rem auto 0; }
 .article-abstract h2, .article-keywords h2 { font-size: 1em; margin-bottom: .35em; }
 .article-keywords ul { display: flex; flex-wrap: wrap; gap: .35em .8em; margin: 0; }
-.article-body { column-count: ${layout.columns}; column-gap: 2.2rem; text-align: ${alignment}; }
-.manuscript-section, .scholarly-figure, .scholarly-table, .scholarly-chart, .scholarly-equation { break-inside: avoid; }
+.article-body { text-align: ${alignment}; }
+.manuscript-section-body { text-align: ${alignment}; }
+.omi-tab { white-space: pre; }
+.scholarly-figure, .scholarly-table, .scholarly-chart, .scholarly-equation { break-inside: avoid; }
 .manuscript-section > h2, .manuscript-section > h3, .manuscript-section > h4, .manuscript-section > h5, .manuscript-section > h6 { break-after: avoid; text-align: left; }
 .section-number { margin-right: .45em; }
 p { orphans: 3; widows: 3; }
