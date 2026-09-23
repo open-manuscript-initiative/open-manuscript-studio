@@ -136,14 +136,38 @@ export async function claimNativeSubmission(
     editorUserId,
     submission.publicationVenueId,
   );
-  if (submission.editorUserId && submission.editorUserId !== editorUserId) {
-    throw conflict('This submission is already assigned to another editor.');
-  }
   if (['ACCEPTED', 'REJECTED', 'PUBLISHED'].includes(submission.status)) {
     throw conflict('This submission is already closed.');
   }
+  if (submission.editorUserId && submission.editorUserId !== editorUserId) {
+    throw conflict('This submission is already assigned to another editor.');
+  }
 
-  const updated = await prisma.$transaction(async (transaction) => {
+  if (submission.editorUserId === editorUserId) {
+    return serializeSubmission(submission);
+  }
+
+  return prisma.$transaction(async (transaction) => {
+    const claim = await transaction.nativeSubmission.updateMany({
+      where: {
+        id: submission.id,
+        editorUserId: null,
+        status: { notIn: ['ACCEPTED', 'REJECTED', 'PUBLISHED'] },
+      },
+      data: {
+        editorUserId,
+        status: submission.status === 'SUBMITTED'
+          ? 'EDITOR_ASSIGNED'
+          : submission.status,
+        editorAssignedAt: new Date(),
+      },
+    });
+    if (claim.count !== 1) {
+      throw conflict(
+        'Another editor claimed this submission at the same time. Reload the editorial inbox.',
+      );
+    }
+
     await transaction.reviewWorkspaceAccess.upsert({
       where: {
         workspaceId_userId_role: {
@@ -160,15 +184,6 @@ export async function claimNativeSubmission(
         role: 'EDITOR',
       },
     });
-    const result = await transaction.nativeSubmission.update({
-      where: { id: submission.id },
-      data: {
-        editorUserId,
-        status: submission.status === 'SUBMITTED' ? 'EDITOR_ASSIGNED' : submission.status,
-        editorAssignedAt: submission.editorAssignedAt ?? new Date(),
-      },
-      include: submissionInclude,
-    });
     await transaction.nativeSubmissionEvent.create({
       data: {
         submissionId: submission.id,
@@ -176,9 +191,15 @@ export async function claimNativeSubmission(
         kind: 'EDITOR_ASSIGNED',
       },
     });
-    return result;
+    const updated = await transaction.nativeSubmission.findUnique({
+      where: { id: submission.id },
+      include: submissionInclude,
+    });
+    if (!updated) throw notFound();
+    return serializeSubmission(updated);
+  }, {
+    isolationLevel: 'Serializable',
   });
-  return serializeSubmission(updated);
 }
 
 export async function assignNativeReviewer(
