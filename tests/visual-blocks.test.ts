@@ -13,7 +13,9 @@ import {
   createImageBlock,
   createTableBlock,
   parseDelimitedTable,
+  tableRowsToParagraphBlocks,
   tableToChartDataset,
+  tableToDelimitedText,
   updateTableCell,
 } from '../src/model/visualBlocks.ts';
 
@@ -46,6 +48,25 @@ test('parses quoted CSV and tab-separated Excel clipboard data', () => {
     parseDelimitedTable('Name\tValue\nAlpha\t12'),
     [['Name', 'Value'], ['Alpha', '12']],
   );
+});
+
+test('converts table data to tab-separated text blocks without losing cell order', () => {
+  const cells = [['Name', 'Value'], ['Alpha', '12']];
+  assert.equal(tableToDelimitedText(cells), 'Name\tValue\nAlpha\t12');
+
+  const blocks = tableRowsToParagraphBlocks(
+    cells,
+    'table-1',
+    (() => {
+      let index = 0;
+      return () => `generated-${++index}`;
+    })(),
+  );
+  assert.equal(blocks.length, 2);
+  assert.equal(blocks[0]?.id, 'table-1');
+  assert.equal(blocks[1]?.id, 'generated-1');
+  assert.match(blocks[0]?.content ?? '', /Name\\tValue/);
+  assert.match(blocks[1]?.content ?? '', /Alpha\\t12/);
 });
 
 test('keeps table data rectangular while editing rows and columns', () => {
