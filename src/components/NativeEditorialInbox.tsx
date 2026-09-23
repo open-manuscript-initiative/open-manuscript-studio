@@ -9,6 +9,7 @@ import {
   claimNativeSubmission,
   completeNativeReview,
   listNativeEditorialInbox,
+  markNativeSubmissionPublished,
   rejectNativeSubmission,
   requestNativeRevision,
   type NativeSubmission,
@@ -34,6 +35,10 @@ const COPY = {
     author: 'Author',
     editor: 'Editor',
     assignedElsewhere: 'This submission is assigned to another editor. You can inspect it, but only the assigned editor can change its workflow.',
+    markPublished: 'Mark as published',
+    acceptedReady: 'The exact revision is accepted. Publication may now be recorded.',
+    rejectedFinal: 'This submission is rejected and closed.',
+    publishedFinal: 'This submission is recorded as published.',
     round: 'Round',
   },
   hu: {
@@ -53,6 +58,10 @@ const COPY = {
     author: 'Szerző',
     editor: 'Szerkesztő',
     assignedElsewhere: 'Ezt a kéziratot másik szerkesztő vette át. Megtekintheted, de a workflow-t csak a kijelölt szerkesztő módosíthatja.',
+    markPublished: 'Publikált állapot rögzítése',
+    acceptedReady: 'A pontos revízió elfogadva. A publikálás most már rögzíthető.',
+    rejectedFinal: 'A kézirat elutasítva, a folyamat lezárult.',
+    publishedFinal: 'A kézirat publikált állapotban van.',
     round: 'Forduló',
   },
   de: {
@@ -72,6 +81,10 @@ const COPY = {
     author: 'Autor/in',
     editor: 'Redaktion',
     assignedElsewhere: 'Diese Einreichung ist einer anderen Redaktion zugewiesen. Sie kann eingesehen, aber nur von der zugewiesenen Redaktion bearbeitet werden.',
+    markPublished: 'Als veröffentlicht markieren',
+    acceptedReady: 'Die exakte Revision ist angenommen. Die Veröffentlichung kann nun erfasst werden.',
+    rejectedFinal: 'Diese Einreichung wurde abgelehnt und abgeschlossen.',
+    publishedFinal: 'Diese Einreichung ist als veröffentlicht erfasst.',
     round: 'Runde',
   },
 } as const;
@@ -223,6 +236,27 @@ export function NativeEditorialInbox({
                 ) : !selected.viewerIsAssignedEditor ? (
                   <section className="review-mode__card">
                     <p>{copy.assignedElsewhere}</p>
+                  </section>
+                ) : selected.status === 'PUBLISHED' ? (
+                  <section className="review-mode__card">
+                    <p>{copy.publishedFinal}</p>
+                  </section>
+                ) : selected.status === 'REJECTED' ? (
+                  <section className="review-mode__card">
+                    <p>{copy.rejectedFinal}</p>
+                  </section>
+                ) : selected.status === 'ACCEPTED' ? (
+                  <section className="review-mode__card">
+                    <p>{copy.acceptedReady}</p>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void run(() =>
+                        markNativeSubmissionPublished(selected.id)
+                      )}
+                    >
+                      {busy ? copy.busy : copy.markPublished}
+                    </button>
                   </section>
                 ) : (
                   <>
