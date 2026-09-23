@@ -195,8 +195,34 @@ test('paragraph style editor exposes the complete InDesign-compatible category s
   assert.match(inDesignParagraphStyles, /onSetProperty\('grepStyles'/);
   assert.match(inDesignParagraphStyles, /onSetProperty\('openType'/);
   assert.match(inDesignParagraphStyles, /onSetProperty\('exportTagging'/);
+  assert.match(inDesignParagraphStyles, /baselineGridAlignment/);
+  assert.match(inDesignParagraphStyles, /decimalCharacter/);
+  assert.match(inDesignParagraphStyles, /gapOverprint/);
+  assert.match(inDesignParagraphStyles, /keepInFrame/);
+  assert.match(inDesignParagraphStyles, /CornerFields/);
+  assert.match(inDesignParagraphStyles, /OffsetFields/);
+  assert.match(inDesignParagraphStyles, /alignLeftEdge/);
+  assert.match(inDesignParagraphStyles, /scaleForDescenders/);
+  assert.match(inDesignParagraphStyles, /restartAfterLevel/);
+  assert.match(inDesignParagraphStyles, /miterLimit/);
+  assert.match(inDesignParagraphStyles, /figureStyle/);
+  assert.match(inDesignParagraphStyles, /positionalForm/);
+  assert.match(inDesignParagraphStyles, /emitTag/);
   assert.match(editorStyles, /\.indesign-paragraph-style-settings \{[\s\S]*grid-template-columns:/);
   assert.match(editorStyles, /@media \(max-width: 900px\)[\s\S]*\.indesign-paragraph-style-settings \{[\s\S]*grid-template-columns: 1fr/);
+});
+
+test('InDesign paragraph style rendering covers extended native and approximate properties', () => {
+  assert.match(exportRenderer, /keepWithPrevious/);
+  assert.match(exportRenderer, /::first-letter/);
+  assert.match(exportRenderer, /spaceBetweenSameStyle/);
+  assert.match(exportRenderer, /font-variant-position: super/);
+  assert.match(exportRenderer, /-webkit-text-stroke-width/);
+  assert.match(exportRenderer, /text-decoration-style/);
+  assert.match(exportRenderer, /box-decoration-break: clone/);
+  assert.match(exportRenderer, /font-variant-numeric/);
+  assert.match(exportRenderer, /lining-nums proportional-nums/);
+  assert.match(exportRenderer, /oldstyle-nums tabular-nums/);
 });
 
 test('live publication editor switches between print and semantic HTML5 visual editing', () => {
