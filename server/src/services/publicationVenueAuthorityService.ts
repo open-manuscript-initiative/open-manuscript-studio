@@ -29,6 +29,15 @@ export interface VerifiedPublicationVenueAuthority {
   editorRole: PublicationVenueEditorRole;
 }
 
+export interface StudioNativePublicationVenueAuthority {
+  venueId: string;
+  venueName: string;
+  venueType: 'JOURNAL' | 'BOOK_PUBLISHER';
+  domain: string;
+  verificationId: string;
+  verifiedAt: string;
+}
+
 export interface PublicationVenueDomainClaimInput {
   type: 'JOURNAL' | 'BOOK_PUBLISHER';
   name: string;
@@ -325,6 +334,120 @@ export async function revokePublicationVenueMembership(
     }
     throw error;
   }
+}
+
+export async function assertStudioNativePublicationVenue(
+  venueId: string,
+): Promise<StudioNativePublicationVenueAuthority> {
+  const venue = await identityPrisma.publicationVenue.findUnique({
+    where: { id: venueId },
+    include: {
+      domainVerifications: {
+        where: { status: 'VERIFIED' },
+        orderBy: { verifiedAt: 'desc' },
+        take: 1,
+      },
+    },
+  });
+  if (!venue) throw notFound('The publication venue was not found.');
+  if (
+    venue.integrationStatus === 'VERIFIED' &&
+    (venue.integrationProvider === 'OJS' || venue.integrationProvider === 'OMP')
+  ) {
+    throw conflict(
+      'This publication venue uses an authoritative OJS/OMP workflow. Submit and manage the manuscript in that publishing system.',
+    );
+  }
+  const claim = venue.domainVerifications[0];
+  if (!claim?.verifiedAt) {
+    throw conflict(
+      'Studio-native editorial workflow requires a DNS-verified publication venue.',
+    );
+  }
+  if (!claim.lastCheckedAt || claim.lastCheckedAt.getTime() < Date.now() - DOMAIN_RECHECK_MS) {
+    if (!(await dnsClaimMatches(claim.txtRecordName, claim.tokenHash))) {
+      throw conflict(
+        'The publication venue DNS authority could not be revalidated. Restore the TXT record before using the Studio-native editorial workflow.',
+      );
+    }
+    await identityPrisma.publicationVenueDomainVerification.update({
+      where: { id: claim.id },
+      data: { lastCheckedAt: new Date() },
+    });
+  }
+  return {
+    venueId: venue.id,
+    venueName: venue.name,
+    venueType: venue.type,
+    domain: claim.domain,
+    verificationId: claim.id,
+    verifiedAt: claim.verifiedAt.toISOString(),
+  };
+}
+
+export async function assertStudioNativePublicationVenueEditorAuthority(
+  userId: string,
+  venueId: string,
+): Promise<VerifiedPublicationVenueAuthority> {
+  await assertStudioNativePublicationVenue(venueId);
+  return assertVerifiedPublicationVenueEditorAuthority(userId, venueId);
+}
+
+export async function listStudioNativePublicationVenuesForEditor(userId: string) {
+  const memberships = await identityPrisma.publicationVenueMembership.findMany({
+    where: {
+      userId,
+      active: true,
+      role: { in: ['EDITOR', 'EDITOR_IN_CHIEF'] },
+    },
+    include: {
+      venue: {
+        include: {
+          domainVerifications: {
+            where: { status: 'VERIFIED' },
+            orderBy: { verifiedAt: 'desc' },
+            take: 1,
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+  const venues = new Map<string, {
+    venueId: string;
+    venueName: string;
+    venueType: 'JOURNAL' | 'BOOK_PUBLISHER';
+    domain: string;
+    editorRole: PublicationVenueEditorRole;
+  }>();
+  for (const membership of memberships) {
+    if (
+      membership.role !== 'EDITOR' &&
+      membership.role !== 'EDITOR_IN_CHIEF'
+    ) continue;
+    if (
+      membership.venue.integrationStatus === 'VERIFIED' &&
+      (
+        membership.venue.integrationProvider === 'OJS' ||
+        membership.venue.integrationProvider === 'OMP'
+      )
+    ) continue;
+    const claim = membership.venue.domainVerifications[0];
+    if (!claim?.verifiedAt) continue;
+    const existing = venues.get(membership.venueId);
+    if (
+      existing &&
+      existing.editorRole === 'EDITOR_IN_CHIEF'
+    ) continue;
+    venues.set(membership.venueId, {
+      venueId: membership.venue.id,
+      venueName: membership.venue.name,
+      venueType: membership.venue.type,
+      domain: claim.domain,
+      editorRole: membership.role,
+    });
+  }
+  return Array.from(venues.values());
 }
 
 export async function assertVerifiedPublicationVenueEditorAuthority(
