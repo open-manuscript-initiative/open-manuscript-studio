@@ -247,10 +247,13 @@ export function NewsletterPublishingPanel() {
         approval.grant.executionToken,
       );
       setReceipt(next);
+      let venuePublicationRecorded = true;
       if (publicationStatus === 'publish' && isStudioNativeDnsVenue(prepared.source)) {
-        const publicationVenueId = prepared.source.metadata?.publicationVenue?.id;
-        if (!publicationVenueId) {
-          throw new Error('The Studio-native publication venue identifier is missing.');
+        const publicationVenue = prepared.source.metadata?.publicationVenue;
+        const publicationVenueId = publicationVenue?.id;
+        const publicationVenueDomain = publicationVenue?.authority?.domain;
+        if (!publicationVenueId || !publicationVenueDomain) {
+          throw new Error('The Studio-native publication venue identity is incomplete.');
         }
         const nativeSubmission = await findNativeEditorialSubmissionForManuscript(
           prepared.source.id,
@@ -260,17 +263,26 @@ export function NewsletterPublishingPanel() {
           nativeSubmission?.status === 'accepted' &&
           nativeSubmission.revisionId === prepared.artifact.build.manuscript.revisionId
         ) {
-          await markNativeEditorialPublished(
-            nativeSubmission.id,
-            nativeSubmission.revisionId,
-            next.externalUrl ?? undefined,
-          );
+          if (
+            next.externalUrl &&
+            publicationUrlMatchesVenue(next.externalUrl, publicationVenueDomain)
+          ) {
+            await markNativeEditorialPublished(
+              nativeSubmission.id,
+              nativeSubmission.revisionId,
+              next.externalUrl,
+            );
+          } else {
+            venuePublicationRecorded = false;
+          }
         }
       }
       setMessage(
         publicationStatus === 'draft'
           ? copy.sentDraft
-          : copy.published,
+          : venuePublicationRecorded
+            ? copy.published
+            : copy.publishedOutsideVenue,
       );
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
@@ -494,6 +506,21 @@ function isStudioNativeDnsVenue(manuscript: OmiManuscript): boolean {
   );
 }
 
+function publicationUrlMatchesVenue(
+  externalUrl: string,
+  publicationVenueDomain: string,
+): boolean {
+  try {
+    const parsed = new URL(externalUrl);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
+    const hostname = parsed.hostname.toLowerCase().replace(/\.$/u, '');
+    const domain = publicationVenueDomain.toLowerCase().replace(/\.$/u, '');
+    return hostname === domain || hostname.endsWith(`.${domain}`);
+  } catch {
+    return false;
+  }
+}
+
 function reviewRoundKey(reviewRound: EligibleEditorialReviewRound): string {
   return `${reviewRound.workspaceId}\u0000${reviewRound.reviewRound}`;
 }
@@ -543,6 +570,7 @@ function getCopy(locale: string) {
       publish: 'Közzététel',
       sentDraft: 'A külső piszkozat létrejött vagy frissült.',
       published: 'A külső bejegyzés létrejött vagy frissült és közzé lett téve.',
+      publishedOutsideVenue: 'A külső bejegyzés közzé lett téve, de nem a hitelesített publikációs hely domainjén; a szerkesztőségi workflow ezért továbbra is elfogadott, nem publikált állapotú.',
       openPublished: 'Külső bejegyzés megnyitása',
       working: 'Folyamatban…',
       untitled: 'Névtelen kézirat',
@@ -588,6 +616,7 @@ function getCopy(locale: string) {
       publish: 'Veröffentlichen',
       sentDraft: 'Der externe Entwurf wurde erstellt oder aktualisiert.',
       published: 'Der externe Beitrag wurde erstellt oder aktualisiert und veröffentlicht.',
+      publishedOutsideVenue: 'Der externe Beitrag wurde veröffentlicht, jedoch nicht unter der verifizierten Domain der Publikationsstelle; der redaktionelle Workflow bleibt daher angenommen und wird nicht als publiziert markiert.',
       openPublished: 'Externen Beitrag öffnen',
       working: 'Wird verarbeitet…',
       untitled: 'Unbenanntes Manuskript',
@@ -632,6 +661,7 @@ function getCopy(locale: string) {
     publish: 'Publish',
     sentDraft: 'The external draft was created or updated.',
     published: 'The external post was created or updated and published.',
+    publishedOutsideVenue: 'The external post was published outside the verified publication-venue domain, so the editorial workflow remains accepted rather than being marked published.',
     openPublished: 'Open external post',
     working: 'Working…',
     untitled: 'Untitled manuscript',
