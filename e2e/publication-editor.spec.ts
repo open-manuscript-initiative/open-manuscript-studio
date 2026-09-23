@@ -109,6 +109,11 @@ test('HTML5 visual editing is responsive and preserves changes when returning to
   await page.keyboard.type('Alpha');
   await page.keyboard.press('Tab');
   await page.keyboard.type('12');
+  const tabNodes = sectionEditor.locator('[data-omi-tab]');
+  await expect(tabNodes).toHaveCount(2);
+  await expect.poll(() => tabNodes.first().evaluate(
+    (element) => Number.parseFloat(getComputedStyle(element).width),
+  )).toBeGreaterThan(2);
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
   const textToTable = activeHtmlSection.getByRole('button', {
     name: 'Convert text to table',
