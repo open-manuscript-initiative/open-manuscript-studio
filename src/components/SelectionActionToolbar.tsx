@@ -21,11 +21,13 @@ interface SelectionActionToolbarProps {
   crossReferenceLabel: string;
   translateLabel?: string;
   assistantLabel?: string;
+  textToTableLabel?: string;
   onCitation?: () => void;
   onNote?: () => void;
   onCrossReference?: () => void;
   onTranslate?: () => void;
   onAssistant?: () => void;
+  onTextToTable?: () => void;
 }
 
 const indexLabels: Record<string, { action: string; choose: string }> = {
@@ -47,11 +49,13 @@ export function SelectionActionToolbar({
   crossReferenceLabel,
   translateLabel,
   assistantLabel,
+  textToTableLabel,
   onCitation,
   onNote,
   onCrossReference,
   onTranslate,
   onAssistant,
+  onTextToTable,
 }: SelectionActionToolbarProps) {
   const { locale } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
@@ -150,6 +154,11 @@ export function SelectionActionToolbar({
         ))}
       </select>
       <button type="button" onMouseDown={preserveSelection} onClick={addIndexEntry}>{indexCopy.action}</button>
+      {onTextToTable ? (
+        <button type="button" onMouseDown={preserveSelection} onClick={onTextToTable}>
+          {textToTableLabel ?? 'Convert text to table'}
+        </button>
+      ) : null}
       {onCitation ? <button type="button" onMouseDown={preserveSelection} onClick={onCitation}>{citationLabel}</button> : null}
       {onNote ? <button type="button" onMouseDown={preserveSelection} onClick={onNote}>{noteLabel}</button> : null}
       {onCrossReference ? <button type="button" onMouseDown={preserveSelection} onClick={onCrossReference}>{crossReferenceLabel}</button> : null}
