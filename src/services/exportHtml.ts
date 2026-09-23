@@ -636,6 +636,8 @@ function renderJsonNode(node: JsonNode, state: RenderState): string {
     }
     case 'hardBreak':
       return '<br>';
+    case 'omiTab':
+      return '<span class="omi-tab" aria-hidden="true">\t</span>';
     case 'text':
       return applyMarks(renderTextWithTabs(node.text ?? ''), node.marks ?? []);
     case 'omiCitation':
