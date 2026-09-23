@@ -211,6 +211,7 @@ export function StudioMenu({
             {navigationAfterReferences}
             <a
               className="studio-menu-nav-button"
+              data-external-route-navigation="true"
               href="?review=1"
             ><UserPlus size={18} aria-hidden="true" /><span>{supplementalCopy.editorialWorkspace ?? supplementalCopy.assignments}</span></a>
             {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
