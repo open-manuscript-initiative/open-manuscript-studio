@@ -142,9 +142,13 @@ export async function listMyNativeEditorialSubmissions(
 
 export async function findNativeEditorialSubmissionForManuscript(
   manuscriptId: string,
+  publicationVenueId?: string,
 ): Promise<NativeEditorialSubmissionSummary | null> {
+  const query = publicationVenueId
+    ? `?publicationVenueId=${encodeURIComponent(publicationVenueId)}`
+    : '';
   return (await request<{ submission: NativeEditorialSubmissionSummary | null }>(
-    `/api/native-editorial/submissions/for-manuscript/${encodeURIComponent(manuscriptId)}`,
+    `/api/native-editorial/submissions/for-manuscript/${encodeURIComponent(manuscriptId)}${query}`,
   )).submission;
 }
 
