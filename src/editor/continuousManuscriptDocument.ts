@@ -14,6 +14,7 @@ export interface ContinuousNodeAttributes {
   omiSectionNumber?: string | null;
   omiParagraphStyleId?: string | null;
   omiNextParagraphStyleId?: string | null;
+  omiTabStopsMm?: string | null;
   omiVisual?: OmiVisualBlockData | null;
 }
 
@@ -50,6 +51,9 @@ export function buildContinuousManuscriptDocument(
           omiBlockType: 'heading',
           omiAnchorId: section.id,
           omiSectionNumber: sectionNumbers.get(section.id) ?? null,
+          omiTabStopsMm: section.layout?.tabStopsMm?.length
+            ? section.layout.tabStopsMm.join(' ')
+            : null,
           level: depth + 1,
         }),
         ...(section.title
@@ -67,6 +71,9 @@ export function buildContinuousManuscriptDocument(
             omiSectionId: section.id,
             omiBlockType: block.type,
             omiAnchorId: block.id,
+            omiTabStopsMm: section.layout?.tabStopsMm?.length
+            ? section.layout.tabStopsMm.join(' ')
+            : null,
             omiVisual: block.visual,
           }),
         });
@@ -91,6 +98,9 @@ export function buildContinuousManuscriptDocument(
             : paragraphStyleNextById.get(
                 block.paragraphStyleId ?? defaultParagraphStyleId,
               ) ?? null,
+          omiTabStopsMm: section.layout?.tabStopsMm?.length
+            ? section.layout.tabStopsMm.join(' ')
+            : null,
         });
         content.push(node);
       });
@@ -240,6 +250,7 @@ export function stripContinuousAttributes(node: JSONContent): JSONContent {
     delete attrs.omiSectionNumber;
     delete attrs.omiParagraphStyleId;
     delete attrs.omiNextParagraphStyleId;
+    delete attrs.omiTabStopsMm;
     delete attrs.omiVisual;
     next.attrs = Object.keys(attrs).length ? attrs : undefined;
   }
