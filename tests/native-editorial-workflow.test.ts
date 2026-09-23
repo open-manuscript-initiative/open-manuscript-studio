@@ -54,6 +54,9 @@ test('native submission schema preserves workflow state and immutable audit even
 
 test('author submission creates review access and editor claim creates editor access', () => {
   assert.match(service, /role: 'AUTHOR'/);
+  assert.match(service, /assertSnapshotBinding/);
+  assert.match(service, /headRevisionId/);
+  assert.match(service, /stateDigest/);
   assert.match(service, /claimNativeSubmission/);
   assert.match(service, /role: 'EDITOR'/);
   assert.match(service, /assertVerifiedPublicationVenueEditorAuthority/);
