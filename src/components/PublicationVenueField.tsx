@@ -7,8 +7,15 @@ import {
 } from '../model/scholarlyMetadata';
 import {
   createPublicationVenue,
+  createPublicationVenueDomainClaim,
+  getPublicationVenueAuthority,
   getPublicationVenues,
+  grantPublicationVenueEditor,
+  revokePublicationVenueEditor,
+  verifyPublicationVenueDomainClaim,
   type CreatePublicationVenueInput,
+  type PublicationVenueAuthorityOverview,
+  type PublicationVenueDomainChallenge,
 } from '../services/publicationVenueApi';
 import {
   getIntegrationCatalog,
@@ -43,6 +50,27 @@ const LABELS = {
     chooseIntegration: 'Select an active OJS/OMP connection',
     noConnections: 'No active publishing connection is available. Configure and test an OJS or OMP connection in Integrations first.',
     connectionRequired: 'Select an active publishing connection first.',
+    verificationMethod: 'Verification method',
+    viaIntegration: 'OJS / OMP integration',
+    viaDns: 'DNS TXT domain verification',
+    domain: 'Journal / publisher domain',
+    domainPlaceholder: 'journal.example.org',
+    dnsHelp: 'Studio will create a one-time TXT challenge. Domain control verifies the publication venue; it does not by itself prove peer review.',
+    dnsChallenge: 'Add this DNS TXT record, then verify it in Studio.',
+    dnsRecordName: 'TXT name',
+    dnsRecordValue: 'TXT value',
+    verifyDns: 'Verify DNS',
+    dnsVerified: 'Domain verified. You are now the domain administrator for this publication venue.',
+    authorityTitle: 'Publication venue authority',
+    currentRole: 'Your venue role',
+    editorEmail: 'Editor Studio e-mail',
+    editorRole: 'Editor role',
+    editor: 'Editor',
+    editorInChief: 'Editor-in-chief',
+    addEditor: 'Authorize editor',
+    revokeEditor: 'Revoke',
+    noEditors: 'No editors have been authorized yet.',
+    authorityLoading: 'Loading publication venue authority…',
   },
   hu: {
     label: 'Folyóirat vagy könyvkiadó',
@@ -70,6 +98,27 @@ const LABELS = {
     chooseIntegration: 'Válassz aktív OJS/OMP-kapcsolatot',
     noConnections: 'Nincs aktív kiadói kapcsolat. Előbb állíts be és tesztelj egy OJS- vagy OMP-kapcsolatot az Integrációk menüben.',
     connectionRequired: 'Előbb válassz aktív kiadói kapcsolatot.',
+    verificationMethod: 'Hitelesítés módja',
+    viaIntegration: 'OJS / OMP integráció',
+    viaDns: 'DNS TXT domainhitelesítés',
+    domain: 'A folyóirat / kiadó domainje',
+    domainPlaceholder: 'folyoirat.hu',
+    dnsHelp: 'A Studio egyszer használatos TXT-kihívást hoz létre. A domain feletti rendelkezés a folyóiratot/kiadót hitelesíti; önmagában nem bizonyít lektorálást.',
+    dnsChallenge: 'Add hozzá ezt a DNS TXT rekordot, majd ellenőrizd a Studioban.',
+    dnsRecordName: 'TXT név',
+    dnsRecordValue: 'TXT érték',
+    verifyDns: 'DNS ellenőrzése',
+    dnsVerified: 'A domain hitelesítve. Mostantól te vagy ennek a publikációs helynek a domain-adminisztrátora.',
+    authorityTitle: 'Folyóirati / kiadói autoritás',
+    currentRole: 'Saját szerepköröd',
+    editorEmail: 'Szerkesztő Studio e-mail-címe',
+    editorRole: 'Szerkesztői szerepkör',
+    editor: 'Szerkesztő',
+    editorInChief: 'Főszerkesztő',
+    addEditor: 'Szerkesztő felhatalmazása',
+    revokeEditor: 'Visszavonás',
+    noEditors: 'Még nincs felhatalmazott szerkesztő.',
+    authorityLoading: 'A folyóirati autoritás betöltése…',
   },
   de: {
     label: 'Zeitschrift oder Buchverlag',
@@ -97,6 +146,27 @@ const LABELS = {
     chooseIntegration: 'Aktive OJS/OMP-Verbindung auswählen',
     noConnections: 'Keine aktive Verlagsverbindung verfügbar. Zuerst eine OJS- oder OMP-Verbindung unter Integrationen konfigurieren und testen.',
     connectionRequired: 'Bitte zuerst eine aktive Verlagsverbindung auswählen.',
+    verificationMethod: 'Verifizierungsmethode',
+    viaIntegration: 'OJS-/OMP-Integration',
+    viaDns: 'DNS-TXT-Domainverifizierung',
+    domain: 'Domain der Zeitschrift / des Verlags',
+    domainPlaceholder: 'zeitschrift.example.org',
+    dnsHelp: 'Studio erzeugt eine einmalige TXT-Challenge. Die Domainkontrolle verifiziert die Publikationsstelle; sie beweist für sich allein kein Peer Review.',
+    dnsChallenge: 'Fügen Sie diesen DNS-TXT-Eintrag hinzu und prüfen Sie ihn anschließend in Studio.',
+    dnsRecordName: 'TXT-Name',
+    dnsRecordValue: 'TXT-Wert',
+    verifyDns: 'DNS prüfen',
+    dnsVerified: 'Domain verifiziert. Sie sind jetzt Domain-Administrator dieser Publikationsstelle.',
+    authorityTitle: 'Autorität der Publikationsstelle',
+    currentRole: 'Ihre Rolle',
+    editorEmail: 'Studio-E-Mail der Redaktion',
+    editorRole: 'Redaktionelle Rolle',
+    editor: 'Redakteur/in',
+    editorInChief: 'Chefredakteur/in',
+    addEditor: 'Redaktion autorisieren',
+    revokeEditor: 'Widerrufen',
+    noEditors: 'Noch keine Redaktionsmitglieder autorisiert.',
+    authorityLoading: 'Autorität der Publikationsstelle wird geladen…',
   },
 } as const;
 
@@ -134,6 +204,17 @@ export function PublicationVenueField({
     value?.type ?? 'JOURNAL',
   );
   const [createConnectionId, setCreateConnectionId] = useState('');
+  const [verificationMethod, setVerificationMethod] =
+    useState<'integration' | 'dns'>('integration');
+  const [createDomain, setCreateDomain] = useState('');
+  const [domainChallenge, setDomainChallenge] =
+    useState<PublicationVenueDomainChallenge | null>(null);
+  const [authorityOverview, setAuthorityOverview] =
+    useState<PublicationVenueAuthorityOverview | null>(null);
+  const [authorityLoading, setAuthorityLoading] = useState(false);
+  const [editorEmail, setEditorEmail] = useState('');
+  const [editorRole, setEditorRole] =
+    useState<'EDITOR' | 'EDITOR_IN_CHIEF'>('EDITOR');
   const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [createName, setCreateName] = useState('');
   const [createWebsite, setCreateWebsite] = useState('');
@@ -171,6 +252,31 @@ export function PublicationVenueField({
       active = false;
     };
   }, [createOpen]);
+
+  useEffect(() => {
+    let active = true;
+    const venueId = value?.authority?.method === 'DNS_TXT' ? value.id : undefined;
+    if (!venueId) {
+      setAuthorityOverview(null);
+      return () => {
+        active = false;
+      };
+    }
+    setAuthorityLoading(true);
+    void getPublicationVenueAuthority(venueId)
+      .then((overview) => {
+        if (active) setAuthorityOverview(overview);
+      })
+      .catch(() => {
+        if (active) setAuthorityOverview(null);
+      })
+      .finally(() => {
+        if (active) setAuthorityLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [value?.authority?.method, value?.id]);
 
   useEffect(() => {
     const currentRequestId = ++requestId.current;
@@ -230,6 +336,9 @@ export function PublicationVenueField({
   function openCreateForm(): void {
     setCreateType(venueType);
     setCreateConnectionId('');
+    setVerificationMethod('integration');
+    setCreateDomain('');
+    setDomainChallenge(null);
     setPublishingConnections([]);
     setConnectionsLoading(false);
     setCreateName('');
@@ -251,8 +360,12 @@ export function PublicationVenueField({
       setError(copy.required);
       return;
     }
-    if (!createConnectionId) {
+    if (verificationMethod === 'integration' && !createConnectionId) {
       setError(copy.connectionRequired);
+      return;
+    }
+    if (verificationMethod === 'dns' && !createDomain.trim()) {
+      setError(copy.domain + ' is required.');
       return;
     }
 
@@ -272,6 +385,24 @@ export function PublicationVenueField({
     setSaving(true);
     setError('');
     try {
+      if (verificationMethod === 'dns') {
+        const result = await createPublicationVenueDomainClaim({
+          type: createType,
+          name: createName.trim(),
+          domain: createDomain.trim(),
+          ...(createWebsite.trim() ? { website: createWebsite.trim() } : {}),
+          ...(createType === 'JOURNAL' && createIssn.trim()
+            ? { issn: createIssn.trim() }
+            : {}),
+          ...(createType === 'BOOK_PUBLISHER' && createIsbnPrefix.trim()
+            ? { isbnPrefix: createIsbnPrefix.trim() }
+            : {}),
+        });
+        setDomainChallenge(result.challenge);
+        setVenueType(result.venue.type);
+        return;
+      }
+
       const venue = await createPublicationVenue(input);
       setVenueType(venue.type);
       setQuery('');
@@ -282,6 +413,62 @@ export function PublicationVenueField({
       onChange(venue);
       setCreateOpen(false);
       setCreateName('');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : copy.saveFailed);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function verifyDnsChallenge(): Promise<void> {
+    if (!domainChallenge) return;
+    setSaving(true);
+    setError('');
+    try {
+      const venue = await verifyPublicationVenueDomainClaim(domainChallenge.claimId);
+      setVenues((current) => [
+        venue,
+        ...current.filter((candidate) => candidate.id !== venue.id),
+      ]);
+      onChange(venue);
+      setVenueType(venue.type);
+      setDomainChallenge(null);
+      setCreateOpen(false);
+      setCreateName('');
+      const overview = await getPublicationVenueAuthority(venue.id);
+      setAuthorityOverview(overview);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : copy.saveFailed);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function authorizeEditor(): Promise<void> {
+    if (!value || !editorEmail.trim()) return;
+    setSaving(true);
+    setError('');
+    try {
+      await grantPublicationVenueEditor(value.id, {
+        email: editorEmail.trim(),
+        role: editorRole,
+      });
+      setEditorEmail('');
+      setAuthorityOverview(await getPublicationVenueAuthority(value.id));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : copy.saveFailed);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function revokeEditorMembership(membershipId: string): Promise<void> {
+    if (!value) return;
+    setSaving(true);
+    setError('');
+    try {
+      await revokePublicationVenueEditor(value.id, membershipId);
+      setAuthorityOverview(await getPublicationVenueAuthority(value.id));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : copy.saveFailed);
     } finally {
@@ -332,7 +519,7 @@ export function PublicationVenueField({
             {options.map((venue) => (
               <option key={venue.id} value={venue.id}>
                 {venue.name}
-                {venue.integrationProvider ? ' (' + venue.integrationProvider + ')' : ''}
+                {venue.authority?.method ? ' (' + venue.authority.method + ')' : ''}
               </option>
             ))}
           </select>
@@ -353,21 +540,50 @@ export function PublicationVenueField({
           <strong>{copy.addTitle}</strong>
           <div className="studio-publication-venue-create-grid">
             <label>
-              <span>{copy.integration}</span>
+              <span>{copy.verificationMethod}</span>
               <select
-                required
-                value={createConnectionId}
-                disabled={!availablePublishingConnections.length}
-                onChange={(event) => setCreateConnectionId(event.target.value)}
+                value={verificationMethod}
+                onChange={(event) => {
+                  setVerificationMethod(event.target.value as 'integration' | 'dns');
+                  setDomainChallenge(null);
+                  setError('');
+                }}
               >
-                <option value="">{copy.chooseIntegration}</option>
-                {availablePublishingConnections.map((connection) => (
-                  <option key={connection.id} value={connection.id}>
-                    {publishingConnectionLabel(connection)}
-                  </option>
-                ))}
+                <option value="integration">{copy.viaIntegration}</option>
+                <option value="dns">{copy.viaDns}</option>
               </select>
             </label>
+            {verificationMethod === 'integration' ? (
+              <label>
+                <span>{copy.integration}</span>
+                <select
+                  required
+                  value={createConnectionId}
+                  disabled={!availablePublishingConnections.length}
+                  onChange={(event) => setCreateConnectionId(event.target.value)}
+                >
+                  <option value="">{copy.chooseIntegration}</option>
+                  {availablePublishingConnections.map((connection) => (
+                    <option key={connection.id} value={connection.id}>
+                      {publishingConnectionLabel(connection)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <label>
+                <span>{copy.domain}</span>
+                <input
+                  type="text"
+                  required
+                  maxLength={253}
+                  value={createDomain}
+                  placeholder={copy.domainPlaceholder}
+                  onChange={(event) => setCreateDomain(event.target.value)}
+                />
+                <small>{copy.dnsHelp}</small>
+              </label>
+            )}
             <label>
               <span>{copy.kind}</span>
               <select
@@ -422,8 +638,11 @@ export function PublicationVenueField({
               </label>
             )}
           </div>
-          {connectionsLoading ? <small aria-live="polite">{copy.loading}</small> : null}
-          {!connectionsLoading && !availablePublishingConnections.length ? (
+          {verificationMethod === 'integration' && connectionsLoading
+            ? <small aria-live="polite">{copy.loading}</small>
+            : null}
+          {verificationMethod === 'integration' &&
+          !connectionsLoading && !availablePublishingConnections.length ? (
             <small className="studio-publication-venue-error" role="alert">
               {copy.noConnections}
             </small>
@@ -432,7 +651,12 @@ export function PublicationVenueField({
             <button
               type="submit"
               className="studio-menu-primary-action"
-              disabled={saving || !createConnectionId || !availablePublishingConnections.length}
+              disabled={
+                saving ||
+                (verificationMethod === 'integration'
+                  ? !createConnectionId || !availablePublishingConnections.length
+                  : !createDomain.trim())
+              }
             >
               {copy.save}
             </button>
@@ -441,6 +665,100 @@ export function PublicationVenueField({
             </button>
           </div>
         </form>
+      ) : null}
+
+      {domainChallenge ? (
+        <div className="studio-publication-venue-create" role="status">
+          <strong>{copy.dnsChallenge}</strong>
+          <p>
+            {copy.dnsRecordName}: <code>{domainChallenge.txtName}</code>
+          </p>
+          <p>
+            {copy.dnsRecordValue}: <code>{domainChallenge.txtValue}</code>
+          </p>
+          <button
+            type="button"
+            className="studio-menu-primary-action"
+            disabled={saving}
+            onClick={() => void verifyDnsChallenge()}
+          >
+            {copy.verifyDns}
+          </button>
+        </div>
+      ) : null}
+
+      {value?.authority?.method === 'DNS_TXT' ? (
+        <div className="studio-publication-venue-create">
+          <strong>{copy.authorityTitle}</strong>
+          {authorityLoading ? (
+            <small aria-live="polite">{copy.authorityLoading}</small>
+          ) : authorityOverview ? (
+            <>
+              {authorityOverview.currentMembership ? (
+                <p>
+                  {copy.currentRole}: <strong>{authorityOverview.currentMembership.role}</strong>
+                </p>
+              ) : null}
+              {authorityOverview.canManageEditors ? (
+                <>
+                  <div className="studio-publication-venue-create-grid">
+                    <label>
+                      <span>{copy.editorEmail}</span>
+                      <input
+                        type="email"
+                        value={editorEmail}
+                        onChange={(event) => setEditorEmail(event.target.value)}
+                      />
+                    </label>
+                    <label>
+                      <span>{copy.editorRole}</span>
+                      <select
+                        value={editorRole}
+                        onChange={(event) =>
+                          setEditorRole(event.target.value as 'EDITOR' | 'EDITOR_IN_CHIEF')}
+                      >
+                        <option value="EDITOR">{copy.editor}</option>
+                        <option value="EDITOR_IN_CHIEF">{copy.editorInChief}</option>
+                      </select>
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    className="studio-menu-secondary-action"
+                    disabled={saving || !editorEmail.trim()}
+                    onClick={() => void authorizeEditor()}
+                  >
+                    {copy.addEditor}
+                  </button>
+                  {authorityOverview.members.filter((member) =>
+                    member.role === 'EDITOR' || member.role === 'EDITOR_IN_CHIEF'
+                  ).length ? (
+                    <ul>
+                      {authorityOverview.members
+                        .filter((member) =>
+                          member.role === 'EDITOR' || member.role === 'EDITOR_IN_CHIEF'
+                        )
+                        .map((member) => (
+                          <li key={member.id}>
+                            {member.user.fullName} · {member.user.email} · {member.role}{' '}
+                            <button
+                              type="button"
+                              disabled={saving}
+                              onClick={() => void revokeEditorMembership(member.id)}
+                            >
+                              {copy.revokeEditor}
+                            </button>
+                          </li>
+                        ))}
+                    </ul>
+                  ) : (
+                    <small>{copy.noEditors}</small>
+                  )}
+                </>
+              ) : null}
+            </>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
