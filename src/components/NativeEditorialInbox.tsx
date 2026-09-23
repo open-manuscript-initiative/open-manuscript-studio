@@ -255,7 +255,22 @@ export function NativeEditorialInbox({
                         {selectedReviews.map((review) => (
                           <article className="review-mode__feedback" key={review.id}>
                             <strong>{review.reviewerAlias} · {copy.round} {review.reviewRound}</strong>
-                            <p>{review.status.replaceAll('_', ' ')}</p>
+                            <p>
+                              {review.status.replaceAll('_', ' ')}
+                              {review.recommendation
+                                ? ` · ${review.recommendation.replaceAll('_', ' ')}`
+                                : ''}
+                            </p>
+                            {review.feedback.map((feedback) => (
+                              <div key={feedback.id}>
+                                <strong>
+                                  {feedback.visibility === 'editor_only'
+                                    ? 'Editor only'
+                                    : 'Author and editor'}
+                                </strong>
+                                <p>{feedback.body}</p>
+                              </div>
+                            ))}
                             {review.status === 'submitted' ? (
                               <button
                                 type="button"
