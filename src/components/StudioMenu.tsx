@@ -212,7 +212,7 @@ export function StudioMenu({
             <a
               className="studio-menu-nav-button"
               href="?review=1"
-            ><UserPlus size={18} aria-hidden="true" /><span>{supplementalCopy.assignments}</span></a>
+            ><UserPlus size={18} aria-hidden="true" /><span>{supplementalCopy.editorialWorkspace ?? supplementalCopy.assignments}</span></a>
             {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
             <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} />
             <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
