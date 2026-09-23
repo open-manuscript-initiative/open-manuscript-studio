@@ -297,7 +297,10 @@ export async function assertVerifiedPublicationVenueEditorAuthority(
     },
     orderBy: { role: 'asc' },
   });
-  if (!membership) {
+  if (
+    !membership ||
+    (membership.role !== 'EDITOR' && membership.role !== 'EDITOR_IN_CHIEF')
+  ) {
     throw forbidden('An active editor or editor-in-chief role at the verified publication venue is required.');
   }
   const claim = membership.venue.domainVerifications[0];
