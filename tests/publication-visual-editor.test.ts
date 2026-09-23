@@ -28,6 +28,10 @@ const documentCanvas = readFileSync(
   new URL('../src/components/PublicationDocumentCanvas.tsx', import.meta.url),
   'utf8',
 );
+const sectionRuler = readFileSync(
+  new URL('../src/components/PublicationSectionRuler.tsx', import.meta.url),
+  'utf8',
+);
 const editorStyles = readFileSync(
   new URL('../src/components/PublicationStyleEditor.css', import.meta.url),
   'utf8',
@@ -307,7 +311,9 @@ test('screen pagination presents separate Word-like sheets without storing page 
     { pageIndex: 1, translateY: 90 },
   ]);
   assert.match(documentCanvas, /paginatePublicationBlocks/);
-  assert.match(documentCanvas, /publication-document-ruler/);
+  assert.match(documentCanvas, /<PublicationSectionRuler/);
+  assert.match(sectionRuler, /publication-document-ruler/);
+  assert.match(sectionRuler, /stageSectionLayoutChange/);
   assert.match(documentCanvas, /pageHeight \* pageCount \+ pageGap/);
   assert.match(editorStyles, /\.publication-document-page-guide[\s\S]*background: #fff/);
   assert.match(editorStyles, /\.publication-document-page-guide[\s\S]*box-shadow:/);
