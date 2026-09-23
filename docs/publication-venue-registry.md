@@ -9,7 +9,7 @@ Egy publikációs hely két független módon válhat hitelesítetté:
 1. **OJS / OMP integráció** — aktív, tesztelt PKP-integráció igazolja a folyóiratot vagy kiadót.
 2. **DNS TXT domainhitelesítés** — OJS/OMP nélküli folyóirat vagy kiadó a saját DNS-zónájában elhelyezett egyszer használatos TXT-értékkel igazolja a domain feletti rendelkezési jogot.
 
-A DNS-hitelesítés **nem peer-review bizonyíték**, és nem ad automatikusan szerkesztői döntési jogot. Sikeres DNS-ellenőrzéskor a kezdeményező DOMAIN_ADMIN szerepet kap. A domain-admin ezután külön felhatalmazhat Studio-felhasználókat EDITOR vagy EDITOR_IN_CHIEF szerepre.
+A DNS-hitelesítés **nem peer-review bizonyíték**, és nem ad automatikusan szerkesztői döntési jogot. Sikeres DNS-ellenőrzéskor a kezdeményező DOMAIN_ADMIN szerepet kap. A domain-admin ezután külön felhatalmazhat már létező Studio-felhasználókat további DOMAIN_ADMIN, EDITOR vagy EDITOR_IN_CHIEF szerepre. A további domain-adminokhoz nem kell új DNS TXT rekord: az ő autoritásuk a már hitelesített venue-n belüli explicit admin-delegálásból származik.
 
 ## DNS TXT folyamat
 
@@ -28,11 +28,11 @@ A már rögzített szerkesztői döntés történeti bizonyítékát későbbi D
 
 ## Szerepkörök
 
-- **DOMAIN_ADMIN**: a DNS-sel igazolt publikációs hely adminisztrátora. Szerkesztői szerepeket kezel, de ettől még nem hozhat tudományos szerkesztői döntést.
+- **DOMAIN_ADMIN**: a DNS-sel igazolt publikációs hely adminisztrátora. További domain-adminokat és szerkesztői szerepeket kezelhet, de ettől még nem hozhat tudományos szerkesztői döntést. Minden aktív domain-admin azonos venue-adminisztrációs joggal rendelkezik.
 - **EDITOR**: a hitelesített publikációs hely nevében rögzíthet elfogadó döntést, ha a kézirat review-workspace-ében is EDITOR.
 - **EDITOR_IN_CHIEF**: ugyanaz a döntési jogosultság, külön megőrzött főszerkesztői szerepkörrel.
 
-A venue-szerepkör és a kézirat-workspace szerepkör szándékosan két külön jogosultsági sík.
+A venue-szerepkör és a kézirat-workspace szerepkör szándékosan két külön jogosultsági sík. A Studio nem engedi az utolsó aktív DOMAIN_ADMIN visszavonását; előbb egy második domain-adminisztrátort kell felhatalmazni. Ez a védelem szerveroldali, tranzakciós ellenőrzés.
 
 ## Kiválasztható rekordok
 
@@ -67,7 +67,7 @@ Példa DNS-kihíváskérés:
 }
 ~~~
 
-A domain-admin csak már létező Studio-fióknak adhat EDITOR vagy EDITOR_IN_CHIEF szerepet.
+A domain-admin csak már létező Studio-fióknak adhat DOMAIN_ADMIN, EDITOR vagy EDITOR_IN_CHIEF szerepet. Egy felhasználó ugyanannál a venue-nál több szereppel is rendelkezhet. DOMAIN_ADMIN kiosztásához nincs új DNS challenge: a meglévő domain-admin delegálja a jogosultságot.
 
 ## Peer-review autoritás
 
