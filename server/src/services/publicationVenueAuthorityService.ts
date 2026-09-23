@@ -13,6 +13,9 @@ const DOMAIN_RECHECK_MS = 24 * 60 * 60 * 1000;
 const TXT_PREFIX = 'omi-publication-verification=';
 
 export type PublicationVenueEditorRole = 'EDITOR' | 'EDITOR_IN_CHIEF';
+export type PublicationVenueAssignableRole =
+  | 'DOMAIN_ADMIN'
+  | PublicationVenueEditorRole;
 
 export interface VerifiedPublicationVenueAuthority {
   type: 'verified-publication-venue';
@@ -238,15 +241,21 @@ export async function getPublicationVenueAuthorityOverview(userId: string, venue
   };
 }
 
-export async function grantPublicationVenueEditor(
+export async function grantPublicationVenueMember(
   adminUserId: string,
   venueId: string,
   email: string,
-  role: PublicationVenueEditorRole,
+  role: PublicationVenueAssignableRole,
 ) {
   await requireDomainAdmin(adminUserId, venueId);
-  const user = await identityPrisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
-  if (!user) throw notFound('The editor must already have a Studio account with this e-mail address.');
+  const user = await identityPrisma.user.findUnique({
+    where: { email: email.trim().toLowerCase() },
+  });
+  if (!user) {
+    throw notFound(
+      'The publication-venue member must already have a Studio account with this e-mail address.',
+    );
+  }
   return identityPrisma.publicationVenueMembership.upsert({
     where: {
       venueId_userId_role: {
@@ -261,20 +270,61 @@ export async function grantPublicationVenueEditor(
   });
 }
 
-export async function revokePublicationVenueEditor(
+export async function revokePublicationVenueMembership(
   adminUserId: string,
   venueId: string,
   membershipId: string,
 ): Promise<void> {
   await requireDomainAdmin(adminUserId, venueId);
-  const membership = await identityPrisma.publicationVenueMembership.findFirst({
-    where: { id: membershipId, venueId, role: { in: ['EDITOR', 'EDITOR_IN_CHIEF'] } },
-  });
-  if (!membership) throw notFound('The publication-venue editor membership was not found.');
-  await identityPrisma.publicationVenueMembership.update({
-    where: { id: membership.id },
-    data: { active: false, grantedByUserId: adminUserId },
-  });
+  try {
+    await identityPrisma.$transaction(async (transaction) => {
+      const membership = await transaction.publicationVenueMembership.findFirst({
+        where: { id: membershipId, venueId, active: true },
+      });
+      if (!membership) {
+        throw notFound('The active publication-venue membership was not found.');
+      }
+
+      if (membership.role === 'DOMAIN_ADMIN') {
+        const activeDomainAdminCount =
+          await transaction.publicationVenueMembership.count({
+            where: {
+              venueId,
+              role: 'DOMAIN_ADMIN',
+              active: true,
+            },
+          });
+        if (activeDomainAdminCount <= 1) {
+          throw conflict(
+            'The last active domain administrator cannot be revoked. Authorize another domain administrator first.',
+          );
+        }
+      }
+
+      await transaction.publicationVenueMembership.update({
+        where: { id: membership.id },
+        data: { active: false, grantedByUserId: adminUserId },
+      });
+    }, {
+      isolationLevel: 'Serializable',
+    });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      (
+        error.name === 'NotFoundError' ||
+        error.name === 'ConflictError'
+      )
+    ) {
+      throw error;
+    }
+    if (isTransactionConflictError(error)) {
+      throw conflict(
+        'Publication-venue membership changed concurrently. Reload the authority list and try again.',
+      );
+    }
+    throw error;
+  }
 }
 
 export async function assertVerifiedPublicationVenueEditorAuthority(
@@ -382,6 +432,15 @@ function safeHashEqual(left: string, right: string): boolean {
   if (!/^[a-f0-9]{64}$/iu.test(left) || !/^[a-f0-9]{64}$/iu.test(right)) return false;
   return timingSafeEqual(Buffer.from(left, 'hex'), Buffer.from(right, 'hex'));
 }
+function isTransactionConflictError(error: unknown): boolean {
+  return Boolean(
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    (error as { code?: unknown }).code === 'P2034',
+  );
+}
+
 function isUniqueConstraintError(error: unknown): boolean {
   return Boolean(
     error &&
