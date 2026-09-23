@@ -79,6 +79,8 @@ After a submitted review has been completed by the editor, the editor may reques
 
 The author edits the original manuscript in Studio. Resubmission stores a new exact committed revision ID, state digest and manuscript snapshot. It does not silently overwrite the previous audit events.
 
+A resubmission does not automatically create a new peer-review round. The editor may accept the revised manuscript on the basis of the completed prior round. If the editor assigns a reviewer after `REVISION_SUBMITTED`, Studio advances the active review round exactly once and all subsequent reviewer assignments belong to that new round.
+
 ## Editorial decision is separate from publication
 
 Editorial acceptance is **not** the act of publishing.
@@ -131,7 +133,7 @@ Publication-venue authority and manuscript-workspace authority remain independen
 
 The native workflow stores append-only workflow events for significant transitions, including submission, editor assignment, reviewer assignment, review completion, revision request, revision resubmission, acceptance, rejection and publication marking.
 
-The current submission row represents current workflow state; the event history records how that state was reached.
+The current submission row represents current workflow state; the event history records how that state was reached. Only the currently assigned, still-authorized venue editor can change an accepted submission to `PUBLISHED`.
 
 ## Preview status
 
