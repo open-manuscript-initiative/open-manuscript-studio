@@ -33,6 +33,7 @@ const COPY = {
     busy: 'Working…',
     author: 'Author',
     editor: 'Editor',
+    assignedElsewhere: 'This submission is assigned to another editor. You can inspect it, but only the assigned editor can change its workflow.',
     round: 'Round',
   },
   hu: {
@@ -51,6 +52,7 @@ const COPY = {
     busy: 'Folyamatban…',
     author: 'Szerző',
     editor: 'Szerkesztő',
+    assignedElsewhere: 'Ezt a kéziratot másik szerkesztő vette át. Megtekintheted, de a workflow-t csak a kijelölt szerkesztő módosíthatja.',
     round: 'Forduló',
   },
   de: {
@@ -69,6 +71,7 @@ const COPY = {
     busy: 'Wird verarbeitet…',
     author: 'Autor/in',
     editor: 'Redaktion',
+    assignedElsewhere: 'Diese Einreichung ist einer anderen Redaktion zugewiesen. Sie kann eingesehen, aber nur von der zugewiesenen Redaktion bearbeitet werden.',
     round: 'Runde',
   },
 } as const;
@@ -216,6 +219,10 @@ export function NativeEditorialInbox({
                     >
                       {busy ? copy.busy : copy.claim}
                     </button>
+                  </section>
+                ) : !selected.viewerIsAssignedEditor ? (
+                  <section className="review-mode__card">
+                    <p>{copy.assignedElsewhere}</p>
                   </section>
                 ) : (
                   <>
