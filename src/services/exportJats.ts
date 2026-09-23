@@ -521,6 +521,8 @@ function renderInlineNode(node: JsonNode, state: RenderState): string {
       );
     case 'hardBreak':
       return '\n';
+    case 'omiTab':
+      return ' ';
     case 'omiCitation':
       return renderCitationMarker(node, state);
     case 'omiCrossReference':
