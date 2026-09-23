@@ -66,6 +66,33 @@ test('renders assigned paragraph styles as portable traceability attributes', ()
   assert.match(result.html, /data-omi-paragraph-style-id="first-paragraph"/);
 });
 
+test('renders section-scoped columns and tabbed text in semantic HTML5', () => {
+  const manuscript = createTestManuscript();
+  const section = manuscript.sections[0];
+  const block = section?.blocks[0];
+  assert.ok(section);
+  assert.ok(block);
+
+  section.layout = {
+    columns: 2,
+    columnGapMm: 9,
+    tabStopsMm: [20, 40],
+  };
+  block.content = JSON.stringify({
+    type: 'doc',
+    content: [{
+      type: 'paragraph',
+      content: [{ type: 'text', text: 'Name\tValue' }],
+    }],
+  });
+
+  const result = renderHtmlArticle(manuscript);
+  assert.match(result.html, /class="manuscript-section-body" data-omi-columns="2"/);
+  assert.match(result.html, /data-omi-tab-stops-mm="20 40"/);
+  assert.match(result.html, /column-count:2;column-gap:9mm;tab-size:20mm/);
+  assert.match(result.html, /class="omi-tab" aria-hidden="true">\t<\/span>/);
+});
+
 test('renders semantic citations, notes and internal cross-references as navigable HTML links', () => {
   const manuscript = createTestManuscript();
   const section = manuscript.sections[0];
