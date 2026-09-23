@@ -40,6 +40,7 @@ import {
 import { cssStringLiteral } from '../services/embeddedCss';
 import type { OmiPublicationFlowBreak } from '../editor/extensions/OmiProofingMarksExtension';
 import { BlockEditor } from './BlockEditor';
+import { PublicationHtmlSectionsEditor } from './PublicationHtmlSectionsEditor';
 import { PublicationSectionRuler } from './PublicationSectionRuler';
 import {
   paginatePublicationBlocks,
@@ -762,19 +763,29 @@ export function PublicationDocumentCanvas({
 
             {manuscript.sections.length ? (
               <div className="publication-document-body" aria-label={copy.body}>
-                <BlockEditor
-                  blockId={`omi-publication-document-${manuscript.id}`}
-                  blockType="manuscript"
-                  content={JSON.stringify(document)}
-                  onUpdate={updateDocument}
-                  manuscriptLanguage={manuscript.locale}
-                  className="publication-layout-document-editor"
-                  continuous
-                  proofingMode={viewMode === 'print' ? 'publication' : 'editor'}
-                  publicationCorrections={viewMode === 'print' ? publicationCorrections : undefined}
-                  publicationFlowBreaks={viewMode === 'print' ? pagination.flowBreaks : undefined}
-                  onProofingSelection={viewMode === 'print' ? onProofingSelection : undefined}
-                />
+                {viewMode === 'html' ? (
+                  <PublicationHtmlSectionsEditor
+                    sections={manuscript.sections}
+                    sectionNumbers={sectionNumbers}
+                    paragraphStyleNextById={paragraphStyleNextById}
+                    defaultParagraphStyleId={style.paragraphStyles.defaultStyleId}
+                    manuscriptLanguage={manuscript.locale}
+                  />
+                ) : (
+                  <BlockEditor
+                    blockId={`omi-publication-document-${manuscript.id}`}
+                    blockType="manuscript"
+                    content={JSON.stringify(document)}
+                    onUpdate={updateDocument}
+                    manuscriptLanguage={manuscript.locale}
+                    className="publication-layout-document-editor"
+                    continuous
+                    proofingMode="publication"
+                    publicationCorrections={publicationCorrections}
+                    publicationFlowBreaks={pagination.flowBreaks}
+                    onProofingSelection={onProofingSelection}
+                  />
+                )}
               </div>
             ) : (
               <p className="publication-document-empty">{copy.empty}</p>
