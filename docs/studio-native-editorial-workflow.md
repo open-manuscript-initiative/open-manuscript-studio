@@ -67,7 +67,7 @@ The manuscript remains the canonical scholarly object. The workflow database sto
 
 ## Reviewer privacy
 
-The anonymous review projection is generated without author identity. Studio-native scientific review defaults to double blind.
+The anonymous review projection is generated without author identity. Studio-native scientific review defaults to double blind. The submitting author cannot be assigned as a scientific reviewer of the same submission.
 
 Author-facing review APIs do not expose reviewer account identity. Editor-facing APIs may show the author and assigned reviewer because editors need those identities to administer the workflow.
 
