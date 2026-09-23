@@ -654,7 +654,8 @@ async function latestCompletedScientificRound(
     ? Array.from(byRound.keys()).sort((a, b) => b - a)
     : [requiredRound];
   for (const reviewRound of reviewRounds) {
-    const group = byRound.get(reviewRound) ?? [];
+    const group = (byRound.get(reviewRound) ?? [])
+      .filter((assignment) => assignment.status !== 'DECLINED');
     if (
       group.length > 0 &&
       group.every((assignment) =>
