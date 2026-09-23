@@ -20,11 +20,13 @@ let grant = null;
 let externalPublication = null;
 let remoteCalls = [];
 let editorialEvidenceCalls = [];
+let failSuccessAudit = false;
 
 const reviewedEvidence = {
   type: 'studio-editorial-decision',
   decisionId: '60000000-0000-4000-8000-000000000006',
   evidenceDigest: '6'.repeat(64),
+  publicationContentDigest: '0'.repeat(64),
   reviewRound: 2,
   decidedAt: '2026-09-22T07:30:00.000Z',
 };
@@ -142,7 +144,19 @@ mock.module(new URL('../server/dist/lib/prisma.js', import.meta.url).href, {
 });
 mock.module(
   new URL('../server/dist/integrations/integrationAudit.js', import.meta.url).href,
-  { namedExports: { writeIntegrationAuditEvent: async () => undefined } },
+  {
+    namedExports: {
+      writeIntegrationAuditEvent: async (event) => {
+        if (
+          failSuccessAudit &&
+          event.operation === 'web-publication.deliver' &&
+          event.status === 'SUCCESS'
+        ) {
+          throw new Error('Synthetic audit failure after remote success');
+        }
+      },
+    },
+  },
 );
 mock.module(
   new URL('../server/dist/services/editorialDecisionService.js', import.meta.url).href,
@@ -150,7 +164,10 @@ mock.module(
     namedExports: {
       assertEditorialDecisionEvidence: async (input) => {
         editorialEvidenceCalls.push(input);
-        return reviewedEvidence;
+        return {
+          ...reviewedEvidence,
+          publicationContentDigest: input.publicationContentDigest,
+        };
       },
     },
   },
@@ -236,9 +253,106 @@ test('web publication service binds target version, rejects hidden seals, and re
     manuscriptId: reviewed.manuscriptId,
     revisionId: reviewed.artifact.build.manuscript.revisionId,
     stateDigest: reviewed.artifact.build.manuscript.stateDigest.value,
+    publicationContentDigest: reviewed.assurance.evidence.publicationContentDigest,
     decisionId: reviewedEvidence.decisionId,
     evidenceDigest: reviewedEvidence.evidenceDigest,
   });
+});
+
+test('reviewed approval rejects changed article bytes even with a valid old decision id', async () => {
+  reset();
+  const reviewed = approvalInput({ reviewed: true });
+  const acceptedContentDigest = reviewed.assurance.evidence.publicationContentDigest;
+  reviewed.artifact.html = reviewed.artifact.html.replace(
+    '<h1>Synthetic article</h1>',
+    '<h1>Synthetic article changed after editorial acceptance</h1>',
+  );
+  reviewed.artifact.build = publicationBuild(reviewed.artifact.html);
+  reviewed.idempotencyKey = `tampered-reviewed:${reviewed.artifact.build.id}`;
+
+  assert.notEqual(digestPublicationArticle(reviewed.artifact.html), acceptedContentDigest);
+  await assert.rejects(
+    issueWebPublicationApproval(userId, reviewed),
+    (error) => error?.code === 'WEB_PUBLICATION_ASSURANCE_INVALID',
+  );
+  assert.equal(delivery, null);
+});
+
+test('web publication rejects hidden ancestors and active navigation metadata', async () => {
+  reset();
+  const hidden = approvalInput();
+  hidden.artifact.html = hidden.artifact.html.replace(
+    '<article class="omi-scholarly-article">',
+    '<article class="omi-scholarly-article" hidden>',
+  );
+  hidden.artifact.build = publicationBuild(hidden.artifact.html);
+  hidden.idempotencyKey = `hidden-ancestor:${hidden.artifact.build.id}`;
+  await assert.rejects(
+    issueWebPublicationApproval(userId, hidden),
+    (error) => error?.code === 'WEB_PUBLICATION_ARTIFACT_INVALID',
+  );
+
+  reset();
+  const refresh = approvalInput();
+  refresh.artifact.html = refresh.artifact.html.replace(
+    '<title>Synthetic article</title>',
+    '<meta http-equiv="refresh" content="0;url=https://attacker.example/"><title>Synthetic article</title>',
+  );
+  refresh.artifact.build = publicationBuild(refresh.artifact.html);
+  refresh.idempotencyKey = `meta-refresh:${refresh.artifact.build.id}`;
+  await assert.rejects(
+    issueWebPublicationApproval(userId, refresh),
+    (error) => error?.code === 'WEB_PUBLICATION_ARTIFACT_INVALID',
+  );
+
+  reset();
+  const srcset = approvalInput();
+  srcset.artifact.html = srcset.artifact.html.replace(
+    '<h1>Synthetic article</h1>',
+    '<img src="data:image/png;base64,AA==" srcset="https://attacker.example/a.png 2x"><h1>Synthetic article</h1>',
+  );
+  srcset.artifact.build = publicationBuild(srcset.artifact.html);
+  srcset.idempotencyKey = `srcset:${srcset.artifact.build.id}`;
+  await assert.rejects(
+    issueWebPublicationApproval(userId, srcset),
+    (error) => error?.code === 'WEB_PUBLICATION_ARTIFACT_INVALID',
+  );
+});
+
+test('unknown delivery outcomes require reconciliation instead of automatic resend', async () => {
+  reset();
+  const input = approvalInput();
+  const approved = await issueWebPublicationApproval(userId, input);
+  delivery.state = 'UNKNOWN';
+
+  await assert.rejects(
+    executeWebPublicationDelivery(
+      userId,
+      approved.grant.deliveryId,
+      approved.grant.executionToken,
+    ),
+    (error) => error?.code === 'WEB_PUBLICATION_RECONCILIATION_REQUIRED',
+  );
+  assert.equal(remoteCalls.length, 0);
+});
+
+test('audit failure after stored remote success never downgrades delivery to retryable unknown', async () => {
+  reset();
+  const input = approvalInput();
+  const approved = await issueWebPublicationApproval(userId, input);
+  failSuccessAudit = true;
+
+  await assert.rejects(
+    executeWebPublicationDelivery(
+      userId,
+      approved.grant.deliveryId,
+      approved.grant.executionToken,
+    ),
+    (error) => error?.code === 'WEB_PUBLICATION_AUDIT_FAILED_AFTER_DELIVERY',
+  );
+  assert.equal(remoteCalls.length, 1);
+  assert.equal(delivery.state, 'SUCCEEDED');
+  assert.equal(delivery.artifactHtml, null);
 });
 
 function reset() {
@@ -247,6 +361,7 @@ function reset() {
   externalPublication = null;
   remoteCalls = [];
   editorialEvidenceCalls = [];
+  failSuccessAudit = false;
   connection.updatedAt = new Date('2026-09-22T08:00:00.000Z');
 }
 
@@ -259,7 +374,7 @@ function approvalInput(options = {}) {
         reviewStatus: 'peer-reviewed',
         approvalAuthority: 'studio-editorial-decision',
         disclosure: 'visible-and-machine-readable',
-        evidence: reviewedEvidence,
+        evidence: { ...reviewedEvidence },
       }
     : {
         model: 'omi-publication-assurance',
@@ -270,6 +385,9 @@ function approvalInput(options = {}) {
         disclosure: 'visible-and-machine-readable',
       };
   const html = publicationHtml(assurance, options.hiddenSeal === true);
+  if (assurance.reviewStatus === 'peer-reviewed') {
+    assurance.evidence.publicationContentDigest = digestPublicationArticle(html);
+  }
   const build = publicationBuild(html);
   return {
     connectionId,
@@ -325,6 +443,20 @@ function publicationHtml(assurance, hiddenSeal) {
     '</body>',
     '</html>',
   ].join('\n');
+}
+
+function digestPublicationArticle(html) {
+  const article = html.match(
+    /<article\b[^>]*class="[^"]*omi-scholarly-article[^"]*"[^>]*>[\s\S]*?<\/article>/i,
+  )?.[0];
+  assert.ok(article);
+  const disclosures = Array.from(
+    article.matchAll(
+      /\n {4}<aside\b[^>]*class="[^"]*omi-publication-assurance[^"]*"[^>]*>[\s\S]*?<\/aside>/gi,
+    ),
+  );
+  assert.equal(disclosures.length, 1);
+  return sha256(article.replace(disclosures[0][0], ''));
 }
 
 function publicationBuild(html) {
