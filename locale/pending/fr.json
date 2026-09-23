@@ -2,6 +2,14 @@
   "locale": "fr",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Français",
+    "deepLName": "French",
+    "code": "fr",
+    "apiTargetCode": "FR",
+    "supported": true
+  },
   "pendingCount": 477,
   "instructions": [
     "Translate only the translation field.",

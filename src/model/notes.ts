@@ -95,27 +95,29 @@ export function getNoteKind(
 }
 
 export function collectNoteAnchors(
-  state: OmiManuscriptState,
+  state: Pick<OmiManuscriptState, 'sections'>,
 ): NoteAnchorOccurrence[] {
   const result: NoteAnchorOccurrence[] = [];
 
   for (const section of state.sections) {
     for (const block of section.blocks) {
-      const document = parseStructuredContent(block.content);
-
-      if (!document) {
-        continue;
-      }
-
-      collectNoteNodes(
-        document,
-        section.id,
-        block.id,
-        result,
-      );
+      result.push(...collectNoteAnchorsInBlock(block.content, section.id, block.id));
     }
   }
 
+  return result;
+}
+
+export function collectNoteAnchorsInBlock(
+  content: string,
+  sectionId: string,
+  blockId: string,
+): NoteAnchorOccurrence[] {
+  const document = parseStructuredContent(content);
+  if (!document) return [];
+
+  const result: NoteAnchorOccurrence[] = [];
+  collectNoteNodes(document, sectionId, blockId, result);
   return result;
 }
 
@@ -456,7 +458,7 @@ function uniqueNoteIdentifiers(
 }
 
 export function buildNoteNumberMap(
-  state: OmiManuscriptState,
+  state: Pick<OmiManuscriptState, 'sections' | 'documentStructure'>,
   occurrences: NoteAnchorOccurrence[] = collectNoteAnchors(state),
 ): Map<string, number> {
   const scope = getDocumentStructureProfile(state).noteNumberingScope;

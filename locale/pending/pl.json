@@ -2,6 +2,14 @@
   "locale": "pl",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Polski",
+    "deepLName": "Polish",
+    "code": "pl",
+    "apiTargetCode": "PL",
+    "supported": true
+  },
   "pendingCount": 458,
   "instructions": [
     "Translate only the translation field.",

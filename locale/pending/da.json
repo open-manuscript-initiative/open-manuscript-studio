@@ -2,6 +2,14 @@
   "locale": "da",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Dansk",
+    "deepLName": "Danish",
+    "code": "da",
+    "apiTargetCode": "DA",
+    "supported": true
+  },
   "pendingCount": 34,
   "instructions": [
     "Translate only the translation field.",

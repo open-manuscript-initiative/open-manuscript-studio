@@ -2,6 +2,14 @@
   "locale": "cs",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Čeština",
+    "deepLName": "Czech",
+    "code": "cs",
+    "apiTargetCode": "CS",
+    "supported": true
+  },
   "pendingCount": 31,
   "instructions": [
     "Translate only the translation field.",

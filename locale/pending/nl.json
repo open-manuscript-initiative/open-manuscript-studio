@@ -2,6 +2,14 @@
   "locale": "nl",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Nederlands",
+    "deepLName": "Dutch",
+    "code": "nl",
+    "apiTargetCode": "NL",
+    "supported": true
+  },
   "pendingCount": 466,
   "instructions": [
     "Translate only the translation field.",

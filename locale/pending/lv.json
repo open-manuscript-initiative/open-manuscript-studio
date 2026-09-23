@@ -2,6 +2,14 @@
   "locale": "lv",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Latviešu",
+    "deepLName": "Latvian",
+    "code": "lv",
+    "apiTargetCode": "LV",
+    "supported": true
+  },
   "pendingCount": 456,
   "instructions": [
     "Translate only the translation field.",

@@ -2,6 +2,14 @@
   "locale": "ro",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Română",
+    "deepLName": "Romanian",
+    "code": "ro",
+    "apiTargetCode": "RO",
+    "supported": true
+  },
   "pendingCount": 467,
   "instructions": [
     "Translate only the translation field.",

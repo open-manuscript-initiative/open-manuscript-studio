@@ -2,6 +2,14 @@
   "locale": "fi",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Suomi",
+    "deepLName": "Finnish",
+    "code": "fi",
+    "apiTargetCode": "FI",
+    "supported": true
+  },
   "pendingCount": 457,
   "instructions": [
     "Translate only the translation field.",

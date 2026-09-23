@@ -235,6 +235,8 @@ export function synchronizeCrossReferenceLabels(
   locale = 'en',
   namedAnchors: readonly OmiNamedAnchor[] = [],
 ): OmiSection[] {
+  if (crossReferences.length === 0) return [...sections];
+
   const manuscript = {
     sections: sections as OmiSection[],
     crossReferenceNumbering: numbering,

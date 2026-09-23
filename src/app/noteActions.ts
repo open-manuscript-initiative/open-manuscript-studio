@@ -246,8 +246,10 @@ export function reconcileNotesAfterBlockEdit(): void {
   let changed = false;
 
   useStudioStore.setState((state) => {
-    const portableState = extractManuscriptState(state.manuscript);
-    const reconciled = reconcileNoteState(portableState, {
+    // The store already holds immutable sections from the editor projection.
+    // Reusing them avoids cloning the complete manuscript before checking
+    // whether a note anchor actually changed.
+    const reconciled = reconcileNoteState(state.manuscript, {
       removeOrphanAnnotations: true,
     });
     const semanticEvents = [

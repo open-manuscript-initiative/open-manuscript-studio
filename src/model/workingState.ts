@@ -30,6 +30,12 @@ export interface StagePendingChangesInput {
   events: CreateChangeEventInput[];
   actorAgentId?: AgentId;
   timestamp?: string;
+  /**
+   * Continuous editors already produce fresh immutable section trees. They
+   * can retain those references until the checkpoint, where the revision
+   * snapshot performs the authoritative deep clone.
+   */
+  cloneEventValues?: boolean;
 }
 
 export interface CheckpointDescriptor {
@@ -47,6 +53,7 @@ export function stagePendingChanges(
   }
 
   const timestamp = input.timestamp ?? new Date().toISOString();
+  const cloneEventValues = input.cloneEventValues !== false;
 
   if (!pending) {
     return {
@@ -56,7 +63,7 @@ export function stagePendingChanges(
       actorAgentId: input.actorAgentId,
       mixedActors: false,
       summaries: [input.summary],
-      events: coalesceEvents([], input.events),
+      events: coalesceEvents([], input.events, cloneEventValues),
     };
   }
 
@@ -78,7 +85,7 @@ export function stagePendingChanges(
     actorAgentId: actorState.actorAgentId,
     mixedActors: actorState.mixedActors,
     summaries: appendUnique(pending.summaries, input.summary),
-    events: coalesceEvents(pending.events, input.events),
+    events: coalesceEvents(pending.events, input.events, cloneEventValues),
   };
 }
 
@@ -94,7 +101,7 @@ export function createCheckpointDescriptor(
 
   return {
     summary: createCheckpointSummary(pending),
-    events: pending.events.map(cloneEvent),
+    events: pending.events.map((event) => cloneEvent(event)),
     actorAgentId: pending.mixedActors
       ? undefined
       : pending.actorAgentId,
@@ -118,8 +125,9 @@ export function createCheckpointSummary(
 export function coalesceEvents(
   existing: CreateChangeEventInput[],
   incoming: CreateChangeEventInput[],
+  cloneEventValues = true,
 ): CreateChangeEventInput[] {
-  const result = existing.map(cloneEvent);
+  const result = existing.map((event) => cloneEvent(event, cloneEventValues));
 
   for (const event of incoming) {
     const key = eventKey(event);
@@ -128,20 +136,20 @@ export function coalesceEvents(
     );
 
     if (index < 0) {
-      result.push(cloneEvent(event));
+      result.push(cloneEvent(event, cloneEventValues));
       continue;
     }
 
     const previous = result[index];
 
     if (!previous) {
-      result.push(cloneEvent(event));
+      result.push(cloneEvent(event, cloneEventValues));
       continue;
     }
 
     result[index] = {
       ...previous,
-      nextValue: cloneValue(event.nextValue),
+      nextValue: cloneEventValue(event.nextValue, cloneEventValues),
     };
   }
 
@@ -188,15 +196,20 @@ function appendUnique(values: string[], value: string): string[] {
 
 function cloneEvent(
   event: CreateChangeEventInput,
+  cloneEventValues = true,
 ): CreateChangeEventInput {
   return {
     ...event,
-    previousValue: cloneValue(event.previousValue),
-    nextValue: cloneValue(event.nextValue),
+    previousValue: cloneEventValue(event.previousValue, cloneEventValues),
+    nextValue: cloneEventValue(event.nextValue, cloneEventValues),
   };
 }
 
-function cloneValue<T>(value: T): T {
+function cloneEventValue<T>(value: T, cloneValue = true): T {
+  return cloneValue ? cloneEventPayload(value) : value;
+}
+
+function cloneEventPayload<T>(value: T): T {
   if (value === undefined || value === null) {
     return value;
   }
