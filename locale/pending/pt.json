@@ -2,6 +2,14 @@
   "locale": "pt",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Português",
+    "deepLName": "Portuguese (European)",
+    "code": "pt-PT",
+    "apiTargetCode": "PT-PT",
+    "supported": true
+  },
   "pendingCount": 463,
   "instructions": [
     "Translate only the translation field.",

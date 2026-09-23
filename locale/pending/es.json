@@ -2,6 +2,14 @@
   "locale": "es",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Español",
+    "deepLName": "Spanish",
+    "code": "es",
+    "apiTargetCode": "ES",
+    "supported": true
+  },
   "pendingCount": 462,
   "instructions": [
     "Translate only the translation field.",

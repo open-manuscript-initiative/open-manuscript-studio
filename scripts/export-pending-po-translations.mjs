@@ -10,6 +10,9 @@ const poRoot = path.join(root, 'locale');
 const outRoot = path.join(root, 'locale', 'pending');
 const policy = JSON.parse(await fs.readFile(path.join(poRoot, 'translation-status.json'), 'utf8'));
 const terminology = JSON.parse(await fs.readFile(path.join(poRoot, 'terminology.json'), 'utf8'));
+const deeplLanguageMap = JSON.parse(
+  await fs.readFile(path.join(outRoot, 'deepl-language-map.json'), 'utf8'),
+);
 const referenceLocale = policy.referenceLocale ?? 'en';
 const identicalAllowlist = new Set(policy.identicalAllowlist ?? []);
 const onlyLocaleArg = process.argv.find((arg) => arg.startsWith('--locale='));
@@ -22,12 +25,19 @@ async function readEntries(locale) {
 
 const referenceEntries = await readEntries(referenceLocale);
 const referenceByPointer = new Map(referenceEntries.map((entry) => [entry.pointer, entry]));
-const localeDirs = (await fs.readdir(poRoot, { withFileTypes: true }))
-  .filter((entry) => entry.isDirectory() && entry.name !== 'pending')
-  .map((entry) => entry.name)
-  .filter((locale) => locale !== referenceLocale)
-  .filter((locale) => !onlyLocale || locale === onlyLocale)
-  .sort();
+const localeDirs = [];
+for (const entry of await fs.readdir(poRoot, { withFileTypes: true })) {
+  if (!entry.isDirectory() || entry.name === 'pending') continue;
+  try {
+    await fs.access(path.join(poRoot, entry.name, 'studio.po'));
+  } catch {
+    continue;
+  }
+  if (entry.name === referenceLocale) continue;
+  if (onlyLocale && entry.name !== onlyLocale) continue;
+  localeDirs.push(entry.name);
+}
+localeDirs.sort();
 
 if (onlyLocale && localeDirs.length === 0) {
   throw new Error(`Locale not found: ${onlyLocale}`);
@@ -38,6 +48,7 @@ let grandTotal = 0;
 
 for (const locale of localeDirs) {
   const entries = await readEntries(locale);
+  const entriesByPointer = new Map(entries.map((entry) => [entry.pointer, entry]));
   const pending = [];
 
   for (const entry of entries) {
@@ -54,10 +65,42 @@ for (const locale of localeDirs) {
     });
   }
 
+  const previousPath = path.join(outRoot, `${locale}.json`);
+  try {
+    const previous = JSON.parse(await fs.readFile(previousPath, 'utf8'));
+    const previousByKey = new Map(
+      (previous.entries ?? []).map((entry) => [entry.key, entry]),
+    );
+    for (const entry of pending) {
+      const previousEntry = previousByKey.get(entry.key);
+      if (typeof previousEntry?.translation === 'string' && previousEntry.translation.trim()) {
+        entry.translation = previousEntry.translation;
+      }
+    }
+    for (const previousEntry of previous.entries ?? []) {
+      if (pending.some((entry) => entry.key === previousEntry.key)) continue;
+      if (typeof previousEntry.translation !== 'string' || !previousEntry.translation.trim()) continue;
+      const current = entriesByPointer.get(previousEntry.key);
+      const reference = referenceByPointer.get(previousEntry.key);
+      if (!current || !reference || current.source !== reference.source) continue;
+      if (current.translation !== reference.source) continue;
+      pending.push({
+        key: previousEntry.key,
+        source: reference.source,
+        translation: previousEntry.translation,
+        protectedTerms: previousEntry.protectedTerms ?? terminology.protectedTerms.filter((term) => reference.source.includes(term)),
+      });
+    }
+  } catch {
+    // No previous queue exists, or it is not readable; export a fresh queue.
+  }
+
   const payload = {
     locale,
     referenceLocale,
     generatedFrom: 'locale/<locale>/studio.po',
+    translationService: 'DeepL',
+    deepL: deeplLanguageMap.languages[locale] ?? null,
     pendingCount: pending.length,
     instructions: [
       'Translate only the translation field.',

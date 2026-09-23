@@ -2,6 +2,14 @@
   "locale": "et",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Eesti",
+    "deepLName": "Estonian",
+    "code": "et",
+    "apiTargetCode": "ET",
+    "supported": true
+  },
   "pendingCount": 457,
   "instructions": [
     "Translate only the translation field.",
