@@ -21,7 +21,12 @@ import {
   projectContinuousManuscriptDocument,
 } from '../editor/continuousManuscriptDocument';
 import { useTranslation } from '../i18n';
-import { buildNoteNumberMap, getNoteKind } from '../model/notes';
+import {
+  buildNoteNumberMap,
+  collectNoteAnchorsInBlock,
+  getNoteKind,
+  type NoteAnchorOccurrence,
+} from '../model/notes';
 import { contributorNameParts } from '../model/contributorName';
 import { collectPublicationContributors } from '../model/publicationRendering';
 import type { ProofingSelection } from '../model/proofing';
@@ -47,6 +52,19 @@ type PublicationZoom = 'fit' | 50 | 75 | 100;
 export type PublicationDocumentViewMode = 'print' | 'html';
 const EMPTY_PUBLICATION_CORRECTIONS = [] as const;
 const EMPTY_PUBLICATION_FLOW_BREAKS: readonly OmiPublicationFlowBreak[] = [];
+const LARGE_PUBLICATION_DOCUMENT_NODE_COUNT = 400;
+const LARGE_PUBLICATION_PAGINATION_DEBOUNCE_MS = 120;
+
+interface NoteAnchorCacheEntry {
+  content: string;
+  sectionId: string;
+  occurrences: NoteAnchorOccurrence[];
+}
+
+interface NoteBodyCacheEntry {
+  body: string;
+  text: string;
+}
 
 interface PublicationPaginationState {
   pageCount: number;
@@ -93,6 +111,14 @@ export function PublicationDocumentCanvas({
   const copy = canvasCopy(locale);
   const canvasId = `publication-canvas-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const manuscript = useStudioStore((state) => state.manuscript);
+  const {
+    id: manuscriptId,
+    agents: manuscriptAgents,
+    contributions: manuscriptContributions,
+    annotations: manuscriptAnnotations,
+    sections: manuscriptSections,
+    documentStructure: manuscriptDocumentStructure,
+  } = manuscript;
   const publicationCorrections = manuscript.publicationCorrections
     ?? EMPTY_PUBLICATION_CORRECTIONS;
   const setTitle = useStudioStore((state) => state.setTitle);
@@ -101,6 +127,8 @@ export function PublicationDocumentCanvas({
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const noteMeasureRef = useRef<HTMLDivElement>(null);
+  const noteAnchorCacheRef = useRef(new Map<string, NoteAnchorCacheEntry>());
+  const noteBodyCacheRef = useRef(new Map<string, NoteBodyCacheEntry>());
   const [stageWidth, setStageWidth] = useState(0);
   const [pagination, setPagination] = useState<PublicationPaginationState>({
     pageCount: 1,
@@ -183,26 +211,71 @@ export function PublicationDocumentCanvas({
       style.paragraphStyles.defaultStyleId,
     ],
   );
+  const paginationDebounceMs = (document.content?.length ?? 0) > LARGE_PUBLICATION_DOCUMENT_NODE_COUNT
+    ? LARGE_PUBLICATION_PAGINATION_DEBOUNCE_MS
+    : 0;
   const contributors = useMemo(
-    () => collectPublicationContributors(manuscript),
-    [manuscript],
+    () => collectPublicationContributors({
+      id: manuscriptId,
+      agents: manuscriptAgents,
+      contributions: manuscriptContributions,
+    }),
+    [manuscriptAgents, manuscriptContributions, manuscriptId],
   );
-  const notes = useMemo(() => {
-    const numbers = buildNoteNumberMap(manuscript);
-    return manuscript.annotations
-      .filter((annotation) => getNoteKind(annotation) === 'footnote' && numbers.has(annotation.id))
-      .map((annotation) => ({ id: annotation.id, label: numbers.get(annotation.id), text: plainText(annotation.body) }));
-  }, [manuscript]);
+  const noteNumbers = useMemo(() => {
+    const cache = noteAnchorCacheRef.current;
+    const activeBlockIds = new Set<string>();
+    const occurrences: NoteAnchorOccurrence[] = [];
+    for (const section of manuscriptSections) {
+      for (const block of section.blocks) {
+        activeBlockIds.add(block.id);
+        const cached = cache.get(block.id);
+        const entry = cached
+          && cached.content === block.content
+          && cached.sectionId === section.id
+          ? cached
+          : {
+              content: block.content,
+              sectionId: section.id,
+              occurrences: collectNoteAnchorsInBlock(block.content, section.id, block.id),
+            };
+        cache.set(block.id, entry);
+        occurrences.push(...entry.occurrences);
+      }
+    }
+    for (const blockId of cache.keys()) {
+      if (!activeBlockIds.has(blockId)) cache.delete(blockId);
+    }
+    return buildNoteNumberMap({
+      sections: manuscriptSections,
+      documentStructure: manuscriptDocumentStructure,
+    }, occurrences);
+  }, [manuscriptDocumentStructure, manuscriptSections]);
   const semanticNotes = useMemo(() => {
-    const numbers = buildNoteNumberMap(manuscript);
-    return manuscript.annotations
+    const cache = noteBodyCacheRef.current;
+    const activeIds = new Set<string>();
+    const result = manuscriptAnnotations
       .filter((annotation) => annotation.type === 'note')
-      .map((annotation, index) => ({
-        id: annotation.id,
-        label: numbers.get(annotation.id) ?? index + 1,
-        text: plainText(annotation.body),
-      }));
-  }, [manuscript]);
+      .map((annotation, index) => {
+        activeIds.add(annotation.id);
+        const cached = cache.get(annotation.id);
+        const text = cached?.body === annotation.body ? cached.text : plainText(annotation.body);
+        cache.set(annotation.id, { body: annotation.body, text });
+        return {
+          id: annotation.id,
+          label: noteNumbers.get(annotation.id) ?? index + 1,
+          text,
+          kind: getNoteKind(annotation),
+        };
+      });
+    for (const id of cache.keys()) {
+      if (!activeIds.has(id)) cache.delete(id);
+    }
+    return result;
+  }, [manuscriptAnnotations, noteNumbers]);
+  const notes = useMemo(() => semanticNotes.filter(
+    (note) => note.kind === 'footnote' && noteNumbers.has(note.id),
+  ), [semanticNotes, noteNumbers]);
   const noteById = useMemo(() => new Map(notes.map((note) => [note.id, note])), [notes]);
   const endnotes = useMemo(() => manuscript.annotations.filter(
     (annotation) => getNoteKind(annotation) === 'endnote',
@@ -242,6 +315,7 @@ export function PublicationDocumentCanvas({
     if (!content) return;
 
     let frame = 0;
+    let scheduleTimer: ReturnType<typeof setTimeout> | null = null;
     const update = () => {
       const flow = collectPublicationFlowElements(content);
       const corrections = publicationCorrections;
@@ -339,6 +413,15 @@ export function PublicationDocumentCanvas({
       ));
     };
     const schedule = () => {
+      if (paginationDebounceMs > 0) {
+        if (scheduleTimer !== null) clearTimeout(scheduleTimer);
+        scheduleTimer = setTimeout(() => {
+          scheduleTimer = null;
+          cancelAnimationFrame(frame);
+          frame = requestAnimationFrame(update);
+        }, paginationDebounceMs);
+        return;
+      }
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(update);
     };
@@ -361,6 +444,7 @@ export function PublicationDocumentCanvas({
     });
 
     return () => {
+      if (scheduleTimer !== null) clearTimeout(scheduleTimer);
       cancelAnimationFrame(frame);
       resizeObserver?.disconnect();
       fonts?.removeEventListener('loadingdone', schedule);
@@ -381,6 +465,7 @@ export function PublicationDocumentCanvas({
     noteLineHeight,
     noteSeparatorHeight,
     outerMargin,
+    paginationDebounceMs,
     pageOverhead,
     style.page.mirroredMargins,
     style,
@@ -761,6 +846,7 @@ export function PublicationDocumentCanvas({
     </section>
   );
 }
+
 
 function AutoGrowPublicationField({
   className,

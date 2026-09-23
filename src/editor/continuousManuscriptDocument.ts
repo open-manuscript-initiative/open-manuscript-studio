@@ -116,7 +116,9 @@ export function projectContinuousManuscriptDocument(
 ): OmiSection[] {
   const createId = options.createId ?? (() => crypto.randomUUID());
   const previousBlocks = new Map<string, OmiBlock>();
+  const previousSectionsById = new Map<string, OmiSection>();
   for (const section of previousSections) {
+    previousSectionsById.set(section.id, section);
     for (const block of section.blocks) previousBlocks.set(block.id, block);
   }
 
@@ -153,7 +155,7 @@ export function projectContinuousManuscriptDocument(
         headingStack.pop();
       }
       const parentSectionId = headingStack[headingStack.length - 1]?.id;
-      const previousSection = previousSections.find((section) => section.id === sectionId);
+      const previousSection = previousSectionsById.get(sectionId);
       const headingBlock = textBlockFromNode(
         editorNode,
         blockId,
@@ -176,7 +178,7 @@ export function projectContinuousManuscriptDocument(
 
     if (!currentSection) {
       const sectionId = uniqueId(attrs.omiSectionId, usedSectionIds);
-      const previousSection = previousSections.find((section) => section.id === sectionId);
+      const previousSection = previousSectionsById.get(sectionId);
       currentSection = withParentSectionId(
         {
           ...(previousSection ?? {}),
