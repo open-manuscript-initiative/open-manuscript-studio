@@ -1,6 +1,7 @@
 import type { JSONContent } from '@tiptap/core';
 import { FileCode2, FileText } from 'lucide-react';
 import {
+  useEffect,
   useId,
   useLayoutEffect,
   useMemo,
@@ -16,6 +17,12 @@ import {
   stageSubtitleChange,
 } from '../app/manuscriptFrontMatterActions';
 import { useStudioStore } from '../app/useStudioStore';
+import {
+  editorZoomFromEvent,
+  editorZoomScale,
+  EDITOR_ZOOM_EVENT,
+  readStoredEditorZoom,
+} from '../editor/editorZoom';
 import {
   buildContinuousManuscriptDocument,
   projectContinuousManuscriptDocument,
@@ -140,6 +147,16 @@ export function PublicationDocumentCanvas({
     flowBreaks: EMPTY_PUBLICATION_FLOW_BREAKS,
   });
   const [zoom, setZoom] = useState<PublicationZoom>('fit');
+  const [editorZoomPercent, setEditorZoomPercent] = useState(readStoredEditorZoom);
+
+  useEffect(() => {
+    const handleEditorZoom = (event: Event) => {
+      const next = editorZoomFromEvent(event);
+      if (next !== null) setEditorZoomPercent(next);
+    };
+    window.addEventListener(EDITOR_ZOOM_EVENT, handleEditorZoom);
+    return () => window.removeEventListener(EDITOR_ZOOM_EVENT, handleEditorZoom);
+  }, []);
 
   const pageWidthMm = positive(style.page.width, 150);
   const pageHeightMm = positive(style.page.height, 240);
@@ -153,11 +170,12 @@ export function PublicationDocumentCanvas({
   const fitScale = stageWidth > 0
     ? Math.min(1, Math.max(0.25, (stageWidth - 34) / physicalWidth))
     : 0.75;
+  const printLayoutScale = zoom === 'fit'
+    ? fitScale
+    : zoom / 100;
   const scale = viewMode === 'html'
     ? 1
-    : zoom === 'fit'
-      ? fitScale
-      : zoom / 100;
+    : printLayoutScale * editorZoomScale(editorZoomPercent);
   const pageWidth = physicalWidth * scale;
   const pageHeight = pageHeightMm * PIXELS_PER_MM * scale;
   const topMargin = topMarginMm * PIXELS_PER_MM * scale;
