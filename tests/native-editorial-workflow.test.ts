@@ -159,6 +159,22 @@ test('reviewer assignment is failure-safe and blocks author self-review', () => 
   assert.match(service, /\.catch\(\(\) => undefined\)/);
 });
 
+test('published workflow state is restricted to the verified venue domain', () => {
+  assert.match(routes, /externalUrl: z\.string\(\)\.trim\(\)\.url\(\)/);
+  assert.match(service, /assertPublicationUrlMatchesVenue/);
+  assert.match(
+    service,
+    /hostname !== domain && !hostname\.endsWith\(.*domain/,
+  );
+  assert.match(
+    service,
+    /The published URL is outside the verified publication-venue domain/,
+  );
+  assert.match(publishing, /publicationUrlMatchesVenue/);
+  assert.match(publishing, /publishedOutsideVenue/);
+  assert.match(nativeApi, /externalUrl: string/);
+});
+
 test('submission assets are self-contained and checksum verified', () => {
   assert.match(service, /validateSubmissionAssets/);
   assert.match(service, /createHash\('sha256'\)/);
