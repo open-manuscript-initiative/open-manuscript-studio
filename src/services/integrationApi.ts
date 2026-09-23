@@ -5,6 +5,14 @@ import type {
   IntegrationAuthenticationMode,
   IntegrationProviderStatus,
 } from '../integrations/contracts';
+import type {
+  EditorialAcceptanceRequest,
+  EditorialDecisionEvidence,
+  WebPublicationApprovalRequest,
+  WebPublicationApprovalResult,
+  WebPublicationAssuranceEvidence,
+  WebPublicationReceipt,
+} from '../integrations/webPublicationContract';
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
 const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org/api';
@@ -371,26 +379,10 @@ export async function requestPublicationArtifact(
 }
 
 
-export interface NewsletterPublicationReceipt {
-  connectionId: string;
-  providerId: 'wordpress' | 'web-publishing';
-  manuscriptId: string;
-  externalId: string | null;
-  externalUrl: string | null;
-  contentDigest: string;
-  status: 'draft' | 'publish';
-  updatedAt: string;
-}
-
-export async function requestNewsletterPublication(input: {
-  connectionId: string;
-  manuscriptId: string;
-  title: string;
-  html: string;
-  status: 'draft' | 'publish';
-  approved: true;
-}): Promise<NewsletterPublicationReceipt> {
-  const response = await fetch(`${API_BASE_URL}/publication/newsletter/publish`, {
+export async function requestWebPublicationApproval(
+  input: WebPublicationApprovalRequest,
+): Promise<WebPublicationApprovalResult> {
+  const response = await fetch(`${API_BASE_URL}/v1/publications/web/approval-grants`, {
     method: 'POST',
     credentials: 'include',
     cache: 'no-store',
@@ -401,14 +393,111 @@ export async function requestNewsletterPublication(input: {
     body: JSON.stringify(input),
   });
   const payload = await parseJsonResponse<{
-    publication?: NewsletterPublicationReceipt;
+    grant?: WebPublicationApprovalResult['grant'];
+    receipt?: WebPublicationReceipt;
     error?: { message?: string };
   }>(response);
-  if (!response.ok || !payload.publication) {
+  if (!response.ok || (!payload.grant && !payload.receipt)) {
     throw new Error(
       payload.error?.message ??
-        `Website publication failed with HTTP ${response.status}.`,
+        `Website publication approval failed with HTTP ${response.status}.`,
     );
   }
-  return payload.publication;
+  return payload.receipt
+    ? { receipt: payload.receipt }
+    : { grant: payload.grant! };
+}
+
+export async function getWebPublicationAssuranceEvidence(input: {
+  manuscriptId: string;
+  revisionId: string;
+  stateDigest: string;
+}): Promise<WebPublicationAssuranceEvidence> {
+  const query = new URLSearchParams({
+    manuscriptId: input.manuscriptId,
+    revisionId: input.revisionId,
+    stateDigest: input.stateDigest,
+  });
+  const response = await fetch(
+    `${API_BASE_URL}/v1/publications/web/assurance-evidence?${query.toString()}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: integrationHeaders({ Accept: 'application/json' }),
+    },
+  );
+  const payload = await parseJsonResponse<
+    WebPublicationAssuranceEvidence & { error?: { message?: string } }
+  >(response);
+  if (!response.ok) {
+    throw new Error(
+      payload.error?.message ??
+        `Publication-assurance lookup failed with HTTP ${response.status}.`,
+    );
+  }
+  return {
+    decisions: payload.decisions ?? [],
+    eligibleReviewRounds: payload.eligibleReviewRounds ?? [],
+  };
+}
+
+export async function recordStudioEditorialAcceptance(
+  workspaceId: string,
+  input: EditorialAcceptanceRequest,
+): Promise<EditorialDecisionEvidence> {
+  const response = await fetch(
+    `${API_BASE_URL}/v1/reviews/workspaces/${encodeURIComponent(workspaceId)}/editorial-decisions`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: integrationHeaders({
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify(input),
+    },
+  );
+  const payload = await parseJsonResponse<{
+    evidence?: EditorialDecisionEvidence;
+    error?: { message?: string };
+  }>(response);
+  if (!response.ok || !payload.evidence) {
+    throw new Error(
+      payload.error?.message ??
+        `Editorial acceptance failed with HTTP ${response.status}.`,
+    );
+  }
+  return payload.evidence;
+}
+
+export async function executeWebPublication(
+  deliveryId: string,
+  executionToken: string,
+): Promise<WebPublicationReceipt> {
+  const response = await fetch(
+    `${API_BASE_URL}/v1/publications/web/deliveries/${encodeURIComponent(deliveryId)}/execute`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: integrationHeaders({
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({ executionToken }),
+    },
+  );
+  const payload = await parseJsonResponse<{
+    receipt?: WebPublicationReceipt;
+    error?: { message?: string };
+  }>(response);
+  if (!response.ok || !payload.receipt) {
+    throw new Error(
+      payload.error?.message ??
+        `Website publication delivery failed with HTTP ${response.status}.`,
+    );
+  }
+  return payload.receipt;
 }

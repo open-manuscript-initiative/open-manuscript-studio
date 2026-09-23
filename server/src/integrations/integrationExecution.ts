@@ -1,10 +1,11 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { isIP } from 'node:net';
 
 import { prisma } from '../lib/prisma.js';
 import { requestAiText, resolveAiEndpoint } from './aiProviderClient.js';
 import { assertOmiAgentRunAllowed } from './omiAgentsConfig.js';
 import { decryptSecret, type EncryptedSecret } from './secretCrypto.js';
+import { writeIntegrationAuditEvent } from './integrationAudit.js';
 
 export type ExternalDocumentScopeKind =
   | 'selection'
@@ -148,7 +149,7 @@ export async function translateWithDeepL(
       throw new Error('DeepL returned an invalid translation payload.');
     }
 
-    await writeAuditEvent({
+    await writeIntegrationAuditEvent({
       id: auditId,
       userId,
       providerId: 'deepl',
@@ -174,7 +175,7 @@ export async function translateWithDeepL(
       segments: translated,
     };
   } catch (error) {
-    await writeAuditEvent({
+    await writeIntegrationAuditEvent({
       id: auditId,
       userId,
       providerId: 'deepl',
@@ -258,7 +259,7 @@ export async function runBuiltInAgent(
       maxOutputTokens: 4096,
     });
 
-    await writeAuditEvent({
+    await writeIntegrationAuditEvent({
       id: auditId,
       userId,
       providerId: 'ai-provider',
@@ -282,7 +283,7 @@ export async function runBuiltInAgent(
       auditId,
     };
   } catch (error) {
-    await writeAuditEvent({
+    await writeIntegrationAuditEvent({
       id: auditId,
       userId,
       providerId: 'ai-provider',
@@ -360,39 +361,6 @@ async function resolveIntegrationConnection(userId: string, providerId: string):
   };
 }
 
-async function writeAuditEvent(input: {
-  id: string;
-  userId: string;
-  providerId: string;
-  operation: string;
-  scope: ExternalDocumentScope;
-  input?: string;
-  output?: string;
-  permissions: string[];
-  directWrite: boolean;
-  status: 'SUCCESS' | 'ERROR';
-  detail?: Record<string, unknown>;
-}): Promise<void> {
-  const inputDigest = input.input === undefined ? null : sha256(input.input);
-  const outputDigest = input.output === undefined ? null : sha256(input.output);
-  const inputLength = input.input?.length ?? null;
-  const outputLength = input.output?.length ?? null;
-  const permissions = JSON.stringify(input.permissions);
-  const detail = input.detail ? JSON.stringify(input.detail) : null;
-  await prisma.$executeRaw`
-    INSERT INTO integration_audit_events
-      (id, user_id, provider_id, operation, scope_kind, scope_id,
-       input_digest, input_length, output_digest, output_length,
-       permissions, review_confidential, direct_write, status, detail)
-    VALUES
-      (${input.id}::uuid, ${input.userId}::uuid, ${input.providerId}, ${input.operation},
-       ${input.scope.kind}, ${input.scope.id ?? null}, ${inputDigest}, ${inputLength},
-       ${outputDigest}, ${outputLength}, ${permissions}::jsonb,
-       ${Boolean(input.scope.reviewConfidential)}, ${input.directWrite}, ${input.status},
-       ${detail}::jsonb)
-  `;
-}
-
 function assertConfidentialScopeAllowed(
   scope: ExternalDocumentScope,
   allowed: boolean | undefined,
@@ -462,10 +430,6 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
 
 function uniqueStrings(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
-}
-
-function sha256(value: string): string {
-  return createHash('sha256').update(value).digest('hex');
 }
 
 function safeErrorMessage(error: unknown): string {

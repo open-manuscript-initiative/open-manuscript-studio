@@ -213,6 +213,7 @@ jobs:
           npm --prefix server run typecheck
           npm run test:direct-submission
           npm run test:publication-artifact
+          npm run test:web-publication
 
       - name: Install pinned Vivliostyle renderer
         shell: bash

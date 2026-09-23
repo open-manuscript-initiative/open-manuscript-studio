@@ -24,7 +24,10 @@ import { institutionalProfileRouter } from './routes/institutionalProfileRoutes.
 import { integrationExecutionRouter } from './routes/integrationExecutionRoutes.js';
 import { integrationRouter } from './routes/integrationRoutes.js';
 import { linkedIdentityRouter } from './routes/linkedIdentityRoutes.js';
-import { newsletterPublishingRouter } from './routes/newsletterPublishingRoutes.js';
+import {
+  newsletterPublishingRouter,
+  webPublicationV1Router,
+} from './routes/newsletterPublishingRoutes.js';
 import { ojsAssignmentRouter } from './routes/ojsAssignmentRoutes.js';
 import { ojsReviewRouter } from './routes/ojsReviewRoutes.js';
 import { ompReviewRouter } from './routes/ompReviewRoutes.js';
@@ -33,7 +36,10 @@ import { oidcProviderRouter } from './routes/oidcProviderRoutes.js';
 import { orcidLinkStartRouter } from './routes/orcidLinkStartRoutes.js';
 import { orcidOidcRouter } from './routes/orcidOidcRoutes.js';
 import { pdfImportRouter } from './routes/pdfImportRoutes.js';
-import { peerReviewRouter } from './routes/peerReviewRoutes.js';
+import {
+  peerReviewRouter,
+  peerReviewV1Router,
+} from './routes/peerReviewRoutes.js';
 import { proofreadingRouter } from './routes/proofreadingRoutes.js';
 import { publishingConnectionRouter } from './routes/publishingConnectionRoutes.js';
 import { publicationVenueRouter } from './routes/publicationVenueRoutes.js';
@@ -75,6 +81,7 @@ app.use('/api/integrations/connections/:connectionId/publication-artifact', expr
 app.use('/integrations/omp/native/author/:contextId/revision', express.json({ limit: '36mb' }));
 app.use('/api/publication/render/pdf', express.json({ limit: '64mb' }));
 app.use('/api/publication/newsletter', express.json({ limit: '12mb' }));
+app.use('/api/v1/publications/web', express.json({ limit: '12mb' }));
 app.use('/api/publication/validate/jats', express.json({ limit: '7mb' }));
 app.use(express.json({ limit: '1mb' }));
 
@@ -114,9 +121,11 @@ app.use('/api', proofreadingRouter);
 app.use('/api', publishingConnectionRouter);
 app.use('/api/publication', publicationPdfRouter);
 app.use('/api/publication', newsletterPublishingRouter);
+app.use('/api/v1/publications', webPublicationV1Router);
 app.use('/api/publication', publicationValidationRouter);
 app.use('/api/import', pdfImportRouter);
 app.use('/api/reviews', peerReviewRouter);
+app.use('/api/v1/reviews', peerReviewV1Router);
 app.use('/api/reviews', reviewManuscriptRouter);
 app.use('/api/reviews', editorReviewOverviewRouter);
 app.use('/api/reviews', ojsAssignmentRouter);

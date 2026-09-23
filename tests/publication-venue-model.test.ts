@@ -63,3 +63,35 @@ test('preserves verified integration metadata and rejects unverified selection',
     false,
   );
 });
+
+
+test('preserves DNS-verified publication venue authority independently of OJS/OMP', () => {
+  const verified = normalizePublicationVenue({
+    id: 'venue-dns-1',
+    type: 'JOURNAL',
+    name: 'Domain Verified Journal',
+    website: 'https://journal.example.org',
+    authority: {
+      method: 'DNS_TXT',
+      status: 'VERIFIED',
+      domain: 'journal.example.org',
+      verificationId: '40000000-0000-4000-8000-000000000004',
+      verifiedAt: '2026-09-23T07:15:00.000Z',
+    },
+  });
+
+  assert.deepEqual(verified, {
+    id: 'venue-dns-1',
+    type: 'JOURNAL',
+    name: 'Domain Verified Journal',
+    website: 'https://journal.example.org',
+    authority: {
+      method: 'DNS_TXT',
+      status: 'VERIFIED',
+      domain: 'journal.example.org',
+      verificationId: '40000000-0000-4000-8000-000000000004',
+      verifiedAt: '2026-09-23T07:15:00.000Z',
+    },
+  });
+  assert.equal(isVerifiedPublicationVenue(verified), true);
+});

@@ -17,6 +17,41 @@ const newsletterPublishingPanel = readFileSync(
   new URL('../src/components/NewsletterPublishingPanel.tsx', import.meta.url),
   'utf8',
 );
+const webPublicationService = readFileSync(
+  new URL('../server/src/integrations/publishing/webPublication.ts', import.meta.url),
+  'utf8',
+);
+const editorialDecisionService = readFileSync(
+  new URL('../server/src/services/editorialDecisionService.ts', import.meta.url),
+  'utf8',
+);
+const publicationVenueAuthorityService = readFileSync(
+  new URL('../server/src/services/publicationVenueAuthorityService.ts', import.meta.url),
+  'utf8',
+);
+const publicationVenueRoutes = readFileSync(
+  new URL('../server/src/routes/publicationVenueRoutes.ts', import.meta.url),
+  'utf8',
+);
+const publicationVenueApi = readFileSync(
+  new URL('../src/services/publicationVenueApi.ts', import.meta.url),
+  'utf8',
+);
+const publicationVenueField = readFileSync(
+  new URL('../src/components/PublicationVenueField.tsx', import.meta.url),
+  'utf8',
+);
+const identitySchema = readFileSync(
+  new URL('../server/prisma/identity/schema.prisma', import.meta.url),
+  'utf8',
+);
+const webPublicationMigration = readFileSync(
+  new URL(
+    '../server/prisma/migrations/20260922090000_harden_web_publication_delivery/migration.sql',
+    import.meta.url,
+  ),
+  'utf8',
+);
 const webPublishingSettings = readFileSync(
   new URL('../src/components/WebPublishingSettings.tsx', import.meta.url),
   'utf8',
@@ -123,16 +158,88 @@ test('WordPress publishing uses application-password credentials and generic web
   assert.match(userIntegrationRoutes, /encryptedSecret: null/);
 });
 
-test('website publication requires preview approval and keeps idempotent external receipts', () => {
-  assert.match(newsletterPublishingPanel, /buildPublicationHtmlArtifact/);
+test('website publication binds assurance to a committed artifact and keeps idempotent external receipts', () => {
+  assert.match(newsletterPublishingPanel, /prepareWebPublicationArtifact/);
   assert.match(newsletterPublishingPanel, /sandbox=""/);
-  assert.match(newsletterPublishingPanel, /approved: true/);
-  assert.match(newsletterPublishingRoutes, /approved: z\.literal\(true\)/);
-  assert.match(newsletterPublishingRoutes, /omi-newsletter-publish\/1/);
-  assert.match(newsletterPublishingRoutes, /wp-json\/wp\/v2\/media/);
-  assert.match(newsletterPublishingRoutes, /wp-json\/wp\/v2\/posts/);
-  assert.match(newsletterPublishingRoutes, /assertTrustedIntegrationUrl/);
-  assert.match(newsletterPublishingRoutes, /redirect: 'error'/);
+  assert.match(newsletterPublishingPanel, /OMI_WEB_PUBLICATION_APPROVAL_STATEMENT/);
+  assert.match(newsletterPublishingPanel, /createStudioReviewedAssurance/);
+  assert.doesNotMatch(newsletterPublishingPanel, /approved:\s*true/);
+  assert.match(newsletterPublishingRoutes, /z\.discriminatedUnion\('reviewStatus'/);
+  assert.match(newsletterPublishingRoutes, /\/web\/approval-grants/);
+  assert.match(newsletterPublishingRoutes, /\/web\/assurance-evidence/);
+  assert.match(webPublicationService, /omi-web-publication\/1/);
+  assert.match(webPublicationService, /wp-json\/wp\/v2\/media/);
+  assert.match(webPublicationService, /wp-json\/wp\/v2\/posts/);
+  assert.match(webPublicationService, /assertTrustedIntegrationUrl/);
+  assert.match(webPublicationService, /redirect: 'error'/);
+  assert.match(webPublicationService, /Idempotency-Key/);
+  assert.match(webPublicationService, /WEB_PUBLICATION_TARGET_CHANGED/);
+  assert.match(webPublicationService, /deliveredContentDigest/);
+  assert.match(webPublicationService, /assertEditorialDecisionEvidence/);
+  assert.match(webPublicationService, /WEB_PUBLICATION_RECONCILIATION_REQUIRED/);
+  assert.match(webPublicationService, /publicationContentDigest/);
+
+  assert.match(editorialDecisionService, /publicationContentDigest/);
+  assert.match(editorialDecisionService, /externalInstallationId === null/);
+  assert.match(editorialDecisionService, /manuscriptSnapshot !== null/);
+  assert.match(editorialDecisionService, /sourceSnapshotDigest/);
+  assert.match(editorialDecisionService, /authoritySnapshot/);
+  assert.match(editorialDecisionService, /publicationVenueId/);
+
+  assert.match(publicationVenueAuthorityService, /resolveTxt/);
+  assert.match(publicationVenueAuthorityService, /DOMAIN_ADMIN/);
+  assert.match(publicationVenueAuthorityService, /EDITOR_IN_CHIEF/);
+  assert.match(publicationVenueAuthorityService, /DNS_TXT/);
+  assert.match(publicationVenueAuthorityService, /claim\.requestedByUserId !== userId/);
+  assert.match(publicationVenueAuthorityService, /claim\.status !== 'PENDING'/);
+  assert.match(publicationVenueAuthorityService, /already been consumed or revoked/);
+  assert.match(publicationVenueAuthorityService, /grantPublicationVenueMember/);
+  assert.match(publicationVenueAuthorityService, /role: 'DOMAIN_ADMIN'/);
+  assert.match(
+    publicationVenueAuthorityService,
+    /last active domain administrator cannot be revoked/i,
+  );
+  assert.match(publicationVenueAuthorityService, /isolationLevel: 'Serializable'/);
+
+  assert.match(
+    publicationVenueRoutes,
+    /z\.enum\(\['DOMAIN_ADMIN', 'EDITOR', 'EDITOR_IN_CHIEF'\]\)/,
+  );
+  assert.match(publicationVenueRoutes, /canManageMembers/);
+  assert.match(publicationVenueApi, /grantPublicationVenueMember/);
+  assert.match(publicationVenueApi, /revokePublicationVenueMembership/);
+  assert.match(publicationVenueField, /option value="DOMAIN_ADMIN"/);
+  assert.match(publicationVenueField, /copy\.domainAdmin/);
+
+  assert.match(identitySchema, /model PublicationVenueDomainVerification \{/);
+  assert.match(identitySchema, /model PublicationVenueMembership \{/);
+
+  assert.equal(
+    webPublicationMigration.match(/CREATE TABLE "editorial_decisions"/g)?.length,
+    1,
+  );
+  assert.ok(
+    webPublicationMigration.includes(
+      `"state_digest" ~ '^[0-9a-f]{64}$'`,
+    ),
+  );
+  assert.ok(
+    webPublicationMigration.includes(
+      `"publication_content_digest" ~ '^[0-9a-f]{64}$'`,
+    ),
+  );
+  assert.ok(
+    webPublicationMigration.includes(
+      `"evidence_digest" ~ '^[0-9a-f]{64}$'`,
+    ),
+  );
+
   assert.match(serverSchema, /model WebPublication \{/);
-  assert.match(serverSchema, /@@unique\(\[userId, connectionId, manuscriptId\]\)/);
+  assert.match(serverSchema, /model WebPublicationDelivery \{/);
+  assert.match(serverSchema, /model WebPublicationApprovalGrant \{/);
+  assert.match(serverSchema, /model EditorialDecision \{/);
+  assert.match(
+    serverSchema,
+    /@@unique\(\[userId, connectionId, manuscriptId\]\)/,
+  );
 });

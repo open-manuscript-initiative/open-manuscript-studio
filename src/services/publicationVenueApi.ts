@@ -17,6 +17,57 @@ export interface CreatePublicationVenueInput {
   integrationConnectionId: string;
 }
 
+export interface CreatePublicationVenueDomainClaimInput {
+  type: OmiPublicationVenueType;
+  name: string;
+  domain: string;
+  website?: string;
+  issn?: string;
+  isbnPrefix?: string;
+}
+
+export interface PublicationVenueDomainChallenge {
+  claimId: string;
+  venueId: string;
+  domain: string;
+  txtName: string;
+  txtValue: string;
+  expiresAt: string;
+}
+
+export type PublicationVenueAuthorityRole =
+  | 'DOMAIN_ADMIN'
+  | 'EDITOR_IN_CHIEF'
+  | 'EDITOR';
+
+export interface PublicationVenueAuthorityMember {
+  id: string;
+  role: PublicationVenueAuthorityRole;
+  active: boolean;
+  user: {
+    id: string;
+    email: string;
+    fullName: string;
+  };
+}
+
+export interface PublicationVenueAuthorityOverview {
+  verifiedDomains: Array<{
+    verificationId: string;
+    domain: string;
+    method: 'DNS_TXT';
+    verifiedAt: string | null;
+    lastCheckedAt: string | null;
+  }>;
+  currentMemberships: Array<{
+    id: string;
+    role: PublicationVenueAuthorityRole;
+    active: boolean;
+  }>;
+  canManageMembers: boolean;
+  members: PublicationVenueAuthorityMember[];
+}
+
 export async function getPublicationVenues(
   type?: OmiPublicationVenueType,
   query?: string,
@@ -42,19 +93,121 @@ export async function getPublicationVenues(
 export async function createPublicationVenue(
   input: CreatePublicationVenueInput,
 ): Promise<OmiPublicationVenueReference> {
-  const requestHeaders = headers();
-  requestHeaders.set('Content-Type', 'application/json');
-  const response = await fetch(apiBaseUrl() + '/api/auth/publication-venues', {
-    method: 'POST',
-    credentials: 'include',
-    headers: requestHeaders,
-    body: JSON.stringify(input),
-  });
-  if (!response.ok) throw await apiError(response);
+  const response = await jsonRequest('/api/auth/publication-venues', 'POST', input);
   const payload = await response.json() as {
     venue: OmiPublicationVenueReference;
   };
   return payload.venue;
+}
+
+export async function createPublicationVenueDomainClaim(
+  input: CreatePublicationVenueDomainClaimInput,
+): Promise<{
+  venue: OmiPublicationVenueReference;
+  challenge: PublicationVenueDomainChallenge;
+}> {
+  const response = await jsonRequest(
+    '/api/auth/publication-venues/domain-claims',
+    'POST',
+    input,
+  );
+  return response.json() as Promise<{
+    venue: OmiPublicationVenueReference;
+    challenge: PublicationVenueDomainChallenge;
+  }>;
+}
+
+export async function verifyPublicationVenueDomainClaim(
+  claimId: string,
+): Promise<OmiPublicationVenueReference> {
+  const response = await jsonRequest(
+    '/api/auth/publication-venues/domain-claims/'
+      + encodeURIComponent(claimId)
+      + '/verify',
+    'POST',
+    {},
+  );
+  const payload = await response.json() as {
+    venue: OmiPublicationVenueReference;
+  };
+  return payload.venue;
+}
+
+export async function getPublicationVenueAuthority(
+  venueId: string,
+): Promise<PublicationVenueAuthorityOverview> {
+  const response = await fetch(
+    apiBaseUrl()
+      + '/api/auth/publication-venues/'
+      + encodeURIComponent(venueId)
+      + '/authority',
+    {
+      method: 'GET',
+      credentials: 'include',
+      headers: headers(),
+    },
+  );
+  if (!response.ok) throw await apiError(response);
+  const payload = await response.json() as {
+    authority: PublicationVenueAuthorityOverview;
+  };
+  return payload.authority;
+}
+
+export async function grantPublicationVenueMember(
+  venueId: string,
+  input: {
+    email: string;
+    role: PublicationVenueAuthorityRole;
+  },
+): Promise<PublicationVenueAuthorityMember> {
+  const response = await jsonRequest(
+    '/api/auth/publication-venues/'
+      + encodeURIComponent(venueId)
+      + '/members',
+    'POST',
+    input,
+  );
+  const payload = await response.json() as {
+    member: PublicationVenueAuthorityMember;
+  };
+  return payload.member;
+}
+
+export async function revokePublicationVenueMembership(
+  venueId: string,
+  membershipId: string,
+): Promise<void> {
+  const response = await fetch(
+    apiBaseUrl()
+      + '/api/auth/publication-venues/'
+      + encodeURIComponent(venueId)
+      + '/members/'
+      + encodeURIComponent(membershipId),
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: headers(),
+    },
+  );
+  if (!response.ok && response.status !== 204) throw await apiError(response);
+}
+
+async function jsonRequest(
+  path: string,
+  method: 'POST' | 'PUT',
+  body: unknown,
+): Promise<Response> {
+  const requestHeaders = headers();
+  requestHeaders.set('Content-Type', 'application/json');
+  const response = await fetch(apiBaseUrl() + path, {
+    method,
+    credentials: 'include',
+    headers: requestHeaders,
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw await apiError(response);
+  return response;
 }
 
 function apiBaseUrl(): string {

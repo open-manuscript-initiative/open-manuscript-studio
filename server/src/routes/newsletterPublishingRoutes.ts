@@ -1,359 +1,210 @@
-import { createHash } from 'node:crypto';
-
-import { Router } from 'express';
+import { Router, type Response } from 'express';
 import { z } from 'zod';
 
-import { prisma } from '../lib/prisma.js';
-import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
-import { decryptSecret, type EncryptedSecret } from '../integrations/secretCrypto.js';
-import { assertTrustedIntegrationUrl } from '../integrations/security/trustedRemoteUrl.js';
+import {
+  WEB_PUBLICATION_APPROVAL,
+  WebPublicationServiceError,
+  executeWebPublicationDelivery,
+  issueWebPublicationApproval,
+} from '../integrations/publishing/webPublication.js';
+import {
+  requireSession,
+  type AuthenticatedRequest,
+} from '../middleware/requireSession.js';
+import { listEditorialPublicationEvidence } from '../services/editorialDecisionService.js';
 
+export const webPublicationV1Router = Router();
 export const newsletterPublishingRouter = Router();
 
-const publishSchema = z.object({
-  connectionId: z.string().uuid(),
-  manuscriptId: z.string().trim().min(1).max(128),
-  title: z.string().trim().min(1).max(500),
-  html: z.string().min(1).max(10 * 1024 * 1024),
-  status: z.enum(['draft', 'publish']).default('draft'),
-  approved: z.literal(true),
+const assuranceBaseSchema = z.object({
+  model: z.literal('omi-publication-assurance'),
+  version: z.literal('1'),
+  intent: z.enum([
+    'public-interest',
+    'popular-science',
+    'newsletter',
+    'scholarly-article',
+    'book-chapter',
+  ]),
+  disclosure: z.literal('visible-and-machine-readable'),
 });
 
-type ConfigRecord = Record<string, unknown>;
+const assuranceSchema = z.discriminatedUnion('reviewStatus', [
+  assuranceBaseSchema.extend({
+    reviewStatus: z.literal('not-peer-reviewed'),
+    approvalAuthority: z.literal('authenticated-account-holder'),
+  }).strict(),
+  assuranceBaseSchema.extend({
+    reviewStatus: z.literal('peer-reviewed'),
+    approvalAuthority: z.literal('studio-editorial-decision'),
+    evidence: z.object({
+      type: z.literal('studio-editorial-decision'),
+      decisionId: z.string().uuid(),
+      evidenceDigest: z.string().regex(/^[a-f0-9]{64}$/i),
+      publicationContentDigest: z.string().regex(/^[a-f0-9]{64}$/i),
+      authority: z.object({
+        type: z.literal('verified-publication-venue'),
+        venueId: z.string().uuid(),
+        venueName: z.string().trim().min(1).max(300),
+        venueType: z.enum(['JOURNAL', 'BOOK_PUBLISHER']),
+        domain: z.string().trim().min(3).max(253),
+        verificationMethod: z.literal('DNS_TXT'),
+        verificationId: z.string().uuid(),
+        verifiedAt: z.iso.datetime({ offset: true }),
+        editorRole: z.enum(['EDITOR', 'EDITOR_IN_CHIEF']),
+      }).strict().optional(),
+      reviewRound: z.number().int().min(1).max(99),
+      decidedAt: z.iso.datetime({ offset: true }),
+    }).strict(),
+  }).strict(),
+]);
 
-function configRecord(value: unknown): ConfigRecord {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? value as ConfigRecord
-    : {};
-}
+const approvalSchema = z.object({
+  connectionId: z.string().uuid(),
+  connectionVersion: z.iso.datetime({ offset: true }),
+  manuscriptId: z.string().trim().min(1).max(128),
+  title: z.string().trim().min(1).max(500),
+  status: z.enum(['draft', 'publish']),
+  assurance: assuranceSchema,
+  artifact: z.object({
+    html: z.string().min(1).max(10 * 1024 * 1024),
+    build: z.unknown(),
+  }).strict(),
+  idempotencyKey: z.string().trim().min(32).max(256),
+  confirmation: z.literal(WEB_PUBLICATION_APPROVAL),
+}).strict();
 
-function stringConfig(config: ConfigRecord, key: string): string {
-  const value = config[key];
-  return typeof value === 'string' ? value.trim() : '';
-}
+const executionSchema = z.object({
+  executionToken: z.string().min(32).max(256),
+}).strict();
 
-function parseEncryptedSecret(value: string | null): string | null {
-  if (!value) return null;
-  const parsed = JSON.parse(value) as Partial<EncryptedSecret>;
-  if (!parsed.ciphertext || !parsed.iv || !parsed.authTag) {
-    throw new Error('Stored integration secret is invalid.');
-  }
-  return decryptSecret(parsed as EncryptedSecret);
-}
+const assuranceEvidenceQuerySchema = z.object({
+  manuscriptId: z.string().trim().min(1).max(128),
+  revisionId: z.string().trim().min(1).max(128),
+  stateDigest: z.string().regex(/^[a-f0-9]{64}$/i),
+}).strict();
 
-function digestHtml(html: string): string {
-  return createHash('sha256').update(html, 'utf8').digest('hex');
-}
-
-function appendTrustedPath(baseUrl: string, path: string): string {
-  const base = new URL(baseUrl);
-  const root = base.pathname.replace(/\/+$/, '');
-  base.pathname = `${root}/${path.replace(/^\/+/, '')}`;
-  base.search = '';
-  base.hash = '';
-  return base.toString();
-}
-
-async function wordpressRequest(
-  baseUrl: string,
-  path: string,
-  username: string,
-  applicationPassword: string,
-  init: RequestInit,
-): Promise<Response> {
-  const rawUrl = appendTrustedPath(baseUrl, path);
-  const trustedUrl = await assertTrustedIntegrationUrl(rawUrl, baseUrl);
-  const headers = new Headers(init.headers);
-  headers.set(
-    'Authorization',
-    `Basic ${Buffer.from(`${username}:${applicationPassword}`, 'utf8').toString('base64')}`,
-  );
-  headers.set('Accept', 'application/json');
-  return fetch(trustedUrl, {
-    ...init,
-    headers,
-    redirect: 'error',
-    signal: AbortSignal.timeout(20000),
-  });
-}
-
-async function responseMessage(response: Response): Promise<string> {
-  const body = await response.json().catch(() => null) as
-    | { message?: string; code?: string }
-    | null;
-  return body?.message || body?.code || `HTTP ${response.status}`;
-}
-
-async function uploadWordPressImages(
-  html: string,
-  baseUrl: string,
-  username: string,
-  applicationPassword: string,
-): Promise<string> {
-  let output = html;
-  const matches = Array.from(
-    html.matchAll(/src=["'](data:image\/(png|jpeg|gif|webp);base64,([A-Za-z0-9+/=]+))["']/gi),
-  );
-
-  if (matches.length > 64) {
-    throw new Error('A WordPress publication may contain at most 64 embedded images.');
-  }
-
-  let index = 0;
-  for (const match of matches) {
-    const source = match[1];
-    const subtype = match[2]?.toLowerCase();
-    const payload = match[3];
-    if (!source || !subtype || !payload) continue;
-
-    const mediaType = subtype === 'jpeg' ? 'image/jpeg' : `image/${subtype}`;
-    const extension = subtype === 'jpeg' ? 'jpg' : subtype;
-    const bytes = Buffer.from(payload, 'base64');
-    if (bytes.length > 12 * 1024 * 1024) {
-      throw new Error('An embedded image exceeds the 12 MiB WordPress upload limit.');
-    }
-
-    index += 1;
-    const upload = await wordpressRequest(
-      baseUrl,
-      'wp-json/wp/v2/media',
-      username,
-      applicationPassword,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': mediaType,
-          'Content-Disposition': `attachment; filename="omi-newsletter-${index}.${extension}"`,
-        },
-        body: bytes,
-      },
-    );
-
-    if (!upload.ok) {
-      throw new Error(`WordPress media upload failed: ${await responseMessage(upload)}`);
-    }
-
-    const media = await upload.json() as { source_url?: string };
-    if (!media.source_url) {
-      throw new Error('WordPress media upload did not return a source URL.');
-    }
-    output = output.replaceAll(source, media.source_url);
-  }
-
-  return output;
-}
-
-function wordpressArticleHtml(html: string): string {
-  const article = html.match(/<article\b[\s\S]*?<\/article>/i)?.[0];
-  return article ?? html;
-}
-
-function genericHeaders(
-  authenticationMode: string,
-  config: ConfigRecord,
-  secret: string | null,
-): Headers {
-  const headers = new Headers({
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-  });
-  if (authenticationMode === 'none') return headers;
-  if (!secret) throw new Error('The selected web publishing target has no stored credential.');
-
-  const scheme = stringConfig(config, 'authScheme') || 'bearer';
-  if (scheme === 'bearer') {
-    headers.set('Authorization', `Bearer ${secret}`);
-  } else if (scheme === 'x-api-key') {
-    headers.set('X-API-Key', secret);
-  } else if (scheme === 'basic') {
-    const username = stringConfig(config, 'username');
-    if (!username) throw new Error('Basic authentication requires a username.');
-    headers.set(
-      'Authorization',
-      `Basic ${Buffer.from(`${username}:${secret}`, 'utf8').toString('base64')}`,
-    );
-  } else {
-    throw new Error('Unsupported web publishing authentication scheme.');
-  }
-  return headers;
-}
-
-newsletterPublishingRouter.post(
-  '/newsletter/publish',
+webPublicationV1Router.get(
+  '/web/assurance-evidence',
   requireSession,
   async (request: AuthenticatedRequest, response) => {
-    const input = publishSchema.safeParse(request.body);
+    response.setHeader('Cache-Control', 'no-store');
+    const input = assuranceEvidenceQuerySchema.safeParse(request.query);
     if (!input.success) {
       response.status(400).json({
         error: {
-          code: 'INVALID_NEWSLETTER_PUBLICATION',
-          message: 'The newsletter publication request is invalid or has not been explicitly approved.',
+          code: 'INVALID_PUBLICATION_ASSURANCE_QUERY',
+          message: 'A manuscript, committed revision, and state digest are required.',
+        },
+      });
+      return;
+    }
+    try {
+      const evidence = await listEditorialPublicationEvidence(
+        request.authUserId!,
+        input.data.manuscriptId,
+        input.data.revisionId,
+        input.data.stateDigest,
+      );
+      response.status(200).json(evidence);
+    } catch (error) {
+      sendServiceError(response, error, 'Publication-assurance lookup failed.');
+    }
+  },
+);
+
+webPublicationV1Router.post(
+  '/web/approval-grants',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    response.setHeader('Cache-Control', 'no-store');
+    const input = approvalSchema.safeParse(request.body);
+    if (!input.success) {
+      response.status(400).json({
+        error: {
+          code: 'INVALID_WEB_PUBLICATION_APPROVAL',
+          message: 'The web-publication artifact, assurance, or approval is invalid.',
           fields: input.error.flatten().fieldErrors,
         },
       });
       return;
     }
 
-    const userId = request.authUserId!;
-    const connection = await prisma.userIntegration.findFirst({
-      where: {
-        id: input.data.connectionId,
-        userId,
-        enabled: true,
-        providerId: { in: ['wordpress', 'web-publishing'] },
-      },
-    });
-    if (!connection) {
-      response.status(404).json({
+    try {
+      const result = await issueWebPublicationApproval(
+        request.authUserId!,
+        input.data,
+      );
+      response.status(result.receipt ? 200 : 201).json(result);
+    } catch (error) {
+      sendServiceError(response, error, 'Web-publication approval failed.');
+    }
+  },
+);
+
+webPublicationV1Router.post(
+  '/web/deliveries/:deliveryId/execute',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    response.setHeader('Cache-Control', 'no-store');
+    const deliveryId = z.string().uuid().safeParse(request.params.deliveryId);
+    const input = executionSchema.safeParse(request.body);
+    if (!deliveryId.success || !input.success) {
+      response.status(400).json({
         error: {
-          code: 'WEB_PUBLISHING_TARGET_NOT_FOUND',
-          message: 'The selected personal web publishing target was not found.',
+          code: 'INVALID_WEB_PUBLICATION_EXECUTION',
+          message: 'The web-publication execution request is invalid.',
         },
       });
       return;
     }
 
-    const config = configRecord(connection.config);
-    const secret = parseEncryptedSecret(connection.encryptedSecret);
-    const contentDigest = digestHtml(input.data.html);
-    const previous = await prisma.webPublication.findUnique({
-      where: {
-        userId_connectionId_manuscriptId: {
-          userId,
-          connectionId: connection.id,
-          manuscriptId: input.data.manuscriptId,
-        },
-      },
-    });
-
     try {
-      let externalId = previous?.externalId ?? null;
-      let externalUrl = previous?.externalUrl ?? null;
-
-      if (connection.providerId === 'wordpress') {
-        const baseUrl = stringConfig(config, 'baseUrl');
-        const username = stringConfig(config, 'username');
-        if (!baseUrl || !username || !secret) {
-          throw new Error('WordPress publishing requires a site URL, username, and application password.');
-        }
-
-        await assertTrustedIntegrationUrl(baseUrl, baseUrl);
-        let content = wordpressArticleHtml(input.data.html);
-        content = await uploadWordPressImages(content, baseUrl, username, secret);
-
-        const path = externalId
-          ? `wp-json/wp/v2/posts/${encodeURIComponent(externalId)}`
-          : 'wp-json/wp/v2/posts';
-        const postResponse = await wordpressRequest(
-          baseUrl,
-          path,
-          username,
-          secret,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              title: input.data.title,
-              content,
-              status: input.data.status,
-            }),
-          },
-        );
-        if (!postResponse.ok) {
-          throw new Error(`WordPress publication failed: ${await responseMessage(postResponse)}`);
-        }
-        const post = await postResponse.json() as { id?: number; link?: string };
-        if (post.id === undefined) {
-          throw new Error('WordPress did not return a post identifier.');
-        }
-        externalId = String(post.id);
-        externalUrl = typeof post.link === 'string' ? post.link : externalUrl;
-      } else {
-        const endpoint = stringConfig(config, 'endpoint');
-        if (!endpoint) throw new Error('The generic web publishing endpoint is missing.');
-        const trustedEndpoint = await assertTrustedIntegrationUrl(endpoint, endpoint);
-        const publishResponse = await fetch(trustedEndpoint, {
-          method: 'POST',
-          headers: genericHeaders(connection.authenticationMode, config, secret),
-          body: JSON.stringify({
-            protocol: 'omi-newsletter-publish/1',
-            manuscript: {
-              id: input.data.manuscriptId,
-              title: input.data.title,
-            },
-            publication: {
-              html: input.data.html,
-              status: input.data.status,
-              sha256: contentDigest,
-            },
-            previous: previous
-              ? {
-                  externalId: previous.externalId,
-                  externalUrl: previous.externalUrl,
-                }
-              : null,
-          }),
-          redirect: 'error',
-          signal: AbortSignal.timeout(20000),
-        });
-        if (!publishResponse.ok) {
-          throw new Error(`Web publication failed: ${await responseMessage(publishResponse)}`);
-        }
-        const receipt = await publishResponse.json().catch(() => ({})) as {
-          id?: string | number;
-          externalId?: string | number;
-          url?: string;
-          externalUrl?: string;
-        };
-        const receiptId = receipt.externalId ?? receipt.id;
-        externalId = receiptId === undefined ? externalId : String(receiptId);
-        externalUrl = receipt.externalUrl ?? receipt.url ?? externalUrl;
-      }
-
-      const publication = await prisma.webPublication.upsert({
-        where: {
-          userId_connectionId_manuscriptId: {
-            userId,
-            connectionId: connection.id,
-            manuscriptId: input.data.manuscriptId,
-          },
-        },
-        update: {
-          externalId,
-          externalUrl,
-          contentDigest,
-          status: input.data.status.toUpperCase(),
-        },
-        create: {
-          userId,
-          connectionId: connection.id,
-          manuscriptId: input.data.manuscriptId,
-          externalId,
-          externalUrl,
-          contentDigest,
-          status: input.data.status.toUpperCase(),
-        },
-      });
-
-      response.status(200).json({
-        publication: {
-          connectionId: connection.id,
-          providerId: connection.providerId,
-          manuscriptId: publication.manuscriptId,
-          externalId: publication.externalId,
-          externalUrl: publication.externalUrl,
-          contentDigest: publication.contentDigest,
-          status: publication.status.toLowerCase(),
-          updatedAt: publication.updatedAt.toISOString(),
-        },
-      });
+      const receipt = await executeWebPublicationDelivery(
+        request.authUserId!,
+        deliveryId.data,
+        input.data.executionToken,
+      );
+      response.status(200).json({ receipt });
     } catch (error) {
-      response.status(502).json({
-        error: {
-          code: 'WEB_PUBLICATION_FAILED',
-          message: error instanceof Error ? error.message : 'External web publication failed.',
-        },
-      });
+      sendServiceError(response, error, 'Web-publication delivery failed.');
     }
   },
 );
+
+/**
+ * Pre-v1 beta endpoint. Keeping an explicit tombstone prevents an older client
+ * from silently falling back to client-controlled `approved: true` authority.
+ */
+newsletterPublishingRouter.post(
+  '/newsletter/publish',
+  requireSession,
+  (_request, response) => {
+    response.setHeader('Cache-Control', 'no-store');
+    response.status(410).json({
+      error: {
+        code: 'WEB_PUBLICATION_V1_REQUIRED',
+        message: 'Prepare a committed publication artifact and use the server-issued web-publication approval-grant flow.',
+      },
+    });
+  },
+);
+
+function sendServiceError(
+  response: Response,
+  error: unknown,
+  fallback: string,
+): void {
+  if (error instanceof WebPublicationServiceError) {
+    response.status(error.httpStatus).json({
+      error: { code: error.code, message: error.message },
+    });
+    return;
+  }
+  response.status(500).json({
+    error: {
+      code: 'WEB_PUBLICATION_INTERNAL_ERROR',
+      message: fallback,
+    },
+  });
+}

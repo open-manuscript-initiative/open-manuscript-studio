@@ -20,6 +20,7 @@ npm run test:jats-validation
 npm run test:jats4r-profile
 npm run test:vivliostyle-pdf
 npm run test:publication-release
+npm run test:web-publication
 ```
 
 To generate the machine-readable and human-readable publication gate evidence:

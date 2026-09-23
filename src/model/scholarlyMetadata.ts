@@ -6,6 +6,15 @@ export type OmiLocalizedTerms = Partial<Record<OmiLocale, string[]>>;
 export type OmiPublicationVenueType = 'JOURNAL' | 'BOOK_PUBLISHER';
 export type OmiPublicationVenueIntegrationProvider = 'OJS' | 'OMP';
 export type OmiPublicationVenueIntegrationStatus = 'VERIFIED' | 'DISABLED';
+export type OmiPublicationVenueVerificationMethod = 'OJS' | 'OMP' | 'DNS_TXT';
+
+export interface OmiPublicationVenueAuthorityReference {
+  method: OmiPublicationVenueVerificationMethod;
+  status: 'VERIFIED';
+  domain?: string;
+  verificationId?: string;
+  verifiedAt?: string;
+}
 
 export interface OmiPublicationVenueReference {
   id: string;
@@ -16,6 +25,7 @@ export interface OmiPublicationVenueReference {
   isbnPrefix?: string;
   integrationProvider?: OmiPublicationVenueIntegrationProvider;
   integrationStatus?: OmiPublicationVenueIntegrationStatus;
+  authority?: OmiPublicationVenueAuthorityReference;
 }
 
 export interface OmiScholarlyMetadata {
@@ -113,6 +123,29 @@ export function normalizePublicationVenue(
     || record.integrationStatus === 'DISABLED'
     ? record.integrationStatus
     : undefined;
+  const authorityRecord = record.authority && typeof record.authority === 'object'
+    && !Array.isArray(record.authority)
+    ? record.authority as Record<string, unknown>
+    : undefined;
+  let authorityMethod: OmiPublicationVenueVerificationMethod | undefined;
+  if (authorityRecord?.method === 'OJS') authorityMethod = 'OJS';
+  else if (authorityRecord?.method === 'OMP') authorityMethod = 'OMP';
+  else if (authorityRecord?.method === 'DNS_TXT') authorityMethod = 'DNS_TXT';
+  const authorityDomain = optionalVenueString(authorityRecord?.domain);
+  const authorityVerificationId = optionalVenueString(authorityRecord?.verificationId);
+  const authorityVerifiedAt = optionalVenueString(authorityRecord?.verifiedAt);
+  const authority: OmiPublicationVenueAuthorityReference | undefined =
+    authorityMethod && authorityRecord?.status === 'VERIFIED'
+      ? {
+          method: authorityMethod,
+          status: 'VERIFIED',
+          ...(authorityDomain ? { domain: authorityDomain } : {}),
+          ...(authorityVerificationId
+            ? { verificationId: authorityVerificationId }
+            : {}),
+          ...(authorityVerifiedAt ? { verifiedAt: authorityVerifiedAt } : {}),
+        }
+      : undefined;
 
   return {
     id,
@@ -123,6 +156,7 @@ export function normalizePublicationVenue(
     ...(isbnPrefix ? { isbnPrefix } : {}),
     ...(integrationProvider ? { integrationProvider } : {}),
     ...(integrationStatus ? { integrationStatus } : {}),
+    ...(authority ? { authority } : {}),
   };
 }
 
@@ -130,8 +164,11 @@ export function isVerifiedPublicationVenue(
   value: OmiPublicationVenueReference | undefined,
 ): boolean {
   return Boolean(
-    value?.integrationStatus === 'VERIFIED'
-      && (value.integrationProvider === 'OJS' || value.integrationProvider === 'OMP'),
+    value?.authority?.status === 'VERIFIED'
+      || (
+        value?.integrationStatus === 'VERIFIED'
+        && (value.integrationProvider === 'OJS' || value.integrationProvider === 'OMP')
+      ),
   );
 }
 

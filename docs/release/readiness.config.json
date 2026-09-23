@@ -49,6 +49,10 @@
     "src/services/publicationHtmlArtifact.ts",
     "tests/publication-html-artifact.test.ts",
     "tests/publication-artifact.test.ts",
+    "src/services/webPublicationArtifact.ts",
+    "server/src/integrations/publishing/webPublication.ts",
+    "tests/web-publication-assurance.test.ts",
+    "tests/web-publication-service.test.mjs",
     "docs/release/1.0-hardening.md",
     "tests/release-security.test.ts",
     "tests/desktop-update-routing.test.mjs",
@@ -67,6 +71,7 @@
       "npm run test:publication-release",
       "npm run test:jats4r-profile",
       "npm run test:publication-artifact",
+      "npm run test:web-publication",
       "npm run test:release-hardening"
     ],
     ".github/workflows/codeql.yml": [

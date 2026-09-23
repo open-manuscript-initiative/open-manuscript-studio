@@ -76,13 +76,13 @@ const providers: IntegrationProviderDescriptor[] = [
   },
   {
     id: 'wordpress', kind: 'publishing', displayName: 'WordPress',
-    description: 'Publish semantic HTML5 articles or newsletters through the WordPress REST API using a personal application password.',
+    description: 'Deliver committed semantic HTML5 artifacts with an explicit peer-review assurance seal through the WordPress REST API using a personal application password.',
     authenticationModes: ['user_api_key'], preferredAuthenticationMode: 'user_api_key',
     supportsPerUserAuthentication: true, supportsMultipleConnections: true, configurable: true,
   },
   {
     id: 'web-publishing', kind: 'publishing', displayName: 'Generic web publishing endpoint',
-    description: 'Publish semantic HTML5 through the omi-newsletter-publish/1 JSON contract using no authentication, Bearer, X-API-Key, or Basic authentication.',
+    description: 'Deliver committed semantic HTML5 artifacts with explicit peer-review assurance through the omi-web-publication/1 JSON contract using no authentication, Bearer, X-API-Key, or Basic authentication.',
     authenticationModes: ['none', 'user_api_key'], preferredAuthenticationMode: 'user_api_key',
     supportsPerUserAuthentication: true, supportsMultipleConnections: true, configurable: true,
   },

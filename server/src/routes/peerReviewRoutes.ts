@@ -27,10 +27,16 @@ import {
   listReviewerAssignments,
   submitReview,
 } from '../services/peerReviewService.js';
+import {
+  createEditorialAcceptance,
+  EDITORIAL_ACCEPTANCE_CONFIRMATION,
+} from '../services/editorialDecisionService.js';
 
 export const peerReviewRouter = Router();
+export const peerReviewV1Router = Router();
 
 peerReviewRouter.use(requireSession);
+peerReviewV1Router.use(requireSession);
 
 const assignmentTypeSchema = z.enum([
   'SCIENTIFIC_REVIEW',
@@ -82,6 +88,35 @@ const submitSchema = z.object({
   ]).optional(),
   recommendationExternalId: z.string().trim().min(1).max(128).optional(),
 });
+
+const editorialAcceptanceSchema = z.object({
+  manuscriptId: z.string().trim().min(1).max(128),
+  revisionId: z.string().trim().min(1).max(128),
+  stateDigest: z.string().regex(/^[a-f0-9]{64}$/i),
+  publicationContentDigest: z.string().regex(/^[a-f0-9]{64}$/i),
+  publicationVenueId: z.string().uuid().optional(),
+  reviewRound: z.number().int().min(1).max(99),
+  basisAssignmentIds: z.array(z.string().uuid()).min(1).max(100),
+  confirmation: z.literal(EDITORIAL_ACCEPTANCE_CONFIRMATION),
+}).strict();
+
+peerReviewV1Router.post(
+  '/workspaces/:workspaceId/editorial-decisions',
+  async (request: AuthenticatedRequest, response) => {
+    response.setHeader('Cache-Control', 'no-store');
+    try {
+      const workspaceId = parseId(request.params.workspaceId, 'workspace');
+      const input = editorialAcceptanceSchema.parse(request.body);
+      const evidence = await createEditorialAcceptance(
+        requireUserId(request),
+        { workspaceId, ...input },
+      );
+      response.status(201).json({ evidence });
+    } catch (error) {
+      sendError(response, error, 'EDITORIAL_DECISION_FAILED');
+    }
+  },
+);
 
 peerReviewRouter.post(
   '/workspaces/:workspaceId/assignments',
@@ -333,6 +368,10 @@ function sendError(response: Response, error: unknown, fallbackCode: string): vo
   }
   if (name === 'NotFoundError') {
     response.status(404).json({ error: { code: 'REVIEW_NOT_FOUND', message } });
+    return;
+  }
+  if (name === 'ConflictError') {
+    response.status(409).json({ error: { code: 'EDITORIAL_DECISION_CONFLICT', message } });
     return;
   }
 

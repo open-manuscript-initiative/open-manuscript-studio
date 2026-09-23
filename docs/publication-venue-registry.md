@@ -1,50 +1,100 @@
 # Közös folyóirat- és könyvkiadó-törzsadat
 
-A kézirat **Kibővített metaadatok** paneljén a folyóirat vagy könyvkiadó kiválasztható a közös legördülő listából. A listát a Studio szerver identitás-adatbázisa tárolja, ezért ugyanazon telepítés minden bejelentkezett felhasználója látja.
+A kézirat **Kibővített metaadatok** paneljén a folyóirat vagy könyvkiadó a Studio közös, hitelesített törzsadatából választható ki.
 
-## Működés
+## Hitelesítési utak
 
-- A bejegyzés típusa `JOURNAL` (folyóirat) vagy `BOOK_PUBLISHER` (könyvkiadó).
-- A név típusként egyszer, kis-/nagybetűtől és fölösleges szóközöktől függetlenül vehető fel.
-- A választó kizárólag már regisztrált, ellenőrzött integrációhoz tartozó rekordokat jelenít meg.
-- A név szerinti kereső csak a regisztrált lista szűrője; szabadon beírt név nem válik kiválasztható értékké.
-- Új rekord regisztrációjához a felhasználónak aktív, tesztelt OJS- vagy OMP-kapcsolatot kell kiválasztania.
-- A szerver a regisztráció előtt ellenőrzi a kapcsolat telepítését, a megfelelő platformot és az `omi-direct-submission/1` végpontot. A rekord neve a távoli integráció által jelentett névvel egyezik.
-- A regisztráció után a rekord azonnal kiválasztható és a többi felhasználó listájában is megjelenik, amíg a kapcsolódó integráció aktív.
-- A kézirat a kiválasztott rekord hordozható hivatkozását is menti (`id`, `type`, `name` és a megadott azonosítók), ezért exportált vagy offline dokumentumban sem vész el a megjelenített név.
-- A meglévő `publisherId` metaadat-mező kompatibilitási okból megmarad; a közös lista külön `publicationVenue` mezőt használ.
-- A korábbi, integráció nélkül létrehozott rekordok rejtve maradnak; ellenőrzött kapcsolat kiválasztása után ugyanazzal a névvel újraregisztrálhatók és felminősíthetők.
+Egy publikációs hely két független módon válhat hitelesítetté:
+
+1. **OJS / OMP integráció** — aktív, tesztelt PKP-integráció igazolja a folyóiratot vagy kiadót.
+2. **DNS TXT domainhitelesítés** — OJS/OMP nélküli folyóirat vagy kiadó a saját DNS-zónájában elhelyezett egyszer használatos TXT-értékkel igazolja a domain feletti rendelkezési jogot.
+
+A DNS-hitelesítés **nem peer-review bizonyíték**, és nem ad automatikusan szerkesztői döntési jogot. Sikeres DNS-ellenőrzéskor a kezdeményező DOMAIN_ADMIN szerepet kap. A domain-admin ezután külön felhatalmazhat már létező Studio-felhasználókat további DOMAIN_ADMIN, EDITOR vagy EDITOR_IN_CHIEF szerepre. A további domain-adminokhoz nem kell új DNS TXT rekord: az ő autoritásuk a már hitelesített venue-n belüli explicit admin-delegálásból származik.
+
+## DNS TXT folyamat
+
+A Studio például ilyen kihívást generál:
+
+~~~text
+TXT név:   _omi-publication.folyoirat.hu
+TXT érték: omi-publication-verification=<random-token>
+~~~
+
+A DNS TXT rekord nyilvános adat. A challenge értéke ezért **nem titkos hitelesítő adat és nem személyazonosító**. A bizonyíték abból áll, hogy a Studio egy friss, előre nem ismert kihívást köt egy konkrét bejelentkezett fiókhoz, és ez a kihívás a megadott DNS-név alatt megjelenik. A Studio a challenge SHA-256 lenyomatát tárolja, és ugyanazt a challenge-et csak a létrehozó fiók, csak PENDING állapotban, egyszer használhatja fel. A nyilvánosan kiolvasható érték más fióknak nem ad DOMAIN_ADMIN vagy EDITOR jogosultságot.
+
+A kihívás 7 napig érvényes. Sikeres ellenőrzés után a domain VERIFIED állapotú lesz. A későbbi DNS-lekérdezés csak azt ellenőrzi, hogy a domain továbbra is nyilvánosan fenntartja ezt a venue-kötést; nem használja a TXT-értéket új fiók vagy szerkesztő hitelesítésére. Új publisher-verified szerkesztői döntés előtt a Studio legfeljebb 24 órás DNS-ellenőrzési eredményt fogad el; régebbi eredménynél újra ellenőrzi a TXT rekordot.
+
+A már rögzített szerkesztői döntés történeti bizonyítékát későbbi DNS- vagy szerepkörváltozás nem írja át: a döntés az akkori venue-autoritás snapshotját őrzi.
+
+## Szerepkörök
+
+- **DOMAIN_ADMIN**: a DNS-sel igazolt publikációs hely adminisztrátora. További domain-adminokat és szerkesztői szerepeket kezelhet, de ettől még nem hozhat tudományos szerkesztői döntést. Minden aktív domain-admin azonos venue-adminisztrációs joggal rendelkezik.
+- **EDITOR**: a hitelesített publikációs hely nevében rögzíthet elfogadó döntést, ha a kézirat review-workspace-ében is EDITOR.
+- **EDITOR_IN_CHIEF**: ugyanaz a döntési jogosultság, külön megőrzött főszerkesztői szerepkörrel.
+
+A venue-szerepkör és a kézirat-workspace szerepkör szándékosan két külön jogosultsági sík. A Studio nem engedi az utolsó aktív DOMAIN_ADMIN visszavonását; előbb egy második domain-adminisztrátort kell felhatalmazni. Ez a védelem szerveroldali, tranzakciós ellenőrzés.
+
+## Kiválasztható rekordok
+
+- A típus JOURNAL vagy BOOK_PUBLISHER.
+- A választó ellenőrzött OJS/OMP-kapcsolathoz vagy VERIFIED DNS-domainhez tartozó rekordokat jelenít meg.
+- DNS-hitelesített rekordnál a hordozható publicationVenue metaadat az authority.method = DNS_TXT adatot is megőrzi.
+- A meglévő publisherId kompatibilitási mező megmarad.
 
 ## API
 
-A végpontok bejelentkezést igényelnek:
-
-```
+~~~text
 GET  /api/auth/publication-venues?type=JOURNAL&q=...
 POST /api/auth/publication-venues
-```
 
-A létrehozási kérés törzse:
+POST /api/auth/publication-venues/domain-claims
+POST /api/auth/publication-venues/domain-claims/:claimId/verify
+GET  /api/auth/publication-venues/:venueId/authority
 
-```json
+POST   /api/auth/publication-venues/:venueId/members
+DELETE /api/auth/publication-venues/:venueId/members/:membershipId
+~~~
+
+Példa DNS-kihíváskérés:
+
+~~~json
 {
   "type": "JOURNAL",
   "name": "Open Manuscript Review",
-  "website": "https://example.org",
-  "issn": "1234-5678",
-  "integrationConnectionId": "<user-connection-uuid>"
+  "domain": "review.example.org",
+  "website": "https://review.example.org",
+  "issn": "1234-5678"
 }
-```
+~~~
 
-Könyvkiadónál az `isbnPrefix` mező használható az ISSN helyett.
+A domain-admin csak már létező Studio-fióknak adhat DOMAIN_ADMIN, EDITOR vagy EDITOR_IN_CHIEF szerepet. Egy felhasználó ugyanannál a venue-nál több szereppel is rendelkezhet. DOMAIN_ADMIN kiosztásához nincs új DNS challenge: a meglévő domain-admin delegálja a jogosultságot.
+
+## Peer-review autoritás
+
+DNS-hitelesített folyóirat esetén a Studio-native szerkesztői döntés publicationVenueId mezőt kap. A szerver egyidejűleg ellenőrzi:
+
+- a döntéshozó aktív venue EDITOR / EDITOR_IN_CHIEF szerepét;
+- a venue aktuális DNS-hitelesítését;
+- a kézirat review-workspace EDITOR jogosultságát;
+- a lezárt tudományos lektori fordulót;
+- a konkrét revisionId + stateDigest azonosságot;
+- az assurance-rétegtől független publicationContentDigest értéket.
+
+A döntés az akkori domain, venue, verification ID, hitelesítési időpont és szerkesztői szerep változtathatatlan authority snapshotját tárolja.
 
 ## Telepítés
 
-A séma módosítása után az identitás-adatbázis migrációját a szerveren is le kell futtatni:
+A funkció az identity és az alkalmazás-adatbázist is érinti:
 
-```bash
+~~~bash
 cd server
 npm run prisma:migrate:identity:deploy
-```
+npm run prisma:migrate:deploy
+~~~
 
-Ezután újra kell indítani a szerveralkalmazást, hogy a frissen generált Prisma klienssel és az új API-végponttal fusson.
+Új migrációk:
+
+- 20260923071500_add_dns_verified_publication_venue_authority
+- 20260923072000_bind_editorial_decisions_to_verified_venues
+
+Ezután a szerveralkalmazást újra kell indítani a frissen generált Prisma kliensekkel.

@@ -9,6 +9,13 @@ import { assertTrustedIntegrationUrl } from '../integrations/security/trustedRem
 import { identityPrisma } from '../lib/identityPrisma.js';
 import { prisma } from '../lib/prisma.js';
 import {
+  createPublicationVenueDomainClaim,
+  getPublicationVenueAuthorityOverview,
+  grantPublicationVenueMember,
+  revokePublicationVenueMembership,
+  verifyPublicationVenueDomainClaim,
+} from '../services/publicationVenueAuthorityService.js';
+import {
   requireSession,
   type AuthenticatedRequest,
 } from '../middleware/requireSession.js';
@@ -37,6 +44,20 @@ const createSchema = z.object({
   isbnPrefix: z.string().trim().max(64).optional(),
   integrationConnectionId: z.string().uuid(),
 });
+
+const domainClaimSchema = z.object({
+  type: venueTypeSchema,
+  name: z.string().trim().min(1).max(300),
+  domain: z.string().trim().min(3).max(253),
+  website: z.string().trim().url().max(2048).optional(),
+  issn: z.string().trim().max(32).optional(),
+  isbnPrefix: z.string().trim().max(64).optional(),
+}).strict();
+
+const venueMembershipSchema = z.object({
+  email: z.string().trim().email(),
+  role: z.enum(['DOMAIN_ADMIN', 'EDITOR', 'EDITOR_IN_CHIEF']),
+}).strict();
 
 type PublicationVenueIntegrationProvider = 'OJS' | 'OMP';
 
@@ -82,7 +103,10 @@ publicationVenueRouter.get(
       : '';
     const where = {
       ...(parsed.data.type ? { type: parsed.data.type } : {}),
-      integrationStatus: 'VERIFIED' as const,
+      OR: [
+        { integrationStatus: 'VERIFIED' as const },
+        { domainVerifications: { some: { status: 'VERIFIED' as const } } },
+      ],
       ...(normalizedQuery
         ? { normalizedName: { contains: normalizedQuery } }
         : {}),
@@ -91,6 +115,13 @@ publicationVenueRouter.get(
     try {
       const venues = await identityPrisma.publicationVenue.findMany({
         where,
+        include: {
+          domainVerifications: {
+            where: { status: 'VERIFIED' },
+            orderBy: { verifiedAt: 'desc' },
+            take: 1,
+          },
+        },
         orderBy: { name: 'asc' },
         take: 500,
       });
@@ -101,18 +132,15 @@ publicationVenueRouter.get(
             .filter((id): id is string => Boolean(id)),
         ),
       ];
-      if (!installationIds.length) {
-        response.status(200).json({ venues: [] });
-        return;
-      }
-
-      const activeInstallations = await prisma.externalInstallation.findMany({
-        where: {
-          installationId: { in: installationIds },
-          status: ExternalInstallationStatus.ACTIVE,
-        },
-        select: { installationId: true, platform: true },
-      });
+      const activeInstallations = installationIds.length
+        ? await prisma.externalInstallation.findMany({
+            where: {
+              installationId: { in: installationIds },
+              status: ExternalInstallationStatus.ACTIVE,
+            },
+            select: { installationId: true, platform: true },
+          })
+        : [];
       const activePlatforms = new Map(
         activeInstallations.map((installation) => [
           installation.installationId,
@@ -120,6 +148,7 @@ publicationVenueRouter.get(
         ]),
       );
       const visibleVenues = venues.filter((venue) => {
+        if (venue.domainVerifications.length > 0) return true;
         if (!venue.integrationInstallationId) return false;
         const platform = activePlatforms.get(venue.integrationInstallationId);
         return platform !== undefined
@@ -127,7 +156,9 @@ publicationVenueRouter.get(
       });
 
       response.status(200).json({
-        venues: visibleVenues.map(serializePublicationVenue),
+        venues: visibleVenues.map((venue) =>
+          serializePublicationVenue(venue, venue.domainVerifications[0]),
+        ),
       });
     } catch (error) {
       console.error('[OMI publication venues] list failed', error);
@@ -332,6 +363,152 @@ publicationVenueRouter.post(
   },
 );
 
+
+publicationVenueRouter.post(
+  '/publication-venues/domain-claims',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    const parsed = domainClaimSchema.safeParse(request.body);
+    if (!parsed.success) {
+      response.status(400).json({
+        error: {
+          code: 'PUBLICATION_VENUE_DOMAIN_CLAIM_INVALID',
+          message: parsed.error.issues.map((issue) => issue.message).join(' '),
+        },
+      });
+      return;
+    }
+    try {
+      const result = await createPublicationVenueDomainClaim(request.authUserId!, parsed.data);
+      response.status(201).json({
+        venue: serializePublicationVenue(result.venue),
+        challenge: result.challenge,
+      });
+    } catch (error) {
+      sendVenueAuthorityError(response, error, 'The DNS verification challenge could not be created.');
+    }
+  },
+);
+
+publicationVenueRouter.post(
+  '/publication-venues/domain-claims/:claimId/verify',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    const claimId = z.string().uuid().safeParse(request.params.claimId);
+    if (!claimId.success) {
+      response.status(400).json({
+        error: { code: 'PUBLICATION_VENUE_DOMAIN_CLAIM_INVALID', message: 'A valid domain claim is required.' },
+      });
+      return;
+    }
+    try {
+      const verified = await verifyPublicationVenueDomainClaim(request.authUserId!, claimId.data);
+      response.status(200).json({
+        venue: serializePublicationVenue(verified.venue, verified),
+        verified: true,
+      });
+    } catch (error) {
+      sendVenueAuthorityError(response, error, 'The publication venue domain could not be verified.');
+    }
+  },
+);
+
+publicationVenueRouter.get(
+  '/publication-venues/:venueId/authority',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    const venueId = z.string().uuid().safeParse(request.params.venueId);
+    if (!venueId.success) {
+      response.status(400).json({
+        error: { code: 'PUBLICATION_VENUE_INVALID', message: 'A valid publication venue is required.' },
+      });
+      return;
+    }
+    try {
+      const overview = await getPublicationVenueAuthorityOverview(request.authUserId!, venueId.data);
+      response.status(200).json({
+        authority: {
+          verifiedDomains: overview.venue.domainVerifications.map((claim) => ({
+            verificationId: claim.id,
+            domain: claim.domain,
+            method: 'DNS_TXT',
+            verifiedAt: claim.verifiedAt?.toISOString() ?? null,
+            lastCheckedAt: claim.lastCheckedAt?.toISOString() ?? null,
+          })),
+          currentMemberships: overview.currentMemberships.map((membership) => ({
+            id: membership.id,
+            role: membership.role,
+            active: membership.active,
+          })),
+          canManageMembers: overview.isDomainAdmin,
+          members: overview.members.map((membership) => ({
+            id: membership.id,
+            role: membership.role,
+            active: membership.active,
+            user: membership.user,
+          })),
+        },
+      });
+    } catch (error) {
+      sendVenueAuthorityError(response, error, 'Publication venue authority could not be loaded.');
+    }
+  },
+);
+
+publicationVenueRouter.post(
+  '/publication-venues/:venueId/members',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    const venueId = z.string().uuid().safeParse(request.params.venueId);
+    const input = venueMembershipSchema.safeParse(request.body);
+    if (!venueId.success || !input.success) {
+      response.status(400).json({
+        error: { code: 'PUBLICATION_VENUE_MEMBER_INVALID', message: 'A valid venue, member e-mail and role are required.' },
+      });
+      return;
+    }
+    try {
+      const membership = await grantPublicationVenueMember(
+        request.authUserId!,
+        venueId.data,
+        input.data.email,
+        input.data.role,
+      );
+      response.status(200).json({
+        member: {
+          id: membership.id,
+          role: membership.role,
+          active: membership.active,
+          user: membership.user,
+        },
+      });
+    } catch (error) {
+      sendVenueAuthorityError(response, error, 'The publication venue member could not be authorized.');
+    }
+  },
+);
+
+publicationVenueRouter.delete(
+  '/publication-venues/:venueId/members/:membershipId',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    const venueId = z.string().uuid().safeParse(request.params.venueId);
+    const membershipId = z.string().uuid().safeParse(request.params.membershipId);
+    if (!venueId.success || !membershipId.success) {
+      response.status(400).json({
+        error: { code: 'PUBLICATION_VENUE_MEMBER_INVALID', message: 'A valid venue and membership are required.' },
+      });
+      return;
+    }
+    try {
+      await revokePublicationVenueMembership(request.authUserId!, venueId.data, membershipId.data);
+      response.status(204).end();
+    } catch (error) {
+      sendVenueAuthorityError(response, error, 'The publication venue membership could not be revoked.');
+    }
+  },
+);
+
 function serializePublicationVenue(venue: {
   id: string;
   type: string;
@@ -341,6 +518,11 @@ function serializePublicationVenue(venue: {
   isbnPrefix: string | null;
   integrationProvider: string | null;
   integrationStatus: string | null;
+}, domainVerification?: {
+  id: string;
+  domain: string;
+  status: string;
+  verifiedAt: Date | null;
 }) {
   return {
     id: venue.id,
@@ -355,6 +537,21 @@ function serializePublicationVenue(venue: {
     ...(venue.integrationStatus
       ? { integrationStatus: venue.integrationStatus }
       : {}),
+    ...(domainVerification?.status === 'VERIFIED'
+      ? {
+          authority: {
+            method: 'DNS_TXT',
+            status: 'VERIFIED',
+            domain: domainVerification.domain,
+            verificationId: domainVerification.id,
+            ...(domainVerification.verifiedAt
+              ? { verifiedAt: domainVerification.verifiedAt.toISOString() }
+              : {}),
+          },
+        }
+      : venue.integrationProvider && venue.integrationStatus === 'VERIFIED'
+        ? { authority: { method: venue.integrationProvider, status: 'VERIFIED' } }
+        : {}),
   };
 }
 
@@ -411,6 +608,26 @@ function matchesPlatform(
     (provider === 'OJS' && platform === ExternalPlatform.OJS) ||
     (provider === 'OMP' && platform === ExternalPlatform.OMP)
   );
+}
+
+function sendVenueAuthorityError(
+  response: import('express').Response,
+  error: unknown,
+  fallback: string,
+): void {
+  const status = error instanceof Error && error.name === 'ForbiddenError'
+    ? 403
+    : error instanceof Error && error.name === 'NotFoundError'
+      ? 404
+      : error instanceof Error && error.name === 'ConflictError'
+        ? 409
+        : 400;
+  response.status(status).json({
+    error: {
+      code: 'PUBLICATION_VENUE_AUTHORITY_FAILED',
+      message: error instanceof Error ? error.message : fallback,
+    },
+  });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
