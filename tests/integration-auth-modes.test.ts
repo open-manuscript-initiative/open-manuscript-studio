@@ -178,12 +178,14 @@ test('website publication binds assurance to a committed artifact and keeps idem
   assert.match(webPublicationService, /assertEditorialDecisionEvidence/);
   assert.match(webPublicationService, /WEB_PUBLICATION_RECONCILIATION_REQUIRED/);
   assert.match(webPublicationService, /publicationContentDigest/);
+
   assert.match(editorialDecisionService, /publicationContentDigest/);
   assert.match(editorialDecisionService, /externalInstallationId === null/);
   assert.match(editorialDecisionService, /manuscriptSnapshot !== null/);
   assert.match(editorialDecisionService, /sourceSnapshotDigest/);
   assert.match(editorialDecisionService, /authoritySnapshot/);
   assert.match(editorialDecisionService, /publicationVenueId/);
+
   assert.match(publicationVenueAuthorityService, /resolveTxt/);
   assert.match(publicationVenueAuthorityService, /DOMAIN_ADMIN/);
   assert.match(publicationVenueAuthorityService, /EDITOR_IN_CHIEF/);
@@ -193,16 +195,25 @@ test('website publication binds assurance to a committed artifact and keeps idem
   assert.match(publicationVenueAuthorityService, /already been consumed or revoked/);
   assert.match(publicationVenueAuthorityService, /grantPublicationVenueMember/);
   assert.match(publicationVenueAuthorityService, /role: 'DOMAIN_ADMIN'/);
-  assert.match(publicationVenueAuthorityService, /last active domain administrator cannot be revoked/i);
+  assert.match(
+    publicationVenueAuthorityService,
+    /last active domain administrator cannot be revoked/i,
+  );
   assert.match(publicationVenueAuthorityService, /isolationLevel: 'Serializable'/);
-  assert.match(publicationVenueRoutes, /z\.enum\(\['DOMAIN_ADMIN', 'EDITOR', 'EDITOR_IN_CHIEF'\]\)/);
+
+  assert.match(
+    publicationVenueRoutes,
+    /z\.enum\(\['DOMAIN_ADMIN', 'EDITOR', 'EDITOR_IN_CHIEF'\]\)/,
+  );
   assert.match(publicationVenueRoutes, /canManageMembers/);
   assert.match(publicationVenueApi, /grantPublicationVenueMember/);
   assert.match(publicationVenueApi, /revokePublicationVenueMembership/);
   assert.match(publicationVenueField, /option value="DOMAIN_ADMIN"/);
   assert.match(publicationVenueField, /copy\.domainAdmin/);
+
   assert.match(identitySchema, /model PublicationVenueDomainVerification \{/);
   assert.match(identitySchema, /model PublicationVenueMembership \{/);
+
   assert.equal(
     webPublicationMigration.match(/CREATE TABLE "editorial_decisions"/g)?.length,
     1,
@@ -222,37 +233,13 @@ test('website publication binds assurance to a committed artifact and keeps idem
       `"evidence_digest" ~ '^[0-9a-f]{64}$'`,
     ),
   );
+
   assert.match(serverSchema, /model WebPublication \{/);
   assert.match(serverSchema, /model WebPublicationDelivery \{/);
   assert.match(serverSchema, /model WebPublicationApprovalGrant \{/);
   assert.match(serverSchema, /model EditorialDecision \{/);
-  assert.match(serverSchema, /@@unique\(\[userId, connectionId, manuscriptId\]\)/);
-});
-/,
-  );
   assert.match(
-    webPublicationMigration,
-    /"publication_content_digest" ~ '\^\[0-9a-f\]\{64\}\  assert.match(serverSchema, /model WebPublication \{/);
-  assert.match(serverSchema, /model WebPublicationDelivery \{/);
-  assert.match(serverSchema, /model WebPublicationApprovalGrant \{/);
-  assert.match(serverSchema, /model EditorialDecision \{/);
-  assert.match(serverSchema, /@@unique\(\[userId, connectionId, manuscriptId\]\)/);
-});
-/,
+    serverSchema,
+    /@@unique\(\[userId, connectionId, manuscriptId\]\)/,
   );
-  assert.match(
-    webPublicationMigration,
-    /"evidence_digest" ~ '\^\[0-9a-f\]\{64\}\  assert.match(serverSchema, /model WebPublication \{/);
-  assert.match(serverSchema, /model WebPublicationDelivery \{/);
-  assert.match(serverSchema, /model WebPublicationApprovalGrant \{/);
-  assert.match(serverSchema, /model EditorialDecision \{/);
-  assert.match(serverSchema, /@@unique\(\[userId, connectionId, manuscriptId\]\)/);
-});
-/,
-  );
-  assert.match(serverSchema, /model WebPublication \{/);
-  assert.match(serverSchema, /model WebPublicationDelivery \{/);
-  assert.match(serverSchema, /model WebPublicationApprovalGrant \{/);
-  assert.match(serverSchema, /model EditorialDecision \{/);
-  assert.match(serverSchema, /@@unique\(\[userId, connectionId, manuscriptId\]\)/);
 });
