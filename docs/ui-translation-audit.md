@@ -11,6 +11,29 @@ Snapshot: 2026-08-23
 
 This inventory tracks user-visible Studio strings that are not yet fully routed through the 24-locale translation system. The canonical PO audit alone is not sufficient: recent product work introduced component-local EN/HU/DE dictionaries and direct JSX/user-message strings that never entered the PO catalogue.
 
+## DeepL handoff queue
+
+The current translation handoff is kept beside the canonical queue in
+`locale/pending/`:
+
+- `locale/pending/<locale>.json` contains the canonical PO entries;
+- `locale/pending/supplemental/<locale>.json` contains source-level coded copy and direct UI literals that still fall back to English;
+- `locale/pending/deepl-language-map.json` records the DeepL English name, BCP 47 code and uppercase API target code for every Studio locale.
+
+The supplemental inventory currently covers **33 coded-copy surfaces** and
+**602 direct UI literal candidates** across the maintained locale catalogues.
+Entries carried forward from `scripts/i18n-module-translations/` retain their
+translation and are not counted as blank work. The blank count is available as
+`pendingCount` in each supplemental file. The queue is generated with
+`scripts/export-pending-supplemental-translations.mjs` and is intentionally
+separate from the runtime dictionaries until the reviewed translations are
+wired into their surfaces.
+
+DeepL names are written in English as DeepL exposes them: for example,
+`Portuguese (European)` / `PT-PT`, `Norwegian (Bokmål)` / `NB`, and `Chinese` /
+`ZH` for the three Chinese regional Studio locales. The checked official
+reference is the [DeepL supported-languages documentation](https://developers.deepl.com/docs/getting-started/supported-languages).
+
 ## Supported UI locales
 
 `bg`, `cs`, `da`, `de`, `el`, `en`, `es`, `et`, `fi`, `fr`, `ga`, `hr`, `hu`, `it`, `lt`, `lv`, `mt`, `nl`, `pl`, `pt`, `ro`, `sk`, `sl`, `sv`.

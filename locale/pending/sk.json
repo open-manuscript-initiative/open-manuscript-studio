@@ -2,6 +2,14 @@
   "locale": "sk",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Slovenčina",
+    "deepLName": "Slovak",
+    "code": "sk",
+    "apiTargetCode": "SK",
+    "supported": true
+  },
   "pendingCount": 461,
   "instructions": [
     "Translate only the translation field.",

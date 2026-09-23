@@ -2,6 +2,14 @@
   "locale": "bg",
   "referenceLocale": "en",
   "generatedFrom": "locale/<locale>/studio.po",
+  "translationService": "DeepL",
+  "deepL": {
+    "appName": "Български",
+    "deepLName": "Bulgarian",
+    "code": "bg",
+    "apiTargetCode": "BG",
+    "supported": true
+  },
   "pendingCount": 19,
   "instructions": [
     "Translate only the translation field.",
