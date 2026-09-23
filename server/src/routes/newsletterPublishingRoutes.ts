@@ -41,6 +41,7 @@ const assuranceSchema = z.discriminatedUnion('reviewStatus', [
       type: z.literal('studio-editorial-decision'),
       decisionId: z.string().uuid(),
       evidenceDigest: z.string().regex(/^[a-f0-9]{64}$/i),
+      publicationContentDigest: z.string().regex(/^[a-f0-9]{64}$/i),
       reviewRound: z.number().int().min(1).max(99),
       decidedAt: z.iso.datetime({ offset: true }),
     }).strict(),
