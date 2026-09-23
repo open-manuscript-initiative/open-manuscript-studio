@@ -88,8 +88,12 @@ function addAssuranceDisclosure(
             ? [
                 '  <meta name="omi-publication-authority" content="verified-publication-venue">',
                 `  <meta name="omi-publication-venue-id" content="${escapeHtml(assurance.evidence.authority.venueId)}">`,
+                `  <meta name="omi-publication-venue-name" content="${escapeHtml(assurance.evidence.authority.venueName)}">`,
                 `  <meta name="omi-publication-venue-domain" content="${escapeHtml(assurance.evidence.authority.domain)}">`,
                 '  <meta name="omi-publication-venue-verification" content="dns-txt">',
+                `  <meta name="omi-publication-venue-verification-id" content="${escapeHtml(assurance.evidence.authority.verificationId)}">`,
+                `  <meta name="omi-publication-venue-verified-at" content="${escapeHtml(assurance.evidence.authority.verifiedAt)}">`,
+                `  <meta name="omi-publication-venue-editor-role" content="${escapeHtml(assurance.evidence.authority.editorRole)}">`,
               ]
             : []),
         ]
