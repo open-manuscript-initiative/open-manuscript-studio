@@ -127,26 +127,25 @@ export function normalizePublicationVenue(
     && !Array.isArray(record.authority)
     ? record.authority as Record<string, unknown>
     : undefined;
-  const authorityMethod = authorityRecord?.method === 'OJS'
-    || authorityRecord?.method === 'OMP'
-    || authorityRecord?.method === 'DNS_TXT'
-    ? authorityRecord.method
-    : undefined;
-  const authority = authorityMethod && authorityRecord?.status === 'VERIFIED'
-    ? {
-        method: authorityMethod,
-        status: 'VERIFIED' as const,
-        ...(optionalVenueString(authorityRecord.domain)
-          ? { domain: optionalVenueString(authorityRecord.domain) }
-          : {}),
-        ...(optionalVenueString(authorityRecord.verificationId)
-          ? { verificationId: optionalVenueString(authorityRecord.verificationId) }
-          : {}),
-        ...(optionalVenueString(authorityRecord.verifiedAt)
-          ? { verifiedAt: optionalVenueString(authorityRecord.verifiedAt) }
-          : {}),
-      }
-    : undefined;
+  let authorityMethod: OmiPublicationVenueVerificationMethod | undefined;
+  if (authorityRecord?.method === 'OJS') authorityMethod = 'OJS';
+  else if (authorityRecord?.method === 'OMP') authorityMethod = 'OMP';
+  else if (authorityRecord?.method === 'DNS_TXT') authorityMethod = 'DNS_TXT';
+  const authorityDomain = optionalVenueString(authorityRecord?.domain);
+  const authorityVerificationId = optionalVenueString(authorityRecord?.verificationId);
+  const authorityVerifiedAt = optionalVenueString(authorityRecord?.verifiedAt);
+  const authority: OmiPublicationVenueAuthorityReference | undefined =
+    authorityMethod && authorityRecord?.status === 'VERIFIED'
+      ? {
+          method: authorityMethod,
+          status: 'VERIFIED',
+          ...(authorityDomain ? { domain: authorityDomain } : {}),
+          ...(authorityVerificationId
+            ? { verificationId: authorityVerificationId }
+            : {}),
+          ...(authorityVerifiedAt ? { verifiedAt: authorityVerifiedAt } : {}),
+        }
+      : undefined;
 
   return {
     id,
