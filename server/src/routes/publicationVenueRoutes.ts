@@ -11,8 +11,8 @@ import { prisma } from '../lib/prisma.js';
 import {
   createPublicationVenueDomainClaim,
   getPublicationVenueAuthorityOverview,
-  grantPublicationVenueEditor,
-  revokePublicationVenueEditor,
+  grantPublicationVenueMember,
+  revokePublicationVenueMembership,
   verifyPublicationVenueDomainClaim,
 } from '../services/publicationVenueAuthorityService.js';
 import {
@@ -54,9 +54,9 @@ const domainClaimSchema = z.object({
   isbnPrefix: z.string().trim().max(64).optional(),
 }).strict();
 
-const editorMembershipSchema = z.object({
+const venueMembershipSchema = z.object({
   email: z.string().trim().email(),
-  role: z.enum(['EDITOR', 'EDITOR_IN_CHIEF']),
+  role: z.enum(['DOMAIN_ADMIN', 'EDITOR', 'EDITOR_IN_CHIEF']),
 }).strict();
 
 type PublicationVenueIntegrationProvider = 'OJS' | 'OMP';
@@ -440,7 +440,7 @@ publicationVenueRouter.get(
             role: membership.role,
             active: membership.active,
           })),
-          canManageEditors: overview.isDomainAdmin,
+          canManageMembers: overview.isDomainAdmin,
           members: overview.members.map((membership) => ({
             id: membership.id,
             role: membership.role,
@@ -460,15 +460,15 @@ publicationVenueRouter.post(
   requireSession,
   async (request: AuthenticatedRequest, response) => {
     const venueId = z.string().uuid().safeParse(request.params.venueId);
-    const input = editorMembershipSchema.safeParse(request.body);
+    const input = venueMembershipSchema.safeParse(request.body);
     if (!venueId.success || !input.success) {
       response.status(400).json({
-        error: { code: 'PUBLICATION_VENUE_EDITOR_INVALID', message: 'A valid venue, editor e-mail and role are required.' },
+        error: { code: 'PUBLICATION_VENUE_MEMBER_INVALID', message: 'A valid venue, member e-mail and role are required.' },
       });
       return;
     }
     try {
-      const membership = await grantPublicationVenueEditor(
+      const membership = await grantPublicationVenueMember(
         request.authUserId!,
         venueId.data,
         input.data.email,
@@ -483,7 +483,7 @@ publicationVenueRouter.post(
         },
       });
     } catch (error) {
-      sendVenueAuthorityError(response, error, 'The publication venue editor could not be authorized.');
+      sendVenueAuthorityError(response, error, 'The publication venue member could not be authorized.');
     }
   },
 );
@@ -496,15 +496,15 @@ publicationVenueRouter.delete(
     const membershipId = z.string().uuid().safeParse(request.params.membershipId);
     if (!venueId.success || !membershipId.success) {
       response.status(400).json({
-        error: { code: 'PUBLICATION_VENUE_EDITOR_INVALID', message: 'A valid venue and membership are required.' },
+        error: { code: 'PUBLICATION_VENUE_MEMBER_INVALID', message: 'A valid venue and membership are required.' },
       });
       return;
     }
     try {
-      await revokePublicationVenueEditor(request.authUserId!, venueId.data, membershipId.data);
+      await revokePublicationVenueMembership(request.authUserId!, venueId.data, membershipId.data);
       response.status(204).end();
     } catch (error) {
-      sendVenueAuthorityError(response, error, 'The publication venue editor could not be revoked.');
+      sendVenueAuthorityError(response, error, 'The publication venue membership could not be revoked.');
     }
   },
 );
