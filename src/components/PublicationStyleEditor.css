@@ -953,6 +953,40 @@
   color: #171717;
 }
 
+.publication-html-sections-editor {
+  display: grid;
+  gap: 1.35rem;
+  min-width: 0;
+}
+
+.publication-html-section-editor {
+  min-width: 0;
+}
+
+.publication-html-section-editor .publication-layout-section-editor {
+  min-width: 0;
+}
+
+.publication-html-section-editor .omi-continuous-tiptap-editor {
+  column-count: var(--omi-section-columns, 1);
+  column-gap: var(--omi-section-column-gap, 8mm);
+  tab-size: var(--omi-section-tab-size, 12.5mm);
+  white-space: pre-wrap;
+}
+
+.publication-html-section-editor .omi-continuous-tiptap-editor > :is(h1, h2, h3, h4, h5, h6) {
+  column-span: all;
+}
+
+.publication-html-section-editor .omi-continuous-tiptap-editor > .omi-continuous-visual {
+  break-inside: avoid;
+}
+
+.publication-html-section-editor + .publication-html-section-editor {
+  padding-top: 0.2rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.24);
+}
+
 .publication-document-paper--html {
   width: min(100%, 56rem);
   min-height: calc(100% - 2.5rem);
