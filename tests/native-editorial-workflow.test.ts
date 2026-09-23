@@ -152,6 +152,13 @@ test('manuscript lookup and published transition remain scoped to the selected v
   );
 });
 
+test('reviewer assignment is failure-safe and blocks author self-review', () => {
+  assert.match(service, /The submitting author cannot review their own manuscript/);
+  assert.match(service, /sanitizeReviewManuscript\(submission\.reviewSnapshot\)/);
+  assert.match(service, /peerReviewAssignment\.delete/);
+  assert.match(service, /\.catch\(\(\) => undefined\)/);
+});
+
 test('submission assets are self-contained and checksum verified', () => {
   assert.match(service, /validateSubmissionAssets/);
   assert.match(service, /createHash\('sha256'\)/);
