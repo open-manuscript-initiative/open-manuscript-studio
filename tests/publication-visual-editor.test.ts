@@ -173,6 +173,8 @@ test('live publication editor switches between print and semantic HTML5 visual e
   assert.match(htmlSectionsEditor, /proofingMode="editor"/);
   assert.match(htmlSectionsEditor, /projectContinuousManuscriptDocument/);
   assert.match(documentCanvas, /viewMode === 'html' && semanticNotes\.length/);
+  assert.match(documentCanvas, /window\.addEventListener\(EDITOR_ZOOM_EVENT, handleEditorZoom\)/);
+  assert.match(documentCanvas, /printLayoutScale \* editorZoomScale\(editorZoomPercent\)/);
   assert.match(editorStyles, /\.publication-document-paper--html \{[\s\S]*width: min\(100%, 56rem\)/);
   assert.match(editorStyles, /\.publication-document-paper--html \{[\s\S]*zoom: var\(--omi-editor-zoom, 1\)/);
   assert.match(editorStyles, /\.publication-document-content--html \{[\s\S]*position: relative/);

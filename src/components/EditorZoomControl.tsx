@@ -1,47 +1,39 @@
 import { Minus, Plus, ZoomIn } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import {
+  clampEditorZoom,
+  dispatchEditorZoomChange,
+  EDITOR_ZOOM_STEP,
+  EDITOR_ZOOM_STORAGE_KEY,
+  MAX_EDITOR_ZOOM,
+  MIN_EDITOR_ZOOM,
+  readStoredEditorZoom,
+} from '../editor/editorZoom';
 import { useTranslation } from '../i18n';
 import './EditorZoomControl.css';
-
-const STORAGE_KEY = 'omi:editor-zoom';
-const MIN_ZOOM = 50;
-const MAX_ZOOM = 200;
-const STEP = 10;
-
-function clampZoom(value: number): number {
-  if (!Number.isFinite(value)) return 100;
-  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(value / STEP) * STEP));
-}
-
-function readStoredZoom(): number {
-  try {
-    return clampZoom(Number(window.localStorage.getItem(STORAGE_KEY) ?? 100));
-  } catch {
-    return 100;
-  }
-}
 
 export function EditorZoomControl() {
   const { locale } = useTranslation();
   const copy = getCopy(locale);
-  const [zoom, setZoom] = useState(readStoredZoom);
+  const [zoom, setZoom] = useState(readStoredEditorZoom);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const value = String(zoom / 100);
     document.documentElement.style.setProperty('--omi-editor-zoom', value);
     try {
-      window.localStorage.setItem(STORAGE_KEY, String(zoom));
+      window.localStorage.setItem(EDITOR_ZOOM_STORAGE_KEY, String(zoom));
     } catch {
       // Device-local preference persistence is optional.
     }
+    dispatchEditorZoomChange(zoom);
     return () => {
       document.documentElement.style.removeProperty('--omi-editor-zoom');
     };
   }, [zoom]);
 
-  const applyZoom = (next: number) => setZoom(clampZoom(next));
+  const applyZoom = (next: number) => setZoom(clampEditorZoom(next));
 
   return (
     <div className="omi-editor-zoom" data-open={open ? 'true' : 'false'}>
@@ -62,16 +54,16 @@ export function EditorZoomControl() {
           type="button"
           aria-label={copy.decrease}
           title={copy.decrease}
-          disabled={zoom <= MIN_ZOOM}
-          onClick={() => applyZoom(zoom - STEP)}
+          disabled={zoom <= MIN_EDITOR_ZOOM}
+          onClick={() => applyZoom(zoom - EDITOR_ZOOM_STEP)}
         >
           <Minus size={16} aria-hidden="true" />
         </button>
         <input
           type="range"
-          min={MIN_ZOOM}
-          max={MAX_ZOOM}
-          step={STEP}
+          min={MIN_EDITOR_ZOOM}
+          max={MAX_EDITOR_ZOOM}
+          step={EDITOR_ZOOM_STEP}
           value={zoom}
           aria-label={copy.slider}
           onChange={(event) => applyZoom(Number(event.target.value))}
@@ -89,8 +81,8 @@ export function EditorZoomControl() {
           type="button"
           aria-label={copy.increase}
           title={copy.increase}
-          disabled={zoom >= MAX_ZOOM}
-          onClick={() => applyZoom(zoom + STEP)}
+          disabled={zoom >= MAX_EDITOR_ZOOM}
+          onClick={() => applyZoom(zoom + EDITOR_ZOOM_STEP)}
         >
           <Plus size={16} aria-hidden="true" />
         </button>
