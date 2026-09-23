@@ -3,6 +3,8 @@ import { useState, type ReactNode } from 'react';
 
 import {
   paragraphStyleWouldCreateCycle,
+  type PublicationCorners,
+  type PublicationOffsets,
   type PublicationParagraphStyleCollection,
   type PublicationParagraphStyleDefinition,
   type PublicationParagraphStyleProperties,
@@ -146,6 +148,12 @@ export function InDesignParagraphStyleSettings({
               <NumberField label={copy.spaceBefore} value={resolved.spaceBefore} step={0.5} suffix="pt" onChange={(value) => onSetProperty('spaceBefore', value)} />
               <NumberField label={copy.spaceAfter} value={resolved.spaceAfter} step={0.5} suffix="pt" onChange={(value) => onSetProperty('spaceAfter', value)} />
               <NumberField label={copy.sameStyleSpacing} value={resolved.spaceBetweenSameStyle} step={0.5} suffix="pt" onChange={(value) => onSetProperty('spaceBetweenSameStyle', value)} />
+              <SelectField label={copy.baselineGrid} value={resolved.baselineGridAlignment} options={[
+                ['none', copy.none],
+                ['all-lines', copy.gridAllLines],
+                ['first-line', copy.gridFirstLine],
+                ['last-line', copy.gridLastLine],
+              ]} onChange={(value) => onSetProperty('baselineGridAlignment', value as PublicationParagraphStyleProperties['baselineGridAlignment'])} />
             </Grid>
             <ToggleGrid>
               <Toggle label={copy.balanceRagged} checked={resolved.balanceRaggedLines} onChange={(checked) => onSetProperty('balanceRaggedLines', checked)} />
@@ -277,6 +285,7 @@ function TabPane({ copy, resolved, onSetProperty }: PaneProps) {
             ['left', copy.left], ['center', copy.center], ['right', copy.right], ['decimal', copy.decimal],
           ]} onChange={(value) => onSetProperty('tabStops', stops.map((item, i) => i === index ? { ...item, alignment: value as 'left' | 'center' | 'right' | 'decimal' } : item))} />
           <TextField label={copy.leader} value={stop.leader ?? ''} onChange={(value) => onSetProperty('tabStops', stops.map((item, i) => i === index ? { ...item, leader: value } : item))} />
+          <TextField label={copy.alignOn} value={stop.decimalCharacter ?? ''} onChange={(value) => onSetProperty('tabStops', stops.map((item, i) => i === index ? { ...item, decimalCharacter: value } : item))} />
           <button type="button" onClick={() => onSetProperty('tabStops', stops.filter((_, i) => i !== index))}>{copy.delete}</button>
         </div>
       ))}
@@ -312,10 +321,23 @@ function RuleGroup({
       <Grid>
         <NumberField label={copy.weight} value={value.widthPt ?? 0.5} min={0} step={0.1} suffix="pt" onChange={(next) => onChange({ ...value, widthPt: next })} />
         <SelectField label={copy.type} value={value.style ?? 'solid'} options={strokeOptions(copy)} onChange={(next) => onChange({ ...value, style: next as typeof value.style })} />
+        <TextField label={copy.strokeName} value={value.strokeName ?? ''} onChange={(next) => onChange({ ...value, strokeName: next })} />
         <TextField label={copy.color} value={value.color ?? 'currentColor'} onChange={(next) => onChange({ ...value, color: next })} />
         <NumberField label={copy.tint} value={value.tint ?? 100} min={0} max={100} suffix="%" onChange={(next) => onChange({ ...value, tint: next })} />
+        <TextField label={copy.gapColor} value={value.gapColor ?? 'transparent'} onChange={(next) => onChange({ ...value, gapColor: next })} />
+        <NumberField label={copy.gapTint} value={value.gapTint ?? 100} min={0} max={100} suffix="%" onChange={(next) => onChange({ ...value, gapTint: next })} />
+        <SelectField label={copy.widthMode} value={value.widthMode ?? 'column'} options={[
+          ['column', copy.column], ['text', copy.text],
+        ]} onChange={(next) => onChange({ ...value, widthMode: next as 'column' | 'text' })} />
         <NumberField label={copy.offset} value={value.offsetPt ?? 0} step={0.1} suffix="pt" onChange={(next) => onChange({ ...value, offsetPt: next })} />
+        <NumberField label={copy.leftIndent} value={value.leftIndentMm ?? 0} step={0.5} suffix="mm" onChange={(next) => onChange({ ...value, leftIndentMm: next })} />
+        <NumberField label={copy.rightIndent} value={value.rightIndentMm ?? 0} step={0.5} suffix="mm" onChange={(next) => onChange({ ...value, rightIndentMm: next })} />
       </Grid>
+      <ToggleGrid>
+        <Toggle label={copy.overprint} checked={value.overprint === true} onChange={(checked) => onChange({ ...value, overprint: checked })} />
+        <Toggle label={copy.gapOverprint} checked={value.gapOverprint === true} onChange={(checked) => onChange({ ...value, gapOverprint: checked })} />
+        <Toggle label={copy.keepInFrame} checked={value.keepInFrame === true} onChange={(checked) => onChange({ ...value, keepInFrame: checked })} />
+      </ToggleGrid>
     </fieldset>
   );
 }
@@ -331,10 +353,30 @@ function BorderPane({ copy, resolved, onSetProperty }: PaneProps) {
         <NumberField label={copy.right} value={widths.rightPt ?? value.widthPt ?? 0.5} min={0} suffix="pt" onChange={(next) => onSetProperty('border', { ...value, widths: { ...widths, rightPt: next } })} />
         <NumberField label={copy.bottom} value={widths.bottomPt ?? value.widthPt ?? 0.5} min={0} suffix="pt" onChange={(next) => onSetProperty('border', { ...value, widths: { ...widths, bottomPt: next } })} />
         <NumberField label={copy.left} value={widths.leftPt ?? value.widthPt ?? 0.5} min={0} suffix="pt" onChange={(next) => onSetProperty('border', { ...value, widths: { ...widths, leftPt: next } })} />
+        <SelectField label={copy.type} value={value.style ?? 'solid'} options={strokeOptions(copy)} onChange={(next) => onSetProperty('border', { ...value, style: next as typeof value.style })} />
+        <TextField label={copy.strokeName} value={value.strokeName ?? ''} onChange={(next) => onSetProperty('border', { ...value, strokeName: next })} />
         <TextField label={copy.color} value={value.color ?? 'currentColor'} onChange={(next) => onSetProperty('border', { ...value, color: next })} />
         <NumberField label={copy.tint} value={value.tint ?? 100} min={0} max={100} suffix="%" onChange={(next) => onSetProperty('border', { ...value, tint: next })} />
+        <TextField label={copy.gapColor} value={value.gapColor ?? 'transparent'} onChange={(next) => onSetProperty('border', { ...value, gapColor: next })} />
+        <NumberField label={copy.gapTint} value={value.gapTint ?? 100} min={0} max={100} suffix="%" onChange={(next) => onSetProperty('border', { ...value, gapTint: next })} />
+        <SelectField label={copy.cap} value={value.cap ?? 'butt'} options={[
+          ['butt', copy.capButt], ['round', copy.capRound], ['projecting', copy.capProjecting],
+        ]} onChange={(next) => onSetProperty('border', { ...value, cap: next as NonNullable<typeof value.cap> })} />
+        <SelectField label={copy.join} value={value.join ?? 'miter'} options={[
+          ['miter', copy.joinMiter], ['round', copy.joinRound], ['bevel', copy.joinBevel],
+        ]} onChange={(next) => onSetProperty('border', { ...value, join: next as NonNullable<typeof value.join> })} />
+        <SelectField label={copy.widthMode} value={value.widthMode ?? 'column'} options={[
+          ['column', copy.column], ['text', copy.text],
+        ]} onChange={(next) => onSetProperty('border', { ...value, widthMode: next as 'column' | 'text' })} />
       </Grid>
-      <Toggle label={copy.mergeConsecutive} checked={value.mergeConsecutive === true} onChange={(checked) => onSetProperty('border', { ...value, mergeConsecutive: checked })} />
+      <CornerFields copy={copy} value={value.corners ?? {}} onChange={(corners) => onSetProperty('border', { ...value, corners })} />
+      <OffsetFields copy={copy} value={value.offsets ?? {}} onChange={(offsets) => onSetProperty('border', { ...value, offsets })} />
+      <ToggleGrid>
+        <Toggle label={copy.overprint} checked={value.overprint === true} onChange={(checked) => onSetProperty('border', { ...value, overprint: checked })} />
+        <Toggle label={copy.gapOverprint} checked={value.gapOverprint === true} onChange={(checked) => onSetProperty('border', { ...value, gapOverprint: checked })} />
+        <Toggle label={copy.displayAcrossFrames} checked={value.displayAcrossFrames === true} onChange={(checked) => onSetProperty('border', { ...value, displayAcrossFrames: checked })} />
+        <Toggle label={copy.mergeConsecutive} checked={value.mergeConsecutive === true} onChange={(checked) => onSetProperty('border', { ...value, mergeConsecutive: checked })} />
+      </ToggleGrid>
     </>
   );
 }
@@ -347,7 +389,12 @@ function ShadingPane({ copy, resolved, onSetProperty }: PaneProps) {
       <Grid>
         <TextField label={copy.color} value={value.color ?? 'transparent'} onChange={(next) => onSetProperty('shading', { ...value, color: next })} />
         <NumberField label={copy.tint} value={value.tint ?? 100} min={0} max={100} suffix="%" onChange={(next) => onSetProperty('shading', { ...value, tint: next })} />
+        <SelectField label={copy.widthMode} value={value.widthMode ?? 'column'} options={[
+          ['column', copy.column], ['text', copy.text],
+        ]} onChange={(next) => onSetProperty('shading', { ...value, widthMode: next as 'column' | 'text' })} />
       </Grid>
+      <CornerFields copy={copy} value={value.corners ?? {}} onChange={(corners) => onSetProperty('shading', { ...value, corners })} />
+      <OffsetFields copy={copy} value={value.offsets ?? {}} onChange={(offsets) => onSetProperty('shading', { ...value, offsets })} />
       <ToggleGrid>
         <Toggle label={copy.overprint} checked={value.overprint === true} onChange={(checked) => onSetProperty('shading', { ...value, overprint: checked })} />
         <Toggle label={copy.clipToFrame} checked={value.clipToFrame === true} onChange={(checked) => onSetProperty('shading', { ...value, clipToFrame: checked })} />
@@ -457,6 +504,10 @@ function NestedPane({ copy, resolved, onSetProperty }: PaneProps) {
           <NumberField label={copy.characters} value={resolved.dropCaps.characters ?? 0} min={0} step={1} onChange={(next) => onSetProperty('dropCaps', { ...resolved.dropCaps, characters: Math.trunc(next) })} />
           <TextField label={copy.characterStyle} value={resolved.dropCaps.characterStyleId ?? ''} onChange={(next) => onSetProperty('dropCaps', { ...resolved.dropCaps, characterStyleId: next })} />
         </Grid>
+        <ToggleGrid>
+          <Toggle label={copy.alignLeftEdge} checked={resolved.dropCaps.alignLeftEdge === true} onChange={(checked) => onSetProperty('dropCaps', { ...resolved.dropCaps, alignLeftEdge: checked })} />
+          <Toggle label={copy.scaleDescenders} checked={resolved.dropCaps.scaleForDescenders === true} onChange={(checked) => onSetProperty('dropCaps', { ...resolved.dropCaps, scaleForDescenders: checked })} />
+        </ToggleGrid>
       </fieldset>
       <RepeatableRules
         title={copy.nestedStyles}
@@ -507,6 +558,11 @@ function BulletsPane({ copy, resolved, onSetProperty }: PaneProps) {
       <TextField label={copy.bulletCharacter} value={value.bulletCharacter ?? '•'} onChange={(next) => set({ bulletCharacter: next })} />
       <TextField label={copy.numberExpression} value={value.numberExpression ?? ''} onChange={(next) => set({ numberExpression: next })} />
       <TextField label={copy.characterStyle} value={value.characterStyleId ?? ''} onChange={(next) => set({ characterStyleId: next })} />
+      <SelectField label={copy.alignment} value={value.alignment ?? 'left'} options={[
+        ['left', copy.left], ['center', copy.center], ['right', copy.right], ['justify', copy.justify],
+      ]} onChange={(next) => set({ alignment: next as NonNullable<typeof value.alignment> })} />
+      <NumberField label={copy.startAt} value={value.startAt ?? 1} min={0} step={1} onChange={(next) => set({ startAt: Math.trunc(next) })} />
+      <NumberField label={copy.restartAfterLevel} value={value.restartAfterLevel ?? 0} min={0} step={1} onChange={(next) => set({ restartAfterLevel: Math.trunc(next) })} />
       <NumberField label={copy.leftIndent} value={value.leftIndentMm ?? 0} suffix="mm" onChange={(next) => set({ leftIndentMm: next })} />
       <NumberField label={copy.firstLineIndent} value={value.firstLineIndentMm ?? 0} suffix="mm" onChange={(next) => set({ firstLineIndentMm: next })} />
       <NumberField label={copy.tabPosition} value={value.tabPositionMm ?? 0} suffix="mm" onChange={(next) => set({ tabPositionMm: next })} />
@@ -523,6 +579,11 @@ function ColorPane({ copy, resolved, onSetProperty }: PaneProps) {
         <NumberField label={copy.tint} value={resolved.fillTint} min={0} max={100} suffix="%" onChange={(next) => onSetProperty('fillTint', next)} />
         <NumberField label={copy.strokeWeight} value={stroke.widthPt ?? 0} min={0} suffix="pt" onChange={(next) => onSetProperty('characterStroke', { ...stroke, widthPt: next })} />
         <TextField label={copy.strokeColor} value={stroke.color ?? 'currentColor'} onChange={(next) => onSetProperty('characterStroke', { ...stroke, color: next })} />
+        <NumberField label={copy.strokeTint} value={stroke.tint ?? 100} min={0} max={100} suffix="%" onChange={(next) => onSetProperty('characterStroke', { ...stroke, tint: next })} />
+        <NumberField label={copy.miterLimit} value={stroke.miterLimit ?? 4} min={0} step={0.1} onChange={(next) => onSetProperty('characterStroke', { ...stroke, miterLimit: next })} />
+        <SelectField label={copy.strokeAlignment} value={stroke.alignment ?? 'center'} options={[
+          ['center', copy.strokeCenter], ['inside', copy.strokeInside], ['outside', copy.strokeOutside],
+        ]} onChange={(next) => onSetProperty('characterStroke', { ...stroke, alignment: next as NonNullable<typeof stroke.alignment> })} />
       </Grid>
       <ToggleGrid>
         <Toggle label={copy.overprintFill} checked={resolved.fillOverprint} onChange={(checked) => onSetProperty('fillOverprint', checked)} />
@@ -547,6 +608,20 @@ function OpenTypePane({ copy, resolved, onSetProperty }: PaneProps) {
         <Toggle label={copy.slashedZero} checked={value.slashedZero === true} onChange={(checked) => set({ slashedZero: checked })} />
       </ToggleGrid>
       <Grid>
+        <SelectField label={copy.figureStyle} value={value.figureStyle ?? 'default'} options={[
+          ['default', copy.defaultValue],
+          ['lining-proportional', copy.liningProportional],
+          ['lining-tabular', copy.liningTabular],
+          ['oldstyle-proportional', copy.oldstyleProportional],
+          ['oldstyle-tabular', copy.oldstyleTabular],
+        ]} onChange={(next) => set({ figureStyle: next as NonNullable<typeof value.figureStyle> })} />
+        <SelectField label={copy.positionalForm} value={value.positionalForm ?? 'general'} options={[
+          ['general', copy.generalForm],
+          ['initial', copy.initialForm],
+          ['medial', copy.medialForm],
+          ['final', copy.finalForm],
+          ['isolated', copy.isolatedForm],
+        ]} onChange={(next) => set({ positionalForm: next as NonNullable<typeof value.positionalForm> })} />
         <TextField label={copy.stylisticSets} value={(value.stylisticSets ?? []).join(', ')} onChange={(next) => set({ stylisticSets: parseSets(next) })} />
       </Grid>
     </>
@@ -570,7 +645,13 @@ function DecorationPane({
         <SelectField label={copy.type} value={value.style ?? 'solid'} options={strokeOptions(copy)} onChange={(next) => set({ style: next as typeof value.style })} />
         <TextField label={copy.color} value={value.color ?? 'currentColor'} onChange={(next) => set({ color: next })} />
         <NumberField label={copy.tint} value={value.tint ?? 100} min={0} max={100} suffix="%" onChange={(next) => set({ tint: next })} />
+        <TextField label={copy.gapColor} value={value.gapColor ?? 'transparent'} onChange={(next) => set({ gapColor: next })} />
+        <NumberField label={copy.gapTint} value={value.gapTint ?? 100} min={0} max={100} suffix="%" onChange={(next) => set({ gapTint: next })} />
       </Grid>
+      <ToggleGrid>
+        <Toggle label={copy.overprint} checked={value.overprint === true} onChange={(checked) => set({ overprint: checked })} />
+        <Toggle label={copy.gapOverprint} checked={value.gapOverprint === true} onChange={(checked) => set({ gapOverprint: checked })} />
+      </ToggleGrid>
     </>
   );
 }
@@ -591,6 +672,7 @@ function ExportPane({ copy, resolved, onSetProperty }: PaneProps) {
         <Toggle label={copy.applyHtmlClass} checked={value.applyHtmlClass === true} onChange={(checked) => set({ applyHtmlClass: checked })} />
         <Toggle label={copy.emitCss} checked={value.emitCss === true} onChange={(checked) => set({ emitCss: checked })} />
         <Toggle label={copy.splitDocument} checked={value.splitDocument === true} onChange={(checked) => set({ splitDocument: checked })} />
+        <Toggle label={copy.emitTag} checked={value.emitTag !== false} onChange={(checked) => set({ emitTag: checked })} />
       </ToggleGrid>
     </>
   );
@@ -630,6 +712,87 @@ function RepeatableRules({
         </div>
       ))}
       <button type="button" className="studio-menu-secondary-action" onClick={() => onChange([...rows, { id: crypto.randomUUID(), first: '', second: '' }])}>{addLabel}</button>
+    </fieldset>
+  );
+}
+
+function CornerFields({
+  copy,
+  value,
+  onChange,
+}: {
+  copy: Copy;
+  value: PublicationCorners;
+  onChange: (value: PublicationCorners) => void;
+}) {
+  return (
+    <fieldset className="indesign-subpanel">
+      <legend>{copy.corners}</legend>
+      <Grid>
+        {([
+          ['topLeft', copy.topLeft],
+          ['topRight', copy.topRight],
+          ['bottomRight', copy.bottomRight],
+          ['bottomLeft', copy.bottomLeft],
+        ] as const).flatMap(([key, label]) => {
+          const corner = value[key] ?? {};
+          return [
+            <NumberField
+              key={key + '-radius'}
+              label={label + ' — ' + copy.radius}
+              value={corner.radiusMm ?? 0}
+              min={0}
+              step={0.5}
+              suffix="mm"
+              onChange={(radiusMm) => onChange({
+                ...value,
+                [key]: { ...corner, radiusMm },
+              })}
+            />,
+            <SelectField
+              key={key + '-shape'}
+              label={label + ' — ' + copy.cornerShape}
+              value={corner.shape ?? 'square'}
+              options={[
+                ['square', copy.cornerSquare],
+                ['rounded', copy.cornerRounded],
+                ['bevel', copy.cornerBevel],
+                ['inset', copy.cornerInset],
+                ['inverse-rounded', copy.cornerInverseRounded],
+              ]}
+              onChange={(shape) => onChange({
+                ...value,
+                [key]: {
+                  ...corner,
+                  shape: shape as NonNullable<typeof corner.shape>,
+                },
+              })}
+            />,
+          ];
+        })}
+      </Grid>
+    </fieldset>
+  );
+}
+
+function OffsetFields({
+  copy,
+  value,
+  onChange,
+}: {
+  copy: Copy;
+  value: PublicationOffsets;
+  onChange: (value: PublicationOffsets) => void;
+}) {
+  return (
+    <fieldset className="indesign-subpanel">
+      <legend>{copy.offsets}</legend>
+      <Grid>
+        <NumberField label={copy.top} value={value.topMm ?? 0} step={0.5} suffix="mm" onChange={(topMm) => onChange({ ...value, topMm })} />
+        <NumberField label={copy.right} value={value.rightMm ?? 0} step={0.5} suffix="mm" onChange={(rightMm) => onChange({ ...value, rightMm })} />
+        <NumberField label={copy.bottom} value={value.bottomMm ?? 0} step={0.5} suffix="mm" onChange={(bottomMm) => onChange({ ...value, bottomMm })} />
+        <NumberField label={copy.left} value={value.leftMm ?? 0} step={0.5} suffix="mm" onChange={(leftMm) => onChange({ ...value, leftMm })} />
+      </Grid>
     </fieldset>
   );
 }
@@ -854,8 +1017,13 @@ function copyFor(locale: string) {
     sameStyleSpacing: t('Azonos stílusú bekezdések közötti térköz', 'Abstand zwischen gleichem Format', 'Same-style spacing'),
     balanceRagged: t('Szabad sorvégek kiegyenlítése', 'Unausgeglichene Zeilen ausgleichen', 'Balance ragged lines'),
     ignoreOpticalMargin: t('Optikai margó kihagyása', 'Optischen Randausgleich ignorieren', 'Ignore optical margin'),
+    baselineGrid: t('Rácshoz igazítás', 'Am Grundlinienraster ausrichten', 'Align to baseline grid'),
+    gridAllLines: t('Minden sor', 'Alle Zeilen', 'All lines'),
+    gridFirstLine: t('Első sor', 'Erste Zeile', 'First line'),
+    gridLastLine: t('Utolsó sor', 'Letzte Zeile', 'Last line'),
     decimal: t('Igazítás karakterhez', 'Am Zeichen ausrichten', 'Align on character'),
     leader: t('Sorkitöltés', 'Füllzeichen', 'Leader'),
+    alignOn: t('Igazítás be', 'Ausrichten an', 'Align on'),
     delete: t('Törlés', 'Löschen', 'Delete'),
     add: t('Hozzáadás', 'Hinzufügen', 'Add'),
     ruleAbove: t('Felső lénia', 'Linie darüber', 'Rule above'),
@@ -867,6 +1035,36 @@ function copyFor(locale: string) {
     tint: t('Színárnyalat', 'Farbton', 'Tint'),
     offset: t('Eltolás', 'Versatz', 'Offset'),
     overprint: t('Felülnyomás', 'Überdrucken', 'Overprint'),
+    gapColor: t('Köz színe', 'Lückenfarbe', 'Gap color'),
+    gapTint: t('Köz színárnyalata', 'Lückenfarbton', 'Gap tint'),
+    gapOverprint: t('Térköz felülnyomása', 'Lücke überdrucken', 'Overprint gap'),
+    strokeName: t('Vonalstílus', 'Konturstil', 'Stroke style'),
+    widthMode: t('Szélesség', 'Breite', 'Width'),
+    column: t('Oszlop', 'Spalte', 'Column'),
+    text: t('Szöveg', 'Text', 'Text'),
+    keepInFrame: t('Kereten belül marad', 'Im Rahmen halten', 'Keep in frame'),
+    cap: t('Vonalvég', 'Linienende', 'Cap'),
+    capButt: t('Tompa', 'Abgeschnitten', 'Butt'),
+    capRound: t('Kerek', 'Rund', 'Round'),
+    capProjecting: t('Kinyúló', 'Projizierend', 'Projecting'),
+    join: t('Egyesítés', 'Eckenverbindung', 'Join'),
+    joinMiter: t('Gér', 'Gehrung', 'Miter'),
+    joinRound: t('Kerek', 'Rund', 'Round'),
+    joinBevel: t('Levágott', 'Abgeschrägt', 'Bevel'),
+    corners: t('Sarok mérete és alakja', 'Eckgröße und -form', 'Corner size and shape'),
+    radius: t('Méret', 'Größe', 'Radius'),
+    cornerShape: t('Alak', 'Form', 'Shape'),
+    cornerSquare: t('Négyzetes', 'Eckig', 'Square'),
+    cornerRounded: t('Lekerekített', 'Abgerundet', 'Rounded'),
+    cornerBevel: t('Levágott', 'Abgeschrägt', 'Bevel'),
+    cornerInset: t('Belső', 'Eingezogen', 'Inset'),
+    cornerInverseRounded: t('Fordított kerek', 'Umgekehrt rund', 'Inverse rounded'),
+    topLeft: t('Bal felső', 'Oben links', 'Top left'),
+    topRight: t('Jobb felső', 'Oben rechts', 'Top right'),
+    bottomRight: t('Jobb alsó', 'Unten rechts', 'Bottom right'),
+    bottomLeft: t('Bal alsó', 'Unten links', 'Bottom left'),
+    offsets: t('Eltolások', 'Versätze', 'Offsets'),
+    displayAcrossFrames: t('Szegély megjelenítése kereteken/oszlopokon át', 'Rahmen über Textrahmen/Spalten hinweg anzeigen', 'Display border across frames/columns'),
     solid: t('Folytonos', 'Durchgezogen', 'Solid'),
     dashed: t('Szaggatott', 'Gestrichelt', 'Dashed'),
     dotted: t('Pontozott', 'Gepunktet', 'Dotted'),
@@ -919,6 +1117,8 @@ function copyFor(locale: string) {
     lines: t('Sor', 'Zeilen', 'Lines'),
     characters: t('Karakterek', 'Zeichen', 'Characters'),
     characterStyle: t('Karakterstílus', 'Zeichenformat', 'Character style'),
+    alignLeftEdge: t('Bal oldali szegély igazítása', 'Linke Kante ausrichten', 'Align left edge'),
+    scaleDescenders: t('Igazítás az alsó nyúlványokhoz', 'An Unterlängen ausrichten', 'Scale for descenders'),
     nestedStyles: t('Egymásba ágyazott stílusok', 'Verschachtelte Formate', 'Nested styles'),
     nestedLineStyles: t('Egymásba ágyazott vonalstílusok', 'Verschachtelte Zeilenformate', 'Nested line styles'),
     delimiter: t('Határoló', 'Trennzeichen', 'Delimiter'),
@@ -932,9 +1132,17 @@ function copyFor(locale: string) {
     bulletCharacter: t('Felsorolásjel', 'Aufzählungszeichen', 'Bullet character'),
     numberExpression: t('Számozási minta', 'Nummerierungsmuster', 'Number expression'),
     tabPosition: t('Tabulátor helye', 'Tabulatorposition', 'Tab position'),
+    startAt: t('Kezdőérték', 'Beginnen bei', 'Start at'),
+    restartAfterLevel: t('Újraindítás szint után', 'Nach Ebene neu starten', 'Restart after level'),
     fillColor: t('Kitöltés színe', 'Flächenfarbe', 'Fill color'),
     strokeWeight: t('Körvonal vastagsága', 'Konturstärke', 'Stroke weight'),
     strokeColor: t('Körvonal színe', 'Konturfarbe', 'Stroke color'),
+    strokeTint: t('Körvonal színárnyalata', 'Konturfarbton', 'Stroke tint'),
+    miterLimit: t('Ferde vágás határa', 'Gehrungsgrenze', 'Miter limit'),
+    strokeAlignment: t('Körvonal igazítása', 'Konturausrichtung', 'Stroke alignment'),
+    strokeCenter: t('Középre', 'Zentriert', 'Center'),
+    strokeInside: t('Belülre', 'Innen', 'Inside'),
+    strokeOutside: t('Kívülre', 'Außen', 'Outside'),
     overprintFill: t('Felülnyomott kitöltés', 'Fläche überdrucken', 'Overprint fill'),
     overprintStroke: t('Felülnyomott körvonal', 'Kontur überdrucken', 'Overprint stroke'),
     titling: t('Címváltozatok', 'Titelformen', 'Titling alternates'),
@@ -945,6 +1153,18 @@ function copyFor(locale: string) {
     fractions: t('Törtek', 'Brüche', 'Fractions'),
     slashedZero: t('Perjeles nulla', 'Durchgestrichene Null', 'Slashed zero'),
     stylisticSets: t('Stíluskészletek', 'Stilsets', 'Stylistic sets'),
+    figureStyle: t('Számstílus', 'Ziffernstil', 'Figure style'),
+    positionalForm: t('Helyfüggő alak', 'Positionsform', 'Positional form'),
+    defaultValue: t('Alapértelmezett', 'Standard', 'Default'),
+    liningProportional: t('Álló, arányos', 'Versalziffern proportional', 'Lining proportional'),
+    liningTabular: t('Álló, táblázatos', 'Versalziffern tabellarisch', 'Lining tabular'),
+    oldstyleProportional: t('Ugráló, arányos', 'Mediäval proportional', 'Oldstyle proportional'),
+    oldstyleTabular: t('Ugráló, táblázatos', 'Mediäval tabellarisch', 'Oldstyle tabular'),
+    generalForm: t('Általános alak', 'Allgemeine Form', 'General form'),
+    initialForm: t('Kezdő alak', 'Anfangsform', 'Initial form'),
+    medialForm: t('Középső alak', 'Mittelform', 'Medial form'),
+    finalForm: t('Záró alak', 'Endform', 'Final form'),
+    isolatedForm: t('Önálló alak', 'Isolierte Form', 'Isolated form'),
     htmlTag: t('HTML címke', 'HTML-Tag', 'HTML tag'),
     epubTag: t('EPUB címke', 'EPUB-Tag', 'EPUB tag'),
     ariaRole: t('ARIA szerep', 'ARIA-Rolle', 'ARIA role'),
@@ -953,5 +1173,6 @@ function copyFor(locale: string) {
     applyHtmlClass: t('HTML-osztályok alkalmazása', 'HTML-Klassen anwenden', 'Apply HTML classes'),
     emitCss: t('CSS készítése', 'CSS ausgeben', 'Emit CSS'),
     splitDocument: t('Dokumentum darabolása', 'Dokument aufteilen', 'Split document'),
+    emitTag: t('Címke exportálása', 'Tag exportieren', 'Emit tag'),
   };
 }
