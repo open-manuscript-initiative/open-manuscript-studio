@@ -42,6 +42,10 @@ const editorZoomStyles = readFileSync(
   new URL('../src/components/EditorZoomControl.css', import.meta.url),
   'utf8',
 );
+const editorZoomModel = readFileSync(
+  new URL('../src/editor/editorZoom.ts', import.meta.url),
+  'utf8',
+);
 const studioShell = readFileSync(
   new URL('../src/styles/studio-shell.css', import.meta.url),
   'utf8',
@@ -107,11 +111,13 @@ test('native mobile removes the obsolete bottom navigation and reserves only the
 });
 
 test('normal manuscript editing exposes a Word-style document zoom without changing manuscript data', () => {
-  assert.match(editorZoom, /MIN_ZOOM = 50/);
-  assert.match(editorZoom, /MAX_ZOOM = 200/);
+  assert.match(editorZoomModel, /MIN_EDITOR_ZOOM = 50/);
+  assert.match(editorZoomModel, /MAX_EDITOR_ZOOM = 200/);
+  assert.match(editorZoomModel, /EDITOR_ZOOM_EVENT = 'omi:editor-zoom-change'/);
   assert.match(editorZoom, /type="range"/);
   assert.match(editorZoom, /setZoom\(100\)/);
-  assert.match(editorZoom, /localStorage\.setItem\(STORAGE_KEY/);
+  assert.match(editorZoom, /localStorage\.setItem\(EDITOR_ZOOM_STORAGE_KEY/);
+  assert.match(editorZoom, /dispatchEditorZoomChange\(zoom\)/);
   assert.match(editorZoomStyles, /\.omi-manuscript-page\s*\{\s*zoom:\s*var\(--omi-editor-zoom, 1\);/);
   assert.match(
     editorZoomStyles,
