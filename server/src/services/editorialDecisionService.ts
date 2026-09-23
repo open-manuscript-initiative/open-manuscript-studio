@@ -274,6 +274,7 @@ async function decisionEvidenceIsCurrent(decision: {
       manuscriptId: decision.manuscriptId,
       revisionId: decision.revisionId,
       stateDigest: decision.stateDigest,
+      publicationContentDigest: decision.publicationContentDigest,
       reviewRound: decision.reviewRound,
       basisAssignmentIds: assignmentIds,
       editorUserId: decision.decidedByUserId,
