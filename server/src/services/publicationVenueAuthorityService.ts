@@ -35,7 +35,10 @@ export interface PublicationVenueDomainClaimInput {
   isbnPrefix?: string | undefined;
 }
 
-export async function createPublicationVenueDomainClaim(userId: string, input: PublicationVenueDomainClaimInput) {
+export async function createPublicationVenueDomainClaim(
+  userId: string,
+  input: PublicationVenueDomainClaimInput,
+) {
   const name = normalizeDisplayName(input.name);
   const normalizedName = normalizeVenueName(name);
   if (!name || !normalizedName) throw new Error('A publication venue name is required.');
@@ -44,19 +47,62 @@ export async function createPublicationVenueDomainClaim(userId: string, input: P
   if (website) assertWebsiteMatchesDomain(website, domain);
   const issn = cleanOptional(input.issn)?.toUpperCase();
   const isbnPrefix = cleanOptional(input.isbnPrefix);
-  const venueData = {
-    ...(website ? { website } : {}),
-    ...(issn ? { issn } : {}),
-    ...(isbnPrefix ? { isbnPrefix } : {}),
-  };
+
   const existing = await identityPrisma.publicationVenue.findUnique({
     where: { type_normalizedName: { type: input.type, normalizedName } },
+    include: { domainVerifications: true },
   });
-  const venue = existing
-    ? await identityPrisma.publicationVenue.update({ where: { id: existing.id }, data: venueData })
-    : await identityPrisma.publicationVenue.create({
-        data: { type: input.type, name, normalizedName, createdByUserId: userId, ...venueData },
-      });
+  if (existing) {
+    const verifiedClaim = existing.domainVerifications.find(
+      (claim) => claim.status === 'VERIFIED',
+    );
+    if (verifiedClaim) {
+      throw conflict(
+        verifiedClaim.domain === domain
+          ? 'This publication venue domain is already verified.'
+          : 'This publication venue already has a different verified domain.',
+      );
+    }
+    if (existing.integrationStatus === 'VERIFIED') {
+      if (!existing.website) {
+        throw conflict(
+          'An integrated publication venue without a registered website cannot be claimed through DNS.',
+        );
+      }
+      assertWebsiteMatchesDomain(existing.website, domain);
+    } else if (existing.createdByUserId !== userId) {
+      if (!existing.website) {
+        throw conflict(
+          'An existing publication venue without a registered website cannot be claimed by another account.',
+        );
+      }
+      assertWebsiteMatchesDomain(existing.website, domain);
+    }
+    const activeForeignClaim = existing.domainVerifications.find(
+      (claim) =>
+        claim.domain === domain &&
+        claim.status === 'PENDING' &&
+        claim.expiresAt.getTime() > Date.now() &&
+        claim.requestedByUserId !== userId,
+    );
+    if (activeForeignClaim) {
+      throw conflict(
+        'Another account already has an active DNS verification challenge for this publication venue domain.',
+      );
+    }
+  }
+
+  const venue = existing ?? await identityPrisma.publicationVenue.create({
+    data: {
+      type: input.type,
+      name,
+      normalizedName,
+      createdByUserId: userId,
+      ...(website ? { website } : {}),
+      ...(issn ? { issn } : {}),
+      ...(isbnPrefix ? { isbnPrefix } : {}),
+    },
+  });
 
   const token = randomBytes(32).toString('base64url');
   const txtValue = TXT_PREFIX + token;
