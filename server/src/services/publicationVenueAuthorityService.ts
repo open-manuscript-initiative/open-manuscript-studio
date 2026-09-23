@@ -117,8 +117,14 @@ export async function verifyPublicationVenueDomainClaim(userId: string, claimId:
       include: { venue: true },
     });
     await transaction.publicationVenueMembership.upsert({
-      where: { venueId_userId: { venueId: claim.venueId, userId: claim.requestedByUserId } },
-      update: { role: 'DOMAIN_ADMIN', active: true, grantedByUserId: userId },
+      where: {
+        venueId_userId_role: {
+          venueId: claim.venueId,
+          userId: claim.requestedByUserId,
+          role: 'DOMAIN_ADMIN',
+        },
+      },
+      update: { active: true, grantedByUserId: userId },
       create: {
         venueId: claim.venueId,
         userId: claim.requestedByUserId,
@@ -144,9 +150,18 @@ export async function getPublicationVenueAuthorityOverview(userId: string, venue
     },
   });
   if (!venue) throw notFound('The publication venue was not found.');
-  const currentMembership = venue.memberships.find((membership) => membership.userId === userId) ?? null;
-  const isDomainAdmin = currentMembership?.role === 'DOMAIN_ADMIN';
-  return { venue, currentMembership, members: isDomainAdmin ? venue.memberships : [], isDomainAdmin };
+  const currentMemberships = venue.memberships.filter(
+    (membership) => membership.userId === userId,
+  );
+  const isDomainAdmin = currentMemberships.some(
+    (membership) => membership.role === 'DOMAIN_ADMIN',
+  );
+  return {
+    venue,
+    currentMemberships,
+    members: isDomainAdmin ? venue.memberships : [],
+    isDomainAdmin,
+  };
 }
 
 export async function grantPublicationVenueEditor(
@@ -159,8 +174,14 @@ export async function grantPublicationVenueEditor(
   const user = await identityPrisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
   if (!user) throw notFound('The editor must already have a Studio account with this e-mail address.');
   return identityPrisma.publicationVenueMembership.upsert({
-    where: { venueId_userId: { venueId, userId: user.id } },
-    update: { role, active: true, grantedByUserId: adminUserId },
+    where: {
+      venueId_userId_role: {
+        venueId,
+        userId: user.id,
+        role,
+      },
+    },
+    update: { active: true, grantedByUserId: adminUserId },
     create: { venueId, userId: user.id, role, active: true, grantedByUserId: adminUserId },
     include: { user: { select: { id: true, email: true, fullName: true } } },
   });
@@ -186,8 +207,13 @@ export async function assertVerifiedPublicationVenueEditorAuthority(
   userId: string,
   venueId: string,
 ): Promise<VerifiedPublicationVenueAuthority> {
-  const membership = await identityPrisma.publicationVenueMembership.findUnique({
-    where: { venueId_userId: { venueId, userId } },
+  const membership = await identityPrisma.publicationVenueMembership.findFirst({
+    where: {
+      venueId,
+      userId,
+      active: true,
+      role: { in: ['EDITOR', 'EDITOR_IN_CHIEF'] },
+    },
     include: {
       venue: {
         include: {
@@ -195,8 +221,9 @@ export async function assertVerifiedPublicationVenueEditorAuthority(
         },
       },
     },
+    orderBy: { role: 'asc' },
   });
-  if (!membership || !membership.active || (membership.role !== 'EDITOR' && membership.role !== 'EDITOR_IN_CHIEF')) {
+  if (!membership) {
     throw forbidden('An active editor or editor-in-chief role at the verified publication venue is required.');
   }
   const claim = membership.venue.domainVerifications[0];
@@ -225,7 +252,9 @@ export async function assertVerifiedPublicationVenueEditorAuthority(
 
 async function requireDomainAdmin(userId: string, venueId: string): Promise<void> {
   const [membership, verifiedClaim] = await Promise.all([
-    identityPrisma.publicationVenueMembership.findUnique({ where: { venueId_userId: { venueId, userId } } }),
+    identityPrisma.publicationVenueMembership.findFirst({
+      where: { venueId, userId, role: 'DOMAIN_ADMIN', active: true },
+    }),
     identityPrisma.publicationVenueDomainVerification.findFirst({ where: { venueId, status: 'VERIFIED' }, select: { id: true } }),
   ]);
   if (!verifiedClaim || !membership || !membership.active || membership.role !== 'DOMAIN_ADMIN') {
