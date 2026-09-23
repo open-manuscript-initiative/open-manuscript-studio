@@ -61,6 +61,8 @@ test('OJS and OMP remain authoritative and are excluded from native workflow', (
   assert.match(venueAuthority, /assertStudioNativePublicationVenueEditorAuthority/);
   assert.match(service, /assertStudioNativePublicationVenue\(input\.publicationVenueId\)/);
   assert.match(service, /assertStudioNativePublicationVenueEditorAuthority/);
+  assert.match(service, /assertRevisionPublicationVenue/);
+  assert.match(service, /The submitted manuscript revision is not bound to the selected publication venue/);
   assert.match(panel, /venue\.integrationProvider === 'OJS'/);
   assert.match(panel, /venue\.integrationProvider === 'OMP'/);
   assert.match(panel, /OJS\/OMP is authoritative/);
