@@ -112,7 +112,9 @@ export async function listNativeEditorialInbox(editorUserId: string) {
     include: submissionInclude,
     orderBy: [{ status: 'asc' }, { submittedAt: 'asc' }],
   });
-  return submissions.map(serializeSubmission);
+  return submissions.map((submission) =>
+    serializeSubmission(submission, editorUserId)
+  );
 }
 
 export async function getNativeSubmissionForParticipant(
@@ -144,7 +146,7 @@ export async function claimNativeSubmission(
   }
 
   if (submission.editorUserId === editorUserId) {
-    return serializeSubmission(submission);
+    return serializeSubmission(submission, editorUserId);
   }
 
   return prisma.$transaction(async (transaction) => {
@@ -196,7 +198,7 @@ export async function claimNativeSubmission(
       include: submissionInclude,
     });
     if (!updated) throw notFound();
-    return serializeSubmission(updated);
+    return serializeSubmission(updated, editorUserId);
   }, {
     isolationLevel: 'Serializable',
   });
@@ -211,6 +213,13 @@ export async function assignNativeReviewer(
   },
 ) {
   const submission = await requireAssignedEditor(editorUserId, submissionId);
+  if (
+    !['EDITOR_ASSIGNED', 'UNDER_REVIEW', 'REVISION_SUBMITTED'].includes(
+      submission.status,
+    )
+  ) {
+    throw conflict('A reviewer cannot be assigned from the current submission state.');
+  }
   const review = await createReviewAssignment(editorUserId, {
     workspaceId: submission.workspaceId,
     manuscriptId: submission.manuscriptId,
@@ -300,7 +309,7 @@ export async function requestNativeRevision(
       detail: note.trim() ? { note: note.trim() } : undefined,
     },
   });
-  return serializeSubmission(updated);
+  return serializeSubmission(updated, editorUserId);
 }
 
 export async function submitNativeRevision(
@@ -341,7 +350,7 @@ export async function submitNativeRevision(
       },
     },
   });
-  return serializeSubmission(updated);
+  return serializeSubmission(updated, authorUserId);
 }
 
 export async function rejectNativeSubmission(
@@ -370,7 +379,7 @@ export async function rejectNativeSubmission(
       detail: note.trim() ? { note: note.trim() } : undefined,
     },
   });
-  return serializeSubmission(updated);
+  return serializeSubmission(updated, editorUserId);
 }
 
 export async function acceptNativeSubmission(
@@ -435,7 +444,7 @@ export async function markNativeSubmissionPublished(
       kind: 'PUBLISHED',
     },
   });
-  return serializeSubmission(updated);
+  return serializeSubmission(updated, editorUserId);
 }
 
 async function requireAssignedEditor(editorUserId: string, submissionId: string) {
@@ -492,7 +501,7 @@ function serializeSubmission(submission: NativeSubmission & {
     detail: unknown;
     createdAt: Date;
   }>;
-}) {
+}, viewerUserId?: string) {
   return {
     id: submission.id,
     publicationVenueId: submission.publicationVenueId,
@@ -504,6 +513,8 @@ function serializeSubmission(submission: NativeSubmission & {
     manuscriptSnapshot: submission.manuscriptSnapshot,
     reviewRound: submission.reviewRound,
     status: submission.status,
+    viewerIsAssignedEditor:
+      Boolean(viewerUserId) && submission.editorUserId === viewerUserId,
     latestEditorialNote: submission.latestEditorialNote,
     author: submission.author,
     editor: submission.editor,
