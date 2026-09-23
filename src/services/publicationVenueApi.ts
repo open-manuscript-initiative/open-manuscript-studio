@@ -64,7 +64,7 @@ export interface PublicationVenueAuthorityOverview {
     role: PublicationVenueAuthorityRole;
     active: boolean;
   }>;
-  canManageEditors: boolean;
+  canManageMembers: boolean;
   members: PublicationVenueAuthorityMember[];
 }
 
@@ -154,11 +154,11 @@ export async function getPublicationVenueAuthority(
   return payload.authority;
 }
 
-export async function grantPublicationVenueEditor(
+export async function grantPublicationVenueMember(
   venueId: string,
   input: {
     email: string;
-    role: 'EDITOR' | 'EDITOR_IN_CHIEF';
+    role: PublicationVenueAuthorityRole;
   },
 ): Promise<PublicationVenueAuthorityMember> {
   const response = await jsonRequest(
@@ -174,7 +174,7 @@ export async function grantPublicationVenueEditor(
   return payload.member;
 }
 
-export async function revokePublicationVenueEditor(
+export async function revokePublicationVenueMembership(
   venueId: string,
   membershipId: string,
 ): Promise<void> {
