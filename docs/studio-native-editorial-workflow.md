@@ -93,6 +93,8 @@ A scientific reviewer assignment is bound to:
 
 A submitted reviewer report is explicitly completed by an editor.
 
+If an invited reviewer declines, that assignment remains in the audit history but is not decision-bearing review evidence. A replacement reviewer can be assigned in the same round; once all non-declined scientific assignments in that round are completed, the round can support revision or acceptance.
+
 A revision request requires the current scientific review round to be completed. When the author submits a revised committed manuscript, Studio records a new revision ID and state/content digests and advances the review round.
 
 After a revised submission the editor may:
