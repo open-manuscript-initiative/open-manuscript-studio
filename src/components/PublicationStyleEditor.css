@@ -767,6 +767,133 @@
   min-height: 0;
 }
 
+.publication-section-ruler-shell {
+  position: sticky;
+  z-index: 22;
+  top: 0;
+  width: 100%;
+  padding-top: 0.35rem;
+  background: color-mix(in srgb, #e8edf3 94%, transparent);
+}
+
+.publication-section-ruler-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.65rem;
+  width: min(100%, 56rem);
+  margin: 0 auto 0.35rem;
+  color: #334155;
+  font-family: system-ui, sans-serif;
+  font-size: 0.7rem;
+}
+
+.publication-section-ruler-controls label,
+.publication-section-ruler-section {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.publication-section-ruler-section {
+  min-width: 0;
+  max-width: 18rem;
+}
+
+.publication-section-ruler-section > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.publication-section-ruler-controls select,
+.publication-section-ruler-controls input,
+.publication-section-ruler-controls button {
+  min-height: 1.75rem;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.35rem;
+  background: #fff;
+  color: #1e293b;
+  font: inherit;
+}
+
+.publication-section-ruler-controls select,
+.publication-section-ruler-controls input {
+  padding: 0.1rem 0.3rem;
+}
+
+.publication-section-ruler-controls input {
+  width: 4.25rem;
+}
+
+.publication-section-ruler-controls button {
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+}
+
+.publication-section-ruler-controls button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.publication-section-ruler-tab-summary {
+  white-space: nowrap;
+}
+
+.publication-section-ruler-shell .publication-document-ruler {
+  position: relative;
+  top: auto;
+}
+
+.publication-document-ruler--interactive {
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+
+.publication-document-ruler-column-guide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 1px;
+  background: rgba(37, 99, 235, 0.48);
+  pointer-events: none;
+}
+
+.publication-document-ruler-tab-stop {
+  position: absolute;
+  z-index: 5;
+  top: -0.15rem;
+  width: 1.2rem;
+  height: 1.4rem;
+  margin-left: -0.6rem;
+  border: 0;
+  background: transparent;
+  color: #7c3aed;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.publication-document-ruler-tab-stop:hover,
+.publication-document-ruler-tab-stop:focus-visible {
+  border-radius: 0.2rem;
+  outline: 2px solid rgba(124, 58, 237, 0.28);
+  background: rgba(237, 233, 254, 0.9);
+}
+
+.publication-section-ruler-empty {
+  width: min(100%, 56rem);
+  margin: 0 auto 0.7rem;
+  padding: 0.35rem 0.6rem;
+  color: #64748b;
+  font-size: 0.72rem;
+  text-align: center;
+}
+
 .publication-document-ruler {
   position: sticky;
   z-index: 20;
