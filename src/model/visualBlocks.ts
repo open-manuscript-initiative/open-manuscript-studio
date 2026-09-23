@@ -328,7 +328,11 @@ export function tableRowsToParagraphBlocks(
 ): OmiBlock[] {
   const normalized = normalizeCellMatrix(cells.map((row) => [...row]));
   return normalized.map((row, index) => {
-    const text = row.map((cell) => normalizeTableTextCell(cell, '\t')).join('\t');
+    const normalizedRow = row.map((cell) => normalizeTableTextCell(cell, '\t'));
+    const inlineContent = normalizedRow.flatMap((cell, columnIndex) => [
+      ...(columnIndex > 0 ? [{ type: 'omiTab' }] : []),
+      ...(cell ? [{ type: 'text', text: cell }] : []),
+    ]);
     return {
       id: index === 0 && firstBlockId ? firstBlockId : createId(),
       type: 'paragraph',
@@ -336,7 +340,7 @@ export function tableRowsToParagraphBlocks(
         type: 'doc',
         content: [{
           type: 'paragraph',
-          ...(text ? { content: [{ type: 'text', text }] } : {}),
+          ...(inlineContent.length ? { content: inlineContent } : {}),
         }],
       }),
     };
