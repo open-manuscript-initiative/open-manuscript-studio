@@ -27,7 +27,6 @@ import { useTranslation } from '../i18n';
 import { getManuscriptLanguageDisplayName } from '../model/manuscriptLanguage';
 import type { ProofingSelection } from '../model/proofing';
 import {
-  paragraphStyleWouldCreateCycle,
   type PublicationParagraphStyleDefinition,
   type PublicationParagraphStyleProperties,
 } from '../model/publicationParagraphStyles';
