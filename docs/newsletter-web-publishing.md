@@ -47,6 +47,37 @@ The HTML metadata contract is:
 Unreviewed artifacts omit both editorial-evidence fields and use
 `not-peer-reviewed` plus `authenticated-account-holder`.
 
+When an editorial decision was made by an authorized editor of a DNS-verified
+publication venue, the same reviewed seal also carries publisher-authority
+provenance:
+
+```html
+<meta name="omi-publication-authority" content="verified-publication-venue">
+<meta name="omi-publication-venue-id" content="…">
+<meta name="omi-publication-venue-domain" content="journal.example.org">
+<meta name="omi-publication-venue-verification" content="dns-txt">
+```
+
+The visible notice names the verified publication venue and domain. DNS
+control alone never turns an artifact into a peer-reviewed artifact.
+
+## Verified publication-venue authority
+
+A journal or press without OJS/OMP may verify its domain by adding a one-time
+Studio-generated TXT value at `_omi-publication.<domain>`. Successful
+verification grants the claimant `DOMAIN_ADMIN`, which may authorize existing
+Studio accounts as `EDITOR` or `EDITOR_IN_CHIEF`.
+
+The roles are deliberately separated: a domain administrator manages authority
+but does not itself satisfy editorial-decision authority. A publisher-verified
+acceptance additionally requires manuscript-workspace `EDITOR` access, a
+completed Studio-native scientific review round, and active venue editor
+membership. DNS is revalidated before a new decision when the previous check
+is older than 24 hours.
+
+The editorial decision stores an immutable authority snapshot containing the
+venue, domain, verification ID/time and editor role.
+
 ## Studio-native review authority
 
 For organizations without OJS or OMP, Studio may own the review workflow. A
@@ -56,9 +87,11 @@ peer-reviewed web seal is available only when all of these checks pass:
 2. every scientific assignment in the selected Studio-native review round is
    complete, has a recommendation and had a reviewer-safe manuscript snapshot;
 3. the round has no OJS/OMP external installation or assignment binding;
-4. the editor explicitly accepts one exact committed revision and state
-   digest for publication;
-5. the server recalculates the confidential evidence digest when the seal is
+4. the editor explicitly accepts one exact committed revision, state digest and
+   assurance-neutral publication-content digest for publication;
+5. when a DNS-verified publication venue is attached, the decision maker has an
+   active venue `EDITOR` or `EDITOR_IN_CHIEF` role and current DNS authority;
+6. the server recalculates the confidential evidence digest when the seal is
    selected and again before issuing a delivery grant.
 
 Review completion is evidence, not acceptance. An editor decision is a
