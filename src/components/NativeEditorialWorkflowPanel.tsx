@@ -49,7 +49,9 @@ export function NativeEditorialWorkflowPanel() {
     !(venue.integrationStatus === 'VERIFIED' &&
       (venue.integrationProvider === 'OJS' || venue.integrationProvider === 'OMP')),
   );
-  const currentSubmission = mine[0] ?? null;
+  const currentSubmission = venue?.id
+    ? mine.find((submission) => submission.publicationVenueId === venue.id) ?? null
+    : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +69,9 @@ export function NativeEditorialWorkflowPanel() {
             ? current
             : nextInbox[0]?.id ?? '',
         );
-        const own = nextMine[0];
+        const own = venue?.id
+          ? nextMine.find((submission) => submission.publicationVenueId === venue.id)
+          : undefined;
         if (own) {
           const nextAuthorDetail = await getNativeEditorialSubmission(own.id);
           if (!cancelled) setAuthorDetail(nextAuthorDetail);
@@ -81,7 +85,7 @@ export function NativeEditorialWorkflowPanel() {
     return () => {
       cancelled = true;
     };
-  }, [manuscript.id]);
+  }, [manuscript.id, venue?.id]);
 
   useEffect(() => {
     if (!selectedId) {
@@ -106,9 +110,12 @@ export function NativeEditorialWorkflowPanel() {
       ]);
       setMine(nextMine);
       setInbox(nextInbox);
+      const own = venue?.id
+        ? nextMine.find((submission) => submission.publicationVenueId === venue.id)
+        : undefined;
       setAuthorDetail(
-        nextMine[0]
-          ? await getNativeEditorialSubmission(nextMine[0].id)
+        own
+          ? await getNativeEditorialSubmission(own.id)
           : null,
       );
       const nextSelected =
