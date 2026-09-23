@@ -109,9 +109,13 @@ nativeEditorialWorkflowRouter.get(
   async (request: AuthenticatedRequest, response) => {
     try {
       const manuscriptId = parseId(request.params.manuscriptId, manuscriptIdSchema);
+      const publicationVenueId = typeof request.query.publicationVenueId === 'string'
+        ? venueIdSchema.parse(request.query.publicationVenueId)
+        : undefined;
       const submission = await findNativeEditorialSubmissionForUser(
         requireUserId(request),
         manuscriptId,
+        publicationVenueId,
       );
       response.status(200).json({ submission });
     } catch (error) {
