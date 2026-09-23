@@ -100,6 +100,33 @@ test('HTML5 visual editing is responsive and preserves changes when returning to
   )).toBe('1.5');
   await zoomSlider.fill('100');
 
+  const sectionEditor = activeHtmlSection.locator('.omi-continuous-tiptap-editor');
+  await sectionEditor.click();
+  await page.keyboard.type('Name');
+  await page.keyboard.press('Tab');
+  await page.keyboard.type('Value');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Alpha');
+  await page.keyboard.press('Tab');
+  await page.keyboard.type('12');
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+  const textToTable = activeHtmlSection.getByRole('button', {
+    name: 'Convert text to table',
+    exact: true,
+  });
+  await expect(textToTable).toBeVisible();
+  await textToTable.click();
+  await expect(activeHtmlSection.locator('.omi-visual-block--table')).toBeVisible();
+
+  page.once('dialog', (dialog) => void dialog.accept());
+  await activeHtmlSection.getByRole('button', {
+    name: 'Convert table to text',
+    exact: true,
+  }).click();
+  await expect(activeHtmlSection.locator('.omi-visual-block--table')).toHaveCount(0);
+  await expect(activeHtmlSection.locator('.omi-continuous-tiptap-editor')).toContainText('Name');
+  await expect(activeHtmlSection.locator('.omi-continuous-tiptap-editor')).toContainText('Alpha');
+
   const title = canvas.getByRole('textbox', { name: 'Document title', exact: true });
   await title.fill('Edited in the HTML5 visual editor');
   expect(await canvas.locator('.publication-document-canvas-stage--html').evaluate(
