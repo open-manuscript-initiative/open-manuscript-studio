@@ -196,6 +196,14 @@ export async function listAssignedReviews(): Promise<ReviewerAssignment[]> {
   return (await request<ReviewListResponse>('/api/reviews/assigned')).reviews;
 }
 
+export async function listAuthorReviews(
+  workspaceId: string,
+): Promise<ReviewerAssignment[]> {
+  return (await request<ReviewListResponse>(
+    `/api/reviews/workspaces/${encodeURIComponent(workspaceId)}/author`,
+  )).reviews;
+}
+
 export async function getAssignedReview(id: string): Promise<ReviewerAssignment> {
   return (await request<ReviewResponse>(
     `/api/reviews/assigned/${encodeURIComponent(id)}`,
