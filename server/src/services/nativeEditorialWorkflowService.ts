@@ -14,6 +14,7 @@ import {
   completeReview,
   createReviewAssignment,
 } from './peerReviewService.js';
+import { setReviewManuscript } from './reviewManuscriptService.js';
 import {
   createEditorialAcceptance,
   type EditorialDecisionEvidence,
@@ -197,6 +198,11 @@ export async function assignNativeReviewer(
     assignmentType: 'SCIENTIFIC_REVIEW',
     ...(input.anonymityMode ? { anonymityMode: input.anonymityMode } : {}),
   });
+  await setReviewManuscript(
+    editorUserId,
+    review.id,
+    toAnonymousReviewSnapshot(submission.manuscriptSnapshot),
+  );
 
   await prisma.$transaction([
     prisma.nativeSubmission.update({
@@ -491,6 +497,108 @@ function serializeSubmission(submission: NativeSubmission & {
       createdAt: event.createdAt.toISOString(),
     })),
   };
+}
+
+function toAnonymousReviewSnapshot(value: unknown) {
+  const manuscript = asRecord(value);
+  const blocks: Array<Record<string, unknown>> = [];
+  const sections = Array.isArray(manuscript.sections) ? manuscript.sections : [];
+  for (const section of sections) appendSection(blocks, section, 1);
+  const keywords = Array.isArray(manuscript.keywords)
+    ? manuscript.keywords.filter((item): item is string => typeof item === 'string')
+    : [];
+  return {
+    documentKind: 'article' as const,
+    authorIdentity: 'hidden' as const,
+    title: textValue(manuscript.title) || 'Untitled article',
+    ...(textValue(manuscript.subtitle)
+      ? { subtitle: textValue(manuscript.subtitle) }
+      : {}),
+    ...(textValue(manuscript.abstract)
+      ? { abstract: textValue(manuscript.abstract) }
+      : {}),
+    keywords,
+    blocks,
+    bibliographicRecords: [],
+  };
+}
+
+function appendSection(
+  target: Array<Record<string, unknown>>,
+  value: unknown,
+  level: number,
+): void {
+  const section = asRecord(value);
+  const title = textValue(section.title);
+  if (title) target.push({ type: 'heading', text: title, level: Math.min(6, level) });
+  const blocks = Array.isArray(section.blocks) ? section.blocks : [];
+  for (const blockValue of blocks) {
+    const block = asRecord(blockValue);
+    const type = textValue(block.type);
+    const text = extractPortableText(block.content);
+    if (type === 'heading' && text) {
+      target.push({ type: 'heading', text, level: Math.min(6, level + 1) });
+    } else if ((type === 'paragraph' || type === 'quote') && text) {
+      target.push({ type: 'paragraph', text });
+    } else {
+      const visual = asRecord(block.visual);
+      if ((type === 'image' || visual.kind === 'image') && textValue(visual.src)) {
+        target.push({
+          type: 'image',
+          src: textValue(visual.src),
+          mediaType: textValue(visual.mediaType) || 'application/octet-stream',
+          ...(textValue(visual.alt) ? { alt: textValue(visual.alt) } : {}),
+        });
+      } else if ((type === 'table' || visual.kind === 'table') && Array.isArray(visual.cells)) {
+        target.push({
+          type: 'table',
+          cells: visual.cells,
+          headerRows: typeof visual.headerRows === 'number' ? visual.headerRows : 0,
+        });
+      } else if (text) {
+        target.push({ type: 'paragraph', text });
+      }
+    }
+    const children = Array.isArray(block.children) ? block.children : [];
+    for (const child of children) {
+      const childRecord = asRecord(child);
+      const childText = extractPortableText(childRecord.content);
+      if (childText) target.push({ type: 'paragraph', text: childText });
+    }
+  }
+}
+
+function extractPortableText(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  const source = value.trim();
+  if (!source) return '';
+  if (!source.startsWith('{') && !source.startsWith('[')) return source;
+  try {
+    return collectJsonText(JSON.parse(source)).replace(/\s+/gu, ' ').trim();
+  } catch {
+    return source;
+  }
+}
+
+function collectJsonText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value.map(collectJsonText).filter(Boolean).join(' ');
+  const record = asRecord(value);
+  const own = typeof record.text === 'string' ? record.text : '';
+  const content = Array.isArray(record.content)
+    ? record.content.map(collectJsonText).filter(Boolean).join(' ')
+    : '';
+  return [own, content].filter(Boolean).join(' ');
+}
+
+function asRecord(value: unknown): Record<string, any> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, any>
+    : {};
+}
+
+function textValue(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function assertDigest(value: string): void {
