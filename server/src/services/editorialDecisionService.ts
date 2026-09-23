@@ -5,6 +5,10 @@ import {
   type PeerReviewAssignment,
 } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
+import {
+  assertVerifiedPublicationVenueEditorAuthority,
+  type VerifiedPublicationVenueAuthority,
+} from './publicationVenueAuthorityService.js';
 
 export const EDITORIAL_ACCEPTANCE_CONFIRMATION =
   'editor-accepts-exact-revision-for-web-publication-v1' as const;
@@ -15,6 +19,7 @@ export interface CreateEditorialAcceptanceInput {
   revisionId: string;
   stateDigest: string;
   publicationContentDigest: string;
+  publicationVenueId?: string;
   reviewRound: number;
   basisAssignmentIds: string[];
 }
@@ -24,6 +29,7 @@ export interface EditorialDecisionEvidence {
   decisionId: string;
   evidenceDigest: string;
   publicationContentDigest: string;
+  authority?: VerifiedPublicationVenueAuthority;
   reviewRound: number;
   decidedAt: string;
 }
@@ -57,10 +63,17 @@ export async function createEditorialAcceptance(
     'EDITOR',
   );
   const assignments = await loadAcceptanceAssignments(input, assignmentIds);
+  const authority = input.publicationVenueId
+    ? await assertVerifiedPublicationVenueEditorAuthority(
+        editorUserId,
+        input.publicationVenueId,
+      )
+    : undefined;
   const evidenceDigest = calculateEvidenceDigest({
     ...input,
     basisAssignmentIds: assignmentIds,
     editorUserId,
+    ...(authority ? { authority } : {}),
   }, assignments);
   const existing = await prisma.editorialDecision.findUnique({
     where: {
@@ -76,6 +89,9 @@ export async function createEditorialAcceptance(
       existing.decision !== 'ACCEPT' ||
       existing.stateDigest.toLowerCase() !== input.stateDigest.toLowerCase() ||
       existing.publicationContentDigest.toLowerCase() !== input.publicationContentDigest.toLowerCase() ||
+      (existing.publicationVenueId ?? null) !== (authority?.venueId ?? null) ||
+      canonicalJson(parseAuthoritySnapshot(existing.authoritySnapshot) ?? null) !==
+        canonicalJson(authority ?? null) ||
       existing.evidenceDigest !== evidenceDigest
     ) {
       throw conflict('This revision already has a different editorial decision or evidence set.');
@@ -90,6 +106,12 @@ export async function createEditorialAcceptance(
       revisionId: input.revisionId,
       stateDigest: input.stateDigest.toLowerCase(),
       publicationContentDigest: input.publicationContentDigest.toLowerCase(),
+      ...(authority
+        ? {
+            publicationVenueId: authority.venueId,
+            authoritySnapshot: authority as unknown as Prisma.InputJsonValue,
+          }
+        : {}),
       reviewRound: input.reviewRound,
       decision: 'ACCEPT',
       basisAssignmentIds: assignmentIds as Prisma.InputJsonValue,
@@ -259,6 +281,8 @@ async function decisionEvidenceIsCurrent(decision: {
   revisionId: string;
   stateDigest: string;
   publicationContentDigest: string;
+  publicationVenueId: string | null;
+  authoritySnapshot: unknown;
   reviewRound: number;
   decision: string;
   basisAssignmentIds: unknown;
@@ -275,9 +299,15 @@ async function decisionEvidenceIsCurrent(decision: {
       revisionId: decision.revisionId,
       stateDigest: decision.stateDigest,
       publicationContentDigest: decision.publicationContentDigest,
+      ...(decision.publicationVenueId
+        ? { publicationVenueId: decision.publicationVenueId }
+        : {}),
       reviewRound: decision.reviewRound,
       basisAssignmentIds: assignmentIds,
       editorUserId: decision.decidedByUserId,
+      ...(parseAuthoritySnapshot(decision.authoritySnapshot)
+        ? { authority: parseAuthoritySnapshot(decision.authoritySnapshot)! }
+        : {}),
     }, assignments) === decision.evidenceDigest;
   } catch {
     return false;
@@ -285,7 +315,10 @@ async function decisionEvidenceIsCurrent(decision: {
 }
 
 function calculateEvidenceDigest(
-  input: CreateEditorialAcceptanceInput & { editorUserId: string },
+  input: CreateEditorialAcceptanceInput & {
+    editorUserId: string;
+    authority?: VerifiedPublicationVenueAuthority;
+  },
   assignments: PeerReviewAssignment[],
 ): string {
   return sha256(canonicalJson({
@@ -297,6 +330,7 @@ function calculateEvidenceDigest(
     revisionId: input.revisionId,
     stateDigest: input.stateDigest.toLowerCase(),
     publicationContentDigest: input.publicationContentDigest.toLowerCase(),
+    authority: input.authority ?? null,
     reviewRound: input.reviewRound,
     decidedByUserId: input.editorUserId,
     reviews: assignments.map((assignment) => ({
@@ -349,6 +383,7 @@ function serializeEvidence(decision: {
   id: string;
   evidenceDigest: string;
   publicationContentDigest: string;
+  authoritySnapshot: unknown;
   workspaceId: string;
   reviewRound: number;
   decidedAt: Date;
@@ -358,9 +393,33 @@ function serializeEvidence(decision: {
     decisionId: decision.id,
     evidenceDigest: decision.evidenceDigest,
     publicationContentDigest: decision.publicationContentDigest,
+    ...(parseAuthoritySnapshot(decision.authoritySnapshot)
+      ? { authority: parseAuthoritySnapshot(decision.authoritySnapshot)! }
+      : {}),
     reviewRound: decision.reviewRound,
     decidedAt: decision.decidedAt.toISOString(),
   };
+}
+
+function parseAuthoritySnapshot(
+  value: unknown,
+): VerifiedPublicationVenueAuthority | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const authority = value as Record<string, unknown>;
+  if (
+    authority.type !== 'verified-publication-venue' ||
+    typeof authority.venueId !== 'string' ||
+    typeof authority.venueName !== 'string' ||
+    (authority.venueType !== 'JOURNAL' && authority.venueType !== 'BOOK_PUBLISHER') ||
+    typeof authority.domain !== 'string' ||
+    authority.verificationMethod !== 'DNS_TXT' ||
+    typeof authority.verificationId !== 'string' ||
+    typeof authority.verifiedAt !== 'string' ||
+    (authority.editorRole !== 'EDITOR' && authority.editorRole !== 'EDITOR_IN_CHIEF')
+  ) {
+    return undefined;
+  }
+  return authority as unknown as VerifiedPublicationVenueAuthority;
 }
 
 function jsonStringArray(value: unknown): string[] {
