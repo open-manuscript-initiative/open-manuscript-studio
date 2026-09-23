@@ -27,7 +27,8 @@ CREATE TABLE "publication_venue_memberships" (
   "updated_at" TIMESTAMPTZ(6) NOT NULL,
   CONSTRAINT "publication_venue_memberships_pkey" PRIMARY KEY ("id")
 );
-CREATE UNIQUE INDEX "publication_venue_domain_verifications_venue_id_domain_key" ON "publication_venue_domain_verifications"("venue_id", "domain");
+CREATE UNIQUE INDEX "publication_venue_domain_verifications_venue_id_domain_requested_by_user_id_key"
+  ON "publication_venue_domain_verifications"("venue_id", "domain", "requested_by_user_id");
 CREATE INDEX "publication_venue_domain_verifications_domain_status_idx" ON "publication_venue_domain_verifications"("domain", "status");
 CREATE INDEX "publication_venue_domain_verifications_requested_by_user_id_status_idx" ON "publication_venue_domain_verifications"("requested_by_user_id", "status");
 CREATE UNIQUE INDEX "publication_venue_domain_verifications_one_verified_domain_per_venue_key"
