@@ -1,8 +1,10 @@
-import { Edit3, ExternalLink, Plus, Search, Settings2, Trash2, Upload } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { Edit3, ExternalLink, Library, Plus, RefreshCw, Save, Search, Settings2, Trash2, Upload } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 
 import {
+  stageAddBibliographicRecord,
   stageAddBibliographicRecords,
+  stageSetBibliographyRecordIncluded,
   stageSetCitationStyle,
 } from '../app/citationActions';
 import { useStudioStore } from '../app/useStudioStore';
@@ -12,6 +14,7 @@ import {
   countCitationsForRecord,
   formatBibliographyEntry,
   getBibliographicIdentifier,
+  getBibliographyRecords,
 } from '../model/citations';
 import {
   CITATION_STYLE_CATALOG,
@@ -24,7 +27,11 @@ import {
   type CustomCitationStyleConfig,
 } from '../model/cslRendering';
 import { parseReferenceInterchange } from '../services/referenceInterchange';
-import type { OmiCitationStyleId } from '../types/omi';
+import {
+  listPersonalReferenceLibrary,
+  savePersonalReferenceRecords,
+} from '../services/referenceManagerApi';
+import type { OmiBibliographicRecord, OmiCitationStyleId } from '../types/omi';
 import { BibliographicRecordEditor } from './BibliographicRecordEditor';
 import { ReferenceLookupPanel } from './ReferenceLookupPanel';
 
@@ -47,6 +54,61 @@ function readSavedCustomStyles(): string[] {
 function writeSavedCustomStyles(styles: readonly string[]): void {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(CUSTOM_STYLE_STORAGE_KEY, JSON.stringify(styles));
+}
+
+function personalReferenceLibraryCopy(locale: string) {
+  if (locale === 'hu') {
+    return {
+      title: 'Saját hivatkozástár',
+      description:
+        'A fiókodhoz mentett bibliográfiai tételeket bármely dokumentumban újra felhasználhatod. A dokumentumba átvett tétel hordozható pillanatképként a kéziratban is megmarad.',
+      saveCurrent: 'Dokumentum tételeinek mentése a saját tárba',
+      saved: (count: number) => `${count} tétel mentve a saját hivatkozástárba.`,
+      saveFailed: 'A saját hivatkozástár mentése sikertelen.',
+      loadFailed: 'A saját hivatkozástár betöltése sikertelen.',
+      empty: 'A saját hivatkozástár még üres.',
+      search: 'Keresés a saját hivatkozástárban',
+      add: 'Hozzáadás a dokumentumhoz',
+      inDocument: 'Már a dokumentumban',
+      refresh: 'Frissítés',
+      include: 'Szerepeljen a hivatkozáslistában',
+      cited: 'Idézett mű – automatikusan szerepel a hivatkozáslistában',
+    };
+  }
+  if (locale === 'de') {
+    return {
+      title: 'Persönliche Literaturbibliothek',
+      description:
+        'Im Konto gespeicherte Literaturangaben können in mehreren Dokumenten wiederverwendet werden. In das Dokument übernommene Datensätze bleiben als portable Momentaufnahme im Manuskript erhalten.',
+      saveCurrent: 'Dokumentreferenzen in der persönlichen Bibliothek speichern',
+      saved: (count: number) => `${count} Einträge in der persönlichen Bibliothek gespeichert.`,
+      saveFailed: 'Die persönliche Literaturbibliothek konnte nicht gespeichert werden.',
+      loadFailed: 'Die persönliche Literaturbibliothek konnte nicht geladen werden.',
+      empty: 'Die persönliche Literaturbibliothek ist noch leer.',
+      search: 'Persönliche Literaturbibliothek durchsuchen',
+      add: 'Zum Dokument hinzufügen',
+      inDocument: 'Bereits im Dokument',
+      refresh: 'Aktualisieren',
+      include: 'Im Literaturverzeichnis anzeigen',
+      cited: 'Zitiert – wird automatisch im Literaturverzeichnis angezeigt',
+    };
+  }
+  return {
+    title: 'Personal reference library',
+    description:
+      'Bibliographic records saved to your account can be reused across documents. A record copied into a document remains a portable manuscript snapshot.',
+    saveCurrent: 'Save document references to personal library',
+    saved: (count: number) => `${count} records saved to the personal reference library.`,
+    saveFailed: 'The personal reference library could not be saved.',
+    loadFailed: 'The personal reference library could not be loaded.',
+    empty: 'Your personal reference library is empty.',
+    search: 'Search personal reference library',
+    add: 'Add to document',
+    inDocument: 'Already in document',
+    refresh: 'Refresh',
+    include: 'Include in bibliography',
+    cited: 'Cited work – automatically included in the bibliography',
+  };
 }
 
 function referenceInterchangeCopy(locale: string) {
