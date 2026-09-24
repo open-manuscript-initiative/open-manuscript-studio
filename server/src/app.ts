@@ -37,6 +37,7 @@ import { oidcProviderRouter } from './routes/oidcProviderRoutes.js';
 import { orcidLinkStartRouter } from './routes/orcidLinkStartRoutes.js';
 import { orcidOidcRouter } from './routes/orcidOidcRoutes.js';
 import { pdfImportRouter } from './routes/pdfImportRoutes.js';
+import { personalReferenceLibraryRouter } from './routes/personalReferenceLibraryRoutes.js';
 import {
   peerReviewRouter,
   peerReviewV1Router,
@@ -116,6 +117,7 @@ app.use('/api', cloudOAuthRouter);
 app.use('/api', cloudRouter);
 app.use('/api', userIntegrationRouter);
 app.use('/api', referenceManagerRouter);
+app.use('/api', personalReferenceLibraryRouter);
 app.use('/api', directSubmissionRouter);
 app.use('/api', agentReviewRouter);
 app.use('/api', integrationExecutionRouter);
