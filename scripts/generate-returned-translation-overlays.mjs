@@ -9,11 +9,12 @@ const outputDir = path.join(root, 'src', 'i18n', 'generated');
 const outputFile = path.join(outputDir, 'returnedTranslationOverlays.json');
 
 async function loadChunkedJson(prefix) {
-  const matcher = new RegExp(
-    `^${prefix.replace(/[.*+?^\${}()|[\]\\]/g, '\\$&')}\\.part\\d+\\.json\\.txt$`,
-  );
   const names = (await fs.readdir(importRoot))
-    .filter((name) => matcher.test(name))
+    .filter(
+      (name) =>
+        name.startsWith(`${prefix}.part`) &&
+        name.endsWith('.json.txt'),
+    )
     .sort((left, right) => left.localeCompare(right));
 
   if (names.length === 0) {
