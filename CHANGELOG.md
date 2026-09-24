@@ -6,6 +6,52 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+## 0.3.0-beta.1 — 2026-09-24
+
+### Scholarly authoring and publication layout
+
+- Adds section-level ruler controls with tab stops, columns and text-to-table
+  conversion, together with consistent zoom behavior in HTML5 and print-layout
+  publication editing.
+- Adds an InDesign-compatible paragraph-style system with expanded paragraph
+  controls and live rendering.
+- Improves responsive space usage and sizes short numeric/fixed-length input
+  fields to their expected content instead of stretching them across the form.
+
+### Editorial workflow and publication assurance
+
+- Adds Studio-native submission, editorial handling and peer-review workflow for
+  journals and publishers that do not use OJS or OMP, while keeping OJS/OMP
+  authoritative when those integrations are used.
+- Adds native peer-review assurance and revision-bound website publication
+  metadata, and completes editor assignment persistence for the native inbox.
+- Reduces unnecessary work in large live-publication documents while keeping
+  source-state changes immediate.
+
+### Reusable references
+
+- Adds an account-level personal reference library whose bibliographic records
+  can be reused across multiple manuscripts.
+- Copies selected records into each manuscript as portable OMI bibliographic
+  snapshots so documents remain self-contained.
+- Lets authors choose which uncited works appear in a document bibliography;
+  cited works remain automatically included.
+- Carries the same selection through semantic HTML, JATS, custom exports and
+  Studio-native review snapshots.
+
+### Localization and release metadata
+
+- Applies the maintained supplemental multilingual translation queue and keeps
+  the new publication/reference surfaces responsive on mobile.
+- Advances the shared Studio version to **0.3.0-beta.1**.
+- Advances the Windows MSI product version to **0.3.0.1**.
+- Advances the iOS marketing/build identity to **0.3.0 / 13**.
+- Raises the checked-in Android versionCode floor to **1200**; release builds
+  derive a strictly higher run-specific code.
+- Keeps the portable manuscript format at **OMI-SPEC-320@0.2.0**; no mandatory
+  manuscript migration is required.
+
+
 ## 0.2.0-beta.4 — 2026-09-21
 
 ### Cross-platform catch-up and mobile stabilization
