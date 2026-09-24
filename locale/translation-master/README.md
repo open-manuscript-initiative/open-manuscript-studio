@@ -38,6 +38,7 @@ Generated files:
    invented DeepL target code.
 6. When identical English text needs different grammar in different contexts,
    fill the key-level master rather than relying on the deduplicated glossary.
+7. `direct-ui-literal` rows come from a deliberately conservative source scan. If a row is clearly a technical identifier (for example a CSS custom property) rather than visible UI copy, leave its translation blank; it will be reviewed when the returned master is imported.
 
 When completed files are returned, the stable keys allow the translations to be
 applied back to PO/JSON dictionaries and the remaining source-level literals
