@@ -15,6 +15,33 @@
   --omi-density-panel-padding: .65rem;
 }
 
+/* Adaptive field widths ----------------------------------------------------
+ * Short values should consume only the space their content needs. Numeric
+ * controls keep room for roughly five characters plus native steppers, grow
+ * with their value on engines supporting field-sizing, and stay bounded on
+ * narrower layouts. Text-like inputs can opt into their HTML size attribute.
+ */
+input[type="number"]:not([data-full-width="true"]) {
+  width: auto;
+  min-inline-size: calc(5ch + 2rem);
+  max-inline-size: min(100%, calc(12ch + 2rem));
+  field-sizing: content;
+  justify-self: start;
+}
+
+input[size]:not([data-full-width="true"]) {
+  width: auto;
+  max-width: 100%;
+  justify-self: start;
+}
+
+.indesign-number-field {
+  width: max-content;
+  max-width: 100%;
+  grid-template-columns: max-content auto;
+  justify-self: start;
+}
+
 /* Desktop / pointer-oriented workspaces ------------------------------------ */
 @media (min-width: 761px) {
   .workspace {

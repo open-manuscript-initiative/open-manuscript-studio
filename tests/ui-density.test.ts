@@ -10,6 +10,10 @@ const main = readFileSync(
   new URL('../src/main.tsx', import.meta.url),
   'utf8',
 );
+const studioShellCss = readFileSync(
+  new URL('../src/styles/studio-shell.css', import.meta.url),
+  'utf8',
+);
 
 test('Studio loads the shared density layer after feature styles', () => {
   const metadataImport = main.indexOf("import './styles/scholarly-metadata.css';");
@@ -67,5 +71,35 @@ test('mobile density preserves primary touch targets while removing surrounding 
   assert.match(
     densityCss,
     /\.mobile-document-view,[\s\S]*\.mobile-details-view \{[\s\S]*padding: 10px 10px 16px/,
+  );
+});
+
+
+test('short numeric fields use intrinsic character-based widths instead of stretching', () => {
+  assert.match(
+    densityCss,
+    /input\[type="number"\]:not\(\[data-full-width="true"\]\) \{[\s\S]*field-sizing: content;/,
+  );
+  assert.match(densityCss, /min-inline-size: calc\(5ch \+ 2rem\)/);
+  assert.match(densityCss, /max-inline-size: min\(100%, calc\(12ch \+ 2rem\)\)/);
+  assert.match(
+    densityCss,
+    /\.indesign-number-field \{[\s\S]*grid-template-columns: max-content auto;/,
+  );
+});
+
+test('Studio form layout no longer forces numeric or sized inputs to full width', () => {
+  assert.ok(
+    studioShellCss.includes(
+      ':not([type="file"]):not([type="number"]):not([size])',
+    ),
+  );
+  assert.match(
+    studioShellCss,
+    /\.studio-manuscript-fields input\[type="number"\]:not\(\[data-full-width="true"\]\),[\s\S]*justify-self: start;/,
+  );
+  assert.match(
+    studioShellCss,
+    /\.studio-tool-actions > input\[type="number"\]:not\(\[data-full-width="true"\]\),[\s\S]*flex: 0 0 auto;/,
   );
 });
