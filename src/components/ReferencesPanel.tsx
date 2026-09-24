@@ -214,10 +214,6 @@ export function ReferencesPanel() {
       }),
     [normalizedQuery, records],
   );
-  const citedRecordIds = useMemo(
-    () => new Set(manuscript.citations.map((citation) => citation.target)),
-    [manuscript.citations],
-  );
   const additionalBibliographyIds = useMemo(
     () => new Set(manuscript.bibliographyAdditionalRecordIds ?? []),
     [manuscript.bibliographyAdditionalRecordIds],
