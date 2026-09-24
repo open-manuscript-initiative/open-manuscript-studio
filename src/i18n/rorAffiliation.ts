@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 import type { SupportedLocale } from './types';
 
 export interface RorAffiliationCopy {
@@ -49,7 +50,13 @@ const COPY: Record<SupportedLocale, RorAffiliationCopy> = {
 };
 
 export function getRorAffiliationCopy(locale: string): RorAffiliationCopy {
-  return COPY[isSupportedCopyLocale(locale) ? locale : 'en'];
+  const current = COPY[isSupportedCopyLocale(locale) ? locale : 'en'];
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'rorAffiliation',
+    current,
+    COPY.en,
+  );
 }
 
 function isSupportedCopyLocale(locale: string): locale is SupportedLocale {
