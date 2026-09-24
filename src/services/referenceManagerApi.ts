@@ -62,6 +62,60 @@ const API_BASE_URL = normalizeIntegrationApiBaseUrl(
     (IS_TAURI && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '/api'),
 );
 
+export async function listPersonalReferenceLibrary(): Promise<OmiBibliographicRecord[]> {
+  const response = await apiFetch('/references/library', {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  });
+  const payload = await readJson<{ records: OmiBibliographicRecord[] }>(response);
+  return payload.records;
+}
+
+export async function savePersonalReferenceRecord(
+  record: OmiBibliographicRecord,
+): Promise<OmiBibliographicRecord> {
+  const response = await apiFetch(
+    `/references/library/${encodeURIComponent(record.id)}`,
+    {
+      method: 'PUT',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ record }),
+    },
+  );
+  const payload = await readJson<{ record: OmiBibliographicRecord }>(response);
+  return payload.record;
+}
+
+export async function savePersonalReferenceRecords(
+  records: readonly OmiBibliographicRecord[],
+): Promise<number> {
+  const response = await apiFetch('/references/library/bulk', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ records }),
+  });
+  const payload = await readJson<{ saved: number }>(response);
+  return payload.saved;
+}
+
+export async function deletePersonalReferenceRecord(
+  recordId: string,
+): Promise<void> {
+  const response = await apiFetch(
+    `/references/library/${encodeURIComponent(recordId)}`,
+    { method: 'DELETE' },
+  );
+  if (!response.ok) {
+    await readJson<unknown>(response);
+  }
+}
+
 export async function searchPersonalReferenceManager(
   provider: ReferenceManagerProviderId,
   query: string,
