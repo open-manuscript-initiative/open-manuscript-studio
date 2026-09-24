@@ -124,7 +124,18 @@ const translations: Record<string, CloudOAuthCopy> = {
 
 export function getCloudOAuthCopy(locale: string): CloudOAuthCopy {
   const current = translations[locale] ?? en;
-  return applyReturnedSupplementalOverlay(locale, 'cloudOAuth', current, en);
+  const localized = applyReturnedSupplementalOverlay(
+    locale,
+    'cloudOAuth',
+    current,
+    en,
+  );
+
+  return {
+    ...localized,
+    // Product name: keep the canonical provider label verbatim.
+    protonPreviewTitle: en.protonPreviewTitle,
+  };
 }
 
 export const cloudOAuthTranslationLocales = Object.freeze(Object.keys(translations));

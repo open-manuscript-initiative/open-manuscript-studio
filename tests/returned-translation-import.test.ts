@@ -14,6 +14,10 @@ const generated = JSON.parse(
   baseline: string;
   canonical: Record<string, Record<string, string>>;
   supplemental: Record<string, Record<string, Record<string, string>>>;
+  validation?: {
+    activatedLocales?: string[];
+    quarantinedLocales?: string[];
+  };
   stats: {
     canonicalLocales: number;
     canonicalEntries: number;
@@ -24,19 +28,37 @@ const generated = JSON.parse(
 
 test('returned translation overlay keeps the 0.3.0-beta.1 baseline', () => {
   assert.equal(generated.baseline, '0.3.0-beta.1');
-  assert.ok(generated.stats.canonicalLocales >= 0);
-  assert.ok(generated.stats.canonicalEntries >= 0);
-  assert.ok(generated.stats.supplementalLocales >= 0);
-  assert.ok(generated.stats.supplementalEntries >= 0);
+  assert.equal(generated.stats.canonicalLocales, 11);
+  assert.ok(generated.stats.canonicalEntries >= 7_000);
+  assert.equal(generated.stats.supplementalLocales, 11);
+  assert.ok(generated.stats.supplementalEntries >= 17_000);
+  assert.deepEqual(
+    generated.validation?.activatedLocales,
+    ['bg', 'cs', 'da', 'es', 'et', 'fi', 'fr', 'he', 'hu', 'id', 'lt'],
+  );
+  assert.ok(generated.validation?.quarantinedLocales?.includes('el'));
+  assert.ok(generated.validation?.quarantinedLocales?.includes('it'));
+  assert.ok(generated.validation?.quarantinedLocales?.includes('zh-CN'));
 });
 
-test('translation import generator degrades safely when transport payloads are invalid', () => {
+test('translation import generator requires text-safe chunked payloads', () => {
   const generator = readFileSync(
     new URL('../scripts/generate-returned-translation-overlays.mjs', import.meta.url),
     'utf8',
   );
-  assert.match(generator, /preserving the committed runtime overlay instead/);
-  assert.match(generator, /process\.exit\(0\)/);
+  assert.match(generator, /loadChunkedJson/);
+  assert.match(generator, /No text-safe returned translation chunks found/);
+  assert.doesNotMatch(generator, /process\.exit\(0\)/);
+});
+
+test('row-shifted returned locales are quarantined before runtime overlay generation', () => {
+  const generator = readFileSync(
+    new URL('../scripts/generate-returned-translation-overlays.mjs', import.meta.url),
+    'utf8',
+  );
+  assert.match(generator, /validatedReturnedLocales/);
+  assert.match(generator, /quarantinedReturnedLocales/);
+  assert.match(generator, /row-shifted/);
 });
 
 test('runtime overlay preserves reviewed Studio translations before DeepL fills', () => {

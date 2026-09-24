@@ -1,6 +1,5 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { gunzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -9,21 +8,87 @@ const importRoot = path.join(root, 'locale', 'translation-import');
 const outputDir = path.join(root, 'src', 'i18n', 'generated');
 const outputFile = path.join(outputDir, 'returnedTranslationOverlays.json');
 
-async function loadGzipJson(fileName) {
-  try {
-    const buffer = await fs.readFile(path.join(importRoot, fileName));
-    return JSON.parse(gunzipSync(buffer).toString('utf8'));
-  } catch (error) {
-    const code = error && typeof error === 'object' ? error.code : undefined;
-    if (code === 'ENOENT' || code === 'Z_DATA_ERROR' || code === 'Z_BUF_ERROR') {
-      console.warn(
-        `Returned translation payload ${fileName} is unavailable or invalid; ` +
-          'preserving the committed runtime overlay instead.',
-      );
-      return null;
-    }
-    throw error;
+/**
+ * The returned 0.3.0-beta.1 workbook contains several columns whose translated
+ * cells were pasted out of row alignment. Only locales that passed structural
+ * spot checks (duplicate-source consistency, placeholders and protected terms)
+ * are activated here. Quarantined locales keep the existing reviewed Studio
+ * dictionaries / English fallback until a corrected workbook is returned.
+ */
+const validatedReturnedLocales = new Set([
+  'bg',
+  'cs',
+  'da',
+  'es',
+  'et',
+  'fi',
+  'fr',
+  'he',
+  'hu',
+  'id',
+  'lt',
+]);
+
+const quarantinedReturnedLocales = [
+  'af',
+  'ca',
+  'de',
+  'el',
+  'hr',
+  'is',
+  'it',
+  'ja',
+  'ko',
+  'lv',
+  'nl',
+  'no',
+  'pl',
+  'pt',
+  'ro',
+  'ru',
+  'sk',
+  'sl',
+  'sv',
+  'th',
+  'tr',
+  'uk',
+  'vi',
+  'zh-CN',
+];
+
+async function loadChunkedJson(prefix) {
+  const names = (await fs.readdir(importRoot))
+    .filter(
+      (name) =>
+        name.startsWith(`${prefix}.part`) &&
+        name.endsWith('.json.txt'),
+    )
+    .sort((left, right) => left.localeCompare(right));
+
+  if (names.length === 0) {
+    throw new Error(
+      `No text-safe returned translation chunks found for ${prefix}.`,
+    );
   }
+
+  const chunks = await Promise.all(
+    names.map((name) => fs.readFile(path.join(importRoot, name), 'utf8')),
+  );
+
+  try {
+    return JSON.parse(chunks.join('\n'));
+  } catch (error) {
+    throw new Error(
+      `Returned translation chunks for ${prefix} do not form valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    );
+  }
+}
+
+function selectVerifiedLocales(payload) {
+  return payload.locales.filter(({ locale }) =>
+    validatedReturnedLocales.has(locale),
+  );
 }
 
 function groupSupplemental(translations) {
@@ -38,16 +103,9 @@ function groupSupplemental(translations) {
 }
 
 const [canonicalPayload, supplementalPayload] = await Promise.all([
-  loadGzipJson('0.3.0-beta.1-canonical.json.gz'),
-  loadGzipJson('0.3.0-beta.1-supplemental.json.gz'),
+  loadChunkedJson('0.3.0-beta.1-canonical'),
+  loadChunkedJson('0.3.0-beta.1-supplemental'),
 ]);
-
-if (!canonicalPayload || !supplementalPayload) {
-  console.warn(
-    'Returned translation overlay regeneration skipped until a valid text-safe import payload is committed.',
-  );
-  process.exit(0);
-}
 
 if (canonicalPayload.baseline !== supplementalPayload.baseline) {
   throw new Error(
@@ -56,7 +114,7 @@ if (canonicalPayload.baseline !== supplementalPayload.baseline) {
 }
 
 const canonical = Object.fromEntries(
-  canonicalPayload.locales.map(({ locale, translations }) => [
+  selectVerifiedLocales(canonicalPayload).map(({ locale, translations }) => [
     locale,
     Object.fromEntries(
       Object.entries(translations).filter(
@@ -70,7 +128,7 @@ const canonical = Object.fromEntries(
 );
 
 const supplemental = Object.fromEntries(
-  supplementalPayload.locales.map(({ locale, translations }) => [
+  selectVerifiedLocales(supplementalPayload).map(({ locale, translations }) => [
     locale,
     groupSupplemental(translations),
   ]),
@@ -102,7 +160,13 @@ await fs.writeFile(
       formatVersion: 1,
       baseline: canonicalPayload.baseline,
       precedence:
-        'Existing reviewed Studio translations win; returned DeepL values fill English fallbacks only.',
+        'Existing reviewed Studio translations win; only structurally validated returned DeepL locales fill English fallbacks.',
+      validation: {
+        activatedLocales: [...validatedReturnedLocales],
+        quarantinedLocales: quarantinedReturnedLocales,
+        reason:
+          'Several returned workbook columns are row-shifted; quarantined locales are not safe for runtime use.',
+      },
       canonical,
       supplemental,
       stats,
@@ -116,5 +180,6 @@ await fs.writeFile(
 console.log(
   `Returned translation overlay generated: ${stats.canonicalEntries} canonical + ` +
     `${stats.supplementalEntries} supplemental values across ` +
-    `${Math.max(stats.canonicalLocales, stats.supplementalLocales)} locales.`,
+    `${Math.max(stats.canonicalLocales, stats.supplementalLocales)} validated locales; ` +
+    `${quarantinedReturnedLocales.length} returned locales quarantined.`,
 );
