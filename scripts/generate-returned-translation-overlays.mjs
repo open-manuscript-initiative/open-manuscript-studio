@@ -85,24 +85,10 @@ async function loadChunkedJson(prefix) {
   }
 }
 
-const verifiedAlignedLocales = new Set([
-  'af',
-  'bg',
-  'cs',
-  'da',
-  'de',
-  'es',
-  'et',
-  'fi',
-  'fr',
-  'he',
-  'hu',
-  'id',
-  'lt',
-]);
-
 function selectVerifiedLocales(payload) {
-  return payload.locales.filter(({ locale }) => verifiedAlignedLocales.has(locale));
+  return payload.locales.filter(({ locale }) =>
+    validatedReturnedLocales.has(locale),
+  );
 }
 
 function groupSupplemental(translations) {
@@ -174,7 +160,13 @@ await fs.writeFile(
       formatVersion: 1,
       baseline: canonicalPayload.baseline,
       precedence:
-        'Existing reviewed Studio translations win; returned DeepL values fill English fallbacks only. Only workbook columns verified to be row-aligned are activated.',
+        'Existing reviewed Studio translations win; only structurally validated returned DeepL locales fill English fallbacks.',
+      validation: {
+        activatedLocales: [...validatedReturnedLocales],
+        quarantinedLocales: quarantinedReturnedLocales,
+        reason:
+          'Several returned workbook columns are row-shifted; quarantined locales are not safe for runtime use.',
+      },
       canonical,
       supplemental,
       stats,
