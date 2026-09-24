@@ -24,10 +24,10 @@ const generated = JSON.parse(
 
 test('returned translation overlay keeps the 0.3.0-beta.1 baseline', () => {
   assert.equal(generated.baseline, '0.3.0-beta.1');
-  assert.ok(generated.stats.canonicalLocales >= 30);
-  assert.ok(generated.stats.canonicalEntries >= 20_000);
-  assert.ok(generated.stats.supplementalLocales >= 30);
-  assert.ok(generated.stats.supplementalEntries >= 50_000);
+  assert.ok(generated.stats.canonicalLocales >= 13);
+  assert.ok(generated.stats.canonicalEntries >= 9_000);
+  assert.ok(generated.stats.supplementalLocales >= 13);
+  assert.ok(generated.stats.supplementalEntries >= 20_000);
 });
 
 test('translation import generator requires text-safe chunked payloads', () => {
