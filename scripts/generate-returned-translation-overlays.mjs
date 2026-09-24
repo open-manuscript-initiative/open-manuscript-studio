@@ -32,6 +32,7 @@ async function loadChunkedJson(prefix) {
   } catch (error) {
     throw new Error(
       `Returned translation chunks for ${prefix} do not form valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 }
