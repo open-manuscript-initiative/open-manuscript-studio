@@ -22,3 +22,7 @@ first be migrated to stable i18n keys; the translation-master workbook remains
 the migration source for that remaining debt.
 
 Run `npm run i18n:returned:generate` to concatenate and validate the text-safe chunks and regenerate the runtime overlay JSON. The generator fails closed if a chunk set is missing or invalid; it must never silently publish an empty overlay.
+
+## Alignment safety
+
+The returned workbook contains row-shifted translation columns for some locales. Runtime import therefore activates only columns whose row alignment was verified against preserved technical/source strings. Currently verified: af, bg, cs, da, de, es, et, fi, fr, he, hu, id and lt. Shifted columns are retained as source material but are not applied until they are deterministically realigned.
