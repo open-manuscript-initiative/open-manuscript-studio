@@ -1,4 +1,4 @@
-import returnedOverlays from './generated/returnedTranslationOverlays.json';
+import returnedOverlays from './generated/returnedTranslationOverlays.json' with { type: 'json' };
 import { resolveStudioUiLocale } from './platformLocales';
 
 type UnknownRecord = Record<string, unknown>;
