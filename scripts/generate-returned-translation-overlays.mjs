@@ -9,33 +9,25 @@ const outputDir = path.join(root, 'src', 'i18n', 'generated');
 const outputFile = path.join(outputDir, 'returnedTranslationOverlays.json');
 
 async function loadChunkedJson(prefix) {
+  const matcher = new RegExp(
+    `^${prefix.replace(/[.*+?^\${}()|[\]\\]/g, '\\$&')}\\.part\\d+\\.json\\.txt$`,
+  );
   const names = (await fs.readdir(importRoot))
-    .filter((name) =>
-      new RegExp(`^${prefix}\\.part\\d+\\.json\\.txtimport fs from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(__dirname, '..');
-const importRoot = path.join(root, 'locale', 'translation-import');
-const outputDir = path.join(root, 'src', 'i18n', 'generated');
-const outputFile = path.join(outputDir, 'returnedTranslationOverlays.json');
-
-).test(name),
-    )
+    .filter((name) => matcher.test(name))
     .sort((left, right) => left.localeCompare(right));
 
   if (names.length === 0) {
-    throw new Error(`No text-safe returned translation chunks found for ${prefix}.`);
+    throw new Error(
+      `No text-safe returned translation chunks found for ${prefix}.`,
+    );
   }
 
   const chunks = await Promise.all(
     names.map((name) => fs.readFile(path.join(importRoot, name), 'utf8')),
   );
-  const joined = chunks.join('\n');
 
   try {
-    return JSON.parse(joined);
+    return JSON.parse(chunks.join('\n'));
   } catch (error) {
     throw new Error(
       `Returned translation chunks for ${prefix} do not form valid JSON: ${error instanceof Error ? error.message : String(error)}`,
