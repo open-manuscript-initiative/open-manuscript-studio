@@ -439,6 +439,22 @@ const uniqueSourceEntries = new Map();
 for (const entry of allSourceEntries) uniqueSourceEntries.set(entry.key, entry);
 
 await fs.mkdir(supplementalRoot, { recursive: true });
+
+const masterSourceEntries = [...uniqueSourceEntries.values()]
+  .sort((left, right) => left.key.localeCompare(right.key));
+await fs.writeFile(
+  path.join(supplementalRoot, 'master-source.json'),
+  `${JSON.stringify({
+    referenceLocale: 'en',
+    generatedFrom: 'scripts/export-pending-supplemental-translations.mjs',
+    entryCount: masterSourceEntries.length,
+    directUiLiteralCount: directUiStrings.length,
+    codedCopySurfaceCount: surfaceDefinitions.length,
+    entries: masterSourceEntries,
+  }, null, 2)}\n`,
+  'utf8',
+);
+
 const status = {
   generatedFrom: 'scripts/export-pending-supplemental-translations.mjs',
   referenceLocale: 'en',

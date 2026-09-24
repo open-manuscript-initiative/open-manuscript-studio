@@ -1,0 +1,62 @@
+name: Translation master glossary
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'locale/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/translation-glossary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  glossary:
+    name: Generate complete Studio translation glossary
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate translation master
+        run: npm run i18n:translation-master
+
+      - name: Show inventory summary
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const master = JSON.parse(fs.readFileSync('locale/translation-master/studio-translation-master.json', 'utf8'));
+          console.log('Key-level entries:', master.keyLevelEntryCount);
+          console.log('Unique English strings:', master.uniqueSourceCount);
+          console.log('Target locales:', master.targetLocaleCount);
+          NODE
+
+      - name: Upload translator handoff
+        uses: actions/upload-artifact@v7
+        with:
+          name: open-manuscript-studio-translation-master
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            locale/translation-master/studio-translation-master.csv
+            locale/translation-master/studio-translation-glossary.csv
+            locale/translation-master/studio-translation-master.json
+            locale/translation-master/studio-translation-glossary.json
+            locale/translation-master/languages.csv
+            locale/translation-master/README.md

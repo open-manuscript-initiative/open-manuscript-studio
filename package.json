@@ -83,7 +83,8 @@
     "test:release-update": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/android-update-installer.test.ts && node --experimental-vm-modules --test tests/android-distribution.test.mjs tests/desktop-update-routing.test.mjs",
     "test:release-accessibility": "playwright test e2e/release-accessibility.spec.ts e2e/release-accessibility.mobile.spec.ts e2e/menu-responsive.mobile.spec.ts",
     "test:release-recovery:e2e": "playwright test e2e/release-recovery.spec.ts --project=desktop-chromium",
-    "test:release-hardening": "npm run test:release-security && npm run test:release-recovery && npm run test:release-update"
+    "test:release-hardening": "npm run test:release-security && npm run test:release-recovery && npm run test:release-update",
+    "i18n:translation-master": "npm run i18n:pending:supplemental && node scripts/export-translation-master.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
