@@ -152,6 +152,7 @@ export function ReferencesPanel() {
   const { t, locale } = useTranslation();
   const copy = getCslRenderingCopy(locale);
   const interchangeCopy = referenceInterchangeCopy(locale);
+  const personalCopy = personalReferenceLibraryCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const records = useMemo(
     () => manuscript.bibliographicRecords ?? [],
@@ -176,10 +177,33 @@ export function ReferencesPanel() {
   const interchangeInputRef = useRef<HTMLInputElement>(null);
   const [interchangeStatus, setInterchangeStatus] = useState<string | null>(null);
   const [interchangeError, setInterchangeError] = useState<string | null>(null);
+  const [personalRecords, setPersonalRecords] = useState<OmiBibliographicRecord[]>([]);
+  const [personalQuery, setPersonalQuery] = useState('');
+  const [personalBusy, setPersonalBusy] = useState(false);
+  const [personalStatus, setPersonalStatus] = useState<string | null>(null);
+  const [personalError, setPersonalError] = useState<string | null>(null);
+
+  const refreshPersonalLibrary = useCallback(async () => {
+    setPersonalBusy(true);
+    setPersonalError(null);
+    try {
+      setPersonalRecords(await listPersonalReferenceLibrary());
+    } catch (reason) {
+      setPersonalError(
+        reason instanceof Error ? reason.message : personalCopy.loadFailed,
+      );
+    } finally {
+      setPersonalBusy(false);
+    }
+  }, [personalCopy.loadFailed]);
 
   useEffect(() => {
     setSavedCustomStyles(readSavedCustomStyles());
   }, []);
+
+  useEffect(() => {
+    void refreshPersonalLibrary();
+  }, [refreshPersonalLibrary]);
 
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const filtered = useMemo(
@@ -194,14 +218,31 @@ export function ReferencesPanel() {
     () => new Set(manuscript.citations.map((citation) => citation.target)),
     [manuscript.citations],
   );
+  const additionalBibliographyIds = useMemo(
+    () => new Set(manuscript.bibliographyAdditionalRecordIds ?? []),
+    [manuscript.bibliographyAdditionalRecordIds],
+  );
   const bibliography = useMemo(
     () =>
       renderBibliography(
-        records.filter((record) => citedRecordIds.has(record.id)),
+        getBibliographyRecords(manuscript),
         citationStyle,
         manuscript.locale,
       ),
-    [citationStyle, citedRecordIds, manuscript.locale, records],
+    [citationStyle, manuscript],
+  );
+  const normalizedPersonalQuery = personalQuery.trim().toLocaleLowerCase();
+  const filteredPersonalRecords = useMemo(
+    () =>
+      personalRecords.filter((record) =>
+        !normalizedPersonalQuery ||
+        formatBibliographyEntry(record).toLocaleLowerCase().includes(normalizedPersonalQuery),
+      ),
+    [normalizedPersonalQuery, personalRecords],
+  );
+  const documentRecordIds = useMemo(
+    () => new Set(records.map((record) => record.id)),
+    [records],
   );
 
   const normalizedStyleQuery = styleQuery.trim().toLocaleLowerCase();
@@ -247,6 +288,31 @@ export function ReferencesPanel() {
         reason instanceof Error ? reason.message : interchangeCopy.failed,
       );
     }
+  }
+
+  async function saveCurrentReferencesToPersonalLibrary(): Promise<void> {
+    if (!records.length || personalBusy) return;
+    setPersonalBusy(true);
+    setPersonalError(null);
+    setPersonalStatus(null);
+    try {
+      const saved = await savePersonalReferenceRecords(records);
+      setPersonalStatus(personalCopy.saved(saved));
+      setPersonalRecords(await listPersonalReferenceLibrary());
+    } catch (reason) {
+      setPersonalError(
+        reason instanceof Error ? reason.message : personalCopy.saveFailed,
+      );
+    } finally {
+      setPersonalBusy(false);
+    }
+  }
+
+  function addPersonalRecordToDocument(record: OmiBibliographicRecord): void {
+    if (!documentRecordIds.has(record.id)) {
+      stageAddBibliographicRecord(record);
+    }
+    stageSetBibliographyRecordIncluded(record.id, true);
   }
 
   function saveCustomStyle(): void {
