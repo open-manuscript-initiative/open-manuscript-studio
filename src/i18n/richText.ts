@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 import type { SupportedLocale } from './types';
 
 export interface RichTextCopy {
@@ -121,5 +122,6 @@ const COPY: Record<SupportedLocale, RichTextCopy> = {
 };
 
 export function getRichTextCopy(locale: SupportedLocale): RichTextCopy {
-  return COPY[locale] ?? COPY.en;
+  const current = COPY[locale] ?? COPY.en;
+  return applyReturnedSupplementalOverlay(locale, 'richText', current, COPY.en);
 }
