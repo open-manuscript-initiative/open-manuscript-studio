@@ -8,6 +8,7 @@ import {
   findLikelyDuplicateRecord,
   formatCitationLabel,
   getBibliographicIdentifier,
+  getBibliographyRecords,
   normalizeDoi,
   removeCitationAnchorFromSections,
   setBibliographicIdentifier,
@@ -45,6 +46,31 @@ test('stores a work once and allows multiple citation occurrences to target it',
   assert.notEqual(first.id, second.id);
   assert.match(formatCitationLabel(record, first), /Example 2026, 12/);
   assert.match(formatCitationLabel(record, second), /Example 2026, 45–47/);
+});
+
+test('document bibliography includes cited records plus explicitly selected uncited works', () => {
+  const cited = createBibliographicRecord({ title: 'Cited work' });
+  cited.id = 'bib-cited';
+  const selected = createBibliographicRecord({ title: 'Selected background work' });
+  selected.id = 'bib-selected';
+  const unused = createBibliographicRecord({ title: 'Unused library work' });
+  unused.id = 'bib-unused';
+
+  const records = getBibliographyRecords({
+    bibliographicRecords: [cited, selected, unused],
+    citations: [{
+      id: 'cit-one',
+      target: cited.id,
+      anchorId: 'anchor-one',
+      targetBlockId: 'block-one',
+    }],
+    bibliographyAdditionalRecordIds: [selected.id],
+  });
+
+  assert.deepEqual(
+    records.map((record) => record.id),
+    ['bib-cited', 'bib-selected'],
+  );
 });
 
 test('normalizes DOI identifiers and detects exact DOI duplicates', () => {

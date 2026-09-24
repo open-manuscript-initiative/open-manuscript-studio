@@ -315,6 +315,56 @@
   align-items: end;
 }
 
+.omi-personal-reference-library {
+  display: grid;
+  gap: 0.8rem;
+  margin: 1rem 0 1.2rem;
+  padding: 0.9rem;
+  border: 1px solid var(--omi-editor-border);
+  border-radius: 0.7rem;
+  background: var(--omi-editor-surface-muted);
+}
+
+.omi-personal-reference-library .omi-reference-subheading {
+  align-items: center;
+}
+
+.omi-personal-reference-library h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.omi-personal-reference-library .omi-reference-search {
+  margin-bottom: 0;
+}
+
+.omi-personal-reference-list {
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.omi-reference-bibliography-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+  color: var(--omi-editor-text-muted);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.omi-reference-bibliography-toggle input {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.omi-reference-bibliography-toggle input:disabled + span {
+  color: var(--omi-editor-accent-text);
+  font-weight: 650;
+}
+
 .omi-bibliography-preview {
   margin-top: 1.25rem;
   padding-top: 1rem;
@@ -354,6 +404,29 @@
     width: 100%;
     flex-wrap: wrap;
     justify-content: flex-end;
+  }
+
+  .omi-personal-reference-library .omi-reference-subheading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: .65rem;
+  }
+
+  .omi-personal-reference-library .omi-reference-subheading > div {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .omi-personal-reference-library .omi-reference-item-actions {
+    justify-content: stretch;
+  }
+
+  .omi-personal-reference-library .studio-menu-secondary-action {
+    max-width: 100%;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .omi-reference-item-actions > .studio-menu-primary-action,

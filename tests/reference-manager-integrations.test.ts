@@ -201,3 +201,31 @@ test('pins Mendeley OAuth callback redirects to explicit native allowlist target
   );
   assert.doesNotMatch(routes, /\$\{state\.returnOrigin\}\/#/);
 });
+
+
+test('persists an account-level personal reference library for reuse across documents', () => {
+  const schema = readFileSync('server/prisma/schema.prisma', 'utf8');
+  const migration = readFileSync(
+    'server/prisma/migrations/20260924083000_add_personal_reference_library/migration.sql',
+    'utf8',
+  );
+  const routes = readFileSync(
+    'server/src/routes/personalReferenceLibraryRoutes.ts',
+    'utf8',
+  );
+  const app = readFileSync('server/src/app.ts', 'utf8');
+  const client = readFileSync('src/services/referenceManagerApi.ts', 'utf8');
+  const panel = readFileSync('src/components/ReferencesPanel.tsx', 'utf8');
+
+  assert.match(schema, /model PersonalReferenceRecord \{/);
+  assert.match(schema, /@@unique\(\[userId, recordId\]\)/);
+  assert.match(migration, /CREATE TABLE "personal_reference_records"/);
+  assert.match(routes, /\/references\/library/);
+  assert.match(routes, /personalReferenceRecord\.upsert/);
+  assert.match(routes, /request\.authUserId/);
+  assert.match(app, /personalReferenceLibraryRouter/);
+  assert.match(client, /listPersonalReferenceLibrary/);
+  assert.match(client, /savePersonalReferenceRecords/);
+  assert.match(panel, /stageSetBibliographyRecordIncluded/);
+  assert.match(panel, /saveCurrentReferencesToPersonalLibrary/);
+});

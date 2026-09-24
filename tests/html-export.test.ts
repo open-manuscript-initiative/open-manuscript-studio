@@ -425,3 +425,32 @@ function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {
 
   return entries;
 }
+
+
+test('HTML bibliography includes explicitly selected uncited records only', () => {
+  const manuscript = createTestManuscript();
+  manuscript.bibliographicRecords = [
+    {
+      id: 'bib-selected',
+      type: 'book',
+      title: 'Selected background work',
+      contributors: [],
+      identifiers: [],
+      status: 'resolved',
+    },
+    {
+      id: 'bib-unused',
+      type: 'book',
+      title: 'Unused background work',
+      contributors: [],
+      identifiers: [],
+      status: 'resolved',
+    },
+  ];
+  manuscript.bibliographyAdditionalRecordIds = ['bib-selected'];
+
+  const result = renderHtmlArticle(manuscript);
+
+  assert.match(result.html, /data-omi-record-id="bib-selected"/);
+  assert.doesNotMatch(result.html, /data-omi-record-id="bib-unused"/);
+});

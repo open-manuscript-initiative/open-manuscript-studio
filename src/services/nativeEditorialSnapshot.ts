@@ -2,6 +2,7 @@ import {
   createAccountHolderApprovedAssurance,
 } from '../integrations/webPublicationContract';
 import { ensureManuscriptRevisionStateDigests } from '../model/revisionIntegrity';
+import { getBibliographyRecords } from '../model/citations';
 import { createManuscriptStateDigest } from '../model/stateDigest';
 import {
   extractManuscriptState,
@@ -156,7 +157,7 @@ export async function createNativeReviewSnapshot(
       : {}),
     keywords: [...manuscript.keywords],
     blocks,
-    bibliographicRecords: (manuscript.bibliographicRecords ?? [])
+    bibliographicRecords: getBibliographyRecords(manuscript)
       .map(toReviewBibliographicRecord),
   };
 }

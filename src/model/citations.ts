@@ -332,6 +332,24 @@ export function countCitationsForRecord(
   return citations.filter((citation) => citation.target === recordId).length;
 }
 
+
+export function getBibliographyRecords(
+  manuscript: Pick<
+    import('../types/omi').OmiManuscriptState,
+    'bibliographicRecords' | 'citations' | 'bibliographyAdditionalRecordIds'
+  >,
+): OmiBibliographicRecord[] {
+  const included = new Set(
+    manuscript.citations.map((citation) => citation.target),
+  );
+  for (const recordId of manuscript.bibliographyAdditionalRecordIds ?? []) {
+    included.add(recordId);
+  }
+  return (manuscript.bibliographicRecords ?? []).filter((record) =>
+    included.has(record.id),
+  );
+}
+
 export function collectCitationAnchors(
   sections: readonly OmiSection[],
 ): CitationAnchorReference[] {

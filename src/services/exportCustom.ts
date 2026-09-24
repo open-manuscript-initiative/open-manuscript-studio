@@ -1,4 +1,5 @@
 import { renderBibliography } from '../model/cslRendering';
+import { getBibliographyRecords } from '../model/citations';
 import {
   defaultCustomCitationStyle,
   resolveLocalizedAbstract,
@@ -148,7 +149,7 @@ function renderHtmlBlock(
       return notes.length ? wrap(`<div><strong>${escapeHtml(localizedLabel(manuscript.locale, 'notes'))}</strong></div>${notes.map((item, index) => `<p>${index + 1}. ${escapeHtml(item.body)}</p>`).join('')}`, 'omi-custom-notes') : '';
     }
     case 'bibliography': {
-      const records = manuscript.bibliographicRecords ?? [];
+      const records = getBibliographyRecords(manuscript);
       const styleId = block.bibliographyStyle ?? manuscript.citationStyle ?? 'apa-7';
       const entries = renderBibliography(records, styleId, manuscript.locale);
       return entries.length ? wrap(`<div><strong>${escapeHtml(localizedLabel(manuscript.locale, 'bibliography'))}</strong></div>${entries.map((entry) => `<p>${escapeHtml(entry.text)}</p>`).join('')}`, 'omi-custom-bibliography') : '';
@@ -223,7 +224,7 @@ function renderWordBlock(
     }
     case 'bibliography': {
       const styleId = block.bibliographyStyle ?? manuscript.citationStyle ?? 'apa-7';
-      const entries = renderBibliography(manuscript.bibliographicRecords ?? [], styleId, manuscript.locale);
+      const entries = renderBibliography(getBibliographyRecords(manuscript), styleId, manuscript.locale);
       return entries.length ? [wordParagraph(localizedLabel(manuscript.locale, 'bibliography'), { ...block.typography, bold: true }), ...entries.map((entry) => wordParagraph(entry.text, block.typography))] : [];
     }
   }

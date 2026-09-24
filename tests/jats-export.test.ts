@@ -272,3 +272,32 @@ test('structural validation rejects duplicate ids and unresolved rid targets', (
     true,
   );
 });
+
+
+test('JATS reference list includes explicitly selected uncited records only', () => {
+  const manuscript = createTestManuscript();
+  manuscript.bibliographicRecords = [
+    {
+      id: 'bib-selected',
+      type: 'book',
+      title: 'Selected background work',
+      contributors: [],
+      identifiers: [],
+      status: 'resolved',
+    },
+    {
+      id: 'bib-unused',
+      type: 'book',
+      title: 'Unused background work',
+      contributors: [],
+      identifiers: [],
+      status: 'resolved',
+    },
+  ];
+  manuscript.bibliographyAdditionalRecordIds = ['bib-selected'];
+
+  const result = renderJatsArticle(manuscript);
+
+  assert.match(result.xml, /id="ref-bib-selected"/);
+  assert.doesNotMatch(result.xml, /id="ref-bib-unused"/);
+});

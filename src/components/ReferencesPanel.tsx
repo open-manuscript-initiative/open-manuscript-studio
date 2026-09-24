@@ -1,8 +1,10 @@
-import { Edit3, ExternalLink, Plus, Search, Settings2, Trash2, Upload } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { Edit3, ExternalLink, Library, Plus, RefreshCw, Save, Search, Settings2, Trash2, Upload } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 
 import {
+  stageAddBibliographicRecord,
   stageAddBibliographicRecords,
+  stageSetBibliographyRecordIncluded,
   stageSetCitationStyle,
 } from '../app/citationActions';
 import { useStudioStore } from '../app/useStudioStore';
@@ -12,6 +14,7 @@ import {
   countCitationsForRecord,
   formatBibliographyEntry,
   getBibliographicIdentifier,
+  getBibliographyRecords,
 } from '../model/citations';
 import {
   CITATION_STYLE_CATALOG,
@@ -24,7 +27,11 @@ import {
   type CustomCitationStyleConfig,
 } from '../model/cslRendering';
 import { parseReferenceInterchange } from '../services/referenceInterchange';
-import type { OmiCitationStyleId } from '../types/omi';
+import {
+  listPersonalReferenceLibrary,
+  savePersonalReferenceRecords,
+} from '../services/referenceManagerApi';
+import type { OmiBibliographicRecord, OmiCitationStyleId } from '../types/omi';
 import { BibliographicRecordEditor } from './BibliographicRecordEditor';
 import { ReferenceLookupPanel } from './ReferenceLookupPanel';
 
@@ -47,6 +54,61 @@ function readSavedCustomStyles(): string[] {
 function writeSavedCustomStyles(styles: readonly string[]): void {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(CUSTOM_STYLE_STORAGE_KEY, JSON.stringify(styles));
+}
+
+function personalReferenceLibraryCopy(locale: string) {
+  if (locale === 'hu') {
+    return {
+      title: 'Saját hivatkozástár',
+      description:
+        'A fiókodhoz mentett bibliográfiai tételeket bármely dokumentumban újra felhasználhatod. A dokumentumba átvett tétel hordozható pillanatképként a kéziratban is megmarad.',
+      saveCurrent: 'Dokumentum tételeinek mentése a saját tárba',
+      saved: (count: number) => `${count} tétel mentve a saját hivatkozástárba.`,
+      saveFailed: 'A saját hivatkozástár mentése sikertelen.',
+      loadFailed: 'A saját hivatkozástár betöltése sikertelen.',
+      empty: 'A saját hivatkozástár még üres.',
+      search: 'Keresés a saját hivatkozástárban',
+      add: 'Hozzáadás a dokumentumhoz',
+      inDocument: 'Már a dokumentumban',
+      refresh: 'Frissítés',
+      include: 'Szerepeljen a hivatkozáslistában',
+      cited: 'Idézett mű – automatikusan szerepel a hivatkozáslistában',
+    };
+  }
+  if (locale === 'de') {
+    return {
+      title: 'Persönliche Literaturbibliothek',
+      description:
+        'Im Konto gespeicherte Literaturangaben können in mehreren Dokumenten wiederverwendet werden. In das Dokument übernommene Datensätze bleiben als portable Momentaufnahme im Manuskript erhalten.',
+      saveCurrent: 'Dokumentreferenzen in der persönlichen Bibliothek speichern',
+      saved: (count: number) => `${count} Einträge in der persönlichen Bibliothek gespeichert.`,
+      saveFailed: 'Die persönliche Literaturbibliothek konnte nicht gespeichert werden.',
+      loadFailed: 'Die persönliche Literaturbibliothek konnte nicht geladen werden.',
+      empty: 'Die persönliche Literaturbibliothek ist noch leer.',
+      search: 'Persönliche Literaturbibliothek durchsuchen',
+      add: 'Zum Dokument hinzufügen',
+      inDocument: 'Bereits im Dokument',
+      refresh: 'Aktualisieren',
+      include: 'Im Literaturverzeichnis anzeigen',
+      cited: 'Zitiert – wird automatisch im Literaturverzeichnis angezeigt',
+    };
+  }
+  return {
+    title: 'Personal reference library',
+    description:
+      'Bibliographic records saved to your account can be reused across documents. A record copied into a document remains a portable manuscript snapshot.',
+    saveCurrent: 'Save document references to personal library',
+    saved: (count: number) => `${count} records saved to the personal reference library.`,
+    saveFailed: 'The personal reference library could not be saved.',
+    loadFailed: 'The personal reference library could not be loaded.',
+    empty: 'Your personal reference library is empty.',
+    search: 'Search personal reference library',
+    add: 'Add to document',
+    inDocument: 'Already in document',
+    refresh: 'Refresh',
+    include: 'Include in bibliography',
+    cited: 'Cited work – automatically included in the bibliography',
+  };
 }
 
 function referenceInterchangeCopy(locale: string) {
@@ -90,6 +152,7 @@ export function ReferencesPanel() {
   const { t, locale } = useTranslation();
   const copy = getCslRenderingCopy(locale);
   const interchangeCopy = referenceInterchangeCopy(locale);
+  const personalCopy = personalReferenceLibraryCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const records = useMemo(
     () => manuscript.bibliographicRecords ?? [],
@@ -114,10 +177,33 @@ export function ReferencesPanel() {
   const interchangeInputRef = useRef<HTMLInputElement>(null);
   const [interchangeStatus, setInterchangeStatus] = useState<string | null>(null);
   const [interchangeError, setInterchangeError] = useState<string | null>(null);
+  const [personalRecords, setPersonalRecords] = useState<OmiBibliographicRecord[]>([]);
+  const [personalQuery, setPersonalQuery] = useState('');
+  const [personalBusy, setPersonalBusy] = useState(false);
+  const [personalStatus, setPersonalStatus] = useState<string | null>(null);
+  const [personalError, setPersonalError] = useState<string | null>(null);
+
+  const refreshPersonalLibrary = useCallback(async () => {
+    setPersonalBusy(true);
+    setPersonalError(null);
+    try {
+      setPersonalRecords(await listPersonalReferenceLibrary());
+    } catch (reason) {
+      setPersonalError(
+        reason instanceof Error ? reason.message : personalCopy.loadFailed,
+      );
+    } finally {
+      setPersonalBusy(false);
+    }
+  }, [personalCopy.loadFailed]);
 
   useEffect(() => {
     setSavedCustomStyles(readSavedCustomStyles());
   }, []);
+
+  useEffect(() => {
+    void refreshPersonalLibrary();
+  }, [refreshPersonalLibrary]);
 
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const filtered = useMemo(
@@ -128,18 +214,31 @@ export function ReferencesPanel() {
       }),
     [normalizedQuery, records],
   );
-  const citedRecordIds = useMemo(
-    () => new Set(manuscript.citations.map((citation) => citation.target)),
-    [manuscript.citations],
+  const additionalBibliographyIds = useMemo(
+    () => new Set(manuscript.bibliographyAdditionalRecordIds ?? []),
+    [manuscript.bibliographyAdditionalRecordIds],
   );
   const bibliography = useMemo(
     () =>
       renderBibliography(
-        records.filter((record) => citedRecordIds.has(record.id)),
+        getBibliographyRecords(manuscript),
         citationStyle,
         manuscript.locale,
       ),
-    [citationStyle, citedRecordIds, manuscript.locale, records],
+    [citationStyle, manuscript],
+  );
+  const normalizedPersonalQuery = personalQuery.trim().toLocaleLowerCase();
+  const filteredPersonalRecords = useMemo(
+    () =>
+      personalRecords.filter((record) =>
+        !normalizedPersonalQuery ||
+        formatBibliographyEntry(record).toLocaleLowerCase().includes(normalizedPersonalQuery),
+      ),
+    [normalizedPersonalQuery, personalRecords],
+  );
+  const documentRecordIds = useMemo(
+    () => new Set(records.map((record) => record.id)),
+    [records],
   );
 
   const normalizedStyleQuery = styleQuery.trim().toLocaleLowerCase();
@@ -185,6 +284,31 @@ export function ReferencesPanel() {
         reason instanceof Error ? reason.message : interchangeCopy.failed,
       );
     }
+  }
+
+  async function saveCurrentReferencesToPersonalLibrary(): Promise<void> {
+    if (!records.length || personalBusy) return;
+    setPersonalBusy(true);
+    setPersonalError(null);
+    setPersonalStatus(null);
+    try {
+      const saved = await savePersonalReferenceRecords(records);
+      setPersonalStatus(personalCopy.saved(saved));
+      setPersonalRecords(await listPersonalReferenceLibrary());
+    } catch (reason) {
+      setPersonalError(
+        reason instanceof Error ? reason.message : personalCopy.saveFailed,
+      );
+    } finally {
+      setPersonalBusy(false);
+    }
+  }
+
+  function addPersonalRecordToDocument(record: OmiBibliographicRecord): void {
+    if (!documentRecordIds.has(record.id)) {
+      stageAddBibliographicRecord(record);
+    }
+    stageSetBibliographyRecordIncluded(record.id, true);
   }
 
   function saveCustomStyle(): void {
@@ -395,6 +519,81 @@ export function ReferencesPanel() {
 
       <ReferenceLookupPanel />
 
+      <section className="omi-personal-reference-library">
+        <div className="omi-reference-subheading">
+          <div>
+            <h4><Library size={17} aria-hidden="true" /> {personalCopy.title}</h4>
+            <p>{personalCopy.description}</p>
+          </div>
+          <div className="omi-reference-item-actions">
+            <button
+              type="button"
+              className="studio-menu-secondary-action"
+              disabled={personalBusy || records.length === 0}
+              onClick={() => void saveCurrentReferencesToPersonalLibrary()}
+            >
+              <Save size={16} aria-hidden="true" />
+              {personalCopy.saveCurrent}
+            </button>
+            <button
+              type="button"
+              className="omi-reference-icon-action"
+              disabled={personalBusy}
+              aria-label={personalCopy.refresh}
+              title={personalCopy.refresh}
+              onClick={() => void refreshPersonalLibrary()}
+            >
+              <RefreshCw size={16} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+
+        {personalStatus ? <small role="status">{personalStatus}</small> : null}
+        {personalError ? (
+          <small className="omi-integration-error" role="alert">{personalError}</small>
+        ) : null}
+
+        {personalRecords.length > 0 ? (
+          <>
+            <label className="omi-reference-search">
+              <Search size={16} aria-hidden="true" />
+              <span className="sr-only">{personalCopy.search}</span>
+              <input
+                value={personalQuery}
+                onChange={(event) => setPersonalQuery(event.target.value)}
+                placeholder={personalCopy.search}
+              />
+            </label>
+            <ul className="omi-reference-list omi-personal-reference-list">
+              {filteredPersonalRecords.map((record) => {
+                const inDocument = documentRecordIds.has(record.id);
+                return (
+                  <li className="omi-reference-item" key={record.id}>
+                    <div className="omi-reference-item-main">
+                      <strong>{record.title || t('citations.untitledReference')}</strong>
+                      <p>{formatBibliographyEntry(record)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="studio-menu-secondary-action"
+                      disabled={inDocument}
+                      onClick={() => addPersonalRecordToDocument(record)}
+                    >
+                      <Plus size={15} aria-hidden="true" />
+                      {inDocument ? personalCopy.inDocument : personalCopy.add}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        ) : (
+          <div className="omi-reference-empty">
+            <strong>{personalCopy.empty}</strong>
+          </div>
+        )}
+      </section>
+
       {records.length > 0 ? (
         <label className="omi-reference-search">
           <Search size={16} aria-hidden="true" />
@@ -423,6 +622,17 @@ export function ReferencesPanel() {
                   </div>
                   <p>{formatBibliographyEntry(record)}</p>
                   <div className="omi-reference-item-meta"><code>{record.id}</code><span>{record.type}</span><span>{record.status}</span></div>
+                  <label className="omi-reference-bibliography-toggle">
+                    <input
+                      type="checkbox"
+                      checked={citationCount > 0 || additionalBibliographyIds.has(record.id)}
+                      disabled={citationCount > 0}
+                      onChange={(event) =>
+                        stageSetBibliographyRecordIncluded(record.id, event.target.checked)
+                      }
+                    />
+                    <span>{citationCount > 0 ? personalCopy.cited : personalCopy.include}</span>
+                  </label>
                 </div>
                 <div className="omi-reference-item-actions">
                   {onlineUrl ? (

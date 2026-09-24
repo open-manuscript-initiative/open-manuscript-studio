@@ -127,3 +127,37 @@ test('does not emit a canonical OMI file until required portable metadata is pre
       && /title/.test(error.message),
   );
 });
+
+
+test('portable OMI preserves explicit uncited bibliography selections', () => {
+  const portable = toPortableOmiManuscript(
+    createVersionedTestManuscript(),
+  ) as unknown as Record<string, any>;
+  portable.bibliographicRecords = [{
+    id: 'bib-background',
+    type: 'book',
+    title: 'Reusable background work',
+    contributors: [],
+    identifiers: [],
+    status: 'resolved',
+  }];
+  portable.bibliographyAdditionalRecordIds = ['bib-background'];
+
+  const reopened = parseOmiJson(JSON.stringify(portable));
+  assert.deepEqual(
+    reopened.bibliographyAdditionalRecordIds,
+    ['bib-background'],
+  );
+});
+
+test('portable OMI rejects bibliography selections that do not resolve to a record', () => {
+  const portable = toPortableOmiManuscript(
+    createVersionedTestManuscript(),
+  ) as unknown as Record<string, any>;
+  portable.bibliographyAdditionalRecordIds = ['missing-record'];
+
+  assert.throws(
+    () => parseOmiJson(JSON.stringify(portable)),
+    /Unresolved OMI reference at \/bibliographyAdditionalRecordIds\/0/,
+  );
+});

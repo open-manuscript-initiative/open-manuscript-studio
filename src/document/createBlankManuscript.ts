@@ -43,6 +43,7 @@ export function createBlankManuscript(
     sections: input.kind === 'study' ? [createEmptyStudy()] : [],
     annotations: [],
     bibliographicRecords: [],
+    bibliographyAdditionalRecordIds: [],
     citations: [],
     citationClusters: [],
     crossReferences: [],
