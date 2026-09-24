@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 import type { SupportedLocale } from './types';
 
 export interface NoteCitationCopy {
@@ -33,5 +34,6 @@ const COPY: Record<SupportedLocale, NoteCitationCopy> = {
 };
 
 export function getNoteCitationCopy(locale: SupportedLocale): NoteCitationCopy {
-  return COPY[locale] ?? COPY.en;
+  const current = COPY[locale] ?? COPY.en;
+  return applyReturnedSupplementalOverlay(locale, 'noteCitations', current, COPY.en);
 }
