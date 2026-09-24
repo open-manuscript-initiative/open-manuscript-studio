@@ -523,6 +523,81 @@ export function ReferencesPanel() {
 
       <ReferenceLookupPanel />
 
+      <section className="omi-personal-reference-library">
+        <div className="omi-reference-subheading">
+          <div>
+            <h4><Library size={17} aria-hidden="true" /> {personalCopy.title}</h4>
+            <p>{personalCopy.description}</p>
+          </div>
+          <div className="omi-reference-item-actions">
+            <button
+              type="button"
+              className="studio-menu-secondary-action"
+              disabled={personalBusy || records.length === 0}
+              onClick={() => void saveCurrentReferencesToPersonalLibrary()}
+            >
+              <Save size={16} aria-hidden="true" />
+              {personalCopy.saveCurrent}
+            </button>
+            <button
+              type="button"
+              className="omi-reference-icon-action"
+              disabled={personalBusy}
+              aria-label={personalCopy.refresh}
+              title={personalCopy.refresh}
+              onClick={() => void refreshPersonalLibrary()}
+            >
+              <RefreshCw size={16} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+
+        {personalStatus ? <small role="status">{personalStatus}</small> : null}
+        {personalError ? (
+          <small className="omi-integration-error" role="alert">{personalError}</small>
+        ) : null}
+
+        {personalRecords.length > 0 ? (
+          <>
+            <label className="omi-reference-search">
+              <Search size={16} aria-hidden="true" />
+              <span className="sr-only">{personalCopy.search}</span>
+              <input
+                value={personalQuery}
+                onChange={(event) => setPersonalQuery(event.target.value)}
+                placeholder={personalCopy.search}
+              />
+            </label>
+            <ul className="omi-reference-list omi-personal-reference-list">
+              {filteredPersonalRecords.map((record) => {
+                const inDocument = documentRecordIds.has(record.id);
+                return (
+                  <li className="omi-reference-item" key={record.id}>
+                    <div className="omi-reference-item-main">
+                      <strong>{record.title || t('citations.untitledReference')}</strong>
+                      <p>{formatBibliographyEntry(record)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="studio-menu-secondary-action"
+                      disabled={inDocument}
+                      onClick={() => addPersonalRecordToDocument(record)}
+                    >
+                      <Plus size={15} aria-hidden="true" />
+                      {inDocument ? personalCopy.inDocument : personalCopy.add}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        ) : (
+          <div className="omi-reference-empty">
+            <strong>{personalCopy.empty}</strong>
+          </div>
+        )}
+      </section>
+
       {records.length > 0 ? (
         <label className="omi-reference-search">
           <Search size={16} aria-hidden="true" />
@@ -551,6 +626,17 @@ export function ReferencesPanel() {
                   </div>
                   <p>{formatBibliographyEntry(record)}</p>
                   <div className="omi-reference-item-meta"><code>{record.id}</code><span>{record.type}</span><span>{record.status}</span></div>
+                  <label className="omi-reference-bibliography-toggle">
+                    <input
+                      type="checkbox"
+                      checked={citationCount > 0 || additionalBibliographyIds.has(record.id)}
+                      disabled={citationCount > 0}
+                      onChange={(event) =>
+                        stageSetBibliographyRecordIncluded(record.id, event.target.checked)
+                      }
+                    />
+                    <span>{citationCount > 0 ? personalCopy.cited : personalCopy.include}</span>
+                  </label>
                 </div>
                 <div className="omi-reference-item-actions">
                   {onlineUrl ? (
