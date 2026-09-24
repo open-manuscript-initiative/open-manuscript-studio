@@ -535,6 +535,13 @@ export interface OmiManuscriptState {
   bibliographicRecords?: OmiBibliographicRecord[];
 
   /**
+   * Bibliographic records explicitly added to the rendered bibliography even
+   * when the manuscript does not contain an inline citation to them. Cited
+   * records are always included automatically.
+   */
+  bibliographyAdditionalRecordIds?: string[];
+
+  /**
    * OMI-SPEC-210 citation occurrences anchored in manuscript content.
    */
   citations: OmiCitation[];
