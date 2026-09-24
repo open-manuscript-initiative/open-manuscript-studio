@@ -15,7 +15,7 @@ async function loadGzipJson(fileName) {
     return JSON.parse(gunzipSync(buffer).toString('utf8'));
   } catch (error) {
     const code = error && typeof error === 'object' ? error.code : undefined;
-    if (code === 'ENOENT' || code === 'Z_DATA_ERROR') {
+    if (code === 'ENOENT' || code === 'Z_DATA_ERROR' || code === 'Z_BUF_ERROR') {
       console.warn(
         `Returned translation payload ${fileName} is unavailable or invalid; ` +
           'preserving the committed runtime overlay instead.',
