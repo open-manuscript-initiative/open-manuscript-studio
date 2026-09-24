@@ -395,7 +395,7 @@
   min-width: 0;
 }
 
-.studio-manuscript-fields input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.studio-manuscript-fields input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="number"]):not([size]),
 .studio-manuscript-fields select,
 .studio-manuscript-fields textarea {
   width: 100%;
@@ -407,6 +407,14 @@
 .studio-manuscript-fields select {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.studio-manuscript-fields input[type="number"]:not([data-full-width="true"]),
+.studio-manuscript-fields input[size]:not([data-full-width="true"]) {
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  justify-self: start;
 }
 
 .studio-manuscript-fields label > span,
@@ -487,7 +495,7 @@
   flex-wrap: wrap;
 }
 
-.studio-tool-actions > input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.studio-tool-actions > input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="number"]):not([size]),
 .studio-tool-actions > select,
 .studio-tool-actions > textarea {
   flex: 1 1 12rem;
@@ -495,6 +503,14 @@
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
+}
+
+.studio-tool-actions > input[type="number"]:not([data-full-width="true"]),
+.studio-tool-actions > input[size]:not([data-full-width="true"]) {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .studio-tool-actions > button {
