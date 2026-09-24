@@ -9,10 +9,21 @@ const importRoot = path.join(root, 'locale', 'translation-import');
 const outputDir = path.join(root, 'src', 'i18n', 'generated');
 const outputFile = path.join(outputDir, 'returnedTranslationOverlays.json');
 
-function loadGzipJson(fileName) {
-  return fs
-    .readFile(path.join(importRoot, fileName))
-    .then((buffer) => JSON.parse(gunzipSync(buffer).toString('utf8')));
+async function loadGzipJson(fileName) {
+  try {
+    const buffer = await fs.readFile(path.join(importRoot, fileName));
+    return JSON.parse(gunzipSync(buffer).toString('utf8'));
+  } catch (error) {
+    const code = error && typeof error === 'object' ? error.code : undefined;
+    if (code === 'ENOENT' || code === 'Z_DATA_ERROR') {
+      console.warn(
+        `Returned translation payload ${fileName} is unavailable or invalid; ` +
+          'preserving the committed runtime overlay instead.',
+      );
+      return null;
+    }
+    throw error;
+  }
 }
 
 function groupSupplemental(translations) {
@@ -30,6 +41,13 @@ const [canonicalPayload, supplementalPayload] = await Promise.all([
   loadGzipJson('0.3.0-beta.1-canonical.json.gz'),
   loadGzipJson('0.3.0-beta.1-supplemental.json.gz'),
 ]);
+
+if (!canonicalPayload || !supplementalPayload) {
+  console.warn(
+    'Returned translation overlay regeneration skipped until a valid text-safe import payload is committed.',
+  );
+  process.exit(0);
+}
 
 if (canonicalPayload.baseline !== supplementalPayload.baseline) {
   throw new Error(
