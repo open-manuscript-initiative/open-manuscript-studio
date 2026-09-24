@@ -403,6 +403,17 @@ function validateReferences(
     requireReference(item.target, indexes.bibliographicRecords, `/citations/${index}/target`);
   });
 
+  optionalArray(
+    document.bibliographyAdditionalRecordIds,
+    'bibliographyAdditionalRecordIds',
+  ).forEach((recordId, index) => {
+    requireReference(
+      recordId,
+      indexes.bibliographicRecords,
+      `/bibliographyAdditionalRecordIds/${index}`,
+    );
+  });
+
   optionalArray(document.citationClusters, 'citationClusters').forEach((item, index) => {
     if (!isRecord(item)) invalid(`/citationClusters/${index} must be an object.`);
     requireReference(item.targetBlockId, indexes.blocks, `/citationClusters/${index}/targetBlockId`);
