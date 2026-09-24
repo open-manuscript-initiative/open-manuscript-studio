@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { Prisma } from '../generated/prisma/client.js';
 import { prisma } from '../lib/prisma.js';
 import {
   requireSession,
@@ -82,6 +83,9 @@ personalReferenceLibraryRouter.put(
       return;
     }
 
+    const recordJson = JSON.parse(
+      JSON.stringify(record.data),
+    ) as Prisma.InputJsonValue;
     const row = await prisma.personalReferenceRecord.upsert({
       where: {
         userId_recordId: {
@@ -92,10 +96,10 @@ personalReferenceLibraryRouter.put(
       create: {
         userId: request.authUserId!,
         recordId: recordId.data,
-        record: record.data,
+        record: recordJson,
       },
       update: {
-        record: record.data,
+        record: recordJson,
       },
     });
 
@@ -119,8 +123,11 @@ personalReferenceLibraryRouter.post(
 
     const unique = new Map(body.data.records.map((record) => [record.id, record]));
     await prisma.$transaction(
-      [...unique.values()].map((record) =>
-        prisma.personalReferenceRecord.upsert({
+      [...unique.values()].map((record) => {
+        const recordJson = JSON.parse(
+          JSON.stringify(record),
+        ) as Prisma.InputJsonValue;
+        return prisma.personalReferenceRecord.upsert({
           where: {
             userId_recordId: {
               userId: request.authUserId!,
@@ -130,13 +137,13 @@ personalReferenceLibraryRouter.post(
           create: {
             userId: request.authUserId!,
             recordId: record.id,
-            record,
+            record: recordJson,
           },
           update: {
-            record,
+            record: recordJson,
           },
-        }),
-      ),
+        });
+      }),
     );
 
     response.status(200).json({
