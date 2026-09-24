@@ -10,7 +10,7 @@
     "test:continuous": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/continuous-manuscript-document.test.ts tests/changed-workspace-references.test.ts",
     "test:current-study-notes": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/current-study-notes.test.ts",
     "test:android-update": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/android-update-installer.test.ts && node --experimental-vm-modules --test tests/android-distribution.test.mjs && node --test tests/android-modern-ui.test.mjs && node --test tests/android-version-code.test.mjs",
-    "pretest": "npm run test:continuous && npm run test:current-study-notes && npm run test:android-update",
+    "pretest": "npm run i18n:returned:generate && npm run test:continuous && npm run test:current-study-notes && npm run test:android-update",
     "preview": "vite preview",
     "lint": "eslint .",
     "playwright:install": "playwright install --only-shell chromium",
@@ -84,7 +84,10 @@
     "test:release-accessibility": "playwright test e2e/release-accessibility.spec.ts e2e/release-accessibility.mobile.spec.ts e2e/menu-responsive.mobile.spec.ts",
     "test:release-recovery:e2e": "playwright test e2e/release-recovery.spec.ts --project=desktop-chromium",
     "test:release-hardening": "npm run test:release-security && npm run test:release-recovery && npm run test:release-update",
-    "i18n:translation-master": "npm run i18n:pending:supplemental && node scripts/export-translation-master.mjs"
+    "i18n:translation-master": "npm run i18n:pending:supplemental && node scripts/export-translation-master.mjs",
+    "i18n:returned:generate": "node scripts/generate-returned-translation-overlays.mjs",
+    "predev": "npm run i18n:returned:generate",
+    "prebuild": "npm run i18n:returned:generate"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
