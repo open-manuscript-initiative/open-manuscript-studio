@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 import type { SupportedLocale } from './types';
 
 export interface CslRenderingCopy {
@@ -93,5 +94,6 @@ const COPY: Record<SupportedLocale, CslRenderingCopy> = {
 };
 
 export function getCslRenderingCopy(locale: SupportedLocale): CslRenderingCopy {
-  return COPY[locale] ?? COPY.en;
+  const current = COPY[locale] ?? COPY.en;
+  return applyReturnedSupplementalOverlay(locale, 'cslRendering', current, COPY.en);
 }
