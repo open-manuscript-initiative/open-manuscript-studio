@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface LinkedIdentitiesCopy {
   title: string;
   description: string;
@@ -98,5 +99,12 @@ export const linkedIdentitiesTranslations: Record<string, LinkedIdentitiesCopy> 
 };
 
 export function getLinkedIdentitiesCopy(locale: string): LinkedIdentitiesCopy {
-  return linkedIdentitiesTranslations[locale] ?? linkedIdentitiesTranslations.en;
+  const current =
+    linkedIdentitiesTranslations[locale] ?? linkedIdentitiesTranslations.en;
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'linkedIdentities',
+    current,
+    linkedIdentitiesTranslations.en,
+  );
 }
