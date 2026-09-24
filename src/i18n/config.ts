@@ -31,10 +31,13 @@ const baseTranslations = Object.fromEntries(
 const englishDictionary = baseTranslations[DEFAULT_LOCALE];
 
 export const translations = Object.fromEntries(
-  Object.entries(baseTranslations).map(([locale, dictionary]) => [
-    locale,
-    applyReturnedCanonicalOverlay(locale, dictionary, englishDictionary),
-  ]),
+  STUDIO_UI_LOCALES.map((locale) => {
+    const dictionary = baseTranslations[locale] ?? englishDictionary;
+    return [
+      locale,
+      applyReturnedCanonicalOverlay(locale, dictionary, englishDictionary),
+    ];
+  }),
 ) as Record<string, TranslationDictionary>;
 
 export { localeLabels };
