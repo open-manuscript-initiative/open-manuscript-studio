@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface StudioMenuSupplementalCopy {
   home: string;
   assignments: string;
@@ -62,6 +63,13 @@ const studioMenuSupplementalTranslations: Record<StudioUiLocale, StudioMenuSuppl
 export function getStudioMenuSupplementalCopy(
   locale: string,
 ): StudioMenuSupplementalCopy {
-  return studioMenuSupplementalTranslations[locale as StudioUiLocale]
+  const current =
+    studioMenuSupplementalTranslations[locale as StudioUiLocale]
     ?? studioMenuSupplementalTranslations.en;
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'studioMenu',
+    current,
+    studioMenuSupplementalTranslations.en,
+  );
 }
