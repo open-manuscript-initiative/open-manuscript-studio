@@ -16,6 +16,12 @@ Runtime precedence is deliberately conservative: existing reviewed Studio
 translations win. Returned DeepL values are used only where the current locale
 still resolves to the English source string.
 
+The returned workbook was also found to contain row-shifted translation columns.
+Only locales that passed structural alignment checks are activated by the runtime
+overlay. Suspect columns are explicitly quarantined rather than displaying a
+translation belonging to a different source string. A corrected workbook can
+promote those locales later without changing the overlay contract.
+
 Direct component literals from the translation workbook are not treated as
 runtime-complete merely because a translated string exists. Those literals must
 first be migrated to stable i18n keys; the translation-master workbook remains
