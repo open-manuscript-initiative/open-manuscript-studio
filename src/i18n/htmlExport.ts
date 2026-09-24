@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface HtmlExportCopy {
   title: string;
   description: string;
@@ -110,5 +111,7 @@ const COPY: Record<'en' | 'hu' | 'de', HtmlExportCopy> = {
 
 export function getHtmlExportCopy(locale: string): HtmlExportCopy {
   const language = locale.trim().toLowerCase().split('-')[0];
-  return language === 'hu' || language === 'de' ? COPY[language] : COPY.en;
+  const current =
+    language === 'hu' || language === 'de' ? COPY[language] : COPY.en;
+  return applyReturnedSupplementalOverlay(locale, 'htmlExport', current, COPY.en);
 }
