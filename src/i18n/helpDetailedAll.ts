@@ -8,9 +8,20 @@ import {
   generatedDetailedHelpByLocale,
   generatedDetailedHelpLabels,
 } from './helpDetailed.generated';
+import { applyReturnedSupplementalPathOverlay } from './returnedTranslationOverlay';
 
 export function getDetailedHelpLabels(locale: string): DetailedHelpLabels {
-  return generatedDetailedHelpLabels[locale] ?? getBuiltInDetailedHelpLabels(locale);
+  const current =
+    generatedDetailedHelpLabels[locale] ?? getBuiltInDetailedHelpLabels(locale);
+  const english =
+    generatedDetailedHelpLabels.en ?? getBuiltInDetailedHelpLabels('en');
+  return applyReturnedSupplementalPathOverlay(
+    locale,
+    'detailedHelp',
+    'labels',
+    current,
+    english,
+  );
 }
 
 export function getDetailedHelpTopic(locale: string, title: string): DetailedHelpTopic | null {
@@ -18,8 +29,23 @@ export function getDetailedHelpTopic(locale: string, title: string): DetailedHel
   if (match) {
     const index = Number(match[1]);
     if (Number.isFinite(index)) {
-      const generated = generatedDetailedHelpByLocale[locale]?.[index];
-      if (generated) return generated;
+      const current =
+        generatedDetailedHelpByLocale[locale]?.[index]
+        ?? getBuiltInDetailedHelpTopic(locale, title);
+      if (!current) return null;
+
+      const english =
+        generatedDetailedHelpByLocale.en?.[index]
+        ?? getBuiltInDetailedHelpTopic('en', String(index));
+      if (!english) return current;
+
+      return applyReturnedSupplementalPathOverlay(
+        locale,
+        'detailedHelp',
+        `topics.${index}`,
+        current,
+        english,
+      );
     }
   }
   return getBuiltInDetailedHelpTopic(locale, title);
