@@ -37,6 +37,26 @@ async function loadChunkedJson(prefix) {
   }
 }
 
+const verifiedAlignedLocales = new Set([
+  'af',
+  'bg',
+  'cs',
+  'da',
+  'de',
+  'es',
+  'et',
+  'fi',
+  'fr',
+  'he',
+  'hu',
+  'id',
+  'lt',
+]);
+
+function selectVerifiedLocales(payload) {
+  return payload.locales.filter(({ locale }) => verifiedAlignedLocales.has(locale));
+}
+
 function groupSupplemental(translations) {
   const surfaces = {};
   for (const [key, value] of Object.entries(translations)) {
@@ -60,7 +80,7 @@ if (canonicalPayload.baseline !== supplementalPayload.baseline) {
 }
 
 const canonical = Object.fromEntries(
-  canonicalPayload.locales.map(({ locale, translations }) => [
+  selectVerifiedLocales(canonicalPayload).map(({ locale, translations }) => [
     locale,
     Object.fromEntries(
       Object.entries(translations).filter(
@@ -74,7 +94,7 @@ const canonical = Object.fromEntries(
 );
 
 const supplemental = Object.fromEntries(
-  supplementalPayload.locales.map(({ locale, translations }) => [
+  selectVerifiedLocales(supplementalPayload).map(({ locale, translations }) => [
     locale,
     groupSupplemental(translations),
   ]),
@@ -106,7 +126,7 @@ await fs.writeFile(
       formatVersion: 1,
       baseline: canonicalPayload.baseline,
       precedence:
-        'Existing reviewed Studio translations win; returned DeepL values fill English fallbacks only.',
+        'Existing reviewed Studio translations win; returned DeepL values fill English fallbacks only. Only workbook columns verified to be row-aligned are activated.',
       canonical,
       supplemental,
       stats,
