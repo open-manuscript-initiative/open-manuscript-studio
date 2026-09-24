@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface JatsExportCopy {
   title: string;
   description: string;
@@ -154,5 +155,7 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
 
 export function getJatsExportCopy(locale: string): JatsExportCopy {
   const language = locale.trim().toLowerCase().split('-')[0];
-  return language === 'hu' || language === 'de' ? COPY[language] : COPY.en;
+  const current =
+    language === 'hu' || language === 'de' ? COPY[language] : COPY.en;
+  return applyReturnedSupplementalOverlay(locale, 'jatsExport', current, COPY.en);
 }
