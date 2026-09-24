@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface CurrentStudyNotesCopy {
   show: string;
   hide: string;
@@ -37,6 +38,13 @@ const currentStudyNotesTranslations: Record<StudioUiLocale, CurrentStudyNotesCop
 };
 
 export function getCurrentStudyNotesCopy(locale: string): CurrentStudyNotesCopy {
-  return currentStudyNotesTranslations[locale as StudioUiLocale]
+  const current =
+    currentStudyNotesTranslations[locale as StudioUiLocale]
     ?? currentStudyNotesTranslations.en;
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'currentStudyNotes',
+    current,
+    currentStudyNotesTranslations.en,
+  );
 }
