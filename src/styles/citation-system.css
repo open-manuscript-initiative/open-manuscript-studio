@@ -406,6 +406,29 @@
     justify-content: flex-end;
   }
 
+  .omi-personal-reference-library .omi-reference-subheading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: .65rem;
+  }
+
+  .omi-personal-reference-library .omi-reference-subheading > div {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .omi-personal-reference-library .omi-reference-item-actions {
+    justify-content: stretch;
+  }
+
+  .omi-personal-reference-library .studio-menu-secondary-action {
+    max-width: 100%;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .omi-reference-item-actions > .studio-menu-primary-action,
   .omi-reference-item-actions > .studio-menu-secondary-action {
     width: 100%;
