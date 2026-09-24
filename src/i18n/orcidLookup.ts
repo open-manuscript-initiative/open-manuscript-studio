@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 import type { SupportedLocale } from './types';
 
 export interface OrcidLookupCopy {
@@ -53,5 +54,6 @@ const COPY: Record<SupportedLocale, OrcidLookupCopy> = {
 };
 
 export function getOrcidLookupCopy(locale: SupportedLocale): OrcidLookupCopy {
-  return COPY[locale] ?? COPY.en;
+  const current = COPY[locale] ?? COPY.en;
+  return applyReturnedSupplementalOverlay(locale, 'orcidLookup', current, COPY.en);
 }
