@@ -55,5 +55,5 @@ test('direct component literals remain an explicit migration boundary', () => {
     new URL('../locale/translation-import/README.md', import.meta.url),
     'utf8',
   );
-  assert.match(readme, /must first be migrated to stable i18n keys/);
+  assert.match(readme, /must\s+first be migrated to stable i18n keys/);
 });
