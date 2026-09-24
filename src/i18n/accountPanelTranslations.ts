@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface AccountPanelCopy {
   title: string;
   subtitle: string;
@@ -143,5 +144,11 @@ export const accountPanelTranslations: Record<string, AccountPanelCopy> = {
 };
 
 export function getAccountPanelCopy(locale: string): AccountPanelCopy {
-  return accountPanelTranslations[locale] ?? accountPanelTranslations.en;
+  const current = accountPanelTranslations[locale] ?? accountPanelTranslations.en;
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'accountPanel',
+    current,
+    accountPanelTranslations.en,
+  );
 }
