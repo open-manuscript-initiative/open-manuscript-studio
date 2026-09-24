@@ -9,6 +9,7 @@ import {
   type OmiCrossReferenceTarget,
 } from '../model/crossReferences';
 import { renderBibliography, renderCitationCluster } from '../model/cslRendering';
+import { getBibliographyRecords } from '../model/citations';
 import { buildNoteNumberMap } from '../model/notes';
 import { latexToMathMl } from '../model/equationRendering';
 import {
@@ -844,20 +845,17 @@ function renderFootnoteGroup(state: RenderState): string {
 }
 
 function renderReferenceList(state: RenderState): string {
-  const citedRecordIds = new Set(
-    state.manuscript.citations.map((citation) => citation.target),
-  );
-  const citedRecords = (state.manuscript.bibliographicRecords ?? []).filter((record) =>
-    citedRecordIds.has(record.id),
-  );
-  if (!citedRecords.length) return '';
+  const bibliographyRecords = getBibliographyRecords(state.manuscript);
+  if (!bibliographyRecords.length) return '';
 
   const order = renderBibliography(
-    citedRecords,
+    bibliographyRecords,
     state.context.profile.rules.citations.style,
     state.context.locale,
   ).map((entry) => entry.recordId);
-  const recordMap = new Map(citedRecords.map((record) => [record.id, record]));
+  const recordMap = new Map(
+    bibliographyRecords.map((record) => [record.id, record]),
+  );
   const references = order
     .map((recordId, index) => {
       const record = recordMap.get(recordId);
