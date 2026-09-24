@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface FrontMatterCopy {
   subtitle: string;
   subtitleOptional: string;
@@ -79,6 +80,7 @@ const COPY: Record<'en' | 'hu' | 'de', FrontMatterCopy> = {
 
 export function getFrontMatterCopy(locale: string): FrontMatterCopy {
   const primary = locale.trim().toLowerCase().split('-')[0];
-  if (primary === 'hu' || primary === 'de') return COPY[primary];
-  return COPY.en;
+  const current =
+    primary === 'hu' || primary === 'de' ? COPY[primary] : COPY.en;
+  return applyReturnedSupplementalOverlay(locale, 'frontMatter', current, COPY.en);
 }
