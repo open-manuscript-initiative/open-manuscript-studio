@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 import { getHelpCopy, type HelpCopy } from './help';
 import { getAdditionalHelpCopy } from './helpAdditional';
 import { appendDirectSubmissionHelp } from './helpDirectSubmission';
@@ -26,7 +27,7 @@ const fullHelpByLocale: Partial<Record<string, HelpCopy>> = {
   ...remainingFullHelpByLocale,
 };
 
-export function getLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy {
+function buildLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy {
   let copy: HelpCopy;
 
   if (locale === 'it') {
@@ -46,4 +47,10 @@ export function getLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy
   }
 
   return appendMusicImportHelp(locale, appendDirectSubmissionHelp(locale, copy));
+}
+
+export function getLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy {
+  const current = buildLocalizedHelpCopy(locale);
+  const english = locale === 'en' ? current : buildLocalizedHelpCopy('en');
+  return applyReturnedSupplementalOverlay(locale, 'help', current, english);
 }

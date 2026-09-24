@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 import type { SupportedLocale } from './types';
 
 export interface ExportFormatCopy {
@@ -197,5 +198,6 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
 };
 
 export function getExportFormatCopy(locale: SupportedLocale): ExportFormatCopy {
-  return copy[locale] ?? copy.en;
+  const current = copy[locale] ?? copy.en;
+  return applyReturnedSupplementalOverlay(locale, 'exportFormats', current, copy.en);
 }

@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface CloudOAuthCopy {
   oauthTitle: string;
   oauthDescription: string;
@@ -122,7 +123,8 @@ const translations: Record<string, CloudOAuthCopy> = {
 };
 
 export function getCloudOAuthCopy(locale: string): CloudOAuthCopy {
-  return translations[locale] ?? en;
+  const current = translations[locale] ?? en;
+  return applyReturnedSupplementalOverlay(locale, 'cloudOAuth', current, en);
 }
 
 export const cloudOAuthTranslationLocales = Object.freeze(Object.keys(translations));

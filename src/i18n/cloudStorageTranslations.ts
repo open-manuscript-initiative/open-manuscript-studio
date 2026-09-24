@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface CloudCopy {
   title: string;
   description: string;
@@ -162,5 +163,11 @@ export const cloudStorageTranslations: Record<string, CloudCopy> = {
 };
 
 export function getCloudStorageCopy(locale: string): CloudCopy {
-  return cloudStorageTranslations[locale] ?? cloudStorageTranslations.en;
+  const current = cloudStorageTranslations[locale] ?? cloudStorageTranslations.en;
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'cloudStorage',
+    current,
+    cloudStorageTranslations.en,
+  );
 }

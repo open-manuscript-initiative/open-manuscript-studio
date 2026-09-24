@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface StateDigestCopy {
   integrity: string;
   verified: string;
@@ -60,5 +61,7 @@ const COPY: Record<'en' | 'hu' | 'de', StateDigestCopy> = {
 
 export function getStateDigestCopy(locale: string): StateDigestCopy {
   const language = locale.trim().toLowerCase().split('-')[0];
-  return language === 'hu' || language === 'de' ? COPY[language] : COPY.en;
+  const current =
+    language === 'hu' || language === 'de' ? COPY[language] : COPY.en;
+  return applyReturnedSupplementalOverlay(locale, 'stateDigest', current, COPY.en);
 }

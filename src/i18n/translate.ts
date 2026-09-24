@@ -1,6 +1,7 @@
 import { authSupplementalTranslations } from './authSupplementalTranslations';
 import { authTranslations, type AuthTranslationKey } from './authTranslations';
 import { DEFAULT_LOCALE, translations } from './config';
+import { getReturnedSupplementalString } from './returnedTranslationOverlay';
 import type {
   SupportedLocale,
   TranslationDictionary,
@@ -45,10 +46,23 @@ export function translate(
   locale: SupportedLocale,
   key: AppTranslationKey,
 ): string {
+  const localizedAuth = resolveAuthTranslation(locale, key);
+  const englishAuth = resolveAuthTranslation(DEFAULT_LOCALE, key);
+  const returnedAuth = getReturnedSupplementalString(
+    locale,
+    'auth',
+    key as string,
+  );
+  const authValue =
+    returnedAuth &&
+    (localizedAuth === undefined || localizedAuth === englishAuth)
+      ? returnedAuth
+      : localizedAuth;
+
   const value =
-    resolveAuthTranslation(locale, key) ??
+    authValue ??
     resolveTranslation(translations[locale], key as TranslationKey) ??
-    resolveAuthTranslation(DEFAULT_LOCALE, key) ??
+    englishAuth ??
     resolveTranslation(translations[DEFAULT_LOCALE], key as TranslationKey) ??
     key;
 

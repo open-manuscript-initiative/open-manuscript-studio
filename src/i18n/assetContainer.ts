@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface AssetContainerCopy {
   title: string;
   description: string;
@@ -159,5 +160,12 @@ const COPY: Record<'en' | 'hu' | 'de', AssetContainerCopy> = {
 
 export function getAssetContainerCopy(locale: string): AssetContainerCopy {
   const language = locale.trim().toLowerCase().split('-')[0];
-  return language === 'hu' || language === 'de' ? COPY[language] : COPY.en;
+  const current =
+    language === 'hu' || language === 'de' ? COPY[language] : COPY.en;
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'assetContainer',
+    current,
+    COPY.en,
+  );
 }

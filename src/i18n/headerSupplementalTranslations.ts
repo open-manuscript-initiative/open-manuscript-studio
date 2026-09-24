@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface HeaderSupplementalCopy {
   search: string;
   account: string;
@@ -39,6 +40,13 @@ const headerSupplementalTranslations: Record<StudioUiLocale, HeaderSupplementalC
 };
 
 export function getHeaderSupplementalCopy(locale: string): HeaderSupplementalCopy {
-  return headerSupplementalTranslations[locale as StudioUiLocale]
+  const current =
+    headerSupplementalTranslations[locale as StudioUiLocale]
     ?? headerSupplementalTranslations.en;
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'header',
+    current,
+    headerSupplementalTranslations.en,
+  );
 }

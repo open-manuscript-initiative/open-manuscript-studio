@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 import type { SupportedLocale } from './types';
 
 export interface CrossReferenceCopy {
@@ -144,5 +145,11 @@ export function getCrossReferenceCopy(
   locale: string,
 ): CrossReferenceCopy {
   const language = locale.toLowerCase().split('-')[0] as SupportedLocale;
-  return COPY[language] ?? COPY.en;
+  const current = COPY[language] ?? COPY.en;
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'crossReferences',
+    current,
+    COPY.en,
+  );
 }

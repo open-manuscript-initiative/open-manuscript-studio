@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 import type { InstitutionRole } from '../model/user';
 
 export interface InstitutionalProfilesCopy {
@@ -62,5 +63,12 @@ export const institutionalProfilesTranslations: Record<string, InstitutionalProf
 };
 
 export function getInstitutionalProfilesCopy(locale: string): InstitutionalProfilesCopy {
-  return institutionalProfilesTranslations[locale] ?? institutionalProfilesTranslations.en;
+  const current =
+    institutionalProfilesTranslations[locale] ?? institutionalProfilesTranslations.en;
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'institutionalProfiles',
+    current,
+    institutionalProfilesTranslations.en,
+  );
 }

@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 import type {
   OmiPublicationProfileIssueCode,
   OmiPublicationRequirement,
@@ -334,7 +335,11 @@ const de: PublicationProfileCopy = {
 
 export function getPublicationProfileCopy(locale: string): PublicationProfileCopy {
   const language = locale.trim().toLowerCase().split('-')[0];
-  if (language === 'hu') return hu;
-  if (language === 'de') return de;
-  return en;
+  const current = language === 'hu' ? hu : language === 'de' ? de : en;
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'publicationProfile',
+    current,
+    en,
+  );
 }

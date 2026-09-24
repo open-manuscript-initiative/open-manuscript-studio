@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface VisualElementsCopy {
   insertMenu: string;
   insertElement: string;
@@ -73,5 +74,12 @@ const COPY: Record<'en' | 'hu' | 'de', VisualElementsCopy> = {
 
 export function getVisualElementsCopy(locale: string): VisualElementsCopy {
   const language = locale.toLowerCase().split('-')[0];
-  return COPY[language === 'hu' || language === 'de' ? language : 'en'];
+  const current =
+    COPY[language === 'hu' || language === 'de' ? language : 'en'];
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'visualElements',
+    current,
+    COPY.en,
+  );
 }

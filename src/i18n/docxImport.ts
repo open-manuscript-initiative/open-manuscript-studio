@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface DocxImportCopy {
   title: string;
   description: string;
@@ -154,7 +155,6 @@ const de: DocxImportCopy = {
 
 export function getDocxImportCopy(locale: string): DocxImportCopy {
   const language = locale.toLowerCase().split('-')[0];
-  if (language === 'hu') return hu;
-  if (language === 'de') return de;
-  return en;
+  const current = language === 'hu' ? hu : language === 'de' ? de : en;
+  return applyReturnedSupplementalOverlay(locale, 'docxImport', current, en);
 }

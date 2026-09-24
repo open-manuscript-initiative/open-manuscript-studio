@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 import type { SupportedLocale } from './types';
 
 export interface SectionStructureCopy {
@@ -89,5 +90,6 @@ const COPY: Record<SupportedLocale, SectionStructureCopy> = {
 export function getSectionStructureCopy(
   locale: SupportedLocale,
 ): SectionStructureCopy {
-  return COPY[locale] ?? COPY.en;
+  const current = COPY[locale] ?? COPY.en;
+  return applyReturnedSupplementalOverlay(locale, 'sectionStructure', current, COPY.en);
 }

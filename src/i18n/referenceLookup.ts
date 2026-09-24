@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 import type { SupportedLocale } from './types';
 
 export interface ReferenceLookupCopy {
@@ -219,5 +220,6 @@ const COPY: Record<SupportedLocale, ReferenceLookupCopy> = {
 };
 
 export function getReferenceLookupCopy(locale: SupportedLocale): ReferenceLookupCopy {
-  return COPY[locale] ?? COPY.en;
+  const current = COPY[locale] ?? COPY.en;
+  return applyReturnedSupplementalOverlay(locale, 'referenceLookup', current, COPY.en);
 }

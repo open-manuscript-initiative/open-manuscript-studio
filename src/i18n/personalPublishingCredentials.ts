@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface PersonalPublishingCredentialsCopy {
   title: string;
   description: string;
@@ -123,5 +124,11 @@ Object.assign(personalPublishingCredentialsTranslations.de, {
 });
 
 export function getPersonalPublishingCredentialsCopy(locale: string): PersonalPublishingCredentialsCopy {
-  return personalPublishingCredentialsTranslations[locale] ?? en;
+  const current = personalPublishingCredentialsTranslations[locale] ?? en;
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'personalPublishingCredentials',
+    current,
+    en,
+  );
 }

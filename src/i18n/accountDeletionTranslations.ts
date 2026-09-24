@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface AccountDeletionCopy {
   title: string;
   description: string;
@@ -59,5 +60,6 @@ const copy: Record<string, AccountDeletionCopy> = {
 };
 
 export function getAccountDeletionCopy(locale: string): AccountDeletionCopy {
-  return copy[locale] ?? copy.en;
+  const current = copy[locale] ?? copy.en;
+  return applyReturnedSupplementalOverlay(locale, 'accountDeletion', current, copy.en);
 }
