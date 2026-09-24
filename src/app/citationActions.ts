@@ -431,6 +431,60 @@ export function stageCreateCitationCluster(
   return changed;
 }
 
+export function stageSetBibliographyRecordIncluded(
+  recordId: string,
+  included: boolean,
+): boolean {
+  let changed = false;
+
+  useStudioStore.setState((state) => {
+    const records = state.manuscript.bibliographicRecords ?? [];
+    if (!records.some((record) => record.id === recordId)) return state;
+
+    const previous = state.manuscript.bibliographyAdditionalRecordIds ?? [];
+    const next = included
+      ? Array.from(new Set([...previous, recordId]))
+      : previous.filter((candidate) => candidate !== recordId);
+
+    if (JSON.stringify(previous) === JSON.stringify(next)) return state;
+
+    const timestamp = new Date().toISOString();
+    const pendingChangeSet = stagePendingChanges(
+      state.pendingChangeSet,
+      {
+        baseRevisionId: state.manuscript.headRevisionId,
+        summary: included
+          ? 'Included record in bibliography'
+          : 'Removed uncited record from bibliography',
+        events: [
+          {
+            operation: 'bibliography.selection.set' as never,
+            targetId: recordId,
+            path: '/bibliographyAdditionalRecordIds',
+            previousValue: previous,
+            nextValue: next,
+          },
+        ],
+        actorAgentId: resolveCurrentActorAgentId(state.manuscript),
+        timestamp,
+      },
+    );
+
+    changed = true;
+    return {
+      manuscript: {
+        ...state.manuscript,
+        bibliographyAdditionalRecordIds: next,
+        updatedAt: timestamp,
+      },
+      pendingChangeSet,
+    };
+  });
+
+  if (changed) scheduleCitationCheckpoint();
+  return changed;
+}
+
 export function stageSetCitationStyle(style: OmiCitationStyleId): boolean {
   let changed = false;
 
