@@ -3,11 +3,10 @@
 This directory contains the translations returned from the Studio 0.3.0-beta.1
 translation-master workbook.
 
-- `0.3.0-beta.1-canonical.json.gz` contains translations for canonical
-  `studio.json`/PO keys.
-- `0.3.0-beta.1-supplemental.json.gz` contains translations for coded-copy
-  surfaces such as account, storage, help, publication, references and native
-  client labels.
+- `0.3.0-beta.1-canonical.partNN.json.txt` chunks reconstruct the returned canonical `studio.json`/PO translations.
+- `0.3.0-beta.1-supplemental.partNN.json.txt` chunks reconstruct returned coded-copy translations for account, storage, help, publication, references and native-client labels.
+
+The chunks are ordinary UTF-8 text on purpose: this avoids the binary transport corruption that previously left the generated runtime overlay empty.
 
 The payload contains translations for 35 target locales. Eleven target locales
 were entirely blank in the returned workbook and therefore remain on the normal
@@ -22,4 +21,4 @@ runtime-complete merely because a translated string exists. Those literals must
 first be migrated to stable i18n keys; the translation-master workbook remains
 the migration source for that remaining debt.
 
-Run `npm run i18n:returned:generate` to regenerate the runtime overlay JSON.
+Run `npm run i18n:returned:generate` to concatenate and validate the text-safe chunks and regenerate the runtime overlay JSON. The generator fails closed if a chunk set is missing or invalid; it must never silently publish an empty overlay.
