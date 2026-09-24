@@ -3,6 +3,7 @@ import {
   STUDIO_UI_LOCALES,
   type StudioUiLocale,
 } from './platformLocales';
+import { applyReturnedCanonicalOverlay } from './returnedTranslationOverlay';
 import type { SupportedLocale, TranslationDictionary } from './types';
 
 export const DEFAULT_LOCALE: SupportedLocale = 'en';
@@ -15,7 +16,7 @@ const jsonLocaleModules = import.meta.glob(
   },
 ) as Record<string, TranslationDictionary>;
 
-export const translations = Object.fromEntries(
+const baseTranslations = Object.fromEntries(
   Object.entries(jsonLocaleModules).map(([path, dictionary]) => {
     const match = path.match(/\/locales\/([^/]+)\/studio\.json$/);
 
@@ -25,6 +26,15 @@ export const translations = Object.fromEntries(
 
     return [match[1], dictionary];
   }),
+) as Record<string, TranslationDictionary>;
+
+const englishDictionary = baseTranslations[DEFAULT_LOCALE];
+
+export const translations = Object.fromEntries(
+  Object.entries(baseTranslations).map(([locale, dictionary]) => [
+    locale,
+    applyReturnedCanonicalOverlay(locale, dictionary, englishDictionary),
+  ]),
 ) as Record<string, TranslationDictionary>;
 
 export { localeLabels };
