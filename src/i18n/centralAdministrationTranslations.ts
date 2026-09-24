@@ -1,3 +1,4 @@
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 export interface CentralAdministrationCopy {
   title: string;
   description: string;
@@ -58,5 +59,12 @@ export const centralAdministrationTranslations: Record<string, CentralAdministra
 };
 
 export function getCentralAdministrationCopy(locale: string): CentralAdministrationCopy {
-  return centralAdministrationTranslations[locale] ?? centralAdministrationTranslations.en;
+  const current =
+    centralAdministrationTranslations[locale] ?? centralAdministrationTranslations.en;
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'centralAdministration',
+    current,
+    centralAdministrationTranslations.en,
+  );
 }
