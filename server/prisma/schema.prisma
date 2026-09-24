@@ -140,8 +140,23 @@ model User {
   directSubmissions         DirectSubmission[]
   webPublicationGrants      WebPublicationApprovalGrant[]
   webPublicationDeliveries  WebPublicationDelivery[]
+  personalReferenceRecords  PersonalReferenceRecord[]
 
   @@map("users")
+}
+
+model PersonalReferenceRecord {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  recordId  String   @map("record_id") @db.VarChar(128)
+  record    Json     @db.JsonB
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recordId])
+  @@index([userId, updatedAt])
+  @@map("personal_reference_records")
 }
 
 model UserSession {
