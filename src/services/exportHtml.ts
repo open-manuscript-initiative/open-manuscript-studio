@@ -4,6 +4,7 @@ import {
   type OmiCrossReferenceTarget,
 } from '../model/crossReferences.ts';
 import { renderBibliography, renderCitationCluster } from '../model/cslRendering.ts';
+import { getBibliographyRecords } from '../model/citations.ts';
 import { buildNoteNumberMap } from '../model/notes.ts';
 import { contributorNameParts } from '../model/contributorName.ts';
 import { latexToMathMl } from '../model/equationRendering.ts';
@@ -764,14 +765,11 @@ function renderBibliographySection(
   state: RenderState,
   labels: ReturnType<typeof localizedLabels>,
 ): string {
-  const citedIds = new Set(state.manuscript.citations.map((citation) => citation.target));
-  const citedRecords = (state.manuscript.bibliographicRecords ?? []).filter((record) =>
-    citedIds.has(record.id),
-  );
-  if (!citedRecords.length) return '';
+  const bibliographyRecords = getBibliographyRecords(state.manuscript);
+  if (!bibliographyRecords.length) return '';
 
   const entries = renderBibliography(
-    citedRecords,
+    bibliographyRecords,
     state.context.profile.rules.citations.style,
     state.context.locale,
   );
