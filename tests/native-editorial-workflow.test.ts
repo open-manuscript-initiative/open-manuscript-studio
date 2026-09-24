@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const schema = read('../server/prisma/schema.prisma');
 const migration = read('../server/prisma/migrations/20260923120000_add_studio_native_editorial_workflow/migration.sql');
+const editorAssignmentMigration = read('../server/prisma/migrations/20260924062000_add_native_editor_assignment_fields/migration.sql');
 const service = read('../server/src/services/nativeEditorialWorkflowService.ts');
 const editorialDecisionService = read('../server/src/services/editorialDecisionService.ts');
 const venueAuthority = read('../server/src/services/publicationVenueAuthorityService.ts');
@@ -52,6 +53,21 @@ test('native submission migration preserves digest, audit and asset integrity', 
   assert.match(migration, /"publication_content_digest" ~ '\^\[0-9a-f\]\{64\}\$'/);
   assert.match(migration, /"checksum" ~ '\^\[0-9a-f\]\{64\}\$'/);
   assert.match(migration, /BYTEA NOT NULL/);
+});
+
+test('native editorial editor assignment columns are migrated to match Prisma schema', () => {
+  assert.match(schema, /editorUserId\s+String\?/);
+  assert.match(schema, /editorAssignedAt\s+DateTime\?/);
+  assert.match(editorAssignmentMigration, /ADD COLUMN "editor_user_id" UUID/);
+  assert.match(editorAssignmentMigration, /ADD COLUMN "editor_assigned_at" TIMESTAMPTZ\(6\)/);
+  assert.match(
+    editorAssignmentMigration,
+    /FOREIGN KEY \("editor_user_id"\) REFERENCES "users"\("id"\)[\s\S]*ON DELETE SET NULL/,
+  );
+  assert.match(
+    editorAssignmentMigration,
+    /ON "native_editorial_submissions"\("editor_user_id", "status", "updated_at"\)/,
+  );
 });
 
 test('OJS and OMP remain authoritative and are excluded from native workflow', () => {
