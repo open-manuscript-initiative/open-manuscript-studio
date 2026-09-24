@@ -8,6 +8,54 @@ const importRoot = path.join(root, 'locale', 'translation-import');
 const outputDir = path.join(root, 'src', 'i18n', 'generated');
 const outputFile = path.join(outputDir, 'returnedTranslationOverlays.json');
 
+/**
+ * The returned 0.3.0-beta.1 workbook contains several columns whose translated
+ * cells were pasted out of row alignment. Only locales that passed structural
+ * spot checks (duplicate-source consistency, placeholders and protected terms)
+ * are activated here. Quarantined locales keep the existing reviewed Studio
+ * dictionaries / English fallback until a corrected workbook is returned.
+ */
+const validatedReturnedLocales = new Set([
+  'bg',
+  'cs',
+  'da',
+  'es',
+  'et',
+  'fi',
+  'fr',
+  'he',
+  'hu',
+  'id',
+  'lt',
+]);
+
+const quarantinedReturnedLocales = [
+  'af',
+  'ca',
+  'de',
+  'el',
+  'hr',
+  'is',
+  'it',
+  'ja',
+  'ko',
+  'lv',
+  'nl',
+  'no',
+  'pl',
+  'pt',
+  'ro',
+  'ru',
+  'sk',
+  'sl',
+  'sv',
+  'th',
+  'tr',
+  'uk',
+  'vi',
+  'zh-CN',
+];
+
 async function loadChunkedJson(prefix) {
   const names = (await fs.readdir(importRoot))
     .filter(
@@ -140,5 +188,6 @@ await fs.writeFile(
 console.log(
   `Returned translation overlay generated: ${stats.canonicalEntries} canonical + ` +
     `${stats.supplementalEntries} supplemental values across ` +
-    `${Math.max(stats.canonicalLocales, stats.supplementalLocales)} locales.`,
+    `${Math.max(stats.canonicalLocales, stats.supplementalLocales)} validated locales; ` +
+    `${quarantinedReturnedLocales.length} returned locales quarantined.`,
 );
