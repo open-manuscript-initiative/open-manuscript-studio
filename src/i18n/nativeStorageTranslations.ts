@@ -1,4 +1,5 @@
 import type { StudioPlatform } from '../mobile/platform/platform';
+import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 
 export interface LocalFileLabels {
   localTitle: string;
@@ -97,8 +98,24 @@ const ANDROID: Record<string, AndroidOverrides> = {
 
 export function getLocalFileLabels(locale: string, platform: StudioPlatform): LocalFileLabels {
   const base = BASE[locale] ?? BASE.en;
-  if (platform !== 'android') return base;
-  return { ...base, ...(ANDROID[locale] ?? ANDROID.en) };
+
+  if (platform !== 'android') {
+    return applyReturnedSupplementalOverlay(
+      locale,
+      'nativeStorageDesktop',
+      base,
+      BASE.en,
+    );
+  }
+
+  const current = { ...base, ...(ANDROID[locale] ?? ANDROID.en) };
+  const english = { ...BASE.en, ...ANDROID.en };
+  return applyReturnedSupplementalOverlay(
+    locale,
+    'nativeStorageAndroid',
+    current,
+    english,
+  );
 }
 
 export const nativeStorageTranslationLocales = Object.freeze(Object.keys(BASE));
