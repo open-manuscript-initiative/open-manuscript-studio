@@ -1,6 +1,5 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { gunzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -9,20 +8,38 @@ const importRoot = path.join(root, 'locale', 'translation-import');
 const outputDir = path.join(root, 'src', 'i18n', 'generated');
 const outputFile = path.join(outputDir, 'returnedTranslationOverlays.json');
 
-async function loadGzipJson(fileName) {
+async function loadChunkedJson(prefix) {
+  const names = (await fs.readdir(importRoot))
+    .filter((name) =>
+      new RegExp(`^${prefix}\\.part\\d+\\.json\\.txtimport fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(__dirname, '..');
+const importRoot = path.join(root, 'locale', 'translation-import');
+const outputDir = path.join(root, 'src', 'i18n', 'generated');
+const outputFile = path.join(outputDir, 'returnedTranslationOverlays.json');
+
+).test(name),
+    )
+    .sort((left, right) => left.localeCompare(right));
+
+  if (names.length === 0) {
+    throw new Error(`No text-safe returned translation chunks found for ${prefix}.`);
+  }
+
+  const chunks = await Promise.all(
+    names.map((name) => fs.readFile(path.join(importRoot, name), 'utf8')),
+  );
+  const joined = chunks.join('\n');
+
   try {
-    const buffer = await fs.readFile(path.join(importRoot, fileName));
-    return JSON.parse(gunzipSync(buffer).toString('utf8'));
+    return JSON.parse(joined);
   } catch (error) {
-    const code = error && typeof error === 'object' ? error.code : undefined;
-    if (code === 'ENOENT' || code === 'Z_DATA_ERROR' || code === 'Z_BUF_ERROR') {
-      console.warn(
-        `Returned translation payload ${fileName} is unavailable or invalid; ` +
-          'preserving the committed runtime overlay instead.',
-      );
-      return null;
-    }
-    throw error;
+    throw new Error(
+      `Returned translation chunks for ${prefix} do not form valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
@@ -38,16 +55,9 @@ function groupSupplemental(translations) {
 }
 
 const [canonicalPayload, supplementalPayload] = await Promise.all([
-  loadGzipJson('0.3.0-beta.1-canonical.json.gz'),
-  loadGzipJson('0.3.0-beta.1-supplemental.json.gz'),
+  loadChunkedJson('0.3.0-beta.1-canonical'),
+  loadChunkedJson('0.3.0-beta.1-supplemental'),
 ]);
-
-if (!canonicalPayload || !supplementalPayload) {
-  console.warn(
-    'Returned translation overlay regeneration skipped until a valid text-safe import payload is committed.',
-  );
-  process.exit(0);
-}
 
 if (canonicalPayload.baseline !== supplementalPayload.baseline) {
   throw new Error(
