@@ -1,6 +1,11 @@
-import { Minus, Plus, ZoomIn } from 'lucide-react';
+import { Minus, Pilcrow, Plus, ZoomIn } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import {
+  NON_PRINTING_MARKS_CLASS,
+  NON_PRINTING_MARKS_STORAGE_KEY,
+  readStoredNonPrintingMarks,
+} from '../editor/nonPrintingMarks';
 import {
   clampEditorZoom,
   dispatchEditorZoomChange,
@@ -17,6 +22,7 @@ export function EditorZoomControl() {
   const { locale } = useTranslation();
   const copy = getCopy(locale);
   const [zoom, setZoom] = useState(readStoredEditorZoom);
+  const [showNonPrintingMarks, setShowNonPrintingMarks] = useState(readStoredNonPrintingMarks);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -33,21 +39,51 @@ export function EditorZoomControl() {
     };
   }, [zoom]);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      NON_PRINTING_MARKS_CLASS,
+      showNonPrintingMarks,
+    );
+    try {
+      window.localStorage.setItem(
+        NON_PRINTING_MARKS_STORAGE_KEY,
+        String(showNonPrintingMarks),
+      );
+    } catch {
+      // Device-local preference persistence is optional.
+    }
+    return () => {
+      document.documentElement.classList.remove(NON_PRINTING_MARKS_CLASS);
+    };
+  }, [showNonPrintingMarks]);
+
   const applyZoom = (next: number) => setZoom(clampEditorZoom(next));
 
   return (
     <div className="omi-editor-zoom" data-open={open ? 'true' : 'false'}>
-      <button
-        type="button"
-        className="omi-editor-zoom__toggle"
-        aria-label={copy.zoom}
-        aria-expanded={open}
-        title={copy.zoom}
-        onClick={() => setOpen((current) => !current)}
-      >
-        <ZoomIn size={18} aria-hidden="true" />
-        <span>{zoom}%</span>
-      </button>
+      <div className="omi-editor-zoom__quick-actions">
+        <button
+          type="button"
+          className="omi-editor-nonprinting-toggle"
+          aria-label={copy.nonPrintingMarks}
+          aria-pressed={showNonPrintingMarks}
+          title={copy.nonPrintingMarks}
+          onClick={() => setShowNonPrintingMarks((current) => !current)}
+        >
+          <Pilcrow size={18} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className="omi-editor-zoom__toggle"
+          aria-label={copy.zoom}
+          aria-expanded={open}
+          title={copy.zoom}
+          onClick={() => setOpen((current) => !current)}
+        >
+          <ZoomIn size={18} aria-hidden="true" />
+          <span>{zoom}%</span>
+        </button>
+      </div>
 
       <div className="omi-editor-zoom__controls" role="group" aria-label={copy.zoom}>
         <button
@@ -99,6 +135,7 @@ function getCopy(locale: string) {
       increase: 'Nagyítás',
       slider: 'Nagyítás mértéke',
       reset: 'Visszaállítás 100%-ra',
+      nonPrintingMarks: 'Nem nyomtatható jelek',
     };
   }
   if (locale === 'de') {
@@ -108,6 +145,7 @@ function getCopy(locale: string) {
       increase: 'Vergrößern',
       slider: 'Zoomstufe',
       reset: 'Auf 100 % zurücksetzen',
+      nonPrintingMarks: 'Nicht druckbare Zeichen',
     };
   }
   return {
@@ -116,5 +154,6 @@ function getCopy(locale: string) {
     increase: 'Zoom in',
     slider: 'Zoom level',
     reset: 'Reset to 100%',
+    nonPrintingMarks: 'Non-printing marks',
   };
 }
