@@ -139,7 +139,12 @@ export function parseDelimitedTable(
   input: string,
   delimiter?: string,
 ): string[][] {
-  const normalizedInput = input.replace(/\r\n?/g, '\n').trimEnd();
+  const normalizedInput = input
+    .replace(/\r\n?/g, '\n')
+    // A selection often ends at a paragraph boundary. Drop only those trailing
+    // line breaks: trimEnd() would also erase a trailing tab and therefore an
+    // intentional empty final cell.
+    .replace(/\n+$/g, '');
   if (!normalizedInput) {
     return [['']];
   }
@@ -188,39 +193,87 @@ export function parseDelimitedTable(
 }
 
 function inferDelimiter(input: string): string {
-  const sample = input.split('\n').slice(0, 6).join('\n');
-  const counts = [
-    ['\t', countOutsideQuotes(sample, '\t')],
-    [';', countOutsideQuotes(sample, ';')],
-    [',', countOutsideQuotes(sample, ',')],
-  ] as const;
+  const sampleLines = input
+    .split('\n')
+    .filter((line) => line.length > 0)
+    .slice(0, 12);
 
-  return [...counts].sort((first, second) => second[1] - first[1])[0]?.[0] ?? '\t';
+  if (sampleLines.length === 0) return '\t';
+
+  // Tabs are unambiguous structural markers in manuscript text. If they occur
+  // outside quoted values, prefer them over punctuation that may merely belong
+  // to prose or decimal values.
+  const tabProfile = delimiterProfile(sampleLines, '\t');
+  if (tabProfile.rowsWithDelimiter > 0) return '\t';
+
+  const candidates = [';', ','] as const;
+  const profiles = candidates.map((token, priority) => ({
+    token,
+    priority,
+    ...delimiterProfile(sampleLines, token),
+  }));
+
+  const structural = profiles
+    .filter((profile) => profile.rowsWithDelimiter > 0)
+    .sort((first, second) =>
+      second.consistentRows - first.consistentRows
+      || second.rowsWithDelimiter - first.rowsWithDelimiter
+      || second.modeCount - first.modeCount
+      || first.priority - second.priority,
+    )[0];
+
+  return structural?.token ?? '\t';
 }
 
-function countOutsideQuotes(input: string, token: string): number {
+function delimiterProfile(
+  lines: readonly string[],
+  token: string,
+): {
+  rowsWithDelimiter: number;
+  consistentRows: number;
+  modeCount: number;
+} {
   let quoted = false;
-  let count = 0;
+  const counts: number[] = [];
 
-  for (let index = 0; index < input.length; index += 1) {
-    const character = input[index] ?? '';
-    const next = input[index + 1] ?? '';
+  for (const line of lines) {
+    let count = 0;
+    for (let index = 0; index < line.length; index += 1) {
+      const character = line[index] ?? '';
+      const next = line[index + 1] ?? '';
 
-    if (character === '"') {
-      if (quoted && next === '"') {
-        index += 1;
-      } else {
-        quoted = !quoted;
+      if (character === '"') {
+        if (quoted && next === '"') {
+          index += 1;
+        } else {
+          quoted = !quoted;
+        }
+        continue;
       }
-      continue;
-    }
 
-    if (!quoted && character === token) {
-      count += 1;
+      if (!quoted && character === token) count += 1;
     }
+    counts.push(count);
   }
 
-  return count;
+  const positiveCounts = counts.filter((count) => count > 0);
+  if (positiveCounts.length === 0) {
+    return { rowsWithDelimiter: 0, consistentRows: 0, modeCount: 0 };
+  }
+
+  const frequencies = new Map<number, number>();
+  for (const count of positiveCounts) {
+    frequencies.set(count, (frequencies.get(count) ?? 0) + 1);
+  }
+  const [modeCount, consistentRows] = [...frequencies.entries()]
+    .sort((first, second) => second[1] - first[1] || first[0] - second[0])[0]
+    ?? [0, 0];
+
+  return {
+    rowsWithDelimiter: positiveCounts.length,
+    consistentRows,
+    modeCount,
+  };
 }
 
 export interface ChartSeries {

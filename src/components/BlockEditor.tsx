@@ -566,7 +566,7 @@ export function BlockEditor({
     setIntegrationAction(action);
   }
 
-  function convertSelectionToTable(): void {
+  function convertSelectionToTable(delimiter?: string): void {
     if (!editor || !continuous || !capabilities.editStructure) return;
     const { from, to } = editor.state.selection;
     if (from === to) return;
@@ -580,7 +580,7 @@ export function BlockEditor({
     if (!selectedText.trim()) return;
 
     const table = createTableBlock(
-      parseDelimitedTable(selectedText),
+      parseDelimitedTable(selectedText, delimiter),
       {
         headerRows: 0,
         provenance: {
