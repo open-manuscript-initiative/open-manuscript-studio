@@ -21,7 +21,7 @@ The web application consumes generated JSON dictionaries:
 src/i18n/locales/<locale>/studio.json
 ```
 
-This keeps the React/i18next runtime simple while allowing translators to use gettext-compatible tools such as Weblate, Poedit and other PO editors.
+This keeps the Studio React localization runtime simple while allowing translators to use gettext-compatible tools such as Weblate, Poedit and other PO editors.
 
 ## Platform language parity
 
