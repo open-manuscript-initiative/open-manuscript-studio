@@ -101,7 +101,7 @@ function createNonPrintingMark(
   const mark = document.createElement('span');
   mark.className = 'omi-nonprinting-mark';
   mark.dataset.nonprintingMark = kind;
-  mark.textContent = glyph;
+  mark.dataset.nonprintingGlyph = glyph;
   mark.setAttribute('aria-hidden', 'true');
   mark.setAttribute('contenteditable', 'false');
   return mark;
