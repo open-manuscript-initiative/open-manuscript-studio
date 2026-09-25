@@ -147,10 +147,13 @@ test('non-printing manuscript marks are display-only, persistent and available i
   assert.match(editorZoom, /NON_PRINTING_MARKS_CLASS/);
   assert.match(editorZoom, /NON_PRINTING_MARKS_STORAGE_KEY/);
   assert.match(editorZoom, /<Pilcrow size=\{18\}/);
-  assert.match(nonPrintingExtension, /Decoration\.widget[\s\S]*?'↵'/);
-  assert.match(nonPrintingExtension, /Decoration\.widget[\s\S]*?'¶'/);
+  assert.match(nonPrintingExtension, /createNonPrintingMark\('↵', 'line-break'\)/);
+  assert.match(nonPrintingExtension, /createNonPrintingMark\('¶', 'paragraph-end'\)/);
+  assert.match(nonPrintingExtension, /dataset\.nonprintingGlyph = glyph/);
+  assert.doesNotMatch(nonPrintingExtension, /textContent = glyph/);
   assert.match(nonPrintingExtension, /decorations\.map\(transaction\.mapping, transaction\.doc\)/);
   assert.match(nonPrintingExtension, /transactionAddsNonPrintingStructure/);
+  assert.match(nonPrintingStyles, /\.omi-show-nonprinting-marks \.omi-nonprinting-mark::after[\s\S]*?content: attr\(data-nonprinting-glyph\)/);
   assert.match(nonPrintingStyles, /\.omi-show-nonprinting-marks \.omi-tab-node::after[\s\S]*?content: '→'/);
   assert.match(richTextExtensions, /OMI_RICH_TEXT_EXTENSIONS[\s\S]*OmiNonPrintingMarksExtension/);
   assert.match(richTextExtensions, /OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS[\s\S]*OmiNonPrintingMarksExtension/);
