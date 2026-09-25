@@ -49,4 +49,4 @@ CI performs the following localization checks before the application build:
 4. verify that any generated runtime JSON difference is backed by a reviewed completion overlay;
 5. run the application test suite and build.
 
-This keeps PO catalogs as the translator-facing baseline, makes reviewed completion work explicit and auditable, and keeps JSON as the React/i18next runtime format. Completion overlays can later be folded back into PO catalogs without changing runtime semantics.
+This keeps PO catalogs as the translator-facing baseline, makes reviewed completion work explicit and auditable, and keeps JSON as the Studio React localization runtime format. Completion overlays can later be folded back into PO catalogs without changing runtime semantics.
