@@ -44,6 +44,38 @@
   font-size: 0.78rem;
 }
 
+
+
+.omi-selection-table-conversion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 0 0 auto;
+}
+
+.omi-selection-table-conversion input {
+  width: 3.25rem;
+  min-height: 2rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--omi-editor-border);
+  border-radius: 999px;
+  background: var(--omi-editor-surface);
+  color: inherit;
+  font: inherit;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.omi-selection-table-conversion input:focus-visible {
+  outline: 2px solid var(--omi-editor-accent);
+  outline-offset: 1px;
+}
+
+.omi-selection-action-toolbar button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .omi-selection-action-toolbar button:focus-visible,
 .omi-selection-action-toolbar select:focus-visible {
   outline: 2px solid var(--omi-editor-accent);
@@ -59,7 +91,9 @@
   }
 
   .omi-selection-action-toolbar button,
-  .omi-selection-action-toolbar select {
+  .omi-selection-action-toolbar select,
+  .omi-selection-table-conversion,
+  .omi-selection-table-conversion input {
     flex: 0 0 auto;
   }
 
