@@ -50,6 +50,31 @@ test('parses quoted CSV and tab-separated Excel clipboard data', () => {
   );
 });
 
+test('prefers manuscript tabs over punctuation during automatic delimiter detection', () => {
+  assert.deepEqual(
+    parseDelimitedTable('Name\tNote\nAlpha\tContains, commas, and punctuation\nBeta\tAnother, note'),
+    [
+      ['Name', 'Note'],
+      ['Alpha', 'Contains, commas, and punctuation'],
+      ['Beta', 'Another, note'],
+    ],
+  );
+});
+
+test('detects semicolon-delimited rows even when values contain decimal commas', () => {
+  assert.deepEqual(
+    parseDelimitedTable('Name;Value\nAlpha;1,5\nBeta;2,5'),
+    [['Name', 'Value'], ['Alpha', '1,5'], ['Beta', '2,5']],
+  );
+});
+
+test('preserves a trailing empty cell in tab-delimited selections', () => {
+  assert.deepEqual(
+    parseDelimitedTable('A\tB\t\n1\t2\t'),
+    [['A', 'B', ''], ['1', '2', '']],
+  );
+});
+
 test('converts table data to tab-separated text blocks without losing cell order', () => {
   const cells = [['Name', 'Value'], ['Alpha', '12']];
   assert.equal(tableToDelimitedText(cells), 'Name\tValue\nAlpha\t12');
