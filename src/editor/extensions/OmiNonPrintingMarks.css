@@ -5,13 +5,17 @@
 .omi-show-nonprinting-marks .omi-nonprinting-mark {
   display: inline;
   margin-inline-start: 0.08em;
+  pointer-events: none;
+  user-select: none;
+}
+
+.omi-show-nonprinting-marks .omi-nonprinting-mark::after {
+  content: attr(data-nonprinting-glyph);
   color: var(--omi-editor-text-muted, #64748b);
   font-size: 0.78em;
   font-weight: 600;
   line-height: 1;
   opacity: 0.72;
-  pointer-events: none;
-  user-select: none;
 }
 
 .omi-show-nonprinting-marks .omi-nonprinting-mark[data-nonprinting-mark='line-break'] {
