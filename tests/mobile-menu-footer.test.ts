@@ -46,6 +46,22 @@ const editorZoomModel = readFileSync(
   new URL('../src/editor/editorZoom.ts', import.meta.url),
   'utf8',
 );
+const nonPrintingModel = readFileSync(
+  new URL('../src/editor/nonPrintingMarks.ts', import.meta.url),
+  'utf8',
+);
+const nonPrintingExtension = readFileSync(
+  new URL('../src/editor/extensions/OmiNonPrintingMarksExtension.ts', import.meta.url),
+  'utf8',
+);
+const nonPrintingStyles = readFileSync(
+  new URL('../src/editor/extensions/OmiNonPrintingMarks.css', import.meta.url),
+  'utf8',
+);
+const richTextExtensions = readFileSync(
+  new URL('../src/editor/extensions/OmiRichTextExtensions.ts', import.meta.url),
+  'utf8',
+);
 const studioShell = readFileSync(
   new URL('../src/styles/studio-shell.css', import.meta.url),
   'utf8',
@@ -123,6 +139,21 @@ test('normal manuscript editing exposes a Word-style document zoom without chang
     editorZoomStyles,
     /@media \(max-width: 760px\)[\s\S]*?\.omi-editor-zoom__toggle\s*\{[\s\S]*?display:\s*inline-flex;/,
   );
+});
+
+test('non-printing manuscript marks are display-only, persistent and available in every rich-text editor', () => {
+  assert.match(nonPrintingModel, /NON_PRINTING_MARKS_STORAGE_KEY = 'omi\.show-nonprinting-marks'/);
+  assert.match(editorZoom, /aria-pressed=\{showNonPrintingMarks\}/);
+  assert.match(editorZoom, /NON_PRINTING_MARKS_CLASS/);
+  assert.match(editorZoom, /NON_PRINTING_MARKS_STORAGE_KEY/);
+  assert.match(editorZoom, /<Pilcrow size=\{18\}/);
+  assert.match(nonPrintingExtension, /Decoration\.widget[\s\S]*?'↵'/);
+  assert.match(nonPrintingExtension, /Decoration\.widget[\s\S]*?'¶'/);
+  assert.match(nonPrintingExtension, /decorations\.map\(transaction\.mapping, transaction\.doc\)/);
+  assert.match(nonPrintingExtension, /transactionAddsNonPrintingStructure/);
+  assert.match(nonPrintingStyles, /\.omi-show-nonprinting-marks \.omi-tab-node::after[\s\S]*?content: '→'/);
+  assert.match(richTextExtensions, /OMI_RICH_TEXT_EXTENSIONS[\s\S]*OmiNonPrintingMarksExtension/);
+  assert.match(richTextExtensions, /OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS[\s\S]*OmiNonPrintingMarksExtension/);
 });
 
 test('the desktop OMI brand is an explicit Home control', () => {
