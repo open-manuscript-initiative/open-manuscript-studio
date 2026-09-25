@@ -12,6 +12,7 @@ import {
 } from '../../model/richText';
 import { OmiManuscriptBoundaryEditingExtension } from './OmiManuscriptBoundaryEditingExtension';
 import { OmiManuscriptSelectionExtension } from './OmiManuscriptSelectionExtension';
+import { OmiNonPrintingMarksExtension } from './OmiNonPrintingMarksExtension';
 import { OmiTabExtension } from './OmiTabExtension';
 import './OmiBlockTypeMenu.css';
 
@@ -260,6 +261,7 @@ export const OMI_RICH_TEXT_EXTENSIONS = [
   OmiUnderlineExtension,
   OmiLanguageExtension,
   OmiTabExtension,
+  OmiNonPrintingMarksExtension,
   OmiBlockTypeMenuExtension,
 ];
 
@@ -276,6 +278,7 @@ export const OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS = [
   OmiUnderlineExtension,
   OmiLanguageExtension,
   OmiTabExtension,
+  OmiNonPrintingMarksExtension,
   OmiBlockTypeMenuExtension,
 ];
 
