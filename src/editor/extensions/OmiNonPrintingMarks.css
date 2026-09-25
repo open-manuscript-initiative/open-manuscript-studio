@@ -1,0 +1,38 @@
+.omi-nonprinting-mark {
+  display: none;
+}
+
+.omi-show-nonprinting-marks .omi-nonprinting-mark {
+  display: inline;
+  margin-inline-start: 0.08em;
+  color: var(--omi-editor-text-muted, #64748b);
+  font-size: 0.78em;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.72;
+  pointer-events: none;
+  user-select: none;
+}
+
+.omi-show-nonprinting-marks .omi-nonprinting-mark[data-nonprinting-mark='line-break'] {
+  margin-inline-start: 0.12em;
+}
+
+.omi-show-nonprinting-marks .omi-tab-node {
+  position: relative;
+}
+
+.omi-show-nonprinting-marks .omi-tab-node::after {
+  content: '→';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--omi-editor-text-muted, #64748b);
+  font-size: 0.72em;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.72;
+  pointer-events: none;
+  user-select: none;
+}
