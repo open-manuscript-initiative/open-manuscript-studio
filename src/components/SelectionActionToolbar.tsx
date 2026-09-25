@@ -99,9 +99,10 @@ export function SelectionActionToolbar({
 }: SelectionActionToolbarProps) {
   const { locale } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
-  const indexCopy = indexLabels[locale] ?? indexLabels.en;
-  const clipboardCopy = clipboardLabels[locale] ?? clipboardLabels.en;
-  const textTableCopy = textTableLabels[locale] ?? textTableLabels.en;
+  const language = locale.toLowerCase().split('-')[0];
+  const indexCopy = indexLabels[language] ?? indexLabels.en;
+  const clipboardCopy = clipboardLabels[language] ?? clipboardLabels.en;
+  const textTableCopy = textTableLabels[language] ?? textTableLabels.en;
   const indexDefinitions = useMemo(
     () => getDocumentIndexDefinitions({
       locale,
