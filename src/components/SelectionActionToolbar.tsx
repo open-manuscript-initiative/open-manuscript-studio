@@ -27,7 +27,7 @@ interface SelectionActionToolbarProps {
   onCrossReference?: () => void;
   onTranslate?: () => void;
   onAssistant?: () => void;
-  onTextToTable?: () => void;
+  onTextToTable?: (delimiter?: string) => void;
 }
 
 const indexLabels: Record<string, { action: string; choose: string }> = {
@@ -40,6 +40,46 @@ const clipboardLabels: Record<string, { cut: string; copy: string }> = {
   en: { cut: 'Cut', copy: 'Copy' },
   hu: { cut: 'Kivágás', copy: 'Másolás' },
   de: { cut: 'Ausschneiden', copy: 'Kopieren' },
+};
+
+type TextTableDelimiterMode = 'auto' | 'tab' | 'semicolon' | 'comma' | 'custom';
+
+const textTableLabels: Record<string, {
+  delimiter: string;
+  auto: string;
+  tab: string;
+  semicolon: string;
+  comma: string;
+  custom: string;
+  customCharacter: string;
+}> = {
+  en: {
+    delimiter: 'Column separator',
+    auto: 'Auto',
+    tab: 'Tab',
+    semicolon: 'Semicolon',
+    comma: 'Comma',
+    custom: 'Custom',
+    customCharacter: 'Custom separator',
+  },
+  hu: {
+    delimiter: 'Oszlopelválasztó',
+    auto: 'Automatikus',
+    tab: 'Tabulátor',
+    semicolon: 'Pontosvessző',
+    comma: 'Vessző',
+    custom: 'Egyéni',
+    customCharacter: 'Egyéni elválasztó',
+  },
+  de: {
+    delimiter: 'Spaltentrenner',
+    auto: 'Automatisch',
+    tab: 'Tabulator',
+    semicolon: 'Semikolon',
+    comma: 'Komma',
+    custom: 'Benutzerdefiniert',
+    customCharacter: 'Benutzerdefiniertes Trennzeichen',
+  },
 };
 
 export function SelectionActionToolbar({
@@ -61,6 +101,7 @@ export function SelectionActionToolbar({
   const manuscript = useStudioStore((state) => state.manuscript);
   const indexCopy = indexLabels[locale] ?? indexLabels.en;
   const clipboardCopy = clipboardLabels[locale] ?? clipboardLabels.en;
+  const textTableCopy = textTableLabels[locale] ?? textTableLabels.en;
   const indexDefinitions = useMemo(
     () => getDocumentIndexDefinitions({
       locale,
@@ -70,6 +111,8 @@ export function SelectionActionToolbar({
     [locale, manuscript.indexDefinitions, manuscript.indexEntries],
   );
   const [selectedIndexId, setSelectedIndexId] = useState(DEFAULT_INDEX_ID);
+  const [textTableDelimiterMode, setTextTableDelimiterMode] = useState<TextTableDelimiterMode>('auto');
+  const [customTextTableDelimiter, setCustomTextTableDelimiter] = useState('');
   const effectiveIndexId = indexDefinitions.some(
     (definition) => definition.id === selectedIndexId,
   )
@@ -155,9 +198,43 @@ export function SelectionActionToolbar({
       </select>
       <button type="button" onMouseDown={preserveSelection} onClick={addIndexEntry}>{indexCopy.action}</button>
       {onTextToTable ? (
-        <button type="button" onMouseDown={preserveSelection} onClick={onTextToTable}>
-          {textToTableLabel ?? 'Convert text to table'}
-        </button>
+        <span className="omi-selection-table-conversion">
+          <select
+            aria-label={textTableCopy.delimiter}
+            value={textTableDelimiterMode}
+            onChange={(event) =>
+              setTextTableDelimiterMode(event.target.value as TextTableDelimiterMode)
+            }
+          >
+            <option value="auto">{textTableCopy.auto}</option>
+            <option value="tab">{textTableCopy.tab}</option>
+            <option value="semicolon">{textTableCopy.semicolon}</option>
+            <option value="comma">{textTableCopy.comma}</option>
+            <option value="custom">{textTableCopy.custom}</option>
+          </select>
+          {textTableDelimiterMode === 'custom' ? (
+            <input
+              aria-label={textTableCopy.customCharacter}
+              value={customTextTableDelimiter}
+              maxLength={1}
+              inputMode="text"
+              onChange={(event) => setCustomTextTableDelimiter(event.target.value)}
+            />
+          ) : null}
+          <button
+            type="button"
+            onMouseDown={preserveSelection}
+            disabled={textTableDelimiterMode === 'custom' && !customTextTableDelimiter}
+            onClick={() =>
+              onTextToTable(resolveTextTableDelimiter(
+                textTableDelimiterMode,
+                customTextTableDelimiter,
+              ))
+            }
+          >
+            {textToTableLabel ?? 'Convert text to table'}
+          </button>
+        </span>
       ) : null}
       {onCitation ? <button type="button" onMouseDown={preserveSelection} onClick={onCitation}>{citationLabel}</button> : null}
       {onNote ? <button type="button" onMouseDown={preserveSelection} onClick={onNote}>{noteLabel}</button> : null}
@@ -166,4 +243,20 @@ export function SelectionActionToolbar({
       {onAssistant ? <button type="button" onMouseDown={preserveSelection} onClick={onAssistant}>{assistantLabel ?? 'Assistant'}</button> : null}
     </div>
   );
+}
+
+
+function resolveTextTableDelimiter(
+  mode: TextTableDelimiterMode,
+  customDelimiter: string,
+): string | undefined {
+  switch (mode) {
+    case 'tab': return '\t';
+    case 'semicolon': return ';';
+    case 'comma': return ',';
+    case 'custom': return customDelimiter || undefined;
+    case 'auto':
+    default:
+      return undefined;
+  }
 }
