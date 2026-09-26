@@ -56,7 +56,7 @@ export interface OmiGeneratedIndex {
   };
 }
 
-export interface GroupedIndexEntry {
+interface GroupedIndexEntry {
   key: string;
   terms: string[];
   label: string;
@@ -64,7 +64,7 @@ export interface GroupedIndexEntry {
   entries: OmiIndexEntry[];
 }
 
-export interface OmiIndexValidationIssue {
+interface OmiIndexValidationIssue {
   entryId: string;
   type:
     | 'empty-term'
@@ -77,7 +77,7 @@ export interface OmiIndexValidationIssue {
 
 export const DEFAULT_INDEX_ID = 'omi-default-index';
 
-export function createDefaultIndexDefinition(locale = 'en'): OmiIndexDefinition {
+function createDefaultIndexDefinition(locale = 'en'): OmiIndexDefinition {
   return {
     id: DEFAULT_INDEX_ID,
     title: locale === 'hu' ? 'Névmutató' : locale === 'de' ? 'Personenregister' : 'Name index',
@@ -191,7 +191,7 @@ export function indexEntryDisplayLabel(entry: Pick<OmiIndexEntry, 'terms'>): str
  * sit next to a year in prose ("Apafi Mihály 1661-ben"), which must not make
  * the person itself invalid.
  */
-export function isIndexEntryEligible(entry: Pick<OmiIndexEntry, 'kind' | 'terms'>): boolean {
+function isIndexEntryEligible(entry: Pick<OmiIndexEntry, 'kind' | 'terms'>): boolean {
   if (entry.kind !== 'name') return true;
   return entry.terms.every((term) => !/[0-9]/u.test(term));
 }
