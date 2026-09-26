@@ -129,3 +129,35 @@ test('desktop manuscript overview falls back to one column when the content area
     /@container \(max-width: 860px\)[\s\S]*\.studio-manuscript-overview-grid \{[\s\S]*grid-template-columns: 1fr/,
   );
 });
+
+
+test('desktop menu density compacts contributors and supporting panels', () => {
+  assert.match(
+    densityCss,
+    /\.studio-menu-content \.contributor-form-grid \{[\s\S]*gap: \.4rem \.5rem;/,
+  );
+  assert.match(
+    densityCss,
+    /@container \(min-width: 1000px\)[\s\S]*\.studio-menu-content \.contributor-form-grid \{[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/,
+  );
+  assert.match(
+    densityCss,
+    /\.studio-menu-content \.contributor-form-grid textarea \{[\s\S]*min-height: 3\.75rem;[\s\S]*max-height: 7rem;/,
+  );
+  assert.match(
+    densityCss,
+    /\.studio-menu-content \.omi-note-rich-editor,[\s\S]*min-height: 3\.75rem;/,
+  );
+  assert.match(
+    densityCss,
+    /\.studio-menu-content \.omi-reference-item \{[\s\S]*padding: \.45rem \.55rem;/,
+  );
+  assert.match(
+    densityCss,
+    /\.studio-menu-content \.history-item \{[\s\S]*padding: \.45rem \.55rem;/,
+  );
+  assert.match(
+    densityCss,
+    /\.studio-menu-content \.studio-settings-card \{[\s\S]*padding: \.5rem \.55rem;/,
+  );
+});

@@ -671,3 +671,420 @@ input[size]:not([data-full-width="true"]) {
     min-height: 8rem;
   }
 }
+
+
+/* Dense desktop menu panels -------------------------------------------------
+ * Configuration/editorial views should use desktop space efficiently without
+ * shrinking the mobile touch experience.
+ */
+@media (min-width: 761px) {
+  .studio-menu-content .omi-properties-panel-header {
+    gap: .5rem;
+    margin-bottom: .45rem;
+  }
+
+  .studio-menu-content .omi-properties-panel-header h2 {
+    margin: 0 0 .12rem;
+    font-size: 1rem;
+  }
+
+  .studio-menu-content .omi-properties-panel-header p {
+    font-size: .72rem;
+    line-height: 1.3;
+  }
+
+  .studio-menu-content .contributor-add-button {
+    min-height: 1.9rem;
+    padding: .28rem .48rem;
+    font-size: .72rem;
+  }
+
+  .studio-menu-content .contributor-card {
+    margin-bottom: .45rem;
+    padding: .5rem .55rem;
+    border-radius: .45rem;
+  }
+
+  .studio-menu-content .contributor-card-header {
+    margin-bottom: .4rem;
+  }
+
+  .studio-menu-content .contributor-card-header strong {
+    font-size: .8rem;
+  }
+
+  .studio-menu-content .contributor-order-actions {
+    gap: .15rem;
+  }
+
+  .studio-menu-content .icon-button {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: .35rem;
+  }
+
+  .studio-menu-content .contributor-form-grid {
+    gap: .4rem .5rem;
+  }
+
+  .studio-menu-content .contributor-form-grid label > span {
+    margin-bottom: .15rem;
+    font-size: .68rem;
+  }
+
+  .studio-menu-content .contributor-form-grid input,
+  .studio-menu-content .contributor-form-grid select {
+    min-height: 1.9rem;
+    padding: .28rem .4rem;
+    font-size: .74rem;
+  }
+
+  .studio-menu-content .contributor-form-grid textarea {
+    min-height: 3.75rem;
+    max-height: 7rem;
+    padding: .35rem .45rem;
+    font-size: .74rem;
+    line-height: 1.35;
+    resize: vertical;
+  }
+
+  .studio-menu-content .contributor-checkboxes {
+    gap: .3rem .75rem;
+    margin-top: .4rem;
+  }
+
+  .studio-menu-content .contributor-checkbox {
+    gap: .3rem;
+    margin-top: .3rem;
+    font-size: .72rem;
+  }
+
+  .studio-menu-content .contributor-metadata-fieldset {
+    margin-top: .45rem;
+    padding: .45rem .55rem;
+  }
+
+  .studio-menu-content .contributor-metadata-fieldset > legend {
+    font-size: .72rem;
+  }
+
+  .studio-menu-content .contributor-metadata-fieldset > label {
+    gap: .2rem;
+    margin-top: .3rem;
+  }
+
+  .studio-menu-content .contributor-metadata-fieldset textarea {
+    min-height: 3.75rem;
+    max-height: 7rem;
+    padding: .35rem .45rem;
+    font-size: .74rem;
+    line-height: 1.35;
+  }
+
+  .studio-menu-content .contributor-metadata-fieldset select {
+    min-height: 1.9rem;
+    font-size: .74rem;
+  }
+
+  .studio-menu-content .contributor-credit-grid {
+    gap: .2rem .65rem;
+    margin-top: .35rem;
+  }
+
+  .studio-menu-content .omi-notes-list {
+    gap: .45rem;
+  }
+
+  .studio-menu-content .omi-note-editor-card {
+    gap: .45rem;
+    padding: .5rem .55rem;
+  }
+
+  .studio-menu-content .omi-note-editor-header {
+    gap: .4rem;
+  }
+
+  .studio-menu-content .omi-note-field {
+    gap: .15rem;
+  }
+
+  .studio-menu-content .omi-note-field > span {
+    font-size: .7rem;
+  }
+
+  .studio-menu-content .omi-note-field select {
+    min-height: 1.9rem;
+    padding-inline: .45rem;
+    font-size: .74rem;
+  }
+
+  .studio-menu-content .omi-note-rich-body {
+    gap: .3rem;
+  }
+
+  .studio-menu-content .omi-note-rich-editor,
+  .studio-menu-content .omi-note-editor-card--compact .omi-note-rich-editor {
+    min-height: 3.75rem;
+    padding: .4rem .45rem;
+    font-size: .78rem;
+    line-height: 1.4;
+  }
+
+  .studio-menu-content .omi-note-rich-editor p {
+    margin-bottom: .35rem;
+  }
+
+  .studio-menu-content .omi-note-actions,
+  .studio-menu-content .omi-note-meta {
+    gap: .3rem;
+  }
+
+  .studio-menu-content .omi-reference-editor {
+    padding: .55rem .65rem;
+  }
+
+  .studio-menu-content .omi-reference-form-grid {
+    gap: .4rem .5rem;
+  }
+
+  .studio-menu-content .omi-reference-form-grid label,
+  .studio-menu-content .omi-reference-contributor label {
+    gap: .18rem;
+    font-size: .7rem;
+  }
+
+  .studio-menu-content .omi-reference-form-grid input,
+  .studio-menu-content .omi-reference-form-grid select,
+  .studio-menu-content .omi-reference-contributor input,
+  .studio-menu-content .omi-reference-contributor select,
+  .studio-menu-content .omi-reference-search input {
+    min-height: 1.9rem;
+    padding: .3rem .45rem;
+    font-size: .74rem;
+  }
+
+  .studio-menu-content .omi-reference-list {
+    gap: .35rem;
+  }
+
+  .studio-menu-content .omi-reference-item {
+    gap: .5rem;
+    padding: .45rem .55rem;
+  }
+
+  .studio-menu-content .omi-reference-item-main > p {
+    font-size: .74rem;
+    line-height: 1.35;
+  }
+
+  .studio-menu-content .omi-reference-item-meta,
+  .studio-menu-content .omi-reference-item-actions {
+    gap: .25rem .4rem;
+  }
+
+  .studio-menu-content .omi-personal-reference-library {
+    gap: .45rem;
+    padding: .5rem .55rem;
+  }
+
+  .studio-menu-content .omi-xref-picker,
+  .studio-menu-content .omi-xref-editor-card,
+  .studio-menu-content .omi-xref-status-panel {
+    padding: .5rem .55rem;
+    border-radius: .45rem;
+  }
+
+  .studio-menu-content .omi-xref-picker-header,
+  .studio-menu-content .omi-xref-editor-card > header,
+  .studio-menu-content .omi-xref-status-panel > header {
+    gap: .5rem;
+  }
+
+  .studio-menu-content .omi-xref-picker-controls,
+  .studio-menu-content .omi-xref-editor-grid {
+    gap: .35rem .45rem;
+  }
+
+  .studio-menu-content .omi-xref-picker input,
+  .studio-menu-content .omi-xref-picker select,
+  .studio-menu-content .omi-xref-editor-card select,
+  .studio-menu-content .omi-xref-numbering-control select {
+    min-height: 1.9rem;
+    padding: .28rem .4rem;
+    font-size: .74rem;
+  }
+
+  .studio-menu-content .omi-xref-target-list {
+    gap: .22rem;
+  }
+
+  .studio-menu-content .omi-xref-target {
+    gap: .45rem;
+    padding: .38rem .45rem;
+  }
+
+  .studio-menu-content .omi-xref-validation {
+    padding: .4rem .5rem;
+  }
+
+  .studio-menu-content .omi-history-panel {
+    gap: .45rem;
+  }
+
+  .studio-menu-content .omi-history-header {
+    gap: .45rem;
+  }
+
+  .studio-menu-content .omi-history-header h2 {
+    font-size: 1rem;
+  }
+
+  .studio-menu-content .omi-history-header p {
+    font-size: .72rem;
+    line-height: 1.3;
+  }
+
+  .studio-menu-content .history-pending,
+  .studio-menu-content .history-item {
+    gap: .4rem;
+    padding: .45rem .55rem;
+  }
+
+  .studio-menu-content .history-list {
+    gap: .35rem;
+  }
+
+  .studio-menu-content .history-item-summary-row,
+  .studio-menu-content .history-item-metadata,
+  .studio-menu-content .history-pending-actions {
+    gap: .25rem .35rem;
+  }
+
+  .studio-menu-content .history-item-metadata,
+  .studio-menu-content .history-pending-meta {
+    font-size: .68rem;
+  }
+
+  .studio-menu-content .history-tombstone-list {
+    gap: .25rem;
+  }
+
+  .studio-menu-content .history-tombstone-list li {
+    gap: .35rem;
+    padding: .35rem .45rem;
+  }
+
+  .studio-menu-content .studio-settings-card {
+    padding: .5rem .55rem;
+  }
+
+  .studio-menu-content .studio-settings-card-header h4 {
+    margin-bottom: .12rem;
+    font-size: .82rem;
+  }
+
+  .studio-menu-content .studio-settings-card-header p,
+  .studio-menu-content .studio-settings-hint {
+    font-size: .7rem;
+    line-height: 1.3;
+  }
+
+  .studio-menu-content .studio-language-setting-row {
+    gap: .35rem;
+    padding: .3rem 0;
+  }
+
+  .studio-menu-content .studio-language-setting-heading h5 {
+    font-size: .74rem;
+  }
+
+  .studio-menu-content .studio-language-setting-heading p {
+    font-size: .64rem;
+  }
+
+  .studio-menu-content .studio-language-chip {
+    min-height: 1.65rem;
+    padding-block: .14rem;
+    font-size: .68rem;
+  }
+
+  .studio-menu-content .studio-language-preference {
+    min-height: 2.2rem;
+    padding: .3rem .45rem;
+  }
+
+  .studio-menu-content .studio-language-preference-copy strong {
+    font-size: .76rem;
+  }
+
+  .studio-menu-content .studio-language-preference-copy small {
+    font-size: .66rem;
+  }
+
+  .studio-menu-content .studio-settings-future-note {
+    margin-top: .4rem;
+    padding: .4rem .5rem;
+    font-size: .7rem;
+  }
+
+  .studio-menu-content .publication-profile-options {
+    gap: .35rem;
+    margin-top: .4rem;
+  }
+
+  .studio-menu-content .review-mode__feedback {
+    padding: .45rem .55rem;
+  }
+
+  .studio-menu-content .studio-tool-card {
+    gap: .45rem;
+    margin-bottom: .35rem;
+    padding: .45rem .55rem;
+  }
+
+  .studio-menu-content .studio-tool-card strong {
+    margin-bottom: .1rem;
+    font-size: .78rem;
+  }
+
+  .studio-menu-content .studio-tool-card p,
+  .studio-menu-content .studio-tool-card small {
+    font-size: .7rem;
+    line-height: 1.3;
+  }
+}
+
+@container (min-width: 1000px) {
+  .studio-menu-content .contributor-form-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .studio-menu-content .contributor-wide-field {
+    grid-column: span 2;
+  }
+
+  .studio-menu-content .contributor-credit-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .studio-menu-content .omi-reference-form-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .studio-menu-content .omi-reference-field-wide {
+    grid-column: span 2;
+  }
+
+  .studio-menu-content .omi-xref-picker-controls,
+  .studio-menu-content .omi-xref-editor-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .studio-menu-content .studio-language-setting-row {
+    grid-template-columns: minmax(9rem, .65fr) minmax(0, 2fr) minmax(10rem, .75fr);
+  }
+
+  .studio-menu-content .history-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
