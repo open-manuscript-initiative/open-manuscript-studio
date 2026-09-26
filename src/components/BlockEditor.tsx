@@ -1,4 +1,5 @@
 import {
+  memo,
   useEffect,
   useRef,
   useState,
@@ -117,7 +118,7 @@ interface BlockEditorProps {
 const EMPTY_PUBLICATION_CORRECTIONS: readonly OmiPublicationCorrection[] = [];
 const EMPTY_PUBLICATION_FLOW_BREAKS: readonly OmiPublicationFlowBreak[] = [];
 
-export function BlockEditor({
+function BlockEditorComponent({
   blockId,
   blockType,
   content,
@@ -850,6 +851,8 @@ function textToTableLabel(locale: string): string {
   if (language === 'de') return 'Text in Tabelle umwandeln';
   return 'Convert text to table';
 }
+
+export const BlockEditor = memo(BlockEditorComponent);
 
 function parseStoredContent(content: string): JSONContent {
   if (content.trim().length === 0) return createParagraphDocument('');
