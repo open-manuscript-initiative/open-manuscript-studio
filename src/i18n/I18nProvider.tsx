@@ -3,7 +3,6 @@ import {
   type PropsWithChildren,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -43,7 +42,7 @@ export function I18nProvider({ children }: PropsWithChildren) {
   const [locale, setLocaleState] = useState<SupportedLocale>(
     () => resolveInitialUiLocale(),
   );
-  const [translationRevision, setTranslationRevision] = useState(0);
+  const [, setTranslationRevision] = useState(0);
   const localeRequestId = useRef(0);
 
   const setLocale = useCallback((nextLocale: SupportedLocale) => {
@@ -140,23 +139,13 @@ export function I18nProvider({ children }: PropsWithChildren) {
     [locale],
   );
 
-  const value = useMemo(
-    () => ({
-      locale,
-      enabledLocales,
-      setLocale,
-      setLocaleEnabled,
-      t,
-    }),
-    [
-      locale,
-      enabledLocales,
-      setLocale,
-      setLocaleEnabled,
-      t,
-      translationRevision,
-    ],
-  );
+  const value: I18nContextValue = {
+    locale,
+    enabledLocales,
+    setLocale,
+    setLocaleEnabled,
+    t,
+  };
 
   return (
     <I18nContext.Provider value={value}>
