@@ -1,7 +1,5 @@
 import { sanitizeRichTextPasteHtml } from '../model/richText';
 
-
-
 export function normalizeClipboardHtml(html: string): string {
   return sanitizeRichTextPasteHtml(html);
 }
