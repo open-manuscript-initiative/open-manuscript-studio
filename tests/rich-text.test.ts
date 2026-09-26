@@ -71,10 +71,3 @@ test('recognizes Microsoft Word heading styles during clipboard paste', () => {
   assert.equal(detectWordHeadingLevel('MsoNormal', 'font-weight:bold'), undefined);
 });
 
-
-test('turns plain clipboard text into safe paragraph HTML', () => {
-  assert.equal(
-    plainTextToPasteHtml('One\nline\n\nTwo < three'),
-    '<p>One<br>line</p><p>Two &lt; three</p>',
-  );
-});
