@@ -742,16 +742,6 @@
   margin: 1.75rem 0;
 }
 
-/* Kept for backwards compatibility with older inline insert affordances. */
-.omi-continuous-blocks .omi-visual-insert-menu {
-  opacity: 0.12;
-  transition: opacity 120ms ease;
-}
-
-.omi-continuous-blocks .omi-visual-insert-menu:hover,
-.omi-continuous-blocks .omi-visual-insert-menu:focus-within {
-  opacity: 1;
-}
 
 .omi-visually-hidden {
   position: absolute !important;
