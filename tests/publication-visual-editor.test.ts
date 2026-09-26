@@ -84,7 +84,12 @@ const cslRenderingStyles = readFileSync(
 test('live publication editor opens as its own full-screen menu workspace', () => {
   assert.match(studioMenu, /'publication-editor'/);
   assert.match(studioMenu, /supplementalCopy\.publicationEditor/);
-  assert.match(studioMenu, /activeView === 'publication-editor' \? <PublicationStyleEditor \/>/);
+  assert.match(studioMenu, /const LazyPublicationStyleEditor = lazy\(async \(\) => \{/);
+  assert.match(studioMenu, /import\('\.\/PublicationStyleEditor'\)/);
+  assert.match(
+    studioMenu,
+    /activeView === 'publication-editor' \? \([\s\S]*<Suspense[\s\S]*<LazyPublicationStyleEditor \/>/,
+  );
   assert.doesNotMatch(publicationProfile, /<PublicationStyleEditor/);
   assert.match(fullscreenPanels, /\.studio-menu-content--publication-editor[\s\S]*overflow: hidden/);
   assert.match(fullscreenPanels, /\.studio-menu-content--publication-editor \.publication-style-editor[\s\S]*height: 100%/);
