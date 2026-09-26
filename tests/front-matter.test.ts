@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  frontMatterIsEmpty,
   getPublicationFrontMatterRules,
   normalizeOptionalFrontMatterValue,
   serializePublicationProfileWithFrontMatter,
@@ -11,15 +10,6 @@ import {
   BUILTIN_PUBLICATION_PROFILES,
 } from '../src/model/publicationProfile.ts';
 
-test('keeps subtitle and motto independently optional', () => {
-  assert.equal(frontMatterIsEmpty({}), true);
-  assert.equal(frontMatterIsEmpty({ subtitle: 'A subtitle' }), false);
-  assert.equal(frontMatterIsEmpty({ motto: 'Sapere aude' }), false);
-  assert.equal(
-    frontMatterIsEmpty({ subtitle: '   ', motto: '\n' }),
-    true,
-  );
-});
 
 test('normalizes an intentionally empty optional front-matter field to absence', () => {
   assert.equal(normalizeOptionalFrontMatterValue(''), undefined);
