@@ -41,7 +41,7 @@ function compareIdentifier(
   return left.localeCompare(right);
 }
 
-export function compareStudioVersions(left: string, right: string): number {
+function compareStudioVersions(left: string, right: string): number {
   const parsedLeft = parseVersion(left);
   const parsedRight = parseVersion(right);
   if (!parsedLeft || !parsedRight) return 0;
