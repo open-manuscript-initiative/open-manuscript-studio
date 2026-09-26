@@ -17,7 +17,6 @@ import {
   type HtmlDiagnostic,
   type HtmlExportResult,
 } from './exportHtml.ts';
-import type { OmiAsset } from '../types/assets.ts';
 import type { OmiManuscript } from '../types/omi.ts';
 
 export const OMI_HTML_PACKAGE_VERSION = '0.1.0-alpha.1' as const;
@@ -199,14 +198,6 @@ export async function buildHtmlPackage(
   };
 }
 
-function referencedHtmlAssets(
-  manuscript: OmiManuscript,
-): OmiAsset[] {
-  const referenced = collectReferencedAssetIds(
-    manuscript.sections.flatMap((section) => section.blocks),
-  );
-  return (manuscript.assets ?? []).filter((asset) => referenced.has(asset.id));
-}
 
 function createStoreZip(
   entries: readonly { name: string; bytes: Uint8Array }[],
