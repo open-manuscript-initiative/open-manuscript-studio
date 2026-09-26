@@ -40,7 +40,7 @@ const REVIEW_TEXT_CAPABILITIES: EditorCapabilities = {
   reconcileWorkspaceReferences: false,
 };
 
-export const EDITOR_CAPABILITIES_BY_ROLE: Record<EditorRole, EditorCapabilities> = {
+const EDITOR_CAPABILITIES_BY_ROLE: Record<EditorRole, EditorCapabilities> = {
   author: FULL_EDITOR_CAPABILITIES,
   editor: FULL_EDITOR_CAPABILITIES,
   'scientific-review': REVIEW_TEXT_CAPABILITIES,
