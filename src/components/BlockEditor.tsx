@@ -12,6 +12,7 @@ import {
 } from '@tiptap/react';
 import type { Editor } from '@tiptap/core';
 import { collectChangedWorkspaceReferences } from '../editor/changedWorkspaceReferences';
+import { measureEditorPerformance } from '../editor/performanceInstrumentation';
 import StarterKit from '@tiptap/starter-kit';
 
 import {
@@ -411,14 +412,23 @@ function BlockEditorComponent({
       },
     },
     onUpdate: ({ editor: currentEditor, transaction, appendedTransactions }) => {
-      const serializedContent = JSON.stringify(currentEditor.getJSON());
+      const serializedContent = measureEditorPerformance(
+        'tiptap.serialize',
+        () => JSON.stringify(currentEditor.getJSON()),
+      );
       lastEmittedContentRef.current = serializedContent;
       if (capabilities.reconcileWorkspaceReferences) {
-        const changedReferences = collectChangedWorkspaceReferences([
-          transaction,
-          ...appendedTransactions,
-        ]);
-        onUpdateRef.current(blockId, serializedContent);
+        const changedReferences = measureEditorPerformance(
+          'tiptap.changed-references',
+          () => collectChangedWorkspaceReferences([
+            transaction,
+            ...appendedTransactions,
+          ]),
+        );
+        measureEditorPerformance(
+          'tiptap.emit-update',
+          () => onUpdateRef.current(blockId, serializedContent),
+        );
         if (changedReferences.has('note')) {
           reconcileNotesAfterBlockEdit();
         }
@@ -430,7 +440,10 @@ function BlockEditorComponent({
         }
         return;
       }
-      onUpdateRef.current(blockId, serializedContent);
+      measureEditorPerformance(
+        'tiptap.emit-update',
+        () => onUpdateRef.current(blockId, serializedContent),
+      );
     },
   });
 
