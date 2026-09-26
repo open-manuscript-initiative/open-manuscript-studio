@@ -353,59 +353,6 @@ export function insertSectionAfter(
   return next;
 }
 
-/**
- * Moves one complete section subtree to a raw structural gap. The root keeps
- * its current parent. This legacy-compatible helper is safe for flat documents
- * and remains available for older callers.
- */
-export function moveSectionToGap(
-  sections: readonly OmiSection[],
-  sectionId: string,
-  gapIndex: number,
-): OmiSection[] {
-  const sourceIndex = sections.findIndex((section) => section.id === sectionId);
-  if (sourceIndex < 0 || sections.length < 2) return [...sections];
-
-  const subtreeIds = new Set([
-    sectionId,
-    ...getSectionDescendantIds(sections, sectionId),
-  ]);
-  const subtree = sections.filter((section) => subtreeIds.has(section.id));
-  const remaining = sections.filter((section) => !subtreeIds.has(section.id));
-  const boundedGap = clampSectionGapIndex(gapIndex, sections.length);
-  const removedBeforeGap = sections
-    .slice(0, boundedGap)
-    .filter((section) => subtreeIds.has(section.id)).length;
-  const insertionIndex = clampSectionGapIndex(
-    boundedGap - removedBeforeGap,
-    remaining.length,
-  );
-  const next = [...remaining];
-  next.splice(insertionIndex, 0, ...subtree);
-
-  return hierarchyOrderIsValid(next) ? next : [...sections];
-}
-
-export function moveSectionToIndex(
-  sections: readonly OmiSection[],
-  sectionId: string,
-  targetIndex: number,
-): OmiSection[] {
-  const sourceIndex = sections.findIndex((section) => section.id === sectionId);
-  if (sourceIndex < 0 || sections.length < 2) return [...sections];
-
-  const boundedTarget = Math.max(
-    0,
-    Math.min(sections.length - 1, Math.trunc(targetIndex)),
-  );
-  if (boundedTarget === sourceIndex) return [...sections];
-
-  return moveSectionToGap(
-    sections,
-    sectionId,
-    boundedTarget > sourceIndex ? boundedTarget + 1 : boundedTarget,
-  );
-}
 
 /** Move a complete subtree one position among siblings. */
 export function moveSectionAmongSiblings(
