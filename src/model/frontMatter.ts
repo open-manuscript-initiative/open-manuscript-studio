@@ -103,11 +103,6 @@ export function normalizeOptionalFrontMatterValue(
   return value.length === 0 ? undefined : value;
 }
 
-export function frontMatterIsEmpty(
-  manuscript: Pick<OmiManuscriptState, 'subtitle' | 'motto'>,
-): boolean {
-  return !(manuscript.subtitle ?? '').trim() && !(manuscript.motto ?? '').trim();
-}
 
 export function normalizeTitleMatter(
   value: OmiTitleMatter | undefined,
