@@ -391,18 +391,22 @@ function ManuscriptDataView({ onNavigate }: { onNavigate: () => void }) {
           <p>{t('studio.manuscript.description')}</p>
         </div>
       </div>
-      <div className="studio-manuscript-fields">
-        <label>
-          <span>{t('manuscript.abstract')}</span>
-          <textarea
-            value={manuscript.abstract ?? ''}
-            onChange={(event) => setAbstract(event.target.value)}
-          />
-        </label>
-        <KeywordEditor />
-        <ManuscriptLanguageField />
+      <div className="studio-manuscript-overview-grid">
+        <div className="studio-manuscript-fields">
+          <label>
+            <span>{t('manuscript.abstract')}</span>
+            <textarea
+              value={manuscript.abstract ?? ''}
+              onChange={(event) => setAbstract(event.target.value)}
+            />
+          </label>
+        </div>
+        <div className="studio-manuscript-overview-side">
+          <KeywordEditor />
+          <ManuscriptLanguageField />
+          <SectionNumberingControl />
+        </div>
       </div>
-      <SectionNumberingControl />
       <ScholarlyMetadataPanel />
       <div className="studio-menu-mobile-structure">
         <SectionStructurePanel onNavigate={onNavigate} />
