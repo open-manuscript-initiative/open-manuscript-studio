@@ -16,7 +16,7 @@ export interface OmiGeneratedListDefinition {
   };
 }
 
-export interface GeneratedListEntry {
+interface GeneratedListEntry {
   id: string;
   label: string;
   blockId?: string;
