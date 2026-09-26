@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type CDPSession, type Page } from '@playwright/test';
 
 import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
 import {
@@ -449,9 +449,7 @@ async function measureScrollFrames(page: Page): Promise<number[]> {
 }
 
 async function readHeapUsage(
-  cdp: Awaited<ReturnType<Page['context']>> extends never ? never : {
-    send(method: string): Promise<Record<string, number>>;
-  },
+  cdp: CDPSession,
 ): Promise<{ usedSize: number; totalSize: number }> {
   await cdp.send('HeapProfiler.collectGarbage');
   const usage = await cdp.send('Runtime.getHeapUsage');
