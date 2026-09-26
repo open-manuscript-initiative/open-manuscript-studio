@@ -739,6 +739,15 @@ input[size]:not([data-full-width="true"]) {
     font-size: .74rem;
   }
 
+  .studio-menu-content .contributor-form-grid textarea {
+    min-height: 3.75rem;
+    max-height: 7rem;
+    padding: .35rem .45rem;
+    font-size: .74rem;
+    line-height: 1.35;
+    resize: vertical;
+  }
+
   .studio-menu-content .contributor-checkboxes {
     gap: .3rem .75rem;
     margin-top: .4rem;
