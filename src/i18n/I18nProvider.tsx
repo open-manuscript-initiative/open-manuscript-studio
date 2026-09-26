@@ -137,7 +137,7 @@ export function I18nProvider({ children }: PropsWithChildren) {
 
   const t = useCallback(
     (key: AppTranslationKey) => translate(locale, key),
-    [locale, translationRevision],
+    [locale],
   );
 
   const value = useMemo(
@@ -154,6 +154,7 @@ export function I18nProvider({ children }: PropsWithChildren) {
       setLocale,
       setLocaleEnabled,
       t,
+      translationRevision,
     ],
   );
 
