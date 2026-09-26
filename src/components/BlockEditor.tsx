@@ -919,9 +919,8 @@ function getIntegrationActionLabels(locale: string): {
 }
 
 function resolveContinuousProofreadingScope(editor: Editor) {
-  const active = getTopLevelBlockAtPosition(
-    editor.state.doc,
-    editor.state.selection.from,
+  const active = getTopLevelBlockFromResolvedPosition(
+    editor.state.selection.$from,
   );
   if (!active) return null;
   return {
@@ -936,11 +935,13 @@ function resolveProofingSelection(
   activeBlockId: string,
 ): ProofingSelection | null {
   const { doc, selection } = editor.state;
-  const fromBlock = getTopLevelBlockAtPosition(doc, selection.from);
+  const fromBlock = getTopLevelBlockFromResolvedPosition(selection.$from);
   const targetTo = selection.empty
     ? selection.to
     : Math.max(selection.from, selection.to - 1);
-  const toBlock = getTopLevelBlockAtPosition(doc, targetTo);
+  const toBlock = getTopLevelBlockFromResolvedPosition(
+    doc.resolve(targetTo),
+  );
   if (
     !fromBlock
     || !toBlock
