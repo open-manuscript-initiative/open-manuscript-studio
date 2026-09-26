@@ -1,5 +1,5 @@
 import { Bot, CircleHelp, CircleX, FolderOpen, ListTree, Plug, UploadCloud } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import {
@@ -16,13 +16,34 @@ import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import type { OmpNativeAuthorContext } from '../integrations/omp/importOmpLaunch';
 import { sendAuthorRevisionToOmp } from '../services/ompNativeApi';
 import type { OmiManuscript } from '../types/omi';
-import { HelpPanel } from './HelpPanel';
-import { IntegrationExecutionWorkspace } from './IntegrationExecutionWorkspace';
-import { IntegrationsPanel } from './IntegrationsPanel';
-import { ListsPanel } from './ListsPanel';
-import { OmiAgentsWorkspace } from './OmiAgentsWorkspace';
+import { LongTaskStatus } from './LongTaskStatus';
 import { StudioMenu } from './StudioMenu';
 import './StudioMenuWithHelp.css';
+
+const LazyHelpPanel = lazy(async () => {
+  const module = await import('./HelpPanel');
+  return { default: module.HelpPanel };
+});
+
+const LazyIntegrationExecutionWorkspace = lazy(async () => {
+  const module = await import('./IntegrationExecutionWorkspace');
+  return { default: module.IntegrationExecutionWorkspace };
+});
+
+const LazyIntegrationsPanel = lazy(async () => {
+  const module = await import('./IntegrationsPanel');
+  return { default: module.IntegrationsPanel };
+});
+
+const LazyListsPanel = lazy(async () => {
+  const module = await import('./ListsPanel');
+  return { default: module.ListsPanel };
+});
+
+const LazyOmiAgentsWorkspace = lazy(async () => {
+  const module = await import('./OmiAgentsWorkspace');
+  return { default: module.OmiAgentsWorkspace };
+});
 
 interface StudioMenuWithHelpProps {
   open: boolean;
@@ -37,7 +58,7 @@ export function StudioMenuWithHelp({
   ojsAssignment = null,
   ompAuthorContext = null,
 }: StudioMenuWithHelpProps) {
-  const { locale } = useTranslation();
+  const { t, locale } = useTranslation();
   const copy = getLocalizedHelpCopy(locale);
   const integrationsLabel = getIntegrationsLabel(locale);
   const agentsLabel = getAgentsLabel(locale);
@@ -221,10 +242,39 @@ export function StudioMenuWithHelp({
       documentCloseAction={documentCloseAction}
       externalContentActive={externalContentActive}
     />
-    {contentHost && listsOpen ? createPortal(<div className="studio-help-portal studio-lists-portal"><ListsPanel onNavigate={onClose} /></div>, contentHost) : null}
-    {contentHost && agentsOpen ? createPortal(<div className="studio-help-portal studio-agents-portal"><OmiAgentsWorkspace /></div>, contentHost) : null}
-    {contentHost && integrationsOpen ? createPortal(<div className="studio-help-portal studio-integrations-portal"><IntegrationsPanel /><IntegrationExecutionWorkspace /></div>, contentHost) : null}
-    {contentHost && helpOpen ? createPortal(<div className="studio-help-portal"><HelpPanel /></div>, contentHost) : null}
+    {contentHost && listsOpen ? createPortal(
+      <div className="studio-help-portal studio-lists-portal">
+        <Suspense fallback={<LongTaskStatus message={t('common.loading')} />}>
+          <LazyListsPanel onNavigate={onClose} />
+        </Suspense>
+      </div>,
+      contentHost,
+    ) : null}
+    {contentHost && agentsOpen ? createPortal(
+      <div className="studio-help-portal studio-agents-portal">
+        <Suspense fallback={<LongTaskStatus message={t('common.loading')} />}>
+          <LazyOmiAgentsWorkspace />
+        </Suspense>
+      </div>,
+      contentHost,
+    ) : null}
+    {contentHost && integrationsOpen ? createPortal(
+      <div className="studio-help-portal studio-integrations-portal">
+        <Suspense fallback={<LongTaskStatus message={t('common.loading')} />}>
+          <LazyIntegrationsPanel />
+          <LazyIntegrationExecutionWorkspace />
+        </Suspense>
+      </div>,
+      contentHost,
+    ) : null}
+    {contentHost && helpOpen ? createPortal(
+      <div className="studio-help-portal">
+        <Suspense fallback={<LongTaskStatus message={t('common.loading')} />}>
+          <LazyHelpPanel />
+        </Suspense>
+      </div>,
+      contentHost,
+    ) : null}
   </>;
 }
 
