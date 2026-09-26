@@ -133,6 +133,7 @@ export function RorAffiliationField({
         <input
           id={`${listboxId}-input`}
           type="text"
+          dir="auto"
           role="combobox"
           autoComplete="off"
           value={affiliation}

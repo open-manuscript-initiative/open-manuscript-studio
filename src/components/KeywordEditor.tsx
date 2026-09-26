@@ -1,8 +1,11 @@
 import { Plus, X } from 'lucide-react';
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
+  type ChangeEvent,
   type KeyboardEvent,
 } from 'react';
 
@@ -28,6 +31,27 @@ export function KeywordEditor() {
     manuscript.locale,
   );
   const [draft, setDraft] = useState('');
+  const draftInputRef = useRef<HTMLInputElement>(null);
+  const draftSelectionRef = useRef<{
+    start: number;
+    end: number;
+    restoreFocus: boolean;
+  } | null>(null);
+
+  useLayoutEffect(() => {
+    const pending = draftSelectionRef.current;
+    const input = draftInputRef.current;
+    if (!pending || !input) return;
+
+    draftSelectionRef.current = null;
+    if (pending.restoreFocus && document.activeElement !== input) {
+      input.focus({ preventScroll: true });
+    }
+
+    const start = Math.min(pending.start, input.value.length);
+    const end = Math.min(pending.end, input.value.length);
+    input.setSelectionRange(start, end);
+  }, [draft]);
 
   useEffect(() => {
     const primaryAbstract = manuscript.abstract ?? '';
@@ -55,6 +79,7 @@ export function KeywordEditor() {
   useEffect(() => {
     if (!locales.includes(metadataLocale)) {
       setMetadataLocale(locales[0] ?? manuscript.locale);
+      draftSelectionRef.current = null;
       setDraft('');
     }
   }, [locales, metadataLocale, manuscript.locale]);
@@ -71,7 +96,28 @@ export function KeywordEditor() {
     if (!draft.trim()) return;
     const nextKeywords = addKeywords(keywords, draft);
     setLocalizedKeywords(metadataLocale, nextKeywords);
+    draftSelectionRef.current = null;
     setDraft('');
+  }
+
+  function handleDraftChange(
+    event: ChangeEvent<HTMLInputElement>,
+  ): void {
+    const { value, selectionStart, selectionEnd } = event.currentTarget;
+
+    if (event.nativeEvent instanceof InputEvent && event.nativeEvent.isComposing) {
+      draftSelectionRef.current = null;
+      setDraft(value);
+      return;
+    }
+
+    const fallback = value.length;
+    draftSelectionRef.current = {
+      start: selectionStart ?? fallback,
+      end: selectionEnd ?? selectionStart ?? fallback,
+      restoreFocus: document.activeElement === event.currentTarget,
+    };
+    setDraft(value);
   }
 
   function handleKeyDown(
@@ -93,6 +139,7 @@ export function KeywordEditor() {
             value={metadataLocale}
             onChange={(event) => {
               setMetadataLocale(event.target.value);
+              draftSelectionRef.current = null;
               setDraft('');
             }}
           >
@@ -109,6 +156,8 @@ export function KeywordEditor() {
           <label>
             <span>{t('manuscript.abstract')}</span>
             <textarea
+              dir="auto"
+              lang={metadataLocale}
               value={localizedAbstract}
               onChange={(event) =>
                 setLocalizedAbstract(metadataLocale, event.target.value)
@@ -122,13 +171,10 @@ export function KeywordEditor() {
         </span>
 
         {keywords.length > 0 ? (
-          <div
-            className="omi-keyword-chip-list"
-            aria-label={`${t('manuscript.keywords')} ${metadataLocale}`}
-          >
+          <div className="omi-keyword-chip-list">
             {keywords.map((keyword) => (
               <span className="omi-keyword-chip" key={keyword}>
-                <span>{keyword}</span>
+                <span dir="auto" lang={metadataLocale}>{keyword}</span>
                 <button
                   type="button"
                   onClick={() =>
@@ -149,9 +195,12 @@ export function KeywordEditor() {
 
         <div className="omi-keyword-input-row">
           <input
+            ref={draftInputRef}
             type="text"
+            dir="auto"
+            lang={metadataLocale}
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={handleDraftChange}
             onKeyDown={handleKeyDown}
             placeholder={`${t('manuscript.keywords')} (${metadataLocale.toUpperCase()})`}
             aria-label={`${t('manuscript.keywords')} ${metadataLocale}`}

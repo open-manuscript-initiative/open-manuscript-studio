@@ -141,30 +141,34 @@ export function ScholarlyMetadataPanel() {
       </div>
 
       <div className="studio-metadata-grid">
-        <TermsField label={copy.subjects} value={termsValue('subjects')} hint={copy.termsHint}
+        <TermsField lang={metadataLocale} label={copy.subjects} value={termsValue('subjects')} hint={copy.termsHint}
           onChange={(value) => setScholarlyLocalizedTerms('subjects', metadataLocale, splitTerms(value))} />
-        <TermsField label={copy.disciplines} value={termsValue('disciplines')} hint={copy.termsHint}
+        <TermsField lang={metadataLocale} label={copy.disciplines} value={termsValue('disciplines')} hint={copy.termsHint}
           onChange={(value) => setScholarlyLocalizedTerms('disciplines', metadataLocale, splitTerms(value))} />
-        <TermsField label={copy.supportingAgencies} value={termsValue('supportingAgencies')} hint={copy.termsHint}
+        <TermsField lang={metadataLocale} label={copy.supportingAgencies} value={termsValue('supportingAgencies')} hint={copy.termsHint}
           onChange={(value) => setScholarlyLocalizedTerms('supportingAgencies', metadataLocale, splitTerms(value))} />
 
-        <TextField label={copy.coverage} value={textValue('coverage')}
+        <TextField lang={metadataLocale} label={copy.coverage} value={textValue('coverage')}
           onChange={(value) => setScholarlyLocalizedText('coverage', metadataLocale, value)} />
-        <TextField label={copy.rights} value={textValue('rights')}
+        <TextField lang={metadataLocale} label={copy.rights} value={textValue('rights')}
           onChange={(value) => setScholarlyLocalizedText('rights', metadataLocale, value)} />
-        <TextField label={copy.source} value={textValue('source')}
+        <TextField lang={metadataLocale} label={copy.source} value={textValue('source')}
           onChange={(value) => setScholarlyLocalizedText('source', metadataLocale, value)} />
-        <TextField label={copy.type} value={textValue('type')}
+        <TextField lang={metadataLocale} label={copy.type} value={textValue('type')}
           onChange={(value) => setScholarlyLocalizedText('type', metadataLocale, value)} />
-        <TextField label={copy.languages} value={textValue('languages')}
+        <TextField lang={metadataLocale} label={copy.languages} value={textValue('languages')}
           onChange={(value) => setScholarlyLocalizedText('languages', metadataLocale, value)} />
-        <TextField label={copy.copyrightHolder} value={textValue('copyrightHolder')}
+        <TextField lang={metadataLocale} label={copy.copyrightHolder} value={textValue('copyrightHolder')}
           onChange={(value) => setScholarlyLocalizedText('copyrightHolder', metadataLocale, value)} />
 
         <label className="studio-metadata-field studio-metadata-field--wide">
           <span>{copy.dataAvailability}</span>
-          <textarea value={textValue('dataAvailability')}
-            onChange={(event) => setScholarlyLocalizedText('dataAvailability', metadataLocale, event.target.value)} />
+          <textarea
+            dir="auto"
+            lang={metadataLocale}
+            value={textValue('dataAvailability')}
+            onChange={(event) => setScholarlyLocalizedText('dataAvailability', metadataLocale, event.target.value)}
+          />
         </label>
 
         <PublicationVenueField
@@ -172,24 +176,24 @@ export function ScholarlyMetadataPanel() {
           onChange={setPublicationVenue}
         />
 
-        <TextField label={copy.publisherId} value={metadata.publisherId ?? ''}
+        <TextField dir="ltr" label={copy.publisherId} value={metadata.publisherId ?? ''}
           onChange={(value) => setScholarlyScalar('publisherId', value)} />
-        <TextField label={copy.licenseUrl} value={metadata.licenseUrl ?? ''}
+        <TextField dir="ltr" label={copy.licenseUrl} value={metadata.licenseUrl ?? ''}
           onChange={(value) => setScholarlyScalar('licenseUrl', value)} />
-        <TextField label={copy.copyrightYear} value={metadata.copyrightYear?.toString() ?? ''}
+        <TextField dir="ltr" label={copy.copyrightYear} value={metadata.copyrightYear?.toString() ?? ''}
           onChange={(value) => setScholarlyScalar('copyrightYear', value)} />
       </div>
 
       <details className="studio-technical-details studio-open-science-details">
         <summary>{copy.openScience}</summary>
         <div className="studio-metadata-grid studio-metadata-grid--inside">
-          <TextField label={copy.openData} value={openScienceValue('openData')}
+          <TextField lang={metadataLocale} label={copy.openData} value={openScienceValue('openData')}
             onChange={(value) => setOjsOpenScienceField('openData', metadataLocale, value)} />
-          <TextField label={copy.openMaterials} value={openScienceValue('openMaterials')}
+          <TextField lang={metadataLocale} label={copy.openMaterials} value={openScienceValue('openMaterials')}
             onChange={(value) => setOjsOpenScienceField('openMaterials', metadataLocale, value)} />
-          <TextField label={copy.preregistered} value={openScienceValue('preregistered')}
+          <TextField lang={metadataLocale} label={copy.preregistered} value={openScienceValue('preregistered')}
             onChange={(value) => setOjsOpenScienceField('preregistered', metadataLocale, value)} />
-          <TextField label={copy.preregisteredPlus} value={openScienceValue('preregisteredPlus')}
+          <TextField lang={metadataLocale} label={copy.preregisteredPlus} value={openScienceValue('preregisteredPlus')}
             onChange={(value) => setOjsOpenScienceField('preregisteredPlus', metadataLocale, value)} />
         </div>
       </details>
@@ -197,20 +201,56 @@ export function ScholarlyMetadataPanel() {
   );
 }
 
-function TextField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function TextField({
+  label,
+  value,
+  onChange,
+  lang,
+  dir = 'auto',
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  lang?: string;
+  dir?: 'auto' | 'ltr';
+}) {
   return (
     <label className="studio-metadata-field">
       <span>{label}</span>
-      <input type="text" value={value} onChange={(event) => onChange(event.target.value)} />
+      <input
+        type="text"
+        dir={dir}
+        lang={lang}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
     </label>
   );
 }
 
-function TermsField({ label, value, hint, onChange }: { label: string; value: string; hint: string; onChange: (value: string) => void }) {
+function TermsField({
+  label,
+  value,
+  hint,
+  onChange,
+  lang,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  onChange: (value: string) => void;
+  lang: string;
+}) {
   return (
     <label className="studio-metadata-field">
       <span>{label}</span>
-      <input type="text" value={value} onChange={(event) => onChange(event.target.value)} />
+      <input
+        type="text"
+        dir="auto"
+        lang={lang}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
       <small>{hint}</small>
     </label>
   );

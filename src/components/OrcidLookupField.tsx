@@ -135,6 +135,7 @@ export function OrcidLookupField({
         <input
           id={`${listboxId}-input`}
           type="text"
+          dir="ltr"
           role="combobox"
           autoComplete="off"
           value={orcid}

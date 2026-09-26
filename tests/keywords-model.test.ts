@@ -42,3 +42,11 @@ test('removes only the requested keyword and preserves order', () => {
     ['History', 'Religion'],
   );
 });
+
+
+test('preserves Unicode character order in multilingual keywords', () => {
+  assert.deepEqual(
+    parseKeywordInput('egyháztörténet, Հայագիտություն, Geschichte'),
+    ['egyháztörténet', 'Հայագիտություն', 'Geschichte'],
+  );
+});
