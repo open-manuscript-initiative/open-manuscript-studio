@@ -1,4 +1,5 @@
 import {
+  memo,
   useEffect,
   useRef,
   useState,
@@ -37,7 +38,7 @@ import {
   requestBlockEditorFocus,
 } from '../editor/blockFocusRegistry';
 import {
-  getTopLevelBlockAtPosition,
+  getTopLevelBlockFromResolvedPosition,
   OMI_VISUAL_NODE,
 } from '../editor/continuousManuscriptDocument';
 import {
@@ -117,7 +118,7 @@ interface BlockEditorProps {
 const EMPTY_PUBLICATION_CORRECTIONS: readonly OmiPublicationCorrection[] = [];
 const EMPTY_PUBLICATION_FLOW_BREAKS: readonly OmiPublicationFlowBreak[] = [];
 
-export function BlockEditor({
+function BlockEditorComponent({
   blockId,
   blockType,
   content,
@@ -134,7 +135,28 @@ export function BlockEditor({
 }: BlockEditorProps) {
   const { t, locale } = useTranslation();
   const crossReferenceCopy = getCrossReferenceCopy(locale);
-  const manuscript = useStudioStore((state) => state.manuscript);
+  // Subscribe only to editor-adjacent semantic state. The manuscript sections
+  // are replaced after every continuous-editor change, so subscribing to the
+  // complete manuscript made every keystroke force an avoidable BlockEditor
+  // React render even when notes/citations/proofing metadata were unchanged.
+  const annotations = useStudioStore((state) => state.manuscript.annotations);
+  const citations = useStudioStore((state) => state.manuscript.citations);
+  const citationClusters = useStudioStore(
+    (state) => state.manuscript.citationClusters,
+  );
+  const crossReferences = useStudioStore(
+    (state) => state.manuscript.crossReferences,
+  );
+  const bibliographicRecords = useStudioStore(
+    (state) => state.manuscript.bibliographicRecords,
+  );
+  const citationStyle = useStudioStore(
+    (state) => state.manuscript.citationStyle,
+  );
+  const manuscriptLocale = useStudioStore((state) => state.manuscript.locale);
+  const proofingChanges = useStudioStore(
+    (state) => state.manuscript.proofing?.changes,
+  );
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [activeCitationId, setActiveCitationId] = useState<string | null>(null);
   const [activeCrossReferenceId, setActiveCrossReferenceId] = useState<string | null>(null);
@@ -156,10 +178,10 @@ export function BlockEditor({
   const integrationLabels = getIntegrationActionLabels(locale);
 
   const activeCitation = activeCitationId
-    ? manuscript.citations.find((citation) => citation.id === activeCitationId)
+    ? citations.find((citation) => citation.id === activeCitationId)
     : undefined;
   const activeCluster = activeCitation?.clusterId
-    ? (manuscript.citationClusters ?? []).find(
+    ? (citationClusters ?? []).find(
         (cluster) => cluster.id === activeCitation.clusterId,
       )
     : undefined;
@@ -178,27 +200,27 @@ export function BlockEditor({
 
   useEffect(() => {
     if (!capabilities.insertNotes) return;
-    if (activeNoteId && !manuscript.annotations.some((annotation) => annotation.id === activeNoteId)) {
+    if (activeNoteId && !annotations.some((annotation) => annotation.id === activeNoteId)) {
       setActiveNoteId(null);
     }
-  }, [activeNoteId, capabilities.insertNotes, manuscript.annotations]);
+  }, [activeNoteId, capabilities.insertNotes, annotations]);
 
   useEffect(() => {
     if (!capabilities.editCitations) return;
-    if (activeCitationId && !manuscript.citations.some((citation) => citation.id === activeCitationId)) {
+    if (activeCitationId && !citations.some((citation) => citation.id === activeCitationId)) {
       setActiveCitationId(null);
     }
-  }, [activeCitationId, capabilities.editCitations, manuscript.citations]);
+  }, [activeCitationId, capabilities.editCitations, citations]);
 
   useEffect(() => {
     if (!capabilities.editCrossReferences) return;
     if (
       activeCrossReferenceId &&
-      !(manuscript.crossReferences ?? []).some((reference) => reference.id === activeCrossReferenceId)
+      !(crossReferences ?? []).some((reference) => reference.id === activeCrossReferenceId)
     ) {
       setActiveCrossReferenceId(null);
     }
-  }, [activeCrossReferenceId, capabilities.editCrossReferences, manuscript.crossReferences]);
+  }, [activeCrossReferenceId, capabilities.editCrossReferences, crossReferences]);
 
   const editor = useEditor({
     editable: effectiveEditable,
@@ -415,7 +437,7 @@ export function BlockEditor({
   const proofreading = useEditorProofreading(
     editor,
     blockId,
-    manuscriptLanguage ?? manuscript.locale,
+    manuscriptLanguage ?? manuscriptLocale,
     continuous ? resolveContinuousProofreadingScope : undefined,
   );
   proofreadingSelectRef.current = proofreading.selectIssue;
@@ -430,9 +452,8 @@ export function BlockEditor({
   useEffect(() => {
     if (!editor || !continuous) return;
     const syncActiveBlock = () => {
-      const active = getTopLevelBlockAtPosition(
-        editor.state.doc,
-        editor.state.selection.from,
+      const active = getTopLevelBlockFromResolvedPosition(
+        editor.state.selection.$from,
       );
       if (!active) return;
       activeBlockIdRef.current = active.blockId;
@@ -447,10 +468,10 @@ export function BlockEditor({
       );
     };
     syncActiveBlock();
-    editor.on('selectionUpdate', syncActiveBlock);
+    // Tiptap emits a transaction for selection changes as well. Listening to
+    // both transaction and selectionUpdate duplicated active-block work.
     editor.on('transaction', syncActiveBlock);
     return () => {
-      editor.off('selectionUpdate', syncActiveBlock);
       editor.off('transaction', syncActiveBlock);
     };
   }, [continuous, editor]);
@@ -478,10 +499,10 @@ export function BlockEditor({
   useEffect(() => {
     if (!editor) return;
     const changes = proofingMode === 'editor'
-      ? manuscript.proofing?.changes ?? []
+      ? proofingChanges ?? []
       : [];
     const comments = proofingMode === 'editor'
-      ? manuscript.annotations
+      ? annotations
       : [];
     const corrections = proofingMode === 'publication'
       ? publicationCorrections
@@ -496,8 +517,8 @@ export function BlockEditor({
     }));
   }, [
     editor,
-    manuscript.annotations,
-    manuscript.proofing?.changes,
+    annotations,
+    proofingChanges,
     proofingMode,
     publicationCorrections,
     publicationFlowBreaks,
@@ -590,10 +611,13 @@ export function BlockEditor({
         },
       },
     );
-    const active = getTopLevelBlockAtPosition(editor.state.doc, from);
+    const active = getTopLevelBlockFromResolvedPosition(
+      editor.state.selection.$from,
+    );
+    const currentState = useStudioStore.getState();
     const sectionId = active?.sectionId
-      ?? useStudioStore.getState().selectedSectionId
-      ?? manuscript.sections[0]?.id
+      ?? currentState.selectedSectionId
+      ?? currentState.manuscript.sections[0]?.id
       ?? null;
     if (!sectionId || !table.visual) return;
 
@@ -626,7 +650,7 @@ export function BlockEditor({
 
   function insertCitationCluster(selections: CitationPickerSelection[]): void {
     if (!editor || !capabilities.editCitations || selections.length === 0) return;
-    const records = manuscript.bibliographicRecords ?? [];
+    const records = bibliographicRecords ?? [];
     const validSelections = selections.filter((selection) =>
       records.some((record) => record.id === selection.recordId),
     );
@@ -642,8 +666,8 @@ export function BlockEditor({
     const label = renderCitationCluster(
       creation.citations,
       records,
-      manuscript.citationStyle,
-      manuscript.locale,
+      citationStyle,
+      manuscriptLocale,
     );
     const firstCitation = creation.citations[0];
     if (!firstCitation) return;
@@ -677,7 +701,8 @@ export function BlockEditor({
     displayStyle: OmiCrossReferenceDisplayStyle,
   ): void {
     if (!editor || !capabilities.editCrossReferences) return;
-    const target = resolveCrossReferenceTarget(manuscript, targetId);
+    const currentManuscript = useStudioStore.getState().manuscript;
+    const target = resolveCrossReferenceTarget(currentManuscript, targetId);
     if (!target || target.kind !== targetKind) return;
 
     const reference = createCrossReference({
@@ -686,7 +711,7 @@ export function BlockEditor({
       sourceBlockId: continuous ? activeBlockIdRef.current : blockId,
       displayStyle,
     });
-    const label = formatCrossReferenceLabel(reference, target, manuscript.locale);
+    const label = formatCrossReferenceLabel(reference, target, currentManuscript.locale);
     const inserted = editor
       .chain()
       .focus()
@@ -748,7 +773,7 @@ export function BlockEditor({
         <RichTextToolbar
           editor={editor}
           locale={locale}
-          manuscriptLanguage={manuscriptLanguage ?? manuscript.locale}
+          manuscriptLanguage={manuscriptLanguage ?? manuscriptLocale}
         >
           {showSelectionActions ? (
             <SelectionActionToolbar
@@ -775,7 +800,7 @@ export function BlockEditor({
           editor={editor}
           blockId={continuous ? activeBlockIdRef.current : blockId}
           mode={integrationAction}
-          sourceLanguage={manuscriptLanguage ?? manuscript.locale}
+          sourceLanguage={manuscriptLanguage ?? manuscriptLocale}
           onClose={() => setIntegrationAction(null)}
         />
       ) : null}
@@ -826,6 +851,8 @@ function textToTableLabel(locale: string): string {
   if (language === 'de') return 'Text in Tabelle umwandeln';
   return 'Convert text to table';
 }
+
+export const BlockEditor = memo(BlockEditorComponent);
 
 function parseStoredContent(content: string): JSONContent {
   if (content.trim().length === 0) return createParagraphDocument('');
@@ -892,9 +919,8 @@ function getIntegrationActionLabels(locale: string): {
 }
 
 function resolveContinuousProofreadingScope(editor: Editor) {
-  const active = getTopLevelBlockAtPosition(
-    editor.state.doc,
-    editor.state.selection.from,
+  const active = getTopLevelBlockFromResolvedPosition(
+    editor.state.selection.$from,
   );
   if (!active) return null;
   return {
@@ -909,11 +935,13 @@ function resolveProofingSelection(
   activeBlockId: string,
 ): ProofingSelection | null {
   const { doc, selection } = editor.state;
-  const fromBlock = getTopLevelBlockAtPosition(doc, selection.from);
+  const fromBlock = getTopLevelBlockFromResolvedPosition(selection.$from);
   const targetTo = selection.empty
     ? selection.to
     : Math.max(selection.from, selection.to - 1);
-  const toBlock = getTopLevelBlockAtPosition(doc, targetTo);
+  const toBlock = getTopLevelBlockFromResolvedPosition(
+    doc.resolve(targetTo),
+  );
   if (
     !fromBlock
     || !toBlock

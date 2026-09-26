@@ -22,6 +22,33 @@ export interface ProjectContinuousDocumentOptions {
   createId?: () => string;
 }
 
+interface ResolvedTopLevelPosition {
+  depth: number;
+  pos: number;
+  node: (depth: number) => {
+    nodeSize: number;
+    attrs: Record<string, unknown>;
+    childCount?: number;
+    child?: (index: number) => { nodeSize: number; attrs: Record<string, unknown> };
+  };
+  start: (depth: number) => number;
+  end: (depth: number) => number;
+}
+
+/**
+ * Detects the common local-editor echo path without serializing or deeply
+ * comparing a large study. Projection preserves the exact OMI section objects
+ * it hands to the store unless another semantic synchronizer actually changes
+ * them.
+ */
+export function sectionsShareIdentity(
+  first: readonly OmiSection[],
+  second: readonly OmiSection[],
+): boolean {
+  return first.length === second.length
+    && first.every((section, index) => section === second[index]);
+}
+
 /**
  * Builds one ProseMirror document for the supplied study subtree. OMI block
  * and section identifiers travel as node attributes, while paragraphs and
@@ -213,6 +240,48 @@ export function projectContinuousManuscriptDocument(
   }
 
   return sections;
+}
+
+/**
+ * Resolves the active top-level block from ProseMirror's already-resolved
+ * selection position. For normal text selections this is O(document depth)
+ * and avoids rescanning every preceding top-level node on each transaction.
+ * Root-level gap/node selections retain the legacy scan as a compatibility
+ * fallback.
+ */
+export function getTopLevelBlockFromResolvedPosition(
+  position: ResolvedTopLevelPosition,
+): { blockId: string; sectionId?: string; start: number; end: number } | null {
+  if (position.depth < 1) {
+    const root = position.node(0);
+    if (
+      typeof root.childCount !== 'number'
+      || typeof root.child !== 'function'
+    ) {
+      return null;
+    }
+    const child = root.child;
+    return getTopLevelBlockAtPosition(
+      {
+        childCount: root.childCount,
+        // ProseMirror Node.child reads from `this.content`; passing the method
+        // reference directly loses that receiver for root-depth selections.
+        child: (index) => child.call(root, index),
+      },
+      position.pos,
+    );
+  }
+
+  const node = position.node(1);
+  const blockId = stringAttribute(node.attrs.omiBlockId);
+  if (!blockId) return null;
+
+  return {
+    blockId,
+    sectionId: stringAttribute(node.attrs.omiSectionId) || undefined,
+    start: position.start(1),
+    end: position.end(1),
+  };
 }
 
 export function getTopLevelBlockAtPosition(

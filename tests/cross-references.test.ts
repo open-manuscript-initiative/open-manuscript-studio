@@ -205,6 +205,42 @@ test('renumbering after structural reorder updates only the derived inline label
   assert.equal(reference.targetId, 'figure-b');
 });
 
+test('synchronization preserves section and block identity when labels are already current', () => {
+  const reference = createCrossReference({
+    id: 'xref-stable',
+    anchorId: 'anchor-stable',
+    targetId: 'figure-a',
+    targetKind: 'figure',
+    sourceBlockId: 'paragraph-stable',
+  });
+  const source: OmiSection[] = [
+    {
+      id: 'section-stable',
+      title: 'Stable',
+      blocks: [
+        paragraphWithReference(
+          'paragraph-stable',
+          reference.id,
+          reference.anchorId,
+          'Figure 1',
+        ),
+        visualBlock('figure-a', 'image', 'Figure A'),
+      ],
+    },
+  ];
+
+  const synchronized = synchronizeCrossReferenceLabels(
+    source,
+    [reference],
+    'document',
+    'en',
+  );
+
+  assert.equal(synchronized[0], source[0]);
+  assert.equal(synchronized[0]?.blocks[0], source[0]?.blocks[0]);
+  assert.equal(synchronized[0]?.blocks[1], source[0]?.blocks[1]);
+});
+
 test('missing targets remain visible as unresolved references and are validated', () => {
   const reference = createCrossReference({
     id: 'xref-missing',

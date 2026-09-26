@@ -3,7 +3,7 @@ import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 
 import {
-  getTopLevelBlockAtPosition,
+  getTopLevelBlockFromResolvedPosition,
   OMI_VISUAL_NODE,
 } from '../continuousManuscriptDocument';
 
@@ -175,10 +175,10 @@ export const OmiContinuousStructureExtension = Extension.create({
 });
 
 function syncActiveStructureAttributes(view: {
-  state: { doc: Parameters<typeof getTopLevelBlockAtPosition>[0]; selection: { from: number } };
+  state: { selection: { $from: Parameters<typeof getTopLevelBlockFromResolvedPosition>[0] } };
   dom: HTMLElement;
 }): void {
-  const active = getTopLevelBlockAtPosition(view.state.doc, view.state.selection.from);
+  const active = getTopLevelBlockFromResolvedPosition(view.state.selection.$from);
   if (active) {
     view.dom.dataset.blockId = active.blockId;
     if (active.sectionId) view.dom.dataset.sectionId = active.sectionId;

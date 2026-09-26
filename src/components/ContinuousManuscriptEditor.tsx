@@ -1,6 +1,7 @@
 import { FileUp, Plus } from 'lucide-react';
 import {
   Fragment,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -20,6 +21,7 @@ import {
 import {
   buildContinuousManuscriptDocument,
   projectContinuousManuscriptDocument,
+  sectionsShareIdentity,
 } from '../editor/continuousManuscriptDocument';
 import {
   announceRenderedManuscriptChange,
@@ -34,9 +36,11 @@ import {
   collectStudyNoteOverview,
   resolveCurrentStudy,
 } from '../model/currentStudyNotes';
-import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
+import { buildSectionNumberMap } from '../model/sectionNumbering';
 import { getDocumentStructureProfile } from '../model/documentProfile';
+import type { ProofingSelection } from '../model/proofing';
 import {
+  getParentSectionId,
   partitionManuscriptStudies,
   replaceManuscriptStudySections,
   type ManuscriptStudy,
@@ -73,12 +77,25 @@ function StudyEditor({
   contributorTitle,
   contributorDescription,
 }: StudyEditorProps) {
-  const document = useMemo(
-    () => buildContinuousManuscriptDocument(study.sections, sectionNumbers),
-    [sectionNumbers, study.sections],
-  );
+  const localProjectionRef = useRef<{
+    sections: ReadonlyArray<ManuscriptStudy['sections'][number]>;
+    content: string;
+  } | null>(null);
+  const serializedDocument = useMemo(() => {
+    const localProjection = localProjectionRef.current;
+    if (
+      localProjection
+      && sectionsShareIdentity(study.sections, localProjection.sections)
+    ) {
+      return localProjection.content;
+    }
 
-  const updateDocument = (_documentId: string, content: string) => {
+    return JSON.stringify(
+      buildContinuousManuscriptDocument(study.sections, sectionNumbers),
+    );
+  }, [sectionNumbers, study.sections]);
+
+  const updateDocument = useCallback((_documentId: string, content: string) => {
     let parsed: JSONContent;
     try {
       parsed = JSON.parse(content) as JSONContent;
@@ -98,6 +115,14 @@ function StudyEditor({
       parsed,
       currentStudy.sections,
     );
+    // The store update below is synchronous. Remember the exact projected
+    // section objects so the resulting React render can reuse Tiptap's own
+    // serialized document instead of rebuilding and stringifying the complete
+    // study after every local keystroke.
+    localProjectionRef.current = {
+      sections: projectedStudy,
+      content,
+    };
     stageContinuousDocumentChange(documentWide
       ? projectedStudy
       : replaceManuscriptStudySections(
@@ -105,7 +130,13 @@ function StudyEditor({
           study.rootSectionId,
           projectedStudy,
         ));
-  };
+  }, [documentWide, study.rootSectionId]);
+
+  const handleProofingSelection = useCallback(
+    (selection: ProofingSelection | null) =>
+      useStudioStore.getState().setProofingSelection(selection),
+    [],
+  );
 
   const contributionCount = useStudioStore.getState().manuscript.contributions
     .filter((contribution) => contribution.targetId === study.rootSectionId)
@@ -131,15 +162,13 @@ function StudyEditor({
       <BlockEditor
         blockId={`omi-study-${study.rootSectionId}`}
         blockType="manuscript"
-        content={JSON.stringify(document)}
+        content={serializedDocument}
         onUpdate={updateDocument}
         manuscriptLanguage={manuscriptLanguage}
         className="omi-continuous-document-editor"
         continuous
         proofingMode="editor"
-        onProofingSelection={(selection) =>
-          useStudioStore.getState().setProofingSelection(selection)
-        }
+        onProofingSelection={handleProofingSelection}
       />
     </section>
   );
@@ -249,8 +278,10 @@ export function ContinuousManuscriptEditor() {
     return partitionManuscriptStudies(manuscript.sections);
   }, [manuscript.sections, structure.kind]);
   const currentStudy = useMemo(
-    () => resolveCurrentStudy(manuscript, selectedSectionId),
-    [manuscript, selectedSectionId],
+    () => currentStudyNotesVisible
+      ? resolveCurrentStudy(manuscript, selectedSectionId)
+      : null,
+    [currentStudyNotesVisible, manuscript, selectedSectionId],
   );
   const currentStudyNoteOverview = useMemo(
     () => currentStudyNotesVisible && currentStudy
@@ -265,19 +296,33 @@ export function ContinuousManuscriptEditor() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState('');
   const [importBusy, setImportBusy] = useState(false);
-  const sectionNumbers = useMemo(
-    () => new Map(
-      manuscript.sections.map((section) => [
-        section.id,
-        formatHierarchicalSectionNumber(
-          manuscript.sections,
-          section.id,
-          manuscript.sectionNumberingStyle,
-        ),
-      ]),
-    ),
-    [manuscript.sectionNumberingStyle, manuscript.sections],
-  );
+  const sectionNumberCacheRef = useRef<{
+    signature: string;
+    style: typeof manuscript.sectionNumberingStyle;
+    numbers: Map<string, string>;
+  } | null>(null);
+  const sectionNumberingSignature = manuscript.sections.map((section) =>
+    [
+      section.id,
+      getParentSectionId(section) ?? '',
+      section.title,
+    ].join('\u0000'),
+  ).join('\u0001');
+  if (
+    !sectionNumberCacheRef.current
+    || sectionNumberCacheRef.current.signature !== sectionNumberingSignature
+    || sectionNumberCacheRef.current.style !== manuscript.sectionNumberingStyle
+  ) {
+    sectionNumberCacheRef.current = {
+      signature: sectionNumberingSignature,
+      style: manuscript.sectionNumberingStyle,
+      numbers: buildSectionNumberMap(
+        manuscript.sections,
+        manuscript.sectionNumberingStyle,
+      ),
+    };
+  }
+  const sectionNumbers = sectionNumberCacheRef.current.numbers;
   const progressiveStudyMounting = useMemo(
     () => structure.kind === 'volume'
       && shouldProgressivelyMountStudyEditors(studies),
