@@ -378,3 +378,125 @@
     width: 100%;
   }
 }
+
+
+@media (min-width: 1000px) {
+  .publication-profile-view .publisher-profile-editor {
+    gap: .5rem;
+    border-left-width: 2px;
+    padding: .55rem .65rem;
+  }
+
+  .publication-profile-view .publication-profile-experimental-note {
+    margin: .3rem 0 0;
+    padding: .35rem .45rem;
+    border-radius: .35rem;
+    font-size: .68rem;
+    line-height: 1.25;
+  }
+
+  .publication-profile-view .publisher-profile-saved-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .3rem;
+  }
+
+  .publication-profile-view .publisher-profile-saved {
+    grid-template-columns: 1.8rem minmax(0, 1fr) auto;
+    gap: .4rem;
+    padding: .28rem .35rem;
+  }
+
+  .publication-profile-view .publisher-profile-saved img,
+  .publication-profile-view .publisher-profile-logo-placeholder {
+    width: 1.8rem;
+    height: 1.8rem;
+  }
+
+  .publication-profile-view .publisher-profile-brand-preview {
+    gap: .55rem;
+    min-height: 3.5rem;
+    padding: .45rem .55rem;
+    border-top-width: 2px;
+  }
+
+  .publication-profile-view .publisher-profile-logo-box {
+    width: 3.4rem;
+    height: 2.4rem;
+    padding-right: .55rem;
+  }
+
+  .publication-profile-view .publisher-profile-brand-preview strong {
+    font-size: .84rem;
+  }
+
+  .publication-profile-view .publisher-profile-brand-preview span {
+    font-size: .68rem;
+  }
+
+  .publication-profile-view .publisher-profile-editable-fields {
+    gap: .45rem;
+  }
+
+  .publication-profile-view .publisher-profile-form-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .4rem .5rem;
+  }
+
+  .publication-profile-view .publisher-profile-form-grid label {
+    gap: .18rem;
+  }
+
+  .publication-profile-view .publisher-profile-form-grid label > span:first-child {
+    font-size: .66rem;
+  }
+
+  .publication-profile-view .publisher-profile-form-grid input:not([type='checkbox']):not([type='file']),
+  .publication-profile-view .publisher-profile-form-grid select,
+  .publication-profile-view .publisher-profile-form-grid textarea {
+    min-height: 1.85rem;
+    padding: .3rem .4rem;
+    font-size: .72rem;
+  }
+
+  .publication-profile-view .publisher-profile-form-grid input[type='color'] {
+    min-height: 1.85rem !important;
+  }
+
+  .publication-profile-view .publisher-profile-form-grid textarea {
+    height: 3.6rem;
+    min-height: 3.6rem;
+    max-height: 7rem;
+  }
+
+  .publication-profile-view .publisher-profile-wide {
+    grid-column: span 2;
+  }
+
+  .publication-profile-view .publisher-profile-logo-upload {
+    grid-column: span 2;
+  }
+
+  .publication-profile-view .publisher-profile-file-button,
+  .publication-profile-view .publisher-profile-logo-upload button {
+    min-height: 1.85rem;
+    padding: .28rem .45rem;
+    font-size: .68rem;
+  }
+
+  .publication-profile-view .publisher-profile-actions {
+    gap: .5rem;
+    padding-top: .45rem;
+  }
+
+  .publication-profile-view .publisher-profile-action-buttons {
+    gap: .3rem;
+  }
+
+  .publication-profile-view .publisher-profile-rules-editor {
+    padding-top: .4rem;
+  }
+
+  .publication-profile-view .publisher-profile-rules-editor .publisher-profile-form-grid {
+    margin-top: .4rem;
+  }
+}
