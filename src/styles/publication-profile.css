@@ -246,3 +246,232 @@
     justify-content: center;
   }
 }
+
+
+/* Dense desktop publication dashboard -------------------------------------
+ * The publication profile is configuration-heavy rather than reading-heavy.
+ * On desktop, use horizontal space aggressively and keep controls compact.
+ */
+@media (min-width: 1000px) {
+  .publication-profile-view {
+    gap: .5rem;
+  }
+
+  .publication-profile-header {
+    margin-bottom: 0;
+    padding-bottom: .25rem;
+  }
+
+  .publication-profile-quick-grid,
+  .publication-profile-identity-grid,
+  .publication-profile-style-grid,
+  .publication-profile-validation-grid,
+  .publication-profile-export-grid {
+    display: grid;
+    align-items: start;
+    gap: .5rem;
+    min-width: 0;
+  }
+
+  .publication-profile-quick-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .publication-profile-identity-grid {
+    grid-template-columns: minmax(18rem, .8fr) minmax(0, 1.45fr);
+  }
+
+  .publication-profile-style-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .publication-profile-validation-grid {
+    grid-template-columns: minmax(0, 1.45fr) minmax(18rem, .75fr);
+  }
+
+  .publication-profile-export-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .publication-profile-selector,
+  .publication-profile-rules,
+  .publication-profile-readiness,
+  .publication-profile-export {
+    border-radius: .45rem;
+    padding: .55rem .65rem;
+  }
+
+  .publication-profile-section-heading {
+    gap: .5rem;
+  }
+
+  .publication-profile-section-heading h4 {
+    font-size: .88rem;
+    line-height: 1.2;
+  }
+
+  .publication-profile-section-heading p,
+  .publication-profile-export p {
+    margin-top: .12rem;
+    font-size: .72rem;
+    line-height: 1.3;
+  }
+
+  .publication-profile-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .35rem;
+    margin-top: .45rem;
+  }
+
+  .publication-profile-option {
+    gap: .4rem;
+    padding: .42rem .5rem;
+    border-radius: .4rem;
+  }
+
+  .publication-profile-option-copy {
+    gap: .08rem;
+  }
+
+  .publication-profile-option-copy > span:not(.publication-profile-option-title) {
+    font-size: .7rem;
+    line-height: 1.25;
+  }
+
+  .publication-profile-option-copy code {
+    font-size: .62rem;
+  }
+
+  .publication-profile-option-title {
+    gap: .3rem;
+    font-size: .78rem;
+  }
+
+  .publication-profile-active-badge {
+    padding: .04rem .3rem;
+    font-size: .6rem;
+  }
+
+  .publication-profile-apply {
+    margin-top: .45rem;
+  }
+
+  .publication-profile-status,
+  .publication-profile-no-issues {
+    gap: .3rem;
+    margin-top: .35rem;
+    font-size: .72rem;
+  }
+
+  .publication-profile-rule-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .35rem;
+    margin-top: .45rem;
+  }
+
+  .publication-profile-rule-card {
+    border-radius: .4rem;
+    padding: .42rem .48rem;
+  }
+
+  .publication-profile-rule-card h5 {
+    margin-bottom: .25rem;
+    font-size: .74rem;
+  }
+
+  .publication-profile-rule-card dl {
+    gap: .18rem;
+  }
+
+  .publication-profile-rule-card dl > div {
+    gap: .35rem;
+  }
+
+  .publication-profile-rule-card dt,
+  .publication-profile-rule-card dd {
+    font-size: .66rem;
+    line-height: 1.25;
+  }
+
+  .publication-profile-output-row {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: .35rem;
+    margin-top: .4rem;
+    font-size: .7rem;
+  }
+
+  .publication-profile-output-list {
+    gap: .2rem;
+  }
+
+  .publication-profile-output-list code {
+    padding: .08rem .28rem;
+    font-size: .62rem;
+  }
+
+  .publication-readiness-counts span {
+    padding: .08rem .3rem;
+    font-size: .64rem;
+  }
+
+  .publication-profile-issue-list {
+    gap: .25rem;
+    margin-top: .4rem;
+  }
+
+  .publication-profile-issue {
+    gap: .3rem;
+    padding: .3rem .4rem;
+    border-radius: .35rem;
+    font-size: .7rem;
+    line-height: 1.3;
+  }
+
+  .publication-profile-view input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  .publication-profile-view select {
+    min-height: 1.85rem;
+    padding-block: .25rem;
+    font-size: .74rem;
+  }
+
+  .publication-profile-view textarea {
+    min-height: 4.75rem;
+    max-height: 9rem;
+    padding: .4rem .5rem;
+    font-size: .74rem;
+    line-height: 1.35;
+  }
+
+  .publication-profile-export {
+    gap: .5rem;
+  }
+}
+
+@media (min-width: 1500px) {
+  .publication-profile-style-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .publication-profile-rule-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 761px) and (max-width: 999px) {
+  .publication-profile-quick-grid,
+  .publication-profile-identity-grid,
+  .publication-profile-style-grid,
+  .publication-profile-validation-grid,
+  .publication-profile-export-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .6rem;
+  }
+
+  .publication-profile-identity-grid > .publisher-profile-editor,
+  .publication-profile-validation-grid > .publication-profile-rules,
+  .publication-profile-export-grid > .publication-profile-export {
+    grid-column: 1 / -1;
+  }
+}
