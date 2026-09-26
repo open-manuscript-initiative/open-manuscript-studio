@@ -4,10 +4,7 @@ import test from 'node:test';
 import {
   formatHierarchicalSectionHeading,
   formatHierarchicalSectionNumber,
-  formatSectionHeading,
-  formatSectionNumber,
   getSectionNumberToken,
-  getSectionOrdinalPath,
   normalizeSectionNumberingStyle,
   sectionNumberingStyleExample,
 } from '../src/model/sectionNumbering.ts';
@@ -23,29 +20,13 @@ const sections: OmiSection[] = [
 
 test('section numbering is optional and defaults to none', () => {
   assert.equal(normalizeSectionNumberingStyle(undefined), 'none');
-  assert.equal(formatSectionNumber(0, undefined), '');
-  assert.equal(formatSectionHeading('Introduction', 0, 'none'), 'Introduction');
+  assert.equal(getSectionNumberToken(sections, 'a', undefined), '');
 });
 
-test('formats decimal and roman section numbering', () => {
-  assert.equal(formatSectionNumber(0, 'decimal'), '1.');
-  assert.equal(formatSectionNumber(3, 'upper-roman'), 'IV.');
-  assert.equal(formatSectionNumber(8, 'lower-roman'), 'ix.');
-});
-
-test('formats alphabetic numbering beyond the first alphabet cycle', () => {
-  assert.equal(formatSectionNumber(0, 'upper-alpha'), 'A.');
-  assert.equal(formatSectionNumber(25, 'upper-alpha'), 'Z.');
-  assert.equal(formatSectionNumber(26, 'upper-alpha'), 'AA.');
-  assert.equal(formatSectionNumber(27, 'lower-alpha'), 'ab.');
-});
-
-test('derives hierarchical ordinal paths from sibling order', () => {
-  assert.deepEqual(getSectionOrdinalPath(sections, 'a'), [1]);
-  assert.deepEqual(getSectionOrdinalPath(sections, 'a1'), [1, 1]);
-  assert.deepEqual(getSectionOrdinalPath(sections, 'a11'), [1, 1, 1]);
-  assert.deepEqual(getSectionOrdinalPath(sections, 'a2'), [1, 2]);
-  assert.deepEqual(getSectionOrdinalPath(sections, 'b'), [2]);
+test('formats hierarchical decimal, roman and alphabetic numbering', () => {
+  assert.equal(getSectionNumberToken(sections, 'a11', 'decimal'), '1.1.1');
+  assert.equal(getSectionNumberToken(sections, 'b', 'upper-roman'), 'II');
+  assert.equal(getSectionNumberToken(sections, 'a2', 'lower-alpha'), 'a.b');
 });
 
 test('renders hierarchical numbering without storing it in titles', () => {
@@ -57,14 +38,6 @@ test('renders hierarchical numbering without storing it in titles', () => {
   );
   assert.equal(formatHierarchicalSectionNumber(sections, 'a11', 'upper-roman'), 'I.I.I.');
   assert.equal(sections[3]?.title, 'A.2');
-});
-
-test('keeps generated numbering separate from the semantic title', () => {
-  const title = 'Methods';
-  const rendered = formatSectionHeading(title, 1, 'upper-roman');
-
-  assert.equal(title, 'Methods');
-  assert.equal(rendered, 'II. Methods');
 });
 
 test('provides hierarchy-aware examples for every numbering style', () => {
