@@ -33,7 +33,7 @@ export interface OmiSemanticField {
   modifiedAt?: string;
 }
 
-export interface OmiSemanticFieldValidationIssue {
+interface OmiSemanticFieldValidationIssue {
   fieldId: string;
   type:
     | 'missing-required-value'
@@ -42,7 +42,7 @@ export interface OmiSemanticFieldValidationIssue {
     | 'invalid-role';
 }
 
-export interface CreateSemanticFieldInput {
+interface CreateSemanticFieldInput {
   role: string;
   label: string;
   valueType?: OmiSemanticFieldValueType;
