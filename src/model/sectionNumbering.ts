@@ -21,28 +21,13 @@ export function normalizeSectionNumberingStyle(
     : 'none';
 }
 
-/**
- * Backward-compatible single-level formatter.
- */
-export function formatSectionNumber(
-  zeroBasedIndex: number,
-  style: OmiSectionNumberingStyle | undefined,
-): string {
-  const normalizedStyle = normalizeSectionNumberingStyle(style);
-
-  if (normalizedStyle === 'none' || zeroBasedIndex < 0) {
-    return '';
-  }
-
-  return `${formatOrdinal(zeroBasedIndex + 1, normalizedStyle)}.`;
-}
 
 /**
  * Returns the structural ordinal path of a section, for example [2, 1, 3].
  * The path is derived from sibling order and parent relationships rather than
  * stored as mutable numbering metadata.
  */
-export function getSectionOrdinalPath(
+function getSectionOrdinalPath(
   sections: readonly OmiSection[],
   sectionId: string,
 ): number[] {
@@ -123,14 +108,6 @@ function hasLeadingSectionNumber(title: string): boolean {
   );
 }
 
-export function formatSectionHeading(
-  title: string,
-  zeroBasedIndex: number,
-  style: OmiSectionNumberingStyle | undefined,
-): string {
-  const number = formatSectionNumber(zeroBasedIndex, style);
-  return number ? `${number} ${title}` : title;
-}
 
 export function formatHierarchicalSectionHeading(
   title: string,
