@@ -856,8 +856,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .omi-continuous-blocks .omi-block-toolbar,
-  .omi-continuous-blocks .omi-visual-insert-menu {
+  .omi-continuous-blocks .omi-block-toolbar {
     transition: none;
   }
 }
