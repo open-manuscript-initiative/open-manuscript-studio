@@ -75,7 +75,7 @@ function StudyEditor({
   contributorDescription,
 }: StudyEditorProps) {
   const localProjectionRef = useRef<{
-    sections: readonly ManuscriptStudy['sections'][number][];
+    sections: ReadonlyArray<ManuscriptStudy['sections'][number]>;
     content: string;
   } | null>(null);
   const serializedDocument = useMemo(() => {
