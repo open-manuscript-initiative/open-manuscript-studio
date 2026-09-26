@@ -122,7 +122,7 @@ export function createCheckpointSummary(
  * Repeated edits of the same semantic target are collapsed into one event.
  * The first previous value is retained and the latest next value wins.
  */
-export function coalesceEvents(
+function coalesceEvents(
   existing: CreateChangeEventInput[],
   incoming: CreateChangeEventInput[],
   cloneEventValues = true,
