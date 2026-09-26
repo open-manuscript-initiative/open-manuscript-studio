@@ -1,0 +1,153 @@
+name: Android AGP 9.1 compatibility test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/android-agp91-test.yml'
+      - 'scripts/configure-android-agp91-test.mjs'
+      - 'scripts/configure-android-modern-ui.mjs'
+      - 'scripts/configure-android-signing.mjs'
+      - 'tests/android-agp91-test.test.mjs'
+      - 'tests/android-release-optimization.test.mjs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-agp91-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Android release smoke (AGP 9.1.1)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Test AGP 9.1 adapter
+        run: node --test tests/android-agp91-test.test.mjs tests/android-release-optimization.test.mjs
+
+      - name: Configure Android SDK and NDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358'
+          echo "NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+
+      - name: Generate Android project
+        env:
+          CI: 'true'
+        run: |
+          npm run tauri -- android init --ci
+          npm run icons:generate
+          node scripts/configure-android-modern-ui.mjs
+
+      - name: Enable AGP 9.1 compatibility mode
+        run: |
+          node scripts/configure-android-agp91-test.mjs
+          grep -n 'com.android.tools.build:gradle:9.1.1' src-tauri/gen/android/build.gradle.kts
+          grep -n 'com.android.tools.build:gradle:9.1.1' src-tauri/gen/android/buildSrc/build.gradle.kts
+          grep -n 'gradle-9.3.1-bin.zip' src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties
+          grep -n 'android.r8.optimizedResourceShrinking=true' src-tauri/gen/android/gradle.properties
+
+      - name: Configure disposable test signing and shrinking
+        shell: bash
+        run: |
+          set -euo pipefail
+          keytool -genkeypair             -keystore "$RUNNER_TEMP/agp91-test.jks"             -storepass android             -keypass android             -alias agp91-test             -dname 'CN=OMI AGP 9.1 compatibility test'             -keyalg RSA             -keysize 2048             -validity 2
+          printf 'storeFile=%s\nstorePassword=android\nkeyPassword=android\nkeyAlias=agp91-test\n'             "$RUNNER_TEMP/agp91-test.jks" > src-tauri/gen/android/keystore.properties
+          node scripts/configure-android-signing.mjs
+
+      - name: Build ARM64 release AAB and APK with R8
+        env:
+          CI: 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run tauri -- android build --target aarch64 --aab --apk --ci             --config '{"bundle":{"android":{"versionCode":1291}}}'             2>&1 | tee "$RUNNER_TEMP/agp91-release-build.log"
+
+      - name: Verify R8 class repackaging
+        shell: bash
+        run: |
+          python3 - <<'PYTHON'
+          from pathlib import Path
+
+          mappings = list(Path("src-tauri/gen/android/app/build/outputs/mapping").rglob("mapping.txt"))
+          assert mappings, "R8 mapping.txt is missing"
+
+          mapping = mappings[0]
+          targets = []
+          for raw in mapping.read_text(encoding="utf-8", errors="replace").splitlines():
+              if raw.startswith((" ", "#")) or " -> " not in raw or not raw.endswith(":"):
+                  continue
+              target = raw.split(" -> ", 1)[1][:-1].strip()
+              if target:
+                  targets.append(target)
+
+          unnamed = [target for target in targets if "." not in target]
+          assert unnamed, (
+              "No class was mapped into the unnamed package. "
+              "AGP 9.1 default R8 class repackaging was not observed."
+          )
+          print(f"R8 mapping: {len(unnamed)} of {len(targets)} mapped classes use the unnamed package.")
+          print("Examples:", ", ".join(unnamed[:10]))
+          PYTHON
+
+      - name: Verify ARM64 native 16 KB page alignment
+        run: |
+          python3 - <<'PYTHON'
+          import importlib.util
+          from pathlib import Path
+          import zipfile
+
+          spec = importlib.util.spec_from_file_location("alignment", "scripts/verify-android-page-size.py")
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+
+          outputs = Path("src-tauri/gen/android/app/build/outputs")
+          for suffix in ("*.aab", "*.apk"):
+              archives = list(outputs.rglob(suffix))
+              assert archives, f"Missing {suffix}"
+              for path in archives:
+                  with zipfile.ZipFile(path) as archive:
+                      libraries = [
+                          name for name in archive.namelist()
+                          if "/arm64-v8a/" in name and name.endswith(".so")
+                      ]
+                      assert any(name.endswith("libopen_manuscript_studio_lib.so") for name in libraries)
+                      for name in libraries:
+                          module.verify_elf(archive.read(name), 183)
+                  print(f"ARM64 ELF alignment passed: {path}")
+          PYTHON
+
+      - name: Upload build evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-toolchain-agp91
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/agp91-release-build.log
+            src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
+            src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+            src-tauri/gen/android/app/build/outputs/mapping/**
