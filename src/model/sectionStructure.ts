@@ -578,11 +578,6 @@ function endOfSubtreeIndex(
   return index;
 }
 
-function hierarchyOrderIsValid(sections: readonly OmiSection[]): boolean {
-  return validateSectionHierarchy(sections).every(
-    (issue) => issue.type !== 'non-preorder',
-  );
-}
 
 function resolveStudyRootId(
   section: OmiSection,
