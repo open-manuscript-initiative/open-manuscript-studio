@@ -1,7 +1,4 @@
 import type {
-  OmiManuscriptState,
-} from '../types/omi.ts';
-import type {
   OmiPublicationProfile,
 } from './publicationProfile.ts';
 
