@@ -396,6 +396,8 @@ function ManuscriptDataView({ onNavigate }: { onNavigate: () => void }) {
           <label>
             <span>{t('manuscript.abstract')}</span>
             <textarea
+              dir="auto"
+              lang={manuscript.locale}
               value={manuscript.abstract ?? ''}
               onChange={(event) => setAbstract(event.target.value)}
             />
