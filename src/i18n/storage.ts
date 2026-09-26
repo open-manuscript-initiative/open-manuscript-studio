@@ -39,6 +39,15 @@ export function saveUiLocale(locale: SupportedLocale): void {
   }
 }
 
+export function resolveInitialUiLocale(): SupportedLocale {
+  const preferredLocale = loadUiLocale();
+  const enabled = loadEnabledUiLocales();
+
+  return enabled.includes(preferredLocale)
+    ? preferredLocale
+    : enabled[0] ?? preferredLocale;
+}
+
 export function loadEnabledUiLocales(): SupportedLocale[] {
   if (typeof window === 'undefined') {
     return [...supportedLocales];
