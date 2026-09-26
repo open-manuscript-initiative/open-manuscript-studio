@@ -507,9 +507,6 @@ export function normalizeRorId(rorId: string): string {
     : '';
 }
 
-export function isValidRorId(rorId: string): boolean {
-  return normalizeRorId(rorId).length > 0;
-}
 
 function createExternalIdentifierAssertion(
   scheme: string,
