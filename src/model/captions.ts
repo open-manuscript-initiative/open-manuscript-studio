@@ -1,5 +1,4 @@
 import type {
-  OmiBlock,
   OmiSection,
   OmiVisualBlockData,
 } from '../types/omi';
@@ -45,7 +44,7 @@ export function defaultCaptionLabel(kind: OmiVisualBlockData['kind']): string {
   return DEFAULT_LABELS[kind];
 }
 
-export function normalizeCaptionSequenceKey(label: string): string {
+function normalizeCaptionSequenceKey(label: string): string {
   return label.trim().toLocaleLowerCase().replace(/\s+/g, '-');
 }
 
@@ -146,10 +145,6 @@ export function updateCaptionSemantics(
   };
 }
 
-export function captionForBlock(block: OmiBlock): OmiCaption | undefined {
-  if (!block.visual) return undefined;
-  return ensureSemanticCaption(block.visual).semanticCaption;
-}
 
 declare module '../types/omi' {
   interface OmiImageBlockData {
