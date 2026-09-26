@@ -148,7 +148,7 @@ export function collectReferencedAssetIds(blocks: readonly OmiBlock[]): Set<stri
   return ids;
 }
 
-export function sanitizeAssetFileName(
+function sanitizeAssetFileName(
   value: string,
   id: string,
   mediaType = 'application/octet-stream',
@@ -164,7 +164,7 @@ export function sanitizeAssetFileName(
   return `asset-${id}${extensionForMediaType(mediaType)}`;
 }
 
-export function normalizeMediaType(value: string): string {
+function normalizeMediaType(value: string): string {
   const normalized = value.trim().toLowerCase();
   return /^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/.test(normalized)
     ? normalized
