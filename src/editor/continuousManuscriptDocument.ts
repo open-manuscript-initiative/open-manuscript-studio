@@ -260,10 +260,13 @@ export function getTopLevelBlockFromResolvedPosition(
     ) {
       return null;
     }
+    const child = root.child;
     return getTopLevelBlockAtPosition(
       {
         childCount: root.childCount,
-        child: root.child,
+        // ProseMirror Node.child reads from `this.content`; passing the method
+        // reference directly loses that receiver for root-depth selections.
+        child: (index) => child.call(root, index),
       },
       position.pos,
     );
