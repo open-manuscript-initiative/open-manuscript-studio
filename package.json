@@ -87,7 +87,9 @@
     "i18n:translation-master": "npm run i18n:pending:supplemental && node scripts/export-translation-master.mjs",
     "i18n:returned:generate": "node scripts/generate-returned-translation-overlays.mjs",
     "predev": "npm run i18n:returned:generate",
-    "prebuild": "npm run i18n:returned:generate"
+    "prebuild": "npm run i18n:returned:generate",
+    "benchmark:editor": "playwright test --config=playwright.performance.config.ts",
+    "benchmark:editor:summary": "node scripts/summarize-editor-performance.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
