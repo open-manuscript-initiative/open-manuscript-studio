@@ -9,7 +9,6 @@ import {
   hierarchiesAreEqual,
   indentSection,
   insertSectionAfter,
-  insertSectionAtGap,
   insertSubsection,
   insertTopLevelSectionAtEnd,
   moveSectionAmongSiblings,
