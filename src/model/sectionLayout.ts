@@ -3,10 +3,10 @@ import type {
   OmiSectionLayout,
 } from '../types/omi';
 
-export const DEFAULT_SECTION_COLUMNS: OmiSectionColumnCount = 1;
+const DEFAULT_SECTION_COLUMNS: OmiSectionColumnCount = 1;
 export const DEFAULT_SECTION_COLUMN_GAP_MM = 8;
 export const DEFAULT_TAB_INTERVAL_MM = 12.5;
-export const MAX_SECTION_TAB_STOP_MM = 240;
+const MAX_SECTION_TAB_STOP_MM = 240;
 
 export function normalizeSectionLayout(
   layout: OmiSectionLayout | undefined,
