@@ -1088,3 +1088,65 @@ input[size]:not([data-full-width="true"]) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* Contributor forms use content-appropriate field widths on desktop.
+ * Identifiers and short metadata must not expand to the full menu width. */
+@media (min-width: 761px) {
+  .studio-menu-content .contributor-form-grid {
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 16.5rem));
+    justify-content: start;
+    align-items: start;
+    gap: .4rem .55rem;
+  }
+
+  .studio-menu-content .contributor-form-grid > label,
+  .studio-menu-content .contributor-form-grid > .contributor-compact-field,
+  .studio-menu-content .contributor-form-grid > .contributor-medium-field,
+  .studio-menu-content .contributor-form-grid > .contributor-large-field {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .studio-menu-content .contributor-medium-field,
+  .studio-menu-content .contributor-large-field {
+    grid-column: span 2;
+    max-width: 33.55rem;
+  }
+
+  .studio-menu-content .contributor-compact-field {
+    grid-column: span 1;
+    max-width: 16.5rem;
+  }
+
+  .studio-menu-content .orcid-lookup-field {
+    width: min(100%, 14.5rem);
+    max-width: 14.5rem;
+  }
+
+  .studio-menu-content .ror-affiliation-field {
+    width: min(100%, 30rem);
+    max-width: 30rem;
+  }
+
+  .studio-menu-content .contributor-metadata-fieldset {
+    width: min(100%, 46rem);
+    max-width: 46rem;
+  }
+
+  .studio-menu-content .contributor-metadata-fieldset > label {
+    width: min(100%, 33.55rem);
+    max-width: 33.55rem;
+  }
+
+  .studio-menu-content .contributor-metadata-fieldset > label:first-of-type {
+    width: min(100%, 16.5rem);
+    max-width: 16.5rem;
+  }
+
+  .studio-menu-content .contributor-credit-grid {
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 15rem));
+    justify-content: start;
+    max-width: 46rem;
+  }
+}
