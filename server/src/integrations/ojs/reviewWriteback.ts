@@ -136,6 +136,3 @@ export async function writeBackSubmittedExternalReview(
   }
 }
 
-// Backwards-compatible export for existing callers while the persistence table
-// names are migrated to platform-neutral terminology in a later schema change.
-export const writeBackSubmittedOjsReview = writeBackSubmittedExternalReview;
