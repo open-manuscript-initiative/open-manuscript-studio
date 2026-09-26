@@ -78,3 +78,44 @@ test('Hebrew selects RTL while the other parity locales stay LTR', () => {
   assert.equal(getStudioLocaleDirection('ja'), 'ltr');
   assert.equal(getStudioLocaleDirection('zh-TW'), 'ltr');
 });
+
+
+test('canonical Studio locale dictionaries are lazy-loaded after the English fallback', () => {
+  const configSource = readFileSync(
+    new URL('../src/i18n/config.ts', import.meta.url),
+    'utf8',
+  );
+  assert.match(
+    configSource,
+    /import englishDictionaryJson from '\.\/locales\/en\/studio\.json'/,
+  );
+  assert.match(configSource, /import\.meta\.glob\(/);
+  assert.match(configSource, /!\.\/locales\/en\/studio\.json/);
+  assert.doesNotMatch(configSource, /eager:\s*true/);
+  assert.match(
+    configSource,
+    /export async function loadTranslationDictionary\(/,
+  );
+});
+
+test('Studio preloads the active locale and switches languages only after loading', () => {
+  const mainSource = readFileSync(
+    new URL('../src/main.tsx', import.meta.url),
+    'utf8',
+  );
+  const providerSource = readFileSync(
+    new URL('../src/i18n/I18nProvider.tsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(mainSource, /loadTranslationDictionary\(initialLocale\)/);
+  assert.match(mainSource, /LOCALE_BOOT_BUDGET_MS/);
+  assert.match(
+    providerSource,
+    /loadTranslationDictionary\(nextLocale\)[\s\S]*setLocaleState\(nextLocale\)/,
+  );
+  assert.match(
+    providerSource,
+    /isTranslationDictionaryLoaded\(locale\)/,
+  );
+});
