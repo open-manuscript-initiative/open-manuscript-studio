@@ -341,7 +341,7 @@ function DocumentMenuView({
     ? (ownDevice ? labels.open : labels.openPortable)
     : labels.open;
 
-  return <section className="studio-menu-view">
+  return <section className="studio-menu-view studio-menu-view--document">
     <div className="studio-menu-view-header"><div><h3>{t('studio.document.title')}</h3><p>{t('studio.document.description')}</p></div></div>
     <NewDocumentActions onCreated={onCreated} />
     <div className="studio-tool-card" data-document-lifecycle="true">
@@ -384,7 +384,7 @@ function ManuscriptDataView({ onNavigate }: { onNavigate: () => void }) {
   const manuscript = useStudioStore((state) => state.manuscript);
   const setAbstract = useStudioStore((state) => state.setAbstract);
   return (
-    <section className="studio-menu-view">
+    <section className="studio-menu-view studio-menu-view--manuscript">
       <div className="studio-menu-view-header">
         <div>
           <h3>{t('studio.manuscript.title')}</h3>
@@ -418,7 +418,7 @@ function ManuscriptDataView({ onNavigate }: { onNavigate: () => void }) {
 }
 
 function ReferencesView() {
-  return <section className="studio-menu-view"><ReferencesPanel /><CrossReferencePanel /></section>;
+  return <section className="studio-menu-view studio-menu-view--references"><ReferencesPanel /><CrossReferencePanel /></section>;
 }
 
 function ToolsView() {
@@ -550,7 +550,7 @@ function ToolsView() {
 
   const nativeSaveCard = ownDevice ? ownDeviceSaveCard : sharedDeviceSaveCard;
 
-  return <section className="studio-menu-view"><div className="studio-menu-view-header"><div><h3>{t('studio.tools.title')}</h3><p>{t('studio.tools.description')}</p></div></div>
+  return <section className="studio-menu-view studio-menu-view--tools"><div className="studio-menu-view-header"><div><h3>{t('studio.tools.title')}</h3><p>{t('studio.tools.description')}</p></div></div>
     {platform === 'android' ? nativeSaveCard : null}
     <ExportFormatsPanel />
     {platform !== 'android' ? nativeSaveCard : null}
@@ -560,7 +560,7 @@ function ToolsView() {
 
 function SettingsView() {
   const { t } = useTranslation();
-  return <section className="studio-menu-view"><div className="studio-menu-view-header"><div><h3>{t('studio.settings.title')}</h3><p>{t('studio.settings.description')}</p></div></div><ContentLanguageSettings /><ImportFormatSettings /><CloudStorageSettings /></section>;
+  return <section className="studio-menu-view studio-menu-view--settings"><div className="studio-menu-view-header"><div><h3>{t('studio.settings.title')}</h3><p>{t('studio.settings.description')}</p></div></div><ContentLanguageSettings /><ImportFormatSettings /><CloudStorageSettings /></section>;
 }
 
 function formatNativeLocation(
