@@ -4,7 +4,11 @@ import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import { initializeLastSessionPersistence } from './app/lastSessionPersistence';
 import { initializeRevisionIntegrity } from './app/revisionIntegrity';
-import { I18nProvider } from './i18n';
+import {
+  I18nProvider,
+  loadTranslationDictionary,
+  resolveInitialUiLocale,
+} from './i18n';
 import { restorePendingExternalLaunchToLocation } from './services/pendingExternalLaunch';
 
 import './styles/global.css';
@@ -51,17 +55,36 @@ restorePendingExternalLaunchToLocation();
 initializeRevisionIntegrity();
 
 const SESSION_RESTORE_BOOT_BUDGET_MS = 1200;
+const LOCALE_BOOT_BUDGET_MS = 1500;
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, milliseconds);
+  });
+}
 
 async function bootstrap(): Promise<void> {
   const sessionRestore = initializeLastSessionPersistence();
-  await Promise.race([
-    sessionRestore,
-    new Promise<void>((resolve) => {
-      window.setTimeout(resolve, SESSION_RESTORE_BOOT_BUDGET_MS);
-    }),
-  ]).catch((error) => {
-    console.warn('Studio session restore failed during bootstrap.', error);
+  const initialLocale = resolveInitialUiLocale();
+  const localeReady = loadTranslationDictionary(initialLocale).catch((error) => {
+    console.warn(
+      `Studio locale ${initialLocale} could not be loaded during bootstrap.`,
+      error,
+    );
   });
+
+  await Promise.all([
+    Promise.race([
+      sessionRestore,
+      delay(SESSION_RESTORE_BOOT_BUDGET_MS),
+    ]).catch((error) => {
+      console.warn('Studio session restore failed during bootstrap.', error);
+    }),
+    Promise.race([
+      localeReady,
+      delay(LOCALE_BOOT_BUDGET_MS),
+    ]),
+  ]);
 
   // A slow or blocked IndexedDB restore must never prevent the first frame.
   // Keep it alive in the background so a late successful restore can still
