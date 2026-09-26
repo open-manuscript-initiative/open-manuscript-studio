@@ -11,7 +11,7 @@ test('keyword entry preserves typing order and multilingual text direction', asy
   const dialog = page.getByRole('dialog', { name: 'Manuscript menu' });
   await dialog.getByRole('button', { name: 'Manuscript data', exact: true }).click();
 
-  const keywordInput = dialog.getByLabel('Keywords en');
+  const keywordInput = dialog.getByRole('textbox', { name: 'Keywords en', exact: true });
   await expect(keywordInput).toBeVisible();
   await expect(keywordInput).toHaveAttribute('dir', 'auto');
 
