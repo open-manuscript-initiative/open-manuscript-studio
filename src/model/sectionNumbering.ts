@@ -62,7 +62,7 @@ function getSectionOrdinalPath(
 export function getSectionNumberToken(
   sections: readonly OmiSection[],
   sectionId: string,
-  style: OmiSectionNumberingStyle | undefined = 'decimal',
+  style: OmiSectionNumberingStyle | undefined,
 ): string {
   const normalizedStyle = normalizeSectionNumberingStyle(style);
   if (normalizedStyle === 'none') return '';
