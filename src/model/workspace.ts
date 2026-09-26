@@ -359,7 +359,7 @@ export interface CreateWorkspaceInvitationInput {
 /**
  * Default permissions belonging to each workspace role.
  */
-export const WORKSPACE_ROLE_PERMISSIONS: Readonly<
+const WORKSPACE_ROLE_PERMISSIONS: Readonly<
   Record<WorkspaceRole, WorkspacePermissions>
 > = {
   owner: {
@@ -668,7 +668,7 @@ export function isInvitationExpired(
  *
  * The manuscript's primary language is removed from the translation list.
  */
-export function normalizeLanguageCodes(
+function normalizeLanguageCodes(
   languages: LanguageCode[],
   manuscriptLanguage?: LanguageCode,
 ): LanguageCode[] {
