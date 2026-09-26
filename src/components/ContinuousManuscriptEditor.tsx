@@ -1,6 +1,7 @@
 import { FileUp, Plus } from 'lucide-react';
 import {
   Fragment,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -93,7 +94,7 @@ function StudyEditor({
     );
   }, [sectionNumbers, study.sections]);
 
-  const updateDocument = (_documentId: string, content: string) => {
+  const updateDocument = useCallback((_documentId: string, content: string) => {
     let parsed: JSONContent;
     try {
       parsed = JSON.parse(content) as JSONContent;
@@ -128,7 +129,13 @@ function StudyEditor({
           study.rootSectionId,
           projectedStudy,
         ));
-  };
+  }, [documentWide, study.rootSectionId]);
+
+  const handleProofingSelection = useCallback(
+    (selection: Parameters<NonNullable<React.ComponentProps<typeof BlockEditor>['onProofingSelection']>>[0]) =>
+      useStudioStore.getState().setProofingSelection(selection),
+    [],
+  );
 
   const contributionCount = useStudioStore.getState().manuscript.contributions
     .filter((contribution) => contribution.targetId === study.rootSectionId)
@@ -160,9 +167,7 @@ function StudyEditor({
         className="omi-continuous-document-editor"
         continuous
         proofingMode="editor"
-        onProofingSelection={(selection) =>
-          useStudioStore.getState().setProofingSelection(selection)
-        }
+        onProofingSelection={handleProofingSelection}
       />
     </section>
   );
