@@ -171,10 +171,7 @@ export function KeywordEditor() {
         </span>
 
         {keywords.length > 0 ? (
-          <div
-            className="omi-keyword-chip-list"
-            aria-label={`${t('manuscript.keywords')} ${metadataLocale}`}
-          >
+          <div className="omi-keyword-chip-list">
             {keywords.map((keyword) => (
               <span className="omi-keyword-chip" key={keyword}>
                 <span dir="auto" lang={metadataLocale}>{keyword}</span>
