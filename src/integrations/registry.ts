@@ -2,7 +2,6 @@ import type {
   IntegrationAuthenticationMode,
   IntegrationPermission,
   IntegrationProviderDescriptor,
-  IntegrationProviderKind,
 } from './contracts';
 
 export interface IntegrationCatalogEntry extends IntegrationProviderDescriptor {
@@ -197,6 +196,3 @@ export const integrationCatalog: IntegrationCatalogEntry[] = [
   },
 ];
 
-export function getIntegrationsByKind(kind: IntegrationProviderKind): IntegrationCatalogEntry[] {
-  return integrationCatalog.filter((entry) => entry.kind === kind);
-}
