@@ -154,23 +154,6 @@ export function createManualIndexEntry(input: {
   };
 }
 
-/** Backward-compatible helper retained for existing callers/imports. */
-export function createManualNameIndexEntry(input: {
-  term: string;
-  targetBlockId: string;
-  targetText?: string;
-  targetTextOffset?: number;
-  subterm?: string;
-  sortKey?: string;
-  id?: string;
-  anchorId?: string;
-}): OmiIndexEntry {
-  return createManualIndexEntry({
-    ...input,
-    indexId: DEFAULT_INDEX_ID,
-    kind: 'name',
-  });
-}
 
 export function createIndexSubentry(input: {
   parent: OmiIndexEntry;
