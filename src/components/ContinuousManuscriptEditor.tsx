@@ -20,6 +20,7 @@ import {
 import {
   buildContinuousManuscriptDocument,
   projectContinuousManuscriptDocument,
+  sectionsShareIdentity,
 } from '../editor/continuousManuscriptDocument';
 import {
   announceRenderedManuscriptChange,
@@ -73,10 +74,23 @@ function StudyEditor({
   contributorTitle,
   contributorDescription,
 }: StudyEditorProps) {
-  const document = useMemo(
-    () => buildContinuousManuscriptDocument(study.sections, sectionNumbers),
-    [sectionNumbers, study.sections],
-  );
+  const localProjectionRef = useRef<{
+    sections: readonly ManuscriptStudy['sections'][number][];
+    content: string;
+  } | null>(null);
+  const serializedDocument = useMemo(() => {
+    const localProjection = localProjectionRef.current;
+    if (
+      localProjection
+      && sectionsShareIdentity(study.sections, localProjection.sections)
+    ) {
+      return localProjection.content;
+    }
+
+    return JSON.stringify(
+      buildContinuousManuscriptDocument(study.sections, sectionNumbers),
+    );
+  }, [sectionNumbers, study.sections]);
 
   const updateDocument = (_documentId: string, content: string) => {
     let parsed: JSONContent;
@@ -98,6 +112,14 @@ function StudyEditor({
       parsed,
       currentStudy.sections,
     );
+    // The store update below is synchronous. Remember the exact projected
+    // section objects so the resulting React render can reuse Tiptap's own
+    // serialized document instead of rebuilding and stringifying the complete
+    // study after every local keystroke.
+    localProjectionRef.current = {
+      sections: projectedStudy,
+      content,
+    };
     stageContinuousDocumentChange(documentWide
       ? projectedStudy
       : replaceManuscriptStudySections(
@@ -131,7 +153,7 @@ function StudyEditor({
       <BlockEditor
         blockId={`omi-study-${study.rootSectionId}`}
         blockType="manuscript"
-        content={JSON.stringify(document)}
+        content={serializedDocument}
         onUpdate={updateDocument}
         manuscriptLanguage={manuscriptLanguage}
         className="omi-continuous-document-editor"
