@@ -138,23 +138,23 @@ export function BlockEditor({
   // are replaced after every continuous-editor change, so subscribing to the
   // complete manuscript made every keystroke force an avoidable BlockEditor
   // React render even when notes/citations/proofing metadata were unchanged.
-  const annotations = useStudioStore((state) => state.annotations);
-  const citations = useStudioStore((state) => state.citations);
+  const annotations = useStudioStore((state) => state.manuscript.annotations);
+  const citations = useStudioStore((state) => state.manuscript.citations);
   const citationClusters = useStudioStore(
-    (state) => state.citationClusters,
+    (state) => state.manuscript.citationClusters,
   );
   const crossReferences = useStudioStore(
-    (state) => state.crossReferences,
+    (state) => state.manuscript.crossReferences,
   );
   const bibliographicRecords = useStudioStore(
-    (state) => state.bibliographicRecords,
+    (state) => state.manuscript.bibliographicRecords,
   );
   const citationStyle = useStudioStore(
-    (state) => state.citationStyle,
+    (state) => state.manuscript.citationStyle,
   );
-  const manuscriptLocale = useStudioStore((state) => state.manuscriptLocale);
+  const manuscriptLocale = useStudioStore((state) => state.manuscript.locale);
   const proofingChanges = useStudioStore(
-    (state) => state.proofingChanges,
+    (state) => state.manuscript.proofing?.changes,
   );
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [activeCitationId, setActiveCitationId] = useState<string | null>(null);
