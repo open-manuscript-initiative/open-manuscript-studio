@@ -4,7 +4,6 @@ import test from 'node:test';
 import {
   getSystemTimeZone,
   getTimeZoneOptions,
-  isValidTimeZone,
 } from '../src/account/timeZones.ts';
 
 test('time zone options use valid IANA identifiers with UTC offsets', () => {
@@ -13,10 +12,15 @@ test('time zone options use valid IANA identifiers with UTC offsets', () => {
 
   assert.ok(budapest);
   assert.match(budapest.label, /^Europe\/Budapest \(UTC[+-]\d{2}:\d{2}\)$/);
-  assert.equal(isValidTimeZone(budapest.id), true);
-  assert.equal(isValidTimeZone('Not/A_Time_Zone'), false);
+
+  const invalid = getTimeZoneOptions('Not/A_Time_Zone');
+  assert.equal(invalid.some((option) => option.id === 'Not/A_Time_Zone'), false);
 });
 
-test('system time zone resolves to a valid identifier', () => {
-  assert.equal(isValidTimeZone(getSystemTimeZone()), true);
+test('system time zone resolves to an available option', () => {
+  const systemTimeZone = getSystemTimeZone();
+  assert.equal(
+    getTimeZoneOptions(systemTimeZone).some((option) => option.id === systemTimeZone),
+    true,
+  );
 });
