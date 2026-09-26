@@ -1,29 +1,6 @@
 import { sanitizeRichTextPasteHtml } from '../model/richText';
 
-export interface ClipboardPastePayload {
-  html: string;
-  text: string;
-  isWord: boolean;
-}
 
-/**
- * Reads clipboard payloads without depending on the async Clipboard API.
- * This keeps paste compatible with browsers, Tauri WebViews and Android's
- * native selection menu.
- */
-export function readClipboardPastePayload(
-  clipboardData: Pick<DataTransfer, 'getData' | 'types'>,
-): ClipboardPastePayload {
-  const html = clipboardData.getData('text/html');
-  const text = clipboardData.getData('text/plain');
-  const types = Array.from(clipboardData.types ?? []);
-
-  return {
-    html,
-    text,
-    isWord: isMicrosoftWordClipboardHtml(html, types),
-  };
-}
 
 export function normalizeClipboardHtml(html: string): string {
   return sanitizeRichTextPasteHtml(html);
