@@ -190,7 +190,6 @@ Next coherent migration unit:
 
 ## Priority 2 — ORCID, signature and remaining account-adjacent surfaces
 
-- `src/components/AuthorSignatureControl.tsx`
 - `src/components/AuthorSignaturePanel.tsx`
 - `src/components/OrcidEnvironmentBadge.tsx`
 
