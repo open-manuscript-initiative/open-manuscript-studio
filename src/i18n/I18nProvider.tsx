@@ -3,13 +3,17 @@ import {
   type PropsWithChildren,
   useCallback,
   useEffect,
-  useMemo,
+  useRef,
   useState,
 } from 'react';
-import { supportedLocales } from './config';
+import {
+  isTranslationDictionaryLoaded,
+  loadTranslationDictionary,
+  supportedLocales,
+} from './config';
 import {
   loadEnabledUiLocales,
-  loadUiLocale,
+  resolveInitialUiLocale,
   saveEnabledUiLocales,
   saveUiLocale,
 } from './storage';
@@ -35,32 +39,44 @@ export function I18nProvider({ children }: PropsWithChildren) {
   const [enabledLocales, setEnabledLocales] = useState<
     SupportedLocale[]
   >(() => loadEnabledUiLocales());
-  const [locale, setLocaleState] = useState<SupportedLocale>(() => {
-    const preferredLocale = loadUiLocale();
-    const enabled = loadEnabledUiLocales();
-
-    return enabled.includes(preferredLocale)
-      ? preferredLocale
-      : enabled[0] ?? preferredLocale;
-  });
+  const [locale, setLocaleState] = useState<SupportedLocale>(
+    () => resolveInitialUiLocale(),
+  );
+  const [, setTranslationRevision] = useState(0);
+  const localeRequestId = useRef(0);
 
   const setLocale = useCallback((nextLocale: SupportedLocale) => {
-    setEnabledLocales((currentEnabledLocales) => {
-      if (currentEnabledLocales.includes(nextLocale)) {
-        return currentEnabledLocales;
-      }
+    const requestId = ++localeRequestId.current;
 
-      const nextEnabledLocales = supportedLocales.filter(
-        (candidate) =>
-          currentEnabledLocales.includes(candidate) ||
-          candidate === nextLocale,
-      );
-      saveEnabledUiLocales(nextEnabledLocales);
-      return [...nextEnabledLocales];
-    });
+    void loadTranslationDictionary(nextLocale)
+      .then(() => {
+        if (requestId !== localeRequestId.current) {
+          return;
+        }
 
-    setLocaleState(nextLocale);
-    saveUiLocale(nextLocale);
+        setEnabledLocales((currentEnabledLocales) => {
+          if (currentEnabledLocales.includes(nextLocale)) {
+            return currentEnabledLocales;
+          }
+
+          const nextEnabledLocales = supportedLocales.filter(
+            (candidate) =>
+              currentEnabledLocales.includes(candidate) ||
+              candidate === nextLocale,
+          );
+          saveEnabledUiLocales(nextEnabledLocales);
+          return [...nextEnabledLocales];
+        });
+
+        setLocaleState(nextLocale);
+        saveUiLocale(nextLocale);
+      })
+      .catch((error) => {
+        console.warn(
+          `Studio locale ${nextLocale} could not be loaded.`,
+          error,
+        );
+      });
   }, []);
 
   const setLocaleEnabled = useCallback(
@@ -94,27 +110,42 @@ export function I18nProvider({ children }: PropsWithChildren) {
     document.documentElement.dir = getStudioLocaleDirection(locale);
   }, [locale]);
 
+  useEffect(() => {
+    if (isTranslationDictionaryLoaded(locale)) {
+      return;
+    }
+
+    let cancelled = false;
+    void loadTranslationDictionary(locale)
+      .then(() => {
+        if (!cancelled) {
+          setTranslationRevision((current) => current + 1);
+        }
+      })
+      .catch((error) => {
+        console.warn(
+          `Studio locale ${locale} could not be loaded.`,
+          error,
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
+
   const t = useCallback(
     (key: AppTranslationKey) => translate(locale, key),
     [locale],
   );
 
-  const value = useMemo(
-    () => ({
-      locale,
-      enabledLocales,
-      setLocale,
-      setLocaleEnabled,
-      t,
-    }),
-    [
-      locale,
-      enabledLocales,
-      setLocale,
-      setLocaleEnabled,
-      t,
-    ],
-  );
+  const value: I18nContextValue = {
+    locale,
+    enabledLocales,
+    setLocale,
+    setLocaleEnabled,
+    t,
+  };
 
   return (
     <I18nContext.Provider value={value}>
