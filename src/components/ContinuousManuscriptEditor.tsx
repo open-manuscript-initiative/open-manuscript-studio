@@ -38,6 +38,7 @@ import {
 } from '../model/currentStudyNotes';
 import { buildSectionNumberMap } from '../model/sectionNumbering';
 import { getDocumentStructureProfile } from '../model/documentProfile';
+import type { ProofingSelection } from '../model/proofing';
 import {
   getParentSectionId,
   partitionManuscriptStudies,
@@ -132,7 +133,7 @@ function StudyEditor({
   }, [documentWide, study.rootSectionId]);
 
   const handleProofingSelection = useCallback(
-    (selection: Parameters<NonNullable<React.ComponentProps<typeof BlockEditor>['onProofingSelection']>>[0]) =>
+    (selection: ProofingSelection | null) =>
       useStudioStore.getState().setProofingSelection(selection),
     [],
   );
