@@ -16,10 +16,6 @@ export function getDeviceStorageMode(userId: string): DeviceStorageMode {
   }
 }
 
-export function isOwnDevice(userId: string): boolean {
-  return getDeviceStorageMode(userId) === 'own-device';
-}
-
 export function setDeviceStorageMode(
   userId: string,
   mode: DeviceStorageMode,

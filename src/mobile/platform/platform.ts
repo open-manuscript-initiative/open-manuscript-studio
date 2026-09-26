@@ -47,7 +47,3 @@ export function isMobileStudio(): boolean {
 export function isDesktopStudio(): boolean {
   return getStudioPlatform() === 'desktop';
 }
-
-export function isWebStudio(): boolean {
-  return getStudioPlatform() === 'web';
-}
