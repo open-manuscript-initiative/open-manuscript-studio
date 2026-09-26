@@ -11,6 +11,10 @@ import {
   measureStudyMountWork,
   shouldProgressivelyMountStudyEditors,
 } from '../src/editor/progressiveStudyMounting.ts';
+import {
+  getTopLevelBlockFromResolvedPosition,
+  sectionsShareIdentity,
+} from '../src/editor/continuousManuscriptDocument.ts';
 import type { ManuscriptStudy } from '../src/model/sectionStructure.ts';
 
 const continuousEditorSource = readFileSync(
@@ -72,6 +76,56 @@ test('a pending focus request activates the deferred editor that owns the block'
   }
 });
 
+
+test('local continuous-editor projections are reusable only while section identity is preserved', () => {
+  const first = createStudy('identity', 2, 10).sections;
+  assert.equal(sectionsShareIdentity(first, first), true);
+  assert.equal(sectionsShareIdentity([...first], first), true);
+  assert.equal(
+    sectionsShareIdentity(
+      first.map((section) => ({ ...section })),
+      first,
+    ),
+    false,
+  );
+});
+
+test('resolved active-block lookup does not scan preceding top-level siblings', () => {
+  let rootChildReads = 0;
+  const root = {
+    nodeSize: 100_000,
+    attrs: {},
+    childCount: 10_000,
+    child: (_index: number) => {
+      rootChildReads += 1;
+      throw new Error('root siblings should not be scanned');
+    },
+  };
+  const active = {
+    nodeSize: 14,
+    attrs: {
+      omiBlockId: 'block-9000',
+      omiSectionId: 'section-90',
+    },
+  };
+
+  const result = getTopLevelBlockFromResolvedPosition({
+    depth: 1,
+    pos: 90_001,
+    node: (depth) => depth === 0 ? root : active,
+    start: () => 90_001,
+    end: () => 90_013,
+  });
+
+  assert.deepEqual(result, {
+    blockId: 'block-9000',
+    sectionId: 'section-90',
+    start: 90_001,
+    end: 90_013,
+  });
+  assert.equal(rootChildReads, 0);
+});
+
 test('the volume UI mounts studies on selection, viewport entry, and navigation', () => {
   assert.match(
     continuousEditorSource,
@@ -81,6 +135,8 @@ test('the volume UI mounts studies on selection, viewport entry, and navigation'
     continuousEditorSource,
     /registerDeferredBlockEditorActivator/,
   );
+  assert.match(continuousEditorSource, /localProjectionRef/);
+  assert.match(continuousEditorSource, /sectionsShareIdentity/);
   assert.match(continuousEditorSource, /new IntersectionObserver/);
   assert.match(continuousEditorSource, /rootMargin: '1800px 0px'/);
   assert.match(continuousEditorSource, /if \(active\).*<StudyEditor/s);
