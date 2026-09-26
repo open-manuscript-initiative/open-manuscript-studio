@@ -35,9 +35,10 @@ import {
   collectStudyNoteOverview,
   resolveCurrentStudy,
 } from '../model/currentStudyNotes';
-import { formatHierarchicalSectionNumber } from '../model/sectionNumbering';
+import { buildSectionNumberMap } from '../model/sectionNumbering';
 import { getDocumentStructureProfile } from '../model/documentProfile';
 import {
+  getParentSectionId,
   partitionManuscriptStudies,
   replaceManuscriptStudySections,
   type ManuscriptStudy,
@@ -271,8 +272,10 @@ export function ContinuousManuscriptEditor() {
     return partitionManuscriptStudies(manuscript.sections);
   }, [manuscript.sections, structure.kind]);
   const currentStudy = useMemo(
-    () => resolveCurrentStudy(manuscript, selectedSectionId),
-    [manuscript, selectedSectionId],
+    () => currentStudyNotesVisible
+      ? resolveCurrentStudy(manuscript, selectedSectionId)
+      : null,
+    [currentStudyNotesVisible, manuscript, selectedSectionId],
   );
   const currentStudyNoteOverview = useMemo(
     () => currentStudyNotesVisible && currentStudy
@@ -287,19 +290,33 @@ export function ContinuousManuscriptEditor() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState('');
   const [importBusy, setImportBusy] = useState(false);
-  const sectionNumbers = useMemo(
-    () => new Map(
-      manuscript.sections.map((section) => [
-        section.id,
-        formatHierarchicalSectionNumber(
-          manuscript.sections,
-          section.id,
-          manuscript.sectionNumberingStyle,
-        ),
-      ]),
-    ),
-    [manuscript.sectionNumberingStyle, manuscript.sections],
-  );
+  const sectionNumberCacheRef = useRef<{
+    signature: string;
+    style: typeof manuscript.sectionNumberingStyle;
+    numbers: Map<string, string>;
+  } | null>(null);
+  const sectionNumberingSignature = manuscript.sections.map((section) =>
+    [
+      section.id,
+      getParentSectionId(section) ?? '',
+      section.title,
+    ].join('\u0000'),
+  ).join('\u0001');
+  if (
+    !sectionNumberCacheRef.current
+    || sectionNumberCacheRef.current.signature !== sectionNumberingSignature
+    || sectionNumberCacheRef.current.style !== manuscript.sectionNumberingStyle
+  ) {
+    sectionNumberCacheRef.current = {
+      signature: sectionNumberingSignature,
+      style: manuscript.sectionNumberingStyle,
+      numbers: buildSectionNumberMap(
+        manuscript.sections,
+        manuscript.sectionNumberingStyle,
+      ),
+    };
+  }
+  const sectionNumbers = sectionNumberCacheRef.current.numbers;
   const progressiveStudyMounting = useMemo(
     () => structure.kind === 'volume'
       && shouldProgressivelyMountStudyEditors(studies),
