@@ -104,6 +104,13 @@ export function KeywordEditor() {
     event: ChangeEvent<HTMLInputElement>,
   ): void {
     const { value, selectionStart, selectionEnd } = event.currentTarget;
+
+    if (event.nativeEvent instanceof InputEvent && event.nativeEvent.isComposing) {
+      draftSelectionRef.current = null;
+      setDraft(value);
+      return;
+    }
+
     const fallback = value.length;
     draftSelectionRef.current = {
       start: selectionStart ?? fallback,
