@@ -6,7 +6,7 @@ import {
   saveOjsReviewFormResponses,
   validateOjsReviewFormComplete,
 } from '../integrations/ojs/reviewForm.js';
-import { writeBackSubmittedOjsReview } from '../integrations/ojs/reviewWriteback.js';
+import { writeBackSubmittedExternalReview } from '../integrations/ojs/reviewWriteback.js';
 import {
   uploadOmpReviewerRevision,
   writeBackSubmittedOmpReview,
@@ -303,7 +303,7 @@ peerReviewRouter.post(
         reviewerUserId,
       );
       const externalWriteback = ompWriteback.status === 'not_applicable'
-        ? await writeBackSubmittedOjsReview(assignmentId, reviewerUserId)
+        ? await writeBackSubmittedExternalReview(assignmentId, reviewerUserId)
         : ompWriteback;
       response.status(200).json({
         review,

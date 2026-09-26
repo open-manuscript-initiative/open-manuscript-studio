@@ -14,8 +14,6 @@ import {
   insertSectionAtGap,
   insertSubsection,
   moveSectionAmongSiblings,
-  moveSectionToGap,
-  moveSectionToIndex,
   outdentSection,
   reparentSection,
   sectionOrder,
@@ -171,18 +169,3 @@ test('reparents a subtree and prevents cyclic parent relationships', () => {
   assert.equal(getParentSectionId(rejectedCycle[0]!), undefined);
 });
 
-test('legacy gap and index moves remain stable for flat documents', () => {
-  const a = section('a');
-  const b = section('b');
-  const c = section('c');
-
-  const movedToEnd = moveSectionToGap([a, b, c], 'a', 3);
-  assert.deepEqual(sectionOrder(movedToEnd), ['b', 'c', 'a']);
-  assert.equal(movedToEnd[2], a);
-  assert.equal(movedToEnd[2]?.blocks[0], a.blocks[0]);
-
-  assert.deepEqual(
-    sectionOrder(moveSectionToIndex([a, b, c], 'c', 0)),
-    ['c', 'a', 'b'],
-  );
-});

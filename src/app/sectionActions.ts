@@ -175,28 +175,6 @@ export function stageReparentSection(
   );
 }
 
-/**
- * Backward-compatible move helpers now operate within sibling structure.
- */
-export function stageMoveSectionToGap(
-  sectionId: string,
-  gapIndex: number,
-): boolean {
-  const sections = useStudioStore.getState().manuscript.sections;
-  const index = sections.findIndex((section) => section.id === sectionId);
-  if (index < 0) return false;
-  return stageMoveSectionSibling(sectionId, gapIndex <= index ? -1 : 1);
-}
-
-export function stageMoveSectionToIndex(
-  sectionId: string,
-  targetIndex: number,
-): boolean {
-  const sections = useStudioStore.getState().manuscript.sections;
-  const index = sections.findIndex((section) => section.id === sectionId);
-  if (index < 0 || index === targetIndex) return false;
-  return stageMoveSectionSibling(sectionId, targetIndex < index ? -1 : 1);
-}
 
 export function stageSectionLayoutChange(
   sectionId: string,
