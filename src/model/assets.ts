@@ -4,12 +4,12 @@ import type { OmiAsset, OmiAssetRole } from '../types/assets';
 export const OMI_ASSET_MODEL_VERSION = '0.1.0-alpha.1' as const;
 export const MAX_CONTAINER_ASSET_BYTES = 100 * 1024 * 1024;
 
-export interface DecodedDataUrl {
+interface DecodedDataUrl {
   mediaType: string;
   bytes: Uint8Array;
 }
 
-export interface ExternalizedImageAsset {
+interface ExternalizedImageAsset {
   block: OmiBlock;
   asset: OmiAsset;
   bytes: Uint8Array;
@@ -171,7 +171,7 @@ export function normalizeMediaType(value: string): string {
     : 'application/octet-stream';
 }
 
-export function extensionForMediaType(mediaType: string): string {
+function extensionForMediaType(mediaType: string): string {
   switch (normalizeMediaType(mediaType)) {
     case 'image/png': return '.png';
     case 'image/jpeg': return '.jpg';

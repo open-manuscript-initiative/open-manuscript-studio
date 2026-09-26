@@ -10,7 +10,7 @@ export type OmiComputedFieldKind =
   | 'section-count'
   | 'word-count';
 
-export type OmiComputedDocumentProperty =
+type OmiComputedDocumentProperty =
   | 'title'
   | 'subtitle'
   | 'locale'
@@ -35,7 +35,7 @@ export interface OmiComputedField {
   modifiedAt?: string;
 }
 
-export interface OmiComputedFieldValidationIssue {
+interface OmiComputedFieldValidationIssue {
   fieldId: string;
   type:
     | 'missing-label'
@@ -44,7 +44,7 @@ export interface OmiComputedFieldValidationIssue {
     | 'missing-cross-reference-target';
 }
 
-export interface CreateComputedFieldInput {
+interface CreateComputedFieldInput {
   label: string;
   kind: OmiComputedFieldKind;
   property?: OmiComputedDocumentProperty;
