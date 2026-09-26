@@ -153,7 +153,7 @@ export function buildSectionOutline(
   }));
 }
 
-export function buildSectionDepthMap(
+function buildSectionDepthMap(
   sections: readonly OmiSection[],
 ): Map<string, number> {
   const sectionMap = new Map(sections.map((section) => [section.id, section]));
@@ -214,13 +214,6 @@ export function getSectionDescendantIds(
   return descendants;
 }
 
-export function getSectionSubtree(
-  sections: readonly OmiSection[],
-  sectionId: string,
-): OmiSection[] {
-  const ids = new Set([sectionId, ...getSectionDescendantIds(sections, sectionId)]);
-  return sections.filter((section) => ids.has(section.id));
-}
 
 export function isDescendantOf(
   sections: readonly OmiSection[],
@@ -280,7 +273,7 @@ export function validateSectionHierarchy(
   return issues;
 }
 
-export function clampSectionGapIndex(
+function clampSectionGapIndex(
   gapIndex: number,
   sectionCount: number,
 ): number {
@@ -532,15 +525,8 @@ export function sectionOrder(
   return sections.map((section) => section.id);
 }
 
-export function sectionParentMap(
-  sections: readonly OmiSection[],
-): Record<string, string | null> {
-  return Object.fromEntries(
-    sections.map((section) => [section.id, getParentSectionId(section) ?? null]),
-  );
-}
 
-export function arraysHaveSameOrder(
+function arraysHaveSameOrder(
   first: readonly OmiSection[],
   second: readonly OmiSection[],
 ): boolean {

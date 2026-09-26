@@ -34,13 +34,7 @@ export function isAndroidDocumentUri(value: string | null | undefined): boolean 
     && (value.startsWith('content://') || value.startsWith('file://'));
 }
 
-export function isIosDocumentUri(value: string | null | undefined): boolean {
-  return typeof value === 'string' && value.startsWith('file://');
-}
 
-export function isMobileDocumentUri(value: string | null | undefined): boolean {
-  return isAndroidDocumentUri(value);
-}
 
 export function getCurrentManuscriptFilePath(): string | null {
   return currentFilePath;

@@ -9,7 +9,6 @@ import {
   hierarchiesAreEqual,
   indentSection,
   insertSectionAfter,
-  insertSectionAtGap,
   insertSubsection,
   insertTopLevelSectionAtEnd,
   moveSectionAmongSiblings,
@@ -93,14 +92,6 @@ export function stageSectionTitleChange(
   if (changed) scheduleSectionCheckpoint();
 }
 
-/** Legacy-compatible top-level insertion into a raw flat gap. */
-export function stageInsertSectionAtGap(
-  gapIndex: number,
-): string | undefined {
-  return stageCreateSection((sections, section) =>
-    insertSectionAtGap(sections, section, gapIndex),
-  );
-}
 
 export function stageInsertTopLevelSection(): string | undefined {
   return stageCreateSection(
