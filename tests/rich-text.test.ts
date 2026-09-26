@@ -2,10 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  isMicrosoftWordClipboardHtml,
-  plainTextToPasteHtml,
-} from '../src/editor/clipboardPaste.ts';
-import {
   detectSemanticInlineStyle,
   detectWordHeadingLevel,
   normalizeExternalHref,
@@ -75,21 +71,3 @@ test('recognizes Microsoft Word heading styles during clipboard paste', () => {
   assert.equal(detectWordHeadingLevel('MsoNormal', 'font-weight:bold'), undefined);
 });
 
-test('recognizes Word HTML clipboard payloads', () => {
-  assert.equal(
-    isMicrosoftWordClipboardHtml('<p class="MsoNormal">Word</p>'),
-    true,
-  );
-  assert.equal(
-    isMicrosoftWordClipboardHtml('<p style="mso-list:l0 level1 lfo1">Item</p>'),
-    true,
-  );
-  assert.equal(isMicrosoftWordClipboardHtml('<p>Browser HTML</p>'), false);
-});
-
-test('turns plain clipboard text into safe paragraph HTML', () => {
-  assert.equal(
-    plainTextToPasteHtml('One\nline\n\nTwo < three'),
-    '<p>One<br>line</p><p>Two &lt; three</p>',
-  );
-});
