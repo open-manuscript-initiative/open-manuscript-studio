@@ -248,11 +248,10 @@ export function synchronizeCrossReferenceLabels(
     crossReferences.map((reference) => [reference.id, reference]),
   );
 
-  return sections.map((section) => ({
-    ...section,
-    blocks: section.blocks.map((block) => ({
-      ...block,
-      content: transformStructuredContent(block.content, (node) => {
+  return sections.map((section) => {
+    let sectionChanged = false;
+    const blocks = section.blocks.map((block) => {
+      const content = transformStructuredContent(block.content, (node) => {
         if (
           node.type !== 'omiCrossReference' ||
           !isRecord(node.attrs)
@@ -284,9 +283,15 @@ export function synchronizeCrossReferenceLabels(
             unresolved: !target,
           },
         };
-      }),
-    })),
-  }));
+      });
+
+      if (content === block.content) return block;
+      sectionChanged = true;
+      return { ...block, content };
+    });
+
+    return sectionChanged ? { ...section, blocks } : section;
+  });
 }
 
 export function collectCrossReferenceAnchors(
