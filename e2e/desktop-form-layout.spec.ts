@@ -14,9 +14,9 @@ test('desktop forms use intrinsic widths instead of stretching across the page',
 
   const content = dialog.locator('.studio-menu-content');
   const card = content.locator('.contributor-card').first();
-  const givenName = card.getByLabel('Given name');
-  const familyName = card.getByLabel('Family name');
-  const orcid = card.getByLabel('ORCID');
+  const givenName = card.getByRole('textbox', { name: 'Given name', exact: true });
+  const familyName = card.getByRole('textbox', { name: 'Family name', exact: true });
+  const orcid = card.getByRole('combobox', { name: 'ORCID', exact: true });
 
   await expect(card).toBeVisible();
   await expect(orcid).toBeVisible();
