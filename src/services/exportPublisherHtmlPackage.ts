@@ -330,7 +330,7 @@ function dosDateTime(value: Date): { time: number; date: number } {
   };
 }
 
-export function referencedPublisherHtmlAssets(manuscript: OmiManuscript): OmiAsset[] {
+function referencedPublisherHtmlAssets(manuscript: OmiManuscript): OmiAsset[] {
   const referenced = collectReferencedAssetIds(manuscript.sections.flatMap((section) => section.blocks));
   return (manuscript.assets ?? []).filter((asset) => referenced.has(asset.id));
 }
