@@ -100,24 +100,69 @@ gate. Keep one reference environment for trend measurements.
 
 ## Phase 2 — browser rendering diagnostics
 
-After Phase 1 is merged, add an opt-in browser benchmark around the real Tiptap
-view rather than relying only on server-side ProseMirror serialization.
+Phase 2 adds an opt-in Playwright/Chromium benchmark around the real Studio
+continuous Tiptap editor. It does not run as part of the normal browser smoke
+suite. Pull requests that change the benchmark or its instrumented editor paths
+run the small `smoke` workload; the full reference workload is started manually
+from the **Editor Performance Benchmark** workflow.
 
-The benchmark should generate or load a non-sensitive stress manuscript and
-measure:
+Local smoke run:
 
-- initial Tiptap view construction,
-- React commits caused by one local edit,
-- ProseMirror transaction duration,
-- OMI projection/staging duration,
-- browser style/layout/paint cost,
-- DOM node count by top-level section.
+```
+npm run benchmark:editor
+npm run benchmark:editor:summary
+```
 
-Only after those measurements should off-screen rendering be changed. Candidate
-techniques include bounded use of `content-visibility`/containment or a
-ProseMirror-compatible viewport decoration strategy. Any approach must retain
-cross-section selection, search navigation, IME input, accessibility and native
-mobile selection behavior.
+Full reference run on Unix-like shells:
+
+```
+OMI_EDITOR_BENCHMARK_SCALE=reference npm run benchmark:editor
+npm run benchmark:editor:summary
+```
+
+On PowerShell:
+
+```powershell
+$env:OMI_EDITOR_BENCHMARK_SCALE = 'reference'
+npm run benchmark:editor
+npm run benchmark:editor:summary
+```
+
+The generated `reference` workload is content-neutral and approximates the
+large-document case with one continuous study containing 1,500 text blocks,
+3,000 footnotes, 30 structured tables and about 150 words per text block. Keeping
+the workload as one study deliberately exercises the difficult case that cannot
+benefit from volume-level progressive study mounting.
+
+The benchmark records:
+
+- load-to-editable time and first-caret time,
+- input-to-next-painted-frame latency (median, p95, maximum),
+- main-thread long-task count and duration,
+- scroll-to-frame latency through the middle/end of the document,
+- total/editor DOM element counts, Tiptap host count and top-level node count,
+- Chromium JS heap usage after open and after the edit sample,
+- opt-in internal phase timings for Tiptap serialization/reference detection and
+  continuous OMI build, parse, projection and staging.
+
+Results are written to `test-results/editor-performance/metrics.json`. The
+GitHub workflow uploads that file together with Playwright diagnostics and writes
+a compact metric table to the workflow summary. Instrumentation is inert unless
+the benchmark explicitly installs `globalThis.__OMI_EDITOR_PERF__`.
+
+These measurements are diagnostic evidence, not absolute release thresholds.
+Browser, runner and host differences can materially change the numbers; trend
+comparisons should use the same workload and environment. The benchmark asserts
+semantic/structural invariants (single continuous Tiptap host, expected note
+anchors, successful edit samples and no browser runtime errors) but deliberately
+does not fail on an arbitrary millisecond target.
+
+Only after reference measurements identify the dominant remaining cost should
+off-screen rendering be changed. Candidate techniques include bounded
+`content-visibility`/containment, a ProseMirror-compatible viewport strategy,
+or the incremental projection work described in Phase 3. Any approach must
+retain cross-section selection, search navigation, IME input, accessibility and
+native mobile selection behavior.
 
 ## Phase 3 — incremental semantic projection
 
