@@ -123,7 +123,7 @@ export function RorAffiliationField({
     (isLoading || hasSearched || suggestions.length > 0);
 
   return (
-    <div className="contributor-wide-field ror-affiliation-field">
+    <div className="contributor-medium-field ror-affiliation-field">
       <label htmlFor={`${listboxId}-input`}>
         <span>{label}</span>
       </label>
