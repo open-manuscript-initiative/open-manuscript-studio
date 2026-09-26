@@ -1,4 +1,4 @@
-// Experimental only: deliberately not called by release workflows.
+// Production release adapter uses compatibility mode; `defaults` remains an isolated compatibility probe.
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -68,4 +68,4 @@ if (app.includes(scriptApply)) {
 }
 updates.push([appPath, app]);
 for (const [file, content] of updates) writeFileSync(file, content);
-console.log(`Experimental AGP 9.0.1 / Gradle 9.1.0: ${mode}`);
+console.log(`Configured AGP 9.0.1 / Gradle 9.1.0: ${mode}`);
