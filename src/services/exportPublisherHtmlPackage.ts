@@ -11,7 +11,6 @@ import {
   resolvePublicationProfile,
   type OmiPublicationProfile,
 } from '../model/publicationProfile';
-import type { OmiAsset } from '../types/assets';
 import type { OmiManuscript } from '../types/omi';
 import { getAssetPayload } from './assetRepository';
 import {
@@ -330,7 +329,3 @@ function dosDateTime(value: Date): { time: number; date: number } {
   };
 }
 
-function referencedPublisherHtmlAssets(manuscript: OmiManuscript): OmiAsset[] {
-  const referenced = collectReferencedAssetIds(manuscript.sections.flatMap((section) => section.blocks));
-  return (manuscript.assets ?? []).filter((asset) => referenced.has(asset.id));
-}
