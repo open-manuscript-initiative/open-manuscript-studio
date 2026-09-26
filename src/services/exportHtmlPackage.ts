@@ -199,7 +199,7 @@ export async function buildHtmlPackage(
   };
 }
 
-export function referencedHtmlAssets(
+function referencedHtmlAssets(
   manuscript: OmiManuscript,
 ): OmiAsset[] {
   const referenced = collectReferencedAssetIds(
