@@ -148,7 +148,6 @@ const surfaceNotes = [
   {
     id: 'identity-and-language-settings',
     files: [
-      'src/components/AuthorSignatureControl.tsx',
       'src/components/AuthorSignaturePanel.tsx',
       'src/components/ContentLanguageSettings.tsx',
       'src/components/ManuscriptLanguageField.tsx',
