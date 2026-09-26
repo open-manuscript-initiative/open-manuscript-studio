@@ -26,7 +26,9 @@ test('Studio loads the shared density layer after feature styles', () => {
 test('desktop density uses more of the viewport and reduces non-functional spacing', () => {
   assert.match(densityCss, /@media \(min-width: 761px\)/);
   assert.match(densityCss, /\.focus-editor \{[\s\S]*width: min\(100%, 88rem\)/);
-  assert.match(densityCss, /\.studio-menu-view \{[\s\S]*width: min\(100%, 82rem\)/);
+  assert.match(densityCss, /\.studio-menu-view \{[\s\S]*width: 100%;[\s\S]*max-width: none/);
+  assert.match(densityCss, /\.studio-menu-content \{[\s\S]*container-type: inline-size/);
+  assert.match(densityCss, /\.studio-manuscript-overview-grid \{[\s\S]*grid-template-columns: minmax\(0, 1\.45fr\)/);
   assert.match(densityCss, /\.studio-menu-nav-button \{[\s\S]*min-height: 2\.1rem/);
   assert.match(densityCss, /\.omi-writing-pane \{[\s\S]*padding: \.9rem/);
   assert.match(densityCss, /\.omi-document-canvas \{[\s\S]*padding: \.65rem \.5rem 1\.5rem/);
@@ -101,5 +103,29 @@ test('Studio form layout no longer forces numeric or sized inputs to full width'
   assert.match(
     studioShellCss,
     /\.studio-tool-actions > input\[type="number"\]:not\(\[data-full-width="true"\]\),[\s\S]*flex: 0 0 auto;/,
+  );
+});
+
+
+test('wide desktop metadata uses responsive multi-column grids', () => {
+  const metadataCss = readFileSync(
+    new URL('../src/styles/scholarly-metadata.css', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(
+    metadataCss,
+    /@media \(min-width: 1100px\)[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/,
+  );
+  assert.match(
+    metadataCss,
+    /@media \(min-width: 1500px\)[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/,
+  );
+});
+
+test('desktop manuscript overview falls back to one column when the content area narrows', () => {
+  assert.match(
+    densityCss,
+    /@container \(max-width: 860px\)[\s\S]*\.studio-manuscript-overview-grid \{[\s\S]*grid-template-columns: 1fr/,
   );
 });

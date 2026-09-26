@@ -233,7 +233,42 @@ input[size]:not([data-full-width="true"]) {
   }
 
   .studio-menu-view {
-    width: min(100%, 82rem);
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+
+  .studio-menu-content {
+    container-type: inline-size;
+    padding-inline: clamp(.55rem, 1vw, 1rem);
+  }
+
+  .studio-manuscript-overview-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(20rem, .85fr);
+    align-items: start;
+    gap: .75rem;
+  }
+
+  .studio-manuscript-overview-side {
+    display: grid;
+    min-width: 0;
+    gap: .6rem;
+  }
+
+  .studio-manuscript-overview-side .section-numbering-control {
+    margin-bottom: 0;
+  }
+
+  .studio-manuscript-overview-grid .studio-manuscript-fields textarea {
+    min-height: 14rem;
+  }
+
+  .studio-menu-content .omi-properties-panel,
+  .studio-menu-content .omi-history-panel,
+  .studio-menu-content .studio-settings-card,
+  .studio-menu-content .studio-tool-card {
+    max-width: none;
   }
 
   .studio-menu-view-header {
@@ -621,5 +656,18 @@ input[size]:not([data-full-width="true"]) {
   .studio-menu-content {
     padding-right: .55rem;
     padding-left: .55rem;
+  }
+}
+
+
+/* Keep desktop forms readable on smaller laptop widths, then expand into
+ * multi-column layouts once the menu content has enough actual space. */
+@container (max-width: 860px) {
+  .studio-manuscript-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-manuscript-overview-grid .studio-manuscript-fields textarea {
+    min-height: 8rem;
   }
 }
