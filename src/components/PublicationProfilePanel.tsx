@@ -94,10 +94,13 @@ export function PublicationProfilePanel() {
         <LayoutTemplate size={22} aria-hidden="true" />
       </div>
 
-      <DirectSubmissionPanel />
-      <PublicationArtifactPanel />
-      <NewsletterPublishingPanel />
+      <div className="publication-profile-quick-grid">
+        <DirectSubmissionPanel />
+        <PublicationArtifactPanel />
+        <NewsletterPublishingPanel />
+      </div>
 
+      <div className="publication-profile-identity-grid">
       <section className="publication-profile-selector" aria-labelledby="publication-profile-choose">
         <div className="publication-profile-section-heading">
           <div>
@@ -136,11 +139,16 @@ export function PublicationProfilePanel() {
       </section>
 
       <PublisherProfileEditor baseProfile={activeProfile} />
-      <IdmlPublicationStyleImportPanel />
-      <PublicationStyleExportPanel />
-      <PublisherExportStylesheetPanel profile={activeProfile} />
-      <PublisherPrintStylesheetPanel profile={activeProfile} />
+      </div>
 
+      <div className="publication-profile-style-grid">
+        <IdmlPublicationStyleImportPanel />
+        <PublicationStyleExportPanel />
+        <PublisherExportStylesheetPanel profile={activeProfile} />
+        <PublisherPrintStylesheetPanel profile={activeProfile} />
+      </div>
+
+      <div className="publication-profile-validation-grid">
       <ProfileRuleSummary profile={activeProfile} copy={copy} frontMatterCopy={frontMatterCopy} />
 
       <section className="publication-profile-readiness" aria-labelledby="publication-readiness-title">
@@ -165,14 +173,17 @@ export function PublicationProfilePanel() {
           </ul>
         )}
       </section>
+      </div>
 
-      <JatsExportPanel />
-      <HtmlExportPanel />
+      <div className="publication-profile-export-grid">
+        <JatsExportPanel />
+        <HtmlExportPanel />
 
       <section className="publication-profile-export">
         <div><strong>{copy.exportProfile}</strong><p>{copy.exportDescription}</p></div>
         <button type="button" className="studio-menu-secondary-action" onClick={exportProfile}><Download size={16} aria-hidden="true" />{copy.exportProfile}</button>
       </section>
+      </div>
     </section>
   );
 }
