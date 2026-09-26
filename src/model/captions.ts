@@ -49,7 +49,7 @@ export function normalizeCaptionSequenceKey(label: string): string {
   return label.trim().toLocaleLowerCase().replace(/\s+/g, '-');
 }
 
-export function getLegacyCaptionTitle(visual: OmiVisualBlockData): string {
+function getLegacyCaptionTitle(visual: OmiVisualBlockData): string {
   return visual.caption?.trim() ?? '';
 }
 
