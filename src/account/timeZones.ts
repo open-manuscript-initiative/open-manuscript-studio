@@ -66,7 +66,7 @@ export function getSystemTimeZone(): string {
   return detected && isValidTimeZone(detected) ? detected : 'UTC';
 }
 
-export function isValidTimeZone(value: string): boolean {
+function isValidTimeZone(value: string): boolean {
   try {
     new Intl.DateTimeFormat('en', { timeZone: value }).format();
     return true;
