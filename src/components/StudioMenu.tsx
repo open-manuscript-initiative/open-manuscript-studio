@@ -21,8 +21,6 @@ import {
   Wrench,
 } from 'lucide-react';
 import {
-  lazy,
-  Suspense,
   useEffect,
   useRef,
   useState,
@@ -70,22 +68,17 @@ import { ExportFormatsPanel } from './ExportFormatsPanel';
 import { HistoryPanel } from './HistoryPanel';
 import { KeywordEditor } from './KeywordEditor';
 import { ManuscriptLanguageField } from './ManuscriptLanguageField';
-import { LongTaskStatus } from './LongTaskStatus';
 import { NotesPanel } from './NotesPanel';
 import { NativeEditorialWorkflowPanel } from './NativeEditorialWorkflowPanel';
 import { NewDocumentActions } from './NewDocumentActions';
 import { OjsAssignmentPanel } from './OjsAssignmentPanel';
 import { PropertiesPanel } from './PropertiesPanel';
 import { PublicationProfilePanel } from './PublicationProfilePanel';
+import { PublicationStyleEditor } from './PublicationStyleEditor';
 import { ReferencesPanel } from './ReferencesPanel';
 import { SectionNumberingControl } from './SectionNumberingControl';
 import { ScholarlyMetadataPanel } from './ScholarlyMetadataPanel';
 import { SectionStructurePanel } from './SectionStructurePanel';
-
-const LazyPublicationStyleEditor = lazy(async () => {
-  const module = await import('./PublicationStyleEditor');
-  return { default: module.PublicationStyleEditor };
-});
 
 type StudioMenuView =
   | 'document'
@@ -241,11 +234,7 @@ export function StudioMenu({
             {activeView === 'assignments' && ojsAssignment ? <OjsAssignmentPanel actorMode={ojsAssignment.actorMode} context={ojsAssignment.context} /> : null}
             {activeView === 'signatures' ? <AuthorSignaturePanel /> : null}
             {activeView === 'history' ? <HistoryPanel /> : null}
-            {activeView === 'publication-editor' ? (
-              <Suspense fallback={<LongTaskStatus message={t('common.loading')} />}>
-                <LazyPublicationStyleEditor />
-              </Suspense>
-            ) : null}
+            {activeView === 'publication-editor' ? <PublicationStyleEditor /> : null}
             {activeView === 'publication' ? <PublicationProfilePanel /> : null}
             {activeView === 'tools' ? <ToolsView /> : null}
             {activeView === 'settings' ? <SettingsView /> : null}
