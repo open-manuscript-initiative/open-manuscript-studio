@@ -474,8 +474,7 @@ body {
 }
 
 .omi-continuous-blocks .omi-block-toolbar,
-.omi-numbered-object-label,
-.omi-visual-insert-menu {
+.omi-numbered-object-label {
   font-family: var(--omi-academic-sans);
 }
 
