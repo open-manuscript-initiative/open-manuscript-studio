@@ -144,18 +144,18 @@ export function getCitationStyleDescriptor(id: string): CitationStyleDescriptor 
     ?? CITATION_STYLE_CATALOG[0]!;
 }
 
-export interface CslJsonName {
+interface CslJsonName {
   given?: string;
   family?: string;
   literal?: string;
 }
 
-export interface CslJsonDate {
+interface CslJsonDate {
   'date-parts'?: Array<Array<number | string>>;
   literal?: string;
 }
 
-export interface CslJsonItem {
+interface CslJsonItem {
   id: string;
   type: string;
   title: string;
@@ -176,7 +176,7 @@ export interface CslJsonItem {
   URL?: string;
 }
 
-export interface RenderedBibliographyEntry {
+interface RenderedBibliographyEntry {
   recordId: string;
   text: string;
 }
@@ -256,7 +256,7 @@ export function renderBibliography(
     .map(({ recordId, text }) => ({ recordId, text }));
 }
 
-export function renderBibliographyRecord(
+function renderBibliographyRecord(
   record: OmiBibliographicRecord,
   styleId: OmiCitationStyleId = DEFAULT_CITATION_STYLE,
   locale = 'en',
