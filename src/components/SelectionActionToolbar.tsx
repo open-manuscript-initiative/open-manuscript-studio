@@ -6,7 +6,7 @@ import {
 } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
-import { getTopLevelBlockAtPosition } from '../editor/continuousManuscriptDocument';
+import { getTopLevelBlockFromResolvedPosition } from '../editor/continuousManuscriptDocument';
 import { useTranslation } from '../i18n';
 import {
   createManualIndexEntry,
@@ -149,7 +149,7 @@ export function SelectionActionToolbar({
     if (from === to) return;
     const selectedText = editor.state.doc.textBetween(from, to, ' ').trim();
     if (!selectedText) return;
-    const activeBlock = getTopLevelBlockAtPosition(editor.state.doc, from);
+    const activeBlock = getTopLevelBlockFromResolvedPosition(editor.state.selection.$from);
     const blockId = activeBlock?.blockId
       ?? editor.view.dom.getAttribute('data-block-id');
     if (!blockId) return;
