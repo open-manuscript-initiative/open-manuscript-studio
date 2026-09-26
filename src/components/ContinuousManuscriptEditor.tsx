@@ -31,6 +31,7 @@ import {
   estimateDeferredStudyHeight,
   shouldProgressivelyMountStudyEditors,
 } from '../editor/progressiveStudyMounting';
+import { measureEditorPerformance } from '../editor/performanceInstrumentation';
 import { useTranslation } from '../i18n';
 import {
   collectStudyNoteOverview,
@@ -90,15 +91,21 @@ function StudyEditor({
       return localProjection.content;
     }
 
-    return JSON.stringify(
-      buildContinuousManuscriptDocument(study.sections, sectionNumbers),
+    return measureEditorPerformance(
+      'continuous.build-and-serialize',
+      () => JSON.stringify(
+        buildContinuousManuscriptDocument(study.sections, sectionNumbers),
+      ),
     );
   }, [sectionNumbers, study.sections]);
 
   const updateDocument = useCallback((_documentId: string, content: string) => {
     let parsed: JSONContent;
     try {
-      parsed = JSON.parse(content) as JSONContent;
+      parsed = measureEditorPerformance(
+        'continuous.parse',
+        () => JSON.parse(content) as JSONContent,
+      );
     } catch {
       return;
     }
@@ -111,9 +118,12 @@ function StudyEditor({
         );
     if (!currentStudy) return;
 
-    const projectedStudy = projectContinuousManuscriptDocument(
-      parsed,
-      currentStudy.sections,
+    const projectedStudy = measureEditorPerformance(
+      'continuous.project',
+      () => projectContinuousManuscriptDocument(
+        parsed,
+        currentStudy.sections,
+      ),
     );
     // The store update below is synchronous. Remember the exact projected
     // section objects so the resulting React render can reuse Tiptap's own
@@ -123,13 +133,16 @@ function StudyEditor({
       sections: projectedStudy,
       content,
     };
-    stageContinuousDocumentChange(documentWide
-      ? projectedStudy
-      : replaceManuscriptStudySections(
-          currentSections,
-          study.rootSectionId,
-          projectedStudy,
-        ));
+    measureEditorPerformance(
+      'continuous.stage',
+      () => stageContinuousDocumentChange(documentWide
+        ? projectedStudy
+        : replaceManuscriptStudySections(
+            currentSections,
+            study.rootSectionId,
+            projectedStudy,
+          )),
+    );
   }, [documentWide, study.rootSectionId]);
 
   const handleProofingSelection = useCallback(
