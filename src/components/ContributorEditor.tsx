@@ -213,6 +213,7 @@ export function ContributorEditor({
                   <span>{t('contributors.givenName')}</span>
                   <input
                     type="text"
+                    dir="auto"
                     value={name?.givenName ?? ''}
                     onChange={(event) =>
                       updateContributor(agent.id, {
@@ -226,6 +227,7 @@ export function ContributorEditor({
                   <span>{t('contributors.familyName')}</span>
                   <input
                     type="text"
+                    dir="auto"
                     value={name?.familyName ?? ''}
                     onChange={(event) =>
                       updateContributor(agent.id, {
@@ -239,6 +241,7 @@ export function ContributorEditor({
                   <span>{copy.preferredPublicName}</span>
                   <input
                     type="text"
+                    dir="auto"
                     value={contribution.attributionName ?? ''}
                     onChange={(event) =>
                       updateContribution(contribution.id, {
@@ -253,6 +256,7 @@ export function ContributorEditor({
                   <span>{copy.email}</span>
                   <input
                     type="email"
+                    dir="ltr"
                     value={agent.email ?? ''}
                     onChange={(event) =>
                       updateContributor(agent.id, {
@@ -285,6 +289,7 @@ export function ContributorEditor({
                   <span>{copy.website}</span>
                   <input
                     type="url"
+                    dir="ltr"
                     value={agent.url ?? ''}
                     onChange={(event) =>
                       updateContributor(agent.id, {
@@ -316,6 +321,7 @@ export function ContributorEditor({
                   <span>{copy.department}</span>
                   <input
                     type="text"
+                    dir="auto"
                     value={primaryAffiliation?.department ?? ''}
                     onChange={(event) =>
                       updateContributor(agent.id, {
@@ -330,6 +336,7 @@ export function ContributorEditor({
                   <span>{copy.position}</span>
                   <input
                     type="text"
+                    dir="auto"
                     value={primaryAffiliation?.position ?? ''}
                     onChange={(event) =>
                       updateContributor(agent.id, {
@@ -344,6 +351,8 @@ export function ContributorEditor({
                   <span>{copy.biography}</span>
                   <textarea
                     rows={4}
+                    dir="auto"
+                    lang={manuscript.locale}
                     value={biography}
                     onChange={(event) =>
                       updateContributor(agent.id, {
@@ -431,6 +440,8 @@ export function ContributorEditor({
                     <span>{copy.competingInterestsStatement}</span>
                     <textarea
                       rows={4}
+                      dir="auto"
+                      lang={manuscript.locale}
                       value={
                         competingStatement ||
                         (competingStatus === 'none'
