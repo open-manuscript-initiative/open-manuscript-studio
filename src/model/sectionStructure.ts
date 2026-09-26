@@ -214,13 +214,6 @@ export function getSectionDescendantIds(
   return descendants;
 }
 
-function getSectionSubtree(
-  sections: readonly OmiSection[],
-  sectionId: string,
-): OmiSection[] {
-  const ids = new Set([sectionId, ...getSectionDescendantIds(sections, sectionId)]);
-  return sections.filter((section) => ids.has(section.id));
-}
 
 export function isDescendantOf(
   sections: readonly OmiSection[],
@@ -532,13 +525,6 @@ export function sectionOrder(
   return sections.map((section) => section.id);
 }
 
-function sectionParentMap(
-  sections: readonly OmiSection[],
-): Record<string, string | null> {
-  return Object.fromEntries(
-    sections.map((section) => [section.id, getParentSectionId(section) ?? null]),
-  );
-}
 
 function arraysHaveSameOrder(
   first: readonly OmiSection[],
