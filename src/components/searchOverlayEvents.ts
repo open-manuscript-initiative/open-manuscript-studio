@@ -1,5 +1,5 @@
 export const SEARCH_OVERLAY_TOGGLE_EVENT = 'omi:search-overlay-toggle';
-export const SEARCH_OVERLAY_STATE_EVENT = 'omi:search-overlay-state';
+const SEARCH_OVERLAY_STATE_EVENT = 'omi:search-overlay-state';
 
 interface SearchOverlayStateDetail {
   open: boolean;
