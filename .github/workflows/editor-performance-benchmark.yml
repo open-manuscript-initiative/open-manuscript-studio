@@ -1,0 +1,81 @@
+name: Editor Performance Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      scale:
+        description: Benchmark workload
+        required: true
+        default: reference
+        type: choice
+        options:
+          - smoke
+          - reference
+  pull_request:
+    paths:
+      - '.github/workflows/editor-performance-benchmark.yml'
+      - 'playwright.performance.config.ts'
+      - 'e2e/editor-performance.benchmark.spec.ts'
+      - 'e2e/support/editorPerformanceWorkload.ts'
+      - 'scripts/summarize-editor-performance.mjs'
+      - 'src/components/BlockEditor.tsx'
+      - 'src/components/ContinuousManuscriptEditor.tsx'
+      - 'src/editor/performanceInstrumentation.ts'
+      - 'docs/large-manuscript-editor-performance.md'
+      - 'package.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: editor-performance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    name: Browser editor benchmark
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      OMI_EDITOR_BENCHMARK_SCALE: ${{ github.event_name == 'workflow_dispatch' && inputs.scale || 'smoke' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps --only-shell chromium
+
+      - name: Run editor benchmark
+        run: npm run benchmark:editor
+
+      - name: Write benchmark summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f test-results/editor-performance/metrics.json ]]; then
+            node scripts/summarize-editor-performance.mjs               test-results/editor-performance/metrics.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '## Editor benchmark did not produce metrics.json' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: editor-performance-${{ env.OMI_EDITOR_BENCHMARK_SCALE }}-${{ github.run_attempt }}
+          if-no-files-found: warn
+          retention-days: 30
+          path: |
+            test-results/editor-performance/
+            test-results/editor-performance-playwright/
+            playwright-report/editor-performance/
