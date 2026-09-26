@@ -239,3 +239,50 @@ test('publisher profile editors start without misleading example field content',
   assert.doesNotMatch(exportCssEditor, /\.omi-scholarly-article \{ … \}/);
   assert.doesNotMatch(printCssEditor, /PRINT_CSS_TEMPLATE|Insert template|Minta beszúrása|Vorlage einfügen/);
 });
+
+
+test('publication profile uses a dense responsive desktop dashboard', () => {
+  const panel = readFileSync(
+    new URL('../src/components/PublicationProfilePanel.tsx', import.meta.url),
+    'utf8',
+  );
+  const profileCss = readFileSync(
+    new URL('../src/styles/publication-profile.css', import.meta.url),
+    'utf8',
+  );
+  const publisherCss = readFileSync(
+    new URL('../src/styles/publisher-profile.css', import.meta.url),
+    'utf8',
+  );
+
+  for (const className of [
+    'publication-profile-quick-grid',
+    'publication-profile-identity-grid',
+    'publication-profile-style-grid',
+    'publication-profile-validation-grid',
+    'publication-profile-export-grid',
+  ]) {
+    assert.match(panel, new RegExp(className));
+  }
+
+  assert.match(
+    profileCss,
+    /@media \(min-width: 1000px\)[\s\S]*publication-profile-quick-grid[\s\S]*repeat\(3, minmax\(0, 1fr\)\)/,
+  );
+  assert.match(
+    profileCss,
+    /publication-profile-rule-grid \{[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/,
+  );
+  assert.match(
+    profileCss,
+    /publication-profile-view textarea \{[\s\S]*min-height: 4\.75rem;[\s\S]*max-height: 9rem;/,
+  );
+  assert.match(
+    publisherCss,
+    /publisher-profile-form-grid \{[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/,
+  );
+  assert.match(
+    publisherCss,
+    /publisher-profile-form-grid textarea \{[\s\S]*height: 3\.6rem;/,
+  );
+});
