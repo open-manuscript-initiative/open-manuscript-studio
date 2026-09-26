@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
-const script = resolve('scripts/configure-android-agp91-test.mjs');
+const script = resolve('scripts/configure-android-agp91.mjs');
 
 function fixture() {
   const cwd = mkdtempSync(join(tmpdir(), 'omi-agp91-'));

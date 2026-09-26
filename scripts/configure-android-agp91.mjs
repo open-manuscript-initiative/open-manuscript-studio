@@ -1,4 +1,4 @@
-// Isolated AGP 9.1 compatibility experiment. Never called by production release workflows.
+// Production AGP 9.1 compatibility adapter for the Tauri 2.11.4 generated Android project.
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -86,4 +86,4 @@ if (app.includes(scriptApply)) {
 updates.push([appPath, app]);
 
 for (const [file, content] of updates) writeFileSync(file, content);
-console.log('Experimental AGP 9.1.1 / Gradle 9.3.1 compatibility configuration applied.');
+console.log('Configured production AGP 9.1.1 / Gradle 9.3.1 compatibility.');

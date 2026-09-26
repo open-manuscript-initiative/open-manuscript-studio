@@ -67,7 +67,7 @@ jobs:
       - name: Test Android distribution
         run: |
           node --test tests/android-release-optimization.test.mjs
-          node --test tests/android-agp9-test.test.mjs
+          node --test tests/android-agp91-test.test.mjs
           node --test tests/android-version-code.test.mjs
           npm run test:android-update
           python3 tests/verify-play-bundle.test.py
@@ -136,14 +136,14 @@ jobs:
           grep -nE 'ndkVersion|debugSymbolLevel' src-tauri/gen/android/app/build.gradle.kts
           npm run icons:generate
 
-      - name: Configure AGP 9.0.1 production compatibility
+      - name: Configure AGP 9.1.1 production compatibility
         shell: bash
         run: |
           set -euo pipefail
-          node scripts/configure-android-agp9-test.mjs compatibility
-          grep -n 'com.android.tools.build:gradle:9.0.1' src-tauri/gen/android/build.gradle.kts
-          grep -n 'com.android.tools.build:gradle:9.0.1' src-tauri/gen/android/buildSrc/build.gradle.kts
-          grep -n 'gradle-9.1.0-bin.zip' src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties
+          node scripts/configure-android-agp91.mjs
+          grep -n 'com.android.tools.build:gradle:9.1.1' src-tauri/gen/android/build.gradle.kts
+          grep -n 'com.android.tools.build:gradle:9.1.1' src-tauri/gen/android/buildSrc/build.gradle.kts
+          grep -n 'gradle-9.3.1-bin.zip' src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties
           grep -n 'android.r8.optimizedResourceShrinking=true' src-tauri/gen/android/gradle.properties
 
       - name: Validate Android signing secrets
@@ -187,6 +187,9 @@ jobs:
         env:
           CI: 'true'
         run: npm run android:build:play
+
+      - name: Verify R8 class repackaging
+        run: python3 scripts/verify-r8-class-repackaging.py
 
       - name: Verify Google Play bundle permissions
         shell: bash

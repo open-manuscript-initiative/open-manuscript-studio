@@ -5,11 +5,13 @@ on:
   pull_request:
     paths:
       - '.github/workflows/android-agp91-test.yml'
-      - 'scripts/configure-android-agp91-test.mjs'
+      - 'scripts/configure-android-agp91.mjs'
       - 'scripts/configure-android-modern-ui.mjs'
       - 'scripts/configure-android-signing.mjs'
       - 'tests/android-agp91-test.test.mjs'
       - 'tests/android-release-optimization.test.mjs'
+      - 'scripts/verify-r8-class-repackaging.py'
+      - '.github/workflows/android-release.yml'
 
 permissions:
   contents: read
@@ -64,7 +66,7 @@ jobs:
 
       - name: Enable AGP 9.1 compatibility mode
         run: |
-          node scripts/configure-android-agp91-test.mjs
+          node scripts/configure-android-agp91.mjs
           grep -n 'com.android.tools.build:gradle:9.1.1' src-tauri/gen/android/build.gradle.kts
           grep -n 'com.android.tools.build:gradle:9.1.1' src-tauri/gen/android/buildSrc/build.gradle.kts
           grep -n 'gradle-9.3.1-bin.zip' src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties
@@ -87,31 +89,7 @@ jobs:
           npm run tauri -- android build --target aarch64 --aab --apk --ci             --config '{"bundle":{"android":{"versionCode":1291}}}'             2>&1 | tee "$RUNNER_TEMP/agp91-release-build.log"
 
       - name: Verify R8 class repackaging
-        shell: bash
-        run: |
-          python3 - <<'PYTHON'
-          from pathlib import Path
-
-          mappings = list(Path("src-tauri/gen/android/app/build/outputs/mapping").rglob("mapping.txt"))
-          assert mappings, "R8 mapping.txt is missing"
-
-          mapping = mappings[0]
-          targets = []
-          for raw in mapping.read_text(encoding="utf-8", errors="replace").splitlines():
-              if raw.startswith((" ", "#")) or " -> " not in raw or not raw.endswith(":"):
-                  continue
-              target = raw.split(" -> ", 1)[1][:-1].strip()
-              if target:
-                  targets.append(target)
-
-          unnamed = [target for target in targets if "." not in target]
-          assert unnamed, (
-              "No class was mapped into the unnamed package. "
-              "AGP 9.1 default R8 class repackaging was not observed."
-          )
-          print(f"R8 mapping: {len(unnamed)} of {len(targets)} mapped classes use the unnamed package.")
-          print("Examples:", ", ".join(unnamed[:10]))
-          PYTHON
+        run: python3 scripts/verify-r8-class-repackaging.py
 
       - name: Verify ARM64 native 16 KB page alignment
         run: |

@@ -2,9 +2,9 @@
 
 Date: 2026-09-26.
 
-This experiment is intentionally isolated from the production Android Release workflow.
-Production remains on AGP 9.0.1 until the AGP 9.1 build, R8 repackaging, native alignment,
-and device smoke tests have all passed.
+The isolated compatibility experiment passed in PR #530. The production rollout is
+performed separately so the signed all-ABI release, Play bundle checks, native
+alignment checks, and device smoke tests remain explicit release gates.
 
 ## Target toolchain
 
@@ -33,5 +33,8 @@ The pull-request workflow must:
 
 The compatibility artifacts use a disposable key and must not be uploaded to Google Play.
 
-If all CI checks pass, the next step is a separate production-rollout PR followed by
-a signed all-ABI release with Play upload disabled and physical-device smoke testing.
+PR #530 passed the AGP 9.1.1 build, R8 class-repackaging verification, and 16 KB ARM64
+alignment checks. The production Android Release workflow can therefore move to the
+same adapter in a separate rollout PR. The first production AGP 9.1.1 release must
+still run with Play upload disabled and be smoke-tested on a physical device before
+a Play upload is performed.
