@@ -90,6 +90,43 @@ test('local continuous-editor projections are reusable only while section identi
   );
 });
 
+test('root-depth active-block fallback preserves the ProseMirror node receiver', () => {
+  const children = [
+    {
+      nodeSize: 8,
+      attrs: { omiBlockId: 'root-block-a', omiSectionId: 'root-section' },
+    },
+    {
+      nodeSize: 9,
+      attrs: { omiBlockId: 'root-block-b', omiSectionId: 'root-section' },
+    },
+  ];
+  const root = {
+    nodeSize: 19,
+    attrs: {},
+    childCount: children.length,
+    children,
+    child(this: { children: typeof children }, index: number) {
+      return this.children[index]!;
+    },
+  };
+
+  const result = getTopLevelBlockFromResolvedPosition({
+    depth: 0,
+    pos: 9,
+    node: () => root,
+    start: () => 0,
+    end: () => root.nodeSize,
+  });
+
+  assert.deepEqual(result, {
+    blockId: 'root-block-b',
+    sectionId: 'root-section',
+    start: 9,
+    end: 16,
+  });
+});
+
 test('resolved active-block lookup does not scan preceding top-level siblings', () => {
   let rootChildReads = 0;
   const root = {
