@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/android-agp9-test.yml'
+      - '.github/workflows/android-release.yml'
       - 'scripts/configure-android-agp9-test.mjs'
       - 'scripts/configure-android-modern-ui.mjs'
       - 'tests/android-agp9-test.test.mjs'

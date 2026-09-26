@@ -1,10 +1,12 @@
-# AGP 9 compatibility experiment
+# AGP 9 compatibility and production adoption
 
 Dates: 2026-09-13–14. PR: https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/409
 
-This is an isolated ARM64 release-build experiment. The production Android Release
-workflow still uses the Tauri-generated toolchain. The experimental AAB and APK
-use a disposable signing key and are not Google Play upload packages.
+The work started as an isolated ARM64 release-build experiment. On 2026-09-26 the
+tested compatibility adapter was promoted into the production Android Release
+workflow. The compatibility-test AAB and APK still use a disposable signing key
+and are not Google Play upload packages; the production workflow continues to use
+the normal release signing and Play verification gates.
 
 ## Build evidence
 
@@ -32,13 +34,16 @@ means the compatibility release build and alignment checks passed; it does not
 mean AGP 9 defaults passed. The probe deliberately uses `continue-on-error` and
 records its raw outcome in the run summary.
 
-Artifacts from the successful run are under `android-toolchain-agp9`, with
-14-day retention. They use disposable test signing. This PR does not switch the
-production release workflow to AGP 9 or produce a Play-uploadable release.
+Artifacts from the compatibility run are under `android-toolchain-agp9`, with
+14-day retention. They use disposable test signing. The production Android Release
+workflow now applies the same compatibility adapter after Tauri generates the
+Android project and before release signing.
 
 ## Required adaptations found by the experiment
 
-The script `scripts/configure-android-agp9-test.mjs` modifies generated files only:
+The script `scripts/configure-android-agp9-test.mjs` modifies generated files only.
+Production releases invoke it in `compatibility` mode; `defaults` remains an
+experimental probe:
 
 1. Set AGP 9.0.1 in both the root build script and `buildSrc`.
 2. Set the Gradle wrapper to 9.1.0.
@@ -72,12 +77,14 @@ experiment. Three local Node tests cover repeatable configuration, rejecting
 unexpected generated templates, and preserving release shrinking/signing setup.
 The CI build compiles the actual Tauri-generated Kotlin code and application.
 
-Passing this experiment does not cover all-ABI Play packaging, production signing,
-Play-specific permission filtering, or physical-device behavior. Before adopting
-AGP 9 for production, build with the release signing key and a new versionCode,
-run the existing Play bundle checks, and test launch, ORCID, document open/save,
-file dialogs, and update behavior on a device. The compatibility opt-outs are
-transitional and do not demonstrate support for AGP 9 defaults or AGP 10.
+The compatibility smoke test remains ARM64-only. The production Android Release
+workflow is the all-ABI acceptance gate: it builds with the release signing key,
+runs the existing Play bundle and 16 KB checks, and produces both the Play AAB and
+the direct-install APK. For the first AGP 9 production run, dispatch the workflow
+with Play upload disabled, test launch, ORCID, document open/save, file dialogs,
+and update behavior on a physical device, and only then upload the resulting or a
+subsequent signed AAB to Play. The compatibility opt-outs are transitional and do
+not demonstrate support for AGP 9 defaults or AGP 10.
 
 Reference: https://developer.android.com/build/releases/agp-9-0-0-release-notes
 
