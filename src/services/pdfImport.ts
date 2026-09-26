@@ -149,7 +149,7 @@ export function buildPdfImportHeaders(
  * pipeline. DOI and copyright lines are publication metadata rather than body
  * prose: extract and preserve them before dropping the footer/header block.
  */
-export function normalizePdfPageFurniture(result: PdfImportResult): PdfImportResult {
+function normalizePdfPageFurniture(result: PdfImportResult): PdfImportResult {
   const pages = new Map<number, PdfImportBlock[]>();
   for (const block of result.blocks) {
     const list = pages.get(block.page) ?? [];
@@ -256,7 +256,7 @@ function isCopyrightStatement(text: string): boolean {
  * footnote block. The later OMI conversion can then attach the note to the
  * exact body block rather than to whichever paragraph happened to precede it.
  */
-export function normalizePdfFootnotes(result: PdfImportResult): PdfImportResult {
+function normalizePdfFootnotes(result: PdfImportResult): PdfImportResult {
   const blocks = result.blocks.map((block) => ({
     ...block,
     ...(block.noteAnchors ? { noteAnchors: [...block.noteAnchors] } : {}),
