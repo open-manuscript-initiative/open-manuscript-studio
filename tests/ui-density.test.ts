@@ -161,3 +161,36 @@ test('desktop menu density compacts contributors and supporting panels', () => {
     /\.studio-menu-content \.studio-settings-card \{[\s\S]*padding: \.5rem \.55rem;/,
   );
 });
+
+
+test('contributor fields use content-appropriate widths instead of stretching across desktop', () => {
+  const contributorEditor = readFileSync(
+    new URL('../src/components/ContributorEditor.tsx', import.meta.url),
+    'utf8',
+  );
+  const orcidField = readFileSync(
+    new URL('../src/components/OrcidLookupField.tsx', import.meta.url),
+    'utf8',
+  );
+  const rorField = readFileSync(
+    new URL('../src/components/RorAffiliationField.tsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(
+    densityCss,
+    /grid-template-columns: repeat\(auto-fill, minmax\(12rem, 16\.5rem\)\)/,
+  );
+  assert.match(
+    densityCss,
+    /\.studio-menu-content \.orcid-lookup-field \{[\s\S]*max-width: 14\.5rem;/,
+  );
+  assert.match(
+    densityCss,
+    /\.studio-menu-content \.ror-affiliation-field \{[\s\S]*max-width: 30rem;/,
+  );
+  assert.match(orcidField, /contributor-compact-field orcid-lookup-field/);
+  assert.match(rorField, /contributor-medium-field ror-affiliation-field/);
+  assert.match(contributorEditor, /contributor-medium-field/);
+  assert.match(contributorEditor, /contributor-large-field/);
+});

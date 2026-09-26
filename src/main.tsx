@@ -50,6 +50,7 @@ import './styles/proofreading.css';
 import './styles/account-profiles.css';
 import './styles/scholarly-metadata.css';
 import './styles/ui-density.css';
+import './styles/desktop-form-layout.css';
 
 restorePendingExternalLaunchToLocation();
 initializeRevisionIntegrity();

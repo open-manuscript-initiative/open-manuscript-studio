@@ -237,7 +237,7 @@ export function ContributorEditor({
                   />
                 </label>
 
-                <label className="contributor-wide-field">
+                <label className="contributor-medium-field">
                   <span>{copy.preferredPublicName}</span>
                   <input
                     type="text"
@@ -285,7 +285,7 @@ export function ContributorEditor({
                   </select>
                 </label>
 
-                <label className="contributor-wide-field">
+                <label className="contributor-medium-field">
                   <span>{copy.website}</span>
                   <input
                     type="url"
@@ -347,7 +347,7 @@ export function ContributorEditor({
                   />
                 </label>
 
-                <label className="contributor-wide-field">
+                <label className="contributor-large-field">
                   <span>{copy.biography}</span>
                   <textarea
                     rows={4}
@@ -366,7 +366,7 @@ export function ContributorEditor({
                   <small>{copy.localizedField} {manuscript.locale}</small>
                 </label>
 
-                <label className="contributor-wide-field">
+                <label className="contributor-field">
                   <span>{t('contributors.role')}</span>
                   <select
                     value={primaryRole}
@@ -436,7 +436,7 @@ export function ContributorEditor({
                   </select>
                 </label>
                 {competingStatus ? (
-                  <label className="contributor-wide-field">
+                  <label className="contributor-large-field">
                     <span>{copy.competingInterestsStatement}</span>
                     <textarea
                       rows={4}

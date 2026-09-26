@@ -1,0 +1,480 @@
+/*
+ * Desktop form layout system
+ *
+ * Mobile remains full-width and touch-oriented. Desktop forms use intrinsic,
+ * content-appropriate widths and fixed-size packing tracks so short values do
+ * not stretch across the viewport.
+ */
+
+:root {
+  --omi-form-control-height: 1.9rem;
+  --omi-form-field-xs: 8rem;
+  --omi-form-field-sm: 12rem;
+  --omi-form-field-md: 18rem;
+  --omi-form-field-lg: 28rem;
+  --omi-form-field-xl: 38rem;
+  --omi-form-gap-x: .55rem;
+  --omi-form-gap-y: .4rem;
+}
+
+@media (min-width: 761px) {
+  .studio-menu-content:not(.studio-menu-content--publication-editor),
+  .account-page {
+    --omi-form-track: 17rem;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input:not([type]),
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="text"],
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="password"],
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="email"],
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="url"],
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="search"],
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="tel"],
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="date"],
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="time"],
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="datetime-local"],
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="month"],
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="week"],
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="number"],
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    select,
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    textarea,
+  .account-page input:not([type]),
+  .account-page input[type="text"],
+  .account-page input[type="password"],
+  .account-page input[type="email"],
+  .account-page input[type="url"],
+  .account-page input[type="search"],
+  .account-page input[type="tel"],
+  .account-page input[type="date"],
+  .account-page input[type="time"],
+  .account-page input[type="datetime-local"],
+  .account-page input[type="month"],
+  .account-page input[type="week"],
+  .account-page input[type="number"],
+  .account-page select,
+  .account-page textarea {
+    width: min(100%, var(--omi-form-field-md));
+    max-width: 100%;
+    min-width: 0;
+    min-height: var(--omi-form-control-height);
+    box-sizing: border-box;
+    justify-self: start;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    :is(input:not([type]), input[type="text"], input[type="password"]),
+  .account-page :is(input:not([type]), input[type="text"], input[type="password"]) {
+    width: min(100%, var(--omi-form-field-md));
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="email"],
+  .account-page input[type="email"] {
+    width: min(100%, 22rem);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="url"],
+  .account-page input[type="url"] {
+    width: min(100%, var(--omi-form-field-lg));
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="search"],
+  .account-page input[type="search"] {
+    width: min(100%, 22rem);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="tel"],
+  .account-page input[type="tel"] {
+    width: min(100%, 15rem);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    :is(input[type="number"], input[type="date"], input[type="time"], input[type="month"], input[type="week"]),
+  .account-page
+    :is(input[type="number"], input[type="date"], input[type="time"], input[type="month"], input[type="week"]) {
+    width: min(100%, var(--omi-form-field-sm));
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    input[type="datetime-local"],
+  .account-page input[type="datetime-local"] {
+    width: min(100%, 16rem);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor) select,
+  .account-page select {
+    width: min(100%, var(--omi-form-field-md));
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor) textarea,
+  .account-page textarea {
+    width: min(100%, var(--omi-form-field-lg));
+    min-height: 4rem;
+    max-height: 9rem;
+    padding: .38rem .48rem;
+    line-height: 1.35;
+    resize: vertical;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    :is([data-full-width="true"], .omi-field-full, .studio-field-full),
+  .account-page
+    :is([data-full-width="true"], .omi-field-full, .studio-field-full) {
+    width: 100%;
+    max-width: none;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    :is(
+      .contributor-form-grid,
+      .studio-metadata-grid,
+      .studio-publication-venue-create-grid,
+      .omi-reference-form-grid,
+      .omi-lookup-settings-grid,
+      .omi-web-provider-form,
+      .omi-integration-workspace-grid,
+      .publisher-profile-form-grid,
+      .account-institution-fields
+    ),
+  .account-page
+    :is(
+      .account-institution-fields,
+      .central-admin-inline-form,
+      .central-admin-token-form
+    ) {
+    display: grid;
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(100%, 13rem), var(--omi-form-track))
+    );
+    justify-content: start;
+    align-items: start;
+    gap: var(--omi-form-gap-y) var(--omi-form-gap-x);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    :is(
+      .contributor-wide-field,
+      .contributor-medium-field,
+      .contributor-large-field,
+      .studio-metadata-field--wide,
+      .omi-reference-field-wide,
+      .publisher-profile-wide
+    ) {
+    grid-column: span 2;
+    width: min(100%, calc((var(--omi-form-track) * 2) + var(--omi-form-gap-x)));
+    max-width: calc((var(--omi-form-track) * 2) + var(--omi-form-gap-x));
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .contributor-compact-field {
+    grid-column: span 1;
+    width: min(100%, var(--omi-form-track));
+    max-width: var(--omi-form-track);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .studio-metadata-field {
+    width: min(100%, var(--omi-form-track));
+    max-width: var(--omi-form-track);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .studio-metadata-field--wide {
+    max-width: calc((var(--omi-form-track) * 2) + var(--omi-form-gap-x));
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .studio-metadata-field--wide textarea {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .studio-publication-venue-controls {
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(100%, 12rem), 17rem)
+    );
+    justify-content: start;
+    gap: var(--omi-form-gap-y) var(--omi-form-gap-x);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .studio-tool-actions > :is(input:not([type]), input[type="text"], input[type="password"], input[type="email"], input[type="url"], input[type="search"], select, textarea) {
+    flex: 0 1 auto;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .omi-keyword-input-row {
+    justify-content: flex-start;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .omi-keyword-input-row input {
+    flex: 0 1 22rem;
+    width: min(100%, 22rem);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .orcid-lookup-field {
+    width: min(100%, 15rem);
+    max-width: 15rem;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .orcid-lookup-input-wrap {
+    width: min(100%, 15rem);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .orcid-lookup-input-wrap input {
+    width: 11.5rem;
+    max-width: 11.5rem;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .ror-affiliation-field {
+    width: min(100%, 30rem);
+    max-width: 30rem;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .ror-affiliation-input-wrap {
+    width: min(100%, 30rem);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .publisher-profile-form-grid {
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(100%, 13rem), 16.5rem)
+    );
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .publisher-profile-form-grid textarea {
+    width: min(100%, 33.55rem);
+    min-height: 3.5rem;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .omi-reference-search {
+    width: min(100%, 24rem);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .omi-reference-search input {
+    width: 100%;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .omi-xref-numbering-control {
+    grid-template-columns: minmax(11rem, 20rem) minmax(9rem, 14rem);
+    justify-content: start;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .studio-manuscript-overview-grid {
+    grid-template-columns: minmax(24rem, 2fr) minmax(18rem, 1fr);
+    max-width: 70rem;
+    gap: .55rem;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .studio-manuscript-overview-grid .studio-manuscript-fields textarea {
+    width: 100%;
+    max-width: 100%;
+    min-height: 5.5rem;
+    max-height: 8rem;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .studio-manuscript-language-field input {
+    width: min(100%, 16rem);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .section-numbering-control select {
+    width: min(100%, 14rem);
+  }
+
+  /* Default desktop pages are packed horizontally before vertical scrolling. */
+  .studio-menu-view--document,
+  .studio-menu-view--tools,
+  .studio-menu-view--settings {
+    display: grid;
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(min(100%, 20rem), 1fr)
+    );
+    align-items: start;
+    gap: .5rem;
+  }
+
+  .studio-menu-view--document > .studio-menu-view-header,
+  .studio-menu-view--tools > .studio-menu-view-header,
+  .studio-menu-view--settings > .studio-menu-view-header {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+  }
+
+  .studio-menu-view--document > .studio-tool-card,
+  .studio-menu-view--tools > .studio-tool-card,
+  .studio-menu-view--settings > .studio-settings-card,
+  .studio-menu-view--settings > .omi-settings-section {
+    margin: 0;
+  }
+
+  .studio-menu-view--tools > .studio-technical-details {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+
+  .studio-menu-view--references {
+    display: grid;
+    grid-template-columns: minmax(28rem, 1.55fr) minmax(20rem, .85fr);
+    align-items: start;
+    gap: .5rem;
+  }
+
+  .studio-menu-view--references > .omi-references-panel {
+    grid-row: 1 / span 5;
+    min-width: 0;
+  }
+
+  .studio-menu-view--references > :not(.omi-references-panel) {
+    min-width: 0;
+  }
+
+  .studio-menu-view--references .studio-menu-view-header {
+    margin-bottom: .4rem;
+  }
+
+  .studio-menu-view--settings .studio-cloud-section {
+    margin-top: .45rem;
+  }
+
+  .studio-menu-view--settings .studio-cloud-section + .studio-cloud-section {
+    margin-top: .45rem;
+  }
+
+  .studio-menu-view--settings .studio-language-settings-grid,
+  .studio-menu-view--settings .omi-import-format-settings {
+    gap: .3rem;
+  }
+
+  .studio-menu-view--settings .omi-setting-toggle {
+    padding-block: .3rem;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .publication-profile-view input[type="text"],
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .publication-profile-view input[type="email"],
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .publication-profile-view select {
+    width: min(100%, 18rem);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .publication-profile-view input[type="url"] {
+    width: min(100%, 26rem);
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .publication-profile-view textarea {
+    width: min(100%, 32rem);
+    min-height: 3.5rem;
+    max-height: 7rem;
+  }
+
+  /* Account/admin forms follow the same desktop packing rules. */
+  .account-page .account-institution-fields {
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(100%, 14rem), 20rem)
+    );
+  }
+
+  .account-page .central-admin-inline-form,
+  .account-page .central-admin-token-form {
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(min(100%, 12rem), 18rem)
+    );
+    justify-content: start;
+  }
+
+  .account-page .central-admin-inline-form > h3,
+  .account-page .central-admin-scope-list,
+  .account-page .central-admin-token-form > .account-primary {
+    grid-column: 1 / -1;
+  }
+}
+
+@container (max-width: 720px) {
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    :is(
+      .contributor-wide-field,
+      .contributor-medium-field,
+      .contributor-large-field,
+      .studio-metadata-field--wide,
+      .omi-reference-field-wide,
+      .publisher-profile-wide
+    ) {
+    grid-column: auto;
+    width: 100%;
+    max-width: none;
+  }
+
+  .studio-menu-view--references {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-menu-view--references > .omi-references-panel {
+    grid-row: auto;
+  }
+}
+
+@media (min-width: 761px) and (max-height: 850px) {
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .studio-menu-view-header {
+    margin-bottom: .3rem;
+    padding-bottom: .25rem;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    .studio-menu-view-header h3 {
+    font-size: 1rem;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    :is(.studio-settings-card, .studio-tool-card, .contributor-card) {
+    padding-block: .4rem;
+  }
+
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    textarea {
+    min-height: 3.25rem;
+    max-height: 6.5rem;
+  }
+}

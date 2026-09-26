@@ -125,7 +125,7 @@ export function OrcidLookupField({
     (isLoading || hasSearched || suggestions.length > 0);
 
   return (
-    <div className="contributor-wide-field orcid-lookup-field">
+    <div className="contributor-compact-field orcid-lookup-field">
       <label htmlFor={`${listboxId}-input`}>
         <span>{label}</span>
       </label>
