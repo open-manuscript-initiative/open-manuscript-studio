@@ -2,7 +2,9 @@ import { createHash, randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
 
 import { env } from '../config/env.js';
+import { closeCollaborationDocumentConnections } from '../collaboration/collaborationServer.js';
 import { prisma } from '../lib/prisma.js';
+import { revokeCollaborationConnectionTickets } from './collaborationTicketService.js';
 
 export type CollaborationInviteRole = 'EDITOR' | 'AUTHOR' | 'VIEWER';
 
@@ -320,6 +322,8 @@ export async function revokeCollaborator(actorUserId: string, documentId: string
       },
     });
   });
+  await revokeCollaborationConnectionTickets(documentId, targetUserId);
+  closeCollaborationDocumentConnections(documentId);
 }
 
 export async function requireActiveMember(documentId: string, userId: string) {

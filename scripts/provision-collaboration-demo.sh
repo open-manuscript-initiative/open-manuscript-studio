@@ -111,8 +111,8 @@ else
   : > "$nginx_temp"
 fi
 
-if grep -Eq '^[[:space:]]*location[[:space:]]+(\^~[[:space:]]+)?/collaboration-demo/(api/|ws)([[:space:]]|$)' "$nginx_temp"; then
-  echo "Found an unmanaged collaboration-demo location; refusing to create a duplicate. Remove or migrate that Plesk Nginx rule first." >&2
+if grep -Eq '^[[:space:]]*location[[:space:]]+(\^~[[:space:]]+)?(/collaboration-demo/(api/|ws)|/collaboration/ws)([[:space:]]|$)' "$nginx_temp"; then
+  echo "Found an unmanaged OMI collaboration location; refusing to create a duplicate. Remove or migrate that Plesk Nginx rule first." >&2
   exit 1
 fi
 
@@ -133,6 +133,17 @@ location ^~ /collaboration-demo/ws {
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
     proxy_set_header Host $host;
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
+}
+
+location ^~ /collaboration/ws {
+    proxy_pass http://127.0.0.1:3022;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
     proxy_read_timeout 3600s;
     proxy_send_timeout 3600s;
 }

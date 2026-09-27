@@ -13,6 +13,10 @@ import {
   revokeCollaborationInvitation,
 } from '../services/collaborationInvitationService.js';
 import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
+import {
+  CollaborationTicketError,
+  issueCollaborationConnectionTicket,
+} from '../services/collaborationTicketService.js';
 
 export const collaborationRouter = Router();
 
@@ -45,6 +49,20 @@ collaborationRouter.get('/documents/:documentId/access', requireSession, async (
     response.status(200).json(access);
   } catch (error) {
     sendError(response, error, 'COLLABORATION_ACCESS_LOAD_FAILED');
+  }
+});
+
+collaborationRouter.post('/documents/:documentId/connection-ticket', requireSession, async (request: AuthenticatedRequest, response) => {
+  try {
+    const ticket = await issueCollaborationConnectionTicket(
+      requireUserId(request),
+      parseId(request.params.documentId, 'document'),
+    );
+    response.setHeader('Cache-Control', 'no-store');
+    response.setHeader('Pragma', 'no-cache');
+    response.status(201).json({ ticket });
+  } catch (error) {
+    sendError(response, error, 'COLLABORATION_TICKET_CREATE_FAILED');
   }
 });
 
@@ -147,6 +165,10 @@ function sendError(response: Response, error: unknown, fallbackCode: string): vo
           : error.code === 'MAIL_DELIVERY_FAILED' ? 503
             : 400;
     response.status(status).json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+  if (error instanceof CollaborationTicketError) {
+    response.status(error.code === 'NOT_FOUND' ? 404 : 403).json({ error: { code: error.code, message: error.message } });
     return;
   }
   if (error instanceof z.ZodError || error instanceof TypeError) {

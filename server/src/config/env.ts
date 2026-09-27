@@ -83,6 +83,8 @@ const environmentSchema = z.object({
   // on existing deployments unless an operator opts in explicitly.
   MANUSCRIPT_COLLABORATION_ENABLED: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
 
+  COLLABORATION_WS_PORT: z.coerce.number().int().positive().max(65535).default(3022),
+
   PASSWORD_RESET_TTL_MINUTES: z.coerce
     .number()
     .int()
