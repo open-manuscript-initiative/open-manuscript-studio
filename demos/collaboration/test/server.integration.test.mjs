@@ -30,7 +30,7 @@ test('session endpoint rejects wrong code and issues a signed room-scoped token'
       try {
         if ((await fetch('http://127.0.0.1:' + port + '/healthz')).ok) { ready = true; break; }
       } catch {}
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => { setTimeout(resolve, 100); });
     }
     assert.equal(ready, true, 'server should become ready');
 
@@ -51,9 +51,9 @@ test('session endpoint rejects wrong code and issues a signed room-scoped token'
     assert.match(session.token, /^[-_A-Za-z0-9]+\.[-_A-Za-z0-9]+$/);
     assert.equal(session.room, 'omi-sponsor-demo-synthetic-manuscript-v1');
   } finally {
-    exit = new Promise((resolve) => child.once('exit', resolve));
+    exit = new Promise((resolve) => { child.once('exit', resolve); });
     child.kill('SIGTERM');
-    await Promise.race([exit, new Promise((resolve) => setTimeout(resolve, 3000))]);
+    await Promise.race([exit, new Promise((resolve) => { setTimeout(resolve, 3000); })]);
     child.kill('SIGKILL');
     await rm(directory, { recursive: true, force: true });
   }
