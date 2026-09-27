@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-09-27
-- Supersedes: ADR-023 section 6 only. All other ADR-023 decisions remain in force.
+- Supersedes: ADR-023's production-disabled default in section 6, its matching consequence, and the default-off deployment instructions in implementation step 4. All other ADR-023 design and authorization decisions remain in force.
 
 ## Context
 

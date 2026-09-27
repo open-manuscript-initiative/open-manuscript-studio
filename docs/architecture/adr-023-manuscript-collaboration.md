@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-09-27
-- Supersedes: ADR-022 only for the boundary between the isolated sponsor demo and Studio collaboration. ADR-022 remains the policy for the synthetic demo. The production enablement decision in section 6 is superseded by ADR-024.
+- Supersedes: ADR-022 only for the boundary between the isolated sponsor demo and Studio collaboration. ADR-022 remains the policy for the synthetic demo. ADR-024 supersedes the production-disabled default in section 6, the matching consequence below, and the default-off deployment instructions in implementation step 4.
 
 ## Context
 
@@ -36,9 +36,11 @@ Studio 1.0 ADR-006 makes the portable OMI document/artifact and the explicit doc
 - A relational migration and server authorization boundary are required before editor UI can connect to real documents.
 - Accepted membership becomes the single access predicate for both REST handshakes and WebSocket document connections.
 - Import/export must be serialized with collaborative state checkpoints and must preserve the current OMI validators and semantic node handling.
-- Each implementation PR must include invitation and permission tests, synchronization recovery tests, relevant editor Playwright coverage, release-hardening/release-readiness gates, and an architecture-drift check. No production deployment configuration is enabled automatically.
+- Each implementation PR must include invitation and permission tests, synchronization recovery tests, relevant editor Playwright coverage, release-hardening/release-readiness gates, and an architecture-drift check. ADR-024 supersedes the original statement that production deployment configuration is not enabled automatically.
 
 ## Mergeable implementation PR sequence
+
+This sequence records the original implementation plan. ADR-024 supersedes the default-off deployment instructions in step 4.
 
 1. **Invitation and membership authority.** Add server-owned document membership and invitation state, authenticated invitation issue/inspect/accept/decline/revoke endpoints, verified-email binding, expiry/revocation behavior, and audit events. No Yjs connection or production enablement in this PR. Test pending invitations cannot read/write; accepted members receive only their granted scope; wrong-account, expired, replayed, revoked, and removed-member cases fail.
 2. **Durable collaboration service.** Add a provider-neutral collaboration transport/persistence boundary, PostgreSQL local adapter, connection-ticket endpoint, per-document authorization, reconnect/recovery and revocation behavior. Keep a local single-node profile; document the manual Plesk WebSocket route while leaving production deploy defaults untouched. Test authorization, persistence round trips, process restart recovery, stale/revoked tickets, and concurrent joins.
