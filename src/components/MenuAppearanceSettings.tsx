@@ -3,52 +3,158 @@ import { useState } from 'react';
 
 import { useTranslation } from '../i18n';
 import {
+  DEFAULT_INTERFACE_FONT_SCALE,
   DEFAULT_MENU_FONT_SCALE,
+  INTERFACE_FONT_SCALE_MAX,
+  INTERFACE_FONT_SCALE_MIN,
+  INTERFACE_FONT_SCALE_STEP,
   MENU_FONT_SCALE_MAX,
   MENU_FONT_SCALE_MIN,
   MENU_FONT_SCALE_STEP,
+  loadInterfaceFontScale,
   loadMenuFontScale,
+  saveInterfaceFontScale,
   saveMenuFontScale,
 } from '../services/menuAppearancePreferences';
 
+interface FontScaleControlProps {
+  id: string;
+  label: string;
+  description: string;
+  smaller: string;
+  larger: string;
+  reset: string;
+  preview: string;
+  scale: number;
+  minimum: number;
+  maximum: number;
+  step: number;
+  defaultScale: number;
+  previewClassName: string;
+  onChange: (value: number) => void;
+}
+
+function FontScaleControl({
+  id,
+  label,
+  description,
+  smaller,
+  larger,
+  reset,
+  preview,
+  scale,
+  minimum,
+  maximum,
+  step,
+  defaultScale,
+  previewClassName,
+  onChange,
+}: FontScaleControlProps) {
+  return (
+    <section className="studio-appearance-scale-row" aria-labelledby={`${id}-title`}>
+      <div className="studio-appearance-scale-copy">
+        <strong id={`${id}-title`}>{label}</strong>
+        <small>{description}</small>
+      </div>
+
+      <div className="studio-menu-font-control">
+        <span className="studio-menu-font-boundary">{smaller}</span>
+        <label htmlFor={id} className="studio-menu-font-slider">
+          <span className="sr-only">{label}</span>
+          <input
+            id={id}
+            type="range"
+            min={minimum}
+            max={maximum}
+            step={step}
+            value={scale}
+            aria-label={label}
+            aria-valuetext={`${scale}%`}
+            onChange={(event) => onChange(Number(event.target.value))}
+          />
+        </label>
+        <span className="studio-menu-font-boundary">{larger}</span>
+        <output htmlFor={id} className="studio-menu-font-value">
+          {scale}%
+        </output>
+        <button
+          type="button"
+          className="studio-menu-secondary-action studio-menu-font-reset"
+          disabled={scale === defaultScale}
+          onClick={() => onChange(defaultScale)}
+        >
+          <RotateCcw size={14} aria-hidden="true" />
+          {reset}
+        </button>
+      </div>
+
+      <p className={previewClassName}>{preview}</p>
+    </section>
+  );
+}
+
 export function MenuAppearanceSettings() {
   const { locale } = useTranslation();
-  const [scale, setScale] = useState(() => loadMenuFontScale());
+  const [menuScale, setMenuScale] = useState(() => loadMenuFontScale());
+  const [interfaceScale, setInterfaceScale] = useState(() => loadInterfaceFontScale());
+
   const copy = locale === 'hu'
     ? {
-        title: 'Menü betűmérete',
+        title: 'Felület és menü betűmérete',
         description:
-          'A kéziratmenü feliratainak mérete ezen az eszközön külön beállítható. A változás azonnal megjelenik.',
-        label: 'Menü betűmérete',
+          'A menü és a teljes kezelőfelület betűmérete külön állítható ezen az eszközön. A kézirat és a kiadvány tényleges szövegméretét ezek a beállítások nem módosítják.',
+        menuLabel: 'Menü betűmérete',
+        menuDescription:
+          'A kéziratmenü navigációs feliratainak és a menügombok keretének mérete.',
+        interfaceLabel: 'Felületi szövegméret',
+        interfaceDescription:
+          'Címek, mezőfeliratok, magyarázószövegek, gombok és beviteli mezők mérete a Stúdió minden részén, az élő kiadványszerkesztő kezelőszerveit is beleértve.',
         smaller: 'Kisebb',
         larger: 'Nagyobb',
         reset: 'Alapméret',
-        preview: 'Előnézet: Kéziratadatok · Közreműködők · Beállítások',
+        menuPreview: 'Menü: Kéziratadatok · Közreműködők · Beállítások',
+        interfacePreview: 'Felület: mezőfelirat · magyarázószöveg · műveleti gomb',
       }
     : locale === 'de'
       ? {
-          title: 'Menüschriftgröße',
+          title: 'Oberflächen- und Menüschriftgröße',
           description:
-            'Die Schriftgröße der Manuskriptmenü-Einträge kann auf diesem Gerät angepasst werden. Die Änderung wird sofort angewendet.',
-          label: 'Menüschriftgröße',
+            'Menü und Benutzeroberfläche können auf diesem Gerät getrennt skaliert werden. Manuskript- und Publikationstext bleiben unverändert.',
+          menuLabel: 'Menüschriftgröße',
+          menuDescription:
+            'Größe der Navigationsbeschriftungen und ihrer Menüschaltflächen.',
+          interfaceLabel: 'Oberflächenschriftgröße',
+          interfaceDescription:
+            'Überschriften, Feldbezeichnungen, Hilfetexte, Schaltflächen und Eingabefelder in der gesamten Studio-Oberfläche einschließlich der Bedienelemente des Live-Publikationseditors.',
           smaller: 'Kleiner',
           larger: 'Größer',
           reset: 'Standardgröße',
-          preview: 'Vorschau: Manuskriptdaten · Mitwirkende · Einstellungen',
+          menuPreview: 'Menü: Manuskriptdaten · Mitwirkende · Einstellungen',
+          interfacePreview: 'Oberfläche: Feldbezeichnung · Hilfetext · Aktionsschaltfläche',
         }
       : {
-          title: 'Menu font size',
+          title: 'Interface and menu font size',
           description:
-            'Adjust the manuscript-menu label size on this device. Changes are applied immediately.',
-          label: 'Menu font size',
+            'Menu and interface typography can be scaled independently on this device. Manuscript and publication content typography stays unchanged.',
+          menuLabel: 'Menu font size',
+          menuDescription:
+            'Size of manuscript-menu navigation labels and their button frames.',
+          interfaceLabel: 'Interface text size',
+          interfaceDescription:
+            'Headings, field labels, explanatory text, buttons and form controls throughout Studio, including the live publication editor controls.',
           smaller: 'Smaller',
           larger: 'Larger',
           reset: 'Default size',
-          preview: 'Preview: Manuscript data · Contributors · Settings',
+          menuPreview: 'Menu: Manuscript data · Contributors · Settings',
+          interfacePreview: 'Interface: field label · explanatory text · action button',
         };
 
-  function update(value: number): void {
-    setScale(saveMenuFontScale(value));
+  function updateMenuScale(value: number): void {
+    setMenuScale(saveMenuFontScale(value));
+  }
+
+  function updateInterfaceScale(value: number): void {
+    setInterfaceScale(saveInterfaceFontScale(value));
   }
 
   return (
@@ -60,38 +166,41 @@ export function MenuAppearanceSettings() {
         </div>
       </div>
 
-      <div className="studio-menu-font-control">
-        <span className="studio-menu-font-boundary">{copy.smaller}</span>
-        <label htmlFor="studio-menu-font-size" className="studio-menu-font-slider">
-          <span className="sr-only">{copy.label}</span>
-          <input
-            id="studio-menu-font-size"
-            type="range"
-            min={MENU_FONT_SCALE_MIN}
-            max={MENU_FONT_SCALE_MAX}
-            step={MENU_FONT_SCALE_STEP}
-            value={scale}
-            aria-label={copy.label}
-            aria-valuetext={`${scale}%`}
-            onChange={(event) => update(Number(event.target.value))}
-          />
-        </label>
-        <span className="studio-menu-font-boundary">{copy.larger}</span>
-        <output htmlFor="studio-menu-font-size" className="studio-menu-font-value">
-          {scale}%
-        </output>
-        <button
-          type="button"
-          className="studio-menu-secondary-action studio-menu-font-reset"
-          disabled={scale === DEFAULT_MENU_FONT_SCALE}
-          onClick={() => update(DEFAULT_MENU_FONT_SCALE)}
-        >
-          <RotateCcw size={14} aria-hidden="true" />
-          {copy.reset}
-        </button>
-      </div>
+      <div className="studio-appearance-scale-list">
+        <FontScaleControl
+          id="studio-menu-font-size"
+          label={copy.menuLabel}
+          description={copy.menuDescription}
+          smaller={copy.smaller}
+          larger={copy.larger}
+          reset={copy.reset}
+          preview={copy.menuPreview}
+          scale={menuScale}
+          minimum={MENU_FONT_SCALE_MIN}
+          maximum={MENU_FONT_SCALE_MAX}
+          step={MENU_FONT_SCALE_STEP}
+          defaultScale={DEFAULT_MENU_FONT_SCALE}
+          previewClassName="studio-menu-font-preview"
+          onChange={updateMenuScale}
+        />
 
-      <p className="studio-menu-font-preview">{copy.preview}</p>
+        <FontScaleControl
+          id="studio-interface-font-size"
+          label={copy.interfaceLabel}
+          description={copy.interfaceDescription}
+          smaller={copy.smaller}
+          larger={copy.larger}
+          reset={copy.reset}
+          preview={copy.interfacePreview}
+          scale={interfaceScale}
+          minimum={INTERFACE_FONT_SCALE_MIN}
+          maximum={INTERFACE_FONT_SCALE_MAX}
+          step={INTERFACE_FONT_SCALE_STEP}
+          defaultScale={DEFAULT_INTERFACE_FONT_SCALE}
+          previewClassName="studio-interface-font-preview"
+          onChange={updateInterfaceScale}
+        />
+      </div>
     </section>
   );
 }
