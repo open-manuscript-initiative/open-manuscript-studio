@@ -97,7 +97,7 @@ const collaboration = new Server({
   maxDebounce: 3000,
   websocketOptions: { maxPayload: 1024 * 1024 },
   async onAuthenticate({ token, documentName, requestHeaders }) {
-    const origin = requestHeaders?.origin;
+    const origin = requestHeaders?.get?.('origin') || requestHeaders?.origin;
     const session = verifySessionToken(token, secret);
     if (origin !== allowedOrigin) throw new Error('Origin is not allowed.');
     if (!session || documentName !== ROOM) throw new Error('The demo session is invalid or expired.');
