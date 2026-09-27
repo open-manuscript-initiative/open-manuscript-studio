@@ -1,12 +1,13 @@
-import { createHmac, timingSafeEqual, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Server } from '@hocuspocus/server';
+import { createSessionToken, safeEqualSecret, verifySessionToken, ROOM_ID } from './session-security.mjs';
 import * as Y from 'yjs';
 
-const ROOM = 'omi-sponsor-demo-synthetic-manuscript-v1';
+const ROOM = ROOM_ID;
 const httpPort = Number(process.env.DEMO_HTTP_PORT || 3020);
 const wsPort = Number(process.env.DEMO_WS_PORT || 3021);
 const accessCode = process.env.DEMO_ACCESS_CODE || '';
@@ -32,42 +33,6 @@ const securityHeaders = {
 function send(response, status, value) {
   response.writeHead(status, { ...securityHeaders, 'content-type': 'application/json; charset=utf-8' });
   response.end(JSON.stringify(value));
-}
-
-function equalSecret(expected, supplied) {
-  const left = Buffer.from(String(expected));
-  const right = Buffer.from(String(supplied));
-  return left.length === right.length && timingSafeEqual(left, right);
-}
-
-function issueToken(name) {
-  const displayName = String(name || '').trim().replace(/\s+/g, ' ').slice(0, 48);
-  if (displayName.length < 2) throw new Error('Enter a display name of at least two characters.');
-  const payload = Buffer.from(JSON.stringify({
-    name: displayName,
-    room: ROOM,
-    exp: Math.floor(Date.now() / 1000) + 7200,
-  })).toString('base64url');
-  const signature = createHmac('sha256', secret).update(payload).digest('base64url');
-  return payload + '.' + signature;
-}
-
-function verifyToken(token) {
-  if (typeof token !== 'string') return null;
-  const parts = token.split('.');
-  if (parts.length !== 2) return null;
-  const expected = createHmac('sha256', secret).update(parts[0]).digest('base64url');
-  const left = Buffer.from(expected);
-  const right = Buffer.from(parts[1]);
-  if (left.length !== right.length || !timingSafeEqual(left, right)) return null;
-  try {
-    const value = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
-    if (value.room !== ROOM || value.exp <= Math.floor(Date.now() / 1000)) return null;
-    if (typeof value.name !== 'string') return null;
-    return value;
-  } catch {
-    return null;
-  }
 }
 
 async function bodyJson(request) {
@@ -134,11 +99,11 @@ const api = createServer(async (request, response) => {
   }
   try {
     const body = await bodyJson(request);
-    if (!equalSecret(accessCode, body.accessCode || '')) {
+    if (!safeEqualSecret(accessCode, body.accessCode || '')) {
       send(response, 401, { error: 'The access code is incorrect.' });
       return;
     }
-    send(response, 200, { token: issueToken(body.displayName), expiresIn: 7200, room: ROOM, webSocketUrl: wsUrl });
+    send(response, 200, { token: createSessionToken(body.displayName, secret), expiresIn: 7200, room: ROOM, webSocketUrl: wsUrl });
   } catch (error) {
     send(response, 400, { error: error instanceof Error ? error.message : 'Invalid request.' });
   }
@@ -153,7 +118,7 @@ const collaboration = new Server({
   websocketOptions: { maxPayload: 1024 * 1024 },
   async onAuthenticate({ token, documentName, requestHeaders }) {
     const origin = requestHeaders?.origin;
-    const session = verifyToken(token);
+    const session = verifySessionToken(token, secret);
     if (origin !== allowedOrigin) throw new Error('Origin is not allowed.');
     if (!session || documentName !== ROOM) throw new Error('The demo session is invalid or expired.');
     return { user: { name: session.name } };
