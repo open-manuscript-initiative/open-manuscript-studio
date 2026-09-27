@@ -26,6 +26,35 @@ button.secondary:hover { background: #e1e5eb; }
 .editor-hint { margin: 0; padding: .85rem 1.25rem 0; font-size: .85rem; }
 .editor-content { min-height: 55vh; padding: 1.25rem; }
 .editor-content .tiptap { min-height: 50vh; outline: none; line-height: 1.65; }
+.editor-content .collaboration-carets__caret {
+  position: relative;
+  margin-left: -1px;
+  margin-right: -1px;
+  border-left: 1px solid currentColor;
+  border-right: 1px solid currentColor;
+  pointer-events: none;
+  word-break: normal;
+}
+.editor-content .collaboration-carets__label {
+  position: absolute;
+  top: -1.4em;
+  left: -1px;
+  z-index: 2;
+  padding: .18rem .45rem;
+  border-radius: 5px 5px 5px 0;
+  color: #fff;
+  font-size: .72rem;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  user-select: none;
+}
+.editor-content .collaboration-carets__selection {
+  background-color: currentColor;
+  opacity: .22;
+  pointer-events: none;
+}
 footer { margin-top: 1.25rem; color: #687386; font-size: .78rem; line-height: 1.5; }
 @media (max-width: 650px) {
   .page-shell { width: min(100% - 1.25rem, 920px); padding-top: 1.2rem; }
