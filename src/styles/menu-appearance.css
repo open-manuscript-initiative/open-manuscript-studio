@@ -1,19 +1,259 @@
-/* User-adjustable manuscript-menu typography. */
+/* User-adjustable Studio typography.
+ *
+ * Menu navigation and the rest of the interface are intentionally independent.
+ * Manuscript text and the publication canvas content keep their document styles.
+ */
 
+/* Menu navigation --------------------------------------------------------- */
 @media (min-width: 761px) {
   .studio-menu-nav-button {
+    min-height: var(--omi-menu-nav-min-height-desktop, 2.1rem);
+    padding: var(--omi-menu-nav-padding-y, .35rem)
+      var(--omi-menu-nav-padding-x, .5rem);
     font-size: var(--omi-menu-nav-font-size-desktop, .76rem);
   }
 }
 
 @media (max-width: 760px) {
   .studio-menu-nav-button {
+    min-height: var(--omi-menu-nav-min-height-mobile, 3.25rem);
+    padding: var(--omi-menu-nav-padding-y, .35rem)
+      var(--omi-menu-nav-padding-x, .5rem);
     font-size: var(--omi-menu-nav-font-size-mobile, .72rem);
   }
 }
 
+/* Shared interface hierarchy --------------------------------------------- */
+.studio-menu-content:not(.studio-menu-content--publication-editor),
+.account-page,
+.auth-page,
+.mobile-details-view,
+.mobile-document-view {
+  font-size: var(--omi-interface-font-md, .76rem);
+}
+
+.studio-menu-content:not(.studio-menu-content--publication-editor) *,
+.account-page *,
+.auth-page *,
+.mobile-details-view *,
+.mobile-document-view * {
+  font-size: inherit;
+}
+
+.studio-menu-content:not(.studio-menu-content--publication-editor) :is(h1, h2, h3),
+.account-page :is(h1, h2, h3),
+.auth-page :is(h1, h2, h3),
+.mobile-details-view :is(h1, h2, h3),
+.mobile-document-view :is(h1, h2, h3) {
+  font-size: var(--omi-interface-font-title, 1.1rem);
+}
+
+.studio-menu-content:not(.studio-menu-content--publication-editor) h4,
+.account-page h4,
+.auth-page h4,
+.mobile-details-view h4,
+.mobile-document-view h4 {
+  font-size: var(--omi-interface-font-xl, .95rem);
+}
+
+.studio-menu-content:not(.studio-menu-content--publication-editor) :is(h5, legend),
+.account-page :is(h5, legend),
+.auth-page :is(h5, legend),
+.mobile-details-view :is(h5, legend),
+.mobile-document-view :is(h5, legend) {
+  font-size: var(--omi-interface-font-lg, .84rem);
+}
+
+.studio-menu-content:not(.studio-menu-content--publication-editor) :is(p, label, li, dt, dd),
+.account-page :is(p, label, li, dt, dd),
+.auth-page :is(p, label, li, dt, dd),
+.mobile-details-view :is(p, label, li, dt, dd),
+.mobile-document-view :is(p, label, li, dt, dd) {
+  font-size: var(--omi-interface-font-md, .76rem);
+}
+
+.studio-menu-content:not(.studio-menu-content--publication-editor) :is(small, code, .studio-settings-hint, .field-error),
+.account-page :is(small, code),
+.auth-page :is(small, code),
+.mobile-details-view :is(small, code),
+.mobile-document-view :is(small, code) {
+  font-size: var(--omi-interface-font-sm, .7rem);
+}
+
+.studio-menu-content:not(.studio-menu-content--publication-editor)
+  :is(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']), select),
+.account-page
+  :is(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']), select),
+.auth-page
+  :is(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']), select),
+.mobile-details-view
+  :is(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']), select) {
+  min-height: var(--omi-interface-control-height, 1.9rem);
+  padding: var(--omi-interface-control-padding-y, .3rem)
+    var(--omi-interface-control-padding-x, .48rem);
+  font-size: var(--omi-interface-font-md, .76rem);
+  line-height: 1.25;
+}
+
+.studio-menu-content:not(.studio-menu-content--publication-editor) textarea,
+.account-page textarea,
+.auth-page textarea,
+.mobile-details-view textarea {
+  min-height: var(--omi-interface-textarea-min-height, 4rem);
+  padding: var(--omi-interface-control-padding-y, .3rem)
+    var(--omi-interface-control-padding-x, .48rem);
+  font-size: var(--omi-interface-font-md, .76rem);
+  line-height: 1.4;
+}
+
+.studio-menu-content:not(.studio-menu-content--publication-editor) button,
+.account-page button,
+.auth-page button,
+.mobile-details-view button,
+.mobile-document-view button {
+  min-height: var(--omi-interface-control-height, 1.9rem);
+  font-size: var(--omi-interface-font-md, .76rem);
+  line-height: 1.2;
+}
+
+.studio-menu-content:not(.studio-menu-content--publication-editor)
+  :is(.icon-button, .omi-reference-icon-action, .studio-language-chip-remove),
+.account-page :is(.icon-button, .omi-reference-icon-action),
+.mobile-details-view :is(.icon-button, .omi-reference-icon-action) {
+  width: var(--omi-interface-icon-button-size, 1.9rem);
+  height: var(--omi-interface-icon-button-size, 1.9rem);
+  min-height: var(--omi-interface-icon-button-size, 1.9rem);
+}
+
+/* Application chrome outside the menu content. */
+.focus-header :is(button, select, span, strong),
+.studio-menu-header :is(button, span, strong),
+.mobile-header :is(button, span, strong),
+.mobile-action-bar :is(button, span, strong),
+.mobile-account-bar :is(button, span, strong) {
+  font-size: var(--omi-interface-font-md, .76rem);
+}
+
+.focus-header small,
+.studio-menu-header small,
+.mobile-header small,
+.mobile-action-bar small,
+.mobile-account-bar small {
+  font-size: var(--omi-interface-font-sm, .7rem);
+}
+
+.focus-header :is(button, select),
+.studio-menu-header button,
+.mobile-header button,
+.mobile-action-bar button,
+.mobile-account-bar button {
+  min-height: var(--omi-interface-control-height, 1.9rem);
+}
+
+/* Live publication editor UI --------------------------------------------- */
+/* Do not target .publication-document-canvas-stage or its document content. */
+.publication-style-editor-heading,
+.publication-style-ribbon,
+.publication-document-canvas-toolbar,
+.publication-section-ruler-controls {
+  font-size: var(--omi-interface-font-md, .76rem);
+}
+
+.publication-style-editor-heading *,
+.publication-style-ribbon *,
+.publication-document-canvas-toolbar *,
+.publication-section-ruler-controls * {
+  font-size: inherit;
+}
+
+.publication-style-editor-heading h4 {
+  font-size: var(--omi-interface-font-xl, .95rem);
+}
+
+.publication-style-editor-heading p,
+.publication-style-ribbon p,
+.publication-document-canvas-toolbar p,
+.publication-section-ruler-controls p {
+  font-size: var(--omi-interface-font-md, .76rem);
+}
+
+.publication-style-ribbon :is(small, code),
+.publication-document-canvas-toolbar :is(small, code),
+.publication-section-ruler-controls :is(small, code) {
+  font-size: var(--omi-interface-font-sm, .7rem);
+}
+
+.publication-style-ribbon :is(legend, h4, h5),
+.publication-document-canvas-toolbar :is(h4, h5) {
+  font-size: var(--omi-interface-font-lg, .84rem);
+}
+
+.publication-style-ribbon
+  :is(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']), select, textarea),
+.publication-document-canvas-toolbar
+  :is(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']), select, textarea),
+.publication-section-ruler-controls
+  :is(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']), select) {
+  min-height: var(--omi-interface-control-height, 1.9rem);
+  padding: var(--omi-interface-control-padding-y, .3rem)
+    var(--omi-interface-control-padding-x, .48rem);
+  font-size: var(--omi-interface-font-md, .76rem);
+  line-height: 1.25;
+}
+
+.publication-style-ribbon button,
+.publication-document-canvas-toolbar button,
+.publication-section-ruler-controls button {
+  min-height: var(--omi-interface-control-height, 1.9rem);
+  font-size: var(--omi-interface-font-md, .76rem);
+  line-height: 1.2;
+}
+
+.publication-style-ribbon-action-button {
+  width: var(--omi-interface-icon-button-size, 1.9rem);
+  height: var(--omi-interface-icon-button-size, 1.9rem);
+  min-height: var(--omi-interface-icon-button-size, 1.9rem);
+}
+
+.publication-proofing-symbol {
+  font-size: var(--omi-interface-font-xl, .95rem);
+}
+
+.publication-font-option-sample {
+  font-size: var(--omi-interface-font-xl, .95rem);
+}
+
+/* Settings control ------------------------------------------------------- */
 .studio-menu-appearance-settings {
   align-content: start;
+}
+
+.studio-appearance-scale-list {
+  display: grid;
+  gap: .65rem;
+  margin-top: .55rem;
+}
+
+.studio-appearance-scale-row {
+  display: grid;
+  gap: .4rem;
+  padding-top: .55rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.studio-appearance-scale-copy {
+  display: grid;
+  gap: .15rem;
+}
+
+.studio-appearance-scale-copy strong {
+  font-size: var(--omi-interface-font-md, .76rem);
+}
+
+.studio-appearance-scale-copy small {
+  color: #64748b;
+  font-size: var(--omi-interface-font-sm, .7rem);
+  line-height: 1.35;
 }
 
 .studio-menu-font-control {
@@ -21,7 +261,6 @@
   grid-template-columns: auto minmax(9rem, 18rem) auto auto auto;
   align-items: center;
   gap: .45rem .6rem;
-  margin-top: .55rem;
 }
 
 .studio-menu-font-slider {
@@ -40,7 +279,7 @@
 .studio-menu-font-boundary,
 .studio-menu-font-value {
   color: #64748b;
-  font-size: .7rem;
+  font-size: var(--omi-interface-font-sm, .7rem);
 }
 
 .studio-menu-font-value {
@@ -52,20 +291,45 @@
 }
 
 .studio-menu-font-reset {
-  min-height: 1.9rem;
+  min-height: var(--omi-interface-control-height, 1.9rem);
   margin: 0;
   white-space: nowrap;
 }
 
-.studio-menu-font-preview {
-  margin: .5rem 0 0;
+.studio-menu-font-preview,
+.studio-interface-font-preview {
+  margin: .1rem 0 0;
   color: #475569;
-  font-size: var(--omi-menu-nav-font-size-desktop, .76rem);
   font-weight: 650;
   line-height: 1.35;
 }
 
+.studio-menu-font-preview {
+  font-size: var(--omi-menu-nav-font-size-desktop, .76rem);
+}
+
+.studio-interface-font-preview {
+  font-size: var(--omi-interface-font-md, .76rem);
+}
+
+/* Preserve mobile touch targets while allowing larger accessibility text to
+ * grow the controls above the touch minimum. */
 @media (max-width: 760px) {
+  .studio-menu-content:not(.studio-menu-content--publication-editor)
+    :is(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']), select, button),
+  .account-page
+    :is(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']), select, button),
+  .auth-page
+    :is(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']), select, button),
+  .mobile-details-view
+    :is(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']), select, button),
+  .mobile-document-view button,
+  .mobile-header button,
+  .mobile-action-bar button,
+  .mobile-account-bar button {
+    min-height: var(--omi-interface-mobile-control-height, 2.75rem);
+  }
+
   .studio-menu-font-control {
     grid-template-columns: auto minmax(0, 1fr) auto;
   }
