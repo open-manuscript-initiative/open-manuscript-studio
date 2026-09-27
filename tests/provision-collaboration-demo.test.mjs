@@ -27,8 +27,14 @@ test('managed Nginx block replacement removes indented CRLF markers', () => {
   assert.equal(stripManagedBlock(input), 'server {\nlocation /unrelated/ { }\n} \n');
 });
 
-test('managed Nginx block replacement refuses repeated or unmatched markers', () => {
-  assert.throws(() => stripManagedBlock(`${begin}\n${end}\n${begin}\n${end}\n`));
+test('managed Nginx block replacement removes repeated complete blocks', () => {
+  const input = `before\n${begin}\nold block\n${end}\n${begin}\nolder block\n${end}\nafter\n`;
+
+  assert.equal(stripManagedBlock(input), 'before\nafter\n');
+});
+
+test('managed Nginx block replacement refuses nested or unmatched markers', () => {
+  assert.throws(() => stripManagedBlock(`${begin}\n${begin}\n${end}\n${end}\n`));
   assert.throws(() => stripManagedBlock(`${begin}\n`));
   assert.throws(() => stripManagedBlock(`${end}\n`));
 });
