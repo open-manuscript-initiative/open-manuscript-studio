@@ -6,7 +6,7 @@
   sub(/[[:space:]]+$/, "", marker)
 
   if (marker == begin) {
-    if (inside || starts > 0) invalid = 1
+    if (inside) invalid = 1
     inside = 1
     starts += 1
     next
@@ -23,8 +23,8 @@
 }
 
 END {
-  if (invalid || inside || starts != ends || starts > 1) {
-    print "Managed Nginx block markers are malformed or repeated." > "/dev/stderr"
+  if (invalid || inside || starts != ends) {
+    print "Managed Nginx block markers are malformed." > "/dev/stderr"
     exit 1
   }
 }
