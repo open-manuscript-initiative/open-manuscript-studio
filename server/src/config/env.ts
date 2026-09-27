@@ -79,6 +79,10 @@ const environmentSchema = z.object({
     .max(720)
     .default(168),
 
+  // Manuscript collaboration is a preview capability. It remains unavailable
+  // on existing deployments unless an operator opts in explicitly.
+  MANUSCRIPT_COLLABORATION_ENABLED: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
+
   PASSWORD_RESET_TTL_MINUTES: z.coerce
     .number()
     .int()

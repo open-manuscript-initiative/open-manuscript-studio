@@ -15,6 +15,7 @@ import { authorSignatureRouter } from './routes/authorSignatureRoutes.js';
 import { centralAdminRouter } from './routes/centralAdminRoutes.js';
 import { cloudOAuthRouter } from './routes/cloudOAuthRoutes.js';
 import { cloudRouter } from './routes/cloudRoutes.js';
+import { collaborationRouter } from './routes/collaborationRoutes.js';
 import { editorReviewOverviewRouter } from './routes/editorReviewOverviewRoutes.js';
 import { federatedAuthRouter } from './routes/federatedAuthRoutes.js';
 import { healthRouter } from './routes/healthRoutes.js';
@@ -116,6 +117,9 @@ app.use('/api', orcidLinkStartRouter);
 app.use('/api', authorSignatureRouter);
 app.use('/api', cloudOAuthRouter);
 app.use('/api', cloudRouter);
+if (env.MANUSCRIPT_COLLABORATION_ENABLED) {
+  app.use('/api/collaboration', collaborationRouter);
+}
 app.use('/api', userIntegrationRouter);
 app.use('/api', referenceManagerRouter);
 app.use('/api', personalReferenceLibraryRouter);

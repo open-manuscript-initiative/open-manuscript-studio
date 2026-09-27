@@ -116,6 +116,9 @@ jobs:
       - name: Test direct publishing submissions
         run: npm run test:direct-submission
 
+      - name: Test invitation-backed collaboration access
+        run: npm run test:collaboration-invitations
+
       - name: Test OJS/OMP publication artifact client
         run: npm run test:publication-artifact
 
