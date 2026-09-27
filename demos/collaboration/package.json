@@ -1,0 +1,29 @@
+{
+  "name": "@omi/collaboration-sponsor-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "start": "node server.mjs",
+    "test": "node --test",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@hocuspocus/provider": "4.7.0",
+    "@hocuspocus/server": "4.7.0",
+    "@tiptap/extension-collaboration": "3.31.3",
+    "@tiptap/pm": "3.31.3",
+    "@tiptap/react": "3.31.3",
+    "@tiptap/starter-kit": "3.31.3",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "yjs": "13.6.33"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@vitejs/plugin-react": "5.0.2",
+    "vite": "7.1.5"
+  }
+}
