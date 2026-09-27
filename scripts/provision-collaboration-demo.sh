@@ -10,6 +10,7 @@ REPOSITORY_ROOT="${STUDIO_REPOSITORY_ROOT:-/var/www/vhosts/openmanuscript.org/st
 DOCUMENT_ROOT="${STUDIO_DOCUMENT_ROOT:-/var/www/vhosts/openmanuscript.org/studio/httpdocs}"
 DOMAIN="studio.openmanuscript.org"
 APP_DIR="$REPOSITORY_ROOT/demos/collaboration"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DATA_DIR="/var/lib/omi-collaboration-demo"
 ENV_FILE="/etc/omi-studio-collaboration-demo.env"
 UNIT_FILE="/etc/systemd/system/omi-studio-collaboration-demo.service"
@@ -93,17 +94,26 @@ systemctl daemon-reload
 install -d -o root -g root -m 0755 "$(dirname "$NGINX_FILE")"
 if [[ -f "$NGINX_FILE" ]]; then
   cp -p "$NGINX_FILE" "$nginx_backup"
-  if grep -Fq "$MARKER_BEGIN" "$nginx_backup"; then
-    if ! grep -Fq "$MARKER_END" "$nginx_backup"; then
+  has_begin=false
+  has_end=false
+  grep -Fq "$MARKER_BEGIN" "$nginx_backup" && has_begin=true || true
+  grep -Fq "$MARKER_END" "$nginx_backup" && has_end=true || true
+  if [[ "$has_begin" == true || "$has_end" == true ]]; then
+    if [[ "$has_begin" != "$has_end" ]]; then
       echo "Found an incomplete managed block; refusing to edit Nginx configuration." >&2
       exit 1
     fi
-    awk -v begin="$MARKER_BEGIN" -v end="$MARKER_END" '$0 == begin { skip=1; next } $0 == end { skip=0; next } !skip { print }' "$nginx_backup" > "$nginx_temp"
+    awk -v begin="$MARKER_BEGIN" -v end="$MARKER_END" -f "$SCRIPT_DIR/strip-managed-nginx-block.awk" "$nginx_backup" > "$nginx_temp"
   else
     cp "$nginx_backup" "$nginx_temp"
   fi
 else
   : > "$nginx_temp"
+fi
+
+if grep -Eq '^[[:space:]]*location[[:space:]]+(\^~[[:space:]]+)?/collaboration-demo/(api/|ws)([[:space:]]|$)' "$nginx_temp"; then
+  echo "Found an unmanaged collaboration-demo location; refusing to create a duplicate. Remove or migrate that Plesk Nginx rule first." >&2
+  exit 1
 fi
 
 cat >> "$nginx_temp" <<'NGINX'

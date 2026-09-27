@@ -155,6 +155,8 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: demos/collaboration/package-lock.json
+      - name: Test Plesk provisioning block handling
+        run: node --test ../../tests/provision-collaboration-demo.test.mjs
       - name: Install demo dependencies
         run: npm ci
       - name: Run demo unit and integration tests
