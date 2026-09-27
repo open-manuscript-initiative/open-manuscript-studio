@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -139,10 +140,40 @@ jobs:
       - name: Build
         run: npm run build
 
+  collaboration-demo:
+    name: Collaboration demo checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: demos/collaboration
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: demos/collaboration/package-lock.json
+      - name: Install demo dependencies
+        run: npm ci
+      - name: Run demo unit and integration tests
+        run: npm test
+      - name: Build production-base demo
+        run: npm run build
+        env:
+          DEMO_BASE_PATH: /collaboration-demo/
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps --only-shell chromium
+      - name: Run two-browser collaboration tests
+        run: npm run test:e2e
+        env:
+          CI: true
+
   deploy:
     name: Deploy to Production
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build, collaboration-demo]
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     environment:
@@ -206,7 +237,11 @@ jobs:
           script: |
             set -euo pipefail
 
-            export PATH="/var/www/vhosts/openmanuscript.org/.nodenv/shims:$PATH"
+            export PATH="/opt/plesk/node/24/bin:/var/www/vhosts/openmanuscript.org/.nodenv/shims:$PATH"
+            case "$(node --version)" in
+              v24.*) ;;
+              *) echo "Production deploy requires Node 24; got $(node --version)." >&2; exit 1 ;;
+            esac
 
             cd /var/www/vhosts/openmanuscript.org/studio/repository
 
@@ -262,9 +297,43 @@ jobs:
             npm run prisma:migrate:identity:deploy
             cd ..
 
+            DEMO_ENABLED=false
+            if systemctl is-enabled --quiet omi-studio-collaboration-demo.service 2>/dev/null; then
+              if ! sudo -n -l /usr/bin/systemctl restart omi-studio-collaboration-demo.service >/dev/null 2>&1; then
+                echo 'The collaboration demo unit is enabled, but the deploy user lacks its narrow restart permission.' >&2
+                exit 1
+              fi
+              DEMO_ENABLED=true
+              npm ci --prefix demos/collaboration --include=dev
+              DEMO_BASE_PATH=/collaboration-demo/ npm run build --prefix demos/collaboration
+              mkdir -p dist/collaboration-demo
+              rsync -a --delete demos/collaboration/dist/ dist/collaboration-demo/
+              npm ci --prefix demos/collaboration --omit=dev
+            else
+              echo 'Collaboration demo is not provisioned; skipping its production files.'
+            fi
+
             rsync -a --delete \
               dist/ \
               /var/www/vhosts/openmanuscript.org/studio/httpdocs/
+
+            if [[ "$DEMO_ENABLED" == true ]]; then
+              sudo -n systemctl restart omi-studio-collaboration-demo.service
+              demo_ready=false
+              for attempt in $(seq 1 20); do
+                if curl --fail --silent http://127.0.0.1:3020/healthz >/dev/null; then
+                  demo_ready=true
+                  break
+                fi
+                sleep 1
+              done
+              if [[ "$demo_ready" != true ]]; then
+                sudo -n systemctl status omi-studio-collaboration-demo.service --no-pager -l || true
+                echo 'Collaboration demo service did not become ready.' >&2
+                exit 1
+              fi
+              curl --fail --silent --show-error https://studio.openmanuscript.org/collaboration-demo/ >/dev/null
+            fi
 
             APP_LINK_ROOT=''
             for candidate in \
