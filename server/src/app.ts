@@ -117,7 +117,9 @@ app.use('/api', orcidLinkStartRouter);
 app.use('/api', authorSignatureRouter);
 app.use('/api', cloudOAuthRouter);
 app.use('/api', cloudRouter);
-app.use('/api/collaboration', collaborationRouter);
+if (env.MANUSCRIPT_COLLABORATION_ENABLED) {
+  app.use('/api/collaboration', collaborationRouter);
+}
 app.use('/api', userIntegrationRouter);
 app.use('/api', referenceManagerRouter);
 app.use('/api', personalReferenceLibraryRouter);
