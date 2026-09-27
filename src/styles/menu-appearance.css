@@ -307,6 +307,16 @@
   font-size: var(--omi-interface-font-xl, .95rem);
 }
 
+.publication-document-ruler-tab-stop {
+  width: var(--omi-interface-icon-button-size, 1.9rem);
+  height: var(--omi-interface-icon-button-size, 1.9rem);
+  font-size: var(--omi-interface-font-lg, .84rem);
+}
+
+.publication-section-ruler-empty {
+  font-size: var(--omi-interface-font-sm, .7rem);
+}
+
 /* Settings control ------------------------------------------------------- */
 .studio-menu-appearance-settings {
   align-content: start;
