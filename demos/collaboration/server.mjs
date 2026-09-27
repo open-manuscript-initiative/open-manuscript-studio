@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { Server } from '@hocuspocus/server';
 import { createSessionToken, safeEqualSecret, verifySessionToken, ROOM_ID } from './session-security.mjs';
 import { createFileStateStore } from './file-state-store.mjs';
+import { applySampleDocument } from './sample-document.mjs';
 import * as Y from 'yjs';
 
 const ROOM = ROOM_ID;
@@ -43,22 +44,6 @@ async function bodyJson(request) {
     chunks.push(chunk);
   }
   return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
-}
-
-function seedSampleDocument(document) {
-  const fragment = document.getXmlFragment('default');
-  const heading = new Y.XmlElement('heading');
-  heading.setAttribute('level', 1);
-  const headingText = new Y.XmlText();
-  headingText.insert(0, 'A shared manuscript, written together');
-  heading.insert(0, [headingText]);
-
-  const paragraph = new Y.XmlElement('paragraph');
-  const paragraphText = new Y.XmlText();
-  paragraphText.insert(0, 'This synthetic sample is shared in real time. Edit this text from two browser windows to see Yjs collaboration in action.');
-  paragraph.insert(0, [paragraphText]);
-
-  fragment.insert(0, [heading, paragraph]);
 }
 
 function allowAttempt(request) {
@@ -122,8 +107,7 @@ const collaboration = new Server({
   async onLoadDocument({ documentName, document }) {
     if (documentName !== ROOM) throw new Error('Unknown demo room.');
     const saved = await store.load();
-    if (saved) Y.applyUpdate(document, saved);
-    else seedSampleDocument(document);
+    applySampleDocument(document, saved);
   },
   async onStoreDocument({ documentName, document }) {
     if (documentName === ROOM) await store.save(Y.encodeStateAsUpdate(document));
