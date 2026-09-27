@@ -6,7 +6,9 @@ async function join(page, name) {
   await page.getByLabel('Private access code').fill('playwright-demo-access-code');
   await page.getByRole('button', { name: 'Join shared room' }).click();
   await expect(page.getByText('Connected', { exact: true })).toBeVisible();
-  return page.locator('[contenteditable="true"]');
+  const editor = page.locator('[contenteditable="true"]');
+  await expect(editor).toContainText('A shared manuscript, written together');
+  return editor;
 }
 
 test('two participants edit the same synthetic room in real time', async ({ browser }) => {
