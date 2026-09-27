@@ -3,11 +3,14 @@ import { z } from 'zod';
 
 import {
   acceptCollaborationInvitation,
+  acceptCollaborationInvitationById,
   CollaborationInvitationError,
   createCollaborativeDocument,
   declineCollaborationInvitation,
+  declineCollaborationInvitationById,
   inspectCollaborationInvitation,
   inviteCollaborator,
+  listPendingCollaborationInvitations,
   listCollaborativeDocumentAccess,
   revokeCollaborator,
   revokeCollaborationInvitation,
@@ -23,6 +26,7 @@ export const collaborationRouter = Router();
 const documentSchema = z.object({
   documentId: z.string().trim().min(1).max(128),
   title: z.string().trim().min(1).max(500),
+  initialState: z.string().max(11_184_812).optional(),
 }).strict();
 
 const inviteSchema = z.object({
@@ -104,6 +108,16 @@ collaborationRouter.delete('/documents/:documentId/members/:userId', requireSess
   }
 });
 
+collaborationRouter.get('/invitations/pending', requireSession, async (request: AuthenticatedRequest, response) => {
+  try {
+    const invitations = await listPendingCollaborationInvitations(requireUserId(request));
+    response.setHeader('Cache-Control', 'no-store');
+    response.status(200).json({ invitations });
+  } catch (error) {
+    sendError(response, error, 'COLLABORATION_PENDING_INVITATIONS_LOAD_FAILED');
+  }
+});
+
 collaborationRouter.get('/invitations/:token', async (request, response) => {
   try {
     const invitation = await inspectCollaborationInvitation(parseId(request.params.token, 'invitation token'));
@@ -135,6 +149,30 @@ collaborationRouter.post('/invitations/:token/decline', requireSession, async (r
     const result = await declineCollaborationInvitation(
       requireUserId(request),
       parseId(request.params.token, 'invitation token'),
+    );
+    response.status(200).json(result);
+  } catch (error) {
+    sendError(response, error, 'COLLABORATION_INVITATION_DECLINE_FAILED');
+  }
+});
+
+collaborationRouter.post('/invitations/by-id/:invitationId/accept', requireSession, async (request: AuthenticatedRequest, response) => {
+  try {
+    const membership = await acceptCollaborationInvitationById(
+      requireUserId(request),
+      parseId(request.params.invitationId, 'invitation'),
+    );
+    response.status(200).json({ membership });
+  } catch (error) {
+    sendError(response, error, 'COLLABORATION_INVITATION_ACCEPT_FAILED');
+  }
+});
+
+collaborationRouter.post('/invitations/by-id/:invitationId/decline', requireSession, async (request: AuthenticatedRequest, response) => {
+  try {
+    const result = await declineCollaborationInvitationById(
+      requireUserId(request),
+      parseId(request.params.invitationId, 'invitation'),
     );
     response.status(200).json(result);
   } catch (error) {

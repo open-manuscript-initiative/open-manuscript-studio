@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import * as Y from 'yjs';
 
 import { env } from '../config/env.js';
 import { closeCollaborationDocumentConnections } from '../collaboration/collaborationServer.js';
@@ -22,7 +23,7 @@ const TOKEN_PATTERN = /^[A-Za-z0-9_-]{32,128}$/u;
 
 export async function createCollaborativeDocument(
   ownerUserId: string,
-  input: { documentId: string; title: string },
+  input: { documentId: string; title: string; initialState?: string | undefined },
 ) {
   const id = input.documentId.trim();
   const title = input.title.trim();
@@ -40,6 +41,7 @@ export async function createCollaborativeDocument(
   if (!user || user.status !== 'ACTIVE') {
     throw new CollaborationInvitationError('An active Studio account is required.', 'FORBIDDEN');
   }
+  const initialState = decodeInitialState(input.initialState);
 
   return prisma.$transaction(async (transaction) => {
     const document = await transaction.collaborativeDocument.create({
@@ -48,11 +50,36 @@ export async function createCollaborativeDocument(
     await transaction.collaborationMember.create({
       data: { documentId: id, userId: ownerUserId, role: 'OWNER' },
     });
+    if (initialState) {
+      await transaction.collaborativeDocumentState.create({
+        data: { documentId: id, state: Buffer.from(initialState) },
+      });
+    }
     await transaction.collaborationAuditEvent.create({
       data: { documentId: id, actorUserId: ownerUserId, type: 'DOCUMENT_REGISTERED' },
     });
     return document;
   });
+}
+
+function decodeInitialState(value: string | undefined): Uint8Array | null {
+  if (value === undefined) return null;
+  if (value.length === 0 || value.length > 11_184_812 || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u.test(value)) {
+    throw new TypeError('The initial collaboration state is invalid or too large.');
+  }
+  const state = Buffer.from(value, 'base64');
+  if (state.length > 8 * 1024 * 1024 || state.toString('base64') !== value) {
+    throw new TypeError('The initial collaboration state is invalid or too large.');
+  }
+  const document = new Y.Doc();
+  try {
+    Y.applyUpdate(document, state);
+  } catch {
+    throw new TypeError('The initial collaboration state is invalid.');
+  } finally {
+    document.destroy();
+  }
+  return state;
 }
 
 export async function listCollaborativeDocumentAccess(
@@ -153,6 +180,7 @@ export async function inviteCollaborator(
 
   const inviteUrl = new URL('/', env.FRONTEND_ORIGIN);
   inviteUrl.searchParams.set('collaborationInvite', rawToken);
+  let emailSent = true;
   try {
     await sendInvitationMail({
       to: email,
@@ -162,17 +190,8 @@ export async function inviteCollaborator(
       expiresAt,
     });
   } catch (error) {
-    await prisma.$transaction(async (transaction) => {
-      await transaction.collaborationInvitation.update({
-        where: { id: invitation.id },
-        data: { revokedAt: new Date() },
-      });
-      await transaction.collaborationAuditEvent.create({
-        data: { documentId: input.documentId, actorUserId, type: 'INVITATION_REVOKED' },
-      });
-    });
+    emailSent = false;
     console.error('[OMI collaboration invitation] mail delivery failed', error);
-    throw new CollaborationInvitationError('The invitation e-mail could not be delivered.', 'MAIL_DELIVERY_FAILED');
   }
 
   return {
@@ -181,6 +200,7 @@ export async function inviteCollaborator(
     role: invitation.role,
     expiresAt: invitation.expiresAt.toISOString(),
     status: 'pending' as const,
+    emailSent,
   };
 }
 
@@ -202,13 +222,54 @@ export async function inspectCollaborationInvitation(rawToken: string) {
   };
 }
 
+export async function listPendingCollaborationInvitations(actorUserId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: actorUserId },
+    select: { email: true, status: true },
+  });
+  if (!user || user.status !== 'ACTIVE') {
+    throw new CollaborationInvitationError('An active Studio account is required.', 'FORBIDDEN');
+  }
+  const invitations = await prisma.collaborationInvitation.findMany({
+    where: {
+      invitedEmail: normalizeEmail(user.email),
+      acceptedAt: null,
+      declinedAt: null,
+      revokedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    include: { document: { select: { id: true, title: true } } },
+    orderBy: { createdAt: 'desc' },
+  });
+  return invitations.map((invitation) => ({
+    id: invitation.id,
+    documentId: invitation.document.id,
+    documentTitle: invitation.document.title,
+    role: invitation.role,
+    createdAt: invitation.createdAt.toISOString(),
+    expiresAt: invitation.expiresAt.toISOString(),
+    status: 'pending' as const,
+  }));
+}
+
 export async function acceptCollaborationInvitation(actorUserId: string, rawToken: string) {
   const token = validateToken(rawToken);
   if (!token) throw new CollaborationInvitationError('The invitation is invalid or expired.', 'INVALID_INVITATION');
 
+  return consumeCollaborationInvitation(actorUserId, { tokenHash: hashToken(token) });
+}
+
+export async function acceptCollaborationInvitationById(actorUserId: string, invitationId: string) {
+  return consumeCollaborationInvitation(actorUserId, { id: invitationId });
+}
+
+async function consumeCollaborationInvitation(
+  actorUserId: string,
+  where: { tokenHash: string } | { id: string },
+) {
   return prisma.$transaction(async (transaction) => {
     const invitation = await transaction.collaborationInvitation.findUnique({
-      where: { tokenHash: hashToken(token) },
+      where,
     });
     if (!isPending(invitation)) {
       throw new CollaborationInvitationError('The invitation is invalid or expired.', 'INVALID_INVITATION');
@@ -273,6 +334,11 @@ export async function acceptCollaborationInvitation(actorUserId: string, rawToke
 
 export async function declineCollaborationInvitation(actorUserId: string, rawToken: string) {
   return closeCollaborationInvitation(actorUserId, rawToken, 'decline');
+}
+
+export async function declineCollaborationInvitationById(actorUserId: string, invitationId: string) {
+  if (!invitationId.trim()) throw new CollaborationInvitationError('The invitation is invalid or expired.', 'INVALID_INVITATION');
+  return closeCollaborationInvitationById(actorUserId, invitationId.trim());
 }
 
 export async function revokeCollaborationInvitation(actorUserId: string, documentId: string, invitationId: string) {
@@ -376,6 +442,28 @@ async function closeCollaborationInvitation(
       },
     });
     return { status: action === 'decline' ? 'declined' as const : 'pending' as const };
+  });
+}
+
+async function closeCollaborationInvitationById(actorUserId: string, invitationId: string) {
+  return prisma.$transaction(async (transaction) => {
+    const invitation = await transaction.collaborationInvitation.findUnique({ where: { id: invitationId } });
+    if (!isPending(invitation)) {
+      throw new CollaborationInvitationError('The invitation is invalid or expired.', 'INVALID_INVITATION');
+    }
+    const user = await transaction.user.findUnique({ where: { id: actorUserId }, select: { email: true, status: true } });
+    if (!user || user.status !== 'ACTIVE' || normalizeEmail(user.email) !== invitation.invitedEmail) {
+      throw new CollaborationInvitationError('This invitation was sent to another account.', 'FORBIDDEN');
+    }
+    const updated = await transaction.collaborationInvitation.updateMany({
+      where: { id: invitation.id, acceptedAt: null, declinedAt: null, revokedAt: null, expiresAt: { gt: new Date() } },
+      data: { declinedAt: new Date() },
+    });
+    if (updated.count !== 1) throw new CollaborationInvitationError('The invitation is invalid or expired.', 'INVALID_INVITATION');
+    await transaction.collaborationAuditEvent.create({
+      data: { documentId: invitation.documentId, actorUserId, type: 'INVITATION_DECLINED' },
+    });
+    return { status: 'declined' as const };
   });
 }
 

@@ -9,6 +9,8 @@ import {
   type ChangeEvent,
 } from 'react';
 import type { JSONContent } from '@tiptap/core';
+import * as Y from 'yjs';
+import { HocuspocusProvider } from '@hocuspocus/provider';
 
 import { stageContinuousDocumentChange } from '../app/continuousDocumentActions';
 import { stageInsertTopLevelSection } from '../app/sectionActions';
@@ -32,12 +34,23 @@ import {
   shouldProgressivelyMountStudyEditors,
 } from '../editor/progressiveStudyMounting';
 import { useTranslation } from '../i18n';
+import { useAuthStore, getCurrentUser } from '../store/authStore';
 import {
   collectStudyNoteOverview,
   resolveCurrentStudy,
 } from '../model/currentStudyNotes';
 import { buildSectionNumberMap } from '../model/sectionNumbering';
 import { getDocumentStructureProfile } from '../model/documentProfile';
+import { createInitialCollaborationDocument } from '../editor/collaborationDocument';
+import {
+  createCollaborationDocument,
+  collaborationWebSocketUrl,
+  getCollaborationAccess,
+  getCollaborationTicket,
+  inviteCollaborationMember,
+  isCollaborationEnabled,
+  type CollaborationAccess,
+} from '../services/collaborationApi';
 import type { ProofingSelection } from '../model/proofing';
 import {
   getParentSectionId,
@@ -49,6 +62,12 @@ import { BlockEditor } from './BlockEditor';
 import { ContributorEditor } from './ContributorEditor';
 import { CurrentStudyNotesFooter } from './CurrentStudyNotesFooter';
 
+interface CollaborationSession {
+  document: Y.Doc;
+  provider: HocuspocusProvider;
+  user: { name: string; color: string };
+}
+
 interface StudyEditorProps {
   study: ManuscriptStudy;
   sectionNumbers: ReadonlyMap<string, string>;
@@ -58,6 +77,7 @@ interface StudyEditorProps {
   showContributors?: boolean;
   contributorTitle: string;
   contributorDescription: string;
+  collaboration?: CollaborationSession | null;
 }
 
 interface ProgressiveStudyEditorProps extends StudyEditorProps {
@@ -76,6 +96,7 @@ function StudyEditor({
   showContributors = false,
   contributorTitle,
   contributorDescription,
+  collaboration,
 }: StudyEditorProps) {
   const localProjectionRef = useRef<{
     sections: ReadonlyArray<ManuscriptStudy['sections'][number]>;
@@ -169,6 +190,11 @@ function StudyEditor({
         continuous
         proofingMode="editor"
         onProofingSelection={handleProofingSelection}
+        collaboration={collaboration ? {
+          fragment: collaboration.document.getXmlFragment(study.rootSectionId),
+          provider: collaboration.provider,
+          user: collaboration.user,
+        } : undefined}
       />
     </section>
   );
@@ -260,6 +286,7 @@ function ProgressiveStudyEditor({
 export function ContinuousManuscriptEditor() {
   const { locale } = useTranslation();
   const copy = getStudyEditorCopy(locale);
+  const currentUser = useAuthStore(getCurrentUser);
   const manuscript = useStudioStore((state) => state.manuscript);
   const selectedSectionId = useStudioStore(
     (state) => state.selectedSectionId,
@@ -328,6 +355,131 @@ export function ContinuousManuscriptEditor() {
       && shouldProgressivelyMountStudyEditors(studies),
     [structure.kind, studies],
   );
+  const [collaborationEnabled, setCollaborationEnabled] = useState(false);
+  const [collaborationAccess, setCollaborationAccess] = useState<CollaborationAccess | null>(null);
+  const [collaborationSession, setCollaborationSession] = useState<CollaborationSession | null>(null);
+  const [collaborationStatus, setCollaborationStatus] = useState('');
+  const [collaborationConnected, setCollaborationConnected] = useState(false);
+  const [collaborationParticipants, setCollaborationParticipants] = useState(0);
+  const [collaboratorEmail, setCollaboratorEmail] = useState('');
+  const [collaborationBusy, setCollaborationBusy] = useState(false);
+  const [collaborationRefresh, setCollaborationRefresh] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    void isCollaborationEnabled()
+      .then((enabled) => { if (!cancelled) setCollaborationEnabled(enabled); })
+      .catch(() => { if (!cancelled) setCollaborationEnabled(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    const refreshMembership = () => setCollaborationRefresh((value) => value + 1);
+    window.addEventListener('omi:collaboration-access-changed', refreshMembership);
+    return () => window.removeEventListener('omi:collaboration-access-changed', refreshMembership);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      collaborationSession?.provider.destroy();
+      collaborationSession?.document.destroy();
+    };
+  }, [collaborationSession]);
+
+  useEffect(() => {
+    setCollaborationAccess(null);
+    setCollaborationSession(null);
+    setCollaborationStatus('');
+    setCollaborationConnected(false);
+    setCollaborationParticipants(0);
+    if (!collaborationEnabled || !currentUser) return;
+    let cancelled = false;
+    void getCollaborationAccess(manuscript.id).then(async (access) => {
+      if (cancelled) return;
+      setCollaborationAccess(access);
+      if (!access.members.some((member) => member.userId === currentUser.id)) return;
+      const ticket = await getCollaborationTicket(manuscript.id);
+      if (cancelled) return;
+      const document = new Y.Doc();
+      const provider = new HocuspocusProvider({
+        url: collaborationWebSocketUrl(ticket.webSocketPath),
+        name: manuscript.id,
+        document,
+        token: ticket.token,
+      });
+      const session = {
+        document,
+        provider,
+        user: { name: currentUser.profile.fullName || currentUser.email, color: collaborationColor(currentUser.id) },
+      };
+      provider.on('status', (event: { status: string }) => setCollaborationConnected(event.status === 'connected'));
+      provider.on('awarenessUpdate', () => setCollaborationParticipants(provider.awareness?.getStates().size ?? 0));
+      setCollaborationSession(session);
+    }).catch(() => {
+      // A missing membership is expected before an invitation is accepted.
+      if (!cancelled) setCollaborationAccess(null);
+    });
+    return () => { cancelled = true; };
+  }, [collaborationEnabled, collaborationRefresh, currentUser, manuscript.id]);
+
+  const startCollaboration = async () => {
+    if (!currentUser) return;
+    setCollaborationBusy(true);
+    setCollaborationStatus('');
+    try {
+      const seeded = createInitialCollaborationDocument(studies, sectionNumbers);
+      const update = Y.encodeStateAsUpdate(seeded);
+      seeded.destroy();
+      let binary = '';
+      for (let offset = 0; offset < update.length; offset += 0x8000) {
+        binary += String.fromCharCode(...update.subarray(offset, offset + 0x8000));
+      }
+      await createCollaborationDocument({
+        documentId: manuscript.id,
+        title: manuscript.title || 'Untitled manuscript',
+        initialState: btoa(binary),
+      });
+      setCollaborationAccess(await getCollaborationAccess(manuscript.id));
+      const ticket = await getCollaborationTicket(manuscript.id);
+      const document = new Y.Doc();
+      const provider = new HocuspocusProvider({
+        url: collaborationWebSocketUrl(ticket.webSocketPath),
+        name: manuscript.id,
+        document,
+        token: ticket.token,
+      });
+      provider.on('status', (event: { status: string }) => setCollaborationConnected(event.status === 'connected'));
+      provider.on('awarenessUpdate', () => setCollaborationParticipants(provider.awareness?.getStates().size ?? 0));
+      setCollaborationSession({
+        document,
+        provider,
+        user: { name: currentUser.profile.fullName || currentUser.email, color: collaborationColor(currentUser.id) },
+      });
+    } catch (error) {
+      setCollaborationStatus(error instanceof Error ? error.message : String(error));
+    } finally {
+      setCollaborationBusy(false);
+    }
+  };
+
+  const inviteCollaborator = async () => {
+    const email = collaboratorEmail.trim();
+    if (!email) return;
+    setCollaborationBusy(true);
+    setCollaborationStatus('');
+    try {
+      const emailSent = await inviteCollaborationMember(manuscript.id, email, 'AUTHOR');
+      setCollaboratorEmail('');
+      setCollaborationAccess(await getCollaborationAccess(manuscript.id));
+      setCollaborationStatus(emailSent
+        ? 'Invitation sent. The invited author must accept it before joining.'
+        : 'Invitation added to the Studio inbox, but the notification email could not be sent.');
+    } catch (error) {
+      setCollaborationStatus(error instanceof Error ? error.message : String(error));
+    } finally {
+      setCollaborationBusy(false);
+    }
+  };
 
   const insertStudy = () => {
     const sectionId = stageInsertTopLevelSection();
@@ -376,6 +528,47 @@ export function ContinuousManuscriptEditor() {
 
   return (
     <>
+      {collaborationEnabled ? (
+        <aside className="omi-collaboration-panel" aria-label="Live collaboration">
+          <div className="omi-collaboration-panel__summary">
+            <strong>Live collaboration</strong>
+            {collaborationSession ? (
+              <span className={collaborationConnected ? 'is-connected' : ''}>
+                {collaborationConnected ? 'Connected' : 'Connecting'}
+                {collaborationConnected ? ` · ${collaborationParticipants} participant${collaborationParticipants === 1 ? '' : 's'}` : ''}
+              </span>
+            ) : null}
+          </div>
+          {!collaborationAccess ? (
+            <button type="button" onClick={startCollaboration} disabled={collaborationBusy}>
+              {collaborationBusy ? 'Starting…' : 'Start shared editing'}
+            </button>
+          ) : null}
+          {collaborationAccess && collaborationAccess.members.some((member) =>
+            member.userId === currentUser?.id && ['OWNER', 'EDITOR'].includes(member.role),
+          ) ? (
+            <div className="omi-collaboration-invite">
+              <label htmlFor="omi-collaborator-email">Invite an author</label>
+              <input
+                id="omi-collaborator-email"
+                type="email"
+                value={collaboratorEmail}
+                onChange={(event) => setCollaboratorEmail(event.target.value)}
+                placeholder="Email address"
+              />
+              <button type="button" onClick={inviteCollaborator} disabled={collaborationBusy || !collaboratorEmail.trim()}>
+                Send invitation
+              </button>
+              {collaborationAccess.invitations.map((invitation) => (
+                <span key={invitation.id} className="omi-collaboration-invite__pending">
+                  {invitation.invitedEmail} · awaiting acceptance
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {collaborationStatus ? <p role="status">{collaborationStatus}</p> : null}
+        </aside>
+      ) : null}
       {studies.map((study) => {
         const root = study.sections.find(
           (section) => section.id === study.rootSectionId,
@@ -409,6 +602,7 @@ export function ContinuousManuscriptEditor() {
               }
               contributorTitle={copy.contributorTitle}
               contributorDescription={copy.contributorDescription}
+              collaboration={collaborationSession}
             />
             {showNotes && currentStudyNoteOverview ? (
               <CurrentStudyNotesFooter
@@ -451,6 +645,15 @@ export function ContinuousManuscriptEditor() {
       ) : null}
     </>
   );
+}
+
+function collaborationColor(identity: string): string {
+  let hash = 0;
+  for (let index = 0; index < identity.length; index += 1) {
+    hash = (hash * 31 + identity.charCodeAt(index)) | 0;
+  }
+  const palette = ['#2563eb', '#7c3aed', '#c2410c', '#15803d', '#be185d', '#0f766e'];
+  return palette[Math.abs(hash) % palette.length]!;
 }
 
 function getStudyEditorCopy(locale: string): {

@@ -88,6 +88,7 @@ app.use('/api/publication/newsletter', express.json({ limit: '12mb' }));
 app.use('/api/v1/publications/web', express.json({ limit: '12mb' }));
 app.use('/api/publication/validate/jats', express.json({ limit: '7mb' }));
 app.use('/api/references/library', express.json({ limit: '8mb' }));
+app.use('/api/collaboration/documents', express.json({ limit: '12mb' }));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/api', (_request, response) => {
@@ -117,6 +118,10 @@ app.use('/api', orcidLinkStartRouter);
 app.use('/api', authorSignatureRouter);
 app.use('/api', cloudOAuthRouter);
 app.use('/api', cloudRouter);
+app.get('/api/collaboration/status', (_request, response) => {
+  response.setHeader('Cache-Control', 'no-store');
+  response.status(200).json({ enabled: env.MANUSCRIPT_COLLABORATION_ENABLED });
+});
 if (env.MANUSCRIPT_COLLABORATION_ENABLED) {
   app.use('/api/collaboration', collaborationRouter);
 }

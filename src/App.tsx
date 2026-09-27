@@ -8,6 +8,8 @@ import {
 import { AuthGate } from './auth/AuthGate';
 import { LoginPage } from './auth/LoginPage';
 import { RegisterPage } from './auth/RegisterPage';
+import { CollaborationInvitationGate } from './components/CollaborationInvitationGate';
+import { CollaborationInbox } from './components/CollaborationInbox';
 
 import {
   getRestoredDesktopSession,
@@ -130,7 +132,17 @@ export function App() {
 
   return (
     <>
-      <AuthGate fallback={authScreen}><StudioApplication /></AuthGate>
+      <AuthGate fallback={authScreen}>
+        <CollaborationInbox>
+          {new URLSearchParams(window.location.search).get('collaborationInvite') ? (
+            <CollaborationInvitationGate
+              token={new URLSearchParams(window.location.search).get('collaborationInvite')!}
+            >
+              <StudioApplication />
+            </CollaborationInvitationGate>
+          ) : <StudioApplication />}
+        </CollaborationInbox>
+      </AuthGate>
       <StudioUpdatePrompt />
     </>
   );

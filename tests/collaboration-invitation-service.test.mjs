@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { mock, test } from 'node:test';
+import * as Y from 'yjs';
 
 const token = 'a'.repeat(43);
 const tokenHash = createHash('sha256').update(token).digest('hex');
@@ -11,6 +12,7 @@ const invite = {
   invitedEmail: 'author@example.test',
   role: 'AUTHOR',
   tokenHash,
+  createdAt: new Date('2026-09-27T00:00:00Z'),
   expiresAt: new Date(Date.now() + 60_000),
   acceptedAt: null,
   declinedAt: null,
@@ -26,11 +28,20 @@ const user = {
 let invitationRow;
 let membershipRow;
 let authorizationMembership;
+const createdStates = [];
+const collaborativeDocuments = {
+  findUnique: async () => null,
+  create: async ({ data }) => ({ ...data, createdAt: new Date() }),
+};
+const documentStates = {
+  create: async ({ data }) => { createdStates.push(data); return data; },
+};
 
 const invitations = {
-  findUnique: async ({ where }) => where.tokenHash === invitationRow?.tokenHash
+  findUnique: async ({ where }) => (where.tokenHash === invitationRow?.tokenHash || where.id === invitationRow?.id)
     ? structuredClone(invitationRow)
     : null,
+  findMany: async () => invitationRow ? [{ ...structuredClone(invitationRow), document: { id: invitationRow.documentId, title: invite.document.title } }] : [],
   updateMany: async ({ where, data }) => {
     if (where.id !== invitationRow?.id || invitationRow.acceptedAt || invitationRow.declinedAt || invitationRow.revokedAt || invitationRow.expiresAt <= new Date()) return { count: 0 };
     Object.assign(invitationRow, data);
@@ -49,16 +60,44 @@ const members = {
     if (update) Object.assign(membershipRow, update);
     return structuredClone(membershipRow);
   },
+  create: async ({ data }) => data,
 };
 const users = { findUnique: async ({ where }) => where.id === user.id ? structuredClone(user) : null };
 const auditEvents = { create: async () => ({ id: 'audit-event' }) };
 mock.module(new URL('../server/dist/lib/prisma.js', import.meta.url).href, {
-  namedExports: { prisma: { collaborationInvitation: invitations, collaborationMember: members, collaborationAuditEvent: auditEvents, user: users, $transaction: async (work) => work({ collaborationInvitation: invitations, collaborationMember: members, collaborationAuditEvent: auditEvents, user: users }) } },
+  namedExports: { prisma: { collaborativeDocument: collaborativeDocuments, collaborativeDocumentState: documentStates, collaborationInvitation: invitations, collaborationMember: members, collaborationAuditEvent: auditEvents, user: users, $transaction: async (work) => work({ collaborativeDocument: collaborativeDocuments, collaborativeDocumentState: documentStates, collaborationInvitation: invitations, collaborationMember: members, collaborationAuditEvent: auditEvents, user: users }) } },
 });
 mock.module(new URL('../server/dist/config/env.js', import.meta.url).href, {
   namedExports: { env: { FRONTEND_ORIGIN: 'https://studio.example.test', INVITATION_TTL_HOURS: 168, MAIL_FROM: 'Studio <no-reply@example.test>', SENDMAIL_PATH: '/usr/sbin/sendmail' } },
 });
 const service = await import('../server/dist/services/collaborationInvitationService.js');
+
+test('collaboration space and initial Yjs state are created in one transaction', async () => {
+  const document = new Y.Doc();
+  document.getText('seed').insert(0, 'existing manuscript text');
+  const initialState = Buffer.from(Y.encodeStateAsUpdate(document)).toString('base64');
+  document.destroy();
+  const result = await service.createCollaborativeDocument(user.id, {
+    documentId: 'seeded-manuscript',
+    title: 'Seeded manuscript',
+    initialState,
+  });
+  assert.equal(result.id, 'seeded-manuscript');
+  assert.equal(createdStates.at(-1).documentId, 'seeded-manuscript');
+  const restored = new Y.Doc();
+  Y.applyUpdate(restored, createdStates.at(-1).state);
+  assert.equal(restored.getText('seed').toString(), 'existing manuscript text');
+  restored.destroy();
+});
+
+test('invalid initial Yjs states are rejected before a collaboration space is created', async () => {
+  await assert.rejects(
+    service.createCollaborativeDocument(user.id, {
+      documentId: 'bad-seed', title: 'Bad seed', initialState: Buffer.from('not a Yjs update').toString('base64'),
+    }),
+    /initial collaboration state is invalid/u,
+  );
+});
 
 test('invitation inspection never exposes an active membership and hides expired or consumed links', async () => {
   invitationRow = structuredClone(invite);
@@ -97,6 +136,21 @@ test('acceptance requires the invited account, creates membership only on accept
     service.acceptCollaborationInvitation(user.id, token),
     { code: 'INVALID_INVITATION' },
   );
+});
+
+test('Studio inbox exposes only pending invitations for the signed-in email and accepts by invitation ID', async () => {
+  invitationRow = structuredClone(invite);
+  membershipRow = null;
+  const pending = await service.listPendingCollaborationInvitations(user.id);
+  assert.equal(pending.length, 1);
+  assert.equal(pending[0].documentTitle, 'A shared manuscript');
+  assert.equal('token' in pending[0], false);
+  assert.equal('tokenHash' in pending[0], false);
+
+  const accepted = await service.acceptCollaborationInvitationById(user.id, invite.id);
+  assert.equal(accepted.documentId, invite.documentId);
+  assert.equal(membershipRow.userId, user.id);
+  await assert.rejects(service.acceptCollaborationInvitationById(user.id, invite.id), { code: 'INVALID_INVITATION' });
 });
 
 test('expired and malformed invitation tokens cannot be accepted', async () => {

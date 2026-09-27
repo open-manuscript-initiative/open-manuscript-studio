@@ -34,9 +34,29 @@ export interface MockStudioApi {
   unhandledRequests: string[];
 }
 
+interface MockCollaborationOptions {
+  enabled?: boolean;
+  pendingInvitations?: Array<{
+    id: string;
+    documentId: string;
+    documentTitle: string;
+    role: 'EDITOR' | 'AUTHOR' | 'VIEWER';
+    status: 'pending';
+    createdAt: string;
+    expiresAt: string;
+  }>;
+  invitation?: {
+    email: string;
+    role: 'EDITOR' | 'AUTHOR' | 'VIEWER';
+    documentId: string;
+    documentTitle: string;
+    status: 'pending';
+  };
+}
+
 export async function installMockStudioApi(
   page: Page,
-  options: { authenticated?: boolean } = {},
+  options: { authenticated?: boolean; collaboration?: MockCollaborationOptions } = {},
 ): Promise<MockStudioApi> {
   let authenticated = options.authenticated ?? false;
   const loginRequests: Array<Record<string, unknown>> = [];
@@ -47,6 +67,45 @@ export async function installMockStudioApi(
     const request = route.request();
     const url = new URL(request.url());
     const requestKey = `${request.method()} ${url.pathname}`;
+
+    if (request.method() === 'GET' && url.pathname === '/api/collaboration/status') {
+      await fulfillJson(route, 200, { enabled: options.collaboration?.enabled ?? false });
+      return;
+    }
+
+    if (request.method() === 'GET' && url.pathname === '/api/collaboration/invitations/pending') {
+      await fulfillJson(route, 200, { invitations: options.collaboration?.pendingInvitations ?? [] });
+      return;
+    }
+
+    if (request.method() === 'GET' && /^\/api\/collaboration\/invitations\/[^/]+$/u.test(url.pathname)) {
+      if (options.collaboration?.invitation) {
+        await fulfillJson(route, 200, { invitation: options.collaboration.invitation });
+      } else {
+        await fulfillJson(route, 404, { error: { message: 'Invitation not found.' } });
+      }
+      return;
+    }
+
+    if (request.method() === 'POST' && /^\/api\/collaboration\/invitations\/[^/]+\/accept$/u.test(url.pathname)) {
+      await fulfillJson(route, 200, { membership: { role: options.collaboration?.invitation?.role ?? 'AUTHOR' } });
+      return;
+    }
+
+    if (request.method() === 'POST' && /^\/api\/collaboration\/invitations\/by-id\/[^/]+\/accept$/u.test(url.pathname)) {
+      await fulfillJson(route, 200, { membership: { role: 'AUTHOR' } });
+      return;
+    }
+
+    if (request.method() === 'POST' && /^\/api\/collaboration\/invitations\/by-id\/[^/]+\/decline$/u.test(url.pathname)) {
+      await fulfillJson(route, 200, { status: 'declined' });
+      return;
+    }
+
+    if (request.method() === 'POST' && /^\/api\/collaboration\/invitations\/[^/]+\/decline$/u.test(url.pathname)) {
+      await fulfillJson(route, 200, { status: 'declined' });
+      return;
+    }
 
     if (request.method() === 'GET' && url.pathname === '/api/auth/providers') {
       await fulfillJson(route, 200, {

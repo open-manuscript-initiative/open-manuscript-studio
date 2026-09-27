@@ -506,6 +506,15 @@ async function request<T>(
   return parseJsonResponse<T>(response);
 }
 
+/** Authenticated same-origin API access for feature APIs that share Studio sessions. */
+export function requestStudioApi<T>(path: string, init: RequestInit = {}): Promise<T> {
+  return request<T>(path, init);
+}
+
+export function getStudioApiBaseUrl(): string {
+  return API_BASE_URL || globalThis.location?.origin || 'http://localhost';
+}
+
 async function parseJsonResponse<T>(response: Response): Promise<T> {
   const contentType = response.headers.get('content-type') ?? '';
   if (!contentType.includes('application/json')) {
