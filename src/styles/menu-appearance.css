@@ -150,6 +150,90 @@
   min-height: var(--omi-interface-control-height, 1.9rem);
 }
 
+/* Editor chrome outside the manuscript menu ----------------------------- */
+.sidebar,
+.properties,
+.desktop-document-outline,
+.desktop-document-tabs,
+.omi-selection-action-toolbar,
+.focus-insert-menu-popover,
+.omi-volume-workspace-tabs,
+.omi-new-document-actions,
+.omi-add-study-actions,
+.omi-block-toolbar,
+.omi-note-insert-button,
+.omi-footer {
+  font-size: var(--omi-interface-font-md, .76rem);
+}
+
+.sidebar *,
+.properties *,
+.desktop-document-outline *,
+.desktop-document-tabs *,
+.omi-selection-action-toolbar *,
+.focus-insert-menu-popover *,
+.omi-volume-workspace-tabs *,
+.omi-new-document-actions *,
+.omi-add-study-actions *,
+.omi-block-toolbar *,
+.omi-note-insert-button *,
+.omi-footer * {
+  font-size: inherit;
+}
+
+:is(.sidebar, .properties, .desktop-document-outline, .desktop-document-tabs,
+  .omi-selection-action-toolbar, .focus-insert-menu-popover,
+  .omi-volume-workspace-tabs, .omi-new-document-actions, .omi-add-study-actions,
+  .omi-block-toolbar, .omi-footer) :is(h2, h3, h4) {
+  font-size: var(--omi-interface-font-lg, .84rem);
+}
+
+:is(.sidebar, .properties, .desktop-document-outline, .desktop-document-tabs,
+  .omi-selection-action-toolbar, .focus-insert-menu-popover,
+  .omi-volume-workspace-tabs, .omi-new-document-actions, .omi-add-study-actions,
+  .omi-block-toolbar, .omi-footer) :is(p, label, li, button, input, select) {
+  font-size: var(--omi-interface-font-md, .76rem);
+}
+
+:is(.sidebar, .properties, .desktop-document-outline, .desktop-document-tabs,
+  .omi-selection-action-toolbar, .focus-insert-menu-popover,
+  .omi-volume-workspace-tabs, .omi-new-document-actions, .omi-add-study-actions,
+  .omi-block-toolbar, .omi-footer) :is(small, code) {
+  font-size: var(--omi-interface-font-sm, .7rem);
+}
+
+.omi-selection-action-toolbar
+  :is(input:not([type='checkbox']):not([type='radio']), select, button),
+.focus-insert-menu-popover
+  :is(input:not([type='checkbox']):not([type='radio']), select, button),
+.omi-new-document-actions button,
+.omi-add-study-actions button,
+.omi-volume-workspace-tabs button,
+.desktop-document-tabs button,
+.desktop-document-outline button,
+.sidebar button,
+.properties button {
+  min-height: var(--omi-interface-control-height, 1.9rem);
+}
+
+.omi-selection-action-toolbar
+  :is(input:not([type='checkbox']):not([type='radio']), select),
+.focus-insert-menu-popover
+  :is(input:not([type='checkbox']):not([type='radio']), select) {
+  padding: var(--omi-interface-control-padding-y, .3rem)
+    var(--omi-interface-control-padding-x, .48rem);
+}
+
+.omi-footer-column h2,
+.omi-footer-message strong {
+  font-size: var(--omi-interface-font-xl, .95rem);
+}
+
+.omi-footer-build,
+.omi-footer-share__label {
+  font-size: var(--omi-interface-font-sm, .7rem);
+}
+
 /* Live publication editor UI --------------------------------------------- */
 /* Do not target .publication-document-canvas-stage or its document content. */
 .publication-style-editor-heading,
