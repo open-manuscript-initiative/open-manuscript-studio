@@ -68,6 +68,7 @@ import { ExportFormatsPanel } from './ExportFormatsPanel';
 import { HistoryPanel } from './HistoryPanel';
 import { KeywordEditor } from './KeywordEditor';
 import { ManuscriptLanguageField } from './ManuscriptLanguageField';
+import { MenuAppearanceSettings } from './MenuAppearanceSettings';
 import { NotesPanel } from './NotesPanel';
 import { NativeEditorialWorkflowPanel } from './NativeEditorialWorkflowPanel';
 import { NewDocumentActions } from './NewDocumentActions';
@@ -560,7 +561,7 @@ function ToolsView() {
 
 function SettingsView() {
   const { t } = useTranslation();
-  return <section className="studio-menu-view studio-menu-view--settings"><div className="studio-menu-view-header"><div><h3>{t('studio.settings.title')}</h3><p>{t('studio.settings.description')}</p></div></div><ContentLanguageSettings /><ImportFormatSettings /><CloudStorageSettings /></section>;
+  return <section className="studio-menu-view studio-menu-view--settings"><div className="studio-menu-view-header"><div><h3>{t('studio.settings.title')}</h3><p>{t('studio.settings.description')}</p></div></div><MenuAppearanceSettings /><ContentLanguageSettings /><ImportFormatSettings /><CloudStorageSettings /></section>;
 }
 
 function formatNativeLocation(

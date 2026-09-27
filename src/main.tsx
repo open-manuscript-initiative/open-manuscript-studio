@@ -10,6 +10,7 @@ import {
   resolveInitialUiLocale,
 } from './i18n';
 import { restorePendingExternalLaunchToLocation } from './services/pendingExternalLaunch';
+import { initializeMenuAppearancePreferences } from './services/menuAppearancePreferences';
 
 import './styles/global.css';
 import './styles/editor.css';
@@ -51,8 +52,10 @@ import './styles/account-profiles.css';
 import './styles/scholarly-metadata.css';
 import './styles/ui-density.css';
 import './styles/desktop-form-layout.css';
+import './styles/menu-appearance.css';
 
 restorePendingExternalLaunchToLocation();
+initializeMenuAppearancePreferences();
 initializeRevisionIntegrity();
 
 const SESSION_RESTORE_BOOT_BUDGET_MS = 1200;
