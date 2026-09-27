@@ -140,13 +140,13 @@ location ^~ /collaboration-demo/ws {
 NGINX
 
 install -o root -g root -m 0644 "$nginx_temp" "$NGINX_FILE"
-if ! plesk sbin httpdmng --reconfigure-domain "$DOMAIN" || ! nginx -t; then
+if ! plesk sbin httpdmng --reconfigure-domain "$DOMAIN" -no-restart || ! nginx -t; then
   if [[ -s "$nginx_backup" ]]; then
     install -o root -g root -m 0644 "$nginx_backup" "$NGINX_FILE"
   else
     rm -f "$NGINX_FILE"
   fi
-  plesk sbin httpdmng --reconfigure-domain "$DOMAIN" || true
+  plesk sbin httpdmng --reconfigure-domain "$DOMAIN" -no-restart || true
   nginx -t && systemctl reload nginx || true
   echo "Plesk rejected the proxy; the previous custom config was restored." >&2
   exit 1
