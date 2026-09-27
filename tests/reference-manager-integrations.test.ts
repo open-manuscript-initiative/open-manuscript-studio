@@ -229,3 +229,33 @@ test('persists an account-level personal reference library for reuse across docu
   assert.match(panel, /stageSetBibliographyRecordIncluded/);
   assert.match(panel, /saveCurrentReferencesToPersonalLibrary/);
 });
+
+
+test('personal reference library uses a leading checkbox selection cell', () => {
+  const panel = readFileSync('src/components/ReferencesPanel.tsx', 'utf8');
+  const css = readFileSync('src/styles/citation-system.css', 'utf8');
+
+  assert.match(panel, /omi-personal-reference-selection-hint/);
+  assert.match(panel, /omi-personal-reference-row/);
+  assert.match(panel, /omi-personal-reference-select/);
+  assert.match(
+    panel,
+    /type="checkbox"[\s\S]*checked=\{inDocument\}[\s\S]*disabled=\{inDocument \|\| personalBusy\}/,
+  );
+  assert.match(
+    panel,
+    /if \(event\.target\.checked\) addPersonalRecordToDocument\(record\)/,
+  );
+  assert.doesNotMatch(
+    panel,
+    /\{inDocument \? personalCopy\.inDocument : personalCopy\.add\}/,
+  );
+  assert.match(
+    css,
+    /\.omi-personal-reference-row \{[\s\S]*grid-template-columns: 1\.15rem minmax\(0, 1fr\)/,
+  );
+  assert.match(
+    css,
+    /\.omi-personal-reference-select \{[\s\S]*width: 1\.15rem;/,
+  );
+});

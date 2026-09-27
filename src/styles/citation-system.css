@@ -459,3 +459,46 @@
     flex-wrap: wrap;
   }
 }
+
+
+.omi-personal-reference-selection-hint {
+  margin-top: .3rem !important;
+  color: var(--omi-editor-text-muted);
+  font-size: .75rem;
+  line-height: 1.35;
+}
+
+.omi-personal-reference-row {
+  display: grid;
+  grid-template-columns: 1.15rem minmax(0, 1fr);
+  align-items: start;
+  gap: .55rem;
+}
+
+.omi-personal-reference-select {
+  display: grid;
+  width: 1.15rem;
+  min-width: 1.15rem;
+  place-items: start center;
+  margin: .1rem 0 0;
+  padding: 0;
+}
+
+.omi-personal-reference-select input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.omi-personal-reference-select input:disabled {
+  cursor: default;
+}
+
+@media (max-width: 720px) {
+  .omi-personal-reference-row {
+    display: grid;
+    grid-template-columns: 1.15rem minmax(0, 1fr);
+    gap: .5rem;
+  }
+}
