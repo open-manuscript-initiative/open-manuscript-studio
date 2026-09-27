@@ -1,0 +1,90 @@
+/* User-adjustable manuscript-menu typography. */
+
+@media (min-width: 761px) {
+  .studio-menu-nav-button {
+    font-size: var(--omi-menu-nav-font-size-desktop, .76rem);
+  }
+}
+
+@media (max-width: 760px) {
+  .studio-menu-nav-button {
+    font-size: var(--omi-menu-nav-font-size-mobile, .72rem);
+  }
+}
+
+.studio-menu-appearance-settings {
+  align-content: start;
+}
+
+.studio-menu-font-control {
+  display: grid;
+  grid-template-columns: auto minmax(9rem, 18rem) auto auto auto;
+  align-items: center;
+  gap: .45rem .6rem;
+  margin-top: .55rem;
+}
+
+.studio-menu-font-slider {
+  display: grid;
+  align-items: center;
+  min-width: 0;
+}
+
+.studio-menu-font-slider input[type='range'] {
+  width: 100%;
+  min-width: 8rem;
+  margin: 0;
+  accent-color: #0f172a;
+}
+
+.studio-menu-font-boundary,
+.studio-menu-font-value {
+  color: #64748b;
+  font-size: .7rem;
+}
+
+.studio-menu-font-value {
+  min-width: 3rem;
+  color: #334155;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+  text-align: center;
+}
+
+.studio-menu-font-reset {
+  min-height: 1.9rem;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.studio-menu-font-preview {
+  margin: .5rem 0 0;
+  color: #475569;
+  font-size: var(--omi-menu-nav-font-size-desktop, .76rem);
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+@media (max-width: 760px) {
+  .studio-menu-font-control {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .studio-menu-font-value,
+  .studio-menu-font-reset {
+    grid-row: 2;
+  }
+
+  .studio-menu-font-value {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .studio-menu-font-reset {
+    grid-column: 3;
+  }
+
+  .studio-menu-font-preview {
+    font-size: var(--omi-menu-nav-font-size-mobile, .72rem);
+  }
+}
