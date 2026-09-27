@@ -7,6 +7,18 @@ async function openStudioMenu(page: import('@playwright/test').Page) {
   return page.getByRole('dialog', { name: 'Manuscript menu' });
 }
 
+async function openMenuNavigation(
+  dialog: import('@playwright/test').Locator,
+): Promise<void> {
+  const navigation = dialog.getByRole('navigation', { name: 'Manuscript menu' });
+  if (!(await navigation.isVisible())) {
+    await dialog
+      .getByRole('button', { name: 'Manuscript menu', exact: true })
+      .click();
+  }
+  await expect(navigation).toBeVisible();
+}
+
 test('menu font size can be personalized independently from Settings', async ({ page }) => {
   await installMockStudioApi(page);
   await signInToStudio(page);
@@ -29,6 +41,12 @@ test('menu font size can be personalized independently from Settings', async ({ 
   await slider.fill('130');
 
   await expect.poll(async () =>
+    page.evaluate(() => localStorage.getItem('omi-studio-menu-font-scale')),
+  ).toBe('130');
+
+  await openMenuNavigation(dialog);
+
+  await expect.poll(async () =>
     firstMenuItem.evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
   ).toBeGreaterThan(defaultSize);
 
@@ -36,15 +54,15 @@ test('menu font size can be personalized independently from Settings', async ({ 
     firstMenuItem.evaluate((node) => node.getBoundingClientRect().height),
   ).toBeGreaterThan(defaultHeight);
 
-  await expect.poll(async () =>
-    page.evaluate(() => localStorage.getItem('omi-studio-menu-font-scale')),
-  ).toBe('130');
-
   const enlargedSize = await firstMenuItem.evaluate(
     (node) => Number.parseFloat(getComputedStyle(node).fontSize),
   );
 
   await slider.fill('80');
+
+  await expect.poll(async () =>
+    page.evaluate(() => localStorage.getItem('omi-studio-menu-font-scale')),
+  ).toBe('80');
 
   await expect.poll(async () =>
     firstMenuItem.evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
@@ -82,27 +100,29 @@ test('interface text size scales controls and live publication editor chrome but
     ),
   };
 
+  await openMenuNavigation(dialog);
   await dialog.getByRole('button', { name: 'Settings', exact: true }).click();
+
   const interfaceSlider = dialog.getByRole('slider', { name: 'Interface text size' });
   await expect(interfaceSlider).toHaveValue('100');
 
-  const settingsInput = dialog.locator('.studio-language-compact-add select').first();
-  if (await settingsInput.isVisible()) {
-    const baselineControlHeight = await settingsInput.evaluate(
-      (node) => node.getBoundingClientRect().height,
-    );
-    await interfaceSlider.fill('130');
-    await expect.poll(async () =>
-      settingsInput.evaluate((node) => node.getBoundingClientRect().height),
-    ).toBeGreaterThan(baselineControlHeight);
-  } else {
-    await interfaceSlider.fill('130');
-  }
+  const settingsControl = dialog.locator('.studio-language-compact-add select').first();
+  await expect(settingsControl).toBeVisible();
+  const baselineControlHeight = await settingsControl.evaluate(
+    (node) => node.getBoundingClientRect().height,
+  );
+
+  await interfaceSlider.fill('130');
 
   await expect.poll(async () =>
     page.evaluate(() => localStorage.getItem('omi-studio-interface-font-scale')),
   ).toBe('130');
 
+  await expect.poll(async () =>
+    settingsControl.evaluate((node) => node.getBoundingClientRect().height),
+  ).toBeGreaterThan(baselineControlHeight);
+
+  await openMenuNavigation(dialog);
   await dialog.getByRole('button', { name: 'Live publication editor', exact: true }).click();
 
   await expect.poll(async () =>
