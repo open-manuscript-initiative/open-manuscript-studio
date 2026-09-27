@@ -9,6 +9,9 @@ import {
   resolveOrcidRuntimeConfig,
   validateOrcidDeployment,
 } from '../integrations/orcidEnvironment.js';
+import {
+  resolveManuscriptCollaborationEnabled,
+} from './collaborationAvailability.js';
 
 const environmentSchema = z.object({
   NODE_ENV: z
@@ -79,9 +82,10 @@ const environmentSchema = z.object({
     .max(720)
     .default(168),
 
-  // Manuscript collaboration is a preview capability. It remains unavailable
-  // on existing deployments unless an operator opts in explicitly.
-  MANUSCRIPT_COLLABORATION_ENABLED: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
+  MANUSCRIPT_COLLABORATION_ENABLED: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => resolveManuscriptCollaborationEnabled(value, process.env.NODE_ENV)),
 
   COLLABORATION_WS_PORT: z.coerce.number().int().positive().max(65535).default(3022),
 

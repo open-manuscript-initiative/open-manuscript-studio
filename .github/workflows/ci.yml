@@ -415,6 +415,13 @@ jobs:
               exit 1
             fi
 
+            collaboration_status="$(curl --fail --silent --show-error http://127.0.0.1:3001/api/collaboration/status)"
+            if [[ "$collaboration_status" != '{"enabled":true}' ]]; then
+              echo "Production API did not enable manuscript collaboration: $collaboration_status" >&2
+              echo 'Check MANUSCRIPT_COLLABORATION_ENABLED and provision /collaboration/ws before retrying the deploy.' >&2
+              exit 1
+            fi
+
             assetlinks_body="$(curl --fail --silent --show-error https://app.openmanuscript.org/.well-known/assetlinks.json)"
             printf '%s' "$assetlinks_body" | grep -Fq '"package_name": "org.openmanuscript.studio"'
             printf '%s' "$assetlinks_body" | grep -Fq '"${{ steps.android_app_link.outputs.fingerprint }}"'

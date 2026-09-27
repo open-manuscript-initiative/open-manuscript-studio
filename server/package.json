@@ -20,7 +20,8 @@
     "prisma:migrate:identity:deploy": "prisma migrate deploy --config prisma.identity.config.ts",
     "prisma:studio": "prisma studio",
     "prisma:studio:identity": "prisma studio --config prisma.identity.config.ts",
-    "test:jats-validation": "node --import tsx --test ../tests/jats-schema-validation.test.ts"
+    "test:jats-validation": "node --import tsx --test ../tests/jats-schema-validation.test.ts",
+    "test:collaboration-availability": "node --import tsx --test src/config/collaborationAvailability.test.ts"
   },
   "dependencies": {
     "@hocuspocus/server": "4.7.0",

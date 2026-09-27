@@ -1,8 +1,8 @@
 # ADR-023: Invitation-authorized manuscript collaboration
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-09-27
-- Supersedes: ADR-022 only for the boundary between the isolated sponsor demo and a future Studio collaboration capability. ADR-022 remains the policy for the synthetic demo.
+- Supersedes: ADR-022 only for the boundary between the isolated sponsor demo and Studio collaboration. ADR-022 remains the policy for the synthetic demo. The production enablement decision in section 6 is superseded by ADR-024.
 
 ## Context
 

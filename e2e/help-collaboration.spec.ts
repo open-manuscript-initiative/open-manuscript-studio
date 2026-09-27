@@ -19,4 +19,6 @@ test('Help explains how authors invite, accept, and join live collaboration', as
   await expect(topic).toContainText('Start shared editing');
   await expect(topic).toContainText('accepts or declines');
   await expect(topic).toContainText('does not transfer the OMI file');
+  await expect(topic).toContainText('enables live collaboration by default');
+  await expect(topic).toContainText('/collaboration/ws');
 });
