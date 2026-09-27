@@ -87,6 +87,7 @@ test('every locale explains how to invite, accept, and join manuscript collabora
     assert.match(guidance, /studi/i, `${locale}: Studio account guidance missing`);
     assert.match(guidance, /OMI/i, `${locale}: manuscript re-open guidance missing`);
     assert.match(guidance, /\/collaboration\/ws/, `${locale}: WebSocket proxy guidance missing`);
+    assert.match(guidance, /3022/u, `${locale}: WebSocket listener port missing`);
     assert.ok(guidance.length > 250, `${locale}: collaboration process is too short`);
   }
   const english = getLocalizedHelpCopy('en').topics.find(
