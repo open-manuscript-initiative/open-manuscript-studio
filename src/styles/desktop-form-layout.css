@@ -164,7 +164,7 @@
     display: grid;
     grid-template-columns: repeat(
       auto-fill,
-      minmax(min(100%, 13rem), var(--omi-form-track))
+      minmax(min(100%, 22ch), var(--omi-form-track))
     );
     justify-content: start;
     align-items: start;
@@ -181,8 +181,8 @@
       .publisher-profile-wide
     ) {
     grid-column: span 2;
-    width: min(100%, calc((var(--omi-form-track) * 2) + var(--omi-form-gap-x)));
-    max-width: calc((var(--omi-form-track) * 2) + var(--omi-form-gap-x));
+    width: min(100%, calc(var(--omi-form-track) + var(--omi-form-track) + var(--omi-form-gap-x)));
+    max-width: calc(var(--omi-form-track) + var(--omi-form-track) + var(--omi-form-gap-x));
   }
 
   .studio-menu-content:not(.studio-menu-content--publication-editor)
@@ -200,7 +200,7 @@
 
   .studio-menu-content:not(.studio-menu-content--publication-editor)
     .studio-metadata-field--wide {
-    max-width: calc((var(--omi-form-track) * 2) + var(--omi-form-gap-x));
+    max-width: calc(var(--omi-form-track) + var(--omi-form-track) + var(--omi-form-gap-x));
   }
 
   .studio-menu-content:not(.studio-menu-content--publication-editor)
@@ -213,7 +213,7 @@
     .studio-publication-venue-controls {
     grid-template-columns: repeat(
       auto-fill,
-      minmax(min(100%, 12rem), 17rem)
+      minmax(min(100%, 20ch), 28ch)
     );
     justify-content: start;
     gap: var(--omi-form-gap-y) var(--omi-form-gap-x);
@@ -231,14 +231,14 @@
 
   .studio-menu-content:not(.studio-menu-content--publication-editor)
     .omi-keyword-input-row input {
-    flex: 0 1 22rem;
+    flex: 0 1 34ch;
     width: min(100%, 34ch);
   }
 
   .studio-menu-content:not(.studio-menu-content--publication-editor)
     .orcid-lookup-field {
     width: min(100%, 22ch);
-    max-width: 15rem;
+    max-width: 22ch;
   }
 
   .studio-menu-content:not(.studio-menu-content--publication-editor)
@@ -267,7 +267,7 @@
     .publisher-profile-form-grid {
     grid-template-columns: repeat(
       auto-fill,
-      minmax(min(100%, 13rem), 16.5rem)
+      minmax(min(100%, 22ch), 28ch)
     );
   }
 
@@ -412,7 +412,7 @@
   .account-page .account-institution-fields {
     grid-template-columns: repeat(
       auto-fill,
-      minmax(min(100%, 14rem), 20rem)
+      minmax(min(100%, 24ch), 32ch)
     );
   }
 
@@ -420,7 +420,7 @@
   .account-page .central-admin-token-form {
     grid-template-columns: repeat(
       auto-fit,
-      minmax(min(100%, 12rem), 18rem)
+      minmax(min(100%, 20ch), 28ch)
     );
     justify-content: start;
   }
