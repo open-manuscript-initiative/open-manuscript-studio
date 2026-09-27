@@ -23,6 +23,7 @@
     "test:jats-validation": "node --import tsx --test ../tests/jats-schema-validation.test.ts"
   },
   "dependencies": {
+    "@hocuspocus/server": "4.7.0",
     "@jats4r/dtds": "0.0.10",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
@@ -34,6 +35,7 @@
     "jose": "^6.1.0",
     "libxml2-wasm": "0.7.2",
     "pg": "^8.23.0",
+    "yjs": "13.6.33",
     "zod": "^4.0.0"
   },
   "devDependencies": {

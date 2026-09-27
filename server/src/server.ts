@@ -1,6 +1,11 @@
 import { app } from './app.js';
 import { env } from './config/env.js';
+import { startCollaborationServer, stopCollaborationServer } from './collaboration/collaborationServer.js';
 import { prisma } from './lib/prisma.js';
+
+const collaborationServer = env.MANUSCRIPT_COLLABORATION_ENABLED
+  ? await startCollaborationServer()
+  : null;
 
 const server = app.listen(
   env.PORT,
@@ -12,9 +17,7 @@ const server = app.listen(
   },
 );
 
-async function shutdown(
-  signal: NodeJS.Signals,
-): Promise<void> {
+async function shutdown(signal: NodeJS.Signals): Promise<void> {
   console.log(
     `Received ${signal}. Shutting down gracefully.`,
   );
@@ -29,6 +32,7 @@ async function shutdown(
       process.exitCode = 1;
     }
 
+    await stopCollaborationServer(collaborationServer);
     await prisma.$disconnect();
 
     process.exit();

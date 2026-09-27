@@ -23,7 +23,15 @@ const service = {
   revokeCollaborationInvitation: async (userId, id) => calls.push({ action: 'revoke', userId, id }),
   revokeCollaborator: async (userId, documentId, target) => calls.push({ action: 'remove', userId, documentId, target }),
 };
+const ticketService = {
+  CollaborationTicketError: class CollaborationTicketError extends Error {},
+  issueCollaborationConnectionTicket: async (userId, documentId) => {
+    calls.push({ action: 'ticket', userId, documentId });
+    return { token: 'ticket-secret', documentId, role: 'AUTHOR', expiresAt: '2026-09-27T16:50:00.000Z', webSocketPath: '/collaboration/ws' };
+  },
+};
 mock.module(new URL('../server/dist/services/collaborationInvitationService.js', import.meta.url).href, { namedExports: service });
+mock.module(new URL('../server/dist/services/collaborationTicketService.js', import.meta.url).href, { namedExports: ticketService });
 mock.module(new URL('../server/dist/middleware/requireSession.js', import.meta.url).href, { namedExports: {
   requireSession: (request, response, next) => {
     const userId = request.headers['x-test-user'];
@@ -70,4 +78,13 @@ test('malformed invitation requests are rejected before they reach the service',
   const response = await fetchLocal('/documents/ms-1/invitations', { userId: owner, method: 'POST', body: { email: 'bad', role: 'OWNER' } });
   assert.equal(response.status, 400);
   assert.equal(calls.filter((call) => call.action === 'invite').length, 1);
+});
+
+test('connection tickets require login, have a no-store response, and are document-scoped', async () => {
+  assert.equal((await fetchLocal('/documents/ms-1/connection-ticket', { method: 'POST' })).status, 401);
+  const response = await fetchLocal('/documents/ms-1/connection-ticket', { userId: owner, method: 'POST' });
+  assert.equal(response.status, 201);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.equal((await response.json()).ticket.webSocketPath, '/collaboration/ws');
+  assert.deepEqual(calls.at(-1), { action: 'ticket', userId: owner, documentId: 'ms-1' });
 });

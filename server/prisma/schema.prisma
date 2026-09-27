@@ -168,6 +168,7 @@ model User {
   sentCollaborationInvitations CollaborationInvitation[] @relation("CollaborationInvitationSender")
   collaborationAuditEvents CollaborationAuditEvent[] @relation("CollaborationAuditActor")
   targetedCollaborationAuditEvents CollaborationAuditEvent[] @relation("CollaborationAuditTarget")
+  collaborationConnectionTickets CollaborationConnectionTicket[]
 
   @@map("users")
 }
@@ -281,9 +282,36 @@ model CollaborativeDocument {
   members     CollaborationMember[]
   invitations CollaborationInvitation[]
   auditEvents CollaborationAuditEvent[]
+  state             CollaborativeDocumentState?
+  connectionTickets CollaborationConnectionTicket[]
 
   @@index([ownerUserId, updatedAt])
   @@map("collaborative_documents")
+}
+
+model CollaborativeDocumentState {
+  documentId String                @id @map("document_id") @db.VarChar(128)
+  state      Bytes                 @db.ByteA
+  updatedAt  DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  document   CollaborativeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@map("collaborative_document_states")
+}
+
+model CollaborationConnectionTicket {
+  id         String                @id @default(uuid()) @db.Uuid
+  documentId String                @map("document_id") @db.VarChar(128)
+  userId     String                @map("user_id") @db.Uuid
+  tokenHash  String                @unique @map("token_hash") @db.VarChar(64)
+  expiresAt  DateTime              @map("expires_at") @db.Timestamptz(6)
+  revokedAt  DateTime?             @map("revoked_at") @db.Timestamptz(6)
+  createdAt  DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  document   CollaborativeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, expiresAt])
+  @@index([userId, expiresAt])
+  @@map("collaboration_connection_tickets")
 }
 
 /// Only active rows authorize access. Membership is created after invite
