@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import { Collaboration } from '@tiptap/extension-collaboration';
+import { CollaborationCaret } from '@tiptap/extension-collaboration-caret';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import * as Y from 'yjs';
+import { participantColor } from './participant-color.js';
 
 const SESSION_URL = import.meta.env.BASE_URL + 'api/session';
 const SESSION_KEY = 'omi-collaboration-demo-session';
@@ -36,6 +38,13 @@ export default function CollaborationDemo() {
     extensions: [
       StarterKit.configure({ undoRedo: false }),
       ...(connection ? [Collaboration.configure({ document: connection.document })] : []),
+      ...(connection ? [CollaborationCaret.configure({
+        provider: connection.provider,
+        user: {
+          name: session.displayName,
+          color: participantColor(session.participantId || session.token || session.displayName),
+        },
+      })] : []),
     ],
     editable: Boolean(connection),
   }, [connection]);
@@ -67,7 +76,7 @@ export default function CollaborationDemo() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not join the demo.');
-      const next = { ...result, displayName: displayName.trim() };
+      const next = { ...result, displayName: displayName.trim(), participantId: crypto.randomUUID() };
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
       setSession(next);
     } catch (reason) {
@@ -111,7 +120,7 @@ export default function CollaborationDemo() {
               <button type="button" className="secondary" onClick={leave}>Leave demo</button>
             </div>
           </div>
-          <p className="editor-hint">Open this page in a second browser window, join with another name, and edit the shared sample.</p>
+          <p className="editor-hint">Open this page in another browser window to edit together. Each collaborator’s name appears beside their cursor.</p>
           <EditorContent editor={editor} className="editor-content" />
         </section>
       )}
