@@ -68,8 +68,9 @@ function personalReferenceLibraryCopy(locale: string) {
       loadFailed: 'A saját hivatkozástár betöltése sikertelen.',
       empty: 'A saját hivatkozástár még üres.',
       search: 'Keresés a saját hivatkozástárban',
-      add: 'Hozzáadás a dokumentumhoz',
-      inDocument: 'Már a dokumentumban',
+      selectionHint:
+        'A sor eleji jelölőnégyzettel adhatod a tételt az aktuális dokumentumhoz. A már átvett tételek kijelölve jelennek meg.',
+      selectRecord: (title: string) => `Hozzáadás a dokumentumhoz: ${title}`,
       refresh: 'Frissítés',
       include: 'Szerepeljen a hivatkozáslistában',
       cited: 'Idézett mű – automatikusan szerepel a hivatkozáslistában',
@@ -86,8 +87,9 @@ function personalReferenceLibraryCopy(locale: string) {
       loadFailed: 'Die persönliche Literaturbibliothek konnte nicht geladen werden.',
       empty: 'Die persönliche Literaturbibliothek ist noch leer.',
       search: 'Persönliche Literaturbibliothek durchsuchen',
-      add: 'Zum Dokument hinzufügen',
-      inDocument: 'Bereits im Dokument',
+      selectionHint:
+        'Mit dem Kontrollkästchen am Zeilenanfang übernehmen Sie den Eintrag in das aktuelle Dokument. Bereits übernommene Einträge sind markiert.',
+      selectRecord: (title: string) => `Zum Dokument hinzufügen: ${title}`,
       refresh: 'Aktualisieren',
       include: 'Im Literaturverzeichnis anzeigen',
       cited: 'Zitiert – wird automatisch im Literaturverzeichnis angezeigt',
@@ -103,8 +105,9 @@ function personalReferenceLibraryCopy(locale: string) {
     loadFailed: 'The personal reference library could not be loaded.',
     empty: 'Your personal reference library is empty.',
     search: 'Search personal reference library',
-    add: 'Add to document',
-    inDocument: 'Already in document',
+    selectionHint:
+      'Use the checkbox at the start of a row to add that record to the current document. Records already copied into the document appear selected.',
+    selectRecord: (title: string) => `Add to document: ${title}`,
     refresh: 'Refresh',
     include: 'Include in bibliography',
     cited: 'Cited work – automatically included in the bibliography',
@@ -524,6 +527,7 @@ export function ReferencesPanel() {
           <div>
             <h4><Library size={17} aria-hidden="true" /> {personalCopy.title}</h4>
             <p>{personalCopy.description}</p>
+            <p className="omi-personal-reference-selection-hint">{personalCopy.selectionHint}</p>
           </div>
           <div className="omi-reference-item-actions">
             <button
@@ -568,20 +572,24 @@ export function ReferencesPanel() {
               {filteredPersonalRecords.map((record) => {
                 const inDocument = documentRecordIds.has(record.id);
                 return (
-                  <li className="omi-reference-item" key={record.id}>
+                  <li className="omi-reference-item omi-personal-reference-row" key={record.id}>
+                    <label className="omi-personal-reference-select">
+                      <input
+                        type="checkbox"
+                        checked={inDocument}
+                        disabled={inDocument || personalBusy}
+                        aria-label={personalCopy.selectRecord(
+                          record.title || t('citations.untitledReference'),
+                        )}
+                        onChange={(event) => {
+                          if (event.target.checked) addPersonalRecordToDocument(record);
+                        }}
+                      />
+                    </label>
                     <div className="omi-reference-item-main">
                       <strong>{record.title || t('citations.untitledReference')}</strong>
                       <p>{formatBibliographyEntry(record)}</p>
                     </div>
-                    <button
-                      type="button"
-                      className="studio-menu-secondary-action"
-                      disabled={inDocument}
-                      onClick={() => addPersonalRecordToDocument(record)}
-                    >
-                      <Plus size={15} aria-hidden="true" />
-                      {inDocument ? personalCopy.inDocument : personalCopy.add}
-                    </button>
                   </li>
                 );
               })}
