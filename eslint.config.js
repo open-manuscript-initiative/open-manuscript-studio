@@ -55,6 +55,7 @@ export default tseslint.config(
     name: 'omi/node',
     files: [
       '*.{js,mjs,cjs,ts,mts,cts}',
+      'demos/**/*.{js,mjs,cjs,ts,mts,cts}',
       'scripts/**/*.{js,mjs,cjs,ts,mts,cts}',
       'server/**/*.{js,mjs,cjs,ts,mts,cts}',
       'tests/**/*.{js,mjs,cjs,ts,mts,cts}',
@@ -62,6 +63,17 @@ export default tseslint.config(
     ],
     languageOptions: {
       globals: {
+        ...globals.node,
+        ...globals.es2024,
+      },
+    },
+  },
+  {
+    name: 'omi/demo-browser',
+    files: ['demos/**/*.{js,jsx,mjs,ts,tsx,mts,cts}'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
         ...globals.node,
         ...globals.es2024,
       },
