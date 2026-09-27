@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { getLocalizedHelpCopy } from '../src/i18n/helpResolver.ts';
+import { collaborationInvitationHelpTitle } from '../src/i18n/helpCollaboration.ts';
 
 const locales = [
   'bg','cs','da','de','el','en','es','et','fi','fr','ga','hr',
@@ -71,5 +72,20 @@ test('every locale documents current signature and publisher-profile workflows',
     });
 
     assert.ok(signatureTopic, `${locale}: author-signature topic missing`);
+  }
+});
+
+test('every locale explains how to invite, accept, and join manuscript collaboration', () => {
+  for (const locale of locales) {
+    const copy = getLocalizedHelpCopy(locale);
+    const topicTitle = collaborationInvitationHelpTitle(locale);
+    const topic = copy.topics.find((entry) => entry.title === topicTitle);
+    assert.ok(topic, `${locale}: collaboration invitation topic missing`);
+    const guidance = [topic.title, topic.body, ...(topic.tips ?? [])].join('\n');
+    assert.ok(topic.body.length >= 150, `${locale}: collaboration guidance is too short`);
+    assert.ok((topic.tips?.length ?? 0) >= 3, `${locale}: collaboration steps are incomplete`);
+    assert.match(guidance, /studi/i, `${locale}: Studio account guidance missing`);
+    assert.match(guidance, /OMI/i, `${locale}: manuscript re-open guidance missing`);
+    assert.ok(guidance.length > 250, `${locale}: collaboration process is too short`);
   }
 });
