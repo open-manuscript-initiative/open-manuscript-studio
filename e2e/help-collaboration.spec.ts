@@ -1,11 +1,14 @@
 import { expect, test } from '@playwright/test';
-import { installMockStudioApi } from './support/mockStudioApi';
+import { installMockStudioApi, signInToStudio } from './support/mockStudioApi';
 
 test('Help explains how authors invite, accept, and join live collaboration', async ({ page }) => {
-  await installMockStudioApi(page, { authenticated: true, collaboration: { enabled: false } });
+  await installMockStudioApi(page, { collaboration: { enabled: false } });
+  await signInToStudio(page);
+  await page.getByRole('button', { name: /^New OMI study/ }).click();
 
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Help' }).click();
+  await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  await menu.getByRole('button', { name: 'Help', exact: true }).click();
   const help = page.locator('.studio-help-portal');
   await expect(help.getByRole('searchbox', { name: 'Search Help' })).toBeVisible();
   await help.getByRole('searchbox', { name: 'Search Help' }).fill('invited author');
