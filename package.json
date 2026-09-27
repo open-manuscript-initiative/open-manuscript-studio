@@ -91,21 +91,25 @@
     "prebuild": "npm run i18n:returned:generate"
   },
   "dependencies": {
+    "@hocuspocus/provider": "^4.7.0",
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-deep-link": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.0.0",
     "@tauri-apps/plugin-fs": "^2.0.0",
     "@tauri-apps/plugin-opener": "^2.0.0",
     "@tiptap/core": "3.31.0",
+    "@tiptap/extension-collaboration": "^3.31.0",
+    "@tiptap/extension-collaboration-caret": "^3.31.0",
     "@tiptap/pm": "3.31.0",
     "@tiptap/react": "3.31.0",
     "@tiptap/starter-kit": "3.31.0",
+    "@tiptap/y-tiptap": "^3.0.9",
+    "@xmldom/xmldom": "0.9.12",
     "hyphen": "^1.14.1",
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "zustand": "latest",
-    "@xmldom/xmldom": "0.9.12"
+    "zustand": "latest"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

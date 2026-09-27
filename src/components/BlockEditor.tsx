@@ -13,6 +13,10 @@ import {
 import type { Editor } from '@tiptap/core';
 import { collectChangedWorkspaceReferences } from '../editor/changedWorkspaceReferences';
 import StarterKit from '@tiptap/starter-kit';
+import Collaboration from '@tiptap/extension-collaboration';
+import CollaborationCaret from '@tiptap/extension-collaboration-caret';
+import type { HocuspocusProvider } from '@hocuspocus/provider';
+import type * as Y from 'yjs';
 
 import {
   reconcileCitationsAfterBlockEdit,
@@ -113,6 +117,11 @@ interface BlockEditorProps {
   publicationCorrections?: readonly OmiPublicationCorrection[];
   publicationFlowBreaks?: readonly OmiPublicationFlowBreak[];
   onProofingSelection?: (selection: ProofingSelection | null) => void;
+  collaboration?: {
+    fragment: Y.XmlFragment;
+    provider: HocuspocusProvider;
+    user: { name: string; color: string };
+  };
 }
 
 const EMPTY_PUBLICATION_CORRECTIONS: readonly OmiPublicationCorrection[] = [];
@@ -132,6 +141,7 @@ function BlockEditorComponent({
   publicationCorrections = EMPTY_PUBLICATION_CORRECTIONS,
   publicationFlowBreaks = EMPTY_PUBLICATION_FLOW_BREAKS,
   onProofingSelection,
+  collaboration,
 }: BlockEditorProps) {
   const { t, locale } = useTranslation();
   const crossReferenceCopy = getCrossReferenceCopy(locale);
@@ -227,8 +237,8 @@ function BlockEditorComponent({
     extensions: [
       StarterKit.configure(
         capabilities.editStructure
-          ? { horizontalRule: false }
-          : { heading: false, horizontalRule: false },
+          ? { horizontalRule: false, ...(collaboration ? { undoRedo: false } : {}) }
+          : { heading: false, horizontalRule: false, ...(collaboration ? { undoRedo: false } : {}) },
       ),
       ...(continuous
         ? [
@@ -261,6 +271,13 @@ function BlockEditorComponent({
         : []),
       ...(capabilities.editCitations ? [OmiCitationExtension] : []),
       ...(capabilities.editCrossReferences ? [OmiCrossReferenceExtension] : []),
+      ...(collaboration ? [
+        Collaboration.configure({ fragment: collaboration.fragment }),
+        CollaborationCaret.configure({
+          provider: collaboration.provider,
+          user: collaboration.user,
+        }),
+      ] : []),
     ],
     content: parseStoredContent(content),
     editorProps: {
