@@ -1,10 +1,10 @@
-import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Server } from '@hocuspocus/server';
 import { createSessionToken, safeEqualSecret, verifySessionToken, ROOM_ID } from './session-security.mjs';
+import { createFileStateStore } from './file-state-store.mjs';
 import * as Y from 'yjs';
 
 const ROOM = ROOM_ID;
@@ -15,9 +15,8 @@ const secret = process.env.DEMO_TOKEN_SECRET || '';
 const allowedOrigin = process.env.DEMO_ALLOWED_ORIGIN || 'http://127.0.0.1:5173';
 const wsUrl = process.env.DEMO_PUBLIC_WS_URL || 'ws://127.0.0.1:' + wsPort;
 const storageDir = path.resolve(process.env.DEMO_STORAGE_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), 'data'));
-const stateFile = path.join(storageDir, ROOM + '.yjs');
+const store = createFileStateStore(storageDir, ROOM);
 const attempts = new Map();
-let pendingWrite = Promise.resolve();
 
 if (accessCode.length < 12) throw new Error('DEMO_ACCESS_CODE must have at least 12 characters.');
 if (Buffer.byteLength(secret) < 32) throw new Error('DEMO_TOKEN_SECRET must have at least 32 bytes.');
@@ -57,25 +56,6 @@ function allowAttempt(request) {
   if (current.count >= 10) return false;
   current.count += 1;
   return true;
-}
-
-async function loadState() {
-  try {
-    return await readFile(stateFile);
-  } catch (error) {
-    if (error && error.code === 'ENOENT') return null;
-    throw error;
-  }
-}
-
-function saveState(bytes) {
-  pendingWrite = pendingWrite.then(async () => {
-    await mkdir(storageDir, { recursive: true, mode: 0o700 });
-    const temp = stateFile + '.' + randomUUID() + '.tmp';
-    await writeFile(temp, Buffer.from(bytes), { mode: 0o600 });
-    await rename(temp, stateFile);
-  });
-  return pendingWrite;
 }
 
 const api = createServer(async (request, response) => {
@@ -125,11 +105,11 @@ const collaboration = new Server({
   },
   async onLoadDocument({ documentName, document }) {
     if (documentName !== ROOM) throw new Error('Unknown demo room.');
-    const saved = await loadState();
+    const saved = await store.load();
     if (saved) Y.applyUpdate(document, saved);
   },
   async onStoreDocument({ documentName, document }) {
-    if (documentName === ROOM) await saveState(Y.encodeStateAsUpdate(document));
+    if (documentName === ROOM) await store.save(Y.encodeStateAsUpdate(document));
   },
 });
 
