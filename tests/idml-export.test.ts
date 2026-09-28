@@ -74,12 +74,12 @@ test('IDML package follows the InDesign UCF and design-map structure', () => {
   assert.equal(new TextDecoder().decode(entries.get('mimetype')), IDML_MEDIA_TYPE);
 
   const designMap = new TextDecoder().decode(entries.get('designmap.xml'));
-  assert.match(designMap, /<\\?aid style="50" type="document" readerVersion="6\\.0" featureSet="257" product="8\\.0\\(0\\)"\\?>/);
-  assert.match(designMap, /<Document\\b[^>]*StoryList="u3"/);
-  assert.match(designMap, /<idPkg:Preferences src="Resources\\/Preferences\\.xml"\\/>/);
+  assert.ok(designMap.includes('<?aid style="50" type="document" readerVersion="6.0" featureSet="257" product="8.0(0)"?>'));
+  assert.ok(designMap.includes('<Document xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="8.0" Self="d" StoryList="u3"'));
+  assert.ok(designMap.includes('<idPkg:Preferences src="Resources/Preferences.xml"/>'));
   assert.doesNotMatch(designMap, /<idPkg:DesignMap|<idPkg:Properties/);
 
-  const references = [...designMap.matchAll(/\\bsrc="([^"]+)"/g)].map((match) => match[1]);
+  const references = [...designMap.matchAll(/\bsrc="([^"]+)"/g)].map((match) => match[1]);
   for (const reference of references) {
     assert.equal(entries.has(reference), true, `designmap reference must exist: ${reference}`);
   }
