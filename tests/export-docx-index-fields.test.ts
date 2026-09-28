@@ -60,6 +60,78 @@ test('exports given and family names as separate Word character styles', () => {
   );
 });
 
+test('exports linked OMI notes as native Word footnotes by default and retains explicit endnotes', () => {
+  const manuscript = createTestManuscript();
+  const block = manuscript.sections[0]!.blocks[0]!;
+  block.content = JSON.stringify({
+    type: 'doc',
+    content: [{
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Before ' },
+        { type: 'omiNote', attrs: { noteId: 'note-default', anchorId: 'anchor-default', label: '9', noteType: 'footnote' } },
+        { type: 'text', text: ' between ' },
+        { type: 'omiNote', attrs: { noteId: 'note-end', anchorId: 'anchor-end', label: '4', noteType: 'endnote' } },
+        { type: 'text', text: ' after.' },
+      ],
+    }],
+  });
+  manuscript.annotations = [
+    {
+      id: 'note-default',
+      type: 'note',
+      targetBlockId: block.id,
+      body: 'A default footnote & its text.',
+      renderingHint: 'hidden',
+    },
+    {
+      id: 'note-end',
+      type: 'note',
+      noteKind: 'endnote',
+      targetBlockId: block.id,
+      body: 'An explicit endnote.',
+      renderingHint: 'endnote',
+    },
+    {
+      id: 'comment-only',
+      type: 'comment',
+      targetBlockId: block.id,
+      body: 'Review comment must not be exported as a scholarly note.',
+      renderingHint: 'margin',
+    },
+    {
+      id: 'note-without-anchor',
+      type: 'note',
+      targetBlockId: block.id,
+      body: 'Orphaned note content is retained.',
+      renderingHint: 'footnote',
+    },
+  ];
+
+  const result = buildDocxExport(manuscript);
+  const entries = readStoreZipEntries(result.bytes);
+  const documentXml = new TextDecoder().decode(entries.get('word/document.xml'));
+  const footnotesXml = new TextDecoder().decode(entries.get('word/footnotes.xml'));
+  const endnotesXml = new TextDecoder().decode(entries.get('word/endnotes.xml'));
+  const relationshipsXml = new TextDecoder().decode(entries.get('word/_rels/document.xml.rels'));
+  const contentTypesXml = new TextDecoder().decode(entries.get('[Content_Types].xml'));
+
+  assert.match(documentXml, /Before <\/w:t><\/w:r><w:r><w:footnoteReference w:id="1"\/><\/w:r><w:r><w:t xml:space="preserve"> between <\/w:t>/);
+  assert.match(documentXml, /w:endnoteReference w:id="1"/);
+  assert.match(footnotesXml, /w:footnote w:id="1"/);
+  assert.match(footnotesXml, /A default footnote &amp; its text\./);
+  assert.match(endnotesXml, /w:endnote w:id="1"/);
+  assert.match(endnotesXml, /An explicit endnote\./);
+  assert.match(relationshipsXml, /relationships\/footnotes" Target="footnotes\.xml"/);
+  assert.match(relationshipsXml, /relationships\/endnotes" Target="endnotes\.xml"/);
+  assert.match(contentTypesXml, /word\/footnotes\.xml/);
+  assert.match(contentTypesXml, /word\/endnotes\.xml/);
+  assert.doesNotMatch(footnotesXml + endnotesXml, /Review comment/);
+  assert.doesNotMatch(documentXml, /A default footnote|An explicit endnote/);
+  assert.match(documentXml, /Orphaned note content is retained\./);
+  assert.match(result.warnings.join('\n'), /no inline anchor/);
+});
+
 function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {
   const entries = new Map<string, Uint8Array>();
   const decoder = new TextDecoder();
