@@ -9,6 +9,9 @@ export interface CollaborationPanelCopy {
   awaitingAcceptance: string;
   invitationSent: string;
   invitationEmailFailed: string;
+}
+
+interface CollaborationPanelActionCopy {
   startSharedEditing: string;
   starting: string;
 }
@@ -24,8 +27,6 @@ const english: CollaborationPanelCopy = {
   awaitingAcceptance: 'awaiting acceptance',
   invitationSent: 'Invitation sent. The invited author must accept it before joining.',
   invitationEmailFailed: 'Invitation added to the Studio inbox, but the notification email could not be sent.',
-  startSharedEditing: 'Start shared editing',
-  starting: 'Starting…',
 };
 
 const copyByLocale: Record<string, CollaborationPanelCopy> = {
@@ -78,7 +79,7 @@ const copyByLocale: Record<string, CollaborationPanelCopy> = {
   zu: { title: 'Ukusebenzisana bukhoma', connected: 'Kuxhunyiwe', connecting: 'Kuyaxhuma', inviteAuthor: 'Mema umbhali', emailAddress: 'Ikheli le-imeyili', sendInvitation: 'Thumela isimemo', cancel: 'Khansela', awaitingAcceptance: 'kulindwe ukwamukelwa', invitationSent: 'Isimemo sithunyelwe. Umbhali omenyiwe kufanele asamukele ngaphambi kokujoyina.', invitationEmailFailed: 'Isimemo sifakwe ebhokisini lokungenayo le-Studio, kodwa i-imeyili yesaziso ayikwazanga ukuthunyelwa.' },
 };
 
-const actionCopyByLocale: Record<string, Pick<CollaborationPanelCopy, 'startSharedEditing' | 'starting'>> = {
+const actionCopyByLocale: Record<string, CollaborationPanelActionCopy> = {
   af: { startSharedEditing: 'Begin gedeelde redigering', starting: 'Begin tans…' },
   am: { startSharedEditing: 'የጋራ አርትዖትን ጀምር', starting: 'በመጀመር ላይ…' },
   bg: { startSharedEditing: 'Стартиране на съвместна редакция', starting: 'Стартиране…' },
@@ -128,7 +129,7 @@ const actionCopyByLocale: Record<string, Pick<CollaborationPanelCopy, 'startShar
   en: { startSharedEditing: 'Start shared editing', starting: 'Starting…' },
 };
 
-export function getCollaborationPanelCopy(locale: string): CollaborationPanelCopy {
+export function getCollaborationPanelCopy(locale: string): CollaborationPanelCopy & CollaborationPanelActionCopy {
   const copy = copyByLocale[locale] ?? english;
   return { ...copy, ...(actionCopyByLocale[locale] ?? actionCopyByLocale.en!) };
 }
