@@ -39,10 +39,9 @@ import { buildSlaExport } from '../services/exportSla';
 import { buildXtgExport } from '../services/exportXtg';
 import { buildOmiContainer } from '../services/omiContainer';
 import { savePublicationArtifactWithBuildSidecar } from '../services/publicationBuildSidecar';
-import { CustomExportPanel } from './CustomExportPanel';
 import { LongTaskStatus } from './LongTaskStatus';
 
-type ExportId = 'omi' | 'omi-json' | 'jats' | 'html' | 'docx' | 'idml' | 'xtg' | 'mif' | 'sla' | 'latex' | 'epub' | 'pdf' | 'custom';
+type ExportId = 'omi' | 'omi-json' | 'jats' | 'html' | 'docx' | 'idml' | 'xtg' | 'mif' | 'sla' | 'latex' | 'epub' | 'pdf';
 type ExportGroupId = 'portable' | 'publication';
 
 interface ExportFormatOption {
@@ -54,7 +53,7 @@ interface ExportFormatOption {
 }
 
 const MOBILE_EXPORT_IDS: ReadonlySet<ExportId> = new Set([
-  'omi', 'omi-json', 'jats', 'html', 'docx', 'latex', 'epub', 'pdf', 'custom',
+  'omi', 'omi-json', 'jats', 'html', 'docx', 'latex', 'epub', 'pdf',
 ]);
 
 export function ExportFormatsPanel() {
@@ -69,19 +68,12 @@ export function ExportFormatsPanel() {
   const [busy, setBusy] = useState<ExportId | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const customCopy = locale === 'hu'
-    ? { label: 'Egyéni export', description: 'Rendezhető, opcionális blokkokból összeállított DOCX, PDF vagy HTML kimenet.' }
-    : locale === 'de'
-      ? { label: 'Benutzerdefinierter Export', description: 'DOCX-, PDF- oder HTML-Ausgabe aus sortierbaren optionalen Blöcken.' }
-      : { label: 'Custom export', description: 'DOCX, PDF or HTML output built from reorderable optional blocks.' };
-
   const formats: ExportFormatOption[] = [
     { id: 'omi', group: 'portable', label: copy.omi, description: copy.omiDescription, extension: '.omi.zip' },
     { id: 'omi-json', group: 'portable', label: copy.omiJson, description: copy.omiJsonDescription, extension: '.omi.json' },
     { id: 'jats', group: 'publication', label: copy.jats, description: copy.jatsDescription, extension: '.xml' },
     { id: 'html', group: 'publication', label: copy.html, description: copy.htmlDescription, extension: '.html.zip' },
     { id: 'docx', group: 'publication', label: copy.docx, description: copy.docxDescription, extension: '.docx' },
-    { id: 'custom', group: 'publication', label: customCopy.label, description: customCopy.description, extension: 'DOCX / PDF / HTML' },
     { id: 'idml', group: 'publication', label: copy.idml, description: copy.idmlDescription, extension: '.idml' },
     { id: 'xtg', group: 'publication', label: copy.xtg, description: copy.xtgDescription, extension: '.xtg' },
     { id: 'mif', group: 'publication', label: copy.mif, description: copy.mifDescription, extension: '.mif' },
@@ -110,7 +102,7 @@ export function ExportFormatsPanel() {
     setNotice(delivery.path ? `${copy.saved} ${delivery.path}` : copy.saved);
   };
 
-  const run = async (id: Exclude<ExportId, 'custom'>): Promise<void> => {
+  const run = async (id: ExportId): Promise<void> => {
     if (mobile && !MOBILE_EXPORT_IDS.has(id)) return;
     setError('');
     setNotice('');
@@ -263,9 +255,7 @@ export function ExportFormatsPanel() {
       {selectedFormat ? <div className="studio-settings-hint"><strong>{selectedFormat.label}</strong><p>{selectedFormat.description}</p></div> : null}
       {selectedId === 'pdf' ? <div className="studio-settings-hint" data-pdf-content={pdfContentMode}><strong>{pdfContentLabel}</strong><p>{pdfContentDescription}</p></div> : null}
       {selectedId === 'pdf' ? <div className="studio-settings-hint" data-pdf-mode={pdfMode}><strong>{pdfModeLabel}</strong><p>{pdfModeDescription} {copy.pdfHint}</p></div> : null}
-      {selectedId === 'custom' ? <CustomExportPanel /> : (
-        <div className="studio-tool-actions"><button type="button" className="studio-menu-primary-action" disabled={!selectedId || busy !== null} onClick={() => { if (selectedId) void run(selectedId); }}>{busy ? copy.preparing : copy.export}</button></div>
-      )}
+      <div className="studio-tool-actions"><button type="button" className="studio-menu-primary-action" disabled={!selectedId || busy !== null} onClick={() => { if (selectedId) void run(selectedId); }}>{busy ? copy.preparing : copy.export}</button></div>
       {busy ? <LongTaskStatus message={busyFormat ? `${busyFormat.label} — ${copy.preparing}` : copy.preparing} /> : null}
       {notice ? <p className="studio-settings-hint" role="status">{notice}</p> : null}
       {error ? <div className="studio-export-error" role="alert">{error}</div> : null}

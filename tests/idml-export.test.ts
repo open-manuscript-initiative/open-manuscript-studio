@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { DOMParser as XmlParser } from '@xmldom/xmldom';
+
 import { buildIdmlExport, IDML_MEDIA_TYPE } from '../src/services/exportIdml.ts';
 import type { PublicationStyle } from '../src/services/publicationStyleExport.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
@@ -48,6 +50,7 @@ test('builds an IDML package with paragraph and character styles', () => {
 
   const styles = new TextDecoder().decode(entries.get('Resources/Styles.xml'));
   assert.match(styles, /Name="OMI Emphasis"/);
+  assert.match(styles, /<ParagraphStyle Self="ParagraphStyle\/OMI Title"[^>]*><Properties><AppliedFont type="string">Times New Roman<\/AppliedFont><FontStyle type="string">Bold<\/FontStyle><\/Properties><\/ParagraphStyle>/);
   assert.match(styles, /Name="OMI Strong"/);
   assert.match(styles, /Name="OMI Small Caps"/);
   assert.match(styles, /Name="OMI Author Given Name"/);
@@ -57,6 +60,42 @@ test('builds an IDML package with paragraph and character styles', () => {
   assert.match(spread, /ParentStory="u3"/);
 });
 
+
+test('IDML package follows the InDesign UCF and design-map structure', () => {
+  const result = buildIdmlExport(createVersionedTestManuscript());
+  const entries = readStoreZipEntries(result.bytes);
+  const names = [...entries.keys()];
+
+  assert.equal(names[0], 'mimetype');
+  assert.equal(
+    new DataView(result.bytes.buffer, result.bytes.byteOffset, result.bytes.byteLength).getUint16(8, true),
+    0,
+    'the leading UCF mimetype entry must be stored without compression',
+  );
+  assert.equal(new TextDecoder().decode(entries.get('mimetype')), IDML_MEDIA_TYPE);
+
+  const designMap = new TextDecoder().decode(entries.get('designmap.xml'));
+  assert.ok(designMap.includes('<?aid style="50" type="document" readerVersion="6.0" featureSet="257" product="8.0(0)"?>'));
+  assert.ok(designMap.includes('<Document xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="8.0" Self="d" StoryList="u3"'));
+  assert.ok(designMap.includes('<idPkg:Preferences src="Resources/Preferences.xml"/>'));
+  assert.doesNotMatch(designMap, /<idPkg:DesignMap|<idPkg:Properties/);
+
+  const references = [...designMap.matchAll(/\bsrc="([^"]+)"/g)].map((match) => match[1]);
+  for (const reference of references) {
+    assert.equal(entries.has(reference), true, `designmap reference must exist: ${reference}`);
+  }
+
+  for (const [name, bytes] of entries) {
+    if (!name.endsWith('.xml')) continue;
+    const xml = new TextDecoder().decode(bytes);
+    const document = new XmlParser({
+      onError: (_level, message) => {
+        throw new Error(`${name}: ${message}`);
+      },
+    }).parseFromString(xml, 'application/xml');
+    assert.ok(document.documentElement, `${name} must have an XML root element`);
+  }
+});
 
 test('exports assigned Studio paragraph styles as real IDML paragraph styles', () => {
   const manuscript = createVersionedTestManuscript();

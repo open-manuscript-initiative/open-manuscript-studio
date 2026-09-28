@@ -97,15 +97,16 @@ export function buildIdmlExport(
   const layerId = 'u1';
 
   const designMap = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<idPkg:DesignMap xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}" Self="d">
-  <idPkg:Properties src="Resources/Preferences.xml"/>
+<?aid style="50" type="document" readerVersion="6.0" featureSet="257" product="8.0(0)"?>
+<Document xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}" Self="d" StoryList="${storyId}" Name="${xml(fileStem(manuscript))}.indd" ActiveLayer="${layerId}" ZeroPoint="0 0">
+  <idPkg:Graphic src="Resources/Graphic.xml"/>
   <idPkg:Fonts src="Resources/Fonts.xml"/>
   <idPkg:Styles src="Resources/Styles.xml"/>
-  <idPkg:Graphic src="Resources/Graphic.xml"/>
+  <idPkg:Preferences src="Resources/Preferences.xml"/>
   <Layer Self="${layerId}" Name="OMI Content" Visible="true" Locked="false" IgnoreWrap="false" ShowGuides="true" LockGuides="false" UI="true" Expendable="true" Printable="true"/>
   <idPkg:Spread src="Spreads/Spread_${spreadId}.xml"/>
   <idPkg:Story src="Stories/Story_${storyId}.xml"/>
-</idPkg:DesignMap>`;
+</Document>`;
 
   const storyXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <idPkg:Story xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}">
@@ -483,7 +484,7 @@ function characterStyle(name: string, fontStyle?: string, attributes?: string, f
 }
 
 function style(name: string, size: number, bold: boolean, justification: string, spaceBefore: number, spaceAfter: number): string {
-  return `<ParagraphStyle Self="ParagraphStyle/${xml(name)}" Name="${xml(name)}" BasedOn="ParagraphStyle/$ID/[No paragraph style]" NextStyle="ParagraphStyle/OMI Body" PointSize="${size}" Leading="Auto" Justification="${justification}" SpaceBefore="${spaceBefore}" SpaceAfter="${spaceAfter}"><Properties><AppliedFont type="string">Times New Roman</AppliedFont></Properties>${bold ? '<Properties><FontStyle type="string">Bold</FontStyle></Properties>' : ''}</ParagraphStyle>`;
+  return `<ParagraphStyle Self="ParagraphStyle/${xml(name)}" Name="${xml(name)}" BasedOn="ParagraphStyle/$ID/[No paragraph style]" NextStyle="ParagraphStyle/OMI Body" PointSize="${size}" Leading="Auto" Justification="${justification}" SpaceBefore="${spaceBefore}" SpaceAfter="${spaceAfter}"><Properties><AppliedFont type="string">Times New Roman</AppliedFont>${bold ? '<FontStyle type="string">Bold</FontStyle>' : ''}</Properties></ParagraphStyle>`;
 }
 
 function styledParagraph(value: string, styleName: string): string {
