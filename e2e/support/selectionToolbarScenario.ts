@@ -14,17 +14,30 @@ export function selectionToolbarScenario(): void {
     const select = async (start: number, end: number) => {
       await editor.evaluate((element, { start, end }) => {
         const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-        let text: Node | null = null;
+        const textNodes: Text[] = [];
+        let fullText = '';
         while (walker.nextNode()) {
-          if (walker.currentNode.textContent?.includes('Select these words')) {
-            text = walker.currentNode;
-            break;
-          }
+          const textNode = walker.currentNode as Text;
+          textNodes.push(textNode);
+          fullText += textNode.data;
         }
-        if (!text) throw new Error('Fixture text is missing');
+        const fixtureStart = fullText.indexOf('Select these words');
+        if (fixtureStart < 0) throw new Error('Fixture text is missing');
+        const pointAt = (absoluteOffset: number): [Text, number] => {
+          let remaining = absoluteOffset;
+          for (const textNode of textNodes) {
+            if (remaining <= textNode.length) return [textNode, remaining];
+            remaining -= textNode.length;
+          }
+          const lastTextNode = textNodes.at(-1);
+          if (!lastTextNode) throw new Error('Fixture text is missing');
+          return [lastTextNode, lastTextNode.length];
+        };
+        const [startNode, startOffset] = pointAt(fixtureStart + start);
+        const [endNode, endOffset] = pointAt(fixtureStart + end);
         const range = document.createRange();
-        range.setStart(text, start);
-        range.setEnd(text, end);
+        range.setStart(startNode, startOffset);
+        range.setEnd(endNode, endOffset);
         const selection = document.getSelection()!;
         selection.removeAllRanges();
         selection.addRange(range);
