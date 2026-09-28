@@ -1,9 +1,13 @@
 import {
   extractOmiInlineRuns,
+  inlineLanguageFromMarks,
+  semanticKindsFromMarks,
   type OmiInlineRun,
   type OmiInlineSemanticKind,
 } from '../model/inlineSemantics';
 import type { OmiIndexEntry } from '../model/indexing';
+import { getNoteKind, isNoteAnnotation } from '../model/notes';
+import { createNoteBodyDocument, type NoteJsonNode } from '../model/noteRichText';
 import { contributorNameParts } from '../model/contributorName';
 import { buildPublicationRenderingContext, type OmiRenderedContributor } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
@@ -32,6 +36,13 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   const warnings: string[] = [];
   const body: string[] = [];
   const indexEntriesByBlock = collectIndexEntriesByBlock(manuscript.indexEntries ?? []);
+  const annotationsById = new Map(
+    manuscript.annotations.filter(isNoteAnnotation).map((annotation) => [annotation.id, annotation]),
+  );
+  const footnotes: Array<{ id: number; body: string }> = [];
+  const endnotes: Array<{ id: number; body: string }> = [];
+  const noteReferenceIds = { footnote: new Map<string, number>(), endnote: new Map<string, number>() };
+  const referencedNoteIds = new Set<string>();
 
   body.push(paragraph(context.title, 'Title'));
   if (context.subtitle) body.push(paragraph(context.subtitle, 'Subtitle'));
@@ -59,8 +70,31 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
           warnings.push(`Structured ${block.visual.kind} object ${block.id} was exported as descriptive text in DOCX.`);
           continue;
         }
-        const runs = extractOmiInlineRuns(block.content);
-        if (runs.length) body.push(richParagraph(runs, indexFields));
+        const rendered = renderWordContent(block.content, (noteId) => {
+          const note = annotationsById.get(noteId);
+          if (!note) {
+            warnings.push(`DOCX note anchor ${noteId} has no matching OMI note.`);
+            return undefined;
+          }
+          const kind = getNoteKind(note) === 'endnote' ? 'endnote' : 'footnote';
+          let id = noteReferenceIds[kind].get(noteId);
+          if (id === undefined) {
+            id = noteReferenceIds[kind].size + 1;
+            noteReferenceIds[kind].set(noteId, id);
+            referencedNoteIds.add(noteId);
+            const noteDocument = createNoteBodyDocument(
+              note,
+              manuscript.bibliographicRecords ?? [],
+              manuscript.citationStyle ?? 'apa-7',
+              manuscript.locale,
+            );
+            const noteBody = renderJsonContent(noteDocument);
+            const target = kind === 'footnote' ? footnotes : endnotes;
+            target.push({ id, body: noteBody });
+          }
+          return { kind, id };
+        });
+        if (rendered) body.push(richParagraph(rendered, indexFields));
         else {
           const text = blockPlainText(block);
           if (text || indexFields) body.push(paragraph(text, undefined, indexFields));
@@ -71,9 +105,13 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
   };
   renderSections(context.sections);
 
-  if (manuscript.annotations.length) {
-    body.push(paragraph(localizedLabel(context.locale, 'notes'), 'Heading1'));
-    manuscript.annotations.forEach((note, index) => {
+  const unanchoredNotes = manuscript.annotations.filter(
+    (annotation) => isNoteAnnotation(annotation) && !referencedNoteIds.has(annotation.id),
+  );
+  if (unanchoredNotes.length) {
+    warnings.push(`${unanchoredNotes.length} OMI note(s) have no inline anchor and were omitted from DOCX notes.`);
+    body.push(paragraph(localizedLabel(context.locale, 'unanchoredNotes'), 'Heading1'));
+    unanchoredNotes.forEach((note, index) => {
       body.push(paragraph(`${index + 1}. ${note.body}`));
     });
   }
@@ -92,6 +130,8 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
 <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
 <w:style w:type="character" w:default="1" w:styleId="DefaultParagraphFont"><w:name w:val="Default Paragraph Font"/><w:uiPriority w:val="1"/><w:semiHidden/><w:unhideWhenUsed/></w:style>
 ${style('Title', 'Title', 32, true)}${style('Subtitle', 'Subtitle', 24, false)}${style('Author', 'Author', 22, false)}
+${noteParagraphStyle('FootnoteText', 'footnote text')}${noteParagraphStyle('EndnoteText', 'endnote text')}
+${characterStyle('FootnoteReference', 'footnote reference', '<w:vertAlign w:val="superscript"/>')}${characterStyle('EndnoteReference', 'endnote reference', '<w:vertAlign w:val="superscript"/>')}
 ${[1,2,3,4,5,6].map((level) => headingStyle(level)).join('')}
 ${characterStylesXml()}
 </w:styles>`;
@@ -103,13 +143,15 @@ ${characterStylesXml()}
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xml(context.title)}</dc:title><dc:language>${xml(context.locale)}</dc:language><cp:lastModifiedBy>Open Manuscript Studio</cp:lastModifiedBy><dcterms:modified xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:modified></cp:coreProperties>`;
 
   const entries = [
-    textZipEntry('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`),
+    textZipEntry('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>${footnotes.length ? '<Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>' : ''}${endnotes.length ? '<Override PartName="/word/endnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml"/>' : ''}</Types>`),
     textZipEntry('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`),
-    textZipEntry('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/></Relationships>`),
+    textZipEntry('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>${footnotes.length ? '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>' : ''}${endnotes.length ? `<Relationship Id="rId${footnotes.length ? 4 : 3}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes" Target="endnotes.xml"/>` : ''}</Relationships>`),
     textZipEntry('word/document.xml', documentXml),
     textZipEntry('word/styles.xml', stylesXml),
     textZipEntry('word/settings.xml', settingsXml),
     textZipEntry('docProps/core.xml', core),
+    ...(footnotes.length ? [textZipEntry('word/footnotes.xml', renderWordNotes('footnote', footnotes))] : []),
+    ...(endnotes.length ? [textZipEntry('word/endnotes.xml', renderWordNotes('endnote', endnotes))] : []),
   ];
   const bytes = createStoreZip(entries);
   const copy = bytes.slice();
@@ -153,9 +195,83 @@ function wordStyledText(value: string, styleId?: string): string {
   return `<w:r>${rPr}<w:t xml:space="preserve">${xml(value)}</w:t></w:r>`;
 }
 
-function richParagraph(runs: readonly OmiInlineRun[], suffix = ''): string {
-  const rendered = runs.map(wordRun).join('');
+function richParagraph(runs: readonly WordInlinePart[], suffix = ''): string {
+  const rendered = runs.map((run) => 'kind' in run ? wordNoteReference(run.kind, run.id) : wordRun(run)).join('');
   return `<w:p>${rendered}${suffix}</w:p>`;
+}
+
+type WordNoteKind = 'footnote' | 'endnote';
+type WordInlinePart = OmiInlineRun | { kind: WordNoteKind; id: number };
+type WordNoteReference = { kind: WordNoteKind; id: number };
+
+function wordNoteReference(kind: WordNoteKind, id: number): string {
+  const element = kind === 'footnote' ? 'footnoteReference' : 'endnoteReference';
+  return `<w:r><w:${element} w:id="${id}"/></w:r>`;
+}
+
+function renderWordContent(
+  content: string,
+  resolveNote: (noteId: string) => WordNoteReference | undefined,
+): WordInlinePart[] {
+  try {
+    const runs = renderJsonNode(JSON.parse(content) as NoteJsonNode, resolveNote);
+    const last = runs.at(-1);
+    if (last && !('kind' in last) && last.text === '\n') runs.pop();
+    return runs;
+  } catch {
+    return extractOmiInlineRuns(content);
+  }
+}
+
+function renderJsonContent(document: NoteJsonNode): string {
+  const runs = renderJsonNode(document);
+  const last = runs.at(-1);
+  if (last && !('kind' in last) && last.text === '\n') runs.pop();
+  return runs.map((run) => 'kind' in run ? '' : wordRun(run)).join('');
+}
+
+function renderJsonNode(
+  node: NoteJsonNode,
+  resolveNote?: (noteId: string) => WordNoteReference | undefined,
+): WordInlinePart[] {
+  if (typeof node.text === 'string') {
+    return [{
+      text: node.text,
+      semantics: semanticKindsFromMarks(node.marks),
+      language: inlineLanguageFromMarks(node.marks),
+    }];
+  }
+  if (node.type === 'hardBreak') return [{ text: '\n', semantics: [] }];
+  if (node.type === 'omiTab') return [{ text: '\t', semantics: [] }];
+  if (node.type === 'omiNote') {
+    const id = node.attrs?.noteId;
+    const reference = typeof id === 'string' ? resolveNote?.(id) : undefined;
+    if (reference) return [reference];
+    const label = node.attrs?.label;
+    return typeof label === 'string' ? [{ text: label, semantics: [] }] : [];
+  }
+  if (node.type === 'omiCitation' || node.type === 'omiCrossReference') {
+    const label = node.attrs?.label;
+    return typeof label === 'string' ? [{ text: label, semantics: [] }] : [];
+  }
+  const children = (node.content ?? []).flatMap((child) => renderJsonNode(child, resolveNote));
+  if ((node.type === 'paragraph' || node.type === 'blockquote' || node.type === 'codeBlock') && children.length) {
+    children.push({ text: '\n', semantics: [] });
+  }
+  return children;
+}
+
+function renderWordNotes(kind: WordNoteKind, notes: readonly { id: number; body: string }[]): string {
+  const root = kind === 'footnote' ? 'footnotes' : 'endnotes';
+  const item = kind === 'footnote' ? 'footnote' : 'endnote';
+  const reference = kind === 'footnote' ? 'footnoteRef' : 'endnoteRef';
+  const separator = kind === 'footnote' ? 'footnote' : 'endnote';
+  const notesXml = notes.map((note) => `<w:${item} w:id="${note.id}"><w:p><w:pPr><w:pStyle w:val="${kind === 'footnote' ? 'FootnoteText' : 'EndnoteText'}"/></w:pPr><w:r><w:rPr><w:rStyle w:val="${kind === 'footnote' ? 'FootnoteReference' : 'EndnoteReference'}"/></w:rPr><w:${reference}/></w:r>${note.body}</w:p></w:${item}>`).join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:${root} xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:${separator} w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:${separator}><w:${separator} w:type="continuationSeparator" w:id="0"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:${separator}>${notesXml}</w:${root}>`;
+}
+
+function noteParagraphStyle(id: string, name: string): string {
+  return `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>`;
 }
 
 function wordRun(run: OmiInlineRun): string {
@@ -272,13 +388,13 @@ function blockPlainText(block: OmiBlock): string {
   return block.content.trim();
 }
 
-function localizedLabel(locale: string, key: 'abstract' | 'keywords' | 'notes'): string {
+function localizedLabel(locale: string, key: 'abstract' | 'keywords' | 'notes' | 'unanchoredNotes'): string {
   const language = locale.toLowerCase().split(/[-_]/)[0];
   const labels = language === 'hu'
-    ? { abstract: 'Absztrakt', keywords: 'Kulcsszavak', notes: 'Jegyzetek' }
+    ? { abstract: 'Absztrakt', keywords: 'Kulcsszavak', notes: 'Jegyzetek', unanchoredNotes: 'Horgony nélküli jegyzetek' }
     : language === 'de'
-      ? { abstract: 'Zusammenfassung', keywords: 'Schlüsselwörter', notes: 'Anmerkungen' }
-      : { abstract: 'Abstract', keywords: 'Keywords', notes: 'Notes' };
+      ? { abstract: 'Zusammenfassung', keywords: 'Schlüsselwörter', notes: 'Anmerkungen', unanchoredNotes: 'Nicht verankerte Anmerkungen' }
+      : { abstract: 'Abstract', keywords: 'Keywords', notes: 'Notes', unanchoredNotes: 'Unanchored notes' };
   return labels[key];
 }
 
