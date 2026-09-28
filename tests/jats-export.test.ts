@@ -7,6 +7,7 @@ import {
   renderJatsArticle,
   validateJatsStructure,
 } from '../src/services/exportJats.ts';
+import { validateJats4rProfile } from '../src/services/jats4rProfileValidator.ts';
 import { createTestManuscript } from './testManuscriptFixture.ts';
 
 test('renders deterministic JATS 1.4 authoring XML with title block and traceability metadata', () => {
@@ -270,6 +271,32 @@ test('structural validation rejects duplicate ids and unresolved rid targets', (
       (diagnostic) => diagnostic.code === 'unresolved-jats-rid',
     ),
     true,
+  );
+});
+
+test('bare URI link text receives a useful JATS title for accessibility', () => {
+  const manuscript = createTestManuscript();
+  const block = manuscript.sections[0]?.blocks[0];
+  assert.ok(block);
+  block.content = JSON.stringify({
+    type: 'doc',
+    content: [{
+      type: 'paragraph',
+      content: [{
+        type: 'text',
+        text: 'https://example.org/resource',
+        marks: [{ type: 'omiLink', attrs: { href: 'https://example.org/resource' } }],
+      }],
+    }],
+  });
+
+  const result = renderJatsArticle(manuscript);
+  assert.match(result.xml, /xlink:title="External link to example\.org"/);
+  assert.equal(
+    validateJats4rProfile(result.xml).diagnostics.some(
+      (item) => item.code === 'accessibility.descriptive-link' && item.severity === 'error',
+    ),
+    false,
   );
 });
 

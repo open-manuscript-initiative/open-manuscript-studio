@@ -3,6 +3,7 @@ import {
   OMI_JATS_CONFORMANCE_TAG_SET,
   OMI_JATS_CONFORMANCE_VERSION,
 } from '../model/jatsConformance';
+import { assetPath } from '../model/assets';
 import {
   collectCrossReferenceTargets,
   formatCrossReferenceLabel,
@@ -31,6 +32,7 @@ import type {
   OmiCrossReference,
   OmiManuscript,
 } from '../types/omi';
+import type { OmiAsset } from '../types/assets';
 
 export const OMI_JATS_RENDERER_VERSION =
   OMI_JATS_CONFORMANCE_RENDERER_VERSION;
@@ -73,6 +75,7 @@ interface RenderState {
   recordMap: Map<string, OmiBibliographicRecord>;
   annotationMap: Map<string, OmiAnnotation>;
   noteLabels: Map<string, string>;
+  assetMap: Map<string, OmiAsset>;
 }
 
 /**
@@ -127,6 +130,7 @@ export function renderJatsArticle(
       manuscript.annotations.map((annotation) => [annotation.id, annotation]),
     ),
     noteLabels: collectNoteLabels(manuscript),
+    assetMap: new Map((manuscript.assets ?? []).map((asset) => [asset.id, asset])),
   };
 
   const xml = [
@@ -519,6 +523,7 @@ function renderInlineNode(node: JsonNode, state: RenderState): string {
         escapeXml(node.text ?? ''),
         node.marks ?? [],
         state,
+        node.text ?? '',
       );
     case 'hardBreak':
       return '\n';
@@ -539,6 +544,7 @@ function applyMarks(
   input: string,
   marks: readonly { type?: string; attrs?: Record<string, unknown> }[],
   state: RenderState,
+  plainText: string,
 ): string {
   let output = input;
 
@@ -576,7 +582,10 @@ function applyMarks(
       case 'omiLink': {
         const href = stringAttr(mark.attrs, 'href');
         if (href && /^(https?:|mailto:)/i.test(href)) {
-          output = `<ext-link ext-link-type="uri" xlink:href="${escapeAttribute(href)}">${output}</ext-link>`;
+          const title = bareLinkTitle(plainText, href);
+          output = `<ext-link ext-link-type="uri" xlink:href="${escapeAttribute(href)}"${
+            title ? ` xlink:title="${escapeAttribute(title)}"` : ''
+          }>${output}</ext-link>`;
         }
         break;
       }
@@ -689,20 +698,20 @@ function renderImage(block: OmiBlock, state: RenderState): string {
   const target = state.targetMap.get(block.id);
   const label = target ? objectLabel(target, state) : '';
   const caption = block.visual.caption?.trim();
-  const graphic = `<graphic xlink:href="${escapeAttribute(block.visual.src)}" mimetype="image"${mimeSubtypeAttribute(block.visual.mediaType)}>${
-    block.visual.alt.trim()
-      ? `<alt-text>${escapeXml(block.visual.alt.trim())}</alt-text>`
-      : ''
-  }</graphic>`;
+  const asset = block.visual.assetId
+    ? state.assetMap.get(block.visual.assetId)
+    : undefined;
+  const source = asset ? assetPath(asset) : block.visual.src.trim();
+  const graphic = `<graphic xlink:href="${escapeAttribute(source)}" mimetype="image"${mimeSubtypeAttribute(block.visual.mediaType)}/>`;
 
-  if (!block.visual.src.trim()) {
+  if (!source) {
     state.diagnostics.push({
       code: 'missing-image-source',
       severity: 'warning',
       message: 'Image has no portable graphic reference for JATS publication.',
       targetId: block.id,
     });
-  } else if (block.visual.src.startsWith('data:')) {
+  } else if (source.startsWith('data:')) {
     state.diagnostics.push({
       code: 'embedded-image-data-uri',
       severity: 'warning',
@@ -711,9 +720,29 @@ function renderImage(block: OmiBlock, state: RenderState): string {
     });
   }
 
-  return `<fig id="${xmlId('fig', block.id)}">${
-    label ? `<label>${escapeXml(label)}</label>` : ''
-  }${caption ? `<caption><p>${escapeXml(caption)}</p></caption>` : ''}${graphic}</fig>`;
+  const alt = block.visual.alt.trim()
+    ? `<alt-text>${escapeXml(block.visual.alt.trim())}</alt-text>`
+    : '';
+  const figureCaption = caption || label
+    ? `<caption>${label ? `<title>${escapeXml(label)}</title>` : ''}${
+        caption ? `<p>${escapeXml(caption)}</p>` : ''
+      }</caption>`
+    : '';
+
+  return `<fig id="${xmlId('fig', block.id)}">${figureCaption}${alt}${graphic}</fig>`;
+}
+
+function bareLinkTitle(text: string, href: string): string {
+  const visibleText = text.trim();
+  const isUriText = /^https?:\/\/|^s?ftp:\/\//i.test(visibleText);
+  if (visibleText && visibleText !== href && !isUriText) return '';
+
+  try {
+    const host = new URL(href).hostname;
+    return host ? `External link to ${host}` : 'External link';
+  } catch {
+    return 'External link';
+  }
 }
 
 function renderChart(block: OmiBlock, state: RenderState): string {

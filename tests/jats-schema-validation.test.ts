@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { renderJatsArticle } from '../src/services/exportJats.ts';
+import { buildJatsPackage } from '../src/services/exportJatsPackage.ts';
+import { validateJats4rProfile } from '../src/services/jats4rProfileValidator.ts';
 import {
   JATS_VALIDATION_DTD_FILE,
   validateJats14ArticleAuthoring,
@@ -49,6 +51,47 @@ test('JATS4R-oriented permissions remain valid against the pinned DTD', async ()
     true,
     validation.diagnostics.map((item) => item.message).join('\n'),
   );
+});
+
+test('JATS package externalizes image data and validates accessible figure markup', async () => {
+  const manuscript = createVersionedTestManuscript();
+  const block = manuscript.sections[0]?.blocks[0];
+  assert.ok(block);
+  block.type = 'figure';
+  block.visual = {
+    kind: 'image',
+    src: 'data:image/png;base64,aGVsbG8=',
+    mediaType: 'image/png',
+    fileName: 'figure.png',
+    alt: 'A sample figure',
+    caption: 'Sample caption',
+  };
+
+  const packaged = await buildJatsPackage(manuscript);
+  assert.equal(packaged.validForExport, true, packaged.diagnostics.map((item) => item.message).join('\n'));
+  assert.match(packaged.fileName, /\.jats\.zip$/);
+  assert.match(packaged.xml, /<caption><title>Figure 1<\/title><p>Sample caption<\/p><\/caption>/);
+  assert.match(packaged.xml, /<alt-text>A sample figure<\/alt-text><graphic xlink:href="media\/images\//);
+  assert.doesNotMatch(packaged.xml, /data:image\/png/);
+  assert.match(packaged.xml, /mimetype="image" mime-subtype="png"\/>/);
+  const archiveText = new TextDecoder().decode(await packaged.blob.arrayBuffer());
+  assert.match(archiveText, /media\/images\/[a-z0-9-]+-figure\.png/);
+  assert.ok(archiveText.includes('hello'), 'image bytes are included in the package');
+  assert.equal(manuscript.sections[0]?.blocks[0]?.visual?.kind === 'image'
+    ? manuscript.sections[0].blocks[0].visual.src
+    : '', 'data:image/png;base64,aGVsbG8=');
+
+  const profile = validateJats4rProfile(packaged.xml);
+  assert.equal(profile.valid, true, profile.diagnostics.map((item) => item.message).join('\n'));
+  const validation = await validateJats14ArticleAuthoring(packaged.xml);
+  assert.equal(validation.valid, true, validation.diagnostics.map((item) => item.message).join('\n'));
+});
+
+test('JATS export remains a standalone XML file when it has no image assets', async () => {
+  const result = await buildJatsPackage(createVersionedTestManuscript());
+  assert.equal(result.mediaType, 'application/xml');
+  assert.match(result.fileName, /\.jats\.xml$/);
+  assert.equal(await result.blob.text(), result.xml);
 });
 
 test('conformance-matrix stable rich-text constructs remain valid against the pinned DTD', async () => {

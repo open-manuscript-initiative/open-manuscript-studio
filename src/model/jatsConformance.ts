@@ -199,10 +199,10 @@ export const OMI_JATS_CONFORMANCE_MATRIX: readonly JatsConformanceCapability[] =
     id: 'objects.figures',
     area: 'objects',
     omi: 'Image block with caption and alt text',
-    jats: 'fig/caption/graphic/alt-text',
+    jats: 'fig/caption/alt-text/graphic + packaged media asset',
     status: 'conditional',
     releaseGate: 'blocks-on-use',
-    notes: 'A release-quality JATS figure requires a non-empty portable graphic reference; data URIs remain exportable previews but are not release-quality interchange.',
+    notes: 'JATS packages externalize embedded image data into integrity-checked media files and retain figure alt text in the Article Authoring content model.',
     blockingDiagnostics: [
       'missing-image-source',
       'embedded-image-data-uri',
