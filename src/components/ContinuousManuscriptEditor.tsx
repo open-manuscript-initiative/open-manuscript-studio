@@ -34,6 +34,7 @@ import {
   shouldProgressivelyMountStudyEditors,
 } from '../editor/progressiveStudyMounting';
 import { useTranslation } from '../i18n';
+import { getCollaborationPanelCopy } from '../i18n/collaborationPanel';
 import { useAuthStore, getCurrentUser } from '../store/authStore';
 import {
   collectStudyNoteOverview,
@@ -286,6 +287,7 @@ function ProgressiveStudyEditor({
 
 export function ContinuousManuscriptEditor() {
   const { locale } = useTranslation();
+  const collaborationCopy = getCollaborationPanelCopy(locale);
   const copy = getStudyEditorCopy(locale);
   const currentUser = useAuthStore(getCurrentUser);
   const manuscript = useStudioStore((state) => state.manuscript);
@@ -363,6 +365,7 @@ export function ContinuousManuscriptEditor() {
   const [collaborationConnected, setCollaborationConnected] = useState(false);
   const [collaborationParticipants, setCollaborationParticipants] = useState(0);
   const [collaboratorEmail, setCollaboratorEmail] = useState('');
+  const [showCollaborationInvite, setShowCollaborationInvite] = useState(true);
   const [collaborationBusy, setCollaborationBusy] = useState(false);
   const [collaborationRefresh, setCollaborationRefresh] = useState(0);
 
@@ -473,8 +476,8 @@ export function ContinuousManuscriptEditor() {
       setCollaboratorEmail('');
       setCollaborationAccess(await getCollaborationAccess(manuscript.id));
       setCollaborationStatus(emailSent
-        ? 'Invitation sent. The invited author must accept it before joining.'
-        : 'Invitation added to the Studio inbox, but the notification email could not be sent.');
+        ? collaborationCopy.invitationSent
+        : collaborationCopy.invitationEmailFailed);
     } catch (error) {
       setCollaborationStatus(error instanceof Error ? error.message : String(error));
     } finally {
@@ -530,12 +533,12 @@ export function ContinuousManuscriptEditor() {
   return (
     <>
       {collaborationEnabled ? (
-        <aside className="omi-collaboration-panel" aria-label="Live collaboration">
+        <aside className="omi-collaboration-panel" aria-label={collaborationCopy.title}>
           <div className="omi-collaboration-panel__summary">
-            <strong>Live collaboration</strong>
+            <strong>{collaborationCopy.title}</strong>
             {collaborationSession ? (
               <span className={collaborationConnected ? 'is-connected' : ''}>
-                {collaborationConnected ? 'Connected' : 'Connecting'}
+                {collaborationConnected ? collaborationCopy.connected : collaborationCopy.connecting}
                 {collaborationConnected ? ` · ${collaborationParticipants} participant${collaborationParticipants === 1 ? '' : 's'}` : ''}
               </span>
             ) : null}
@@ -549,20 +552,42 @@ export function ContinuousManuscriptEditor() {
             member.userId === currentUser?.id && ['OWNER', 'EDITOR'].includes(member.role),
           ) ? (
             <div className="omi-collaboration-invite">
-              <label htmlFor="omi-collaborator-email">Invite an author</label>
-              <input
-                id="omi-collaborator-email"
-                type="email"
-                value={collaboratorEmail}
-                onChange={(event) => setCollaboratorEmail(event.target.value)}
-                placeholder="Email address"
-              />
-              <button type="button" onClick={inviteCollaborator} disabled={collaborationBusy || !collaboratorEmail.trim()}>
-                Send invitation
-              </button>
+              {showCollaborationInvite ? (
+                <>
+                  <label htmlFor="omi-collaborator-email">{collaborationCopy.inviteAuthor}</label>
+                  <input
+                    id="omi-collaborator-email"
+                    type="email"
+                    value={collaboratorEmail}
+                    onChange={(event) => setCollaboratorEmail(event.target.value)}
+                    placeholder={collaborationCopy.emailAddress}
+                  />
+                  <div className="omi-collaboration-invite__actions">
+                    <button type="button" onClick={inviteCollaborator} disabled={collaborationBusy || !collaboratorEmail.trim()}>
+                      {collaborationCopy.sendInvitation}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => {
+                        setCollaboratorEmail('');
+                        setCollaborationStatus('');
+                        setShowCollaborationInvite(false);
+                      }}
+                      disabled={collaborationBusy}
+                    >
+                      {collaborationCopy.cancel}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <button type="button" onClick={() => setShowCollaborationInvite(true)} disabled={collaborationBusy}>
+                  {collaborationCopy.inviteAuthor}
+                </button>
+              )}
               {collaborationAccess.invitations.map((invitation) => (
                 <span key={invitation.id} className="omi-collaboration-invite__pending">
-                  {invitation.invitedEmail} · awaiting acceptance
+                  {invitation.invitedEmail} · {collaborationCopy.awaitingAcceptance}
                 </span>
               ))}
             </div>
