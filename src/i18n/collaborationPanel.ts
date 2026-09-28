@@ -9,6 +9,8 @@ export interface CollaborationPanelCopy {
   awaitingAcceptance: string;
   invitationSent: string;
   invitationEmailFailed: string;
+  startSharedEditing: string;
+  starting: string;
 }
 
 const english: CollaborationPanelCopy = {
@@ -22,6 +24,8 @@ const english: CollaborationPanelCopy = {
   awaitingAcceptance: 'awaiting acceptance',
   invitationSent: 'Invitation sent. The invited author must accept it before joining.',
   invitationEmailFailed: 'Invitation added to the Studio inbox, but the notification email could not be sent.',
+  startSharedEditing: 'Start shared editing',
+  starting: 'Starting…',
 };
 
 const copyByLocale: Record<string, CollaborationPanelCopy> = {
@@ -74,6 +78,57 @@ const copyByLocale: Record<string, CollaborationPanelCopy> = {
   zu: { title: 'Ukusebenzisana bukhoma', connected: 'Kuxhunyiwe', connecting: 'Kuyaxhuma', inviteAuthor: 'Mema umbhali', emailAddress: 'Ikheli le-imeyili', sendInvitation: 'Thumela isimemo', cancel: 'Khansela', awaitingAcceptance: 'kulindwe ukwamukelwa', invitationSent: 'Isimemo sithunyelwe. Umbhali omenyiwe kufanele asamukele ngaphambi kokujoyina.', invitationEmailFailed: 'Isimemo sifakwe ebhokisini lokungenayo le-Studio, kodwa i-imeyili yesaziso ayikwazanga ukuthunyelwa.' },
 };
 
+const actionCopyByLocale: Record<string, Pick<CollaborationPanelCopy, 'startSharedEditing' | 'starting'>> = {
+  af: { startSharedEditing: 'Begin gedeelde redigering', starting: 'Begin tans…' },
+  am: { startSharedEditing: 'የጋራ አርትዖትን ጀምር', starting: 'በመጀመር ላይ…' },
+  bg: { startSharedEditing: 'Стартиране на съвместна редакция', starting: 'Стартиране…' },
+  ca: { startSharedEditing: 'Inicia l’edició compartida', starting: 'S’està iniciant…' },
+  cs: { startSharedEditing: 'Zahájit sdílené úpravy', starting: 'Spouštění…' },
+  da: { startSharedEditing: 'Start fælles redigering', starting: 'Starter…' },
+  de: { startSharedEditing: 'Gemeinsame Bearbeitung starten', starting: 'Wird gestartet…' },
+  el: { startSharedEditing: 'Έναρξη κοινής επεξεργασίας', starting: 'Εκκίνηση…' },
+  es: { startSharedEditing: 'Iniciar edición compartida', starting: 'Iniciando…' },
+  et: { startSharedEditing: 'Alusta ühist redigeerimist', starting: 'Käivitamine…' },
+  fi: { startSharedEditing: 'Aloita yhteismuokkaus', starting: 'Aloitetaan…' },
+  fil: { startSharedEditing: 'Simulan ang sabayang pag-edit', starting: 'Sinisimulan…' },
+  fr: { startSharedEditing: 'Démarrer la modification partagée', starting: 'Démarrage…' },
+  ga: { startSharedEditing: 'Tosaigh eagarthóireacht chomhroinnte', starting: 'Á thosú…' },
+  he: { startSharedEditing: 'התחלת עריכה משותפת', starting: 'מתחיל…' },
+  hi: { startSharedEditing: 'साझा संपादन शुरू करें', starting: 'शुरू हो रहा है…' },
+  hr: { startSharedEditing: 'Pokreni zajedničko uređivanje', starting: 'Pokretanje…' },
+  hu: { startSharedEditing: 'Közös szerkesztés indítása', starting: 'Indítás…' },
+  id: { startSharedEditing: 'Mulai penyuntingan bersama', starting: 'Memulai…' },
+  is: { startSharedEditing: 'Hefja sameiginlega ritun', starting: 'Hef…' },
+  it: { startSharedEditing: 'Avvia modifica condivisa', starting: 'Avvio…' },
+  ja: { startSharedEditing: '共同編集を開始', starting: '開始中…' },
+  ko: { startSharedEditing: '공동 편집 시작', starting: '시작 중…' },
+  lt: { startSharedEditing: 'Pradėti bendrą redagavimą', starting: 'Pradedama…' },
+  lv: { startSharedEditing: 'Sākt kopīgu rediģēšanu', starting: 'Tiek sākts…' },
+  ms: { startSharedEditing: 'Mulakan penyuntingan bersama', starting: 'Memulakan…' },
+  mt: { startSharedEditing: 'Ibda editjar konġunt', starting: 'Qed jibda…' },
+  nl: { startSharedEditing: 'Gedeelde bewerking starten', starting: 'Bezig met starten…' },
+  no: { startSharedEditing: 'Start delt redigering', starting: 'Starter…' },
+  pl: { startSharedEditing: 'Rozpocznij wspólną edycję', starting: 'Uruchamianie…' },
+  pt: { startSharedEditing: 'Iniciar edição partilhada', starting: 'A iniciar…' },
+  ro: { startSharedEditing: 'Începe editarea colaborativă', starting: 'Se pornește…' },
+  ru: { startSharedEditing: 'Начать совместное редактирование', starting: 'Запуск…' },
+  sk: { startSharedEditing: 'Spustiť spoločné úpravy', starting: 'Spúšťanie…' },
+  sl: { startSharedEditing: 'Začni skupno urejanje', starting: 'Začenjanje…' },
+  sr: { startSharedEditing: 'Започни заједничко уређивање', starting: 'Покретање…' },
+  sv: { startSharedEditing: 'Starta gemensam redigering', starting: 'Startar…' },
+  sw: { startSharedEditing: 'Anza uhariri wa pamoja', starting: 'Inaanza…' },
+  th: { startSharedEditing: 'เริ่มแก้ไขร่วมกัน', starting: 'กำลังเริ่ม…' },
+  tr: { startSharedEditing: 'Paylaşımlı düzenlemeyi başlat', starting: 'Başlatılıyor…' },
+  uk: { startSharedEditing: 'Почати спільне редагування', starting: 'Запуск…' },
+  vi: { startSharedEditing: 'Bắt đầu chỉnh sửa chung', starting: 'Đang bắt đầu…' },
+  'zh-CN': { startSharedEditing: '开始共同编辑', starting: '正在启动…' },
+  'zh-HK': { startSharedEditing: '開始協作編輯', starting: '正在啟動…' },
+  'zh-TW': { startSharedEditing: '開始共同編輯', starting: '正在啟動…' },
+  zu: { startSharedEditing: 'Qala ukuhlela ngokubambisana', starting: 'Iyaqala…' },
+  en: { startSharedEditing: 'Start shared editing', starting: 'Starting…' },
+};
+
 export function getCollaborationPanelCopy(locale: string): CollaborationPanelCopy {
-  return copyByLocale[locale] ?? english;
+  const copy = copyByLocale[locale] ?? english;
+  return { ...copy, ...(actionCopyByLocale[locale] ?? actionCopyByLocale.en!) };
 }
