@@ -484,7 +484,7 @@ function characterStyle(name: string, fontStyle?: string, attributes?: string, f
 }
 
 function style(name: string, size: number, bold: boolean, justification: string, spaceBefore: number, spaceAfter: number): string {
-  return `<ParagraphStyle Self="ParagraphStyle/${xml(name)}" Name="${xml(name)}" BasedOn="ParagraphStyle/$ID/[No paragraph style]" NextStyle="ParagraphStyle/OMI Body" PointSize="${size}" Leading="Auto" Justification="${justification}" SpaceBefore="${spaceBefore}" SpaceAfter="${spaceAfter}"><Properties><AppliedFont type="string">Times New Roman</AppliedFont></Properties>${bold ? '<Properties><FontStyle type="string">Bold</FontStyle></Properties>' : ''}</ParagraphStyle>`;
+  return `<ParagraphStyle Self="ParagraphStyle/${xml(name)}" Name="${xml(name)}" BasedOn="ParagraphStyle/$ID/[No paragraph style]" NextStyle="ParagraphStyle/OMI Body" PointSize="${size}" Leading="Auto" Justification="${justification}" SpaceBefore="${spaceBefore}" SpaceAfter="${spaceAfter}"><Properties><AppliedFont type="string">Times New Roman</AppliedFont>${bold ? '<FontStyle type="string">Bold</FontStyle>' : ''}</Properties></ParagraphStyle>`;
 }
 
 function styledParagraph(value: string, styleName: string): string {
