@@ -193,7 +193,10 @@ function validateAccessibility(
   evaluated: Set<string>,
 ): void {
   for (const graphic of elements(document, 'graphic')) {
-    const alt = directChildren(graphic, 'alt-text');
+    const figure = parentElement(graphic, 'fig');
+    const alt = figure
+      ? directChildren(figure, 'alt-text')
+      : directChildren(graphic, 'alt-text');
     check(
       diagnostics,
       evaluated,
@@ -932,6 +935,16 @@ function directChildren(
     (node): node is XmlElement =>
       node.nodeType === 1 && (node as XmlElement).localName === localName,
   );
+}
+
+function parentElement(element: XmlElement, localName: string): XmlElement | null {
+  let parent = element.parentNode;
+  while (parent && parent.nodeType === 1) {
+    const candidate = parent as XmlElement;
+    if (candidate.localName === localName) return candidate;
+    parent = parent.parentNode;
+  }
+  return null;
 }
 
 function directChildrenByNamespace(

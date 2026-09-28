@@ -38,13 +38,13 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
   en: {
     title: 'JATS XML',
     description:
-      'Render the semantic manuscript through the active Publication Profile as NISO JATS 1.4 Article Authoring XML.',
+      'Render the semantic manuscript as NISO JATS 1.4 Article Authoring XML and include referenced images in the download package.',
     standard: 'Target standard',
     renderingContext: 'Rendering context',
     currentRevision: 'Manuscript revision',
     preview: 'Preview XML',
     hidePreview: 'Hide XML',
-    download: 'Download validated JATS XML',
+    download: 'Download validated JATS export',
     exportReady: 'The JATS rendering has no blocking diagnostics.',
     exportHasErrors: 'The XML can be inspected, but blocking diagnostics must be resolved before publication.',
     errors: 'errors',
@@ -52,7 +52,7 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
     diagnostics: 'JATS diagnostics',
     noDiagnostics: 'No JATS-specific diagnostics.',
     workingPreview:
-      'The preview reflects the current working state. Download creates a checkpoint and validates the committed XML before saving it.',
+      'The preview shows the current XML. Download validates it and includes external image files in a ZIP when the manuscript references images.',
     unsupportedProfile: 'The active profile does not declare JATS as a supported output.',
     jats4rValidation: 'JATS4R profile',
     jats4rValid: 'Pass',
@@ -76,13 +76,13 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
   hu: {
     title: 'JATS XML',
     description:
-      'A szemantikus kézirat renderelése az aktív publikációs profilon keresztül NISO JATS 1.4 Article Authoring XML formátumba.',
+      'A szemantikus kézirat renderelése NISO JATS 1.4 Article Authoring XML formátumba; a letölthető csomag a hivatkozott képeket is tartalmazza.',
     standard: 'Célszabvány',
     renderingContext: 'Renderelési kontextus',
     currentRevision: 'Kéziratrevízió',
     preview: 'XML előnézet',
     hidePreview: 'XML elrejtése',
-    download: 'Validált JATS XML letöltése',
+    download: 'Validált JATS-export letöltése',
     exportReady: 'A JATS-renderelésben nincs blokkoló diagnosztika.',
     exportHasErrors:
       'Az XML ellenőrizhető, de a blokkoló hibákat publikálás előtt meg kell oldani.',
@@ -91,7 +91,7 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
     diagnostics: 'JATS diagnosztika',
     noDiagnostics: 'Nincs JATS-specifikus diagnosztika.',
     workingPreview:
-      'Az előnézet az aktuális munkapéldányt mutatja. Letöltéskor a Stúdió checkpointot készít, majd mentés előtt a committed XML teljes DTD-validációját is lefuttatja.',
+      'Az előnézet az aktuális XML-t mutatja. Letöltéskor a Stúdió validálja a kimenetet, és hivatkozott képek esetén ZIP-fájlban mellékeli a képfájlokat.',
     unsupportedProfile: 'Az aktív profil nem jelöli támogatott kimenetként a JATS formátumot.',
     jats4rValidation: 'JATS4R profil',
     jats4rValid: 'Megfelel',
@@ -115,13 +115,13 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
   de: {
     title: 'JATS XML',
     description:
-      'Das semantische Manuskript wird über das aktive Publikationsprofil als NISO JATS 1.4 Article Authoring XML gerendert.',
+      'Das semantische Manuskript wird als NISO JATS 1.4 Article Authoring XML gerendert; referenzierte Bilder sind im Downloadpaket enthalten.',
     standard: 'Zielstandard',
     renderingContext: 'Rendering-Kontext',
     currentRevision: 'Manuskriptrevision',
     preview: 'XML-Vorschau',
     hidePreview: 'XML ausblenden',
-    download: 'Validiertes JATS XML herunterladen',
+    download: 'Validierten JATS-Export herunterladen',
     exportReady: 'Das JATS-Rendering enthält keine blockierenden Diagnosen.',
     exportHasErrors:
       'Das XML kann geprüft werden, blockierende Fehler müssen jedoch vor der Publikation behoben werden.',
@@ -130,7 +130,7 @@ const COPY: Record<'en' | 'hu' | 'de', JatsExportCopy> = {
     diagnostics: 'JATS-Diagnostik',
     noDiagnostics: 'Keine JATS-spezifischen Diagnosen.',
     workingPreview:
-      'Die Vorschau zeigt den aktuellen Arbeitsstand. Beim Download erzeugt Studio einen Checkpoint und validiert das festgeschriebene XML vor dem Speichern vollständig gegen die DTD.',
+      'Die Vorschau zeigt das aktuelle XML. Der Download validiert die Ausgabe und enthält externe Bilddateien bei Bedarf in einer ZIP-Datei.',
     unsupportedProfile: 'Das aktive Profil deklariert JATS nicht als unterstütztes Ausgabeformat.',
     jats4rValidation: 'JATS4R-Profil',
     jats4rValid: 'Bestanden',

@@ -16,7 +16,6 @@ import {
   resolvePublicationProfile,
 } from '../model/publicationProfile';
 import {
-  jatsFileName,
   OMI_JATS_RENDERER_VERSION,
   OMI_JATS_TAGSET,
   OMI_JATS_VERSION,
@@ -28,6 +27,7 @@ import {
   jatsPublicationReleaseFailureMessage,
 } from '../services/jatsReleaseGate';
 import { savePublicationArtifactWithBuildSidecar } from '../services/publicationBuildSidecar';
+import { buildJatsPackage } from '../services/exportJatsPackage';
 import {
   validateJatsSchema,
   type JatsSchemaValidationResult,
@@ -112,42 +112,45 @@ export function JatsExportPanel() {
     checkpoint('export');
     const committedManuscript = useStudioStore.getState().manuscript;
     const committedProfile = resolvePublicationProfile(committedManuscript);
-    const committedResult = renderJatsArticle(
+    const packageResult = await buildJatsPackage(
       committedManuscript,
       committedProfile,
     );
-    const committedErrors = committedResult.diagnostics.filter(
-      (diagnostic) => diagnostic.severity === 'error',
-    );
-    if (committedErrors.length) return;
+    if (!packageResult.validForExport) {
+      setSchemaError({
+        xml: packageResult.xml,
+        message: packageResult.diagnostics
+          .filter((diagnostic) => diagnostic.severity === 'error')
+          .map((diagnostic) => diagnostic.message)
+          .join(' '),
+      });
+      return;
+    }
 
-    const validation = await validateXml(committedResult.xml);
+    const validation = await validateXml(packageResult.xml);
     if (!validation) return;
 
-    const committedJats4r = validateJats4rProfile(committedResult.xml);
+    const committedJats4r = validateJats4rProfile(packageResult.xml);
     const release = evaluateJatsPublicationRelease(
-      committedResult,
+      packageResult.render,
       validation,
       committedJats4r,
     );
     if (!release.releasable) {
       setSchemaError({
-        xml: committedResult.xml,
+        xml: packageResult.xml,
         message: jatsPublicationReleaseFailureMessage(release),
       });
       return;
     }
 
-    const fileName = jatsFileName(committedManuscript);
     await savePublicationArtifactWithBuildSidecar({
       manuscript: committedManuscript,
       profile: committedProfile,
-      artifact: new Blob([committedResult.xml], {
-        type: 'application/xml;charset=utf-8',
-      }),
-      fileName,
+      artifact: packageResult.blob,
+      fileName: packageResult.fileName,
       format: 'jats',
-      mediaType: 'application/xml',
+      mediaType: packageResult.mediaType,
       renderer: 'open-manuscript-studio-jats',
       rendererVersion: OMI_JATS_RENDERER_VERSION,
     });
