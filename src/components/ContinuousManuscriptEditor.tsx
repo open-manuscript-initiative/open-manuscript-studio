@@ -545,7 +545,7 @@ export function ContinuousManuscriptEditor() {
           </div>
           {!collaborationAccess ? (
             <button type="button" onClick={startCollaboration} disabled={collaborationBusy}>
-              {collaborationBusy ? 'Starting…' : 'Start shared editing'}
+              {collaborationBusy ? collaborationCopy.starting : collaborationCopy.startSharedEditing}
             </button>
           ) : null}
           {collaborationAccess && collaborationAccess.members.some((member) =>
