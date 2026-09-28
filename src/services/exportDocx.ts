@@ -206,7 +206,8 @@ type WordNoteReference = { kind: WordNoteKind; id: number };
 
 function wordNoteReference(kind: WordNoteKind, id: number): string {
   const element = kind === 'footnote' ? 'footnoteReference' : 'endnoteReference';
-  return `<w:r><w:${element} w:id="${id}"/></w:r>`;
+  const styleId = kind === 'footnote' ? 'FootnoteReference' : 'EndnoteReference';
+  return `<w:r><w:rPr><w:rStyle w:val="${styleId}"/></w:rPr><w:${element} w:id="${id}"/></w:r>`;
 }
 
 function renderWordContent(
@@ -266,7 +267,7 @@ function renderWordNotes(kind: WordNoteKind, notes: readonly { id: number; body:
   const item = kind === 'footnote' ? 'footnote' : 'endnote';
   const reference = kind === 'footnote' ? 'footnoteRef' : 'endnoteRef';
   const separator = kind === 'footnote' ? 'footnote' : 'endnote';
-  const notesXml = notes.map((note) => `<w:${item} w:id="${note.id}"><w:p><w:pPr><w:pStyle w:val="${kind === 'footnote' ? 'FootnoteText' : 'EndnoteText'}"/></w:pPr><w:r><w:rPr><w:rStyle w:val="${kind === 'footnote' ? 'FootnoteReference' : 'EndnoteReference'}"/></w:rPr><w:${reference}/></w:r>${note.body}</w:p></w:${item}>`).join('');
+  const notesXml = notes.map((note) => `<w:${item} w:id="${note.id}"><w:p><w:pPr><w:pStyle w:val="${kind === 'footnote' ? 'FootnoteText' : 'EndnoteText'}"/></w:pPr><w:r><w:rPr><w:rStyle w:val="${kind === 'footnote' ? 'FootnoteReference' : 'EndnoteReference'}"/></w:rPr><w:${reference}/></w:r><w:r><w:t xml:space="preserve"> </w:t></w:r>${note.body}</w:p></w:${item}>`).join('');
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:${root} xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:${separator} w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:${separator}><w:${separator} w:type="continuationSeparator" w:id="0"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:${separator}>${notesXml}</w:${root}>`;
 }
 
