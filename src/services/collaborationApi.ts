@@ -127,3 +127,27 @@ export async function declinePendingCollaborationInvitation(invitationId: string
     method: 'POST', body: '{}',
   });
 }
+
+export interface CollaborationMessage {
+  id: string;
+  senderUserId: string | null;
+  senderName: string;
+  body: string;
+  createdAt: string;
+}
+
+export async function getCollaborationMessages(documentId: string): Promise<CollaborationMessage[]> {
+  const response = await requestStudioApi<{ messages: CollaborationMessage[] }>(
+    '/api/collaboration/documents/' + encodeURIComponent(documentId) + '/messages',
+    { method: 'GET' },
+  );
+  return response.messages;
+}
+
+export async function sendCollaborationMessage(documentId: string, body: string): Promise<CollaborationMessage> {
+  const response = await requestStudioApi<{ message: CollaborationMessage }>(
+    '/api/collaboration/documents/' + encodeURIComponent(documentId) + '/messages',
+    { method: 'POST', body: JSON.stringify({ body }) },
+  );
+  return response.message;
+}
