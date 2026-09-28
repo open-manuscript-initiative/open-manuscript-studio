@@ -86,6 +86,12 @@ test('every locale explains how to invite, accept, and join manuscript collabora
     assert.ok((topic.tips?.length ?? 0) >= 3, `${locale}: collaboration steps are incomplete`);
     assert.match(guidance, /studi/i, `${locale}: Studio account guidance missing`);
     assert.match(guidance, /OMI/i, `${locale}: manuscript re-open guidance missing`);
+    assert.match(guidance, /\/collaboration\/ws/, `${locale}: WebSocket proxy guidance missing`);
+    assert.match(guidance, /3022/u, `${locale}: WebSocket listener port missing`);
     assert.ok(guidance.length > 250, `${locale}: collaboration process is too short`);
   }
+  const english = getLocalizedHelpCopy('en').topics.find(
+    (entry) => entry.title === collaborationInvitationHelpTitle('en'),
+  );
+  assert.match(english?.tips?.join('\n') ?? '', /enables live collaboration by default/u);
 });
