@@ -116,9 +116,10 @@ test('exports linked OMI notes as native Word footnotes by default and retains e
   const relationshipsXml = new TextDecoder().decode(entries.get('word/_rels/document.xml.rels'));
   const contentTypesXml = new TextDecoder().decode(entries.get('[Content_Types].xml'));
 
-  assert.match(documentXml, /Before <\/w:t><\/w:r><w:r><w:footnoteReference w:id="1"\/><\/w:r><w:r><w:t xml:space="preserve"> between <\/w:t>/);
-  assert.match(documentXml, /w:endnoteReference w:id="1"/);
+  assert.match(documentXml, /Before <\/w:t><\/w:r><w:r><w:rPr><w:rStyle w:val="FootnoteReference"\/><\/w:rPr><w:footnoteReference w:id="1"\/><\/w:r><w:r><w:t xml:space="preserve"> between <\/w:t>/);
+  assert.match(documentXml, /w:rStyle w:val="EndnoteReference"\/><\/w:rPr><w:endnoteReference w:id="1"/);
   assert.match(footnotesXml, /w:footnote w:id="1"/);
+  assert.match(footnotesXml, /w:footnoteRef\/><\/w:r><w:r><w:t xml:space="preserve"> <\/w:t><\/w:r><w:r><w:t xml:space="preserve">A default footnote/);
   assert.match(footnotesXml, /A default footnote &amp; its text\./);
   assert.match(endnotesXml, /w:endnote w:id="1"/);
   assert.match(endnotesXml, /An explicit endnote\./);
