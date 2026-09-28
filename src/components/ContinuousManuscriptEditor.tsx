@@ -42,6 +42,7 @@ import {
 import { buildSectionNumberMap } from '../model/sectionNumbering';
 import { getDocumentStructureProfile } from '../model/documentProfile';
 import { createInitialCollaborationDocument } from '../editor/collaborationDocument';
+import { CollaborationChat } from './CollaborationChat';
 import {
   createCollaborationDocument,
   collaborationWebSocketUrl,
@@ -567,6 +568,12 @@ export function ContinuousManuscriptEditor() {
             </div>
           ) : null}
           {collaborationStatus ? <p role="status">{collaborationStatus}</p> : null}
+          {collaborationAccess?.members.some((member) => member.userId === currentUser?.id) ? (
+            <details className="omi-collaboration-chat-disclosure">
+              <summary>{locale === 'hu' ? 'Dokumentum chat' : locale === 'de' ? 'Dokument-Chat' : 'Document chat'}</summary>
+              <CollaborationChat documentId={manuscript.id} locale={locale} />
+            </details>
+          ) : null}
         </aside>
       ) : null}
       {studies.map((study) => {

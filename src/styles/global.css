@@ -498,3 +498,68 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+
+.omi-collaboration-chat-disclosure {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--border-color, #d8d2c8);
+  padding-top: 0.65rem;
+}
+.omi-collaboration-chat-disclosure > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.omi-collaboration-chat {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.65rem;
+}
+.omi-collaboration-chat__messages {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 18rem;
+  overflow: auto;
+  padding: 0.25rem;
+}
+.omi-collaboration-chat__message {
+  padding: 0.5rem 0.6rem;
+  border-radius: 0.5rem;
+  background: var(--surface-muted, #f5f2ec);
+  overflow-wrap: anywhere;
+}
+.omi-collaboration-chat__message header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.82em;
+}
+.omi-collaboration-chat__message time {
+  color: var(--text-muted, #666);
+  white-space: nowrap;
+}
+.omi-collaboration-chat__message p {
+  margin: 0.25rem 0 0;
+  white-space: pre-wrap;
+}
+.omi-collaboration-chat__compose {
+  display: grid;
+  gap: 0.4rem;
+}
+.omi-collaboration-chat__compose textarea {
+  width: 100%;
+  min-height: 4.5rem;
+  resize: vertical;
+}
+.omi-collaboration-chat__compose button {
+  justify-self: end;
+}
+.omi-collaboration-chat__status {
+  margin: 0;
+  font-size: 0.9em;
+}
+@media (max-width: 640px) {
+  .omi-collaboration-chat__message header {
+    display: grid;
+    gap: 0.15rem;
+  }
+}

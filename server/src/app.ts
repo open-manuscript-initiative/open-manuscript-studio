@@ -16,6 +16,7 @@ import { centralAdminRouter } from './routes/centralAdminRoutes.js';
 import { cloudOAuthRouter } from './routes/cloudOAuthRoutes.js';
 import { cloudRouter } from './routes/cloudRoutes.js';
 import { collaborationRouter } from './routes/collaborationRoutes.js';
+import { collaborationMessageRouter } from './routes/collaborationMessageRoutes.js';
 import { editorReviewOverviewRouter } from './routes/editorReviewOverviewRoutes.js';
 import { federatedAuthRouter } from './routes/federatedAuthRoutes.js';
 import { healthRouter } from './routes/healthRoutes.js';
@@ -124,6 +125,7 @@ app.get('/api/collaboration/status', (_request, response) => {
 });
 if (env.MANUSCRIPT_COLLABORATION_ENABLED) {
   app.use('/api/collaboration', collaborationRouter);
+  app.use('/api/collaboration/documents', collaborationMessageRouter);
 }
 app.use('/api', userIntegrationRouter);
 app.use('/api', referenceManagerRouter);
