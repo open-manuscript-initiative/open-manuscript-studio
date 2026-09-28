@@ -22,6 +22,23 @@
   margin-inline-start: 0.12em;
 }
 
+.omi-show-nonprinting-marks .omi-nonprinting-mark[data-nonprinting-mark='space'],
+.omi-show-nonprinting-marks .omi-nonprinting-mark[data-nonprinting-mark='nonbreaking-space'] {
+  position: relative;
+  display: inline-block;
+  width: 0;
+  margin: 0;
+  vertical-align: baseline;
+}
+
+.omi-show-nonprinting-marks .omi-nonprinting-mark[data-nonprinting-mark='space']::after,
+.omi-show-nonprinting-marks .omi-nonprinting-mark[data-nonprinting-mark='nonbreaking-space']::after {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .omi-show-nonprinting-marks .omi-tab-node {
   position: relative;
 }
