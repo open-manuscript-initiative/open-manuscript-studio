@@ -50,6 +50,7 @@ test('builds an IDML package with paragraph and character styles', () => {
 
   const styles = new TextDecoder().decode(entries.get('Resources/Styles.xml'));
   assert.match(styles, /Name="OMI Emphasis"/);
+  assert.match(styles, /<ParagraphStyle Self="ParagraphStyle\/OMI Title"[^>]*><Properties><AppliedFont type="string">Times New Roman<\/AppliedFont><FontStyle type="string">Bold<\/FontStyle><\/Properties><\/ParagraphStyle>/);
   assert.match(styles, /Name="OMI Strong"/);
   assert.match(styles, /Name="OMI Small Caps"/);
   assert.match(styles, /Name="OMI Author Given Name"/);
