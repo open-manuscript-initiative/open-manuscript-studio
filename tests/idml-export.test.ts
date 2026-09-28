@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { DOMParser as XmlParser } from '@xmldom/xmldom';
+
 import { buildIdmlExport, IDML_MEDIA_TYPE } from '../src/services/exportIdml.ts';
 import type { PublicationStyle } from '../src/services/publicationStyleExport.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
@@ -57,6 +59,42 @@ test('builds an IDML package with paragraph and character styles', () => {
   assert.match(spread, /ParentStory="u3"/);
 });
 
+
+test('IDML package follows the InDesign UCF and design-map structure', () => {
+  const result = buildIdmlExport(createVersionedTestManuscript());
+  const entries = readStoreZipEntries(result.bytes);
+  const names = [...entries.keys()];
+
+  assert.equal(names[0], 'mimetype');
+  assert.equal(
+    new DataView(result.bytes.buffer, result.bytes.byteOffset, result.bytes.byteLength).getUint16(8, true),
+    0,
+    'the leading UCF mimetype entry must be stored without compression',
+  );
+  assert.equal(new TextDecoder().decode(entries.get('mimetype')), IDML_MEDIA_TYPE);
+
+  const designMap = new TextDecoder().decode(entries.get('designmap.xml'));
+  assert.match(designMap, /<\\?aid style="50" type="document" readerVersion="6\\.0" featureSet="257" product="8\\.0\\(0\\)"\\?>/);
+  assert.match(designMap, /<Document\\b[^>]*StoryList="u3"/);
+  assert.match(designMap, /<idPkg:Preferences src="Resources\\/Preferences\\.xml"\\/>/);
+  assert.doesNotMatch(designMap, /<idPkg:DesignMap|<idPkg:Properties/);
+
+  const references = [...designMap.matchAll(/\\bsrc="([^"]+)"/g)].map((match) => match[1]);
+  for (const reference of references) {
+    assert.equal(entries.has(reference), true, `designmap reference must exist: ${reference}`);
+  }
+
+  for (const [name, bytes] of entries) {
+    if (!name.endsWith('.xml')) continue;
+    const xml = new TextDecoder().decode(bytes);
+    const document = new XmlParser({
+      onError: (_level, message) => {
+        throw new Error(`${name}: ${message}`);
+      },
+    }).parseFromString(xml, 'application/xml');
+    assert.ok(document.documentElement, `${name} must have an XML root element`);
+  }
+});
 
 test('exports assigned Studio paragraph styles as real IDML paragraph styles', () => {
   const manuscript = createVersionedTestManuscript();
