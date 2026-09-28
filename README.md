@@ -2,7 +2,7 @@
 
 **Open Manuscript Studio** is the open-source reference implementation of the **Open Manuscript Initiative (OMI)**: a structured, multilingual scholarly authoring environment for writing, reviewing, exchanging and preparing manuscripts for publication without locking the manuscript to one application, operating system or publishing platform.
 
-> **Current status:** `0.3.0-beta.1` · scholarly workflow and publication beta.
+> **Current status:** `0.3.0-beta.2` · scholarly workflow, publication and live collaboration beta.
 >
 > The core authoring, account, review, import/export, native packaging and institutional-administration layers are implemented and actively exercised. Beta development focuses on regression elimination, interoperability, recovery/error handling, migration discipline, performance, accessibility and trusted distribution on the path toward the first release candidate.
 
@@ -29,6 +29,13 @@ Studio uses one shared React/TypeScript application core and one OMI manuscript 
 The iOS/iPadOS target is no longer only architectural planning: Tauri/Xcode project generation and Apple Silicon iPhone/iPad simulator compilation are validated in CI. Public Apple distribution still requires the real Apple Developer Team ID, signing certificate, provisioning profile, production Universal Link association and TestFlight/device validation.
 
 ## What Studio can do today
+
+### Live manuscript collaboration
+
+- invite manuscript collaborators from Studio and require each invitee to accept before access is granted;
+- review pending invitations in the Studio invitation inbox without requiring an e-mail message;
+- edit the same manuscript live with Yjs synchronization and see collaborator names and distinct cursor/selection colors;
+- keep collaboration separate from peer-review change tracking and preserve the existing OMI manuscript format and file workflows.
 
 ### Structured scholarly authoring
 

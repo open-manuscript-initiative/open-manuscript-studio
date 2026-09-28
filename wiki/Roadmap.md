@@ -1,6 +1,6 @@
 # Roadmap
 
-Open Manuscript Studio is on the `0.3.0-beta.1` scholarly workflow and publication beta line. The authoring, account, review, import/export, native packaging, and institutional administration layers are implemented; the next milestone is a stable release candidate.
+Open Manuscript Studio is on the `0.3.0-beta.2` scholarly workflow, publication and live collaboration beta line. The authoring, account, review, import/export, native packaging, institutional administration and invitation-authorized live collaboration layers are implemented; the next milestone is a stable release candidate.
 
 This page records direction rather than promising dates. The [issue tracker](https://github.com/open-manuscript-initiative/open-manuscript-studio/issues), pull requests, and [CHANGELOG](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/CHANGELOG.md) are the authoritative sources for individual work items.
 
@@ -13,6 +13,7 @@ This page records direction rather than promising dates. The [issue tracker](htt
 - DOCX/PDF import paths and multi-format publication export;
 - local accounts, linked identity providers, profiles, and institutional administration;
 - double-blind review workspaces and assignment-aware OJS integration;
+- invitation acceptance, in-Studio invitation inbox, and Yjs live manuscript editing with named, colored collaborator cursors;
 - web, desktop, Android, and validated iOS/iPadOS simulator targets;
 - portable local/native storage and profile-scoped cloud connections;
 - localization and help infrastructure across the supported interface languages;

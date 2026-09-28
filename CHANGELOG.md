@@ -6,6 +6,34 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+## 0.3.0-beta.2 — 2026-09-28
+
+### Live manuscript collaboration
+
+- Enables invitation-authorized Yjs manuscript collaboration in the production
+  Studio. Invited authors gain access only after explicitly accepting their
+  invitation in Studio.
+- Adds an in-Studio invitation inbox so authors can review and accept pending
+  manuscript invitations without relying on e-mail.
+- Shows collaborator names and distinct colors beside live cursors and remote
+  selections.
+- Persists shared document updates and reconnects collaborators through the
+  single-node collaboration service; the existing manuscript file format and
+  save/import/export paths remain unchanged.
+- Keeps review change tracking in the peer-review workflow, separate from live
+  co-editing.
+
+### Version identities
+
+- Advances the shared Studio version to **0.3.0-beta.2**.
+- Advances the Windows MSI product version to **0.3.0.2**.
+- Advances the iOS beta build number to **14** while retaining App Store short
+  version **0.3.0**.
+- Advances the checked-in Android versionCode floor to **1201**; release builds
+  derive a strictly higher run-specific code.
+- Keeps the portable manuscript format at **OMI-SPEC-320@0.2.0**. No schema or
+  container-contract change is required.
+
 ## 0.3.0-beta.1 — 2026-09-24
 
 ### Scholarly authoring and publication layout
