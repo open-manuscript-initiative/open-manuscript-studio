@@ -72,3 +72,35 @@ test('a signed-in author can accept or decline invitations in the Studio inbox',
   await expect(inbox.getByRole('status')).toContainText('Accepted and opened: Inbox manuscript.');
   expect(api.unhandledRequests).toEqual([]);
 });
+
+test('opening a shared manuscript collapses the inbox and keeps a way to reopen it', async ({ page }) => {
+  const api = await installMockStudioApi(page, {
+    authenticated: true,
+    collaboration: {
+      enabled: true,
+      packageBase64: await sharedPackageBase64,
+      sharedDocuments: [{
+        documentId: 'shared-manuscript-e2e',
+        title: 'Reopenable shared manuscript',
+        role: 'AUTHOR',
+        packageUpdatedAt: '2026-09-29T00:00:00.000Z',
+      }],
+    },
+  });
+
+  await page.goto('/');
+  const inbox = page.getByRole('complementary', { name: 'Manuscript invitations and shared manuscripts' });
+  await expect(inbox.getByText('Reopenable shared manuscript')).toBeVisible();
+  await inbox.getByRole('button', { name: 'Open', exact: true }).click();
+
+  await expect(inbox).toBeHidden();
+  const launcher = page.getByRole('button', { name: 'Invitations and shared manuscripts' });
+  await expect(launcher).toBeVisible();
+  await launcher.click();
+  await expect(inbox).toBeVisible();
+  await expect(inbox.getByRole('status')).toContainText('Opened: Reopenable shared manuscript.');
+  await inbox.getByRole('button', { name: 'Close' }).click();
+  await expect(inbox).toBeHidden();
+  await expect(launcher).toBeVisible();
+  expect(api.unhandledRequests).toEqual([]);
+});

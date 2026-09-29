@@ -27,6 +27,8 @@ export function CollaborationInbox({ children }: { children: ReactNode }) {
     expired: hu ? 'Lejárat' : de ? 'Läuft ab' : 'Expires',
     accepted: hu ? 'Elfogadva és megnyitva' : de ? 'Angenommen und geöffnet' : 'Accepted and opened',
     opened: hu ? 'Megnyitva' : de ? 'Geöffnet' : 'Opened',
+    close: hu ? 'Bezárás' : de ? 'Schließen' : 'Close',
+    showPanel: hu ? 'Meghívók és megosztott kéziratok' : de ? 'Einladungen und geteilte Manuskripte' : 'Invitations and shared manuscripts',
     activeOnly: hu
       ? 'A kézirathoz csak az elfogadott meghívó ad hozzáférést.'
       : de
@@ -38,6 +40,7 @@ export function CollaborationInbox({ children }: { children: ReactNode }) {
   const [documents, setDocuments] = useState<SharedCollaborativeDocument[]>([]);
   const [busyInvitationId, setBusyInvitationId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const [panelOpen, setPanelOpen] = useState(true);
   const enabledRef = useRef<boolean | null>(null);
 
   const refresh = useCallback(async () => {
@@ -96,6 +99,7 @@ export function CollaborationInbox({ children }: { children: ReactNode }) {
       const plan = await inspectOmiContainer(await downloadSharedManuscriptPackage(document.documentId));
       await applyOmiContainerImportPlan(plan);
       setMessage(`${copy.opened}: ${document.title}.`);
+      setPanelOpen(false);
       window.dispatchEvent(new Event('omi:collaboration-access-changed'));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
@@ -104,35 +108,63 @@ export function CollaborationInbox({ children }: { children: ReactNode }) {
     }
   };
 
+  const hasInboxContent = invitations.length > 0 || documents.length > 0 || Boolean(message);
+
   return (
     <>
       {children}
-      {invitations.length || documents.length || message ? (
-        <aside className="omi-collaboration-inbox" aria-label={copy.aria}>
-          {invitations.length ? <strong>{copy.invitations}</strong> : null}
-          {invitations.map((invitation) => (
-            <div className="omi-collaboration-inbox__item" key={invitation.id}>
-              <span><b>{invitation.documentTitle}</b><small>{invitation.role.toLowerCase()} · {copy.expired} {new Date(invitation.expiresAt).toLocaleDateString(locale)}</small></span>
-              <div>
-                <button type="button" disabled={busyInvitationId !== null} onClick={() => void decide(invitation, true)}>{copy.accept}</button>
-                <button type="button" className="secondary" disabled={busyInvitationId !== null} onClick={() => void decide(invitation, false)}>{copy.decline}</button>
-              </div>
+      {hasInboxContent ? (
+        panelOpen ? (
+          <aside className="omi-collaboration-inbox" aria-label={copy.aria}>
+            <div className="omi-collaboration-inbox__header">
+              <strong>{copy.showPanel}</strong>
+              <button
+                type="button"
+                className="secondary omi-collaboration-inbox__close"
+                aria-label={copy.close}
+                title={copy.close}
+                onClick={() => setPanelOpen(false)}
+              >
+                ×
+              </button>
             </div>
-          ))}
-          {invitations.length ? <small>{copy.activeOnly}</small> : null}
-          {documents.length ? (
-            <div className="omi-collaboration-inbox__shared">
-              <strong>{copy.shared}</strong>
-              {documents.map((document) => (
-                <div className="omi-collaboration-inbox__item" key={document.documentId}>
-                  <span><b>{document.title}</b><small>{document.role.toLowerCase()}</small></span>
-                  <button type="button" disabled={busyInvitationId !== null} onClick={() => void openSharedDocument(document)}>{copy.open}</button>
+            {invitations.length ? <strong>{copy.invitations}</strong> : null}
+            {invitations.map((invitation) => (
+              <div className="omi-collaboration-inbox__item" key={invitation.id}>
+                <span><b>{invitation.documentTitle}</b><small>{invitation.role.toLowerCase()} · {copy.expired} {new Date(invitation.expiresAt).toLocaleDateString(locale)}</small></span>
+                <div>
+                  <button type="button" disabled={busyInvitationId !== null} onClick={() => void decide(invitation, true)}>{copy.accept}</button>
+                  <button type="button" className="secondary" disabled={busyInvitationId !== null} onClick={() => void decide(invitation, false)}>{copy.decline}</button>
                 </div>
-              ))}
-            </div>
-          ) : null}
-          {message ? <p role="status">{message}</p> : null}
-        </aside>
+              </div>
+            ))}
+            {invitations.length ? <small>{copy.activeOnly}</small> : null}
+            {documents.length ? (
+              <div className="omi-collaboration-inbox__shared">
+                <strong>{copy.shared}</strong>
+                {documents.map((document) => (
+                  <div className="omi-collaboration-inbox__item" key={document.documentId}>
+                    <span><b>{document.title}</b><small>{document.role.toLowerCase()}</small></span>
+                    <button type="button" disabled={busyInvitationId !== null} onClick={() => void openSharedDocument(document)}>{copy.open}</button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {message ? <p role="status">{message}</p> : null}
+          </aside>
+        ) : (
+          <button
+            type="button"
+            className="omi-collaboration-inbox__launcher"
+            aria-label={copy.showPanel}
+            title={copy.showPanel}
+            onClick={() => setPanelOpen(true)}
+          >
+            <span aria-hidden="true">✉</span>
+            <span>{copy.shared}</span>
+            <span>{invitations.length + documents.length}</span>
+          </button>
+        )
       ) : null}
     </>
   );
