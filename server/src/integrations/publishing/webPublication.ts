@@ -963,7 +963,7 @@ function hasVisibleAssuranceDisclosure(
   const isPeerReviewedPrSeal = assurance.reviewStatus === 'peer-reviewed' &&
     /^<svg\b(?=[^>]*\bviewBox="0 0 80 80")[^>]*><circle\b(?=[^>]*\bstroke="#166534")[^>]*\/><text\b[^>]*>PR<\/text><\/svg>$/i.test(sealArtwork);
   const isUnreviewedPrSeal = assurance.reviewStatus === 'not-peer-reviewed' &&
-    /^<svg\b(?=[^>]*\bviewBox="0 0 80 80")[^>]*><circle\b(?=[^>]*\bstroke="#dc2626")[^>]*\/><text\b[^>]*>PR<\/text><path\b(?=[^>]*\bd="M15 65 65 15")(?=[^>]*\bstroke="#dc2626")[^>]*\/><\/svg>$/i.test(sealArtwork);
+    /^<svg\b(?=[^>]*\bviewBox="0 0 80 80")[^>]*><circle\b(?=[^>]*\bstroke="#dc2626")[^>]*\/><text\b[^>]*>PR<\/text><path\b(?=[^>]*\bd="(?:M15 65 65 15|M20 60 60 20)")(?=[^>]*\bstroke="#dc2626")[^>]*\/><\/svg>$/i.test(sealArtwork);
   const hasExpectedSealArtwork = isLegacyTextSeal || isPeerReviewedPrSeal || isUnreviewedPrSeal;
   const hiddenStyle = /(?:display\s*:\s*none|visibility\s*:\s*hidden|content-visibility\s*:\s*hidden|opacity\s*:\s*0(?:\D|$)|filter\s*:\s*opacity\(\s*0|color\s*:\s*transparent|font-size\s*:\s*0|transform\s*:|clip-path\s*:(?!\s*none)|position\s*:\s*(?:absolute|fixed))/i;
   const hiddenContainer = [htmlOpening, bodyOpening, articleOpening].some(

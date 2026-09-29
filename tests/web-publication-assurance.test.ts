@@ -48,8 +48,7 @@ test('unreviewed web publication carries a visible and machine-readable disclosu
   assert.match(artifact.html, /<svg[^>]+viewBox="0 0 80 80"/);
   assert.match(artifact.html, /<text[^>]*>PR<\/text>/);
   assert.match(artifact.html, /<circle[^>]+stroke="#dc2626"/);
-  assert.match(artifact.html, /<clipPath id="omi-review-seal-interior"><circle cx="40" cy="40" r="30"\/><\/clipPath>/);
-  assert.match(artifact.html, /<path d="M20 60 60 20" clip-path="url\(#omi-review-seal-interior\)"[^>]+stroke="#dc2626"/);
+  assert.match(artifact.html, /<path d="M20 60 60 20"[^>]+stroke="#dc2626"/);
   assert.match(artifact.html, /nincs igazolt tudományos lektorálás/);
   assert.doesNotMatch(artifact.html, /omi-editorial-decision-id/);
   assert.equal(verifyPublicationBuildArtifact(artifact.build, artifact.html), true);
@@ -78,7 +77,7 @@ test('peer-reviewed seal carries only revision-bound editorial evidence, never r
   assert.match(artifact.html, /<svg[^>]+viewBox="0 0 80 80"/);
   assert.match(artifact.html, /<text[^>]*>PR<\/text>/);
   assert.match(artifact.html, /<circle[^>]+stroke="#166534"/);
-  assert.doesNotMatch(artifact.html, /<path d="M20 60 60 20"/);
+  assert.doesNotMatch(artifact.html, /<path d="M(?:15 65 65 15|20 60 60 20)"/);
   assert.ok(artifact.html.includes(editorialEvidence.decisionId));
   assert.ok(artifact.html.includes(editorialEvidence.evidenceDigest));
   assert.match(artifact.html, /<meta name="omi-publication-authority" content="verified-publication-venue">/);

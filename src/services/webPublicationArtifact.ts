@@ -160,7 +160,7 @@ function renderAssuranceSeal(
   const reviewed = reviewStatus === 'peer-reviewed';
   const circleColor = reviewed ? '#166534' : '#dc2626';
   const textColor = reviewed ? '#14532d' : '#7f1d1d';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80" focusable="false"><defs><clipPath id="omi-review-seal-interior"><circle cx="40" cy="40" r="30"/></clipPath></defs><circle cx="40" cy="40" r="35" fill="#fff" stroke="${circleColor}" stroke-width="4"/><text x="40" y="40" text-anchor="middle" dominant-baseline="central" fill="${textColor}" font-family="system-ui,sans-serif" font-size="26" font-weight="800">PR</text>${reviewed ? '' : '<path d="M20 60 60 20" clip-path="url(#omi-review-seal-interior)" fill="none" stroke="#dc2626" stroke-width="6" stroke-linecap="round"/>'}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80" focusable="false"><circle cx="40" cy="40" r="35" fill="#fff" stroke="${circleColor}" stroke-width="4"/><text x="40" y="40" text-anchor="middle" dominant-baseline="central" fill="${textColor}" font-family="system-ui,sans-serif" font-size="26" font-weight="800">PR</text>${reviewed ? '' : '<path d="M20 60 60 20" fill="none" stroke="#dc2626" stroke-width="6" stroke-linecap="round"/>'}</svg>`;
 }
 
 function disclosureCopy(
