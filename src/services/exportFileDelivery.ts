@@ -139,6 +139,7 @@ function dialogFilter(
 
 function mimeTypeForFileName(fileName: string): string {
   const normalized = fileName.trim().toLowerCase();
+  if (normalized.endsWith('.omi')) return 'application/vnd.openmanuscript.omi+zip';
   if (normalized.endsWith('.omi.zip') || normalized.endsWith('.html.zip')) return 'application/zip';
   if (normalized.endsWith('.omi.json') || normalized.endsWith('.json')) return 'application/json';
   if (normalized.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';

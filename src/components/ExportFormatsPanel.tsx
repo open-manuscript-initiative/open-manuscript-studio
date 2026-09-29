@@ -75,7 +75,7 @@ export function ExportFormatsPanel() {
       ? { label: 'Vorlagenbasierter Export', description: 'DOCX, PDF oder HTML mit eigener Blockreihenfolge, Typografie sowie Kopf- und Fußzeilen. Getrennt vom vollständigen DOCX, semantischen HTML5-Paket und Standard-PDF.' }
       : { label: 'Template-based export', description: 'DOCX, PDF or HTML with a custom block order, typography, headers and footers. Distinct from the full-manuscript DOCX, semantic HTML5 package and standard PDF.' };
   const formats: ExportFormatOption[] = [
-    { id: 'omi', group: 'portable', label: copy.omi, description: copy.omiDescription, extension: '.omi.zip' },
+    { id: 'omi', group: 'portable', label: copy.omi, description: copy.omiDescription, extension: '.omi' },
     { id: 'omi-json', group: 'portable', label: copy.omiJson, description: copy.omiJsonDescription, extension: '.omi.json' },
     { id: 'jats', group: 'publication', label: copy.jats, description: copy.jatsDescription, extension: '.xml' },
     { id: 'html', group: 'publication', label: copy.html, description: copy.htmlDescription, extension: '.html.zip' },

@@ -10,6 +10,7 @@ test('embeds semantic HTML alongside JATS in a valid OMI container', async () =>
   const entries = readStoreZipEntries(result.bytes);
 
   assert.equal(result.validForExport, true);
+  assert.match(result.fileName, /\.omi$/);
   assert.equal(entries.has('publication/article.jats.xml'), true);
   assert.equal(entries.has('publication/article.html'), true);
 
