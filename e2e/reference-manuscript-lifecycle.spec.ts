@@ -46,6 +46,9 @@ test('shows profile saved manuscripts only in the document opening view', async 
   await menu.getByRole('button', { name: 'Settings', exact: true }).click();
   await expect(menu.locator('[data-profile-saved-documents="true"]')).toHaveCount(0);
 
+  if (await menu.locator('.studio-menu-navigation').isHidden()) {
+    await menu.locator('.studio-menu-navigation-toggle').click();
+  }
   await menu.getByRole('button', { name: 'Document', exact: true }).click();
   const savedManuscripts = menu.locator('[data-profile-saved-documents="true"]');
   await expect(savedManuscripts.getByText('Saved profile manuscript')).toBeVisible();
