@@ -63,7 +63,19 @@ interface MockCollaborationOptions {
 
 export async function installMockStudioApi(
   page: Page,
-  options: { authenticated?: boolean; collaboration?: MockCollaborationOptions } = {},
+  options: {
+    authenticated?: boolean;
+    collaboration?: MockCollaborationOptions;
+    savedDocuments?: Array<{
+      id: string;
+      title: string;
+      connectionName: string;
+      createdAt: string;
+      sizeBytes: string;
+      locationUrl: string | null;
+      providerPath: string;
+    }>;
+  } = {},
 ): Promise<MockStudioApi> {
   let authenticated = options.authenticated ?? false;
   const loginRequests: Array<Record<string, unknown>> = [];
@@ -164,7 +176,7 @@ export async function installMockStudioApi(
     }
 
     if (request.method() === 'GET' && url.pathname === '/api/profile/saved-documents') {
-      await fulfillJson(route, 200, { savedDocuments: [] });
+      await fulfillJson(route, 200, { savedDocuments: options.savedDocuments ?? [] });
       return;
     }
 
