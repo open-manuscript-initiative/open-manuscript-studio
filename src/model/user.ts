@@ -41,6 +41,7 @@ export interface UserProfile {
   fullName: string;
   affiliation?: string;
   affiliationRorId?: string;
+  country?: string;
   orcid?: string;
   avatarUrl?: string;
   bio?: string;
@@ -113,6 +114,7 @@ export interface UpdateUserProfileInput {
   fullName?: string;
   affiliation?: string;
   affiliationRorId?: string;
+  country?: string;
   orcid?: string;
   avatarUrl?: string;
   bio?: string;

@@ -30,6 +30,7 @@ export interface RegisterUserInput {
 
 export interface UpdateUserInput {
   fullName?: string;
+  country?: string | null;
   affiliation?: string | null;
   affiliationRorId?: string | null;
   orcid?: string | null;
@@ -211,6 +212,7 @@ export async function updateUserForSession(
 
   const data: {
     fullName?: string;
+    country?: string | null;
     affiliation?: string | null;
     affiliationRorId?: string | null;
     orcid?: string | null;
@@ -223,6 +225,13 @@ export async function updateUserForSession(
     const fullName = input.fullName.trim();
     if (!fullName) throw new Error('The user name is required.');
     data.fullName = fullName;
+  }
+  if (input.country !== undefined) {
+    const country = cleanNullable(input.country)?.toUpperCase() ?? null;
+    if (country !== null && !/^[A-Z]{2}$/.test(country)) {
+      throw new Error('Country must be an ISO 3166-1 alpha-2 code.');
+    }
+    data.country = country;
   }
   if (input.affiliation !== undefined) data.affiliation = cleanNullable(input.affiliation);
   if (input.affiliationRorId !== undefined) data.affiliationRorId = cleanNullable(input.affiliationRorId);
@@ -323,6 +332,7 @@ function serializeUser(user: {
   fullName: string;
   affiliation: string | null;
   affiliationRorId: string | null;
+  country: string | null;
   orcid: string | null;
   bio: string | null;
   timeZone: string | null;
@@ -341,6 +351,7 @@ function serializeUser(user: {
       fullName: user.fullName,
       ...(user.affiliation !== null ? { affiliation: user.affiliation } : {}),
       ...(user.affiliationRorId !== null ? { affiliationRorId: user.affiliationRorId } : {}),
+      ...(user.country !== null ? { country: user.country } : {}),
       ...(user.orcid !== null ? { orcid: user.orcid } : {}),
       ...(user.bio !== null ? { bio: user.bio } : {}),
     },
