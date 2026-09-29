@@ -123,16 +123,116 @@ export function StudioMenu({
   const publicationCopy = getPublicationProfileCopy(locale);
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
   const editorialWorkflowLabel = supplementalCopy.editorialWorkspace;
-  const platfor×ž¼¶‰žËkºwµçClick={() => setActiveView('editorial-workflow')} />
-            {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
-            <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} />
-            <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
-            <MenuButton active={activeView === 'publication-editor'} icon={<LayoutTemplate size={18} aria-hidden="true" />} label={supplementalCopy.publicationEditor} onClick={() => setActiveView('publication-editor')} />
-            <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} />
-            {navigationBeforeTools}
-            <MenuButton active={activeView === 'tools'} icon={<Wrench size={18} aria-hidden="true" />} label={t('studio.navigation.tools')} onClick={() => setActiveView('tools')} />
-            <MenuButton active={activeView === 'settings'} icon={<Settings2 size={18} aria-hidden="true" />} label={t('studio.navigation.settings')} onClick={() => setActiveView('settings')} />
-            {navigationAfterSettings}
+  const platform = getStudioPlatform();
+  const nativeMobile = platform === 'android' || platform === 'ios';
+  const [navigationOpen, setNavigationOpen] = useState(true);
+  const navigationToggleRef = useRef<HTMLButtonElement>(null);
+  const [activeView, setActiveView] = useState<StudioMenuView | null>(null);
+  const hasActiveContent = activeView !== null || externalContentActive;
+
+  const returnHome = () => {
+    setActiveView(null);
+    onClose();
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    setNavigationOpen(true);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (!hasActiveContent) {
+        onClose();
+        return;
+      }
+      setNavigationOpen(false);
+      navigationToggleRef.current?.focus({ preventScroll: true });
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [hasActiveContent, onClose, open]);
+
+  if (!open) return null;
+
+  return (
+    <div className={`studio-menu-backdrop${nativeMobile ? ' studio-menu-backdrop--native-mobile' : ''}`} onMouseDown={(event) => {
+      if (event.target !== event.currentTarget) return;
+      if (!hasActiveContent) onClose();
+      else setNavigationOpen(false);
+    }}>
+      <aside className={`studio-menu-drawer${!hasActiveContent ? ' studio-menu-drawer--navigation-only' : ''}`} role="dialog" aria-modal="true" aria-labelledby="studio-menu-title">
+        <header className="studio-menu-header">
+          <button
+            ref={navigationToggleRef}
+            type="button"
+            className="studio-menu-close studio-menu-navigation-toggle"
+            aria-label={t('studio.menu')}
+            title={t('studio.menu')}
+            aria-controls="studio-menu-navigation"
+            aria-expanded={navigationOpen}
+            onClick={() => {
+              if (!hasActiveContent && navigationOpen) {
+                onClose();
+                return;
+              }
+              setNavigationOpen((current) => !current);
+            }}
+          ><Menu size={20} aria-hidden="true" /></button>
+          <div className="studio-menu-heading"><span className="studio-menu-eyebrow">Open Manuscript Studio</span><h2 id="studio-menu-title">{t('studio.menu')}</h2></div>
+          <span className="studio-menu-header-spacer" aria-hidden="true" />
+        </header>
+        <div className={`studio-menu-body${navigationOpen ? ' studio-menu-body--navigation-open' : ' studio-menu-body--navigation-collapsed'}`}>
+          <nav id="studio-menu-navigation" className="studio-menu-navigation" aria-label={t('studio.menu')}
+            hidden={!navigationOpen}
+            onClick={(event) => {
+              const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.studio-menu-nav-button');
+              if (!button || button.disabled) return;
+              setNavigationOpen(false);
+              navigationToggleRef.current?.focus({ preventScroll: true });
+            }}
+          >
+            <button
+              type="button"
+              data-home-navigation="true"
+              className="studio-menu-nav-button"
+              onClick={returnHome}
+            ><House size={18} aria-hidden="true" /><span>{supplementalCopy.home}</span></button>
+            <MenuNavGroup label={supplementalCopy.manuscriptGroup}>
+              <MenuButton active={activeView === 'document'} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} />
+              <MenuButton active={activeView === 'manuscript'} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} />
+              <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} />
+              <MenuButton active={activeView === 'notes'} icon={<StickyNote size={18} aria-hidden="true" />} label={t('studio.navigation.notes')} onClick={() => setActiveView('notes')} />
+              <MenuButton active={activeView === 'references'} icon={<Library size={18} aria-hidden="true" />} label={t('studio.navigation.references')} onClick={() => setActiveView('references')} />
+              {navigationAfterReferences}
+              <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
+            </MenuNavGroup>
+            <MenuNavGroup label={supplementalCopy.editorialGroup}>
+              <MenuButton active={activeView === 'editorial-workflow'} icon={<Inbox size={18} aria-hidden="true" />} label={editorialWorkflowLabel} onClick={() => setActiveView('editorial-workflow')} />
+              {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
+              <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} />
+            </MenuNavGroup>
+            <MenuNavGroup label={supplementalCopy.publicationGroup}>
+              <MenuButton active={activeView === 'publication-editor'} icon={<LayoutTemplate size={18} aria-hidden="true" />} label={supplementalCopy.publicationEditor} onClick={() => setActiveView('publication-editor')} />
+              <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} />
+            </MenuNavGroup>
+            <MenuNavGroup label={supplementalCopy.toolsGroup}>
+              {navigationBeforeTools}
+              <MenuButton active={activeView === 'tools'} icon={<Wrench size={18} aria-hidden="true" />} label={supplementalCopy.tools} onClick={() => setActiveView('tools')} />
+            </MenuNavGroup>
+            <MenuNavGroup label={supplementalCopy.preferencesGroup}>
+              <MenuButton active={activeView === 'settings'} icon={<Settings2 size={18} aria-hidden="true" />} label={t('studio.navigation.settings')} onClick={() => setActiveView('settings')} />
+              {navigationAfterSettings}
+            </MenuNavGroup>
           </nav>
           <div className={`studio-menu-content${activeView === 'publication-editor' ? ' studio-menu-content--publication-editor' : ''}${!hasActiveContent ? ' studio-menu-content--empty' : ''}`}>
             {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} onCreated={returnHome} /> : null}
@@ -164,6 +264,13 @@ interface MenuButtonProps {
 
 function MenuButton({ active, icon, label, onClick }: MenuButtonProps) {
   return <button type="button" className={`studio-menu-nav-button${active ? ' studio-menu-nav-button--active' : ''}`} aria-current={active ? 'page' : undefined} onClick={onClick}>{icon}<span>{label}</span></button>;
+}
+
+function MenuNavGroup({ label, children }: { label: string; children: ReactNode }) {
+  return <div className="studio-menu-nav-group" role="group" aria-label={label}>
+    <span className="studio-menu-nav-group-label" aria-hidden="true">{label}</span>
+    {children}
+  </div>;
 }
 
 function useOwnDeviceStorage(): boolean {
@@ -333,6 +440,7 @@ function ReferencesView() {
 
 function ToolsView() {
   const { t, locale } = useTranslation();
+  const supplementalCopy = getStudioMenuSupplementalCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const selectedSectionId = useStudioStore((state) => state.selectedSectionId);
   const checkpoint = useStudioStore((state) => state.checkpoint);
@@ -460,7 +568,7 @@ function ToolsView() {
 
   const nativeSaveCard = ownDevice ? ownDeviceSaveCard : sharedDeviceSaveCard;
 
-  return <section className="studio-menu-view studio-menu-view--tools"><div className="studio-menu-view-header"><div><h3>{t('studio.tools.title')}</h3><p>{t('studio.tools.description')}</p></div></div>
+  return <section className="studio-menu-view studio-menu-view--tools"><div className="studio-menu-view-header"><div><h3>{supplementalCopy.tools}</h3><p>{t('studio.tools.description')}</p></div></div>
     {platform === 'android' ? nativeSaveCard : null}
     {platform !== 'android' ? nativeSaveCard : null}
     <AssetContainerPanel />
