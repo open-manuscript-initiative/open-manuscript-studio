@@ -29,6 +29,31 @@ test('creates a standalone OMI study with one independent editor root', () => {
   assert.equal(manuscript.revisionHistory.revisions.length, 1);
 });
 
+test('seeds a new OMI with the signed-in author identity and an author contribution', () => {
+  const manuscript = createBlankManuscript({
+    kind: 'study',
+    locale: 'hu',
+    author: {
+      displayName: 'Kovács Anna',
+      email: 'anna@example.org',
+      affiliation: 'Sárospataki Református Hittudományi Egyetem',
+      affiliationRorId: 'https://ror.org/012345678',
+      orcid: '0000-0002-1825-0097',
+    },
+  });
+
+  assert.equal(manuscript.agents.length, 1);
+  assert.equal(manuscript.agents[0]?.names[0]?.value, 'Kovács Anna');
+  assert.equal(manuscript.agents[0]?.email, 'anna@example.org');
+  assert.equal(manuscript.agents[0]?.affiliations[0]?.organizationName, 'Sárospataki Református Hittudományi Egyetem');
+  assert.equal(manuscript.agents[0]?.affiliations[0]?.organizationIdentifier?.value, 'https://ror.org/012345678');
+  assert.equal(manuscript.agents[0]?.identifiers[0]?.value, '0000-0002-1825-0097');
+  assert.equal(manuscript.contributions.length, 1);
+  assert.equal(manuscript.contributions[0]?.agentId, manuscript.agents[0]?.id);
+  assert.equal(manuscript.contributions[0]?.targetId, manuscript.sections[0]?.id);
+  assert.deepEqual(manuscript.contributions[0]?.roles, ['author']);
+});
+
 test('creates monographs and edited volumes with distinct apparatus defaults', () => {
   const monograph = createBlankManuscript({
     kind: 'volume',

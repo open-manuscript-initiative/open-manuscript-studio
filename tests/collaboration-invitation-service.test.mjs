@@ -36,6 +36,15 @@ const collaborativeDocuments = {
 const documentStates = {
   create: async ({ data }) => { createdStates.push(data); return data; },
 };
+let packageAvailable = true;
+let storedPackage;
+const packages = {
+  findUnique: async () => packageAvailable ? (storedPackage ?? { documentId: 'manuscript-1' }) : null,
+  upsert: async ({ create, update }) => {
+    storedPackage = { ...create, ...update, updatedAt: new Date() };
+    return { checksum: storedPackage.checksum, packageVersion: storedPackage.packageVersion, updatedAt: storedPackage.updatedAt };
+  },
+};
 
 const invitations = {
   findUnique: async ({ where }) => (where.tokenHash === invitationRow?.tokenHash || where.id === invitationRow?.id)
@@ -65,7 +74,10 @@ const members = {
 const users = { findUnique: async ({ where }) => where.id === user.id ? structuredClone(user) : null };
 const auditEvents = { create: async () => ({ id: 'audit-event' }) };
 mock.module(new URL('../server/dist/lib/prisma.js', import.meta.url).href, {
-  namedExports: { prisma: { collaborativeDocument: collaborativeDocuments, collaborativeDocumentState: documentStates, collaborationInvitation: invitations, collaborationMember: members, collaborationAuditEvent: auditEvents, user: users, $transaction: async (work) => work({ collaborativeDocument: collaborativeDocuments, collaborativeDocumentState: documentStates, collaborationInvitation: invitations, collaborationMember: members, collaborationAuditEvent: auditEvents, user: users }) } },
+  namedExports: { prisma: { collaborativeDocument: collaborativeDocuments, collaborativeDocumentState: documentStates, collaborativeDocumentPackage: packages, collaborationInvitation: invitations, collaborationMember: members, collaborationAuditEvent: auditEvents, user: users, $transaction: async (work) => work({ collaborativeDocument: collaborativeDocuments, collaborativeDocumentState: documentStates, collaborativeDocumentPackage: packages, collaborationInvitation: invitations, collaborationMember: members, collaborationAuditEvent: auditEvents, user: users }) } },
+});
+mock.module(new URL('../server/dist/lib/identityPrisma.js', import.meta.url).href, {
+  namedExports: { identityPrisma: { userIdentity: { findMany: async () => [{ profile: { email_verified: true } }] } } },
 });
 mock.module(new URL('../server/dist/config/env.js', import.meta.url).href, {
   namedExports: { env: { FRONTEND_ORIGIN: 'https://studio.example.test', INVITATION_TTL_HOURS: 168, MAIL_FROM: 'Studio <no-reply@example.test>', SENDMAIL_PATH: '/usr/sbin/sendmail' } },
@@ -163,8 +175,8 @@ test('expired and malformed invitation tokens cannot be accepted', async () => {
 });
 
 test('pending invitations are not memberships and only active owners or editors may invite', async () => {
-  authorizationMembership = { id: 'member-1', role: 'AUTHOR', revokedAt: null };
-  assert.equal((await service.requireActiveMember('manuscript-1', user.id)).role, 'AUTHOR');
+  authorizationMembership = { id: 'member-1', role: 'VIEWER', revokedAt: null };
+  assert.equal((await service.requireActiveMember('manuscript-1', user.id)).role, 'VIEWER');
   await assert.rejects(
     service.inviteCollaborator(user.id, { documentId: 'manuscript-1', email: 'next@example.test', role: 'AUTHOR' }),
     { code: 'FORBIDDEN' },
@@ -176,4 +188,37 @@ test('pending invitations are not memberships and only active owners or editors 
     service.requireActiveMember('manuscript-1', user.id),
     { code: 'FORBIDDEN' },
   );
+});
+
+test('a collaborator cannot be invited until a complete shared OMI package exists', async () => {
+  authorizationMembership = { id: 'owner-member', role: 'OWNER', revokedAt: null };
+  packageAvailable = false;
+  try {
+    await assert.rejects(
+      service.inviteCollaborator(user.id, { documentId: 'manuscript-1', email: 'next@example.test', role: 'AUTHOR' }),
+      { code: 'CONFLICT' },
+    );
+  } finally {
+    packageAvailable = true;
+    authorizationMembership = null;
+  }
+});
+
+test('publishes only ZIP packages and returns the stored package checksum', async () => {
+  authorizationMembership = { id: 'owner-member', role: 'OWNER', revokedAt: null };
+  const bytes = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
+  try {
+    const result = await service.publishCollaborativeDocumentPackage(user.id, {
+      documentId: 'manuscript-1',
+      packageVersion: '0.1.0-alpha.1',
+      packageBase64: bytes.toString('base64'),
+    });
+    assert.equal(result.checksum, createHash('sha256').update(bytes).digest('hex'));
+    await assert.rejects(service.publishCollaborativeDocumentPackage(user.id, {
+      documentId: 'manuscript-1', packageVersion: '0.1.0-alpha.1', packageBase64: Buffer.from('not a zip').toString('base64'),
+    }), TypeError);
+  } finally {
+    authorizationMembership = null;
+    storedPackage = null;
+  }
 });

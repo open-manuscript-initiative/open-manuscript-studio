@@ -42,6 +42,13 @@ export interface PendingCollaborationInvitation {
   expiresAt: string;
 }
 
+export interface SharedCollaborativeDocument {
+  documentId: string;
+  title: string;
+  role: 'OWNER' | 'EDITOR' | 'AUTHOR' | 'VIEWER';
+  packageUpdatedAt: string | null;
+}
+
 export async function isCollaborationEnabled(): Promise<boolean> {
   const response = await requestStudioApi<{ enabled: boolean }>(
     '/api/collaboration/status',
@@ -60,6 +67,40 @@ export async function getPendingCollaborationInvitations(): Promise<PendingColla
 
 export async function getCollaborationAccess(documentId: string): Promise<CollaborationAccess> {
   return requestStudioApi(`/api/collaboration/documents/${encodeURIComponent(documentId)}/access`, { method: 'GET' });
+}
+
+export async function listSharedCollaborativeDocuments(): Promise<SharedCollaborativeDocument[]> {
+  const response = await requestStudioApi<{ documents: SharedCollaborativeDocument[] }>(
+    '/api/collaboration/documents',
+    { method: 'GET' },
+  );
+  return response.documents;
+}
+
+export async function publishSharedManuscriptPackage(input: {
+  documentId: string;
+  packageVersion: string;
+  bytes: Uint8Array;
+}): Promise<void> {
+  let binary = '';
+  for (let offset = 0; offset < input.bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...input.bytes.subarray(offset, offset + 0x8000));
+  }
+  await requestStudioApi(`/api/collaboration/documents/${encodeURIComponent(input.documentId)}/package`, {
+    method: 'PUT',
+    body: JSON.stringify({ packageVersion: input.packageVersion, packageBase64: btoa(binary) }),
+  });
+}
+
+export async function downloadSharedManuscriptPackage(documentId: string): Promise<Uint8Array> {
+  const response = await requestStudioApi<{ package: { packageBase64: string } }>(
+    `/api/collaboration/documents/${encodeURIComponent(documentId)}/package`,
+    { method: 'GET' },
+  );
+  const binary = atob(response.package.packageBase64);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
 }
 
 export async function createCollaborationDocument(input: {

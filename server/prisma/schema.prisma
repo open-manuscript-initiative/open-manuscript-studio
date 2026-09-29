@@ -286,6 +286,7 @@ model CollaborativeDocument {
   state             CollaborativeDocumentState?
   connectionTickets CollaborationConnectionTicket[]
   messages CollaborationMessage[]
+  package CollaborativeDocumentPackage?
 
   @@index([ownerUserId, updatedAt])
   @@map("collaborative_documents")
@@ -313,6 +314,20 @@ model CollaborativeDocumentState {
   document   CollaborativeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@map("collaborative_document_states")
+}
+
+/// Complete validated OMI container published for accepted collaborators to
+/// open independently. This is distinct from the per-profile external cloud
+/// backup and from the live Yjs state.
+model CollaborativeDocumentPackage {
+  documentId    String                @id @map("document_id") @db.VarChar(128)
+  packageBytes  Bytes                 @map("package_bytes") @db.ByteA
+  checksum      String                @db.VarChar(64)
+  packageVersion String               @map("package_version") @db.VarChar(32)
+  updatedAt     DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  document      CollaborativeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@map("collaborative_document_packages")
 }
 
 model CollaborationConnectionTicket {

@@ -2,9 +2,12 @@ import { useEffect, useState, type ReactNode } from 'react';
 
 import {
   acceptCollaborationInvitation,
+  downloadSharedManuscriptPackage,
   declineCollaborationInvitation,
   inspectCollaborationInvitation,
 } from '../services/collaborationApi';
+import { inspectOmiContainer } from '../services/omiContainerImport';
+import { applyOmiContainerImportPlan } from '../app/omiContainerImportActions';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 
 interface Invitation {
@@ -44,7 +47,13 @@ export function CollaborationInvitationGate({
     setBusy(true);
     setMessage('');
     try {
-      if (accept) await acceptCollaborationInvitation(token);
+      if (accept) {
+        await acceptCollaborationInvitation(token);
+        if (invitation) {
+          const plan = await inspectOmiContainer(await downloadSharedManuscriptPackage(invitation.documentId));
+          await applyOmiContainerImportPlan(plan);
+        }
+      }
       else await declineCollaborationInvitation(token);
       setAccepted(true);
       if (accept) window.dispatchEvent(new Event('omi:collaboration-access-changed'));

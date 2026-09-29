@@ -6,12 +6,15 @@ import {
   acceptCollaborationInvitationById,
   CollaborationInvitationError,
   createCollaborativeDocument,
+  downloadCollaborativeDocumentPackage,
   declineCollaborationInvitation,
   declineCollaborationInvitationById,
   inspectCollaborationInvitation,
   inviteCollaborator,
   listPendingCollaborationInvitations,
   listCollaborativeDocumentAccess,
+  listSharedCollaborativeDocuments,
+  publishCollaborativeDocumentPackage,
   revokeCollaborator,
   revokeCollaborationInvitation,
 } from '../services/collaborationInvitationService.js';
@@ -33,6 +36,10 @@ const inviteSchema = z.object({
   email: z.string().trim().email().max(320),
   role: z.enum(['EDITOR', 'AUTHOR', 'VIEWER']),
 }).strict();
+const sharedPackageSchema = z.object({
+  packageVersion: z.string().trim().min(1).max(32),
+  packageBase64: z.string().min(8).max(139_810_136),
+}).strict();
 
 collaborationRouter.post('/documents', requireSession, async (request: AuthenticatedRequest, response) => {
   try {
@@ -53,6 +60,39 @@ collaborationRouter.get('/documents/:documentId/access', requireSession, async (
     response.status(200).json(access);
   } catch (error) {
     sendError(response, error, 'COLLABORATION_ACCESS_LOAD_FAILED');
+  }
+});
+
+collaborationRouter.get('/documents', requireSession, async (request: AuthenticatedRequest, response) => {
+  try {
+    response.setHeader('Cache-Control', 'no-store');
+    response.status(200).json({ documents: await listSharedCollaborativeDocuments(requireUserId(request)) });
+  } catch (error) {
+    sendError(response, error, 'COLLABORATION_DOCUMENTS_LOAD_FAILED');
+  }
+});
+
+collaborationRouter.put('/documents/:documentId/package', requireSession, async (request: AuthenticatedRequest, response) => {
+  try {
+    const published = await publishCollaborativeDocumentPackage(requireUserId(request), {
+      documentId: parseId(request.params.documentId, 'document'),
+      ...sharedPackageSchema.parse(request.body),
+    });
+    response.status(200).json({ package: published });
+  } catch (error) {
+    sendError(response, error, 'COLLABORATION_PACKAGE_PUBLISH_FAILED');
+  }
+});
+
+collaborationRouter.get('/documents/:documentId/package', requireSession, async (request: AuthenticatedRequest, response) => {
+  try {
+    response.setHeader('Cache-Control', 'no-store');
+    response.status(200).json({ package: await downloadCollaborativeDocumentPackage(
+      requireUserId(request),
+      parseId(request.params.documentId, 'document'),
+    ) });
+  } catch (error) {
+    sendError(response, error, 'COLLABORATION_PACKAGE_LOAD_FAILED');
   }
 });
 

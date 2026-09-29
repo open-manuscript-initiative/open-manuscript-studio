@@ -14,6 +14,9 @@ const service = {
     return { id: input.documentId, title: input.title, createdAt: new Date('2026-09-27T00:00:00Z') };
   },
   listCollaborativeDocumentAccess: async (_userId, _documentId) => ({ members: [{ userId: owner, role: 'OWNER' }], invitations: [] }),
+  listSharedCollaborativeDocuments: async (_userId) => [],
+  publishCollaborativeDocumentPackage: async (_userId, input) => ({ checksum: '0'.repeat(64), packageVersion: input.packageVersion, updatedAt: new Date().toISOString() }),
+  downloadCollaborativeDocumentPackage: async (_userId, documentId) => ({ title: documentId, packageBase64: 'UEsDBA==' }),
   listPendingCollaborationInvitations: async (userId) => {
     calls.push({ action: 'inbox', userId });
     return [{ id: '30000000-0000-4000-8000-000000000003', documentId: 'manuscript-1', documentTitle: 'A shared manuscript', role: 'AUTHOR', status: 'pending' }];
