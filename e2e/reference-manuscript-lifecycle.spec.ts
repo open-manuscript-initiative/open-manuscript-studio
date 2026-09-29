@@ -216,7 +216,7 @@ async function exportFromUi(
   if (await menu.locator('.studio-menu-navigation').isHidden()) {
     await menu.locator('.studio-menu-navigation-toggle').click();
   }
-  await menu.getByRole('button', { name: 'Export and tools', exact: true }).click();
+  await menu.getByRole('button', { name: 'Publication', exact: true }).click();
   const formatSelect = menu.getByLabel('Export format');
   await formatSelect.selectOption(format);
 
@@ -244,7 +244,7 @@ async function expectJatsReleaseBlocked(page: Page): Promise<void> {
   if (await menu.locator('.studio-menu-navigation').isHidden()) {
     await menu.locator('.studio-menu-navigation-toggle').click();
   }
-  await menu.getByRole('button', { name: 'Export and tools', exact: true }).click();
+  await menu.getByRole('button', { name: 'Publication', exact: true }).click();
   await menu.getByLabel('Export format').selectOption('jats');
   await menu.getByRole('button', { name: 'Export', exact: true }).click();
 
