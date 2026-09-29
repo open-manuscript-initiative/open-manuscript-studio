@@ -49,6 +49,7 @@ const resetPasswordSchema = z.object({
 
 const updateProfileSchema = z.object({
   fullName: z.string().min(1).max(200).optional(),
+  country: z.string().trim().toUpperCase().regex(/^[A-Z]{2}$/).nullable().optional(),
   affiliation: z.string().max(300).nullable().optional(),
   affiliationRorId: z.string().max(128).nullable().optional(),
   orcid: z.string().max(19).nullable().optional(),
@@ -215,6 +216,7 @@ authRouter.patch('/me', async (request, response) => {
     const parsed = updateProfileSchema.parse(request.body);
     const input: UpdateUserInput = {
       ...(parsed.fullName !== undefined ? { fullName: parsed.fullName } : {}),
+      ...(parsed.country !== undefined ? { country: parsed.country } : {}),
       ...(parsed.affiliation !== undefined ? { affiliation: parsed.affiliation } : {}),
       ...(parsed.affiliationRorId !== undefined ? { affiliationRorId: parsed.affiliationRorId } : {}),
       ...(parsed.orcid !== undefined ? { orcid: parsed.orcid } : {}),

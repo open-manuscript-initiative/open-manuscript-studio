@@ -318,6 +318,10 @@ export async function updateCurrentAccount(
       input.affiliationRorId !== undefined
         ? input.affiliationRorId.trim() || null
         : undefined,
+    country:
+      input.country !== undefined
+        ? input.country.trim().toUpperCase() || null
+        : undefined,
     orcid:
       input.orcid !== undefined
         ? input.orcid.trim() || null

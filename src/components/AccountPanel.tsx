@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 
 import { getSystemTimeZone, getTimeZoneOptions } from '../account/timeZones';
+import { getCountryOptions } from '../model/countryCodes';
 import { useTranslation } from '../i18n';
 import { getAccountPanelCopy } from '../i18n/accountPanelTranslations';
 import { getCentralAdminContext, type CentralAdminRole } from '../services/centralAdminApi';
@@ -25,6 +26,7 @@ type AccountFormState = {
   fullName: string;
   orcid: string;
   bio: string;
+  country: string;
   timeZone: string;
 };
 
@@ -45,12 +47,14 @@ export function AccountPanel() {
     fullName: '',
     orcid: '',
     bio: '',
+    country: '',
     timeZone: getSystemTimeZone(),
   });
   const timeZoneOptions = useMemo(
     () => getTimeZoneOptions(form.timeZone),
     [form.timeZone],
   );
+  const countryOptions = useMemo(() => getCountryOptions(locale), [locale]);
 
   useEffect(() => {
     if (!user) return;
@@ -58,6 +62,7 @@ export function AccountPanel() {
       fullName: user.profile.fullName ?? '',
       orcid: user.profile.orcid ?? '',
       bio: user.profile.bio ?? '',
+      country: user.profile.country ?? '',
       timeZone: user.preferences.timeZone || getSystemTimeZone(),
     });
     void getCentralAdminContext()
@@ -74,6 +79,7 @@ export function AccountPanel() {
       fullName: form.fullName,
       orcid: form.orcid || undefined,
       bio: form.bio || undefined,
+      country: form.country,
       timeZone: form.timeZone || undefined,
     });
     setSaved(true);
@@ -156,6 +162,19 @@ export function AccountPanel() {
                   onChange={(event) => setForm({ ...form, orcid: event.target.value })}
                   placeholder="0000-0000-0000-0000"
                 />
+              </label>
+
+              <label>
+                {labels.country}
+                <select
+                  value={form.country}
+                  onChange={(event) => setForm({ ...form, country: event.target.value })}
+                >
+                  <option value="">{labels.notSpecified}</option>
+                  {countryOptions.map((option) => (
+                    <option value={option.code} key={option.code}>{option.label}</option>
+                  ))}
+                </select>
               </label>
 
               <label>
