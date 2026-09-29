@@ -35,16 +35,23 @@ test('seeds a new OMI with the signed-in author identity and an author contribut
     locale: 'hu',
     author: {
       displayName: 'Kovács Anna',
+      givenName: 'Anna',
+      familyName: 'Kovács',
+      preferredPublicName: 'Anna Kovács',
       email: 'anna@example.org',
       affiliation: 'Sárospataki Református Hittudományi Egyetem',
       affiliationRorId: 'https://ror.org/012345678',
       orcid: '0000-0002-1825-0097',
+      biography: { hu: 'Szerző.' },
     },
   });
 
   assert.equal(manuscript.agents.length, 1);
   assert.equal(manuscript.agents[0]?.names[0]?.value, 'Kovács Anna');
+  assert.equal(manuscript.agents[0]?.names[0]?.givenName, 'Anna');
+  assert.equal(manuscript.agents[0]?.names[0]?.familyName, 'Kovács');
   assert.equal(manuscript.agents[0]?.email, 'anna@example.org');
+  assert.deepEqual(manuscript.agents[0]?.biography, { hu: 'Szerző.' });
   assert.equal(manuscript.agents[0]?.affiliations[0]?.organizationName, 'Sárospataki Református Hittudományi Egyetem');
   assert.equal(manuscript.agents[0]?.affiliations[0]?.organizationIdentifier?.value, 'https://ror.org/012345678');
   assert.equal(manuscript.agents[0]?.identifiers[0]?.value, '0000-0002-1825-0097');
@@ -52,6 +59,7 @@ test('seeds a new OMI with the signed-in author identity and an author contribut
   assert.equal(manuscript.contributions[0]?.agentId, manuscript.agents[0]?.id);
   assert.equal(manuscript.contributions[0]?.targetId, manuscript.sections[0]?.id);
   assert.deepEqual(manuscript.contributions[0]?.roles, ['author']);
+  assert.equal(manuscript.contributions[0]?.attributionName, 'Anna Kovács');
 });
 
 test('creates monographs and edited volumes with distinct apparatus defaults', () => {

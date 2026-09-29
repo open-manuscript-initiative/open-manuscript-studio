@@ -21,10 +21,14 @@ export interface CreateBlankManuscriptInput {
   title?: string;
   author?: {
     displayName: string;
+    givenName?: string;
+    familyName?: string;
+    preferredPublicName?: string;
     email: string;
     affiliation?: string;
     affiliationRorId?: string;
     orcid?: string;
+    biography?: Record<string, string>;
   };
 }
 
@@ -35,14 +39,15 @@ export function createBlankManuscript(
   const manuscriptId = crypto.randomUUID();
   const authorName = input.author?.displayName.trim();
   const author = authorName
-    ? createPersonAgent({
-        givenName: '',
-        familyName: '',
+      ? createPersonAgent({
+        givenName: input.author?.givenName ?? '',
+        familyName: input.author?.familyName ?? '',
         displayName: authorName,
         email: input.author?.email,
         affiliation: input.author?.affiliation,
         affiliationRorId: input.author?.affiliationRorId,
         orcid: input.author?.orcid,
+        biography: input.author?.biography,
         language: input.locale,
       }, crypto.randomUUID(), now)
     : null;
@@ -64,14 +69,19 @@ export function createBlankManuscript(
     ),
     agents: author ? [author] : [],
     contributions: author
-      ? [createContribution(
-          author.id,
-          rootStudyId ?? manuscriptId,
-          ['author'],
-          1,
-          crypto.randomUUID(),
-          now,
-        )]
+      ? [{
+          ...createContribution(
+            author.id,
+            rootStudyId ?? manuscriptId,
+            ['author'],
+            1,
+            crypto.randomUUID(),
+            now,
+          ),
+          ...(input.author?.preferredPublicName?.trim()
+            ? { attributionName: input.author.preferredPublicName.trim() }
+            : {}),
+        }]
       : [],
     tombstones: [],
     sections: rootStudyId ? [createEmptyStudy(rootStudyId)] : [],
