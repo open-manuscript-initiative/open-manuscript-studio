@@ -70,9 +70,7 @@ function addAssuranceDisclosure(
   assurance: WebPublicationAssurance,
 ): string {
   const copy = disclosureCopy(locale, assurance);
-  const seal = assurance.reviewStatus === 'peer-reviewed'
-    ? 'OMI\nPEER REVIEW\nVERIFIED'
-    : 'OMI\nPEER REVIEW\nNOT VERIFIED';
+  const seal = renderAssuranceSeal(assurance.reviewStatus);
   const palette = assurance.reviewStatus === 'peer-reviewed'
     ? { border: '#166534', background: '#f0fdf4', color: '#14532d' }
     : { border: '#92400e', background: '#fffbeb', color: '#78350f' };
@@ -121,7 +119,7 @@ function addAssuranceDisclosure(
       : []),
     `      style="display:flex!important;visibility:visible!important;opacity:1!important;position:static!important;width:auto!important;height:auto!important;clip:auto!important;clip-path:none!important;overflow:visible!important;gap:.8rem;align-items:center;margin:0 0 1.5rem;padding:.75rem 1rem;border:1px solid ${palette.border};border-inline-start-width:.3rem;border-radius:.35rem;background:${palette.background}!important;color:${palette.color}!important;font:.95rem/1.45 system-ui,sans-serif!important"`,
     '      role="note">',
-    `      <span class="omi-publication-assurance__seal" aria-hidden="true" style="display:inline-grid!important;visibility:visible!important;opacity:1!important;place-items:center;box-sizing:border-box;flex:0 0 5rem;width:5rem;min-height:5rem;padding:.35rem;border:.18rem double currentColor;border-radius:50%;text-align:center;text-transform:uppercase;white-space:pre-line;font-size:.58rem!important;font-weight:750;letter-spacing:.04em;line-height:1.12">${escapeHtml(seal)}</span>`,
+    `      <span class="omi-publication-assurance__seal" aria-hidden="true" style="display:inline-grid!important;visibility:visible!important;opacity:1!important;place-items:center;box-sizing:border-box;flex:0 0 5rem;width:5rem;height:5rem;line-height:0">${seal}</span>`,
     '      <span class="omi-publication-assurance__copy" style="display:grid;gap:.2rem">',
     `        <strong>${escapeHtml(copy.label)}</strong> ${escapeHtml(copy.text)}`,
     ...(assurance.reviewStatus === 'peer-reviewed'
@@ -143,7 +141,8 @@ function addAssuranceDisclosure(
       '    .omi-publication-assurance { display: flex; gap: .8rem; align-items: center; margin: 0 0 1.5rem; padding: .75rem 1rem; border: 1px solid #6b7280; border-inline-start-width: .3rem; border-radius: .35rem; background: #f3f4f6; color: #1f2937; font: 0.95rem/1.45 system-ui, sans-serif; }',
       '    .omi-publication-assurance--peer-reviewed { border-color: #166534; background: #f0fdf4; color: #14532d; }',
       '    .omi-publication-assurance--not-peer-reviewed { border-color: #92400e; background: #fffbeb; color: #78350f; }',
-      '    .omi-publication-assurance__seal { display: inline-grid; place-items: center; box-sizing: border-box; flex: 0 0 5rem; width: 5rem; min-height: 5rem; padding: .35rem; border: .18rem double currentColor; border-radius: 50%; text-align: center; text-transform: uppercase; white-space: pre-line; font-size: .58rem; font-weight: 750; letter-spacing: .04em; line-height: 1.12; }',
+      '    .omi-publication-assurance__seal { display: inline-grid; place-items: center; box-sizing: border-box; flex: 0 0 5rem; width: 5rem; height: 5rem; line-height: 0; }',
+      '    .omi-publication-assurance__seal svg { display: block; width: 100%; height: 100%; }',
       '    .omi-publication-assurance__copy { display: grid; gap: .2rem; }',
       '    .omi-publication-assurance__copy small { overflow-wrap: anywhere; }',
       '  </style>',
@@ -153,6 +152,15 @@ function addAssuranceDisclosure(
     /( {2}<article class="omi-scholarly-article"[^>]*>)/,
     `$1\n${notice}`,
   );
+}
+
+function renderAssuranceSeal(
+  reviewStatus: WebPublicationAssurance['reviewStatus'],
+): string {
+  const reviewed = reviewStatus === 'peer-reviewed';
+  const circleColor = reviewed ? '#166534' : '#dc2626';
+  const textColor = reviewed ? '#14532d' : '#7f1d1d';
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80" focusable="false"><circle cx="40" cy="40" r="35" fill="#fff" stroke="${circleColor}" stroke-width="4"/><text x="40" y="40" text-anchor="middle" dominant-baseline="central" fill="${textColor}" font-family="system-ui,sans-serif" font-size="26" font-weight="800">PR</text>${reviewed ? '' : '<path d="M15 65 65 15" fill="none" stroke="#dc2626" stroke-width="6" stroke-linecap="round"/>'}</svg>`;
 }
 
 function disclosureCopy(

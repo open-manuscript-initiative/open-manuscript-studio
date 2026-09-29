@@ -45,8 +45,10 @@ test('unreviewed web publication carries a visible and machine-readable disclosu
   assert.match(artifact.html, /<meta name="omi-review-status" content="not-peer-reviewed">/);
   assert.match(artifact.html, /data-omi-review-status="not-peer-reviewed"/);
   assert.match(artifact.html, /data-omi-assurance-version="1"/);
-  assert.match(artifact.html, />OMI\nPEER REVIEW\nNOT VERIFIED</);
-  assert.match(artifact.html, /border-radius:50%/);
+  assert.match(artifact.html, /<svg[^>]+viewBox="0 0 80 80"/);
+  assert.match(artifact.html, /<text[^>]*>PR<\/text>/);
+  assert.match(artifact.html, /<circle[^>]+stroke="#dc2626"/);
+  assert.match(artifact.html, /<path d="M15 65 65 15"[^>]+stroke="#dc2626"/);
   assert.match(artifact.html, /nincs igazolt tudományos lektorálás/);
   assert.doesNotMatch(artifact.html, /omi-editorial-decision-id/);
   assert.equal(verifyPublicationBuildArtifact(artifact.build, artifact.html), true);
@@ -72,7 +74,10 @@ test('peer-reviewed seal carries only revision-bound editorial evidence, never r
   assert.equal(artifact.publicationContentDigest, editorialEvidence.publicationContentDigest);
   assert.match(artifact.html, /<meta name="omi-review-status" content="peer-reviewed">/);
   assert.match(artifact.html, /data-omi-review-status="peer-reviewed"/);
-  assert.match(artifact.html, />OMI\nPEER REVIEW\nVERIFIED</);
+  assert.match(artifact.html, /<svg[^>]+viewBox="0 0 80 80"/);
+  assert.match(artifact.html, /<text[^>]*>PR<\/text>/);
+  assert.match(artifact.html, /<circle[^>]+stroke="#166534"/);
+  assert.doesNotMatch(artifact.html, /<path d="M15 65 65 15"/);
   assert.ok(artifact.html.includes(editorialEvidence.decisionId));
   assert.ok(artifact.html.includes(editorialEvidence.evidenceDigest));
   assert.match(artifact.html, /<meta name="omi-publication-authority" content="verified-publication-venue">/);

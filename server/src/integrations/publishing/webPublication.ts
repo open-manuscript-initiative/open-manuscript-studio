@@ -945,7 +945,7 @@ function hasVisibleAssuranceDisclosure(
   if (!disclosure) return false;
   const opening = disclosure.match(/^<aside\b[^>]*>/i)?.[0];
   const seal = disclosure.match(
-    /<span\b[^>]*class="[^"]*omi-publication-assurance__seal[^"]*"[^>]*>([^<]+)<\/span>/i,
+    /<span\b[^>]*class="[^"]*omi-publication-assurance__seal[^"]*"[^>]*>([\s\S]*?)<\/span>/i,
   );
   if (!opening || !seal) return false;
   const openingStyle = attribute(opening, 'style')?.toLowerCase() ?? '';
@@ -958,6 +958,13 @@ function hasVisibleAssuranceDisclosure(
   const expectedSeal = assurance.reviewStatus === 'peer-reviewed'
     ? 'OMI PEER REVIEW VERIFIED'
     : 'OMI PEER REVIEW NOT VERIFIED';
+  const sealArtwork = (seal[1] ?? '').trim();
+  const isLegacyTextSeal = sealArtwork.replace(/\s+/g, ' ') === expectedSeal;
+  const isPeerReviewedPrSeal = assurance.reviewStatus === 'peer-reviewed' &&
+    /^<svg\b(?=[^>]*\bviewBox="0 0 80 80")[^>]*><circle\b(?=[^>]*\bstroke="#166534")[^>]*\/><text\b[^>]*>PR<\/text><\/svg>$/i.test(sealArtwork);
+  const isUnreviewedPrSeal = assurance.reviewStatus === 'not-peer-reviewed' &&
+    /^<svg\b(?=[^>]*\bviewBox="0 0 80 80")[^>]*><circle\b(?=[^>]*\bstroke="#dc2626")[^>]*\/><text\b[^>]*>PR<\/text><path\b(?=[^>]*\bd="M15 65 65 15")(?=[^>]*\bstroke="#dc2626")[^>]*\/><\/svg>$/i.test(sealArtwork);
+  const hasExpectedSealArtwork = isLegacyTextSeal || isPeerReviewedPrSeal || isUnreviewedPrSeal;
   const hiddenStyle = /(?:display\s*:\s*none|visibility\s*:\s*hidden|content-visibility\s*:\s*hidden|opacity\s*:\s*0(?:\D|$)|filter\s*:\s*opacity\(\s*0|color\s*:\s*transparent|font-size\s*:\s*0|transform\s*:|clip-path\s*:(?!\s*none)|position\s*:\s*(?:absolute|fixed))/i;
   const hiddenContainer = [htmlOpening, bodyOpening, articleOpening].some(
     (tag) =>
@@ -983,7 +990,7 @@ function hasVisibleAssuranceDisclosure(
     sealStyle.includes('visibility:visible!important') &&
     !hiddenStyle.test(openingStyle) &&
     !hiddenStyle.test(sealStyle) &&
-    (seal[1] ?? '').replace(/\s+/g, ' ').trim() === expectedSeal &&
+    hasExpectedSealArtwork &&
     (assurance.reviewStatus === 'not-peer-reviewed' ||
       (
         attribute(opening, 'data-omi-editorial-decision-id') === assurance.evidence.decisionId &&
