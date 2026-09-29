@@ -1,10 +1,12 @@
 import { useState } from 'react';
 
+import { externalizeActiveManuscriptAssets } from '../app/assetActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { useTranslation } from '../i18n';
 import { getExportFormatCopy } from '../i18n/exportFormats';
 import { getStudioPlatform } from '../mobile/platform/platform';
 import { resolvePublicationProfile } from '../model/publicationProfile';
+import { ensureManuscriptRevisionStateDigests } from '../model/revisionIntegrity';
 import { buildDocxExport } from '../services/exportDocx';
 import { buildEpubExport } from '../services/exportEpub';
 import { saveExportBlob, saveExportText, type ExportDeliveryResult } from '../services/exportFileDelivery';
@@ -122,7 +124,12 @@ export function ExportFormatsPanel() {
       const manuscript = useStudioStore.getState().manuscript;
       switch (id) {
         case 'omi': {
-          const result = await buildOmiContainer(manuscript);
+          await externalizeActiveManuscriptAssets();
+          checkpoint('export');
+          const current = useStudioStore.getState().manuscript;
+          const enriched = ensureManuscriptRevisionStateDigests(current);
+          if (enriched !== current) useStudioStore.setState({ manuscript: enriched });
+          const result = await buildOmiContainer(enriched);
           if (!result.validForExport) throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
           reportDelivery(await saveExportBlob(result.blob, result.fileName));
           break;

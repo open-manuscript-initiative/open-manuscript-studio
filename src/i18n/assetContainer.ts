@@ -7,12 +7,7 @@ export interface AssetContainerCopy {
   prepare: string;
   preparing: string;
   prepared: string;
-  download: string;
-  downloading: string;
-  ready: string;
-  blocked: string;
   diagnostics: string;
-  noDiagnostics: string;
   integrity: string;
   format: string;
   privacyNote: string;
@@ -37,22 +32,17 @@ export interface AssetContainerCopy {
 
 const COPY: Record<'en' | 'hu' | 'de', AssetContainerCopy> = {
   en: {
-    title: 'OMI package',
+    title: 'OMI package tools',
     description:
-      'Externalize binary resources and package the manuscript, history, publication profile, checksums, assets and valid JATS output as a portable .omi container.',
+      'Prepare embedded images as portable assets, check revision integrity, and inspect or open an existing .omi package. Create new OMI packages from Export formats.',
     assets: 'registered assets',
     embedded: 'embedded images awaiting externalization',
     prepare: 'Prepare assets',
     preparing: 'Preparing assets…',
     prepared: 'Embedded image payloads are registered as stable assets.',
-    download: 'Download .omi package',
-    downloading: 'Building package…',
-    ready: 'The container passed Studio integrity checks.',
-    blocked: 'The package has blocking integrity errors.',
     diagnostics: 'Container diagnostics',
-    noDiagnostics: 'No container-specific diagnostics.',
     integrity: 'SHA-256 integrity',
-    format: 'OMI-SPEC-320 / OMI-SPEC-330 Draft package',
+    format: 'Package format: OMI-SPEC-320 / OMI-SPEC-330 Draft.',
     privacyNote:
       'Asset-backed image previews are resolved from the local binary repository. Portable manuscript state no longer needs Base64 preview data after externalization.',
     importTitle: 'Open OMI package',
@@ -77,22 +67,17 @@ const COPY: Record<'en' | 'hu' | 'de', AssetContainerCopy> = {
       'Open this verified OMI manuscript and replace the currently active workspace document?',
   },
   hu: {
-    title: 'OMI-csomag',
+    title: 'OMI-csomag kezelése',
     description:
-      'A bináris erőforrások külső assetté alakítása, majd a kézirat, revíziótörténet, publikációs profil, ellenőrzőösszegek, assetek és az érvényes JATS-kimenet hordozható .omi konténerbe csomagolása.',
+      'Beágyazott képek előkészítése hordozható assetként, a revízióintegritás ellenőrzése, valamint meglévő .omi csomag vizsgálata és megnyitása. Új OMI-csomagot az Exportálás menüben készíthet.',
     assets: 'regisztrált asset',
     embedded: 'külső assetté alakítandó beágyazott kép',
     prepare: 'Assetek előkészítése',
     preparing: 'Assetek előkészítése…',
     prepared: 'A beágyazott képek stabil assetként regisztrálva vannak.',
-    download: '.omi csomag letöltése',
-    downloading: 'Csomag készítése…',
-    ready: 'A konténer átment a Stúdió integritás-ellenőrzésén.',
-    blocked: 'A csomag blokkoló integritási hibákat tartalmaz.',
     diagnostics: 'Konténerdiagnosztika',
-    noDiagnostics: 'Nincs konténer-specifikus diagnosztika.',
     integrity: 'SHA-256 integritás',
-    format: 'OMI-SPEC-320 / OMI-SPEC-330 Draft csomag',
+    format: 'A csomag formátuma: OMI-SPEC-320 / OMI-SPEC-330 Draft.',
     privacyNote:
       'Az asset-alapú kép-előnézetet a Stúdió a helyi bináris tárból oldja fel. Külső assetté alakítás után a hordozható kéziratállapotnak már nincs szüksége Base64-előnézetre.',
     importTitle: 'OMI-csomag megnyitása',
@@ -117,22 +102,17 @@ const COPY: Record<'en' | 'hu' | 'de', AssetContainerCopy> = {
       'Megnyitod ezt az ellenőrzött OMI-kéziratot, és lecseréled vele a munkatér jelenlegi dokumentumát?',
   },
   de: {
-    title: 'OMI-Paket',
+    title: 'OMI-Paket verwalten',
     description:
-      'Binäre Ressourcen werden als Assets externalisiert und Manuskript, Versionshistorie, Publikationsprofil, Prüfsummen, Assets sowie gültiges JATS in einen portablen .omi-Container gepackt.',
+      'Eingebettete Bilder als portable Assets vorbereiten, Revisionsintegrität prüfen und vorhandene .omi-Pakete untersuchen oder öffnen. Neue OMI-Pakete erstellen Sie unter Export.',
     assets: 'registrierte Assets',
     embedded: 'eingebettete Bilder zur Externalisierung',
     prepare: 'Assets vorbereiten',
     preparing: 'Assets werden vorbereitet…',
     prepared: 'Eingebettete Bilddaten sind als stabile Assets registriert.',
-    download: '.omi-Paket herunterladen',
-    downloading: 'Paket wird erstellt…',
-    ready: 'Der Container hat die Integritätsprüfungen von Studio bestanden.',
-    blocked: 'Das Paket enthält blockierende Integritätsfehler.',
     diagnostics: 'Container-Diagnostik',
-    noDiagnostics: 'Keine containerspezifische Diagnostik.',
     integrity: 'SHA-256-Integrität',
-    format: 'OMI-SPEC-320 / OMI-SPEC-330 Draft-Paket',
+    format: 'Paketformat: OMI-SPEC-320 / OMI-SPEC-330 Draft.',
     privacyNote:
       'Asset-basierte Bildvorschauen werden aus dem lokalen Binärspeicher aufgelöst. Nach der Externalisierung benötigt der portable Manuskriptzustand keine Base64-Vorschau mehr.',
     importTitle: 'OMI-Paket öffnen',
