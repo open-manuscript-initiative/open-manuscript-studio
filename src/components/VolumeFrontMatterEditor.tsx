@@ -24,6 +24,7 @@ import {
   type OmiVolumeKind,
 } from '../model/documentProfile';
 import type { OmiTitleMatterField } from '../model/frontMatter';
+import { partitionManuscriptStudies } from '../model/sectionStructure';
 import { ContributorEditor } from './ContributorEditor';
 
 type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
@@ -129,6 +130,9 @@ export function VolumeFrontMatterEditor({
   const frontMatterCopy = getFrontMatterCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const structure = getDocumentStructureProfile(manuscript);
+  const contributorTargetId = structure.kind === 'study'
+    ? partitionManuscriptStudies(manuscript.sections)[0]?.rootSectionId ?? manuscript.id
+    : manuscript.id;
   const copy = getVolumeFrontMatterCopy(locale, structure.kind);
   const setTitle = useStudioStore((state) => state.setTitle);
   const [activeTab, setActiveTab] = useState<VolumeFrontMatterTab>('title-matter');
@@ -236,7 +240,7 @@ export function VolumeFrontMatterEditor({
       ) : activeTab === 'contributors' ? (
         <div id="omi-volume-contributors-panel" role="tabpanel">
           <ContributorEditor
-            targetId={manuscript.id}
+            targetId={contributorTargetId}
             title={copy.contributorTitle}
             description={copy.contributorDescription}
             className="omi-volume-contributor-editor"
