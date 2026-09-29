@@ -217,19 +217,20 @@ async function exportFromUi(
     await menu.locator('.studio-menu-navigation-toggle').click();
   }
   await menu.getByRole('button', { name: 'Publication', exact: true }).click();
-  const formatSelect = menu.getByLabel('Export format');
+  const exportFormats = menu.getByRole('region', { name: 'Export formats' });
+  const formatSelect = exportFormats.getByLabel('Export format');
   await formatSelect.selectOption(format);
 
   if (format === 'pdf' && pdf) {
-    await menu.getByLabel('Print view').selectOption(pdf.content);
-    await menu.getByLabel('PDF variant').selectOption(pdf.mode);
+    await exportFormats.getByLabel('Print view').selectOption(pdf.content);
+    await exportFormats.getByLabel('PDF variant').selectOption(pdf.mode);
   }
 
   const downloadPromise = page.waitForEvent('download');
-  await menu.getByRole('button', { name: 'Export', exact: true }).click();
+  await exportFormats.getByRole('button', { name: 'Export', exact: true }).click();
   const download = await downloadPromise;
 
-  await expect(menu.getByRole('status').filter({ hasText: 'Export completed.' })).toBeVisible();
+  await expect(exportFormats.getByRole('status').filter({ hasText: 'Export completed.' })).toBeVisible();
   expect(download.suggestedFilename()).toMatch(fileName);
   return download;
 }
@@ -245,10 +246,11 @@ async function expectJatsReleaseBlocked(page: Page): Promise<void> {
     await menu.locator('.studio-menu-navigation-toggle').click();
   }
   await menu.getByRole('button', { name: 'Publication', exact: true }).click();
-  await menu.getByLabel('Export format').selectOption('jats');
-  await menu.getByRole('button', { name: 'Export', exact: true }).click();
+  const exportFormats = menu.getByRole('region', { name: 'Export formats' });
+  await exportFormats.getByLabel('Export format').selectOption('jats');
+  await exportFormats.getByRole('button', { name: 'Export', exact: true }).click();
 
-  const alert = menu.getByRole('alert');
+  const alert = exportFormats.getByRole('alert');
   await expect(alert).toBeVisible();
   await expect(alert).toContainText('Release-blocking JATS fidelity diagnostics:');
   await expect(alert).toContainText('chart-semantic-media');
