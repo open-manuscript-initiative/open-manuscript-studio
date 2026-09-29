@@ -24,14 +24,30 @@ export interface CloudConnection {
 export interface CloudBackup {
   id: string;
   manuscriptId: string;
+  title?: string;
   userId: string;
   connectionId: string;
   providerObjectId: string;
   providerPath: string;
+  locationUrl?: string | null;
   packageVersion: string;
   checksum: string;
   sizeBytes: string;
   status: string;
+  createdAt: string;
+}
+
+export interface ProfileSavedDocument {
+  id: string;
+  manuscriptId: string;
+  title: string;
+  connectionId: string;
+  connectionName: string;
+  providerType: CloudProviderType;
+  providerPath: string;
+  locationUrl: string | null;
+  packageVersion: string;
+  sizeBytes: string;
   createdAt: string;
 }
 
@@ -207,6 +223,7 @@ export async function deleteCloudConnection(
 
 export async function uploadCloudBackup(input: {
   manuscriptId: string;
+  title: string;
   connectionId: string;
   packageVersion: string;
   bytes: Uint8Array;
@@ -222,12 +239,28 @@ export async function uploadCloudBackup(input: {
         'Content-Type': 'application/vnd.openmanuscript.package+zip',
         Accept: 'application/json',
         'X-OMI-Package-Version': input.packageVersion,
+        'X-OMI-Document-Title': encodeURIComponent(input.title),
       },
       body: payload.buffer,
     },
   );
   const data = await readJson<{ backup: CloudBackup }>(response);
   return data.backup;
+}
+
+export async function listProfileSavedDocuments(): Promise<ProfileSavedDocument[]> {
+  const response = await cloudFetch('/api/profile/saved-documents', {
+    headers: { Accept: 'application/json' },
+  });
+  const data = await readJson<{ savedDocuments: ProfileSavedDocument[] }>(response);
+  return data.savedDocuments;
+}
+
+export async function unlinkProfileSavedDocument(backupId: string): Promise<void> {
+  const response = await cloudFetch(`/api/profile/saved-documents/${encodeURIComponent(backupId)}`, {
+    method: 'DELETE',
+  });
+  await ensureSuccess(response);
 }
 
 export async function listCloudBackups(

@@ -1,7 +1,10 @@
 import {
   Cloud,
   CloudUpload,
+  ExternalLink,
+  FolderOpen,
   HardDrive,
+  Link2Off,
   KeyRound,
   RefreshCw,
   RotateCcw,
@@ -38,14 +41,17 @@ import {
   listCloudBackups,
   listCloudConnections,
   listCloudOAuthProviders,
+  listProfileSavedDocuments,
   listenForCloudOAuthReturn,
   startCloudOAuthConnection,
   testCloudConnection,
   uploadCloudBackup,
+  unlinkProfileSavedDocument,
   type CloudBackup,
   type CloudConnection,
   type CloudOAuthProviderConfig,
   type CloudOAuthProviderId,
+  type ProfileSavedDocument,
 } from '../services/cloudStorageApi';
 import {
   getDeviceStorageMode,
@@ -109,6 +115,7 @@ export function CloudStorageSettings() {
   const ownDevice = nativeStorageCapable && deviceMode === 'own-device';
   const [connections, setConnections] = useState<CloudConnection[]>([]);
   const [backups, setBackups] = useState<CloudBackup[]>([]);
+  const [savedDocuments, setSavedDocuments] = useState<ProfileSavedDocument[]>([]);
   const [oauthProviders, setOauthProviders] = useState<CloudOAuthProviderConfig[]>([]);
   const [selectedConnectionId, setSelectedConnectionId] = useState('');
   const [providerId, setProviderId] = useState<CloudStorageProviderId | ''>('');
@@ -157,14 +164,16 @@ export function CloudStorageSettings() {
 
   const refresh = useCallback(async (): Promise<void> => {
     try {
-      const [nextConnections, nextBackups, nextOauthProviders] = await Promise.all([
+      const [nextConnections, nextBackups, nextOauthProviders, nextSavedDocuments] = await Promise.all([
         listCloudConnections(),
         listCloudBackups(manuscript.id),
         listCloudOAuthProviders().catch(() => [] as CloudOAuthProviderConfig[]),
+        listProfileSavedDocuments(),
       ]);
       setConnections(nextConnections);
       setBackups(nextBackups);
       setOauthProviders(nextOauthProviders);
+      setSavedDocuments(nextSavedDocuments);
       setSelectedConnectionId((current) =>
         nextConnections.some((connection) => connection.id === current && connection.status === 'connected')
           ? current
@@ -370,6 +379,7 @@ export function CloudStorageSettings() {
       }
       await uploadCloudBackup({
         manuscriptId: current.id,
+        title: current.title,
         connectionId: selectedConnectionId,
         packageVersion: OMI_CONTAINER_VERSION,
         bytes: packaged.bytes,
@@ -393,6 +403,40 @@ export function CloudStorageSettings() {
       if (!plan.validForImport || !plan.manuscript) throw new Error(copy.invalidPackage);
       await applyOmiContainerImportPlan(plan);
       setMessage(copy.restored);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function openSavedDocument(document: ProfileSavedDocument): Promise<void> {
+    const confirmation = (copy.confirmOpenSavedDocument ?? copy.confirmRestore).replace('{title}', document.title);
+    if (!window.confirm(confirmation)) return;
+    setBusy(`profile-open:${document.id}`);
+    setMessage(copy.restoring);
+    try {
+      const bytes = await downloadCloudBackup(document.id);
+      const plan = await inspectOmiContainer(bytes);
+      if (!plan.validForImport || !plan.manuscript) throw new Error(copy.invalidPackage);
+      await applyOmiContainerImportPlan(plan);
+      setMessage(copy.restored);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function removeProfileLink(document: ProfileSavedDocument): Promise<void> {
+    const confirmation = (copy.confirmRemoveProfileLink ?? 'Remove this link from your profile? The saved document will remain in cloud storage.').replace('{title}', document.title);
+    if (!window.confirm(confirmation)) return;
+    setBusy(`profile-unlink:${document.id}`);
+    setMessage('');
+    try {
+      await unlinkProfileSavedDocument(document.id);
+      setSavedDocuments((current) => current.filter((item) => item.id !== document.id));
+      setMessage(copy.profileLinkRemoved ?? 'The profile link was removed. The cloud document remains in storage.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -628,6 +672,34 @@ export function CloudStorageSettings() {
                 </button>
                 <button type="button" className="studio-menu-secondary-action studio-menu-danger-action" disabled={busy !== null} onClick={() => void removeConnection(connection.id)}>
                   <Trash2 size={14} aria-hidden="true" /> {copy.remove}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="studio-cloud-section">
+        <strong><FolderOpen size={16} aria-hidden="true" /> {copy.savedDocumentsTitle ?? copy.backups}</strong>
+        <p>{copy.savedDocumentsDescription ?? 'Saved cloud documents linked to this profile.'}</p>
+        {savedDocuments.length === 0 ? <p>{copy.noSavedDocuments ?? 'No saved documents are linked to this profile yet.'}</p> : (
+          <div className="studio-language-preference-list">
+            {savedDocuments.map((document) => (
+              <div className="studio-language-preference" key={document.id}>
+                <span className="studio-language-preference-copy">
+                  <strong>{document.title}</strong>
+                  <small>{document.connectionName} · {new Date(document.createdAt).toLocaleString(locale)} · {formatBytes(document.sizeBytes)}</small>
+                  {document.locationUrl ? (
+                    <a href={document.locationUrl} target="_blank" rel="noreferrer noopener">
+                      <ExternalLink size={13} aria-hidden="true" /> {copy.openStorageLocation ?? 'Open storage location'}
+                    </a>
+                  ) : <small>{document.providerPath}</small>}
+                </span>
+                <button type="button" className="studio-menu-secondary-action" disabled={busy !== null} onClick={() => void openSavedDocument(document)}>
+                  <RotateCcw size={14} aria-hidden="true" /> {busy === `profile-open:${document.id}` ? copy.restoring : copy.openInStudio ?? copy.restore}
+                </button>
+                <button type="button" className="studio-menu-secondary-action studio-menu-danger-action" disabled={busy !== null} onClick={() => void removeProfileLink(document)}>
+                  <Link2Off size={14} aria-hidden="true" /> {copy.removeProfileLink ?? copy.remove}
                 </button>
               </div>
             ))}

@@ -742,10 +742,12 @@ model CloudConnection {
 model CloudBackup {
   id               String            @id @default(uuid()) @db.Uuid
   manuscriptId     String            @map("manuscript_id") @db.VarChar(128)
+  title            String            @default("") @db.VarChar(300)
   userId           String            @map("user_id") @db.Uuid
   connectionId     String            @map("connection_id") @db.Uuid
   providerObjectId String            @map("provider_object_id") @db.Text
   providerPath     String            @map("provider_path") @db.Text
+  locationUrl      String?           @map("location_url") @db.Text
   packageVersion   String            @map("package_version") @db.VarChar(32)
   checksum         String            @db.VarChar(64)
   sizeBytes        BigInt            @map("size_bytes")
@@ -755,6 +757,7 @@ model CloudBackup {
   connection       CloudConnection   @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 
   @@index([manuscriptId, userId, createdAt])
+  @@index([userId, createdAt])
   @@index([connectionId])
   @@map("cloud_backups")
 }

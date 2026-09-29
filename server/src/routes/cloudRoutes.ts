@@ -29,6 +29,62 @@ const connectionIdSchema = z.string().uuid();
 const manuscriptIdSchema = z.string().trim().min(1).max(128);
 const checksumSchema = z.string().regex(/^[0-9a-fA-F]{64}$/);
 
+cloudRouter.get(
+  '/profile/saved-documents',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    const savedDocuments = await prisma.cloudBackup.findMany({
+      where: { userId: request.authUserId!, status: 'COMPLETED' },
+      include: {
+        connection: {
+          select: { displayName: true, providerType: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    response.status(200).json({
+      savedDocuments: savedDocuments.map((backup) => ({
+        id: backup.id,
+        manuscriptId: backup.manuscriptId,
+        title: backup.title.trim() || backup.manuscriptId,
+        connectionId: backup.connectionId,
+        connectionName: backup.connection.displayName,
+        providerType: providerTypeFromDatabase(backup.connection.providerType),
+        providerPath: backup.providerPath,
+        locationUrl: backup.locationUrl,
+        packageVersion: backup.packageVersion,
+        sizeBytes: backup.sizeBytes.toString(),
+        createdAt: backup.createdAt.toISOString(),
+      })),
+    });
+  },
+);
+
+cloudRouter.delete(
+  '/profile/saved-documents/:backupId',
+  requireSession,
+  async (request: AuthenticatedRequest, response) => {
+    const parsedId = connectionIdSchema.safeParse(request.params.backupId);
+    if (!parsedId.success) {
+      response.status(400).json({ error: { code: 'INVALID_SAVED_DOCUMENT_ID', message: 'The saved-document link ID is invalid.' } });
+      return;
+    }
+
+    const result = await prisma.cloudBackup.deleteMany({
+      where: { id: parsedId.data, userId: request.authUserId! },
+    });
+    if (result.count === 0) {
+      response.status(404).json({ error: { code: 'SAVED_DOCUMENT_NOT_FOUND', message: 'Saved document link not found.' } });
+      return;
+    }
+
+    // This endpoint removes only the profile's saved-document reference.
+    // The remote object is intentionally left in the connected storage.
+    response.status(204).end();
+  },
+);
+
 function databaseProviderType(type: 'webdav' | 'nextcloud'): 'WEBDAV' | 'NEXTCLOUD' {
   return type === 'webdav' ? 'WEBDAV' : 'NEXTCLOUD';
 }
@@ -227,6 +283,15 @@ cloudRouter.post(
     const expectedChecksum = typeof expectedChecksumHeader === 'string'
       ? checksumSchema.safeParse(expectedChecksumHeader)
       : undefined;
+    const titleHeader = request.headers['x-omi-document-title'];
+    let title = '';
+    if (typeof titleHeader === 'string') {
+      try {
+        title = decodeURIComponent(titleHeader).trim().slice(0, 300);
+      } catch {
+        title = titleHeader.trim().slice(0, 300);
+      }
+    }
     const requestBody: unknown = request.body;
 
     if (!manuscriptId.success || !connectionId.success || !Buffer.isBuffer(requestBody) || requestBody.byteLength === 0) {
@@ -290,10 +355,12 @@ cloudRouter.post(
       const backup = await prisma.cloudBackup.create({
         data: {
           manuscriptId: manuscriptId.data,
+          title,
           userId: request.authUserId!,
           connectionId: connection.id,
           providerObjectId: object.id,
           providerPath: object.path,
+          locationUrl: object.webUrl ?? null,
           packageVersion,
           checksum,
           sizeBytes: BigInt(packageBytes.byteLength),

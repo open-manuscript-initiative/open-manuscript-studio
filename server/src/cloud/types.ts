@@ -30,6 +30,7 @@ export interface CloudObject {
   id: string;
   path: string;
   name: string;
+  webUrl?: string;
   size?: number;
   modifiedAt?: string;
   checksum?: string;

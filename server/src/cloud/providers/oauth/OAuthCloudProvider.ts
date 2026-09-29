@@ -124,13 +124,14 @@ export class OAuthCloudProvider implements CloudStorageProvider {
     const prefix = Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n`, 'utf8');
     const middle = Buffer.from(`\r\n--${boundary}\r\nContent-Type: ${request.contentType || 'application/octet-stream'}\r\n\r\n`, 'utf8');
     const suffix = Buffer.from(`\r\n--${boundary}--\r\n`, 'utf8');
-    const response = await this.authorizedJson('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,size,modifiedTime,md5Checksum', {
+    const response = await this.authorizedJson('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,size,modifiedTime,md5Checksum,webViewLink', {
       method: 'POST',
       headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
       body: Buffer.concat([prefix, metadata, middle, request.data, suffix]),
     });
     return {
       id: String(response.id), path, name: String(response.name || fileName),
+      ...(typeof response.webViewLink === 'string' ? { webUrl: response.webViewLink } : {}),
       ...(response.size ? { size: Number(response.size) } : {}),
       ...(response.modifiedTime ? { modifiedAt: String(response.modifiedTime) } : {}),
       ...(response.md5Checksum ? { checksum: String(response.md5Checksum) } : {}),
@@ -181,6 +182,7 @@ export class OAuthCloudProvider implements CloudStorageProvider {
     });
     return {
       id: String(response.id), path: fullPath, name: String(response.name || fullPath.split('/').pop()),
+      ...(typeof response.webUrl === 'string' ? { webUrl: response.webUrl } : {}),
       ...(response.size ? { size: Number(response.size) } : {}),
       ...(response.lastModifiedDateTime ? { modifiedAt: String(response.lastModifiedDateTime) } : {}),
       isDirectory: false,
@@ -235,6 +237,7 @@ export class OAuthCloudProvider implements CloudStorageProvider {
     });
     return {
       id: String(response.id || fullPath), path: fullPath, name: String(response.name || fullPath.split('/').pop()),
+      webUrl: `https://www.dropbox.com/home/${encodePath(fullPath)}`,
       ...(response.size ? { size: Number(response.size) } : {}),
       ...(response.server_modified ? { modifiedAt: String(response.server_modified) } : {}),
       ...(response.content_hash ? { checksum: String(response.content_hash) } : {}),

@@ -119,6 +119,9 @@ jobs:
       - name: Test invitation-backed collaboration access
         run: npm run test:collaboration-invitations
 
+      - name: Test profile saved-document links
+        run: npm run test:profile-saved-documents
+
       - name: Test OJS/OMP publication artifact client
         run: npm run test:publication-artifact
 
