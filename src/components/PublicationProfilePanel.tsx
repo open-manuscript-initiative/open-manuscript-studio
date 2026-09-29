@@ -27,6 +27,7 @@ import {
   type OmiPublicationProfile,
 } from '../model/publicationProfile';
 import { DirectSubmissionPanel } from './DirectSubmissionPanel';
+import { ExportFormatsPanel } from './ExportFormatsPanel';
 import { PublicationArtifactPanel } from './PublicationArtifactPanel';
 import { HtmlExportPanel } from './HtmlExportPanel';
 import { IdmlPublicationStyleImportPanel } from './IdmlPublicationStyleImportPanel';
@@ -147,6 +148,8 @@ export function PublicationProfilePanel() {
         <PublisherExportStylesheetPanel profile={activeProfile} />
         <PublisherPrintStylesheetPanel profile={activeProfile} />
       </div>
+
+      <ExportFormatsPanel />
 
       <div className="publication-profile-validation-grid">
       <ProfileRuleSummary profile={activeProfile} copy={copy} frontMatterCopy={frontMatterCopy} />
