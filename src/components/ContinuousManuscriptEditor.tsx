@@ -365,8 +365,6 @@ export function ContinuousManuscriptEditor() {
   const [collaborationAccess, setCollaborationAccess] = useState<CollaborationAccess | null>(null);
   const [collaborationSession, setCollaborationSession] = useState<CollaborationSession | null>(null);
   const [collaborationStatus, setCollaborationStatus] = useState('');
-  const [collaborationConnected, setCollaborationConnected] = useState(false);
-  const [collaborationParticipants, setCollaborationParticipants] = useState(0);
   const [invitationEmail, setInvitationEmail] = useState('');
   const [invitationAgentId, setInvitationAgentId] = useState('');
   const [cloudDestinations, setCloudDestinations] = useState<CloudConnection[]>([]);
@@ -417,8 +415,6 @@ export function ContinuousManuscriptEditor() {
     setCollaborationAccess(null);
     setCollaborationSession(null);
     setCollaborationStatus('');
-    setCollaborationConnected(false);
-    setCollaborationParticipants(0);
     if (!collaborationEnabled || !currentUser) return;
     let cancelled = false;
     void getCollaborationAccess(manuscript.id).then(async (access) => {
@@ -439,8 +435,6 @@ export function ContinuousManuscriptEditor() {
         provider,
         user: { name: currentUser.profile.fullName || currentUser.email, color: collaborationColor(currentUser.id) },
       };
-      provider.on('status', (event: { status: string }) => setCollaborationConnected(event.status === 'connected'));
-      provider.on('awarenessUpdate', () => setCollaborationParticipants(provider.awareness?.getStates().size ?? 0));
       setCollaborationSession(session);
     }).catch(() => {
       // A missing membership is expected before an invitation is accepted.
@@ -473,46 +467,6 @@ export function ContinuousManuscriptEditor() {
       window.clearTimeout(timer);
     };
   }, [collaborationAccess, currentUser, manuscript.headRevisionId]);
-
-  const startCollaboration = async () => {
-    if (!currentUser) return;
-    setCollaborationBusy(true);
-    setCollaborationStatus('');
-    try {
-      const seeded = createInitialCollaborationDocument(studies, sectionNumbers);
-      const update = Y.encodeStateAsUpdate(seeded);
-      seeded.destroy();
-      let binary = '';
-      for (let offset = 0; offset < update.length; offset += 0x8000) {
-        binary += String.fromCharCode(...update.subarray(offset, offset + 0x8000));
-      }
-      await createCollaborationDocument({
-        documentId: manuscript.id,
-        title: manuscript.title || 'Untitled manuscript',
-        initialState: btoa(binary),
-      });
-      setCollaborationAccess(await getCollaborationAccess(manuscript.id));
-      const ticket = await getCollaborationTicket(manuscript.id);
-      const document = new Y.Doc();
-      const provider = new HocuspocusProvider({
-        url: collaborationWebSocketUrl(ticket.webSocketPath),
-        name: manuscript.id,
-        document,
-        token: ticket.token,
-      });
-      provider.on('status', (event: { status: string }) => setCollaborationConnected(event.status === 'connected'));
-      provider.on('awarenessUpdate', () => setCollaborationParticipants(provider.awareness?.getStates().size ?? 0));
-      setCollaborationSession({
-        document,
-        provider,
-        user: { name: currentUser.profile.fullName || currentUser.email, color: collaborationColor(currentUser.id) },
-      });
-    } catch (error) {
-      setCollaborationStatus(error instanceof Error ? error.message : String(error));
-    } finally {
-      setCollaborationBusy(false);
-    }
-  };
 
   const saveAndInviteCollaborator = async () => {
     const email = invitationEmail.trim();
@@ -628,49 +582,21 @@ export function ContinuousManuscriptEditor() {
 
   return (
     <>
-      {collaborationEnabled ? (
-        <aside className="omi-collaboration-panel" aria-label={collaborationCopy.title}>
-          <div className="omi-collaboration-panel__summary">
-            <strong>{collaborationCopy.title}</strong>
-            {collaborationSession ? (
-              <span className={collaborationConnected ? 'is-connected' : ''}>
-                {collaborationConnected ? collaborationCopy.connected : collaborationCopy.connecting}
-                {collaborationConnected ? ` · ${collaborationParticipants} participant${collaborationParticipants === 1 ? '' : 's'}` : ''}
-              </span>
-            ) : null}
-          </div>
-          {!collaborationAccess ? (
-            <button type="button" onClick={startCollaboration} disabled={collaborationBusy}>
-              {collaborationBusy ? collaborationCopy.starting : collaborationCopy.startSharedEditing}
-            </button>
-          ) : null}
-          {collaborationAccess && collaborationAccess.members.some((member) => member.userId === currentUser?.id) ? (
-            <div className="omi-collaboration-invite">
-              {collaborationAccess.invitations.map((invitation) => (
-                <span key={invitation.id} className="omi-collaboration-invite__pending">
-                  {invitation.invitedEmail} · {collaborationCopy.awaitingAcceptance}
-                </span>
-              ))}
-            </div>
-          ) : null}
-          {collaborationStatus ? <p role="status">{collaborationStatus}</p> : null}
-          {collaborationAccess?.members.some((member) => member.userId === currentUser?.id) ? (
-            <details className="omi-collaboration-chat-disclosure">
-              <summary>{locale === 'hu' ? 'Dokumentum chat' : locale === 'de' ? 'Dokument-Chat' : 'Document chat'}</summary>
-              <CollaborationChat documentId={manuscript.id} locale={locale} />
-            </details>
-          ) : null}
-        </aside>
+      {collaborationAccess?.members.some((member) => member.userId === currentUser?.id) ? (
+        <details className="omi-collaboration-chat-disclosure">
+          <summary>{locale === 'hu' ? 'Dokumentum chat' : locale === 'de' ? 'Dokument-Chat' : 'Document chat'}</summary>
+          <CollaborationChat documentId={manuscript.id} locale={locale} />
+        </details>
       ) : null}
       {invitationEmail ? (
         <div className="omi-collaboration-save-dialog" role="dialog" aria-modal="true" aria-labelledby="omi-collaboration-save-title">
           <div className="omi-collaboration-save-dialog__card">
-            <h2 id="omi-collaboration-save-title">{locale === 'hu' ? 'Meghívó a felhőmentés után' : locale === 'de' ? 'Einladung nach Cloud-Speicherung' : 'Invite after cloud save'}</h2>
+            <h2 id="omi-collaboration-save-title">{locale === 'hu' ? 'Felhőmentés a közös szerkesztés előtt' : locale === 'de' ? 'Cloud-Speicherung für die gemeinsame Bearbeitung' : 'Save to cloud for shared editing'}</h2>
             <p>{locale === 'hu'
-              ? `${invitationEmail} társszerző meghívása előtt mentsük a kéziratot az Ön felhőtárhelyére.`
+              ? `A Studio a felhőmentés után automatikusan meghívja ${invitationEmail} szerzőt. Mentsük a kéziratot az Ön felhőtárhelyére.`
               : locale === 'de'
-                ? `Speichern Sie das Manuskript in Ihrem Cloud-Speicher, bevor ${invitationEmail} eingeladen wird.`
-                : `Save the manuscript to your cloud storage before inviting ${invitationEmail}.`}</p>
+                ? `Studio lädt ${invitationEmail} nach dem Speichern in Ihrem Cloud-Speicher automatisch ein.`
+                : `Studio will automatically invite ${invitationEmail} after saving the manuscript to your cloud storage.`}</p>
             {cloudDestinations.length ? (
               <label>
                 <span>{locale === 'hu' ? 'Felhőtárhely' : locale === 'de' ? 'Cloud-Speicher' : 'Cloud storage'}</span>
@@ -687,14 +613,18 @@ export function ContinuousManuscriptEditor() {
               <button type="button" onClick={() => void saveAndInviteCollaborator()} disabled={collaborationBusy || !selectedCloudDestination}>
                 {collaborationBusy
                   ? (locale === 'hu' ? 'Mentés…' : locale === 'de' ? 'Wird gespeichert…' : 'Saving…')
-                  : (locale === 'hu' ? 'Mentés és meghívás' : locale === 'de' ? 'Speichern und einladen' : 'Save and invite')}
+                  : (locale === 'hu' ? 'Mentés és folytatás' : locale === 'de' ? 'Speichern und fortfahren' : 'Save and continue')}
               </button>
               <button type="button" className="secondary" onClick={() => { setInvitationEmail(''); setInvitationAgentId(''); setCloudDestinations([]); }} disabled={collaborationBusy}>
                 {locale === 'hu' ? 'Mégsem' : locale === 'de' ? 'Abbrechen' : 'Cancel'}
               </button>
             </div>
+            {collaborationStatus ? <p role="status" aria-live="polite">{collaborationStatus}</p> : null}
           </div>
         </div>
+      ) : null}
+      {collaborationStatus && !invitationEmail ? (
+        <p className="omi-collaboration-status" role="status" aria-live="polite">{collaborationStatus}</p>
       ) : null}
       {studies.map((study) => {
         const root = study.sections.find(

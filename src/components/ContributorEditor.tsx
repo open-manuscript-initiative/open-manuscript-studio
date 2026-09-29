@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -77,23 +77,30 @@ export function ContributorEditor({
   const updateContribution = useStudioStore((state) => state.updateContribution);
   const removeContributor = useStudioStore((state) => state.removeContributor);
   const moveContributor = useStudioStore((state) => state.moveContributor);
-  const newlyAddedContributorIds = useRef(new Set<string>());
+  const [newlyAddedContributorIds, setNewlyAddedContributorIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     const markInvitationSent = (event: Event) => {
       const agentId = (event as CustomEvent<{ agentId?: string }>).detail?.agentId;
-      if (agentId) newlyAddedContributorIds.current.delete(agentId);
+      if (agentId) {
+        setNewlyAddedContributorIds((current) => {
+          const next = new Set(current);
+          next.delete(agentId);
+          return next;
+        });
+      }
     };
     window.addEventListener('omi:author-invitation-sent', markInvitationSent);
     return () => window.removeEventListener('omi:author-invitation-sent', markInvitationSent);
   }, []);
 
   const addAuthor = () => {
-    newlyAddedContributorIds.current.add(addContributor(targetId));
+    const contributorId = addContributor(targetId);
+    setNewlyAddedContributorIds((current) => new Set(current).add(contributorId));
   };
 
   const requestAuthorInvitation = (agentId: string, email: string) => {
-    if (!newlyAddedContributorIds.current.has(agentId)) return;
+    if (!newlyAddedContributorIds.has(agentId)) return;
     const normalizedEmail = email.trim();
     const ownEmail = getCurrentUser(useAuthStore.getState())?.email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(normalizedEmail)
@@ -152,6 +159,7 @@ export function ContributorEditor({
             contribution.competingInterests?.statements?.[manuscript.locale] ??
             '';
           const creditRoles = contribution.creditRoles ?? [];
+          const isNewlyAdded = newlyAddedContributorIds.has(agent.id);
 
           const setCompetingStatus = (
             status: '' | 'none' | 'declared' | 'unclassified',
@@ -291,6 +299,7 @@ export function ContributorEditor({
                     }
                     onBlur={(event) => requestAuthorInvitation(agent.id, event.target.value)}
                   />
+                  {isNewlyAdded ? <small className="contributor-invitation-hint">{copy.invitationAccessHint}</small> : null}
                 </label>
 
                 <label>
@@ -535,6 +544,7 @@ function contributorMetadataCopy(locale: string) {
     preferredPublicName: 'Előnyben részesített nyilvános név',
     preferredPublicNameHint: 'Ha ki van töltve, a publikációban ez a teljes név jelenik meg a keresztnév és vezetéknév helyett.',
     email: 'E-mail-cím',
+    invitationAccessHint: 'A Studio a felhőmentés után automatikusan meghívja. A meghívás elfogadása után szerkesztheti a dokumentumot.',
     country: 'Ország',
     website: 'Honlap URL-címe',
     department: 'Tanszék / szervezeti egység',
@@ -559,6 +569,7 @@ function contributorMetadataCopy(locale: string) {
     preferredPublicName: 'Bevorzugter öffentlicher Name',
     preferredPublicNameHint: 'Wenn ausgefüllt, wird dieser vollständige Name in der Publikation anstelle von Vor- und Nachname angezeigt.',
     email: 'E-Mail-Adresse',
+    invitationAccessHint: 'Studio sendet nach der Cloud-Speicherung automatisch eine Einladung. Nach Annahme kann die Person das Dokument bearbeiten.',
     country: 'Land',
     website: 'Website-URL',
     department: 'Abteilung / Einheit',
@@ -583,6 +594,7 @@ function contributorMetadataCopy(locale: string) {
     preferredPublicName: 'Preferred public name',
     preferredPublicNameHint: 'When provided, this full name is displayed in the publication instead of the given and family name.',
     email: 'Email address',
+    invitationAccessHint: 'Studio sends an invitation automatically after the cloud save. Once accepted, the author can edit the document.',
     country: 'Country',
     website: 'Website URL',
     department: 'Department / unit',

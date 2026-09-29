@@ -309,6 +309,14 @@ button:disabled {
   font-weight: 700;
 }
 
+.contributor-invitation-hint {
+  display: block;
+  margin-top: .35rem;
+  color: #5b6470;
+  font-size: .78rem;
+  line-height: 1.4;
+}
+
 .contributor-form-grid input,
 .contributor-form-grid select {
   width: 100%;

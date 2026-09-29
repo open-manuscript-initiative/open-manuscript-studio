@@ -20,6 +20,7 @@ test('desktop forms use intrinsic widths instead of stretching across the page',
 
   await expect(card).toBeVisible();
   await expect(orcid).toBeVisible();
+  await expect(card).toContainText('Studio sends an invitation automatically after the cloud save. Once accepted, the author can edit the document.');
 
   const widths = await Promise.all([
     givenName.evaluate((node) => node.getBoundingClientRect().width),
