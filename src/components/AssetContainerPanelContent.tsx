@@ -1,5 +1,4 @@
 import {
-  Archive,
   CheckCircle2,
   Download,
   FileCheck2,
@@ -168,11 +167,7 @@ export function AssetContainerPanelContent() {
   const importWarnings = importPlan?.diagnostics.filter((item) => item.severity === 'warning') ?? [];
 
   return (
-    <section className="omi-container-card" aria-labelledby="omi-container-title" aria-busy={busy !== null}>
-      <div className="omi-container-header">
-        <div className="omi-container-icon" aria-hidden="true"><Archive size={19} /></div>
-        <div><h4 id="omi-container-title">{copy.title}</h4><p>{copy.description}</p></div>
-      </div>
+    <section className="omi-container-card" aria-label={copy.title} aria-busy={busy !== null}>
       {busy && busyMessage ? <LongTaskStatus message={busyMessage} /> : null}
       <div className="omi-container-facts">
         <span><strong>{assets.length}</strong> {copy.assets}</span>
