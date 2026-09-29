@@ -100,7 +100,7 @@ interface StudioState {
   clearParagraphStyleAssignments: (styleId: string) => void;
   updateBlock: (blockId: string, content: string) => void;
   addSection: () => void;
-  addContributor: (targetId?: string) => void;
+  addContributor: (targetId?: string) => string;
   updateContributor: (
     agentId: string,
     input: ContributorEditInput,
@@ -512,7 +512,8 @@ export const useStudioStore = create<StudioState>((set) => ({
       };
     }),
 
-  addContributor: (targetId) =>
+  addContributor: (targetId) => {
+    const agentId = crypto.randomUUID();
     set((state) => {
       const timestamp = new Date().toISOString();
       const agent = createPersonAgent(
@@ -521,7 +522,7 @@ export const useStudioStore = create<StudioState>((set) => ({
           familyName: 'Contributor',
           language: state.manuscript.locale,
         },
-        crypto.randomUUID(),
+        agentId,
         timestamp,
       );
       const contribution = createContribution(
@@ -564,7 +565,9 @@ export const useStudioStore = create<StudioState>((set) => ({
         ],
         timestamp,
       );
-    }),
+    });
+    return agentId;
+  },
 
   updateContributor: (agentId, input) =>
     set((state) => {

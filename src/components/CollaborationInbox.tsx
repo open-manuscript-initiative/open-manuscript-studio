@@ -5,11 +5,37 @@ import {
   declinePendingCollaborationInvitation,
   getPendingCollaborationInvitations,
   isCollaborationEnabled,
+  listSharedCollaborativeDocuments,
+  downloadSharedManuscriptPackage,
   type PendingCollaborationInvitation,
+  type SharedCollaborativeDocument,
 } from '../services/collaborationApi';
+import { inspectOmiContainer } from '../services/omiContainerImport';
+import { applyOmiContainerImportPlan } from '../app/omiContainerImportActions';
+import { useTranslation } from '../i18n';
 
 export function CollaborationInbox({ children }: { children: ReactNode }) {
+  const { locale } = useTranslation();
+  const hu = locale.toLowerCase().startsWith('hu');
+  const de = locale.toLowerCase().startsWith('de');
+  const copy = {
+    invitations: hu ? 'Kézirat-meghívók' : de ? 'Einladungen zu Manuskripten' : 'Manuscript invitations',
+    shared: hu ? 'Megosztott kéziratok' : de ? 'Geteilte Manuskripte' : 'Shared manuscripts',
+    accept: hu ? 'Elfogadás' : de ? 'Annehmen' : 'Accept',
+    decline: hu ? 'Elutasítás' : de ? 'Ablehnen' : 'Decline',
+    open: hu ? 'Megnyitás' : de ? 'Öffnen' : 'Open',
+    expired: hu ? 'Lejárat' : de ? 'Läuft ab' : 'Expires',
+    accepted: hu ? 'Elfogadva és megnyitva' : de ? 'Angenommen und geöffnet' : 'Accepted and opened',
+    opened: hu ? 'Megnyitva' : de ? 'Geöffnet' : 'Opened',
+    activeOnly: hu
+      ? 'A kézirathoz csak az elfogadott meghívó ad hozzáférést.'
+      : de
+        ? 'Nur angenommene Einladungen gewähren Manuskriptzugriff.'
+        : 'Only accepted invitations grant manuscript access.',
+    aria: hu ? 'Kézirat-meghívók és megosztott kéziratok' : de ? 'Manuskripteinladungen und geteilte Manuskripte' : 'Manuscript invitations and shared manuscripts',
+  };
   const [invitations, setInvitations] = useState<PendingCollaborationInvitation[]>([]);
+  const [documents, setDocuments] = useState<SharedCollaborativeDocument[]>([]);
   const [busyInvitationId, setBusyInvitationId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const enabledRef = useRef<boolean | null>(null);
@@ -18,7 +44,12 @@ export function CollaborationInbox({ children }: { children: ReactNode }) {
     try {
       if (enabledRef.current === null) enabledRef.current = await isCollaborationEnabled();
       if (!enabledRef.current) return;
-      setInvitations(await getPendingCollaborationInvitations());
+      const [pending, shared] = await Promise.all([
+        getPendingCollaborationInvitations(),
+        listSharedCollaborativeDocuments(),
+      ]);
+      setInvitations(pending);
+      setDocuments(shared);
     } catch {
       // An unavailable preview API must not block the normal Studio workspace.
     }
@@ -38,12 +69,17 @@ export function CollaborationInbox({ children }: { children: ReactNode }) {
     setBusyInvitationId(invitation.id);
     setMessage('');
     try {
-      if (accept) await acceptPendingCollaborationInvitation(invitation.id);
+      if (accept) {
+        await acceptPendingCollaborationInvitation(invitation.id);
+        const plan = await inspectOmiContainer(await downloadSharedManuscriptPackage(invitation.documentId));
+        await applyOmiContainerImportPlan(plan);
+      }
       else await declinePendingCollaborationInvitation(invitation.id);
       setInvitations((pending) => pending.filter((item) => item.id !== invitation.id));
       if (accept) {
-        setMessage(`Accepted: ${invitation.documentTitle}. Open that OMI manuscript in Studio to join its live edit.`);
+        setMessage(`${copy.accepted}: ${invitation.documentTitle}.`);
         window.dispatchEvent(new Event('omi:collaboration-access-changed'));
+        await refresh();
       }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
@@ -53,22 +89,48 @@ export function CollaborationInbox({ children }: { children: ReactNode }) {
     }
   };
 
+  const openSharedDocument = async (document: SharedCollaborativeDocument) => {
+    setBusyInvitationId(document.documentId);
+    setMessage('');
+    try {
+      const plan = await inspectOmiContainer(await downloadSharedManuscriptPackage(document.documentId));
+      await applyOmiContainerImportPlan(plan);
+      setMessage(`${copy.opened}: ${document.title}.`);
+      window.dispatchEvent(new Event('omi:collaboration-access-changed'));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusyInvitationId(null);
+    }
+  };
+
   return (
     <>
       {children}
-      {invitations.length || message ? (
-        <aside className="omi-collaboration-inbox" aria-label="Manuscript invitations">
-          <strong>Manuscript invitations</strong>
+      {invitations.length || documents.length || message ? (
+        <aside className="omi-collaboration-inbox" aria-label={copy.aria}>
+          {invitations.length ? <strong>{copy.invitations}</strong> : null}
           {invitations.map((invitation) => (
             <div className="omi-collaboration-inbox__item" key={invitation.id}>
-              <span><b>{invitation.documentTitle}</b><small>{invitation.role.toLowerCase()} · expires {new Date(invitation.expiresAt).toLocaleDateString()}</small></span>
+              <span><b>{invitation.documentTitle}</b><small>{invitation.role.toLowerCase()} · {copy.expired} {new Date(invitation.expiresAt).toLocaleDateString(locale)}</small></span>
               <div>
-                <button type="button" disabled={busyInvitationId !== null} onClick={() => void decide(invitation, true)}>Accept</button>
-                <button type="button" className="secondary" disabled={busyInvitationId !== null} onClick={() => void decide(invitation, false)}>Decline</button>
+                <button type="button" disabled={busyInvitationId !== null} onClick={() => void decide(invitation, true)}>{copy.accept}</button>
+                <button type="button" className="secondary" disabled={busyInvitationId !== null} onClick={() => void decide(invitation, false)}>{copy.decline}</button>
               </div>
             </div>
           ))}
-          <small>Only accepted invitations grant manuscript access. After accepting, open the same OMI manuscript in Studio.</small>
+          {invitations.length ? <small>{copy.activeOnly}</small> : null}
+          {documents.length ? (
+            <div className="omi-collaboration-inbox__shared">
+              <strong>{copy.shared}</strong>
+              {documents.map((document) => (
+                <div className="omi-collaboration-inbox__item" key={document.documentId}>
+                  <span><b>{document.title}</b><small>{document.role.toLowerCase()}</small></span>
+                  <button type="button" disabled={busyInvitationId !== null} onClick={() => void openSharedDocument(document)}>{copy.open}</button>
+                </div>
+              ))}
+            </div>
+          ) : null}
           {message ? <p role="status">{message}</p> : null}
         </aside>
       ) : null}

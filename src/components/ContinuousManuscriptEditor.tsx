@@ -36,6 +36,8 @@ import {
 import { useTranslation } from '../i18n';
 import { getCollaborationPanelCopy } from '../i18n/collaborationPanel';
 import { useAuthStore, getCurrentUser } from '../store/authStore';
+import { listCloudConnections, uploadCloudBackup, type CloudConnection } from '../services/cloudStorageApi';
+import { buildOmiContainer, OMI_CONTAINER_VERSION } from '../services/omiContainer';
 import {
   collectStudyNoteOverview,
   resolveCurrentStudy,
@@ -51,6 +53,7 @@ import {
   getCollaborationTicket,
   inviteCollaborationMember,
   isCollaborationEnabled,
+  publishSharedManuscriptPackage,
   type CollaborationAccess,
 } from '../services/collaborationApi';
 import type { ProofingSelection } from '../model/proofing';
@@ -364,10 +367,30 @@ export function ContinuousManuscriptEditor() {
   const [collaborationStatus, setCollaborationStatus] = useState('');
   const [collaborationConnected, setCollaborationConnected] = useState(false);
   const [collaborationParticipants, setCollaborationParticipants] = useState(0);
-  const [collaboratorEmail, setCollaboratorEmail] = useState('');
-  const [showCollaborationInvite, setShowCollaborationInvite] = useState(true);
+  const [invitationEmail, setInvitationEmail] = useState('');
+  const [invitationAgentId, setInvitationAgentId] = useState('');
+  const [cloudDestinations, setCloudDestinations] = useState<CloudConnection[]>([]);
+  const [selectedCloudDestination, setSelectedCloudDestination] = useState('');
   const [collaborationBusy, setCollaborationBusy] = useState(false);
   const [collaborationRefresh, setCollaborationRefresh] = useState(0);
+
+  useEffect(() => {
+    const requestInvitation = (event: Event) => {
+      const email = (event as CustomEvent<{ email?: string }>).detail?.email?.trim();
+      const agentId = (event as CustomEvent<{ agentId?: string }>).detail?.agentId;
+      if (!email) return;
+      setInvitationEmail(email);
+      setInvitationAgentId(agentId ?? '');
+      setCollaborationStatus('');
+      void listCloudConnections().then((connections) => {
+        const connected = connections.filter((connection) => connection.status === 'connected');
+        setCloudDestinations(connected);
+        setSelectedCloudDestination(connected[0]?.id ?? '');
+      }).catch(() => setCloudDestinations([]));
+    };
+    window.addEventListener('omi:request-author-invitation', requestInvitation);
+    return () => window.removeEventListener('omi:request-author-invitation', requestInvitation);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -426,6 +449,31 @@ export function ContinuousManuscriptEditor() {
     return () => { cancelled = true; };
   }, [collaborationEnabled, collaborationRefresh, currentUser, manuscript.id]);
 
+  useEffect(() => {
+    if (!currentUser || !collaborationAccess?.members.some((member) => member.userId === currentUser.id)) return;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const current = useStudioStore.getState().manuscript;
+          const packaged = await buildOmiContainer(current);
+          if (cancelled || !packaged.validForExport) return;
+          await publishSharedManuscriptPackage({
+            documentId: current.id,
+            packageVersion: OMI_CONTAINER_VERSION,
+            bytes: packaged.bytes,
+          });
+        } catch (error) {
+          if (!cancelled) setCollaborationStatus(error instanceof Error ? error.message : String(error));
+        }
+      })();
+    }, 2500);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [collaborationAccess, currentUser, manuscript.headRevisionId]);
+
   const startCollaboration = async () => {
     if (!currentUser) return;
     setCollaborationBusy(true);
@@ -466,18 +514,65 @@ export function ContinuousManuscriptEditor() {
     }
   };
 
-  const inviteCollaborator = async () => {
-    const email = collaboratorEmail.trim();
-    if (!email) return;
+  const saveAndInviteCollaborator = async () => {
+    const email = invitationEmail.trim();
+    const connection = cloudDestinations.find((candidate) => candidate.id === selectedCloudDestination);
+    if (!email || !connection) return;
     setCollaborationBusy(true);
     setCollaborationStatus('');
     try {
-      const emailSent = await inviteCollaborationMember(manuscript.id, email, 'AUTHOR');
-      setCollaboratorEmail('');
+      useStudioStore.getState().checkpoint('manual');
+      const current = useStudioStore.getState().manuscript;
+      const packaged = await buildOmiContainer(current);
+      if (!packaged.validForExport) {
+        throw new Error(packaged.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join(' ')
+          || 'The OMI package did not pass validation.');
+      }
+      await uploadCloudBackup({
+        manuscriptId: current.id,
+        connectionId: connection.id,
+        packageVersion: OMI_CONTAINER_VERSION,
+        bytes: packaged.bytes,
+      });
+
+      let access = await getCollaborationAccess(current.id).catch(() => null);
+      if (!access) {
+        const seeded = createInitialCollaborationDocument(studies, sectionNumbers);
+        const update = Y.encodeStateAsUpdate(seeded);
+        seeded.destroy();
+        let binary = '';
+        for (let offset = 0; offset < update.length; offset += 0x8000) {
+          binary += String.fromCharCode(...update.subarray(offset, offset + 0x8000));
+        }
+        try {
+          await createCollaborationDocument({
+            documentId: current.id,
+            title: current.title || 'Untitled manuscript',
+            initialState: btoa(binary),
+          });
+        } catch (error) {
+          access = await getCollaborationAccess(current.id).catch(() => null);
+          if (!access) throw error;
+        }
+        access ??= await getCollaborationAccess(current.id);
+      }
+      await publishSharedManuscriptPackage({
+        documentId: current.id,
+        packageVersion: OMI_CONTAINER_VERSION,
+        bytes: packaged.bytes,
+      });
+      const emailSent = await inviteCollaborationMember(current.id, email, 'AUTHOR');
       setCollaborationAccess(await getCollaborationAccess(manuscript.id));
+      setInvitationEmail('');
+      if (invitationAgentId) {
+        window.dispatchEvent(new CustomEvent('omi:author-invitation-sent', { detail: { agentId: invitationAgentId } }));
+      }
+      setInvitationAgentId('');
+      setCloudDestinations([]);
       setCollaborationStatus(emailSent
         ? collaborationCopy.invitationSent
         : collaborationCopy.invitationEmailFailed);
+      window.dispatchEvent(new Event('omi:collaboration-access-changed'));
     } catch (error) {
       setCollaborationStatus(error instanceof Error ? error.message : String(error));
     } finally {
@@ -548,43 +643,8 @@ export function ContinuousManuscriptEditor() {
               {collaborationBusy ? collaborationCopy.starting : collaborationCopy.startSharedEditing}
             </button>
           ) : null}
-          {collaborationAccess && collaborationAccess.members.some((member) =>
-            member.userId === currentUser?.id && ['OWNER', 'EDITOR'].includes(member.role),
-          ) ? (
+          {collaborationAccess && collaborationAccess.members.some((member) => member.userId === currentUser?.id) ? (
             <div className="omi-collaboration-invite">
-              {showCollaborationInvite ? (
-                <>
-                  <label htmlFor="omi-collaborator-email">{collaborationCopy.inviteAuthor}</label>
-                  <input
-                    id="omi-collaborator-email"
-                    type="email"
-                    value={collaboratorEmail}
-                    onChange={(event) => setCollaboratorEmail(event.target.value)}
-                    placeholder={collaborationCopy.emailAddress}
-                  />
-                  <div className="omi-collaboration-invite__actions">
-                    <button type="button" onClick={inviteCollaborator} disabled={collaborationBusy || !collaboratorEmail.trim()}>
-                      {collaborationCopy.sendInvitation}
-                    </button>
-                    <button
-                      type="button"
-                      className="secondary"
-                      onClick={() => {
-                        setCollaboratorEmail('');
-                        setCollaborationStatus('');
-                        setShowCollaborationInvite(false);
-                      }}
-                      disabled={collaborationBusy}
-                    >
-                      {collaborationCopy.cancel}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <button type="button" onClick={() => setShowCollaborationInvite(true)} disabled={collaborationBusy}>
-                  {collaborationCopy.inviteAuthor}
-                </button>
-              )}
               {collaborationAccess.invitations.map((invitation) => (
                 <span key={invitation.id} className="omi-collaboration-invite__pending">
                   {invitation.invitedEmail} · {collaborationCopy.awaitingAcceptance}
@@ -600,6 +660,40 @@ export function ContinuousManuscriptEditor() {
             </details>
           ) : null}
         </aside>
+      ) : null}
+      {invitationEmail ? (
+        <div className="omi-collaboration-save-dialog" role="dialog" aria-modal="true" aria-labelledby="omi-collaboration-save-title">
+          <div className="omi-collaboration-save-dialog__card">
+            <h2 id="omi-collaboration-save-title">{locale === 'hu' ? 'Meghívó a felhőmentés után' : locale === 'de' ? 'Einladung nach Cloud-Speicherung' : 'Invite after cloud save'}</h2>
+            <p>{locale === 'hu'
+              ? `${invitationEmail} társszerző meghívása előtt mentsük a kéziratot az Ön felhőtárhelyére.`
+              : locale === 'de'
+                ? `Speichern Sie das Manuskript in Ihrem Cloud-Speicher, bevor ${invitationEmail} eingeladen wird.`
+                : `Save the manuscript to your cloud storage before inviting ${invitationEmail}.`}</p>
+            {cloudDestinations.length ? (
+              <label>
+                <span>{locale === 'hu' ? 'Felhőtárhely' : locale === 'de' ? 'Cloud-Speicher' : 'Cloud storage'}</span>
+                <select value={selectedCloudDestination} onChange={(event) => setSelectedCloudDestination(event.target.value)}>
+                  {cloudDestinations.map((connection) => <option key={connection.id} value={connection.id}>{connection.displayName}</option>)}
+                </select>
+              </label>
+            ) : <p role="alert">{locale === 'hu'
+              ? 'Nincs csatlakoztatott felhőtárhely. Csatlakoztasson egyet a Beállításokban, majd adja meg újra a szerző e-mail-címét.'
+              : locale === 'de'
+                ? 'Kein Cloud-Speicher verbunden. Verbinden Sie einen in den Einstellungen und geben Sie die E-Mail-Adresse erneut ein.'
+                : 'No cloud storage is connected. Connect one in Settings, then enter the author email again.'}</p>}
+            <div className="omi-collaboration-invite__actions">
+              <button type="button" onClick={() => void saveAndInviteCollaborator()} disabled={collaborationBusy || !selectedCloudDestination}>
+                {collaborationBusy
+                  ? (locale === 'hu' ? 'Mentés…' : locale === 'de' ? 'Wird gespeichert…' : 'Saving…')
+                  : (locale === 'hu' ? 'Mentés és meghívás' : locale === 'de' ? 'Speichern und einladen' : 'Save and invite')}
+              </button>
+              <button type="button" className="secondary" onClick={() => { setInvitationEmail(''); setInvitationAgentId(''); setCloudDestinations([]); }} disabled={collaborationBusy}>
+                {locale === 'hu' ? 'Mégsem' : locale === 'de' ? 'Abbrechen' : 'Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
       {studies.map((study) => {
         const root = study.sections.find(

@@ -89,7 +89,7 @@ app.use('/api/publication/newsletter', express.json({ limit: '12mb' }));
 app.use('/api/v1/publications/web', express.json({ limit: '12mb' }));
 app.use('/api/publication/validate/jats', express.json({ limit: '7mb' }));
 app.use('/api/references/library', express.json({ limit: '8mb' }));
-app.use('/api/collaboration/documents', express.json({ limit: '12mb' }));
+app.use('/api/collaboration/documents', express.json({ limit: '140mb' }));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/api', (_request, response) => {

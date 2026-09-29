@@ -52,6 +52,7 @@ interface MockCollaborationOptions {
     documentTitle: string;
     status: 'pending';
   };
+  packageBase64?: string;
 }
 
 export async function installMockStudioApi(
@@ -75,6 +76,21 @@ export async function installMockStudioApi(
 
     if (request.method() === 'GET' && url.pathname === '/api/collaboration/invitations/pending') {
       await fulfillJson(route, 200, { invitations: options.collaboration?.pendingInvitations ?? [] });
+      return;
+    }
+
+    if (request.method() === 'GET' && url.pathname === '/api/collaboration/documents') {
+      await fulfillJson(route, 200, { documents: [] });
+      return;
+    }
+
+    if (request.method() === 'GET' && /^\/api\/collaboration\/documents\/[^/]+\/package$/u.test(url.pathname)) {
+      const packageBase64 = options.collaboration?.packageBase64;
+      if (!packageBase64) {
+        await fulfillJson(route, 404, { error: { message: 'Shared manuscript package not found.' } });
+      } else {
+        await fulfillJson(route, 200, { package: { packageBase64 } });
+      }
       return;
     }
 

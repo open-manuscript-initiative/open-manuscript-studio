@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 
 import { useStudioStore } from '../app/useStudioStore';
+import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { useTranslation } from '../i18n';
 import type { TranslationKey } from '../i18n/types';
 import { getCountryOptions } from '../model/countryCodes';
@@ -76,6 +77,31 @@ export function ContributorEditor({
   const updateContribution = useStudioStore((state) => state.updateContribution);
   const removeContributor = useStudioStore((state) => state.removeContributor);
   const moveContributor = useStudioStore((state) => state.moveContributor);
+  const newlyAddedContributorIds = useRef(new Set<string>());
+
+  useEffect(() => {
+    const markInvitationSent = (event: Event) => {
+      const agentId = (event as CustomEvent<{ agentId?: string }>).detail?.agentId;
+      if (agentId) newlyAddedContributorIds.current.delete(agentId);
+    };
+    window.addEventListener('omi:author-invitation-sent', markInvitationSent);
+    return () => window.removeEventListener('omi:author-invitation-sent', markInvitationSent);
+  }, []);
+
+  const addAuthor = () => {
+    newlyAddedContributorIds.current.add(addContributor(targetId));
+  };
+
+  const requestAuthorInvitation = (agentId: string, email: string) => {
+    if (!newlyAddedContributorIds.current.has(agentId)) return;
+    const normalizedEmail = email.trim();
+    const ownEmail = getCurrentUser(useAuthStore.getState())?.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(normalizedEmail)
+        || normalizedEmail.toLowerCase() === ownEmail) return;
+    window.dispatchEvent(new CustomEvent('omi:request-author-invitation', {
+      detail: { email: normalizedEmail, agentId },
+    }));
+  };
 
   const contributions = manuscript.contributions
     .filter((contribution) => contribution.targetId === targetId)
@@ -96,7 +122,7 @@ export function ContributorEditor({
         <button
           type="button"
           className="contributor-add-button"
-          onClick={() => addContributor(targetId)}
+          onClick={addAuthor}
         >
           <Plus size={16} aria-hidden="true" />
           {t('contributors.add')}
@@ -263,6 +289,7 @@ export function ContributorEditor({
                         email: event.target.value,
                       })
                     }
+                    onBlur={(event) => requestAuthorInvitation(agent.id, event.target.value)}
                   />
                 </label>
 

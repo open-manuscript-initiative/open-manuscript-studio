@@ -1,10 +1,15 @@
 import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 import { installMockStudioApi } from './support/mockStudioApi';
+
+const sharedPackageBase64 = readFile(new URL('./fixtures/shared-manuscript.omi', import.meta.url))
+  .then((bytes) => bytes.toString('base64'));
 
 test('an invited author must explicitly accept with the invited Studio account', async ({ page }) => {
   const api = await installMockStudioApi(page, {
     authenticated: true,
     collaboration: {
+      packageBase64: await sharedPackageBase64,
       invitation: {
         email: 'editor@example.test',
         role: 'AUTHOR',
@@ -19,7 +24,7 @@ test('an invited author must explicitly accept with the invited Studio account',
   await expect(page.getByRole('heading', { name: 'Manuscript collaboration invitation' })).toBeVisible();
   await expect(page.getByText('Shared E2E manuscript', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Accept invitation' }).click();
-  await expect(page.getByRole('heading', { name: 'No document is open' })).toBeVisible();
+  await expect(page.getByText('Test manuscript', { exact: true }).first()).toBeVisible();
   expect(api.unhandledRequests).toEqual([]);
 });
 
@@ -47,6 +52,7 @@ test('a signed-in author can accept or decline invitations in the Studio inbox',
     authenticated: true,
     collaboration: {
       enabled: true,
+      packageBase64: await sharedPackageBase64,
       pendingInvitations: [{
         id: '30000000-0000-4000-8000-000000000003',
         documentId: 'manuscript-e2e',
@@ -60,9 +66,9 @@ test('a signed-in author can accept or decline invitations in the Studio inbox',
   });
 
   await page.goto('/');
-  const inbox = page.getByRole('complementary', { name: 'Manuscript invitations' });
+  const inbox = page.getByRole('complementary', { name: 'Manuscript invitations and shared manuscripts' });
   await expect(inbox.getByText('Inbox manuscript')).toBeVisible();
   await inbox.getByRole('button', { name: 'Accept', exact: true }).click();
-  await expect(inbox.getByRole('status')).toContainText('Open that OMI manuscript');
+  await expect(inbox.getByRole('status')).toContainText('Accepted and opened: Inbox manuscript.');
   expect(api.unhandledRequests).toEqual([]);
 });

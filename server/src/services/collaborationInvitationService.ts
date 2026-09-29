@@ -4,10 +4,12 @@ import * as Y from 'yjs';
 
 import { env } from '../config/env.js';
 import { closeCollaborationDocumentConnections } from '../collaboration/collaborationServer.js';
+import { identityPrisma } from '../lib/identityPrisma.js';
 import { prisma } from '../lib/prisma.js';
 import { revokeCollaborationConnectionTickets } from './collaborationTicketService.js';
 
 export type CollaborationInviteRole = 'EDITOR' | 'AUTHOR' | 'VIEWER';
+const MAX_SHARED_PACKAGE_BYTES = 100 * 1024 * 1024;
 
 export class CollaborationInvitationError extends Error {
   constructor(
@@ -93,7 +95,7 @@ export async function listCollaborativeDocumentAccess(
       include: { user: { select: { id: true, email: true, fullName: true } } },
       orderBy: [{ role: 'asc' }, { acceptedAt: 'asc' }],
     }),
-    actor.role === 'OWNER' || actor.role === 'EDITOR'
+    actor.role === 'OWNER' || actor.role === 'EDITOR' || actor.role === 'AUTHOR'
       ? prisma.collaborationInvitation.findMany({
           where: { documentId, acceptedAt: null, declinedAt: null, revokedAt: null, expiresAt: { gt: new Date() } },
           select: { id: true, invitedEmail: true, role: true, expiresAt: true, createdAt: true },
@@ -118,6 +120,73 @@ export async function listCollaborativeDocumentAccess(
   };
 }
 
+export async function publishCollaborativeDocumentPackage(
+  actorUserId: string,
+  input: { documentId: string; packageVersion: string; packageBase64: string },
+) {
+  await requireInviteAuthority(input.documentId, actorUserId);
+  if (!input.packageVersion.trim() || input.packageVersion.length > 32
+      || input.packageBase64.length > Math.ceil(MAX_SHARED_PACKAGE_BYTES * 4 / 3)
+      || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u.test(input.packageBase64)) {
+    throw new TypeError('The shared OMI package is invalid or too large.');
+  }
+  const bytes = Buffer.from(input.packageBase64, 'base64');
+  if (bytes.length < 4 || bytes.length > MAX_SHARED_PACKAGE_BYTES
+      || bytes.toString('base64') !== input.packageBase64
+      || bytes[0] !== 0x50 || bytes[1] !== 0x4b) {
+    throw new TypeError('The shared OMI package is invalid or too large.');
+  }
+  const checksum = createHash('sha256').update(bytes).digest('hex');
+  const published = await prisma.collaborativeDocumentPackage.upsert({
+    where: { documentId: input.documentId },
+    create: {
+      documentId: input.documentId,
+      packageBytes: bytes,
+      checksum,
+      packageVersion: input.packageVersion.trim(),
+    },
+    update: {
+      packageBytes: bytes,
+      checksum,
+      packageVersion: input.packageVersion.trim(),
+    },
+    select: { checksum: true, packageVersion: true, updatedAt: true },
+  });
+  return { ...published, updatedAt: published.updatedAt.toISOString() };
+}
+
+export async function downloadCollaborativeDocumentPackage(actorUserId: string, documentId: string) {
+  await requireActiveMember(documentId, actorUserId);
+  const [document, sharedPackage] = await Promise.all([
+    prisma.collaborativeDocument.findUnique({ where: { id: documentId }, select: { title: true } }),
+    prisma.collaborativeDocumentPackage.findUnique({ where: { documentId } }),
+  ]);
+  if (!document || !sharedPackage) {
+    throw new CollaborationInvitationError('The shared OMI package is not available.', 'NOT_FOUND');
+  }
+  return {
+    title: document.title,
+    packageVersion: sharedPackage.packageVersion,
+    checksum: sharedPackage.checksum,
+    updatedAt: sharedPackage.updatedAt.toISOString(),
+    packageBase64: Buffer.from(sharedPackage.packageBytes).toString('base64'),
+  };
+}
+
+export async function listSharedCollaborativeDocuments(actorUserId: string) {
+  const memberships = await prisma.collaborationMember.findMany({
+    where: { userId: actorUserId, revokedAt: null, document: { package: { isNot: null } } },
+    include: { document: { include: { package: { select: { updatedAt: true } } } } },
+    orderBy: { document: { updatedAt: 'desc' } },
+  });
+  return memberships.map(({ document, role }) => ({
+    documentId: document.id,
+    title: document.title,
+    role,
+    packageUpdatedAt: document.package?.updatedAt.toISOString() ?? null,
+  }));
+}
+
 export async function inviteCollaborator(
   actorUserId: string,
   input: { documentId: string; email: string; role: CollaborationInviteRole },
@@ -125,6 +194,14 @@ export async function inviteCollaborator(
   const email = normalizeEmail(input.email);
   if (!isEmail(email)) throw new TypeError('A valid invitation e-mail address is required.');
   await requireInviteAuthority(input.documentId, actorUserId);
+
+  const publishedPackage = await prisma.collaborativeDocumentPackage.findUnique({
+    where: { documentId: input.documentId },
+    select: { documentId: true },
+  });
+  if (!publishedPackage) {
+    throw new CollaborationInvitationError('Save the OMI package before inviting collaborators.', 'CONFLICT');
+  }
 
   const document = await prisma.collaborativeDocument.findUnique({
     where: { id: input.documentId },
@@ -230,6 +307,7 @@ export async function listPendingCollaborationInvitations(actorUserId: string) {
   if (!user || user.status !== 'ACTIVE') {
     throw new CollaborationInvitationError('An active Studio account is required.', 'FORBIDDEN');
   }
+  if (!(await hasVerifiedMailbox(actorUserId))) return [];
   const invitations = await prisma.collaborationInvitation.findMany({
     where: {
       invitedEmail: normalizeEmail(user.email),
@@ -256,16 +334,17 @@ export async function acceptCollaborationInvitation(actorUserId: string, rawToke
   const token = validateToken(rawToken);
   if (!token) throw new CollaborationInvitationError('The invitation is invalid or expired.', 'INVALID_INVITATION');
 
-  return consumeCollaborationInvitation(actorUserId, { tokenHash: hashToken(token) });
+  return consumeCollaborationInvitation(actorUserId, { tokenHash: hashToken(token) }, false);
 }
 
 export async function acceptCollaborationInvitationById(actorUserId: string, invitationId: string) {
-  return consumeCollaborationInvitation(actorUserId, { id: invitationId });
+  return consumeCollaborationInvitation(actorUserId, { id: invitationId }, true);
 }
 
 async function consumeCollaborationInvitation(
   actorUserId: string,
   where: { tokenHash: string } | { id: string },
+  requireVerifiedEmail: boolean,
 ) {
   return prisma.$transaction(async (transaction) => {
     const invitation = await transaction.collaborationInvitation.findUnique({
@@ -284,6 +363,11 @@ async function consumeCollaborationInvitation(
     }
     if (normalizeEmail(user.email) !== invitation.invitedEmail) {
       throw new CollaborationInvitationError('This invitation was sent to another e-mail address.', 'FORBIDDEN');
+    }
+    if (requireVerifiedEmail) {
+      if (!(await hasVerifiedMailbox(actorUserId))) {
+        throw new CollaborationInvitationError('Verify your e-mail address or accept using the invitation link sent to that address.', 'FORBIDDEN');
+      }
     }
 
     const consumed = await transaction.collaborationInvitation.updateMany({
@@ -405,7 +489,7 @@ export async function requireActiveMember(documentId: string, userId: string) {
 
 async function requireInviteAuthority(documentId: string, userId: string) {
   const member = await requireActiveMember(documentId, userId);
-  if (member.role !== 'OWNER' && member.role !== 'EDITOR') {
+  if (member.role !== 'OWNER' && member.role !== 'EDITOR' && member.role !== 'AUTHOR') {
     throw new CollaborationInvitationError('You do not have permission to invite collaborators.', 'FORBIDDEN');
   }
   return member;
@@ -429,6 +513,9 @@ async function closeCollaborationInvitation(
     if (!user || user.status !== 'ACTIVE' || normalizeEmail(user.email) !== invitation.invitedEmail) {
       throw new CollaborationInvitationError('This invitation was sent to another account.', 'FORBIDDEN');
     }
+    if (!(await hasVerifiedMailbox(actorUserId))) {
+      throw new CollaborationInvitationError('Verify your e-mail address or use the invitation link sent to that address.', 'FORBIDDEN');
+    }
     const updated = await transaction.collaborationInvitation.updateMany({
       where: { id: invitation.id, acceptedAt: null, declinedAt: null, revokedAt: null, expiresAt: { gt: new Date() } },
       data: { declinedAt: new Date() },
@@ -442,6 +529,18 @@ async function closeCollaborationInvitation(
       },
     });
     return { status: action === 'decline' ? 'declined' as const : 'pending' as const };
+  });
+}
+
+async function hasVerifiedMailbox(userId: string): Promise<boolean> {
+  const identities = await identityPrisma.userIdentity.findMany({
+    where: { userId },
+    select: { profile: true },
+  });
+  return identities.some((identity) => {
+    if (!identity.profile || typeof identity.profile !== 'object' || Array.isArray(identity.profile)) return false;
+    const profile = identity.profile as Record<string, unknown>;
+    return profile.emailVerified === true || profile.email_verified === true;
   });
 }
 

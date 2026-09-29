@@ -1,4 +1,8 @@
-import { OMI_IDENTITY_MODEL_VERSION } from '../model/identity';
+import {
+  createContribution,
+  createPersonAgent,
+  OMI_IDENTITY_MODEL_VERSION,
+} from '../model/identity';
 import {
   createDocumentStructureProfile,
   type OmiDocumentKind,
@@ -15,6 +19,13 @@ export interface CreateBlankManuscriptInput {
   volumeKind?: OmiVolumeKind;
   locale?: string;
   title?: string;
+  author?: {
+    displayName: string;
+    email: string;
+    affiliation?: string;
+    affiliationRorId?: string;
+    orcid?: string;
+  };
 }
 
 export function createBlankManuscript(
@@ -22,6 +33,20 @@ export function createBlankManuscript(
 ): OmiManuscript {
   const now = new Date().toISOString();
   const manuscriptId = crypto.randomUUID();
+  const authorName = input.author?.displayName.trim();
+  const author = authorName
+    ? createPersonAgent({
+        givenName: '',
+        familyName: '',
+        displayName: authorName,
+        email: input.author?.email,
+        affiliation: input.author?.affiliation,
+        affiliationRorId: input.author?.affiliationRorId,
+        orcid: input.author?.orcid,
+        language: input.locale,
+      }, crypto.randomUUID(), now)
+    : null;
+  const rootStudyId = input.kind === 'study' ? crypto.randomUUID() : null;
   const state: OmiManuscriptState = {
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
     id: manuscriptId,
@@ -37,10 +62,19 @@ export function createBlankManuscript(
       input.kind,
       input.volumeKind,
     ),
-    agents: [],
-    contributions: [],
+    agents: author ? [author] : [],
+    contributions: author
+      ? [createContribution(
+          author.id,
+          rootStudyId ?? manuscriptId,
+          ['author'],
+          1,
+          crypto.randomUUID(),
+          now,
+        )]
+      : [],
     tombstones: [],
-    sections: input.kind === 'study' ? [createEmptyStudy()] : [],
+    sections: rootStudyId ? [createEmptyStudy(rootStudyId)] : [],
     annotations: [],
     bibliographicRecords: [],
     bibliographyAdditionalRecordIds: [],
