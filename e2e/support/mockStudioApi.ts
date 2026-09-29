@@ -90,6 +90,11 @@ export async function installMockStudioApi(
       return;
     }
 
+    if (request.method() === 'GET' && /^\/api\/collaboration\/documents\/[^/]+\/access$/u.test(url.pathname)) {
+      await fulfillJson(route, 200, { members: [], invitations: [] });
+      return;
+    }
+
     if (request.method() === 'GET' && /^\/api\/collaboration\/documents\/[^/]+\/package$/u.test(url.pathname)) {
       const packageBase64 = options.collaboration?.packageBase64;
       if (!packageBase64) {
