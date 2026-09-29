@@ -8,6 +8,7 @@ export interface AccountPanelCopy {
   personalDescription: string;
   name: string;
   country?: string;
+  website?: string;
   notSpecified?: string;
   orcid: string;
   bio: string;
@@ -40,7 +41,7 @@ export const accountPanelTranslations: Record<string, AccountPanelCopy> = {
   },
   de: {
     title: 'Konto', subtitle: 'Persönliche Identität, institutionelle Rollen und Anmeldemethoden', personal: 'Persönliches Profil', institutional: 'Institutionelle Profile', central: 'Zentrale Administration',
-    personalDescription: 'Ihre dauerhafte wissenschaftliche Identität. Organisationsbezogene Zugehörigkeiten werden separat verwaltet.', name: 'Vollständiger Name', country: 'Land', notSpecified: 'Nicht angegeben', orcid: 'ORCID iD', bio: 'Kurzbiografie', preferences: 'Persönliche Einstellungen', timezone: 'Zeitzone',
+    personalDescription: 'Ihre dauerhafte wissenschaftliche Identität. Organisationsbezogene Zugehörigkeiten werden separat verwaltet.', name: 'Vollständiger Name', country: 'Land', notSpecified: 'Nicht angegeben', website: 'Website', orcid: 'ORCID iD', bio: 'Kurzbiografie', preferences: 'Persönliche Einstellungen', timezone: 'Zeitzone',
     timezoneHint: 'Standardisierte IANA-Zeitzone; der aktuelle UTC-Versatz wird zur Orientierung angezeigt.', identity: 'Kontoidentität', verified: 'Bestätigte E-Mail-Adresse', unverified: 'E-Mail-Adresse nicht bestätigt', save: 'Persönliches Profil speichern', saved: 'Persönliches Profil gespeichert.', logout: 'Abmelden',
   },
   el: {
@@ -50,7 +51,7 @@ export const accountPanelTranslations: Record<string, AccountPanelCopy> = {
   },
   en: {
     title: 'Account', subtitle: 'Personal identity, institutional roles and sign-in methods', personal: 'Personal profile', institutional: 'Institutional profiles', central: 'Central administration',
-    personalDescription: 'Your durable scholarly identity. Organization-specific affiliations are managed separately.', name: 'Full name', country: 'Country', notSpecified: 'Not specified', orcid: 'ORCID iD', bio: 'Short biography', preferences: 'Personal preferences', timezone: 'Time zone',
+    personalDescription: 'Your durable scholarly identity. Organization-specific affiliations are managed separately.', name: 'Full name', country: 'Country', notSpecified: 'Not specified', website: 'Website', orcid: 'ORCID iD', bio: 'Short biography', preferences: 'Personal preferences', timezone: 'Time zone',
     timezoneHint: 'Standard IANA time-zone identifier; the current UTC offset is shown for reference.', identity: 'Account identity', verified: 'Verified e-mail', unverified: 'E-mail not verified', save: 'Save personal profile', saved: 'Personal profile saved.', logout: 'Sign out',
   },
   es: {
@@ -85,7 +86,7 @@ export const accountPanelTranslations: Record<string, AccountPanelCopy> = {
   },
   hu: {
     title: 'Fiók', subtitle: 'Személyes identitás, intézményi szerepek és bejelentkezési módok', personal: 'Személyes profil', institutional: 'Intézményi profilok', central: 'Központi adminisztráció',
-    personalDescription: 'A tartós személyes tudományos identitásod. Az intézményi affiliációk külön kezelhetők.', name: 'Teljes név', country: 'Ország', notSpecified: 'Nincs megadva', orcid: 'ORCID iD', bio: 'Rövid bemutatkozás', preferences: 'Személyes beállítások', timezone: 'Időzóna',
+    personalDescription: 'A tartós személyes tudományos identitásod. Az intézményi affiliációk külön kezelhetők.', name: 'Teljes név', country: 'Ország', notSpecified: 'Nincs megadva', website: 'Honlap', orcid: 'ORCID iD', bio: 'Rövid bemutatkozás', preferences: 'Személyes beállítások', timezone: 'Időzóna',
     timezoneHint: 'Szabványos IANA-időzóna; tájékoztatásként az aktuális UTC-eltolás is látható.', identity: 'Fiókazonosság', verified: 'Ellenőrzött e-mail-cím', unverified: 'Nem ellenőrzött e-mail-cím', save: 'Személyes profil mentése', saved: 'A személyes profil elmentve.', logout: 'Kijelentkezés',
   },
   it: {

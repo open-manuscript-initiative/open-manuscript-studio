@@ -28,6 +28,7 @@ export interface CreateBlankManuscriptInput {
     affiliation?: string;
     affiliationRorId?: string;
     country?: string;
+    url?: string;
     orcid?: string;
     biography?: Record<string, string>;
   };
@@ -48,6 +49,7 @@ export function createBlankManuscript(
         affiliation: input.author?.affiliation,
         affiliationRorId: input.author?.affiliationRorId,
         country: input.author?.country,
+        url: input.author?.url,
         orcid: input.author?.orcid,
         biography: input.author?.biography,
         language: input.locale,

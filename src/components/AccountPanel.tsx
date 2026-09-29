@@ -27,6 +27,7 @@ type AccountFormState = {
   orcid: string;
   bio: string;
   country: string;
+  website: string;
   timeZone: string;
 };
 
@@ -48,6 +49,7 @@ export function AccountPanel() {
     orcid: '',
     bio: '',
     country: '',
+    website: '',
     timeZone: getSystemTimeZone(),
   });
   const timeZoneOptions = useMemo(
@@ -63,6 +65,7 @@ export function AccountPanel() {
       orcid: user.profile.orcid ?? '',
       bio: user.profile.bio ?? '',
       country: user.profile.country ?? '',
+      website: user.profile.website ?? '',
       timeZone: user.preferences.timeZone || getSystemTimeZone(),
     });
     void getCentralAdminContext()
@@ -80,6 +83,7 @@ export function AccountPanel() {
       orcid: form.orcid || undefined,
       bio: form.bio || undefined,
       country: form.country,
+      website: form.website,
       timeZone: form.timeZone || undefined,
     });
     setSaved(true);
@@ -175,6 +179,17 @@ export function AccountPanel() {
                     <option value={option.code} key={option.code}>{option.label}</option>
                   ))}
                 </select>
+              </label>
+
+              <label>
+                {labels.website}
+                <input
+                  type="url"
+                  dir="ltr"
+                  value={form.website}
+                  onChange={(event) => setForm({ ...form, website: event.target.value })}
+                  placeholder="https://example.org"
+                />
               </label>
 
               <label>

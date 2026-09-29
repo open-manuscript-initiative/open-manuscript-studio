@@ -77,6 +77,7 @@ model User {
   affiliation            String?                 @db.VarChar(300)
   affiliationRorId       String?                 @map("affiliation_ror_id") @db.VarChar(128)
   country                String?                 @db.VarChar(2)
+  website                String?                 @db.VarChar(2048)
   orcid                  String?                 @unique @db.VarChar(19)
   bio                    String?                 @db.VarChar(2000)
   timeZone               String?                 @map("time_zone") @db.VarChar(64)
