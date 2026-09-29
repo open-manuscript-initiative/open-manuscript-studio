@@ -152,6 +152,16 @@ export async function installMockStudioApi(
       return;
     }
 
+    if (request.method() === 'GET' && url.pathname === '/api/profile/saved-documents') {
+      await fulfillJson(route, 200, { savedDocuments: [] });
+      return;
+    }
+
+    if (request.method() === 'DELETE' && /^\/api\/profile\/saved-documents\/[^/]+$/u.test(url.pathname)) {
+      await route.fulfill({ status: 204 });
+      return;
+    }
+
     if (request.method() === 'POST' && url.pathname === '/api/auth/login') {
       const payload = request.postDataJSON() as Record<string, unknown>;
       loginRequests.push(payload);

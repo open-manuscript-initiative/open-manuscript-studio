@@ -21,7 +21,8 @@
     "prisma:studio": "prisma studio",
     "prisma:studio:identity": "prisma studio --config prisma.identity.config.ts",
     "test:jats-validation": "node --import tsx --test ../tests/jats-schema-validation.test.ts",
-    "test:collaboration-availability": "node --import tsx --test src/config/collaborationAvailability.test.ts"
+    "test:collaboration-availability": "node --import tsx --test src/config/collaborationAvailability.test.ts",
+    "test:profile-saved-documents": "npm run prisma:generate && tsc -p tsconfig.json && node --test --experimental-test-module-mocks ../tests/profile-saved-documents-routes.test.mjs"
   },
   "dependencies": {
     "@hocuspocus/server": "4.7.0",

@@ -109,25 +109,30 @@ export class WebDavProvider implements CloudStorageProvider {
     return joinPath(this.credentials.rootPath, path);
   }
 
-  private async request(
-    method: string,
-    path: string,
-    options: {
-      body?: Buffer | string;
-      headers?: Record<string, string>;
-    } = {},
-  ): Promise<Response> {
+  private async remoteUrl(path: string): Promise<URL> {
     const baseUrl = this.credentials.baseUrl.endsWith('/')
       ? this.credentials.baseUrl
       : `${this.credentials.baseUrl}/`;
     const safeBase = await assertSafeRemoteUrl(baseUrl);
-    const target = new URL(
+    return new URL(
       this.remotePath(path)
         .split('/')
         .map(encodeURIComponent)
         .join('/'),
       safeBase,
     );
+  }
+
+  private async request(
+    method: string,
+    path: string,
+    options: {
+      body?: Buffer | string;
+      headers?: Record<string, string>;
+      targetUrl?: URL;
+    } = {},
+  ): Promise<Response> {
+    const target = options.targetUrl ?? await this.remoteUrl(path);
 
     const authorization = Buffer.from(
       `${this.credentials.username}:${this.credentials.password}`,
@@ -243,8 +248,10 @@ export class WebDavProvider implements CloudStorageProvider {
       : 'application/octet-stream';
     const directory = path.split('/').slice(0, -1).join('/');
     if (directory) await this.ensureDirectory(directory);
+    const targetUrl = await this.remoteUrl(path);
 
     const response = await this.request('PUT', path, {
+      targetUrl,
       body: data,
       headers: {
         'Content-Type': contentType,
@@ -257,6 +264,7 @@ export class WebDavProvider implements CloudStorageProvider {
       id: path,
       path,
       name: path.split('/').pop() ?? path,
+      webUrl: targetUrl.toString(),
       size: data.byteLength,
       ...(response.headers.get('etag')
         ? { checksum: response.headers.get('etag')!.replace(/^W\//, '').replace(/^"|"$/g, '') }

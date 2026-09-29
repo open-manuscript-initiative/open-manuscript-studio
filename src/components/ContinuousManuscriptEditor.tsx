@@ -530,6 +530,7 @@ export function ContinuousManuscriptEditor() {
       }
       await uploadCloudBackup({
         manuscriptId: current.id,
+        title: current.title,
         connectionId: connection.id,
         packageVersion: OMI_CONTAINER_VERSION,
         bytes: packaged.bytes,
