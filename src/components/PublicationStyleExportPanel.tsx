@@ -187,7 +187,7 @@ export function PublicationStyleExportPanel() {
         <article className="publication-style-export-option">
           <FileCode2 size={22} aria-hidden="true" />
           <div>
-            <strong>HTML</strong>
+            <strong>{copy.htmlLabel}</strong>
             <p>{copy.htmlDescription}</p>
           </div>
           <button type="button" className="studio-menu-primary-action" disabled={busy !== null} onClick={() => void exportHtml()}>
@@ -205,7 +205,7 @@ export function PublicationStyleExportPanel() {
 
 function copyFor(locale: string) {
   if (locale === 'hu') return {
-    title: 'Nyomtatás és export',
+    title: 'Nyomtatás és vizuális export',
     description: 'Nyomtatás előtt kiválasztható a semleges szerkesztői kéziratnézet vagy az Élő kiadványszerkesztőben kialakított tördelt kiadvány.',
     print: 'nyomtatás',
     pdfDescription: 'A választott nézetből a Studio Vivliostyle segítségével tényleges, lapozott PDF-fájlt készít.',
@@ -219,14 +219,15 @@ function copyFor(locale: string) {
     pdfInteractive: 'Interaktív',
     pdfPrintDescription: 'A fizikai nyomtatásra és archiválásra szánt változat nem tartalmaz aktív hiperhivatkozásokat.',
     pdfInteractiveDescription: 'A belső és külső hivatkozások kattinthatók maradnak a PDF-ben.',
+    htmlLabel: 'Stílusozott HTML webnézet',
     htmlDescription: 'Folyamatos webes nézet ugyanazzal a tipográfiával, de élőfej, oldalszám, lapméret és oldaltörés nélkül.',
-    exportPdf: 'PDF készítése', exportHtml: 'HTML export', preparing: 'Előkészítés…', preparingPdf: 'PDF előkészítése…',
+    exportPdf: 'PDF készítése', exportHtml: 'HTML webnézet exportálása', preparing: 'Előkészítés…', preparingPdf: 'PDF előkészítése…',
     pdfReady: 'A PDF-fájl elkészült.', saveCancelled: 'A PDF mentése megszakítva.', htmlReady: 'A stílusozott HTML-csomag elkészült.',
     exportError: 'A nyomtatási/export nézet nem készíthető el.',
     note: 'A tördelt változat a mentett kiadványstílus nyomdai geometriáját használja. A nyers/szerkesztői változat csak a dokumentum szemantikai szerkezetét és tartalmát formázza olvasható nyomattá.'
   };
   if (locale === 'de') return {
-    title: 'Drucken und Exportieren', description: 'Vor dem Drucken kann zwischen einer neutralen redaktionellen Manuskriptansicht und der im Live-Publikationseditor gesetzten Publikation gewählt werden.',
+    title: 'Drucken und visueller Export', description: 'Vor dem Drucken kann zwischen einer neutralen redaktionellen Manuskriptansicht und der im Live-Publikationseditor gesetzten Publikation gewählt werden.',
     print: 'Drucken',
     pdfDescription: 'Studio erzeugt aus der gewählten Ansicht mit Vivliostyle eine echte paginierte PDF-Datei.',
     pdfContent: 'Druckansicht', pdfPublication: 'Gesetzte Publikation', pdfEditorial: 'Redaktionell / Manuskript',
@@ -235,14 +236,15 @@ function copyFor(locale: string) {
     pdfMode: 'PDF-Variante', pdfPrint: 'Druck', pdfInteractive: 'Interaktiv',
     pdfPrintDescription: 'Die für physischen Druck und Archivierung bestimmte Variante enthält keine aktiven Hyperlinks.',
     pdfInteractiveDescription: 'Interne und externe Verweise bleiben im PDF anklickbar.',
+    htmlLabel: 'Formatierte HTML-Webansicht',
     htmlDescription: 'Fortlaufende Webansicht mit derselben Typografie, jedoch ohne Kolumnentitel, Seitenzahlen, Seitengröße oder Seitenumbrüche.',
-    exportPdf: 'PDF erstellen', exportHtml: 'HTML exportieren', preparing: 'Wird vorbereitet…', preparingPdf: 'PDF wird vorbereitet…',
+    exportPdf: 'PDF erstellen', exportHtml: 'HTML-Webansicht exportieren', preparing: 'Wird vorbereitet…', preparingPdf: 'PDF wird vorbereitet…',
     pdfReady: 'Die PDF-Datei wurde erstellt.', saveCancelled: 'Das Speichern der PDF-Datei wurde abgebrochen.', htmlReady: 'Das formatierte HTML-Paket wurde erstellt.',
     exportError: 'Die PDF-/Exportausgabe konnte nicht erstellt werden.',
     note: 'Die gesetzte Variante verwendet die gespeicherte Druckgeometrie des Publikationsstils. Die redaktionelle Variante formatiert nur die semantische Struktur und den Inhalt als lesbaren Ausdruck.'
   };
   return {
-    title: 'Print and export', description: 'Before printing, choose either a neutral editorial manuscript view or the typeset publication created in the Live Publication Editor.',
+    title: 'Print and visual export', description: 'Before printing, choose either a neutral editorial manuscript view or the typeset publication created in the Live Publication Editor.',
     print: 'print',
     pdfDescription: 'Studio uses Vivliostyle to produce a real paginated PDF artifact from the selected view.',
     pdfContent: 'Print view', pdfPublication: 'Typeset publication', pdfEditorial: 'Editorial / manuscript',
@@ -251,11 +253,11 @@ function copyFor(locale: string) {
     pdfMode: 'PDF variant', pdfPrint: 'Print', pdfInteractive: 'Interactive',
     pdfPrintDescription: 'The physical-print and archive variant contains no active hyperlinks.',
     pdfInteractiveDescription: 'Internal and external references remain clickable in the PDF.',
+    htmlLabel: 'Styled HTML web view',
     htmlDescription: 'Continuous web view with the same typography, but no running header, page numbers, page size or page breaks.',
-    exportPdf: 'Create PDF', exportHtml: 'Export HTML', preparing: 'Preparing…', preparingPdf: 'Preparing PDF…',
+    exportPdf: 'Create PDF', exportHtml: 'Export HTML web view', preparing: 'Preparing…', preparingPdf: 'Preparing PDF…',
     pdfReady: 'The PDF file is ready.', saveCancelled: 'PDF file save cancelled.', htmlReady: 'The styled HTML package is ready.',
     exportError: 'The PDF/export output could not be created.',
     note: 'The typeset variant uses the saved publication-style print geometry. The editorial variant formats only the document semantic structure and content as a readable printout.'
   };
 }
-
