@@ -984,6 +984,42 @@
   box-shadow: 0 16px 40px #17203324;
 }
 
+.omi-collaboration-inbox__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.omi-collaboration-inbox .omi-collaboration-inbox__close {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 50%;
+  background: #eef0f4;
+  color: #263248;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.omi-collaboration-inbox__reopen {
+  position: fixed;
+  z-index: 500;
+  top: 1rem;
+  right: 1rem;
+  max-width: calc(100vw - 2rem);
+  padding: 0.65rem 0.9rem;
+  border: 0;
+  border-radius: 0.65rem;
+  background: #6d2831;
+  color: #fff;
+  box-shadow: 0 8px 24px #17203324;
+  font: inherit;
+}
+
 .omi-collaboration-inbox__item {
   display: flex;
   flex-wrap: wrap;

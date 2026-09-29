@@ -27,6 +27,8 @@ export function CollaborationInbox({ children }: { children: ReactNode }) {
     expired: hu ? 'Lejárat' : de ? 'Läuft ab' : 'Expires',
     accepted: hu ? 'Elfogadva és megnyitva' : de ? 'Angenommen und geöffnet' : 'Accepted and opened',
     opened: hu ? 'Megnyitva' : de ? 'Geöffnet' : 'Opened',
+    close: hu ? 'Bezárás' : de ? 'Schließen' : 'Close',
+    show: hu ? 'Megosztott kéziratok megnyitása' : de ? 'Geteilte Manuskripte öffnen' : 'Open shared manuscripts',
     activeOnly: hu
       ? 'A kézirathoz csak az elfogadott meghívó ad hozzáférést.'
       : de
@@ -38,7 +40,9 @@ export function CollaborationInbox({ children }: { children: ReactNode }) {
   const [documents, setDocuments] = useState<SharedCollaborativeDocument[]>([]);
   const [busyInvitationId, setBusyInvitationId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const [isOpen, setIsOpen] = useState(true);
   const enabledRef = useRef<boolean | null>(null);
+  const hasInboxContent = invitations.length > 0 || documents.length > 0 || Boolean(message);
 
   const refresh = useCallback(async () => {
     try {
@@ -73,6 +77,7 @@ export function CollaborationInbox({ children }: { children: ReactNode }) {
         await acceptPendingCollaborationInvitation(invitation.id);
         const plan = await inspectOmiContainer(await downloadSharedManuscriptPackage(invitation.documentId));
         await applyOmiContainerImportPlan(plan);
+        setIsOpen(false);
       }
       else await declinePendingCollaborationInvitation(invitation.id);
       setInvitations((pending) => pending.filter((item) => item.id !== invitation.id));
@@ -96,6 +101,7 @@ export function CollaborationInbox({ children }: { children: ReactNode }) {
       const plan = await inspectOmiContainer(await downloadSharedManuscriptPackage(document.documentId));
       await applyOmiContainerImportPlan(plan);
       setMessage(`${copy.opened}: ${document.title}.`);
+      setIsOpen(false);
       window.dispatchEvent(new Event('omi:collaboration-access-changed'));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
@@ -107,8 +113,24 @@ export function CollaborationInbox({ children }: { children: ReactNode }) {
   return (
     <>
       {children}
-      {invitations.length || documents.length || message ? (
-        <aside className="omi-collaboration-inbox" aria-label={copy.aria}>
+      {hasInboxContent && !isOpen ? (
+        <button
+          type="button"
+          className="omi-collaboration-inbox__reopen"
+          aria-label={copy.show}
+          aria-controls="omi-collaboration-inbox"
+          aria-expanded={false}
+          onClick={() => setIsOpen(true)}
+        >
+          {copy.shared}
+        </button>
+      ) : null}
+      {hasInboxContent && isOpen ? (
+        <aside id="omi-collaboration-inbox" className="omi-collaboration-inbox" aria-label={copy.aria}>
+          <div className="omi-collaboration-inbox__header">
+            <strong>{copy.aria}</strong>
+            <button type="button" className="omi-collaboration-inbox__close" aria-label={copy.close} onClick={() => setIsOpen(false)}>×</button>
+          </div>
           {invitations.length ? <strong>{copy.invitations}</strong> : null}
           {invitations.map((invitation) => (
             <div className="omi-collaboration-inbox__item" key={invitation.id}>
