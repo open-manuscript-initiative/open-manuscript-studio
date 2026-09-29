@@ -6,6 +6,50 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+## 0.3.0-beta.3 — 2026-09-29
+
+### Authoring and Word export
+
+- Exports anchored OMI notes as linked Word footnotes by default and preserves
+  explicit endnotes as Word endnotes.
+- Formats inline note markers as superscript references and separates them from
+  note text; unanchored notes remain clearly identified in an appendix.
+- Shows spaces, non-breaking spaces, tabs, line breaks and paragraphs when
+  non-printing marks are enabled.
+
+### Collaboration
+
+- Adds persistent, manuscript-scoped chat for accepted collaborators, with
+  server-side checks for active membership and message validation.
+- Completes localization and cancellation/reopen actions for collaboration
+  invitations and shared-editing controls.
+
+### Publication and interchange
+
+- Separates standard DOCX, semantic HTML5 and PDF outputs, and distinguishes
+  print PDF from the visual publication editor and styled HTML web view.
+- Restores template-based exports with their block order, typography, citation,
+  front matter, notes, headers, footers and page-number settings.
+- Improves JATS 1.4 figure, image-package and accessibility output.
+- Repairs InDesign IDML package structure and orders its required entries for
+  compatibility.
+- Clarifies the portable OMI ZIP package and single-file OMI JSON choices, and
+  makes Export formats the single OMI-package download action while Tools
+  handles preparation, integrity and verified opening.
+- Keeps DOCX, PDF, HTML5, JATS, OMI and DTP exports available without removing
+  their existing functions.
+
+### Version identities
+
+- Advances the shared Studio version to **0.3.0-beta.3**.
+- Advances the Windows MSI product version to **0.3.0.3**.
+- Advances the iOS beta build number to **15** while retaining App Store short
+  version **0.3.0**.
+- Advances the checked-in Android versionCode floor to **1202**; release builds
+  derive a strictly higher run-specific code.
+- Keeps the portable manuscript format at **OMI-SPEC-320@0.2.0**. No schema or
+  container-contract change is required.
+
 ## 0.3.0-beta.2 — 2026-09-28
 
 ### Live manuscript collaboration

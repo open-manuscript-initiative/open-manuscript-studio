@@ -1,6 +1,6 @@
 # Roadmap
 
-Open Manuscript Studio is on the `0.3.0-beta.2` scholarly workflow, publication and live collaboration beta line. The authoring, account, review, import/export, native packaging, institutional administration and invitation-authorized live collaboration layers are implemented; the next milestone is a stable release candidate.
+Open Manuscript Studio is on the `0.3.0-beta.3` scholarly authoring, collaboration and publication beta line. Recent work adds linked Word footnotes, complete non-printing marks, document-scoped collaboration chat, validated JATS and InDesign IDML packages, and a clearer, unified export workflow. The portable manuscript format remains `OMI-SPEC-320@0.2.0`; the next milestone is a stable release candidate.
 
 This page records direction rather than promising dates. The [issue tracker](https://github.com/open-manuscript-initiative/open-manuscript-studio/issues), pull requests, and [CHANGELOG](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/CHANGELOG.md) are the authoritative sources for individual work items.
 
