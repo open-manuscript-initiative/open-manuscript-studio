@@ -22,6 +22,39 @@ const UI_EDIT = 'UI lifecycle edit persisted through download and reopen.';
 
 test.describe.configure({ mode: 'serial' });
 
+test('shows profile saved manuscripts only in the document opening view', async ({ page }) => {
+  await installMockStudioApi(page, {
+    savedDocuments: [{
+      id: 'saved-doc-1',
+      title: 'Saved profile manuscript',
+      connectionName: 'My cloud',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sizeBytes: '2048',
+      locationUrl: 'https://cloud.example.test/manuscript.omi.zip',
+      providerPath: '/OMI/manuscript.omi.zip',
+    }],
+  });
+  await signInToStudio(page);
+
+  await page.getByRole('button', { name: 'Open or import a document', exact: true }).click();
+  const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
+  await expect(menu).toBeVisible();
+  if (await menu.locator('.studio-menu-navigation').isHidden()) {
+    await menu.locator('.studio-menu-navigation-toggle').click();
+  }
+
+  await menu.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(menu.locator('[data-profile-saved-documents="true"]')).toHaveCount(0);
+
+  await menu.getByRole('button', { name: 'Document', exact: true }).click();
+  const savedManuscripts = menu.locator('[data-profile-saved-documents="true"]');
+  await expect(savedManuscripts.getByText('Saved profile manuscript')).toBeVisible();
+  await expect(savedManuscripts.getByRole('link', { name: 'Open storage location' })).toHaveAttribute(
+    'href',
+    'https://cloud.example.test/manuscript.omi.zip',
+  );
+});
+
 test('opens, edits, saves, closes and reopens the complete reference manuscript through the real UI', async ({ page }) => {
   const api = await installMockStudioApi(page);
   await signInToStudio(page);

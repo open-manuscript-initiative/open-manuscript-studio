@@ -75,6 +75,7 @@ import { OjsAssignmentPanel } from './OjsAssignmentPanel';
 import { PropertiesPanel } from './PropertiesPanel';
 import { PublicationProfilePanel } from './PublicationProfilePanel';
 import { PublicationStyleEditor } from './PublicationStyleEditor';
+import { ProfileSavedDocumentsSection } from './ProfileSavedDocumentsSection';
 import { ReferencesPanel } from './ReferencesPanel';
 import { SectionNumberingControl } from './SectionNumberingControl';
 import { ScholarlyMetadataPanel } from './ScholarlyMetadataPanel';
@@ -392,6 +393,7 @@ function DocumentMenuView({
         ) : null)}
       </div>
     </div>
+    <ProfileSavedDocumentsSection />
     <DocxImportPanel />
   </section>;
 }
