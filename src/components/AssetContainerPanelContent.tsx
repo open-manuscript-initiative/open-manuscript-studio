@@ -1,6 +1,5 @@
 import {
   CheckCircle2,
-  Download,
   FileCheck2,
   FileSearch,
   ShieldAlert,
@@ -23,18 +22,14 @@ import { useTranslation } from '../i18n';
 import { getAssetContainerCopy } from '../i18n/assetContainer';
 import { getStateDigestCopy } from '../i18n/stateDigest';
 import {
-  ensureManuscriptRevisionStateDigests,
   inspectRevisionHistoryIntegrity,
 } from '../model/revisionIntegrity';
-import {
-  buildOmiContainer,
-  type OmiContainerDiagnostic,
-} from '../services/omiContainer';
 import {
   inspectOmiContainer,
   MAX_OMI_IMPORT_BYTES,
   type OmiContainerImportPlan,
 } from '../services/omiContainerImport';
+import type { OmiContainerDiagnostic } from '../services/omiContainer';
 import { LongTaskStatus } from './LongTaskStatus';
 
 export function AssetContainerPanelContent() {
@@ -42,11 +37,9 @@ export function AssetContainerPanelContent() {
   const copy = getAssetContainerCopy(locale);
   const digestCopy = getStateDigestCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
-  const checkpoint = useStudioStore((state) => state.checkpoint);
   const importInputRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState<'prepare' | 'download' | 'inspect' | 'import' | null>(null);
+  const [busy, setBusy] = useState<'prepare' | 'inspect' | 'import' | null>(null);
   const [preparedCount, setPreparedCount] = useState<number | null>(null);
-  const [diagnostics, setDiagnostics] = useState<OmiContainerDiagnostic[]>([]);
   const [importPlan, setImportPlan] = useState<OmiContainerImportPlan | null>(null);
   const [importedTitle, setImportedTitle] = useState<string | null>(null);
   const [importReadError, setImportReadError] = useState<string | null>(null);
@@ -75,15 +68,13 @@ export function AssetContainerPanelContent() {
   const importCanOpen = Boolean(
     importPlan?.validForImport && importPlan.manuscript && !importHasInvalidDigest,
   );
-  const busyMessage = busy === 'download'
-    ? copy.downloading
-    : busy === 'inspect'
-      ? copy.inspecting
-      : busy === 'import'
-        ? copy.importing
-        : busy === 'prepare'
-          ? copy.preparing
-          : '';
+  const busyMessage = busy === 'inspect'
+    ? copy.inspecting
+    : busy === 'import'
+      ? copy.importing
+      : busy === 'prepare'
+        ? copy.preparing
+        : '';
 
   async function prepareAssets(): Promise<number> {
     setBusy('prepare');
@@ -91,31 +82,6 @@ export function AssetContainerPanelContent() {
       const count = await externalizeActiveManuscriptAssets();
       setPreparedCount(count);
       return count;
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function downloadPackage(): Promise<void> {
-    setBusy('download');
-    setDiagnostics([]);
-    try {
-      await externalizeActiveManuscriptAssets();
-      checkpoint('export');
-      const current = useStudioStore.getState().manuscript;
-      const enriched = ensureManuscriptRevisionStateDigests(current);
-      if (enriched !== current) useStudioStore.setState({ manuscript: enriched });
-      const result = await buildOmiContainer(enriched);
-      setDiagnostics(result.diagnostics);
-      if (!result.validForExport) return;
-      const url = URL.createObjectURL(result.blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = result.fileName;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 0);
     } finally {
       setBusy(null);
     }
@@ -152,7 +118,6 @@ export function AssetContainerPanelContent() {
       await applyOmiContainerImportPlan(importPlan);
       setImportedTitle(title);
       setImportPlan(null);
-      setDiagnostics([]);
       setPreparedCount(null);
     } catch (importError) {
       setImportReadError(importError instanceof Error ? importError.message : copy.invalid);
@@ -161,8 +126,6 @@ export function AssetContainerPanelContent() {
     }
   }
 
-  const errors = diagnostics.filter((item) => item.severity === 'error');
-  const warnings = diagnostics.filter((item) => item.severity === 'warning');
   const importErrors = importPlan?.diagnostics.filter((item) => item.severity === 'error') ?? [];
   const importWarnings = importPlan?.diagnostics.filter((item) => item.severity === 'warning') ?? [];
 
@@ -177,12 +140,10 @@ export function AssetContainerPanelContent() {
       </div>
       <div className="omi-container-actions">
         <button type="button" className="studio-menu-secondary-action" disabled={busy !== null || embeddedImageCount === 0} onClick={() => void prepareAssets()}><FileCheck2 size={16} aria-hidden="true" />{busy === 'prepare' ? copy.preparing : copy.prepare}</button>
-        <button type="button" className="studio-menu-primary-action" disabled={busy !== null} onClick={() => void downloadPackage()}><Download size={16} aria-hidden="true" />{busy === 'download' ? copy.downloading : copy.download}</button>
       </div>
       {preparedCount !== null ? <p className="omi-container-status omi-container-status--ok"><CheckCircle2 size={15} aria-hidden="true" />{copy.prepared} {preparedCount > 0 ? `(${preparedCount})` : ''}</p> : null}
       <p className="omi-container-note">{copy.format}</p>
       <p className="omi-container-note">{copy.privacyNote}</p>
-      {diagnostics.length ? <ContainerDiagnostics diagnostics={diagnostics} errors={errors.length} warnings={warnings.length} title={copy.diagnostics} ready={copy.ready} blocked={copy.blocked} /> : <small className="omi-container-empty">{copy.noDiagnostics}</small>}
       <div className="omi-container-divider" />
       <section className="omi-container-import" aria-labelledby="omi-container-import-title">
         <div className="omi-container-header">
