@@ -45,6 +45,12 @@ interface MockCollaborationOptions {
     createdAt: string;
     expiresAt: string;
   }>;
+  sharedDocuments?: Array<{
+    documentId: string;
+    title: string;
+    role: 'OWNER' | 'EDITOR' | 'AUTHOR' | 'VIEWER';
+    packageUpdatedAt: string | null;
+  }>;
   invitation?: {
     email: string;
     role: 'EDITOR' | 'AUTHOR' | 'VIEWER';
@@ -80,7 +86,7 @@ export async function installMockStudioApi(
     }
 
     if (request.method() === 'GET' && url.pathname === '/api/collaboration/documents') {
-      await fulfillJson(route, 200, { documents: [] });
+      await fulfillJson(route, 200, { documents: options.collaboration?.sharedDocuments ?? [] });
       return;
     }
 
