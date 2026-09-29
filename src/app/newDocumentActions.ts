@@ -29,6 +29,7 @@ export function createAndOpenBlankOmiDocument(input: {
       affiliation: user.profile.affiliation,
       affiliationRorId: user.profile.affiliationRorId,
       country: user.profile.country,
+      url: user.profile.website,
       orcid: user.profile.orcid,
       biography: user.profile.bio
         ? { [input.locale]: user.profile.bio }

@@ -31,6 +31,7 @@ export interface RegisterUserInput {
 export interface UpdateUserInput {
   fullName?: string;
   country?: string | null;
+  website?: string | null;
   affiliation?: string | null;
   affiliationRorId?: string | null;
   orcid?: string | null;
@@ -213,6 +214,7 @@ export async function updateUserForSession(
   const data: {
     fullName?: string;
     country?: string | null;
+    website?: string | null;
     affiliation?: string | null;
     affiliationRorId?: string | null;
     orcid?: string | null;
@@ -233,6 +235,7 @@ export async function updateUserForSession(
     }
     data.country = country;
   }
+  if (input.website !== undefined) data.website = cleanNullable(input.website);
   if (input.affiliation !== undefined) data.affiliation = cleanNullable(input.affiliation);
   if (input.affiliationRorId !== undefined) data.affiliationRorId = cleanNullable(input.affiliationRorId);
   if (input.orcid !== undefined) data.orcid = normalizeNullableOrcid(input.orcid);
@@ -333,6 +336,7 @@ function serializeUser(user: {
   affiliation: string | null;
   affiliationRorId: string | null;
   country: string | null;
+  website: string | null;
   orcid: string | null;
   bio: string | null;
   timeZone: string | null;
@@ -352,6 +356,7 @@ function serializeUser(user: {
       ...(user.affiliation !== null ? { affiliation: user.affiliation } : {}),
       ...(user.affiliationRorId !== null ? { affiliationRorId: user.affiliationRorId } : {}),
       ...(user.country !== null ? { country: user.country } : {}),
+      ...(user.website !== null ? { website: user.website } : {}),
       ...(user.orcid !== null ? { orcid: user.orcid } : {}),
       ...(user.bio !== null ? { bio: user.bio } : {}),
     },

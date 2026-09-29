@@ -322,6 +322,10 @@ export async function updateCurrentAccount(
       input.country !== undefined
         ? input.country.trim().toUpperCase() || null
         : undefined,
+    website:
+      input.website !== undefined
+        ? input.website.trim() || null
+        : undefined,
     orcid:
       input.orcid !== undefined
         ? input.orcid.trim() || null

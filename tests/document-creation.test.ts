@@ -46,6 +46,7 @@ test('seeds a new OMI with the signed-in author identity and an author contribut
       affiliation: 'Sárospataki Református Hittudományi Egyetem',
       affiliationRorId: 'https://ror.org/012345678',
       country: 'HU',
+      url: 'https://example.org/anna',
       orcid: '0000-0002-1825-0097',
       biography: { hu: 'Szerző.' },
     },
@@ -57,6 +58,7 @@ test('seeds a new OMI with the signed-in author identity and an author contribut
   assert.equal(manuscript.agents[0]?.names[0]?.familyName, 'Kovács');
   assert.equal(manuscript.agents[0]?.email, 'anna@example.org');
   assert.equal(manuscript.agents[0]?.country, 'HU');
+  assert.equal(manuscript.agents[0]?.url, 'https://example.org/anna');
   assert.deepEqual(manuscript.agents[0]?.biography, { hu: 'Szerző.' });
   assert.equal(manuscript.agents[0]?.affiliations[0]?.organizationName, 'Sárospataki Református Hittudományi Egyetem');
   assert.equal(manuscript.agents[0]?.affiliations[0]?.organizationIdentifier?.value, 'https://ror.org/012345678');
@@ -68,11 +70,12 @@ test('seeds a new OMI with the signed-in author identity and an author contribut
   assert.equal(manuscript.contributions[0]?.attributionName, 'Anna Kovács');
 });
 
-test('copies the saved profile country into the author of a newly opened OMI', () => {
+test('copies saved profile country and website into a newly opened OMI author', () => {
   const previousAuth = useAuthStore.getState();
   const previousStudio = useStudioStore.getState();
   const user = createUser({ email: 'anna@example.org', fullName: 'Anna Kovács' });
   user.profile.country = 'HU';
+  user.profile.website = 'https://example.org/anna';
 
   try {
     useAuthStore.setState({
@@ -88,7 +91,9 @@ test('copies the saved profile country into the author of a newly opened OMI', (
     const manuscript = createAndOpenBlankOmiDocument({ kind: 'study', locale: 'hu' });
 
     assert.equal(manuscript.agents[0]?.country, 'HU');
+    assert.equal(manuscript.agents[0]?.url, 'https://example.org/anna');
     assert.equal(useStudioStore.getState().manuscript.agents[0]?.country, 'HU');
+    assert.equal(useStudioStore.getState().manuscript.agents[0]?.url, 'https://example.org/anna');
   } finally {
     useAuthStore.setState(previousAuth);
     useStudioStore.setState(previousStudio);
