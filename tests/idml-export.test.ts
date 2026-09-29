@@ -67,6 +67,7 @@ test('IDML package follows the InDesign UCF and design-map structure', () => {
   const names = [...entries.keys()];
 
   assert.equal(names[0], 'mimetype');
+  assert.equal(names[1], 'designmap.xml');
   assert.equal(
     new DataView(result.bytes.buffer, result.bytes.byteOffset, result.bytes.byteLength).getUint16(8, true),
     0,

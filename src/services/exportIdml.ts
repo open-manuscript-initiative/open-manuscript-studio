@@ -149,8 +149,8 @@ export function buildIdmlExport(
 
   const entries = [
     textZipEntry('mimetype', IDML_MEDIA_TYPE),
-    textZipEntry('META-INF/container.xml', containerXml),
     textZipEntry('designmap.xml', designMap),
+    textZipEntry('META-INF/container.xml', containerXml),
     textZipEntry('Resources/Preferences.xml', preferencesXml),
     textZipEntry('Resources/Fonts.xml', fontsXml),
     textZipEntry('Resources/Styles.xml', stylesXml),
