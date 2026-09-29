@@ -188,7 +188,7 @@ export function AccountPanel() {
                   dir="ltr"
                   value={form.website}
                   onChange={(event) => setForm({ ...form, website: event.target.value })}
-                  placeholder="https://example.org"
+                  placeholder="https://"
                 />
               </label>
 
