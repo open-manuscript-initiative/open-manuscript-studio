@@ -1,4 +1,4 @@
-import { ExternalLink, FolderOpen, Link2Off, RotateCcw } from 'lucide-react';
+import { FolderOpen, Link2Off, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { applyOmiContainerImportPlan } from '../app/omiContainerImportActions';
@@ -82,13 +82,18 @@ export function ProfileSavedDocumentsSection({ confirmOpen = true }: { confirmOp
           {documents.map((document) => (
             <div className="studio-language-preference" key={document.id}>
               <span className="studio-language-preference-copy">
-                <strong>{document.title}</strong>
-                <small>{document.connectionName} · {new Date(document.createdAt).toLocaleString(locale)} · {formatBytes(document.sizeBytes)}</small>
                 {document.locationUrl ? (
-                  <a href={document.locationUrl} target="_blank" rel="noreferrer noopener">
-                    <ExternalLink size={13} aria-hidden="true" /> {copy.openStorageLocation ?? 'Open storage location'}
+                  <a
+                    className="studio-profile-saved-document-title"
+                    href={document.locationUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                  >
+                    {document.title}
                   </a>
-                ) : <small>{document.providerPath}</small>}
+                ) : <strong>{document.title}</strong>}
+                <small>{document.connectionName} · {new Date(document.createdAt).toLocaleString(locale)} · {formatBytes(document.sizeBytes)}</small>
+                {!document.locationUrl ? <small>{document.providerPath}</small> : null}
               </span>
               <div className="studio-profile-saved-document-actions">
                 <button type="button" className="studio-menu-secondary-action" disabled={busy !== null} onClick={() => void openSavedDocument(document)}>

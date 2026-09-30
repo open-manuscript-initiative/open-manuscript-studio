@@ -39,6 +39,10 @@ test('saved manuscripts are available from the empty workspace and document menu
 
   const emptyWorkspaceDocuments = page.locator('.closed-document-card [data-profile-saved-documents="true"]');
   await expect(emptyWorkspaceDocuments.getByText('Saved profile manuscript')).toBeVisible();
+  await expect(emptyWorkspaceDocuments.getByRole('link', { name: 'Saved profile manuscript' })).toHaveAttribute(
+    'href',
+    'https://cloud.example.test/manuscript.omi.zip',
+  );
   const savedDocumentRow = emptyWorkspaceDocuments.locator('.studio-language-preference').first();
   await expect(savedDocumentRow).toBeVisible();
   expect(await savedDocumentRow.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
@@ -64,7 +68,7 @@ test('saved manuscripts are available from the empty workspace and document menu
   await menu.getByRole('button', { name: 'Document', exact: true }).click();
   const savedManuscripts = menu.locator('[data-profile-saved-documents="true"]');
   await expect(savedManuscripts.getByText('Saved profile manuscript')).toBeVisible();
-  await expect(savedManuscripts.getByRole('link', { name: 'Open storage location' })).toHaveAttribute(
+  await expect(savedManuscripts.getByRole('link', { name: 'Saved profile manuscript' })).toHaveAttribute(
     'href',
     'https://cloud.example.test/manuscript.omi.zip',
   );

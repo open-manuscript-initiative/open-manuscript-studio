@@ -263,6 +263,21 @@
   font-size: .86rem;
 }
 
+.studio-profile-saved-document-title {
+  display: block;
+  color: #1e293b;
+  font-size: .86rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.studio-profile-saved-document-title:hover,
+.studio-profile-saved-document-title:focus-visible {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
 .studio-language-preference-copy small {
   margin-top: .15rem;
   color: #64748b;
