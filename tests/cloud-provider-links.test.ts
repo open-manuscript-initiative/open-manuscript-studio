@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
-import { mock } from 'node:test';
+import test, { mock } from 'node:test';
 
 import { OAuthCloudProvider } from '../server/src/cloud/providers/oauth/OAuthCloudProvider.ts';
 
