@@ -47,7 +47,7 @@ test('an invitation cannot be accepted from a different signed-in email', async 
   await expect(page.getByRole('alert')).toContainText('invited email address');
 });
 
-test('a signed-in author can accept or decline invitations in the Studio inbox', async ({ page }) => {
+test('the Studio inbox appears for a pending invitation and closes after acceptance', async ({ page }) => {
   const api = await installMockStudioApi(page, {
     authenticated: true,
     collaboration: {
@@ -66,22 +66,21 @@ test('a signed-in author can accept or decline invitations in the Studio inbox',
   });
 
   await page.goto('/');
-  const inbox = page.getByRole('complementary', { name: 'Manuscript invitations and shared manuscripts' });
+  const inbox = page.getByRole('complementary', { name: 'Manuscript invitations' });
   await expect(inbox.getByText('Inbox manuscript')).toBeVisible();
   await inbox.getByRole('button', { name: 'Accept', exact: true }).click();
-  await expect(inbox.getByRole('status')).toContainText('Accepted and opened: Inbox manuscript.');
+  await expect(inbox).toHaveCount(0);
   expect(api.unhandledRequests).toEqual([]);
 });
 
-test('opening a shared manuscript collapses the inbox and keeps a way to reopen it', async ({ page }) => {
+test('accepted shared documents do not keep the invitation popup visible', async ({ page }) => {
   const api = await installMockStudioApi(page, {
     authenticated: true,
     collaboration: {
       enabled: true,
-      packageBase64: await sharedPackageBase64,
       sharedDocuments: [{
         documentId: 'shared-manuscript-e2e',
-        title: 'Reopenable shared manuscript',
+        title: 'Already accepted manuscript',
         role: 'AUTHOR',
         packageUpdatedAt: '2026-09-29T00:00:00.000Z',
       }],
@@ -89,18 +88,6 @@ test('opening a shared manuscript collapses the inbox and keeps a way to reopen 
   });
 
   await page.goto('/');
-  const inbox = page.getByRole('complementary', { name: 'Manuscript invitations and shared manuscripts' });
-  await expect(inbox.getByText('Reopenable shared manuscript')).toBeVisible();
-  await inbox.getByRole('button', { name: 'Open', exact: true }).click();
-
-  await expect(inbox).toBeHidden();
-  const launcher = page.getByRole('button', { name: 'Invitations and shared manuscripts' });
-  await expect(launcher).toBeVisible();
-  await launcher.click();
-  await expect(inbox).toBeVisible();
-  await expect(inbox.getByRole('status')).toContainText('Opened: Reopenable shared manuscript.');
-  await inbox.getByRole('button', { name: 'Close' }).click();
-  await expect(inbox).toBeHidden();
-  await expect(launcher).toBeVisible();
+  await expect(page.getByRole('complementary', { name: 'Manuscript invitations' })).toHaveCount(0);
   expect(api.unhandledRequests).toEqual([]);
 });

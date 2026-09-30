@@ -5,10 +5,8 @@ import {
   declinePendingCollaborationInvitation,
   getPendingCollaborationInvitations,
   isCollaborationEnabled,
-  listSharedCollaborativeDocuments,
   downloadSharedManuscriptPackage,
   type PendingCollaborationInvitation,
-  type SharedCollaborativeDocument,
 } from '../services/collaborationApi';
 import { inspectOmiContainer } from '../services/omiContainerImport';
 import { applyOmiContainerImportPlan } from '../app/omiContainerImportActions';
@@ -20,39 +18,28 @@ export function CollaborationInbox({ children }: { children: ReactNode }) {
   const de = locale.toLowerCase().startsWith('de');
   const copy = {
     invitations: hu ? 'Kézirat-meghívók' : de ? 'Einladungen zu Manuskripten' : 'Manuscript invitations',
-    shared: hu ? 'Megosztott kéziratok' : de ? 'Geteilte Manuskripte' : 'Shared manuscripts',
     accept: hu ? 'Elfogadás' : de ? 'Annehmen' : 'Accept',
     decline: hu ? 'Elutasítás' : de ? 'Ablehnen' : 'Decline',
-    open: hu ? 'Megnyitás' : de ? 'Öffnen' : 'Open',
     expired: hu ? 'Lejárat' : de ? 'Läuft ab' : 'Expires',
     accepted: hu ? 'Elfogadva és megnyitva' : de ? 'Angenommen und geöffnet' : 'Accepted and opened',
-    opened: hu ? 'Megnyitva' : de ? 'Geöffnet' : 'Opened',
-    close: hu ? 'Bezárás' : de ? 'Schließen' : 'Close',
-    showPanel: hu ? 'Meghívók és megosztott kéziratok' : de ? 'Einladungen und geteilte Manuskripte' : 'Invitations and shared manuscripts',
     activeOnly: hu
       ? 'A kézirathoz csak az elfogadott meghívó ad hozzáférést.'
       : de
         ? 'Nur angenommene Einladungen gewähren Manuskriptzugriff.'
         : 'Only accepted invitations grant manuscript access.',
-    aria: hu ? 'Kézirat-meghívók és megosztott kéziratok' : de ? 'Manuskripteinladungen und geteilte Manuskripte' : 'Manuscript invitations and shared manuscripts',
+    aria: hu ? 'Kézirat-meghívók' : de ? 'Einladungen zu Manuskripten' : 'Manuscript invitations',
   };
   const [invitations, setInvitations] = useState<PendingCollaborationInvitation[]>([]);
-  const [documents, setDocuments] = useState<SharedCollaborativeDocument[]>([]);
   const [busyInvitationId, setBusyInvitationId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
-  const [panelOpen, setPanelOpen] = useState(true);
   const enabledRef = useRef<boolean | null>(null);
 
   const refresh = useCallback(async () => {
     try {
       if (enabledRef.current === null) enabledRef.current = await isCollaborationEnabled();
       if (!enabledRef.current) return;
-      const [pending, shared] = await Promise.all([
-        getPendingCollaborationInvitations(),
-        listSharedCollaborativeDocuments(),
-      ]);
+      const pending = await getPendingCollaborationInvitations();
       setInvitations(pending);
-      setDocuments(shared);
     } catch {
       // An unavailable preview API must not block the normal Studio workspace.
     }
@@ -92,79 +79,24 @@ export function CollaborationInbox({ children }: { children: ReactNode }) {
     }
   };
 
-  const openSharedDocument = async (document: SharedCollaborativeDocument) => {
-    setBusyInvitationId(document.documentId);
-    setMessage('');
-    try {
-      const plan = await inspectOmiContainer(await downloadSharedManuscriptPackage(document.documentId));
-      await applyOmiContainerImportPlan(plan);
-      setMessage(`${copy.opened}: ${document.title}.`);
-      setPanelOpen(false);
-      window.dispatchEvent(new Event('omi:collaboration-access-changed'));
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setBusyInvitationId(null);
-    }
-  };
-
-  const hasInboxContent = invitations.length > 0 || documents.length > 0 || Boolean(message);
-
   return (
     <>
       {children}
-      {hasInboxContent ? (
-        panelOpen ? (
-          <aside className="omi-collaboration-inbox" aria-label={copy.aria}>
-            <div className="omi-collaboration-inbox__header">
-              <strong>{copy.showPanel}</strong>
-              <button
-                type="button"
-                className="secondary omi-collaboration-inbox__close"
-                aria-label={copy.close}
-                title={copy.close}
-                onClick={() => setPanelOpen(false)}
-              >
-                ×
-              </button>
+      {invitations.length > 0 ? (
+        <aside className="omi-collaboration-inbox" aria-label={copy.aria}>
+          <strong>{copy.invitations}</strong>
+          {invitations.map((invitation) => (
+            <div className="omi-collaboration-inbox__item" key={invitation.id}>
+              <span><b>{invitation.documentTitle}</b><small>{invitation.role.toLowerCase()} · {copy.expired} {new Date(invitation.expiresAt).toLocaleDateString(locale)}</small></span>
+              <div>
+                <button type="button" disabled={busyInvitationId !== null} onClick={() => void decide(invitation, true)}>{copy.accept}</button>
+                <button type="button" className="secondary" disabled={busyInvitationId !== null} onClick={() => void decide(invitation, false)}>{copy.decline}</button>
+              </div>
             </div>
-            {invitations.length ? <strong>{copy.invitations}</strong> : null}
-            {invitations.map((invitation) => (
-              <div className="omi-collaboration-inbox__item" key={invitation.id}>
-                <span><b>{invitation.documentTitle}</b><small>{invitation.role.toLowerCase()} · {copy.expired} {new Date(invitation.expiresAt).toLocaleDateString(locale)}</small></span>
-                <div>
-                  <button type="button" disabled={busyInvitationId !== null} onClick={() => void decide(invitation, true)}>{copy.accept}</button>
-                  <button type="button" className="secondary" disabled={busyInvitationId !== null} onClick={() => void decide(invitation, false)}>{copy.decline}</button>
-                </div>
-              </div>
-            ))}
-            {invitations.length ? <small>{copy.activeOnly}</small> : null}
-            {documents.length ? (
-              <div className="omi-collaboration-inbox__shared">
-                <strong>{copy.shared}</strong>
-                {documents.map((document) => (
-                  <div className="omi-collaboration-inbox__item" key={document.documentId}>
-                    <span><b>{document.title}</b><small>{document.role.toLowerCase()}</small></span>
-                    <button type="button" disabled={busyInvitationId !== null} onClick={() => void openSharedDocument(document)}>{copy.open}</button>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-            {message ? <p role="status">{message}</p> : null}
-          </aside>
-        ) : (
-          <button
-            type="button"
-            className="omi-collaboration-inbox__launcher"
-            aria-label={copy.showPanel}
-            title={copy.showPanel}
-            onClick={() => setPanelOpen(true)}
-          >
-            <span aria-hidden="true">✉</span>
-            <span>{copy.shared}</span>
-            <span>{invitations.length + documents.length}</span>
-          </button>
-        )
+          ))}
+          <small>{copy.activeOnly}</small>
+          {message ? <p role="status">{message}</p> : null}
+        </aside>
       ) : null}
     </>
   );

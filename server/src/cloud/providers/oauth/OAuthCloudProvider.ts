@@ -129,14 +129,26 @@ export class OAuthCloudProvider implements CloudStorageProvider {
       headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
       body: Buffer.concat([prefix, metadata, middle, request.data, suffix]),
     });
+    const id = String(response.id);
+    const webUrl = typeof response.webViewLink === 'string'
+      ? response.webViewLink
+      : await this.getGoogleWebUrl(id) ?? `https://drive.google.com/open?id=${encodeURIComponent(id)}`;
     return {
-      id: String(response.id), path, name: String(response.name || fileName),
-      ...(typeof response.webViewLink === 'string' ? { webUrl: response.webViewLink } : {}),
+      id, path, name: String(response.name || fileName), webUrl,
       ...(response.size ? { size: Number(response.size) } : {}),
       ...(response.modifiedTime ? { modifiedAt: String(response.modifiedTime) } : {}),
       ...(response.md5Checksum ? { checksum: String(response.md5Checksum) } : {}),
       isDirectory: false,
     };
+  }
+
+  private async getGoogleWebUrl(fileId: string): Promise<string | undefined> {
+    try {
+      const response = await this.authorizedJson(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?fields=webViewLink`);
+      return typeof response.webViewLink === 'string' ? response.webViewLink : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   private async ensureGoogleFolder(parentId: string, name: string): Promise<string> {
@@ -180,13 +192,24 @@ export class OAuthCloudProvider implements CloudStorageProvider {
       headers: { 'Content-Type': request.contentType || 'application/octet-stream' },
       body: request.data,
     });
+    const id = String(response.id);
+    const webUrl = typeof response.webUrl === 'string' ? response.webUrl : await this.getOneDriveWebUrl(id);
     return {
-      id: String(response.id), path: fullPath, name: String(response.name || fullPath.split('/').pop()),
-      ...(typeof response.webUrl === 'string' ? { webUrl: response.webUrl } : {}),
+      id, path: fullPath, name: String(response.name || fullPath.split('/').pop()),
+      ...(webUrl ? { webUrl } : {}),
       ...(response.size ? { size: Number(response.size) } : {}),
       ...(response.lastModifiedDateTime ? { modifiedAt: String(response.lastModifiedDateTime) } : {}),
       isDirectory: false,
     };
+  }
+
+  private async getOneDriveWebUrl(itemId: string): Promise<string | undefined> {
+    try {
+      const response = await this.authorizedJson(`https://graph.microsoft.com/v1.0/me/drive/items/${encodeURIComponent(itemId)}?$select=webUrl`);
+      return typeof response.webUrl === 'string' ? response.webUrl : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   private async ensureOneDriveParent(parts: string[]): Promise<void> {

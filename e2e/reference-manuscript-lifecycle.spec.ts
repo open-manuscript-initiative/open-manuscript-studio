@@ -22,7 +22,8 @@ const UI_EDIT = 'UI lifecycle edit persisted through download and reopen.';
 
 test.describe.configure({ mode: 'serial' });
 
-test('shows profile saved manuscripts only in the document opening view', async ({ page }) => {
+test('saved manuscripts are available from the empty workspace and document menu on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await installMockStudioApi(page, {
     savedDocuments: [{
       id: 'saved-doc-1',
@@ -35,6 +36,21 @@ test('shows profile saved manuscripts only in the document opening view', async 
     }],
   });
   await signInToStudio(page);
+
+  const emptyWorkspaceDocuments = page.locator('.closed-document-card [data-profile-saved-documents="true"]');
+  await expect(emptyWorkspaceDocuments.getByText('Saved profile manuscript')).toBeVisible();
+  await expect(emptyWorkspaceDocuments.getByRole('link', { name: 'Saved profile manuscript' })).toHaveAttribute(
+    'href',
+    'https://cloud.example.test/manuscript.omi.zip',
+  );
+  const savedDocumentRow = emptyWorkspaceDocuments.locator('.studio-language-preference').first();
+  await expect(savedDocumentRow).toBeVisible();
+  expect(await savedDocumentRow.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  const actionStack = savedDocumentRow.locator('.studio-profile-saved-document-actions');
+  expect(await actionStack.evaluate((element) => getComputedStyle(element).flexDirection)).toBe('column');
+  await page.setViewportSize({ width: 1280, height: 900 });
+  expect(await actionStack.evaluate((element) => getComputedStyle(element).flexDirection)).toBe('column');
+  await page.setViewportSize({ width: 390, height: 844 });
 
   await page.getByRole('button', { name: 'Open or import a document', exact: true }).click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });
@@ -52,7 +68,7 @@ test('shows profile saved manuscripts only in the document opening view', async 
   await menu.getByRole('button', { name: 'Document', exact: true }).click();
   const savedManuscripts = menu.locator('[data-profile-saved-documents="true"]');
   await expect(savedManuscripts.getByText('Saved profile manuscript')).toBeVisible();
-  await expect(savedManuscripts.getByRole('link', { name: 'Open storage location' })).toHaveAttribute(
+  await expect(savedManuscripts.getByRole('link', { name: 'Saved profile manuscript' })).toHaveAttribute(
     'href',
     'https://cloud.example.test/manuscript.omi.zip',
   );
