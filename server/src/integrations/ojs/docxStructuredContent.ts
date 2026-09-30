@@ -21,8 +21,8 @@ export function applyStructuredContent(buffer: Buffer, source: OjsSourceDocument
   for (const child of topLevelBodyBlocks(body)) {
     const { kind, xml } = child;
     if (kind === 'tbl') {
-      const cells = parseTable(xml);
-      if (cells.length) blocks.push({ kind: 'table', cells, headerRows: /<(?:[A-Za-z_][\w.-]*:)?tblHeader\b/i.test(xml) ? 1 : 0, afterText: lastText });
+      const table = parseTable(xml);
+      if (table.cells.length) blocks.push({ kind: 'table', ...table, afterText: lastText });
       appendImagesFromXml(buffer, xml, relationships, blocks, lastText);
       continue;
     }
@@ -65,14 +65,21 @@ export function applyStructuredContent(buffer: Buffer, source: OjsSourceDocument
 
 function topLevelBodyBlocks(body: string): BodyBlock[] {
   const blocks: BodyBlock[] = [];
-  const opening = /<(?:[A-Za-z_][\w.-]*:)?(p|tbl)\b[^>]*>/gi;
+  const opening = /<(?:[A-Za-z_][\w.-]*:)?(p|tbl|sdtContent|sdt)\b[^>]*>/gi;
   let cursor = 0;
 
   while (cursor < body.length) {
     opening.lastIndex = cursor;
     const first = opening.exec(body);
     if (!first) break;
-    const kind = first[1] as 'p' | 'tbl';
+    const kind = first[1] as 'p' | 'tbl' | 'sdtContent' | 'sdt';
+    if (/\/\s*>$/.test(first[0])) {
+      // Empty Word paragraphs are commonly serialized as self-closing tags.
+      // Treat them as complete elements so they cannot make the scanner pair
+      // the next table with a paragraph closing tag later in the document.
+      cursor = opening.lastIndex;
+      continue;
+    }
     const tagPattern = new RegExp(
       `<(?<close>/)?(?:[A-Za-z_][\\w.-]*:)?${kind}\\b[^>]*?(?<self>/)?>`,
       'gi',
@@ -98,10 +105,15 @@ function topLevelBodyBlocks(body: string): BodyBlock[] {
     }
 
     if (end < 0 || closeStart < first.index) break;
-    blocks.push({
-      kind,
-      xml: body.slice(first.index + first[0].length, closeStart),
-    });
+    const innerXml = body.slice(first.index + first[0].length, closeStart);
+    if (kind === 'p' || kind === 'tbl') {
+      blocks.push({ kind, xml: innerXml });
+    } else {
+      // Word may wrap body content, including tables, in one or more content
+      // controls. Recurse through those transparent containers so the source
+      // order and table boundaries survive the OJS/OMP handoff.
+      blocks.push(...topLevelBodyBlocks(innerXml));
+    }
     cursor = end;
   }
 
@@ -181,7 +193,7 @@ function parseNumbering(xml: string): Map<string, Map<number, boolean>> {
   return result;
 }
 
-function parseTable(xml: string): string[][] {
+function parseTable(xml: string): { cells: string[][]; headerRows: number } {
   const rows: string[][] = [];
   const rowPattern = /<(?:[A-Za-z_][\w.-]*:)?tr\b[^>]*>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?tr>/g;
   let row: RegExpExecArray | null;
@@ -189,11 +201,24 @@ function parseTable(xml: string): string[][] {
     const cells: string[] = [];
     const cellPattern = /<(?:[A-Za-z_][\w.-]*:)?tc\b[^>]*>([\s\S]*?)<\/(?:[A-Za-z_][\w.-]*:)?tc>/g;
     let cell: RegExpExecArray | null;
-    while ((cell = cellPattern.exec(row[1] ?? ''))) cells.push(visibleText(cell[1] ?? '').trim());
+    while ((cell = cellPattern.exec(row[1] ?? ''))) {
+      const paragraphs = topLevelBodyBlocks(cell[1] ?? '')
+        .filter((block) => block.kind === 'p')
+        .map((block) => visibleText(block.xml).trim())
+        .filter(Boolean);
+      cells.push(paragraphs.length ? paragraphs.join('\n') : visibleText(cell[1] ?? '').trim());
+    }
     if (cells.length) rows.push(cells);
   }
   const width = Math.max(0, ...rows.map((row) => row.length));
-  return rows.map((row) => Array.from({ length: width }, (_, index) => row[index] ?? ''));
+  const lookAttributes = /<(?:[A-Za-z_][\w.-]*:)?tblLook\b([^>]*)\/?\s*>/i.exec(xml)?.[1] ?? '';
+  const firstRowLook = attr(lookAttributes, 'firstRow');
+  const styledHeader = firstRowLook === '1' || firstRowLook?.toLowerCase() === 'true';
+  const explicitHeader = /<(?:[A-Za-z_][\w.-]*:)?tblHeader\b/i.test(xml);
+  return {
+    cells: rows.map((row) => Array.from({ length: width }, (_, index) => row[index] ?? '')),
+    headerRows: rows.length && (explicitHeader || styledHeader) ? 1 : 0,
+  };
 }
 
 function embeddedTargets(xml: string, relationships: Map<string, Relationship>, tag: string, attribute: string): string[] {
