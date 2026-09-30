@@ -50,7 +50,7 @@ export function ClosedDocumentScreen() {
             <Menu size={15} aria-hidden="true" /> {copy.hint}
           </p>
         </div>
-        <ProfileSavedDocumentsSection />
+        <ProfileSavedDocumentsSection confirmOpen={false} />
       </section>
 
       <StudioMenuWithHelp

@@ -42,6 +42,11 @@ test('saved manuscripts are available from the empty workspace and document menu
   const savedDocumentRow = emptyWorkspaceDocuments.locator('.studio-language-preference').first();
   await expect(savedDocumentRow).toBeVisible();
   expect(await savedDocumentRow.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  const actionStack = savedDocumentRow.locator('.studio-profile-saved-document-actions');
+  expect(await actionStack.evaluate((element) => getComputedStyle(element).flexDirection)).toBe('column');
+  await page.setViewportSize({ width: 1280, height: 900 });
+  expect(await actionStack.evaluate((element) => getComputedStyle(element).flexDirection)).toBe('column');
+  await page.setViewportSize({ width: 390, height: 844 });
 
   await page.getByRole('button', { name: 'Open or import a document', exact: true }).click();
   const menu = page.getByRole('dialog', { name: 'Manuscript menu' });

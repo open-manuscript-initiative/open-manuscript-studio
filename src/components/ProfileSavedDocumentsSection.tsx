@@ -20,7 +20,7 @@ function formatBytes(value: string): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function ProfileSavedDocumentsSection() {
+export function ProfileSavedDocumentsSection({ confirmOpen = true }: { confirmOpen?: boolean }) {
   const { locale } = useTranslation();
   const copy = getCloudStorageCopy(locale);
   const [documents, setDocuments] = useState<ProfileSavedDocument[]>([]);
@@ -38,8 +38,10 @@ export function ProfileSavedDocumentsSection() {
   }, []);
 
   async function openSavedDocument(document: ProfileSavedDocument): Promise<void> {
-    const confirmation = (copy.confirmOpenSavedDocument ?? copy.confirmRestore).replace('{title}', document.title);
-    if (!window.confirm(confirmation)) return;
+    if (confirmOpen) {
+      const confirmation = (copy.confirmOpenSavedDocument ?? copy.confirmRestore).replace('{title}', document.title);
+      if (!window.confirm(confirmation)) return;
+    }
     setBusy(`open:${document.id}`);
     setMessage(copy.restoring);
     try {
@@ -88,12 +90,14 @@ export function ProfileSavedDocumentsSection() {
                   </a>
                 ) : <small>{document.providerPath}</small>}
               </span>
-              <button type="button" className="studio-menu-secondary-action" disabled={busy !== null} onClick={() => void openSavedDocument(document)}>
-                <RotateCcw size={14} aria-hidden="true" /> {busy === `open:${document.id}` ? copy.restoring : copy.openInStudio ?? copy.restore}
-              </button>
-              <button type="button" className="studio-menu-secondary-action studio-menu-danger-action" disabled={busy !== null} onClick={() => void removeProfileLink(document)}>
-                <Link2Off size={14} aria-hidden="true" /> {copy.removeProfileLink ?? copy.remove}
-              </button>
+              <div className="studio-profile-saved-document-actions">
+                <button type="button" className="studio-menu-secondary-action" disabled={busy !== null} onClick={() => void openSavedDocument(document)}>
+                  <RotateCcw size={14} aria-hidden="true" /> {busy === `open:${document.id}` ? copy.restoring : copy.openInStudio ?? copy.restore}
+                </button>
+                <button type="button" className="studio-menu-secondary-action studio-menu-danger-action" disabled={busy !== null} onClick={() => void removeProfileLink(document)}>
+                  <Link2Off size={14} aria-hidden="true" /> {copy.removeProfileLink ?? copy.remove}
+                </button>
+              </div>
             </div>
           ))}
         </div>

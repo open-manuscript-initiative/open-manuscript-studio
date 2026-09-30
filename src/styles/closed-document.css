@@ -38,6 +38,10 @@
   width: 100%;
 }
 
+.closed-document-card > .studio-cloud-section[data-profile-saved-documents="true"] {
+  margin-top: 1rem;
+}
+
 .closed-document-card .omi-new-document-heading {
   margin-bottom: 0.65rem;
 }
@@ -73,6 +77,10 @@
 @media (max-width: 56rem) {
   .closed-document-page .closed-document-card {
     width: min(100%, 46rem);
+  }
+
+  .closed-document-card > .studio-cloud-section[data-profile-saved-documents="true"] {
+    margin-top: .75rem;
   }
 }
 
