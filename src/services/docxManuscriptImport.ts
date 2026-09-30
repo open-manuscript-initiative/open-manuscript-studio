@@ -1053,13 +1053,32 @@ function parseWordTable(table: Element): {
       ) {
         mergedCells = true;
       }
-      return descendantsByLocalName(cell, 't')
-        .map((text) => text.textContent ?? '')
-        .join('')
-        .trim();
+      // Keep paragraph boundaries inside cells. A cell can contain separate
+      // paragraphs (for example, a citation followed by its annotation); a
+      // plain concatenation silently changes their meaning during import.
+      return descendantsByLocalName(cell, 'p')
+        .map((paragraph) => paragraphPlainText(paragraph).trim())
+        .filter(Boolean)
+        .join('\n');
     }),
   );
-  const headerRows = rows[0] && descendantsByLocalName(rows[0], 'tblHeader').length ? 1 : 0;
+
+  // Word commonly marks the first row as a header through the table style's
+  // tblLook instead of an explicit w:tblHeader row property. Preserve both
+  // representations so styled Word headers render as headers in OMI.
+  const tableProperties = directChildrenByLocalName(table, 'tblPr')[0];
+  const look = tableProperties
+    ? directChildrenByLocalName(tableProperties, 'tblLook')[0]
+    : undefined;
+  const firstRowStyledAsHeader = look
+    ? ['firstRow', 'firstrow'].some((name) => {
+        const value = attributeByLocalName(look, name);
+        return value === '1' || value?.toLocaleLowerCase() === 'true';
+      })
+    : false;
+  const headerRows = rows[0] && (
+    descendantsByLocalName(rows[0], 'tblHeader').length > 0 || firstRowStyledAsHeader
+  ) ? 1 : 0;
   return { cells: rectangularize(cells), headerRows, mergedCells };
 }
 
