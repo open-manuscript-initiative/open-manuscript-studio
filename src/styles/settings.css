@@ -255,6 +255,10 @@
   line-height: 1.35;
 }
 
+.studio-cloud-section[data-profile-saved-documents="true"] .studio-language-preference-copy {
+  overflow-wrap: anywhere;
+}
+
 .studio-language-preference code {
   border-radius: .35rem;
   background: #e2e8f0;
@@ -305,5 +309,18 @@
   .studio-language-preference code {
     grid-column: 2;
     width: max-content;
+  }
+}
+
+@media (max-width: 760px) {
+  .studio-cloud-section[data-profile-saved-documents="true"] .studio-language-preference {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .studio-cloud-section[data-profile-saved-documents="true"] .studio-menu-secondary-action {
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;
   }
 }

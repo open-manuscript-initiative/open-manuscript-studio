@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import '../styles/closed-document.css';
 import { StudioMenuWithHelp } from './StudioMenuWithHelp';
 import { NewDocumentActions } from './NewDocumentActions';
+import { ProfileSavedDocumentsSection } from './ProfileSavedDocumentsSection';
 
 export function ClosedDocumentScreen() {
   const { locale, t } = useTranslation();
@@ -49,6 +50,7 @@ export function ClosedDocumentScreen() {
             <Menu size={15} aria-hidden="true" /> {copy.hint}
           </p>
         </div>
+        <ProfileSavedDocumentsSection />
       </section>
 
       <StudioMenuWithHelp
