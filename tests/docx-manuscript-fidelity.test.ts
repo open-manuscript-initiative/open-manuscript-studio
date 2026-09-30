@@ -58,6 +58,37 @@ test('imports block content nested in Word content controls in document order', 
   assert.ok(plan.warnings.some((item) => item.code === 'content-controls-flattened'));
 });
 
+test('preserves Word table header styling and paragraph boundaries inside cells', async () => {
+  const file = makeDocx(`
+    <w:tbl>
+      <w:tblPr><w:tblLook w:firstRow="1"/></w:tblPr>
+      <w:tr>
+        <w:tc><w:p><w:r><w:t>Column heading</w:t></w:r></w:p></w:tc>
+        <w:tc><w:p><w:r><w:t>Source</w:t></w:r></w:p></w:tc>
+      </w:tr>
+      <w:tr>
+        <w:tc><w:p><w:r><w:t>1234</w:t></w:r></w:p></w:tc>
+        <w:tc>
+          <w:p><w:r><w:t>Primary record</w:t></w:r></w:p>
+          <w:p><w:r><w:t>Additional note</w:t></w:r></w:p>
+        </w:tc>
+      </w:tr>
+    </w:tbl>
+  `);
+
+  const plan = await parseDocxManuscript(file);
+  const table = plan.sections.flatMap((section) => section.blocks)
+    .find((block) => block.type === 'table');
+
+  assert.equal(table?.visual?.kind, 'table');
+  if (table?.visual?.kind !== 'table') return;
+  assert.equal(table.visual.headerRows, 1);
+  assert.deepEqual(table.visual.cells, [
+    ['Column heading', 'Source'],
+    ['1234', 'Primary record\nAdditional note'],
+  ]);
+});
+
 test('preserves a paragraph that contains only a footnote reference', async () => {
   const file = makeDocx(
     '<w:p><w:r><w:footnoteReference w:id="1"/></w:r></w:p>',
