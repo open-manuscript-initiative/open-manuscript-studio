@@ -173,7 +173,7 @@ test('exports assigned Studio paragraph styles as real IDML paragraph styles', (
   for (const id of ['body', 'chapter-title']) {
     const styleTag = styles.match(new RegExp(`<ParagraphStyle Self="ParagraphStyle/${id}"[^>]*>`))?.[0];
     assert.ok(styleTag, `style ${id} must be present`);
-    assert.equal((styleTag.match(/\\bImported=/g) ?? []).length, 1);
+    assert.equal((styleTag.match(/\bImported=/g) ?? []).length, 1);
     assert.match(styleTag, /Imported="false"/);
   }
   const tabStopIds = Array.from(parsedStyles.getElementsByTagName('TabStop'))
