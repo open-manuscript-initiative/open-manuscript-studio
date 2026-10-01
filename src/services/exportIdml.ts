@@ -253,7 +253,7 @@ function paragraphStyle(
   const attributeText = Object.entries({ ...preserved, ...attributes })
     .map(([name, value]) => `${name}="${xml(String(value))}"`)
     .join(' ');
-  const propertiesXml = paragraphStylePropertiesXml(properties, basedOn);
+  const propertiesXml = paragraphStylePropertiesXml(properties, basedOn, definition.id);
   return `<ParagraphStyle Self="ParagraphStyle/${xml(definition.id)}" Name="${xml(definition.name)}" Imported="false" NextStyle="${nextStyle}"${attributeText ? ` ${attributeText}` : ''}>${propertiesXml}</ParagraphStyle>`;
 }
 
@@ -330,6 +330,7 @@ function paragraphStyleAttributes(
 function paragraphStylePropertiesXml(
   properties: PublicationParagraphStyleProperties,
   basedOn: string,
+  styleId: string,
 ): string {
   const children = [
     `<BasedOn type="object">${xml(basedOn)}</BasedOn>`,
@@ -345,7 +346,7 @@ function paragraphStylePropertiesXml(
     properties.fillColor
       ? `<FillColor type="string">${xml(properties.fillColor)}</FillColor>`
       : '',
-    tabListXml(properties.tabStops),
+    tabListXml(properties.tabStops, styleId),
     nestedStylesXml(properties),
   ].filter(Boolean).join('');
   return `<Properties>${children}</Properties>`;
@@ -353,10 +354,11 @@ function paragraphStylePropertiesXml(
 
 function tabListXml(
   stops: PublicationParagraphStyleProperties['tabStops'],
+  styleId: string,
 ): string {
   if (!stops?.length) return '';
   const items = stops.map((stop, index) => (
-    `<ListItem type="record"><TabStop Self="omi-tab-${index + 1}" Position="${mmToPt(stop.positionMm) ?? 0}" Alignment="${idmlTabAlignment(stop.alignment)}" AlignmentCharacter="${xml(stop.decimalCharacter ?? '.')}" Leader="${xml(stop.leader ?? '')}"/></ListItem>`
+    `<ListItem type="record"><TabStop Self="TabStop/${xml(styleId)}/${index + 1}" Position="${mmToPt(stop.positionMm) ?? 0}" Alignment="${idmlTabAlignment(stop.alignment)}" AlignmentCharacter="${xml(stop.decimalCharacter ?? '.')}" Leader="${xml(stop.leader ?? '')}"/></ListItem>`
   )).join('');
   return `<TabList type="list">${items}</TabList>`;
 }
@@ -395,7 +397,7 @@ function preservedIdmlAttributes(
   for (const [key, value] of Object.entries(values)) {
     if (
       generated.has(key)
-      || ['Self', 'Name', 'BasedOn', 'NextStyle', 'Shortcut'].includes(key)
+      || ['Self', 'Name', 'BasedOn', 'NextStyle', 'Shortcut', 'Imported'].includes(key)
       || !/^[A-Za-z_:][A-Za-z0-9_.:-]*$/.test(key)
     ) continue;
     result[key] = value;
