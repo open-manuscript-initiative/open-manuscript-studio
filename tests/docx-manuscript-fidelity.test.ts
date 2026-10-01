@@ -110,6 +110,67 @@ test('preserves a paragraph that contains only a footnote reference', async () =
   assert.ok(findNodeTypes(content).includes('omiNote'));
 });
 
+test('keeps Word footnote IDs and marker order across an XE field', async () => {
+  const file = makeDocx(`
+    <w:p>
+      <w:r><w:t>Greek text: ἱεράρχης </w:t></w:r>
+      <w:r><w:fldChar w:fldCharType="begin"/></w:r>
+      <w:r><w:instrText xml:space="preserve"> XE "Jézus" </w:instrText></w:r>
+      <w:r><w:fldChar w:fldCharType="end"/></w:r>
+      <w:r><w:t xml:space="preserve">and then</w:t></w:r>
+      <w:r><w:footnoteReference w:id="14"/></w:r>
+      <w:r><w:t xml:space="preserve">; final note</w:t></w:r>
+      <w:r><w:footnoteReference w:id="8"/></w:r>
+    </w:p>
+  `, {
+    footnotes: `
+      <w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+        <w:footnote w:id="14"><w:p><w:r><w:t>Word note fourteen.</w:t></w:r></w:p></w:footnote>
+        <w:footnote w:id="12"><w:p><w:r><w:t>Unreferenced note.</w:t></w:r></w:p></w:footnote>
+      </w:footnotes>`,
+  });
+
+  const plan = await parseDocxManuscript(file);
+  const block = plan.sections.flatMap((section) => section.blocks)[0];
+  const content = JSON.parse(block?.content ?? '{}') as TiptapNode;
+  const noteMarkers = findNodes(content, 'omiNote');
+
+  assert.equal(plan.stats.notes, 2);
+  assert.deepEqual(noteMarkers.map((node) => node.attrs?.label), ['1', '2']);
+  assert.deepEqual(plan.annotations.map((annotation) => annotation.body), [
+    'Word note fourteen.',
+    '',
+  ]);
+  assert.ok(plan.warnings.some((item) => item.code === 'missing-note-body'));
+  assert.equal(blockText(block), 'Greek text: ἱεράρχης and then; final note');
+});
+
+test('does not classify a paragraph with a Word note marker as a heading', async () => {
+  const file = makeDocx(`
+    <w:p>
+      <w:pPr><w:pStyle w:val="Heading1"/></w:pPr>
+      <w:r><w:t>Heading with a note</w:t></w:r>
+      <w:r><w:footnoteReference w:id="14"/></w:r>
+    </w:p>
+  `, {
+    footnotes: `
+      <w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+        <w:footnote w:id="14"><w:p><w:r><w:t>Heading note body.</w:t></w:r></w:p></w:footnote>
+      </w:footnotes>`,
+  });
+
+  for (const parse of [parseDocxManuscript, parseDocxMonograph]) {
+    const plan = await parse(file);
+    const block = plan.sections.flatMap((section) => section.blocks)
+      .find((item) => item.type === 'paragraph');
+    const content = JSON.parse(block?.content ?? '{}') as TiptapNode;
+
+    assert.equal(plan.stats.notes, 1);
+    assert.equal(plan.annotations[0]?.body, 'Heading note body.');
+    assert.equal(findNodes(content, 'omiNote')[0]?.attrs?.label, '1');
+  }
+});
+
 test('flattens text-box paragraphs into the editable main text flow', async () => {
   const file = makeDocx(`
     <w:p>
@@ -197,6 +258,7 @@ test('one Studio import reads the immutable DOCX package only once', async () =>
 interface TiptapNode {
   type?: string;
   text?: string;
+  attrs?: Record<string, unknown>;
   content?: TiptapNode[];
 }
 
@@ -245,6 +307,13 @@ function findNodeTypes(node: TiptapNode): string[] {
   return [node.type, ...(node.content ?? []).flatMap(findNodeTypes)].filter(
     (value): value is string => Boolean(value),
   );
+}
+
+function findNodes(node: TiptapNode, type: string): TiptapNode[] {
+  return [
+    ...(node.type === type ? [node] : []),
+    ...(node.content ?? []).flatMap((child) => findNodes(child, type)),
+  ];
 }
 
 function installXmlDomGlobals(): void {
