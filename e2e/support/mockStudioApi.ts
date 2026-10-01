@@ -81,6 +81,7 @@ export async function installMockStudioApi(
   const loginRequests: Array<Record<string, unknown>> = [];
   const publicationRequests: string[] = [];
   const unhandledRequests: string[] = [];
+  const pendingInvitations = [...(options.collaboration?.pendingInvitations ?? [])];
 
   await page.route('**/api/**', async (route) => {
     const request = route.request();
@@ -93,7 +94,7 @@ export async function installMockStudioApi(
     }
 
     if (request.method() === 'GET' && url.pathname === '/api/collaboration/invitations/pending') {
-      await fulfillJson(route, 200, { invitations: options.collaboration?.pendingInvitations ?? [] });
+      await fulfillJson(route, 200, { invitations: pendingInvitations });
       return;
     }
 
@@ -132,11 +133,21 @@ export async function installMockStudioApi(
     }
 
     if (request.method() === 'POST' && /^\/api\/collaboration\/invitations\/by-id\/[^/]+\/accept$/u.test(url.pathname)) {
+      const invitationId = url.pathname.match(/^\/api\/collaboration\/invitations\/by-id\/([^/]+)\/accept$/u)?.[1];
+      if (invitationId) {
+        const pendingIndex = pendingInvitations.findIndex((invitation) => invitation.id === decodeURIComponent(invitationId));
+        if (pendingIndex >= 0) pendingInvitations.splice(pendingIndex, 1);
+      }
       await fulfillJson(route, 200, { membership: { role: 'AUTHOR' } });
       return;
     }
 
     if (request.method() === 'POST' && /^\/api\/collaboration\/invitations\/by-id\/[^/]+\/decline$/u.test(url.pathname)) {
+      const invitationId = url.pathname.match(/^\/api\/collaboration\/invitations\/by-id\/([^/]+)\/decline$/u)?.[1];
+      if (invitationId) {
+        const pendingIndex = pendingInvitations.findIndex((invitation) => invitation.id === decodeURIComponent(invitationId));
+        if (pendingIndex >= 0) pendingInvitations.splice(pendingIndex, 1);
+      }
       await fulfillJson(route, 200, { status: 'declined' });
       return;
     }
