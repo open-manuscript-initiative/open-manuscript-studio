@@ -116,7 +116,9 @@ test('exports assigned Studio paragraph styles as real IDML paragraph styles', (
           properties: {
             fontFamily: 'Garamond Premier Pro',
             fontSize: 11,
+            tabStops: [{ positionMm: 12, alignment: 'left' }],
           },
+          preservedIdml: { Imported: 'true' },
         },
         {
           id: 'chapter-title',
@@ -152,6 +154,7 @@ test('exports assigned Studio paragraph styles as real IDML paragraph styles', (
               stylisticSets: [1, 3],
             },
           },
+          preservedIdml: { Imported: 'true' },
         },
       ],
     },
@@ -161,6 +164,22 @@ test('exports assigned Studio paragraph styles as real IDML paragraph styles', (
   const entries = readStoreZipEntries(result.bytes);
   const styles = new TextDecoder().decode(entries.get('Resources/Styles.xml'));
   const story = new TextDecoder().decode(entries.get('Stories/Story_u3.xml'));
+  const parsedStyles = new XmlParser({
+    onError: (_level, message) => {
+      throw new Error(`Resources/Styles.xml: ${message}`);
+    },
+  }).parseFromString(styles, 'application/xml');
+
+  for (const id of ['body', 'chapter-title']) {
+    const styleTag = styles.match(new RegExp(`<ParagraphStyle Self="ParagraphStyle/${id}"[^>]*>`))?.[0];
+    assert.ok(styleTag, `style ${id} must be present`);
+    assert.equal((styleTag.match(/\bImported=/g) ?? []).length, 1);
+    assert.match(styleTag, /Imported="false"/);
+  }
+  const tabStopIds = Array.from(parsedStyles.getElementsByTagName('TabStop'))
+    .map((tabStop) => tabStop.getAttribute('Self'));
+  assert.equal(tabStopIds.length, 2);
+  assert.equal(new Set(tabStopIds).size, tabStopIds.length, 'tab stop Self IDs must be unique');
 
   assert.match(styles, /Self="ParagraphStyle\/chapter-title"/);
   assert.match(styles, /Name="Szakaszcím"/);
