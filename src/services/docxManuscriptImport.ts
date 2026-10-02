@@ -238,8 +238,9 @@ export async function parseDocxManuscript(
     const style = resolveParagraphStyle(child, styles);
     const plainText = paragraphPlainText(child).trim();
     const headingLevel = resolveParagraphHeadingLevel(child, style);
+    const hasNoteReference = paragraphHasNoteReference(child);
 
-    if (headingLevel !== undefined && plainText) {
+    if (headingLevel !== undefined && plainText && !hasNoteReference) {
       frontMatter = false;
       while (
         headingStack.length &&
@@ -265,7 +266,7 @@ export async function parseDocxManuscript(
       continue;
     }
 
-    if (frontMatter && plainText) {
+    if (frontMatter && plainText && !hasNoteReference) {
       if (isTitleStyle(style?.id, style?.name)) {
         if (!title) {
           title = plainText;
@@ -308,7 +309,10 @@ export async function parseDocxManuscript(
         const paragraph = children[index];
         if (!paragraph || paragraph.localName !== 'p') break;
         const paragraphStyle = resolveParagraphStyle(paragraph, styles);
-        if (resolveParagraphHeadingLevel(paragraph, paragraphStyle) !== undefined) break;
+        if (
+          resolveParagraphHeadingLevel(paragraph, paragraphStyle) !== undefined
+          && !paragraphHasNoteReference(paragraph)
+        ) break;
         const info = paragraphListInfo(paragraph, numbering);
         if (!info) break;
 
@@ -618,16 +622,19 @@ function parseParagraphInline(
 
       if (node.localName === 'footnoteReference' || node.localName === 'endnoteReference') {
         const noteId = attributeByLocalName(node, 'id');
-        if (!noteId || Number(noteId) < 0) continue;
+        if (!noteId || Number(noteId) < 1) continue;
+
+        // Word note references are independent anchors in the document stream.
+        // Flush an in-flight field before placing the anchor so a citation or
+        // index field cannot swallow the marker into its cached result.
+        finishField();
+
         const noteType = node.localName === 'endnoteReference' ? 'endnote' : 'footnote';
-        const noteBody =
-          noteType === 'endnote'
-            ? context.endnotes.get(noteId)
-            : context.footnotes.get(noteId);
-        if (!noteBody) {
+        const noteBodies = noteType === 'endnote' ? context.endnotes : context.footnotes;
+        if (!noteBodies.has(noteId)) {
           context.warnings.push(warning('missing-note-body'));
-          continue;
         }
+        const noteBody = noteBodies.get(noteId) ?? '';
         const annotationId = `note-${crypto.randomUUID()}`;
         const anchorId = `anchor-${crypto.randomUUID()}`;
         const label = String(context.annotations.length + 1);
@@ -642,7 +649,7 @@ function parseParagraphInline(
           createdAt: new Date().toISOString(),
           modifiedAt: new Date().toISOString(),
         });
-        append([
+        output.push(
           {
             type: 'omiNote',
             attrs: {
@@ -652,7 +659,7 @@ function parseParagraphInline(
               noteType,
             },
           },
-        ]);
+        );
         continue;
       }
 
@@ -720,6 +727,15 @@ function parseParagraphInline(
 
   if (field) finishField();
   return coalesceTextNodes(output);
+}
+
+function paragraphHasNoteReference(paragraph: Element): boolean {
+  return ['footnoteReference', 'endnoteReference'].some((name) =>
+    descendantsByLocalName(paragraph, name).some((reference) => {
+      const id = attributeByLocalName(reference, 'id');
+      return Boolean(id && Number(id) >= 1);
+    }),
+  );
 }
 
 function renderField(field: FieldState, context: InlineContext): TiptapNode[] {
@@ -1119,7 +1135,7 @@ function parseNotes(
   const result = new Map<string, string>();
   for (const note of descendantsByLocalName(document, localName)) {
     const id = attributeByLocalName(note, 'id');
-    if (!id || Number(id) < 0) continue;
+    if (!id || Number(id) < 1) continue;
     const paragraphs = directChildrenByLocalName(note, 'p')
       .map((paragraph) => paragraphPlainText(paragraph).trim())
       .filter(Boolean);

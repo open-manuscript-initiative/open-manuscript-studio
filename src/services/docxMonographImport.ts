@@ -144,8 +144,9 @@ export async function parseDocxMonograph(
       style?.name,
       directOutline ?? style?.outlineLevel,
     );
+    const hasNoteReference = hasWordNoteReference(paragraphXml);
 
-    if (headingLevel !== undefined && plainText) {
+    if (headingLevel !== undefined && plainText && !hasNoteReference) {
       frontMatter = false;
       while (headingStack.length && (headingStack.at(-1)?.level ?? 0) >= headingLevel) {
         headingStack.pop();
@@ -162,7 +163,7 @@ export async function parseDocxMonograph(
       continue;
     }
 
-    if (frontMatter && plainText) {
+    if (frontMatter && plainText && !hasNoteReference) {
       if (isTitleStyle(styleId, style?.name)) {
         if (!title) {
           title = plainText;
@@ -286,33 +287,31 @@ function parseInline(
     for (const run of runs) {
       if (/<w:instrText\b/i.test(run)) continue;
       const noteMatch = /<w:(footnoteReference|endnoteReference)\b[^>]*\bw:id="(-?\d+)"[^>]*\/?\s*>/i.exec(run);
-      if (noteMatch?.[2] && Number(noteMatch[2]) >= 0) {
+      if (noteMatch?.[2] && Number(noteMatch[2]) >= 1) {
         const noteKind = noteMatch[1] === 'endnoteReference' ? 'endnote' : 'footnote';
-        const body = noteKind === 'endnote' ? endnotes.get(noteMatch[2]) : footnotes.get(noteMatch[2]);
-        if (body) {
-          const annotationId = `note-${crypto.randomUUID()}`;
-          const anchorId = `anchor-${crypto.randomUUID()}`;
-          annotations.push({
-            id: annotationId,
-            type: 'note',
-            noteKind,
+        const body = (noteKind === 'endnote' ? endnotes : footnotes).get(noteMatch[2]) ?? '';
+        const annotationId = `note-${crypto.randomUUID()}`;
+        const anchorId = `anchor-${crypto.randomUUID()}`;
+        annotations.push({
+          id: annotationId,
+          type: 'note',
+          noteKind,
+          anchorId,
+          targetBlockId: blockId,
+          body,
+          renderingHint: noteKind,
+          createdAt: new Date().toISOString(),
+          modifiedAt: new Date().toISOString(),
+        });
+        output.push({
+          type: 'omiNote',
+          attrs: {
+            noteId: annotationId,
             anchorId,
-            targetBlockId: blockId,
-            body,
-            renderingHint: noteKind,
-            createdAt: new Date().toISOString(),
-            modifiedAt: new Date().toISOString(),
-          });
-          output.push({
-            type: 'omiNote',
-            attrs: {
-              noteId: annotationId,
-              anchorId,
-              label: String(annotations.length),
-              noteType: noteKind,
-            },
-          });
-        }
+            label: String(annotations.length),
+            noteType: noteKind,
+          },
+        });
       }
 
       const marks = runMarks(run);
@@ -325,6 +324,10 @@ function parseInline(
   }
 
   return coalesceTextNodes(output);
+}
+
+function hasWordNoteReference(paragraphXml: string): boolean {
+  return /<w:(?:footnoteReference|endnoteReference)\b[^>]*\bw:id="([1-9]\d*)"/i.test(paragraphXml);
 }
 
 function runMarks(run: string): TiptapMark[] {

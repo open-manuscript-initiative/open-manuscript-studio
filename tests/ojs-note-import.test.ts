@@ -93,6 +93,41 @@ test('OJS DOCX footnote becomes an OMI note marker and annotation', () => {
   assert.equal(marker.attrs?.anchorId, manuscript.annotations[0]?.anchorId);
 });
 
+test('OJS import pairs notes by Word ID and labels them in document order', () => {
+  const manuscript = createManuscriptFromOjsLaunch(
+    launchWithSource({
+      kind: 'docx',
+      paragraphs: [{
+        text: 'First marker, second marker.',
+        inline: [
+          { kind: 'footnoteReference', footnoteId: '14' },
+          { kind: 'text', text: ' between ' },
+          { kind: 'footnoteReference', footnoteId: '2' },
+        ],
+      }],
+      // Deliberately reverse the package order: document references pair to
+      // note bodies by w:id, while labels follow their positions in Word.
+      footnotes: [
+        { id: '2', text: 'Body for Word note 2.' },
+        { id: '14', text: 'Body for Word note 14.' },
+      ],
+      endnotes: [],
+    }),
+  );
+
+  assert.ok(manuscript);
+  assert.deepEqual(manuscript.annotations.map((annotation) => annotation.body), [
+    'Body for Word note 14.',
+    'Body for Word note 2.',
+  ]);
+  const block = manuscript.sections[0]?.blocks[0];
+  assert.ok(block);
+  const markers = JSON.stringify(JSON.parse(block.content)).match(/"type":"omiNote"/g) ?? [];
+  assert.equal(markers.length, 2);
+  assert.match(block.content, /"label":"1"/);
+  assert.match(block.content, /"label":"2"/);
+});
+
 test('OJS DOCX endnote is imported as an OMI endnote', () => {
   const manuscript = createManuscriptFromOjsLaunch(
     launchWithSource({
