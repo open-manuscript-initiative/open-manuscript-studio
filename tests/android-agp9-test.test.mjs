@@ -47,6 +47,7 @@ test('both AGP classpaths and wrapper change; default probe can switch to repeat
     assert.match(properties, /android.newDsl=false/);
     assert.match(properties, /android.nonFinalResIds=true/);
     assert.match(properties, /android.r8.optimizedResourceShrinking=true/);
+    assert.match(properties, /android.r8.gradual.support=true/);
     assert.ok(!properties.includes('android.nonFinalResIds=false'));
     assert.match(properties, /android.useAndroidX=true/);
     assert.equal(f.run('compatibility').status, 0);
