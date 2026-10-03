@@ -1,4 +1,4 @@
-// Production AGP 9.1 compatibility adapter for the Tauri 2.11.4 generated Android project.
+// Production AGP 9.1 compatibility adapter for generated Tauri Android projects.
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -24,7 +24,7 @@ if (/^distributionSha256Sum=/m.test(readFileSync(wrapper, 'utf8'))) {
 const properties = resolve(root, 'gradle.properties');
 const source = readFileSync(properties, 'utf8');
 const clean = source
-  .replace(/^android\.(builtInKotlin|newDsl|nonFinalResIds|r8\.optimizedResourceShrinking)=.*\r?\n?/gm, '')
+  .replace(/^android\.(builtInKotlin|newDsl|nonFinalResIds|r8\.(optimizedResourceShrinking|gradual\.support))=.*\r?\n?/gm, '')
   .trimEnd();
 updates.push([
   properties,
@@ -33,6 +33,7 @@ android.builtInKotlin=false
 android.newDsl=false
 android.nonFinalResIds=true
 android.r8.optimizedResourceShrinking=true
+android.r8.gradual.support=true
 `,
 ]);
 
@@ -63,7 +64,9 @@ const appPath = resolve(root, 'app/build.gradle.kts');
 let app = readFileSync(appPath, 'utf8');
 const marker = '// OMI AGP 9.1 Java and Kotlin target alignment';
 if (!app.includes(marker)) {
-  if (!/jvmTarget\s*=\s*"1\.8"/.test(app)) throw new Error('Expected generated Kotlin JVM target 1.8');
+  if (!/jvmTarget\s*=\s*(?:"1\.8"|JvmTarget\.JVM_1_8)/.test(app)) {
+    throw new Error('Expected generated Kotlin JVM target 1.8');
+  }
   app += `
 ${marker}
 android {

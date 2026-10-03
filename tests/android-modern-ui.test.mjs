@@ -140,6 +140,17 @@ test('Android theme patch migrates generated Tauri theme to AppCompat', () => {
   assert.equal(patchAndroidTheme(patched), patched);
 });
 
+test('Android theme patch supports the Material 3 theme from Tauri 2.12', () => {
+  const material3Theme = generatedTheme.replace(
+    'Theme.MaterialComponents.DayNight.NoActionBar',
+    'Theme.Material3.DayNight.NoActionBar',
+  );
+  const patched = patchAndroidTheme(material3Theme);
+  assert.match(patched, /Theme\.AppCompat\.DayNight\.NoActionBar/);
+  assert.doesNotMatch(patched, /Theme\.Material3\.DayNight\.NoActionBar/);
+  assert.equal(patchAndroidTheme(patched), patched);
+});
+
 test('Android modern UI configuration patches a generated project idempotently', () => {
   const root = mkdtempSync(join(tmpdir(), 'omi-android-modern-ui-'));
   try {

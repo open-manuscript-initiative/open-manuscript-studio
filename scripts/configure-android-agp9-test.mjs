@@ -22,8 +22,8 @@ const source = readFileSync(properties, 'utf8');
 if (/^distributionSha256Sum=/m.test(readFileSync(resolve(root, 'gradle/wrapper/gradle-wrapper.properties'), 'utf8'))) {
   throw new Error('Update the pinned wrapper checksum explicitly before changing Gradle.');
 }
-const clean = source.replace(/^android\.(builtInKotlin|newDsl|nonFinalResIds|r8\.optimizedResourceShrinking)=.*\r?\n?/gm, '').trimEnd();
-updates.push([properties, `${clean}\nandroid.builtInKotlin=${mode === 'defaults'}\nandroid.newDsl=${mode === 'defaults'}\nandroid.nonFinalResIds=true\nandroid.r8.optimizedResourceShrinking=true\n`]);
+const clean = source.replace(/^android\.(builtInKotlin|newDsl|nonFinalResIds|r8\.(optimizedResourceShrinking|gradual\.support))=.*\r?\n?/gm, '').trimEnd();
+updates.push([properties, `${clean}\nandroid.builtInKotlin=${mode === 'defaults'}\nandroid.newDsl=${mode === 'defaults'}\nandroid.nonFinalResIds=true\nandroid.r8.optimizedResourceShrinking=true\nandroid.r8.gradual.support=true\n`]);
 // Gradle 9 removed Project.exec; Tauri 2.11.4 still generates it.
 const tasks = readdirSync(resolve(root, 'buildSrc/src'), { recursive: true })
   .filter(file => file.endsWith('BuildTask.kt'));
@@ -41,12 +41,14 @@ if (task.includes('project.exec {')) {
   throw new Error('Expected a known Tauri BuildTask execution API');
 }
 updates.push([taskPath, task]);
-// Preserve the generated Kotlin JVM 1.8 target when AGP 9 defaults Java to 11.
+// Preserve the generated Kotlin JVM 1.8 target across Tauri's old and new Kotlin DSLs.
 const appPath = resolve(root, 'app/build.gradle.kts');
 let app = readFileSync(appPath, 'utf8');
 const marker = '// OMI AGP 9 Java and Kotlin target alignment';
 if (!app.includes(marker)) {
-  if (!/jvmTarget\s*=\s*"1\.8"/.test(app)) throw new Error('Expected generated Kotlin JVM target 1.8');
+  if (!/jvmTarget\s*=\s*(?:"1\.8"|JvmTarget\.JVM_1_8)/.test(app)) {
+    throw new Error('Expected generated Kotlin JVM target 1.8');
+  }
   app += `\n${marker}
 android {
     compileOptions {

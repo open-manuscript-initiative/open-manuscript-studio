@@ -6,11 +6,14 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const script = resolve('scripts/configure-android-agp9-test.mjs');
-function fixture() {
+function fixture(modernKotlinDsl = false) {
   const cwd = mkdtempSync(join(tmpdir(), 'omi-agp9-'));
   const root = join(cwd, 'src-tauri/gen/android');
   mkdirSync(join(root, 'app'), { recursive: true });
-  writeFileSync(join(root, 'app/build.gradle.kts'), 'android { kotlinOptions { jvmTarget = "1.8" } }\napply(from = "tauri.build.gradle.kts")');
+  writeFileSync(
+    join(root, 'app/build.gradle.kts'),
+    `${modernKotlinDsl ? 'import org.jetbrains.kotlin.gradle.dsl.JvmTarget\nkotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }' : 'android { kotlinOptions { jvmTarget = "1.8" } }'}\napply(from = "tauri.build.gradle.kts")`,
+  );
   mkdirSync(join(root, 'buildSrc/src/main/kotlin'), { recursive: true });
   writeFileSync(join(root, 'buildSrc/src/main/kotlin/BuildTask.kt'), 'open class BuildTask : DefaultTask() { fun run() { project.exec { executable("npm") } } }');
   mkdirSync(join(root, 'gradle/wrapper'), { recursive: true });
@@ -44,6 +47,7 @@ test('both AGP classpaths and wrapper change; default probe can switch to repeat
     assert.match(properties, /android.newDsl=false/);
     assert.match(properties, /android.nonFinalResIds=true/);
     assert.match(properties, /android.r8.optimizedResourceShrinking=true/);
+    assert.match(properties, /android.r8.gradual.support=true/);
     assert.ok(!properties.includes('android.nonFinalResIds=false'));
     assert.match(properties, /android.useAndroidX=true/);
     assert.equal(f.run('compatibility').status, 0);
@@ -56,5 +60,14 @@ test('unexpected generated files fail before modifying the toolchain', () => {
     writeFileSync(join(f.root, 'buildSrc/build.gradle.kts'), 'changed template');
     assert.notEqual(f.run('compatibility').status, 0);
     assert.match(readFileSync(join(f.root, 'build.gradle.kts'), 'utf8'), /gradle:8\.11\.0/);
+  } finally { rmSync(f.cwd, { recursive: true, force: true }); }
+});
+
+test('compatibility mode accepts the Kotlin compilerOptions DSL in Tauri 2.12 templates', () => {
+  const f = fixture(true);
+  try {
+    const result = f.run('compatibility');
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(readFileSync(join(f.root, 'app/build.gradle.kts'), 'utf8'), /targetCompatibility = JavaVersion.VERSION_1_8/);
   } finally { rmSync(f.cwd, { recursive: true, force: true }); }
 });

@@ -22,7 +22,10 @@ const TAURI_DEBUG_SYMBOL_GLOBS = Object.freeze([
 ]);
 const DEBUG_SYMBOL_SCOPE_MARKER = '// OMI: scope Tauri keepDebugSymbols to debug variants only';
 
-const LEGACY_THEME = 'Theme.MaterialComponents.DayNight.NoActionBar';
+const GENERATED_TAURI_THEMES = Object.freeze([
+  'Theme.MaterialComponents.DayNight.NoActionBar',
+  'Theme.Material3.DayNight.NoActionBar',
+]);
 const MODERN_THEME = 'Theme.AppCompat.DayNight.NoActionBar';
 const LEGACY_ACTIVITY_IMPORT = 'import androidx.activity.enableEdgeToEdge';
 const MODERN_ACTIVITY_IMPORT = `import android.os.Build
@@ -187,10 +190,11 @@ export function patchAndroidNativeDebugSymbols(source) {
 
 export function patchAndroidTheme(source) {
   if (source.includes(MODERN_THEME)) return source;
-  if (!source.includes(LEGACY_THEME)) {
-    throw new Error('Expected generated Material Components application theme is missing.');
+  const generatedTheme = GENERATED_TAURI_THEMES.find((theme) => source.includes(theme));
+  if (!generatedTheme) {
+    throw new Error('Expected generated Tauri application theme is missing.');
   }
-  return source.replaceAll(LEGACY_THEME, MODERN_THEME);
+  return source.replaceAll(generatedTheme, MODERN_THEME);
 }
 
 function findGeneratedMainActivity(root) {

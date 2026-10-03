@@ -7,13 +7,13 @@ import test from 'node:test';
 
 const script = resolve('scripts/configure-android-agp91.mjs');
 
-function fixture() {
+function fixture(modernKotlinDsl = false) {
   const cwd = mkdtempSync(join(tmpdir(), 'omi-agp91-'));
   const root = join(cwd, 'src-tauri/gen/android');
   mkdirSync(join(root, 'app'), { recursive: true });
   writeFileSync(
     join(root, 'app/build.gradle.kts'),
-    'android { kotlinOptions { jvmTarget = "1.8" } }\napply(from = "tauri.build.gradle.kts")',
+    `${modernKotlinDsl ? 'import org.jetbrains.kotlin.gradle.dsl.JvmTarget\nkotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }' : 'android { kotlinOptions { jvmTarget = "1.8" } }'}\napply(from = "tauri.build.gradle.kts")`,
   );
   mkdirSync(join(root, 'buildSrc/src/main/kotlin'), { recursive: true });
   writeFileSync(
@@ -58,6 +58,7 @@ test('AGP 9.1 compatibility adapter is repeatable and preserves required release
     assert.match(properties, /android\.newDsl=false/);
     assert.match(properties, /android\.nonFinalResIds=true/);
     assert.match(properties, /android\.r8\.optimizedResourceShrinking=true/);
+    assert.match(properties, /android\.r8\.gradual\.support=true/);
     assert.ok(!properties.includes('android.nonFinalResIds=false'));
 
     const task = readFileSync(join(f.root, 'buildSrc/src/main/kotlin/BuildTask.kt'), 'utf8');
@@ -82,6 +83,17 @@ test('unexpected generated build files fail before changing the toolchain', () =
     writeFileSync(join(f.root, 'buildSrc/build.gradle.kts'), 'changed template');
     assert.notEqual(f.run().status, 0);
     assert.match(readFileSync(join(f.root, 'build.gradle.kts'), 'utf8'), /gradle:9\.0\.1/);
+  } finally {
+    rmSync(f.cwd, { recursive: true, force: true });
+  }
+});
+
+test('AGP 9.1 adapter accepts the Kotlin compilerOptions DSL in Tauri 2.12 templates', () => {
+  const f = fixture(true);
+  try {
+    const result = f.run();
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(readFileSync(join(f.root, 'app/build.gradle.kts'), 'utf8'), /targetCompatibility = JavaVersion.VERSION_1_8/);
   } finally {
     rmSync(f.cwd, { recursive: true, force: true });
   }
