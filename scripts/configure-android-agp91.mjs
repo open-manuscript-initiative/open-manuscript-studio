@@ -1,4 +1,4 @@
-// Production AGP 9.1 compatibility adapter for the Tauri 2.11.4 generated Android project.
+// Production AGP 9.1 compatibility adapter for generated Tauri Android projects.
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -63,7 +63,9 @@ const appPath = resolve(root, 'app/build.gradle.kts');
 let app = readFileSync(appPath, 'utf8');
 const marker = '// OMI AGP 9.1 Java and Kotlin target alignment';
 if (!app.includes(marker)) {
-  if (!/jvmTarget\s*=\s*"1\.8"/.test(app)) throw new Error('Expected generated Kotlin JVM target 1.8');
+  if (!/jvmTarget\s*=\s*(?:"1\.8"|JvmTarget\.JVM_1_8)/.test(app)) {
+    throw new Error('Expected generated Kotlin JVM target 1.8');
+  }
   app += `
 ${marker}
 android {
