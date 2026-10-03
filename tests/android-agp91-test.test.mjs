@@ -58,6 +58,7 @@ test('AGP 9.1 compatibility adapter is repeatable and preserves required release
     assert.match(properties, /android\.newDsl=false/);
     assert.match(properties, /android\.nonFinalResIds=true/);
     assert.match(properties, /android\.r8\.optimizedResourceShrinking=true/);
+    assert.match(properties, /android\.r8\.gradual\.support=true/);
     assert.ok(!properties.includes('android.nonFinalResIds=false'));
 
     const task = readFileSync(join(f.root, 'buildSrc/src/main/kotlin/BuildTask.kt'), 'utf8');
