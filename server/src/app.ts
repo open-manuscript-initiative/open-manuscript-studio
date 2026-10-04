@@ -20,6 +20,7 @@ import { collaborationMessageRouter } from './routes/collaborationMessageRoutes.
 import { editorReviewOverviewRouter } from './routes/editorReviewOverviewRoutes.js';
 import { federatedAuthRouter } from './routes/federatedAuthRoutes.js';
 import { healthRouter } from './routes/healthRoutes.js';
+import { historyArchivesRouter } from './routes/historyArchivesRoutes.js';
 import { institutionAdminApiRouter } from './routes/institutionAdminApiRoutes.js';
 import { institutionAdminAuthRouter } from './routes/institutionAdminAuthRoutes.js';
 import { institutionalProfileRouter } from './routes/institutionalProfileRoutes.js';
@@ -100,6 +101,7 @@ app.get('/api', (_request, response) => {
 });
 
 app.use('/api/health', healthRouter);
+app.use('/api', historyArchivesRouter);
 app.use(apiRateLimit);
 app.use('/api/auth', authRateLimit);
 app.use('/integrations', integrationRateLimit);
