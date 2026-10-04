@@ -9,10 +9,10 @@ model merely to store module-specific state.
 
 The framework provides provider-neutral manifests, a validated in-process
 registry, contribution slots, capability declarations, and two-level activation.
-The Studio menu opens a module manager and hosts empty shells for the built-in
-discipline modules. They provide catalog descriptions, activation controls, and
-navigation placeholders only; they do not implement research or search
-functions and do not load remote code.
+The Studio menu opens a module manager and hosts the built-in discipline
+modules. The History and Archives module now includes a server-side Europeana
+Search API connection. The other modules remain catalog and navigation shells.
+Modules do not load remote code.
 
 ## Built-in module catalog
 
@@ -30,10 +30,14 @@ The initial catalog includes these modules:
 | Legal sources | Law | Search legislation and court decisions, track jurisdiction and effective dates, cite provisions and cases, and compare versions. Provider access is jurisdiction-specific. |
 | Research reproducibility | Natural sciences, engineering | Relate publications to versioned datasets, code, methods, supplemental materials, and research repositories. |
 
-These entries are module shells. Their descriptions communicate the planned
-scope; no connectors, search interfaces, discipline workflows, or data
-processing functions are implemented yet. Additional disciplines can add
-modules through the same manifest and contribution system.
+The History and Archives entry has an initial Europeana Search API
+connector. It searches Europe's shared cultural heritage catalogue and returns
+record links to Europeana and, where available, the source institution. This
+does not cover every archive or replace a provider's own catalogue. Other
+entries remain shells without search or workflow functions. Additional
+disciplines can add modules through the same manifest and contribution system.
+The Europeana key is configured as server-side `EUROPEANA_API_KEY`; it must
+not be exposed in frontend configuration.
 
 ## Module manifest
 
@@ -90,7 +94,6 @@ provider credentials and authorization stay server-side.
 ## Follow-up implementation
 
 Replace the temporary built-in installation policy and browser preference store
-with server-owned settings and real workspace-scoped preferences. Implement
-each module's discipline-specific research functions and provider adapters in
-later work. The current catalog is only the shared activation, description, and
-navigation scaffold.
+with server-owned settings and real workspace-scoped preferences. Expand the
+History and Archives module with other provider adapters, and implement the
+remaining modules' discipline-specific research functions.
