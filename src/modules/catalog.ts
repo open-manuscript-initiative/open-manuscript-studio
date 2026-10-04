@@ -1,8 +1,8 @@
-import { historyArchivesModule } from './history-archives';
+import { historyArchivesModule } from './history-archives/index';
 import { StudioModuleRegistry } from './registry';
 import type { StudioModuleInstallationPolicy } from './types';
 
-export { historyArchivesModule } from './history-archives';
+export { historyArchivesModule } from './history-archives/index';
 
 export const studioModules = new StudioModuleRegistry();
 studioModules.register(historyArchivesModule);
