@@ -104,18 +104,25 @@ export function ModuleManagerPanel({
         })}
       </div>
 
-      {activeModules.map((module) => (
-        <section className="studio-module-workspace-shell" key={module.id}>
-          <header>
-            <span>{copy.scaffoldTitle}</span>
-            <h4>{getModuleName(module.id, locale)}</h4>
-          </header>
-          <p>{copy.scaffoldDescription}</p>
-          <div className="studio-module-empty-slot">
-            {copy.noFeatures}
-          </div>
-        </section>
-      ))}
+      {activeModules.flatMap((module) => module.contributions
+        .filter((contribution) => contribution.slot === 'research-navigation')
+        .map((contribution) => (
+          <section
+            className="studio-module-workspace-shell"
+            key={module.id + ':' + contribution.id}
+            data-module-id={module.id}
+            data-contribution-id={contribution.id}
+          >
+            <header>
+              <span>{copy.scaffoldTitle}</span>
+              <h4>{getContributionName(module.id, contribution.id, locale)}</h4>
+            </header>
+            <p>{copy.scaffoldDescription}</p>
+            <div className="studio-module-empty-slot">
+              {copy.noFeatures}
+            </div>
+          </section>
+        )))}
 
       <p className="studio-module-storage-note">{copy.localPreferenceNote}</p>
     </section>
@@ -132,4 +139,18 @@ function getModuleName(moduleId: StudioModuleId, locale: string): string {
   };
   const moduleNames = names[moduleId];
   return moduleNames?.[locale] ?? moduleNames?.en ?? moduleId;
+}
+
+function getContributionName(moduleId: StudioModuleId, contributionId: string, locale: string): string {
+  const names: Record<string, Record<string, Record<string, string>>> = {
+    'org.omi.history-archives': {
+      overview: {
+        en: 'Overview',
+        de: 'Übersicht',
+        hu: 'Áttekintés',
+      },
+    },
+  };
+  const contributionNames = names[moduleId]?.[contributionId];
+  return contributionNames?.[locale] ?? contributionNames?.en ?? contributionId;
 }
