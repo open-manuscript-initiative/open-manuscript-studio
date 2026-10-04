@@ -1,4 +1,4 @@
-import { Bot, CircleHelp, CircleX, FolderOpen, ListTree, Plug, UploadCloud } from 'lucide-react';
+import { Bot, Boxes, CircleHelp, CircleX, FolderOpen, ListTree, Plug, UploadCloud } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -17,6 +17,8 @@ import type { OmpNativeAuthorContext } from '../integrations/omp/importOmpLaunch
 import { sendAuthorRevisionToOmp } from '../services/ompNativeApi';
 import type { OmiManuscript } from '../types/omi';
 import { LongTaskStatus } from './LongTaskStatus';
+import { getModuleShellCopy } from '../modules/moduleShellTranslations';
+import { ModuleManagerPanel } from '../modules/ModuleManagerPanel';
 import { StudioMenu } from './StudioMenu';
 import './StudioMenuWithHelp.css';
 
@@ -62,6 +64,7 @@ export function StudioMenuWithHelp({
   const copy = getLocalizedHelpCopy(locale);
   const integrationsLabel = getIntegrationsLabel(locale);
   const agentsLabel = getAgentsLabel(locale);
+  const modulesLabel = getModuleShellCopy(locale).navigation;
   const listsLabel = getListsLabel(locale);
   const closeDocumentCopy = getCloseDocumentCopy(locale);
   const platform = getStudioPlatform();
@@ -79,9 +82,10 @@ export function StudioMenuWithHelp({
   const [integrationsOpen, setIntegrationsOpen] = useState(false);
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [listsOpen, setListsOpen] = useState(false);
+  const [modulesOpen, setModulesOpen] = useState(false);
   const [navigationHost, setNavigationHost] = useState<HTMLElement | null>(null);
   const [contentHost, setContentHost] = useState<HTMLElement | null>(null);
-  const externalContentActive = helpOpen || integrationsOpen || agentsOpen || listsOpen;
+  const externalContentActive = helpOpen || integrationsOpen || agentsOpen || listsOpen || modulesOpen;
 
   useEffect(() => {
     if (previousManuscriptRef.current === manuscript) return;
@@ -92,7 +96,7 @@ export function StudioMenuWithHelp({
 
   useEffect(() => {
     if (!open) {
-      setHelpOpen(false); setIntegrationsOpen(false); setAgentsOpen(false); setListsOpen(false);
+      setHelpOpen(false); setIntegrationsOpen(false); setAgentsOpen(false); setListsOpen(false); setModulesOpen(false);
       setNavigationHost(null); setContentHost(null); return;
     }
     setNavigationHost(document.querySelector<HTMLElement>('.studio-menu-navigation'));
@@ -108,6 +112,7 @@ export function StudioMenuWithHelp({
       if (button.dataset.integrationsNavigation !== 'true') setIntegrationsOpen(false);
       if (button.dataset.agentsNavigation !== 'true') setAgentsOpen(false);
       if (button.dataset.listsNavigation !== 'true') setListsOpen(false);
+      if (button.dataset.modulesNavigation !== 'true') setModulesOpen(false);
     };
     navigationHost.addEventListener('click', closePortalOnOtherNavigation);
     return () => navigationHost.removeEventListener('click', closePortalOnOtherNavigation);
@@ -116,9 +121,9 @@ export function StudioMenuWithHelp({
   useEffect(() => {
     if (!navigationHost) return;
     const internalButtons = Array.from(navigationHost.querySelectorAll<HTMLButtonElement>(
-      '.studio-menu-nav-button:not([data-help-navigation="true"]):not([data-integrations-navigation="true"]):not([data-agents-navigation="true"]):not([data-lists-navigation="true"])',
+      '.studio-menu-nav-button:not([data-help-navigation="true"]):not([data-integrations-navigation="true"]):not([data-agents-navigation="true"]):not([data-lists-navigation="true"]):not([data-modules-navigation="true"])',
     ));
-    const externalNavigationOpen = helpOpen || integrationsOpen || agentsOpen || listsOpen;
+    const externalNavigationOpen = helpOpen || integrationsOpen || agentsOpen || listsOpen || modulesOpen;
     for (const button of internalButtons) {
       button.classList.remove('studio-menu-nav-button--external-suppressed');
       if (!button.classList.contains('studio-menu-nav-button--active')) { button.removeAttribute('aria-current'); continue; }
@@ -126,15 +131,15 @@ export function StudioMenuWithHelp({
       else button.setAttribute('aria-current', 'page');
     }
     return () => { for (const button of internalButtons) button.classList.remove('studio-menu-nav-button--external-suppressed'); };
-  }, [navigationHost, helpOpen, integrationsOpen, agentsOpen, listsOpen]);
+  }, [navigationHost, helpOpen, integrationsOpen, agentsOpen, listsOpen, modulesOpen]);
 
   useEffect(() => {
     if (!contentHost) return;
-    contentHost.classList.toggle('studio-menu-content--help-open', helpOpen || integrationsOpen || agentsOpen || listsOpen);
+    contentHost.classList.toggle('studio-menu-content--help-open', helpOpen || integrationsOpen || agentsOpen || listsOpen || modulesOpen);
     return () => contentHost.classList.remove('studio-menu-content--help-open');
-  }, [contentHost, helpOpen, integrationsOpen, agentsOpen, listsOpen]);
+  }, [contentHost, helpOpen, integrationsOpen, agentsOpen, listsOpen, modulesOpen]);
 
-  const closeExternalViews = () => { setHelpOpen(false); setIntegrationsOpen(false); setAgentsOpen(false); setListsOpen(false); };
+  const closeExternalViews = () => { setHelpOpen(false); setIntegrationsOpen(false); setAgentsOpen(false); setListsOpen(false); setModulesOpen(false); };
   const requestDocumentClose = () => { if (window.confirm(closeDocumentCopy.confirm)) void closeCurrentDocument(); };
 
   async function sendOmpRevision(): Promise<void> {
@@ -185,6 +190,9 @@ export function StudioMenuWithHelp({
     <button type="button" data-agents-navigation="true" className={`studio-menu-nav-button${agentsOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={agentsOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setAgentsOpen(true); }}><Bot size={18} aria-hidden="true" /><span>{agentsLabel}</span></button>
     <button type="button" data-integrations-navigation="true" className={`studio-menu-nav-button${integrationsOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={integrationsOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setIntegrationsOpen(true); }}><Plug size={18} aria-hidden="true" /><span>{integrationsLabel}</span></button>
   </>;
+  const modulesNavigation = (
+    <button type="button" data-modules-navigation="true" className={'studio-menu-nav-button' + (modulesOpen ? ' studio-menu-nav-button--active' : '')} aria-current={modulesOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setModulesOpen(true); }}><Boxes size={18} aria-hidden="true" /><span>{modulesLabel}</span></button>
+  );
   const utilityNavigation = (
     <button type="button" data-help-navigation="true" className={`studio-menu-nav-button${helpOpen ? ' studio-menu-nav-button--active' : ''}`} aria-current={helpOpen ? 'page' : undefined} onClick={() => { closeExternalViews(); setHelpOpen(true); }}><CircleHelp size={18} aria-hidden="true" /><span>{copy.navigation}</span></button>
   );
@@ -238,7 +246,7 @@ export function StudioMenuWithHelp({
       ojsAssignment={ojsAssignment}
       navigationAfterReferences={listsNavigation}
       navigationBeforeTools={workflowServicesNavigation}
-      navigationAfterSettings={utilityNavigation}
+      navigationAfterSettings={<>{modulesNavigation}{utilityNavigation}</>}
       documentCloseAction={documentCloseAction}
       externalContentActive={externalContentActive}
     />
@@ -246,6 +254,14 @@ export function StudioMenuWithHelp({
       <div className="studio-help-portal studio-lists-portal">
         <Suspense fallback={<LongTaskStatus message={t('common.loading')} />}>
           <LazyListsPanel onNavigate={onClose} />
+        </Suspense>
+      </div>,
+      contentHost,
+    ) : null}
+    {contentHost && modulesOpen ? createPortal(
+      <div className="studio-help-portal studio-module-portal">
+        <Suspense fallback={<LongTaskStatus message={t('common.loading')} />}>
+          <ModuleManagerPanel />
         </Suspense>
       </div>,
       contentHost,
