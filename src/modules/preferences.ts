@@ -70,5 +70,10 @@ function isStoredPreference(
 }
 
 function getBrowserStorage(): ModulePreferenceStorage | null {
-  return typeof window === 'undefined' ? null : window.localStorage;
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
 }
