@@ -64,7 +64,7 @@ export function EuropeanaSearchPanel({ copy, locale }: EuropeanaSearchPanelProps
       setTotalResults(result.totalResults);
       setNextCursor(result.nextCursor);
     } catch (searchError) {
-      setError(getErrorMessage(searchError, copy.setupRequired));
+      setError(getErrorMessage(searchError, copy));
     } finally {
       setIsLoadingMore(false);
     }
@@ -158,7 +158,7 @@ export function EuropeanaSearchPanel({ copy, locale }: EuropeanaSearchPanelProps
 }
 
 function getErrorMessage(error: unknown, copy: EuropeanaSearchCopy): string {
-  if (error instanceof Error && error instanceof EuropeanaSearchError && error.code === 'EUROPEANA_NOT_CONFIGURED') {
+  if (error instanceof EuropeanaSearchError && error.code === 'EUROPEANA_NOT_CONFIGURED') {
     return copy.setupRequired;
   }
   return copy.searchFailed;
