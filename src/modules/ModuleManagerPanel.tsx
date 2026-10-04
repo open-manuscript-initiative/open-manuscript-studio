@@ -1,13 +1,14 @@
 import { Boxes, Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { getModuleShellCopy } from './moduleShellTranslations';
+import { studioModules, defaultModuleInstallationPolicy } from './catalog';
 import {
   readStudioModulePreferences,
   writeStudioModulePreferences,
 } from './preferences';
-import { studioModules, defaultModuleInstallationPolicy } from './catalog';
 import { resolveStudioModuleActivationState } from './types';
 import type {
   StudioModuleId,
@@ -22,7 +23,7 @@ interface ModuleManagerPanelProps {
 export function ModuleManagerPanel({
   workspaceId = 'default',
 }: ModuleManagerPanelProps) {
-  const { locale } = useModuleLocale();
+  const { locale } = useTranslation();
   const user = useAuthStore(getCurrentUser);
   const userId = String(user?.id ?? 'anonymous');
   const copy = getModuleShellCopy(locale);
@@ -120,28 +121,6 @@ export function ModuleManagerPanel({
     </section>
   );
 }
-
-function useModuleLocale(): { locale: string } {
-  // Kept as a hook so the module shell can later add host-provided module
-  // context without coupling module packages to the full Studio translation API.
-  const { useTranslation } = requireStudioTranslation();
-  return useTranslation();
-}
-
-function requireStudioTranslation() {
-  return { useTranslation: () => useStudioLocale() };
-}
-
-function useStudioLocale(): { locale: string } {
-  // Importing the host hook statically keeps locale changes reactive.
-  return useTranslationHook();
-}
-
-function useTranslationHook() {
-  return useTranslation();
-}
-
-import { useTranslation } from '../i18n';
 
 function getModuleName(moduleId: StudioModuleId, locale: string): string {
   const names: Record<string, Record<string, string>> = {
