@@ -9,10 +9,10 @@ import {
   readStudioModulePreferences,
   writeStudioModulePreferences,
 } from './preferences';
-import { resolveStudioModuleActivationState } from './types';
-import type {
-  StudioModuleId,
-  StudioWorkspaceModulePreferences,
+import {
+  resolveStudioModuleActivationState,
+  type StudioModuleId,
+  type StudioWorkspaceModulePreferences,
 } from './types';
 import './moduleShell.css';
 
