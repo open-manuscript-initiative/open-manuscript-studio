@@ -15,6 +15,7 @@ import {
 } from '../src/modules/preferences.ts';
 import { getModuleShellCopy } from '../src/modules/moduleShellTranslations.ts';
 import { resolveStudioModuleActivationState } from '../src/modules/types.ts';
+import { searchEuropeana } from '../server/src/integrations/europeana/europeanaSearch.ts';
 
 const expectedModuleIds = [
   'org.omi.history-archives',
@@ -140,7 +141,6 @@ test('workspace activation state remains bounded by the enabled module policy', 
 });
 
 
-import { searchEuropeana } from '../server/src/integrations/europeana/europeanaSearch.ts';
 
 test('Europeana adapter uses the secret header and normalizes archival discovery metadata', async () => {
   let requestedUrl: URL | undefined;
