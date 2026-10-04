@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react';
 import type { EuropeanaSearchCopy } from '../moduleShellTranslations';
 
 import {
+  EuropeanaSearchError,
   searchEuropeanaRecords,
   type EuropeanaSearchRecord,
 } from './europeanaApi';
@@ -157,7 +158,7 @@ export function EuropeanaSearchPanel({ copy, locale }: EuropeanaSearchPanelProps
 }
 
 function getErrorMessage(error: unknown, copy: EuropeanaSearchCopy): string {
-  if (error instanceof Error && error.message.includes('EUROPEANA_NOT_CONFIGURED')) {
+  if (error instanceof Error && error instanceof EuropeanaSearchError && error.code === 'EUROPEANA_NOT_CONFIGURED') {
     return copy.setupRequired;
   }
   return copy.searchFailed;
