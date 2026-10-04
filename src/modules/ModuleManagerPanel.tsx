@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react';
 
 import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
-import { studioModules, defaultModuleInstallationPolicy } from './catalog';
+import { historyArchivesModule, studioModules, defaultModuleInstallationPolicy } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
+import { EuropeanaSearchPanel } from './history-archives/EuropeanaSearchPanel';
 import {
   readStudioModulePreferences,
   writeStudioModulePreferences,
@@ -120,9 +121,11 @@ export function ModuleManagerPanel({
                 <h4>{details?.overview ?? details?.title ?? contribution.titleKey}</h4>
               </header>
               <p>{details?.description ?? copy.scaffoldDescription}</p>
-              <div className="studio-module-empty-slot">
-                {copy.noFeatures}
-              </div>
+              {module.id === historyArchivesModule.id ? (
+                <EuropeanaSearchPanel copy={copy.europeana} locale={locale} />
+              ) : (
+                <div className="studio-module-empty-slot">{copy.noFeatures}</div>
+              )}
             </section>
           ));
       })}

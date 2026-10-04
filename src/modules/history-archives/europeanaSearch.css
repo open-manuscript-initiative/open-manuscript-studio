@@ -1,0 +1,132 @@
+.europeana-search {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.europeana-search-heading h5 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.europeana-search-heading p,
+.europeana-search-count,
+.europeana-search-empty {
+  margin: 0.35rem 0 0;
+  color: var(--studio-muted, #596273);
+}
+
+.europeana-search-form label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.europeana-search-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.europeana-search-controls input {
+  flex: 1;
+  min-width: 0;
+}
+
+.europeana-search-controls input,
+.europeana-search-controls button,
+.europeana-search-more {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--studio-border, #d8dce3);
+  border-radius: 0.5rem;
+  background: var(--studio-surface, #fff);
+  color: inherit;
+  font: inherit;
+}
+
+.europeana-search-controls button,
+.europeana-search-more {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.europeana-search-controls button:disabled,
+.europeana-search-more:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.europeana-search-results {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.europeana-search-result {
+  display: grid;
+  grid-template-columns: minmax(0, 8rem) minmax(0, 1fr);
+  gap: 0.85rem;
+  padding: 0.85rem;
+  border: 1px solid var(--studio-border, #d8dce3);
+  border-radius: 0.6rem;
+  background: var(--studio-surface, #fff);
+}
+
+.europeana-search-thumbnail {
+  width: 100%;
+  max-height: 7rem;
+  object-fit: contain;
+  background: var(--studio-surface-muted, #f1f3f6);
+  border-radius: 0.35rem;
+}
+
+.europeana-search-result-content {
+  min-width: 0;
+}
+
+.europeana-search-result h6 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.europeana-search-result p {
+  margin: 0.35rem 0 0;
+  color: var(--studio-muted, #596273);
+  line-height: 1.4;
+}
+
+.europeana-search-result a {
+  color: var(--studio-accent, #3949ab);
+}
+
+.europeana-search-source {
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+.europeana-search-rights {
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}
+
+.europeana-search-error {
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--studio-danger-soft, #fff0f0);
+  color: var(--studio-danger, #a21717);
+}
+
+@media (max-width: 42rem) {
+  .europeana-search-controls {
+    flex-direction: column;
+  }
+
+  .europeana-search-result {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .europeana-search-thumbnail {
+    max-height: 12rem;
+  }
+}
