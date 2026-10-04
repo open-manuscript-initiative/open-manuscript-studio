@@ -101,8 +101,8 @@ app.get('/api', (_request, response) => {
 });
 
 app.use('/api/health', healthRouter);
-app.use('/api', historyArchivesRouter);
 app.use(apiRateLimit);
+app.use('/api', historyArchivesRouter);
 app.use('/api/auth', authRateLimit);
 app.use('/integrations', integrationRateLimit);
 
