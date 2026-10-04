@@ -121,11 +121,11 @@ export function ModuleManagerPanel({
                 <h4>{details?.overview ?? details?.title ?? contribution.titleKey}</h4>
               </header>
               <p>{details?.description ?? copy.scaffoldDescription}</p>
-              <div className="studio-module-empty-slot">
-                {module.id === historyArchivesModule.id
-                  ? <EuropeanaSearchPanel copy={copy.europeana} locale={locale} />
-                  : copy.noFeatures}
-              </div>
+              {module.id === historyArchivesModule.id ? (
+                <EuropeanaSearchPanel copy={copy.europeana} locale={locale} />
+              ) : (
+                <div className="studio-module-empty-slot">{copy.noFeatures}</div>
+              )}
             </section>
           ));
       })}
