@@ -77,6 +77,6 @@ export async function searchEuropeanaRecords(
 
 function apiBaseUrl(): string {
   const configured = import.meta.env?.VITE_API_BASE_URL?.trim();
-  return configured.replace(/\\/+$/, '');
+  if (configured) return configured.replace(/\/+$/, '');
   return isTauri() && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '';
 }
