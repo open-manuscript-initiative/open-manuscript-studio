@@ -20,7 +20,7 @@ The initial catalog includes these modules:
 
 | Module | Disciplines | Planned scope |
 | --- | --- | --- |
-| History and archives | History, archival studies | Search archival catalogs and connect archive records with research context. |
+| History and archives | History, archival studies | Search Europeana's shared cultural heritage catalogue and future archive providers, preserving links to Europeana and source institutions. |
 | Religious texts | Theology, religious studies | Locate religious passages, compare editions and translations, and relate manuscript witnesses and interpretation. |
 | Critical text edition | Philology, classical philology, literary studies | Manage transcriptions, textual variants, manuscript witnesses, critical apparatus, and digital editions. |
 | Corpus linguistics | Linguistics | Search corpora, produce concordances, align texts, and annotate linguistic features. |
