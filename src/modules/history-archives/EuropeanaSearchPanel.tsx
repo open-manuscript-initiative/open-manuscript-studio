@@ -1,28 +1,12 @@
 import { useState, type FormEvent } from 'react';
 
+import type { EuropeanaSearchCopy } from '../moduleShellTranslations';
+
 import {
   searchEuropeanaRecords,
   type EuropeanaSearchRecord,
 } from './europeanaApi';
 import './europeanaSearch.css';
-
-export interface EuropeanaSearchCopy {
-  searchLabel: string;
-  searchPlaceholder: string;
-  searchButton: string;
-  searching: string;
-  resultCount: string;
-  noResults: string;
-  openRecord: string;
-  provider: string;
-  sourceRecord: string;
-  rights: string;
-  loadMore: string;
-  loadingMore: string;
-  errorTitle: string;
-  setupRequired: string;
-  queryRequired: string;
-}
 
 interface EuropeanaSearchPanelProps {
   copy: EuropeanaSearchCopy;
@@ -59,7 +43,7 @@ export function EuropeanaSearchPanel({ copy, locale }: EuropeanaSearchPanelProps
       setTotalResults(result.totalResults);
       setNextCursor(result.nextCursor);
     } catch (searchError) {
-      setError(getErrorMessage(searchError, copy.setupRequired));
+      setError(getErrorMessage(searchError, copy));
     } finally {
       setIsSearching(false);
     }
@@ -146,7 +130,7 @@ export function EuropeanaSearchPanel({ copy, locale }: EuropeanaSearchPanelProps
               {record.creator ? <p><strong>{record.creator}</strong></p> : null}
               {record.date ? <p>{record.date}</p> : null}
               {record.description ? <p>{record.description}</p> : null}
-              {record.provider ? <p>{copy.provider}: {record.provider}</p> : null}
+              {record.provider ? <p>{copy.dataProvider}: {record.provider}</p> : null}
               {record.rights ? <p className="europeana-search-rights">{copy.rights}: {record.rights}</p> : null}
               {record.sourceUrl ? (
                 <a className="europeana-search-source" href={record.sourceUrl} target="_blank" rel="noopener noreferrer">
@@ -172,8 +156,9 @@ export function EuropeanaSearchPanel({ copy, locale }: EuropeanaSearchPanelProps
   );
 }
 
-function getErrorMessage(error: unknown, fallback: string): string {
-  if (!(error instanceof Error)) return fallback;
-  if (error.message.includes('EUROPEANA_NOT_CONFIGURED')) return fallback;
-  return error.message;
+function getErrorMessage(error: unknown, copy: EuropeanaSearchCopy): string {
+  if (error instanceof Error && error.message.includes('EUROPEANA_NOT_CONFIGURED')) {
+    return copy.setupRequired;
+  }
+  return copy.searchFailed;
 }
