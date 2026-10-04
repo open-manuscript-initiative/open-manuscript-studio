@@ -68,6 +68,11 @@ test('provides a translated title and description for every registered module sh
       assert.ok(copy.modules[moduleId]?.description, `Missing ${locale} description for ${moduleId}`);
       assert.ok(copy.modules[moduleId]?.overview, `Missing ${locale} overview for ${moduleId}`);
     }
+    assert.ok(copy.europeana.searchLabel, `Missing ${locale} Europeana search label`);
+    assert.ok(copy.europeana.setupRequired, `Missing ${locale} Europeana setup message`);
+    assert.ok(copy.europeana.loadMore, `Missing ${locale} Europeana pagination label`);
+    for (const moduleId of expectedModuleIds) {
+    }
   }
 });
 
