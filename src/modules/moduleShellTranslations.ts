@@ -1,4 +1,25 @@
+export interface EuropeanaSearchCopy {
+  searchLabel: string;
+  searchPlaceholder: string;
+  searchButton: string;
+  searching: string;
+  resultCount: string;
+  noResults: string;
+  openRecord: string;
+  provider: string;
+  dataProvider: string;
+  sourceRecord: string;
+  rights: string;
+  loadMore: string;
+  loadingMore: string;
+  errorTitle: string;
+  searchFailed: string;
+  setupRequired: string;
+  queryRequired: string;
+}
+
 export interface ModuleShellCopy {
+  europeana: EuropeanaSearchCopy;
   navigation: string;
   title: string;
   description: string;
@@ -79,6 +100,25 @@ const translations: Record<string, ModuleShellCopy> = {
         overview: 'Research outputs and reproducibility',
       },
     },
+    europeana: {
+      searchLabel: 'Search Europeana',
+      searchPlaceholder: 'Name, place, date, or keyword',
+      searchButton: 'Search',
+      searching: 'Searching…',
+      resultCount: '{count} results',
+      noResults: 'No records matched this search.',
+      openRecord: 'Open source institution record',
+      provider: 'Europeana Search',
+      dataProvider: 'Data provider',
+      sourceRecord: 'Search Europeana’s cultural heritage catalogue. Each result links back to Europeana or its source institution.',
+      rights: 'Rights',
+      loadMore: 'Load more results',
+      loadingMore: 'Loading…',
+      errorTitle: 'Search unavailable.',
+      searchFailed: 'Europeana could not complete the search. Try again later.',
+      setupRequired: 'The Studio administrator must configure a Europeana API key on the server.',
+      queryRequired: 'Enter at least two characters to search.',
+    },
   },
   de: {
     navigation: 'Forschungsmodule',
@@ -139,6 +179,25 @@ const translations: Record<string, ModuleShellCopy> = {
         overview: 'Forschungsergebnisse und Reproduzierbarkeit',
       },
     },
+    europeana: {
+      searchLabel: 'Keresés az Europeanában',
+      searchPlaceholder: 'Név, hely, dátum vagy kulcsszó',
+      searchButton: 'Keresés',
+      searching: 'Keresés…',
+      resultCount: '{count} találat',
+      noResults: 'Nincs találat erre a keresésre.',
+      openRecord: 'Megnyitás az őrző intézménynél',
+      provider: 'Europeana-kereső',
+      dataProvider: 'Adatszolgáltató',
+      sourceRecord: 'Keresés az Europeana kulturálisörökség-katalógusában. Minden találat visszavezet az Europeanához vagy az adatszolgáltató intézményhez.',
+      rights: 'Felhasználási jogok',
+      loadMore: 'További találatok',
+      loadingMore: 'Betöltés…',
+      errorTitle: 'A keresés nem érhető el.',
+      searchFailed: 'Az Europeana most nem tudta végrehajtani a keresést. Próbálja meg később.',
+      setupRequired: 'A Stúdió rendszergazdájának Europeana API-kulcsot kell beállítania a szerveren.',
+      queryRequired: 'A kereséshez legalább két karaktert adjon meg.',
+    },
   },
   hu: {
     navigation: 'Kutatási modulok',
@@ -198,6 +257,25 @@ const translations: Record<string, ModuleShellCopy> = {
         description: 'Adatállományok, kód, módszerek és kiegészítő anyagok összekapcsolása; verziózott forrásokra és adattárakra mutató hivatkozások, a publikációk és kutatási eredmények kapcsolatának rögzítése.',
         overview: 'Kutatási eredmények és reprodukálhatóság',
       },
+    },
+    europeana: {
+      searchLabel: 'Suche in Europeana',
+      searchPlaceholder: 'Name, Ort, Datum oder Stichwort',
+      searchButton: 'Suchen',
+      searching: 'Suche läuft…',
+      resultCount: '{count} Ergebnisse',
+      noResults: 'Für diese Suche wurden keine Einträge gefunden.',
+      openRecord: 'Eintrag bei der verwahrenden Einrichtung öffnen',
+      provider: 'Europeana-Suche',
+      dataProvider: 'Datenlieferant',
+      sourceRecord: 'Durchsuchen Sie den Kulturerbe-Katalog von Europeana. Jeder Treffer führt zurück zu Europeana oder zur liefernden Einrichtung.',
+      rights: 'Rechte',
+      loadMore: 'Weitere Ergebnisse laden',
+      loadingMore: 'Wird geladen…',
+      errorTitle: 'Suche nicht verfügbar.',
+      searchFailed: 'Europeana konnte die Suche nicht ausführen. Bitte versuchen Sie es später erneut.',
+      setupRequired: 'Die Studio-Administration muss einen Europeana-API-Schlüssel auf dem Server konfigurieren.',
+      queryRequired: 'Geben Sie mindestens zwei Zeichen für die Suche ein.',
     },
   },
 };
