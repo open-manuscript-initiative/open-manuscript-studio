@@ -158,6 +158,9 @@ const environmentSchema = z.object({
   MENDELEY_CLIENT_SECRET: z.string().trim().optional(),
   MENDELEY_REDIRECT_URI: z.string().url().optional(),
 
+  // Europeana API access key. Keep it server-side; the search UI calls this API through Studio.
+  EUROPEANA_API_KEY: z.string().trim().optional(),
+
   // Vivliostyle is an external, separately installed renderer. Keeping the
   // executable outside the Studio dependency graph lets deployments pin and
   // audit the paged-media engine independently.
