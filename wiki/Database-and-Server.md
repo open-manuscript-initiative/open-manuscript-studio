@@ -86,7 +86,7 @@ GET /api/health
 
 ## References
 
-- Europeana search requires a server-side project API key in `EUROPEANA_API_KEY`; request one at [Europeana API key management](https://www.europeana.eu/en/how-to-register-for-and-manage-an-api-key). Never put the key in frontend configuration.
+- Europeana search uses the Search API through the authenticated Studio API. Configure a server-side project key in `EUROPEANA_API_KEY`; request one at [Europeana API key management](https://www.europeana.eu/en/how-to-register-for-and-manage-an-api-key). Studio sends it in Europeana's `X-Api-Key` header; never put the key in frontend configuration.
 - [`server/.env.example`](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/server/.env.example)
 - [Database schema notes](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/docs/server/database-schema.md)
 - [Security model](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/docs/server/security-model.md)
