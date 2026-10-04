@@ -18,7 +18,6 @@ import { sendAuthorRevisionToOmp } from '../services/ompNativeApi';
 import type { OmiManuscript } from '../types/omi';
 import { LongTaskStatus } from './LongTaskStatus';
 import { getModuleShellCopy } from '../modules/moduleShellTranslations';
-import { ModuleManagerPanel } from '../modules/ModuleManagerPanel';
 import { StudioMenu } from './StudioMenu';
 import './StudioMenuWithHelp.css';
 
@@ -45,6 +44,11 @@ const LazyListsPanel = lazy(async () => {
 const LazyOmiAgentsWorkspace = lazy(async () => {
   const module = await import('./OmiAgentsWorkspace');
   return { default: module.OmiAgentsWorkspace };
+});
+
+const LazyModuleManagerPanel = lazy(async () => {
+  const module = await import('../modules/ModuleManagerPanel');
+  return { default: module.ModuleManagerPanel };
 });
 
 interface StudioMenuWithHelpProps {
@@ -261,7 +265,7 @@ export function StudioMenuWithHelp({
     {contentHost && modulesOpen ? createPortal(
       <div className="studio-help-portal studio-module-portal">
         <Suspense fallback={<LongTaskStatus message={t('common.loading')} />}>
-          <ModuleManagerPanel />
+          <LazyModuleManagerPanel />
         </Suspense>
       </div>,
       contentHost,
