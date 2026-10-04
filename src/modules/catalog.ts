@@ -1,11 +1,43 @@
 import { historyArchivesModule } from './history-archives/index';
+import { moduleManifest as religiousTextsModule } from './religious-texts/index';
+import { moduleManifest as criticalTextEditionModule } from './critical-text-edition/index';
+import { moduleManifest as corpusLinguisticsModule } from './corpus-linguistics/index';
+import { moduleManifest as musicologyModule } from './musicology/index';
+import { moduleManifest as culturalHeritageModule } from './cultural-heritage/index';
+import { moduleManifest as socialResearchMethodsModule } from './social-research-methods/index';
+import { moduleManifest as legalSourcesModule } from './legal-sources/index';
+import { moduleManifest as researchReproducibilityModule } from './research-reproducibility/index';
 import { StudioModuleRegistry } from './registry';
 import type { StudioModuleInstallationPolicy } from './types';
 
-export { historyArchivesModule } from './history-archives/index';
+export {
+  historyArchivesModule,
+  religiousTextsModule,
+  criticalTextEditionModule,
+  corpusLinguisticsModule,
+  musicologyModule,
+  culturalHeritageModule,
+  socialResearchMethodsModule,
+  legalSourcesModule,
+  researchReproducibilityModule,
+};
+
+export const builtinModuleManifests = [
+  historyArchivesModule,
+  religiousTextsModule,
+  criticalTextEditionModule,
+  corpusLinguisticsModule,
+  musicologyModule,
+  culturalHeritageModule,
+  socialResearchMethodsModule,
+  legalSourcesModule,
+  researchReproducibilityModule,
+] as const;
 
 export const studioModules = new StudioModuleRegistry();
-studioModules.register(historyArchivesModule);
+for (const manifest of builtinModuleManifests) {
+  studioModules.register(manifest);
+}
 
 /**
  * Until server-owned module administration exists, built-in shells are
@@ -14,5 +46,5 @@ studioModules.register(historyArchivesModule);
  */
 export const defaultModuleInstallationPolicy: StudioModuleInstallationPolicy = {
   revision: 1,
-  enabledModuleIds: [historyArchivesModule.id],
+  enabledModuleIds: builtinModuleManifests.map(({ id }) => id),
 };

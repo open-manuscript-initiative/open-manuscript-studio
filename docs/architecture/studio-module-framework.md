@@ -9,9 +9,31 @@ model merely to store module-specific state.
 
 The framework provides provider-neutral manifests, a validated in-process
 registry, contribution slots, capability declarations, and two-level activation.
-The Studio menu now opens a module manager and hosts an empty shell for the first
-history-and-archives module. The shell has no archive search or other research
-tools yet. It does not load remote code.
+The Studio menu opens a module manager and hosts empty shells for the built-in
+discipline modules. They provide catalog descriptions, activation controls, and
+navigation placeholders only; they do not implement research or search
+functions and do not load remote code.
+
+## Built-in module catalog
+
+The initial catalog includes these modules:
+
+| Module | Disciplines | Planned scope |
+| --- | --- | --- |
+| History and archives | History, archival studies | Search archival catalogs and connect archive records with research context. |
+| Religious texts | Theology, religious studies | Locate religious passages, compare editions and translations, and relate manuscript witnesses and interpretation. |
+| Critical text edition | Philology, classical philology, literary studies | Manage transcriptions, textual variants, manuscript witnesses, critical apparatus, and digital editions. |
+| Corpus linguistics | Linguistics | Search corpora, produce concordances, align texts, and annotate linguistic features. |
+| Musicology | Musicology | Work with notation and musical events, align scores and recordings, annotate passages, and compare variants. |
+| Cultural heritage | Archaeology, art history, museum studies | Describe objects and sites with people, events, dates, and places, and annotate image regions. |
+| Social research methods | Social sciences, behavioral sciences, economics | Organize survey instruments, variables, codebooks, interview coding, datasets, and methods. |
+| Legal sources | Law | Search legislation and court decisions, track jurisdiction and effective dates, cite provisions and cases, and compare versions. Provider access is jurisdiction-specific. |
+| Research reproducibility | Natural sciences, engineering | Relate publications to versioned datasets, code, methods, supplemental materials, and research repositories. |
+
+These entries are module shells. Their descriptions communicate the planned
+scope; no connectors, search interfaces, discipline workflows, or data
+processing functions are implemented yet. Additional disciplines can add
+modules through the same manifest and contribution system.
 
 ## Module manifest
 
@@ -68,7 +90,7 @@ provider credentials and authorization stay server-side.
 ## Follow-up implementation
 
 Replace the temporary built-in installation policy and browser preference store
-with server-owned settings and real workspace-scoped preferences. Add the
-history-and-archives search functions and archive-provider adapters as a later
-module implementation; the current module shell is only the navigation and
-activation scaffold.
+with server-owned settings and real workspace-scoped preferences. Implement
+each module's discipline-specific research functions and provider adapters in
+later work. The current catalog is only the shared activation, description, and
+navigation scaffold.

@@ -1,14 +1,32 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { historyArchivesModule, studioModules, defaultModuleInstallationPolicy } from '../src/modules/catalog.ts';
+import {
+  builtinModuleManifests,
+  historyArchivesModule,
+  studioModules,
+  defaultModuleInstallationPolicy,
+} from '../src/modules/catalog.ts';
 import {
   getModulePreferencesStorageKey,
   readStudioModulePreferences,
   writeStudioModulePreferences,
   type ModulePreferenceStorage,
 } from '../src/modules/preferences.ts';
+import { getModuleShellCopy } from '../src/modules/moduleShellTranslations.ts';
 import { resolveStudioModuleActivationState } from '../src/modules/types.ts';
+
+const expectedModuleIds = [
+  'org.omi.history-archives',
+  'org.omi.religious-texts',
+  'org.omi.critical-text-edition',
+  'org.omi.corpus-linguistics',
+  'org.omi.musicology',
+  'org.omi.cultural-heritage',
+  'org.omi.social-research-methods',
+  'org.omi.legal-sources',
+  'org.omi.research-reproducibility',
+];
 
 function createStorage(): ModulePreferenceStorage & { values: Map<string, string> } {
   const values = new Map<string, string>();
@@ -23,15 +41,33 @@ function createStorage(): ModulePreferenceStorage & { values: Map<string, string
   };
 }
 
-test('registers the history and archives shell with a navigation contribution', () => {
-  assert.equal(studioModules.get(historyArchivesModule.id)?.version, '0.1.0');
+test('registers all planned discipline shells with empty navigation contributions', () => {
   assert.deepEqual(
-    historyArchivesModule.contributions.map(({ slot }) => slot),
-    ['research-navigation'],
+    studioModules.list().map(({ id }) => id),
+    [...expectedModuleIds].sort(),
   );
-  assert.deepEqual(defaultModuleInstallationPolicy.enabledModuleIds, [
-    historyArchivesModule.id,
-  ]);
+  assert.deepEqual(
+    defaultModuleInstallationPolicy.enabledModuleIds,
+    expectedModuleIds,
+  );
+  assert.equal(builtinModuleManifests.length, expectedModuleIds.length);
+  assert.ok(builtinModuleManifests.every(
+    (module) => module.contributions.some(({ slot }) => slot === 'research-navigation'),
+  ));
+  assert.ok(builtinModuleManifests.every(
+    (module) => module.requiredCapabilities.length === 0,
+  ));
+});
+
+test('provides a translated title and description for every registered module shell', () => {
+  for (const locale of ['en', 'de', 'hu']) {
+    const copy = getModuleShellCopy(locale);
+    for (const moduleId of expectedModuleIds) {
+      assert.ok(copy.modules[moduleId]?.title, `Missing ${locale} title for ${moduleId}`);
+      assert.ok(copy.modules[moduleId]?.description, `Missing ${locale} description for ${moduleId}`);
+      assert.ok(copy.modules[moduleId]?.overview, `Missing ${locale} overview for ${moduleId}`);
+    }
+  }
 });
 
 test('stores active module selections separately by user and workspace', () => {
@@ -76,7 +112,7 @@ test('ignores malformed stored module preference data', () => {
   );
 });
 
-test('the activation scaffold only marks an enabled module active after user selection', () => {
+test('workspace activation state remains bounded by the enabled module policy', () => {
   assert.equal(
     resolveStudioModuleActivationState(
       historyArchivesModule.id,
@@ -84,6 +120,14 @@ test('the activation scaffold only marks an enabled module active after user sel
       { workspaceId: 'default', activeModuleIds: [] },
     ),
     'available',
+  );
+  assert.equal(
+    resolveStudioModuleActivationState(
+      historyArchivesModule.id,
+      { revision: 2, enabledModuleIds: [] },
+      { workspaceId: 'default', activeModuleIds: [historyArchivesModule.id] },
+    ),
+    'disabled-by-installation',
   );
   assert.equal(
     resolveStudioModuleActivationState(
