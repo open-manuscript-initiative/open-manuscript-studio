@@ -32,6 +32,7 @@ DATABASE_URL=postgresql://omi_studio_app:change-me@127.0.0.1:5432/omi_studio
 IDENTITY_DATABASE_URL=postgresql://omi_identity_app:change-me@127.0.0.1:5432/omi_identity
 INTEGRATION_MASTER_KEY=<64 hexadecimal characters>
 DEPLOYMENT_MODE=personal
+EUROPEANA_API_KEY=<server-side Europeana project key>
 ```
 
 Generate the integration encryption key once and store it outside Git:
@@ -85,6 +86,7 @@ GET /api/health
 
 ## References
 
+- Europeana search requires a server-side project API key in `EUROPEANA_API_KEY`; request one at [Europeana API key management](https://www.europeana.eu/en/how-to-register-for-and-manage-an-api-key). Never put the key in frontend configuration.
 - [`server/.env.example`](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/server/.env.example)
 - [Database schema notes](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/docs/server/database-schema.md)
 - [Security model](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/docs/server/security-model.md)
