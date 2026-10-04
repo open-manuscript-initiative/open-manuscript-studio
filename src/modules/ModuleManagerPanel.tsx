@@ -5,6 +5,8 @@ import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { studioModules, defaultModuleInstallationPolicy } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
+import { historyArchivesModule } from './catalog';
+import { EuropeanaSearchPanel } from './history-archives/EuropeanaSearchPanel';
 import {
   readStudioModulePreferences,
   writeStudioModulePreferences,
@@ -121,7 +123,9 @@ export function ModuleManagerPanel({
               </header>
               <p>{details?.description ?? copy.scaffoldDescription}</p>
               <div className="studio-module-empty-slot">
-                {copy.noFeatures}
+                {module.id === historyArchivesModule.id
+                  ? <EuropeanaSearchPanel copy={copy.europeana} locale={locale} />
+                  : copy.noFeatures}
               </div>
             </section>
           ));
