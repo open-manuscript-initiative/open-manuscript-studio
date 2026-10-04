@@ -17,7 +17,8 @@ historyArchivesRouter.get(
   '/modules/history-archives/europeana/search',
   requireSession,
   async (request: AuthenticatedRequest, response) => {
-    if (!env.EUROPEANA_API_KEY) {
+    const apiKey = env.EUROPEANA_API_KEY;
+    if (!apiKey) {
       response.status(503).json({
         error: {
           code: 'EUROPEANA_NOT_CONFIGURED',
@@ -42,7 +43,7 @@ historyArchivesRouter.get(
     try {
       const result = await searchEuropeana({
         query: query.data,
-        apiKey: env.EUROPEANA_API_KEY,
+        apiKey,
         ...(cursor.data ? { cursor: cursor.data } : {}),
       });
       response.setHeader('Cache-Control', 'private, max-age=30');
