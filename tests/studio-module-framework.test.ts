@@ -34,7 +34,7 @@ test('registers, snapshots, and sorts valid manifests', () => {
   registry.register(source);
   registry.register(manifest({ id: 'org.example.citation-tools' }));
 
-  source.requiredCapabilities.push('admin');
+  (source.requiredCapabilities as string[]).push('admin');
   assert.deepEqual(
     registry.list().map(({ id }) => id),
     ['org.example.citation-tools', 'org.example.research-tools'],
@@ -56,7 +56,7 @@ test('rejects duplicate module IDs and unsupported API versions', () => {
   );
 });
 
-test('rejects malformed identifiers, duplicate contributions, and invalid permission names', () => {
+test('rejects malformed identifiers, duplicate contributions, and invalid capability names', () => {
   const registry = new StudioModuleRegistry();
   assert.throws(() => registry.register(manifest({ id: 'Research Module' })), /Invalid Studio module id/);
   assert.throws(
