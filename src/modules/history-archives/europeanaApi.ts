@@ -1,3 +1,10 @@
+export class EuropeanaSearchError extends Error {
+  constructor(public readonly code: string, message: string) {
+    super(message);
+    this.name = 'EuropeanaSearchError';
+  }
+}
+
 export interface EuropeanaSearchRecord {
   id: string;
   title: string;
@@ -39,7 +46,10 @@ export async function searchEuropeanaRecords(
     | null;
 
   if (!response.ok) {
-    throw new Error(
+    throw new EuropeanaSearchError(
+      payload && 'error' in payload && typeof payload.error?.code === 'string'
+        ? payload.error.code
+        : 'EUROPEANA_SEARCH_FAILED',
       payload && 'error' in payload && payload.error?.message
         ? payload.error.message
         : `Europeana search failed (HTTP ${response.status}).`,
