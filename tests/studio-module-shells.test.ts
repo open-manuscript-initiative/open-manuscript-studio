@@ -138,3 +138,79 @@ test('workspace activation state remains bounded by the enabled module policy', 
     'active',
   );
 });
+
+
+import { searchEuropeana } from '../server/src/integrations/europeana/europeanaSearch.ts';
+
+test('Europeana adapter uses the secret header and normalizes archival discovery metadata', async () => {
+  let requestedUrl: URL | undefined;
+  let requestedHeaders: Headers | undefined;
+  const fetchImpl: typeof fetch = async (input, init) => {
+    requestedUrl = new URL(input instanceof Request ? input.url : String(input));
+    requestedHeaders = new Headers(init?.headers);
+    return Response.json({
+      success: true,
+      totalResults: 19,
+      nextCursor: 'cursor-next',
+      apikey: 'must-not-be-forwarded',
+      items: [{
+        id: '/2020601/item-123',
+        title: { en: ['Letters from 1848'] },
+        dcCreator: ['Archive author'],
+        year: ['1848'],
+        dataProvider: ['City Archives'],
+        edmPreview: ['https://images.example.org/thumb.jpg'],
+        edmIsShownAt: ['https://archives.example.org/item/123'],
+        edmRights: ['http://rightsstatements.org/vocab/InC/1.0/'],
+      }],
+    });
+  };
+
+  const result = await searchEuropeana({
+    query: 'letters 1848',
+    cursor: 'cursor-current',
+    apiKey: 'private-project-key',
+    fetchImpl,
+  });
+
+  assert.equal(requestedUrl?.origin, 'https://api.europeana.eu');
+  assert.equal(requestedUrl?.searchParams.get('query'), 'letters 1848');
+  assert.equal(requestedUrl?.searchParams.get('cursor'), 'cursor-current');
+  assert.equal(requestedUrl?.searchParams.get('rows'), '12');
+  assert.equal(requestedHeaders?.get('X-Api-Key'), 'private-project-key');
+  assert.equal(requestedUrl?.searchParams.has('wskey'), false);
+  assert.deepEqual(result, {
+    totalResults: 19,
+    nextCursor: 'cursor-next',
+    items: [{
+      id: '/2020601/item-123',
+      title: 'Letters from 1848',
+      description: null,
+      creator: 'Archive author',
+      date: '1848',
+      provider: 'City Archives',
+      thumbnailUrl: 'https://images.example.org/thumb.jpg',
+      rights: 'http://rightsstatements.org/vocab/InC/1.0/',
+      recordUrl: 'https://www.europeana.eu/item/2020601/item-123',
+      sourceUrl: 'https://archives.example.org/item/123',
+    }],
+  });
+  assert.equal(JSON.stringify(result).includes('private-project-key'), false);
+});
+
+test('Europeana adapter rejects unsafe result links and malformed records', async () => {
+  const fetchImpl: typeof fetch = async () => Response.json({
+    success: true,
+    totalResults: 2,
+    items: [
+      { id: '/dataset/valid', title: 'Record', guid: 'javascript:alert(1)', edmPreview: ['http://unsafe.example/image'], edmIsShownAt: ['javascript:alert(1)'] },
+      { id: '//evil.example/item', title: 'Invalid identifier' },
+    ],
+  });
+
+  const result = await searchEuropeana({ query: 'record', apiKey: 'test-key', fetchImpl });
+  assert.equal(result.items.length, 1);
+  assert.equal(result.items[0]?.recordUrl, 'https://www.europeana.eu/item/dataset/valid');
+  assert.equal(result.items[0]?.thumbnailUrl, null);
+  assert.equal(result.items[0]?.sourceUrl, null);
+});
