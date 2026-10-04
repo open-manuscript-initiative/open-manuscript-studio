@@ -42,7 +42,7 @@ export async function searchEuropeanaRecords(
 
   const payload = await response.json().catch(() => null) as
     | EuropeanaSearchPage
-    | { error?: { message?: string } }
+    | { error?: { code?: string; message?: string } }
     | null;
 
   if (!response.ok) {
