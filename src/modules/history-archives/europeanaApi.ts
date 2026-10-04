@@ -1,3 +1,5 @@
+import { isTauri } from '@tauri-apps/api/core';
+
 export class EuropeanaSearchError extends Error {
   constructor(public readonly code: string, message: string) {
     super(message);
@@ -24,6 +26,9 @@ export interface EuropeanaSearchPage {
   nextCursor: string | null;
 }
 
+const NATIVE_SESSION_KEY = 'omi_native_session_token';
+const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
+
 export async function searchEuropeanaRecords(
   query: string,
   cursor?: string,
@@ -31,12 +36,19 @@ export async function searchEuropeanaRecords(
   const params = new URLSearchParams({ q: query });
   if (cursor) params.set('cursor', cursor);
 
+  const headers = new Headers({ Accept: 'application/json' });
+  if (isTauri()) {
+    headers.set('X-OMI-Native-Client', '1');
+    const token = globalThis.localStorage?.getItem(NATIVE_SESSION_KEY);
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+  }
+
   const response = await fetch(
-    `/api/modules/history-archives/europeana/search?${params.toString()}`,
+    `${apiBaseUrl()}/api/modules/history-archives/europeana/search?${params.toString()}`,
     {
       method: 'GET',
       credentials: 'include',
-      headers: { Accept: 'application/json' },
+      headers,
     },
   );
 
@@ -61,4 +73,10 @@ export async function searchEuropeanaRecords(
   }
 
   return payload as EuropeanaSearchPage;
+}
+
+function apiBaseUrl(): string {
+  const configured = import.meta.env?.VITE_API_BASE_URL?.trim();
+  if (configured) return configured.replace(/\\/+$/, '');
+  return isTauri() && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '';
 }
