@@ -3,9 +3,8 @@ import { useEffect, useState } from 'react';
 
 import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
-import { studioModules, defaultModuleInstallationPolicy } from './catalog';
+import { historyArchivesModule, studioModules, defaultModuleInstallationPolicy } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
-import { historyArchivesModule } from './catalog';
 import { EuropeanaSearchPanel } from './history-archives/EuropeanaSearchPanel';
 import {
   readStudioModulePreferences,
