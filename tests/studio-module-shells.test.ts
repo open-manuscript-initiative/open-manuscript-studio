@@ -16,6 +16,7 @@ import {
 import { getModuleShellCopy } from '../src/modules/moduleShellTranslations.ts';
 import { resolveStudioModuleActivationState } from '../src/modules/types.ts';
 import { searchEuropeana } from '../server/src/integrations/europeana/europeanaSearch.ts';
+import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSearch.ts';
 
 const expectedModuleIds = [
   'org.omi.history-archives',
@@ -71,6 +72,9 @@ test('provides a translated title and description for every registered module sh
     assert.ok(copy.europeana.searchLabel, `Missing ${locale} Europeana search label`);
     assert.ok(copy.europeana.setupRequired, `Missing ${locale} Europeana setup message`);
     assert.ok(copy.europeana.loadMore, `Missing ${locale} Europeana pagination label`);
+    assert.ok(copy.nara.searchLabel, `Missing ${locale} NARA search label`);
+    assert.ok(copy.nara.setupRequired, `Missing ${locale} NARA setup message`);
+    assert.ok(copy.nara.loadMore, `Missing ${locale} NARA pagination label`);
   }
 });
 
@@ -216,4 +220,86 @@ test('Europeana adapter rejects unsafe result links and malformed records', asyn
   assert.equal(result.items[0]?.recordUrl, 'https://www.europeana.eu/item/dataset/valid');
   assert.equal(result.items[0]?.thumbnailUrl, null);
   assert.equal(result.items[0]?.sourceUrl, null);
+});
+
+
+test('NARA adapter keeps the key in a header and normalizes a catalog search result', async () => {
+  let requestedUrl: URL | undefined;
+  let requestedHeaders: Headers | undefined;
+  const fetchImpl: typeof fetch = async (input, init) => {
+    requestedUrl = new URL(input instanceof Request ? input.url : String(input));
+    requestedHeaders = new Headers(init?.headers);
+    return Response.json({
+      body: {
+        hits: {
+          total: { value: 13, relation: 'eq' },
+          hits: [{
+            _id: '123456',
+            _source: {
+              record: {
+                naId: 123456,
+                title: 'Letters from 1848',
+                scopeAndContentNote: [{ note: 'Correspondence and related records.' }],
+                creators: [{ creatorName: 'City Archives' }],
+                inclusiveDates: [{ inclusiveStartDate: 1848, inclusiveEndDate: 1849 }],
+                recordGroupName: 'Record Group 21',
+                digitalObjects: [{ thumbnailUrl: 'https://catalog.archives.gov/id/123456/thumbnails/1' }],
+                useRestriction: { status: 'Unrestricted' },
+              },
+            },
+          }],
+        },
+      },
+    });
+  };
+
+  const result = await searchNaraCatalog({
+    query: 'letters 1848',
+    apiKey: 'private-nara-key',
+    fetchImpl,
+  });
+
+  assert.equal(requestedUrl?.origin, 'https://catalog.archives.gov');
+  assert.equal(requestedUrl?.pathname, '/api/v2/records/search');
+  assert.equal(requestedUrl?.searchParams.get('q'), 'letters 1848');
+  assert.equal(requestedUrl?.searchParams.get('limit'), '12');
+  assert.equal(requestedUrl?.searchParams.get('page'), '1');
+  assert.equal(requestedUrl?.searchParams.has('apiKey'), false);
+  assert.equal(requestedHeaders?.get('x-api-key'), 'private-nara-key');
+  assert.deepEqual(result, {
+    totalResults: 13,
+    nextCursor: '2',
+    items: [{
+      id: '123456',
+      title: 'Letters from 1848',
+      description: 'Correspondence and related records.',
+      creator: 'City Archives',
+      date: '1848',
+      provider: 'Record Group 21',
+      thumbnailUrl: 'https://catalog.archives.gov/id/123456/thumbnails/1',
+      rights: 'Unrestricted',
+      recordUrl: 'https://catalog.archives.gov/id/123456',
+      sourceUrl: null,
+    }],
+  });
+  assert.equal(JSON.stringify(result).includes('private-nara-key'), false);
+});
+
+test('NARA adapter drops malformed records and unsafe thumbnail URLs', async () => {
+  const fetchImpl: typeof fetch = async () => Response.json({
+    body: {
+      hits: {
+        total: { value: 2 },
+        hits: [
+          { _id: '123', _source: { record: { naId: '123', title: 'Valid', digitalObjects: [{ thumbnailUrl: 'javascript:alert(1)' }] } } },
+          { _id: '../bad', _source: { record: { naId: '../bad', title: 'Invalid identifier' } } },
+        ],
+      },
+    },
+  });
+
+  const result = await searchNaraCatalog({ query: 'record', apiKey: 'test-key', fetchImpl });
+  assert.equal(result.items.length, 1);
+  assert.equal(result.items[0]?.recordUrl, 'https://catalog.archives.gov/id/123');
+  assert.equal(result.items[0]?.thumbnailUrl, null);
 });
