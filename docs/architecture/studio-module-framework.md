@@ -79,7 +79,7 @@ There are two separate decisions:
 
 The shared resolver expresses those states for UI and policy evaluation. The
 installation operator controls the allow-list through the server-side
-`STUDIO_ENABLED_MODULES` setting. User selections are stored in the identity
+`STUDIO_ENABLED_MODULES` setting. User selections are stored in the Studio
 database by authenticated user and workspace ID, with revision checks to avoid
 stale updates. The client imports existing browser selections once when no
 server preference exists. Current module scopes are user-owned; shared-workspace
