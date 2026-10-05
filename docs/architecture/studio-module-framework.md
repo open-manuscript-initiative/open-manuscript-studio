@@ -21,7 +21,7 @@ The initial catalog includes these modules:
 
 | Module | Disciplines | Planned scope |
 | --- | --- | --- |
-| History and archives | History, archival studies | Search Europeana's shared cultural heritage catalogue and NARA's federal archival descriptions, preserving links to the source records. |
+| History and archives | History, archival studies | Search Europeana's shared cultural heritage catalogue and NARA's federal archival descriptions, and open the eLevéltár portal for Hungarian archival descriptions from the Hungarian National Archives and Budapest City Archives. |
 | Religious texts | Theology, religious studies | Locate religious passages, compare editions and translations, and relate manuscript witnesses and interpretation. |
 | Critical text edition | Philology, classical philology, literary studies | Manage transcriptions, textual variants, manuscript witnesses, critical apparatus, and digital editions. |
 | Corpus linguistics | Linguistics | Search corpora, produce concordances, align texts, and annotate linguistic features. |
@@ -32,10 +32,12 @@ The initial catalog includes these modules:
 | Research reproducibility | Natural sciences, engineering | Relate publications to versioned datasets, code, methods, supplemental materials, and research repositories. |
 
 The History and Archives entry has on-demand Europeana Search API and U.S.
-National Archives Catalog searches. Europeana results link to their Europeana
-record and, where available, the source institution; NARA results link to the
-original catalog record. These connectors do not cover every archive or
-replace a provider's catalogue. Other entries remain shells without search or
+National Archives Catalog searches, plus a direct link to the official
+eLevéltár archival search portal for Hungarian holdings. Europeana results link
+to their Europeana record and, where available, the source institution; NARA
+results link to the original catalog record. eLevéltár search opens in the
+provider's portal because no supported public API endpoint has been confirmed.
+These sources do not cover every archive or replace a provider's catalogue. Other entries remain shells without search or
 workflow functions. Additional disciplines can add modules through the same
 manifest and contribution system.
 
