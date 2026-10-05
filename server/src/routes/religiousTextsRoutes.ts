@@ -10,7 +10,7 @@ import { searchSefaria } from '../integrations/sefaria/sefariaSearch.js';
 export const religiousTextsRouter = Router();
 
 const querySchema = z.string().trim().min(2).max(240);
-const cursorSchema = z.string().trim().regex(/^\\d{1,4}$/).transform(Number).refine((value) => value <= 1200).optional();
+const cursorSchema = z.string().trim().regex(/^\d{1,4}$/).transform(Number).refine((value) => value <= 1200).optional();
 
 religiousTextsRouter.get(
   '/modules/religious-texts/sefaria/search',
