@@ -161,6 +161,9 @@ const environmentSchema = z.object({
   // Europeana API access key. Keep it server-side; the search UI calls this API through Studio.
   EUROPEANA_API_KEY: z.string().trim().optional(),
 
+  // Read-only National Archives Catalog key. Keep it server-side; search is proxied through Studio.
+  NARA_CATALOG_API_KEY: z.string().trim().optional(),
+
   // Vivliostyle is an external, separately installed renderer. Keeping the
   // executable outside the Studio dependency graph lets deployments pin and
   // audit the paged-media engine independently.
