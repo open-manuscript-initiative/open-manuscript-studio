@@ -6,6 +6,7 @@ import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { historyArchivesModule, studioModules, defaultModuleInstallationPolicy } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
 import { EuropeanaSearchPanel } from './history-archives/EuropeanaSearchPanel';
+import { NaraSearchPanel } from './history-archives/NaraSearchPanel';
 import {
   readStudioModulePreferences,
   writeStudioModulePreferences,
@@ -123,6 +124,7 @@ export function ModuleManagerPanel({
               <p>{details?.description ?? copy.scaffoldDescription}</p>
               {module.id === historyArchivesModule.id ? (
                 <EuropeanaSearchPanel copy={copy.europeana} locale={locale} />
+                <NaraSearchPanel copy={copy.nara} locale={locale} />
               ) : (
                 <div className="studio-module-empty-slot">{copy.noFeatures}</div>
               )}
