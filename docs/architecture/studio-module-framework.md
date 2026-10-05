@@ -22,7 +22,7 @@ The initial catalog includes these modules:
 | Module | Disciplines | Planned scope |
 | --- | --- | --- |
 | History and archives | History, archival studies | Search Europeana's shared cultural heritage catalogue and NARA's federal archival descriptions, and open the eLevéltár portal for Hungarian archival descriptions from the Hungarian National Archives and Budapest City Archives. |
-| Religious texts | Theology, religious studies | Locate religious passages, compare editions and translations, and relate manuscript witnesses and interpretation. |
+| Religious texts | Theology, religious studies | Search Sefaria's Jewish text and commentary library live, display short excerpts with citation and edition metadata, and link to Bible, Qur'an, and Buddhist text portals. The first embedded full-text connector covers Sefaria only. |
 | Critical text edition | Philology, classical philology, literary studies | Manage transcriptions, textual variants, manuscript witnesses, critical apparatus, and digital editions. |
 | Corpus linguistics | Linguistics | Search corpora, produce concordances, align texts, and annotate linguistic features. |
 | Musicology | Musicology | Work with notation and musical events, align scores and recordings, annotate passages, and compare variants. |
@@ -37,8 +37,15 @@ eLevéltár archival search portal for Hungarian holdings. Europeana results lin
 to their Europeana record and, where available, the source institution; NARA
 results link to the original catalog record. eLevéltár search opens in the
 provider's portal because no supported public API endpoint has been confirmed.
-These sources do not cover every archive or replace a provider's catalogue. Other entries remain shells without search or
-workflow functions. Additional disciplines can add modules through the same
+These sources do not cover every archive or replace a provider's catalogue.
+
+The Religious Texts module searches Sefaria's library on demand through its
+public search API. It displays short excerpts, citations, edition and language
+metadata, and links each result back to Sefaria. The panel also links to Bible,
+Qur'an, and Buddhist text portals; those are external searches, not embedded
+Studio connectors. Sefaria documents public API access without API keys. Texts
+are requested live and are not mirrored. Other modules remain shells without
+search or workflow functions. Additional disciplines can add modules through the same
 manifest and contribution system.
 
 Configure the server-side Europeana key as `EUROPEANA_API_KEY` and the
