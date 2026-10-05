@@ -9,6 +9,7 @@ export interface EuropeanaSearchCopy {
   provider: string;
   dataProvider: string;
   sourceRecord: string;
+  attribution?: string;
   rights: string;
   loadMore: string;
   loadingMore: string;
@@ -131,6 +132,7 @@ const translations: Record<string, ModuleShellCopy> = {
       provider: 'U.S. National Archives Catalog',
       dataProvider: 'Record group',
       sourceRecord: 'Search archival descriptions in the U.S. National Archives Catalog. Results link to the original NARA record.',
+      attribution: 'This product uses the National Archives Catalog API but is not endorsed or certified by the National Archives and Records Administration.',
       rights: 'Use restriction',
       loadMore: 'Load more results',
       loadingMore: 'Loading…',
@@ -229,6 +231,7 @@ const translations: Record<string, ModuleShellCopy> = {
       provider: 'Katalog des US-Nationalarchivs',
       dataProvider: 'Bestandsgruppe',
       sourceRecord: 'Durchsuchen Sie die archivischen Beschreibungen im Katalog des US-Nationalarchivs. Die Treffer verweisen auf den ursprünglichen NARA-Eintrag.',
+      attribution: 'This product uses the National Archives Catalog API but is not endorsed or certified by the National Archives and Records Administration.',
       rights: 'Nutzungsbeschränkung',
       loadMore: 'Weitere Ergebnisse laden',
       loadingMore: 'Wird geladen…',
@@ -327,6 +330,7 @@ const translations: Record<string, ModuleShellCopy> = {
       provider: 'USA Nemzeti Levéltárának katalógusa',
       dataProvider: 'Fond vagy állag',
       sourceRecord: 'Keresés az USA Nemzeti Levéltárának levéltári leírásai között. A találatok az eredeti NARA-rekordra mutatnak.',
+      attribution: 'This product uses the National Archives Catalog API but is not endorsed or certified by the National Archives and Records Administration.',
       rights: 'Felhasználási korlátozás',
       loadMore: 'További találatok',
       loadingMore: 'Betöltés…',
