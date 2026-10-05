@@ -102,7 +102,10 @@ A module should integrate through named contribution slots and provider-neutral
 service interfaces. It must not import another discipline module's internals,
 access Prisma or databases directly, or put service credentials in OMI files.
 External archives and other providers belong behind server-side connectors;
-provider credentials and authorization stay server-side.
+provider credentials and authorization stay server-side. Every external provider
+or record link in a module must open in a new tab or window with
+`target="_blank"` and `rel="noopener noreferrer"`, so the researcher keeps the
+Studio workspace open.
 
 ## Follow-up implementation
 
