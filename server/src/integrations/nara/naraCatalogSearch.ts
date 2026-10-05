@@ -86,8 +86,7 @@ function mapRecord(value: unknown): NaraCatalogRecord | null {
       const object = asRecord(entry);
       return safeHttpsUrl(
         firstText(object?.thumbnailUrl)
-        ?? firstText(object?.thumbnail)
-        ?? firstText(object?.objectUrl),
+        ?? firstText(object?.thumbnail),
       );
     })
     .find((url): url is string => Boolean(url)) ?? null;
