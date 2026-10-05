@@ -75,7 +75,7 @@ export function NaraSearchPanel({ copy, locale }: NaraSearchPanelProps) {
       <div className="europeana-search-heading">
         <h5>{copy.provider}</h5>
         <p>{copy.sourceRecord}</p>
-        {copy.attribution ? <p>{copy.attribution}</p> : null}
+        {copy.attribution ? <p><strong>{copy.attribution}</strong></p> : null}
       </div>
 
       <form className="europeana-search-form" onSubmit={runSearch}>
