@@ -3,11 +3,12 @@ import { useEffect, useState } from 'react';
 
 import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
-import { historyArchivesModule, studioModules, defaultModuleInstallationPolicy } from './catalog';
+import { historyArchivesModule, religiousTextsModule, studioModules, defaultModuleInstallationPolicy } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
 import { EuropeanaSearchPanel } from './history-archives/EuropeanaSearchPanel';
 import { NaraSearchPanel } from './history-archives/NaraSearchPanel';
 import { EleveltarSearchPanel } from './history-archives/EleveltarSearchPanel';
+import { ReligiousTextsPanel } from './religious-texts/ReligiousTextsPanel';
 import {
   readStudioModulePreferences,
   writeStudioModulePreferences,
@@ -129,6 +130,8 @@ export function ModuleManagerPanel({
                   <NaraSearchPanel copy={copy.nara} locale={locale} />
                   <EleveltarSearchPanel locale={locale} />
                 </>
+              ) : module.id === religiousTextsModule.id ? (
+                <ReligiousTextsPanel locale={locale} />
               ) : (
                 <div className="studio-module-empty-slot">{copy.noFeatures}</div>
               )}
