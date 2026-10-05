@@ -2,9 +2,9 @@ import { Router, type Response } from 'express';
 import { z } from 'zod';
 
 import { env } from '../config/env.js';
-import { identityPrisma } from '../lib/identityPrisma.js';
+import { prisma } from '../lib/prisma.js';
 import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
-import { writeAdminAuditEvent } from '../services/centralAdminService.js';
+import { writeStudioModuleAuditEvent } from '../services/studioModuleAuditService.js';
 
 export const studioModuleRouter = Router();
 
@@ -35,7 +35,7 @@ studioModuleRouter.get('/modules/policy', requireSession, async (request: Authen
     return;
   }
   const workspaceId = parsedWorkspaceId.data;
-  const preference = await identityPrisma.studioModulePreference.findUnique({
+  const preference = await prisma.studioModulePreference.findUnique({
     where: { userId_workspaceId: { userId, workspaceId } },
   });
   const enabledModuleIds = env.STUDIO_ENABLED_MODULES.filter((id): id is (typeof MODULE_IDS)[number] =>
@@ -90,11 +90,11 @@ studioModuleRouter.put('/modules/preferences', requireSession, async (request: A
     if (!preference) return stalePreference(response);
   }
 
-  await writeAdminAuditEvent({
+  await writeStudioModuleAuditEvent({
     actorUserId: userId,
-    action: 'studio.module.preferences.update',
-    targetType: 'workspace',
-    targetId: input.workspaceId,
+    workspaceId: input.workspaceId,
+    moduleId: 'org.omi.studio-module-framework',
+    action: 'preferences.update',
     details: { activeModuleIds: activeModuleIds.join(',') },
     ipAddress: request.ip,
   });
