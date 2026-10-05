@@ -263,12 +263,12 @@ test('NARA adapter keeps the key in a header and normalizes a catalog search res
   assert.equal(requestedUrl?.pathname, '/api/v2/records/search');
   assert.equal(requestedUrl?.searchParams.get('q'), 'letters 1848');
   assert.equal(requestedUrl?.searchParams.get('limit'), '12');
-  assert.equal(requestedUrl?.searchParams.get('page'), '1');
+  assert.equal(requestedUrl?.searchParams.has('searchAfter'), false);
   assert.equal(requestedUrl?.searchParams.has('apiKey'), false);
   assert.equal(requestedHeaders?.get('x-api-key'), 'private-nara-key');
   assert.deepEqual(result, {
     totalResults: 13,
-    nextCursor: '2',
+    nextCursor: null,
     items: [{
       id: '123456',
       title: 'Letters from 1848',
@@ -302,4 +302,41 @@ test('NARA adapter drops malformed records and unsafe thumbnail URLs', async () 
   assert.equal(result.items.length, 1);
   assert.equal(result.items[0]?.recordUrl, 'https://catalog.archives.gov/id/123');
   assert.equal(result.items[0]?.thumbnailUrl, null);
+});
+
+
+test('NARA adapter follows the searchAfter cursor returned by the catalog API', async () => {
+  let requestedUrl: URL | undefined;
+  const fetchImpl: typeof fetch = async (input) => {
+    requestedUrl = new URL(input instanceof Request ? input.url : String(input));
+    return Response.json({
+      body: {
+        hits: {
+          total: { value: 24 },
+          hits: Array.from({ length: 12 }, (_, index) => ({
+            sort: [`sort-after-${index + 1}`],
+            _source: {
+              record: {
+                naId: index + 1,
+                title: `Record ${index + 1}`,
+              },
+            },
+          })),
+        },
+      },
+    });
+  };
+
+  const result = await searchNaraCatalog({
+    query: 'catalogue',
+    cursor: 'sort-before-page',
+    apiKey: 'test-key',
+    fetchImpl,
+  });
+
+  assert.equal(requestedUrl?.searchParams.get('searchAfter'), 'sort-before-page');
+  assert.equal(requestedUrl?.searchParams.get('limit'), '12');
+  assert.equal(requestedUrl?.searchParams.has('page'), false);
+  assert.equal(result.items.length, 12);
+  assert.equal(result.nextCursor, 'sort-after-12');
 });
