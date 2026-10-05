@@ -1,0 +1,141 @@
+.religious-texts-panel {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.religious-texts-provider,
+.religious-texts-external {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--studio-border, #d8dce3);
+  border-radius: 0.65rem;
+  background: var(--studio-surface, #fff);
+}
+
+.religious-texts-heading h5,
+.religious-texts-external h5 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.religious-texts-heading p,
+.religious-texts-external p,
+.religious-texts-count,
+.religious-texts-empty {
+  margin: 0.35rem 0 0;
+  color: var(--studio-muted, #596273);
+}
+
+.religious-texts-form label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.religious-texts-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.religious-texts-controls input,
+.religious-texts-controls button,
+.religious-texts-more {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--studio-border, #d8dce3);
+  border-radius: 0.5rem;
+  background: var(--studio-surface, #fff);
+  color: inherit;
+  font: inherit;
+}
+
+.religious-texts-controls input {
+  flex: 1;
+  min-width: 0;
+}
+
+.religious-texts-controls button,
+.religious-texts-more {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.religious-texts-controls button:disabled,
+.religious-texts-more:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.religious-texts-results {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.religious-texts-result {
+  padding: 0.85rem;
+  border: 1px solid var(--studio-border, #d8dce3);
+  border-radius: 0.6rem;
+  background: var(--studio-surface-muted, #f8f9fb);
+}
+
+.religious-texts-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.religious-texts-result h6 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.religious-texts-result p {
+  margin: 0.45rem 0 0;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+
+.religious-texts-result a,
+.religious-texts-external a {
+  color: var(--studio-accent, #3949ab);
+}
+
+.religious-texts-result > a {
+  display: inline-block;
+  margin-top: 0.55rem;
+}
+
+.religious-texts-more {
+  align-self: flex-start;
+}
+
+.religious-texts-external ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.religious-texts-error {
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--studio-danger-soft, #fff0f0);
+  color: var(--studio-danger, #a21717);
+}
+
+@media (max-width: 42rem) {
+  .religious-texts-controls {
+    flex-direction: column;
+  }
+
+  .religious-texts-result-header {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
