@@ -86,8 +86,9 @@ studioModuleRouter.put('/modules/preferences', requireSession, async (request: A
       data: { activeModuleIds, revision: { increment: 1 } },
     });
     if (result.count !== 1) return stalePreference(response);
-    preference = await prisma.studioModulePreference.findUnique({ where: { id: existing.id } });
-    if (!preference) return stalePreference(response);
+    const updatedPreference = await prisma.studioModulePreference.findUnique({ where: { id: existing.id } });
+    if (!updatedPreference) return stalePreference(response);
+    preference = updatedPreference;
   }
 
   await writeStudioModuleAuditEvent({
@@ -96,7 +97,7 @@ studioModuleRouter.put('/modules/preferences', requireSession, async (request: A
     moduleId: 'org.omi.studio-module-framework',
     action: 'preferences.update',
     details: { activeModuleIds: activeModuleIds.join(',') },
-    ipAddress: request.ip,
+    ...(request.ip === undefined ? {} : { ipAddress: request.ip }),
   });
   response.setHeader('Cache-Control', 'no-store');
   response.status(200).json({
