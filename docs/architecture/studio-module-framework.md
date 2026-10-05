@@ -41,7 +41,7 @@ manifest and contribution system.
 
 Configure the server-side Europeana key as `EUROPEANA_API_KEY` and the
 read-only NARA key as `NARA_CATALOG_API_KEY`. Neither key may be exposed in
-frontend configuration. Searches are on demand; catalogues are not mirrored.
+frontend configuration. Searches are on demand; catalogues are not mirrored. The NARA search displays the attribution notice required by its API terms.
 
 ## Module manifest
 
