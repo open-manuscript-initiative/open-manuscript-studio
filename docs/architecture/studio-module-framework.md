@@ -10,8 +10,8 @@ model merely to store module-specific state.
 The framework provides provider-neutral manifests, a validated in-process
 registry, contribution slots, capability declarations, and two-level activation.
 The Studio menu opens a module manager and hosts the built-in discipline
-modules. The History and Archives module now includes a server-side Europeana
-Search API connection. The other modules remain catalog and navigation shells.
+modules. The History and Archives module now includes server-side Europeana Search API
+and U.S. National Archives Catalog connections. The other modules remain catalog and navigation shells.
 Modules do not load remote code.
 
 ## Built-in module catalog
@@ -20,7 +20,7 @@ The initial catalog includes these modules:
 
 | Module | Disciplines | Planned scope |
 | --- | --- | --- |
-| History and archives | History, archival studies | Search Europeana's shared cultural heritage catalogue and future archive providers, preserving links to Europeana and source institutions. |
+| History and archives | History, archival studies | Search Europeana's shared cultural heritage catalogue and NARA's federal archival descriptions, preserving links to the source records. |
 | Religious texts | Theology, religious studies | Locate religious passages, compare editions and translations, and relate manuscript witnesses and interpretation. |
 | Critical text edition | Philology, classical philology, literary studies | Manage transcriptions, textual variants, manuscript witnesses, critical apparatus, and digital editions. |
 | Corpus linguistics | Linguistics | Search corpora, produce concordances, align texts, and annotate linguistic features. |
@@ -36,8 +36,7 @@ record links to Europeana and, where available, the source institution. This
 does not cover every archive or replace a provider's own catalogue. Other
 entries remain shells without search or workflow functions. Additional
 disciplines can add modules through the same manifest and contribution system.
-The Europeana key is configured as server-side `EUROPEANA_API_KEY`; it must
-not be exposed in frontend configuration.
+The Europeana key is configured as server-side `EUROPEANA_API_KEY`, and the read-only NARA key as `NARA_CATALOG_API_KEY`; neither may be exposed in frontend configuration. Searches are on demand; catalogues are not mirrored.
 
 ## Module manifest
 
