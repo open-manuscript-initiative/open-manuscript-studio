@@ -20,7 +20,7 @@ export interface NaraCatalogSearchPage {
 interface NaraCatalogSearchOptions {
   query: string;
   apiKey: string;
-  page?: number;
+  cursor?: string;
   fetchImpl?: typeof fetch;
 }
 
@@ -30,12 +30,12 @@ const PAGE_SIZE = 12;
 export async function searchNaraCatalog({
   query,
   apiKey,
-  page = 1,
+  cursor,
   fetchImpl = fetch,
 }: NaraCatalogSearchOptions): Promise<NaraCatalogSearchPage> {
   const url = new URL(SEARCH_ENDPOINT);
   url.searchParams.set('q', query);
-  url.searchParams.set('page', String(page));
+  if (cursor) url.searchParams.set('searchAfter', cursor);
   url.searchParams.set('limit', String(PAGE_SIZE));
 
   const response = await fetchImpl(url, {
@@ -64,7 +64,11 @@ export async function searchNaraCatalog({
     return mapped ? [mapped] : [];
   });
   const total = parseTotal(hitsBlock?.total, items.length);
-  const nextCursor = page * PAGE_SIZE < total ? String(page + 1) : null;
+  const lastHit = asRecord(rawHits.at(-1));
+  const sortValues = Array.isArray(lastHit?.sort) ? lastHit.sort : [];
+  const nextCursor = rawHits.length === PAGE_SIZE
+    ? firstText(sortValues[0])
+    : null;
 
   return { totalResults: total, items, nextCursor };
 }
