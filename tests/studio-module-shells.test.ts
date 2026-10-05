@@ -75,6 +75,7 @@ test('provides a translated title and description for every registered module sh
     assert.ok(copy.nara.searchLabel, `Missing ${locale} NARA search label`);
     assert.ok(copy.nara.setupRequired, `Missing ${locale} NARA setup message`);
     assert.ok(copy.nara.loadMore, `Missing ${locale} NARA pagination label`);
+    assert.ok(copy.nara.attribution?.includes('not endorsed or certified'), `Missing ${locale} NARA attribution`);
   }
 });
 
