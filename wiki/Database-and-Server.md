@@ -33,6 +33,7 @@ IDENTITY_DATABASE_URL=postgresql://omi_identity_app:change-me@127.0.0.1:5432/omi
 INTEGRATION_MASTER_KEY=<64 hexadecimal characters>
 DEPLOYMENT_MODE=personal
 EUROPEANA_API_KEY=<server-side Europeana project key>
+NARA_CATALOG_API_KEY=<server-side NARA read-only key>
 ```
 
 Generate the integration encryption key once and store it outside Git:
@@ -87,6 +88,7 @@ GET /api/health
 ## References
 
 - Europeana search uses the Search API through the authenticated Studio API. Configure a server-side project key in `EUROPEANA_API_KEY`; request one at [Europeana API key management](https://www.europeana.eu/en/how-to-register-for-and-manage-an-api-key). Studio sends it in Europeana's `X-Api-Key` header; never put the key in frontend configuration.
+- NARA Catalog search uses the authenticated Studio API. Configure a read-only key in `NARA_CATALOG_API_KEY`; request one from [NARA Catalog API support](mailto:Catalog_API@nara.gov). Studio sends it in the `x-api-key` header. Searches are live and the connector does not mirror catalogue records.
 - [`server/.env.example`](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/server/.env.example)
 - [Database schema notes](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/docs/server/database-schema.md)
 - [Security model](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/docs/server/security-model.md)

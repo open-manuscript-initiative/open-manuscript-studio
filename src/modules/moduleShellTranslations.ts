@@ -9,6 +9,7 @@ export interface EuropeanaSearchCopy {
   provider: string;
   dataProvider: string;
   sourceRecord: string;
+  attribution?: string;
   rights: string;
   loadMore: string;
   loadingMore: string;
@@ -20,6 +21,7 @@ export interface EuropeanaSearchCopy {
 
 export interface ModuleShellCopy {
   europeana: EuropeanaSearchCopy;
+  nara: EuropeanaSearchCopy;
   navigation: string;
   title: string;
   description: string;
@@ -119,6 +121,26 @@ const translations: Record<string, ModuleShellCopy> = {
       setupRequired: 'The Studio administrator must configure a Europeana API key on the server.',
       queryRequired: 'Enter at least two characters to search.',
     },
+    nara: {
+      searchLabel: 'Search the U.S. National Archives',
+      searchPlaceholder: 'Name, place, date, or keyword',
+      searchButton: 'Search',
+      searching: 'Searching…',
+      resultCount: '{count} results',
+      noResults: 'No records matched this search.',
+      openRecord: 'Open record in the National Archives Catalog',
+      provider: 'U.S. National Archives Catalog',
+      dataProvider: 'Record group',
+      sourceRecord: 'Search archival descriptions in the U.S. National Archives Catalog. Results link to the original NARA record.',
+      attribution: 'This product uses the National Archives Catalog API but is not endorsed or certified by the National Archives and Records Administration.',
+      rights: 'Use restriction',
+      loadMore: 'Load more results',
+      loadingMore: 'Loading…',
+      errorTitle: 'Search unavailable.',
+      searchFailed: 'The National Archives Catalog could not complete the search. Try again later.',
+      setupRequired: 'The Studio administrator must configure a read-only NARA Catalog API key on the server.',
+      queryRequired: 'Enter at least two characters to search.',
+    },
   },
   de: {
     navigation: 'Forschungsmodule',
@@ -198,6 +220,26 @@ const translations: Record<string, ModuleShellCopy> = {
       setupRequired: 'Die Studio-Administration muss einen Europeana-API-Schlüssel auf dem Server konfigurieren.',
       queryRequired: 'Geben Sie mindestens zwei Zeichen für die Suche ein.',
     },
+    nara: {
+      searchLabel: 'Suche im Katalog des US-Nationalarchivs',
+      searchPlaceholder: 'Name, Ort, Datum oder Stichwort',
+      searchButton: 'Suchen',
+      searching: 'Suche läuft…',
+      resultCount: '{count} Ergebnisse',
+      noResults: 'Für diese Suche wurden keine Einträge gefunden.',
+      openRecord: 'Eintrag im Katalog des Nationalarchivs öffnen',
+      provider: 'Katalog des US-Nationalarchivs',
+      dataProvider: 'Bestandsgruppe',
+      sourceRecord: 'Durchsuchen Sie die archivischen Beschreibungen im Katalog des US-Nationalarchivs. Die Treffer verweisen auf den ursprünglichen NARA-Eintrag.',
+      attribution: 'This product uses the National Archives Catalog API but is not endorsed or certified by the National Archives and Records Administration.',
+      rights: 'Nutzungsbeschränkung',
+      loadMore: 'Weitere Ergebnisse laden',
+      loadingMore: 'Wird geladen…',
+      errorTitle: 'Suche nicht verfügbar.',
+      searchFailed: 'Der Katalog des Nationalarchivs konnte die Suche nicht ausführen. Bitte versuchen Sie es später erneut.',
+      setupRequired: 'Die Studio-Administration muss einen schreibgeschützten NARA-API-Schlüssel auf dem Server konfigurieren.',
+      queryRequired: 'Geben Sie mindestens zwei Zeichen für die Suche ein.',
+    },
   },
   hu: {
     navigation: 'Kutatási modulok',
@@ -275,6 +317,26 @@ const translations: Record<string, ModuleShellCopy> = {
       errorTitle: 'A keresés nem érhető el.',
       searchFailed: 'Az Europeana most nem tudta végrehajtani a keresést. Próbálja meg később.',
       setupRequired: 'A Stúdió rendszergazdájának Europeana API-kulcsot kell beállítania a szerveren.',
+      queryRequired: 'A kereséshez legalább két karaktert adjon meg.',
+    },
+    nara: {
+      searchLabel: 'Keresés az USA Nemzeti Levéltárának katalógusában',
+      searchPlaceholder: 'Név, hely, dátum vagy kulcsszó',
+      searchButton: 'Keresés',
+      searching: 'Keresés…',
+      resultCount: '{count} találat',
+      noResults: 'Nincs találat erre a keresésre.',
+      openRecord: 'Rekord megnyitása a NARA katalógusában',
+      provider: 'USA Nemzeti Levéltárának katalógusa',
+      dataProvider: 'Fond vagy állag',
+      sourceRecord: 'Keresés az USA Nemzeti Levéltárának levéltári leírásai között. A találatok az eredeti NARA-rekordra mutatnak.',
+      attribution: 'This product uses the National Archives Catalog API but is not endorsed or certified by the National Archives and Records Administration.',
+      rights: 'Felhasználási korlátozás',
+      loadMore: 'További találatok',
+      loadingMore: 'Betöltés…',
+      errorTitle: 'A keresés nem érhető el.',
+      searchFailed: 'A National Archives katalógusa most nem tudta végrehajtani a keresést. Próbálja meg később.',
+      setupRequired: 'A Stúdió rendszergazdájának egy csak olvasásra jogosító NARA API-kulcsot kell beállítania a szerveren.',
       queryRequired: 'A kereséshez legalább két karaktert adjon meg.',
     },
   },
