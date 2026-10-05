@@ -3,8 +3,8 @@ import type { NextFunction, Response } from 'express';
 import { z } from 'zod';
 
 import { env } from '../config/env.js';
-import { identityPrisma } from '../lib/identityPrisma.js';
-import { writeAdminAuditEvent } from '../services/centralAdminService.js';
+import { prisma } from '../lib/prisma.js';
+import { writeStudioModuleAuditEvent } from '../services/studioModuleAuditService.js';
 import type { AuthenticatedRequest } from './requireSession.js';
 
 export type StudioModuleId =
@@ -59,7 +59,7 @@ export function requireModuleCapability(
     }
 
     const workspaceId = workspaceResult.data;
-    const preference = await identityPrisma.studioModulePreference.findUnique({
+    const preference = await prisma.studioModulePreference.findUnique({
       where: { userId_workspaceId: { userId, workspaceId } },
     });
     if (!preference?.activeModuleIds.includes(moduleId)) {
@@ -74,12 +74,13 @@ export function requireModuleCapability(
       moduleId,
       capability,
     };
-    await writeAdminAuditEvent({
+    await writeStudioModuleAuditEvent({
       actorUserId: userId,
-      action: 'studio.module.execution.grant',
-      targetType: 'module',
-      targetId: moduleId,
-      details: { grantId: grant.id, capability, workspaceId },
+      workspaceId,
+      moduleId,
+      action: 'execution.grant',
+      capability,
+      executionGrantId: grant.id,
       ipAddress: request.ip,
     });
     request.moduleExecutionGrant = grant;
