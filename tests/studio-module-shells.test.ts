@@ -391,7 +391,7 @@ test('Sefaria adapter sends a bounded live text search and preserves citation me
   });
 });
 
-test('Sefaria adapter rejects unsafe pagination cursors and skips malformed hits', async () => {
+test('Sefaria adapter rejects unsafe pagination cursors and keeps result links on the provider domain', async () => {
   let calls = 0;
   const fetchImpl: typeof fetch = async () => {
     calls += 1;
@@ -413,6 +413,6 @@ test('Sefaria adapter rejects unsafe pagination cursors and skips malformed hits
   assert.equal(calls, 0);
 
   const result = await searchSefaria({ query: 'shepherd', fetchImpl });
-  assert.equal(result.items.length, 2);
+  assert.equal(result.items.length, 1);
   assert.ok(result.items.every(({ sourceUrl }) => sourceUrl.startsWith('https://www.sefaria.org/')));
 });
