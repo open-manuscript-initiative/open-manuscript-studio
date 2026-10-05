@@ -68,7 +68,7 @@ studioModuleRouter.put('/modules/preferences', requireSession, async (request: A
   const existing = await identityPrisma.studioModulePreference.findUnique({
     where: { userId_workspaceId: { userId, workspaceId: input.workspaceId } },
   });
-  let preference;
+  let preference: { revision: number; activeModuleIds: string[] } | null = null;
   if (!existing) {
     if (input.revision !== 0) return stalePreference(response);
     try {
