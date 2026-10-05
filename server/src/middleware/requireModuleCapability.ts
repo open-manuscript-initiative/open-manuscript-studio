@@ -81,7 +81,7 @@ export function requireModuleCapability(
       action: 'execution.grant',
       capability,
       executionGrantId: grant.id,
-      ipAddress: request.ip,
+      ...(request.ip === undefined ? {} : { ipAddress: request.ip }),
     });
     request.moduleExecutionGrant = grant;
     next();
