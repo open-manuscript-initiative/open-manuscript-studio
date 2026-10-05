@@ -88,7 +88,7 @@ function mapRecord(value: unknown): SefariaSearchRecord | null {
 
   const source = value._source;
   const reference = firstText(source.ref) ?? firstText(source.heRef);
-  if (!reference || reference.length > 300) return null;
+  if (!reference || reference.length > 300 || /^[a-z][a-z0-9+.-]*:/i.test(reference) || reference.startsWith('/')) return null;
 
   const edition = firstText(source.version);
   const language = firstText(source.lang);
