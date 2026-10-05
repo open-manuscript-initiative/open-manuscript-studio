@@ -10,7 +10,7 @@ import { searchSefaria } from '../integrations/sefaria/sefariaSearch.js';
 export const religiousTextsRouter = Router();
 
 const querySchema = z.string().trim().min(2).max(240);
-const cursorSchema = z.string().trim().regex(/^\\d{1,5}$/).optional();
+const cursorSchema = z.string().trim().regex(/^\\d{1,4}$/).transform(Number).refine((value) => value <= 1200).optional();
 
 religiousTextsRouter.get(
   '/modules/religious-texts/sefaria/search',
@@ -31,7 +31,7 @@ religiousTextsRouter.get(
     try {
       const result = await searchSefaria({
         query: query.data,
-        ...(cursor.data ? { cursor: cursor.data } : {}),
+        ...(cursor.data !== undefined ? { cursor: String(cursor.data) } : {}),
       });
       response.setHeader('Cache-Control', 'private, max-age=30');
       response.status(200).json(result);
