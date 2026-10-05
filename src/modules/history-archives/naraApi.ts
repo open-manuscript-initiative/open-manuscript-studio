@@ -31,10 +31,10 @@ const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 
 export async function searchNaraCatalogRecords(
   query: string,
-  page?: string,
+  cursor?: string,
 ): Promise<NaraCatalogSearchPage> {
   const params = new URLSearchParams({ q: query });
-  if (page) params.set('page', page);
+  if (cursor) params.set('cursor', cursor);
 
   const headers = new Headers({ Accept: 'application/json' });
   if (isTauri()) {
