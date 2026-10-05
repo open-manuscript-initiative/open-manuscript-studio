@@ -123,8 +123,10 @@ export function ModuleManagerPanel({
               </header>
               <p>{details?.description ?? copy.scaffoldDescription}</p>
               {module.id === historyArchivesModule.id ? (
-                <EuropeanaSearchPanel copy={copy.europeana} locale={locale} />
-                <NaraSearchPanel copy={copy.nara} locale={locale} />
+                <>
+                  <EuropeanaSearchPanel copy={copy.europeana} locale={locale} />
+                  <NaraSearchPanel copy={copy.nara} locale={locale} />
+                </>
               ) : (
                 <div className="studio-module-empty-slot">{copy.noFeatures}</div>
               )}
