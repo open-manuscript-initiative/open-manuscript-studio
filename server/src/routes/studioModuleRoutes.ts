@@ -65,14 +65,14 @@ studioModuleRouter.put('/modules/preferences', requireSession, async (request: A
     return;
   }
   const activeModuleIds = [...new Set(input.activeModuleIds)];
-  const existing = await identityPrisma.studioModulePreference.findUnique({
+  const existing = await prisma.studioModulePreference.findUnique({
     where: { userId_workspaceId: { userId, workspaceId: input.workspaceId } },
   });
-  let preference: { revision: number; activeModuleIds: string[] } | null = null;
+  let preference: { revision: number; activeModuleIds: string[] };
   if (!existing) {
     if (input.revision !== 0) return stalePreference(response);
     try {
-      preference = await identityPrisma.studioModulePreference.create({
+      preference = await prisma.studioModulePreference.create({
         data: { userId, workspaceId: input.workspaceId, activeModuleIds },
       });
     } catch (error) {
@@ -81,12 +81,12 @@ studioModuleRouter.put('/modules/preferences', requireSession, async (request: A
     }
   } else {
     if (existing.revision !== input.revision) return stalePreference(response);
-    const result = await identityPrisma.studioModulePreference.updateMany({
+    const result = await prisma.studioModulePreference.updateMany({
       where: { id: existing.id, revision: input.revision },
       data: { activeModuleIds, revision: { increment: 1 } },
     });
     if (result.count !== 1) return stalePreference(response);
-    preference = await identityPrisma.studioModulePreference.findUnique({ where: { id: existing.id } });
+    preference = await prisma.studioModulePreference.findUnique({ where: { id: existing.id } });
     if (!preference) return stalePreference(response);
   }
 
