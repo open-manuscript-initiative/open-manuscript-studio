@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react';
 
 import {
-  searchSefariaTexts,
   SefariaSearchError,
+  searchSefariaTexts,
   type SefariaSearchRecord,
 } from './sefariaApi';
 import './religiousTexts.css';
