@@ -7,6 +7,7 @@ import { historyArchivesModule, studioModules, defaultModuleInstallationPolicy }
 import { getModuleShellCopy } from './moduleShellTranslations';
 import { EuropeanaSearchPanel } from './history-archives/EuropeanaSearchPanel';
 import { NaraSearchPanel } from './history-archives/NaraSearchPanel';
+import { EleveltarSearchPanel } from './history-archives/EleveltarSearchPanel';
 import {
   readStudioModulePreferences,
   writeStudioModulePreferences,
@@ -126,6 +127,7 @@ export function ModuleManagerPanel({
                 <>
                   <EuropeanaSearchPanel copy={copy.europeana} locale={locale} />
                   <NaraSearchPanel copy={copy.nara} locale={locale} />
+                  <EleveltarSearchPanel locale={locale} />
                 </>
               ) : (
                 <div className="studio-module-empty-slot">{copy.noFeatures}</div>
