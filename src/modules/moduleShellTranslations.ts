@@ -53,8 +53,8 @@ const translations: Record<string, ModuleShellCopy> = {
     noModules: 'No research modules are registered yet.',
     scaffoldTitle: 'Module shell',
     scaffoldDescription: 'This module is registered and connected to the Studio workspace.',
-    noFeatures: 'Module tools and research features will be added here later.',
-    localPreferenceNote: 'Workspace selections are stored in this browser for now. Module features are not implemented yet.',
+    noFeatures: 'Research tools for this discipline appear here.',
+    localPreferenceNote: 'Workspace selections are stored in this browser for now.',
     modules: {
       'org.omi.history-archives': {
         title: 'History & Archives',
@@ -63,7 +63,7 @@ const translations: Record<string, ModuleShellCopy> = {
       },
       'org.omi.religious-texts': {
         title: 'Religious texts and sources',
-        description: 'Identify biblical and other religious passages, compare editions and translations, and connect manuscripts with interpretations.',
+        description: 'Search Jewish texts and commentaries in Sefaria, follow source links, and open external Bible, Qur’an, and Buddhist text libraries.',
         overview: 'Religious text sources',
       },
       'org.omi.critical-text-edition': {
@@ -152,8 +152,8 @@ const translations: Record<string, ModuleShellCopy> = {
     noModules: 'Es sind noch keine Forschungsmodule registriert.',
     scaffoldTitle: 'Modulgerüst',
     scaffoldDescription: 'Dieses Modul ist registriert und mit dem Studio-Arbeitsbereich verbunden.',
-    noFeatures: 'Modulwerkzeuge und Forschungsfunktionen werden später hier ergänzt.',
-    localPreferenceNote: 'Die Auswahl wird vorerst in diesem Browser gespeichert. Die Modulfunktionen sind noch nicht implementiert.',
+    noFeatures: 'Die Forschungswerkzeuge dieses Fachgebiets erscheinen hier.',
+    localPreferenceNote: 'Die Auswahl wird vorerst in diesem Browser gespeichert.',
     modules: {
       'org.omi.history-archives': {
         title: 'Geschichte und Archive',
@@ -162,7 +162,7 @@ const translations: Record<string, ModuleShellCopy> = {
       },
       'org.omi.religious-texts': {
         title: 'Religiöse Texte und Quellen',
-        description: 'Biblische und andere religiöse Textstellen identifizieren, Ausgaben und Übersetzungen vergleichen sowie Handschriften mit Deutungen verknüpfen.',
+        description: 'Jüdische Texte und Kommentare in Sefaria durchsuchen, Quellen verknüpfen und externe Bibel-, Koran- und buddhistische Textsammlungen öffnen.',
         overview: 'Religiöse Textquellen',
       },
       'org.omi.critical-text-edition': {
@@ -251,8 +251,8 @@ const translations: Record<string, ModuleShellCopy> = {
     noModules: 'Még nincs regisztrált kutatási modul.',
     scaffoldTitle: 'Modulváz',
     scaffoldDescription: 'A modul regisztrálva van, és csatlakozik a Studio munkateréhez.',
-    noFeatures: 'A modul eszközei és kutatási funkciói később kerülnek ide.',
-    localPreferenceNote: 'A munkatér beállításait egyelőre ez a böngésző tárolja. A modul funkciói még nem készültek el.',
+    noFeatures: 'A tudományterület kutatási eszközei itt jelennek meg.',
+    localPreferenceNote: 'A munkatér beállításait egyelőre ez a böngésző tárolja.',
     modules: {
       'org.omi.history-archives': {
         title: 'Történelem és levéltárak',
@@ -261,7 +261,7 @@ const translations: Record<string, ModuleShellCopy> = {
       },
       'org.omi.religious-texts': {
         title: 'Vallási szöveg- és forrásmodul',
-        description: 'Bibliai és más vallási szöveghelyek azonosítása, kiadások és fordítások összevetése, valamint kéziratok és értelmezések összekapcsolása.',
+        description: 'Zsidó szövegek és kommentárok keresése a Sefaria könyvtárában, forráshelyek megnyitása, valamint külső bibliai, koráni és buddhista szöveggyűjtemények elérése.',
         overview: 'Vallási szövegforrások',
       },
       'org.omi.critical-text-edition': {

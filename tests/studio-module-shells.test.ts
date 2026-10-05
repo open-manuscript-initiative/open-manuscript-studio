@@ -17,6 +17,7 @@ import { getModuleShellCopy } from '../src/modules/moduleShellTranslations.ts';
 import { resolveStudioModuleActivationState } from '../src/modules/types.ts';
 import { searchEuropeana } from '../server/src/integrations/europeana/europeanaSearch.ts';
 import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSearch.ts';
+import { searchSefaria } from '../server/src/integrations/sefaria/sefariaSearch.ts';
 
 const expectedModuleIds = [
   'org.omi.history-archives',
@@ -43,7 +44,7 @@ function createStorage(): ModulePreferenceStorage & { values: Map<string, string
   };
 }
 
-test('registers all planned discipline shells with empty navigation contributions', () => {
+test('registers all built-in discipline modules with navigation contributions', () => {
   assert.deepEqual(
     studioModules.list().map(({ id }) => id),
     [...expectedModuleIds].sort(),
@@ -61,7 +62,7 @@ test('registers all planned discipline shells with empty navigation contribution
   ));
 });
 
-test('provides a translated title and description for every registered module shell', () => {
+test('provides a translated title and description for every registered module', () => {
   for (const locale of ['en', 'de', 'hu']) {
     const copy = getModuleShellCopy(locale);
     for (const moduleId of expectedModuleIds) {
@@ -340,4 +341,78 @@ test('NARA adapter follows the searchAfter cursor returned by the catalog API', 
   assert.equal(requestedUrl?.searchParams.has('page'), false);
   assert.equal(result.items.length, 12);
   assert.equal(result.nextCursor, 'sort-after-12');
+});
+
+
+test('Sefaria adapter sends a bounded live text search and preserves citation metadata', async () => {
+  let requestedUrl: URL | undefined;
+  let requestedBody: Record<string, unknown> | undefined;
+  const fetchImpl: typeof fetch = async (input, init) => {
+    requestedUrl = new URL(input instanceof Request ? input.url : String(input));
+    requestedBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    return Response.json({
+      hits: {
+        total: { value: 1, relation: 'eq' },
+        hits: [{
+          _id: 'Genesis 1:1',
+          _source: {
+            ref: 'Genesis 1:1',
+            heRef: 'בראשית א׳:א׳',
+            title: 'Genesis Chapter 1 Verse 1',
+            exact: 'In the beginning God created the heavens and the earth.',
+            lang: 'en',
+            version: 'Jewish English Torah',
+            categories: ['Tanakh', 'Torah'],
+          },
+        }],
+      },
+    });
+  };
+
+  const result = await searchSefaria({ query: 'beginning', cursor: '12', fetchImpl });
+
+  assert.equal(requestedUrl?.origin, 'https://www.sefaria.org');
+  assert.equal(requestedUrl?.pathname, '/api/search/text/_search');
+  assert.equal(requestedBody?.from, 12);
+  assert.equal(requestedBody?.size, 12);
+  assert.deepEqual(result, {
+    totalResults: 1,
+    nextCursor: null,
+    items: [{
+      id: 'Genesis 1:1:Jewish English Torah:en',
+      reference: 'Genesis 1:1',
+      title: 'Genesis Chapter 1 Verse 1',
+      excerpt: 'In the beginning God created the heavens and the earth.',
+      language: 'en',
+      edition: 'Jewish English Torah',
+      categories: ['Tanakh', 'Torah'],
+      sourceUrl: 'https://www.sefaria.org/Genesis%201%3A1',
+    }],
+  });
+});
+
+test('Sefaria adapter rejects unsafe pagination cursors and keeps result links on the provider domain', async () => {
+  let calls = 0;
+  const fetchImpl: typeof fetch = async () => {
+    calls += 1;
+    return Response.json({
+      hits: {
+        total: 3,
+        hits: [
+          { _source: { ref: 'Psalms 23:1', exact: 'The Lord is my shepherd.' } },
+          { _source: { ref: 'javascript:alert(1)', exact: 'unsafe ref' } },
+        ],
+      },
+    });
+  };
+
+  await assert.rejects(
+    searchSefaria({ query: 'shepherd', cursor: '-1', fetchImpl }),
+    /cursor is invalid/,
+  );
+  assert.equal(calls, 0);
+
+  const result = await searchSefaria({ query: 'shepherd', fetchImpl });
+  assert.equal(result.items.length, 1);
+  assert.ok(result.items.every(({ sourceUrl }) => sourceUrl.startsWith('https://www.sefaria.org/')));
 });
