@@ -13,7 +13,6 @@ export const historyArchivesRouter = Router();
 
 const querySchema = z.string().trim().min(2).max(300);
 const cursorSchema = z.string().trim().min(1).max(4096).optional();
-const pageSchema = z.coerce.number().int().min(1).max(100_000).optional();
 
 historyArchivesRouter.get(
   '/modules/history-archives/europeana/search',
@@ -77,12 +76,12 @@ historyArchivesRouter.get(
     }
 
     const query = querySchema.safeParse(request.query.q);
-    const page = pageSchema.safeParse(request.query.page);
-    if (!query.success || !page.success) {
+    const cursor = cursorSchema.safeParse(request.query.cursor);
+    if (!query.success || !cursor.success) {
       response.status(400).json({
         error: {
           code: 'INVALID_NARA_SEARCH',
-          message: 'Enter a search term of 2 to 300 characters and a valid page number.',
+          message: 'Enter a search term of 2 to 300 characters and a valid result cursor.',
         },
       });
       return;
@@ -92,7 +91,7 @@ historyArchivesRouter.get(
       const result = await searchNaraCatalog({
         query: query.data,
         apiKey,
-        ...(page.data ? { page: page.data } : {}),
+        ...(cursor.data ? { cursor: cursor.data } : {}),
       });
       response.setHeader('Cache-Control', 'private, max-age=30');
       response.status(200).json(result);
