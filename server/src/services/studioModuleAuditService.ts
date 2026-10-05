@@ -18,7 +18,7 @@ export async function writeStudioModuleAuditEvent(input: {
       action: input.action,
       capability: input.capability ?? null,
       executionGrantId: input.executionGrantId ?? null,
-      details: input.details,
+      ...(input.details === undefined ? {} : { details: input.details }),
       ipAddress: input.ipAddress?.slice(0, 64) ?? null,
     },
   });
