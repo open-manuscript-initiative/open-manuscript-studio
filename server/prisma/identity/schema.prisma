@@ -99,6 +99,7 @@ model User {
   publicationVenueMembershipGrants PublicationVenueMembership[] @relation("PublicationVenueMembershipGrantor")
   profileEmails          UserProfileEmail[]
   publishingCredentials  PersonalPublishingCredential[]
+  studioModulePreferences StudioModulePreference[]
 
   @@map("users")
 }
@@ -375,4 +376,20 @@ model OAuthLoginState {
 
   @@index([expiresAt])
   @@map("oauth_login_states")
+}
+
+
+model StudioModulePreference {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  workspaceId    String   @map("workspace_id") @db.VarChar(128)
+  activeModuleIds String[] @default([]) @map("active_module_ids")
+  revision       Int      @default(1)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+  @@map("studio_module_preferences")
 }

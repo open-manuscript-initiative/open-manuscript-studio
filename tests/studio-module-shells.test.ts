@@ -57,9 +57,11 @@ test('registers all built-in discipline modules with navigation contributions', 
   assert.ok(builtinModuleManifests.every(
     (module) => module.contributions.some(({ slot }) => slot === 'research-navigation'),
   ));
-  assert.ok(builtinModuleManifests.every(
-    (module) => module.requiredCapabilities.length === 0,
-  ));
+  assert.deepEqual(historyArchivesModule.requiredCapabilities, ['archives.search']);
+  assert.deepEqual(
+    builtinModuleManifests.find((module) => module.id === 'org.omi.religious-texts')?.requiredCapabilities,
+    ['religious-texts.search'],
+  );
 });
 
 test('provides a translated title and description for every registered module', () => {

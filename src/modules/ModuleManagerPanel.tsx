@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 
 import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
-import { historyArchivesModule, religiousTextsModule, studioModules, defaultModuleInstallationPolicy } from './catalog';
+import { getServerModulePolicy, saveServerModulePreferences } from './api';
+import { historyArchivesModule, religiousTextsModule, studioModules } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
 import { EuropeanaSearchPanel } from './history-archives/EuropeanaSearchPanel';
 import { NaraSearchPanel } from './history-archives/NaraSearchPanel';
@@ -35,12 +36,42 @@ export function ModuleManagerPanel({
   const [preferences, setPreferences] = useState<StudioWorkspaceModulePreferences>(
     () => readStudioModulePreferences(userId, workspaceId),
   );
+  const [installationPolicy, setInstallationPolicy] = useState({ revision: 0, enabledModuleIds: [] as StudioModuleId[] });
+  const [policyError, setPolicyError] = useState(false);
+  const [policyLoaded, setPolicyLoaded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    setPreferences(readStudioModulePreferences(userId, workspaceId));
+    let cancelled = false;
+    setPolicyLoaded(false);
+    setPolicyError(false);
+    const legacy = readStudioModulePreferences(userId, workspaceId);
+    void getServerModulePolicy(workspaceId).then(async (serverPolicy) => {
+      if (cancelled) return;
+      let activeModuleIds = serverPolicy.activeModuleIds;
+      if (serverPolicy.revision === 0 && legacy.activeModuleIds.length > 0) {
+        const migrated = await saveServerModulePreferences({
+          workspaceId,
+          revision: 0,
+          activeModuleIds: legacy.activeModuleIds.filter((id) => serverPolicy.enabledModuleIds.includes(id)),
+        });
+        activeModuleIds = migrated.activeModuleIds;
+        serverPolicy.revision = migrated.revision;
+      }
+      if (cancelled) return;
+      setInstallationPolicy({ revision: serverPolicy.revision, enabledModuleIds: serverPolicy.enabledModuleIds });
+      setPolicyLoaded(true);
+      const next = { workspaceId, activeModuleIds };
+      setPreferences(next);
+      writeStudioModulePreferences(userId, next);
+      setPolicyError(false);
+    }).catch(() => {
+      if (!cancelled) setPolicyError(true);
+    });
+    return () => { cancelled = true; };
   }, [userId, workspaceId]);
 
-  function setModuleActive(moduleId: StudioModuleId, active: boolean): void {
+  async function setModuleActive(moduleId: StudioModuleId, active: boolean): Promise<void> {
     const next: StudioWorkspaceModulePreferences = {
       ...preferences,
       workspaceId,
@@ -48,14 +79,32 @@ export function ModuleManagerPanel({
         ? [...new Set([...preferences.activeModuleIds, moduleId])]
         : preferences.activeModuleIds.filter((id) => id !== moduleId),
     };
+    const previous = preferences;
     setPreferences(next);
-    writeStudioModulePreferences(userId, next);
+    setIsSaving(true);
+    setPolicyError(false);
+    try {
+      const saved = await saveServerModulePreferences({
+        workspaceId,
+        revision: installationPolicy.revision,
+        activeModuleIds: [...next.activeModuleIds],
+      });
+      const confirmed = { workspaceId, activeModuleIds: saved.activeModuleIds };
+      setPreferences(confirmed);
+      setInstallationPolicy({ revision: saved.revision, enabledModuleIds: saved.enabledModuleIds });
+      writeStudioModulePreferences(userId, confirmed);
+    } catch {
+      setPreferences(previous);
+      setPolicyError(true);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   const activeModules = modules.filter((manifest) =>
     resolveStudioModuleActivationState(
       manifest.id,
-      defaultModuleInstallationPolicy,
+      installationPolicy,
       preferences,
     ) === 'active',
   );
@@ -75,10 +124,11 @@ export function ModuleManagerPanel({
         ) : modules.map((module) => {
           const state = resolveStudioModuleActivationState(
             module.id,
-            defaultModuleInstallationPolicy,
+            installationPolicy,
             preferences,
           );
           const active = state === 'active';
+          const disabledByInstallation = state === 'disabled-by-installation';
           const details = copy.modules[module.id];
           return (
             <article className="studio-module-card" key={module.id}>
@@ -92,12 +142,13 @@ export function ModuleManagerPanel({
                   <input
                     type="checkbox"
                     checked={active}
-                    onChange={(event) => setModuleActive(module.id, event.target.checked)}
+                    disabled={!policyLoaded || isSaving || policyError || disabledByInstallation}
+                    onChange={(event) => { void setModuleActive(module.id, event.target.checked); }}
                   />
                   <span className="studio-module-toggle-indicator" aria-hidden="true">
                     {active ? <Check size={14} /> : null}
                   </span>
-                  <span>{active ? copy.active : copy.activate}</span>
+                  <span>{active ? copy.active : disabledByInstallation ? copy.disabledByInstallation : copy.activate}</span>
                 </label>
               </div>
               <span className={`studio-module-state studio-module-state--${state}`}>
@@ -139,7 +190,7 @@ export function ModuleManagerPanel({
           ));
       })}
 
-      <p className="studio-module-storage-note">{copy.localPreferenceNote}</p>
+      <p className="studio-module-storage-note" role={policyError ? 'alert' : undefined}>{policyError ? copy.policyError : copy.localPreferenceNote}</p>
     </section>
   );
 }

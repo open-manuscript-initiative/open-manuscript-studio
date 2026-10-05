@@ -31,7 +31,7 @@ export async function searchSefariaTexts(
   query: string,
   cursor?: string,
 ): Promise<SefariaSearchPage> {
-  const params = new URLSearchParams({ q: query });
+  const params = new URLSearchParams({ q: query, workspaceId: 'default' });
   if (cursor) params.set('cursor', cursor);
 
   const headers = new Headers({ Accept: 'application/json' });
@@ -42,7 +42,7 @@ export async function searchSefariaTexts(
   }
 
   const response = await fetch(
-    `${apiBaseUrl()}/api/modules/religious-texts/sefaria/search?${params.toString()}`,
+    `${apiBaseUrl()}/api/v1/modules/religious-texts/sefaria/search?${params.toString()}`,
     { method: 'GET', credentials: 'include', headers },
   );
 

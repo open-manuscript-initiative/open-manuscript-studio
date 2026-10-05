@@ -48,8 +48,9 @@ are requested live and are not mirrored. Other modules remain shells without
 search or workflow functions. Additional disciplines can add modules through the same
 manifest and contribution system.
 
-Configure the server-side Europeana key as `EUROPEANA_API_KEY` and the
-read-only NARA key as `NARA_CATALOG_API_KEY`. Neither key may be exposed in
+Configure the server-side module allow-list with `STUDIO_ENABLED_MODULES`, the
+Europeana key as `EUROPEANA_API_KEY`, and the read-only NARA key as
+`NARA_CATALOG_API_KEY`. Neither key may be exposed in
 frontend configuration. Searches are on demand; catalogues are not mirrored. The NARA search displays the attribution notice required by its API terms.
 
 ## Module manifest
@@ -77,18 +78,21 @@ There are two separate decisions:
 2. A researcher activates an enabled module for a specific workspace.
 
 The shared resolver expresses those states for UI and policy evaluation. The
-current shell uses a built-in installation policy and stores the researcher's
-selection in browser storage, scoped to the authenticated user and a temporary
-default workspace. This is scaffolding; it is not synchronized across devices
-and does not provide administrator controls. A future workspace model should
-supply a real workspace ID.
+installation operator controls the allow-list through the server-side
+`STUDIO_ENABLED_MODULES` setting. User selections are stored in the identity
+database by authenticated user and workspace ID, with revision checks to avoid
+stale updates. The client imports existing browser selections once when no
+server preference exists. Current module scopes are user-owned; shared-workspace
+membership is not yet part of the module authorization model.
 
-Installation policy and workspace preferences are not an authorization
-mechanism. The server must own both settings and check module availability and
-the user's authorization on every protected API operation. A module's
-`requiredCapabilities` declaration describes requested access; it does not
-grant it. Settings updates should use the installation policy revision to
-detect stale writes.
+The server checks the installation allow-list, the authenticated user's
+workspace-scoped active-module preference, and the module's declared capability
+on every protected operation. A successful check creates a request-scoped
+execution grant and writes an audit event without storing the external search
+query. The external search routes use the versioned `/api/v1/modules/...`
+namespace. Capability declarations describe the operation being requested;
+they do not grant access by themselves. Preference writes use a monotonically
+increasing revision and return a conflict for stale updates.
 
 ## Loading and integration rules
 
@@ -109,7 +113,7 @@ Studio workspace open.
 
 ## Follow-up implementation
 
-Replace the temporary built-in installation policy and browser preference store
-with server-owned settings and real workspace-scoped preferences. Expand the
-History and Archives module with other provider adapters, and implement the
-remaining modules' discipline-specific research functions.
+Add installation-administrator UI for the server-owned module allow-list and
+integrate shared-workspace membership when the server workspace model is ready.
+Expand the History and Archives module with other provider adapters, and
+implement the remaining modules' discipline-specific research functions.
