@@ -170,6 +170,8 @@ model User {
   targetedCollaborationAuditEvents CollaborationAuditEvent[] @relation("CollaborationAuditTarget")
   collaborationConnectionTickets CollaborationConnectionTicket[]
   sentCollaborationMessages CollaborationMessage[] @relation("CollaborationMessageSender")
+  studioModulePreferences StudioModulePreference[]
+  studioModuleAuditEvents StudioModuleAuditEvent[] @relation("StudioModuleAuditActor")
 
   @@map("users")
 }
@@ -780,4 +782,39 @@ model DirectSubmission {
 
   @@unique([userId, connectionId, manuscriptId])
   @@map("direct_submissions")
+}
+
+
+model StudioModulePreference {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  workspaceId     String   @map("workspace_id") @db.VarChar(128)
+  activeModuleIds String[] @default([]) @map("active_module_ids")
+  revision        Int      @default(1)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+  @@map("studio_module_preferences")
+}
+
+model StudioModuleAuditEvent {
+  id                  String   @id @default(uuid()) @db.Uuid
+  actorUserId         String?  @map("actor_user_id") @db.Uuid
+  workspaceId         String   @map("workspace_id") @db.VarChar(128)
+  moduleId            String   @map("module_id") @db.VarChar(128)
+  action              String   @db.VarChar(80)
+  capability          String?  @db.VarChar(128)
+  executionGrantId    String?  @map("execution_grant_id") @db.Uuid
+  details             Json?    @db.JsonB
+  ipAddress           String?  @map("ip_address") @db.VarChar(64)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  actor               User?    @relation("StudioModuleAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([moduleId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@map("studio_module_audit_events")
 }

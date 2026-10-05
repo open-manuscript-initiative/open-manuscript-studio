@@ -11,7 +11,7 @@ export const moduleManifest: StudioModuleManifest = {
   titleKey: 'modules.religiousTexts.title',
   descriptionKey: 'modules.religiousTexts.description',
   disciplines: ['theology', 'religious-studies'],
-  requiredCapabilities: [],
+  requiredCapabilities: ['religious-texts.search'],
   contributions: [
     {
       id: 'overview',

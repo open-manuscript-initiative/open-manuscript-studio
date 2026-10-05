@@ -2,12 +2,13 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { env } from '../config/env.js';
+import { searchEuropeana } from '../integrations/europeana/europeanaSearch.js';
+import { searchNaraCatalog } from '../integrations/nara/naraCatalogSearch.js';
+import { requireModuleCapability } from '../middleware/requireModuleCapability.js';
 import {
   requireSession,
   type AuthenticatedRequest,
 } from '../middleware/requireSession.js';
-import { searchEuropeana } from '../integrations/europeana/europeanaSearch.js';
-import { searchNaraCatalog } from '../integrations/nara/naraCatalogSearch.js';
 
 export const historyArchivesRouter = Router();
 
@@ -17,6 +18,7 @@ const cursorSchema = z.string().trim().min(1).max(4096).optional();
 historyArchivesRouter.get(
   '/modules/history-archives/europeana/search',
   requireSession,
+  requireModuleCapability('org.omi.history-archives', 'archives.search'),
   async (request: AuthenticatedRequest, response) => {
     const apiKey = env.EUROPEANA_API_KEY;
     if (!apiKey) {
@@ -63,6 +65,7 @@ historyArchivesRouter.get(
 historyArchivesRouter.get(
   '/modules/history-archives/nara/search',
   requireSession,
+  requireModuleCapability('org.omi.history-archives', 'archives.search'),
   async (request: AuthenticatedRequest, response) => {
     const apiKey = env.NARA_CATALOG_API_KEY;
     if (!apiKey) {

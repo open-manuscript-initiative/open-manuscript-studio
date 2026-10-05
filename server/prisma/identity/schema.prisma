@@ -376,3 +376,4 @@ model OAuthLoginState {
   @@index([expiresAt])
   @@map("oauth_login_states")
 }
+

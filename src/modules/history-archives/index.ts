@@ -11,7 +11,7 @@ export const historyArchivesModule: StudioModuleManifest = {
   titleKey: 'modules.historyArchives.title',
   descriptionKey: 'modules.historyArchives.description',
   disciplines: ['history'],
-  requiredCapabilities: [],
+  requiredCapabilities: ['archives.search'],
   contributions: [
     {
       id: 'overview',

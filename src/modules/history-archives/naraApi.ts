@@ -33,7 +33,7 @@ export async function searchNaraCatalogRecords(
   query: string,
   cursor?: string,
 ): Promise<NaraCatalogSearchPage> {
-  const params = new URLSearchParams({ q: query });
+  const params = new URLSearchParams({ q: query, workspaceId: 'default' });
   if (cursor) params.set('cursor', cursor);
 
   const headers = new Headers({ Accept: 'application/json' });
@@ -44,7 +44,7 @@ export async function searchNaraCatalogRecords(
   }
 
   const response = await fetch(
-    `${apiBaseUrl()}/api/modules/history-archives/nara/search?${params.toString()}`,
+    `${apiBaseUrl()}/api/v1/modules/history-archives/nara/search?${params.toString()}`,
     {
       method: 'GET',
       credentials: 'include',

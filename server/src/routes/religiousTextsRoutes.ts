@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
 
+import { searchSefaria } from '../integrations/sefaria/sefariaSearch.js';
+import { requireModuleCapability } from '../middleware/requireModuleCapability.js';
 import {
   requireSession,
   type AuthenticatedRequest,
 } from '../middleware/requireSession.js';
-import { searchSefaria } from '../integrations/sefaria/sefariaSearch.js';
 
 export const religiousTextsRouter = Router();
 
@@ -15,6 +16,7 @@ const cursorSchema = z.string().trim().regex(/^\d{1,4}$/).transform(Number).refi
 religiousTextsRouter.get(
   '/modules/religious-texts/sefaria/search',
   requireSession,
+  requireModuleCapability('org.omi.religious-texts', 'religious-texts.search'),
   async (request: AuthenticatedRequest, response) => {
     const query = querySchema.safeParse(request.query.q);
     const cursor = cursorSchema.safeParse(request.query.cursor);
