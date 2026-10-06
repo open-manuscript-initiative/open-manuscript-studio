@@ -25,7 +25,7 @@ function xmlElements(root: XmlDocument | XmlElement, selector: string): XmlEleme
    return expected===undefined?actual!==null:actual===expected;
   }));
  }
- return roots;
+ return roots as XmlElement[];
 }
 function xmlText(parent: XmlDocument | XmlElement | null, selector: string): string {
  return parent ? xmlElements(parent,selector)[0]?.textContent?.trim() ?? '' : '';
@@ -57,7 +57,7 @@ function parseMusicXml(xml:string):{project:Partial<MusicProject>;events:MusicEv
    }
   }
  }
- return {project:{title:xmlText(document,'work-title')||xmlText(document,'movement-title'),composer:xmlElements(document,'creator[type="composer"]').map(e=>e.textContent?.trim()).find(Boolean)||xmlText(document,'creator'),meter:xmlText(document,'time beats')+'/'+xmlText(document,'time beat-type'),key:xmlText(document,'fifths'),tempo:xmlElements(document,'sound[tempo]').map(e=>e.getAttribute('tempo')).find(Boolean)},events};
+ return {project:{title:xmlText(document,'work-title')||xmlText(document,'movement-title'),composer:xmlElements(document,'creator[type="composer"]').map(e=>e.textContent?.trim()).find(Boolean)||xmlText(document,'creator'),meter:xmlText(document,'time beats')+'/'+xmlText(document,'time beat-type'),key:xmlText(document,'fifths'),tempo:xmlElements(document,'sound[tempo]').map(e=>e.getAttribute('tempo')).find((value): value is string => Boolean(value))},events};
 }
 export function MusicologyPanel({locale='hu',storageKey='default'}:Props){
  const t=words[locale as keyof typeof words]??words.en; const fileRef=useRef<HTMLInputElement>(null);
