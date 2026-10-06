@@ -10,9 +10,10 @@ model merely to store module-specific state.
 The framework provides provider-neutral manifests, a validated in-process
 registry, contribution slots, capability declarations, and two-level activation.
 The Studio menu opens a module manager and hosts the built-in discipline
-modules. The History and Archives module now includes server-side Europeana
-Search API and U.S. National Archives Catalog connections. The other modules
-remain catalog and navigation shells.
+modules. History and Archives searches Europeana and the U.S. National Archives;
+Religious Texts searches Sefaria; Critical Text Edition supports witness
+collation and TEI export; Corpus Linguistics supports corpus search, annotation,
+and parallel-text alignment. Other discipline modules remain catalog shells.
 Modules do not load remote code.
 
 ## Built-in module catalog
@@ -44,9 +45,16 @@ public search API. It displays short excerpts, citations, edition and language
 metadata, and links each result back to Sefaria. The panel also links to Bible,
 Qur'an, and Buddhist text portals; those are external searches, not embedded
 Studio connectors. Sefaria documents public API access without API keys. Texts
-are requested live and are not mirrored. Other modules remain shells without
-search or workflow functions. Additional disciplines can add modules through the same
-manifest and contribution system.
+are requested live and are not mirrored.
+
+Corpus Linguistics stores corpus metadata, text documents, character-offset
+annotations, and manually aligned parallel passages in browser storage. It
+provides Unicode-aware concordance search with context, case and whole-word
+options; annotation categories for part of speech, lemma, morphology, named
+entities, semantics, and other labels; project JSON import/export; and CSV
+export of the current concordance. Browser storage is device-local; use JSON
+export for backup or transfer. Additional disciplines can add modules through
+the same manifest and contribution system.
 
 Configure the server-side module allow-list with `STUDIO_ENABLED_MODULES`, the
 Europeana key as `EUROPEANA_API_KEY`, and the read-only NARA key as
