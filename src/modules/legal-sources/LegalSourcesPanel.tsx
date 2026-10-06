@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { downloadWorkspaceJson, newWorkspaceId, useLocalWorkspace } from '../disciplineWorkspace';
+import { downloadWorkspaceJson, newWorkspaceId, safeExternalUrl, useLocalWorkspace } from '../disciplineWorkspace';
 import '../disciplineWorkspaces.css';
 
 type Locale = 'hu' | 'en' | 'de';
@@ -28,7 +28,7 @@ export function LegalSourcesPanel({ locale = 'hu', storageKey = 'legal-sources' 
     <header className="discipline-workspace__header"><div><p className="discipline-workspace__eyebrow">OMI Studio</p><h1>{t.title}</h1><p>{t.subtitle}</p></div><button type="button" onClick={() => downloadWorkspaceJson('legal-sources.json', workspace)}>{t.export}</button></header>
     <section className="discipline-workspace__section"><div className="discipline-workspace__section-title"><label>{t.search}<input value={query} onChange={e => setQuery(e.target.value)} /></label><button type="button" onClick={addSource}>{t.add}</button></div><p className="discipline-workspace__hint">{t.local}</p>
       {visible.length === 0 && <p>{t.noSources}</p>}
-      {visible.map(source => <article className="discipline-workspace__card" key={source.id}>
+      {visible.map(source => { const officialUrl = safeExternalUrl(source.url); return <article className="discipline-workspace__card" key={source.id}>
         <div className="discipline-workspace__grid">
           <label>{t.jurisdiction}<input value={source.jurisdiction} onChange={e => updateSource(source.id, { jurisdiction: e.target.value })} /></label><label>{t.authority}<input value={source.authority} onChange={e => updateSource(source.id, { authority: e.target.value })} /></label>
           <label>{t.citation}<input value={source.citation} onChange={e => updateSource(source.id, { citation: e.target.value })} /></label><label>{t.titleField}<input value={source.title} onChange={e => updateSource(source.id, { title: e.target.value })} /></label>
@@ -36,7 +36,7 @@ export function LegalSourcesPanel({ locale = 'hu', storageKey = 'legal-sources' 
           <label>{t.publication}<input type="date" value={source.publicationDate} onChange={e => updateSource(source.id, { publicationDate: e.target.value })} /></label><label>{t.effective}<input type="date" value={source.effectiveDate} onChange={e => updateSource(source.id, { effectiveDate: e.target.value })} /></label>
           <label>{t.url}<input type="url" value={source.url} onChange={e => updateSource(source.id, { url: e.target.value })} /></label>
         </div>
-        {source.url && <p><a href={source.url} target="_blank" rel="noopener noreferrer">{t.open} ↗</a></p>}
+        {officialUrl && <p><a href={officialUrl} target="_blank" rel="noopener noreferrer">{t.open} ↗</a></p>}
         <div className="discipline-workspace__section-title"><h3>{t.versions}</h3><button type="button" onClick={() => updateSource(source.id, { versions: [...source.versions, { id: newWorkspaceId(), date: '', effectiveDate: '', url: '', text: '', note: '' }] })}>{t.addVersion}</button></div>
         {source.versions.map(version => <div className="discipline-workspace__version" key={version.id}><div className="discipline-workspace__grid">
           <label>{t.versionDate}<input type="date" value={version.date} onChange={e => updateVersion(source, version.id, { date: e.target.value })} /></label><label>{t.versionEffective}<input type="date" value={version.effectiveDate} onChange={e => updateVersion(source, version.id, { effectiveDate: e.target.value })} /></label><label>{t.versionUrl}<input type="url" value={version.url} onChange={e => updateVersion(source, version.id, { url: e.target.value })} /></label>
@@ -47,7 +47,7 @@ export function LegalSourcesPanel({ locale = 'hu', storageKey = 'legal-sources' 
           <div className="discipline-workspace__comparison">{options(source.id).map((id, index) => { const version = source.versions.find(item => item.id === id); return <section key={index}><h4>{index === 0 ? t.first : t.second}</h4><pre>{version?.text ?? ''}</pre></section>; })}</div>
         </div>}
         <button type="button" className="discipline-workspace__danger" onClick={() => setWorkspace(current => ({ sources: current.sources.filter(item => item.id !== source.id) }))}>{t.remove}</button>
-      </article>)}
+      </article>; })}
     </section>
   </main>;
 }
