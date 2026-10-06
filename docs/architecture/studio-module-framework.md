@@ -15,23 +15,23 @@ Religious Texts searches Sefaria; Critical Text Edition provides an edition
 workspace for witnesses, collation, apparatus, and TEI export. Corpus Linguistics
 supports corpus search, linguistic annotation, and parallel-text alignment.
 Musicology imports MusicXML scores and stores musical events alongside recording references. Cultural Heritage catalogs objects and sites with descriptive metadata and image-region annotations. Social Research Methods provides a project design, codebook, transcript editor, and character-offset coding. Legal Sources tracks citations and dated source versions with side-by-side text comparison. Research Reproducibility links publications to versioned outputs and can calculate a SHA-256 checksum for a selected file without uploading it.
-All five workspaces persist locally in the browser and export JSON for transfer. They do not load remote code.
+All five workspaces persist locally in the browser and export JSON for transfer. The Musicology parser accepts uncompressed MusicXML; it does not render notation. They do not load remote code.
 
 ## Built-in module catalog
 
 The initial catalog includes these modules:
 
-| Module | Disciplines | Planned scope |
+| Module | Disciplines | Current scope |
 | --- | --- | --- |
 | History and archives | History, archival studies | Search Europeana's shared cultural heritage catalogue and NARA's federal archival descriptions, and open the eLevéltár portal for Hungarian archival descriptions from the Hungarian National Archives and Budapest City Archives. |
 | Religious texts | Theology, religious studies | Search Sefaria's Jewish text and commentary library live, display short excerpts with citation and edition metadata, and link to Bible, Qur'an, and Buddhist text portals. The first embedded full-text connector covers Sefaria only. |
 | Critical text edition | Philology, classical philology, literary studies | Manage transcriptions, textual variants, manuscript witnesses, critical apparatus, and digital editions. |
 | Corpus linguistics | Linguistics | Search corpora, produce concordances, align texts, and annotate linguistic features. |
-| Musicology | Musicology | Work with notation and musical events, align scores and recordings, annotate passages, and compare variants. |
-| Cultural heritage | Archaeology, art history, museum studies | Describe objects and sites with people, events, dates, and places, and annotate image regions. |
-| Social research methods | Social sciences, behavioral sciences, economics | Organize survey instruments, variables, codebooks, interview coding, datasets, and methods. |
-| Legal sources | Law | Search legislation and court decisions, track jurisdiction and effective dates, cite provisions and cases, and compare versions. Provider access is jurisdiction-specific. |
-| Research reproducibility | Natural sciences, engineering | Relate publications to versioned datasets, code, methods, supplemental materials, and research repositories. |
+| Musicology | Musicology | Import uncompressed MusicXML, catalog musical events, and link score events to recording timestamps. |
+| Cultural heritage | Archaeology, art history, museum studies | Describe objects and sites with provenance metadata, link images, and annotate image regions. |
+| Social research methods | Social sciences, behavioral sciences, economics | Record research design and ethics notes, maintain a variable codebook, and code selected transcript passages. |
+| Legal sources | Law | Record jurisdiction, citations, dates, status, source links, and dated text versions; compare two saved versions side by side. Provider APIs are not connected. |
+| Research reproducibility | Natural sciences, engineering | Link publications to versioned datasets, code, methods, software, supplements, repositories, persistent identifiers, licenses, and checksums. |
 
 The History and Archives entry has on-demand Europeana Search API and U.S.
 National Archives Catalog searches, plus a direct link to the official
