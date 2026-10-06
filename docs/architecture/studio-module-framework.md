@@ -51,8 +51,8 @@ Corpus Linguistics stores corpus metadata, text documents, character-offset
 annotations, and manually aligned parallel passages in browser storage. It
 provides Unicode-aware concordance search with context, case and whole-word
 options; annotation categories for part of speech, lemma, morphology, named
-entities, semantics, and other labels; project JSON import/export; and CSV
-export of the current concordance. Browser storage is device-local; use JSON
+entities, semantics, and other labels; DOCX, TXT, and MD text import; project
+JSON import/export; and CSV export of the current concordance. Browser storage is device-local; use JSON
 export for backup or transfer. Additional disciplines can add modules through
 the same manifest and contribution system.
 
