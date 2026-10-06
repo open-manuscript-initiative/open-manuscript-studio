@@ -11,7 +11,7 @@ const words={
  de:{intro:'Erfassen Sie Notendaten, musikalische Ereignisse und mit einer Aufnahme verknüpfte Anmerkungen. Der MusicXML-Import zerlegt Stimmen und Noten in bearbeitbare Ereignisse.',title:'Werktitel',composer:'Komponist / Urheber',source:'Quelle / Ausgabe',key:'Tonart',meter:'Taktart',tempo:'Tempo',recording:'Aufnahme-URL',import:'MusicXML importieren',events:'Musikalische Ereignisse',add:'Ereignis hinzufügen',measure:'Takt',beat:'Zählzeit',part:'Stimme',pitch:'Ton / Ereignis',duration:'Dauer',annotation:'Analyse / Variante',recordingTime:'Aufnahmezeit',remove:'Entfernen',export:'Projekt-JSON herunterladen',empty:'Noch keine musikalischen Ereignisse. Importieren Sie MusicXML oder fügen Sie ein Ereignis hinzu.',error:'Die MusicXML-Datei ist unlesbar oder ungültig.',language:'Sprache der Partitur'}
 };
 const fresh=(language:string):MusicProject=>({title:'',composer:'',source:'',language,key:'',meter:'',tempo:'',recordingUrl:'',events:[]});
-function xmlText(parent:Element|null,selector:string):string{return parent?.querySelector(selector)?.textContent?.trim()??''}
+function xmlText(parent:ParentNode|null,selector:string):string{return parent?.querySelector(selector)?.textContent?.trim()??''}
 function parseMusicXml(xml:string):{project:Partial<MusicProject>;events:MusicEvent[]}{
  const document=new DOMParser().parseFromString(xml,'application/xml');
  if(document.querySelector('parsererror'))throw new Error('invalid xml');
