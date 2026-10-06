@@ -163,7 +163,7 @@ export function CriticalTextEditionPanel({
     if (typeof window === 'undefined') return EMPTY_PROJECT;
     try {
       const stored = window.localStorage.getItem(key);
-      if (!stored) return EMPTY_PROJECT;
+      if (!stored) return { ...EMPTY_PROJECT, language: ['hu', 'en', 'de'].includes(locale) ? locale : 'en' };
       const parsed: unknown = JSON.parse(stored);
       return isProject(parsed) ? parsed : EMPTY_PROJECT;
     } catch {
@@ -191,7 +191,10 @@ export function CriticalTextEditionPanel({
     witnesses: current.witnesses.map((witness) => witness.id === witnessId ? { ...witness, ...patch } : witness),
   }));
   const addWitness = () => {
-    const witness: Witness = { id: makeId(), siglum: `W${project.witnesses.length + 1}`, description: '', repository: '', shelfmark: '', date: '' };
+    let number = 1;
+    const existingSigla = new Set(project.witnesses.map((witness) => witness.siglum));
+    while (existingSigla.has(`W${number}`)) number += 1;
+    const witness: Witness = { id: makeId(), siglum: `W${number}`, description: '', repository: '', shelfmark: '', date: '' };
     setProject((current) => ({
       ...current,
       witnesses: [...current.witnesses, witness],
