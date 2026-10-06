@@ -121,6 +121,17 @@ const copy: Record<SupportedLocale, HelpCopy> = {
         body: 'Először állapítsa meg, hogy tartalmi, strukturális, metaadat-, integrációs vagy megjelenítési problémáról van-e szó. Ellenőrizze a kézirat és a metaadat nyelvét, a szakaszszerkezetet, az aktív publikációs profilt és az export diagnosztikáját. Importproblémánál vizsgálja meg a forrásdokumentum tényleges struktúráját is.',
         tips: ['DOCX esetén ellenőrizze a Word címsorstílusait és a jegyzet/táblázat szerkezetét.', 'OJS esetén ellenőrizze a Publication metaadatokat, az assignmentet és a jogosultsági kontextust.', 'PDF/HTML megjelenésnél ellenőrizze az aktív profilt, az Export CSS-t és a Nyomtatási/PDF CSS-t.'],
       },
+      {
+        title: '21. Kutatási és szakterületi modulok',
+        body: 'A Kutatás modulkezelőjében külön munkafelületeket nyithat meg: Történet és levéltárak (Europeana, NARA és eLevéltár), Vallási szövegek (Sefaria és külső szövegportálok), Kritikai szövegkiadás (tanúk, kolláció, apparátus és TEI), Korpusz- és nyelvi annotáció (konkordancia, annotáció és párhuzamos szövegek), Zeneismeret (MusicXML és zenei események), Kulturális örökség (tárgyak, helyszínek és képrészletek), Társadalomkutatási módszerek (kutatási terv, kódkönyv és átiratok), Jogforrások (hivatkozások és változatok), valamint Kutatási reprodukálhatóság (adatok, kód, verziók és ellenőrzőösszegek).',
+        tips: ['A modulokat a Modulok panelen kapcsolja be.', 'A legtöbb modul munkája ezen a böngészőn tárolódik; használja a JSON-exportot mentésre és átvitelre.', 'A helyi böngészős mentés nem jelent automatikus megosztást vagy központi biztonsági mentést.'],
+      },
+      {
+        title: '22. Jogi adatbázisok keresése',
+        body: 'A Jogforrások modul az EUR-Lexben közvetlen kulcsszavas keresést indít, továbbá az InfoCuria, az ENSZ Szerződéstára, a Grenoble-i Egyetem Római Jogi Könyvtára és a Vatikán kánonjogi forrásai felé kínál célzott, új lapon megnyíló keresést. A külső portálok találatait a Stúdió nem tölti be és nem hitelesíti.',
+        tips: ['A jogi adatbázis-keresőhöz írjon be egy kifejezést, majd válassza ki a portált.', 'A kánonjogi források jelenleg a katolikus egyház hivatalos vatikáni szövegeire összpontosítanak.', 'Mindig ellenőrizze a hivatkozást, a hatályt és a változatot az elsődleges forrásban.'],
+      },
+
     ],
   },
   en: {
@@ -149,6 +160,17 @@ const copy: Record<SupportedLocale, HelpCopy> = {
       { title: '18. HTML and publication validation', body: 'Semantic HTML export produces a script-free publication document. Before export, Studio validates the manuscript against the active publication profile and may report errors or warnings for missing required metadata, broken internal relationships or other publication issues.', tips: ['Resolve blocking errors before export.', 'Warnings may not always block export, but they should still be reviewed individually.'] },
       { title: '19. Cloud and file storage', body: 'Studio supports local and configurable external storage workflows. WebDAV/Nextcloud availability depends on the installation and user configuration; the semantic OMI format is designed so a manuscript is not locked to one storage provider.', tips: ['Verify connection settings before using external storage.', 'Create a portable OMI package for migration or backup.'] },
       { title: '20. If something does not look right', body: 'First determine whether the problem concerns content, structure, metadata, integration or presentation. Check manuscript and metadata languages, section structure, the active publication profile and export diagnostics. For import problems, also inspect the actual source-document structure.', tips: ['For DOCX, check Word heading styles and note/table structure.', 'For OJS, check Publication metadata, the assignment and permission context.', 'For PDF/HTML presentation, check the active profile, Export CSS and Print/PDF CSS.'] },
+      {
+        title: '21. Research and discipline modules',
+        body: 'The Research module manager opens focused workspaces: History and Archives (Europeana, NARA and eLevéltár); Religious Texts (Sefaria and external text portals); Critical Text Edition (witnesses, collation, apparatus and TEI); Corpus Linguistics (concordance, annotation and parallel texts); Musicology (MusicXML and musical events); Cultural Heritage (objects, sites and image regions); Social Research Methods (study design, codebook and transcripts); Legal Sources (citations and versions); and Research Reproducibility (outputs, versions and checksums).',
+        tips: ['Enable modules in the Modules panel.', 'Most module work is stored in this browser; use JSON export for backup and transfer.', 'Local browser storage does not provide automatic sharing or a central backup.'],
+      },
+      {
+        title: '22. Searching legal databases',
+        body: 'Legal Sources starts direct keyword searches in EUR-Lex and offers targeted searches that open in a new tab for InfoCuria, the United Nations Treaty Collection, the University of Grenoble Alpes Roman Law Library, and Vatican canon-law sources. Studio does not retrieve or verify results from those external portals.',
+        tips: ['Enter a term in the legal database search field and choose a portal.', 'The canon-law links currently focus on official Vatican Catholic Church texts.', 'Verify citations, validity dates and versions against the primary source.'],
+      },
+
     ],
   },
   de: {
@@ -177,6 +199,17 @@ const copy: Record<SupportedLocale, HelpCopy> = {
       { title: '18. HTML und Publikationsprüfung', body: 'Der semantische HTML-Export erzeugt ein skriptfreies Publikationsdokument. Vor dem Export validiert Studio das Manuskript gegen das aktive Publikationsprofil und kann Fehler oder Warnungen zu fehlenden Pflichtmetadaten, defekten internen Beziehungen oder anderen Publikationsproblemen melden.', tips: ['Beheben Sie blockierende Fehler vor dem Export.', 'Warnungen blockieren nicht immer den Export, sollten aber einzeln geprüft werden.'] },
       { title: '19. Cloud- und Dateispeicherung', body: 'Studio unterstützt lokale und konfigurierbare externe Speicherabläufe. Die Verfügbarkeit von WebDAV/Nextcloud hängt von Installation und Benutzerkonfiguration ab; das semantische OMI-Format soll verhindern, dass ein Manuskript an einen einzelnen Speicheranbieter gebunden ist.', tips: ['Prüfen Sie Verbindungseinstellungen vor Nutzung externen Speichers.', 'Erstellen Sie für Migration oder Sicherung ein portables OMI-Paket.'] },
       { title: '20. Wenn etwas nicht wie erwartet erscheint', body: 'Klären Sie zuerst, ob das Problem Inhalt, Struktur, Metadaten, Integration oder Darstellung betrifft. Prüfen Sie Manuskript- und Metadatensprache, Abschnittsstruktur, aktives Publikationsprofil und Exportdiagnostik. Bei Importproblemen prüfen Sie zusätzlich die tatsächliche Struktur des Quelldokuments.', tips: ['Bei DOCX: Word-Überschriftenstile sowie Anmerkungs- und Tabellenstruktur prüfen.', 'Bei OJS: Publikationsmetadaten, Assignment und Berechtigungskontext prüfen.', 'Bei PDF/HTML: aktives Profil, Export-CSS und Druck/PDF-CSS prüfen.'] },
+      {
+        title: '21. Forschungs- und Fachmodule',
+        body: 'Die Forschungsmodulverwaltung öffnet spezialisierte Arbeitsbereiche: Geschichte und Archive (Europeana, NARA und eLevéltár), religiöse Texte (Sefaria und externe Textportale), kritische Textedition (Zeugen, Kollation, Apparat und TEI), Korpuslinguistik (Konkordanz, Annotation und Paralleltexte), Musikwissenschaft (MusicXML und musikalische Ereignisse), Kulturerbe (Objekte, Orte und Bildbereiche), Methoden der Sozialforschung (Forschungsdesign, Codebuch und Transkripte), Rechtsquellen (Zitate und Fassungen) sowie Forschungsreproduzierbarkeit (Ergebnisse, Versionen und Prüfsummen).',
+        tips: ['Aktivieren Sie Module im Bereich „Module“.', 'Die meisten Moduldaten werden in diesem Browser gespeichert; verwenden Sie den JSON-Export zur Sicherung und Übertragung.', 'Lokaler Browserspeicher bietet keine automatische Freigabe oder zentrale Sicherung.'],
+      },
+      {
+        title: '22. Suche in Rechtsdatenbanken',
+        body: 'Rechtsquellen startet eine direkte Stichwortsuche in EUR-Lex und bietet gezielte Suchvorgänge in InfoCuria, der Vertragssammlung der Vereinten Nationen, der Roman Law Library der Université Grenoble Alpes und den kanonischen Quellen des Vatikans, die sich in einem neuen Tab öffnen. Studio ruft externe Ergebnisse nicht ab und verifiziert sie nicht.',
+        tips: ['Geben Sie einen Suchbegriff ein und wählen Sie ein Portal.', 'Die kanonischen Quellen konzentrieren sich derzeit auf offizielle vatikanische Texte der katholischen Kirche.', 'Prüfen Sie Fundstellen, Gültigkeit und Fassungen anhand der Primärquelle.'],
+      },
+
     ],
   },
 };
