@@ -123,23 +123,23 @@ function toTei(project: EditionProject): string {
   const title = escapeXml(project.title || 'Untitled critical edition');
   const witnessList = project.witnesses.map((witness) =>
     `      <witness xml:id="${escapeXml(witnessXmlId(witness.id))}">${escapeXml(witness.siglum)}</witness>`,
-  ).join('\\n');
+  ).join('\n');
   const manuscriptDescriptions = project.witnesses.map((witness) => {
     const id = escapeXml(witnessXmlId(witness.id));
     return `      <msDesc xml:id="ms-${id}"><msIdentifier><repository>${escapeXml(witness.repository)}</repository><idno>${escapeXml(witness.shelfmark)}</idno></msIdentifier><msContents><summary>${escapeXml(witness.description)}</summary></msContents><history><origin><origDate>${escapeXml(witness.date)}</origDate></origin></history></msDesc>`;
-  }).join('\\n');
+  }).join('\n');
   const body = project.segments.map((segment) => {
     const readings = project.witnesses.map((witness) => {
       const reading = segment.readings[witness.id];
       if (!hasVariant(reading)) return '';
       const kind = reading.kind === 'omission' ? 'omission' : reading.kind;
       return `          <rdg type="${kind}" wit="#${escapeXml(witnessXmlId(witness.id))}">${escapeXml(reading.text)}${reading.note.trim() ? ` <note>${escapeXml(reading.note)}</note>` : ''}</rdg>`;
-    }).filter(Boolean).join('\\n');
+    }).filter(Boolean).join('\n');
     const locus = segment.locus.trim() ? ` n="${escapeXml(segment.locus)}"` : '';
     const lemma = `          <lem>${escapeXml(segment.lemma)}</lem>`;
-    return `        <p${locus}><app xml:id="app-${escapeXml(segment.id)}">\\n${lemma}${readings ? `\\n${readings}` : ''}\\n        </app></p>`;
-  }).join('\\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>\\n<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:lang="${escapeXml(project.language)}">\\n  <teiHeader>\\n    <fileDesc>\\n      <titleStmt><title>${title}</title><editor>OMI Studio</editor></titleStmt>\\n      <publicationStmt><p>Digital critical edition project.</p></publicationStmt>\\n      <sourceDesc><listWit>\\n${witnessList}\\n      </listWit>\\n${manuscriptDescriptions}\\n      </sourceDesc>\\n    </fileDesc>\\n    <encodingDesc><projectDesc><p>${escapeXml(project.editorialPrinciple)}</p></projectDesc></encodingDesc>\\n  </teiHeader>\\n  <text><body>\\n${body || '        <p/>'}\\n  </body></text>\\n</TEI>\\n`;
+    return `        <p${locus}><app xml:id="app-${escapeXml(segment.id)}">\n${lemma}${readings ? `\n${readings}` : ''}\n        </app></p>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:lang="${escapeXml(project.language)}">\n  <teiHeader>\n    <fileDesc>\n      <titleStmt><title>${title}</title><editor>OMI Studio</editor></titleStmt>\n      <publicationStmt><p>Digital critical edition project.</p></publicationStmt>\n      <sourceDesc><listWit>\n${witnessList}\n      </listWit>\n${manuscriptDescriptions}\n      </sourceDesc>\n    </fileDesc>\n    <encodingDesc><projectDesc><p>${escapeXml(project.editorialPrinciple)}</p></projectDesc></encodingDesc>\n  </teiHeader>\n  <text><body>\n${body || '        <p/>'}\n  </body></text>\n</TEI>\n`;
 }
 export function CriticalTextEditionPanel({
   locale = 'hu',
