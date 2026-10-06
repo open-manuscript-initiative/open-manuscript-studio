@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { getServerModulePolicy, saveServerModulePreferences } from './api';
-import { corpusLinguisticsModule, historyArchivesModule, religiousTextsModule, studioModules } from './catalog';
+import { corpusLinguisticsModule, criticalTextEditionModule, historyArchivesModule, religiousTextsModule, studioModules } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
 import { EuropeanaSearchPanel } from './history-archives/EuropeanaSearchPanel';
 import { NaraSearchPanel } from './history-archives/NaraSearchPanel';
 import { EleveltarSearchPanel } from './history-archives/EleveltarSearchPanel';
 import { ReligiousTextsPanel } from './religious-texts/ReligiousTextsPanel';
+import { CriticalTextEditionPanel } from './critical-text-edition/CriticalTextEditionPanel';
 import { CorpusLinguisticsPanel } from './corpus-linguistics/CorpusLinguisticsPanel';
 import {
   readStudioModulePreferences,
@@ -184,6 +185,8 @@ export function ModuleManagerPanel({
                 </>
               ) : module.id === religiousTextsModule.id ? (
                 <ReligiousTextsPanel locale={locale} />
+              ) : module.id === criticalTextEditionModule.id ? (
+                <CriticalTextEditionPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
               ) : module.id === corpusLinguisticsModule.id ? (
                 <CorpusLinguisticsPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
               ) : (
