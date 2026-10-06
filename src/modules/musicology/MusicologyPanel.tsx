@@ -13,7 +13,7 @@ const words={
 const fresh=(language:string):MusicProject=>({title:'',composer:'',source:'',language,key:'',meter:'',tempo:'',recordingUrl:'',events:[]});
 function xmlText(parent:ParentNode|null,selector:string):string{return parent?.querySelector(selector)?.textContent?.trim()??''}
 function parseMusicXml(xml:string):{project:Partial<MusicProject>;events:MusicEvent[]}{
- if(/<!\\s*(?:DOCTYPE|ENTITY)\\b/i.test(xml))throw new Error('DTD and entity declarations are not supported');
+ if(/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(xml))throw new Error('DTD and entity declarations are not supported');
  const document=new DOMParser().parseFromString(xml,'application/xml');
  if(document.querySelector('parsererror'))throw new Error('invalid xml');
  const partNames=new Map(Array.from(document.querySelectorAll('score-part')).map((part)=>[part.getAttribute('id')??'',xmlText(part,'part-name')]));
