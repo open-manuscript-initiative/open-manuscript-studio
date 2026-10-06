@@ -105,6 +105,9 @@ const copyByLocale: Record<string, CorpusCopy> = {
 function makeId(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
+function blankProject(language: string): CorpusProject {
+  return { version: 1, title: '', description: '', language: ['hu', 'en', 'de'].includes(language) ? language : 'en', documents: [], annotations: [], alignments: [] };
+}
 function blankDocument(language: string): CorpusDocument {
   return { id: makeId(), title: '', source: '', date: '', language, text: '' };
 }
@@ -168,14 +171,14 @@ export function CorpusLinguisticsPanel({ locale = 'hu', storageKey = 'default' }
   const copy = copyByLocale[locale] ?? copyByLocale.en;
   const key = `${STORAGE_PREFIX}${storageKey}`;
   const [project, setProject] = useState<CorpusProject>(() => {
-    if (typeof window === 'undefined') return { version: 1, title: '', description: '', language: 'hu', documents: [], annotations: [], alignments: [] };
+    if (typeof window === 'undefined') return blankProject(locale);
     try {
       const saved = window.localStorage.getItem(key);
-      if (!saved) return { version: 1, title: '', description: '', language: ['hu', 'en', 'de'].includes(locale) ? locale : 'en', documents: [], annotations: [], alignments: [] };
+      if (!saved) return blankProject(locale);
       const parsed: unknown = JSON.parse(saved);
-      return isProject(parsed) ? parsed : { version: 1, title: '', description: '', language: 'hu', documents: [], annotations: [], alignments: [] };
+      return isProject(parsed) ? parsed : blankProject(locale);
     } catch {
-      return { version: 1, title: '', description: '', language: 'hu', documents: [], annotations: [], alignments: [] };
+      return blankProject(locale);
     }
   });
   const [query, setQuery] = useState('');
@@ -313,8 +316,8 @@ export function CorpusLinguisticsPanel({ locale = 'hu', storageKey = 'default' }
 
       <section className="corpus-card">
         <header className="corpus-heading"><h5>{copy.annotations}</h5><span>{project.annotations.length}</span></header>
-        {project.annotations.length === 0 ? <p className="corpus-empty">{copy.noAnnotations}</p> : <div className="corpus-table-wrap"><table className="corpus-table"><thead><tr><th>{copy.documentTitle}</th><th>{copy.category}</th><th>{copy.label}</th><th>{copy.note}</th><th>Text</th></tr></thead><tbody>
-          {project.annotations.map((annotation) => <tr key={annotation.id}><td>{project.documents.find((doc) => doc.id === annotation.documentId)?.title ?? ''}</td><td>{copy.categoryNames[annotation.category]}</td><td>{annotation.label}</td><td>{annotation.note}</td><td>{annotation.surface} <small>({annotation.start}–{annotation.end})</small></td></tr>)}
+        {project.annotations.length === 0 ? <p className="corpus-empty">{copy.noAnnotations}</p> : <div className="corpus-table-wrap"><table className="corpus-table"><thead><tr><th>{copy.documentTitle}</th><th>{copy.category}</th><th>{copy.label}</th><th>{copy.note}</th><th>{copy.text}</th><th></th></tr></thead><tbody>
+          {project.annotations.map((annotation) => <tr key={annotation.id}><td>{project.documents.find((doc) => doc.id === annotation.documentId)?.title ?? ''}</td><td>{copy.categoryNames[annotation.category]}</td><td>{annotation.label}</td><td>{annotation.note}</td><td>{annotation.surface} <small>({annotation.start}–{annotation.end})</small></td><td><button type="button" className="corpus-link-button" onClick={() => setProject((current) => ({ ...current, annotations: current.annotations.filter((item) => item.id !== annotation.id) }))}>{copy.deleteAnnotation}</button></td></tr>)}
         </tbody></table></div>}
       </section>
 
@@ -330,7 +333,7 @@ export function CorpusLinguisticsPanel({ locale = 'hu', storageKey = 'default' }
           </div>
           <button type="button" disabled={!alignmentDraft.leftDocumentId || !alignmentDraft.rightDocumentId || alignmentDraft.leftDocumentId === alignmentDraft.rightDocumentId} onClick={saveAlignment}>{copy.addAlignment}</button>
         </>}
-        {project.alignments.length === 0 ? <p className="corpus-empty">{copy.noAlignment}</p> : <div className="corpus-alignments">{project.alignments.map((alignment) => <article key={alignment.id} className="corpus-alignment"><strong>{alignment.label}</strong><div><p>{alignment.leftText}</p><span>↔</span><p>{alignment.rightText}</p></div></article>)}</div>}
+        {project.alignments.length === 0 ? <p className="corpus-empty">{copy.noAlignment}</p> : <div className="corpus-alignments">{project.alignments.map((alignment) => <article key={alignment.id} className="corpus-alignment"><strong>{alignment.label}</strong><button type="button" className="corpus-link-button" onClick={() => setProject((current) => ({ ...current, alignments: current.alignments.filter((item) => item.id !== alignment.id) }))}>{copy.remove}</button><div><p>{alignment.leftText}</p><span>↔</span><p>{alignment.rightText}</p></div></article>)}</div>}
       </section>
 
       <section className="corpus-card corpus-export">
