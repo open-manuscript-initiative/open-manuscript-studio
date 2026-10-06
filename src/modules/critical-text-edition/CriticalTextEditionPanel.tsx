@@ -45,7 +45,19 @@ const EMPTY_PROJECT: EditionProject = {
 };
 const kinds: ReadingKind[] = ['substitution', 'omission', 'addition', 'orthography', 'transposition'];
 
-const copyByLocale: Record<string, Record<string, string>> = {
+interface CriticalEditionCopy {
+  intro: string; project: string; title: string; language: string; principle: string;
+  witnesses: string; addWitness: string; siglum: string; witnessDesc: string;
+  repository: string; shelfmark: string; date: string; remove: string;
+  segments: string; addSegment: string; locus: string; lemma: string; reading: string;
+  kind: string; note: string; apparatus: string; noVariants: string;
+  export: string; exportTei: string; exportJson: string; importJson: string;
+  importText: string; import: string; saved: string; backup: string;
+  deleteSegment: string; noWitness: string; noSegment: string; invalidProject: string;
+  loadError: string; untitled: string; ready: string;
+  kinds: Record<ReadingKind, string>;
+}
+const copyByLocale: Record<string, CriticalEditionCopy> = {
   hu: {
     intro: 'Hozza létre a kiadási projektet, írja le a kézirati tanúkat, majd szöveghelyenként rögzítse a főszöveget és az eltéréseket. A változatok a kritikai apparátusban is megjelennek.',
     project: 'Kiadási projekt', title: 'A kiadás címe', language: 'A szöveg nyelve', principle: 'Szerkesztési alapelvek',
