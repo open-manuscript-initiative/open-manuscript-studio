@@ -3,7 +3,7 @@ import {
   type StudioModuleManifest,
 } from '../types';
 
-/** Empty disciplinary module shell. */
+/** Built-in corpus and linguistic annotation module manifest. */
 export const moduleManifest: StudioModuleManifest = {
   id: 'org.omi.corpus-linguistics',
   version: '0.1.0',
