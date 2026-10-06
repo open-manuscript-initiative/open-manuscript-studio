@@ -15,7 +15,7 @@ Religious Texts searches Sefaria; Critical Text Edition provides an edition
 workspace for witnesses, collation, apparatus, and TEI export. Corpus Linguistics
 supports corpus search, linguistic annotation, and parallel-text alignment.
 Musicology imports MusicXML scores and stores musical events alongside recording references. Cultural Heritage catalogs objects and sites with descriptive metadata and image-region annotations. Social Research Methods provides a project design, codebook, transcript editor, and character-offset coding. Legal Sources tracks citations and dated source versions with side-by-side text comparison. Research Reproducibility links publications to versioned outputs and can calculate a SHA-256 checksum for a selected file without uploading it.
-All five workspaces persist locally in the browser and export JSON for transfer. The Musicology parser accepts uncompressed MusicXML; it does not render notation. They do not load remote code.
+All five workspaces persist locally in the browser and export JSON for transfer. The Musicology parser accepts uncompressed MusicXML, ignores external DTD identifiers, rejects entity declarations, and does not render notation. They do not load remote code.
 
 ## Built-in module catalog
 
