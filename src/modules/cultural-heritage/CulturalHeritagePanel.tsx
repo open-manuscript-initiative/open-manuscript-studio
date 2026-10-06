@@ -4,7 +4,6 @@ import '../disciplineWorkspaces.css';
 
 interface Region {id:string;x:number;y:number;width:number;height:number;label:string;note:string}
 interface HeritageRecord {id:string;title:string;identifier:string;kind:string;creator:string;date:string;place:string;institution:string;rights:string;sourceUrl:string;imageUrl:string;iiifUrl:string;description:string;relatedPeople:string;regions:Region[]}
-interface Project {records:HeritageRecord[]}
 interface Props {locale?:string;storageKey?:string}
 const words={
  hu:{intro:'Leletek, műtárgyak, épületek és helyszínek adatlapja; forrás- és jogkezelés; képterületek annotálása százalékos koordinátákkal. A rekordok és képek URL-jei külső forrásra mutatnak.',records:'Örökségi rekordok',add:'Rekord hozzáadása',title:'Megnevezés',id:'Azonosító',kind:'Típus',creator:'Létrehozó / kultúra',date:'Keltezés',place:'Helyszín',institution:'Őrző intézmény',rights:'Jogállás / licenc',source:'Forrásrekord URL',image:'Kép URL',iiif:'IIIF manifest URL',description:'Leírás',people:'Személyek / kapcsolatok',regions:'Képrészlet-annotációk',x:'Bal (%)',y:'Felső (%)',width:'Szélesség (%)',height:'Magasság (%)',label:'Címke',note:'Megjegyzés',addRegion:'Terület rögzítése',remove:'Eltávolítás',export:'JSON export',empty:'Még nincs rekord.',select:'Válasszon rekordot a képannotációhoz.',invalid:'A koordináták 0 és 100 közötti százalékok legyenek, a terület férjen a képbe.'},
