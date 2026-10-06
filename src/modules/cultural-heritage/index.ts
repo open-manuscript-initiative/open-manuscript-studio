@@ -3,7 +3,7 @@ import {
   type StudioModuleManifest,
 } from '../types';
 
-/** Empty disciplinary module shell. */
+/** Built-in cultural-heritage research workspace. */
 export const moduleManifest: StudioModuleManifest = {
   id: 'org.omi.cultural-heritage',
   version: '0.1.0',
