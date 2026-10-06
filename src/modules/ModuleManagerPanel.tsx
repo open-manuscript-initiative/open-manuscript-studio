@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { getServerModulePolicy, saveServerModulePreferences } from './api';
-import { corpusLinguisticsModule, criticalTextEditionModule, historyArchivesModule, religiousTextsModule, studioModules } from './catalog';
+import { corpusLinguisticsModule, criticalTextEditionModule, culturalHeritageModule, historyArchivesModule, legalSourcesModule, musicologyModule, researchReproducibilityModule, religiousTextsModule, socialResearchMethodsModule, studioModules } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
 import { EuropeanaSearchPanel } from './history-archives/EuropeanaSearchPanel';
 import { NaraSearchPanel } from './history-archives/NaraSearchPanel';
@@ -12,6 +12,11 @@ import { EleveltarSearchPanel } from './history-archives/EleveltarSearchPanel';
 import { ReligiousTextsPanel } from './religious-texts/ReligiousTextsPanel';
 import { CriticalTextEditionPanel } from './critical-text-edition/CriticalTextEditionPanel';
 import { CorpusLinguisticsPanel } from './corpus-linguistics/CorpusLinguisticsPanel';
+import { MusicologyPanel } from './musicology/MusicologyPanel';
+import { CulturalHeritagePanel } from './cultural-heritage/CulturalHeritagePanel';
+import { SocialResearchMethodsPanel } from './social-research-methods/SocialResearchMethodsPanel';
+import { LegalSourcesPanel } from './legal-sources/LegalSourcesPanel';
+import { ResearchReproducibilityPanel } from './research-reproducibility/ResearchReproducibilityPanel';
 import {
   readStudioModulePreferences,
   writeStudioModulePreferences,
@@ -189,6 +194,16 @@ export function ModuleManagerPanel({
                 <CriticalTextEditionPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
               ) : module.id === corpusLinguisticsModule.id ? (
                 <CorpusLinguisticsPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+              ) : module.id === musicologyModule.id ? (
+                <MusicologyPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+              ) : module.id === culturalHeritageModule.id ? (
+                <CulturalHeritagePanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+              ) : module.id === socialResearchMethodsModule.id ? (
+                <SocialResearchMethodsPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+              ) : module.id === legalSourcesModule.id ? (
+                <LegalSourcesPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+              ) : module.id === researchReproducibilityModule.id ? (
+                <ResearchReproducibilityPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
               ) : (
                 <div className="studio-module-empty-slot">{copy.noFeatures}</div>
               )}

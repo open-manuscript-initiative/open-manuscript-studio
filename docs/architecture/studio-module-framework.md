@@ -14,8 +14,8 @@ modules. History and Archives searches Europeana and the U.S. National Archives;
 Religious Texts searches Sefaria; Critical Text Edition provides an edition
 workspace for witnesses, collation, apparatus, and TEI export. Corpus Linguistics
 supports corpus search, linguistic annotation, and parallel-text alignment.
-Other discipline modules remain catalog shells.
-Modules do not load remote code.
+Musicology imports MusicXML scores and stores musical events alongside recording references. Cultural Heritage catalogs objects and sites with descriptive metadata and image-region annotations. Social Research Methods provides a project design, codebook, transcript editor, and character-offset coding. Legal Sources tracks citations and dated source versions with side-by-side text comparison. Research Reproducibility links publications to versioned outputs and can calculate a SHA-256 checksum for a selected file without uploading it.
+All five workspaces persist locally in the browser and export JSON for transfer. They do not load remote code.
 
 ## Built-in module catalog
 
@@ -61,8 +61,9 @@ provides Unicode-aware concordance search with context, case and whole-word
 options; annotation categories for part of speech, lemma, morphology, named
 entities, semantics, and other labels; DOCX, TXT, and MD text import; project
 JSON import/export; and CSV export of the current concordance. Browser storage
-is device-local; use JSON export for backup or transfer. Additional disciplines
-can add modules through the same manifest and contribution system.
+is device-local; use JSON export for backup or transfer. Additional disciplines can add modules through the same manifest and contribution system.
+
+These five workspaces are client-side research aids and do not verify legal validity, resolve authorities, or provide shared storage. The Legal Sources workspace does not fetch legislation or case law from provider APIs; researchers record and verify primary-source links themselves. MusicXML import covers uncompressed XML files.
 
 Configure the server-side module allow-list with `STUDIO_ENABLED_MODULES`, the
 Europeana key as `EUROPEANA_API_KEY`, and the read-only NARA key as
@@ -131,5 +132,4 @@ Studio workspace open.
 
 Add installation-administrator UI for the server-owned module allow-list and
 integrate shared-workspace membership when the server workspace model is ready.
-Expand the History and Archives module with other provider adapters, and
-implement the remaining modules' discipline-specific research functions.
+Expand the History and Archives module with other provider adapters and add jurisdiction-specific legal-source connectors where official APIs are available.

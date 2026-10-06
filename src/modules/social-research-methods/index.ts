@@ -3,7 +3,7 @@ import {
   type StudioModuleManifest,
 } from '../types';
 
-/** Empty disciplinary module shell. */
+/** Built-in social-research-methods research workspace. */
 export const moduleManifest: StudioModuleManifest = {
   id: 'org.omi.social-research-methods',
   version: '0.1.0',

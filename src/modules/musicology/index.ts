@@ -3,7 +3,7 @@ import {
   type StudioModuleManifest,
 } from '../types';
 
-/** Empty disciplinary module shell. */
+/** Built-in musicology research workspace. */
 export const moduleManifest: StudioModuleManifest = {
   id: 'org.omi.musicology',
   version: '0.1.0',
