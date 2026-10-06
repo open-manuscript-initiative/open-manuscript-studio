@@ -127,8 +127,8 @@ function downloadFile(name: string, content: string, type: string): void {
 function safeFileName(title: string): string {
   return (title || 'critical-edition').normalize('NFKD').replace(/[^\w.-]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'critical-edition';
 }
-function hasVariant(reading: Reading | undefined): reading is Reading {
-  return Boolean(reading && (reading.text.trim() || reading.kind === 'omission'));
+function hasVariant(reading: Reading | undefined, lemma: string): reading is Reading {
+  return Boolean(reading && (reading.kind === 'omission' || (reading.text.trim() && reading.text.trim() !== lemma.trim())));
 }
 function toTei(project: EditionProject): string {
   const witnessXmlId = (value: string) => `wit-${value.replace(/[^A-Za-z0-9_.-]/g, '')}`;
@@ -143,7 +143,7 @@ function toTei(project: EditionProject): string {
   const body = project.segments.map((segment) => {
     const readings = project.witnesses.map((witness) => {
       const reading = segment.readings[witness.id];
-      if (!hasVariant(reading)) return '';
+      if (!hasVariant(reading, segment.lemma)) return '';
       const kind = reading.kind === 'omission' ? 'omission' : reading.kind;
       return `          <rdg type="${kind}" wit="#${escapeXml(witnessXmlId(witness.id))}">${escapeXml(reading.text)}${reading.note.trim() ? ` <note>${escapeXml(reading.note)}</note>` : ''}</rdg>`;
     }).filter(Boolean).join('\n');
@@ -184,7 +184,7 @@ export function CriticalTextEditionPanel({
   }, [copy.backup, copy.saved, key, project]);
 
   const variantCount = useMemo(() => project.segments.reduce((count, segment) =>
-    count + project.witnesses.filter((witness) => hasVariant(segment.readings[witness.id])).length, 0), [project]);
+    count + project.witnesses.filter((witness) => hasVariant(segment.readings[witness.id], segment.lemma)).length, 0), [project]);
   const update = (patch: Partial<EditionProject>) => setProject((current) => ({ ...current, ...patch }));
   const updateWitness = (witnessId: string, patch: Partial<Witness>) => setProject((current) => ({
     ...current,
@@ -293,9 +293,9 @@ export function CriticalTextEditionPanel({
                   })}
                 </div>}
                 <div className="critical-edition-apparatus"><strong>{copy.apparatus}</strong>
-                  {project.witnesses.filter((witness) => hasVariant(segment.readings[witness.id])).length === 0
+                  {project.witnesses.filter((witness) => hasVariant(segment.readings[witness.id], segment.lemma)).length === 0
                     ? <p>{copy.noVariants}</p>
-                    : <ol>{project.witnesses.filter((witness) => hasVariant(segment.readings[witness.id])).map((witness) => {
+                    : <ol>{project.witnesses.filter((witness) => hasVariant(segment.readings[witness.id], segment.lemma)).map((witness) => {
                       const reading = segment.readings[witness.id];
                       return <li key={witness.id}><span className="critical-edition-siglum">{witness.siglum}</span> <span>{reading.text}</span> <small>({copy.kinds[reading.kind]})</small>{reading.note && <em> — {reading.note}</em>}</li>;
                     })}</ol>}
