@@ -10,12 +10,14 @@ model merely to store module-specific state.
 The framework provides provider-neutral manifests, a validated in-process
 registry, contribution slots, capability declarations, and two-level activation.
 The Studio menu opens a module manager and hosts the built-in discipline
-modules. History and Archives searches Europeana and the U.S. National Archives;
-Religious Texts searches Sefaria; Critical Text Edition provides an edition
-workspace for witnesses, collation, apparatus, and TEI export. Corpus Linguistics
-supports corpus search, linguistic annotation, and parallel-text alignment.
-Musicology imports MusicXML scores and stores musical events alongside recording references. Cultural Heritage catalogs objects and sites with descriptive metadata and image-region annotations. Social Research Methods provides a project design, codebook, transcript editor, and character-offset coding. Legal Sources tracks citations and dated source versions with side-by-side text comparison. Research Reproducibility links publications to versioned outputs and can calculate a SHA-256 checksum for a selected file without uploading it.
-All five workspaces persist locally in the browser and export JSON for transfer. The Musicology parser accepts uncompressed MusicXML, ignores external DTD identifiers, rejects entity declarations, and does not render notation. They do not load remote code.
+modules. The current catalog covers history and archives, religious texts,
+critical text edition, corpus linguistics, musicology, cultural heritage, social
+research methods, legal sources, and research reproducibility. Their specific
+workflows are described in the catalog below. Most discipline workspaces persist
+in browser storage and provide JSON export; the server stores module activation
+preferences separately by user and workspace. The Musicology parser accepts
+uncompressed MusicXML, ignores external DTD identifiers, rejects entity
+declarations, and does not render notation. Modules do not load remote code.
 
 ## Built-in module catalog
 
@@ -30,7 +32,7 @@ The initial catalog includes these modules:
 | Musicology | Musicology | Import uncompressed MusicXML, catalog musical events, and link score events to recording timestamps. |
 | Cultural heritage | Archaeology, art history, museum studies | Describe objects and sites with provenance metadata, link images, and annotate image regions. |
 | Social research methods | Social sciences, behavioral sciences, economics | Record research design and ethics notes, maintain a variable codebook, and code selected transcript passages. |
-| Legal sources | Law | Record jurisdiction, citations, dates, status, source links, and dated text versions; compare two saved versions side by side. Provider APIs are not connected. |
+| Legal sources | Law | Record jurisdiction, citations, dates, status, source links, and dated text versions; compare two saved versions side by side. Search EUR-Lex directly and open portal-scoped web searches for InfoCuria, the UN Treaty Collection, Roman law, and Vatican canon-law sources. External results are not imported. |
 | Research reproducibility | Natural sciences, engineering | Link publications to versioned datasets, code, methods, software, supplements, repositories, persistent identifiers, licenses, and checksums. |
 
 The History and Archives entry has on-demand Europeana Search API and U.S.
@@ -63,7 +65,7 @@ entities, semantics, and other labels; DOCX, TXT, and MD text import; project
 JSON import/export; and CSV export of the current concordance. Browser storage
 is device-local; use JSON export for backup or transfer. Additional disciplines can add modules through the same manifest and contribution system.
 
-These five workspaces are client-side research aids and do not verify legal validity, resolve authorities, or provide shared storage. The Legal Sources workspace does not fetch legislation or case law from provider APIs; researchers record and verify primary-source links themselves. MusicXML import covers uncompressed XML files.
+These discipline workspaces are research aids and do not verify legal validity, resolve authorities, or provide shared storage. Legal Sources does not ingest external search results; researchers record and verify primary-source links themselves. MusicXML import covers uncompressed XML files.
 
 Configure the server-side module allow-list with `STUDIO_ENABLED_MODULES`, the
 Europeana key as `EUROPEANA_API_KEY`, and the read-only NARA key as
