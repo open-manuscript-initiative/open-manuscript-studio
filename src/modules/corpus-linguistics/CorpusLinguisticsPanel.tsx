@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { parseDocxForStudio } from '../../services/docxImportStrategy';
+import type { DocxManuscriptImportPlan } from '../../services/docxManuscriptImport';
 import './corpusLinguistics.css';
 
 type AnnotationCategory = 'pos' | 'lemma' | 'morphology' | 'named-entity' | 'semantics' | 'other';
@@ -83,7 +85,7 @@ const copyByLocale: Record<string, CorpusCopy> = {
     intro: 'Build a text corpus, create context-rich concordances, annotate linguistic and named-entity features, and manually align passages across texts.',
     corpus: 'Corpus settings', corpusTitle: 'Corpus name', description: 'Description', language: 'Default language',
     documents: 'Texts', addDocument: 'Add text', documentTitle: 'Title', source: 'Source / provenance', date: 'Date', text: 'Text', remove: 'Remove',
-    importText: 'Import TXT or MD', search: 'Concordance search', query: 'Search term', caseSensitive: 'Match case', wholeWord: 'Whole word only', results: 'Concordance results', noHits: 'No matches in the corpus texts.', hit: 'hits', annotate: 'Annotate', saveAnnotation: 'Save annotation',
+    importText: 'Import TXT, MD, or DOCX', search: 'Concordance search', query: 'Search term', caseSensitive: 'Match case', wholeWord: 'Whole word only', results: 'Concordance results', noHits: 'No matches in the corpus texts.', hit: 'hits', annotate: 'Annotate', saveAnnotation: 'Save annotation',
     category: 'Category', label: 'Label / value', note: 'Note', annotations: 'Linguistic annotations', noAnnotations: 'No annotations have been saved yet.',
     alignment: 'Parallel text alignment', leftDocument: 'Left text', rightDocument: 'Right text', alignmentLabel: 'Aligned unit label', leftPassage: 'Left passage', rightPassage: 'Right passage', addAlignment: 'Save alignment', noAlignment: 'No alignments have been saved yet.',
     export: 'Export', exportJson: 'Download corpus JSON', exportCsv: 'Download concordance CSV', importJson: 'Import corpus JSON', saved: 'Automatically saved on this device.', backup: 'Download JSON to create a portable backup.',
@@ -94,7 +96,7 @@ const copyByLocale: Record<string, CorpusCopy> = {
     intro: 'Erstellen Sie ein Textkorpus, erzeugen Sie Konkordanzen mit Kontext, annotieren Sie sprachliche Merkmale und Eigennamen und richten Sie parallele Textstellen manuell aus.',
     corpus: 'Korpuseinstellungen', corpusTitle: 'Name des Korpus', description: 'Beschreibung', language: 'Standardsprache',
     documents: 'Texte', addDocument: 'Text hinzufügen', documentTitle: 'Titel', source: 'Quelle / Herkunft', date: 'Datum', text: 'Text', remove: 'Entfernen',
-    importText: 'TXT oder MD importieren', search: 'Konkordanzsuche', query: 'Suchbegriff', caseSensitive: 'Groß- und Kleinschreibung beachten', wholeWord: 'Nur ganzes Wort', results: 'Konkordanzergebnisse', noHits: 'Keine Treffer in den Korpustexten.', hit: 'Treffer', annotate: 'Annotieren', saveAnnotation: 'Annotation speichern',
+    importText: 'TXT, MD oder DOCX importieren', search: 'Konkordanzsuche', query: 'Suchbegriff', caseSensitive: 'Groß- und Kleinschreibung beachten', wholeWord: 'Nur ganzes Wort', results: 'Konkordanzergebnisse', noHits: 'Keine Treffer in den Korpustexten.', hit: 'Treffer', annotate: 'Annotieren', saveAnnotation: 'Annotation speichern',
     category: 'Kategorie', label: 'Merkmal / Wert', note: 'Anmerkung', annotations: 'Sprachliche Annotationen', noAnnotations: 'Es wurden noch keine Annotationen gespeichert.',
     alignment: 'Parallele Texte ausrichten', leftDocument: 'Linker Text', rightDocument: 'Rechter Text', alignmentLabel: 'Bezeichnung der Einheit', leftPassage: 'Linke Passage', rightPassage: 'Rechte Passage', addAlignment: 'Ausrichtung speichern', noAlignment: 'Es wurden noch keine Ausrichtungen gespeichert.',
     export: 'Export', exportJson: 'Korpus-JSON herunterladen', exportCsv: 'Konkordanz-CSV herunterladen', importJson: 'Korpus-JSON importieren', saved: 'Automatisch auf diesem Gerät gespeichert.', backup: 'Laden Sie das JSON als portable Sicherung herunter.',
@@ -118,6 +120,19 @@ function isProject(value: unknown): value is CorpusProject {
     && typeof item.language === 'string' && Array.isArray(item.documents) && Array.isArray(item.annotations)
     && Array.isArray(item.alignments)
     && item.documents.every((doc) => doc && typeof doc.id === 'string' && typeof doc.title === 'string' && typeof doc.text === 'string');
+}
+function docxText(plan: DocxManuscriptImportPlan): string {
+  const fromNode = (node: unknown): string => {
+    if (!node || typeof node !== 'object') return '';
+    const value = node as { type?: unknown; text?: unknown; content?: unknown };
+    if (value.type === 'text' && typeof value.text === 'string') return value.text;
+    const children = Array.isArray(value.content) ? value.content.map(fromNode).join('') : '';
+    return ['paragraph', 'heading', 'blockquote', 'listItem'].includes(String(value.type)) ? children + '\n' : children;
+  };
+  const sections = plan.sections.map((section) => [section.title, ...section.blocks.map((block) => {
+    try { return fromNode(JSON.parse(block.content)).trim(); } catch { return block.content.trim(); }
+  })].filter(Boolean).join('\n'));
+  return [plan.abstract ?? '', ...sections].filter(Boolean).join('\n\n');
 }
 function safeName(value: string): string {
   return (value || 'corpus').normalize('NFKD').replace(/[^\w.-]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'corpus';
@@ -221,13 +236,15 @@ export function CorpusLinguisticsPanel({ locale = 'hu', storageKey = 'default' }
   const importFile = async (file: File | undefined, asText = false) => {
     if (!file) return;
     try {
-      const raw = await file.text();
       if (asText) {
+        const plan = /\.docx$/i.test(file.name) ? await parseDocxForStudio(file) : undefined;
+        const raw = plan ? docxText(plan) : await file.text();
         setProject((current) => ({
           ...current,
-          documents: [...current.documents, { ...blankDocument(current.language), title: file.name.replace(/\.[^.]+$/, ''), source: file.name, text: raw }],
+          documents: [...current.documents, { ...blankDocument(current.language), title: plan?.title || file.name.replace(/\.[^.]+$/, ''), source: file.name, language: plan?.locale || current.language, text: raw }],
         }));
       } else {
+        const raw = await file.text();
         const parsed: unknown = JSON.parse(raw);
         if (!isProject(parsed)) throw new Error('invalid');
         setProject(parsed);
@@ -265,7 +282,7 @@ export function CorpusLinguisticsPanel({ locale = 'hu', storageKey = 'default' }
         <header className="corpus-heading"><div><h5>{copy.documents}</h5><span>{project.documents.length} · {totalWords} {copy.wordCount}</span></div><div className="corpus-actions">
           <button type="button" onClick={addDocument}>＋ {copy.addDocument}</button>
           <button type="button" onClick={() => textInputRef.current?.click()}>{copy.importText}</button>
-          <input ref={textInputRef} className="corpus-file-input" type="file" accept=".txt,.md,text/plain,text/markdown" onChange={(event) => { void importFile(event.target.files?.[0], true); event.currentTarget.value = ''; }} />
+          <input ref={textInputRef} className="corpus-file-input" type="file" accept=".txt,.md,.docx,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(event) => { void importFile(event.target.files?.[0], true); event.currentTarget.value = ''; }} />
         </div></header>
         {project.documents.length === 0 ? <p className="corpus-empty">{copy.documents}: 0</p> : (
           <div className="corpus-documents">
