@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { DOMParser as XmlParser, type Document as XmlDocument, type Element as XmlElement } from '@xmldom/xmldom';
 import { downloadWorkspaceJson, newWorkspaceId, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
 import '../disciplineWorkspaces.css';
 
@@ -11,31 +12,52 @@ const words={
  de:{intro:'Erfassen Sie Notendaten, musikalische Ereignisse und mit einer Aufnahme verknüpfte Anmerkungen. Der MusicXML-Import zerlegt Stimmen und Noten in bearbeitbare Ereignisse.',title:'Werktitel',composer:'Komponist / Urheber',source:'Quelle / Ausgabe',key:'Tonart',meter:'Taktart',tempo:'Tempo',recording:'Aufnahme-URL',import:'MusicXML importieren',events:'Musikalische Ereignisse',add:'Ereignis hinzufügen',measure:'Takt',beat:'Zählzeit',part:'Stimme',pitch:'Ton / Ereignis',duration:'Dauer',annotation:'Analyse / Variante',recordingTime:'Aufnahmezeit',remove:'Entfernen',export:'Projekt-JSON herunterladen',empty:'Noch keine musikalischen Ereignisse. Importieren Sie MusicXML oder fügen Sie ein Ereignis hinzu.',error:'Die MusicXML-Datei ist unlesbar oder ungültig.',language:'Sprache der Partitur'}
 };
 const fresh=(language:string):MusicProject=>({title:'',composer:'',source:'',language,key:'',meter:'',tempo:'',recordingUrl:'',events:[]});
-function xmlText(parent:ParentNode|null,selector:string):string{return parent?.querySelector(selector)?.textContent?.trim()??''}
+function xmlElements(root: XmlDocument | XmlElement, selector: string): XmlElement[] {
+ const segments=selector.trim().split(/\s+/);
+ let roots: Array<XmlDocument | XmlElement>=[root];
+ for(const segment of segments){
+  const match=/^([A-Za-z_][\w:.-]*)(?:\[([A-Za-z_:.-]+)(?:=["']([^"']*)["'])?\])?$/.exec(segment);
+  if(!match) return [];
+  const [,tag,attribute,expected]=match;
+  roots=roots.flatMap(node=>Array.from(node.getElementsByTagNameNS('*',tag)).filter(element=>{
+   if(!attribute)return true;
+   const actual=element.getAttribute(attribute);
+   return expected===undefined?actual!==null:actual===expected;
+  }));
+ }
+ return roots;
+}
+function xmlText(parent: XmlDocument | XmlElement | null, selector: string): string {
+ return parent ? xmlElements(parent,selector)[0]?.textContent?.trim() ?? '' : '';
+}
+function directElements(parent: XmlElement): XmlElement[] {
+ return Array.from(parent.childNodes).filter(node=>node.nodeType===1) as XmlElement[];
+}
 function parseMusicXml(xml:string):{project:Partial<MusicProject>;events:MusicEvent[]}{
- if(/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(xml))throw new Error('DTD and entity declarations are not supported');
- const document=new DOMParser().parseFromString(xml,'application/xml');
- if(document.querySelector('parsererror'))throw new Error('invalid xml');
- const partNames=new Map(Array.from(document.querySelectorAll('score-part')).map((part)=>[part.getAttribute('id')??'',xmlText(part,'part-name')]));
+ if(/<!ENTITY\b/i.test(xml))throw new Error('MusicXML entity declarations are not supported');
+ const document=new XmlParser({onError:()=>{throw new Error('Invalid MusicXML')}}).parseFromString(xml,'application/xml');
+ if(document.documentElement?.localName!=='score-partwise')throw new Error('Expected a score-partwise document');
+ const partNames=new Map(xmlElements(document,'score-part').map(part=>[part.getAttribute('id')??'',xmlText(part,'part-name')]));
  const events:MusicEvent[]=[];
- for(const part of Array.from(document.querySelectorAll('part'))){
-  const divisions=Number(xmlText(part,'divisions'))||1; const partId=part.getAttribute('id')??'';
-  for(const measure of Array.from(part.querySelectorAll(':scope > measure'))){
+ for(const part of xmlElements(document,'part')){
+  const divisions=Number(xmlText(part,'measure attributes divisions'))||Number(xmlText(part,'divisions'))||1;
+  const partId=part.getAttribute('id')??'';
+  for(const measure of directElements(part).filter(element=>element.localName==='measure')){
    let tick=0; const number=measure.getAttribute('number')??'';
-   for(const child of Array.from(measure.children)){
+   for(const child of directElements(measure)){
     if(child.localName==='backup'){tick-=Number(xmlText(child,'duration'))||0;continue}
     if(child.localName==='forward'){tick+=Number(xmlText(child,'duration'))||0;continue}
     if(child.localName!=='note')continue;
     const durationTicks=Number(xmlText(child,'duration'))||0;
     const step=xmlText(child,'pitch step'); const alter=Number(xmlText(child,'pitch alter'))||0; const octave=xmlText(child,'pitch octave');
-    const pitch=child.querySelector('rest')?'rest':step?step+(alter===1?'♯':alter===-1?'♭':alter?String(alter):'')+octave:'unpitched';
-    const chord=Boolean(child.querySelector('chord')); const beat=(tick/divisions+1).toFixed(2);
+    const pitch=xmlElements(child,'rest').length?'rest':step?step+(alter===1?'♯':alter===-1?'♭':alter?String(alter):'')+octave:'unpitched';
+    const chord=xmlElements(child,'chord').length>0; const beat=(tick/divisions+1).toFixed(2);
     events.push({id:newWorkspaceId(),measure:number,beat,part:partNames.get(partId)??partId,pitch,duration:(durationTicks/divisions).toFixed(2),annotation:'',recordingTime:''});
     if(!chord)tick+=durationTicks;
    }
   }
  }
- return {project:{title:xmlText(document,'work-title')||xmlText(document,'movement-title'),composer:xmlText(document,'creator[type="composer"]')||xmlText(document,'creator'),meter:xmlText(document,'time beats')+'/'+xmlText(document,'time beat-type'),key:xmlText(document,'fifths'),tempo:xmlText(document,'sound[tempo]')},events};
+ return {project:{title:xmlText(document,'work-title')||xmlText(document,'movement-title'),composer:xmlElements(document,'creator[type="composer"]').map(e=>e.textContent?.trim()).find(Boolean)||xmlText(document,'creator'),meter:xmlText(document,'time beats')+'/'+xmlText(document,'time beat-type'),key:xmlText(document,'fifths'),tempo:xmlElements(document,'sound[tempo]').map(e=>e.getAttribute('tempo')).find(Boolean)},events};
 }
 export function MusicologyPanel({locale='hu',storageKey='default'}:Props){
  const t=words[locale as keyof typeof words]??words.en; const fileRef=useRef<HTMLInputElement>(null);
