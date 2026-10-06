@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { getServerModulePolicy, saveServerModulePreferences } from './api';
-import { historyArchivesModule, religiousTextsModule, studioModules } from './catalog';
+import { corpusLinguisticsModule, historyArchivesModule, religiousTextsModule, studioModules } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
 import { EuropeanaSearchPanel } from './history-archives/EuropeanaSearchPanel';
 import { NaraSearchPanel } from './history-archives/NaraSearchPanel';
 import { EleveltarSearchPanel } from './history-archives/EleveltarSearchPanel';
 import { ReligiousTextsPanel } from './religious-texts/ReligiousTextsPanel';
+import { CorpusLinguisticsPanel } from './corpus-linguistics/CorpusLinguisticsPanel';
 import {
   readStudioModulePreferences,
   writeStudioModulePreferences,
@@ -183,6 +184,8 @@ export function ModuleManagerPanel({
                 </>
               ) : module.id === religiousTextsModule.id ? (
                 <ReligiousTextsPanel locale={locale} />
+              ) : module.id === corpusLinguisticsModule.id ? (
+                <CorpusLinguisticsPanel locale={locale} storageKey={\`${userId}:${workspaceId}\`} />
               ) : (
                 <div className="studio-module-empty-slot">{copy.noFeatures}</div>
               )}
