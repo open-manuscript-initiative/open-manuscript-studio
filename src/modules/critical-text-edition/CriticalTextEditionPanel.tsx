@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import './criticalTextEdition.css';
 
 type ReadingKind = 'substitution' | 'omission' | 'addition' | 'orthography' | 'transposition';
 interface Witness {
@@ -115,16 +116,17 @@ function safeFileName(title: string): string {
   return (title || 'critical-edition').normalize('NFKD').replace(/[^\w.-]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'critical-edition';
 }
 function toTei(project: EditionProject): string {
+  const witnessXmlId = (value: string) => `wit-${value.replace(/[^A-Za-z0-9_.-]/g, '')}`;
   const title = escapeXml(project.title || 'Untitled critical edition');
   const witnesses = project.witnesses.map((witness) =>
-    `      <witness xml:id="${escapeXml(witness.id)}"><abbr>${escapeXml(witness.siglum)}</abbr><msDesc><msIdentifier><repository>${escapeXml(witness.repository)}</repository><idno>${escapeXml(witness.shelfmark)}</idno></msIdentifier><msContents><summary>${escapeXml(witness.description)}</summary></msContents><history><origin><origDate>${escapeXml(witness.date)}</origDate></origin></history></msDesc></witness>`,
+    `      <witness xml:id="${escapeXml(witnessXmlId(witness.id))}"><abbr>${escapeXml(witness.siglum)}</abbr><msDesc><msIdentifier><repository>${escapeXml(witness.repository)}</repository><idno>${escapeXml(witness.shelfmark)}</idno></msIdentifier><msContents><summary>${escapeXml(witness.description)}</summary></msContents><history><origin><origDate>${escapeXml(witness.date)}</origDate></origin></history></msDesc></witness>`,
   ).join('\n');
   const body = project.segments.map((segment) => {
     const readings = project.witnesses.map((witness) => {
       const reading = segment.readings[witness.id];
       if (!reading?.text.trim()) return '';
       const tag = reading.kind === 'omission' ? 'rdg type="omission"' : `rdg type="${escapeXml(reading.kind)}"`;
-      return `        <${tag} wit="#${escapeXml(witness.id)}">${escapeXml(reading.text)}${reading.note.trim() ? ` <note>${escapeXml(reading.note)}</note>` : ''}</rdg>`;
+      return `        <${tag} wit="#${escapeXml(witnessXmlId(witness.id))}">${escapeXml(reading.text)}${reading.note.trim() ? ` <note>${escapeXml(reading.note)}</note>` : ''}</rdg>`;
     }).filter(Boolean).join('\n');
     const lemma = `        <lem>${escapeXml(segment.lemma)}${segment.locus.trim() ? ` <note type="locus">${escapeXml(segment.locus)}</note>` : ''}</lem>`;
     return `      <app xml:id="app-${escapeXml(segment.id)}">\n${lemma}${readings ? `\n${readings}` : ''}\n      </app>`;
