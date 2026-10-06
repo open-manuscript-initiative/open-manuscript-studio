@@ -185,7 +185,7 @@ export function ModuleManagerPanel({
               ) : module.id === religiousTextsModule.id ? (
                 <ReligiousTextsPanel locale={locale} />
               ) : module.id === criticalTextEditionModule.id ? (
-                <CriticalTextEditionPanel locale={locale} storageKey={\`\${userId}:\${workspaceId}\`} />
+                <CriticalTextEditionPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
               ) : (
                 <div className="studio-module-empty-slot">{copy.noFeatures}</div>
               )}
