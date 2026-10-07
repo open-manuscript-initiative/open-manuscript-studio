@@ -21,7 +21,7 @@ import { searchEuropeana } from '../server/src/integrations/europeana/europeanaS
 import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSearch.ts';
 import { searchSefaria } from '../server/src/integrations/sefaria/sefariaSearch.ts';
 import { createExperimentalWorkspace, isExperimentalWorkspace, parseExperimentalWorkspace } from '../src/modules/experimental-laboratory/model.ts';
-import { describe, linearRegression, oneWayAnova, parseDelimited, welchTTest } from '../src/modules/statistical-analysis/model.ts';
+import { createStatisticalWorkspace, describe, isStatisticalWorkspace, linearRegression, oneWayAnova, parseDelimited, parseStatisticalWorkspace, welchTTest } from '../src/modules/statistical-analysis/model.ts';
 
 const expectedModuleIds = [
   'org.omi.history-archives',
@@ -518,4 +518,24 @@ test('linear regression fits exact linear data', () => {
   assert.deepEqual(linearRegression([1, 2, 3], [3, 5, 7]), {
     n: 3, intercept: 1, slope: 2, correlation: 1, rSquared: 1,
   });
+});
+
+
+test('statistical analysis JSON validates and round-trips datasets and analysis settings', () => {
+  const workspace = createStatisticalWorkspace();
+  workspace.analysisTitle = 'Treatment comparison';
+  workspace.configuration.valueColumn = '2';
+  workspace.configuration.groupColumn = '0';
+  workspace.dataset = {
+    id: 'dataset-1',
+    title: 'Measurements',
+    sourceStudy: 'Study A',
+    importedAt: '2026-10-07T08:00:00.000Z',
+    columns: ['group', 'replicate', 'value'],
+    rows: [['control', '1', '4.2'], ['treated', '1', '5.1']],
+  };
+  assert.equal(isStatisticalWorkspace(workspace), true);
+  assert.deepEqual(parseStatisticalWorkspace(JSON.stringify(workspace)), workspace);
+  assert.equal(parseStatisticalWorkspace('{broken'), null);
+  assert.equal(isStatisticalWorkspace({ ...workspace, schemaVersion: 2 }), false);
 });
