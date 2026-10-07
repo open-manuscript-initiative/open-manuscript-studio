@@ -28,6 +28,7 @@ export type StatisticalWorkspace = {
   dataset: StatisticalDataset | null;
   analysisTitle: string;
   configuration: { valueColumn: string; groupColumn: string; regressionX: string; regressionY: string };
+  design: ExperimentalDesign;
 };
 
 export type DescriptiveSummary = {
