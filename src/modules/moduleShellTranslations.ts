@@ -25,6 +25,8 @@ export interface ModuleShellCopy {
   navigation: string;
   title: string;
   description: string;
+  settingsDescription: string;
+  noActiveModules: string;
   active: string;
   activate: string;
   available: string;
