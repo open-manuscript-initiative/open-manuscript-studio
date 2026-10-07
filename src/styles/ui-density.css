@@ -505,7 +505,6 @@ input[size]:not([data-full-width="true"]) {
   }
 
   .studio-menu-navigation {
-    grid-auto-rows: minmax(3.25rem, auto);
     gap: .3rem;
     padding: .4rem;
   }
