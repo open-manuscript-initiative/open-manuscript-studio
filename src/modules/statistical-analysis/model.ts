@@ -145,7 +145,7 @@ export function parseLaboratoryMeasurements(json: string): LaboratoryMeasurement
         for (const rawMeasurement of assay.measurements) {
           if (!rawMeasurement || typeof rawMeasurement !== 'object' || Array.isArray(rawMeasurement)) continue;
           const measurement = rawMeasurement as { name?: unknown; value?: unknown; unit?: unknown; uncertainty?: unknown; measuredAt?: unknown; instrumentId?: unknown };
-          if (typeof measurement.value !== 'string' || !Number.isFinite(Number(measurement.value))) continue;
+          if (typeof measurement.value !== 'string' || measurement.value.trim() === '' || !Number.isFinite(Number(measurement.value))) continue;
           rows.push([
             project.title,
             study.title,
