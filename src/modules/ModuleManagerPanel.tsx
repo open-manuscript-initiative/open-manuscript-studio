@@ -149,7 +149,7 @@ export function ModuleManagerPanel({
               </div>
               <div className="studio-module-card-content">
                 <h4>{details?.title ?? module.titleKey}</h4>
-                <p>{details?.description ?? copy.scaffoldDescription}</p>
+                {details?.description && <p>{details.description}</p>}
                 <label className="studio-module-toggle">
                   <input
                     type="checkbox"
@@ -183,10 +183,9 @@ export function ModuleManagerPanel({
               data-contribution-id={contribution.id}
             >
               <header>
-                <span>{copy.scaffoldTitle}</span>
                 <h4>{details?.overview ?? details?.title ?? contribution.titleKey}</h4>
               </header>
-              <p>{details?.description ?? copy.scaffoldDescription}</p>
+              {details?.description && <p>{details.description}</p>}
               <ModuleWorkspaceErrorBoundary
                 moduleTitle={details?.title ?? module.titleKey}
                 locale={locale}
