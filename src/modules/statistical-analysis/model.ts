@@ -60,9 +60,9 @@ export function createStatisticalWorkspace(): StatisticalWorkspace {
   return { schemaVersion: 1, dataset: null, analysisTitle: '' };
 }
 
-export function parseDelimited(text: string, delimiter?: ',' | '\\t'): { columns: string[]; rows: string[][] } | null {
-  const source = text.replace(/^\\uFEFF/, '');
-  const selectedDelimiter = delimiter ?? (guessDelimiter(source) === '\\t' ? '\\t' : ',');
+export function parseDelimited(text: string, delimiter?: ',' | '\${term}'): { columns: string[]; rows: string[][] } | null {
+  const source = text.replace(/^\${term}/, '');
+  const selectedDelimiter = delimiter ?? (guessDelimiter(source) === '\${term}' ? '\${term}' : ',');
   const records: string[][] = [];
   let row: string[] = [];
   let field = '';
@@ -84,8 +84,8 @@ export function parseDelimited(text: string, delimiter?: ',' | '\\t'): { columns
     } else if (char === selectedDelimiter) {
       row.push(field);
       field = '';
-    } else if (char === '\\n' || char === '\\r') {
-      if (char === '\\r' && source[index + 1] === '\\n') index += 1;
+    } else if (char === '\${term}' || char === '\${term}') {
+      if (char === '\${term}' && source[index + 1] === '\${term}') index += 1;
       row.push(field);
       field = '';
       if (row.some((cell) => cell.trim() !== '')) records.push(row);
@@ -105,10 +105,10 @@ export function parseDelimited(text: string, delimiter?: ',' | '\\t'): { columns
   return { columns, rows };
 }
 
-function guessDelimiter(source: string): ',' | '\\t' {
-  const header = source.split(/\\r?\\n/, 1)[0] ?? '';
+function guessDelimiter(source: string): ',' | '\${term}' {
+  const header = source.split(/\${term}?\${term}/, 1)[0] ?? '';
   const count = (value: string) => [...header].filter((char) => char === value).length;
-  return count('\\t') > count(',') ? '\\t' : ',';
+  return count('\${term}') > count(',') ? '\${term}' : ',';
 }
 
 export function numericColumnValues(rows: string[][], columnIndex: number): number[] {
