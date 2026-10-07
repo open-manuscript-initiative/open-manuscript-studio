@@ -21,7 +21,7 @@ import { searchEuropeana } from '../server/src/integrations/europeana/europeanaS
 import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSearch.ts';
 import { searchSefaria } from '../server/src/integrations/sefaria/sefariaSearch.ts';
 import { createExperimentalWorkspace, isExperimentalWorkspace, parseExperimentalWorkspace } from '../src/modules/experimental-laboratory/model.ts';
-import { createStatisticalWorkspace, describe, isStatisticalWorkspace, linearRegression, oneWayAnova, parseDelimited, parseLaboratoryMeasurements, parseStatisticalWorkspace, welchTTest } from '../src/modules/statistical-analysis/model.ts';
+import { addDesignDeviation, createStatisticalWorkspace, describe, estimateTwoGroupSampleSize, isStatisticalWorkspace, linearRegression, oneWayAnova, parseDelimited, parseLaboratoryMeasurements, parseStatisticalWorkspace, preregisterDesign, randomizeParticipants, welchTTest } from '../src/modules/statistical-analysis/model.ts';
 
 const expectedModuleIds = [
   'org.omi.history-archives',
@@ -567,4 +567,36 @@ test('statistical analysis imports laboratory measurements as linked tabular dat
   assert.equal(imported.projectTitle, 'Physics investigation');
   assert.deepEqual(imported.rows[0], ['Physics investigation', 'Cooling experiment', 'Temperature over time', 'Thermometry', 'water-1', 'Temperature', '21.5', '°C', '0.1', '2026-10-07T08:00', 'Digital thermometer']);
   assert.equal(parseLaboratoryMeasurements(JSON.stringify({ schemaVersion: 1, title: 'Empty', studies: [] })), null);
+});
+
+
+test('experimental design sample size uses a two-sided normal approximation and validates inputs', () => {
+  assert.equal(estimateTwoGroupSampleSize(0.05, 0.8, 0.5), 63);
+  assert.equal(estimateTwoGroupSampleSize(0.05, 0.8, 0), null);
+  assert.equal(estimateTwoGroupSampleSize(1, 0.8, 0.5), null);
+});
+
+test('seeded allocation is reproducible, balanced, and plan registration is immutable with deviations logged', () => {
+  const first = randomizeParticipants(['P1', 'P2', 'P3', 'P4', 'P5'], ['A', 'B'], 'seed-1');
+  assert.deepEqual(randomizeParticipants(['P1', 'P2', 'P3', 'P4', 'P5'], ['A', 'B'], 'seed-1'), first);
+  assert.equal(Math.abs(first.filter(item => item.group === 'A').length - first.filter(item => item.group === 'B').length), 1);
+
+  const design = createStatisticalWorkspace().design;
+  design.hypothesis = 'Treatment improves outcome';
+  const frozen = preregisterDesign(design, '2026-10-07T00:00:00.000Z');
+  assert.equal(frozen.preregisteredAt, '2026-10-07T00:00:00.000Z');
+  assert.equal(JSON.parse(frozen.preregisteredSnapshot!).hypothesis, 'Treatment improves outcome');
+  assert.equal(preregisterDesign(frozen, 'later'), frozen);
+  const withDeviation = addDesignDeviation(frozen, 'Used a prespecified sensitivity analysis', '2026-10-08T00:00:00.000Z');
+  assert.equal(withDeviation.deviations.length, 1);
+  assert.equal(withDeviation.deviations[0]?.description, 'Used a prespecified sensitivity analysis');
+});
+
+test('legacy statistical workspace JSON migrates with an empty experimental design', () => {
+  const workspace = createStatisticalWorkspace();
+  const legacy = { ...workspace } as Partial<typeof workspace>;
+  delete legacy.design;
+  const migrated = parseStatisticalWorkspace(JSON.stringify(legacy));
+  assert.ok(migrated);
+  assert.equal(migrated.design.groups.join(','), 'Control,Treatment');
 });

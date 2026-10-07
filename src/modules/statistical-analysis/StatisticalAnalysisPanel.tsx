@@ -1,20 +1,20 @@
-import { useRef, useState } from 'react';
-import { downloadWorkspaceJson, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
+import { useEffect, useRef, useState } from 'react';
+import { downloadWorkspaceJson, safeWorkspaceFileName } from '../disciplineWorkspace';
+import { useIndexedStatisticalWorkspace } from './workspaceStorage';
 import {
-  createStatisticalWorkspace,
+  addDesignDeviation,
+  analyzeStatisticalDataset,
+  createExperimentalDesign,
   describe,
+  estimateTwoGroupSampleSize,
   formatStat,
-  isStatisticalWorkspace,
-  linearRegression,
   newStatisticalId,
-  numericColumnValues,
-  oneWayAnova,
   parseDelimited,
   parseLaboratoryMeasurements,
   parseStatisticalWorkspace,
-  welchTTest,
+  preregisterDesign,
+  randomizeParticipants,
   type StatisticalDataset,
-  type StatisticalWorkspace,
 } from './model';
 import '../disciplineWorkspaces.css';
 
@@ -75,6 +75,28 @@ const copy = {
     count: 'Elemszám',
     noNumeric: 'A kiválasztott oszlopban nincs elegendő érvényes numerikus adat.',
     noComparison: 'Csoportonként legalább két érvényes numerikus érték szükséges.',
+    design: "Kísérlettervezés",
+    hypothesis: "Hipotézis",
+    outcome: "Elsődleges kimenet",
+    groupsPlan: "Csoportok (vesszővel elválasztva)",
+    alpha: "Szignifikanciaszint (α)",
+    power: "Célzott statisztikai erő",
+    effect: "Várt standardizált hatásméret (d)",
+    sampleEstimate: "Becsült elemszám csoportonként",
+    estimateNote: "Kétoldali, két független csoport átlagkülönbségének normálközelítése; a végleges tervhez ellenőrizze a feltevéseket.",
+    inclusion: "Beválasztási szabályok (soronként egy)",
+    exclusion: "Kizárási szabályok (soronként egy)",
+    analysisPlan: "Előzetes elemzési terv",
+    freeze: "Terv előzetes rögzítése",
+    frozen: "Rögzítve",
+    seed: "Véletlenítés magja",
+    participantCount: "Résztvevők száma",
+    randomize: "Besorolási lista készítése",
+    randomizationNote: "A lista reprodukálható, egyszerű blokkolás nélküli besorolás. Az allokáció elrejtését külön folyamat biztosítsa.",
+    downloadAssignments: "Besorolási lista letöltése",
+    deviation: "Eltérés a rögzített tervtől",
+    addDeviation: "Eltérés naplózása",
+    deviations: "Naplózott eltérések",
     removeData: 'Adatkészlet eltávolítása',
   },
   en: {
@@ -132,6 +154,28 @@ const copy = {
     count: 'Count',
     noNumeric: 'The selected column has too few valid numeric values.',
     noComparison: 'Each group needs at least two valid numeric values.',
+    design: "Experimental design",
+    hypothesis: "Hypothesis",
+    outcome: "Primary outcome",
+    groupsPlan: "Groups (comma separated)",
+    alpha: "Significance level (α)",
+    power: "Target statistical power",
+    effect: "Expected standardized effect (d)",
+    sampleEstimate: "Estimated sample size per group",
+    estimateNote: "Normal approximation for a two-sided mean difference between two independent groups; check assumptions before finalizing the design.",
+    inclusion: "Inclusion criteria (one per line)",
+    exclusion: "Exclusion criteria (one per line)",
+    analysisPlan: "Preregistered analysis plan",
+    freeze: "Preregister and freeze plan",
+    frozen: "Preregistered",
+    seed: "Randomization seed",
+    participantCount: "Number of participants",
+    randomize: "Generate allocation list",
+    randomizationNote: "This is reproducible simple randomization without blocking. Use a separate process to conceal allocation.",
+    downloadAssignments: "Download allocation list",
+    deviation: "Deviation from frozen plan",
+    addDeviation: "Log deviation",
+    deviations: "Logged deviations",
     removeData: 'Remove dataset',
   },
   de: {
@@ -189,66 +233,75 @@ const copy = {
     count: 'Anzahl',
     noNumeric: 'Die ausgewählte Spalte enthält zu wenige gültige numerische Werte.',
     noComparison: 'Jede Gruppe benötigt mindestens zwei gültige numerische Werte.',
+    design: "Versuchsplanung",
+    hypothesis: "Hypothese",
+    outcome: "Primärer Endpunkt",
+    groupsPlan: "Gruppen (durch Komma getrennt)",
+    alpha: "Signifikanzniveau (α)",
+    power: "Angestrebte Teststärke",
+    effect: "Erwartete standardisierte Effektstärke (d)",
+    sampleEstimate: "Geschätzte Fallzahl je Gruppe",
+    estimateNote: "Normalapproximation für einen zweiseitigen Mittelwertvergleich zweier unabhängiger Gruppen; Annahmen vor der endgültigen Planung prüfen.",
+    inclusion: "Einschlusskriterien (je eine Zeile)",
+    exclusion: "Ausschlusskriterien (je eine Zeile)",
+    analysisPlan: "Präregistrierter Analyseplan",
+    freeze: "Plan präregistrieren und einfrieren",
+    frozen: "Präregistriert",
+    seed: "Randomisierungs-Seed",
+    participantCount: "Teilnehmendenzahl",
+    randomize: "Zuteilungsliste erstellen",
+    randomizationNote: "Reproduzierbare einfache Randomisierung ohne Blockbildung. Die Zuteilungsverdeckung muss separat sichergestellt werden.",
+    downloadAssignments: "Zuteilungsliste herunterladen",
+    deviation: "Abweichung vom eingefrorenen Plan",
+    addDeviation: "Abweichung protokollieren",
+    deviations: "Protokollierte Abweichungen",
     removeData: 'Datensatz entfernen',
   },
 } as const;
 
-function cellNumber(value: string | undefined): number {
-  if (value === undefined || value.trim() === '') return Number.NaN;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : Number.NaN;
-}
-
 export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statistical-analysis' }: { locale?: string; storageKey?: string }) {
   const t = copy[locale as Locale] ?? copy.hu;
-  const [workspace, setWorkspace] = useLocalWorkspace<StatisticalWorkspace>(storageKey, createStatisticalWorkspace, isStatisticalWorkspace);
+  const [workspace, setWorkspace, storageReady, storageError] = useIndexedStatisticalWorkspace(storageKey);
   const [error, setError] = useState('');
+  useEffect(() => { if (!workspace.design) setWorkspace(current => ({ ...current, design: createExperimentalDesign() })); }, [workspace.design, setWorkspace]);
+  const [participantCount, setParticipantCount] = useState(20);
+  const [assignments, setAssignments] = useState<{ id: string; group: string }[]>([]);
+  const [deviationText, setDeviationText] = useState('');
   const csvRef = useRef<HTMLInputElement>(null);
   const labRef = useRef<HTMLInputElement>(null);
   const jsonRef = useRef<HTMLInputElement>(null);
   const dataset = workspace.dataset;
+  const design = workspace.design ?? createExperimentalDesign();
+  const sampleSize = estimateTwoGroupSampleSize(design.alpha, design.power, design.standardizedEffect);
+  const locked = Boolean(design.preregisteredSnapshot);
 
-  const numericColumns = dataset ? dataset.columns.flatMap((name, index) => {
-    const count = numericColumnValues(dataset.rows, index).filter(Number.isFinite).length;
-    return count >= 2 ? [{ name, index }] : [];
-  }) : [];
+  const [analysis, setAnalysis] = useState<ReturnType<typeof analyzeStatisticalDataset> | null>(null);
+  useEffect(() => {
+    if (!dataset) { setAnalysis(null); return; }
+    if (typeof Worker === 'undefined') {
+      setAnalysis(analyzeStatisticalDataset(dataset, workspace.configuration));
+      return;
+    }
+    const worker = new Worker(new URL('./analyze.worker.ts', import.meta.url), { type: 'module' });
+    worker.onmessage = event => setAnalysis(event.data as ReturnType<typeof analyzeStatisticalDataset>);
+    worker.onerror = () => setAnalysis(analyzeStatisticalDataset(dataset, workspace.configuration));
+    worker.postMessage([dataset, workspace.configuration]);
+    return () => worker.terminate();
+  }, [dataset, workspace.configuration]);
+
+  const numericColumns = analysis?.numericColumns ?? [];
+  const groupingColumns = analysis?.groupingColumns ?? [];
   const valueColumn = numericColumns.find(column => String(column.index) === workspace.configuration.valueColumn) ?? numericColumns[0];
   const xColumn = numericColumns.find(column => String(column.index) === workspace.configuration.regressionX) ?? numericColumns[0];
   const yColumn = numericColumns.find(column => String(column.index) === workspace.configuration.regressionY) ?? numericColumns[1];
-  const groupingColumns = dataset ? dataset.columns.map((name, index) => ({
-    name,
-    index,
-    values: [...new Set(dataset.rows.map(row => row[index]?.trim()).filter((value): value is string => Boolean(value)))],
-  })).filter(column => column.values.length > 1 && column.values.length <= 20) : [];
   const groupColumn = groupingColumns.find(column => String(column.index) === workspace.configuration.groupColumn) ?? groupingColumns[0];
-  const values = dataset && valueColumn ? numericColumnValues(dataset.rows, valueColumn.index).filter(Number.isFinite) : [];
-  const summary = describe(values);
-  const groups = dataset && valueColumn && groupColumn
-    ? groupColumn.values.map(group => ({
-      label: group,
-      values: dataset.rows.flatMap(row => row[groupColumn.index]?.trim() === group
-        ? [cellNumber(row[valueColumn.index])]
-        : []).filter(Number.isFinite),
-    })).filter(group => group.values.length >= 2)
-    : [];
-  const tTest = groups.length === 2 ? welchTTest(groups[0]!.values, groups[1]!.values) : null;
-  const anova = groups.length >= 2 ? oneWayAnova(groups.map(group => group.values)) : null;
-  const regression = dataset && xColumn && yColumn && xColumn.index !== yColumn.index
-    ? linearRegression(
-      dataset.rows.map(row => cellNumber(row[xColumn.index])),
-      dataset.rows.map(row => cellNumber(row[yColumn.index])),
-    )
-    : null;
-  const histogram = (() => {
-    if (!values.length) return [];
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const bins = Array.from({ length: 10 }, () => 0);
-    if (min === max) { bins[0] = values.length; return bins; }
-    for (const value of values) bins[Math.min(9, Math.floor((value - min) / (max - min) * 10))]! += 1;
-    return bins;
-  })();
-  const maxBin = Math.max(1, ...histogram);
+  const summary = analysis?.summary ?? null;
+  const groups = analysis?.groups ?? [];
+  const tTest = analysis?.tTest ?? null;
+  const anova = analysis?.anova ?? null;
+  const regression = analysis?.regression ?? null;
+  const histogram = analysis?.histogram ?? [];
+  const maxBin = analysis?.maxBin ?? 1;
   const report = {
     ...workspace,
     schemaVersion: 1,
@@ -270,7 +323,13 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
   async function importCsv(file?: File): Promise<void> {
     if (!file) return;
     try {
-      const parsed = parseDelimited(await file.text());
+      const text = await file.text();
+      const parsed = typeof Worker === 'undefined' ? parseDelimited(text) : await new Promise<ReturnType<typeof parseDelimited>>(resolve => {
+        const worker = new Worker(new URL('./parse.worker.ts', import.meta.url), { type: 'module' });
+        worker.onmessage = event => { worker.terminate(); resolve(event.data as ReturnType<typeof parseDelimited>); };
+        worker.onerror = () => { worker.terminate(); resolve(parseDelimited(text)); };
+        worker.postMessage({ text });
+      });
       if (!parsed) { setError(t.csvError); return; }
       const nextDataset: StatisticalDataset = {
         id: newStatisticalId(),
@@ -280,7 +339,7 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
         columns: parsed.columns,
         rows: parsed.rows,
       };
-      setWorkspace({ schemaVersion: 1, dataset: nextDataset, analysisTitle: '', configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' } });
+      setWorkspace({ schemaVersion: 1, dataset: nextDataset, analysisTitle: '', configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' }, design: createExperimentalDesign() });
       setError('');
     } catch {
       setError(t.csvError);
@@ -304,6 +363,7 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
         },
         analysisTitle: '',
         configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' },
+        design: createExperimentalDesign(),
       });
       setError('');
     } catch {
@@ -326,11 +386,11 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
   return <main className="discipline-workspace">
     <header className="discipline-workspace__header">
       <div><p className="discipline-workspace__eyebrow">OMI Studio</p><h1>{t.title}</h1><p>{t.intro}</p></div>
-      <div><button type="button" onClick={() => jsonRef.current?.click()}>{t.importJson}</button> <button type="button" disabled={!dataset} onClick={() => downloadWorkspaceJson(safeWorkspaceFileName(workspace.analysisTitle || dataset?.title || '', 'statistical-analysis') + '.json', report)}>{t.export}</button></div>
+      <div><button type="button" onClick={() => jsonRef.current?.click()} disabled={!storageReady}>{t.importJson}</button> <button type="button" disabled={!dataset} onClick={() => downloadWorkspaceJson(safeWorkspaceFileName(workspace.analysisTitle || dataset?.title || '', 'statistical-analysis') + '.json', report)}>{t.export}</button></div>
       <input ref={jsonRef} className="discipline-file" type="file" accept=".json,application/json" onChange={event => { void importJson(event.target.files?.[0]); event.currentTarget.value = ''; }} />
     </header>
     <section className="discipline-workspace__section">
-      <div className="discipline-workspace__section-title"><h2>{t.dataset}</h2><div><button type="button" onClick={() => csvRef.current?.click()}>{t.importCsv}</button> <button type="button" onClick={() => labRef.current?.click()}>{t.importLab}</button> {dataset && <button type="button" className="discipline-workspace__danger" onClick={() => { setWorkspace({ schemaVersion: 1, dataset: null, analysisTitle: '', configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' } }); setError(''); }}>{t.removeData}</button>}</div></div>
+      <div className="discipline-workspace__section-title"><h2>{t.dataset}</h2><div><button type="button" onClick={() => csvRef.current?.click()} disabled={!storageReady}>{t.importCsv}</button> <button type="button" onClick={() => labRef.current?.click()} disabled={!storageReady}>{t.importLab}</button> {dataset && <button type="button" className="discipline-workspace__danger" disabled={!storageReady} onClick={() => { setWorkspace({ schemaVersion: 1, dataset: null, analysisTitle: '', configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' }, design: createExperimentalDesign() }); setError(''); }}>{t.removeData}</button>}</div></div>
       <input ref={csvRef} className="discipline-file" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" onChange={event => { void importCsv(event.target.files?.[0]); event.currentTarget.value = ''; }} />
       <input ref={labRef} className="discipline-file" type="file" accept=".json,application/json" onChange={event => { void importLaboratory(event.target.files?.[0]); event.currentTarget.value = ''; }} />
       {dataset ? <>
@@ -342,9 +402,37 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
         <p className="discipline-workspace__hint">{dataset.rows.length} {t.rows} · {dataset.columns.length} {t.columns}</p>
       </> : <p className="discipline-workspace__hint">{t.noDataset}</p>}
       <p className="discipline-workspace__hint">{t.local}</p>
+      {!storageReady && <p role="status">{locale === 'de' ? 'Datensatz wird geladen …' : locale === 'en' ? 'Loading dataset…' : 'Adatkészlet betöltése…'}</p>}
+      {storageError && <p role="alert">{storageError}</p>}
       {error && <p role="alert">{error}</p>}
     </section>
     {dataset && <>
+      <section className="discipline-workspace__section">
+        <h2>{t.design}</h2>
+        {design.preregisteredAt && <p role="status">{t.frozen}: {new Date(design.preregisteredAt).toLocaleString()}</p>}
+        <div className="discipline-workspace__grid">
+          <label>{t.hypothesis}<textarea value={design.hypothesis} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, hypothesis: event.target.value } }))} /></label>
+          <label>{t.outcome}<input value={design.primaryOutcome} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, primaryOutcome: event.target.value } }))} /></label>
+          <label>{t.groupsPlan}<input value={design.groups.join(', ')} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, groups: event.target.value.split(',').map(value => value.trim()).filter(Boolean) } }))} /></label>
+          <label>{t.alpha}<input type="number" min="0.001" max="0.2" step="0.001" value={design.alpha} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, alpha: Number(event.target.value) } }))} /></label>
+          <label>{t.power}<input type="number" min="0.51" max="0.99" step="0.01" value={design.power} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, power: Number(event.target.value) } }))} /></label>
+          <label>{t.effect}<input type="number" min="0.01" step="0.05" value={design.standardizedEffect} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, standardizedEffect: Number(event.target.value) } }))} /></label>
+        </div>
+        <p>{t.sampleEstimate}: <strong>{sampleSize ?? '—'}</strong></p><p className="discipline-workspace__hint">{t.estimateNote}</p>
+        <div className="discipline-workspace__grid">
+          <label>{t.inclusion}<textarea value={design.inclusionCriteria.join('\n')} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, inclusionCriteria: event.target.value.split('\n') } }))} /></label>
+          <label>{t.exclusion}<textarea value={design.exclusionCriteria.join('\n')} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, exclusionCriteria: event.target.value.split('\n') } }))} /></label>
+          <label>{t.analysisPlan}<textarea value={design.analysisPlan} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, analysisPlan: event.target.value } }))} /></label>
+          <label>{t.seed}<input value={design.randomizationSeed} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, randomizationSeed: event.target.value } }))} /></label>
+        </div>
+        {!locked && <button type="button" disabled={!design.hypothesis.trim() || !design.primaryOutcome.trim() || !design.analysisPlan.trim()} onClick={() => setWorkspace(current => ({ ...current, design: preregisterDesign(current.design) }))}>{t.freeze}</button>}
+        <hr />
+        <label>{t.participantCount}<input type="number" min="1" max="100000" value={participantCount} onChange={event => setParticipantCount(Math.max(1, Math.min(100000, Number(event.target.value) || 1)))} /></label>
+        <button type="button" disabled={design.groups.length < 2} onClick={() => setAssignments(randomizeParticipants(Array.from({ length: participantCount }, (_, index) => 'P' + String(index + 1).padStart(4, '0')), design.groups, design.randomizationSeed))}>{t.randomize}</button>
+        <p className="discipline-workspace__hint">{t.randomizationNote}</p>
+        {assignments.length > 0 && <><button type="button" onClick={() => { const csv = ['id,group', ...assignments.map(item => JSON.stringify(item.id) + ',' + JSON.stringify(item.group))].join('\n'); const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); const link = document.createElement('a'); link.href = url; link.download = 'randomization-assignments.csv'; link.click(); URL.revokeObjectURL(url); }}>{t.downloadAssignments}</button><div className="discipline-table-wrap"><table className="discipline-table"><thead><tr><th>ID</th><th>{t.groups}</th></tr></thead><tbody>{assignments.slice(0, 50).map(item => <tr key={item.id}><td>{item.id}</td><td>{item.group}</td></tr>)}</tbody></table></div></>}
+        {locked && <><label>{t.deviation}<textarea value={deviationText} onChange={event => setDeviationText(event.target.value)} /></label><button type="button" disabled={!deviationText.trim()} onClick={() => { setWorkspace(current => ({ ...current, design: addDesignDeviation(current.design, deviationText) })); setDeviationText(''); }}>{t.addDeviation}</button><h3>{t.deviations}</h3><ul>{design.deviations.map((item,index) => <li key={index}>{item.date}: {item.description}</li>)}</ul></>}
+      </section>
       <section className="discipline-workspace__section">
         <div className="discipline-workspace__section-title"><h2>{t.descriptive}</h2><label>{t.valueColumn}<select value={valueColumn?.index ?? ''} onChange={event => setWorkspace(current => ({ ...current, configuration: { ...current.configuration, valueColumn: event.target.value } }))}>{numericColumns.map(column => <option key={column.index} value={column.index}>{column.name}</option>)}</select></label></div>
         {summary ? <>

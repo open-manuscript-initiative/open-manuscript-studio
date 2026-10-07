@@ -7,11 +7,28 @@ export type StatisticalDataset = {
   rows: string[][];
 };
 
+export type ExperimentalDesign = {
+  hypothesis: string;
+  primaryOutcome: string;
+  groups: string[];
+  alpha: number;
+  power: number;
+  standardizedEffect: number;
+  randomizationSeed: string;
+  inclusionCriteria: string[];
+  exclusionCriteria: string[];
+  analysisPlan: string;
+  preregisteredAt: string | null;
+  preregisteredSnapshot: string | null;
+  deviations: { date: string; description: string }[];
+};
+
 export type StatisticalWorkspace = {
   schemaVersion: 1;
   dataset: StatisticalDataset | null;
   analysisTitle: string;
   configuration: { valueColumn: string; groupColumn: string; regressionX: string; regressionY: string };
+  design: ExperimentalDesign;
 };
 
 export type DescriptiveSummary = {
@@ -57,8 +74,68 @@ export function newStatisticalId(): string {
     : `stat-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+export function createExperimentalDesign(): ExperimentalDesign {
+  return {
+    hypothesis: '', primaryOutcome: '', groups: ['Control', 'Treatment'], alpha: 0.05,
+    power: 0.8, standardizedEffect: 0.5, randomizationSeed: 'omi-seed',
+    inclusionCriteria: [], exclusionCriteria: [], analysisPlan: '',
+    preregisteredAt: null, preregisteredSnapshot: null, deviations: [],
+  };
+}
+
+export function estimateTwoGroupSampleSize(alpha: number, power: number, standardizedEffect: number): number | null {
+  if (!(alpha > 0 && alpha < 1) || !(power > 0.5 && power < 1) || !(standardizedEffect > 0) ||
+    ![alpha, power, standardizedEffect].every(Number.isFinite)) return null;
+  const z = (p: number) => inverseNormal(p);
+  return Math.ceil(2 * ((z(1 - alpha / 2) + z(power)) / standardizedEffect) ** 2);
+}
+
+function inverseNormal(p: number): number {
+  const a = [-39.6968302866538, 220.946098424521, -275.928510446969, 138.357751867269, -30.6647980661472, 2.50662827745924];
+  const b = [-54.4760987982241, 161.585836858041, -155.698979859887, 66.8013118877197, -13.2806815528857];
+  const c = [-0.00778489400243029, -0.322396458041136, -2.40075827716184, -2.54973253934373, 4.37466414146497, 2.93816398269878];
+  const d = [0.00778469570904146, 0.32246712907004, 2.445134137143, 3.75440866190742];
+  const low = 0.02425, high = 1 - low;
+  if (p < low) { const q = Math.sqrt(-2 * Math.log(p)); return (((((c[0]!*q+c[1]!)*q+c[2]!)*q+c[3]!)*q+c[4]!)*q+c[5]!) / ((((d[0]! * q + d[1]!) * q + d[2]!) * q + d[3]!) * q + 1); }
+  if (p > high) { const q = Math.sqrt(-2 * Math.log(1-p)); return -(((((c[0]!*q+c[1]!)*q+c[2]!)*q+c[3]!)*q+c[4]!)*q+c[5]!) / ((((d[0]! * q + d[1]!) * q + d[2]!) * q + d[3]!) * q + 1); }
+  const q = p - 0.5, r = q * q;
+  return (((((a[0]!*r+a[1]!)*r+a[2]!)*r+a[3]!)*r+a[4]!)*r+a[5]!)*q / (((((b[0]! * r + b[1]!) * r + b[2]!) * r + b[3]!) * r + b[4]!) * r + 1);
+}
+
+function seededRandom(seed: string): () => number {
+  let state = 2166136261;
+  for (const char of seed) { state ^= char.charCodeAt(0); state = Math.imul(state, 16777619); }
+  return () => {
+    state += 0x6D2B79F5;
+    let value = state;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function randomizeParticipants(ids: string[], groups: string[], seed: string): { id: string; group: string }[] {
+  if (!groups.length || groups.some(group => !group.trim())) return [];
+  const random = seededRandom(seed);
+  const shuffled = [...ids].map((id, index) => ({ id, key: random(), index })).sort((a, b) => a.key - b.key || a.index - b.index);
+  return shuffled.map(({ id }, index) => ({ id, group: groups[index % groups.length]! }));
+}
+
+export function preregisterDesign(design: ExperimentalDesign, now = new Date().toISOString()): ExperimentalDesign {
+  if (design.preregisteredSnapshot) return design;
+  const snapshot = { ...design, preregisteredAt: now, preregisteredSnapshot: null, deviations: [] };
+  return { ...design, preregisteredAt: now, preregisteredSnapshot: JSON.stringify(snapshot), deviations: [] };
+}
+
+export function addDesignDeviation(design: ExperimentalDesign, description: string, now = new Date().toISOString()): ExperimentalDesign {
+  const value = description.trim();
+  return value && design.preregisteredSnapshot
+    ? { ...design, deviations: [...design.deviations, { date: now, description: value }] }
+    : design;
+}
+
 export function createStatisticalWorkspace(): StatisticalWorkspace {
-  return { schemaVersion: 1, dataset: null, analysisTitle: '', configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' } };
+  return { schemaVersion: 1, dataset: null, analysisTitle: '', configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' }, design: createExperimentalDesign() };
 }
 
 export function parseDelimited(text: string, delimiter?: ',' | '\t'): { columns: string[]; rows: string[][] } | null {
@@ -263,6 +340,56 @@ export function linearRegression(xValues: number[], yValues: number[]): LinearRe
   return { n: pairs.length, intercept, slope, correlation, rSquared: correlation ** 2 };
 }
 
+export type StatisticalAnalysisResult = {
+  numericColumns: { name: string; index: number }[];
+  groupingColumns: { name: string; index: number; values: string[] }[];
+  values: number[];
+  summary: DescriptiveSummary | null;
+  groups: { label: string; values: number[] }[];
+  tTest: MeanComparison | null;
+  anova: AnovaResult | null;
+  regression: LinearRegressionResult | null;
+  histogram: number[];
+  maxBin: number;
+};
+
+export function analyzeStatisticalDataset(dataset: StatisticalDataset, configuration: StatisticalWorkspace['configuration']): StatisticalAnalysisResult {
+  const numericColumns = dataset.columns.flatMap((name, index) => numericColumnValues(dataset.rows, index).length >= 2 ? [{ name, index }] : []);
+  const groupingColumns = dataset.columns.map((name, index) => ({
+    name, index, values: [...new Set(dataset.rows.map(row => row[index]?.trim()).filter((value): value is string => Boolean(value)))],
+  })).filter(column => column.values.length > 1 && column.values.length <= 20);
+  const valueColumn = numericColumns.find(column => String(column.index) === configuration.valueColumn) ?? numericColumns[0];
+  const xColumn = numericColumns.find(column => String(column.index) === configuration.regressionX) ?? numericColumns[0];
+  const yColumn = numericColumns.find(column => String(column.index) === configuration.regressionY) ?? numericColumns[1];
+  const groupColumn = groupingColumns.find(column => String(column.index) === configuration.groupColumn) ?? groupingColumns[0];
+  const values = valueColumn ? numericColumnValues(dataset.rows, valueColumn.index) : [];
+  const groups = valueColumn && groupColumn
+    ? groupColumn.values.map(label => ({
+      label,
+      values: dataset.rows.flatMap(row => row[groupColumn.index]?.trim() === label
+        ? [parseFiniteNumber(row[valueColumn.index])]
+        : []).filter(Number.isFinite),
+    })).filter(group => group.values.length >= 2)
+    : [];
+  const tTest = groups.length === 2 ? welchTTest(groups[0]!.values, groups[1]!.values) : null;
+  const anova = groups.length >= 2 ? oneWayAnova(groups.map(group => group.values)) : null;
+  const regression = xColumn && yColumn && xColumn.index !== yColumn.index
+    ? linearRegression(dataset.rows.map(row => parseFiniteNumber(row[xColumn.index])), dataset.rows.map(row => parseFiniteNumber(row[yColumn.index])))
+    : null;
+  const min = values.length ? values.reduce((a,b) => Math.min(a,b), Infinity) : 0;
+  const max = values.length ? values.reduce((a,b) => Math.max(a,b), -Infinity) : 0;
+  const histogram = values.length ? Array.from({ length: 10 }, () => 0) : [];
+  if (values.length && min === max) histogram[0] = values.length;
+  else for (const value of values) histogram[Math.min(9, Math.floor((value - min) / (max - min) * 10))]! += 1;
+  return { numericColumns, groupingColumns, values, summary: describe(values), groups, tTest, anova, regression, histogram, maxBin: histogram.reduce((a,b) => Math.max(a,b), 1) };
+}
+
+function parseFiniteNumber(value: string | undefined): number {
+  if (value === undefined || value.trim() === '') return Number.NaN;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
 export function formatStat(value: number, digits = 4): string {
   if (!Number.isFinite(value)) return '—';
   return new Intl.NumberFormat(undefined, { maximumFractionDigits: digits }).format(value);
@@ -355,10 +482,24 @@ function logGamma(value: number): number {
   return 0.5 * Math.log(2 * Math.PI) + (shifted + 0.5) * Math.log(t) - t + Math.log(x);
 }
 
+function isExperimentalDesign(value: unknown): value is ExperimentalDesign {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const design = value as Partial<ExperimentalDesign>;
+  return ['hypothesis', 'primaryOutcome', 'analysisPlan', 'randomizationSeed'].every(key => typeof design[key as keyof ExperimentalDesign] === 'string')
+    && Array.isArray(design.groups) && design.groups.every(item => typeof item === 'string')
+    && Array.isArray(design.inclusionCriteria) && design.inclusionCriteria.every(item => typeof item === 'string')
+    && Array.isArray(design.exclusionCriteria) && design.exclusionCriteria.every(item => typeof item === 'string')
+    && Array.isArray(design.deviations) && design.deviations.every(item => Boolean(item && typeof item.date === 'string' && typeof item.description === 'string'))
+    && typeof design.alpha === 'number' && typeof design.power === 'number' && typeof design.standardizedEffect === 'number'
+    && (design.preregisteredAt === null || typeof design.preregisteredAt === 'string')
+    && (design.preregisteredSnapshot === null || typeof design.preregisteredSnapshot === 'string');
+}
+
 export function isStatisticalWorkspace(value: unknown): value is StatisticalWorkspace {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const candidate = value as Partial<StatisticalWorkspace>;
   if (candidate.schemaVersion !== 1 || typeof candidate.analysisTitle !== 'string') return false;
+  if (candidate.design !== undefined && !isExperimentalDesign(candidate.design)) return false;
   const configuration = candidate.configuration as StatisticalWorkspace['configuration'] | undefined;
   if (!configuration || !['valueColumn', 'groupColumn', 'regressionX', 'regressionY'].every((key) => typeof configuration[key as keyof typeof configuration] === 'string')) return false;
   if (candidate.dataset === null) return true;
@@ -374,7 +515,8 @@ export function isStatisticalWorkspace(value: unknown): value is StatisticalWork
 export function parseStatisticalWorkspace(json: string): StatisticalWorkspace | null {
   try {
     const value: unknown = JSON.parse(json);
-    return isStatisticalWorkspace(value) ? value : null;
+    if (!isStatisticalWorkspace(value)) return null;
+    return { ...value, design: value.design ?? createExperimentalDesign() };
   } catch {
     return null;
   }
