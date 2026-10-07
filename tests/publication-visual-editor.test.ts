@@ -107,17 +107,18 @@ test('Studio navigation collapses without leaving the active workspace and Home 
   assert.match(studioShellStyles, /\.studio-menu-body\.studio-menu-body--navigation-collapsed \{\s*grid-template-columns: minmax\(0, 1fr\)/);
 });
 
-test('mobile manuscript menu uses a full-window grid with vertical-only scrolling', () => {
+test('mobile manuscript menu keeps section grids in normal vertical flow', () => {
   assert.match(
     studioShellStyles,
     /@media \(max-width: 760px\)[\s\S]*\.studio-menu-body \{[\s\S]*position: relative;[\s\S]*display: block;[\s\S]*overflow: hidden;/,
   );
   assert.match(
     studioShellStyles,
-    /@media \(max-width: 760px\)[\s\S]*\.studio-menu-navigation \{[\s\S]*position: absolute;[\s\S]*inset: 0;[\s\S]*z-index: 120;[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);[\s\S]*overflow-x: hidden;[\s\S]*overflow-y: auto;/,
+    /@media \(max-width: 760px\)[\s\S]*\.studio-menu-navigation \{[\s\S]*position: absolute;[\s\S]*inset: 0;[\s\S]*z-index: 120;[\s\S]*display: flex;[\s\S]*flex-direction: column;[\s\S]*overflow-x: hidden;[\s\S]*overflow-y: auto;/,
   );
   assert.match(
     studioShellStyles,
+    /\.studio-menu-nav-group \{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/,
     /\.studio-menu-body--navigation-open > \.studio-menu-content \{\s*display: none;/,
   );
   assert.doesNotMatch(
