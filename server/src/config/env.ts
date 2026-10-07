@@ -159,7 +159,7 @@ const environmentSchema = z.object({
   MENDELEY_REDIRECT_URI: z.string().url().optional(),
 
   // Comma-separated built-in module IDs available on this installation.
-  STUDIO_ENABLED_MODULES: z.string().default('org.omi.history-archives,org.omi.religious-texts,org.omi.critical-text-edition,org.omi.corpus-linguistics,org.omi.musicology,org.omi.cultural-heritage,org.omi.social-research-methods,org.omi.legal-sources,org.omi.research-reproducibility,org.omi.spatial-research,org.omi.archaeology,org.omi.experimental-laboratory')
+  STUDIO_ENABLED_MODULES: z.string().default('org.omi.history-archives,org.omi.religious-texts,org.omi.critical-text-edition,org.omi.corpus-linguistics,org.omi.musicology,org.omi.cultural-heritage,org.omi.social-research-methods,org.omi.legal-sources,org.omi.research-reproducibility,org.omi.spatial-research,org.omi.archaeology,org.omi.experimental-laboratory,org.omi.statistical-analysis')
     .transform((value) => [...new Set(value.split(',').map((item) => item.trim()).filter(Boolean))]),
 
   // Europeana API access key. Keep it server-side; the search UI calls this API through Studio.
