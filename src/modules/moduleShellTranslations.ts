@@ -100,6 +100,11 @@ const translations: Record<string, ModuleShellCopy> = {
         description: 'Document archaeological sites, contexts, stratigraphic units, finds, samples, and source records.',
         overview: 'Archaeology workspace',
       },
+      'org.omi.experimental-laboratory': {
+        title: 'Experimental and laboratory research',
+        description: 'Structure investigations, studies, samples, protocols, instruments, assays, measurements, and raw or derived research data.',
+        overview: 'Experimental research workspace',
+      },
       'org.omi.social-research-methods': {
         title: 'Social research data and methods',
         description: 'Describe surveys, variables, and codebooks; code interviews; and connect datasets with research methods.',
@@ -211,6 +216,11 @@ const translations: Record<string, ModuleShellCopy> = {
         description: 'Fundorte, Kontexte, stratigraphische Einheiten, Funde, Proben und Quellen dokumentieren.',
         overview: 'Arbeitsbereich Archäologie',
       },
+      'org.omi.experimental-laboratory': {
+        title: 'Experimentelle und Laborforschung',
+        description: 'Untersuchungen, Studien, Proben, Protokolle, Geräte, Assays, Messungen und Roh- oder abgeleitete Forschungsdaten strukturieren.',
+        overview: 'Arbeitsbereich Experimentalforschung',
+      },
       'org.omi.social-research-methods': {
         title: 'Sozialwissenschaftliche Daten und Methoden',
         description: 'Erhebungen, Variablen und Codebücher beschreiben, Interviews codieren und Datensätze mit Forschungsmethoden verknüpfen.',
@@ -321,6 +331,11 @@ const translations: Record<string, ModuleShellCopy> = {
         title: 'Régészeti kutatási modul',
         description: 'Lelőhelyek, kontextusok, rétegtani egységek, leletek, minták és forrásrekordok dokumentálása.',
         overview: 'Régészeti kutatótér',
+      },
+      'org.omi.experimental-laboratory': {
+        title: 'Kísérleti és laboratóriumi kutatási modul',
+        description: 'Vizsgálatok, tanulmányok, minták, protokollok, műszerek, vizsgálatok, mérések, valamint nyers és feldolgozott kutatási adatok strukturált kezelése.',
+        overview: 'Kísérleti kutatómunkatér',
       },
       'org.omi.social-research-methods': {
         title: 'Kutatási adat- és módszertani modul',

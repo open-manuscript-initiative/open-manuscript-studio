@@ -4,7 +4,7 @@ import { Component, useEffect, useState, type ErrorInfo, type ReactNode } from '
 import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { getServerModulePolicy, saveServerModulePreferences } from './api';
-import { corpusLinguisticsModule, criticalTextEditionModule, culturalHeritageModule, historyArchivesModule, legalSourcesModule, musicologyModule, researchReproducibilityModule, religiousTextsModule, socialResearchMethodsModule, spatialResearchModule, archaeologyModule, studioModules } from './catalog';
+import { corpusLinguisticsModule, criticalTextEditionModule, culturalHeritageModule, historyArchivesModule, legalSourcesModule, musicologyModule, researchReproducibilityModule, religiousTextsModule, socialResearchMethodsModule, spatialResearchModule, archaeologyModule, experimentalLaboratoryModule, studioModules } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
 import { EuropeanaSearchPanel } from './history-archives/EuropeanaSearchPanel';
 import { NaraSearchPanel } from './history-archives/NaraSearchPanel';
@@ -19,6 +19,7 @@ import { LegalSourcesPanel } from './legal-sources/LegalSourcesPanel';
 import { ResearchReproducibilityPanel } from './research-reproducibility/ResearchReproducibilityPanel';
 import { SpatialResearchPanel } from './spatial-research/SpatialResearchPanel';
 import { ArchaeologyPanel } from './archaeology/ArchaeologyPanel';
+import { ExperimentalLaboratoryPanel } from './experimental-laboratory/ExperimentalLaboratoryPanel';
 import {
   readStudioModulePreferences,
   writeStudioModulePreferences,
@@ -215,6 +216,8 @@ export function ModuleManagerPanel({
                   <SpatialResearchPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === archaeologyModule.id ? (
                   <ArchaeologyPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
+                ) : module.id === experimentalLaboratoryModule.id ? (
+                  <ExperimentalLaboratoryPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : (
                   <div className="studio-module-empty-slot">{copy.noFeatures}</div>
                 )}

@@ -20,6 +20,7 @@ import { resolveStudioModuleActivationState } from '../src/modules/types.ts';
 import { searchEuropeana } from '../server/src/integrations/europeana/europeanaSearch.ts';
 import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSearch.ts';
 import { searchSefaria } from '../server/src/integrations/sefaria/sefariaSearch.ts';
+import { createExperimentalWorkspace, isExperimentalWorkspace, parseExperimentalWorkspace } from '../src/modules/experimental-laboratory/model.ts';
 
 const expectedModuleIds = [
   'org.omi.history-archives',
@@ -33,6 +34,7 @@ const expectedModuleIds = [
   'org.omi.research-reproducibility',
   'org.omi.spatial-research',
   'org.omi.archaeology',
+  'org.omi.experimental-laboratory',
 ];
 
 function createStorage(): ModulePreferenceStorage & { values: Map<string, string> } {
@@ -437,4 +439,37 @@ test('Sefaria adapter rejects unsafe pagination cursors and keeps result links o
   const result = await searchSefaria({ query: 'shepherd', fetchImpl });
   assert.equal(result.items.length, 1);
   assert.ok(result.items.every(({ sourceUrl }) => sourceUrl.startsWith('https://www.sefaria.org/')));
+});
+
+
+test('experimental laboratory projects validate and round-trip their portable module JSON', () => {
+  const project = createExperimentalWorkspace();
+  project.profile = 'chemistry';
+  project.title = 'Example investigation';
+  project.studies[0]!.assays.push({
+    id: 'assay-1',
+    title: 'Absorbance',
+    technology: 'UV-visible spectroscopy',
+    method: 'Measure at a fixed wavelength.',
+    materialReferences: 'sample-1',
+    measurements: [{
+      id: 'measurement-1',
+      name: 'Absorbance',
+      value: '0.42',
+      unit: 'AU',
+      uncertainty: '0.01',
+      measuredAt: '2026-10-07T08:00',
+      instrumentId: 'instrument-1',
+    }],
+  });
+
+  assert.equal(isExperimentalWorkspace(project), true);
+  assert.deepEqual(parseExperimentalWorkspace(JSON.stringify(project)), project);
+});
+
+test('experimental laboratory import rejects malformed records and unsupported schema versions', () => {
+  const project = createExperimentalWorkspace();
+  assert.equal(parseExperimentalWorkspace('{broken'), null);
+  assert.equal(isExperimentalWorkspace({ ...project, schemaVersion: 2 }), false);
+  assert.equal(isExperimentalWorkspace({ ...project, studies: [{ ...project.studies[0], assays: [{ measurements: [null] }] }] }), false);
 });
