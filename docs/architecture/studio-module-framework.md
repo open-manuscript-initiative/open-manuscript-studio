@@ -34,6 +34,10 @@ The initial catalog includes these modules:
 | Social research methods | Social sciences, behavioral sciences, economics | Record research design and ethics notes, maintain a variable codebook, and code selected transcript passages. |
 | Legal sources | Law | Record jurisdiction, citations, dates, status, source links, and dated text versions; compare two saved versions side by side. Search EUR-Lex directly and open portal-scoped web searches for InfoCuria, the UN Treaty Collection, Roman law, and Vatican canon-law sources. External results are not imported. |
 | Research reproducibility | Natural sciences, engineering | Link publications to versioned datasets, code, methods, software, supplements, repositories, persistent identifiers, licenses, and checksums. |
+| Spatial research and GIS | Geography, GIS, spatial humanities | Register georeferenced objects, edit point coordinates, and import/export GeoJSON FeatureCollections while retaining declared coordinate reference information. No reprojection or map tile service is provided. |
+| Archaeology | Archaeology, archaeometry, material culture | Document sites, stratigraphic contexts, dating, finds, sample identifiers, coordinates, and source records; import and export project JSON. |
+
+Spatial Research and Archaeology save project records in browser storage with portable exports. GeoJSON import preserves supported Point, LineString, Polygon, and Multi* geometry coordinates; the coordinate reference system is recorded as project metadata and is not transformed. Archaeology records group contexts and finds under one site/project and do not replace a formal excavation database.
 
 The History and Archives entry has on-demand Europeana Search API and U.S.
 National Archives Catalog searches, plus a direct link to the official

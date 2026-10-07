@@ -7,6 +7,8 @@ import { moduleManifest as culturalHeritageModule } from './cultural-heritage/in
 import { moduleManifest as socialResearchMethodsModule } from './social-research-methods/index';
 import { moduleManifest as legalSourcesModule } from './legal-sources/index';
 import { moduleManifest as researchReproducibilityModule } from './research-reproducibility/index';
+import { moduleManifest as spatialResearchModule } from './spatial-research/index';
+import { moduleManifest as archaeologyModule } from './archaeology/index';
 import { StudioModuleRegistry } from './registry';
 import type { StudioModuleInstallationPolicy } from './types';
 
@@ -20,6 +22,8 @@ export {
   socialResearchMethodsModule,
   legalSourcesModule,
   researchReproducibilityModule,
+  spatialResearchModule,
+  archaeologyModule,
 };
 
 export const builtinModuleManifests = [
@@ -32,6 +36,8 @@ export const builtinModuleManifests = [
   socialResearchMethodsModule,
   legalSourcesModule,
   researchReproducibilityModule,
+  spatialResearchModule,
+  archaeologyModule,
 ] as const;
 
 export const studioModules = new StudioModuleRegistry();

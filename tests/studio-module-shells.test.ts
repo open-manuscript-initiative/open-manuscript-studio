@@ -31,6 +31,8 @@ const expectedModuleIds = [
   'org.omi.social-research-methods',
   'org.omi.legal-sources',
   'org.omi.research-reproducibility',
+  'org.omi.spatial-research',
+  'org.omi.archaeology',
 ];
 
 function createStorage(): ModulePreferenceStorage & { values: Map<string, string> } {

@@ -18,6 +18,8 @@ const MODULE_IDS = [
   'org.omi.social-research-methods',
   'org.omi.legal-sources',
   'org.omi.research-reproducibility',
+  'org.omi.spatial-research',
+  'org.omi.archaeology',
 ] as const;
 const workspaceIdSchema = z.string().trim().min(1).max(128).regex(/^[A-Za-z0-9._:-]+$/);
 const updateSchema = z.object({

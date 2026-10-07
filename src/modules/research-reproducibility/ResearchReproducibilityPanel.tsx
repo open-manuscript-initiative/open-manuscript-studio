@@ -6,6 +6,14 @@ type Locale = 'hu' | 'en' | 'de';
 type Output = { id: string; kind: string; title: string; version: string; persistentId: string; repository: string; releaseDate: string; license: string; checksum: string; relation: string; verified: boolean; notes: string };
 type Workspace = { project: string; outputs: Output[] };
 const blankWorkspace = (): Workspace => ({ project: '', outputs: [] });
+const isWorkspace = (value: unknown): value is Workspace => Boolean(
+  value && typeof value === 'object' && typeof (value as Workspace).project === 'string'
+    && Array.isArray((value as Workspace).outputs)
+    && (value as Workspace).outputs.every((item) => item && typeof item === 'object'
+      && typeof (item as Output).id === 'string'
+      && ['kind', 'title', 'version', 'persistentId', 'repository', 'releaseDate', 'license', 'checksum', 'relation', 'notes'].every((key) => typeof (item as unknown as Record<string, unknown>)[key] === 'string')
+      && typeof (item as Output).verified === 'boolean'),
+);
 const newOutput = (): Output => ({ id: newWorkspaceId(), kind: 'dataset', title: '', version: '', persistentId: '', repository: '', releaseDate: '', license: '', checksum: '', relation: '', verified: false, notes: '' });
 const copy = {
   hu: { title: 'Kutatási reprodukálhatóság', subtitle: 'A közleményekhez kapcsolódó adatok, kódok, módszerek és verziók nyilvántartása.', project: 'Kutatás / közlemény címe', outputs: 'Kapcsolódó kutatási kimenetek', add: 'Kimenet hozzáadása', kind: 'Típus', kinds: { dataset: 'Adatkészlet', code: 'Kód', method: 'Módszer', supplement: 'Kiegészítő anyag', software: 'Szoftver', other: 'Egyéb' }, titleField: 'Megnevezés', version: 'Verzió', pid: 'Tartós azonosító (DOI, Handle stb.)', repository: 'Adattár URL-je', date: 'Közzététel dátuma', license: 'Licenc', checksum: 'SHA-256 ellenőrzőösszeg', relation: 'Kapcsolat a közleménnyel', notes: 'Megjegyzések és újrafuttatási útmutató', verified: 'A hivatkozást és verziót ellenőriztem', file: 'Fájl ellenőrzőösszegének kiszámítása', remove: 'Törlés', export: 'Reprodukálhatósági jegyzék exportálása JSON-ként', local: 'A jegyzék ezen az eszközön tárolódik. Fájlfeltöltéskor csak a fájlnév, méret és SHA-256 kerül bejegyzésre; a fájl tartalma nem.' },
@@ -15,7 +23,7 @@ const copy = {
 
 export function ResearchReproducibilityPanel({ locale = 'hu', storageKey = 'research-reproducibility' }: { locale?: string; storageKey?: string }) {
   const t = copy[locale as Locale] ?? copy.hu;
-  const [workspace, setWorkspace] = useLocalWorkspace<Workspace>(storageKey, blankWorkspace);
+  const [workspace, setWorkspace] = useLocalWorkspace<Workspace>(storageKey, blankWorkspace, isWorkspace);
   const [busy, setBusy] = useState<string | null>(null);
   const updateOutput = (id: string, changes: Partial<Output>) => setWorkspace(current => ({ ...current, outputs: current.outputs.map(output => output.id === id ? { ...output, ...changes } : output) }));
   const hashFile = async (id: string, file?: File) => {

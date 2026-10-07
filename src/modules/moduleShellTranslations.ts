@@ -90,6 +90,16 @@ const translations: Record<string, ModuleShellCopy> = {
         description: 'Connect objects, sites, people, and events with time and place, and annotate regions within images.',
         overview: 'Cultural heritage workspace',
       },
+      'org.omi.spatial-research': {
+        title: 'Spatial research and GIS',
+        description: 'Register georeferenced research objects, import and export GeoJSON, and retain coordinate reference information.',
+        overview: 'Spatial research workspace',
+      },
+      'org.omi.archaeology': {
+        title: 'Archaeology',
+        description: 'Document archaeological sites, contexts, stratigraphic units, finds, samples, and source records.',
+        overview: 'Archaeology workspace',
+      },
       'org.omi.social-research-methods': {
         title: 'Social research data and methods',
         description: 'Describe surveys, variables, and codebooks; code interviews; and connect datasets with research methods.',
@@ -191,6 +201,16 @@ const translations: Record<string, ModuleShellCopy> = {
         description: 'Objekte, Fundorte, Personen und Ereignisse mit Zeit und Ort verknüpfen sowie Bildbereiche annotieren.',
         overview: 'Arbeitsbereich Kulturerbe',
       },
+      'org.omi.spatial-research': {
+        title: 'Raumbezogene Forschung und GIS',
+        description: 'Georeferenzierte Forschungsobjekte erfassen, GeoJSON importieren und exportieren sowie Koordinatenreferenzangaben dokumentieren.',
+        overview: 'Arbeitsbereich Raumforschung',
+      },
+      'org.omi.archaeology': {
+        title: 'Archäologie',
+        description: 'Fundorte, Kontexte, stratigraphische Einheiten, Funde, Proben und Quellen dokumentieren.',
+        overview: 'Arbeitsbereich Archäologie',
+      },
       'org.omi.social-research-methods': {
         title: 'Sozialwissenschaftliche Daten und Methoden',
         description: 'Erhebungen, Variablen und Codebücher beschreiben, Interviews codieren und Datensätze mit Forschungsmethoden verknüpfen.',
@@ -291,6 +311,16 @@ const translations: Record<string, ModuleShellCopy> = {
         title: 'Kulturális örökségi tárgy- és képelemző modul',
         description: 'Tárgyak, lelőhelyek, szereplők és események összekapcsolása térbeli és időbeli adatokkal, képrészletek annotálása.',
         overview: 'Kulturálisörökség-munkatér',
+      },
+      'org.omi.spatial-research': {
+        title: 'Térinformatikai kutatási modul',
+        description: 'Georeferált kutatási objektumok nyilvántartása, GeoJSON importja és exportja, valamint a koordinátarendszer rögzítése.',
+        overview: 'Térinformatikai kutatótér',
+      },
+      'org.omi.archaeology': {
+        title: 'Régészeti kutatási modul',
+        description: 'Lelőhelyek, kontextusok, rétegtani egységek, leletek, minták és forrásrekordok dokumentálása.',
+        overview: 'Régészeti kutatótér',
       },
       'org.omi.social-research-methods': {
         title: 'Kutatási adat- és módszertani modul',

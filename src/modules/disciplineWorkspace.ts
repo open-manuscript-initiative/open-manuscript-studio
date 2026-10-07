@@ -8,12 +8,14 @@ export function newWorkspaceId(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function useLocalWorkspace<T>(key: string, createDefault: () => T): [T, Dispatch<SetStateAction<T>>] {
+export function useLocalWorkspace<T>(key: string, createDefault: () => T, validate?: (value: unknown) => value is T): [T, Dispatch<SetStateAction<T>>] {
   const [value, setValue] = useState<T>(() => {
     if (typeof window === 'undefined') return createDefault();
     try {
       const stored = window.localStorage.getItem(key);
-      return stored ? JSON.parse(stored) as T : createDefault();
+      if (!stored) return createDefault();
+      const parsed: unknown = JSON.parse(stored);
+      return !validate || validate(parsed) ? parsed as T : createDefault();
     } catch {
       return createDefault();
     }
