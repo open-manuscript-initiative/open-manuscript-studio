@@ -1,4 +1,3 @@
-import { Boxes, Check } from 'lucide-react';
 import { Component, useEffect, useState, type ErrorInfo, type ReactNode } from 'react';
 
 import { useTranslation } from '../i18n';
@@ -50,12 +49,9 @@ export function ModuleManagerPanel({
   );
   const [installationPolicy, setInstallationPolicy] = useState({ revision: 0, enabledModuleIds: [] as StudioModuleId[] });
   const [policyError, setPolicyError] = useState(false);
-  const [policyLoaded, setPolicyLoaded] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    setPolicyLoaded(false);
     setPolicyError(false);
     const legacy = readStudioModulePreferences(userId, workspaceId);
     void getServerModulePolicy(workspaceId).then(async (serverPolicy) => {
@@ -72,7 +68,6 @@ export function ModuleManagerPanel({
       }
       if (cancelled) return;
       setInstallationPolicy({ revision: serverPolicy.revision, enabledModuleIds: serverPolicy.enabledModuleIds });
-      setPolicyLoaded(true);
       const next = { workspaceId, activeModuleIds };
       setPreferences(next);
       writeStudioModulePreferences(userId, next);
@@ -82,36 +77,6 @@ export function ModuleManagerPanel({
     });
     return () => { cancelled = true; };
   }, [userId, workspaceId]);
-
-  async function setModuleActive(moduleId: StudioModuleId, active: boolean): Promise<void> {
-    const next: StudioWorkspaceModulePreferences = {
-      ...preferences,
-      workspaceId,
-      activeModuleIds: active
-        ? [...new Set([...preferences.activeModuleIds, moduleId])]
-        : preferences.activeModuleIds.filter((id) => id !== moduleId),
-    };
-    const previous = preferences;
-    setPreferences(next);
-    setIsSaving(true);
-    setPolicyError(false);
-    try {
-      const saved = await saveServerModulePreferences({
-        workspaceId,
-        revision: installationPolicy.revision,
-        activeModuleIds: [...next.activeModuleIds],
-      });
-      const confirmed = { workspaceId, activeModuleIds: saved.activeModuleIds };
-      setPreferences(confirmed);
-      setInstallationPolicy({ revision: saved.revision, enabledModuleIds: saved.enabledModuleIds });
-      writeStudioModulePreferences(userId, confirmed);
-    } catch {
-      setPreferences(previous);
-      setPolicyError(true);
-    } finally {
-      setIsSaving(false);
-    }
-  }
 
   const activeModules = modules.filter((manifest) =>
     resolveStudioModuleActivationState(
@@ -130,48 +95,9 @@ export function ModuleManagerPanel({
         </div>
       </div>
 
-      <div className="studio-module-list">
-        {modules.length === 0 ? (
-          <div className="studio-module-empty">{copy.noModules}</div>
-        ) : modules.map((module) => {
-          const state = resolveStudioModuleActivationState(
-            module.id,
-            installationPolicy,
-            preferences,
-          );
-          const active = state === 'active';
-          const disabledByInstallation = state === 'disabled-by-installation';
-          const details = copy.modules[module.id];
-          return (
-            <article className="studio-module-card" key={module.id}>
-              <div className="studio-module-card-icon" aria-hidden="true">
-                <Boxes size={20} />
-              </div>
-              <div className="studio-module-card-content">
-                <h4>{details?.title ?? module.titleKey}</h4>
-                {details?.description && <p>{details.description}</p>}
-                <label className="studio-module-toggle">
-                  <input
-                    type="checkbox"
-                    checked={active}
-                    disabled={!policyLoaded || isSaving || policyError || disabledByInstallation}
-                    onChange={(event) => { void setModuleActive(module.id, event.target.checked); }}
-                  />
-                  <span className="studio-module-toggle-indicator" aria-hidden="true">
-                    {active ? <Check size={14} /> : null}
-                  </span>
-                  <span>{active ? copy.active : disabledByInstallation ? copy.disabledByInstallation : copy.activate}</span>
-                </label>
-              </div>
-              <span className={`studio-module-state studio-module-state--${state}`}>
-                {active ? copy.active : copy.available}
-              </span>
-            </article>
-          );
-        })}
-      </div>
-
-      {activeModules.flatMap((module) => {
+      {activeModules.length === 0 ? (
+        <div className="studio-module-empty">{copy.noActiveModules}</div>
+      ) : activeModules.flatMap((module) => {
         const details = copy.modules[module.id];
         return module.contributions
           .filter((contribution) => contribution.slot === 'research-navigation')

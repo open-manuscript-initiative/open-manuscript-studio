@@ -57,6 +57,7 @@ import type { OjsAssignmentLaunchContext } from '../services/ojsAssignmentApi';
 import { buildOmiContainer } from '../services/omiContainer';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import type { OmiManuscript } from '../types/omi';
+import { ResearchModuleSettings } from '../modules/ResearchModuleSettings';
 import { AssetContainerPanel } from './AssetContainerPanel';
 import { AuthorSignaturePanel } from './AuthorSignaturePanel';
 import { CloudStorageSettings } from './CloudStorageSettings';
@@ -579,7 +580,7 @@ function ToolsView() {
 
 function SettingsView() {
   const { t } = useTranslation();
-  return <section className="studio-menu-view studio-menu-view--settings"><div className="studio-menu-view-header"><div><h3>{t('studio.settings.title')}</h3><p>{t('studio.settings.description')}</p></div></div><MenuAppearanceSettings /><ContentLanguageSettings /><ImportFormatSettings /><CloudStorageSettings /></section>;
+  return <section className="studio-menu-view studio-menu-view--settings"><div className="studio-menu-view-header"><div><h3>{t('studio.settings.title')}</h3><p>{t('studio.settings.description')}</p></div></div><MenuAppearanceSettings /><ResearchModuleSettings /><ContentLanguageSettings /><ImportFormatSettings /><CloudStorageSettings /></section>;
 }
 
 function formatNativeLocation(

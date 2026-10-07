@@ -25,6 +25,8 @@ export interface ModuleShellCopy {
   navigation: string;
   title: string;
   description: string;
+  settingsDescription: string;
+  noActiveModules: string;
   active: string;
   activate: string;
   available: string;
@@ -46,7 +48,9 @@ const translations: Record<string, ModuleShellCopy> = {
   en: {
     navigation: 'Research modules',
     title: 'Research modules',
-    description: 'Choose which available modules appear in this workspace.',
+    description: 'Research workspaces for the modules enabled in Settings.',
+    settingsDescription: 'Choose which research modules are available in the Modules view.',
+    noActiveModules: 'No research modules are enabled. Turn modules on in Settings to show them here.',
     active: 'Active in this workspace',
     activate: 'Activate',
     available: 'Available',
@@ -166,7 +170,9 @@ const translations: Record<string, ModuleShellCopy> = {
   de: {
     navigation: 'Forschungsmodule',
     title: 'Forschungsmodule',
-    description: 'Wählen Sie aus, welche verfügbaren Module in diesem Arbeitsbereich erscheinen.',
+    description: 'Forschungsarbeitsbereiche für die in den Einstellungen aktivierten Module.',
+    settingsDescription: 'Wählen Sie aus, welche Forschungsmodule in der Modulansicht erscheinen.',
+    noActiveModules: 'Es sind keine Forschungsmodule aktiviert. Aktivieren Sie Module in den Einstellungen, damit sie hier erscheinen.',
     active: 'In diesem Arbeitsbereich aktiv',
     activate: 'Aktivieren',
     available: 'Verfügbar',
@@ -286,7 +292,9 @@ const translations: Record<string, ModuleShellCopy> = {
   hu: {
     navigation: 'Kutatási modulok',
     title: 'Kutatási modulok',
-    description: 'Válassza ki, mely elérhető modulok jelenjenek meg ebben a munkatérben.',
+    description: 'Munkafelületek a Beállításokban bekapcsolt kutatási modulokhoz.',
+    settingsDescription: 'Válassza ki, mely kutatási modulok jelenjenek meg a Modulok nézetben.',
+    noActiveModules: 'Nincs bekapcsolt kutatási modul. A megjelenítéshez kapcsoljon be modulokat a Beállításokban.',
     active: 'Aktív ebben a munkatérben',
     activate: 'Bekapcsolás',
     available: 'Elérhető',
