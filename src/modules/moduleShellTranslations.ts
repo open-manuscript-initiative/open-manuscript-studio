@@ -105,6 +105,12 @@ const translations: Record<string, ModuleShellCopy> = {
         description: 'Structure investigations, studies, samples, protocols, instruments, assays, measurements, and raw or derived research data.',
         overview: 'Experimental research workspace',
       },
+      'org.omi.statistical-analysis': {
+        title: 'Statistical Analysis and Data',
+        description: 'Import CSV/TSV datasets and run descriptive statistics, Welch tests, one-way ANOVA, and linear regression with reproducible JSON reports.',
+        overview: 'Statistical analysis workspace',
+      },
+
       'org.omi.social-research-methods': {
         title: 'Social research data and methods',
         description: 'Describe surveys, variables, and codebooks; code interviews; and connect datasets with research methods.',
@@ -221,6 +227,12 @@ const translations: Record<string, ModuleShellCopy> = {
         description: 'Untersuchungen, Studien, Proben, Protokolle, Geräte, Assays, Messungen und Roh- oder abgeleitete Forschungsdaten strukturieren.',
         overview: 'Arbeitsbereich Experimentalforschung',
       },
+      'org.omi.statistical-analysis': {
+        title: 'Statistik und Datenanalyse',
+        description: 'CSV/TSV-Datensätze importieren und deskriptive Statistik, Welch-Tests, einfaktorielle ANOVA sowie lineare Regression mit reproduzierbaren JSON-Berichten durchführen.',
+        overview: 'Arbeitsbereich Statistik',
+      },
+
       'org.omi.social-research-methods': {
         title: 'Sozialwissenschaftliche Daten und Methoden',
         description: 'Erhebungen, Variablen und Codebücher beschreiben, Interviews codieren und Datensätze mit Forschungsmethoden verknüpfen.',
@@ -337,6 +349,12 @@ const translations: Record<string, ModuleShellCopy> = {
         description: 'Vizsgálatok, tanulmányok, minták, protokollok, műszerek, vizsgálatok, mérések, valamint nyers és feldolgozott kutatási adatok strukturált kezelése.',
         overview: 'Kísérleti kutatómunkatér',
       },
+      'org.omi.statistical-analysis': {
+        title: 'Statisztikai és adatelemzési modul',
+        description: 'CSV/TSV-adatok importálása, leíró statisztika, Welch-próba, egyszempontos ANOVA és lineáris regresszió, megismételhető JSON-jelentéssel.',
+        overview: 'Statisztikai elemzési munkatér',
+      },
+
       'org.omi.social-research-methods': {
         title: 'Kutatási adat- és módszertani modul',
         description: 'Kérdőívek, változók és kódkönyvek leírása, interjúk kódolása, adathalmazok és kutatási módszerek összekapcsolása.',

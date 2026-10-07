@@ -10,6 +10,7 @@ import { moduleManifest as researchReproducibilityModule } from './research-repr
 import { moduleManifest as spatialResearchModule } from './spatial-research/index';
 import { moduleManifest as archaeologyModule } from './archaeology/index';
 import { moduleManifest as experimentalLaboratoryModule } from './experimental-laboratory/index';
+import { moduleManifest as statisticalAnalysisModule } from './statistical-analysis/index';
 import { StudioModuleRegistry } from './registry';
 import type { StudioModuleInstallationPolicy } from './types';
 
@@ -26,6 +27,7 @@ export {
   spatialResearchModule,
   archaeologyModule,
   experimentalLaboratoryModule,
+  statisticalAnalysisModule,
 };
 
 export const builtinModuleManifests = [
@@ -41,6 +43,7 @@ export const builtinModuleManifests = [
   spatialResearchModule,
   archaeologyModule,
   experimentalLaboratoryModule,
+  statisticalAnalysisModule,
 ] as const;
 
 export const studioModules = new StudioModuleRegistry();

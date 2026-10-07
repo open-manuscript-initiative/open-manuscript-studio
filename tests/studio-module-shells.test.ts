@@ -21,6 +21,7 @@ import { searchEuropeana } from '../server/src/integrations/europeana/europeanaS
 import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSearch.ts';
 import { searchSefaria } from '../server/src/integrations/sefaria/sefariaSearch.ts';
 import { createExperimentalWorkspace, isExperimentalWorkspace, parseExperimentalWorkspace } from '../src/modules/experimental-laboratory/model.ts';
+import { createStatisticalWorkspace, describe, isStatisticalWorkspace, linearRegression, oneWayAnova, parseDelimited, parseLaboratoryMeasurements, parseStatisticalWorkspace, welchTTest } from '../src/modules/statistical-analysis/model.ts';
 
 const expectedModuleIds = [
   'org.omi.history-archives',
@@ -35,6 +36,7 @@ const expectedModuleIds = [
   'org.omi.spatial-research',
   'org.omi.archaeology',
   'org.omi.experimental-laboratory',
+  'org.omi.statistical-analysis',
 ];
 
 function createStorage(): ModulePreferenceStorage & { values: Map<string, string> } {
@@ -472,4 +474,97 @@ test('experimental laboratory import rejects malformed records and unsupported s
   assert.equal(parseExperimentalWorkspace('{broken'), null);
   assert.equal(isExperimentalWorkspace({ ...project, schemaVersion: 2 }), false);
   assert.equal(isExperimentalWorkspace({ ...project, studies: [{ ...project.studies[0], assays: [{ measurements: [null] }] }] }), false);
+});
+
+
+test('statistical analysis parses CSV/TSV and rejects malformed rows', () => {
+  assert.deepEqual(parseDelimited('group,value\nA,1\nB,2'), {
+    columns: ['group', 'value'],
+    rows: [['A', '1'], ['B', '2']],
+  });
+  assert.deepEqual(parseDelimited('name\tvalue\n"Sample\tA"\t2'), {
+    columns: ['name', 'value'],
+    rows: [['Sample\tA', '2']],
+  });
+  assert.equal(parseDelimited('a,b\n1'), null);
+  assert.equal(parseDelimited('a,b\n"unclosed,2'), null);
+});
+
+test('descriptive statistics include sample spread, quartiles, and a t confidence interval', () => {
+  const result = describe([1, 2, 3, 4]);
+  assert.ok(result);
+  assert.equal(result.n, 4);
+  assert.equal(result.mean, 2.5);
+  assert.equal(result.median, 2.5);
+  assert.equal(result.minimum, 1);
+  assert.equal(result.maximum, 4);
+  assert.equal(result.standardDeviation, Math.sqrt(5 / 3));
+  assert.ok(result.confidenceLow < result.mean && result.confidenceHigh > result.mean);
+});
+
+test('Welch t test and one-way ANOVA return bounded two-sided p values', () => {
+  const comparison = welchTTest([1, 2, 3], [4, 5, 6]);
+  assert.ok(comparison);
+  assert.ok(comparison.pValue > 0 && comparison.pValue < 0.05);
+  assert.ok(comparison.confidenceHigh < 0);
+
+  const analysis = oneWayAnova([[1, 2, 3], [4, 5, 6], [7, 8, 9]]);
+  assert.ok(analysis);
+  assert.equal(analysis.fStatistic, 27);
+  assert.ok(analysis.pValue > 0 && analysis.pValue < 0.01);
+});
+
+test('linear regression fits exact linear data', () => {
+  assert.deepEqual(linearRegression([1, 2, 3], [3, 5, 7]), {
+    n: 3, intercept: 1, slope: 2, correlation: 1, rSquared: 1,
+  });
+});
+
+
+test('statistical analysis JSON validates and round-trips datasets and analysis settings', () => {
+  const workspace = createStatisticalWorkspace();
+  workspace.analysisTitle = 'Treatment comparison';
+  workspace.configuration.valueColumn = '2';
+  workspace.configuration.groupColumn = '0';
+  workspace.dataset = {
+    id: 'dataset-1',
+    title: 'Measurements',
+    sourceStudy: 'Study A',
+    importedAt: '2026-10-07T08:00:00.000Z',
+    columns: ['group', 'replicate', 'value'],
+    rows: [['control', '1', '4.2'], ['treated', '1', '5.1']],
+  };
+  assert.equal(isStatisticalWorkspace(workspace), true);
+  assert.deepEqual(parseStatisticalWorkspace(JSON.stringify(workspace)), workspace);
+  assert.equal(parseStatisticalWorkspace('{broken'), null);
+  assert.equal(isStatisticalWorkspace({ ...workspace, schemaVersion: 2 }), false);
+});
+
+
+test('statistical analysis imports laboratory measurements as linked tabular data', () => {
+  const imported = parseLaboratoryMeasurements(JSON.stringify({
+    schemaVersion: 1,
+    title: 'Physics investigation',
+    studies: [{
+      title: 'Cooling experiment',
+      instruments: [{ id: 'thermometer-1', name: 'Digital thermometer' }],
+      assays: [{
+        title: 'Temperature over time',
+        technology: 'Thermometry',
+        materialReferences: 'water-1',
+        measurements: [{
+          name: 'Temperature',
+          value: '21.5',
+          unit: '°C',
+          uncertainty: '0.1',
+          measuredAt: '2026-10-07T08:00',
+          instrumentId: 'thermometer-1',
+        }],
+      }],
+    }],
+  }));
+  assert.ok(imported);
+  assert.equal(imported.projectTitle, 'Physics investigation');
+  assert.deepEqual(imported.rows[0], ['Physics investigation', 'Cooling experiment', 'Temperature over time', 'Thermometry', 'water-1', 'Temperature', '21.5', '°C', '0.1', '2026-10-07T08:00', 'Digital thermometer']);
+  assert.equal(parseLaboratoryMeasurements(JSON.stringify({ schemaVersion: 1, title: 'Empty', studies: [] })), null);
 });

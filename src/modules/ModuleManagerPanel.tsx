@@ -4,7 +4,7 @@ import { Component, useEffect, useState, type ErrorInfo, type ReactNode } from '
 import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { getServerModulePolicy, saveServerModulePreferences } from './api';
-import { corpusLinguisticsModule, criticalTextEditionModule, culturalHeritageModule, historyArchivesModule, legalSourcesModule, musicologyModule, researchReproducibilityModule, religiousTextsModule, socialResearchMethodsModule, spatialResearchModule, archaeologyModule, experimentalLaboratoryModule, studioModules } from './catalog';
+import { corpusLinguisticsModule, criticalTextEditionModule, culturalHeritageModule, historyArchivesModule, legalSourcesModule, musicologyModule, researchReproducibilityModule, religiousTextsModule, socialResearchMethodsModule, spatialResearchModule, archaeologyModule, experimentalLaboratoryModule, statisticalAnalysisModule, studioModules } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
 import { EuropeanaSearchPanel } from './history-archives/EuropeanaSearchPanel';
 import { NaraSearchPanel } from './history-archives/NaraSearchPanel';
@@ -20,6 +20,7 @@ import { ResearchReproducibilityPanel } from './research-reproducibility/Researc
 import { SpatialResearchPanel } from './spatial-research/SpatialResearchPanel';
 import { ArchaeologyPanel } from './archaeology/ArchaeologyPanel';
 import { ExperimentalLaboratoryPanel } from './experimental-laboratory/ExperimentalLaboratoryPanel';
+import { StatisticalAnalysisPanel } from './statistical-analysis/StatisticalAnalysisPanel';
 import {
   readStudioModulePreferences,
   writeStudioModulePreferences,
@@ -218,6 +219,8 @@ export function ModuleManagerPanel({
                   <ArchaeologyPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === experimentalLaboratoryModule.id ? (
                   <ExperimentalLaboratoryPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
+                ) : module.id === statisticalAnalysisModule.id ? (
+                  <StatisticalAnalysisPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : (
                   <div className="studio-module-empty-slot">{copy.noFeatures}</div>
                 )}
