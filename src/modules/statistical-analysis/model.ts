@@ -11,6 +11,7 @@ export type StatisticalWorkspace = {
   schemaVersion: 1;
   dataset: StatisticalDataset | null;
   analysisTitle: string;
+  configuration: { valueColumn: string; groupColumn: string; regressionX: string; regressionY: string };
 };
 
 export type DescriptiveSummary = {
@@ -57,7 +58,7 @@ export function newStatisticalId(): string {
 }
 
 export function createStatisticalWorkspace(): StatisticalWorkspace {
-  return { schemaVersion: 1, dataset: null, analysisTitle: '' };
+  return { schemaVersion: 1, dataset: null, analysisTitle: '', configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' } };
 }
 
 export function parseDelimited(text: string, delimiter?: ',' | '\t'): { columns: string[]; rows: string[][] } | null {
@@ -302,6 +303,8 @@ export function isStatisticalWorkspace(value: unknown): value is StatisticalWork
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const candidate = value as Partial<StatisticalWorkspace>;
   if (candidate.schemaVersion !== 1 || typeof candidate.analysisTitle !== 'string') return false;
+  const configuration = candidate.configuration as StatisticalWorkspace['configuration'] | undefined;
+  if (!configuration || !['valueColumn', 'groupColumn', 'regressionX', 'regressionY'].every((key) => typeof configuration[key as keyof typeof configuration] === 'string')) return false;
   if (candidate.dataset === null) return true;
   const dataset = candidate.dataset as StatisticalDataset | undefined;
   return Boolean(dataset && typeof dataset === 'object' && typeof dataset.id === 'string'
