@@ -263,12 +263,6 @@ const copy = {
   },
 } as const;
 
-function cellNumber(value: string | undefined): number {
-  if (value === undefined || value.trim() === '') return Number.NaN;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : Number.NaN;
-}
-
 export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statistical-analysis' }: { locale?: string; storageKey?: string }) {
   const t = copy[locale as Locale] ?? copy.hu;
   const [workspace, setWorkspace, storageReady, storageError] = useIndexedStatisticalWorkspace(storageKey);
