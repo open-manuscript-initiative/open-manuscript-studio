@@ -515,7 +515,8 @@ export function isStatisticalWorkspace(value: unknown): value is StatisticalWork
 export function parseStatisticalWorkspace(json: string): StatisticalWorkspace | null {
   try {
     const value: unknown = JSON.parse(json);
-    if (!isStatisticalWorkspace(value)) return null;\n    return { ...value, design: value.design ?? createExperimentalDesign() };
+    if (!isStatisticalWorkspace(value)) return null;
+    return { ...value, design: value.design ?? createExperimentalDesign() };
   } catch {
     return null;
   }
