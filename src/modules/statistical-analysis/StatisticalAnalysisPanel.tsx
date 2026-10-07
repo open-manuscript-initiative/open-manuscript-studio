@@ -206,7 +206,7 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
   }) : [];
   const valueColumn = numericColumns.find(column => String(column.index) === workspace.configuration.valueColumn) ?? numericColumns[0];
   const xColumn = numericColumns.find(column => String(column.index) === workspace.configuration.regressionX) ?? numericColumns[0];
-  const yColumn = numericColumns.find(column => String(column.index) === workspace.configuration.regressionY) ?? numericColumns[1] ?? numericColumns[0];
+  const yColumn = numericColumns.find(column => String(column.index) === workspace.configuration.regressionY) ?? numericColumns[1];
   const groupingColumns = dataset ? dataset.columns.map((name, index) => ({
     name,
     index,
@@ -225,7 +225,7 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
     : [];
   const tTest = groups.length === 2 ? welchTTest(groups[0]!.values, groups[1]!.values) : null;
   const anova = groups.length >= 2 ? oneWayAnova(groups.map(group => group.values)) : null;
-  const regression = dataset && xColumn && yColumn
+  const regression = dataset && xColumn && yColumn && xColumn.index !== yColumn.index
     ? linearRegression(
       dataset.rows.map(row => cellNumber(row[xColumn.index])),
       dataset.rows.map(row => cellNumber(row[yColumn.index])),
