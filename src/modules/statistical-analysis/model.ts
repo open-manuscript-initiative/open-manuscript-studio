@@ -340,6 +340,56 @@ export function linearRegression(xValues: number[], yValues: number[]): LinearRe
   return { n: pairs.length, intercept, slope, correlation, rSquared: correlation ** 2 };
 }
 
+export type StatisticalAnalysisResult = {
+  numericColumns: { name: string; index: number }[];
+  groupingColumns: { name: string; index: number; values: string[] }[];
+  values: number[];
+  summary: DescriptiveSummary | null;
+  groups: { label: string; values: number[] }[];
+  tTest: MeanComparison | null;
+  anova: AnovaResult | null;
+  regression: LinearRegressionResult | null;
+  histogram: number[];
+  maxBin: number;
+};
+
+export function analyzeStatisticalDataset(dataset: StatisticalDataset, configuration: StatisticalWorkspace['configuration']): StatisticalAnalysisResult {
+  const numericColumns = dataset.columns.flatMap((name, index) => numericColumnValues(dataset.rows, index).length >= 2 ? [{ name, index }] : []);
+  const groupingColumns = dataset.columns.map((name, index) => ({
+    name, index, values: [...new Set(dataset.rows.map(row => row[index]?.trim()).filter((value): value is string => Boolean(value)))],
+  })).filter(column => column.values.length > 1 && column.values.length <= 20);
+  const valueColumn = numericColumns.find(column => String(column.index) === configuration.valueColumn) ?? numericColumns[0];
+  const xColumn = numericColumns.find(column => String(column.index) === configuration.regressionX) ?? numericColumns[0];
+  const yColumn = numericColumns.find(column => String(column.index) === configuration.regressionY) ?? numericColumns[1];
+  const groupColumn = groupingColumns.find(column => String(column.index) === configuration.groupColumn) ?? groupingColumns[0];
+  const values = valueColumn ? numericColumnValues(dataset.rows, valueColumn.index) : [];
+  const groups = valueColumn && groupColumn
+    ? groupColumn.values.map(label => ({
+      label,
+      values: dataset.rows.flatMap(row => row[groupColumn.index]?.trim() === label
+        ? [parseFiniteNumber(row[valueColumn.index])]
+        : []).filter(Number.isFinite),
+    })).filter(group => group.values.length >= 2)
+    : [];
+  const tTest = groups.length === 2 ? welchTTest(groups[0]!.values, groups[1]!.values) : null;
+  const anova = groups.length >= 2 ? oneWayAnova(groups.map(group => group.values)) : null;
+  const regression = xColumn && yColumn && xColumn.index !== yColumn.index
+    ? linearRegression(dataset.rows.map(row => parseFiniteNumber(row[xColumn.index])), dataset.rows.map(row => parseFiniteNumber(row[yColumn.index])))
+    : null;
+  const min = values.length ? values.reduce((a,b) => Math.min(a,b), Infinity) : 0;
+  const max = values.length ? values.reduce((a,b) => Math.max(a,b), -Infinity) : 0;
+  const histogram = values.length ? Array.from({ length: 10 }, () => 0) : [];
+  if (values.length && min === max) histogram[0] = values.length;
+  else for (const value of values) histogram[Math.min(9, Math.floor((value - min) / (max - min) * 10))]! += 1;
+  return { numericColumns, groupingColumns, values, summary: describe(values), groups, tTest, anova, regression, histogram, maxBin: histogram.reduce((a,b) => Math.max(a,b), 1) };
+}
+
+function parseFiniteNumber(value: string | undefined): number {
+  if (value === undefined || value.trim() === '') return Number.NaN;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
 export function formatStat(value: number, digits = 4): string {
   if (!Number.isFinite(value)) return '—';
   return new Intl.NumberFormat(undefined, { maximumFractionDigits: digits }).format(value);
