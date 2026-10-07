@@ -26,8 +26,6 @@ function transact<T>(key: string, mode: IDBTransactionMode, action: (store: IDBO
 }
 
 type StoredRecord = { key: string; workspace: StatisticalWorkspace };
-type PersistedMetadata = Omit<StatisticalWorkspace, 'dataset'> & { dataset: Omit<NonNullable<StatisticalWorkspace['dataset']>, 'rows'> & { rows?: never; storedInIndexedDB?: true } | null };
-
 function readLegacy(key: string): StatisticalWorkspace {
   if (typeof window === 'undefined') return createStatisticalWorkspace();
   try {
@@ -66,9 +64,9 @@ export function useIndexedStatisticalWorkspace(key: string): [StatisticalWorkspa
     const save = async () => {
       try {
         await transact<IDBValidKey>(key, 'readwrite', store => store.put({ key, workspace }));
-        const metadata: PersistedMetadata = {
+        const metadata = {
           ...workspace,
-          dataset: workspace.dataset ? { ...workspace.dataset, rows: undefined, storedInIndexedDB: true } as PersistedMetadata['dataset'] : null,
+          dataset: workspace.dataset ? { ...workspace.dataset, rows: undefined, storedInIndexedDB: true } : null,
         };
         window.localStorage.setItem(key, JSON.stringify(metadata));
         setStorageError('');
