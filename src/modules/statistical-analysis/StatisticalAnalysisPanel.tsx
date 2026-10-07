@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { downloadWorkspaceJson, safeWorkspaceFileName } from '../disciplineWorkspace';
 import { useIndexedStatisticalWorkspace } from './workspaceStorage';
 import {
-  createStatisticalWorkspace,
-  addDesignDeviation,\n  createExperimentalDesign,\n  describe,\n  estimateTwoGroupSampleSize,
+  addDesignDeviation,
+  createExperimentalDesign,
+  describe,
+  estimateTwoGroupSampleSize,
   formatStat,
   linearRegression,
   newStatisticalId,
@@ -11,7 +13,9 @@ import {
   oneWayAnova,
   parseDelimited,
   parseLaboratoryMeasurements,
-  parseStatisticalWorkspace,\n  preregisterDesign,\n  randomizeParticipants,
+  parseStatisticalWorkspace,
+  preregisterDesign,
+  randomizeParticipants,
   welchTTest,
   type StatisticalDataset,
 } from './model';
@@ -74,7 +78,29 @@ const copy = {
     count: 'Elemszám',
     noNumeric: 'A kiválasztott oszlopban nincs elegendő érvényes numerikus adat.',
     noComparison: 'Csoportonként legalább két érvényes numerikus érték szükséges.',
-    design: "Kísérlettervezés",\n    hypothesis: "Hipotézis",\n    outcome: "Elsődleges kimenet",\n    groupsPlan: "Csoportok (vesszővel elválasztva)",\n    alpha: "Szignifikanciaszint (α)",\n    power: "Célzott statisztikai erő",\n    effect: "Várt standardizált hatásméret (d)",\n    sampleEstimate: "Becsült elemszám csoportonként",\n    estimateNote: "Kétoldali, két független csoport átlagkülönbségének normálközelítése; a végleges tervhez ellenőrizze a feltevéseket.",\n    inclusion: "Beválasztási szabályok (soronként egy)",\n    exclusion: "Kizárási szabályok (soronként egy)",\n    analysisPlan: "Előzetes elemzési terv",\n    freeze: "Terv előzetes rögzítése",\n    frozen: "Rögzítve",\n    seed: "Véletlenítés magja",\n    participantCount: "Résztvevők száma",\n    randomize: "Besorolási lista készítése",\n    randomizationNote: "A lista reprodukálható, egyszerű blokkolás nélküli besorolás. Az allokáció elrejtését külön folyamat biztosítsa.",\n    downloadAssignments: "Besorolási lista letöltése",\n    deviation: "Eltérés a rögzített tervtől",\n    addDeviation: "Eltérés naplózása",\n    deviations: "Naplózott eltérések",\n    removeData: 'Adatkészlet eltávolítása',
+    design: "Kísérlettervezés",
+    hypothesis: "Hipotézis",
+    outcome: "Elsődleges kimenet",
+    groupsPlan: "Csoportok (vesszővel elválasztva)",
+    alpha: "Szignifikanciaszint (α)",
+    power: "Célzott statisztikai erő",
+    effect: "Várt standardizált hatásméret (d)",
+    sampleEstimate: "Becsült elemszám csoportonként",
+    estimateNote: "Kétoldali, két független csoport átlagkülönbségének normálközelítése; a végleges tervhez ellenőrizze a feltevéseket.",
+    inclusion: "Beválasztási szabályok (soronként egy)",
+    exclusion: "Kizárási szabályok (soronként egy)",
+    analysisPlan: "Előzetes elemzési terv",
+    freeze: "Terv előzetes rögzítése",
+    frozen: "Rögzítve",
+    seed: "Véletlenítés magja",
+    participantCount: "Résztvevők száma",
+    randomize: "Besorolási lista készítése",
+    randomizationNote: "A lista reprodukálható, egyszerű blokkolás nélküli besorolás. Az allokáció elrejtését külön folyamat biztosítsa.",
+    downloadAssignments: "Besorolási lista letöltése",
+    deviation: "Eltérés a rögzített tervtől",
+    addDeviation: "Eltérés naplózása",
+    deviations: "Naplózott eltérések",
+    removeData: 'Adatkészlet eltávolítása',
   },
   en: {
     title: 'Statistical Analysis and Data',
@@ -131,7 +157,29 @@ const copy = {
     count: 'Count',
     noNumeric: 'The selected column has too few valid numeric values.',
     noComparison: 'Each group needs at least two valid numeric values.',
-    design: "Experimental design",\n    hypothesis: "Hypothesis",\n    outcome: "Primary outcome",\n    groupsPlan: "Groups (comma separated)",\n    alpha: "Significance level (α)",\n    power: "Target statistical power",\n    effect: "Expected standardized effect (d)",\n    sampleEstimate: "Estimated sample size per group",\n    estimateNote: "Normal approximation for a two-sided mean difference between two independent groups; check assumptions before finalizing the design.",\n    inclusion: "Inclusion criteria (one per line)",\n    exclusion: "Exclusion criteria (one per line)",\n    analysisPlan: "Preregistered analysis plan",\n    freeze: "Preregister and freeze plan",\n    frozen: "Preregistered",\n    seed: "Randomization seed",\n    participantCount: "Number of participants",\n    randomize: "Generate allocation list",\n    randomizationNote: "This is reproducible simple randomization without blocking. Use a separate process to conceal allocation.",\n    downloadAssignments: "Download allocation list",\n    deviation: "Deviation from frozen plan",\n    addDeviation: "Log deviation",\n    deviations: "Logged deviations",\n    removeData: 'Remove dataset',
+    design: "Experimental design",
+    hypothesis: "Hypothesis",
+    outcome: "Primary outcome",
+    groupsPlan: "Groups (comma separated)",
+    alpha: "Significance level (α)",
+    power: "Target statistical power",
+    effect: "Expected standardized effect (d)",
+    sampleEstimate: "Estimated sample size per group",
+    estimateNote: "Normal approximation for a two-sided mean difference between two independent groups; check assumptions before finalizing the design.",
+    inclusion: "Inclusion criteria (one per line)",
+    exclusion: "Exclusion criteria (one per line)",
+    analysisPlan: "Preregistered analysis plan",
+    freeze: "Preregister and freeze plan",
+    frozen: "Preregistered",
+    seed: "Randomization seed",
+    participantCount: "Number of participants",
+    randomize: "Generate allocation list",
+    randomizationNote: "This is reproducible simple randomization without blocking. Use a separate process to conceal allocation.",
+    downloadAssignments: "Download allocation list",
+    deviation: "Deviation from frozen plan",
+    addDeviation: "Log deviation",
+    deviations: "Logged deviations",
+    removeData: 'Remove dataset',
   },
   de: {
     title: 'Statistik und Datenanalyse',
@@ -188,7 +236,29 @@ const copy = {
     count: 'Anzahl',
     noNumeric: 'Die ausgewählte Spalte enthält zu wenige gültige numerische Werte.',
     noComparison: 'Jede Gruppe benötigt mindestens zwei gültige numerische Werte.',
-    design: "Versuchsplanung",\n    hypothesis: "Hypothese",\n    outcome: "Primärer Endpunkt",\n    groupsPlan: "Gruppen (durch Komma getrennt)",\n    alpha: "Signifikanzniveau (α)",\n    power: "Angestrebte Teststärke",\n    effect: "Erwartete standardisierte Effektstärke (d)",\n    sampleEstimate: "Geschätzte Fallzahl je Gruppe",\n    estimateNote: "Normalapproximation für einen zweiseitigen Mittelwertvergleich zweier unabhängiger Gruppen; Annahmen vor der endgültigen Planung prüfen.",\n    inclusion: "Einschlusskriterien (je eine Zeile)",\n    exclusion: "Ausschlusskriterien (je eine Zeile)",\n    analysisPlan: "Präregistrierter Analyseplan",\n    freeze: "Plan präregistrieren und einfrieren",\n    frozen: "Präregistriert",\n    seed: "Randomisierungs-Seed",\n    participantCount: "Teilnehmendenzahl",\n    randomize: "Zuteilungsliste erstellen",\n    randomizationNote: "Reproduzierbare einfache Randomisierung ohne Blockbildung. Die Zuteilungsverdeckung muss separat sichergestellt werden.",\n    downloadAssignments: "Zuteilungsliste herunterladen",\n    deviation: "Abweichung vom eingefrorenen Plan",\n    addDeviation: "Abweichung protokollieren",\n    deviations: "Protokollierte Abweichungen",\n    removeData: 'Datensatz entfernen',
+    design: "Versuchsplanung",
+    hypothesis: "Hypothese",
+    outcome: "Primärer Endpunkt",
+    groupsPlan: "Gruppen (durch Komma getrennt)",
+    alpha: "Signifikanzniveau (α)",
+    power: "Angestrebte Teststärke",
+    effect: "Erwartete standardisierte Effektstärke (d)",
+    sampleEstimate: "Geschätzte Fallzahl je Gruppe",
+    estimateNote: "Normalapproximation für einen zweiseitigen Mittelwertvergleich zweier unabhängiger Gruppen; Annahmen vor der endgültigen Planung prüfen.",
+    inclusion: "Einschlusskriterien (je eine Zeile)",
+    exclusion: "Ausschlusskriterien (je eine Zeile)",
+    analysisPlan: "Präregistrierter Analyseplan",
+    freeze: "Plan präregistrieren und einfrieren",
+    frozen: "Präregistriert",
+    seed: "Randomisierungs-Seed",
+    participantCount: "Teilnehmendenzahl",
+    randomize: "Zuteilungsliste erstellen",
+    randomizationNote: "Reproduzierbare einfache Randomisierung ohne Blockbildung. Die Zuteilungsverdeckung muss separat sichergestellt werden.",
+    downloadAssignments: "Zuteilungsliste herunterladen",
+    deviation: "Abweichung vom eingefrorenen Plan",
+    addDeviation: "Abweichung protokollieren",
+    deviations: "Protokollierte Abweichungen",
+    removeData: 'Datensatz entfernen',
   },
 } as const;
 
@@ -202,11 +272,17 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
   const t = copy[locale as Locale] ?? copy.hu;
   const [workspace, setWorkspace, storageReady, storageError] = useIndexedStatisticalWorkspace(storageKey);
   const [error, setError] = useState('');
-  useEffect(() => { if (!workspace.design) setWorkspace(current => ({ ...current, design: createExperimentalDesign() })); }, [workspace.design, setWorkspace]);\n  const [participantCount, setParticipantCount] = useState(20);\n  const [assignments, setAssignments] = useState<{ id: string; group: string }[]>([]);\n  const [deviationText, setDeviationText] = useState('');
+  useEffect(() => { if (!workspace.design) setWorkspace(current => ({ ...current, design: createExperimentalDesign() })); }, [workspace.design, setWorkspace]);
+  const [participantCount, setParticipantCount] = useState(20);
+  const [assignments, setAssignments] = useState<{ id: string; group: string }[]>([]);
+  const [deviationText, setDeviationText] = useState('');
   const csvRef = useRef<HTMLInputElement>(null);
   const labRef = useRef<HTMLInputElement>(null);
   const jsonRef = useRef<HTMLInputElement>(null);
-  const dataset = workspace.dataset;\n  const design = workspace.design ?? createExperimentalDesign();\n  const sampleSize = estimateTwoGroupSampleSize(design.alpha, design.power, design.standardizedEffect);\n  const locked = Boolean(design.preregisteredSnapshot);
+  const dataset = workspace.dataset;
+  const design = workspace.design ?? createExperimentalDesign();
+  const sampleSize = estimateTwoGroupSampleSize(design.alpha, design.power, design.standardizedEffect);
+  const locked = Boolean(design.preregisteredSnapshot);
 
   const numericColumns = dataset ? dataset.columns.flatMap((name, index) => {
     const count = numericColumnValues(dataset.rows, index).filter(Number.isFinite).length;
