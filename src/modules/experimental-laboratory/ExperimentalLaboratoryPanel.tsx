@@ -25,7 +25,7 @@ const words = {
     intro: 'Kísérletek, tanulmányok, minták, protokollok, műszerek, mérések és kutatási fájlok összekapcsolása.',
     local: 'A projekt ezen az eszközön tárolódik. A JSON-export hordozható OMI-moduladat; fájlok kiválasztásakor csak a név, méret és SHA-256 kerül rögzítésre, a fájl nem töltődik fel.',
     project: 'Vizsgálat / projekt címe', profile: 'Szakterületi profil', objective: 'Kutatási cél', lead: 'Vezető kutató', collaborators: 'Közreműködők',
-    physics: 'Fizika', chemistry: 'Kémia', biology: 'Biológia', materials: 'Anyagtudomány',
+    physics: 'Fizika', chemistry: 'Kémia', biology: 'Biológia', materialsProfile: 'Anyagtudomány',
     studies: 'Tanulmányok / kísérleti egységek', addStudy: 'Tanulmány hozzáadása', studyTitle: 'Tanulmány címe', date: 'Dátum', context: 'Kísérleti körülmények / szakterületi részletek',
     contextLabels: { physics: 'Berendezés, mérési tartomány és körülmények', chemistry: 'Reakció, oldószer és reakciókörülmények', biology: 'Organizmus, kezelés és etikai hivatkozás', materials: 'Összetétel, előállítás és karakterizálás' },
     materials: 'Minták és anyagok', addMaterial: 'Minta / anyag hozzáadása', name: 'Megnevezés', category: 'Típus / szerep', identifier: 'Azonosító / tételszám', quantity: 'Mennyiség', unit: 'Mértékegység', conditions: 'Kezelés és tárolási körülmény',
@@ -40,7 +40,7 @@ const words = {
     intro: 'Connect investigations, studies, samples, protocols, instruments, measurements, and research files.',
     local: 'The project is stored on this device. JSON export is a portable OMI module record; selecting a file records only its name, size, and SHA-256. The file is not uploaded.',
     project: 'Investigation / project title', profile: 'Discipline profile', objective: 'Research objective', lead: 'Principal investigator', collaborators: 'Collaborators',
-    physics: 'Physics', chemistry: 'Chemistry', biology: 'Biology', materials: 'Materials science',
+    physics: 'Physics', chemistry: 'Chemistry', biology: 'Biology', materialsProfile: 'Materials science',
     studies: 'Studies / experimental units', addStudy: 'Add study', studyTitle: 'Study title', date: 'Date', context: 'Experimental conditions / discipline details',
     contextLabels: { physics: 'Apparatus, measurement range, and conditions', chemistry: 'Reaction, solvent, and reaction conditions', biology: 'Organism, treatment, and ethics reference', materials: 'Composition, preparation, and characterization' },
     materials: 'Samples and materials', addMaterial: 'Add sample / material', name: 'Name', category: 'Type / role', identifier: 'Identifier / lot number', quantity: 'Quantity', unit: 'Unit', conditions: 'Treatment and storage conditions',
@@ -55,7 +55,7 @@ const words = {
     intro: 'Untersuchungen, Studien, Proben, Protokolle, Geräte, Messungen und Forschungsdateien verknüpfen.',
     local: 'Das Projekt wird auf diesem Gerät gespeichert. Der JSON-Export ist ein portabler OMI-Moduldatensatz. Bei Dateiauswahl werden nur Name, Größe und SHA-256 erfasst; die Datei wird nicht hochgeladen.',
     project: 'Untersuchung / Projekttitel', profile: 'Fachprofil', objective: 'Forschungsziel', lead: 'Projektleitung', collaborators: 'Mitwirkende',
-    physics: 'Physik', chemistry: 'Chemie', biology: 'Biologie', materials: 'Materialwissenschaft',
+    physics: 'Physik', chemistry: 'Chemie', biology: 'Biologie', materialsProfile: 'Materialwissenschaft',
     studies: 'Studien / experimentelle Einheiten', addStudy: 'Studie hinzufügen', studyTitle: 'Studientitel', date: 'Datum', context: 'Versuchsbedingungen / Fachdetails',
     contextLabels: { physics: 'Aufbau, Messbereich und Bedingungen', chemistry: 'Reaktion, Lösungsmittel und Reaktionsbedingungen', biology: 'Organismus, Behandlung und Ethikreferenz', materials: 'Zusammensetzung, Herstellung und Charakterisierung' },
     materials: 'Proben und Materialien', addMaterial: 'Probe / Material hinzufügen', name: 'Bezeichnung', category: 'Typ / Rolle', identifier: 'Kennung / Chargennummer', quantity: 'Menge', unit: 'Einheit', conditions: 'Behandlung und Lagerbedingungen',
@@ -112,7 +112,7 @@ export function ExperimentalLaboratoryPanel({ locale = 'hu', storageKey = 'exper
     } catch { setError(t.hashError); }
     finally { setBusyArtifact(null); }
   }
-  const profileNames: Record<ExperimentalProfile, string> = { physics: t.physics, chemistry: t.chemistry, biology: t.biology, materials: t.materials };
+  const profileNames: Record<ExperimentalProfile, string> = { physics: t.physics, chemistry: t.chemistry, biology: t.biology, materials: t.materialsProfile };
   const input = (label: string, value: string, onChange: (value: string) => void, type = 'text') => <label>{label}<input type={type} value={value} onChange={event => onChange(event.target.value)}/></label>;
 
   return <main className="discipline-workspace">
