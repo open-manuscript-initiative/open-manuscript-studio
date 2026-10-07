@@ -7,6 +7,7 @@ type Version = { id: string; date: string; effectiveDate: string; url: string; t
 type LegalSource = { id: string; jurisdiction: string; authority: string; citation: string; title: string; sourceType: string; publicationDate: string; effectiveDate: string; status: string; url: string; versions: Version[] };
 type Workspace = { sources: LegalSource[] };
 const blankWorkspace = (): Workspace => ({ sources: [] });
+const isWorkspace = (value: unknown): value is Workspace => Boolean(value && typeof value === 'object' && Array.isArray((value as Workspace).sources));
 const emptySource = (): LegalSource => ({ id: newWorkspaceId(), jurisdiction: '', authority: '', citation: '', title: '', sourceType: '', publicationDate: '', effectiveDate: '', status: '', url: '', versions: [] });
 const copy = {
   hu: { title: 'Jogforrások', subtitle: 'Hivatkozások, hatályállapotok és forrásszöveg-változatok nyilvántartása.', search: 'Keresés cím, hivatkozás vagy joghatóság szerint', add: 'Jogforrás hozzáadása', jurisdiction: 'Joghatóság', authority: 'Kibocsátó szerv', citation: 'Hivatalos hivatkozás', titleField: 'Cím', type: 'Forrástípus', publication: 'Kihirdetés dátuma', effective: 'Hatálybalépés', status: 'Hatályállapot / státusz', url: 'Hivatalos forrás URL-je', open: 'Forrás megnyitása', versions: 'Szövegváltozatok', addVersion: 'Változat felvétele', versionDate: 'Változat dátuma', versionEffective: 'Hatályos ettől', versionUrl: 'Változat URL-je', text: 'Forrásszöveg', note: 'Megjegyzés', compare: 'Két változat összevetése', first: 'Első változat', second: 'Második változat', remove: 'Törlés', export: 'Nyilvántartás exportálása JSON-ként', noSources: 'Még nincs rögzített jogforrás.', local: 'A nyilvántartás ezen az eszközön tárolódik. Ellenőrizd a hivatkozásokat és a hatályállapotot az elsődleges forrásnál.' , databases: 'Külső jogi adatbázisok', databasesHelp: 'A keresések új lapon nyílnak meg. Az EUR-Lex keresőjét közvetlenül használjuk; a többi portálra korlátozott webes keresés vezet. Az OMI nem tölt le vagy hitelesít találatokat.', databaseQuery: 'Keresőkifejezés', searchDatabase: 'Keresés', openPortal: 'Portál megnyitása' },
@@ -16,7 +17,7 @@ const copy = {
 
 export function LegalSourcesPanel({ locale = 'hu', storageKey = 'legal-sources' }: { locale?: string; storageKey?: string }) {
   const t = copy[locale as Locale] ?? copy.hu;
-  const [workspace, setWorkspace] = useLocalWorkspace<Workspace>(storageKey, blankWorkspace);
+  const [workspace, setWorkspace] = useLocalWorkspace<Workspace>(storageKey, blankWorkspace, isWorkspace);
   const [providerQuery, setProviderQuery] = useState('');
   const providers: Array<{ id: 'eurlex'; title: string; detail: string; portal: string; searchUrl: (value: string) => string } | { id: 'curia' | 'unts' | 'roman' | 'canon'; title: string; detail: string; portal: string; domain: string }> = [
     { id: 'eurlex', title: 'EUR-Lex', detail: locale === 'hu' ? 'Az Európai Unió joganyaga, nemzetközi megállapodásai és kapcsolódó nemzeti hivatkozások.' : locale === 'de' ? 'EU-Recht, internationale Übereinkünfte und zugehörige nationale Verweise.' : 'EU law, international agreements, and related national references.', portal: 'https://eur-lex.europa.eu/', searchUrl: (value: string) => 'https://eur-lex.europa.eu/search.html?scope=EURLEX&text=' + encodeURIComponent(value) },
