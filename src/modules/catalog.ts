@@ -9,6 +9,7 @@ import { moduleManifest as legalSourcesModule } from './legal-sources/index';
 import { moduleManifest as researchReproducibilityModule } from './research-reproducibility/index';
 import { moduleManifest as spatialResearchModule } from './spatial-research/index';
 import { moduleManifest as archaeologyModule } from './archaeology/index';
+import { moduleManifest as experimentalLaboratoryModule } from './experimental-laboratory/index';
 import { StudioModuleRegistry } from './registry';
 import type { StudioModuleInstallationPolicy } from './types';
 
@@ -24,6 +25,7 @@ export {
   researchReproducibilityModule,
   spatialResearchModule,
   archaeologyModule,
+  experimentalLaboratoryModule,
 };
 
 export const builtinModuleManifests = [
@@ -38,6 +40,7 @@ export const builtinModuleManifests = [
   researchReproducibilityModule,
   spatialResearchModule,
   archaeologyModule,
+  experimentalLaboratoryModule,
 ] as const;
 
 export const studioModules = new StudioModuleRegistry();
