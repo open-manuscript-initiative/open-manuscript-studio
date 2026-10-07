@@ -194,10 +194,6 @@ function cellNumber(value: string | undefined): number {
 
 export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statistical-analysis' }: { locale?: string; storageKey?: string }) {
   const t = copy[locale as Locale] ?? copy.hu;
-  const [selectedValueIndex, setSelectedValueIndex] = useState('');
-  const [selectedGroupIndex, setSelectedGroupIndex] = useState('');
-  const [selectedXIndex, setSelectedXIndex] = useState('');
-  const [selectedYIndex, setSelectedYIndex] = useState('');
   const [workspace, setWorkspace] = useLocalWorkspace<StatisticalWorkspace>(storageKey, createStatisticalWorkspace, isStatisticalWorkspace);
   const [error, setError] = useState('');
   const csvRef = useRef<HTMLInputElement>(null);
@@ -208,15 +204,15 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
     const count = numericColumnValues(dataset.rows, index).filter(Number.isFinite).length;
     return count >= 2 ? [{ name, index }] : [];
   }) ?? [], [dataset]);
-  const valueColumn = numericColumns.find(column => String(column.index) === selectedValueIndex) ?? numericColumns[0];
-  const xColumn = numericColumns.find(column => String(column.index) === selectedXIndex) ?? numericColumns[0];
-  const yColumn = numericColumns.find(column => String(column.index) === selectedYIndex) ?? numericColumns[1] ?? numericColumns[0];
+  const valueColumn = numericColumns.find(column => String(column.index) === workspace.configuration.valueColumn) ?? numericColumns[0];
+  const xColumn = numericColumns.find(column => String(column.index) === workspace.configuration.regressionX) ?? numericColumns[0];
+  const yColumn = numericColumns.find(column => String(column.index) === workspace.configuration.regressionY) ?? numericColumns[1] ?? numericColumns[0];
   const groupingColumns = dataset?.columns.map((name, index) => ({
     name,
     index,
     values: [...new Set(dataset.rows.map(row => row[index]?.trim()).filter((value): value is string => Boolean(value)))],
   })).filter(column => column.values.length > 1 && column.values.length <= 20) ?? [];
-  const groupColumn = groupingColumns.find(column => String(column.index) === selectedGroupIndex) ?? groupingColumns[0];
+  const groupColumn = groupingColumns.find(column => String(column.index) === workspace.configuration.groupColumn) ?? groupingColumns[0];
   const values = dataset && valueColumn ? numericColumnValues(dataset.rows, valueColumn.index).filter(Number.isFinite) : [];
   const summary = describe(values);
   const groups = dataset && valueColumn && groupColumn
@@ -246,6 +242,8 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
   })();
   const maxBin = Math.max(1, ...histogram);
   const report = {
+    ...workspace,
+    schemaVersion: 1,
     schema: 'omi-statistical-analysis/1',
     generatedAt: new Date().toISOString(),
     analysisTitle: workspace.analysisTitle,
@@ -274,8 +272,7 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
         columns: parsed.columns,
         rows: parsed.rows,
       };
-      setWorkspace({ schemaVersion: 1, dataset: nextDataset, analysisTitle: '' });
-      setSelectedValueIndex(''); setSelectedGroupIndex(''); setSelectedXIndex(''); setSelectedYIndex('');
+      setWorkspace({ schemaVersion: 1, dataset: nextDataset, analysisTitle: '', configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' } });
       setError('');
     } catch {
       setError(t.csvError);
@@ -288,7 +285,6 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
       const parsed = parseStatisticalWorkspace(await file.text());
       if (!parsed) { setError(t.jsonError); return; }
       setWorkspace(parsed);
-      setSelectedValueIndex(''); setSelectedGroupIndex(''); setSelectedXIndex(''); setSelectedYIndex('');
       setError('');
     } catch {
       setError(t.jsonError);
@@ -302,7 +298,7 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
       <input ref={jsonRef} className="discipline-file" type="file" accept=".json,application/json" onChange={event => { void importJson(event.target.files?.[0]); event.currentTarget.value = ''; }} />
     </header>
     <section className="discipline-workspace__section">
-      <div className="discipline-workspace__section-title"><h2>{t.dataset}</h2><div><button type="button" onClick={() => csvRef.current?.click()}>{t.importCsv}</button> {dataset && <button type="button" className="discipline-workspace__danger" onClick={() => { setWorkspace({ schemaVersion: 1, dataset: null, analysisTitle: '' }); setError(''); }}>{t.removeData}</button>}</div></div>
+      <div className="discipline-workspace__section-title"><h2>{t.dataset}</h2><div><button type="button" onClick={() => csvRef.current?.click()}>{t.importCsv}</button> {dataset && <button type="button" className="discipline-workspace__danger" onClick={() => { setWorkspace({ schemaVersion: 1, dataset: null, analysisTitle: '', configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' } }); setError(''); }}>{t.removeData}</button>}</div></div>
       <input ref={csvRef} className="discipline-file" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" onChange={event => { void importCsv(event.target.files?.[0]); event.currentTarget.value = ''; }} />
       {dataset ? <>
         <div className="discipline-workspace__grid">
@@ -317,7 +313,7 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
     </section>
     {dataset && <>
       <section className="discipline-workspace__section">
-        <div className="discipline-workspace__section-title"><h2>{t.descriptive}</h2><label>{t.valueColumn}<select value={valueColumn?.index ?? ''} onChange={event => setSelectedValueIndex(event.target.value)}>{numericColumns.map(column => <option key={column.index} value={column.index}>{column.name}</option>)}</select></label></div>
+        <div className="discipline-workspace__section-title"><h2>{t.descriptive}</h2><label>{t.valueColumn}<select value={valueColumn?.index ?? ''} onChange={event => setWorkspace(current => ({ ...current, configuration: { ...current.configuration, valueColumn: event.target.value } }))}>{numericColumns.map(column => <option key={column.index} value={column.index}>{column.name}</option>)}</select></label></div>
         {summary ? <>
           <div className="discipline-table-wrap"><table className="discipline-table"><thead><tr>{[t.n,t.mean,t.median,t.sd,t.minimum,t.q1,t.q3,t.maximum].map(label => <th key={label}>{label}</th>)}</tr></thead><tbody><tr>{[summary.n,formatStat(summary.mean),formatStat(summary.median),formatStat(summary.standardDeviation),formatStat(summary.minimum),formatStat(summary.q1),formatStat(summary.q3),formatStat(summary.maximum)].map((value,index) => <td key={index}>{value}</td>)}</tr></tbody></table></div>
           <p>{t.ci}: [{formatStat(summary.confidenceLow)}, {formatStat(summary.confidenceHigh)}]</p>
@@ -326,14 +322,14 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
       </section>
       <section className="discipline-workspace__section">
         <h2>{t.comparison}</h2>
-        {groupColumn && <label>{t.groupColumn}<select value={groupColumn.index} onChange={event => setSelectedGroupIndex(event.target.value)}>{groupingColumns.map(column => <option key={column.index} value={column.index}>{column.name}</option>)}</select></label>}
+        {groupColumn && <label>{t.groupColumn}<select value={groupColumn.index} onChange={event => setWorkspace(current => ({ ...current, configuration: { ...current.configuration, groupColumn: event.target.value } }))}>{groupingColumns.map(column => <option key={column.index} value={column.index}>{column.name}</option>)}</select></label>}
         {tTest && <div><h3>{t.groups}: {groups[0]!.label} / {groups[1]!.label}</h3><p>{t.meanDifference}: {formatStat(tTest.meanDifference)} · {t.t}: {formatStat(tTest.statistic)} · {t.df}: {formatStat(tTest.degreesOfFreedom)} · {t.p}: {formatStat(tTest.pValue, 6)}</p><p>{t.ci}: [{formatStat(tTest.confidenceLow)}, {formatStat(tTest.confidenceHigh)}]</p></div>}
         {anova && groups.length >= 2 && <div><h3>{t.anova}</h3><p>{t.f}: {formatStat(anova.fStatistic)} · {t.dfBetween}: {anova.degreesOfFreedomBetween} · {t.dfWithin}: {anova.degreesOfFreedomWithin} · {t.p}: {formatStat(anova.pValue, 6)}</p></div>}
         {groupColumn && groups.length < 2 && <p>{t.noComparison}</p>}
       </section>
       <section className="discipline-workspace__section">
         <h2>{t.regression}</h2>
-        <div className="discipline-workspace__grid"><label>{t.x}<select value={xColumn?.index ?? ''} onChange={event => setSelectedXIndex(event.target.value)}>{numericColumns.map(column => <option key={column.index} value={column.index}>{column.name}</option>)}</select></label><label>{t.y}<select value={yColumn?.index ?? ''} onChange={event => setSelectedYIndex(event.target.value)}>{numericColumns.map(column => <option key={column.index} value={column.index}>{column.name}</option>)}</select></label></div>
+        <div className="discipline-workspace__grid"><label>{t.x}<select value={xColumn?.index ?? ''} onChange={event => setWorkspace(current => ({ ...current, configuration: { ...current.configuration, regressionX: event.target.value } }))}>{numericColumns.map(column => <option key={column.index} value={column.index}>{column.name}</option>)}</select></label><label>{t.y}<select value={yColumn?.index ?? ''} onChange={event => setWorkspace(current => ({ ...current, configuration: { ...current.configuration, regressionY: event.target.value } }))}>{numericColumns.map(column => <option key={column.index} value={column.index}>{column.name}</option>)}</select></label></div>
         {regression ? <div className="discipline-table-wrap"><table className="discipline-table"><tbody>
           <tr><th>{t.x} / {t.y}</th><td>{xColumn?.name} → {yColumn?.name}</td></tr>
           <tr><th>{t.count}</th><td>{regression.n}</td></tr><tr><th>{t.intercept}</th><td>{formatStat(regression.intercept)}</td></tr>
