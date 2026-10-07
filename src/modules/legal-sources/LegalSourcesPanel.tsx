@@ -7,7 +7,14 @@ type Version = { id: string; date: string; effectiveDate: string; url: string; t
 type LegalSource = { id: string; jurisdiction: string; authority: string; citation: string; title: string; sourceType: string; publicationDate: string; effectiveDate: string; status: string; url: string; versions: Version[] };
 type Workspace = { sources: LegalSource[] };
 const blankWorkspace = (): Workspace => ({ sources: [] });
-const isWorkspace = (value: unknown): value is Workspace => Boolean(value && typeof value === 'object' && Array.isArray((value as Workspace).sources));
+const isWorkspace = (value: unknown): value is Workspace => Boolean(
+  value && typeof value === 'object' && Array.isArray((value as Workspace).sources)
+    && (value as Workspace).sources.every((item) => item && typeof item === 'object'
+      && typeof (item as LegalSource).id === 'string'
+      && typeof (item as LegalSource).title === 'string'
+      && Array.isArray((item as LegalSource).versions)
+      && (item as LegalSource).versions.every((version) => version && typeof version === 'object' && typeof (version as Version).id === 'string')),
+);
 const emptySource = (): LegalSource => ({ id: newWorkspaceId(), jurisdiction: '', authority: '', citation: '', title: '', sourceType: '', publicationDate: '', effectiveDate: '', status: '', url: '', versions: [] });
 const copy = {
   hu: { title: 'Jogforrások', subtitle: 'Hivatkozások, hatályállapotok és forrásszöveg-változatok nyilvántartása.', search: 'Keresés cím, hivatkozás vagy joghatóság szerint', add: 'Jogforrás hozzáadása', jurisdiction: 'Joghatóság', authority: 'Kibocsátó szerv', citation: 'Hivatalos hivatkozás', titleField: 'Cím', type: 'Forrástípus', publication: 'Kihirdetés dátuma', effective: 'Hatálybalépés', status: 'Hatályállapot / státusz', url: 'Hivatalos forrás URL-je', open: 'Forrás megnyitása', versions: 'Szövegváltozatok', addVersion: 'Változat felvétele', versionDate: 'Változat dátuma', versionEffective: 'Hatályos ettől', versionUrl: 'Változat URL-je', text: 'Forrásszöveg', note: 'Megjegyzés', compare: 'Két változat összevetése', first: 'Első változat', second: 'Második változat', remove: 'Törlés', export: 'Nyilvántartás exportálása JSON-ként', noSources: 'Még nincs rögzített jogforrás.', local: 'A nyilvántartás ezen az eszközön tárolódik. Ellenőrizd a hivatkozásokat és a hatályállapotot az elsődleges forrásnál.' , databases: 'Külső jogi adatbázisok', databasesHelp: 'A keresések új lapon nyílnak meg. Az EUR-Lex keresőjét közvetlenül használjuk; a többi portálra korlátozott webes keresés vezet. Az OMI nem tölt le vagy hitelesít találatokat.', databaseQuery: 'Keresőkifejezés', searchDatabase: 'Keresés', openPortal: 'Portál megnyitása' },
