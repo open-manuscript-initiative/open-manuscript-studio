@@ -8,16 +8,12 @@ import {
   describe,
   estimateTwoGroupSampleSize,
   formatStat,
-  linearRegression,
   newStatisticalId,
-  numericColumnValues,
-  oneWayAnova,
   parseDelimited,
   parseLaboratoryMeasurements,
   parseStatisticalWorkspace,
   preregisterDesign,
   randomizeParticipants,
-  welchTTest,
   type StatisticalDataset,
 } from './model';
 import '../disciplineWorkspaces.css';
@@ -299,7 +295,6 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
   const xColumn = numericColumns.find(column => String(column.index) === workspace.configuration.regressionX) ?? numericColumns[0];
   const yColumn = numericColumns.find(column => String(column.index) === workspace.configuration.regressionY) ?? numericColumns[1];
   const groupColumn = groupingColumns.find(column => String(column.index) === workspace.configuration.groupColumn) ?? groupingColumns[0];
-  const values = analysis?.values ?? [];
   const summary = analysis?.summary ?? null;
   const groups = analysis?.groups ?? [];
   const tTest = analysis?.tTest ?? null;
@@ -368,6 +363,7 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
         },
         analysisTitle: '',
         configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' },
+        design: createExperimentalDesign(),
       });
       setError('');
     } catch {
@@ -411,6 +407,32 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
       {error && <p role="alert">{error}</p>}
     </section>
     {dataset && <>
+      <section className="discipline-workspace__section">
+        <h2>{t.design}</h2>
+        {design.preregisteredAt && <p role="status">{t.frozen}: {new Date(design.preregisteredAt).toLocaleString()}</p>}
+        <div className="discipline-workspace__grid">
+          <label>{t.hypothesis}<textarea value={design.hypothesis} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, hypothesis: event.target.value } }))} /></label>
+          <label>{t.outcome}<input value={design.primaryOutcome} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, primaryOutcome: event.target.value } }))} /></label>
+          <label>{t.groupsPlan}<input value={design.groups.join(', ')} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, groups: event.target.value.split(',').map(value => value.trim()).filter(Boolean) } }))} /></label>
+          <label>{t.alpha}<input type="number" min="0.001" max="0.2" step="0.001" value={design.alpha} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, alpha: Number(event.target.value) } }))} /></label>
+          <label>{t.power}<input type="number" min="0.51" max="0.99" step="0.01" value={design.power} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, power: Number(event.target.value) } }))} /></label>
+          <label>{t.effect}<input type="number" min="0.01" step="0.05" value={design.standardizedEffect} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, standardizedEffect: Number(event.target.value) } }))} /></label>
+        </div>
+        <p>{t.sampleEstimate}: <strong>{sampleSize ?? '—'}</strong></p><p className="discipline-workspace__hint">{t.estimateNote}</p>
+        <div className="discipline-workspace__grid">
+          <label>{t.inclusion}<textarea value={design.inclusionCriteria.join('\n')} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, inclusionCriteria: event.target.value.split('\n') } }))} /></label>
+          <label>{t.exclusion}<textarea value={design.exclusionCriteria.join('\n')} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, exclusionCriteria: event.target.value.split('\n') } }))} /></label>
+          <label>{t.analysisPlan}<textarea value={design.analysisPlan} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, analysisPlan: event.target.value } }))} /></label>
+          <label>{t.seed}<input value={design.randomizationSeed} disabled={locked} onChange={event => setWorkspace(current => ({ ...current, design: { ...current.design, randomizationSeed: event.target.value } }))} /></label>
+        </div>
+        {!locked && <button type="button" disabled={!design.hypothesis.trim() || !design.primaryOutcome.trim() || !design.analysisPlan.trim()} onClick={() => setWorkspace(current => ({ ...current, design: preregisterDesign(current.design) }))}>{t.freeze}</button>}
+        <hr />
+        <label>{t.participantCount}<input type="number" min="1" max="100000" value={participantCount} onChange={event => setParticipantCount(Math.max(1, Math.min(100000, Number(event.target.value) || 1)))} /></label>
+        <button type="button" disabled={design.groups.length < 2} onClick={() => setAssignments(randomizeParticipants(Array.from({ length: participantCount }, (_, index) => 'P' + String(index + 1).padStart(4, '0')), design.groups, design.randomizationSeed))}>{t.randomize}</button>
+        <p className="discipline-workspace__hint">{t.randomizationNote}</p>
+        {assignments.length > 0 && <><button type="button" onClick={() => { const csv = ['id,group', ...assignments.map(item => JSON.stringify(item.id) + ',' + JSON.stringify(item.group))].join('\n'); const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); const link = document.createElement('a'); link.href = url; link.download = 'randomization-assignments.csv'; link.click(); URL.revokeObjectURL(url); }}>{t.downloadAssignments}</button><div className="discipline-table-wrap"><table className="discipline-table"><thead><tr><th>ID</th><th>{t.groups}</th></tr></thead><tbody>{assignments.slice(0, 50).map(item => <tr key={item.id}><td>{item.id}</td><td>{item.group}</td></tr>)}</tbody></table></div></>}
+        {locked && <><label>{t.deviation}<textarea value={deviationText} onChange={event => setDeviationText(event.target.value)} /></label><button type="button" disabled={!deviationText.trim()} onClick={() => { setWorkspace(current => ({ ...current, design: addDesignDeviation(current.design, deviationText) })); setDeviationText(''); }}>{t.addDeviation}</button><h3>{t.deviations}</h3><ul>{design.deviations.map((item,index) => <li key={index}>{item.date}: {item.description}</li>)}</ul></>}
+      </section>
       <section className="discipline-workspace__section">
         <div className="discipline-workspace__section-title"><h2>{t.descriptive}</h2><label>{t.valueColumn}<select value={valueColumn?.index ?? ''} onChange={event => setWorkspace(current => ({ ...current, configuration: { ...current.configuration, valueColumn: event.target.value } }))}>{numericColumns.map(column => <option key={column.index} value={column.index}>{column.name}</option>)}</select></label></div>
         {summary ? <>
