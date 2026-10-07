@@ -21,7 +21,7 @@ import { searchEuropeana } from '../server/src/integrations/europeana/europeanaS
 import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSearch.ts';
 import { searchSefaria } from '../server/src/integrations/sefaria/sefariaSearch.ts';
 import { createExperimentalWorkspace, isExperimentalWorkspace, parseExperimentalWorkspace } from '../src/modules/experimental-laboratory/model.ts';
-import { createStatisticalWorkspace, describe, isStatisticalWorkspace, linearRegression, oneWayAnova, parseDelimited, parseStatisticalWorkspace, welchTTest } from '../src/modules/statistical-analysis/model.ts';
+import { createStatisticalWorkspace, describe, isStatisticalWorkspace, linearRegression, oneWayAnova, parseDelimited, parseLaboratoryMeasurements, parseStatisticalWorkspace, welchTTest } from '../src/modules/statistical-analysis/model.ts';
 
 const expectedModuleIds = [
   'org.omi.history-archives',
@@ -538,4 +538,33 @@ test('statistical analysis JSON validates and round-trips datasets and analysis 
   assert.deepEqual(parseStatisticalWorkspace(JSON.stringify(workspace)), workspace);
   assert.equal(parseStatisticalWorkspace('{broken'), null);
   assert.equal(isStatisticalWorkspace({ ...workspace, schemaVersion: 2 }), false);
+});
+
+
+test('statistical analysis imports laboratory measurements as linked tabular data', () => {
+  const imported = parseLaboratoryMeasurements(JSON.stringify({
+    schemaVersion: 1,
+    title: 'Physics investigation',
+    studies: [{
+      title: 'Cooling experiment',
+      instruments: [{ id: 'thermometer-1', name: 'Digital thermometer' }],
+      assays: [{
+        title: 'Temperature over time',
+        technology: 'Thermometry',
+        materialReferences: 'water-1',
+        measurements: [{
+          name: 'Temperature',
+          value: '21.5',
+          unit: '°C',
+          uncertainty: '0.1',
+          measuredAt: '2026-10-07T08:00',
+          instrumentId: 'thermometer-1',
+        }],
+      }],
+    }],
+  }));
+  assert.ok(imported);
+  assert.equal(imported.projectTitle, 'Physics investigation');
+  assert.deepEqual(imported.rows[0], ['Physics investigation', 'Cooling experiment', 'Temperature over time', 'Thermometry', 'water-1', 'Temperature', '21.5', '°C', '0.1', '2026-10-07T08:00', 'Digital thermometer']);
+  assert.equal(parseLaboratoryMeasurements(JSON.stringify({ schemaVersion: 1, title: 'Empty', studies: [] })), null);
 });
