@@ -498,7 +498,8 @@ function isExperimentalDesign(value: unknown): value is ExperimentalDesign {
 export function isStatisticalWorkspace(value: unknown): value is StatisticalWorkspace {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const candidate = value as Partial<StatisticalWorkspace>;
-  if (candidate.schemaVersion !== 1 || typeof candidate.analysisTitle !== 'string') return false;\n  if (candidate.design !== undefined && !isExperimentalDesign(candidate.design)) return false;
+  if (candidate.schemaVersion !== 1 || typeof candidate.analysisTitle !== 'string') return false;
+  if (candidate.design !== undefined && !isExperimentalDesign(candidate.design)) return false;
   const configuration = candidate.configuration as StatisticalWorkspace['configuration'] | undefined;
   if (!configuration || !['valueColumn', 'groupColumn', 'regressionX', 'regressionY'].every((key) => typeof configuration[key as keyof typeof configuration] === 'string')) return false;
   if (candidate.dataset === null) return true;
