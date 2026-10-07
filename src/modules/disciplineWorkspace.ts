@@ -1,5 +1,9 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 
+export function getDisciplineWorkspaceStorageKey(userId: string, workspaceId: string, moduleId: string): string {
+  return `omi:discipline-workspace:v1:${encodeURIComponent(userId)}:${encodeURIComponent(workspaceId)}:${encodeURIComponent(moduleId)}`;
+}
+
 export function newWorkspaceId(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
