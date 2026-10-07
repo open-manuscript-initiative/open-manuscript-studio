@@ -15,7 +15,6 @@ import {
 } from './preferences';
 import type {
   StudioModuleId,
-  StudioWorkspaceModulePreferences,
 } from './types';
 import './moduleShell.css';
 
@@ -139,4 +138,4 @@ export function ResearchModuleSettings() {
     </section>
   );
 }
-\n
+
