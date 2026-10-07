@@ -200,18 +200,18 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
   const jsonRef = useRef<HTMLInputElement>(null);
   const dataset = workspace.dataset;
 
-  const numericColumns = useMemo(() => dataset?.columns.flatMap((name, index) => {
+  const numericColumns = dataset ? dataset.columns.flatMap((name, index) => {
     const count = numericColumnValues(dataset.rows, index).filter(Number.isFinite).length;
     return count >= 2 ? [{ name, index }] : [];
-  }) ?? [], [dataset]);
+  }) : [];
   const valueColumn = numericColumns.find(column => String(column.index) === workspace.configuration.valueColumn) ?? numericColumns[0];
   const xColumn = numericColumns.find(column => String(column.index) === workspace.configuration.regressionX) ?? numericColumns[0];
   const yColumn = numericColumns.find(column => String(column.index) === workspace.configuration.regressionY) ?? numericColumns[1] ?? numericColumns[0];
-  const groupingColumns = dataset?.columns.map((name, index) => ({
+  const groupingColumns = dataset ? dataset.columns.map((name, index) => ({
     name,
     index,
     values: [...new Set(dataset.rows.map(row => row[index]?.trim()).filter((value): value is string => Boolean(value)))],
-  })).filter(column => column.values.length > 1 && column.values.length <= 20) ?? [];
+  })).filter(column => column.values.length > 1 && column.values.length <= 20) : [];
   const groupColumn = groupingColumns.find(column => String(column.index) === workspace.configuration.groupColumn) ?? groupingColumns[0];
   const values = dataset && valueColumn ? numericColumnValues(dataset.rows, valueColumn.index).filter(Number.isFinite) : [];
   const summary = describe(values);
