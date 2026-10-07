@@ -70,7 +70,7 @@ const copy = {
     methodNote: 'A t-próba Welch-féle, kétoldali változat; nem feltételez azonos csoportvarianciát. Az ANOVA hagyományos egyszempontos modell. Az OLS lineáris regresszió feltételezéseit, a hiányzó adatokat és a többszörös tesztelést a kutatónak kell mérlegelnie.',
     unsupported: 'A fájl nem érvényes OMI statisztikai munkatér vagy nem támogatott verzió.',
     csvError: 'A CSV/TSV nem olvasható: ellenőrizze a fejlécet, az idézőjeleket és a sorok oszlopszámát.',
-    labError: 'A laboratóriumi JSON nem tartalmaz importálható mérési adatokat.'
+    labError: 'A laboratóriumi JSON nem tartalmaz importálható mérési adatokat.',
     jsonError: 'Az OMI statisztikai JSON nem érvényes.',
     count: 'Elemszám',
     noNumeric: 'A kiválasztott oszlopban nincs elegendő érvényes numerikus adat.',
@@ -127,7 +127,7 @@ const copy = {
     methodNote: "The t-test is Welch's two-sided test and does not assume equal group variances. ANOVA is the conventional one-way model. Researchers should assess OLS assumptions, missing data, and multiple testing.",
     unsupported: 'This is not a valid OMI statistical workspace or the version is unsupported.',
     csvError: 'Could not read the CSV/TSV. Check the header, quotes, and consistent column counts.',
-    labError: 'The laboratory JSON contains no importable measurement data.'
+    labError: 'The laboratory JSON contains no importable measurement data.',
     jsonError: 'The OMI statistical JSON is invalid.',
     count: 'Count',
     noNumeric: 'The selected column has too few valid numeric values.',
@@ -184,7 +184,7 @@ const copy = {
     methodNote: 'Der t-Test ist zweiseitig nach Welch und setzt keine gleichen Gruppenvarianzen voraus. Die ANOVA ist ein klassisches einfaktorielles Modell. OLS-Annahmen, fehlende Daten und multiples Testen sind zu prüfen.',
     unsupported: 'Kein gültiger OMI-Statistikarbeitsbereich oder nicht unterstützte Version.',
     csvError: 'CSV/TSV nicht lesbar: Kopfzeile, Anführungszeichen und einheitliche Spaltenzahl prüfen.',
-    labError: 'Das Labor-JSON enthält keine importierbaren Messdaten.'
+    labError: 'Das Labor-JSON enthält keine importierbaren Messdaten.',
     jsonError: 'Das OMI-Statistik-JSON ist ungültig.',
     count: 'Anzahl',
     noNumeric: 'Die ausgewählte Spalte enthält zu wenige gültige numerische Werte.',
