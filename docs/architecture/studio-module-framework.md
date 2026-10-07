@@ -72,6 +72,8 @@ entities, semantics, and other labels; DOCX, TXT, and MD text import; project
 JSON import/export; and CSV export of the current concordance. Browser storage
 is device-local; use JSON export for backup or transfer. Additional disciplines can add modules through the same manifest and contribution system.
 
+The Statistical Analysis module imports CSV/TSV datasets and calculates descriptive summaries, t-based confidence intervals, Welch's independent two-group t-test, one-way ANOVA, and ordinary least-squares simple linear regression. Its JSON report records the dataset, selected variables, methods, results, and caveats. Calculations run in the browser and data stays in local workspace storage; this initial implementation does not replace R/Python, assumption diagnostics, power analysis, nonparametric methods, or multiple-testing correction.
+
 These discipline workspaces are research aids and do not verify legal validity, resolve authorities, or provide shared storage. Legal Sources does not ingest external search results; researchers record and verify primary-source links themselves. MusicXML import covers uncompressed XML files.
 
 Configure the server-side module allow-list with `STUDIO_ENABLED_MODULES`, the
