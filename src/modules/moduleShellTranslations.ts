@@ -30,8 +30,6 @@ export interface ModuleShellCopy {
   available: string;
   disabledByInstallation: string;
   noModules: string;
-  scaffoldTitle: string;
-  scaffoldDescription: string;
   noFeatures: string;
   localPreferenceNote: string;
   policyError: string;
@@ -54,8 +52,6 @@ const translations: Record<string, ModuleShellCopy> = {
     available: 'Available',
     disabledByInstallation: 'Disabled by this installation',
     noModules: 'No research modules are registered yet.',
-    scaffoldTitle: 'Module shell',
-    scaffoldDescription: 'This module is registered and connected to the Studio workspace.',
     noFeatures: 'Research tools for this discipline appear here.',
     localPreferenceNote: 'Workspace selections are saved to your Studio account and enforced by the server.',
     policyError: 'Module settings could not be loaded or saved. Check your connection and try again.',
@@ -176,8 +172,6 @@ const translations: Record<string, ModuleShellCopy> = {
     available: 'Verfügbar',
     disabledByInstallation: 'In dieser Installation deaktiviert',
     noModules: 'Es sind noch keine Forschungsmodule registriert.',
-    scaffoldTitle: 'Modulgerüst',
-    scaffoldDescription: 'Dieses Modul ist registriert und mit dem Studio-Arbeitsbereich verbunden.',
     noFeatures: 'Die Forschungswerkzeuge dieses Fachgebiets erscheinen hier.',
     localPreferenceNote: 'Die Auswahl wird im Studio-Konto gespeichert und vom Server geprüft.',
     policyError: 'Moduleinstellungen konnten nicht geladen oder gespeichert werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.',
@@ -298,8 +292,6 @@ const translations: Record<string, ModuleShellCopy> = {
     available: 'Elérhető',
     disabledByInstallation: 'Ezen a telepítésen letiltva',
     noModules: 'Még nincs regisztrált kutatási modul.',
-    scaffoldTitle: 'Modulváz',
-    scaffoldDescription: 'A modul regisztrálva van, és csatlakozik a Studio munkateréhez.',
     noFeatures: 'A tudományterület kutatási eszközei itt jelennek meg.',
     localPreferenceNote: 'A munkatér beállításait a Studio-fiók menti, a szerver pedig ellenőrzi.',
     policyError: 'A modulbeállításokat nem sikerült betölteni vagy menteni. Ellenőrizze a kapcsolatot, majd próbálja újra.',
