@@ -1,6 +1,8 @@
 import { parseDelimited } from './model';
 
-self.onmessage = (event: MessageEvent<{ text: string }>) => {
+const scope = self as unknown as { onmessage: ((event: MessageEvent<{ text: string }>) => void) | null; postMessage: (value: unknown) => void };
+scope.onmessage = (event) => {
   const result = parseDelimited(event.data.text);
-  self.postMessage(result);
+  scope.postMessage(result);
 };
+
