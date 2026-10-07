@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { getDisciplineWorkspaceStorageKey } from '../src/modules/disciplineWorkspace.ts';
+
 import {
   builtinModuleManifests,
   historyArchivesModule,
@@ -121,6 +123,22 @@ test('ignores malformed stored module preference data', () => {
   assert.deepEqual(
     readStudioModulePreferences('user-a', 'workspace-a', storage),
     { workspaceId: 'workspace-a', activeModuleIds: [] },
+  );
+});
+
+test('uses isolated local storage keys for each research module workspace', () => {
+  const keys = expectedModuleIds.map((moduleId) =>
+    getDisciplineWorkspaceStorageKey('user-a', 'workspace-a', moduleId),
+  );
+
+  assert.equal(new Set(keys).size, expectedModuleIds.length);
+  assert.notEqual(
+    getDisciplineWorkspaceStorageKey('user-a', 'workspace-a', expectedModuleIds[0]!),
+    getDisciplineWorkspaceStorageKey('user-b', 'workspace-a', expectedModuleIds[0]!),
+  );
+  assert.notEqual(
+    getDisciplineWorkspaceStorageKey('user-a', 'workspace-a', expectedModuleIds[0]!),
+    getDisciplineWorkspaceStorageKey('user-a', 'workspace-b', expectedModuleIds[0]!),
   );
 });
 
