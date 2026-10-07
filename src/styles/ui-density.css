@@ -505,6 +505,7 @@ input[size]:not([data-full-width="true"]) {
   }
 
   .studio-menu-navigation {
+    flex-direction: column;
     gap: .3rem;
     padding: .4rem;
   }
