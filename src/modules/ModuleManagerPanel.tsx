@@ -27,6 +27,7 @@ import {
   type StudioWorkspaceModulePreferences,
 } from './types';
 import './moduleShell.css';
+import { getDisciplineWorkspaceStorageKey } from './disciplineWorkspace';
 
 interface ModuleManagerPanelProps {
   workspaceId?: string;
@@ -195,19 +196,19 @@ export function ModuleManagerPanel({
                 ) : module.id === religiousTextsModule.id ? (
                   <ReligiousTextsPanel locale={locale} />
                 ) : module.id === criticalTextEditionModule.id ? (
-                  <CriticalTextEditionPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+                  <CriticalTextEditionPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === corpusLinguisticsModule.id ? (
-                  <CorpusLinguisticsPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+                  <CorpusLinguisticsPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === musicologyModule.id ? (
-                  <MusicologyPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+                  <MusicologyPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === culturalHeritageModule.id ? (
-                  <CulturalHeritagePanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+                  <CulturalHeritagePanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === socialResearchMethodsModule.id ? (
-                  <SocialResearchMethodsPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+                  <SocialResearchMethodsPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === legalSourcesModule.id ? (
-                  <LegalSourcesPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+                  <LegalSourcesPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === researchReproducibilityModule.id ? (
-                  <ResearchReproducibilityPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+                  <ResearchReproducibilityPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : (
                   <div className="studio-module-empty-slot">{copy.noFeatures}</div>
                 )}
