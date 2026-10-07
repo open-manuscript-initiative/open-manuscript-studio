@@ -5,7 +5,14 @@ import '../disciplineWorkspaces.css';
 type Context = { id: string; locus: string; period: string; layer: string; description: string; finds: string; sampleId: string; source: string };
 type Workspace = { project: string; site: string; country: string; coordinates: string; contexts: Context[] };
 const blank = (): Workspace => ({ project: '', site: '', country: '', coordinates: '', contexts: [] });
-const valid = (value: unknown): value is Workspace => Boolean(value && typeof value === 'object' && typeof (value as Workspace).project === 'string' && Array.isArray((value as Workspace).contexts));
+const valid = (value: unknown): value is Workspace => Boolean(
+  value && typeof value === 'object'
+    && ['project', 'site', 'country', 'coordinates'].every((key) => typeof (value as Record<string, unknown>)[key] === 'string')
+    && Array.isArray((value as Workspace).contexts)
+    && (value as Workspace).contexts.every((context) => context && typeof context === 'object'
+      && typeof (context as Context).id === 'string'
+      && ['locus', 'period', 'layer', 'description', 'finds', 'sampleId', 'source'].every((key) => typeof (context as unknown as Record<string, unknown>)[key] === 'string')),
+);
 const emptyContext = (): Context => ({ id: newWorkspaceId(), locus: '', period: '', layer: '', description: '', finds: '', sampleId: '', source: '' });
 const copy = {
   hu: { title: 'Régészeti kutatótér', subtitle: 'Lelőhelyek, rétegek, kontextusok és leletek dokumentálása, forráskapcsolatokkal.', project: 'Kutatási projekt', site: 'Lelőhely neve / azonosítója', country: 'Ország / régió', coordinates: 'Koordináták vagy térinformatikai rekord', contexts: 'Régészeti kontextusok', add: 'Kontextus hozzáadása', locus: 'Locus / kontextusazonosító', period: 'Korszak / datálás', layer: 'Réteg / stratigráfiai egység', description: 'Leírás és megfigyelések', finds: 'Leletek és tárgyazonosítók', sample: 'Mintaazonosító', source: 'Dokumentáció / forrás URL', remove: 'Törlés', export: 'Régészeti jegyzék exportálása JSON-ként', local: 'Az adatok ezen az eszközön tárolódnak. Rendszeres JSON-exporttal készítsen hordozható másolatot.' },
