@@ -112,6 +112,62 @@ function guessDelimiter(source: string): ',' | '\t' {
   return count('\t') > count(',') ? '\t' : ',';
 }
 
+export type LaboratoryMeasurementsImport = {
+  projectTitle: string;
+  columns: string[];
+  rows: string[][];
+};
+
+export function parseLaboratoryMeasurements(json: string): LaboratoryMeasurementsImport | null {
+  try {
+    const root: unknown = JSON.parse(json);
+    if (!root || typeof root !== 'object' || Array.isArray(root)) return null;
+    const project = root as { schemaVersion?: unknown; title?: unknown; studies?: unknown };
+    if (project.schemaVersion !== 1 || typeof project.title !== 'string' || !Array.isArray(project.studies)) return null;
+    const columns = ['Project', 'Study', 'Assay', 'Technology', 'Samples', 'Measurement', 'Value', 'Unit', 'Uncertainty', 'Measured at', 'Instrument'];
+    const rows: string[][] = [];
+    for (const rawStudy of project.studies) {
+      if (!rawStudy || typeof rawStudy !== 'object' || Array.isArray(rawStudy)) continue;
+      const study = rawStudy as { title?: unknown; assays?: unknown; instruments?: unknown };
+      if (typeof study.title !== 'string' || !Array.isArray(study.assays)) continue;
+      const instruments = new Map<string, string>();
+      if (Array.isArray(study.instruments)) {
+        for (const rawInstrument of study.instruments) {
+          if (!rawInstrument || typeof rawInstrument !== 'object' || Array.isArray(rawInstrument)) continue;
+          const instrument = rawInstrument as { id?: unknown; name?: unknown; model?: unknown };
+          if (typeof instrument.id === 'string') instruments.set(instrument.id, typeof instrument.name === 'string' && instrument.name ? instrument.name : typeof instrument.model === 'string' ? instrument.model : instrument.id);
+        }
+      }
+      for (const rawAssay of study.assays) {
+        if (!rawAssay || typeof rawAssay !== 'object' || Array.isArray(rawAssay)) continue;
+        const assay = rawAssay as { title?: unknown; technology?: unknown; materialReferences?: unknown; measurements?: unknown };
+        if (!Array.isArray(assay.measurements)) continue;
+        for (const rawMeasurement of assay.measurements) {
+          if (!rawMeasurement || typeof rawMeasurement !== 'object' || Array.isArray(rawMeasurement)) continue;
+          const measurement = rawMeasurement as { name?: unknown; value?: unknown; unit?: unknown; uncertainty?: unknown; measuredAt?: unknown; instrumentId?: unknown };
+          if (typeof measurement.value !== 'string' || !Number.isFinite(Number(measurement.value))) continue;
+          rows.push([
+            project.title,
+            study.title,
+            typeof assay.title === 'string' ? assay.title : '',
+            typeof assay.technology === 'string' ? assay.technology : '',
+            typeof assay.materialReferences === 'string' ? assay.materialReferences : '',
+            typeof measurement.name === 'string' ? measurement.name : '',
+            measurement.value,
+            typeof measurement.unit === 'string' ? measurement.unit : '',
+            typeof measurement.uncertainty === 'string' ? measurement.uncertainty : '',
+            typeof measurement.measuredAt === 'string' ? measurement.measuredAt : '',
+            typeof measurement.instrumentId === 'string' ? instruments.get(measurement.instrumentId) ?? measurement.instrumentId : '',
+          ]);
+        }
+      }
+    }
+    return rows.length ? { projectTitle: project.title, columns, rows } : null;
+  } catch {
+    return null;
+  }
+}
+
 export function numericColumnValues(rows: string[][], columnIndex: number): number[] {
   return rows.flatMap((row) => {
     const raw = row[columnIndex]?.trim() ?? '';
