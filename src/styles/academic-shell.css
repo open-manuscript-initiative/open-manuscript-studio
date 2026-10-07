@@ -875,9 +875,8 @@ body {
     position: absolute;
     inset: 0;
     z-index: 120;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-rows: minmax(4.25rem, auto);
+    display: flex;
+    flex-direction: column;
     gap: .45rem;
     width: 100%;
     height: 100%;
@@ -892,11 +891,13 @@ body {
   }
 
   .studio-menu-navigation > [data-home-navigation] {
-    grid-column: 1 / -1;
+    width: 100%;
+    flex: 0 0 auto;
   }
 
   .studio-menu-nav-group {
-    grid-column: 1 / -1;
+    flex: 0 0 auto;
+    width: 100%;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: .45rem;
   }

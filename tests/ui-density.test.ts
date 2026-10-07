@@ -68,7 +68,7 @@ test('mobile density preserves primary touch targets while removing surrounding 
   );
   assert.match(
     densityCss,
-    /\.studio-menu-navigation \{[\s\S]*grid-auto-rows: minmax\(3\.25rem, auto\)/,
+    /\.studio-menu-navigation \{[\s\S]*flex-direction: column/,
   );
   assert.match(
     densityCss,
