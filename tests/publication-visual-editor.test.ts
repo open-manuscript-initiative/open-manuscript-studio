@@ -72,6 +72,10 @@ const studioShellStyles = readFileSync(
   new URL('../src/styles/studio-shell.css', import.meta.url),
   'utf8',
 );
+const academicShellStyles = readFileSync(
+  new URL('../src/styles/academic-shell.css', import.meta.url),
+  'utf8',
+);
 const citationSystemStyles = readFileSync(
   new URL('../src/styles/citation-system.css', import.meta.url),
   'utf8',
@@ -114,10 +118,14 @@ test('mobile manuscript menu keeps section grids in normal vertical flow', () =>
   );
   assert.match(
     studioShellStyles,
-    /@media \(max-width: 760px\)[\s\S]*\.studio-menu-navigation \{[\s\S]*position: absolute;[\s\S]*inset: 0;[\s\S]*z-index: 120;[\s\S]*display: flex;[\s\S]*flex-direction: column;[\s\S]*overflow-x: hidden;[\s\S]*overflow-y: auto;/,
+    /@media \(max-width: 760px\)[\s\S]*\.studio-menu-navigation \{[\s\S]*position: absolute;[\s\S]*inset: 0;[\s\S]*z-index: 120;[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);[\s\S]*overflow-x: hidden;[\s\S]*overflow-y: auto;/,
   );
   assert.match(
-    studioShellStyles,
+    academicShellStyles,
+    /@media \(max-width: 760px\)[\s\S]*\.studio-menu-navigation \{[\s\S]*display: flex;[\s\S]*flex-direction: column;[\s\S]*overflow-x: hidden;[\s\S]*overflow-y: auto;/,
+  );
+  assert.match(
+    academicShellStyles,
     /@media \(max-width: 760px\)[\s\S]*\.studio-menu-nav-group \{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/,
   );
   assert.match(
