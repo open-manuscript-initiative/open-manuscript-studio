@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -599,4 +600,17 @@ test('legacy statistical workspace JSON migrates with an empty experimental desi
   const migrated = parseStatisticalWorkspace(JSON.stringify(legacy));
   assert.ok(migrated);
   assert.equal(migrated.design.groups.join(','), 'Control,Treatment');
+});
+
+
+test('completed research module workspaces no longer render scaffold labels or descriptions', () => {
+  const source = readFileSync(new URL('../src/modules/ModuleManagerPanel.tsx', import.meta.url), 'utf8');
+  assert.equal(source.includes('copy.scaffoldTitle'), false);
+  assert.equal(source.includes('copy.scaffoldDescription'), false);
+  for (const locale of ['en', 'de', 'hu']) {
+    const copy = getModuleShellCopy(locale);
+    assert.equal('scaffoldTitle' in copy, false);
+    assert.equal('scaffoldDescription' in copy, false);
+    for (const moduleId of expectedModuleIds) assert.ok(copy.modules[moduleId]?.description);
+  }
 });
