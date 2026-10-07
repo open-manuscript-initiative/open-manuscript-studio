@@ -478,16 +478,16 @@ test('experimental laboratory import rejects malformed records and unsupported s
 
 
 test('statistical analysis parses CSV/TSV and rejects malformed rows', () => {
-  assert.deepEqual(parseDelimited('group,value\\nA,1\\nB,2'), {
+  assert.deepEqual(parseDelimited('group,value\nA,1\nB,2'), {
     columns: ['group', 'value'],
     rows: [['A', '1'], ['B', '2']],
   });
-  assert.deepEqual(parseDelimited('name\\tvalue\\n"Sample\\tA"\\t2'), {
+  assert.deepEqual(parseDelimited('name\tvalue\n"Sample\tA"\t2'), {
     columns: ['name', 'value'],
-    rows: [['Sample\\tA', '2']],
+    rows: [['Sample\tA', '2']],
   });
-  assert.equal(parseDelimited('a,b\\n1'), null);
-  assert.equal(parseDelimited('a,b\\n"unclosed,2'), null);
+  assert.equal(parseDelimited('a,b\n1'), null);
+  assert.equal(parseDelimited('a,b\n"unclosed,2'), null);
 });
 
 test('descriptive statistics include sample spread, quartiles, and a t confidence interval', () => {
