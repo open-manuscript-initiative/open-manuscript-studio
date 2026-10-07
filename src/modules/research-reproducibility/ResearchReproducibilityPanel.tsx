@@ -9,7 +9,10 @@ const blankWorkspace = (): Workspace => ({ project: '', outputs: [] });
 const isWorkspace = (value: unknown): value is Workspace => Boolean(
   value && typeof value === 'object' && typeof (value as Workspace).project === 'string'
     && Array.isArray((value as Workspace).outputs)
-    && (value as Workspace).outputs.every((item) => item && typeof item === 'object' && typeof (item as Output).id === 'string' && typeof (item as Output).title === 'string'),
+    && (value as Workspace).outputs.every((item) => item && typeof item === 'object'
+      && typeof (item as Output).id === 'string'
+      && ['kind', 'title', 'version', 'persistentId', 'repository', 'releaseDate', 'license', 'checksum', 'relation', 'notes'].every((key) => typeof (item as unknown as Record<string, unknown>)[key] === 'string')
+      && typeof (item as Output).verified === 'boolean'),
 );
 const newOutput = (): Output => ({ id: newWorkspaceId(), kind: 'dataset', title: '', version: '', persistentId: '', repository: '', releaseDate: '', license: '', checksum: '', relation: '', verified: false, notes: '' });
 const copy = {
