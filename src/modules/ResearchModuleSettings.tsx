@@ -1,6 +1,7 @@
 import { Boxes, Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import {
   getServerModulePolicy,
@@ -23,7 +24,7 @@ const WORKSPACE_ID = 'default';
 export function ResearchModuleSettings() {
   const user = useAuthStore(getCurrentUser);
   const userId = String(user?.id ?? 'anonymous');
-  const locale = useSettingsLocale();
+  const { locale } = useTranslation();
   const copy = getModuleShellCopy(locale);
   const [activeModuleIds, setActiveModuleIds] = useState<StudioModuleId[]>([]);
   const [revision, setRevision] = useState(0);
@@ -138,12 +139,4 @@ export function ResearchModuleSettings() {
     </section>
   );
 }
-
-function useSettingsLocale(): string {
-  // The Studio locale is exposed through the same translation context used by the module manager.
-  return useTranslationLocale();
-}
-
-function useTranslationLocale(): string {
-  return useTranslation().locale;
-}
+\n
