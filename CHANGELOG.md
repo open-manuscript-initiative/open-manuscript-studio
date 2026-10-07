@@ -6,6 +6,27 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+## 0.3.0-beta.4 — 2026-10-07
+
+### Research modules
+
+- Adds nine discipline-focused modules for history and archives, religious texts,
+  critical text editions, corpus linguistics, musicology, cultural heritage,
+  social research methods, legal sources and research reproducibility.
+- Gives each module its own help coverage and portal-scoped research workflows,
+  including source discovery and citation-aware manuscript research.
+
+### Version identities
+
+- Advances the shared Studio version to **0.3.0-beta.4**.
+- Advances the Windows MSI product version to **0.3.0.4**.
+- Advances the iOS beta build number to **16** while retaining App Store short
+  version **0.3.0**.
+- Advances the checked-in Android versionCode floor to **1203**; release builds
+  derive a strictly higher run-specific code.
+- Keeps the portable manuscript format at **OMI-SPEC-320@0.2.0**. No schema or
+  container-contract change is required.
+
 ## 0.3.0-beta.3 — 2026-09-29
 
 ### Authoring and Word export

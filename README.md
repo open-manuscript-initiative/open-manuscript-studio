@@ -2,9 +2,9 @@
 
 **Open Manuscript Studio** is the open-source reference implementation of the **Open Manuscript Initiative (OMI)**: a structured, multilingual scholarly authoring environment for writing, reviewing, exchanging and preparing manuscripts for publication without locking the manuscript to one application, operating system or publishing platform.
 
-> **Current status:** `0.3.0-beta.3` · scholarly authoring, collaboration and clarified publication exports beta.
+> **Current status:** `0.3.0-beta.4` · scholarly authoring, collaboration and clarified publication exports beta.
 >
-> The beta adds linked Word footnotes, all non-printing marks, persistent manuscript chat, clearer publication/export choices, improved JATS and InDesign IDML packages, and one authoritative OMI package export workflow. It builds on live collaboration, review, native publishing integrations, import/export and cross-platform packaging. The portable manuscript format remains `OMI-SPEC-320@0.2.0`.
+> The beta adds nine research modules for history and archives, religious texts, critical text editions, corpus linguistics, musicology, cultural heritage, social research methods, legal sources and research reproducibility. It also builds on linked Word footnotes, persistent manuscript chat, live collaboration, review, native publishing integrations, import/export and cross-platform packaging. The portable manuscript format remains `OMI-SPEC-320@0.2.0`.
 
 - Web Studio: https://studio.openmanuscript.org
 - Project website and specifications: https://openmanuscript.org
