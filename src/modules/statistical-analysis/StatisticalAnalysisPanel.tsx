@@ -1,10 +1,10 @@
-import { useRef, useState } from 'react';
-import { downloadWorkspaceJson, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
+import { useEffect, useRef, useState } from 'react';
+import { downloadWorkspaceJson, safeWorkspaceFileName } from '../disciplineWorkspace';
+import { useIndexedStatisticalWorkspace } from './workspaceStorage';
 import {
   createStatisticalWorkspace,
   addDesignDeviation,\n  createExperimentalDesign,\n  describe,\n  estimateTwoGroupSampleSize,
   formatStat,
-  isStatisticalWorkspace,
   linearRegression,
   newStatisticalId,
   numericColumnValues,
@@ -14,7 +14,6 @@ import {
   parseStatisticalWorkspace,\n  preregisterDesign,\n  randomizeParticipants,
   welchTTest,
   type StatisticalDataset,
-  type StatisticalWorkspace,
 } from './model';
 import '../disciplineWorkspaces.css';
 
@@ -201,8 +200,9 @@ function cellNumber(value: string | undefined): number {
 
 export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statistical-analysis' }: { locale?: string; storageKey?: string }) {
   const t = copy[locale as Locale] ?? copy.hu;
-  const [workspace, setWorkspace] = useLocalWorkspace<StatisticalWorkspace>(storageKey, createStatisticalWorkspace, isStatisticalWorkspace);
-  const [error, setError] = useState('');\n  const [participantCount, setParticipantCount] = useState(20);\n  const [assignments, setAssignments] = useState<{ id: string; group: string }[]>([]);\n  const [deviationText, setDeviationText] = useState('');
+  const [workspace, setWorkspace, storageReady, storageError] = useIndexedStatisticalWorkspace(storageKey);
+  const [error, setError] = useState('');
+  useEffect(() => { if (!workspace.design) setWorkspace(current => ({ ...current, design: createExperimentalDesign() })); }, [workspace.design, setWorkspace]);\n  const [participantCount, setParticipantCount] = useState(20);\n  const [assignments, setAssignments] = useState<{ id: string; group: string }[]>([]);\n  const [deviationText, setDeviationText] = useState('');
   const csvRef = useRef<HTMLInputElement>(null);
   const labRef = useRef<HTMLInputElement>(null);
   const jsonRef = useRef<HTMLInputElement>(null);
@@ -270,7 +270,13 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
   async function importCsv(file?: File): Promise<void> {
     if (!file) return;
     try {
-      const parsed = parseDelimited(await file.text());
+      const text = await file.text();
+      const parsed = typeof Worker === 'undefined' ? parseDelimited(text) : await new Promise<ReturnType<typeof parseDelimited>>(resolve => {
+        const worker = new Worker(new URL('./parse.worker.ts', import.meta.url), { type: 'module' });
+        worker.onmessage = event => { worker.terminate(); resolve(event.data as ReturnType<typeof parseDelimited>); };
+        worker.onerror = () => { worker.terminate(); resolve(parseDelimited(text)); };
+        worker.postMessage({ text });
+      });
       if (!parsed) { setError(t.csvError); return; }
       const nextDataset: StatisticalDataset = {
         id: newStatisticalId(),
@@ -342,6 +348,8 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
         <p className="discipline-workspace__hint">{dataset.rows.length} {t.rows} · {dataset.columns.length} {t.columns}</p>
       </> : <p className="discipline-workspace__hint">{t.noDataset}</p>}
       <p className="discipline-workspace__hint">{t.local}</p>
+      {!storageReady && <p role="status">{locale === 'de' ? 'Datensatz wird geladen …' : locale === 'en' ? 'Loading dataset…' : 'Adatkészlet betöltése…'}</p>}
+      {storageError && <p role="alert">{storageError}</p>}
       {error && <p role="alert">{error}</p>}
     </section>
     {dataset && <>
