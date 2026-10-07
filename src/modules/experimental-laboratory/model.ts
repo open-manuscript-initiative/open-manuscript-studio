@@ -42,7 +42,7 @@ export function createExperimentalWorkspace(): ExperimentalWorkspace {
 function record(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value));
 }
-function strings(value: unknown, keys: string[]): boolean {
+function strings(value: unknown, keys: string[]): value is Record<string, unknown> {
   return record(value) && keys.every((key) => typeof value[key] === 'string');
 }
 function isMaterial(value: unknown): value is LaboratoryMaterial {
