@@ -118,7 +118,10 @@ test('mobile manuscript menu keeps section grids in normal vertical flow', () =>
   );
   assert.match(
     studioShellStyles,
-    /\.studio-menu-nav-group \{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/,
+    /@media \(max-width: 760px\)[\s\S]*\.studio-menu-nav-group \{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/,
+  );
+  assert.match(
+    studioShellStyles,
     /\.studio-menu-body--navigation-open > \.studio-menu-content \{\s*display: none;/,
   );
   assert.doesNotMatch(
