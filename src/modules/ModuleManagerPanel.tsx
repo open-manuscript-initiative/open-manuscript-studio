@@ -1,4 +1,3 @@
-import { Boxes } from 'lucide-react';
 import { Component, useEffect, useState, type ErrorInfo, type ReactNode } from 'react';
 
 import { useTranslation } from '../i18n';
