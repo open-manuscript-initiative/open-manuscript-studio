@@ -7,6 +7,22 @@ export type StatisticalDataset = {
   rows: string[][];
 };
 
+export type ExperimentalDesign = {
+  hypothesis: string;
+  primaryOutcome: string;
+  groups: string[];
+  alpha: number;
+  power: number;
+  standardizedEffect: number;
+  randomizationSeed: string;
+  inclusionCriteria: string[];
+  exclusionCriteria: string[];
+  analysisPlan: string;
+  preregisteredAt: string | null;
+  preregisteredSnapshot: string | null;
+  deviations: { date: string; description: string }[];
+};
+
 export type StatisticalWorkspace = {
   schemaVersion: 1;
   dataset: StatisticalDataset | null;
@@ -57,8 +73,68 @@ export function newStatisticalId(): string {
     : `stat-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+export function createExperimentalDesign(): ExperimentalDesign {
+  return {
+    hypothesis: '', primaryOutcome: '', groups: ['Control', 'Treatment'], alpha: 0.05,
+    power: 0.8, standardizedEffect: 0.5, randomizationSeed: 'omi-seed',
+    inclusionCriteria: [], exclusionCriteria: [], analysisPlan: '',
+    preregisteredAt: null, preregisteredSnapshot: null, deviations: [],
+  };
+}
+
+export function estimateTwoGroupSampleSize(alpha: number, power: number, standardizedEffect: number): number | null {
+  if (!(alpha > 0 && alpha < 1) || !(power > 0.5 && power < 1) || !(standardizedEffect > 0) ||
+    ![alpha, power, standardizedEffect].every(Number.isFinite)) return null;
+  const z = (p: number) => inverseNormal(p);
+  return Math.ceil(2 * ((z(1 - alpha / 2) + z(power)) / standardizedEffect) ** 2);
+}
+
+function inverseNormal(p: number): number {
+  const a = [-39.6968302866538, 220.946098424521, -275.928510446969, 138.357751867269, -30.6647980661472, 2.50662827745924];
+  const b = [-54.4760987982241, 161.585836858041, -155.698979859887, 66.8013118877197, -13.2806815528857];
+  const c = [-0.00778489400243029, -0.322396458041136, -2.40075827716184, -2.54973253934373, 4.37466414146497, 2.93816398269878];
+  const d = [0.00778469570904146, 0.32246712907004, 2.445134137143, 3.75440866190742];
+  const low = 0.02425, high = 1 - low;
+  if (p < low) { const q = Math.sqrt(-2 * Math.log(p)); return (((((c[0]!*q+c[1]!)*q+c[2]!)*q+c[3]!)*q+c[4]!)*q+c[5]!) / ((((d[0]! * q + d[1]!) * q + d[2]!) * q + d[3]!) * q + 1); }
+  if (p > high) { const q = Math.sqrt(-2 * Math.log(1-p)); return -(((((c[0]!*q+c[1]!)*q+c[2]!)*q+c[3]!)*q+c[4]!)*q+c[5]!) / ((((d[0]! * q + d[1]!) * q + d[2]!) * q + d[3]!) * q + 1); }
+  const q = p - 0.5, r = q * q;
+  return (((((a[0]!*r+a[1]!)*r+a[2]!)*r+a[3]!)*r+a[4]!)*r+a[5]!)*q / (((((b[0]! * r + b[1]!) * r + b[2]!) * r + b[3]!) * r + b[4]!) * r + 1);
+}
+
+function seededRandom(seed: string): () => number {
+  let state = 2166136261;
+  for (const char of seed) { state ^= char.charCodeAt(0); state = Math.imul(state, 16777619); }
+  return () => {
+    state += 0x6D2B79F5;
+    let value = state;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function randomizeParticipants(ids: string[], groups: string[], seed: string): { id: string; group: string }[] {
+  if (!groups.length || groups.some(group => !group.trim())) return [];
+  const random = seededRandom(seed);
+  const shuffled = [...ids].map((id, index) => ({ id, key: random(), index })).sort((a, b) => a.key - b.key || a.index - b.index);
+  return shuffled.map(({ id }, index) => ({ id, group: groups[index % groups.length]! }));
+}
+
+export function preregisterDesign(design: ExperimentalDesign, now = new Date().toISOString()): ExperimentalDesign {
+  if (design.preregisteredSnapshot) return design;
+  const snapshot = { ...design, preregisteredAt: now, preregisteredSnapshot: null, deviations: [] };
+  return { ...design, preregisteredAt: now, preregisteredSnapshot: JSON.stringify(snapshot), deviations: [] };
+}
+
+export function addDesignDeviation(design: ExperimentalDesign, description: string, now = new Date().toISOString()): ExperimentalDesign {
+  const value = description.trim();
+  return value && design.preregisteredSnapshot
+    ? { ...design, deviations: [...design.deviations, { date: now, description: value }] }
+    : design;
+}
+
 export function createStatisticalWorkspace(): StatisticalWorkspace {
-  return { schemaVersion: 1, dataset: null, analysisTitle: '', configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' } };
+  return { schemaVersion: 1, dataset: null, analysisTitle: '', configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' }, design: createExperimentalDesign() };
 }
 
 export function parseDelimited(text: string, delimiter?: ',' | '\t'): { columns: string[]; rows: string[][] } | null {
@@ -355,10 +431,23 @@ function logGamma(value: number): number {
   return 0.5 * Math.log(2 * Math.PI) + (shifted + 0.5) * Math.log(t) - t + Math.log(x);
 }
 
+function isExperimentalDesign(value: unknown): value is ExperimentalDesign {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const design = value as Partial<ExperimentalDesign>;
+  return ['hypothesis', 'primaryOutcome', 'analysisPlan', 'randomizationSeed'].every(key => typeof design[key as keyof ExperimentalDesign] === 'string')
+    && Array.isArray(design.groups) && design.groups.every(item => typeof item === 'string')
+    && Array.isArray(design.inclusionCriteria) && design.inclusionCriteria.every(item => typeof item === 'string')
+    && Array.isArray(design.exclusionCriteria) && design.exclusionCriteria.every(item => typeof item === 'string')
+    && Array.isArray(design.deviations) && design.deviations.every(item => Boolean(item && typeof item.date === 'string' && typeof item.description === 'string'))
+    && typeof design.alpha === 'number' && typeof design.power === 'number' && typeof design.standardizedEffect === 'number'
+    && (design.preregisteredAt === null || typeof design.preregisteredAt === 'string')
+    && (design.preregisteredSnapshot === null || typeof design.preregisteredSnapshot === 'string');
+}
+
 export function isStatisticalWorkspace(value: unknown): value is StatisticalWorkspace {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const candidate = value as Partial<StatisticalWorkspace>;
-  if (candidate.schemaVersion !== 1 || typeof candidate.analysisTitle !== 'string') return false;
+  if (candidate.schemaVersion !== 1 || typeof candidate.analysisTitle !== 'string') return false;\n  if (candidate.design !== undefined && !isExperimentalDesign(candidate.design)) return false;
   const configuration = candidate.configuration as StatisticalWorkspace['configuration'] | undefined;
   if (!configuration || !['valueColumn', 'groupColumn', 'regressionX', 'regressionY'].every((key) => typeof configuration[key as keyof typeof configuration] === 'string')) return false;
   if (candidate.dataset === null) return true;
@@ -374,7 +463,7 @@ export function isStatisticalWorkspace(value: unknown): value is StatisticalWork
 export function parseStatisticalWorkspace(json: string): StatisticalWorkspace | null {
   try {
     const value: unknown = JSON.parse(json);
-    return isStatisticalWorkspace(value) ? value : null;
+    if (!isStatisticalWorkspace(value)) return null;\n    return { ...value, design: value.design ?? createExperimentalDesign() };
   } catch {
     return null;
   }
