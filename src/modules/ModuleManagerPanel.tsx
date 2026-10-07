@@ -1,5 +1,5 @@
 import { Boxes, Check } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Component, useEffect, useState, type ErrorInfo, type ReactNode } from 'react';
 
 import { useTranslation } from '../i18n';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
@@ -182,31 +182,36 @@ export function ModuleManagerPanel({
                 <h4>{details?.overview ?? details?.title ?? contribution.titleKey}</h4>
               </header>
               <p>{details?.description ?? copy.scaffoldDescription}</p>
-              {module.id === historyArchivesModule.id ? (
-                <>
-                  <EuropeanaSearchPanel copy={copy.europeana} locale={locale} />
-                  <NaraSearchPanel copy={copy.nara} locale={locale} />
-                  <EleveltarSearchPanel locale={locale} />
-                </>
-              ) : module.id === religiousTextsModule.id ? (
-                <ReligiousTextsPanel locale={locale} />
-              ) : module.id === criticalTextEditionModule.id ? (
-                <CriticalTextEditionPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
-              ) : module.id === corpusLinguisticsModule.id ? (
-                <CorpusLinguisticsPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
-              ) : module.id === musicologyModule.id ? (
-                <MusicologyPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
-              ) : module.id === culturalHeritageModule.id ? (
-                <CulturalHeritagePanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
-              ) : module.id === socialResearchMethodsModule.id ? (
-                <SocialResearchMethodsPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
-              ) : module.id === legalSourcesModule.id ? (
-                <LegalSourcesPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
-              ) : module.id === researchReproducibilityModule.id ? (
-                <ResearchReproducibilityPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
-              ) : (
-                <div className="studio-module-empty-slot">{copy.noFeatures}</div>
-              )}
+              <ModuleWorkspaceErrorBoundary
+                moduleTitle={details?.title ?? module.titleKey}
+                locale={locale}
+              >
+                {module.id === historyArchivesModule.id ? (
+                  <>
+                    <EuropeanaSearchPanel copy={copy.europeana} locale={locale} />
+                    <NaraSearchPanel copy={copy.nara} locale={locale} />
+                    <EleveltarSearchPanel locale={locale} />
+                  </>
+                ) : module.id === religiousTextsModule.id ? (
+                  <ReligiousTextsPanel locale={locale} />
+                ) : module.id === criticalTextEditionModule.id ? (
+                  <CriticalTextEditionPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+                ) : module.id === corpusLinguisticsModule.id ? (
+                  <CorpusLinguisticsPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+                ) : module.id === musicologyModule.id ? (
+                  <MusicologyPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+                ) : module.id === culturalHeritageModule.id ? (
+                  <CulturalHeritagePanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+                ) : module.id === socialResearchMethodsModule.id ? (
+                  <SocialResearchMethodsPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+                ) : module.id === legalSourcesModule.id ? (
+                  <LegalSourcesPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+                ) : module.id === researchReproducibilityModule.id ? (
+                  <ResearchReproducibilityPanel locale={locale} storageKey={`${userId}:${workspaceId}`} />
+                ) : (
+                  <div className="studio-module-empty-slot">{copy.noFeatures}</div>
+                )}
+              </ModuleWorkspaceErrorBoundary>
             </section>
           ));
       })}
@@ -214,4 +219,50 @@ export function ModuleManagerPanel({
       <p className="studio-module-storage-note" role={policyError ? 'alert' : undefined}>{policyError ? copy.policyError : copy.localPreferenceNote}</p>
     </section>
   );
+}
+
+
+interface ModuleWorkspaceErrorBoundaryProps {
+  moduleTitle: string;
+  locale: string;
+  children: ReactNode;
+}
+
+interface ModuleWorkspaceErrorBoundaryState {
+  failed: boolean;
+}
+
+/** Keeps a broken module from taking down the entire research-modules screen. */
+class ModuleWorkspaceErrorBoundary extends Component<
+  ModuleWorkspaceErrorBoundaryProps,
+  ModuleWorkspaceErrorBoundaryState
+> {
+  state: ModuleWorkspaceErrorBoundaryState = { failed: false };
+
+  static getDerivedStateFromError(): ModuleWorkspaceErrorBoundaryState {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo): void {
+    console.error(`Research module "${this.props.moduleTitle}" failed to render.`, error, info);
+  }
+
+  render(): ReactNode {
+    if (!this.state.failed) return this.props.children;
+
+    const copy = this.props.locale === 'hu'
+      ? { message: 'Ez a modul most nem tölthető be.', retry: 'Újrapróbálás' }
+      : this.props.locale === 'de'
+        ? { message: 'Dieses Modul kann derzeit nicht geladen werden.', retry: 'Erneut versuchen' }
+        : { message: 'This module could not be loaded.', retry: 'Try again' };
+
+    return (
+      <div className="studio-module-empty-slot" role="alert">
+        <p>{this.props.moduleTitle}: {copy.message}</p>
+        <button type="button" onClick={() => this.setState({ failed: false })}>
+          {copy.retry}
+        </button>
+      </div>
+    );
+  }
 }
