@@ -10,6 +10,7 @@ import {
   numericColumnValues,
   oneWayAnova,
   parseDelimited,
+  parseLaboratoryMeasurements,
   parseStatisticalWorkspace,
   welchTTest,
   type StatisticalDataset,
@@ -26,10 +27,11 @@ const copy = {
     sourceStudy: 'Kapcsolódó kutatás / kísérlet',
     titleField: 'Elemzés címe',
     importCsv: 'CSV / TSV importálása',
+    importLab: 'Laboratóriumi projekt importálása',
     importJson: 'Elemzés JSON importálása',
     export: 'Elemzés és adatok exportálása JSON-ként',
     dataset: 'Adatkészlet',
-    noDataset: 'Importáljon fejlécsort és adatsorokat tartalmazó CSV- vagy TSV-fájlt.',
+    noDataset: 'Importáljon CSV/TSV-adatfájlt vagy kísérleti laboratóriumi projektet.',
     rows: 'sor',
     columns: 'változó',
     preview: 'Adatelőnézet (első 15 sor)',
@@ -68,6 +70,7 @@ const copy = {
     methodNote: 'A t-próba Welch-féle, kétoldali változat; nem feltételez azonos csoportvarianciát. Az ANOVA hagyományos egyszempontos modell. Az OLS lineáris regresszió feltételezéseit, a hiányzó adatokat és a többszörös tesztelést a kutatónak kell mérlegelnie.',
     unsupported: 'A fájl nem érvényes OMI statisztikai munkatér vagy nem támogatott verzió.',
     csvError: 'A CSV/TSV nem olvasható: ellenőrizze a fejlécet, az idézőjeleket és a sorok oszlopszámát.',
+    labError: 'A laboratóriumi JSON nem tartalmaz importálható mérési adatokat.'
     jsonError: 'Az OMI statisztikai JSON nem érvényes.',
     count: 'Elemszám',
     noNumeric: 'A kiválasztott oszlopban nincs elegendő érvényes numerikus adat.',
@@ -81,10 +84,11 @@ const copy = {
     sourceStudy: 'Related research / experiment',
     titleField: 'Analysis title',
     importCsv: 'Import CSV / TSV',
+    importLab: 'Import laboratory project',
     importJson: 'Import analysis JSON',
     export: 'Export analysis and data as JSON',
     dataset: 'Dataset',
-    noDataset: 'Import a CSV or TSV file with a header row and data rows.',
+    noDataset: 'Import a CSV/TSV dataset or an experimental laboratory project.',
     rows: 'rows',
     columns: 'variables',
     preview: 'Data preview (first 15 rows)',
@@ -123,6 +127,7 @@ const copy = {
     methodNote: "The t-test is Welch's two-sided test and does not assume equal group variances. ANOVA is the conventional one-way model. Researchers should assess OLS assumptions, missing data, and multiple testing.",
     unsupported: 'This is not a valid OMI statistical workspace or the version is unsupported.',
     csvError: 'Could not read the CSV/TSV. Check the header, quotes, and consistent column counts.',
+    labError: 'The laboratory JSON contains no importable measurement data.'
     jsonError: 'The OMI statistical JSON is invalid.',
     count: 'Count',
     noNumeric: 'The selected column has too few valid numeric values.',
@@ -136,10 +141,11 @@ const copy = {
     sourceStudy: 'Zugehörige Forschung / Untersuchung',
     titleField: 'Analysetitel',
     importCsv: 'CSV / TSV importieren',
+    importLab: 'Laborprojekt importieren',
     importJson: 'Analyse-JSON importieren',
     export: 'Analyse und Daten als JSON exportieren',
     dataset: 'Datensatz',
-    noDataset: 'Importieren Sie eine CSV- oder TSV-Datei mit Kopf- und Datenzeilen.',
+    noDataset: 'Importieren Sie einen CSV/TSV-Datensatz oder ein experimentelles Laborprojekt.',
     rows: 'Zeilen',
     columns: 'Variablen',
     preview: 'Datenvorschau (erste 15 Zeilen)',
@@ -178,6 +184,7 @@ const copy = {
     methodNote: 'Der t-Test ist zweiseitig nach Welch und setzt keine gleichen Gruppenvarianzen voraus. Die ANOVA ist ein klassisches einfaktorielles Modell. OLS-Annahmen, fehlende Daten und multiples Testen sind zu prüfen.',
     unsupported: 'Kein gültiger OMI-Statistikarbeitsbereich oder nicht unterstützte Version.',
     csvError: 'CSV/TSV nicht lesbar: Kopfzeile, Anführungszeichen und einheitliche Spaltenzahl prüfen.',
+    labError: 'Das Labor-JSON enthält keine importierbaren Messdaten.'
     jsonError: 'Das OMI-Statistik-JSON ist ungültig.',
     count: 'Anzahl',
     noNumeric: 'Die ausgewählte Spalte enthält zu wenige gültige numerische Werte.',
@@ -197,6 +204,7 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
   const [workspace, setWorkspace] = useLocalWorkspace<StatisticalWorkspace>(storageKey, createStatisticalWorkspace, isStatisticalWorkspace);
   const [error, setError] = useState('');
   const csvRef = useRef<HTMLInputElement>(null);
+  const labRef = useRef<HTMLInputElement>(null);
   const jsonRef = useRef<HTMLInputElement>(null);
   const dataset = workspace.dataset;
 
@@ -279,6 +287,30 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
     }
   }
 
+  async function importLaboratory(file?: File): Promise<void> {
+    if (!file) return;
+    try {
+      const imported = parseLaboratoryMeasurements(await file.text());
+      if (!imported) { setError(t.labError); return; }
+      setWorkspace({
+        schemaVersion: 1,
+        dataset: {
+          id: newStatisticalId(),
+          title: imported.projectTitle + ' — measurements',
+          sourceStudy: imported.projectTitle,
+          importedAt: new Date().toISOString(),
+          columns: imported.columns,
+          rows: imported.rows,
+        },
+        analysisTitle: '',
+        configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' },
+      });
+      setError('');
+    } catch {
+      setError(t.labError);
+    }
+  }
+
   async function importJson(file?: File): Promise<void> {
     if (!file) return;
     try {
@@ -298,8 +330,9 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
       <input ref={jsonRef} className="discipline-file" type="file" accept=".json,application/json" onChange={event => { void importJson(event.target.files?.[0]); event.currentTarget.value = ''; }} />
     </header>
     <section className="discipline-workspace__section">
-      <div className="discipline-workspace__section-title"><h2>{t.dataset}</h2><div><button type="button" onClick={() => csvRef.current?.click()}>{t.importCsv}</button> {dataset && <button type="button" className="discipline-workspace__danger" onClick={() => { setWorkspace({ schemaVersion: 1, dataset: null, analysisTitle: '', configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' } }); setError(''); }}>{t.removeData}</button>}</div></div>
+      <div className="discipline-workspace__section-title"><h2>{t.dataset}</h2><div><button type="button" onClick={() => csvRef.current?.click()}>{t.importCsv}</button> <button type="button" onClick={() => labRef.current?.click()}>{t.importLab}</button> {dataset && <button type="button" className="discipline-workspace__danger" onClick={() => { setWorkspace({ schemaVersion: 1, dataset: null, analysisTitle: '', configuration: { valueColumn: '', groupColumn: '', regressionX: '', regressionY: '' } }); setError(''); }}>{t.removeData}</button>}</div></div>
       <input ref={csvRef} className="discipline-file" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" onChange={event => { void importCsv(event.target.files?.[0]); event.currentTarget.value = ''; }} />
+      <input ref={labRef} className="discipline-file" type="file" accept=".json,application/json" onChange={event => { void importLaboratory(event.target.files?.[0]); event.currentTarget.value = ''; }} />
       {dataset ? <>
         <div className="discipline-workspace__grid">
           <label>{t.titleField}<input value={workspace.analysisTitle} onChange={event => setWorkspace(current => ({ ...current, analysisTitle: event.target.value }))} /></label>
