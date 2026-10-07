@@ -1,5 +1,5 @@
 import { Bot, Boxes, CircleHelp, CircleX, FolderOpen, ListTree, Plug, UploadCloud } from 'lucide-react';
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Component, lazy, Suspense, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 import {
@@ -264,9 +264,11 @@ export function StudioMenuWithHelp({
     ) : null}
     {contentHost && modulesOpen ? createPortal(
       <div className="studio-help-portal studio-module-portal">
-        <Suspense fallback={<LongTaskStatus message={t('common.loading')} />}>
-          <LazyModuleManagerPanel />
-        </Suspense>
+        <ModulePanelErrorBoundary locale={locale}>
+          <Suspense fallback={<LongTaskStatus message={t('common.loading')} />}>
+            <LazyModuleManagerPanel />
+          </Suspense>
+        </ModulePanelErrorBoundary>
       </div>,
       contentHost,
     ) : null}
@@ -350,4 +352,47 @@ function getCloseDocumentCopy(locale: string) {
   if (locale === 'hu') return { label: 'Dokumentum bezárása', confirm: 'Bezárja az aktuális dokumentumot? A dokumentum kikerül a visszaállított munkamenetből. A külön fájlba vagy külső rendszerbe még el nem mentett tartalom elveszhet.' };
   if (locale === 'de') return { label: 'Dokument schließen', confirm: 'Aktuelles Dokument schließen? Es wird aus der wiederhergestellten Sitzung entfernt. Inhalte, die noch nicht in einer separaten Datei oder einem externen System gespeichert wurden, können verloren gehen.' };
   return { label: 'Close document', confirm: 'Close the current document? It will be removed from the restored session. Content not yet saved to a separate file or external system may be lost.' };
+}
+
+
+interface ModulePanelErrorBoundaryProps {
+  locale: string;
+  children: ReactNode;
+}
+
+interface ModulePanelErrorBoundaryState {
+  failed: boolean;
+}
+
+/** Also catches a failed lazy import before the research modules panel can render. */
+class ModulePanelErrorBoundary extends Component<
+  ModulePanelErrorBoundaryProps,
+  ModulePanelErrorBoundaryState
+> {
+  state: ModulePanelErrorBoundaryState = { failed: false };
+
+  static getDerivedStateFromError(): ModulePanelErrorBoundaryState {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo): void {
+    console.error('Research modules panel failed to load.', error, info);
+  }
+
+  render(): ReactNode {
+    if (!this.state.failed) return this.props.children;
+
+    const copy = this.props.locale === 'hu'
+      ? { message: 'A kutatási modulok nézete nem tölthető be.', reload: 'Studio újratöltése' }
+      : this.props.locale === 'de'
+        ? { message: 'Die Ansicht der Forschungsmodule kann nicht geladen werden.', reload: 'Studio neu laden' }
+        : { message: 'The research modules view could not be loaded.', reload: 'Reload Studio' };
+
+    return (
+      <div role="alert" className="studio-help-portal">
+        <p>{copy.message}</p>
+        <button type="button" onClick={() => window.location.reload()}>{copy.reload}</button>
+      </div>
+    );
+  }
 }
