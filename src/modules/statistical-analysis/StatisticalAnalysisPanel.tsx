@@ -3,6 +3,7 @@ import { downloadWorkspaceJson, safeWorkspaceFileName } from '../disciplineWorks
 import { useIndexedStatisticalWorkspace } from './workspaceStorage';
 import {
   addDesignDeviation,
+  analyzeStatisticalDataset,
   createExperimentalDesign,
   describe,
   estimateTwoGroupSampleSize,
@@ -284,47 +285,34 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
   const sampleSize = estimateTwoGroupSampleSize(design.alpha, design.power, design.standardizedEffect);
   const locked = Boolean(design.preregisteredSnapshot);
 
-  const numericColumns = dataset ? dataset.columns.flatMap((name, index) => {
-    const count = numericColumnValues(dataset.rows, index).filter(Number.isFinite).length;
-    return count >= 2 ? [{ name, index }] : [];
-  }) : [];
+  const [analysis, setAnalysis] = useState<ReturnType<typeof analyzeStatisticalDataset> | null>(null);
+  useEffect(() => {
+    if (!dataset) { setAnalysis(null); return; }
+    if (typeof Worker === 'undefined') {
+      setAnalysis(analyzeStatisticalDataset(dataset, workspace.configuration));
+      return;
+    }
+    const worker = new Worker(new URL('./analyze.worker.ts', import.meta.url), { type: 'module' });
+    worker.onmessage = event => setAnalysis(event.data as ReturnType<typeof analyzeStatisticalDataset>);
+    worker.onerror = () => setAnalysis(analyzeStatisticalDataset(dataset, workspace.configuration));
+    worker.postMessage([dataset, workspace.configuration]);
+    return () => worker.terminate();
+  }, [dataset, workspace.configuration]);
+
+  const numericColumns = analysis?.numericColumns ?? [];
+  const groupingColumns = analysis?.groupingColumns ?? [];
   const valueColumn = numericColumns.find(column => String(column.index) === workspace.configuration.valueColumn) ?? numericColumns[0];
   const xColumn = numericColumns.find(column => String(column.index) === workspace.configuration.regressionX) ?? numericColumns[0];
   const yColumn = numericColumns.find(column => String(column.index) === workspace.configuration.regressionY) ?? numericColumns[1];
-  const groupingColumns = dataset ? dataset.columns.map((name, index) => ({
-    name,
-    index,
-    values: [...new Set(dataset.rows.map(row => row[index]?.trim()).filter((value): value is string => Boolean(value)))],
-  })).filter(column => column.values.length > 1 && column.values.length <= 20) : [];
   const groupColumn = groupingColumns.find(column => String(column.index) === workspace.configuration.groupColumn) ?? groupingColumns[0];
-  const values = dataset && valueColumn ? numericColumnValues(dataset.rows, valueColumn.index).filter(Number.isFinite) : [];
-  const summary = describe(values);
-  const groups = dataset && valueColumn && groupColumn
-    ? groupColumn.values.map(group => ({
-      label: group,
-      values: dataset.rows.flatMap(row => row[groupColumn.index]?.trim() === group
-        ? [cellNumber(row[valueColumn.index])]
-        : []).filter(Number.isFinite),
-    })).filter(group => group.values.length >= 2)
-    : [];
-  const tTest = groups.length === 2 ? welchTTest(groups[0]!.values, groups[1]!.values) : null;
-  const anova = groups.length >= 2 ? oneWayAnova(groups.map(group => group.values)) : null;
-  const regression = dataset && xColumn && yColumn && xColumn.index !== yColumn.index
-    ? linearRegression(
-      dataset.rows.map(row => cellNumber(row[xColumn.index])),
-      dataset.rows.map(row => cellNumber(row[yColumn.index])),
-    )
-    : null;
-  const histogram = (() => {
-    if (!values.length) return [];
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const bins = Array.from({ length: 10 }, () => 0);
-    if (min === max) { bins[0] = values.length; return bins; }
-    for (const value of values) bins[Math.min(9, Math.floor((value - min) / (max - min) * 10))]! += 1;
-    return bins;
-  })();
-  const maxBin = Math.max(1, ...histogram);
+  const values = analysis?.values ?? [];
+  const summary = analysis?.summary ?? null;
+  const groups = analysis?.groups ?? [];
+  const tTest = analysis?.tTest ?? null;
+  const anova = analysis?.anova ?? null;
+  const regression = analysis?.regression ?? null;
+  const histogram = analysis?.histogram ?? [];
+  const maxBin = analysis?.maxBin ?? 1;
   const report = {
     ...workspace,
     schemaVersion: 1,
