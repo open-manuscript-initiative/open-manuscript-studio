@@ -26,8 +26,8 @@ import {
   type StudioModuleId,
   type StudioWorkspaceModulePreferences,
 } from './types';
-import './moduleShell.css';
 import { getDisciplineWorkspaceStorageKey } from './disciplineWorkspace';
+import './moduleShell.css';
 
 interface ModuleManagerPanelProps {
   workspaceId?: string;
