@@ -39,7 +39,7 @@ test('serializes Studio manuscripts as canonical OMI-SPEC-320@0.2.0 working file
   assert.equal(reopened.id, manuscript.id);
   assert.equal(reopened.schema, OMI_MANUSCRIPT_SCHEMA_URI);
   assert.equal(reopened.headRevisionId, manuscript.headRevisionId);
-  assert.equal('omi' in (reopened as unknown as Record<string, unknown>), false);
+  assert.equal(reopened.omi?.version, OMI_FILE_FORMAT_VERSION);
 });
 
 test('rejects the experimental pre-0.2 standalone schema instead of migrating it', () => {
@@ -164,6 +164,52 @@ test('portable OMI rejects bibliography selections that do not resolve to a reco
   );
 });
 
+
+test('preserves the complete portable envelope and unknown data through an edit/save round trip', async () => {
+  const fixtureRoot = new URL('./fixtures/omi-spec-320/0.2.0/', import.meta.url);
+  const source = JSON.parse(await readFile(
+    new URL('valid-history-extension.omi.json', fixtureRoot),
+    'utf8',
+  )) as Record<string, any>;
+  source.opaqueVendorData = { future: { orderedValues: ['first', 'second'] } };
+  source.omi.opaqueEnvelopeData = { producerMode: 'future', options: ['a', 'b'] };
+  source.extensions['https://example.org/omi/extensions/research-project/1'].futureField = {
+    retained: true,
+  };
+  source.sections.push({
+    id: 'section-afterword',
+    title: 'Utószó',
+    blocks: [],
+  });
+
+  const imported = parseOmiJson(JSON.stringify(source));
+  imported.title = 'Szerkesztett kézirat';
+
+  const saved = JSON.parse(serializeOmiJson(imported)) as Record<string, any>;
+  assert.equal(saved.title, 'Szerkesztett kézirat');
+  assert.deepEqual(saved.opaqueVendorData, source.opaqueVendorData);
+  assert.deepEqual(saved.omi.opaqueEnvelopeData, source.omi.opaqueEnvelopeData);
+  assert.deepEqual(saved.omi.generator, source.omi.generator);
+  assert.deepEqual(saved.omi.profiles, source.omi.profiles);
+  for (const [specification, version] of Object.entries(source.omi.specifications)) {
+    assert.equal(saved.omi.specifications[specification], version);
+  }
+
+  assert.deepEqual(saved.extensions, source.extensions);
+  assert.deepEqual(saved.agents, source.agents);
+  assert.deepEqual(saved.contributions, source.contributions);
+  assert.deepEqual(saved.sections, source.sections);
+  assert.deepEqual(saved.annotations, source.annotations);
+  assert.deepEqual(saved.bibliographicRecords, source.bibliographicRecords);
+  assert.deepEqual(saved.citations, source.citations);
+  assert.deepEqual(saved.revisionHistory, source.revisionHistory);
+  assert.equal(saved.headRevisionId, source.headRevisionId);
+
+  const reopened = parseOmiJson(JSON.stringify(saved));
+  assert.deepEqual(reopened.extensions, source.extensions);
+  assert.deepEqual(reopened.sections, source.sections);
+  assert.deepEqual(reopened.revisionHistory, source.revisionHistory);
+});
 
 test('passes the version-pinned OMI-SPEC-320@0.2.0 conformance fixtures', async () => {
   const fixtureRoot = new URL('./fixtures/omi-spec-320/0.2.0/', import.meta.url);
