@@ -1,5 +1,5 @@
 import Ajv2020 from 'ajv2020/dist/2020.js';
-import schema from '../schemas/omi-manuscript-0.2.schema.json';
+import schema from '../schemas/omi-manuscript-0.2.schema.json' with { type: 'json' };
 
 const ajv = new Ajv2020({ allErrors: true, strict: true, validateFormats: true });
 ajv.addFormat('date-time', (value: string) =>
