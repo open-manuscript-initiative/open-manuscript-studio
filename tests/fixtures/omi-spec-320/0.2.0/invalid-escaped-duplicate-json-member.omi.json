@@ -1,0 +1,20 @@
+{
+  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
+  "omi": {
+    "format": "manuscript",
+    "version": "0.2.0",
+    "profiles": ["core-snapshot"],
+    "specifications": {
+      "OMI-SPEC-100": "0.1.0",
+      "OMI-SPEC-120": "0.1.0",
+      "OMI-SPEC-140": "0.1.0"
+    }
+  },
+  "id": "urn:uuid:6d2be6c1-1f4d-4f10-98fc-6c5e6e9b9f8f",
+  "locale": "en",
+  "title": "Escaped duplicate member",
+  "ti\u0074le": "The decoded member name is also title",
+  "sections": [],
+  "createdAt": "2026-10-08T08:00:00Z",
+  "updatedAt": "2026-10-08T08:00:00Z"
+}
