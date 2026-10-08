@@ -272,7 +272,7 @@ function buildCurrentState(): OmiManuscriptState {
       copyrightYear: 2026,
     },
     extensions: {
-      'org.pkp.ojs': {
+      'https://pkp.sfu.ca/ojs/': {
         openScience: {
           openData: { en: 'Synthetic data are included in the reference corpus.' },
           openMaterials: { en: 'All test materials are repository fixtures.' },
