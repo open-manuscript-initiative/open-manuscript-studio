@@ -92,7 +92,7 @@ export function ScholarlyMetadataPanel() {
     () => manuscript.metadata ?? {},
     [manuscript.metadata],
   );
-  const openScience = manuscript.extensions?.['org.pkp.ojs']?.openScience ?? {};
+  const openScience = manuscript.extensions?.['https://pkp.sfu.ca/ojs/']?.openScience ?? {};
 
   const locales = useMemo(() => {
     const values = new Set<string>([manuscript.locale, 'hu', 'en', 'de']);
