@@ -117,6 +117,17 @@
       ]
     },
     {
+      "path": "invalid-escaped-duplicate-json-member.omi.json",
+      "valid": false,
+      "expectedDiagnostics": [
+        "FMT-DUPLICATE-JSON-MEMBER"
+      ],
+      "purpose": "JSON escape decoding makes two differently spelled member names identical.",
+      "requirements": [
+        "REQ-FMT-007"
+      ]
+    },
+    {
       "path": "invalid-malformed-json.omi.json",
       "valid": false,
       "expectedDiagnostics": [
@@ -151,5 +162,5 @@
       ]
     }
   ],
-  "suiteVersion": "0.2.0-draft.2"
+  "suiteVersion": "0.2.0-draft.4"
 }
