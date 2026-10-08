@@ -203,6 +203,13 @@ test('exports assigned Studio paragraph styles as real IDML paragraph styles', (
   assert.match(styles, /<AllGREPStyles type="list">/);
   assert.match(styles, /OtfStylisticSets="5"/);
   assert.match(story, /AppliedParagraphStyle="ParagraphStyle\/chapter-title"/);
+  assert.match(preferences, /PageOrientation="Portrait"/);
+
+  publicationStyle.page.width = 297;
+  const landscape = buildIdmlExport(manuscript, publicationStyle);
+  const landscapeEntries = readStoreZipEntries(landscape.bytes);
+  const landscapePreferences = new TextDecoder().decode(landscapeEntries.get('Resources/Preferences.xml'));
+  assert.match(landscapePreferences, /PageOrientation="Landscape"/);
 });
 
 function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {
