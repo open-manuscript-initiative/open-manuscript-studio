@@ -78,9 +78,9 @@ The vendored runtime schema is `src/schemas/omi-manuscript-0.2.schema.json`, pin
 date-time and URI format checks, followed by existing semantic invariants. It
 never fetches a schema URI supplied by an input document.
 
-The version-pinned manifest and all 13 fixtures are vendored under
+The version-pinned manifest and all 14 fixtures are vendored under
 `tests/fixtures/omi-spec-320/0.2.0/`. The suite checks validity and stable
-diagnostic codes for malformed JSON, duplicate JSON members, structural failures,
+diagnostic codes for malformed JSON, duplicate JSON members (including escaped-equivalent names), structural failures,
 duplicate identifiers, unresolved references, timestamp order, history-head
 mismatch, and forbidden credential fields.
 
