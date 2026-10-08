@@ -105,6 +105,11 @@ test('exports assigned Studio paragraph styles as real IDML paragraph styles', (
   block.paragraphStyleId = 'chapter-title';
 
   const publicationStyle = {
+    page: {
+      width: 148,
+      height: 210,
+      margins: { top: 20, bottom: 25, inner: 15, outer: 18 },
+    },
     paragraphStyles: {
       defaultStyleId: 'body',
       items: [
@@ -164,6 +169,12 @@ test('exports assigned Studio paragraph styles as real IDML paragraph styles', (
   const entries = readStoreZipEntries(result.bytes);
   const styles = new TextDecoder().decode(entries.get('Resources/Styles.xml'));
   const story = new TextDecoder().decode(entries.get('Stories/Story_u3.xml'));
+  const preferences = new TextDecoder().decode(entries.get('Resources/Preferences.xml'));
+  const spread = new TextDecoder().decode(entries.get('Spreads/Spread_u2.xml'));
+  assert.match(preferences, /PageHeight="595\.2756" PageWidth="419\.5276"/);
+  assert.match(spread, /GeometricBounds="0 0 595\.2756 419\.5276"/);
+  assert.match(spread, /Anchor="42\.5197 56\.6929"/);
+  assert.match(spread, /Anchor="368\.5039 524\.4094"/);
   const parsedStyles = new XmlParser({
     onError: (_level, message) => {
       throw new Error(`Resources/Styles.xml: ${message}`);
@@ -192,6 +203,13 @@ test('exports assigned Studio paragraph styles as real IDML paragraph styles', (
   assert.match(styles, /<AllGREPStyles type="list">/);
   assert.match(styles, /OtfStylisticSets="5"/);
   assert.match(story, /AppliedParagraphStyle="ParagraphStyle\/chapter-title"/);
+  assert.match(preferences, /PageOrientation="Portrait"/);
+
+  publicationStyle.page.width = 297;
+  const landscape = buildIdmlExport(manuscript, publicationStyle);
+  const landscapeEntries = readStoreZipEntries(landscape.bytes);
+  const landscapePreferences = new TextDecoder().decode(landscapeEntries.get('Resources/Preferences.xml'));
+  assert.match(landscapePreferences, /PageOrientation="Landscape"/);
 });
 
 function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {

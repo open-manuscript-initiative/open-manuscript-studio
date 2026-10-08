@@ -117,17 +117,36 @@ export function buildIdmlExport(
   </Story>
 </idPkg:Story>`;
 
+  const pageWidthPoints = idmlDimensionPoints(publicationStyle?.page.width, 595.2756);
+  const pageHeightPoints = idmlDimensionPoints(publicationStyle?.page.height, 841.8898);
+  const pageMargins = publicationStyle?.page.margins;
+  const topMarginPoints = idmlMarginPoints(pageMargins?.top, 36, pageHeightPoints);
+  const bottomMarginPoints = idmlMarginPoints(pageMargins?.bottom, 36, pageHeightPoints);
+  const leftMarginPoints = idmlMarginPoints(pageMargins?.inner, 36, pageWidthPoints);
+  const rightMarginPoints = idmlMarginPoints(pageMargins?.outer, 36, pageWidthPoints);
+  const frameLeft = Math.min(leftMarginPoints, pageWidthPoints / 2);
+  const frameRight = Math.max(frameLeft + 1, pageWidthPoints - rightMarginPoints);
+  const frameTop = Math.min(topMarginPoints, pageHeightPoints / 2);
+  const frameBottom = Math.max(frameTop + 1, pageHeightPoints - bottomMarginPoints);
+  const pageWidth = formatIdmlPoints(pageWidthPoints);
+  const pageHeight = formatIdmlPoints(pageHeightPoints);
+  const pageOrientation = pageWidthPoints > pageHeightPoints ? 'Landscape' : 'Portrait';
+  const left = formatIdmlPoints(frameLeft);
+  const right = formatIdmlPoints(frameRight);
+  const top = formatIdmlPoints(frameTop);
+  const bottom = formatIdmlPoints(frameBottom);
+
   const spreadXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <idPkg:Spread xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}">
   <Spread Self="${spreadId}" FlattenerOverride="Default" ShowMasterItems="true" PageTransitionType="None" PageTransitionDirection="NotApplicable" PageTransitionDuration="Medium" BindingLocation="0 0" AllowPageShuffle="true" ItemTransform="1 0 0 1 0 0">
-    <Page Self="${pageId}" GeometricBounds="0 0 841.8898 595.2756" ItemTransform="1 0 0 1 0 0" Name="1" AppliedMaster="n" MasterPageTransform="1 0 0 1 0 0" GridStartingPoint="TopOutside" UseMasterGrid="true"/>
+    <Page Self="${pageId}" GeometricBounds="0 0 ${pageHeight} ${pageWidth}" ItemTransform="1 0 0 1 0 0" Name="1" AppliedMaster="n" MasterPageTransform="1 0 0 1 0 0" GridStartingPoint="TopOutside" UseMasterGrid="true"/>
     <TextFrame Self="${frameId}" ParentStory="${storyId}" PreviousTextFrame="n" NextTextFrame="n" ContentType="TextType" ParentPage="${pageId}" ItemLayer="${layerId}" Locked="false" LocalDisplaySetting="Default" AppliedObjectStyle="ObjectStyle/$ID/[None]" ItemTransform="1 0 0 1 0 0">
       <Properties>
         <PathGeometry><GeometryPathType PathOpen="false"><PathPointArray>
-          <PathPointType Anchor="36 36" LeftDirection="36 36" RightDirection="36 36"/>
-          <PathPointType Anchor="559.2756 36" LeftDirection="559.2756 36" RightDirection="559.2756 36"/>
-          <PathPointType Anchor="559.2756 805.8898" LeftDirection="559.2756 805.8898" RightDirection="559.2756 805.8898"/>
-          <PathPointType Anchor="36 805.8898" LeftDirection="36 805.8898" RightDirection="36 805.8898"/>
+          <PathPointType Anchor="${left} ${top}" LeftDirection="${left} ${top}" RightDirection="${left} ${top}"/>
+          <PathPointType Anchor="${right} ${top}" LeftDirection="${right} ${top}" RightDirection="${right} ${top}"/>
+          <PathPointType Anchor="${right} ${bottom}" LeftDirection="${right} ${bottom}" RightDirection="${right} ${bottom}"/>
+          <PathPointType Anchor="${left} ${bottom}" LeftDirection="${left} ${bottom}" RightDirection="${left} ${bottom}"/>
         </PathPointArray></GeometryPathType></PathGeometry>
       </Properties>
       <TextFramePreference TextColumnCount="1" TextColumnGutter="12" TextColumnFixedWidth="0" UseFixedColumnWidth="false" FirstBaselineOffset="AscentOffset" MinimumFirstBaselineOffset="0" VerticalJustification="TopAlign" VerticalThreshold="0" IgnoreWrap="false"/>
@@ -138,7 +157,7 @@ export function buildIdmlExport(
   const stylesXml = buildStylesXml(publicationStyle);
   const preferencesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <idPkg:Preferences xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}">
-  <DocumentPreference PageHeight="841.8898" PageWidth="595.2756" PagesPerDocument="1" FacingPages="false" PageOrientation="Portrait" PageBinding="LeftToRight"/>
+  <DocumentPreference PageHeight="${pageHeight}" PageWidth="${pageWidth}" PagesPerDocument="1" FacingPages="false" PageOrientation="${pageOrientation}" PageBinding="LeftToRight"/>
 </idPkg:Preferences>`;
   const fontsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <idPkg:Fonts xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}"><FontFamily Self="FontFamily/Times New Roman" Name="Times New Roman"/></idPkg:Fonts>`;
@@ -214,6 +233,27 @@ function buildStylesXml(publicationStyle?: PublicationStyle): string {
   </RootParagraphStyleGroup>
   <RootObjectStyleGroup Self="uObjRoot"><ObjectStyle Self="ObjectStyle/$ID/[None]" Name="$ID/[None]"/></RootObjectStyleGroup>
 </idPkg:Styles>`;
+}
+
+function idmlDimensionPoints(valueMm: number | undefined, fallbackPoints: number): number {
+  return typeof valueMm === 'number' && Number.isFinite(valueMm) && valueMm > 0
+    ? valueMm * 72 / 25.4
+    : fallbackPoints;
+}
+
+function idmlMarginPoints(
+  valueMm: number | undefined,
+  fallbackPoints: number,
+  pageDimensionPoints: number,
+): number {
+  const points = typeof valueMm === 'number' && Number.isFinite(valueMm) && valueMm >= 0
+    ? valueMm * 72 / 25.4
+    : fallbackPoints;
+  return Math.min(points, pageDimensionPoints / 2);
+}
+
+function formatIdmlPoints(value: number): string {
+  return Number(value.toFixed(4)).toString();
 }
 
 function resolveIdmlParagraphStyleId(
