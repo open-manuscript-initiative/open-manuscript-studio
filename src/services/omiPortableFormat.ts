@@ -690,7 +690,7 @@ function toConformanceDiagnosticCode(error: unknown): string {
   if (/Duplicate OMI identifier/u.test(error.message)) return 'FMT-DUPLICATE-ID';
   if (/Unresolved OMI reference/u.test(error.message)) return 'FMT-UNRESOLVED-REFERENCE';
   if (/updatedAt must not precede createdAt/u.test(error.message)) return 'FMT-TIMESTAMP-ORDER';
-  if (/headRevisionId must match revisionHistory\\.headRevisionId/u.test(error.message)) return 'FMT-HISTORY-HEAD-MISMATCH';
+  if (/headRevisionId must match revisionHistory\.headRevisionId/u.test(error.message)) return 'FMT-HISTORY-HEAD-MISMATCH';
   if (/credential field/u.test(error.message)) return 'FMT-FORBIDDEN-SECRET';
   return 'FMT-SCHEMA';
 }
@@ -698,11 +698,11 @@ function toConformanceDiagnosticCode(error: unknown): string {
 function findDuplicateJsonMemberKeys(source: string): string[] {
   const duplicates: string[] = [];
   let cursor = 0;
-  function skipWhitespace(): void { while (cursor < source.length && /\\s/u.test(source[cursor] ?? '')) cursor += 1; }
+  function skipWhitespace(): void { while (cursor < source.length && /\s/u.test(source[cursor] ?? '')) cursor += 1; }
   function readString(): string {
     const start = cursor++;
     while (cursor < source.length) {
-      if (source[cursor] === '\\\\') cursor += 2;
+      if (source[cursor] === '\\') cursor += 2;
       else if (source[cursor] === '"') { cursor++; break; }
       else cursor++;
     }
@@ -734,7 +734,7 @@ function findDuplicateJsonMemberKeys(source: string): string[] {
       return;
     }
     if (token === '"') { readString(); return; }
-    while (cursor < source.length && !/[\\s,}\\]]/u.test(source[cursor] ?? '')) cursor++;
+    while (cursor < source.length && !/[\s,}\]]/u.test(source[cursor] ?? '')) cursor++;
   }
   visit('');
   return duplicates;
