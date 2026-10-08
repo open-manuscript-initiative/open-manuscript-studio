@@ -72,7 +72,7 @@ export function toPortableOmiState(
     ...state,
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
     omi: createOmiFileFormatEnvelope(false),
-    tombstones: state.tombstones.map((tombstone) => ({
+    tombstones: (state.tombstones ?? []).map((tombstone) => ({
       ...tombstone,
       id: tombstoneId(tombstone),
     })),
