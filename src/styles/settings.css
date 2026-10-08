@@ -347,3 +347,56 @@
     width: 100%;
   }
 }
+
+
+/* Use desktop width for the settings workspace instead of a narrow centered column. */
+.studio-menu-view--settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1rem;
+  width: min(100%, 90rem);
+  max-width: 90rem;
+}
+
+.studio-menu-view--settings > .studio-menu-view-header {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
+.studio-menu-view--settings > .studio-settings-card.studio-research-module-settings,
+.studio-menu-view--settings > .studio-settings-card.studio-language-settings-card,
+.studio-menu-view--settings > .studio-settings-card[aria-labelledby="studio-cloud-storage-title"] {
+  grid-column: 1 / -1;
+}
+
+.studio-menu-view--settings .studio-language-setting-row--interface .studio-language-chip-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  align-items: start;
+}
+
+.studio-menu-view--settings .studio-language-setting-row--interface .studio-language-chip {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1100px) {
+  .studio-menu-view--settings .studio-research-module-settings .studio-module-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .studio-menu-view--settings {
+    grid-template-columns: minmax(0, 1fr);
+    gap: .75rem;
+  }
+
+  .studio-menu-view--settings > .studio-menu-view-header,
+  .studio-menu-view--settings > .studio-settings-card.studio-research-module-settings,
+  .studio-menu-view--settings > .studio-settings-card.studio-language-settings-card,
+  .studio-menu-view--settings > .studio-settings-card[aria-labelledby="studio-cloud-storage-title"] {
+    grid-column: 1;
+  }
+}
