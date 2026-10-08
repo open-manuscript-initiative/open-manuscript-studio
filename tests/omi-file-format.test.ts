@@ -173,7 +173,7 @@ test('passes the version-pinned OMI-SPEC-320@0.2.0 conformance fixtures', async 
   };
   assert.equal(manifest.specification, 'OMI-SPEC-320@0.2.0');
   assert.equal(manifest.schema, OMI_MANUSCRIPT_SCHEMA_URI);
-  assert.equal(manifest.suiteVersion, '0.2.0-draft.2');
+  assert.equal(manifest.suiteVersion, '0.2.0-draft.4');
   for (const fixture of manifest.fixtures) {
     const source = await readFile(new URL(fixture.path, fixtureRoot), 'utf8');
     const actualDiagnostics = validateOmiConformanceJson(source);
