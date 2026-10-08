@@ -562,7 +562,20 @@ export interface OmiManuscriptState {
   updatedAt: string;
 }
 
+export interface OmiFileFormatEnvelope {
+  format: 'manuscript';
+  version: '0.2.0';
+  profiles: string[];
+  specifications: Record<string, string>;
+  [key: string]: unknown;
+}
+
 export interface OmiManuscript extends OmiManuscriptState {
+  /**
+   * The imported portable envelope is retained so an edit/save cycle does not
+   * discard producer metadata, declared profiles, or future envelope members.
+   */
+  omi?: OmiFileFormatEnvelope;
   versioningModelVersion: 'OMI-SPEC-160@0.1.0';
   headRevisionId: RevisionId;
   revisionHistory: OmiRevisionHistory;
