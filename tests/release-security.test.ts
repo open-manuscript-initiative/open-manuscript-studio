@@ -9,7 +9,7 @@ test('portable OMI rejects embedded credentials at any nesting depth', () => {
   const portable = structuredClone(toPortableOmiManuscript(createReferenceManuscript())) as Record<string, unknown>;
   portable.extensions = {
     ...(portable.extensions as Record<string, unknown> | undefined),
-    'org.openmanuscript.security-test': {
+    'urn:org.openmanuscript.security-test': {
       nested: {
         clientSecret: 'must-never-leave-the-account-boundary',
       },
