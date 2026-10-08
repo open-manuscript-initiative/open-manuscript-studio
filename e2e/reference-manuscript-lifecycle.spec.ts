@@ -127,7 +127,7 @@ test('opens, edits, saves, closes and reopens the complete reference manuscript 
       generatedLists: manuscript.generatedListDefinitions?.length ?? 0,
       publicationProfile: manuscript.embeddedPublicationProfile?.id ?? null,
       hasOjsOpenScience: Boolean(
-        manuscript.extensions?.['org.pkp.ojs']?.openScience,
+        manuscript.extensions?.['https://pkp.sfu.ca/ojs/']?.openScience,
       ),
     };
   });
