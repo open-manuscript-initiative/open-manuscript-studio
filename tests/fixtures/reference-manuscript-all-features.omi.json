@@ -155,7 +155,7 @@
     "copyrightYear": 2026
   },
   "extensions": {
-    "org.pkp.ojs": {
+    "https://pkp.sfu.ca/ojs/": {
       "openScience": {
         "openData": {
           "en": "Synthetic data are included in the reference corpus."
@@ -2025,7 +2025,7 @@
               "copyrightYear": 2026
             },
             "extensions": {
-              "org.pkp.ojs": {
+              "https://pkp.sfu.ca/ojs/": {
                 "openScience": {
                   "openData": {
                     "en": "Synthetic data are included in the reference corpus."
@@ -3880,7 +3880,7 @@
               "copyrightYear": 2026
             },
             "extensions": {
-              "org.pkp.ojs": {
+              "https://pkp.sfu.ca/ojs/": {
                 "openScience": {
                   "openData": {
                     "en": "Synthetic data are included in the reference corpus."
