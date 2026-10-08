@@ -3,7 +3,7 @@ import schema from '../schemas/omi-manuscript-0.2.schema.json' with { type: 'jso
 
 const ajv = new Ajv2020({ allErrors: true, strict: true, validateFormats: true });
 ajv.addFormat('date-time', (value: string) =>
-  /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$/u.test(value)
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/u.test(value)
   && !Number.isNaN(Date.parse(value)),
 );
 ajv.addFormat('uri', (value: string) => {
