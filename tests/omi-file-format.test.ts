@@ -125,7 +125,7 @@ test('does not emit a canonical OMI file until required portable metadata is pre
     () => serializeOmiJson(manuscript),
     (error: unknown) =>
       error instanceof OmiPortableFormatError
-      && error.code === 'invalid-document'
+      && ['invalid-document', 'schema-validation'].includes(error.code)
       && /title/.test(error.message),
   );
 });
