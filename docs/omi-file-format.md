@@ -84,6 +84,12 @@ diagnostic codes for malformed JSON, duplicate JSON members (including escaped-e
 duplicate identifiers, unresolved references, timestamp order, history-head
 mismatch, and forbidden credential fields.
 
+An edit/save round-trip test imports the shared history/extension fixture,
+changes a known field, and verifies that producer metadata, unknown root and
+envelope members, namespaced extension values, ordered collections, references,
+and revision history survive export and reopen. A serialization or validation
+error occurs before a native file write is invoked.
+
 Run `npm run test:file-format` for the focused suite. The standard Studio test
 suite also includes it. A green result proves the listed behaviors for this
 Draft; it is not a full OMI 1.0 conformance claim.
