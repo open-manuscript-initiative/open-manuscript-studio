@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
@@ -10,6 +11,7 @@ import {
   OmiPortableFormatError,
   parseOmiJson,
   toPortableOmiManuscript,
+  validateOmiConformanceJson,
 } from '../src/services/omiPortableFormat.ts';
 import {
   createTestManuscript,
@@ -123,7 +125,7 @@ test('does not emit a canonical OMI file until required portable metadata is pre
     () => serializeOmiJson(manuscript),
     (error: unknown) =>
       error instanceof OmiPortableFormatError
-      && error.code === 'invalid-document'
+      && ['invalid-document', 'schema-validation'].includes(error.code)
       && /title/.test(error.message),
   );
 });
@@ -160,4 +162,22 @@ test('portable OMI rejects bibliography selections that do not resolve to a reco
     () => parseOmiJson(JSON.stringify(portable)),
     /Unresolved OMI reference at \/bibliographyAdditionalRecordIds\/0/,
   );
+});
+
+
+test('passes the version-pinned OMI-SPEC-320@0.2.0 conformance fixtures', async () => {
+  const fixtureRoot = new URL('./fixtures/omi-spec-320/0.2.0/', import.meta.url);
+  const manifest = JSON.parse(await readFile(new URL('manifest.json', fixtureRoot), 'utf8')) as {
+    specification: string; schema: string; suiteVersion: string;
+    fixtures: Array<{ path: string; valid: boolean; expectedDiagnostics: string[] }>;
+  };
+  assert.equal(manifest.specification, 'OMI-SPEC-320@0.2.0');
+  assert.equal(manifest.schema, OMI_MANUSCRIPT_SCHEMA_URI);
+  assert.equal(manifest.suiteVersion, '0.2.0-draft.2');
+  for (const fixture of manifest.fixtures) {
+    const source = await readFile(new URL(fixture.path, fixtureRoot), 'utf8');
+    const actualDiagnostics = validateOmiConformanceJson(source);
+    assert.equal(actualDiagnostics.length === 0, fixture.valid, `${fixture.path}: validity differs`);
+    assert.deepEqual(actualDiagnostics, fixture.expectedDiagnostics, `${fixture.path}: diagnostic codes differ`);
+  }
 });

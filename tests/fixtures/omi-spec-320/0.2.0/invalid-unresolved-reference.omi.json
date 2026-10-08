@@ -1,0 +1,29 @@
+{
+  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
+  "omi": {
+    "format": "manuscript",
+    "version": "0.2.0",
+    "profiles": [
+      "core-snapshot"
+    ],
+    "specifications": {
+      "OMI-SPEC-100": "0.1.0",
+      "OMI-SPEC-120": "0.1.0",
+      "OMI-SPEC-140": "0.1.0"
+    }
+  },
+  "id": "manuscript-unresolved-reference",
+  "locale": "en",
+  "title": "Unresolved annotation target",
+  "sections": [],
+  "annotations": [
+    {
+      "id": "annotation-orphan",
+      "type": "note",
+      "targetBlockId": "block-not-present",
+      "body": "This annotation cannot resolve its target."
+    }
+  ],
+  "createdAt": "2026-09-05T08:00:00Z",
+  "updatedAt": "2026-09-05T08:00:00Z"
+}

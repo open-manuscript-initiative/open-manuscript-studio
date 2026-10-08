@@ -1,0 +1,33 @@
+{
+  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
+  "omi": {
+    "format": "manuscript",
+    "version": "0.2.0",
+    "profiles": [
+      "core-snapshot"
+    ],
+    "specifications": {
+      "OMI-SPEC-100": "0.1.0",
+      "OMI-SPEC-120": "0.1.0",
+      "OMI-SPEC-140": "0.1.0"
+    }
+  },
+  "id": "manuscript-duplicate-id",
+  "locale": "en",
+  "title": "Duplicate object identifier",
+  "sections": [
+    {
+      "id": "duplicate-object",
+      "title": "Section",
+      "blocks": [
+        {
+          "id": "duplicate-object",
+          "type": "paragraph",
+          "content": "The section and block must not share an identifier."
+        }
+      ]
+    }
+  ],
+  "createdAt": "2026-09-05T08:00:00Z",
+  "updatedAt": "2026-09-05T08:00:00Z"
+}

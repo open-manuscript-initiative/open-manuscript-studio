@@ -53,7 +53,7 @@ export interface OmiOjsOpenScienceMetadata {
 }
 
 export interface OmiIntegrationExtensions {
-  'org.pkp.ojs'?: {
+  'https://pkp.sfu.ca/ojs/'?: {
     openScience?: OmiOjsOpenScienceMetadata;
     [key: string]: unknown;
   };

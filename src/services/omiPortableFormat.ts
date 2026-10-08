@@ -6,6 +6,7 @@ import {
   type OmiManuscriptSchemaUri,
 } from '../model/omiFormatConstants';
 import type { OmiManuscript, OmiManuscriptState } from '../types/omi';
+import { validateOmiManuscriptSchema } from './omiSchemaValidation';
 
 export interface OmiFileFormatEnvelope {
   format: 'manuscript';
@@ -28,7 +29,9 @@ export type OmiPortableFormatErrorCode =
   | 'invalid-json'
   | 'invalid-document'
   | 'unsupported-schema'
-  | 'unsupported-version';
+  | 'unsupported-version'
+  | 'schema-validation'
+  | 'duplicate-json-member';
 
 export class OmiPortableFormatError extends Error {
   readonly code: OmiPortableFormatErrorCode;
@@ -117,6 +120,10 @@ export function parseOmiJson(raw: string): OmiManuscript {
     );
   }
 
+  const duplicateMemberPaths = findDuplicateJsonMemberKeys(raw);
+  if (duplicateMemberPaths.length > 0) {
+    throw new OmiPortableFormatError('duplicate-json-member', `Duplicate JSON member name at ${duplicateMemberPaths.join(', ')}.`);
+  }
   return parsePortableOmiManuscript(value);
 }
 
@@ -188,6 +195,11 @@ export function assertPortableOmiManuscript(
       'unsupported-version',
       `Unsupported OMI file-format version. Expected ${OMI_FILE_FORMAT_VERSION}.`,
     );
+  }
+
+  const schemaErrors = validateOmiManuscriptSchema(value);
+  if (schemaErrors.length > 0) {
+    throw new OmiPortableFormatError('schema-validation', `The manuscript does not satisfy the canonical OMI-SPEC-320@0.2.0 schema: ${schemaErrors.join('; ')}`);
   }
 
   const profiles = envelope.profiles;
@@ -659,4 +671,71 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function invalid(message: string): never {
   throw new OmiPortableFormatError('invalid-document', message);
+}
+
+
+/** Runs the version-pinned OMI-SPEC-320 fixture validator and returns stable diagnostic codes. */
+export function validateOmiConformanceJson(source: string): string[] {
+  if (findDuplicateJsonMemberKeys(source).length > 0) return ['FMT-DUPLICATE-JSON-MEMBER'];
+  let value: unknown;
+  try { value = JSON.parse(source); } catch { return ['FMT-INVALID-JSON']; }
+  try { assertPortableOmiManuscript(value); return []; }
+  catch (error) { return [toConformanceDiagnosticCode(error)]; }
+}
+function toConformanceDiagnosticCode(error: unknown): string {
+  if (!(error instanceof OmiPortableFormatError)) return 'FMT-SCHEMA';
+  if (error.code === 'invalid-json') return 'FMT-INVALID-JSON';
+  if (error.code === 'duplicate-json-member') return 'FMT-DUPLICATE-JSON-MEMBER';
+  if (['unsupported-schema','unsupported-version','schema-validation'].includes(error.code)) return 'FMT-SCHEMA';
+  if (/Duplicate OMI identifier/u.test(error.message)) return 'FMT-DUPLICATE-ID';
+  if (/Unresolved OMI reference/u.test(error.message)) return 'FMT-UNRESOLVED-REFERENCE';
+  if (/updatedAt must not precede createdAt/u.test(error.message)) return 'FMT-TIMESTAMP-ORDER';
+  if (/headRevisionId must match revisionHistory\.headRevisionId/u.test(error.message)) return 'FMT-HISTORY-HEAD-MISMATCH';
+  if (/credential field/u.test(error.message)) return 'FMT-FORBIDDEN-SECRET';
+  return 'FMT-SCHEMA';
+}
+/** Detect duplicate object member names before JSON.parse discards them. */
+function findDuplicateJsonMemberKeys(source: string): string[] {
+  const duplicates: string[] = [];
+  let cursor = 0;
+  function skipWhitespace(): void { while (cursor < source.length && /\s/u.test(source[cursor] ?? '')) cursor += 1; }
+  function readString(): string {
+    const start = cursor++;
+    while (cursor < source.length) {
+      if (source[cursor] === '\\') cursor += 2;
+      else if (source[cursor] === '"') { cursor++; break; }
+      else cursor++;
+    }
+    const token = source.slice(start, cursor);
+    try { return JSON.parse(token) as string; } catch { return token.slice(1, -1); }
+  }
+  function visit(path: string): void {
+    skipWhitespace(); const token = source[cursor];
+    if (token === '{') {
+      cursor++; skipWhitespace(); const names = new Set<string>();
+      while (cursor < source.length && source[cursor] !== '}') {
+        if (source[cursor] !== '"') return;
+        const name = readString(), memberPath = `${path}/${name.replaceAll('~','~0').replaceAll('/','~1')}`;
+        if (names.has(name)) duplicates.push(memberPath);
+        names.add(name); skipWhitespace(); if (source[cursor] !== ':') return;
+        cursor++; visit(memberPath); skipWhitespace();
+        if (source[cursor] === ',') { cursor++; skipWhitespace(); } else break;
+      }
+      if (source[cursor] === '}') cursor++;
+      return;
+    }
+    if (token === '[') {
+      cursor++; skipWhitespace(); let index=0;
+      while (cursor < source.length && source[cursor] !== ']') {
+        visit(`${path}/${index++}`); skipWhitespace();
+        if (source[cursor] === ',') { cursor++; skipWhitespace(); } else break;
+      }
+      if (source[cursor] === ']') cursor++;
+      return;
+    }
+    if (token === '"') { readString(); return; }
+    while (cursor < source.length && !/[\s,}\]]/u.test(source[cursor] ?? '')) cursor++;
+  }
+  visit('');
+  return duplicates;
 }

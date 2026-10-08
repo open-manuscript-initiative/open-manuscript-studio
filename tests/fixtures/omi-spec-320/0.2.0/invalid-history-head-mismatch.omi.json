@@ -1,0 +1,44 @@
+{
+  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
+  "omi": {
+    "format": "manuscript",
+    "version": "0.2.0",
+    "profiles": [
+      "core-snapshot",
+      "history-exchange"
+    ],
+    "specifications": {
+      "OMI-SPEC-100": "0.1.0",
+      "OMI-SPEC-120": "0.1.0",
+      "OMI-SPEC-140": "0.1.0",
+      "OMI-SPEC-160": "0.1.0"
+    }
+  },
+  "id": "manuscript-history-head-mismatch",
+  "locale": "en",
+  "title": "Mismatched history head",
+  "sections": [],
+  "versioningModelVersion": "OMI-SPEC-160@0.1.0",
+  "headRevisionId": "revision-2",
+  "revisionHistory": {
+    "completeness": "complete",
+    "rootRevisionId": "revision-1",
+    "headRevisionId": "revision-1",
+    "revisions": [
+      {
+        "id": "revision-1",
+        "parentRevisionIds": [],
+        "createdAt": "2026-09-05T08:00:00Z"
+      },
+      {
+        "id": "revision-2",
+        "parentRevisionIds": [
+          "revision-1"
+        ],
+        "createdAt": "2026-09-05T08:30:00Z"
+      }
+    ]
+  },
+  "createdAt": "2026-09-05T08:00:00Z",
+  "updatedAt": "2026-09-05T08:30:00Z"
+}

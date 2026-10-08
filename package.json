@@ -89,7 +89,8 @@
     "i18n:translation-master": "npm run i18n:pending:supplemental && node scripts/export-translation-master.mjs",
     "i18n:returned:generate": "node scripts/generate-returned-translation-overlays.mjs",
     "predev": "npm run i18n:returned:generate",
-    "prebuild": "npm run i18n:returned:generate"
+    "prebuild": "npm run i18n:returned:generate",
+    "test:file-format": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/omi-file-format.test.ts"
   },
   "dependencies": {
     "@hocuspocus/provider": "^4.7.0",
@@ -110,7 +111,8 @@
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "zustand": "latest"
+    "zustand": "latest",
+    "ajv2020": "npm:ajv@8.20.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

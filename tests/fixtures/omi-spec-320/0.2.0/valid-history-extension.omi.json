@@ -1,0 +1,119 @@
+{
+  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
+  "omi": {
+    "format": "manuscript",
+    "version": "0.2.0",
+    "profiles": [
+      "core-snapshot",
+      "history-exchange",
+      "lossless-round-trip"
+    ],
+    "specifications": {
+      "OMI-SPEC-100": "0.1.0",
+      "OMI-SPEC-120": "0.1.0",
+      "OMI-SPEC-140": "0.1.0",
+      "OMI-SPEC-160": "0.1.0",
+      "OMI-SPEC-210": "0.1.0",
+      "OMI-SPEC-220": "0.1.0"
+    },
+    "generator": {
+      "name": "OMI fixture generator",
+      "version": "0.2.0",
+      "uri": "https://openmanuscript.org/"
+    }
+  },
+  "id": "urn:uuid:8ad7eb3e-1144-4ce1-9133-3cf1d9189f7a",
+  "locale": "hu",
+  "title": "Történettel megőrzött kézirat",
+  "keywords": [
+    "interoperabilitás",
+    "megőrzés"
+  ],
+  "agents": [
+    {
+      "id": "agent-author",
+      "type": "person",
+      "name": "Minta Szerző"
+    }
+  ],
+  "contributions": [
+    {
+      "id": "contribution-author",
+      "agentId": "agent-author",
+      "role": "author"
+    }
+  ],
+  "sections": [
+    {
+      "id": "section-1",
+      "title": "Bevezetés",
+      "blocks": [
+        {
+          "id": "block-1",
+          "type": "paragraph",
+          "language": "hu",
+          "content": "A kézirat szerkezete és története együtt, de elkülönített jelentéssel utazik."
+        }
+      ]
+    }
+  ],
+  "annotations": [
+    {
+      "id": "annotation-1",
+      "type": "note",
+      "targetBlockId": "block-1",
+      "body": "A megjegyzés stabil blokkazonosítóra hivatkozik.",
+      "creatorAgentId": "agent-author",
+      "createdAt": "2026-09-05T08:10:00Z"
+    }
+  ],
+  "bibliographicRecords": [
+    {
+      "id": "record-1",
+      "type": "book",
+      "title": "Portable Scholarship"
+    }
+  ],
+  "citations": [
+    {
+      "id": "citation-1",
+      "target": "record-1",
+      "anchorId": "anchor-citation-1",
+      "targetBlockId": "block-1"
+    }
+  ],
+  "versioningModelVersion": "OMI-SPEC-160@0.1.0",
+  "headRevisionId": "revision-2",
+  "revisionHistory": {
+    "profile": "core-revision-history",
+    "completeness": "complete",
+    "rootRevisionId": "revision-1",
+    "headRevisionId": "revision-2",
+    "revisions": [
+      {
+        "id": "revision-1",
+        "parentRevisionIds": [],
+        "createdAt": "2026-09-05T08:00:00Z",
+        "actorAgentId": "agent-author",
+        "summary": "Initial manuscript"
+      },
+      {
+        "id": "revision-2",
+        "parentRevisionIds": [
+          "revision-1"
+        ],
+        "createdAt": "2026-09-05T08:15:00Z",
+        "actorAgentId": "agent-author",
+        "summary": "Add portable note and citation"
+      }
+    ]
+  },
+  "createdAt": "2026-09-05T08:00:00Z",
+  "updatedAt": "2026-09-05T08:15:00Z",
+  "extensions": {
+    "https://example.org/omi/extensions/research-project/1": {
+      "projectId": "project-42",
+      "workPackage": "WP3"
+    }
+  }
+}

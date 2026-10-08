@@ -142,7 +142,7 @@ test('reference manuscript covers the portable feature families used by the life
   assert.ok(manuscript.embeddedPublicationProfile?.exportStylesheet?.cssText);
   assert.ok(manuscript.embeddedPublicationProfile?.printStylesheet?.cssText);
   assert.ok(manuscript.metadata?.publicationVenue);
-  assert.ok(manuscript.extensions?.['org.pkp.ojs']?.openScience);
+  assert.ok(manuscript.extensions?.['https://pkp.sfu.ca/ojs/']?.openScience);
   assert.ok(manuscript.localizedFrontMatter?.hu?.abstract);
   assert.ok(manuscript.abstracts?.de);
   assert.ok(manuscript.keywordsByLocale?.hu?.length);

@@ -88,17 +88,17 @@ export function setOjsOpenScienceField(
   value: string,
 ): void {
   useStudioStore.setState((state) => {
-    const previous = state.manuscript.extensions?.['org.pkp.ojs']?.openScience?.[key]?.[locale] ?? '';
+    const previous = state.manuscript.extensions?.['https://pkp.sfu.ca/ojs/']?.openScience?.[key]?.[locale] ?? '';
     if (previous === value) return state;
     const timestamp = new Date().toISOString();
     const extensions = {
       ...(state.manuscript.extensions ?? {}),
-      'org.pkp.ojs': {
-        ...(state.manuscript.extensions?.['org.pkp.ojs'] ?? {}),
+      'https://pkp.sfu.ca/ojs/': {
+        ...(state.manuscript.extensions?.['https://pkp.sfu.ca/ojs/'] ?? {}),
         openScience: {
-          ...(state.manuscript.extensions?.['org.pkp.ojs']?.openScience ?? {}),
+          ...(state.manuscript.extensions?.['https://pkp.sfu.ca/ojs/']?.openScience ?? {}),
           [key]: {
-            ...(state.manuscript.extensions?.['org.pkp.ojs']?.openScience?.[key] ?? {}),
+            ...(state.manuscript.extensions?.['https://pkp.sfu.ca/ojs/']?.openScience?.[key] ?? {}),
             [locale]: value,
           },
         },
@@ -111,7 +111,7 @@ export function setOjsOpenScienceField(
       events: [{
         operation: 'manuscript.abstract.set' as never,
         targetId: state.manuscript.id,
-        path: `/extensions/org.pkp.ojs/openScience/${key}/${locale}`,
+        path: `/extensions/https:~1~1pkp.sfu.ca~1ojs~1/openScience/${key}/${locale}`,
         previousValue: previous,
         nextValue: value,
       }],

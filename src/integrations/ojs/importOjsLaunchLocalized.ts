@@ -285,7 +285,7 @@ function normalizeExtensions(
   value: Record<string, unknown> | undefined,
 ): OmiIntegrationExtensions | undefined {
   if (!value) return undefined;
-  const ojs = value['org.pkp.ojs'];
+  const ojs = value['https://pkp.sfu.ca/ojs/'];
   if (!ojs || typeof ojs !== 'object' || Array.isArray(ojs)) {
     return value as OmiIntegrationExtensions;
   }
@@ -304,7 +304,7 @@ function normalizeExtensions(
 
   return {
     ...value,
-    'org.pkp.ojs': {
+    'https://pkp.sfu.ca/ojs/': {
       ...ojsRecord,
       ...(openScience ? { openScience } : {}),
     },
