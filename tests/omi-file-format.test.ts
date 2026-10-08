@@ -165,7 +165,7 @@ test('portable OMI rejects bibliography selections that do not resolve to a reco
 });
 
 
-test('passes the approved OMI-SPEC-320@0.2.0 conformance fixtures', async () => {
+test('passes the version-pinned OMI-SPEC-320@0.2.0 conformance fixtures', async () => {
   const fixtureRoot = new URL('./fixtures/omi-spec-320/0.2.0/', import.meta.url);
   const manifest = JSON.parse(await readFile(new URL('manifest.json', fixtureRoot), 'utf8')) as {
     specification: string; schema: string; suiteVersion: string;
