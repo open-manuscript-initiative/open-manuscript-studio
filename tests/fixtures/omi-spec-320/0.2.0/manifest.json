@@ -1,0 +1,155 @@
+{
+  "specification": "OMI-SPEC-320@0.2.0",
+  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
+  "description": "Version-pinned structural and semantic fixture corpus for OMI-SPEC-320@0.2.0.",
+  "fixtures": [
+    {
+      "path": "valid-minimal.omi.json",
+      "valid": true,
+      "expectedDiagnostics": [],
+      "purpose": "Smallest useful Core Snapshot with one ordered section and block.",
+      "requirements": [
+        "REQ-FMT-001",
+        "REQ-FMT-018",
+        "REQ-FMT-022",
+        "REQ-FMT-023",
+        "REQ-FMT-029"
+      ]
+    },
+    {
+      "path": "valid-history-extension.omi.json",
+      "valid": true,
+      "expectedDiagnostics": [],
+      "purpose": "History Exchange and Lossless Round Trip profiles with resolved scholarly references and a namespaced extension.",
+      "requirements": [
+        "REQ-FMT-005",
+        "REQ-FMT-024",
+        "REQ-FMT-036",
+        "REQ-FMT-037"
+      ]
+    },
+    {
+      "path": "invalid-missing-version.omi.json",
+      "valid": false,
+      "expectedDiagnostics": [
+        "FMT-SCHEMA"
+      ],
+      "purpose": "The OMI envelope omits its required format version.",
+      "requirements": [
+        "REQ-FMT-023"
+      ]
+    },
+    {
+      "path": "invalid-duplicate-id.omi.json",
+      "valid": false,
+      "expectedDiagnostics": [
+        "FMT-DUPLICATE-ID"
+      ],
+      "purpose": "A section and block reuse one addressable identifier.",
+      "requirements": [
+        "REQ-FMT-016"
+      ]
+    },
+    {
+      "path": "invalid-unresolved-reference.omi.json",
+      "valid": false,
+      "expectedDiagnostics": [
+        "FMT-UNRESOLVED-REFERENCE"
+      ],
+      "purpose": "An annotation targets a block that is not present.",
+      "requirements": [
+        "REQ-FMT-032"
+      ]
+    },
+    {
+      "path": "invalid-timestamp-order.omi.json",
+      "valid": false,
+      "expectedDiagnostics": [
+        "FMT-TIMESTAMP-ORDER"
+      ],
+      "purpose": "The represented update instant precedes manuscript creation.",
+      "requirements": [
+        "REQ-FMT-019"
+      ]
+    },
+    {
+      "path": "invalid-history-head-mismatch.omi.json",
+      "valid": false,
+      "expectedDiagnostics": [
+        "FMT-HISTORY-HEAD-MISMATCH"
+      ],
+      "purpose": "The root snapshot and revision history declare different head revisions.",
+      "requirements": [
+        "REQ-FMT-036"
+      ]
+    },
+    {
+      "path": "invalid-forbidden-secret.omi.json",
+      "valid": false,
+      "expectedDiagnostics": [
+        "FMT-FORBIDDEN-SECRET"
+      ],
+      "purpose": "A portable manuscript contains an access credential field.",
+      "requirements": [
+        "REQ-FMT-020"
+      ]
+    },
+    {
+      "path": "invalid-root-array.omi.json",
+      "valid": false,
+      "expectedDiagnostics": [
+        "FMT-SCHEMA"
+      ],
+      "purpose": "The top-level JSON value is an array, not a manuscript object.",
+      "requirements": [
+        "REQ-FMT-008"
+      ]
+    },
+    {
+      "path": "invalid-duplicate-json-member.omi.json",
+      "valid": false,
+      "expectedDiagnostics": [
+        "FMT-DUPLICATE-JSON-MEMBER"
+      ],
+      "purpose": "The same object member name occurs twice and must not be resolved by first-wins or last-wins parsing.",
+      "requirements": [
+        "REQ-FMT-007"
+      ]
+    },
+    {
+      "path": "invalid-malformed-json.omi.json",
+      "valid": false,
+      "expectedDiagnostics": [
+        "FMT-INVALID-JSON"
+      ],
+      "purpose": "The file is not syntactically valid JSON.",
+      "requirements": [
+        "REQ-FMT-006"
+      ]
+    },
+    {
+      "path": "invalid-schema-uri-mismatch.omi.json",
+      "valid": false,
+      "expectedDiagnostics": [
+        "FMT-SCHEMA"
+      ],
+      "purpose": "The schema URI does not identify the declared OMI-SPEC-320 version.",
+      "requirements": [
+        "REQ-FMT-022"
+      ]
+    },
+    {
+      "path": "invalid-unsupported-format-version.omi.json",
+      "valid": false,
+      "expectedDiagnostics": [
+        "FMT-SCHEMA"
+      ],
+      "purpose": "The document declares a format version not supported by this pinned schema.",
+      "requirements": [
+        "REQ-FMT-023",
+        "REQ-FMT-026"
+      ]
+    }
+  ],
+  "suiteVersion": "0.2.0-draft.2"
+}

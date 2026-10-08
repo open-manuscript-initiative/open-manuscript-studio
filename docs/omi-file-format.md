@@ -19,10 +19,7 @@ The application version, for example `0.2.0-beta.2`, is not the OMI
 file-format version. The manuscript's application-defined `version` field is
 also not the OMI file-format version.
 
-The authoritative JSON Schema and OMI-SPEC-320 conformance fixtures live in the
-Open Manuscript Initiative specification repository. Studio's runtime checks are
-an implementation trust boundary around that normative contract; they do not
-replace the specification.
+Studio vendors the exact JSON Schema from the Open Manuscript Initiative specification repository and validates every imported and exported portable manuscript against it with JSON Schema Draft 2020-12. Existing semantic checks remain for cross-record invariants the schema cannot express. Studio runs the same version-pinned fixture corpus as the specification repository.
 
 ## Pre-0.2 files
 
@@ -72,3 +69,21 @@ This separation is intentional:
 - Studio versions the implementation that consumes and produces both.
 
 A change in one of these version lines does not implicitly change the others.
+
+
+## Canonical schema and conformance fixtures
+
+The vendored runtime schema is `src/schemas/omi-manuscript-0.2.schema.json`, pinned to
+`OMI-SPEC-320@0.2.0` and its canonical schema URI. Studio uses Ajv 2020 with
+date-time and URI format checks, followed by existing semantic invariants. It
+never fetches a schema URI supplied by an input document.
+
+The approved manifest and all 13 fixtures are vendored under
+`tests/fixtures/omi-spec-320/0.2.0/`. The suite checks validity and stable
+diagnostic codes for malformed JSON, duplicate JSON members, structural failures,
+duplicate identifiers, unresolved references, timestamp order, history-head
+mismatch, and forbidden credential fields.
+
+Run `npm run test:file-format` for the focused suite. The standard Studio test
+suite also includes it. A green result proves the listed behaviors for this
+Draft; it is not a full OMI 1.0 conformance claim.

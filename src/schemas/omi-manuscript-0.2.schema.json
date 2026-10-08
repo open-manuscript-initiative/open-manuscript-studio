@@ -1,0 +1,632 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
+  "title": "Open Manuscript Initiative manuscript file format 0.2",
+  "description": "Normative structural schema for OMI-SPEC-320@0.2.0. Semantic and processing requirements remain normative in the specification prose.",
+  "$comment": "Status: Draft. Unknown members are permitted for forward-compatible preservation and require semantic unknown-field handling.",
+  "type": "object",
+  "required": [
+    "schema",
+    "omi",
+    "id",
+    "locale",
+    "title",
+    "sections",
+    "createdAt",
+    "updatedAt"
+  ],
+  "properties": {
+    "schema": {
+      "const": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json"
+    },
+    "omi": {
+      "$ref": "#/$defs/omiEnvelope"
+    },
+    "id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional manuscript revision or application-defined state label; never the file-format version."
+    },
+    "locale": {
+      "$ref": "#/$defs/languageTag"
+    },
+    "title": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "subtitle": {
+      "type": "string"
+    },
+    "abstract": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object"
+        },
+        {
+          "type": "array"
+        }
+      ]
+    },
+    "keywords": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/section"
+      }
+    },
+    "agents": {
+      "$ref": "#/$defs/addressableCollection"
+    },
+    "contributions": {
+      "$ref": "#/$defs/addressableCollection"
+    },
+    "tombstones": {
+      "$ref": "#/$defs/addressableCollection"
+    },
+    "annotations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/annotation"
+      }
+    },
+    "bibliographicRecords": {
+      "$ref": "#/$defs/addressableCollection"
+    },
+    "citations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/citation"
+      }
+    },
+    "citationClusters": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/citationCluster"
+      }
+    },
+    "crossReferences": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/crossReference"
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/asset"
+      }
+    },
+    "identityModelVersion": {
+      "$ref": "#/$defs/specificationReference"
+    },
+    "versioningModelVersion": {
+      "$ref": "#/$defs/specificationReference"
+    },
+    "headRevisionId": {
+      "$ref": "#/$defs/identifier"
+    },
+    "revisionHistory": {
+      "$ref": "#/$defs/revisionHistory"
+    },
+    "createdAt": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "updatedAt": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "extensions": {
+      "$ref": "#/$defs/extensions"
+    }
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "omi": {
+            "type": "object",
+            "properties": {
+              "profiles": {
+                "type": "array",
+                "contains": {
+                  "const": "history-exchange"
+                }
+              }
+            },
+            "required": ["profiles"]
+          }
+        },
+        "required": ["omi"]
+      },
+      "then": {
+        "type": "object",
+        "required": [
+          "versioningModelVersion",
+          "headRevisionId",
+          "revisionHistory"
+        ],
+        "properties": {
+          "versioningModelVersion": true,
+          "headRevisionId": true,
+          "revisionHistory": true,
+          "omi": {
+            "type": "object",
+            "properties": {
+              "specifications": {
+                "type": "object",
+                "properties": {
+                  "OMI-SPEC-160": true
+                },
+                "required": ["OMI-SPEC-160"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "revisionHistory": true
+        },
+        "required": ["revisionHistory"]
+      },
+      "then": {
+        "properties": {
+          "omi": {
+            "type": "object",
+            "properties": {
+              "profiles": {
+                "type": "array",
+                "contains": {
+                  "const": "history-exchange"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "semanticVersion": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "specificationReference": {
+      "type": "string",
+      "pattern": "^OMI-SPEC-[0-9]{3}@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "languageTag": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 255,
+      "pattern": "^(?:[A-Za-z]{2,8}|(?:[A-Za-z]{1,8}|[xX])(?:-[A-Za-z0-9]{1,8})+)$"
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^(?:https://|urn:)[^\\s]+$"
+      },
+      "additionalProperties": true
+    },
+    "generator": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "uri": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "additionalProperties": true
+    },
+    "omiEnvelope": {
+      "type": "object",
+      "required": [
+        "format",
+        "version",
+        "profiles",
+        "specifications"
+      ],
+      "properties": {
+        "format": {
+          "const": "manuscript"
+        },
+        "version": {
+          "const": "0.2.0"
+        },
+        "profiles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "contains": {
+            "const": "core-snapshot"
+          },
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+          }
+        },
+        "specifications": {
+          "type": "object",
+          "required": [
+            "OMI-SPEC-100",
+            "OMI-SPEC-120",
+            "OMI-SPEC-140"
+          ],
+          "properties": {
+            "OMI-SPEC-100": {
+              "$ref": "#/$defs/semanticVersion"
+            },
+            "OMI-SPEC-120": {
+              "$ref": "#/$defs/semanticVersion"
+            },
+            "OMI-SPEC-140": {
+              "$ref": "#/$defs/semanticVersion"
+            }
+          },
+          "propertyNames": {
+            "pattern": "^OMI-SPEC-[0-9]{3}$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/semanticVersion"
+          }
+        },
+        "generator": {
+          "$ref": "#/$defs/generator"
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      },
+      "additionalProperties": true
+    },
+    "addressableObject": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      },
+      "additionalProperties": true
+    },
+    "addressableCollection": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/addressableObject"
+      }
+    },
+    "section": {
+      "type": "object",
+      "required": ["id", "title", "blocks"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "title": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "language": {
+          "$ref": "#/$defs/languageTag"
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/block"
+          }
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/section"
+          }
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      },
+      "additionalProperties": true
+    },
+    "block": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "type": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "content": true,
+        "data": true,
+        "language": {
+          "$ref": "#/$defs/languageTag"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/block"
+          }
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      },
+      "additionalProperties": true
+    },
+    "annotation": {
+      "type": "object",
+      "required": ["id", "targetBlockId"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "targetBlockId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "creatorAgentId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "modifiedAt": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      },
+      "additionalProperties": true
+    },
+    "citation": {
+      "type": "object",
+      "required": ["id", "target", "anchorId", "targetBlockId"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "target": {
+          "$ref": "#/$defs/identifier"
+        },
+        "anchorId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "targetBlockId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "clusterId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      },
+      "additionalProperties": true
+    },
+    "citationCluster": {
+      "type": "object",
+      "required": ["id", "anchorId", "targetBlockId", "citationIds"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "anchorId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "targetBlockId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "citationIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      },
+      "additionalProperties": true
+    },
+    "crossReference": {
+      "type": "object",
+      "required": ["id", "sourceBlockId", "targetId"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "sourceBlockId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "targetId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      },
+      "additionalProperties": true
+    },
+    "asset": {
+      "type": "object",
+      "required": ["id", "mediaType"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "mediaType": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9!#$&^_.+-]+/[A-Za-z0-9!#$&^_.+-]+(?:;.*)?$"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "uri": {
+          "type": "string",
+          "format": "uri-reference"
+        },
+        "checksum": {
+          "type": "object",
+          "required": ["algorithm", "value"],
+          "properties": {
+            "algorithm": {
+              "type": "string",
+              "minLength": 1
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": true
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      },
+      "additionalProperties": true
+    },
+    "revision": {
+      "type": "object",
+      "required": ["id", "parentRevisionIds", "createdAt"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "parentRevisionIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "createdAt": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "actorAgentId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      },
+      "additionalProperties": true
+    },
+    "revisionHistory": {
+      "type": "object",
+      "required": [
+        "completeness",
+        "rootRevisionId",
+        "headRevisionId",
+        "revisions"
+      ],
+      "properties": {
+        "profile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "completeness": {
+          "enum": ["complete", "partial", "shallow"]
+        },
+        "rootRevisionId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "headRevisionId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "revisions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/revision"
+          }
+        },
+        "omissionNotice": {
+          "type": "string",
+          "minLength": 1
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      },
+      "additionalProperties": true,
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "completeness": {
+                "enum": ["partial", "shallow"]
+              }
+            },
+            "required": ["completeness"]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "omissionNotice": true
+            },
+            "required": ["omissionNotice"]
+          }
+        }
+      ]
+    }
+  }
+}
