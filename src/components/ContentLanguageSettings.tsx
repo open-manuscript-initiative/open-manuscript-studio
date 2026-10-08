@@ -187,7 +187,7 @@ export function ContentLanguageSettings() {
         </div>
 
         <div className="studio-language-settings-grid">
-          <section className="studio-language-setting-row">
+          <section className="studio-language-setting-row studio-language-setting-row--interface">
             <div className="studio-language-setting-heading">
               <div>
                 <h5>{t('studio.settings.interfaceLanguages')}</h5>
