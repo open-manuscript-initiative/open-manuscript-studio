@@ -5,15 +5,13 @@ import {
   OMI_MANUSCRIPT_SCHEMA_URI,
   type OmiManuscriptSchemaUri,
 } from '../model/omiFormatConstants';
-import type { OmiManuscript, OmiManuscriptState } from '../types/omi';
+import type {
+  OmiFileFormatEnvelope,
+  OmiManuscript,
+  OmiManuscriptState,
+} from '../types/omi';
+export type { OmiFileFormatEnvelope } from '../types/omi';
 import { validateOmiManuscriptSchema } from './omiSchemaValidation';
-
-export interface OmiFileFormatEnvelope {
-  format: 'manuscript';
-  version: typeof OMI_FILE_FORMAT_VERSION;
-  profiles: string[];
-  specifications: Record<string, string>;
-}
 
 export type PortableOmiState = Omit<OmiManuscriptState, 'schema'> & {
   schema: OmiManuscriptSchemaUri;
@@ -74,7 +72,7 @@ export function toPortableOmiState(
     ...state,
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
     omi: createOmiFileFormatEnvelope(false),
-    tombstones: state.tombstones.map((tombstone) => ({
+    tombstones: (state.tombstones ?? []).map((tombstone) => ({
       ...tombstone,
       id: tombstoneId(tombstone),
     })),
@@ -92,6 +90,7 @@ export function toPortableOmiManuscript(
   manuscript: OmiManuscript,
 ): PortableOmiManuscript {
   const {
+    omi: sourceEnvelope,
     versioningModelVersion,
     headRevisionId,
     revisionHistory,
@@ -99,7 +98,7 @@ export function toPortableOmiManuscript(
   } = manuscript;
   const portable = {
     ...toPortableOmiState(state),
-    omi: createOmiFileFormatEnvelope(true),
+    omi: mergeOmiFileFormatEnvelope(sourceEnvelope, true),
     versioningModelVersion,
     headRevisionId,
     revisionHistory: portableRevisionHistory(manuscript, revisionHistory),
@@ -107,6 +106,26 @@ export function toPortableOmiManuscript(
 
   assertPortableOmiManuscript(portable);
   return portable;
+}
+
+function mergeOmiFileFormatEnvelope(
+  source: OmiFileFormatEnvelope | undefined,
+  includeHistory: boolean,
+): OmiFileFormatEnvelope {
+  const canonical = createOmiFileFormatEnvelope(includeHistory);
+  if (!source) return canonical;
+
+  return {
+    ...canonical,
+    ...source,
+    format: canonical.format,
+    version: canonical.version,
+    profiles: [...new Set([...source.profiles, ...canonical.profiles])],
+    specifications: {
+      ...canonical.specifications,
+      ...source.specifications,
+    },
+  };
 }
 
 export function parseOmiJson(raw: string): OmiManuscript {
@@ -163,7 +182,6 @@ export function parsePortableOmiManuscript(value: unknown): OmiManuscript {
   }
 
   const {
-    omi: _omi,
     publicationSignatures: _publicationSignatures,
     ...manuscript
   } = record;
