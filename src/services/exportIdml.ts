@@ -130,6 +130,7 @@ export function buildIdmlExport(
   const frameBottom = Math.max(frameTop + 1, pageHeightPoints - bottomMarginPoints);
   const pageWidth = formatIdmlPoints(pageWidthPoints);
   const pageHeight = formatIdmlPoints(pageHeightPoints);
+  const pageOrientation = pageWidthPoints > pageHeightPoints ? 'Landscape' : 'Portrait';
   const left = formatIdmlPoints(frameLeft);
   const right = formatIdmlPoints(frameRight);
   const top = formatIdmlPoints(frameTop);
@@ -156,7 +157,7 @@ export function buildIdmlExport(
   const stylesXml = buildStylesXml(publicationStyle);
   const preferencesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <idPkg:Preferences xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}">
-  <DocumentPreference PageHeight="${pageHeight}" PageWidth="${pageWidth}" PagesPerDocument="1" FacingPages="false" PageOrientation="Portrait" PageBinding="LeftToRight"/>
+  <DocumentPreference PageHeight="${pageHeight}" PageWidth="${pageWidth}" PagesPerDocument="1" FacingPages="false" PageOrientation="${pageOrientation}" PageBinding="LeftToRight"/>
 </idPkg:Preferences>`;
   const fontsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <idPkg:Fonts xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}"><FontFamily Self="FontFamily/Times New Roman" Name="Times New Roman"/></idPkg:Fonts>`;
