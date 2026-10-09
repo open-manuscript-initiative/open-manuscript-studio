@@ -21,6 +21,7 @@ import { getModuleShellCopy } from '../src/modules/moduleShellTranslations.ts';
 import { resolveStudioModuleActivationState } from '../src/modules/types.ts';
 import { searchEuropeana } from '../server/src/integrations/europeana/europeanaSearch.ts';
 import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSearch.ts';
+import { buildRomanianArchivesSearchUrl } from '../src/modules/history-archives/romanianArchives.ts';
 import { searchSefaria } from '../server/src/integrations/sefaria/sefariaSearch.ts';
 import { createExperimentalWorkspace, isExperimentalWorkspace, parseExperimentalWorkspace } from '../src/modules/experimental-laboratory/model.ts';
 import { addDesignDeviation, createStatisticalWorkspace, describe, estimateTwoGroupSampleSize, isStatisticalWorkspace, linearRegression, oneWayAnova, parseDelimited, parseLaboratoryMeasurements, parseStatisticalWorkspace, preregisterDesign, randomizeParticipants, welchTTest } from '../src/modules/statistical-analysis/model.ts';
@@ -178,6 +179,16 @@ test('workspace activation state remains bounded by the enabled module policy', 
 });
 
 
+
+test('Romanian Archives search URL targets the official text catalogue and encodes the query', () => {
+  const url = new URL(buildRomanianArchivesSearchUrl('  Béthlen + Oradea  '));
+
+  assert.equal(url.origin, 'https://descopera.arhivelenationale.ro');
+  assert.equal(url.pathname, '/cautare-text/');
+  assert.equal(url.searchParams.get('ts'), 'Béthlen + Oradea');
+  assert.equal(url.searchParams.get('pg'), '1');
+  assert.equal(url.searchParams.get('pgs'), '10');
+});
 
 test('Europeana adapter uses the secret header and normalizes archival discovery metadata', async () => {
   let requestedUrl: URL | undefined;
