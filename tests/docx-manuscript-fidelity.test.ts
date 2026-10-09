@@ -7,7 +7,7 @@ import {
 } from '@xmldom/xmldom';
 
 import { parseDocxManuscript } from '../src/services/docxManuscriptImport.ts';
-import { attachImportedDocumentSource } from '../src/model/importedDocumentSource.ts';
+import { attachImportedDocumentSource, selfAuthoredExternalOrigin } from '../src/model/importedDocumentSource.ts';
 import { parseDocxMonograph } from '../src/services/docxMonographImport.ts';
 import { parseDocxForStudio } from '../src/services/docxImportStrategy.ts';
 import { createStoreZip, textZipEntry } from '../src/services/simpleZip.ts';
@@ -360,4 +360,20 @@ test('converted manuscript source is visible without replacing imported structur
   assert.match(result[0]!.blocks[1]!.content, /Source: Public manuscript DOI:10.0000\/example/);
   assert.deepEqual(sections[0]!.blocks.map((block) => block.id), ['heading-1', 'body-1']);
   assert.throws(() => attachImportedDocumentSource(sections, '   ', 'Source'), /requires a source/);
+});
+
+test('self-authored external import retains hidden origin without visible filename or source paragraph', () => {
+  const sections = [{
+    id: 'section-1', title: 'Synthetic study',
+    blocks: [{ id: 'body-1', type: 'paragraph', content: 'Research text' }],
+  }];
+  const annotation = selfAuthoredExternalOrigin(sections, '2026-10-09T00:00:00.000Z', () => 'origin-1');
+  assert.equal(annotation.type, 'semantic');
+  assert.equal(annotation.targetBlockId, 'body-1');
+  assert.equal(annotation.targetText, 'omi:source-origin');
+  assert.equal(annotation.body, 'author-declared:self-authored-outside-omi');
+  assert.equal(annotation.renderingHint, 'hidden');
+  assert.equal(sections[0]!.blocks.length, 1);
+  assert.doesNotMatch(JSON.stringify(annotation), /private-file|\\/home\\//);
+  assert.throws(() => selfAuthoredExternalOrigin([], '2026-10-09T00:00:00.000Z'), /no content/);
 });
