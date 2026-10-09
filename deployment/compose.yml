@@ -17,9 +17,7 @@ services:
       start_period: 10s
 
   api:
-    build:
-      context: ..
-      dockerfile: deployment/Dockerfile.api
+    image: ghcr.io/open-manuscript-initiative/open-manuscript-studio-api:${STUDIO_IMAGE_TAG:-latest}
     restart: unless-stopped
     env_file:
       - .env
@@ -50,11 +48,7 @@ services:
       start_period: 30s
 
   web:
-    build:
-      context: ..
-      dockerfile: deployment/Dockerfile.web
-      args:
-        VITE_API_BASE_URL: /
+    image: ghcr.io/open-manuscript-initiative/open-manuscript-studio-web:${STUDIO_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${STUDIO_BIND_ADDRESS:-127.0.0.1}:${STUDIO_HTTP_PORT:-8080}:80"
