@@ -6,6 +6,31 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+## 0.3.0-beta.5 — 2026-10-09
+
+### Source review and provenance
+
+- Adds source review before imported references are added to a reference library and before DOCX/PDF manuscript conversions are accepted.
+- Preserves per-item origin for imported visual objects, including author-declared own work, without exposing private local filenames.
+- Keeps OJS/OMP source attribution visible in editable manuscript projections and expands source-backed research excerpts to additional safe module fields.
+
+### Platform diagnostics
+
+- Shows the Android versionCode in Help alongside the shared application version.
+
+### Reading and study notes
+
+- Adds a bottom study-notes panel that lists only notes anchored to text currently visible in the manuscript viewport.
+- Updates the list as the author scrolls, uses only the height needed up to half of the usable screen, and scrolls overflow within the panel.
+
+### Version identities
+
+- Advances the shared Studio version to **0.3.0-beta.5**.
+- Advances the Windows MSI product version to **0.3.0.5**.
+- Advances the iOS beta build number to **17** while retaining App Store short version **0.3.0**.
+- Advances the checked-in Android versionCode floor to **1204**; release builds derive a strictly higher run-specific code.
+- Keeps the portable manuscript format at **OMI-SPEC-320@0.2.0**. No schema or container-contract change is required.
+
 ## 0.3.0-beta.4 — 2026-10-07
 
 ### Research modules

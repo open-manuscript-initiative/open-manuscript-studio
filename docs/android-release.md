@@ -67,7 +67,7 @@ Play upload: retries deliberately keep the same derived code. Start a new
 workflow run so the next release receives a higher code.
 
 The AGP 9 experiment reserved codes 1015 through 1019. The checked-in floor for
-**0.3.0-beta.4** is versionCode **1203**. The Android Release workflow derives
+**0.3.0-beta.5** is versionCode **1204**. The Android Release workflow derives
 a fresh code above that floor from the workflow run number without modifying the
 protected main branch. Always start a new Android Release run for a new Play
 upload; do not reuse a previously uploaded run.
