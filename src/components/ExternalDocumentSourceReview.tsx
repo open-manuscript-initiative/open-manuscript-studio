@@ -24,7 +24,7 @@ export function ExternalDocumentSourceReview({
   return <section className="docx-import-card" aria-label={copy.title}>
     <h5>{copy.title}</h5>
     <p>{summary}</p>
-    <p>{copy.note}</p>
+    {!selfAuthoredExternal && <p>{copy.note}</p>}
     <label>
       <input type="checkbox" checked={selfAuthoredExternal} onChange={(event) => { onSelfAuthoredExternalChange(event.target.checked); setApproved(false); }} />
       {copy.own}
