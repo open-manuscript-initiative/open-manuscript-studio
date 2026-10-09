@@ -65,7 +65,7 @@ test('a standalone study treats all of its sections as one editing unit', () => 
   );
 });
 
-test('the Studio UI exposes one responsive toggle and a natural-height note footer', () => {
+test('the Studio UI exposes one responsive toggle and a viewport-constrained scrolling note panel', () => {
   const headerSource = readFileSync(
     new URL('../src/components/Header.tsx', import.meta.url),
     'utf8',
@@ -86,6 +86,10 @@ test('the Studio UI exposes one responsive toggle and a natural-height note foot
     new URL('../src/styles/academic-shell.css', import.meta.url),
     'utf8',
   );
+  const densityStyles = readFileSync(
+    new URL('../src/styles/ui-density.css', import.meta.url),
+    'utf8',
+  );
 
   assert.match(headerSource, /<StickyNote/);
   assert.match(headerSource, /aria-pressed=\{currentStudyNotesVisible\}/);
@@ -96,7 +100,23 @@ test('the Studio UI exposes one responsive toggle and a natural-height note foot
   assert.match(footerSource, /findRenderedNoteElement\(note\.id\)/);
   assert.match(
     continuousStyles,
-    /\.omi-current-study-notes \{[\s\S]*?height: auto;[\s\S]*?max-height: none;[\s\S]*?overflow: visible;/,
+    /\.omi-current-study-notes \{[\s\S]*?position: fixed;[\s\S]*?bottom: max\([^;]+;[\s\S]*?max-height: calc\(50dvh - 3\.75rem\);[\s\S]*?overflow-y: auto;/,
+  );
+  assert.match(
+    continuousStyles,
+    /\.omi-current-study-notes__header \{[\s\S]*?position: sticky;[\s\S]*?top: 0;/,
+  );
+  assert.doesNotMatch(
+    continuousStyles,
+    /\.omi-current-study-notes \{\s*display: none;/,
+  );
+  assert.match(
+    densityStyles,
+    /\.omi-current-study-notes \{\s*margin-top: 0;/,
+  );
+  assert.match(
+    densityStyles,
+    /\.mobile-workspace \.omi-current-study-notes \{\s*margin-top: 0;/,
   );
   assert.match(
     headerSource,
