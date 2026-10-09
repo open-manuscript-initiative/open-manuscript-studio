@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from '../i18n';
 import { getDetailedHelpLabels, getDetailedHelpTopic } from '../i18n/helpDetailedAll';
 import { getLocalizedHelpCopy } from '../i18n/helpResolver';
+import { getStudioPlatform } from '../mobile/platform/platform';
 import { BUILD_INFO } from '../version';
 import './HelpPanelSearch.css';
 
@@ -15,6 +16,7 @@ export function HelpPanel() {
   const copy = getLocalizedHelpCopy(locale);
   const detailedLabels = getDetailedHelpLabels(locale);
   const searchCopy = getHelpSearchCopy(locale);
+  const isAndroid = getStudioPlatform() === 'android';
   const [query, setQuery] = useState('');
   const collator = useMemo(() => new Intl.Collator(locale, { sensitivity: 'base', numeric: true }), [locale]);
   const topics = useMemo(() => copy.topics
@@ -50,6 +52,11 @@ export function HelpPanel() {
         <div>
           <h3>{copy.title}</h3>
           <p>{helpDescription}</p>
+          {isAndroid && BUILD_INFO.androidVersionCode ? (
+            <p className="studio-help-android-version-code">
+              {getAndroidVersionCodeLabel(locale)}: <code>{BUILD_INFO.androidVersionCode}</code>
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -121,6 +128,12 @@ export function HelpPanel() {
       </div>
     </section>
   );
+}
+
+function getAndroidVersionCodeLabel(locale: string): string {
+  if (locale === 'hu') return 'Android-verziókód';
+  if (locale === 'de') return 'Android-Versionscode';
+  return 'Android version code';
 }
 
 function normalizeHelpSearch(value: string): string {
