@@ -1,6 +1,7 @@
 import { useStudioStore } from './useStudioStore';
 import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import { createDocumentStructureProfile } from '../model/documentProfile';
+import { attachImportedDocumentSource, importedDocumentSourceLabel } from '../model/importedDocumentSource';
 import {
   createContribution,
   createPersonAgent,
@@ -12,6 +13,7 @@ import type { OmiManuscript, OmiManuscriptState } from '../types/omi';
 
 export interface ApplyDocxImportOptions {
   importDetectedAuthors: boolean;
+  source: string;
 }
 
 export function applyDocxImportPlan(
@@ -62,7 +64,7 @@ export function applyDocxImportPlan(
     agents,
     contributions,
     tombstones: [],
-    sections: plan.sections,
+    sections: attachImportedDocumentSource(plan.sections, options.source, importedDocumentSourceLabel(plan.locale ?? current.locale)),
     annotations: plan.annotations,
     bibliographicRecords: plan.bibliographicRecords,
     citations: plan.citations,
