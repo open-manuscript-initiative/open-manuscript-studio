@@ -61,7 +61,6 @@ import { ResearchModuleSettings } from '../modules/ResearchModuleSettings';
 import { AssetContainerPanel } from './AssetContainerPanel';
 import { AuthorSignaturePanel } from './AuthorSignaturePanel';
 import { CloudStorageSettings } from './CloudStorageSettings';
-import { ImportFormatSettings } from './ImportFormatSettings';
 import { ContentLanguageSettings } from './ContentLanguageSettings';
 import { CrossReferencePanel } from './CrossReferencePanel';
 import { DocxImportPanel } from './DocxImportPanel';
@@ -580,7 +579,7 @@ function ToolsView() {
 
 function SettingsView() {
   const { t } = useTranslation();
-  return <section className="studio-menu-view studio-menu-view--settings"><div className="studio-menu-view-header"><div><h3>{t('studio.settings.title')}</h3><p>{t('studio.settings.description')}</p></div></div><MenuAppearanceSettings /><ResearchModuleSettings /><ContentLanguageSettings /><ImportFormatSettings /><CloudStorageSettings /></section>;
+  return <section className="studio-menu-view studio-menu-view--settings"><div className="studio-menu-view-header"><div><h3>{t('studio.settings.title')}</h3><p>{t('studio.settings.description')}</p></div></div><MenuAppearanceSettings /><ResearchModuleSettings /><ContentLanguageSettings /><CloudStorageSettings /></section>;
 }
 
 function formatNativeLocation(
