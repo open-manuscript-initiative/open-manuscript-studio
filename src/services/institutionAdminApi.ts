@@ -85,7 +85,9 @@ export function clearInstitutionAdminLoginPending(): void {
   globalThis.localStorage?.removeItem(ADMIN_LOGIN_PENDING_KEY);
 }
 
-function apiBaseUrl(): string {\n  return getStudioApiBaseUrl();\n}
+function apiBaseUrl(): string {
+  return getStudioApiBaseUrl();
+}
 
 function authHeaders(input: HeadersInit = {}): Headers {
   const headers = new Headers(input);
