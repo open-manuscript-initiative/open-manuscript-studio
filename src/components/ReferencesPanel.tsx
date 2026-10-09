@@ -26,7 +26,7 @@ import {
   renderBibliography,
   type CustomCitationStyleConfig,
 } from '../model/cslRendering';
-import { parseReferenceInterchange } from '../services/referenceInterchange';
+import { parseReferenceInterchange, type ReferenceInterchangeImportResult } from '../services/referenceInterchange';
 import {
   listPersonalReferenceLibrary,
   savePersonalReferenceRecords,
@@ -124,6 +124,8 @@ function referenceInterchangeCopy(locale: string) {
       description:
         'RIS, BibTeX vagy CSL JSON könyvtár importálható. A Stúdió a már meglévő DOI- vagy azonos bibliográfiai rekordokat nem duplikálja.',
       importLibrary: 'Könyvtár importálása',
+      review: 'Importált források ellenőrzése', confirm: 'Ellenőrzött rekordok átvétele', cancel: 'Mégsem',
+      preview: (count: number, file: string) => `${count} forrás a következő fájlból: ${file}. A tételek bibliográfiai adatai maguk a forrásmegjelölések; ellenőrizze őket átvétel előtt.`,
       imported: (added: number, skipped: number, format: string, issues: number) =>
         `${formatLabel(format)}: ${added} rekord importálva, ${skipped} kihagyva${issues ? `, ${issues} figyelmeztetéssel` : ''}.`,
       failed: 'A referenciakönyvtár importálása sikertelen.',
@@ -135,6 +137,8 @@ function referenceInterchangeCopy(locale: string) {
       description:
         'RIS-, BibTeX- oder CSL-JSON-Bibliotheken können importiert werden. Vorhandene DOI- oder übereinstimmende bibliografische Datensätze werden nicht dupliziert.',
       importLibrary: 'Bibliothek importieren',
+      review: 'Importierte Quellen prüfen', confirm: 'Geprüfte Einträge übernehmen', cancel: 'Abbrechen',
+      preview: (count: number, file: string) => `${count} Quellen aus ${file}. Die bibliografischen Angaben sind die Quellenangaben; bitte vor der Übernahme prüfen.`,
       imported: (added: number, skipped: number, format: string, issues: number) =>
         `${formatLabel(format)}: ${added} Datensätze importiert, ${skipped} übersprungen${issues ? `, ${issues} Warnungen` : ''}.`,
       failed: 'Die Literaturbibliothek konnte nicht importiert werden.',
@@ -145,6 +149,8 @@ function referenceInterchangeCopy(locale: string) {
     description:
       'Import RIS, BibTeX, or CSL JSON libraries. Existing DOI or matching bibliographic records are not duplicated.',
     importLibrary: 'Import library',
+    review: 'Review imported sources', confirm: 'Add reviewed records', cancel: 'Cancel',
+    preview: (count: number, file: string) => `${count} sources from ${file}. The bibliographic record itself provides the source attribution; review its details before adding it.`,
     imported: (added: number, skipped: number, format: string, issues: number) =>
       `${formatLabel(format)}: ${added} records imported, ${skipped} skipped${issues ? `, ${issues} warnings` : ''}.`,
     failed: 'The reference library could not be imported.',
@@ -180,6 +186,7 @@ export function ReferencesPanel() {
   const interchangeInputRef = useRef<HTMLInputElement>(null);
   const [interchangeStatus, setInterchangeStatus] = useState<string | null>(null);
   const [interchangeError, setInterchangeError] = useState<string | null>(null);
+  const [pendingReferences, setPendingReferences] = useState<{ fileName: string; parsed: ReferenceInterchangeImportResult } | null>(null);
   const [personalRecords, setPersonalRecords] = useState<OmiBibliographicRecord[]>([]);
   const [personalQuery, setPersonalQuery] = useState('');
   const [personalBusy, setPersonalBusy] = useState(false);
@@ -273,20 +280,22 @@ export function ReferencesPanel() {
         undefined,
         file.name,
       );
-      const imported = stageAddBibliographicRecords(parsed.records);
-      setInterchangeStatus(
-        interchangeCopy.imported(
-          imported.added,
-          imported.skipped,
-          parsed.format,
-          parsed.issues.length,
-        ),
-      );
+      setPendingReferences({ fileName: file.name, parsed });
     } catch (reason) {
       setInterchangeError(
         reason instanceof Error ? reason.message : interchangeCopy.failed,
       );
     }
+  }
+
+  function confirmReferenceImport(): void {
+    if (!pendingReferences || pendingReferences.parsed.records.some((record) => !record.title.trim())) return;
+    const { parsed } = pendingReferences;
+    const imported = stageAddBibliographicRecords(parsed.records);
+    setInterchangeStatus(interchangeCopy.imported(
+      imported.added, imported.skipped, parsed.format, parsed.issues.length,
+    ));
+    setPendingReferences(null);
   }
 
   async function saveCurrentReferencesToPersonalLibrary(): Promise<void> {
@@ -399,6 +408,19 @@ export function ReferencesPanel() {
       <section className="omi-reference-interchange-note">
         <strong>{interchangeCopy.title}</strong>
         <p>{interchangeCopy.description}</p>
+        {pendingReferences && (
+          <div className="omi-module-excerpt-preview">
+            <h5>{interchangeCopy.review}</h5>
+            <p>{interchangeCopy.preview(pendingReferences.parsed.records.length, pendingReferences.fileName)}</p>
+            <ul style={{ maxHeight: '18rem', overflowY: 'auto' }}>
+              {pendingReferences.parsed.records.map((record) => (
+                <li key={record.id}>{formatBibliographyEntry(record)}</li>
+              ))}
+            </ul>
+            <button type="button" onClick={confirmReferenceImport}>{interchangeCopy.confirm}</button>
+            <button type="button" onClick={() => setPendingReferences(null)}>{interchangeCopy.cancel}</button>
+          </div>
+        )}
         {interchangeStatus ? <small role="status">{interchangeStatus}</small> : null}
         {interchangeError ? (
           <small className="omi-integration-error" role="alert">
