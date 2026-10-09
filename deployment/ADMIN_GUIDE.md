@@ -1,6 +1,6 @@
 # Administrator guide – self-hosted deployment
 
-This guide is for administrators operating the Open Manuscript Studio web edition. The installer starts the web application, API, and PostgreSQL databases with Docker Compose. The existing VPS release workflow remains separate.
+This guide is for administrators operating the Open Manuscript Studio web edition. The installer pulls the web and API images from GitHub Container Registry (GHCR) and starts them with PostgreSQL using Docker Compose. The images support `linux/amd64` and `linux/arm64`. The existing VPS release workflow remains separate.
 
 ## Supported environments
 
@@ -24,7 +24,7 @@ By default, the Studio HTTP port listens on `127.0.0.1:8080`. On Linux, point th
 
 ## Install on Linux
 
-1. Download or clone the complete Studio source repository. The Docker images are built from the source; the `deployment/` directory alone is not sufficient.
+1. Download or clone the Studio repository, or obtain its deployment bundle. The prebuilt Docker images are pulled from GHCR, so the server does not need the source tree or a local image build toolchain.
 2. Enter the deployment directory:
 
    ```sh
@@ -45,7 +45,7 @@ By default, the Studio HTTP port listens on `127.0.0.1:8080`. On Linux, point th
    ./install.sh
    ```
 
-   The script creates `deployment/.env`, applies file permissions, creates a sample SMTP configuration, and builds and starts the containers. On the first run, edit `msmtprc` with working mail relay settings; invitation and password-reset messages will not work without SMTP.
+   The script creates `deployment/.env`, applies file permissions, creates a sample SMTP configuration, pulls the API and web images, and starts the containers. On the first run, edit `msmtprc` with working mail relay settings; invitation and password-reset messages will not work without SMTP.
 
 5. Configure the reverse proxy to use `http://127.0.0.1:8080` as the Studio upstream. The proxy should forward the `Host` header, set `X-Forwarded-Proto: https`, and allow WebSocket upgrades. TLS is handled by the proxy; this Compose package does not issue certificates.
 6. Open the HTTPS address configured in `PUBLIC_ORIGIN` and complete the checks below.
@@ -117,11 +117,12 @@ Before restoring, stop the API and web services, then restore only into suitably
 ## Upgrade
 
 1. Back up the databases and configuration.
-2. Check out the source for the desired, verified Studio release; preserve the existing `.env`, `msmtprc`, and PostgreSQL data.
-3. From the `deployment/` directory, rebuild and start the services:
+2. Set `STUDIO_IMAGE_TAG` in `.env` to `latest` or the desired published version tag; preserve the existing `.env`, `msmtprc`, and PostgreSQL data.
+3. From the `deployment/` directory, pull and start the services:
 
    ```sh
-   docker compose -f compose.yml up --build -d
+   docker compose -f compose.yml pull
+   docker compose -f compose.yml up -d
    docker compose -f compose.yml ps
    ```
 
