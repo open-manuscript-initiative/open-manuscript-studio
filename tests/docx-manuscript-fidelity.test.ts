@@ -7,6 +7,7 @@ import {
 } from '@xmldom/xmldom';
 
 import { parseDocxManuscript } from '../src/services/docxManuscriptImport.ts';
+import { attachImportedDocumentSource } from '../src/model/importedDocumentSource.ts';
 import { parseDocxMonograph } from '../src/services/docxMonographImport.ts';
 import { parseDocxForStudio } from '../src/services/docxImportStrategy.ts';
 import { createStoreZip, textZipEntry } from '../src/services/simpleZip.ts';
@@ -345,3 +346,18 @@ function installXmlDomGlobals(): void {
     });
   }
 }
+
+test('converted manuscript source is visible without replacing imported structure', () => {
+  const sections = [{
+    id: 'section-1', title: 'Synthetic study',
+    blocks: [
+      { id: 'heading-1', type: 'heading', content: 'Synthetic study' },
+      { id: 'body-1', type: 'paragraph', content: 'Research text' },
+    ],
+  }];
+  const result = attachImportedDocumentSource(sections, 'Public manuscript DOI:10.0000/example', 'Source', () => 'source-1');
+  assert.deepEqual(result[0]?.blocks.map((block) => block.id), ['heading-1', 'source-1', 'body-1']);
+  assert.match(result[0]!.blocks[1]!.content, /Source: Public manuscript DOI:10.0000\/example/);
+  assert.deepEqual(sections[0]!.blocks.map((block) => block.id), ['heading-1', 'body-1']);
+  assert.throws(() => attachImportedDocumentSource(sections, '   ', 'Source'), /requires a source/);
+});
