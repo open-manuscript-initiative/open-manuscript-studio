@@ -1,5 +1,5 @@
+import { getStudioIntegrationApiBaseUrl } from './studioServer';
 import { isTauri } from '@tauri-apps/api/core';
-import { normalizeIntegrationApiBaseUrl } from './integrationApiBaseUrl';
 
 import type {
   IntegrationAuthenticationMode,
@@ -15,13 +15,8 @@ import type {
 } from '../integrations/webPublicationContract';
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org/api';
 const IS_TAURI = detectTauriRuntime();
-const USE_DIRECT_NATIVE_API = IS_TAURI && !import.meta.env.DEV;
-const API_BASE_URL = normalizeIntegrationApiBaseUrl(
-  import.meta.env.VITE_API_BASE_URL ??
-    (USE_DIRECT_NATIVE_API ? NATIVE_API_BASE_URL : '/api'),
-);
+const API_BASE_URL = getStudioIntegrationApiBaseUrl();
 
 export interface IntegrationConnection {
   id: string;
