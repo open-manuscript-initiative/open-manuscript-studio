@@ -1,3 +1,4 @@
+import { getStudioApiBaseUrl } from '../services/studioServer';
 import { useEffect, useState } from 'react';
 
 import './ReviewMode.css';
@@ -44,7 +45,7 @@ const assignmentLabels: Record<EditorReview['assignmentType'], string> = {
   editorial_revision: 'Editorial revision',
 };
 
-const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL ?? '').trim().replace(/\/$/, '');
+const API_BASE_URL = getStudioApiBaseUrl();
 
 export async function loadEditorReviewOverview(): Promise<EditorReview[]> {
   const response = await fetch(`${API_BASE_URL}/api/reviews/editor/overview`, {
