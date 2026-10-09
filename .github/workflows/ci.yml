@@ -146,6 +146,18 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare portable deployment validation
+        run: cp deployment/.env.example deployment/.env
+
+      - name: Validate portable Compose configuration
+        run: docker compose --project-directory deployment -f deployment/compose.yml config --quiet
+
+      - name: Build portable deployment images
+        run: docker compose --project-directory deployment -f deployment/compose.yml build
+
   collaboration-demo:
     name: Collaboration demo checks
     runs-on: ubuntu-latest
