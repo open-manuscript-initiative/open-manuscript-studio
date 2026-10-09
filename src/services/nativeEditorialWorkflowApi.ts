@@ -1,3 +1,4 @@
+import { getStudioApiBaseUrl } from './studioServer';
 import type { OmiManuscriptState } from '../types/omi';
 import type { NativeEditorialAssetPayload, NativeReviewSnapshot } from './nativeEditorialSnapshot';
 
@@ -112,9 +113,7 @@ export interface NativeEditorialRevisionPayload {
   assets: NativeEditorialAssetPayload[];
 }
 
-const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL ?? '')
-  .trim()
-  .replace(/\/$/, '');
+const API_BASE_URL = getStudioApiBaseUrl();
 
 export async function submitNativeEditorialManuscript(
   publicationVenueId: string,
