@@ -153,7 +153,9 @@ jobs:
         run: docker compose --project-directory deployment -f deployment/compose.yml config --quiet
 
       - name: Build portable deployment images
-        run: docker compose --project-directory deployment -f deployment/compose.yml build
+        run: |
+          docker build --file deployment/Dockerfile.api --tag omi-studio-api:ci .
+          docker build --file deployment/Dockerfile.web --build-arg VITE_API_BASE_URL=/ --tag omi-studio-web:ci .
 
   collaboration-demo:
     name: Collaboration demo checks
