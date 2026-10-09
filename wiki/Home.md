@@ -2,7 +2,9 @@
 
 Open Manuscript Studio is the open-source reference implementation of the [Open Manuscript Initiative (OMI)](https://openmanuscript.org/): a structured, multilingual scholarly authoring environment for writing, reviewing, exchanging, and preparing manuscripts for publication without locking them to one application, operating system, or publishing platform.
 
-> **Current release line:** `0.3.0-beta.4` · scholarly authoring, live collaboration and clarified publication exports beta
+> **Current release line:** `0.3.0-beta.5` · scholarly authoring, live collaboration and clarified publication exports beta
+
+The beta.5 quality pass improves source review and provenance for imports and visual materials, preserves publisher-source attribution in editable views, and makes study notes follow the manuscript text currently in view.
 >
 > **Principle:** Write naturally. Structure once. Publish everywhere.
 
