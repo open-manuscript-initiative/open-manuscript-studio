@@ -387,17 +387,17 @@ function getListInsertCopy(locale: string) {
 function getExternalSourceCopy(locale: string) {
   if (locale === 'hu') return {
     preview: 'Külső objektumok forrása', source: 'Forrás', own: 'Saját mű, korábban más programban készítettem; csak rejtett eredetjelölés',
-    explanation: 'Az ismert fájlnevet és fájlrészt előre kitöltöttük. Ellenőrizze vagy pontosítsa; a forrás minden beszúrt objektum után láthatóan megjelenik.',
+    explanation: 'Az ismert fájlnevet és fájlrészt előre kitöltöttük. Ellenőrizze vagy pontosítsa; a külső forrású objektum után láthatóan megjelenik; saját mű esetén csak rejtett eredetjelölés marad.',
     required: 'Minden külső objektumhoz kötelező a forrás.', confirm: 'Objektumok beszúrása forrással', cancel: 'Mégsem',
   };
   if (locale === 'de') return {
     preview: 'Quellen externer Objekte', source: 'Quelle', own: 'Eigenes Werk aus einem anderen Programm; nur verborgene Herkunftsangabe',
-    explanation: 'Bekannte Dateinamen und Teile sind vorausgefüllt. Bitte prüfen oder ergänzen; die Quelle erscheint sichtbar nach jedem eingefügten Objekt.',
+    explanation: 'Bekannte Dateinamen und Teile sind vorausgefüllt. Bitte prüfen oder ergänzen; bei fremden Objekten erscheint die Quelle sichtbar; bei eigenen bleibt nur die verborgene Herkunftsangabe.',
     required: 'Für jedes externe Objekt ist eine Quelle erforderlich.', confirm: 'Objekte mit Quelle einfügen', cancel: 'Abbrechen',
   };
   return {
     preview: 'Sources of external objects', source: 'Source', own: 'My own work made in another editor; hidden origin declaration only',
-    explanation: 'Known file names and parts are prefilled. Review or refine them; the source appears visibly after each inserted object.',
+    explanation: 'Known file names and parts are prefilled. Review or refine them; third-party objects show a visible source; own work retains only a hidden origin declaration.',
     required: 'Every external object requires a source.', confirm: 'Insert objects with sources', cancel: 'Cancel',
   };
 }
