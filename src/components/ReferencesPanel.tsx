@@ -414,10 +414,7 @@ export function ReferencesPanel() {
             <p>{interchangeCopy.preview(pendingReferences.parsed.records.length, pendingReferences.fileName)}</p>
             <ul>
               {pendingReferences.parsed.records.slice(0, 20).map((record) => (
-                <li key={record.id}>{record.title}
-                  {getBibliographicIdentifier(record, 'doi') ? ` · DOI: ${getBibliographicIdentifier(record, 'doi')}` : ''}
-                  {record.url ? ` · ${record.url}` : ''}
-                </li>
+                <li key={record.id}>{formatBibliographyEntry(record)}</li>
               ))}
             </ul>
             {pendingReferences.parsed.records.length > 20 && <p>+{pendingReferences.parsed.records.length - 20}</p>}
