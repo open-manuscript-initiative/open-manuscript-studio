@@ -7,6 +7,7 @@ import { corpusLinguisticsModule, criticalTextEditionModule, culturalHeritageMod
 import { getModuleShellCopy } from './moduleShellTranslations';
 import { EuropeanaSearchPanel } from './history-archives/EuropeanaSearchPanel';
 import { NaraSearchPanel } from './history-archives/NaraSearchPanel';
+import { RomanianArchivesSearchPanel } from './history-archives/RomanianArchivesSearchPanel';
 import { EleveltarSearchPanel } from './history-archives/EleveltarSearchPanel';
 import { ReligiousTextsPanel } from './religious-texts/ReligiousTextsPanel';
 import { CriticalTextEditionPanel } from './critical-text-edition/CriticalTextEditionPanel';
@@ -120,6 +121,7 @@ export function ModuleManagerPanel({
                   <>
                     <EuropeanaSearchPanel copy={copy.europeana} locale={locale} />
                     <NaraSearchPanel copy={copy.nara} locale={locale} />
+                    <RomanianArchivesSearchPanel locale={locale} />
                     <EleveltarSearchPanel locale={locale} />
                   </>
                 ) : module.id === religiousTextsModule.id ? (
