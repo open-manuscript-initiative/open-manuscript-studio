@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
+import { getStudioIntegrationApiBaseUrl } from './studioServer';
+const API_BASE_URL = getStudioIntegrationApiBaseUrl();
 
 export type ProofreadingCategory = 'spelling' | 'grammar' | 'punctuation' | 'style';
 
