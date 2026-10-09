@@ -1,6 +1,6 @@
 # Portable self-hosted deployment
 
-This directory contains a provider-neutral Docker Compose deployment for the OMI Studio web application and API. It runs on Linux hosts with Docker Engine and the Compose plugin. It does not change the existing VPS deployment workflow.
+This directory contains a provider-neutral Docker Compose deployment for the OMI Studio web application and API. It runs on Linux hosts with Docker Engine and the Compose plugin and pulls prebuilt multi-platform images from GitHub Container Registry (GHCR). It does not change the existing VPS deployment workflow.
 
 ## Administrator guides
 
@@ -17,7 +17,7 @@ The web container serves the frontend and proxies API, OJS/OMP integration and c
 
 ## First installation
 
-1. Clone the complete open-manuscript-studio repository (or unpack its complete source archive) on the server; the images are built from the repository source. Run the installer from the repository's deployment directory.
+1. Clone the open-manuscript-studio repository or unpack a deployment bundle on the server. The deployment files pull the prebuilt API and web images from GHCR; a source checkout and local build toolchain are not required. Run the installer from the deployment directory.
 2. Set PUBLIC_ORIGIN in .env.example to the HTTPS URL that will be used for this installation, then run the installer from this directory with ./install.sh. It creates deployment/.env with random database and integration-encryption secrets and starts the containers.
 3. Configure your reverse proxy and TLS certificate. Point it to 127.0.0.1:8080 on Linux, or the VM address and configured port on Windows Server after allowing that port only from the reverse proxy. Set the forwarded scheme to https. Keep the Studio port private behind the reverse proxy.
 4. Configure the mail relay in deployment/msmtprc. Set permissions to 0600 and owner UID 1000. Password-reset and invitation mail depends on this relay.
@@ -29,9 +29,10 @@ The SMTP configuration is mounted read-only into the API container. Keep credent
 
 ## Upgrade
 
-From the deployment directory, update the deployment files to the desired Studio release and run:
+From the deployment directory, choose the desired image tag in `.env` (`STUDIO_IMAGE_TAG=latest` or a published version tag), then pull and start the images:
 
-    docker compose -f compose.yml up --build -d
+    docker compose -f compose.yml pull
+    docker compose -f compose.yml up -d
 
 The API applies pending migrations before accepting traffic. Back up PostgreSQL before upgrades. Do not run two API containers during schema migrations.
 
