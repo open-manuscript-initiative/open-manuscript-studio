@@ -5,7 +5,7 @@ This directory contains a provider-neutral Docker Compose deployment for the OMI
 ## Supported deployment shape
 
 - Linux server: run this Compose stack directly.
-- Windows Server 2022 or 2025: run the same stack inside an Ubuntu Server virtual machine managed by Hyper-V. Give the VM a stable address and forward HTTPS from the Windows host or an upstream reverse proxy to the VM's HTTP port. Docker Desktop is not supported on Windows Server, and Docker's Windows Server engine runs Windows containers rather than this Linux-based application.
+- Windows Server 2022 or 2025: run the same stack inside an Ubuntu Server virtual machine managed by Hyper-V. Give the VM a stable address, set STUDIO_BIND_ADDRESS=0.0.0.0 in deployment/.env inside the VM, and forward HTTPS from the Windows host or an upstream reverse proxy to the VM's HTTP port. Restrict that HTTP port to the reverse proxy with the VM firewall. Docker Desktop is not supported on Windows Server, and Docker's Windows Server engine runs Windows containers rather than this Linux-based application.
 - Windows 10/11 development host: Docker Desktop with Linux containers can run the stack for evaluation.
 
 The web container serves the frontend and proxies API, OJS/OMP integration and collaboration WebSocket traffic to the API. PostgreSQL holds two separate databases: omi_studio and omi_identity. The API runs both Prisma migrations on startup. The database volume persists across upgrades and container rebuilds.
@@ -14,7 +14,7 @@ The web container serves the frontend and proxies API, OJS/OMP integration and c
 
 1. Copy this directory to the server, preserving its folder structure.
 2. Set PUBLIC_ORIGIN in .env.example to the HTTPS URL that will be used for this installation, then run the installer from this directory with ./install.sh. It creates deployment/.env with random database and integration-encryption secrets and starts the containers.
-3. Configure your reverse proxy and TLS certificate. Point it to 127.0.0.1:8080 on Linux, or the VM address and configured port on Windows Server. Set the forwarded scheme to https. Keep the Studio port private behind the reverse proxy.
+3. Configure your reverse proxy and TLS certificate. Point it to 127.0.0.1:8080 on Linux, or the VM address and configured port on Windows Server after allowing that port only from the reverse proxy. Set the forwarded scheme to https. Keep the Studio port private behind the reverse proxy.
 4. Configure the mail relay in deployment/msmtprc. Set permissions to 0600 and owner UID 1000. Password-reset and invitation mail depends on this relay.
 5. Rebuild the web container after changing PUBLIC_ORIGIN or frontend build settings.
 
