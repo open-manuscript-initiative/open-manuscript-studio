@@ -9,6 +9,7 @@ import {
 } from 'react';
 
 import { clearDocumentClosedState } from '../app/documentCloseState';
+import type { DocxManuscriptImportPlan } from '../services/docxManuscriptImport';
 import { applyDocxImportPlan } from '../app/docxImportActions';
 import { useTranslation } from '../i18n';
 import { getDocxImportCopy } from '../i18n/docxImport';
@@ -17,6 +18,7 @@ import {
   type DocxImportStage,
 } from '../services/docxImportStrategy';
 import { PdfImportPanel } from './PdfImportPanel';
+import { ExternalDocumentSourceReview } from './ExternalDocumentSourceReview';
 
 interface DocxImportPanelProps {
   onImported?: () => void;
@@ -31,6 +33,8 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
   const [importStage, setImportStage] = useState<DocxImportStage | null>(null);
   const [largeDocumentMode, setLargeDocumentMode] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<DocxManuscriptImportPlan | null>(null);
+  const [source, setSource] = useState('');
 
   async function handleFile(file: File | undefined): Promise<void> {
     if (!file || parsing) return;
@@ -38,6 +42,7 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
     setImportStage('preparing');
     setLargeDocumentMode(false);
     setError(null);
+    setPendingPlan(null);
 
     try {
       await yieldToBrowser();
@@ -49,11 +54,8 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
       });
       await yieldToBrowser();
 
-      applyDocxImportPlan(plan, {
-        importDetectedAuthors: plan.authors.length > 0,
-      });
-      clearDocumentClosedState();
-      onImported?.();
+      setPendingPlan(plan);
+      setSource(plan.fileName);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
@@ -61,6 +63,21 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
       setImportStage(null);
       setLargeDocumentMode(false);
       if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+
+  function confirmImport(): void {
+    if (!pendingPlan || !source.trim()) return;
+    try {
+      applyDocxImportPlan(pendingPlan, {
+        importDetectedAuthors: pendingPlan.authors.length > 0,
+        source,
+      });
+      setPendingPlan(null);
+      clearDocumentClosedState();
+      onImported?.();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   }
 
@@ -116,6 +133,15 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
           </div>
         ) : null}
       </section>
+      {pendingPlan && <ExternalDocumentSourceReview
+        key={pendingPlan.fileName}
+        locale={locale}
+        summary={pendingPlan.title}
+        source={source}
+        onSourceChange={setSource}
+        onConfirm={confirmImport}
+        onCancel={() => { setPendingPlan(null); setSource(''); }}
+      />}
       <PdfImportPanel onImported={onImported} />
     </>
   );
