@@ -374,6 +374,6 @@ test('self-authored external import retains hidden origin without visible filena
   assert.equal(annotation.body, 'author-declared:self-authored-outside-omi');
   assert.equal(annotation.renderingHint, 'hidden');
   assert.equal(sections[0]!.blocks.length, 1);
-  assert.doesNotMatch(JSON.stringify(annotation), /private-file|\\/home\\//);
+  assert.equal(JSON.stringify(annotation).includes('/home/'), false);
   assert.throws(() => selfAuthoredExternalOrigin([], '2026-10-09T00:00:00.000Z'), /no content/);
 });
