@@ -1,3 +1,4 @@
+import { getStudioApiBaseUrl } from './studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 
 import type {
@@ -6,7 +7,6 @@ import type {
 } from '../model/scholarlyMetadata';
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 
 export interface CreatePublicationVenueInput {
   type: OmiPublicationVenueType;
@@ -210,13 +210,7 @@ async function jsonRequest(
   return response;
 }
 
-function apiBaseUrl(): string {
-  const configured = import.meta.env?.VITE_API_BASE_URL?.trim();
-  if (configured) return configured.replace(/\/+$/, '');
-  return isTauri() && !import.meta.env.DEV
-    ? NATIVE_API_BASE_URL
-    : '';
-}
+function apiBaseUrl(): string {\n  return getStudioApiBaseUrl();\n}
 
 function headers(): Headers {
   const result = new Headers({ Accept: 'application/json' });
