@@ -1,4 +1,5 @@
-import type { OmiBlock } from '../types/omi';
+import type { OmiAnnotation, OmiBlock } from '../types/omi';
+import { selfAuthoredExternalBlockOrigin } from './importedDocumentSource';
 
 export interface ExternalObjectDraft {
   block: OmiBlock;
@@ -32,4 +33,26 @@ export function buildSourcedVisualBlocks(
 
 export function prefillExternalSource(fileName: string, sourcePart?: string): string {
   return [fileName.trim(), sourcePart?.trim()].filter(Boolean).join(' · ');
+}
+
+/** Previewed ownership is per imported object, including mixed batches. */
+export function buildAttributedVisualImport(
+  drafts: readonly (ExternalObjectDraft & { selfAuthoredExternal?: boolean })[],
+  sourceLabel: string,
+  timestamp: string,
+  newId: () => string = () => crypto.randomUUID(),
+): { blocks: OmiBlock[]; annotations: OmiAnnotation[] } {
+  if (drafts.length === 0 || drafts.some(({ block, source, selfAuthoredExternal }) =>
+    !block.visual || (!selfAuthoredExternal && !source.trim()))) {
+    throw new Error('Every third-party visual object requires a source.');
+  }
+  const annotations: OmiAnnotation[] = [];
+  const blocks = drafts.flatMap(({ block, source, selfAuthoredExternal }) => {
+    if (selfAuthoredExternal) {
+      annotations.push(selfAuthoredExternalBlockOrigin(block.id, timestamp, newId));
+      return [block];
+    }
+    return buildSourcedVisualBlocks([{ block, source }], sourceLabel, newId);
+  });
+  return { blocks, annotations };
 }
