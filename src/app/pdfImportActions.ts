@@ -137,7 +137,7 @@ export function applyPdfImportResult(result: PdfImportResult, source: string, se
     updatedAt: timestamp,
   };
   const envelope = createInitialVersioningEnvelope(state, {
-    summary: `Imported PDF manuscript: ${result.source.fileName}`,
+    summary: selfAuthoredExternal ? 'Imported self-authored PDF manuscript' : `Imported PDF manuscript: ${result.source.fileName}`,
     timestamp,
     completeness: result.warnings.length > 0 ? 'shallow' : 'complete',
   });
