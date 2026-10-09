@@ -1,3 +1,4 @@
+import { getStudioApiBaseUrl } from './studioServer';
 export type ReviewStatus =
   | 'invited'
   | 'accepted'
@@ -178,9 +179,7 @@ interface ErrorResponse {
   error?: { code?: string; message?: string; };
 }
 
-const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL ?? '')
-  .trim()
-  .replace(/\/$/, '');
+const API_BASE_URL = getStudioApiBaseUrl();
 
 export async function claimOjsReviewLaunch(
   payload: string,
