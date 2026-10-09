@@ -1,4 +1,5 @@
 import { isTauri } from '@tauri-apps/api/core';
+import { normalizeIntegrationApiBaseUrl } from './integrationApiBaseUrl';
 
 export const DEFAULT_STUDIO_API_ORIGIN = 'https://studio.openmanuscript.org';
 export const NATIVE_SESSION_STORAGE_KEY = 'omi_native_session_token';
@@ -119,12 +120,6 @@ function normalizeConfiguredOrigin(value: string | undefined): string {
   return (value ?? '').trim().replace(/\/+$/, '');
 }
 
-function normalizeIntegrationApiBaseUrl(value: string): string {
-  const trimmed = value.trim().replace(/\/+$/, '');
-  if (!trimmed) return '';
-  if (/\/api$/i.test(trimmed)) return trimmed;
-  return `${trimmed}/api`;
-}
 
 function isLoopbackHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
