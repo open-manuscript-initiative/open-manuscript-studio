@@ -614,3 +614,12 @@ test('completed research module workspaces no longer render scaffold labels or d
     for (const moduleId of expectedModuleIds) assert.ok(copy.modules[moduleId]?.description);
   }
 });
+
+test('module insertion cannot silently copy research workspace records into a manuscript', () => {
+  const source = readFileSync(new URL('../src/modules/ResearchModuleInsertPanel.tsx', import.meta.url), 'utf8');
+  assert.equal(source.includes('localStorage'), false);
+  assert.equal(source.includes('readModuleWorkspace'), false);
+  assert.equal(source.includes('flattenModuleData'), false);
+  assert.match(source, /heading\(details\?\.title \?\? module\.titleKey\)/);
+  assert.match(source, /paragraph\(details\?\.description \?\? module\.descriptionKey\)/);
+});
