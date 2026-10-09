@@ -47,10 +47,19 @@ export function selfAuthoredExternalOrigin(
 ): import('../types/omi').OmiAnnotation {
   const target = sections.flatMap((section) => section.blocks)[0];
   if (!target) throw new Error('Imported document has no content to attribute.');
+  return selfAuthoredExternalBlockOrigin(target.id, timestamp, createId);
+}
+
+export function selfAuthoredExternalBlockOrigin(
+  targetBlockId: string,
+  timestamp: string,
+  createId: () => string = () => crypto.randomUUID(),
+): import('../types/omi').OmiAnnotation {
+  if (!targetBlockId.trim()) throw new Error('Origin declaration requires an object target.');
   return {
     id: createId(),
     type: 'semantic',
-    targetBlockId: target.id,
+    targetBlockId,
     targetText: 'omi:source-origin',
     body: 'author-declared:self-authored-outside-omi',
     renderingHint: 'hidden',
