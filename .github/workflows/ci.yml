@@ -194,6 +194,10 @@ jobs:
     needs: [build, collaboration-demo]
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+      packages: write
 
     environment:
       name: production
