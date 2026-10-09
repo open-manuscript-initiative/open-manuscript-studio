@@ -867,8 +867,18 @@ body {
   .studio-menu-body {
     position: relative;
     display: block;
+    flex: 1 1 0;
+    height: 0;
     min-height: 0;
     overflow: hidden;
+  }
+
+  .studio-menu-content {
+    display: block;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .studio-menu-navigation {
