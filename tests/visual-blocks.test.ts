@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { buildSourcedVisualBlocks, prefillExternalSource } from '../src/model/externalObjectSources.ts';
+import { buildAttributedVisualImport, buildSourcedVisualBlocks, prefillExternalSource } from '../src/model/externalObjectSources.ts';
 import {
   latexToMathMl,
   sanitizeMathMlForPreview,
@@ -163,4 +163,21 @@ test('external objects retain a visible source after each object and reject miss
   assert.match(blocks[3]!.content, /Source: Public data, figure 2/);
   assert.throws(() => buildSourcedVisualBlocks([{ block: first, source: '   ' }], 'Source'), /requires a source/);
   assert.throws(() => buildSourcedVisualBlocks([{ block: { id: 'text', type: 'paragraph', content: '' }, source: 'X' }], 'Source'), /requires a source/);
+});
+
+test('mixed import carries own-work origin privately while requiring third-party source', () => {
+  const own = createTableBlock([['Self', '1']], {}, 'table-own');
+  const external = createChartBlock([['Public', '2']], {}, 'chart-public');
+  const result = buildAttributedVisualImport([
+    { block: own, source: 'private-draft.xlsx', selfAuthoredExternal: true },
+    { block: external, source: 'Public dataset', selfAuthoredExternal: false },
+  ], 'Source', '2026-10-09T00:00:00.000Z', () => 'origin-or-source');
+  assert.deepEqual(result.blocks.map((block) => block.id), ['table-own', 'chart-public', 'origin-or-source']);
+  assert.equal(result.annotations.length, 1);
+  assert.equal(result.annotations[0]?.targetBlockId, 'table-own');
+  assert.equal(result.annotations[0]?.renderingHint, 'hidden');
+  assert.equal(JSON.stringify(result).includes('private-draft.xlsx'), false);
+  assert.throws(() => buildAttributedVisualImport([
+    { block: external, source: '', selfAuthoredExternal: false },
+  ], 'Source', '2026-10-09T00:00:00.000Z'), /requires a source/);
 });
