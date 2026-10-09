@@ -1,3 +1,4 @@
+import { getStudioApiBaseUrl } from '../../services/studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 
 export class SefariaSearchError extends Error {
@@ -25,7 +26,6 @@ export interface SefariaSearchPage {
 }
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 
 export async function searchSefariaTexts(
   query: string,
@@ -69,8 +69,4 @@ export async function searchSefariaTexts(
   return payload as SefariaSearchPage;
 }
 
-function apiBaseUrl(): string {
-  const configured = import.meta.env?.VITE_API_BASE_URL?.trim();
-  if (configured) return configured.replace(/\/+$/, '');
-  return isTauri() && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '';
-}
+function apiBaseUrl(): string {\n  return getStudioApiBaseUrl();\n}
