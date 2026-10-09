@@ -171,7 +171,7 @@ input[size]:not([data-full-width="true"]) {
   }
 
   .omi-current-study-notes {
-    margin-top: 1.4rem;
+    margin-top: 0;
   }
 
   .omi-volume-front-matter-workspace {
@@ -606,7 +606,7 @@ input[size]:not([data-full-width="true"]) {
   }
 
   .mobile-workspace .omi-current-study-notes {
-    margin-top: 1rem;
+    margin-top: 0;
   }
 
   .mobile-workspace .omi-block-editor {
