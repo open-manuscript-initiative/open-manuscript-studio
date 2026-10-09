@@ -168,6 +168,7 @@ test('external objects retain a visible source after each object and reject miss
 test('mixed import carries own-work origin privately while requiring third-party source', () => {
   const own = createTableBlock([['Self', '1']], {}, 'table-own');
   const external = createChartBlock([['Public', '2']], {}, 'chart-public');
+  if (own.visual) own.visual.provenance = { sourceFormat: 'xlsx', fileName: 'private-draft.xlsx', importedAt: '2026-10-09T00:00:00.000Z' };
   const result = buildAttributedVisualImport([
     { block: own, source: 'private-draft.xlsx', selfAuthoredExternal: true },
     { block: external, source: 'Public dataset', selfAuthoredExternal: false },
