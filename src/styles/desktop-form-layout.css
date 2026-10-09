@@ -379,14 +379,6 @@
   }
 
   .studio-menu-view--settings .studio-language-settings-grid,
-  .studio-menu-view--settings .omi-import-format-settings {
-    gap: .3rem;
-  }
-
-  .studio-menu-view--settings .omi-setting-toggle {
-    padding-block: .3rem;
-  }
-
   .studio-menu-content:not(.studio-menu-content--publication-editor)
     .publication-profile-view input[type="text"],
   .studio-menu-content:not(.studio-menu-content--publication-editor)

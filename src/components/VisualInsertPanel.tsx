@@ -24,6 +24,7 @@ import { useStudioStore } from '../app/useStudioStore';
 import { stageInsertBlocks } from '../app/visualBlockActions';
 import { useTranslation } from '../i18n';
 import { getVisualElementsCopy } from '../i18n/visualElements';
+import { ResearchModuleInsertPanel } from '../modules/ResearchModuleInsertPanel';
 import type { OmiGeneratedListKind } from '../model/generatedLists';
 import type { OmiTableOfContents } from '../model/tableOfContents';
 import {
@@ -236,6 +237,13 @@ export function VisualInsertPanel({
           {listCopy.custom}
         </button>
       </div>
+
+      <ResearchModuleInsertPanel
+        locale={locale}
+        sectionId={selectedSection.id}
+        gapIndex={gapIndex}
+        onInserted={onInserted}
+      />
 
       <div
         className="omi-office-paste-target"
