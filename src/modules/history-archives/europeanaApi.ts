@@ -75,4 +75,6 @@ export async function searchEuropeanaRecords(
   return payload as EuropeanaSearchPage;
 }
 
-function apiBaseUrl(): string {\n  return getStudioApiBaseUrl();\n}
+function apiBaseUrl(): string {
+  return getStudioApiBaseUrl();
+}
