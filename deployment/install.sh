@@ -34,5 +34,6 @@ if [ ! -f msmtprc ]; then
   echo "Created msmtprc. Edit it with your SMTP relay settings before relying on invitations or password reset e-mail."
 fi
 
-docker compose -f compose.yml up --build -d
+docker compose -f compose.yml pull
+docker compose -f compose.yml up -d
 docker compose -f compose.yml ps

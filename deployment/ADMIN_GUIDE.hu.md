@@ -1,6 +1,6 @@
 # Rendszergazdai súgó – saját szerveres telepítés
 
-Ez az útmutató az Open Manuscript Studio webes kiadásának üzemeltetéséhez készült. A telepítő Docker Compose-t, az API-t és a webes felületet indítja el; az adatokat két PostgreSQL-adatbázis tárolja. A meglévő VPS-es kiadási folyamat ettől külön marad.
+Ez az útmutató az Open Manuscript Studio webes kiadásának üzemeltetéséhez készült. A telepítő a GitHub Container Registryből (GHCR) letölti a webes felület és az API előre elkészített Docker-képeit, majd Docker Compose-zal elindítja őket a két PostgreSQL-adatbázissal. A képek `linux/amd64` és `linux/arm64` architektúrát támogatnak. A meglévő VPS-es kiadási folyamat ettől külön marad.
 
 ## Milyen rendszeren fut?
 
@@ -24,7 +24,7 @@ A Studio HTTP portja alapértelmezés szerint `127.0.0.1:8080`-on figyel. Linuxo
 
 ## Linux telepítése
 
-1. Töltsd le vagy klónozd a teljes Studio forráskód-repozitóriumot. A Docker-képek ebből a forrásból épülnek; csak a `deployment/` könyvtár önmagában nem elég.
+1. Töltsd le vagy klónozd a Studio repozitóriumot, vagy szerezd be a telepítési csomagot. Az előre elkészített Docker-képeket a GHCR-ből tölti le a telepítő; a szerveren nem kell forráskódot fordítani vagy buildkörnyezetet fenntartani.
 2. Menj a telepítő könyvtárába:
 
    ```sh
@@ -45,7 +45,7 @@ A Studio HTTP portja alapértelmezés szerint `127.0.0.1:8080`-on figyel. Linuxo
    ./install.sh
    ```
 
-   A szkript létrehozza a `deployment/.env` fájlt, beállítja a jogosultságokat, elkészíti az SMTP konfiguráció mintáját, majd felépíti és elindítja a konténereket. Első indításkor szerkeszd a `msmtprc` fájlt valódi levelezési adatokkal; SMTP nélkül a meghívó- és jelszó-visszaállító e-mailek nem működnek.
+   A szkript létrehozza a `deployment/.env` fájlt, beállítja a jogosultságokat, elkészíti az SMTP konfiguráció mintáját, letölti az API- és webes image-eket, majd elindítja a konténereket. Első indításkor szerkeszd a `msmtprc` fájlt valódi levelezési adatokkal; SMTP nélkül a meghívó- és jelszó-visszaállító e-mailek nem működnek.
 
 5. A fordított proxyban a Studio háttércíme legyen `http://127.0.0.1:8080`. A proxy továbbítsa a `Host` fejlécet, állítsa be a `X-Forwarded-Proto: https` fejlécet, és engedje a WebSocket kapcsolatot. A TLS-t a proxy végzi; a Compose csomag nem állít ki tanúsítványt.
 6. Nyisd meg a `PUBLIC_ORIGIN` szerinti HTTPS-címet, és végezd el az ellenőrzőlistát.
@@ -117,11 +117,12 @@ A visszaállítás előtt állítsd le az API-t és a webet, majd csak megfelel�
 ## Frissítés
 
 1. Készíts adatbázis- és konfigurációmentést.
-2. Válts a kívánt, ellenőrzött Studio kiadás forrására; tartsd meg a meglévő `.env`, `msmtprc` és PostgreSQL adatokat.
-3. A `deployment/` könyvtárból építsd újra és indítsd el a szolgáltatásokat:
+2. Állítsd a `.env` fájlban a `STUDIO_IMAGE_TAG` értékét `latest`-re vagy a kívánt közzétett verzióra; tartsd meg a meglévő `.env`, `msmtprc` és PostgreSQL adatokat.
+3. A `deployment/` könyvtárból töltsd le és indítsd újra a szolgáltatásokat:
 
    ```sh
-   docker compose -f compose.yml up --build -d
+   docker compose -f compose.yml pull
+   docker compose -f compose.yml up -d
    docker compose -f compose.yml ps
    ```
 
