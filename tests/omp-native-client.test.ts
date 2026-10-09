@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { createManuscriptFromOmpLaunch } from '../src/integrations/omp/importOmpLaunch.ts';
 
 function source(path: string): string {
   return readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -64,4 +65,18 @@ test('author revision action remains bound to the imported OMP manuscript contex
   assert.match(menu, /ompAuthorContext\?\.writable/);
   assert.match(api, /buildDocxExport/);
   assert.match(api, /\/integrations\/omp\/native\/author\//);
+});
+
+test('OMP editable import shows publisher source without private source filename', () => {
+  const manuscript = createManuscriptFromOmpLaunch({
+    protocol: 'omi-integration/1',
+    profile: 'omi-integration/1/omp',
+    installation: { displayName: 'Synthetic Press' },
+    submission: { externalId: 'synthetic-1', title: { en: 'Synthetic Book' }, primaryLocale: 'en' },
+    sourceDocument: { kind: 'docx', fileName: 'PRIVATE-SYNTHETIC-AUTHOR.docx', paragraphs: [{ text: 'Public passage.' }] },
+  });
+  assert.ok(manuscript);
+  const content = manuscript.sections.flatMap((section) => section.blocks.map((block) => block.content)).join(' ');
+  assert.match(content, /Synthetic Press/);
+  assert.doesNotMatch(content, /PRIVATE-SYNTHETIC-AUTHOR/);
 });
