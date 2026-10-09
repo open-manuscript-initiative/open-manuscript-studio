@@ -35,6 +35,7 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [pendingPlan, setPendingPlan] = useState<DocxManuscriptImportPlan | null>(null);
   const [source, setSource] = useState('');
+  const [selfAuthoredExternal, setSelfAuthoredExternal] = useState(false);
 
   async function handleFile(file: File | undefined): Promise<void> {
     if (!file || parsing) return;
@@ -43,6 +44,7 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
     setLargeDocumentMode(false);
     setError(null);
     setPendingPlan(null);
+    setSelfAuthoredExternal(false);
 
     try {
       await yieldToBrowser();
@@ -67,11 +69,12 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
   }
 
   function confirmImport(): void {
-    if (!pendingPlan || !source.trim()) return;
+    if (!pendingPlan || (!selfAuthoredExternal && !source.trim())) return;
     try {
       applyDocxImportPlan(pendingPlan, {
         importDetectedAuthors: pendingPlan.authors.length > 0,
         source,
+        selfAuthoredExternal,
       });
       setPendingPlan(null);
       clearDocumentClosedState();
@@ -138,6 +141,8 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
         locale={locale}
         summary={pendingPlan.title}
         source={source}
+        selfAuthoredExternal={selfAuthoredExternal}
+        onSelfAuthoredExternalChange={setSelfAuthoredExternal}
         onSourceChange={setSource}
         onConfirm={confirmImport}
         onCancel={() => { setPendingPlan(null); setSource(''); }}

@@ -1,7 +1,7 @@
 import { useStudioStore } from './useStudioStore';
 import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import { OMI_IDENTITY_MODEL_VERSION } from '../model/identity';
-import { attachImportedDocumentSource, importedDocumentSourceLabel } from '../model/importedDocumentSource';
+import { attachImportedDocumentSource, importedDocumentSourceLabel, selfAuthoredExternalOrigin } from '../model/importedDocumentSource';
 import { createInitialVersioningEnvelope } from '../model/versioning';
 import type { PdfImportBlock, PdfImportResult } from '../services/pdfImport';
 import type {
@@ -24,7 +24,8 @@ interface PendingPdfAnchor {
   blockIndex: number;
 }
 
-export function applyPdfImportResult(result: PdfImportResult, source: string): string {
+export function applyPdfImportResult(result: PdfImportResult, source: string, selfAuthoredExternal = false): string {
+  if (!selfAuthoredExternal && !source.trim()) throw new Error('Imported document requires a source.');
   const current = useStudioStore.getState().manuscript;
   const timestamp = new Date().toISOString();
   const manuscriptId = crypto.randomUUID();
@@ -106,6 +107,11 @@ export function applyPdfImportResult(result: PdfImportResult, source: string): s
 
   preservePdfPublicationMetadata(result, sections, annotations, timestamp);
 
+  const sourcedSections = selfAuthoredExternal
+    ? sections
+    : attachImportedDocumentSource(sections, source, importedDocumentSourceLabel(current.locale));
+  if (selfAuthoredExternal) annotations.push(selfAuthoredExternalOrigin(sourcedSections, timestamp));
+
   const state: OmiManuscriptState = {
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
     id: manuscriptId,
@@ -121,7 +127,7 @@ export function applyPdfImportResult(result: PdfImportResult, source: string): s
     agents: [],
     contributions: [],
     tombstones: [],
-    sections: attachImportedDocumentSource(sections, source, importedDocumentSourceLabel(current.locale)),
+    sections: sourcedSections,
     annotations,
     bibliographicRecords: [],
     citations: [],
@@ -131,7 +137,7 @@ export function applyPdfImportResult(result: PdfImportResult, source: string): s
     updatedAt: timestamp,
   };
   const envelope = createInitialVersioningEnvelope(state, {
-    summary: `Imported PDF manuscript: ${result.source.fileName}`,
+    summary: selfAuthoredExternal ? 'Imported self-authored PDF manuscript' : `Imported PDF manuscript: ${result.source.fileName}`,
     timestamp,
     completeness: result.warnings.length > 0 ? 'shallow' : 'complete',
   });

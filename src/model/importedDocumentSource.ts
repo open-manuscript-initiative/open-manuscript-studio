@@ -34,3 +34,27 @@ export function importedDocumentSourceLabel(locale: string): string {
   const language = locale.toLowerCase().split('-')[0];
   return language === 'hu' ? 'Forrás' : language === 'de' ? 'Quelle' : 'Source';
 }
+
+/**
+ * An author may bring their own work from another editor without publishing a
+ * spurious citation to a local filename. This self-attestation travels with
+ * canonical OMI annotations, but is deliberately not publication text.
+ */
+export function selfAuthoredExternalOrigin(
+  sections: readonly OmiSection[],
+  timestamp: string,
+  createId: () => string = () => crypto.randomUUID(),
+): import('../types/omi').OmiAnnotation {
+  const target = sections.flatMap((section) => section.blocks)[0];
+  if (!target) throw new Error('Imported document has no content to attribute.');
+  return {
+    id: createId(),
+    type: 'semantic',
+    targetBlockId: target.id,
+    targetText: 'omi:source-origin',
+    body: 'author-declared:self-authored-outside-omi',
+    renderingHint: 'hidden',
+    createdAt: timestamp,
+    modifiedAt: timestamp,
+  };
+}
