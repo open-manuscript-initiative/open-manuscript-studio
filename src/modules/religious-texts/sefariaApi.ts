@@ -69,4 +69,6 @@ export async function searchSefariaTexts(
   return payload as SefariaSearchPage;
 }
 
-function apiBaseUrl(): string {\n  return getStudioApiBaseUrl();\n}
+function apiBaseUrl(): string {
+  return getStudioApiBaseUrl();
+}
