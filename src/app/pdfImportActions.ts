@@ -1,6 +1,7 @@
 import { useStudioStore } from './useStudioStore';
 import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import { OMI_IDENTITY_MODEL_VERSION } from '../model/identity';
+import { attachImportedDocumentSource, importedDocumentSourceLabel } from '../model/importedDocumentSource';
 import { createInitialVersioningEnvelope } from '../model/versioning';
 import type { PdfImportBlock, PdfImportResult } from '../services/pdfImport';
 import type {
@@ -23,7 +24,7 @@ interface PendingPdfAnchor {
   blockIndex: number;
 }
 
-export function applyPdfImportResult(result: PdfImportResult): string {
+export function applyPdfImportResult(result: PdfImportResult, source: string): string {
   const current = useStudioStore.getState().manuscript;
   const timestamp = new Date().toISOString();
   const manuscriptId = crypto.randomUUID();
@@ -120,7 +121,7 @@ export function applyPdfImportResult(result: PdfImportResult): string {
     agents: [],
     contributions: [],
     tombstones: [],
-    sections,
+    sections: attachImportedDocumentSource(sections, source, importedDocumentSourceLabel(current.locale)),
     annotations,
     bibliographicRecords: [],
     citations: [],
