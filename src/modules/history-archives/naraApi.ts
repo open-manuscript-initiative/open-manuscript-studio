@@ -75,4 +75,6 @@ export async function searchNaraCatalogRecords(
   return payload as NaraCatalogSearchPage;
 }
 
-function apiBaseUrl(): string {\n  return getStudioApiBaseUrl();\n}
+function apiBaseUrl(): string {
+  return getStudioApiBaseUrl();
+}
