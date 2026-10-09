@@ -9,6 +9,10 @@ export const HISTORY_ARCHIVE_SOURCE_IDS = [
   'dutch',
   'french',
   'german',
+  'swedish',
+  'polish',
+  'slovak',
+  'austrian',
 ] as const;
 
 export type HistoryArchiveSourceId = (typeof HISTORY_ARCHIVE_SOURCE_IDS)[number];
