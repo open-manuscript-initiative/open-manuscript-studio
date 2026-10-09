@@ -86,7 +86,7 @@ export function applyDocxImportPlan(
     updatedAt: timestamp,
   };
   const envelope = createInitialVersioningEnvelope(state, {
-    summary: `Imported DOCX manuscript: ${plan.fileName}`,
+    summary: options.selfAuthoredExternal ? 'Imported self-authored DOCX manuscript' : `Imported DOCX manuscript: ${plan.fileName}`,
     timestamp,
     completeness: 'complete',
   });
