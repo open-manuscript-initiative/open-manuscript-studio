@@ -46,6 +46,7 @@ export type OmiChangeOperation =
   | 'contribution.remove'
   | 'contribution.restore'
   | 'contribution.reorder'
+  | 'annotation.create'
   | 'annotation.remove'
   | 'annotation.restore'
   | 'proofing.tracking.set'
