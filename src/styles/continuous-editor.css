@@ -328,18 +328,33 @@
 }
 
 /*
- * Optional page-bottom note overview for the currently active editing unit.
- * Its natural flow height deliberately reserves exactly the space required by
- * the note text; there is no fixed-height pane or nested scrollbar.
+ * The current study's notes stay available at the bottom of the editing view.
+ * The viewport cap subtracts half of the two-row editor header before taking
+ * half of the remaining height; excess notes scroll inside this panel.
  */
 .omi-current-study-notes {
-  width: 100%;
-  height: auto;
-  min-height: 0;
-  max-height: none;
+  position: fixed;
+  z-index: 50;
+  top: auto;
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  left: max(0.75rem, env(safe-area-inset-left));
+  width: auto;
+  max-width: 76rem;
+  max-height: calc(50vh - 3.75rem);
+  max-height: calc(50dvh - 3.75rem);
   box-sizing: border-box;
-  margin: 2.5rem 0 0;
-  overflow: visible;
+  margin: 0 auto;
+  padding: 0.85rem 1rem 1rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  border: 1px solid rgba(109, 33, 48, 0.2);
+  border-radius: 0.8rem;
+  background: rgba(255, 254, 250, 0.98);
+  box-shadow: 0 -8px 28px rgba(48, 42, 35, 0.16);
+  backdrop-filter: blur(8px);
   color: #30343a;
   font-family: var(--omi-academic-serif, Georgia, "Times New Roman", serif);
 }
@@ -353,11 +368,16 @@
 }
 
 .omi-current-study-notes__header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 0.75rem;
+  padding-bottom: 0.45rem;
+  background: rgba(255, 254, 250, 0.98);
   font-family: var(--omi-academic-sans, sans-serif);
 }
 
@@ -822,10 +842,6 @@
   .omi-study-editor ~ .omi-study-editor {
     margin-top: 2.25rem;
     padding-top: 2.25rem;
-  }
-
-  .omi-current-study-notes {
-    display: none;
   }
 
   .omi-add-study-row {
