@@ -1,5 +1,5 @@
+import { getStudioApiBaseUrl } from './studioServer';
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 const NATIVE_MOBILE_RETURN_URL = 'https://app.openmanuscript.org/auth/orcid';
 
 export async function startOrcidIdentityLink(): Promise<void> {
@@ -20,7 +20,7 @@ export async function startOrcidIdentityLink(): Promise<void> {
     : native
       ? getDesktopNativeReturnOrigin()
       : undefined;
-  const baseUrl = native && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '';
+  const baseUrl = native && !import.meta.env.DEV ? getStudioApiBaseUrl() : '';
   const response = await fetch(`${baseUrl}/api/auth/orcid/link/start`, {
     method: 'POST',
     credentials: 'include',

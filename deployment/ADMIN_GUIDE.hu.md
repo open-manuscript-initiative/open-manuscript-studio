@@ -148,4 +148,4 @@ docker compose -f compose.yml logs --tail=100 postgres
 
 ## A telepítés hatóköre
 
-Ez a csomag a saját szerveren futó webes felületet és API-t biztosítja. A natív asztali és mobil alkalmazások jelenleg a saját konfigurált Studio API-végpontjukat használják; a szerver kiválasztása ezekből külön fejlesztést igényel.
+Ez a csomag a saját szerveren futó webes felületet és API-t biztosítja. A natív asztali és mobil kliensek a bejelentkezési képernyőn vagy a Fiók beállításaiban választhatnak saját Studio-szervert. Csak a szerver alapcímét adja meg (például https://studio.pelda.hu), HTTPS használatával. Szerverváltáskor a kliens kijelentkeztet az előző szerverről, és törli annak helyi munkamenet-tokenjét; a szervereken tárolt adatok változatlanok maradnak.

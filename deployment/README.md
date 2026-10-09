@@ -55,4 +55,4 @@ Store backups and the .env file separately from the host. Test restores before r
 
 The API accepts the optional identity, ORCID, cloud-storage and catalogue-provider settings documented in server/.env.example. Add only credentials that the deployment administrator has registered for the installation's own public origin. They belong in deployment/.env and must not be committed.
 
-The native desktop and mobile clients still use their configured Studio API endpoint. A self-hosted web deployment is available at its own origin; choosing a server from native clients is a separate client configuration feature.
+Native desktop and mobile clients can select a custom Studio server from the sign-in screen or Account settings. Enter the server origin only (for example, https://studio.example.org), and use HTTPS. Switching servers signs the client out of the previous server and clears its local native session token; data stored on either server is unchanged. The client continues to offer the official Studio server as its default.

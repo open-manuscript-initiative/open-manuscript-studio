@@ -1,3 +1,4 @@
+import { getStudioApiBaseUrl } from './studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 
 import type {
@@ -6,7 +7,6 @@ import type {
 } from '../model/user';
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 
 export type InstitutionalProfileUpdate = Partial<
   Omit<InstitutionalProfileInput, 'isDefault'>
@@ -81,9 +81,7 @@ async function writeProfile(
 }
 
 function apiBaseUrl(): string {
-  const configured = import.meta.env?.VITE_API_BASE_URL?.trim();
-  if (configured) return configured.replace(/\/+$/, '');
-  return isTauri() && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '';
+  return getStudioApiBaseUrl();
 }
 
 function headers(): Headers {

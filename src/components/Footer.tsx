@@ -1,3 +1,4 @@
+import { getStudioApiBaseUrl } from '../services/studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 import { useEffect, useState } from 'react';
 
@@ -17,7 +18,6 @@ type ProviderStatus = {
   };
 };
 
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 const STUDIO_SHARE_URL = 'https://openmanuscript.org/studio/';
 const STUDIO_SHARE_TITLE = 'Open Manuscript Studio';
 
@@ -28,7 +28,7 @@ function providerStatusUrl(): string {
     || location?.hostname === 'tauri.localhost';
 
   return nativeRuntime && !import.meta.env.DEV
-    ? `${NATIVE_API_BASE_URL}/api/auth/providers`
+    ? `${getStudioApiBaseUrl()}/api/auth/providers`
     : '/api/auth/providers';
 }
 

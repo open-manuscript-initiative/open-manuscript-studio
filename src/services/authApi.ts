@@ -1,3 +1,4 @@
+import { getStudioApiBaseUrl as resolveStudioApiBaseUrl } from './studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 
 import type {
@@ -79,15 +80,10 @@ const NATIVE_SESSION_KEY = 'omi_native_session_token';
 const NATIVE_AUTH_CODE_PARAM = 'nativeAuthCode';
 const NATIVE_MOBILE_RETURN_URL = 'https://app.openmanuscript.org/auth/orcid';
 const NATIVE_MOBILE_FALLBACK_URL = 'openmanuscript://auth';
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 const IS_TAURI = detectTauriRuntime();
 const IS_MOBILE_TAURI = detectMobileTauriRuntime();
-const USE_DIRECT_NATIVE_API = IS_TAURI && !import.meta.env.DEV;
 
-const API_BASE_URL = normalizeBaseUrl(
-  import.meta.env?.VITE_API_BASE_URL ??
-    (USE_DIRECT_NATIVE_API ? NATIVE_API_BASE_URL : ''),
-);
+const API_BASE_URL = resolveStudioApiBaseUrl();
 
 export async function getAuthProviders(): Promise<AuthProviders> {
   const response = await fetch(`${API_BASE_URL}/api/auth/providers`, {
@@ -666,8 +662,4 @@ function detectMobileTauriRuntime(): boolean {
   if (!IS_TAURI) return false;
   const userAgent = globalThis.navigator?.userAgent ?? '';
   return /Android|iPhone|iPad|iPod/i.test(userAgent);
-}
-
-function normalizeBaseUrl(value: string): string {
-  return value.trim().replace(/\/$/, '');
 }

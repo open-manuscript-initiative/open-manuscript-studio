@@ -1,7 +1,7 @@
+import { getStudioApiBaseUrl } from './studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 
 export interface JatsSchemaDiagnostic {
   code: 'dtd-validity-error' | 'unsafe-xml' | 'invalid-request';
@@ -26,12 +26,7 @@ export async function validateJatsSchema(
   xml: string,
 ): Promise<JatsSchemaValidationResult> {
   const native = isTauri();
-  const configured = import.meta.env?.VITE_API_BASE_URL?.trim();
-  const apiBase = configured
-    ? configured.replace(/\/+$/, '')
-    : native && !import.meta.env.DEV
-      ? NATIVE_API_BASE_URL
-      : '';
+  const apiBase = getStudioApiBaseUrl();
   const headers = new Headers({
     Accept: 'application/json',
     'Content-Type': 'application/json',

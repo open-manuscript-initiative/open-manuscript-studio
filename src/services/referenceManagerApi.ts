@@ -1,3 +1,4 @@
+import { getStudioIntegrationApiBaseUrl } from './studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 
 import {
@@ -8,7 +9,6 @@ import type {
   OmiBibliographicRecord,
   OmiBibliographicResourceType,
 } from '../types/omi';
-import { normalizeIntegrationApiBaseUrl } from './integrationApiBaseUrl';
 
 export type ReferenceManagerProviderId = 'zotero' | 'mendeley';
 
@@ -50,17 +50,13 @@ export interface ReferenceManagerOAuthResult {
 }
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org/api';
 const IS_TAURI = isTauri();
 const IS_MOBILE_TAURI =
   IS_TAURI &&
   /Android|iPhone|iPad|iPod/i.test(
     globalThis.navigator?.userAgent ?? '',
   );
-const API_BASE_URL = normalizeIntegrationApiBaseUrl(
-  import.meta.env?.VITE_API_BASE_URL ??
-    (IS_TAURI && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '/api'),
-);
+const API_BASE_URL = getStudioIntegrationApiBaseUrl();
 
 export async function listPersonalReferenceLibrary(): Promise<OmiBibliographicRecord[]> {
   const response = await apiFetch('/references/library', {

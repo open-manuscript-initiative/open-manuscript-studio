@@ -1,9 +1,9 @@
+import { getStudioApiBaseUrl } from '../services/studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 
 import type { StudioModuleId } from './types';
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 
 export interface ServerModulePolicy {
   workspaceId: string;
@@ -48,9 +48,7 @@ function requestHeaders(): Headers {
 }
 
 function apiBaseUrl(): string {
-  const configured = import.meta.env?.VITE_API_BASE_URL?.trim();
-  if (configured) return configured.replace(/\/+$/, '');
-  return isTauri() && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '';
+  return getStudioApiBaseUrl();
 }
 
 async function readResponse<T>(response: Response): Promise<T> {

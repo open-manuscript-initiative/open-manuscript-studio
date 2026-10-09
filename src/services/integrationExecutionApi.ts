@@ -1,6 +1,6 @@
-import { normalizeIntegrationApiBaseUrl } from './integrationApiBaseUrl';
+import { getStudioIntegrationApiBaseUrl } from './studioServer';
 
-const API_BASE_URL = normalizeIntegrationApiBaseUrl(import.meta.env.VITE_API_BASE_URL ?? '/api');
+const API_BASE_URL = getStudioIntegrationApiBaseUrl();
 
 export type ExternalDocumentScopeKind =
   | 'selection'
