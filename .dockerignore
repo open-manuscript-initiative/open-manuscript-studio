@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+.git
+.github
+src-tauri/target
+src-tauri/gen
+dist
+server/dist
+server/src/generated
+.env
+.env.*
+!deployment/.env.example
+!server/.env.example
+playwright-report
+test-results
+android

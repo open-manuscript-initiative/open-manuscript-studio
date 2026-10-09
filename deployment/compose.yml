@@ -1,0 +1,66 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: omi_studio
+      POSTGRES_USER: omi_studio
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run install.sh to create deployment secrets}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/01-init-databases.sh:/docker-entrypoint-initdb.d/01-init-databases.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U omi_studio -d omi_studio"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://omi_studio:${POSTGRES_PASSWORD}@postgres:5432/omi_studio?schema=public
+      IDENTITY_DATABASE_URL: postgresql://omi_studio:${POSTGRES_PASSWORD}@postgres:5432/omi_identity?schema=public
+      FRONTEND_ORIGIN: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN in deployment/.env}
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-personal}
+      INTEGRATION_MASTER_KEY: ${INTEGRATION_MASTER_KEY:?Run install.sh to create deployment secrets}
+      COLLABORATION_WS_HOST: 0.0.0.0
+      COLLABORATION_WS_PORT: 3022
+      MANUSCRIPT_COLLABORATION_ENABLED: ${MANUSCRIPT_COLLABORATION_ENABLED:-true}
+      SENDMAIL_PATH: /usr/sbin/sendmail
+      VIVLIOSTYLE_BIN: /usr/local/bin/vivliostyle
+      VIVLIOSTYLE_EXECUTABLE_BROWSER: /usr/bin/chromium
+    volumes:
+      - ./msmtprc:/etc/msmtprc:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  web:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.web
+      args:
+        VITE_API_BASE_URL: /
+    restart: unless-stopped
+    ports:
+      - "${STUDIO_BIND_ADDRESS:-127.0.0.1}:${STUDIO_HTTP_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres-data:

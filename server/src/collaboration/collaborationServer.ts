@@ -15,7 +15,7 @@ export async function startCollaborationServer(): Promise<Server> {
 
   const expectedOrigin = new URL(env.FRONTEND_ORIGIN).origin;
   const server = new Server({
-    address: '127.0.0.1',
+    address: env.COLLABORATION_WS_HOST,
     port: env.COLLABORATION_WS_PORT,
     quiet: true,
     stopOnSignals: false,

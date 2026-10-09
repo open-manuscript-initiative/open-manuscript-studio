@@ -87,6 +87,7 @@ const environmentSchema = z.object({
     .optional()
     .transform((value) => resolveManuscriptCollaborationEnabled(value, process.env.NODE_ENV)),
 
+  COLLABORATION_WS_HOST: z.string().trim().min(1).default('127.0.0.1'),
   COLLABORATION_WS_PORT: z.coerce.number().int().positive().max(65535).default(3022),
 
   PASSWORD_RESET_TTL_MINUTES: z.coerce

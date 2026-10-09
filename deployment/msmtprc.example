@@ -1,0 +1,14 @@
+# Copy this file to deployment/msmtprc, replace every placeholder, then set
+# permissions to 0600 and owner UID 1000 (the API container's unprivileged user).
+defaults
+auth           on
+tls            on
+tls_starttls   on
+logfile        /tmp/msmtp.log
+
+account default
+host smtp.example.org
+port 587
+user SMTP_USERNAME
+password SMTP_PASSWORD
+from no-reply@example.org
