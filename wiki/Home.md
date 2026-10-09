@@ -4,7 +4,7 @@ Open Manuscript Studio is the open-source reference implementation of the [Open 
 
 > **Current release line:** `0.3.0-beta.5` · scholarly authoring, live collaboration and clarified publication exports beta
 
-The beta.5 quality pass improves source review and provenance for imports and visual materials, preserves publisher-source attribution in editable views, and makes study notes follow the manuscript text currently in view.
+The beta.5 quality pass improves source review and provenance for imports and visual materials, preserves publisher-source attribution in editable views, and makes study notes follow the manuscript text currently in view. Android Help also shows its platform versionCode.
 >
 > **Principle:** Write naturally. Structure once. Publish everywhere.
 

@@ -14,6 +14,10 @@ the portable OMI document model and individual renderers.
 - Preserves per-item origin for imported visual objects, including author-declared own work, without exposing private local filenames.
 - Keeps OJS/OMP source attribution visible in editable manuscript projections and expands source-backed research excerpts to additional safe module fields.
 
+### Platform diagnostics
+
+- Shows the Android versionCode in Help alongside the shared application version.
+
 ### Reading and study notes
 
 - Adds a bottom study-notes panel that lists only notes anchored to text currently visible in the manuscript viewport.
