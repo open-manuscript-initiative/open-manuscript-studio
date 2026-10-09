@@ -1,0 +1,84 @@
+.native-server-settings {
+  margin: 0.5rem 0 1rem;
+  color: #344054;
+  font-size: 0.875rem;
+}
+
+.native-server-settings details {
+  border: 1px solid #d9e0e8;
+  border-radius: 0.625rem;
+  background: #fff;
+}
+
+.native-server-settings summary {
+  padding: 0.75rem 0.9rem;
+  color: #344054;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.native-server-settings__body {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0 0.9rem 0.9rem;
+}
+
+.native-server-settings__current,
+.native-server-settings__help {
+  margin: 0;
+  color: #667085;
+  line-height: 1.45;
+}
+
+.native-server-settings__current span {
+  overflow-wrap: anywhere;
+}
+
+.native-server-settings__body label {
+  font-weight: 600;
+}
+
+.native-server-settings__body input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #172033;
+  font: inherit;
+}
+
+.native-server-settings__body input:focus {
+  border-color: #315efb;
+  outline: 3px solid rgb(49 94 251 / 15%);
+}
+
+.native-server-settings__error {
+  margin: 0;
+  color: #b42318;
+}
+
+.native-server-settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.native-server-settings__actions button {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #344054;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.native-server-settings__actions .native-server-settings__primary {
+  border-color: #2347c5;
+  background: #315efb;
+  color: #fff;
+}
