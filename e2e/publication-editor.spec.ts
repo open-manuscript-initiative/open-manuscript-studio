@@ -157,6 +157,9 @@ test('HTML5 visual editing is responsive and preserves changes when returning to
 });
 
 test('live pages place each footnote below its anchor and reflow after zoom and editing', async ({ page }) => {
+  // This stress fixture paginates 18 note-heavy blocks and audits every text line against footnote areas.
+  // Hosted CI can need more than the suite-wide 45-second timeout when other browser tests run concurrently.
+  test.setTimeout(90_000);
   await installMockStudioApi(page);
   await signInToStudio(page);
   await page.getByRole('button', { name: /^New OMI study/ }).click();
