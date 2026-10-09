@@ -1,0 +1,66 @@
+.history-archives-source-picker {
+  margin: 0.5rem 0 1rem;
+  padding: 1rem;
+  border: 1px solid var(--studio-border, #d8dce3);
+  border-radius: 0.65rem;
+  background: var(--studio-surface, #fff);
+}
+
+.history-archives-source-picker legend {
+  padding: 0 0.35rem;
+  font-weight: 700;
+}
+
+.history-archives-source-picker > p {
+  margin: 0.2rem 0 0.8rem;
+  color: var(--studio-muted, #596273);
+}
+
+.history-archives-source-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.history-archives-source-actions button {
+  min-height: 2.2rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--studio-border, #d8dce3);
+  border-radius: 0.45rem;
+  background: var(--studio-surface, #fff);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.history-archives-source-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 0.45rem 1rem;
+}
+
+.history-archives-source-list label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.history-archives-source-list input {
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+  accent-color: var(--studio-accent, #3949ab);
+}
+
+.history-archives-portal {
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--studio-border, #d8dce3);
+}
+
+.history-archives-portal-country {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--studio-muted, #596273);
+}
