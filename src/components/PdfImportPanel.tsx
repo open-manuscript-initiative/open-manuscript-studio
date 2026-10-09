@@ -37,7 +37,7 @@ export function PdfImportPanel({ onImported }: PdfImportPanelProps) {
       const result = await importPdfForStudio(file, setProgress);
       setPendingResult(result);
       setSource(result.metadata?.dois?.length === 1
-        ? `DOI: ${result.metadata.dois[0]} · ${result.source.fileName}`
+        ? `DOI: ${result.metadata?.dois?.[0]} · ${result.source.fileName}`
         : result.source.fileName);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
