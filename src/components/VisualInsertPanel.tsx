@@ -26,6 +26,7 @@ import { useTranslation } from '../i18n';
 import { getVisualElementsCopy } from '../i18n/visualElements';
 import { ResearchModuleInsertPanel } from '../modules/ResearchModuleInsertPanel';
 import type { OmiBlock } from '../types/omi';
+import { buildSourcedVisualBlocks, prefillExternalSource } from '../model/externalObjectSources';
 import type { OmiGeneratedListKind } from '../model/generatedLists';
 import type { OmiTableOfContents } from '../model/tableOfContents';
 import {
@@ -148,20 +149,7 @@ export function VisualInsertPanel({
     setBusy(true);
     setError(null);
     try {
-      const blocks = pendingImports.flatMap(({ block, source }) => [
-        block,
-        {
-          id: crypto.randomUUID(),
-          type: 'paragraph',
-          content: JSON.stringify({
-            type: 'doc',
-            content: [{
-              type: 'paragraph',
-              content: [{ type: 'text', text: `${sourceCopy.source}: ${source.trim()}` }],
-            }],
-          }),
-        } satisfies OmiBlock,
-      ]);
+      const blocks = buildSourcedVisualBlocks(pendingImports, sourceCopy.source);
       const externalized = await externalizeBlocksForManuscript(manuscript.id, blocks);
       if (insert(externalized.blocks)) {
         stageAssetAttachments(externalized.assets);
@@ -189,8 +177,7 @@ export function VisualInsertPanel({
       const imported = groups.flatMap(({ file, blocks }) =>
         blocks.map((block) => ({
           block,
-          source: [file.name, block.visual?.provenance?.sourcePart]
-            .filter(Boolean).join(' · '),
+          source: prefillExternalSource(file.name, block.visual?.provenance?.sourcePart),
         })),
       );
       if (imported.length === 0) {
