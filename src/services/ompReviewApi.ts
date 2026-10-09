@@ -1,6 +1,5 @@
-const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL ?? '')
-  .trim()
-  .replace(/\/$/, '');
+import { getStudioApiBaseUrl } from './studioServer';
+const API_BASE_URL = getStudioApiBaseUrl();
 
 interface OmpReviewLaunchResponse {
   assignmentId: string;
