@@ -1,13 +1,13 @@
+import { getStudioApiBaseUrl } from './studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 
 export async function deleteCurrentAccount(
   confirmationEmail: string,
 ): Promise<void> {
   const native = isTauri();
-  const apiBase = native && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '';
+  const apiBase = native && !import.meta.env.DEV ? getStudioApiBaseUrl() : '';
   const headers = new Headers({
     Accept: 'application/json',
     'Content-Type': 'application/json',
