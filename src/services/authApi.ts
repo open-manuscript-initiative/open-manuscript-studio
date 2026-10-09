@@ -1,4 +1,4 @@
-import { getStudioApiBaseUrl } from './studioServer';
+import { getStudioApiBaseUrl as resolveStudioApiBaseUrl } from './studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 
 import type {
@@ -83,7 +83,7 @@ const NATIVE_MOBILE_FALLBACK_URL = 'openmanuscript://auth';
 const IS_TAURI = detectTauriRuntime();
 const IS_MOBILE_TAURI = detectMobileTauriRuntime();
 
-const API_BASE_URL = getStudioApiBaseUrl();
+const API_BASE_URL = resolveStudioApiBaseUrl();
 
 export async function getAuthProviders(): Promise<AuthProviders> {
   const response = await fetch(`${API_BASE_URL}/api/auth/providers`, {
@@ -663,4 +663,3 @@ function detectMobileTauriRuntime(): boolean {
   const userAgent = globalThis.navigator?.userAgent ?? '';
   return /Android|iPhone|iPad|iPod/i.test(userAgent);
 }
-\n
