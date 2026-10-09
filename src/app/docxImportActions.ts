@@ -1,7 +1,7 @@
 import { useStudioStore } from './useStudioStore';
 import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import { createDocumentStructureProfile } from '../model/documentProfile';
-import { attachImportedDocumentSource, importedDocumentSourceLabel } from '../model/importedDocumentSource';
+import { attachImportedDocumentSource, importedDocumentSourceLabel, selfAuthoredExternalOrigin } from '../model/importedDocumentSource';
 import {
   createContribution,
   createPersonAgent,
@@ -14,6 +14,7 @@ import type { OmiManuscript, OmiManuscriptState } from '../types/omi';
 export interface ApplyDocxImportOptions {
   importDetectedAuthors: boolean;
   source: string;
+  selfAuthoredExternal?: boolean;
 }
 
 export function applyDocxImportPlan(
@@ -48,6 +49,14 @@ export function applyDocxImportPlan(
     ),
   );
 
+  if (!options.selfAuthoredExternal && !options.source.trim()) throw new Error('Imported document requires a source.');
+  const sections = options.selfAuthoredExternal
+    ? plan.sections
+    : attachImportedDocumentSource(plan.sections, options.source, importedDocumentSourceLabel(plan.locale ?? current.locale));
+  const annotations = options.selfAuthoredExternal
+    ? [...plan.annotations, selfAuthoredExternalOrigin(sections, timestamp)]
+    : plan.annotations;
+
   const state: OmiManuscriptState = {
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
     id: manuscriptId,
@@ -64,8 +73,8 @@ export function applyDocxImportPlan(
     agents,
     contributions,
     tombstones: [],
-    sections: attachImportedDocumentSource(plan.sections, options.source, importedDocumentSourceLabel(plan.locale ?? current.locale)),
-    annotations: plan.annotations,
+    sections,
+    annotations,
     bibliographicRecords: plan.bibliographicRecords,
     citations: plan.citations,
     citationClusters: plan.citationClusters,
