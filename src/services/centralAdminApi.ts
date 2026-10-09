@@ -189,7 +189,9 @@ async function request<T = unknown>(path: string, init: RequestInit = {}): Promi
   return response.json() as Promise<T>;
 }
 
-function apiBaseUrl(): string {\n  return getStudioApiBaseUrl();\n}
+function apiBaseUrl(): string {
+  return getStudioApiBaseUrl();
+}
 
 async function apiError(response: Response): Promise<Error> {
   try {
