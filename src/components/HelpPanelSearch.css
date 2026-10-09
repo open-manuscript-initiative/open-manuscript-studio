@@ -1,3 +1,9 @@
+.studio-help-android-version-code {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  opacity: 0.78;
+}
+
 .studio-help-search {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
