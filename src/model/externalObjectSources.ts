@@ -50,7 +50,13 @@ export function buildAttributedVisualImport(
   const blocks = drafts.flatMap(({ block, source, selfAuthoredExternal }) => {
     if (selfAuthoredExternal) {
       annotations.push(selfAuthoredExternalBlockOrigin(block.id, timestamp, newId));
-      return [block];
+      const visual = block.visual!;
+      const provenance = visual.provenance;
+      // A local filename is a suggested citation, not a public authorship fact.
+      const privateSafeVisual = provenance
+        ? { ...visual, provenance: { sourceFormat: provenance.sourceFormat, importedAt: provenance.importedAt } }
+        : visual;
+      return [{ ...block, visual: privateSafeVisual } as OmiBlock];
     }
     return buildSourcedVisualBlocks([{ block, source }], sourceLabel, newId);
   });
