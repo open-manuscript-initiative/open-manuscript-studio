@@ -139,6 +139,31 @@ or record link in a module must open in a new tab or window with
 `target="_blank"` and `rel="noopener noreferrer"`, so the researcher keeps the
 Studio workspace open.
 
+## Manuscript contribution and data boundary
+
+The editor's **Insert module section** action inserts only the module's localized
+title and description. It does not read browser or IndexedDB research records,
+serialize workspace JSON, or silently copy transcripts, participant data, legal
+notes, measurements, source material, or other module state into portable OMI.
+Existing manuscript sections are unaffected. The action is a manuscript
+structure aid, not a data export.
+
+Research workspace records remain separately owned, locally stored module data.
+Their current project JSON downloads are user-initiated backups or transfers;
+they are not OMI manuscript snapshots and do not acquire OMI-SPEC-320
+compatibility guarantees. Browser storage may be cleared, unavailable, or
+device-specific. Users should retain an explicit export for important records;
+sensitive projects require an appropriate storage and retention policy.
+
+A future module-to-manuscript contribution must declare a typed, versioned
+projection with an allow-list of fields, provenance and loss diagnostics. Before
+insertion the researcher must see exactly what will be copied and explicitly
+confirm it. The projection must exclude confidential or identifying material by
+default, validate the resulting OMI blocks, and run through an application
+command with undo/revision behavior. No module may treat its raw workspace
+record as Tiptap or OMI content. Review-confidential data needs a separate
+authorization and de-identification boundary.
+
 ## Follow-up implementation
 
 Add installation-administrator UI for the server-owned module allow-list and
