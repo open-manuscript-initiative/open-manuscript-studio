@@ -47,7 +47,9 @@ function requestHeaders(): Headers {
   return headers;
 }
 
-function apiBaseUrl(): string {\n  return getStudioApiBaseUrl();\n}
+function apiBaseUrl(): string {
+  return getStudioApiBaseUrl();
+}
 
 async function readResponse<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
