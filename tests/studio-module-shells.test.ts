@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { getDisciplineWorkspaceStorageKey } from '../src/modules/disciplineWorkspace.ts';
+import { readResearchExcerpts } from '../src/modules/researchModuleProjection.ts';
 
 import {
   builtinModuleManifests,
@@ -622,4 +623,36 @@ test('module insertion cannot silently copy research workspace records into a ma
   assert.equal(source.includes('flattenModuleData'), false);
   assert.match(source, /heading\(details\?\.title \?\? module\.titleKey\)/);
   assert.match(source, /paragraph\(details\?\.description \?\? module\.descriptionKey\)/);
+});
+
+test('research excerpt projection selects named fields and never flattens confidential metadata', () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  const userId = 'synthetic-user';
+  const moduleId = 'org.omi.corpus-linguistics';
+  const key = 'omi:corpus-linguistics:v1:' + getDisciplineWorkspaceStorageKey(userId, 'default', moduleId);
+  const storage = new Map<string, string>([[key, JSON.stringify({
+    version: 1,
+    documents: [{
+      id: 'document-1', title: 'Synthetic passage', text: 'Public sample excerpt',
+      source: 'Synthetic public source, p. 2',
+      participantIdentity: 'PRIVATE SYNTHETIC NAME',
+    }],
+    confidentialInterviewNotes: 'PRIVATE SYNTHETIC NOTE',
+  })]]);
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: { localStorage: { getItem: (name: string) => storage.get(name) ?? null } },
+  });
+  try {
+    assert.deepEqual(readResearchExcerpts(moduleId, userId), [{
+      id: 'document-1', moduleId, label: 'Synthetic passage',
+      text: 'Public sample excerpt', source: 'Synthetic public source, p. 2',
+    }]);
+    assert.deepEqual(readResearchExcerpts('org.omi.social-research-methods', userId), []);
+    storage.set(key, JSON.stringify({ version: 2, documents: [{ id: 'document-1', text: 'Future schema' }] }));
+    assert.deepEqual(readResearchExcerpts(moduleId, userId), []);
+  } finally {
+    if (original) Object.defineProperty(globalThis, 'window', original);
+    else Reflect.deleteProperty(globalThis, 'window');
+  }
 });
