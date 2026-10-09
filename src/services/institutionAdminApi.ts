@@ -1,3 +1,4 @@
+import { getStudioApiBaseUrl } from './studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 
 import type { User } from '../model/user';
@@ -24,7 +25,6 @@ interface NativeAdminLoginResponse {
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
 const ADMIN_LOGIN_PENDING_KEY = 'omi_institution_admin_login_pending';
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 
 export async function loginInstitutionAdminAccount(input: {
   email: string;
@@ -85,11 +85,7 @@ export function clearInstitutionAdminLoginPending(): void {
   globalThis.localStorage?.removeItem(ADMIN_LOGIN_PENDING_KEY);
 }
 
-function apiBaseUrl(): string {
-  const configured = import.meta.env?.VITE_API_BASE_URL?.trim();
-  if (configured) return configured.replace(/\/+$/, '');
-  return isTauri() && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '';
-}
+function apiBaseUrl(): string {\n  return getStudioApiBaseUrl();\n}
 
 function authHeaders(input: HeadersInit = {}): Headers {
   const headers = new Headers(input);
