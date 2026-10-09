@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { buildSourcedVisualBlocks, prefillExternalSource } from '../src/model/externalObjectSources.ts';
 import {
   latexToMathMl,
   sanitizeMathMlForPreview,
@@ -145,4 +146,21 @@ test('never returns active markup when MathML sanitization runs without a browse
   assert.match(sanitized, /^<math /);
   assert.ok(!sanitized.includes('<script'));
   assert.ok(!sanitized.includes('onclick='));
+});
+
+test('external objects retain a visible source after each object and reject missing attribution', () => {
+  const first = createTableBlock([['Synthetic', '1']], {}, 'table-1');
+  const second = createChartBlock([['Synthetic', '2']], {}, 'chart-1');
+  const blocks = buildSourcedVisualBlocks([
+    { block: first, source: prefillExternalSource('public-data.xlsx', 'Sheet 1') },
+    { block: second, source: 'Public data, figure 2' },
+  ], 'Source', (() => {
+    let id = 0;
+    return () => `source-${++id}`;
+  })());
+  assert.deepEqual(blocks.map((block) => block.id), ['table-1', 'source-1', 'chart-1', 'source-2']);
+  assert.match(blocks[1]!.content, /Source: public-data.xlsx · Sheet 1/);
+  assert.match(blocks[3]!.content, /Source: Public data, figure 2/);
+  assert.throws(() => buildSourcedVisualBlocks([{ block: first, source: '   ' }], 'Source'), /requires a source/);
+  assert.throws(() => buildSourcedVisualBlocks([{ block: { id: 'text', type: 'paragraph', content: '' }, source: 'X' }], 'Source'), /requires a source/);
 });

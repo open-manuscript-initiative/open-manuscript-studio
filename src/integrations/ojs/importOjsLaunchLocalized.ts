@@ -1,4 +1,5 @@
 import type { OmiManuscript } from '../../types/omi';
+import { attachImportedDocumentSource, importedDocumentSourceLabel } from '../../model/importedDocumentSource';
 import {
   normalizeLocalizedTerms,
   normalizeLocalizedText,
@@ -102,8 +103,15 @@ export function createManuscriptFromOjsLaunch(
   const metadata = normalizeScholarlyMetadata(submission.metadata);
   const extensions = normalizeExtensions(submission.extensions);
 
+  // Only the author/editor launch reaches this path; reviewer projections remain
+  // under their separate anonymity authority. Do not expose private file names.
+  const source = [launch.installation?.displayName?.trim() || 'OJS', manuscript.title]
+    .filter(Boolean).join(' · ');
   return {
     ...manuscript,
+    sections: attachImportedDocumentSource(
+      manuscript.sections, source, importedDocumentSourceLabel(primaryLocale),
+    ),
     locale: primaryLocale,
     abstract: primaryAbstract,
     keywords: [...primaryKeywords],

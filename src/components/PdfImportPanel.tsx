@@ -2,6 +2,7 @@ import { AlertTriangle, FileText, LoaderCircle } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import { clearDocumentClosedState } from '../app/documentCloseState';
+import { ExternalDocumentSourceReview } from './ExternalDocumentSourceReview';
 import { applyPdfImportResult } from '../app/pdfImportActions';
 import { useTranslation } from '../i18n';
 import {
@@ -22,24 +23,40 @@ export function PdfImportPanel({ onImported }: PdfImportPanelProps) {
   const [progress, setProgress] = useState<PdfImportProgress | null>(null);
   const [summary, setSummary] = useState<PdfImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingResult, setPendingResult] = useState<PdfImportResult | null>(null);
+  const [source, setSource] = useState('');
 
   async function handleFile(file: File | undefined): Promise<void> {
     if (!file || busy) return;
     setBusy(true);
     setProgress({ status: 'queued', pagesProcessed: 0, pagesTotal: 0 });
     setSummary(null);
+    setPendingResult(null);
     setError(null);
     try {
       const result = await importPdfForStudio(file, setProgress);
-      applyPdfImportResult(result);
-      clearDocumentClosedState();
-      setSummary(result);
-      onImported?.();
+      setPendingResult(result);
+      setSource(result.metadata?.dois?.length === 1
+        ? `DOI: ${result.metadata?.dois?.[0]} · ${result.source.fileName}`
+        : result.source.fileName);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+
+  function confirmImport(): void {
+    if (!pendingResult || !source.trim()) return;
+    try {
+      applyPdfImportResult(pendingResult, source);
+      setSummary(pendingResult);
+      setPendingResult(null);
+      clearDocumentClosedState();
+      onImported?.();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   }
 
@@ -84,6 +101,16 @@ export function PdfImportPanel({ onImported }: PdfImportPanelProps) {
           {progressText}
         </p>
       ) : null}
+
+      {pendingResult && <ExternalDocumentSourceReview
+        key={pendingResult.source.fileName}
+        locale={locale}
+        summary={pendingResult.title}
+        source={source}
+        onSourceChange={setSource}
+        onConfirm={confirmImport}
+        onCancel={() => { setPendingResult(null); setSource(''); }}
+      />}
 
       {summary ? (
         <p className="docx-import-hint" role="status" aria-live="polite">
