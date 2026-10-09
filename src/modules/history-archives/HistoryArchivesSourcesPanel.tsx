@@ -210,7 +210,7 @@ export function HistoryArchivesSourcesPanel({
             <h5>{names[archive.id]}</h5>
             <p>{copy.portalNote}</p>
           </div>
-          <p className="history-archives-portal-country">{portalLabels[locale] ?? portalLabels.en![archive.id]}</p>
+          <p className="history-archives-portal-country">{(portalLabels[locale] ?? portalLabels.en!)[archive.id]}</p>
           <div className="europeana-search-controls">
             <a className="europeana-search-more" href={archive.url} target="_blank" rel="noopener noreferrer">
               {copy.open}
