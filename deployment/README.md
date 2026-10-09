@@ -18,7 +18,7 @@ The web container serves the frontend and proxies API, OJS/OMP integration and c
 4. Configure the mail relay in deployment/msmtprc. Set permissions to 0600 and owner UID 1000. Password-reset and invitation mail depends on this relay.
 5. Rebuild the web container after changing PUBLIC_ORIGIN or frontend build settings.
 
-For a direct local evaluation, set STUDIO_BIND_ADDRESS=0.0.0.0 and visit http://SERVER:8080. This exposes unencrypted HTTP and is not suitable for public production use.
+For a direct local evaluation, set PUBLIC_ORIGIN to the exact URL that will be opened (for example, http://localhost:8080), set STUDIO_BIND_ADDRESS=0.0.0.0, and visit that URL. This exposes unencrypted HTTP and is not suitable for public production use.
 
 The SMTP configuration is mounted read-only into the API container. Keep credentials out of Git and use a dedicated relay account. The integration master key and database password are generated once; keep them in a secure backup. Losing the integration key makes stored third-party credentials unreadable.
 
