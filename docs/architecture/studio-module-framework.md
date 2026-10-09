@@ -156,12 +156,15 @@ device-specific. Users should retain an explicit export for important records;
 sensitive projects require an appropriate storage and retention policy.
 
 A future module-to-manuscript contribution must declare a typed, versioned
-projection with an allow-list of fields, provenance and loss diagnostics. Before
-insertion the researcher must see exactly what will be copied and explicitly
-confirm it. The projection must exclude confidential or identifying material by
+projection with an allow-list of fields, provenance and loss diagnostics.
+Every copied excerpt must have a required source record/citation or clearly
+identified researcher-authored source, represented in the portable manuscript
+and visibly rendered beside the excerpt. Before insertion the researcher must
+see the exact text and source together and explicitly confirm both. The projection must exclude confidential or identifying material by
 default, validate the resulting OMI blocks, and run through an application
-command with undo/revision behavior. No module may treat its raw workspace
-record as Tiptap or OMI content. Review-confidential data needs a separate
+command with undo/revision behavior. A source label by itself does not authorize copying confidential records, and
+anonymous projections must not expose participant or reviewer identity. No
+module may treat its raw workspace record as Tiptap or OMI content. Review-confidential data needs a separate
 authorization and de-identification boundary.
 
 ## Follow-up implementation
