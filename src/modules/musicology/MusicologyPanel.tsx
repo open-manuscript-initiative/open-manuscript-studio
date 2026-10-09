@@ -13,10 +13,10 @@ const words={
 };
 const fresh=(language:string):MusicProject=>({title:'',composer:'',source:'',language,key:'',meter:'',tempo:'',recordingUrl:'',events:[]});
 function xmlElements(root: XmlDocument | XmlElement, selector: string): XmlElement[] {
- const segments=selector.trim().split(/\\s+/);
+ const segments=selector.trim().split(/\s+/);
  let roots: Array<XmlDocument | XmlElement>=[root];
  for(const segment of segments){
-  const match=/^([A-Za-z_][\\w:.-]*)(?:\\[([A-Za-z_:.-]+)(?:=["']([^"']*)["'])?\\])?$/.exec(segment);
+  const match=/^([A-Za-z_][\w:.-]*)(?:\[([A-Za-z_:.-]+)(?:=["']([^"']*)["'])?\])?$/.exec(segment);
   if(!match) return [];
   const [,tag,attribute,expected]=match;
   roots=roots.flatMap(node=>Array.from(node.getElementsByTagNameNS('*',tag)).filter(element=>{
@@ -34,7 +34,7 @@ function directElements(parent: XmlElement): XmlElement[] {
  return Array.from(parent.childNodes).filter(node=>node.nodeType===1) as XmlElement[];
 }
 function parseMusicXml(xml:string):{project:Partial<MusicProject>;events:MusicEvent[]}{
- if(/<!ENTITY\\b/i.test(xml))throw new Error('MusicXML entity declarations are not supported');
+ if(/<!ENTITY\b/i.test(xml))throw new Error('MusicXML entity declarations are not supported');
  const document=new XmlParser({onError:()=>{throw new Error('Invalid MusicXML')}}).parseFromString(xml,'application/xml');
  if(document.documentElement?.localName!=='score-partwise')throw new Error('Expected a score-partwise document');
  const partNames=new Map(xmlElements(document,'score-part').map(part=>[part.getAttribute('id')??'',xmlText(part,'part-name')]));
@@ -130,7 +130,7 @@ export function MusicologyPanel({locale='hu',storageKey='default'}:Props){
  async function importScore(file:File|undefined){
   if(!file)return;
   try{
-   const isMidi=/\\.midi?$/i.test(file.name)||file.type==='audio/midi'||file.type==='audio/x-midi';
+   const isMidi=/\.midi?$/i.test(file.name)||file.type==='audio/midi'||file.type==='audio/x-midi';
    const parsed=isMidi?parseMidi(await file.arrayBuffer()):parseMusicXml(await file.text());
    setProject(current=>({...current,...parsed.project,source:file.name,events:[...current.events,...parsed.events]}));setError('');
   }catch{setError(t.error)}
