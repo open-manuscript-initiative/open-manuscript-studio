@@ -72,8 +72,7 @@ export function readResearchExcerpts(moduleId: string, userId: string): Research
       const heritage = record(item);
       if (heritage) add(string(heritage.id), string(heritage.title), string(heritage.description), string(heritage.sourceUrl));
     }
-  }
-  else if (moduleId === 'org.omi.legal-sources') {
+  } else if (moduleId === 'org.omi.legal-sources') {
     for (const item of items(project.sources)) {
       const legal = record(item);
       if (!legal) continue;
