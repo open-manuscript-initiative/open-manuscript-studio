@@ -1,3 +1,4 @@
+import { getStudioApiBaseUrl } from './studioServer';
 import { createManuscriptStateDigest } from '../model/stateDigest';
 import { getExternalIdentifierValue } from '../model/identity';
 import type { OmiManuscript } from '../types/omi';
@@ -88,7 +89,6 @@ export interface AuthorSignatureStatus {
 
 const SIGNATURE_STORAGE_PREFIX = 'omi.publication-signatures.v1:';
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 
 export async function getAuthorSignatureStatus(): Promise<AuthorSignatureStatus> {
   return requestJson<AuthorSignatureStatus>('/api/signatures/status');
@@ -287,7 +287,7 @@ async function requestJson<T = unknown>(path: string, init: RequestInit = {}): P
     if (token) headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const baseUrl = native && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '';
+  const baseUrl = native && !import.meta.env.DEV ? getStudioApiBaseUrl() : '';
   const response = await fetch(`${baseUrl}${path}`, {
     ...init,
     credentials: 'include',
