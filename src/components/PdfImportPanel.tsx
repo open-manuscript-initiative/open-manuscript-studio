@@ -25,6 +25,7 @@ export function PdfImportPanel({ onImported }: PdfImportPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [pendingResult, setPendingResult] = useState<PdfImportResult | null>(null);
   const [source, setSource] = useState('');
+  const [selfAuthoredExternal, setSelfAuthoredExternal] = useState(false);
 
   async function handleFile(file: File | undefined): Promise<void> {
     if (!file || busy) return;
@@ -32,6 +33,7 @@ export function PdfImportPanel({ onImported }: PdfImportPanelProps) {
     setProgress({ status: 'queued', pagesProcessed: 0, pagesTotal: 0 });
     setSummary(null);
     setPendingResult(null);
+    setSelfAuthoredExternal(false);
     setError(null);
     try {
       const result = await importPdfForStudio(file, setProgress);
@@ -48,9 +50,9 @@ export function PdfImportPanel({ onImported }: PdfImportPanelProps) {
   }
 
   function confirmImport(): void {
-    if (!pendingResult || !source.trim()) return;
+    if (!pendingResult || (!selfAuthoredExternal && !source.trim())) return;
     try {
-      applyPdfImportResult(pendingResult, source);
+      applyPdfImportResult(pendingResult, source, selfAuthoredExternal);
       setSummary(pendingResult);
       setPendingResult(null);
       clearDocumentClosedState();
@@ -107,6 +109,8 @@ export function PdfImportPanel({ onImported }: PdfImportPanelProps) {
         locale={locale}
         summary={pendingResult.title}
         source={source}
+        selfAuthoredExternal={selfAuthoredExternal}
+        onSelfAuthoredExternalChange={setSelfAuthoredExternal}
         onSourceChange={setSource}
         onConfirm={confirmImport}
         onCancel={() => { setPendingResult(null); setSource(''); }}
