@@ -23,7 +23,7 @@ interface HistoryArchivesSourcesPanelProps {
 }
 
 interface ArchivePortal {
-  id: Extract<HistoryArchiveSourceId, 'uk' | 'italian' | 'spanish' | 'dutch' | 'french' | 'german'>;
+  id: Extract<HistoryArchiveSourceId, 'uk' | 'italian' | 'spanish' | 'dutch' | 'french' | 'german' | 'swedish' | 'polish' | 'slovak' | 'austrian'>;
   url: string;
 }
 
@@ -34,6 +34,10 @@ const archivePortals: ArchivePortal[] = [
   { id: 'dutch', url: 'https://www.nationaalarchief.nl/onderzoeken/collectie' },
   { id: 'french', url: 'https://www.siv.archives-nationales.culture.gouv.fr' },
   { id: 'german', url: 'https://invenio.bundesarchiv.de/invenio/' },
+  { id: 'swedish', url: 'https://sok.riksarkivet.se/en/digitala-forskarsalen' },
+  { id: 'polish', url: 'https://www.szukajwarchiwach.gov.pl/en/wyszukiwarka' },
+  { id: 'slovak', url: 'https://portal.minv.sk/wps/portal/domov/isea/EA07_PrezeranieObsahuArchivu' },
+  { id: 'austrian', url: 'https://www.archivinformationssystem.at/archivplansuche.aspx?ID=13' },
 ];
 
 const copyByLocale = {
@@ -71,6 +75,10 @@ const portalLabels: Record<string, Record<ArchivePortal['id'], string>> = {
     dutch: 'Netherlands',
     french: 'France',
     german: 'Germany',
+    swedish: 'Sweden',
+    polish: 'Poland',
+    slovak: 'Slovakia',
+    austrian: 'Austria',
   },
   de: {
     uk: 'Vereinigtes Königreich',
@@ -79,6 +87,10 @@ const portalLabels: Record<string, Record<ArchivePortal['id'], string>> = {
     dutch: 'Niederlande',
     french: 'Frankreich',
     german: 'Deutschland',
+    swedish: 'Schweden',
+    polish: 'Polen',
+    slovak: 'Slowakei',
+    austrian: 'Österreich',
   },
   hu: {
     uk: 'Egyesült Királyság',
@@ -87,6 +99,10 @@ const portalLabels: Record<string, Record<ArchivePortal['id'], string>> = {
     dutch: 'Hollandia',
     french: 'Franciaország',
     german: 'Németország',
+    swedish: 'Svédország',
+    polish: 'Lengyelország',
+    slovak: 'Szlovákia',
+    austrian: 'Ausztria',
   },
 };
 
@@ -102,6 +118,10 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     dutch: 'Nationaal Archief (Netherlands)',
     french: 'Archives nationales (France)',
     german: 'Bundesarchiv Invenio (Germany)',
+    swedish: 'Swedish National Archives (Riksarkivet)',
+    polish: 'Polish State Archives (Szukaj w Archiwach)',
+    slovak: 'Slovak Electronic Archives',
+    austrian: 'Austrian State Archives (ÖStA)',
   },
   de: {
     europeana: 'Europeana',
@@ -114,6 +134,10 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     dutch: 'Nationaal Archief (Niederlande)',
     french: 'Archives nationales (Frankreich)',
     german: 'Bundesarchiv Invenio (Deutschland)',
+    swedish: 'Schwedisches Nationalarchiv (Riksarkivet)',
+    polish: 'Polnisches Staatsarchiv (Szukaj w Archiwach)',
+    slovak: 'Slowakisches elektronisches Archiv',
+    austrian: 'Österreichisches Staatsarchiv (ÖStA)',
   },
   hu: {
     europeana: 'Europeana',
@@ -126,6 +150,10 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     dutch: 'Nationaal Archief (Hollandia)',
     french: 'Archives nationales (Franciaország)',
     german: 'Bundesarchiv Invenio (Németország)',
+    swedish: 'Svéd Nemzeti Levéltár (Riksarkivet)',
+    polish: 'Lengyel Állami Levéltárak (Szukaj w Archiwach)',
+    slovak: 'Szlovák Elektronikus Levéltár',
+    austrian: 'Osztrák Állami Levéltár (ÖStA)',
   },
 };
 
