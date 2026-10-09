@@ -24,17 +24,16 @@ interface HistoryArchivesSourcesPanelProps {
 
 interface ArchivePortal {
   id: Extract<HistoryArchiveSourceId, 'uk' | 'italian' | 'spanish' | 'dutch' | 'french' | 'german'>;
-  name: string;
   url: string;
 }
 
 const archivePortals: ArchivePortal[] = [
-  { id: 'uk', name: 'The National Archives (UK)', url: 'https://discovery.nationalarchives.gov.uk/' },
-  { id: 'italian', name: 'Sistema Archivistico Nazionale (Italy)', url: 'https://san.beniculturali.it/web/san/ricerca-negli-archivi' },
-  { id: 'spanish', name: 'PARES – Spanish Archives', url: 'https://pares.cultura.gob.es/ParesBusquedas20/catalogo/find' },
-  { id: 'dutch', name: 'Nationaal Archief (Netherlands)', url: 'https://www.nationaalarchief.nl/onderzoeken/collectie' },
-  { id: 'french', name: 'Archives nationales (France)', url: 'https://www.siv.archives-nationales.culture.gouv.fr' },
-  { id: 'german', name: 'Bundesarchiv Invenio (Germany)', url: 'https://invenio.bundesarchiv.de/invenio/' },
+  { id: 'uk', url: 'https://discovery.nationalarchives.gov.uk/' },
+  { id: 'italian', url: 'https://san.beniculturali.it/web/san/ricerca-negli-archivi' },
+  { id: 'spanish', url: 'https://pares.cultura.gob.es/ParesBusquedas20/catalogo/find' },
+  { id: 'dutch', url: 'https://www.nationaalarchief.nl/onderzoeken/collectie' },
+  { id: 'french', url: 'https://www.siv.archives-nationales.culture.gouv.fr' },
+  { id: 'german', url: 'https://invenio.bundesarchiv.de/invenio/' },
 ];
 
 const copyByLocale = {
@@ -150,29 +149,36 @@ export function HistoryArchivesSourcesPanel({
   workspaceId,
 }: HistoryArchivesSourcesPanelProps) {
   const storageKey = getHistoryArchiveSourcesStorageKey(userId, workspaceId);
-  const [visibleSources, setVisibleSources] = useState<HistoryArchiveSourceId[]>(
-    () => typeof window === 'undefined' ? [...DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS] : readFromBrowser(storageKey),
-  );
+  const [selection, setSelection] = useState(() => ({
+    storageKey,
+    sources: typeof window === 'undefined' ? [...DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS] : readFromBrowser(storageKey),
+  }));
   const copy = getLocaleCopy(locale);
   const names = sourceNames[locale] ?? sourceNames.en!;
+  const visibleSources = selection.storageKey === storageKey
+    ? selection.sources
+    : typeof window === 'undefined' ? [...DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS] : readFromBrowser(storageKey);
 
   useEffect(() => {
-    setVisibleSources(readFromBrowser(storageKey));
-  }, [storageKey]);
-
-  useEffect(() => {
+    if (selection.storageKey !== storageKey) {
+      setSelection({ storageKey, sources: readFromBrowser(storageKey) });
+      return;
+    }
     try {
-      window.localStorage.setItem(storageKey, JSON.stringify(visibleSources));
+      window.localStorage.setItem(storageKey, JSON.stringify(selection.sources));
     } catch {
       // Storage may be disabled; source selection still works for this page session.
     }
-  }, [storageKey, visibleSources]);
+  }, [storageKey, selection]);
+
+  function updateSources(nextSources: HistoryArchiveSourceId[]): void {
+    setSelection({ storageKey, sources: nextSources });
+  }
 
   function toggleSource(sourceId: HistoryArchiveSourceId): void {
-    setVisibleSources((current) => current.includes(sourceId)
-      ? current.filter((id) => id !== sourceId)
-      : HISTORY_ARCHIVE_SOURCE_IDS.filter((id) => id === sourceId || current.includes(id)),
-    );
+    updateSources(visibleSources.includes(sourceId)
+      ? visibleSources.filter((id) => id !== sourceId)
+      : HISTORY_ARCHIVE_SOURCE_IDS.filter((id) => id === sourceId || visibleSources.includes(id)));
   }
 
   const visible = new Set(visibleSources);
@@ -183,8 +189,8 @@ export function HistoryArchivesSourcesPanel({
         <legend>{copy.choose}</legend>
         <p>{copy.help}</p>
         <div className="history-archives-source-actions">
-          <button type="button" onClick={() => setVisibleSources([...HISTORY_ARCHIVE_SOURCE_IDS])}>{copy.selectAll}</button>
-          <button type="button" onClick={() => setVisibleSources([])}>{copy.clear}</button>
+          <button type="button" onClick={() => updateSources([...HISTORY_ARCHIVE_SOURCE_IDS])}>{copy.selectAll}</button>
+          <button type="button" onClick={() => updateSources([])}>{copy.clear}</button>
         </div>
         <div className="history-archives-source-list">
           {HISTORY_ARCHIVE_SOURCE_IDS.map((sourceId) => (
