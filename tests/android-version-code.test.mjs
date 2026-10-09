@@ -31,6 +31,17 @@ test('rejects a run offset that would reuse the committed code', () => {
   );
 });
 
+test('Android Help shows the build versionCode only on Android', () => {
+  const versionSource = readFileSync('src/version.ts', 'utf8');
+  const helpSource = readFileSync('src/components/HelpPanel.tsx', 'utf8');
+  const viteConfigSource = readFileSync('vite.config.ts', 'utf8');
+  assert.match(versionSource, /VITE_ANDROID_VERSION_CODE/);
+  assert.match(viteConfigSource, /tauri\.android\.conf\.json/);
+  assert.match(viteConfigSource, /VITE_ANDROID_VERSION_CODE/);
+  assert.match(helpSource, /getStudioPlatform\(\) === 'android'/);
+  assert.match(helpSource, /BUILD_INFO\.androidVersionCode/);
+});
+
 test('updates only the local build configuration', () => {
   const root = mkdtempSync(join(tmpdir(), 'omi-version-code-'));
   try {

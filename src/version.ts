@@ -4,9 +4,13 @@ function buildValue(value: string | undefined, fallback: string): string {
 }
 
 const viteEnv = import.meta.env ?? {};
+const androidVersionCode = Number(viteEnv.VITE_ANDROID_VERSION_CODE);
 
 export const BUILD_INFO = {
   version: buildValue(viteEnv.VITE_APP_VERSION, 'dev'),
+  androidVersionCode: Number.isSafeInteger(androidVersionCode) && androidVersionCode > 0
+    ? String(androidVersionCode)
+    : null,
   build: buildValue(viteEnv.VITE_BUILD_NUMBER, '0'),
   commit: buildValue(viteEnv.VITE_COMMIT_SHA, '-'),
   builtAt: buildValue(viteEnv.VITE_BUILD_DATE, '-'),

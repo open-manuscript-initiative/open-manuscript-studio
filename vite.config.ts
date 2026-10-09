@@ -6,6 +6,18 @@ import react from '@vitejs/plugin-react';
 
 const tauriDevHost = process.env.TAURI_DEV_HOST;
 
+const androidConfig = JSON.parse(
+  readFileSync(new URL('./src-tauri/tauri.android.conf.json', import.meta.url), 'utf8'),
+) as { bundle?: { android?: { versionCode?: number } } };
+const androidVersionCode = androidConfig.bundle?.android?.versionCode;
+if (
+  typeof androidVersionCode === 'number'
+  && Number.isSafeInteger(androidVersionCode)
+  && androidVersionCode > 0
+) {
+  process.env.VITE_ANDROID_VERSION_CODE = String(androidVersionCode);
+}
+
 const packageMetadata = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
 ) as { version?: string };
