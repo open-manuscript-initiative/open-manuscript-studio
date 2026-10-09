@@ -148,4 +148,4 @@ docker compose -f compose.yml logs --tail=100 postgres
 
 ## Deployment scope
 
-This package provides the web application and API on your own server. Native desktop and mobile applications still use their configured Studio API endpoint; selecting a server from those clients requires a separate change.
+This package provides the web application and API on your own server. Native desktop and mobile clients can select a custom Studio server from the sign-in screen or Account settings. Enter only the server origin (for example, https://studio.example.org), and use HTTPS. Switching servers signs the client out of the previous server and clears its local native session token; data stored on either server is unchanged.
