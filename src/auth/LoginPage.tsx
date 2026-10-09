@@ -17,6 +17,7 @@ import {
 } from '../i18n';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { OrcidEnvironmentBadge } from '../components/OrcidEnvironmentBadge';
+import { ServerEndpointSettings } from '../components/ServerEndpointSettings';
 import {
   getAuthErrorCodeFromLocation,
   startOidcAuthentication,
@@ -186,6 +187,7 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
           <div className="auth-language-switcher auth-login-language-switcher">
             <LanguageSwitcher showAllLocales />
           </div>
+          <ServerEndpointSettings />
 
           <div className="auth-brand auth-login-mobile-brand">
             <div className="auth-brand-name">{t('auth.brand.name')}</div>
