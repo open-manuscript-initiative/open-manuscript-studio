@@ -21,7 +21,7 @@ function copy(locale: string) {
       placeholder: 'https://studio.pelda.hu',
       help: 'A saját szervernek HTTPS-en elérhető Studio API-t kell biztosítania. A váltás kijelentkeztet erről a szerverről; a rajta tárolt adatok nem változnak.',
       apply: 'Szerver használata',
-      reset: 'Hivatalos OMI-szerver visszaállítása',
+      reset: 'Alapértelmezett szerver visszaállítása',
       invalid: 'Adja meg a szerver teljes HTTPS-címét.',
     };
   }
@@ -34,7 +34,7 @@ function copy(locale: string) {
       placeholder: 'https://studio.beispiel.org',
       help: 'Der eigene Server muss eine über HTTPS erreichbare Studio-API bereitstellen. Beim Wechsel werden Sie auf diesem Server abgemeldet; dort gespeicherte Daten bleiben unverändert.',
       apply: 'Server verwenden',
-      reset: 'Offiziellen OMI-Server wiederherstellen',
+      reset: 'Standardserver wiederherstellen',
       invalid: 'Geben Sie die vollständige HTTPS-Adresse des Servers ein.',
     };
   }
@@ -46,7 +46,7 @@ function copy(locale: string) {
     placeholder: 'https://studio.example.org',
     help: 'Your server must provide a Studio API over HTTPS. Switching signs you out of this server; data stored there is unchanged.',
     apply: 'Use server',
-    reset: 'Return to the official OMI server',
+    reset: 'Return to the default server',
     invalid: 'Enter the server’s full HTTPS address.',
   };
 }
