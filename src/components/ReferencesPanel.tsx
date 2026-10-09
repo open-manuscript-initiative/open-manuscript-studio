@@ -412,12 +412,11 @@ export function ReferencesPanel() {
           <div className="omi-module-excerpt-preview">
             <h5>{interchangeCopy.review}</h5>
             <p>{interchangeCopy.preview(pendingReferences.parsed.records.length, pendingReferences.fileName)}</p>
-            <ul>
-              {pendingReferences.parsed.records.slice(0, 20).map((record) => (
+            <ul style={{ maxHeight: '18rem', overflowY: 'auto' }}>
+              {pendingReferences.parsed.records.map((record) => (
                 <li key={record.id}>{formatBibliographyEntry(record)}</li>
               ))}
             </ul>
-            {pendingReferences.parsed.records.length > 20 && <p>+{pendingReferences.parsed.records.length - 20}</p>}
             <button type="button" onClick={confirmReferenceImport}>{interchangeCopy.confirm}</button>
             <button type="button" onClick={() => setPendingReferences(null)}>{interchangeCopy.cancel}</button>
           </div>
