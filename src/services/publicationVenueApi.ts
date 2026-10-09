@@ -210,7 +210,9 @@ async function jsonRequest(
   return response;
 }
 
-function apiBaseUrl(): string {\n  return getStudioApiBaseUrl();\n}
+function apiBaseUrl(): string {
+  return getStudioApiBaseUrl();
+}
 
 function headers(): Headers {
   const result = new Headers({ Accept: 'application/json' });
