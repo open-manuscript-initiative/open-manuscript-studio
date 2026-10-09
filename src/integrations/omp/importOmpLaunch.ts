@@ -1,4 +1,5 @@
 import { createSampleManuscript } from '../../document/sampleManuscript';
+import { attachImportedDocumentSource, importedDocumentSourceLabel } from '../../model/importedDocumentSource';
 import {
   createContribution,
   createPersonAgent,
@@ -308,7 +309,13 @@ export function createManuscriptFromOmpLaunch(
     keywords,
     agents,
     contributions,
-    sections: imported.sections.length ? imported.sections : fallbackSections,
+    sections: (imported.sections.length || fallbackSections.length)
+      ? attachImportedDocumentSource(
+          imported.sections.length ? imported.sections : fallbackSections,
+          [launch.installation?.displayName?.trim() || 'OMP', title].filter(Boolean).join(' · '),
+          importedDocumentSourceLabel(locale),
+        )
+      : [],
     annotations: imported.annotations,
     createdAt: now,
     updatedAt: launch.submission?.updatedAt || now,

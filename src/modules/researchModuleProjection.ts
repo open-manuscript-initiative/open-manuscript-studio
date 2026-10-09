@@ -13,6 +13,12 @@ const storagePrefixes: Readonly<Record<string, string>> = {
   'org.omi.corpus-linguistics': 'omi:corpus-linguistics:v1:',
   'org.omi.musicology': 'omi:musicology:v1:',
   'org.omi.cultural-heritage': 'omi:cultural-heritage:v1:',
+  'org.omi.legal-sources': '',
+  'org.omi.research-reproducibility': '',
+  'org.omi.spatial-research': '',
+  'org.omi.archaeology': '',
+  'org.omi.experimental-laboratory': '',
+  'org.omi.social-research-methods': '',
 };
 
 function record(value: unknown): Record<string, unknown> | null {
@@ -29,7 +35,7 @@ function items(value: unknown): unknown[] {
 /** Project data is read only after the researcher opens the selection UI. */
 export function readResearchExcerpts(moduleId: string, userId: string): ResearchExcerpt[] {
   const prefix = storagePrefixes[moduleId];
-  if (!prefix || typeof window === 'undefined') return [];
+  if (prefix === undefined || typeof window === 'undefined') return [];
   const key = prefix + getDisciplineWorkspaceStorageKey(userId, 'default', moduleId);
   let project: Record<string, unknown> | null;
   try {
@@ -66,6 +72,43 @@ export function readResearchExcerpts(moduleId: string, userId: string): Research
       const heritage = record(item);
       if (heritage) add(string(heritage.id), string(heritage.title), string(heritage.description), string(heritage.sourceUrl));
     }
+  } else if (moduleId === 'org.omi.legal-sources') {
+    for (const item of items(project.sources)) {
+      const legal = record(item);
+      if (!legal) continue;
+      for (const itemVersion of items(legal.versions)) {
+        const version = record(itemVersion);
+        if (version) add(string(version.id), [string(legal.title), string(version.date)].filter(Boolean).join(' · '), string(version.text), string(version.url) || string(legal.url) || string(legal.citation));
+      }
+    }
+  } else if (moduleId === 'org.omi.research-reproducibility') {
+    for (const item of items(project.outputs)) {
+      const output = record(item);
+      if (output) add(string(output.id), string(output.title), string(output.notes), string(output.persistentId) || string(output.repository));
+    }
+  } else if (moduleId === 'org.omi.spatial-research') {
+    for (const item of items(project.features)) {
+      const feature = record(item);
+      if (feature) add(string(feature.id), string(feature.name), string(feature.notes), string(feature.source));
+    }
+  } else if (moduleId === 'org.omi.archaeology') {
+    for (const item of items(project.contexts)) {
+      const context = record(item);
+      if (context) add(string(context.id), string(context.locus), string(context.description), string(context.source));
+    }
+  } else if (moduleId === 'org.omi.experimental-laboratory' && project.schemaVersion === 1) {
+    for (const studyItem of items(project.studies)) {
+      const study = record(studyItem);
+      if (!study) continue;
+      for (const item of items(study.protocols)) {
+        const protocol = record(item);
+        if (protocol) add(string(protocol.id), [string(study.title), string(protocol.title)].filter(Boolean).join(' · '), string(protocol.steps), string(protocol.source));
+      }
+    }
+  } else if (moduleId === 'org.omi.social-research-methods') {
+    // Research design is shareable only after explicit review. Never project
+    // transcripts, participant identifiers, coding notes or ethics records.
+    add('research-design', string(project.title), string(project.method), '');
   }
   return excerpts;
 }

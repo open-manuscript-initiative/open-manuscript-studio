@@ -656,3 +656,39 @@ test('research excerpt projection selects named fields and never flattens confid
     else Reflect.deleteProperty(globalThis, 'window');
   }
 });
+
+test('additional module projections include explicit sources and exclude private social research records', () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  const userId = 'synthetic-user-2';
+  const legalId = 'org.omi.legal-sources';
+  const socialId = 'org.omi.social-research-methods';
+  const key = (id: string) => getDisciplineWorkspaceStorageKey(userId, 'default', id);
+  const storage = new Map<string, string>([
+    [key(legalId), JSON.stringify({ sources: [{
+      id: 'law-1', title: 'Synthetic public law', citation: 'Law 1',
+      versions: [{ id: 'version-1', date: '2026', text: 'Public legal text', url: 'https://example.org/law/1' }],
+    }] })],
+    [key(socialId), JSON.stringify({
+      title: 'Synthetic study', method: 'Public methodology',
+      ethics: 'PRIVATE SYNTHETIC CONSENT',
+      transcripts: [{ id: 'transcript-1', participant: 'PRIVATE SYNTHETIC PERSON', text: 'PRIVATE SYNTHETIC INTERVIEW' }],
+    })],
+  ]);
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: { localStorage: { getItem: (name: string) => storage.get(name) ?? null } },
+  });
+  try {
+    assert.deepEqual(readResearchExcerpts(legalId, userId), [{
+      id: 'version-1', moduleId: legalId, label: 'Synthetic public law · 2026',
+      text: 'Public legal text', source: 'https://example.org/law/1',
+    }]);
+    assert.deepEqual(readResearchExcerpts(socialId, userId), [{
+      id: 'research-design', moduleId: socialId, label: 'Synthetic study',
+      text: 'Public methodology', source: '',
+    }]);
+  } finally {
+    if (original) Object.defineProperty(globalThis, 'window', original);
+    else Reflect.deleteProperty(globalThis, 'window');
+  }
+});

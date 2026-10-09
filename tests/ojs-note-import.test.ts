@@ -182,3 +182,17 @@ test('OJS note reference is preserved even when its source body is missing', () 
   assert.ok(block);
   assert.match(block.content, /"type":"omiNote"/);
 });
+
+test('OJS editable import labels its provider source without exposing private source filenames', () => {
+  const launch = launchWithSource({
+    kind: 'docx',
+    fileName: 'PRIVATE-SYNTHETIC-AUTHOR.docx',
+    paragraphs: [{ text: 'Synthetic public excerpt.' }],
+  });
+  launch.installation = { displayName: 'Synthetic Journal' };
+  const manuscript = importLocalizedLaunch(launch);
+  assert.ok(manuscript);
+  const content = manuscript.sections.flatMap((section) => section.blocks.map((block) => block.content)).join(' ');
+  assert.match(content, /Synthetic Journal/);
+  assert.doesNotMatch(content, /PRIVATE-SYNTHETIC-AUTHOR/);
+});
