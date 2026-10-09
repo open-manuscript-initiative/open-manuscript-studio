@@ -19,6 +19,7 @@ import { InstitutionalProfilesSettings } from './InstitutionalProfilesSettings';
 import { LinkedIdentitiesSettings } from './LinkedIdentitiesSettings';
 import { PersonalEmailsSettings } from './PersonalEmailsSettings';
 import { PersonalPublishingCredentialsSettings } from './PersonalPublishingCredentialsSettings';
+import { ServerEndpointSettings } from './ServerEndpointSettings';
 import { WebPublishingSettings } from './WebPublishingSettings';
 import '../styles/account.css';
 
@@ -245,6 +246,7 @@ export function AccountPanel() {
         </div>
 
         <aside className="account-card account-identity">
+          <ServerEndpointSettings />
           <h2>{labels.identity}</h2>
           <div className="account-email">
             <strong>{user.email}</strong>
