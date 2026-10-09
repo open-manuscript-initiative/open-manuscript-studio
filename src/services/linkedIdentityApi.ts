@@ -34,7 +34,9 @@ export interface LinkedIdentitySettings {
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
 
-function apiBaseUrl(): string {\n  return getStudioApiBaseUrl();\n}
+function apiBaseUrl(): string {
+  return getStudioApiBaseUrl();
+}
 
 function headers(): Headers {
   const result = new Headers({ Accept: 'application/json' });
