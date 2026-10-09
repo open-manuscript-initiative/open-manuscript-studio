@@ -142,11 +142,16 @@ Studio workspace open.
 ## Manuscript contribution and data boundary
 
 The editor's **Insert module section** action inserts only the module's localized
-title and description. It does not read browser or IndexedDB research records,
-serialize workspace JSON, or silently copy transcripts, participant data, legal
-notes, measurements, source material, or other module state into portable OMI.
-Existing manuscript sections are unaffected. The action is a manuscript
-structure aid, not a data export.
+title and description. A separate **Select saved excerpt** action reads the
+supported local module project only after the researcher opens it, exposes
+allow-listed fields for explicit selection, and requires a non-empty source,
+exact excerpt/source preview and an acknowledgement before inserting a visible
+source line. The current typed projections cover critical-edition lemmas,
+corpus documents, musicology events and cultural-heritage descriptions. The
+source may be edited by the researcher; Studio does not independently verify
+that bibliographic claim. Other modules retain section insertion until they
+have a reviewed projection. No action serializes raw project JSON or copies
+arbitrary fields. Existing manuscript sections are unaffected.
 
 Research workspace records remain separately owned, locally stored module data.
 Their current project JSON downloads are user-initiated backups or transfers;
@@ -155,7 +160,13 @@ compatibility guarantees. Browser storage may be cleared, unavailable, or
 device-specific. Users should retain an explicit export for important records;
 sensitive projects require an appropriate storage and retention policy.
 
-A future module-to-manuscript contribution must declare a typed, versioned
+The current excerpt projection is an initial, reviewed allow-list, not a full
+OMI citation record. Its source is visible manuscript text. Formal bibliography
+linkage, provenance/loss diagnostics, authorization for confidential datasets
+and a versioned cross-module contribution contract remain follow-up gates;
+these are required before claiming stable module interchange.
+
+Every later module-to-manuscript contribution must declare a typed, versioned
 projection with an allow-list of fields, provenance and loss diagnostics.
 Every copied excerpt must have a required source record/citation or clearly
 identified researcher-authored source, represented in the portable manuscript
