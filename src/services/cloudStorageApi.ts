@@ -1,3 +1,4 @@
+import { getStudioApiBaseUrl } from './studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 
 import { normalizeNextcloudWebDavUrl } from './nextcloudConnection';
@@ -70,11 +71,9 @@ export interface CloudOAuthProviderConfig {
 }
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 const IS_TAURI = isTauri();
 const IS_MOBILE_TAURI = IS_TAURI && /Android|iPhone|iPad|iPod/i.test(globalThis.navigator?.userAgent ?? '');
-const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL?.trim()
-  || (IS_TAURI && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '')).replace(/\/$/, '');
+const API_BASE_URL = getStudioApiBaseUrl();
 
 export async function listCloudConnections(): Promise<CloudConnection[]> {
   const response = await cloudFetch('/api/cloud/connections', {
