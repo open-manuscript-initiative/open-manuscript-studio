@@ -136,6 +136,7 @@ export async function benchmarkDocxImport(options: CliOptions) {
   const applyStarted = performance.now();
   applyDocxImportPlan(plan, {
     importDetectedAuthors: plan.authors.length > 0,
+    source: plan.fileName,
   });
   const applyWallMs = performance.now() - applyStarted;
   const applied = useStudioStore.getState().manuscript;
