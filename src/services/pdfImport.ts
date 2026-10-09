@@ -1,3 +1,4 @@
+import { getStudioApiBaseUrl } from './studioServer';
 import { isTauri } from '@tauri-apps/api/core';
 
 export interface PdfImportWarning {
@@ -65,10 +66,8 @@ interface ErrorResponse {
 }
 
 const NATIVE_SESSION_KEY = 'omi_native_session_token';
-const NATIVE_API_BASE_URL = 'https://studio.openmanuscript.org';
 const IS_TAURI = isTauri();
-const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL?.trim()
-  || (IS_TAURI && !import.meta.env.DEV ? NATIVE_API_BASE_URL : '')).replace(/\/$/, '');
+const API_BASE_URL = getStudioApiBaseUrl();
 
 export async function importPdfForStudio(
   file: File,
