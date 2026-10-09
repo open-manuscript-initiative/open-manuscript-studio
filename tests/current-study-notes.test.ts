@@ -65,7 +65,7 @@ test('a standalone study treats all of its sections as one editing unit', () => 
   );
 });
 
-test('the Studio UI exposes one responsive toggle and a viewport-constrained scrolling note panel', () => {
+test('the Studio UI exposes a viewport-scoped list for visible note anchors', () => {
   const headerSource = readFileSync(
     new URL('../src/components/Header.tsx', import.meta.url),
     'utf8',
@@ -98,6 +98,11 @@ test('the Studio UI exposes one responsive toggle and a viewport-constrained scr
   assert.match(editorSource, /currentStudy\?\.rootSectionId === study\.rootSectionId/);
   assert.match(footerSource, /numberByNoteId\.get\(note\.id\)/);
   assert.match(footerSource, /findRenderedNoteElement\(note\.id\)/);
+  assert.match(footerSource, /new IntersectionObserver/);
+  assert.match(footerSource, /rect\.bottom > headerBottom[\s\S]*?rect\.top < viewportBottom/);
+  assert.match(footerSource, /data-omi-note\]\[data-note-id\]/);
+  assert.match(footerSource, /notes\.filter\(\(note\) => visibleNoteIds\.has\(note\.id\)\)/);
+  assert.match(footerSource, /omi-current-study-notes__count[\s\S]*?\{visibleNotes\.length\}/);
   assert.match(
     continuousStyles,
     /\.omi-current-study-notes \{[\s\S]*?position: fixed;[\s\S]*?bottom: max\([^;]+;[\s\S]*?max-height: calc\(50dvh - 3\.75rem\);[\s\S]*?overflow-y: auto;/,
