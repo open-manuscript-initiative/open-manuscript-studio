@@ -194,6 +194,10 @@ jobs:
     needs: [build, collaboration-demo]
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+      packages: write
 
     environment:
       name: production
@@ -242,6 +246,44 @@ jobs:
           fi
 
           echo "fingerprint=$fingerprint" >> "$GITHUB_OUTPUT"
+
+      - name: Check out repository for container images
+        uses: actions/checkout@v4
+
+      - name: Build and publish multi-platform Studio images
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USERNAME: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          echo "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USERNAME" --password-stdin
+          docker run --privileged --rm tonistiigi/binfmt:latest --install arm64
+          docker buildx create --name omi-studio-builder --use
+          docker buildx inspect --bootstrap
+
+          api_image=ghcr.io/open-manuscript-initiative/open-manuscript-studio-api
+          web_image=ghcr.io/open-manuscript-initiative/open-manuscript-studio-web
+          source_label=org.opencontainers.image.source=https://github.com/open-manuscript-initiative/open-manuscript-studio
+          commit_tag="sha-${GITHUB_SHA}"
+
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --file deployment/Dockerfile.api \
+            --tag "$api_image:latest" \
+            --tag "$api_image:$commit_tag" \
+            --label "$source_label" \
+            --push .
+
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --file deployment/Dockerfile.web \
+            --tag "$web_image:latest" \
+            --tag "$web_image:$commit_tag" \
+            --label "$source_label" \
+            --push .
+
+          docker logout ghcr.io
 
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.2
