@@ -25,8 +25,8 @@ import { stageInsertBlocks } from '../app/visualBlockActions';
 import { useTranslation } from '../i18n';
 import { getVisualElementsCopy } from '../i18n/visualElements';
 import { ResearchModuleInsertPanel } from '../modules/ResearchModuleInsertPanel';
-import type { OmiBlock } from '../types/omi';
-import { buildSourcedVisualBlocks, prefillExternalSource } from '../model/externalObjectSources';
+import type { OmiAnnotation, OmiBlock } from '../types/omi';
+import { buildAttributedVisualImport, prefillExternalSource } from '../model/externalObjectSources';
 import type { OmiGeneratedListKind } from '../model/generatedLists';
 import type { OmiTableOfContents } from '../model/tableOfContents';
 import {
@@ -59,7 +59,7 @@ export function VisualInsertPanel({
   const selectedSectionId = useStudioStore((state) => state.selectedSectionId);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pendingImports, setPendingImports] = useState<Array<{ block: OmiBlock; source: string }>>([]);
+  const [pendingImports, setPendingImports] = useState<Array<{ block: OmiBlock; source: string; selfAuthoredExternal?: boolean }>>([]);
   const sourceCopy = getExternalSourceCopy(locale);
   const importInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -74,8 +74,8 @@ export function VisualInsertPanel({
 
   const gapIndex = selectedSection.blocks.length;
 
-  function insert(blocks: Parameters<typeof stageInsertBlocks>[2]): boolean {
-    const inserted = stageInsertBlocks(selectedSection.id, gapIndex, blocks);
+  function insert(blocks: Parameters<typeof stageInsertBlocks>[2], originAnnotations: readonly OmiAnnotation[] = []): boolean {
+    const inserted = stageInsertBlocks(selectedSection.id, gapIndex, blocks, 'Inserted manuscript elements', originAnnotations);
     if (inserted) {
       setError(null);
       onInserted?.();
@@ -142,16 +142,16 @@ export function VisualInsertPanel({
 
   async function confirmImported(): Promise<void> {
     if (pendingImports.length === 0) return;
-    if (pendingImports.some((item) => !item.source.trim())) {
+    if (pendingImports.some((item) => !item.selfAuthoredExternal && !item.source.trim())) {
       setError(sourceCopy.required);
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      const blocks = buildSourcedVisualBlocks(pendingImports, sourceCopy.source);
+      const { blocks, annotations } = buildAttributedVisualImport(pendingImports, sourceCopy.source, new Date().toISOString());
       const externalized = await externalizeBlocksForManuscript(manuscript.id, blocks);
-      if (insert(externalized.blocks)) {
+      if (insert(externalized.blocks, annotations)) {
         stageAssetAttachments(externalized.assets);
         setPendingImports([]);
       }
@@ -285,16 +285,24 @@ export function VisualInsertPanel({
           <h4>{sourceCopy.preview}</h4>
           <p className="omi-visual-format-hint">{sourceCopy.explanation}</p>
           {pendingImports.map((item, index) => (
-            <label key={item.block.id}>
-              {sourceCopy.source} {index + 1} · {item.block.type}
-              <input
-                required
-                value={item.source}
-                onChange={(event) => setPendingImports((previous) =>
+            <div key={item.block.id}>
+              <label>
+                <input type="checkbox" checked={Boolean(item.selfAuthoredExternal)} onChange={(event) => setPendingImports((previous) =>
                   previous.map((candidate, candidateIndex) => candidateIndex === index
-                    ? { ...candidate, source: event.target.value } : candidate))}
-              />
-            </label>
+                    ? { ...candidate, selfAuthoredExternal: event.target.checked } : candidate))} />
+                {sourceCopy.own} {index + 1} · {item.block.type}
+              </label>
+              {!item.selfAuthoredExternal && <label>
+                {sourceCopy.source} {index + 1} · {item.block.type}
+                <input
+                  required
+                  value={item.source}
+                  onChange={(event) => setPendingImports((previous) =>
+                    previous.map((candidate, candidateIndex) => candidateIndex === index
+                      ? { ...candidate, source: event.target.value } : candidate))}
+                />
+              </label>}
+            </div>
           ))}
           <div className="omi-visual-insert-actions">
             <button type="button" disabled={busy || pendingImports.some((item) => !item.source.trim())} onClick={confirmImported}>{sourceCopy.confirm}</button>
@@ -378,18 +386,18 @@ function getListInsertCopy(locale: string) {
 
 function getExternalSourceCopy(locale: string) {
   if (locale === 'hu') return {
-    preview: 'Külső objektumok forrása', source: 'Forrás',
-    explanation: 'Az ismert fájlnevet és fájlrészt előre kitöltöttük. Ellenőrizze vagy pontosítsa; a forrás minden beszúrt objektum után láthatóan megjelenik.',
+    preview: 'Külső objektumok forrása', source: 'Forrás', own: 'Saját mű, korábban más programban készítettem; csak rejtett eredetjelölés',
+    explanation: 'Az ismert fájlnevet és fájlrészt előre kitöltöttük. Ellenőrizze vagy pontosítsa; a külső forrású objektum után láthatóan megjelenik; saját mű esetén csak rejtett eredetjelölés marad.',
     required: 'Minden külső objektumhoz kötelező a forrás.', confirm: 'Objektumok beszúrása forrással', cancel: 'Mégsem',
   };
   if (locale === 'de') return {
-    preview: 'Quellen externer Objekte', source: 'Quelle',
-    explanation: 'Bekannte Dateinamen und Teile sind vorausgefüllt. Bitte prüfen oder ergänzen; die Quelle erscheint sichtbar nach jedem eingefügten Objekt.',
+    preview: 'Quellen externer Objekte', source: 'Quelle', own: 'Eigenes Werk aus einem anderen Programm; nur verborgene Herkunftsangabe',
+    explanation: 'Bekannte Dateinamen und Teile sind vorausgefüllt. Bitte prüfen oder ergänzen; bei fremden Objekten erscheint die Quelle sichtbar; bei eigenen bleibt nur die verborgene Herkunftsangabe.',
     required: 'Für jedes externe Objekt ist eine Quelle erforderlich.', confirm: 'Objekte mit Quelle einfügen', cancel: 'Abbrechen',
   };
   return {
-    preview: 'Sources of external objects', source: 'Source',
-    explanation: 'Known file names and parts are prefilled. Review or refine them; the source appears visibly after each inserted object.',
+    preview: 'Sources of external objects', source: 'Source', own: 'My own work made in another editor; hidden origin declaration only',
+    explanation: 'Known file names and parts are prefilled. Review or refine them; third-party objects show a visible source; own work retains only a hidden origin declaration.',
     required: 'Every external object requires a source.', confirm: 'Insert objects with sources', cancel: 'Cancel',
   };
 }

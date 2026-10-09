@@ -8,6 +8,7 @@ import {
   useAuthStore,
 } from '../store/authStore';
 import type {
+  OmiAnnotation,
   OmiBlock,
   OmiManuscript,
   OmiSection,
@@ -23,6 +24,7 @@ export function stageInsertBlocks(
   gapIndex: number,
   blocks: OmiBlock[],
   summary = 'Inserted manuscript elements',
+  originAnnotations: readonly OmiAnnotation[] = [],
 ): boolean {
   if (blocks.length === 0) return false;
   let changed = false;
@@ -42,6 +44,13 @@ export function stageInsertBlocks(
       throw new Error(
         'Cannot insert a block whose stable identifier already exists.',
       );
+    }
+
+    const insertedIds = new Set(blocks.map((block) => block.id));
+    if (originAnnotations.some((annotation) =>
+      !insertedIds.has(annotation.targetBlockId) ||
+      state.manuscript.annotations.some((current) => current.id === annotation.id))) {
+      throw new Error('Origin declaration must target a newly inserted object.');
     }
 
     const section = state.manuscript.sections[sectionIndex];
@@ -76,6 +85,12 @@ export function stageInsertBlocks(
             path: `/sections/${sectionId}/blocks/${insertionIndex + index}`,
             nextValue: block,
           })),
+          ...originAnnotations.map((annotation) => ({
+            operation: 'annotation.create' as const,
+            targetId: annotation.id,
+            path: `/annotations/${annotation.id}`,
+            nextValue: annotation,
+          })),
           ...contentEvents,
         ],
         actorAgentId: resolveCurrentActorAgentId(state.manuscript),
@@ -90,6 +105,7 @@ export function stageInsertBlocks(
         ...state.manuscript,
         ...portableState,
         sections: nextSections,
+        annotations: [...state.manuscript.annotations, ...originAnnotations],
         updatedAt: timestamp,
       },
       pendingChangeSet,
