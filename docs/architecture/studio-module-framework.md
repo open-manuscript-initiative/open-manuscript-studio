@@ -147,7 +147,10 @@ supported local module project only after the researcher opens it, exposes
 allow-listed fields for explicit selection, and requires a non-empty source,
 exact excerpt/source preview and an acknowledgement before inserting a visible
 source line. The current typed projections cover critical-edition lemmas,
-corpus documents, musicology events and cultural-heritage descriptions. The
+corpus documents, musicology events, cultural-heritage descriptions, legal-source
+versions, reproducibility notes, spatial-feature notes, archaeological contexts,
+laboratory protocol steps and the social-research methodology. Transcript,
+participant, coding and ethics fields are never projected by this action. The
 source may be edited by the researcher; Studio does not independently verify
 that bibliographic claim. Other modules retain section insertion until they
 have a reviewed projection. No action serializes raw project JSON or copies
