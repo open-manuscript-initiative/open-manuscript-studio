@@ -40,10 +40,10 @@ export function ResearchModuleInsertPanel({
     preferences.activeModuleIds.includes(module.id),
   );
   const actionCopy = locale === 'hu'
-    ? { title: 'Kutatási modulok', insert: 'Moduladatok beszúrása', empty: 'Nincs aktív kutatási modul.', emptyData: 'Még nincs mentett moduladat; a szakasz előkészítő címmel és leírással kerül be.', inserted: 'A modul szakasza és mentett adatai bekerülnek az aktuális kéziratba.' }
+    ? { title: 'Kutatási modulok', insert: 'Modulszakasz beszúrása', empty: 'Nincs aktív kutatási modul.', emptyData: 'Még nincs mentett moduladat; a szakasz előkészítő címmel és leírással kerül be.', inserted: 'A modul szakasza és mentett adatai bekerülnek az aktuális kéziratba.' }
     : locale === 'de'
-      ? { title: 'Forschungsmodule', insert: 'Moduldaten einfügen', empty: 'Kein Forschungsmodul ist aktiv.', emptyData: 'Es sind noch keine Moduldaten gespeichert; der Abschnitt wird mit Titel und Beschreibung vorbereitet.', inserted: 'Der Modulabschnitt und die gespeicherten Daten werden in das aktuelle Manuskript eingefügt.' }
-      : { title: 'Research modules', insert: 'Insert module data', empty: 'No research module is active.', emptyData: 'No module data is saved yet; the section will be inserted with its title and description.', inserted: 'The module section and its saved data will be inserted into the current manuscript.' };
+      ? { title: 'Forschungsmodule', insert: 'Modulabschnitt einfügen', empty: 'Kein Forschungsmodul ist aktiv.', emptyData: 'Es sind noch keine Moduldaten gespeichert; der Abschnitt wird mit Titel und Beschreibung vorbereitet.', inserted: 'Der Modulabschnitt und die gespeicherten Daten werden in das aktuelle Manuskript eingefügt.' }
+      : { title: 'Research modules', insert: 'Insert module section', empty: 'No research module is active.', emptyData: 'No module data is saved yet; the section will be inserted with its title and description.', inserted: 'The module section and its saved data will be inserted into the current manuscript.' };
 
   function insertModule(module: typeof builtinModuleManifests[number]): void {
     const details = copy.modules[module.id];
