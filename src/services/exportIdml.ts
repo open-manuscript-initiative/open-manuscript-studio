@@ -616,7 +616,9 @@ function splitGreekSourceFontRanges(run: OmiInlineRun): IdmlFontRange[] {
     const isGreek = (codePoint >= 0x0370 && codePoint <= 0x03ff)
       || (codePoint >= 0x1f00 && codePoint <= 0x1fff);
     const isCombiningMark = codePoint >= 0x0300 && codePoint <= 0x036f;
-    const fontFamily = isGreek || (isCombiningMark && previousWasGreek)
+    const joinsGreekRun = isCombiningMark || /^\\s$/u.test(character);
+    const usesGreekFallback = isGreek || (joinsGreekRun && previousWasGreek);
+    const fontFamily = usesGreekFallback
       ? run.sourceFontFamily || 'Times New Roman'
       : undefined;
     const previous = result.at(-1);
@@ -625,7 +627,7 @@ function splitGreekSourceFontRanges(run: OmiInlineRun): IdmlFontRange[] {
     } else {
       result.push({ text: character, ...(fontFamily ? { fontFamily } : {}) });
     }
-    previousWasGreek = isGreek || (isCombiningMark && previousWasGreek);
+    previousWasGreek = isGreek || (joinsGreekRun && previousWasGreek);
   }
   return result;
 }
