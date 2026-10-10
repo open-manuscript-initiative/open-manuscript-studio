@@ -39,6 +39,8 @@ export function buildIdmlExport(
   const context = buildPublicationRenderingContext(manuscript, profile);
   const warnings: string[] = [];
   const storyParts: string[] = [];
+  const annotationsById = new Map(manuscript.annotations.map((note) => [note.id, note]));
+  const renderedFootnoteIds = new Set<string>();
 
   storyParts.push(styledParagraph(context.title, 'OMI Title'));
   if (context.subtitle) storyParts.push(styledParagraph(context.subtitle, 'OMI Subtitle'));
@@ -72,7 +74,7 @@ export function buildIdmlExport(
         );
         const runs = extractOmiInlineRuns(block.content);
         if (runs.length) {
-          storyParts.push(styledRunsParagraph(runs, paragraphStyleId));
+          storyParts.push(styledRunsParagraph(runs, paragraphStyleId, annotationsById, renderedFootnoteIds));
         } else {
           const text = blockPlainText(block);
           if (text) storyParts.push(styledParagraph(text, paragraphStyleId));
@@ -83,9 +85,10 @@ export function buildIdmlExport(
   };
   renderSections(context.sections);
 
-  if (manuscript.annotations.length) {
+  const unanchoredAnnotations = manuscript.annotations.filter((note) => !renderedFootnoteIds.has(note.id));
+  if (unanchoredAnnotations.length) {
     storyParts.push(styledParagraph(localizedLabel(context.locale, 'notes'), 'OMI Heading 1'));
-    manuscript.annotations.forEach((note, index) => {
+    unanchoredAnnotations.forEach((note, index) => {
       storyParts.push(styledParagraph(`${index + 1}. ${note.body}`, 'OMI Note'));
     });
   }
@@ -583,16 +586,36 @@ function styledContributorNamesParagraph(
   return `<ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/OMI Authors">${ranges.join('')}<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Br/></CharacterStyleRange></ParagraphStyleRange>`;
 }
 
-function styledRunsParagraph(runs: readonly OmiInlineRun[], styleName: string): string {
+function idmlFootnote(note: OmiManuscript['annotations'][number], index: number): string {
+  return `<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Footnote Self="uFootnote${index}"><ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/OMI Note"><CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Content>${xml(note.body)}</Content></CharacterStyleRange></ParagraphStyleRange></Footnote></CharacterStyleRange>`;
+}
+
+function styledRunsParagraph(
+  runs: readonly OmiInlineRun[],
+  styleName: string,
+  annotationsById?: ReadonlyMap<string, OmiManuscript['annotations'][number]>,
+  renderedFootnoteIds?: Set<string>,
+): string {
   const content = runs
-    .flatMap((run) => splitGreekSourceFontRanges(run).map((range) => {
+    .flatMap((run) => {
+      const note = run.noteId ? annotationsById?.get(run.noteId) : undefined;
+      if (
+        note &&
+        (run.noteType === 'footnote' || note.noteKind === 'footnote' || note.renderingHint === 'footnote')
+      ) {
+        renderedFootnoteIds?.add(note.id);
+        const index = [...(annotationsById?.values() ?? [])].findIndex((item) => item.id === note.id) + 1;
+        return [idmlFootnote(note, index)];
+      }
+      return splitGreekSourceFontRanges(run).map((range) => {
       const charStyle = omiCharacterStyleName(run.semantics) ?? '$ID/[None]';
       const language = run.language ? ` AppliedLanguage="${xml(run.language)}"` : '';
       const properties = range.fontFamily
         ? `<Properties><AppliedFont type="string">${xml(range.fontFamily)}</AppliedFont></Properties>`
         : '';
       return `<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/${xml(charStyle)}"${language}>${properties}<Content>${xml(range.text)}</Content></CharacterStyleRange>`;
-    }))
+      });
+    })
     .join('');
   return `<ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/${xml(styleName)}">${content}<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Br/></CharacterStyleRange></ParagraphStyleRange>`;
 }
