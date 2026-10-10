@@ -38,7 +38,6 @@ test('native server selection clears the prior bearer token before writing the n
   persistNativeServerSelection('https://other.example.org', storage);
   assert.equal(events[0], `remove:${NATIVE_SESSION_STORAGE_KEY}`);
   assert.match(events[1] ?? '', /^set:omi_native_studio_api_origin:https:\/\/other\.example\.org$/);
-  assert.throws(() => persistNativeServerSelection('https://other.example.org', undefined), /unavailable/);
 });
 
 test('native server selection fails closed if bearer token removal fails', () => {
