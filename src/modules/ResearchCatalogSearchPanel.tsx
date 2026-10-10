@@ -125,6 +125,31 @@ function normalizeRecords(catalog: ResearchCatalogId, payload: unknown): { recor
       return { id: stringOr(item.id, `europepmc-${index}`), title: stringOr(item.title, 'Untitled publication'), description: stringOr(item.authorString, ''), url, meta: [stringOr(item.journalTitle, ''), stringOr(item.pubYear, '')].filter(Boolean).join(' · ') };
     }), total: numberOr(root.hitCount, 0) };
   }
+  if (catalog === 'clarin') {
+    if (!Array.isArray(root.records)) throw new Error('Unexpected CLARIN VLO API response');
+    const values = root.records;
+    const records = values.map((value, index) => {
+      const item = asObject(value);
+      const fields = asObject(item.fields);
+      const id = stringOr(item.id, `clarin-${index}`);
+      const title = fieldText(fields, 'name') || fieldText(fields, 'title') || id;
+      const description = stripHtml(fieldText(fields, 'description'));
+      const meta = [
+        fieldText(fields, 'creator'),
+        fieldText(fields, 'collection'),
+        fieldText(fields, 'resourceClass'),
+        fieldText(fields, 'languageCode'),
+      ].filter(Boolean).join(' · ');
+      return {
+        id,
+        title,
+        description,
+        url: `https://vlo.clarin.eu/record/#${encodeURIComponent(id)}`,
+        meta,
+      };
+    });
+    return { records, total: numberOr(root.numFound, values.length) };
+  }
   const values = firstArray(root, ['records', 'items', 'results', 'hits']);
   const records = values.map((value, index) => {
     const item = asObject(value); const title = stringOr(item.title, stringOr(item.name, stringOr(item.id, 'Untitled resource')));
@@ -135,6 +160,11 @@ function normalizeRecords(catalog: ResearchCatalogId, payload: unknown): { recor
   return { records, total: numberOr(root.totalElements, numberOr(root.total, numberOr(root.numberOfResults, records.length))) };
 }
 
+function fieldText(fields: Record<string, unknown>, key: string): string {
+  const value = fields[key];
+  const values = Array.isArray(value) ? value : [value];
+  return values.filter(isString).map((item) => item.trim()).filter(Boolean).join(', ');
+}
 function asObject(value: unknown): Record<string, unknown> { return value && typeof value === 'object' ? value as Record<string, unknown> : {}; }
 function asArray(value: unknown): unknown[] { return Array.isArray(value) ? value : []; }
 function firstArray(value: Record<string, unknown>, keys: string[]): unknown[] { for (const key of keys) { const found = asArray(value[key]); if (found.length) return found; } return []; }
