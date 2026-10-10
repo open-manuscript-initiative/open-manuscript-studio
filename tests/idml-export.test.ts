@@ -378,7 +378,8 @@ test('IDML publishes notes without exposing hidden provenance or editor-only ann
   const story = new TextDecoder().decode(readStoreZipEntries(buildIdmlExport(manuscript).bytes).get('Stories/Story_u3.xml'));
   assert.match(story, /Public footnote/);
   assert.match(story, /Public endnote/);
-  assert.doesNotMatch(story, /author-declared:self-authored-outside-omi|Confidential editor note|<Content>2<\\/Content>/);
+  assert.doesNotMatch(story, /author-declared:self-authored-outside-omi|Confidential editor note/);
+  assert.equal(story.includes('<Content>2</Content>'), false);
   assert.equal((story.match(/<Footnote /g) ?? []).length, 1);
 });
 
