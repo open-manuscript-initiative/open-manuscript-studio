@@ -89,6 +89,11 @@ export function inlineLanguageFromMarks(
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
+/**
+ * Transitional editor mark for imported DOCX typeface fidelity. It is a
+ * presentation hint, not an OMI inline semantic or a frozen portable AST field.
+ * Keep its decoding here until ContentCodec defines a versioned OMI mapping.
+ */
 export function inlineSourceFontFamilyFromMarks(
   marks: readonly OmiInlineMarkLike[] | undefined,
 ): string | undefined {
