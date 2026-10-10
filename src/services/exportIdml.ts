@@ -639,7 +639,7 @@ function splitGreekSourceFontRanges(run: OmiInlineRun): IdmlFontRange[] {
     const isGreek = (codePoint >= 0x0370 && codePoint <= 0x03ff)
       || (codePoint >= 0x1f00 && codePoint <= 0x1fff);
     const isCombiningMark = codePoint >= 0x0300 && codePoint <= 0x036f;
-    const joinsGreekRun = isCombiningMark || /^\\s$/u.test(character);
+    const joinsGreekRun = isCombiningMark || /^\s$/u.test(character);
     const usesGreekFallback = isGreek || (joinsGreekRun && previousWasGreek);
     const fontFamily = usesGreekFallback
       ? run.sourceFontFamily || 'Times New Roman'
