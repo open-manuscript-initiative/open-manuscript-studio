@@ -601,6 +601,8 @@ function styledRunsParagraph(
   const content = runs
     .flatMap((run) => {
       const note = run.noteId ? annotationsById?.get(run.noteId) : undefined;
+      // A marker for a hidden/restricted or unresolved annotation is not public content.
+      if (run.noteId && annotationsById && !note) return [];
       if (
         note &&
         (run.noteType === 'footnote' || note.noteKind === 'footnote' || note.renderingHint === 'footnote')
