@@ -159,8 +159,7 @@ export function buildIdmlExport(
 <idPkg:Preferences xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}">
   <DocumentPreference PageHeight="${pageHeight}" PageWidth="${pageWidth}" PagesPerDocument="1" FacingPages="false" PageOrientation="${pageOrientation}" PageBinding="LeftToRight"/>
 </idPkg:Preferences>`;
-  const fontsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<idPkg:Fonts xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}"><FontFamily Self="FontFamily/Times New Roman" Name="Times New Roman"/></idPkg:Fonts>`;
+  const fontsXml = buildFontsXml(publicationStyle, context.sections);
   const graphicXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <idPkg:Graphic xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}"><Color Self="Color/Black" Model="Process" Space="CMYK" ColorValue="0 0 0 100" ColorOverride="Specialblack" Name="Black"/></idPkg:Graphic>`;
   const containerXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -185,6 +184,33 @@ export function buildIdmlExport(
     fileName: `${fileStem(manuscript)}.idml`,
     warnings,
   };
+}
+
+function buildFontsXml(
+  publicationStyle: PublicationStyle | undefined,
+  sections: readonly { blocks: readonly OmiBlock[]; children: typeof sections }[],
+): string {
+  const families = new Set(['Times New Roman', 'Courier New']);
+  for (const definition of publicationStyle?.paragraphStyles.items ?? []) {
+    const family = definition.properties.fontFamily?.trim();
+    if (family) families.add(family);
+  }
+  const visit = (items: typeof sections): void => {
+    for (const section of items) {
+      for (const block of section.blocks) {
+        if (block.visual) continue;
+        for (const run of extractOmiInlineRuns(block.content)) {
+          if (run.sourceFontFamily) families.add(run.sourceFontFamily);
+        }
+      }
+      visit(section.children);
+    }
+  };
+  visit(sections);
+  const entries = [...families]
+    .map((family) => `<FontFamily Self="FontFamily/${xml(family)}" Name="${xml(family)}"/>`)
+    .join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<idPkg:Fonts xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}">${entries}</idPkg:Fonts>`;
 }
 
 function buildStylesXml(publicationStyle?: PublicationStyle): string {
