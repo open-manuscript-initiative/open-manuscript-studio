@@ -23,6 +23,7 @@ import { searchEuropeana } from '../server/src/integrations/europeana/europeanaS
 import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSearch.ts';
 import { buildRomanianArchivesSearchUrl } from '../src/modules/history-archives/romanianArchives.ts';
 import { DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS, getHistoryArchiveSourcesStorageKey, HISTORY_ARCHIVE_SOURCE_IDS, readVisibleHistoryArchiveSources } from '../src/modules/history-archives/sourcePreferences.ts';
+import { getResearchCatalogPreferencesKey, readVisibleResearchCatalogs, type ResearchCatalogId } from '../src/modules/researchCatalogPreferences.ts';
 import { searchSefaria } from '../server/src/integrations/sefaria/sefariaSearch.ts';
 import { createExperimentalWorkspace, isExperimentalWorkspace, parseExperimentalWorkspace } from '../src/modules/experimental-laboratory/model.ts';
 import { addDesignDeviation, createStatisticalWorkspace, describe, estimateTwoGroupSampleSize, isStatisticalWorkspace, linearRegression, oneWayAnova, parseDelimited, parseLaboratoryMeasurements, parseStatisticalWorkspace, preregisterDesign, randomizeParticipants, welchTTest } from '../src/modules/statistical-analysis/model.ts';
@@ -200,6 +201,15 @@ test('archive source preferences default to existing sources, filter unknown IDs
   assert.deepEqual(readVisibleHistoryArchiveSources(JSON.stringify(['swedish', 'polish', 'slovak', 'austrian'])), ['swedish', 'polish', 'slovak', 'austrian']);
   assert.deepEqual(readVisibleHistoryArchiveSources(JSON.stringify(['belgian', 'portuguese', 'slovenian'])), ['belgian', 'portuguese', 'slovenian']);
   assert.deepEqual(readVisibleHistoryArchiveSources(JSON.stringify(['norwegian', 'swiss', 'icelandic', 'serbian', 'archivesEurope'])), ['norwegian', 'swiss', 'icelandic', 'serbian', 'archivesEurope']);
+});
+
+test('research catalog choices default to all sources, persist an empty choice, and scope keys', () => {
+  const available: ResearchCatalogId[] = ['rism', 'musicbrainz'];
+  assert.deepEqual(readVisibleResearchCatalogs(available, null), available);
+  assert.deepEqual(readVisibleResearchCatalogs(available, JSON.stringify(['musicbrainz', 'unknown'])), ['musicbrainz']);
+  assert.deepEqual(readVisibleResearchCatalogs(available, '[]'), []);
+  assert.deepEqual(readVisibleResearchCatalogs(available, '{broken'), available);
+  assert.equal(getResearchCatalogPreferencesKey('user-a:workspace-b:musicology'), 'omi:research-catalogs:v1:user-a:workspace-b:musicology');
 });
 
 test('archive source preferences are isolated by user and workspace', () => {

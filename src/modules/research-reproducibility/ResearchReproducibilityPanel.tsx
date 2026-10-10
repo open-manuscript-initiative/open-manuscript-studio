@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { downloadWorkspaceJson, newWorkspaceId, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
+import { ResearchCatalogSearchPanel } from '../ResearchCatalogSearchPanel';
 import '../disciplineWorkspaces.css';
 
 type Locale = 'hu' | 'en' | 'de';
@@ -51,5 +52,6 @@ export function ResearchReproducibilityPanel({ locale = 'hu', storageKey = 'rese
         <button type="button" className="discipline-workspace__danger" onClick={() => setWorkspace(current => ({ ...current, outputs: current.outputs.filter(item => item.id !== output.id) }))}>{t.remove}</button>
       </article>)}
     </section>
+    <ResearchCatalogSearchPanel catalogs={['zenodo']} locale={locale} storageKey={`${storageKey}:reproducibility`} />
   </main>;
 }

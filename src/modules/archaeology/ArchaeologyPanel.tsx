@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { downloadWorkspaceJson, newWorkspaceId, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
+import { ResearchCatalogSearchPanel } from '../ResearchCatalogSearchPanel';
 import '../disciplineWorkspaces.css';
 
 type Context = { id: string; locus: string; period: string; layer: string; description: string; finds: string; sampleId: string; source: string };
@@ -42,5 +43,6 @@ export function ArchaeologyPanel({ locale = 'hu', storageKey = 'archaeology' }: 
     <section className="discipline-workspace__section"><div className="discipline-workspace__section-title"><h2>{t.contexts} ({workspace.contexts.length})</h2><button type="button" onClick={() => setWorkspace(current => ({ ...current, contexts: [...current.contexts, emptyContext()] }))}>{t.add}</button></div>
       {workspace.contexts.map(context => <article className="discipline-workspace__card" key={context.id}><div className="discipline-workspace__grid"><label>{t.locus}<input value={context.locus} onChange={e => update(context.id, { locus: e.target.value })}/></label><label>{t.period}<input value={context.period} onChange={e => update(context.id, { period: e.target.value })}/></label><label>{t.layer}<input value={context.layer} onChange={e => update(context.id, { layer: e.target.value })}/></label><label>{t.sample}<input value={context.sampleId} onChange={e => update(context.id, { sampleId: e.target.value })}/></label><label>{t.finds}<input value={context.finds} onChange={e => update(context.id, { finds: e.target.value })}/></label><label>{t.source}<input value={context.source} onChange={e => update(context.id, { source: e.target.value })}/></label></div><label>{t.description}<textarea rows={3} value={context.description} onChange={e => update(context.id, { description: e.target.value })}/></label><button className="discipline-workspace__danger" type="button" onClick={() => setWorkspace(current => ({ ...current, contexts: current.contexts.filter(item => item.id !== context.id) }))}>{t.remove}</button></article>)}
     </section>
+    <ResearchCatalogSearchPanel catalogs={['pleiades']} locale={locale} storageKey={`${storageKey}:archaeology`} />
   </main>;
 }

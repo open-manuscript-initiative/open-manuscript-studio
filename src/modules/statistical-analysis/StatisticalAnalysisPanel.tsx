@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { downloadWorkspaceJson, safeWorkspaceFileName } from '../disciplineWorkspace';
+import { ResearchCatalogSearchPanel } from '../ResearchCatalogSearchPanel';
 import { useIndexedStatisticalWorkspace } from './workspaceStorage';
 import {
   addDesignDeviation,
@@ -461,5 +462,6 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
       <section className="discipline-workspace__section"><h2>{t.methods}</h2><p className="discipline-workspace__hint">{t.methodNote}</p></section>
       <section className="discipline-workspace__section"><h2>{t.preview}</h2><div className="discipline-table-wrap"><table className="discipline-table"><thead><tr>{dataset.columns.map((column,index) => <th key={index}>{column}</th>)}</tr></thead><tbody>{dataset.rows.slice(0,15).map((row,index) => <tr key={index}>{row.map((value,column) => <td key={column}>{value}</td>)}</tr>)}</tbody></table></div></section>
     </>}
+    <ResearchCatalogSearchPanel catalogs={['eurostat']} locale={locale} storageKey={`${storageKey}:statistics`} />
   </main>;
 }

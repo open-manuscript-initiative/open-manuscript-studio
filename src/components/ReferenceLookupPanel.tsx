@@ -708,6 +708,8 @@ function providerLabel(provider: BibliographicSourceId): string {
       return 'OpenAlex';
     case 'mtmt':
       return 'MTMT';
+    case 'europepmc':
+      return 'Europe PMC';
     case 'zotero':
       return 'Zotero';
     case 'mendeley':
