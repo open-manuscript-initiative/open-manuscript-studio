@@ -162,6 +162,12 @@ function parseParagraphRuns(
       : [];
     const semantics = Array.from(new Set([...inherited, ...direct]));
     const marks: TiptapMark[] = semantics.flatMap(toTiptapMark);
+    const sourceFontFamily = properties
+      ? sourceFontFamilyFromRunProperties(properties)
+      : undefined;
+    if (sourceFontFamily) {
+      marks.push({ type: 'omiSourceFont', attrs: { family: sourceFontFamily } });
+    }
 
     const languageElement = properties
       ? directChildrenByLocalName(properties, 'lang')[0]
@@ -267,6 +273,15 @@ function toTiptapMark(semantic: DocxInlineSemantic): TiptapMark[] {
     case 'subscript': return [{ type: 'omiSubscript' }];
     case 'code': return [{ type: 'code' }];
   }
+}
+
+function sourceFontFamilyFromRunProperties(properties: Element): string | undefined {
+  const fonts = directChildrenByLocalName(properties, 'rFonts')[0];
+  if (!fonts) return undefined;
+  const family = ['hAnsi', 'ascii', 'eastAsia', 'cs']
+    .map((name) => attributeByLocalName(fonts, name)?.trim())
+    .find((value) => value && value.length <= 128 && !/[\\u0000-\\u001f\\u007f]/.test(value));
+  return family || undefined;
 }
 
 function enabledWordProperty(properties: Element, name: string): boolean {

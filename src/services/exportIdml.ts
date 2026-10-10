@@ -5,7 +5,7 @@ import {
   type OmiInlineRun,
 } from '../model/inlineSemantics';
 import { contributorNameParts } from '../model/contributorName';
-import { buildPublicationRenderingContext, type OmiRenderedContributor } from '../model/publicationRendering';
+import { buildPublicationRenderingContext, type OmiRenderedContributor, type OmiRenderedSection } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type {
   PublicationParagraphStyleDefinition,
@@ -39,6 +39,8 @@ export function buildIdmlExport(
   const context = buildPublicationRenderingContext(manuscript, profile);
   const warnings: string[] = [];
   const storyParts: string[] = [];
+  const annotationsById = new Map(manuscript.annotations.map((note) => [note.id, note]));
+  const renderedFootnoteIds = new Set<string>();
 
   storyParts.push(styledParagraph(context.title, 'OMI Title'));
   if (context.subtitle) storyParts.push(styledParagraph(context.subtitle, 'OMI Subtitle'));
@@ -72,7 +74,7 @@ export function buildIdmlExport(
         );
         const runs = extractOmiInlineRuns(block.content);
         if (runs.length) {
-          storyParts.push(styledRunsParagraph(runs, paragraphStyleId));
+          storyParts.push(styledRunsParagraph(runs, paragraphStyleId, annotationsById, renderedFootnoteIds));
         } else {
           const text = blockPlainText(block);
           if (text) storyParts.push(styledParagraph(text, paragraphStyleId));
@@ -83,9 +85,10 @@ export function buildIdmlExport(
   };
   renderSections(context.sections);
 
-  if (manuscript.annotations.length) {
+  const unanchoredAnnotations = manuscript.annotations.filter((note) => !renderedFootnoteIds.has(note.id));
+  if (unanchoredAnnotations.length) {
     storyParts.push(styledParagraph(localizedLabel(context.locale, 'notes'), 'OMI Heading 1'));
-    manuscript.annotations.forEach((note, index) => {
+    unanchoredAnnotations.forEach((note, index) => {
       storyParts.push(styledParagraph(`${index + 1}. ${note.body}`, 'OMI Note'));
     });
   }
@@ -159,8 +162,7 @@ export function buildIdmlExport(
 <idPkg:Preferences xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}">
   <DocumentPreference PageHeight="${pageHeight}" PageWidth="${pageWidth}" PagesPerDocument="1" FacingPages="false" PageOrientation="${pageOrientation}" PageBinding="LeftToRight"/>
 </idPkg:Preferences>`;
-  const fontsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<idPkg:Fonts xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}"><FontFamily Self="FontFamily/Times New Roman" Name="Times New Roman"/></idPkg:Fonts>`;
+  const fontsXml = buildFontsXml(publicationStyle, context.sections);
   const graphicXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <idPkg:Graphic xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}"><Color Self="Color/Black" Model="Process" Space="CMYK" ColorValue="0 0 0 100" ColorOverride="Specialblack" Name="Black"/></idPkg:Graphic>`;
   const containerXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -185,6 +187,33 @@ export function buildIdmlExport(
     fileName: `${fileStem(manuscript)}.idml`,
     warnings,
   };
+}
+
+function buildFontsXml(
+  publicationStyle: PublicationStyle | undefined,
+  sections: readonly OmiRenderedSection[],
+): string {
+  const families = new Set(['Times New Roman', 'Courier New']);
+  for (const definition of publicationStyle?.paragraphStyles.items ?? []) {
+    const family = definition.properties.fontFamily?.trim();
+    if (family) families.add(family);
+  }
+  const visit = (items: typeof sections): void => {
+    for (const section of items) {
+      for (const block of section.blocks) {
+        if (block.visual) continue;
+        for (const run of extractOmiInlineRuns(block.content)) {
+          if (run.sourceFontFamily) families.add(run.sourceFontFamily);
+        }
+      }
+      visit(section.children);
+    }
+  };
+  visit(sections);
+  const entries = [...families]
+    .map((family) => `<FontFamily Self="FontFamily/${xml(family)}" Name="${xml(family)}"/>`)
+    .join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<idPkg:Fonts xmlns:idPkg="http://ns.adobe.com/AdobeInDesign/idml/1.0/packaging" DOMVersion="${IDML_DOM_VERSION}">${entries}</idPkg:Fonts>`;
 }
 
 function buildStylesXml(publicationStyle?: PublicationStyle): string {
@@ -557,15 +586,83 @@ function styledContributorNamesParagraph(
   return `<ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/OMI Authors">${ranges.join('')}<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Br/></CharacterStyleRange></ParagraphStyleRange>`;
 }
 
-function styledRunsParagraph(runs: readonly OmiInlineRun[], styleName: string): string {
+function idmlFootnote(note: OmiManuscript['annotations'][number], index: number): string {
+  return `<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Footnote Self="uFootnote${index}"><ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/OMI Note"><CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Content>${xml(note.body)}</Content></CharacterStyleRange></ParagraphStyleRange></Footnote></CharacterStyleRange>`;
+}
+
+function styledRunsParagraph(
+  runs: readonly OmiInlineRun[],
+  styleName: string,
+  annotationsById?: ReadonlyMap<string, OmiManuscript['annotations'][number]>,
+  renderedFootnoteIds?: Set<string>,
+): string {
   const content = runs
-    .map((run) => {
+    .flatMap((run) => {
+      const note = run.noteId ? annotationsById?.get(run.noteId) : undefined;
+      if (
+        note &&
+        (run.noteType === 'footnote' || note.noteKind === 'footnote' || note.renderingHint === 'footnote')
+      ) {
+        renderedFootnoteIds?.add(note.id);
+        const index = [...(annotationsById?.values() ?? [])].findIndex((item) => item.id === note.id) + 1;
+        return [idmlFootnote(note, index)];
+      }
+      return splitGreekSourceFontRanges(run).map((range) => {
       const charStyle = omiCharacterStyleName(run.semantics) ?? '$ID/[None]';
       const language = run.language ? ` AppliedLanguage="${xml(run.language)}"` : '';
-      return `<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/${xml(charStyle)}"${language}><Content>${xml(run.text)}</Content></CharacterStyleRange>`;
+      const properties = range.fontFamily
+        ? `<Properties><AppliedFont type="string">${xml(range.fontFamily)}</AppliedFont></Properties>`
+        : '';
+      return `<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/${xml(charStyle)}"${language}>${properties}<Content>${xml(range.text)}</Content></CharacterStyleRange>`;
+      });
     })
     .join('');
   return `<ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/${xml(styleName)}">${content}<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Br/></CharacterStyleRange></ParagraphStyleRange>`;
+}
+
+interface IdmlFontRange {
+  text: string;
+  fontFamily?: string;
+}
+
+/**
+ * Polytonic Greek in older OMI packages predates inline source-font metadata.
+ * Keep its Word source face (Times New Roman in the supplied manuscript), or
+ * the imported run face when present, while the publication template styles
+ * the surrounding text.
+ */
+function splitGreekSourceFontRanges(run: OmiInlineRun): IdmlFontRange[] {
+  const result: IdmlFontRange[] = [];
+  let previousWasGreek = false;
+  const characters = Array.from(run.text);
+  for (let index = 0; index < characters.length; index += 1) {
+    const character = characters[index]!;
+    const codePoint = character.codePointAt(0) ?? 0;
+    const isGreek = (codePoint >= 0x0370 && codePoint <= 0x03ff)
+      || (codePoint >= 0x1f00 && codePoint <= 0x1fff);
+    const isCombiningMark = codePoint >= 0x0300 && codePoint <= 0x036f;
+    const isWhitespace = /^\s$/u.test(character);
+    const nextSignificantCharacter: string | undefined = isWhitespace
+      ? characters.slice(index + 1).find((candidate) => !/^\s$/u.test(candidate))
+      : undefined;
+    const nextCodePoint = nextSignificantCharacter?.codePointAt(0) ?? 0;
+    const nextSignificantIsGreek = (nextCodePoint >= 0x0370 && nextCodePoint <= 0x03ff)
+      || (nextCodePoint >= 0x1f00 && nextCodePoint <= 0x1fff);
+    const joinsGreekRun: boolean = isCombiningMark
+      || (isWhitespace && previousWasGreek && nextSignificantIsGreek);
+    const usesGreekFallback = isGreek || (joinsGreekRun && previousWasGreek);
+    const fontFamily = usesGreekFallback
+      ? run.sourceFontFamily || 'Times New Roman'
+      : undefined;
+    const previous = result.at(-1);
+    if (previous && previous.fontFamily === fontFamily) {
+      previous.text += character;
+    } else {
+      result.push({ text: character, ...(fontFamily ? { fontFamily } : {}) });
+    }
+    previousWasGreek = isGreek || (joinsGreekRun && previousWasGreek);
+  }
+  return result;
 }
 
 function blockPlainText(block: OmiBlock): string {
