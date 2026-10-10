@@ -61,3 +61,25 @@ test('preserves ruler tab nodes as tab characters for text-based exports', () =>
   const runs = extractOmiInlineRuns(content);
   assert.equal(runs.map((run) => run.text).join('').trimEnd(), 'Name\tValue');
 });
+
+test('source-font compatibility mark stays outside scholarly semantics in the inline adapter', () => {
+  const content = JSON.stringify({
+    type: 'doc',
+    content: [{
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Ἡ ἀρχή', marks: [
+          { type: 'omiSourceFont', attrs: { family: 'Original Greek Font' } },
+          { type: 'italic' },
+        ] },
+        { type: 'text', text: ' and Latin', marks: [{ type: 'italic' }] },
+      ],
+    }],
+  });
+  const runs = extractOmiInlineRuns(content);
+  assert.equal(runs[0]?.sourceFontFamily, 'Original Greek Font');
+  assert.deepEqual(runs[0]?.semantics, ['emphasis']);
+  assert.equal(runs[1]?.sourceFontFamily, undefined);
+  assert.deepEqual(runs[1]?.semantics, ['emphasis']);
+  assert.deepEqual(semanticKindsFromMarks([{ type: 'omiSourceFont', attrs: { family: 'Original Greek Font' } }]), []);
+});
