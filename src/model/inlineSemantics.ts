@@ -19,6 +19,8 @@ export interface OmiInlineRun {
   sourceFontFamily?: string;
   language?: string;
   link?: string;
+  noteId?: string;
+  noteType?: string;
 }
 
 interface JsonNode {
@@ -156,8 +158,23 @@ function walk(node: JsonNode, runs: OmiInlineRun[]): void {
     return;
   }
 
+  if (node.type === 'omiNote') {
+    const label = node.attrs?.label;
+    if (typeof label === 'string' && label) {
+      const noteId = node.attrs?.noteId;
+      const noteType = node.attrs?.noteType;
+      runs.push({
+        text: label,
+        semantics: [],
+        ...(typeof noteId === 'string' ? { noteId } : {}),
+        ...(typeof noteType === 'string' ? { noteType } : {}),
+      });
+    }
+    return;
+  }
+
   // Atomic semantic objects keep their visible label when one is available.
-  if (node.type === 'omiCitation' || node.type === 'omiCrossReference' || node.type === 'omiNote') {
+  if (node.type === 'omiCitation' || node.type === 'omiCrossReference') {
     const label = node.attrs?.label;
     if (typeof label === 'string' && label) runs.push({ text: label, semantics: [] });
     return;
@@ -184,6 +201,8 @@ function coalesceRuns(runs: readonly OmiInlineRun[]): OmiInlineRun[] {
       previous.sourceFontFamily === run.sourceFontFamily &&
       previous.language === run.language &&
       previous.link === run.link &&
+      previous.noteId === run.noteId &&
+      previous.noteType === run.noteType &&
       previous.semantics.join('|') === run.semantics.join('|')
     ) {
       previous.text += run.text;
