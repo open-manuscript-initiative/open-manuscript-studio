@@ -297,6 +297,49 @@ test('uses the manuscript legacy font fallback for polytonic Greek without sourc
   assert.equal(greekRange.getElementsByTagName('AppliedFont')[0]?.textContent, 'Times New Roman');
 });
 
+
+test('exports footnotes as anchored IDML footnotes with their reference association', () => {
+  const manuscript = createVersionedTestManuscript();
+  const block = manuscript.sections[0]?.blocks[0];
+  assert.ok(block);
+  block.content = JSON.stringify({
+    type: 'doc',
+    content: [{
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Claim' },
+        { type: 'omiNote', attrs: { noteId: 'note-1', anchorId: 'anchor-1', label: '1', noteType: 'footnote' } },
+        { type: 'text', text: ' continues.' },
+      ],
+    }],
+  });
+  manuscript.annotations.push({
+    id: 'note-1',
+    type: 'note',
+    noteKind: 'footnote',
+    anchorId: 'anchor-1',
+    targetBlockId: block.id,
+    body: 'Footnote body with <details> & context.',
+    renderingHint: 'footnote',
+  });
+
+  const result = buildIdmlExport(manuscript);
+  const entries = readStoreZipEntries(result.bytes);
+  const story = new XmlParser({
+    onError: (_level, message) => { throw new Error(message); },
+  }).parseFromString(new TextDecoder().decode(entries.get('Stories/Story_u3.xml')), 'application/xml');
+  const footnotes = Array.from(story.getElementsByTagName('Footnote'));
+
+  assert.equal(footnotes.length, 1);
+  assert.equal(footnotes[0]?.getElementsByTagName('Content')[0]?.textContent, 'Footnote body with <details> & context.');
+  assert.equal(footnotes[0]?.parentNode?.parentNode?.nodeName, 'ParagraphStyleRange');
+  assert.equal(
+    (footnotes[0]?.parentNode?.parentNode as Element | undefined)?.getAttribute('AppliedParagraphStyle'),
+    'ParagraphStyle/OMI Body',
+  );
+  assert.doesNotMatch(new TextDecoder().decode(entries.get('Stories/Story_u3.xml')), /Jegyzetek|OMI Heading 1[^]*Footnote body/);
+});
+
 function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {
   const entries = new Map<string, Uint8Array>();
   const decoder = new TextDecoder();
