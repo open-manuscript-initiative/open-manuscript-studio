@@ -1,6 +1,5 @@
 import {
   extractOmiInlineRuns,
-  inlineSourceFontFamilyFromMarks,
   omiCharacterStyleName,
   OMI_CHARACTER_STYLE_NAMES,
   type OmiInlineRun,
