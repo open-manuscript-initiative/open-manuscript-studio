@@ -337,7 +337,7 @@ test('exports footnotes as anchored IDML footnotes with their reference associat
     (footnotes[0]?.parentNode?.parentNode as Element | undefined)?.getAttribute('AppliedParagraphStyle'),
     'ParagraphStyle/OMI Body',
   );
-  assert.doesNotMatch(new TextDecoder().decode(entries.get('Stories/Story_u3.xml')), /Jegyzetek|OMI Heading 1[^]*Footnote body/);
+  assert.doesNotMatch(new TextDecoder().decode(entries.get('Stories/Story_u3.xml')), /<Content>1\\. Footnote body/);
 });
 
 function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {
