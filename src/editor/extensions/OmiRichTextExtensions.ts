@@ -231,6 +231,34 @@ export const OmiLanguageExtension = Mark.create({
   },
 });
 
+export const OmiSourceFontExtension = Mark.create({
+  name: 'omiSourceFont',
+  inclusive: false,
+
+  addAttributes() {
+    return {
+      family: {
+        default: null,
+        parseHTML: (element: HTMLElement) =>
+          normalizeSourceFontFamily(element.getAttribute('data-omi-source-font')),
+      },
+    };
+  },
+
+  parseHTML() {
+    return [{ tag: 'span[data-omi-source-font]' }];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    const family = normalizeSourceFontFamily(
+      typeof HTMLAttributes.family === 'string' ? HTMLAttributes.family : null,
+    );
+    return family
+      ? ['span', { 'data-omi-source-font': family }, 0]
+      : ['span', {}, 0];
+  },
+});
+
 /**
  * Provides a compact structural menu for the current ProseMirror text block.
  * The menu follows the paragraph containing the editor selection and collapses
@@ -260,6 +288,7 @@ export const OMI_RICH_TEXT_EXTENSIONS = [
   OmiSmallCapsExtension,
   OmiUnderlineExtension,
   OmiLanguageExtension,
+  OmiSourceFontExtension,
   OmiTabExtension,
   OmiNonPrintingMarksExtension,
   OmiBlockTypeMenuExtension,
@@ -277,6 +306,7 @@ export const OMI_CONTINUOUS_RICH_TEXT_EXTENSIONS = [
   OmiSmallCapsExtension,
   OmiUnderlineExtension,
   OmiLanguageExtension,
+  OmiSourceFontExtension,
   OmiTabExtension,
   OmiNonPrintingMarksExtension,
   OmiBlockTypeMenuExtension,
@@ -574,6 +604,13 @@ function getBlockTypeCopy(): BlockTypeCopy {
     .split('-')[0];
   if (locale === 'hu' || locale === 'de') return BLOCK_TYPE_COPY[locale];
   return BLOCK_TYPE_COPY.en;
+}
+
+function normalizeSourceFontFamily(value: string | null): string | null {
+  const family = value?.trim();
+  return family && family.length <= 128 && !/[\\u0000-\\u001f\\u007f]/.test(family)
+    ? family
+    : null;
 }
 
 function sanitizeLinkAttributes(
