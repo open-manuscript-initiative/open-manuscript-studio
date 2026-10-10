@@ -16,6 +16,7 @@ export interface OmiInlineMarkLike {
 export interface OmiInlineRun {
   text: string;
   semantics: OmiInlineSemanticKind[];
+  sourceFontFamily?: string;
   language?: string;
   link?: string;
 }
@@ -86,6 +87,14 @@ export function inlineLanguageFromMarks(
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
+export function inlineSourceFontFamilyFromMarks(
+  marks: readonly OmiInlineMarkLike[] | undefined,
+): string | undefined {
+  const mark = (marks ?? []).find((item) => item.type === 'omiSourceFont');
+  const value = mark?.attrs?.family;
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
 export function inlineLinkFromMarks(
   marks: readonly OmiInlineMarkLike[] | undefined,
 ): string | undefined {
@@ -130,6 +139,7 @@ function walk(node: JsonNode, runs: OmiInlineRun[]): void {
     runs.push({
       text: node.text,
       semantics: semanticKindsFromMarks(node.marks),
+      sourceFontFamily: inlineSourceFontFamilyFromMarks(node.marks),
       language: inlineLanguageFromMarks(node.marks),
       link: inlineLinkFromMarks(node.marks),
     });
@@ -171,6 +181,7 @@ function coalesceRuns(runs: readonly OmiInlineRun[]): OmiInlineRun[] {
     const previous = result.at(-1);
     if (
       previous &&
+      previous.sourceFontFamily === run.sourceFontFamily &&
       previous.language === run.language &&
       previous.link === run.link &&
       previous.semantics.join('|') === run.semantics.join('|')
