@@ -196,9 +196,10 @@ test('archive source preferences default to existing sources, filter unknown IDs
   assert.deepEqual(readVisibleHistoryArchiveSources('{broken'), DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS);
   assert.deepEqual(readVisibleHistoryArchiveSources(JSON.stringify(['uk', 'uk', 'future', 4, 'nara'])), ['uk', 'nara']);
   assert.deepEqual(readVisibleHistoryArchiveSources('[]'), []);
-  assert.equal(HISTORY_ARCHIVE_SOURCE_IDS.length, 30);
+  assert.equal(HISTORY_ARCHIVE_SOURCE_IDS.length, 35);
   assert.deepEqual(readVisibleHistoryArchiveSources(JSON.stringify(['swedish', 'polish', 'slovak', 'austrian'])), ['swedish', 'polish', 'slovak', 'austrian']);
   assert.deepEqual(readVisibleHistoryArchiveSources(JSON.stringify(['belgian', 'portuguese', 'slovenian'])), ['belgian', 'portuguese', 'slovenian']);
+  assert.deepEqual(readVisibleHistoryArchiveSources(JSON.stringify(['norwegian', 'swiss', 'icelandic', 'serbian', 'archivesEurope'])), ['norwegian', 'swiss', 'icelandic', 'serbian', 'archivesEurope']);
 });
 
 test('archive source preferences are isolated by user and workspace', () => {
