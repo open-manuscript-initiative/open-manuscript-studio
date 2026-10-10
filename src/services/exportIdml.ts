@@ -1,5 +1,6 @@
 import {
   extractOmiInlineRuns,
+  inlineSourceFontFamilyFromMarks,
   omiCharacterStyleName,
   OMI_CHARACTER_STYLE_NAMES,
   type OmiInlineRun,
@@ -559,13 +560,49 @@ function styledContributorNamesParagraph(
 
 function styledRunsParagraph(runs: readonly OmiInlineRun[], styleName: string): string {
   const content = runs
-    .map((run) => {
+    .flatMap((run) => splitGreekSourceFontRanges(run).map((range) => {
       const charStyle = omiCharacterStyleName(run.semantics) ?? '$ID/[None]';
       const language = run.language ? ` AppliedLanguage="${xml(run.language)}"` : '';
-      return `<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/${xml(charStyle)}"${language}><Content>${xml(run.text)}</Content></CharacterStyleRange>`;
-    })
+      const properties = range.fontFamily
+        ? `<Properties><AppliedFont type="string">${xml(range.fontFamily)}</AppliedFont></Properties>`
+        : '';
+      return `<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/${xml(charStyle)}"${language}>${properties}<Content>${xml(range.text)}</Content></CharacterStyleRange>`;
+    }))
     .join('');
   return `<ParagraphStyleRange AppliedParagraphStyle="ParagraphStyle/${xml(styleName)}">${content}<CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[None]"><Br/></CharacterStyleRange></ParagraphStyleRange>`;
+}
+
+interface IdmlFontRange {
+  text: string;
+  fontFamily?: string;
+}
+
+/**
+ * Polytonic Greek in older OMI packages predates inline source-font metadata.
+ * Keep its Word source face (Times New Roman in the supplied manuscript), or
+ * the imported run face when present, while the publication template styles
+ * the surrounding text.
+ */
+function splitGreekSourceFontRanges(run: OmiInlineRun): IdmlFontRange[] {
+  const result: IdmlFontRange[] = [];
+  let previousWasGreek = false;
+  for (const character of Array.from(run.text)) {
+    const codePoint = character.codePointAt(0) ?? 0;
+    const isGreek = (codePoint >= 0x0370 && codePoint <= 0x03ff)
+      || (codePoint >= 0x1f00 && codePoint <= 0x1fff);
+    const isCombiningMark = codePoint >= 0x0300 && codePoint <= 0x036f;
+    const fontFamily = isGreek || (isCombiningMark && previousWasGreek)
+      ? run.sourceFontFamily || 'Times New Roman'
+      : undefined;
+    const previous = result.at(-1);
+    if (previous && previous.fontFamily === fontFamily) {
+      previous.text += character;
+    } else {
+      result.push({ text: character, ...(fontFamily ? { fontFamily } : {}) });
+    }
+    previousWasGreek = isGreek || (isCombiningMark && previousWasGreek);
+  }
+  return result;
 }
 
 function blockPlainText(block: OmiBlock): string {
