@@ -212,6 +212,91 @@ test('exports assigned Studio paragraph styles as real IDML paragraph styles', (
   assert.match(landscapePreferences, /PageOrientation="Landscape"/);
 });
 
+test('keeps the source font on Greek text when generating IDML', () => {
+  const manuscript = createVersionedTestManuscript();
+  const block = manuscript.sections[0]?.blocks[0];
+  assert.ok(block);
+  block.content = JSON.stringify({
+    type: 'doc',
+    content: [{
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Latin ' },
+        { type: 'text', text: 'Ἡ ἀρχή', marks: [{ type: 'omiSourceFont', attrs: { family: 'Original Greek Font' } }] },
+        { type: 'text', text: ' after' },
+      ],
+    }],
+  });
+  const publicationStyle = {
+    page: { width: 210, height: 297, margins: { top: 20, bottom: 20, inner: 20, outer: 20 } },
+    paragraphStyles: {
+      defaultStyleId: 'body',
+      items: [{
+        id: 'body',
+        name: 'Body',
+        basedOnId: null,
+        nextStyleId: 'body',
+        properties: { fontFamily: 'Template Font' },
+      }],
+    },
+  } as unknown as PublicationStyle;
+
+  const result = buildIdmlExport(manuscript, publicationStyle);
+  const entries = readStoreZipEntries(result.bytes);
+  const story = new XmlParser({
+    onError: (_level, message) => { throw new Error(message); },
+  }).parseFromString(new TextDecoder().decode(entries.get('Stories/Story_u3.xml')), 'application/xml');
+  const ranges = Array.from(story.getElementsByTagName('CharacterStyleRange'));
+  const greekRange = ranges.find((range) =>
+    range.getElementsByTagName('Content')[0]?.textContent === 'Ἡ ἀρχή',
+  );
+  assert.ok(greekRange, 'Greek text should remain a distinct IDML character range');
+  assert.equal(greekRange.getElementsByTagName('AppliedFont')[0]?.textContent, 'Original Greek Font');
+  const latinRange = ranges.find((range) =>
+    range.getElementsByTagName('Content')[0]?.textContent === 'Latin ',
+  );
+  assert.ok(latinRange, 'Latin text should remain a template-styled range');
+  assert.equal(latinRange.getElementsByTagName('AppliedFont').length, 0);
+
+  const fonts = new TextDecoder().decode(entries.get('Resources/Fonts.xml'));
+  assert.match(fonts, /Name="Original Greek Font"/);
+});
+
+test('uses the manuscript legacy font fallback for polytonic Greek without source font metadata', () => {
+  const manuscript = createVersionedTestManuscript();
+  const block = manuscript.sections[0]?.blocks[0];
+  assert.ok(block);
+  block.content = JSON.stringify({
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Text Ἡ ἀρχή text' }] }],
+  });
+  const publicationStyle = {
+    page: { width: 210, height: 297, margins: { top: 20, bottom: 20, inner: 20, outer: 20 } },
+    paragraphStyles: {
+      defaultStyleId: 'body',
+      items: [{
+        id: 'body',
+        name: 'Body',
+        basedOnId: null,
+        nextStyleId: 'body',
+        properties: { fontFamily: 'Template Font' },
+      }],
+    },
+  } as unknown as PublicationStyle;
+
+  const result = buildIdmlExport(manuscript, publicationStyle);
+  const entries = readStoreZipEntries(result.bytes);
+  const story = new XmlParser({
+    onError: (_level, message) => { throw new Error(message); },
+  }).parseFromString(new TextDecoder().decode(entries.get('Stories/Story_u3.xml')), 'application/xml');
+  const ranges = Array.from(story.getElementsByTagName('CharacterStyleRange'));
+  const greekRange = ranges.find((range) =>
+    range.getElementsByTagName('Content')[0]?.textContent === 'Ἡ ἀρχή',
+  );
+  assert.ok(greekRange, 'Greek text should be split from surrounding Latin text');
+  assert.equal(greekRange.getElementsByTagName('AppliedFont')[0]?.textContent, 'Times New Roman');
+});
+
 function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {
   const entries = new Map<string, Uint8Array>();
   const decoder = new TextDecoder();
