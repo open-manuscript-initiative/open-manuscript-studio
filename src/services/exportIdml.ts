@@ -40,7 +40,7 @@ export function buildIdmlExport(
   const warnings: string[] = [];
   const storyParts: string[] = [];
   const publishableAnnotations = manuscript.annotations.filter((note) =>
-    note.type === 'note' && note.renderingHint !== 'hidden' && note.visibility !== 'editor_only');
+    note.type === 'note' && note.renderingHint !== 'hidden' && !note.visibility);
   const annotationsById = new Map(publishableAnnotations.map((note) => [note.id, note]));
   const renderedFootnoteIds = new Set<string>();
 
