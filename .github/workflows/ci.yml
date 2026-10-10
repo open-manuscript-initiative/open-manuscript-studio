@@ -270,7 +270,7 @@ jobs:
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
             --file deployment/Dockerfile.api \
-            --tag "$api_image:latest" \
+            --tag "$api_image:beta" \
             --tag "$api_image:$commit_tag" \
             --label "$source_label" \
             --push .
@@ -278,7 +278,7 @@ jobs:
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
             --file deployment/Dockerfile.web \
-            --tag "$web_image:latest" \
+            --tag "$web_image:beta" \
             --tag "$web_image:$commit_tag" \
             --label "$source_label" \
             --push .

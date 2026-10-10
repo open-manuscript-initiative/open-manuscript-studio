@@ -17,7 +17,7 @@ services:
       start_period: 10s
 
   api:
-    image: ghcr.io/open-manuscript-initiative/open-manuscript-studio-api:${STUDIO_IMAGE_TAG:-latest}
+    image: ghcr.io/open-manuscript-initiative/open-manuscript-studio-api:${STUDIO_IMAGE_TAG:-beta}
     restart: unless-stopped
     env_file:
       - .env
@@ -48,7 +48,7 @@ services:
       start_period: 30s
 
   web:
-    image: ghcr.io/open-manuscript-initiative/open-manuscript-studio-web:${STUDIO_IMAGE_TAG:-latest}
+    image: ghcr.io/open-manuscript-initiative/open-manuscript-studio-web:${STUDIO_IMAGE_TAG:-beta}
     restart: unless-stopped
     ports:
       - "${STUDIO_BIND_ADDRESS:-127.0.0.1}:${STUDIO_HTTP_PORT:-8080}:80"
