@@ -13,6 +13,22 @@ export const HISTORY_ARCHIVE_SOURCE_IDS = [
   'polish',
   'slovak',
   'austrian',
+  'belgian',
+  'bulgarian',
+  'croatian',
+  'cypriot',
+  'czech',
+  'danish',
+  'estonian',
+  'finnish',
+  'greek',
+  'irish',
+  'latvian',
+  'lithuanian',
+  'luxembourgish',
+  'maltese',
+  'portuguese',
+  'slovenian',
 ] as const;
 
 export type HistoryArchiveSourceId = (typeof HISTORY_ARCHIVE_SOURCE_IDS)[number];
