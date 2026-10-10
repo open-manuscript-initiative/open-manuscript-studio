@@ -54,6 +54,11 @@ const archivePortals: ArchivePortal[] = [
   { id: 'maltese', url: 'https://arkivji.org.mt/' },
   { id: 'portuguese', url: 'https://digitarq.arquivos.pt/en' },
   { id: 'slovenian', url: 'https://vac.sjas.gov.si/vac/search/fieldSearch' },
+  { id: 'norwegian', url: 'https://www.arkivportalen.no/' },
+  { id: 'swiss', url: 'https://www.recherche.bar.admin.ch/recherche/' },
+  { id: 'icelandic', url: 'https://skjalaskrar.skjalasafn.is/' },
+  { id: 'serbian', url: 'https://portal.earhiv.gov.rs/' },
+  { id: 'archivesEurope', url: 'https://www.archivesportaleurope.net/' },
 ];
 
 const copyByLocale = {
@@ -111,6 +116,11 @@ const portalLabels: Record<string, Record<ArchivePortal['id'], string>> = {
     maltese: 'Malta',
     portuguese: 'Portugal',
     slovenian: 'Slovenia',
+    norwegian: 'Norway',
+    swiss: 'Switzerland',
+    icelandic: 'Iceland',
+    serbian: 'Serbia',
+    archivesEurope: 'Europe',
   },
   de: {
     uk: 'Vereinigtes Königreich',
@@ -139,6 +149,11 @@ const portalLabels: Record<string, Record<ArchivePortal['id'], string>> = {
     maltese: 'Malta',
     portuguese: 'Portugal',
     slovenian: 'Slowenien',
+    norwegian: 'Norwegen',
+    swiss: 'Schweiz',
+    icelandic: 'Island',
+    serbian: 'Serbien',
+    archivesEurope: 'Europa',
   },
   hu: {
     uk: 'Egyesült Királyság',
@@ -167,6 +182,11 @@ const portalLabels: Record<string, Record<ArchivePortal['id'], string>> = {
     maltese: 'Málta',
     portuguese: 'Portugália',
     slovenian: 'Szlovénia',
+    norwegian: 'Norvégia',
+    swiss: 'Svájc',
+    icelandic: 'Izland',
+    serbian: 'Szerbia',
+    archivesEurope: 'Európa',
   },
 };
 
@@ -202,6 +222,11 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     maltese: 'National Archives of Malta (Arkivji)',
     portuguese: 'Portuguese Archives (Digitarq)',
     slovenian: 'Slovenian Virtual Archival Reading Room (VAČ)',
+    norwegian: 'Norwegian Archive Portal (Arkivportalen)',
+    swiss: 'Swiss Federal Archives (online access)',
+    icelandic: 'National Archives of Iceland (Skjalaskrá)',
+    serbian: 'State Archives of Serbia (eArhiv)',
+    archivesEurope: 'Archives Portal Europe',
   },
   de: {
     europeana: 'Europeana',
@@ -234,6 +259,11 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     maltese: 'Nationalarchiv Malta (Arkivji)',
     portuguese: 'Portugiesische Archive (Digitarq)',
     slovenian: 'Virtueller slowenischer Lesesaal (VAČ)',
+    norwegian: 'Norwegisches Archivportal (Arkivportalen)',
+    swiss: 'Schweizerisches Bundesarchiv (Online-Zugang)',
+    icelandic: 'Nationalarchiv Islands (Skjalaskrá)',
+    serbian: 'Staatsarchiv Serbiens (eArhiv)',
+    archivesEurope: 'Archives Portal Europe',
   },
   hu: {
     europeana: 'Europeana',
@@ -266,6 +296,11 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     maltese: 'Máltai Nemzeti Levéltár (Arkivji)',
     portuguese: 'Portugál Levéltárak (Digitarq)',
     slovenian: 'Szlovén Virtuális Kutatóterem (VAČ)',
+    norwegian: 'Norvég Levéltári Portál (Arkivportalen)',
+    swiss: 'Svájci Szövetségi Levéltár (online kereső)',
+    icelandic: 'Izlandi Nemzeti Levéltár (Skjalaskrá)',
+    serbian: 'Szerb Állami Levéltár (eArhiv)',
+    archivesEurope: 'Archives Portal Europe',
   },
 };
 
