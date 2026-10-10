@@ -1,19 +1,13 @@
-import { isTauri } from '@tauri-apps/api/core';
+import {
+  clearNativeServerOverride,
+  isNativeStudioRuntime,
+  persistNativeServerSelection,
+  readNativeServerSelection,
+} from '../platform/nativeServerSelection';
+export { isNativeStudioRuntime, NATIVE_SESSION_STORAGE_KEY } from '../platform/nativeServerSelection';
 import { normalizeIntegrationApiBaseUrl } from './integrationApiBaseUrl';
 
 export const DEFAULT_STUDIO_API_ORIGIN = 'https://studio.openmanuscript.org';
-export const NATIVE_SESSION_STORAGE_KEY = 'omi_native_session_token';
-const NATIVE_SERVER_STORAGE_KEY = 'omi_native_studio_api_origin';
-
-export function isNativeStudioRuntime(): boolean {
-  if (isTauri()) return true;
-  const location = globalThis.location;
-  return Boolean(location && (
-    location.protocol === 'tauri:' ||
-    location.hostname === 'tauri.localhost'
-  ));
-}
-
 /** Return the selected native endpoint, or the build default for this platform. */
 export function getNativeStudioServerOrigin(): string {
   if (isNativeStudioRuntime()) {
@@ -88,23 +82,18 @@ export function saveNativeStudioServerOrigin(value: string | null): boolean {
   const resolvedNext = next ?? configuredOrDefaultOrigin();
   if (current === resolvedNext) {
     if (next === null) {
-      globalThis.localStorage?.removeItem(NATIVE_SERVER_STORAGE_KEY);
+      clearNativeServerOverride();
     }
     return false;
   }
 
-  if (next === null) {
-    globalThis.localStorage?.removeItem(NATIVE_SERVER_STORAGE_KEY);
-  } else {
-    globalThis.localStorage?.setItem(NATIVE_SERVER_STORAGE_KEY, next);
-  }
-  globalThis.localStorage?.removeItem(NATIVE_SESSION_STORAGE_KEY);
+  persistNativeServerSelection(next);
   return true;
 }
 
 function readSavedNativeStudioServerOrigin(): string | null {
   try {
-    const value = globalThis.localStorage?.getItem(NATIVE_SERVER_STORAGE_KEY)?.trim();
+    const value = readNativeServerSelection()?.trim();
     return value ? normalizeNativeStudioServerOrigin(value) : null;
   } catch {
     return null;
