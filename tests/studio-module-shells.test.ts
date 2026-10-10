@@ -22,6 +22,7 @@ import { resolveStudioModuleActivationState } from '../src/modules/types.ts';
 import { searchEuropeana } from '../server/src/integrations/europeana/europeanaSearch.ts';
 import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSearch.ts';
 import { buildRomanianArchivesSearchUrl } from '../src/modules/history-archives/romanianArchives.ts';
+import { DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS, getHistoryArchiveSourcesStorageKey, HISTORY_ARCHIVE_SOURCE_IDS, readVisibleHistoryArchiveSources } from '../src/modules/history-archives/sourcePreferences.ts';
 import { searchSefaria } from '../server/src/integrations/sefaria/sefariaSearch.ts';
 import { createExperimentalWorkspace, isExperimentalWorkspace, parseExperimentalWorkspace } from '../src/modules/experimental-laboratory/model.ts';
 import { addDesignDeviation, createStatisticalWorkspace, describe, estimateTwoGroupSampleSize, isStatisticalWorkspace, linearRegression, oneWayAnova, parseDelimited, parseLaboratoryMeasurements, parseStatisticalWorkspace, preregisterDesign, randomizeParticipants, welchTTest } from '../src/modules/statistical-analysis/model.ts';
@@ -188,6 +189,20 @@ test('Romanian Archives search URL targets the official text catalogue and encod
   assert.equal(url.searchParams.get('ts'), 'Béthlen + Oradea');
   assert.equal(url.searchParams.get('pg'), '1');
   assert.equal(url.searchParams.get('pgs'), '10');
+});
+
+test('archive source preferences default to existing sources, filter unknown IDs, and preserve an empty selection', () => {
+  assert.deepEqual(readVisibleHistoryArchiveSources(null), DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS);
+  assert.deepEqual(readVisibleHistoryArchiveSources('{broken'), DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS);
+  assert.deepEqual(readVisibleHistoryArchiveSources(JSON.stringify(['uk', 'uk', 'future', 4, 'nara'])), ['uk', 'nara']);
+  assert.deepEqual(readVisibleHistoryArchiveSources('[]'), []);
+  assert.equal(HISTORY_ARCHIVE_SOURCE_IDS.length, 14);
+  assert.deepEqual(readVisibleHistoryArchiveSources(JSON.stringify(['swedish', 'polish', 'slovak', 'austrian'])), ['swedish', 'polish', 'slovak', 'austrian']);
+});
+
+test('archive source preferences are isolated by user and workspace', () => {
+  assert.notEqual(getHistoryArchiveSourcesStorageKey('user-a', 'workspace-a'), getHistoryArchiveSourcesStorageKey('user-b', 'workspace-a'));
+  assert.notEqual(getHistoryArchiveSourcesStorageKey('user-a', 'workspace-a'), getHistoryArchiveSourcesStorageKey('user-a', 'workspace-b'));
 });
 
 test('Europeana adapter uses the secret header and normalizes archival discovery metadata', async () => {

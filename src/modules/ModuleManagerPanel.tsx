@@ -5,10 +5,7 @@ import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { getServerModulePolicy, saveServerModulePreferences } from './api';
 import { corpusLinguisticsModule, criticalTextEditionModule, culturalHeritageModule, historyArchivesModule, legalSourcesModule, musicologyModule, researchReproducibilityModule, religiousTextsModule, socialResearchMethodsModule, spatialResearchModule, archaeologyModule, experimentalLaboratoryModule, statisticalAnalysisModule, studioModules } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
-import { EuropeanaSearchPanel } from './history-archives/EuropeanaSearchPanel';
-import { NaraSearchPanel } from './history-archives/NaraSearchPanel';
-import { RomanianArchivesSearchPanel } from './history-archives/RomanianArchivesSearchPanel';
-import { EleveltarSearchPanel } from './history-archives/EleveltarSearchPanel';
+import { HistoryArchivesSourcesPanel } from './history-archives/HistoryArchivesSourcesPanel';
 import { ReligiousTextsPanel } from './religious-texts/ReligiousTextsPanel';
 import { CriticalTextEditionPanel } from './critical-text-edition/CriticalTextEditionPanel';
 import { CorpusLinguisticsPanel } from './corpus-linguistics/CorpusLinguisticsPanel';
@@ -118,12 +115,13 @@ export function ModuleManagerPanel({
                 locale={locale}
               >
                 {module.id === historyArchivesModule.id ? (
-                  <>
-                    <EuropeanaSearchPanel copy={copy.europeana} locale={locale} />
-                    <NaraSearchPanel copy={copy.nara} locale={locale} />
-                    <RomanianArchivesSearchPanel locale={locale} />
-                    <EleveltarSearchPanel locale={locale} />
-                  </>
+                  <HistoryArchivesSourcesPanel
+                    europeanaCopy={copy.europeana}
+                    naraCopy={copy.nara}
+                    locale={locale}
+                    userId={userId}
+                    workspaceId={workspaceId}
+                  />
                 ) : module.id === religiousTextsModule.id ? (
                   <ReligiousTextsPanel locale={locale} />
                 ) : module.id === criticalTextEditionModule.id ? (
