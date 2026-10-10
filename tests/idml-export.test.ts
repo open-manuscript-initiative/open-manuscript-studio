@@ -340,6 +340,48 @@ test('exports footnotes as anchored IDML footnotes with their reference associat
   assert.doesNotMatch(new TextDecoder().decode(entries.get('Stories/Story_u3.xml')), /<Content>1\\. Footnote body/);
 });
 
+test('IDML publishes notes without exposing hidden provenance or editor-only annotations', () => {
+  const manuscript = createVersionedTestManuscript();
+  const block = manuscript.sections[0]?.blocks[0];
+  assert.ok(block);
+  block.content = JSON.stringify({
+    type: 'doc',
+    content: [{
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Public claim' },
+        { type: 'omiNote', attrs: { noteId: 'visible-note', noteType: 'footnote' } },
+        { type: 'omiNote', attrs: { noteId: 'hidden-note', noteType: 'footnote' } },
+      ],
+    }],
+  });
+  manuscript.annotations.push(
+    {
+      id: 'visible-note', type: 'note', noteKind: 'footnote', targetBlockId: block.id,
+      body: 'Public footnote', renderingHint: 'footnote',
+    },
+    {
+      id: 'hidden-note', type: 'semantic', targetBlockId: block.id,
+      targetText: 'omi:source-origin', body: 'author-declared:self-authored-outside-omi',
+      renderingHint: 'hidden',
+    },
+    {
+      id: 'editor-note', type: 'note', targetBlockId: block.id,
+      body: 'Confidential editor note', renderingHint: 'endnote', visibility: 'editor_only',
+    },
+    {
+      id: 'public-endnote', type: 'note', targetBlockId: block.id,
+      body: 'Public endnote', renderingHint: 'endnote',
+    },
+  );
+
+  const story = new TextDecoder().decode(readStoreZipEntries(buildIdmlExport(manuscript).bytes).get('Stories/Story_u3.xml'));
+  assert.match(story, /Public footnote/);
+  assert.match(story, /Public endnote/);
+  assert.doesNotMatch(story, /author-declared:self-authored-outside-omi|Confidential editor note/);
+  assert.equal((story.match(/<Footnote /g) ?? []).length, 1);
+});
+
 function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {
   const entries = new Map<string, Uint8Array>();
   const decoder = new TextDecoder();
