@@ -350,8 +350,8 @@ test('IDML publishes notes without exposing hidden provenance or editor-only ann
       type: 'paragraph',
       content: [
         { type: 'text', text: 'Public claim' },
-        { type: 'omiNote', attrs: { noteId: 'visible-note', noteType: 'footnote' } },
-        { type: 'omiNote', attrs: { noteId: 'hidden-note', noteType: 'footnote' } },
+        { type: 'omiNote', attrs: { noteId: 'visible-note', noteType: 'footnote', label: '1' } },
+        { type: 'omiNote', attrs: { noteId: 'hidden-note', noteType: 'footnote', label: '2' } },
       ],
     }],
   });
