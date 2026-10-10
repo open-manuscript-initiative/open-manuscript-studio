@@ -14,7 +14,8 @@ export type BibliographicProviderId =
   | 'crossref'
   | 'datacite'
   | 'openalex'
-  | 'mtmt';
+  | 'mtmt'
+  | 'europepmc';
 
 export type BibliographicSourceId =
   | BibliographicProviderId
@@ -55,6 +56,7 @@ export const BIBLIOGRAPHIC_PROVIDERS: BibliographicProviderId[] = [
   'datacite',
   'openalex',
   'mtmt',
+  'europepmc',
 ];
 
 export const DEFAULT_BIBLIOGRAPHIC_LOOKUP_SETTINGS: BibliographicLookupSettings = {
@@ -205,6 +207,8 @@ async function searchProvider(
       return searchOpenAlex(query, settings.openAlexApiKey ?? '');
     case 'mtmt':
       return searchMtmt(query);
+    case 'europepmc':
+      return searchEuropePmc(query);
   }
 }
 
@@ -336,6 +340,19 @@ async function searchMtmt(query: string): Promise<BibliographicLookupCandidate[]
   return [];
 }
 
+export function buildEuropePmcLookupUrl(query: string): string {
+  const url = new URL('https://www.ebi.ac.uk/europepmc/webservices/rest/search');
+  url.searchParams.set('query', query.trim());
+  url.searchParams.set('format', 'json');
+  url.searchParams.set('pageSize', String(RESULT_LIMIT));
+  return url.toString();
+}
+
+async function searchEuropePmc(query: string): Promise<BibliographicLookupCandidate[]> {
+  const sourceUrl = buildEuropePmcLookupUrl(query);
+  return parseEuropePmcResponse(await fetchJson(sourceUrl), sourceUrl);
+}
+
 async function fetchJson(
   url: string,
   headers: Record<string, string> = {},
@@ -425,6 +442,41 @@ export function parseMtmtResponse(
 
   return items
     .map((item) => mapMtmtItem(item, sourceUrl))
+    .filter(isCandidate);
+}
+
+export function parseEuropePmcResponse(
+  payload: unknown,
+  sourceUrl = 'https://www.ebi.ac.uk/europepmc/webservices/rest/search',
+): BibliographicLookupCandidate[] {
+  const root = asRecord(payload);
+  const resultList = asRecord(root?.resultList);
+  return asArray(resultList?.result)
+    .map((raw) => {
+      const item = asRecord(raw);
+      if (!item) return undefined;
+      const title = firstString(item.title);
+      if (!title) return undefined;
+      const doi = normalizeLookupDoi(firstString(item.doi) ?? '');
+      const pmid = firstString(item.pmid);
+      const pmcid = firstString(item.pmcid);
+      const record = createResolvedRecord({
+        type: 'article',
+        title,
+        contributors: firstString(item.authorString)
+          ? [bibliographicContributor(undefined, undefined, firstString(item.authorString))]
+          : [],
+        containerTitle: firstString(item.journalTitle),
+        issued: firstString(item.firstPublicationDate) || firstString(item.pubYear),
+        identifiers: compactIdentifiers([
+          doi ? { scheme: 'doi', value: doi } : undefined,
+          pmid ? { scheme: 'pmid', value: pmid } : undefined,
+          pmcid ? { scheme: 'url', value: `https://europepmc.org/articles/${pmcid}` } : undefined,
+        ]),
+        url: doi ? `https://doi.org/${doi}` : pmid ? `https://europepmc.org/article/MED/${encodeURIComponent(pmid)}` : undefined,
+      });
+      return candidate('europepmc', record, sourceUrl);
+    })
     .filter(isCandidate);
 }
 

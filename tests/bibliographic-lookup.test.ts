@@ -4,12 +4,14 @@ import test from 'node:test';
 import {
   buildCrossrefLookupUrl,
   buildDataCiteLookupUrl,
+  buildEuropePmcLookupUrl,
   buildMtmtLookupUrls,
   buildOpenAlexLookupUrl,
   deduplicateCandidates,
   normalizeLookupDoi,
   parseCrossrefResponse,
   parseDataCiteResponse,
+  parseEuropePmcResponse,
   parseMtmtResponse,
   parseOpenAlexResponse,
 } from '../src/services/bibliographicLookup.ts';
@@ -53,6 +55,27 @@ test('builds provider queries without mixing provider-specific contracts', () =>
   assert.equal(mtmt.length, 2);
   assert.equal(new URL(mtmt[0]!).hostname, 'm2.mtmt.hu');
   assert.match(new URL(mtmt[0]!).searchParams.get('cond') ?? '', /identifiers\.identifier;eq;/);
+
+  const europePmc = new URL(buildEuropePmcLookupUrl('ancient DNA'));
+  assert.equal(europePmc.hostname, 'www.ebi.ac.uk');
+  assert.equal(europePmc.searchParams.get('query'), 'ancient DNA');
+  assert.equal(europePmc.searchParams.get('format'), 'json');
+});
+
+test('maps Europe PMC article metadata into the shared reference model', () => {
+  const [candidate] = parseEuropePmcResponse({
+    hitCount: 1,
+    resultList: { result: [{
+      id: '123456', source: 'MED', pmid: '123456', pmcid: 'PMC123', doi: '10.1000/test',
+      title: 'An example life sciences article', authorString: 'Ada Example et al.',
+      journalTitle: 'Example Journal', pubYear: '2025',
+    }] },
+  });
+  assert.ok(candidate);
+  assert.equal(candidate.providers[0], 'europepmc');
+  assert.equal(candidate.record.title, 'An example life sciences article');
+  assert.equal(candidate.record.issued, '2025');
+  assert.ok(candidate.record.identifiers.some(({ scheme }) => scheme === 'pmid'));
 });
 
 

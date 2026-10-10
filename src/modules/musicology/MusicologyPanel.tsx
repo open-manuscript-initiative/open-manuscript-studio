@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { DOMParser as XmlParser, type Document as XmlDocument, type Element as XmlElement } from '@xmldom/xmldom';
 import { downloadWorkspaceJson, newWorkspaceId, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
+import { ResearchCatalogSearchPanel } from '../ResearchCatalogSearchPanel';
 import '../disciplineWorkspaces.css';
 
 interface MusicEvent { id:string; measure:string; beat:string; part:string; pitch:string; duration:string; annotation:string; recordingTime:string }
@@ -145,5 +146,6 @@ export function MusicologyPanel({locale='hu',storageKey='default'}:Props){
   <section className="discipline-card"><div className="discipline-heading"><h5>{t.events}</h5><small>{project.events.length}</small></div>{project.events.length===0?<p className="discipline-empty">{t.empty}</p>:<div className="discipline-list">{project.events.map(event=><div className="discipline-row" key={event.id}>
    <label>{t.measure}<input value={event.measure} onChange={e=>updateEvent(event.id,{measure:e.target.value})}/></label><label>{t.beat}<input value={event.beat} onChange={e=>updateEvent(event.id,{beat:e.target.value})}/></label><label>{t.part}<input value={event.part} onChange={e=>updateEvent(event.id,{part:e.target.value})}/></label><label>{t.pitch}<input value={event.pitch} onChange={e=>updateEvent(event.id,{pitch:e.target.value})}/></label><label>{t.duration}<input value={event.duration} onChange={e=>updateEvent(event.id,{duration:e.target.value})}/></label><label>{t.recordingTime}<input value={event.recordingTime} onChange={e=>updateEvent(event.id,{recordingTime:e.target.value})}/></label><label>{t.annotation}<input value={event.annotation} onChange={e=>updateEvent(event.id,{annotation:e.target.value})}/></label><button className="discipline-danger" type="button" onClick={()=>setProject(c=>({...c,events:c.events.filter(item=>item.id!==event.id)}))}>{t.remove}</button>
   </div>)}</div>}</section>
+  <ResearchCatalogSearchPanel catalogs={['rism', 'musicbrainz']} locale={locale} storageKey={`${storageKey}:musicology`} />
  </div>
 }

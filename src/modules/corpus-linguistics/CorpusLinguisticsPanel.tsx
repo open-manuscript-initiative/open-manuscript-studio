@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseDocxForStudio } from '../../services/docxImportStrategy';
+import { ResearchCatalogSearchPanel } from '../ResearchCatalogSearchPanel';
 import type { DocxManuscriptImportPlan } from '../../services/docxManuscriptImport';
 import './corpusLinguistics.css';
 
@@ -363,6 +364,7 @@ export function CorpusLinguisticsPanel({ locale = 'hu', storageKey = 'default' }
         </div>
         <p>{copy.backup}</p>
       </section>
+      <ResearchCatalogSearchPanel catalogs={['clarin']} locale={locale} storageKey={`${storageKey}:corpus`} />
     </div>
   );
 }
