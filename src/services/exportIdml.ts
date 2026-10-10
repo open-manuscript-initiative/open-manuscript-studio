@@ -39,7 +39,9 @@ export function buildIdmlExport(
   const context = buildPublicationRenderingContext(manuscript, profile);
   const warnings: string[] = [];
   const storyParts: string[] = [];
-  const annotationsById = new Map(manuscript.annotations.map((note) => [note.id, note]));
+  const publishableAnnotations = manuscript.annotations.filter((note) =>
+    note.type === 'note' && note.renderingHint !== 'hidden' && !note.visibility);
+  const annotationsById = new Map(publishableAnnotations.map((note) => [note.id, note]));
   const renderedFootnoteIds = new Set<string>();
 
   storyParts.push(styledParagraph(context.title, 'OMI Title'));
@@ -85,7 +87,7 @@ export function buildIdmlExport(
   };
   renderSections(context.sections);
 
-  const unanchoredAnnotations = manuscript.annotations.filter((note) => !renderedFootnoteIds.has(note.id));
+  const unanchoredAnnotations = publishableAnnotations.filter((note) => !renderedFootnoteIds.has(note.id));
   if (unanchoredAnnotations.length) {
     storyParts.push(styledParagraph(localizedLabel(context.locale, 'notes'), 'OMI Heading 1'));
     unanchoredAnnotations.forEach((note, index) => {
@@ -599,6 +601,8 @@ function styledRunsParagraph(
   const content = runs
     .flatMap((run) => {
       const note = run.noteId ? annotationsById?.get(run.noteId) : undefined;
+      // A marker for a hidden/restricted or unresolved annotation is not public content.
+      if (run.noteId && annotationsById && !note) return [];
       if (
         note &&
         (run.noteType === 'footnote' || note.noteKind === 'footnote' || note.renderingHint === 'footnote')
