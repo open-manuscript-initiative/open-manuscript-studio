@@ -5,7 +5,7 @@ import {
   type OmiInlineRun,
 } from '../model/inlineSemantics';
 import { contributorNameParts } from '../model/contributorName';
-import { buildPublicationRenderingContext, type OmiRenderedContributor } from '../model/publicationRendering';
+import { buildPublicationRenderingContext, type OmiRenderedContributor, type OmiRenderedSection } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type {
   PublicationParagraphStyleDefinition,
@@ -188,7 +188,7 @@ export function buildIdmlExport(
 
 function buildFontsXml(
   publicationStyle: PublicationStyle | undefined,
-  sections: readonly { blocks: readonly OmiBlock[]; children: typeof sections }[],
+  sections: readonly OmiRenderedSection[],
 ): string {
   const families = new Set(['Times New Roman', 'Courier New']);
   for (const definition of publicationStyle?.paragraphStyles.items ?? []) {
