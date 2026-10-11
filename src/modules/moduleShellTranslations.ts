@@ -208,7 +208,7 @@ const translations: Record<string, ModuleShellCopy> = {
       },
       'org.omi.critical-text-edition': {
         title: 'Kritische Textedition',
-        description: 'Transkriptionen und Textvarianten mit Handschriftenzeugen, kritischem Apparat und digitalen Editionen verbinden; Forschungsliteratur zu Philosophie und Textwissenschaften durchsuchen.'
+        description: 'Transkriptionen und Textvarianten mit Handschriftenzeugen, kritischem Apparat und digitalen Editionen verbinden; Forschungsliteratur zu Philosophie und Textwissenschaften durchsuchen.',
         overview: 'Arbeitsbereich für kritische Editionen',
       },
       'org.omi.corpus-linguistics': {
