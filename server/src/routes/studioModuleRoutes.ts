@@ -52,7 +52,9 @@ studioModuleRouter.get('/modules/policy', requireSession, async (request: Authen
     workspaceId,
     revision: preference?.revision ?? 0,
     enabledModuleIds,
-    activeModuleIds: preference?.activeModuleIds.filter((id) => enabledModuleIds.includes(id as (typeof MODULE_IDS)[number])) ?? [],
+    activeModuleIds: preference?.activeModuleIds
+      .map((id) => id === 'org.omi.cultural-heritage' ? 'org.omi.archaeology' : id)
+      .filter((id) => enabledModuleIds.includes(id as (typeof MODULE_IDS)[number])) ?? [],
   });
 });
 
