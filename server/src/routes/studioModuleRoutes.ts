@@ -14,7 +14,6 @@ const MODULE_IDS = [
   'org.omi.critical-text-edition',
   'org.omi.corpus-linguistics',
   'org.omi.musicology',
-  'org.omi.cultural-heritage',
   'org.omi.social-research-methods',
   'org.omi.legal-sources',
   'org.omi.research-reproducibility',
