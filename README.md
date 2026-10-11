@@ -269,7 +269,7 @@ Administrative roles do not implicitly grant manuscript/editorial-content access
        OJS · OMP · ORCID · OIDC · storage · DeepL · AI services
 ```
 
-The OMI manuscript schema remains independent of the Studio application version and of the operating system. Standalone Studio working files now use the canonical **OMI-SPEC-320@0.3.0** boundary with explicit schema URI and format profiles; unsupported pre-0.2 standalone JSON is rejected instead of being silently migrated. Platform adapters provide native file dialogs, filesystem access, packaging, update behavior and mobile authentication return handling around one scholarly core.
+The OMI manuscript schema remains independent of the Studio application version and of the operating system. Standalone Studio working files now use the canonical **OMI-SPEC-320@0.3.0** boundary with explicit schema URI and format profiles; unsupported OMI format versions are rejected instead of being silently migrated. Platform adapters provide native file dialogs, filesystem access, packaging, update behavior and mobile authentication return handling around one scholarly core.
 
 ## Technology stack
 
