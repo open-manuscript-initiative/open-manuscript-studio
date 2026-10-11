@@ -36,7 +36,6 @@ const expectedModuleIds = [
   'org.omi.critical-text-edition',
   'org.omi.corpus-linguistics',
   'org.omi.musicology',
-  'org.omi.cultural-heritage',
   'org.omi.social-research-methods',
   'org.omi.legal-sources',
   'org.omi.research-reproducibility',
@@ -80,6 +79,20 @@ test('registers all built-in discipline modules with navigation contributions', 
     builtinModuleManifests.find((module) => module.id === 'org.omi.religious-texts')?.requiredCapabilities,
     ['religious-texts.search'],
   );
+});
+
+test('combines archaeology and cultural heritage with catalog links and one module entry', () => {
+  assert.equal(expectedModuleIds.includes('org.omi.cultural-heritage'), false);
+  assert.equal(expectedModuleIds.filter((id) => id === 'org.omi.archaeology').length, 1);
+  const panel = readFileSync(new URL('../src/modules/archaeology/ArchaeologyPanel.tsx', import.meta.url), 'utf8');
+  const manager = readFileSync(new URL('../src/modules/ModuleManagerPanel.tsx', import.meta.url), 'utf8');
+  assert.match(panel, /catalogs=\{\['pleiades', 'ariadne', 'openContext'\]\}/);
+  assert.match(panel, /<CulturalHeritagePanel locale=\{locale\} storageKey=\{heritageStorageKey\}/);
+  assert.match(manager, /heritageStorageKey=\{getDisciplineWorkspaceStorageKey\(userId, workspaceId, culturalHeritageModule.id\)\}/);
+  assert.match(manager, /mergeLegacyHeritageSelection/);
+  const searches = readFileSync(new URL('../src/modules/ResearchCatalogSearchPanel.tsx', import.meta.url), 'utf8');
+  assert.match(searches, /ariadne: \{ title: 'ARIADNE Portal'.*\{ q: query \}/s);
+  assert.match(searches, /openContext: \{ title: 'Open Context'.*\{ q: query \}/s);
 });
 
 test('provides a translated title and description for every registered module', () => {

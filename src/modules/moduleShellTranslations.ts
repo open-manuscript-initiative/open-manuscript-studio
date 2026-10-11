@@ -103,9 +103,9 @@ const translations: Record<string, ModuleShellCopy> = {
         overview: 'Spatial research workspace',
       },
       'org.omi.archaeology': {
-        title: 'Archaeology',
-        description: 'Document archaeological sites, contexts, stratigraphic units, finds, samples, and source records.',
-        overview: 'Archaeology workspace',
+        title: 'Archaeology & Cultural Heritage',
+        description: 'Document sites, contexts, stratigraphy, finds, samples, objects, provenance, rights, images, and source records.',
+        overview: 'Archaeology and cultural heritage workspace',
       },
       'org.omi.experimental-laboratory': {
         title: 'Experimental and laboratory research',
@@ -232,9 +232,9 @@ const translations: Record<string, ModuleShellCopy> = {
         overview: 'Arbeitsbereich Raumforschung',
       },
       'org.omi.archaeology': {
-        title: 'Archäologie',
-        description: 'Fundorte, Kontexte, stratigraphische Einheiten, Funde, Proben und Quellen dokumentieren.',
-        overview: 'Arbeitsbereich Archäologie',
+        title: 'Archäologie und Kulturerbe',
+        description: 'Fundorte, Kontexte, Stratigraphie, Funde, Proben, Objekte, Provenienz, Rechte, Bilder und Quellen dokumentieren.',
+        overview: 'Arbeitsbereich Archäologie und Kulturerbe',
       },
       'org.omi.experimental-laboratory': {
         title: 'Experimentelle und Laborforschung',
@@ -361,9 +361,9 @@ const translations: Record<string, ModuleShellCopy> = {
         overview: 'Térinformatikai kutatótér',
       },
       'org.omi.archaeology': {
-        title: 'Régészeti kutatási modul',
-        description: 'Lelőhelyek, kontextusok, rétegtani egységek, leletek, minták és forrásrekordok dokumentálása.',
-        overview: 'Régészeti kutatótér',
+        title: 'Régészet és kulturális örökség',
+        description: 'Lelőhelyek, kontextusok, rétegtan, leletek, minták, tárgyak, proveniencia, jogok, képek és források dokumentálása.',
+        overview: 'Régészeti és kulturálisörökség-munkatér',
       },
       'org.omi.experimental-laboratory': {
         title: 'Kísérleti és laboratóriumi kutatási modul',

@@ -6,7 +6,7 @@ export const moduleManifest: StudioModuleManifest = {
   apiVersion: STUDIO_MODULE_API_VERSION,
   titleKey: 'modules.archaeology.title',
   descriptionKey: 'modules.archaeology.description',
-  disciplines: ['archaeology', 'archaeometry', 'material-culture'],
+  disciplines: ['archaeology', 'archaeometry', 'material-culture', 'art-history', 'museum-studies', 'cultural-heritage'],
   requiredCapabilities: [],
   contributions: [{
     id: 'overview',

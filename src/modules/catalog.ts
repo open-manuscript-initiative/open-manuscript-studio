@@ -42,7 +42,6 @@ export const builtinModuleManifests = [
   criticalTextEditionModule,
   corpusLinguisticsModule,
   musicologyModule,
-  culturalHeritageModule,
   socialResearchMethodsModule,
   legalSourcesModule,
   researchReproducibilityModule,

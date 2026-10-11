@@ -1,4 +1,4 @@
-export type ResearchCatalogId = 'rism' | 'musicbrainz' | 'pleiades' | 'clarin' | 'eurostat' | 'zenodo' | 'europePmc'
+export type ResearchCatalogId = 'rism' | 'musicbrainz' | 'pleiades' | 'ariadne' | 'openContext' | 'clarin' | 'eurostat' | 'zenodo' | 'europePmc'
   | 'nsiBelgium' | 'nsiBulgaria' | 'nsiCzechia' | 'nsiDenmark' | 'nsiGermany' | 'nsiEstonia'
   | 'nsiIreland' | 'nsiGreece' | 'nsiSpain' | 'nsiFrance' | 'nsiCroatia' | 'nsiItaly'
   | 'nsiCyprus' | 'nsiLatvia' | 'nsiLithuania' | 'nsiLuxembourg' | 'nsiHungary' | 'nsiMalta'

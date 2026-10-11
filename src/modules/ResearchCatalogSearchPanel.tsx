@@ -7,6 +7,8 @@ const catalogs: Record<ResearchCatalogId, { title: string; portalUrl: (query: st
   rism: { title: 'RISM', portalUrl: (query) => `https://rism.online/search/?${new URLSearchParams({ q: query, mode: 'sources' })}` },
   musicbrainz: { title: 'MusicBrainz', portalUrl: (query) => `https://musicbrainz.org/search?${new URLSearchParams({ query, type: 'recording', method: 'indexed' })}` },
   pleiades: { title: 'Pleiades', portalUrl: (query) => `https://pleiades.stoa.org/search?${new URLSearchParams({ SearchableText: query })}` },
+  ariadne: { title: 'ARIADNE Portal', portalUrl: (query) => `https://portal.ariadne-infrastructure.eu/search?${new URLSearchParams({ q: query })}` },
+  openContext: { title: 'Open Context', portalUrl: (query) => `https://opencontext.org/query/?${new URLSearchParams({ q: query })}` },
   clarin: {
     title: 'CLARIN Virtual Language Observatory',
     portalUrl: (query) => `https://vlo.clarin.eu/search?${new URLSearchParams({ q: query })}`,

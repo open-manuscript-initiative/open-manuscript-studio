@@ -14,7 +14,6 @@ const MODULE_IDS = [
   'org.omi.critical-text-edition',
   'org.omi.corpus-linguistics',
   'org.omi.musicology',
-  'org.omi.cultural-heritage',
   'org.omi.social-research-methods',
   'org.omi.legal-sources',
   'org.omi.research-reproducibility',
@@ -53,7 +52,9 @@ studioModuleRouter.get('/modules/policy', requireSession, async (request: Authen
     workspaceId,
     revision: preference?.revision ?? 0,
     enabledModuleIds,
-    activeModuleIds: preference?.activeModuleIds.filter((id) => enabledModuleIds.includes(id as (typeof MODULE_IDS)[number])) ?? [],
+    activeModuleIds: preference?.activeModuleIds
+      .map((id) => id === 'org.omi.cultural-heritage' ? 'org.omi.archaeology' : id)
+      .filter((id) => enabledModuleIds.includes(id as (typeof MODULE_IDS)[number])) ?? [],
   });
 });
 

@@ -160,8 +160,8 @@ const environmentSchema = z.object({
   MENDELEY_REDIRECT_URI: z.string().url().optional(),
 
   // Comma-separated built-in module IDs available on this installation.
-  STUDIO_ENABLED_MODULES: z.string().default('org.omi.history-archives,org.omi.religious-texts,org.omi.critical-text-edition,org.omi.corpus-linguistics,org.omi.musicology,org.omi.cultural-heritage,org.omi.social-research-methods,org.omi.legal-sources,org.omi.research-reproducibility,org.omi.spatial-research,org.omi.archaeology,org.omi.experimental-laboratory,org.omi.statistical-analysis,org.omi.mathematics,org.omi.psychology,org.omi.medical-sciences')
-    .transform((value) => [...new Set(value.split(',').map((item) => item.trim()).filter(Boolean))]),
+  STUDIO_ENABLED_MODULES: z.string().default('org.omi.history-archives,org.omi.religious-texts,org.omi.critical-text-edition,org.omi.corpus-linguistics,org.omi.musicology,org.omi.social-research-methods,org.omi.legal-sources,org.omi.research-reproducibility,org.omi.spatial-research,org.omi.archaeology,org.omi.experimental-laboratory,org.omi.statistical-analysis,org.omi.mathematics,org.omi.psychology,org.omi.medical-sciences')
+    .transform((value) => [...new Set(value.split(',').map((item) => item.trim()).filter(Boolean).map((id) => id === 'org.omi.cultural-heritage' ? 'org.omi.archaeology' : id))]),
 
   // Europeana API access key. Keep it server-side; the search UI calls this API through Studio.
   EUROPEANA_API_KEY: z.string().trim().optional(),
