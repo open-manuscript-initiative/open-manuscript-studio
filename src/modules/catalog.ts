@@ -23,7 +23,6 @@ export {
   criticalTextEditionModule,
   corpusLinguisticsModule,
   musicologyModule,
-  culturalHeritageModule,
   socialResearchMethodsModule,
   legalSourcesModule,
   researchReproducibilityModule,
