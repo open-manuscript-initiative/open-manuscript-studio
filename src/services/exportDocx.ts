@@ -1,3 +1,4 @@
+import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import {
   extractOmiInlineRuns,
   inlineLanguageFromMarks,
@@ -31,6 +32,7 @@ export interface DocxExportResult {
  * calculate and deduplicate page numbers from the final pagination.
  */
 export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
+  manuscript = publicPublicationManuscript(manuscript);
   const profile = resolvePublicationProfile(manuscript);
   const context = buildPublicationRenderingContext(manuscript, profile);
   const warnings: string[] = [];
