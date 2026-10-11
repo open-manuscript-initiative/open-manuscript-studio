@@ -79,7 +79,7 @@ const translations: Record<string, ModuleShellCopy> = {
       },
       'org.omi.critical-text-edition': {
         title: 'Critical text edition',
-        description: 'Connect transcriptions and textual variants with manuscript witnesses, critical apparatus, and digital editions.',
+        description: 'Connect transcriptions and textual variants with manuscript witnesses, critical apparatus, and digital editions; search scholarly literature on philosophy and textual studies.',
         overview: 'Critical edition workspace',
       },
       'org.omi.corpus-linguistics': {
@@ -208,7 +208,7 @@ const translations: Record<string, ModuleShellCopy> = {
       },
       'org.omi.critical-text-edition': {
         title: 'Kritische Textedition',
-        description: 'Transkriptionen und Textvarianten mit Handschriftenzeugen, kritischem Apparat und digitalen Editionen verbinden.',
+        description: 'Transkriptionen und Textvarianten mit Handschriftenzeugen, kritischem Apparat und digitalen Editionen verbinden; Forschungsliteratur zu Philosophie und Textwissenschaften durchsuchen.'
         overview: 'Arbeitsbereich für kritische Editionen',
       },
       'org.omi.corpus-linguistics': {

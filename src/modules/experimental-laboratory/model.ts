@@ -1,4 +1,4 @@
-export type ExperimentalProfile = 'physics' | 'chemistry' | 'biology' | 'materials';
+export type ExperimentalProfile = 'physics' | 'chemistry' | 'biology' | 'materials' | 'agriculture' | 'engineering' | 'geosciences';
 export type LaboratoryMaterial = { id: string; name: string; category: string; identifier: string; quantity: string; unit: string; conditions: string };
 export type LaboratoryProtocol = { id: string; title: string; version: string; steps: string; source: string };
 export type LaboratoryInstrument = { id: string; name: string; model: string; serialNumber: string; calibrationDate: string; calibrationReference: string };
@@ -75,7 +75,7 @@ function isStudy(value: unknown): value is ExperimentalStudy {
 export function isExperimentalWorkspace(value: unknown): value is ExperimentalWorkspace {
   return strings(value, ['title', 'objective', 'principalInvestigator', 'collaborators'])
     && value.schemaVersion === 1
-    && ['physics', 'chemistry', 'biology', 'materials'].includes(String(value.profile))
+    && ['physics', 'chemistry', 'biology', 'materials', 'agriculture', 'engineering', 'geosciences'].includes(String(value.profile))
     && Array.isArray(value.studies) && value.studies.every(isStudy);
 }
 export function parseExperimentalWorkspace(json: string): ExperimentalWorkspace | null {

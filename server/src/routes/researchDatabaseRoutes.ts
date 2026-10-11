@@ -7,14 +7,15 @@ import { requireSession } from '../middleware/requireSession.js';
 
 export const researchDatabaseRouter = Router();
 const bodySchema = z.object({
-  provider: z.enum(['eric', 'inspire-hep', 'pubchem', 'gbif']),
+  provider: z.enum(['eric', 'inspire-hep', 'pubchem', 'gbif', 'openalex', 'sciencebase']),
   query: z.string().trim().min(2).max(240),
   cursor: z.string().regex(/^\d{1,6}$/).optional(),
 }).strict();
 const searchLimit = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false });
-const moduleProviders: { module: string; moduleId: StudioModuleId; providers: readonly ('eric' | 'inspire-hep' | 'pubchem' | 'gbif')[] }[] = [
-  { module: 'social-research-methods', moduleId: 'org.omi.social-research-methods', providers: ['eric'] },
-  { module: 'experimental-laboratory', moduleId: 'org.omi.experimental-laboratory', providers: ['inspire-hep', 'pubchem', 'gbif'] },
+const moduleProviders: { module: string; moduleId: StudioModuleId; providers: readonly ('eric' | 'inspire-hep' | 'pubchem' | 'gbif' | 'openalex' | 'sciencebase')[] }[] = [
+  { module: 'social-research-methods', moduleId: 'org.omi.social-research-methods', providers: ['eric', 'openalex'] },
+  { module: 'critical-text-edition', moduleId: 'org.omi.critical-text-edition', providers: ['openalex'] },
+  { module: 'experimental-laboratory', moduleId: 'org.omi.experimental-laboratory', providers: ['inspire-hep', 'pubchem', 'gbif', 'openalex', 'sciencebase'] },
 ];
 for (const { module, moduleId, providers } of moduleProviders) {
   researchDatabaseRouter.post(`/modules/${module}/research-databases/search`, requireSession,

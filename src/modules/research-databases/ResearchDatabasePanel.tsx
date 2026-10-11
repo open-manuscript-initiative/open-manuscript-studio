@@ -14,7 +14,8 @@ const names = {
 export function ResearchDatabasePanel({ moduleId, workspaceId, storageKey, locale }: { moduleId:'social-research-methods'|'experimental-laboratory'; workspaceId:string; storageKey:string; locale:string }) {
  const lang = locale === 'hu' || locale === 'de' ? locale : 'en'; const t = copy[lang]; const n = names[lang];
  const key = `omi:research-database-providers:v1:${storageKey}`;
- const [providers,setProviders] = useState<ResearchDatabaseProvider[]>(()=>{ try { const v:unknown=JSON.parse(localStorage.getItem(key)??'null'); return Array.isArray(v)?PROVIDERS.filter(p=>v.includes(p)):moduleId==='social-research-methods'?['eric']:['inspire-hep','pubchem','gbif']; } catch { return moduleId==='social-research-methods'?['eric']:['inspire-hep','pubchem','gbif']; }});
+ const availableProviders: ResearchDatabaseProvider[] = moduleId === 'social-research-methods' ? ['eric', 'openalex'] : moduleId === 'critical-text-edition' ? ['openalex'] : PROVIDERS;
+ const [providers,setProviders] = useState<ResearchDatabaseProvider[]>(()=>{ try { const v:unknown=JSON.parse(localStorage.getItem(key)??'null'); return Array.isArray(v)?availableProviders.filter(p=>v.includes(p)):moduleId==='social-research-methods'?['eric']:['inspire-hep','pubchem','gbif']; } catch { return moduleId==='social-research-methods'?['eric']:['inspire-hep','pubchem','gbif']; }});
  const [query,setQuery]=useState(''); const [pages,setPages]=useState<Partial<Record<ResearchDatabaseProvider,ResearchDatabasePage>>>({}); const [errors,setErrors]=useState<ResearchDatabaseProvider[]>([]); const [busy,setBusy]=useState(false); const [searched,setSearched]=useState('');
  const controller=useRef<AbortController|null>(null); const generation=useRef(0);
  useEffect(()=>()=>{generation.current++;controller.current?.abort();},[]);

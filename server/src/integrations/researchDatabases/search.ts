@@ -1,4 +1,4 @@
-export type ResearchDatabaseProvider = 'eric' | 'inspire-hep' | 'pubchem' | 'gbif';
+export type ResearchDatabaseProvider = 'eric' | 'inspire-hep' | 'pubchem' | 'gbif' | 'openalex' | 'sciencebase';
 export interface ResearchDatabaseRecord {
   id: string; provider: ResearchDatabaseProvider; title: string; authors: string[];
   year: string; description: string; url: string; rights: string;
@@ -35,7 +35,7 @@ function record(provider: ResearchDatabaseProvider, id: string, title: string, u
 export async function searchResearchDatabase({ provider, query, cursor, fetchImpl = fetch }: {
   provider: ResearchDatabaseProvider; query: string; cursor?: string; fetchImpl?: typeof fetch;
 }): Promise<ResearchDatabasePage> {
-  if (!['eric', 'inspire-hep', 'pubchem', 'gbif'].includes(provider) || query.trim().length < 2 || query.length > 240) throw new Error('Invalid research database query.');
+  if (!['eric', 'inspire-hep', 'pubchem', 'gbif', 'openalex', 'sciencebase'].includes(provider) || query.trim().length < 2 || query.length > 240) throw new Error('Invalid research database query.');
   const offset = cursorOffset(cursor);
   if (provider === 'eric') {
     const url = new URL('https://api.ies.ed.gov/eric/');
@@ -88,6 +88,36 @@ export async function searchResearchDatabase({ provider, query, cursor, fetchImp
     });
     const next = (page + 1) * PAGE_SIZE;
     return { items, totalResults: cids.length, nextCursor: selected.length === PAGE_SIZE && next < cids.length && next <= 100_000 ? String(next) : null };
+  }
+  if (provider === 'openalex') {
+    const url = new URL('https://api.openalex.org/works');
+    url.search = new URLSearchParams({ search: query, per_page: String(PAGE_SIZE), page: String(Math.floor(offset / PAGE_SIZE) + 1), select: 'id,title,publication_year,authorships,doi' }).toString();
+    const data = await json(url, fetchImpl); const total = count(obj(data.meta).count); const rows = arr(data.results);
+    const items = rows.slice(0, PAGE_SIZE).flatMap(raw => {
+      const r = obj(raw); const sourceId = text(r.id, 300); const id = sourceId.replace(/^https:\/\/openalex\.org\//, ''); const title = text(r.title, 500);
+      if (!/^W\d+$/.test(id) || !title) return [];
+      const item = record(provider, id, title, `https://openalex.org/${id}`);
+      item.authors = arr(r.authorships).map(a => text(obj(obj(a).author).display_name, 200)).filter(Boolean).slice(0, 20);
+      item.year = String(r.publication_year ?? '').slice(0, 20); item.description = text(r.doi, 240);
+      return [item];
+    });
+    const next = offset + rows.length;
+    return { items, totalResults: total, nextCursor: rows.length === PAGE_SIZE && next < total && next <= 100_000 ? String(next) : null };
+  }
+  if (provider === 'sciencebase') {
+    const url = new URL('https://www.sciencebase.gov/catalog/items');
+    url.search = new URLSearchParams({ q: query, format: 'json', max: String(PAGE_SIZE), offset: String(offset) }).toString();
+    const data = await json(url, fetchImpl); const rows = arr(data.items); const total = count(data.total);
+    const items = rows.slice(0, PAGE_SIZE).flatMap(raw => {
+      const r = obj(raw); const id = text(r.id, 80); const title = text(r.title, 500);
+      if (!/^[A-Za-z0-9]+$/.test(id) || !title) return [];
+      const item = record(provider, id, title, `https://www.sciencebase.gov/catalog/item/${id}`);
+      item.year = text(r.dateCreated, 30).slice(0, 4); item.description = text(r.summary, 700);
+      item.authors = arr(r.contacts).map(a => text(obj(a).name, 200)).filter(Boolean).slice(0, 20);
+      return [item];
+    });
+    const next = offset + rows.length;
+    return { items, totalResults: total, nextCursor: rows.length === PAGE_SIZE && next < total && next <= 100_000 ? String(next) : null };
   }
   const url = new URL('https://api.gbif.org/v1/occurrence/search');
   url.search = new URLSearchParams({ q: query, limit: String(PAGE_SIZE), offset: String(offset) }).toString();

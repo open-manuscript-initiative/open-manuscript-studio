@@ -1,11 +1,11 @@
 import { isTauri } from '@tauri-apps/api/core';
 import { getStudioApiBaseUrl } from '../../services/studioServer';
-export type ResearchDatabaseProvider = 'eric' | 'inspire-hep' | 'pubchem' | 'gbif';
+export type ResearchDatabaseProvider = 'eric' | 'inspire-hep' | 'pubchem' | 'gbif' | 'openalex' | 'sciencebase';
 export interface ResearchDatabaseRecord { id: string; provider: ResearchDatabaseProvider; title: string; authors: string[]; year: string; description: string; url: string; rights: string }
 export interface ResearchDatabasePage { items: ResearchDatabaseRecord[]; totalResults: number; nextCursor: string | null }
-export const PROVIDERS: ResearchDatabaseProvider[] = ['eric', 'inspire-hep', 'pubchem', 'gbif'];
-export const PROVIDER_NAMES: Record<ResearchDatabaseProvider, string> = { eric: 'ERIC', 'inspire-hep': 'INSPIRE-HEP', pubchem: 'PubChem', gbif: 'GBIF' };
-const hosts: Record<ResearchDatabaseProvider, string> = { eric: 'eric.ed.gov', 'inspire-hep': 'inspirehep.net', pubchem: 'pubchem.ncbi.nlm.nih.gov', gbif: 'www.gbif.org' };
+export const PROVIDERS: ResearchDatabaseProvider[] = ['eric', 'inspire-hep', 'pubchem', 'gbif', 'openalex', 'sciencebase'];
+export const PROVIDER_NAMES: Record<ResearchDatabaseProvider, string> = { eric: 'ERIC', 'inspire-hep': 'INSPIRE-HEP', pubchem: 'PubChem', gbif: 'GBIF', openalex: 'OpenAlex', sciencebase: 'USGS ScienceBase' };
+const hosts: Record<ResearchDatabaseProvider, string> = { eric: 'eric.ed.gov', 'inspire-hep': 'inspirehep.net', pubchem: 'pubchem.ncbi.nlm.nih.gov', gbif: 'www.gbif.org', openalex: 'openalex.org', sciencebase: 'www.sciencebase.gov' };
 export function isResearchDatabaseRecord(value: unknown, provider: ResearchDatabaseProvider): value is ResearchDatabaseRecord {
   if (!value || typeof value !== 'object') return false;
   const v = value as ResearchDatabaseRecord;
@@ -13,7 +13,7 @@ export function isResearchDatabaseRecord(value: unknown, provider: ResearchDatab
   if (!['id','title','year','description','url','rights'].every(k => typeof (value as Record<string, unknown>)[k] === 'string')) return false;
   try { const u = new URL(v.url); return u.protocol === 'https:' && u.hostname === hosts[provider] && !u.username && !u.password && !u.port; } catch { return false; }
 }
-export async function searchResearchDatabase(moduleId: 'social-research-methods' | 'experimental-laboratory', workspaceId: string, provider: ResearchDatabaseProvider, query: string, cursor?: string, signal?: AbortSignal): Promise<ResearchDatabasePage> {
+export async function searchResearchDatabase(moduleId: 'social-research-methods' | 'experimental-laboratory' | 'critical-text-edition', workspaceId: string, provider: ResearchDatabaseProvider, query: string, cursor?: string, signal?: AbortSignal): Promise<ResearchDatabasePage> {
   const headers = new Headers({ Accept: 'application/json', 'Content-Type': 'application/json' });
   if (isTauri()) { headers.set('X-OMI-Native-Client', '1'); const token = globalThis.localStorage?.getItem('omi_native_session_token'); if (token) headers.set('Authorization', `Bearer ${token}`); }
   const url = `${getStudioApiBaseUrl()}/api/v1/modules/${moduleId}/research-databases/search?${new URLSearchParams({ workspaceId })}`;

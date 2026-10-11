@@ -11,7 +11,7 @@ export const moduleManifest: StudioModuleManifest = {
   titleKey: 'modules.criticalTextEdition.title',
   descriptionKey: 'modules.criticalTextEdition.description',
   disciplines: ['philology', 'classical-philology', 'literary-studies'],
-  requiredCapabilities: [],
+  requiredCapabilities: ['research-databases.search'],
   contributions: [
     {
       id: 'overview',

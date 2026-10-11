@@ -13,6 +13,7 @@ export type StudioModuleId =
   | 'org.omi.psychology'
   | 'org.omi.medical-sciences'
   | 'org.omi.social-research-methods'
+  | 'org.omi.critical-text-edition'
   | 'org.omi.experimental-laboratory';
 export type StudioModuleCapability = 'archives.search' | 'religious-texts.search' | 'health-research.search' | 'research-databases.search';
 
@@ -23,6 +24,7 @@ const moduleCapabilities: Record<StudioModuleId, readonly StudioModuleCapability
   'org.omi.psychology': ['health-research.search'],
   'org.omi.medical-sciences': ['health-research.search'],
   'org.omi.social-research-methods': ['research-databases.search'],
+  'org.omi.critical-text-edition': ['research-databases.search'],
   'org.omi.experimental-laboratory': ['research-databases.search'],
 };
 

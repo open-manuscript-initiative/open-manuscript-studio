@@ -6,7 +6,7 @@ export const moduleManifest: StudioModuleManifest = {
   apiVersion: STUDIO_MODULE_API_VERSION,
   titleKey: 'modules.experimentalLaboratory.title',
   descriptionKey: 'modules.experimentalLaboratory.description',
-  disciplines: ['physics', 'chemistry', 'biology', 'materials-science', 'experimental-science'],
+  disciplines: ['physics', 'chemistry', 'biology', 'materials-science', 'experimental-science', 'agriculture', 'agronomy', 'engineering', 'earth-sciences', 'geosciences'],
   requiredCapabilities: ['research-databases.search'],
   contributions: [{
     id: 'overview',

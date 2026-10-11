@@ -10,7 +10,7 @@ export const moduleManifest: StudioModuleManifest = {
   apiVersion: STUDIO_MODULE_API_VERSION,
   titleKey: 'modules.socialResearchMethods.title',
   descriptionKey: 'modules.socialResearchMethods.description',
-  disciplines: ['social-sciences', 'behavioral-sciences', 'economics'],
+  disciplines: ['social-sciences', 'behavioral-sciences', 'economics', 'philosophy'],
   requiredCapabilities: ['research-databases.search'],
   contributions: [
     {
