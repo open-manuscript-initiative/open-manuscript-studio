@@ -224,9 +224,15 @@ test('mixed import carries own-work origin privately while requiring third-party
   const result = buildAttributedVisualImport([
     { block: own, source: 'private-draft.xlsx', selfAuthoredExternal: true },
     { block: external, source: 'Public dataset', selfAuthoredExternal: false },
-  ], 'Source', '2026-10-09T00:00:00.000Z', () => 'origin-or-source');
-  assert.deepEqual(result.blocks.map((block) => block.id), ['table-own', 'chart-public', 'origin-or-source']);
+  ], 'Source', '2026-10-09T00:00:00.000Z', (() => { let id = 0; return () => 'origin-or-source-' + (++id); })());
+  assert.deepEqual(result.blocks.map((block) => block.id), ['table-own', 'chart-public', 'origin-or-source-4']);
   assert.equal(result.annotations.length, 1);
+  assert.equal(result.bibliographicRecords.length, 1);
+  assert.equal(result.bibliographicRecords[0]?.title, 'Public dataset');
+  assert.equal(result.sourceAttributions.length, 1);
+  assert.equal(result.sourceAttributions[0]?.sourceObjectId, 'chart-public');
+  assert.equal(result.sourceAttributions[0]?.targetBibliographicRecordId, result.bibliographicRecords[0]?.id);
+  assert.equal(result.sourceAttributions[0]?.assertionStatus, 'author-confirmed');
   assert.equal(result.annotations[0]?.targetBlockId, 'table-own');
   assert.equal(result.annotations[0]?.renderingHint, 'hidden');
   assert.equal(JSON.stringify(result).includes('private-draft.xlsx'), false);

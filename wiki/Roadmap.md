@@ -1,6 +1,6 @@
 # Roadmap
 
-Open Manuscript Studio is on the `0.3.0-beta.5` scholarly authoring, collaboration and publication beta line. Recent beta.5 work improves source review and provenance across imports, preserves OJS/OMP attribution in editable views, expands source-backed research excerpts and makes study notes follow visible manuscript text. Android Help also displays its platform versionCode. The nine discipline-focused research modules span archival history, religious studies, critical editions, corpus linguistics, musicology, cultural heritage, social methods, legal sources and reproducibility. The portable manuscript format remains `OMI-SPEC-320@0.2.0`; the next milestone is a stable release candidate.
+Open Manuscript Studio is on the `0.3.0-beta.6` scholarly authoring, collaboration and publication beta line. Recent beta.5 work improves source review and provenance across imports, preserves OJS/OMP attribution in editable views, expands source-backed research excerpts and makes study notes follow visible manuscript text. Android Help also displays its platform versionCode. The nine discipline-focused research modules span archival history, religious studies, critical editions, corpus linguistics, musicology, cultural heritage, social methods, legal sources and reproducibility. The portable manuscript format remains `OMI-SPEC-320@0.3.0`; the next milestone is a stable release candidate.
 
 This page records direction rather than promising dates. The [issue tracker](https://github.com/open-manuscript-initiative/open-manuscript-studio/issues), pull requests, and [CHANGELOG](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/CHANGELOG.md) are the authoritative sources for individual work items.
 
@@ -27,7 +27,7 @@ This page records direction rather than promising dates. The [issue tracker](htt
 - improve large-manuscript performance and progressive editor mounting;
 - continue DOCX/PDF structural fidelity for headings, notes, lists, tables, references, and inline semantics;
 - harden recovery, autosave, and multi-document session restoration;
-- enforce the canonical OMI-SPEC-320@0.2.0 schema/version boundary and begin compatibility guarantees from the first production-stable format rather than the experimental pre-0.2 representation.
+- enforce the canonical OMI-SPEC-320@0.3.0 schema/version boundary and begin compatibility guarantees from the first production-stable format rather than the experimental pre-0.2 representation.
 
 ### Publishing and review interoperability
 

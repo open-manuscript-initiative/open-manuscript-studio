@@ -59,9 +59,9 @@ export function createOmiFileFormatEnvelope(
 
 /**
  * Converts Studio's internal manuscript state into the canonical portable
- * OMI-SPEC-320@0.2.0 representation.
+ * OMI-SPEC-320@0.3.0 representation.
  *
- * Pre-0.2 standalone JSON is intentionally not emitted or migrated. The
+ * Pre-0.3 standalone JSON is rejected and is not silently migrated. The
  * application release version and the portable file-format version are
  * independent values.
  */
@@ -72,6 +72,7 @@ export function toPortableOmiState(
     ...state,
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
     omi: createOmiFileFormatEnvelope(false),
+    sourceAttributions: state.sourceAttributions ?? [],
     tombstones: (state.tombstones ?? []).map((tombstone) => ({
       ...tombstone,
       id: tombstoneId(tombstone),
@@ -79,7 +80,7 @@ export function toPortableOmiState(
   } as PortableOmiState & { authors?: unknown };
 
   // The legacy embedded-author representation is not part of the canonical
-  // Studio 0.2 wire format.
+  // Studio 0.3 wire format.
   delete portable.authors;
 
   assertPortableOmiManuscript(portable);
@@ -217,7 +218,7 @@ export function assertPortableOmiManuscript(
 
   const schemaErrors = validateOmiManuscriptSchema(value);
   if (schemaErrors.length > 0) {
-    throw new OmiPortableFormatError('schema-validation', `The manuscript does not satisfy the canonical OMI-SPEC-320@0.2.0 schema: ${schemaErrors.join('; ')}`);
+    throw new OmiPortableFormatError('schema-validation', `The manuscript does not satisfy the canonical OMI-SPEC-320@0.3.0 schema: ${schemaErrors.join('; ')}`);
   }
 
   const profiles = envelope.profiles;
@@ -291,6 +292,7 @@ export function assertPortableOmiManuscript(
     ['contributions', null],
     ['annotations', null],
     ['bibliographicRecords', indexes.bibliographicRecords],
+    ['sourceAttributions', null],
     ['citations', indexes.citations],
     ['citationClusters', null],
     ['crossReferences', null],
@@ -303,6 +305,14 @@ export function assertPortableOmiManuscript(
       addAddressable(item, path, indexes.all);
       if (target) addAddressable(item, path, target);
     });
+  }
+
+  for (const [index, relation] of optionalArray(value.sourceAttributions, 'sourceAttributions').entries()) {
+    if (!isRecord(relation)) invalid(`/sourceAttributions/${index} must be an object.`);
+    requireNonEmptyString(relation.sourceObjectId, `/sourceAttributions/${index}/sourceObjectId`);
+    requireNonEmptyString(relation.targetBibliographicRecordId, `/sourceAttributions/${index}/targetBibliographicRecordId`);
+    if (!indexes.all.has(String(relation.sourceObjectId))) invalid(`/sourceAttributions/${index} has an unresolved sourceObjectId.`);
+    if (!indexes.bibliographicRecords.has(String(relation.targetBibliographicRecordId))) invalid(`/sourceAttributions/${index} has an unresolved bibliographic record.`);
   }
 
   validateTombstones(value.tombstones, indexes.all);

@@ -18,7 +18,7 @@ import {
   createVersionedTestManuscript,
 } from './testManuscriptFixture.ts';
 
-test('serializes Studio manuscripts as canonical OMI-SPEC-320@0.2.0 working files', () => {
+test('serializes Studio manuscripts as canonical OMI-SPEC-320@0.3.0 working files', () => {
   const manuscript = createVersionedTestManuscript();
   const serialized = serializeOmiJson(manuscript);
   const portable = JSON.parse(serialized) as Record<string, any>;
@@ -42,6 +42,25 @@ test('serializes Studio manuscripts as canonical OMI-SPEC-320@0.2.0 working file
   assert.equal(reopened.omi?.version, OMI_FILE_FORMAT_VERSION);
 });
 
+test('preserves semantic source attribution through OMI save and reopen', () => {
+  const portable = toPortableOmiManuscript(createVersionedTestManuscript()) as unknown as Record<string, any>;
+  portable.bibliographicRecords = [{ id: 'source-record', type: 'dataset', title: 'Public dataset' }];
+  portable.sourceAttributions = [{
+    id: 'source-link',
+    sourceObjectId: 'block-one',
+    targetBibliographicRecordId: 'source-record',
+    predicate: 'prov:wasDerivedFrom',
+    assertionStatus: 'author-confirmed',
+  }];
+
+  const reopened = parseOmiJson(JSON.stringify(portable));
+  assert.deepEqual(reopened.sourceAttributions, portable.sourceAttributions);
+  assert.deepEqual(
+    toPortableOmiManuscript(reopened).sourceAttributions,
+    portable.sourceAttributions,
+  );
+});
+
 test('rejects the experimental pre-0.2 standalone schema instead of migrating it', () => {
   const portable = toPortableOmiManuscript(createVersionedTestManuscript()) as unknown as Record<string, any>;
   portable.schema = 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json';
@@ -58,7 +77,7 @@ test('rejects an unsupported OMI file-format version independently from the Stud
   const portable = toPortableOmiManuscript(createVersionedTestManuscript()) as unknown as Record<string, any>;
   portable.omi = {
     ...portable.omi,
-    version: '0.3.0',
+    version: '0.4.0',
   };
 
   assert.throws(
@@ -166,7 +185,7 @@ test('portable OMI rejects bibliography selections that do not resolve to a reco
 
 
 test('preserves the complete portable envelope and unknown data through an edit/save round trip', async () => {
-  const fixtureRoot = new URL('./fixtures/omi-spec-320/0.2.0/', import.meta.url);
+  const fixtureRoot = new URL('./fixtures/omi-spec-320/0.3.0/', import.meta.url);
   const source = JSON.parse(await readFile(
     new URL('valid-history-extension.omi.json', fixtureRoot),
     'utf8',
@@ -211,15 +230,15 @@ test('preserves the complete portable envelope and unknown data through an edit/
   assert.deepEqual(reopened.revisionHistory, source.revisionHistory);
 });
 
-test('passes the version-pinned OMI-SPEC-320@0.2.0 conformance fixtures', async () => {
-  const fixtureRoot = new URL('./fixtures/omi-spec-320/0.2.0/', import.meta.url);
+test('passes the version-pinned OMI-SPEC-320@0.3.0 conformance fixtures', async () => {
+  const fixtureRoot = new URL('./fixtures/omi-spec-320/0.3.0/', import.meta.url);
   const manifest = JSON.parse(await readFile(new URL('manifest.json', fixtureRoot), 'utf8')) as {
     specification: string; schema: string; suiteVersion: string;
     fixtures: Array<{ path: string; valid: boolean; expectedDiagnostics: string[] }>;
   };
-  assert.equal(manifest.specification, 'OMI-SPEC-320@0.2.0');
+  assert.equal(manifest.specification, 'OMI-SPEC-320@0.3.0');
   assert.equal(manifest.schema, OMI_MANUSCRIPT_SCHEMA_URI);
-  assert.equal(manifest.suiteVersion, '0.2.0-draft.4');
+  assert.equal(manifest.suiteVersion, '0.3.0-draft.4');
   for (const fixture of manifest.fixtures) {
     const source = await readFile(new URL(fixture.path, fixtureRoot), 'utf8');
     const actualDiagnostics = validateOmiConformanceJson(source);

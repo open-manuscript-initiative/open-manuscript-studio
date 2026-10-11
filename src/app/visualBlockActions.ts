@@ -13,6 +13,8 @@ import type {
   OmiManuscript,
   OmiSection,
   OmiVisualBlockData,
+  OmiBibliographicRecord,
+  OmiSourceAttribution,
 } from '../types/omi';
 import { useStudioStore } from './useStudioStore';
 
@@ -25,6 +27,8 @@ export function stageInsertBlocks(
   blocks: OmiBlock[],
   summary = 'Inserted manuscript elements',
   originAnnotations: readonly OmiAnnotation[] = [],
+  sourceAttributions: readonly OmiSourceAttribution[] = [],
+  bibliographicRecords: readonly OmiBibliographicRecord[] = [],
 ): boolean {
   if (blocks.length === 0) return false;
   let changed = false;
@@ -53,6 +57,12 @@ export function stageInsertBlocks(
       throw new Error('Origin declaration must target a newly inserted object.');
     }
 
+    if (sourceAttributions.some((relation) =>
+      !insertedIds.has(relation.sourceObjectId) ||
+      (!bibliographicRecords.some((record) => record.id === relation.targetBibliographicRecordId)
+        && !state.manuscript.bibliographicRecords?.some((record) => record.id === relation.targetBibliographicRecordId)))) {
+      throw new Error('Source attribution must resolve to a newly inserted object and bibliographic record.');
+    }
     const section = state.manuscript.sections[sectionIndex];
     if (!section) return state;
     const insertionIndex = clampGap(gapIndex, section.blocks.length);
@@ -85,6 +95,16 @@ export function stageInsertBlocks(
             path: `/sections/${sectionId}/blocks/${insertionIndex + index}`,
             nextValue: block,
           })),
+          ...(bibliographicRecords.length || sourceAttributions.length ? [{
+            operation: 'manuscript.structure.set' as const,
+            targetId: state.manuscript.id,
+            path: '/bibliography-and-source-attributions',
+            previousValue: { bibliographicRecords: state.manuscript.bibliographicRecords ?? [], sourceAttributions: state.manuscript.sourceAttributions ?? [] },
+            nextValue: {
+              bibliographicRecords: [...(state.manuscript.bibliographicRecords ?? []), ...bibliographicRecords],
+              sourceAttributions: [...(state.manuscript.sourceAttributions ?? []), ...sourceAttributions],
+            },
+          }] : []),
           ...originAnnotations.map((annotation) => ({
             operation: 'annotation.create' as const,
             targetId: annotation.id,
@@ -106,6 +126,8 @@ export function stageInsertBlocks(
         ...portableState,
         sections: nextSections,
         annotations: [...state.manuscript.annotations, ...originAnnotations],
+        bibliographicRecords: [...(state.manuscript.bibliographicRecords ?? []), ...bibliographicRecords],
+        sourceAttributions: [...(state.manuscript.sourceAttributions ?? []), ...sourceAttributions],
         updatedAt: timestamp,
       },
       pendingChangeSet,

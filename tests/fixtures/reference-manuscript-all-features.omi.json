@@ -1,5 +1,5 @@
 {
-  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
+  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json",
   "id": "reference-manuscript-all-features",
   "version": "0.1.0-alpha.1",
   "identityModelVersion": "OMI-SPEC-150@0.1.0",
@@ -1818,19 +1818,20 @@
   "updatedAt": "2026-09-19T12:30:00.000Z",
   "omi": {
     "format": "manuscript",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "profiles": [
       "core-snapshot",
       "history-exchange"
     ],
     "specifications": {
       "OMI-SPEC-100": "0.1.0",
-      "OMI-SPEC-120": "0.1.0",
+      "OMI-SPEC-120": "0.2.0",
       "OMI-SPEC-140": "0.1.0",
       "OMI-SPEC-150": "0.1.0",
       "OMI-SPEC-160": "0.1.0",
       "OMI-SPEC-210": "0.1.0",
-      "OMI-SPEC-220": "0.1.0"
+      "OMI-SPEC-220": "0.1.0",
+      "OMI-SPEC-225": "0.1.0"
     }
   },
   "versioningModelVersion": "OMI-SPEC-160@0.1.0",
@@ -1869,7 +1870,7 @@
         "snapshot": {
           "manuscriptId": "reference-manuscript-all-features",
           "state": {
-            "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
+            "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json",
             "id": "reference-manuscript-all-features",
             "version": "0.1.0-alpha.1",
             "identityModelVersion": "OMI-SPEC-150@0.1.0",
@@ -3676,12 +3677,13 @@
               }
             },
             "createdAt": "2026-09-19T12:00:00.000Z",
-            "updatedAt": "2026-09-19T12:00:00.000Z"
+            "updatedAt": "2026-09-19T12:00:00.000Z",
+            "sourceAttributions": []
           }
         },
         "stateDigest": {
           "algorithm": "sha256",
-          "value": "e84e02f18c9db405e1a47a7d036cf4a5b237b1c4aa9b08d34debeed76e76278b",
+          "value": "70ddc31cd80f624f8c579d8116d0555052397f66f9bb76664194624f012b5248",
           "canonicalization": "omi-manuscript-state-json-v1",
           "scope": "revision.snapshot.state",
           "exclusions": [
@@ -3689,7 +3691,7 @@
             "asset-backed-image-authoring-preview-src"
           ],
           "mediaType": "application/vnd.openmanuscript.manuscript-state+json",
-          "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
+          "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json",
           "createdAt": "2026-09-19T12:00:00.000Z",
           "generatedBy": "open-manuscript-studio"
         }
@@ -3724,7 +3726,7 @@
         "snapshot": {
           "manuscriptId": "reference-manuscript-all-features",
           "state": {
-            "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
+            "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json",
             "id": "reference-manuscript-all-features",
             "version": "0.1.0-alpha.1",
             "identityModelVersion": "OMI-SPEC-150@0.1.0",
@@ -5539,12 +5541,13 @@
               }
             },
             "createdAt": "2026-09-19T12:00:00.000Z",
-            "updatedAt": "2026-09-19T12:30:00.000Z"
+            "updatedAt": "2026-09-19T12:30:00.000Z",
+            "sourceAttributions": []
           }
         },
         "stateDigest": {
           "algorithm": "sha256",
-          "value": "b0dbcf81d2093d4c0b7897cb21447be72078448456022b8d12badf855c83bda4",
+          "value": "16485c315da9ba7db87ad90867250ce4a3412d52b6f8821c1937c692bcd32600",
           "canonicalization": "omi-manuscript-state-json-v1",
           "scope": "revision.snapshot.state",
           "exclusions": [
@@ -5552,11 +5555,12 @@
             "asset-backed-image-authoring-preview-src"
           ],
           "mediaType": "application/vnd.openmanuscript.manuscript-state+json",
-          "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
+          "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json",
           "createdAt": "2026-09-19T12:30:00.000Z",
           "generatedBy": "open-manuscript-studio"
         }
       }
     ]
-  }
+  },
+  "sourceAttributions": []
 }

@@ -8,7 +8,7 @@ export const REFERENCE_IMAGE_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 
 export const REFERENCE_MANUSCRIPT_FEATURES = [
-  'canonical OMI-SPEC-320@0.2.0 manuscript envelope',
+  'canonical OMI-SPEC-320@0.3.0 manuscript envelope',
   'complete revision history with state digests and tombstone evidence',
   'edited-volume structure with two studies and nested sections',
   'multilingual title-adjacent metadata, abstracts and keywords',
@@ -167,7 +167,7 @@ function buildCurrentState(): OmiManuscriptState {
   );
 
   const state = {
-    schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json',
+    schema: 'https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json',
     id: 'reference-manuscript-all-features',
     version: '0.1.0-alpha.1',
     identityModelVersion: 'OMI-SPEC-150@0.1.0',
@@ -969,6 +969,7 @@ function buildCurrentState(): OmiManuscriptState {
         modifiedAt: REFERENCE_TIMESTAMP_HEAD,
       },
     ],
+    sourceAttributions: [],
     bibliographicRecords: [
       {
         id: 'record-journal',

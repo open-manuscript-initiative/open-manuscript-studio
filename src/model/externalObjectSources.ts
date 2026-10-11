@@ -1,4 +1,4 @@
-import type { OmiAnnotation, OmiBlock } from '../types/omi';
+import type { OmiAnnotation, OmiBibliographicRecord, OmiBlock, OmiSourceAttribution } from '../types/omi';
 import { selfAuthoredExternalBlockOrigin } from './importedDocumentSource';
 
 export interface ExternalObjectDraft {
@@ -41,12 +41,16 @@ export function buildAttributedVisualImport(
   sourceLabel: string,
   timestamp: string,
   newId: () => string = () => crypto.randomUUID(),
-): { blocks: OmiBlock[]; annotations: OmiAnnotation[] } {
+  existingRecords: readonly OmiBibliographicRecord[] = [],
+): { blocks: OmiBlock[]; annotations: OmiAnnotation[]; bibliographicRecords: OmiBibliographicRecord[]; sourceAttributions: OmiSourceAttribution[] } {
   if (drafts.length === 0 || drafts.some(({ block, source, selfAuthoredExternal }) =>
     !block.visual || (!selfAuthoredExternal && !source.trim()))) {
     throw new Error('Every third-party visual object requires a source.');
   }
   const annotations: OmiAnnotation[] = [];
+  const bibliographicRecords: OmiBibliographicRecord[] = [];
+  const sourceAttributions: OmiSourceAttribution[] = [];
+  const recordsByTitle = new Map(existingRecords.map((record) => [record.title.trim().toLocaleLowerCase(), record]));
   const blocks = drafts.flatMap(({ block, source, selfAuthoredExternal }) => {
     if (selfAuthoredExternal) {
       annotations.push(selfAuthoredExternalBlockOrigin(block.id, timestamp, newId));
@@ -58,7 +62,24 @@ export function buildAttributedVisualImport(
         : visual;
       return [{ ...block, visual: privateSafeVisual } as OmiBlock];
     }
-    return buildSourcedVisualBlocks([{ block, source }], sourceLabel, newId);
+    const title = source.trim();
+    let record = recordsByTitle.get(title.toLocaleLowerCase());
+    if (!record) {
+      record = { id: newId(), type: 'other', title, contributors: [], identifiers: [], status: 'provisional', createdAt: timestamp, modifiedAt: timestamp };
+      recordsByTitle.set(title.toLocaleLowerCase(), record);
+      bibliographicRecords.push(record);
+    }
+    sourceAttributions.push({
+      id: newId(),
+      sourceObjectId: block.id,
+      targetBibliographicRecordId: record.id,
+      predicate: 'prov:wasDerivedFrom',
+      role: 'import-source',
+      assertionStatus: 'author-confirmed',
+      createdAt: timestamp,
+      modifiedAt: timestamp,
+    });
+    return buildSourcedVisualBlocks([{ block, source: title }], sourceLabel, newId);
   });
-  return { blocks, annotations };
+  return { blocks, annotations, bibliographicRecords, sourceAttributions };
 }

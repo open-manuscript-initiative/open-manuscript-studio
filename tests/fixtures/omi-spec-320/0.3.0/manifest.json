@@ -1,7 +1,7 @@
 {
-  "specification": "OMI-SPEC-320@0.2.0",
-  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
-  "description": "Version-pinned structural and semantic fixture corpus for OMI-SPEC-320@0.2.0.",
+  "specification": "OMI-SPEC-320@0.3.0",
+  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json",
+  "description": "Version-pinned structural and semantic fixture corpus for OMI-SPEC-320@0.3.0.",
   "fixtures": [
     {
       "path": "valid-minimal.omi.json",
@@ -162,5 +162,5 @@
       ]
     }
   ],
-  "suiteVersion": "0.2.0-draft.4"
+  "suiteVersion": "0.3.0-draft.4"
 }

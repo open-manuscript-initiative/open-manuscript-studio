@@ -8,8 +8,9 @@
     ],
     "specifications": {
       "OMI-SPEC-100": "0.1.0",
-      "OMI-SPEC-120": "0.1.0",
-      "OMI-SPEC-140": "0.1.0"
+      "OMI-SPEC-120": "0.2.0",
+      "OMI-SPEC-140": "0.1.0",
+      "OMI-SPEC-225": "0.1.0"
     }
   },
   "id": "urn:uuid:924ac355-f66c-4f2d-9946-dd25a7ac4775",
@@ -29,5 +30,6 @@
     }
   ],
   "createdAt": "2026-09-05T08:00:00Z",
-  "updatedAt": "2026-09-05T08:00:00Z"
+  "updatedAt": "2026-09-05T08:00:00Z",
+  "sourceAttributions": []
 }

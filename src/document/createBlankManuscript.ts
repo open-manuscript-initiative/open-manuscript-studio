@@ -91,6 +91,7 @@ export function createBlankManuscript(
     sections: rootStudyId ? [createEmptyStudy(rootStudyId)] : [],
     annotations: [],
     bibliographicRecords: [],
+    sourceAttributions: [],
     bibliographyAdditionalRecordIds: [],
     citations: [],
     citationClusters: [],

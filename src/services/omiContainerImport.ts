@@ -1,5 +1,6 @@
 import { collectReferencedAssetIds, sha256Hex } from '../model/assets';
 import { isValidLinearRevisionHistory } from '../model/versioning';
+import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import {
   OMI_CONTAINER_MEDIA_TYPE,
   OMI_CONTAINER_VERSION,
@@ -152,7 +153,7 @@ export async function inspectOmiContainer(
         'invalid-manuscript-document',
         error instanceof Error
           ? error.message
-          : 'The packaged manuscript document does not conform to OMI-SPEC-320@0.2.0.',
+          : 'The packaged manuscript document does not conform to OMI-SPEC-320@0.3.0.',
       ));
     }
   }
@@ -668,6 +669,8 @@ function stableComparableState(state: OmiManuscriptState): string {
 function normalizeAssetPreviewFields(state: OmiManuscriptState): OmiManuscriptState {
   return {
     ...state,
+    schema: OMI_MANUSCRIPT_SCHEMA_URI,
+    sourceAttributions: state.sourceAttributions ?? [],
     sections: state.sections.map((section) => ({
       ...section,
       blocks: normalizeBlockPreviews(section.blocks),

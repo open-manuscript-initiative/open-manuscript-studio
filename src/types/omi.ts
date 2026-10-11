@@ -325,6 +325,20 @@ export interface OmiCrossReference {
   modifiedAt?: string;
 }
 
+export type OmiSourceAttributionStatus = 'machine-inferred' | 'author-declared' | 'author-confirmed';
+
+export interface OmiSourceAttribution {
+  id: string;
+  sourceObjectId: string;
+  targetBibliographicRecordId: string;
+  predicate: 'prov:wasDerivedFrom';
+  role?: string;
+  locator?: OmiCitationLocator;
+  assertionStatus: OmiSourceAttributionStatus;
+  createdAt?: string;
+  modifiedAt?: string;
+}
+
 export interface OmiImportProvenance {
   sourceFormat:
     | 'image'
@@ -533,6 +547,7 @@ export interface OmiManuscriptState {
    * alpha manuscripts are still importable; new Studio edits initialize it.
    */
   bibliographicRecords?: OmiBibliographicRecord[];
+  sourceAttributions?: OmiSourceAttribution[];
 
   /**
    * Bibliographic records explicitly added to the rendered bibliography even
@@ -564,7 +579,7 @@ export interface OmiManuscriptState {
 
 export interface OmiFileFormatEnvelope {
   format: 'manuscript';
-  version: '0.2.0';
+  version: '0.3.0';
   profiles: string[];
   specifications: Record<string, string>;
   [key: string]: unknown;
