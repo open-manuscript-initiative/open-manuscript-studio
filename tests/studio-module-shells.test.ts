@@ -24,6 +24,7 @@ import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSe
 import { buildRomanianArchivesSearchUrl } from '../src/modules/history-archives/romanianArchives.ts';
 import { DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS, getHistoryArchiveSourcesStorageKey, HISTORY_ARCHIVE_SOURCE_IDS, readVisibleHistoryArchiveSources } from '../src/modules/history-archives/sourcePreferences.ts';
 import { getResearchCatalogPreferencesKey, readVisibleResearchCatalogs, type ResearchCatalogId } from '../src/modules/researchCatalogPreferences.ts';
+import { searchEurostatCatalogue } from '../src/modules/eurostatCatalogue.ts';
 import { searchSefaria } from '../server/src/integrations/sefaria/sefariaSearch.ts';
 import { createExperimentalWorkspace, isExperimentalWorkspace, parseExperimentalWorkspace } from '../src/modules/experimental-laboratory/model.ts';
 import { addDesignDeviation, createStatisticalWorkspace, describe, estimateTwoGroupSampleSize, isStatisticalWorkspace, linearRegression, oneWayAnova, parseDelimited, parseLaboratoryMeasurements, parseStatisticalWorkspace, preregisterDesign, randomizeParticipants, welchTTest } from '../src/modules/statistical-analysis/model.ts';
@@ -210,6 +211,27 @@ test('research catalog choices default to all sources, persist an empty choice, 
   assert.deepEqual(readVisibleResearchCatalogs(available, '[]'), []);
   assert.deepEqual(readVisibleResearchCatalogs(available, '{broken'), available);
   assert.equal(getResearchCatalogPreferencesKey('user-a:workspace-b:musicology'), 'omi:research-catalogs:v1:user-a:workspace-b:musicology');
+});
+
+test('Eurostat search returns matching catalogue records with direct dataset links', () => {
+  const xml = `<?xml version="1.0"?><nt:toc xmlns:nt="urn:example:toc">
+    <nt:leaf type="dataset" code="demo_pjan">
+      <nt:title lang="en">Population on 1 January</nt:title>
+      <nt:title lang="de">Bevölkerung am 1. Januar</nt:title>
+      <nt:shortDescription lang="en">Population data by age and sex.</nt:shortDescription>
+      <nt:unit lang="en">Persons</nt:unit>
+    </nt:leaf>
+    <nt:leaf type="folder" code="demo">
+      <nt:title lang="en">Population</nt:title>
+    </nt:leaf>
+  </nt:toc>`;
+
+  const result = searchEurostatCatalogue(xml, 'population 1 January', 'en');
+  assert.equal(result.total, 1);
+  assert.equal(result.records[0]?.title, 'Population on 1 January');
+  assert.equal(result.records[0]?.description, 'Population data by age and sex.');
+  assert.equal(result.records[0]?.url, 'https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table?lang=en');
+  assert.equal(searchEurostatCatalogue(xml, 'bevolkerung', 'de').total, 1);
 });
 
 test('archive source preferences are isolated by user and workspace', () => {
