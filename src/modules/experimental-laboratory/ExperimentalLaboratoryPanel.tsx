@@ -25,9 +25,9 @@ const words = {
     intro: 'Kísérletek, tanulmányok, minták, protokollok, műszerek, mérések és kutatási fájlok összekapcsolása.',
     local: 'A projekt ezen az eszközön tárolódik. A JSON-export hordozható OMI-moduladat; fájlok kiválasztásakor csak a név, méret és SHA-256 kerül rögzítésre, a fájl nem töltődik fel.',
     project: 'Vizsgálat / projekt címe', profile: 'Szakterületi profil', objective: 'Kutatási cél', lead: 'Vezető kutató', collaborators: 'Közreműködők',
-    physics: 'Fizika', chemistry: 'Kémia', biology: 'Biológia', materialsProfile: 'Anyagtudomány',
+    physics: 'Fizika', chemistry: 'Kémia', biology: 'Biológia', materialsProfile: 'Anyagtudomány', agriculture: 'Agrártudomány', engineering: 'Műszaki kutatás', geosciences: 'Földtudomány',
     studies: 'Tanulmányok / kísérleti egységek', addStudy: 'Tanulmány hozzáadása', studyTitle: 'Tanulmány címe', date: 'Dátum', context: 'Kísérleti körülmények / szakterületi részletek',
-    contextLabels: { physics: 'Berendezés, mérési tartomány és körülmények', chemistry: 'Reakció, oldószer és reakciókörülmények', biology: 'Organizmus, kezelés és etikai hivatkozás', materials: 'Összetétel, előállítás és karakterizálás' },
+    contextLabels: { physics: 'Berendezés, mérési tartomány és körülmények', chemistry: 'Reakció, oldószer és reakciókörülmények', biology: 'Organizmus, kezelés és etikai hivatkozás', materials: 'Összetétel, előállítás és karakterizálás', agriculture: 'Termőhely, parcella, fajta, kezelés és szezon', engineering: 'Rendszer, tervezési paraméterek és vizsgálati feltételek', geosciences: 'Mintavételi hely, rétegtan, koordináták és terepi körülmények' },
     materials: 'Minták és anyagok', addMaterial: 'Minta / anyag hozzáadása', name: 'Megnevezés', category: 'Típus / szerep', identifier: 'Azonosító / tételszám', quantity: 'Mennyiség', unit: 'Mértékegység', conditions: 'Kezelés és tárolási körülmény',
     protocols: 'Protokollok', addProtocol: 'Protokoll hozzáadása', version: 'Verzió', steps: 'Lépések / eljárás', source: 'Forrás / DOI / URL',
     instruments: 'Műszerek', addInstrument: 'Műszer hozzáadása', model: 'Modell', serial: 'Gyári szám', calibrationDate: 'Kalibrálás dátuma', calibrationReference: 'Kalibrációs jegyzőkönyv / referencia',
@@ -40,9 +40,9 @@ const words = {
     intro: 'Connect investigations, studies, samples, protocols, instruments, measurements, and research files.',
     local: 'The project is stored on this device. JSON export is a portable OMI module record; selecting a file records only its name, size, and SHA-256. The file is not uploaded.',
     project: 'Investigation / project title', profile: 'Discipline profile', objective: 'Research objective', lead: 'Principal investigator', collaborators: 'Collaborators',
-    physics: 'Physics', chemistry: 'Chemistry', biology: 'Biology', materialsProfile: 'Materials science',
+    physics: 'Physics', chemistry: 'Chemistry', biology: 'Biology', materialsProfile: 'Materials science', agriculture: 'Agricultural sciences', engineering: 'Engineering', geosciences: 'Earth sciences',
     studies: 'Studies / experimental units', addStudy: 'Add study', studyTitle: 'Study title', date: 'Date', context: 'Experimental conditions / discipline details',
-    contextLabels: { physics: 'Apparatus, measurement range, and conditions', chemistry: 'Reaction, solvent, and reaction conditions', biology: 'Organism, treatment, and ethics reference', materials: 'Composition, preparation, and characterization' },
+    contextLabels: { physics: 'Apparatus, measurement range, and conditions', chemistry: 'Reaction, solvent, and reaction conditions', biology: 'Organism, treatment, and ethics reference', materials: 'Composition, preparation, and characterization', agriculture: 'Site, plot, variety, treatment, and season', engineering: 'System, design parameters, and test conditions', geosciences: 'Sampling location, stratigraphy, coordinates, and field conditions' },
     materials: 'Samples and materials', addMaterial: 'Add sample / material', name: 'Name', category: 'Type / role', identifier: 'Identifier / lot number', quantity: 'Quantity', unit: 'Unit', conditions: 'Treatment and storage conditions',
     protocols: 'Protocols', addProtocol: 'Add protocol', version: 'Version', steps: 'Steps / procedure', source: 'Source / DOI / URL',
     instruments: 'Instruments', addInstrument: 'Add instrument', model: 'Model', serial: 'Serial number', calibrationDate: 'Calibration date', calibrationReference: 'Calibration record / reference',
@@ -55,9 +55,9 @@ const words = {
     intro: 'Untersuchungen, Studien, Proben, Protokolle, Geräte, Messungen und Forschungsdateien verknüpfen.',
     local: 'Das Projekt wird auf diesem Gerät gespeichert. Der JSON-Export ist ein portabler OMI-Moduldatensatz. Bei Dateiauswahl werden nur Name, Größe und SHA-256 erfasst; die Datei wird nicht hochgeladen.',
     project: 'Untersuchung / Projekttitel', profile: 'Fachprofil', objective: 'Forschungsziel', lead: 'Projektleitung', collaborators: 'Mitwirkende',
-    physics: 'Physik', chemistry: 'Chemie', biology: 'Biologie', materialsProfile: 'Materialwissenschaft',
+    physics: 'Physik', chemistry: 'Chemie', biology: 'Biologie', materialsProfile: 'Materialwissenschaft', agriculture: 'Agrarwissenschaften', engineering: 'Ingenieurwissenschaften', geosciences: 'Geowissenschaften',
     studies: 'Studien / experimentelle Einheiten', addStudy: 'Studie hinzufügen', studyTitle: 'Studientitel', date: 'Datum', context: 'Versuchsbedingungen / Fachdetails',
-    contextLabels: { physics: 'Aufbau, Messbereich und Bedingungen', chemistry: 'Reaktion, Lösungsmittel und Reaktionsbedingungen', biology: 'Organismus, Behandlung und Ethikreferenz', materials: 'Zusammensetzung, Herstellung und Charakterisierung' },
+    contextLabels: { physics: 'Aufbau, Messbereich und Bedingungen', chemistry: 'Reaktion, Lösungsmittel und Reaktionsbedingungen', biology: 'Organismus, Behandlung und Ethikreferenz', materials: 'Zusammensetzung, Herstellung und Charakterisierung', agriculture: 'Standort, Parzelle, Sorte, Behandlung und Saison', engineering: 'System, Entwurfsparameter und Prüfbedingungen', geosciences: 'Probenahmeort, Stratigraphie, Koordinaten und Feldbedingungen' },
     materials: 'Proben und Materialien', addMaterial: 'Probe / Material hinzufügen', name: 'Bezeichnung', category: 'Typ / Rolle', identifier: 'Kennung / Chargennummer', quantity: 'Menge', unit: 'Einheit', conditions: 'Behandlung und Lagerbedingungen',
     protocols: 'Protokolle', addProtocol: 'Protokoll hinzufügen', version: 'Version', steps: 'Schritte / Verfahren', source: 'Quelle / DOI / URL',
     instruments: 'Geräte', addInstrument: 'Gerät hinzufügen', model: 'Modell', serial: 'Seriennummer', calibrationDate: 'Kalibrierungsdatum', calibrationReference: 'Kalibrierungsnachweis / Referenz',
@@ -112,7 +112,7 @@ export function ExperimentalLaboratoryPanel({ locale = 'hu', storageKey = 'exper
     } catch { setError(t.hashError); }
     finally { setBusyArtifact(null); }
   }
-  const profileNames: Record<ExperimentalProfile, string> = { physics: t.physics, chemistry: t.chemistry, biology: t.biology, materials: t.materialsProfile };
+  const profileNames: Record<ExperimentalProfile, string> = { physics: t.physics, chemistry: t.chemistry, biology: t.biology, materials: t.materialsProfile, agriculture: t.agriculture, engineering: t.engineering, geosciences: t.geosciences };
   const input = (label: string, value: string, onChange: (value: string) => void, type = 'text') => <label>{label}<input type={type} value={value} onChange={event => onChange(event.target.value)}/></label>;
 
   return <main className="discipline-workspace">

@@ -75,6 +75,10 @@ test('registers all built-in discipline modules with navigation contributions', 
     (module) => module.contributions.some(({ slot }) => slot === 'research-navigation'),
   ));
   assert.deepEqual(historyArchivesModule.requiredCapabilities, ['archives.search']);
+  assert.ok(builtinModuleManifests.find(module => module.id === 'org.omi.experimental-laboratory')?.disciplines?.includes('agriculture'));
+  assert.ok(builtinModuleManifests.find(module => module.id === 'org.omi.experimental-laboratory')?.disciplines?.includes('engineering'));
+  assert.ok(builtinModuleManifests.find(module => module.id === 'org.omi.experimental-laboratory')?.disciplines?.includes('earth-sciences'));
+  assert.ok(builtinModuleManifests.find(module => module.id === 'org.omi.critical-text-edition')?.disciplines?.includes('philosophy'));
   assert.deepEqual(
     builtinModuleManifests.find((module) => module.id === 'org.omi.religious-texts')?.requiredCapabilities,
     ['religious-texts.search'],

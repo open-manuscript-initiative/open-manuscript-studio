@@ -10,8 +10,8 @@ export const moduleManifest: StudioModuleManifest = {
   apiVersion: STUDIO_MODULE_API_VERSION,
   titleKey: 'modules.criticalTextEdition.title',
   descriptionKey: 'modules.criticalTextEdition.description',
-  disciplines: ['philology', 'classical-philology', 'literary-studies'],
-  requiredCapabilities: [],
+  disciplines: ['philology', 'classical-philology', 'literary-studies', 'philosophy', 'history-of-philosophy'],
+  requiredCapabilities: ['research-databases.search'],
   contributions: [
     {
       id: 'overview',

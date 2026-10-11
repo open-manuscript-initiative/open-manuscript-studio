@@ -142,7 +142,7 @@ export function ModuleManagerPanel({
                 ) : module.id === religiousTextsModule.id ? (
                   <ReligiousTextsPanel locale={locale} />
                 ) : module.id === criticalTextEditionModule.id ? (
-                  <CriticalTextEditionPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
+                  <><CriticalTextEditionPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /><ResearchDatabasePanel moduleId="critical-text-edition" workspaceId={workspaceId} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /></>
                 ) : module.id === corpusLinguisticsModule.id ? (
                   <CorpusLinguisticsPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === musicologyModule.id ? (
