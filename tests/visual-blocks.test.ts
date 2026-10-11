@@ -1,9 +1,13 @@
+import { renderHtmlArticle } from '../src/services/exportHtml.ts';
+import { renderJatsArticle } from '../src/services/exportJats.ts';
+import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { buildAttributedVisualImport, buildSourcedVisualBlocks, prefillExternalSource } from '../src/model/externalObjectSources.ts';
 import {
   latexToMathMl,
+  renderLatexMath,
   sanitizeMathMlForPreview,
 } from '../src/model/equationRendering.ts';
 import {
@@ -138,6 +142,47 @@ test('renders common LaTeX structures as browser-native MathML', () => {
   assert.ok(!mathml.includes('<script'));
 });
 
+test('LaTeX keeps simultaneous scripts, operators and multi-digit numbers mathematically structured', () => {
+  for (const source of ['x_i^2', 'x^2_i']) {
+    const result = renderLatexMath(source);
+    assert.equal(result.error, undefined);
+    assert.match(result.mathml, /<msubsup><mi>x<\/mi><mi>i<\/mi><mn>2<\/mn><\/msubsup>/);
+  }
+  const result = renderLatexMath('12.5 + \\sin(x) + \\sqrt[3]{x} + \\sum_{i=1}^{n} x_i');
+  assert.equal(result.error, undefined);
+  assert.match(result.mathml, /<mn>12\.5<\/mn>/);
+  assert.match(result.mathml, /<mi[^>]*>sin<\/mi>/);
+  assert.match(result.mathml, /<mroot>/);
+  assert.match(result.mathml, /<munderover>/);
+});
+
+test('LaTeX supports matrices, cases and aligned equations without losing cells', () => {
+  for (const source of [
+    '\\begin{pmatrix}a & b \\\\ c & d\\end{pmatrix}',
+    '\\begin{cases}x^2 & x\\ge 0 \\\\ -x & x<0\\end{cases}',
+    '\\begin{aligned}a+b &= c \\\\ a &= c-b\\end{aligned}',
+  ]) {
+    const result = renderLatexMath(source);
+    assert.equal(result.error, undefined);
+    assert.match(result.mathml, /<mtable/);
+    assert.equal((result.mathml.match(/<mtr>/g) ?? []).length, 2);
+  }
+});
+
+test('invalid, unknown, untrusted and runaway LaTeX is diagnosed rather than silently approximated', () => {
+  for (const source of [
+    'x_{', '\\unknowncommand{x}', '\\href{javascript:alert(1)}{x}',
+    '\\includegraphics{https://example.test/private.png}',
+    '\\def\\loop{\\loop}\\loop', 'x'.repeat(8193),
+  ]) {
+    const result = renderLatexMath(source);
+    assert.ok(result.error, source.slice(0, 60));
+    assert.doesNotMatch(result.mathml, /<(?:script|img|a)\b|href=/);
+  }
+  assert.doesNotMatch(latexToMathMl('<script>'), /<script>/);
+  assert.doesNotMatch(latexToMathMl('\\unknowncommand{<img src=x onerror=alert(1)>}'), /<img/);
+});
+
 test('never returns active markup when MathML sanitization runs without a browser DOM', () => {
   const sanitized = sanitizeMathMlForPreview(
     '<math onclick="alert(1)"><mrow><mi>x</mi><script>alert(1)</script></mrow></math>',
@@ -181,4 +226,21 @@ test('mixed import carries own-work origin privately while requiring third-party
   assert.throws(() => buildAttributedVisualImport([
     { block: external, source: '', selfAuthoredExternal: false },
   ], 'Source', '2026-10-09T00:00:00.000Z'), /requires a source/);
+});
+
+
+test('invalid equations block HTML and JATS publication while preserving manuscript source', () => {
+  const manuscript = createVersionedTestManuscript();
+  manuscript.sections[0].blocks.push(createEquationBlock('\\unknowncommand{x}'));
+  const before = JSON.stringify(manuscript);
+  for (const result of [renderHtmlArticle(manuscript), renderJatsArticle(manuscript)]) {
+    assert.equal(result.validForExport, false);
+    assert.ok(result.diagnostics.some((item) => item.code === 'invalid-equation-latex' && item.severity === 'error'));
+  }
+  assert.equal(JSON.stringify(manuscript), before);
+});
+
+test('LaTeX macro definitions cannot contaminate another manuscript equation', () => {
+  assert.equal(renderLatexMath('\\gdef\\custom{a}\\custom').error, undefined);
+  assert.ok(renderLatexMath('\\custom').error);
 });
