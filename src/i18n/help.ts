@@ -4,6 +4,7 @@ export interface HelpTopic {
   title: string;
   body: string;
   tips?: string[];
+  sections?: Array<{ title: string; body: string; tips?: string[] }>;
 }
 
 export interface HelpCopy {
