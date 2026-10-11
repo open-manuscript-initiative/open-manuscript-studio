@@ -29,7 +29,7 @@ export function searchEurostatCatalogue(xml: string, query: string, locale = 'en
 
     const code = (node.getAttribute('code') || '').trim();
     if (!/^[a-z0-9_-]+$/i.test(code)) continue;
-    const children = Array.from(node.getElementsByTagName('*')) as Element[];
+    const children = Array.from(node.getElementsByTagName('*')) as XmlElement[];
     const title = readLocalizedField(children, 'title', locale) || code;
     const description = readLocalizedField(children, 'shortDescription', locale);
     const unit = readLocalizedField(children, 'unit', locale);
@@ -59,7 +59,7 @@ export function searchEurostatCatalogue(xml: string, query: string, locale = 'en
 function readLocalizedField(nodes: XmlElement[], field: string, locale: string): string {
   const candidates = nodes.filter((node) => (node.localName || node.nodeName.split(':').pop()) === field);
   const preferred = locale === 'de' ? 'de' : 'en';
-  const getLanguage = (node: Element) => node.getAttribute('lang') || node.getAttribute('xml:lang') || node.getAttributeNS('http://www.w3.org/XML/1998/namespace', 'lang') || '';
+  const getLanguage = (node: XmlElement) => node.getAttribute('lang') || node.getAttribute('xml:lang') || node.getAttributeNS('http://www.w3.org/XML/1998/namespace', 'lang') || '';
   const match = candidates.find((node) => getLanguage(node).toLowerCase() === preferred)
     || candidates.find((node) => getLanguage(node).toLowerCase().startsWith(preferred + '-'))
     || candidates[0];
