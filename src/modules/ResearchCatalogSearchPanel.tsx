@@ -15,8 +15,7 @@ const catalogs: Record<ResearchCatalogId, { title: string; portalUrl: (query: st
   },
   eurostat: {
     title: 'Eurostat',
-    portalUrl: (query) => `https://ec.europa.eu/eurostat/web/main/search?${new URLSearchParams({ query })}`,
-    apiUrl: () => 'https://ec.europa.eu/eurostat/api/dissemination/catalogue/toc/xml',
+    portalUrl: (query) => `https://ec.europa.eu/eurostat/search?${new URLSearchParams({ query })}`,
   },
   nsiBelgium: { title: 'Statistics Belgium (Statbel)', portalUrl: (query) => `https://statbel.fgov.be/en/search?${new URLSearchParams({ items_per_page: '10', page: '1', search_api_fulltext: query, search_api_fulltext_block: '' })}` },
   nsiBulgaria: { title: 'National Statistical Institute of Bulgaria', portalUrl: (query) => `https://www.nsi.bg/en/search?${new URLSearchParams({ filters: 'data', q: query })}` },
@@ -34,7 +33,7 @@ const catalogs: Record<ResearchCatalogId, { title: string; portalUrl: (query: st
   nsiLatvia: { title: 'Central Statistical Bureau of Latvia', portalUrl: (query) => `https://stat.gov.lv/en/search?${new URLSearchParams({ search: query })}` },
   nsiLithuania: { title: 'State Data Agency (Statistics Lithuania)', portalUrl: (query) => `https://osp.stat.gov.lt/en/search?${new URLSearchParams({ query })}` },
   nsiLuxembourg: { title: 'National Institute of Statistics and Economic Studies of the Grand Duchy of Luxembourg (STATEC)', portalUrl: (query) => `https://statistiques.public.lu/en/search.html?${new URLSearchParams({ q: query })}` },
-  nsiHungary: { title: 'Hungarian Central Statistical Office (KSH)', portalUrl: (query) => `https://www.ksh.hu/search?${new URLSearchParams({ query })}` },
+  nsiHungary: { title: 'Hungarian Central Statistical Office (KSH)', portalUrl: (query) => `https://www.ksh.hu/kereses?${new URLSearchParams({ q: query })}` },
   nsiMalta: { title: 'National Statistics Office Malta', portalUrl: (query) => `https://nso.gov.mt/?${new URLSearchParams({ s: query })}` },
   nsiNetherlands: { title: 'Statistics Netherlands (CBS)', portalUrl: (query) => `https://www.cbs.nl/en-gb/search?${new URLSearchParams({ query })}` },
   nsiAustria: { title: 'Statistics Austria', portalUrl: (query) => `https://www.statistik.at/en/search?${new URLSearchParams({ 'tx_solr[q]': query })}` },
@@ -116,6 +115,7 @@ function ResearchCatalogProviderSearch({ catalog, locale = 'hu' }: { catalog: Re
     const normalized = query.trim();
     if (!normalized) return;
     if (!provider.apiUrl) {
+      window.open(getResearchCatalogSearchUrl(catalog, normalized), '_blank', 'noopener,noreferrer');
       setPortalReady(true);
       return;
     }
