@@ -22,6 +22,7 @@ const MODULE_IDS = [
   'org.omi.archaeology',
   'org.omi.experimental-laboratory',
   'org.omi.statistical-analysis',
+  'org.omi.mathematics',
 ] as const;
 const workspaceIdSchema = z.string().trim().min(1).max(128).regex(/^[A-Za-z0-9._:-]+$/);
 const updateSchema = z.object({
