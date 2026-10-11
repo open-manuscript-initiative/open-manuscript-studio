@@ -25,7 +25,9 @@ for (const { module, moduleId, providers } of moduleProviders) {
         response.status(400).json({ error: { code: 'INVALID_RESEARCH_DATABASE_SEARCH', message: 'Enter a supported database, query and cursor.' } }); return;
       }
       response.setHeader('Cache-Control', 'no-store');
-      try { response.status(200).json(await searchResearchDatabase(parsed.data)); }
+      const { provider, query, cursor } = parsed.data;
+      const searchInput = cursor === undefined ? { provider, query } : { provider, query, cursor };
+      try { response.status(200).json(await searchResearchDatabase(searchInput)); }
       catch { response.status(502).json({ error: { code: 'RESEARCH_DATABASE_SEARCH_FAILED', message: 'The selected research database is temporarily unavailable.' } }); }
     });
 }
