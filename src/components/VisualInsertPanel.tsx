@@ -24,7 +24,7 @@ import { stageInsertBlocks } from '../app/visualBlockActions';
 import { useTranslation } from '../i18n';
 import { getVisualElementsCopy } from '../i18n/visualElements';
 import { ResearchModuleInsertPanel } from '../modules/ResearchModuleInsertPanel';
-import type { OmiAnnotation, OmiBlock } from '../types/omi';
+import type { OmiAnnotation, OmiBibliographicRecord, OmiBlock, OmiSourceAttribution } from '../types/omi';
 import { buildAttributedVisualImport, prefillExternalSource } from '../model/externalObjectSources';
 import type { OmiGeneratedListKind } from '../model/generatedLists';
 import type { OmiTableOfContents } from '../model/tableOfContents';
@@ -72,8 +72,8 @@ export function VisualInsertPanel({
 
   const gapIndex = selectedSection.blocks.length;
 
-  function insert(blocks: Parameters<typeof stageInsertBlocks>[2], originAnnotations: readonly OmiAnnotation[] = []): boolean {
-    const inserted = stageInsertBlocks(selectedSection.id, gapIndex, blocks, 'Inserted manuscript elements', originAnnotations);
+  function insert(blocks: Parameters<typeof stageInsertBlocks>[2], originAnnotations: readonly OmiAnnotation[] = [], sourceAttributions: readonly OmiSourceAttribution[] = [], bibliographicRecords: readonly OmiBibliographicRecord[] = []): boolean {
+    const inserted = stageInsertBlocks(selectedSection.id, gapIndex, blocks, 'Inserted manuscript elements', originAnnotations, sourceAttributions, bibliographicRecords);
     if (inserted) {
       setError(null);
       onInserted?.();
@@ -147,9 +147,9 @@ export function VisualInsertPanel({
     setBusy(true);
     setError(null);
     try {
-      const { blocks, annotations } = buildAttributedVisualImport(pendingImports, sourceCopy.source, new Date().toISOString());
+      const { blocks, annotations, bibliographicRecords, sourceAttributions } = buildAttributedVisualImport(pendingImports, sourceCopy.source, new Date().toISOString(), () => crypto.randomUUID(), manuscript.bibliographicRecords ?? []);
       const externalized = await externalizeBlocksForManuscript(manuscript.id, blocks);
-      if (insert(externalized.blocks, annotations)) {
+      if (insert(externalized.blocks, annotations, sourceAttributions, bibliographicRecords)) {
         stageAssetAttachments(externalized.assets);
         setPendingImports([]);
       }
@@ -381,7 +381,7 @@ function getListInsertCopy(locale: string) {
 function getExternalSourceCopy(locale: string) {
   if (locale === 'hu') return {
     preview: 'Külső objektumok forrása', source: 'Forrás', own: 'Saját mű, korábban más programban készítettem; csak rejtett eredetjelölés',
-    explanation: 'Az ismert fájlnevet és fájlrészt előre kitöltöttük. Ellenőrizze vagy pontosítsa; a külső forrású objektum után láthatóan megjelenik; saját mű esetén csak rejtett eredetjelölés marad.',
+    explanation: 'Az ismert fájlnevet és fájlrészt előre kitöltöttük. Ellenőrizze vagy pontosítsa; a megerősített forráshoz előzetes bibliográfiai rekord kapcsolódik; a külső forrású objektum után láthatóan megjelenik; saját mű esetén csak rejtett eredetjelölés marad.',
     required: 'Minden külső objektumhoz kötelező a forrás.', confirm: 'Objektumok beszúrása forrással', cancel: 'Mégsem',
   };
   if (locale === 'de') return {
@@ -391,7 +391,7 @@ function getExternalSourceCopy(locale: string) {
   };
   return {
     preview: 'Sources of external objects', source: 'Source', own: 'My own work made in another editor; hidden origin declaration only',
-    explanation: 'Known file names and parts are prefilled. Review or refine them; third-party objects show a visible source; own work retains only a hidden origin declaration.',
+    explanation: 'Known file names and parts are prefilled. Review or refine them; confirmed sources link to provisional bibliographic records; third-party objects show a visible source; own work retains only a hidden origin declaration.',
     required: 'Every external object requires a source.', confirm: 'Insert objects with sources', cancel: 'Cancel',
   };
 }
