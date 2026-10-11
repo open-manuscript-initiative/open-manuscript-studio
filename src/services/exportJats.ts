@@ -13,7 +13,7 @@ import {
 import { renderBibliography, renderCitationCluster } from '../model/cslRendering';
 import { getBibliographyRecords } from '../model/citations';
 import { buildNoteNumberMap } from '../model/notes';
-import { latexToMathMl } from '../model/equationRendering';
+import { renderLatexMath } from '../model/equationRendering';
 import {
   buildPublicationRenderingContext,
   type OmiPublicationRenderingContext,
@@ -798,7 +798,12 @@ function renderEquation(block: OmiBlock, state: RenderState): string {
   let math: string;
 
   if (latex) {
-    math = prefixMathMl(latexToMathMl(latex));
+    const result = renderLatexMath(latex);
+    if (result.error) state.diagnostics.push({
+      code: 'invalid-equation-latex', severity: 'error',
+      message: result.error, targetId: block.id,
+    });
+    math = prefixMathMl(result.mathml);
   } else if (block.visual.notation === 'mathml') {
     math = normalizeStoredMathMl(block.visual.source, state, block.id);
   } else {
@@ -1058,7 +1063,7 @@ function prefixMathMl(source: string): string {
     '',
   );
   return withoutDefaultNamespace.replace(
-    /<(\/?)((?:math|mrow|mi|mn|mo|mtext|mspace|mfrac|msqrt|mroot|msup|msub|msubsup|munder|mover|munderover|mmultiscripts|mprescripts|none|mtable|mtr|mtd|mfenced|menclose|mstyle|semantics|annotation))\b/g,
+    /<(\/?)((?:math|mrow|mi|mn|mo|mtext|mspace|mfrac|msqrt|mroot|msup|msub|msubsup|munder|mover|munderover|mmultiscripts|mprescripts|none|mtable|mtr|mtd|mfenced|menclose|mstyle|semantics|annotation|mpadded|mphantom))\b/g,
     '<$1mml:$2',
   );
 }
