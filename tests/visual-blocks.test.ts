@@ -177,10 +177,17 @@ test('invalid, unknown, untrusted and runaway LaTeX is diagnosed rather than sil
   ]) {
     const result = renderLatexMath(source);
     assert.ok(result.error, source.slice(0, 60));
-    assert.doesNotMatch(result.mathml, /<(?:script|img|a)\b|href=/);
+    assert.doesNotMatch(result.mathml, /<(?:script|img|a)\b|href=/i);
   }
-  assert.doesNotMatch(latexToMathMl('<script>'), /<script>/);
-  assert.doesNotMatch(latexToMathMl('\\unknowncommand{<img src=x onerror=alert(1)>}'), /<img/);
+  for (const source of ['<script>', '<SCRIPT>', '<ScRiPt>']) {
+    assert.doesNotMatch(latexToMathMl(source), /<script\b/i);
+  }
+  for (const tag of ['img', 'IMG', 'ImG']) {
+    assert.doesNotMatch(
+      latexToMathMl(`\\unknowncommand{<${tag} src=x onerror=alert(1)>}`),
+      /<img\b/i,
+    );
+  }
 });
 
 test('never returns active markup when MathML sanitization runs without a browser DOM', () => {
