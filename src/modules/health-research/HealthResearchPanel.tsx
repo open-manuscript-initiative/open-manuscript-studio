@@ -1,9 +1,10 @@
+import { HealthSearchPanel } from './HealthSearchPanel';
 import { downloadWorkspaceJson, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
 import { commonFields, createHealthWorkspace, disciplineFields, isHealthWorkspace, type HealthDiscipline } from './model';
 import { healthCopy, healthFieldLabels } from './copy';
 import '../disciplineWorkspaces.css';
 
-export function HealthResearchPanel({ discipline, locale, storageKey }: { discipline: HealthDiscipline; locale: string; storageKey: string }) {
+export function HealthResearchPanel({ discipline, locale, storageKey, workspaceId = 'default' }: { workspaceId?: string; discipline: HealthDiscipline; locale: string; storageKey: string }) {
   const language = locale === 'hu' || locale === 'de' ? locale : 'en';
   const t = healthCopy[language];
   const [workspace, setWorkspace] = useLocalWorkspace(storageKey, () => createHealthWorkspace(discipline), value => isHealthWorkspace(value, discipline));
@@ -13,6 +14,7 @@ export function HealthResearchPanel({ discipline, locale, storageKey }: { discip
     </header>
     <p className="discipline-workspace__hint">{t.notice}</p>
     <p>{t.shared}</p>
+    <HealthSearchPanel discipline={discipline} locale={locale} storageKey={storageKey} workspaceId={workspaceId} />
     <section className="discipline-workspace__section"><div className="discipline-workspace__grid">
       {[...commonFields, ...disciplineFields[discipline]].map(field => <label key={field}>{healthFieldLabels[field][language]}
         <textarea rows={field === 'publicSummary' ? 5 : 2} value={workspace.fields[field]} onChange={event => {
