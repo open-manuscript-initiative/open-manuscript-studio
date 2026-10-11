@@ -36,7 +36,7 @@ test('reference fixture is canonical OMI-SPEC-320@0.3.0 and synchronized with it
 
   assert.equal(wire.schema, 'https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json');
   assert.equal(wire.omi?.format, 'manuscript');
-  assert.equal(wire.omi?.version, '0.2.0');
+  assert.equal(wire.omi?.version, '0.3.0');
   assert.deepEqual(wire.omi?.profiles, ['core-snapshot', 'history-exchange']);
   assert.equal(wire.omi?.specifications?.['OMI-SPEC-160'], '0.1.0');
 
