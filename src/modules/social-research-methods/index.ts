@@ -11,7 +11,7 @@ export const moduleManifest: StudioModuleManifest = {
   titleKey: 'modules.socialResearchMethods.title',
   descriptionKey: 'modules.socialResearchMethods.description',
   disciplines: ['social-sciences', 'behavioral-sciences', 'economics'],
-  requiredCapabilities: [],
+  requiredCapabilities: ['research-databases.search'],
   contributions: [
     {
       id: 'overview',
