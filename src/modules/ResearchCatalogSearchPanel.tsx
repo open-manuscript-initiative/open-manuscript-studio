@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { getResearchCatalogPreferencesKey, readVisibleResearchCatalogs, type ResearchCatalogId } from './researchCatalogPreferences';
+import { searchEurostatCatalogue } from './eurostatCatalogue';
 
 type CatalogRecord = { id: string; title: string; description: string; url: string; meta?: string };
 
@@ -12,7 +13,11 @@ const catalogs: Record<ResearchCatalogId, { title: string; portalUrl: (query: st
     portalUrl: (query) => `https://vlo.clarin.eu/search?${new URLSearchParams({ q: query })}`,
     apiUrl: (query) => `https://vlo.clarin.eu/api/records?${new URLSearchParams({ q: query, from: '0', size: '8' })}`,
   },
-  eurostat: { title: 'Eurostat', portalUrl: (query) => `https://ec.europa.eu/eurostat/web/main/search?${new URLSearchParams({ query })}` },
+  eurostat: {
+    title: 'Eurostat',
+    portalUrl: (query) => `https://ec.europa.eu/eurostat/web/main/search?${new URLSearchParams({ query })}`,
+    apiUrl: () => 'https://ec.europa.eu/eurostat/api/dissemination/catalogue/toc/xml',
+  },
   zenodo: {
     title: 'Zenodo',
     portalUrl: (query) => `https://zenodo.org/search?${new URLSearchParams({ q: query })}`,
@@ -24,6 +29,23 @@ const catalogs: Record<ResearchCatalogId, { title: string; portalUrl: (query: st
     apiUrl: (query) => `https://www.ebi.ac.uk/europepmc/webservices/rest/search?${new URLSearchParams({ query, format: 'json', pageSize: '8' })}`,
   },
 };
+
+let eurostatCatalogueCache: Promise<string> | null = null;
+
+async function loadEurostatCatalogue(url: string): Promise<string> {
+  if (!eurostatCatalogueCache) {
+    eurostatCatalogueCache = fetch(url, { headers: { Accept: 'application/xml' } })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        return response.text();
+      })
+      .catch((error: unknown) => {
+        eurostatCatalogueCache = null;
+        throw error;
+      });
+  }
+  return eurostatCatalogueCache;
+}
 
 const copy = {
   hu: { searchLabel: 'Keresőkifejezés', placeholder: 'Név, cím vagy kulcsszó', search: 'Keresés', searching: 'Keresés…', open: 'Találatok megnyitása a szolgáltatónál', fallback: 'Keresés a szolgáltató oldalán', introApi: 'A keresés találatai itt jelennek meg.', introPortal: 'A keresés egy új lapon, a szolgáltató saját oldalán nyílik meg.', empty: 'Nincs találat.', failed: 'A keresés nem sikerült. Próbálja újra, vagy nyissa meg a szolgáltató keresőjét.', count: '{count} találat', sources: 'Kereshető adatbázisok', selectSource: 'Megjelenítés' },
@@ -72,10 +94,13 @@ function ResearchCatalogProviderSearch({ catalog, locale = 'hu' }: { catalog: Re
     }
     setBusy(true); setFailed(false); setSearched(true); setRecords([]);
     try {
-      const response = await fetch(provider.apiUrl(normalized), { headers: { Accept: 'application/json' } });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const payload: unknown = await response.json();
-      const normalizedPage = normalizeRecords(catalog, payload);
+      const normalizedPage = catalog === 'eurostat'
+        ? searchEurostatCatalogue(await loadEurostatCatalogue(provider.apiUrl(normalized)), normalized, locale)
+        : await fetch(provider.apiUrl(normalized), { headers: { Accept: 'application/json' } })
+          .then(async (response) => {
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return normalizeRecords(catalog, await response.json());
+          });
       setRecords(normalizedPage.records); setTotal(normalizedPage.total);
     } catch {
       setFailed(true);
