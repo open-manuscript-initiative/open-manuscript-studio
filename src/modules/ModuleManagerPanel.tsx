@@ -118,7 +118,7 @@ export function ModuleManagerPanel({
                 locale={locale}
               >
                 {module.id === 'org.omi.psychology' || module.id === 'org.omi.medical-sciences' ? (
-                  <HealthResearchPanel key={userId + ':' + workspaceId + ':' + module.id} discipline={module.id === 'org.omi.psychology' ? 'psychology' : 'medical-sciences'} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
+                  <HealthResearchPanel workspaceId={workspaceId} key={userId + ':' + workspaceId + ':' + module.id} discipline={module.id === 'org.omi.psychology' ? 'psychology' : 'medical-sciences'} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === 'org.omi.mathematics' ? (
                   <MathematicsPanel locale={locale} />
                 ) : module.id === historyArchivesModule.id ? (

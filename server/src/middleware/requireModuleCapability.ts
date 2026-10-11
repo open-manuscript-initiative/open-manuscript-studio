@@ -9,13 +9,17 @@ import type { AuthenticatedRequest } from './requireSession.js';
 
 export type StudioModuleId =
   | 'org.omi.history-archives'
-  | 'org.omi.religious-texts';
-export type StudioModuleCapability = 'archives.search' | 'religious-texts.search';
+  | 'org.omi.religious-texts'
+  | 'org.omi.psychology'
+  | 'org.omi.medical-sciences';
+export type StudioModuleCapability = 'archives.search' | 'religious-texts.search' | 'health-research.search';
 
 const workspaceIdSchema = z.string().trim().min(1).max(128).regex(/^[A-Za-z0-9._:-]+$/);
 const moduleCapabilities: Record<StudioModuleId, readonly StudioModuleCapability[]> = {
   'org.omi.history-archives': ['archives.search'],
   'org.omi.religious-texts': ['religious-texts.search'],
+  'org.omi.psychology': ['health-research.search'],
+  'org.omi.medical-sciences': ['health-research.search'],
 };
 
 export interface ModuleExecutionGrant {

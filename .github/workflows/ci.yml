@@ -90,6 +90,9 @@ jobs:
         working-directory: server
         run: npm run typecheck
 
+      - name: Test health research API authorization
+        run: npm run test:health-research-api
+
       - name: Test JATS 1.4 schema validation
         run: npm run test:jats-validation
 
