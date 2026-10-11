@@ -220,10 +220,18 @@ test('statistics panel offers all 27 EU national statistical offices while defau
   assert.deepEqual(readVisibleResearchCatalogs(available, JSON.stringify(['nsiHungary', 'nsiSweden', 'unknown']), ['eurostat']), ['nsiHungary', 'nsiSweden']);
 });
 
-test('statistics searches open official result URLs and pass the query directly', () => {
+test('EU statistics searches use each provider\u2019s verified result URL and query parameter', () => {
   const source = readFileSync(new URL('../src/modules/ResearchCatalogSearchPanel.tsx', import.meta.url), 'utf8');
-  assert.match(source, /https:\/\/ec\.europa\.eu\/eurostat\/search\?\$\{new URLSearchParams\(\{ query \}\)\}/);
+  assert.match(source, /https:\/\/ec\.europa\.eu\/eurostat\/search\/-\/search\/estatsearchportlet_WAR_estatsearchportlet_INSTANCE_bHVzuvn1SZ8J\?\$\{new URLSearchParams\(\{ text: query \}\)\}/);
   assert.match(source, /https:\/\/www\.ksh\.hu\/kereses\?\$\{new URLSearchParams\(\{ q: query \}\)\}/);
+  assert.match(source, /https:\/\/csu\.gov\.cz\/vysledky-vyhledavani\?\$\{new URLSearchParams\(\{ searchText: query \}\)\}/);
+  assert.match(source, /https:\/\/cystatdb\.cystat\.gov\.cy\/pxweb\/en\/8\.CYSTAT-DB\/search\/\?\$\{new URLSearchParams\(\{ searchquery: query \}\)\}/);
+  assert.match(source, /https:\/\/osp\.stat\.gov\.lt\/paieska\?\$\{new URLSearchParams\(\{ q: query \}\)\}/);
+  assert.match(source, /https:\/\/statistiques\.public\.lu\/en\/support\/recherche\.html\?\$\{new URLSearchParams\(\{ q: query \}\)\}/);
+  assert.match(source, /frm_accao: 'PESQUISAR'.*frm_texto: query/s);
+  assert.match(source, /https:\/\/pxweb\.stat\.si\/SiStat\/en\/Home\/GetSearchResultsRedirect\?\$\{new URLSearchParams\(\{ searchQuery: query, searchString: query \}\)\}/);
+  assert.match(source, /'search-term': query/);
+  assert.match(source, /https:\/\/www\.scb\.se\/en\/finding-statistics\/search\/\?\$\{new URLSearchParams\(\{ query \}\)\}/);
   assert.match(source, /window\.open\(getResearchCatalogSearchUrl\(catalog, normalized\), '_blank'/);
 });
 
