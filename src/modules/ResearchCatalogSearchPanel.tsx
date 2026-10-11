@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
 import { getResearchCatalogPreferencesKey, readVisibleResearchCatalogs, type ResearchCatalogId } from './researchCatalogPreferences';
-import { searchEurostatCatalogue } from './eurostatCatalogue';
 
 type CatalogRecord = { id: string; title: string; description: string; url: string; meta?: string };
 
@@ -15,8 +14,7 @@ const catalogs: Record<ResearchCatalogId, { title: string; portalUrl: (query: st
   },
   eurostat: {
     title: 'Eurostat',
-    portalUrl: (query) => `https://ec.europa.eu/eurostat/web/main/search?${new URLSearchParams({ query })}`,
-    apiUrl: () => 'https://ec.europa.eu/eurostat/api/dissemination/catalogue/toc/xml',
+    portalUrl: (query) => `https://ec.europa.eu/eurostat/search?${new URLSearchParams({ query })}`,
   },
   nsiBelgium: { title: 'Statistics Belgium (Statbel)', portalUrl: (query) => `https://statbel.fgov.be/en/search?${new URLSearchParams({ items_per_page: '10', page: '1', search_api_fulltext: query, search_api_fulltext_block: '' })}` },
   nsiBulgaria: { title: 'National Statistical Institute of Bulgaria', portalUrl: (query) => `https://www.nsi.bg/en/search?${new URLSearchParams({ filters: 'data', q: query })}` },
@@ -34,7 +32,7 @@ const catalogs: Record<ResearchCatalogId, { title: string; portalUrl: (query: st
   nsiLatvia: { title: 'Central Statistical Bureau of Latvia', portalUrl: (query) => `https://stat.gov.lv/en/search?${new URLSearchParams({ search: query })}` },
   nsiLithuania: { title: 'State Data Agency (Statistics Lithuania)', portalUrl: (query) => `https://osp.stat.gov.lt/en/search?${new URLSearchParams({ query })}` },
   nsiLuxembourg: { title: 'National Institute of Statistics and Economic Studies of the Grand Duchy of Luxembourg (STATEC)', portalUrl: (query) => `https://statistiques.public.lu/en/search.html?${new URLSearchParams({ q: query })}` },
-  nsiHungary: { title: 'Hungarian Central Statistical Office (KSH)', portalUrl: (query) => `https://www.ksh.hu/search?${new URLSearchParams({ query })}` },
+  nsiHungary: { title: 'Hungarian Central Statistical Office (KSH)', portalUrl: (query) => `https://www.ksh.hu/kereses?${new URLSearchParams({ q: query })}` },
   nsiMalta: { title: 'National Statistics Office Malta', portalUrl: (query) => `https://nso.gov.mt/?${new URLSearchParams({ s: query })}` },
   nsiNetherlands: { title: 'Statistics Netherlands (CBS)', portalUrl: (query) => `https://www.cbs.nl/en-gb/search?${new URLSearchParams({ query })}` },
   nsiAustria: { title: 'Statistics Austria', portalUrl: (query) => `https://www.statistik.at/en/search?${new URLSearchParams({ 'tx_solr[q]': query })}` },
@@ -56,23 +54,6 @@ const catalogs: Record<ResearchCatalogId, { title: string; portalUrl: (query: st
     apiUrl: (query) => `https://www.ebi.ac.uk/europepmc/webservices/rest/search?${new URLSearchParams({ query, format: 'json', pageSize: '8' })}`,
   },
 };
-
-let eurostatCatalogueCache: Promise<string> | null = null;
-
-async function loadEurostatCatalogue(url: string): Promise<string> {
-  if (!eurostatCatalogueCache) {
-    eurostatCatalogueCache = fetch(url, { headers: { Accept: 'application/xml' } })
-      .then(async (response) => {
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        return response.text();
-      })
-      .catch((error: unknown) => {
-        eurostatCatalogueCache = null;
-        throw error;
-      });
-  }
-  return eurostatCatalogueCache;
-}
 
 const copy = {
   hu: { searchLabel: 'Keresőkifejezés', placeholder: 'Név, cím vagy kulcsszó', search: 'Keresés', searching: 'Keresés…', open: 'Találatok megnyitása a szolgáltatónál', fallback: 'Keresés a szolgáltató oldalán', introApi: 'A keresés találatai itt jelennek meg.', introPortal: 'A keresés egy új lapon, a szolgáltató saját oldalán nyílik meg.', empty: 'Nincs találat.', failed: 'A keresés nem sikerült. Próbálja újra, vagy nyissa meg a szolgáltató keresőjét.', count: '{count} találat', sources: 'Kereshető adatbázisok', selectSource: 'Megjelenítés' },
@@ -116,18 +97,17 @@ function ResearchCatalogProviderSearch({ catalog, locale = 'hu' }: { catalog: Re
     const normalized = query.trim();
     if (!normalized) return;
     if (!provider.apiUrl) {
+      window.open(getResearchCatalogSearchUrl(catalog, normalized), '_blank', 'noopener,noreferrer');
       setPortalReady(true);
       return;
     }
     setBusy(true); setFailed(false); setSearched(true); setRecords([]);
     try {
-      const normalizedPage = catalog === 'eurostat'
-        ? searchEurostatCatalogue(await loadEurostatCatalogue(provider.apiUrl(normalized)), normalized, locale)
-        : await fetch(provider.apiUrl(normalized), { headers: { Accept: 'application/json' } })
-          .then(async (response) => {
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-            return normalizeRecords(catalog, await response.json());
-          });
+      const normalizedPage = await fetch(provider.apiUrl(normalized), { headers: { Accept: 'application/json' } })
+        .then(async (response) => {
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+          return normalizeRecords(catalog, await response.json());
+        });
       setRecords(normalizedPage.records); setTotal(normalizedPage.total);
     } catch {
       setFailed(true);

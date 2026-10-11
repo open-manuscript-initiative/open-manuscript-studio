@@ -220,6 +220,13 @@ test('statistics panel offers all 27 EU national statistical offices while defau
   assert.deepEqual(readVisibleResearchCatalogs(available, JSON.stringify(['nsiHungary', 'nsiSweden', 'unknown']), ['eurostat']), ['nsiHungary', 'nsiSweden']);
 });
 
+test('statistics searches open official result URLs and pass the query directly', () => {
+  const source = readFileSync(new URL('../src/modules/ResearchCatalogSearchPanel.tsx', import.meta.url), 'utf8');
+  assert.match(source, /https:\/\/ec\.europa\.eu\/eurostat\/search\?\$\{new URLSearchParams\(\{ query \}\)\}/);
+  assert.match(source, /https:\/\/www\.ksh\.hu\/kereses\?\$\{new URLSearchParams\(\{ q: query \}\)\}/);
+  assert.match(source, /window\.open\(getResearchCatalogSearchUrl\(catalog, normalized\), '_blank'/);
+});
+
 test('Eurostat search returns matching catalogue records with direct dataset links', () => {
   const xml = `<?xml version="1.0"?><nt:toc xmlns:nt="urn:example:toc">
     <nt:leaf type="dataset" code="demo_pjan">
