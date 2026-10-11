@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { downloadWorkspaceJson, newWorkspaceId, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
 import { ResearchCatalogSearchPanel } from '../ResearchCatalogSearchPanel';
+import { CulturalHeritagePanel } from '../cultural-heritage/CulturalHeritagePanel';
 import '../disciplineWorkspaces.css';
 
 type Context = { id: string; locus: string; period: string; layer: string; description: string; finds: string; sampleId: string; source: string };
@@ -20,7 +21,7 @@ const copy = {
   en: { title: 'Archaeology workspace', subtitle: 'Document sites, layers, contexts, and finds with links to their sources.', project: 'Research project', site: 'Site name / identifier', country: 'Country / region', coordinates: 'Coordinates or spatial record', contexts: 'Archaeological contexts', add: 'Add context', locus: 'Locus / context identifier', period: 'Period / dating', layer: 'Layer / stratigraphic unit', description: 'Description and observations', finds: 'Finds and object identifiers', sample: 'Sample identifier', source: 'Documentation / source URL', remove: 'Remove', export: 'Export archaeology register as JSON', local: 'Data is stored on this device. Export JSON regularly to keep a portable copy.' },
   de: { title: 'Arbeitsbereich Archäologie', subtitle: 'Fundorte, Schichten, Kontexte und Funde mit ihren Quellen dokumentieren.', project: 'Forschungsprojekt', site: 'Fundort / Kennung', country: 'Land / Region', coordinates: 'Koordinaten oder Raumdatensatz', contexts: 'Archäologische Kontexte', add: 'Kontext hinzufügen', locus: 'Locus / Kontextkennung', period: 'Epoche / Datierung', layer: 'Schicht / stratigraphische Einheit', description: 'Beschreibung und Beobachtungen', finds: 'Funde und Objektkennungen', sample: 'Probenkennung', source: 'Dokumentation / Quellen-URL', remove: 'Entfernen', export: 'Archäologisches Verzeichnis als JSON exportieren', local: 'Die Daten werden auf diesem Gerät gespeichert. Exportieren Sie regelmäßig JSON als portable Kopie.' },
 } as const;
-export function ArchaeologyPanel({ locale = 'hu', storageKey = 'archaeology' }: { locale?: string; storageKey?: string }) {
+export function ArchaeologyPanel({ locale = 'hu', storageKey = 'archaeology', heritageStorageKey = 'cultural-heritage' }: { locale?: string; storageKey?: string; heritageStorageKey?: string }) {
   const t = copy[locale as keyof typeof copy] ?? copy.hu;
   const fileRef = useRef<HTMLInputElement>(null);
   const [workspace, setWorkspace] = useLocalWorkspace<Workspace>(storageKey, blank, valid);
@@ -43,6 +44,7 @@ export function ArchaeologyPanel({ locale = 'hu', storageKey = 'archaeology' }: 
     <section className="discipline-workspace__section"><div className="discipline-workspace__section-title"><h2>{t.contexts} ({workspace.contexts.length})</h2><button type="button" onClick={() => setWorkspace(current => ({ ...current, contexts: [...current.contexts, emptyContext()] }))}>{t.add}</button></div>
       {workspace.contexts.map(context => <article className="discipline-workspace__card" key={context.id}><div className="discipline-workspace__grid"><label>{t.locus}<input value={context.locus} onChange={e => update(context.id, { locus: e.target.value })}/></label><label>{t.period}<input value={context.period} onChange={e => update(context.id, { period: e.target.value })}/></label><label>{t.layer}<input value={context.layer} onChange={e => update(context.id, { layer: e.target.value })}/></label><label>{t.sample}<input value={context.sampleId} onChange={e => update(context.id, { sampleId: e.target.value })}/></label><label>{t.finds}<input value={context.finds} onChange={e => update(context.id, { finds: e.target.value })}/></label><label>{t.source}<input value={context.source} onChange={e => update(context.id, { source: e.target.value })}/></label></div><label>{t.description}<textarea rows={3} value={context.description} onChange={e => update(context.id, { description: e.target.value })}/></label><button className="discipline-workspace__danger" type="button" onClick={() => setWorkspace(current => ({ ...current, contexts: current.contexts.filter(item => item.id !== context.id) }))}>{t.remove}</button></article>)}
     </section>
-    <ResearchCatalogSearchPanel catalogs={['pleiades']} locale={locale} storageKey={`${storageKey}:archaeology`} />
+    <ResearchCatalogSearchPanel catalogs={['pleiades', 'ariadne', 'openContext']} locale={locale} storageKey={`${storageKey}:archaeology`} />
+    <section className="discipline-workspace__section"><h2>{locale === 'en' ? 'Cultural heritage' : locale === 'de' ? 'Kulturelles Erbe' : 'Kulturális örökség'}</h2><CulturalHeritagePanel locale={locale} storageKey={heritageStorageKey} /></section>
   </main>;
 }
