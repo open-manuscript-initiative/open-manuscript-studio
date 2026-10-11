@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { searchResearchDatabase } from '../integrations/researchDatabases/search.js';
 import { requireModuleCapability } from '../middleware/requireModuleCapability.js';
 import { requireSession } from '../middleware/requireSession.js';
+import type { StudioModuleId } from '../middleware/requireModuleCapability.js';
 
 export const researchDatabaseRouter = Router();
 const bodySchema = z.object({
@@ -12,13 +13,13 @@ const bodySchema = z.object({
   cursor: z.string().regex(/^\d{1,6}$/).optional(),
 }).strict();
 const searchLimit = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false });
-const moduleProviders = {
-  'social-research-methods': ['eric'],
-  'experimental-laboratory': ['inspire-hep', 'pubchem', 'gbif'],
-} as const;
-for (const [module, providers] of Object.entries(moduleProviders) as [keyof typeof moduleProviders, readonly string[]][]) {
+const moduleProviders: { module: string; moduleId: StudioModuleId; providers: readonly ('eric' | 'inspire-hep' | 'pubchem' | 'gbif')[] }[] = [
+  { module: 'social-research-methods', moduleId: 'org.omi.social-research-methods', providers: ['eric'] },
+  { module: 'experimental-laboratory', moduleId: 'org.omi.experimental-laboratory', providers: ['inspire-hep', 'pubchem', 'gbif'] },
+];
+for (const { module, moduleId, providers } of moduleProviders) {
   researchDatabaseRouter.post(`/modules/${module}/research-databases/search`, requireSession,
-    requireModuleCapability(`org.omi.${module}` as 'org.omi.social-research-methods', 'research-databases.search'),
+    requireModuleCapability(moduleId, 'research-databases.search'),
     searchLimit, async (request, response) => {
       const parsed = bodySchema.safeParse(request.body);
       if (!parsed.success || !providers.includes(parsed.data.provider)) {
