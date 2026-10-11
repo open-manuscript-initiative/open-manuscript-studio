@@ -58,12 +58,22 @@ export function ModuleManagerPanel({
     const legacy = readStudioModulePreferences(userId, workspaceId);
     void getServerModulePolicy(workspaceId).then(async (serverPolicy) => {
       if (cancelled) return;
-      let activeModuleIds = serverPolicy.activeModuleIds;
+      const archaeologyEnabled = serverPolicy.enabledModuleIds.includes(archaeologyModule.id);
+      const mergeLegacyHeritageSelection = (ids: readonly StudioModuleId[]) => archaeologyEnabled && ids.includes(culturalHeritageModule.id)
+        ? [...new Set([...ids.filter((id) => id !== culturalHeritageModule.id), archaeologyModule.id])]
+        : [...ids];
+      let activeModuleIds = mergeLegacyHeritageSelection(serverPolicy.activeModuleIds);
       if (serverPolicy.revision === 0 && legacy.activeModuleIds.length > 0) {
+        activeModuleIds = mergeLegacyHeritageSelection(legacy.activeModuleIds)
+          .filter((id) => serverPolicy.enabledModuleIds.includes(id));
+      }
+      const preferencesChanged = activeModuleIds.length !== serverPolicy.activeModuleIds.length
+        || activeModuleIds.some((id) => !serverPolicy.activeModuleIds.includes(id));
+      if (preferencesChanged || (serverPolicy.revision === 0 && legacy.activeModuleIds.length > 0)) {
         const migrated = await saveServerModulePreferences({
           workspaceId,
-          revision: 0,
-          activeModuleIds: legacy.activeModuleIds.filter((id) => serverPolicy.enabledModuleIds.includes(id)),
+          revision: serverPolicy.revision,
+          activeModuleIds,
         });
         activeModuleIds = migrated.activeModuleIds;
         serverPolicy.revision = migrated.revision;
@@ -149,7 +159,7 @@ export function ModuleManagerPanel({
                 ) : module.id === spatialResearchModule.id ? (
                   <SpatialResearchPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === archaeologyModule.id ? (
-                  <ArchaeologyPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
+                  <ArchaeologyPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} heritageStorageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, culturalHeritageModule.id)} />
                 ) : module.id === experimentalLaboratoryModule.id ? (
                   <><ExperimentalLaboratoryPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /><ResearchDatabasePanel moduleId="experimental-laboratory" workspaceId={workspaceId} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /></>
                 ) : module.id === statisticalAnalysisModule.id ? (
