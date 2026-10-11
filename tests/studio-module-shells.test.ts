@@ -45,6 +45,8 @@ const expectedModuleIds = [
   'org.omi.experimental-laboratory',
   'org.omi.statistical-analysis',
   'org.omi.mathematics',
+  'org.omi.psychology',
+  'org.omi.medical-sciences',
 ];
 
 function createStorage(): ModulePreferenceStorage & { values: Map<string, string> } {

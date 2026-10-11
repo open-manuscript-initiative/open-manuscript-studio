@@ -60,6 +60,8 @@ const translations: Record<string, ModuleShellCopy> = {
     localPreferenceNote: 'Workspace selections are saved to your Studio account and enforced by the server.',
     policyError: 'Module settings could not be loaded or saved. Check your connection and try again.',
     modules: {
+      'org.omi.psychology': { title: "Psychology", overview: "Psychology", description: "Research protocols, instruments, scoring rules and psychometric results." },
+      'org.omi.medical-sciences': { title: "Medical and Health Sciences", overview: "Medical and Health Sciences", description: "Clinical studies, case reports, endpoints and ethics statements." },
       'org.omi.mathematics': {
         title: 'Mathematics',
         description: 'LaTeX equations with validated MathML preview, matrices, cases and aligned equations.',
@@ -187,6 +189,8 @@ const translations: Record<string, ModuleShellCopy> = {
     localPreferenceNote: 'Die Auswahl wird im Studio-Konto gespeichert und vom Server geprüft.',
     policyError: 'Moduleinstellungen konnten nicht geladen oder gespeichert werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.',
     modules: {
+      'org.omi.psychology': { title: "Psychologie", overview: "Psychologie", description: "Forschungsprotokolle, Messinstrumente, Auswertungsregeln und psychometrische Ergebnisse." },
+      'org.omi.medical-sciences': { title: "Medizin und Gesundheitswissenschaften", overview: "Medizin und Gesundheitswissenschaften", description: "Klinische Studien, Fallberichte, Endpunkte und Ethikerklärungen." },
       'org.omi.mathematics': {
         title: 'Mathematik',
         description: 'LaTeX-Formeln mit geprüfter MathML-Vorschau, Matrizen, Fallunterscheidungen und Gleichungssystemen.',
@@ -314,6 +318,8 @@ const translations: Record<string, ModuleShellCopy> = {
     localPreferenceNote: 'A munkatér beállításait a Studio-fiók menti, a szerver pedig ellenőrzi.',
     policyError: 'A modulbeállításokat nem sikerült betölteni vagy menteni. Ellenőrizze a kapcsolatot, majd próbálja újra.',
     modules: {
+      'org.omi.psychology': { title: "Pszichológia", overview: "Pszichológia", description: "Kutatási protokoll, mérőeszközök, pontozási szabályok és pszichometriai eredmények." },
+      'org.omi.medical-sciences': { title: "Orvostudomány és egészségtudomány", overview: "Orvostudomány és egészségtudomány", description: "Klinikai vizsgálatok, esetismertetések, végpontok és etikai nyilatkozatok." },
       'org.omi.mathematics': {
         title: 'Matematika',
         description: 'LaTeX-képletek ellenőrzött MathML-előnézettel, mátrixokkal, esetekkel és egyenletrendszerekkel.',
