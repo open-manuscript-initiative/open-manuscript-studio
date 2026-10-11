@@ -12,7 +12,7 @@ const arr = (v: unknown): unknown[] => Array.isArray(v) ? v : [];
 const count = (v: unknown): number => Number.isSafeInteger(Number(v)) && Number(v) >= 0 ? Number(v) : 0;
 async function json(url: URL, fetchImpl: typeof fetch): Promise<Record<string, unknown>> {
   const response = await fetchImpl(url, { headers: { Accept: 'application/json' }, redirect: 'error', signal: AbortSignal.timeout(15_000) });
-  if (!response.ok) throw new Error('Research database request failed.');
+  if (!response.ok) throw new Error(response.status === 404 ? 'PROVIDER_RECORD_NOT_FOUND' : 'Research database request failed.');
   if (Number(response.headers.get('content-length')) > MAX_BYTES) throw new Error('Provider response too large.');
   const reader = response.body?.getReader(); if (!reader) throw new Error('Provider response is empty.');
   let size = 0; const chunks: Uint8Array[] = [];
