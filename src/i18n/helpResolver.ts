@@ -53,7 +53,7 @@ function buildLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy {
 }
 
 function consolidateModuleHelp(locale: string, copy: HelpCopy): HelpCopy {
-  const moduleIndex = copy.topics.findIndex((topic) => /^21[.):-]?\s/.test(topic.title));
+  const moduleIndex = copy.topics.findIndex((topic) => /^21[.):-]?\s/.test(topic.title) && /module|modul|módul|moduł|модул|模块|モジュール/i.test(topic.title));
   if (moduleIndex < 0) return copy;
 
   const moduleTopic = copy.topics[moduleIndex];
