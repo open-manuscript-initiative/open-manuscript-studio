@@ -4,6 +4,7 @@ export interface HelpTopic {
   title: string;
   body: string;
   tips?: string[];
+  sections?: Array<{ title: string; body: string; tips?: string[] }>;
 }
 
 export interface HelpCopy {
@@ -122,9 +123,9 @@ const copy: Record<SupportedLocale, HelpCopy> = {
         tips: ['DOCX esetén ellenőrizze a Word címsorstílusait és a jegyzet/táblázat szerkezetét.', 'OJS esetén ellenőrizze a Publication metaadatokat, az assignmentet és a jogosultsági kontextust.', 'PDF/HTML megjelenésnél ellenőrizze az aktív profilt, az Export CSS-t és a Nyomtatási/PDF CSS-t.'],
       },
       {
-        title: '21. Kutatási és szakterületi modulok',
-        body: 'A Kutatás modulkezelőjében külön munkafelületeket nyithat meg: Történet és levéltárak (Europeana, NARA és eLevéltár), Vallási szövegek (Sefaria és külső szövegportálok), Kritikai szövegkiadás (tanúk, kolláció, apparátus és TEI), Korpusz- és nyelvi annotáció (konkordancia, annotáció és párhuzamos szövegek), Zeneismeret (MusicXML és zenei események), Kulturális örökség (tárgyak, helyszínek és képrészletek), Társadalomkutatási módszerek (kutatási terv, kódkönyv és átiratok), Jogforrások (hivatkozások és változatok), valamint Kutatási reprodukálhatóság (adatok, kód, verziók és ellenőrzőösszegek).',
-        tips: ['A modulokat a Modulok panelen kapcsolja be.', 'A legtöbb modul munkája ezen a böngészőn tárolódik; használja a JSON-exportot mentésre és átvitelre.', 'A helyi böngészős mentés nem jelent automatikus megosztást vagy központi biztonsági mentést.'],
+        title: '21. Modulok',
+        body: 'A Modulok nézetben a Beállításokban bekapcsolt, szakterülethez kötődő munkafelületek érhetők el. A kínálat a történeti és levéltári kutatástól, vallási szövegektől, kritikai szövegkiadástól és korpusznyelvészettől a zenetudományon, kulturális örökségen, társadalomkutatáson és jogforrásokon át a matematikai, egészségügyi, természettudományi és reprodukálhatósági munkafolyamatokig terjed. A modulok saját eszközt és – ahol elérhető – adatbázis-keresést biztosítanak. A találatok külső portálra mutathatnak, ezért a rekordot mindig az eredeti szolgáltatónál ellenőrizze.',
+        tips: ["A Beállításokban kapcsolja be a használni kívánt modulokat; csak az aktív modulok jelennek meg a Modulok nézetben és a kapcsolódó beszúrási lehetőségek között.","Több adatbázist kínáló modulnál válassza ki, mely szolgáltatókat szeretné keresni.","A moduladatok munkaterületi adatok. Kéziratba csak előnézet és jóváhagyás után kerüljenek; a külső forrást tüntesse fel.","A helyi böngészős mentés nem jelent automatikus megosztást vagy központi biztonsági mentést."]
       },
       {
         title: '22. Jogi adatbázisok keresése',
@@ -161,9 +162,9 @@ const copy: Record<SupportedLocale, HelpCopy> = {
       { title: '19. Cloud and file storage', body: 'Studio supports local and configurable external storage workflows. WebDAV/Nextcloud availability depends on the installation and user configuration; the semantic OMI format is designed so a manuscript is not locked to one storage provider.', tips: ['Verify connection settings before using external storage.', 'Create a portable OMI package for migration or backup.'] },
       { title: '20. If something does not look right', body: 'First determine whether the problem concerns content, structure, metadata, integration or presentation. Check manuscript and metadata languages, section structure, the active publication profile and export diagnostics. For import problems, also inspect the actual source-document structure.', tips: ['For DOCX, check Word heading styles and note/table structure.', 'For OJS, check Publication metadata, the assignment and permission context.', 'For PDF/HTML presentation, check the active profile, Export CSS and Print/PDF CSS.'] },
       {
-        title: '21. Research and discipline modules',
-        body: 'The Research module manager opens focused workspaces: History and Archives (Europeana, NARA and eLevéltár); Religious Texts (Sefaria and external text portals); Critical Text Edition (witnesses, collation, apparatus and TEI); Corpus Linguistics (concordance, annotation and parallel texts); Musicology (MusicXML and musical events); Cultural Heritage (objects, sites and image regions); Social Research Methods (study design, codebook and transcripts); Legal Sources (citations and versions); and Research Reproducibility (outputs, versions and checksums).',
-        tips: ['Enable modules in the Modules panel.', 'Most module work is stored in this browser; use JSON export for backup and transfer.', 'Local browser storage does not provide automatic sharing or a central backup.'],
+        title: '21. Modules',
+        body: 'The Modules view provides the discipline-focused workspaces enabled in Settings. Coverage ranges from history and archives, religious texts, critical editions and corpus linguistics to musicology, cultural heritage, social research and legal sources, as well as mathematics, health, natural sciences and reproducibility workflows. Modules provide focused tools and, where available, database search. Some results link to external portals, so verify each record with its original provider.',
+        tips: ["Enable the modules you need in Settings; only active modules appear in the Modules view and related insertion options.","Where a module offers several databases, select the providers you want to search.","Module data belongs to its workspace. Review and approve any content before inserting it into a manuscript, and retain the external source.","Local browser storage does not provide automatic sharing or a central backup."]
       },
       {
         title: '22. Searching legal databases',
@@ -200,9 +201,9 @@ const copy: Record<SupportedLocale, HelpCopy> = {
       { title: '19. Cloud- und Dateispeicherung', body: 'Studio unterstützt lokale und konfigurierbare externe Speicherabläufe. Die Verfügbarkeit von WebDAV/Nextcloud hängt von Installation und Benutzerkonfiguration ab; das semantische OMI-Format soll verhindern, dass ein Manuskript an einen einzelnen Speicheranbieter gebunden ist.', tips: ['Prüfen Sie Verbindungseinstellungen vor Nutzung externen Speichers.', 'Erstellen Sie für Migration oder Sicherung ein portables OMI-Paket.'] },
       { title: '20. Wenn etwas nicht wie erwartet erscheint', body: 'Klären Sie zuerst, ob das Problem Inhalt, Struktur, Metadaten, Integration oder Darstellung betrifft. Prüfen Sie Manuskript- und Metadatensprache, Abschnittsstruktur, aktives Publikationsprofil und Exportdiagnostik. Bei Importproblemen prüfen Sie zusätzlich die tatsächliche Struktur des Quelldokuments.', tips: ['Bei DOCX: Word-Überschriftenstile sowie Anmerkungs- und Tabellenstruktur prüfen.', 'Bei OJS: Publikationsmetadaten, Assignment und Berechtigungskontext prüfen.', 'Bei PDF/HTML: aktives Profil, Export-CSS und Druck/PDF-CSS prüfen.'] },
       {
-        title: '21. Forschungs- und Fachmodule',
-        body: 'Die Forschungsmodulverwaltung öffnet spezialisierte Arbeitsbereiche: Geschichte und Archive (Europeana, NARA und eLevéltár), religiöse Texte (Sefaria und externe Textportale), kritische Textedition (Zeugen, Kollation, Apparat und TEI), Korpuslinguistik (Konkordanz, Annotation und Paralleltexte), Musikwissenschaft (MusicXML und musikalische Ereignisse), Kulturerbe (Objekte, Orte und Bildbereiche), Methoden der Sozialforschung (Forschungsdesign, Codebuch und Transkripte), Rechtsquellen (Zitate und Fassungen) sowie Forschungsreproduzierbarkeit (Ergebnisse, Versionen und Prüfsummen).',
-        tips: ['Aktivieren Sie Module im Bereich „Module“.', 'Die meisten Moduldaten werden in diesem Browser gespeichert; verwenden Sie den JSON-Export zur Sicherung und Übertragung.', 'Lokaler Browserspeicher bietet keine automatische Freigabe oder zentrale Sicherung.'],
+        title: '21. Module',
+        body: 'Die Ansicht Module bietet die in den Einstellungen aktivierten fachbezogenen Arbeitsbereiche. Das Spektrum reicht von Geschichte und Archiven, religiösen Texten, kritischen Editionen und Korpuslinguistik bis zu Musikwissenschaft, Kulturerbe, Sozialforschung und Rechtsquellen sowie Mathematik, Gesundheit, Naturwissenschaften und Reproduzierbarkeit. Die Module stellen passende Werkzeuge und, sofern verfügbar, Datenbanksuchen bereit. Manche Treffer führen zu externen Portalen; prüfen Sie jeden Datensatz beim ursprünglichen Anbieter.',
+        tips: ["Aktivieren Sie die benötigten Module in den Einstellungen. Nur aktive Module erscheinen in der Modulansicht und den zugehörigen Einfügeoptionen.","Wenn ein Modul mehrere Datenbanken anbietet, wählen Sie die gewünschten Anbieter aus.","Moduldaten gehören zum jeweiligen Arbeitsbereich. Prüfen und bestätigen Sie Inhalte vor dem Einfügen ins Manuskript und führen Sie die externe Quelle mit.","Lokaler Browserspeicher bietet keine automatische Freigabe oder zentrale Sicherung."]
       },
       {
         title: '22. Suche in Rechtsdatenbanken',
