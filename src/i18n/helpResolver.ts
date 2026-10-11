@@ -52,8 +52,33 @@ function buildLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy {
   return appendHealthResearchHelp(locale, appendMathematicsHelp(locale, appendMusicImportHelp(locale, appendDirectSubmissionHelp(locale, appendCollaborationHelp(locale, copy)))));
 }
 
+function consolidateModuleHelp(locale: string, copy: HelpCopy): HelpCopy {
+  const moduleIndex = copy.topics.findIndex((topic) => /^21[.):-]?\\s/.test(topic.title));
+  if (moduleIndex < 0) return copy;
+
+  const moduleTopic = copy.topics[moduleIndex];
+  const sections = [...(moduleTopic.sections ?? [])];
+  const kept = copy.topics.filter((topic, index) => {
+    if (index === moduleIndex) return true;
+    const title = topic.title;
+    const isLegalSearch = /^22[.):-]?\\s/.test(title);
+    const isModuleDetail = /latex|musicxml|midi|psychology|medical sciences|gesundheit|psychologie|orvostudomány|pszichológia/i.test(title);
+    if (!isLegalSearch && !isModuleDetail) return true;
+    sections.push({
+      title: title.replace(/^\\s*\\d+[.):-]?\\s*/, '').trim(),
+      body: topic.body,
+      ...(topic.tips?.length ? { tips: topic.tips } : {}),
+    });
+    return false;
+  });
+
+  const heading = locale === 'hu' ? '21. Modulok' : locale === 'de' ? '21. Module' : '21. Modules';
+  kept[moduleIndex] = { ...moduleTopic, title: heading, sections };
+  return { ...copy, topics: kept };
+}
+
 export function getLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy {
   const current = buildLocalizedHelpCopy(locale);
   const english = locale === 'en' ? current : buildLocalizedHelpCopy('en');
-  return applyReturnedSupplementalOverlay(locale, 'help', current, english);
+  return consolidateModuleHelp(locale, applyReturnedSupplementalOverlay(locale, 'help', current, english));
 }
