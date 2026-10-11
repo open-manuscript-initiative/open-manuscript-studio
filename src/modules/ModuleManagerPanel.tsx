@@ -1,5 +1,6 @@
 import { sortModulesForLocale } from './moduleOrdering';
 import { HealthResearchPanel } from './health-research/HealthResearchPanel';
+import { ResearchDatabasePanel } from './research-databases/ResearchDatabasePanel';
 import { MathematicsPanel } from './mathematics/MathematicsPanel';
 import { Component, useEffect, useState, type ErrorInfo, type ReactNode } from 'react';
 
@@ -140,7 +141,7 @@ export function ModuleManagerPanel({
                 ) : module.id === culturalHeritageModule.id ? (
                   <CulturalHeritagePanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === socialResearchMethodsModule.id ? (
-                  <SocialResearchMethodsPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
+                  <><SocialResearchMethodsPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /><ResearchDatabasePanel moduleId="social-research-methods" workspaceId={workspaceId} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /></>
                 ) : module.id === legalSourcesModule.id ? (
                   <LegalSourcesPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === researchReproducibilityModule.id ? (
@@ -150,7 +151,7 @@ export function ModuleManagerPanel({
                 ) : module.id === archaeologyModule.id ? (
                   <ArchaeologyPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === experimentalLaboratoryModule.id ? (
-                  <ExperimentalLaboratoryPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
+                  <><ExperimentalLaboratoryPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /><ResearchDatabasePanel moduleId="experimental-laboratory" workspaceId={workspaceId} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /></>
                 ) : module.id === statisticalAnalysisModule.id ? (
                   <StatisticalAnalysisPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : (
