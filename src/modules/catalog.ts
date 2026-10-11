@@ -1,3 +1,4 @@
+import { moduleManifest as mathematicsModule } from './mathematics/index';
 import { historyArchivesModule } from './history-archives/index';
 import { moduleManifest as religiousTextsModule } from './religious-texts/index';
 import { moduleManifest as criticalTextEditionModule } from './critical-text-edition/index';
@@ -28,6 +29,7 @@ export {
   archaeologyModule,
   experimentalLaboratoryModule,
   statisticalAnalysisModule,
+  mathematicsModule,
 };
 
 export const builtinModuleManifests = [
@@ -44,6 +46,7 @@ export const builtinModuleManifests = [
   archaeologyModule,
   experimentalLaboratoryModule,
   statisticalAnalysisModule,
+  mathematicsModule,
 ] as const;
 
 export const studioModules = new StudioModuleRegistry();
