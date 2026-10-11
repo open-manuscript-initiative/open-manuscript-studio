@@ -19,6 +19,7 @@ import {
   type ModulePreferenceStorage,
 } from '../src/modules/preferences.ts';
 import { getModuleShellCopy } from '../src/modules/moduleShellTranslations.ts';
+import { getResearchCatalogSearchUrl } from '../src/modules/ResearchCatalogSearchPanel.tsx';
 import { resolveStudioModuleActivationState } from '../src/modules/types.ts';
 import { searchEuropeana } from '../server/src/integrations/europeana/europeanaSearch.ts';
 import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSearch.ts';
@@ -85,11 +86,17 @@ test('combines archaeology and cultural heritage with catalog links and one modu
   assert.equal(expectedModuleIds.includes('org.omi.cultural-heritage'), false);
   assert.equal(expectedModuleIds.filter((id) => id === 'org.omi.archaeology').length, 1);
   const panel = readFileSync(new URL('../src/modules/archaeology/ArchaeologyPanel.tsx', import.meta.url), 'utf8');
-  const searches = readFileSync(new URL('../src/modules/ResearchCatalogSearchPanel.tsx', import.meta.url), 'utf8');
+  const manager = readFileSync(new URL('../src/modules/ModuleManagerPanel.tsx', import.meta.url), 'utf8');
   assert.match(panel, /catalogs=\{\['pleiades', 'ariadne', 'openContext'\]\}/);
   assert.match(panel, /<CulturalHeritagePanel locale=\{locale\} storageKey=\{heritageStorageKey\}/);
-  assert.match(searches, /ariadne: \{ title: 'ARIADNE Portal'.*SearchableText|ariadne: \{ title: 'ARIADNE Portal'.*\{ q: query \}/s);
-  assert.match(searches, /openContext: \{ title: 'Open Context'.*\{ q: query \}/s);
+  assert.match(manager, /heritageStorageKey=\{getDisciplineWorkspaceStorageKey\(userId, workspaceId, culturalHeritageModule.id\)\}/);
+  assert.match(manager, /mergeLegacyHeritageSelection/);
+  const ariadne = new URL(getResearchCatalogSearchUrl('ariadne', 'bronze age site'));
+  const openContext = new URL(getResearchCatalogSearchUrl('openContext', 'bronze age site'));
+  assert.equal(ariadne.origin, 'https://portal.ariadne-infrastructure.eu');
+  assert.equal(ariadne.searchParams.get('q'), 'bronze age site');
+  assert.equal(openContext.origin, 'https://opencontext.org');
+  assert.equal(openContext.searchParams.get('q'), 'bronze age site');
 });
 
 test('provides a translated title and description for every registered module', () => {
