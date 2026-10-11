@@ -30,7 +30,7 @@ test('an invited author must explicitly accept with the invited Studio account',
     const status = invitationGate.getByRole('status');
     return (await status.count()) > 0 ? await status.textContent() : 'Invitation is still being processed.';
   }, { timeout: 15_000 }).toBeNull();
-  await expect(page.getByText('Test manuscript', { exact: true }).first()).toBeVisible();
+  await expect(page.locator('#manuscript-title')).toHaveValue('Test manuscript');
   expect(api.unhandledRequests).toEqual([]);
 });
 
