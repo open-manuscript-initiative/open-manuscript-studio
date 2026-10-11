@@ -1,3 +1,4 @@
+import { appendHealthResearchHelp } from './helpHealthResearch';
 import { appendMathematicsHelp } from './helpMathematics';
 import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 import { getHelpCopy, type HelpCopy } from './help';
@@ -48,7 +49,7 @@ function buildLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy {
     }
   }
 
-  return appendMathematicsHelp(locale, appendMusicImportHelp(locale, appendDirectSubmissionHelp(locale, appendCollaborationHelp(locale, copy))));
+  return appendHealthResearchHelp(locale, appendMathematicsHelp(locale, appendMusicImportHelp(locale, appendDirectSubmissionHelp(locale, appendCollaborationHelp(locale, copy)))));
 }
 
 export function getLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy {

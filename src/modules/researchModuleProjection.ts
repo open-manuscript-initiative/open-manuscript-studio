@@ -1,3 +1,4 @@
+import { projectHealthSummary } from './health-research/model';
 import { getDisciplineWorkspaceStorageKey } from './disciplineWorkspace';
 
 export interface ResearchExcerpt {
@@ -19,6 +20,8 @@ const storagePrefixes: Readonly<Record<string, string>> = {
   'org.omi.archaeology': '',
   'org.omi.experimental-laboratory': '',
   'org.omi.social-research-methods': '',
+  'org.omi.psychology': '',
+  'org.omi.medical-sciences': '',
 };
 
 function record(value: unknown): Record<string, unknown> | null {
@@ -49,7 +52,10 @@ export function readResearchExcerpts(moduleId: string, userId: string): Research
   const add = (id: string, label: string, text: string, source: string): void => {
     if (id && label && text) excerpts.push({ id, moduleId, label, text, source });
   };
-  if (moduleId === 'org.omi.critical-text-edition' && project.version === 1) {
+  if (moduleId === 'org.omi.psychology' || moduleId === 'org.omi.medical-sciences') {
+    const summary = projectHealthSummary(project, moduleId === 'org.omi.psychology' ? 'psychology' : 'medical-sciences');
+    if (summary) add('public-summary', summary.title, summary.text, summary.source);
+  } else if (moduleId === 'org.omi.critical-text-edition' && project.version === 1) {
     for (const item of items(project.segments)) {
       const segment = record(item);
       if (segment) add(string(segment.id), string(segment.locus), string(segment.lemma), '');

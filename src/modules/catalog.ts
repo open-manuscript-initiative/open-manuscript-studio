@@ -1,3 +1,5 @@
+import { moduleManifest as psychologyModule } from './psychology/index';
+import { moduleManifest as medicalSciencesModule } from './medical-sciences/index';
 import { moduleManifest as mathematicsModule } from './mathematics/index';
 import { historyArchivesModule } from './history-archives/index';
 import { moduleManifest as religiousTextsModule } from './religious-texts/index';
@@ -30,6 +32,8 @@ export {
   experimentalLaboratoryModule,
   statisticalAnalysisModule,
   mathematicsModule,
+  psychologyModule,
+  medicalSciencesModule,
 };
 
 export const builtinModuleManifests = [
@@ -47,6 +51,8 @@ export const builtinModuleManifests = [
   experimentalLaboratoryModule,
   statisticalAnalysisModule,
   mathematicsModule,
+  psychologyModule,
+  medicalSciencesModule,
 ] as const;
 
 export const studioModules = new StudioModuleRegistry();

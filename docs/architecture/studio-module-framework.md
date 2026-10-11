@@ -221,3 +221,7 @@ use the existing reviewed source/provenance import boundary.
 Module display order in Settings, Modules and the module insertion menu follows
 the localized display title using the current locale's collation. Registry IDs,
 installation allow-lists and persisted activation preferences are unchanged.
+
+## Psychology and Medical / Health Sciences
+
+See [health research modules](health-research-modules.md) for structured protocols, instrument descriptions, ethics metadata, local-storage limits and allowlisted manuscript summary insertion. Both modules use the shared statistics workspace rather than introducing another computation engine.
