@@ -7,9 +7,9 @@ const copy = {
  de: { title:'Forschungsdatenbanken durchsuchen', choose:'Datenbanken', query:'Suchbegriffe', search:'Suchen', busy:'Suche…', more:'Weitere Ergebnisse', open:'Quelldatensatz öffnen', empty:'Keine Treffer.', failed:'Dieser Anbieter ist nicht erreichbar. Andere Ergebnisse bleiben verfügbar.', rights:'Nutzungsrechte', noRights:'Nicht angegeben; vor einer Übernahme den Quelldatensatz prüfen.', consent:'Die Suchbegriffe werden an die ausgewählten Anbieter gesendet. Keine personenbezogenen, Teilnehmenden- oder vertraulichen Daten eingeben.', none:'Mindestens eine Datenbank auswählen und 2–240 Zeichen eingeben.' },
 } as const;
 const names: Record<'en' | 'hu' | 'de', Record<ResearchDatabaseProvider, string>> = {
- en:{eric:'ERIC (education research)','inspire-hep':'INSPIRE-HEP (high-energy physics)',pubchem:'PubChem (chemical compounds)',gbif:'GBIF (biodiversity occurrences)'},
- hu:{eric:'ERIC (oktatáskutatás)','inspire-hep':'INSPIRE-HEP (nagyenergiás fizika)',pubchem:'PubChem (kémiai vegyületek)',gbif:'GBIF (biodiverzitási előfordulások)'},
- de:{eric:'ERIC (Bildungsforschung)','inspire-hep':'INSPIRE-HEP (Hochenergiephysik)',pubchem:'PubChem (chemische Verbindungen)',gbif:'GBIF (Biodiversitätsnachweise)'},
+ en:{eric:'ERIC (education research)','inspire-hep':'INSPIRE-HEP (high-energy physics)',pubchem:'PubChem (chemical compounds)',gbif:'GBIF (biodiversity occurrences)',openalex:'OpenAlex (scholarly literature)',sciencebase:'USGS ScienceBase (earth science data)'},
+ hu:{eric:'ERIC (oktatáskutatás)','inspire-hep':'INSPIRE-HEP (nagyenergiás fizika)',pubchem:'PubChem (kémiai vegyületek)',gbif:'GBIF (biodiverzitási előfordulások)',openalex:'OpenAlex (tudományos szakirodalom)',sciencebase:'USGS ScienceBase (földtudományi adatok)'},
+ de:{eric:'ERIC (Bildungsforschung)','inspire-hep':'INSPIRE-HEP (Hochenergiephysik)',pubchem:'PubChem (chemische Verbindungen)',gbif:'GBIF (Biodiversitätsnachweise)',openalex:'OpenAlex (wissenschaftliche Literatur)',sciencebase:'USGS ScienceBase (geowissenschaftliche Daten)'},
 } as const;
 export function ResearchDatabasePanel({ moduleId, workspaceId, storageKey, locale }: { moduleId:'social-research-methods'|'experimental-laboratory'|'critical-text-edition'; workspaceId:string; storageKey:string; locale:string }) {
  const lang = locale === 'hu' || locale === 'de' ? locale : 'en'; const t = copy[lang]; const n = names[lang];
