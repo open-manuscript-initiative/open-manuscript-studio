@@ -1,3 +1,4 @@
+import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import {
   collectCrossReferenceTargets,
   formatCrossReferenceLabel,
@@ -88,6 +89,7 @@ export function renderHtmlArticle(
   profile: OmiPublicationProfile = resolvePublicationProfile(manuscript),
   options: HtmlRenderOptions = {},
 ): HtmlExportResult {
+  manuscript = publicPublicationManuscript(manuscript);
   const context = buildPublicationRenderingContext(manuscript, profile);
   const diagnostics: HtmlDiagnostic[] = context.publicationIssues.map((issue) => ({
     code: `publication-${issue.code}`,
