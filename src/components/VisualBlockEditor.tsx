@@ -13,10 +13,7 @@ import {
 } from '../app/visualBlockActions';
 import { useTranslation } from '../i18n';
 import { getVisualElementsCopy } from '../i18n/visualElements';
-import {
-  latexToMathMl,
-  sanitizeMathMlForPreview,
-} from '../model/equationRendering';
+import { EquationEditor } from '../modules/mathematics/EquationEditor';
 import {
   addTableColumn,
   addTableRow,
@@ -177,30 +174,12 @@ export function VisualBlockEditor({
 
       {visual.kind === 'equation' ? (
         <div className="omi-equation-block">
-          <div
-            className="omi-equation-preview"
-            dangerouslySetInnerHTML={{
-              __html:
-                visual.notation === 'mathml'
-                  ? sanitizeMathMlForPreview(visual.source)
-                  : latexToMathMl(visual.latex ?? visual.source),
-            }}
+          <EquationEditor
+            locale={locale}
+            value={visual.latex ?? (visual.notation === 'latex' ? visual.source : '')}
+            mathmlSource={visual.notation === 'mathml' ? visual.source : undefined}
+            onChange={(value) => update({ ...visual, notation: 'latex', source: value, latex: value })}
           />
-          <label>
-            <span>{copy.equationLatex}</span>
-            <textarea
-              spellCheck={false}
-              value={visual.latex ?? (visual.notation === 'latex' ? visual.source : '')}
-              onChange={(event) =>
-                update({
-                  ...visual,
-                  notation: 'latex',
-                  source: event.target.value,
-                  latex: event.target.value,
-                })
-              }
-            />
-          </label>
           <div className="omi-equation-meta">
             <label>
               <span>{copy.equationLabel}</span>

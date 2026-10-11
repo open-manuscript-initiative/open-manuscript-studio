@@ -60,6 +60,11 @@ const translations: Record<string, ModuleShellCopy> = {
     localPreferenceNote: 'Workspace selections are saved to your Studio account and enforced by the server.',
     policyError: 'Module settings could not be loaded or saved. Check your connection and try again.',
     modules: {
+      'org.omi.mathematics': {
+        title: 'Mathematics',
+        description: 'LaTeX equations with validated MathML preview, matrices, cases and aligned equations.',
+        overview: 'Mathematical equation workspace',
+      },
       'org.omi.history-archives': {
         title: 'History & Archives',
         description: 'Discover historical and archival sources across institutions, and keep each result connected to its holding archive.',
@@ -182,6 +187,11 @@ const translations: Record<string, ModuleShellCopy> = {
     localPreferenceNote: 'Die Auswahl wird im Studio-Konto gespeichert und vom Server geprüft.',
     policyError: 'Moduleinstellungen konnten nicht geladen oder gespeichert werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.',
     modules: {
+      'org.omi.mathematics': {
+        title: 'Mathematik',
+        description: 'LaTeX-Formeln mit geprüfter MathML-Vorschau, Matrizen, Fallunterscheidungen und Gleichungssystemen.',
+        overview: 'Mathematischer Formelarbeitsbereich',
+      },
       'org.omi.history-archives': {
         title: 'Geschichte und Archive',
         description: 'Historische und archivische Quellen institutionsübergreifend auffinden und jedes Ergebnis mit seinem verwahrenden Archiv verbinden.',
@@ -304,6 +314,11 @@ const translations: Record<string, ModuleShellCopy> = {
     localPreferenceNote: 'A munkatér beállításait a Studio-fiók menti, a szerver pedig ellenőrzi.',
     policyError: 'A modulbeállításokat nem sikerült betölteni vagy menteni. Ellenőrizze a kapcsolatot, majd próbálja újra.',
     modules: {
+      'org.omi.mathematics': {
+        title: 'Matematika',
+        description: 'LaTeX-képletek ellenőrzött MathML-előnézettel, mátrixokkal, esetekkel és egyenletrendszerekkel.',
+        overview: 'Matematikai képletszerkesztő',
+      },
       'org.omi.history-archives': {
         title: 'Történelem és levéltárak',
         description: 'Történeti és levéltári források feltárása különböző intézményekből, a találatok őrző levéltárhoz kapcsolásával.',

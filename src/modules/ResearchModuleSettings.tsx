@@ -1,3 +1,4 @@
+import { sortModulesForLocale } from './moduleOrdering';
 import { Boxes, Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -105,7 +106,7 @@ export function ResearchModuleSettings() {
       </div>
       {error ? <p role="alert">{copy.policyError}</p> : null}
       <div className="studio-module-list">
-        {builtinModuleManifests.map((module) => {
+        {sortModulesForLocale(builtinModuleManifests, locale).map((module) => {
           const details = copy.modules[module.id];
           const active = activeModuleIds.includes(module.id);
           const unavailable = !enabledModuleIds.includes(module.id);

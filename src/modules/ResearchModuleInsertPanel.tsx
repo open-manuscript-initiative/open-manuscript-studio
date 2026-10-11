@@ -1,3 +1,5 @@
+import { sortModulesForLocale } from './moduleOrdering';
+import { MathematicsPanel } from './mathematics/MathematicsPanel';
 import { useMemo, useState } from 'react';
 
 import { stageInsertBlocks } from '../app/visualBlockActions';
@@ -30,7 +32,7 @@ export function ResearchModuleInsertPanel({
     [userId],
   );
   const copy = getModuleShellCopy(locale);
-  const modules = builtinModuleManifests.filter((module) =>
+  const modules = sortModulesForLocale(builtinModuleManifests, locale).filter((module) =>
     preferences.activeModuleIds.includes(module.id),
   );
   const [activeModuleId, setActiveModuleId] = useState('');
@@ -119,6 +121,12 @@ export function ResearchModuleInsertPanel({
       <p className="omi-visual-format-hint">{actionCopy.inserted}</p>
       <div className="omi-visual-insert-actions">
         {modules.map((module) => {
+          if (module.id === 'org.omi.mathematics') return (
+            <details key={module.id} className="omi-module-insert-group">
+              <summary>{copy.modules[module.id]?.title}</summary>
+              <MathematicsPanel locale={locale} sectionId={sectionId} gapIndex={gapIndex} onInserted={onInserted} />
+            </details>
+          );
           const details = copy.modules[module.id];
           return (
             <div key={module.id}>

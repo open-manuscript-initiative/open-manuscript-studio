@@ -1,3 +1,5 @@
+import { sortModulesForLocale } from './moduleOrdering';
+import { MathematicsPanel } from './mathematics/MathematicsPanel';
 import { Component, useEffect, useState, type ErrorInfo, type ReactNode } from 'react';
 
 import { useTranslation } from '../i18n';
@@ -41,7 +43,7 @@ export function ModuleManagerPanel({
   const user = useAuthStore(getCurrentUser);
   const userId = String(user?.id ?? 'anonymous');
   const copy = getModuleShellCopy(locale);
-  const modules = studioModules.list();
+  const modules = sortModulesForLocale(studioModules.list(), locale);
   const [preferences, setPreferences] = useState<StudioWorkspaceModulePreferences>(
     () => readStudioModulePreferences(userId, workspaceId),
   );
@@ -114,7 +116,9 @@ export function ModuleManagerPanel({
                 moduleTitle={details?.title ?? module.titleKey}
                 locale={locale}
               >
-                {module.id === historyArchivesModule.id ? (
+                {module.id === 'org.omi.mathematics' ? (
+                  <MathematicsPanel locale={locale} />
+                ) : module.id === historyArchivesModule.id ? (
                   <HistoryArchivesSourcesPanel
                     europeanaCopy={copy.europeana}
                     naraCopy={copy.nara}

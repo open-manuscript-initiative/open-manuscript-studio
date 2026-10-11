@@ -1,3 +1,4 @@
+import { sortModulesForLocale } from '../src/modules/moduleOrdering.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -43,6 +44,7 @@ const expectedModuleIds = [
   'org.omi.archaeology',
   'org.omi.experimental-laboratory',
   'org.omi.statistical-analysis',
+  'org.omi.mathematics',
 ];
 
 function createStorage(): ModulePreferenceStorage & { values: Map<string, string> } {
@@ -773,4 +775,16 @@ test('additional module projections include explicit sources and exclude private
     if (original) Object.defineProperty(globalThis, 'window', original);
     else Reflect.deleteProperty(globalThis, 'window');
   }
+});
+
+
+test('module display order follows localized titles without changing registration or preferences', () => {
+  const modules = builtinModuleManifests.filter((module) =>
+    ['org.omi.history-archives', 'org.omi.legal-sources'].includes(module.id));
+  const original = modules.map((module) => module.id);
+  assert.deepEqual(sortModulesForLocale(modules, 'en').map((module) => module.id),
+    ['org.omi.history-archives', 'org.omi.legal-sources']);
+  assert.deepEqual(sortModulesForLocale(modules, 'hu').map((module) => module.id),
+    ['org.omi.legal-sources', 'org.omi.history-archives']);
+  assert.deepEqual(modules.map((module) => module.id), original);
 });

@@ -8,7 +8,7 @@ import { renderBibliography, renderCitationCluster } from '../model/cslRendering
 import { getBibliographyRecords } from '../model/citations.ts';
 import { buildNoteNumberMap } from '../model/notes.ts';
 import { contributorNameParts } from '../model/contributorName.ts';
-import { latexToMathMl } from '../model/equationRendering.ts';
+import { renderLatexMath } from '../model/equationRendering.ts';
 import { assetPath } from '../model/assets.ts';
 import {
   buildPublicationRenderingContext,
@@ -31,7 +31,7 @@ import type {
   OmiManuscript,
 } from '../types/omi.ts';
 
-export const OMI_HTML_RENDERER_VERSION = '0.1.0-alpha.1' as const;
+export const OMI_HTML_RENDERER_VERSION = '0.1.0-alpha.2' as const;
 export const OMI_HTML_PROFILE = 'semantic-html5-alpha-0.1' as const;
 
 export type HtmlDiagnosticSeverity = 'error' | 'warning';
@@ -580,7 +580,12 @@ function renderEquation(block: OmiBlock, state: RenderState): string {
   let equation: string;
 
   if (latex) {
-    equation = latexToMathMl(latex);
+    const result = renderLatexMath(latex);
+    if (result.error) state.diagnostics.push({
+      code: 'invalid-equation-latex', severity: 'error',
+      message: result.error, targetId: block.id,
+    });
+    equation = result.mathml;
   } else {
     equation = `<pre class="equation-source"><code>${escapeHtml(visual.source)}</code></pre>`;
     state.diagnostics.push({

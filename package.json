@@ -108,6 +108,7 @@
     "@tiptap/y-tiptap": "^3.0.9",
     "@xmldom/xmldom": "0.9.12",
     "hyphen": "^1.14.1",
+    "katex": "0.19.0",
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",

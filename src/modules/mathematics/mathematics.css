@@ -1,0 +1,5 @@
+.omi-equation-editor { min-width: 0; }
+.omi-equation-editor > label { display: grid; gap: .3rem; }
+.omi-equation-editor textarea { width: 100%; min-height: 5rem; box-sizing: border-box; font-family: monospace; }
+.omi-equation-editor .omi-equation-preview { overflow-x: auto; padding: .5rem; }
+.omi-equation-editor [role="alert"] { overflow-wrap: anywhere; }

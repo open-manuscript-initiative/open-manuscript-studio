@@ -154,8 +154,22 @@ function unsafeXmlReason(xml: string): string | undefined {
   if (/<!ENTITY\b/i.test(xml)) {
     return 'Custom XML entity declarations are not allowed in JATS validation input.';
   }
-  if (/<!DOCTYPE[\s\S]*?\[/i.test(xml)) {
-    return 'DOCTYPE internal subsets are not allowed in JATS validation input.';
+  // Examine only the declaration, not brackets in later formula annotations.
+  const doctype = /<!DOCTYPE\b/i.exec(xml);
+  if (doctype) {
+    let quote: '"' | "'" | undefined;
+    for (let index = doctype.index + doctype[0].length; index < xml.length; index += 1) {
+      const character = xml[index];
+      if (quote) {
+        if (character === quote) quote = undefined;
+      } else if (character === '"' || character === "'") {
+        quote = character;
+      } else if (character === '[') {
+        return 'DOCTYPE internal subsets are not allowed in JATS validation input.';
+      } else if (character === '>') {
+        break;
+      }
+    }
   }
   if ((xml.match(/<!DOCTYPE\b/gi) ?? []).length > 1) {
     return 'Multiple DOCTYPE declarations are not allowed in JATS validation input.';
