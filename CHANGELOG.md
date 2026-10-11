@@ -42,11 +42,11 @@ the portable OMI document model and individual renderers.
 
 ### Version identities
 
-- Advances the shared Studio version to **0.3.0-beta.6**.
+- Advances the shared Studio version to **0.3.0-beta.5**.
 - Advances the Windows MSI product version to **0.3.0.5**.
 - Advances the iOS beta build number to **17** while retaining App Store short version **0.3.0**.
 - Advances the checked-in Android versionCode floor to **1204**; release builds derive a strictly higher run-specific code.
-- Keeps the portable manuscript format at **OMI-SPEC-320@0.2.0**. No schema or container-contract change is required.
+- Keeps the portable manuscript format at **OMI-SPEC-320@0.2.0**. No schema or container-contract change was included in that release.
 
 ## 0.3.0-beta.4 — 2026-10-07
 
