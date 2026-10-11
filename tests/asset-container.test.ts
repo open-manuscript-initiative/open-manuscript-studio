@@ -100,7 +100,7 @@ test('builds a portable OMI ZIP with external asset payload and clean document J
   const jats = new TextDecoder().decode(entries.get('publication/article.jats.xml'));
   const manifest = new TextDecoder().decode(entries.get('META-INF/manifest.json'));
 
-  assert.equal(result.validForExport, true);
+  assert.equal(result.validForExport, true, JSON.stringify(result.diagnostics));
   assert.equal(new TextDecoder().decode(entries.get('META-INF/mimetype')), OMI_CONTAINER_MEDIA_TYPE);
   assert.ok(entries.has('META-INF/checksums.json'));
   assert.ok(entries.has('media/images/asset-figure-1-figure.png'));
@@ -118,7 +118,7 @@ test('verifies an exported OMI package and preserves manuscript and revision ide
 
   const plan = await inspectOmiContainer(exported.bytes);
 
-  assert.equal(plan.validForImport, true);
+  assert.equal(plan.validForImport, true, JSON.stringify(plan.diagnostics));
   assert.equal(plan.diagnostics.filter((item) => item.severity === 'error').length, 0);
   assert.equal(plan.manuscript?.id, manuscript.id);
   assert.equal(plan.manuscript?.headRevisionId, manuscript.headRevisionId);
