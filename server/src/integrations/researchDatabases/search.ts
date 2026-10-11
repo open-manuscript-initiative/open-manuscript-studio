@@ -48,7 +48,7 @@ export async function searchResearchDatabase({ provider, query, cursor, fetchImp
       const item = record(provider, id, title, `https://eric.ed.gov/?id=${encodeURIComponent(id)}`);
       item.authors = arr(r.author).map(a => text(a, 200)).filter(Boolean).slice(0, 20);
       item.year = text(r.publicationdateyear, 20); item.description = text(r.description, 700);
-      item.rights = text(r.fulltext, 200);
+      item.rights = '';
       return [item];
     });
     const next = offset + docs.length;
