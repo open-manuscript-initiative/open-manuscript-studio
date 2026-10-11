@@ -81,6 +81,17 @@ test('registers all built-in discipline modules with navigation contributions', 
   );
 });
 
+test('combines archaeology and cultural heritage with catalog links and one module entry', () => {
+  assert.equal(expectedModuleIds.includes('org.omi.cultural-heritage'), false);
+  assert.equal(expectedModuleIds.filter((id) => id === 'org.omi.archaeology').length, 1);
+  const panel = readFileSync(new URL('../src/modules/archaeology/ArchaeologyPanel.tsx', import.meta.url), 'utf8');
+  const searches = readFileSync(new URL('../src/modules/ResearchCatalogSearchPanel.tsx', import.meta.url), 'utf8');
+  assert.match(panel, /catalogs=\{\['pleiades', 'ariadne', 'openContext'\]\}/);
+  assert.match(panel, /<CulturalHeritagePanel locale=\{locale\} storageKey=\{heritageStorageKey\}/);
+  assert.match(searches, /ariadne: \{ title: 'ARIADNE Portal'.*SearchableText|ariadne: \{ title: 'ARIADNE Portal'.*\{ q: query \}/s);
+  assert.match(searches, /openContext: \{ title: 'Open Context'.*\{ q: query \}/s);
+});
+
 test('provides a translated title and description for every registered module', () => {
   for (const locale of ['en', 'de', 'hu']) {
     const copy = getModuleShellCopy(locale);
