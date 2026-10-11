@@ -2,9 +2,8 @@ import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 import { searchResearchDatabase } from '../integrations/researchDatabases/search.js';
-import { requireModuleCapability } from '../middleware/requireModuleCapability.js';
+import { requireModuleCapability, type StudioModuleId } from '../middleware/requireModuleCapability.js';
 import { requireSession } from '../middleware/requireSession.js';
-import type { StudioModuleId } from '../middleware/requireModuleCapability.js';
 
 export const researchDatabaseRouter = Router();
 const bodySchema = z.object({
