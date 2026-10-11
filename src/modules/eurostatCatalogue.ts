@@ -1,4 +1,4 @@
-import { DOMParser } from '@xmldom/xmldom';
+import { DOMParser, type Element as XmlElement } from '@xmldom/xmldom';
 
 export type EurostatCatalogueRecord = {
   id: string;
@@ -19,7 +19,7 @@ export function searchEurostatCatalogue(xml: string, query: string, locale = 'en
   const rootName = document.documentElement?.localName || document.documentElement?.nodeName;
   if (!rootName || /parsererror/i.test(rootName)) throw new Error('Invalid Eurostat catalogue XML');
 
-  const nodes = Array.from(document.getElementsByTagName('*')) as Element[];
+  const nodes = Array.from(document.getElementsByTagName('*')) as XmlElement[];
   const matches: Array<{ record: EurostatCatalogueRecord; score: number }> = [];
   for (const node of nodes) {
     const name = node.localName || node.nodeName.split(':').pop() || '';
@@ -56,7 +56,7 @@ export function searchEurostatCatalogue(xml: string, query: string, locale = 'en
   return { records: matches.slice(0, 8).map(({ record }) => record), total: matches.length };
 }
 
-function readLocalizedField(nodes: Element[], field: string, locale: string): string {
+function readLocalizedField(nodes: XmlElement[], field: string, locale: string): string {
   const candidates = nodes.filter((node) => (node.localName || node.nodeName.split(':').pop()) === field);
   const preferred = locale === 'de' ? 'de' : 'en';
   const getLanguage = (node: Element) => node.getAttribute('lang') || node.getAttribute('xml:lang') || node.getAttributeNS('http://www.w3.org/XML/1998/namespace', 'lang') || '';
