@@ -299,7 +299,8 @@ test('public exports omit private annotation bodies and anchors without changing
     docx: zipText(buildDocxExport(manuscript).bytes),
     epub: zipText(buildEpubExport(manuscript).bytes),
   };
-  for (const [format, output] of Object.entries(outputs)) {
+  for (const [format, rawOutput] of Object.entries(outputs)) {
+    const output = rawOutput.replace(/\\_/g, '_');
     assert.doesNotMatch(output, /PRIVATE_(?:HIDDEN|EDITOR|AUTHOR|ORIGIN)_BODY|PRIVATE_MARKER/, format);
     assert.match(output, /PUBLIC_TEXT/, format);
     if (format !== 'epub') assert.match(output, /PUBLIC_NOTE_BODY/, format);
