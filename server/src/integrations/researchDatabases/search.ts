@@ -64,7 +64,7 @@ export async function searchResearchDatabase({ provider, query, cursor, fetchImp
       if (!id || !title || !/^[A-Za-z0-9._:-]+$/.test(id)) return [];
       const item = record(provider, id, title, `https://inspirehep.net/literature/${encodeURIComponent(id)}`);
       item.authors = arr(meta.authors).map(a => text(obj(obj(a).full_name).value ?? obj(a).full_name, 200)).filter(Boolean).slice(0, 30);
-      item.year = text(arr(meta.publication_info).map(p => obj(p).year).find(Boolean), 20);
+      item.year = String(arr(meta.publication_info).map(p => obj(p).year).find(Boolean) ?? '').slice(0, 20);
       item.description = text(obj(meta.abstract).value ?? meta.abstract, 700);
       return [item];
     });
