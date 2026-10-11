@@ -23,7 +23,7 @@ import { searchEuropeana } from '../server/src/integrations/europeana/europeanaS
 import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSearch.ts';
 import { buildRomanianArchivesSearchUrl } from '../src/modules/history-archives/romanianArchives.ts';
 import { DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS, getHistoryArchiveSourcesStorageKey, HISTORY_ARCHIVE_SOURCE_IDS, readVisibleHistoryArchiveSources } from '../src/modules/history-archives/sourcePreferences.ts';
-import { getResearchCatalogPreferencesKey, readVisibleResearchCatalogs, type ResearchCatalogId } from '../src/modules/researchCatalogPreferences.ts';
+import { EU_NSI_CATALOGS, getResearchCatalogPreferencesKey, readVisibleResearchCatalogs, type ResearchCatalogId } from '../src/modules/researchCatalogPreferences.ts';
 import { searchEurostatCatalogue } from '../src/modules/eurostatCatalogue.ts';
 import { searchSefaria } from '../server/src/integrations/sefaria/sefariaSearch.ts';
 import { createExperimentalWorkspace, isExperimentalWorkspace, parseExperimentalWorkspace } from '../src/modules/experimental-laboratory/model.ts';
@@ -211,6 +211,13 @@ test('research catalog choices default to all sources, persist an empty choice, 
   assert.deepEqual(readVisibleResearchCatalogs(available, '[]'), []);
   assert.deepEqual(readVisibleResearchCatalogs(available, '{broken'), available);
   assert.equal(getResearchCatalogPreferencesKey('user-a:workspace-b:musicology'), 'omi:research-catalogs:v1:user-a:workspace-b:musicology');
+});
+
+test('statistics panel offers all 27 EU national statistical offices while defaulting to Eurostat', () => {
+  const available: ResearchCatalogId[] = ['eurostat', ...EU_NSI_CATALOGS];
+  assert.equal(EU_NSI_CATALOGS.length, 27);
+  assert.deepEqual(readVisibleResearchCatalogs(available, null, ['eurostat']), ['eurostat']);
+  assert.deepEqual(readVisibleResearchCatalogs(available, JSON.stringify(['nsiHungary', 'nsiSweden', 'unknown']), ['eurostat']), ['nsiHungary', 'nsiSweden']);
 });
 
 test('Eurostat search returns matching catalogue records with direct dataset links', () => {
