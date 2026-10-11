@@ -1,5 +1,5 @@
 {
-  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json",
+  "schema": "https://example.org/schemas/omi-manuscript-0.3.schema.json",
   "omi": {
     "format": "manuscript",
     "version": "0.3.0",
