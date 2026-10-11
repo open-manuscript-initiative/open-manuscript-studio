@@ -18,6 +18,33 @@ const catalogs: Record<ResearchCatalogId, { title: string; portalUrl: (query: st
     portalUrl: (query) => `https://ec.europa.eu/eurostat/web/main/search?${new URLSearchParams({ query })}`,
     apiUrl: () => 'https://ec.europa.eu/eurostat/api/dissemination/catalogue/toc/xml',
   },
+  nsiBelgium: { title: 'Statistics Belgium (Statbel)', portalUrl: (query) => `https://statbel.fgov.be/en/search?${new URLSearchParams({ items_per_page: '10', page: '1', search_api_fulltext: query, search_api_fulltext_block: '' })}` },
+  nsiBulgaria: { title: 'National Statistical Institute of Bulgaria', portalUrl: (query) => `https://www.nsi.bg/en/search?${new URLSearchParams({ filters: 'data', q: query })}` },
+  nsiCzechia: { title: 'Czech Statistical Office', portalUrl: (query) => `https://www.czso.cz/csu/czso/search?${new URLSearchParams({ query })}` },
+  nsiDenmark: { title: 'Statistics Denmark', portalUrl: (query) => `https://www.dst.dk/en/search?${new URLSearchParams({ q: query, r: '1', ui: 'dstdk' })}` },
+  nsiGermany: { title: 'Federal Statistical Office of Germany (Destatis)', portalUrl: (query) => `https://www.destatis.de/SiteGlobals/Forms/Suche/Servicesuche_Formular.html?${new URLSearchParams({ templateQueryString: query })}` },
+  nsiEstonia: { title: 'Statistics Estonia', portalUrl: (query) => `https://stat.ee/en/otsing?${new URLSearchParams({ search: query, type: 'All' })}` },
+  nsiIreland: { title: 'Central Statistics Office Ireland', portalUrl: (query) => `https://www.cso.ie/en/search/?${new URLSearchParams({ addsearch: query })}` },
+  nsiGreece: { title: 'Hellenic Statistical Authority (ELSTAT)', portalUrl: (query) => `https://www.statistics.gr/en/home?${new URLSearchParams({ _com_liferay_portal_search_web_portlet_SearchPortlet_INSTANCE_3_keywords: query, _com_liferay_portal_search_web_portlet_SearchPortlet_INSTANCE_3_scope: 'this-site', _com_liferay_portal_search_web_portlet_SearchPortlet_INSTANCE_3_mvcPath: '/search.jsp', p_p_id: 'com_liferay_portal_search_web_portlet_SearchPortlet_INSTANCE_3', p_p_lifecycle: '0', p_p_mode: 'view', p_p_state: 'maximized' })}` },
+  nsiSpain: { title: 'National Statistics Institute of Spain (INE)', portalUrl: (query) => `https://www.ine.es/en/search/?${new URLSearchParams({ q: query })}` },
+  nsiFrance: { title: 'National Institute of Statistics and Economic Studies (INSEE)', portalUrl: (query) => `https://www.insee.fr/en/recherche?${new URLSearchParams({ q: query })}` },
+  nsiCroatia: { title: 'Croatian Bureau of Statistics', portalUrl: (query) => `https://dzs.gov.hr/en/search?${new URLSearchParams({ query })}` },
+  nsiItaly: { title: 'Italian National Institute of Statistics (Istat)', portalUrl: (query) => `https://www.istat.it/en/?${new URLSearchParams({ s: query })}` },
+  nsiCyprus: { title: 'Statistical Service of Cyprus', portalUrl: (query) => `https://www.cystat.gov.cy/en/search?${new URLSearchParams({ search: query })}` },
+  nsiLatvia: { title: 'Central Statistical Bureau of Latvia', portalUrl: (query) => `https://stat.gov.lv/en/search?${new URLSearchParams({ search: query })}` },
+  nsiLithuania: { title: 'State Data Agency (Statistics Lithuania)', portalUrl: (query) => `https://osp.stat.gov.lt/en/search?${new URLSearchParams({ query })}` },
+  nsiLuxembourg: { title: 'National Institute of Statistics and Economic Studies of the Grand Duchy of Luxembourg (STATEC)', portalUrl: (query) => `https://statistiques.public.lu/en/search.html?${new URLSearchParams({ q: query })}` },
+  nsiHungary: { title: 'Hungarian Central Statistical Office (KSH)', portalUrl: (query) => `https://www.ksh.hu/search?${new URLSearchParams({ query })}` },
+  nsiMalta: { title: 'National Statistics Office Malta', portalUrl: (query) => `https://nso.gov.mt/?${new URLSearchParams({ s: query })}` },
+  nsiNetherlands: { title: 'Statistics Netherlands (CBS)', portalUrl: (query) => `https://www.cbs.nl/en-gb/search?${new URLSearchParams({ query })}` },
+  nsiAustria: { title: 'Statistics Austria', portalUrl: (query) => `https://www.statistik.at/en/search?${new URLSearchParams({ 'tx_solr[q]': query })}` },
+  nsiPoland: { title: 'Statistics Poland', portalUrl: (query) => `https://stat.gov.pl/en/search/search.html?${new URLSearchParams({ query })}` },
+  nsiPortugal: { title: 'Statistics Portugal (INE)', portalUrl: (query) => `https://www.ine.pt/xportal/xmain?${new URLSearchParams({ xpid: 'INE', xpgid: 'ine_pesquisa', xlang: 'en', query })}` },
+  nsiRomania: { title: 'National Institute of Statistics of Romania (INSSE)', portalUrl: (query) => `https://insse.ro/cms/en/search/node/${encodeURIComponent(query)}` },
+  nsiSlovenia: { title: 'Statistical Office of the Republic of Slovenia (SURS)', portalUrl: (query) => `https://www.stat.si/StatWeb/en/search?${new URLSearchParams({ q: query })}` },
+  nsiSlovakia: { title: 'Statistical Office of the Slovak Republic', portalUrl: (query) => `https://slovak.statistics.sk/wps/portal/ext/products/informationmessages/search?${new URLSearchParams({ search: query })}` },
+  nsiFinland: { title: 'Statistics Finland', portalUrl: (query) => `https://stat.fi/en/search?${new URLSearchParams({ query })}` },
+  nsiSweden: { title: 'Statistics Sweden (SCB)', portalUrl: (query) => `https://www.scb.se/en/search/?${new URLSearchParams({ query })}` },
   zenodo: {
     title: 'Zenodo',
     portalUrl: (query) => `https://zenodo.org/search?${new URLSearchParams({ q: query })}`,
@@ -57,10 +84,10 @@ export function getResearchCatalogSearchUrl(catalog: ResearchCatalogId, query: s
   return catalogs[catalog].portalUrl(query.trim());
 }
 
-export function ResearchCatalogSearchPanel({ catalogs: availableCatalogs, locale = 'hu', storageKey = 'default' }: { catalogs: ResearchCatalogId[]; locale?: string; storageKey?: string }) {
+export function ResearchCatalogSearchPanel({ catalogs: availableCatalogs, locale = 'hu', storageKey = 'default', defaultVisibleCatalogs = availableCatalogs }: { catalogs: ResearchCatalogId[]; locale?: string; storageKey?: string; defaultVisibleCatalogs?: readonly ResearchCatalogId[] }) {
   const t = copy[locale as keyof typeof copy] ?? copy.en;
   const preferenceKey = getResearchCatalogPreferencesKey(storageKey);
-  const [selected, setSelected] = useState<ResearchCatalogId[]>(() => readVisibleResearchCatalogs(availableCatalogs, window.localStorage.getItem(preferenceKey)));
+  const [selected, setSelected] = useState<ResearchCatalogId[]>(() => readVisibleResearchCatalogs(availableCatalogs, window.localStorage.getItem(preferenceKey), defaultVisibleCatalogs));
   function toggle(catalog: ResearchCatalogId, visible: boolean) {
     const next = visible ? [...new Set([...selected, catalog])] : selected.filter((item) => item !== catalog);
     setSelected(next);
