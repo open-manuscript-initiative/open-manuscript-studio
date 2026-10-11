@@ -6,6 +6,23 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+## 0.3.0-beta.6 — 2026-10-11
+
+### Semantic source attribution
+
+- Adds a portable OMI-SPEC-225 relationship from each externally imported visual object to a bibliographic record.
+- Reuses an existing matching record or creates a provisional record after the author confirms the source.
+- Keeps citation rendering, import-file provenance, and author-declared own-work markers separate.
+- Advances the portable manuscript format to OMI-SPEC-320@0.3.0. Studio explicitly rejects unsupported 0.2 files without silent migration.
+
+### Version identities
+
+- Advances the shared Studio version to **0.3.0-beta.6**.
+- Advances the Windows MSI product version to **0.3.0.6**.
+- Advances the iOS beta build number to **18** while retaining App Store short version **0.3.0**.
+- Advances the checked-in Android versionCode floor to **1205**; release builds derive a strictly higher run-specific code.
+- Advances the portable manuscript format to **OMI-SPEC-320@0.3.0**.
+
 ## 0.3.0-beta.5 — 2026-10-09
 
 ### Source review and provenance
@@ -25,7 +42,7 @@ the portable OMI document model and individual renderers.
 
 ### Version identities
 
-- Advances the shared Studio version to **0.3.0-beta.5**.
+- Advances the shared Studio version to **0.3.0-beta.6**.
 - Advances the Windows MSI product version to **0.3.0.5**.
 - Advances the iOS beta build number to **17** while retaining App Store short version **0.3.0**.
 - Advances the checked-in Android versionCode floor to **1204**; release builds derive a strictly higher run-specific code.
