@@ -1,5 +1,5 @@
 {
-  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
+  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json",
   "omi": {
     "format": "manuscript",
     "profiles": [
@@ -7,14 +7,17 @@
     ],
     "specifications": {
       "OMI-SPEC-100": "0.1.0",
-      "OMI-SPEC-120": "0.1.0",
-      "OMI-SPEC-140": "0.1.0"
-    }
+      "OMI-SPEC-120": "0.2.0",
+      "OMI-SPEC-140": "0.1.0",
+      "OMI-SPEC-225": "0.1.0"
+    },
+    "version": "0.3.0"
   },
   "id": "manuscript-missing-version",
   "locale": "en",
   "title": "Missing format version",
   "sections": [],
   "createdAt": "2026-09-05T08:00:00Z",
-  "updatedAt": "2026-09-05T08:00:00Z"
+  "updatedAt": "2026-09-05T08:00:00Z",
+  "sourceAttributions": []
 }

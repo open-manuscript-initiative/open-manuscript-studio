@@ -6,7 +6,7 @@ Open Manuscript Studio uses one React/Vite application for the web and native sh
 
 The web application remains the canonical Studio frontend. `src-tauri/` contains only the native shell and platform integration layer. This separation allows normal Studio development to continue without maintaining separate Windows, macOS, Linux, Android, iOS, or iPadOS application forks.
 
-The OMI manuscript schema version is intentionally independent from the Studio application version. Studio currently supports the canonical OMI-SPEC-320@0.2.0 standalone working-file boundary. The earlier experimental 0.1 standalone representation is rejected rather than migrated because no production compatibility commitment was made for it. Compatibility guarantees begin with the stable production format boundary.
+The OMI manuscript schema version is intentionally independent from the Studio application version. Studio currently supports the canonical OMI-SPEC-320@0.3.0 standalone working-file boundary. The earlier experimental 0.1 standalone representation is rejected rather than migrated because no production compatibility commitment was made for it. Compatibility guarantees begin with the stable production format boundary.
 
 ## Web development
 

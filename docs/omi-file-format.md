@@ -9,13 +9,13 @@ Studio emits and opens standalone `.omi.json` working manuscripts using:
 
 | Boundary | Current value |
 |---|---|
-| File-format specification | `OMI-SPEC-320@0.2.0` |
-| Canonical schema URI | `https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json` |
+| File-format specification | `OMI-SPEC-320@0.3.0` |
+| Canonical schema URI | `https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json` |
 | `omi.format` | `manuscript` |
-| `omi.version` | `0.2.0` |
+| `omi.version` | `0.3.0` |
 | Studio working-file profiles | `core-snapshot`, `history-exchange` |
 
-The application version, for example `0.2.0-beta.2`, is not the OMI
+The application version, for example `0.3.0-beta.2`, is not the OMI
 file-format version. The manuscript's application-defined `version` field is
 also not the OMI file-format version.
 
@@ -59,7 +59,7 @@ title, is missing.
 The physical `.omi` package is versioned separately under OMI-SPEC-330.
 The current package architecture remains on its own Draft version line, while
 its `manuscript/document.json` member uses the canonical
-OMI-SPEC-320@0.2.0 core-snapshot representation. Revision history remains a
+OMI-SPEC-320@0.3.0 core-snapshot representation. Revision history remains a
 separate package member as defined by the current container architecture.
 
 This separation is intentional:
@@ -73,13 +73,13 @@ A change in one of these version lines does not implicitly change the others.
 
 ## Canonical schema and conformance fixtures
 
-The vendored runtime schema is `src/schemas/omi-manuscript-0.2.schema.json`, pinned to
-`OMI-SPEC-320@0.2.0` and its canonical schema URI. Studio uses Ajv 2020 with
+The vendored runtime schema is `src/schemas/omi-manuscript-0.3.schema.json`, pinned to
+`OMI-SPEC-320@0.3.0` and its canonical schema URI. Studio uses Ajv 2020 with
 date-time and URI format checks, followed by existing semantic invariants. It
 never fetches a schema URI supplied by an input document.
 
 The version-pinned manifest and all 14 fixtures are vendored under
-`tests/fixtures/omi-spec-320/0.2.0/`. The suite checks validity and stable
+`tests/fixtures/omi-spec-320/0.3.0/`. The suite checks validity and stable
 diagnostic codes for malformed JSON, duplicate JSON members (including escaped-equivalent names), structural failures,
 duplicate identifiers, unresolved references, timestamp order, history-head
 mismatch, and forbidden credential fields.

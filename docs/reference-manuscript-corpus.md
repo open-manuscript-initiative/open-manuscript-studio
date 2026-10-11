@@ -2,7 +2,7 @@
 
 The file tests/fixtures/reference-manuscript-all-features.omi.json is the synthetic reference manuscript used by the Studio 1.0 lifecycle conformance gate.
 
-It is deliberately not a sample article. Its purpose is to exercise as much of the **portable manuscript state** as the current Studio implementation can represent in one deterministic OMI-SPEC-320@0.2.0 working document.
+It is deliberately not a sample article. Its purpose is to exercise as much of the **portable manuscript state** as the current Studio implementation can represent in one deterministic OMI-SPEC-320@0.3.0 working document.
 
 ## Lifecycle gate
 

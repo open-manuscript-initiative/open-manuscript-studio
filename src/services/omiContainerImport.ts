@@ -152,7 +152,7 @@ export async function inspectOmiContainer(
         'invalid-manuscript-document',
         error instanceof Error
           ? error.message
-          : 'The packaged manuscript document does not conform to OMI-SPEC-320@0.2.0.',
+          : 'The packaged manuscript document does not conform to OMI-SPEC-320@0.3.0.',
       ));
     }
   }

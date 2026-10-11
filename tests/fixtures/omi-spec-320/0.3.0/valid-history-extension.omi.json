@@ -1,8 +1,8 @@
 {
-  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json",
+  "schema": "https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json",
   "omi": {
     "format": "manuscript",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "profiles": [
       "core-snapshot",
       "history-exchange",
@@ -10,11 +10,12 @@
     ],
     "specifications": {
       "OMI-SPEC-100": "0.1.0",
-      "OMI-SPEC-120": "0.1.0",
+      "OMI-SPEC-120": "0.2.0",
       "OMI-SPEC-140": "0.1.0",
       "OMI-SPEC-160": "0.1.0",
       "OMI-SPEC-210": "0.1.0",
-      "OMI-SPEC-220": "0.1.0"
+      "OMI-SPEC-220": "0.1.0",
+      "OMI-SPEC-225": "0.1.0"
     },
     "generator": {
       "name": "OMI fixture generator",
@@ -115,5 +116,6 @@
       "projectId": "project-42",
       "workPackage": "WP3"
     }
-  }
+  },
+  "sourceAttributions": []
 }

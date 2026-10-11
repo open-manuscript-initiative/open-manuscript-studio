@@ -4,7 +4,7 @@
 
 > **Current status:** `0.3.0-beta.6` · provenance-aware scholarly authoring and reading workflow quality beta.
 >
-> This beta improves source review and provenance across imported references, DOCX/PDF material and visual objects; preserves OJS/OMP source attribution in editable manuscript views; and extends source-backed research excerpts to more safe module fields. Study notes now appear in a bottom panel only when their anchors are visible in the manuscript, with the panel capped at half the usable screen. On Android, Help also shows the platform versionCode beside the shared app version. It builds on the nine research modules and the collaboration, publication and cross-platform workflows of the previous release. The portable manuscript format remains `OMI-SPEC-320@0.2.0`.
+> This beta improves source review and provenance across imported references, DOCX/PDF material and visual objects; preserves OJS/OMP source attribution in editable manuscript views; and extends source-backed research excerpts to more safe module fields. Study notes now appear in a bottom panel only when their anchors are visible in the manuscript, with the panel capped at half the usable screen. On Android, Help also shows the platform versionCode beside the shared app version. It builds on the nine research modules and the collaboration, publication and cross-platform workflows of the previous release. The portable manuscript format remains `OMI-SPEC-320@0.3.0`.
 
 - Web Studio: https://studio.openmanuscript.org
 - Project website and specifications: https://openmanuscript.org
@@ -269,7 +269,7 @@ Administrative roles do not implicitly grant manuscript/editorial-content access
        OJS · OMP · ORCID · OIDC · storage · DeepL · AI services
 ```
 
-The OMI manuscript schema remains independent of the Studio application version and of the operating system. Standalone Studio working files now use the canonical **OMI-SPEC-320@0.2.0** boundary with explicit schema URI and format profiles; unsupported pre-0.2 standalone JSON is rejected instead of being silently migrated. Platform adapters provide native file dialogs, filesystem access, packaging, update behavior and mobile authentication return handling around one scholarly core.
+The OMI manuscript schema remains independent of the Studio application version and of the operating system. Standalone Studio working files now use the canonical **OMI-SPEC-320@0.3.0** boundary with explicit schema URI and format profiles; unsupported pre-0.2 standalone JSON is rejected instead of being silently migrated. Platform adapters provide native file dialogs, filesystem access, packaging, update behavior and mobile authentication return handling around one scholarly core.
 
 ## Technology stack
 

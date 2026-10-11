@@ -22,7 +22,7 @@ const FIXTURE_URL = new URL(
   import.meta.url,
 );
 
-test('reference fixture is canonical OMI-SPEC-320@0.2.0 and synchronized with its builder', () => {
+test('reference fixture is canonical OMI-SPEC-320@0.3.0 and synchronized with its builder', () => {
   const raw = readFileSync(FIXTURE_URL, 'utf8');
   const wire = JSON.parse(raw) as {
     schema?: string;
@@ -34,7 +34,7 @@ test('reference fixture is canonical OMI-SPEC-320@0.2.0 and synchronized with it
     };
   };
 
-  assert.equal(wire.schema, 'https://openmanuscript.org/schemas/omi-manuscript-0.2.schema.json');
+  assert.equal(wire.schema, 'https://openmanuscript.org/schemas/omi-manuscript-0.3.schema.json');
   assert.equal(wire.omi?.format, 'manuscript');
   assert.equal(wire.omi?.version, '0.2.0');
   assert.deepEqual(wire.omi?.profiles, ['core-snapshot', 'history-exchange']);
