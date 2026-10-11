@@ -969,6 +969,7 @@ function buildCurrentState(): OmiManuscriptState {
         modifiedAt: REFERENCE_TIMESTAMP_HEAD,
       },
     ],
+    sourceAttributions: [],
     bibliographicRecords: [
       {
         id: 'record-journal',
