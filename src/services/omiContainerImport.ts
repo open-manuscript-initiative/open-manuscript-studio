@@ -1,5 +1,6 @@
 import { collectReferencedAssetIds, sha256Hex } from '../model/assets';
 import { isValidLinearRevisionHistory } from '../model/versioning';
+import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import {
   OMI_CONTAINER_MEDIA_TYPE,
   OMI_CONTAINER_VERSION,
@@ -668,6 +669,7 @@ function stableComparableState(state: OmiManuscriptState): string {
 function normalizeAssetPreviewFields(state: OmiManuscriptState): OmiManuscriptState {
   return {
     ...state,
+    schema: OMI_MANUSCRIPT_SCHEMA_URI,
     sourceAttributions: state.sourceAttributions ?? [],
     sections: state.sections.map((section) => ({
       ...section,
