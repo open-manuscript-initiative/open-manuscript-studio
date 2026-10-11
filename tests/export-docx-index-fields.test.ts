@@ -82,7 +82,7 @@ test('exports linked OMI notes as native Word footnotes by default and retains e
       type: 'note',
       targetBlockId: block.id,
       body: 'A default footnote & its text.',
-      renderingHint: 'hidden',
+      renderingHint: 'footnote',
     },
     {
       id: 'note-end',
