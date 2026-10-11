@@ -10,8 +10,7 @@
       "OMI-SPEC-120": "0.2.0",
       "OMI-SPEC-140": "0.1.0",
       "OMI-SPEC-225": "0.1.0"
-    },
-    "version": "0.3.0"
+    }
   },
   "id": "manuscript-missing-version",
   "locale": "en",
