@@ -1,3 +1,4 @@
+import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { contributorNameParts } from '../model/contributorName';
 import { buildPublicationRenderingContext } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
@@ -11,6 +12,7 @@ export interface EpubExportResult {
 }
 
 export function buildEpubExport(manuscript: OmiManuscript): EpubExportResult {
+  manuscript = publicPublicationManuscript(manuscript);
   const profile = resolvePublicationProfile(manuscript);
   const context = buildPublicationRenderingContext(manuscript, profile);
   const modified = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');

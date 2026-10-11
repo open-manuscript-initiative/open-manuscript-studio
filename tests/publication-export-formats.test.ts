@@ -1,3 +1,10 @@
+import { publicPublicationManuscript } from '../src/model/publicationAnnotations.ts';
+import { buildLatexExport } from '../src/services/exportLatex.ts';
+import { buildMifExport } from '../src/services/exportMif.ts';
+import { buildSlaExport } from '../src/services/exportSla.ts';
+import { buildXtgExport } from '../src/services/exportXtg.ts';
+import { renderHtmlArticle } from '../src/services/exportHtml.ts';
+import { renderJatsArticle } from '../src/services/exportJats.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -258,3 +265,45 @@ function readStoreZipEntries(bytes: Uint8Array): Map<string, Uint8Array> {
 
   return entries;
 }
+
+test('public exports omit private annotation bodies and anchors without changing portable state', () => {
+  const manuscript = createVersionedTestManuscript();
+  const block = manuscript.sections[0].blocks[0];
+  manuscript.annotations = [
+    { id: 'public', type: 'note', targetBlockId: block.id, body: 'PUBLIC_NOTE_BODY', renderingHint: 'footnote' },
+    { id: 'hidden', type: 'note', targetBlockId: block.id, body: 'PRIVATE_HIDDEN_BODY', renderingHint: 'hidden' },
+    { id: 'editor', type: 'note', targetBlockId: block.id, body: 'PRIVATE_EDITOR_BODY', renderingHint: 'footnote', visibility: 'editor_only' },
+    { id: 'author', type: 'note', targetBlockId: block.id, body: 'PRIVATE_AUTHOR_BODY', renderingHint: 'footnote', visibility: 'author_and_editor' },
+    { id: 'origin', type: 'semantic', targetBlockId: block.id, body: 'PRIVATE_ORIGIN_BODY', renderingHint: 'hidden' },
+  ];
+  block.content = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [
+    { type: 'text', text: 'PUBLIC_TEXT ' },
+    ...manuscript.annotations.map((note) => ({ type: 'omiNote', attrs: {
+      noteId: note.id, label: note.id === 'public' ? '1' : 'PRIVATE_MARKER_' + note.id,
+    } })),
+  ] }] });
+  const before = JSON.stringify(manuscript);
+  const projection = publicPublicationManuscript(manuscript);
+  assert.deepEqual(projection.annotations.map((note) => note.id), ['public']);
+  assert.doesNotMatch(projection.sections[0].blocks[0].content, /PRIVATE_MARKER/);
+  const decoder = new TextDecoder();
+  const zipText = (bytes: Uint8Array) => [...readStoreZipEntries(bytes).values()]
+    .map((entry) => decoder.decode(entry)).join('\n');
+  const outputs = {
+    html: renderHtmlArticle(manuscript).html,
+    jats: renderJatsArticle(manuscript).xml,
+    latex: buildLatexExport(manuscript).text,
+    mif: buildMifExport(manuscript).text,
+    sla: buildSlaExport(manuscript).text,
+    xtg: buildXtgExport(manuscript).text,
+    docx: zipText(buildDocxExport(manuscript).bytes),
+    epub: zipText(buildEpubExport(manuscript).bytes),
+  };
+  for (const [format, rawOutput] of Object.entries(outputs)) {
+    const output = rawOutput.replace(/\\_/g, '_');
+    assert.doesNotMatch(output, /PRIVATE_(?:HIDDEN|EDITOR|AUTHOR|ORIGIN)_BODY|PRIVATE_MARKER/, format);
+    assert.match(output, /PUBLIC_TEXT/, format);
+    if (format !== 'epub') assert.match(output, /PUBLIC_NOTE_BODY/, format);
+  }
+  assert.equal(JSON.stringify(manuscript), before);
+});

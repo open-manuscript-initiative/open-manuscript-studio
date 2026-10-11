@@ -1,3 +1,4 @@
+import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import {
   OMI_JATS_CONFORMANCE_RENDERER_VERSION,
   OMI_JATS_CONFORMANCE_TAG_SET,
@@ -90,6 +91,7 @@ export function renderJatsArticle(
   manuscript: OmiManuscript,
   profile: OmiPublicationProfile = resolvePublicationProfile(manuscript),
 ): JatsExportResult {
+  manuscript = publicPublicationManuscript(manuscript);
   const context = buildPublicationRenderingContext(manuscript, profile);
   const diagnostics: JatsDiagnostic[] = context.publicationIssues.map((issue) => ({
     code: `publication-${issue.code}`,

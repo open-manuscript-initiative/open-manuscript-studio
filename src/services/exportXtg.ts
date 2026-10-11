@@ -1,3 +1,4 @@
+import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { buildPublicationRenderingContext } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type { OmiManuscript } from '../types/omi';
@@ -11,6 +12,7 @@ export interface XtgExportResult {
 
 /** UTF-8 QuarkXPress XPress Tags text export. */
 export function buildXtgExport(manuscript: OmiManuscript): XtgExportResult {
+  manuscript = publicPublicationManuscript(manuscript);
   const context = buildPublicationRenderingContext(manuscript, resolvePublicationProfile(manuscript));
   const lines: string[] = ['<v21.00><e9>'];
 
