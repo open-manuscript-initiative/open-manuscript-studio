@@ -7,7 +7,7 @@ export const moduleManifest: StudioModuleManifest = {
   titleKey: 'modules.experimentalLaboratory.title',
   descriptionKey: 'modules.experimentalLaboratory.description',
   disciplines: ['physics', 'chemistry', 'biology', 'materials-science', 'experimental-science'],
-  requiredCapabilities: [],
+  requiredCapabilities: ['research-databases.search'],
   contributions: [{
     id: 'overview',
     slot: 'research-navigation',

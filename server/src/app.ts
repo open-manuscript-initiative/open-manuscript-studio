@@ -22,6 +22,7 @@ import { federatedAuthRouter } from './routes/federatedAuthRoutes.js';
 import { healthRouter } from './routes/healthRoutes.js';
 import { historyArchivesRouter } from './routes/historyArchivesRoutes.js';
 import { healthResearchRouter } from './routes/healthResearchRoutes.js';
+import { researchDatabaseRouter } from './routes/researchDatabaseRoutes.js';
 import { religiousTextsRouter } from './routes/religiousTextsRoutes.js';
 import { studioModuleRouter } from './routes/studioModuleRoutes.js';
 import { institutionAdminApiRouter } from './routes/institutionAdminApiRoutes.js';
@@ -109,6 +110,7 @@ app.use('/api/v1', studioModuleRouter);
 app.use('/api/v1', historyArchivesRouter);
 app.use('/api/v1', religiousTextsRouter);
 app.use('/api/v1', healthResearchRouter);
+app.use('/api/v1', researchDatabaseRouter);
 app.use('/api/auth', authRateLimit);
 app.use('/integrations', integrationRateLimit);
 

@@ -11,8 +11,10 @@ export type StudioModuleId =
   | 'org.omi.history-archives'
   | 'org.omi.religious-texts'
   | 'org.omi.psychology'
-  | 'org.omi.medical-sciences';
-export type StudioModuleCapability = 'archives.search' | 'religious-texts.search' | 'health-research.search';
+  | 'org.omi.medical-sciences'
+  | 'org.omi.social-research-methods'
+  | 'org.omi.experimental-laboratory';
+export type StudioModuleCapability = 'archives.search' | 'religious-texts.search' | 'health-research.search' | 'research-databases.search';
 
 const workspaceIdSchema = z.string().trim().min(1).max(128).regex(/^[A-Za-z0-9._:-]+$/);
 const moduleCapabilities: Record<StudioModuleId, readonly StudioModuleCapability[]> = {
@@ -20,6 +22,8 @@ const moduleCapabilities: Record<StudioModuleId, readonly StudioModuleCapability
   'org.omi.religious-texts': ['religious-texts.search'],
   'org.omi.psychology': ['health-research.search'],
   'org.omi.medical-sciences': ['health-research.search'],
+  'org.omi.social-research-methods': ['research-databases.search'],
+  'org.omi.experimental-laboratory': ['research-databases.search'],
 };
 
 export interface ModuleExecutionGrant {
