@@ -186,3 +186,38 @@ authorization and de-identification boundary.
 Add installation-administrator UI for the server-owned module allow-list and
 integrate shared-workspace membership when the server workspace model is ready.
 Expand the History and Archives module with other provider adapters and add jurisdiction-specific legal-source connectors where official APIs are available.
+
+
+## Mathematics equation workspace
+
+`org.omi.mathematics` adds the existing equation authoring feature to the module
+catalog, server installation allow-list and per-workspace activation settings.
+New equation insertion lives in Modules and Insert → Research modules → Mathematics.
+Existing equation blocks remain visible and editable even when the module is off.
+The shared EquationEditor provides source entry, MathML preview, diagnostics and
+selection-aware templates for fractions, roots, scripts, sums, integrals, matrices,
+cases and aligned equations. It inserts the existing portable equation visual block
+through `stageInsertBlocks`; no OMI schema changes or separate equation store are added.
+
+The previous handwritten LaTeX parser could silently change mathematical meaning
+(combined scripts, operators and unsupported commands). The pinned KaTeX 0.19.0
+adapter replaces only that parser: it generates MathML, retains original LaTeX,
+uses fresh macro state per call, disallows trusted link/image/HTML commands, and
+bounds input length, macro expansion and user-specified sizes. Parse errors are
+shown during editing, prevent new insertion, and fail HTML/JATS publication
+validation. Exporters continue to consume the same adapter. KaTeX supports a
+mathematical subset of LaTeX, not arbitrary packages, documents or symbolic algebra.
+No CDN or external rendering service is needed. HTML and JATS renderer versions
+advance to `0.1.0-alpha.2` to identify the changed mathematical output.
+The JATS XML safety scanner examines brackets only inside the DOCTYPE
+declaration, so preserved LaTeX annotations such as `\\sqrt[3]{x}` no longer
+trigger a false internal-subset alarm. Actual internal subsets remain rejected.
+
+This release does not add theorem/proof domain objects, inline editor nodes,
+symbolic calculation or function plotting. External file/clipboard objects still
+use the existing reviewed source/provenance import boundary.
+
+
+Module display order in Settings, Modules and the module insertion menu follows
+the localized display title using the current locale's collation. Registry IDs,
+installation allow-lists and persisted activation preferences are unchanged.
