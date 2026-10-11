@@ -24,6 +24,9 @@ test('an invited author must explicitly accept with the invited Studio account',
   await expect(page.getByRole('heading', { name: 'Manuscript collaboration invitation' })).toBeVisible();
   await expect(page.getByText('Shared E2E manuscript', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Accept invitation' }).click();
+  const invitationGate = page.locator('main.omi-collaboration-invitation');
+  const acceptanceError = await invitationGate.getByRole('status').textContent().catch(() => null);
+  await expect(invitationGate).toHaveCount(0, { message: acceptanceError ?? 'Invitation was not accepted.' });
   await expect(page.getByText('Test manuscript', { exact: true }).first()).toBeVisible();
   expect(api.unhandledRequests).toEqual([]);
 });
