@@ -117,6 +117,11 @@ const hu: Record<number, DetailedHelpTopic> = {
     steps: ['Először döntse el, hogy tartalmi, szerkezeti, metaadat-, integrációs vagy megjelenítési hibáról van-e szó.', 'Ellenőrizze az adott terület forrásadatait és aktív beállításait.', 'Import/export hibánál próbálja meg ugyanazt egy egyszerűbb vagy kisebb tesztdokumentummal elkülöníteni.'],
     checks: ['DOCX-hibánál a Word-stílusokat, OJS-hibánál az assignmentet és metaadatokat, PDF/HTML-hibánál az aktív kiadói profilt és stílust ellenőrizze.', 'Ha a felület hosszabb folyamatot végez, várja meg a folyamatjelző végét, mielőtt új műveletet indít.'],
   },
+  21: {
+    location: 'Beállítások → Modulok, majd a Modulok nézet.',
+    steps: ['A Beállításokban kapcsolja be a használni kívánt szakterületi modulokat.', 'Nyissa meg a Modulok nézetet, majd válassza ki a munkaterületet és – ha több adatbázis érhető el – a keresési szolgáltatót.', 'Külső találatnál nyissa meg az eredeti rekordot; kéziratba csak ellenőrzött, előnézetben jóváhagyott és forrással ellátott tartalmat illesszen.'],
+    checks: ['Csak bekapcsolt modulok jelennek meg a Modulok nézetben.', 'A külső keresők találatait az eredeti szolgáltatónál ellenőrizze.', 'A modul munkaterületi adatai nem kerülnek automatikusan a kéziratba.'],
+  },
 };
 
 const en: Record<number, DetailedHelpTopic> = {
@@ -140,6 +145,7 @@ const en: Record<number, DetailedHelpTopic> = {
   18: { location: 'Export & tools → HTML and publication validation.', steps: ['Select the intended publisher profile and style.', 'Review publication validation.', 'Resolve blocking issues before producing HTML/PDF.'], checks: ['Red errors normally require correction.', 'Review warnings even when they do not block export.'] },
   19: { location: 'Settings → cloud/storage settings and native Document/Export actions.', steps: ['Choose the storage mode.', 'Configure and test external storage where applicable.', 'Keep a portable OMI package as an independent backup.'], checks: ['External service availability depends on installation and configuration.', 'On shared devices, avoid retaining unnecessary local working-file associations.'] },
   20: { location: 'The relevant Document, Manuscript data, References, Publication, Integrations or Export & tools view.', steps: ['Classify the problem as content, structure, metadata, integration or presentation.', 'Check the source data and active settings for that area.', 'For import/export issues, reproduce with a smaller test manuscript if possible.'], checks: ['For DOCX inspect Word styles; for OJS inspect assignment/metadata; for PDF/HTML inspect the active publisher profile and style.', 'For long-running operations, wait for the progress state to finish before starting another action.'] },
+  21: { location: 'Settings → Modules, then the Modules view.', steps: ['Enable the discipline modules you need in Settings.', 'Open Modules and choose a workspace and, where multiple databases are available, a search provider.', 'For external results, open the original record; insert content into a manuscript only after checking it, approving the preview and retaining its source.'], checks: ['Only enabled modules appear in the Modules view.', 'Verify external search results with the original provider.', 'Workspace data is not inserted into the manuscript automatically.'] },
 };
 
 const de: Record<number, DetailedHelpTopic> = {
@@ -163,6 +169,7 @@ const de: Record<number, DetailedHelpTopic> = {
   18: { location: 'Export & Werkzeuge → HTML und Publikationsprüfung.', steps: ['Gewünschtes Verlagsprofil und Stil auswählen.', 'Publikationsprüfung kontrollieren.', 'Blockierende Probleme vor HTML/PDF beheben.'], checks: ['Rote Fehler sollten behoben werden.', 'Warnungen auch dann prüfen, wenn sie Export nicht blockieren.'] },
   19: { location: 'Einstellungen → Cloud/Speicher sowie native Dokument-/Exportaktionen.', steps: ['Speichermodus auswählen.', 'Externen Speicher konfigurieren und testen.', 'Zusätzlich ein portables OMI-Paket als unabhängige Sicherung erstellen.'], checks: ['Externe Dienste hängen von Installation und Konfiguration ab.', 'Auf gemeinsam genutzten Geräten keine unnötige lokale Dateizuordnung behalten.'] },
   20: { location: 'Je nach Problem: Dokument, Manuskriptdaten, Referenzen, Publikation, Integrationen oder Export & Werkzeuge.', steps: ['Problem als Inhalt, Struktur, Metadaten, Integration oder Darstellung einordnen.', 'Quelldaten und aktive Einstellungen dieses Bereichs prüfen.', 'Import-/Exportfehler möglichst mit kleinerem Testmanuskript reproduzieren.'], checks: ['Bei DOCX Word-Stile, bei OJS Assignment/Metadaten, bei PDF/HTML aktives Verlagsprofil und Stil prüfen.', 'Bei längeren Vorgängen das Ende der Fortschrittsanzeige abwarten.'] },
+  21: { location: 'Einstellungen → Module, anschließend die Modulansicht.', steps: ['Aktivieren Sie in den Einstellungen die benötigten Fachmodule.', 'Öffnen Sie Module und wählen Sie einen Arbeitsbereich sowie – sofern mehrere Datenbanken verfügbar sind – einen Suchanbieter.', 'Öffnen Sie bei externen Treffern den Originaldatensatz. Fügen Sie Inhalte erst nach Prüfung, bestätigter Vorschau und Quellenangabe ins Manuskript ein.'], checks: ['In der Modulansicht erscheinen nur aktivierte Module.', 'Prüfen Sie externe Suchtreffer beim ursprünglichen Anbieter.', 'Arbeitsbereichsdaten werden nicht automatisch ins Manuskript übernommen.'] },
 };
 
 const detailedByLocale: Record<string, Record<number, DetailedHelpTopic>> = { hu, en, de };
