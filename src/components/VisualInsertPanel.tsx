@@ -2,7 +2,6 @@ import {
   BarChart3,
   BookA,
   FileInput,
-  FunctionSquare,
   ImagePlus,
   Images,
   ListPlus,
@@ -31,7 +30,6 @@ import type { OmiGeneratedListKind } from '../model/generatedLists';
 import type { OmiTableOfContents } from '../model/tableOfContents';
 import {
   createChartBlock,
-  createEquationBlock,
   createTableBlock,
 } from '../model/visualBlocks';
 import {
@@ -227,10 +225,6 @@ export function VisualInsertPanel({
         <button type="button" onClick={() => insert([createChartBlock()])}>
           <BarChart3 size={17} aria-hidden="true" />
           {copy.chart}
-        </button>
-        <button type="button" onClick={() => insert([createEquationBlock()])}>
-          <FunctionSquare size={17} aria-hidden="true" />
-          {copy.equation}
         </button>
         <button type="button" onClick={() => importInputRef.current?.click()}>
           <FileInput size={17} aria-hidden="true" />
