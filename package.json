@@ -78,6 +78,7 @@
     "test:jats4r-profile": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/jats4r-profile.test.ts",
     "test:publication-artifact": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/publication-html-artifact.test.ts tests/publication-artifact.test.ts && node --test --experimental-test-module-mocks tests/publication-artifact-routes.test.mjs",
     "test:health-research-api": "tsc -p server/tsconfig.json && node --test --experimental-test-module-mocks tests/health-research-routes.test.mjs",
+    "test:research-database-api": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/research-database-search.test.ts",
     "test:web-publication": "tsc -p server/tsconfig.json && node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/web-publication-assurance.test.ts tests/integration-auth-modes.test.ts && node --test --experimental-test-module-mocks tests/web-publication-service.test.mjs",
     "fixture:reference-manuscript": "node --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs scripts/generate-reference-manuscript.ts",
     "test:reference-manuscript": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/reference-manuscript-lifecycle.test.ts",
