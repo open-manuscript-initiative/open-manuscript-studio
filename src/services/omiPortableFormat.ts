@@ -59,7 +59,7 @@ export function createOmiFileFormatEnvelope(
 
 /**
  * Converts Studio's internal manuscript state into the canonical portable
- * OMI-SPEC-320@0.2.0 representation.
+ * OMI-SPEC-320@0.3.0 representation.
  *
  * Pre-0.2 standalone JSON is intentionally not emitted or migrated. The
  * application release version and the portable file-format version are
@@ -72,6 +72,7 @@ export function toPortableOmiState(
     ...state,
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
     omi: createOmiFileFormatEnvelope(false),
+    sourceAttributions: state.sourceAttributions ?? [],
     tombstones: (state.tombstones ?? []).map((tombstone) => ({
       ...tombstone,
       id: tombstoneId(tombstone),
@@ -217,7 +218,7 @@ export function assertPortableOmiManuscript(
 
   const schemaErrors = validateOmiManuscriptSchema(value);
   if (schemaErrors.length > 0) {
-    throw new OmiPortableFormatError('schema-validation', `The manuscript does not satisfy the canonical OMI-SPEC-320@0.2.0 schema: ${schemaErrors.join('; ')}`);
+    throw new OmiPortableFormatError('schema-validation', `The manuscript does not satisfy the canonical OMI-SPEC-320@0.3.0 schema: ${schemaErrors.join('; ')}`);
   }
 
   const profiles = envelope.profiles;
