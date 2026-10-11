@@ -53,7 +53,7 @@ function buildLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy {
 }
 
 function consolidateModuleHelp(locale: string, copy: HelpCopy): HelpCopy {
-  const moduleIndex = copy.topics.findIndex((topic) => /^21[.):-]?\\s/.test(topic.title));
+  const moduleIndex = copy.topics.findIndex((topic) => /^21[.):-]?\s/.test(topic.title));
   if (moduleIndex < 0) return copy;
 
   const moduleTopic = copy.topics[moduleIndex];
@@ -61,11 +61,11 @@ function consolidateModuleHelp(locale: string, copy: HelpCopy): HelpCopy {
   const kept = copy.topics.filter((topic, index) => {
     if (index === moduleIndex) return true;
     const title = topic.title;
-    const isLegalSearch = /^22[.):-]?\\s/.test(title);
+    const isLegalSearch = /^22[.):-]?\s/.test(title);
     const isModuleDetail = /latex|musicxml|midi|psychology|medical sciences|gesundheit|psychologie|orvostudomány|pszichológia/i.test(title);
     if (!isLegalSearch && !isModuleDetail) return true;
     sections.push({
-      title: title.replace(/^\\s*\\d+[.):-]?\\s*/, '').trim(),
+      title: title.replace(/^\s*\\d+[.):-]?\s*/, '').trim(),
       body: topic.body,
       ...(topic.tips?.length ? { tips: topic.tips } : {}),
     });
