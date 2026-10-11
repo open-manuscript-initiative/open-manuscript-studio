@@ -1,3 +1,4 @@
+import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { buildPublicationRenderingContext } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type { OmiManuscript } from '../types/omi';
@@ -11,6 +12,7 @@ export interface MifExportResult {
 
 /** Minimal editable Maker Interchange Format document for FrameMaker. */
 export function buildMifExport(manuscript: OmiManuscript): MifExportResult {
+  manuscript = publicPublicationManuscript(manuscript);
   const context = buildPublicationRenderingContext(manuscript, resolvePublicationProfile(manuscript));
   const paragraphs: string[] = [];
 
