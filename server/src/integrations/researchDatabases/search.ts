@@ -65,7 +65,7 @@ export async function searchResearchDatabase({ provider, query, cursor, fetchImp
       const item = record(provider, id, title, `https://inspirehep.net/literature/${encodeURIComponent(id)}`);
       item.authors = arr(meta.authors).map(a => text(obj(obj(a).full_name).value ?? obj(a).full_name, 200)).filter(Boolean).slice(0, 30);
       item.year = text(arr(meta.publication_info).map(p => obj(p).year).find(Boolean), 20);
-      item.description = text(meta.abstract, 700);
+      item.description = text(obj(meta.abstract).value ?? meta.abstract, 700);
       return [item];
     });
     const next = offset + rows.length;
@@ -77,10 +77,10 @@ export async function searchResearchDatabase({ provider, query, cursor, fetchImp
     const found = await json(names, fetchImpl); const cids = arr(obj(found.IdentifierList).CID).map(v => String(v)).filter(v => /^\d{1,12}$/.test(v));
     const selected = cids.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
     if (!selected.length) return { items: [], totalResults: cids.length, nextCursor: null };
-    const properties = new URL(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${selected.join(',')}/property/Title,MolecularFormula,MolecularWeight/JSON`);
+    const properties = new URL(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${selected.join(',')}/property/IUPACName,MolecularFormula,MolecularWeight/JSON`);
     const data = await json(properties, fetchImpl); const props = arr(obj(data.PropertyTable).Properties);
     const items = props.flatMap(raw => {
-      const p = obj(raw); const id = String(p.CID ?? ''); const title = text(p.Title, 300) || `CID ${id}`;
+      const p = obj(raw); const id = String(p.CID ?? ''); const title = text(p.IUPACName, 300) || `CID ${id}`;
       if (!/^\d{1,12}$/.test(id)) return [];
       const item = record(provider, id, title, `https://pubchem.ncbi.nlm.nih.gov/compound/${id}`);
       item.description = [text(p.MolecularFormula, 80), text(p.MolecularWeight, 40) ? `Molecular weight: ${text(p.MolecularWeight, 40)}` : ''].filter(Boolean).join(' · ');
