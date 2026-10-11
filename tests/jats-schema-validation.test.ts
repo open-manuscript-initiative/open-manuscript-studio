@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { renderJatsArticle } from '../src/services/exportJats.ts';
+import { createEquationBlock } from '../src/model/visualBlocks.ts';
 import { buildJatsPackage } from '../src/services/exportJatsPackage.ts';
 import { validateJats4rProfile } from '../src/services/jats4rProfileValidator.ts';
 import {
@@ -9,6 +10,22 @@ import {
   validateJats14ArticleAuthoring,
 } from '../server/src/services/jatsValidator.ts';
 import { createVersionedTestManuscript } from './testManuscriptFixture.ts';
+
+test('mathematics MathML stays valid against the pinned JATS MathML3 DTD', async () => {
+  const manuscript = createVersionedTestManuscript();
+  manuscript.sections[0].blocks.push(...[
+    'x_i^2 + \\frac{12.5}{\\sqrt[3]{x}}',
+    '\\sum_{i=1}^{n} x_i + \\int_0^1 f(x)\\,dx',
+    '\\begin{pmatrix}a & b \\\\ c & d\\end{pmatrix}',
+    '\\begin{cases}x^2 & x\\ge 0 \\\\ -x & x<0\\end{cases}',
+    '\\begin{aligned}a+b &= c \\\\ a &= c-b\\end{aligned}',
+    '\\phantom{x} + \\smash{y}',
+  ].map((source) => createEquationBlock(source)));
+  const rendered = renderJatsArticle(manuscript);
+  assert.equal(rendered.validForExport, true, JSON.stringify(rendered.diagnostics));
+  const validation = await validateJats14ArticleAuthoring(rendered.xml);
+  assert.equal(validation.valid, true, validation.diagnostics.map((item) => item.message).join('\n'));
+});
 
 test('generated OMI JATS passes the pinned JATS 1.4 Article Authoring MathML3 DTD', async () => {
   const manuscript = createVersionedTestManuscript();
@@ -194,4 +211,7 @@ test('validator rejects input-side entity declarations and internal subsets', as
   const validation = await validateJats14ArticleAuthoring(malicious);
   assert.equal(validation.valid, false);
   assert.equal(validation.diagnostics[0]?.code, 'unsafe-xml');
+  const internalSubset = await validateJats14ArticleAuthoring('<!DOCTYPE article [<!ELEMENT article ANY>]><article/>');
+  assert.equal(internalSubset.valid, false);
+  assert.equal(internalSubset.diagnostics[0]?.code, 'unsafe-xml');
 });
