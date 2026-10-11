@@ -14,7 +14,6 @@ import { ReligiousTextsPanel } from './religious-texts/ReligiousTextsPanel';
 import { CriticalTextEditionPanel } from './critical-text-edition/CriticalTextEditionPanel';
 import { CorpusLinguisticsPanel } from './corpus-linguistics/CorpusLinguisticsPanel';
 import { MusicologyPanel } from './musicology/MusicologyPanel';
-import { CulturalHeritagePanel } from './cultural-heritage/CulturalHeritagePanel';
 import { SocialResearchMethodsPanel } from './social-research-methods/SocialResearchMethodsPanel';
 import { LegalSourcesPanel } from './legal-sources/LegalSourcesPanel';
 import { ResearchReproducibilityPanel } from './research-reproducibility/ResearchReproducibilityPanel';
@@ -148,8 +147,6 @@ export function ModuleManagerPanel({
                   <CorpusLinguisticsPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === musicologyModule.id ? (
                   <MusicologyPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
-                ) : module.id === culturalHeritageModule.id ? (
-                  <CulturalHeritagePanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === socialResearchMethodsModule.id ? (
                   <><SocialResearchMethodsPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /><ResearchDatabasePanel moduleId="social-research-methods" workspaceId={workspaceId} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /></>
                 ) : module.id === legalSourcesModule.id ? (
