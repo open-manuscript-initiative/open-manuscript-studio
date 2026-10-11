@@ -88,6 +88,18 @@ export function HelpPanel() {
               <div className="studio-help-topic-body">
                 <p>{topic.body}</p>
 
+                {topic.sections?.length ? (
+                  <div className="studio-help-module-sections">
+                    {topic.sections.map((section) => (
+                      <section className="studio-help-module-section" key={section.title}>
+                        <h4>{section.title}</h4>
+                        <p>{section.body}</p>
+                        {section.tips?.length ? <ul>{section.tips.map((tip) => <li key={tip}>{tip}</li>)}</ul> : null}
+                      </section>
+                    ))}
+                  </div>
+                ) : null}
+
                 {detailed ? (
                   <div className="studio-help-detailed" aria-label={topic.title}>
                     <section className="studio-help-detail-section">
