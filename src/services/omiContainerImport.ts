@@ -668,6 +668,7 @@ function stableComparableState(state: OmiManuscriptState): string {
 function normalizeAssetPreviewFields(state: OmiManuscriptState): OmiManuscriptState {
   return {
     ...state,
+    sourceAttributions: state.sourceAttributions ?? [],
     sections: state.sections.map((section) => ({
       ...section,
       blocks: normalizeBlockPreviews(section.blocks),
