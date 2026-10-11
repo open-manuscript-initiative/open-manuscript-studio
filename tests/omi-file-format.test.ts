@@ -58,7 +58,7 @@ test('rejects an unsupported OMI file-format version independently from the Stud
   const portable = toPortableOmiManuscript(createVersionedTestManuscript()) as unknown as Record<string, any>;
   portable.omi = {
     ...portable.omi,
-    version: '0.3.0',
+    version: '0.4.0',
   };
 
   assert.throws(
@@ -219,7 +219,7 @@ test('passes the version-pinned OMI-SPEC-320@0.3.0 conformance fixtures', async 
   };
   assert.equal(manifest.specification, 'OMI-SPEC-320@0.3.0');
   assert.equal(manifest.schema, OMI_MANUSCRIPT_SCHEMA_URI);
-  assert.equal(manifest.suiteVersion, '0.2.0-draft.4');
+  assert.equal(manifest.suiteVersion, '0.3.0-draft.4');
   for (const fixture of manifest.fixtures) {
     const source = await readFile(new URL(fixture.path, fixtureRoot), 'utf8');
     const actualDiagnostics = validateOmiConformanceJson(source);
