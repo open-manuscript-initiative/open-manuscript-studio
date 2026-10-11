@@ -65,7 +65,7 @@ function consolidateModuleHelp(locale: string, copy: HelpCopy): HelpCopy {
     const isModuleDetail = /latex|musicxml|midi|psychology|medical sciences|gesundheit|psychologie|orvostudomány|pszichológia/i.test(title);
     if (!isLegalSearch && !isModuleDetail) return true;
     sections.push({
-      title: title.replace(/^\s*\\d+[.):-]?\s*/, '').trim(),
+      title: title.replace(/^\s*\d+[.):-]?\s*/, '').trim(),
       body: topic.body,
       ...(topic.tips?.length ? { tips: topic.tips } : {}),
     });
