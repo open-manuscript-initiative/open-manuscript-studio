@@ -42,6 +42,25 @@ test('serializes Studio manuscripts as canonical OMI-SPEC-320@0.3.0 working file
   assert.equal(reopened.omi?.version, OMI_FILE_FORMAT_VERSION);
 });
 
+test('preserves semantic source attribution through OMI save and reopen', () => {
+  const portable = toPortableOmiManuscript(createVersionedTestManuscript()) as unknown as Record<string, any>;
+  portable.bibliographicRecords = [{ id: 'source-record', type: 'dataset', title: 'Public dataset' }];
+  portable.sourceAttributions = [{
+    id: 'source-link',
+    sourceObjectId: 'block-one',
+    targetBibliographicRecordId: 'source-record',
+    predicate: 'prov:wasDerivedFrom',
+    assertionStatus: 'author-confirmed',
+  }];
+
+  const reopened = parseOmiJson(JSON.stringify(portable));
+  assert.deepEqual(reopened.sourceAttributions, portable.sourceAttributions);
+  assert.deepEqual(
+    toPortableOmiManuscript(reopened).sourceAttributions,
+    portable.sourceAttributions,
+  );
+});
+
 test('rejects the experimental pre-0.2 standalone schema instead of migrating it', () => {
   const portable = toPortableOmiManuscript(createVersionedTestManuscript()) as unknown as Record<string, any>;
   portable.schema = 'https://openmanuscript.org/schemas/omi-manuscript-0.1.json';
