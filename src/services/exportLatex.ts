@@ -1,3 +1,4 @@
+import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import {
   extractOmiInlineRuns,
   type OmiInlineRun,
@@ -16,6 +17,7 @@ export interface LatexExportResult {
 }
 
 export function buildLatexExport(manuscript: OmiManuscript): LatexExportResult {
+  manuscript = publicPublicationManuscript(manuscript);
   const context = buildPublicationRenderingContext(manuscript, resolvePublicationProfile(manuscript));
   const body: string[] = [];
 
