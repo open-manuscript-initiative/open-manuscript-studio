@@ -25,7 +25,6 @@ import { buildRomanianArchivesSearchUrl } from '../src/modules/history-archives/
 import { DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS, getHistoryArchiveSourcesStorageKey, HISTORY_ARCHIVE_SOURCE_IDS, readVisibleHistoryArchiveSources } from '../src/modules/history-archives/sourcePreferences.ts';
 import { EU_NSI_CATALOGS, getResearchCatalogPreferencesKey, readVisibleResearchCatalogs, type ResearchCatalogId } from '../src/modules/researchCatalogPreferences.ts';
 import { searchEurostatCatalogue } from '../src/modules/eurostatCatalogue.ts';
-import { getResearchCatalogSearchUrl } from '../src/modules/ResearchCatalogSearchPanel.tsx';
 import { searchSefaria } from '../server/src/integrations/sefaria/sefariaSearch.ts';
 import { createExperimentalWorkspace, isExperimentalWorkspace, parseExperimentalWorkspace } from '../src/modules/experimental-laboratory/model.ts';
 import { addDesignDeviation, createStatisticalWorkspace, describe, estimateTwoGroupSampleSize, isStatisticalWorkspace, linearRegression, oneWayAnova, parseDelimited, parseLaboratoryMeasurements, parseStatisticalWorkspace, preregisterDesign, randomizeParticipants, welchTTest } from '../src/modules/statistical-analysis/model.ts';
@@ -221,16 +220,11 @@ test('statistics panel offers all 27 EU national statistical offices while defau
   assert.deepEqual(readVisibleResearchCatalogs(available, JSON.stringify(['nsiHungary', 'nsiSweden', 'unknown']), ['eurostat']), ['nsiHungary', 'nsiSweden']);
 });
 
-test('statistics office search links open the providers\u2019 result searches with the query', () => {
-  const eurostat = new URL(getResearchCatalogSearchUrl('eurostat', 'GDP'));
-  assert.equal(eurostat.origin, 'https://ec.europa.eu');
-  assert.equal(eurostat.pathname, '/eurostat/search');
-  assert.equal(eurostat.searchParams.get('query'), 'GDP');
-
-  const ksh = new URL(getResearchCatalogSearchUrl('nsiHungary', 'GDP'));
-  assert.equal(ksh.origin, 'https://www.ksh.hu');
-  assert.equal(ksh.pathname, '/kereses');
-  assert.equal(ksh.searchParams.get('q'), 'GDP');
+test('statistics searches open official result URLs and pass the query directly', () => {
+  const source = readFileSync(new URL('../src/modules/ResearchCatalogSearchPanel.tsx', import.meta.url), 'utf8');
+  assert.match(source, /https:\/\/ec\.europa\.eu\/eurostat\/search\?\$\{new URLSearchParams\(\{ query \}\)\}/);
+  assert.match(source, /https:\/\/www\.ksh\.hu\/kereses\?\$\{new URLSearchParams\(\{ q: query \}\)\}/);
+  assert.match(source, /window\.open\(getResearchCatalogSearchUrl\(catalog, normalized\), '_blank'/);
 });
 
 test('Eurostat search returns matching catalogue records with direct dataset links', () => {
