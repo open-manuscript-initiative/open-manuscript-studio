@@ -1,3 +1,4 @@
+import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { buildPublicationRenderingContext } from '../model/publicationRendering';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import type { OmiManuscript } from '../types/omi';
@@ -14,6 +15,7 @@ export interface SlaExportResult {
  * Paragraph styles preserve the OMI semantic hierarchy for later template mapping.
  */
 export function buildSlaExport(manuscript: OmiManuscript): SlaExportResult {
+  manuscript = publicPublicationManuscript(manuscript);
   const context = buildPublicationRenderingContext(manuscript, resolvePublicationProfile(manuscript));
   const story: string[] = [];
 
