@@ -221,12 +221,12 @@ test('review snapshots are an anonymous article-only projection', () => {
   assert.doesNotMatch(reviewManuscriptServiceSource, /fileName\?: string/);
   assert.match(reviewManuscriptServiceSource, /anonymityMode: 'DOUBLE_BLIND'/);
   const sanitizerStart = reviewManuscriptServiceSource.indexOf('export function sanitizeReviewManuscript');
-  const sanitizerEnd = reviewManuscriptServiceSource.indexOf('\\nfunction sanitizeCells', sanitizerStart);
+  const sanitizerEnd = reviewManuscriptServiceSource.indexOf('function sanitizeCells', sanitizerStart);
   const sanitizer = reviewManuscriptServiceSource.slice(sanitizerStart, sanitizerEnd);
   assert.match(sanitizer, /documentKind: 'article'/);
   assert.match(sanitizer, /authorIdentity: 'hidden'/);
-  assert.match(sanitizer, /bibliographicRecords: sanitizeBibliographicRecords\\(record\\.bibliographicRecords\\)/);
-  assert.doesNotMatch(sanitizer, /record\\.(?:annotations|sourceAttributions|fileName|authorIdentity)/);
+  assert.match(sanitizer, /bibliographicRecords: sanitizeBibliographicRecords\(record\.bibliographicRecords\)/);
+  assert.doesNotMatch(sanitizer, /record\.(?:annotations|sourceAttributions|fileName|authorIdentity)/);
   assert.match(ojsVerifierSource, /REVIEWER_FORBIDDEN_SCOPES[\s\S]*'contributors\.read'/);
   assert.match(ojsClientSource, /const hasContributorScope = !reviewerMode/);
   assert.match(reviewModeSource, /manuscript: 'Cikk'/);
