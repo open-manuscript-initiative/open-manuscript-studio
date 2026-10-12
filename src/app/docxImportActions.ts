@@ -86,7 +86,9 @@ export function applyDocxImportPlan(
     updatedAt: timestamp,
   };
   const envelope = createInitialVersioningEnvelope(state, {
-    summary: options.selfAuthoredExternal ? 'Imported self-authored DOCX manuscript' : `Imported DOCX manuscript: ${plan.fileName}`,
+    summary: options.selfAuthoredExternal
+      ? `Imported self-authored ${plan.fileName.toLowerCase().endsWith('.odt') ? 'ODT' : 'DOCX'} manuscript`
+      : `Imported ${plan.fileName.toLowerCase().endsWith('.odt') ? 'ODT' : 'DOCX'} manuscript: ${plan.fileName}`,
     timestamp,
     completeness: 'complete',
   });
