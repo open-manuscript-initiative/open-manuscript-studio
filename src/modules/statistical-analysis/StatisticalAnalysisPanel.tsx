@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { useEffect, useRef, useState } from 'react';
 import { downloadWorkspaceJson, safeWorkspaceFileName } from '../disciplineWorkspace';
 import { ResearchCatalogSearchPanel } from '../ResearchCatalogSearchPanel';
@@ -20,7 +21,6 @@ import {
 } from './model';
 import '../disciplineWorkspaces.css';
 
-type Locale = 'hu' | 'en' | 'de';
 const copy = {
   hu: {
     title: 'Statisztikai és adatelemzés',
@@ -261,8 +261,9 @@ const copy = {
   },
 } as const;
 
-export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statistical-analysis' }: { locale?: string; storageKey?: string }) {
-  const t = copy[locale as Locale] ?? copy.hu;
+export function StatisticalAnalysisPanel({ locale = 'en', storageKey = 'statistical-analysis' }: { locale?: string; storageKey?: string }) {
+  const t = copy[normalizeModuleLocale(locale)];
+  const language = normalizeModuleLocale(locale);
   const [workspace, setWorkspace, storageReady, storageError] = useIndexedStatisticalWorkspace(storageKey);
   const [error, setError] = useState('');
   useEffect(() => { if (!workspace.design) setWorkspace(current => ({ ...current, design: createExperimentalDesign() })); }, [workspace.design, setWorkspace]);
@@ -404,7 +405,7 @@ export function StatisticalAnalysisPanel({ locale = 'hu', storageKey = 'statisti
         <p className="discipline-workspace__hint">{dataset.rows.length} {t.rows} · {dataset.columns.length} {t.columns}</p>
       </> : <p className="discipline-workspace__hint">{t.noDataset}</p>}
       <p className="discipline-workspace__hint">{t.local}</p>
-      {!storageReady && <p role="status">{locale === 'de' ? 'Datensatz wird geladen …' : locale === 'en' ? 'Loading dataset…' : 'Adatkészlet betöltése…'}</p>}
+      {!storageReady && <p role="status">{language === 'de' ? 'Datensatz wird geladen …' : language === 'hu' ? 'Adatkészlet betöltése…' : 'Loading dataset…'}</p>}
       {storageError && <p role="alert">{storageError}</p>}
       {error && <p role="alert">{error}</p>}
     </section>
