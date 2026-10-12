@@ -1,3 +1,4 @@
+import { DOMParser as XmlParser, type Document as XmlDocument, type Element as XmlElement, type Node as XmlNode } from '@xmldom/xmldom';
 import { materializeSectionHeadingBlocks } from '../model/atomicTextBlocks';
 import { createNoteAnnotation } from '../model/notes';
 import { createImageBlock, createTableBlock, MAX_VISUAL_IMPORT_BYTES } from '../model/visualBlocks';
@@ -20,13 +21,13 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
   }
 
   const contentDoc = parseXml(await zip.text('content.xml'));
-  const textRoot = descendants(contentDoc.documentElement, 'text').find((node) => node.localName === 'text');
+  const textRoot = descendants(documentElement(contentDoc), 'text').find((node) => node.localName === 'text');
   if (!textRoot) throw new Error('The ODT package does not contain an office:text document body.');
   const metadata = zip.has('meta.xml') ? parseMetadata(parseXml(await zip.text('meta.xml'))) : {};
   const listStyleTypes = new Map<string, boolean>();
   for (const part of ['styles.xml', 'content.xml']) if (zip.has(part)) {
     const styleDoc = part === 'content.xml' ? contentDoc : parseXml(await zip.text(part));
-    for (const style of descendants(styleDoc.documentElement, 'list-style')) {
+    for (const style of descendants(documentElement(styleDoc), 'list-style')) {
       const name = style.getAttribute('style:name') ?? style.getAttribute('text:name') ?? '';
       if (name) listStyleTypes.set(name, descendants(style, 'list-level-style-number').length > 0);
     }
@@ -135,12 +136,12 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
   };
 }
 
-function parseInlineChildren(root: Element, blockId: string, annotations: OmiAnnotation[], stats: ReturnType<typeof createEmptyDocxImportStats>, provenance: OmiImportProvenance, warnings: DocxImportWarning[]): Array<Record<string, unknown>> {
+function parseInlineChildren(root: XmlElement, blockId: string, annotations: OmiAnnotation[], stats: ReturnType<typeof createEmptyDocxImportStats>, provenance: OmiImportProvenance, warnings: DocxImportWarning[]): Array<Record<string, unknown>> {
   const output: Array<Record<string, unknown>> = [];
-  const visit = (node: Node, marks: Array<{ type: string; attrs?: Record<string, unknown> }> = []): void => {
+  const visit = (node: XmlNode, marks: Array<{ type: string; attrs?: Record<string, unknown> }> = []): void => {
     if (node.nodeType === 3) { if (node.nodeValue) output.push({ type: 'text', text: node.nodeValue, ...(marks.length ? { marks } : {}) }); return; }
     if (node.nodeType !== 1) return;
-    const element = node as Element;
+    const element = node as XmlElement;
     const next = [...marks];
     if (element.localName === 'span') {
       const style = (element.getAttribute('text:style-name') ?? '').toLowerCase();
@@ -173,7 +174,7 @@ function parseInlineChildren(root: Element, blockId: string, annotations: OmiAnn
   return output;
 }
 
-function parseOdtList(root: Element, ordered: boolean, blockId: string, annotations: OmiAnnotation[], stats: ReturnType<typeof createEmptyDocxImportStats>, provenance: OmiImportProvenance, warnings: DocxImportWarning[], listStyleTypes: Map<string, boolean>): Array<Record<string, unknown>> {
+function parseOdtList(root: XmlElement, ordered: boolean, blockId: string, annotations: OmiAnnotation[], stats: ReturnType<typeof createEmptyDocxImportStats>, provenance: OmiImportProvenance, warnings: DocxImportWarning[], listStyleTypes: Map<string, boolean>): Array<Record<string, unknown>> {
   const listItems = Array.from(root.children).filter((node) => node.localName === 'list-item' || node.localName === 'list-header');
   if (!listItems.length) return [];
   return [{
@@ -212,20 +213,28 @@ function countListNodes(nodes: Array<Record<string, unknown>>): number {
   nodes.forEach(walk); return count;
 }
 
-function parseMetadata(doc: XMLDocument): { title?: string; creator?: string; language?: string; abstract?: string; keywords?: string[] } {
-  const get = (name: string) => descendants(doc.documentElement, name)[0]?.textContent?.trim();
+function parseMetadata(doc: XmlDocument): { title?: string; creator?: string; language?: string; abstract?: string; keywords?: string[] } {
+  const root = documentElement(doc);
+  const get = (name: string) => descendants(root, name)[0]?.textContent?.trim();
   const title = get('title'); const creator = get('creator'); const language = get('language'); const abstract = get('description');
-  const keywords = descendants(doc.documentElement, 'keyword').map((node) => node.textContent?.trim() ?? '').filter(Boolean);
+  const keywords = descendants(root, 'keyword').map((node) => node.textContent?.trim() ?? '').filter(Boolean);
   return { title, creator, language, abstract, keywords };
 }
 
-function parseXml(value: string): XMLDocument {
-  const doc = new DOMParser().parseFromString(value, 'application/xml');
-  if (doc.getElementsByTagName('parsererror').length) throw new Error('The ODT package contains invalid XML.');
+function parseXml(value: string): XmlDocument {
+  // ODT parts are untrusted XML. Parse into an isolated XML-only tree, reject
+  // DTD/entity declarations, and never reinterpret the content as HTML or mount it.
+  if (/<!DOCTYPE\b|<!ENTITY\b/i.test(value)) throw new Error('ODT XML declarations and entities are not supported.');
+  const doc = new XmlParser({ onError: () => { throw new Error('The ODT package contains invalid XML.'); } }).parseFromString(value, 'application/xml');
+  if (!doc.documentElement) throw new Error('The ODT package contains invalid XML.');
   return doc;
 }
-function descendants(root: Element, name: string): Element[] { return Array.from(root.getElementsByTagNameNS('*', name)); }
-function plainText(node: Element): string { return node.textContent ?? ''; }
+function documentElement(doc: XmlDocument): XmlElement {
+  if (!doc.documentElement) throw new Error('The ODT package contains invalid XML.');
+  return doc.documentElement;
+}
+function descendants(root: XmlElement, name: string): XmlElement[] { return Array.from(root.getElementsByTagNameNS('*', name)); }
+function plainText(node: XmlElement): string { return node.textContent ?? ''; }
 function ensureSection(sections: OmiSection[]): OmiSection {
   let current = sections.at(-1);
   if (!current) { current = { id: crypto.randomUUID(), title: 'Imported content', blocks: [] }; sections.push(current); }

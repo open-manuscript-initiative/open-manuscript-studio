@@ -1,14 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { inflateRawSync } from 'node:zlib';
-import { DOMParser as XmlDomParser } from '@xmldom/xmldom';
 import { createStoreZip, textZipEntry } from '../src/services/simpleZip.ts';
 import { parseOdtForStudio } from '../src/services/odtImport.ts';
 import { buildOdtExport } from '../src/services/exportOdt.ts';
 import { createImageBlock } from '../src/model/visualBlocks.ts';
 import { createTestManuscript } from './testManuscriptFixture.ts';
-
-Object.assign(globalThis, { DOMParser: XmlDomParser });
 
 test('imports ODT title, heading hierarchy, inline semantics, table and notes', async () => {
   const content = `<?xml version="1.0"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:xlink="http://www.w3.org/1999/xlink"><office:body><office:text><text:h text:outline-level="1">Methods</text:h><text:p>Plain <text:span text:style-name="Strong">bold</text:span><text:note text:note-class="footnote"><text:note-citation>1</text:note-citation><text:note-body><text:p>A note.</text:p></text:note-body></text:note></text:p><text:list><text:list-item><text:p>Listed item</text:p></text:list-item></text:list><table:table><table:table-row><table:table-cell><text:p>Head</text:p></table:table-cell><table:table-cell><text:p>Value</text:p></table:table-cell></table:table-row></table:table></office:text></office:body></office:document-content>`;
@@ -28,6 +25,15 @@ test('imports ODT title, heading hierarchy, inline semantics, table and notes', 
   const paragraph = plan.sections[0]?.blocks.find((block) => !block.visual && block.type === 'paragraph');
   assert.ok(paragraph?.content.includes('"type":"bold"'));
   assert.ok(paragraph?.content.includes('"type":"omiNote"'));
+});
+
+test('rejects DTD and entity declarations in untrusted ODT XML', async () => {
+  const content = `<!DOCTYPE office:document-content [<!ENTITY payload "unsafe">]><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"><office:body><office:text>&payload;</office:text></office:body></office:document-content>`;
+  const bytes = createStoreZip([
+    textZipEntry('mimetype', 'application/vnd.oasis.opendocument.text'),
+    textZipEntry('content.xml', content),
+  ]);
+  await assert.rejects(() => parseOdtForStudio(new File([bytes], 'unsafe.odt')), /declarations and entities are not supported/i);
 });
 
 test('exports an ODT package with the required first mimetype entry and portable manuscript content', () => {
