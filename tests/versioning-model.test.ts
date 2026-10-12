@@ -259,6 +259,57 @@ test('records multiple semantic events in one atomic change set', () => {
   assert.equal(committed?.snapshot.state.abstract, 'Atomic abstract');
 });
 
+test('reverting a revision restores the author-declared external origin annotation', () => {
+  const base = createManuscript();
+  const origin = {
+    id: 'origin-annotation',
+    type: 'semantic' as const,
+    targetBlockId: 'block-1',
+    targetText: 'omi:source-origin',
+    body: 'author-declared:self-authored-outside-omi',
+    renderingHint: 'hidden' as const,
+    createdAt: '2026-08-06T21:31:00.000Z',
+    modifiedAt: '2026-08-06T21:31:00.000Z',
+  };
+  const state = {
+    ...extractManuscriptState(base),
+    sections: [{ id: 'section-1', title: 'Introduction', blocks: [{ id: 'block-1', type: 'paragraph' as const, content: 'Imported text.' }] }],
+    annotations: [origin],
+  };
+  const manuscript = {
+    ...state,
+    ...createInitialVersioningEnvelope(state, {
+      summary: 'Imported own work with origin declaration',
+      timestamp: state.updatedAt,
+      completeness: 'complete',
+    }),
+  };
+  const withoutOrigin = commitManuscriptRevision(
+    manuscript,
+    { ...extractManuscriptState(manuscript), annotations: [] },
+    {
+      summary: 'Remove origin declaration',
+      timestamp: '2026-08-06T21:32:00.000Z',
+      events: [{
+        operation: 'annotation.remove',
+        targetId: origin.id,
+        path: '/annotations/origin-annotation',
+        previousValue: origin,
+      }],
+    },
+  );
+  const restored = revertManuscriptToRevision(withoutOrigin, manuscript.headRevisionId, {
+    summary: 'Restore origin declaration',
+    timestamp: '2026-08-06T21:33:00.000Z',
+  });
+
+  assert.deepEqual(restored.annotations, [origin]);
+  assert.deepEqual(
+    restored.revisionHistory.revisions.at(-1)?.snapshot.state.annotations,
+    [origin],
+  );
+});
+
 test('revert creates a new revision and preserves the reverted history', () => {
   const manuscript = createManuscript();
   const rootRevisionId = manuscript.headRevisionId;
