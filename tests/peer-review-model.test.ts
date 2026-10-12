@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { parseOjsReviewRecommendations } from '../server/src/integrations/ojs/reviewRecommendationModel.ts';
+import { sanitizeReviewManuscript } from '../server/src/services/reviewManuscriptService.ts';
 import {
   createPeerReviewAssignment,
   createPeerReviewFeedback,
@@ -235,4 +236,27 @@ test('OMP reviewer access is bound to the assigned study instead of its parent m
   assert.match(ompReviewRouteSource, /platform: 'omp'/);
   assert.match(ompReviewRouteSource, /includeSubmissionMetadata: false/);
   assert.match(ompReviewRouteSource, /setReviewManuscriptFromOjs\(assignment\.id, componentId, snapshot\)/);
+});
+
+
+test('anonymous reviewer projection drops author origin and import privacy metadata', () => {
+  const projection = sanitizeReviewManuscript({
+    title: 'Review copy',
+    authorIdentity: 'visible',
+    authors: ['Ada Scholar'],
+    annotations: [{
+      type: 'semantic',
+      targetText: 'omi:source-origin',
+      body: 'author-declared:self-authored-outside-omi',
+    }],
+    sourceAttributions: [{ sourceObjectId: 'block-1', targetBibliographicRecordId: 'record-1' }],
+    fileName: '/home/private-draft.docx',
+    blocks: [{ type: 'paragraph', text: 'Reviewable text.' }],
+  });
+  const serialized = JSON.stringify(projection);
+
+  assert.equal(projection.authorIdentity, 'hidden');
+  assert.equal(projection.title, 'Review copy');
+  assert.deepEqual(projection.blocks, [{ type: 'paragraph', text: 'Reviewable text.' }]);
+  assert.doesNotMatch(serialized, /author-declared:self-authored-outside-omi|omi:source-origin|private-draft\.docx|Ada Scholar|sourceAttributions/);
 });
