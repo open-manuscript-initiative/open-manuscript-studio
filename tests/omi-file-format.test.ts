@@ -249,16 +249,19 @@ test('validates well-formed BCP 47 tags in manuscript and section metadata', () 
     assert.doesNotThrow(() => parseOmiJson(JSON.stringify(portable)), tag);
   }
 
-  const invalidLocale = structuredClone(template);
-  invalidLocale.locale = 'en-US-AB';
-  assert.throws(
-    () => parseOmiJson(JSON.stringify(invalidLocale)),
-    (error: unknown) =>
-      error instanceof OmiPortableFormatError
-      && error.code === 'invalid-document'
-      && /\/locale/.test(error.message)
-      && !error.message.includes('en-US-AB'),
-  );
+  for (const tag of ['en-US-AB', 'de-1901-1901', 'en-a-foo-a-bar']) {
+    const invalidLocale = structuredClone(template);
+    invalidLocale.locale = tag;
+    assert.throws(
+      () => parseOmiJson(JSON.stringify(invalidLocale)),
+      (error: unknown) =>
+        error instanceof OmiPortableFormatError
+        && error.code === 'invalid-document'
+        && /\\/locale/.test(error.message)
+        && !error.message.includes(tag),
+      tag,
+    );
+  }
 
   const invalidSectionLanguage = structuredClone(template);
   const section = invalidSectionLanguage.sections[0];
@@ -269,6 +272,16 @@ test('validates well-formed BCP 47 tags in manuscript and section metadata', () 
     (error: unknown) =>
       error instanceof OmiPortableFormatError
       && /\/sections\/0\/language/.test(error.message),
+  );
+  const invalidBlockLanguage = structuredClone(template);
+  const block = invalidBlockLanguage.sections[0]?.blocks[0];
+  assert.ok(block);
+  block.language = 'en-US-AB';
+  assert.throws(
+    () => parseOmiJson(JSON.stringify(invalidBlockLanguage)),
+    (error: unknown) =>
+      error instanceof OmiPortableFormatError
+      && /\\/sections\\/0\\/blocks\\/0\\/language/.test(error.message),
   );
 });
 
