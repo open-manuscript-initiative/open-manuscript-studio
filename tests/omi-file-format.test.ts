@@ -240,6 +240,108 @@ test('preserves the complete portable envelope and unknown data through an edit/
   assert.deepEqual(reopened.revisionHistory, source.revisionHistory);
 });
 
+
+test('validates well-formed BCP 47 tags in manuscript and section metadata', () => {
+  const template = toPortableOmiManuscript(createVersionedTestManuscript());
+  for (const tag of ['en-US', 'zh-Hant-TW', 'en-GB-oed', 'i-klingon', 'x-project']) {
+    const portable = structuredClone(template);
+    portable.locale = tag;
+    assert.doesNotThrow(() => parseOmiJson(JSON.stringify(portable)), tag);
+  }
+
+  for (const tag of ['en-US-AB', 'de-1901-1901', 'en-a-foo-a-bar']) {
+    const invalidLocale = structuredClone(template);
+    invalidLocale.locale = tag;
+    assert.throws(
+      () => parseOmiJson(JSON.stringify(invalidLocale)),
+      (error: unknown) =>
+        error instanceof OmiPortableFormatError
+        && error.code === 'invalid-document'
+        && /\/locale/.test(error.message)
+        && !error.message.includes(tag),
+      tag,
+    );
+  }
+
+  const invalidSectionLanguage = structuredClone(template);
+  const section = invalidSectionLanguage.sections[0];
+  assert.ok(section);
+  section.language = 'en-US-AB';
+  assert.throws(
+    () => parseOmiJson(JSON.stringify(invalidSectionLanguage)),
+    (error: unknown) =>
+      error instanceof OmiPortableFormatError
+      && /\/sections\/0\/language/.test(error.message),
+  );
+  const invalidBlockLanguage = structuredClone(template);
+  const block = invalidBlockLanguage.sections[0]?.blocks[0];
+  assert.ok(block);
+  block.language = 'en-US-AB';
+  assert.throws(
+    () => parseOmiJson(JSON.stringify(invalidBlockLanguage)),
+    (error: unknown) =>
+      error instanceof OmiPortableFormatError
+      && /\/sections\/0\/blocks\/0\/language/.test(error.message),
+  );
+});
+
+test('redacts manuscript identifiers and reference values from Studio validation errors', () => {
+  const privateValue = 'restricted-manuscript-value-592c';
+  const duplicate = toPortableOmiManuscript(createVersionedTestManuscript()) as unknown as Record<string, any>;
+  const section = duplicate.sections[0];
+  assert.ok(section);
+  section.id = privateValue;
+  section.blocks[0].id = privateValue;
+  assert.throws(
+    () => parseOmiJson(JSON.stringify(duplicate)),
+    (error: unknown) =>
+      error instanceof OmiPortableFormatError
+      && error.message.includes('Duplicate OMI identifier')
+      && !error.message.includes(privateValue),
+  );
+
+  const unresolved = toPortableOmiManuscript(createVersionedTestManuscript()) as unknown as Record<string, any>;
+  unresolved.annotations = [{
+    id: 'annotation-private',
+    targetBlockId: privateValue,
+  }];
+  assert.throws(
+    () => parseOmiJson(JSON.stringify(unresolved)),
+    (error: unknown) =>
+      error instanceof OmiPortableFormatError
+      && error.message.includes('/annotations/0/targetBlockId')
+      && !error.message.includes(privateValue),
+  );
+});
+
+test('enforces complete history parents and allows declared partial or shallow boundaries', async () => {
+  const fixtureRoot = new URL('./fixtures/omi-spec-320/0.3.0/', import.meta.url);
+  const historyFixture = JSON.parse(await readFile(
+    new URL('valid-history-extension.omi.json', fixtureRoot),
+    'utf8',
+  )) as Record<string, any>;
+  const missingParent = 'restricted-parent-revision-71d4';
+  const complete = structuredClone(historyFixture);
+  complete.revisionHistory.revisions[1].parentRevisionIds = [missingParent];
+  assert.throws(
+    () => parseOmiJson(JSON.stringify(complete)),
+    (error: unknown) =>
+      error instanceof OmiPortableFormatError
+      && error.message.includes('/revisionHistory/revisions/1/parentRevisionIds/0')
+      && !error.message.includes(missingParent),
+  );
+
+  for (const completeness of ['partial', 'shallow']) {
+    const bounded = structuredClone(complete);
+    bounded.revisionHistory.completeness = completeness;
+    bounded.revisionHistory.omissionNotice = 'Earlier history is outside this package.';
+    assert.doesNotThrow(
+      () => parseOmiJson(JSON.stringify(bounded)),
+      `${completeness} history declares its omitted boundary`,
+    );
+  }
+});
+
 test('passes the version-pinned OMI-SPEC-320@0.3.0 conformance fixtures', async () => {
   const fixtureRoot = new URL('./fixtures/omi-spec-320/0.3.0/', import.meta.url);
   const manifest = JSON.parse(await readFile(new URL('manifest.json', fixtureRoot), 'utf8')) as {

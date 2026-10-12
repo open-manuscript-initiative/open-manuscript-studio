@@ -257,9 +257,9 @@ export function assertPortableOmiManuscript(
   if (
     typeof value.locale !== 'string'
     || value.locale.length > 255
-    || !/^(?:[A-Za-z]{2,8}|(?:[A-Za-z]{1,8}|[xX])(?:-[A-Za-z0-9]{1,8})+)$/u.test(value.locale)
+    || !isWellFormedBcp47(value.locale)
   ) {
-    invalid('locale must be a valid OMI language tag.');
+    invalid('/locale must be a well-formed BCP 47 language tag.');
   }
   requireNonEmptyString(value.title, 'title');
   requireTimestamp(value.createdAt, 'createdAt');
@@ -332,6 +332,7 @@ function validateSection(
   if (!isRecord(value)) invalid(`${path} must be an object.`);
   requireNonEmptyString(value.id, `${path}/id`);
   if (typeof value.title !== 'string') invalid(`${path}/title must be a string.`);
+  if (value.language !== undefined) requireLanguageTag(value.language, `${path}/language`);
   if (!Array.isArray(value.blocks)) invalid(`${path}/blocks must be an array.`);
   addAddressable(value, path, indexes.all);
 
@@ -396,6 +397,7 @@ function validateBlock(
   if (!isRecord(value)) invalid(`${path} must be an object.`);
   requireNonEmptyString(value.id, `${path}/id`);
   requireNonEmptyString(value.type, `${path}/type`);
+  if (value.language !== undefined) requireLanguageTag(value.language, `${path}/language`);
   addAddressable(value, path, indexes.all);
   addAddressable(value, path, indexes.blocks);
   optionalArray(value.children, `${path}/children`).forEach((child, index) =>
@@ -550,7 +552,7 @@ function addAddressable(
     invalid(`${path}/id must be a non-empty string.`);
   }
   if (index.has(value.id)) {
-    invalid(`Duplicate OMI identifier ${value.id} at ${path}.`);
+    invalid(`Duplicate OMI identifier at ${path}.`);
   }
   index.set(value.id, path);
 }
@@ -569,6 +571,71 @@ function optionalArray(value: unknown, path: string): unknown[] {
   if (value === undefined) return [];
   if (!Array.isArray(value)) invalid(`${path} must be an array.`);
   return value;
+}
+
+function requireLanguageTag(value: unknown, path: string): void {
+  if (typeof value !== 'string' || !isWellFormedBcp47(value)) {
+    invalid(`${path} must be a well-formed BCP 47 language tag.`);
+  }
+}
+
+function isWellFormedBcp47(tag: string): boolean {
+  const grandfathered = new Set([
+    'art-lojban', 'cel-gaulish', 'en-gb-oed', 'i-ami', 'i-bnn', 'i-default',
+    'i-enochian', 'i-hak', 'i-klingon', 'i-lux', 'i-mingo', 'i-navajo',
+    'i-pwn', 'i-tao', 'i-tay', 'i-tsu', 'no-bok', 'no-nyn', 'sgn-be-fr',
+    'sgn-be-nl', 'sgn-ch-de', 'zh-guoyu', 'zh-hakka', 'zh-min',
+    'zh-min-nan', 'zh-xiang',
+  ]);
+  const lower = tag.toLowerCase();
+  if (grandfathered.has(lower)) return true;
+  if (/^x(?:-[a-z0-9]{1,8})+$/iu.test(tag)) return true;
+
+  const parts = tag.split('-');
+  let index = 0;
+  const language = parts[index++];
+  if (!language || !/^[a-z]{2,8}$/iu.test(language)) return false;
+
+  if (language.length <= 3) {
+    let extlangs = 0;
+    while (extlangs < 3 && /^[a-z]{3}$/iu.test(parts[index] ?? '')) {
+      index += 1;
+      extlangs += 1;
+    }
+  }
+  if (/^[a-z]{4}$/iu.test(parts[index] ?? '')) index += 1;
+  if (/^(?:[a-z]{2}|[0-9]{3})$/iu.test(parts[index] ?? '')) index += 1;
+
+  const variants = new Set<string>();
+  while (/^(?:[a-z0-9]{5,8}|[0-9][a-z0-9]{3})$/iu.test(parts[index] ?? '')) {
+    const variant = (parts[index] ?? '').toLowerCase();
+    if (variants.has(variant)) return false;
+    variants.add(variant);
+    index += 1;
+  }
+  const extensionSingletons = new Set<string>();
+  while (/^[0-9a-wy-z]$/iu.test(parts[index] ?? '')) {
+    const singleton = (parts[index] ?? '').toLowerCase();
+    if (extensionSingletons.has(singleton)) return false;
+    extensionSingletons.add(singleton);
+    index += 1;
+    let extensionSubtags = 0;
+    while (/^[a-z0-9]{2,8}$/iu.test(parts[index] ?? '')) {
+      index += 1;
+      extensionSubtags += 1;
+    }
+    if (extensionSubtags === 0) return false;
+  }
+  if (/^x$/iu.test(parts[index] ?? '')) {
+    index += 1;
+    let privateSubtags = 0;
+    while (/^[a-z0-9]{1,8}$/iu.test(parts[index] ?? '')) {
+      index += 1;
+      privateSubtags += 1;
+    }
+    if (privateSubtags === 0) return false;
+  }
+  return index === parts.length;
 }
 
 function requireNonEmptyString(value: unknown, path: string): void {
