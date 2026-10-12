@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { useRef, useState } from 'react';
 import { DOMParser as XmlParser, type Document as XmlDocument, type Element as XmlElement } from '@xmldom/xmldom';
 import { downloadWorkspaceJson, newWorkspaceId, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
@@ -123,8 +124,8 @@ function parseMidi(buffer:ArrayBuffer):{project:Partial<MusicProject>;events:Mus
  });
  return {project:{meter:`${numerator}/${denominator}`,...(tempo?{tempo:String(tempo)}:{})},events};
 }
-export function MusicologyPanel({locale='hu',storageKey='default'}:Props){
- const t=words[locale as keyof typeof words]??words.en; const fileRef=useRef<HTMLInputElement>(null);
+export function MusicologyPanel({locale='en',storageKey='default'}:Props){
+ const t=words[normalizeModuleLocale(locale)]; const fileRef=useRef<HTMLInputElement>(null);
  const [project,setProject]=useLocalWorkspace(`omi:musicology:v1:${storageKey}`,()=>fresh(locale));
  const [error,setError]=useState('');
  const update=(patch:Partial<MusicProject>)=>setProject((current)=>({...current,...patch}));
