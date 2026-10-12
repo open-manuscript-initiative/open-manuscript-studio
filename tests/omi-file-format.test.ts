@@ -18,6 +18,11 @@ import {
   createVersionedTestManuscript,
 } from './testManuscriptFixture.ts';
 
+function prependTopLevelMember(json: string, member: string): string {
+  assert.ok(json.startsWith('{'));
+  return `{${member},${json.slice(1)}`;
+}
+
 test('serializes Studio manuscripts as canonical OMI-SPEC-320@0.3.0 working files', () => {
   const manuscript = createVersionedTestManuscript();
   const serialized = serializeOmiJson(manuscript);
@@ -246,9 +251,9 @@ test('rejects JSON numbers and strings that JavaScript would silently corrupt', 
   const portable = toPortableOmiManuscript(createVersionedTestManuscript());
   const json = JSON.stringify(portable);
   const invalidSources = [
-    [json.replace('{', '{"unsafeInteger":9007199254740993,'), 'FMT-UNSAFE-INTEGER', 'safe integer range'],
-    [json.replace('{', '{"nonFinite":1e400,'), 'FMT-NONFINITE-NUMBER', 'not finite'],
-    [json.replace('{', '{"unpaired":"\\uD800",'), 'FMT-INVALID-UNICODE', 'unpaired Unicode surrogate'],
+    [prependTopLevelMember(json, '"unsafeInteger":9007199254740993'), 'FMT-UNSAFE-INTEGER', 'safe integer range'],
+    [prependTopLevelMember(json, '"nonFinite":1e400'), 'FMT-NONFINITE-NUMBER', 'not finite'],
+    [prependTopLevelMember(json, '"unpaired":"\\uD800"'), 'FMT-INVALID-UNICODE', 'unpaired Unicode surrogate'],
   ] as const;
 
   for (const [source, code, message] of invalidSources) {
@@ -267,9 +272,9 @@ test('rejects JSON numbers and strings that JavaScript would silently corrupt', 
 
 test('keeps __proto__ as inert JSON data while preserving object prototypes', () => {
   const portable = toPortableOmiManuscript(createVersionedTestManuscript());
-  const source = JSON.stringify(portable).replace(
-    '{',
-    '{"__proto__":{"polluted":true},',
+  const source = prependTopLevelMember(
+    JSON.stringify(portable),
+    '"__proto__":{"polluted":true}',
   );
   const reopened = parseOmiJson(source) as unknown as Record<string, unknown>;
   assert.equal(Object.hasOwn(reopened, '__proto__'), true);
