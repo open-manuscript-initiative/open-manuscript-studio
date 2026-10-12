@@ -248,7 +248,7 @@ test('rejects JSON numbers and strings that JavaScript would silently corrupt', 
   const invalidSources = [
     [json.replace('{', '{"unsafeInteger":9007199254740993,'), 'FMT-UNSAFE-INTEGER', 'safe integer range'],
     [json.replace('{', '{"nonFinite":1e400,'), 'FMT-NONFINITE-NUMBER', 'not finite'],
-    [json.replace('{', String.raw\`{"unpaired":"\\uD800",\`), 'FMT-INVALID-UNICODE', 'unpaired Unicode surrogate'],
+    [json.replace('{', '{"unpaired":"\\uD800",'), 'FMT-INVALID-UNICODE', 'unpaired Unicode surrogate'],
   ] as const;
 
   for (const [source, code, message] of invalidSources) {
