@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { useState } from 'react';
 import { stageInsertBlocks } from '../../app/visualBlockActions';
 import { useStudioStore } from '../../app/useStudioStore';
@@ -16,9 +17,10 @@ export function MathematicsPanel({ locale, sectionId, gapIndex, onInserted }: Pr
   const selectedSectionId = useStudioStore((state) => state.selectedSectionId);
   const target = manuscript.sections.find((section) => section.id === (sectionId ?? selectedSectionId))
     ?? (sectionId ? undefined : manuscript.sections[0]);
-  const copy = locale === 'hu'
+  const language = normalizeModuleLocale(locale);
+  const copy = language === 'hu'
     ? { insert: 'Képlet beszúrása', label: 'Képlet címkéje', caption: 'Képaláírás / magyarázat', noSection: 'Nyisson meg egy kéziratot és válasszon szakaszt.', failed: 'A képlet beszúrása nem sikerült.' }
-    : locale === 'de'
+    : language === 'de'
       ? { insert: 'Formel einfügen', label: 'Formelbezeichnung', caption: 'Beschriftung / Erklärung', noSection: 'Öffnen Sie ein Manuskript und wählen Sie einen Abschnitt.', failed: 'Die Formel konnte nicht eingefügt werden.' }
       : { insert: 'Insert equation', label: 'Equation label', caption: 'Caption / explanation', noSection: 'Open a manuscript and select a section.', failed: 'The equation could not be inserted.' };
 
