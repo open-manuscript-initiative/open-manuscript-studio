@@ -257,7 +257,7 @@ test('validates well-formed BCP 47 tags in manuscript and section metadata', () 
       (error: unknown) =>
         error instanceof OmiPortableFormatError
         && error.code === 'invalid-document'
-        && /\\/locale/.test(error.message)
+        && /\/locale/.test(error.message)
         && !error.message.includes(tag),
       tag,
     );
@@ -281,7 +281,7 @@ test('validates well-formed BCP 47 tags in manuscript and section metadata', () 
     () => parseOmiJson(JSON.stringify(invalidBlockLanguage)),
     (error: unknown) =>
       error instanceof OmiPortableFormatError
-      && /\\/sections\\/0\\/blocks\\/0\\/language/.test(error.message),
+      && /\/sections\/0\/blocks\/0\/language/.test(error.message),
   );
 });
 
