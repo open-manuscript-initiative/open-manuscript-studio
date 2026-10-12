@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 interface EleveltarSearchPanelProps {
   locale: string;
 }
@@ -24,7 +25,7 @@ const copyByLocale: Record<string, { title: string; description: string; open: s
 };
 
 export function EleveltarSearchPanel({ locale }: EleveltarSearchPanelProps) {
-  const copy = copyByLocale[locale] ?? copyByLocale.en!;
+  const copy = copyByLocale[normalizeModuleLocale(locale)] ?? copyByLocale.en!;
   return (
     <section className="europeana-search eleveltar-search" aria-labelledby="eleveltar-search-title">
       <div className="europeana-search-heading">

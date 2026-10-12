@@ -1,8 +1,8 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { useState } from 'react';
 import { downloadWorkspaceJson, newWorkspaceId, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
 import '../disciplineWorkspaces.css';
 
-type Locale = 'hu' | 'en' | 'de';
 type Variable = { id: string; name: string; label: string; type: string; values: string };
 type Code = { id: string; start: number; end: number; text: string; label: string; note: string };
 type Transcript = { id: string; title: string; participant: string; text: string; codes: Code[] };
@@ -16,8 +16,8 @@ const copy = {
 
 function blankProject(): Project { return { title: '', question: '', method: '', ethics: '', variables: [], transcripts: [] }; }
 
-export function SocialResearchMethodsPanel({ locale = 'hu', storageKey = 'social-research-methods' }: { locale?: string; storageKey?: string }) {
-  const t = copy[locale as Locale] ?? copy.hu;
+export function SocialResearchMethodsPanel({ locale = 'en', storageKey = 'social-research-methods' }: { locale?: string; storageKey?: string }) {
+  const t = copy[normalizeModuleLocale(locale)];
   const [project, setProject] = useLocalWorkspace<Project>(storageKey, blankProject);
   const [selected, setSelected] = useState<{ id: string; start: number; end: number } | null>(null);
   const [pendingCode, setPendingCode] = useState('');

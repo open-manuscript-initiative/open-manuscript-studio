@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './criticalTextEdition.css';
 
@@ -154,10 +155,10 @@ function toTei(project: EditionProject): string {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:lang="${escapeXml(project.language)}">\n  <teiHeader>\n    <fileDesc>\n      <titleStmt><title>${title}</title><editor>OMI Studio</editor></titleStmt>\n      <publicationStmt><p>Digital critical edition project.</p></publicationStmt>\n      <sourceDesc><listWit>\n${witnessList}\n      </listWit>\n${manuscriptDescriptions}\n      </sourceDesc>\n    </fileDesc>\n    <encodingDesc><projectDesc><p>${escapeXml(project.editorialPrinciple)}</p></projectDesc></encodingDesc>\n  </teiHeader>\n  <text><body>\n${body || '        <p/>'}\n  </body></text>\n</TEI>\n`;
 }
 export function CriticalTextEditionPanel({
-  locale = 'hu',
+  locale = 'en',
   storageKey = 'default',
 }: CriticalTextEditionPanelProps) {
-  const copy = copyByLocale[locale] ?? copyByLocale.en;
+  const copy = copyByLocale[normalizeModuleLocale(locale)];
   const key = `${STORAGE_PREFIX}${storageKey}`;
   const [project, setProject] = useState<EditionProject>(() => {
     if (typeof window === 'undefined') return EMPTY_PROJECT;

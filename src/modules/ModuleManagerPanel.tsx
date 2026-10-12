@@ -9,6 +9,7 @@ import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { getServerModulePolicy, saveServerModulePreferences } from './api';
 import { corpusLinguisticsModule, criticalTextEditionModule, culturalHeritageModule, historyArchivesModule, legalSourcesModule, musicologyModule, researchReproducibilityModule, religiousTextsModule, socialResearchMethodsModule, spatialResearchModule, archaeologyModule, experimentalLaboratoryModule, statisticalAnalysisModule, studioModules } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
+import { normalizeModuleLocale } from './moduleLocale';
 import { HistoryArchivesSourcesPanel } from './history-archives/HistoryArchivesSourcesPanel';
 import { ReligiousTextsPanel } from './religious-texts/ReligiousTextsPanel';
 import { CriticalTextEditionPanel } from './critical-text-edition/CriticalTextEditionPanel';
@@ -203,9 +204,10 @@ class ModuleWorkspaceErrorBoundary extends Component<
   render(): ReactNode {
     if (!this.state.failed) return this.props.children;
 
-    const copy = this.props.locale === 'hu'
+    const language = normalizeModuleLocale(this.props.locale);
+    const copy = language === 'hu'
       ? { message: 'Ez a modul most nem tölthető be.', retry: 'Újrapróbálás' }
-      : this.props.locale === 'de'
+      : language === 'de'
         ? { message: 'Dieses Modul kann derzeit nicht geladen werden.', retry: 'Erneut versuchen' }
         : { message: 'This module could not be loaded.', retry: 'Try again' };
 

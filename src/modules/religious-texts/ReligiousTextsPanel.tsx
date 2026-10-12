@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { useState, type FormEvent } from 'react';
 
 import {
@@ -98,7 +99,7 @@ const otherSources = [
 ] as const;
 
 export function ReligiousTextsPanel({ locale }: { locale: string }) {
-  const copy = copyByLocale[locale] ?? copyByLocale.en!;
+  const copy = copyByLocale[normalizeModuleLocale(locale)] ?? copyByLocale.en!;
   const [query, setQuery] = useState('');
   const [records, setRecords] = useState<SefariaSearchRecord[]>([]);
   const [totalResults, setTotalResults] = useState(0);

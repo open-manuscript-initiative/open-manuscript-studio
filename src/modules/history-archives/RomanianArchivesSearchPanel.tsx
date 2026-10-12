@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { normalizeModuleLocale } from '../moduleLocale';
 
 import { buildRomanianArchivesSearchUrl } from './romanianArchives';
 import './europeanaSearch.css';
@@ -38,7 +39,7 @@ const copyByLocale: Record<string, {
 };
 
 export function RomanianArchivesSearchPanel({ locale }: RomanianArchivesSearchPanelProps) {
-  const copy = copyByLocale[locale] ?? copyByLocale.en!;
+  const copy = copyByLocale[normalizeModuleLocale(locale)] ?? copyByLocale.en!;
   const [query, setQuery] = useState('');
 
   function runSearch(event: FormEvent<HTMLFormElement>): void {

@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { useEffect, useState } from 'react';
 
 import type { EuropeanaSearchCopy } from '../moduleShellTranslations';
@@ -313,7 +314,7 @@ function readFromBrowser(key: string): HistoryArchiveSourceId[] {
 }
 
 function getLocaleCopy(locale: string) {
-  return copyByLocale[locale as keyof typeof copyByLocale] ?? copyByLocale.en;
+  return copyByLocale[normalizeModuleLocale(locale)] ?? copyByLocale.en;
 }
 
 export function HistoryArchivesSourcesPanel({
@@ -329,7 +330,8 @@ export function HistoryArchivesSourcesPanel({
     sources: typeof window === 'undefined' ? [...DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS] : readFromBrowser(storageKey),
   }));
   const copy = getLocaleCopy(locale);
-  const names = sourceNames[locale] ?? sourceNames.en!;
+  const language = normalizeModuleLocale(locale);
+  const names = sourceNames[language] ?? sourceNames.en!;
   const visibleSources = selection.storageKey === storageKey
     ? selection.sources
     : typeof window === 'undefined' ? [...DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS] : readFromBrowser(storageKey);
@@ -391,7 +393,7 @@ export function HistoryArchivesSourcesPanel({
             <h5>{names[archive.id]}</h5>
             <p>{copy.portalNote}</p>
           </div>
-          <p className="history-archives-portal-country">{(portalLabels[locale] ?? portalLabels.en!)[archive.id]}</p>
+          <p className="history-archives-portal-country">{(portalLabels[language] ?? portalLabels.en!)[archive.id]}</p>
           <div className="europeana-search-controls">
             <a className="europeana-search-more" href={archive.url} target="_blank" rel="noopener noreferrer">
               {copy.open}

@@ -1,9 +1,9 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { useState } from 'react';
 import { downloadWorkspaceJson, newWorkspaceId, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
 import { ResearchCatalogSearchPanel } from '../ResearchCatalogSearchPanel';
 import '../disciplineWorkspaces.css';
 
-type Locale = 'hu' | 'en' | 'de';
 type Output = { id: string; kind: string; title: string; version: string; persistentId: string; repository: string; releaseDate: string; license: string; checksum: string; relation: string; verified: boolean; notes: string };
 type Workspace = { project: string; outputs: Output[] };
 const blankWorkspace = (): Workspace => ({ project: '', outputs: [] });
@@ -22,8 +22,8 @@ const copy = {
   de: { title: 'Reproduzierbarkeit der Forschung', subtitle: 'Verzeichnis von Daten, Code, Methoden und Versionen zu Publikationen.', project: 'Titel der Forschung / Publikation', outputs: 'Zugehörige Forschungsergebnisse', add: 'Ergebnis hinzufügen', kind: 'Typ', kinds: { dataset: 'Datensatz', code: 'Code', method: 'Methode', supplement: 'Zusatzmaterial', software: 'Software', other: 'Sonstiges' }, titleField: 'Bezeichnung', version: 'Version', pid: 'Persistente Kennung (DOI, Handle usw.)', repository: 'Repository-URL', date: 'Veröffentlichungsdatum', license: 'Lizenz', checksum: 'SHA-256-Prüfsumme', relation: 'Bezug zur Publikation', notes: 'Anmerkungen und Hinweise zur Wiederholung', verified: 'Link und Version geprüft', file: 'Datei-Prüfsumme berechnen', remove: 'Entfernen', export: 'Reproduzierbarkeitsverzeichnis als JSON exportieren', local: 'Das Verzeichnis wird auf diesem Gerät gespeichert. Bei Dateiauswahl werden nur Name, Größe und SHA-256 erfasst; der Dateiinhalt wird nicht gespeichert.' }
 } as const;
 
-export function ResearchReproducibilityPanel({ locale = 'hu', storageKey = 'research-reproducibility' }: { locale?: string; storageKey?: string }) {
-  const t = copy[locale as Locale] ?? copy.hu;
+export function ResearchReproducibilityPanel({ locale = 'en', storageKey = 'research-reproducibility' }: { locale?: string; storageKey?: string }) {
+  const t = copy[normalizeModuleLocale(locale)];
   const [workspace, setWorkspace] = useLocalWorkspace<Workspace>(storageKey, blankWorkspace, isWorkspace);
   const [busy, setBusy] = useState<string | null>(null);
   const updateOutput = (id: string, changes: Partial<Output>) => setWorkspace(current => ({ ...current, outputs: current.outputs.map(output => output.id === id ? { ...output, ...changes } : output) }));

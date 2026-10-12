@@ -19,6 +19,7 @@ import {
   type ModulePreferenceStorage,
 } from '../src/modules/preferences.ts';
 import { getModuleShellCopy } from '../src/modules/moduleShellTranslations.ts';
+import { normalizeModuleLocale } from '../src/modules/moduleLocale.ts';
 import { resolveStudioModuleActivationState } from '../src/modules/types.ts';
 import { searchEuropeana } from '../server/src/integrations/europeana/europeanaSearch.ts';
 import { searchNaraCatalog } from '../server/src/integrations/nara/naraCatalogSearch.ts';
@@ -115,6 +116,15 @@ test('provides a translated title and description for every registered module', 
     assert.ok(copy.nara.loadMore, `Missing ${locale} NARA pagination label`);
     assert.ok(copy.nara.attribution?.includes('not endorsed or certified'), `Missing ${locale} NARA attribution`);
   }
+});
+
+test('normalizes module language tags and defaults to English', () => {
+  assert.equal(normalizeModuleLocale('en-US'), 'en');
+  assert.equal(normalizeModuleLocale('HU_hu'), 'hu');
+  assert.equal(normalizeModuleLocale('de-DE'), 'de');
+  assert.equal(normalizeModuleLocale('fr-FR'), 'en');
+  assert.equal(getModuleShellCopy('hu-HU').title, getModuleShellCopy('hu').title);
+  assert.equal(getModuleShellCopy('fr-FR').title, getModuleShellCopy('en').title);
 });
 
 test('stores active module selections separately by user and workspace', () => {

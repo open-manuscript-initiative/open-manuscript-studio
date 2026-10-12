@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from './moduleLocale';
 export interface EuropeanaSearchCopy {
   searchLabel: string;
   searchPlaceholder: string;
@@ -435,5 +436,5 @@ const translations: Record<string, ModuleShellCopy> = {
 };
 
 export function getModuleShellCopy(locale: string): ModuleShellCopy {
-  return translations[locale] ?? translations.en!;
+  return translations[normalizeModuleLocale(locale)] ?? translations.en!;
 }

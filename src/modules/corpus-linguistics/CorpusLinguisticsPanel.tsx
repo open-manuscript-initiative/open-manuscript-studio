@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseDocxForStudio } from '../../services/docxImportStrategy';
 import { ResearchCatalogSearchPanel } from '../ResearchCatalogSearchPanel';
@@ -183,8 +184,8 @@ function validAnnotation(item: TextAnnotation): boolean {
   return Boolean(item.label.trim());
 }
 
-export function CorpusLinguisticsPanel({ locale = 'hu', storageKey = 'default' }: CorpusLinguisticsPanelProps) {
-  const copy = copyByLocale[locale] ?? copyByLocale.en;
+export function CorpusLinguisticsPanel({ locale = 'en', storageKey = 'default' }: CorpusLinguisticsPanelProps) {
+  const copy = copyByLocale[normalizeModuleLocale(locale)];
   const key = `${STORAGE_PREFIX}${storageKey}`;
   const [project, setProject] = useState<CorpusProject>(() => {
     if (typeof window === 'undefined') return blankProject(locale);

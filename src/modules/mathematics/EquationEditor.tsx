@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { useRef } from 'react';
 import './mathematics.css';
 import { renderLatexMath, sanitizeMathMlForPreview } from '../../model/equationRendering';
@@ -29,7 +30,7 @@ interface Props {
 
 export function EquationEditor({ value, onChange, locale, mathmlSource }: Props) {
   const input = useRef<HTMLTextAreaElement>(null);
-  const copy = labels[locale as keyof typeof labels] ?? labels.en;
+  const copy = labels[normalizeModuleLocale(locale)];
   const result = renderLatexMath(value);
   const preview = mathmlSource !== undefined ? sanitizeMathMlForPreview(mathmlSource) : result.mathml;
 

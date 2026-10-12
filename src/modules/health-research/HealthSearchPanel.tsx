@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { stageAddBibliographicRecord } from '../../app/citationActions';
 import { useStudioStore } from '../../app/useStudioStore';
@@ -7,7 +8,7 @@ import { healthResultToReference, hasHealthReference, psychArchivesSearchUrl } f
 import { healthSearchCopy } from './searchCopy';
 
 export function HealthSearchPanel({ discipline, locale, storageKey, workspaceId }: { discipline: HealthDiscipline; locale: string; storageKey: string; workspaceId: string }) {
-  const t = healthSearchCopy[locale === 'hu' || locale === 'de' ? locale : 'en'];
+  const t = healthSearchCopy[normalizeModuleLocale(locale)];
   const records = useStudioStore(state => state.manuscript.bibliographicRecords ?? []);
   const key = `omi:health-search-providers:v1:${storageKey}`;
   const [providers, setProviders] = useState<HealthProvider[]>(() => {

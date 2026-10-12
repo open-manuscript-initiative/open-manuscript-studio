@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { useRef, useState } from 'react';
 import { downloadWorkspaceJson, newWorkspaceId, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
 import '../disciplineWorkspaces.css';
@@ -42,8 +43,8 @@ function isGeometry(value: unknown): value is Geometry {
   const depth = typeof geometry.type === 'string' && geometryTypes.includes(geometry.type as typeof geometryTypes[number]) ? depthByType[geometry.type] : undefined;
   return depth !== undefined && nestedCoordinates(geometry.coordinates, depth);
 }
-export function SpatialResearchPanel({ locale = 'hu', storageKey = 'spatial-research' }: { locale?: string; storageKey?: string }) {
-  const t = text[locale as keyof typeof text] ?? text.hu;
+export function SpatialResearchPanel({ locale = 'en', storageKey = 'spatial-research' }: { locale?: string; storageKey?: string }) {
+  const t = text[normalizeModuleLocale(locale)];
   const [workspace, setWorkspace] = useLocalWorkspace<Workspace>(storageKey, blank, isWorkspace);
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');

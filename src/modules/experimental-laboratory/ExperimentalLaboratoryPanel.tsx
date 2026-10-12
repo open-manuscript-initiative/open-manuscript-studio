@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { useRef, useState } from 'react';
 import { downloadWorkspaceJson, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
 import {
@@ -18,7 +19,6 @@ import {
 } from './model';
 import '../disciplineWorkspaces.css';
 
-type Locale = 'hu' | 'en' | 'de';
 const words = {
   hu: {
     title: 'Kísérleti és laboratóriumi kutatás',
@@ -82,8 +82,8 @@ const blankMeasurement = (): LaboratoryMeasurement => ({ id: newLabId(), name: '
 const blankAssay = (): LaboratoryAssay => ({ id: newLabId(), title: '', technology: '', method: '', materialReferences: '', measurements: [] });
 const blankArtifact = (): ResearchArtifact => ({ id: newLabId(), title: '', kind: 'raw', format: '', uri: '', persistentId: '', checksum: '', license: '', description: '' });
 
-export function ExperimentalLaboratoryPanel({ locale = 'hu', storageKey = 'experimental-laboratory' }: { locale?: string; storageKey?: string }) {
-  const t = words[locale as Locale] ?? words.en;
+export function ExperimentalLaboratoryPanel({ locale = 'en', storageKey = 'experimental-laboratory' }: { locale?: string; storageKey?: string }) {
+  const t = words[normalizeModuleLocale(locale)];
   const [workspace, setWorkspace] = useLocalWorkspace<ExperimentalWorkspace>(storageKey, createExperimentalWorkspace, isExperimentalWorkspace);
   const [error, setError] = useState('');
   const [busyArtifact, setBusyArtifact] = useState<string | null>(null);
