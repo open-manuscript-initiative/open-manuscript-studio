@@ -274,7 +274,7 @@ test('public exports omit private annotation bodies and anchors without changing
     { id: 'hidden', type: 'note', targetBlockId: block.id, body: 'PRIVATE_HIDDEN_BODY', renderingHint: 'hidden' },
     { id: 'editor', type: 'note', targetBlockId: block.id, body: 'PRIVATE_EDITOR_BODY', renderingHint: 'footnote', visibility: 'editor_only' },
     { id: 'author', type: 'note', targetBlockId: block.id, body: 'PRIVATE_AUTHOR_BODY', renderingHint: 'footnote', visibility: 'author_and_editor' },
-    { id: 'origin', type: 'semantic', targetBlockId: block.id, body: 'PRIVATE_ORIGIN_BODY', renderingHint: 'hidden' },
+    { id: 'origin', type: 'semantic', targetBlockId: block.id, targetText: 'omi:source-origin', body: 'author-declared:self-authored-outside-omi', renderingHint: 'hidden' },
   ];
   block.content = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [
     { type: 'text', text: 'PUBLIC_TEXT ' },
@@ -291,6 +291,7 @@ test('public exports omit private annotation bodies and anchors without changing
     .map((entry) => decoder.decode(entry)).join('\n');
   const outputs = {
     html: renderHtmlArticle(manuscript).html,
+    pdf: buildPdfPrintDocument(manuscript),
     jats: renderJatsArticle(manuscript).xml,
     latex: buildLatexExport(manuscript).text,
     mif: buildMifExport(manuscript).text,
@@ -301,7 +302,7 @@ test('public exports omit private annotation bodies and anchors without changing
   };
   for (const [format, rawOutput] of Object.entries(outputs)) {
     const output = rawOutput.replace(/\\_/g, '_');
-    assert.doesNotMatch(output, /PRIVATE_(?:HIDDEN|EDITOR|AUTHOR|ORIGIN)_BODY|PRIVATE_MARKER/, format);
+    assert.doesNotMatch(output, /PRIVATE_(?:HIDDEN|EDITOR|AUTHOR|ORIGIN)_BODY|author-declared:self-authored-outside-omi|omi:source-origin|PRIVATE_MARKER/, format);
     assert.match(output, /PUBLIC_TEXT/, format);
     if (format !== 'epub') assert.match(output, /PUBLIC_NOTE_BODY/, format);
   }
