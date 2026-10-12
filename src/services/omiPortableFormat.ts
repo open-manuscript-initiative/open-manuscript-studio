@@ -614,7 +614,7 @@ function containsUnpairedSurrogate(value: string): boolean {
     const unit = value.charCodeAt(index);
     if (unit >= 0xd800 && unit <= 0xdbff) {
       const next = value.charCodeAt(index + 1);
-      if (next < 0xdc00 || next > 0xdfff) return true;
+      if (!(next >= 0xdc00 && next <= 0xdfff)) return true;
       index += 1;
     } else if (unit >= 0xdc00 && unit <= 0xdfff) {
       return true;
@@ -714,7 +714,7 @@ function requireNonEmptyString(value: unknown, path: string): void {
 }
 
 function isValidRfc3339Timestamp(value: string): boolean {
-  const match = /^(\\d{4})-(\\d{2})-(\\d{2})[Tt](\\d{2}):(\\d{2}):(\\d{2})(?:\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2})$/u.exec(value);
+  const match = /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.\d+)?([Zz]|[+-]\d{2}:\d{2})$/u.exec(value);
   if (!match) return false;
   const [, yearText, monthText, dayText, hourText, minuteText, secondText, zone] = match;
   const year = Number(yearText);
