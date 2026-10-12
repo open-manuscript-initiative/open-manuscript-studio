@@ -222,7 +222,7 @@ test('mixed import carries own-work origin privately while requiring third-party
   const external = createChartBlock([['Public', '2']], {}, 'chart-public');
   if (own.visual) own.visual.provenance = { sourceFormat: 'xlsx', fileName: 'private-draft.xlsx', importedAt: '2026-10-09T00:00:00.000Z' };
   const result = buildAttributedVisualImport([
-    { block: own, source: 'private-draft.xlsx', selfAuthoredExternal: true },
+    { block: own, source: 'https://private.example.test/draft.docx', selfAuthoredExternal: true },
     { block: external, source: 'Public dataset', selfAuthoredExternal: false },
   ], 'Source', '2026-10-09T00:00:00.000Z', (() => { let id = 0; return () => 'origin-or-source-' + (++id); })());
   assert.deepEqual(result.blocks.map((block) => block.id), ['table-own', 'chart-public', 'origin-or-source-4']);
@@ -235,7 +235,7 @@ test('mixed import carries own-work origin privately while requiring third-party
   assert.equal(result.sourceAttributions[0]?.assertionStatus, 'author-confirmed');
   assert.equal(result.annotations[0]?.targetBlockId, 'table-own');
   assert.equal(result.annotations[0]?.renderingHint, 'hidden');
-  assert.equal(JSON.stringify(result).includes('private-draft.xlsx'), false);
+  assert.doesNotMatch(JSON.stringify(result), /private-draft\.xlsx|https:\/\/private\.example\.test/);
   assert.throws(() => buildAttributedVisualImport([
     { block: external, source: '', selfAuthoredExternal: false },
   ], 'Source', '2026-10-09T00:00:00.000Z'), /requires a source/);
