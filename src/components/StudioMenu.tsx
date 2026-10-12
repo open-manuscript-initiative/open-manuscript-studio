@@ -64,6 +64,7 @@ import { CloudStorageSettings } from './CloudStorageSettings';
 import { ContentLanguageSettings } from './ContentLanguageSettings';
 import { CrossReferencePanel } from './CrossReferencePanel';
 import { DocxImportPanel } from './DocxImportPanel';
+import { OdtImportPanel } from './OdtImportPanel';
 import { HistoryPanel } from './HistoryPanel';
 import { KeywordEditor } from './KeywordEditor';
 import { ManuscriptLanguageField } from './ManuscriptLanguageField';
@@ -395,6 +396,7 @@ function DocumentMenuView({
     </div>
     <ProfileSavedDocumentsSection />
     <DocxImportPanel />
+    <OdtImportPanel />
   </section>;
 }
 

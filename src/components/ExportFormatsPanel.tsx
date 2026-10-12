@@ -8,6 +8,7 @@ import { getStudioPlatform } from '../mobile/platform/platform';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import { ensureManuscriptRevisionStateDigests } from '../model/revisionIntegrity';
 import { buildDocxExport } from '../services/exportDocx';
+import { buildOdtExport } from '../services/exportOdt';
 import { buildEpubExport } from '../services/exportEpub';
 import { saveExportBlob, saveExportText, type ExportDeliveryResult } from '../services/exportFileDelivery';
 import {
@@ -44,7 +45,7 @@ import { savePublicationArtifactWithBuildSidecar } from '../services/publication
 import { CustomExportPanel } from './CustomExportPanel';
 import { LongTaskStatus } from './LongTaskStatus';
 
-type ExportId = 'omi' | 'omi-json' | 'jats' | 'html' | 'docx' | 'custom' | 'idml' | 'xtg' | 'mif' | 'sla' | 'latex' | 'epub' | 'pdf';
+type ExportId = 'omi' | 'omi-json' | 'jats' | 'html' | 'docx' | 'odt' | 'custom' | 'idml' | 'xtg' | 'mif' | 'sla' | 'latex' | 'epub' | 'pdf';
 type ExportGroupId = 'portable' | 'publication';
 
 interface ExportFormatOption {
@@ -56,7 +57,7 @@ interface ExportFormatOption {
 }
 
 const MOBILE_EXPORT_IDS: ReadonlySet<ExportId> = new Set([
-  'omi', 'omi-json', 'jats', 'html', 'docx', 'custom', 'latex', 'epub', 'pdf',
+  'omi', 'omi-json', 'jats', 'html', 'docx', 'odt', 'custom', 'latex', 'epub', 'pdf',
 ]);
 
 export function ExportFormatsPanel() {
@@ -82,6 +83,7 @@ export function ExportFormatsPanel() {
     { id: 'jats', group: 'publication', label: copy.jats, description: copy.jatsDescription, extension: '.xml' },
     { id: 'html', group: 'publication', label: copy.html, description: copy.htmlDescription, extension: '.html.zip' },
     { id: 'docx', group: 'publication', label: copy.docx, description: copy.docxDescription, extension: '.docx' },
+    { id: 'odt', group: 'publication', label: copy.odt, description: copy.odtDescription, extension: '.odt' },
     { id: 'custom', group: 'publication', label: customCopy.label, description: customCopy.description, extension: 'DOCX / PDF / HTML' },
     { id: 'idml', group: 'publication', label: copy.idml, description: copy.idmlDescription, extension: '.idml' },
     { id: 'xtg', group: 'publication', label: copy.xtg, description: copy.xtgDescription, extension: '.xtg' },
@@ -187,6 +189,12 @@ export function ExportFormatsPanel() {
         case 'docx': {
           const result = buildDocxExport(manuscript);
           reportDelivery(await saveExportBlob(result.blob, result.fileName));
+          break;
+        }
+        case 'odt': {
+          const result = buildOdtExport(manuscript);
+          reportDelivery(await saveExportBlob(result.blob, result.fileName));
+          if (result.warnings.length) setNotice((current) => `${current} ${result.warnings.join(' ')}`.trim());
           break;
         }
         case 'idml': {

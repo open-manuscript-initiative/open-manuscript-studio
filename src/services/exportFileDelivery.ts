@@ -143,6 +143,7 @@ function mimeTypeForFileName(fileName: string): string {
   if (normalized.endsWith('.omi.zip') || normalized.endsWith('.html.zip')) return 'application/zip';
   if (normalized.endsWith('.omi.json') || normalized.endsWith('.json')) return 'application/json';
   if (normalized.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if (normalized.endsWith('.odt')) return 'application/vnd.oasis.opendocument.text';
   if (normalized.endsWith('.epub')) return 'application/epub+zip';
   if (normalized.endsWith('.pdf')) return 'application/pdf';
   if (normalized.endsWith('.xml')) return 'application/xml';

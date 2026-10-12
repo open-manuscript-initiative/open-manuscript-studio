@@ -18,6 +18,8 @@ export interface ExportFormatCopy {
   htmlDescription: string;
   docx: string;
   docxDescription: string;
+  odt: string;
+  odtDescription: string;
   idml: string;
   idmlDescription: string;
   xtg: string;
@@ -68,6 +70,8 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     htmlDescription: 'Offline használható ZIP-csomag index.html fájllal, manifeszttel és az ellenőrzött kézirateszközökkel.',
     docx: 'DOCX – teljes kézirat',
     docxDescription: 'A teljes kézirat szerkeszthető Word-változata valódi címsorstílusokkal. A rendezhető blokkokat és egyéni tipográfiát a külön sablonalapú export tartalmazza.',
+    odt: 'ODT – OpenDocument szöveg',
+    odtDescription: 'Szerkeszthető OpenDocument Text-változat címsorokkal, alapvető formázással, táblázatokkal és jegyzetekkel. A speciális OMI-objektumok egy része egyszerűsített szövegként jelenik meg.',
     idml: 'Adobe InDesign (IDML)',
     idmlDescription: 'Szerkeszthető InDesign Markup Language csomag OMI bekezdésstílusokkal, fejezet-hierarchiával és kiadói tördeléshez alkalmas szövegstruktúrával.',
     xtg: 'QuarkXPress (XPress Tags)',
@@ -116,6 +120,8 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     htmlDescription: 'Offline ZIP package containing index.html, a manifest and verified manuscript assets.',
     docx: 'DOCX – full manuscript',
     docxDescription: 'Editable Word version of the full manuscript with real heading styles. Reorderable blocks and custom typography are available in the separate template-based export.',
+    odt: 'ODT – OpenDocument Text',
+    odtDescription: 'Editable OpenDocument Text version with headings, basic formatting, tables and notes. Some specialized OMI objects are represented as simplified text.',
     idml: 'Adobe InDesign (IDML)',
     idmlDescription: 'Editable InDesign Markup Language package with OMI paragraph styles, section hierarchy and publisher-oriented text structure.',
     xtg: 'QuarkXPress (XPress Tags)',
@@ -164,6 +170,8 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
     htmlDescription: 'Offline nutzbares ZIP-Paket mit index.html, Manifest und geprüften Manuskript-Assets.',
     docx: 'DOCX – vollständiges Manuskript',
     docxDescription: 'Bearbeitbare Word-Version des vollständigen Manuskripts mit echten Überschriftenformaten. Sortierbare Blöcke und eigene Typografie bietet der separate vorlagenbasierte Export.',
+    odt: 'ODT – OpenDocument-Text',
+    odtDescription: 'Bearbeitbare OpenDocument-Text-Version mit Überschriften, grundlegender Formatierung, Tabellen und Anmerkungen. Einige spezielle OMI-Objekte werden vereinfacht als Text dargestellt.',
     idml: 'Adobe InDesign (IDML)',
     idmlDescription: 'Bearbeitbares InDesign-Markup-Language-Paket mit OMI-Absatzformaten, Abschnittshierarchie und verlagsorientierter Textstruktur.',
     xtg: 'QuarkXPress (XPress Tags)',
