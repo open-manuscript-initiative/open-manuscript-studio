@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { normalizeModuleLocale } from '../moduleLocale';
 import { PROVIDERS, PROVIDER_NAMES, searchResearchDatabase, type ResearchDatabaseProvider, type ResearchDatabasePage } from './searchApi';
 import '../disciplineWorkspaces.css';
 const copy = {
@@ -12,7 +13,7 @@ const names: Record<'en' | 'hu' | 'de', Record<ResearchDatabaseProvider, string>
  de:{eric:'ERIC (Bildungsforschung)','inspire-hep':'INSPIRE-HEP (Hochenergiephysik)',pubchem:'PubChem (chemische Verbindungen)',gbif:'GBIF (Biodiversitätsnachweise)',openalex:'OpenAlex (wissenschaftliche Literatur)',sciencebase:'USGS ScienceBase (geowissenschaftliche Daten)'},
 } as const;
 export function ResearchDatabasePanel({ moduleId, workspaceId, storageKey, locale }: { moduleId:'social-research-methods'|'experimental-laboratory'|'critical-text-edition'; workspaceId:string; storageKey:string; locale:string }) {
- const lang = locale === 'hu' || locale === 'de' ? locale : 'en'; const t = copy[lang]; const n = names[lang];
+ const lang = normalizeModuleLocale(locale); const t = copy[lang]; const n = names[lang];
  const key = `omi:research-database-providers:v1:${storageKey}`;
  const availableProviders: ResearchDatabaseProvider[] = moduleId === 'social-research-methods' ? ['eric', 'openalex'] : moduleId === 'critical-text-edition' ? ['openalex'] : PROVIDERS;
  const [providers,setProviders] = useState<ResearchDatabaseProvider[]>(()=>{ try { const v:unknown=JSON.parse(localStorage.getItem(key)??'null'); return Array.isArray(v)?availableProviders.filter(p=>v.includes(p)):moduleId==='social-research-methods'?['eric','openalex']:moduleId==='critical-text-edition'?['openalex']:['inspire-hep','pubchem','gbif','openalex','sciencebase']; } catch { return moduleId==='social-research-methods'?['eric','openalex']:moduleId==='critical-text-edition'?['openalex']:['inspire-hep','pubchem','gbif','openalex','sciencebase']; }});
