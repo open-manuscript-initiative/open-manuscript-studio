@@ -52,13 +52,23 @@ test('preserves semantic source attribution through OMI save and reopen', () => 
     predicate: 'prov:wasDerivedFrom',
     assertionStatus: 'author-confirmed',
   }];
+  portable.annotations = [{
+    id: 'own-work-origin',
+    type: 'semantic',
+    targetBlockId: 'block-one',
+    targetText: 'omi:source-origin',
+    body: 'author-declared:self-authored-outside-omi',
+    renderingHint: 'hidden',
+    createdAt: '2026-10-12T00:00:00.000Z',
+    modifiedAt: '2026-10-12T00:00:00.000Z',
+  }];
 
   const reopened = parseOmiJson(JSON.stringify(portable));
   assert.deepEqual(reopened.sourceAttributions, portable.sourceAttributions);
-  assert.deepEqual(
-    toPortableOmiManuscript(reopened).sourceAttributions,
-    portable.sourceAttributions,
-  );
+  assert.deepEqual(reopened.annotations, portable.annotations);
+  const saved = toPortableOmiManuscript(reopened);
+  assert.deepEqual(saved.sourceAttributions, portable.sourceAttributions);
+  assert.deepEqual(saved.annotations, portable.annotations);
 });
 
 test('rejects the experimental pre-0.2 standalone schema instead of migrating it', () => {
