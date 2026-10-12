@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { useState } from 'react';
 import { downloadWorkspaceJson, newWorkspaceId, safeWorkspaceFileName, safeExternalUrl, useLocalWorkspace } from '../disciplineWorkspace';
 import '../disciplineWorkspaces.css';
@@ -11,8 +12,8 @@ const words={
  de:{intro:'Beschreiben Sie Funde, Kunstwerke, Gebäude und Orte; erfassen Sie Provenienz und Rechte; annotieren Sie Bildbereiche mit normierten Prozentkoordinaten. Quellen- und Bild-URLs verweisen auf externe Bestände.',records:'Kulturerbe-Datensätze',add:'Datensatz hinzufügen',title:'Titel / Bezeichnung',id:'Identifikator',kind:'Typ',creator:'Urheber / Kultur',date:'Datierung',place:'Ort',institution:'Verwahrende Einrichtung',rights:'Rechte / Lizenz',source:'URL des Quelldatensatzes',image:'Bild-URL',iiif:'IIIF-Manifest-URL',description:'Beschreibung',people:'Personen / Beziehungen',regions:'Bildbereichsannotation',x:'Links (%)',y:'Oben (%)',width:'Breite (%)',height:'Höhe (%)',label:'Kennzeichnung',note:'Anmerkung',addRegion:'Bereich speichern',remove:'Entfernen',export:'JSON exportieren',empty:'Noch keine Datensätze.',select:'Wählen Sie einen Datensatz, um sein Bild zu annotieren.',invalid:'Koordinaten müssen Prozentwerte von 0 bis 100 sein; der Bereich muss innerhalb des Bildes liegen.'}
 };
 const freshRecord=():HeritageRecord=>({id:newWorkspaceId(),title:'',identifier:'',kind:'',creator:'',date:'',place:'',institution:'',rights:'',sourceUrl:'',imageUrl:'',iiifUrl:'',description:'',relatedPeople:'',regions:[]});
-export function CulturalHeritagePanel({locale='hu',storageKey='default'}:Props){
- const t=words[locale as keyof typeof words]??words.en;
+export function CulturalHeritagePanel({locale='en',storageKey='default'}:Props){
+ const t=words[normalizeModuleLocale(locale)];
  const [project,setProject]=useLocalWorkspace(`omi:cultural-heritage:v1:${storageKey}`,()=>({records:[] as HeritageRecord[]}));
  const [selectedId,setSelectedId]=useState('');
  const [region,setRegion]=useState({x:'0',y:'0',width:'10',height:'10',label:'',note:''});
