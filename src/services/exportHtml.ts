@@ -1,3 +1,4 @@
+import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import {
   collectCrossReferenceTargets,
@@ -31,7 +32,7 @@ import type {
   OmiManuscript,
 } from '../types/omi.ts';
 
-export const OMI_HTML_RENDERER_VERSION = '0.1.0-alpha.2' as const;
+export const OMI_HTML_RENDERER_VERSION = '0.1.0-alpha.3' as const;
 export const OMI_HTML_PROFILE = 'semantic-html5-alpha-0.1' as const;
 
 export type HtmlDiagnosticSeverity = 'error' | 'warning';
@@ -97,6 +98,8 @@ export function renderHtmlArticle(
     message: issue.detail ? `${issue.code}: ${issue.detail}` : issue.code,
     targetId: issue.targetId,
   }));
+
+  diagnostics.push(...sourceAttributionLossDiagnostics(manuscript, 'HTML'));
 
   if (!profileSupportsOutput(profile, 'html')) {
     diagnostics.push({

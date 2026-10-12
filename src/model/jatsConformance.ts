@@ -5,7 +5,7 @@ export const OMI_JATS_CONFORMANCE_TAG_SET = 'articleauthoring' as const;
 export const OMI_JATS_CONFORMANCE_DTD =
   'JATS-articleauthoring1-4-mathml3.dtd' as const;
 export const OMI_JATS_CONFORMANCE_RENDERER_VERSION =
-  '0.1.0-alpha.2' as const;
+  '0.1.0-alpha.3' as const;
 
 export type JatsConformanceStatus =
   | 'stable'

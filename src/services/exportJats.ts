@@ -1,3 +1,4 @@
+import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import {
   OMI_JATS_CONFORMANCE_RENDERER_VERSION,
@@ -101,6 +102,8 @@ export function renderJatsArticle(
       : issue.code,
     targetId: issue.targetId,
   }));
+
+  diagnostics.push(...sourceAttributionLossDiagnostics(manuscript, 'JATS'));
 
   if (!profileSupportsOutput(profile, 'jats')) {
     diagnostics.push({

@@ -39,18 +39,13 @@ export function stageInsertBlocks(
     );
     if (sectionIndex < 0) return state;
 
-    const existingIds = new Set(
-      state.manuscript.sections.flatMap((section) =>
-        section.blocks.map((block) => block.id),
-      ),
-    );
-    if (blocks.some((block) => existingIds.has(block.id))) {
-      throw new Error(
-        'Cannot insert a block whose stable identifier already exists.',
-      );
+    const existingIds = new Set(collectBlockIds(state.manuscript.sections.flatMap(section => section.blocks)));
+    const incomingIds = collectBlockIds(blocks);
+    const insertedIds = new Set(incomingIds);
+    if (insertedIds.size !== incomingIds.length || incomingIds.some(id => existingIds.has(id))) {
+      throw new Error('Cannot insert a block whose stable identifier already exists.');
     }
 
-    const insertedIds = new Set(blocks.map((block) => block.id));
     if (originAnnotations.some((annotation) =>
       !insertedIds.has(annotation.targetBlockId) ||
       state.manuscript.annotations.some((current) => current.id === annotation.id))) {
@@ -298,6 +293,9 @@ export function stageRemoveBlock(blockId: string): boolean {
   useStudioStore.setState((state) => {
     const located = findBlock(state.manuscript, blockId);
     if (!located) return state;
+    const removedObjectIds = new Set(collectBlockIds([located.block]));
+    const previousAttributions = state.manuscript.sourceAttributions ?? [];
+    const nextAttributions = previousAttributions.filter(relation => !removedObjectIds.has(relation.sourceObjectId));
     const unsynchronizedSections = state.manuscript.sections.map(
       (section) =>
         section.id === located.sectionId
@@ -330,6 +328,13 @@ export function stageRemoveBlock(blockId: string): boolean {
             path: `/sections/${located.sectionId}/blocks/${located.blockIndex}`,
             previousValue: located.block,
           },
+          ...(nextAttributions.length !== previousAttributions.length ? [{
+            operation: 'manuscript.structure.set' as const,
+            targetId: state.manuscript.id,
+            path: '/sourceAttributions',
+            previousValue: previousAttributions,
+            nextValue: nextAttributions,
+          }] : []),
           ...contentEvents,
         ],
         actorAgentId: resolveCurrentActorAgentId(state.manuscript),
@@ -344,6 +349,7 @@ export function stageRemoveBlock(blockId: string): boolean {
         ...state.manuscript,
         ...portableState,
         sections: nextSections,
+        sourceAttributions: nextAttributions,
         updatedAt: timestamp,
       },
       pendingChangeSet,
@@ -455,4 +461,8 @@ function normalizeOrcidForComparison(value: string | undefined): string {
     .trim()
     .replace(/^https?:\/\/orcid\.org\//i, '')
     .toUpperCase();
+}
+
+function collectBlockIds(blocks: readonly OmiBlock[]): string[] {
+  return blocks.flatMap(block => [block.id, ...collectBlockIds(block.children ?? [])]);
 }
