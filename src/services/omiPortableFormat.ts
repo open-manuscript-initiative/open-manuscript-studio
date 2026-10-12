@@ -144,6 +144,7 @@ export function parseOmiJson(raw: string): OmiManuscript {
   if (duplicateMemberPaths.length > 0) {
     throw new OmiPortableFormatError('duplicate-json-member', `Duplicate JSON member name at ${duplicateMemberPaths.join(', ')}.`);
   }
+  validateJsonInteroperability(value);
   return parsePortableOmiManuscript(value);
 }
 
@@ -272,6 +273,7 @@ export function assertPortableOmiManuscript(
   if (!Array.isArray(value.sections)) {
     invalid('sections must be an array.');
   }
+  validateAbsoluteAssetUris(value);
 
   const indexes = {
     all: new Map<string, string>(),
@@ -567,6 +569,73 @@ function requireReference(
   }
 }
 
+function validateJsonInteroperability(root: unknown): void {
+  const pending: Array<{ value: unknown; path: string }> = [{ value: root, path: '/' }];
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (!current) continue;
+    const { value, path } = current;
+    if (typeof value === 'string') {
+      if (containsUnpairedSurrogate(value)) {
+        invalid(`JSON string at ${path} contains an unpaired Unicode surrogate.`);
+      }
+      continue;
+    }
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value)) {
+        invalid(`JSON number at ${path} is not finite.`);
+      }
+      if (Number.isInteger(value) && !Number.isSafeInteger(value)) {
+        invalid(`JSON integer at ${path} exceeds the safe integer range.`);
+      }
+      continue;
+    }
+    if (Array.isArray(value)) {
+      for (let index = value.length - 1; index >= 0; index -= 1) {
+        pending.push({ value: value[index], path: `${path}${index}` });
+      }
+      continue;
+    }
+    if (!isRecord(value)) continue;
+    for (const [key, child] of Object.entries(value)) {
+      if (containsUnpairedSurrogate(key)) {
+        invalid(`JSON object at ${path} contains an unpaired Unicode surrogate in a member name.`);
+      }
+      pending.push({
+        value: child,
+        path: `${path}${escapeJsonPointerToken(key)}/`,
+      });
+    }
+  }
+}
+
+function containsUnpairedSurrogate(value: string): boolean {
+  for (let index = 0; index < value.length; index += 1) {
+    const unit = value.charCodeAt(index);
+    if (unit >= 0xd800 && unit <= 0xdbff) {
+      const next = value.charCodeAt(index + 1);
+      if (next < 0xdc00 || next > 0xdfff) return true;
+      index += 1;
+    } else if (unit >= 0xdc00 && unit <= 0xdfff) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function validateAbsoluteAssetUris(document: Record<string, unknown>): void {
+  optionalArray(document.assets, 'assets').forEach((asset, index) => {
+    if (!isRecord(asset) || typeof asset.uri !== 'string') return;
+    if (!/^[A-Za-z][A-Za-z0-9+.-]*:/u.test(asset.uri)) {
+      invalid(`/assets/${index}/uri must be an absolute URI.`);
+    }
+  });
+}
+
+function escapeJsonPointerToken(value: string): string {
+  return value.replaceAll('~', '~0').replaceAll('/', '~1');
+}
+
 function optionalArray(value: unknown, path: string): unknown[] {
   if (value === undefined) return [];
   if (!Array.isArray(value)) invalid(`${path} must be an array.`);
@@ -644,13 +713,31 @@ function requireNonEmptyString(value: unknown, path: string): void {
   }
 }
 
+function isValidRfc3339Timestamp(value: string): boolean {
+  const match = /^(\\d{4})-(\\d{2})-(\\d{2})[Tt](\\d{2}):(\\d{2}):(\\d{2})(?:\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2})$/u.exec(value);
+  if (!match) return false;
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText, zone] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  const second = Number(secondText);
+  if (month < 1 || month > 12 || hour > 23 || minute > 59 || second > 59) return false;
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1] ?? 0;
+  if (day < 1 || day > daysInMonth) return false;
+  if (zone !== 'Z' && zone !== 'z') {
+    const offsetHour = Number(zone.slice(1, 3));
+    const offsetMinute = Number(zone.slice(4, 6));
+    if (offsetHour > 23 || offsetMinute > 59) return false;
+  }
+  return Number.isFinite(Date.parse(value));
+}
+
 function requireTimestamp(value: unknown, path: string): void {
   requireNonEmptyString(value, path);
-  if (
-    typeof value !== 'string'
-    || !/[Tt].*(?:[Zz]|[+-][0-9]{2}:[0-9]{2})$/u.test(value)
-    || Number.isNaN(Date.parse(value))
-  ) {
+  if (typeof value !== 'string' || !isValidRfc3339Timestamp(value)) {
     invalid(`${path} must be an RFC 3339 timestamp with an explicit timezone.`);
   }
 }
@@ -662,7 +749,7 @@ function rejectCredentialFields(value: unknown, path = ''): void {
     return;
   }
 
-  const forbidden = /^(?:password|accessToken|refreshToken|sessionToken|clientSecret|privateKey)$/i;
+  const forbidden = /^(?:password|accessToken|refreshToken|session(?:Token|Id|Identifier)|clientSecret|privateKey)$/i;
   for (const [key, child] of Object.entries(value)) {
     const childPath = `${path}/${key.replaceAll('~', '~0').replaceAll('/', '~1')}`;
     if (forbidden.test(key)) {
@@ -783,6 +870,10 @@ function toConformanceDiagnosticCode(error: unknown): string {
   if (error.code === 'duplicate-json-member') return 'FMT-DUPLICATE-JSON-MEMBER';
   if (['unsupported-schema','unsupported-version','schema-validation'].includes(error.code)) return 'FMT-SCHEMA';
   if (/Duplicate OMI identifier/u.test(error.message)) return 'FMT-DUPLICATE-ID';
+  if (/unpaired Unicode surrogate/u.test(error.message)) return 'FMT-INVALID-UNICODE';
+  if (/not finite/u.test(error.message)) return 'FMT-NONFINITE-NUMBER';
+  if (/safe integer range/u.test(error.message)) return 'FMT-UNSAFE-INTEGER';
+  if (/asset URI must be an absolute URI/u.test(error.message)) return 'FMT-URI';
   if (/Unresolved OMI reference/u.test(error.message)) return 'FMT-UNRESOLVED-REFERENCE';
   if (/updatedAt must not precede createdAt/u.test(error.message)) return 'FMT-TIMESTAMP-ORDER';
   if (/headRevisionId must match revisionHistory\.headRevisionId/u.test(error.message)) return 'FMT-HISTORY-HEAD-MISMATCH';
