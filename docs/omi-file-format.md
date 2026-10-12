@@ -95,3 +95,9 @@ error occurs before a native file write is invoked.
 Run `npm run test:file-format` for the focused suite. The standard Studio test
 suite also includes it. A green result proves the listed behaviors for this
 Draft; it is not a full OMI 1.0 conformance claim.
+
+## Source-attribution lifecycle and publication loss
+
+Block deletion removes source-attribution relationships to the removed block subtree in the same pending revision batch. Unrelated relationships and bibliography records remain. Earlier revision snapshots retain the original relationships; reverting a revision restores its source graph. This does not change the OMI 0.3 Draft schema.
+
+HTML/JATS currently have no frozen mapping for OMI-SPEC-225 relationships. Their renderers emit `source-attribution-not-preserved` warnings per relationship. A valid artifact with this warning is not a lossless source-graph export. Portable OMI save/history retains the full graph. No citation or rights statement is fabricated. Other target formats still need separate mapping/loss coverage before a fidelity guarantee.
