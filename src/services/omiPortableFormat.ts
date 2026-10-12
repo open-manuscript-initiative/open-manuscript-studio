@@ -144,7 +144,6 @@ export function parseOmiJson(raw: string): OmiManuscript {
   if (duplicateMemberPaths.length > 0) {
     throw new OmiPortableFormatError('duplicate-json-member', `Duplicate JSON member name at ${duplicateMemberPaths.join(', ')}.`);
   }
-  validateJsonInteroperability(value);
   return parsePortableOmiManuscript(value);
 }
 
@@ -198,6 +197,7 @@ export function assertPortableOmiManuscript(
   if (!isRecord(value)) {
     invalid('The OMI document root must be an object.');
   }
+  validateJsonInteroperability(value);
 
   if (value.schema !== OMI_MANUSCRIPT_SCHEMA_URI) {
     throw new OmiPortableFormatError(
