@@ -82,7 +82,9 @@ The version-pinned manifest and all 14 fixtures are vendored under
 `tests/fixtures/omi-spec-320/0.3.0/`. The suite checks validity and stable
 diagnostic codes for malformed JSON, duplicate JSON members (including escaped-equivalent names), structural failures,
 duplicate identifiers, unresolved references, timestamp order, history-head
-mismatch, and forbidden credential fields.
+mismatch, and forbidden credential fields. Studio-specific tests also cover
+unsafe JSON numbers, unpaired Unicode surrogates, inert `__proto__` data,
+absolute asset URIs, strict timestamp calendar values, and session identifiers.
 
 An edit/save round-trip test imports the shared history/extension fixture,
 changes a known field, and verifies that producer metadata, unknown root and

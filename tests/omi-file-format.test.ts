@@ -18,6 +18,11 @@ import {
   createVersionedTestManuscript,
 } from './testManuscriptFixture.ts';
 
+function prependTopLevelMember(json: string, member: string): string {
+  assert.ok(json.startsWith('{'));
+  return `{${member},${json.slice(1)}`;
+}
+
 test('serializes Studio manuscripts as canonical OMI-SPEC-320@0.3.0 working files', () => {
   const manuscript = createVersionedTestManuscript();
   const serialized = serializeOmiJson(manuscript);
@@ -240,6 +245,83 @@ test('preserves the complete portable envelope and unknown data through an edit/
   assert.deepEqual(reopened.revisionHistory, source.revisionHistory);
 });
 
+
+
+test('rejects JSON numbers and strings that JavaScript would silently corrupt', () => {
+  const portable = toPortableOmiManuscript(createVersionedTestManuscript());
+  const json = JSON.stringify(portable);
+  const invalidSources = [
+    [prependTopLevelMember(json, '"unsafeInteger":9007199254740993'), 'FMT-UNSAFE-INTEGER', 'safe integer range'],
+    [prependTopLevelMember(json, '"nonFinite":1e400'), 'FMT-NONFINITE-NUMBER', 'not finite'],
+    [prependTopLevelMember(json, '"unpaired":"\\uD800"'), 'FMT-INVALID-UNICODE', 'unpaired Unicode surrogate'],
+  ] as const;
+
+  for (const [source, code, message] of invalidSources) {
+    assert.throws(
+      () => parseOmiJson(source),
+      (error: unknown) =>
+        error instanceof OmiPortableFormatError
+        && error.code === 'invalid-document'
+        && error.message.includes(message)
+        && !error.message.includes('9007199254740993')
+        && !error.message.includes('1e400'),
+    );
+    assert.deepEqual(validateOmiConformanceJson(source), [code]);
+  }
+});
+
+test('keeps __proto__ as inert JSON data while preserving object prototypes', () => {
+  const portable = toPortableOmiManuscript(createVersionedTestManuscript());
+  const source = prependTopLevelMember(
+    JSON.stringify(portable),
+    '"__proto__":{"polluted":true}',
+  );
+  const reopened = parseOmiJson(source) as unknown as Record<string, unknown>;
+  assert.equal(Object.hasOwn(reopened, '__proto__'), true);
+  assert.deepEqual(reopened.__proto__, { polluted: true });
+  assert.equal(Object.getPrototypeOf(reopened), Object.prototype);
+  assert.equal(({} as { polluted?: boolean }).polluted, undefined);
+});
+
+test('requires absolute asset URIs and validates timestamp calendar boundaries', () => {
+  const template = toPortableOmiManuscript(createVersionedTestManuscript());
+  const relativeAsset = structuredClone(template) as unknown as Record<string, any>;
+  relativeAsset.assets = [{ id: 'asset-relative', mediaType: 'image/png', uri: 'images/a.png' }];
+  assert.throws(
+    () => parseOmiJson(JSON.stringify(relativeAsset)),
+    (error: unknown) =>
+      error instanceof OmiPortableFormatError
+      && error.code === 'invalid-document'
+      && error.message.includes('/assets/0/uri must be an absolute URI'),
+  );
+
+  const absoluteAsset = structuredClone(relativeAsset);
+  absoluteAsset.assets[0].uri = 'https://example.org/images/a.png';
+  assert.doesNotThrow(() => parseOmiJson(JSON.stringify(absoluteAsset)));
+
+  const validOffset = structuredClone(template);
+  validOffset.createdAt = '2026-10-10T12:00:00+02:00';
+  validOffset.updatedAt = '2026-10-10T10:00:00Z';
+  assert.doesNotThrow(() => parseOmiJson(JSON.stringify(validOffset)));
+
+  for (const timestamp of ['2026-10-10T12:00:00', '2026-02-30T12:00:00Z']) {
+    const invalidTimestamp = structuredClone(template);
+    invalidTimestamp.createdAt = timestamp;
+    assert.throws(() => parseOmiJson(JSON.stringify(invalidTimestamp)));
+  }
+});
+
+test('rejects session identifiers in portable manuscript data', () => {
+  const portable = toPortableOmiManuscript(createVersionedTestManuscript()) as unknown as Record<string, any>;
+  portable.sessionId = 'synthetic-session-secret';
+  assert.throws(
+    () => parseOmiJson(JSON.stringify(portable)),
+    (error: unknown) =>
+      error instanceof OmiPortableFormatError
+      && error.message.includes('credential field')
+      && !error.message.includes('synthetic-session-secret'),
+  );
+});
 
 test('validates well-formed BCP 47 tags in manuscript and section metadata', () => {
   const template = toPortableOmiManuscript(createVersionedTestManuscript());
