@@ -606,10 +606,18 @@ function isWellFormedBcp47(tag: string): boolean {
   if (/^[a-z]{4}$/iu.test(parts[index] ?? '')) index += 1;
   if (/^(?:[a-z]{2}|[0-9]{3})$/iu.test(parts[index] ?? '')) index += 1;
 
+  const variants = new Set<string>();
   while (/^(?:[a-z0-9]{5,8}|[0-9][a-z0-9]{3})$/iu.test(parts[index] ?? '')) {
+    const variant = (parts[index] ?? '').toLowerCase();
+    if (variants.has(variant)) return false;
+    variants.add(variant);
     index += 1;
   }
+  const extensionSingletons = new Set<string>();
   while (/^[0-9a-wy-z]$/iu.test(parts[index] ?? '')) {
+    const singleton = (parts[index] ?? '').toLowerCase();
+    if (extensionSingletons.has(singleton)) return false;
+    extensionSingletons.add(singleton);
     index += 1;
     let extensionSubtags = 0;
     while (/^[a-z0-9]{2,8}$/iu.test(parts[index] ?? '')) {
