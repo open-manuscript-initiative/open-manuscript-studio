@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from './moduleLocale';
 import { useState, type FormEvent } from 'react';
 import { getResearchCatalogPreferencesKey, readVisibleResearchCatalogs, type ResearchCatalogId } from './researchCatalogPreferences';
 
@@ -67,8 +68,8 @@ export function getResearchCatalogSearchUrl(catalog: ResearchCatalogId, query: s
   return catalogs[catalog].portalUrl(query.trim());
 }
 
-export function ResearchCatalogSearchPanel({ catalogs: availableCatalogs, locale = 'hu', storageKey = 'default', defaultVisibleCatalogs = availableCatalogs }: { catalogs: ResearchCatalogId[]; locale?: string; storageKey?: string; defaultVisibleCatalogs?: readonly ResearchCatalogId[] }) {
-  const t = copy[locale as keyof typeof copy] ?? copy.en;
+export function ResearchCatalogSearchPanel({ catalogs: availableCatalogs, locale = 'en', storageKey = 'default', defaultVisibleCatalogs = availableCatalogs }: { catalogs: ResearchCatalogId[]; locale?: string; storageKey?: string; defaultVisibleCatalogs?: readonly ResearchCatalogId[] }) {
+  const t = copy[normalizeModuleLocale(locale)];
   const preferenceKey = getResearchCatalogPreferencesKey(storageKey);
   const [selected, setSelected] = useState<ResearchCatalogId[]>(() => readVisibleResearchCatalogs(availableCatalogs, window.localStorage.getItem(preferenceKey), defaultVisibleCatalogs));
   function toggle(catalog: ResearchCatalogId, visible: boolean) {
@@ -83,8 +84,8 @@ export function ResearchCatalogSearchPanel({ catalogs: availableCatalogs, locale
   </div>;
 }
 
-function ResearchCatalogProviderSearch({ catalog, locale = 'hu' }: { catalog: ResearchCatalogId; locale?: string }) {
-  const t = copy[locale as keyof typeof copy] ?? copy.en;
+function ResearchCatalogProviderSearch({ catalog, locale = 'en' }: { catalog: ResearchCatalogId; locale?: string }) {
+  const t = copy[normalizeModuleLocale(locale)];
   const provider = catalogs[catalog];
   const [query, setQuery] = useState('');
   const [records, setRecords] = useState<CatalogRecord[]>([]);
