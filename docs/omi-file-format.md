@@ -100,4 +100,6 @@ Draft; it is not a full OMI 1.0 conformance claim.
 
 Block deletion removes source-attribution relationships to the removed block subtree in the same pending revision batch. Unrelated relationships and bibliography records remain. Earlier revision snapshots retain the original relationships; reverting a revision restores its source graph. This does not change the OMI 0.3 Draft schema.
 
-HTML/JATS currently have no frozen mapping for OMI-SPEC-225 relationships. Their renderers emit `source-attribution-not-preserved` warnings per relationship. A valid artifact with this warning is not a lossless source-graph export. Portable OMI save/history retains the full graph. No citation or rights statement is fabricated. Other target formats still need separate mapping/loss coverage before a fidelity guarantee.
+HTML/JATS/ODT currently have no frozen mapping for OMI-SPEC-225 relationships. Their renderers emit `source-attribution-not-preserved` warnings per relationship. A valid artifact with this warning is not a lossless source-graph export. Portable OMI save/history retains the full graph. No citation or rights statement is fabricated. Other target formats still need separate mapping/loss coverage before a fidelity guarantee.
+
+ODT remains Preview; see [ODT import/export trust and fidelity contract](architecture/odt-import-export.md).

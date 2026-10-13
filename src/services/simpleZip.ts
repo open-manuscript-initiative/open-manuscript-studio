@@ -104,7 +104,7 @@ function dosDateTime(value: Date): { time: number; date: number } {
   };
 }
 
-function crc32(bytes: Uint8Array): number {
+export function crc32(bytes: Uint8Array): number {
   let crc = 0xffffffff;
   for (const byte of bytes) {
     crc ^= byte;
