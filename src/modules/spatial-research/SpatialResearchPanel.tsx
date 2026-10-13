@@ -16,7 +16,7 @@ const isWorkspace = (value: unknown): value is Workspace => Boolean(
       && isGeometry((feature as Feature).geometry)),
 );
 const makePoint = (): Feature => ({ id: newWorkspaceId(), name: '', geometry: { type: 'Point', coordinates: [0, 0] }, period: '', source: '', notes: '' });
-const text = getResearchModuleCopyByLocale('spatial-research-spatial-research-panel/text') as const;
+const text = getResearchModuleCopyByLocale('spatial-research-spatial-research-panel/text');
 function isPosition(value: unknown): boolean {
   return Array.isArray(value) && value.length >= 2 && value.every((coordinate) => typeof coordinate === 'number' && Number.isFinite(coordinate));
 }

@@ -63,7 +63,7 @@ const archivePortals: ArchivePortal[] = [
   { id: 'archivesEurope', url: 'https://www.archivesportaleurope.net/' },
 ];
 
-const copyByLocale = getResearchModuleCopyByLocale('history-archives-history-archives-sources-panel/copyByLocale') as const;
+const copyByLocale = getResearchModuleCopyByLocale('history-archives-history-archives-sources-panel/copyByLocale');
 
 const portalLabels: Record<string, Record<ArchivePortal['id'], string>> = {
   en: {

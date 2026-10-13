@@ -1,3 +1,4 @@
+import { normalizeModuleLocale } from '../moduleLocale';
 import { getResearchModuleCopyByLocale } from '../moduleTranslationCatalog';
 import { useState } from 'react';
 import { stageInsertBlocks } from '../../app/visualBlockActions';
@@ -17,6 +18,7 @@ export function MathematicsPanel({ locale, sectionId, gapIndex, onInserted }: Pr
   const selectedSectionId = useStudioStore((state) => state.selectedSectionId);
   const target = manuscript.sections.find((section) => section.id === (sectionId ?? selectedSectionId))
     ?? (sectionId ? undefined : manuscript.sections[0]);
+  const language = normalizeModuleLocale(locale);
   const copy = getResearchModuleCopyByLocale('mathematics-panel/copy')[language];
 
   function insert() {

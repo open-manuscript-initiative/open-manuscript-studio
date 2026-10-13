@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { normalizeModuleLocale } from '../moduleLocale';
 import { PROVIDERS, PROVIDER_NAMES, searchResearchDatabase, type ResearchDatabaseProvider, type ResearchDatabasePage } from './searchApi';
 import '../disciplineWorkspaces.css';
-const copy = getResearchModuleCopyByLocale('research-databases-research-database-panel/copy') as const;
+const copy = getResearchModuleCopyByLocale('research-databases-research-database-panel/copy');
 const names: Record<'en' | 'hu' | 'de', Record<ResearchDatabaseProvider, string>> = {
  en:{eric:'ERIC (education research)','inspire-hep':'INSPIRE-HEP (high-energy physics)',pubchem:'PubChem (chemical compounds)',gbif:'GBIF (biodiversity occurrences)',openalex:'OpenAlex (scholarly literature)',sciencebase:'USGS ScienceBase (earth science data)'},
  hu:{eric:'ERIC (oktatáskutatás)','inspire-hep':'INSPIRE-HEP (nagyenergiás fizika)',pubchem:'PubChem (kémiai vegyületek)',gbif:'GBIF (biodiverzitási előfordulások)',openalex:'OpenAlex (tudományos szakirodalom)',sciencebase:'USGS ScienceBase (földtudományi adatok)'},

@@ -22,7 +22,7 @@ import {
 } from './model';
 import '../disciplineWorkspaces.css';
 
-const copy = getResearchModuleCopyByLocale('statistical-analysis-statistical-analysis-panel/copy') as const;
+const copy = getResearchModuleCopyByLocale('statistical-analysis-statistical-analysis-panel/copy');
 
 export function StatisticalAnalysisPanel({ locale = 'en', storageKey = 'statistical-analysis' }: { locale?: string; storageKey?: string }) {
   const t = copy[normalizeModuleLocale(locale)];

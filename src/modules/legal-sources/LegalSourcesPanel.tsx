@@ -17,7 +17,7 @@ const isWorkspace = (value: unknown): value is Workspace => Boolean(
       && (item as LegalSource).versions.every((version) => version && typeof version === 'object' && typeof (version as Version).id === 'string')),
 );
 const emptySource = (): LegalSource => ({ id: newWorkspaceId(), jurisdiction: '', authority: '', citation: '', title: '', sourceType: '', publicationDate: '', effectiveDate: '', status: '', url: '', versions: [] });
-const copy = getResearchModuleCopyByLocale('legal-sources-legal-sources-panel/copy') as const;
+const copy = getResearchModuleCopyByLocale('legal-sources-legal-sources-panel/copy');
 
 export function LegalSourcesPanel({ locale = 'en', storageKey = 'legal-sources' }: { locale?: string; storageKey?: string }) {
   const t = copy[normalizeModuleLocale(locale)];

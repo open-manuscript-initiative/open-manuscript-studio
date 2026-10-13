@@ -18,7 +18,7 @@ const valid = (value: unknown): value is Workspace => Boolean(
       && ['locus', 'period', 'layer', 'description', 'finds', 'sampleId', 'source'].every((key) => typeof (context as unknown as Record<string, unknown>)[key] === 'string')),
 );
 const emptyContext = (): Context => ({ id: newWorkspaceId(), locus: '', period: '', layer: '', description: '', finds: '', sampleId: '', source: '' });
-const copy = getResearchModuleCopyByLocale('archaeology-archaeology-panel/copy') as const;
+const copy = getResearchModuleCopyByLocale('archaeology-archaeology-panel/copy');
 export function ArchaeologyPanel({ locale = 'en', storageKey = 'archaeology', heritageStorageKey = 'cultural-heritage' }: { locale?: string; storageKey?: string; heritageStorageKey?: string }) {
   const t = copy[normalizeModuleLocale(locale)];
   const fileRef = useRef<HTMLInputElement>(null);

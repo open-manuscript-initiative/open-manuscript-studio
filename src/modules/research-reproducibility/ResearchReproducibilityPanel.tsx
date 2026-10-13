@@ -17,7 +17,7 @@ const isWorkspace = (value: unknown): value is Workspace => Boolean(
       && typeof (item as Output).verified === 'boolean'),
 );
 const newOutput = (): Output => ({ id: newWorkspaceId(), kind: 'dataset', title: '', version: '', persistentId: '', repository: '', releaseDate: '', license: '', checksum: '', relation: '', verified: false, notes: '' });
-const copy = getResearchModuleCopyByLocale('research-reproducibility-research-reproducibility-panel/copy') as const;
+const copy = getResearchModuleCopyByLocale('research-reproducibility-research-reproducibility-panel/copy');
 
 export function ResearchReproducibilityPanel({ locale = 'en', storageKey = 'research-reproducibility' }: { locale?: string; storageKey?: string }) {
   const t = copy[normalizeModuleLocale(locale)];

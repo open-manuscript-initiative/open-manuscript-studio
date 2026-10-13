@@ -96,4 +96,4 @@ export const healthFieldLabels: Record<string, Record<string, string>> = {
     "de": "Aggregierte Ergebnisse und unerwünschte Ereignisse"
   }
 };
-export const healthCopy = getResearchModuleCopyByLocale('health-research-copy/healthCopy') as const;
+export const healthCopy = getResearchModuleCopyByLocale('health-research-copy/healthCopy');

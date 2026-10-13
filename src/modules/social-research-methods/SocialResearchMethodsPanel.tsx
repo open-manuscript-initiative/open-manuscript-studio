@@ -9,7 +9,7 @@ type Code = { id: string; start: number; end: number; text: string; label: strin
 type Transcript = { id: string; title: string; participant: string; text: string; codes: Code[] };
 type Project = { title: string; question: string; method: string; ethics: string; variables: Variable[]; transcripts: Transcript[] };
 
-const copy = getResearchModuleCopyByLocale('social-research-methods-social-research-methods-panel/copy') as const;
+const copy = getResearchModuleCopyByLocale('social-research-methods-social-research-methods-panel/copy');
 
 function blankProject(): Project { return { title: '', question: '', method: '', ethics: '', variables: [], transcripts: [] }; }
 

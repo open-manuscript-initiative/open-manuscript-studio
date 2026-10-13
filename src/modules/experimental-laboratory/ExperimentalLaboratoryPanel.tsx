@@ -20,7 +20,7 @@ import {
 } from './model';
 import '../disciplineWorkspaces.css';
 
-const words = getResearchModuleCopyByLocale('experimental-laboratory-experimental-laboratory-panel/words') as const;
+const words = getResearchModuleCopyByLocale('experimental-laboratory-experimental-laboratory-panel/words');
 
 type StudyCollectionMap = {
   materials: LaboratoryMaterial;

@@ -59,7 +59,7 @@ const catalogs: Record<ResearchCatalogId, { title: string; portalUrl: (query: st
   },
 };
 
-const copy = getResearchModuleCopyByLocale('research-catalog-search-panel/copy') as const;
+const copy = getResearchModuleCopyByLocale('research-catalog-search-panel/copy');
 
 export function getResearchCatalogSearchUrl(catalog: ResearchCatalogId, query: string): string {
   return catalogs[catalog].portalUrl(query.trim());
