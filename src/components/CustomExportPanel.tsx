@@ -26,8 +26,7 @@ import {
   buildCustomPdfSource,
 } from '../services/exportCustom';
 import { renderPdfArtifact } from '../services/vivliostylePdfApi';
-import { useTranslation } from '../i18n';
-import { tCatalog } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 
 const STORAGE_KEY = 'omi.custom-export.templates.v1';
 const FONT_OPTIONS = ['Times New Roman', 'Arial', 'Calibri', 'Garamond', 'Georgia', 'Cambria', 'Palatino Linotype', 'Courier New'];

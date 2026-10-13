@@ -14,7 +14,7 @@ import {
 } from '../app/manuscriptFrontMatterActions';
 import { stageDocumentStructureChange } from '../app/documentProfileActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import { getFrontMatterCopy } from '../i18n/frontMatter';
 import type { OjsLaunchPayload } from '../integrations/ojs/importOjsLaunch';
 import {
@@ -26,7 +26,6 @@ import {
 import type { OmiTitleMatterField } from '../model/frontMatter';
 import { partitionManuscriptStudies } from '../model/sectionStructure';
 import { ContributorEditor } from './ContributorEditor';
-import { tCatalog } from '../i18n';
 
 type OjsContributors = NonNullable<OjsLaunchPayload['contributors']>;
 type VolumeFrontMatterTab = 'title-matter' | 'contributors' | 'structure';

@@ -14,6 +14,7 @@ import {
 import {
   useTranslation,
   type TranslationKey,
+  tCatalog,
 } from '../i18n';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { OrcidEnvironmentBadge } from '../components/OrcidEnvironmentBadge';
@@ -32,7 +33,6 @@ import {
 import { useAuthStore } from '../store/authStore';
 import { PasswordRecoveryPage } from './PasswordRecoveryPage';
 import { useAuthProviders } from './useOrcidProvider';
-import { tCatalog } from '../i18n';
 
 interface LoginPageProps {
   onShowRegister: () => void;

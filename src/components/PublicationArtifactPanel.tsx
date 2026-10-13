@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { externalizeActiveManuscriptAssets } from '../app/assetActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import { getDocumentStructureProfile } from '../model/documentProfile';
 import {
   getIntegrationCatalog,
@@ -20,7 +20,6 @@ import {
 } from '../services/publicationArtifact';
 import type { OmiManuscript } from '../types/omi';
 import './DirectSubmissionPanel.css';
-import { tCatalog } from '../i18n';
 
 const commonText = {
   hu: {

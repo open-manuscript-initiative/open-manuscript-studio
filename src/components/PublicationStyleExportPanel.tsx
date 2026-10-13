@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { externalizeActiveManuscriptAssets } from '../app/assetActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import { createPublisherExportStylesheet } from '../model/publisherExportStyle';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import {
@@ -24,7 +24,6 @@ import {
 } from '../services/publicationStyleExport';
 import { savePublicationArtifactWithBuildSidecar } from '../services/publicationBuildSidecar';
 import { renderPdfArtifact } from '../services/vivliostylePdfApi';
-import { tCatalog } from '../i18n';
 
 export function PublicationStyleExportPanel() {
   const { locale } = useTranslation();

@@ -13,6 +13,7 @@ import {
 import {
   useTranslation,
   type AuthTranslationKey,
+  tCatalog,
 } from '../i18n';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { OrcidEnvironmentBadge } from '../components/OrcidEnvironmentBadge';
@@ -24,7 +25,6 @@ import { AuthRorAffiliationField } from './AuthRorAffiliationField';
 import { AuthOrcidLookupField } from './AuthOrcidLookupField';
 import { useOrcidProvider } from './useOrcidProvider';
 import { useAuthStore } from '../store/authStore';
-import { tCatalog } from '../i18n';
 
 interface RegisterPageProps {
   onShowLogin: () => void;

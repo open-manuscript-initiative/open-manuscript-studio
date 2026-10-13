@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { stagePublicationProfileChange } from '../app/publicationProfileActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import { getFrontMatterCopy } from '../i18n/frontMatter';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
 import {
@@ -37,7 +37,6 @@ import { PublicationStyleExportPanel } from './PublicationStyleExportPanel';
 import { PublisherExportStylesheetPanel } from './PublisherExportStylesheetPanel';
 import { PublisherPrintStylesheetPanel } from './PublisherPrintStylesheetPanel';
 import { PublisherProfileEditor } from './PublisherProfileEditor';
-import { tCatalog } from '../i18n';
 
 export function PublicationProfilePanel() {
   const { locale } = useTranslation();

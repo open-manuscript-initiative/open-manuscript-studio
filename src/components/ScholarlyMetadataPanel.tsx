@@ -8,9 +8,8 @@ import {
   setScholarlyScalar,
 } from '../app/scholarlyMetadataActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import { PublicationVenueField } from './PublicationVenueField';
-import { tCatalog } from '../i18n';
 
 const LABELS = {
   en: {

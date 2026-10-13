@@ -33,7 +33,7 @@ import {
   estimateDeferredStudyHeight,
   shouldProgressivelyMountStudyEditors,
 } from '../editor/progressiveStudyMounting';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import { getCollaborationPanelCopy } from '../i18n/collaborationPanel';
 import { useAuthStore, getCurrentUser } from '../store/authStore';
 import { listCloudConnections, uploadCloudBackup, type CloudConnection } from '../services/cloudStorageApi';
@@ -66,7 +66,6 @@ import {
 import { BlockEditor } from './BlockEditor';
 import { ContributorEditor } from './ContributorEditor';
 import { CurrentStudyNotesFooter } from './CurrentStudyNotesFooter';
-import { tCatalog } from '../i18n';
 
 interface CollaborationSession {
   document: Y.Doc;

@@ -7,13 +7,12 @@ import {
 
 import { useStudioStore } from '../app/useStudioStore';
 import { getTopLevelBlockFromResolvedPosition } from '../editor/continuousManuscriptDocument';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import {
   createManualIndexEntry,
   DEFAULT_INDEX_ID,
   getDocumentIndexDefinitions,
 } from '../model/indexing';
-import { tCatalog } from '../i18n';
 
 interface SelectionActionToolbarProps {
   editor: Editor;

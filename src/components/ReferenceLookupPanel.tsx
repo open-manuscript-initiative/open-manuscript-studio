@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { stageAddBibliographicRecord } from '../app/citationActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import { getReferenceLookupCopy } from '../i18n/referenceLookup';
 import {
   formatBibliographyEntry,
@@ -50,7 +50,6 @@ import {
   type WebBibliographicProviderDraft,
 } from '../services/webBibliographicProviders';
 import type { OmiBibliographicRecord } from '../types/omi';
-import { tCatalog } from '../i18n';
 
 const EMPTY_WEB_PROVIDER_DRAFT: WebBibliographicProviderDraft = {
   name: '',

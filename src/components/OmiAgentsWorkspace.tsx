@@ -2,7 +2,7 @@ import { Bot, Check, CheckCircle2, ChevronLeft, ChevronRight, Clipboard, ShieldC
 import { useMemo, useState } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import {
   applyStructuredTranslations,
   buildStructuredTranslationPlan,
@@ -15,7 +15,6 @@ import type {
 import { testIntegrationConnection } from '../services/integrationApi';
 import { recordOmiAgentReview, runOmiAgent } from '../services/omiAgentsApi';
 import './OmiAgentsWorkspace.css';
-import { tCatalog } from '../i18n';
 
 type AgentScope = 'section' | 'manuscript' | 'metadata' | 'references';
 
