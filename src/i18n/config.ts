@@ -1,4 +1,4 @@
-import englishDictionaryJson from './locales/en/studio.json';
+import englishDictionaryJson from './locales/en/studio.json' with { type: 'json' };
 import {
   localeLabels,
   STUDIO_UI_LOCALES,
