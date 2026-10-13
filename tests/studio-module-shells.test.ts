@@ -119,7 +119,8 @@ test('provides a translated title and description for every registered module', 
     assert.ok(copy.nara.searchLabel, `Missing ${locale} NARA search label`);
     assert.ok(copy.nara.setupRequired, `Missing ${locale} NARA setup message`);
     assert.ok(copy.nara.loadMore, `Missing ${locale} NARA pagination label`);
-    assert.ok(copy.nara.attribution?.includes('not endorsed or certified'), `Missing ${locale} NARA attribution`);
+    const naraAttributionPhrase = { en: 'not endorsed or certified', de: 'weder unterstützt noch zertifiziert', hu: 'nem támogatja és nem tanúsítja' } as const;
+    assert.ok(copy.nara.attribution?.includes(naraAttributionPhrase[locale]), `Missing ${locale} NARA attribution`);
   }
 });
 
