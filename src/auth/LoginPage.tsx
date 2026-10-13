@@ -227,7 +227,83 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
             <p>{adminMode ? adminCopy.description : t('auth.login.description')}</p>
           </header>
 
-          {tCatalog("/uncataloguedUi/auth-loginpage/orcid-sign-in-uses-the-verified-orcid-id-linked-to-you-e32910e")}
+          {hasFederatedProvider ? (
+            <div className="auth-form auth-login-federated">
+              {showOmi && omiProvider ? (
+                <div className="auth-login-path auth-login-path--omi">
+                  <div className="auth-login-path-copy">
+                    <strong>{pathwayCopy.omiTitle}</strong>
+                    <span>{pathwayCopy.omiHint}</span>
+                  </div>
+                  <button
+                    className="auth-primary-button auth-provider-button auth-provider-button--omi"
+                    type="button"
+                    onClick={() => void handleOidcSignIn('omi', omiProvider.label)}
+                  >
+                    {pathwayCopy.omiAction}
+                  </button>
+                </div>
+              ) : null}
+
+              {showInstitutional && institutionalProvider ? (
+                <div className="auth-login-path auth-login-path--institutional">
+                  <div className="auth-login-path-copy">
+                    <strong>{pathwayCopy.institutionTitle}</strong>
+                    <span>{adminMode ? adminCopy.federatedHint : pathwayCopy.institutionHint}</span>
+                  </div>
+                  <button
+                    className="auth-primary-button auth-provider-button auth-provider-button--oidc"
+                    type="button"
+                    onClick={() => void handleOidcSignIn('oidc', institutionalProvider.label)}
+                  >
+                    {adminMode
+                      ? adminProviderButtonLabel(institutionalProvider.label, locale)
+                      : pathwayCopy.institutionAction}
+                  </button>
+                </div>
+              ) : null}
+
+              {showOrcid || auxiliaryOidcProviders.length > 0 ? (
+                <div className="auth-login-secondary-providers">
+                  <div className="auth-login-secondary-label">{pathwayCopy.otherProviders}</div>
+                  <div className="auth-login-provider-grid">
+                    {showOrcid ? (
+                      <button
+                        className="auth-primary-button auth-provider-button auth-orcid-button"
+                        type="button"
+                        onClick={() => void handleOrcidSignIn()}
+                      >
+                        {providerButtonLabel('ORCID', locale)}
+                      </button>
+                    ) : null}
+                    {auxiliaryOidcProviders.map(({ key, provider }) => (
+                      <button
+                        className={`auth-primary-button auth-provider-button auth-provider-button--${key}`}
+                        type="button"
+                        key={key}
+                        onClick={() => void handleOidcSignIn(key, provider.label)}
+                      >
+                        {adminMode
+                          ? adminProviderButtonLabel(provider.label, locale)
+                          : providerButtonLabel(provider.label, locale)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {showOrcid && orcidProvider ? (
+                <div className="auth-login-orcid-meta">
+                  <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
+                  <div className="auth-field-hint auth-login-orcid-hint">
+                    {tCatalog("/uncataloguedUi/auth-loginpage/orcid-sign-in-uses-the-verified-orcid-id-linked-to-you-e32910e")}
+                  </div>
+                </div>
+              ) : null}
+
+              {federatedStartError ? <div className="auth-error" role="alert">{federatedStartError}</div> : null}
+            </div>
+          ) : null}
 
           {hasFederatedProvider ? (
             <div className="auth-login-divider" aria-hidden="true">

@@ -395,11 +395,15 @@ function PublicationArtifactForm({
       <p>{platform.intro}</p>
       {provider ? <p>{platform.help}</p> : null}
 
-      {tCatalog("/uncataloguedUi/components-publicationartifactpanel/first-configure-an-ojs-or-omp-connection-in-integratio-3b77850")}
+      {!connections.length ? (
+        <p>
+          {tCatalog("/uncataloguedUi/components-publicationartifactpanel/first-configure-an-ojs-or-omp-connection-in-integratio-3b77850")}
+        </p>
+      ) : null}
 
       <fieldset disabled={busy !== null}>
         <label>
-          {tCatalog("/uncataloguedUi/components-publicationartifactpanel/publishing-connection-3c9fa55")}
+          {provider ? platform.connection : tCatalog("/uncataloguedUi/components-publicationartifactpanel/publishing-connection-3c9fa55")}
           <select
             value={connectionId}
             onChange={(event) => {

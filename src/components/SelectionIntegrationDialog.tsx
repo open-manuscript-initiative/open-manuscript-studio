@@ -65,7 +65,9 @@ export function SelectionIntegrationDialog({
 
   async function translateText(): Promise<void> {
     if (!activeParts.length) {
-      setError(tCatalog("/uncataloguedUi/components-selectionintegrationdialog/select-text-before-using-deepl-8ecb6fd"));
+      setError(translationScope === 'selection'
+        ? tCatalog("/uncataloguedUi/components-selectionintegrationdialog/select-text-before-using-deepl-8ecb6fd")
+        : tCatalog("/uncataloguedUi/components-selectionintegrationdialog/this-block-contains-no-translatable-text-5ace29e"));
       return;
     }
     setBusy(true);
@@ -140,15 +142,34 @@ export function SelectionIntegrationDialog({
   }
 
   return (
-    <div className="omi-selection-integration-dialog" role="dialog" aria-modal="false" aria-label={tCatalog("/uncataloguedUi/components-selectionintegrationdialog/ai-suggestion-for-selected-text-2693cfb")}>
+    <div className="omi-selection-integration-dialog" role="dialog" aria-modal="false" aria-label={mode === 'translate' ? tCatalog("/uncataloguedUi/components-selectionintegrationdialog/translate-manuscript-text-8b840e2") : tCatalog("/uncataloguedUi/components-selectionintegrationdialog/ai-suggestion-for-selected-text-2693cfb")}>
       <header>
-        <div>{mode === 'translate' ? <Languages size={17} aria-hidden="true" /> : <Bot size={17} aria-hidden="true" />}<strong>{tCatalog("/uncataloguedUi/components-selectionintegrationdialog/agent-suggestion-8059275")}</strong></div>
+        <div>{mode === 'translate' ? <Languages size={17} aria-hidden="true" /> : <Bot size={17} aria-hidden="true" />}<strong>{mode === 'translate' ? tCatalog("/uncataloguedUi/components-selectionintegrationdialog/deepl-translation-83ad2de") : tCatalog("/uncataloguedUi/components-selectionintegrationdialog/agent-suggestion-8059275")}</strong></div>
         <button type="button" className="omi-selection-integration-close" onClick={onClose} aria-label="Close"><X size={16} aria-hidden="true" /></button>
       </header>
 
       <p className="omi-selection-integration-source">{mode === 'translate' ? (translationText || 'No translatable text.') : (selectedText || 'No text selected.')}</p>
 
-      {tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translate-2be17aa")}
+      {mode === 'translate' ? (
+        <>
+          <label><span>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translate-2be17aa")}</span><select value={translationScope} onChange={(event) => { setTranslationScope(event.target.value as 'selection' | 'block'); setTranslated([]); setError(''); }}><option value="selection" disabled={!selection.length}>{tCatalog("/uncataloguedUi/components-selectionintegrationdialog/selected-text-7bb2287")}</option><option value="block">{tCatalog("/uncataloguedUi/components-selectionintegrationdialog/whole-block-45f6767")}</option></select></label>
+          <label><span>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/target-language-f137c97")}</span><select value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)}>{LANGUAGES.map(([value, label]) => <option value={value} key={value}>{label} ({value})</option>)}</select></label>
+          <div className="omi-selection-integration-actions">
+            <button type="button" className="studio-menu-primary-action" disabled={busy || !activeParts.length} onClick={() => void translateText()}>{busy ? tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translating-ae47b9e") : tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translate-2be17aa")}</button>
+            <button type="button" className="studio-menu-secondary-action" disabled={busy || !translated.length} onClick={applyTranslation}>{tCatalog("/uncataloguedUi/components-selectionintegrationdialog/apply-translation-d9f42be")}</button>
+          </div>
+          {translated.length ? <div className="omi-selection-integration-result">{translated.map((segment) => <span key={segment.id}>{segment.text}</span>)}</div> : null}
+        </>
+      ) : (
+        <>
+          <label><span>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/agent-5ce2e6f")}</span><select value={agentId} onChange={(event) => setAgentId(event.target.value as BuiltInAgentId)}><option value="language-editor">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/language-editor-d8036c0")}</option><option value="metadata-assistant">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/metadata-assistant-3642647")}</option><option value="summarizer">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/summarizer-0ec21c9")}</option><option value="citation-checker">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/citation-checker-67ee923")}</option></select></label>
+          <div className="omi-selection-integration-actions">
+            <button type="button" className="studio-menu-primary-action" disabled={busy || !selection.length} onClick={() => void runAgent()}>{busy ? tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/running-7ef25a7") : tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/create-suggestion-7fd1425")}</button>
+            <button type="button" className="studio-menu-secondary-action" disabled={busy || !suggestion} onClick={applySuggestion}>{tCatalog("/uncataloguedUi/components-selectionintegrationdialog/apply-suggestion-06e2622")}</button>
+          </div>
+          {suggestion ? <pre className="omi-selection-integration-result">{suggestion}</pre> : null}
+        </>
+      )}
 
       {error ? <p className="omi-integration-error" role="alert">{error}</p> : null}
       <small>{tCatalog("/uncataloguedUi/components-selectionintegrationdialog/only-plain-manuscript-text-is-sent-externally-inline-f-9384372")}</small>

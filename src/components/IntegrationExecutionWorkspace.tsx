@@ -342,7 +342,7 @@ export function IntegrationExecutionWorkspace() {
           <label><span>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/api-secret-0eb1e2c")}</span><input type="password" autoComplete="off" value={aiSecret} onChange={(event) => setAiSecret(event.target.value)} /></label>
         </div>
         <div className="omi-integration-card__actions">
-          <button type="button" className="studio-menu-primary-action" disabled={aiConfigBusy} onClick={() => void saveAiConfiguration()}>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/save-ai-provider-43cd787")}</button>
+          <button type="button" className="studio-menu-primary-action" disabled={aiConfigBusy} onClick={() => void saveAiConfiguration()}>{aiConfigBusy ? 'Saving…' : tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/save-ai-provider-43cd787")}</button>
           <button type="button" className="studio-menu-secondary-action" disabled={aiConfigBusy} onClick={() => void testAiConfiguration()}>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/test-configuration-6f766a7")}</button>
         </div>
         {aiConfigNotice ? <p role="status">{aiConfigNotice}</p> : null}
@@ -357,7 +357,7 @@ export function IntegrationExecutionWorkspace() {
         </div>
         {translationScope === 'section' ? <small>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/current-section-13a016b")} {selectedSection?.title || 'Untitled section'}</small> : null}
         <div className="omi-integration-card__actions">
-          <button type="button" className="studio-menu-primary-action" disabled={translationBusy} onClick={() => void translateScope()}>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translate-2be17aa")}</button>
+          <button type="button" className="studio-menu-primary-action" disabled={translationBusy} onClick={() => void translateScope()}>{translationBusy ? tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translating-ae47b9e") : tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translate-2be17aa")}</button>
           <button type="button" className="studio-menu-secondary-action" disabled={translationBusy || !translatedManuscript} onClick={() => void persistVariant()}>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/save-as-language-variant-d2ce9b4")}</button>
         </div>
         {translationError ? <p className="omi-integration-error" role="alert">{translationError}</p> : null}
@@ -371,7 +371,7 @@ export function IntegrationExecutionWorkspace() {
           <label><span>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/agent-5ce2e6f")}</span><select value={agentId} onChange={(event) => setAgentId(event.target.value as BuiltInAgentId)}><option value="language-editor">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/language-editor-d8036c0")}</option><option value="metadata-assistant">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/metadata-assistant-3642647")}</option><option value="summarizer">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/summarizer-0ec21c9")}</option><option value="citation-checker">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/citation-checker-67ee923")}</option></select></label>
           <label><span>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/scope-4651a34")}</span><select value={agentScope} onChange={(event) => setAgentScope(event.target.value as typeof agentScope)}><option value="section">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/current-section-0cf15e6")}</option><option value="manuscript">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/whole-manuscript-26a3f8b")}</option><option value="metadata">Metadata</option><option value="references">References</option></select></label>
         </div>
-        <div className="omi-integration-card__actions"><button type="button" className="studio-menu-primary-action" disabled={agentBusy} onClick={() => void runAgent()}>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/create-suggestion-7fd1425")}</button></div>
+        <div className="omi-integration-card__actions"><button type="button" className="studio-menu-primary-action" disabled={agentBusy} onClick={() => void runAgent()}>{agentBusy ? tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/running-7ef25a7") : tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/create-suggestion-7fd1425")}</button></div>
         {agentError ? <p className="omi-integration-error" role="alert">{agentError}</p> : null}
         {agentSuggestion ? <div className="omi-agent-suggestion"><strong>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/suggestion-ab9befa")}</strong><pre>{agentSuggestion}</pre><small>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/review-the-suggestion-before-applying-it-selection-lev-c9a9cb4")}</small></div> : null}
       </section>
@@ -379,7 +379,7 @@ export function IntegrationExecutionWorkspace() {
       <section className="omi-integration-workspace-card">
         <header><Puzzle size={18} aria-hidden="true" /><div><h4>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/extension-sdk-registry-ce5a009")}</h4><p>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/register-omi-integration-extension-api-v1-manifests-wi-8cbf04e")}</p></div></header>
         <textarea className="omi-extension-manifest-editor" spellCheck={false} value={manifestText} onChange={(event) => setManifestText(event.target.value)} />
-        <div className="omi-integration-card__actions"><button type="button" className="studio-menu-primary-action" disabled={extensionBusy} onClick={() => void registerExtension()}>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/register-manifest-baebfbf")}</button></div>
+        <div className="omi-integration-card__actions"><button type="button" className="studio-menu-primary-action" disabled={extensionBusy} onClick={() => void registerExtension()}>{extensionBusy ? 'Saving…' : tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/register-manifest-baebfbf")}</button></div>
         {extensionError ? <p className="omi-integration-error" role="alert">{extensionError}</p> : null}
         {extensions.length ? <div className="omi-integration-record-list">{extensions.map((extension) => <div key={extension.id} className="omi-integration-record"><span><b>{extension.manifest.name}</b> · {extension.extensionId} · v{extension.manifest.version}</span><button type="button" className="studio-menu-secondary-action" disabled={extensionBusy} onClick={() => void removeExtension(extension.extensionId)}><Trash2 size={14} aria-hidden="true" /> Remove</button></div>)}</div> : null}
       </section>

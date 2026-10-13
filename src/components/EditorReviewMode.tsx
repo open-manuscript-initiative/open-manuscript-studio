@@ -70,7 +70,7 @@ export function EditorReviewMode({ initialReviews }: { initialReviews?: EditorRe
         setReviews(next);
         setSelectedId(next[0]?.id ?? null);
       })
-      .catch((caught) => setError(tCatalog("/uncataloguedUi/components-editorreviewmode/unable-to-load-editorial-assignments-d330d67")));
+      .catch((caught) => setError(caught instanceof Error ? caught.message : tCatalog("/uncataloguedUi/components-editorreviewmode/unable-to-load-editorial-assignments-d330d67")));
   }, [initialReviews]);
 
   const selected = reviews.find((item) => item.id === selectedId) ?? reviews[0];
@@ -112,7 +112,56 @@ export function EditorReviewMode({ initialReviews }: { initialReviews?: EditorRe
         </aside>
 
         <section className="review-mode__content">
-          {tCatalog("/uncataloguedUi/components-editorreviewmode/confidential-to-editor-edfdb4f")}
+          {selected ? (
+            <>
+              <section className="review-mode__card review-mode__summary">
+                <div>
+                  <div className="review-mode__eyebrow">Manuscript {selected.manuscriptId}</div>
+                  <h2>{assignmentLabels[selected.assignmentType]}</h2>
+                  <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/round-ec7b598")} {selected.reviewRound} · {selected.anonymityMode.replaceAll('_', ' ')} · {selected.status.replaceAll('_', ' ')}{languagePair ? ` · ${languagePair}` : ''}</p>
+                </div>
+                <span className="review-mode__status">
+                  {selected.assignmentType === 'scientific_review'
+                    ? selected.recommendation?.replaceAll('_', ' ') ?? 'No recommendation yet'
+                    : selected.status.replaceAll('_', ' ')}
+                </span>
+              </section>
+
+              <section className="review-mode__card">
+                <h2>{tCatalog("/uncataloguedUi/components-editorreviewmode/author-identity-f83da8a")}</h2>
+                {selected.authors.length ? selected.authors.map((author) => (
+                  <article key={author.userId} className="review-mode__feedback">
+                    <strong>{author.fullName}</strong>
+                    <p>{author.email}</p>
+                    {author.affiliation ? <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/affiliation-7767fe9")} {author.affiliation}</p> : null}
+                    {author.orcid ? <p>ORCID: {author.orcid}</p> : null}
+                  </article>
+                )) : <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/no-author-account-is-linked-to-this-manuscript-workspa-8350ffd")}</p>}
+              </section>
+
+              <section className="review-mode__card">
+                <h2>{tCatalog("/uncataloguedUi/components-editorreviewmode/assigned-participant-cb46a43")}</h2>
+                <article className="review-mode__feedback">
+                  <strong>{selected.reviewer.fullName}</strong>
+                  <p>{selected.reviewer.email}</p>
+                  {selected.reviewer.affiliation ? <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/affiliation-7767fe9")} {selected.reviewer.affiliation}</p> : null}
+                  {selected.reviewer.orcid ? <p>ORCID: {selected.reviewer.orcid}</p> : null}
+                  <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/author-facing-alias-42afcc5")} <strong>{selected.reviewerAlias}</strong></p>
+                  <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/role-61e4c27")} <strong>{assignmentLabels[selected.assignmentType]}</strong></p>
+                </article>
+              </section>
+
+              <section className="review-mode__card">
+                <h2>{tCatalog("/uncataloguedUi/components-editorreviewmode/assignment-feedback-ea897d6")}</h2>
+                {selected.feedback.length ? selected.feedback.map((feedback) => (
+                  <article key={feedback.id} className="review-mode__feedback">
+                    <strong>{feedback.visibility === 'editor_only' ? tCatalog("/uncataloguedUi/components-editorreviewmode/confidential-to-editor-edfdb4f") : tCatalog("/uncataloguedUi/components-editorreviewmode/visible-to-author-6adc2c3")}</strong>
+                    <p>{feedback.body}</p>
+                  </article>
+                )) : <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/no-feedback-yet-dd9e490")}</p>}
+              </section>
+            </>
+          ) : <section className="review-mode__card"><p>{tCatalog("/uncataloguedUi/components-editorreviewmode/no-editorial-assignment-selected-c9870be")}</p></section>}
         </section>
       </div>
     </main>

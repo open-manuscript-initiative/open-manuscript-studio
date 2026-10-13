@@ -138,7 +138,7 @@ export function RegisterPage({
             </div>
 
             <p className="auth-login-tagline">
-              {tCatalog("/uncataloguedUi/auth-loginpage/write-naturally-structure-once-publish-everywhere-d2b9a80")}
+              Write naturally. Structure once. Publish everywhere.
             </p>
 
             <p className="auth-login-intro">
@@ -178,10 +178,26 @@ export function RegisterPage({
           <header className="auth-header auth-login-header auth-register-header">
             <h1 id="register-title">{t('auth.register.title')}</h1>
             <p>{t('auth.register.description')}</p>
-            {tCatalog("/uncataloguedUi/auth-registerpage/loading-assignment-invitation-70ca527")}
+            {invitationToken && !invitationError ? (
+              <p className="auth-field-hint auth-register-invitation-hint">
+                {invitationLoading
+                  ? tCatalog("/uncataloguedUi/auth-registerpage/loading-assignment-invitation-70ca527")
+                  : tCatalog("/uncataloguedUi/auth-registerpage/complete-your-studio-registration-to-open-the-assignme-8696998")}
+              </p>
+            ) : null}
           </header>
 
-          {tCatalog("/uncataloguedUi/auth-registerpage/accept-invitation-with-orcid-95d8722")}
+          {invitationToken && orcidProvider?.enabled && !invitationError ? (
+            <div className="auth-form auth-register-orcid">
+              <a className="auth-primary-button" href={getOrcidAuthUrl({ invitationToken })}>
+                {tCatalog("/uncataloguedUi/auth-registerpage/accept-invitation-with-orcid-95d8722")}
+              </a>
+              <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
+              <div className="auth-field-hint">
+                {tCatalog("/uncataloguedUi/auth-registerpage/orcid-authentication-activates-the-invited-studio-acco-867c8f6")}
+              </div>
+            </div>
+          ) : null}
 
           <form className="auth-form auth-register-form" onSubmit={handleSubmit}>
             <div className="auth-field">

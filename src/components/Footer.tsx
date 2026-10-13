@@ -141,7 +141,7 @@ export function Footer() {
 
         <div className="omi-footer-message">
           <strong>Open Manuscript Studio</strong>
-          <span>{tCatalog("/uncataloguedUi/auth-loginpage/write-naturally-structure-once-publish-everywhere-d2b9a80")}</span>
+          <span>Write naturally. Structure once. Publish everywhere.</span>
           <span>{tCatalog("/uncataloguedUi/components-footer/open-standards-for-scholarly-publishing-963cefb")}</span>
           <span>© {new Date().getFullYear()} {tCatalog("/uncataloguedUi/components-footer/open-manuscript-initiative-contributors-3561518")}</span>
         </div>
