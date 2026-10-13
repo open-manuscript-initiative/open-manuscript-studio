@@ -3819,7 +3819,7 @@ msgstr "Kategória"
 #. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/lemma
 msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/lemma"
 msgid "Lemma"
-msgstr "Lemma"
+msgstr "Szótári alak"
 
 #. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/morphology
 msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/morphology"
@@ -4079,7 +4079,7 @@ msgstr "Szöveghely törlése"
 #. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/export
 msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/export"
 msgid "Export"
-msgstr "Export"
+msgstr "Exportálás"
 
 #. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/exportJson
 msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/exportJson"
@@ -5194,7 +5194,7 @@ msgstr "Az adatkészlet és a beállítások ezen az eszközön tárolódnak. A 
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/maximum
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/maximum"
 msgid "Maximum"
-msgstr "Maximum"
+msgstr "Legnagyobb érték"
 
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/mean
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/mean"
@@ -5224,7 +5224,7 @@ msgstr "Módszertani megjegyzés"
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/minimum
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/minimum"
 msgid "Minimum"
-msgstr "Minimum"
+msgstr "Legkisebb érték"
 
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/n
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/n"
@@ -5969,7 +5969,7 @@ msgstr "Azonosító"
 #. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/iiif
 msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/iiif"
 msgid "IIIF manifest URL"
-msgstr "IIIF manifest URL"
+msgstr "IIIF-jegyzék URL-je"
 
 #. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/image
 msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/image"
@@ -6810,3 +6810,38 @@ msgstr "Nincs megadva — átvétel előtt ellenőrizze a forrást."
 msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/who"
 msgid "Open WHO ICTRP — external search portal"
 msgstr "WHO ICTRP megnyitása — külső keresőportál"
+
+#. OMI translation key: /researchModules/module-manager-panel/errorCopy/message
+msgctxt "/researchModules/module-manager-panel/errorCopy/message"
+msgid "This module could not be loaded."
+msgstr "Ez a modul most nem tölthető be."
+
+#. OMI translation key: /researchModules/module-manager-panel/errorCopy/retry
+msgctxt "/researchModules/module-manager-panel/errorCopy/retry"
+msgid "Try again"
+msgstr "Újrapróbálás"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/insert
+msgctxt "/researchModules/mathematics-panel/copy/insert"
+msgid "Insert equation"
+msgstr "Képlet beszúrása"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/label
+msgctxt "/researchModules/mathematics-panel/copy/label"
+msgid "Equation label"
+msgstr "Képlet címkéje"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/caption
+msgctxt "/researchModules/mathematics-panel/copy/caption"
+msgid "Caption / explanation"
+msgstr "Képaláírás / magyarázat"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/noSection
+msgctxt "/researchModules/mathematics-panel/copy/noSection"
+msgid "Open a manuscript and select a section."
+msgstr "Nyisson meg egy kéziratot és válasszon szakaszt."
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/failed
+msgctxt "/researchModules/mathematics-panel/copy/failed"
+msgid "The equation could not be inserted."
+msgstr "A képlet beszúrása nem sikerült."

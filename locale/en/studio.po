@@ -6810,3 +6810,38 @@ msgstr "Not supplied — check the source before reusing content."
 msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/who"
 msgid "Open WHO ICTRP — external search portal"
 msgstr "Open WHO ICTRP — external search portal"
+
+#. OMI translation key: /researchModules/module-manager-panel/errorCopy/message
+msgctxt "/researchModules/module-manager-panel/errorCopy/message"
+msgid "This module could not be loaded."
+msgstr "This module could not be loaded."
+
+#. OMI translation key: /researchModules/module-manager-panel/errorCopy/retry
+msgctxt "/researchModules/module-manager-panel/errorCopy/retry"
+msgid "Try again"
+msgstr "Try again"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/insert
+msgctxt "/researchModules/mathematics-panel/copy/insert"
+msgid "Insert equation"
+msgstr "Insert equation"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/label
+msgctxt "/researchModules/mathematics-panel/copy/label"
+msgid "Equation label"
+msgstr "Equation label"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/caption
+msgctxt "/researchModules/mathematics-panel/copy/caption"
+msgid "Caption / explanation"
+msgstr "Caption / explanation"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/noSection
+msgctxt "/researchModules/mathematics-panel/copy/noSection"
+msgid "Open a manuscript and select a section."
+msgstr "Open a manuscript and select a section."
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/failed
+msgctxt "/researchModules/mathematics-panel/copy/failed"
+msgid "The equation could not be inserted."
+msgstr "The equation could not be inserted."

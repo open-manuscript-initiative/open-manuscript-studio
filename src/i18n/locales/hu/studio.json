@@ -919,7 +919,7 @@
         "caseSensitive": "Kis- és nagybetű megkülönböztetése",
         "category": "Kategória",
         "categoryNames": {
-          "lemma": "Lemma",
+          "lemma": "Szótári alak",
           "morphology": "Morfológia",
           "named-entity": "Tulajdonnév / entitás",
           "other": "Egyéb",
@@ -976,7 +976,7 @@
         "backup": "A JSON exporttal készíthet hordozható biztonsági másolatot.",
         "date": "Dátum / datálás",
         "deleteSegment": "Szöveghely törlése",
-        "export": "Export",
+        "export": "Exportálás",
         "exportJson": "Projekt JSON letöltése",
         "exportTei": "TEI XML letöltése",
         "import": "Betöltés",
@@ -1245,13 +1245,13 @@
         "jsonError": "Az OMI statisztikai JSON nem érvényes.",
         "labError": "A laboratóriumi JSON nem tartalmaz importálható mérési adatokat.",
         "local": "Az adatkészlet és a beállítások ezen az eszközön tárolódnak. A fájl tartalmát nem töltjük fel. Érzékeny vagy személyes adatot csak anonimizálás után importáljon.",
-        "maximum": "Maximum",
+        "maximum": "Legnagyobb érték",
         "mean": "Átlag",
         "meanDifference": "Átlagkülönbség (1. − 2.)",
         "median": "Medián",
         "methodNote": "A t-próba Welch-féle, kétoldali változat; nem feltételez azonos csoportvarianciát. Az ANOVA hagyományos egyszempontos modell. Az OLS lineáris regresszió feltételezéseit, a hiányzó adatokat és a többszörös tesztelést a kutatónak kell mérlegelnie.",
         "methods": "Módszertani megjegyzés",
-        "minimum": "Minimum",
+        "minimum": "Legkisebb érték",
         "n": "Érvényes elemszám",
         "noComparison": "Csoportonként legalább két érvényes numerikus érték szükséges.",
         "noDataset": "Importáljon CSV/TSV-adatfájlt vagy kísérleti laboratóriumi projektet.",
@@ -1450,7 +1450,7 @@
         "export": "JSON export",
         "height": "Magasság (%)",
         "id": "Azonosító",
-        "iiif": "IIIF manifest URL",
+        "iiif": "IIIF-jegyzék URL-je",
         "image": "Kép URL",
         "institution": "Őrző intézmény",
         "intro": "Leletek, műtárgyak, épületek és helyszínek adatlapja; forrás- és jogkezelés; képterületek annotálása százalékos koordinátákkal. A rekordok és képek URL-jei külső forrásra mutatnak.",
@@ -1643,6 +1643,21 @@
         "title": "Nemzetközi kutatási adatbázisok",
         "unknown": "Nincs megadva — átvétel előtt ellenőrizze a forrást.",
         "who": "WHO ICTRP megnyitása — külső keresőportál"
+      }
+    },
+    "module-manager-panel": {
+      "errorCopy": {
+        "message": "Ez a modul most nem tölthető be.",
+        "retry": "Újrapróbálás"
+      }
+    },
+    "mathematics-panel": {
+      "copy": {
+        "insert": "Képlet beszúrása",
+        "label": "Képlet címkéje",
+        "caption": "Képaláírás / magyarázat",
+        "noSection": "Nyisson meg egy kéziratot és válasszon szakaszt.",
+        "failed": "A képlet beszúrása nem sikerült."
       }
     }
   }

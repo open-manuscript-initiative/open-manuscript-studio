@@ -3819,7 +3819,7 @@ msgstr "Kategorie"
 #. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/lemma
 msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/lemma"
 msgid "Lemma"
-msgstr "Lemma"
+msgstr "Grundform"
 
 #. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/morphology
 msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/morphology"
@@ -3894,7 +3894,7 @@ msgstr "Texte"
 #. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/export
 msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/export"
 msgid "Export"
-msgstr "Export"
+msgstr "Exportieren"
 
 #. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/exportCsv
 msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/exportCsv"
@@ -4034,7 +4034,7 @@ msgstr "z. B. Handschrift, Ausgabe, URL"
 #. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/text
 msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/text"
 msgid "Text"
-msgstr "Text"
+msgstr "Textinhalt"
 
 #. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/wholeWord
 msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/wholeWord"
@@ -4079,7 +4079,7 @@ msgstr "Textstelle löschen"
 #. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/export
 msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/export"
 msgid "Export"
-msgstr "Export"
+msgstr "Exportieren"
 
 #. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/exportJson
 msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/exportJson"
@@ -4524,12 +4524,12 @@ msgstr "Geben Sie einen Ausdruck ohne vollständiges LaTeX-Dokument oder $-Begre
 #. OMI translation key: /researchModules/mathematics-equation-editor/labels/integral
 msgctxt "/researchModules/mathematics-equation-editor/labels/integral"
 msgid "Integral"
-msgstr "Integral"
+msgstr "Integralzeichen"
 
 #. OMI translation key: /researchModules/mathematics-equation-editor/labels/matrix
 msgctxt "/researchModules/mathematics-equation-editor/labels/matrix"
 msgid "Matrix"
-msgstr "Matrix"
+msgstr "Matrize"
 
 #. OMI translation key: /researchModules/mathematics-equation-editor/labels/preview
 msgctxt "/researchModules/mathematics-equation-editor/labels/preview"
@@ -4759,7 +4759,7 @@ msgstr "Typ"
 #. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/code
 msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/code"
 msgid "Code"
-msgstr "Code"
+msgstr "Quellcode"
 
 #. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/dataset
 msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/dataset"
@@ -4779,7 +4779,7 @@ msgstr "Sonstiges"
 #. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/software
 msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/software"
 msgid "Software"
-msgstr "Software"
+msgstr "Anwendungssoftware"
 
 #. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/supplement
 msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/supplement"
@@ -4854,7 +4854,7 @@ msgstr "Link und Version geprüft"
 #. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/version
 msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/version"
 msgid "Version"
-msgstr "Version"
+msgstr "Versionsnummer"
 
 #. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/addTranscript
 msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/addTranscript"
@@ -4879,7 +4879,7 @@ msgstr "Code zuweisen"
 #. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/codeLabel
 msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/codeLabel"
 msgid "Code"
-msgstr "Code"
+msgstr "Code-Bezeichnung"
 
 #. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/coded
 msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/coded"
@@ -5019,7 +5019,7 @@ msgstr "95%-Konfidenzintervall des Mittelwerts"
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/column
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/column"
 msgid "Variable"
-msgstr "Variable"
+msgstr "Merkmal"
 
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/columns
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/columns"
@@ -5194,7 +5194,7 @@ msgstr "Datensatz und Einstellungen bleiben auf diesem Gerät. Dateiinhalte werd
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/maximum
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/maximum"
 msgid "Maximum"
-msgstr "Maximum"
+msgstr "Höchstwert"
 
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/mean
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/mean"
@@ -5209,7 +5209,7 @@ msgstr "Mittelwertdifferenz (1 − 2)"
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/median
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/median"
 msgid "Median"
-msgstr "Median"
+msgstr "Zentralwert"
 
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/methodNote
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/methodNote"
@@ -5224,7 +5224,7 @@ msgstr "Methodischer Hinweis"
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/minimum
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/minimum"
 msgid "Minimum"
-msgstr "Minimum"
+msgstr "Mindestwert"
 
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/n
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/n"
@@ -6219,7 +6219,7 @@ msgstr "Projekt als JSON exportieren"
 #. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/format
 msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/format"
 msgid "Format"
-msgstr "Format"
+msgstr "Dateiformat"
 
 #. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/geosciences
 msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/geosciences"
@@ -6454,7 +6454,7 @@ msgstr "Wert"
 #. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/version
 msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/version"
 msgid "Version"
-msgstr "Version"
+msgstr "Versionsnummer"
 
 #. OMI translation key: /researchModules/musicology-musicology-panel/words/add
 msgctxt "/researchModules/musicology-musicology-panel/words/add"
@@ -6564,7 +6564,7 @@ msgstr "Quelle / Ausgabe"
 #. OMI translation key: /researchModules/musicology-musicology-panel/words/tempo
 msgctxt "/researchModules/musicology-musicology-panel/words/tempo"
 msgid "Tempo"
-msgstr "Tempo"
+msgstr "Geschwindigkeit"
 
 #. OMI translation key: /researchModules/musicology-musicology-panel/words/title
 msgctxt "/researchModules/musicology-musicology-panel/words/title"
@@ -6810,3 +6810,38 @@ msgstr "Nicht angegeben — vor Übernahme die Quelle prüfen."
 msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/who"
 msgid "Open WHO ICTRP — external search portal"
 msgstr "WHO ICTRP öffnen — externes Suchportal"
+
+#. OMI translation key: /researchModules/module-manager-panel/errorCopy/message
+msgctxt "/researchModules/module-manager-panel/errorCopy/message"
+msgid "This module could not be loaded."
+msgstr "Dieses Modul kann derzeit nicht geladen werden."
+
+#. OMI translation key: /researchModules/module-manager-panel/errorCopy/retry
+msgctxt "/researchModules/module-manager-panel/errorCopy/retry"
+msgid "Try again"
+msgstr "Erneut versuchen"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/insert
+msgctxt "/researchModules/mathematics-panel/copy/insert"
+msgid "Insert equation"
+msgstr "Formel einfügen"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/label
+msgctxt "/researchModules/mathematics-panel/copy/label"
+msgid "Equation label"
+msgstr "Formelbezeichnung"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/caption
+msgctxt "/researchModules/mathematics-panel/copy/caption"
+msgid "Caption / explanation"
+msgstr "Beschriftung / Erklärung"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/noSection
+msgctxt "/researchModules/mathematics-panel/copy/noSection"
+msgid "Open a manuscript and select a section."
+msgstr "Öffnen Sie ein Manuskript und wählen Sie einen Abschnitt."
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/failed
+msgctxt "/researchModules/mathematics-panel/copy/failed"
+msgid "The equation could not be inserted."
+msgstr "Die Formel konnte nicht eingefügt werden."

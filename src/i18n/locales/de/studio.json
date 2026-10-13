@@ -919,7 +919,7 @@
         "caseSensitive": "Groß- und Kleinschreibung beachten",
         "category": "Kategorie",
         "categoryNames": {
-          "lemma": "Lemma",
+          "lemma": "Grundform",
           "morphology": "Morphologie",
           "named-entity": "Eigenname / Entität",
           "other": "Sonstiges",
@@ -935,7 +935,7 @@
         "description": "Beschreibung",
         "documentTitle": "Titel",
         "documents": "Texte",
-        "export": "Export",
+        "export": "Exportieren",
         "exportCsv": "Konkordanz-CSV herunterladen",
         "exportJson": "Korpus-JSON herunterladen",
         "hit": "Treffer",
@@ -963,7 +963,7 @@
         "search": "Konkordanzsuche",
         "source": "Quelle / Herkunft",
         "sourcePlaceholder": "z. B. Handschrift, Ausgabe, URL",
-        "text": "Text",
+        "text": "Textinhalt",
         "wholeWord": "Nur ganzes Wort",
         "wordCount": "Wörter"
       }
@@ -976,7 +976,7 @@
         "backup": "Laden Sie das Projekt-JSON als portable Sicherung herunter.",
         "date": "Datum / Datierung",
         "deleteSegment": "Textstelle löschen",
-        "export": "Export",
+        "export": "Exportieren",
         "exportJson": "Projekt-JSON herunterladen",
         "exportTei": "TEI-XML herunterladen",
         "import": "Importieren",
@@ -1087,8 +1087,8 @@
         "error": "Ungültiges oder nicht unterstütztes LaTeX",
         "fraction": "Bruch",
         "hint": "Geben Sie einen Ausdruck ohne vollständiges LaTeX-Dokument oder $-Begrenzer ein. Vorlagen ersetzen die Auswahl.",
-        "integral": "Integral",
-        "matrix": "Matrix",
+        "integral": "Integralzeichen",
+        "matrix": "Matrize",
         "preview": "Formelvorschau",
         "root": "Wurzel",
         "scripts": "Indizes",
@@ -1149,11 +1149,11 @@
         "file": "Datei-Prüfsumme berechnen",
         "kind": "Typ",
         "kinds": {
-          "code": "Code",
+          "code": "Quellcode",
           "dataset": "Datensatz",
           "method": "Methode",
           "other": "Sonstiges",
-          "software": "Software",
+          "software": "Anwendungssoftware",
           "supplement": "Zusatzmaterial"
         },
         "license": "Lizenz",
@@ -1169,7 +1169,7 @@
         "title": "Reproduzierbarkeit der Forschung",
         "titleField": "Bezeichnung",
         "verified": "Link und Version geprüft",
-        "version": "Version"
+        "version": "Versionsnummer"
       }
     },
     "social-research-methods-social-research-methods-panel": {
@@ -1178,7 +1178,7 @@
         "addVariable": "Variable hinzufügen",
         "annotation": "Ausgewählte Passage codieren",
         "apply": "Code zuweisen",
-        "codeLabel": "Code",
+        "codeLabel": "Code-Bezeichnung",
         "coded": "Codierte Passagen",
         "ethics": "Ethik und Datenverarbeitung",
         "export": "Projekt als JSON exportieren",
@@ -1210,7 +1210,7 @@
         "analysisPlan": "Präregistrierter Analyseplan",
         "anova": "Einfaktorielle ANOVA",
         "ci": "95%-Konfidenzintervall des Mittelwerts",
-        "column": "Variable",
+        "column": "Merkmal",
         "columns": "Variablen",
         "comparison": "Gruppenvergleich",
         "count": "Anzahl",
@@ -1245,13 +1245,13 @@
         "jsonError": "Das OMI-Statistik-JSON ist ungültig.",
         "labError": "Das Labor-JSON enthält keine importierbaren Messdaten.",
         "local": "Datensatz und Einstellungen bleiben auf diesem Gerät. Dateiinhalte werden nicht hochgeladen. Sensible oder personenbezogene Daten vor dem Import anonymisieren.",
-        "maximum": "Maximum",
+        "maximum": "Höchstwert",
         "mean": "Mittelwert",
         "meanDifference": "Mittelwertdifferenz (1 − 2)",
-        "median": "Median",
+        "median": "Zentralwert",
         "methodNote": "Der t-Test ist zweiseitig nach Welch und setzt keine gleichen Gruppenvarianzen voraus. Die ANOVA ist ein klassisches einfaktorielles Modell. OLS-Annahmen, fehlende Daten und multiples Testen sind zu prüfen.",
         "methods": "Methodischer Hinweis",
-        "minimum": "Minimum",
+        "minimum": "Mindestwert",
         "n": "Gültige Fallzahl",
         "noComparison": "Jede Gruppe benötigt mindestens zwei gültige numerische Werte.",
         "noDataset": "Importieren Sie einen CSV/TSV-Datensatz oder ein experimentelles Laborprojekt.",
@@ -1506,7 +1506,7 @@
         "description": "Beschreibung / Bezug zur Messung",
         "engineering": "Ingenieurwissenschaften",
         "export": "Projekt als JSON exportieren",
-        "format": "Format",
+        "format": "Dateiformat",
         "geosciences": "Geowissenschaften",
         "hash": "Prüfsumme einer lokalen Datei berechnen",
         "hashError": "Die Dateiprüfsumme konnte nicht berechnet werden.",
@@ -1555,7 +1555,7 @@
         "unit": "Einheit",
         "uri": "Datei-URL / Repository",
         "value": "Wert",
-        "version": "Version"
+        "version": "Versionsnummer"
       }
     },
     "musicology-musicology-panel": {
@@ -1581,7 +1581,7 @@
         "recordingTime": "Aufnahmezeit",
         "remove": "Entfernen",
         "source": "Quelle / Ausgabe",
-        "tempo": "Tempo",
+        "tempo": "Geschwindigkeit",
         "title": "Werktitel"
       }
     },
@@ -1643,6 +1643,21 @@
         "title": "Internationale Forschungsdatenbanken",
         "unknown": "Nicht angegeben — vor Übernahme die Quelle prüfen.",
         "who": "WHO ICTRP öffnen — externes Suchportal"
+      }
+    },
+    "module-manager-panel": {
+      "errorCopy": {
+        "message": "Dieses Modul kann derzeit nicht geladen werden.",
+        "retry": "Erneut versuchen"
+      }
+    },
+    "mathematics-panel": {
+      "copy": {
+        "insert": "Formel einfügen",
+        "label": "Formelbezeichnung",
+        "caption": "Beschriftung / Erklärung",
+        "noSection": "Öffnen Sie ein Manuskript und wählen Sie einen Abschnitt.",
+        "failed": "Die Formel konnte nicht eingefügt werden."
       }
     }
   }

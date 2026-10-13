@@ -34,7 +34,7 @@ test('English, German and Hungarian PO catalogs are complete and drive the runti
   assert.ok(englishEntries.length > 0, 'English PO catalog must not be empty');
   assert.equal(
     englishEntries.filter((entry) => entry.pointer.startsWith('/researchModules/')).length,
-    639,
+    646,
     'research module copy must be stored in the primary PO catalogs',
   );
 

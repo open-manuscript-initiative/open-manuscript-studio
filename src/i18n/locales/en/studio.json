@@ -1644,6 +1644,21 @@
         "unknown": "Not supplied — check the source before reusing content.",
         "who": "Open WHO ICTRP — external search portal"
       }
+    },
+    "module-manager-panel": {
+      "errorCopy": {
+        "message": "This module could not be loaded.",
+        "retry": "Try again"
+      }
+    },
+    "mathematics-panel": {
+      "copy": {
+        "insert": "Insert equation",
+        "label": "Equation label",
+        "caption": "Caption / explanation",
+        "noSection": "Open a manuscript and select a section.",
+        "failed": "The equation could not be inserted."
+      }
     }
   }
 }
