@@ -24,6 +24,7 @@ import {
 } from '../services/publicationStyleExport';
 import { savePublicationArtifactWithBuildSidecar } from '../services/publicationBuildSidecar';
 import { renderPdfArtifact } from '../services/vivliostylePdfApi';
+import { tCatalog } from '../i18n';
 
 export function PublicationStyleExportPanel() {
   const { locale } = useTranslation();
@@ -157,7 +158,7 @@ export function PublicationStyleExportPanel() {
         <article className="publication-style-export-option">
           <FileText size={22} aria-hidden="true" />
           <div>
-            <strong>PDF / {copy.print}</strong>
+            <strong>{tCatalog("/uncataloguedUi/components-publicationstyleexportpanel/pdf-e0012bd")} {copy.print}</strong>
             <p>{copy.pdfDescription}</p>
             <div className="studio-manuscript-fields">
               <label>

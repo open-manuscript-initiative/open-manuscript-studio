@@ -20,6 +20,7 @@ import {
 } from '../services/publicationArtifact';
 import type { OmiManuscript } from '../types/omi';
 import './DirectSubmissionPanel.css';
+import { tCatalog } from '../i18n';
 
 const commonText = {
   hu: {
@@ -394,17 +395,11 @@ function PublicationArtifactForm({
       <p>{platform.intro}</p>
       {provider ? <p>{platform.help}</p> : null}
 
-      {!connections.length ? (
-        <p>
-          {uiLocale === 'hu'
-            ? 'Először állíts be OJS- vagy OMP-kapcsolatot az Integrációk menüben.'
-            : 'First configure an OJS or OMP connection in Integrations.'}
-        </p>
-      ) : null}
+      {tCatalog("/uncataloguedUi/components-publicationartifactpanel/first-configure-an-ojs-or-omp-connection-in-integratio-3b77850")}
 
       <fieldset disabled={busy !== null}>
         <label>
-          {provider ? platform.connection : uiLocale === 'hu' ? 'Publikációs kapcsolat' : 'Publishing connection'}
+          {tCatalog("/uncataloguedUi/components-publicationartifactpanel/publishing-connection-3c9fa55")}
           <select
             value={connectionId}
             onChange={(event) => {

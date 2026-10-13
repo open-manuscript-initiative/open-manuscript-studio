@@ -1,4 +1,5 @@
 export interface TranslationDictionary {
+  uncataloguedUi?: Record<string, Record<string, string>>;
   common: {
     save: string;
     cancel: string;

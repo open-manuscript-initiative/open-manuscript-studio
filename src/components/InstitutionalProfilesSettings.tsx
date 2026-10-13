@@ -27,6 +27,7 @@ import {
   getLinkedIdentitySettings,
   type LinkedIdentityRecord,
 } from '../services/linkedIdentityApi';
+import { tCatalog } from '../i18n';
 
 interface InstitutionalProfilesSettingsProps {
   locale: string;
@@ -219,7 +220,7 @@ export function InstitutionalProfilesSettings({ locale }: InstitutionalProfilesS
                 </div>
                 {profile.department ? <span>{profile.department}</span> : null}
                 {profile.positionTitle ? <span>{profile.positionTitle}</span> : null}
-                {profile.rorId ? <small>ROR: {profile.rorId}</small> : null}
+                {profile.rorId ? <small>{tCatalog("/uncataloguedUi/components-institutionalprofilessettings/ror-deb99ae")} {profile.rorId}</small> : null}
                 {profile.institutionalEmail ? (
                   <small>{profile.institutionalEmail}{!profile.emailVerified ? ` · ${labels.unverified}` : ''}</small>
                 ) : null}
@@ -259,7 +260,7 @@ export function InstitutionalProfilesSettings({ locale }: InstitutionalProfilesS
           {editingId ? (
             <div className="account-institution-fixed">
               <strong>{form.organizationName}</strong>
-              {form.rorId ? <span>ROR: {form.rorId}</span> : null}
+              {form.rorId ? <span>{tCatalog("/uncataloguedUi/components-institutionalprofilessettings/ror-deb99ae")} {form.rorId}</span> : null}
               <small>{labels.fixedInstitution}</small>
             </div>
           ) : (

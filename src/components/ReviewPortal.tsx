@@ -6,6 +6,7 @@ import { AssignmentStudioMenu } from './AssignmentStudioMenu';
 import { EditorReviewMode, loadEditorReviewOverview } from './EditorReviewMode';
 import { ReviewMode } from './ReviewMode';
 import { ReviewPortalHeader } from './ReviewPortalHeader';
+import { tCatalog } from '../i18n';
 
 export function ReviewPortal() {
   const [editorReviews, setEditorReviews] = useState<Awaited<ReturnType<typeof loadEditorReviewOverview>> | null>(null);
@@ -78,7 +79,7 @@ export function ReviewPortal() {
     content = (
       <main className="review-mode">
         <div className="review-mode__card">
-          <p>Loading peer review workspace…</p>
+          <p>{tCatalog("/uncataloguedUi/components-reviewportal/loading-peer-review-workspace-cef04d4")}</p>
         </div>
       </main>
     );
@@ -87,7 +88,7 @@ export function ReviewPortal() {
       <main className="review-mode">
         <div className="review-mode__card review-mode__error" role="alert">
           <p>{launchError}</p>
-          <a className="review-mode__back" href="/">Back to Studio</a>
+          <a className="review-mode__back" href="/">{tCatalog("/uncataloguedUi/components-editorreviewmode/back-to-studio-b458395")}</a>
         </div>
       </main>
     );

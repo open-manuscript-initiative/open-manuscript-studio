@@ -5,6 +5,7 @@ import {
   sendCollaborationMessage,
   type CollaborationMessage,
 } from '../services/collaborationApi';
+import { tCatalog } from '../i18n';
 
 interface CollaborationChatProps {
   documentId: string;
@@ -76,7 +77,7 @@ export function CollaborationChat({ documentId, locale }: CollaborationChatProps
   };
 
   return (
-    <section className="omi-collaboration-chat" aria-label={hu ? 'Dokumentum chat' : de ? 'Dokument-Chat' : 'Document chat'}>
+    <section className="omi-collaboration-chat" aria-label={tCatalog("/uncataloguedUi/components-collaborationchat/document-chat-88aa5ac")}>
       <div className="omi-collaboration-chat__messages" role="log" aria-live="polite" aria-relevant="additions">
         {messages.length === 0 ? <p>{labels.empty}</p> : messages.map((message) => (
           <article className="omi-collaboration-chat__message" key={message.id}>

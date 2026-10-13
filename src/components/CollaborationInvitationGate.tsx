@@ -9,6 +9,7 @@ import {
 import { inspectOmiContainer } from '../services/omiContainerImport';
 import { applyOmiContainerImportPlan } from '../app/omiContainerImportActions';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
+import { tCatalog } from '../i18n';
 
 interface Invitation {
   email: string;
@@ -70,22 +71,22 @@ export function CollaborationInvitationGate({
   if (accepted) return <>{children}</>;
   return (
     <main className="omi-collaboration-invitation">
-      <h1>Manuscript collaboration invitation</h1>
+      <h1>{tCatalog("/uncataloguedUi/components-collaborationinvitationgate/manuscript-collaboration-invitation-f32a232")}</h1>
       {invitation ? (
         <>
           <p><strong>{invitation.documentTitle}</strong></p>
-          <p>Invited as {invitation.role.toLowerCase()} for {invitation.email}.</p>
-          <p>Signed in as {user?.email}. Accepting adds this account as a collaborator.</p>
+          <p>{tCatalog("/uncataloguedUi/components-collaborationinvitationgate/invited-as-role-for-workspace-0c87d6c", { role: invitation.role.toLowerCase(), workspace: invitation.email })}.</p>
+          <p>{tCatalog("/uncataloguedUi/components-collaborationinvitationgate/signed-in-as-name-accepting-adds-this-account-as-a-col-ea9edcf", { name: user?.email ?? "" })}</p>
           <div>
             <button type="button" onClick={() => void decide(true)} disabled={busy || user?.email.toLowerCase() !== invitation.email.toLowerCase()}>
-              Accept invitation
+              {tCatalog("/uncataloguedUi/components-collaborationinvitationgate/accept-invitation-0b918ca")}
             </button>
             <button type="button" className="secondary" onClick={() => void decide(false)} disabled={busy}>
-              Decline
+              {tCatalog("/uncataloguedUi/components-collaborationinvitationgate/decline-b59cf9e")}
             </button>
           </div>
           {user?.email.toLowerCase() !== invitation.email.toLowerCase() ? (
-            <p role="alert">Sign in with the invited email address to accept this invitation.</p>
+            <p role="alert">{tCatalog("/uncataloguedUi/components-collaborationinvitationgate/sign-in-with-the-invited-email-address-to-accept-this--467f451")}</p>
           ) : null}
         </>
       ) : null}

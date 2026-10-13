@@ -10,6 +10,7 @@ import {
   type TranslationSegment,
 } from '../services/integrationExecutionApi';
 import './SelectionIntegrationDialog.css';
+import { tCatalog } from '../i18n';
 
 interface SelectionIntegrationDialogProps {
   editor: Editor;
@@ -64,9 +65,7 @@ export function SelectionIntegrationDialog({
 
   async function translateText(): Promise<void> {
     if (!activeParts.length) {
-      setError(translationScope === 'selection'
-        ? 'Select text before using DeepL.'
-        : 'This block contains no translatable text.');
+      setError(tCatalog("/uncataloguedUi/components-selectionintegrationdialog/select-text-before-using-deepl-8ecb6fd"));
       return;
     }
     setBusy(true);
@@ -107,7 +106,7 @@ export function SelectionIntegrationDialog({
 
   async function runAgent(): Promise<void> {
     if (!selectedText.trim()) {
-      setError('Select text before running an agent.');
+      setError(tCatalog("/uncataloguedUi/components-selectionintegrationdialog/select-text-before-running-an-agent-e26f526"));
       return;
     }
     setBusy(true);
@@ -141,37 +140,18 @@ export function SelectionIntegrationDialog({
   }
 
   return (
-    <div className="omi-selection-integration-dialog" role="dialog" aria-modal="false" aria-label={mode === 'translate' ? 'Translate manuscript text' : 'AI suggestion for selected text'}>
+    <div className="omi-selection-integration-dialog" role="dialog" aria-modal="false" aria-label={tCatalog("/uncataloguedUi/components-selectionintegrationdialog/ai-suggestion-for-selected-text-2693cfb")}>
       <header>
-        <div>{mode === 'translate' ? <Languages size={17} aria-hidden="true" /> : <Bot size={17} aria-hidden="true" />}<strong>{mode === 'translate' ? 'DeepL translation' : 'Agent suggestion'}</strong></div>
+        <div>{mode === 'translate' ? <Languages size={17} aria-hidden="true" /> : <Bot size={17} aria-hidden="true" />}<strong>{tCatalog("/uncataloguedUi/components-selectionintegrationdialog/agent-suggestion-8059275")}</strong></div>
         <button type="button" className="omi-selection-integration-close" onClick={onClose} aria-label="Close"><X size={16} aria-hidden="true" /></button>
       </header>
 
       <p className="omi-selection-integration-source">{mode === 'translate' ? (translationText || 'No translatable text.') : (selectedText || 'No text selected.')}</p>
 
-      {mode === 'translate' ? (
-        <>
-          <label><span>Translate</span><select value={translationScope} onChange={(event) => { setTranslationScope(event.target.value as 'selection' | 'block'); setTranslated([]); setError(''); }}><option value="selection" disabled={!selection.length}>Selected text</option><option value="block">Whole block</option></select></label>
-          <label><span>Target language</span><select value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)}>{LANGUAGES.map(([value, label]) => <option value={value} key={value}>{label} ({value})</option>)}</select></label>
-          <div className="omi-selection-integration-actions">
-            <button type="button" className="studio-menu-primary-action" disabled={busy || !activeParts.length} onClick={() => void translateText()}>{busy ? 'Translating…' : 'Translate'}</button>
-            <button type="button" className="studio-menu-secondary-action" disabled={busy || !translated.length} onClick={applyTranslation}>Apply translation</button>
-          </div>
-          {translated.length ? <div className="omi-selection-integration-result">{translated.map((segment) => <span key={segment.id}>{segment.text}</span>)}</div> : null}
-        </>
-      ) : (
-        <>
-          <label><span>Agent</span><select value={agentId} onChange={(event) => setAgentId(event.target.value as BuiltInAgentId)}><option value="language-editor">Language editor</option><option value="metadata-assistant">Metadata assistant</option><option value="summarizer">Summarizer</option><option value="citation-checker">Citation checker</option></select></label>
-          <div className="omi-selection-integration-actions">
-            <button type="button" className="studio-menu-primary-action" disabled={busy || !selection.length} onClick={() => void runAgent()}>{busy ? 'Running…' : 'Create suggestion'}</button>
-            <button type="button" className="studio-menu-secondary-action" disabled={busy || !suggestion} onClick={applySuggestion}>Apply suggestion</button>
-          </div>
-          {suggestion ? <pre className="omi-selection-integration-result">{suggestion}</pre> : null}
-        </>
-      )}
+      {tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translate-2be17aa")}
 
       {error ? <p className="omi-integration-error" role="alert">{error}</p> : null}
-      <small>Only plain manuscript text is sent externally. Inline formatting is preserved; citation, note and cross-reference nodes and code marks remain outside translation requests.</small>
+      <small>{tCatalog("/uncataloguedUi/components-selectionintegrationdialog/only-plain-manuscript-text-is-sent-externally-inline-f-9384372")}</small>
     </div>
   );
 }

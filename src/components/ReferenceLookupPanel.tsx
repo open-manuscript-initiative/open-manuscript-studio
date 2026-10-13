@@ -50,6 +50,7 @@ import {
   type WebBibliographicProviderDraft,
 } from '../services/webBibliographicProviders';
 import type { OmiBibliographicRecord } from '../types/omi';
+import { tCatalog } from '../i18n';
 
 const EMPTY_WEB_PROVIDER_DRAFT: WebBibliographicProviderDraft = {
   name: '',
@@ -421,7 +422,7 @@ export function ReferenceLookupPanel() {
                 }
               />
               <span>{provider.name}</span>
-              <small>web</small>
+              <small>{tCatalog("/uncataloguedUi/components-referencelookuppanel/web-ca84d13")}</small>
             </label>
           ))}
         </div>
@@ -677,7 +678,7 @@ export function ReferenceLookupPanel() {
                   <div className="omi-lookup-result-meta">
                     <span>{candidate.record.type}</span>
                     {doi ? <code>DOI {doi}</code> : null}
-                    {mtmtId ? <code>MTMT {mtmtId}</code> : null}
+                    {mtmtId ? <code>{tCatalog("/uncataloguedUi/components-referencelookuppanel/mtmt-02f100e")} {mtmtId}</code> : null}
                   </div>
                 </div>
                 <button
@@ -707,7 +708,7 @@ function providerLabel(provider: BibliographicSourceId): string {
     case 'openalex':
       return 'OpenAlex';
     case 'mtmt':
-      return 'MTMT';
+      return tCatalog("/uncataloguedUi/components-referencelookuppanel/mtmt-02f100e");
     case 'europepmc':
       return 'Europe PMC';
     case 'zotero':

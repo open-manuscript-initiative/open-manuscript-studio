@@ -13,6 +13,7 @@ import {
   DEFAULT_INDEX_ID,
   getDocumentIndexDefinitions,
 } from '../model/indexing';
+import { tCatalog } from '../i18n';
 
 interface SelectionActionToolbarProps {
   editor: Editor;
@@ -184,7 +185,7 @@ export function SelectionActionToolbar({
   };
 
   return (
-    <div className="omi-selection-action-toolbar" role="group" aria-label="Selection actions">
+    <div className="omi-selection-action-toolbar" role="group" aria-label={tCatalog("/uncataloguedUi/components-selectionactiontoolbar/selection-actions-292f133")}>
       <button type="button" onMouseDown={preserveSelection} onClick={() => void runClipboardAction('cut')}>{clipboardCopy.cut}</button>
       <button type="button" onMouseDown={preserveSelection} onClick={() => void runClipboardAction('copy')}>{clipboardCopy.copy}</button>
       <select

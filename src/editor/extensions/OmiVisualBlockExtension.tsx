@@ -13,6 +13,7 @@ import {
   formatCrossReferenceLabel,
 } from '../../model/crossReferences';
 import type { OmiBlock, OmiVisualBlockData } from '../../types/omi';
+import { tCatalog } from '../../i18n';
 
 export const OmiVisualBlockExtension = Node.create({
   name: OMI_VISUAL_NODE,
@@ -96,7 +97,7 @@ function ContinuousVisualBlockView({ node, selected }: NodeViewProps) {
           />
         </>
       ) : (
-        <div className="omi-visual-block omi-visual-block--missing">Visual element</div>
+        <div className="omi-visual-block omi-visual-block--missing">{tCatalog("/uncataloguedUi/editor-extensions-omivisualblockextension/visual-element-b542d6d")}</div>
       )}
     </NodeViewWrapper>
   );

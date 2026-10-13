@@ -24,6 +24,7 @@ import { AuthRorAffiliationField } from './AuthRorAffiliationField';
 import { AuthOrcidLookupField } from './AuthOrcidLookupField';
 import { useOrcidProvider } from './useOrcidProvider';
 import { useAuthStore } from '../store/authStore';
+import { tCatalog } from '../i18n';
 
 interface RegisterPageProps {
   onShowLogin: () => void;
@@ -137,7 +138,7 @@ export function RegisterPage({
             </div>
 
             <p className="auth-login-tagline">
-              Write naturally. Structure once. Publish everywhere.
+              {tCatalog("/uncataloguedUi/auth-loginpage/write-naturally-structure-once-publish-everywhere-d2b9a80")}
             </p>
 
             <p className="auth-login-intro">
@@ -177,34 +178,10 @@ export function RegisterPage({
           <header className="auth-header auth-login-header auth-register-header">
             <h1 id="register-title">{t('auth.register.title')}</h1>
             <p>{t('auth.register.description')}</p>
-            {invitationToken && !invitationError ? (
-              <p className="auth-field-hint auth-register-invitation-hint">
-                {invitationLoading
-                  ? 'Loading assignment invitation…'
-                  : 'Complete your Studio registration to open the assignment sent to this e-mail address.'}
-              </p>
-            ) : null}
+            {tCatalog("/uncataloguedUi/auth-registerpage/loading-assignment-invitation-70ca527")}
           </header>
 
-          {invitationToken && orcidProvider?.enabled && !invitationError ? (
-            <div className="auth-form auth-register-orcid">
-              <a className="auth-primary-button" href={getOrcidAuthUrl({ invitationToken })}>
-                {locale === 'hu'
-                  ? 'Meghívás elfogadása ORCID-dal'
-                  : locale === 'de'
-                    ? 'Einladung mit ORCID annehmen'
-                    : 'Accept invitation with ORCID'}
-              </a>
-              <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
-              <div className="auth-field-hint">
-                {locale === 'hu'
-                  ? 'Az ORCID-hitelesítés aktiválja a meghívott Stúdió-fiókot; külön Stúdió-jelszó létrehozása nem szükséges.'
-                  : locale === 'de'
-                    ? 'Die ORCID-Authentifizierung aktiviert das eingeladene Studio-Konto; ein separates Studio-Passwort ist nicht erforderlich.'
-                    : 'ORCID authentication activates the invited Studio account; a separate Studio password is not required.'}
-              </div>
-            </div>
-          ) : null}
+          {tCatalog("/uncataloguedUi/auth-registerpage/accept-invitation-with-orcid-95d8722")}
 
           <form className="auth-form auth-register-form" onSubmit={handleSubmit}>
             <div className="auth-field">
@@ -242,7 +219,7 @@ export function RegisterPage({
                 }}
               />
               {invitedEmail ? (
-                <div className="auth-field-hint">This e-mail address is fixed by the invitation.</div>
+                <div className="auth-field-hint">{tCatalog("/uncataloguedUi/auth-registerpage/this-e-mail-address-is-fixed-by-the-invitation-d9ae7e0")}</div>
               ) : null}
             </div>
 

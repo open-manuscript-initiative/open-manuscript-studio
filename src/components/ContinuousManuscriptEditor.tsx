@@ -66,6 +66,7 @@ import {
 import { BlockEditor } from './BlockEditor';
 import { ContributorEditor } from './ContributorEditor';
 import { CurrentStudyNotesFooter } from './CurrentStudyNotesFooter';
+import { tCatalog } from '../i18n';
 
 interface CollaborationSession {
   document: Y.Doc;
@@ -584,36 +585,28 @@ export function ContinuousManuscriptEditor() {
     <>
       {collaborationAccess?.members.some((member) => member.userId === currentUser?.id) ? (
         <details className="omi-collaboration-chat-disclosure">
-          <summary>{locale === 'hu' ? 'Dokumentum chat' : locale === 'de' ? 'Dokument-Chat' : 'Document chat'}</summary>
+          <summary>{tCatalog("/uncataloguedUi/components-collaborationchat/document-chat-88aa5ac")}</summary>
           <CollaborationChat documentId={manuscript.id} locale={locale} />
         </details>
       ) : null}
       {invitationEmail ? (
         <div className="omi-collaboration-save-dialog" role="dialog" aria-modal="true" aria-labelledby="omi-collaboration-save-title">
           <div className="omi-collaboration-save-dialog__card">
-            <h2 id="omi-collaboration-save-title">{locale === 'hu' ? 'Felhőmentés a közös szerkesztés előtt' : locale === 'de' ? 'Cloud-Speicherung für die gemeinsame Bearbeitung' : 'Save to cloud for shared editing'}</h2>
-            <p>{locale === 'hu'
-              ? `A Studio a felhőmentés után automatikusan meghívja ${invitationEmail} szerzőt. Mentsük a kéziratot az Ön felhőtárhelyére.`
-              : locale === 'de'
-                ? `Studio lädt ${invitationEmail} nach dem Speichern in Ihrem Cloud-Speicher automatisch ein.`
-                : `Studio will automatically invite ${invitationEmail} after saving the manuscript to your cloud storage.`}</p>
+            <h2 id="omi-collaboration-save-title">{tCatalog("/uncataloguedUi/components-continuousmanuscripteditor/save-to-cloud-for-shared-editing-53bdfe0")}</h2>
+            <p>{tCatalog("/uncataloguedUi/components-continuousmanuscripteditor/studio-will-automatically-invite-email-after-saving-th-2061bd0", { email: invitationEmail })}</p>
             {cloudDestinations.length ? (
               <label>
-                <span>{locale === 'hu' ? 'Felhőtárhely' : locale === 'de' ? 'Cloud-Speicher' : 'Cloud storage'}</span>
+                <span>{tCatalog("/uncataloguedUi/components-continuousmanuscripteditor/cloud-storage-52fa5e7")}</span>
                 <select value={selectedCloudDestination} onChange={(event) => setSelectedCloudDestination(event.target.value)}>
                   {cloudDestinations.map((connection) => <option key={connection.id} value={connection.id}>{connection.displayName}</option>)}
                 </select>
               </label>
-            ) : <p role="alert">{locale === 'hu'
-              ? 'Nincs csatlakoztatott felhőtárhely. Csatlakoztasson egyet a Beállításokban, majd adja meg újra a szerző e-mail-címét.'
-              : locale === 'de'
-                ? 'Kein Cloud-Speicher verbunden. Verbinden Sie einen in den Einstellungen und geben Sie die E-Mail-Adresse erneut ein.'
-                : 'No cloud storage is connected. Connect one in Settings, then enter the author email again.'}</p>}
+            ) : <p role="alert">{tCatalog("/uncataloguedUi/components-continuousmanuscripteditor/no-cloud-storage-is-connected-connect-one-in-settings--3befaa1")}</p>}
             <div className="omi-collaboration-invite__actions">
               <button type="button" onClick={() => void saveAndInviteCollaborator()} disabled={collaborationBusy || !selectedCloudDestination}>
                 {collaborationBusy
                   ? (locale === 'hu' ? 'Mentés…' : locale === 'de' ? 'Wird gespeichert…' : 'Saving…')
-                  : (locale === 'hu' ? 'Mentés és folytatás' : locale === 'de' ? 'Speichern und fortfahren' : 'Save and continue')}
+                  : (tCatalog("/uncataloguedUi/components-continuousmanuscripteditor/save-and-continue-3b033f4"))}
               </button>
               <button type="button" className="secondary" onClick={() => { setInvitationEmail(''); setInvitationAgentId(''); setCloudDestinations([]); }} disabled={collaborationBusy}>
                 {locale === 'hu' ? 'Mégsem' : locale === 'de' ? 'Abbrechen' : 'Cancel'}
