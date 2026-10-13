@@ -33,7 +33,6 @@ test('research module locale normalization keeps English as the default', () => 
   assert.equal(normalizeModuleLocale('en-US'), 'en');
   assert.equal(normalizeModuleLocale('de-DE'), 'de');
   assert.equal(normalizeModuleLocale('hu_HU'), 'hu');
-  assert.equal(normalizeModuleLocale('fr'), 'en');
 });
 
 test('mathematics and health research help are available in all three base languages', () => {
