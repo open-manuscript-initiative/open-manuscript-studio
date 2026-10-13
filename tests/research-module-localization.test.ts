@@ -191,6 +191,7 @@ const localizedSourceFiles = [
   'src/modules/social-research-methods/SocialResearchMethodsPanel.tsx',
   'src/modules/spatial-research/SpatialResearchPanel.tsx',
   'src/modules/statistical-analysis/StatisticalAnalysisPanel.tsx',
+  'src/modules/mathematics/EquationEditor.tsx',
   'src/modules/health-research/copy.ts',
   'src/modules/health-research/searchCopy.ts',
 ];
