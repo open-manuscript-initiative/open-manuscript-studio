@@ -23,13 +23,24 @@ const output = execFileSync(
   ['diff', '--name-only', '--', 'src/i18n/locales'],
   { cwd: root, encoding: 'utf8' },
 ).trim();
+const poOutput = execFileSync(
+  'git',
+  ['diff', '--name-only', '--', 'locale/en/studio.po', 'locale/de/studio.po', 'locale/hu/studio.po'],
+  { cwd: root, encoding: 'utf8' },
+).trim();
 
 const changed = output ? output.split(/\r?\n/).filter(Boolean) : [];
+const changedPoLocales = new Set(
+  (poOutput ? poOutput.split(/\r?\n/).filter(Boolean) : [])
+    .map((file) => /^locale\/([^/]+)\/studio\.po$/.exec(file)?.[1])
+    .filter(Boolean),
+);
+const primaryPoLocales = new Set(['en', 'de', 'hu']);
 const unexpected = [];
 
 for (const file of changed) {
   const match = /^src\/i18n\/locales\/([^/]+)\/studio\.json$/.exec(file);
-  if (!match || !allowedLocales.has(match[1])) unexpected.push(file);
+  if (!match || (!allowedLocales.has(match[1]) && !(primaryPoLocales.has(match[1]) && changedPoLocales.has(match[1])))) unexpected.push(file);
 }
 
 if (unexpected.length) {
@@ -39,7 +50,7 @@ if (unexpected.length) {
 }
 
 if (changed.length) {
-  console.log(`Accepted ${changed.length} generated runtime locale change(s) backed by reviewed completion overlays.`);
+  console.log(`Accepted ${changed.length} generated runtime locale change(s) backed by canonical PO catalogs or reviewed completion overlays.`);
   for (const file of changed) console.log(`  ${file}`);
 } else {
   console.log('Generated runtime locale files match the committed dictionaries.');

@@ -1,3 +1,4 @@
+import { getResearchModuleCopyByLocale } from '../moduleTranslationCatalog';
 import { normalizeModuleLocale } from '../moduleLocale';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './criticalTextEdition.css';
@@ -58,38 +59,7 @@ interface CriticalEditionCopy {
   loadError: string; untitled: string; ready: string;
   kinds: Record<ReadingKind, string>;
 }
-const copyByLocale: Record<string, CriticalEditionCopy> = {
-  hu: {
-    intro: 'Hozza létre a kiadási projektet, írja le a kézirati tanúkat, majd szöveghelyenként rögzítse a főszöveget és az eltéréseket. A változatok a kritikai apparátusban is megjelennek.',
-    project: 'Kiadási projekt', title: 'A kiadás címe', language: 'A szöveg nyelve', principle: 'Szerkesztési alapelvek',
-    witnesses: 'Kézirati tanúk', addWitness: 'Tanú hozzáadása', siglum: 'Jelzet', witnessDesc: 'Leírás', repository: 'Őrzőhely', shelfmark: 'Raktári jelzet', date: 'Dátum / datálás', remove: 'Eltávolítás',
-    segments: 'Szöveghelyek és kolláció', addSegment: 'Szöveghely hozzáadása', locus: 'Hely (pl. 1. levél, 2r)', lemma: 'Főszöveg / lemma', reading: 'Tanú olvasata',
-    kind: 'Eltérés típusa', note: 'Szerkesztői megjegyzés', apparatus: 'Kritikai apparátus', noVariants: 'Ezen a helyen még nincs rögzített eltérés.',
-    kinds: { substitution: 'szövegváltozat', omission: 'kihagyás', addition: 'betoldás', orthography: 'helyesírási eltérés', transposition: 'szórend / áthelyezés' },
-    export: 'Export', exportTei: 'TEI XML letöltése', exportJson: 'Projekt JSON letöltése', importJson: 'Projekt JSON betöltése', importText: 'Szövegfájl betöltése a főszövegbe', import: 'Betöltés', saved: 'Automatikusan mentve ezen az eszközön.', backup: 'A JSON exporttal készíthet hordozható biztonsági másolatot.', deleteSegment: 'Szöveghely törlése',
-    noWitness: 'Adjon hozzá legalább egy kézirati tanút a kolláció megkezdéséhez.', noSegment: 'Adjon hozzá szöveghelyet a szerkesztés megkezdéséhez.', invalidProject: 'A fájl nem érvényes OMI kritikai kiadási projekt.', loadError: 'A fájl beolvasása nem sikerült.', untitled: 'Névtelen kritikai szövegkiadás', ready: 'A kiadás váza elkészült. A tanúkhoz tartozó mezők és szöveghelyek szerkeszthetők.',
-  },
-  en: {
-    intro: 'Set up an edition, describe its manuscript witnesses, then record the edited text and differences locus by locus. Witness readings feed the critical apparatus.',
-    project: 'Edition project', title: 'Edition title', language: 'Text language', principle: 'Editorial principles',
-    witnesses: 'Manuscript witnesses', addWitness: 'Add witness', siglum: 'Siglum', witnessDesc: 'Description', repository: 'Holding institution', shelfmark: 'Shelfmark', date: 'Date / dating', remove: 'Remove',
-    segments: 'Text loci and collation', addSegment: 'Add text locus', locus: 'Locus (e.g. fol. 1, 2r)', lemma: 'Edited text / lemma', reading: 'Witness reading',
-    kind: 'Variant type', note: 'Editorial note', apparatus: 'Critical apparatus', noVariants: 'No variants have been recorded at this locus.',
-    kinds: { substitution: 'substitution', omission: 'omission', addition: 'addition', orthography: 'orthographic variant', transposition: 'transposition' },
-    export: 'Export', exportTei: 'Download TEI XML', exportJson: 'Download project JSON', importJson: 'Import project JSON', importText: 'Load a text file into the edited text', import: 'Import', saved: 'Automatically saved on this device.', backup: 'Download project JSON to create a portable backup.', deleteSegment: 'Delete locus',
-    noWitness: 'Add at least one manuscript witness to begin collation.', noSegment: 'Add a text locus to begin editing.', invalidProject: 'This is not a valid OMI critical edition project.', loadError: 'The file could not be read.', untitled: 'Untitled critical edition', ready: 'The edition workspace is ready. Witness fields and text loci can be edited.',
-  },
-  de: {
-    intro: 'Legen Sie eine Edition an, beschreiben Sie die Handschriftenzeugen und erfassen Sie edierten Text und Abweichungen Abschnitt für Abschnitt. Die Lesarten der Zeugen fließen in den kritischen Apparat ein.',
-    project: 'Editionsprojekt', title: 'Titel der Edition', language: 'Sprache des Textes', principle: 'Editionsrichtlinien',
-    witnesses: 'Handschriftenzeugen', addWitness: 'Zeugen hinzufügen', siglum: 'Sigle', witnessDesc: 'Beschreibung', repository: 'Aufbewahrende Institution', shelfmark: 'Signatur', date: 'Datum / Datierung', remove: 'Entfernen',
-    segments: 'Textstellen und Kollation', addSegment: 'Textstelle hinzufügen', locus: 'Stelle (z. B. Bl. 1, 2r)', lemma: 'Edierter Text / Lemma', reading: 'Lesart des Zeugen',
-    kind: 'Variantenart', note: 'Editorische Anmerkung', apparatus: 'Kritischer Apparat', noVariants: 'Für diese Stelle sind noch keine Varianten erfasst.',
-    kinds: { substitution: 'Substitution', omission: 'Auslassung', addition: 'Zusatz', orthography: 'orthografische Variante', transposition: 'Umstellung' },
-    export: 'Export', exportTei: 'TEI-XML herunterladen', exportJson: 'Projekt-JSON herunterladen', importJson: 'Projekt-JSON importieren', importText: 'Textdatei in den edierten Text laden', import: 'Importieren', saved: 'Automatisch auf diesem Gerät gespeichert.', backup: 'Laden Sie das Projekt-JSON als portable Sicherung herunter.', deleteSegment: 'Textstelle löschen',
-    noWitness: 'Fügen Sie mindestens einen Handschriftenzeugen hinzu, um mit der Kollation zu beginnen.', noSegment: 'Fügen Sie eine Textstelle hinzu, um mit der Bearbeitung zu beginnen.', invalidProject: 'Dies ist kein gültiges OMI-Kritische-Edition-Projekt.', loadError: 'Die Datei konnte nicht gelesen werden.', untitled: 'Unbetitelte kritische Edition', ready: 'Der Editionsarbeitsbereich ist bereit. Zeugenfelder und Textstellen können bearbeitet werden.',
-  },
-};
+const copyByLocale: Record<string, CriticalEditionCopy> = getResearchModuleCopyByLocale('critical-text-edition-critical-text-edition-panel/copyByLocale');
 
 function makeId(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto

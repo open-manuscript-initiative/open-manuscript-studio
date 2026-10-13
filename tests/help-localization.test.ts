@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { before, test } from 'node:test';
 
+import { loadPrimaryLocaleDictionariesForTest } from './test-primary-locale-dictionaries.ts';
 import { getLocalizedHelpCopy } from '../src/i18n/helpResolver.ts';
 import { collaborationInvitationHelpTitle } from '../src/i18n/helpCollaboration.ts';
+
+before(async () => {
+  await loadPrimaryLocaleDictionariesForTest();
+});
 
 const locales = [
   'bg','cs','da','de','el','en','es','et','fi','fr','ga','hr',

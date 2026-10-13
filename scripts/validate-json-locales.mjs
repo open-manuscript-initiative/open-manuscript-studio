@@ -44,14 +44,20 @@ if (!locales.includes(referenceLocale)) {
 const reference = await loadLocale(referenceLocale);
 const referenceEntries = flatten(reference);
 const referenceKeys = new Set(referenceEntries.map(([key]) => key));
+const primaryLocales = new Set(['en', 'de', 'hu']);
 
 for (const locale of locales) {
   const dictionary = await loadLocale(locale);
   const entries = flatten(dictionary);
   const keys = new Set(entries.map(([key]) => key));
 
-  const missing = [...referenceKeys].filter((key) => !keys.has(key));
-  const extra = [...keys].filter((key) => !referenceKeys.has(key));
+  // Research-module catalogs are migrating in the primary locales first; other
+  // runtime dictionaries use the English copy fallback for these keys.
+  const expectedKeys = primaryLocales.has(locale)
+    ? referenceKeys
+    : new Set([...referenceKeys].filter((key) => !key.startsWith('researchModules.')));
+  const missing = [...expectedKeys].filter((key) => !keys.has(key));
+  const extra = [...keys].filter((key) => !expectedKeys.has(key));
   const empty = entries
     .filter(([, value]) => value.trim().length === 0)
     .map(([key]) => key);

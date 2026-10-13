@@ -9,6 +9,7 @@ const root = path.resolve(__dirname, '..');
 const jsonRoot = path.join(root, 'src', 'i18n', 'locales');
 const poRoot = path.join(root, 'locale');
 const referenceLocale = 'en';
+const canonicalPoLocales = new Set(['en', 'de', 'hu']);
 
 async function readJson(locale) {
   const file = path.join(jsonRoot, locale, 'studio.json');
@@ -26,7 +27,7 @@ if (!dirs.includes(referenceLocale)) {
 
 const englishEntries = new Map(flattenStrings(await readJson(referenceLocale)));
 
-for (const locale of dirs) {
+for (const locale of dirs.filter((candidate) => !canonicalPoLocales.has(candidate))) {
   const dictionary = await readJson(locale);
   const localizedEntries = new Map(flattenStrings(dictionary));
 
@@ -56,4 +57,4 @@ for (const locale of dirs) {
   console.log(`Exported ${locale}: ${entries.length} PO entries`);
 }
 
-console.log(`Exported ${dirs.length} locales to ${path.relative(root, poRoot)}/<locale>/studio.po.`);
+console.log(`Exported ${dirs.filter((locale) => !canonicalPoLocales.has(locale)).length} legacy locale(s) to PO. Canonical catalogs en, de and hu were left untouched.`);

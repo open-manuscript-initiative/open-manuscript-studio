@@ -3616,3 +3616,3232 @@ msgctxt "/modules/visualElements/fileFormats"
 msgid "Images, DOCX, XLSX, CSV/TSV, HTML and TeX are supported."
 msgstr "Unterstützt werden Bilder, DOCX, XLSX, CSV/TSV, HTML und TeX."
 
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/count
+msgctxt "/researchModules/research-catalog-search-panel/copy/count"
+msgid "{count} results"
+msgstr "{count} Treffer"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/empty
+msgctxt "/researchModules/research-catalog-search-panel/copy/empty"
+msgid "No results found."
+msgstr "Keine Treffer."
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/failed
+msgctxt "/researchModules/research-catalog-search-panel/copy/failed"
+msgid "Search failed. Try again or open the provider search."
+msgstr "Die Suche ist fehlgeschlagen. Versuchen Sie es erneut oder öffnen Sie die Anbietersuche."
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/fallback
+msgctxt "/researchModules/research-catalog-search-panel/copy/fallback"
+msgid "Search on provider website"
+msgstr "Auf der Anbieterwebsite suchen"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/introApi
+msgctxt "/researchModules/research-catalog-search-panel/copy/introApi"
+msgid "Search results appear here."
+msgstr "Suchergebnisse erscheinen hier."
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/introPortal
+msgctxt "/researchModules/research-catalog-search-panel/copy/introPortal"
+msgid "The search opens on the provider website in a new tab."
+msgstr "Die Suche wird in einem neuen Tab auf der Website des Anbieters geöffnet."
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/open
+msgctxt "/researchModules/research-catalog-search-panel/copy/open"
+msgid "Open results at provider"
+msgstr "Treffer beim Anbieter öffnen"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/placeholder
+msgctxt "/researchModules/research-catalog-search-panel/copy/placeholder"
+msgid "Name, title, or keyword"
+msgstr "Name, Titel oder Stichwort"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/search
+msgctxt "/researchModules/research-catalog-search-panel/copy/search"
+msgid "Search"
+msgstr "Suchen"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/searchLabel
+msgctxt "/researchModules/research-catalog-search-panel/copy/searchLabel"
+msgid "Search terms"
+msgstr "Suchbegriffe"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/searching
+msgctxt "/researchModules/research-catalog-search-panel/copy/searching"
+msgid "Searching…"
+msgstr "Suche läuft…"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/selectSource
+msgctxt "/researchModules/research-catalog-search-panel/copy/selectSource"
+msgid "Show"
+msgstr "Anzeigen"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/sources
+msgctxt "/researchModules/research-catalog-search-panel/copy/sources"
+msgid "Searchable databases"
+msgstr "Durchsuchbare Datenbanken"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/add
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/add"
+msgid "Add context"
+msgstr "Kontext hinzufügen"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/contexts
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/contexts"
+msgid "Archaeological contexts"
+msgstr "Archäologische Kontexte"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/coordinates
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/coordinates"
+msgid "Coordinates or spatial record"
+msgstr "Koordinaten oder Raumdatensatz"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/country
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/country"
+msgid "Country / region"
+msgstr "Land / Region"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/description
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/description"
+msgid "Description and observations"
+msgstr "Beschreibung und Beobachtungen"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/export
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/export"
+msgid "Export archaeology register as JSON"
+msgstr "Archäologisches Verzeichnis als JSON exportieren"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/finds
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/finds"
+msgid "Finds and object identifiers"
+msgstr "Funde und Objektkennungen"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/layer
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/layer"
+msgid "Layer / stratigraphic unit"
+msgstr "Schicht / stratigraphische Einheit"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/local
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/local"
+msgid "Data is stored on this device. Export JSON regularly to keep a portable copy."
+msgstr "Die Daten werden auf diesem Gerät gespeichert. Exportieren Sie regelmäßig JSON als portable Kopie."
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/locus
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/locus"
+msgid "Locus / context identifier"
+msgstr "Locus / Kontextkennung"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/period
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/period"
+msgid "Period / dating"
+msgstr "Epoche / Datierung"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/project
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/project"
+msgid "Research project"
+msgstr "Forschungsprojekt"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/remove
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/remove"
+msgid "Remove"
+msgstr "Entfernen"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/sample
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/sample"
+msgid "Sample identifier"
+msgstr "Probenkennung"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/site
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/site"
+msgid "Site name / identifier"
+msgstr "Fundort / Kennung"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/source
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/source"
+msgid "Documentation / source URL"
+msgstr "Dokumentation / Quellen-URL"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/subtitle
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/subtitle"
+msgid "Document sites, layers, objects, collections, and images with source and heritage records."
+msgstr "Fundorte, Schichten, Objekte, Sammlungen und Bilder mit Quellen und Kulturerbedatensätzen dokumentieren."
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/title
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/title"
+msgid "Archaeology and cultural heritage"
+msgstr "Archäologie und Kulturerbe"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/addAlignment
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/addAlignment"
+msgid "Save alignment"
+msgstr "Ausrichtung speichern"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/addDocument
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/addDocument"
+msgid "Add text"
+msgstr "Text hinzufügen"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/alignment
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/alignment"
+msgid "Parallel text alignment"
+msgstr "Parallele Texte ausrichten"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/alignmentLabel
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/alignmentLabel"
+msgid "Aligned unit label"
+msgstr "Bezeichnung der Einheit"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/annotate
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/annotate"
+msgid "Annotate"
+msgstr "Annotieren"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/annotations
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/annotations"
+msgid "Linguistic annotations"
+msgstr "Sprachliche Annotationen"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/backup
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/backup"
+msgid "Download JSON to create a portable backup."
+msgstr "Laden Sie das JSON als portable Sicherung herunter."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/caseSensitive
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/caseSensitive"
+msgid "Match case"
+msgstr "Groß- und Kleinschreibung beachten"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/category
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/category"
+msgid "Category"
+msgstr "Kategorie"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/lemma
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/lemma"
+msgid "Lemma"
+msgstr "Grundform"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/morphology
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/morphology"
+msgid "Morphology"
+msgstr "Morphologie"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/named-entity
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/named-entity"
+msgid "Named entity"
+msgstr "Eigenname / Entität"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/other
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/other"
+msgid "Other"
+msgstr "Sonstiges"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/pos
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/pos"
+msgid "Part of speech"
+msgstr "Wortart"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/semantics
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/semantics"
+msgid "Semantic label"
+msgstr "Semantische Kennzeichnung"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/chars
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/chars"
+msgid "characters"
+msgstr "Zeichen"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/corpus
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/corpus"
+msgid "Corpus settings"
+msgstr "Korpuseinstellungen"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/corpusTitle
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/corpusTitle"
+msgid "Corpus name"
+msgstr "Name des Korpus"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/date
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/date"
+msgid "Date"
+msgstr "Datum"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/datePlaceholder
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/datePlaceholder"
+msgid "e.g. c. 1670"
+msgstr "z. B. um 1670"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/deleteAnnotation
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/deleteAnnotation"
+msgid "Delete annotation"
+msgstr "Annotation löschen"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/description
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/description"
+msgid "Description"
+msgstr "Beschreibung"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/documentTitle
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/documentTitle"
+msgid "Title"
+msgstr "Titel"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/documents
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/documents"
+msgid "Texts"
+msgstr "Texte"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/export
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/export"
+msgid "Export"
+msgstr "Exportieren"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/exportCsv
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/exportCsv"
+msgid "Download concordance CSV"
+msgstr "Konkordanz-CSV herunterladen"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/exportJson
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/exportJson"
+msgid "Download corpus JSON"
+msgstr "Korpus-JSON herunterladen"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/hit
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/hit"
+msgid "hits"
+msgstr "Treffer"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/importJson
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/importJson"
+msgid "Import corpus JSON"
+msgstr "Korpus-JSON importieren"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/importText
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/importText"
+msgid "Import TXT, MD, or DOCX"
+msgstr "TXT, MD oder DOCX importieren"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/intro
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/intro"
+msgid "Build a text corpus, create context-rich concordances, annotate linguistic and named-entity features, and manually align passages across texts."
+msgstr "Erstellen Sie ein Textkorpus, erzeugen Sie Konkordanzen mit Kontext, annotieren Sie sprachliche Merkmale und Eigennamen und richten Sie parallele Textstellen manuell aus."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/invalidProject
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/invalidProject"
+msgid "This is not a valid OMI corpus project."
+msgstr "Dies ist kein gültiges OMI-Korpusprojekt."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/label
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/label"
+msgid "Label / value"
+msgstr "Merkmal / Wert"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/language
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/language"
+msgid "Default language"
+msgstr "Standardsprache"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/leftDocument
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/leftDocument"
+msgid "Left text"
+msgstr "Linker Text"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/leftPassage
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/leftPassage"
+msgid "Left passage"
+msgstr "Linke Passage"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/loadError
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/loadError"
+msgid "The file could not be read."
+msgstr "Die Datei konnte nicht gelesen werden."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/noAlignment
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/noAlignment"
+msgid "No alignments have been saved yet."
+msgstr "Es wurden noch keine Ausrichtungen gespeichert."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/noAnnotations
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/noAnnotations"
+msgid "No annotations have been saved yet."
+msgstr "Es wurden noch keine Annotationen gespeichert."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/noHits
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/noHits"
+msgid "No matches in the corpus texts."
+msgstr "Keine Treffer in den Korpustexten."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/note
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/note"
+msgid "Note"
+msgstr "Anmerkung"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/query
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/query"
+msgid "Search term"
+msgstr "Suchbegriff"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/queryPlaceholder
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/queryPlaceholder"
+msgid "Word or phrase"
+msgstr "Wort oder Ausdruck"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/remove
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/remove"
+msgid "Remove"
+msgstr "Entfernen"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/results
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/results"
+msgid "Concordance results"
+msgstr "Konkordanzergebnisse"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/rightDocument
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/rightDocument"
+msgid "Right text"
+msgstr "Rechter Text"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/rightPassage
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/rightPassage"
+msgid "Right passage"
+msgstr "Rechte Passage"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/saveAnnotation
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/saveAnnotation"
+msgid "Save annotation"
+msgstr "Annotation speichern"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/saved
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/saved"
+msgid "Automatically saved on this device."
+msgstr "Automatisch auf diesem Gerät gespeichert."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/search
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/search"
+msgid "Concordance search"
+msgstr "Konkordanzsuche"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/source
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/source"
+msgid "Source / provenance"
+msgstr "Quelle / Herkunft"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/sourcePlaceholder
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/sourcePlaceholder"
+msgid "e.g. manuscript, edition, URL"
+msgstr "z. B. Handschrift, Ausgabe, URL"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/text
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/text"
+msgid "Text"
+msgstr "Textinhalt"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/wholeWord
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/wholeWord"
+msgid "Whole word only"
+msgstr "Nur ganzes Wort"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/wordCount
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/wordCount"
+msgid "words"
+msgstr "Wörter"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/addSegment
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/addSegment"
+msgid "Add text locus"
+msgstr "Textstelle hinzufügen"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/addWitness
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/addWitness"
+msgid "Add witness"
+msgstr "Zeugen hinzufügen"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/apparatus
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/apparatus"
+msgid "Critical apparatus"
+msgstr "Kritischer Apparat"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/backup
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/backup"
+msgid "Download project JSON to create a portable backup."
+msgstr "Laden Sie das Projekt-JSON als portable Sicherung herunter."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/date
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/date"
+msgid "Date / dating"
+msgstr "Datum / Datierung"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/deleteSegment
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/deleteSegment"
+msgid "Delete locus"
+msgstr "Textstelle löschen"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/export
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/export"
+msgid "Export"
+msgstr "Exportieren"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/exportJson
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/exportJson"
+msgid "Download project JSON"
+msgstr "Projekt-JSON herunterladen"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/exportTei
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/exportTei"
+msgid "Download TEI XML"
+msgstr "TEI-XML herunterladen"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/import
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/import"
+msgid "Import"
+msgstr "Importieren"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/importJson
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/importJson"
+msgid "Import project JSON"
+msgstr "Projekt-JSON importieren"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/importText
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/importText"
+msgid "Load a text file into the edited text"
+msgstr "Textdatei in den edierten Text laden"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/intro
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/intro"
+msgid "Set up an edition, describe its manuscript witnesses, then record the edited text and differences locus by locus. Witness readings feed the critical apparatus."
+msgstr "Legen Sie eine Edition an, beschreiben Sie die Handschriftenzeugen und erfassen Sie edierten Text und Abweichungen Abschnitt für Abschnitt. Die Lesarten der Zeugen fließen in den kritischen Apparat ein."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/invalidProject
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/invalidProject"
+msgid "This is not a valid OMI critical edition project."
+msgstr "Dies ist kein gültiges OMI-Kritische-Edition-Projekt."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kind
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kind"
+msgid "Variant type"
+msgstr "Variantenart"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/addition
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/addition"
+msgid "addition"
+msgstr "Zusatz"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/omission
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/omission"
+msgid "omission"
+msgstr "Auslassung"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/orthography
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/orthography"
+msgid "orthographic variant"
+msgstr "orthografische Variante"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/substitution
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/substitution"
+msgid "substitution"
+msgstr "Substitution"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/transposition
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/transposition"
+msgid "transposition"
+msgstr "Umstellung"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/language
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/language"
+msgid "Text language"
+msgstr "Sprache des Textes"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/lemma
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/lemma"
+msgid "Edited text / lemma"
+msgstr "Edierter Text / Lemma"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/loadError
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/loadError"
+msgid "The file could not be read."
+msgstr "Die Datei konnte nicht gelesen werden."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/locus
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/locus"
+msgid "Locus (e.g. fol. 1, 2r)"
+msgstr "Stelle (z. B. Bl. 1, 2r)"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/noSegment
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/noSegment"
+msgid "Add a text locus to begin editing."
+msgstr "Fügen Sie eine Textstelle hinzu, um mit der Bearbeitung zu beginnen."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/noVariants
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/noVariants"
+msgid "No variants have been recorded at this locus."
+msgstr "Für diese Stelle sind noch keine Varianten erfasst."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/noWitness
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/noWitness"
+msgid "Add at least one manuscript witness to begin collation."
+msgstr "Fügen Sie mindestens einen Handschriftenzeugen hinzu, um mit der Kollation zu beginnen."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/note
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/note"
+msgid "Editorial note"
+msgstr "Editorische Anmerkung"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/principle
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/principle"
+msgid "Editorial principles"
+msgstr "Editionsrichtlinien"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/project
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/project"
+msgid "Edition project"
+msgstr "Editionsprojekt"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/reading
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/reading"
+msgid "Witness reading"
+msgstr "Lesart des Zeugen"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/ready
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/ready"
+msgid "The edition workspace is ready. Witness fields and text loci can be edited."
+msgstr "Der Editionsarbeitsbereich ist bereit. Zeugenfelder und Textstellen können bearbeitet werden."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/remove
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/remove"
+msgid "Remove"
+msgstr "Entfernen"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/repository
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/repository"
+msgid "Holding institution"
+msgstr "Aufbewahrende Institution"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/saved
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/saved"
+msgid "Automatically saved on this device."
+msgstr "Automatisch auf diesem Gerät gespeichert."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/segments
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/segments"
+msgid "Text loci and collation"
+msgstr "Textstellen und Kollation"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/shelfmark
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/shelfmark"
+msgid "Shelfmark"
+msgstr "Signatur"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/siglum
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/siglum"
+msgid "Siglum"
+msgstr "Sigle"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/title
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/title"
+msgid "Edition title"
+msgstr "Titel der Edition"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/untitled
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/untitled"
+msgid "Untitled critical edition"
+msgstr "Unbetitelte kritische Edition"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/witnessDesc
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/witnessDesc"
+msgid "Description"
+msgstr "Beschreibung"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/witnesses
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/witnesses"
+msgid "Manuscript witnesses"
+msgstr "Handschriftenzeugen"
+
+#. OMI translation key: /researchModules/history-archives-eleveltar-search-panel/copyByLocale/description
+msgctxt "/researchModules/history-archives-eleveltar-search-panel/copyByLocale/description"
+msgid "Search archival descriptions and digital records from the Hungarian National Archives and Budapest City Archives in the Electronic Archives Portal."
+msgstr "Durchsuchen Sie archivische Beschreibungen und Digitalisate des Ungarischen Nationalarchivs und des Budapester Stadtarchivs im Elektronischen Archivportal."
+
+#. OMI translation key: /researchModules/history-archives-eleveltar-search-panel/copyByLocale/note
+msgctxt "/researchModules/history-archives-eleveltar-search-panel/copyByLocale/note"
+msgid "Search opens on the archive portal; enter the query there."
+msgstr "Die Suche wird im Archivportal geöffnet; geben Sie die Suchbegriffe dort ein."
+
+#. OMI translation key: /researchModules/history-archives-eleveltar-search-panel/copyByLocale/open
+msgctxt "/researchModules/history-archives-eleveltar-search-panel/copyByLocale/open"
+msgid "Open archival search"
+msgstr "Archivrecherche öffnen"
+
+#. OMI translation key: /researchModules/history-archives-eleveltar-search-panel/copyByLocale/title
+msgctxt "/researchModules/history-archives-eleveltar-search-panel/copyByLocale/title"
+msgid "eLevéltár – Hungarian archival sources"
+msgstr "eLevéltár – Ungarische Archivquellen"
+
+#. OMI translation key: /researchModules/history-archives-history-archives-sources-panel/copyByLocale/choose
+msgctxt "/researchModules/history-archives-history-archives-sources-panel/copyByLocale/choose"
+msgid "Archives to display"
+msgstr "Anzuzeigende Archive"
+
+#. OMI translation key: /researchModules/history-archives-history-archives-sources-panel/copyByLocale/clear
+msgctxt "/researchModules/history-archives-history-archives-sources-panel/copyByLocale/clear"
+msgid "Hide all"
+msgstr "Alle ausblenden"
+
+#. OMI translation key: /researchModules/history-archives-history-archives-sources-panel/copyByLocale/help
+msgctxt "/researchModules/history-archives-history-archives-sources-panel/copyByLocale/help"
+msgid "Choose which catalogues appear below. Your selection is saved for this workspace."
+msgstr "Wählen Sie die Kataloge aus, die unten angezeigt werden. Die Auswahl wird für diesen Arbeitsbereich gespeichert."
+
+#. OMI translation key: /researchModules/history-archives-history-archives-sources-panel/copyByLocale/open
+msgctxt "/researchModules/history-archives-history-archives-sources-panel/copyByLocale/open"
+msgid "Open archive search"
+msgstr "Archivsuche öffnen"
+
+#. OMI translation key: /researchModules/history-archives-history-archives-sources-panel/copyByLocale/portalNote
+msgctxt "/researchModules/history-archives-history-archives-sources-panel/copyByLocale/portalNote"
+msgid "Search on the archive’s official catalogue; the link opens in a new tab."
+msgstr "Suchen Sie im offiziellen Archivkatalog. Der Link wird in einem neuen Tab geöffnet."
+
+#. OMI translation key: /researchModules/history-archives-history-archives-sources-panel/copyByLocale/selectAll
+msgctxt "/researchModules/history-archives-history-archives-sources-panel/copyByLocale/selectAll"
+msgid "Show all"
+msgstr "Alle anzeigen"
+
+#. OMI translation key: /researchModules/history-archives-romanian-archives-search-panel/copyByLocale/description
+msgctxt "/researchModules/history-archives-romanian-archives-search-panel/copyByLocale/description"
+msgid "Search the Romanian National Archives online catalogue. Results open on the Archives’ official portal in a new tab."
+msgstr "Durchsuchen Sie den Online-Katalog des Nationalarchivs Rumäniens. Die Ergebnisse öffnen sich in einem neuen Tab auf dem offiziellen Archivportal."
+
+#. OMI translation key: /researchModules/history-archives-romanian-archives-search-panel/copyByLocale/label
+msgctxt "/researchModules/history-archives-romanian-archives-search-panel/copyByLocale/label"
+msgid "Search the Romanian archival catalogue"
+msgstr "Im rumänischen Archivkatalog suchen"
+
+#. OMI translation key: /researchModules/history-archives-romanian-archives-search-panel/copyByLocale/placeholder
+msgctxt "/researchModules/history-archives-romanian-archives-search-panel/copyByLocale/placeholder"
+msgid "Name, place, date, or keyword"
+msgstr "Name, Ort, Datum oder Stichwort"
+
+#. OMI translation key: /researchModules/history-archives-romanian-archives-search-panel/copyByLocale/search
+msgctxt "/researchModules/history-archives-romanian-archives-search-panel/copyByLocale/search"
+msgid "Search"
+msgstr "Suchen"
+
+#. OMI translation key: /researchModules/history-archives-romanian-archives-search-panel/copyByLocale/title
+msgctxt "/researchModules/history-archives-romanian-archives-search-panel/copyByLocale/title"
+msgid "Romanian National Archives"
+msgstr "Nationalarchiv Rumäniens"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/add
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/add"
+msgid "Add legal source"
+msgstr "Rechtsquelle hinzufügen"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/addVersion
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/addVersion"
+msgid "Add version"
+msgstr "Fassung hinzufügen"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/authority
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/authority"
+msgid "Issuing authority"
+msgstr "Erlassende Stelle"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/citation
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/citation"
+msgid "Official citation"
+msgstr "Amtliche Fundstelle"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/compare
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/compare"
+msgid "Compare two versions"
+msgstr "Zwei Fassungen vergleichen"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/databaseQuery
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/databaseQuery"
+msgid "Search terms"
+msgstr "Suchbegriffe"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/databases
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/databases"
+msgid "External legal databases"
+msgstr "Externe Rechtsdatenbanken"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/databasesHelp
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/databasesHelp"
+msgid "Searches open in a new tab. EUR-Lex is queried directly; other entries open a web search restricted to the listed portal. OMI does not retrieve or verify results."
+msgstr "Suchvorgänge öffnen sich in einem neuen Tab. EUR-Lex wird direkt abgefragt; die übrigen Einträge öffnen eine auf das jeweilige Portal beschränkte Websuche. OMI ruft keine Ergebnisse ab und verifiziert sie nicht."
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/effective
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/effective"
+msgid "Effective date"
+msgstr "Inkrafttreten"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/export
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/export"
+msgid "Export register as JSON"
+msgstr "Verzeichnis als JSON exportieren"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/first
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/first"
+msgid "First version"
+msgstr "Erste Fassung"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/jurisdiction
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/jurisdiction"
+msgid "Jurisdiction"
+msgstr "Rechtsordnung"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/local
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/local"
+msgid "The register is stored on this device. Verify citations and validity against the primary source."
+msgstr "Das Verzeichnis wird auf diesem Gerät gespeichert. Zitate und Gültigkeit anhand der Primärquelle prüfen."
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/noSources
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/noSources"
+msgid "No legal sources recorded yet."
+msgstr "Noch keine Rechtsquellen erfasst."
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/note
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/note"
+msgid "Note"
+msgstr "Anmerkung"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/open
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/open"
+msgid "Open source"
+msgstr "Quelle öffnen"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/openPortal
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/openPortal"
+msgid "Open portal"
+msgstr "Portal öffnen"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/publication
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/publication"
+msgid "Publication date"
+msgstr "Veröffentlichungsdatum"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/remove
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/remove"
+msgid "Remove"
+msgstr "Entfernen"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/search
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/search"
+msgid "Search title, citation, or jurisdiction"
+msgstr "Suche nach Titel, Zitat oder Rechtsordnung"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/searchDatabase
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/searchDatabase"
+msgid "Search"
+msgstr "Suchen"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/second
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/second"
+msgid "Second version"
+msgstr "Zweite Fassung"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/status
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/status"
+msgid "Validity / status"
+msgstr "Gültigkeit / Status"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/subtitle
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/subtitle"
+msgid "Register citations, validity status, and source text versions."
+msgstr "Verzeichnis von Zitaten, Gültigkeitsstatus und Textfassungen."
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/text
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/text"
+msgid "Source text"
+msgstr "Quellentext"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/title
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/title"
+msgid "Legal Sources"
+msgstr "Rechtsquellen"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/titleField
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/titleField"
+msgid "Title"
+msgstr "Titel"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/type
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/type"
+msgid "Source type"
+msgstr "Quellentyp"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/url
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/url"
+msgid "Official source URL"
+msgstr "URL der amtlichen Quelle"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/versionDate
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/versionDate"
+msgid "Version date"
+msgstr "Fassungsdatum"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/versionEffective
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/versionEffective"
+msgid "Effective from"
+msgstr "Gültig ab"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/versionUrl
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/versionUrl"
+msgid "Version URL"
+msgstr "URL der Fassung"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/versions
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/versions"
+msgid "Text versions"
+msgstr "Textfassungen"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/aligned
+msgctxt "/researchModules/mathematics-equation-editor/labels/aligned"
+msgid "Aligned equations"
+msgstr "Gleichungssystem"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/cases
+msgctxt "/researchModules/mathematics-equation-editor/labels/cases"
+msgid "Cases"
+msgstr "Fallunterscheidung"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/error
+msgctxt "/researchModules/mathematics-equation-editor/labels/error"
+msgid "Invalid or unsupported LaTeX"
+msgstr "Ungültiges oder nicht unterstütztes LaTeX"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/fraction
+msgctxt "/researchModules/mathematics-equation-editor/labels/fraction"
+msgid "Fraction"
+msgstr "Bruch"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/hint
+msgctxt "/researchModules/mathematics-equation-editor/labels/hint"
+msgid "Enter an expression, without a full LaTeX document or $ delimiters. Templates replace the selection."
+msgstr "Geben Sie einen Ausdruck ohne vollständiges LaTeX-Dokument oder $-Begrenzer ein. Vorlagen ersetzen die Auswahl."
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/integral
+msgctxt "/researchModules/mathematics-equation-editor/labels/integral"
+msgid "Integral"
+msgstr "Integralzeichen"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/matrix
+msgctxt "/researchModules/mathematics-equation-editor/labels/matrix"
+msgid "Matrix"
+msgstr "Matrize"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/preview
+msgctxt "/researchModules/mathematics-equation-editor/labels/preview"
+msgid "Equation preview"
+msgstr "Formelvorschau"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/root
+msgctxt "/researchModules/mathematics-equation-editor/labels/root"
+msgid "Root"
+msgstr "Wurzel"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/scripts
+msgctxt "/researchModules/mathematics-equation-editor/labels/scripts"
+msgid "Scripts"
+msgstr "Indizes"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/source
+msgctxt "/researchModules/mathematics-equation-editor/labels/source"
+msgid "LaTeX equation"
+msgstr "LaTeX-Formel"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/sum
+msgctxt "/researchModules/mathematics-equation-editor/labels/sum"
+msgid "Sum"
+msgstr "Summe"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/templates
+msgctxt "/researchModules/mathematics-equation-editor/labels/templates"
+msgid "Equation templates"
+msgstr "Formelvorlagen"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/count
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/count"
+msgid "{count} results"
+msgstr "{count} Ergebnisse"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/editions
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/editions"
+msgid "Edition"
+msgstr "Ausgabe"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/empty
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/empty"
+msgid "No results matched this search."
+msgstr "Keine Treffer für diese Suche."
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/failed
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/failed"
+msgid "The search could not be completed. Try again later."
+msgstr "Die Suche konnte nicht abgeschlossen werden. Bitte versuchen Sie es später erneut."
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/heading
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/heading"
+msgid "Sefaria – Jewish texts and commentaries"
+msgstr "Sefaria – jüdische Texte und Kommentare"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/intro
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/intro"
+msgid "Live search across the Sefaria Library. Results show a short excerpt, citation, and edition details, with a link to the original source."
+msgstr "Live-Suche in der Sefaria-Bibliothek. Die Treffer zeigen einen kurzen Auszug, einen Beleg und Angaben zur Ausgabe mit einem Link zur Originalquelle."
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/loadMore
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/loadMore"
+msgid "Load more results"
+msgstr "Weitere Ergebnisse laden"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/loadingMore
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/loadingMore"
+msgid "Loading…"
+msgstr "Wird geladen…"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/openSource
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/openSource"
+msgid "Open in Sefaria"
+msgstr "In Sefaria öffnen"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/otherSources
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/otherSources"
+msgid "Other religious text libraries"
+msgstr "Weitere religiöse Textsammlungen"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/placeholder
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/placeholder"
+msgid "Phrase, name, or passage"
+msgstr "Begriff, Name oder Textstelle"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/portalNote
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/portalNote"
+msgid "These are external search portals; start the search on the provider’s site."
+msgstr "Dies sind externe Suchportale; starten Sie die Suche auf der Website des Anbieters."
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/queryRequired
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/queryRequired"
+msgid "Enter at least two characters."
+msgstr "Geben Sie mindestens zwei Zeichen ein."
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/search
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/search"
+msgid "Search"
+msgstr "Suchen"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/searchLabel
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/searchLabel"
+msgid "Search text"
+msgstr "Volltextsuche"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/searching
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/searching"
+msgid "Searching…"
+msgstr "Suche läuft…"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/serviceError
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/serviceError"
+msgid "Sefaria search is temporarily unavailable."
+msgstr "Die Sefaria-Suche ist vorübergehend nicht verfügbar."
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/sourceNames/bible
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/sourceNames/bible"
+msgid "Bible – Bible.com"
+msgstr "Bibel – Bible.com"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/sourceNames/buddhist
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/sourceNames/buddhist"
+msgid "Buddhist texts – BUDA"
+msgstr "Buddhistische Texte – BUDA"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/sourceNames/quran
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/sourceNames/quran"
+msgid "Qur’an – Quran.com"
+msgstr "Koran – Quran.com"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/busy
+msgctxt "/researchModules/research-databases-research-database-panel/copy/busy"
+msgid "Searching…"
+msgstr "Suche…"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/choose
+msgctxt "/researchModules/research-databases-research-database-panel/copy/choose"
+msgid "Databases"
+msgstr "Datenbanken"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/consent
+msgctxt "/researchModules/research-databases-research-database-panel/copy/consent"
+msgid "Your search terms are sent to the selected providers. Do not enter personal, participant, or confidential data."
+msgstr "Die Suchbegriffe werden an die ausgewählten Anbieter gesendet. Keine personenbezogenen, Teilnehmenden- oder vertraulichen Daten eingeben."
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/empty
+msgctxt "/researchModules/research-databases-research-database-panel/copy/empty"
+msgid "No results."
+msgstr "Keine Treffer."
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/failed
+msgctxt "/researchModules/research-databases-research-database-panel/copy/failed"
+msgid "This provider could not be searched. Other results remain available."
+msgstr "Dieser Anbieter ist nicht erreichbar. Andere Ergebnisse bleiben verfügbar."
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/more
+msgctxt "/researchModules/research-databases-research-database-panel/copy/more"
+msgid "More results"
+msgstr "Weitere Ergebnisse"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/noRights
+msgctxt "/researchModules/research-databases-research-database-panel/copy/noRights"
+msgid "Not supplied; check the source record before reuse."
+msgstr "Nicht angegeben; vor einer Übernahme den Quelldatensatz prüfen."
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/none
+msgctxt "/researchModules/research-databases-research-database-panel/copy/none"
+msgid "Select at least one database and enter 2–240 characters."
+msgstr "Mindestens eine Datenbank auswählen und 2–240 Zeichen eingeben."
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/open
+msgctxt "/researchModules/research-databases-research-database-panel/copy/open"
+msgid "Open source record"
+msgstr "Quelldatensatz öffnen"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/query
+msgctxt "/researchModules/research-databases-research-database-panel/copy/query"
+msgid "Search terms"
+msgstr "Suchbegriffe"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/rights
+msgctxt "/researchModules/research-databases-research-database-panel/copy/rights"
+msgid "Rights"
+msgstr "Nutzungsrechte"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/search
+msgctxt "/researchModules/research-databases-research-database-panel/copy/search"
+msgid "Search"
+msgstr "Suchen"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/title
+msgctxt "/researchModules/research-databases-research-database-panel/copy/title"
+msgid "Research database search"
+msgstr "Forschungsdatenbanken durchsuchen"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/add
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/add"
+msgid "Add output"
+msgstr "Ergebnis hinzufügen"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/checksum
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/checksum"
+msgid "SHA-256 checksum"
+msgstr "SHA-256-Prüfsumme"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/date
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/date"
+msgid "Release date"
+msgstr "Veröffentlichungsdatum"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/export
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/export"
+msgid "Export reproducibility register as JSON"
+msgstr "Reproduzierbarkeitsverzeichnis als JSON exportieren"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/file
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/file"
+msgid "Calculate file checksum"
+msgstr "Datei-Prüfsumme berechnen"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kind
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kind"
+msgid "Type"
+msgstr "Typ"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/code
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/code"
+msgid "Code"
+msgstr "Quellcode"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/dataset
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/dataset"
+msgid "Dataset"
+msgstr "Datensatz"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/method
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/method"
+msgid "Method"
+msgstr "Methode"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/other
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/other"
+msgid "Other"
+msgstr "Sonstiges"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/software
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/software"
+msgid "Software"
+msgstr "Anwendungssoftware"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/supplement
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/supplement"
+msgid "Supplement"
+msgstr "Zusatzmaterial"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/license
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/license"
+msgid "License"
+msgstr "Lizenz"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/local
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/local"
+msgid "The register is stored on this device. File selection records only its name, size, and SHA-256; file contents are not stored."
+msgstr "Das Verzeichnis wird auf diesem Gerät gespeichert. Bei Dateiauswahl werden nur Name, Größe und SHA-256 erfasst; der Dateiinhalt wird nicht gespeichert."
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/notes
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/notes"
+msgid "Notes and rerun instructions"
+msgstr "Anmerkungen und Hinweise zur Wiederholung"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/outputs
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/outputs"
+msgid "Related research outputs"
+msgstr "Zugehörige Forschungsergebnisse"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/pid
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/pid"
+msgid "Persistent identifier (DOI, Handle, etc.)"
+msgstr "Persistente Kennung (DOI, Handle usw.)"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/project
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/project"
+msgid "Research / publication title"
+msgstr "Titel der Forschung / Publikation"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/relation
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/relation"
+msgid "Relationship to publication"
+msgstr "Bezug zur Publikation"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/remove
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/remove"
+msgid "Remove"
+msgstr "Entfernen"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/repository
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/repository"
+msgid "Repository URL"
+msgstr "Repository-URL"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/subtitle
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/subtitle"
+msgid "Register data, code, methods, and versions linked to publications."
+msgstr "Verzeichnis von Daten, Code, Methoden und Versionen zu Publikationen."
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/title
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/title"
+msgid "Research Reproducibility"
+msgstr "Reproduzierbarkeit der Forschung"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/titleField
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/titleField"
+msgid "Name"
+msgstr "Bezeichnung"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/verified
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/verified"
+msgid "I verified the link and version"
+msgstr "Link und Version geprüft"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/version
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/version"
+msgid "Version"
+msgstr "Versionsnummer"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/addTranscript
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/addTranscript"
+msgid "Add document"
+msgstr "Dokument hinzufügen"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/addVariable
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/addVariable"
+msgid "Add variable"
+msgstr "Variable hinzufügen"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/annotation
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/annotation"
+msgid "Code selected passage"
+msgstr "Ausgewählte Passage codieren"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/apply
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/apply"
+msgid "Apply code"
+msgstr "Code zuweisen"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/codeLabel
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/codeLabel"
+msgid "Code"
+msgstr "Code-Bezeichnung"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/coded
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/coded"
+msgid "Coded passages"
+msgstr "Codierte Passagen"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/ethics
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/ethics"
+msgid "Ethics and data handling notes"
+msgstr "Ethik und Datenverarbeitung"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/export
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/export"
+msgid "Export project as JSON"
+msgstr "Projekt als JSON exportieren"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/label
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/label"
+msgid "Description / code"
+msgstr "Beschreibung / Code"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/method
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/method"
+msgid "Methodology and sampling"
+msgstr "Methodik und Stichprobe"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/name
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/name"
+msgid "Project title"
+msgstr "Projekttitel"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/noSelection
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/noSelection"
+msgid "Select text in the transcript, then assign a code."
+msgstr "Text im Transkript markieren und einen Code zuweisen."
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/note
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/note"
+msgid "Analytic note"
+msgstr "Analytische Notiz"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/participant
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/participant"
+msgid "Participant code"
+msgstr "Teilnehmendencode"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/private
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/private"
+msgid "The working copy is stored on this device. Anonymize sensitive data."
+msgstr "Die Arbeitskopie wird auf diesem Gerät gespeichert. Sensible Daten anonymisieren."
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/project
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/project"
+msgid "Research design"
+msgstr "Forschungsdesign"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/question
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/question"
+msgid "Research question"
+msgstr "Forschungsfrage"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/remove
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/remove"
+msgid "Remove"
+msgstr "Entfernen"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/subtitle
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/subtitle"
+msgid "Workspace for research design, codebooks, and qualitative data."
+msgstr "Arbeitsbereich für Forschungsdesign, Codebuch und qualitative Daten."
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/text
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/text"
+msgid "Transcript / notes"
+msgstr "Transkript / Notizen"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/title
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/title"
+msgid "Social Research Methods"
+msgstr "Methoden der Sozialforschung"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/transcriptTitle
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/transcriptTitle"
+msgid "Document title"
+msgstr "Dokumenttitel"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/transcripts
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/transcripts"
+msgid "Interviews and field notes"
+msgstr "Interviews und Feldnotizen"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/type
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/type"
+msgid "Measurement level or type"
+msgstr "Messniveau oder Typ"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/values
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/values"
+msgid "Values and coding rules"
+msgstr "Werte und Codierregeln"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/varName
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/varName"
+msgid "Variable name"
+msgstr "Variablenname"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/variables
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/variables"
+msgid "Codebook"
+msgstr "Codebuch"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/addDeviation
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/addDeviation"
+msgid "Log deviation"
+msgstr "Abweichung protokollieren"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/alpha
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/alpha"
+msgid "Significance level (α)"
+msgstr "Signifikanzniveau (α)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/analysisPlan
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/analysisPlan"
+msgid "Preregistered analysis plan"
+msgstr "Präregistrierter Analyseplan"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/anova
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/anova"
+msgid "One-way ANOVA"
+msgstr "Einfaktorielle ANOVA"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/ci
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/ci"
+msgid "95% confidence interval for the mean"
+msgstr "95%-Konfidenzintervall des Mittelwerts"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/column
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/column"
+msgid "Variable"
+msgstr "Merkmal"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/columns
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/columns"
+msgid "variables"
+msgstr "Variablen"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/comparison
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/comparison"
+msgid "Group comparison"
+msgstr "Gruppenvergleich"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/count
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/count"
+msgid "Count"
+msgstr "Anzahl"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/csvError
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/csvError"
+msgid "Could not read the CSV/TSV. Check the header, quotes, and consistent column counts."
+msgstr "CSV/TSV nicht lesbar: Kopfzeile, Anführungszeichen und einheitliche Spaltenzahl prüfen."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/dataset
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/dataset"
+msgid "Dataset"
+msgstr "Datensatz"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/descriptive
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/descriptive"
+msgid "Descriptive statistics"
+msgstr "Deskriptive Statistik"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/design
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/design"
+msgid "Experimental design"
+msgstr "Versuchsplanung"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/deviation
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/deviation"
+msgid "Deviation from frozen plan"
+msgstr "Abweichung vom eingefrorenen Plan"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/deviations
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/deviations"
+msgid "Logged deviations"
+msgstr "Protokollierte Abweichungen"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/df
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/df"
+msgid "Degrees of freedom"
+msgstr "Freiheitsgrade"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/dfBetween
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/dfBetween"
+msgid "Between-group degrees of freedom"
+msgstr "Freiheitsgrade zwischen Gruppen"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/dfWithin
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/dfWithin"
+msgid "Within-group degrees of freedom"
+msgstr "Freiheitsgrade innerhalb der Gruppen"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/downloadAssignments
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/downloadAssignments"
+msgid "Download allocation list"
+msgstr "Zuteilungsliste herunterladen"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/effect
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/effect"
+msgid "Expected standardized effect (d)"
+msgstr "Erwartete standardisierte Effektstärke (d)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/estimateNote
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/estimateNote"
+msgid "Normal approximation for a two-sided mean difference between two independent groups; check assumptions before finalizing the design."
+msgstr "Normalapproximation für einen zweiseitigen Mittelwertvergleich zweier unabhängiger Gruppen; Annahmen vor der endgültigen Planung prüfen."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/exclusion
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/exclusion"
+msgid "Exclusion criteria (one per line)"
+msgstr "Ausschlusskriterien (je eine Zeile)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/export
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/export"
+msgid "Export analysis and data as JSON"
+msgstr "Analyse und Daten als JSON exportieren"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/f
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/f"
+msgid "F statistic"
+msgstr "F-Statistik"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/freeze
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/freeze"
+msgid "Preregister and freeze plan"
+msgstr "Plan präregistrieren und einfrieren"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/frozen
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/frozen"
+msgid "Preregistered"
+msgstr "Präregistriert"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/groupColumn
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/groupColumn"
+msgid "Grouping variable"
+msgstr "Gruppierungsvariable"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/groups
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/groups"
+msgid "Groups"
+msgstr "Gruppen"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/groupsPlan
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/groupsPlan"
+msgid "Groups (comma separated)"
+msgstr "Gruppen (durch Komma getrennt)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/histogram
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/histogram"
+msgid "Distribution (histogram)"
+msgstr "Verteilung (Histogramm)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/hypothesis
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/hypothesis"
+msgid "Hypothesis"
+msgstr "Hypothese"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/importCsv
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/importCsv"
+msgid "Import CSV / TSV"
+msgstr "CSV / TSV importieren"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/importJson
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/importJson"
+msgid "Import analysis JSON"
+msgstr "Analyse-JSON importieren"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/importLab
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/importLab"
+msgid "Import laboratory project"
+msgstr "Laborprojekt importieren"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/inclusion
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/inclusion"
+msgid "Inclusion criteria (one per line)"
+msgstr "Einschlusskriterien (je eine Zeile)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/intercept
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/intercept"
+msgid "Intercept"
+msgstr "Achsenabschnitt"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/intro
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/intro"
+msgid "Explore tabular research data with descriptive statistics, group comparisons, linear regression, and reproducible reports."
+msgstr "Tabellarische Forschungsdaten deskriptiv auswerten, Gruppen vergleichen, linear regressieren und Ergebnisse reproduzierbar dokumentieren."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/jsonError
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/jsonError"
+msgid "The OMI statistical JSON is invalid."
+msgstr "Das OMI-Statistik-JSON ist ungültig."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/labError
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/labError"
+msgid "The laboratory JSON contains no importable measurement data."
+msgstr "Das Labor-JSON enthält keine importierbaren Messdaten."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/local
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/local"
+msgid "The dataset and settings stay on this device. File contents are not uploaded. Anonymize sensitive or personal data before importing."
+msgstr "Datensatz und Einstellungen bleiben auf diesem Gerät. Dateiinhalte werden nicht hochgeladen. Sensible oder personenbezogene Daten vor dem Import anonymisieren."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/maximum
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/maximum"
+msgid "Maximum"
+msgstr "Höchstwert"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/mean
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/mean"
+msgid "Mean"
+msgstr "Mittelwert"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/meanDifference
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/meanDifference"
+msgid "Mean difference (1 − 2)"
+msgstr "Mittelwertdifferenz (1 − 2)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/median
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/median"
+msgid "Median"
+msgstr "Zentralwert"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/methodNote
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/methodNote"
+msgid "The t-test is Welch's two-sided test and does not assume equal group variances. ANOVA is the conventional one-way model. Researchers should assess OLS assumptions, missing data, and multiple testing."
+msgstr "Der t-Test ist zweiseitig nach Welch und setzt keine gleichen Gruppenvarianzen voraus. Die ANOVA ist ein klassisches einfaktorielles Modell. OLS-Annahmen, fehlende Daten und multiples Testen sind zu prüfen."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/methods
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/methods"
+msgid "Method note"
+msgstr "Methodischer Hinweis"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/minimum
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/minimum"
+msgid "Minimum"
+msgstr "Mindestwert"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/n
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/n"
+msgid "Valid sample size"
+msgstr "Gültige Fallzahl"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/noComparison
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/noComparison"
+msgid "Each group needs at least two valid numeric values."
+msgstr "Jede Gruppe benötigt mindestens zwei gültige numerische Werte."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/noDataset
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/noDataset"
+msgid "Import a CSV/TSV dataset or an experimental laboratory project."
+msgstr "Importieren Sie einen CSV/TSV-Datensatz oder ein experimentelles Laborprojekt."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/noNumeric
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/noNumeric"
+msgid "The selected column has too few valid numeric values."
+msgstr "Die ausgewählte Spalte enthält zu wenige gültige numerische Werte."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/outcome
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/outcome"
+msgid "Primary outcome"
+msgstr "Primärer Endpunkt"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/p
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/p"
+msgid "Two-sided p-value"
+msgstr "Zweiseitiger p-Wert"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/participantCount
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/participantCount"
+msgid "Number of participants"
+msgstr "Teilnehmendenzahl"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/power
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/power"
+msgid "Target statistical power"
+msgstr "Angestrebte Teststärke"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/preview
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/preview"
+msgid "Data preview (first 15 rows)"
+msgstr "Datenvorschau (erste 15 Zeilen)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/q1
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/q1"
+msgid "1st quartile"
+msgstr "1. Quartil"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/q3
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/q3"
+msgid "3rd quartile"
+msgstr "3. Quartil"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/r
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/r"
+msgid "Pearson correlation (r)"
+msgstr "Pearson-Korrelation (r)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/r2
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/r2"
+msgid "Explained variance (R²)"
+msgstr "Erklärte Varianz (R²)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/randomizationNote
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/randomizationNote"
+msgid "This is reproducible simple randomization without blocking. Use a separate process to conceal allocation."
+msgstr "Reproduzierbare einfache Randomisierung ohne Blockbildung. Die Zuteilungsverdeckung muss separat sichergestellt werden."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/randomize
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/randomize"
+msgid "Generate allocation list"
+msgstr "Zuteilungsliste erstellen"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/regression
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/regression"
+msgid "Linear regression (OLS)"
+msgstr "Lineare Regression (OLS)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/removeData
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/removeData"
+msgid "Remove dataset"
+msgstr "Datensatz entfernen"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/rows
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/rows"
+msgid "rows"
+msgstr "Zeilen"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/sampleEstimate
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/sampleEstimate"
+msgid "Estimated sample size per group"
+msgstr "Geschätzte Fallzahl je Gruppe"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/sd
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/sd"
+msgid "Sample standard deviation"
+msgstr "Stichprobenstandardabweichung"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/seed
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/seed"
+msgid "Randomization seed"
+msgstr "Randomisierungs-Seed"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/slope
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/slope"
+msgid "Slope"
+msgstr "Steigung"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/sourceStudy
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/sourceStudy"
+msgid "Related research / experiment"
+msgstr "Zugehörige Forschung / Untersuchung"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/t
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/t"
+msgid "Welch's t"
+msgstr "Welch-t"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/title
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/title"
+msgid "Statistical Analysis and Data"
+msgstr "Statistik und Datenanalyse"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/titleField
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/titleField"
+msgid "Analysis title"
+msgstr "Analysetitel"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/unsupported
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/unsupported"
+msgid "This is not a valid OMI statistical workspace or the version is unsupported."
+msgstr "Kein gültiger OMI-Statistikarbeitsbereich oder nicht unterstützte Version."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/valueColumn
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/valueColumn"
+msgid "Numeric variable"
+msgstr "Numerische Variable"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/x
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/x"
+msgid "Predictor (X)"
+msgstr "Prädiktor (X)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/y
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/y"
+msgid "Outcome (Y)"
+msgstr "Zielvariable (Y)"
+
+#. OMI translation key: /researchModules/shell/translations/activate
+msgctxt "/researchModules/shell/translations/activate"
+msgid "Activate"
+msgstr "Aktivieren"
+
+#. OMI translation key: /researchModules/shell/translations/active
+msgctxt "/researchModules/shell/translations/active"
+msgid "Active in this workspace"
+msgstr "In diesem Arbeitsbereich aktiv"
+
+#. OMI translation key: /researchModules/shell/translations/available
+msgctxt "/researchModules/shell/translations/available"
+msgid "Available"
+msgstr "Verfügbar"
+
+#. OMI translation key: /researchModules/shell/translations/description
+msgctxt "/researchModules/shell/translations/description"
+msgid "Research workspaces for the modules enabled in Settings."
+msgstr "Forschungsarbeitsbereiche für die in den Einstellungen aktivierten Module."
+
+#. OMI translation key: /researchModules/shell/translations/disabledByInstallation
+msgctxt "/researchModules/shell/translations/disabledByInstallation"
+msgid "Disabled by this installation"
+msgstr "In dieser Installation deaktiviert"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/dataProvider
+msgctxt "/researchModules/shell/translations/europeana/dataProvider"
+msgid "Data provider"
+msgstr "Datenlieferant"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/errorTitle
+msgctxt "/researchModules/shell/translations/europeana/errorTitle"
+msgid "Search unavailable."
+msgstr "Suche nicht verfügbar."
+
+#. OMI translation key: /researchModules/shell/translations/europeana/loadMore
+msgctxt "/researchModules/shell/translations/europeana/loadMore"
+msgid "Load more results"
+msgstr "Weitere Ergebnisse laden"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/loadingMore
+msgctxt "/researchModules/shell/translations/europeana/loadingMore"
+msgid "Loading…"
+msgstr "Wird geladen…"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/noResults
+msgctxt "/researchModules/shell/translations/europeana/noResults"
+msgid "No records matched this search."
+msgstr "Für diese Suche wurden keine Einträge gefunden."
+
+#. OMI translation key: /researchModules/shell/translations/europeana/openRecord
+msgctxt "/researchModules/shell/translations/europeana/openRecord"
+msgid "Open source institution record"
+msgstr "Eintrag bei der verwahrenden Einrichtung öffnen"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/provider
+msgctxt "/researchModules/shell/translations/europeana/provider"
+msgid "Europeana Search"
+msgstr "Europeana-Suche"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/queryRequired
+msgctxt "/researchModules/shell/translations/europeana/queryRequired"
+msgid "Enter at least two characters to search."
+msgstr "Geben Sie mindestens zwei Zeichen für die Suche ein."
+
+#. OMI translation key: /researchModules/shell/translations/europeana/resultCount
+msgctxt "/researchModules/shell/translations/europeana/resultCount"
+msgid "{count} results"
+msgstr "{count} Ergebnisse"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/rights
+msgctxt "/researchModules/shell/translations/europeana/rights"
+msgid "Rights"
+msgstr "Rechte"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/searchButton
+msgctxt "/researchModules/shell/translations/europeana/searchButton"
+msgid "Search"
+msgstr "Suchen"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/searchFailed
+msgctxt "/researchModules/shell/translations/europeana/searchFailed"
+msgid "Europeana could not complete the search. Try again later."
+msgstr "Europeana konnte die Suche nicht ausführen. Bitte versuchen Sie es später erneut."
+
+#. OMI translation key: /researchModules/shell/translations/europeana/searchLabel
+msgctxt "/researchModules/shell/translations/europeana/searchLabel"
+msgid "Search Europeana"
+msgstr "Suche in Europeana"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/searchPlaceholder
+msgctxt "/researchModules/shell/translations/europeana/searchPlaceholder"
+msgid "Name, place, date, or keyword"
+msgstr "Name, Ort, Datum oder Stichwort"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/searching
+msgctxt "/researchModules/shell/translations/europeana/searching"
+msgid "Searching…"
+msgstr "Suche läuft…"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/setupRequired
+msgctxt "/researchModules/shell/translations/europeana/setupRequired"
+msgid "The Studio administrator must configure a Europeana API key on the server."
+msgstr "Die Studio-Administration muss einen Europeana-API-Schlüssel auf dem Server konfigurieren."
+
+#. OMI translation key: /researchModules/shell/translations/europeana/sourceRecord
+msgctxt "/researchModules/shell/translations/europeana/sourceRecord"
+msgid "Search Europeana’s cultural heritage catalogue. Each result links back to Europeana or its source institution."
+msgstr "Durchsuchen Sie den Kulturerbe-Katalog von Europeana. Jeder Treffer führt zurück zu Europeana oder zur liefernden Einrichtung."
+
+#. OMI translation key: /researchModules/shell/translations/localPreferenceNote
+msgctxt "/researchModules/shell/translations/localPreferenceNote"
+msgid "Workspace selections are saved to your Studio account and enforced by the server."
+msgstr "Die Auswahl wird im Studio-Konto gespeichert und vom Server geprüft."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.archaeology/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.archaeology/description"
+msgid "Document sites, contexts, stratigraphy, finds, samples, objects, provenance, rights, images, and source records."
+msgstr "Fundorte, Kontexte, Stratigraphie, Funde, Proben, Objekte, Provenienz, Rechte, Bilder und Quellen dokumentieren."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.archaeology/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.archaeology/overview"
+msgid "Archaeology and cultural heritage workspace"
+msgstr "Arbeitsbereich Archäologie und Kulturerbe"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.archaeology/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.archaeology/title"
+msgid "Archaeology & Cultural Heritage"
+msgstr "Archäologie und Kulturerbe"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.corpus-linguistics/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.corpus-linguistics/description"
+msgid "Search corpora, inspect concordances, align texts, and annotate linguistic features."
+msgstr "Korpora durchsuchen, Konkordanzen untersuchen, Texte ausrichten und sprachliche Merkmale annotieren."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.corpus-linguistics/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.corpus-linguistics/overview"
+msgid "Corpus workspace"
+msgstr "Korpusarbeitsbereich"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.corpus-linguistics/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.corpus-linguistics/title"
+msgid "Corpus and linguistic annotation"
+msgstr "Korpus und linguistische Annotation"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.critical-text-edition/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.critical-text-edition/description"
+msgid "Connect transcriptions and textual variants with manuscript witnesses, critical apparatus, and digital editions; search scholarly literature on philosophy and textual studies."
+msgstr "Transkriptionen und Textvarianten mit Handschriftenzeugen, kritischem Apparat und digitalen Editionen verbinden; Forschungsliteratur zu Philosophie und Textwissenschaften durchsuchen."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.critical-text-edition/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.critical-text-edition/overview"
+msgid "Critical edition workspace"
+msgstr "Arbeitsbereich für kritische Editionen"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.critical-text-edition/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.critical-text-edition/title"
+msgid "Critical text edition"
+msgstr "Kritische Textedition"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.cultural-heritage/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.cultural-heritage/description"
+msgid "Connect objects, sites, people, and events with time and place, and annotate regions within images."
+msgstr "Objekte, Fundorte, Personen und Ereignisse mit Zeit und Ort verknüpfen sowie Bildbereiche annotieren."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.cultural-heritage/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.cultural-heritage/overview"
+msgid "Cultural heritage workspace"
+msgstr "Arbeitsbereich Kulturerbe"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.cultural-heritage/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.cultural-heritage/title"
+msgid "Cultural heritage objects and images"
+msgstr "Kulturerbeobjekte und Bilder"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.experimental-laboratory/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.experimental-laboratory/description"
+msgid "Structure investigations, studies, samples, protocols, instruments, assays, measurements, and raw or derived research data."
+msgstr "Untersuchungen, Studien, Proben, Protokolle, Geräte, Assays, Messungen und Roh- oder abgeleitete Forschungsdaten strukturieren."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.experimental-laboratory/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.experimental-laboratory/overview"
+msgid "Experimental research workspace"
+msgstr "Arbeitsbereich Experimentalforschung"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.experimental-laboratory/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.experimental-laboratory/title"
+msgid "Experimental and laboratory research"
+msgstr "Experimentelle und Laborforschung"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.history-archives/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.history-archives/description"
+msgid "Discover historical and archival sources across institutions, and keep each result connected to its holding archive."
+msgstr "Historische und archivische Quellen institutionsübergreifend auffinden und jedes Ergebnis mit seinem verwahrenden Archiv verbinden."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.history-archives/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.history-archives/overview"
+msgid "Historical and archival sources"
+msgstr "Historische und archivische Quellen"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.history-archives/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.history-archives/title"
+msgid "History & Archives"
+msgstr "Geschichte und Archive"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.legal-sources/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.legal-sources/description"
+msgid "Search legislation and court decisions by jurisdiction and effective date, cite provisions and cases, compare versions, and connect national sources."
+msgstr "Gesetze und Gerichtsentscheidungen nach Rechtsordnung und Geltungszeit suchen, Vorschriften und Fälle zitieren, Fassungen vergleichen und nationale Quellen verbinden."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.legal-sources/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.legal-sources/overview"
+msgid "Legal research workspace"
+msgstr "Arbeitsbereich Rechtswissenschaft"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.legal-sources/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.legal-sources/title"
+msgid "Legal sources and citations"
+msgstr "Rechtsquellen und Zitate"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.mathematics/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.mathematics/description"
+msgid "LaTeX equations with validated MathML preview, matrices, cases and aligned equations."
+msgstr "LaTeX-Formeln mit geprüfter MathML-Vorschau, Matrizen, Fallunterscheidungen und Gleichungssystemen."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.mathematics/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.mathematics/overview"
+msgid "Mathematical equation workspace"
+msgstr "Mathematischer Formelarbeitsbereich"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.mathematics/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.mathematics/title"
+msgid "Mathematics"
+msgstr "Mathematik"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.medical-sciences/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.medical-sciences/description"
+msgid "Clinical studies, case reports, endpoints and ethics statements."
+msgstr "Klinische Studien, Fallberichte, Endpunkte und Ethikerklärungen."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.medical-sciences/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.medical-sciences/overview"
+msgid "Medical and Health Sciences"
+msgstr "Medizin und Gesundheitswissenschaften"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.medical-sciences/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.medical-sciences/title"
+msgid "Medical and Health Sciences"
+msgstr "Medizin und Gesundheitswissenschaften"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.musicology/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.musicology/description"
+msgid "Work with notation and musical events, align scores with recordings, annotate passages, and compare versions."
+msgstr "Mit Notation und musikalischen Ereignissen arbeiten, Partituren und Aufnahmen abgleichen, Abschnitte annotieren und Fassungen vergleichen."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.musicology/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.musicology/overview"
+msgid "Music research workspace"
+msgstr "Arbeitsbereich Musikwissenschaft"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.musicology/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.musicology/title"
+msgid "Musicology"
+msgstr "Musikwissenschaft"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.psychology/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.psychology/description"
+msgid "Research protocols, instruments, scoring rules and psychometric results."
+msgstr "Forschungsprotokolle, Messinstrumente, Auswertungsregeln und psychometrische Ergebnisse."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.psychology/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.psychology/overview"
+msgid "Psychology"
+msgstr "Psychologie"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.psychology/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.psychology/title"
+msgid "Psychology"
+msgstr "Psychologie"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.religious-texts/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.religious-texts/description"
+msgid "Search Jewish texts and commentaries in Sefaria, follow source links, and open external Bible, Qur’an, and Buddhist text libraries."
+msgstr "Jüdische Texte und Kommentare in Sefaria durchsuchen, Quellen verknüpfen und externe Bibel-, Koran- und buddhistische Textsammlungen öffnen."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.religious-texts/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.religious-texts/overview"
+msgid "Religious text sources"
+msgstr "Religiöse Textquellen"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.religious-texts/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.religious-texts/title"
+msgid "Religious texts and sources"
+msgstr "Religiöse Texte und Quellen"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.research-reproducibility/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.research-reproducibility/description"
+msgid "Link datasets, code, methods, and supplements to versioned sources and repositories, and record how publications relate to research outputs."
+msgstr "Datensätze, Code, Methoden und Ergänzungsmaterialien mit versionierten Quellen und Repositorien verknüpfen und Publikationen den Forschungsergebnissen zuordnen."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.research-reproducibility/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.research-reproducibility/overview"
+msgid "Research outputs and reproducibility"
+msgstr "Forschungsergebnisse und Reproduzierbarkeit"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.research-reproducibility/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.research-reproducibility/title"
+msgid "Research data and reproducibility"
+msgstr "Forschungsdaten und Reproduzierbarkeit"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.social-research-methods/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.social-research-methods/description"
+msgid "Describe surveys, variables, and codebooks; code interviews; and connect datasets with research methods."
+msgstr "Erhebungen, Variablen und Codebücher beschreiben, Interviews codieren und Datensätze mit Forschungsmethoden verknüpfen."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.social-research-methods/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.social-research-methods/overview"
+msgid "Social research workspace"
+msgstr "Arbeitsbereich Sozialforschung"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.social-research-methods/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.social-research-methods/title"
+msgid "Social research data and methods"
+msgstr "Sozialwissenschaftliche Daten und Methoden"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.spatial-research/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.spatial-research/description"
+msgid "Register georeferenced research objects, import and export GeoJSON, and retain coordinate reference information."
+msgstr "Georeferenzierte Forschungsobjekte erfassen, GeoJSON importieren und exportieren sowie Koordinatenreferenzangaben dokumentieren."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.spatial-research/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.spatial-research/overview"
+msgid "Spatial research workspace"
+msgstr "Arbeitsbereich Raumforschung"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.spatial-research/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.spatial-research/title"
+msgid "Spatial research and GIS"
+msgstr "Raumbezogene Forschung und GIS"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.statistical-analysis/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.statistical-analysis/description"
+msgid "Import CSV/TSV datasets and run descriptive statistics, Welch tests, one-way ANOVA, and linear regression with reproducible JSON reports."
+msgstr "CSV/TSV-Datensätze importieren und deskriptive Statistik, Welch-Tests, einfaktorielle ANOVA sowie lineare Regression mit reproduzierbaren JSON-Berichten durchführen."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.statistical-analysis/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.statistical-analysis/overview"
+msgid "Statistical analysis workspace"
+msgstr "Arbeitsbereich Statistik"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.statistical-analysis/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.statistical-analysis/title"
+msgid "Statistical Analysis and Data"
+msgstr "Statistik und Datenanalyse"
+
+#. OMI translation key: /researchModules/shell/translations/nara/attribution
+msgctxt "/researchModules/shell/translations/nara/attribution"
+msgid "This product uses the National Archives Catalog API but is not endorsed or certified by the National Archives and Records Administration."
+msgstr "This product uses the National Archives Catalog API but is not endorsed or certified by the National Archives and Records Administration."
+
+#. OMI translation key: /researchModules/shell/translations/nara/dataProvider
+msgctxt "/researchModules/shell/translations/nara/dataProvider"
+msgid "Record group"
+msgstr "Bestandsgruppe"
+
+#. OMI translation key: /researchModules/shell/translations/nara/errorTitle
+msgctxt "/researchModules/shell/translations/nara/errorTitle"
+msgid "Search unavailable."
+msgstr "Suche nicht verfügbar."
+
+#. OMI translation key: /researchModules/shell/translations/nara/loadMore
+msgctxt "/researchModules/shell/translations/nara/loadMore"
+msgid "Load more results"
+msgstr "Weitere Ergebnisse laden"
+
+#. OMI translation key: /researchModules/shell/translations/nara/loadingMore
+msgctxt "/researchModules/shell/translations/nara/loadingMore"
+msgid "Loading…"
+msgstr "Wird geladen…"
+
+#. OMI translation key: /researchModules/shell/translations/nara/noResults
+msgctxt "/researchModules/shell/translations/nara/noResults"
+msgid "No records matched this search."
+msgstr "Für diese Suche wurden keine Einträge gefunden."
+
+#. OMI translation key: /researchModules/shell/translations/nara/openRecord
+msgctxt "/researchModules/shell/translations/nara/openRecord"
+msgid "Open record in the National Archives Catalog"
+msgstr "Eintrag im Katalog des Nationalarchivs öffnen"
+
+#. OMI translation key: /researchModules/shell/translations/nara/provider
+msgctxt "/researchModules/shell/translations/nara/provider"
+msgid "U.S. National Archives Catalog"
+msgstr "Katalog des US-Nationalarchivs"
+
+#. OMI translation key: /researchModules/shell/translations/nara/queryRequired
+msgctxt "/researchModules/shell/translations/nara/queryRequired"
+msgid "Enter at least two characters to search."
+msgstr "Geben Sie mindestens zwei Zeichen für die Suche ein."
+
+#. OMI translation key: /researchModules/shell/translations/nara/resultCount
+msgctxt "/researchModules/shell/translations/nara/resultCount"
+msgid "{count} results"
+msgstr "{count} Ergebnisse"
+
+#. OMI translation key: /researchModules/shell/translations/nara/rights
+msgctxt "/researchModules/shell/translations/nara/rights"
+msgid "Use restriction"
+msgstr "Nutzungsbeschränkung"
+
+#. OMI translation key: /researchModules/shell/translations/nara/searchButton
+msgctxt "/researchModules/shell/translations/nara/searchButton"
+msgid "Search"
+msgstr "Suchen"
+
+#. OMI translation key: /researchModules/shell/translations/nara/searchFailed
+msgctxt "/researchModules/shell/translations/nara/searchFailed"
+msgid "The National Archives Catalog could not complete the search. Try again later."
+msgstr "Der Katalog des Nationalarchivs konnte die Suche nicht ausführen. Bitte versuchen Sie es später erneut."
+
+#. OMI translation key: /researchModules/shell/translations/nara/searchLabel
+msgctxt "/researchModules/shell/translations/nara/searchLabel"
+msgid "Search the U.S. National Archives"
+msgstr "Suche im Katalog des US-Nationalarchivs"
+
+#. OMI translation key: /researchModules/shell/translations/nara/searchPlaceholder
+msgctxt "/researchModules/shell/translations/nara/searchPlaceholder"
+msgid "Name, place, date, or keyword"
+msgstr "Name, Ort, Datum oder Stichwort"
+
+#. OMI translation key: /researchModules/shell/translations/nara/searching
+msgctxt "/researchModules/shell/translations/nara/searching"
+msgid "Searching…"
+msgstr "Suche läuft…"
+
+#. OMI translation key: /researchModules/shell/translations/nara/setupRequired
+msgctxt "/researchModules/shell/translations/nara/setupRequired"
+msgid "The Studio administrator must configure a read-only NARA Catalog API key on the server."
+msgstr "Die Studio-Administration muss einen schreibgeschützten NARA-API-Schlüssel auf dem Server konfigurieren."
+
+#. OMI translation key: /researchModules/shell/translations/nara/sourceRecord
+msgctxt "/researchModules/shell/translations/nara/sourceRecord"
+msgid "Search archival descriptions in the U.S. National Archives Catalog. Results link to the original NARA record."
+msgstr "Durchsuchen Sie die archivischen Beschreibungen im Katalog des US-Nationalarchivs. Die Treffer verweisen auf den ursprünglichen NARA-Eintrag."
+
+#. OMI translation key: /researchModules/shell/translations/navigation
+msgctxt "/researchModules/shell/translations/navigation"
+msgid "Research modules"
+msgstr "Forschungsmodule"
+
+#. OMI translation key: /researchModules/shell/translations/noActiveModules
+msgctxt "/researchModules/shell/translations/noActiveModules"
+msgid "No research modules are enabled. Turn modules on in Settings to show them here."
+msgstr "Es sind keine Forschungsmodule aktiviert. Aktivieren Sie Module in den Einstellungen, damit sie hier erscheinen."
+
+#. OMI translation key: /researchModules/shell/translations/noFeatures
+msgctxt "/researchModules/shell/translations/noFeatures"
+msgid "Research tools for this discipline appear here."
+msgstr "Die Forschungswerkzeuge dieses Fachgebiets erscheinen hier."
+
+#. OMI translation key: /researchModules/shell/translations/noModules
+msgctxt "/researchModules/shell/translations/noModules"
+msgid "No research modules are registered yet."
+msgstr "Es sind noch keine Forschungsmodule registriert."
+
+#. OMI translation key: /researchModules/shell/translations/policyError
+msgctxt "/researchModules/shell/translations/policyError"
+msgid "Module settings could not be loaded or saved. Check your connection and try again."
+msgstr "Moduleinstellungen konnten nicht geladen oder gespeichert werden. Prüfen Sie die Verbindung und versuchen Sie es erneut."
+
+#. OMI translation key: /researchModules/shell/translations/settingsDescription
+msgctxt "/researchModules/shell/translations/settingsDescription"
+msgid "Choose which research modules are available in the Modules view."
+msgstr "Wählen Sie aus, welche Forschungsmodule in der Modulansicht erscheinen."
+
+#. OMI translation key: /researchModules/shell/translations/title
+msgctxt "/researchModules/shell/translations/title"
+msgid "Research modules"
+msgstr "Forschungsmodule"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/title
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/title"
+msgid "Research modules"
+msgstr "Forschungsmodule"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/insert
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/insert"
+msgid "Insert module section"
+msgstr "Modulabschnitt einfügen"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/choose
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/choose"
+msgid "Select saved excerpt"
+msgstr "Gespeicherten Auszug auswählen"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/excerpt
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/excerpt"
+msgid "Excerpt"
+msgstr "Auszug"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/source
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/source"
+msgid "Source (required)"
+msgstr "Quelle (erforderlich)"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/preview
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/preview"
+msgid "Excerpt and source to insert"
+msgstr "Auszug und Quelle für das Manuskript"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/approve
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/approve"
+msgid "I checked the excerpt, source and permission to share."
+msgstr "Ich habe Auszug, Quelle und Freigabe geprüft."
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/confirm
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/confirm"
+msgid "Insert excerpt with source"
+msgstr "Auszug mit Quelle einfügen"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/noData
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/noData"
+msgid "No selectable saved excerpts in this module."
+msgstr "Keine auswählbaren gespeicherten Auszüge in diesem Modul."
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/missing
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/missing"
+msgid "Enter a source and approve the preview."
+msgstr "Quelle angeben und Vorschau bestätigen."
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/changed
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/changed"
+msgid "Module data changed. Select the excerpt again."
+msgstr "Die Moduldaten wurden geändert. Bitte erneut auswählen."
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/tooLong
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/tooLong"
+msgid "The excerpt is too long for direct insertion."
+msgstr "Der Auszug ist für direktes Einfügen zu lang."
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/inserted
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/inserted"
+msgid "You can insert a module section separately. Saved content requires selection, a source and preview."
+msgstr "Der Modulabschnitt kann separat eingefügt werden. Gespeicherte Daten erfordern Auswahl, Quelle und Vorschau."
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/add
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/add"
+msgid "Add record"
+msgstr "Datensatz hinzufügen"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/addRegion
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/addRegion"
+msgid "Save region"
+msgstr "Bereich speichern"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/creator
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/creator"
+msgid "Creator / culture"
+msgstr "Urheber / Kultur"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/date
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/date"
+msgid "Date / period"
+msgstr "Datierung"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/description
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/description"
+msgid "Description"
+msgstr "Beschreibung"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/empty
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/empty"
+msgid "No records yet."
+msgstr "Noch keine Datensätze."
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/export
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/export"
+msgid "Export JSON"
+msgstr "JSON exportieren"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/height
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/height"
+msgid "Height (%)"
+msgstr "Höhe (%)"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/id
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/id"
+msgid "Identifier"
+msgstr "Identifikator"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/iiif
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/iiif"
+msgid "IIIF manifest URL"
+msgstr "IIIF-Manifest-URL"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/image
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/image"
+msgid "Image URL"
+msgstr "Bild-URL"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/institution
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/institution"
+msgid "Holding institution"
+msgstr "Verwahrende Einrichtung"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/intro
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/intro"
+msgid "Describe finds, artworks, buildings, and sites; track provenance and rights; annotate image regions with normalized percentage coordinates. Source and image URLs remain links to external holdings."
+msgstr "Beschreiben Sie Funde, Kunstwerke, Gebäude und Orte; erfassen Sie Provenienz und Rechte; annotieren Sie Bildbereiche mit normierten Prozentkoordinaten. Quellen- und Bild-URLs verweisen auf externe Bestände."
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/invalid
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/invalid"
+msgid "Coordinates must be percentages from 0 to 100 and the region must fit inside the image."
+msgstr "Koordinaten müssen Prozentwerte von 0 bis 100 sein; der Bereich muss innerhalb des Bildes liegen."
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/kind
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/kind"
+msgid "Type"
+msgstr "Typ"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/label
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/label"
+msgid "Label"
+msgstr "Kennzeichnung"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/note
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/note"
+msgid "Note"
+msgstr "Anmerkung"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/people
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/people"
+msgid "People / relationships"
+msgstr "Personen / Beziehungen"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/place
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/place"
+msgid "Place"
+msgstr "Ort"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/records
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/records"
+msgid "Heritage records"
+msgstr "Kulturerbe-Datensätze"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/regions
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/regions"
+msgid "Image region annotations"
+msgstr "Bildbereichsannotation"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/remove
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/remove"
+msgid "Remove"
+msgstr "Entfernen"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/rights
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/rights"
+msgid "Rights / licence"
+msgstr "Rechte / Lizenz"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/select
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/select"
+msgid "Select a record to annotate its image."
+msgstr "Wählen Sie einen Datensatz, um sein Bild zu annotieren."
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/source
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/source"
+msgid "Source record URL"
+msgstr "URL des Quelldatensatzes"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/title
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/title"
+msgid "Title / name"
+msgstr "Titel / Bezeichnung"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/width
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/width"
+msgid "Width (%)"
+msgstr "Breite (%)"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/x
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/x"
+msgid "Left (%)"
+msgstr "Links (%)"
+
+#. OMI translation key: /researchModules/cultural-heritage-cultural-heritage-panel/words/y
+msgctxt "/researchModules/cultural-heritage-cultural-heritage-panel/words/y"
+msgid "Top (%)"
+msgstr "Oben (%)"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/addArtifact
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/addArtifact"
+msgid "Add data file / output"
+msgstr "Datei / Ergebnis hinzufügen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/addAssay
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/addAssay"
+msgid "Add assay / measurement"
+msgstr "Assay / Messung hinzufügen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/addInstrument
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/addInstrument"
+msgid "Add instrument"
+msgstr "Gerät hinzufügen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/addMaterial
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/addMaterial"
+msgid "Add sample / material"
+msgstr "Probe / Material hinzufügen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/addMeasurement
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/addMeasurement"
+msgid "Add measured value"
+msgstr "Messwert hinzufügen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/addProtocol
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/addProtocol"
+msgid "Add protocol"
+msgstr "Protokoll hinzufügen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/addStudy
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/addStudy"
+msgid "Add study"
+msgstr "Studie hinzufügen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/agriculture
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/agriculture"
+msgid "Agricultural sciences"
+msgstr "Agrarwissenschaften"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/artifacts
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/artifacts"
+msgid "Raw and derived data"
+msgstr "Roh- und abgeleitete Daten"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/assays
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/assays"
+msgid "Assays and measurements"
+msgstr "Assays und Messungen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/biology
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/biology"
+msgid "Biology"
+msgstr "Biologie"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/calibrationDate
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/calibrationDate"
+msgid "Calibration date"
+msgstr "Kalibrierungsdatum"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/calibrationReference
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/calibrationReference"
+msgid "Calibration record / reference"
+msgstr "Kalibrierungsnachweis / Referenz"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/category
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/category"
+msgid "Type / role"
+msgstr "Typ / Rolle"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/checksum
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/checksum"
+msgid "SHA-256 checksum"
+msgstr "SHA-256-Prüfsumme"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/chemistry
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/chemistry"
+msgid "Chemistry"
+msgstr "Chemie"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/collaborators
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/collaborators"
+msgid "Collaborators"
+msgstr "Mitwirkende"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/conditions
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/conditions"
+msgid "Treatment and storage conditions"
+msgstr "Behandlung und Lagerbedingungen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/context
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/context"
+msgid "Experimental conditions / discipline details"
+msgstr "Versuchsbedingungen / Fachdetails"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/contextLabels/agriculture
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/contextLabels/agriculture"
+msgid "Site, plot, variety, treatment, and season"
+msgstr "Standort, Parzelle, Sorte, Behandlung und Saison"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/contextLabels/biology
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/contextLabels/biology"
+msgid "Organism, treatment, and ethics reference"
+msgstr "Organismus, Behandlung und Ethikreferenz"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/contextLabels/chemistry
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/contextLabels/chemistry"
+msgid "Reaction, solvent, and reaction conditions"
+msgstr "Reaktion, Lösungsmittel und Reaktionsbedingungen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/contextLabels/engineering
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/contextLabels/engineering"
+msgid "System, design parameters, and test conditions"
+msgstr "System, Entwurfsparameter und Prüfbedingungen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/contextLabels/geosciences
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/contextLabels/geosciences"
+msgid "Sampling location, stratigraphy, coordinates, and field conditions"
+msgstr "Probenahmeort, Stratigraphie, Koordinaten und Feldbedingungen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/contextLabels/materials
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/contextLabels/materials"
+msgid "Composition, preparation, and characterization"
+msgstr "Zusammensetzung, Herstellung und Charakterisierung"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/contextLabels/physics
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/contextLabels/physics"
+msgid "Apparatus, measurement range, and conditions"
+msgstr "Aufbau, Messbereich und Bedingungen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/date
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/date"
+msgid "Date"
+msgstr "Datum"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/description
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/description"
+msgid "Description / relation to measurement"
+msgstr "Beschreibung / Bezug zur Messung"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/engineering
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/engineering"
+msgid "Engineering"
+msgstr "Ingenieurwissenschaften"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/export
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/export"
+msgid "Export project as JSON"
+msgstr "Projekt als JSON exportieren"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/format
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/format"
+msgid "Format"
+msgstr "Dateiformat"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/geosciences
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/geosciences"
+msgid "Earth sciences"
+msgstr "Geowissenschaften"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/hash
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/hash"
+msgid "Calculate checksum of a local file"
+msgstr "Prüfsumme einer lokalen Datei berechnen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/hashError
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/hashError"
+msgid "The file checksum could not be calculated."
+msgstr "Die Dateiprüfsumme konnte nicht berechnet werden."
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/identifier
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/identifier"
+msgid "Identifier / lot number"
+msgstr "Kennung / Chargennummer"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/import
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/import"
+msgid "Import OMI experimental JSON"
+msgstr "OMI-Experiment-JSON importieren"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/importError
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/importError"
+msgid "This is not a valid OMI experimental project or the version is unsupported."
+msgstr "Keine gültige OMI-Experimentdatei oder nicht unterstützte Version."
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/instrument
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/instrument"
+msgid "Instrument"
+msgstr "Gerät"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/instruments
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/instruments"
+msgid "Instruments"
+msgstr "Geräte"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/intro
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/intro"
+msgid "Connect investigations, studies, samples, protocols, instruments, measurements, and research files."
+msgstr "Untersuchungen, Studien, Proben, Protokolle, Geräte, Messungen und Forschungsdateien verknüpfen."
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/kind
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/kind"
+msgid "Data role"
+msgstr "Datenrolle"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/kinds/code
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/kinds/code"
+msgid "Code / analysis"
+msgstr "Code / Analyse"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/kinds/derived
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/kinds/derived"
+msgid "Derived data"
+msgstr "Abgeleitete Daten"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/kinds/other
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/kinds/other"
+msgid "Other"
+msgstr "Sonstiges"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/kinds/protocol
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/kinds/protocol"
+msgid "Protocol"
+msgstr "Protokoll"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/kinds/raw
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/kinds/raw"
+msgid "Raw data"
+msgstr "Rohdaten"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/lead
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/lead"
+msgid "Principal investigator"
+msgstr "Projektleitung"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/license
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/license"
+msgid "License"
+msgstr "Lizenz"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/local
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/local"
+msgid "The project is stored on this device. JSON export is a portable OMI module record; selecting a file records only its name, size, and SHA-256. The file is not uploaded."
+msgstr "Das Projekt wird auf diesem Gerät gespeichert. Der JSON-Export ist ein portabler OMI-Moduldatensatz. Bei Dateiauswahl werden nur Name, Größe und SHA-256 erfasst; die Datei wird nicht hochgeladen."
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/materialRefs
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/materialRefs"
+msgid "Related sample identifiers"
+msgstr "Zugehörige Probenkennungen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/materials
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/materials"
+msgid "Samples and materials"
+msgstr "Proben und Materialien"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/materialsProfile
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/materialsProfile"
+msgid "Materials science"
+msgstr "Materialwissenschaft"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/measuredAt
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/measuredAt"
+msgid "Measured at"
+msgstr "Messzeitpunkt"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/measurements
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/measurements"
+msgid "Measured values"
+msgstr "Messwerte"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/method
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/method"
+msgid "Method description"
+msgstr "Methodenbeschreibung"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/model
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/model"
+msgid "Model"
+msgstr "Modell"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/name
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/name"
+msgid "Name"
+msgstr "Bezeichnung"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/objective
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/objective"
+msgid "Research objective"
+msgstr "Forschungsziel"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/physics
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/physics"
+msgid "Physics"
+msgstr "Physik"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/pid
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/pid"
+msgid "Persistent identifier"
+msgstr "Persistente Kennung"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/profile
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/profile"
+msgid "Discipline profile"
+msgstr "Fachprofil"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/project
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/project"
+msgid "Investigation / project title"
+msgstr "Untersuchung / Projekttitel"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/protocols
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/protocols"
+msgid "Protocols"
+msgstr "Protokolle"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/quantity
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/quantity"
+msgid "Quantity"
+msgstr "Menge"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/remove
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/remove"
+msgid "Remove"
+msgstr "Entfernen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/removeStudy
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/removeStudy"
+msgid "Remove study"
+msgstr "Studie entfernen"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/serial
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/serial"
+msgid "Serial number"
+msgstr "Seriennummer"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/source
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/source"
+msgid "Source / DOI / URL"
+msgstr "Quelle / DOI / URL"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/steps
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/steps"
+msgid "Steps / procedure"
+msgstr "Schritte / Verfahren"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/studies
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/studies"
+msgid "Studies / experimental units"
+msgstr "Studien / experimentelle Einheiten"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/studyTitle
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/studyTitle"
+msgid "Study title"
+msgstr "Studientitel"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/technology
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/technology"
+msgid "Method / technology"
+msgstr "Methode / Technologie"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/title
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/title"
+msgid "Experimental and Laboratory Research"
+msgstr "Experimentelle und Laborforschung"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/uncertainty
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/uncertainty"
+msgid "Uncertainty"
+msgstr "Unsicherheit"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/unit
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/unit"
+msgid "Unit"
+msgstr "Einheit"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/uri
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/uri"
+msgid "File URL / repository"
+msgstr "Datei-URL / Repository"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/value
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/value"
+msgid "Value"
+msgstr "Wert"
+
+#. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/version
+msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/version"
+msgid "Version"
+msgstr "Versionsnummer"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/add
+msgctxt "/researchModules/musicology-musicology-panel/words/add"
+msgid "Add event"
+msgstr "Ereignis hinzufügen"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/annotation
+msgctxt "/researchModules/musicology-musicology-panel/words/annotation"
+msgid "Analysis / variant"
+msgstr "Analyse / Variante"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/beat
+msgctxt "/researchModules/musicology-musicology-panel/words/beat"
+msgid "Beat"
+msgstr "Zählzeit"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/composer
+msgctxt "/researchModules/musicology-musicology-panel/words/composer"
+msgid "Composer / creator"
+msgstr "Komponist / Urheber"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/duration
+msgctxt "/researchModules/musicology-musicology-panel/words/duration"
+msgid "Duration"
+msgstr "Dauer"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/empty
+msgctxt "/researchModules/musicology-musicology-panel/words/empty"
+msgid "No musical events yet. Import a MusicXML or MIDI file, or add an event."
+msgstr "Noch keine musikalischen Ereignisse. Importieren Sie eine MusicXML- oder MIDI-Datei oder fügen Sie ein Ereignis hinzu."
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/error
+msgctxt "/researchModules/musicology-musicology-panel/words/error"
+msgid "The music file is unreadable or invalid."
+msgstr "Die Musikdatei ist unlesbar oder ungültig."
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/events
+msgctxt "/researchModules/musicology-musicology-panel/words/events"
+msgid "Musical events"
+msgstr "Musikalische Ereignisse"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/export
+msgctxt "/researchModules/musicology-musicology-panel/words/export"
+msgid "Download project JSON"
+msgstr "Projekt-JSON herunterladen"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/import
+msgctxt "/researchModules/musicology-musicology-panel/words/import"
+msgid "Import MusicXML / MIDI"
+msgstr "MusicXML / MIDI importieren"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/intro
+msgctxt "/researchModules/musicology-musicology-panel/words/intro"
+msgid "Record score metadata, musical events, and notes aligned to a recording. MusicXML and MIDI imports create editable musical events."
+msgstr "Erfassen Sie Notendaten, musikalische Ereignisse und mit einer Aufnahme verknüpfte Anmerkungen. MusicXML- und MIDI-Import erstellen bearbeitbare musikalische Ereignisse."
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/key
+msgctxt "/researchModules/musicology-musicology-panel/words/key"
+msgid "Key"
+msgstr "Tonart"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/language
+msgctxt "/researchModules/musicology-musicology-panel/words/language"
+msgid "Score language"
+msgstr "Sprache der Partitur"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/measure
+msgctxt "/researchModules/musicology-musicology-panel/words/measure"
+msgid "Measure"
+msgstr "Takt"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/meter
+msgctxt "/researchModules/musicology-musicology-panel/words/meter"
+msgid "Time signature"
+msgstr "Taktart"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/part
+msgctxt "/researchModules/musicology-musicology-panel/words/part"
+msgid "Part"
+msgstr "Stimme"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/pitch
+msgctxt "/researchModules/musicology-musicology-panel/words/pitch"
+msgid "Pitch / event"
+msgstr "Ton / Ereignis"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/recording
+msgctxt "/researchModules/musicology-musicology-panel/words/recording"
+msgid "Recording URL"
+msgstr "Aufnahme-URL"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/recordingTime
+msgctxt "/researchModules/musicology-musicology-panel/words/recordingTime"
+msgid "Recording time"
+msgstr "Aufnahmezeit"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/remove
+msgctxt "/researchModules/musicology-musicology-panel/words/remove"
+msgid "Remove"
+msgstr "Entfernen"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/source
+msgctxt "/researchModules/musicology-musicology-panel/words/source"
+msgid "Source / edition"
+msgstr "Quelle / Ausgabe"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/tempo
+msgctxt "/researchModules/musicology-musicology-panel/words/tempo"
+msgid "Tempo"
+msgstr "Geschwindigkeit"
+
+#. OMI translation key: /researchModules/musicology-musicology-panel/words/title
+msgctxt "/researchModules/musicology-musicology-panel/words/title"
+msgid "Work title"
+msgstr "Werktitel"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/add
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/add"
+msgid "Add point"
+msgstr "Punkt hinzufügen"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/coordinates
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/coordinates"
+msgid "Coordinates (GeoJSON)"
+msgstr "Koordinaten (GeoJSON)"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/crs
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/crs"
+msgid "Coordinate reference system"
+msgstr "Koordinatenreferenzsystem"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/empty
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/empty"
+msgid "No spatial features yet."
+msgstr "Noch keine räumlichen Objekte."
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/error
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/error"
+msgid "The file is not a valid GeoJSON FeatureCollection."
+msgstr "Die Datei ist keine gültige GeoJSON-FeatureCollection."
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/export
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/export"
+msgid "Export GeoJSON"
+msgstr "GeoJSON exportieren"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/features
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/features"
+msgid "Spatial features"
+msgstr "Räumliche Objekte"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/geometry
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/geometry"
+msgid "Geometry"
+msgstr "Geometrie"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/import
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/import"
+msgid "Import GeoJSON"
+msgstr "GeoJSON importieren"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/intro
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/intro"
+msgid "Register place-based research objects and sources. Import and export GeoJSON; the application does not reproject coordinates."
+msgstr "Ortsbezogene Forschungsobjekte und Quellen erfassen. GeoJSON-Import und -Export; Koordinaten werden nicht umprojiziert."
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/latitude
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/latitude"
+msgid "Latitude"
+msgstr "Breitengrad"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/longitude
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/longitude"
+msgid "Longitude"
+msgstr "Längengrad"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/name
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/name"
+msgid "Name"
+msgstr "Bezeichnung"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/note
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/note"
+msgid "GeoJSON coordinates use WGS 84 (EPSG:4326); imported geometries are not reprojected."
+msgstr "GeoJSON-Koordinaten verwenden WGS 84 (EPSG:4326); importierte Geometrien werden nicht umprojiziert."
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/notes
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/notes"
+msgid "Notes"
+msgstr "Anmerkungen"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/period
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/period"
+msgid "Period"
+msgstr "Zeitraum"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/project
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/project"
+msgid "Project title"
+msgstr "Projekttitel"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/remove
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/remove"
+msgid "Remove"
+msgstr "Entfernen"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/source
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/source"
+msgid "Source / record URL"
+msgstr "Quelle / Datensatz-URL"
+
+#. OMI translation key: /researchModules/spatial-research-spatial-research-panel/text/title
+msgctxt "/researchModules/spatial-research-spatial-research-panel/text/title"
+msgid "Spatial research workspace"
+msgstr "Arbeitsbereich Geoinformation"
+
+#. OMI translation key: /researchModules/health-research-copy/healthCopy/export
+msgctxt "/researchModules/health-research-copy/healthCopy/export"
+msgid "Export workspace as JSON"
+msgstr "Arbeitsbereich als JSON exportieren"
+
+#. OMI translation key: /researchModules/health-research-copy/healthCopy/medical-sciences
+msgctxt "/researchModules/health-research-copy/healthCopy/medical-sciences"
+msgid "Medical and Health Sciences"
+msgstr "Medizin und Gesundheitswissenschaften"
+
+#. OMI translation key: /researchModules/health-research-copy/healthCopy/notice
+msgctxt "/researchModules/health-research-copy/healthCopy/notice"
+msgid "Store only anonymized or aggregate research descriptions. This workspace saves to browser local storage; it is not a protected patient record system. Do not enter names, contact details, patient identifiers or identifiable case histories."
+msgstr "Nur anonymisierte oder aggregierte Forschungsbeschreibungen speichern. Der Arbeitsbereich nutzt lokalen Browserspeicher und ist keine geschützte Patientenakte. Keine Namen, Kontaktdaten, Patientenkennungen oder identifizierbaren Fallgeschichten eingeben."
+
+#. OMI translation key: /researchModules/health-research-copy/healthCopy/projection
+msgctxt "/researchModules/health-research-copy/healthCopy/projection"
+msgid "Insert offers only the separate shareable summary, with a source and explicit preview approval. Manually check anonymity; this is not an automatic anonymizer or diagnostic tool."
+msgstr "Einfügen bietet nur die separate freigabefähige Zusammenfassung an, mit Quelle und ausdrücklicher Vorschaufreigabe. Anonymität manuell prüfen; kein automatischer Anonymisierer oder diagnostisches Werkzeug."
+
+#. OMI translation key: /researchModules/health-research-copy/healthCopy/psychology
+msgctxt "/researchModules/health-research-copy/healthCopy/psychology"
+msgid "Psychology"
+msgstr "Psychologie"
+
+#. OMI translation key: /researchModules/health-research-copy/healthCopy/shared
+msgctxt "/researchModules/health-research-copy/healthCopy/shared"
+msgid "Use the existing Statistical Analysis module for analyses and experimental design, and record its reference here. Scoring fields describe rules; they do not automatically score instruments."
+msgstr "Analysen und Versuchsplanung im vorhandenen Statistikmodul erstellen und hier referenzieren. Auswertungsfelder beschreiben Regeln; Instrumente werden nicht automatisch ausgewertet."
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/add
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/add"
+msgid "Add bibliographic reference"
+msgstr "Bibliografischen Beleg hinzufügen"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/added
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/added"
+msgid "Reference already added"
+msgstr "Beleg bereits hinzugefügt"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/consent
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/consent"
+msgid "The typed query is sent to the selected providers. Do not enter personal or patient data. Protocol and ethics fields are not sent."
+msgstr "Die eingegebene Anfrage wird an ausgewählte Anbieter gesendet. Keine Personen- oder Patientendaten eingeben. Protokoll- und Ethikfelder werden nicht übertragen."
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/disclaimer
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/disclaimer"
+msgid "PubMed: NCBI disclaimer and copyright"
+msgstr "PubMed: NCBI Haftungsausschluss und Urheberrecht"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/distinction
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/distinction"
+msgid "Database inclusion or trial registration does not certify peer review. References are imported as provisional metadata; verify them before publication."
+msgstr "Datenbankaufnahme oder Studienregistrierung bestätigt kein Peer Review. Belege werden als vorläufige Metadaten importiert; vor Veröffentlichung prüfen."
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/empty
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/empty"
+msgid "No results."
+msgstr "Keine Treffer."
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/external
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/external"
+msgid "External search / institutional access"
+msgstr "Externe Suche / institutioneller Zugang"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/failed
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/failed"
+msgid "Search unavailable. Check module activation and retry later."
+msgstr "Suche nicht verfügbar. Modulaktivierung prüfen und später erneut versuchen."
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/more
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/more"
+msgid "More results"
+msgstr "Weitere Ergebnisse"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/none
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/none"
+msgid "Select at least one database and enter 2–240 characters."
+msgstr "Mindestens eine Datenbank auswählen und 2–240 Zeichen eingeben."
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/open
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/open"
+msgid "Open source record"
+msgstr "Quelldatensatz öffnen"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/providers
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/providers"
+msgid "Databases to search"
+msgstr "Zu durchsuchende Datenbanken"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/psyc
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/psyc"
+msgid "Open APA PsycInfo — institutional subscription"
+msgstr "APA PsycInfo öffnen — institutionelles Abonnement"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/psych
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/psych"
+msgid "Search PsychArchives externally"
+msgstr "PsychArchives extern durchsuchen"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/query
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/query"
+msgid "Research search terms"
+msgstr "Forschungssuchbegriffe"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/results
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/results"
+msgid "results"
+msgstr "Ergebnisse"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/rights
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/rights"
+msgid "Usage rights"
+msgstr "Nutzungsrechte"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/search
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/search"
+msgid "Search databases"
+msgstr "Datenbanken durchsuchen"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/searching
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/searching"
+msgid "Searching…"
+msgstr "Suche läuft…"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/title
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/title"
+msgid "International research databases"
+msgstr "Internationale Forschungsdatenbanken"
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/unknown
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/unknown"
+msgid "Not supplied — check the source before reusing content."
+msgstr "Nicht angegeben — vor Übernahme die Quelle prüfen."
+
+#. OMI translation key: /researchModules/health-research-search-copy/healthSearchCopy/who
+msgctxt "/researchModules/health-research-search-copy/healthSearchCopy/who"
+msgid "Open WHO ICTRP — external search portal"
+msgstr "WHO ICTRP öffnen — externes Suchportal"
+
+#. OMI translation key: /researchModules/module-manager-panel/errorCopy/message
+msgctxt "/researchModules/module-manager-panel/errorCopy/message"
+msgid "This module could not be loaded."
+msgstr "Dieses Modul kann derzeit nicht geladen werden."
+
+#. OMI translation key: /researchModules/module-manager-panel/errorCopy/retry
+msgctxt "/researchModules/module-manager-panel/errorCopy/retry"
+msgid "Try again"
+msgstr "Erneut versuchen"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/insert
+msgctxt "/researchModules/mathematics-panel/copy/insert"
+msgid "Insert equation"
+msgstr "Formel einfügen"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/label
+msgctxt "/researchModules/mathematics-panel/copy/label"
+msgid "Equation label"
+msgstr "Formelbezeichnung"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/caption
+msgctxt "/researchModules/mathematics-panel/copy/caption"
+msgid "Caption / explanation"
+msgstr "Beschriftung / Erklärung"
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/noSection
+msgctxt "/researchModules/mathematics-panel/copy/noSection"
+msgid "Open a manuscript and select a section."
+msgstr "Öffnen Sie ein Manuskript und wählen Sie einen Abschnitt."
+
+#. OMI translation key: /researchModules/mathematics-panel/copy/failed
+msgctxt "/researchModules/mathematics-panel/copy/failed"
+msgid "The equation could not be inserted."
+msgstr "Die Formel konnte nicht eingefügt werden."

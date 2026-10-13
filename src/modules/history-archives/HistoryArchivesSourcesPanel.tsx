@@ -1,3 +1,4 @@
+import { getResearchModuleCopyByLocale } from '../moduleTranslationCatalog';
 import { normalizeModuleLocale } from '../moduleLocale';
 import { useEffect, useState } from 'react';
 
@@ -62,32 +63,7 @@ const archivePortals: ArchivePortal[] = [
   { id: 'archivesEurope', url: 'https://www.archivesportaleurope.net/' },
 ];
 
-const copyByLocale = {
-  en: {
-    choose: 'Archives to display',
-    help: 'Choose which catalogues appear below. Your selection is saved for this workspace.',
-    selectAll: 'Show all',
-    clear: 'Hide all',
-    open: 'Open archive search',
-    portalNote: 'Search on the archive’s official catalogue; the link opens in a new tab.',
-  },
-  de: {
-    choose: 'Anzuzeigende Archive',
-    help: 'Wählen Sie die Kataloge aus, die unten angezeigt werden. Die Auswahl wird für diesen Arbeitsbereich gespeichert.',
-    selectAll: 'Alle anzeigen',
-    clear: 'Alle ausblenden',
-    open: 'Archivsuche öffnen',
-    portalNote: 'Suchen Sie im offiziellen Archivkatalog. Der Link wird in einem neuen Tab geöffnet.',
-  },
-  hu: {
-    choose: 'Megjelenő levéltárak',
-    help: 'Jelölje ki, mely katalógusok jelenjenek meg. A választás erre a munkatérre mentődik.',
-    selectAll: 'Mind megjelenítése',
-    clear: 'Összes elrejtése',
-    open: 'Levéltári kereső megnyitása',
-    portalNote: 'Keresés a levéltár hivatalos katalógusában; a hivatkozás új lapon nyílik meg.',
-  },
-} as const;
+const copyByLocale = getResearchModuleCopyByLocale('history-archives-history-archives-sources-panel/copyByLocale');
 
 const portalLabels: Record<string, Record<ArchivePortal['id'], string>> = {
   en: {

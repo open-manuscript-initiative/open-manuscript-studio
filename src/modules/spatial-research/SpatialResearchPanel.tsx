@@ -1,3 +1,4 @@
+import { getResearchModuleCopyByLocale } from '../moduleTranslationCatalog';
 import { normalizeModuleLocale } from '../moduleLocale';
 import { useRef, useState } from 'react';
 import { downloadWorkspaceJson, newWorkspaceId, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
@@ -15,11 +16,7 @@ const isWorkspace = (value: unknown): value is Workspace => Boolean(
       && isGeometry((feature as Feature).geometry)),
 );
 const makePoint = (): Feature => ({ id: newWorkspaceId(), name: '', geometry: { type: 'Point', coordinates: [0, 0] }, period: '', source: '', notes: '' });
-const text = {
-  hu: { title: 'Térinformatikai kutatótér', intro: 'Helyhez kötött kutatási objektumok és források nyilvántartása. GeoJSON-import és -export; az alkalmazás nem módosítja a koordinátarendszert.', project: 'Projekt címe', crs: 'Koordinátarendszer', features: 'Térbeli objektumok', add: 'Pont hozzáadása', import: 'GeoJSON importálása', export: 'GeoJSON exportálása', name: 'Megnevezés', geometry: 'Geometria', longitude: 'Hosszúság (kelet)', latitude: 'Szélesség (észak)', coordinates: 'Koordináták (GeoJSON)', period: 'Időszak', source: 'Forrás / rekord URL-je', notes: 'Megjegyzések', remove: 'Törlés', error: 'A fájl nem érvényes GeoJSON FeatureCollection.', empty: 'Még nincs térbeli objektum.', note: 'A GeoJSON koordináták WGS 84 (EPSG:4326) szerintiek; az alkalmazás nem vetíti át az importált geometriát.' },
-  en: { title: 'Spatial research workspace', intro: 'Register place-based research objects and sources. Import and export GeoJSON; the application does not reproject coordinates.', project: 'Project title', crs: 'Coordinate reference system', features: 'Spatial features', add: 'Add point', import: 'Import GeoJSON', export: 'Export GeoJSON', name: 'Name', geometry: 'Geometry', longitude: 'Longitude', latitude: 'Latitude', coordinates: 'Coordinates (GeoJSON)', period: 'Period', source: 'Source / record URL', notes: 'Notes', remove: 'Remove', error: 'The file is not a valid GeoJSON FeatureCollection.', empty: 'No spatial features yet.', note: 'GeoJSON coordinates use WGS 84 (EPSG:4326); imported geometries are not reprojected.' },
-  de: { title: 'Arbeitsbereich Geoinformation', intro: 'Ortsbezogene Forschungsobjekte und Quellen erfassen. GeoJSON-Import und -Export; Koordinaten werden nicht umprojiziert.', project: 'Projekttitel', crs: 'Koordinatenreferenzsystem', features: 'Räumliche Objekte', add: 'Punkt hinzufügen', import: 'GeoJSON importieren', export: 'GeoJSON exportieren', name: 'Bezeichnung', geometry: 'Geometrie', longitude: 'Längengrad', latitude: 'Breitengrad', coordinates: 'Koordinaten (GeoJSON)', period: 'Zeitraum', source: 'Quelle / Datensatz-URL', notes: 'Anmerkungen', remove: 'Entfernen', error: 'Die Datei ist keine gültige GeoJSON-FeatureCollection.', empty: 'Noch keine räumlichen Objekte.', note: 'GeoJSON-Koordinaten verwenden WGS 84 (EPSG:4326); importierte Geometrien werden nicht umprojiziert.' },
-} as const;
+const text = getResearchModuleCopyByLocale('spatial-research-spatial-research-panel/text');
 function isPosition(value: unknown): boolean {
   return Array.isArray(value) && value.length >= 2 && value.every((coordinate) => typeof coordinate === 'number' && Number.isFinite(coordinate));
 }

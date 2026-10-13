@@ -1,3 +1,4 @@
+import { getResearchModuleCopyByLocale } from '../moduleTranslationCatalog';
 import { normalizeModuleLocale } from '../moduleLocale';
 import { useRef, useState } from 'react';
 import { downloadWorkspaceJson, newWorkspaceId, safeWorkspaceFileName, useLocalWorkspace } from '../disciplineWorkspace';
@@ -17,11 +18,7 @@ const valid = (value: unknown): value is Workspace => Boolean(
       && ['locus', 'period', 'layer', 'description', 'finds', 'sampleId', 'source'].every((key) => typeof (context as unknown as Record<string, unknown>)[key] === 'string')),
 );
 const emptyContext = (): Context => ({ id: newWorkspaceId(), locus: '', period: '', layer: '', description: '', finds: '', sampleId: '', source: '' });
-const copy = {
-  hu: { title: 'Régészet és kulturális örökség', subtitle: 'Lelőhelyek, rétegek, tárgyak, gyűjtemények és képek dokumentálása, forrásokkal és örökségi rekordokkal.', project: 'Kutatási projekt', site: 'Lelőhely neve / azonosítója', country: 'Ország / régió', coordinates: 'Koordináták vagy térinformatikai rekord', contexts: 'Régészeti kontextusok', add: 'Kontextus hozzáadása', locus: 'Locus / kontextusazonosító', period: 'Korszak / datálás', layer: 'Réteg / stratigráfiai egység', description: 'Leírás és megfigyelések', finds: 'Leletek és tárgyazonosítók', sample: 'Mintaazonosító', source: 'Dokumentáció / forrás URL', remove: 'Törlés', export: 'Régészeti jegyzék exportálása JSON-ként', local: 'Az adatok ezen az eszközön tárolódnak. Rendszeres JSON-exporttal készítsen hordozható másolatot.' },
-  en: { title: 'Archaeology and cultural heritage', subtitle: 'Document sites, layers, objects, collections, and images with source and heritage records.', project: 'Research project', site: 'Site name / identifier', country: 'Country / region', coordinates: 'Coordinates or spatial record', contexts: 'Archaeological contexts', add: 'Add context', locus: 'Locus / context identifier', period: 'Period / dating', layer: 'Layer / stratigraphic unit', description: 'Description and observations', finds: 'Finds and object identifiers', sample: 'Sample identifier', source: 'Documentation / source URL', remove: 'Remove', export: 'Export archaeology register as JSON', local: 'Data is stored on this device. Export JSON regularly to keep a portable copy.' },
-  de: { title: 'Archäologie und Kulturerbe', subtitle: 'Fundorte, Schichten, Objekte, Sammlungen und Bilder mit Quellen und Kulturerbedatensätzen dokumentieren.', project: 'Forschungsprojekt', site: 'Fundort / Kennung', country: 'Land / Region', coordinates: 'Koordinaten oder Raumdatensatz', contexts: 'Archäologische Kontexte', add: 'Kontext hinzufügen', locus: 'Locus / Kontextkennung', period: 'Epoche / Datierung', layer: 'Schicht / stratigraphische Einheit', description: 'Beschreibung und Beobachtungen', finds: 'Funde und Objektkennungen', sample: 'Probenkennung', source: 'Dokumentation / Quellen-URL', remove: 'Entfernen', export: 'Archäologisches Verzeichnis als JSON exportieren', local: 'Die Daten werden auf diesem Gerät gespeichert. Exportieren Sie regelmäßig JSON als portable Kopie.' },
-} as const;
+const copy = getResearchModuleCopyByLocale('archaeology-archaeology-panel/copy');
 export function ArchaeologyPanel({ locale = 'en', storageKey = 'archaeology', heritageStorageKey = 'cultural-heritage' }: { locale?: string; storageKey?: string; heritageStorageKey?: string }) {
   const t = copy[normalizeModuleLocale(locale)];
   const fileRef = useRef<HTMLInputElement>(null);

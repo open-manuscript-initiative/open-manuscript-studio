@@ -1,3 +1,4 @@
+import { getResearchModuleCopyByLocale } from '../moduleTranslationCatalog';
 import { normalizeModuleLocale } from '../moduleLocale';
 import { useRef } from 'react';
 import './mathematics.css';
@@ -14,11 +15,7 @@ const templates = [
   ['aligned', '\\begin{aligned}a+b &= c \\\\ a &= c-b\\end{aligned}'],
 ] as const;
 
-const labels = {
-  hu: { source: 'LaTeX-képlet', preview: 'Képlet előnézete', templates: 'Képletsablonok', error: 'Hibás vagy nem támogatott LaTeX', fraction: 'Tört', root: 'Gyök', scripts: 'Indexek', sum: 'Összeg', integral: 'Integrál', matrix: 'Mátrix', cases: 'Esetek', aligned: 'Egyenletrendszer', hint: 'Képletet adjon meg, teljes LaTeX-dokumentum és $ határolók nélkül. A sablon a kijelölés helyére kerül.' },
-  en: { source: 'LaTeX equation', preview: 'Equation preview', templates: 'Equation templates', error: 'Invalid or unsupported LaTeX', fraction: 'Fraction', root: 'Root', scripts: 'Scripts', sum: 'Sum', integral: 'Integral', matrix: 'Matrix', cases: 'Cases', aligned: 'Aligned equations', hint: 'Enter an expression, without a full LaTeX document or $ delimiters. Templates replace the selection.' },
-  de: { source: 'LaTeX-Formel', preview: 'Formelvorschau', templates: 'Formelvorlagen', error: 'Ungültiges oder nicht unterstütztes LaTeX', fraction: 'Bruch', root: 'Wurzel', scripts: 'Indizes', sum: 'Summe', integral: 'Integral', matrix: 'Matrix', cases: 'Fallunterscheidung', aligned: 'Gleichungssystem', hint: 'Geben Sie einen Ausdruck ohne vollständiges LaTeX-Dokument oder $-Begrenzer ein. Vorlagen ersetzen die Auswahl.' },
-};
+const labels = getResearchModuleCopyByLocale('mathematics-equation-editor/labels');
 
 interface Props {
   value: string;

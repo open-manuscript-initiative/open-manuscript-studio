@@ -1,12 +1,9 @@
+import { getResearchModuleCopyByLocale } from '../moduleTranslationCatalog';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { normalizeModuleLocale } from '../moduleLocale';
 import { PROVIDERS, PROVIDER_NAMES, searchResearchDatabase, type ResearchDatabaseProvider, type ResearchDatabasePage } from './searchApi';
 import '../disciplineWorkspaces.css';
-const copy = {
- en: { title:'Research database search', choose:'Databases', query:'Search terms', search:'Search', busy:'Searching…', more:'More results', open:'Open source record', empty:'No results.', failed:'This provider could not be searched. Other results remain available.', rights:'Rights', noRights:'Not supplied; check the source record before reuse.', consent:'Your search terms are sent to the selected providers. Do not enter personal, participant, or confidential data.', none:'Select at least one database and enter 2–240 characters.' },
- hu: { title:'Kutatási adatbázisok keresése', choose:'Adatbázisok', query:'Keresőkifejezés', search:'Keresés', busy:'Keresés…', more:'További találatok', open:'Forrásrekord megnyitása', empty:'Nincs találat.', failed:'Ez a szolgáltató most nem érhető el. A többi találat megmarad.', rights:'Felhasználási jog', noRights:'Nincs megadva; átvétel előtt ellenőrizze a forrásrekordot.', consent:'A keresőkifejezést elküldjük a kijelölt szolgáltatóknak. Ne adjon meg személyes, résztvevői vagy bizalmas adatot.', none:'Válasszon legalább egy adatbázist, és írjon be 2–240 karaktert.' },
- de: { title:'Forschungsdatenbanken durchsuchen', choose:'Datenbanken', query:'Suchbegriffe', search:'Suchen', busy:'Suche…', more:'Weitere Ergebnisse', open:'Quelldatensatz öffnen', empty:'Keine Treffer.', failed:'Dieser Anbieter ist nicht erreichbar. Andere Ergebnisse bleiben verfügbar.', rights:'Nutzungsrechte', noRights:'Nicht angegeben; vor einer Übernahme den Quelldatensatz prüfen.', consent:'Die Suchbegriffe werden an die ausgewählten Anbieter gesendet. Keine personenbezogenen, Teilnehmenden- oder vertraulichen Daten eingeben.', none:'Mindestens eine Datenbank auswählen und 2–240 Zeichen eingeben.' },
-} as const;
+const copy = getResearchModuleCopyByLocale('research-databases-research-database-panel/copy');
 const names: Record<'en' | 'hu' | 'de', Record<ResearchDatabaseProvider, string>> = {
  en:{eric:'ERIC (education research)','inspire-hep':'INSPIRE-HEP (high-energy physics)',pubchem:'PubChem (chemical compounds)',gbif:'GBIF (biodiversity occurrences)',openalex:'OpenAlex (scholarly literature)',sciencebase:'USGS ScienceBase (earth science data)'},
  hu:{eric:'ERIC (oktatáskutatás)','inspire-hep':'INSPIRE-HEP (nagyenergiás fizika)',pubchem:'PubChem (kémiai vegyületek)',gbif:'GBIF (biodiverzitási előfordulások)',openalex:'OpenAlex (tudományos szakirodalom)',sciencebase:'USGS ScienceBase (földtudományi adatok)'},

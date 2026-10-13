@@ -1,28 +1,10 @@
+import { getResearchModuleCopyByLocale } from '../moduleTranslationCatalog';
 import { normalizeModuleLocale } from '../moduleLocale';
 interface EleveltarSearchPanelProps {
   locale: string;
 }
 
-const copyByLocale: Record<string, { title: string; description: string; open: string; note: string }> = {
-  hu: {
-    title: 'eLevéltár – magyar levéltári források',
-    description: 'Az Elektronikus Levéltári Portálon a Magyar Nemzeti Levéltár és Budapest Főváros Levéltára levéltári leírásai és digitális iratai kereshetők.',
-    open: 'Iratkereső megnyitása',
-    note: 'A keresés a levéltári portálon nyílik meg; a keresőkifejezést ott kell megadni.',
-  },
-  en: {
-    title: 'eLevéltár – Hungarian archival sources',
-    description: 'Search archival descriptions and digital records from the Hungarian National Archives and Budapest City Archives in the Electronic Archives Portal.',
-    open: 'Open archival search',
-    note: 'Search opens on the archive portal; enter the query there.',
-  },
-  de: {
-    title: 'eLevéltár – Ungarische Archivquellen',
-    description: 'Durchsuchen Sie archivische Beschreibungen und Digitalisate des Ungarischen Nationalarchivs und des Budapester Stadtarchivs im Elektronischen Archivportal.',
-    open: 'Archivrecherche öffnen',
-    note: 'Die Suche wird im Archivportal geöffnet; geben Sie die Suchbegriffe dort ein.',
-  },
-};
+const copyByLocale: Record<string, { title: string; description: string; open: string; note: string }> = getResearchModuleCopyByLocale('history-archives-eleveltar-search-panel/copyByLocale');
 
 export function EleveltarSearchPanel({ locale }: EleveltarSearchPanelProps) {
   const copy = copyByLocale[normalizeModuleLocale(locale)] ?? copyByLocale.en!;

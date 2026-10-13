@@ -1,3 +1,4 @@
+import { getResearchModuleCopyByLocale } from '../moduleTranslationCatalog';
 import { useState, type FormEvent } from 'react';
 import { normalizeModuleLocale } from '../moduleLocale';
 
@@ -14,29 +15,7 @@ const copyByLocale: Record<string, {
   label: string;
   placeholder: string;
   search: string;
-}> = {
-  hu: {
-    title: 'Román Nemzeti Levéltár',
-    description: 'Keresés a Román Nemzeti Levéltár online katalógusában. A találatok a levéltár hivatalos portálján, új lapon nyílnak meg.',
-    label: 'Keresés a román levéltári katalógusban',
-    placeholder: 'Név, hely, dátum vagy kulcsszó',
-    search: 'Keresés',
-  },
-  en: {
-    title: 'Romanian National Archives',
-    description: 'Search the Romanian National Archives online catalogue. Results open on the Archives’ official portal in a new tab.',
-    label: 'Search the Romanian archival catalogue',
-    placeholder: 'Name, place, date, or keyword',
-    search: 'Search',
-  },
-  de: {
-    title: 'Nationalarchiv Rumäniens',
-    description: 'Durchsuchen Sie den Online-Katalog des Nationalarchivs Rumäniens. Die Ergebnisse öffnen sich in einem neuen Tab auf dem offiziellen Archivportal.',
-    label: 'Im rumänischen Archivkatalog suchen',
-    placeholder: 'Name, Ort, Datum oder Stichwort',
-    search: 'Suchen',
-  },
-};
+}> = getResearchModuleCopyByLocale('history-archives-romanian-archives-search-panel/copyByLocale');
 
 export function RomanianArchivesSearchPanel({ locale }: RomanianArchivesSearchPanelProps) {
   const copy = copyByLocale[normalizeModuleLocale(locale)] ?? copyByLocale.en!;

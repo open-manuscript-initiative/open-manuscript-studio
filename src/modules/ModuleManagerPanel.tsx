@@ -9,6 +9,7 @@ import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { getServerModulePolicy, saveServerModulePreferences } from './api';
 import { corpusLinguisticsModule, criticalTextEditionModule, culturalHeritageModule, historyArchivesModule, legalSourcesModule, musicologyModule, researchReproducibilityModule, religiousTextsModule, socialResearchMethodsModule, spatialResearchModule, archaeologyModule, experimentalLaboratoryModule, statisticalAnalysisModule, studioModules } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
+import { getResearchModuleCopyByLocale } from './moduleTranslationCatalog';
 import { normalizeModuleLocale } from './moduleLocale';
 import { HistoryArchivesSourcesPanel } from './history-archives/HistoryArchivesSourcesPanel';
 import { ReligiousTextsPanel } from './religious-texts/ReligiousTextsPanel';
@@ -205,11 +206,7 @@ class ModuleWorkspaceErrorBoundary extends Component<
     if (!this.state.failed) return this.props.children;
 
     const language = normalizeModuleLocale(this.props.locale);
-    const copy = language === 'hu'
-      ? { message: 'Ez a modul most nem tölthető be.', retry: 'Újrapróbálás' }
-      : language === 'de'
-        ? { message: 'Dieses Modul kann derzeit nicht geladen werden.', retry: 'Erneut versuchen' }
-        : { message: 'This module could not be loaded.', retry: 'Try again' };
+    const copy = getResearchModuleCopyByLocale('module-manager-panel/errorCopy')[language];
 
     return (
       <div className="studio-module-empty-slot" role="alert">

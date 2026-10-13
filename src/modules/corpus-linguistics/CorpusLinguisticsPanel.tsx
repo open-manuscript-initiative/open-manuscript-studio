@@ -1,3 +1,4 @@
+import { getResearchModuleCopyByLocale } from '../moduleTranslationCatalog';
 import { normalizeModuleLocale } from '../moduleLocale';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseDocxForStudio } from '../../services/docxImportStrategy';
@@ -71,41 +72,7 @@ interface CorpusCopy {
   sourcePlaceholder: string; datePlaceholder: string; queryPlaceholder: string; deleteAnnotation: string;
   chars: string; wordCount: string;
 }
-const copyByLocale: Record<string, CorpusCopy> = {
-  hu: {
-    intro: 'Építsen saját szövegkorpuszt, készítsen konkordanciát a találatok szövegkörnyezetével, jelölje nyelvi és névelem-funkciókat, és kézzel illesszen egymáshoz párhuzamos szövegrészleteket.',
-    corpus: 'Korpusz beállításai', corpusTitle: 'A korpusz neve', description: 'Leírás', language: 'Alapértelmezett nyelv',
-    documents: 'Szövegek', addDocument: 'Szöveg hozzáadása', documentTitle: 'Cím', source: 'Forrás / eredet', date: 'Dátum', text: 'Szöveg', remove: 'Eltávolítás',
-    importText: 'TXT vagy MD importálása', search: 'Konkordancia keresése', query: 'Keresőkifejezés', caseSensitive: 'Kis- és nagybetű megkülönböztetése', wholeWord: 'Teljes szó keresése', results: 'Konkordancia találatai', noHits: 'Nincs találat a korpusz szövegeiben.', hit: 'találat', annotate: 'Annotálás', saveAnnotation: 'Annotáció mentése',
-    category: 'Kategória', label: 'Címke / érték', note: 'Megjegyzés', annotations: 'Nyelvi annotációk', noAnnotations: 'Még nincs mentett annotáció.',
-    alignment: 'Párhuzamos szövegek illesztése', leftDocument: 'Bal oldali szöveg', rightDocument: 'Jobb oldali szöveg', alignmentLabel: 'Illesztett egység címe', leftPassage: 'Bal oldali részlet', rightPassage: 'Jobb oldali részlet', addAlignment: 'Illesztés mentése', noAlignment: 'Még nincs mentett illesztés.',
-    export: 'Exportálás', exportJson: 'Korpusz JSON letöltése', exportCsv: 'Konkordancia CSV letöltése', importJson: 'Korpusz JSON betöltése', saved: 'Automatikusan mentve ezen az eszközön.', backup: 'A JSON exporttal készíthet hordozható biztonsági másolatot.',
-    invalidProject: 'A fájl nem érvényes OMI korpuszprojekt.', loadError: 'A fájl beolvasása nem sikerült.', categoryNames: { pos: 'Szófaj', lemma: 'Lemma', morphology: 'Morfológia', 'named-entity': 'Tulajdonnév / entitás', semantics: 'Szemantikai címke', other: 'Egyéb' },
-    sourcePlaceholder: 'pl. kézirat, kiadás, URL', datePlaceholder: 'pl. 1670 körül', queryPlaceholder: 'Szó vagy kifejezés', deleteAnnotation: 'Annotáció törlése', chars: 'karakter', wordCount: 'szó',
-  },
-  en: {
-    intro: 'Build a text corpus, create context-rich concordances, annotate linguistic and named-entity features, and manually align passages across texts.',
-    corpus: 'Corpus settings', corpusTitle: 'Corpus name', description: 'Description', language: 'Default language',
-    documents: 'Texts', addDocument: 'Add text', documentTitle: 'Title', source: 'Source / provenance', date: 'Date', text: 'Text', remove: 'Remove',
-    importText: 'Import TXT, MD, or DOCX', search: 'Concordance search', query: 'Search term', caseSensitive: 'Match case', wholeWord: 'Whole word only', results: 'Concordance results', noHits: 'No matches in the corpus texts.', hit: 'hits', annotate: 'Annotate', saveAnnotation: 'Save annotation',
-    category: 'Category', label: 'Label / value', note: 'Note', annotations: 'Linguistic annotations', noAnnotations: 'No annotations have been saved yet.',
-    alignment: 'Parallel text alignment', leftDocument: 'Left text', rightDocument: 'Right text', alignmentLabel: 'Aligned unit label', leftPassage: 'Left passage', rightPassage: 'Right passage', addAlignment: 'Save alignment', noAlignment: 'No alignments have been saved yet.',
-    export: 'Export', exportJson: 'Download corpus JSON', exportCsv: 'Download concordance CSV', importJson: 'Import corpus JSON', saved: 'Automatically saved on this device.', backup: 'Download JSON to create a portable backup.',
-    invalidProject: 'This is not a valid OMI corpus project.', loadError: 'The file could not be read.', categoryNames: { pos: 'Part of speech', lemma: 'Lemma', morphology: 'Morphology', 'named-entity': 'Named entity', semantics: 'Semantic label', other: 'Other' },
-    sourcePlaceholder: 'e.g. manuscript, edition, URL', datePlaceholder: 'e.g. c. 1670', queryPlaceholder: 'Word or phrase', deleteAnnotation: 'Delete annotation', chars: 'characters', wordCount: 'words',
-  },
-  de: {
-    intro: 'Erstellen Sie ein Textkorpus, erzeugen Sie Konkordanzen mit Kontext, annotieren Sie sprachliche Merkmale und Eigennamen und richten Sie parallele Textstellen manuell aus.',
-    corpus: 'Korpuseinstellungen', corpusTitle: 'Name des Korpus', description: 'Beschreibung', language: 'Standardsprache',
-    documents: 'Texte', addDocument: 'Text hinzufügen', documentTitle: 'Titel', source: 'Quelle / Herkunft', date: 'Datum', text: 'Text', remove: 'Entfernen',
-    importText: 'TXT, MD oder DOCX importieren', search: 'Konkordanzsuche', query: 'Suchbegriff', caseSensitive: 'Groß- und Kleinschreibung beachten', wholeWord: 'Nur ganzes Wort', results: 'Konkordanzergebnisse', noHits: 'Keine Treffer in den Korpustexten.', hit: 'Treffer', annotate: 'Annotieren', saveAnnotation: 'Annotation speichern',
-    category: 'Kategorie', label: 'Merkmal / Wert', note: 'Anmerkung', annotations: 'Sprachliche Annotationen', noAnnotations: 'Es wurden noch keine Annotationen gespeichert.',
-    alignment: 'Parallele Texte ausrichten', leftDocument: 'Linker Text', rightDocument: 'Rechter Text', alignmentLabel: 'Bezeichnung der Einheit', leftPassage: 'Linke Passage', rightPassage: 'Rechte Passage', addAlignment: 'Ausrichtung speichern', noAlignment: 'Es wurden noch keine Ausrichtungen gespeichert.',
-    export: 'Export', exportJson: 'Korpus-JSON herunterladen', exportCsv: 'Konkordanz-CSV herunterladen', importJson: 'Korpus-JSON importieren', saved: 'Automatisch auf diesem Gerät gespeichert.', backup: 'Laden Sie das JSON als portable Sicherung herunter.',
-    invalidProject: 'Dies ist kein gültiges OMI-Korpusprojekt.', loadError: 'Die Datei konnte nicht gelesen werden.', categoryNames: { pos: 'Wortart', lemma: 'Lemma', morphology: 'Morphologie', 'named-entity': 'Eigenname / Entität', semantics: 'Semantische Kennzeichnung', other: 'Sonstiges' },
-    sourcePlaceholder: 'z. B. Handschrift, Ausgabe, URL', datePlaceholder: 'z. B. um 1670', queryPlaceholder: 'Wort oder Ausdruck', deleteAnnotation: 'Annotation löschen', chars: 'Zeichen', wordCount: 'Wörter',
-  },
-};
+const copyByLocale: Record<string, CorpusCopy> = getResearchModuleCopyByLocale('corpus-linguistics-corpus-linguistics-panel/copyByLocale');
 function makeId(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
