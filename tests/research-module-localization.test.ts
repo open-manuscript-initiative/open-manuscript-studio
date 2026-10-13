@@ -1,11 +1,16 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import test from 'node:test';
+import { before, test } from 'node:test';
 
+import { loadPrimaryLocaleDictionariesForTest } from './test-primary-locale-dictionaries.ts';
 import { getModuleShellCopy } from '../src/modules/moduleShellTranslations.ts';
 import { normalizeModuleLocale } from '../src/modules/moduleLocale.ts';
 import { appendHealthResearchHelp } from '../src/i18n/helpHealthResearch.ts';
 import { appendMathematicsHelp } from '../src/i18n/helpMathematics.ts';
+
+before(async () => {
+  await loadPrimaryLocaleDictionariesForTest();
+});
 
 const locales = ['en', 'de', 'hu'] as const;
 const emptyHelp = { topics: [] };

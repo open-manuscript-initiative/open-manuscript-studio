@@ -1,8 +1,9 @@
 import { sortModulesForLocale } from '../src/modules/moduleOrdering.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import test from 'node:test';
+import { before, test } from 'node:test';
 
+import { loadPrimaryLocaleDictionariesForTest } from './test-primary-locale-dictionaries.ts';
 import { getDisciplineWorkspaceStorageKey } from '../src/modules/disciplineWorkspace.ts';
 import { readResearchExcerpts } from '../src/modules/researchModuleProjection.ts';
 
@@ -30,6 +31,10 @@ import { searchEurostatCatalogue } from '../src/modules/eurostatCatalogue.ts';
 import { searchSefaria } from '../server/src/integrations/sefaria/sefariaSearch.ts';
 import { createExperimentalWorkspace, isExperimentalWorkspace, parseExperimentalWorkspace } from '../src/modules/experimental-laboratory/model.ts';
 import { addDesignDeviation, createStatisticalWorkspace, describe, estimateTwoGroupSampleSize, isStatisticalWorkspace, linearRegression, oneWayAnova, parseDelimited, parseLaboratoryMeasurements, parseStatisticalWorkspace, preregisterDesign, randomizeParticipants, welchTTest } from '../src/modules/statistical-analysis/model.ts';
+
+before(async () => {
+  await loadPrimaryLocaleDictionariesForTest();
+});
 
 const expectedModuleIds = [
   'org.omi.history-archives',
