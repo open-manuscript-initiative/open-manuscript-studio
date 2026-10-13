@@ -32,7 +32,7 @@ const poOutput = execFileSync(
 const changed = output ? output.split(/\r?\n/).filter(Boolean) : [];
 const changedPoLocales = new Set(
   (poOutput ? poOutput.split(/\r?\n/).filter(Boolean) : [])
-    .map((file) => /^locale\\/([^/]+)\\/studio\\.po$/.exec(file)?.[1])
+    .map((file) => /^locale\/([^/]+)\/studio\.po$/.exec(file)?.[1])
     .filter(Boolean),
 );
 const primaryPoLocales = new Set(['en', 'de', 'hu']);
