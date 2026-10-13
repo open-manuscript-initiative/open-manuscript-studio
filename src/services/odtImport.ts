@@ -1,7 +1,8 @@
+import { OdtZip } from './odtZip';
 import { DOMParser as XmlParser, type Document as XmlDocument, type Element as XmlElement, type Node as XmlNode } from '@xmldom/xmldom';
 import { materializeSectionHeadingBlocks } from '../model/atomicTextBlocks';
 import { createNoteAnnotation } from '../model/notes';
-import { createImageBlock, createTableBlock, MAX_VISUAL_IMPORT_BYTES } from '../model/visualBlocks';
+import { createImageBlock, createTableBlock } from '../model/visualBlocks';
 import { normalizeInlineLanguageTag } from '../model/richText';
 import { withParentSectionId } from '../model/sectionStructure';
 import type { OmiAnnotation, OmiBlock, OmiImportProvenance, OmiSection } from '../types/omi';
@@ -243,40 +244,6 @@ function ensureSection(sections: OmiSection[]): OmiSection {
 function emptyParagraph(): OmiBlock { return { id: crypto.randomUUID(), type: 'paragraph', content: JSON.stringify({ type: 'doc', content: [{ type: 'paragraph' }] }) }; }
 function warning(code: string, message: string): DocxImportWarning { return { code, severity: 'warning', message }; }
 
-class OdtZip {
-  private readonly entries = new Map<string, { method: number; size: number; compressed: number; offset: number }>();
-  private readonly bytes: Uint8Array;
-  private readonly view: DataView;
-  constructor(buffer: ArrayBuffer) {
-    this.bytes = new Uint8Array(buffer); this.view = new DataView(buffer);
-    const floor = Math.max(0, this.bytes.length - 0xffff - 22); let end = -1;
-    for (let i = this.bytes.length - 22; i >= floor; i--) if (this.view.getUint32(i, true) === 0x06054b50) { end = i; break; }
-    if (end < 0) throw new Error('The ODT ZIP end-of-central-directory record is missing.');
-    const count = this.view.getUint16(end + 10, true); let offset = this.view.getUint32(end + 16, true); const decoder = new TextDecoder();
-    for (let i = 0; i < count; i++) {
-      if (offset + 46 > this.bytes.length || this.view.getUint32(offset, true) !== 0x02014b50) throw new Error('The ODT ZIP central directory is invalid.');
-      const nameLength = this.view.getUint16(offset + 28, true); const extra = this.view.getUint16(offset + 30, true); const comment = this.view.getUint16(offset + 32, true);
-      const name = decoder.decode(this.bytes.subarray(offset + 46, offset + 46 + nameLength));
-      this.entries.set(name, { method: this.view.getUint16(offset + 10, true), compressed: this.view.getUint32(offset + 20, true), size: this.view.getUint32(offset + 24, true), offset: this.view.getUint32(offset + 42, true) });
-      offset += 46 + nameLength + extra + comment;
-    }
-  }
-  has(name: string): boolean { return this.entries.has(name); }
-  names(): string[] { return [...this.entries.keys()]; }
-  async text(name: string): Promise<string> {
-    return new TextDecoder().decode(await this.data(name));
-  }
-  async data(name: string): Promise<Uint8Array> {
-    const entry = this.entries.get(name); if (!entry) throw new Error(`ODT package part not found: ${name}`);
-    if (entry.size > MAX_VISUAL_IMPORT_BYTES) throw new Error(`ODT package part exceeds the ${MAX_VISUAL_IMPORT_BYTES / 1024 / 1024} MB safety limit: ${name}`);
-    const start = entry.offset; const filename = this.view.getUint16(start + 26, true); const extra = this.view.getUint16(start + 28, true); const dataStart = start + 30 + filename + extra;
-    const payload = this.bytes.slice(dataStart, dataStart + entry.compressed);
-    if (entry.method === 0) return payload;
-    if (entry.method !== 8 || typeof DecompressionStream === 'undefined') throw new Error('This browser cannot decompress this ODT package.');
-    try { const stream = new Blob([payload]).stream().pipeThrough(new DecompressionStream('deflate-raw')); const decompressed = await new Response(stream).arrayBuffer(); if (decompressed.byteLength !== entry.size) throw new Error('Unexpected decompressed length.'); return new Uint8Array(decompressed); }
-    catch { throw new Error(`Could not decompress the ODT package part: ${name}`); }
-  }
-}
 
 function safePicturePath(href: string): string | undefined {
   let path = href.trim();

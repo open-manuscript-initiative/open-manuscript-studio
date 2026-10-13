@@ -1,3 +1,4 @@
+import { sourceAttributionLossDiagnostics } from '../model/sourceAttributionExport';
 import { publicPublicationManuscript } from '../model/publicationAnnotations';
 import { extractOmiInlineRuns, semanticKindsFromMarks, type OmiInlineRun } from '../model/inlineSemantics';
 import { isNoteAnnotation, getNoteKind } from '../model/notes';
@@ -7,13 +8,14 @@ import type { OmiBlock, OmiManuscript } from '../types/omi';
 import { createStoreZip, textZipEntry, type StoreZipEntry } from './simpleZip';
 
 const MIME = 'application/vnd.oasis.opendocument.text';
-export interface OdtExportResult { blob: Blob; bytes: Uint8Array; fileName: string; warnings: string[] }
+export interface OdtExportResult { blob: Blob; bytes: Uint8Array; fileName: string; warnings: string[]; diagnostics: ReturnType<typeof sourceAttributionLossDiagnostics> }
 
 /** Build a standards-shaped ODT package from the public scholarly manuscript view. */
 export function buildOdtExport(source: OmiManuscript): OdtExportResult {
   const manuscript = publicPublicationManuscript(source);
   const context = buildPublicationRenderingContext(manuscript, resolvePublicationProfile(manuscript));
-  const warnings: string[] = [];
+  const diagnostics = sourceAttributionLossDiagnostics(manuscript, 'ODT');
+  const warnings: string[] = diagnostics.map(diagnostic => diagnostic.message);
   const notes = new Map(manuscript.annotations.filter(isNoteAnnotation).map((note) => [note.id, note]));
   const usedNotes = new Set<string>();
   const images: Array<{ path: string; bytes: Uint8Array; mediaType: string }> = [];
@@ -40,7 +42,7 @@ export function buildOdtExport(source: OmiManuscript): OdtExportResult {
   ];
   const bytes = createStoreZip(entries);
   const copy = bytes.slice();
-  return { bytes, blob: new Blob([copy.buffer], { type: MIME }), fileName: `${fileStem(manuscript)}.odt`, warnings };
+  return { bytes, blob: new Blob([copy.buffer], { type: MIME }), fileName: `${fileStem(manuscript)}.odt`, warnings, diagnostics };
 }
 
 function renderSection(section: ReturnType<typeof buildPublicationRenderingContext>['sections'][number], notes: Map<string, OmiManuscript['annotations'][number]>, usedNotes: Set<string>, warnings: string[], images: Array<{ path: string; bytes: Uint8Array; mediaType: string }>): string[] {
