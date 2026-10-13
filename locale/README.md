@@ -6,7 +6,7 @@ For the primary Studio interface locales, the PO catalogs are the editable sourc
 - `de/studio.po` — German
 - `hu/studio.po` — Hungarian
 
-Each catalog contains the complete Studio UI key set. The `msgctxt` value is the stable translation key, `msgid` is the English source text, and `msgstr` is the localized text.
+Each catalog contains the 722 keys currently registered in the shared Studio localization dictionary. The `msgctxt` value is the stable translation key, `msgid` is the English source text, and `msgstr` is the localized text.
 
 The JSON files under `src/i18n/locales/{en,de,hu}/studio.json` are generated runtime dictionaries. Do not edit them directly. They are compiled from the PO catalogs by:
 
@@ -20,4 +20,4 @@ Development, build and test commands run this compilation before using the dicti
 npm run i18n:po:compile -- --all
 ```
 
-The JSON-to-PO export skips English, German and Hungarian so it cannot overwrite the primary source catalogs. Add or change UI strings in the catalogs, keep the same `msgctxt` key in all three, then run the compiler and tests.
+The JSON-to-PO export skips English, German and Hungarian so it cannot overwrite the primary source catalogs. Add or change shared UI strings in the catalogs, keep the same `msgctxt` key in all three, then run the compiler and tests. Some research-module panels still keep copy maps in source files; moving those remaining strings into this catalog is the next migration step.
