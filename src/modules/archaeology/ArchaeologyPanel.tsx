@@ -5,7 +5,7 @@ import { downloadWorkspaceJson, newWorkspaceId, safeWorkspaceFileName, useLocalW
 import { ResearchCatalogSearchPanel } from '../ResearchCatalogSearchPanel';
 import { CulturalHeritagePanel } from '../cultural-heritage/CulturalHeritagePanel';
 import '../disciplineWorkspaces.css';
-import { tCatalog } from '../../i18n';
+import { translateCatalog } from '../../i18n';
 
 type Context = { id: string; locus: string; period: string; layer: string; description: string; finds: string; sampleId: string; source: string };
 type Workspace = { project: string; site: string; country: string; coordinates: string; contexts: Context[] };
@@ -33,17 +33,17 @@ export function ArchaeologyPanel({ locale = 'en', storageKey = 'archaeology', he
         const parsed: unknown = JSON.parse(content);
         if (!valid(parsed)) throw new Error('invalid');
         setWorkspace(parsed); setError('');
-      } catch { setError(tCatalog("/uncataloguedUi/modules-archaeology-archaeologypanel/invalid-archaeology-json-file-ec8d222")); }
+      } catch { setError(translateCatalog(normalizeModuleLocale(locale), "/uncataloguedUi/modules-archaeology-archaeologypanel/invalid-archaeology-json-file-ec8d222")); }
     });
   }
   return <main className="discipline-workspace">
-    <header className="discipline-workspace__header"><div><p className="discipline-workspace__eyebrow">OMI Studio</p><h1>{t.title}</h1><p>{t.subtitle}</p></div><div><button type="button" onClick={() => downloadWorkspaceJson(safeWorkspaceFileName(workspace.project, 'archaeology') + '.json', workspace)}>{t.export}</button> <button type="button" onClick={() => fileRef.current?.click()}>{tCatalog("/uncataloguedUi/modules-archaeology-archaeologypanel/import-json-1a58943")}</button><input ref={fileRef} className="discipline-file" type="file" accept=".json,application/json" onChange={e => { importJson(e.target.files?.[0]); e.currentTarget.value = ''; }}/></div></header>
+    <header className="discipline-workspace__header"><div><p className="discipline-workspace__eyebrow">OMI Studio</p><h1>{t.title}</h1><p>{t.subtitle}</p></div><div><button type="button" onClick={() => downloadWorkspaceJson(safeWorkspaceFileName(workspace.project, 'archaeology') + '.json', workspace)}>{t.export}</button> <button type="button" onClick={() => fileRef.current?.click()}>{translateCatalog(normalizeModuleLocale(locale), "/uncataloguedUi/modules-archaeology-archaeologypanel/import-json-1a58943")}</button><input ref={fileRef} className="discipline-file" type="file" accept=".json,application/json" onChange={e => { importJson(e.target.files?.[0]); e.currentTarget.value = ''; }}/></div></header>
     <section className="discipline-workspace__section"><div className="discipline-workspace__grid"><label>{t.project}<input value={workspace.project} onChange={e => setWorkspace(current => ({ ...current, project: e.target.value }))}/></label><label>{t.site}<input value={workspace.site} onChange={e => setWorkspace(current => ({ ...current, site: e.target.value }))}/></label><label>{t.country}<input value={workspace.country} onChange={e => setWorkspace(current => ({ ...current, country: e.target.value }))}/></label><label>{t.coordinates}<input value={workspace.coordinates} onChange={e => setWorkspace(current => ({ ...current, coordinates: e.target.value }))}/></label></div><p className="discipline-workspace__hint">{t.local}</p></section>
     {error && <p role="alert">{error}</p>}
     <section className="discipline-workspace__section"><div className="discipline-workspace__section-title"><h2>{t.contexts} ({workspace.contexts.length})</h2><button type="button" onClick={() => setWorkspace(current => ({ ...current, contexts: [...current.contexts, emptyContext()] }))}>{t.add}</button></div>
       {workspace.contexts.map(context => <article className="discipline-workspace__card" key={context.id}><div className="discipline-workspace__grid"><label>{t.locus}<input value={context.locus} onChange={e => update(context.id, { locus: e.target.value })}/></label><label>{t.period}<input value={context.period} onChange={e => update(context.id, { period: e.target.value })}/></label><label>{t.layer}<input value={context.layer} onChange={e => update(context.id, { layer: e.target.value })}/></label><label>{t.sample}<input value={context.sampleId} onChange={e => update(context.id, { sampleId: e.target.value })}/></label><label>{t.finds}<input value={context.finds} onChange={e => update(context.id, { finds: e.target.value })}/></label><label>{t.source}<input value={context.source} onChange={e => update(context.id, { source: e.target.value })}/></label></div><label>{t.description}<textarea rows={3} value={context.description} onChange={e => update(context.id, { description: e.target.value })}/></label><button className="discipline-workspace__danger" type="button" onClick={() => setWorkspace(current => ({ ...current, contexts: current.contexts.filter(item => item.id !== context.id) }))}>{t.remove}</button></article>)}
     </section>
     <ResearchCatalogSearchPanel catalogs={['pleiades', 'ariadne', 'openContext']} locale={locale} storageKey={`${storageKey}:archaeology`} />
-    <section className="discipline-workspace__section"><h2>{tCatalog("/uncataloguedUi/modules-archaeology-archaeologypanel/cultural-heritage-2932e85")}</h2><CulturalHeritagePanel locale={locale} storageKey={heritageStorageKey} /></section>
+    <section className="discipline-workspace__section"><h2>{translateCatalog(normalizeModuleLocale(locale), "/uncataloguedUi/modules-archaeology-archaeologypanel/cultural-heritage-2932e85")}</h2><CulturalHeritagePanel locale={locale} storageKey={heritageStorageKey} /></section>
   </main>;
 }
