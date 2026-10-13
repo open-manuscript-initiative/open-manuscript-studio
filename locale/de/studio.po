@@ -5734,7 +5734,7 @@ msgstr "Statistik und Datenanalyse"
 #. OMI translation key: /researchModules/shell/translations/nara/attribution
 msgctxt "/researchModules/shell/translations/nara/attribution"
 msgid "This product uses the National Archives Catalog API but is not endorsed or certified by the National Archives and Records Administration."
-msgstr "This product uses the National Archives Catalog API but is not endorsed or certified by the National Archives and Records Administration."
+msgstr "Dieses Produkt nutzt die API des Katalogs der National Archives, wird jedoch von der National Archives and Records Administration weder unterstützt noch zertifiziert."
 
 #. OMI translation key: /researchModules/shell/translations/nara/dataProvider
 msgctxt "/researchModules/shell/translations/nara/dataProvider"
