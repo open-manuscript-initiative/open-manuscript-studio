@@ -21,7 +21,7 @@ import {
   type StatisticalDataset,
 } from './model';
 import '../disciplineWorkspaces.css';
-import { tCatalog } from '../../i18n';
+import { translateCatalog } from '../../i18n';
 
 const copy = getResearchModuleCopyByLocale('statistical-analysis-statistical-analysis-panel/copy');
 
@@ -169,7 +169,7 @@ export function StatisticalAnalysisPanel({ locale = 'en', storageKey = 'statisti
         <p className="discipline-workspace__hint">{dataset.rows.length} {t.rows} · {dataset.columns.length} {t.columns}</p>
       </> : <p className="discipline-workspace__hint">{t.noDataset}</p>}
       <p className="discipline-workspace__hint">{t.local}</p>
-      {!storageReady && <p role="status">{language === 'de' ? 'Datensatz wird geladen …' : language === 'hu' ? 'Adatkészlet betöltése…' : tCatalog("/uncataloguedUi/modules-statistical-analysis-statisticalanalysispanel/loading-dataset-f6c53bd")}</p>}
+      {!storageReady && <p role="status">{translateCatalog(language, "/uncataloguedUi/modules-statistical-analysis-statisticalanalysispanel/loading-dataset-f6c53bd")}</p>}
       {storageError && <p role="alert">{storageError}</p>}
       {error && <p role="alert">{error}</p>}
     </section>
