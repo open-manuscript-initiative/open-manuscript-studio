@@ -1,3 +1,4 @@
+import { getResearchModuleCopyByLocale } from '../moduleTranslationCatalog';
 import { normalizeModuleLocale } from '../moduleLocale';
 import { useState, type FormEvent } from 'react';
 
@@ -29,68 +30,7 @@ interface ReligiousTextsCopy {
   sourceNames: { bible: string; quran: string; buddhist: string };
 }
 
-const copyByLocale: Record<string, ReligiousTextsCopy> = {
-  hu: {
-    heading: 'Sefaria – zsidó szövegek és kommentárok',
-    intro: 'Élő keresés a Sefaria könyvtárában. A találatok rövid szövegrészletet, hivatkozást és kiadásadatot mutatnak, az eredeti forrásra mutató hivatkozással.',
-    searchLabel: 'Keresés szövegben',
-    placeholder: 'Kifejezés, név vagy szöveghely',
-    search: 'Keresés',
-    searching: 'Keresés…',
-    count: '{count} találat',
-    empty: 'Nincs találat erre a keresésre.',
-    openSource: 'Megnyitás a Sefarián',
-    editions: 'Kiadás',
-    loadingMore: 'Betöltés…',
-    loadMore: 'További találatok',
-    queryRequired: 'Legalább két karaktert adjon meg.',
-    failed: 'A keresés most nem sikerült. Próbálja meg később.',
-    serviceError: 'A Sefaria keresőszolgáltatása átmenetileg nem érhető el.',
-    otherSources: 'Más vallási szöveggyűjtemények',
-    portalNote: 'Ezek külső keresők; a keresést az adott szolgáltatás oldalán kell elindítani.',
-    sourceNames: { bible: 'Biblia – Bible.com', quran: 'Korán – Quran.com', buddhist: 'Buddhista szövegek – BUDA' },
-  },
-  en: {
-    heading: 'Sefaria – Jewish texts and commentaries',
-    intro: 'Live search across the Sefaria Library. Results show a short excerpt, citation, and edition details, with a link to the original source.',
-    searchLabel: 'Search text',
-    placeholder: 'Phrase, name, or passage',
-    search: 'Search',
-    searching: 'Searching…',
-    count: '{count} results',
-    empty: 'No results matched this search.',
-    openSource: 'Open in Sefaria',
-    editions: 'Edition',
-    loadingMore: 'Loading…',
-    loadMore: 'Load more results',
-    queryRequired: 'Enter at least two characters.',
-    failed: 'The search could not be completed. Try again later.',
-    serviceError: 'Sefaria search is temporarily unavailable.',
-    otherSources: 'Other religious text libraries',
-    portalNote: 'These are external search portals; start the search on the provider’s site.',
-    sourceNames: { bible: 'Bible – Bible.com', quran: 'Qur’an – Quran.com', buddhist: 'Buddhist texts – BUDA' },
-  },
-  de: {
-    heading: 'Sefaria – jüdische Texte und Kommentare',
-    intro: 'Live-Suche in der Sefaria-Bibliothek. Die Treffer zeigen einen kurzen Auszug, einen Beleg und Angaben zur Ausgabe mit einem Link zur Originalquelle.',
-    searchLabel: 'Volltextsuche',
-    placeholder: 'Begriff, Name oder Textstelle',
-    search: 'Suchen',
-    searching: 'Suche läuft…',
-    count: '{count} Ergebnisse',
-    empty: 'Keine Treffer für diese Suche.',
-    openSource: 'In Sefaria öffnen',
-    editions: 'Ausgabe',
-    loadingMore: 'Wird geladen…',
-    loadMore: 'Weitere Ergebnisse laden',
-    queryRequired: 'Geben Sie mindestens zwei Zeichen ein.',
-    failed: 'Die Suche konnte nicht abgeschlossen werden. Bitte versuchen Sie es später erneut.',
-    serviceError: 'Die Sefaria-Suche ist vorübergehend nicht verfügbar.',
-    otherSources: 'Weitere religiöse Textsammlungen',
-    portalNote: 'Dies sind externe Suchportale; starten Sie die Suche auf der Website des Anbieters.',
-    sourceNames: { bible: 'Bibel – Bible.com', quran: 'Koran – Quran.com', buddhist: 'Buddhistische Texte – BUDA' },
-  },
-};
+const copyByLocale: Record<string, ReligiousTextsCopy> = getResearchModuleCopyByLocale('religious-texts-religious-texts-panel/copyByLocale');
 
 const otherSources = [
   { id: 'bible', url: 'https://www.bible.com/' },

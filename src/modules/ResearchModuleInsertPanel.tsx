@@ -1,3 +1,4 @@
+import { getResearchModuleCopyByLocale } from './moduleTranslationCatalog';
 import { sortModulesForLocale } from './moduleOrdering';
 import { MathematicsPanel } from './mathematics/MathematicsPanel';
 import { useMemo, useState } from 'react';
@@ -44,11 +45,7 @@ export function ResearchModuleInsertPanel({
   const [approved, setApproved] = useState(false);
   const [error, setError] = useState('');
   const selected = candidates.find((candidate) => candidate.id === selectedId);
-  const actionCopy = language === 'hu'
-    ? { title: 'Kutatási modulok', insert: 'Modulszakasz beszúrása', choose: 'Mentett részlet kiválasztása', excerpt: 'Részlet', source: 'Forrás (kötelező)', preview: 'A kéziratba kerülő részlet és forrás', approve: 'Ellenőriztem a részletet, a forrást és a megoszthatóságot.', confirm: 'Részlet és forrás beszúrása', noData: 'Ebben a modulban nincs választható, mentett részlet.', missing: 'Adjon meg forrást és hagyja jóvá az előnézetet.', changed: 'A modul adatai időközben megváltoztak. Válassza ki újra a részletet.', tooLong: 'A részlet túl hosszú a közvetlen beszúráshoz.', inserted: 'A modulszakasz külön beszúrható. Mentett adat csak kiválasztás, kötelező forrás és előnézet után kerülhet a kéziratba.' }
-    : language === 'de'
-      ? { title: 'Forschungsmodule', insert: 'Modulabschnitt einfügen', choose: 'Gespeicherten Auszug auswählen', excerpt: 'Auszug', source: 'Quelle (erforderlich)', preview: 'Auszug und Quelle für das Manuskript', approve: 'Ich habe Auszug, Quelle und Freigabe geprüft.', confirm: 'Auszug mit Quelle einfügen', noData: 'Keine auswählbaren gespeicherten Auszüge in diesem Modul.', missing: 'Quelle angeben und Vorschau bestätigen.', changed: 'Die Moduldaten wurden geändert. Bitte erneut auswählen.', tooLong: 'Der Auszug ist für direktes Einfügen zu lang.', inserted: 'Der Modulabschnitt kann separat eingefügt werden. Gespeicherte Daten erfordern Auswahl, Quelle und Vorschau.' }
-      : { title: 'Research modules', insert: 'Insert module section', choose: 'Select saved excerpt', excerpt: 'Excerpt', source: 'Source (required)', preview: 'Excerpt and source to insert', approve: 'I checked the excerpt, source and permission to share.', confirm: 'Insert excerpt with source', noData: 'No selectable saved excerpts in this module.', missing: 'Enter a source and approve the preview.', changed: 'Module data changed. Select the excerpt again.', tooLong: 'The excerpt is too long for direct insertion.', inserted: 'You can insert a module section separately. Saved content requires selection, a source and preview.' };
+  const actionCopy = getResearchModuleCopyByLocale('research-module-insert-panel/actionCopy')[language];
 
   function insertModule(module: typeof builtinModuleManifests[number]): void {
     const details = copy.modules[module.id];

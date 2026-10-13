@@ -3616,3 +3616,2307 @@ msgctxt "/modules/visualElements/fileFormats"
 msgid "Images, DOCX, XLSX, CSV/TSV, HTML and TeX are supported."
 msgstr "Támogatott: képek, DOCX, XLSX, CSV/TSV, HTML és TeX."
 
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/count
+msgctxt "/researchModules/research-catalog-search-panel/copy/count"
+msgid "{count} results"
+msgstr "{count} találat"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/empty
+msgctxt "/researchModules/research-catalog-search-panel/copy/empty"
+msgid "No results found."
+msgstr "Nincs találat."
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/failed
+msgctxt "/researchModules/research-catalog-search-panel/copy/failed"
+msgid "Search failed. Try again or open the provider search."
+msgstr "A keresés nem sikerült. Próbálja újra, vagy nyissa meg a szolgáltató keresőjét."
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/fallback
+msgctxt "/researchModules/research-catalog-search-panel/copy/fallback"
+msgid "Search on provider website"
+msgstr "Keresés a szolgáltató oldalán"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/introApi
+msgctxt "/researchModules/research-catalog-search-panel/copy/introApi"
+msgid "Search results appear here."
+msgstr "A keresés találatai itt jelennek meg."
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/introPortal
+msgctxt "/researchModules/research-catalog-search-panel/copy/introPortal"
+msgid "The search opens on the provider website in a new tab."
+msgstr "A keresés egy új lapon, a szolgáltató saját oldalán nyílik meg."
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/open
+msgctxt "/researchModules/research-catalog-search-panel/copy/open"
+msgid "Open results at provider"
+msgstr "Találatok megnyitása a szolgáltatónál"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/placeholder
+msgctxt "/researchModules/research-catalog-search-panel/copy/placeholder"
+msgid "Name, title, or keyword"
+msgstr "Név, cím vagy kulcsszó"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/search
+msgctxt "/researchModules/research-catalog-search-panel/copy/search"
+msgid "Search"
+msgstr "Keresés"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/searchLabel
+msgctxt "/researchModules/research-catalog-search-panel/copy/searchLabel"
+msgid "Search terms"
+msgstr "Keresőkifejezés"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/searching
+msgctxt "/researchModules/research-catalog-search-panel/copy/searching"
+msgid "Searching…"
+msgstr "Keresés…"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/selectSource
+msgctxt "/researchModules/research-catalog-search-panel/copy/selectSource"
+msgid "Show"
+msgstr "Megjelenítés"
+
+#. OMI translation key: /researchModules/research-catalog-search-panel/copy/sources
+msgctxt "/researchModules/research-catalog-search-panel/copy/sources"
+msgid "Searchable databases"
+msgstr "Kereshető adatbázisok"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/add
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/add"
+msgid "Add context"
+msgstr "Kontextus hozzáadása"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/contexts
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/contexts"
+msgid "Archaeological contexts"
+msgstr "Régészeti kontextusok"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/coordinates
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/coordinates"
+msgid "Coordinates or spatial record"
+msgstr "Koordináták vagy térinformatikai rekord"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/country
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/country"
+msgid "Country / region"
+msgstr "Ország / régió"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/description
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/description"
+msgid "Description and observations"
+msgstr "Leírás és megfigyelések"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/export
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/export"
+msgid "Export archaeology register as JSON"
+msgstr "Régészeti jegyzék exportálása JSON-ként"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/finds
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/finds"
+msgid "Finds and object identifiers"
+msgstr "Leletek és tárgyazonosítók"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/layer
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/layer"
+msgid "Layer / stratigraphic unit"
+msgstr "Réteg / stratigráfiai egység"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/local
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/local"
+msgid "Data is stored on this device. Export JSON regularly to keep a portable copy."
+msgstr "Az adatok ezen az eszközön tárolódnak. Rendszeres JSON-exporttal készítsen hordozható másolatot."
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/locus
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/locus"
+msgid "Locus / context identifier"
+msgstr "Locus / kontextusazonosító"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/period
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/period"
+msgid "Period / dating"
+msgstr "Korszak / datálás"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/project
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/project"
+msgid "Research project"
+msgstr "Kutatási projekt"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/remove
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/remove"
+msgid "Remove"
+msgstr "Törlés"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/sample
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/sample"
+msgid "Sample identifier"
+msgstr "Mintaazonosító"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/site
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/site"
+msgid "Site name / identifier"
+msgstr "Lelőhely neve / azonosítója"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/source
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/source"
+msgid "Documentation / source URL"
+msgstr "Dokumentáció / forrás URL"
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/subtitle
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/subtitle"
+msgid "Document sites, layers, objects, collections, and images with source and heritage records."
+msgstr "Lelőhelyek, rétegek, tárgyak, gyűjtemények és képek dokumentálása, forrásokkal és örökségi rekordokkal."
+
+#. OMI translation key: /researchModules/archaeology-archaeology-panel/copy/title
+msgctxt "/researchModules/archaeology-archaeology-panel/copy/title"
+msgid "Archaeology and cultural heritage"
+msgstr "Régészet és kulturális örökség"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/addAlignment
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/addAlignment"
+msgid "Save alignment"
+msgstr "Illesztés mentése"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/addDocument
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/addDocument"
+msgid "Add text"
+msgstr "Szöveg hozzáadása"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/alignment
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/alignment"
+msgid "Parallel text alignment"
+msgstr "Párhuzamos szövegek illesztése"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/alignmentLabel
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/alignmentLabel"
+msgid "Aligned unit label"
+msgstr "Illesztett egység címe"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/annotate
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/annotate"
+msgid "Annotate"
+msgstr "Annotálás"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/annotations
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/annotations"
+msgid "Linguistic annotations"
+msgstr "Nyelvi annotációk"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/backup
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/backup"
+msgid "Download JSON to create a portable backup."
+msgstr "A JSON exporttal készíthet hordozható biztonsági másolatot."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/caseSensitive
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/caseSensitive"
+msgid "Match case"
+msgstr "Kis- és nagybetű megkülönböztetése"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/category
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/category"
+msgid "Category"
+msgstr "Kategória"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/lemma
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/lemma"
+msgid "Lemma"
+msgstr "Lemma"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/morphology
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/morphology"
+msgid "Morphology"
+msgstr "Morfológia"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/named-entity
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/named-entity"
+msgid "Named entity"
+msgstr "Tulajdonnév / entitás"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/other
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/other"
+msgid "Other"
+msgstr "Egyéb"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/pos
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/pos"
+msgid "Part of speech"
+msgstr "Szófaj"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/semantics
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/semantics"
+msgid "Semantic label"
+msgstr "Szemantikai címke"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/chars
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/chars"
+msgid "characters"
+msgstr "karakter"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/corpus
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/corpus"
+msgid "Corpus settings"
+msgstr "Korpusz beállításai"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/corpusTitle
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/corpusTitle"
+msgid "Corpus name"
+msgstr "A korpusz neve"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/date
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/date"
+msgid "Date"
+msgstr "Dátum"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/datePlaceholder
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/datePlaceholder"
+msgid "e.g. c. 1670"
+msgstr "pl. 1670 körül"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/deleteAnnotation
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/deleteAnnotation"
+msgid "Delete annotation"
+msgstr "Annotáció törlése"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/description
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/description"
+msgid "Description"
+msgstr "Leírás"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/documentTitle
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/documentTitle"
+msgid "Title"
+msgstr "Cím"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/documents
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/documents"
+msgid "Texts"
+msgstr "Szövegek"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/export
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/export"
+msgid "Export"
+msgstr "Exportálás"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/exportCsv
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/exportCsv"
+msgid "Download concordance CSV"
+msgstr "Konkordancia CSV letöltése"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/exportJson
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/exportJson"
+msgid "Download corpus JSON"
+msgstr "Korpusz JSON letöltése"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/hit
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/hit"
+msgid "hits"
+msgstr "találat"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/importJson
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/importJson"
+msgid "Import corpus JSON"
+msgstr "Korpusz JSON betöltése"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/importText
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/importText"
+msgid "Import TXT, MD, or DOCX"
+msgstr "TXT vagy MD importálása"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/intro
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/intro"
+msgid "Build a text corpus, create context-rich concordances, annotate linguistic and named-entity features, and manually align passages across texts."
+msgstr "Építsen saját szövegkorpuszt, készítsen konkordanciát a találatok szövegkörnyezetével, jelölje nyelvi és névelem-funkciókat, és kézzel illesszen egymáshoz párhuzamos szövegrészleteket."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/invalidProject
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/invalidProject"
+msgid "This is not a valid OMI corpus project."
+msgstr "A fájl nem érvényes OMI korpuszprojekt."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/label
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/label"
+msgid "Label / value"
+msgstr "Címke / érték"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/language
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/language"
+msgid "Default language"
+msgstr "Alapértelmezett nyelv"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/leftDocument
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/leftDocument"
+msgid "Left text"
+msgstr "Bal oldali szöveg"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/leftPassage
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/leftPassage"
+msgid "Left passage"
+msgstr "Bal oldali részlet"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/loadError
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/loadError"
+msgid "The file could not be read."
+msgstr "A fájl beolvasása nem sikerült."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/noAlignment
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/noAlignment"
+msgid "No alignments have been saved yet."
+msgstr "Még nincs mentett illesztés."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/noAnnotations
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/noAnnotations"
+msgid "No annotations have been saved yet."
+msgstr "Még nincs mentett annotáció."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/noHits
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/noHits"
+msgid "No matches in the corpus texts."
+msgstr "Nincs találat a korpusz szövegeiben."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/note
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/note"
+msgid "Note"
+msgstr "Megjegyzés"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/query
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/query"
+msgid "Search term"
+msgstr "Keresőkifejezés"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/queryPlaceholder
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/queryPlaceholder"
+msgid "Word or phrase"
+msgstr "Szó vagy kifejezés"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/remove
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/remove"
+msgid "Remove"
+msgstr "Eltávolítás"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/results
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/results"
+msgid "Concordance results"
+msgstr "Konkordancia találatai"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/rightDocument
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/rightDocument"
+msgid "Right text"
+msgstr "Jobb oldali szöveg"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/rightPassage
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/rightPassage"
+msgid "Right passage"
+msgstr "Jobb oldali részlet"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/saveAnnotation
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/saveAnnotation"
+msgid "Save annotation"
+msgstr "Annotáció mentése"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/saved
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/saved"
+msgid "Automatically saved on this device."
+msgstr "Automatikusan mentve ezen az eszközön."
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/search
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/search"
+msgid "Concordance search"
+msgstr "Konkordancia keresése"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/source
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/source"
+msgid "Source / provenance"
+msgstr "Forrás / eredet"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/sourcePlaceholder
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/sourcePlaceholder"
+msgid "e.g. manuscript, edition, URL"
+msgstr "pl. kézirat, kiadás, URL"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/text
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/text"
+msgid "Text"
+msgstr "Szöveg"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/wholeWord
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/wholeWord"
+msgid "Whole word only"
+msgstr "Teljes szó keresése"
+
+#. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/wordCount
+msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/wordCount"
+msgid "words"
+msgstr "szó"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/addSegment
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/addSegment"
+msgid "Add text locus"
+msgstr "Szöveghely hozzáadása"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/addWitness
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/addWitness"
+msgid "Add witness"
+msgstr "Tanú hozzáadása"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/apparatus
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/apparatus"
+msgid "Critical apparatus"
+msgstr "Kritikai apparátus"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/backup
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/backup"
+msgid "Download project JSON to create a portable backup."
+msgstr "A JSON exporttal készíthet hordozható biztonsági másolatot."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/date
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/date"
+msgid "Date / dating"
+msgstr "Dátum / datálás"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/deleteSegment
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/deleteSegment"
+msgid "Delete locus"
+msgstr "Szöveghely törlése"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/export
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/export"
+msgid "Export"
+msgstr "Export"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/exportJson
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/exportJson"
+msgid "Download project JSON"
+msgstr "Projekt JSON letöltése"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/exportTei
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/exportTei"
+msgid "Download TEI XML"
+msgstr "TEI XML letöltése"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/import
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/import"
+msgid "Import"
+msgstr "Betöltés"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/importJson
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/importJson"
+msgid "Import project JSON"
+msgstr "Projekt JSON betöltése"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/importText
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/importText"
+msgid "Load a text file into the edited text"
+msgstr "Szövegfájl betöltése a főszövegbe"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/intro
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/intro"
+msgid "Set up an edition, describe its manuscript witnesses, then record the edited text and differences locus by locus. Witness readings feed the critical apparatus."
+msgstr "Hozza létre a kiadási projektet, írja le a kézirati tanúkat, majd szöveghelyenként rögzítse a főszöveget és az eltéréseket. A változatok a kritikai apparátusban is megjelennek."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/invalidProject
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/invalidProject"
+msgid "This is not a valid OMI critical edition project."
+msgstr "A fájl nem érvényes OMI kritikai kiadási projekt."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kind
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kind"
+msgid "Variant type"
+msgstr "Eltérés típusa"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/addition
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/addition"
+msgid "addition"
+msgstr "betoldás"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/omission
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/omission"
+msgid "omission"
+msgstr "kihagyás"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/orthography
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/orthography"
+msgid "orthographic variant"
+msgstr "helyesírási eltérés"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/substitution
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/substitution"
+msgid "substitution"
+msgstr "szövegváltozat"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/transposition
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/kinds/transposition"
+msgid "transposition"
+msgstr "szórend / áthelyezés"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/language
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/language"
+msgid "Text language"
+msgstr "A szöveg nyelve"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/lemma
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/lemma"
+msgid "Edited text / lemma"
+msgstr "Főszöveg / lemma"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/loadError
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/loadError"
+msgid "The file could not be read."
+msgstr "A fájl beolvasása nem sikerült."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/locus
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/locus"
+msgid "Locus (e.g. fol. 1, 2r)"
+msgstr "Hely (pl. 1. levél, 2r)"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/noSegment
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/noSegment"
+msgid "Add a text locus to begin editing."
+msgstr "Adjon hozzá szöveghelyet a szerkesztés megkezdéséhez."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/noVariants
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/noVariants"
+msgid "No variants have been recorded at this locus."
+msgstr "Ezen a helyen még nincs rögzített eltérés."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/noWitness
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/noWitness"
+msgid "Add at least one manuscript witness to begin collation."
+msgstr "Adjon hozzá legalább egy kézirati tanút a kolláció megkezdéséhez."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/note
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/note"
+msgid "Editorial note"
+msgstr "Szerkesztői megjegyzés"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/principle
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/principle"
+msgid "Editorial principles"
+msgstr "Szerkesztési alapelvek"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/project
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/project"
+msgid "Edition project"
+msgstr "Kiadási projekt"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/reading
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/reading"
+msgid "Witness reading"
+msgstr "Tanú olvasata"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/ready
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/ready"
+msgid "The edition workspace is ready. Witness fields and text loci can be edited."
+msgstr "A kiadás váza elkészült. A tanúkhoz tartozó mezők és szöveghelyek szerkeszthetők."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/remove
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/remove"
+msgid "Remove"
+msgstr "Eltávolítás"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/repository
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/repository"
+msgid "Holding institution"
+msgstr "Őrzőhely"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/saved
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/saved"
+msgid "Automatically saved on this device."
+msgstr "Automatikusan mentve ezen az eszközön."
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/segments
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/segments"
+msgid "Text loci and collation"
+msgstr "Szöveghelyek és kolláció"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/shelfmark
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/shelfmark"
+msgid "Shelfmark"
+msgstr "Raktári jelzet"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/siglum
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/siglum"
+msgid "Siglum"
+msgstr "Jelzet"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/title
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/title"
+msgid "Edition title"
+msgstr "A kiadás címe"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/untitled
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/untitled"
+msgid "Untitled critical edition"
+msgstr "Névtelen kritikai szövegkiadás"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/witnessDesc
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/witnessDesc"
+msgid "Description"
+msgstr "Leírás"
+
+#. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/witnesses
+msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/witnesses"
+msgid "Manuscript witnesses"
+msgstr "Kézirati tanúk"
+
+#. OMI translation key: /researchModules/history-archives-eleveltar-search-panel/copyByLocale/description
+msgctxt "/researchModules/history-archives-eleveltar-search-panel/copyByLocale/description"
+msgid "Search archival descriptions and digital records from the Hungarian National Archives and Budapest City Archives in the Electronic Archives Portal."
+msgstr "Az Elektronikus Levéltári Portálon a Magyar Nemzeti Levéltár és Budapest Főváros Levéltára levéltári leírásai és digitális iratai kereshetők."
+
+#. OMI translation key: /researchModules/history-archives-eleveltar-search-panel/copyByLocale/note
+msgctxt "/researchModules/history-archives-eleveltar-search-panel/copyByLocale/note"
+msgid "Search opens on the archive portal; enter the query there."
+msgstr "A keresés a levéltári portálon nyílik meg; a keresőkifejezést ott kell megadni."
+
+#. OMI translation key: /researchModules/history-archives-eleveltar-search-panel/copyByLocale/open
+msgctxt "/researchModules/history-archives-eleveltar-search-panel/copyByLocale/open"
+msgid "Open archival search"
+msgstr "Iratkereső megnyitása"
+
+#. OMI translation key: /researchModules/history-archives-eleveltar-search-panel/copyByLocale/title
+msgctxt "/researchModules/history-archives-eleveltar-search-panel/copyByLocale/title"
+msgid "eLevéltár – Hungarian archival sources"
+msgstr "eLevéltár – magyar levéltári források"
+
+#. OMI translation key: /researchModules/history-archives-history-archives-sources-panel/copyByLocale/choose
+msgctxt "/researchModules/history-archives-history-archives-sources-panel/copyByLocale/choose"
+msgid "Archives to display"
+msgstr "Megjelenő levéltárak"
+
+#. OMI translation key: /researchModules/history-archives-history-archives-sources-panel/copyByLocale/clear
+msgctxt "/researchModules/history-archives-history-archives-sources-panel/copyByLocale/clear"
+msgid "Hide all"
+msgstr "Összes elrejtése"
+
+#. OMI translation key: /researchModules/history-archives-history-archives-sources-panel/copyByLocale/help
+msgctxt "/researchModules/history-archives-history-archives-sources-panel/copyByLocale/help"
+msgid "Choose which catalogues appear below. Your selection is saved for this workspace."
+msgstr "Jelölje ki, mely katalógusok jelenjenek meg. A választás erre a munkatérre mentődik."
+
+#. OMI translation key: /researchModules/history-archives-history-archives-sources-panel/copyByLocale/open
+msgctxt "/researchModules/history-archives-history-archives-sources-panel/copyByLocale/open"
+msgid "Open archive search"
+msgstr "Levéltári kereső megnyitása"
+
+#. OMI translation key: /researchModules/history-archives-history-archives-sources-panel/copyByLocale/portalNote
+msgctxt "/researchModules/history-archives-history-archives-sources-panel/copyByLocale/portalNote"
+msgid "Search on the archive’s official catalogue; the link opens in a new tab."
+msgstr "Keresés a levéltár hivatalos katalógusában; a hivatkozás új lapon nyílik meg."
+
+#. OMI translation key: /researchModules/history-archives-history-archives-sources-panel/copyByLocale/selectAll
+msgctxt "/researchModules/history-archives-history-archives-sources-panel/copyByLocale/selectAll"
+msgid "Show all"
+msgstr "Mind megjelenítése"
+
+#. OMI translation key: /researchModules/history-archives-romanian-archives-search-panel/copyByLocale/description
+msgctxt "/researchModules/history-archives-romanian-archives-search-panel/copyByLocale/description"
+msgid "Search the Romanian National Archives online catalogue. Results open on the Archives’ official portal in a new tab."
+msgstr "Keresés a Román Nemzeti Levéltár online katalógusában. A találatok a levéltár hivatalos portálján, új lapon nyílnak meg."
+
+#. OMI translation key: /researchModules/history-archives-romanian-archives-search-panel/copyByLocale/label
+msgctxt "/researchModules/history-archives-romanian-archives-search-panel/copyByLocale/label"
+msgid "Search the Romanian archival catalogue"
+msgstr "Keresés a román levéltári katalógusban"
+
+#. OMI translation key: /researchModules/history-archives-romanian-archives-search-panel/copyByLocale/placeholder
+msgctxt "/researchModules/history-archives-romanian-archives-search-panel/copyByLocale/placeholder"
+msgid "Name, place, date, or keyword"
+msgstr "Név, hely, dátum vagy kulcsszó"
+
+#. OMI translation key: /researchModules/history-archives-romanian-archives-search-panel/copyByLocale/search
+msgctxt "/researchModules/history-archives-romanian-archives-search-panel/copyByLocale/search"
+msgid "Search"
+msgstr "Keresés"
+
+#. OMI translation key: /researchModules/history-archives-romanian-archives-search-panel/copyByLocale/title
+msgctxt "/researchModules/history-archives-romanian-archives-search-panel/copyByLocale/title"
+msgid "Romanian National Archives"
+msgstr "Román Nemzeti Levéltár"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/add
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/add"
+msgid "Add legal source"
+msgstr "Jogforrás hozzáadása"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/addVersion
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/addVersion"
+msgid "Add version"
+msgstr "Változat felvétele"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/authority
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/authority"
+msgid "Issuing authority"
+msgstr "Kibocsátó szerv"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/citation
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/citation"
+msgid "Official citation"
+msgstr "Hivatalos hivatkozás"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/compare
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/compare"
+msgid "Compare two versions"
+msgstr "Két változat összevetése"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/databaseQuery
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/databaseQuery"
+msgid "Search terms"
+msgstr "Keresőkifejezés"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/databases
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/databases"
+msgid "External legal databases"
+msgstr "Külső jogi adatbázisok"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/databasesHelp
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/databasesHelp"
+msgid "Searches open in a new tab. EUR-Lex is queried directly; other entries open a web search restricted to the listed portal. OMI does not retrieve or verify results."
+msgstr "A keresések új lapon nyílnak meg. Az EUR-Lex keresőjét közvetlenül használjuk; a többi portálra korlátozott webes keresés vezet. Az OMI nem tölt le vagy hitelesít találatokat."
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/effective
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/effective"
+msgid "Effective date"
+msgstr "Hatálybalépés"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/export
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/export"
+msgid "Export register as JSON"
+msgstr "Nyilvántartás exportálása JSON-ként"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/first
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/first"
+msgid "First version"
+msgstr "Első változat"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/jurisdiction
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/jurisdiction"
+msgid "Jurisdiction"
+msgstr "Joghatóság"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/local
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/local"
+msgid "The register is stored on this device. Verify citations and validity against the primary source."
+msgstr "A nyilvántartás ezen az eszközön tárolódik. Ellenőrizd a hivatkozásokat és a hatályállapotot az elsődleges forrásnál."
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/noSources
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/noSources"
+msgid "No legal sources recorded yet."
+msgstr "Még nincs rögzített jogforrás."
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/note
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/note"
+msgid "Note"
+msgstr "Megjegyzés"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/open
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/open"
+msgid "Open source"
+msgstr "Forrás megnyitása"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/openPortal
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/openPortal"
+msgid "Open portal"
+msgstr "Portál megnyitása"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/publication
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/publication"
+msgid "Publication date"
+msgstr "Kihirdetés dátuma"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/remove
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/remove"
+msgid "Remove"
+msgstr "Törlés"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/search
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/search"
+msgid "Search title, citation, or jurisdiction"
+msgstr "Keresés cím, hivatkozás vagy joghatóság szerint"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/searchDatabase
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/searchDatabase"
+msgid "Search"
+msgstr "Keresés"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/second
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/second"
+msgid "Second version"
+msgstr "Második változat"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/status
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/status"
+msgid "Validity / status"
+msgstr "Hatályállapot / státusz"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/subtitle
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/subtitle"
+msgid "Register citations, validity status, and source text versions."
+msgstr "Hivatkozások, hatályállapotok és forrásszöveg-változatok nyilvántartása."
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/text
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/text"
+msgid "Source text"
+msgstr "Forrásszöveg"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/title
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/title"
+msgid "Legal Sources"
+msgstr "Jogforrások"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/titleField
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/titleField"
+msgid "Title"
+msgstr "Cím"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/type
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/type"
+msgid "Source type"
+msgstr "Forrástípus"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/url
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/url"
+msgid "Official source URL"
+msgstr "Hivatalos forrás URL-je"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/versionDate
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/versionDate"
+msgid "Version date"
+msgstr "Változat dátuma"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/versionEffective
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/versionEffective"
+msgid "Effective from"
+msgstr "Hatályos ettől"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/versionUrl
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/versionUrl"
+msgid "Version URL"
+msgstr "Változat URL-je"
+
+#. OMI translation key: /researchModules/legal-sources-legal-sources-panel/copy/versions
+msgctxt "/researchModules/legal-sources-legal-sources-panel/copy/versions"
+msgid "Text versions"
+msgstr "Szövegváltozatok"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/aligned
+msgctxt "/researchModules/mathematics-equation-editor/labels/aligned"
+msgid "Aligned equations"
+msgstr "Egyenletrendszer"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/cases
+msgctxt "/researchModules/mathematics-equation-editor/labels/cases"
+msgid "Cases"
+msgstr "Esetek"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/error
+msgctxt "/researchModules/mathematics-equation-editor/labels/error"
+msgid "Invalid or unsupported LaTeX"
+msgstr "Hibás vagy nem támogatott LaTeX"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/fraction
+msgctxt "/researchModules/mathematics-equation-editor/labels/fraction"
+msgid "Fraction"
+msgstr "Tört"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/hint
+msgctxt "/researchModules/mathematics-equation-editor/labels/hint"
+msgid "Enter an expression, without a full LaTeX document or $ delimiters. Templates replace the selection."
+msgstr "Képletet adjon meg, teljes LaTeX-dokumentum és $ határolók nélkül. A sablon a kijelölés helyére kerül."
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/integral
+msgctxt "/researchModules/mathematics-equation-editor/labels/integral"
+msgid "Integral"
+msgstr "Integrál"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/matrix
+msgctxt "/researchModules/mathematics-equation-editor/labels/matrix"
+msgid "Matrix"
+msgstr "Mátrix"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/preview
+msgctxt "/researchModules/mathematics-equation-editor/labels/preview"
+msgid "Equation preview"
+msgstr "Képlet előnézete"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/root
+msgctxt "/researchModules/mathematics-equation-editor/labels/root"
+msgid "Root"
+msgstr "Gyök"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/scripts
+msgctxt "/researchModules/mathematics-equation-editor/labels/scripts"
+msgid "Scripts"
+msgstr "Indexek"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/source
+msgctxt "/researchModules/mathematics-equation-editor/labels/source"
+msgid "LaTeX equation"
+msgstr "LaTeX-képlet"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/sum
+msgctxt "/researchModules/mathematics-equation-editor/labels/sum"
+msgid "Sum"
+msgstr "Összeg"
+
+#. OMI translation key: /researchModules/mathematics-equation-editor/labels/templates
+msgctxt "/researchModules/mathematics-equation-editor/labels/templates"
+msgid "Equation templates"
+msgstr "Képletsablonok"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/count
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/count"
+msgid "{count} results"
+msgstr "{count} találat"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/editions
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/editions"
+msgid "Edition"
+msgstr "Kiadás"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/empty
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/empty"
+msgid "No results matched this search."
+msgstr "Nincs találat erre a keresésre."
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/failed
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/failed"
+msgid "The search could not be completed. Try again later."
+msgstr "A keresés most nem sikerült. Próbálja meg később."
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/heading
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/heading"
+msgid "Sefaria – Jewish texts and commentaries"
+msgstr "Sefaria – zsidó szövegek és kommentárok"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/intro
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/intro"
+msgid "Live search across the Sefaria Library. Results show a short excerpt, citation, and edition details, with a link to the original source."
+msgstr "Élő keresés a Sefaria könyvtárában. A találatok rövid szövegrészletet, hivatkozást és kiadásadatot mutatnak, az eredeti forrásra mutató hivatkozással."
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/loadMore
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/loadMore"
+msgid "Load more results"
+msgstr "További találatok"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/loadingMore
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/loadingMore"
+msgid "Loading…"
+msgstr "Betöltés…"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/openSource
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/openSource"
+msgid "Open in Sefaria"
+msgstr "Megnyitás a Sefarián"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/otherSources
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/otherSources"
+msgid "Other religious text libraries"
+msgstr "Más vallási szöveggyűjtemények"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/placeholder
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/placeholder"
+msgid "Phrase, name, or passage"
+msgstr "Kifejezés, név vagy szöveghely"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/portalNote
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/portalNote"
+msgid "These are external search portals; start the search on the provider’s site."
+msgstr "Ezek külső keresők; a keresést az adott szolgáltatás oldalán kell elindítani."
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/queryRequired
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/queryRequired"
+msgid "Enter at least two characters."
+msgstr "Legalább két karaktert adjon meg."
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/search
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/search"
+msgid "Search"
+msgstr "Keresés"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/searchLabel
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/searchLabel"
+msgid "Search text"
+msgstr "Keresés szövegben"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/searching
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/searching"
+msgid "Searching…"
+msgstr "Keresés…"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/serviceError
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/serviceError"
+msgid "Sefaria search is temporarily unavailable."
+msgstr "A Sefaria keresőszolgáltatása átmenetileg nem érhető el."
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/sourceNames/bible
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/sourceNames/bible"
+msgid "Bible – Bible.com"
+msgstr "Biblia – Bible.com"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/sourceNames/buddhist
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/sourceNames/buddhist"
+msgid "Buddhist texts – BUDA"
+msgstr "Buddhista szövegek – BUDA"
+
+#. OMI translation key: /researchModules/religious-texts-religious-texts-panel/copyByLocale/sourceNames/quran
+msgctxt "/researchModules/religious-texts-religious-texts-panel/copyByLocale/sourceNames/quran"
+msgid "Qur’an – Quran.com"
+msgstr "Korán – Quran.com"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/busy
+msgctxt "/researchModules/research-databases-research-database-panel/copy/busy"
+msgid "Searching…"
+msgstr "Keresés…"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/choose
+msgctxt "/researchModules/research-databases-research-database-panel/copy/choose"
+msgid "Databases"
+msgstr "Adatbázisok"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/consent
+msgctxt "/researchModules/research-databases-research-database-panel/copy/consent"
+msgid "Your search terms are sent to the selected providers. Do not enter personal, participant, or confidential data."
+msgstr "A keresőkifejezést elküldjük a kijelölt szolgáltatóknak. Ne adjon meg személyes, résztvevői vagy bizalmas adatot."
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/empty
+msgctxt "/researchModules/research-databases-research-database-panel/copy/empty"
+msgid "No results."
+msgstr "Nincs találat."
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/failed
+msgctxt "/researchModules/research-databases-research-database-panel/copy/failed"
+msgid "This provider could not be searched. Other results remain available."
+msgstr "Ez a szolgáltató most nem érhető el. A többi találat megmarad."
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/more
+msgctxt "/researchModules/research-databases-research-database-panel/copy/more"
+msgid "More results"
+msgstr "További találatok"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/noRights
+msgctxt "/researchModules/research-databases-research-database-panel/copy/noRights"
+msgid "Not supplied; check the source record before reuse."
+msgstr "Nincs megadva; átvétel előtt ellenőrizze a forrásrekordot."
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/none
+msgctxt "/researchModules/research-databases-research-database-panel/copy/none"
+msgid "Select at least one database and enter 2–240 characters."
+msgstr "Válasszon legalább egy adatbázist, és írjon be 2–240 karaktert."
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/open
+msgctxt "/researchModules/research-databases-research-database-panel/copy/open"
+msgid "Open source record"
+msgstr "Forrásrekord megnyitása"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/query
+msgctxt "/researchModules/research-databases-research-database-panel/copy/query"
+msgid "Search terms"
+msgstr "Keresőkifejezés"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/rights
+msgctxt "/researchModules/research-databases-research-database-panel/copy/rights"
+msgid "Rights"
+msgstr "Felhasználási jog"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/search
+msgctxt "/researchModules/research-databases-research-database-panel/copy/search"
+msgid "Search"
+msgstr "Keresés"
+
+#. OMI translation key: /researchModules/research-databases-research-database-panel/copy/title
+msgctxt "/researchModules/research-databases-research-database-panel/copy/title"
+msgid "Research database search"
+msgstr "Kutatási adatbázisok keresése"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/add
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/add"
+msgid "Add output"
+msgstr "Kimenet hozzáadása"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/checksum
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/checksum"
+msgid "SHA-256 checksum"
+msgstr "SHA-256 ellenőrzőösszeg"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/date
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/date"
+msgid "Release date"
+msgstr "Közzététel dátuma"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/export
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/export"
+msgid "Export reproducibility register as JSON"
+msgstr "Reprodukálhatósági jegyzék exportálása JSON-ként"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/file
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/file"
+msgid "Calculate file checksum"
+msgstr "Fájl ellenőrzőösszegének kiszámítása"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kind
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kind"
+msgid "Type"
+msgstr "Típus"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/code
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/code"
+msgid "Code"
+msgstr "Kód"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/dataset
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/dataset"
+msgid "Dataset"
+msgstr "Adatkészlet"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/method
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/method"
+msgid "Method"
+msgstr "Módszer"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/other
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/other"
+msgid "Other"
+msgstr "Egyéb"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/software
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/software"
+msgid "Software"
+msgstr "Szoftver"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/supplement
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/supplement"
+msgid "Supplement"
+msgstr "Kiegészítő anyag"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/license
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/license"
+msgid "License"
+msgstr "Licenc"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/local
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/local"
+msgid "The register is stored on this device. File selection records only its name, size, and SHA-256; file contents are not stored."
+msgstr "A jegyzék ezen az eszközön tárolódik. Fájlfeltöltéskor csak a fájlnév, méret és SHA-256 kerül bejegyzésre; a fájl tartalma nem."
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/notes
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/notes"
+msgid "Notes and rerun instructions"
+msgstr "Megjegyzések és újrafuttatási útmutató"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/outputs
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/outputs"
+msgid "Related research outputs"
+msgstr "Kapcsolódó kutatási kimenetek"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/pid
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/pid"
+msgid "Persistent identifier (DOI, Handle, etc.)"
+msgstr "Tartós azonosító (DOI, Handle stb.)"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/project
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/project"
+msgid "Research / publication title"
+msgstr "Kutatás / közlemény címe"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/relation
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/relation"
+msgid "Relationship to publication"
+msgstr "Kapcsolat a közleménnyel"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/remove
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/remove"
+msgid "Remove"
+msgstr "Törlés"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/repository
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/repository"
+msgid "Repository URL"
+msgstr "Adattár URL-je"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/subtitle
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/subtitle"
+msgid "Register data, code, methods, and versions linked to publications."
+msgstr "A közleményekhez kapcsolódó adatok, kódok, módszerek és verziók nyilvántartása."
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/title
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/title"
+msgid "Research Reproducibility"
+msgstr "Kutatási reprodukálhatóság"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/titleField
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/titleField"
+msgid "Name"
+msgstr "Megnevezés"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/verified
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/verified"
+msgid "I verified the link and version"
+msgstr "A hivatkozást és verziót ellenőriztem"
+
+#. OMI translation key: /researchModules/research-reproducibility-research-reproducibility-panel/copy/version
+msgctxt "/researchModules/research-reproducibility-research-reproducibility-panel/copy/version"
+msgid "Version"
+msgstr "Verzió"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/addTranscript
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/addTranscript"
+msgid "Add document"
+msgstr "Dokumentum felvétele"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/addVariable
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/addVariable"
+msgid "Add variable"
+msgstr "Változó felvétele"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/annotation
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/annotation"
+msgid "Code selected passage"
+msgstr "Kijelölt rész kódolása"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/apply
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/apply"
+msgid "Apply code"
+msgstr "Kód hozzárendelése"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/codeLabel
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/codeLabel"
+msgid "Code"
+msgstr "Kód"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/coded
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/coded"
+msgid "Coded passages"
+msgstr "Kódolt szövegrészletek"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/ethics
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/ethics"
+msgid "Ethics and data handling notes"
+msgstr "Etikai és adatkezelési jegyzetek"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/export
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/export"
+msgid "Export project as JSON"
+msgstr "Projekt exportálása JSON-ként"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/label
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/label"
+msgid "Description / code"
+msgstr "Leírás / kód"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/method
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/method"
+msgid "Methodology and sampling"
+msgstr "Módszertan és mintavétel"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/name
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/name"
+msgid "Project title"
+msgstr "Projekt címe"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/noSelection
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/noSelection"
+msgid "Select text in the transcript, then assign a code."
+msgstr "Jelölj ki egy szövegrészt az átiratban, majd rendelj hozzá kódot."
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/note
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/note"
+msgid "Analytic note"
+msgstr "Elemző megjegyzés"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/participant
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/participant"
+msgid "Participant code"
+msgstr "Résztvevő kódja"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/private
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/private"
+msgid "The working copy is stored on this device. Anonymize sensitive data."
+msgstr "A munkapéldány ezen az eszközön tárolódik. Az érzékeny adatokat anonimizáld."
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/project
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/project"
+msgid "Research design"
+msgstr "Kutatási terv"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/question
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/question"
+msgid "Research question"
+msgstr "Kutatási kérdés"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/remove
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/remove"
+msgid "Remove"
+msgstr "Törlés"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/subtitle
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/subtitle"
+msgid "Workspace for research design, codebooks, and qualitative data."
+msgstr "Kutatási terv, kódkönyv és kvalitatív adatok munkafelülete."
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/text
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/text"
+msgid "Transcript / notes"
+msgstr "Átirat / jegyzet"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/title
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/title"
+msgid "Social Research Methods"
+msgstr "Társadalomkutatási módszerek"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/transcriptTitle
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/transcriptTitle"
+msgid "Document title"
+msgstr "Dokumentum címe"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/transcripts
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/transcripts"
+msgid "Interviews and field notes"
+msgstr "Interjúk és megfigyelési jegyzetek"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/type
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/type"
+msgid "Measurement level or type"
+msgstr "Mérési szint vagy típus"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/values
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/values"
+msgid "Values and coding rules"
+msgstr "Értékek és kódolási szabály"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/varName
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/varName"
+msgid "Variable name"
+msgstr "Változónév"
+
+#. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/variables
+msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/variables"
+msgid "Codebook"
+msgstr "Kódkönyv"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/addDeviation
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/addDeviation"
+msgid "Log deviation"
+msgstr "Eltérés naplózása"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/alpha
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/alpha"
+msgid "Significance level (α)"
+msgstr "Szignifikanciaszint (α)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/analysisPlan
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/analysisPlan"
+msgid "Preregistered analysis plan"
+msgstr "Előzetes elemzési terv"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/anova
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/anova"
+msgid "One-way ANOVA"
+msgstr "Egyszempontos ANOVA"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/ci
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/ci"
+msgid "95% confidence interval for the mean"
+msgstr "95%-os konfidenciaintervallum az átlagra"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/column
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/column"
+msgid "Variable"
+msgstr "Változó"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/columns
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/columns"
+msgid "variables"
+msgstr "változó"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/comparison
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/comparison"
+msgid "Group comparison"
+msgstr "Csoportok összehasonlítása"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/count
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/count"
+msgid "Count"
+msgstr "Elemszám"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/csvError
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/csvError"
+msgid "Could not read the CSV/TSV. Check the header, quotes, and consistent column counts."
+msgstr "A CSV/TSV nem olvasható: ellenőrizze a fejlécet, az idézőjeleket és a sorok oszlopszámát."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/dataset
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/dataset"
+msgid "Dataset"
+msgstr "Adatkészlet"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/descriptive
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/descriptive"
+msgid "Descriptive statistics"
+msgstr "Leíró statisztika"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/design
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/design"
+msgid "Experimental design"
+msgstr "Kísérlettervezés"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/deviation
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/deviation"
+msgid "Deviation from frozen plan"
+msgstr "Eltérés a rögzített tervtől"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/deviations
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/deviations"
+msgid "Logged deviations"
+msgstr "Naplózott eltérések"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/df
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/df"
+msgid "Degrees of freedom"
+msgstr "Szabadságfok"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/dfBetween
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/dfBetween"
+msgid "Between-group degrees of freedom"
+msgstr "Csoportok közötti szabadságfok"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/dfWithin
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/dfWithin"
+msgid "Within-group degrees of freedom"
+msgstr "Csoporton belüli szabadságfok"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/downloadAssignments
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/downloadAssignments"
+msgid "Download allocation list"
+msgstr "Besorolási lista letöltése"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/effect
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/effect"
+msgid "Expected standardized effect (d)"
+msgstr "Várt standardizált hatásméret (d)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/estimateNote
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/estimateNote"
+msgid "Normal approximation for a two-sided mean difference between two independent groups; check assumptions before finalizing the design."
+msgstr "Kétoldali, két független csoport átlagkülönbségének normálközelítése; a végleges tervhez ellenőrizze a feltevéseket."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/exclusion
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/exclusion"
+msgid "Exclusion criteria (one per line)"
+msgstr "Kizárási szabályok (soronként egy)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/export
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/export"
+msgid "Export analysis and data as JSON"
+msgstr "Elemzés és adatok exportálása JSON-ként"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/f
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/f"
+msgid "F statistic"
+msgstr "F-statisztika"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/freeze
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/freeze"
+msgid "Preregister and freeze plan"
+msgstr "Terv előzetes rögzítése"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/frozen
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/frozen"
+msgid "Preregistered"
+msgstr "Rögzítve"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/groupColumn
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/groupColumn"
+msgid "Grouping variable"
+msgstr "Csoportosító változó"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/groups
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/groups"
+msgid "Groups"
+msgstr "Csoportok"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/groupsPlan
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/groupsPlan"
+msgid "Groups (comma separated)"
+msgstr "Csoportok (vesszővel elválasztva)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/histogram
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/histogram"
+msgid "Distribution (histogram)"
+msgstr "Adateloszlás (hisztogram)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/hypothesis
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/hypothesis"
+msgid "Hypothesis"
+msgstr "Hipotézis"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/importCsv
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/importCsv"
+msgid "Import CSV / TSV"
+msgstr "CSV / TSV importálása"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/importJson
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/importJson"
+msgid "Import analysis JSON"
+msgstr "Elemzés JSON importálása"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/importLab
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/importLab"
+msgid "Import laboratory project"
+msgstr "Laboratóriumi projekt importálása"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/inclusion
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/inclusion"
+msgid "Inclusion criteria (one per line)"
+msgstr "Beválasztási szabályok (soronként egy)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/intercept
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/intercept"
+msgid "Intercept"
+msgstr "Tengelymetszet"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/intro
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/intro"
+msgid "Explore tabular research data with descriptive statistics, group comparisons, linear regression, and reproducible reports."
+msgstr "Táblázatos kutatási adatok leíró és összehasonlító elemzése, lineáris regressziója és megismételhető jelentése."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/jsonError
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/jsonError"
+msgid "The OMI statistical JSON is invalid."
+msgstr "Az OMI statisztikai JSON nem érvényes."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/labError
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/labError"
+msgid "The laboratory JSON contains no importable measurement data."
+msgstr "A laboratóriumi JSON nem tartalmaz importálható mérési adatokat."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/local
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/local"
+msgid "The dataset and settings stay on this device. File contents are not uploaded. Anonymize sensitive or personal data before importing."
+msgstr "Az adatkészlet és a beállítások ezen az eszközön tárolódnak. A fájl tartalmát nem töltjük fel. Érzékeny vagy személyes adatot csak anonimizálás után importáljon."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/maximum
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/maximum"
+msgid "Maximum"
+msgstr "Maximum"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/mean
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/mean"
+msgid "Mean"
+msgstr "Átlag"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/meanDifference
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/meanDifference"
+msgid "Mean difference (1 − 2)"
+msgstr "Átlagkülönbség (1. − 2.)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/median
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/median"
+msgid "Median"
+msgstr "Medián"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/methodNote
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/methodNote"
+msgid "The t-test is Welch's two-sided test and does not assume equal group variances. ANOVA is the conventional one-way model. Researchers should assess OLS assumptions, missing data, and multiple testing."
+msgstr "A t-próba Welch-féle, kétoldali változat; nem feltételez azonos csoportvarianciát. Az ANOVA hagyományos egyszempontos modell. Az OLS lineáris regresszió feltételezéseit, a hiányzó adatokat és a többszörös tesztelést a kutatónak kell mérlegelnie."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/methods
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/methods"
+msgid "Method note"
+msgstr "Módszertani megjegyzés"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/minimum
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/minimum"
+msgid "Minimum"
+msgstr "Minimum"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/n
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/n"
+msgid "Valid sample size"
+msgstr "Érvényes elemszám"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/noComparison
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/noComparison"
+msgid "Each group needs at least two valid numeric values."
+msgstr "Csoportonként legalább két érvényes numerikus érték szükséges."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/noDataset
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/noDataset"
+msgid "Import a CSV/TSV dataset or an experimental laboratory project."
+msgstr "Importáljon CSV/TSV-adatfájlt vagy kísérleti laboratóriumi projektet."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/noNumeric
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/noNumeric"
+msgid "The selected column has too few valid numeric values."
+msgstr "A kiválasztott oszlopban nincs elegendő érvényes numerikus adat."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/outcome
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/outcome"
+msgid "Primary outcome"
+msgstr "Elsődleges kimenet"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/p
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/p"
+msgid "Two-sided p-value"
+msgstr "Kétoldali p-érték"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/participantCount
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/participantCount"
+msgid "Number of participants"
+msgstr "Résztvevők száma"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/power
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/power"
+msgid "Target statistical power"
+msgstr "Célzott statisztikai erő"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/preview
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/preview"
+msgid "Data preview (first 15 rows)"
+msgstr "Adatelőnézet (első 15 sor)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/q1
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/q1"
+msgid "1st quartile"
+msgstr "1. kvartilis"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/q3
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/q3"
+msgid "3rd quartile"
+msgstr "3. kvartilis"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/r
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/r"
+msgid "Pearson correlation (r)"
+msgstr "Pearson-korreláció (r)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/r2
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/r2"
+msgid "Explained variance (R²)"
+msgstr "Megmagyarázott variancia (R²)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/randomizationNote
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/randomizationNote"
+msgid "This is reproducible simple randomization without blocking. Use a separate process to conceal allocation."
+msgstr "A lista reprodukálható, egyszerű blokkolás nélküli besorolás. Az allokáció elrejtését külön folyamat biztosítsa."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/randomize
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/randomize"
+msgid "Generate allocation list"
+msgstr "Besorolási lista készítése"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/regression
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/regression"
+msgid "Linear regression (OLS)"
+msgstr "Lineáris regresszió (OLS)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/removeData
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/removeData"
+msgid "Remove dataset"
+msgstr "Adatkészlet eltávolítása"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/rows
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/rows"
+msgid "rows"
+msgstr "sor"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/sampleEstimate
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/sampleEstimate"
+msgid "Estimated sample size per group"
+msgstr "Becsült elemszám csoportonként"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/sd
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/sd"
+msgid "Sample standard deviation"
+msgstr "Mintaszórás"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/seed
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/seed"
+msgid "Randomization seed"
+msgstr "Véletlenítés magja"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/slope
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/slope"
+msgid "Slope"
+msgstr "Meredekség"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/sourceStudy
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/sourceStudy"
+msgid "Related research / experiment"
+msgstr "Kapcsolódó kutatás / kísérlet"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/t
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/t"
+msgid "Welch's t"
+msgstr "Welch-féle t"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/title
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/title"
+msgid "Statistical Analysis and Data"
+msgstr "Statisztikai és adatelemzés"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/titleField
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/titleField"
+msgid "Analysis title"
+msgstr "Elemzés címe"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/unsupported
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/unsupported"
+msgid "This is not a valid OMI statistical workspace or the version is unsupported."
+msgstr "A fájl nem érvényes OMI statisztikai munkatér vagy nem támogatott verzió."
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/valueColumn
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/valueColumn"
+msgid "Numeric variable"
+msgstr "Vizsgált numerikus változó"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/x
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/x"
+msgid "Predictor (X)"
+msgstr "Magyarázó változó (X)"
+
+#. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/y
+msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/y"
+msgid "Outcome (Y)"
+msgstr "Eredményváltozó (Y)"
+
+#. OMI translation key: /researchModules/shell/translations/activate
+msgctxt "/researchModules/shell/translations/activate"
+msgid "Activate"
+msgstr "Bekapcsolás"
+
+#. OMI translation key: /researchModules/shell/translations/active
+msgctxt "/researchModules/shell/translations/active"
+msgid "Active in this workspace"
+msgstr "Aktív ebben a munkatérben"
+
+#. OMI translation key: /researchModules/shell/translations/available
+msgctxt "/researchModules/shell/translations/available"
+msgid "Available"
+msgstr "Elérhető"
+
+#. OMI translation key: /researchModules/shell/translations/description
+msgctxt "/researchModules/shell/translations/description"
+msgid "Research workspaces for the modules enabled in Settings."
+msgstr "Munkafelületek a Beállításokban bekapcsolt kutatási modulokhoz."
+
+#. OMI translation key: /researchModules/shell/translations/disabledByInstallation
+msgctxt "/researchModules/shell/translations/disabledByInstallation"
+msgid "Disabled by this installation"
+msgstr "Ezen a telepítésen letiltva"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/dataProvider
+msgctxt "/researchModules/shell/translations/europeana/dataProvider"
+msgid "Data provider"
+msgstr "Adatszolgáltató"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/errorTitle
+msgctxt "/researchModules/shell/translations/europeana/errorTitle"
+msgid "Search unavailable."
+msgstr "A keresés nem érhető el."
+
+#. OMI translation key: /researchModules/shell/translations/europeana/loadMore
+msgctxt "/researchModules/shell/translations/europeana/loadMore"
+msgid "Load more results"
+msgstr "További találatok"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/loadingMore
+msgctxt "/researchModules/shell/translations/europeana/loadingMore"
+msgid "Loading…"
+msgstr "Betöltés…"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/noResults
+msgctxt "/researchModules/shell/translations/europeana/noResults"
+msgid "No records matched this search."
+msgstr "Nincs találat erre a keresésre."
+
+#. OMI translation key: /researchModules/shell/translations/europeana/openRecord
+msgctxt "/researchModules/shell/translations/europeana/openRecord"
+msgid "Open source institution record"
+msgstr "Megnyitás az őrző intézménynél"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/provider
+msgctxt "/researchModules/shell/translations/europeana/provider"
+msgid "Europeana Search"
+msgstr "Europeana-kereső"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/queryRequired
+msgctxt "/researchModules/shell/translations/europeana/queryRequired"
+msgid "Enter at least two characters to search."
+msgstr "A kereséshez legalább két karaktert adjon meg."
+
+#. OMI translation key: /researchModules/shell/translations/europeana/resultCount
+msgctxt "/researchModules/shell/translations/europeana/resultCount"
+msgid "{count} results"
+msgstr "{count} találat"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/rights
+msgctxt "/researchModules/shell/translations/europeana/rights"
+msgid "Rights"
+msgstr "Felhasználási jogok"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/searchButton
+msgctxt "/researchModules/shell/translations/europeana/searchButton"
+msgid "Search"
+msgstr "Keresés"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/searchFailed
+msgctxt "/researchModules/shell/translations/europeana/searchFailed"
+msgid "Europeana could not complete the search. Try again later."
+msgstr "Az Europeana most nem tudta végrehajtani a keresést. Próbálja meg később."
+
+#. OMI translation key: /researchModules/shell/translations/europeana/searchLabel
+msgctxt "/researchModules/shell/translations/europeana/searchLabel"
+msgid "Search Europeana"
+msgstr "Keresés az Europeanában"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/searchPlaceholder
+msgctxt "/researchModules/shell/translations/europeana/searchPlaceholder"
+msgid "Name, place, date, or keyword"
+msgstr "Név, hely, dátum vagy kulcsszó"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/searching
+msgctxt "/researchModules/shell/translations/europeana/searching"
+msgid "Searching…"
+msgstr "Keresés…"
+
+#. OMI translation key: /researchModules/shell/translations/europeana/setupRequired
+msgctxt "/researchModules/shell/translations/europeana/setupRequired"
+msgid "The Studio administrator must configure a Europeana API key on the server."
+msgstr "A Stúdió rendszergazdájának Europeana API-kulcsot kell beállítania a szerveren."
+
+#. OMI translation key: /researchModules/shell/translations/europeana/sourceRecord
+msgctxt "/researchModules/shell/translations/europeana/sourceRecord"
+msgid "Search Europeana’s cultural heritage catalogue. Each result links back to Europeana or its source institution."
+msgstr "Keresés az Europeana kulturálisörökség-katalógusában. Minden találat visszavezet az Europeanához vagy az adatszolgáltató intézményhez."
+
+#. OMI translation key: /researchModules/shell/translations/localPreferenceNote
+msgctxt "/researchModules/shell/translations/localPreferenceNote"
+msgid "Workspace selections are saved to your Studio account and enforced by the server."
+msgstr "A munkatér beállításait a Studio-fiók menti, a szerver pedig ellenőrzi."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.archaeology/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.archaeology/description"
+msgid "Document sites, contexts, stratigraphy, finds, samples, objects, provenance, rights, images, and source records."
+msgstr "Lelőhelyek, kontextusok, rétegtan, leletek, minták, tárgyak, proveniencia, jogok, képek és források dokumentálása."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.archaeology/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.archaeology/overview"
+msgid "Archaeology and cultural heritage workspace"
+msgstr "Régészeti és kulturálisörökség-munkatér"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.archaeology/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.archaeology/title"
+msgid "Archaeology & Cultural Heritage"
+msgstr "Régészet és kulturális örökség"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.corpus-linguistics/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.corpus-linguistics/description"
+msgid "Search corpora, inspect concordances, align texts, and annotate linguistic features."
+msgstr "Korpuszok keresése, konkordanciák vizsgálata, szövegek illesztése és nyelvi jellemzők annotálása."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.corpus-linguistics/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.corpus-linguistics/overview"
+msgid "Corpus workspace"
+msgstr "Korpusz-munkatér"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.corpus-linguistics/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.corpus-linguistics/title"
+msgid "Corpus and linguistic annotation"
+msgstr "Korpusz- és nyelvi annotációs modul"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.critical-text-edition/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.critical-text-edition/description"
+msgid "Connect transcriptions and textual variants with manuscript witnesses, critical apparatus, and digital editions; search scholarly literature on philosophy and textual studies."
+msgstr "Átiratok és szövegváltozatok összekapcsolása kézirati tanúkkal, kritikai apparátussal és digitális kiadásokkal."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.critical-text-edition/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.critical-text-edition/overview"
+msgid "Critical edition workspace"
+msgstr "Kritikai kiadási munkatér"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.critical-text-edition/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.critical-text-edition/title"
+msgid "Critical text edition"
+msgstr "Kritikai szövegkiadási modul"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.cultural-heritage/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.cultural-heritage/description"
+msgid "Connect objects, sites, people, and events with time and place, and annotate regions within images."
+msgstr "Tárgyak, lelőhelyek, szereplők és események összekapcsolása térbeli és időbeli adatokkal, képrészletek annotálása."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.cultural-heritage/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.cultural-heritage/overview"
+msgid "Cultural heritage workspace"
+msgstr "Kulturálisörökség-munkatér"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.cultural-heritage/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.cultural-heritage/title"
+msgid "Cultural heritage objects and images"
+msgstr "Kulturális örökségi tárgy- és képelemző modul"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.experimental-laboratory/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.experimental-laboratory/description"
+msgid "Structure investigations, studies, samples, protocols, instruments, assays, measurements, and raw or derived research data."
+msgstr "Vizsgálatok, tanulmányok, minták, protokollok, műszerek, vizsgálatok, mérések, valamint nyers és feldolgozott kutatási adatok strukturált kezelése."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.experimental-laboratory/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.experimental-laboratory/overview"
+msgid "Experimental research workspace"
+msgstr "Kísérleti kutatómunkatér"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.experimental-laboratory/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.experimental-laboratory/title"
+msgid "Experimental and laboratory research"
+msgstr "Kísérleti és laboratóriumi kutatási modul"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.history-archives/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.history-archives/description"
+msgid "Discover historical and archival sources across institutions, and keep each result connected to its holding archive."
+msgstr "Történeti és levéltári források feltárása különböző intézményekből, a találatok őrző levéltárhoz kapcsolásával."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.history-archives/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.history-archives/overview"
+msgid "Historical and archival sources"
+msgstr "Történeti és levéltári források"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.history-archives/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.history-archives/title"
+msgid "History & Archives"
+msgstr "Történelem és levéltárak"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.legal-sources/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.legal-sources/description"
+msgid "Search legislation and court decisions by jurisdiction and effective date, cite provisions and cases, compare versions, and connect national sources."
+msgstr "Jogszabályok és bírósági döntések keresése joghatóság és időbeli hatály szerint; bekezdések és ügyek hivatkozása, változatok összevetése, országonkénti forráskapcsolatok."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.legal-sources/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.legal-sources/overview"
+msgid "Legal research workspace"
+msgstr "Jogtudományi munkatér"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.legal-sources/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.legal-sources/title"
+msgid "Legal sources and citations"
+msgstr "Jogi forrás- és hivatkozási modul"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.mathematics/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.mathematics/description"
+msgid "LaTeX equations with validated MathML preview, matrices, cases and aligned equations."
+msgstr "LaTeX-képletek ellenőrzött MathML-előnézettel, mátrixokkal, esetekkel és egyenletrendszerekkel."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.mathematics/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.mathematics/overview"
+msgid "Mathematical equation workspace"
+msgstr "Matematikai képletszerkesztő"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.mathematics/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.mathematics/title"
+msgid "Mathematics"
+msgstr "Matematika"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.medical-sciences/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.medical-sciences/description"
+msgid "Clinical studies, case reports, endpoints and ethics statements."
+msgstr "Klinikai vizsgálatok, esetismertetések, végpontok és etikai nyilatkozatok."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.medical-sciences/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.medical-sciences/overview"
+msgid "Medical and Health Sciences"
+msgstr "Orvostudomány és egészségtudomány"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.medical-sciences/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.medical-sciences/title"
+msgid "Medical and Health Sciences"
+msgstr "Orvostudomány és egészségtudomány"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.musicology/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.musicology/description"
+msgid "Work with notation and musical events, align scores with recordings, annotate passages, and compare versions."
+msgstr "Kotta és zenei események kezelése, partitúrák és hangfelvételek illesztése, szakaszok annotálása, változatok összevetése."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.musicology/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.musicology/overview"
+msgid "Music research workspace"
+msgstr "Zenetudományi munkatér"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.musicology/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.musicology/title"
+msgid "Musicology"
+msgstr "Zenetudományi modul"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.psychology/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.psychology/description"
+msgid "Research protocols, instruments, scoring rules and psychometric results."
+msgstr "Kutatási protokoll, mérőeszközök, pontozási szabályok és pszichometriai eredmények."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.psychology/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.psychology/overview"
+msgid "Psychology"
+msgstr "Pszichológia"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.psychology/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.psychology/title"
+msgid "Psychology"
+msgstr "Pszichológia"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.religious-texts/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.religious-texts/description"
+msgid "Search Jewish texts and commentaries in Sefaria, follow source links, and open external Bible, Qur’an, and Buddhist text libraries."
+msgstr "Zsidó szövegek és kommentárok keresése a Sefaria könyvtárában, forráshelyek megnyitása, valamint külső bibliai, koráni és buddhista szöveggyűjtemények elérése."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.religious-texts/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.religious-texts/overview"
+msgid "Religious text sources"
+msgstr "Vallási szövegforrások"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.religious-texts/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.religious-texts/title"
+msgid "Religious texts and sources"
+msgstr "Vallási szöveg- és forrásmodul"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.research-reproducibility/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.research-reproducibility/description"
+msgid "Link datasets, code, methods, and supplements to versioned sources and repositories, and record how publications relate to research outputs."
+msgstr "Adatállományok, kód, módszerek és kiegészítő anyagok összekapcsolása; verziózott forrásokra és adattárakra mutató hivatkozások, a publikációk és kutatási eredmények kapcsolatának rögzítése."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.research-reproducibility/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.research-reproducibility/overview"
+msgid "Research outputs and reproducibility"
+msgstr "Kutatási eredmények és reprodukálhatóság"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.research-reproducibility/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.research-reproducibility/title"
+msgid "Research data and reproducibility"
+msgstr "Kutatási adat és reprodukálhatóság modul"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.social-research-methods/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.social-research-methods/description"
+msgid "Describe surveys, variables, and codebooks; code interviews; and connect datasets with research methods."
+msgstr "Kérdőívek, változók és kódkönyvek leírása, interjúk kódolása, adathalmazok és kutatási módszerek összekapcsolása."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.social-research-methods/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.social-research-methods/overview"
+msgid "Social research workspace"
+msgstr "Társadalomtudományi munkatér"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.social-research-methods/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.social-research-methods/title"
+msgid "Social research data and methods"
+msgstr "Kutatási adat- és módszertani modul"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.spatial-research/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.spatial-research/description"
+msgid "Register georeferenced research objects, import and export GeoJSON, and retain coordinate reference information."
+msgstr "Georeferált kutatási objektumok nyilvántartása, GeoJSON importja és exportja, valamint a koordinátarendszer rögzítése."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.spatial-research/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.spatial-research/overview"
+msgid "Spatial research workspace"
+msgstr "Térinformatikai kutatótér"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.spatial-research/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.spatial-research/title"
+msgid "Spatial research and GIS"
+msgstr "Térinformatikai kutatási modul"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.statistical-analysis/description
+msgctxt "/researchModules/shell/translations/modules/org.omi.statistical-analysis/description"
+msgid "Import CSV/TSV datasets and run descriptive statistics, Welch tests, one-way ANOVA, and linear regression with reproducible JSON reports."
+msgstr "CSV/TSV-adatok importálása, leíró statisztika, Welch-próba, egyszempontos ANOVA és lineáris regresszió, megismételhető JSON-jelentéssel."
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.statistical-analysis/overview
+msgctxt "/researchModules/shell/translations/modules/org.omi.statistical-analysis/overview"
+msgid "Statistical analysis workspace"
+msgstr "Statisztikai elemzési munkatér"
+
+#. OMI translation key: /researchModules/shell/translations/modules/org.omi.statistical-analysis/title
+msgctxt "/researchModules/shell/translations/modules/org.omi.statistical-analysis/title"
+msgid "Statistical Analysis and Data"
+msgstr "Statisztikai és adatelemzési modul"
+
+#. OMI translation key: /researchModules/shell/translations/nara/attribution
+msgctxt "/researchModules/shell/translations/nara/attribution"
+msgid "This product uses the National Archives Catalog API but is not endorsed or certified by the National Archives and Records Administration."
+msgstr "This product uses the National Archives Catalog API but is not endorsed or certified by the National Archives and Records Administration."
+
+#. OMI translation key: /researchModules/shell/translations/nara/dataProvider
+msgctxt "/researchModules/shell/translations/nara/dataProvider"
+msgid "Record group"
+msgstr "Fond vagy állag"
+
+#. OMI translation key: /researchModules/shell/translations/nara/errorTitle
+msgctxt "/researchModules/shell/translations/nara/errorTitle"
+msgid "Search unavailable."
+msgstr "A keresés nem érhető el."
+
+#. OMI translation key: /researchModules/shell/translations/nara/loadMore
+msgctxt "/researchModules/shell/translations/nara/loadMore"
+msgid "Load more results"
+msgstr "További találatok"
+
+#. OMI translation key: /researchModules/shell/translations/nara/loadingMore
+msgctxt "/researchModules/shell/translations/nara/loadingMore"
+msgid "Loading…"
+msgstr "Betöltés…"
+
+#. OMI translation key: /researchModules/shell/translations/nara/noResults
+msgctxt "/researchModules/shell/translations/nara/noResults"
+msgid "No records matched this search."
+msgstr "Nincs találat erre a keresésre."
+
+#. OMI translation key: /researchModules/shell/translations/nara/openRecord
+msgctxt "/researchModules/shell/translations/nara/openRecord"
+msgid "Open record in the National Archives Catalog"
+msgstr "Rekord megnyitása a NARA katalógusában"
+
+#. OMI translation key: /researchModules/shell/translations/nara/provider
+msgctxt "/researchModules/shell/translations/nara/provider"
+msgid "U.S. National Archives Catalog"
+msgstr "USA Nemzeti Levéltárának katalógusa"
+
+#. OMI translation key: /researchModules/shell/translations/nara/queryRequired
+msgctxt "/researchModules/shell/translations/nara/queryRequired"
+msgid "Enter at least two characters to search."
+msgstr "A kereséshez legalább két karaktert adjon meg."
+
+#. OMI translation key: /researchModules/shell/translations/nara/resultCount
+msgctxt "/researchModules/shell/translations/nara/resultCount"
+msgid "{count} results"
+msgstr "{count} találat"
+
+#. OMI translation key: /researchModules/shell/translations/nara/rights
+msgctxt "/researchModules/shell/translations/nara/rights"
+msgid "Use restriction"
+msgstr "Felhasználási korlátozás"
+
+#. OMI translation key: /researchModules/shell/translations/nara/searchButton
+msgctxt "/researchModules/shell/translations/nara/searchButton"
+msgid "Search"
+msgstr "Keresés"
+
+#. OMI translation key: /researchModules/shell/translations/nara/searchFailed
+msgctxt "/researchModules/shell/translations/nara/searchFailed"
+msgid "The National Archives Catalog could not complete the search. Try again later."
+msgstr "A National Archives katalógusa most nem tudta végrehajtani a keresést. Próbálja meg később."
+
+#. OMI translation key: /researchModules/shell/translations/nara/searchLabel
+msgctxt "/researchModules/shell/translations/nara/searchLabel"
+msgid "Search the U.S. National Archives"
+msgstr "Keresés az USA Nemzeti Levéltárának katalógusában"
+
+#. OMI translation key: /researchModules/shell/translations/nara/searchPlaceholder
+msgctxt "/researchModules/shell/translations/nara/searchPlaceholder"
+msgid "Name, place, date, or keyword"
+msgstr "Név, hely, dátum vagy kulcsszó"
+
+#. OMI translation key: /researchModules/shell/translations/nara/searching
+msgctxt "/researchModules/shell/translations/nara/searching"
+msgid "Searching…"
+msgstr "Keresés…"
+
+#. OMI translation key: /researchModules/shell/translations/nara/setupRequired
+msgctxt "/researchModules/shell/translations/nara/setupRequired"
+msgid "The Studio administrator must configure a read-only NARA Catalog API key on the server."
+msgstr "A Stúdió rendszergazdájának egy csak olvasásra jogosító NARA API-kulcsot kell beállítania a szerveren."
+
+#. OMI translation key: /researchModules/shell/translations/nara/sourceRecord
+msgctxt "/researchModules/shell/translations/nara/sourceRecord"
+msgid "Search archival descriptions in the U.S. National Archives Catalog. Results link to the original NARA record."
+msgstr "Keresés az USA Nemzeti Levéltárának levéltári leírásai között. A találatok az eredeti NARA-rekordra mutatnak."
+
+#. OMI translation key: /researchModules/shell/translations/navigation
+msgctxt "/researchModules/shell/translations/navigation"
+msgid "Research modules"
+msgstr "Kutatási modulok"
+
+#. OMI translation key: /researchModules/shell/translations/noActiveModules
+msgctxt "/researchModules/shell/translations/noActiveModules"
+msgid "No research modules are enabled. Turn modules on in Settings to show them here."
+msgstr "Nincs bekapcsolt kutatási modul. A megjelenítéshez kapcsoljon be modulokat a Beállításokban."
+
+#. OMI translation key: /researchModules/shell/translations/noFeatures
+msgctxt "/researchModules/shell/translations/noFeatures"
+msgid "Research tools for this discipline appear here."
+msgstr "A tudományterület kutatási eszközei itt jelennek meg."
+
+#. OMI translation key: /researchModules/shell/translations/noModules
+msgctxt "/researchModules/shell/translations/noModules"
+msgid "No research modules are registered yet."
+msgstr "Még nincs regisztrált kutatási modul."
+
+#. OMI translation key: /researchModules/shell/translations/policyError
+msgctxt "/researchModules/shell/translations/policyError"
+msgid "Module settings could not be loaded or saved. Check your connection and try again."
+msgstr "A modulbeállításokat nem sikerült betölteni vagy menteni. Ellenőrizze a kapcsolatot, majd próbálja újra."
+
+#. OMI translation key: /researchModules/shell/translations/settingsDescription
+msgctxt "/researchModules/shell/translations/settingsDescription"
+msgid "Choose which research modules are available in the Modules view."
+msgstr "Válassza ki, mely kutatási modulok jelenjenek meg a Modulok nézetben."
+
+#. OMI translation key: /researchModules/shell/translations/title
+msgctxt "/researchModules/shell/translations/title"
+msgid "Research modules"
+msgstr "Kutatási modulok"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/title
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/title"
+msgid "Research modules"
+msgstr "Kutatási modulok"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/insert
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/insert"
+msgid "Insert module section"
+msgstr "Modulszakasz beszúrása"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/choose
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/choose"
+msgid "Select saved excerpt"
+msgstr "Mentett részlet kiválasztása"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/excerpt
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/excerpt"
+msgid "Excerpt"
+msgstr "Részlet"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/source
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/source"
+msgid "Source (required)"
+msgstr "Forrás (kötelező)"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/preview
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/preview"
+msgid "Excerpt and source to insert"
+msgstr "A kéziratba kerülő részlet és forrás"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/approve
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/approve"
+msgid "I checked the excerpt, source and permission to share."
+msgstr "Ellenőriztem a részletet, a forrást és a megoszthatóságot."
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/confirm
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/confirm"
+msgid "Insert excerpt with source"
+msgstr "Részlet és forrás beszúrása"
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/noData
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/noData"
+msgid "No selectable saved excerpts in this module."
+msgstr "Ebben a modulban nincs választható, mentett részlet."
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/missing
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/missing"
+msgid "Enter a source and approve the preview."
+msgstr "Adjon meg forrást és hagyja jóvá az előnézetet."
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/changed
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/changed"
+msgid "Module data changed. Select the excerpt again."
+msgstr "A modul adatai időközben megváltoztak. Válassza ki újra a részletet."
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/tooLong
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/tooLong"
+msgid "The excerpt is too long for direct insertion."
+msgstr "A részlet túl hosszú a közvetlen beszúráshoz."
+
+#. OMI translation key: /researchModules/research-module-insert-panel/actionCopy/inserted
+msgctxt "/researchModules/research-module-insert-panel/actionCopy/inserted"
+msgid "You can insert a module section separately. Saved content requires selection, a source and preview."
+msgstr "A modulszakasz külön beszúrható. Mentett adat csak kiválasztás, kötelező forrás és előnézet után kerülhet a kéziratba."

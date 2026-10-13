@@ -1,3 +1,4 @@
+import { getResearchModuleCopyByLocale } from './moduleTranslationCatalog';
 import { normalizeModuleLocale } from './moduleLocale';
 import { useState, type FormEvent } from 'react';
 import { getResearchCatalogPreferencesKey, readVisibleResearchCatalogs, type ResearchCatalogId } from './researchCatalogPreferences';
@@ -58,11 +59,7 @@ const catalogs: Record<ResearchCatalogId, { title: string; portalUrl: (query: st
   },
 };
 
-const copy = {
-  hu: { searchLabel: 'Keresőkifejezés', placeholder: 'Név, cím vagy kulcsszó', search: 'Keresés', searching: 'Keresés…', open: 'Találatok megnyitása a szolgáltatónál', fallback: 'Keresés a szolgáltató oldalán', introApi: 'A keresés találatai itt jelennek meg.', introPortal: 'A keresés egy új lapon, a szolgáltató saját oldalán nyílik meg.', empty: 'Nincs találat.', failed: 'A keresés nem sikerült. Próbálja újra, vagy nyissa meg a szolgáltató keresőjét.', count: '{count} találat', sources: 'Kereshető adatbázisok', selectSource: 'Megjelenítés' },
-  en: { searchLabel: 'Search terms', placeholder: 'Name, title, or keyword', search: 'Search', searching: 'Searching…', open: 'Open results at provider', fallback: 'Search on provider website', introApi: 'Search results appear here.', introPortal: 'The search opens on the provider website in a new tab.', empty: 'No results found.', failed: 'Search failed. Try again or open the provider search.', count: '{count} results', sources: 'Searchable databases', selectSource: 'Show' },
-  de: { searchLabel: 'Suchbegriffe', placeholder: 'Name, Titel oder Stichwort', search: 'Suchen', searching: 'Suche läuft…', open: 'Treffer beim Anbieter öffnen', fallback: 'Auf der Anbieterwebsite suchen', introApi: 'Suchergebnisse erscheinen hier.', introPortal: 'Die Suche wird in einem neuen Tab auf der Website des Anbieters geöffnet.', empty: 'Keine Treffer.', failed: 'Die Suche ist fehlgeschlagen. Versuchen Sie es erneut oder öffnen Sie die Anbietersuche.', count: '{count} Treffer', sources: 'Durchsuchbare Datenbanken', selectSource: 'Anzeigen' },
-} as const;
+const copy = getResearchModuleCopyByLocale('research-catalog-search-panel/copy') as const;
 
 export function getResearchCatalogSearchUrl(catalog: ResearchCatalogId, query: string): string {
   return catalogs[catalog].portalUrl(query.trim());

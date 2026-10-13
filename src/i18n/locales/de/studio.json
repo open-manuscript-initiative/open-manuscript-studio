@@ -866,5 +866,578 @@
       "importedFrom": "Importiert aus",
       "fileFormats": "Unterstützt werden Bilder, DOCX, XLSX, CSV/TSV, HTML und TeX."
     }
+  },
+  "researchModules": {
+    "research-catalog-search-panel": {
+      "copy": {
+        "count": "{count} Treffer",
+        "empty": "Keine Treffer.",
+        "failed": "Die Suche ist fehlgeschlagen. Versuchen Sie es erneut oder öffnen Sie die Anbietersuche.",
+        "fallback": "Auf der Anbieterwebsite suchen",
+        "introApi": "Suchergebnisse erscheinen hier.",
+        "introPortal": "Die Suche wird in einem neuen Tab auf der Website des Anbieters geöffnet.",
+        "open": "Treffer beim Anbieter öffnen",
+        "placeholder": "Name, Titel oder Stichwort",
+        "search": "Suchen",
+        "searchLabel": "Suchbegriffe",
+        "searching": "Suche läuft…",
+        "selectSource": "Anzeigen",
+        "sources": "Durchsuchbare Datenbanken"
+      }
+    },
+    "archaeology-archaeology-panel": {
+      "copy": {
+        "add": "Kontext hinzufügen",
+        "contexts": "Archäologische Kontexte",
+        "coordinates": "Koordinaten oder Raumdatensatz",
+        "country": "Land / Region",
+        "description": "Beschreibung und Beobachtungen",
+        "export": "Archäologisches Verzeichnis als JSON exportieren",
+        "finds": "Funde und Objektkennungen",
+        "layer": "Schicht / stratigraphische Einheit",
+        "local": "Die Daten werden auf diesem Gerät gespeichert. Exportieren Sie regelmäßig JSON als portable Kopie.",
+        "locus": "Locus / Kontextkennung",
+        "period": "Epoche / Datierung",
+        "project": "Forschungsprojekt",
+        "remove": "Entfernen",
+        "sample": "Probenkennung",
+        "site": "Fundort / Kennung",
+        "source": "Dokumentation / Quellen-URL",
+        "subtitle": "Fundorte, Schichten, Objekte, Sammlungen und Bilder mit Quellen und Kulturerbedatensätzen dokumentieren.",
+        "title": "Archäologie und Kulturerbe"
+      }
+    },
+    "corpus-linguistics-corpus-linguistics-panel": {
+      "copyByLocale": {
+        "addAlignment": "Ausrichtung speichern",
+        "addDocument": "Text hinzufügen",
+        "alignment": "Parallele Texte ausrichten",
+        "alignmentLabel": "Bezeichnung der Einheit",
+        "annotate": "Annotieren",
+        "annotations": "Sprachliche Annotationen",
+        "backup": "Laden Sie das JSON als portable Sicherung herunter.",
+        "caseSensitive": "Groß- und Kleinschreibung beachten",
+        "category": "Kategorie",
+        "categoryNames": {
+          "lemma": "Lemma",
+          "morphology": "Morphologie",
+          "named-entity": "Eigenname / Entität",
+          "other": "Sonstiges",
+          "pos": "Wortart",
+          "semantics": "Semantische Kennzeichnung"
+        },
+        "chars": "Zeichen",
+        "corpus": "Korpuseinstellungen",
+        "corpusTitle": "Name des Korpus",
+        "date": "Datum",
+        "datePlaceholder": "z. B. um 1670",
+        "deleteAnnotation": "Annotation löschen",
+        "description": "Beschreibung",
+        "documentTitle": "Titel",
+        "documents": "Texte",
+        "export": "Export",
+        "exportCsv": "Konkordanz-CSV herunterladen",
+        "exportJson": "Korpus-JSON herunterladen",
+        "hit": "Treffer",
+        "importJson": "Korpus-JSON importieren",
+        "importText": "TXT, MD oder DOCX importieren",
+        "intro": "Erstellen Sie ein Textkorpus, erzeugen Sie Konkordanzen mit Kontext, annotieren Sie sprachliche Merkmale und Eigennamen und richten Sie parallele Textstellen manuell aus.",
+        "invalidProject": "Dies ist kein gültiges OMI-Korpusprojekt.",
+        "label": "Merkmal / Wert",
+        "language": "Standardsprache",
+        "leftDocument": "Linker Text",
+        "leftPassage": "Linke Passage",
+        "loadError": "Die Datei konnte nicht gelesen werden.",
+        "noAlignment": "Es wurden noch keine Ausrichtungen gespeichert.",
+        "noAnnotations": "Es wurden noch keine Annotationen gespeichert.",
+        "noHits": "Keine Treffer in den Korpustexten.",
+        "note": "Anmerkung",
+        "query": "Suchbegriff",
+        "queryPlaceholder": "Wort oder Ausdruck",
+        "remove": "Entfernen",
+        "results": "Konkordanzergebnisse",
+        "rightDocument": "Rechter Text",
+        "rightPassage": "Rechte Passage",
+        "saveAnnotation": "Annotation speichern",
+        "saved": "Automatisch auf diesem Gerät gespeichert.",
+        "search": "Konkordanzsuche",
+        "source": "Quelle / Herkunft",
+        "sourcePlaceholder": "z. B. Handschrift, Ausgabe, URL",
+        "text": "Text",
+        "wholeWord": "Nur ganzes Wort",
+        "wordCount": "Wörter"
+      }
+    },
+    "critical-text-edition-critical-text-edition-panel": {
+      "copyByLocale": {
+        "addSegment": "Textstelle hinzufügen",
+        "addWitness": "Zeugen hinzufügen",
+        "apparatus": "Kritischer Apparat",
+        "backup": "Laden Sie das Projekt-JSON als portable Sicherung herunter.",
+        "date": "Datum / Datierung",
+        "deleteSegment": "Textstelle löschen",
+        "export": "Export",
+        "exportJson": "Projekt-JSON herunterladen",
+        "exportTei": "TEI-XML herunterladen",
+        "import": "Importieren",
+        "importJson": "Projekt-JSON importieren",
+        "importText": "Textdatei in den edierten Text laden",
+        "intro": "Legen Sie eine Edition an, beschreiben Sie die Handschriftenzeugen und erfassen Sie edierten Text und Abweichungen Abschnitt für Abschnitt. Die Lesarten der Zeugen fließen in den kritischen Apparat ein.",
+        "invalidProject": "Dies ist kein gültiges OMI-Kritische-Edition-Projekt.",
+        "kind": "Variantenart",
+        "kinds": {
+          "addition": "Zusatz",
+          "omission": "Auslassung",
+          "orthography": "orthografische Variante",
+          "substitution": "Substitution",
+          "transposition": "Umstellung"
+        },
+        "language": "Sprache des Textes",
+        "lemma": "Edierter Text / Lemma",
+        "loadError": "Die Datei konnte nicht gelesen werden.",
+        "locus": "Stelle (z. B. Bl. 1, 2r)",
+        "noSegment": "Fügen Sie eine Textstelle hinzu, um mit der Bearbeitung zu beginnen.",
+        "noVariants": "Für diese Stelle sind noch keine Varianten erfasst.",
+        "noWitness": "Fügen Sie mindestens einen Handschriftenzeugen hinzu, um mit der Kollation zu beginnen.",
+        "note": "Editorische Anmerkung",
+        "principle": "Editionsrichtlinien",
+        "project": "Editionsprojekt",
+        "reading": "Lesart des Zeugen",
+        "ready": "Der Editionsarbeitsbereich ist bereit. Zeugenfelder und Textstellen können bearbeitet werden.",
+        "remove": "Entfernen",
+        "repository": "Aufbewahrende Institution",
+        "saved": "Automatisch auf diesem Gerät gespeichert.",
+        "segments": "Textstellen und Kollation",
+        "shelfmark": "Signatur",
+        "siglum": "Sigle",
+        "title": "Titel der Edition",
+        "untitled": "Unbetitelte kritische Edition",
+        "witnessDesc": "Beschreibung",
+        "witnesses": "Handschriftenzeugen"
+      }
+    },
+    "history-archives-eleveltar-search-panel": {
+      "copyByLocale": {
+        "description": "Durchsuchen Sie archivische Beschreibungen und Digitalisate des Ungarischen Nationalarchivs und des Budapester Stadtarchivs im Elektronischen Archivportal.",
+        "note": "Die Suche wird im Archivportal geöffnet; geben Sie die Suchbegriffe dort ein.",
+        "open": "Archivrecherche öffnen",
+        "title": "eLevéltár – Ungarische Archivquellen"
+      }
+    },
+    "history-archives-history-archives-sources-panel": {
+      "copyByLocale": {
+        "choose": "Anzuzeigende Archive",
+        "clear": "Alle ausblenden",
+        "help": "Wählen Sie die Kataloge aus, die unten angezeigt werden. Die Auswahl wird für diesen Arbeitsbereich gespeichert.",
+        "open": "Archivsuche öffnen",
+        "portalNote": "Suchen Sie im offiziellen Archivkatalog. Der Link wird in einem neuen Tab geöffnet.",
+        "selectAll": "Alle anzeigen"
+      }
+    },
+    "history-archives-romanian-archives-search-panel": {
+      "copyByLocale": {
+        "description": "Durchsuchen Sie den Online-Katalog des Nationalarchivs Rumäniens. Die Ergebnisse öffnen sich in einem neuen Tab auf dem offiziellen Archivportal.",
+        "label": "Im rumänischen Archivkatalog suchen",
+        "placeholder": "Name, Ort, Datum oder Stichwort",
+        "search": "Suchen",
+        "title": "Nationalarchiv Rumäniens"
+      }
+    },
+    "legal-sources-legal-sources-panel": {
+      "copy": {
+        "add": "Rechtsquelle hinzufügen",
+        "addVersion": "Fassung hinzufügen",
+        "authority": "Erlassende Stelle",
+        "citation": "Amtliche Fundstelle",
+        "compare": "Zwei Fassungen vergleichen",
+        "databaseQuery": "Suchbegriffe",
+        "databases": "Externe Rechtsdatenbanken",
+        "databasesHelp": "Suchvorgänge öffnen sich in einem neuen Tab. EUR-Lex wird direkt abgefragt; die übrigen Einträge öffnen eine auf das jeweilige Portal beschränkte Websuche. OMI ruft keine Ergebnisse ab und verifiziert sie nicht.",
+        "effective": "Inkrafttreten",
+        "export": "Verzeichnis als JSON exportieren",
+        "first": "Erste Fassung",
+        "jurisdiction": "Rechtsordnung",
+        "local": "Das Verzeichnis wird auf diesem Gerät gespeichert. Zitate und Gültigkeit anhand der Primärquelle prüfen.",
+        "noSources": "Noch keine Rechtsquellen erfasst.",
+        "note": "Anmerkung",
+        "open": "Quelle öffnen",
+        "openPortal": "Portal öffnen",
+        "publication": "Veröffentlichungsdatum",
+        "remove": "Entfernen",
+        "search": "Suche nach Titel, Zitat oder Rechtsordnung",
+        "searchDatabase": "Suchen",
+        "second": "Zweite Fassung",
+        "status": "Gültigkeit / Status",
+        "subtitle": "Verzeichnis von Zitaten, Gültigkeitsstatus und Textfassungen.",
+        "text": "Quellentext",
+        "title": "Rechtsquellen",
+        "titleField": "Titel",
+        "type": "Quellentyp",
+        "url": "URL der amtlichen Quelle",
+        "versionDate": "Fassungsdatum",
+        "versionEffective": "Gültig ab",
+        "versionUrl": "URL der Fassung",
+        "versions": "Textfassungen"
+      }
+    },
+    "mathematics-equation-editor": {
+      "labels": {
+        "aligned": "Gleichungssystem",
+        "cases": "Fallunterscheidung",
+        "error": "Ungültiges oder nicht unterstütztes LaTeX",
+        "fraction": "Bruch",
+        "hint": "Geben Sie einen Ausdruck ohne vollständiges LaTeX-Dokument oder $-Begrenzer ein. Vorlagen ersetzen die Auswahl.",
+        "integral": "Integral",
+        "matrix": "Matrix",
+        "preview": "Formelvorschau",
+        "root": "Wurzel",
+        "scripts": "Indizes",
+        "source": "LaTeX-Formel",
+        "sum": "Summe",
+        "templates": "Formelvorlagen"
+      }
+    },
+    "religious-texts-religious-texts-panel": {
+      "copyByLocale": {
+        "count": "{count} Ergebnisse",
+        "editions": "Ausgabe",
+        "empty": "Keine Treffer für diese Suche.",
+        "failed": "Die Suche konnte nicht abgeschlossen werden. Bitte versuchen Sie es später erneut.",
+        "heading": "Sefaria – jüdische Texte und Kommentare",
+        "intro": "Live-Suche in der Sefaria-Bibliothek. Die Treffer zeigen einen kurzen Auszug, einen Beleg und Angaben zur Ausgabe mit einem Link zur Originalquelle.",
+        "loadMore": "Weitere Ergebnisse laden",
+        "loadingMore": "Wird geladen…",
+        "openSource": "In Sefaria öffnen",
+        "otherSources": "Weitere religiöse Textsammlungen",
+        "placeholder": "Begriff, Name oder Textstelle",
+        "portalNote": "Dies sind externe Suchportale; starten Sie die Suche auf der Website des Anbieters.",
+        "queryRequired": "Geben Sie mindestens zwei Zeichen ein.",
+        "search": "Suchen",
+        "searchLabel": "Volltextsuche",
+        "searching": "Suche läuft…",
+        "serviceError": "Die Sefaria-Suche ist vorübergehend nicht verfügbar.",
+        "sourceNames": {
+          "bible": "Bibel – Bible.com",
+          "buddhist": "Buddhistische Texte – BUDA",
+          "quran": "Koran – Quran.com"
+        }
+      }
+    },
+    "research-databases-research-database-panel": {
+      "copy": {
+        "busy": "Suche…",
+        "choose": "Datenbanken",
+        "consent": "Die Suchbegriffe werden an die ausgewählten Anbieter gesendet. Keine personenbezogenen, Teilnehmenden- oder vertraulichen Daten eingeben.",
+        "empty": "Keine Treffer.",
+        "failed": "Dieser Anbieter ist nicht erreichbar. Andere Ergebnisse bleiben verfügbar.",
+        "more": "Weitere Ergebnisse",
+        "noRights": "Nicht angegeben; vor einer Übernahme den Quelldatensatz prüfen.",
+        "none": "Mindestens eine Datenbank auswählen und 2–240 Zeichen eingeben.",
+        "open": "Quelldatensatz öffnen",
+        "query": "Suchbegriffe",
+        "rights": "Nutzungsrechte",
+        "search": "Suchen",
+        "title": "Forschungsdatenbanken durchsuchen"
+      }
+    },
+    "research-reproducibility-research-reproducibility-panel": {
+      "copy": {
+        "add": "Ergebnis hinzufügen",
+        "checksum": "SHA-256-Prüfsumme",
+        "date": "Veröffentlichungsdatum",
+        "export": "Reproduzierbarkeitsverzeichnis als JSON exportieren",
+        "file": "Datei-Prüfsumme berechnen",
+        "kind": "Typ",
+        "kinds": {
+          "code": "Code",
+          "dataset": "Datensatz",
+          "method": "Methode",
+          "other": "Sonstiges",
+          "software": "Software",
+          "supplement": "Zusatzmaterial"
+        },
+        "license": "Lizenz",
+        "local": "Das Verzeichnis wird auf diesem Gerät gespeichert. Bei Dateiauswahl werden nur Name, Größe und SHA-256 erfasst; der Dateiinhalt wird nicht gespeichert.",
+        "notes": "Anmerkungen und Hinweise zur Wiederholung",
+        "outputs": "Zugehörige Forschungsergebnisse",
+        "pid": "Persistente Kennung (DOI, Handle usw.)",
+        "project": "Titel der Forschung / Publikation",
+        "relation": "Bezug zur Publikation",
+        "remove": "Entfernen",
+        "repository": "Repository-URL",
+        "subtitle": "Verzeichnis von Daten, Code, Methoden und Versionen zu Publikationen.",
+        "title": "Reproduzierbarkeit der Forschung",
+        "titleField": "Bezeichnung",
+        "verified": "Link und Version geprüft",
+        "version": "Version"
+      }
+    },
+    "social-research-methods-social-research-methods-panel": {
+      "copy": {
+        "addTranscript": "Dokument hinzufügen",
+        "addVariable": "Variable hinzufügen",
+        "annotation": "Ausgewählte Passage codieren",
+        "apply": "Code zuweisen",
+        "codeLabel": "Code",
+        "coded": "Codierte Passagen",
+        "ethics": "Ethik und Datenverarbeitung",
+        "export": "Projekt als JSON exportieren",
+        "label": "Beschreibung / Code",
+        "method": "Methodik und Stichprobe",
+        "name": "Projekttitel",
+        "noSelection": "Text im Transkript markieren und einen Code zuweisen.",
+        "note": "Analytische Notiz",
+        "participant": "Teilnehmendencode",
+        "private": "Die Arbeitskopie wird auf diesem Gerät gespeichert. Sensible Daten anonymisieren.",
+        "project": "Forschungsdesign",
+        "question": "Forschungsfrage",
+        "remove": "Entfernen",
+        "subtitle": "Arbeitsbereich für Forschungsdesign, Codebuch und qualitative Daten.",
+        "text": "Transkript / Notizen",
+        "title": "Methoden der Sozialforschung",
+        "transcriptTitle": "Dokumenttitel",
+        "transcripts": "Interviews und Feldnotizen",
+        "type": "Messniveau oder Typ",
+        "values": "Werte und Codierregeln",
+        "varName": "Variablenname",
+        "variables": "Codebuch"
+      }
+    },
+    "statistical-analysis-statistical-analysis-panel": {
+      "copy": {
+        "addDeviation": "Abweichung protokollieren",
+        "alpha": "Signifikanzniveau (α)",
+        "analysisPlan": "Präregistrierter Analyseplan",
+        "anova": "Einfaktorielle ANOVA",
+        "ci": "95%-Konfidenzintervall des Mittelwerts",
+        "column": "Variable",
+        "columns": "Variablen",
+        "comparison": "Gruppenvergleich",
+        "count": "Anzahl",
+        "csvError": "CSV/TSV nicht lesbar: Kopfzeile, Anführungszeichen und einheitliche Spaltenzahl prüfen.",
+        "dataset": "Datensatz",
+        "descriptive": "Deskriptive Statistik",
+        "design": "Versuchsplanung",
+        "deviation": "Abweichung vom eingefrorenen Plan",
+        "deviations": "Protokollierte Abweichungen",
+        "df": "Freiheitsgrade",
+        "dfBetween": "Freiheitsgrade zwischen Gruppen",
+        "dfWithin": "Freiheitsgrade innerhalb der Gruppen",
+        "downloadAssignments": "Zuteilungsliste herunterladen",
+        "effect": "Erwartete standardisierte Effektstärke (d)",
+        "estimateNote": "Normalapproximation für einen zweiseitigen Mittelwertvergleich zweier unabhängiger Gruppen; Annahmen vor der endgültigen Planung prüfen.",
+        "exclusion": "Ausschlusskriterien (je eine Zeile)",
+        "export": "Analyse und Daten als JSON exportieren",
+        "f": "F-Statistik",
+        "freeze": "Plan präregistrieren und einfrieren",
+        "frozen": "Präregistriert",
+        "groupColumn": "Gruppierungsvariable",
+        "groups": "Gruppen",
+        "groupsPlan": "Gruppen (durch Komma getrennt)",
+        "histogram": "Verteilung (Histogramm)",
+        "hypothesis": "Hypothese",
+        "importCsv": "CSV / TSV importieren",
+        "importJson": "Analyse-JSON importieren",
+        "importLab": "Laborprojekt importieren",
+        "inclusion": "Einschlusskriterien (je eine Zeile)",
+        "intercept": "Achsenabschnitt",
+        "intro": "Tabellarische Forschungsdaten deskriptiv auswerten, Gruppen vergleichen, linear regressieren und Ergebnisse reproduzierbar dokumentieren.",
+        "jsonError": "Das OMI-Statistik-JSON ist ungültig.",
+        "labError": "Das Labor-JSON enthält keine importierbaren Messdaten.",
+        "local": "Datensatz und Einstellungen bleiben auf diesem Gerät. Dateiinhalte werden nicht hochgeladen. Sensible oder personenbezogene Daten vor dem Import anonymisieren.",
+        "maximum": "Maximum",
+        "mean": "Mittelwert",
+        "meanDifference": "Mittelwertdifferenz (1 − 2)",
+        "median": "Median",
+        "methodNote": "Der t-Test ist zweiseitig nach Welch und setzt keine gleichen Gruppenvarianzen voraus. Die ANOVA ist ein klassisches einfaktorielles Modell. OLS-Annahmen, fehlende Daten und multiples Testen sind zu prüfen.",
+        "methods": "Methodischer Hinweis",
+        "minimum": "Minimum",
+        "n": "Gültige Fallzahl",
+        "noComparison": "Jede Gruppe benötigt mindestens zwei gültige numerische Werte.",
+        "noDataset": "Importieren Sie einen CSV/TSV-Datensatz oder ein experimentelles Laborprojekt.",
+        "noNumeric": "Die ausgewählte Spalte enthält zu wenige gültige numerische Werte.",
+        "outcome": "Primärer Endpunkt",
+        "p": "Zweiseitiger p-Wert",
+        "participantCount": "Teilnehmendenzahl",
+        "power": "Angestrebte Teststärke",
+        "preview": "Datenvorschau (erste 15 Zeilen)",
+        "q1": "1. Quartil",
+        "q3": "3. Quartil",
+        "r": "Pearson-Korrelation (r)",
+        "r2": "Erklärte Varianz (R²)",
+        "randomizationNote": "Reproduzierbare einfache Randomisierung ohne Blockbildung. Die Zuteilungsverdeckung muss separat sichergestellt werden.",
+        "randomize": "Zuteilungsliste erstellen",
+        "regression": "Lineare Regression (OLS)",
+        "removeData": "Datensatz entfernen",
+        "rows": "Zeilen",
+        "sampleEstimate": "Geschätzte Fallzahl je Gruppe",
+        "sd": "Stichprobenstandardabweichung",
+        "seed": "Randomisierungs-Seed",
+        "slope": "Steigung",
+        "sourceStudy": "Zugehörige Forschung / Untersuchung",
+        "t": "Welch-t",
+        "title": "Statistik und Datenanalyse",
+        "titleField": "Analysetitel",
+        "unsupported": "Kein gültiger OMI-Statistikarbeitsbereich oder nicht unterstützte Version.",
+        "valueColumn": "Numerische Variable",
+        "x": "Prädiktor (X)",
+        "y": "Zielvariable (Y)"
+      }
+    },
+    "shell": {
+      "translations": {
+        "activate": "Aktivieren",
+        "active": "In diesem Arbeitsbereich aktiv",
+        "available": "Verfügbar",
+        "description": "Forschungsarbeitsbereiche für die in den Einstellungen aktivierten Module.",
+        "disabledByInstallation": "In dieser Installation deaktiviert",
+        "europeana": {
+          "dataProvider": "Datenlieferant",
+          "errorTitle": "Suche nicht verfügbar.",
+          "loadMore": "Weitere Ergebnisse laden",
+          "loadingMore": "Wird geladen…",
+          "noResults": "Für diese Suche wurden keine Einträge gefunden.",
+          "openRecord": "Eintrag bei der verwahrenden Einrichtung öffnen",
+          "provider": "Europeana-Suche",
+          "queryRequired": "Geben Sie mindestens zwei Zeichen für die Suche ein.",
+          "resultCount": "{count} Ergebnisse",
+          "rights": "Rechte",
+          "searchButton": "Suchen",
+          "searchFailed": "Europeana konnte die Suche nicht ausführen. Bitte versuchen Sie es später erneut.",
+          "searchLabel": "Suche in Europeana",
+          "searchPlaceholder": "Name, Ort, Datum oder Stichwort",
+          "searching": "Suche läuft…",
+          "setupRequired": "Die Studio-Administration muss einen Europeana-API-Schlüssel auf dem Server konfigurieren.",
+          "sourceRecord": "Durchsuchen Sie den Kulturerbe-Katalog von Europeana. Jeder Treffer führt zurück zu Europeana oder zur liefernden Einrichtung."
+        },
+        "localPreferenceNote": "Die Auswahl wird im Studio-Konto gespeichert und vom Server geprüft.",
+        "modules": {
+          "org.omi.archaeology": {
+            "description": "Fundorte, Kontexte, Stratigraphie, Funde, Proben, Objekte, Provenienz, Rechte, Bilder und Quellen dokumentieren.",
+            "overview": "Arbeitsbereich Archäologie und Kulturerbe",
+            "title": "Archäologie und Kulturerbe"
+          },
+          "org.omi.corpus-linguistics": {
+            "description": "Korpora durchsuchen, Konkordanzen untersuchen, Texte ausrichten und sprachliche Merkmale annotieren.",
+            "overview": "Korpusarbeitsbereich",
+            "title": "Korpus und linguistische Annotation"
+          },
+          "org.omi.critical-text-edition": {
+            "description": "Transkriptionen und Textvarianten mit Handschriftenzeugen, kritischem Apparat und digitalen Editionen verbinden; Forschungsliteratur zu Philosophie und Textwissenschaften durchsuchen.",
+            "overview": "Arbeitsbereich für kritische Editionen",
+            "title": "Kritische Textedition"
+          },
+          "org.omi.cultural-heritage": {
+            "description": "Objekte, Fundorte, Personen und Ereignisse mit Zeit und Ort verknüpfen sowie Bildbereiche annotieren.",
+            "overview": "Arbeitsbereich Kulturerbe",
+            "title": "Kulturerbeobjekte und Bilder"
+          },
+          "org.omi.experimental-laboratory": {
+            "description": "Untersuchungen, Studien, Proben, Protokolle, Geräte, Assays, Messungen und Roh- oder abgeleitete Forschungsdaten strukturieren.",
+            "overview": "Arbeitsbereich Experimentalforschung",
+            "title": "Experimentelle und Laborforschung"
+          },
+          "org.omi.history-archives": {
+            "description": "Historische und archivische Quellen institutionsübergreifend auffinden und jedes Ergebnis mit seinem verwahrenden Archiv verbinden.",
+            "overview": "Historische und archivische Quellen",
+            "title": "Geschichte und Archive"
+          },
+          "org.omi.legal-sources": {
+            "description": "Gesetze und Gerichtsentscheidungen nach Rechtsordnung und Geltungszeit suchen, Vorschriften und Fälle zitieren, Fassungen vergleichen und nationale Quellen verbinden.",
+            "overview": "Arbeitsbereich Rechtswissenschaft",
+            "title": "Rechtsquellen und Zitate"
+          },
+          "org.omi.mathematics": {
+            "description": "LaTeX-Formeln mit geprüfter MathML-Vorschau, Matrizen, Fallunterscheidungen und Gleichungssystemen.",
+            "overview": "Mathematischer Formelarbeitsbereich",
+            "title": "Mathematik"
+          },
+          "org.omi.medical-sciences": {
+            "description": "Klinische Studien, Fallberichte, Endpunkte und Ethikerklärungen.",
+            "overview": "Medizin und Gesundheitswissenschaften",
+            "title": "Medizin und Gesundheitswissenschaften"
+          },
+          "org.omi.musicology": {
+            "description": "Mit Notation und musikalischen Ereignissen arbeiten, Partituren und Aufnahmen abgleichen, Abschnitte annotieren und Fassungen vergleichen.",
+            "overview": "Arbeitsbereich Musikwissenschaft",
+            "title": "Musikwissenschaft"
+          },
+          "org.omi.psychology": {
+            "description": "Forschungsprotokolle, Messinstrumente, Auswertungsregeln und psychometrische Ergebnisse.",
+            "overview": "Psychologie",
+            "title": "Psychologie"
+          },
+          "org.omi.religious-texts": {
+            "description": "Jüdische Texte und Kommentare in Sefaria durchsuchen, Quellen verknüpfen und externe Bibel-, Koran- und buddhistische Textsammlungen öffnen.",
+            "overview": "Religiöse Textquellen",
+            "title": "Religiöse Texte und Quellen"
+          },
+          "org.omi.research-reproducibility": {
+            "description": "Datensätze, Code, Methoden und Ergänzungsmaterialien mit versionierten Quellen und Repositorien verknüpfen und Publikationen den Forschungsergebnissen zuordnen.",
+            "overview": "Forschungsergebnisse und Reproduzierbarkeit",
+            "title": "Forschungsdaten und Reproduzierbarkeit"
+          },
+          "org.omi.social-research-methods": {
+            "description": "Erhebungen, Variablen und Codebücher beschreiben, Interviews codieren und Datensätze mit Forschungsmethoden verknüpfen.",
+            "overview": "Arbeitsbereich Sozialforschung",
+            "title": "Sozialwissenschaftliche Daten und Methoden"
+          },
+          "org.omi.spatial-research": {
+            "description": "Georeferenzierte Forschungsobjekte erfassen, GeoJSON importieren und exportieren sowie Koordinatenreferenzangaben dokumentieren.",
+            "overview": "Arbeitsbereich Raumforschung",
+            "title": "Raumbezogene Forschung und GIS"
+          },
+          "org.omi.statistical-analysis": {
+            "description": "CSV/TSV-Datensätze importieren und deskriptive Statistik, Welch-Tests, einfaktorielle ANOVA sowie lineare Regression mit reproduzierbaren JSON-Berichten durchführen.",
+            "overview": "Arbeitsbereich Statistik",
+            "title": "Statistik und Datenanalyse"
+          }
+        },
+        "nara": {
+          "attribution": "This product uses the National Archives Catalog API but is not endorsed or certified by the National Archives and Records Administration.",
+          "dataProvider": "Bestandsgruppe",
+          "errorTitle": "Suche nicht verfügbar.",
+          "loadMore": "Weitere Ergebnisse laden",
+          "loadingMore": "Wird geladen…",
+          "noResults": "Für diese Suche wurden keine Einträge gefunden.",
+          "openRecord": "Eintrag im Katalog des Nationalarchivs öffnen",
+          "provider": "Katalog des US-Nationalarchivs",
+          "queryRequired": "Geben Sie mindestens zwei Zeichen für die Suche ein.",
+          "resultCount": "{count} Ergebnisse",
+          "rights": "Nutzungsbeschränkung",
+          "searchButton": "Suchen",
+          "searchFailed": "Der Katalog des Nationalarchivs konnte die Suche nicht ausführen. Bitte versuchen Sie es später erneut.",
+          "searchLabel": "Suche im Katalog des US-Nationalarchivs",
+          "searchPlaceholder": "Name, Ort, Datum oder Stichwort",
+          "searching": "Suche läuft…",
+          "setupRequired": "Die Studio-Administration muss einen schreibgeschützten NARA-API-Schlüssel auf dem Server konfigurieren.",
+          "sourceRecord": "Durchsuchen Sie die archivischen Beschreibungen im Katalog des US-Nationalarchivs. Die Treffer verweisen auf den ursprünglichen NARA-Eintrag."
+        },
+        "navigation": "Forschungsmodule",
+        "noActiveModules": "Es sind keine Forschungsmodule aktiviert. Aktivieren Sie Module in den Einstellungen, damit sie hier erscheinen.",
+        "noFeatures": "Die Forschungswerkzeuge dieses Fachgebiets erscheinen hier.",
+        "noModules": "Es sind noch keine Forschungsmodule registriert.",
+        "policyError": "Moduleinstellungen konnten nicht geladen oder gespeichert werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.",
+        "settingsDescription": "Wählen Sie aus, welche Forschungsmodule in der Modulansicht erscheinen.",
+        "title": "Forschungsmodule"
+      }
+    },
+    "research-module-insert-panel": {
+      "actionCopy": {
+        "title": "Forschungsmodule",
+        "insert": "Modulabschnitt einfügen",
+        "choose": "Gespeicherten Auszug auswählen",
+        "excerpt": "Auszug",
+        "source": "Quelle (erforderlich)",
+        "preview": "Auszug und Quelle für das Manuskript",
+        "approve": "Ich habe Auszug, Quelle und Freigabe geprüft.",
+        "confirm": "Auszug mit Quelle einfügen",
+        "noData": "Keine auswählbaren gespeicherten Auszüge in diesem Modul.",
+        "missing": "Quelle angeben und Vorschau bestätigen.",
+        "changed": "Die Moduldaten wurden geändert. Bitte erneut auswählen.",
+        "tooLong": "Der Auszug ist für direktes Einfügen zu lang.",
+        "inserted": "Der Modulabschnitt kann separat eingefügt werden. Gespeicherte Daten erfordern Auswahl, Quelle und Vorschau."
+      }
+    }
   }
 }

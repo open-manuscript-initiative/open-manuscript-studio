@@ -11,14 +11,18 @@ export const DEFAULT_LOCALE: SupportedLocale = 'en';
 
 type LocaleDictionaryLoader = () => Promise<TranslationDictionary>;
 
-const jsonLocaleModules = import.meta.glob(
-  [
-    './locales/*/studio.json',
-    '!./locales/en/studio.json',
-  ],
-  {
-    import: 'default',
-  },
+const jsonLocaleModules = (
+  typeof import.meta.glob === 'function'
+    ? import.meta.glob(
+      [
+        './locales/*/studio.json',
+        '!./locales/en/studio.json',
+      ],
+      {
+        import: 'default',
+      },
+    )
+    : {}
 ) as Record<string, LocaleDictionaryLoader>;
 
 const englishDictionary = englishDictionaryJson as TranslationDictionary;

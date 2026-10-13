@@ -32,6 +32,11 @@ test('English, German and Hungarian PO catalogs are complete and drive the runti
 
   assert.equal(englishByPointer.size, englishEntries.length, 'English catalog keys must be unique');
   assert.ok(englishEntries.length > 0, 'English PO catalog must not be empty');
+  assert.equal(
+    englishEntries.filter((entry) => entry.pointer.startsWith('/researchModules/')).length,
+    461,
+    'research module copy must be stored in the primary PO catalogs',
+  );
 
   for (const entry of englishEntries) {
     assert.equal(entry.source, entry.translation, `English msgstr must match msgid at ${entry.pointer}`);

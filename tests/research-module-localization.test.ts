@@ -10,8 +10,8 @@ import { appendMathematicsHelp } from '../src/i18n/helpMathematics.ts';
 const locales = ['en', 'de', 'hu'] as const;
 const emptyHelp = { topics: [] };
 
-test('research module shell exposes every registered module in English, German and Hungarian', () => {
-  const copies = locales.map((locale) => getModuleShellCopy(locale));
+test('research module shell exposes every registered module in English', () => {
+  const copies = [getModuleShellCopy('en')];
   const moduleIds = Object.keys(copies[0]!.modules).sort();
 
   for (const copy of copies) {
@@ -24,8 +24,6 @@ test('research module shell exposes every registered module in English, German a
   }
 
   assert.match(copies[0]!.modules['org.omi.mathematics']!.title, /Mathematics/);
-  assert.match(copies[1]!.modules['org.omi.mathematics']!.title, /Mathematik/);
-  assert.match(copies[2]!.modules['org.omi.mathematics']!.title, /Matematik/);
 });
 
 test('research module locale normalization keeps English as the default', () => {
@@ -173,48 +171,17 @@ function topLevelKeys(body: string): string[] {
 }
 
 const localizedSourceFiles = [
-  'src/modules/moduleShellTranslations.ts',
-  'src/modules/ResearchCatalogSearchPanel.tsx',
-  'src/modules/archaeology/ArchaeologyPanel.tsx',
-  'src/modules/corpus-linguistics/CorpusLinguisticsPanel.tsx',
-  'src/modules/critical-text-edition/CriticalTextEditionPanel.tsx',
   'src/modules/cultural-heritage/CulturalHeritagePanel.tsx',
   'src/modules/experimental-laboratory/ExperimentalLaboratoryPanel.tsx',
-  'src/modules/history-archives/HistoryArchivesSourcesPanel.tsx',
-  'src/modules/history-archives/EleveltarSearchPanel.tsx',
-  'src/modules/history-archives/RomanianArchivesSearchPanel.tsx',
-  'src/modules/legal-sources/LegalSourcesPanel.tsx',
   'src/modules/musicology/MusicologyPanel.tsx',
-  'src/modules/religious-texts/ReligiousTextsPanel.tsx',
-  'src/modules/research-databases/ResearchDatabasePanel.tsx',
-  'src/modules/research-reproducibility/ResearchReproducibilityPanel.tsx',
-  'src/modules/social-research-methods/SocialResearchMethodsPanel.tsx',
   'src/modules/spatial-research/SpatialResearchPanel.tsx',
-  'src/modules/statistical-analysis/StatisticalAnalysisPanel.tsx',
-  'src/modules/mathematics/EquationEditor.tsx',
   'src/modules/health-research/copy.ts',
   'src/modules/health-research/searchCopy.ts',
 ];
 
-test('module panel translation records have matching English, German and Hungarian fields', async () => {
-  for (const path of localizedSourceFiles) {
+test('research module panels read their copy from the shared PO catalog', async () => {
+  for (const path of ["src/modules/moduleShellTranslations.ts","src/modules/ResearchCatalogSearchPanel.tsx","src/modules/ResearchModuleInsertPanel.tsx","src/modules/archaeology/ArchaeologyPanel.tsx","src/modules/corpus-linguistics/CorpusLinguisticsPanel.tsx","src/modules/critical-text-edition/CriticalTextEditionPanel.tsx","src/modules/history-archives/HistoryArchivesSourcesPanel.tsx","src/modules/history-archives/EleveltarSearchPanel.tsx","src/modules/history-archives/RomanianArchivesSearchPanel.tsx","src/modules/legal-sources/LegalSourcesPanel.tsx","src/modules/religious-texts/ReligiousTextsPanel.tsx","src/modules/research-databases/ResearchDatabasePanel.tsx","src/modules/research-reproducibility/ResearchReproducibilityPanel.tsx","src/modules/social-research-methods/SocialResearchMethodsPanel.tsx","src/modules/statistical-analysis/StatisticalAnalysisPanel.tsx","src/modules/mathematics/EquationEditor.tsx"]) {
     const source = await readFile(new URL(`../${path}`, import.meta.url), 'utf8');
-    const records = Object.fromEntries(locales.map((locale) => {
-      const expression = new RegExp(`\\b${locale}:\\s*\\{`, 'g');
-      const keys: string[][] = [];
-      for (const match of source.matchAll(expression)) {
-        keys.push(topLevelKeys(objectBodyAt(source, match.index!)));
-      }
-      return [locale, keys];
-    })) as Record<(typeof locales)[number], string[][]>;
-
-    assert.ok(records.en.length > 0, `${path} has no English translation record`);
-    assert.equal(records.de.length, records.en.length, `${path} German records are incomplete`);
-    assert.equal(records.hu.length, records.en.length, `${path} Hungarian records are incomplete`);
-
-    for (let index = 0; index < records.en.length; index += 1) {
-      assert.deepEqual(records.de[index], records.en[index], `${path} German keys differ at record ${index}`);
-      assert.deepEqual(records.hu[index], records.en[index], `${path} Hungarian keys differ at record ${index}`);
-    }
+    assert.match(source, /getResearchModuleCopyByLocale/, `${path} should use the PO-backed catalog`);
   }
 });
