@@ -18,6 +18,7 @@ function getAtPointer(dictionary: TranslationDictionary, pointer: string): unkno
   return current;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- preserve the inferred shape of existing module copy trees.
 export function getResearchModuleCopyByLocale<T = Record<string, any>>(
   catalogPath: string,
 ): Record<string, T> {
