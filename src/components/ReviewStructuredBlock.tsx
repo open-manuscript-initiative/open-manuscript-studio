@@ -6,6 +6,7 @@ import type {
   ReviewManuscriptBlock,
 } from '../services/peerReviewApi';
 import './ReviewStructuredBlock.css';
+import { tCatalog } from '../i18n';
 
 export function ReviewStructuredBlock({
   block,
@@ -69,7 +70,7 @@ export function ReviewStructuredBlock({
     <figure className="review-structured-chart">
       <figcaption>
         <strong>{block.title || 'Chart'}</strong>
-        <span>{block.chartType} chart · source data</span>
+        <span>{block.chartType} {tCatalog("/uncataloguedUi/components-reviewstructuredblock/chart-source-data-44e4bcf")}</span>
       </figcaption>
       <ReviewTable cells={block.cells} headerRows={1} />
     </figure>

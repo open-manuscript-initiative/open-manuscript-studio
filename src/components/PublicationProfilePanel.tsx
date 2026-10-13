@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { stagePublicationProfileChange } from '../app/publicationProfileActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import { getFrontMatterCopy } from '../i18n/frontMatter';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
 import {
@@ -216,7 +216,7 @@ function ProfileRuleSummary({ profile, copy, frontMatterCopy }: { profile: OmiPu
       </div>
       <div className="publication-profile-output-row"><strong>{copy.outputs}</strong><div className="publication-profile-output-list">{rules.outputs.map((format) => <code key={format}>{format.toUpperCase()}</code>)}</div></div>
       {profile.exportStylesheet ? <div className="publication-profile-output-row"><strong>CSS</strong><div className="publication-profile-output-list"><code>{profile.exportStylesheet.fileName}</code></div></div> : null}
-      {profile.printStylesheet ? <div className="publication-profile-output-row"><strong>Print / PDF CSS</strong><div className="publication-profile-output-list"><code>{profile.printStylesheet.fileName}</code></div></div> : null}
+      {profile.printStylesheet ? <div className="publication-profile-output-row"><strong>{tCatalog("/uncataloguedUi/components-publicationprofilepanel/print-pdf-css-82d29a8")}</strong><div className="publication-profile-output-list"><code>{profile.printStylesheet.fileName}</code></div></div> : null}
     </section>
   );
 }

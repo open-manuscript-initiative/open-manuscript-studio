@@ -7,7 +7,7 @@ import {
 
 import { useStudioStore } from '../app/useStudioStore';
 import { getTopLevelBlockFromResolvedPosition } from '../editor/continuousManuscriptDocument';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import {
   createManualIndexEntry,
   DEFAULT_INDEX_ID,
@@ -184,7 +184,7 @@ export function SelectionActionToolbar({
   };
 
   return (
-    <div className="omi-selection-action-toolbar" role="group" aria-label="Selection actions">
+    <div className="omi-selection-action-toolbar" role="group" aria-label={tCatalog("/uncataloguedUi/components-selectionactiontoolbar/selection-actions-292f133")}>
       <button type="button" onMouseDown={preserveSelection} onClick={() => void runClipboardAction('cut')}>{clipboardCopy.cut}</button>
       <button type="button" onMouseDown={preserveSelection} onClick={() => void runClipboardAction('copy')}>{clipboardCopy.copy}</button>
       <select

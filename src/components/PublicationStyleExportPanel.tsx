@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { externalizeActiveManuscriptAssets } from '../app/assetActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import { createPublisherExportStylesheet } from '../model/publisherExportStyle';
 import { resolvePublicationProfile } from '../model/publicationProfile';
 import {
@@ -157,7 +157,7 @@ export function PublicationStyleExportPanel() {
         <article className="publication-style-export-option">
           <FileText size={22} aria-hidden="true" />
           <div>
-            <strong>PDF / {copy.print}</strong>
+            <strong>{tCatalog("/uncataloguedUi/components-publicationstyleexportpanel/pdf-e0012bd")} {copy.print}</strong>
             <p>{copy.pdfDescription}</p>
             <div className="studio-manuscript-fields">
               <label>

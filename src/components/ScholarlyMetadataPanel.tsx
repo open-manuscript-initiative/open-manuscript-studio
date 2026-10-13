@@ -8,7 +8,7 @@ import {
   setScholarlyScalar,
 } from '../app/scholarlyMetadataActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import { PublicationVenueField } from './PublicationVenueField';
 
 const LABELS = {
@@ -131,7 +131,7 @@ export function ScholarlyMetadataPanel() {
         </div>
         <select
           value={metadataLocale}
-          aria-label="Metadata language"
+          aria-label={tCatalog("/uncataloguedUi/components-scholarlymetadatapanel/metadata-language-71c8dda")}
           onChange={(event) => setMetadataLocale(event.target.value)}
         >
           {locales.map((item) => (

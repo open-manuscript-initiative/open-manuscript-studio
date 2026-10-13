@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { externalizeActiveManuscriptAssets } from '../app/assetActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import { getDocumentStructureProfile } from '../model/documentProfile';
 import {
   getIntegrationCatalog,
@@ -396,15 +396,13 @@ function PublicationArtifactForm({
 
       {!connections.length ? (
         <p>
-          {uiLocale === 'hu'
-            ? 'Először állíts be OJS- vagy OMP-kapcsolatot az Integrációk menüben.'
-            : 'First configure an OJS or OMP connection in Integrations.'}
+          {tCatalog("/uncataloguedUi/components-publicationartifactpanel/first-configure-an-ojs-or-omp-connection-in-integratio-3b77850")}
         </p>
       ) : null}
 
       <fieldset disabled={busy !== null}>
         <label>
-          {provider ? platform.connection : uiLocale === 'hu' ? 'Publikációs kapcsolat' : 'Publishing connection'}
+          {provider ? platform.connection : tCatalog("/uncataloguedUi/components-publicationartifactpanel/publishing-connection-3c9fa55")}
           <select
             value={connectionId}
             onChange={(event) => {

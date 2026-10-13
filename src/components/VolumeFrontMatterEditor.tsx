@@ -14,7 +14,7 @@ import {
 } from '../app/manuscriptFrontMatterActions';
 import { stageDocumentStructureChange } from '../app/documentProfileActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import { getFrontMatterCopy } from '../i18n/frontMatter';
 import type { OjsLaunchPayload } from '../integrations/ojs/importOjsLaunch';
 import {
@@ -92,8 +92,8 @@ function OjsContributorPanel({ contributors }: { contributors: OjsContributors }
   if (!contributors.length) return null;
 
   return (
-    <section className="omi-ojs-contributors" aria-label="OJS contributors">
-      <h2>OJS contributors</h2>
+    <section className="omi-ojs-contributors" aria-label={tCatalog("/uncataloguedUi/components-volumefrontmattereditor/ojs-contributors-77987e6")}>
+      <h2>{tCatalog("/uncataloguedUi/components-volumefrontmattereditor/ojs-contributors-77987e6")}</h2>
       <div className="omi-ojs-contributor-list">
         {contributors.map((contributor, index) => {
           const name = [contributor.name?.given, contributor.name?.family]
@@ -109,7 +109,7 @@ function OjsContributorPanel({ contributors }: { contributors: OjsContributors }
               key={contributor.externalId ?? `${name}-${index}`}
             >
               <strong>{name}</strong>
-              {contributor.primaryContact ? <span> · Corresponding author</span> : null}
+              {contributor.primaryContact ? <span> {tCatalog("/uncataloguedUi/components-volumefrontmattereditor/corresponding-author-e698aed")}</span> : null}
               {contributor.email ? <div>{contributor.email}</div> : null}
               {contributor.affiliation ? <div>{contributor.affiliation}</div> : null}
               {orcid ? <div>ORCID: {orcid}</div> : null}

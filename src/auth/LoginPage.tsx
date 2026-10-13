@@ -14,6 +14,7 @@ import {
 import {
   useTranslation,
   type TranslationKey,
+  tCatalog,
 } from '../i18n';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { OrcidEnvironmentBadge } from '../components/OrcidEnvironmentBadge';
@@ -159,7 +160,7 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
             </div>
 
             <p className="auth-login-tagline">
-              Write naturally. Structure once. Publish everywhere.
+              {tCatalog("/uncataloguedUi/auth-loginpage/write-naturally-structure-once-publish-everywhere-d2b9a80")}
             </p>
 
             <p className="auth-login-intro">
@@ -295,11 +296,7 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
                 <div className="auth-login-orcid-meta">
                   <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
                   <div className="auth-field-hint auth-login-orcid-hint">
-                    {locale === 'hu'
-                      ? 'Az ORCID-hitelesítés a Stúdió-fiókhoz kapcsolt, ellenőrzött ORCID iD-t használja.'
-                      : locale === 'de'
-                        ? 'Die ORCID-Anmeldung verwendet die verifizierte ORCID iD, die mit Ihrem Studio-Konto verknüpft ist.'
-                        : 'ORCID sign-in uses the verified ORCID iD linked to your Studio account.'}
+                    {tCatalog("/uncataloguedUi/auth-loginpage/orcid-sign-in-uses-the-verified-orcid-id-linked-to-you-e32910e")}
                   </div>
                 </div>
               ) : null}

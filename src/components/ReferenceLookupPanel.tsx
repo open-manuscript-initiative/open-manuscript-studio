@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { stageAddBibliographicRecord } from '../app/citationActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import { getReferenceLookupCopy } from '../i18n/referenceLookup';
 import {
   formatBibliographyEntry,
@@ -421,7 +421,7 @@ export function ReferenceLookupPanel() {
                 }
               />
               <span>{provider.name}</span>
-              <small>web</small>
+              <small>{tCatalog("/uncataloguedUi/components-referencelookuppanel/web-ca84d13")}</small>
             </label>
           ))}
         </div>
@@ -677,7 +677,7 @@ export function ReferenceLookupPanel() {
                   <div className="omi-lookup-result-meta">
                     <span>{candidate.record.type}</span>
                     {doi ? <code>DOI {doi}</code> : null}
-                    {mtmtId ? <code>MTMT {mtmtId}</code> : null}
+                    {mtmtId ? <code>{tCatalog("/uncataloguedUi/components-referencelookuppanel/mtmt-02f100e")} {mtmtId}</code> : null}
                   </div>
                 </div>
                 <button
@@ -707,7 +707,7 @@ function providerLabel(provider: BibliographicSourceId): string {
     case 'openalex':
       return 'OpenAlex';
     case 'mtmt':
-      return 'MTMT';
+      return tCatalog("/uncataloguedUi/components-referencelookuppanel/mtmt-02f100e");
     case 'europepmc':
       return 'Europe PMC';
     case 'zotero':

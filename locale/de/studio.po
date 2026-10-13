@@ -6845,3 +6845,703 @@ msgstr "Öffnen Sie ein Manuskript und wählen Sie einen Abschnitt."
 msgctxt "/researchModules/mathematics-panel/copy/failed"
 msgid "The equation could not be inserted."
 msgstr "Die Formel konnte nicht eingefügt werden."
+
+#. OMI translation key: /uncataloguedUi/app/loading-external-manuscript-fb96d07
+msgctxt "/uncataloguedUi/app/loading-external-manuscript-fb96d07"
+msgid "Loading external manuscript…"
+msgstr "Loading external manuscript…"
+
+#. OMI translation key: /uncataloguedUi/app/unable-to-load-manuscript-29ad65e
+msgctxt "/uncataloguedUi/app/unable-to-load-manuscript-29ad65e"
+msgid "Unable to load manuscript"
+msgstr "Unable to load manuscript"
+
+#. OMI translation key: /uncataloguedUi/auth-loginpage/write-naturally-structure-once-publish-everywhere-d2b9a80
+msgctxt "/uncataloguedUi/auth-loginpage/write-naturally-structure-once-publish-everywhere-d2b9a80"
+msgid "Write naturally. Structure once. Publish everywhere."
+msgstr "Write naturally. Structure once. Publish everywhere."
+
+#. OMI translation key: /uncataloguedUi/auth-loginpage/orcid-sign-in-uses-the-verified-orcid-id-linked-to-you-e32910e
+msgctxt "/uncataloguedUi/auth-loginpage/orcid-sign-in-uses-the-verified-orcid-id-linked-to-you-e32910e"
+msgid "ORCID sign-in uses the verified ORCID iD linked to your Studio account."
+msgstr "ORCID sign-in uses the verified ORCID iD linked to your Studio account."
+
+#. OMI translation key: /uncataloguedUi/auth-registerpage/loading-assignment-invitation-70ca527
+msgctxt "/uncataloguedUi/auth-registerpage/loading-assignment-invitation-70ca527"
+msgid "Loading assignment invitation…"
+msgstr "Loading assignment invitation…"
+
+#. OMI translation key: /uncataloguedUi/auth-registerpage/complete-your-studio-registration-to-open-the-assignme-8696998
+msgctxt "/uncataloguedUi/auth-registerpage/complete-your-studio-registration-to-open-the-assignme-8696998"
+msgid "Complete your Studio registration to open the assignment sent to this e-mail address."
+msgstr "Complete your Studio registration to open the assignment sent to this e-mail address."
+
+#. OMI translation key: /uncataloguedUi/auth-registerpage/accept-invitation-with-orcid-95d8722
+msgctxt "/uncataloguedUi/auth-registerpage/accept-invitation-with-orcid-95d8722"
+msgid "Accept invitation with ORCID"
+msgstr "Accept invitation with ORCID"
+
+#. OMI translation key: /uncataloguedUi/auth-registerpage/orcid-authentication-activates-the-invited-studio-acco-867c8f6
+msgctxt "/uncataloguedUi/auth-registerpage/orcid-authentication-activates-the-invited-studio-acco-867c8f6"
+msgid "ORCID authentication activates the invited Studio account; a separate Studio password is not required."
+msgstr "ORCID authentication activates the invited Studio account; a separate Studio password is not required."
+
+#. OMI translation key: /uncataloguedUi/auth-registerpage/this-e-mail-address-is-fixed-by-the-invitation-d9ae7e0
+msgctxt "/uncataloguedUi/auth-registerpage/this-e-mail-address-is-fixed-by-the-invitation-d9ae7e0"
+msgid "This e-mail address is fixed by the invitation."
+msgstr "This e-mail address is fixed by the invitation."
+
+#. OMI translation key: /uncataloguedUi/components-collaborationchat/document-chat-88aa5ac
+msgctxt "/uncataloguedUi/components-collaborationchat/document-chat-88aa5ac"
+msgid "Document chat"
+msgstr "Document chat"
+
+#. OMI translation key: /uncataloguedUi/components-collaborationinvitationgate/manuscript-collaboration-invitation-f32a232
+msgctxt "/uncataloguedUi/components-collaborationinvitationgate/manuscript-collaboration-invitation-f32a232"
+msgid "Manuscript collaboration invitation"
+msgstr "Manuscript collaboration invitation"
+
+#. OMI translation key: /uncataloguedUi/components-collaborationinvitationgate/accept-invitation-0b918ca
+msgctxt "/uncataloguedUi/components-collaborationinvitationgate/accept-invitation-0b918ca"
+msgid "Accept invitation"
+msgstr "Accept invitation"
+
+#. OMI translation key: /uncataloguedUi/components-collaborationinvitationgate/decline-b59cf9e
+msgctxt "/uncataloguedUi/components-collaborationinvitationgate/decline-b59cf9e"
+msgid "Decline"
+msgstr "Decline"
+
+#. OMI translation key: /uncataloguedUi/components-collaborationinvitationgate/sign-in-with-the-invited-email-address-to-accept-this--467f451
+msgctxt "/uncataloguedUi/components-collaborationinvitationgate/sign-in-with-the-invited-email-address-to-accept-this--467f451"
+msgid "Sign in with the invited email address to accept this invitation."
+msgstr "Sign in with the invited email address to accept this invitation."
+
+#. OMI translation key: /uncataloguedUi/components-continuousmanuscripteditor/save-to-cloud-for-shared-editing-53bdfe0
+msgctxt "/uncataloguedUi/components-continuousmanuscripteditor/save-to-cloud-for-shared-editing-53bdfe0"
+msgid "Save to cloud for shared editing"
+msgstr "Save to cloud for shared editing"
+
+#. OMI translation key: /uncataloguedUi/components-continuousmanuscripteditor/cloud-storage-52fa5e7
+msgctxt "/uncataloguedUi/components-continuousmanuscripteditor/cloud-storage-52fa5e7"
+msgid "Cloud storage"
+msgstr "Cloud storage"
+
+#. OMI translation key: /uncataloguedUi/components-continuousmanuscripteditor/no-cloud-storage-is-connected-connect-one-in-settings--3befaa1
+msgctxt "/uncataloguedUi/components-continuousmanuscripteditor/no-cloud-storage-is-connected-connect-one-in-settings--3befaa1"
+msgid "No cloud storage is connected. Connect one in Settings, then enter the author email again."
+msgstr "No cloud storage is connected. Connect one in Settings, then enter the author email again."
+
+#. OMI translation key: /uncataloguedUi/components-continuousmanuscripteditor/save-and-continue-3b033f4
+msgctxt "/uncataloguedUi/components-continuousmanuscripteditor/save-and-continue-3b033f4"
+msgid "Save and continue"
+msgstr "Save and continue"
+
+#. OMI translation key: /uncataloguedUi/components-customexportpanel/all-6a72085
+msgctxt "/uncataloguedUi/components-customexportpanel/all-6a72085"
+msgid "All"
+msgstr "All"
+
+#. OMI translation key: /uncataloguedUi/components-customexportpanel/justify-536d274
+msgctxt "/uncataloguedUi/components-customexportpanel/justify-536d274"
+msgid "Justify"
+msgstr "Justify"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/unable-to-load-editorial-assignments-d330d67
+msgctxt "/uncataloguedUi/components-editorreviewmode/unable-to-load-editorial-assignments-d330d67"
+msgid "Unable to load editorial assignments."
+msgstr "Unable to load editorial assignments."
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/editorial-assignments-67c28ef
+msgctxt "/uncataloguedUi/components-editorreviewmode/editorial-assignments-67c28ef"
+msgid "Editorial Assignments"
+msgstr "Editorial Assignments"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/editor-only-view-participant-and-author-identities-are-0dd782d
+msgctxt "/uncataloguedUi/components-editorreviewmode/editor-only-view-participant-and-author-identities-are-0dd782d"
+msgid "Editor-only view. Participant and author identities are available here while author-facing and participant-facing APIs apply their own privacy boundaries."
+msgstr "Editor-only view. Participant and author identities are available here while author-facing and participant-facing APIs apply their own privacy boundaries."
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/back-to-studio-b458395
+msgctxt "/uncataloguedUi/components-editorreviewmode/back-to-studio-b458395"
+msgid "Back to Studio"
+msgstr "Back to Studio"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/editorial-assignments-bd72213
+msgctxt "/uncataloguedUi/components-editorreviewmode/editorial-assignments-bd72213"
+msgid "Editorial assignments"
+msgstr "Editorial assignments"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/assignments-057d58c
+msgctxt "/uncataloguedUi/components-editorreviewmode/assignments-057d58c"
+msgid "Assignments"
+msgstr "Assignments"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/round-988748a
+msgctxt "/uncataloguedUi/components-editorreviewmode/round-988748a"
+msgid "· Round"
+msgstr "· Round"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/no-editorial-assignments-450981b
+msgctxt "/uncataloguedUi/components-editorreviewmode/no-editorial-assignments-450981b"
+msgid "No editorial assignments."
+msgstr "No editorial assignments."
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/round-ec7b598
+msgctxt "/uncataloguedUi/components-editorreviewmode/round-ec7b598"
+msgid "Round"
+msgstr "Round"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/author-identity-f83da8a
+msgctxt "/uncataloguedUi/components-editorreviewmode/author-identity-f83da8a"
+msgid "Author identity"
+msgstr "Author identity"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/affiliation-7767fe9
+msgctxt "/uncataloguedUi/components-editorreviewmode/affiliation-7767fe9"
+msgid "Affiliation:"
+msgstr "Affiliation:"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/no-author-account-is-linked-to-this-manuscript-workspa-8350ffd
+msgctxt "/uncataloguedUi/components-editorreviewmode/no-author-account-is-linked-to-this-manuscript-workspa-8350ffd"
+msgid "No author account is linked to this manuscript workspace."
+msgstr "No author account is linked to this manuscript workspace."
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/assigned-participant-cb46a43
+msgctxt "/uncataloguedUi/components-editorreviewmode/assigned-participant-cb46a43"
+msgid "Assigned participant"
+msgstr "Assigned participant"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/author-facing-alias-42afcc5
+msgctxt "/uncataloguedUi/components-editorreviewmode/author-facing-alias-42afcc5"
+msgid "Author-facing alias:"
+msgstr "Author-facing alias:"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/role-61e4c27
+msgctxt "/uncataloguedUi/components-editorreviewmode/role-61e4c27"
+msgid "Role:"
+msgstr "Role:"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/assignment-feedback-ea897d6
+msgctxt "/uncataloguedUi/components-editorreviewmode/assignment-feedback-ea897d6"
+msgid "Assignment feedback"
+msgstr "Assignment feedback"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/confidential-to-editor-edfdb4f
+msgctxt "/uncataloguedUi/components-editorreviewmode/confidential-to-editor-edfdb4f"
+msgid "Confidential to editor"
+msgstr "Confidential to editor"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/visible-to-author-6adc2c3
+msgctxt "/uncataloguedUi/components-editorreviewmode/visible-to-author-6adc2c3"
+msgid "Visible to author"
+msgstr "Visible to author"
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/no-feedback-yet-dd9e490
+msgctxt "/uncataloguedUi/components-editorreviewmode/no-feedback-yet-dd9e490"
+msgid "No feedback yet."
+msgstr "No feedback yet."
+
+#. OMI translation key: /uncataloguedUi/components-editorreviewmode/no-editorial-assignment-selected-c9870be
+msgctxt "/uncataloguedUi/components-editorreviewmode/no-editorial-assignment-selected-c9870be"
+msgid "No editorial assignment selected."
+msgstr "No editorial assignment selected."
+
+#. OMI translation key: /uncataloguedUi/components-footer/vision-40b0906
+msgctxt "/uncataloguedUi/components-footer/vision-40b0906"
+msgid "Vision"
+msgstr "Vision"
+
+#. OMI translation key: /uncataloguedUi/components-footer/documentation-9e9cf32
+msgctxt "/uncataloguedUi/components-footer/documentation-9e9cf32"
+msgid "Documentation"
+msgstr "Documentation"
+
+#. OMI translation key: /uncataloguedUi/components-footer/roadmap-8119e7f
+msgctxt "/uncataloguedUi/components-footer/roadmap-8119e7f"
+msgid "Roadmap"
+msgstr "Roadmap"
+
+#. OMI translation key: /uncataloguedUi/components-footer/studio-5b23bd7
+msgctxt "/uncataloguedUi/components-footer/studio-5b23bd7"
+msgid "Studio"
+msgstr "Studio"
+
+#. OMI translation key: /uncataloguedUi/components-footer/community-bfd58ee
+msgctxt "/uncataloguedUi/components-footer/community-bfd58ee"
+msgid "Community"
+msgstr "Community"
+
+#. OMI translation key: /uncataloguedUi/components-footer/support-f32d5a3
+msgctxt "/uncataloguedUi/components-footer/support-f32d5a3"
+msgid "Support"
+msgstr "Support"
+
+#. OMI translation key: /uncataloguedUi/components-footer/github-sponsors-2bdab7e
+msgctxt "/uncataloguedUi/components-footer/github-sponsors-2bdab7e"
+msgid "GitHub Sponsors"
+msgstr "GitHub Sponsors"
+
+#. OMI translation key: /uncataloguedUi/components-footer/wiki-4f983a6
+msgctxt "/uncataloguedUi/components-footer/wiki-4f983a6"
+msgid "Wiki"
+msgstr "Wiki"
+
+#. OMI translation key: /uncataloguedUi/components-footer/project-f6f4da8
+msgctxt "/uncataloguedUi/components-footer/project-f6f4da8"
+msgid "Project"
+msgstr "Project"
+
+#. OMI translation key: /uncataloguedUi/components-footer/funding-partnerships-6f9e7ea
+msgctxt "/uncataloguedUi/components-footer/funding-partnerships-6f9e7ea"
+msgid "Funding & Partnerships"
+msgstr "Funding & Partnerships"
+
+#. OMI translation key: /uncataloguedUi/components-footer/grant-readiness-pack-b5f8c28
+msgctxt "/uncataloguedUi/components-footer/grant-readiness-pack-b5f8c28"
+msgid "Grant Readiness Pack"
+msgstr "Grant Readiness Pack"
+
+#. OMI translation key: /uncataloguedUi/components-footer/privacy-policy-7ceacdc
+msgctxt "/uncataloguedUi/components-footer/privacy-policy-7ceacdc"
+msgid "Privacy policy"
+msgstr "Privacy policy"
+
+#. OMI translation key: /uncataloguedUi/components-footer/share-open-manuscript-studio-63a31e8
+msgctxt "/uncataloguedUi/components-footer/share-open-manuscript-studio-63a31e8"
+msgid "Share Open Manuscript Studio"
+msgstr "Share Open Manuscript Studio"
+
+#. OMI translation key: /uncataloguedUi/components-footer/share-09ca55c
+msgctxt "/uncataloguedUi/components-footer/share-09ca55c"
+msgid "Share"
+msgstr "Share"
+
+#. OMI translation key: /uncataloguedUi/components-footer/share-24897bc
+msgctxt "/uncataloguedUi/components-footer/share-24897bc"
+msgid "Share…"
+msgstr "Share…"
+
+#. OMI translation key: /uncataloguedUi/components-footer/open-standards-for-scholarly-publishing-963cefb
+msgctxt "/uncataloguedUi/components-footer/open-standards-for-scholarly-publishing-963cefb"
+msgid "Open standards for scholarly publishing."
+msgstr "Open standards for scholarly publishing."
+
+#. OMI translation key: /uncataloguedUi/components-footer/open-manuscript-initiative-contributors-3561518
+msgctxt "/uncataloguedUi/components-footer/open-manuscript-initiative-contributors-3561518"
+msgid "Open Manuscript Initiative Contributors."
+msgstr "Open Manuscript Initiative Contributors."
+
+#. OMI translation key: /uncataloguedUi/components-footer/omi-studio-9672390
+msgctxt "/uncataloguedUi/components-footer/omi-studio-9672390"
+msgid "OMI Studio ·"
+msgstr "OMI Studio ·"
+
+#. OMI translation key: /uncataloguedUi/components-institutionalprofilessettings/ror-deb99ae
+msgctxt "/uncataloguedUi/components-institutionalprofilessettings/ror-deb99ae"
+msgid "ROR:"
+msgstr "ROR:"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/ai-provider-configuration-f698443
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/ai-provider-configuration-f698443"
+msgid "AI provider configuration"
+msgstr "AI provider configuration"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/configure-an-openai-compatible-chat-completions-endpoi-1df8fe5
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/configure-an-openai-compatible-chat-completions-endpoi-1df8fe5"
+msgid "Configure an OpenAI-compatible chat-completions endpoint. The API secret is encrypted server-side and is never returned to the browser."
+msgstr "Configure an OpenAI-compatible chat-completions endpoint. The API secret is encrypted server-side and is never returned to the browser."
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/https-endpoint-9078755
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/https-endpoint-9078755"
+msgid "HTTPS endpoint"
+msgstr "HTTPS endpoint"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/api-secret-0eb1e2c
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/api-secret-0eb1e2c"
+msgid "API secret"
+msgstr "API secret"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/save-ai-provider-43cd787
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/save-ai-provider-43cd787"
+msgid "Save AI provider"
+msgstr "Save AI provider"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/test-configuration-6f766a7
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/test-configuration-6f766a7"
+msgid "Test configuration"
+msgstr "Test configuration"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/deepl-translation-workspace-ad788d9
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/deepl-translation-workspace-ad788d9"
+msgid "DeepL translation workspace"
+msgstr "DeepL translation workspace"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/translate-structured-omi-content-without-rewriting-cit-6e2685b
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/translate-structured-omi-content-without-rewriting-cit-6e2685b"
+msgid "Translate structured OMI content without rewriting citations, cross-references, bibliography records, code blocks, or equations."
+msgstr "Translate structured OMI content without rewriting citations, cross-references, bibliography records, code blocks, or equations."
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/current-section-0cf15e6
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/current-section-0cf15e6"
+msgid "Current section"
+msgstr "Current section"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/scope-4651a34
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/scope-4651a34"
+msgid "Scope"
+msgstr "Scope"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/whole-manuscript-26a3f8b
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/whole-manuscript-26a3f8b"
+msgid "Whole manuscript"
+msgstr "Whole manuscript"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/target-language-f137c97
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/target-language-f137c97"
+msgid "Target language"
+msgstr "Target language"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/current-section-13a016b
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/current-section-13a016b"
+msgid "Current section:"
+msgstr "Current section:"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/translate-2be17aa
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/translate-2be17aa"
+msgid "Translate"
+msgstr "Translate"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/translating-ae47b9e
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/translating-ae47b9e"
+msgid "Translating…"
+msgstr "Translating…"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/save-as-language-variant-d2ce9b4
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/save-as-language-variant-d2ce9b4"
+msgid "Save as language variant"
+msgstr "Save as language variant"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/more-structured-segments-5be05a4
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/more-structured-segments-5be05a4"
+msgid "more structured segments"
+msgstr "more structured segments"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/translation-preview-cb9856a
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/translation-preview-cb9856a"
+msgid "Translation preview"
+msgstr "Translation preview"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/saved-variants-6880354
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/saved-variants-6880354"
+msgid "Saved variants"
+msgstr "Saved variants"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/agents-return-suggestions-by-default-they-never-mutate-092a80d
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/agents-return-suggestions-by-default-they-never-mutate-092a80d"
+msgid "Agents return suggestions by default. They never mutate manuscript state on the server."
+msgstr "Agents return suggestions by default. They never mutate manuscript state on the server."
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/omi-agents-50c3bc1
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/omi-agents-50c3bc1"
+msgid "OMI agents"
+msgstr "OMI agents"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/agent-5ce2e6f
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/agent-5ce2e6f"
+msgid "Agent"
+msgstr "Agent"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/citation-checker-67ee923
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/citation-checker-67ee923"
+msgid "Citation checker"
+msgstr "Citation checker"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/language-editor-d8036c0
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/language-editor-d8036c0"
+msgid "Language editor"
+msgstr "Language editor"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/metadata-assistant-3642647
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/metadata-assistant-3642647"
+msgid "Metadata assistant"
+msgstr "Metadata assistant"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/summarizer-0ec21c9
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/summarizer-0ec21c9"
+msgid "Summarizer"
+msgstr "Summarizer"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/create-suggestion-7fd1425
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/create-suggestion-7fd1425"
+msgid "Create suggestion"
+msgstr "Create suggestion"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/running-7ef25a7
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/running-7ef25a7"
+msgid "Running…"
+msgstr "Running…"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/review-the-suggestion-before-applying-it-selection-lev-c9a9cb4
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/review-the-suggestion-before-applying-it-selection-lev-c9a9cb4"
+msgid "Review the suggestion before applying it. Selection-level suggestions can be applied explicitly from the editor toolbar."
+msgstr "Review the suggestion before applying it. Selection-level suggestions can be applied explicitly from the editor toolbar."
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/suggestion-ab9befa
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/suggestion-ab9befa"
+msgid "Suggestion"
+msgstr "Suggestion"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/extension-sdk-registry-ce5a009
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/extension-sdk-registry-ce5a009"
+msgid "Extension SDK registry"
+msgstr "Extension SDK registry"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/register-omi-integration-extension-api-v1-manifests-wi-8cbf04e
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/register-omi-integration-extension-api-v1-manifests-wi-8cbf04e"
+msgid "Register OMI Integration Extension API v1 manifests with explicit capabilities and scoped permissions."
+msgstr "Register OMI Integration Extension API v1 manifests with explicit capabilities and scoped permissions."
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/register-manifest-baebfbf
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/register-manifest-baebfbf"
+msgid "Register manifest"
+msgstr "Register manifest"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/integration-audit-trail-0733f98
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/integration-audit-trail-0733f98"
+msgid "Integration audit trail"
+msgstr "Integration audit trail"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/refresh-56e3bad
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/refresh-56e3bad"
+msgid "Refresh"
+msgstr "Refresh"
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/the-log-stores-operation-metadata-and-sha-256-digests--eff5136
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/the-log-stores-operation-metadata-and-sha-256-digests--eff5136"
+msgid "The log stores operation metadata and SHA-256 digests, not manuscript text or provider secrets."
+msgstr "The log stores operation metadata and SHA-256 digests, not manuscript text or provider secrets."
+
+#. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/chars-76a91d6
+msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/chars-76a91d6"
+msgid "chars"
+msgstr "chars"
+
+#. OMI translation key: /uncataloguedUi/components-lazyblockeditor/deferred-manuscript-paragraph-d0e7ac5
+msgctxt "/uncataloguedUi/components-lazyblockeditor/deferred-manuscript-paragraph-d0e7ac5"
+msgid "Deferred manuscript paragraph"
+msgstr "Deferred manuscript paragraph"
+
+#. OMI translation key: /uncataloguedUi/components-omiagentsworkspace/omi-agents-252aafe
+msgctxt "/uncataloguedUi/components-omiagentsworkspace/omi-agents-252aafe"
+msgid "OMI Agents"
+msgstr "OMI Agents"
+
+#. OMI translation key: /uncataloguedUi/components-publicationartifactpanel/first-configure-an-ojs-or-omp-connection-in-integratio-3b77850
+msgctxt "/uncataloguedUi/components-publicationartifactpanel/first-configure-an-ojs-or-omp-connection-in-integratio-3b77850"
+msgid "First configure an OJS or OMP connection in Integrations."
+msgstr "First configure an OJS or OMP connection in Integrations."
+
+#. OMI translation key: /uncataloguedUi/components-publicationartifactpanel/publishing-connection-3c9fa55
+msgctxt "/uncataloguedUi/components-publicationartifactpanel/publishing-connection-3c9fa55"
+msgid "Publishing connection"
+msgstr "Publishing connection"
+
+#. OMI translation key: /uncataloguedUi/components-publicationprofilepanel/print-pdf-css-82d29a8
+msgctxt "/uncataloguedUi/components-publicationprofilepanel/print-pdf-css-82d29a8"
+msgid "Print / PDF CSS"
+msgstr "Print / PDF CSS"
+
+#. OMI translation key: /uncataloguedUi/components-publicationstyleexportpanel/pdf-e0012bd
+msgctxt "/uncataloguedUi/components-publicationstyleexportpanel/pdf-e0012bd"
+msgid "PDF /"
+msgstr "PDF /"
+
+#. OMI translation key: /uncataloguedUi/components-referencelookuppanel/web-ca84d13
+msgctxt "/uncataloguedUi/components-referencelookuppanel/web-ca84d13"
+msgid "web"
+msgstr "web"
+
+#. OMI translation key: /uncataloguedUi/components-referencelookuppanel/mtmt-02f100e
+msgctxt "/uncataloguedUi/components-referencelookuppanel/mtmt-02f100e"
+msgid "MTMT"
+msgstr "MTMT"
+
+#. OMI translation key: /uncataloguedUi/components-reviewmode/unable-to-load-the-review-assignment-18c5f43
+msgctxt "/uncataloguedUi/components-reviewmode/unable-to-load-the-review-assignment-18c5f43"
+msgid "Unable to load the review assignment."
+msgstr "Unable to load the review assignment."
+
+#. OMI translation key: /uncataloguedUi/components-reviewportal/loading-peer-review-workspace-cef04d4
+msgctxt "/uncataloguedUi/components-reviewportal/loading-peer-review-workspace-cef04d4"
+msgid "Loading peer review workspace…"
+msgstr "Loading peer review workspace…"
+
+#. OMI translation key: /uncataloguedUi/components-reviewstructuredblock/chart-source-data-44e4bcf
+msgctxt "/uncataloguedUi/components-reviewstructuredblock/chart-source-data-44e4bcf"
+msgid "chart · source data"
+msgstr "chart · source data"
+
+#. OMI translation key: /uncataloguedUi/components-scholarlymetadatapanel/metadata-language-71c8dda
+msgctxt "/uncataloguedUi/components-scholarlymetadatapanel/metadata-language-71c8dda"
+msgid "Metadata language"
+msgstr "Metadata language"
+
+#. OMI translation key: /uncataloguedUi/components-selectionactiontoolbar/selection-actions-292f133
+msgctxt "/uncataloguedUi/components-selectionactiontoolbar/selection-actions-292f133"
+msgid "Selection actions"
+msgstr "Selection actions"
+
+#. OMI translation key: /uncataloguedUi/components-selectionintegrationdialog/select-text-before-using-deepl-8ecb6fd
+msgctxt "/uncataloguedUi/components-selectionintegrationdialog/select-text-before-using-deepl-8ecb6fd"
+msgid "Select text before using DeepL."
+msgstr "Select text before using DeepL."
+
+#. OMI translation key: /uncataloguedUi/components-selectionintegrationdialog/this-block-contains-no-translatable-text-5ace29e
+msgctxt "/uncataloguedUi/components-selectionintegrationdialog/this-block-contains-no-translatable-text-5ace29e"
+msgid "This block contains no translatable text."
+msgstr "This block contains no translatable text."
+
+#. OMI translation key: /uncataloguedUi/components-selectionintegrationdialog/select-text-before-running-an-agent-e26f526
+msgctxt "/uncataloguedUi/components-selectionintegrationdialog/select-text-before-running-an-agent-e26f526"
+msgid "Select text before running an agent."
+msgstr "Select text before running an agent."
+
+#. OMI translation key: /uncataloguedUi/components-selectionintegrationdialog/ai-suggestion-for-selected-text-2693cfb
+msgctxt "/uncataloguedUi/components-selectionintegrationdialog/ai-suggestion-for-selected-text-2693cfb"
+msgid "AI suggestion for selected text"
+msgstr "AI suggestion for selected text"
+
+#. OMI translation key: /uncataloguedUi/components-selectionintegrationdialog/translate-manuscript-text-8b840e2
+msgctxt "/uncataloguedUi/components-selectionintegrationdialog/translate-manuscript-text-8b840e2"
+msgid "Translate manuscript text"
+msgstr "Translate manuscript text"
+
+#. OMI translation key: /uncataloguedUi/components-selectionintegrationdialog/agent-suggestion-8059275
+msgctxt "/uncataloguedUi/components-selectionintegrationdialog/agent-suggestion-8059275"
+msgid "Agent suggestion"
+msgstr "Agent suggestion"
+
+#. OMI translation key: /uncataloguedUi/components-selectionintegrationdialog/deepl-translation-83ad2de
+msgctxt "/uncataloguedUi/components-selectionintegrationdialog/deepl-translation-83ad2de"
+msgid "DeepL translation"
+msgstr "DeepL translation"
+
+#. OMI translation key: /uncataloguedUi/components-selectionintegrationdialog/selected-text-7bb2287
+msgctxt "/uncataloguedUi/components-selectionintegrationdialog/selected-text-7bb2287"
+msgid "Selected text"
+msgstr "Selected text"
+
+#. OMI translation key: /uncataloguedUi/components-selectionintegrationdialog/whole-block-45f6767
+msgctxt "/uncataloguedUi/components-selectionintegrationdialog/whole-block-45f6767"
+msgid "Whole block"
+msgstr "Whole block"
+
+#. OMI translation key: /uncataloguedUi/components-selectionintegrationdialog/apply-translation-d9f42be
+msgctxt "/uncataloguedUi/components-selectionintegrationdialog/apply-translation-d9f42be"
+msgid "Apply translation"
+msgstr "Apply translation"
+
+#. OMI translation key: /uncataloguedUi/components-selectionintegrationdialog/apply-suggestion-06e2622
+msgctxt "/uncataloguedUi/components-selectionintegrationdialog/apply-suggestion-06e2622"
+msgid "Apply suggestion"
+msgstr "Apply suggestion"
+
+#. OMI translation key: /uncataloguedUi/components-selectionintegrationdialog/only-plain-manuscript-text-is-sent-externally-inline-f-9384372
+msgctxt "/uncataloguedUi/components-selectionintegrationdialog/only-plain-manuscript-text-is-sent-externally-inline-f-9384372"
+msgid "Only plain manuscript text is sent externally. Inline formatting is preserved; citation, note and cross-reference nodes and code marks remain outside translation requests."
+msgstr "Only plain manuscript text is sent externally. Inline formatting is preserved; citation, note and cross-reference nodes and code marks remain outside translation requests."
+
+#. OMI translation key: /uncataloguedUi/components-volumefrontmattereditor/ojs-contributors-77987e6
+msgctxt "/uncataloguedUi/components-volumefrontmattereditor/ojs-contributors-77987e6"
+msgid "OJS contributors"
+msgstr "OJS contributors"
+
+#. OMI translation key: /uncataloguedUi/components-volumefrontmattereditor/corresponding-author-e698aed
+msgctxt "/uncataloguedUi/components-volumefrontmattereditor/corresponding-author-e698aed"
+msgid "· Corresponding author"
+msgstr "· Corresponding author"
+
+#. OMI translation key: /uncataloguedUi/editor-extensions-omivisualblockextension/visual-element-b542d6d
+msgctxt "/uncataloguedUi/editor-extensions-omivisualblockextension/visual-element-b542d6d"
+msgid "Visual element"
+msgstr "Visual element"
+
+#. OMI translation key: /uncataloguedUi/editor-useeditorproofreading/this-block-is-too-large-for-live-language-checking-52cb7e0
+msgctxt "/uncataloguedUi/editor-useeditorproofreading/this-block-is-too-large-for-live-language-checking-52cb7e0"
+msgid "This block is too large for live language checking."
+msgstr "This block is too large for live language checking."
+
+#. OMI translation key: /uncataloguedUi/modules-archaeology-archaeologypanel/invalid-archaeology-json-file-ec8d222
+msgctxt "/uncataloguedUi/modules-archaeology-archaeologypanel/invalid-archaeology-json-file-ec8d222"
+msgid "Invalid archaeology JSON file."
+msgstr "Invalid archaeology JSON file."
+
+#. OMI translation key: /uncataloguedUi/modules-archaeology-archaeologypanel/import-json-1a58943
+msgctxt "/uncataloguedUi/modules-archaeology-archaeologypanel/import-json-1a58943"
+msgid "Import JSON"
+msgstr "Import JSON"
+
+#. OMI translation key: /uncataloguedUi/modules-archaeology-archaeologypanel/cultural-heritage-2932e85
+msgctxt "/uncataloguedUi/modules-archaeology-archaeologypanel/cultural-heritage-2932e85"
+msgid "Cultural heritage"
+msgstr "Cultural heritage"
+
+#. OMI translation key: /uncataloguedUi/modules-legal-sources-legalsourcespanel/eu-law-international-agreements-and-related-national-r-dda5257
+msgctxt "/uncataloguedUi/modules-legal-sources-legalsourcespanel/eu-law-international-agreements-and-related-national-r-dda5257"
+msgid "EU law, international agreements, and related national references."
+msgstr "EU law, international agreements, and related national references."
+
+#. OMI translation key: /uncataloguedUi/modules-legal-sources-legalsourcespanel/case-law-of-the-court-of-justice-of-the-european-union-0445f63
+msgctxt "/uncataloguedUi/modules-legal-sources-legalsourcespanel/case-law-of-the-court-of-justice-of-the-european-union-0445f63"
+msgid "Case law of the Court of Justice of the European Union."
+msgstr "Case law of the Court of Justice of the European Union."
+
+#. OMI translation key: /uncataloguedUi/modules-legal-sources-legalsourcespanel/treaties-registered-with-or-filed-at-the-united-nation-8f6a105
+msgctxt "/uncataloguedUi/modules-legal-sources-legalsourcespanel/treaties-registered-with-or-filed-at-the-united-nation-8f6a105"
+msgid "Treaties registered with or filed at the United Nations."
+msgstr "Treaties registered with or filed at the United Nations."
+
+#. OMI translation key: /uncataloguedUi/modules-legal-sources-legalsourcespanel/united-nations-treaty-collection-7e83010
+msgctxt "/uncataloguedUi/modules-legal-sources-legalsourcespanel/united-nations-treaty-collection-7e83010"
+msgid "United Nations Treaty Collection"
+msgstr "United Nations Treaty Collection"
+
+#. OMI translation key: /uncataloguedUi/modules-legal-sources-legalsourcespanel/roman-law-library-universite-grenoble-alpes-2dde115
+msgctxt "/uncataloguedUi/modules-legal-sources-legalsourcespanel/roman-law-library-universite-grenoble-alpes-2dde115"
+msgid "Roman Law Library · Université Grenoble Alpes"
+msgstr "Roman Law Library · Université Grenoble Alpes"
+
+#. OMI translation key: /uncataloguedUi/modules-legal-sources-legalsourcespanel/university-collection-of-roman-law-texts-and-historica-259e334
+msgctxt "/uncataloguedUi/modules-legal-sources-legalsourcespanel/university-collection-of-roman-law-texts-and-historica-259e334"
+msgid "University collection of Roman law texts and historical legal sources."
+msgstr "University collection of Roman law texts and historical legal sources."
+
+#. OMI translation key: /uncataloguedUi/modules-legal-sources-legalsourcespanel/the-1983-code-the-eastern-churches-code-and-the-dicast-d8bc1f0
+msgctxt "/uncataloguedUi/modules-legal-sources-legalsourcespanel/the-1983-code-the-eastern-churches-code-and-the-dicast-d8bc1f0"
+msgid "The 1983 Code, the Eastern Churches’ Code, and the Dicastery for Legislative Texts."
+msgstr "The 1983 Code, the Eastern Churches’ Code, and the Dicastery for Legislative Texts."
+
+#. OMI translation key: /uncataloguedUi/modules-legal-sources-legalsourcespanel/vatican-canon-law-sources-ba70d33
+msgctxt "/uncataloguedUi/modules-legal-sources-legalsourcespanel/vatican-canon-law-sources-ba70d33"
+msgid "Vatican canon law sources"
+msgstr "Vatican canon law sources"
+
+#. OMI translation key: /uncataloguedUi/modules-statistical-analysis-statisticalanalysispanel/loading-dataset-f6c53bd
+msgctxt "/uncataloguedUi/modules-statistical-analysis-statisticalanalysispanel/loading-dataset-f6c53bd"
+msgid "Loading dataset…"
+msgstr "Loading dataset…"
+
+#. OMI translation key: /uncataloguedUi/components-continuousmanuscripteditor/studio-will-automatically-invite-email-after-saving-th-2061bd0
+msgctxt "/uncataloguedUi/components-continuousmanuscripteditor/studio-will-automatically-invite-email-after-saving-th-2061bd0"
+msgid "Studio will automatically invite {email} after saving the manuscript to your cloud storage."
+msgstr "Studio will automatically invite {email} after saving the manuscript to your cloud storage."
+
+#. OMI translation key: /uncataloguedUi/components-collaborationinvitationgate/invited-as-role-for-workspace-0c87d6c
+msgctxt "/uncataloguedUi/components-collaborationinvitationgate/invited-as-role-for-workspace-0c87d6c"
+msgid "Invited as {role} for {workspace}"
+msgstr "Invited as {role} for {workspace}"
+
+#. OMI translation key: /uncataloguedUi/components-collaborationinvitationgate/signed-in-as-name-accepting-adds-this-account-as-a-col-ea9edcf
+msgctxt "/uncataloguedUi/components-collaborationinvitationgate/signed-in-as-name-accepting-adds-this-account-as-a-col-ea9edcf"
+msgid "Signed in as {name}. Accepting adds this account as a collaborator."
+msgstr "Signed in as {name}. Accepting adds this account as a collaborator."

@@ -30,6 +30,7 @@ import {
 } from '../services/integrationApi';
 import type { OmiManuscript } from '../types/omi';
 import './IntegrationExecutionWorkspace.css';
+import { tCatalog } from '../i18n';
 
 const DEFAULT_EXTENSION_MANIFEST = JSON.stringify({
   model: 'omi-integration-extension',
@@ -334,59 +335,59 @@ export function IntegrationExecutionWorkspace() {
   return (
     <div className="omi-integration-workspace">
       <section className="omi-integration-workspace-card">
-        <header><Sparkles size={18} aria-hidden="true" /><div><h4>AI provider configuration</h4><p>Configure an OpenAI-compatible chat-completions endpoint. The API secret is encrypted server-side and is never returned to the browser.</p></div></header>
+        <header><Sparkles size={18} aria-hidden="true" /><div><h4>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/ai-provider-configuration-f698443")}</h4><p>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/configure-an-openai-compatible-chat-completions-endpoi-1df8fe5")}</p></div></header>
         <div className="omi-integration-workspace-grid">
-          <label><span>HTTPS endpoint</span><input type="url" value={aiEndpoint} onChange={(event) => setAiEndpoint(event.target.value)} /></label>
+          <label><span>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/https-endpoint-9078755")}</span><input type="url" value={aiEndpoint} onChange={(event) => setAiEndpoint(event.target.value)} /></label>
           <label><span>Model</span><input value={aiModel} onChange={(event) => setAiModel(event.target.value)} /></label>
-          <label><span>API secret</span><input type="password" autoComplete="off" value={aiSecret} onChange={(event) => setAiSecret(event.target.value)} /></label>
+          <label><span>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/api-secret-0eb1e2c")}</span><input type="password" autoComplete="off" value={aiSecret} onChange={(event) => setAiSecret(event.target.value)} /></label>
         </div>
         <div className="omi-integration-card__actions">
-          <button type="button" className="studio-menu-primary-action" disabled={aiConfigBusy} onClick={() => void saveAiConfiguration()}>{aiConfigBusy ? 'Saving…' : 'Save AI provider'}</button>
-          <button type="button" className="studio-menu-secondary-action" disabled={aiConfigBusy} onClick={() => void testAiConfiguration()}>Test configuration</button>
+          <button type="button" className="studio-menu-primary-action" disabled={aiConfigBusy} onClick={() => void saveAiConfiguration()}>{aiConfigBusy ? 'Saving…' : tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/save-ai-provider-43cd787")}</button>
+          <button type="button" className="studio-menu-secondary-action" disabled={aiConfigBusy} onClick={() => void testAiConfiguration()}>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/test-configuration-6f766a7")}</button>
         </div>
         {aiConfigNotice ? <p role="status">{aiConfigNotice}</p> : null}
         {aiConfigError ? <p className="omi-integration-error" role="alert">{aiConfigError}</p> : null}
       </section>
 
       <section className="omi-integration-workspace-card">
-        <header><Languages size={18} aria-hidden="true" /><div><h4>DeepL translation workspace</h4><p>Translate structured OMI content without rewriting citations, cross-references, bibliography records, code blocks, or equations.</p></div></header>
+        <header><Languages size={18} aria-hidden="true" /><div><h4>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/deepl-translation-workspace-ad788d9")}</h4><p>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translate-structured-omi-content-without-rewriting-cit-6e2685b")}</p></div></header>
         <div className="omi-integration-workspace-grid">
-          <label><span>Scope</span><select value={translationScope} onChange={(event) => setTranslationScope(event.target.value as 'section' | 'manuscript')}><option value="section">Current section</option><option value="manuscript">Whole manuscript</option></select></label>
-          <label><span>Target language</span><select value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)}>{TARGET_LANGUAGES.map(([value, label]) => <option value={value} key={value}>{label} ({value})</option>)}</select></label>
+          <label><span>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/scope-4651a34")}</span><select value={translationScope} onChange={(event) => setTranslationScope(event.target.value as 'section' | 'manuscript')}><option value="section">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/current-section-0cf15e6")}</option><option value="manuscript">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/whole-manuscript-26a3f8b")}</option></select></label>
+          <label><span>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/target-language-f137c97")}</span><select value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)}>{TARGET_LANGUAGES.map(([value, label]) => <option value={value} key={value}>{label} ({value})</option>)}</select></label>
         </div>
-        {translationScope === 'section' ? <small>Current section: {selectedSection?.title || 'Untitled section'}</small> : null}
+        {translationScope === 'section' ? <small>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/current-section-13a016b")} {selectedSection?.title || 'Untitled section'}</small> : null}
         <div className="omi-integration-card__actions">
-          <button type="button" className="studio-menu-primary-action" disabled={translationBusy} onClick={() => void translateScope()}>{translationBusy ? 'Translating…' : 'Translate'}</button>
-          <button type="button" className="studio-menu-secondary-action" disabled={translationBusy || !translatedManuscript} onClick={() => void persistVariant()}>Save as language variant</button>
+          <button type="button" className="studio-menu-primary-action" disabled={translationBusy} onClick={() => void translateScope()}>{translationBusy ? tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translating-ae47b9e") : tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translate-2be17aa")}</button>
+          <button type="button" className="studio-menu-secondary-action" disabled={translationBusy || !translatedManuscript} onClick={() => void persistVariant()}>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/save-as-language-variant-d2ce9b4")}</button>
         </div>
         {translationError ? <p className="omi-integration-error" role="alert">{translationError}</p> : null}
-        {translatedSegments.length ? <div className="omi-translation-preview"><strong>Translation preview</strong>{translatedSegments.slice(0, 8).map((segment) => <p key={segment.id}>{segment.text}</p>)}{translatedSegments.length > 8 ? <small>+ {translatedSegments.length - 8} more structured segments</small> : null}</div> : null}
-        {variants.length ? <div className="omi-integration-record-list"><strong>Saved variants</strong>{variants.map((variant) => <div key={variant.id} className="omi-integration-record"><span><b>{variant.targetLocale}</b> · {variant.scope.kind}{variant.scope.id ? ` · ${variant.scope.id}` : ''} · {new Date(variant.updatedAt).toLocaleString()}</span><button type="button" className="studio-menu-secondary-action" onClick={() => void removeVariant(variant.id)}><Trash2 size={14} aria-hidden="true" /> Delete</button></div>)}</div> : null}
+        {translatedSegments.length ? <div className="omi-translation-preview"><strong>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translation-preview-cb9856a")}</strong>{translatedSegments.slice(0, 8).map((segment) => <p key={segment.id}>{segment.text}</p>)}{translatedSegments.length > 8 ? <small>+ {translatedSegments.length - 8} {tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/more-structured-segments-5be05a4")}</small> : null}</div> : null}
+        {variants.length ? <div className="omi-integration-record-list"><strong>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/saved-variants-6880354")}</strong>{variants.map((variant) => <div key={variant.id} className="omi-integration-record"><span><b>{variant.targetLocale}</b> · {variant.scope.kind}{variant.scope.id ? ` · ${variant.scope.id}` : ''} · {new Date(variant.updatedAt).toLocaleString()}</span><button type="button" className="studio-menu-secondary-action" onClick={() => void removeVariant(variant.id)}><Trash2 size={14} aria-hidden="true" /> Delete</button></div>)}</div> : null}
       </section>
 
       <section className="omi-integration-workspace-card">
-        <header><Bot size={18} aria-hidden="true" /><div><h4>OMI agents</h4><p>Agents return suggestions by default. They never mutate manuscript state on the server.</p></div></header>
+        <header><Bot size={18} aria-hidden="true" /><div><h4>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/omi-agents-50c3bc1")}</h4><p>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/agents-return-suggestions-by-default-they-never-mutate-092a80d")}</p></div></header>
         <div className="omi-integration-workspace-grid">
-          <label><span>Agent</span><select value={agentId} onChange={(event) => setAgentId(event.target.value as BuiltInAgentId)}><option value="language-editor">Language editor</option><option value="metadata-assistant">Metadata assistant</option><option value="summarizer">Summarizer</option><option value="citation-checker">Citation checker</option></select></label>
-          <label><span>Scope</span><select value={agentScope} onChange={(event) => setAgentScope(event.target.value as typeof agentScope)}><option value="section">Current section</option><option value="manuscript">Whole manuscript</option><option value="metadata">Metadata</option><option value="references">References</option></select></label>
+          <label><span>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/agent-5ce2e6f")}</span><select value={agentId} onChange={(event) => setAgentId(event.target.value as BuiltInAgentId)}><option value="language-editor">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/language-editor-d8036c0")}</option><option value="metadata-assistant">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/metadata-assistant-3642647")}</option><option value="summarizer">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/summarizer-0ec21c9")}</option><option value="citation-checker">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/citation-checker-67ee923")}</option></select></label>
+          <label><span>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/scope-4651a34")}</span><select value={agentScope} onChange={(event) => setAgentScope(event.target.value as typeof agentScope)}><option value="section">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/current-section-0cf15e6")}</option><option value="manuscript">{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/whole-manuscript-26a3f8b")}</option><option value="metadata">Metadata</option><option value="references">References</option></select></label>
         </div>
-        <div className="omi-integration-card__actions"><button type="button" className="studio-menu-primary-action" disabled={agentBusy} onClick={() => void runAgent()}>{agentBusy ? 'Running…' : 'Create suggestion'}</button></div>
+        <div className="omi-integration-card__actions"><button type="button" className="studio-menu-primary-action" disabled={agentBusy} onClick={() => void runAgent()}>{agentBusy ? tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/running-7ef25a7") : tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/create-suggestion-7fd1425")}</button></div>
         {agentError ? <p className="omi-integration-error" role="alert">{agentError}</p> : null}
-        {agentSuggestion ? <div className="omi-agent-suggestion"><strong>Suggestion</strong><pre>{agentSuggestion}</pre><small>Review the suggestion before applying it. Selection-level suggestions can be applied explicitly from the editor toolbar.</small></div> : null}
+        {agentSuggestion ? <div className="omi-agent-suggestion"><strong>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/suggestion-ab9befa")}</strong><pre>{agentSuggestion}</pre><small>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/review-the-suggestion-before-applying-it-selection-lev-c9a9cb4")}</small></div> : null}
       </section>
 
       <section className="omi-integration-workspace-card">
-        <header><Puzzle size={18} aria-hidden="true" /><div><h4>Extension SDK registry</h4><p>Register OMI Integration Extension API v1 manifests with explicit capabilities and scoped permissions.</p></div></header>
+        <header><Puzzle size={18} aria-hidden="true" /><div><h4>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/extension-sdk-registry-ce5a009")}</h4><p>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/register-omi-integration-extension-api-v1-manifests-wi-8cbf04e")}</p></div></header>
         <textarea className="omi-extension-manifest-editor" spellCheck={false} value={manifestText} onChange={(event) => setManifestText(event.target.value)} />
-        <div className="omi-integration-card__actions"><button type="button" className="studio-menu-primary-action" disabled={extensionBusy} onClick={() => void registerExtension()}>{extensionBusy ? 'Saving…' : 'Register manifest'}</button></div>
+        <div className="omi-integration-card__actions"><button type="button" className="studio-menu-primary-action" disabled={extensionBusy} onClick={() => void registerExtension()}>{extensionBusy ? 'Saving…' : tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/register-manifest-baebfbf")}</button></div>
         {extensionError ? <p className="omi-integration-error" role="alert">{extensionError}</p> : null}
         {extensions.length ? <div className="omi-integration-record-list">{extensions.map((extension) => <div key={extension.id} className="omi-integration-record"><span><b>{extension.manifest.name}</b> · {extension.extensionId} · v{extension.manifest.version}</span><button type="button" className="studio-menu-secondary-action" disabled={extensionBusy} onClick={() => void removeExtension(extension.extensionId)}><Trash2 size={14} aria-hidden="true" /> Remove</button></div>)}</div> : null}
       </section>
 
       <section className="omi-integration-workspace-card">
-        <header><FileClock size={18} aria-hidden="true" /><div><h4>Integration audit trail</h4><p>The log stores operation metadata and SHA-256 digests, not manuscript text or provider secrets.</p></div><button type="button" className="studio-menu-secondary-action" onClick={() => void refreshStoredData()}><RefreshCw size={14} aria-hidden="true" /> Refresh</button></header>
+        <header><FileClock size={18} aria-hidden="true" /><div><h4>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/integration-audit-trail-0733f98")}</h4><p>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/the-log-stores-operation-metadata-and-sha-256-digests--eff5136")}</p></div><button type="button" className="studio-menu-secondary-action" onClick={() => void refreshStoredData()}><RefreshCw size={14} aria-hidden="true" /> {tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/refresh-56e3bad")}</button></header>
         {auditError ? <p className="omi-integration-error" role="alert">{auditError}</p> : null}
-        <div className="omi-integration-audit-list">{auditEvents.map((event) => <div className="omi-integration-audit-row" key={event.id}><span className={`omi-integration-status omi-integration-status--${event.status === 'success' ? 'connected' : 'available'}`}>{event.status}</span><strong>{event.providerId}</strong><span>{event.operation}</span><span>{event.scope.kind}</span><span>{event.inputLength ?? 0} → {event.outputLength ?? 0} chars</span><time dateTime={event.createdAt}>{new Date(event.createdAt).toLocaleString()}</time></div>)}</div>
+        <div className="omi-integration-audit-list">{auditEvents.map((event) => <div className="omi-integration-audit-row" key={event.id}><span className={`omi-integration-status omi-integration-status--${event.status === 'success' ? 'connected' : 'available'}`}>{event.status}</span><strong>{event.providerId}</strong><span>{event.operation}</span><span>{event.scope.kind}</span><span>{event.inputLength ?? 0} → {event.outputLength ?? 0} {tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/chars-76a91d6")}</span><time dateTime={event.createdAt}>{new Date(event.createdAt).toLocaleString()}</time></div>)}</div>
       </section>
     </div>
   );

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { BlockEditor } from './BlockEditor';
 import './LazyBlockEditor.css';
+import { tCatalog } from '../i18n';
 
 interface LazyBlockEditorProps {
   blockId: string;
@@ -63,7 +64,7 @@ export function LazyBlockEditor({
       className="omi-block-editor omi-block-editor--deferred"
       data-block-id={blockId}
       id={`omi-target-${blockId}`}
-      aria-label="Deferred manuscript paragraph"
+      aria-label={tCatalog("/uncataloguedUi/components-lazyblockeditor/deferred-manuscript-paragraph-d0e7ac5")}
     >
       <div
         className="omi-tiptap-editor omi-block-editor__deferred-preview"

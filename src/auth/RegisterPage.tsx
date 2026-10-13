@@ -13,6 +13,7 @@ import {
 import {
   useTranslation,
   type AuthTranslationKey,
+  tCatalog,
 } from '../i18n';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { OrcidEnvironmentBadge } from '../components/OrcidEnvironmentBadge';
@@ -180,8 +181,8 @@ export function RegisterPage({
             {invitationToken && !invitationError ? (
               <p className="auth-field-hint auth-register-invitation-hint">
                 {invitationLoading
-                  ? 'Loading assignment invitation…'
-                  : 'Complete your Studio registration to open the assignment sent to this e-mail address.'}
+                  ? tCatalog("/uncataloguedUi/auth-registerpage/loading-assignment-invitation-70ca527")
+                  : tCatalog("/uncataloguedUi/auth-registerpage/complete-your-studio-registration-to-open-the-assignme-8696998")}
               </p>
             ) : null}
           </header>
@@ -189,19 +190,11 @@ export function RegisterPage({
           {invitationToken && orcidProvider?.enabled && !invitationError ? (
             <div className="auth-form auth-register-orcid">
               <a className="auth-primary-button" href={getOrcidAuthUrl({ invitationToken })}>
-                {locale === 'hu'
-                  ? 'Meghívás elfogadása ORCID-dal'
-                  : locale === 'de'
-                    ? 'Einladung mit ORCID annehmen'
-                    : 'Accept invitation with ORCID'}
+                {tCatalog("/uncataloguedUi/auth-registerpage/accept-invitation-with-orcid-95d8722")}
               </a>
               <OrcidEnvironmentBadge provider={orcidProvider} locale={locale} />
               <div className="auth-field-hint">
-                {locale === 'hu'
-                  ? 'Az ORCID-hitelesítés aktiválja a meghívott Stúdió-fiókot; külön Stúdió-jelszó létrehozása nem szükséges.'
-                  : locale === 'de'
-                    ? 'Die ORCID-Authentifizierung aktiviert das eingeladene Studio-Konto; ein separates Studio-Passwort ist nicht erforderlich.'
-                    : 'ORCID authentication activates the invited Studio account; a separate Studio password is not required.'}
+                {tCatalog("/uncataloguedUi/auth-registerpage/orcid-authentication-activates-the-invited-studio-acco-867c8f6")}
               </div>
             </div>
           ) : null}
@@ -242,7 +235,7 @@ export function RegisterPage({
                 }}
               />
               {invitedEmail ? (
-                <div className="auth-field-hint">This e-mail address is fixed by the invitation.</div>
+                <div className="auth-field-hint">{tCatalog("/uncataloguedUi/auth-registerpage/this-e-mail-address-is-fixed-by-the-invitation-d9ae7e0")}</div>
               ) : null}
             </div>
 

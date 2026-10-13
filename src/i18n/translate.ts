@@ -1,7 +1,12 @@
 import { authSupplementalTranslations } from './authSupplementalTranslations';
 import { authTranslations, type AuthTranslationKey } from './authTranslations';
 import { DEFAULT_LOCALE, translations } from './config';
+import { resolveInitialUiLocale } from './storage';
 import { getReturnedSupplementalString } from './returnedTranslationOverlay';
+import {
+  interpolateCatalogTranslation,
+  resolveCatalogTranslation,
+} from './catalogTranslation';
 import type {
   SupportedLocale,
   TranslationDictionary,
@@ -67,4 +72,24 @@ export function translate(
     key;
 
   return localizeStudioName(locale, value);
+}
+
+export function translateCatalog(
+  locale: SupportedLocale,
+  key: string,
+  values: Record<string, string | number> = {},
+): string {
+  const value =
+    resolveCatalogTranslation(translations[locale], key) ??
+    resolveCatalogTranslation(translations[DEFAULT_LOCALE], key) ??
+    key;
+  const interpolated = interpolateCatalogTranslation(value, values);
+  return localizeStudioName(locale, interpolated);
+}
+
+export function tCatalog(
+  key: string,
+  values: Record<string, string | number> = {},
+): string {
+  return translateCatalog(resolveInitialUiLocale(), key, values);
 }

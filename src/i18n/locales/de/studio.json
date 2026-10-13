@@ -1660,5 +1660,205 @@
         "failed": "Die Formel konnte nicht eingefügt werden."
       }
     }
+  },
+  "uncataloguedUi": {
+    "app": {
+      "loading-external-manuscript-fb96d07": "Loading external manuscript…",
+      "unable-to-load-manuscript-29ad65e": "Unable to load manuscript"
+    },
+    "auth-loginpage": {
+      "write-naturally-structure-once-publish-everywhere-d2b9a80": "Write naturally. Structure once. Publish everywhere.",
+      "orcid-sign-in-uses-the-verified-orcid-id-linked-to-you-e32910e": "ORCID sign-in uses the verified ORCID iD linked to your Studio account."
+    },
+    "auth-registerpage": {
+      "loading-assignment-invitation-70ca527": "Loading assignment invitation…",
+      "complete-your-studio-registration-to-open-the-assignme-8696998": "Complete your Studio registration to open the assignment sent to this e-mail address.",
+      "accept-invitation-with-orcid-95d8722": "Accept invitation with ORCID",
+      "orcid-authentication-activates-the-invited-studio-acco-867c8f6": "ORCID authentication activates the invited Studio account; a separate Studio password is not required.",
+      "this-e-mail-address-is-fixed-by-the-invitation-d9ae7e0": "This e-mail address is fixed by the invitation."
+    },
+    "components-collaborationchat": {
+      "document-chat-88aa5ac": "Document chat"
+    },
+    "components-collaborationinvitationgate": {
+      "manuscript-collaboration-invitation-f32a232": "Manuscript collaboration invitation",
+      "accept-invitation-0b918ca": "Accept invitation",
+      "decline-b59cf9e": "Decline",
+      "sign-in-with-the-invited-email-address-to-accept-this--467f451": "Sign in with the invited email address to accept this invitation.",
+      "invited-as-role-for-workspace-0c87d6c": "Invited as {role} for {workspace}",
+      "signed-in-as-name-accepting-adds-this-account-as-a-col-ea9edcf": "Signed in as {name}. Accepting adds this account as a collaborator."
+    },
+    "components-continuousmanuscripteditor": {
+      "save-to-cloud-for-shared-editing-53bdfe0": "Save to cloud for shared editing",
+      "cloud-storage-52fa5e7": "Cloud storage",
+      "no-cloud-storage-is-connected-connect-one-in-settings--3befaa1": "No cloud storage is connected. Connect one in Settings, then enter the author email again.",
+      "save-and-continue-3b033f4": "Save and continue",
+      "studio-will-automatically-invite-email-after-saving-th-2061bd0": "Studio will automatically invite {email} after saving the manuscript to your cloud storage."
+    },
+    "components-customexportpanel": {
+      "all-6a72085": "All",
+      "justify-536d274": "Justify"
+    },
+    "components-editorreviewmode": {
+      "unable-to-load-editorial-assignments-d330d67": "Unable to load editorial assignments.",
+      "editorial-assignments-67c28ef": "Editorial Assignments",
+      "editor-only-view-participant-and-author-identities-are-0dd782d": "Editor-only view. Participant and author identities are available here while author-facing and participant-facing APIs apply their own privacy boundaries.",
+      "back-to-studio-b458395": "Back to Studio",
+      "editorial-assignments-bd72213": "Editorial assignments",
+      "assignments-057d58c": "Assignments",
+      "round-988748a": "· Round",
+      "no-editorial-assignments-450981b": "No editorial assignments.",
+      "round-ec7b598": "Round",
+      "author-identity-f83da8a": "Author identity",
+      "affiliation-7767fe9": "Affiliation:",
+      "no-author-account-is-linked-to-this-manuscript-workspa-8350ffd": "No author account is linked to this manuscript workspace.",
+      "assigned-participant-cb46a43": "Assigned participant",
+      "author-facing-alias-42afcc5": "Author-facing alias:",
+      "role-61e4c27": "Role:",
+      "assignment-feedback-ea897d6": "Assignment feedback",
+      "confidential-to-editor-edfdb4f": "Confidential to editor",
+      "visible-to-author-6adc2c3": "Visible to author",
+      "no-feedback-yet-dd9e490": "No feedback yet.",
+      "no-editorial-assignment-selected-c9870be": "No editorial assignment selected."
+    },
+    "components-footer": {
+      "vision-40b0906": "Vision",
+      "documentation-9e9cf32": "Documentation",
+      "roadmap-8119e7f": "Roadmap",
+      "studio-5b23bd7": "Studio",
+      "community-bfd58ee": "Community",
+      "support-f32d5a3": "Support",
+      "github-sponsors-2bdab7e": "GitHub Sponsors",
+      "wiki-4f983a6": "Wiki",
+      "project-f6f4da8": "Project",
+      "funding-partnerships-6f9e7ea": "Funding & Partnerships",
+      "grant-readiness-pack-b5f8c28": "Grant Readiness Pack",
+      "privacy-policy-7ceacdc": "Privacy policy",
+      "share-open-manuscript-studio-63a31e8": "Share Open Manuscript Studio",
+      "share-09ca55c": "Share",
+      "share-24897bc": "Share…",
+      "open-standards-for-scholarly-publishing-963cefb": "Open standards for scholarly publishing.",
+      "open-manuscript-initiative-contributors-3561518": "Open Manuscript Initiative Contributors.",
+      "omi-studio-9672390": "OMI Studio ·"
+    },
+    "components-institutionalprofilessettings": {
+      "ror-deb99ae": "ROR:"
+    },
+    "components-integrationexecutionworkspace": {
+      "ai-provider-configuration-f698443": "AI provider configuration",
+      "configure-an-openai-compatible-chat-completions-endpoi-1df8fe5": "Configure an OpenAI-compatible chat-completions endpoint. The API secret is encrypted server-side and is never returned to the browser.",
+      "https-endpoint-9078755": "HTTPS endpoint",
+      "api-secret-0eb1e2c": "API secret",
+      "save-ai-provider-43cd787": "Save AI provider",
+      "test-configuration-6f766a7": "Test configuration",
+      "deepl-translation-workspace-ad788d9": "DeepL translation workspace",
+      "translate-structured-omi-content-without-rewriting-cit-6e2685b": "Translate structured OMI content without rewriting citations, cross-references, bibliography records, code blocks, or equations.",
+      "current-section-0cf15e6": "Current section",
+      "scope-4651a34": "Scope",
+      "whole-manuscript-26a3f8b": "Whole manuscript",
+      "target-language-f137c97": "Target language",
+      "current-section-13a016b": "Current section:",
+      "translate-2be17aa": "Translate",
+      "translating-ae47b9e": "Translating…",
+      "save-as-language-variant-d2ce9b4": "Save as language variant",
+      "more-structured-segments-5be05a4": "more structured segments",
+      "translation-preview-cb9856a": "Translation preview",
+      "saved-variants-6880354": "Saved variants",
+      "agents-return-suggestions-by-default-they-never-mutate-092a80d": "Agents return suggestions by default. They never mutate manuscript state on the server.",
+      "omi-agents-50c3bc1": "OMI agents",
+      "agent-5ce2e6f": "Agent",
+      "citation-checker-67ee923": "Citation checker",
+      "language-editor-d8036c0": "Language editor",
+      "metadata-assistant-3642647": "Metadata assistant",
+      "summarizer-0ec21c9": "Summarizer",
+      "create-suggestion-7fd1425": "Create suggestion",
+      "running-7ef25a7": "Running…",
+      "review-the-suggestion-before-applying-it-selection-lev-c9a9cb4": "Review the suggestion before applying it. Selection-level suggestions can be applied explicitly from the editor toolbar.",
+      "suggestion-ab9befa": "Suggestion",
+      "extension-sdk-registry-ce5a009": "Extension SDK registry",
+      "register-omi-integration-extension-api-v1-manifests-wi-8cbf04e": "Register OMI Integration Extension API v1 manifests with explicit capabilities and scoped permissions.",
+      "register-manifest-baebfbf": "Register manifest",
+      "integration-audit-trail-0733f98": "Integration audit trail",
+      "refresh-56e3bad": "Refresh",
+      "the-log-stores-operation-metadata-and-sha-256-digests--eff5136": "The log stores operation metadata and SHA-256 digests, not manuscript text or provider secrets.",
+      "chars-76a91d6": "chars"
+    },
+    "components-lazyblockeditor": {
+      "deferred-manuscript-paragraph-d0e7ac5": "Deferred manuscript paragraph"
+    },
+    "components-omiagentsworkspace": {
+      "omi-agents-252aafe": "OMI Agents"
+    },
+    "components-publicationartifactpanel": {
+      "first-configure-an-ojs-or-omp-connection-in-integratio-3b77850": "First configure an OJS or OMP connection in Integrations.",
+      "publishing-connection-3c9fa55": "Publishing connection"
+    },
+    "components-publicationprofilepanel": {
+      "print-pdf-css-82d29a8": "Print / PDF CSS"
+    },
+    "components-publicationstyleexportpanel": {
+      "pdf-e0012bd": "PDF /"
+    },
+    "components-referencelookuppanel": {
+      "web-ca84d13": "web",
+      "mtmt-02f100e": "MTMT"
+    },
+    "components-reviewmode": {
+      "unable-to-load-the-review-assignment-18c5f43": "Unable to load the review assignment."
+    },
+    "components-reviewportal": {
+      "loading-peer-review-workspace-cef04d4": "Loading peer review workspace…"
+    },
+    "components-reviewstructuredblock": {
+      "chart-source-data-44e4bcf": "chart · source data"
+    },
+    "components-scholarlymetadatapanel": {
+      "metadata-language-71c8dda": "Metadata language"
+    },
+    "components-selectionactiontoolbar": {
+      "selection-actions-292f133": "Selection actions"
+    },
+    "components-selectionintegrationdialog": {
+      "select-text-before-using-deepl-8ecb6fd": "Select text before using DeepL.",
+      "this-block-contains-no-translatable-text-5ace29e": "This block contains no translatable text.",
+      "select-text-before-running-an-agent-e26f526": "Select text before running an agent.",
+      "ai-suggestion-for-selected-text-2693cfb": "AI suggestion for selected text",
+      "translate-manuscript-text-8b840e2": "Translate manuscript text",
+      "agent-suggestion-8059275": "Agent suggestion",
+      "deepl-translation-83ad2de": "DeepL translation",
+      "selected-text-7bb2287": "Selected text",
+      "whole-block-45f6767": "Whole block",
+      "apply-translation-d9f42be": "Apply translation",
+      "apply-suggestion-06e2622": "Apply suggestion",
+      "only-plain-manuscript-text-is-sent-externally-inline-f-9384372": "Only plain manuscript text is sent externally. Inline formatting is preserved; citation, note and cross-reference nodes and code marks remain outside translation requests."
+    },
+    "components-volumefrontmattereditor": {
+      "ojs-contributors-77987e6": "OJS contributors",
+      "corresponding-author-e698aed": "· Corresponding author"
+    },
+    "editor-extensions-omivisualblockextension": {
+      "visual-element-b542d6d": "Visual element"
+    },
+    "editor-useeditorproofreading": {
+      "this-block-is-too-large-for-live-language-checking-52cb7e0": "This block is too large for live language checking."
+    },
+    "modules-archaeology-archaeologypanel": {
+      "invalid-archaeology-json-file-ec8d222": "Invalid archaeology JSON file.",
+      "import-json-1a58943": "Import JSON",
+      "cultural-heritage-2932e85": "Cultural heritage"
+    },
+    "modules-legal-sources-legalsourcespanel": {
+      "eu-law-international-agreements-and-related-national-r-dda5257": "EU law, international agreements, and related national references.",
+      "case-law-of-the-court-of-justice-of-the-european-union-0445f63": "Case law of the Court of Justice of the European Union.",
+      "treaties-registered-with-or-filed-at-the-united-nation-8f6a105": "Treaties registered with or filed at the United Nations.",
+      "united-nations-treaty-collection-7e83010": "United Nations Treaty Collection",
+      "roman-law-library-universite-grenoble-alpes-2dde115": "Roman Law Library · Université Grenoble Alpes",
+      "university-collection-of-roman-law-texts-and-historica-259e334": "University collection of Roman law texts and historical legal sources.",
+      "the-1983-code-the-eastern-churches-code-and-the-dicast-d8bc1f0": "The 1983 Code, the Eastern Churches’ Code, and the Dicastery for Legislative Texts.",
+      "vatican-canon-law-sources-ba70d33": "Vatican canon law sources"
+    },
+    "modules-statistical-analysis-statisticalanalysispanel": {
+      "loading-dataset-f6c53bd": "Loading dataset…"
+    }
   }
 }

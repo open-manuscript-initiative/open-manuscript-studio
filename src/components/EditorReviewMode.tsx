@@ -2,6 +2,7 @@ import { getStudioApiBaseUrl } from '../services/studioServer';
 import { useEffect, useState } from 'react';
 
 import './ReviewMode.css';
+import { tCatalog } from '../i18n';
 
 interface PersonSummary {
   userId: string;
@@ -69,7 +70,7 @@ export function EditorReviewMode({ initialReviews }: { initialReviews?: EditorRe
         setReviews(next);
         setSelectedId(next[0]?.id ?? null);
       })
-      .catch((caught) => setError(caught instanceof Error ? caught.message : 'Unable to load editorial assignments.'));
+      .catch((caught) => setError(caught instanceof Error ? caught.message : tCatalog("/uncataloguedUi/components-editorreviewmode/unable-to-load-editorial-assignments-d330d67")));
   }, [initialReviews]);
 
   const selected = reviews.find((item) => item.id === selectedId) ?? reviews[0];
@@ -82,17 +83,17 @@ export function EditorReviewMode({ initialReviews }: { initialReviews?: EditorRe
       <header className="review-mode__header">
         <div>
           <div className="review-mode__eyebrow">Open Manuscript Studio</div>
-          <h1>Editorial Assignments</h1>
-          <p>Editor-only view. Participant and author identities are available here while author-facing and participant-facing APIs apply their own privacy boundaries.</p>
+          <h1>{tCatalog("/uncataloguedUi/components-editorreviewmode/editorial-assignments-67c28ef")}</h1>
+          <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/editor-only-view-participant-and-author-identities-are-0dd782d")}</p>
         </div>
-        <a className="review-mode__back" href="/">Back to Studio</a>
+        <a className="review-mode__back" href="/">{tCatalog("/uncataloguedUi/components-editorreviewmode/back-to-studio-b458395")}</a>
       </header>
 
       {error ? <div className="review-mode__error" role="alert">{error}</div> : null}
 
       <div className="review-mode__layout">
-        <aside className="review-mode__list" aria-label="Editorial assignments">
-          <h2>Assignments</h2>
+        <aside className="review-mode__list" aria-label={tCatalog("/uncataloguedUi/components-editorreviewmode/editorial-assignments-bd72213")}>
+          <h2>{tCatalog("/uncataloguedUi/components-editorreviewmode/assignments-057d58c")}</h2>
           {reviews.map((review) => (
             <button
               key={review.id}
@@ -102,12 +103,12 @@ export function EditorReviewMode({ initialReviews }: { initialReviews?: EditorRe
             >
               <strong>Manuscript {review.manuscriptId}</strong>
               <span>{assignmentLabels[review.assignmentType]}</span>
-              <span>{review.reviewerAlias} · Round {review.reviewRound}</span>
+              <span>{review.reviewerAlias} {tCatalog("/uncataloguedUi/components-editorreviewmode/round-988748a")} {review.reviewRound}</span>
               {review.assignmentType === 'translation' ? <span>{review.sourceLanguage ?? '?'} → {review.targetLanguage ?? '?'}</span> : null}
               <span>{review.status.replaceAll('_', ' ')}</span>
             </button>
           ))}
-          {!reviews.length ? <p className="review-mode__empty">No editorial assignments.</p> : null}
+          {!reviews.length ? <p className="review-mode__empty">{tCatalog("/uncataloguedUi/components-editorreviewmode/no-editorial-assignments-450981b")}</p> : null}
         </aside>
 
         <section className="review-mode__content">
@@ -117,7 +118,7 @@ export function EditorReviewMode({ initialReviews }: { initialReviews?: EditorRe
                 <div>
                   <div className="review-mode__eyebrow">Manuscript {selected.manuscriptId}</div>
                   <h2>{assignmentLabels[selected.assignmentType]}</h2>
-                  <p>Round {selected.reviewRound} · {selected.anonymityMode.replaceAll('_', ' ')} · {selected.status.replaceAll('_', ' ')}{languagePair ? ` · ${languagePair}` : ''}</p>
+                  <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/round-ec7b598")} {selected.reviewRound} · {selected.anonymityMode.replaceAll('_', ' ')} · {selected.status.replaceAll('_', ' ')}{languagePair ? ` · ${languagePair}` : ''}</p>
                 </div>
                 <span className="review-mode__status">
                   {selected.assignmentType === 'scientific_review'
@@ -127,40 +128,40 @@ export function EditorReviewMode({ initialReviews }: { initialReviews?: EditorRe
               </section>
 
               <section className="review-mode__card">
-                <h2>Author identity</h2>
+                <h2>{tCatalog("/uncataloguedUi/components-editorreviewmode/author-identity-f83da8a")}</h2>
                 {selected.authors.length ? selected.authors.map((author) => (
                   <article key={author.userId} className="review-mode__feedback">
                     <strong>{author.fullName}</strong>
                     <p>{author.email}</p>
-                    {author.affiliation ? <p>Affiliation: {author.affiliation}</p> : null}
+                    {author.affiliation ? <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/affiliation-7767fe9")} {author.affiliation}</p> : null}
                     {author.orcid ? <p>ORCID: {author.orcid}</p> : null}
                   </article>
-                )) : <p>No author account is linked to this manuscript workspace.</p>}
+                )) : <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/no-author-account-is-linked-to-this-manuscript-workspa-8350ffd")}</p>}
               </section>
 
               <section className="review-mode__card">
-                <h2>Assigned participant</h2>
+                <h2>{tCatalog("/uncataloguedUi/components-editorreviewmode/assigned-participant-cb46a43")}</h2>
                 <article className="review-mode__feedback">
                   <strong>{selected.reviewer.fullName}</strong>
                   <p>{selected.reviewer.email}</p>
-                  {selected.reviewer.affiliation ? <p>Affiliation: {selected.reviewer.affiliation}</p> : null}
+                  {selected.reviewer.affiliation ? <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/affiliation-7767fe9")} {selected.reviewer.affiliation}</p> : null}
                   {selected.reviewer.orcid ? <p>ORCID: {selected.reviewer.orcid}</p> : null}
-                  <p>Author-facing alias: <strong>{selected.reviewerAlias}</strong></p>
-                  <p>Role: <strong>{assignmentLabels[selected.assignmentType]}</strong></p>
+                  <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/author-facing-alias-42afcc5")} <strong>{selected.reviewerAlias}</strong></p>
+                  <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/role-61e4c27")} <strong>{assignmentLabels[selected.assignmentType]}</strong></p>
                 </article>
               </section>
 
               <section className="review-mode__card">
-                <h2>Assignment feedback</h2>
+                <h2>{tCatalog("/uncataloguedUi/components-editorreviewmode/assignment-feedback-ea897d6")}</h2>
                 {selected.feedback.length ? selected.feedback.map((feedback) => (
                   <article key={feedback.id} className="review-mode__feedback">
-                    <strong>{feedback.visibility === 'editor_only' ? 'Confidential to editor' : 'Visible to author'}</strong>
+                    <strong>{feedback.visibility === 'editor_only' ? tCatalog("/uncataloguedUi/components-editorreviewmode/confidential-to-editor-edfdb4f") : tCatalog("/uncataloguedUi/components-editorreviewmode/visible-to-author-6adc2c3")}</strong>
                     <p>{feedback.body}</p>
                   </article>
-                )) : <p>No feedback yet.</p>}
+                )) : <p>{tCatalog("/uncataloguedUi/components-editorreviewmode/no-feedback-yet-dd9e490")}</p>}
               </section>
             </>
-          ) : <section className="review-mode__card"><p>No editorial assignment selected.</p></section>}
+          ) : <section className="review-mode__card"><p>{tCatalog("/uncataloguedUi/components-editorreviewmode/no-editorial-assignment-selected-c9870be")}</p></section>}
         </section>
       </div>
     </main>

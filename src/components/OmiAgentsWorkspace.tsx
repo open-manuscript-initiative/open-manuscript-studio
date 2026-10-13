@@ -2,7 +2,7 @@ import { Bot, Check, CheckCircle2, ChevronLeft, ChevronRight, Clipboard, ShieldC
 import { useMemo, useState } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { useTranslation, tCatalog } from '../i18n';
 import {
   applyStructuredTranslations,
   buildStructuredTranslationPlan,
@@ -296,7 +296,7 @@ export function OmiAgentsWorkspace() {
       <header className="omi-agents-workspace__header">
         <div className="omi-agents-workspace__icon"><Bot size={22} aria-hidden="true" /></div>
         <div>
-          <h3 id="omi-agents-workspace-title">OMI Agents</h3>
+          <h3 id="omi-agents-workspace-title">{tCatalog("/uncataloguedUi/components-omiagentsworkspace/omi-agents-252aafe")}</h3>
           <p>{copy.description}</p>
         </div>
       </header>
@@ -448,7 +448,7 @@ function getCopy(locale: string) {
     description: 'Az aktív kéziratot a Stúdió szerverén futó OMI agentekkel elemezheted. A mobilalkalmazás nem tárol AI API-kulcsot.',
     safety: 'Az agent eredménye javaslat. A kéziratot nem módosítja automatikusan; a szerző dönt a felhasználásáról.',
     statusUnknown: 'Kapcsolat még nincs ellenőrizve.', ready: 'OMI Agents használatra kész.', notReady: 'OMI Agents nincs használatra kész.',
-    checking: 'Ellenőrzés…', check: 'Kapcsolat ellenőrzése', agent: 'Agent', scope: 'Hatókör', currentSection: 'Aktuális szakasz', untitled: 'Névtelen szakasz',
+    checking: 'Ellenőrzés…', check: 'Kapcsolat ellenőrzése', agent: tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/agent-5ce2e6f"), scope: 'Hatókör', currentSection: 'Aktuális szakasz', untitled: 'Névtelen szakasz',
     run: 'Agent futtatása', running: 'Agent dolgozik…', emptyScope: 'A kiválasztott hatókörben nincs feldolgozható tartalom.',
     suggestion: 'Agent javaslata', structuredSuggestion: 'Szerkesztési javaslat', model: 'Modell', copy: 'Másolás', copied: 'Másolva', reject: 'Elutasítás', dismiss: 'Javaslat bezárása',
     accept: 'Elfogadás', previous: 'Előző', next: 'Következő', original: 'Eredeti', proposed: 'Javasolt', reason: 'Indoklás', noChanges: 'A nyelvi szerkesztő nem talált módosítandó szövegrészt.', applyFailed: 'A javaslat nem alkalmazható a dokumentum megfelelő blokkjára.',
@@ -462,7 +462,7 @@ function getCopy(locale: string) {
     description: 'Analysiere das aktive Manuskript mit OMI Agents, die über den Studio-Server ausgeführt werden. Die mobile App speichert keinen AI-API-Schlüssel.',
     safety: 'Agent-Ergebnisse sind Vorschläge. Das Manuskript wird nicht automatisch geändert; die Autorin oder der Autor entscheidet über die Übernahme.',
     statusUnknown: 'Verbindung wurde noch nicht geprüft.', ready: 'OMI Agents ist einsatzbereit.', notReady: 'OMI Agents ist nicht einsatzbereit.',
-    checking: 'Prüfen…', check: 'Verbindung prüfen', agent: 'Agent', scope: 'Bereich', currentSection: 'Aktueller Abschnitt', untitled: 'Unbenannter Abschnitt',
+    checking: 'Prüfen…', check: 'Verbindung prüfen', agent: tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/agent-5ce2e6f"), scope: 'Bereich', currentSection: 'Aktueller Abschnitt', untitled: 'Unbenannter Abschnitt',
     run: 'Agent ausführen', running: 'Agent arbeitet…', emptyScope: 'Der ausgewählte Bereich enthält keinen verarbeitbaren Inhalt.',
     suggestion: 'Agent-Vorschlag', structuredSuggestion: 'Redaktionsvorschlag', model: 'Modell', copy: 'Kopieren', copied: 'Kopiert', reject: 'Ablehnen', dismiss: 'Vorschlag schließen',
     accept: 'Übernehmen', previous: 'Zurück', next: 'Weiter', original: 'Original', proposed: 'Vorschlag', reason: 'Begründung', noChanges: 'Die Sprachredaktion hat keine zu ändernden Textsegmente gefunden.', applyFailed: 'Der Vorschlag konnte nicht auf den zugehörigen Dokumentblock angewendet werden.',
@@ -476,14 +476,14 @@ function getCopy(locale: string) {
     description: 'Analyse the active manuscript with OMI Agents executed through the Studio server. The mobile app never stores the AI provider API key.',
     safety: 'Agent output is a suggestion. It never changes the manuscript automatically; the author decides whether to use it.',
     statusUnknown: 'Connection has not been checked yet.', ready: 'OMI Agents is ready.', notReady: 'OMI Agents is not ready.',
-    checking: 'Checking…', check: 'Check connection', agent: 'Agent', scope: 'Scope', currentSection: 'Current section', untitled: 'Untitled section',
+    checking: 'Checking…', check: 'Check connection', agent: tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/agent-5ce2e6f"), scope: tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/scope-4651a34"), currentSection: tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/current-section-0cf15e6"), untitled: 'Untitled section',
     run: 'Run agent', running: 'Agent is working…', emptyScope: 'The selected scope contains no content that the agent can process.',
     suggestion: 'Agent suggestion', structuredSuggestion: 'Editing suggestion', model: 'Model', copy: 'Copy', copied: 'Copied', reject: 'Reject', dismiss: 'Close suggestion',
     accept: 'Accept', previous: 'Previous', next: 'Next', original: 'Original', proposed: 'Proposed', reason: 'Reason', noChanges: 'The language editor found no text segments that need changes.', applyFailed: 'The suggestion could not be applied to its document block.',
     reviewNote: 'Review the suggestion before incorporating it into the manuscript.', structuredReviewNote: 'Accepting changes only the addressed OMI text segment; citations, notes and other structured nodes stay intact.',
     progress: (current: number, total: number) => `Agent is working… ${current}/${total}`,
     proposalCounter: (current: number, total: number) => `Suggestion ${current}/${total}`,
-    agents: { languageEditor: 'Language editor', metadataAssistant: 'Metadata assistant', summarizer: 'Summarizer', citationChecker: 'Citation checker' },
-    scopes: { section: 'Current section', manuscript: 'Whole manuscript', metadata: 'Metadata', references: 'References' },
+    agents: { languageEditor: tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/language-editor-d8036c0"), metadataAssistant: tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/metadata-assistant-3642647"), summarizer: tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/summarizer-0ec21c9"), citationChecker: tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/citation-checker-67ee923") },
+    scopes: { section: tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/current-section-0cf15e6"), manuscript: tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/whole-manuscript-26a3f8b"), metadata: 'Metadata', references: 'References' },
   };
 }

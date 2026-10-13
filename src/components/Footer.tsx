@@ -3,6 +3,7 @@ import { isTauri } from '@tauri-apps/api/core';
 import { useEffect, useState } from 'react';
 
 import { BUILD_INFO } from '../version';
+import { tCatalog } from '../i18n';
 
 type DeploymentMode = 'personal' | 'institutional';
 
@@ -104,34 +105,34 @@ export function Footer() {
         <div className="omi-footer-columns">
           <section className="omi-footer-column">
             <h2>Open Manuscript Initiative</h2>
-            <a href="https://openmanuscript.org/docs/vision/" target="_blank" rel="noopener noreferrer">Vision</a>
-            <a href="https://openmanuscript.org/docs/vision/" target="_blank" rel="noopener noreferrer">Documentation</a>
-            <a href="https://openmanuscript.org/docs/governance/roadmap-to-omi-1.0/" target="_blank" rel="noopener noreferrer">Roadmap</a>
-            <a href="https://openmanuscript.org/studio/" target="_blank" rel="noopener noreferrer">Studio</a>
+            <a href="https://openmanuscript.org/docs/vision/" target="_blank" rel="noopener noreferrer">{tCatalog("/uncataloguedUi/components-footer/vision-40b0906")}</a>
+            <a href="https://openmanuscript.org/docs/vision/" target="_blank" rel="noopener noreferrer">{tCatalog("/uncataloguedUi/components-footer/documentation-9e9cf32")}</a>
+            <a href="https://openmanuscript.org/docs/governance/roadmap-to-omi-1.0/" target="_blank" rel="noopener noreferrer">{tCatalog("/uncataloguedUi/components-footer/roadmap-8119e7f")}</a>
+            <a href="https://openmanuscript.org/studio/" target="_blank" rel="noopener noreferrer">{tCatalog("/uncataloguedUi/components-footer/studio-5b23bd7")}</a>
           </section>
 
           <section className="omi-footer-column">
-            <h2>Community</h2>
-            <a href="https://openmanuscript.org/support/" target="_blank" rel="noopener noreferrer">Support</a>
-            <a href="https://github.com/sponsors/open-manuscript-initiative" target="_blank" rel="noopener noreferrer">GitHub Sponsors</a>
+            <h2>{tCatalog("/uncataloguedUi/components-footer/community-bfd58ee")}</h2>
+            <a href="https://openmanuscript.org/support/" target="_blank" rel="noopener noreferrer">{tCatalog("/uncataloguedUi/components-footer/support-f32d5a3")}</a>
+            <a href="https://github.com/sponsors/open-manuscript-initiative" target="_blank" rel="noopener noreferrer">{tCatalog("/uncataloguedUi/components-footer/github-sponsors-2bdab7e")}</a>
             <a href="https://github.com/open-manuscript-initiative/open-manuscript-studio" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <a href="https://github.com/open-manuscript-initiative/open-manuscript-studio/wiki" target="_blank" rel="noopener noreferrer">Wiki</a>
+            <a href="https://github.com/open-manuscript-initiative/open-manuscript-studio/wiki" target="_blank" rel="noopener noreferrer">{tCatalog("/uncataloguedUi/components-footer/wiki-4f983a6")}</a>
             <a href="https://www.facebook.com/share/19AmDMBVoe/" target="_blank" rel="noopener noreferrer">Facebook</a>
           </section>
 
           <section className="omi-footer-column">
-            <h2>Project</h2>
-            <a href="https://openmanuscript.org/docs/governance/funding-and-partnerships/" target="_blank" rel="noopener noreferrer">Funding &amp; Partnerships</a>
-            <a href="https://openmanuscript.org/docs/governance/grant-readiness-pack/" target="_blank" rel="noopener noreferrer">Grant Readiness Pack</a>
-            <a href="https://openmanuscript.org/docs/governance/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy policy</a>
+            <h2>{tCatalog("/uncataloguedUi/components-footer/project-f6f4da8")}</h2>
+            <a href="https://openmanuscript.org/docs/governance/funding-and-partnerships/" target="_blank" rel="noopener noreferrer">{tCatalog("/uncataloguedUi/components-footer/funding-partnerships-6f9e7ea")}</a>
+            <a href="https://openmanuscript.org/docs/governance/grant-readiness-pack/" target="_blank" rel="noopener noreferrer">{tCatalog("/uncataloguedUi/components-footer/grant-readiness-pack-b5f8c28")}</a>
+            <a href="https://openmanuscript.org/docs/governance/privacy-policy/" target="_blank" rel="noopener noreferrer">{tCatalog("/uncataloguedUi/components-footer/privacy-policy-7ceacdc")}</a>
             <a href="https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>
           </section>
         </div>
 
-        <div className="omi-footer-share" aria-label="Share Open Manuscript Studio">
-          <span className="omi-footer-share__label">Share</span>
+        <div className="omi-footer-share" aria-label={tCatalog("/uncataloguedUi/components-footer/share-open-manuscript-studio-63a31e8")}>
+          <span className="omi-footer-share__label">{tCatalog("/uncataloguedUi/components-footer/share-09ca55c")}</span>
           {nativeShareSupported ? (
-            <button type="button" onClick={() => void shareStudio()}>Share…</button>
+            <button type="button" onClick={() => void shareStudio()}>{tCatalog("/uncataloguedUi/components-footer/share-24897bc")}</button>
           ) : null}
           <a href={socialShareUrl('facebook')} target="_blank" rel="noopener noreferrer">Facebook</a>
           <a href={socialShareUrl('linkedin')} target="_blank" rel="noopener noreferrer">LinkedIn</a>
@@ -141,12 +142,12 @@ export function Footer() {
         <div className="omi-footer-message">
           <strong>Open Manuscript Studio</strong>
           <span>Write naturally. Structure once. Publish everywhere.</span>
-          <span>Open standards for scholarly publishing.</span>
-          <span>© {new Date().getFullYear()} Open Manuscript Initiative Contributors.</span>
+          <span>{tCatalog("/uncataloguedUi/components-footer/open-standards-for-scholarly-publishing-963cefb")}</span>
+          <span>© {new Date().getFullYear()} {tCatalog("/uncataloguedUi/components-footer/open-manuscript-initiative-contributors-3561518")}</span>
         </div>
 
         <div className="omi-footer-build">
-          {deploymentLabel ? <span>OMI Studio · {deploymentLabel}</span> : null}
+          {deploymentLabel ? <span>{tCatalog("/uncataloguedUi/components-footer/omi-studio-9672390")} {deploymentLabel}</span> : null}
           {orcidEnvironment === 'sandbox' ? <span>ORCID Sandbox</span> : null}
           <span>v{BUILD_INFO.version}</span>
           <span>Build #{BUILD_INFO.build}</span>

@@ -11,6 +11,7 @@ import {
   checkProofreading,
   type ProofreadingIssue,
 } from '../services/proofreadingApi';
+import { tCatalog } from '../i18n';
 
 export interface EditorProofreadingState {
   issues: ProofreadingIssue[];
@@ -76,7 +77,7 @@ export function useEditorProofreading(
         return;
       }
       if (text.length > 20_000) {
-        setError('This block is too large for live language checking.');
+        setError(tCatalog("/uncataloguedUi/editor-useeditorproofreading/this-block-is-too-large-for-live-language-checking-52cb7e0"));
         return;
       }
 

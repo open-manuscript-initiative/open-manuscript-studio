@@ -55,6 +55,7 @@ import type { OmiManuscript } from './types/omi';
 
 import './styles/auth.css';
 import './styles/history.css';
+import { tCatalog } from './i18n';
 
 type AuthView = 'login' | 'register';
 type ExternalImportState =
@@ -478,7 +479,7 @@ function StudioApplication() {
         <section className="auth-card">
           <div className="auth-brand">
             <div className="auth-brand-name">Open Manuscript Studio</div>
-            <div className="auth-brand-description">Loading external manuscript…</div>
+            <div className="auth-brand-description">{tCatalog("/uncataloguedUi/app/loading-external-manuscript-fb96d07")}</div>
           </div>
         </section>
       </main>
@@ -490,7 +491,7 @@ function StudioApplication() {
       <main className="auth-page" aria-live="assertive">
         <section className="auth-card">
           <div className="auth-header">
-            <h1>Unable to load manuscript</h1>
+            <h1>{tCatalog("/uncataloguedUi/app/unable-to-load-manuscript-29ad65e")}</h1>
             <p>{externalImportState.message}</p>
           </div>
         </section>
