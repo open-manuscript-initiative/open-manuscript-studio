@@ -34,7 +34,7 @@ test('English, German and Hungarian PO catalogs are complete and drive the runti
   assert.ok(englishEntries.length > 0, 'English PO catalog must not be empty');
 
   for (const entry of englishEntries) {
-    assert.equal(entry.source, entry.translation, \`English msgstr must match msgid at \${entry.pointer}\`);
+    assert.equal(entry.source, entry.translation, `English msgstr must match msgid at ${entry.pointer}`);
   }
 
   for (const locale of primaryLocales) {
@@ -43,8 +43,8 @@ test('English, German and Hungarian PO catalogs are complete and drive the runti
     const actualKeys = [...byPointer.keys()].sort();
     const expectedKeys = [...englishByPointer.keys()].sort();
 
-    assert.equal(byPointer.size, entries.length, \`\${locale} catalog keys must be unique\`);
-    assert.deepEqual(actualKeys, expectedKeys, \`\${locale} catalog must cover every English UI key\`);
+    assert.equal(byPointer.size, entries.length, `${locale} catalog keys must be unique`);
+    assert.deepEqual(actualKeys, expectedKeys, `${locale} catalog must cover every English UI key`);
 
     const runtime = JSON.parse(
       await readFile(
@@ -55,16 +55,16 @@ test('English, German and Hungarian PO catalogs are complete and drive the runti
 
     for (const [pointer, sourceEntry] of englishByPointer) {
       const entry = byPointer.get(pointer);
-      assert.equal(entry.source, sourceEntry.source, \`\${locale} msgid must match English at \${pointer}\`);
-      assert.ok(entry.translation.trim(), \`\${locale} msgstr must be non-empty at \${pointer}\`);
+      assert.equal(entry.source, sourceEntry.source, `${locale} msgid must match English at ${pointer}`);
+      assert.ok(entry.translation.trim(), `${locale} msgstr must be non-empty at ${pointer}`);
       assert.equal(
         readPointerValue(runtime, pointer),
         entry.translation,
-        \`\${locale} runtime value must be compiled from PO at \${pointer}\`,
+        `${locale} runtime value must be compiled from PO at ${pointer}`,
       );
     }
 
     const runtimeKeys = new Map(flattenStrings(runtime));
-    assert.deepEqual([...runtimeKeys.keys()].sort(), expectedKeys, \`\${locale} runtime key set must match PO\`);
+    assert.deepEqual([...runtimeKeys.keys()].sort(), expectedKeys, `${locale} runtime key set must match PO`);
   }
 });
