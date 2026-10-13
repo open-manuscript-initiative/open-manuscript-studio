@@ -769,7 +769,7 @@ msgstr "Szoftver"
 #. OMI translation key: /citations/resourceTypes/standard
 msgctxt "/citations/resourceTypes/standard"
 msgid "Standard"
-msgstr "Standard"
+msgstr "Szabvány"
 
 #. OMI translation key: /citations/resourceTypes/archival-source
 msgctxt "/citations/resourceTypes/archival-source"
@@ -824,7 +824,7 @@ msgstr "Táblázat"
 #. OMI translation key: /citations/locators/folio
 msgctxt "/citations/locators/folio"
 msgid "Folio"
-msgstr "Folio"
+msgstr "Fólió"
 
 #. OMI translation key: /citations/locators/line
 msgctxt "/citations/locators/line"
@@ -3824,7 +3824,7 @@ msgstr "Kategória"
 #. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/lemma
 msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/lemma"
 msgid "Lemma"
-msgstr "Lemma"
+msgstr "Szótári alak"
 
 #. OMI translation key: /researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/morphology
 msgctxt "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/morphology"
@@ -4239,7 +4239,7 @@ msgstr "Katalógusszám"
 #. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/siglum
 msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/siglum"
 msgid "Siglum"
-msgstr "Siglum"
+msgstr "Kéziratjel"
 
 #. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/title
 msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/title"
@@ -4544,7 +4544,7 @@ msgstr "Az egyenlet előnézete"
 #. OMI translation key: /researchModules/mathematics-equation-editor/labels/root
 msgctxt "/researchModules/mathematics-equation-editor/labels/root"
 msgid "Root"
-msgstr "Root"
+msgstr "Gyök"
 
 #. OMI translation key: /researchModules/mathematics-equation-editor/labels/scripts
 msgctxt "/researchModules/mathematics-equation-editor/labels/scripts"
@@ -5199,7 +5199,7 @@ msgstr "Az adatkészlet és a beállítások ezen az eszközön maradnak. A fáj
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/maximum
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/maximum"
 msgid "Maximum"
-msgstr "Maximum"
+msgstr "Maximumérték"
 
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/mean
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/mean"
@@ -5214,7 +5214,7 @@ msgstr "Átlagos különbség (1 − 2)"
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/median
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/median"
 msgid "Median"
-msgstr "Median"
+msgstr "Medián"
 
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/methodNote
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/methodNote"
@@ -5624,12 +5624,12 @@ msgstr "Klinikai vizsgálatok, esettanulmányok, kimeneti mutatók és etikai ny
 #. OMI translation key: /researchModules/shell/translations/modules/org.omi.medical-sciences/overview
 msgctxt "/researchModules/shell/translations/modules/org.omi.medical-sciences/overview"
 msgid "Medical and Health Sciences"
-msgstr "Orvostudomány és egészségtudományok"
+msgstr "Orvostudomány és egészségtudomány"
 
 #. OMI translation key: /researchModules/shell/translations/modules/org.omi.medical-sciences/title
 msgctxt "/researchModules/shell/translations/modules/org.omi.medical-sciences/title"
 msgid "Medical and Health Sciences"
-msgstr "Orvostudomány és egészségtudományok"
+msgstr "Orvostudomány és egészségtudomány"
 
 #. OMI translation key: /researchModules/shell/translations/modules/org.omi.musicology/description
 msgctxt "/researchModules/shell/translations/modules/org.omi.musicology/description"
@@ -6569,7 +6569,7 @@ msgstr "Forrás / kiadás"
 #. OMI translation key: /researchModules/musicology-musicology-panel/words/tempo
 msgctxt "/researchModules/musicology-musicology-panel/words/tempo"
 msgid "Tempo"
-msgstr "Tempo"
+msgstr "Tempó"
 
 #. OMI translation key: /researchModules/musicology-musicology-panel/words/title
 msgctxt "/researchModules/musicology-musicology-panel/words/title"
@@ -6684,7 +6684,7 @@ msgstr "A munkaterület exportálása JSON formátumban"
 #. OMI translation key: /researchModules/health-research-copy/healthCopy/medical-sciences
 msgctxt "/researchModules/health-research-copy/healthCopy/medical-sciences"
 msgid "Medical and Health Sciences"
-msgstr "Orvostudomány és egészségtudományok"
+msgstr "Orvostudomány és egészségtudomány"
 
 #. OMI translation key: /researchModules/health-research-copy/healthCopy/notice
 msgctxt "/researchModules/health-research-copy/healthCopy/notice"
@@ -7089,7 +7089,7 @@ msgstr "GitHub szponzorok"
 #. OMI translation key: /uncataloguedUi/components-footer/wiki-4f983a6
 msgctxt "/uncataloguedUi/components-footer/wiki-4f983a6"
 msgid "Wiki"
-msgstr "Wiki"
+msgstr "Tudástár"
 
 #. OMI translation key: /uncataloguedUi/components-footer/project-f6f4da8
 msgctxt "/uncataloguedUi/components-footer/project-f6f4da8"
@@ -7364,7 +7364,7 @@ msgstr "PDF /"
 #. OMI translation key: /uncataloguedUi/components-referencelookuppanel/web-ca84d13
 msgctxt "/uncataloguedUi/components-referencelookuppanel/web-ca84d13"
 msgid "web"
-msgstr "web"
+msgstr "webes forrás"
 
 #. OMI translation key: /uncataloguedUi/components-referencelookuppanel/mtmt-02f100e
 msgctxt "/uncataloguedUi/components-referencelookuppanel/mtmt-02f100e"
