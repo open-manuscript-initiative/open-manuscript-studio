@@ -45,8 +45,8 @@ test('mathematics and health research help are available in all three base langu
 
   const expectedHealth = {
     en: 'Psychology / Medical and Health Sciences',
-    de: 'Psychologie / Medizin- und Gesundheitswissenschaften',
-    hu: 'Pszichológia / Orvosi és egészségtudományok',
+    de: 'Psychologie / Medizin und Gesundheitswissenschaften',
+    hu: 'Pszichológia / Orvostudomány és egészségtudomány',
   } as const;
 
   for (const locale of locales) {
@@ -85,7 +85,7 @@ function objectBodyAt(source: string, index: number): string {
     }
     if (quote) {
       if (escaped) escaped = false;
-      else if (char === '\\\\') escaped = true;
+      else if (char === String.fromCharCode(92)) escaped = true;
       else if (char === quote) quote = '';
       continue;
     }
@@ -139,7 +139,7 @@ function topLevelKeys(body: string): string[] {
     }
     if (quote) {
       if (escaped) escaped = false;
-      else if (char === '\\\\') escaped = true;
+      else if (char === String.fromCharCode(92)) escaped = true;
       else if (char === quote) quote = '';
       continue;
     }
