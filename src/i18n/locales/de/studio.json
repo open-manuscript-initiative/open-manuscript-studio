@@ -1394,7 +1394,7 @@
           }
         },
         "nara": {
-          "attribution": "This product uses the National Archives Catalog API but is not endorsed or certified by the National Archives and Records Administration.",
+          "attribution": "Dieses Produkt nutzt die API des Katalogs der National Archives, wird jedoch von der National Archives and Records Administration weder unterstützt noch zertifiziert.",
           "dataProvider": "Bestandsgruppe",
           "errorTitle": "Suche nicht verfügbar.",
           "loadMore": "Weitere Ergebnisse laden",
