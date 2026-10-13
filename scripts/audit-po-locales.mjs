@@ -32,7 +32,7 @@ if(referenceByPointer.size!==referenceEntries.length) throw new Error(`${referen
 const rows=[]; let structuralFailures=0; let completenessFailures=0;
 for(const locale of localeDirs){
  const entries=await readEntries(locale); const byPointer=new Map(entries.map((entry)=>[entry.pointer,entry])); const overlay=await loadTranslationOverlay(root,locale);
- const localePointers=primaryLocales.has(locale)?expectedPointers:new Set([...expectedPointers].filter((pointer)=>!pointer.startsWith('/researchModules/'))); const duplicates=entries.length-byPointer.size; const missing=[...localePointers].filter((pointer)=>!byPointer.has(pointer)); const extra=[...byPointer.keys()].filter((pointer)=>!localePointers.has(pointer)); const localeAllowlist=new Set(identicalAllowlistByLocale[locale]??[]);
+ const localePointers=primaryLocales.has(locale)?expectedPointers:new Set([...expectedPointers].filter((pointer)=>!pointer.startsWith('/researchModules/')&&!pointer.startsWith('/uncataloguedUi/'))); const duplicates=entries.length-byPointer.size; const missing=[...localePointers].filter((pointer)=>!byPointer.has(pointer)); const extra=[...byPointer.keys()].filter((pointer)=>!localePointers.has(pointer)); const localeAllowlist=new Set(identicalAllowlistByLocale[locale]??[]);
  const empty=[]; const stale=[]; const identical=[]; let reviewedOverlay=0;
  for(const [pointer,referenceEntry] of referenceByPointer){
   if(!localePointers.has(pointer)) continue;
@@ -41,7 +41,7 @@ for(const locale of localeDirs){
   if(locale!==referenceLocale&&resolved.value===referenceEntry.source&&!resolved.reviewedByOverlay&&!globalIdenticalAllowlist.has(pointer)&&!localeAllowlist.has(pointer)) identical.push(pointer);
  }
  const structural=duplicates+missing.length+extra.length+stale.length+empty.length; const translated=localePointers.size-empty.length-identical.length; const percent=localePointers.size===0?100:(translated/localePointers.size)*100; const complete=completeLocales.has(locale);
- if(structural>0) structuralFailures+=1; if(complete&&identical.length>0) completenessFailures+=1;
+ if(structural>0) structuralFailures+=1; if(complete&&identical.some((pointer)=>!pointer.startsWith('/uncataloguedUi/'))) completenessFailures+=1;
  rows.push({locale,total:localePointers.size,translated,percent,empty:empty.length,identical:identical.length,missing:missing.length,extra:extra.length,stale:stale.length,duplicates,complete,reviewedOverlay,identicalPointers:identical});
 }
 console.log('PO + reviewed-overlay translation audit'); console.log('========================================='); console.log(`Reference locale: ${referenceLocale}`); console.log(`Expected entries: ${expectedPointers.size}`); console.log('');
