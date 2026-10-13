@@ -1,3 +1,4 @@
+import { getResearchModuleCopyByLocale } from '../moduleTranslationCatalog';
 import { normalizeModuleLocale } from '../moduleLocale';
 import { useRef, useState } from 'react';
 import { DOMParser as XmlParser, type Document as XmlDocument, type Element as XmlElement } from '@xmldom/xmldom';
@@ -8,11 +9,7 @@ import '../disciplineWorkspaces.css';
 interface MusicEvent { id:string; measure:string; beat:string; part:string; pitch:string; duration:string; annotation:string; recordingTime:string }
 interface MusicProject { title:string; composer:string; source:string; language:string; key:string; meter:string; tempo:string; recordingUrl:string; events:MusicEvent[] }
 interface Props { locale?:string; storageKey?:string }
-const words={
- hu:{intro:'Kezelje a kotta alapadatait, a zenei eseményeket és a felvételhez illesztett megjegyzéseket. A MusicXML- és MIDI-import szerkeszthető eseményekké alakítja a kottát vagy a hangjegyeket.',title:'Mű címe',composer:'Szerző / zeneszerző',source:'Forrás / kiadás',key:'Hangnem',meter:'Ütemmutató',tempo:'Tempó',recording:'Felvétel URL-je',import:'MusicXML / MIDI importálása',events:'Zenei események',add:'Esemény hozzáadása',measure:'Ütem',beat:'Ütés',part:'Szólam',pitch:'Hang / esemény',duration:'Időtartam',annotation:'Elemzés / változat',recordingTime:'Felvétel időpontja',remove:'Eltávolítás',export:'Projekt JSON letöltése',empty:'Még nincs zenei esemény. Importáljon MusicXML- vagy MIDI-fájlt, vagy vegyen fel egy sort.',error:'A zenei fájl nem olvasható vagy hibás.',language:'A kotta nyelve'},
- en:{intro:'Record score metadata, musical events, and notes aligned to a recording. MusicXML and MIDI imports create editable musical events.',title:'Work title',composer:'Composer / creator',source:'Source / edition',key:'Key',meter:'Time signature',tempo:'Tempo',recording:'Recording URL',import:'Import MusicXML / MIDI',events:'Musical events',add:'Add event',measure:'Measure',beat:'Beat',part:'Part',pitch:'Pitch / event',duration:'Duration',annotation:'Analysis / variant',recordingTime:'Recording time',remove:'Remove',export:'Download project JSON',empty:'No musical events yet. Import a MusicXML or MIDI file, or add an event.',error:'The music file is unreadable or invalid.',language:'Score language'},
- de:{intro:'Erfassen Sie Notendaten, musikalische Ereignisse und mit einer Aufnahme verknüpfte Anmerkungen. MusicXML- und MIDI-Import erstellen bearbeitbare musikalische Ereignisse.',title:'Werktitel',composer:'Komponist / Urheber',source:'Quelle / Ausgabe',key:'Tonart',meter:'Taktart',tempo:'Tempo',recording:'Aufnahme-URL',import:'MusicXML / MIDI importieren',events:'Musikalische Ereignisse',add:'Ereignis hinzufügen',measure:'Takt',beat:'Zählzeit',part:'Stimme',pitch:'Ton / Ereignis',duration:'Dauer',annotation:'Analyse / Variante',recordingTime:'Aufnahmezeit',remove:'Entfernen',export:'Projekt-JSON herunterladen',empty:'Noch keine musikalischen Ereignisse. Importieren Sie eine MusicXML- oder MIDI-Datei oder fügen Sie ein Ereignis hinzu.',error:'Die Musikdatei ist unlesbar oder ungültig.',language:'Sprache der Partitur'}
-};
+const words=getResearchModuleCopyByLocale('musicology-musicology-panel/words');
 const fresh=(language:string):MusicProject=>({title:'',composer:'',source:'',language,key:'',meter:'',tempo:'',recordingUrl:'',events:[]});
 function xmlElements(root: XmlDocument | XmlElement, selector: string): XmlElement[] {
  const segments=selector.trim().split(/\s+/);

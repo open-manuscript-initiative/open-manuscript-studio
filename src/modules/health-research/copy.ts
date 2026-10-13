@@ -1,3 +1,4 @@
+import { getResearchModuleCopyByLocale } from '../moduleTranslationCatalog';
 export const healthFieldLabels: Record<string, Record<string, string>> = {
   "title": {
     "hu": "Kutatás címe",
@@ -95,8 +96,4 @@ export const healthFieldLabels: Record<string, Record<string, string>> = {
     "de": "Aggregierte Ergebnisse und unerwünschte Ereignisse"
   }
 };
-export const healthCopy = {
- hu: { psychology: 'Pszichológia', 'medical-sciences': 'Orvostudomány és egészségtudomány', export: 'Munkatér exportálása JSON-ként', notice: 'Csak anonimizált vagy összesített kutatási leírást tároljon. Ez a munkatér a böngésző helyi tárhelyére ment, nem védett betegnyilvántartás. Ne adjon meg nevet, elérhetőséget, betegazonosítót vagy azonosítható esettörténetet.', shared: 'A meglévő Statisztikai elemzés modulban készíthet elemzést és kísérlettervet; annak hivatkozását itt rögzítse. A pontozási mező szabályleírás, nem automatikus skálakiértékelés.', projection: 'A Beszúrás menü kizárólag a külön megosztható összefoglalót ajánlja fel. Forrás és előnézet-jóváhagyás szükséges. Ellenőrizze kézzel az anonimitást; ez nem automatikus anonimizáló vagy diagnosztikai eszköz.' },
- en: { psychology: 'Psychology', 'medical-sciences': 'Medical and Health Sciences', export: 'Export workspace as JSON', notice: 'Store only anonymized or aggregate research descriptions. This workspace saves to browser local storage; it is not a protected patient record system. Do not enter names, contact details, patient identifiers or identifiable case histories.', shared: 'Use the existing Statistical Analysis module for analyses and experimental design, and record its reference here. Scoring fields describe rules; they do not automatically score instruments.', projection: 'Insert offers only the separate shareable summary, with a source and explicit preview approval. Manually check anonymity; this is not an automatic anonymizer or diagnostic tool.' },
- de: { psychology: 'Psychologie', 'medical-sciences': 'Medizin und Gesundheitswissenschaften', export: 'Arbeitsbereich als JSON exportieren', notice: 'Nur anonymisierte oder aggregierte Forschungsbeschreibungen speichern. Der Arbeitsbereich nutzt lokalen Browserspeicher und ist keine geschützte Patientenakte. Keine Namen, Kontaktdaten, Patientenkennungen oder identifizierbaren Fallgeschichten eingeben.', shared: 'Analysen und Versuchsplanung im vorhandenen Statistikmodul erstellen und hier referenzieren. Auswertungsfelder beschreiben Regeln; Instrumente werden nicht automatisch ausgewertet.', projection: 'Einfügen bietet nur die separate freigabefähige Zusammenfassung an, mit Quelle und ausdrücklicher Vorschaufreigabe. Anonymität manuell prüfen; kein automatischer Anonymisierer oder diagnostisches Werkzeug.' },
-} as const;
+export const healthCopy = getResearchModuleCopyByLocale('health-research-copy/healthCopy') as const;

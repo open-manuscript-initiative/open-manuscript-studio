@@ -3,8 +3,6 @@ import type { TranslationDictionary } from '../i18n/types';
 
 const CATALOG_LOCALES = ['en', 'de', 'hu'] as const;
 
-type CatalogLocale = (typeof CATALOG_LOCALES)[number];
-
 function getAtPointer(dictionary: TranslationDictionary, pointer: string): unknown {
   const tokens = pointer
     .split('/')
@@ -28,8 +26,16 @@ export function getResearchModuleCopyByLocale<T = Record<string, any>>(
   const result = {} as Record<string, T>;
 
   for (const locale of CATALOG_LOCALES) {
-    const localized = getAtPointer(translations[locale] ?? translations.en!, pointer);
-    result[locale] = (localized ?? english) as T;
+    Object.defineProperty(result, locale, {
+      enumerable: true,
+      get: () => {
+        const localized = getAtPointer(
+          translations[locale] ?? translations.en!,
+          pointer,
+        );
+        return (localized ?? english) as T;
+      },
+    });
   }
 
   return result;
