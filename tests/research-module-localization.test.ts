@@ -4,6 +4,7 @@ import { before, test } from 'node:test';
 
 import { loadPrimaryLocaleDictionariesForTest } from './test-primary-locale-dictionaries.ts';
 import { getModuleShellCopy } from '../src/modules/moduleShellTranslations.ts';
+import { getResearchModuleCopyByLocale } from '../src/modules/moduleTranslationCatalog.ts';
 import { normalizeModuleLocale } from '../src/modules/moduleLocale.ts';
 import { appendHealthResearchHelp } from '../src/i18n/helpHealthResearch.ts';
 import { appendMathematicsHelp } from '../src/i18n/helpMathematics.ts';
@@ -36,6 +37,28 @@ test('research module locale normalization keeps English as the default', () => 
   assert.equal(normalizeModuleLocale('en-US'), 'en');
   assert.equal(normalizeModuleLocale('de-DE'), 'de');
   assert.equal(normalizeModuleLocale('hu_HU'), 'hu');
+});
+
+test('runtime locale loading keeps research module shell and search copy localized', () => {
+  const hu = getModuleShellCopy('hu');
+  assert.equal(hu.navigation, 'Kutatási modulok');
+  assert.equal(
+    hu.modules['org.omi.archaeology']?.overview,
+    'Régészeti és kulturális örökségi munkaterület',
+  );
+
+  const de = getModuleShellCopy('de');
+  assert.equal(de.navigation, 'Forschungsmodule');
+  assert.equal(
+    de.modules['org.omi.archaeology']?.overview,
+    'Arbeitsbereich Archäologie und Kulturerbe',
+  );
+
+  const huHealthSearch = getResearchModuleCopyByLocale('health-research-search-copy').hu;
+  assert.equal(
+    huHealthSearch.healthSearchCopy.external,
+    'Külső keresés / intézményi hozzáférés',
+  );
 });
 
 test('mathematics and health research help are available in all three base languages', () => {
