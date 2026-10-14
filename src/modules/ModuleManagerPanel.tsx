@@ -5,6 +5,7 @@ import { MathematicsPanel } from './mathematics/MathematicsPanel';
 import { Component, useEffect, useState, type ErrorInfo, type ReactNode } from 'react';
 
 import { useTranslation } from '../i18n';
+import { translations } from '../i18n/config';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { getServerModulePolicy, saveServerModulePreferences } from './api';
 import { corpusLinguisticsModule, criticalTextEditionModule, culturalHeritageModule, historyArchivesModule, legalSourcesModule, musicologyModule, researchReproducibilityModule, religiousTextsModule, socialResearchMethodsModule, spatialResearchModule, archaeologyModule, experimentalLaboratoryModule, statisticalAnalysisModule, studioModules } from './catalog';
@@ -47,6 +48,34 @@ export function ModuleManagerPanel({
   const userId = String(user?.id ?? 'anonymous');
   const copy = getModuleShellCopy(locale);
   const modules = sortModulesForLocale(studioModules.list(), locale);
+
+  useEffect(() => {
+    const huDictionary = translations.hu as unknown as {
+      researchModules?: Record<string, unknown>;
+    } | undefined;
+    const huResearchModules = huDictionary?.researchModules;
+    const huShell = huResearchModules?.shell as {
+      translations?: {
+        navigation?: unknown;
+        modules?: Record<string, { overview?: unknown }>;
+      };
+    } | undefined;
+    const huHealthSearch = huResearchModules?.['health-research-search-copy'] as {
+      healthSearchCopy?: { external?: unknown; who?: unknown };
+    } | undefined;
+
+    console.info('[module-i18n]', {
+      contextLocale: locale,
+      normalizedLocale: normalizeModuleLocale(locale),
+      huDictionaryLoaded: Boolean(translations.hu),
+      huNavigation: huShell?.translations?.navigation,
+      renderedNavigation: copy.navigation,
+      huArchaeology: huShell?.translations?.modules?.[archaeologyModule.id]?.overview,
+      renderedArchaeology: copy.modules[archaeologyModule.id]?.overview,
+      huHealthSearchExternal: huHealthSearch?.healthSearchCopy?.external,
+      huHealthSearchWho: huHealthSearch?.healthSearchCopy?.who,
+    });
+  }, [locale, copy.navigation, copy.modules[archaeologyModule.id]?.overview]);
   const [preferences, setPreferences] = useState<StudioWorkspaceModulePreferences>(
     () => readStudioModulePreferences(userId, workspaceId),
   );
