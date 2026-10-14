@@ -89,13 +89,19 @@ test('canonical Studio locale dictionaries are lazy-loaded after the English fal
     configSource,
     /import englishDictionaryJson from '\.\/locales\/en\/studio\.json'/,
   );
-  assert.match(configSource, /'\.\/locales\/hu\/studio\.json'[\s\S]*import\('\.\/locales\/hu\/studio\.json'/);
-  assert.doesNotMatch(configSource, /import\.meta\.glob/);
-  assert.doesNotMatch(configSource, /eager:\s*true/);
-  assert.match(
-    configSource,
-    /export async function loadTranslationDictionary\(/,
+  const viteLoaderSource = readFileSync(
+    new URL('../src/i18n/registerViteLocaleLoaders.ts', import.meta.url),
+    'utf8',
   );
+  const mainSource = readFileSync(
+    new URL('../src/main.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(configSource, /export async function loadTranslationDictionary\\(/);
+  assert.match(viteLoaderSource, /import\\.meta\\.glob/);
+  assert.match(viteLoaderSource, /'\\.\\/locales\\/\\*\\/studio\\.json'/);
+  assert.match(mainSource, /import ['"]\\.\\/i18n\\/registerViteLocaleLoaders['"]/);
+  assert.doesNotMatch(viteLoaderSource, /eager:\\s*true/);
 });
 
 test('Studio preloads the active locale and switches languages only after loading', () => {
