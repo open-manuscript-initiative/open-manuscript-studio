@@ -89,8 +89,8 @@ test('canonical Studio locale dictionaries are lazy-loaded after the English fal
     configSource,
     /import englishDictionaryJson from '\.\/locales\/en\/studio\.json'/,
   );
-  assert.match(configSource, /import\.meta\.glob\(/);
-  assert.match(configSource, /!\.\/locales\/en\/studio\.json/);
+  assert.match(configSource, /'\.\/locales\/hu\/studio\.json'[\s\S]*import\('\.\/locales\/hu\/studio\.json'/);
+  assert.doesNotMatch(configSource, /import\.meta\.glob/);
   assert.doesNotMatch(configSource, /eager:\s*true/);
   assert.match(
     configSource,
