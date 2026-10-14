@@ -97,11 +97,11 @@ test('canonical Studio locale dictionaries are lazy-loaded after the English fal
     new URL('../src/main.tsx', import.meta.url),
     'utf8',
   );
-  assert.match(configSource, /export async function loadTranslationDictionary\\(/);
-  assert.match(viteLoaderSource, /import\\.meta\\.glob/);
-  assert.match(viteLoaderSource, /'\\.\\/locales\\/\\*\\/studio\\.json'/);
-  assert.match(mainSource, /import ['"]\\.\\/i18n\\/registerViteLocaleLoaders['"]/);
-  assert.doesNotMatch(viteLoaderSource, /eager:\\s*true/);
+  assert.ok(configSource.includes('export async function loadTranslationDictionary('));
+  assert.ok(viteLoaderSource.includes('import.meta.glob'));
+  assert.ok(viteLoaderSource.includes("'./locales/*/studio.json'"));
+  assert.ok(mainSource.includes("import './i18n/registerViteLocaleLoaders';"));
+  assert.ok(!viteLoaderSource.includes('eager: true'));
 });
 
 test('Studio preloads the active locale and switches languages only after loading', () => {
