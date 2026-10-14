@@ -5,7 +5,7 @@ import { join } from 'node:path';
 const assetsDirectory = new URL('../dist/assets/', import.meta.url);
 const entries = await readdir(assetsDirectory, { withFileTypes: true });
 const javascriptFiles = entries
-  .filter((entry) => entry.isFile() && /\\.m?js$/i.test(entry.name))
+  .filter((entry) => entry.isFile() && /\.m?js$/i.test(entry.name))
   .map((entry) => entry.name);
 const bundles = await Promise.all(
   javascriptFiles.map(async (file) => ({
@@ -14,7 +14,7 @@ const bundles = await Promise.all(
   })),
 );
 
-const allSource = bundles.map(({ source }) => source).join('\\n');
+const allSource = bundles.map(({ source }) => source).join('\n');
 assert.ok(
   allSource.includes('Kutatási modulok'),
   'Hungarian research module navigation must be present in emitted locale chunks.',
@@ -25,7 +25,7 @@ assert.ok(
 );
 assert.doesNotMatch(
   allSource,
-  /import\\(["'][^"']*locales\\/hu\\/studio\\.json["']/,
+  /import\(["'][^"']*locales\/hu\/studio\.json["']/,
   'Production bundles must not request source-tree JSON files directly.',
 );
 
