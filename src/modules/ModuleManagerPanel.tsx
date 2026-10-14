@@ -48,6 +48,8 @@ export function ModuleManagerPanel({
   const userId = String(user?.id ?? 'anonymous');
   const copy = getModuleShellCopy(locale);
   const modules = sortModulesForLocale(studioModules.list(), locale);
+  const renderedNavigation = copy.navigation;
+  const renderedArchaeology = copy.modules[archaeologyModule.id]?.overview;
 
   useEffect(() => {
     const huDictionary = translations.hu as unknown as {
@@ -69,13 +71,13 @@ export function ModuleManagerPanel({
       normalizedLocale: normalizeModuleLocale(locale),
       huDictionaryLoaded: Boolean(translations.hu),
       huNavigation: huShell?.translations?.navigation,
-      renderedNavigation: copy.navigation,
+      renderedNavigation,
       huArchaeology: huShell?.translations?.modules?.[archaeologyModule.id]?.overview,
-      renderedArchaeology: copy.modules[archaeologyModule.id]?.overview,
+      renderedArchaeology,
       huHealthSearchExternal: huHealthSearch?.healthSearchCopy?.external,
       huHealthSearchWho: huHealthSearch?.healthSearchCopy?.who,
     });
-  }, [locale, copy.navigation, copy.modules[archaeologyModule.id]?.overview]);
+  }, [locale, renderedNavigation, renderedArchaeology]);
   const [preferences, setPreferences] = useState<StudioWorkspaceModulePreferences>(
     () => readStudioModulePreferences(userId, workspaceId),
   );
