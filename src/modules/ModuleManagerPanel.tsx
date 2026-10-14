@@ -10,6 +10,7 @@ import { getServerModulePolicy, saveServerModulePreferences } from './api';
 import { corpusLinguisticsModule, criticalTextEditionModule, culturalHeritageModule, historyArchivesModule, legalSourcesModule, musicologyModule, researchReproducibilityModule, religiousTextsModule, socialResearchMethodsModule, spatialResearchModule, archaeologyModule, experimentalLaboratoryModule, statisticalAnalysisModule, studioModules } from './catalog';
 import { getModuleShellCopy } from './moduleShellTranslations';
 import { getResearchModuleCopyByLocale } from './moduleTranslationCatalog';
+import { normalizeModuleLocale } from './moduleLocale';
 import { HistoryArchivesSourcesPanel } from './history-archives/HistoryArchivesSourcesPanel';
 import { ReligiousTextsPanel } from './religious-texts/ReligiousTextsPanel';
 import { CriticalTextEditionPanel } from './critical-text-edition/CriticalTextEditionPanel';
