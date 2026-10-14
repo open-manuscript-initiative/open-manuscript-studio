@@ -9,110 +9,15 @@ import type { SupportedLocale, TranslationDictionary } from './types';
 
 export const DEFAULT_LOCALE: SupportedLocale = 'en';
 
-type LocaleDictionaryLoader = () => Promise<TranslationDictionary>;
+export type LocaleDictionaryLoader = () => Promise<TranslationDictionary>;
 
-const jsonLocaleModules: Record<string, LocaleDictionaryLoader> = {
-  './locales/af/studio.json': () =>
-    import('./locales/af/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/bg/studio.json': () =>
-    import('./locales/bg/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/ca/studio.json': () =>
-    import('./locales/ca/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/cs/studio.json': () =>
-    import('./locales/cs/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/da/studio.json': () =>
-    import('./locales/da/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/de/studio.json': () =>
-    import('./locales/de/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/el/studio.json': () =>
-    import('./locales/el/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/es/studio.json': () =>
-    import('./locales/es/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/et/studio.json': () =>
-    import('./locales/et/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/fi/studio.json': () =>
-    import('./locales/fi/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/fr/studio.json': () =>
-    import('./locales/fr/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/ga/studio.json': () =>
-    import('./locales/ga/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/hr/studio.json': () =>
-    import('./locales/hr/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/hu/studio.json': () =>
-    import('./locales/hu/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/it/studio.json': () =>
-    import('./locales/it/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/lt/studio.json': () =>
-    import('./locales/lt/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/lv/studio.json': () =>
-    import('./locales/lv/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/mt/studio.json': () =>
-    import('./locales/mt/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/nl/studio.json': () =>
-    import('./locales/nl/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/pl/studio.json': () =>
-    import('./locales/pl/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/pt/studio.json': () =>
-    import('./locales/pt/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/ro/studio.json': () =>
-    import('./locales/ro/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/sk/studio.json': () =>
-    import('./locales/sk/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/sl/studio.json': () =>
-    import('./locales/sl/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-  './locales/sv/studio.json': () =>
-    import('./locales/sv/studio.json', { with: { type: 'json' } }).then(
-      (module) => module.default as TranslationDictionary,
-    ),
-};
+const jsonLocaleModules: Record<string, LocaleDictionaryLoader> = {};
+
+export function registerTranslationDictionaryLoaders(
+  loaders: Record<string, LocaleDictionaryLoader>,
+): void {
+  Object.assign(jsonLocaleModules, loaders);
+}
 
 const englishDictionary = englishDictionaryJson as TranslationDictionary;
 
