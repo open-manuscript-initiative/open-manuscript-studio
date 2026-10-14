@@ -149,6 +149,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Verify production locale assets
+        run: node scripts/verify-production-locale-assets.mjs
+
       - name: Prepare portable deployment validation
         run: cp deployment/.env.example deployment/.env
 
