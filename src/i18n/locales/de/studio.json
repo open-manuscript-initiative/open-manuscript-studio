@@ -84,7 +84,9 @@
     "citations": "Zitate",
     "bibliography": "Literaturverzeichnis",
     "documentLanguage": "Dokumentsprache",
-    "originalLanguage": "Originalsprache"
+    "originalLanguage": "Originalsprache",
+    "simpleTextDocument": "Einfaches Textdokument",
+    "simpleTextDocumentDescription": "Eine einfache Schreibumgebung, die Ihre Autorendaten bewahrt und keine Begutachtungs- oder Redaktionsabläufe enthält."
   },
   "notes": {
     "title": "Anmerkungen",

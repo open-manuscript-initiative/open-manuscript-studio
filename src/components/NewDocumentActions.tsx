@@ -2,7 +2,7 @@ import { BookOpen, FilePlus2, LibraryBig } from 'lucide-react';
 
 import { createAndOpenBlankOmiDocument } from '../app/newDocumentActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { tCatalog, useTranslation } from '../i18n';
 import { isMobileStudio } from '../mobile/platform/platform';
 import type { OmiVolumeKind } from '../model/documentProfile';
 
@@ -58,7 +58,7 @@ export function NewDocumentActions({
         </button>
         <button type="button" onClick={createSimpleTextDocument}>
           <FilePlus2 size={20} aria-hidden="true" />
-          <span><strong>{copy.simpleText}</strong><small>{copy.simpleTextDescription}</small></span>
+          <span><strong>{tCatalog("/manuscript/simpleTextDocument")}</strong><small>{tCatalog("/manuscript/simpleTextDocumentDescription")}</small></span>
         </button>
         <button type="button" onClick={() => createVolume('monograph')}>
           <BookOpen size={20} aria-hidden="true" />
@@ -79,8 +79,6 @@ function getCopy(locale: string) {
     description: 'Indítson önálló tanulmányt, egyszerzős monográfiát vagy többszerzős tanulmánykötetet.',
     study: 'Új OMI tanulmány',
     studyDescription: 'Önálló tanulmány saját címmel, metaadatokkal és tartalommal.',
-    simpleText: 'Egyszerű szöveges dokumentum',
-    simpleTextDescription: 'Szerzői adatokkal mentett dokumentum lektorálási és szerkesztőségi funkciók nélkül.',
     monograph: 'Új OMI monográfia',
     monographDescription: 'Egyszerzős kötet fejezetekkel és közös apparátussal.',
     editedVolume: 'Új OMI tanulmánykötet',
@@ -92,8 +90,6 @@ function getCopy(locale: string) {
     description: 'Beginnen Sie einen eigenständigen Beitrag, eine Monografie oder einen Sammelband.',
     study: 'Neue OMI-Studie',
     studyDescription: 'Eigenständiger Beitrag mit eigenem Titel, Metadaten und Inhalt.',
-    simpleText: 'Einfaches Textdokument',
-    simpleTextDescription: 'Dokument mit gespeicherten Autorendaten ohne Begutachtungs- und Redaktionsfunktionen.',
     monograph: 'Neue OMI-Monografie',
     monographDescription: 'Ein einbändiges Werk mit Kapiteln und gemeinsamem Apparat.',
     editedVolume: 'Neuer OMI-Sammelband',
@@ -105,8 +101,6 @@ function getCopy(locale: string) {
     description: 'Start a standalone study, a single-author monograph, or a multi-author edited volume.',
     study: 'New OMI study',
     studyDescription: 'A standalone study with its own title, metadata, and content.',
-    simpleText: 'Simple text document',
-    simpleTextDescription: 'A document that keeps author details without peer-review or editorial workflow tools.',
     monograph: 'New OMI monograph',
     monographDescription: 'A single-author volume with chapters and shared scholarly apparatus.',
     editedVolume: 'New OMI edited volume',
