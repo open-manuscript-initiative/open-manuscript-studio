@@ -11,6 +11,7 @@ import {
 import { accountDeletionRouter } from './routes/accountDeletionRoutes.js';
 import { agentReviewRouter } from './routes/agentReviewRoutes.js';
 import { authRouter } from './routes/authRoutes.js';
+import { passkeyRouter } from './routes/passkeyRoutes.js';
 import { authorSignatureRouter } from './routes/authorSignatureRoutes.js';
 import { centralAdminRouter } from './routes/centralAdminRoutes.js';
 import { cloudOAuthRouter } from './routes/cloudOAuthRoutes.js';
@@ -121,6 +122,7 @@ app.use('/api/auth', linkedIdentityRouter);
 app.use('/api/auth', institutionAdminAuthRouter);
 app.use('/api/auth', institutionalProfileRouter);
 app.use('/api/auth', publicationVenueRouter);
+app.use('/api/auth', passkeyRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/central-admin', centralAdminRouter);
 app.use('/api/institution-admin', institutionAdminApiRouter);
