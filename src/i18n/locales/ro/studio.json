@@ -85,8 +85,8 @@
     "bibliography": "Bibliografie",
     "documentLanguage": "Limba documentului",
     "originalLanguage": "Limba originală",
-    "simpleTextDocument": "Simple text document",
-    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
+    "simpleTextDocument": "Document text simplu",
+    "simpleTextDocumentDescription": "Un document de scriere simplificat, care păstrează datele autorului și nu include instrumente de evaluare inter pares sau flux editorial."
   },
   "notes": {
     "title": "Note",

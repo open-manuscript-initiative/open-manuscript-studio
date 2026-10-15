@@ -85,8 +85,8 @@
     "bibliography": "Bibliografie",
     "documentLanguage": "Jazyk dokumentu",
     "originalLanguage": "Původní jazyk",
-    "simpleTextDocument": "Simple text document",
-    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
+    "simpleTextDocument": "Jednoduchý textový dokument",
+    "simpleTextDocumentDescription": "Přehledný dokument pro psaní, který uchovává údaje o autorovi a neobsahuje nástroje pro odborné recenzní ani redakční procesy."
   },
   "notes": {
     "title": "Poznámky",

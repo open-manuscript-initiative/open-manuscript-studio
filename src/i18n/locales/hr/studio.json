@@ -85,8 +85,8 @@
     "bibliography": "Bibliografija",
     "documentLanguage": "Jezik dokumenta",
     "originalLanguage": "Izvorni jezik",
-    "simpleTextDocument": "Simple text document",
-    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
+    "simpleTextDocument": "Jednostavan tekstualni dokument",
+    "simpleTextDocumentDescription": "Jednostavan dokument za pisanje koji čuva podatke o autoru i ne sadrži alate za stručnu recenziju ni urednički tijek rada."
   },
   "notes": {
     "title": "Bilješke",

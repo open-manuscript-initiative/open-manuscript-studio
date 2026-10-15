@@ -85,8 +85,8 @@
     "bibliography": "Bibliografía",
     "documentLanguage": "Idioma del documento",
     "originalLanguage": "Idioma original",
-    "simpleTextDocument": "Simple text document",
-    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
+    "simpleTextDocument": "Documento de texto sencillo",
+    "simpleTextDocumentDescription": "Un documento de escritura centrado que conserva los datos del autor y no incluye herramientas de revisión por pares ni de flujo editorial."
   },
   "notes": {
     "title": "Notas",

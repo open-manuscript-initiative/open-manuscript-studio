@@ -301,6 +301,16 @@ msgctxt "/manuscript/newDocument"
 msgid "New manuscript"
 msgstr "Nový rukopis"
 
+#. OMI translation key: /manuscript/simpleTextDocument
+msgctxt "/manuscript/simpleTextDocument"
+msgid "Simple text document"
+msgstr "Jednoduchý textový dokument"
+
+#. OMI translation key: /manuscript/simpleTextDocumentDescription
+msgctxt "/manuscript/simpleTextDocumentDescription"
+msgid "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
+msgstr "Přehledný dokument pro psaní, který uchovává údaje o autorovi a neobsahuje nástroje pro odborné recenzní ani redakční procesy."
+
 #. OMI translation key: /manuscript/documentTitle
 msgctxt "/manuscript/documentTitle"
 msgid "Document title"

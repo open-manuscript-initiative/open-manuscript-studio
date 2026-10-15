@@ -85,8 +85,8 @@
     "bibliography": "Βιβλιογραφία",
     "documentLanguage": "Γλώσσα εγγράφου",
     "originalLanguage": "Πρωτότυπη γλώσσα",
-    "simpleTextDocument": "Simple text document",
-    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
+    "simpleTextDocument": "Απλό έγγραφο κειμένου",
+    "simpleTextDocumentDescription": "Ένα λιτό έγγραφο συγγραφής που διατηρεί τα στοιχεία του συγγραφέα και δεν περιλαμβάνει εργαλεία αξιολόγησης από ομοτίμους ή συντακτικής ροής εργασιών."
   },
   "notes": {
     "title": "Σημειώσεις",

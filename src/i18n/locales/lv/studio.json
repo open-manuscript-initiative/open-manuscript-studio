@@ -85,8 +85,8 @@
     "bibliography": "Bibliogrāfija",
     "documentLanguage": "Dokumenta valoda",
     "originalLanguage": "Oriģinālvaloda",
-    "simpleTextDocument": "Simple text document",
-    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
+    "simpleTextDocument": "Vienkāršs teksta dokuments",
+    "simpleTextDocumentDescription": "Rakstīšanai paredzēts dokuments, kurā tiek saglabāti autora dati un nav iekļauti recenzēšanas vai redakcionālās darbplūsmas rīki."
   },
   "notes": {
     "title": "Piezīmes",

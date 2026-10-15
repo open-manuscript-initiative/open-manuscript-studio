@@ -301,6 +301,16 @@ msgctxt "/manuscript/newDocument"
 msgid "New manuscript"
 msgstr "Manuscris nou"
 
+#. OMI translation key: /manuscript/simpleTextDocument
+msgctxt "/manuscript/simpleTextDocument"
+msgid "Simple text document"
+msgstr "Document text simplu"
+
+#. OMI translation key: /manuscript/simpleTextDocumentDescription
+msgctxt "/manuscript/simpleTextDocumentDescription"
+msgid "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
+msgstr "Un document de scriere simplificat, care păstrează datele autorului și nu include instrumente de evaluare inter pares sau flux editorial."
+
 #. OMI translation key: /manuscript/documentTitle
 msgctxt "/manuscript/documentTitle"
 msgid "Document title"

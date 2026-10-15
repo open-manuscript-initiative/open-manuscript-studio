@@ -85,8 +85,8 @@
     "bibliography": "Bibliografija",
     "documentLanguage": "Jezik dokumenta",
     "originalLanguage": "Izvirni jezik",
-    "simpleTextDocument": "Simple text document",
-    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
+    "simpleTextDocument": "Preprost besedilni dokument",
+    "simpleTextDocumentDescription": "Preprost dokument za pisanje, ki ohrani podatke o avtorju in ne vključuje orodij za strokovno recenzijo ali uredniški potek dela."
   },
   "notes": {
     "title": "Opombe",
