@@ -194,3 +194,24 @@ test('contributor fields use content-appropriate widths instead of stretching ac
   assert.match(contributorEditor, /contributor-medium-field/);
   assert.match(contributorEditor, /contributor-large-field/);
 });
+
+
+const closedDocumentCss = readFileSync(
+  new URL('../src/styles/closed-document.css', import.meta.url),
+  'utf8',
+);
+
+test('desktop empty workspace fills the window without oversized controls', () => {
+  assert.match(
+    closedDocumentCss,
+    /@media \(min-width: 761px\) \{[\s\S]*?\.closed-document-page \.closed-document-card \{[^}]*width: 100%;[^}]*max-width: none;[^}]*box-sizing: border-box;[^}]*border: 0;[^}]*background: transparent;[^}]*box-shadow: none;/,
+  );
+  assert.match(
+    closedDocumentCss,
+    /\.closed-document-page \.closed-document-card \.omi-new-document-actions--empty-workspace \.omi-new-document-grid \{[^}]*grid-template-columns: repeat\(auto-fit, minmax\(min\(100%, 18rem\), 22rem\)\)/,
+  );
+  assert.match(
+    closedDocumentCss,
+    /\.closed-document-card \.auth-primary-button \{[^}]*width: fit-content;[^}]*max-width: min\(100%, 28rem\);[^}]*justify-self: center;/,
+  );
+});

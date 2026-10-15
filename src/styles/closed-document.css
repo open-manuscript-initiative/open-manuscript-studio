@@ -267,3 +267,27 @@
     display: none;
   }
 }
+
+.closed-document-card .auth-primary-button {
+  width: fit-content;
+  max-width: min(100%, 28rem);
+  box-sizing: border-box;
+  justify-self: center;
+}
+
+@media (min-width: 761px) {
+  .closed-document-page .closed-document-card {
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .closed-document-page .closed-document-card .omi-new-document-actions--empty-workspace .omi-new-document-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 22rem));
+    justify-content: start;
+  }
+}
