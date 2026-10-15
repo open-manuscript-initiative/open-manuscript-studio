@@ -2,13 +2,14 @@ import { clearDocumentClosedState } from './documentCloseState';
 import { useStudioStore } from './useStudioStore';
 import { createBlankManuscript } from '../document/createBlankManuscript';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
-import type { OmiDocumentKind, OmiVolumeKind } from '../model/documentProfile';
+import type { OmiDocumentKind, OmiEditorMode, OmiVolumeKind } from '../model/documentProfile';
 import { clearCurrentManuscriptFilePath } from '../services/nativeManuscriptFile';
 import type { OmiManuscript } from '../types/omi';
 
 export function createAndOpenBlankOmiDocument(input: {
   kind: OmiDocumentKind;
   volumeKind?: OmiVolumeKind;
+  editorMode?: OmiEditorMode;
   locale: string;
 }): OmiManuscript {
   if (useStudioStore.getState().hasOpenDocument) {

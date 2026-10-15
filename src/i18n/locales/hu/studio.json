@@ -75,6 +75,8 @@
   },
   "manuscript": {
     "newDocument": "Új kézirat",
+    "simpleTextDocument": "Egyszerű szöveges dokumentum",
+    "simpleTextDocumentDescription": "Letisztult írófelület, amely megőrzi a szerző adatait, és nem tartalmaz lektorálási vagy szerkesztőségi munkafolyamatot.",
     "documentTitle": "A dokumentum címe",
     "abstract": "Absztrakt",
     "keywords": "Kulcsszavak",

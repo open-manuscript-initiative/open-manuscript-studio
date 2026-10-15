@@ -84,7 +84,9 @@
     "citations": "Cytowania",
     "bibliography": "Bibliografia",
     "documentLanguage": "Język dokumentu",
-    "originalLanguage": "Język oryginału"
+    "originalLanguage": "Język oryginału",
+    "simpleTextDocument": "Simple text document",
+    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
   },
   "notes": {
     "title": "Przypisy",

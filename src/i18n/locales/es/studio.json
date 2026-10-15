@@ -84,7 +84,9 @@
     "citations": "Citas",
     "bibliography": "Bibliografía",
     "documentLanguage": "Idioma del documento",
-    "originalLanguage": "Idioma original"
+    "originalLanguage": "Idioma original",
+    "simpleTextDocument": "Simple text document",
+    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
   },
   "notes": {
     "title": "Notas",
