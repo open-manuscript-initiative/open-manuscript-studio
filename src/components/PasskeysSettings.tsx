@@ -1,3 +1,4 @@
+import { hasPlatformPasskey } from '../platform/passkeyCapability';
 import { useEffect, useState } from 'react';
 import { startRegistration } from '@simplewebauthn/browser';
 import { Fingerprint, KeyRound, Trash2 } from 'lucide-react';
@@ -56,11 +57,7 @@ export function PasskeysSettings() {
   useEffect(() => {
     let active = true;
     void refresh().catch(() => { if (active) setError(labels.failed); });
-    const publicKey = globalThis.PublicKeyCredential;
-    if (!globalThis.isSecureContext || !publicKey?.isUserVerifyingPlatformAuthenticatorAvailable) {
-      return () => { active = false; };
-    }
-    void publicKey.isUserVerifyingPlatformAuthenticatorAvailable()
+    void hasPlatformPasskey()
       .then((value) => { if (active) setAvailable(value); })
       .catch(() => { if (active) setAvailable(false); });
     return () => { active = false; };

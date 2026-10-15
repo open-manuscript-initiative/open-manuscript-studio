@@ -1,8 +1,9 @@
+import { useDocumentWorkspaceMode, type OmiEditorMode } from './documentWorkspaceMode';
 import { clearDocumentClosedState } from './documentCloseState';
 import { useStudioStore } from './useStudioStore';
 import { createBlankManuscript } from '../document/createBlankManuscript';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
-import type { OmiDocumentKind, OmiEditorMode, OmiVolumeKind } from '../model/documentProfile';
+import type { OmiDocumentKind, OmiVolumeKind } from '../model/documentProfile';
 import { clearCurrentManuscriptFilePath } from '../services/nativeManuscriptFile';
 import type { OmiManuscript } from '../types/omi';
 
@@ -19,8 +20,9 @@ export function createAndOpenBlankOmiDocument(input: {
   const user = getCurrentUser(useAuthStore.getState());
   const fullName = user?.profile.fullName.trim() ?? '';
   const [givenName = '', ...familyNameParts] = fullName.split(/\s+/u).filter(Boolean);
+  const { editorMode, ...documentInput } = input;
   const manuscript = createBlankManuscript({
-    ...input,
+    ...documentInput,
     author: user && fullName ? {
       givenName,
       familyName: familyNameParts.join(' '),
@@ -37,6 +39,7 @@ export function createAndOpenBlankOmiDocument(input: {
         : undefined,
     } : undefined,
   });
+  useDocumentWorkspaceMode.getState().setMode(manuscript.id, editorMode ?? 'scholarly');
   clearCurrentManuscriptFilePath();
   clearDocumentClosedState();
   useStudioStore.getState().loadManuscript(manuscript);

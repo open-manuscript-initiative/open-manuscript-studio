@@ -1,3 +1,4 @@
+import { hasPlatformPasskey } from '../platform/passkeyCapability';
 import {
   type FormEvent,
   useEffect,
@@ -86,12 +87,7 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
 
   useEffect(() => {
     let active = true;
-    const publicKey = globalThis.PublicKeyCredential;
-    if (!globalThis.isSecureContext || !publicKey?.isUserVerifyingPlatformAuthenticatorAvailable) {
-      setPlatformPasskeyAvailable(false);
-      return;
-    }
-    void publicKey.isUserVerifyingPlatformAuthenticatorAvailable()
+    void hasPlatformPasskey()
       .then((available) => { if (active) setPlatformPasskeyAvailable(available); })
       .catch(() => { if (active) setPlatformPasskeyAvailable(false); });
     return () => { active = false; };

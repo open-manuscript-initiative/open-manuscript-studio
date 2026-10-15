@@ -1,3 +1,4 @@
+import { useDocumentWorkspaceMode } from '../src/app/documentWorkspaceMode.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -19,7 +20,7 @@ test('creates a standalone OMI study with one independent editor root', () => {
   });
 
   assert.equal(manuscript.locale, 'hu');
-  assert.equal(manuscript.editorMode, undefined);
+  assert.equal('editorMode' in manuscript, false);
   assert.equal(manuscript.sections.length, 1);
   assert.equal(manuscript.sections[0]?.blocks.length, 1);
   assert.equal(manuscript.sections[0]?.blocks[0]?.type, 'paragraph');
@@ -91,8 +92,9 @@ test('copies saved profile country and website into a newly opened OMI author', 
 
     const manuscript = createAndOpenBlankOmiDocument({ kind: 'study', editorMode: 'simple-text', locale: 'hu' });
 
-    assert.equal(manuscript.editorMode, 'simple-text');
-    assert.equal(manuscript.revisionHistory.revisions[0]?.snapshot.state.editorMode, 'simple-text');
+    assert.equal('editorMode' in manuscript, false);
+    assert.equal(useDocumentWorkspaceMode.getState().modes[manuscript.id], 'simple-text');
+    assert.equal('editorMode' in manuscript.revisionHistory.revisions[0]!.snapshot.state, false);
     assert.equal(manuscript.agents[0]?.names[0]?.value, 'Anna Kovács');
     assert.deepEqual(manuscript.contributions[0]?.roles, ['author']);
     assert.equal(manuscript.agents[0]?.country, 'HU');

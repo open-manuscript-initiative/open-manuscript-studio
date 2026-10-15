@@ -31,10 +31,6 @@
       "minLength": 1,
       "description": "Optional manuscript revision or application-defined state label; never the file-format version."
     },
-    "editorMode": {
-      "enum": ["scholarly", "simple-text"],
-      "description": "Optional Studio authoring profile. When absent, clients retain their default scholarly workspace behavior."
-    },
     "locale": {
       "$ref": "#/$defs/languageTag"
     },

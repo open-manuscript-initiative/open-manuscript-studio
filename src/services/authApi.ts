@@ -261,14 +261,14 @@ export async function loginAccount(
 }
 
 export async function getPasskeyLoginOptions(): Promise<Record<string, unknown>> {
-  return request<Record<string, unknown>>('/api/auth/passkeys/login/options', {
+  return request<Record<string, unknown>>('/api/v1/auth/passkeys/login/options', {
     method: 'POST',
     body: JSON.stringify({}),
   });
 }
 
 export async function loginWithPasskeyAccount(challenge: string, assertion: unknown): Promise<User> {
-  const response = await request<NativeSessionResponse>('/api/auth/passkeys/login/verify', {
+  const response = await request<NativeSessionResponse>('/api/v1/auth/passkeys/login/verify', {
     method: 'POST',
     body: JSON.stringify({ challenge, response: assertion }),
   });
@@ -286,24 +286,24 @@ export interface PasskeySummary {
 }
 
 export async function getPasskeys(): Promise<PasskeySummary[]> {
-  const payload = await request<{ passkeys: PasskeySummary[] }>('/api/auth/passkeys', { method: 'GET' });
+  const payload = await request<{ passkeys: PasskeySummary[] }>('/api/v1/auth/passkeys', { method: 'GET' });
   return payload.passkeys;
 }
 
 export async function getPasskeyRegistrationOptions(): Promise<Record<string, unknown>> {
-  return request<Record<string, unknown>>('/api/auth/passkeys/registration/options', {
+  return request<Record<string, unknown>>('/api/v1/auth/passkeys/registration/options', {
     method: 'POST', body: JSON.stringify({}),
   });
 }
 
 export async function finishPasskeyRegistration(input: { challenge: string; response: unknown; label?: string }): Promise<void> {
-  await request<{ ok: true }>('/api/auth/passkeys/registration/verify', {
+  await request<{ ok: true }>('/api/v1/auth/passkeys/registration/verify', {
     method: 'POST', body: JSON.stringify(input),
   });
 }
 
 export async function deletePasskey(passkeyId: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/passkeys/${encodeURIComponent(passkeyId)}`, {
+  const response = await fetch(`${API_BASE_URL}/api/v1/auth/passkeys/${encodeURIComponent(passkeyId)}`, {
     method: 'DELETE', credentials: 'include', headers: authHeaders({ Accept: 'application/json' }),
   });
   if (!response.ok && response.status !== 204) throw await createApiError(response);
