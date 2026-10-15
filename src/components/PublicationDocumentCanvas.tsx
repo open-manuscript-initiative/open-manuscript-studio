@@ -28,6 +28,7 @@ import {
   projectContinuousManuscriptDocument,
 } from '../editor/continuousManuscriptDocument';
 import { useTranslation } from '../i18n';
+import { getSimpleWordProcessorCopy } from '../i18n/simpleWordProcessor';
 import {
   buildNoteNumberMap,
   collectNoteAnchorsInBlock,
@@ -88,6 +89,7 @@ interface PublicationDocumentCanvasProps {
   viewMode: PublicationDocumentViewMode;
   onViewModeChange: (mode: PublicationDocumentViewMode) => void;
   onProofingSelection?: (selection: ProofingSelection | null) => void;
+  simpleMode?: boolean;
 }
 
 interface PublicationCanvasCopy {
@@ -116,9 +118,11 @@ export function PublicationDocumentCanvas({
   viewMode,
   onViewModeChange,
   onProofingSelection,
+  simpleMode = false,
 }: PublicationDocumentCanvasProps) {
   const { locale } = useTranslation();
   const copy = canvasCopy(locale);
+  const simpleCopy = getSimpleWordProcessorCopy(locale);
   const canvasId = `publication-canvas-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const manuscript = useStudioStore((state) => state.manuscript);
   const {
@@ -601,13 +605,15 @@ export function PublicationDocumentCanvas({
   return (
     <section
       id={canvasId}
-      className={`publication-document-canvas publication-document-canvas--${viewMode}`}
-      aria-labelledby="publication-document-canvas-title"
+      className={`publication-document-canvas publication-document-canvas--${viewMode}${simpleMode ? ' publication-document-canvas--simple' : ''}`}
+      aria-labelledby={simpleMode ? undefined : 'publication-document-canvas-title'}
+      aria-label={simpleMode ? simpleCopy.label : undefined}
+      data-simple-word-processor={simpleMode ? 'true' : undefined}
     >
       {pagination.css || paragraphStyleCss || sectionLayoutCss
         ? <style>{`${paragraphStyleCss}\n${sectionLayoutCss}\n${viewMode === 'print' ? pagination.css : ''}`}</style>
         : null}
-      <header className="publication-document-canvas-toolbar">
+      {simpleMode ? null : <header className="publication-document-canvas-toolbar">
         <div>
           <strong id="publication-document-canvas-title">{copy.editor}</strong>
           <span>{viewMode === 'print' ? copy.printDescription : copy.htmlDescription}</span>
@@ -651,7 +657,7 @@ export function PublicationDocumentCanvas({
             <span className="publication-document-responsive-status">{copy.responsiveWidth}</span>
           )}
         </div>
-      </header>
+      </header>}
 
       <div
         ref={stageRef}
@@ -788,6 +794,7 @@ export function PublicationDocumentCanvas({
                     paragraphStyleNextById={paragraphStyleNextById}
                     defaultParagraphStyleId={style.paragraphStyles.defaultStyleId}
                     manuscriptLanguage={manuscript.locale}
+                    simpleMode={simpleMode}
                   />
                 ) : (
                   <BlockEditor

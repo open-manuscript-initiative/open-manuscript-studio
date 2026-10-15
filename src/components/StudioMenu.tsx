@@ -15,6 +15,7 @@ import {
   SaveAll,
   Settings2,
   StickyNote,
+  Type,
   Usb,
   UserPlus,
   Users,
@@ -36,6 +37,7 @@ import { useTranslation } from '../i18n';
 import { getLocalFileLabels, type LocalFileLabels } from '../i18n/nativeStorageTranslations';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
 import { getStudioMenuSupplementalCopy } from '../i18n/studioMenuSupplementalTranslations';
+import { getSimpleWordProcessorCopy } from '../i18n/simpleWordProcessor';
 import { getStudioPlatform, type StudioPlatform } from '../mobile/platform/platform';
 import {
   getDeviceStorageMode,
@@ -84,6 +86,7 @@ import { SectionStructurePanel } from './SectionStructurePanel';
 
 type StudioMenuView =
   | 'document'
+  | 'simple-editor'
   | 'manuscript'
   | 'notes'
   | 'references'
@@ -124,6 +127,7 @@ export function StudioMenu({
   const { t, locale } = useTranslation();
   const publicationCopy = getPublicationProfileCopy(locale);
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
+  const simpleWordProcessorCopy = getSimpleWordProcessorCopy(locale);
   const editorialWorkflowLabel = supplementalCopy.editorialWorkspace;
   const platform = getStudioPlatform();
   const nativeMobile = platform === 'android' || platform === 'ios';
@@ -211,6 +215,7 @@ export function StudioMenu({
             ><House size={18} aria-hidden="true" /><span>{supplementalCopy.home}</span></button>
             <MenuNavGroup label={supplementalCopy.manuscriptGroup}>
               <MenuButton active={activeView === 'document'} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} />
+              <MenuButton active={activeView === 'simple-editor'} icon={<Type size={18} aria-hidden="true" />} label={simpleWordProcessorCopy.label} onClick={() => setActiveView('simple-editor')} />
               <MenuButton active={activeView === 'manuscript'} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} />
               <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} />
               <MenuButton active={activeView === 'notes'} icon={<StickyNote size={18} aria-hidden="true" />} label={t('studio.navigation.notes')} onClick={() => setActiveView('notes')} />
@@ -236,8 +241,9 @@ export function StudioMenu({
               {navigationAfterSettings}
             </MenuNavGroup>
           </nav>
-          <div className={`studio-menu-content${activeView === 'publication-editor' ? ' studio-menu-content--publication-editor' : ''}${!hasActiveContent ? ' studio-menu-content--empty' : ''}`}>
+          <div className={`studio-menu-content${activeView === 'publication-editor' || activeView === 'simple-editor' ? ' studio-menu-content--publication-editor' : ''}${!hasActiveContent ? ' studio-menu-content--empty' : ''}`}>
             {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} onCreated={returnHome} /> : null}
+            {activeView === 'simple-editor' ? <PublicationStyleEditor simpleMode /> : null}
             {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={returnHome} /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
             {activeView === 'notes' ? <NotesPanel onNavigate={returnHome} /> : null}

@@ -8,10 +8,14 @@ export function ProofreadingController() {
   const { spellcheckEnabled } = useProofreadingPreferences();
 
   useEffect(() => {
+    const applyToEditor = (editor: HTMLElement) => {
+      const simpleWordProcessor = editor.closest('[data-simple-word-processor="true"]');
+      editor.setAttribute('spellcheck', !simpleWordProcessor && spellcheckEnabled ? 'true' : 'false');
+      editor.setAttribute('lang', manuscriptLanguage || 'en');
+    };
     const apply = (root: ParentNode = document) => {
       root.querySelectorAll<HTMLElement>('.omi-tiptap-editor').forEach((editor) => {
-        editor.setAttribute('spellcheck', spellcheckEnabled ? 'true' : 'false');
-        editor.setAttribute('lang', manuscriptLanguage || 'en');
+        applyToEditor(editor);
       });
     };
 
@@ -21,8 +25,7 @@ export function ProofreadingController() {
         for (const node of Array.from(mutation.addedNodes)) {
           if (!(node instanceof HTMLElement)) continue;
           if (node.matches('.omi-tiptap-editor')) {
-            node.setAttribute('spellcheck', spellcheckEnabled ? 'true' : 'false');
-            node.setAttribute('lang', manuscriptLanguage || 'en');
+            applyToEditor(node);
           }
           apply(node);
         }
