@@ -1080,8 +1080,26 @@ input[size]:not([data-full-width="true"]) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .studio-menu-content .studio-language-setting-row {
+  .studio-menu-content .studio-language-setting-row:not(.studio-language-setting-row--interface) {
     grid-template-columns: minmax(9rem, .65fr) minmax(0, 2fr) minmax(10rem, .75fr);
+  }
+
+  .studio-menu-content .studio-language-setting-row--interface {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .studio-menu-content .studio-language-setting-row--interface .studio-language-chip-list {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex-flow: row wrap;
+    align-items: flex-start;
+    align-content: flex-start;
+  }
+
+  .studio-menu-content .studio-language-setting-row--interface .studio-language-chip {
+    flex: 0 0 auto;
   }
 
   .studio-menu-content .history-list {
