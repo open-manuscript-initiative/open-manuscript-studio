@@ -113,7 +113,7 @@ interface BlockEditorProps {
   manuscriptLanguage?: string;
   className?: string;
   continuous?: boolean;
-  proofingMode?: 'editor' | 'publication';
+  proofingMode?: 'editor' | 'publication' | 'none';
   publicationCorrections?: readonly OmiPublicationCorrection[];
   publicationFlowBreaks?: readonly OmiPublicationFlowBreak[];
   onProofingSelection?: (selection: ProofingSelection | null) => void;
@@ -288,7 +288,7 @@ function BlockEditorComponent({
         ...(continuous ? {} : { 'data-block-id': blockId }),
         'data-block-type': blockType,
         'aria-label': `${blockLabel}: ${t('studio.editorAria')}`,
-        spellcheck: 'true',
+        spellcheck: proofingMode === 'none' ? 'false' : 'true',
       },
       transformPastedHTML: (html) => sanitizeRichTextPasteHtml(html),
       handleKeyDown: (view, event) => {
@@ -456,6 +456,7 @@ function BlockEditorComponent({
     blockId,
     manuscriptLanguage ?? manuscriptLocale,
     continuous ? resolveContinuousProofreadingScope : undefined,
+    proofingMode !== 'none',
   );
   proofreadingSelectRef.current = proofreading.selectIssue;
 
@@ -760,11 +761,13 @@ function BlockEditorComponent({
   }
 
   const showSelectionActions = effectiveEditable && (
+    proofingMode !== 'none' && (
     (continuous && capabilities.editStructure) ||
     capabilities.editCitations ||
     capabilities.insertNotes ||
     capabilities.editCrossReferences ||
     externalIntegrationsAllowed
+    )
   );
 
   return (

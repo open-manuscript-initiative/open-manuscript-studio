@@ -34,6 +34,7 @@ export function useEditorProofreading(
   blockId: string,
   language: string,
   resolveScope?: (editor: Editor) => EditorProofreadingScope | null,
+  enabled = true,
 ): EditorProofreadingState {
   const { languageCheckEnabled } = useProofreadingPreferences();
   const [issues, setIssues] = useState<ProofreadingIssue[]>([]);
@@ -47,7 +48,7 @@ export function useEditorProofreading(
   );
 
   useEffect(() => {
-    if (!editor || !languageCheckEnabled) {
+    if (!editor || !enabled || !languageCheckEnabled) {
       setIssues([]);
       setActiveIssueId(null);
       setChecking(false);
@@ -136,7 +137,7 @@ export function useEditorProofreading(
       if (resolveScope) editor.off('selectionUpdate', schedule);
       editor.off('blur', handleBlur);
     };
-  }, [blockId, editor, language, languageCheckEnabled, resolveScope]);
+  }, [blockId, editor, enabled, language, languageCheckEnabled, resolveScope]);
 
   function applyReplacement(replacement: string): void {
     if (!editor || !activeIssue) return;

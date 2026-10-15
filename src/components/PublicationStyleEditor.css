@@ -10,6 +10,44 @@
   background: var(--omi-surface, #fff);
 }
 
+.publication-style-editor--simple {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.publication-style-editor--simple .publication-style-editor-heading,
+.publication-style-editor--simple .publication-style-ribbon {
+  display: none;
+}
+
+.publication-style-editor--simple .publication-style-editor-layout > .publication-document-canvas {
+  grid-template-rows: minmax(0, 1fr);
+  border-top: 1px solid #b8bec8;
+  border-radius: 0.45rem;
+}
+
+.simple-word-processor-heading {
+  min-width: 0;
+  padding: 0 0 0.75rem;
+}
+
+.simple-word-processor-heading h4,
+.simple-word-processor-heading p {
+  margin: 0;
+}
+
+.simple-word-processor-heading p {
+  margin-top: 0.35rem;
+  color: #64748b;
+}
+
+.publication-document-canvas--simple {
+  grid-template-rows: minmax(0, 1fr);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 .publication-style-editor-heading {
   min-width: 0;
   padding: 0 0 0.65rem;

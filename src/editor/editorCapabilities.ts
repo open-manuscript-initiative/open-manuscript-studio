@@ -11,6 +11,7 @@ export interface EditorCapabilities {
 
 export type EditorRole =
   | 'author'
+  | 'word-processing'
   | 'editor'
   | 'scientific-review'
   | 'language-review'
@@ -40,8 +41,20 @@ const REVIEW_TEXT_CAPABILITIES: EditorCapabilities = {
   reconcileWorkspaceReferences: false,
 };
 
+const WORD_PROCESSING_CAPABILITIES: EditorCapabilities = {
+  editText: true,
+  editStructure: true,
+  editVisualBlocks: false,
+  editMetadata: false,
+  insertNotes: false,
+  editCitations: false,
+  editCrossReferences: false,
+  reconcileWorkspaceReferences: false,
+};
+
 const EDITOR_CAPABILITIES_BY_ROLE: Record<EditorRole, EditorCapabilities> = {
   author: FULL_EDITOR_CAPABILITIES,
+  'word-processing': WORD_PROCESSING_CAPABILITIES,
   editor: FULL_EDITOR_CAPABILITIES,
   'scientific-review': REVIEW_TEXT_CAPABILITIES,
   'language-review': REVIEW_TEXT_CAPABILITIES,

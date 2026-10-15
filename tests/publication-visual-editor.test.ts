@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { paginatePublicationBlocks } from '../src/components/publicationPageLayout.ts';
+import { getEditorCapabilities } from '../src/editor/editorCapabilities.ts';
 import {
   resolvePublicationParagraphStyle,
   type PublicationParagraphStyleCollection,
@@ -238,16 +239,16 @@ test('InDesign paragraph style rendering covers extended native and approximate 
 });
 
 test('live publication editor switches between print and semantic HTML5 visual editing', () => {
-  assert.match(styleEditor, /useState<PublicationDocumentViewMode>\('print'\)/);
+  assert.match(styleEditor, /useState<PublicationDocumentViewMode>\([\s\S]*simpleMode \? 'html' : 'print'/);
   assert.match(styleEditor, /documentViewMode === 'print'/);
-  assert.match(styleEditor, /viewMode=\{documentViewMode\}/);
+  assert.match(styleEditor, /viewMode=\{simpleMode \? 'html' : documentViewMode\}/);
   assert.match(styleEditor, /onViewModeChange=\{changeDocumentViewMode\}/);
   assert.match(documentCanvas, /export type PublicationDocumentViewMode = 'print' \| 'html'/);
   assert.match(documentCanvas, /className="publication-document-view-switch"/);
   assert.match(documentCanvas, /data-publication-view=\{viewMode\}/);
   assert.match(documentCanvas, /<PublicationHtmlSectionsEditor/);
   assert.match(documentCanvas, /proofingMode="publication"/);
-  assert.match(htmlSectionsEditor, /proofingMode="editor"/);
+  assert.match(htmlSectionsEditor, /proofingMode=\{simpleMode \? 'none' : 'editor'\}/);
   assert.match(htmlSectionsEditor, /projectContinuousManuscriptDocument/);
   assert.match(documentCanvas, /viewMode === 'html' && semanticNotes\.length/);
   assert.match(documentCanvas, /window\.addEventListener\(EDITOR_ZOOM_EVENT, handleEditorZoom\)/);
@@ -257,6 +258,28 @@ test('live publication editor switches between print and semantic HTML5 visual e
   assert.match(editorStyles, /\.publication-document-content--html \{[\s\S]*position: relative/);
   assert.match(editorStyles, /\.publication-html-section-editor \.omi-continuous-tiptap-editor \{[\s\S]*column-count: var\(--omi-section-columns, 1\)/);
   assert.match(editorStyles, /\.publication-document-view-switch button\[aria-pressed='true'\]/);
+});
+
+test('simple word processor uses the same visual manuscript while hiding review marks and controls', () => {
+  assert.match(studioMenu, /activeView === 'simple-editor' \? <PublicationStyleEditor simpleMode \/>/);
+  assert.match(styleEditor, /publication-style-editor--simple/);
+  assert.match(styleEditor, /viewMode=\{simpleMode \? 'html' : documentViewMode\}/);
+  assert.match(documentCanvas, /data-simple-word-processor=\{simpleMode \? 'true' : undefined\}/);
+  assert.match(documentCanvas, /contributors\.map\(\(contributor/);
+  assert.match(documentCanvas, /<PublicationHtmlSectionsEditor[\s\S]*simpleMode=\{simpleMode\}/);
+  assert.match(htmlSectionsEditor, /getEditorCapabilities\('word-processing'\)/);
+  assert.match(htmlSectionsEditor, /proofingMode=\{simpleMode \? 'none' : 'editor'\}/);
+  assert.match(editorStyles, /\.publication-style-editor--simple \.publication-style-ribbon \{\s*display: none/);
+  assert.deepEqual(getEditorCapabilities('word-processing'), {
+    editText: true,
+    editStructure: true,
+    editVisualBlocks: false,
+    editMetadata: false,
+    insertNotes: false,
+    editCitations: false,
+    editCrossReferences: false,
+    reconcileWorkspaceReferences: false,
+  });
 });
 
 test('font families come from a dropdown with permission-gated system discovery', () => {
