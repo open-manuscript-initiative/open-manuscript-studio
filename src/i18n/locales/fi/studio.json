@@ -84,7 +84,9 @@
     "citations": "Lähdeviittaukset",
     "bibliography": "Lähdeluettelo",
     "documentLanguage": "Asiakirjan kieli",
-    "originalLanguage": "Alkuperäinen kieli"
+    "originalLanguage": "Alkuperäinen kieli",
+    "simpleTextDocument": "Simple text document",
+    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
   },
   "notes": {
     "title": "Huomautukset",

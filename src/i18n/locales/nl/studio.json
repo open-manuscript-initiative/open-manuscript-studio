@@ -84,7 +84,9 @@
     "citations": "Citaten",
     "bibliography": "Bibliografie",
     "documentLanguage": "Documenttaal",
-    "originalLanguage": "Oorspronkelijke taal"
+    "originalLanguage": "Oorspronkelijke taal",
+    "simpleTextDocument": "Simple text document",
+    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
   },
   "notes": {
     "title": "Noten",
