@@ -19,6 +19,7 @@ import { InstitutionalProfilesSettings } from './InstitutionalProfilesSettings';
 import { LinkedIdentitiesSettings } from './LinkedIdentitiesSettings';
 import { PersonalEmailsSettings } from './PersonalEmailsSettings';
 import { PersonalPublishingCredentialsSettings } from './PersonalPublishingCredentialsSettings';
+import { PasskeysSettings } from './PasskeysSettings';
 import { ServerEndpointSettings } from './ServerEndpointSettings';
 import { WebPublishingSettings } from './WebPublishingSettings';
 import '../styles/account.css';
@@ -261,6 +262,8 @@ export function AccountPanel() {
           </div>
 
           <LinkedIdentitiesSettings locale={locale} email={user.email} />
+
+          <PasskeysSettings />
 
           <AccountDeletionSection email={user.email} />
         </aside>

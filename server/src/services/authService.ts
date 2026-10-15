@@ -194,6 +194,20 @@ export async function loginUser(input: LoginUserInput) {
   return { user: serializeUser(updated), ...session };
 }
 
+export async function loginUserWithPasskey(userId: string) {
+  const user = await identityPrisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.status !== 'ACTIVE') {
+    throw new Error('The user account is not active.');
+  }
+  const updated = await identityPrisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() },
+  });
+  await ensureStudioPrincipal(toPrincipalSnapshot(updated));
+  const session = await createSession(updated.id);
+  return { user: serializeUser(updated), ...session };
+}
+
 export async function getUserForSession(rawToken: string) {
   const session = await getActiveSession(rawToken);
   return session ? serializeUser(session.user) : null;

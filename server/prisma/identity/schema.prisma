@@ -14,6 +14,11 @@ enum UserStatus {
   DISABLED
 }
 
+enum PasskeyChallengePurpose {
+  REGISTRATION
+  AUTHENTICATION
+}
+
 enum IdentityProvider {
   ORCID
   OIDC
@@ -99,8 +104,42 @@ model User {
   publicationVenueMembershipGrants PublicationVenueMembership[] @relation("PublicationVenueMembershipGrantor")
   profileEmails          UserProfileEmail[]
   publishingCredentials  PersonalPublishingCredential[]
+  passkeys               UserPasskey[]
+  passkeyChallenges      PasskeyChallenge[]
 
   @@map("users")
+}
+
+model UserPasskey {
+  id                    String   @id @default(uuid()) @db.Uuid
+  userId                String   @map("user_id") @db.Uuid
+  credentialId          String   @unique @map("credential_id") @db.VarChar(1024)
+  publicKey             Bytes    @map("public_key")
+  counter               BigInt   @default(0)
+  transports            String[] @default([])
+  deviceType            String   @map("device_type") @db.VarChar(32)
+  backedUp              Boolean  @default(false) @map("backed_up")
+  label                 String   @default("Passkey") @db.VarChar(100)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastUsedAt            DateTime? @map("last_used_at") @db.Timestamptz(6)
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("user_passkeys")
+}
+
+model PasskeyChallenge {
+  id        String                   @id @default(uuid()) @db.Uuid
+  challenge String                   @unique @db.VarChar(128)
+  userId    String?                  @map("user_id") @db.Uuid
+  purpose   PasskeyChallengePurpose
+  expiresAt DateTime                 @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User?                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([userId, purpose, expiresAt])
+  @@map("passkey_challenges")
 }
 
 model UserSession {

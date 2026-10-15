@@ -12,6 +12,7 @@ import {
   consumeNativeOrcidHandoffFromUrl,
   getCurrentAccount,
   loginAccount,
+  loginWithPasskeyAccount,
   logoutAccount,
   registerAccount,
   updateCurrentAccount,
@@ -50,6 +51,7 @@ export interface AuthState {
   completeNativeOrcidHandoff: (url: string) => Promise<void>;
   register: (input: RegisterInput) => Promise<User>;
   login: (input: LoginInput) => Promise<User>;
+  loginWithPasskey: () => Promise<User>;
   logout: () => Promise<void>;
   updateCurrentUser: (
     input: UpdateUserProfileInput,
@@ -161,6 +163,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         : await loginAccount({ email: input.email, password: input.password });
       setAuthenticatedUser(set, user, true);
       return user;
+    } catch (error) {
+      const message = getErrorMessage(error);
+      set({ isLoading: false, isInitialized: true, error: message });
+      throw error;
+    }
+  },
+
+  loginWithPasskey: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const { startAuthentication } = await import('@simplewebauthn/browser');
+      const { getPasskeyLoginOptions } = await import('../services/authApi');
+      const options = await getPasskeyLoginOptions();
+      const assertion = await startAuthentication({ optionsJSON: options as never });
+      const user = await loginWithPasskeyAccount(String(options.challenge), assertion);
+      const authorizedUser = await enforcePendingInstitutionAdminLogin(user);
+      setAuthenticatedUser(set, authorizedUser, true);
+      return authorizedUser;
     } catch (error) {
       const message = getErrorMessage(error);
       set({ isLoading: false, isInitialized: true, error: message });

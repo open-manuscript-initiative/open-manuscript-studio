@@ -6,6 +6,7 @@ import {
 import {
   Building2,
   FilePenLine,
+  Fingerprint,
   Globe2,
   Layers3,
   UserRound,
@@ -33,6 +34,7 @@ import {
 import { useAuthStore } from '../store/authStore';
 import { PasswordRecoveryPage } from './PasswordRecoveryPage';
 import { useAuthProviders } from './useOrcidProvider';
+import '../styles/passkeys.css';
 
 interface LoginPageProps {
   onShowRegister: () => void;
@@ -41,6 +43,7 @@ interface LoginPageProps {
 export function LoginPage({ onShowRegister }: LoginPageProps) {
   const { t, locale } = useTranslation();
   const login = useAuthStore((state) => state.login);
+  const loginWithPasskey = useAuthStore((state) => state.loginWithPasskey);
   const isLoading = useAuthStore((state) => state.isLoading);
   const error = useAuthStore((state) => state.error);
   const clearError = useAuthStore((state) => state.clearError);
@@ -51,6 +54,7 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
   const [federatedStartError, setFederatedStartError] = useState('');
   const [adminMode, setAdminMode] = useState(false);
   const [institutionalDeployment, setInstitutionalDeployment] = useState(false);
+  const [platformPasskeyAvailable, setPlatformPasskeyAvailable] = useState(false);
 
   const providers = useAuthProviders();
   const orcidProvider = providers?.orcid ?? null;
@@ -79,6 +83,19 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
       .then((deployment) => setInstitutionalDeployment(deployment.mode === 'institutional'))
       .catch(() => setInstitutionalDeployment(false));
   }, [clearError]);
+
+  useEffect(() => {
+    let active = true;
+    const publicKey = globalThis.PublicKeyCredential;
+    if (!globalThis.isSecureContext || !publicKey?.isUserVerifyingPlatformAuthenticatorAvailable) {
+      setPlatformPasskeyAvailable(false);
+      return;
+    }
+    void publicKey.isUserVerifyingPlatformAuthenticatorAvailable()
+      .then((available) => { if (active) setPlatformPasskeyAvailable(available); })
+      .catch(() => { if (active) setPlatformPasskeyAvailable(false); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (authErrorCode) clearInstitutionAdminLoginPending();
@@ -315,6 +332,18 @@ export function LoginPage({ onShowRegister }: LoginPageProps) {
             <strong>{pathwayCopy.localTitle}</strong>
             <span>{adminMode ? adminCopy.description : pathwayCopy.localHint}</span>
           </div>
+
+          {platformPasskeyAvailable ? (
+            <button
+              className="auth-primary-button auth-login-passkey"
+              type="button"
+              disabled={isLoading}
+              onClick={() => void loginWithPasskey().catch(() => {})}
+            >
+              <Fingerprint size={18} aria-hidden="true" />
+              {t('auth.login.passkey')}
+            </button>
+          ) : null}
 
           <form className="auth-form auth-login-email-form" onSubmit={handleSubmit}>
             <div className="auth-field">
