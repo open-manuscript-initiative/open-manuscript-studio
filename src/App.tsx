@@ -154,6 +154,7 @@ function StudioApplication() {
   const mobileStudio = isMobileStudio();
   const hasOpenDocument = useStudioStore((state) => state.hasOpenDocument);
   const activeManuscriptId = useStudioStore((state) => state.manuscript.id);
+  const simpleTextMode = useStudioStore((state) => state.manuscript.editorMode === 'simple-text');
   const restoredDesktopSession = useRef(
     !mobileStudio && !reviewMode ? getRestoredDesktopSession() : null,
   );
@@ -504,7 +505,7 @@ function StudioApplication() {
   if (mobileStudio) {
     return (
       <>
-        <ProofreadingController />
+        {!simpleTextMode ? <ProofreadingController /> : null}
         <MobileLayout
           onOpenMenu={() => setMenuOpen(true)}
           onHome={navigateHome}
@@ -533,7 +534,7 @@ function StudioApplication() {
       onOpenMenu={() => setMenuOpen(true)}
       onHome={navigateHome}
     >
-      <ProofreadingController />
+      {!simpleTextMode ? <ProofreadingController /> : null}
       <DesktopDocumentTabs
         tabs={desktopTabs}
         activeTabId={activeDesktopTabId}
