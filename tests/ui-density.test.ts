@@ -196,6 +196,7 @@ test('contributor fields use content-appropriate widths instead of stretching ac
 });
 
 
+
 const closedDocumentCss = readFileSync(
   new URL('../src/styles/closed-document.css', import.meta.url),
   'utf8',
@@ -208,7 +209,11 @@ test('desktop empty workspace fills the window without oversized controls', () =
   );
   assert.match(
     closedDocumentCss,
-    /\.closed-document-page \.closed-document-card \.omi-new-document-actions--empty-workspace \.omi-new-document-grid \{[^}]*grid-template-columns: repeat\(auto-fit, minmax\(min\(100%, 18rem\), 22rem\)\)/,
+    /@media \(min-width: 761px\) \{[\s\S]*?\.closed-document-page \.closed-document-card \.omi-new-document-actions--empty-workspace \.omi-new-document-grid \{[^}]*display: flex;[^}]*flex-wrap: wrap;[^}]*align-items: stretch;/,
+  );
+  assert.match(
+    closedDocumentCss,
+    /@media \(min-width: 761px\) \{[\s\S]*?\.closed-document-card \.omi-new-document-grid > button \{[^}]*width: fit-content;[^}]*max-width: min\(100%, 22rem\);[^}]*height: auto;/,
   );
   assert.match(
     closedDocumentCss,

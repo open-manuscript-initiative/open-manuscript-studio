@@ -287,7 +287,16 @@
   }
 
   .closed-document-page .closed-document-card .omi-new-document-actions--empty-workspace .omi-new-document-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 22rem));
-    justify-content: start;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+
+  .closed-document-card .omi-new-document-grid > button {
+    width: fit-content;
+    max-width: min(100%, 22rem);
+    height: auto;
+    flex: 0 1 auto;
   }
 }
