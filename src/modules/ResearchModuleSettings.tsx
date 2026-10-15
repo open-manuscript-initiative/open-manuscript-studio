@@ -1,5 +1,5 @@
 import { sortModulesForLocale } from './moduleOrdering';
-import { Boxes, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { useTranslation } from '../i18n';
@@ -112,7 +112,6 @@ export function ResearchModuleSettings() {
           const unavailable = !enabledModuleIds.includes(module.id);
           return (
             <article className="studio-module-card" key={module.id}>
-              <div className="studio-module-card-icon" aria-hidden="true"><Boxes size={20} /></div>
               <div className="studio-module-card-content">
                 <h5>{details?.title ?? module.titleKey}</h5>
                 {details?.description ? <p>{details.description}</p> : null}
@@ -129,9 +128,6 @@ export function ResearchModuleSettings() {
                   <span>{unavailable ? copy.disabledByInstallation : active ? copy.active : copy.activate}</span>
                 </label>
               </div>
-              <span className={`studio-module-state studio-module-state--${unavailable ? 'disabled-by-installation' : active ? 'active' : 'available'}`}>
-                {unavailable ? copy.disabledByInstallation : active ? copy.active : copy.available}
-              </span>
             </article>
           );
         })}

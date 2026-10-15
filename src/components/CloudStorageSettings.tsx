@@ -619,7 +619,7 @@ export function CloudStorageSettings() {
         {connections.length === 0 ? <p>{copy.noConnections}</p> : (
           <div className="studio-language-preference-list">
             {connections.map((connection) => (
-              <div className="studio-language-preference" key={connection.id}>
+              <div className="studio-language-preference studio-cloud-connection-row" key={connection.id}>
                 <span className="studio-language-preference-copy">
                   <strong>{connection.displayName}</strong>
                   <small>{connectionProviderLabel(connection, copy)} · {connection.status === 'connected' ? copy.connected : copy.connectionError}</small>
@@ -655,7 +655,7 @@ export function CloudStorageSettings() {
         {backups.length === 0 ? <p>{copy.noBackups}</p> : (
           <div className="studio-language-preference-list">
             {backups.map((backup) => (
-              <div className="studio-language-preference" key={backup.id}>
+              <div className="studio-language-preference studio-cloud-backup-row" key={backup.id}>
                 <span className="studio-language-preference-copy">
                   <strong>{new Date(backup.createdAt).toLocaleString(locale)}</strong>
                   <small>{formatBytes(backup.sizeBytes)} · OMI {backup.packageVersion}</small>

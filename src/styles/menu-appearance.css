@@ -351,21 +351,22 @@
 }
 
 .studio-menu-font-control {
-  display: grid;
-  grid-template-columns: auto minmax(9rem, 18rem) auto auto auto;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: .45rem .6rem;
 }
 
 .studio-menu-font-slider {
   display: grid;
+  flex: 1 1 9rem;
   align-items: center;
-  min-width: 0;
+  min-width: 9rem;
 }
 
 .studio-menu-font-slider input[type='range'] {
   width: 100%;
-  min-width: 8rem;
+  min-width: 0;
   margin: 0;
   accent-color: #0f172a;
 }
