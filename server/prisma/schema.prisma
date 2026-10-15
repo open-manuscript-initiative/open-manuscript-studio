@@ -172,6 +172,8 @@ model User {
   sentCollaborationMessages CollaborationMessage[] @relation("CollaborationMessageSender")
   studioModulePreferences StudioModulePreference[]
   studioModuleAuditEvents StudioModuleAuditEvent[] @relation("StudioModuleAuditActor")
+  plainDocuments          PlainDocument[]
+  euroOfficeSessions      EuroOfficeSession[]
 
   @@map("users")
 }
@@ -762,6 +764,39 @@ model CloudBackup {
   @@index([userId, createdAt])
   @@index([connectionId])
   @@map("cloud_backups")
+}
+
+/// Ordinary Word files are kept as DOCX and never converted to an OMI package.
+model PlainDocument {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String   @db.VarChar(300)
+  content   Bytes    @db.ByteA
+  revision  Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions  EuroOfficeSession[]
+
+  @@index([userId, updatedAt])
+  @@map("plain_documents")
+}
+
+/// Short-lived, random capabilities used only by the Document Server callbacks.
+model EuroOfficeSession {
+  id         String        @id @default(uuid()) @db.Uuid
+  documentId String        @map("document_id") @db.Uuid
+  userId     String        @map("user_id") @db.Uuid
+  tokenHash  String        @unique @map("token_hash") @db.VarChar(64)
+  documentKey String       @map("document_key") @db.VarChar(128)
+  expiresAt  DateTime      @map("expires_at") @db.Timestamptz(6)
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  document   PlainDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, expiresAt])
+  @@index([userId, expiresAt])
+  @@map("eurooffice_sessions")
 }
 
 // One new submission per manuscript and destination. Credentials are never persisted here.

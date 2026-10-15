@@ -101,6 +101,17 @@ Verify in a browser and with your own workflow:
 
 Optional service environment variables are documented in `server/.env.example`. Put credentials in this installation's `deployment/.env`; do not commit them.
 
+### EuroOffice for everyday DOCX documents
+
+EuroOffice runs as a separate document server. The OMI API stores DOCX files and the signed-in user's document list. The embedded editor appears in Studio after both values are set in `deployment/.env`:
+
+```env
+EUROOFFICE_URL=https://office.example.org
+EUROOFFICE_JWT_SECRET=THE_SAME_VALUE_AS_EUROOFFICE_JWT_SECRET
+```
+
+`EUROOFFICE_JWT_SECRET` must match the EuroOffice container's `JWT_SECRET` and be at least 32 characters. Both services must be reachable over HTTPS: the browser loads the EuroOffice editor API, and EuroOffice fetches and saves DOCX files through the OMI API at `PUBLIC_ORIGIN`. Restart the API container after changing these values. The deployment applies the database migration automatically at startup.
+
 ## Backup and restore
 
 Before upgrades and on a regular schedule, back up both databases:

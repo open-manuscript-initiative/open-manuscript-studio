@@ -101,6 +101,17 @@ Ellenőrizd böngészőből és a saját munkafolyamatoddal:
 
 Az opcionális szolgáltatások környezeti változóit a `server/.env.example` dokumentálja. A hitelesítési adatok a szerver saját `deployment/.env` fájljába kerüljenek; ne commitold őket.
 
+### EuroOffice hétköznapi DOCX-dokumentumokhoz
+
+Az EuroOffice Document Server külön szolgáltatásként működik; a DOCX-fájlokat és a bejelentkezett felhasználókhoz tartozó dokumentumlistát az OMI API kezeli. A beágyazott szerkesztő csak akkor jelenik meg a Stúdióban, ha mindkét érték be van állítva a `deployment/.env` fájlban:
+
+```env
+EUROOFFICE_URL=https://office.sajatdomain.hu
+EUROOFFICE_JWT_SECRET=AZ_EUROOFFICE_JWT_SECRET_ERTEKE
+```
+
+A `EUROOFFICE_JWT_SECRET` értéke egyezzen meg az EuroOffice konténer `JWT_SECRET` értékével, és legalább 32 karakter hosszú legyen. Mindkét kiszolgáló HTTPS-en legyen elérhető: a böngésző tölti be a EuroOffice szerkesztő API-ját, a EuroOffice pedig a `PUBLIC_ORIGIN` címen éri el az OMI API DOCX-letöltési és mentési útvonalait. A változók beállítása után indítsd újra az API-konténert. Az adatbázis-migrációt a telepítés induláskor automatikusan lefuttatja.
+
 ## Mentés és visszaállítás
 
 Frissítés előtt, valamint rendszeres időközönként készíts mentést mindkét adatbázisról:

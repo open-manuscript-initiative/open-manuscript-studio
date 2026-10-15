@@ -1,10 +1,12 @@
-import { BookOpen, FilePlus2, LibraryBig } from 'lucide-react';
+import { BookOpen, FilePlus2, FileText, LibraryBig } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { createAndOpenBlankOmiDocument } from '../app/newDocumentActions';
 import { useStudioStore } from '../app/useStudioStore';
 import { tCatalog, useTranslation } from '../i18n';
 import { isMobileStudio } from '../mobile/platform/platform';
 import type { OmiVolumeKind } from '../model/documentProfile';
+import { euroOfficeEnabled, requestPlainDocumentWorkspace } from '../services/euroOfficeApi';
 
 interface NewDocumentActionsProps {
   onCreated?: () => void;
@@ -17,6 +19,17 @@ export function NewDocumentActions({
 }: NewDocumentActionsProps) {
   const { locale } = useTranslation();
   const copy = getCopy(locale);
+  const [euroOfficeAvailable, setEuroOfficeAvailable] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    euroOfficeEnabled().then((enabled) => {
+      if (!cancelled) setEuroOfficeAvailable(enabled);
+    }).catch(() => {
+      if (!cancelled) setEuroOfficeAvailable(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const confirmSingleDocumentReplacement = () => {
     if (!useStudioStore.getState().hasOpenDocument || !isMobileStudio()) return true;
@@ -68,6 +81,12 @@ export function NewDocumentActions({
           <LibraryBig size={20} aria-hidden="true" />
           <span><strong>{copy.editedVolume}</strong><small>{copy.editedVolumeDescription}</small></span>
         </button>
+        {euroOfficeAvailable ? (
+          <button type="button" onClick={() => { requestPlainDocumentWorkspace(null); onCreated?.(); }}>
+            <FileText size={20} aria-hidden="true" />
+            <span><strong>{copy.plainDocuments}</strong><small>{copy.plainDocumentsDescription}</small></span>
+          </button>
+        ) : null}
       </div>
     </section>
   );
@@ -84,6 +103,8 @@ function getCopy(locale: string) {
     editedVolume: 'Új OMI tanulmánykötet',
     editedVolumeDescription: 'Több szerző külön szerkeszthető tanulmányaiból.',
     replaceConfirm: 'Az új dokumentum felváltja a mobil munkatérben megnyitott dokumentumot. Folytatja?',
+    plainDocuments: 'Hétköznapi DOCX-dokumentumok',
+    plainDocumentsDescription: 'Natív Word-fájlok írása EuroOffice-szal, a Stúdión belül.',
   };
   if (locale === 'de') return {
     title: 'Neues OMI-Dokument',
@@ -95,6 +116,8 @@ function getCopy(locale: string) {
     editedVolume: 'Neuer OMI-Sammelband',
     editedVolumeDescription: 'Getrennt bearbeitbare Beiträge mehrerer Autorinnen und Autoren.',
     replaceConfirm: 'Das neue Dokument ersetzt das aktuell geöffnete Dokument im mobilen Arbeitsbereich. Fortfahren?',
+    plainDocuments: 'Allgemeine DOCX-Dokumente',
+    plainDocumentsDescription: 'Word-Dateien nativ mit EuroOffice in Studio bearbeiten.',
   };
   return {
     title: 'New OMI document',
@@ -106,5 +129,7 @@ function getCopy(locale: string) {
     editedVolume: 'New OMI edited volume',
     editedVolumeDescription: 'Separately editable studies by multiple authors.',
     replaceConfirm: 'The new document will replace the document open in the mobile workspace. Continue?',
+    plainDocuments: 'Everyday DOCX documents',
+    plainDocumentsDescription: 'Write native Word files with EuroOffice inside Studio.',
   };
 }
