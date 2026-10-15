@@ -84,7 +84,9 @@
     "citations": "Citácie",
     "bibliography": "Zoznam použitej literatúry",
     "documentLanguage": "Jazyk dokumentu",
-    "originalLanguage": "Pôvodný jazyk"
+    "originalLanguage": "Pôvodný jazyk",
+    "simpleTextDocument": "Jednoduchý textový dokument",
+    "simpleTextDocumentDescription": "Jednoduchý dokument na písanie, ktorý zachová údaje o autorovi a neobsahuje recenzné ani redakčné pracovné postupy."
   },
   "notes": {
     "title": "Poznámky",

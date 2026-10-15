@@ -19,6 +19,7 @@ test('creates a standalone OMI study with one independent editor root', () => {
   });
 
   assert.equal(manuscript.locale, 'hu');
+  assert.equal(manuscript.editorMode, undefined);
   assert.equal(manuscript.sections.length, 1);
   assert.equal(manuscript.sections[0]?.blocks.length, 1);
   assert.equal(manuscript.sections[0]?.blocks[0]?.type, 'paragraph');
@@ -88,8 +89,12 @@ test('copies saved profile country and website into a newly opened OMI author', 
     });
     useStudioStore.setState({ hasOpenDocument: false });
 
-    const manuscript = createAndOpenBlankOmiDocument({ kind: 'study', locale: 'hu' });
+    const manuscript = createAndOpenBlankOmiDocument({ kind: 'study', editorMode: 'simple-text', locale: 'hu' });
 
+    assert.equal(manuscript.editorMode, 'simple-text');
+    assert.equal(manuscript.revisionHistory.revisions[0]?.snapshot.state.editorMode, 'simple-text');
+    assert.equal(manuscript.agents[0]?.names[0]?.value, 'Anna Kovács');
+    assert.deepEqual(manuscript.contributions[0]?.roles, ['author']);
     assert.equal(manuscript.agents[0]?.country, 'HU');
     assert.equal(manuscript.agents[0]?.url, 'https://example.org/anna');
     assert.equal(useStudioStore.getState().manuscript.agents[0]?.country, 'HU');

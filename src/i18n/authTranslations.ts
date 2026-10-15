@@ -6,6 +6,7 @@ export type AuthTranslationKey =
   | 'auth.login.title'
   | 'auth.login.description'
   | 'auth.login.submit'
+  | 'auth.login.passkey'
   | 'auth.login.submitting'
   | 'auth.login.noAccount'
   | 'auth.login.registerLink'
@@ -53,6 +54,7 @@ export const authTranslations: Record<SupportedLocale, AuthTranslations> = {
     'auth.login.title': 'Sign in',
     'auth.login.description': 'Please sign in to continue.',
     'auth.login.submit': 'Sign in',
+    'auth.login.passkey': 'Sign in with a passkey',
     'auth.login.submitting': 'Signing in…',
     'auth.login.noAccount': 'Do not have an account yet?',
     'auth.login.registerLink': 'Register',
@@ -97,6 +99,7 @@ export const authTranslations: Record<SupportedLocale, AuthTranslations> = {
     'auth.login.title': 'Bejelentkezés',
     'auth.login.description': 'A folytatáshoz jelentkezzen be.',
     'auth.login.submit': 'Bejelentkezés',
+    'auth.login.passkey': 'Bejelentkezés passkey használatával',
     'auth.login.submitting': 'Bejelentkezés…',
     'auth.login.noAccount': 'Még nincs fiókja?',
     'auth.login.registerLink': 'Regisztráció',
@@ -141,6 +144,7 @@ export const authTranslations: Record<SupportedLocale, AuthTranslations> = {
     'auth.login.title': 'Anmelden',
     'auth.login.description': 'Melden Sie sich an, um fortzufahren.',
     'auth.login.submit': 'Anmelden',
+    'auth.login.passkey': 'Mit einem Passkey anmelden',
     'auth.login.submitting': 'Anmeldung…',
     'auth.login.noAccount': 'Noch kein Konto?',
     'auth.login.registerLink': 'Registrieren',

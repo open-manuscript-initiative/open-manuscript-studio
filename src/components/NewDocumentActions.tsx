@@ -2,7 +2,7 @@ import { BookOpen, FilePlus2, LibraryBig } from 'lucide-react';
 
 import { createAndOpenBlankOmiDocument } from '../app/newDocumentActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { tCatalog, useTranslation } from '../i18n';
 import { isMobileStudio } from '../mobile/platform/platform';
 import type { OmiVolumeKind } from '../model/documentProfile';
 
@@ -29,6 +29,12 @@ export function NewDocumentActions({
     onCreated?.();
   };
 
+  const createSimpleTextDocument = () => {
+    if (!confirmSingleDocumentReplacement()) return;
+    createAndOpenBlankOmiDocument({ kind: 'study', editorMode: 'simple-text', locale });
+    onCreated?.();
+  };
+
   const createVolume = (volumeKind: OmiVolumeKind) => {
     if (!confirmSingleDocumentReplacement()) return;
     createAndOpenBlankOmiDocument({ kind: 'volume', volumeKind, locale });
@@ -49,6 +55,10 @@ export function NewDocumentActions({
         <button type="button" onClick={createStudy}>
           <FilePlus2 size={20} aria-hidden="true" />
           <span><strong>{copy.study}</strong><small>{copy.studyDescription}</small></span>
+        </button>
+        <button type="button" onClick={createSimpleTextDocument}>
+          <FilePlus2 size={20} aria-hidden="true" />
+          <span><strong>{tCatalog("/manuscript/simpleTextDocument")}</strong><small>{tCatalog("/manuscript/simpleTextDocumentDescription")}</small></span>
         </button>
         <button type="button" onClick={() => createVolume('monograph')}>
           <BookOpen size={20} aria-hidden="true" />

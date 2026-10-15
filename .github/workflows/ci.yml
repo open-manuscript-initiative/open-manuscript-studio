@@ -90,6 +90,9 @@ jobs:
         working-directory: server
         run: npm run typecheck
 
+      - name: Test passkey authentication routes
+        run: npm run test:passkey-auth
+
       - name: Test health research API authorization
         run: npm run test:health-research-api
 

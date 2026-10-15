@@ -1,0 +1,63 @@
+.account-passkeys {
+  display: grid;
+  gap: 12px;
+  margin-block: 22px;
+  padding-block: 20px;
+  border-block: 1px solid #e4e7ec;
+}
+
+.account-passkeys .account-section-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.account-passkeys .account-section-heading p {
+  margin: 7px 0 0;
+  color: #667085;
+  line-height: 1.45;
+}
+
+.account-passkey-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-passkey-list li,
+.account-passkey-list li > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-passkey-list li {
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid #e4e7ec;
+  border-radius: 8px;
+}
+
+.account-passkey-list button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: #7b1e34;
+  cursor: pointer;
+  font: inherit;
+}
+
+.auth-login-passkey {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 2.85rem;
+  margin-block: 12px;
+}

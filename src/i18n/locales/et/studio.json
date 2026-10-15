@@ -84,7 +84,9 @@
     "citations": "Tsitaadid",
     "bibliography": "Bibliograafia",
     "documentLanguage": "Dokumendi keel",
-    "originalLanguage": "Algkeel"
+    "originalLanguage": "Algkeel",
+    "simpleTextDocument": "Simple text document",
+    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
   },
   "notes": {
     "title": "Märkused",

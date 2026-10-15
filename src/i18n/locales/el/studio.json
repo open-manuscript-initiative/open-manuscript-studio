@@ -84,7 +84,9 @@
     "citations": "Παραπομπές",
     "bibliography": "Βιβλιογραφία",
     "documentLanguage": "Γλώσσα εγγράφου",
-    "originalLanguage": "Πρωτότυπη γλώσσα"
+    "originalLanguage": "Πρωτότυπη γλώσσα",
+    "simpleTextDocument": "Simple text document",
+    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
   },
   "notes": {
     "title": "Σημειώσεις",

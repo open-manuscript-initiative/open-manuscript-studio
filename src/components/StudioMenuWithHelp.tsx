@@ -75,6 +75,7 @@ export function StudioMenuWithHelp({
   const localFileLabels = getLocalFileLabels(locale, platform);
   const native = isNativeStudio();
   const manuscript = useStudioStore((state) => state.manuscript);
+  const simpleTextMode = manuscript.editorMode === 'simple-text';
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
   const previousManuscriptRef = useRef(manuscript);
   const browserFileInputRef = useRef<HTMLInputElement>(null);
@@ -249,8 +250,8 @@ export function StudioMenuWithHelp({
       onClose={onClose}
       ojsAssignment={ojsAssignment}
       navigationAfterReferences={listsNavigation}
-      navigationBeforeTools={workflowServicesNavigation}
-      navigationAfterSettings={<>{modulesNavigation}{utilityNavigation}</>}
+      navigationBeforeTools={simpleTextMode ? null : workflowServicesNavigation}
+      navigationAfterSettings={<>{simpleTextMode ? null : modulesNavigation}{utilityNavigation}</>}
       documentCloseAction={documentCloseAction}
       externalContentActive={externalContentActive}
     />
