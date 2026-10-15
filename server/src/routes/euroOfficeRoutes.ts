@@ -13,6 +13,7 @@ export const euroOfficeRouter = Router();
 const MAX_DOCX_BYTES = 25 * 1024 * 1024;
 const SESSION_LIFETIME_MS = 8 * 60 * 60 * 1000;
 const createDocumentSchema = z.object({
+  // eslint-disable-next-line no-control-regex -- Reject control characters in user supplied titles.
   title: z.string().trim().max(300).regex(/^[^\u0000-\u001f\u007f]*$/).optional(),
 });
 const documentIdSchema = z.string().uuid();
