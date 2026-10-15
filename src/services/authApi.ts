@@ -260,6 +260,55 @@ export async function loginAccount(
   return response.user;
 }
 
+export async function getPasskeyLoginOptions(): Promise<Record<string, unknown>> {
+  return request<Record<string, unknown>>('/api/auth/passkeys/login/options', {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+}
+
+export async function loginWithPasskeyAccount(challenge: string, assertion: unknown): Promise<User> {
+  const response = await request<NativeSessionResponse>('/api/auth/passkeys/login/verify', {
+    method: 'POST',
+    body: JSON.stringify({ challenge, response: assertion }),
+  });
+  persistNativeSession(response);
+  return response.user;
+}
+
+export interface PasskeySummary {
+  id: string;
+  label: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  deviceType: string;
+  backedUp: boolean;
+}
+
+export async function getPasskeys(): Promise<PasskeySummary[]> {
+  const payload = await request<{ passkeys: PasskeySummary[] }>('/api/auth/passkeys', { method: 'GET' });
+  return payload.passkeys;
+}
+
+export async function getPasskeyRegistrationOptions(): Promise<Record<string, unknown>> {
+  return request<Record<string, unknown>>('/api/auth/passkeys/registration/options', {
+    method: 'POST', body: JSON.stringify({}),
+  });
+}
+
+export async function finishPasskeyRegistration(input: { challenge: string; response: unknown; label?: string }): Promise<void> {
+  await request<{ ok: true }>('/api/auth/passkeys/registration/verify', {
+    method: 'POST', body: JSON.stringify(input),
+  });
+}
+
+export async function deletePasskey(passkeyId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/passkeys/${encodeURIComponent(passkeyId)}`, {
+    method: 'DELETE', credentials: 'include', headers: authHeaders({ Accept: 'application/json' }),
+  });
+  if (!response.ok && response.status !== 204) throw await createApiError(response);
+}
+
 export async function requestPasswordReset(email: string): Promise<void> {
   await request<{ ok: true }>('/api/auth/password/forgot', {
     method: 'POST',
