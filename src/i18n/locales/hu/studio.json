@@ -75,6 +75,8 @@
   },
   "manuscript": {
     "newDocument": "Új kézirat",
+    "simpleTextDocument": "Egyszerű szöveges dokumentum",
+    "simpleTextDocumentDescription": "Letisztult írófelület, amely megőrzi a szerző adatait, és nem tartalmaz lektorálási vagy szerkesztőségi munkafolyamatot.",
     "documentTitle": "A dokumentum címe",
     "abstract": "Absztrakt",
     "keywords": "Kulcsszavak",
@@ -84,9 +86,7 @@
     "citations": "Hivatkozások",
     "bibliography": "Irodalomjegyzék",
     "documentLanguage": "A dokumentum nyelve",
-    "originalLanguage": "Eredeti nyelv",
-    "simpleTextDocument": "Egyszerű szöveges dokumentum",
-    "simpleTextDocumentDescription": "Letisztult írófelület, amely megőrzi a szerző adatait, és nem tartalmaz lektorálási vagy szerkesztőségi munkafolyamatot."
+    "originalLanguage": "Eredeti nyelv"
   },
   "notes": {
     "title": "Megjegyzések",

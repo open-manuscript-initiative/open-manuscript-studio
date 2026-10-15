@@ -304,12 +304,12 @@ msgstr "Naujas rankraštis"
 #. OMI translation key: /manuscript/simpleTextDocument
 msgctxt "/manuscript/simpleTextDocument"
 msgid "Simple text document"
-msgstr "Paprastas tekstinis dokumentas"
+msgstr "Simple text document"
 
 #. OMI translation key: /manuscript/simpleTextDocumentDescription
 msgctxt "/manuscript/simpleTextDocumentDescription"
 msgid "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
-msgstr "Rašymui skirtas dokumentas, kuriame išsaugomi autoriaus duomenys ir nėra recenzavimo ar redakcinio darbo eigos įrankių."
+msgstr "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
 
 #. OMI translation key: /manuscript/documentTitle
 msgctxt "/manuscript/documentTitle"

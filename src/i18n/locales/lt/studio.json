@@ -85,8 +85,8 @@
     "bibliography": "Bibliografija",
     "documentLanguage": "Dokumento kalba",
     "originalLanguage": "Originalo kalba",
-    "simpleTextDocument": "Paprastas tekstinis dokumentas",
-    "simpleTextDocumentDescription": "Rašymui skirtas dokumentas, kuriame išsaugomi autoriaus duomenys ir nėra recenzavimo ar redakcinio darbo eigos įrankių."
+    "simpleTextDocument": "Simple text document",
+    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
   },
   "notes": {
     "title": "Pastabos",

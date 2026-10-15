@@ -85,8 +85,8 @@
     "bibliography": "Bibliografi",
     "documentLanguage": "Dokumentsprog",
     "originalLanguage": "Originalsprog",
-    "simpleTextDocument": "Enkel tekstdokument",
-    "simpleTextDocumentDescription": "Et fokuseret skrivedokument, der bevarer dine forfatteroplysninger og ikke indeholder værktøjer til fagfællebedømmelse eller redaktionelle arbejdsgange."
+    "simpleTextDocument": "Simple text document",
+    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
   },
   "notes": {
     "title": "Noter",

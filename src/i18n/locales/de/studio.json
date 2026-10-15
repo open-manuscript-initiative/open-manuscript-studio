@@ -75,6 +75,8 @@
   },
   "manuscript": {
     "newDocument": "Neues Manuskript",
+    "simpleTextDocument": "Einfaches Textdokument",
+    "simpleTextDocumentDescription": "Eine einfache Schreibumgebung, die Ihre Autorendaten bewahrt und keine Begutachtungs- oder Redaktionsabläufe enthält.",
     "documentTitle": "Dokumenttitel",
     "abstract": "Zusammenfassung",
     "keywords": "Schlüsselwörter",
@@ -84,9 +86,7 @@
     "citations": "Zitate",
     "bibliography": "Literaturverzeichnis",
     "documentLanguage": "Dokumentsprache",
-    "originalLanguage": "Originalsprache",
-    "simpleTextDocument": "Einfaches Textdokument",
-    "simpleTextDocumentDescription": "Eine einfache Schreibumgebung, die Ihre Autorendaten bewahrt und keine Begutachtungs- oder Redaktionsabläufe enthält."
+    "originalLanguage": "Originalsprache"
   },
   "notes": {
     "title": "Anmerkungen",

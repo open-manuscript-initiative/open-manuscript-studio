@@ -85,8 +85,8 @@
     "bibliography": "Bibliograafia",
     "documentLanguage": "Dokumendi keel",
     "originalLanguage": "Algkeel",
-    "simpleTextDocument": "Lihtne tekstidokument",
-    "simpleTextDocumentDescription": "Kirjutamiseks mõeldud dokument, mis säilitab autori andmed ega sisalda eelretsenseerimise ega toimetamise töövoo tööriistu."
+    "simpleTextDocument": "Simple text document",
+    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
   },
   "notes": {
     "title": "Märkused",

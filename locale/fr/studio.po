@@ -304,12 +304,12 @@ msgstr "Nouveau manuscrit"
 #. OMI translation key: /manuscript/simpleTextDocument
 msgctxt "/manuscript/simpleTextDocument"
 msgid "Simple text document"
-msgstr "Document texte simple"
+msgstr "Simple text document"
 
 #. OMI translation key: /manuscript/simpleTextDocumentDescription
 msgctxt "/manuscript/simpleTextDocumentDescription"
 msgid "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
-msgstr "Un espace d’écriture épuré qui conserve les informations sur l’auteur et ne comprend aucun outil d’évaluation par les pairs ni de processus éditorial."
+msgstr "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
 
 #. OMI translation key: /manuscript/documentTitle
 msgctxt "/manuscript/documentTitle"

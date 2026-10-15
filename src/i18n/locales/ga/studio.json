@@ -85,8 +85,8 @@
     "bibliography": "Leabharliosta",
     "documentLanguage": "Teanga an doiciméid",
     "originalLanguage": "Bunteanga",
-    "simpleTextDocument": "Doiciméad téacs simplí",
-    "simpleTextDocumentDescription": "Doiciméad scríbhneoireachta dírithe a choinníonn sonraí an údair agus nach bhfuil uirlisí athbhreithnithe piaraí ná sreabhadh oibre eagarthóireachta ann."
+    "simpleTextDocument": "Simple text document",
+    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
   },
   "notes": {
     "title": "Nótaí",

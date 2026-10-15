@@ -85,8 +85,8 @@
     "bibliography": "Библиография",
     "documentLanguage": "Език на документа",
     "originalLanguage": "Оригинален език",
-    "simpleTextDocument": "Документ за обикновен текст",
-    "simpleTextDocumentDescription": "Изчистен документ за писане, който запазва данните за автора и не включва инструменти за рецензиране или редакционен процес."
+    "simpleTextDocument": "Simple text document",
+    "simpleTextDocumentDescription": "A focused writing document that retains your author details and has no peer-review or editorial workflow tools."
   },
   "notes": {
     "title": "Бележки",
