@@ -94,6 +94,8 @@
     "prebuild": "npm run i18n:po:compile && npm run i18n:returned:generate",
     "test:file-format": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/omi-file-format.test.ts",
     "test:odt": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/odt-import-export.test.ts tests/odt-zip-security.test.ts",
+    "test:eurooffice-plain-documents": "node --test --experimental-strip-types --import ./tests/register-ts-extension-loader.mjs tests/eurooffice-plain-documents.test.ts",
+    "test:eurooffice": "npm run test:eurooffice-plain-documents && node --test --experimental-test-module-mocks tests/eurooffice-routes.test.mjs",
     "test:passkey-auth": "npm --prefix server run build && node --test --experimental-test-module-mocks tests/passkey-routes.test.mjs"
   },
   "dependencies": {

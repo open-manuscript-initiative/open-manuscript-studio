@@ -58,6 +58,7 @@ import { publicationValidationRouter } from './routes/publicationValidationRoute
 import { referenceManagerRouter } from './routes/referenceManagerRoutes.js';
 import { reviewManuscriptRouter } from './routes/reviewManuscriptRoutes.js';
 import { directSubmissionRouter } from './routes/directSubmissionRoutes.js';
+import { euroOfficeRouter } from './routes/euroOfficeRoutes.js';
 import { userIntegrationRouter } from './routes/userIntegrationRoutes.js';
 
 export const app = express();
@@ -144,6 +145,7 @@ app.use('/api', userIntegrationRouter);
 app.use('/api', referenceManagerRouter);
 app.use('/api', personalReferenceLibraryRouter);
 app.use('/api', directSubmissionRouter);
+app.use('/api', euroOfficeRouter);
 app.use('/api', agentReviewRouter);
 app.use('/api', integrationExecutionRouter);
 app.use('/api/native-editorial', nativeEditorialWorkflowRouter);

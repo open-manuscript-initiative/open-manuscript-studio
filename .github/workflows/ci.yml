@@ -128,6 +128,9 @@ jobs:
       - name: Test profile saved-document links
         run: npm run test:profile-saved-documents
 
+      - name: Test EuroOffice DOCX editor integration
+        run: npm run test:eurooffice
+
       - name: Test OJS/OMP publication artifact client
         run: npm run test:publication-artifact
 

@@ -169,6 +169,17 @@ const environmentSchema = z.object({
   // Read-only National Archives Catalog key. Keep it server-side; search is proxied through Studio.
   NARA_CATALOG_API_KEY: z.string().trim().optional(),
 
+  // Optional EuroOffice Docs API integration for ordinary DOCX documents.
+  // The JWT secret is only used by the Studio API and is never exposed to the browser.
+  EUROOFFICE_URL: z.preprocess(
+    (value) => typeof value === 'string' && !value.trim() ? undefined : value,
+    z.string().url().optional(),
+  ).transform((value) => value?.replace(/\/+$/, '')),
+  EUROOFFICE_JWT_SECRET: z.preprocess(
+    (value) => typeof value === 'string' && !value.trim() ? undefined : value,
+    z.string().trim().min(32).optional(),
+  ),
+
   // Vivliostyle is an external, separately installed renderer. Keeping the
   // executable outside the Studio dependency graph lets deployments pin and
   // audit the paged-media engine independently.
@@ -224,6 +235,7 @@ validateOrcidDeployment({
 
 export const env = {
   ...result.data,
+  EUROOFFICE_ENABLED: Boolean(result.data.EUROOFFICE_URL && result.data.EUROOFFICE_JWT_SECRET),
   ORCID_ENVIRONMENT: orcid.environment,
   ORCID_BASE_URL: orcid.baseUrl,
   ORCID_CLIENT_ID: orcidCredentials.clientId,

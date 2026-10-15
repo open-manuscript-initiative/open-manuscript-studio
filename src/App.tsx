@@ -27,6 +27,7 @@ import {
 } from './components/DesktopDocumentTabs';
 import { StudioUpdatePrompt } from './components/DesktopUpdatePrompt';
 import { EditorPane } from './components/EditorPane';
+import { PlainDocumentWorkspace } from './components/PlainDocumentWorkspace';
 import { ReviewPortal } from './components/ReviewPortal';
 import { SearchReplaceOverlay } from './components/SearchReplaceOverlay';
 import { StudioMenuWithHelp } from './components/StudioMenuWithHelp';
@@ -165,6 +166,10 @@ function StudioApplication() {
     restoredDesktopSession.current?.activeTabId ?? crypto.randomUUID(),
   );
   const [menuOpen, setMenuOpen] = useState(false);
+  const [plainDocumentWorkspace, setPlainDocumentWorkspace] = useState<{
+    open: boolean;
+    documentId: string | null;
+  }>({ open: false, documentId: null });
   const navigateHome = useCallback(() => setMenuOpen(false), []);
   const [externalImportState, setExternalImportState] = useState<ExternalImportState>(() =>
     !reviewMode && (hasInitialOjsLaunch() || hasInitialOmpLaunch())
@@ -207,6 +212,18 @@ function StudioApplication() {
   const activeDesktopTabIdRef = useRef(activeDesktopTabId);
   const switchingDesktopTabRef = useRef(false);
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
+
+  useEffect(() => {
+    const openPlainDocument = (event: Event) => {
+      const detail = (event as CustomEvent<{ documentId?: unknown }>).detail;
+      const documentId = typeof detail?.documentId === 'string' && detail.documentId
+        ? detail.documentId
+        : null;
+      setPlainDocumentWorkspace({ open: true, documentId });
+    };
+    window.addEventListener('omi-open-plain-document', openPlainDocument);
+    return () => window.removeEventListener('omi-open-plain-document', openPlainDocument);
+  }, []);
   // Effect cleanup must not discard a redeemed one-time token. Reuse the
   // request when React replays the effect while its first fetch is pending.
   const ojsHandoffRequests = useRef(new Map<string, Promise<AssignmentAwareLaunch | null>>());
@@ -499,6 +516,16 @@ function StudioApplication() {
           </div>
         </section>
       </main>
+    );
+  }
+
+  if (plainDocumentWorkspace.open) {
+    return (
+      <PlainDocumentWorkspace
+        documentId={plainDocumentWorkspace.documentId}
+        onClose={() => setPlainDocumentWorkspace({ open: false, documentId: null })}
+        onSelectDocument={(documentId) => setPlainDocumentWorkspace({ open: true, documentId: documentId || null })}
+      />
     );
   }
 
