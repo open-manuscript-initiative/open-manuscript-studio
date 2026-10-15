@@ -90,6 +90,17 @@ const environmentSchema = z.object({
   COLLABORATION_WS_HOST: z.string().trim().min(1).default('127.0.0.1'),
   COLLABORATION_WS_PORT: z.coerce.number().int().positive().max(65535).default(3022),
 
+  // Optional Euro-Office Document Server. Keep this disabled until a
+  // self-hosted server and its shared JWT secret are configured together.
+  EURO_OFFICE_SERVER_URL: z.preprocess(
+    (value) => typeof value === 'string' && !value.trim() ? undefined : value,
+    z.string().url().optional(),
+  ),
+  EURO_OFFICE_JWT_SECRET: z.preprocess(
+    (value) => typeof value === 'string' && !value.trim() ? undefined : value,
+    z.string().min(32).optional(),
+  ),
+
   PASSWORD_RESET_TTL_MINUTES: z.coerce
     .number()
     .int()
@@ -195,6 +206,16 @@ if (!result.success) {
   throw new Error(
     'The server environment configuration is invalid.',
   );
+}
+
+if (Boolean(result.data.EURO_OFFICE_SERVER_URL) !== Boolean(result.data.EURO_OFFICE_JWT_SECRET)) {
+  throw new Error('EURO_OFFICE_SERVER_URL and EURO_OFFICE_JWT_SECRET must be configured together.');
+}
+if (result.data.NODE_ENV === 'production' && result.data.EURO_OFFICE_SERVER_URL) {
+  const scheme = new URL(result.data.EURO_OFFICE_SERVER_URL).protocol;
+  if (scheme !== 'https:') {
+    throw new Error('EURO_OFFICE_SERVER_URL must use HTTPS in production.');
+  }
 }
 
 const orcid = resolveOrcidRuntimeConfig({

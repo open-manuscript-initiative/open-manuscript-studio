@@ -170,6 +170,7 @@ model User {
   targetedCollaborationAuditEvents CollaborationAuditEvent[] @relation("CollaborationAuditTarget")
   collaborationConnectionTickets CollaborationConnectionTicket[]
   sentCollaborationMessages CollaborationMessage[] @relation("CollaborationMessageSender")
+  officeDocuments           OfficeDocument[]
   studioModulePreferences StudioModulePreference[]
   studioModuleAuditEvents StudioModuleAuditEvent[] @relation("StudioModuleAuditActor")
 
@@ -188,6 +189,25 @@ model PersonalReferenceRecord {
   @@unique([userId, recordId])
   @@index([userId, updatedAt])
   @@map("personal_reference_records")
+}
+
+/// Standalone Word documents edited through the optional Euro-Office server.
+/// The original OOXML file and attribution metadata stay outside OMI manuscripts.
+model OfficeDocument {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  title       String   @db.VarChar(300)
+  fileName    String   @map("file_name") @db.VarChar(255)
+  contentType String   @map("content_type") @db.VarChar(128)
+  fileBytes   Bytes    @map("file_bytes") @db.ByteA
+  authorName  String   @map("author_name") @db.VarChar(200)
+  authorEmail String   @map("author_email") @db.VarChar(320)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@map("office_documents")
 }
 
 model UserSession {
