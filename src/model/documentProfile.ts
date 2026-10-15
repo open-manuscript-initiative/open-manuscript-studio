@@ -1,7 +1,6 @@
 import type { OmiManuscriptState } from '../types/omi';
 
 export type OmiDocumentKind = 'study' | 'volume';
-export type OmiEditorMode = 'scholarly' | 'simple-text';
 export type OmiVolumeKind = 'monograph' | 'edited-volume';
 export type OmiNoteNumberingScope = 'continuous' | 'study' | 'section';
 export type OmiBackMatterPlacement = 'study-end' | 'volume-end';
@@ -19,8 +18,6 @@ declare module '../types/omi' {
   interface OmiManuscriptState {
     /** Authoring structure for a standalone study, monograph, or edited volume. */
     documentStructure?: OmiDocumentStructureProfile;
-    /** Optional focused writing mode; absent legacy values retain scholarly tools. */
-    editorMode?: OmiEditorMode;
   }
 }
 

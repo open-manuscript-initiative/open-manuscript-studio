@@ -64,8 +64,8 @@ mock.module(new URL('../server/node_modules/@simplewebauthn/server/esm/index.js'
     verifyRegistrationResponse: async () => ({ verified: false }),
   },
 });
-mock.module(new URL('../server/dist/lib/identityPrisma.js', import.meta.url).href, {
-  namedExports: { identityPrisma },
+mock.module(new URL('../server/dist/repositories/passkeyRepository.js', import.meta.url).href, {
+  namedExports: { passkeyRepository: identityPrisma },
 });
 mock.module(new URL('../server/dist/config/env.js', import.meta.url).href, {
   namedExports: { env: { FRONTEND_ORIGIN: 'https://studio.example.test' } },
@@ -96,6 +96,7 @@ const { passkeyRouter } = await import('../server/dist/routes/passkeyRoutes.js')
 const app = express();
 app.use(express.json());
 app.use((_request, response, next) => { response.cookie = () => response; next(); });
+app.use('/api/v1/auth', passkeyRouter);
 app.use(passkeyRouter);
 const server = await new Promise((resolve) => {
   const listener = app.listen(0, '127.0.0.1', () => resolve(listener));
@@ -123,6 +124,10 @@ test('passkey login requires a discoverable user handle and creates a session on
   const registration = await request('/passkeys/registration/options', {}, userId);
   assert.equal(registration.status, 200);
   assert.equal(registration.body.challenge, 'registrationchallenge012345');
+  assert.equal((await request('/api/v1/auth/passkeys/registration/options', {}, userId)).status, 200);
+  const v1Options = await request('/api/v1/auth/passkeys/login/options', {});
+  assert.equal(v1Options.status, 200);
+  assert.equal(v1Options.body.challenge, challengeValue);
   const options = await request('/passkeys/login/options', {});
   assert.equal(options.status, 200);
   assert.equal(options.body.challenge, challengeValue);

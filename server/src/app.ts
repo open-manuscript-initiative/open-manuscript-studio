@@ -122,7 +122,8 @@ app.use('/api/auth', linkedIdentityRouter);
 app.use('/api/auth', institutionAdminAuthRouter);
 app.use('/api/auth', institutionalProfileRouter);
 app.use('/api/auth', publicationVenueRouter);
-app.use('/api/auth', passkeyRouter);
+app.use('/api/v1/auth', authRateLimit, passkeyRouter);
+app.use('/api/auth', passkeyRouter); // Compatibility facade; identical application handlers.
 app.use('/api/auth', authRouter);
 app.use('/api/central-admin', centralAdminRouter);
 app.use('/api/institution-admin', institutionAdminApiRouter);

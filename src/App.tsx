@@ -1,3 +1,4 @@
+import { useDocumentWorkspaceMode } from './app/documentWorkspaceMode';
 import {
   useCallback,
   useEffect,
@@ -154,7 +155,8 @@ function StudioApplication() {
   const mobileStudio = isMobileStudio();
   const hasOpenDocument = useStudioStore((state) => state.hasOpenDocument);
   const activeManuscriptId = useStudioStore((state) => state.manuscript.id);
-  const simpleTextMode = useStudioStore((state) => state.manuscript.editorMode === 'simple-text');
+  const workspaceDocumentId = useStudioStore((state) => state.manuscript.id);
+  const simpleTextMode = useDocumentWorkspaceMode((state) => state.modes[workspaceDocumentId] === 'simple-text');
   const restoredDesktopSession = useRef(
     !mobileStudio && !reviewMode ? getRestoredDesktopSession() : null,
   );

@@ -17,7 +17,6 @@ import type { OmiManuscript, OmiManuscriptState } from '../types/omi';
 export interface CreateBlankManuscriptInput {
   kind: OmiDocumentKind;
   volumeKind?: OmiVolumeKind;
-  editorMode?: 'scholarly' | 'simple-text';
   locale?: string;
   title?: string;
   author?: {
@@ -72,7 +71,6 @@ export function createBlankManuscript(
       input.kind,
       input.volumeKind,
     ),
-    ...(input.editorMode === 'simple-text' ? { editorMode: input.editorMode } : {}),
     agents: author ? [author] : [],
     contributions: author
       ? [{

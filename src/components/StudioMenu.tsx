@@ -1,3 +1,4 @@
+import { useDocumentWorkspaceMode } from '../app/documentWorkspaceMode';
 import {
   BookOpen,
   CircleX,
@@ -126,7 +127,8 @@ export function StudioMenu({
 }: StudioMenuProps) {
   const { t, locale } = useTranslation();
   const publicationCopy = getPublicationProfileCopy(locale);
-  const simpleTextMode = useStudioStore((state) => state.manuscript.editorMode === 'simple-text');
+  const workspaceDocumentId = useStudioStore((state) => state.manuscript.id);
+  const simpleTextMode = useDocumentWorkspaceMode((state) => state.modes[workspaceDocumentId] === 'simple-text');
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
   const simpleWordProcessorCopy = getSimpleWordProcessorCopy(locale);
   const editorialWorkflowLabel = supplementalCopy.editorialWorkspace;
