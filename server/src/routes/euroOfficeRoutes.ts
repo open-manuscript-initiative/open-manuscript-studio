@@ -143,7 +143,7 @@ euroOfficeRouter.get('/eurooffice/documents/:documentId/session', requireSession
     },
     height: '100%',
     width: '100%',
-    type: 'desktop',
+    type: request.query.type === 'mobile' ? 'mobile' : 'desktop',
   };
 
   const jwt = await new SignJWT(config)
