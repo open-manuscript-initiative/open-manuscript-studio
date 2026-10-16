@@ -18,7 +18,6 @@ import {
 } from '../model/sectionLayout';
 import type { OmiSection } from '../types/omi';
 import { BlockEditor } from './BlockEditor';
-import { getEditorCapabilities } from '../editor/editorCapabilities';
 
 interface PublicationHtmlSectionsEditorProps {
   sections: readonly OmiSection[];
@@ -26,7 +25,6 @@ interface PublicationHtmlSectionsEditorProps {
   paragraphStyleNextById: ReadonlyMap<string, string>;
   defaultParagraphStyleId: string;
   manuscriptLanguage: string;
-  simpleMode?: boolean;
 }
 
 export function PublicationHtmlSectionsEditor({
@@ -35,7 +33,6 @@ export function PublicationHtmlSectionsEditor({
   paragraphStyleNextById,
   defaultParagraphStyleId,
   manuscriptLanguage,
-  simpleMode = false,
 }: PublicationHtmlSectionsEditorProps) {
   const document = useMemo(
     () => buildContinuousManuscriptDocument(
@@ -82,9 +79,8 @@ export function PublicationHtmlSectionsEditor({
               onUpdate={(_documentId, content) => updateSection(section.id, content)}
               manuscriptLanguage={manuscriptLanguage}
               className="publication-layout-section-editor"
-              capabilities={simpleMode ? getEditorCapabilities('word-processing') : undefined}
               continuous
-              proofingMode={simpleMode ? 'none' : 'editor'}
+              proofingMode="editor"
             />
           </section>
         );

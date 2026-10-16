@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 
 import { createAndOpenBlankOmiDocument } from '../app/newDocumentActions';
 import { useStudioStore } from '../app/useStudioStore';
-import { tCatalog, useTranslation } from '../i18n';
+import { useTranslation } from '../i18n';
 import { isMobileStudio } from '../mobile/platform/platform';
 import type { OmiVolumeKind } from '../model/documentProfile';
 import { euroOfficeEnabled, requestPlainDocumentWorkspace } from '../services/euroOfficeApi';
@@ -42,12 +42,6 @@ export function NewDocumentActions({
     onCreated?.();
   };
 
-  const createSimpleTextDocument = () => {
-    if (!confirmSingleDocumentReplacement()) return;
-    createAndOpenBlankOmiDocument({ kind: 'study', editorMode: 'simple-text', locale });
-    onCreated?.();
-  };
-
   const createVolume = (volumeKind: OmiVolumeKind) => {
     if (!confirmSingleDocumentReplacement()) return;
     createAndOpenBlankOmiDocument({ kind: 'volume', volumeKind, locale });
@@ -68,10 +62,6 @@ export function NewDocumentActions({
         <button type="button" onClick={createStudy}>
           <FilePlus2 size={20} aria-hidden="true" />
           <span><strong>{copy.study}</strong><small>{copy.studyDescription}</small></span>
-        </button>
-        <button type="button" onClick={createSimpleTextDocument}>
-          <FilePlus2 size={20} aria-hidden="true" />
-          <span><strong>{tCatalog("/manuscript/simpleTextDocument")}</strong><small>{tCatalog("/manuscript/simpleTextDocumentDescription")}</small></span>
         </button>
         <button type="button" onClick={() => createVolume('monograph')}>
           <BookOpen size={20} aria-hidden="true" />
@@ -94,8 +84,8 @@ export function NewDocumentActions({
 
 function getCopy(locale: string) {
   if (locale === 'hu') return {
-    title: 'Új OMI dokumentum',
-    description: 'Indítson önálló tanulmányt, egyszerzős monográfiát vagy többszerzős tanulmánykötetet.',
+    title: 'Új dokumentum',
+    description: 'Hozzon létre OMI-tanulmányt vagy -kötetet, illetve hétköznapi DOCX-dokumentumot EuroOffice-szal.',
     study: 'Új OMI tanulmány',
     studyDescription: 'Önálló tanulmány saját címmel, metaadatokkal és tartalommal.',
     monograph: 'Új OMI monográfia',
@@ -107,8 +97,8 @@ function getCopy(locale: string) {
     plainDocumentsDescription: 'Natív Word-fájlok írása EuroOffice-szal, a Stúdión belül.',
   };
   if (locale === 'de') return {
-    title: 'Neues OMI-Dokument',
-    description: 'Beginnen Sie einen eigenständigen Beitrag, eine Monografie oder einen Sammelband.',
+    title: 'Neues Dokument',
+    description: 'Erstellen Sie einen OMI-Beitrag oder -Band oder ein gewöhnliches DOCX-Dokument mit EuroOffice.',
     study: 'Neue OMI-Studie',
     studyDescription: 'Eigenständiger Beitrag mit eigenem Titel, Metadaten und Inhalt.',
     monograph: 'Neue OMI-Monografie',
@@ -120,8 +110,8 @@ function getCopy(locale: string) {
     plainDocumentsDescription: 'Word-Dateien nativ mit EuroOffice in Studio bearbeiten.',
   };
   return {
-    title: 'New OMI document',
-    description: 'Start a standalone study, a single-author monograph, or a multi-author edited volume.',
+    title: 'New document',
+    description: 'Create an OMI study or volume, or write an everyday DOCX document with EuroOffice.',
     study: 'New OMI study',
     studyDescription: 'A standalone study with its own title, metadata, and content.',
     monograph: 'New OMI monograph',

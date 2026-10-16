@@ -9,8 +9,7 @@ export function ProofreadingController() {
 
   useEffect(() => {
     const applyToEditor = (editor: HTMLElement) => {
-      const simpleWordProcessor = editor.closest('[data-simple-word-processor="true"]');
-      editor.setAttribute('spellcheck', !simpleWordProcessor && spellcheckEnabled ? 'true' : 'false');
+      editor.setAttribute('spellcheck', spellcheckEnabled ? 'true' : 'false');
       editor.setAttribute('lang', manuscriptLanguage || 'en');
     };
     const apply = (root: ParentNode = document) => {

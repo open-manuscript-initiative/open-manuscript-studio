@@ -1,4 +1,3 @@
-import { useDocumentWorkspaceMode } from '../src/app/documentWorkspaceMode.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -90,10 +89,9 @@ test('copies saved profile country and website into a newly opened OMI author', 
     });
     useStudioStore.setState({ hasOpenDocument: false });
 
-    const manuscript = createAndOpenBlankOmiDocument({ kind: 'study', editorMode: 'simple-text', locale: 'hu' });
+    const manuscript = createAndOpenBlankOmiDocument({ kind: 'study', locale: 'hu' });
 
     assert.equal('editorMode' in manuscript, false);
-    assert.equal(useDocumentWorkspaceMode.getState().modes[manuscript.id], 'simple-text');
     assert.equal('editorMode' in manuscript.revisionHistory.revisions[0]!.snapshot.state, false);
     assert.equal(manuscript.agents[0]?.names[0]?.value, 'Anna Kovács');
     assert.deepEqual(manuscript.contributions[0]?.roles, ['author']);
