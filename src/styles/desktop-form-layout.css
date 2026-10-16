@@ -476,3 +476,29 @@
     max-height: 6.5rem;
   }
 }
+
+/* Give the document start page a balanced desktop grid. */
+@container (min-width: 1000px) {
+  .studio-menu-content .studio-menu-view--document {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .studio-menu-content .studio-menu-view--document > .omi-new-document-actions {
+    grid-column: span 7;
+    min-width: 0;
+  }
+
+  .studio-menu-content .studio-menu-view--document > .studio-tool-card[data-document-lifecycle="true"] {
+    grid-column: span 5;
+    min-width: 0;
+  }
+
+  .studio-menu-content .studio-menu-view--document > .docx-import-card {
+    grid-column: span 4;
+    min-width: 0;
+  }
+
+  .studio-menu-content .studio-menu-view--document .omi-new-document-actions--menu .omi-new-document-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  }
+}
