@@ -67,8 +67,15 @@ export async function createPlainDocument(title: string): Promise<PlainDocumentS
   return data.document;
 }
 
-export async function createEuroOfficeSession(documentId: string): Promise<EuroOfficeLaunch> {
-  const response = await apiFetch(`/api/eurooffice/documents/${encodeURIComponent(documentId)}/session`);
+export type EuroOfficeEditorType = 'desktop' | 'mobile';
+
+export async function createEuroOfficeSession(
+  documentId: string,
+  editorType: EuroOfficeEditorType = 'desktop',
+): Promise<EuroOfficeLaunch> {
+  const response = await apiFetch(
+    `/api/eurooffice/documents/${encodeURIComponent(documentId)}/session?type=${editorType}`,
+  );
   return readJson<EuroOfficeLaunch>(response);
 }
 
