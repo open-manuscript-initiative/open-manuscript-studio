@@ -87,7 +87,8 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
     let cancelled = false;
     setBusy(true);
     setError('');
-    createEuroOfficeSession(documentId)
+    const editorType = window.matchMedia('(max-width: 767px)').matches ? 'mobile' : 'desktop';
+    createEuroOfficeSession(documentId, editorType)
       .then(async (session) => {
         await loadApiScript(session.apiScriptUrl);
         if (!cancelled) {
