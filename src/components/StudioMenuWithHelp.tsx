@@ -1,4 +1,3 @@
-import { useDocumentWorkspaceMode } from '../app/documentWorkspaceMode';
 import { Bot, Boxes, CircleHelp, CircleX, FolderOpen, ListTree, Plug, UploadCloud } from 'lucide-react';
 import { Component, lazy, Suspense, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
@@ -76,7 +75,6 @@ export function StudioMenuWithHelp({
   const localFileLabels = getLocalFileLabels(locale, platform);
   const native = isNativeStudio();
   const manuscript = useStudioStore((state) => state.manuscript);
-  const simpleTextMode = useDocumentWorkspaceMode((state) => state.modes[manuscript.id] === 'simple-text');
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
   const previousManuscriptRef = useRef(manuscript);
   const browserFileInputRef = useRef<HTMLInputElement>(null);
@@ -251,8 +249,8 @@ export function StudioMenuWithHelp({
       onClose={onClose}
       ojsAssignment={ojsAssignment}
       navigationAfterReferences={listsNavigation}
-      navigationBeforeTools={simpleTextMode ? null : workflowServicesNavigation}
-      navigationAfterSettings={<>{simpleTextMode ? null : modulesNavigation}{utilityNavigation}</>}
+      navigationBeforeTools={workflowServicesNavigation}
+      navigationAfterSettings={<>{modulesNavigation}{utilityNavigation}</>}
       documentCloseAction={documentCloseAction}
       externalContentActive={externalContentActive}
     />

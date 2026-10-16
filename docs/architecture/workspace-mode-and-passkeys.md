@@ -1,11 +1,11 @@
 # Workspace mode and passkey boundaries
 
-Simple writing mode is a local workspace preference keyed by document ID in
-`omi-document-workspace-modes`. It does not enter new manuscript state, portable
-OMI, hashes or revision snapshots. Copying a file to another installation uses
-that installation's workspace defaults. Unknown imported extensions are retained;
-legacy `editorMode` data is not silently deleted or treated as authorization.
-The vendored schema matches the OMI source; there is no Studio-only schema field.
+Editor selection is an application concern and is not stored in portable OMI,
+hashes or revision snapshots. The former simple-writing-mode preference is no
+longer read; older values in `omi-document-workspace-modes` are ignored. Unknown
+imported extensions are retained; legacy `editorMode` data is not silently
+deleted or treated as authorization. The vendored schema matches the OMI source;
+there is no Studio-only schema field.
 
 ## Passkey API v1
 

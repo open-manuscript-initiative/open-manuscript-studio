@@ -1,4 +1,3 @@
-import { useDocumentWorkspaceMode } from '../app/documentWorkspaceMode';
 import {
   BookOpen,
   CircleX,
@@ -16,7 +15,6 @@ import {
   SaveAll,
   Settings2,
   StickyNote,
-  Type,
   Usb,
   UserPlus,
   Users,
@@ -38,7 +36,6 @@ import { useTranslation } from '../i18n';
 import { getLocalFileLabels, type LocalFileLabels } from '../i18n/nativeStorageTranslations';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
 import { getStudioMenuSupplementalCopy } from '../i18n/studioMenuSupplementalTranslations';
-import { getSimpleWordProcessorCopy } from '../i18n/simpleWordProcessor';
 import { getStudioPlatform, type StudioPlatform } from '../mobile/platform/platform';
 import {
   getDeviceStorageMode,
@@ -87,7 +84,6 @@ import { SectionStructurePanel } from './SectionStructurePanel';
 
 type StudioMenuView =
   | 'document'
-  | 'simple-editor'
   | 'manuscript'
   | 'notes'
   | 'references'
@@ -127,10 +123,7 @@ export function StudioMenu({
 }: StudioMenuProps) {
   const { t, locale } = useTranslation();
   const publicationCopy = getPublicationProfileCopy(locale);
-  const workspaceDocumentId = useStudioStore((state) => state.manuscript.id);
-  const simpleTextMode = useDocumentWorkspaceMode((state) => state.modes[workspaceDocumentId] === 'simple-text');
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
-  const simpleWordProcessorCopy = getSimpleWordProcessorCopy(locale);
   const editorialWorkflowLabel = supplementalCopy.editorialWorkspace;
   const platform = getStudioPlatform();
   const nativeMobile = platform === 'android' || platform === 'ios';
@@ -218,7 +211,6 @@ export function StudioMenu({
             ><House size={18} aria-hidden="true" /><span>{supplementalCopy.home}</span></button>
             <MenuNavGroup label={supplementalCopy.manuscriptGroup}>
               <MenuButton active={activeView === 'document'} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} />
-              <MenuButton active={activeView === 'simple-editor'} icon={<Type size={18} aria-hidden="true" />} label={simpleWordProcessorCopy.label} onClick={() => setActiveView('simple-editor')} />
               <MenuButton active={activeView === 'manuscript'} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} />
               <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} />
               <MenuButton active={activeView === 'notes'} icon={<StickyNote size={18} aria-hidden="true" />} label={t('studio.navigation.notes')} onClick={() => setActiveView('notes')} />
@@ -226,17 +218,15 @@ export function StudioMenu({
               {navigationAfterReferences}
               <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
             </MenuNavGroup>
-            {!simpleTextMode ? <>
-              <MenuNavGroup label={supplementalCopy.editorialGroup}>
-                <MenuButton active={activeView === 'editorial-workflow'} icon={<Inbox size={18} aria-hidden="true" />} label={editorialWorkflowLabel} onClick={() => setActiveView('editorial-workflow')} />
-                {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
-                <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} />
-              </MenuNavGroup>
-              <MenuNavGroup label={supplementalCopy.publicationGroup}>
-                <MenuButton active={activeView === 'publication-editor'} icon={<LayoutTemplate size={18} aria-hidden="true" />} label={supplementalCopy.publicationEditor} onClick={() => setActiveView('publication-editor')} />
-                <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} />
-              </MenuNavGroup>
-            </> : null}
+            <MenuNavGroup label={supplementalCopy.editorialGroup}>
+              <MenuButton active={activeView === 'editorial-workflow'} icon={<Inbox size={18} aria-hidden="true" />} label={editorialWorkflowLabel} onClick={() => setActiveView('editorial-workflow')} />
+              {ojsAssignment ? <MenuButton active={activeView === 'assignments'} icon={<UserPlus size={18} aria-hidden="true" />} label={supplementalCopy.assignments} onClick={() => setActiveView('assignments')} /> : null}
+              <MenuButton active={activeView === 'signatures'} icon={<Fingerprint size={18} aria-hidden="true" />} label={supplementalCopy.signatures} onClick={() => setActiveView('signatures')} />
+            </MenuNavGroup>
+            <MenuNavGroup label={supplementalCopy.publicationGroup}>
+              <MenuButton active={activeView === 'publication-editor'} icon={<LayoutTemplate size={18} aria-hidden="true" />} label={supplementalCopy.publicationEditor} onClick={() => setActiveView('publication-editor')} />
+              <MenuButton active={activeView === 'publication'} icon={<Printer size={18} aria-hidden="true" />} label={publicationCopy.navigation} onClick={() => setActiveView('publication')} />
+            </MenuNavGroup>
             <MenuNavGroup label={supplementalCopy.toolsGroup}>
               {navigationBeforeTools}
               <MenuButton active={activeView === 'tools'} icon={<Wrench size={18} aria-hidden="true" />} label={supplementalCopy.tools} onClick={() => setActiveView('tools')} />
@@ -246,19 +236,18 @@ export function StudioMenu({
               {navigationAfterSettings}
             </MenuNavGroup>
           </nav>
-          <div className={`studio-menu-content${activeView === 'publication-editor' || activeView === 'simple-editor' ? ' studio-menu-content--publication-editor' : ''}${!hasActiveContent ? ' studio-menu-content--empty' : ''}`}>
+          <div className={`studio-menu-content${activeView === 'publication-editor' ? ' studio-menu-content--publication-editor' : ''}${!hasActiveContent ? ' studio-menu-content--empty' : ''}`}>
             {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} onCreated={returnHome} /> : null}
-            {activeView === 'simple-editor' ? <PublicationStyleEditor simpleMode /> : null}
             {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={returnHome} /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
             {activeView === 'notes' ? <NotesPanel onNavigate={returnHome} /> : null}
             {activeView === 'references' ? <ReferencesView /> : null}
-            {!simpleTextMode && activeView === 'editorial-workflow' ? <NativeEditorialWorkflowPanel /> : null}
-            {!simpleTextMode && activeView === 'assignments' && ojsAssignment ? <OjsAssignmentPanel actorMode={ojsAssignment.actorMode} context={ojsAssignment.context} /> : null}
-            {!simpleTextMode && activeView === 'signatures' ? <AuthorSignaturePanel /> : null}
+            {activeView === 'editorial-workflow' ? <NativeEditorialWorkflowPanel /> : null}
+            {activeView === 'assignments' && ojsAssignment ? <OjsAssignmentPanel actorMode={ojsAssignment.actorMode} context={ojsAssignment.context} /> : null}
+            {activeView === 'signatures' ? <AuthorSignaturePanel /> : null}
             {activeView === 'history' ? <HistoryPanel /> : null}
-            {!simpleTextMode && activeView === 'publication-editor' ? <PublicationStyleEditor /> : null}
-            {!simpleTextMode && activeView === 'publication' ? <PublicationProfilePanel /> : null}
+            {activeView === 'publication-editor' ? <PublicationStyleEditor /> : null}
+            {activeView === 'publication' ? <PublicationProfilePanel /> : null}
             {activeView === 'tools' ? <ToolsView /> : null}
             {activeView === 'settings' ? <SettingsView /> : null}
           </div>

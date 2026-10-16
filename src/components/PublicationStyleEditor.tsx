@@ -24,7 +24,6 @@ import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'rea
 import { useStudioStore } from '../app/useStudioStore';
 import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json';
 import { useTranslation } from '../i18n';
-import { getSimpleWordProcessorCopy } from '../i18n/simpleWordProcessor';
 import { getManuscriptLanguageDisplayName } from '../model/manuscriptLanguage';
 import type { ProofingSelection } from '../model/proofing';
 import {
@@ -169,7 +168,7 @@ function copyFor(locale: string) {
   };
 }
 
-export function PublicationStyleEditor({ simpleMode = false }: { simpleMode?: boolean }) {
+export function PublicationStyleEditor() {
   const { locale } = useTranslation();
   const manuscript = useStudioStore((state) => state.manuscript);
   const manuscriptLanguage = manuscript.locale;
@@ -195,7 +194,7 @@ export function PublicationStyleEditor({ simpleMode = false }: { simpleMode?: bo
   const [message, setMessage] = useState('');
   const [openPanel, setOpenPanel] = useState<PublicationRibbonPanel>(null);
   const [documentViewMode, setDocumentViewMode] = useState<PublicationDocumentViewMode>(
-    simpleMode ? 'html' : 'print',
+    'print',
   );
   const [proofingSelection, setProofingSelection] = useState<ProofingSelection | null>(null);
   const [activeParagraphStyleId, setActiveParagraphStyleId] = useState(
@@ -237,13 +236,6 @@ export function PublicationStyleEditor({ simpleMode = false }: { simpleMode?: bo
       document.removeEventListener('keydown', closeOnEscape, true);
     };
   }, [openPanel]);
-
-  useEffect(() => {
-    if (!simpleMode) return;
-    setDocumentViewMode('html');
-    setOpenPanel(null);
-    setProofingSelection(null);
-  }, [simpleMode]);
 
   function patchStyle(update: (current: PublicationStyle) => PublicationStyle): void {
     setSaved(false);
@@ -692,21 +684,11 @@ export function PublicationStyleEditor({ simpleMode = false }: { simpleMode?: bo
     setActiveParagraphStyleId(selectedParagraphStyleId);
   }, [paragraphStyleAssignable, proofingSelection?.blockId, selectedParagraphStyleId]);
 
-  const simpleCopy = getSimpleWordProcessorCopy(locale);
-
   return (
     <section
-      className={`publication-style-editor${simpleMode ? ' publication-style-editor--simple' : ''}`}
-      aria-labelledby={simpleMode ? 'simple-word-processor-title' : 'publication-style-editor-title'}
+      className="publication-style-editor"
+      aria-labelledby="publication-style-editor-title"
     >
-      {simpleMode ? (
-        <div className="publication-profile-section-heading simple-word-processor-heading">
-          <div>
-            <h4 id="simple-word-processor-title">{simpleCopy.label}</h4>
-            <p>{simpleCopy.description}</p>
-          </div>
-        </div>
-      ) : null}
       <div className="publication-profile-section-heading publication-style-editor-heading">
         <div>
           <h4 id="publication-style-editor-title">{copy.title}</h4>
@@ -1184,10 +1166,9 @@ export function PublicationStyleEditor({ simpleMode = false }: { simpleMode?: bo
       <div className="publication-style-editor-layout">
         <PublicationDocumentCanvas
           style={style}
-          viewMode={simpleMode ? 'html' : documentViewMode}
+          viewMode={documentViewMode}
           onViewModeChange={changeDocumentViewMode}
           onProofingSelection={setProofingSelection}
-          simpleMode={simpleMode}
         />
       </div>
     </section>
