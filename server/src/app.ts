@@ -108,6 +108,7 @@ app.get('/api', (_request, response) => {
 
 app.use('/api/health', healthRouter);
 app.use(apiRateLimit);
+app.use('/api', euroOfficeRouter);
 app.use('/api/v1', studioModuleRouter);
 app.use('/api/v1', historyArchivesRouter);
 app.use('/api/v1', religiousTextsRouter);
@@ -145,7 +146,6 @@ app.use('/api', userIntegrationRouter);
 app.use('/api', referenceManagerRouter);
 app.use('/api', personalReferenceLibraryRouter);
 app.use('/api', directSubmissionRouter);
-app.use('/api', euroOfficeRouter);
 app.use('/api', agentReviewRouter);
 app.use('/api', integrationExecutionRouter);
 app.use('/api/native-editorial', nativeEditorialWorkflowRouter);
