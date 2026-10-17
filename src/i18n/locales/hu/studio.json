@@ -1707,7 +1707,7 @@
         "processingNote": "Az oldal feldolgozás alatt áll. Elhagyhatod ezt a nézetet, és később visszatérve ellenőrizheted a mentett feladatot. A Transkribus korlátozott ideig őrzi meg az eredményeket; mielőbb töltsd le őket.",
         "integrationSecurity": "Az OMI-bejelentkezés és a külső fiókok elkülönülnek. A csatlakozás a szolgáltató által támogatott hitelesítést követi. A kapcsolatok tárolt titkai a Stúdió szerverén titkosítva maradnak.",
         "helpTitle": "Transkribus: oldalképből ellenőrzött átirat",
-        "helpBody": "Csatlakoztasd a fiókodat az Integrációk → Transkribus résznél, majd kapcsold be a Kritikai szövegkiadás modult a Beállítások → Kutatási modulok alatt. A modulban válassz legfeljebb 20 MB-os JPEG, PNG vagy TIFF oldalképet, add meg a Transkribus-modell azonosítóját, engedélyezd a kreditfelhasználást, és indítsd a felismerést. Az utolsó feladat ezen az eszközön megmarad, így visszatérés után lekérhető az állapota. Ellenőrizd és javítsd az átiratot, add meg a forrást és a jogállást, válassz kéziratszakaszt, majd szúrd be. A szöveg és az eredeti PAGE XML letölthető. A jelszót nem tároljuk; a hozzáférési és frissítési tokenek a Stúdió API-szerverén titkosítottak. A PDF-feldolgozás és a gyűjteményszinkronizálás nem része ennek a munkafolyamatnak.",
+        "helpBody": "Csatlakoztasd a fiókodat az Integrációk → Transkribus résznél, majd kapcsold be a Kritikai szövegkiadás modult a Beállítások → Kutatási modulok alatt. A modulban válassz legfeljebb 20 MB-os JPEG, PNG vagy TIFF oldalképet, keress név szerint a nyilvános modellek között, szűrj nyelvre vagy anyagtípusra, és válassz modellt, engedélyezd a kreditfelhasználást, és indítsd a felismerést. Az utolsó feladat ezen az eszközön megmarad, így visszatérés után lekérhető az állapota. Ellenőrizd és javítsd az átiratot, add meg a forrást és a jogállást, válassz kéziratszakaszt, majd szúrd be. A szöveg és az eredeti PAGE XML letölthető. A jelszót nem tároljuk; a hozzáférési és frissítési tokenek a Stúdió API-szerverén titkosítottak. A PDF-feldolgozás és a gyűjteményszinkronizálás nem része ennek a munkafolyamatnak.",
         "rightsOptions": {
           "unknown": "Jogállás nincs megállapítva",
           "public-domain": "Közkincs (szerzői nyilatkozat)",
@@ -1729,8 +1729,8 @@
           "TRANSKRIBUS_RECONNECT": "Csatlakoztasd újra a Transkribus-fiókot; a munkamenet hiányzik vagy lejárt.",
           "TRANSKRIBUS_ACCESS_REQUIRED": "A Transkribus megtagadta az API-hozzáférést. Ellenőrizd az előfizetést és a szerver API-beállítását.",
           "TRANSKRIBUS_LIMIT": "Elfogytak a Transkribus-kreditek, vagy elérted a lekérési korlátot. Újrapróbálás előtt ellenőrizd a fiókodat.",
-          "TRANSKRIBUS_NOT_FOUND": "A modell vagy az eredmény nem található. Ellenőrizd a modell azonosítóját; a kész eredmény megőrzési ideje lejárhatott.",
-          "TRANSKRIBUS_INVALID_REQUEST": "Ellenőrizd a modell azonosítóját, a képet, az átirat forrását és a szükséges jóváhagyást.",
+          "TRANSKRIBUS_NOT_FOUND": "A modell vagy az eredmény nem található. Válassz másik modellt; a kész eredmény megőrzési ideje lejárhatott.",
+          "TRANSKRIBUS_INVALID_REQUEST": "Ellenőrizd a kiválasztott modellt, az oldalképet, az átirat forrását és a szükséges jóváhagyást.",
           "TRANSKRIBUS_INVALID_IMAGE": "A fájl nem támogatott oldalkép, vagy nagyobb 20 MB-nál.",
           "TRANSKRIBUS_INVALID_RESPONSE": "A Transkribus nem a várt választ küldte. A meglévő kézirat nem változott.",
           "TRANSKRIBUS_RESULT_TOO_LARGE": "A felismerési eredmény meghaladja a támogatott méretet.",
@@ -1740,11 +1740,31 @@
           "NOT_AUTHENTICATED": "A Transkribus csatlakoztatásához jelentkezz be a Stúdióba.",
           "MODULE_DISABLED_BY_INSTALLATION": "A rendszergazda letiltotta a Kritikai szövegkiadás modult.",
           "MODULE_NOT_ACTIVE": "A Beállításoknál kapcsold be a Kritikai szövegkiadás modult ehhez a munkaterülethez.",
-          "RATE_LIMIT_EXCEEDED": "Túl sok Stúdió API-kérés. Várj az újrapróbálás előtt."
+          "RATE_LIMIT_EXCEEDED": "Túl sok Stúdió API-kérés. Várj az újrapróbálás előtt.",
+          "TRANSKRIBUS_MODELS_UNAVAILABLE": "A nyilvános modellkatalógus nem tölthető be. Próbáld újra, vagy add meg kézzel a modell azonosítóját."
         },
         "forget": "Mentett feladat törlése ezen az eszközön",
         "forgetConfirm": "Törlöd a mentett feladatot és átiratot erről az eszközről? Előbb töltsd le a szükséges szöveget. Ez nem szakítja meg a Transkribus feldolgozását; az aktív feladat továbbra is használhat kreditet.",
-        "untitledSection": "Névtelen szakasz"
+        "untitledSection": "Névtelen szakasz",
+        "model": "Felismerési modell",
+        "modelSearch": "Modellek keresése",
+        "modelLanguage": "Modell nyelve",
+        "modelMaterial": "Anyagtípus",
+        "allLanguages": "Minden nyelv",
+        "allMaterials": "Kézírás és nyomtatott szöveg",
+        "handwritten": "Kézírás",
+        "printed": "Nyomtatott szöveg",
+        "chooseModel": "Válassz modellt…",
+        "modelsHint": "Válassz név szerint a nyilvános szövegfelismerő modellek közül. Az azonosítót a Stúdió automatikusan kitölti.",
+        "modelsLoading": "Transkribus-modellek betöltése…",
+        "modelsEmpty": "Nincs a szűrésnek megfelelő modell.",
+        "modelsRetry": "Modellek újratöltése",
+        "modelDetails": "Modelladatok a Transkribus oldalán",
+        "manualModel": "Saját modell / azonosító megadása",
+        "manualModelHint": "Saját modellhez add meg a Transkribus-fiókodban látható modellazonosítót. Ha a katalógus nem érhető el, nyilvános modell azonosítóját is megadhatod.",
+        "selectedModel": "Kiválasztott modell",
+        "modelMatches": "Megfelelő modellek",
+        "modelCenturies": "Századok"
       }
     }
   },

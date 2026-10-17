@@ -1707,7 +1707,7 @@
         "processingNote": "Strana sa spracúva. Obrazovku môžete opustiť a neskôr skontrolovať uloženú úlohu. Transkribus uchováva výsledky obmedzený čas; stiahnite si ich čo najskôr.",
         "integrationSecurity": "Prihlásenie OMI a externé účty sú oddelené. Pripojenie používa prihlasovací postup poskytovateľa. Uložené tajné údaje pripojenia sú na serveri Studio šifrované.",
         "helpTitle": "Transkribus: z obrázka strany na overený prepis",
-        "helpBody": "Pripojte účet v časti Integrácie → Transkribus a zapnite Kritickú edíciu textu v Nastaveniach → Výskumné moduly. V module vyberte stranu JPEG, PNG alebo TIFF do 20 MB, zadajte ID modelu Transkribus, povoľte použitie kreditov a spustite rozpoznávanie. Posledná úloha ostáva uložená v zariadení na neskoršiu kontrolu stavu. Skontrolujte a opravte prepis, zadajte zdroj a práva, vyberte časť rukopisu a vložte text. Text a pôvodné PAGE XML si môžete stiahnuť. Heslo sa neukladá; prístupové a obnovovacie tokeny sú šifrované na serveri Studio API. Spracovanie PDF a synchronizácia zbierok nie sú súčasťou tohto postupu.",
+        "helpBody": "Pripojte účet v časti Integrácie → Transkribus a zapnite Kritickú edíciu textu v Nastaveniach → Výskumné moduly. V module vyberte stranu JPEG, PNG alebo TIFF do 20 MB, vyhľadajte verejné modely podľa názvu, filtrujte podľa jazyka alebo materiálu a vyberte model, povoľte použitie kreditov a spustite rozpoznávanie. Posledná úloha ostáva uložená v zariadení na neskoršiu kontrolu stavu. Skontrolujte a opravte prepis, zadajte zdroj a práva, vyberte časť rukopisu a vložte text. Text a pôvodné PAGE XML si môžete stiahnuť. Heslo sa neukladá; prístupové a obnovovacie tokeny sú šifrované na serveri Studio API. Spracovanie PDF a synchronizácia zbierok nie sú súčasťou tohto postupu.",
         "rightsOptions": {
           "unknown": "Právny stav nie je určený",
           "public-domain": "Verejná doména (vyhlásenie autora)",
@@ -1729,8 +1729,8 @@
           "TRANSKRIBUS_RECONNECT": "Znova pripojte účet Transkribus; relácia chýba alebo vypršala.",
           "TRANSKRIBUS_ACCESS_REQUIRED": "Transkribus odmietol prístup k API. Skontrolujte program účtu a konfiguráciu API servera.",
           "TRANSKRIBUS_LIMIT": "Minuli sa kredity Transkribus alebo bol dosiahnutý limit požiadaviek. Pred opakovaním skontrolujte účet.",
-          "TRANSKRIBUS_NOT_FOUND": "Model alebo výsledok sa nenašiel. Skontrolujte ID modelu; platnosť hotového výsledku mohla vypršať.",
-          "TRANSKRIBUS_INVALID_REQUEST": "Skontrolujte ID modelu, obrázok, zdroj prepisu a požadovaný súhlas.",
+          "TRANSKRIBUS_NOT_FOUND": "Model alebo výsledok sa nenašiel. Vyberte iný model; dokončeným výsledkom mohla uplynúť platnosť.",
+          "TRANSKRIBUS_INVALID_REQUEST": "Skontrolujte vybraný model, obrázok, zdroj prepisu a požadovaný súhlas.",
           "TRANSKRIBUS_INVALID_IMAGE": "Súbor nie je podporovaný obrázok strany alebo je väčší ako 20 MB.",
           "TRANSKRIBUS_INVALID_RESPONSE": "Transkribus vrátil neočakávanú odpoveď. Existujúci rukopis sa nezmenil.",
           "TRANSKRIBUS_RESULT_TOO_LARGE": "Výsledok rozpoznávania prekračuje podporovanú veľkosť.",
@@ -1740,11 +1740,31 @@
           "NOT_AUTHENTICATED": "Pred pripojením Transkribus sa prihláste do Studio.",
           "MODULE_DISABLED_BY_INSTALLATION": "Správca vypol modul Kritická edícia textu.",
           "MODULE_NOT_ACTIVE": "V Nastaveniach zapnite Kritickú edíciu textu pre tento pracovný priestor.",
-          "RATE_LIMIT_EXCEEDED": "Príliš veľa požiadaviek na Studio API. Pred opakovaním počkajte."
+          "RATE_LIMIT_EXCEEDED": "Príliš veľa požiadaviek na Studio API. Pred opakovaním počkajte.",
+          "TRANSKRIBUS_MODELS_UNAVAILABLE": "Verejný katalóg modelov sa nepodarilo načítať. Skúste to znova alebo zadajte ID modelu ručne."
         },
         "forget": "Vymazať uloženú úlohu v tomto zariadení",
         "forgetConfirm": "Vymazať uloženú úlohu a prepis z tohto zariadenia? Potrebný text si najprv stiahnite. Tým sa nezruší spracovanie v Transkribus; aktívna úloha môže ďalej používať kredity.",
-        "untitledSection": "Časť bez názvu"
+        "untitledSection": "Časť bez názvu",
+        "model": "Rozpoznávací model",
+        "modelSearch": "Hľadať modely",
+        "modelLanguage": "Jazyk modelu",
+        "modelMaterial": "Typ materiálu",
+        "allLanguages": "Všetky jazyky",
+        "allMaterials": "Rukopis aj tlač",
+        "handwritten": "Rukopis",
+        "printed": "Tlač",
+        "chooseModel": "Vyberte model…",
+        "modelsHint": "Vyberte verejný model rozpoznávania textu podľa názvu. Studio vyplní jeho ID automaticky.",
+        "modelsLoading": "Načítavajú sa modely Transkribus…",
+        "modelsEmpty": "Žiadne modely nezodpovedajú týmto filtrom.",
+        "modelsRetry": "Znova načítať modely",
+        "modelDetails": "Podrobnosti modelu v Transkribus",
+        "manualModel": "Súkromný model / zadať ID",
+        "manualModelHint": "Pre súkromný model zadajte ID modelu zo svojho účtu Transkribus. Ak katalóg nie je dostupný, môžete zadať aj ID verejného modelu.",
+        "selectedModel": "Vybraný model",
+        "modelMatches": "Zodpovedajúce modely",
+        "modelCenturies": "Storočia"
       }
     }
   },

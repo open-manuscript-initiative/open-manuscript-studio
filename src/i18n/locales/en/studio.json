@@ -1707,7 +1707,7 @@
         "processingNote": "The page is being processed. You may leave this screen and return to check the saved job. Results are retained by Transkribus for a limited time; download them promptly.",
         "integrationSecurity": "OMI sign-in and external accounts are separate. Connections follow each provider’s supported authentication flow. Stored integration secrets are encrypted on the Studio server.",
         "helpTitle": "Transkribus: page images to reviewed transcriptions",
-        "helpBody": "Connect your account under Integrations → Transkribus, then enable Critical text edition in Settings → Research modules. In that module choose a JPEG, PNG or TIFF page (up to 20 MB), enter a model ID from Transkribus, approve the credit use and start recognition. The last job is saved on this device for status checks after returning. Review and correct the transcription, provide its source and rights, choose a manuscript section and insert it. Text and original PAGE XML can be downloaded. The password is not stored; access and refresh tokens are encrypted on the Studio API server. PDF files and collection synchronisation are not part of this workflow.",
+        "helpBody": "Connect your account under Integrations → Transkribus, then enable Critical text edition in Settings → Research modules. In that module choose a JPEG, PNG or TIFF page (up to 20 MB), search the public models by name, filter by language or material and select a model, approve the credit use and start recognition. The last job is saved on this device for status checks after returning. Review and correct the transcription, provide its source and rights, choose a manuscript section and insert it. Text and original PAGE XML can be downloaded. The password is not stored; access and refresh tokens are encrypted on the Studio API server. PDF files and collection synchronisation are not part of this workflow.",
         "rightsOptions": {
           "unknown": "Rights not established",
           "public-domain": "Public domain (author declaration)",
@@ -1729,8 +1729,8 @@
           "TRANSKRIBUS_RECONNECT": "Reconnect your Transkribus account; the session is missing or expired.",
           "TRANSKRIBUS_ACCESS_REQUIRED": "Transkribus refused API access. Check the account plan and the server API configuration.",
           "TRANSKRIBUS_LIMIT": "Transkribus credits or request limits have been reached. Check your account before retrying.",
-          "TRANSKRIBUS_NOT_FOUND": "The model or result was not found. Check the model ID; completed results may have expired.",
-          "TRANSKRIBUS_INVALID_REQUEST": "Check the model ID, image, transcription source and required approval.",
+          "TRANSKRIBUS_NOT_FOUND": "The model or result was not found. Choose another model; completed results may have expired.",
+          "TRANSKRIBUS_INVALID_REQUEST": "Check the selected model, image, transcription source and required approval.",
           "TRANSKRIBUS_INVALID_IMAGE": "The file is not a supported page image or exceeds 20 MB.",
           "TRANSKRIBUS_INVALID_RESPONSE": "Transkribus returned an unexpected response. The existing manuscript was not changed.",
           "TRANSKRIBUS_RESULT_TOO_LARGE": "The recognition result exceeds the supported size.",
@@ -1740,11 +1740,31 @@
           "NOT_AUTHENTICATED": "Sign in to Studio before connecting Transkribus.",
           "MODULE_DISABLED_BY_INSTALLATION": "The administrator has disabled the Critical text edition module.",
           "MODULE_NOT_ACTIVE": "Enable Critical text edition for this workspace in Settings.",
-          "RATE_LIMIT_EXCEEDED": "Too many Studio API requests. Wait before trying again."
+          "RATE_LIMIT_EXCEEDED": "Too many Studio API requests. Wait before trying again.",
+          "TRANSKRIBUS_MODELS_UNAVAILABLE": "The public model catalogue could not be loaded. Try again or enter a model ID manually."
         },
         "forget": "Clear saved job on this device",
         "forgetConfirm": "Clear the saved job and transcription from this device? Download any needed text first. This does not cancel processing in Transkribus; an active job may continue using credits.",
-        "untitledSection": "Untitled section"
+        "untitledSection": "Untitled section",
+        "model": "Recognition model",
+        "modelSearch": "Search models",
+        "modelLanguage": "Model language",
+        "modelMaterial": "Material",
+        "allLanguages": "All languages",
+        "allMaterials": "Handwriting and print",
+        "handwritten": "Handwritten",
+        "printed": "Printed",
+        "chooseModel": "Choose a model…",
+        "modelsHint": "Choose a public text recognition model by name. Studio fills in its ID automatically.",
+        "modelsLoading": "Loading Transkribus models…",
+        "modelsEmpty": "No models match these filters.",
+        "modelsRetry": "Reload models",
+        "modelDetails": "Model details on Transkribus",
+        "manualModel": "Private model / enter an ID",
+        "manualModelHint": "For a private model, enter its model ID from your Transkribus account. You can also enter a public model ID if the catalogue is unavailable.",
+        "selectedModel": "Selected model",
+        "modelMatches": "Matching models",
+        "modelCenturies": "Centuries"
       }
     }
   },

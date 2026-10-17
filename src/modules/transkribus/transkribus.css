@@ -14,3 +14,9 @@
 .transkribus-panel .transkribus-check{display:flex;align-items:flex-start;gap:.45rem;line-height:1.45}
 .transkribus-check input{flex-shrink:0;margin-top:.2rem}
 .transkribus-panel [role=alert],.transkribus-connection [role=alert]{color:var(--studio-danger,#a32929)}
+.transkribus-model-picker{display:grid;gap:.5rem;min-width:0}
+.transkribus-selected-model{display:grid;gap:.2rem;overflow-wrap:anywhere}
+.transkribus-manual-model{min-width:0;font-size:.86rem}
+.transkribus-manual-model summary{width:fit-content;max-width:100%;cursor:pointer}
+.transkribus-manual-model[open]{display:grid;gap:.5rem}
+.transkribus-manual-model input[type=number]{max-width:14rem}

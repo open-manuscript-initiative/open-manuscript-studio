@@ -1707,7 +1707,7 @@
         "processingNote": "Die Seite wird verarbeitet. Sie können diese Ansicht verlassen und den gespeicherten Auftrag später prüfen. Transkribus bewahrt Ergebnisse nur begrenzt auf; laden Sie sie zeitnah herunter.",
         "integrationSecurity": "OMI-Anmeldung und externe Konten sind getrennt. Verbindungen folgen dem Anmeldeverfahren des Anbieters. Gespeicherte Verbindungsgeheimnisse sind auf dem Studio-Server verschlüsselt.",
         "helpTitle": "Transkribus: vom Seitenbild zur geprüften Transkription",
-        "helpBody": "Verbinden Sie Ihr Konto unter Integrationen → Transkribus und aktivieren Sie Kritische Textedition unter Einstellungen → Forschungsmodule. Wählen Sie dort ein JPEG-, PNG- oder TIFF-Seitenbild bis 20 MB, geben Sie eine Transkribus-Modell-ID ein, erlauben Sie den Guthabenverbrauch und starten Sie die Erkennung. Der letzte Auftrag bleibt auf diesem Gerät für spätere Statusabfragen gespeichert. Prüfen und korrigieren Sie die Transkription, geben Sie Quelle und Rechte an, wählen Sie einen Manuskriptabschnitt und fügen Sie den Text ein. Text und originales PAGE XML sind herunterladbar. Das Passwort wird nicht gespeichert; Zugriffs- und Aktualisierungstoken sind auf dem Studio-API-Server verschlüsselt. PDF-Verarbeitung und Sammlungssynchronisierung gehören nicht zu diesem Ablauf.",
+        "helpBody": "Verbinden Sie Ihr Konto unter Integrationen → Transkribus und aktivieren Sie Kritische Textedition unter Einstellungen → Forschungsmodule. Wählen Sie dort ein JPEG-, PNG- oder TIFF-Seitenbild bis 20 MB, suchen Sie öffentliche Modelle nach Namen, filtern Sie nach Sprache oder Material und wählen Sie ein Modell, erlauben Sie den Guthabenverbrauch und starten Sie die Erkennung. Der letzte Auftrag bleibt auf diesem Gerät für spätere Statusabfragen gespeichert. Prüfen und korrigieren Sie die Transkription, geben Sie Quelle und Rechte an, wählen Sie einen Manuskriptabschnitt und fügen Sie den Text ein. Text und originales PAGE XML sind herunterladbar. Das Passwort wird nicht gespeichert; Zugriffs- und Aktualisierungstoken sind auf dem Studio-API-Server verschlüsselt. PDF-Verarbeitung und Sammlungssynchronisierung gehören nicht zu diesem Ablauf.",
         "rightsOptions": {
           "unknown": "Rechtsstatus ungeklärt",
           "public-domain": "Gemeinfrei (Erklärung des Autors)",
@@ -1729,8 +1729,8 @@
           "TRANSKRIBUS_RECONNECT": "Verbinden Sie Ihr Transkribus-Konto erneut; die Sitzung fehlt oder ist abgelaufen.",
           "TRANSKRIBUS_ACCESS_REQUIRED": "Transkribus hat den API-Zugang verweigert. Prüfen Sie Kontotarif und API-Konfiguration des Servers.",
           "TRANSKRIBUS_LIMIT": "Transkribus-Guthaben oder Anfragegrenzen sind erreicht. Prüfen Sie Ihr Konto vor einem erneuten Versuch.",
-          "TRANSKRIBUS_NOT_FOUND": "Modell oder Ergebnis nicht gefunden. Prüfen Sie die Modell-ID; fertige Ergebnisse können abgelaufen sein.",
-          "TRANSKRIBUS_INVALID_REQUEST": "Prüfen Sie Modell-ID, Bild, Transkriptionsquelle und erforderliche Zustimmung.",
+          "TRANSKRIBUS_NOT_FOUND": "Das Modell oder Ergebnis wurde nicht gefunden. Wählen Sie ein anderes Modell; fertige Ergebnisse können abgelaufen sein.",
+          "TRANSKRIBUS_INVALID_REQUEST": "Prüfen Sie das ausgewählte Modell, das Bild, die Transkriptionsquelle und die erforderliche Zustimmung.",
           "TRANSKRIBUS_INVALID_IMAGE": "Die Datei ist kein unterstütztes Seitenbild oder größer als 20 MB.",
           "TRANSKRIBUS_INVALID_RESPONSE": "Transkribus lieferte eine unerwartete Antwort. Das vorhandene Manuskript wurde nicht geändert.",
           "TRANSKRIBUS_RESULT_TOO_LARGE": "Das Erkennungsergebnis überschreitet die unterstützte Größe.",
@@ -1740,11 +1740,31 @@
           "NOT_AUTHENTICATED": "Melden Sie sich vor der Transkribus-Verbindung in Studio an.",
           "MODULE_DISABLED_BY_INSTALLATION": "Die Administration hat das Modul Kritische Textedition deaktiviert.",
           "MODULE_NOT_ACTIVE": "Aktivieren Sie Kritische Textedition für diesen Arbeitsbereich in den Einstellungen.",
-          "RATE_LIMIT_EXCEEDED": "Zu viele Studio-API-Anfragen. Warten Sie vor einem erneuten Versuch."
+          "RATE_LIMIT_EXCEEDED": "Zu viele Studio-API-Anfragen. Warten Sie vor einem erneuten Versuch.",
+          "TRANSKRIBUS_MODELS_UNAVAILABLE": "Der öffentliche Modellkatalog konnte nicht geladen werden. Versuchen Sie es erneut oder geben Sie eine Modell-ID manuell ein."
         },
         "forget": "Gespeicherten Auftrag auf diesem Gerät löschen",
         "forgetConfirm": "Gespeicherten Auftrag und Transkription von diesem Gerät löschen? Laden Sie benötigten Text zuerst herunter. Dies beendet die Verarbeitung in Transkribus nicht; ein aktiver Auftrag kann weiterhin Guthaben verbrauchen.",
-        "untitledSection": "Unbenannter Abschnitt"
+        "untitledSection": "Unbenannter Abschnitt",
+        "model": "Erkennungsmodell",
+        "modelSearch": "Modelle suchen",
+        "modelLanguage": "Modellsprache",
+        "modelMaterial": "Material",
+        "allLanguages": "Alle Sprachen",
+        "allMaterials": "Handschrift und Druck",
+        "handwritten": "Handschrift",
+        "printed": "Druck",
+        "chooseModel": "Modell auswählen…",
+        "modelsHint": "Wählen Sie ein öffentliches Texterkennungsmodell nach Namen aus. Studio übernimmt die ID automatisch.",
+        "modelsLoading": "Transkribus-Modelle werden geladen…",
+        "modelsEmpty": "Keine Modelle entsprechen diesen Filtern.",
+        "modelsRetry": "Modelle erneut laden",
+        "modelDetails": "Modelldetails bei Transkribus",
+        "manualModel": "Privates Modell / ID eingeben",
+        "manualModelHint": "Geben Sie für ein privates Modell die Modell-ID aus Ihrem Transkribus-Konto ein. Ist der Katalog nicht erreichbar, können Sie auch eine öffentliche Modell-ID eingeben.",
+        "selectedModel": "Ausgewähltes Modell",
+        "modelMatches": "Passende Modelle",
+        "modelCenturies": "Jahrhunderte"
       }
     }
   },

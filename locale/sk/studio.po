@@ -7778,8 +7778,8 @@ msgstr "Transkribus: z obrázka strany na overený prepis"
 
 #. OMI translation key: /researchModules/transkribus/copy/helpBody
 msgctxt "/researchModules/transkribus/copy/helpBody"
-msgid "Connect your account under Integrations → Transkribus, then enable Critical text edition in Settings → Research modules. In that module choose a JPEG, PNG or TIFF page (up to 20 MB), enter a model ID from Transkribus, approve the credit use and start recognition. The last job is saved on this device for status checks after returning. Review and correct the transcription, provide its source and rights, choose a manuscript section and insert it. Text and original PAGE XML can be downloaded. The password is not stored; access and refresh tokens are encrypted on the Studio API server. PDF files and collection synchronisation are not part of this workflow."
-msgstr "Pripojte účet v časti Integrácie → Transkribus a zapnite Kritickú edíciu textu v Nastaveniach → Výskumné moduly. V module vyberte stranu JPEG, PNG alebo TIFF do 20 MB, zadajte ID modelu Transkribus, povoľte použitie kreditov a spustite rozpoznávanie. Posledná úloha ostáva uložená v zariadení na neskoršiu kontrolu stavu. Skontrolujte a opravte prepis, zadajte zdroj a práva, vyberte časť rukopisu a vložte text. Text a pôvodné PAGE XML si môžete stiahnuť. Heslo sa neukladá; prístupové a obnovovacie tokeny sú šifrované na serveri Studio API. Spracovanie PDF a synchronizácia zbierok nie sú súčasťou tohto postupu."
+msgid "Connect your account under Integrations → Transkribus, then enable Critical text edition in Settings → Research modules. In that module choose a JPEG, PNG or TIFF page (up to 20 MB), search the public models by name, filter by language or material and select a model, approve the credit use and start recognition. The last job is saved on this device for status checks after returning. Review and correct the transcription, provide its source and rights, choose a manuscript section and insert it. Text and original PAGE XML can be downloaded. The password is not stored; access and refresh tokens are encrypted on the Studio API server. PDF files and collection synchronisation are not part of this workflow."
+msgstr "Pripojte účet v časti Integrácie → Transkribus a zapnite Kritickú edíciu textu v Nastaveniach → Výskumné moduly. V module vyberte stranu JPEG, PNG alebo TIFF do 20 MB, vyhľadajte verejné modely podľa názvu, filtrujte podľa jazyka alebo materiálu a vyberte model, povoľte použitie kreditov a spustite rozpoznávanie. Posledná úloha ostáva uložená v zariadení na neskoršiu kontrolu stavu. Skontrolujte a opravte prepis, zadajte zdroj a práva, vyberte časť rukopisu a vložte text. Text a pôvodné PAGE XML si môžete stiahnuť. Heslo sa neukladá; prístupové a obnovovacie tokeny sú šifrované na serveri Studio API. Spracovanie PDF a synchronizácia zbierok nie sú súčasťou tohto postupu."
 
 #. OMI translation key: /researchModules/transkribus/copy/rightsOptions/unknown
 msgctxt "/researchModules/transkribus/copy/rightsOptions/unknown"
@@ -7863,13 +7863,13 @@ msgstr "Minuli sa kredity Transkribus alebo bol dosiahnutý limit požiadaviek. 
 
 #. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_NOT_FOUND
 msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_NOT_FOUND"
-msgid "The model or result was not found. Check the model ID; completed results may have expired."
-msgstr "Model alebo výsledok sa nenašiel. Skontrolujte ID modelu; platnosť hotového výsledku mohla vypršať."
+msgid "The model or result was not found. Choose another model; completed results may have expired."
+msgstr "Model alebo výsledok sa nenašiel. Vyberte iný model; dokončeným výsledkom mohla uplynúť platnosť."
 
 #. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_INVALID_REQUEST
 msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_INVALID_REQUEST"
-msgid "Check the model ID, image, transcription source and required approval."
-msgstr "Skontrolujte ID modelu, obrázok, zdroj prepisu a požadovaný súhlas."
+msgid "Check the selected model, image, transcription source and required approval."
+msgstr "Skontrolujte vybraný model, obrázok, zdroj prepisu a požadovaný súhlas."
 
 #. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_INVALID_IMAGE
 msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_INVALID_IMAGE"
@@ -7935,3 +7935,103 @@ msgstr "Vymazať uloženú úlohu a prepis z tohto zariadenia? Potrebný text si
 msgctxt "/researchModules/transkribus/copy/untitledSection"
 msgid "Untitled section"
 msgstr "Časť bez názvu"
+
+#. OMI translation key: /researchModules/transkribus/copy/model
+msgctxt "/researchModules/transkribus/copy/model"
+msgid "Recognition model"
+msgstr "Rozpoznávací model"
+
+#. OMI translation key: /researchModules/transkribus/copy/modelSearch
+msgctxt "/researchModules/transkribus/copy/modelSearch"
+msgid "Search models"
+msgstr "Hľadať modely"
+
+#. OMI translation key: /researchModules/transkribus/copy/modelLanguage
+msgctxt "/researchModules/transkribus/copy/modelLanguage"
+msgid "Model language"
+msgstr "Jazyk modelu"
+
+#. OMI translation key: /researchModules/transkribus/copy/modelMaterial
+msgctxt "/researchModules/transkribus/copy/modelMaterial"
+msgid "Material"
+msgstr "Typ materiálu"
+
+#. OMI translation key: /researchModules/transkribus/copy/allLanguages
+msgctxt "/researchModules/transkribus/copy/allLanguages"
+msgid "All languages"
+msgstr "Všetky jazyky"
+
+#. OMI translation key: /researchModules/transkribus/copy/allMaterials
+msgctxt "/researchModules/transkribus/copy/allMaterials"
+msgid "Handwriting and print"
+msgstr "Rukopis aj tlač"
+
+#. OMI translation key: /researchModules/transkribus/copy/handwritten
+msgctxt "/researchModules/transkribus/copy/handwritten"
+msgid "Handwritten"
+msgstr "Rukopis"
+
+#. OMI translation key: /researchModules/transkribus/copy/printed
+msgctxt "/researchModules/transkribus/copy/printed"
+msgid "Printed"
+msgstr "Tlač"
+
+#. OMI translation key: /researchModules/transkribus/copy/chooseModel
+msgctxt "/researchModules/transkribus/copy/chooseModel"
+msgid "Choose a model…"
+msgstr "Vyberte model…"
+
+#. OMI translation key: /researchModules/transkribus/copy/modelsHint
+msgctxt "/researchModules/transkribus/copy/modelsHint"
+msgid "Choose a public text recognition model by name. Studio fills in its ID automatically."
+msgstr "Vyberte verejný model rozpoznávania textu podľa názvu. Studio vyplní jeho ID automaticky."
+
+#. OMI translation key: /researchModules/transkribus/copy/modelsLoading
+msgctxt "/researchModules/transkribus/copy/modelsLoading"
+msgid "Loading Transkribus models…"
+msgstr "Načítavajú sa modely Transkribus…"
+
+#. OMI translation key: /researchModules/transkribus/copy/modelsEmpty
+msgctxt "/researchModules/transkribus/copy/modelsEmpty"
+msgid "No models match these filters."
+msgstr "Žiadne modely nezodpovedajú týmto filtrom."
+
+#. OMI translation key: /researchModules/transkribus/copy/modelsRetry
+msgctxt "/researchModules/transkribus/copy/modelsRetry"
+msgid "Reload models"
+msgstr "Znova načítať modely"
+
+#. OMI translation key: /researchModules/transkribus/copy/modelDetails
+msgctxt "/researchModules/transkribus/copy/modelDetails"
+msgid "Model details on Transkribus"
+msgstr "Podrobnosti modelu v Transkribus"
+
+#. OMI translation key: /researchModules/transkribus/copy/manualModel
+msgctxt "/researchModules/transkribus/copy/manualModel"
+msgid "Private model / enter an ID"
+msgstr "Súkromný model / zadať ID"
+
+#. OMI translation key: /researchModules/transkribus/copy/manualModelHint
+msgctxt "/researchModules/transkribus/copy/manualModelHint"
+msgid "For a private model, enter its model ID from your Transkribus account. You can also enter a public model ID if the catalogue is unavailable."
+msgstr "Pre súkromný model zadajte ID modelu zo svojho účtu Transkribus. Ak katalóg nie je dostupný, môžete zadať aj ID verejného modelu."
+
+#. OMI translation key: /researchModules/transkribus/copy/selectedModel
+msgctxt "/researchModules/transkribus/copy/selectedModel"
+msgid "Selected model"
+msgstr "Vybraný model"
+
+#. OMI translation key: /researchModules/transkribus/copy/modelMatches
+msgctxt "/researchModules/transkribus/copy/modelMatches"
+msgid "Matching models"
+msgstr "Zodpovedajúce modely"
+
+#. OMI translation key: /researchModules/transkribus/copy/modelCenturies
+msgctxt "/researchModules/transkribus/copy/modelCenturies"
+msgid "Centuries"
+msgstr "Storočia"
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_MODELS_UNAVAILABLE
+msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_MODELS_UNAVAILABLE"
+msgid "The public model catalogue could not be loaded. Try again or enter a model ID manually."
+msgstr "Verejný katalóg modelov sa nepodarilo načítať. Skúste to znova alebo zadajte ID modelu ručne."

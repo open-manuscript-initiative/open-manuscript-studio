@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { before, test } from 'node:test';
 import { createTranskribusClient, normalizeTranskribusJob, validateTranskribusImage, TRANSKRIBUS_MAX_IMAGE_BYTES } from '../server/src/integrations/transkribus/client.ts';
+import type { TranskribusModel } from '../src/modules/transkribus/api.ts';
+import { filterTranskribusModels } from '../src/modules/transkribus/modelCatalog.ts';
 import { buildTranskribusImport, transkribusStorageKey, type SavedTranskribusJob } from '../src/modules/transkribus/model.ts';
 import { getTranskribusCopy } from '../src/modules/transkribus/copy.ts';
 import { appendTranskribusHelp } from '../src/i18n/helpTranskribus.ts';
@@ -16,6 +18,20 @@ const fixture = (): SavedTranskribusJob => ({ version: 1, job: { processId: 42, 
   modelId: 38230, fileName: 'page.png', title: 'Page', source: 'Archive A, MS 12, fol. 4r', text: '<script>literal source</script>\nárvíztűrő tükörfúrógép', rights: 'unknown' });
 
 before(loadPrimaryLocaleDictionariesForTest);
+
+test('model search matches names, localized languages, centuries and material without accents', () => {
+  const models: TranskribusModel[] = [
+    { modelId: 38230, name: 'Árvíz manuscripts', languages: ['lat', 'hun'], centuries: [16, 17],
+      material: 'handwritten', creator: 'Synthetic archive', scripts: ['latin'] },
+    { modelId: 2, name: 'Latin print', languages: ['lat'], centuries: [15],
+      material: 'print', creator: '', scripts: [] },
+  ];
+  const search = (query: string, language = '', material = '') => filterTranskribusModels(models, { query, language, material }, 'hu');
+  assert.deepEqual(search('arviz').map(model => model.modelId), [38230]);
+  assert.deepEqual(search('magyar 17').map(model => model.modelId), [38230]);
+  assert.deepEqual(search('latin', 'lat', 'print').map(model => model.modelId), [2]);
+  assert.equal(search('no such model').length, 0);
+});
 
 test('Transkribus uses the documented OIDC client, password exchange and rotating refresh tokens', async () => {
   const forms: URLSearchParams[] = [];
@@ -145,7 +161,7 @@ test('reviewed import appends safe plain text, source relationships and non-secr
     const section = manuscript.sections[0];
     const initialCount = section.blocks.length;
     useStudioStore.setState({ manuscript, pendingChangeSet: null });
-    const imported = buildTranskribusImport(fixture(), 'Forrás', new Date().toISOString());
+    const imported = buildTranskribusImport({ ...fixture(), modelName: 'Latin and Hungarian manuscripts' }, 'Forrás', new Date().toISOString());
     assert.equal(imported.bibliographicRecords[0].title, fixture().source);
     assert.equal(imported.sourceAttributions[0].predicate, 'prov:wasDerivedFrom');
     assert.equal(imported.sourceAttributions[0].assertionStatus, 'author-confirmed');
@@ -158,6 +174,8 @@ test('reviewed import appends safe plain text, source relationships and non-secr
     assert.equal(reopened.sections[0].blocks.length, initialCount + 2);
     assert.equal(reopened.sourceAttributions?.[0].targetBibliographicRecordId, imported.bibliographicRecords[0].id);
     assert.ok(reopened.annotations.some(note => note.targetText === 'omi:transkribus-transcription'));
+    const provenance = reopened.annotations.find(note => note.targetText === 'omi:transkribus-transcription');
+    assert.equal(JSON.parse(provenance!.body).modelName, 'Latin and Hungarian manuscripts');
   } finally { useStudioStore.setState(previous); }
 });
 
@@ -180,6 +198,9 @@ test('Transkribus UI, errors and help are PO-backed in English, Hungarian and Ge
   for (const locale of ['en', 'hu', 'de']) {
     const copy = getTranskribusCopy(locale);
     assert.ok(copy.loginHint.trim());
+    assert.ok(copy.modelSearch.trim());
+    assert.ok(copy.chooseModel.trim());
+    assert.ok(copy.errors.TRANSKRIBUS_MODELS_UNAVAILABLE.trim());
     assert.ok(copy.errors.TRANSKRIBUS_RECONNECT.trim());
     assert.ok(copy.rightsOptions['self-authored'].trim());
     const base = { navigation: '', title: '', description: '', gettingStarted: '', topics: [] };

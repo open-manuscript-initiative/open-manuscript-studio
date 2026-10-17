@@ -2,6 +2,7 @@ import { Router, type Response } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 import { TranskribusError, TRANSKRIBUS_MAX_IMAGE_BYTES } from '../integrations/transkribus/client.js';
+import { listTranskribusModels } from '../integrations/transkribus/models.js';
 import {
   connectTranskribus, disconnectTranskribus, transkribusConnectionStatus,
   submitTranskribusJob, getTranskribusJob, getTranskribusPageXml,
@@ -11,6 +12,7 @@ import { requireSession, type AuthenticatedRequest } from '../middleware/require
 
 export const transkribusRouter = Router();
 const base = '/modules/critical-text-edition/transkribus/jobs';
+const modelsPath = '/modules/critical-text-edition/transkribus/models';
 const authenticated = (request: AuthenticatedRequest) => request.authUserId!;
 const limit = (requests: number, windowMs = 60_000) => rateLimit({
   windowMs, limit: requests, keyGenerator: request => authenticated(request as AuthenticatedRequest),
@@ -33,7 +35,7 @@ function failure(response: Response, error: unknown): void {
     .json({ error: { code: error instanceof TranskribusError ? error.code : 'TRANSKRIBUS_UNAVAILABLE' } });
 }
 
-transkribusRouter.use(['/integrations/transkribus/connection', base], (_request, response, next) => {
+transkribusRouter.use(['/integrations/transkribus/connection', base, modelsPath], (_request, response, next) => {
   response.setHeader('Cache-Control', 'no-store');
   next();
 });
@@ -57,6 +59,12 @@ transkribusRouter.post('/integrations/transkribus/connection', requireSession, l
 transkribusRouter.delete('/integrations/transkribus/connection', requireSession,
   async (request: AuthenticatedRequest, response) => {
     try { await disconnectTranskribus(authenticated(request)); response.status(204).end(); }
+    catch (error) { failure(response, error); }
+  });
+
+transkribusRouter.get(modelsPath, requireSession, capability, readLimit,
+  async (_request, response) => {
+    try { response.json({ models: await listTranskribusModels() }); }
     catch (error) { failure(response, error); }
   });
 
