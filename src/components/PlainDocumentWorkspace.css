@@ -144,6 +144,8 @@
 @media (max-width: 760px) {
   /* Keep EuroOffice's bottom controls above the system inset with extra touch clearance. */
   .plain-document-workspace { bottom: calc(env(safe-area-inset-bottom, 0px) + 3rem); }
+  /* The native editor's floating action button needs room above Android navigation. */
+  .plain-document-workspace--native { bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem); }
 }
 
 @media (max-width: 700px) {
