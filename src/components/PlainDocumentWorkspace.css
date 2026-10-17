@@ -3,20 +3,67 @@
   z-index: 1500;
   inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
   display: grid;
-  grid-template-rows: 3.5rem auto minmax(0, 1fr);
+  grid-template-rows: 2.25rem auto minmax(0, 1fr);
   background: #f3f4f6;
   color: #1f2937;
 }
 
 .plain-document-header {
-  display: grid;
-  grid-template-columns: minmax(9rem, 1fr) minmax(0, 2fr) minmax(9rem, 1fr);
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
   align-items: center;
-  gap: .75rem;
-  padding: 0 1rem;
+  min-height: 0;
+  padding: 0 .45rem;
   background: #fff;
   border-bottom: 1px solid #d1d5db;
 }
+
+.plain-document-header > :not(.plain-document-mobile-menu):not(.plain-document-mobile-actions) { display: none; }
+.plain-document-mobile-menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #374151;
+  cursor: pointer;
+}
+.plain-document-mobile-menu:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; }
+.plain-document-mobile-actions {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + .25rem);
+  right: .4rem;
+  display: grid;
+  min-width: 10rem;
+  gap: .2rem;
+  padding: .35rem;
+  border: 1px solid #d1d5db;
+  border-radius: .5rem;
+  background: #fff;
+  box-shadow: 0 .35rem 1rem rgb(15 23 42 / 18%);
+}
+.plain-document-mobile-actions button {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  min-height: 2.5rem;
+  padding: .45rem .6rem;
+  border: 0;
+  border-radius: .3rem;
+  background: transparent;
+  color: #1f2937;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.plain-document-mobile-actions button:hover,
+.plain-document-mobile-actions button:focus-visible { background: #eff6ff; }
 
 .plain-document-header h1 {
   overflow: hidden;
@@ -100,8 +147,7 @@
 }
 
 @media (max-width: 700px) {
-  .plain-document-header { grid-template-columns: auto minmax(0, 1fr) auto; gap: .5rem; padding: 0 .6rem; }
-  .plain-document-header h1 { text-align: left; }
+  .plain-document-workspace { grid-template-rows: 2.25rem auto minmax(0, 1fr); }
   .plain-document-list { grid-template-columns: 1fr; gap: .75rem; width: calc(100% - 1rem); margin: .5rem auto; overflow: auto; }
   .plain-document-toolbar-button { font-size: .8rem; }
 }

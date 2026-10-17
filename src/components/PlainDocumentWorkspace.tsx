@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, FilePlus2, FileText, LoaderCircle, X } from 'lucide-react';
+import { ArrowLeft, FilePlus2, FileText, LoaderCircle, MoreHorizontal, X } from 'lucide-react';
 import {
   createEuroOfficeSession,
   createPlainDocument,
@@ -65,6 +65,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
   const [editorTitle, setEditorTitle] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const editorRef = useRef<{ destroyEditor?: () => void } | null>(null);
   const [editorTarget, setEditorTarget] = useState<HTMLDivElement | null>(null);
 
@@ -135,6 +136,28 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
   return (
     <main className="plain-document-workspace" aria-label={copy.workspace}>
       <header className="plain-document-header">
+        <button
+          type="button"
+          className="plain-document-mobile-menu"
+          onClick={() => setMobileActionsOpen((open) => !open)}
+          aria-label={copy.actions}
+          aria-expanded={mobileActionsOpen}
+          aria-haspopup="true"
+        >
+          <MoreHorizontal size={20} aria-hidden="true" />
+        </button>
+        {mobileActionsOpen ? (
+          <div className="plain-document-mobile-actions" role="menu">
+            {documentId ? (
+              <button type="button" role="menuitem" onClick={() => { setMobileActionsOpen(false); onSelectDocument(''); }}>
+                <ArrowLeft size={16} aria-hidden="true" />{copy.documents}
+              </button>
+            ) : null}
+            <button type="button" role="menuitem" onClick={() => { setMobileActionsOpen(false); onClose(); }}>
+              <X size={16} aria-hidden="true" />{copy.close}
+            </button>
+          </div>
+        ) : null}
         {documentId ? (
           <button type="button" className="plain-document-toolbar-button" onClick={() => onSelectDocument('')}>
             <ArrowLeft size={17} aria-hidden="true" />{copy.documents}
@@ -183,16 +206,16 @@ function getCopy(locale: string) {
   if (locale === 'hu') return {
     workspace: 'Word-dokumentumok', documents: 'Dokumentumaim', document: 'Dokumentum', titleLabel: 'Dokumentum címe',
     untitled: 'Névtelen dokumentum', create: 'Új DOCX létrehozása', description: 'Egyszerű, DOCX-formátumú dokumentumok szerkesztése a EuroOffice beágyazott szövegszerkesztőjével.',
-    loading: 'Betöltés…', empty: 'Még nincs DOCX-dokumentuma.', updated: 'Módosítva', close: 'Bezárás', autosave: 'A EuroOffice menti a módosításokat.', editorUnavailable: 'A EuroOffice szerkesztő nem érhető el.',
+    loading: 'Betöltés…', empty: 'Még nincs DOCX-dokumentuma.', updated: 'Módosítva', close: 'Bezárás', actions: 'Dokumentumműveletek', autosave: 'A EuroOffice menti a módosításokat.', editorUnavailable: 'A EuroOffice szerkesztő nem érhető el.',
   };
   if (locale === 'de') return {
     workspace: 'Word-Dokumente', documents: 'Meine Dokumente', document: 'Dokument', titleLabel: 'Dokumenttitel',
     untitled: 'Unbenanntes Dokument', create: 'Neues DOCX erstellen', description: 'Einfache DOCX-Dokumente mit dem eingebetteten EuroOffice-Editor bearbeiten.',
-    loading: 'Wird geladen…', empty: 'Sie haben noch keine DOCX-Dokumente.', updated: 'Geändert', close: 'Schließen', autosave: 'EuroOffice speichert Änderungen.', editorUnavailable: 'Der EuroOffice-Editor ist nicht verfügbar.',
+    loading: 'Wird geladen…', empty: 'Sie haben noch keine DOCX-Dokumente.', updated: 'Geändert', close: 'Schließen', actions: 'Dokumentaktionen', autosave: 'EuroOffice speichert Änderungen.', editorUnavailable: 'Der EuroOffice-Editor ist nicht verfügbar.',
   };
   return {
     workspace: 'Word documents', documents: 'My documents', document: 'Document', titleLabel: 'Document title',
     untitled: 'Untitled document', create: 'Create DOCX document', description: 'Write ordinary DOCX documents with the embedded EuroOffice editor.',
-    loading: 'Loading…', empty: 'You do not have any DOCX documents yet.', updated: 'Updated', close: 'Close', autosave: 'EuroOffice saves your changes.', editorUnavailable: 'The EuroOffice editor is unavailable.',
+    loading: 'Loading…', empty: 'You do not have any DOCX documents yet.', updated: 'Updated', close: 'Close', actions: 'Document actions', autosave: 'EuroOffice saves your changes.', editorUnavailable: 'The EuroOffice editor is unavailable.',
   };
 }
