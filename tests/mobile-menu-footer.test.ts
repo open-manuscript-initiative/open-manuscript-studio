@@ -113,16 +113,16 @@ test('native mobile keeps menu, OMI brand, language, personal account and logout
   assert.doesNotMatch(mobileLayout, /mobile-nav-item/);
 });
 
-test('native mobile removes the obsolete bottom navigation and reserves only the system safe-area inset', () => {
+test('native mobile keeps the app shell above the system navigation area', () => {
   assert.doesNotMatch(mobileLayout, /mobile-bottom-nav|mobile-nav-item/);
   assert.doesNotMatch(mobileStyles, /\.mobile-bottom-nav|\.mobile-nav-item/);
   assert.match(
     mobileStyles,
-    /\.mobile-shell\s*\{[\s\S]*?grid-template-rows:\s*auto auto minmax\(0, 1fr\);/,
+    /\.mobile-shell\s*\{[\s\S]*?height:\s*calc\(100dvh - env\(safe-area-inset-bottom, 0px\)\);[\s\S]*?min-height:\s*calc\(100dvh - env\(safe-area-inset-bottom, 0px\)\);[\s\S]*?grid-template-rows:\s*auto auto minmax\(0, 1fr\);/,
   );
   assert.match(
     mobileStyles,
-    /\.mobile-workspace\s*\{[\s\S]*?padding-bottom:\s*env\(safe-area-inset-bottom, 0px\);/,
+    /\.mobile-workspace\s*\{[\s\S]*?padding-bottom:\s*0;/,
   );
 });
 
