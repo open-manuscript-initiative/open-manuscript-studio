@@ -108,7 +108,28 @@ export function patchAndroidNdkVersion(source) {
 }
 
 export function patchAndroidActivity(source) {
-  if (source.includes(ANDROID_INSETS_CALL)) return source;
+  const superCall = '    super.onCreate(savedInstanceState)';
+  const insetsStart = source.indexOf('    val content = findViewById<View>(android.R.id.content)');
+  const requestInsets = '    ViewCompat.requestApplyInsets(content)';
+
+  if (source.includes(ANDROID_INSETS_CALL)) {
+    const superIndex = source.indexOf(superCall);
+    const insetsEnd = source.indexOf(requestInsets, insetsStart) + requestInsets.length;
+    if (superIndex < 0 || insetsStart < 0 || insetsEnd < requestInsets.length) {
+      throw new Error('Expected generated Android insets setup is incomplete.');
+    }
+    if (insetsStart > superIndex) return source;
+
+    const insetsBlock = source.slice(insetsStart, insetsEnd);
+    const withoutInsets = source.slice(0, insetsStart) + source.slice(insetsEnd);
+    const updatedSuperIndex = withoutInsets.indexOf(superCall);
+    return (
+      withoutInsets.slice(0, updatedSuperIndex + superCall.length) +
+      '\n' +
+      insetsBlock +
+      withoutInsets.slice(updatedSuperIndex + superCall.length)
+    );
+  }
 
   let result = source;
   if (result.includes(LEGACY_ACTIVITY_IMPORT)) {
@@ -121,6 +142,7 @@ export function patchAndroidActivity(source) {
   } else if (!result.includes(MODERN_ACTIVITY_IMPORT)) {
     throw new Error('Expected generated Tauri edge-to-edge Activity is missing.');
   }
+
   if (!result.includes(MODERN_ACTIVITY_CALL)) {
     if (!result.includes(LEGACY_ACTIVITY_CALL)) {
       throw new Error('Expected generated Tauri edge-to-edge Activity is missing.');
@@ -130,9 +152,12 @@ export function patchAndroidActivity(source) {
   if (!result.includes(MODERN_ACTIVITY_CALL)) {
     throw new Error('Expected generated Tauri edge-to-edge Activity is missing.');
   }
-  return result.replace(MODERN_ACTIVITY_CALL, `${MODERN_ACTIVITY_CALL}\n${ANDROID_INSETS_CALL}`);
-}
 
+  if (!result.includes(superCall)) {
+    throw new Error('Expected generated Android Activity onCreate call is missing.');
+  }
+  return result.replace(superCall, `${superCall}\n${ANDROID_INSETS_CALL}`);
+}
 export function patchAndroidDependencies(source) {
   let result = source;
   for (const [coordinate, version] of Object.entries(ANDROID_UI_DEPENDENCIES)) {
