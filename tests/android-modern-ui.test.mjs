@@ -141,7 +141,28 @@ test('Android Activity patch uses non-deprecated edge-to-edge APIs', () => {
   assert.doesNotMatch(patched, /androidx\.activity\.enableEdgeToEdge/);
   assert.doesNotMatch(patched, /LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES/);
   assert.doesNotMatch(patched, /enableEdgeToEdge\(\)/);
+  assert.ok(
+    patched.indexOf('super.onCreate(savedInstanceState)') < patched.indexOf('val content = findViewById'),
+    'the Android content view must exist before attaching the system inset listener',
+  );
   assert.equal(patchAndroidActivity(patched), patched);
+  const requestInsets = '    ViewCompat.requestApplyInsets(content)';
+  const contentStart = patched.indexOf('    val content = findViewById');
+  const insetsEnd = patched.indexOf(requestInsets, contentStart) + requestInsets.length;
+  const insetsBlock = patched.slice(contentStart, insetsEnd);
+  const withoutInsets = patched.slice(0, contentStart) + patched.slice(insetsEnd);
+  const superIndex = withoutInsets.indexOf('    super.onCreate(savedInstanceState)');
+  const oldOrdering =
+    withoutInsets.slice(0, superIndex) +
+    insetsBlock +
+    '\\n' +
+    withoutInsets.slice(superIndex);
+  const repairedOrdering = patchAndroidActivity(oldOrdering);
+  assert.ok(
+    repairedOrdering.indexOf('super.onCreate(savedInstanceState)') <
+      repairedOrdering.indexOf('val content = findViewById'),
+  );
+  assert.equal(patchAndroidActivity(repairedOrdering), repairedOrdering);
   const upgraded = patchAndroidActivity(generatedModernActivity);
   assert.match(upgraded, /import androidx\.core\.view\.ViewCompat/);
   assert.match(upgraded, /ViewCompat\.requestApplyInsets\(content\)/);
