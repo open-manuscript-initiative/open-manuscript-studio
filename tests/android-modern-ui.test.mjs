@@ -155,7 +155,7 @@ test('Android Activity patch uses non-deprecated edge-to-edge APIs', () => {
   const oldOrdering =
     withoutInsets.slice(0, superIndex) +
     insetsBlock +
-    '\\n' +
+    '\n' +
     withoutInsets.slice(superIndex);
   const repairedOrdering = patchAndroidActivity(oldOrdering);
   assert.ok(
