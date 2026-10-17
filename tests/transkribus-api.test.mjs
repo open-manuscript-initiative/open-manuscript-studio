@@ -47,6 +47,16 @@ mock.method(globalThis, 'fetch', async (input, init) => {
   const url = new URL(String(input));
   providerCalls.push({ url: url.toString(), method: init?.method, body: init?.body, headers: init?.headers });
   assert.equal(init?.redirect, 'error');
+  if (url.toString() === 'https://www.transkribus.org/api/models') {
+    assert.equal(init.credentials, 'omit');
+    assert.equal(new Headers(init.headers).has('authorization'), false);
+    assert.equal(new Headers(init.headers).has('cookie'), false);
+    return Response.json({ models: [
+      { modelId: 38230, name: 'Latin manuscripts', type: 'text', category: 'text', isoLanguages: ['lat'], docType: 'handwritten' },
+      { modelId: 579509, name: 'Text Titan II', type: 'text', category: 'text', isoLanguages: ['lat', 'eng'] },
+      { modelId: 123, name: 'Layout model', type: 'layout', category: 'layout' },
+    ] });
+  }
   if (url.pathname.endsWith('/token')) {
     const form = init.body;
     assert.equal(form.get('client_id'), 'processing-api-client');
@@ -64,6 +74,7 @@ mock.method(globalThis, 'fetch', async (input, init) => {
 
 const { transkribusRouter } = await import('../server/dist/routes/transkribusRoutes.js');
 const { encryptSecret, decryptSecret } = await import('../server/dist/integrations/secretCrypto.js');
+const { createTranskribusModelCatalog, normalizeTranskribusModels } = await import('../server/dist/integrations/transkribus/models.js');
 const app = express(); app.use(express.json({ limit: '28mb' })); app.use('/api', transkribusRouter);
 const server = await new Promise(resolve => { const listener = app.listen(0, '127.0.0.1', () => resolve(listener)); });
 after(() => server.close());
@@ -177,4 +188,90 @@ test('connection requests are strictly validated and sign-in is rate limited per
   const blocked = await request(connectionPath, 'POST', {}, 'rate-test');
   assert.equal(blocked.status, 429);
   assert.deepEqual(await blocked.json(), { error: { code: 'TRANSKRIBUS_RATE_LIMIT' } });
+});
+
+test('model browsing enforces Studio session and module activation without requiring provider credentials', async () => {
+  const path = '/modules/critical-text-edition/transkribus/models';
+  const before = providerCalls.length;
+  assert.equal((await request(path, 'GET', undefined, null)).status, 401);
+  enabled = [];
+  assert.equal((await request(path)).status, 403);
+  enabled = ['org.omi.critical-text-edition']; active = [];
+  assert.equal((await request(path)).status, 403);
+  active = [...enabled];
+  assert.equal((await request(path + '?workspaceId=../private')).status, 400);
+  assert.equal(providerCalls.length, before);
+  assert.equal(accounts.has('alice'), false);
+  const response = await request(path);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.deepEqual((await response.json()).models.map(model => model.name), ['Latin manuscripts', 'Text Titan II']);
+  assert.equal(providerCalls.length, before + 1);
+  assert.equal((await request(path, 'GET', undefined, 'bob')).status, 200);
+  assert.equal(providerCalls.length, before + 1, 'public metadata is cached across Studio users');
+});
+
+const publicModel = (overrides = {}) => ({ modelId: 38230, name: 'Latin and Hungarian manuscripts',
+  category: 'text', type: 'text', isoLanguages: ['lat', 'hun'], centuries: [16, 17],
+  docType: 'handwritten', creator: 'Synthetic archive', scriptTypes: ['latin'], ...overrides });
+
+test('public model catalog exposes named text models and strips unsafe or unrelated provider data', () => {
+  const models = normalizeTranskribusModels({ models: [
+    publicModel({ name: 'Árvíz manuscripts', exampleImageUrl: 'https://evil.test/token', description: '<script>unsafe</script>' }),
+    publicModel({ modelId: 38230, name: 'Duplicate must not replace the first model' }),
+    publicModel({ modelId: 123, category: 'layout', type: 'layout' }),
+    publicModel({ modelId: 124, category: 'table', type: 'layout' }),
+    publicModel({ modelId: 125, category: 'field', type: 'layout' }),
+    publicModel({ modelId: -1 }), publicModel({ modelId: '38230' }), publicModel({ name: '' }),
+    publicModel({ modelId: 2, name: 'Latin print', docType: 'print', isoLanguages: ['lat', 'invalid-language'], centuries: [15, 0, -1, '16'] }),
+  ] });
+  assert.deepEqual(models.map(model => model.modelId).sort((a, b) => a - b), [2, 38230]);
+  assert.equal(JSON.stringify(models).includes('evil.test'), false);
+  assert.equal(JSON.stringify(models).includes('<script>'), false);
+  assert.deepEqual(models.find(model => model.modelId === 2)?.languages, ['lat']);
+  assert.deepEqual(models.find(model => model.modelId === 2)?.centuries, [15, 0]);
+  for (const value of [null, {}, { models: [] }, { models: [publicModel({ category: 'layout' })] }]) {
+    assert.throws(() => normalizeTranskribusModels(value), /TRANSKRIBUS_MODELS_UNAVAILABLE/);
+  }
+});
+
+test('model browsing uses the fixed public catalog without credentials, caches and coalesces reads', async () => {
+  let calls = 0;
+  let now = 0;
+  const catalog = createTranskribusModelCatalog({ now: () => now, fetchImpl: async (input, init) => {
+    calls++;
+    assert.equal(String(input), 'https://www.transkribus.org/api/models');
+    assert.equal(init?.method, 'GET');
+    assert.equal(init?.credentials, 'omit');
+    assert.equal(init?.redirect, 'error');
+    assert.equal(new Headers(init?.headers).has('authorization'), false);
+    assert.equal(new Headers(init?.headers).has('cookie'), false);
+    assert.equal(init?.body, undefined);
+    return Response.json({ models: [publicModel()] });
+  } });
+  const [first, second] = await Promise.all([catalog(), catalog()]);
+  assert.deepEqual(first, second);
+  assert.equal(calls, 1);
+  await catalog();
+  assert.equal(calls, 1);
+  now = 15 * 60_000 + 1;
+  await catalog();
+  assert.equal(calls, 2);
+});
+
+test('catalog failures and oversized responses are bounded and safe to retry without paid jobs', async () => {
+  for (const response of [new Response('private provider error', { status: 503 }),
+    new Response('not json'), Response.json({ models: [] }), new Response('x'.repeat(2 * 1024 * 1024 + 1)),
+    new Response('{}', { headers: { 'content-length': String(2 * 1024 * 1024 + 1) } })]) {
+    const catalog = createTranskribusModelCatalog({ fetchImpl: async () => response });
+    await assert.rejects(catalog(), { message: 'TRANSKRIBUS_MODELS_UNAVAILABLE', httpStatus: 503 });
+  }
+  let calls = 0;
+  const retry = createTranskribusModelCatalog({ fetchImpl: async () => {
+    if (++calls === 1) throw new Error('private provider error');
+    return Response.json({ models: [publicModel()] });
+  } });
+  await assert.rejects(retry(), /TRANSKRIBUS_MODELS_UNAVAILABLE/);
+  assert.equal((await retry())[0].name, publicModel().name);
+  assert.equal(calls, 2);
 });

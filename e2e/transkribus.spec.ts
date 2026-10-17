@@ -19,6 +19,19 @@ for (const width of [1440, 390]) {
       await route.fulfill({ json: { connected, accountLabel: connected ? 'synthetic@example.test' : '' } });
     });
     let submissions = 0;
+    let catalogueAvailable = width !== 390;
+    const modelName = 'Latin and Hungarian manuscripts from the sixteenth and seventeenth centuries';
+    await page.route('**/api/modules/critical-text-edition/transkribus/models**', async route => {
+      if (!catalogueAvailable) {
+        await route.fulfill({ status: 503, json: { error: { code: 'TRANSKRIBUS_MODELS_UNAVAILABLE' } } });
+        return;
+      }
+      await route.fulfill({ json: { models: [
+        { modelId: 38230, name: modelName, languages: ['lat', 'hun'], centuries: [16, 17], material: 'handwritten', creator: 'Synthetic archive', scripts: ['latin'] },
+        { modelId: 579509, name: 'Text Titan II', languages: ['eng', 'lat'], centuries: [], material: 'handwritten', creator: 'Transkribus', scripts: [] },
+        { modelId: 123, name: 'Latin print', languages: ['lat'], centuries: [19], material: 'print', creator: '', scripts: [] },
+      ] } });
+    });
     const job = { processId: 42, status: 'CREATED', text: '', handle: `42.${'a'.repeat(43)}` };
     await page.route('**/api/modules/critical-text-edition/transkribus/jobs**', async route => {
       if (route.request().method() === 'POST') {
@@ -36,15 +49,39 @@ for (const width of [1440, 390]) {
     await page.getByRole('button', { name: 'Manuscript menu', exact: true }).click();
     await page.locator('[data-modules-navigation="true"]').click();
     const panel = page.getByRole('region', { name: 'Transkribus text recognition', exact: true });
+    if (width === 390) {
+      await expect(panel.getByRole('alert')).toContainText('The public model catalogue could not be loaded.');
+      await panel.getByText('Private model / enter an ID', { exact: true }).click();
+      await panel.getByLabel('Recognition model ID', { exact: true }).fill('777123');
+      expect(submissions).toBe(0);
+      catalogueAvailable = true;
+      await panel.getByRole('button', { name: 'Reload models', exact: true }).click();
+      await expect(panel.getByRole('combobox', { name: 'Recognition model', exact: true })).toBeEnabled();
+      await expect(panel.getByRole('combobox', { name: 'Recognition model', exact: true })).toHaveValue('777123');
+      await panel.getByText('Private model / enter an ID', { exact: true }).click();
+    }
     await panel.getByLabel('Transkribus email / username', { exact: true }).fill('synthetic@example.test');
     await panel.getByLabel('Transkribus password', { exact: true }).fill('TRANSKRIBUS-PRIVATE-PASSWORD');
     await panel.getByRole('button', { name: 'Connect Transkribus', exact: true }).click();
     await expect(panel.getByText('Account connected: synthetic@example.test')).toBeVisible();
     await panel.getByLabel('Page image', { exact: true }).setInputFiles({ name: 'page.png', mimeType: 'image/png', buffer: Buffer.from(png, 'base64') });
-    await panel.getByLabel('Recognition model ID', { exact: true }).fill('38230');
     const start = panel.getByRole('button', { name: 'Start recognition (uses credits)', exact: true });
+    const consent = panel.getByRole('checkbox', { name: 'I authorise sending this page to Transkribus for processing and using credits from my Transkribus account.', exact: true });
+    await consent.check();
+    await panel.getByRole('searchbox', { name: 'Search models', exact: true }).fill('Hungarian');
+    await panel.getByRole('combobox', { name: 'Model language', exact: true }).selectOption('lat');
+    await panel.getByRole('combobox', { name: 'Material', exact: true }).selectOption('handwritten');
+    const picker = panel.getByRole('combobox', { name: 'Recognition model', exact: true });
+    await expect(picker.locator('option')).toContainText(['Choose a model', ...(width === 390 ? ['Private model'] : []), modelName]);
+    await picker.selectOption({ label: modelName });
+    await expect(consent).not.toBeChecked();
+    await expect(panel.getByLabel('Recognition model ID', { exact: true })).not.toBeVisible();
+    await panel.getByRole('searchbox', { name: 'Search models', exact: true }).fill('no such model');
+    await expect(panel.getByText('No models match these filters.', { exact: true })).toBeVisible();
+    await expect(picker).toHaveValue('38230');
     await expect(start).toBeDisabled();
     await panel.getByRole('checkbox', { name: 'I authorise sending this page to Transkribus for processing and using credits from my Transkribus account.', exact: true }).check();
+    await page.screenshot({ path: testInfo.outputPath('transkribus-model-picker.png'), fullPage: true });
     await start.click();
     await expect(panel.getByText('Submitted · 42')).toBeVisible();
     await panel.getByRole('button', { name: 'Refresh status', exact: true }).click();
@@ -62,6 +99,7 @@ for (const width of [1440, 390]) {
     const saved = await page.evaluate(() => Object.values(localStorage).join('\n'));
     expect(saved).not.toContain('TRANSKRIBUS-PRIVATE-PASSWORD');
     expect(saved).not.toContain(png);
+    expect(saved).toContain(modelName);
     const size = await panel.evaluate(node => ({ width: node.clientWidth, scroll: node.scrollWidth }));
     expect(size.scroll).toBeLessThanOrEqual(size.width + 1);
     await page.screenshot({ path: testInfo.outputPath('transkribus-result.png'), fullPage: true });

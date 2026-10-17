@@ -3,6 +3,7 @@ import { useStudioStore } from '../../app/useStudioStore';
 import { stageInsertBlocks } from '../../app/visualBlockActions';
 import { saveExportText } from '../../services/exportFileDelivery';
 import { TranskribusConnectionSettings } from './TranskribusConnectionSettings';
+import { TranskribusModelPicker, type TranskribusModelSelection } from './TranskribusModelPicker';
 import { downloadTranskribusPage, refreshTranskribusJob, submitTranskribusJob, type TranskribusConnection } from './api';
 import { getTranskribusCopy, transkribusErrorMessage } from './copy';
 import { buildTranskribusImport, isSavedTranskribusJob, transkribusStorageKey, TRANSKRIBUS_RIGHTS, type SavedTranskribusJob, type TranskribusRights } from './model';
@@ -34,7 +35,7 @@ export function TranskribusPanel({ locale, userId, workspaceId }: { locale: stri
   const [saved, setSaved] = useState<SavedTranskribusJob | null>(() => loadJob(key));
   const [connection, setConnection] = useState<TranskribusConnection | null>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [modelId, setModelId] = useState('');
+  const [model, setModel] = useState<TranskribusModelSelection>({ id: '', name: '' });
   const [consent, setConsent] = useState(false);
   const [reviewed, setReviewed] = useState(false);
   const [targetId, setTargetId] = useState('');
@@ -76,7 +77,7 @@ export function TranskribusPanel({ locale, userId, workspaceId }: { locale: stri
   async function start(event: FormEvent) {
     event.preventDefault();
     if (!file || !consent || !connection?.connected || busy || processing) return;
-    const numericModel = Number(modelId);
+    const numericModel = Number(model.id);
     if (!Number.isInteger(numericModel) || numericModel < 1 || numericModel > 2_147_483_647) return;
     const controller = new AbortController();
     pending.current = controller;
@@ -86,7 +87,7 @@ export function TranskribusPanel({ locale, userId, workspaceId }: { locale: stri
       if (controller.signal.aborted) return;
       const job = await submitTranskribusJob(workspaceId, numericModel, imageBase64, controller.signal);
       if (!controller.signal.aborted) {
-        setSaved({ version: 1, job, modelId: numericModel, fileName: file.name,
+        setSaved({ version: 1, job, modelId: numericModel, modelName: model.name, fileName: file.name,
           title: file.name, source: file.name, text: job.text, rights: 'unknown' });
         setConsent(false);
       }
@@ -165,17 +166,17 @@ export function TranskribusPanel({ locale, userId, workspaceId }: { locale: stri
           }
           setFile(next); setError('');
         }} /></label>
-        <label>{copy.modelId}<input type="number" min={1} max={2_147_483_647} step={1} value={modelId} disabled={busy || processing} onChange={event => { setModelId(event.target.value); setConsent(false); }} required /></label>
       </div>
-      <p>{copy.imageHint} <a href="https://www.transkribus.org/models" target="_blank" rel="noopener noreferrer">{copy.models}</a></p>
+      <p>{copy.imageHint}</p>
+      <TranskribusModelPicker locale={locale} workspaceId={workspaceId} value={model} disabled={busy || processing} onChange={next => { setModel(next); setConsent(false); }} />
       <label className="transkribus-check"><input type="checkbox" checked={consent} disabled={busy || processing} onChange={event => setConsent(event.target.checked)} />{copy.consent}</label>
-      <div className="transkribus-actions"><button type="submit" disabled={busy || processing || !file || !consent || !connection?.connected || !Number.isInteger(Number(modelId)) || Number(modelId) < 1}>{busy ? copy.busy : copy.start}</button></div>
+      <div className="transkribus-actions"><button type="submit" disabled={busy || processing || !file || !consent || !connection?.connected || !Number.isInteger(Number(model.id)) || Number(model.id) < 1 || Number(model.id) > 2_147_483_647}>{busy ? copy.busy : copy.start}</button></div>
     </form>
     {saved && <section className="transkribus-result" aria-label={copy.result}>
       <div className="transkribus-actions"><h5>{copy.result}</h5><span role="status">{copy.statuses[saved.job.status]} · {saved.job.processId}</span><button type="button" disabled={busy || !connection?.connected} onClick={() => void refresh()}>{copy.refresh}</button><button type="button" disabled={busy} onClick={forget}>{copy.forget}</button></div>
       {processing && <p>{copy.processingNote}</p>}
       {pollPaused && <p role="status">{copy.paused}</p>}
-      <p>{copy.savedJob}: {saved.fileName} · {copy.modelId}: {saved.modelId}</p>
+      <p>{copy.savedJob}: {saved.fileName} · {copy.model}: {saved.modelName || saved.modelId}</p>
       {saved.job.status === 'FINISHED' && <>
         <p>{copy.reviewHint}</p>
         {!saved.text.trim() && <p role="status">{copy.empty}</p>}

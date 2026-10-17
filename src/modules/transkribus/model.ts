@@ -8,6 +8,7 @@ export interface SavedTranskribusJob {
   version: 1;
   job: TranskribusJob;
   modelId: number;
+  modelName?: string;
   fileName: string;
   title: string;
   source: string;
@@ -19,6 +20,7 @@ export function isSavedTranskribusJob(value: unknown): value is SavedTranskribus
   if (!value || typeof value !== 'object') return false;
   const item = value as SavedTranskribusJob;
   return item.version === 1 && isTranskribusJob(item.job) && Number.isSafeInteger(item.modelId) && item.modelId > 0 &&
+    (item.modelName === undefined || (typeof item.modelName === 'string' && item.modelName.length <= 300)) &&
     ['fileName', 'title', 'source', 'text'].every(key => typeof item[key as keyof SavedTranskribusJob] === 'string') &&
     item.text.length <= 1_000_000 && TRANSKRIBUS_RIGHTS.includes(item.rights);
 }
@@ -43,6 +45,7 @@ export function buildTranskribusImport(input: SavedTranskribusJob, sourceLabel: 
   const annotations: OmiAnnotation[] = [{
     id: newId(), type: 'semantic', targetBlockId: block.id, targetText: 'omi:transkribus-transcription',
     body: JSON.stringify({ provider: 'Transkribus', processId: input.job.processId, modelId: input.modelId,
+      ...(input.modelName ? { modelName: input.modelName } : {}),
       rights: input.rights, reviewed: true, importedAt: timestamp }),
     renderingHint: 'hidden', createdAt: timestamp, modifiedAt: timestamp,
   }];
