@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { isTauri } from '@tauri-apps/api/core';
 import { ArrowLeft, FilePlus2, FileText, LoaderCircle, MoreHorizontal, X } from 'lucide-react';
 import {
   createEuroOfficeSession,
@@ -57,6 +58,7 @@ interface PlainDocumentWorkspaceProps {
 
 export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }: PlainDocumentWorkspaceProps) {
   const { locale } = useTranslation();
+  const nativeRuntime = isTauri();
   const copy = getCopy(locale);
   const fallbackDocumentTitle = copy.document;
   const [documents, setDocuments] = useState<PlainDocumentSummary[]>([]);
@@ -134,7 +136,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
   }
 
   return (
-    <main className="plain-document-workspace" aria-label={copy.workspace}>
+    <main className={`plain-document-workspace${nativeRuntime ? ' plain-document-workspace--native' : ''}`} aria-label={copy.workspace}>
       <header className="plain-document-header">
         <button
           type="button"

@@ -38,6 +38,10 @@ const plainDocumentStyles = readFileSync(
   new URL('../src/components/PlainDocumentWorkspace.css', import.meta.url),
   'utf8',
 );
+const plainDocumentWorkspace = readFileSync(
+  new URL('../src/components/PlainDocumentWorkspace.tsx', import.meta.url),
+  'utf8',
+);
 const editorZoom = readFileSync(
   new URL('../src/components/EditorZoomControl.tsx', import.meta.url),
   'utf8',
@@ -134,6 +138,11 @@ test('the embedded EuroOffice workspace adds control clearance below the Android
   assert.match(
     plainDocumentStyles,
     /@media \(max-width: 760px\)[\s\S]*?\.plain-document-workspace\s*\{\s*bottom:\s*calc\(env\(safe-area-inset-bottom, 0px\) \+ 3rem\);/,
+  );
+  assert.match(plainDocumentWorkspace, /isTauri\(\)/);
+  assert.match(
+    plainDocumentStyles,
+    /\.plain-document-workspace--native\s*\{\s*bottom:\s*calc\(env\(safe-area-inset-bottom, 0px\) \+ 5rem\);/,
   );
 });
 
