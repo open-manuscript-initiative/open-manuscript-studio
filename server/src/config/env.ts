@@ -40,6 +40,11 @@ const environmentSchema = z.object({
 
   DEPLOYMENT_MODE: z.enum(['personal', 'institutional']).default('personal'),
 
+  TRANSKRIBUS_API_ORIGIN: z.enum([
+    'https://api.transkribus.org',
+    'https://api-staging.transkribus.org',
+  ]).default('https://api.transkribus.org'),
+
   // Optional organization metadata used only by managed institutional
   // deployments. Admin e-mail addresses are a bootstrap allow-list, but an
   // OIDC/SAML identity must also be linked before OWNER access is provisioned.

@@ -60,6 +60,8 @@ import { reviewManuscriptRouter } from './routes/reviewManuscriptRoutes.js';
 import { directSubmissionRouter } from './routes/directSubmissionRoutes.js';
 import { euroOfficeRouter } from './routes/euroOfficeRoutes.js';
 import { userIntegrationRouter } from './routes/userIntegrationRoutes.js';
+import { transkribusRouter } from './routes/transkribusRoutes.js';
+import { requireSession } from './middleware/requireSession.js';
 
 export const app = express();
 
@@ -97,6 +99,7 @@ app.use('/api/v1/publications/web', express.json({ limit: '12mb' }));
 app.use('/api/publication/validate/jats', express.json({ limit: '7mb' }));
 app.use('/api/references/library', express.json({ limit: '8mb' }));
 app.use('/api/collaboration/documents', express.json({ limit: '140mb' }));
+app.use('/api/modules/critical-text-edition/transkribus/jobs', requireSession, express.json({ limit: '28mb' }));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/api', (_request, response) => {
@@ -144,6 +147,7 @@ if (env.MANUSCRIPT_COLLABORATION_ENABLED) {
 }
 app.use('/api', userIntegrationRouter);
 app.use('/api', referenceManagerRouter);
+app.use('/api', transkribusRouter);
 app.use('/api', personalReferenceLibraryRouter);
 app.use('/api', directSubmissionRouter);
 app.use('/api', agentReviewRouter);

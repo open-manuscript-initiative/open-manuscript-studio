@@ -1,4 +1,5 @@
 import { appendHealthResearchHelp } from './helpHealthResearch';
+import { appendTranskribusHelp } from './helpTranskribus';
 import { appendMathematicsHelp } from './helpMathematics';
 import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
 import { getHelpCopy, type HelpCopy } from './help';
@@ -49,7 +50,7 @@ function buildLocalizedHelpCopy(locale: SupportedLocale | string): HelpCopy {
     }
   }
 
-  return appendHealthResearchHelp(locale, appendMathematicsHelp(locale, appendMusicImportHelp(locale, appendDirectSubmissionHelp(locale, appendCollaborationHelp(locale, copy)))));
+  return appendTranskribusHelp(locale, appendHealthResearchHelp(locale, appendMathematicsHelp(locale, appendMusicImportHelp(locale, appendDirectSubmissionHelp(locale, appendCollaborationHelp(locale, copy))))));
 }
 
 function consolidateModuleHelp(locale: string, copy: HelpCopy): HelpCopy {
@@ -62,7 +63,7 @@ function consolidateModuleHelp(locale: string, copy: HelpCopy): HelpCopy {
     if (index === moduleIndex) return true;
     const title = topic.title;
     const isLegalSearch = /^22[.):-]?\s/.test(title);
-    const isModuleDetail = /latex|musicxml|midi|psychology|medical sciences|gesundheit|psychologie|orvostudomány|pszichológia/i.test(title);
+    const isModuleDetail = /latex|musicxml|midi|psychology|medical sciences|gesundheit|psychologie|orvostudomány|pszichológia|transkribus/i.test(title);
     if (!isLegalSearch && !isModuleDetail) return true;
     sections.push({
       title: title.replace(/^\s*\d+[.):-]?\s*/, '').trim(),

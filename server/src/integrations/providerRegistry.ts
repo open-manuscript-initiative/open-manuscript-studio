@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { requestAiText, resolveAiEndpoint } from './aiProviderClient.js';
 import { loadOmiAgentsConfiguration } from './omiAgentsConfig.js';
 import { testReferenceManagerConnection } from './referenceManagers/referenceManagerService.js';
+import { testTranskribusConnection } from './transkribus/service.js';
 import { decryptSecret, type EncryptedSecret } from './secretCrypto.js';
 import { assertTrustedIntegrationUrl } from './security/trustedRemoteUrl.js';
 
@@ -42,6 +43,12 @@ export interface IntegrationConnectionStatus {
 }
 
 const providers: IntegrationProviderDescriptor[] = [
+  {
+    id: 'transkribus', kind: 'scholarly-service', displayName: 'Transkribus',
+    description: 'Handwritten and printed text recognition in the Critical text edition module.',
+    authenticationModes: ['oidc'], preferredAuthenticationMode: 'oidc',
+    supportsPerUserAuthentication: true, supportsMultipleConnections: false, configurable: true,
+  },
   {
     id: 'deepl', kind: 'translation', displayName: 'DeepL',
     description: 'Machine translation for manuscript text and language variants.',
@@ -349,6 +356,8 @@ export async function testIntegrationProvider(
   userId: string,
 ): Promise<IntegrationConnectionStatus> {
   switch (providerId) {
+    case 'transkribus':
+      return testTranskribusConnection(userId);
     case 'deepl':
       return testDeepL(userId);
     case 'ai-provider':

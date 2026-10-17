@@ -7555,3 +7555,378 @@ msgstr "Invited as {role} for {workspace}"
 msgctxt "/uncataloguedUi/components-collaborationinvitationgate/signed-in-as-name-accepting-adds-this-account-as-a-col-ea9edcf"
 msgid "Signed in as {name}. Accepting adds this account as a collaborator."
 msgstr "Signed in as {name}. Accepting adds this account as a collaborator."
+
+#. OMI translation key: /researchModules/transkribus/copy/title
+msgctxt "/researchModules/transkribus/copy/title"
+msgid "Transkribus text recognition"
+msgstr "Transkribus text recognition"
+
+#. OMI translation key: /researchModules/transkribus/copy/description
+msgctxt "/researchModules/transkribus/copy/description"
+msgid "Recognise handwritten or printed page images, review the transcription and insert it with its source."
+msgstr "Recognise handwritten or printed page images, review the transcription and insert it with its source."
+
+#. OMI translation key: /researchModules/transkribus/copy/category
+msgctxt "/researchModules/transkribus/copy/category"
+msgid "Text recognition"
+msgstr "Text recognition"
+
+#. OMI translation key: /researchModules/transkribus/copy/connection
+msgctxt "/researchModules/transkribus/copy/connection"
+msgid "Transkribus account connection"
+msgstr "Transkribus account connection"
+
+#. OMI translation key: /researchModules/transkribus/copy/loginHint
+msgctxt "/researchModules/transkribus/copy/loginHint"
+msgid "Requires a Transkribus account with API access (Scholar plan or above). Studio exchanges these credentials with READ-COOP once and stores only encrypted access and refresh tokens on its server. Your password is not saved."
+msgstr "Requires a Transkribus account with API access (Scholar plan or above). Studio exchanges these credentials with READ-COOP once and stores only encrypted access and refresh tokens on its server. Your password is not saved."
+
+#. OMI translation key: /researchModules/transkribus/copy/username
+msgctxt "/researchModules/transkribus/copy/username"
+msgid "Transkribus email / username"
+msgstr "Transkribus email / username"
+
+#. OMI translation key: /researchModules/transkribus/copy/password
+msgctxt "/researchModules/transkribus/copy/password"
+msgid "Transkribus password"
+msgstr "Transkribus password"
+
+#. OMI translation key: /researchModules/transkribus/copy/connect
+msgctxt "/researchModules/transkribus/copy/connect"
+msgid "Connect Transkribus"
+msgstr "Connect Transkribus"
+
+#. OMI translation key: /researchModules/transkribus/copy/disconnect
+msgctxt "/researchModules/transkribus/copy/disconnect"
+msgid "Disconnect account"
+msgstr "Disconnect account"
+
+#. OMI translation key: /researchModules/transkribus/copy/connected
+msgctxt "/researchModules/transkribus/copy/connected"
+msgid "Account connected"
+msgstr "Account connected"
+
+#. OMI translation key: /researchModules/transkribus/copy/disconnected
+msgctxt "/researchModules/transkribus/copy/disconnected"
+msgid "Account not connected"
+msgstr "Account not connected"
+
+#. OMI translation key: /researchModules/transkribus/copy/busy
+msgctxt "/researchModules/transkribus/copy/busy"
+msgid "Working…"
+msgstr "Working…"
+
+#. OMI translation key: /researchModules/transkribus/copy/moduleHint
+msgctxt "/researchModules/transkribus/copy/moduleHint"
+msgid "Enable Critical text edition in Settings → Research modules to recognise pages."
+msgstr "Enable Critical text edition in Settings → Research modules to recognise pages."
+
+#. OMI translation key: /researchModules/transkribus/copy/documentation
+msgctxt "/researchModules/transkribus/copy/documentation"
+msgid "Official API documentation"
+msgstr "Official API documentation"
+
+#. OMI translation key: /researchModules/transkribus/copy/image
+msgctxt "/researchModules/transkribus/copy/image"
+msgid "Page image"
+msgstr "Page image"
+
+#. OMI translation key: /researchModules/transkribus/copy/imageHint
+msgctxt "/researchModules/transkribus/copy/imageHint"
+msgid "JPEG, PNG or TIFF; one page per job, up to 20 MB. Convert PDF pages to images first."
+msgstr "JPEG, PNG or TIFF; one page per job, up to 20 MB. Convert PDF pages to images first."
+
+#. OMI translation key: /researchModules/transkribus/copy/modelId
+msgctxt "/researchModules/transkribus/copy/modelId"
+msgid "Recognition model ID"
+msgstr "Recognition model ID"
+
+#. OMI translation key: /researchModules/transkribus/copy/models
+msgctxt "/researchModules/transkribus/copy/models"
+msgid "Browse Transkribus models"
+msgstr "Browse Transkribus models"
+
+#. OMI translation key: /researchModules/transkribus/copy/consent
+msgctxt "/researchModules/transkribus/copy/consent"
+msgid "I authorise sending this page to Transkribus for processing and using credits from my Transkribus account."
+msgstr "I authorise sending this page to Transkribus for processing and using credits from my Transkribus account."
+
+#. OMI translation key: /researchModules/transkribus/copy/start
+msgctxt "/researchModules/transkribus/copy/start"
+msgid "Start recognition (uses credits)"
+msgstr "Start recognition (uses credits)"
+
+#. OMI translation key: /researchModules/transkribus/copy/submitHint
+msgctxt "/researchModules/transkribus/copy/submitHint"
+msgid "If submission was interrupted, check the job in Transkribus before starting it again to avoid using credits twice."
+msgstr "If submission was interrupted, check the job in Transkribus before starting it again to avoid using credits twice."
+
+#. OMI translation key: /researchModules/transkribus/copy/refresh
+msgctxt "/researchModules/transkribus/copy/refresh"
+msgid "Refresh status"
+msgstr "Refresh status"
+
+#. OMI translation key: /researchModules/transkribus/copy/paused
+msgctxt "/researchModules/transkribus/copy/paused"
+msgid "Automatic status checks are paused. Use Refresh status to try again; this does not start another recognition job."
+msgstr "Automatic status checks are paused. Use Refresh status to try again; this does not start another recognition job."
+
+#. OMI translation key: /researchModules/transkribus/copy/result
+msgctxt "/researchModules/transkribus/copy/result"
+msgid "Recognised transcription"
+msgstr "Recognised transcription"
+
+#. OMI translation key: /researchModules/transkribus/copy/reviewHint
+msgctxt "/researchModules/transkribus/copy/reviewHint"
+msgid "Compare the result with the original page and correct it before inserting. Machine recognition is not a verified scholarly transcription."
+msgstr "Compare the result with the original page and correct it before inserting. Machine recognition is not a verified scholarly transcription."
+
+#. OMI translation key: /researchModules/transkribus/copy/source
+msgctxt "/researchModules/transkribus/copy/source"
+msgid "Source"
+msgstr "Source"
+
+#. OMI translation key: /researchModules/transkribus/copy/sourceHint
+msgctxt "/researchModules/transkribus/copy/sourceHint"
+msgid "Replace the suggested filename with the repository, shelfmark, page or stable source URL. Rights are declared by you; Studio does not infer a licence."
+msgstr "Replace the suggested filename with the repository, shelfmark, page or stable source URL. Rights are declared by you; Studio does not infer a licence."
+
+#. OMI translation key: /researchModules/transkribus/copy/titleLabel
+msgctxt "/researchModules/transkribus/copy/titleLabel"
+msgid "Transcription title"
+msgstr "Transcription title"
+
+#. OMI translation key: /researchModules/transkribus/copy/rights
+msgctxt "/researchModules/transkribus/copy/rights"
+msgid "Source rights / licence"
+msgstr "Source rights / licence"
+
+#. OMI translation key: /researchModules/transkribus/copy/reviewed
+msgctxt "/researchModules/transkribus/copy/reviewed"
+msgid "I checked the transcription, its source and the declared rights."
+msgstr "I checked the transcription, its source and the declared rights."
+
+#. OMI translation key: /researchModules/transkribus/copy/section
+msgctxt "/researchModules/transkribus/copy/section"
+msgid "Insert at the end of this section"
+msgstr "Insert at the end of this section"
+
+#. OMI translation key: /researchModules/transkribus/copy/noDocument
+msgctxt "/researchModules/transkribus/copy/noDocument"
+msgid "Open a manuscript to insert the transcription. You can download it now."
+msgstr "Open a manuscript to insert the transcription. You can download it now."
+
+#. OMI translation key: /researchModules/transkribus/copy/insert
+msgctxt "/researchModules/transkribus/copy/insert"
+msgid "Insert reviewed transcription"
+msgstr "Insert reviewed transcription"
+
+#. OMI translation key: /researchModules/transkribus/copy/inserted
+msgctxt "/researchModules/transkribus/copy/inserted"
+msgid "The transcription was appended to the selected section with its provenance."
+msgstr "The transcription was appended to the selected section with its provenance."
+
+#. OMI translation key: /researchModules/transkribus/copy/downloadText
+msgctxt "/researchModules/transkribus/copy/downloadText"
+msgid "Download transcription (.txt)"
+msgstr "Download transcription (.txt)"
+
+#. OMI translation key: /researchModules/transkribus/copy/downloadPage
+msgctxt "/researchModules/transkribus/copy/downloadPage"
+msgid "Download original PAGE XML"
+msgstr "Download original PAGE XML"
+
+#. OMI translation key: /researchModules/transkribus/copy/storageFailed
+msgctxt "/researchModules/transkribus/copy/storageFailed"
+msgid "The result could not be saved on this device. Download it before leaving this screen."
+msgstr "The result could not be saved on this device. Download it before leaving this screen."
+
+#. OMI translation key: /researchModules/transkribus/copy/empty
+msgctxt "/researchModules/transkribus/copy/empty"
+msgid "Recognition finished without text. Check the image and selected model."
+msgstr "Recognition finished without text. Check the image and selected model."
+
+#. OMI translation key: /researchModules/transkribus/copy/invalidImage
+msgctxt "/researchModules/transkribus/copy/invalidImage"
+msgid "Choose a JPEG, PNG or TIFF image no larger than 20 MB."
+msgstr "Choose a JPEG, PNG or TIFF image no larger than 20 MB."
+
+#. OMI translation key: /researchModules/transkribus/copy/savedJob
+msgctxt "/researchModules/transkribus/copy/savedJob"
+msgid "Last job on this device"
+msgstr "Last job on this device"
+
+#. OMI translation key: /researchModules/transkribus/copy/processingNote
+msgctxt "/researchModules/transkribus/copy/processingNote"
+msgid "The page is being processed. You may leave this screen and return to check the saved job. Results are retained by Transkribus for a limited time; download them promptly."
+msgstr "The page is being processed. You may leave this screen and return to check the saved job. Results are retained by Transkribus for a limited time; download them promptly."
+
+#. OMI translation key: /researchModules/transkribus/copy/integrationSecurity
+msgctxt "/researchModules/transkribus/copy/integrationSecurity"
+msgid "OMI sign-in and external accounts are separate. Connections follow each provider’s supported authentication flow. Stored integration secrets are encrypted on the Studio server."
+msgstr "OMI sign-in and external accounts are separate. Connections follow each provider’s supported authentication flow. Stored integration secrets are encrypted on the Studio server."
+
+#. OMI translation key: /researchModules/transkribus/copy/helpTitle
+msgctxt "/researchModules/transkribus/copy/helpTitle"
+msgid "Transkribus: page images to reviewed transcriptions"
+msgstr "Transkribus: page images to reviewed transcriptions"
+
+#. OMI translation key: /researchModules/transkribus/copy/helpBody
+msgctxt "/researchModules/transkribus/copy/helpBody"
+msgid "Connect your account under Integrations → Transkribus, then enable Critical text edition in Settings → Research modules. In that module choose a JPEG, PNG or TIFF page (up to 20 MB), enter a model ID from Transkribus, approve the credit use and start recognition. The last job is saved on this device for status checks after returning. Review and correct the transcription, provide its source and rights, choose a manuscript section and insert it. Text and original PAGE XML can be downloaded. The password is not stored; access and refresh tokens are encrypted on the Studio API server. PDF files and collection synchronisation are not part of this workflow."
+msgstr "Connect your account under Integrations → Transkribus, then enable Critical text edition in Settings → Research modules. In that module choose a JPEG, PNG or TIFF page (up to 20 MB), enter a model ID from Transkribus, approve the credit use and start recognition. The last job is saved on this device for status checks after returning. Review and correct the transcription, provide its source and rights, choose a manuscript section and insert it. Text and original PAGE XML can be downloaded. The password is not stored; access and refresh tokens are encrypted on the Studio API server. PDF files and collection synchronisation are not part of this workflow."
+
+#. OMI translation key: /researchModules/transkribus/copy/rightsOptions/unknown
+msgctxt "/researchModules/transkribus/copy/rightsOptions/unknown"
+msgid "Rights not established"
+msgstr "Rights not established"
+
+#. OMI translation key: /researchModules/transkribus/copy/rightsOptions/public-domain
+msgctxt "/researchModules/transkribus/copy/rightsOptions/public-domain"
+msgid "Public domain (author declaration)"
+msgstr "Public domain (author declaration)"
+
+#. OMI translation key: /researchModules/transkribus/copy/rightsOptions/cc-by
+msgctxt "/researchModules/transkribus/copy/rightsOptions/cc-by"
+msgid "CC BY licence"
+msgstr "CC BY licence"
+
+#. OMI translation key: /researchModules/transkribus/copy/rightsOptions/cc-by-sa
+msgctxt "/researchModules/transkribus/copy/rightsOptions/cc-by-sa"
+msgid "CC BY-SA licence"
+msgstr "CC BY-SA licence"
+
+#. OMI translation key: /researchModules/transkribus/copy/rightsOptions/permission
+msgctxt "/researchModules/transkribus/copy/rightsOptions/permission"
+msgid "Permission obtained"
+msgstr "Permission obtained"
+
+#. OMI translation key: /researchModules/transkribus/copy/rightsOptions/self-authored
+msgctxt "/researchModules/transkribus/copy/rightsOptions/self-authored"
+msgid "My own source, created outside OMI"
+msgstr "My own source, created outside OMI"
+
+#. OMI translation key: /researchModules/transkribus/copy/statuses/CREATED
+msgctxt "/researchModules/transkribus/copy/statuses/CREATED"
+msgid "Submitted"
+msgstr "Submitted"
+
+#. OMI translation key: /researchModules/transkribus/copy/statuses/WAITING
+msgctxt "/researchModules/transkribus/copy/statuses/WAITING"
+msgid "Queued"
+msgstr "Queued"
+
+#. OMI translation key: /researchModules/transkribus/copy/statuses/RUNNING
+msgctxt "/researchModules/transkribus/copy/statuses/RUNNING"
+msgid "Recognising…"
+msgstr "Recognising…"
+
+#. OMI translation key: /researchModules/transkribus/copy/statuses/FINISHED
+msgctxt "/researchModules/transkribus/copy/statuses/FINISHED"
+msgid "Finished"
+msgstr "Finished"
+
+#. OMI translation key: /researchModules/transkribus/copy/statuses/FAILED
+msgctxt "/researchModules/transkribus/copy/statuses/FAILED"
+msgid "Recognition failed"
+msgstr "Recognition failed"
+
+#. OMI translation key: /researchModules/transkribus/copy/statuses/CANCELLED
+msgctxt "/researchModules/transkribus/copy/statuses/CANCELLED"
+msgid "Cancelled"
+msgstr "Cancelled"
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_INVALID_LOGIN
+msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_INVALID_LOGIN"
+msgid "Sign-in failed. Check your Transkribus credentials and API access."
+msgstr "Sign-in failed. Check your Transkribus credentials and API access."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_RECONNECT
+msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_RECONNECT"
+msgid "Reconnect your Transkribus account; the session is missing or expired."
+msgstr "Reconnect your Transkribus account; the session is missing or expired."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_ACCESS_REQUIRED
+msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_ACCESS_REQUIRED"
+msgid "Transkribus refused API access. Check the account plan and the server API configuration."
+msgstr "Transkribus refused API access. Check the account plan and the server API configuration."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_LIMIT
+msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_LIMIT"
+msgid "Transkribus credits or request limits have been reached. Check your account before retrying."
+msgstr "Transkribus credits or request limits have been reached. Check your account before retrying."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_NOT_FOUND
+msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_NOT_FOUND"
+msgid "The model or result was not found. Check the model ID; completed results may have expired."
+msgstr "The model or result was not found. Check the model ID; completed results may have expired."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_INVALID_REQUEST
+msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_INVALID_REQUEST"
+msgid "Check the model ID, image, transcription source and required approval."
+msgstr "Check the model ID, image, transcription source and required approval."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_INVALID_IMAGE
+msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_INVALID_IMAGE"
+msgid "The file is not a supported page image or exceeds 20 MB."
+msgstr "The file is not a supported page image or exceeds 20 MB."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_INVALID_RESPONSE
+msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_INVALID_RESPONSE"
+msgid "Transkribus returned an unexpected response. The existing manuscript was not changed."
+msgstr "Transkribus returned an unexpected response. The existing manuscript was not changed."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_RESULT_TOO_LARGE
+msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_RESULT_TOO_LARGE"
+msgid "The recognition result exceeds the supported size."
+msgstr "The recognition result exceeds the supported size."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_INVALID_JOB
+msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_INVALID_JOB"
+msgid "This recognition job is not available for the current Studio account."
+msgstr "This recognition job is not available for the current Studio account."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_UNAVAILABLE
+msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_UNAVAILABLE"
+msgid "The Transkribus connection is temporarily unavailable. Try again later."
+msgstr "The Transkribus connection is temporarily unavailable. Try again later."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_RATE_LIMIT
+msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_RATE_LIMIT"
+msgid "Too many requests. Wait before trying again."
+msgstr "Too many requests. Wait before trying again."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/NOT_AUTHENTICATED
+msgctxt "/researchModules/transkribus/copy/errors/NOT_AUTHENTICATED"
+msgid "Sign in to Studio before connecting Transkribus."
+msgstr "Sign in to Studio before connecting Transkribus."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/MODULE_DISABLED_BY_INSTALLATION
+msgctxt "/researchModules/transkribus/copy/errors/MODULE_DISABLED_BY_INSTALLATION"
+msgid "The administrator has disabled the Critical text edition module."
+msgstr "The administrator has disabled the Critical text edition module."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/MODULE_NOT_ACTIVE
+msgctxt "/researchModules/transkribus/copy/errors/MODULE_NOT_ACTIVE"
+msgid "Enable Critical text edition for this workspace in Settings."
+msgstr "Enable Critical text edition for this workspace in Settings."
+
+#. OMI translation key: /researchModules/transkribus/copy/errors/RATE_LIMIT_EXCEEDED
+msgctxt "/researchModules/transkribus/copy/errors/RATE_LIMIT_EXCEEDED"
+msgid "Too many Studio API requests. Wait before trying again."
+msgstr "Too many Studio API requests. Wait before trying again."
+
+#. OMI translation key: /researchModules/transkribus/copy/forget
+msgctxt "/researchModules/transkribus/copy/forget"
+msgid "Clear saved job on this device"
+msgstr "Clear saved job on this device"
+
+#. OMI translation key: /researchModules/transkribus/copy/forgetConfirm
+msgctxt "/researchModules/transkribus/copy/forgetConfirm"
+msgid "Clear the saved job and transcription from this device? Download any needed text first. This does not cancel processing in Transkribus; an active job may continue using credits."
+msgstr "Clear the saved job and transcription from this device? Download any needed text first. This does not cancel processing in Transkribus; an active job may continue using credits."
+
+#. OMI translation key: /researchModules/transkribus/copy/untitledSection
+msgctxt "/researchModules/transkribus/copy/untitledSection"
+msgid "Untitled section"
+msgstr "Untitled section"

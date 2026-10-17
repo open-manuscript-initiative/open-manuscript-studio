@@ -15,6 +15,16 @@ const auth = (...items: IntegrationAuthenticationMode[]) => items;
 
 export const integrationCatalog: IntegrationCatalogEntry[] = [
   {
+    id: 'transkribus', kind: 'scholarly-service', displayName: 'Transkribus',
+    description: 'Handwritten and printed text recognition with reviewed import into the manuscript.',
+    categoryLabel: 'Text recognition',
+    permissions: permissions('files.read', 'document.suggest'),
+    authenticationModes: auth('oidc'), preferredAuthenticationMode: 'oidc',
+    requiresServerSecret: false, supportsPerUserAuthentication: true,
+    supportsMultipleConnections: false, configurable: true, status: 'available',
+    documentationUrl: 'https://docs.transkribus.org/',
+  },
+  {
     id: 'deepl',
     kind: 'translation',
     displayName: 'DeepL',

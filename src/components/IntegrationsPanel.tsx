@@ -21,6 +21,8 @@ import { CloudStorageSettings } from './CloudStorageSettings';
 import { OmiAgentsSettings } from './OmiAgentsSettings';
 import { ReferenceManagerSettings } from './ReferenceManagerSettings';
 import { WebPublishingSettings } from './WebPublishingSettings';
+import { TranskribusConnectionSettings } from '../modules/transkribus/TranskribusConnectionSettings';
+import { getTranskribusCopy } from '../modules/transkribus/copy';
 import './IntegrationsPanel.css';
 
 export function IntegrationsPanel() {
@@ -31,7 +33,7 @@ export function IntegrationsPanel() {
       <div className="studio-menu-view-header"><div><h3>{copy.title}</h3><p>{copy.description}</p></div></div>
       <div className="omi-integrations-security-note">
         <ShieldCheck size={18} aria-hidden="true" />
-        <div><strong>{copy.securityTitle}</strong><p>{copy.securityDescription}</p></div>
+        <div><strong>{copy.securityTitle}</strong><p>{getTranskribusCopy(locale).integrationSecurity}</p></div>
       </div>
       <div className="omi-integrations-grid">
         {integrationCatalog.map((entry) => <IntegrationCard key={entry.id} entry={entry} locale={locale} />)}
@@ -60,6 +62,8 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
   const isOmiAgents = entry.id === 'omi-agents';
   const isReferenceManager = entry.id === 'zotero' || entry.id === 'mendeley';
   const isWebPublishing = entry.id === 'wordpress' || entry.id === 'web-publishing';
+  const isTranskribus = entry.id === 'transkribus';
+  const transkribusCopy = getTranskribusCopy(locale);
 
   useEffect(() => {
     if (entry.id !== 'orcid') return;
@@ -117,6 +121,7 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
           ? 'available'
           : entry.status;
   const configurableNow =
+    isTranskribus ||
     entry.id === 'deepl' ||
     entry.id === 'orcid' ||
     isOmiAgents ||
@@ -247,10 +252,10 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
     <article className="omi-integration-card">
       <div className="omi-integration-card__header">
         <span className="omi-integration-card__icon" aria-hidden="true">{iconFor(entry.kind)}</span>
-        <div><span className="omi-integration-card__category">{entry.categoryLabel}</span><h4>{entry.displayName}</h4></div>
+        <div><span className="omi-integration-card__category">{isTranskribus ? transkribusCopy.category : entry.categoryLabel}</span><h4>{entry.displayName}</h4></div>
         <span className={`omi-integration-status omi-integration-status--${statusClass}`}>{statusLabel}</span>
       </div>
-      <p>{entry.description}</p>
+      <p>{isTranskribus ? transkribusCopy.description : entry.description}</p>
       <Meta label={copy.authentication}>
         {isCloudStorage
           ? <code>{copy.cloudCredentials}</code>
@@ -323,6 +328,12 @@ function IntegrationCard({ entry, locale }: { entry: IntegrationCatalogEntry; lo
 
       {isWebPublishing && expanded ? (
         <WebPublishingSettings providerId={entry.id as 'wordpress' | 'web-publishing'} />
+      ) : null}
+
+      {isTranskribus && expanded ? (
+        <TranskribusConnectionSettings locale={locale} onStatus={status => setRemoteStatus({
+          providerId: 'transkribus', enabled: true, configured: status.connected, healthy: status.connected,
+        })} />
       ) : null}
 
       {isCloudStorage && expanded ? (
