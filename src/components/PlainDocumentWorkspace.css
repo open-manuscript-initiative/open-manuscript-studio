@@ -1,7 +1,7 @@
 .plain-document-workspace {
   position: fixed;
   z-index: 1500;
-  inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
   display: grid;
   grid-template-rows: 3.5rem auto minmax(0, 1fr);
   background: #f3f4f6;
