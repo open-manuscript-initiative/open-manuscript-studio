@@ -30,7 +30,11 @@ const MODERN_THEME = 'Theme.AppCompat.DayNight.NoActionBar';
 const LEGACY_ACTIVITY_IMPORT = 'import androidx.activity.enableEdgeToEdge';
 const MODERN_ACTIVITY_IMPORT = `import android.os.Build
 import android.view.WindowManager
-import androidx.core.view.WindowCompat`;
+import android.view.View
+import androidx.core.graphics.Insets
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat`;
 const LEGACY_ACTIVITY_CALL = '    enableEdgeToEdge()';
 const MODERN_ACTIVITY_CALL = `    WindowCompat.setDecorFitsSystemWindows(window, false)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -39,6 +43,16 @@ const MODERN_ACTIVITY_CALL = `    WindowCompat.setDecorFitsSystemWindows(window,
           WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
       window.attributes = attributes
     }`;
+const ANDROID_INSETS_CALL = `    val content = findViewById<View>(android.R.id.content)
+    val contentPaddingBottom = content.paddingBottom
+    ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
+      val navigationBarBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+      view.setPadding(view.paddingLeft, view.paddingTop, view.paddingRight, contentPaddingBottom + navigationBarBottom)
+      WindowInsetsCompat.Builder(insets)
+        .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.NONE)
+        .build()
+    }
+    ViewCompat.requestApplyInsets(content)`;
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -94,21 +108,29 @@ export function patchAndroidNdkVersion(source) {
 }
 
 export function patchAndroidActivity(source) {
-  if (
-    source.includes(MODERN_ACTIVITY_IMPORT) &&
-    source.includes(MODERN_ACTIVITY_CALL)
-  ) {
-    return source;
-  }
-  if (
-    !source.includes(LEGACY_ACTIVITY_IMPORT) ||
-    !source.includes(LEGACY_ACTIVITY_CALL)
-  ) {
+  if (source.includes(ANDROID_INSETS_CALL)) return source;
+
+  let result = source;
+  if (result.includes(LEGACY_ACTIVITY_IMPORT)) {
+    result = result.replace(LEGACY_ACTIVITY_IMPORT, MODERN_ACTIVITY_IMPORT);
+  } else if (result.includes('import androidx.core.view.WindowCompat')) {
+    result = result.replace(
+      'import android.view.WindowManager',
+      'import android.view.WindowManager\nimport android.view.View\nimport androidx.core.graphics.Insets\nimport androidx.core.view.ViewCompat\nimport androidx.core.view.WindowInsetsCompat',
+    );
+  } else if (!result.includes(MODERN_ACTIVITY_IMPORT)) {
     throw new Error('Expected generated Tauri edge-to-edge Activity is missing.');
   }
-  return source
-    .replace(LEGACY_ACTIVITY_IMPORT, MODERN_ACTIVITY_IMPORT)
-    .replace(LEGACY_ACTIVITY_CALL, MODERN_ACTIVITY_CALL);
+  if (!result.includes(MODERN_ACTIVITY_CALL)) {
+    if (!result.includes(LEGACY_ACTIVITY_CALL)) {
+      throw new Error('Expected generated Tauri edge-to-edge Activity is missing.');
+    }
+    result = result.replace(LEGACY_ACTIVITY_CALL, MODERN_ACTIVITY_CALL);
+  }
+  if (!result.includes(MODERN_ACTIVITY_CALL)) {
+    throw new Error('Expected generated Tauri edge-to-edge Activity is missing.');
+  }
+  return result.replace(MODERN_ACTIVITY_CALL, `${MODERN_ACTIVITY_CALL}\n${ANDROID_INSETS_CALL}`);
 }
 
 export function patchAndroidDependencies(source) {

@@ -62,6 +62,25 @@ class MainActivity : TauriActivity() {
   }
 }
 `;
+const generatedModernActivity = `package org.openmanuscript.studio
+
+import android.os.Build
+import android.view.WindowManager
+import androidx.core.view.WindowCompat
+
+class MainActivity : TauriActivity() {
+  override fun onCreate(savedInstanceState: Bundle?) {
+    WindowCompat.setDecorFitsSystemWindows(window, false)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      val attributes = window.attributes
+      attributes.layoutInDisplayCutoutMode =
+          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+      window.attributes = attributes
+    }
+    super.onCreate(savedInstanceState)
+  }
+}
+`;
 const generatedTheme = `<resources>
     <style name="Theme.omi_studio" parent="Theme.MaterialComponents.DayNight.NoActionBar">
     </style>
@@ -116,10 +135,17 @@ test('Android Activity patch uses non-deprecated edge-to-edge APIs', () => {
   const patched = patchAndroidActivity(generatedActivity);
   assert.match(patched, /androidx\.core\.view\.WindowCompat/);
   assert.match(patched, /LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS/);
+  assert.match(patched, /WindowInsetsCompat\.Type\.navigationBars\(\)/);
+  assert.match(patched, /contentPaddingBottom \+ navigationBarBottom/);
+  assert.match(patched, /WindowInsetsCompat\.Builder\(insets\)/);
   assert.doesNotMatch(patched, /androidx\.activity\.enableEdgeToEdge/);
   assert.doesNotMatch(patched, /LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES/);
   assert.doesNotMatch(patched, /enableEdgeToEdge\(\)/);
   assert.equal(patchAndroidActivity(patched), patched);
+  const upgraded = patchAndroidActivity(generatedModernActivity);
+  assert.match(upgraded, /import androidx\.core\.view\.ViewCompat/);
+  assert.match(upgraded, /ViewCompat\.requestApplyInsets\(content\)/);
+  assert.equal(patchAndroidActivity(upgraded), upgraded);
 });
 test('Kotlin compiler patch aligns the generated template with modern AndroidX metadata', () => {
   const patched = patchAndroidKotlinVersion(generatedRootBuildGradle);
