@@ -35,6 +35,49 @@ test('Transkribus uses the documented OIDC client, password exchange and rotatin
   assert.equal(forms[1].get('refresh_token'), 'synthetic-refresh');
 });
 
+test('API origins only select fixed production and staging endpoints', async () => {
+  for (const [apiOrigin, expectedOrigin] of [
+    [undefined, 'https://api.transkribus.org'],
+    ['https://api.transkribus.org', 'https://api.transkribus.org'],
+    ['https://api-staging.transkribus.org', 'https://api-staging.transkribus.org'],
+  ] as const) {
+    const paths: string[] = [];
+    const client = createTranskribusClient({ apiOrigin, fetchImpl: async (input, init) => {
+      paths.push(String(input));
+      assert.equal(new Headers(init?.headers).get('authorization'), 'Bearer synthetic-access');
+      assert.equal(init?.redirect, 'error');
+      return String(input).endsWith('/page')
+        ? new Response('<PcGts/>') : json({ processId: 42, status: 'FINISHED' });
+    } });
+    await client.submit('synthetic-access', 38230, png);
+    await client.getJob('synthetic-access', 42);
+    await client.getPageXml('synthetic-access', 42);
+    assert.deepEqual(paths, [
+      `${expectedOrigin}/v2/processes`,
+      `${expectedOrigin}/v2/processes/42`,
+      `${expectedOrigin}/v2/processes/42/page`,
+    ]);
+  }
+
+  let calls = 0;
+  const fetchImpl: typeof fetch = async () => { calls++; return json({}); };
+  for (const apiOrigin of [
+    '', 'http://127.0.0.1', 'http://api.transkribus.org',
+    'https://evil.test/https://api.transkribus.org',
+    'https://api.transkribus.org.evil.test',
+    'https://api.transkribus.org@evil.test',
+    'https://api.transkribus.org:8443',
+    'https://api.transkribus.org/',
+    'https://api.transkribus.org?next=https://evil.test',
+    'https://api.transkribus.org#https://evil.test',
+    'https://api-staging.transkribus.org.evil.test',
+    'https://api-staging.transkribus.org@evil.test',
+  ]) {
+    assert.throws(() => createTranskribusClient({ apiOrigin, fetchImpl }), /Unsupported Transkribus API origin/);
+  }
+  assert.equal(calls, 0, 'unsupported origins must fail before any token-bearing request');
+});
+
 test('one image submission sends the exact v2 schema once without trusting response links', async () => {
   let calls = 0;
   const client = createTranskribusClient({ fetchImpl: async (input, init) => {
@@ -51,7 +94,6 @@ test('one image submission sends the exact v2 schema once without trusting respo
   const failing = createTranskribusClient({ fetchImpl: async () => { calls++; throw new Error('synthetic-private-body'); } });
   await assert.rejects(failing.submit('synthetic-access', 38230, png), { message: 'TRANSKRIBUS_UNAVAILABLE' });
   assert.equal(calls, 2, 'an uncertain paid submission must never be retried automatically');
-  assert.throws(() => createTranskribusClient({ apiOrigin: 'http://127.0.0.1' }), /Unsupported/);
 });
 
 test('invalid and oversized images and model IDs are rejected before any paid request', async () => {

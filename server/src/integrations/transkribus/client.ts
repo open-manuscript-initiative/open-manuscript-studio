@@ -74,9 +74,18 @@ export function createTranskribusClient(options: {
   apiOrigin?: string;
   fetchImpl?: typeof fetch;
 } = {}) {
-  const origin = options.apiOrigin ?? 'https://api.transkribus.org';
-  if (!['https://api.transkribus.org', 'https://api-staging.transkribus.org'].includes(origin)) {
-    throw new Error('Unsupported Transkribus API origin.');
+  // Build request URLs from fixed literals rather than the configured value.
+  let origin: string;
+  switch (options.apiOrigin) {
+    case undefined:
+    case 'https://api.transkribus.org':
+      origin = 'https://api.transkribus.org';
+      break;
+    case 'https://api-staging.transkribus.org':
+      origin = 'https://api-staging.transkribus.org';
+      break;
+    default:
+      throw new Error('Unsupported Transkribus API origin.');
   }
   const fetchImpl = options.fetchImpl ?? fetch;
 
