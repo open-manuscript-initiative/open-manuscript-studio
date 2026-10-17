@@ -34,6 +34,10 @@ const mobileStyles = readFileSync(
   new URL('../src/mobile/styles/mobile.css', import.meta.url),
   'utf8',
 );
+const plainDocumentStyles = readFileSync(
+  new URL('../src/components/PlainDocumentWorkspace.css', import.meta.url),
+  'utf8',
+);
 const editorZoom = readFileSync(
   new URL('../src/components/EditorZoomControl.tsx', import.meta.url),
   'utf8',
@@ -123,6 +127,13 @@ test('native mobile keeps the app shell above the system navigation area', () =>
   assert.match(
     mobileStyles,
     /\.mobile-workspace\s*\{[\s\S]*?padding-bottom:\s*0;/,
+  );
+});
+
+test('the embedded EuroOffice workspace adds control clearance below the Android safe area', () => {
+  assert.match(
+    plainDocumentStyles,
+    /@media \(max-width: 760px\)[\s\S]*?\.plain-document-workspace\s*\{\s*bottom:\s*calc\(env\(safe-area-inset-bottom, 0px\) \+ 3rem\);/,
   );
 });
 
