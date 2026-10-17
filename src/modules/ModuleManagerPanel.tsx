@@ -14,6 +14,7 @@ import { normalizeModuleLocale } from './moduleLocale';
 import { HistoryArchivesSourcesPanel } from './history-archives/HistoryArchivesSourcesPanel';
 import { ReligiousTextsPanel } from './religious-texts/ReligiousTextsPanel';
 import { CriticalTextEditionPanel } from './critical-text-edition/CriticalTextEditionPanel';
+import { TranskribusPanel } from './transkribus/TranskribusPanel';
 import { CorpusLinguisticsPanel } from './corpus-linguistics/CorpusLinguisticsPanel';
 import { MusicologyPanel } from './musicology/MusicologyPanel';
 import { SocialResearchMethodsPanel } from './social-research-methods/SocialResearchMethodsPanel';
@@ -144,7 +145,7 @@ export function ModuleManagerPanel({
                 ) : module.id === religiousTextsModule.id ? (
                   <ReligiousTextsPanel locale={locale} />
                 ) : module.id === criticalTextEditionModule.id ? (
-                  <><CriticalTextEditionPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /><ResearchDatabasePanel moduleId="critical-text-edition" workspaceId={workspaceId} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /></>
+                  <><TranskribusPanel key={userId + ':' + workspaceId} locale={locale} userId={userId} workspaceId={workspaceId} /><CriticalTextEditionPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /><ResearchDatabasePanel moduleId="critical-text-edition" workspaceId={workspaceId} locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} /></>
                 ) : module.id === corpusLinguisticsModule.id ? (
                   <CorpusLinguisticsPanel locale={locale} storageKey={getDisciplineWorkspaceStorageKey(userId, workspaceId, module.id)} />
                 ) : module.id === musicologyModule.id ? (

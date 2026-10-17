@@ -96,6 +96,9 @@ jobs:
       - name: Test health research API authorization
         run: npm run test:health-research-api
 
+      - name: Test Transkribus account and recognition authorization
+        run: npm run test:transkribus
+
       - name: Test JATS 1.4 schema validation
         run: npm run test:jats-validation
 
