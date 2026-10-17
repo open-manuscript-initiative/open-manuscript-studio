@@ -1,6 +1,6 @@
 .mobile-shell {
-  height: 100dvh;
-  min-height: 100dvh;
+  height: calc(100dvh - env(safe-area-inset-bottom, 0px));
+  min-height: calc(100dvh - env(safe-area-inset-bottom, 0px));
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
   overflow: hidden;
@@ -179,7 +179,7 @@
   min-height: 0;
   height: 100%;
   box-sizing: border-box;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: 0;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: auto;
