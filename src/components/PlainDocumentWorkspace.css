@@ -142,8 +142,8 @@
 .plain-document-muted { display: flex; align-items: center; gap: .5rem; }
 
 @media (max-width: 760px) {
-  /* Keep EuroOffice's mobile bottom controls above Android's overlaid navigation bar. */
-  .plain-document-workspace { bottom: max(3rem, env(safe-area-inset-bottom, 0px)); }
+  /* Keep EuroOffice's bottom controls above the system inset with extra touch clearance. */
+  .plain-document-workspace { bottom: calc(env(safe-area-inset-bottom, 0px) + 3rem); }
 }
 
 @media (max-width: 700px) {
