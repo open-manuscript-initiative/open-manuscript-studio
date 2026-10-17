@@ -139,7 +139,11 @@ euroOfficeRouter.get('/eurooffice/documents/:documentId/session', requireSession
       callbackUrl,
       lang: typeof acceptedLanguage === 'string' ? acceptedLanguage : 'en',
       user: { id: request.authUserId!, name: user.fullName },
-      customization: { forcesave: true },
+      customization: {
+        forcesave: true,
+        // Keep the editor header compact on both desktop and mobile layouts.
+        compactHeader: true,
+      },
     },
     height: '100%',
     width: '100%',

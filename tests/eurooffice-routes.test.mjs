@@ -111,12 +111,14 @@ test('ordinary DOCX stays native and uses an owner-scoped, short-lived EuroOffic
   const launch = await launched.json();
   assert.equal(launch.apiScriptUrl, 'https://office.example.org/web-apps/apps/api/documents/api.js');
   assert.equal(launch.config.document.fileType, 'docx');
+  assert.equal(launch.config.editorConfig.customization.compactHeader, true);
   const claims = await jwtVerify(launch.config.token, new TextEncoder().encode(secret));
   assert.equal(claims.payload.document.title, 'Plain text.docx');
   assert.equal(claims.payload.type, 'desktop');
   assert.equal(JSON.stringify(launch).includes(secret), false);
 
   const mobileLaunch = await (await request(`/api/eurooffice/documents/${documentId}/session?type=mobile`)).json();
+  assert.equal(mobileLaunch.config.editorConfig.customization.compactHeader, true);
   const mobileClaims = await jwtVerify(mobileLaunch.config.token, new TextEncoder().encode(secret));
   assert.equal(mobileClaims.payload.type, 'mobile');
 
