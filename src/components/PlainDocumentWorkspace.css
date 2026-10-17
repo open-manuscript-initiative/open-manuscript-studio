@@ -1,7 +1,7 @@
 .plain-document-workspace {
   position: fixed;
   z-index: 1500;
-  inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
+  inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
   display: grid;
   grid-template-rows: 2.25rem auto minmax(0, 1fr);
   background: #f3f4f6;
@@ -98,19 +98,26 @@
 .plain-document-error { padding: .55rem 1rem; background: #fee2e2; color: #991b1b; }
 
 .plain-document-editor {
+  grid-row: 3;
   position: relative;
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
   background: #e5e7eb;
 }
 
-.plain-document-editor > iframe { width: 100%; height: 100%; border: 0; }
+.plain-document-editor-host { position: absolute; inset: 0; overflow: hidden; }
+/* DocsAPI sets position:fixed inline for mobile. Anchor its generated frame to
+   the editor host so the iframe's viewport ends above Studio's safe area. */
+.plain-document-editor-host > iframe { position: absolute !important; inset: 0; display: block; width: 100%; height: 100%; border: 0; }
 .plain-document-loading { position: absolute; z-index: 1; inset: 0; display: flex; align-items: center; justify-content: center; gap: .6rem; background: #f3f4f6; }
 .plain-document-editor-error { display: grid; place-items: center; height: 100%; color: #991b1b; }
 .plain-document-spinner { animation: plain-document-spin 1s linear infinite; }
 @keyframes plain-document-spin { to { transform: rotate(360deg); } }
 
 .plain-document-list {
+  grid-row: 3;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(18rem, 1fr) minmax(20rem, 1.5fr);
   gap: 1.5rem;
@@ -140,13 +147,6 @@
 .plain-document-item strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .plain-document-item small, .plain-document-muted { color: #6b7280; }
 .plain-document-muted { display: flex; align-items: center; gap: .5rem; }
-
-@media (max-width: 760px) {
-  /* Keep EuroOffice's bottom controls above the system inset with extra touch clearance. */
-  .plain-document-workspace { bottom: calc(env(safe-area-inset-bottom, 0px) + 3rem); }
-  /* The native editor's floating action button needs room above Android navigation. */
-  .plain-document-workspace--native { bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem); }
-}
 
 @media (max-width: 700px) {
   .plain-document-workspace { grid-template-rows: 2.25rem auto minmax(0, 1fr); }

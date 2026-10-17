@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
-import { isTauri } from '@tauri-apps/api/core';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, FilePlus2, FileText, LoaderCircle, MoreHorizontal, X } from 'lucide-react';
 import {
   createEuroOfficeSession,
@@ -58,7 +57,6 @@ interface PlainDocumentWorkspaceProps {
 
 export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }: PlainDocumentWorkspaceProps) {
   const { locale } = useTranslation();
-  const nativeRuntime = isTauri();
   const copy = getCopy(locale);
   const fallbackDocumentTitle = copy.document;
   const [documents, setDocuments] = useState<PlainDocumentSummary[]>([]);
@@ -68,8 +66,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
-  const editorRef = useRef<{ destroyEditor?: () => void } | null>(null);
-  const [editorTarget, setEditorTarget] = useState<HTMLDivElement | null>(null);
+  const [editorHost, setEditorHost] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (documentId) return;
@@ -110,15 +107,18 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
   }, [documentId, fallbackDocumentTitle]);
 
   useEffect(() => {
-    if (!launch || !editorTarget || !window.DocsAPI) return;
-    editorTarget.id = 'eurooffice-editor-frame';
-    editorRef.current = new window.DocsAPI.DocEditor(editorTarget.id, launch.config);
+    if (!launch || !editorHost || !window.DocsAPI) return;
+    // DocsAPI replaces its placeholder with an iframe. Keep that DOM mutation
+    // inside a persistent host whose dimensions are controlled by Studio.
+    const placeholder = document.createElement('div');
+    placeholder.id = 'eurooffice-editor-frame';
+    editorHost.replaceChildren(placeholder);
+    const editor = new window.DocsAPI.DocEditor(placeholder.id, launch.config);
     return () => {
-      editorRef.current?.destroyEditor?.();
-      editorRef.current = null;
-      editorTarget.replaceChildren();
+      editor.destroyEditor?.();
+      editorHost.replaceChildren();
     };
-  }, [editorTarget, launch]);
+  }, [editorHost, launch]);
 
   async function createDocument(): Promise<void> {
     setBusy(true);
@@ -136,7 +136,7 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
   }
 
   return (
-    <main className={`plain-document-workspace${nativeRuntime ? ' plain-document-workspace--native' : ''}`} aria-label={copy.workspace}>
+    <main className="plain-document-workspace" aria-label={copy.workspace}>
       <header className="plain-document-header">
         <button
           type="button"
@@ -172,7 +172,8 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
       </header>
       {error ? <div className="plain-document-error" role="alert">{error}</div> : null}
       {documentId ? (
-        <div className="plain-document-editor" ref={setEditorTarget}>
+        <div className="plain-document-editor">
+          <div className="plain-document-editor-host" ref={setEditorHost} />
           {busy ? <div className="plain-document-loading"><LoaderCircle size={22} className="plain-document-spinner" />{copy.loading}</div> : null}
           {!busy && error ? <div className="plain-document-editor-error">{copy.editorUnavailable}</div> : null}
           <span className="sr-only">{launch ? copy.autosave : ''}</span>
