@@ -35,6 +35,10 @@ test('migration, concurrent callback CAS, immutable recovery and execution uniqu
   const migration = await readFile(new URL('../server/prisma/migrations/20261018120000_integration_execution_boundaries/migration.sql', import.meta.url), 'utf8');
   await client.query(migration);
   assert.equal((await client.query('SELECT count(*)::int AS n FROM eurooffice_sessions WHERE expires_at > now()')).rows[0].n, 0);
+  const { PrismaClient } = await import('../server/dist/generated/prisma/client.js');
+  const { PrismaPg } = await import('../server/node_modules/@prisma/adapter-pg/dist/index.js');
+  // Prisma qualifies ORM table names: the adapter schema must match the isolated SQL search_path.
+  globalThis.prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: scoped.href }, { schema }) });
   ({ prisma } = await import('../server/dist/lib/prisma.js'));
   const { euroOfficeRepository } = await import('../server/dist/repositories/euroOfficeRepository.js');
   const base = { documentId, userId, documentKey: documentId+'-1', baseRevision: 1 };
