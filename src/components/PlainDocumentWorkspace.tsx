@@ -1,3 +1,4 @@
+import { EuroOfficeRecovery } from './EuroOfficeRecovery';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, FilePlus2, FileText, LoaderCircle, MoreHorizontal, X } from 'lucide-react';
 import {
@@ -193,10 +194,10 @@ export function PlainDocumentWorkspace({ documentId, onClose, onSelectDocument }
             {busy ? <p className="plain-document-muted"><LoaderCircle size={16} className="plain-document-spinner" />{copy.loading}</p> : null}
             {!busy && documents.length === 0 ? <p className="plain-document-muted">{copy.empty}</p> : null}
             {documents.map((item) => (
-              <button key={item.id} type="button" className="plain-document-item" onClick={() => onSelectDocument(item.id)}>
+              <div key={item.id}><button type="button" className="plain-document-item" onClick={() => onSelectDocument(item.id)}>
                 <FileText size={18} aria-hidden="true" />
                 <span><strong>{item.title}</strong><small>{copy.updated}: {new Date(item.updatedAt).toLocaleDateString(locale)}</small></span>
-              </button>
+              </button><EuroOfficeRecovery documentId={item.id} /></div>
             ))}
           </div>
         </section>

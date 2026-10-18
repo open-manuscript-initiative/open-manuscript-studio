@@ -8030,3 +8030,43 @@ msgstr "Centuries"
 msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_MODELS_UNAVAILABLE"
 msgid "The public model catalogue could not be loaded. Try again or enter a model ID manually."
 msgstr "The public model catalogue could not be loaded. Try again or enter a model ID manually."
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/title
+msgctxt "/uncataloguedUi/euroOfficeRecovery/title"
+msgid "Recovery saves"
+msgstr "Recovery saves"
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/description
+msgctxt "/uncataloguedUi/euroOfficeRecovery/description"
+msgid "Force saves and conflicting callbacks are retained here. Final content is committed when the editor closes. Download a snapshot to recover it; this does not replace the current document."
+msgstr "Force saves and conflicting callbacks are retained here. Final content is committed when the editor closes. Download a snapshot to recover it; this does not replace the current document."
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/loading
+msgctxt "/uncataloguedUi/euroOfficeRecovery/loading"
+msgid "Loading…"
+msgstr "Loading…"
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/empty
+msgctxt "/uncataloguedUi/euroOfficeRecovery/empty"
+msgid "No saved snapshots."
+msgstr "No saved snapshots."
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/final
+msgctxt "/uncataloguedUi/euroOfficeRecovery/final"
+msgid "Final save"
+msgstr "Final save"
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/previous
+msgctxt "/uncataloguedUi/euroOfficeRecovery/previous"
+msgid "Previous document"
+msgstr "Previous document"
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/recovery
+msgctxt "/uncataloguedUi/euroOfficeRecovery/recovery"
+msgid "Recovery snapshot"
+msgstr "Recovery snapshot"
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/failed
+msgctxt "/uncataloguedUi/euroOfficeRecovery/failed"
+msgid "Recovery saves could not be loaded or downloaded."
+msgstr "Recovery saves could not be loaded or downloaded."

@@ -1,8 +1,10 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import type { ModuleExecutionGrant } from '../../middleware/requireModuleCapability.js';
+import { recognitionExecutionRepository as executions } from '../../repositories/recognitionExecutionRepository.js';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { env } from '../../config/env.js';
 import { prisma } from '../../lib/prisma.js';
 import { decryptSecret, encryptSecret, type EncryptedSecret } from '../secretCrypto.js';
-import { createTranskribusClient, TranskribusError, type TranskribusTokens } from './client.js';
+import { createTranskribusClient, validateTranskribusImage, TranskribusError, type TranskribusTokens } from './client.js';
 
 const identity = (userId: string) => ({ userId, providerId: 'transkribus', connectionKey: 'personal' });
 const refreshing = new Map<string, Promise<void>>();
@@ -104,10 +106,53 @@ export function verifyTranskribusJobHandle(userId: string, handle: string): numb
   return processId;
 }
 
-export async function submitTranskribusJob(userId: string, modelId: number, imageBase64: string) {
-  // Never retry submissions: an ambiguous network failure may already have consumed credits.
-  const job = await client().submit(await accessToken(userId), modelId, imageBase64);
-  return { ...job, handle: transkribusJobHandle(userId, job.processId) };
+export async function submitTranskribusJob(userId: string, modelId: number, imageBase64: string, grant: ModuleExecutionGrant, requestKey?: string) {
+  if (!grant || grant.userId !== userId || grant.moduleId !== 'org.omi.critical-text-edition' ||
+      grant.capability !== 'transkribus.recognize' || grant.expiresAt <= Date.now()) {
+    throw new TranskribusError('TRANSKRIBUS_GRANT_REQUIRED', 403);
+  }
+  validateTranskribusImage(imageBase64);
+  if (!Number.isInteger(modelId) || modelId < 1 || modelId > 2_147_483_647) throw new TranskribusError('TRANSKRIBUS_INVALID_REQUEST', 400);
+  const stored = await connection(userId);
+  const imageDigest = createHash('sha256').update(Buffer.from(imageBase64, 'base64')).digest('hex');
+  const providerOrigin = env.TRANSKRIBUS_API_ORIGIN ?? 'https://api.transkribus.org';
+  // Legacy callers get a deterministic key. V1 clients retain a UUID across uncertain retries.
+  const key = requestKey ?? createHash('sha256').update(JSON.stringify([stored.id, modelId, imageDigest])).digest('hex');
+  const where = { userId_workspaceId_requestKey: { userId, workspaceId: grant.workspaceId, requestKey: key } };
+  const existing = await executions.findUnique({ where });
+  if (existing) {
+    if (existing.imageDigest !== imageDigest || existing.modelId !== modelId || existing.connectionId !== stored.id || existing.providerOrigin !== providerOrigin) throw new TranskribusError('TRANSKRIBUS_IDEMPOTENCY_CONFLICT', 409);
+    if (existing.status === 'ACCEPTED' && existing.processId) return getTranskribusJob(userId, transkribusJobHandle(userId, Number(existing.processId)));
+    throw new TranskribusError('TRANSKRIBUS_OUTCOME_UNKNOWN', 409);
+  }
+  // Refresh credentials before reserving a paid intent; no provider submission has happened yet.
+  const access = await accessToken(userId);
+  if (grant.expiresAt <= Date.now()) throw new TranskribusError('TRANSKRIBUS_GRANT_REQUIRED', 403);
+  let intent;
+  try {
+    intent = await executions.create({ data: { userId, workspaceId: grant.workspaceId, requestKey: key,
+      connectionId: stored.id, providerOrigin, modelId, imageDigest, grantId: grant.id,
+      purpose: 'transcription', dataScope: 'uploaded-image', expiresAt: new Date(grant.expiresAt), status: 'SUBMITTING' } });
+  } catch (error) {
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') throw new TranskribusError('TRANSKRIBUS_OUTCOME_UNKNOWN', 409);
+    throw error;
+  }
+  try {
+    // Never automatically retry a paid POST. A timeout is a durable unknown outcome.
+    const job = await client().submit(access, modelId, imageBase64);
+    await executions.update({ where: { id: intent.id }, data: { status: 'ACCEPTED', processId: BigInt(job.processId) } });
+    return { ...job, handle: transkribusJobHandle(userId, job.processId) };
+  } catch {
+    await executions.updateMany({ where: { id: intent.id, status: 'SUBMITTING' }, data: { status: 'UNKNOWN' } });
+    throw new TranskribusError('TRANSKRIBUS_OUTCOME_UNKNOWN', 409);
+  }
+}
+
+export async function transkribusExecutionStatus(userId: string, workspaceId: string, requestKey: string) {
+  const execution = await executions.findUnique({ where: { userId_workspaceId_requestKey: { userId, workspaceId, requestKey } } });
+  if (!execution) throw new TranskribusError('TRANSKRIBUS_NOT_FOUND', 404);
+  return { requestKey, status: execution.status === 'SUBMITTING' && execution.expiresAt.getTime() <= Date.now() ? 'UNKNOWN' : execution.status,
+    ...(execution.processId ? { handle: transkribusJobHandle(userId, Number(execution.processId)) } : {}) };
 }
 
 async function readWithRefresh<T>(userId: string, read: (token: string) => Promise<T>): Promise<T> {

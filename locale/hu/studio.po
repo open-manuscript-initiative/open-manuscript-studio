@@ -8035,3 +8035,43 @@ msgstr "Századok"
 msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_MODELS_UNAVAILABLE"
 msgid "The public model catalogue could not be loaded. Try again or enter a model ID manually."
 msgstr "A nyilvános modellkatalógus nem tölthető be. Próbáld újra, vagy add meg kézzel a modell azonosítóját."
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/title
+msgctxt "/uncataloguedUi/euroOfficeRecovery/title"
+msgid "Recovery saves"
+msgstr "Helyreállítási mentések"
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/description
+msgctxt "/uncataloguedUi/euroOfficeRecovery/description"
+msgid "Force saves and conflicting callbacks are retained here. Final content is committed when the editor closes. Download a snapshot to recover it; this does not replace the current document."
+msgstr "A részmentések és az ütköző visszahívások itt maradnak meg. A végleges dokumentum a szerkesztő bezárásakor frissül. A pillanatkép letöltése nem írja felül az aktuális dokumentumot."
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/loading
+msgctxt "/uncataloguedUi/euroOfficeRecovery/loading"
+msgid "Loading…"
+msgstr "Betöltés…"
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/empty
+msgctxt "/uncataloguedUi/euroOfficeRecovery/empty"
+msgid "No saved snapshots."
+msgstr "Még nincs mentett pillanatkép."
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/final
+msgctxt "/uncataloguedUi/euroOfficeRecovery/final"
+msgid "Final save"
+msgstr "Végleges mentés"
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/previous
+msgctxt "/uncataloguedUi/euroOfficeRecovery/previous"
+msgid "Previous document"
+msgstr "Korábbi dokumentum"
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/recovery
+msgctxt "/uncataloguedUi/euroOfficeRecovery/recovery"
+msgid "Recovery snapshot"
+msgstr "Helyreállítási pillanatkép"
+
+#. OMI translation key: /uncataloguedUi/euroOfficeRecovery/failed
+msgctxt "/uncataloguedUi/euroOfficeRecovery/failed"
+msgid "Recovery saves could not be loaded or downloaded."
+msgstr "A helyreállítási mentések nem tölthetők be vagy le."

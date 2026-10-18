@@ -174,6 +174,7 @@ model User {
   studioModuleAuditEvents StudioModuleAuditEvent[] @relation("StudioModuleAuditActor")
   plainDocuments          PlainDocument[]
   euroOfficeSessions      EuroOfficeSession[]
+  recognitionExecutions  RecognitionExecution[]
 
   @@map("users")
 }
@@ -777,6 +778,7 @@ model PlainDocument {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   sessions  EuroOfficeSession[]
+  saves     EuroOfficeSave[]
 
   @@index([userId, updatedAt])
   @@map("plain_documents")
@@ -789,6 +791,7 @@ model EuroOfficeSession {
   userId     String        @map("user_id") @db.Uuid
   tokenHash  String        @unique @map("token_hash") @db.VarChar(64)
   documentKey String       @map("document_key") @db.VarChar(128)
+  baseRevision Int          @map("base_revision")
   expiresAt  DateTime      @map("expires_at") @db.Timestamptz(6)
   createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   document   PlainDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
@@ -852,4 +855,46 @@ model StudioModuleAuditEvent {
   @@index([moduleId, createdAt])
   @@index([actorUserId, createdAt])
   @@map("studio_module_audit_events")
+}
+
+
+/// Immutable validated DOCX receipts. Force saves are recovery snapshots, not authoritative heads.
+model EuroOfficeSave {
+  id String @id @default(uuid()) @db.Uuid
+  documentId String @map("document_id") @db.Uuid
+  documentKey String @map("document_key") @db.VarChar(128)
+  callbackDigest String @map("callback_digest") @db.VarChar(64)
+  contentHash String @map("content_hash") @db.VarChar(64)
+  content Bytes @db.ByteA
+  status Int
+  applied Boolean @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  document PlainDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  @@unique([documentId, callbackDigest])
+  @@index([documentId, createdAt])
+  @@map("eurooffice_saves")
+}
+
+/// No images, plaintext credentials or recognized manuscript text are stored in this ledger.
+model RecognitionExecution {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @map("user_id") @db.Uuid
+  workspaceId String @map("workspace_id") @db.VarChar(128)
+  requestKey String @map("request_key") @db.VarChar(64)
+  connectionId String @map("connection_id") @db.Uuid
+  providerOrigin String @map("provider_origin") @db.VarChar(256)
+  modelId Int @map("model_id")
+  imageDigest String @map("image_digest") @db.VarChar(64)
+  grantId String @map("grant_id") @db.Uuid
+  purpose String @default("transcription") @db.VarChar(32)
+  dataScope String @default("uploaded-image") @map("data_scope") @db.VarChar(32)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  status String @db.VarChar(32)
+  processId BigInt? @map("process_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, workspaceId, requestKey])
+  @@index([userId, workspaceId, createdAt])
+  @@map("recognition_executions")
 }

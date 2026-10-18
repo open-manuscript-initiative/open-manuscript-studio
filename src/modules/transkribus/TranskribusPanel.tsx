@@ -85,7 +85,16 @@ export function TranskribusPanel({ locale, userId, workspaceId }: { locale: stri
     try {
       const imageBase64 = await fileBase64(file);
       if (controller.signal.aborted) return;
-      const job = await submitTranskribusJob(workspaceId, numericModel, imageBase64, controller.signal);
+      const imageHash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await file.arrayBuffer())), byte => byte.toString(16).padStart(2, '0')).join('');
+      const fingerprint = `${numericModel}:${imageHash}`;
+      const submissionKey = `${key}:submission`;
+      let attempt: { fingerprint?: string; requestKey?: string } = {};
+      try { attempt = JSON.parse(localStorage.getItem(submissionKey) ?? '{}'); } catch { /* Replace malformed local intent before submission. */ }
+      const requestKey = attempt.fingerprint === fingerprint && typeof attempt.requestKey === 'string' ? attempt.requestKey : crypto.randomUUID();
+      // Persist BEFORE the paid POST so reload/timeout retries retain the same identity.
+      localStorage.setItem(submissionKey, JSON.stringify({ fingerprint, requestKey }));
+      if (controller.signal.aborted) return;
+      const job = await submitTranskribusJob(workspaceId, numericModel, imageBase64, controller.signal, requestKey);
       if (!controller.signal.aborted) {
         setSaved({ version: 1, job, modelId: numericModel, modelName: model.name, fileName: file.name,
           title: file.name, source: file.name, text: job.text, rights: 'unknown' });

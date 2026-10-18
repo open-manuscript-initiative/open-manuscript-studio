@@ -504,3 +504,36 @@ jobs:
               echo 'The deployed Android fallback still uses the unreliable Chrome intent URL.' >&2
               exit 1
             fi
+
+  integration-state-postgres:
+    name: Integration state PostgreSQL gate
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: omi_test
+          POSTGRES_PASSWORD: synthetic_test_only
+          POSTGRES_DB: omi_integration_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U omi_test -d omi_integration_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://omi_test:synthetic_test_only@localhost:5432/omi_integration_test
+      IDENTITY_DATABASE_URL: postgresql://omi_test:synthetic_test_only@localhost:5432/omi_integration_test
+      OMI_TEST_POSTGRES_URL: postgresql://omi_test:synthetic_test_only@localhost:5432/omi_integration_test
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+        working-directory: server
+      - run: npm run build
+        working-directory: server
+      - name: Test migration and cross-process-safe storage contracts
+        run: node --test tests/integration-state.postgres.test.mjs

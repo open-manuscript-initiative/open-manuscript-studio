@@ -28,7 +28,7 @@ header{padding:16px}button{position:fixed;right:12px;bottom:12px;width:64px;heig
 async function installEuroOffice(page: Page) {
   await installMockStudioApi(page);
   const sessionTypes: string[] = [];
-  await page.route('**/api/eurooffice/**', async route => {
+  await page.route('**/api/v1/eurooffice/**', async route => {
     const url = new URL(route.request().url());
     if (url.pathname.endsWith('/status')) {
       await route.fulfill({ json: { enabled: true } });

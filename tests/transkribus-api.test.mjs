@@ -4,6 +4,8 @@ import express from '../server/node_modules/express/index.js';
 
 const httpFetch = globalThis.fetch;
 const accounts = new Map();
+const executions = new Map();
+let failSubmit = false;
 const providerCalls = [];
 const audits = [];
 let enabled = ['org.omi.critical-text-edition'];
@@ -17,7 +19,18 @@ mock.module(new URL('../server/dist/config/env.js', import.meta.url).href, { nam
   INTEGRATION_MASTER_KEY: masterKey, TRANSKRIBUS_API_ORIGIN: 'https://api.transkribus.org',
   get STUDIO_ENABLED_MODULES() { return enabled; },
 } } });
-mock.module(new URL('../server/dist/lib/prisma.js', import.meta.url).href, { namedExports: { prisma: {
+mock.module(new URL('../server/dist/repositories/recognitionExecutionRepository.js', import.meta.url).href, { namedExports: { recognitionExecutionRepository: {
+  findUnique: async ({ where }) => executions.get(JSON.stringify(where.userId_workspaceId_requestKey)) ?? null,
+  create: async ({ data }) => {
+    const key = JSON.stringify({ userId: data.userId, workspaceId: data.workspaceId, requestKey: data.requestKey });
+    if (executions.has(key)) throw Object.assign(new Error(), { code: 'P2002' });
+    const value = { ...data, id: crypto.randomUUID() }; executions.set(key, value); return value;
+  },
+  update: async ({ where, data }) => { const value = [...executions.values()].find(item => item.id === where.id); Object.assign(value, data); return value; },
+  updateMany: async ({ where, data }) => { const value = [...executions.values()].find(item => item.id === where.id && item.status === where.status); if (value) Object.assign(value, data); return { count: Number(Boolean(value)) }; },
+} } });
+
+mock.module(new URL('../server/dist/lib/prisma.js' , import.meta.url).href, { namedExports: { prisma: {
   studioModulePreference: { findUnique: async () => ({ activeModuleIds: active }) },
   userIntegration: {
     findUnique: async ({ where }) => accounts.get(where.userId_providerId_connectionKey.userId) ?? null,
@@ -66,6 +79,7 @@ mock.method(globalThis, 'fetch', async (input, init) => {
   if (url.pathname.endsWith('/logout')) return new Response(null, { status: 204 });
   assert.equal(url.origin, 'https://api.transkribus.org');
   assert.equal(new Headers(init.headers).get('authorization'), 'Bearer SYNTHETIC-ACCESS-TOKEN');
+  if (init.method === 'POST' && failSubmit) throw new Error('Synthetic interrupted paid request');
   if (init.method === 'POST') return Response.json({ processId: nextId++, status: 'CREATED' });
   if (url.pathname.endsWith('/page')) return new Response('<PcGts><Page/></PcGts>');
   const id = Number(url.pathname.split('/').at(-1));
@@ -75,7 +89,7 @@ mock.method(globalThis, 'fetch', async (input, init) => {
 const { transkribusRouter } = await import('../server/dist/routes/transkribusRoutes.js');
 const { encryptSecret, decryptSecret } = await import('../server/dist/integrations/secretCrypto.js');
 const { createTranskribusModelCatalog, normalizeTranskribusModels } = await import('../server/dist/integrations/transkribus/models.js');
-const app = express(); app.use(express.json({ limit: '28mb' })); app.use('/api', transkribusRouter);
+const app = express(); app.use(express.json({ limit: '28mb' })); app.use('/api/v1', transkribusRouter); app.use('/api', transkribusRouter);
 const server = await new Promise(resolve => { const listener = app.listen(0, '127.0.0.1', () => resolve(listener)); });
 after(() => server.close());
 const base = '/modules/critical-text-edition/transkribus/jobs';
@@ -274,4 +288,54 @@ test('catalog failures and oversized responses are bounded and safe to retry wit
   await assert.rejects(retry(), /TRANSKRIBUS_MODELS_UNAVAILABLE/);
   assert.equal((await retry())[0].name, publicModel().name);
   assert.equal(calls, 2);
+});
+
+
+test('v1 retries use a durable digest-bound paid intent, and uncertain submissions never repeat', async () => {
+  await signIn('ledger-user');
+  const requestKey = crypto.randomUUID();
+  const body = { ...submitBody, requestKey };
+  const paidCount = () => providerCalls.filter(call => call.method === 'POST' && call.url.endsWith('/v2/processes')).length;
+  const before = paidCount();
+  const first = await request('/v1' + base, 'POST', body, 'ledger-user');
+  assert.equal(first.status, 201);
+  const retry = await request(base, 'POST', body, 'ledger-user');
+  assert.equal(retry.status, 201);
+  assert.equal(paidCount(), before + 1);
+  assert.equal((await first.json()).handle, (await retry.json()).handle);
+  const conflict = await request(base, 'POST', { ...body, modelId: 23 }, 'ledger-user');
+  assert.equal(conflict.status, 409);
+  const failedKey = crypto.randomUUID();
+  failSubmit = true;
+  assert.equal((await request(base, 'POST', { ...submitBody, requestKey: failedKey }, 'ledger-user')).status, 409);
+  failSubmit = false;
+  const afterFailure = paidCount();
+  assert.equal((await request(base, 'POST', { ...submitBody, requestKey: failedKey }, 'ledger-user')).status, 409);
+  assert.equal(paidCount(), afterFailure);
+  const statusPath = '/modules/critical-text-edition/transkribus/executions/' + failedKey;
+  assert.equal((await (await request(statusPath, 'GET', undefined, 'ledger-user')).json()).status, 'UNKNOWN');
+  assert.equal((await request(statusPath, 'GET', undefined, 'other-ledger-user')).status, 404);
+  const serialized = JSON.stringify([...executions.values()], (_key, value) => typeof value === 'bigint' ? value.toString() : value);
+  assert.equal(serialized.includes(png), false);
+  assert.equal(serialized.includes('SYNTHETIC-PASSWORD'), false);
+});
+
+
+test('expired execution grants cannot submit paid work', async () => {
+  const { submitTranskribusJob } = await import('../server/dist/integrations/transkribus/service.js');
+  const before = providerCalls.length;
+  await assert.rejects(submitTranskribusJob('alice', 38230, png, { id: crypto.randomUUID(), userId: 'alice', workspaceId: 'default', moduleId: 'org.omi.critical-text-edition', capability: 'transkribus.recognize', expiresAt: Date.now() - 1 }), { code: 'TRANSKRIBUS_GRANT_REQUIRED' });
+  assert.equal(providerCalls.length, before);
+});
+
+test('accepted recognition IDs above 32-bit range survive durable replay', async () => {
+  await signIn('large-id-user');
+  nextId = 2 ** 32 + 42;
+  const body = { ...submitBody, requestKey: crypto.randomUUID() };
+  const first = await request(base, 'POST', body, 'large-id-user');
+  assert.equal(first.status, 201);
+  const replay = await request(base, 'POST', body, 'large-id-user');
+  assert.equal(replay.status, 201);
+  assert.equal((await first.json()).processId, 2 ** 32 + 42);
+  assert.equal((await replay.json()).processId, 2 ** 32 + 42);
 });

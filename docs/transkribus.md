@@ -35,7 +35,7 @@ Studio accepts the 20 MiB image as base64, so a reverse proxy must allow at leas
 
 ### API routes
 
-| Route, relative to `/api` | Purpose |
+| Route, relative to `/api/v1` | Purpose |
 | --- | --- |
 | `GET /integrations/transkribus/connection` | Non-secret account connection status |
 | `POST /integrations/transkribus/connection` | Exchange credentials and store encrypted tokens |
@@ -75,3 +75,8 @@ Az integrációhoz a frissített Stúdió API-t is telepíteni kell. A kiszolgá
 - [Job lifecycle](https://docs.transkribus.org/processing/how-jobs-work)
 - [API reference / OpenAPI](https://api-staging.transkribus.org/v2/openapi.json)
 - [Production API overview](https://www.transkribus.org/transkribus-api)
+
+
+## Execution safety (2026-10-18)
+
+New clients use the additive `/api/v1` routes; legacy `/api` mounts remain compatibility adapters. The server reserves a digest/model/connection/grant-bound request intent before a billable POST. Repeating an accepted request identity reads its existing job. Interrupted/unknown requests are not automatically reissued, including after an API restart. Use the execution-status endpoint with the same account/workspace/request key and reconcile an unknown result with Transkribus before creating a new paid intent. This is not an upstream exactly-once billing guarantee. See [external integration boundaries](architecture/external-integration-boundaries.md) for deployment, migration and acceptance details.
