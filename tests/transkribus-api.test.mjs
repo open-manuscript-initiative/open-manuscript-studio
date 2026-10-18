@@ -315,7 +315,7 @@ test('v1 retries use a durable digest-bound paid intent, and uncertain submissio
   const statusPath = '/modules/critical-text-edition/transkribus/executions/' + failedKey;
   assert.equal((await (await request(statusPath, 'GET', undefined, 'ledger-user')).json()).status, 'UNKNOWN');
   assert.equal((await request(statusPath, 'GET', undefined, 'other-ledger-user')).status, 404);
-  const serialized = JSON.stringify([...executions.values()]);
+  const serialized = JSON.stringify([...executions.values()], (_key, value) => typeof value === 'bigint' ? value.toString() : value);
   assert.equal(serialized.includes(png), false);
   assert.equal(serialized.includes('SYNTHETIC-PASSWORD'), false);
 });
@@ -326,4 +326,16 @@ test('expired execution grants cannot submit paid work', async () => {
   const before = providerCalls.length;
   await assert.rejects(submitTranskribusJob('alice', 38230, png, { id: crypto.randomUUID(), userId: 'alice', workspaceId: 'default', moduleId: 'org.omi.critical-text-edition', capability: 'transkribus.recognize', expiresAt: Date.now() - 1 }), { code: 'TRANSKRIBUS_GRANT_REQUIRED' });
   assert.equal(providerCalls.length, before);
+});
+
+test('accepted recognition IDs above 32-bit range survive durable replay', async () => {
+  await signIn('large-id-user');
+  nextId = 2 ** 32 + 42;
+  const body = { ...submitBody, requestKey: crypto.randomUUID() };
+  const first = await request(base, 'POST', body, 'large-id-user');
+  assert.equal(first.status, 201);
+  const replay = await request(base, 'POST', body, 'large-id-user');
+  assert.equal(replay.status, 201);
+  assert.equal((await first.json()).processId, 2 ** 32 + 42);
+  assert.equal((await replay.json()).processId, 2 ** 32 + 42);
 });

@@ -122,7 +122,7 @@ export async function submitTranskribusJob(userId: string, modelId: number, imag
   const existing = await executions.findUnique({ where });
   if (existing) {
     if (existing.imageDigest !== imageDigest || existing.modelId !== modelId || existing.connectionId !== stored.id || existing.providerOrigin !== providerOrigin) throw new TranskribusError('TRANSKRIBUS_IDEMPOTENCY_CONFLICT', 409);
-    if (existing.status === 'ACCEPTED' && existing.processId) return getTranskribusJob(userId, transkribusJobHandle(userId, existing.processId));
+    if (existing.status === 'ACCEPTED' && existing.processId) return getTranskribusJob(userId, transkribusJobHandle(userId, Number(existing.processId)));
     throw new TranskribusError('TRANSKRIBUS_OUTCOME_UNKNOWN', 409);
   }
   // Refresh credentials before reserving a paid intent; no provider submission has happened yet.
@@ -140,7 +140,7 @@ export async function submitTranskribusJob(userId: string, modelId: number, imag
   try {
     // Never automatically retry a paid POST. A timeout is a durable unknown outcome.
     const job = await client().submit(access, modelId, imageBase64);
-    await executions.update({ where: { id: intent.id }, data: { status: 'ACCEPTED', processId: job.processId } });
+    await executions.update({ where: { id: intent.id }, data: { status: 'ACCEPTED', processId: BigInt(job.processId) } });
     return { ...job, handle: transkribusJobHandle(userId, job.processId) };
   } catch {
     await executions.updateMany({ where: { id: intent.id, status: 'SUBMITTING' }, data: { status: 'UNKNOWN' } });
@@ -152,7 +152,7 @@ export async function transkribusExecutionStatus(userId: string, workspaceId: st
   const execution = await executions.findUnique({ where: { userId_workspaceId_requestKey: { userId, workspaceId, requestKey } } });
   if (!execution) throw new TranskribusError('TRANSKRIBUS_NOT_FOUND', 404);
   return { requestKey, status: execution.status === 'SUBMITTING' && execution.expiresAt.getTime() <= Date.now() ? 'UNKNOWN' : execution.status,
-    ...(execution.processId ? { handle: transkribusJobHandle(userId, execution.processId) } : {}) };
+    ...(execution.processId ? { handle: transkribusJobHandle(userId, Number(execution.processId)) } : {}) };
 }
 
 async function readWithRefresh<T>(userId: string, read: (token: string) => Promise<T>): Promise<T> {

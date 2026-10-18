@@ -16,7 +16,7 @@ CREATE TABLE "recognition_executions" (
  "request_key" VARCHAR(64) NOT NULL, "connection_id" UUID NOT NULL, "provider_origin" VARCHAR(256) NOT NULL,
  "model_id" INTEGER NOT NULL, "image_digest" VARCHAR(64) NOT NULL, "grant_id" UUID NOT NULL,
  "purpose" VARCHAR(32) NOT NULL DEFAULT 'transcription', "data_scope" VARCHAR(32) NOT NULL DEFAULT 'uploaded-image',
- "expires_at" TIMESTAMPTZ(6) NOT NULL, "status" VARCHAR(32) NOT NULL, "process_id" INTEGER,
+ "expires_at" TIMESTAMPTZ(6) NOT NULL, "status" VARCHAR(32) NOT NULL, "process_id" BIGINT,
  "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMPTZ(6) NOT NULL,
  CONSTRAINT "recognition_executions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );

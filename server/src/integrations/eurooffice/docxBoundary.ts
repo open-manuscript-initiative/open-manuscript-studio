@@ -76,7 +76,7 @@ export function validateDocxPackage(bytes: Buffer): void {
     check(extra === cursor + 46 + nameLength + extraLength);
     const nameBytes = bytes.subarray(cursor + 46, cursor + 46 + nameLength);
     const name = new TextDecoder('utf-8', { fatal: true }).decode(nameBytes);
-    check(!parts.has(name) && !name.includes('\\') && !name.startsWith('/') && !/[\x00-\x1f:]/.test(name));
+    check(!parts.has(name) && !name.includes('\\') && !name.startsWith('/') && ![...name].some(character => character.charCodeAt(0) < 32 || character === ':'));
     check(!name.split('/').some(part => part === '..' || part === '.'));
     check(offset + 30 <= centralStart && bytes.readUInt32LE(offset) === 0x04034b50);
     check(bytes.readUInt16LE(offset + 6) === flags && bytes.readUInt16LE(offset + 8) === method);

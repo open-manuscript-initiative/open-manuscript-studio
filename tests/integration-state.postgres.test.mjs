@@ -53,9 +53,10 @@ test('migration, concurrent callback CAS, immutable recovery and execution uniqu
   await euroOfficeRepository.save({ ...base, callbackDigest:'a'.repeat(64), status:2, bytes:Buffer.from('duplicate') });
   assert.equal((await prisma.plainDocument.findUnique({ where:{ id:documentId } })).revision, 2);
   assert.ok((await prisma.euroOfficeSave.findMany({ where:{ documentId } })).some(save => Buffer.from(save.content).toString() === 'initial'));
-  const data = { userId, workspaceId:'synthetic', requestKey:crypto.randomUUID(), connectionId:crypto.randomUUID(), providerOrigin:'https://api.transkribus.org', modelId:1, imageDigest:'a'.repeat(64), grantId:crypto.randomUUID(), expiresAt:new Date(Date.now()+300000), status:'SUBMITTING' };
+  const data = { userId, workspaceId:'synthetic', requestKey:crypto.randomUUID(), connectionId:crypto.randomUUID(), providerOrigin:'https://api.transkribus.org', modelId:1, imageDigest:'a'.repeat(64), grantId:crypto.randomUUID(), expiresAt:new Date(Date.now()+300000), status:'SUBMITTING', processId: 4294967338n };
   const intents = await Promise.allSettled([prisma.recognitionExecution.create({data}),prisma.recognitionExecution.create({data})]);
   assert.equal(intents.filter(item => item.status==='fulfilled').length, 1);
+  assert.equal((await prisma.recognitionExecution.findFirst()).processId, 4294967338n);
   await client.query('DELETE FROM users WHERE id=$1', [userId]);
   assert.equal(await prisma.recognitionExecution.count(), 0);
 });

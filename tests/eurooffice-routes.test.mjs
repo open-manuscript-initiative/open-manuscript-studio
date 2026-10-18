@@ -58,7 +58,7 @@ const prisma = {
       if (found) return found;
       const save = { id: crypto.randomUUID(), createdAt: new Date(), ...create }; saves.push(save); return save;
     },
-    findMany: async ({ where }) => saves.filter(save => save.documentId === where.documentId && docs.some(doc => doc.id === save.documentId && doc.userId === where.document.userId)).map(({ content, ...save }) => save),
+    findMany: async ({ where }) => saves.filter(save => save.documentId === where.documentId && docs.some(doc => doc.id === save.documentId && doc.userId === where.document.userId)).map(({ content: _content, ...save }) => save),
     findFirst: async ({ where }) => saves.find(save => save.id === where.id && save.documentId === where.documentId && docs.some(doc => doc.id === save.documentId && doc.userId === where.document.userId)) ?? null,
   },
   $queryRaw: async () => [],

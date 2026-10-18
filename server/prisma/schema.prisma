@@ -890,7 +890,7 @@ model RecognitionExecution {
   dataScope String @default("uploaded-image") @map("data_scope") @db.VarChar(32)
   expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
   status String @db.VarChar(32)
-  processId Int? @map("process_id")
+  processId BigInt? @map("process_id")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
