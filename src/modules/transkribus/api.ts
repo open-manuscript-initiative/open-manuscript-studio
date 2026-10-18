@@ -1,5 +1,4 @@
-import { isTauri } from '@tauri-apps/api/core';
-import { getStudioApiBaseUrl } from '../../services/studioServer';
+import { studioApiFetch } from '../../platform/studioApiTransport';
 
 export interface TranskribusConnection {
   connected: boolean;
@@ -33,12 +32,7 @@ const jobsPath = '/modules/critical-text-edition/transkribus/jobs';
 async function request(path: string, method = 'GET', body?: unknown, signal?: AbortSignal): Promise<Response> {
   const headers = new Headers({ Accept: 'application/json' });
   if (body !== undefined) headers.set('Content-Type', 'application/json');
-  if (isTauri()) {
-    headers.set('X-OMI-Native-Client', '1');
-    const token = globalThis.localStorage?.getItem('omi_native_session_token');
-    if (token) headers.set('Authorization', `Bearer ${token}`);
-  }
-  const response = await fetch(`${getStudioApiBaseUrl()}/api${path}`, {
+  const response = await studioApiFetch(`/api/v1${path}`, {
     method, headers, credentials: 'include', cache: 'no-store', signal,
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
@@ -92,8 +86,8 @@ export async function disconnectTranskribus(signal?: AbortSignal): Promise<void>
   await request('/integrations/transkribus/connection', 'DELETE', undefined, signal);
 }
 
-export async function submitTranskribusJob(workspaceId: string, modelId: number, imageBase64: string, signal?: AbortSignal): Promise<TranskribusJob> {
-  return readJob(await request(`${jobsPath}?${new URLSearchParams({ workspaceId })}`, 'POST', { modelId, imageBase64, consent: true }, signal));
+export async function submitTranskribusJob(workspaceId: string, modelId: number, imageBase64: string, signal?: AbortSignal, requestKey?: string): Promise<TranskribusJob> {
+  return readJob(await request(`${jobsPath}?${new URLSearchParams({ workspaceId })}`, 'POST', { modelId, imageBase64, consent: true, ...(requestKey ? { requestKey } : {}) }, signal));
 }
 
 export async function refreshTranskribusJob(workspaceId: string, handle: string, signal?: AbortSignal): Promise<TranskribusJob> {

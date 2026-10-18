@@ -1966,6 +1966,16 @@
     },
     "modules-statistical-analysis-statisticalanalysispanel": {
       "loading-dataset-f6c53bd": "Načítavanie súboru údajov…"
+    },
+    "euroOfficeRecovery": {
+      "title": "Zálohy na obnovenie",
+      "description": "Priebežné a konfliktné uloženia zostávajú zachované. Konečný dokument sa uloží po zatvorení editora. Stiahnutie zálohy nenahrádza aktuálny dokument.",
+      "loading": "Načítava sa…",
+      "empty": "Žiadne uložené zálohy.",
+      "final": "Konečné uloženie",
+      "previous": "Predchádzajúci dokument",
+      "recovery": "Záloha na obnovenie",
+      "failed": "Zálohy sa nepodarilo načítať alebo stiahnuť."
     }
   }
 }

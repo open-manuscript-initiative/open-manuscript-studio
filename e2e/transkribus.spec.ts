@@ -11,7 +11,7 @@ for (const width of [1440, 390]) {
       workspaceId: 'default', revision: 1, enabledModuleIds: ['org.omi.critical-text-edition'], activeModuleIds: ['org.omi.critical-text-edition'],
     } }));
     let connected = false;
-    await page.route('**/api/integrations/transkribus/connection', async route => {
+    await page.route('**/api/v1/integrations/transkribus/connection', async route => {
       if (route.request().method() === 'POST') {
         expect(route.request().postDataJSON()).toEqual({ username: 'synthetic@example.test', password: 'TRANSKRIBUS-PRIVATE-PASSWORD' });
         connected = true;
@@ -21,7 +21,7 @@ for (const width of [1440, 390]) {
     let submissions = 0;
     let catalogueAvailable = width !== 390;
     const modelName = 'Latin and Hungarian manuscripts from the sixteenth and seventeenth centuries';
-    await page.route('**/api/modules/critical-text-edition/transkribus/models**', async route => {
+    await page.route('**/api/v1/modules/critical-text-edition/transkribus/models**', async route => {
       if (!catalogueAvailable) {
         await route.fulfill({ status: 503, json: { error: { code: 'TRANSKRIBUS_MODELS_UNAVAILABLE' } } });
         return;
@@ -33,10 +33,10 @@ for (const width of [1440, 390]) {
       ] } });
     });
     const job = { processId: 42, status: 'CREATED', text: '', handle: `42.${'a'.repeat(43)}` };
-    await page.route('**/api/modules/critical-text-edition/transkribus/jobs**', async route => {
+    await page.route('**/api/v1/modules/critical-text-edition/transkribus/jobs**', async route => {
       if (route.request().method() === 'POST') {
         submissions++;
-        expect(route.request().postDataJSON()).toEqual({ modelId: 38230, imageBase64: png, consent: true });
+        expect(route.request().postDataJSON()).toEqual({ modelId: 38230, imageBase64: png, consent: true, requestKey: expect.any(String) });
         await route.fulfill({ status: 201, json: job });
       } else if (new URL(route.request().url()).pathname.endsWith('/page')) {
         await route.fulfill({ contentType: 'application/xml', body: '<PcGts><Page/></PcGts>' });

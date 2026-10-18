@@ -88,7 +88,7 @@ export async function installMockStudioApi(
     const url = new URL(request.url());
     const requestKey = `${request.method()} ${url.pathname}`;
 
-    if (request.method() === 'GET' && url.pathname === '/api/eurooffice/status') {
+    if (request.method() === 'GET' && ['/api/eurooffice/status', '/api/v1/eurooffice/status'].includes(url.pathname)) {
       await fulfillJson(route, 200, { enabled: false });
       return;
     }

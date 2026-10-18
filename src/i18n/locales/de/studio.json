@@ -1966,6 +1966,16 @@
     },
     "modules-statistical-analysis-statisticalanalysispanel": {
       "loading-dataset-f6c53bd": "Loading dataset…"
+    },
+    "euroOfficeRecovery": {
+      "title": "Wiederherstellungsstände",
+      "description": "Zwischenspeicherungen und widersprüchliche Rückmeldungen bleiben hier erhalten. Der endgültige Inhalt wird beim Schließen des Editors gespeichert. Ein Download ersetzt das aktuelle Dokument nicht.",
+      "loading": "Wird geladen…",
+      "empty": "Keine gespeicherten Stände.",
+      "final": "Endgültiger Stand",
+      "previous": "Vorheriges Dokument",
+      "recovery": "Wiederherstellungsstand",
+      "failed": "Wiederherstellungsstände konnten nicht geladen werden."
     }
   }
 }

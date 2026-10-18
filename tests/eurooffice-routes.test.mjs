@@ -8,6 +8,8 @@ const otherUser = '10000000-0000-4000-8000-000000000002';
 const secret = 'a'.repeat(64);
 const docs = [];
 const sessions = [];
+const saves = [];
+let transaction = Promise.resolve();
 
 const plainDocument = {
   findMany: async ({ where }) => docs.filter((doc) => doc.userId === where.userId).map((doc) => ({
@@ -20,7 +22,7 @@ const plainDocument = {
     return { id: doc.id, title: doc.title, revision: doc.revision, createdAt: doc.createdAt, updatedAt: doc.updatedAt };
   },
   updateMany: async ({ where, data }) => {
-    const doc = docs.find((item) => item.id === where.id && item.userId === where.userId);
+    const doc = docs.find((item) => item.id === where.id && item.userId === where.userId && (where.revision === undefined || item.revision === where.revision));
     if (!doc) return { count: 0 };
     doc.content = data.content;
     doc.revision += data.revision.increment;
@@ -48,8 +50,20 @@ const euroOfficeSession = {
 const prisma = {
   plainDocument,
   euroOfficeSession,
+  euroOfficeSave: {
+    findUnique: async ({ where }) => saves.find(save => save.documentId === where.documentId_callbackDigest.documentId && save.callbackDigest === where.documentId_callbackDigest.callbackDigest) ?? null,
+    create: async ({ data }) => { const save = { id: crypto.randomUUID(), createdAt: new Date(), ...data }; saves.push(save); return save; },
+    upsert: async ({ where, create }) => {
+      const found = saves.find(save => save.documentId === where.documentId_callbackDigest.documentId && save.callbackDigest === where.documentId_callbackDigest.callbackDigest);
+      if (found) return found;
+      const save = { id: crypto.randomUUID(), createdAt: new Date(), ...create }; saves.push(save); return save;
+    },
+    findMany: async ({ where }) => saves.filter(save => save.documentId === where.documentId && docs.some(doc => doc.id === save.documentId && doc.userId === where.document.userId)).map(({ content, ...save }) => save),
+    findFirst: async ({ where }) => saves.find(save => save.id === where.id && save.documentId === where.documentId && docs.some(doc => doc.id === save.documentId && doc.userId === where.document.userId)) ?? null,
+  },
+  $queryRaw: async () => [],
   user: { findUnique: async () => ({ fullName: 'Test Author' }) },
-  $transaction: async (operations) => Promise.all(operations),
+  $transaction: (operation) => { const result = transaction.then(() => operation(prisma)); transaction = result.catch(() => {}); return result; },
 };
 
 mock.module(new URL('../server/dist/lib/prisma.js', import.meta.url).href, {
@@ -77,6 +91,7 @@ mock.module(new URL('../server/dist/middleware/requireSession.js', import.meta.u
 const { euroOfficeRouter } = await import('../server/dist/routes/euroOfficeRoutes.js');
 const app = express();
 app.use(express.json());
+app.use('/api/v1', euroOfficeRouter);
 app.use('/api', euroOfficeRouter);
 const server = await new Promise((resolve) => {
   const listener = app.listen(0, '127.0.0.1', () => resolve(listener));
@@ -135,15 +150,51 @@ test('ordinary DOCX stays native and uses an owner-scoped, short-lived EuroOffic
   assert.equal(blockedCallback.status, 400);
   assert.equal(docs[0].revision, 1);
 
-  const updatedPackage = Buffer.from('PK\u0003\u0004updated-docx');
+  const { createBlankDocx } = await import('../server/dist/integrations/eurooffice/blankDocx.js');
+  const updatedPackage = createBlankDocx('Synthetic updated document');
   globalThis.fetch = async () => new Response(updatedPackage, { status: 200 });
   try {
+    const force = await request(`/api/v1/integrations/eurooffice/${documentId}/callback?token=${capability}`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ status: 6, key: launch.config.document.key, url: 'https://office.example.org/cache/force-before-final' }),
+    }, null);
+    assert.equal(force.status, 200);
+    assert.equal(docs[0].revision, 1);
+    assert.ok(saves.some(save => save.status === 6));
     const callbackResponse = await request(`/api/integrations/eurooffice/${documentId}/callback?token=${capability}`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ status: 2, key: launch.config.document.key, url: 'https://office.example.org/cache/docx' }),
     }, null);
     assert.equal(callbackResponse.status, 200);
     assert.deepEqual(await callbackResponse.json(), { error: 0 });
+    const duplicate = await request(`/api/v1/integrations/eurooffice/${documentId}/callback?token=${capability}`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ status: 2, key: launch.config.document.key, url: 'https://office.example.org/cache/docx' }),
+    }, null);
+    assert.equal(duplicate.status, 200);
+    assert.equal(docs[0].revision, 2);
+    const staleFinal = await request(`/api/integrations/eurooffice/${documentId}/callback?token=${capability}`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ status: 2, key: launch.config.document.key, url: 'https://office.example.org/cache/stale-final' }),
+    }, null);
+    assert.equal(staleFinal.status, 200);
+    assert.equal(docs[0].revision, 2);
+    assert.ok(saves.some(save => save.status === 2 && !save.applied));
+    const stale = await request(`/api/integrations/eurooffice/${documentId}/callback?token=${capability}`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ status: 6, key: launch.config.document.key, url: 'https://office.example.org/cache/late-force' }),
+    }, null);
+    assert.equal(stale.status, 200);
+    assert.equal(docs[0].revision, 2);
+    assert.ok(saves.some(save => save.status === 6 && !save.applied));
+    assert.equal((await request(`/api/v1/eurooffice/documents/${documentId}/saves`, {}, otherUser)).status, 404);
+    const recovery = await request(`/api/v1/eurooffice/documents/${documentId}/saves`);
+    assert.equal(recovery.status, 200);
+    const list = (await recovery.json()).saves;
+    assert.ok(list.some(save => save.status === 0));
+    assert.equal(JSON.stringify(list).includes('content"'), false);
+    assert.equal((await request(`/api/v1/eurooffice/documents/${documentId}/saves/${list[0].id}`)).status, 200);
+
   } finally {
     globalThis.fetch = localFetch;
   }

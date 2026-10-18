@@ -1966,6 +1966,16 @@
     },
     "modules-statistical-analysis-statisticalanalysispanel": {
       "loading-dataset-f6c53bd": "Adatkészlet betöltése…"
+    },
+    "euroOfficeRecovery": {
+      "title": "Helyreállítási mentések",
+      "description": "A részmentések és az ütköző visszahívások itt maradnak meg. A végleges dokumentum a szerkesztő bezárásakor frissül. A pillanatkép letöltése nem írja felül az aktuális dokumentumot.",
+      "loading": "Betöltés…",
+      "empty": "Még nincs mentett pillanatkép.",
+      "final": "Végleges mentés",
+      "previous": "Korábbi dokumentum",
+      "recovery": "Helyreállítási pillanatkép",
+      "failed": "A helyreállítási mentések nem tölthetők be vagy le."
     }
   }
 }

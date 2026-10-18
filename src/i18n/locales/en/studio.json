@@ -1966,6 +1966,16 @@
     },
     "modules-statistical-analysis-statisticalanalysispanel": {
       "loading-dataset-f6c53bd": "Loading dataset…"
+    },
+    "euroOfficeRecovery": {
+      "title": "Recovery saves",
+      "description": "Force saves and conflicting callbacks are retained here. Final content is committed when the editor closes. Download a snapshot to recover it; this does not replace the current document.",
+      "loading": "Loading…",
+      "empty": "No saved snapshots.",
+      "final": "Final save",
+      "previous": "Previous document",
+      "recovery": "Recovery snapshot",
+      "failed": "Recovery saves could not be loaded or downloaded."
     }
   }
 }

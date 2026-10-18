@@ -1,10 +1,4 @@
-import { isTauri } from '@tauri-apps/api/core';
-import { getStudioApiBaseUrl } from './studioServer';
-
-const API_BASE_URL = getStudioApiBaseUrl();
-const NATIVE_SESSION_KEY = 'omi_native_session_token';
-const IS_TAURI = isTauri();
-
+import { studioApiFetch as apiFetch } from '../platform/studioApiTransport';
 export interface PlainDocumentSummary {
   id: string;
   title: string;
@@ -19,21 +13,6 @@ export interface EuroOfficeLaunch {
   expiresAt: string;
 }
 
-async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  const headers = new Headers(init.headers);
-  headers.set('Accept', 'application/json');
-  if (IS_TAURI) {
-    headers.set('X-OMI-Native-Client', '1');
-    const token = globalThis.localStorage?.getItem(NATIVE_SESSION_KEY);
-    if (token) headers.set('Authorization', `Bearer ${token}`);
-  }
-  return fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    credentials: 'include',
-    headers,
-  });
-}
-
 async function readJson<T>(response: Response): Promise<T> {
   const data = await response.json().catch(() => null) as T & {
     error?: { message?: string };
@@ -46,19 +25,19 @@ async function readJson<T>(response: Response): Promise<T> {
 }
 
 export async function euroOfficeEnabled(): Promise<boolean> {
-  const response = await apiFetch('/api/eurooffice/status');
+  const response = await apiFetch('/api/v1/eurooffice/status');
   const data = await readJson<{ enabled: boolean }>(response);
   return data.enabled;
 }
 
 export async function listPlainDocuments(): Promise<PlainDocumentSummary[]> {
-  const response = await apiFetch('/api/eurooffice/documents');
+  const response = await apiFetch('/api/v1/eurooffice/documents');
   const data = await readJson<{ documents: PlainDocumentSummary[] }>(response);
   return data.documents;
 }
 
 export async function createPlainDocument(title: string): Promise<PlainDocumentSummary> {
-  const response = await apiFetch('/api/eurooffice/documents', {
+  const response = await apiFetch('/api/v1/eurooffice/documents', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title }),
@@ -74,11 +53,22 @@ export async function createEuroOfficeSession(
   editorType: EuroOfficeEditorType = 'desktop',
 ): Promise<EuroOfficeLaunch> {
   const response = await apiFetch(
-    `/api/eurooffice/documents/${encodeURIComponent(documentId)}/session?type=${editorType}`,
+    `/api/v1/eurooffice/documents/${encodeURIComponent(documentId)}/session?type=${editorType}`,
   );
   return readJson<EuroOfficeLaunch>(response);
 }
 
 export function requestPlainDocumentWorkspace(documentId: string | null): void {
   window.dispatchEvent(new CustomEvent('omi-open-plain-document', { detail: { documentId } }));
+}
+
+export interface EuroOfficeSaveSummary { id: string; status: number; applied: boolean; contentHash: string; createdAt: string }
+export async function listEuroOfficeSaves(documentId: string): Promise<EuroOfficeSaveSummary[]> {
+  const data = await readJson<{ saves: EuroOfficeSaveSummary[] }>(await apiFetch(`/api/v1/eurooffice/documents/${encodeURIComponent(documentId)}/saves`));
+  return data.saves;
+}
+export async function downloadEuroOfficeSave(documentId: string, saveId: string): Promise<Blob> {
+  const response = await apiFetch(`/api/v1/eurooffice/documents/${encodeURIComponent(documentId)}/saves/${encodeURIComponent(saveId)}`);
+  if (!response.ok) throw new Error('Recovery download failed.');
+  return response.blob();
 }

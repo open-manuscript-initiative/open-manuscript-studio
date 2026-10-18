@@ -34,6 +34,7 @@ export interface ModuleExecutionGrant {
   workspaceId: string;
   moduleId: StudioModuleId;
   capability: StudioModuleCapability;
+  expiresAt: number;
 }
 
 export interface ModuleAuthorizedRequest extends AuthenticatedRequest {
@@ -83,6 +84,7 @@ export function requireModuleCapability(
       workspaceId,
       moduleId,
       capability,
+      expiresAt: Date.now() + 5 * 60_000,
     };
     await writeStudioModuleAuditEvent({
       actorUserId: userId,

@@ -28,5 +28,7 @@ export function getTranskribusCopy(locale: string): TranskribusCopy {
 
 export function transkribusErrorMessage(error: unknown, copy: TranskribusCopy): string {
   const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : '';
+  if (code === 'TRANSKRIBUS_OUTCOME_UNKNOWN') return copy.submitHint;
+  if (code === 'TRANSKRIBUS_IDEMPOTENCY_CONFLICT') return copy.errors.TRANSKRIBUS_INVALID_REQUEST;
   return copy.errors[code] ?? copy.errors.TRANSKRIBUS_UNAVAILABLE;
 }

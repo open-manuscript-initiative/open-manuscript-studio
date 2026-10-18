@@ -5,9 +5,9 @@ import { TranskribusError, TRANSKRIBUS_MAX_IMAGE_BYTES } from '../integrations/t
 import { listTranskribusModels } from '../integrations/transkribus/models.js';
 import {
   connectTranskribus, disconnectTranskribus, transkribusConnectionStatus,
-  submitTranskribusJob, getTranskribusJob, getTranskribusPageXml,
+  submitTranskribusJob, getTranskribusJob, getTranskribusPageXml, transkribusExecutionStatus,
 } from '../integrations/transkribus/service.js';
-import { requireModuleCapability } from '../middleware/requireModuleCapability.js';
+import { requireModuleCapability, type ModuleAuthorizedRequest } from '../middleware/requireModuleCapability.js';
 import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
 
 export const transkribusRouter = Router();
@@ -28,6 +28,7 @@ const jobSchema = z.object({
   modelId: z.number().int().positive().max(2_147_483_647),
   imageBase64: z.string().min(1).max(Math.ceil(TRANSKRIBUS_MAX_IMAGE_BYTES / 3) * 4),
   consent: z.literal(true),
+  requestKey: z.string().min(16).max(64).regex(/^[A-Za-z0-9-]+$/).optional(),
 }).strict();
 
 function failure(response: Response, error: unknown): void {
@@ -69,10 +70,10 @@ transkribusRouter.get(modelsPath, requireSession, capability, readLimit,
   });
 
 transkribusRouter.post(base, requireSession, capability, submitLimit,
-  async (request: AuthenticatedRequest, response) => {
+  async (request: ModuleAuthorizedRequest, response) => {
     const parsed = jobSchema.safeParse(request.body);
     if (!parsed.success) { response.status(400).json({ error: { code: 'TRANSKRIBUS_INVALID_REQUEST' } }); return; }
-    try { response.status(201).json(await submitTranskribusJob(authenticated(request), parsed.data.modelId, parsed.data.imageBase64)); }
+    try { response.status(201).json(await submitTranskribusJob(authenticated(request), parsed.data.modelId, parsed.data.imageBase64, request.moduleExecutionGrant!, parsed.data.requestKey)); }
     catch (error) { failure(response, error); }
   });
 
@@ -89,4 +90,13 @@ transkribusRouter.get(`${base}/:handle/page`, requireSession, capability, readLi
       response.type('application/xml').setHeader('Content-Disposition', 'attachment; filename="transkribus-page.xml"');
       response.send(xml);
     } catch (error) { failure(response, error); }
+  });
+
+transkribusRouter.get('/modules/critical-text-edition/transkribus/executions/:requestKey', requireSession, capability, readLimit,
+  async (request: ModuleAuthorizedRequest, response) => {
+    response.setHeader('Cache-Control', 'no-store');
+    const key = z.string().min(16).max(64).regex(/^[A-Za-z0-9-]+$/).safeParse(request.params.requestKey);
+    if (!key.success) { response.status(400).json({ error: { code: 'TRANSKRIBUS_INVALID_REQUEST' } }); return; }
+    try { response.json(await transkribusExecutionStatus(authenticated(request), request.moduleExecutionGrant!.workspaceId, key.data)); }
+    catch (error) { failure(response, error); }
   });
