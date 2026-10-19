@@ -27,8 +27,8 @@
   "dependencies": {
     "@hocuspocus/server": "4.7.0",
     "@jats4r/dtds": "0.0.10",
-    "@prisma/adapter-pg": "^7.9.1",
-    "@prisma/client": "^7.9.1",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "@simplewebauthn/server": "^14.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.0.0",
@@ -45,7 +45,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.0",
     "@types/node": "^24.0.0",
-    "prisma": "^7.9.1",
+    "prisma": "^7.10.1",
     "tsx": "^4.0.0",
     "typescript": "^5.9.0"
   },
