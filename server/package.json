@@ -50,9 +50,6 @@
     "typescript": "^5.9.0"
   },
   "overrides": {
-    "prisma": {
-      "mysql2": "3.23.1"
-    },
     "deepmerge-ts": "8.0.2"
   }
 }
