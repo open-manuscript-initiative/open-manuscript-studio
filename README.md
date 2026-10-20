@@ -2,9 +2,9 @@
 
 **Open Manuscript Studio** is the open-source reference implementation of the **Open Manuscript Initiative (OMI)**: a structured, multilingual scholarly authoring environment for writing, reviewing, exchanging and preparing manuscripts for publication without locking the manuscript to one application, operating system or publishing platform.
 
-> **Current status:** `0.3.0-beta.6` · provenance-aware scholarly authoring and reading workflow quality beta.
+> **Current status:** `0.3.0-beta.7` · EuroOffice, Transkribus and cross-platform quality beta.
 >
-> This beta improves source review and provenance across imported references, DOCX/PDF material and visual objects; preserves OJS/OMP source attribution in editable manuscript views; and extends source-backed research excerpts to more safe module fields. Study notes now appear in a bottom panel only when their anchors are visible in the manuscript, with the panel capped at half the usable screen. On Android, Help also shows the platform versionCode beside the shared app version. It builds on the nine research modules and the collaboration, publication and cross-platform workflows of the previous release. The portable manuscript format remains `OMI-SPEC-320@0.3.0`.
+> This release brings the merged Android navigation/EuroOffice viewport fixes, recoverable EuroOffice saves, named Transkribus model selection and reviewed recognition import into fresh native packages. It also includes Preview ODT import/export, PO-backed interface and research-module localization, compact responsive settings, and browser passkey authentication where configured. Native passkey handoff is not yet supported. The portable manuscript format remains `OMI-SPEC-320@0.3.0`. See [the release notes](docs/release/0.3.0-beta.7.md) for packaging identities and server migration steps.
 
 - Web Studio: https://studio.openmanuscript.org
 - Project website and specifications: https://openmanuscript.org

@@ -6,6 +6,34 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+## 0.3.0-beta.7 — 2026-10-20
+
+### Native applications and layout
+
+- Packages all merged updates since beta.6 for web, Windows, Linux, macOS and Android, and updates iOS build metadata.
+- Keeps the Android WebView and embedded EuroOffice controls inside the usable viewport above system navigation, with compact floating editor controls.
+- Uses compact responsive desktop settings, wrapping language choices and balanced document-menu controls.
+
+### External editors and recognition
+
+- Adds standalone EuroOffice documents and recoverable save snapshots, with revision-bound final saves that cannot overwrite a newer document head.
+- Adds Transkribus page-image recognition in the Critical text edition module, named public-model browsing, explicit credit consent and reviewed transcription insertion with source/rights metadata.
+- Persists paid recognition request identities so interrupted/unknown submissions are not automatically resubmitted.
+- Adds Preview ODT import/export with bounded ZIP validation and explicit source-attribution loss diagnostics.
+
+### Localization and accounts
+
+- Loads interface labels from PO-backed catalogs and fixes research-module translation loading in production bundles.
+- Adds browser passkey authentication where the secure origin and authenticator are configured; native Tauri passkey handoff remains unsupported.
+- Removes the redundant simple text editor while retaining the OMI, visual publication and EuroOffice workflows.
+
+### Version identities and deployment
+
+- Advances the shared Studio version to **0.3.0-beta.7**, Windows MSI to **0.3.0.7**, iOS build to **19** (short version **0.3.0**) and Android versionCode floor to **1206**.
+- Corrects the Windows/iOS checked-in packaging metadata that had lagged behind the beta.6 release documentation.
+- Keeps the portable manuscript format at **OMI-SPEC-320@0.3.0**.
+- Existing servers must apply pending application and identity database migrations and deploy the API before these clients. See [the release notes](docs/release/0.3.0-beta.7.md).
+
 ## 0.3.0-beta.6 — 2026-10-11
 
 ### Semantic source attribution
