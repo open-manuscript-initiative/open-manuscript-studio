@@ -1,3 +1,10 @@
+## 0.3.0-beta.8 — 2026-10-20
+
+- Fixes DOCX imports that duplicated the manuscript title as the first numbered heading; matching title headings are recognized in both standard and large-document imports.
+- Advances the shared Studio version to **0.3.0-beta.8**, Windows MSI to **0.3.0.8**, iOS build to **20** (short version **0.3.0**) and Android versionCode floor to **1207**.
+- Keeps the portable manuscript format at **OMI-SPEC-320@0.3.0**.
+- See [the release notes](docs/release/0.3.0-beta.8.md) for packaging identities and deployment steps.
+
 # Changelog
 
 Notable changes to Open Manuscript Studio are documented in this file.
