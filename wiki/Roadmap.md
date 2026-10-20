@@ -1,6 +1,6 @@
 # Roadmap
 
-Open Manuscript Studio is on the `0.3.0-beta.7` scholarly authoring, collaboration and publication beta line. This release packages Android/EuroOffice viewport fixes, recoverable external-editor saves, Transkribus recognition with named model selection, Preview ODT import/export, PO-backed translations and compact responsive settings. The portable manuscript format remains `OMI-SPEC-320@0.3.0`; the next milestone is a stable release candidate.
+Open Manuscript Studio is on the `0.3.0-beta.8` scholarly authoring, collaboration and publication beta line. This release fixes duplicate manuscript titles in DOCX imports by recognizing a matching first numbered heading in both standard and large-document import paths. The portable manuscript format remains `OMI-SPEC-320@0.3.0`; the next milestone is a stable release candidate.
 
 This page records direction rather than promising dates. The [issue tracker](https://github.com/open-manuscript-initiative/open-manuscript-studio/issues), pull requests, and [CHANGELOG](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/CHANGELOG.md) are the authoritative sources for individual work items.
 
