@@ -2,9 +2,9 @@
 
 **Open Manuscript Studio** is the open-source reference implementation of the **Open Manuscript Initiative (OMI)**: a structured, multilingual scholarly authoring environment for writing, reviewing, exchanging and preparing manuscripts for publication without locking the manuscript to one application, operating system or publishing platform.
 
-> **Current status:** `0.3.0-beta.7` · EuroOffice, Transkribus and cross-platform quality beta.
+> **Current status:** `0.3.0-beta.8` · DOCX import and cross-platform quality beta.
 >
-> This release brings the merged Android navigation/EuroOffice viewport fixes, recoverable EuroOffice saves, named Transkribus model selection and reviewed recognition import into fresh native packages. It also includes Preview ODT import/export, PO-backed interface and research-module localization, compact responsive settings, and browser passkey authentication where configured. Native passkey handoff is not yet supported. The portable manuscript format remains `OMI-SPEC-320@0.3.0`. See [the release notes](docs/release/0.3.0-beta.7.md) for packaging identities and server migration steps.
+> This release fixes duplicate manuscript titles in DOCX imports by recognizing a matching first numbered heading in both standard and large-document import paths. The portable manuscript format remains `OMI-SPEC-320@0.3.0`. See [the release notes](docs/release/0.3.0-beta.8.md) for packaging identities and server migration steps.
 
 - Web Studio: https://studio.openmanuscript.org
 - Project website and specifications: https://openmanuscript.org
