@@ -214,6 +214,21 @@ export function detectKeywordLine(
   return keywords.length ? Array.from(new Set(keywords)) : undefined;
 }
 
+export function isDuplicateDocumentTitleHeading(heading: string, documentTitle: string): boolean {
+  const normalize = (value: string) => value
+    .normalize('NFKC')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLocaleLowerCase();
+
+  const withoutNumbering = normalize(heading).replace(
+    /^(?:(?:\d+(?:\.\d+)*|[ivxlcdm]+|[a-z])[.)])\s+/i,
+    '',
+  );
+  return Boolean(withoutNumbering) && withoutNumbering === normalize(documentTitle);
+}
+
 export function isTitleStyle(
   styleId: string | undefined,
   styleName: string | undefined,
