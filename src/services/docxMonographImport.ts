@@ -3,6 +3,7 @@ import {
   detectKeywordLine,
   headingLevelFromStyle,
   isAbstractStyle,
+  isDuplicateDocumentTitleHeading,
   isAuthorStyle,
   isTitleStyle,
   mergeDetectedAuthors,
@@ -147,6 +148,16 @@ export async function parseDocxMonograph(
     const hasNoteReference = hasWordNoteReference(paragraphXml);
 
     if (headingLevel !== undefined && plainText && !hasNoteReference) {
+      if (
+        sections.length === 0 &&
+        headingStack.length === 0 &&
+        titleSource !== 'filename' &&
+        isDuplicateDocumentTitleHeading(plainText, title)
+      ) {
+        frontMatter = false;
+        await maybeYield(index, totalParagraphs, options);
+        continue;
+      }
       frontMatter = false;
       while (headingStack.length && (headingStack.at(-1)?.level ?? 0) >= headingLevel) {
         headingStack.pop();

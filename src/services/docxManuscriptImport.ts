@@ -9,6 +9,7 @@ import {
   detectKeywordLine,
   headingLevelFromStyle,
   isAbstractStyle,
+  isDuplicateDocumentTitleHeading,
   isAuthorStyle,
   isCodeStyle,
   isQuoteStyle,
@@ -241,6 +242,16 @@ export async function parseDocxManuscript(
     const hasNoteReference = paragraphHasNoteReference(child);
 
     if (headingLevel !== undefined && plainText && !hasNoteReference) {
+      if (
+        sections.length === 0 &&
+        headingStack.length === 0 &&
+        titleSource !== 'filename' &&
+        isDuplicateDocumentTitleHeading(plainText, title)
+      ) {
+        frontMatter = false;
+        index += 1;
+        continue;
+      }
       frontMatter = false;
       while (
         headingStack.length &&

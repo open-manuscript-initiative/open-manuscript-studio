@@ -5,6 +5,7 @@ import {
   buildHeadingHierarchy,
   detectKeywordLine,
   headingLevelFromStyle,
+  isDuplicateDocumentTitleHeading,
   mapWordSourceType,
   mergeDetectedAuthors,
   parseDetectedAuthors,
@@ -30,6 +31,20 @@ test('recognizes Word heading levels from built-in and localized style names', (
   assert.equal(headingLevelFromStyle(undefined, 'Címsor 3', undefined), 3);
   assert.equal(headingLevelFromStyle(undefined, 'Überschrift 4', undefined), 4);
   assert.equal(headingLevelFromStyle(undefined, 'Normal', 1), 2);
+});
+
+test('recognizes and strips numbering from a duplicated document-title heading', () => {
+  assert.equal(
+    isDuplicateDocumentTitleHeading(
+      '1. Az országos tisztségek és az Apafi kori székelyföldi elit',
+      'Az országos tisztségek és az Apafi kori székelyföldi elit',
+    ),
+    true,
+  );
+  assert.equal(
+    isDuplicateDocumentTitleHeading('1.1. Bevezetés', 'Az országos tisztségek'),
+    false,
+  );
 });
 
 test('recognizes Word character styles as portable inline semantics', () => {
