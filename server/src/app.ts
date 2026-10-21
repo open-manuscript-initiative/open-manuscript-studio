@@ -116,8 +116,8 @@ app.get('/api', (_request, response) => {
 });
 
 app.use('/api/health', healthRouter);
-app.use('/api/server-registry', serverRegistryRouter);
 app.use(apiRateLimit);
+app.use('/api/server-registry', serverRegistryRouter);
 app.use('/api/v1', euroOfficeRouter);
 app.use('/api', euroOfficeRouter); // Legacy compatibility facade.
 app.use('/api/v1', studioModuleRouter);
