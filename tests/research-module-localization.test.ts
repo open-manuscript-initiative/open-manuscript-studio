@@ -13,7 +13,7 @@ before(async () => {
   await loadPrimaryLocaleDictionariesForTest();
 });
 
-const locales = ['en', 'de', 'hu'] as const;
+const locales = ['en', 'de', 'hu', 'fr'] as const;
 const emptyHelp = { topics: [] };
 
 test('research module shell exposes every registered module in English', () => {
@@ -37,6 +37,7 @@ test('research module locale normalization keeps English as the default', () => 
   assert.equal(normalizeModuleLocale('en-US'), 'en');
   assert.equal(normalizeModuleLocale('de-DE'), 'de');
   assert.equal(normalizeModuleLocale('hu_HU'), 'hu');
+  assert.equal(normalizeModuleLocale('fr-FR'), 'fr');
 });
 
 test('runtime locale loading keeps research module shell and search copy localized', () => {
