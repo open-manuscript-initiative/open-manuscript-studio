@@ -5,7 +5,6 @@ import { isIP } from 'node:net';
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
 import { createServerRegistryGithubToken } from '../serverRegistry/githubAppToken.js';
 
