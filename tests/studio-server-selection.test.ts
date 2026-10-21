@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { normalizeNativeStudioServerOrigin } from '../src/services/studioServer.ts';
+import { parseStudioServerDirectory } from '../src/services/studioServerDirectory.ts';
 import { NATIVE_SESSION_STORAGE_KEY, persistNativeServerSelection } from '../src/platform/nativeServerSelection.ts';
 
 test('native Studio server addresses normalize to an origin', () => {
@@ -49,4 +50,35 @@ test('native server selection fails closed if bearer token removal fails', () =>
   };
   assert.throws(() => persistNativeServerSelection('https://other.example.org', storage), /storage denied/);
   assert.equal(wroteOrigin, false);
+});
+
+test('server directory entries provide normalized HTTPS origins for one-click selection', () => {
+  assert.deepEqual(
+    parseStudioServerDirectory({
+      version: 1,
+      servers: [{
+        id: 'community-server',
+        name: 'Community Studio',
+        origin: ' https://studio.example.org/ ',
+      }],
+    }),
+    [{
+      id: 'community-server',
+      name: 'Community Studio',
+      origin: 'https://studio.example.org',
+    }],
+  );
+});
+
+test('server directory rejects duplicate origins and invalid endpoints', () => {
+  assert.throws(() => parseStudioServerDirectory({
+    servers: [
+      { id: 'server-one', name: 'One', origin: 'https://studio.example.org' },
+      { id: 'server-two', name: 'Two', origin: 'https://studio.example.org/' },
+    ],
+  }), /duplicate entry/);
+
+  assert.throws(() => parseStudioServerDirectory({
+    servers: [{ id: 'insecure', name: 'Insecure', origin: 'http://studio.example.org' }],
+  }), /HTTPS/);
 });
