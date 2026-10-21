@@ -21,14 +21,14 @@ Let an author discover participating Open Manuscript Studio servers and then wor
 5. The Studio API sends a heartbeat to the registry on a fixed interval. A server is `online` only while its last heartbeat is within the configured freshness window. Missing heartbeats make it `offline`; the record can remain available for later recovery.
 6. A server operator can rotate the heartbeat token, update public metadata, or unregister the instance.
 
-GitHub is the auditable catalogue of approved public entries, not the heartbeat database. The registry service uses a narrowly scoped GitHub App to submit a pull request when an operator's registration is verified or its public metadata changes. GitHub credentials exist only on the registry service. Heartbeats update the registry database and do not create commits or pull requests.
+GitHub is the auditable catalogue of approved public entries, not the heartbeat database. The registry service uses a narrowly scoped GitHub App to create a registration audit issue after an operator's domain is verified. A GitHub App installation token is minted on the registry host and is never shared with Studio instances. Heartbeats update the registry database and do not create commits or issues.
 
 ## Public API contract
 
-- `GET /v1/servers`: return approved entries and current liveness, suitable for the OMI website and Studio server chooser. Cache for at most 60 seconds.
-- `POST /v1/registrations`: create a pending registration; rate limited.
-- `POST /v1/registrations/:id/verify`: verify the DNS challenge and submit the metadata change to GitHub for review.
-- `POST /v1/instances/:id/heartbeat`: authenticated by that instance's bearer token; update last-seen time and compatible version/capabilities.
+- `GET /api/server-registry/servers`: return domain-verified entries and current liveness, suitable for the OMI website and Studio server chooser. Cache for at most 60 seconds.
+- `POST /api/server-registry/registrations`: create a pending registration; rate limited.
+- `POST /api/server-registry/registrations/:id/verify`: verify the DNS challenge and create a GitHub audit issue.
+- `POST /api/server-registry/instances/:id/heartbeat`: authenticated by that instance's bearer token; update last-seen time and compatible version/capabilities.
 - Authenticated operator controls: metadata update, token rotation, and unregister.
 
 The public response must not expose heartbeat tokens, challenge values, database IDs that are not intended to be public, internal addresses, or detailed infrastructure health.
@@ -41,9 +41,9 @@ When the registry cannot be reached, the Studio chooser may show its cached list
 
 ## Deployment boundary
 
-Run the registry as a small, separately deployable metadata service with its own database and hostname, for example `registry.openmanuscript.org`. It is not part of a Studio instance's document request path. It may be hosted on the same physical VPS initially, provided the public Studio instances still connect directly to one another and resource limits isolate the registry. It can later move to another host without changing the server-selection contract.
+The reference implementation mounts the registry API in the OMI-operated Studio API and stores directory metadata in its PostgreSQL database. It handles discovery and small heartbeats only; it does not proxy document traffic. Resource limits and cache headers keep this workload bounded. If the directory outgrows this host, the registry API can move to a dedicated hostname such as `registry.openmanuscript.org` without changing the server-selection contract.
 
-The registry's GitHub App needs only the permissions required to read the public catalogue and create/update a registration pull request. Do not put its private key or installation token in a Studio server image, installer, browser bundle, or per-instance `.env`.
+The registry's GitHub App needs only Issues: write on the catalogue repository to record verified registrations. Do not put its private key or installation token in a Studio server image, installer, browser bundle, or per-instance `.env`.
 
 ## Required operational controls
 
@@ -54,4 +54,4 @@ The registry's GitHub App needs only the permissions required to read the public
 - A fixed heartbeat interval with jitter and bounded retries.
 - A freshness threshold and removal/takedown path.
 - Minimal, documented public metadata and operator consent.
-- GitHub pull-request review before a new server appears in the curated public catalogue.
+- GitHub audit issue creation after DNS verification and a removal/takedown path.
