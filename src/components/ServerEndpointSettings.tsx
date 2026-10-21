@@ -135,6 +135,7 @@ export function ServerEndpointSettings() {
                     ? 'native-server-settings__server native-server-settings__server--current'
                     : 'native-server-settings__server'}
                   aria-current={selected ? 'true' : undefined}
+                  aria-label={`${label} (${server.origin}) — ${selected ? text.current : unavailable ? text.offline : text.choose}`}
                   disabled={unavailable}
                   onClick={() => openServer(server.origin)}
                 >
@@ -163,7 +164,7 @@ export function ServerEndpointSettings() {
           <p className="native-server-settings__help">{text.help}</p>
           {error ? <p className="native-server-settings__error" role="alert">{error}</p> : null}
           <div className="native-server-settings__actions">
-            <button type="button" className="native-server-settings__primary" onClick={() => openServer(serverOrigin)}>
+            <button type="button" className="native-server-settings__primary" aria-label={text.apply} onClick={() => openServer(serverOrigin)}>
               {text.apply}
             </button>
             {native && (currentOrigin !== DEFAULT_STUDIO_API_ORIGIN || savedOrigin) ? (
