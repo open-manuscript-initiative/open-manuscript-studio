@@ -19,7 +19,7 @@ function copy(locale: string) {
   if (locale === 'hu') {
     return {
       title: 'Studio-szerver', summary: 'Studio-szerver kiválasztása', current: 'Jelenlegi szerver',
-      directory: 'Elérhető szerverek', loading: 'Szerverlista betöltése…',
+      directory: 'Elérhető szerverek', loading: 'Szerverlista betöltése…', offline: 'Nem érhető el',
       unavailable: 'A szerverlista most nem érhető el. Saját szervercímet ettől függetlenül megadhat.',
       address: 'Másik szerver címe', placeholder: 'https://studio.pelda.hu',
       help: 'A saját szervernek HTTPS-en elérhető Studio-felületet és API-t kell biztosítania. Váltáskor az új szerveren folytatja; a korábbi szerveren tárolt adatok nem változnak.',
@@ -31,7 +31,7 @@ function copy(locale: string) {
   if (locale === 'de') {
     return {
       title: 'Studio-Server', summary: 'Studio-Server auswählen', current: 'Aktueller Server',
-      directory: 'Verfügbare Server', loading: 'Serverliste wird geladen…',
+      directory: 'Verfügbare Server', loading: 'Serverliste wird geladen…', offline: 'Nicht erreichbar',
       unavailable: 'Die Serverliste ist derzeit nicht verfügbar. Sie können trotzdem eine eigene Serveradresse eingeben.',
       address: 'Adresse eines anderen Servers', placeholder: 'https://studio.beispiel.org',
       help: 'Der eigene Server muss eine über HTTPS erreichbare Studio-Oberfläche und API bereitstellen. Beim Wechsel wird der neue Server geöffnet; auf dem bisherigen Server gespeicherte Daten bleiben unverändert.',
@@ -42,7 +42,7 @@ function copy(locale: string) {
   }
   return {
     title: 'Studio server', summary: 'Choose a Studio server', current: 'Current server',
-    directory: 'Available servers', loading: 'Loading server list…',
+    directory: 'Available servers', loading: 'Loading server list…', offline: 'Offline',
     unavailable: 'The server list is unavailable right now. You can still enter a server address.',
     address: 'Another server address', placeholder: 'https://studio.example.org',
     help: 'A custom server must provide a Studio web interface and API over HTTPS. Switching opens the new server; data stored on the previous server is unchanged.',
@@ -125,6 +125,7 @@ export function ServerEndpointSettings() {
             ) : null}
             {servers.map((server) => {
               const selected = server.origin === currentOrigin;
+              const unavailable = server.availability === 'offline';
               const label = server.id === 'omi-official' ? text.official : server.name;
               return (
                 <button
@@ -134,11 +135,12 @@ export function ServerEndpointSettings() {
                     ? 'native-server-settings__server native-server-settings__server--current'
                     : 'native-server-settings__server'}
                   aria-current={selected ? 'true' : undefined}
+                  disabled={unavailable}
                   onClick={() => openServer(server.origin)}
                 >
                   <span>{label}</span>
                   <span dir="ltr">{server.origin}</span>
-                  <span>{selected ? text.current : text.choose}</span>
+                  <span>{selected ? text.current : unavailable ? text.offline : text.choose}</span>
                 </button>
               );
             })}
