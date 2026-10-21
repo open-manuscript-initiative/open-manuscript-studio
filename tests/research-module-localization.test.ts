@@ -38,6 +38,8 @@ test('research module locale normalization keeps English as the default', () => 
   assert.equal(normalizeModuleLocale('de-DE'), 'de');
   assert.equal(normalizeModuleLocale('hu_HU'), 'hu');
   assert.equal(normalizeModuleLocale('fr-FR'), 'fr');
+  assert.equal(normalizeModuleLocale('it-IT'), 'it');
+  assert.equal(normalizeModuleLocale('es-ES'), 'es');
 });
 
 test('runtime locale loading keeps research module shell and search copy localized', () => {
@@ -51,6 +53,14 @@ test('runtime locale loading keeps research module shell and search copy localiz
   const fr = getModuleShellCopy('fr');
   assert.ok(fr.navigation);
   assert.ok(fr.modules['org.omi.archaeology']?.overview);
+
+  const es = getModuleShellCopy('es');
+  assert.ok(es.navigation);
+  assert.ok(es.modules['org.omi.archaeology']?.overview);
+
+  const it = getModuleShellCopy('it');
+  assert.ok(it.navigation);
+  assert.ok(it.modules['org.omi.archaeology']?.overview);
 
   const de = getModuleShellCopy('de');
   assert.equal(de.navigation, 'Forschungsmodule');

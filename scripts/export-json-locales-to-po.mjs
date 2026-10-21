@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 const jsonRoot = path.join(root, 'src', 'i18n', 'locales');
 const poRoot = path.join(root, 'locale');
 const referenceLocale = 'en';
-const canonicalPoLocales = new Set(['en', 'de', 'hu', 'fr']);
+const canonicalPoLocales = new Set(['en', 'de', 'hu', 'fr', 'it', 'es']);
 
 async function readJson(locale) {
   const file = path.join(jsonRoot, locale, 'studio.json');

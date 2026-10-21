@@ -1,7 +1,7 @@
 import { translations } from '../i18n/config';
 import type { TranslationDictionary } from '../i18n/types';
 
-const CATALOG_LOCALES = ['en', 'de', 'hu', 'fr'] as const;
+const CATALOG_LOCALES = ['en', 'de', 'hu', 'fr', 'it', 'es'] as const;
 
 function getAtPointer(dictionary: TranslationDictionary, pointer: string): unknown {
   const tokens = pointer
