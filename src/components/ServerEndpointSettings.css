@@ -101,3 +101,14 @@
   .native-server-settings__server > span:nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
   .native-server-settings__server > span:last-child { grid-column: 2; grid-row: 1; }
 }
+
+.native-server-settings__server:disabled {
+  border-color: #d0d5dd;
+  background: #f2f4f7;
+  color: #667085;
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+.native-server-settings__server:disabled > span:last-child {
+  color: #667085;
+}
