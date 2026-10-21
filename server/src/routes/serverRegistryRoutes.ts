@@ -155,7 +155,6 @@ serverRegistryRouter.post('/registrations', registrationRateLimit, async (reques
       name: `_omi-studio-verification.${normalized.hostname}`,
       value: challenge,
     },
-    heartbeatToken,
     heartbeatIntervalSeconds: 300,
     instructions: 'Publish the DNS TXT record, then call POST /api/server-registry/registrations/{id}/verify. Store the heartbeat token only on the server.',
   });
@@ -191,11 +190,12 @@ serverRegistryRouter.post('/registrations/:id/verify', verificationRateLimit, as
     return;
   }
 
+  const heartbeatToken = randomBytes(32).toString('base64url');
   const verified = await prisma.studioServerDirectoryEntry.update({
     where: { id: entry.id },
-    data: { status: 'ACTIVE', verifiedAt: new Date(), githubIssueUrl },
+    data: { status: 'ACTIVE', verifiedAt: new Date(), githubIssueUrl, heartbeatTokenHash: digest(heartbeatToken) },
   });
-  response.status(200).json({ id: verified.id, status: 'active', auditUrl: githubIssueUrl });
+  response.status(200).json({ id: verified.id, status: 'active', auditUrl: githubIssueUrl, heartbeatToken, heartbeatIntervalSeconds: 300 });
 });
 
 serverRegistryRouter.post('/instances/:id/heartbeat', async (request, response) => {
