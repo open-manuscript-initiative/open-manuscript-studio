@@ -66,7 +66,24 @@ test('server directory entries provide normalized HTTPS origins for one-click se
       id: 'community-server',
       name: 'Community Studio',
       origin: 'https://studio.example.org',
+      availability: 'unknown',
     }],
+  );
+});
+
+
+test('live directory status is preserved so the chooser can disable offline servers', () => {
+  assert.deepEqual(
+    parseStudioServerDirectory({
+      servers: [
+        { id: 'online-server', name: 'Online Studio', origin: 'https://online.example.org', status: 'online' },
+        { id: 'offline-server', name: 'Offline Studio', origin: 'https://offline.example.org', status: 'offline' },
+      ],
+    }),
+    [
+      { id: 'online-server', name: 'Online Studio', origin: 'https://online.example.org', availability: 'online' },
+      { id: 'offline-server', name: 'Offline Studio', origin: 'https://offline.example.org', availability: 'offline' },
+    ],
   );
 });
 
