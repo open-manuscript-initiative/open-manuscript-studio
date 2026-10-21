@@ -3,12 +3,16 @@ import { resolveTxt } from 'node:dns/promises';
 import { isIP } from 'node:net';
 
 import { Router } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 
 import { prisma } from '../lib/prisma.js';
 import { createServerRegistryGithubToken } from '../serverRegistry/githubAppToken.js';
 
 export const serverRegistryRouter = Router();
+
+const registrationRateLimit = rateLimit({ windowMs: 60 * 60 * 1000, limit: 10, standardHeaders: 'draft-8', legacyHeaders: false });
+const verificationRateLimit = rateLimit({ windowMs: 60 * 60 * 1000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false });
 
 const registrationSchema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -102,7 +106,7 @@ async function submitGithubRegistration(entry: {
   return result.html_url;
 }
 
-serverRegistryRouter.post('/registrations', async (request, response) => {
+serverRegistryRouter.post('/registrations', registrationRateLimit, async (request, response) => {
   const parsed = registrationSchema.safeParse(request.body);
   if (!parsed.success) {
     response.status(400).json({ error: { code: 'INVALID_REGISTRATION', message: 'Registration details are invalid.' } });
@@ -154,7 +158,7 @@ serverRegistryRouter.post('/registrations', async (request, response) => {
   });
 });
 
-serverRegistryRouter.post('/registrations/:id/verify', async (request, response) => {
+serverRegistryRouter.post('/registrations/:id/verify', verificationRateLimit, async (request, response) => {
   const entry = await prisma.studioServerDirectoryEntry.findUnique({ where: { id: request.params.id } });
   if (!entry || entry.status !== 'PENDING') {
     response.status(404).json({ error: { code: 'REGISTRATION_NOT_FOUND', message: 'Pending registration not found.' } });
