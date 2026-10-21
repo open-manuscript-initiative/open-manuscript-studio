@@ -224,9 +224,13 @@ test('live pages place each footnote below its anchor and reflow after zoom and 
   await canvas.getByRole('combobox', { name: 'Zoom', exact: true }).selectOption('100');
   await expect.poll(audit).toEqual([]);
   const editor = canvas.locator('.omi-continuous-tiptap-editor');
+  const firstNoteAnchor = canvas.locator('[data-omi-note][data-note-id="note-0"]').first();
+  const firstNoteAnchorTopBeforeEdit = await firstNoteAnchor.evaluate((anchor) => anchor.getBoundingClientRect().top);
   await editor.locator('p').first().click();
   await page.keyboard.press('Home');
-  await page.keyboard.insertText('Additional content changes the page breaks. '.repeat(30));
+  await page.keyboard.insertText('Additional content changes the page breaks. '.repeat(8));
+  await expect.poll(() => firstNoteAnchor.evaluate((anchor) => anchor.getBoundingClientRect().top))
+    .toBeGreaterThan(firstNoteAnchorTopBeforeEdit);
   await expect.poll(audit).toEqual([]);
   await expect(canvas.locator('[data-note-continuation]')).not.toHaveCount(0);
 });
