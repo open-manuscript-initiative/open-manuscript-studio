@@ -8,10 +8,11 @@ const verifyId = process.argv.includes('--verify')
   ? process.argv[process.argv.indexOf('--verify') + 1]
   : undefined;
 
-async function request(path: string, init?: RequestInit): Promise<{ response: Response; body: Record<string, unknown> }> {
+async function request(path: string, method: 'POST' = 'POST', bodyValue: unknown = {}): Promise<{ response: Response; body: Record<string, unknown> }> {
   const response = await fetch(`${registryOrigin}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bodyValue),
     signal: AbortSignal.timeout(15_000),
   });
   const body = response.status === 204 ? {} : await response.json() as Record<string, unknown>;
@@ -21,7 +22,7 @@ async function request(path: string, init?: RequestInit): Promise<{ response: Re
 if (verifyId) {
   const { response, body } = await request(
     `/api/server-registry/registrations/${encodeURIComponent(verifyId)}/verify`,
-    { method: 'POST', body: '{}' },
+    'POST', {} ,
   );
   if (!response.ok) {
     console.error(body);
@@ -49,8 +50,7 @@ if (verifyId) {
     const name = arg('--name') || await terminal.question('Public server name: ');
     const origin = arg('--origin') || await terminal.question('Public HTTPS origin: ');
     const { response, body } = await request('/api/server-registry/registrations', {
-      method: 'POST',
-      body: JSON.stringify({
+      'POST', {
         name,
         origin,
         softwareVersion: process.env.OMI_SERVER_REGISTRY_SOFTWARE_VERSION || 'unknown',
@@ -58,7 +58,7 @@ if (verifyId) {
           .split(',')
           .map((value) => value.trim())
           .filter(Boolean),
-      }),
+      },
     });
     if (!response.ok) {
       console.error(body);
