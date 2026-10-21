@@ -8,6 +8,7 @@ import {
   resolveCatalogTranslation,
 } from './catalogTranslation';
 import type {
+  CoreLocale,
   SupportedLocale,
   TranslationDictionary,
   TranslationKey,
@@ -39,7 +40,7 @@ function resolveAuthTranslation(
 ): string | undefined {
   return (
     authSupplementalTranslations[locale]?.[key as AuthTranslationKey] ??
-    authTranslations[locale as SupportedLocale]?.[key as AuthTranslationKey]
+    authTranslations[locale as CoreLocale]?.[key as AuthTranslationKey]
   );
 }
 

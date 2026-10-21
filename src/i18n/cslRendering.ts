@@ -1,5 +1,5 @@
 import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
-import type { SupportedLocale } from './types';
+import type { CoreLocale, SupportedLocale } from './types';
 
 export interface CslRenderingCopy {
   styleTitle: string;
@@ -37,7 +37,7 @@ export interface CslRenderingCopy {
   styleNames: Record<string, string>;
 }
 
-const COPY: Record<SupportedLocale, CslRenderingCopy> = {
+const COPY: Record<CoreLocale, CslRenderingCopy> = {
   en: {
     styleTitle: 'Citation style',
     styleDescription: 'Choose how citations and the bibliography are rendered while authoring. Semantic citation data remain unchanged.',
@@ -94,6 +94,6 @@ const COPY: Record<SupportedLocale, CslRenderingCopy> = {
 };
 
 export function getCslRenderingCopy(locale: SupportedLocale): CslRenderingCopy {
-  const current = COPY[locale] ?? COPY.en;
+  const current = COPY[locale as CoreLocale] ?? COPY.en;
   return applyReturnedSupplementalOverlay(locale, 'cslRendering', current, COPY.en);
 }

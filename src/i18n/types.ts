@@ -351,7 +351,8 @@ export interface TranslationDictionary {
   };
 }
 
-export type SupportedLocale = 'en' | 'hu' | 'de';
+export type CoreLocale = 'en' | 'hu' | 'de';
+export type SupportedLocale = CoreLocale | 'fr';
 
 type NestedKeyOf<T> = {
   [K in keyof T & string]:

@@ -37,6 +37,7 @@ test('research module locale normalization keeps English as the default', () => 
   assert.equal(normalizeModuleLocale('en-US'), 'en');
   assert.equal(normalizeModuleLocale('de-DE'), 'de');
   assert.equal(normalizeModuleLocale('hu_HU'), 'hu');
+  assert.equal(normalizeModuleLocale('fr-FR'), 'fr');
 });
 
 test('runtime locale loading keeps research module shell and search copy localized', () => {
@@ -46,6 +47,10 @@ test('runtime locale loading keeps research module shell and search copy localiz
     hu.modules['org.omi.archaeology']?.overview,
     'Régészeti és kulturális örökségi munkaterület',
   );
+
+  const fr = getModuleShellCopy('fr');
+  assert.ok(fr.navigation);
+  assert.ok(fr.modules['org.omi.archaeology']?.overview);
 
   const de = getModuleShellCopy('de');
   assert.equal(de.navigation, 'Forschungsmodule');

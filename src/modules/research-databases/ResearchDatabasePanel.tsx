@@ -1,13 +1,14 @@
 import { getResearchModuleCopyByLocale } from '../moduleTranslationCatalog';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { normalizeModuleLocale } from '../moduleLocale';
+import { normalizeModuleLocale, type ModuleLocale } from '../moduleLocale';
 import { PROVIDERS, PROVIDER_NAMES, searchResearchDatabase, type ResearchDatabaseProvider, type ResearchDatabasePage } from './searchApi';
 import '../disciplineWorkspaces.css';
 const copy = getResearchModuleCopyByLocale('research-databases-research-database-panel/copy');
-const names: Record<'en' | 'hu' | 'de', Record<ResearchDatabaseProvider, string>> = {
+const names: Record<ModuleLocale, Record<ResearchDatabaseProvider, string>> = {
  en:{eric:'ERIC (education research)','inspire-hep':'INSPIRE-HEP (high-energy physics)',pubchem:'PubChem (chemical compounds)',gbif:'GBIF (biodiversity occurrences)',openalex:'OpenAlex (scholarly literature)',sciencebase:'USGS ScienceBase (earth science data)'},
  hu:{eric:'ERIC (oktatáskutatás)','inspire-hep':'INSPIRE-HEP (nagyenergiás fizika)',pubchem:'PubChem (kémiai vegyületek)',gbif:'GBIF (biodiverzitási előfordulások)',openalex:'OpenAlex (tudományos szakirodalom)',sciencebase:'USGS ScienceBase (földtudományi adatok)'},
  de:{eric:'ERIC (Bildungsforschung)','inspire-hep':'INSPIRE-HEP (Hochenergiephysik)',pubchem:'PubChem (chemische Verbindungen)',gbif:'GBIF (Biodiversitätsnachweise)',openalex:'OpenAlex (wissenschaftliche Literatur)',sciencebase:'USGS ScienceBase (geowissenschaftliche Daten)'},
+ fr:{eric:'ERIC (recherche en éducation)','inspire-hep':'INSPIRE-HEP (physique des hautes énergies)',pubchem:'PubChem (composés chimiques)',gbif:'GBIF (occurrences de biodiversité)',openalex:'OpenAlex (littérature scientifique)',sciencebase:'USGS ScienceBase (données sur les sciences de la Terre)'},
 } as const;
 export function ResearchDatabasePanel({ moduleId, workspaceId, storageKey, locale }: { moduleId:'social-research-methods'|'experimental-laboratory'|'critical-text-edition'; workspaceId:string; storageKey:string; locale:string }) {
  const lang = normalizeModuleLocale(locale); const t = copy[lang]; const n = names[lang];

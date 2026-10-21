@@ -1,4 +1,4 @@
-import type { SupportedLocale } from './types';
+import type { CoreLocale } from './types';
 
 export type AuthTranslationKey =
   | 'auth.brand.name'
@@ -47,7 +47,7 @@ export type AuthTranslationKey =
 
 type AuthTranslations = Record<AuthTranslationKey, string>;
 
-export const authTranslations: Record<SupportedLocale, AuthTranslations> = {
+export const authTranslations: Record<CoreLocale, AuthTranslations> = {
   en: {
     'auth.brand.name': 'Open Manuscript Studio',
     'auth.brand.description': 'Collaborative scholarly writing',

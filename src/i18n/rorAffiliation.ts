@@ -1,5 +1,5 @@
 import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
-import type { SupportedLocale } from './types';
+import type { CoreLocale } from './types';
 
 export interface RorAffiliationCopy {
   searching: string;
@@ -13,7 +13,7 @@ export interface RorAffiliationCopy {
   poweredBy: string;
 }
 
-const COPY: Record<SupportedLocale, RorAffiliationCopy> = {
+const COPY: Record<CoreLocale, RorAffiliationCopy> = {
   en: {
     searching: 'Searching ROR…',
     suggestions: 'ROR organization suggestions',
@@ -59,6 +59,6 @@ export function getRorAffiliationCopy(locale: string): RorAffiliationCopy {
   );
 }
 
-function isSupportedCopyLocale(locale: string): locale is SupportedLocale {
+function isSupportedCopyLocale(locale: string): locale is CoreLocale {
   return locale === 'en' || locale === 'hu' || locale === 'de';
 }

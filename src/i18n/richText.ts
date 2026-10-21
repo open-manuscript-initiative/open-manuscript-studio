@@ -1,5 +1,5 @@
 import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
-import type { SupportedLocale } from './types';
+import type { CoreLocale, SupportedLocale } from './types';
 
 export interface RichTextCopy {
   bold: string;
@@ -31,7 +31,7 @@ export interface RichTextCopy {
   toolbar: string;
 }
 
-const COPY: Record<SupportedLocale, RichTextCopy> = {
+const COPY: Record<CoreLocale, RichTextCopy> = {
   en: {
     bold: 'Bold / strong',
     italic: 'Italic / emphasis',
@@ -122,6 +122,6 @@ const COPY: Record<SupportedLocale, RichTextCopy> = {
 };
 
 export function getRichTextCopy(locale: SupportedLocale): RichTextCopy {
-  const current = COPY[locale] ?? COPY.en;
+  const current = COPY[locale as CoreLocale] ?? COPY.en;
   return applyReturnedSupplementalOverlay(locale, 'richText', current, COPY.en);
 }

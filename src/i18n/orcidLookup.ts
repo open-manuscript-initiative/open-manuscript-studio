@@ -1,5 +1,5 @@
 import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
-import type { SupportedLocale } from './types';
+import type { CoreLocale, SupportedLocale } from './types';
 
 export interface OrcidLookupCopy {
   searching: string;
@@ -14,7 +14,7 @@ export interface OrcidLookupCopy {
   poweredBy: string;
 }
 
-const COPY: Record<SupportedLocale, OrcidLookupCopy> = {
+const COPY: Record<CoreLocale, OrcidLookupCopy> = {
   en: {
     searching: 'Searching ORCID…',
     noResults: 'No matching public ORCID records found.',
@@ -54,6 +54,6 @@ const COPY: Record<SupportedLocale, OrcidLookupCopy> = {
 };
 
 export function getOrcidLookupCopy(locale: SupportedLocale): OrcidLookupCopy {
-  const current = COPY[locale] ?? COPY.en;
+  const current = COPY[locale as CoreLocale] ?? COPY.en;
   return applyReturnedSupplementalOverlay(locale, 'orcidLookup', current, COPY.en);
 }

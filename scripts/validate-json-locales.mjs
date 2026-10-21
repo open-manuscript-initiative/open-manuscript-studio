@@ -44,7 +44,7 @@ if (!locales.includes(referenceLocale)) {
 const reference = await loadLocale(referenceLocale);
 const referenceEntries = flatten(reference);
 const referenceKeys = new Set(referenceEntries.map(([key]) => key));
-const primaryLocales = new Set(['en', 'de', 'hu', 'sk']);
+const primaryLocales = new Set(['en', 'de', 'hu', 'fr', 'sk']);
 
 for (const locale of locales) {
   const dictionary = await loadLocale(locale);

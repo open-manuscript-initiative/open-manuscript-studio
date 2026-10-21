@@ -1,5 +1,5 @@
 import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
-import type { SupportedLocale } from './types';
+import type { CoreLocale, SupportedLocale } from './types';
 
 export interface ExportFormatCopy {
   title: string;
@@ -52,7 +52,7 @@ export interface ExportFormatCopy {
   pdfHint: string;
 }
 
-const copy: Record<SupportedLocale, ExportFormatCopy> = {
+const copy: Record<CoreLocale, ExportFormatCopy> = {
   hu: {
     title: 'Exportálás',
     description: 'Válassza ki a kívánt hordozható vagy publikációs formátumot, majd indítsa el az exportálást. A telepített alkalmazás natív fájlmentést használ.',
@@ -206,6 +206,6 @@ const copy: Record<SupportedLocale, ExportFormatCopy> = {
 };
 
 export function getExportFormatCopy(locale: SupportedLocale): ExportFormatCopy {
-  const current = copy[locale] ?? copy.en;
+  const current = copy[locale as CoreLocale] ?? copy.en;
   return applyReturnedSupplementalOverlay(locale, 'exportFormats', current, copy.en);
 }
