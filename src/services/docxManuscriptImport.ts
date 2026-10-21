@@ -448,7 +448,7 @@ export async function parseDocxManuscript(
   if (sections.length === 0) {
     sections.push({
       id: crypto.randomUUID(),
-      title: 'Imported content',
+      title: '',
       blocks: [createEmptyParagraphBlock()],
     });
   }
@@ -495,7 +495,7 @@ function ensureSection(sections: OmiSection[]): OmiSection {
 
   const section: OmiSection = {
     id: crypto.randomUUID(),
-    title: 'Imported content',
+    title: '',
     blocks: [],
   };
   sections.push(section);

@@ -122,7 +122,7 @@ export async function parseOdtForStudio(file: File): Promise<DocxManuscriptImpor
   }
 
   if (!title) { title = file.name.replace(/\.odt$/i, '').trim() || 'Imported manuscript'; warnings.push(warning('title-from-filename', 'No explicit document title was found; the file name is used as the manuscript title.')); }
-  if (sections.length === 0) sections.push({ id: crypto.randomUUID(), title: 'Imported content', blocks: [] });
+  if (sections.length === 0) sections.push({ id: crypto.randomUUID(), title: '', blocks: [] });
   for (const section of sections) if (!section.blocks.length) section.blocks.push(emptyParagraph());
   const finalizedSections = materializeSectionHeadingBlocks(sections);
   stats.sections = finalizedSections.length;
@@ -238,7 +238,7 @@ function descendants(root: XmlElement, name: string): XmlElement[] { return Arra
 function plainText(node: XmlElement): string { return node.textContent ?? ''; }
 function ensureSection(sections: OmiSection[]): OmiSection {
   let current = sections.at(-1);
-  if (!current) { current = { id: crypto.randomUUID(), title: 'Imported content', blocks: [] }; sections.push(current); }
+  if (!current) { current = { id: crypto.randomUUID(), title: '', blocks: [] }; sections.push(current); }
   return current;
 }
 function emptyParagraph(): OmiBlock { return { id: crypto.randomUUID(), type: 'paragraph', content: JSON.stringify({ type: 'doc', content: [{ type: 'paragraph' }] }) }; }
