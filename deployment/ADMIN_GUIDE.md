@@ -165,3 +165,25 @@ The server chooser reads the same-origin `/studio-servers.json` directory shippe
 ## Deployment scope
 
 This package provides the web application and API on your own server. Native desktop and mobile clients can select a custom Studio server from the sign-in screen or Account settings. Enter only the server origin (for example, https://studio.example.org), and use HTTPS. Switching servers signs the client out of the previous server and clears its local native session token; data stored on either server is unchanged.
+
+## Public server directory
+
+An operator may opt in to the public OMI Studio server directory after installing a public HTTPS instance. Registration contacts the directory API only; manuscript, login, upload, and collaboration traffic continues to go directly to the selected Studio instance.
+
+The directory API must be configured on the registry host with a GitHub App installation for `open-manuscript-initiative/open-manuscript-studio`. Grant the App **Issues: write** on that repository and configure `OMI_SERVER_REGISTRY_GITHUB_APP_ID`, `OMI_SERVER_REGISTRY_GITHUB_INSTALLATION_ID`, and `OMI_SERVER_REGISTRY_GITHUB_PRIVATE_KEY` only on the registry host. The App records verified registrations as GitHub issues; heartbeat updates remain in the registry database and do not create commits.
+
+From the deployment directory, start registration with:
+
+```sh
+docker compose -f compose.yml exec api npm run server:register -- --name "Research Studio" --origin https://studio.example.org
+```
+
+Publish the displayed DNS TXT challenge. After it has propagated, verify the domain:
+
+```sh
+docker compose -f compose.yml exec api npm run server:register -- --verify REGISTRATION_ID
+```
+
+The command displays a per-instance heartbeat token once. Add the returned `OMI_SERVER_REGISTRY_INSTANCE_ID`, `OMI_SERVER_REGISTRY_HEARTBEAT_TOKEN`, and `OMI_SERVER_REGISTRY_ORIGIN` values to the instance's `.env`, then restart the API container. The server sends a small heartbeat every five minutes. The public directory reports it online for fifteen minutes after its latest heartbeat.
+
+The GitHub App private key and installation credentials must never be copied to a participating Studio instance. If the registry is unreachable, existing Studio instances continue to serve their users directly.

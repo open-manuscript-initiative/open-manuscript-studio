@@ -37,3 +37,19 @@ fi
 docker compose -f compose.yml pull
 docker compose -f compose.yml up -d
 docker compose -f compose.yml ps
+
+if [ -t 0 ]; then
+  printf "List this Studio instance in the public OMI server directory? [y/N] "
+  read -r registry_opt_in
+  case "$registry_opt_in" in
+    y|Y|yes|YES)
+      printf "Public server name: "
+      read -r registry_name
+      printf "Public HTTPS origin (for example https://studio.example.org): "
+      read -r registry_origin
+      if ! docker compose -f compose.yml exec api npm run server:register -- --name "$registry_name" --origin "$registry_origin"; then
+        echo "Directory registration could not be completed now. The Studio installation is running; you can retry registration later."
+      fi
+      ;;
+  esac
+fi

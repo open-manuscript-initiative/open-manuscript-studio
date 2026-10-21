@@ -21,6 +21,7 @@ import { collaborationMessageRouter } from './routes/collaborationMessageRoutes.
 import { editorReviewOverviewRouter } from './routes/editorReviewOverviewRoutes.js';
 import { federatedAuthRouter } from './routes/federatedAuthRoutes.js';
 import { healthRouter } from './routes/healthRoutes.js';
+import { serverRegistryRouter } from './routes/serverRegistryRoutes.js';
 import { historyArchivesRouter } from './routes/historyArchivesRoutes.js';
 import { healthResearchRouter } from './routes/healthResearchRoutes.js';
 import { researchDatabaseRouter } from './routes/researchDatabaseRoutes.js';
@@ -76,18 +77,23 @@ app.disable('x-powered-by');
 app.set('trust proxy', 1);
 app.use(helmet());
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin || allowedOrigins.has(origin)) {
-        callback(null, true);
-        return;
-      }
-      callback(new Error(`Origin ${origin} is not allowed by CORS.`));
-    },
-    credentials: true,
-  }),
-);
+const standardCors = cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error(`Origin ${origin} is not allowed by CORS.`));
+  },
+  credentials: true,
+});
+
+app.use((request, response, next) => {
+  if (request.path === '/api/server-registry/servers') {
+    return cors({ origin: true, credentials: false })(request, response, next);
+  }
+  return standardCors(request, response, next);
+});
 
 app.use('/api/integrations/connections/:connectionId/direct-submission', express.json({ limit: '25mb' }));
 app.use('/api/integrations/connections/:connectionId/publication-artifact', express.json({ limit: '48mb' }));
@@ -111,6 +117,7 @@ app.get('/api', (_request, response) => {
 
 app.use('/api/health', healthRouter);
 app.use(apiRateLimit);
+app.use('/api/server-registry', serverRegistryRouter);
 app.use('/api/v1', euroOfficeRouter);
 app.use('/api', euroOfficeRouter); // Legacy compatibility facade.
 app.use('/api/v1', studioModuleRouter);

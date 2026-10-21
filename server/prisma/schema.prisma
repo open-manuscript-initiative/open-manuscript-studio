@@ -898,3 +898,30 @@ model RecognitionExecution {
   @@index([userId, workspaceId, createdAt])
   @@map("recognition_executions")
 }
+
+
+enum StudioServerDirectoryStatus {
+  PENDING
+  ACTIVE
+  REVOKED
+}
+
+model StudioServerDirectoryEntry {
+  id                  String                     @id @default(cuid()) @db.VarChar(64)
+  name                String                     @db.VarChar(100)
+  origin              String                     @unique @db.VarChar(512)
+  hostname            String                     @db.VarChar(253)
+  status              StudioServerDirectoryStatus @default(PENDING)
+  domainChallengeHash String                     @map("domain_challenge_hash") @db.VarChar(64)
+  heartbeatTokenHash  String                     @map("heartbeat_token_hash") @db.VarChar(64)
+  softwareVersion     String?                    @map("software_version") @db.VarChar(80)
+  capabilities        Json                       @default("[]") @db.JsonB
+  githubIssueUrl      String?                    @map("github_issue_url")
+  verifiedAt          DateTime?                  @map("verified_at") @db.Timestamptz(6)
+  lastHeartbeatAt     DateTime?                  @map("last_heartbeat_at") @db.Timestamptz(6)
+  createdAt           DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, lastHeartbeatAt])
+  @@map("studio_server_directory_entries")
+}

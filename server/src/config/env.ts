@@ -40,6 +40,17 @@ const environmentSchema = z.object({
 
   DEPLOYMENT_MODE: z.enum(['personal', 'institutional']).default('personal'),
 
+  // Registry audit credentials exist only on the registry host. Per-instance Studio servers never receive this token.
+  OMI_SERVER_REGISTRY_GITHUB_APP_ID: z.string().trim().min(1).optional(),
+  OMI_SERVER_REGISTRY_GITHUB_INSTALLATION_ID: z.string().trim().min(1).optional(),
+  OMI_SERVER_REGISTRY_GITHUB_PRIVATE_KEY: z.string().trim().min(1).optional(),
+  OMI_SERVER_REGISTRY_GITHUB_REPOSITORY: z.string().trim().regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/).default('open-manuscript-initiative/open-manuscript-studio'),
+  OMI_SERVER_REGISTRY_INSTANCE_ID: z.string().trim().max(64).optional(),
+  OMI_SERVER_REGISTRY_HEARTBEAT_TOKEN: z.string().trim().min(40).optional(),
+  OMI_SERVER_REGISTRY_ORIGIN: z.string().url().default('https://studio.openmanuscript.org'),
+  OMI_SERVER_REGISTRY_SOFTWARE_VERSION: z.string().trim().max(80).optional(),
+  OMI_SERVER_REGISTRY_CAPABILITIES: z.string().trim().default('web,api'),
+
   TRANSKRIBUS_API_ORIGIN: z.enum([
     'https://api.transkribus.org',
     'https://api-staging.transkribus.org',

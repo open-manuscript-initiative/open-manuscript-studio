@@ -2,6 +2,9 @@ import { app } from './app.js';
 import { env } from './config/env.js';
 import { startCollaborationServer, stopCollaborationServer } from './collaboration/collaborationServer.js';
 import { prisma } from './lib/prisma.js';
+import { startServerRegistryHeartbeat } from './serverRegistry/heartbeat.js';
+
+const stopRegistryHeartbeat = startServerRegistryHeartbeat();
 
 const collaborationServer = env.MANUSCRIPT_COLLABORATION_ENABLED
   ? await startCollaborationServer()
@@ -32,6 +35,7 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
       process.exitCode = 1;
     }
 
+    stopRegistryHeartbeat?.();
     await stopCollaborationServer(collaborationServer);
     await prisma.$disconnect();
 

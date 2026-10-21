@@ -165,3 +165,25 @@ A szerverválasztó a webes alkalmazással és a natív kliensekkel együtt kiad
 ## A telepítés hatóköre
 
 Ez a csomag a saját szerveren futó webes felületet és API-t biztosítja. A natív asztali és mobil kliensek a bejelentkezési képernyőn vagy a Fiók beállításaiban választhatnak saját Studio-szervert. Csak a szerver alapcímét adja meg (például https://studio.pelda.hu), HTTPS használatával. Szerverváltáskor a kliens kijelentkeztet az előző szerverről, és törli annak helyi munkamenet-tokenjét; a szervereken tárolt adatok változatlanok maradnak.
+
+## Nyilvános szerverjegyzék
+
+A nyilvános HTTPS-címmel működő Studio-példány üzemeltetője önkéntesen csatlakozhat az OMI nyilvános szerverjegyzékéhez. A regisztráció csak a címtár API-ját éri el; a kéziratok, bejelentkezések, feltöltések és együttműködési forgalom továbbra is közvetlenül a kiválasztott Studio-példányhoz jut.
+
+A címtár API-ján a GitHub Appet az `open-manuscript-initiative/open-manuscript-studio` repozitóriumhoz kell telepíteni, **Issues: write** jogosultsággal. A `OMI_SERVER_REGISTRY_GITHUB_APP_ID`, `OMI_SERVER_REGISTRY_GITHUB_INSTALLATION_ID` és `OMI_SERVER_REGISTRY_GITHUB_PRIVATE_KEY` beállítást csak a címtár üzemeltetői szerverén szabad megadni. Az alkalmazás GitHub-issue-ban naplózza az ellenőrzött regisztrációt; az életjelek az adatbázisba kerülnek, nem készül belőlük commit.
+
+A telepítési könyvtárból indítsd el a regisztrációt:
+
+```sh
+docker compose -f compose.yml exec api npm run server:register -- --name "Kutatói Stúdió" --origin https://studio.pelda.hu
+```
+
+Tedd közzé a parancs által kiírt DNS TXT ellenőrző rekordot. A DNS-frissülés után ellenőrizd a domaint:
+
+```sh
+docker compose -f compose.yml exec api npm run server:register -- --verify REGISZTRACIOS_AZONOSITO
+```
+
+A parancs egyszer jeleníti meg a példány saját életjel-tokenjét. A kapott `OMI_SERVER_REGISTRY_INSTANCE_ID`, `OMI_SERVER_REGISTRY_HEARTBEAT_TOKEN` és `OMI_SERVER_REGISTRY_ORIGIN` értékeket add hozzá a példány `.env` fájljához, majd indítsd újra az API-konténert. A szerver ötpercenként küld kis méretű életjelet. A nyilvános jegyzék az utolsó életjel után 15 percig jelzi online-ként a példányt.
+
+A GitHub App privát kulcsát és telepítési adatait soha ne másold át egy csatlakozó Studio-példányra. Ha a címtár nem érhető el, a már működő Studio-példányok továbbra is közvetlenül szolgálják ki a felhasználóikat.
