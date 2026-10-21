@@ -1,4 +1,4 @@
-import type { SupportedLocale } from './types';
+import type { CoreLocale, SupportedLocale } from './types';
 
 export interface HelpTopic {
   title: string;
@@ -15,7 +15,7 @@ export interface HelpCopy {
   topics: HelpTopic[];
 }
 
-const copy: Record<SupportedLocale, HelpCopy> = {
+const copy: Record<CoreLocale, HelpCopy> = {
   hu: {
     navigation: 'Súgó',
     title: 'Open Manuscript Stúdió súgó',
@@ -216,5 +216,5 @@ const copy: Record<SupportedLocale, HelpCopy> = {
 };
 
 export function getHelpCopy(locale: SupportedLocale): HelpCopy {
-  return copy[locale] ?? copy.en;
+  return copy[locale as CoreLocale] ?? copy.en;
 }
