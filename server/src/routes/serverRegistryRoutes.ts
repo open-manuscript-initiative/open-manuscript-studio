@@ -29,6 +29,10 @@ const heartbeatSchema = z.object({
 
 const digest = (value: string) => createHash('sha256').update(value).digest('hex');
 
+function routeParam(value: string | string[] | undefined): string {
+  return typeof value === 'string' ? value : value?.[0] ?? '';
+}
+
 function normalizePublicOrigin(value: string): { origin: string; hostname: string } {
   const url = new URL(value);
   const hostname = url.hostname.toLowerCase().replace(/\.$/, '');
@@ -162,16 +166,15 @@ serverRegistryRouter.post('/registrations', registrationRateLimit, async (reques
 });
 
 serverRegistryRouter.post('/registrations/:id/verify', verificationRateLimit, async (request, response) => {
-  const entry = await prisma.studioServerDirectoryEntry.findUnique({ where: { id: request.params.id } });
+  const entry = await prisma.studioServerDirectoryEntry.findUnique({ where: { id: routeParam(request.params.id) } });
   if (!entry || entry.status !== 'PENDING') {
     response.status(404).json({ error: { code: 'REGISTRATION_NOT_FOUND', message: 'Pending registration not found.' } });
     return;
   }
 
-  let records: string[] = [];
+  let records: string[];
   try {
-    const txt = await resolveTxt(`_omi-studio-verification.${entry.hostname}`);
-    records = txt.flat();
+    records = (await resolveTxt(`_omi-studio-verification.${entry.hostname}`)).flat();
   } catch {
     response.status(400).json({ error: { code: 'DOMAIN_CHALLENGE_NOT_FOUND', message: 'The DNS verification record could not be found.' } });
     return;
@@ -212,7 +215,7 @@ serverRegistryRouter.post('/instances/:id/heartbeat', async (request, response) 
     return;
   }
 
-  const entry = await prisma.studioServerDirectoryEntry.findUnique({ where: { id: request.params.id } });
+  const entry = await prisma.studioServerDirectoryEntry.findUnique({ where: { id: routeParam(request.params.id) } });
   if (!entry || entry.status !== 'ACTIVE' || !tokenMatches(token, entry.heartbeatTokenHash)) {
     response.status(401).json({ error: { code: 'REGISTRY_TOKEN_INVALID', message: 'The registry token is invalid.' } });
     return;
@@ -235,7 +238,7 @@ serverRegistryRouter.post('/instances/:id/rotate-token', async (request, respons
     response.status(401).json({ error: { code: 'REGISTRY_TOKEN_REQUIRED', message: 'A valid registry bearer token is required.' } });
     return;
   }
-  const entry = await prisma.studioServerDirectoryEntry.findUnique({ where: { id: request.params.id } });
+  const entry = await prisma.studioServerDirectoryEntry.findUnique({ where: { id: routeParam(request.params.id) } });
   if (!entry || entry.status !== 'ACTIVE' || !tokenMatches(token, entry.heartbeatTokenHash)) {
     response.status(401).json({ error: { code: 'REGISTRY_TOKEN_INVALID', message: 'The registry token is invalid.' } });
     return;
@@ -254,7 +257,7 @@ serverRegistryRouter.delete('/instances/:id', async (request, response) => {
     response.status(401).json({ error: { code: 'REGISTRY_TOKEN_REQUIRED', message: 'A valid registry bearer token is required.' } });
     return;
   }
-  const entry = await prisma.studioServerDirectoryEntry.findUnique({ where: { id: request.params.id } });
+  const entry = await prisma.studioServerDirectoryEntry.findUnique({ where: { id: routeParam(request.params.id) } });
   if (!entry || entry.status !== 'ACTIVE' || !tokenMatches(token, entry.heartbeatTokenHash)) {
     response.status(401).json({ error: { code: 'REGISTRY_TOKEN_INVALID', message: 'The registry token is invalid.' } });
     return;
