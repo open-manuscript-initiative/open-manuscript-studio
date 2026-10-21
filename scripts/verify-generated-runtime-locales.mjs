@@ -25,7 +25,7 @@ const output = execFileSync(
 ).trim();
 const poOutput = execFileSync(
   'git',
-  ['diff', '--name-only', '--', 'locale/en/studio.po', 'locale/de/studio.po', 'locale/hu/studio.po', 'locale/fr/studio.po'],
+  ['diff', '--name-only', '--', 'locale/en/studio.po', 'locale/de/studio.po', 'locale/hu/studio.po', 'locale/fr/studio.po', 'locale/it/studio.po'],
   { cwd: root, encoding: 'utf8' },
 ).trim();
 
