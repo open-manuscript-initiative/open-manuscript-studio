@@ -19,6 +19,35 @@ import { createStoreZip, textZipEntry } from '../src/services/simpleZip.ts';
 
 installXmlDomGlobals();
 
+test('does not create an undeletable synthetic heading for an untitled DOCX section', async () => {
+  const file = makeDocx('<w:p><w:r><w:t>First imported paragraph</w:t></w:r></w:p>');
+
+  const plan = await parseDocxManuscript(file);
+  const section = plan.sections[0];
+
+  assert.ok(section);
+  assert.equal(section.title, '');
+  assert.equal(blockText(section.blocks[0]!), 'First imported paragraph');
+
+  const editorDocument = buildContinuousManuscriptDocument(plan.sections);
+  assert.equal(editorDocument.content?.some((node) => node.type === 'heading'), false);
+
+  const projectedSections = projectContinuousManuscriptDocument(editorDocument, plan.sections);
+  assert.equal(projectedSections[0]?.title, '');
+  assert.equal(projectedSections[0]?.blocks.length, 1);
+
+  const legacySections = [{
+    id: 'legacy-imported-section',
+    title: 'Imported content',
+    blocks: section.blocks,
+  }];
+  const legacyEditorDocument = buildContinuousManuscriptDocument(legacySections);
+  legacyEditorDocument.content = legacyEditorDocument.content?.filter((node) => node.type !== 'heading');
+  const afterLegacyHeadingDeletion = projectContinuousManuscriptDocument(legacyEditorDocument, legacySections);
+  assert.equal(afterLegacyHeadingDeletion[0]?.title, '');
+  assert.equal(afterLegacyHeadingDeletion[0]?.blocks.length, 1);
+});
+
 test('imports block content nested in Word content controls in document order', async () => {
   const file = makeDocx(`
     <w:p><w:r><w:t>Before control</w:t></w:r></w:p>
