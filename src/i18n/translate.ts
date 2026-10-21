@@ -9,6 +9,7 @@ import {
 } from './catalogTranslation';
 import type {
   CoreLocale,
+  SupportedLocale,
   TranslationDictionary,
   TranslationKey,
 } from './types';
