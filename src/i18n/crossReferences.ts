@@ -1,5 +1,5 @@
 import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
-import type { SupportedLocale } from './types';
+import type { CoreLocale } from './types';
 
 export interface CrossReferenceCopy {
   insert: string;
@@ -36,7 +36,7 @@ export interface CrossReferenceCopy {
   equation: string;
 }
 
-const COPY: Record<SupportedLocale, CrossReferenceCopy> = {
+const COPY: Record<CoreLocale, CrossReferenceCopy> = {
   en: {
     insert: 'Cross-reference',
     insertDescription: 'Link to a section, figure, table, chart or equation by stable object identity.',
@@ -145,7 +145,7 @@ export function getCrossReferenceCopy(
   locale: string,
 ): CrossReferenceCopy {
   const language = locale.toLowerCase().split('-')[0] as SupportedLocale;
-  const current = COPY[language] ?? COPY.en;
+  const current = COPY[language as CoreLocale] ?? COPY.en;
   return applyReturnedSupplementalOverlay(
     locale,
     'crossReferences',
