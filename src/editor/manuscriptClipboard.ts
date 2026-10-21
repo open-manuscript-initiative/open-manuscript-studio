@@ -1,4 +1,4 @@
-import type { OmiBlock, OmiSection } from '../types/omi';
+import type { OmiAnnotation, OmiBlock, OmiSection } from '../types/omi';
 import { textFromAtomicBlock } from '../model/atomicTextBlocks';
 import {
   getParentSectionId,
@@ -11,6 +11,8 @@ export const OMI_MANUSCRIPT_CLIPBOARD_MIME =
 export interface OmiManuscriptClipboardFragment {
   version: 1;
   blocks: ClipboardBlock[];
+  /** Note bodies travel with the inline note anchors on the OMI clipboard. */
+  annotations?: OmiAnnotation[];
 }
 
 type ClipboardBlock = Omit<OmiBlock, 'id'>;
@@ -35,6 +37,7 @@ export function createManuscriptClipboardFragment(
   startOffset: number,
   endBlockId: string,
   endOffset: number,
+  annotations: readonly OmiAnnotation[] = [],
 ): OmiManuscriptClipboardFragment | undefined {
   const ordered = flattenBlocks(sections);
   const startIndex = ordered.findIndex(({ block }) => block.id === startBlockId);
@@ -63,7 +66,16 @@ export function createManuscriptClipboardFragment(
     return copy;
   });
 
-  return { version: 1, blocks };
+  const noteIds = new Set(blocks.flatMap((block) => collectNoteIds(block.content)));
+  const copiedAnnotations = annotations.filter((annotation) =>
+    annotation.type === 'note' && noteIds.has(annotation.id),
+  ).map(clone);
+
+  return {
+    version: 1,
+    blocks,
+    ...(copiedAnnotations.length > 0 ? { annotations: copiedAnnotations } : {}),
+  };
 }
 
 export function cutManuscriptRange(
@@ -217,6 +229,45 @@ export function pasteManuscriptFragment(
   });
 }
 
+/** Paste an OMI fragment and recreate its note annotations with fresh IDs. */
+export function pasteManuscriptFragmentWithNotes(
+  sections: readonly OmiSection[],
+  targetBlockId: string,
+  targetOffset: number,
+  fragment: OmiManuscriptClipboardFragment,
+  existingAnnotations: readonly OmiAnnotation[],
+): { sections: OmiSection[]; annotations: OmiAnnotation[] } {
+  const pastedBlocks = fragment.blocks.map(cloneClipboardBlock);
+  const idMap = new Map<string, { id: string; anchorId: string }>();
+  for (const annotation of fragment.annotations ?? []) {
+    idMap.set(annotation.id, { id: createId(), anchorId: createId() });
+  }
+  const remappedBlocks = pastedBlocks.map((block) => ({
+    ...block,
+    content: remapNoteReferences(block.content, idMap),
+  }));
+  const remappedFragment = { ...fragment, blocks: remappedBlocks, annotations: [] };
+  const nextSections = pasteManuscriptFragment(
+    sections,
+    targetBlockId,
+    targetOffset,
+    remappedFragment,
+  );
+  const addedAnnotations = (fragment.annotations ?? []).flatMap((annotation) => {
+    const ids = idMap.get(annotation.id);
+    if (!ids || existingAnnotations.some((item) => item.id === ids.id)) return [];
+    return [{
+      ...clone(annotation),
+      id: ids.id,
+      anchorId: ids.anchorId,
+      targetBlockId,
+      createdAt: new Date().toISOString(),
+      modifiedAt: undefined,
+    }];
+  });
+  return { sections: nextSections, annotations: [...existingAnnotations, ...addedAnnotations] };
+}
+
 export function parseManuscriptClipboardFragment(
   value: string,
 ): OmiManuscriptClipboardFragment | undefined {
@@ -321,6 +372,9 @@ function sliceJsonNode(
   to: number,
   cursor: { value: number },
 ): JsonNode | null {
+  if (node.type === 'omiNote' && !Array.isArray(node.content)) {
+    return cursor.value >= from && cursor.value <= to ? clone(node) : null;
+  }
   if (typeof node.text === 'string') {
     const start = cursor.value;
     const end = start + node.text.length;
@@ -434,7 +488,40 @@ function isManuscriptClipboardFragment(
   return isRecord(value) &&
     value.version === 1 &&
     Array.isArray(value.blocks) &&
-    value.blocks.every(isClipboardBlock);
+    value.blocks.every(isClipboardBlock) &&
+    (value.annotations === undefined || (Array.isArray(value.annotations) &&
+      value.annotations.every((annotation) => isRecord(annotation) && annotation.type === 'note')));
+}
+
+function collectNoteIds(content: string): string[] {
+  const document = parseStoredDocument(content);
+  if (!document) return [];
+  const ids: string[] = [];
+  const visit = (node: JsonNode) => {
+    if (node.type === 'omiNote' && isRecord(node.attrs) && typeof node.attrs.noteId === 'string') {
+      ids.push(node.attrs.noteId);
+    }
+    node.content?.forEach(visit);
+  };
+  visit(document);
+  return ids;
+}
+
+function remapNoteReferences(
+  content: string,
+  idMap: Map<string, { id: string; anchorId: string }>,
+): string {
+  const document = parseStoredDocument(content);
+  if (!document) return content;
+  const visit = (node: JsonNode) => {
+    if (node.type === 'omiNote' && isRecord(node.attrs) && typeof node.attrs.noteId === 'string') {
+      const mapped = idMap.get(node.attrs.noteId);
+      if (mapped) node.attrs = { ...node.attrs, noteId: mapped.id, anchorId: mapped.anchorId };
+    }
+    node.content?.forEach(visit);
+  };
+  visit(document);
+  return JSON.stringify(document);
 }
 
 function isClipboardBlock(value: unknown): value is ClipboardBlock {
