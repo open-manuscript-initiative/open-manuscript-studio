@@ -901,6 +901,7 @@ model RecognitionExecution {
 
 
 enum StudioServerDirectoryStatus {
+  VERIFYING
   PENDING
   ACTIVE
   REVOKED
@@ -912,6 +913,8 @@ model StudioServerDirectoryEntry {
   origin              String                     @unique @db.VarChar(512)
   hostname            String                     @db.VarChar(253)
   status              StudioServerDirectoryStatus @default(PENDING)
+  registrationTokenHash String? @map("registration_token_hash") @db.VarChar(64)
+  challengeExpiresAt DateTime? @map("challenge_expires_at") @db.Timestamptz(6)
   domainChallengeHash String                     @map("domain_challenge_hash") @db.VarChar(64)
   heartbeatTokenHash  String                     @map("heartbeat_token_hash") @db.VarChar(64)
   softwareVersion     String?                    @map("software_version") @db.VarChar(80)

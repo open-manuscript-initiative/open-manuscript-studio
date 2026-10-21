@@ -88,7 +88,7 @@ export async function installMockStudioApi(
     const url = new URL(request.url());
     const requestKey = `${request.method()} ${url.pathname}`;
 
-    if (request.method() === 'GET' && url.pathname === '/api/server-registry/servers') {
+    if (request.method() === 'GET' && ['/api/server-registry/servers', '/api/v1/server-registry/servers'].includes(url.pathname)) {
       await fulfillJson(route, 200, { servers: [] });
       return;
     }

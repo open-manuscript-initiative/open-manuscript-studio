@@ -15,7 +15,7 @@ export function startServerRegistryHeartbeat(): (() => void) | null {
   let timer: NodeJS.Timeout | undefined;
   let retryDelayMs = 60_000;
   const endpoint = new URL(
-    `/api/server-registry/instances/${encodeURIComponent(instanceId)}/heartbeat`,
+    `/api/v1/server-registry/instances/${encodeURIComponent(instanceId)}/heartbeat`,
     env.OMI_SERVER_REGISTRY_ORIGIN,
   );
 
@@ -24,6 +24,7 @@ export function startServerRegistryHeartbeat(): (() => void) | null {
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
+      redirect: 'error',
         headers: {
           Authorization: `Bearer ${heartbeatToken}`,
           'Content-Type': 'application/json',

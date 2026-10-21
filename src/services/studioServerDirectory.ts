@@ -60,7 +60,7 @@ export async function fetchStudioServerDirectory(): Promise<StudioServerDirector
   const configuredRegistryOrigin = import.meta.env?.VITE_STUDIO_SERVER_REGISTRY_ORIGIN?.trim();
   const registryOrigin = (configuredRegistryOrigin || 'https://studio.openmanuscript.org').replace(/\/$/, '');
   const [liveResult, fallbackResult] = await Promise.allSettled([
-    fetchDirectory(`${registryOrigin}/api/server-registry/servers`),
+    fetchDirectory(`${registryOrigin}/api/v1/server-registry/servers`),
     fetchDirectory('/studio-servers.json'),
   ]);
 
