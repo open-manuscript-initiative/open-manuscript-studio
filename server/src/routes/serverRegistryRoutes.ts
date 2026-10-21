@@ -6,6 +6,7 @@ import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 
+import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
 import { createServerRegistryGithubToken } from '../serverRegistry/githubAppToken.js';
 
