@@ -17,6 +17,8 @@ export async function loadPrimaryLocaleDictionariesForTest(): Promise<void> {
       hungarianDictionaryJson as TranslationDictionary,
     './locales/fr/studio.json': async () =>
       frenchDictionaryJson as TranslationDictionary,
+    './locales/it/studio.json': async () =>
+      italianDictionaryJson as TranslationDictionary,
   });
 
   for (const locale of primaryLocales) {

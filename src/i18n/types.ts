@@ -352,7 +352,7 @@ export interface TranslationDictionary {
 }
 
 export type CoreLocale = 'en' | 'hu' | 'de';
-export type SupportedLocale = CoreLocale | 'fr';
+export type SupportedLocale = CoreLocale | 'fr' | 'it';
 
 type NestedKeyOf<T> = {
   [K in keyof T & string]:

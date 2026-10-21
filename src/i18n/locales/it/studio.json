@@ -191,7 +191,7 @@
       "table": "Tabella",
       "folio": "Conto",
       "line": "Linea",
-      "timestamp": "Timestamp"
+      "timestamp": "Marca temporale"
     }
   },
   "contributors": {
@@ -314,7 +314,7 @@
         "placeholder": "Il tuo nome completo"
       },
       "email": {
-        "label": "Email",
+        "label": "E-mail",
         "placeholder": "name@example.com"
       },
       "password": {
@@ -380,7 +380,7 @@
       "displayTitle": "Titolo o didascalia",
       "displayLabelNumberTitle": "Etichetta, numero e titolo",
       "edit": "Modifica il riferimento incrociato",
-      "target": "Target",
+      "target": "Destinazione",
       "goToTarget": "Vai alla destinazione",
       "deleteReference": "Eliminare riferimento",
       "confirmDelete": "Elimina questo riferimento incrociato interno?",
@@ -663,7 +663,7 @@
       "profileVersion": "Versione",
       "profilePublisher": "Editore",
       "rules": "Regole di rendering",
-      "layout": "Layout",
+      "layout": "Impaginazione",
       "sections": "Sezioni",
       "citations": "Citazioni",
       "notes": "Note",
@@ -852,7 +852,7 @@
       "chartBar": "Barra",
       "chartLine": "Linea",
       "chartPie": "Torta",
-      "chartScatter": "Scatter",
+      "chartScatter": "Grafico a dispersione",
       "chartTitle": "Titolo del grafico",
       "equationLatex": "Codice sorgente LaTeX",
       "equationLabel": "Etichetta dell'equazione",
@@ -1011,7 +1011,7 @@
         "saved": "Salvato automaticamente su questo dispositivo.",
         "segments": "Loci testuali e collazione",
         "shelfmark": "Segnatura",
-        "siglum": "Siglum",
+        "siglum": "Sigla",
         "title": "Titolo dell'edizione",
         "untitled": "Edizione critica senza titolo",
         "witnessDesc": "Descrizione",
@@ -1092,8 +1092,8 @@
         "integral": "Integrale",
         "matrix": "Matrice",
         "preview": "Anteprima dell'equazione",
-        "root": "Root",
-        "scripts": "Scripts",
+        "root": "Radice",
+        "scripts": "Script",
         "source": "Equazione LaTeX",
         "sum": "Somma",
         "templates": "Modelli di equazioni"
@@ -1202,7 +1202,7 @@
         "type": "Livello o tipo di misurazione",
         "values": "Valori e regole di codifica",
         "varName": "Nome variabile",
-        "variables": "Codebook"
+        "variables": "Codice delle variabili"
       }
     },
     "statistical-analysis-statistical-analysis-panel": {
@@ -1486,7 +1486,7 @@
         "agriculture": "Scienze agrarie",
         "artifacts": "Dati grezzi e dati derivati",
         "assays": "Analisi e misurazioni",
-        "biology": "Biology",
+        "biology": "Biologia",
         "calibrationDate": "Data di taratura",
         "calibrationReference": "Registro di calibrazione / riferimento",
         "category": "Tipo / ruolo",
@@ -1564,7 +1564,7 @@
       "words": {
         "add": "Aggiungi evento",
         "annotation": "Analisi / variante",
-        "beat": "Beat",
+        "beat": "Battuta",
         "composer": "Compositore / autore",
         "duration": "Durata",
         "empty": "Non ci sono ancora eventi musicali. Importa un file MusicXML o MIDI, oppure aggiungi un evento.",
@@ -1764,7 +1764,7 @@
         "manualModelHint": "Per un modello privato, inserisci l'ID del modello dal tuo account Transkribus. Puoi anche inserire l'ID di un modello pubblico se il catalogo non è disponibile.",
         "selectedModel": "Modello selezionato",
         "modelMatches": "Modelli corrispondenti",
-        "modelCenturies": "Centuries"
+        "modelCenturies": "Secoli"
       }
     }
   },
@@ -1877,7 +1877,7 @@
       "citation-checker-67ee923": "Verificatore di citazioni",
       "language-editor-d8036c0": "Editor della lingua",
       "metadata-assistant-3642647": "Assistente ai metadati",
-      "summarizer-0ec21c9": "Summarizer",
+      "summarizer-0ec21c9": "Riassuntore",
       "create-suggestion-7fd1425": "Crea suggerimento",
       "running-7ef25a7": "In esecuzione…",
       "review-the-suggestion-before-applying-it-selection-lev-c9a9cb4": "Verifica il suggerimento prima di applicarlo. I suggerimenti a livello di selezione possono essere applicati esplicitamente dalla barra degli strumenti dell'editor.",

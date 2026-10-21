@@ -35,7 +35,7 @@ const changedPoLocales = new Set(
     .map((file) => /^locale\/([^/]+)\/studio\.po$/.exec(file)?.[1])
     .filter(Boolean),
 );
-const primaryPoLocales = new Set(['en', 'de', 'hu', 'fr']);
+const primaryPoLocales = new Set(['en', 'de', 'hu', 'fr', 'it']);
 const unexpected = [];
 
 for (const file of changed) {

@@ -839,7 +839,7 @@ msgstr "Linea"
 #. OMI translation key: /citations/locators/timestamp
 msgctxt "/citations/locators/timestamp"
 msgid "Timestamp"
-msgstr "Timestamp"
+msgstr "Marca temporale"
 
 #. OMI translation key: /contributors/description
 msgctxt "/contributors/description"
@@ -1309,7 +1309,7 @@ msgstr "Il tuo nome completo"
 #. OMI translation key: /auth/fields/email/label
 msgctxt "/auth/fields/email/label"
 msgid "Email"
-msgstr "Email"
+msgstr "E-mail"
 
 #. OMI translation key: /auth/fields/email/placeholder
 msgctxt "/auth/fields/email/placeholder"
@@ -1584,7 +1584,7 @@ msgstr "Modifica il riferimento incrociato"
 #. OMI translation key: /modules/crossReferences/target
 msgctxt "/modules/crossReferences/target"
 msgid "Target"
-msgstr "Target"
+msgstr "Destinazione"
 
 #. OMI translation key: /modules/crossReferences/goToTarget
 msgctxt "/modules/crossReferences/goToTarget"
@@ -2729,7 +2729,7 @@ msgstr "Regole di rendering"
 #. OMI translation key: /modules/publicationProfile/layout
 msgctxt "/modules/publicationProfile/layout"
 msgid "Layout"
-msgstr "Layout"
+msgstr "Impaginazione"
 
 #. OMI translation key: /modules/publicationProfile/sections
 msgctxt "/modules/publicationProfile/sections"
@@ -3554,7 +3554,7 @@ msgstr "Torta"
 #. OMI translation key: /modules/visualElements/chartScatter
 msgctxt "/modules/visualElements/chartScatter"
 msgid "Scatter"
-msgstr "Scatter"
+msgstr "Grafico a dispersione"
 
 #. OMI translation key: /modules/visualElements/chartTitle
 msgctxt "/modules/visualElements/chartTitle"
@@ -4244,7 +4244,7 @@ msgstr "Segnatura"
 #. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/siglum
 msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/siglum"
 msgid "Siglum"
-msgstr "Siglum"
+msgstr "Sigla"
 
 #. OMI translation key: /researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/title
 msgctxt "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/title"
@@ -4549,12 +4549,12 @@ msgstr "Anteprima dell'equazione"
 #. OMI translation key: /researchModules/mathematics-equation-editor/labels/root
 msgctxt "/researchModules/mathematics-equation-editor/labels/root"
 msgid "Root"
-msgstr "Root"
+msgstr "Radice"
 
 #. OMI translation key: /researchModules/mathematics-equation-editor/labels/scripts
 msgctxt "/researchModules/mathematics-equation-editor/labels/scripts"
 msgid "Scripts"
-msgstr "Scripts"
+msgstr "Script"
 
 #. OMI translation key: /researchModules/mathematics-equation-editor/labels/source
 msgctxt "/researchModules/mathematics-equation-editor/labels/source"
@@ -4999,7 +4999,7 @@ msgstr "Nome variabile"
 #. OMI translation key: /researchModules/social-research-methods-social-research-methods-panel/copy/variables
 msgctxt "/researchModules/social-research-methods-social-research-methods-panel/copy/variables"
 msgid "Codebook"
-msgstr "Codebook"
+msgstr "Codice delle variabili"
 
 #. OMI translation key: /researchModules/statistical-analysis-statistical-analysis-panel/copy/addDeviation
 msgctxt "/researchModules/statistical-analysis-statistical-analysis-panel/copy/addDeviation"
@@ -6129,7 +6129,7 @@ msgstr "Analisi e misurazioni"
 #. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/biology
 msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/biology"
 msgid "Biology"
-msgstr "Biology"
+msgstr "Biologia"
 
 #. OMI translation key: /researchModules/experimental-laboratory-experimental-laboratory-panel/words/calibrationDate
 msgctxt "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/calibrationDate"
@@ -6479,7 +6479,7 @@ msgstr "Analisi / variante"
 #. OMI translation key: /researchModules/musicology-musicology-panel/words/beat
 msgctxt "/researchModules/musicology-musicology-panel/words/beat"
 msgid "Beat"
-msgstr "Beat"
+msgstr "Battuta"
 
 #. OMI translation key: /researchModules/musicology-musicology-panel/words/composer
 msgctxt "/researchModules/musicology-musicology-panel/words/composer"
@@ -7279,7 +7279,7 @@ msgstr "Assistente ai metadati"
 #. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/summarizer-0ec21c9
 msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/summarizer-0ec21c9"
 msgid "Summarizer"
-msgstr "Summarizer"
+msgstr "Riassuntore"
 
 #. OMI translation key: /uncataloguedUi/components-integrationexecutionworkspace/create-suggestion-7fd1425
 msgctxt "/uncataloguedUi/components-integrationexecutionworkspace/create-suggestion-7fd1425"
@@ -8024,7 +8024,7 @@ msgstr "Modelli corrispondenti"
 #. OMI translation key: /researchModules/transkribus/copy/modelCenturies
 msgctxt "/researchModules/transkribus/copy/modelCenturies"
 msgid "Centuries"
-msgstr "Centuries"
+msgstr "Secoli"
 
 #. OMI translation key: /researchModules/transkribus/copy/errors/TRANSKRIBUS_MODELS_UNAVAILABLE
 msgctxt "/researchModules/transkribus/copy/errors/TRANSKRIBUS_MODELS_UNAVAILABLE"
