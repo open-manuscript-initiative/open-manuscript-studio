@@ -27,7 +27,16 @@ if (verifyId) {
     console.error(body);
     process.exitCode = 1;
   } else {
-    console.log(`Server verified and registered. GitHub audit: ${body.auditUrl}`);
+    console.log('Server verified and registered.');
+    console.log(`GitHub audit: ${String(body.auditUrl)}`);
+    console.log('');
+    console.log('Keep this heartbeat token secret. It is shown only once:');
+    console.log(String(body.heartbeatToken));
+    console.log('');
+    console.log('Add these values to the server environment:');
+    console.log(`OMI_SERVER_REGISTRY_INSTANCE_ID=${String(body.id)}`);
+    console.log(`OMI_SERVER_REGISTRY_HEARTBEAT_TOKEN=${String(body.heartbeatToken)}`);
+    console.log(`OMI_SERVER_REGISTRY_ORIGIN=${registryOrigin}`);
   }
 } else {
   const args = process.argv.slice(2);
@@ -59,15 +68,9 @@ if (verifyId) {
       console.log('Publish this DNS TXT record to prove control of the server domain:');
       console.log(`${verification.name} TXT ${verification.value}`);
       console.log('');
-      console.log('Keep this heartbeat token secret. It is shown only once:');
-      console.log(String(body.heartbeatToken));
       console.log('');
-      console.log('After DNS has propagated, save the returned values in the server environment:');
-      console.log(`OMI_SERVER_REGISTRY_INSTANCE_ID=${body.id}`);
-      console.log(`OMI_SERVER_REGISTRY_HEARTBEAT_TOKEN=<the token printed above>`);
-      console.log(`OMI_SERVER_REGISTRY_ORIGIN=${registryOrigin}`);
-      console.log('');
-      console.log(`Then run: npm run server:register -- --verify ${body.id}`);
+      console.log('After DNS has propagated, verify the domain to receive the one-time heartbeat token:');
+      console.log(`npm run server:register -- --verify ${String(body.id)}`);
     }
   } finally {
     terminal.close();
