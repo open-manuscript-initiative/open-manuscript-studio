@@ -106,7 +106,7 @@ test('combines archaeology and cultural heritage with catalog links and one modu
 });
 
 test('provides a translated title and description for every registered module', () => {
-  for (const locale of ['en', 'de', 'hu', 'fr', 'it']) {
+  for (const locale of ['en', 'de', 'hu', 'fr', 'it', 'es']) {
     const copy = getModuleShellCopy(locale);
     for (const moduleId of expectedModuleIds) {
       assert.ok(copy.modules[moduleId]?.title, `Missing ${locale} title for ${moduleId}`);
@@ -119,7 +119,7 @@ test('provides a translated title and description for every registered module', 
     assert.ok(copy.nara.searchLabel, `Missing ${locale} NARA search label`);
     assert.ok(copy.nara.setupRequired, `Missing ${locale} NARA setup message`);
     assert.ok(copy.nara.loadMore, `Missing ${locale} NARA pagination label`);
-    const naraAttributionPhrase = { en: 'not endorsed or certified', de: 'weder unterstützt noch zertifiziert', hu: 'nem támogatja és nem tanúsítja', fr: 'ni approuvé ni certifié', it: 'non è approvato né certificato' } as const;
+    const naraAttributionPhrase = { en: 'not endorsed or certified', de: 'weder unterstützt noch zertifiziert', hu: 'nem támogatja és nem tanúsítja', fr: 'ni approuvé ni certifié', it: 'non è approvato né certificato', es: 'no cuenta con el respaldo ni la certificación' } as const;
     assert.ok(copy.nara.attribution?.includes(naraAttributionPhrase[locale]), `Missing ${locale} NARA attribution`);
   }
 });
@@ -130,9 +130,11 @@ test('normalizes module language tags and defaults to English', () => {
   assert.equal(normalizeModuleLocale('de-DE'), 'de');
   assert.equal(normalizeModuleLocale('fr-FR'), 'fr');
   assert.equal(normalizeModuleLocale('it-IT'), 'it');
+  assert.equal(normalizeModuleLocale('es-ES'), 'es');
   assert.equal(getModuleShellCopy('hu-HU').title, getModuleShellCopy('hu').title);
   assert.equal(getModuleShellCopy('fr-FR').title, getModuleShellCopy('fr').title);
   assert.equal(getModuleShellCopy('it-IT').title, getModuleShellCopy('it').title);
+  assert.equal(getModuleShellCopy('es-ES').title, getModuleShellCopy('es').title);
 });
 
 test('stores active module selections separately by user and workspace', () => {

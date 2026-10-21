@@ -6,7 +6,8 @@
     "cs",
     "da",
     "it",
-    "fr"
+    "fr",
+    "es"
   ],
   "identicalAllowlist": [],
   "identicalAllowlistByLocale": {
@@ -269,6 +270,42 @@
       "/researchModules/legal-sources-legal-sources-panel/copy/open",
       "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/software",
       "/researchModules/musicology-musicology-panel/words/tempo"
+    ],
+    "es": [
+      "/citations/locators/folio",
+      "/citations/resourceTypes/software",
+      "/citations/roles/editor",
+      "/contributors/orcid",
+      "/contributors/roles/editor",
+      "/contributors/roles/software",
+      "/modules/cslRendering/styleNames/apa-7",
+      "/modules/cslRendering/styleNames/iso-690",
+      "/modules/cslRendering/styleNames/mla-9",
+      "/modules/exportFormats/docx",
+      "/modules/exportFormats/epub",
+      "/modules/exportFormats/idml",
+      "/modules/exportFormats/jats",
+      "/modules/exportFormats/latex",
+      "/modules/exportFormats/mif",
+      "/modules/exportFormats/omiJson",
+      "/modules/exportFormats/pdf",
+      "/modules/exportFormats/sla",
+      "/modules/exportFormats/xtg",
+      "/modules/frontMatter/normal",
+      "/modules/jatsExport/title",
+      "/modules/publicationProfile/no",
+      "/modules/publicationProfile/profileNames/omi-generic-scholarly/name",
+      "/modules/richText/linkPlaceholder",
+      "/navigation/editor",
+      "/researchModules/mathematics-equation-editor/labels/integral",
+      "/researchModules/mathematics-equation-editor/labels/scripts",
+      "/researchModules/musicology-musicology-panel/words/tempo",
+      "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/dataset",
+      "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/software",
+      "/researchModules/statistical-analysis-statistical-analysis-panel/copy/column",
+      "/researchModules/statistical-analysis-statistical-analysis-panel/copy/columns",
+      "/researchModules/statistical-analysis-statistical-analysis-panel/copy/dataset",
+      "/researchModules/transkribus/copy/modelMaterial"
     ]
   }
 }
