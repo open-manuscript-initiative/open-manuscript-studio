@@ -228,6 +228,43 @@ serverRegistryRouter.post('/instances/:id/heartbeat', async (request, response) 
   response.status(204).end();
 });
 
+serverRegistryRouter.post('/instances/:id/rotate-token', async (request, response) => {
+  const token = bearerToken(request.header('authorization'));
+  if (!token) {
+    response.status(401).json({ error: { code: 'REGISTRY_TOKEN_REQUIRED', message: 'A valid registry bearer token is required.' } });
+    return;
+  }
+  const entry = await prisma.studioServerDirectoryEntry.findUnique({ where: { id: request.params.id } });
+  if (!entry || entry.status !== 'ACTIVE' || !tokenMatches(token, entry.heartbeatTokenHash)) {
+    response.status(401).json({ error: { code: 'REGISTRY_TOKEN_INVALID', message: 'The registry token is invalid.' } });
+    return;
+  }
+  const heartbeatToken = randomBytes(32).toString('base64url');
+  await prisma.studioServerDirectoryEntry.update({
+    where: { id: entry.id },
+    data: { heartbeatTokenHash: digest(heartbeatToken) },
+  });
+  response.status(200).json({ heartbeatToken });
+});
+
+serverRegistryRouter.delete('/instances/:id', async (request, response) => {
+  const token = bearerToken(request.header('authorization'));
+  if (!token) {
+    response.status(401).json({ error: { code: 'REGISTRY_TOKEN_REQUIRED', message: 'A valid registry bearer token is required.' } });
+    return;
+  }
+  const entry = await prisma.studioServerDirectoryEntry.findUnique({ where: { id: request.params.id } });
+  if (!entry || entry.status !== 'ACTIVE' || !tokenMatches(token, entry.heartbeatTokenHash)) {
+    response.status(401).json({ error: { code: 'REGISTRY_TOKEN_INVALID', message: 'The registry token is invalid.' } });
+    return;
+  }
+  await prisma.studioServerDirectoryEntry.update({
+    where: { id: entry.id },
+    data: { status: 'REVOKED', heartbeatTokenHash: digest(randomBytes(32).toString('base64url')) },
+  });
+  response.status(204).end();
+});
+
 serverRegistryRouter.get('/servers', async (_request, response) => {
   const entries = await prisma.studioServerDirectoryEntry.findMany({
     where: { status: 'ACTIVE' },
