@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "servers": [
+    {
+      "id": "omi-official",
+      "name": "Official Open Manuscript Studio",
+      "origin": "https://studio.openmanuscript.org"
+    }
+  ]
+}
