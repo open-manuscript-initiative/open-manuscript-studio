@@ -106,7 +106,7 @@ test('combines archaeology and cultural heritage with catalog links and one modu
 });
 
 test('provides a translated title and description for every registered module', () => {
-  for (const locale of ['en', 'de', 'hu']) {
+  for (const locale of ['en', 'de', 'hu', 'fr']) {
     const copy = getModuleShellCopy(locale);
     for (const moduleId of expectedModuleIds) {
       assert.ok(copy.modules[moduleId]?.title, `Missing ${locale} title for ${moduleId}`);
@@ -119,7 +119,7 @@ test('provides a translated title and description for every registered module', 
     assert.ok(copy.nara.searchLabel, `Missing ${locale} NARA search label`);
     assert.ok(copy.nara.setupRequired, `Missing ${locale} NARA setup message`);
     assert.ok(copy.nara.loadMore, `Missing ${locale} NARA pagination label`);
-    const naraAttributionPhrase = { en: 'not endorsed or certified', de: 'weder unterstützt noch zertifiziert', hu: 'nem támogatja és nem tanúsítja' } as const;
+    const naraAttributionPhrase = { en: 'not endorsed or certified', de: 'weder unterstützt noch zertifiziert', hu: 'nem támogatja és nem tanúsítja', fr: 'ni approuvé ni certifié' } as const;
     assert.ok(copy.nara.attribution?.includes(naraAttributionPhrase[locale]), `Missing ${locale} NARA attribution`);
   }
 });
@@ -128,9 +128,9 @@ test('normalizes module language tags and defaults to English', () => {
   assert.equal(normalizeModuleLocale('en-US'), 'en');
   assert.equal(normalizeModuleLocale('HU_hu'), 'hu');
   assert.equal(normalizeModuleLocale('de-DE'), 'de');
-  assert.equal(normalizeModuleLocale('fr-FR'), 'en');
+  assert.equal(normalizeModuleLocale('fr-FR'), 'fr');
   assert.equal(getModuleShellCopy('hu-HU').title, getModuleShellCopy('hu').title);
-  assert.equal(getModuleShellCopy('fr-FR').title, getModuleShellCopy('en').title);
+  assert.equal(getModuleShellCopy('fr-FR').title, getModuleShellCopy('fr').title);
 });
 
 test('stores active module selections separately by user and workspace', () => {
@@ -729,7 +729,7 @@ test('completed research module workspaces no longer render scaffold labels or d
   const source = readFileSync(new URL('../src/modules/ModuleManagerPanel.tsx', import.meta.url), 'utf8');
   assert.equal(source.includes('copy.scaffoldTitle'), false);
   assert.equal(source.includes('copy.scaffoldDescription'), false);
-  for (const locale of ['en', 'de', 'hu']) {
+  for (const locale of ['en', 'de', 'hu', 'fr']) {
     const copy = getModuleShellCopy(locale);
     assert.equal('scaffoldTitle' in copy, false);
     assert.equal('scaffoldDescription' in copy, false);
