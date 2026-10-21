@@ -12,7 +12,7 @@ const policy = JSON.parse(await fs.readFile(path.join(poRoot, 'translation-statu
 const referenceLocale = policy.referenceLocale ?? 'en';
 const completeLocales = new Set(policy.completeLocales ?? []);
 for (const locale of await loadCompletionOverlayStatus(root)) completeLocales.add(locale);
-const primaryLocales = new Set(['en', 'de', 'hu', 'sk']);
+const primaryLocales = new Set(['en', 'de', 'hu', 'fr', 'sk']);
 const globalIdenticalAllowlist = new Set(policy.identicalAllowlist ?? []);
 const identicalAllowlistByLocale = policy.identicalAllowlistByLocale ?? {};
 
