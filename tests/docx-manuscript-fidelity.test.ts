@@ -6,8 +6,13 @@ import {
   XMLSerializer as XmlSerializer,
 } from '@xmldom/xmldom';
 
-import { parseDocxManuscript } from '../src/services/docxManuscriptImport.ts';
+import { parseDocxManuscript, type DocxManuscriptImportPlan } from '../src/services/docxManuscriptImport.ts';
 import { attachImportedDocumentSource, selfAuthoredExternalOrigin } from '../src/model/importedDocumentSource.ts';
+import { applyDocxImportPlan } from '../src/app/docxImportActions.ts';
+import { applyPdfImportResult } from '../src/app/pdfImportActions.ts';
+import { useStudioStore } from '../src/app/useStudioStore.ts';
+import { buildContinuousManuscriptDocument, projectContinuousManuscriptDocument } from '../src/editor/continuousManuscriptDocument.ts';
+import type { PdfImportResult } from '../src/services/pdfImport.ts';
 import { parseDocxMonograph } from '../src/services/docxMonographImport.ts';
 import { parseDocxForStudio } from '../src/services/docxImportStrategy.ts';
 import { createStoreZip, textZipEntry } from '../src/services/simpleZip.ts';
@@ -362,7 +367,7 @@ test('converted manuscript source is visible without replacing imported structur
   assert.throws(() => attachImportedDocumentSource(sections, '   ', 'Source'), /requires a source/);
 });
 
-test('self-authored external import retains hidden origin without visible filename or source paragraph', () => {
+test('self-authored object-origin helper uses a hidden marker without exposing a filename', () => {
   const sections = [{
     id: 'section-1', title: 'Synthetic study',
     blocks: [{ id: 'body-1', type: 'paragraph', content: 'Research text' }],
@@ -376,4 +381,69 @@ test('self-authored external import retains hidden origin without visible filena
   assert.equal(sections[0]!.blocks.length, 1);
   assert.equal(JSON.stringify(annotation).includes('/home/'), false);
   assert.throws(() => selfAuthoredExternalOrigin([], '2026-10-09T00:00:00.000Z'), /no content/);
+});
+
+test('self-authored manuscript import does not anchor a hidden source marker to the first heading', () => {
+  const previous = useStudioStore.getState();
+  try {
+    const plan = {
+      fileName: 'own-manuscript.docx',
+      title: 'Imported manuscript',
+      titleSource: 'title-style',
+      locale: 'hu',
+      keywords: [],
+      authors: [],
+      sections: [{
+        id: 'imported-section',
+        title: 'Első címsor',
+        blocks: [
+          { id: 'opening-heading', type: 'heading', content: 'Első címsor' },
+          { id: 'body', type: 'paragraph', content: 'Szövegtörzs' },
+        ],
+      }],
+      annotations: [],
+      bibliographicRecords: [],
+      citations: [],
+      citationClusters: [],
+      stats: {},
+      warnings: [],
+    } as unknown as DocxManuscriptImportPlan;
+
+    applyDocxImportPlan(plan, { importDetectedAuthors: false, source: '', selfAuthoredExternal: true });
+    const imported = useStudioStore.getState().manuscript;
+    assert.deepEqual(imported.sections[0]?.blocks.map((block) => block.id), ['opening-heading', 'body']);
+    assert.equal(imported.annotations.some((annotation) => annotation.targetBlockId === 'opening-heading'), false);
+    assert.equal(imported.annotations.some((annotation) => annotation.targetText === 'omi:source-origin'), false);
+
+    const editorDocument = buildContinuousManuscriptDocument(imported.sections);
+    editorDocument.content = editorDocument.content?.filter((node) => node.type !== 'heading');
+    const afterDelete = projectContinuousManuscriptDocument(editorDocument, imported.sections);
+    assert.equal(afterDelete[0]?.blocks.some((block) => block.id === 'opening-heading'), false);
+  } finally {
+    useStudioStore.setState(previous);
+  }
+});
+
+test('self-authored PDF import leaves the opening heading free of source annotations', () => {
+  const previous = useStudioStore.getState();
+  try {
+    const result = {
+      source: { fileName: 'own-manuscript.pdf' },
+      title: 'Imported manuscript',
+      blocks: [
+        { kind: 'heading', headingLevel: 1, text: 'Első címsor' },
+        { kind: 'paragraph', text: 'Szövegtörzs' },
+      ],
+      warnings: [],
+    } as unknown as PdfImportResult;
+
+    applyPdfImportResult(result, '', true);
+    const imported = useStudioStore.getState().manuscript;
+    const openingHeading = imported.sections[0]?.blocks[0];
+    assert.equal(openingHeading?.type, 'heading');
+    assert.equal(imported.annotations.some((annotation) => annotation.targetBlockId === openingHeading?.id), false);
+    assert.equal(imported.annotations.some((annotation) => annotation.targetText === 'omi:source-origin'), false);
+  } finally {
+    useStudioStore.setState(previous);
+  }
 });
