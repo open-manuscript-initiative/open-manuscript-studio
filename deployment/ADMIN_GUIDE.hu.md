@@ -158,6 +158,10 @@ docker compose -f compose.yml logs --tail=200 web
 docker compose -f compose.yml logs --tail=100 postgres
 ```
 
+## Nyilvános Studio-szerverek címtára
+
+A szerverválasztó a webes alkalmazással és a natív kliensekkel együtt kiadott, azonos eredetű `/studio-servers.json` címtárból tölti be a regisztrált szervereket. Ez karbantartott lista, nem élő elérhetőségi ellenőrzés vagy biztonsági tanúsítás. Új nyilvános bejegyzést csak az üzemeltető hozzájárulásával, annak ellenőrzése után szabad felvenni, hogy a HTTPS-címen kompatibilis Studio webes felület és API működik. A címtár módosítását ebbe a repozitóriumba küldött PR-rel lehet kérni. Nem listázott szerver címe továbbra is kézzel megadható. Böngészőben a választás a célkiszolgáló saját webes alkalmazását nyitja meg, így a bejelentkezési süti azonos eredetű marad; a natív kliens közvetlenül a kiválasztott szerver API-ját használja.
+
 ## A telepítés hatóköre
 
 Ez a csomag a saját szerveren futó webes felületet és API-t biztosítja. A natív asztali és mobil kliensek a bejelentkezési képernyőn vagy a Fiók beállításaiban választhatnak saját Studio-szervert. Csak a szerver alapcímét adja meg (például https://studio.pelda.hu), HTTPS használatával. Szerverváltáskor a kliens kijelentkeztet az előző szerverről, és törli annak helyi munkamenet-tokenjét; a szervereken tárolt adatok változatlanok maradnak.
