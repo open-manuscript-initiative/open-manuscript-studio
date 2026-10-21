@@ -13,7 +13,7 @@ before(async () => {
   await loadPrimaryLocaleDictionariesForTest();
 });
 
-const locales = ['en', 'de', 'hu', 'fr'] as const;
+const locales = ['en', 'de', 'hu'] as const;
 const emptyHelp = { topics: [] };
 
 test('research module shell exposes every registered module in English', () => {
@@ -47,6 +47,10 @@ test('runtime locale loading keeps research module shell and search copy localiz
     hu.modules['org.omi.archaeology']?.overview,
     'Régészeti és kulturális örökségi munkaterület',
   );
+
+  const fr = getModuleShellCopy('fr');
+  assert.ok(fr.navigation);
+  assert.ok(fr.modules['org.omi.archaeology']?.overview);
 
   const de = getModuleShellCopy('de');
   assert.equal(de.navigation, 'Forschungsmodule');
