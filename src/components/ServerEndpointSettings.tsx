@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useTranslation } from '../i18n';
 import {
@@ -9,45 +9,46 @@ import {
   normalizeNativeStudioServerOrigin,
   saveNativeStudioServerOrigin,
 } from '../services/studioServer';
+import {
+  fetchStudioServerDirectory,
+  type StudioServerDirectoryEntry,
+} from '../services/studioServerDirectory';
 import './ServerEndpointSettings.css';
 
 function copy(locale: string) {
   if (locale === 'hu') {
     return {
-      title: 'Studio-szerver',
-      summary: 'Másik Studio-szerver használata',
-      current: 'Jelenlegi szerver',
-      address: 'Szerver címe',
-      placeholder: 'https://studio.pelda.hu',
-      help: 'A saját szervernek HTTPS-en elérhető Studio API-t kell biztosítania. A váltás kijelentkeztet erről a szerverről; a rajta tárolt adatok nem változnak.',
-      apply: 'Szerver használata',
-      reset: 'Alapértelmezett szerver visszaállítása',
-      invalid: 'Adja meg a szerver teljes HTTPS-címét.',
+      title: 'Studio-szerver', summary: 'Studio-szerver kiválasztása', current: 'Jelenlegi szerver',
+      directory: 'Elérhető szerverek', loading: 'Szerverlista betöltése…',
+      unavailable: 'A szerverlista most nem érhető el. Saját szervercímet ettől függetlenül megadhat.',
+      address: 'Másik szerver címe', placeholder: 'https://studio.pelda.hu',
+      help: 'A saját szervernek HTTPS-en elérhető Studio-felületet és API-t kell biztosítania. Váltáskor az új szerveren folytatja; a korábbi szerveren tárolt adatok nem változnak.',
+      choose: 'Szerver megnyitása', apply: 'Saját szerver megnyitása',
+      reset: 'Hivatalos szerver visszaállítása', invalid: 'Adja meg a szerver teljes HTTPS-címét.',
+      official: 'Hivatalos OMI Studio', empty: 'A címtárban jelenleg nincs másik szerver.',
     };
   }
   if (locale === 'de') {
     return {
-      title: 'Studio-Server',
-      summary: 'Anderen Studio-Server verwenden',
-      current: 'Aktueller Server',
-      address: 'Serveradresse',
-      placeholder: 'https://studio.beispiel.org',
-      help: 'Der eigene Server muss eine über HTTPS erreichbare Studio-API bereitstellen. Beim Wechsel werden Sie auf diesem Server abgemeldet; dort gespeicherte Daten bleiben unverändert.',
-      apply: 'Server verwenden',
-      reset: 'Standardserver wiederherstellen',
+      title: 'Studio-Server', summary: 'Studio-Server auswählen', current: 'Aktueller Server',
+      directory: 'Verfügbare Server', loading: 'Serverliste wird geladen…',
+      unavailable: 'Die Serverliste ist derzeit nicht verfügbar. Sie können trotzdem eine eigene Serveradresse eingeben.',
+      address: 'Adresse eines anderen Servers', placeholder: 'https://studio.beispiel.org',
+      help: 'Der eigene Server muss eine über HTTPS erreichbare Studio-Oberfläche und API bereitstellen. Beim Wechsel wird der neue Server geöffnet; auf dem bisherigen Server gespeicherte Daten bleiben unverändert.',
+      choose: 'Server öffnen', apply: 'Eigenen Server öffnen', reset: 'Offiziellen Server öffnen',
       invalid: 'Geben Sie die vollständige HTTPS-Adresse des Servers ein.',
+      official: 'Offizielles OMI Studio', empty: 'Im Verzeichnis sind derzeit keine weiteren Server eingetragen.',
     };
   }
   return {
-    title: 'Studio server',
-    summary: 'Use a different Studio server',
-    current: 'Current server',
-    address: 'Server address',
-    placeholder: 'https://studio.example.org',
-    help: 'Your server must provide a Studio API over HTTPS. Switching signs you out of this server; data stored there is unchanged.',
-    apply: 'Use server',
-    reset: 'Return to the default server',
-    invalid: 'Enter the server’s full HTTPS address.',
+    title: 'Studio server', summary: 'Choose a Studio server', current: 'Current server',
+    directory: 'Available servers', loading: 'Loading server list…',
+    unavailable: 'The server list is unavailable right now. You can still enter a server address.',
+    address: 'Another server address', placeholder: 'https://studio.example.org',
+    help: 'A custom server must provide a Studio web interface and API over HTTPS. Switching opens the new server; data stored on the previous server is unchanged.',
+    choose: 'Open server', apply: 'Open custom server', reset: 'Open the official server',
+    invalid: 'Enter the server’s full HTTPS address.', official: 'Official OMI Studio',
+    empty: 'There are no other servers in the directory yet.',
   };
 }
 
@@ -55,22 +56,40 @@ export function ServerEndpointSettings() {
   const { locale } = useTranslation();
   const text = copy(locale);
   const native = isNativeStudioRuntime();
-  const savedOrigin = getSavedNativeStudioServerOrigin();
+  const savedOrigin = native ? getSavedNativeStudioServerOrigin() : null;
   const [open, setOpen] = useState(Boolean(savedOrigin));
   const [serverOrigin, setServerOrigin] = useState(savedOrigin ?? '');
+  const [servers, setServers] = useState<StudioServerDirectoryEntry[]>([]);
+  const [directoryLoading, setDirectoryLoading] = useState(true);
+  const [directoryAvailable, setDirectoryAvailable] = useState(true);
   const [error, setError] = useState('');
 
-  if (!native) return null;
+  useEffect(() => {
+    let active = true;
+    void fetchStudioServerDirectory()
+      .then((entries) => { if (active) setServers(entries); })
+      .catch(() => { if (active) setDirectoryAvailable(false); })
+      .finally(() => { if (active) setDirectoryLoading(false); });
+    return () => { active = false; };
+  }, []);
 
-  const currentOrigin = getNativeStudioServerOrigin();
+  const currentOrigin = native ? getNativeStudioServerOrigin() : window.location.origin;
 
-  const apply = () => {
+  const openServer = (value: string) => {
     setError('');
     try {
-      const normalized = normalizeNativeStudioServerOrigin(serverOrigin);
-      const changed = saveNativeStudioServerOrigin(normalized);
-      if (changed) {
-        window.location.reload();
+      const normalized = normalizeNativeStudioServerOrigin(value);
+      if (native) {
+        const changed = saveNativeStudioServerOrigin(normalized);
+        if (changed) {
+          window.location.reload();
+          return;
+        }
+        setOpen(false);
+        return;
+      }
+      if (normalized !== window.location.origin) {
+        window.location.assign(normalized);
         return;
       }
       setOpen(false);
@@ -79,7 +98,7 @@ export function ServerEndpointSettings() {
     }
   };
 
-  const reset = () => {
+  const resetNativeServer = () => {
     setError('');
     const changed = saveNativeStudioServerOrigin(null);
     setServerOrigin('');
@@ -95,6 +114,35 @@ export function ServerEndpointSettings() {
           <p className="native-server-settings__current">
             <strong>{text.current}:</strong> <span dir="ltr">{currentOrigin}</span>
           </p>
+          <div className="native-server-settings__directory" aria-label={text.directory}>
+            <strong>{text.directory}</strong>
+            {directoryLoading ? <p>{text.loading}</p> : null}
+            {!directoryLoading && !directoryAvailable ? (
+              <p className="native-server-settings__help">{text.unavailable}</p>
+            ) : null}
+            {!directoryLoading && directoryAvailable && servers.length === 0 ? (
+              <p className="native-server-settings__help">{text.empty}</p>
+            ) : null}
+            {servers.map((server) => {
+              const selected = server.origin === currentOrigin;
+              const label = server.id === 'omi-official' ? text.official : server.name;
+              return (
+                <button
+                  key={server.id}
+                  type="button"
+                  className={selected
+                    ? 'native-server-settings__server native-server-settings__server--current'
+                    : 'native-server-settings__server'}
+                  aria-current={selected ? 'true' : undefined}
+                  onClick={() => openServer(server.origin)}
+                >
+                  <span>{label}</span>
+                  <span dir="ltr">{server.origin}</span>
+                  <span>{selected ? text.current : text.choose}</span>
+                </button>
+              );
+            })}
+          </div>
           <label htmlFor="native-studio-server-origin">{text.address}</label>
           <input
             id="native-studio-server-origin"
@@ -113,11 +161,11 @@ export function ServerEndpointSettings() {
           <p className="native-server-settings__help">{text.help}</p>
           {error ? <p className="native-server-settings__error" role="alert">{error}</p> : null}
           <div className="native-server-settings__actions">
-            <button type="button" className="native-server-settings__primary" onClick={apply}>
+            <button type="button" className="native-server-settings__primary" onClick={() => openServer(serverOrigin)}>
               {text.apply}
             </button>
-            {currentOrigin !== DEFAULT_STUDIO_API_ORIGIN || savedOrigin ? (
-              <button type="button" className="native-server-settings__secondary" onClick={reset}>
+            {native && (currentOrigin !== DEFAULT_STUDIO_API_ORIGIN || savedOrigin) ? (
+              <button type="button" className="native-server-settings__secondary" onClick={resetNativeServer}>
                 {text.reset}
               </button>
             ) : null}
