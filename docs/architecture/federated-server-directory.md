@@ -6,7 +6,7 @@ Let an author discover participating Open Manuscript Studio servers and then wor
 
 ## Data and traffic boundaries
 
-- The public registry stores only an operator-approved server name, canonical HTTPS origin, software version, supported capabilities, optional public contact page, verification state, and last heartbeat.
+- The public registry stores only an operator-approved server name, canonical HTTPS origin, software version, supported capabilities, optional verification state, and last heartbeat.
 - No manuscript content, account information, server IP address, credentials, or user counts are collected.
 - The browser and native applications use the directory to get a list. After selection, every application request goes directly to the selected Studio origin.
 - Registry reads and heartbeats are small metadata requests. A cacheable public JSON response and rate limits keep registry load low.
@@ -16,10 +16,10 @@ Let an author discover participating Open Manuscript Studio servers and then wor
 
 1. During installation, the operator may opt in and submit the server's display name and public HTTPS origin to the registry.
 2. The registry creates a pending record and a one-time domain challenge. The operator publishes the challenge as a DNS TXT record under `_omi-studio-verification.<domain>`.
-3. The registry verifies the TXT record before approving the origin. It must reject non-HTTPS URLs, credentials in URLs, paths, query strings, fragments, private IP ranges, and unverified domains.
+3. The registry verifies the TXT record before approving the origin. It must reject non-HTTPS URLs, credentials in URLs, paths, query strings, fragments, IP literals, and unverified domains. The registry does not make network requests to submitted server origins.
 4. The registry issues a random per-instance heartbeat token once. Only a cryptographic hash is stored. The installation keeps the token in its server-side environment; it is never sent to the browser.
 5. The Studio API sends a heartbeat to the registry on a fixed interval. A server is `online` only while its last heartbeat is within the configured freshness window. Missing heartbeats make it `offline`; the record can remain available for later recovery.
-6. A server operator can rotate the heartbeat token, update public metadata, or unregister the instance.
+6. A server operator can rotate the heartbeat token or unregister the instance. To change public metadata, revoke the registration and register again.
 
 GitHub is the auditable catalogue of approved public entries, not the heartbeat database. The registry service uses a narrowly scoped GitHub App to create a registration audit issue after an operator's domain is verified. A GitHub App installation token is minted on the registry host and is never shared with Studio instances. Heartbeats update the registry database and do not create commits or issues.
 
@@ -29,7 +29,7 @@ GitHub is the auditable catalogue of approved public entries, not the heartbeat 
 - `POST /api/server-registry/registrations`: create a pending registration; rate limited.
 - `POST /api/server-registry/registrations/:id/verify`: verify the DNS challenge and create a GitHub audit issue.
 - `POST /api/server-registry/instances/:id/heartbeat`: authenticated by that instance's bearer token; update last-seen time and compatible version/capabilities.
-- Authenticated operator controls: metadata update, token rotation, and unregister.
+- Authenticated operator controls: token rotation and unregister.
 
 The public response must not expose heartbeat tokens, challenge values, database IDs that are not intended to be public, internal addresses, or detailed infrastructure health.
 
@@ -48,7 +48,7 @@ The registry's GitHub App needs only Issues: write on the catalogue repository t
 ## Required operational controls
 
 - DNS ownership verification before publication.
-- HTTPS-only origins and safe DNS/IP validation to prevent SSRF.
+- HTTPS-only origins and rejecting IP literals; the registry never probes submitted server origins.
 - Registration and verification rate limits.
 - Secret hashing, one-time token display, token rotation, and revocation.
 - A fixed heartbeat interval with jitter and bounded retries.
