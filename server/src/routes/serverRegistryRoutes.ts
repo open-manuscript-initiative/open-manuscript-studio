@@ -7,6 +7,7 @@ import { z } from 'zod';
 
 import { env } from '../config/env.js';
 import { prisma } from '../lib/prisma.js';
+import { createServerRegistryGithubToken } from '../serverRegistry/githubAppToken.js';
 
 export const serverRegistryRouter = Router();
 
@@ -62,9 +63,7 @@ async function submitGithubRegistration(entry: {
   softwareVersion: string | null;
   capabilities: unknown;
 }): Promise<string> {
-  if (!env.OMI_SERVER_REGISTRY_GITHUB_TOKEN) {
-    throw new Error('The registry GitHub integration is not configured.');
-  }
+  const installationToken = await createServerRegistryGithubToken();
 
   const body = [
     'A Studio server completed HTTPS domain verification and requested directory registration.',
@@ -84,7 +83,7 @@ async function submitGithubRegistration(entry: {
       method: 'POST',
       headers: {
         Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${env.OMI_SERVER_REGISTRY_GITHUB_TOKEN}`,
+        Authorization: `Bearer ${installationToken}`,
         'X-GitHub-Api-Version': '2022-11-28',
         'Content-Type': 'application/json',
       },
