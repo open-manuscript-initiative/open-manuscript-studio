@@ -1,5 +1,5 @@
 import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
-import type { SupportedLocale } from './types';
+import type { CoreLocale, SupportedLocale } from './types';
 
 export interface SectionStructureCopy {
   title: string;
@@ -21,7 +21,7 @@ export interface SectionStructureCopy {
   invalidHierarchy: string;
 }
 
-const COPY: Record<SupportedLocale, SectionStructureCopy> = {
+const COPY: Record<CoreLocale, SectionStructureCopy> = {
   en: {
     title: 'Edited volume structure',
     description:
@@ -90,6 +90,6 @@ const COPY: Record<SupportedLocale, SectionStructureCopy> = {
 export function getSectionStructureCopy(
   locale: SupportedLocale,
 ): SectionStructureCopy {
-  const current = COPY[locale] ?? COPY.en;
+  const current = COPY[locale as CoreLocale] ?? COPY.en;
   return applyReturnedSupplementalOverlay(locale, 'sectionStructure', current, COPY.en);
 }
