@@ -137,7 +137,7 @@ serverRegistryRouter.post('/registrations', registrationRateLimit, async (reques
     status: 'PENDING' as const,
     domainChallengeHash: digest(challenge),
     heartbeatTokenHash: digest(heartbeatToken),
-    softwareVersion: parsed.data.softwareVersion,
+    ...(parsed.data.softwareVersion ? { softwareVersion: parsed.data.softwareVersion } : {}),
     capabilities: parsed.data.capabilities,
     verifiedAt: null,
     lastHeartbeatAt: null,
