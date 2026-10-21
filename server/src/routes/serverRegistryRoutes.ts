@@ -127,22 +127,25 @@ serverRegistryRouter.post('/registrations', registrationRateLimit, async (reques
     return;
   }
 
-  const id = randomBytes(16).toString('hex');
+  const id = existing?.id ?? randomBytes(16).toString('hex');
   const challenge = randomBytes(24).toString('base64url');
   const heartbeatToken = randomBytes(32).toString('base64url');
-  const record = await prisma.studioServerDirectoryEntry.create({
-    data: {
-      id,
-      name: parsed.data.name,
-      origin: normalized.origin,
-      hostname: normalized.hostname,
-      status: 'PENDING',
-      domainChallengeHash: digest(challenge),
-      heartbeatTokenHash: digest(heartbeatToken),
-      softwareVersion: parsed.data.softwareVersion,
-      capabilities: parsed.data.capabilities,
-    },
-  });
+  const data = {
+    name: parsed.data.name,
+    origin: normalized.origin,
+    hostname: normalized.hostname,
+    status: 'PENDING' as const,
+    domainChallengeHash: digest(challenge),
+    heartbeatTokenHash: digest(heartbeatToken),
+    softwareVersion: parsed.data.softwareVersion,
+    capabilities: parsed.data.capabilities,
+    verifiedAt: null,
+    lastHeartbeatAt: null,
+    githubIssueUrl: null,
+  };
+  const record = existing
+    ? await prisma.studioServerDirectoryEntry.update({ where: { id }, data })
+    : await prisma.studioServerDirectoryEntry.create({ data: { id, ...data } });
 
   response.status(201).json({
     id: record.id,
