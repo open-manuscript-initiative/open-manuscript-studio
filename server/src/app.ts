@@ -89,7 +89,7 @@ const standardCors = cors({
 });
 
 app.use((request, response, next) => {
-  if (request.path === '/api/server-registry/servers') {
+  if (['/api/server-registry/servers', '/api/v1/server-registry/servers'].includes(request.path)) {
     return cors({ origin: true, credentials: false })(request, response, next);
   }
   return standardCors(request, response, next);
@@ -117,7 +117,8 @@ app.get('/api', (_request, response) => {
 
 app.use('/api/health', healthRouter);
 app.use(apiRateLimit);
-app.use('/api/server-registry', serverRegistryRouter);
+app.use('/api/v1/server-registry', serverRegistryRouter);
+app.use('/api/server-registry', serverRegistryRouter); // Compatibility facade; identical policy and limits.
 app.use('/api/v1', euroOfficeRouter);
 app.use('/api', euroOfficeRouter); // Legacy compatibility facade.
 app.use('/api/v1', studioModuleRouter);

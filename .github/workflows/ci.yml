@@ -536,4 +536,6 @@ jobs:
       - run: npm run build
         working-directory: server
       - name: Test migration and cross-process-safe storage contracts
-        run: node --test tests/integration-state.postgres.test.mjs
+        run: node --test tests/integration-state.postgres.test.mjs tests/server-registry.postgres.test.mjs
+      - name: Registry security and v1 compatibility
+        run: node --test --experimental-test-module-mocks tests/server-registry-routes.test.mjs

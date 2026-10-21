@@ -187,3 +187,14 @@ docker compose -f compose.yml exec api npm run server:register -- --verify REGIS
 A parancs egyszer jeleníti meg a példány saját életjel-tokenjét. A kapott `OMI_SERVER_REGISTRY_INSTANCE_ID`, `OMI_SERVER_REGISTRY_HEARTBEAT_TOKEN` és `OMI_SERVER_REGISTRY_ORIGIN` értékeket add hozzá a példány `.env` fájljához, majd indítsd újra az API-konténert. A szerver ötpercenként küld kis méretű életjelet. A nyilvános jegyzék az utolsó életjel után 15 percig jelzi online-ként a példányt.
 
 A GitHub App privát kulcsát és telepítési adatait soha ne másold át egy csatlakozó Studio-példányra. Ha a címtár nem érhető el, a már működő Studio-példányok továbbra is közvetlenül szolgálják ki a felhasználóikat.
+
+
+## Szerverjegyzék biztonsági átállítása (2026-10-21)
+
+Telepítési sorrend: `20261022080000_registry_registration_authority` migráció → API → CLI/kliensek/honlap. Az aktív regisztrációk és heartbeat-tokenek megmaradnak; a korábbi függő regisztrációkat újra kell indítani. Az új `/api/v1/server-registry` contract mellett a régi útvonal azonos ellenőrzésű facádként megmarad.
+
+A regisztráció két külön értéket ad: kizárólag a `verification.value` kerüljön DNS-be. A privát `registrationToken` értéket az API szerver környezetében, `OMI_SERVER_REGISTRATION_TOKEN` néven őrizze a verification idejéig. A CLI bearer credentialként küldi. 24 óráig érvényes, sikeres aktiváláskor elfogy. Lejárt függő kérelem új regisztrációval helyettesíthető. Titok ne kerüljön DNS-be, GitHubra, klienscsomagba vagy hibajegybe.
+
+Párhuzamos verification esetén csak egy kérés foglalhatja le az aktiválást. Bizonytalan GitHub-audit után a bejegyzés VERIFYING állapotban marad: az üzemeltető ellenőrizze a regisztráció azonosítóját és az audit issue-kat, kontrollált adminisztrációval vonja vissza az elkülönített bejegyzést, majd indítson új regisztrációt. VERIFYING állapotot ne állítson vissza PENDING-re és ne ismételjen vakon issue POST-ot. Elveszett sikeres aktiválási válasz ugyancsak egyeztetést és új regisztrációt igényel; automatikus titokvisszaállítás nincs.
+
+A registry Preview. Az „online” kizárólag friss hitelesített heartbeat; nem egészség, kompatibilitás vagy megbízhatóság igazolása. A DNS domainrendelkezést igazol, nem szerkesztői jogot. Nincs automatikus fiók-/kéziratmozgatás vagy terheléselosztás. A registry-token kizárólag a registry-bejegyzéshez ad jogot. Kötelező a route-negatívteszt és a tényleges PostgreSQL migráció/konkurencia teszt CI-ben, valamint a kontrollált DNS/GitHub és helyreállítási elfogadási próba. Részletes protokoll: `server/SERVER_DIRECTORY.md`.

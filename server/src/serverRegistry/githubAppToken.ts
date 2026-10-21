@@ -29,6 +29,7 @@ export async function createServerRegistryGithubToken(): Promise<string> {
     `https://api.github.com/app/installations/${encodeURIComponent(installationId)}/access_tokens`,
     {
       method: 'POST',
+      redirect: 'error',
       headers: {
         Accept: 'application/vnd.github+json',
         Authorization: `Bearer ${appJwt}`,

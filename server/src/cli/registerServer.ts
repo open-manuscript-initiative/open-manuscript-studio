@@ -10,7 +10,8 @@ const verifyId = verifyIndex >= 0 ? process.argv[verifyIndex + 1] : undefined;
 async function request(path: string, bodyValue: unknown = {}): Promise<{ response: Response; body: Record<string, unknown> }> {
   const response = await fetch(`${registryOrigin}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+      redirect: 'error',
+    headers: { 'Content-Type': 'application/json', ...(process.env.OMI_SERVER_REGISTRATION_TOKEN ? { Authorization: `Bearer ${process.env.OMI_SERVER_REGISTRATION_TOKEN}` } : {}) },
     body: JSON.stringify(bodyValue),
     signal: AbortSignal.timeout(15_000),
   });
@@ -19,12 +20,15 @@ async function request(path: string, bodyValue: unknown = {}): Promise<{ respons
 }
 
 if (process.argv.includes('--verify')) {
-  if (!verifyId) {
+  if (!process.env.OMI_SERVER_REGISTRATION_TOKEN) {
+    console.error('Set OMI_SERVER_REGISTRATION_TOKEN to the private token returned at registration. Never use the public DNS value.');
+    process.exitCode = 1;
+  } else if (!verifyId) {
     console.error('Pass a registration ID after --verify.');
     process.exitCode = 1;
   } else {
     const { response, body } = await request(
-      `/api/server-registry/registrations/${encodeURIComponent(verifyId)}/verify`,
+      `/api/v1/server-registry/registrations/${encodeURIComponent(verifyId)}/verify`,
     );
     if (!response.ok) {
       console.error(body);
@@ -52,7 +56,7 @@ if (process.argv.includes('--verify')) {
   try {
     const name = arg('--name') || await terminal.question('Public server name: ');
     const origin = arg('--origin') || await terminal.question('Public HTTPS origin: ');
-    const { response, body } = await request('/api/server-registry/registrations', {
+    const { response, body } = await request('/api/v1/server-registry/registrations', {
       name,
       origin,
       softwareVersion: process.env.OMI_SERVER_REGISTRY_SOFTWARE_VERSION || 'unknown',
@@ -65,6 +69,8 @@ if (process.argv.includes('--verify')) {
       console.error(body);
       process.exitCode = 1;
     } else {
+      console.log('Keep the private registration token in your server environment until verification (never publish in DNS):');
+      console.log(`OMI_SERVER_REGISTRATION_TOKEN=${String(body.registrationToken)}`);
       const verification = body.verification as { name: string; value: string };
       console.log('Publish this DNS TXT record to prove control of the server domain:');
       console.log(`${verification.name} TXT ${verification.value}`);
