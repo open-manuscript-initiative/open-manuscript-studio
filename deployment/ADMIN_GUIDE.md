@@ -158,6 +158,10 @@ docker compose -f compose.yml logs --tail=200 web
 docker compose -f compose.yml logs --tail=100 postgres
 ```
 
+## Public Studio server directory
+
+The server chooser reads the same-origin `/studio-servers.json` directory shipped with the web application and native clients. It is a curated list of registered server origins, not a live availability check or a security certification. New public entries should be added only with the operator's consent after verifying that the HTTPS origin serves a compatible Studio web application and API. Submit directory changes through a pull request to this repository. Users can still enter an unlisted server address manually. In a browser, choosing a server opens that server's own web application, keeping login cookies first-party; native clients point their API connection to the selected server.
+
 ## Deployment scope
 
 This package provides the web application and API on your own server. Native desktop and mobile clients can select a custom Studio server from the sign-in screen or Account settings. Enter only the server origin (for example, https://studio.example.org), and use HTTPS. Switching servers signs the client out of the previous server and clears its local native session token; data stored on either server is unchanged.
