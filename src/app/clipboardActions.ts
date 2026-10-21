@@ -1,7 +1,7 @@
 import { synchronizeCrossReferenceLabels } from '../model/crossReferences';
 import { extractManuscriptState } from '../model/versioning';
 import { stagePendingChanges } from '../model/workingState';
-import type { OmiSection } from '../types/omi';
+import type { OmiAnnotation, OmiSection } from '../types/omi';
 import { useStudioStore } from './useStudioStore';
 
 const CLIPBOARD_CHECKPOINT_DELAY_MS = 2500;
@@ -10,6 +10,7 @@ let clipboardCheckpointTimer: ReturnType<typeof setTimeout> | null = null;
 export function stageClipboardSectionChange(
   nextSections: readonly OmiSection[],
   summary: string,
+  nextAnnotations?: readonly OmiAnnotation[],
 ): boolean {
   let changed = false;
 
@@ -21,9 +22,11 @@ export function stageClipboardSectionChange(
       state.manuscript.locale,
     );
 
+    const annotations = nextAnnotations ?? state.manuscript.annotations;
     if (
       JSON.stringify(state.manuscript.sections) ===
-      JSON.stringify(synchronizedSections)
+      JSON.stringify(synchronizedSections) &&
+      JSON.stringify(state.manuscript.annotations) === JSON.stringify(annotations)
     ) {
       return state;
     }
@@ -42,6 +45,14 @@ export function stageClipboardSectionChange(
             previousValue: state.manuscript.sections,
             nextValue: synchronizedSections,
           },
+          ...annotations
+            .filter((annotation) => !state.manuscript.annotations.some((item) => item.id === annotation.id))
+            .map((annotation) => ({
+              operation: 'annotation.create' as never,
+              targetId: annotation.id,
+              path: '/annotations/-',
+              nextValue: annotation,
+            })),
         ],
         timestamp,
       },
@@ -59,6 +70,7 @@ export function stageClipboardSectionChange(
         ...state.manuscript,
         ...portableState,
         sections: synchronizedSections,
+        annotations: [...annotations],
         updatedAt: timestamp,
       },
       pendingChangeSet,

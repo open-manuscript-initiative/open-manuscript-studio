@@ -8,7 +8,7 @@ import {
   getStoredTextLength,
   OMI_MANUSCRIPT_CLIPBOARD_MIME,
   parseManuscriptClipboardFragment,
-  pasteManuscriptFragment,
+  pasteManuscriptFragmentWithNotes,
 } from '../editor/manuscriptClipboard';
 import {
   clearRenderedManuscriptSelection,
@@ -233,6 +233,25 @@ function handleCrossBlockCopyOrCut(event: ClipboardEvent, cut: boolean): void {
   const startBlockId = startRoot?.dataset.blockId;
   const endBlockId = endRoot?.dataset.blockId;
 
+  if (
+    startRoot && endRoot && startRoot === endRoot && startBlockId &&
+    !startRoot.classList.contains('omi-continuous-tiptap-editor')
+  ) {
+    const state = useStudioStore.getState();
+    const fragment = createManuscriptClipboardFragment(
+      state.manuscript.sections,
+      startBlockId,
+      storedOffsetWithin(startRoot, range.startContainer, range.startOffset),
+      startBlockId,
+      storedOffsetWithin(startRoot, range.endContainer, range.endOffset),
+      state.manuscript.annotations,
+    );
+    if (fragment) {
+      event.clipboardData.setData(OMI_MANUSCRIPT_CLIPBOARD_MIME, JSON.stringify(fragment));
+    }
+    return;
+  }
+
   // Existing Tiptap/native clipboard handling is better for a selection that
   // stays in one editor. We only bridge separate editors here.
   if (
@@ -265,6 +284,7 @@ function handleCrossBlockCopyOrCut(event: ClipboardEvent, cut: boolean): void {
     startOffset,
     endBlockId,
     endOffset,
+    state.manuscript.annotations,
   );
   if (!fragment) return;
 
@@ -308,6 +328,7 @@ function handleRenderedCopyOrCut(
     range.start.offset,
     range.end.blockId,
     range.end.offset,
+    state.manuscript.annotations,
   );
   if (!fragment) return;
 
@@ -357,7 +378,7 @@ function handleManuscriptPaste(event: ClipboardEvent): void {
   const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
   let targetOffset = 0;
   if (range && targetRoot.contains(range.startContainer)) {
-    targetOffset = textOffsetWithin(
+    targetOffset = storedOffsetWithin(
       targetRoot,
       range.startContainer,
       range.startOffset,
@@ -372,13 +393,14 @@ function handleManuscriptPaste(event: ClipboardEvent): void {
   if (storedLength === undefined) return;
   targetOffset = Math.min(storedLength, targetOffset);
 
-  const nextSections = pasteManuscriptFragment(
+  const pasted = pasteManuscriptFragmentWithNotes(
     state.manuscript.sections,
     targetBlockId,
     targetOffset,
     fragment,
+    state.manuscript.annotations,
   );
-  if (!stageClipboardSectionChange(nextSections, 'Pasted manuscript range')) return;
+  if (!stageClipboardSectionChange(pasted.sections, 'Pasted manuscript range', pasted.annotations)) return;
 
   event.preventDefault();
 }
@@ -484,6 +506,28 @@ function textOffsetWithin(
     range.selectNodeContents(root);
     range.setEnd(endpoint, endpointOffset);
     return range.toString().length;
+  } catch {
+    return 0;
+  }
+}
+
+function storedOffsetWithin(
+  root: HTMLElement,
+  endpoint: Node,
+  endpointOffset: number,
+): number {
+  if (endpoint !== root && !root.contains(endpoint)) return 0;
+  try {
+    const range = document.createRange();
+    range.selectNodeContents(root);
+    range.setEnd(endpoint, endpointOffset);
+    const visibleLength = range.toString().length;
+    const container = document.createElement('div');
+    container.append(range.cloneContents());
+    const noteLabelLength = Array.from(
+      container.querySelectorAll<HTMLElement>('[data-omi-note]'),
+    ).reduce((total, note) => total + (note.textContent?.length ?? 0), 0);
+    return Math.max(0, visibleLength - noteLabelLength);
   } catch {
     return 0;
   }
