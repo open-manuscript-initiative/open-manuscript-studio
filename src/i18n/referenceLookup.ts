@@ -1,5 +1,5 @@
 import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
-import type { SupportedLocale } from './types';
+import type { CoreLocale } from './types';
 
 export interface ReferenceLookupCopy {
   title: string;
@@ -48,7 +48,7 @@ export interface ReferenceLookupCopy {
   browserLogoutOpened: string;
 }
 
-const COPY: Record<SupportedLocale, ReferenceLookupCopy> = {
+const COPY: Record<CoreLocale, ReferenceLookupCopy> = {
   en: {
     title: 'Search external bibliographic services',
     description:
@@ -220,6 +220,6 @@ const COPY: Record<SupportedLocale, ReferenceLookupCopy> = {
 };
 
 export function getReferenceLookupCopy(locale: SupportedLocale): ReferenceLookupCopy {
-  const current = COPY[locale] ?? COPY.en;
+  const current = COPY[locale as CoreLocale] ?? COPY.en;
   return applyReturnedSupplementalOverlay(locale, 'referenceLookup', current, COPY.en);
 }
