@@ -239,7 +239,7 @@ export async function parseDocxMonograph(
     if (section.blocks.length === 0) section.blocks.push(createEmptyParagraphBlock());
   }
   if (sections.length === 0) {
-    sections.push({ id: crypto.randomUUID(), title: 'Imported content', blocks: [createEmptyParagraphBlock()] });
+    sections.push({ id: crypto.randomUUID(), title: '', blocks: [createEmptyParagraphBlock()] });
   }
   if (!title) {
     title = file.name.replace(/\.docx$/i, '').trim() || 'Imported manuscript';
@@ -514,7 +514,7 @@ function decodeXml(value: string): string {
 function ensureSection(sections: OmiSection[]): OmiSection {
   const existing = sections.at(-1);
   if (existing) return existing;
-  const section: OmiSection = { id: crypto.randomUUID(), title: 'Imported content', blocks: [] };
+  const section: OmiSection = { id: crypto.randomUUID(), title: '', blocks: [] };
   sections.push(section);
   return section;
 }
