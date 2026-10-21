@@ -325,7 +325,7 @@
     "errors": {
       "invalidEmail": "Dirección de correo electrónico inválida.",
       "invalidCredentials": "Dirección de correo electrónico o contraseña incorrectas.",
-      "userNotFound": "No se ha podido encontrar la cuenta de usuario ",
+      "userNotFound": "No se ha encontrado la cuenta de usuario.",
       "accountNotActive": "La cuenta de usuario no está activa.",
       "authenticationRequired": "Es necesario autenticarse."
     },
@@ -1377,7 +1377,7 @@
           "org.omi.research-reproducibility": {
             "description": "Vincular conjuntos de datos, código, métodos y material complementario a fuentes y repositorios con control de versiones, y registrar cómo se relacionan las publicaciones con los resultados de la investigación.",
             "overview": "Resultados de investigación y reproducibilidad",
-            "title": "Re"
+            "title": "Datos de investigación y reproducibilidad"
           },
           "org.omi.social-research-methods": {
             "description": "Describir encuestas, variables y libros de códigos; codificar entrevistas; y relacionar conjuntos de datos con métodos de investigación.",
@@ -1658,7 +1658,7 @@
         "insert": "Insertar ecuación",
         "label": "Etiqueta de la ecuación",
         "caption": "Leyenda / explicación",
-        "noSection": "Abre un manuscrito y ",
+        "noSection": "Abre un manuscrito y selecciona una sección.",
         "failed": "No se ha podido insertar la ecuación."
       }
     },

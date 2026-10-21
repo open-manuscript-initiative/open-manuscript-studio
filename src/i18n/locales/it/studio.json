@@ -325,7 +325,7 @@
     "errors": {
       "invalidEmail": "Indirizzo e-mail non valido.",
       "invalidCredentials": "Indirizzo e-mail o password errati.",
-      "userNotFound": "Impossibile trovare l'account utente ",
+      "userNotFound": "Impossibile trovare l'account utente.",
       "accountNotActive": "L'account utente non è attivo.",
       "authenticationRequired": "È richiesta l'autenticazione."
     },
@@ -1377,7 +1377,7 @@
           "org.omi.research-reproducibility": {
             "description": "Collegare set di dati, codice, metodi e materiali supplementari a fonti e archivi con controllo delle versioni e documentare in che modo le pubblicazioni si collegano ai risultati della ricerca.",
             "overview": "Risultati della ricerca e riproducibilità",
-            "title": "Ri"
+            "title": "Dati di ricerca e riproducibilità"
           },
           "org.omi.social-research-methods": {
             "description": "Descrivere sondaggi, variabili e codici di codifica; codificare le interviste; e collegare i set di dati ai metodi di ricerca.",
@@ -1658,7 +1658,7 @@
         "insert": "Inserisci equazione",
         "label": "Etichetta dell'equazione",
         "caption": "Didascalia / spiegazione",
-        "noSection": "Apri un manoscritto e ",
+        "noSection": "Apri un manoscritto e seleziona una sezione.",
         "failed": "Impossibile inserire l'equazione."
       }
     },

@@ -1339,7 +1339,7 @@ msgstr "Dirección de correo electrónico o contraseña incorrectas."
 #. OMI translation key: /auth/errors/userNotFound
 msgctxt "/auth/errors/userNotFound"
 msgid "The user account could not be found."
-msgstr "No se ha podido encontrar la cuenta de usuario "
+msgstr "No se ha encontrado la cuenta de usuario."
 
 #. OMI translation key: /auth/errors/accountNotActive
 msgctxt "/auth/errors/accountNotActive"
@@ -5694,7 +5694,7 @@ msgstr "Resultados de investigación y reproducibilidad"
 #. OMI translation key: /researchModules/shell/translations/modules/org.omi.research-reproducibility/title
 msgctxt "/researchModules/shell/translations/modules/org.omi.research-reproducibility/title"
 msgid "Research data and reproducibility"
-msgstr "Re"
+msgstr "Datos de investigación y reproducibilidad"
 
 #. OMI translation key: /researchModules/shell/translations/modules/org.omi.social-research-methods/description
 msgctxt "/researchModules/shell/translations/modules/org.omi.social-research-methods/description"
@@ -6849,7 +6849,7 @@ msgstr "Leyenda / explicación"
 #. OMI translation key: /researchModules/mathematics-panel/copy/noSection
 msgctxt "/researchModules/mathematics-panel/copy/noSection"
 msgid "Open a manuscript and select a section."
-msgstr "Abre un manuscrito y "
+msgstr "Abre un manuscrito y selecciona una sección."
 
 #. OMI translation key: /researchModules/mathematics-panel/copy/failed
 msgctxt "/researchModules/mathematics-panel/copy/failed"
