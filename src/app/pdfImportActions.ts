@@ -1,7 +1,7 @@
 import { useStudioStore } from './useStudioStore';
 import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import { OMI_IDENTITY_MODEL_VERSION } from '../model/identity';
-import { attachImportedDocumentSource, importedDocumentSourceLabel, selfAuthoredExternalOrigin } from '../model/importedDocumentSource';
+import { attachImportedDocumentSource, importedDocumentSourceLabel } from '../model/importedDocumentSource';
 import { createInitialVersioningEnvelope } from '../model/versioning';
 import type { PdfImportBlock, PdfImportResult } from '../services/pdfImport';
 import type {
@@ -110,7 +110,6 @@ export function applyPdfImportResult(result: PdfImportResult, source: string, se
   const sourcedSections = selfAuthoredExternal
     ? sections
     : attachImportedDocumentSource(sections, source, importedDocumentSourceLabel(current.locale));
-  if (selfAuthoredExternal) annotations.push(selfAuthoredExternalOrigin(sourcedSections, timestamp));
 
   const state: OmiManuscriptState = {
     schema: OMI_MANUSCRIPT_SCHEMA_URI,

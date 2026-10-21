@@ -1,7 +1,7 @@
 import { useStudioStore } from './useStudioStore';
 import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import { createDocumentStructureProfile } from '../model/documentProfile';
-import { attachImportedDocumentSource, importedDocumentSourceLabel, selfAuthoredExternalOrigin } from '../model/importedDocumentSource';
+import { attachImportedDocumentSource, importedDocumentSourceLabel } from '../model/importedDocumentSource';
 import {
   createContribution,
   createPersonAgent,
@@ -53,9 +53,11 @@ export function applyDocxImportPlan(
   const sections = options.selfAuthoredExternal
     ? plan.sections
     : attachImportedDocumentSource(plan.sections, options.source, importedDocumentSourceLabel(plan.locale ?? current.locale));
-  const annotations = options.selfAuthoredExternal
-    ? [...plan.annotations, selfAuthoredExternalOrigin(sections, timestamp)]
-    : plan.annotations;
+  // A whole-document self-authorship marker used to target the first content
+  // block. When that block was the opening heading, the hidden annotation
+  // interfered with deleting it. Keep import history in versioning metadata;
+  // source attribution must not be anchored to manuscript text implicitly.
+  const annotations = plan.annotations;
 
   const state: OmiManuscriptState = {
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
