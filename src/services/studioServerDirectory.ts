@@ -57,7 +57,7 @@ async function fetchDirectory(url: string): Promise<StudioServerDirectoryEntry[]
 }
 
 export async function fetchStudioServerDirectory(): Promise<StudioServerDirectoryEntry[]> {
-  const configuredRegistryOrigin = import.meta.env.VITE_STUDIO_SERVER_REGISTRY_ORIGIN?.trim();
+  const configuredRegistryOrigin = import.meta.env?.VITE_STUDIO_SERVER_REGISTRY_ORIGIN?.trim();
   const registryOrigin = (configuredRegistryOrigin || 'https://studio.openmanuscript.org').replace(/\/$/, '');
   const [liveResult, fallbackResult] = await Promise.allSettled([
     fetchDirectory(`${registryOrigin}/api/server-registry/servers`),
