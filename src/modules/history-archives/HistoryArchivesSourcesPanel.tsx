@@ -61,6 +61,8 @@ const archivePortals: ArchivePortal[] = [
   { id: 'icelandic', url: 'https://skjalaskrar.skjalasafn.is/' },
   { id: 'serbian', url: 'https://portal.earhiv.gov.rs/' },
   { id: 'archivesEurope', url: 'https://www.archivesportaleurope.net/' },
+  { id: 'vatican', url: 'https://opac.vatlib.it/' },
+  { id: 'beweb', url: 'https://beweb.chiesacattolica.it/beniarchivistici/' },
 ];
 
 const copyByLocale = getResearchModuleCopyByLocale('history-archives-history-archives-sources-panel/copyByLocale');
@@ -98,6 +100,8 @@ const portalLabels: Record<string, Record<ArchivePortal['id'], string>> = {
     icelandic: 'Iceland',
     serbian: 'Serbia',
     archivesEurope: 'Europe',
+    vatican: 'Vatican City',
+    beweb: 'Italy',
   },
   de: {
     uk: 'Vereinigtes Königreich',
@@ -131,6 +135,8 @@ const portalLabels: Record<string, Record<ArchivePortal['id'], string>> = {
     icelandic: 'Island',
     serbian: 'Serbien',
     archivesEurope: 'Europa',
+    vatican: 'Vatikanstadt',
+    beweb: 'Italien',
   },
   hu: {
     uk: 'Egyesült Királyság',
@@ -164,6 +170,8 @@ const portalLabels: Record<string, Record<ArchivePortal['id'], string>> = {
     icelandic: 'Izland',
     serbian: 'Szerbia',
     archivesEurope: 'Európa',
+    vatican: 'Vatikánváros',
+    beweb: 'Olaszország',
   },
 };
 
@@ -204,6 +212,8 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     icelandic: 'National Archives of Iceland (Skjalaskrá)',
     serbian: 'State Archives of Serbia (eArhiv)',
     archivesEurope: 'Archives Portal Europe',
+    vatican: 'Vatican Apostolic Library (Bibliotheca Apostolica Vaticana)',
+    beweb: 'CEI BeWeB — Italian ecclesiastical archives',
   },
   de: {
     europeana: 'Europeana',
@@ -241,6 +251,8 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     icelandic: 'Nationalarchiv Islands (Skjalaskrá)',
     serbian: 'Staatsarchiv Serbiens (eArhiv)',
     archivesEurope: 'Archives Portal Europe',
+    vatican: 'Bibliotheca Apostolica Vaticana (Vatikanische Apostolische Bibliothek)',
+    beweb: 'CEI BeWeB — kirchliche Archive Italiens',
   },
   hu: {
     europeana: 'Europeana',
@@ -278,6 +290,8 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     icelandic: 'Izlandi Nemzeti Levéltár (Skjalaskrá)',
     serbian: 'Szerb Állami Levéltár (eArhiv)',
     archivesEurope: 'Archives Portal Europe',
+    vatican: 'Bibliotheca Apostolica Vaticana (Vatikáni Apostoli Könyvtár)',
+    beweb: 'CEI BeWeB – olasz egyházi levéltárak',
   },
 };
 

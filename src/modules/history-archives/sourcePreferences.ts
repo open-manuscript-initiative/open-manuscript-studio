@@ -34,6 +34,8 @@ export const HISTORY_ARCHIVE_SOURCE_IDS = [
   'icelandic',
   'serbian',
   'archivesEurope',
+  'vatican',
+  'beweb',
 ] as const;
 
 export type HistoryArchiveSourceId = (typeof HISTORY_ARCHIVE_SOURCE_IDS)[number];

@@ -25,7 +25,7 @@ The initial catalog includes these modules:
 
 | Module | Disciplines | Current scope |
 | --- | --- | --- |
-| History and archives | History, archival studies | Search Europeana's shared cultural heritage catalogue and NARA's federal archival descriptions, and open the eLevéltár portal for Hungarian archival descriptions from the Hungarian National Archives and Budapest City Archives. |
+| History and archives | History, archival studies | Search Europeana's shared cultural heritage catalogue and NARA's federal archival descriptions, and open official catalogues including eLevéltár for Hungarian archival descriptions, the Vatican Apostolic Library catalogue, and BeWeB for Italian ecclesiastical archives. |
 | Religious texts | Theology, religious studies | Search Sefaria's Jewish text and commentary library live, display short excerpts with citation and edition metadata, and link to Bible, Qur'an, and Buddhist text portals. The first embedded full-text connector covers Sefaria only. |
 | Critical text edition | Philology, classical philology, literary studies, philosophy | Manage transcriptions, textual variants, manuscript witnesses, critical apparatus, and digital editions; search philosophy and textual-studies scholarship in OpenAlex. |
 | Corpus linguistics | Linguistics | Search corpora, produce concordances, align texts, and annotate linguistic features. |
@@ -48,6 +48,13 @@ eLevéltár archival search portal for Hungarian holdings. Europeana results lin
 to their Europeana record and, where available, the source institution; NARA
 results link to the original catalog record. eLevéltár search opens in the
 provider's portal because no supported public API endpoint has been confirmed.
+The Vatican Apostolic Library is available as a link to its official online
+catalogue, which includes archive and manuscript holdings; it opens at the
+provider because no supported public search API has been confirmed.
+BeWeB links to the Italian Episcopal Conference's archival catalogue, which
+describes holdings from participating diocesan and other ecclesiastical
+institutions; coverage depends on the institutions that have published data.
+It opens at the provider and does not import or mirror catalogue records.
 These sources do not cover every archive or replace a provider's catalogue.
 
 The Religious Texts module searches Sefaria's library on demand through its
