@@ -1,5 +1,5 @@
 import { applyReturnedSupplementalOverlay } from './returnedTranslationOverlay';
-import type { CoreLocale } from './types';
+import type { CoreLocale, SupportedLocale } from './types';
 
 export interface OrcidLookupCopy {
   searching: string;
