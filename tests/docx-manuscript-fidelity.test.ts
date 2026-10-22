@@ -1,4 +1,11 @@
 import assert from 'node:assert/strict';
+import { MANUSCRIPT_IMPORT_ORIGIN } from '../src/model/manuscriptImportOrigin.ts';
+import { parseOmiJson, parsePortableOmiState, toPortableOmiState } from '../src/services/omiPortableFormat.ts';
+import { serializeOmiJson } from '../src/services/exportOmi.ts';
+import { publicPublicationManuscript } from '../src/model/publicationAnnotations.ts';
+import { commitManuscriptRevision, extractManuscriptState, revertManuscriptToRevision } from '../src/model/versioning.ts';
+import { buildOmiContainer } from '../src/services/omiContainer.ts';
+import { inspectOmiContainer } from '../src/services/omiContainerImport.ts';
 import test from 'node:test';
 
 import {
@@ -412,7 +419,7 @@ test('self-authored object-origin helper uses a hidden marker without exposing a
   assert.throws(() => selfAuthoredExternalOrigin([], '2026-10-09T00:00:00.000Z'), /no content/);
 });
 
-test('self-authored manuscript import does not anchor a hidden source marker to the first heading', () => {
+test('self-authored manuscript import does not anchor a hidden source marker to the first heading', async () => {
   const previous = useStudioStore.getState();
   try {
     const plan = {
@@ -421,7 +428,7 @@ test('self-authored manuscript import does not anchor a hidden source marker to 
       titleSource: 'title-style',
       locale: 'hu',
       keywords: [],
-      authors: [],
+      authors: [{ givenName: 'Synthetic', familyName: 'Author', displayName: 'Synthetic Author' }],
       sections: [{
         id: 'imported-section',
         title: 'Első címsor',
@@ -438,7 +445,7 @@ test('self-authored manuscript import does not anchor a hidden source marker to 
       warnings: [],
     } as unknown as DocxManuscriptImportPlan;
 
-    applyDocxImportPlan(plan, { importDetectedAuthors: false, source: '', selfAuthoredExternal: true });
+    applyDocxImportPlan(plan, { importDetectedAuthors: true, source: '', selfAuthoredExternal: true });
     const imported = useStudioStore.getState().manuscript;
     assert.deepEqual(imported.sections[0]?.blocks.map((block) => block.id), ['opening-heading', 'body']);
     assert.equal(imported.annotations.some((annotation) => annotation.targetBlockId === 'opening-heading'), false);
@@ -448,6 +455,43 @@ test('self-authored manuscript import does not anchor a hidden source marker to 
     editorDocument.content = editorDocument.content?.filter((node) => node.type !== 'heading');
     const afterDelete = projectContinuousManuscriptDocument(editorDocument, imported.sections);
     assert.equal(afterDelete[0]?.blocks.some((block) => block.id === 'opening-heading'), false);
+    const origin = imported.extensions?.[MANUSCRIPT_IMPORT_ORIGIN];
+    assert.deepEqual(origin, {
+      version: 1, sourceFormat: 'docx', importedAt: imported.createdAt,
+      assertion: 'author-declared:self-authored-outside-omi',
+    });
+    // Editing/deleting every imported block and changing document/section titles
+    // does not remove provenance or create a dangling content relationship.
+    const edited = {
+      ...imported, title: 'Rewritten title',
+      sections: [{ ...imported.sections[0]!, title: '', blocks: [{ id: crypto.randomUUID(), type: 'paragraph' as const, content: 'Completely rewritten' }] }],
+    };
+    const reopened = parseOmiJson(serializeOmiJson(edited));
+    assert.deepEqual(reopened.extensions?.[MANUSCRIPT_IMPORT_ORIGIN], origin);
+    assert.deepEqual(imported.revisionHistory.revisions[0]?.snapshot.state.extensions?.[MANUSCRIPT_IMPORT_ORIGIN], origin);
+    const committed = commitManuscriptRevision(imported, extractManuscriptState(edited), {
+      summary: 'Replace imported content', timestamp: new Date().toISOString(),
+      events: [{ operation: 'manuscript.title.set', targetId: imported.id, path: '/title', previousValue: imported.title, nextValue: edited.title }],
+    });
+    assert.deepEqual(committed.extensions?.[MANUSCRIPT_IMPORT_ORIGIN], origin);
+    const reverted = revertManuscriptToRevision(committed, imported.headRevisionId, { timestamp: new Date().toISOString() });
+    assert.deepEqual(reverted.extensions?.[MANUSCRIPT_IMPORT_ORIGIN], origin);
+    const container = await buildOmiContainer(committed);
+    assert.equal(container.validForExport, true, JSON.stringify(container.diagnostics));
+    const containerImport = await inspectOmiContainer(container.bytes);
+    assert.equal(containerImport.validForImport, true, JSON.stringify(containerImport.diagnostics));
+    assert.deepEqual(containerImport.manuscript?.extensions?.[MANUSCRIPT_IMPORT_ORIGIN], origin);
+
+    applyDocxImportPlan({ ...plan, fileName: 'own-manuscript.odt' }, { importDetectedAuthors: false, source: '', selfAuthoredExternal: true });
+    const odt = useStudioStore.getState().manuscript;
+    assert.equal((odt.extensions?.[MANUSCRIPT_IMPORT_ORIGIN] as { sourceFormat: string }).sourceFormat, 'odt');
+    assert.equal(odt.annotations.some((annotation) => annotation.targetText === 'omi:source-origin'), false);
+    assert.equal(reopened.sections[0]?.blocks[0]?.content, 'Completely rewritten');
+    const snapshot = parsePortableOmiState(JSON.parse(JSON.stringify(toPortableOmiState(extractManuscriptState(reopened)))));
+    assert.deepEqual(snapshot.extensions?.[MANUSCRIPT_IMPORT_ORIGIN], origin);
+    assert.equal(JSON.stringify(origin).includes('own-manuscript.docx'), false);
+    assert.equal(publicPublicationManuscript(reopened).extensions?.[MANUSCRIPT_IMPORT_ORIGIN], undefined);
+    assert.deepEqual(reopened.extensions?.[MANUSCRIPT_IMPORT_ORIGIN], origin);
   } finally {
     useStudioStore.setState(previous);
   }
@@ -469,6 +513,7 @@ test('self-authored PDF import leaves the opening heading free of source annotat
     applyPdfImportResult(result, '', true);
     const imported = useStudioStore.getState().manuscript;
     const openingHeading = imported.sections[0]?.blocks[0];
+    assert.equal((imported.extensions?.[MANUSCRIPT_IMPORT_ORIGIN] as { sourceFormat: string }).sourceFormat, 'pdf');
     assert.equal(openingHeading?.type, 'heading');
     assert.equal(imported.annotations.some((annotation) => annotation.targetBlockId === openingHeading?.id), false);
     assert.equal(imported.annotations.some((annotation) => annotation.targetText === 'omi:source-origin'), false);

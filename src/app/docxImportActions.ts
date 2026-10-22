@@ -1,4 +1,5 @@
 import { useStudioStore } from './useStudioStore';
+import { manuscriptImportOrigin } from '../model/manuscriptImportOrigin';
 import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import { createDocumentStructureProfile } from '../model/documentProfile';
 import { attachImportedDocumentSource, importedDocumentSourceLabel } from '../model/importedDocumentSource';
@@ -53,13 +54,13 @@ export function applyDocxImportPlan(
   const sections = options.selfAuthoredExternal
     ? plan.sections
     : attachImportedDocumentSource(plan.sections, options.source, importedDocumentSourceLabel(plan.locale ?? current.locale));
-  // A whole-document self-authorship marker used to target the first content
-  // block. When that block was the opening heading, the hidden annotation
-  // interfered with deleting it. Keep import history in versioning metadata;
-  // source attribution must not be anchored to manuscript text implicitly.
+  // Document provenance has no block/section anchor and cannot constrain edits.
   const annotations = plan.annotations;
 
   const state: OmiManuscriptState = {
+    ...(options.selfAuthoredExternal ? { extensions: manuscriptImportOrigin(
+      plan.fileName.toLowerCase().endsWith('.odt') ? 'odt' : 'docx', timestamp,
+    ) } : {}),
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
     id: manuscriptId,
     version: current.version,

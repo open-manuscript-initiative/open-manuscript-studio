@@ -11,8 +11,16 @@ A user may declare imported DOCX/PDF content to be their own work from another
 editor and omit a visible source line. Studio does not attach a hidden
 `omi:source-origin` annotation to the first manuscript block: that block may be
 an opening heading, and source metadata must not prevent its editing or
-deletion. The import event remains available in the manuscript's version
-history without being anchored to text. For third-party material, Studio asks
+deletion. The explicit own-work choice is retained as document metadata under
+`extensions["https://openmanuscript.org/extensions/manuscript-import-origin/1"]`:
+`version: 1`, `sourceFormat` (DOCX/ODT/PDF in lowercase), `importedAt`, and
+`assertion: "author-declared:self-authored-outside-omi"`. No filename, URL,
+account identity or content identifier is stored. This is historical self-attestation,
+not verified authorship of the imported work or subsequent edits. The existing
+OMI extension mechanism preserves it in working files, core snapshots and history.
+Public publication projections strip it; anonymous server review uses its existing
+allowlist and excludes it. All document parts can be edited, replaced, moved or
+deleted independently. For third-party material, Studio asks
 for a reviewed source and adds the source line only after confirmation; a file
 name or URL can be a source hint, and users can correct it before import.
 

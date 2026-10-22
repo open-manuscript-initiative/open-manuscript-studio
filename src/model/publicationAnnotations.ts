@@ -1,4 +1,5 @@
 import type { OmiAnnotation, OmiManuscript } from '../types/omi';
+import { publicManuscriptExtensions } from './manuscriptImportOrigin';
 
 /** Workflow visibility and hidden provenance are never public publication notes. */
 export function isPublicPublicationNote(annotation: OmiAnnotation): boolean {
@@ -11,10 +12,11 @@ export function isPublicPublicationNote(annotation: OmiAnnotation): boolean {
  * Unresolved anchors remain for the renderer's existing diagnostics.
  */
 export function publicPublicationManuscript(manuscript: OmiManuscript): OmiManuscript {
+  const extensions = publicManuscriptExtensions(manuscript.extensions);
   const privateIds = new Set(manuscript.annotations
     .filter((annotation) => !isPublicPublicationNote(annotation))
     .map((annotation) => annotation.id));
-  if (!privateIds.size) return manuscript;
+  if (!privateIds.size) return extensions === manuscript.extensions ? manuscript : { ...manuscript, extensions };
 
   function contentView(content: string): string {
     type Node = { type?: string; attrs?: { noteId?: unknown }; content?: Node[] };
@@ -38,6 +40,7 @@ export function publicPublicationManuscript(manuscript: OmiManuscript): OmiManus
 
   return {
     ...manuscript,
+    extensions,
     annotations: manuscript.annotations.filter(isPublicPublicationNote),
     sections: manuscript.sections.map((section) => ({
       ...section,

@@ -1,4 +1,5 @@
 import { useStudioStore } from './useStudioStore';
+import { manuscriptImportOrigin } from '../model/manuscriptImportOrigin';
 import { OMI_MANUSCRIPT_SCHEMA_URI } from '../model/omiFormatConstants';
 import { OMI_IDENTITY_MODEL_VERSION } from '../model/identity';
 import { attachImportedDocumentSource, importedDocumentSourceLabel } from '../model/importedDocumentSource';
@@ -112,6 +113,7 @@ export function applyPdfImportResult(result: PdfImportResult, source: string, se
     : attachImportedDocumentSource(sections, source, importedDocumentSourceLabel(current.locale));
 
   const state: OmiManuscriptState = {
+    ...(selfAuthoredExternal ? { extensions: manuscriptImportOrigin('pdf', timestamp) } : {}),
     schema: OMI_MANUSCRIPT_SCHEMA_URI,
     id: manuscriptId,
     version: current.version,
