@@ -25,7 +25,7 @@ const output = execFileSync(
 ).trim();
 const poOutput = execFileSync(
   'git',
-  ['diff', '--name-only', '--', 'locale/en/studio.po', 'locale/de/studio.po', 'locale/hu/studio.po', 'locale/fr/studio.po', 'locale/it/studio.po', 'locale/es/studio.po'],
+  ['diff', '--name-only', '--', 'locale/en/studio.po', 'locale/de/studio.po', 'locale/hu/studio.po', 'locale/fr/studio.po', 'locale/it/studio.po', 'locale/es/studio.po', 'locale/nl/studio.po', 'locale/pl/studio.po'],
   { cwd: root, encoding: 'utf8' },
 ).trim();
 
@@ -35,7 +35,7 @@ const changedPoLocales = new Set(
     .map((file) => /^locale\/([^/]+)\/studio\.po$/.exec(file)?.[1])
     .filter(Boolean),
 );
-const primaryPoLocales = new Set(['en', 'de', 'hu', 'fr', 'it', 'es']);
+const primaryPoLocales = new Set(['en', 'de', 'hu', 'fr', 'it', 'es', 'nl', 'pl']);
 const unexpected = [];
 
 for (const file of changed) {

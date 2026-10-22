@@ -7,7 +7,9 @@
     "da",
     "it",
     "fr",
-    "es"
+    "es",
+    "nl",
+    "pl"
   ],
   "identicalAllowlist": [],
   "identicalAllowlistByLocale": {
@@ -306,6 +308,46 @@
       "/researchModules/statistical-analysis-statistical-analysis-panel/copy/columns",
       "/researchModules/statistical-analysis-statistical-analysis-panel/copy/dataset",
       "/researchModules/transkribus/copy/modelMaterial"
+    ],
+    "nl": [
+      "/researchModules/corpus-linguistics-corpus-linguistics-panel/copyByLocale/categoryNames/lemma",
+      "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/siglum",
+      "/researchModules/mathematics-equation-editor/labels/matrix",
+      "/researchModules/research-databases-research-database-panel/copy/choose",
+      "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kind",
+      "/researchModules/research-reproducibility-research-reproducibility-panel/copy/kinds/code",
+      "/researchModules/social-research-methods-social-research-methods-panel/copy/codeLabel",
+      "/researchModules/statistical-analysis-statistical-analysis-panel/copy/intercept",
+      "/researchModules/statistical-analysis-statistical-analysis-panel/copy/maximum",
+      "/researchModules/statistical-analysis-statistical-analysis-panel/copy/minimum",
+      "/researchModules/cultural-heritage-cultural-heritage-panel/words/kind",
+      "/researchModules/cultural-heritage-cultural-heritage-panel/words/label",
+      "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/instrument",
+      "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/kinds/protocol",
+      "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/model",
+      "/researchModules/musicology-musicology-panel/words/tempo",
+      "/uncataloguedUi/components-footer/studio-5b23bd7",
+      "/uncataloguedUi/components-footer/wiki-4f983a6",
+      "/uncataloguedUi/components-footer/project-f6f4da8",
+      "/uncataloguedUi/components-footer/omi-studio-9672390",
+      "/uncataloguedUi/components-institutionalprofilessettings/ror-deb99ae",
+      "/uncataloguedUi/components-publicationstyleexportpanel/pdf-e0012bd",
+      "/uncataloguedUi/components-referencelookuppanel/web-ca84d13",
+      "/uncataloguedUi/components-referencelookuppanel/mtmt-02f100e"
+    ],
+    "pl": [
+      "/researchModules/critical-text-edition-critical-text-edition-panel/copyByLocale/siglum",
+      "/researchModules/statistical-analysis-statistical-analysis-panel/copy/minimum",
+      "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/format",
+      "/researchModules/experimental-laboratory-experimental-laboratory-panel/words/model",
+      "/researchModules/musicology-musicology-panel/words/tempo",
+      "/uncataloguedUi/components-footer/studio-5b23bd7",
+      "/uncataloguedUi/components-footer/wiki-4f983a6",
+      "/uncataloguedUi/components-footer/omi-studio-9672390",
+      "/uncataloguedUi/components-institutionalprofilessettings/ror-deb99ae",
+      "/uncataloguedUi/components-integrationexecutionworkspace/agent-5ce2e6f",
+      "/uncataloguedUi/components-publicationstyleexportpanel/pdf-e0012bd",
+      "/uncataloguedUi/components-referencelookuppanel/mtmt-02f100e"
     ]
   }
 }

@@ -8,6 +8,8 @@ import { getResearchModuleCopyByLocale } from '../src/modules/moduleTranslationC
 import { normalizeModuleLocale } from '../src/modules/moduleLocale.ts';
 import { appendHealthResearchHelp } from '../src/i18n/helpHealthResearch.ts';
 import { appendMathematicsHelp } from '../src/i18n/helpMathematics.ts';
+import { getTranskribusCopy } from '../src/modules/transkribus/copy.ts';
+import { translate } from '../src/i18n/translate.ts';
 
 before(async () => {
   await loadPrimaryLocaleDictionariesForTest();
@@ -40,6 +42,10 @@ test('research module locale normalization keeps English as the default', () => 
   assert.equal(normalizeModuleLocale('fr-FR'), 'fr');
   assert.equal(normalizeModuleLocale('it-IT'), 'it');
   assert.equal(normalizeModuleLocale('es-ES'), 'es');
+  assert.equal(normalizeModuleLocale('nl-NL'), 'nl');
+  assert.equal(normalizeModuleLocale('nl_BE'), 'nl');
+  assert.equal(normalizeModuleLocale('pl-PL'), 'pl');
+  assert.equal(normalizeModuleLocale('pl_PL'), 'pl');
 });
 
 test('runtime locale loading keeps research module shell and search copy localized', () => {
@@ -74,6 +80,23 @@ test('runtime locale loading keeps research module shell and search copy localiz
     huHealthSearch.healthSearchCopy.external,
     'Külső keresés / intézményi hozzáférés',
   );
+});
+
+test('Dutch and Polish runtime loading localizes the interface, research panels and Transkribus', () => {
+  for (const expected of [
+    { locale: 'nl', regional: 'nl-NL', save: 'Opslaan', navigation: 'Onderzoeksmodules', search: 'Zoeken', model: 'Herkenningsmodel' },
+    { locale: 'pl', regional: 'pl-PL', save: 'Zapisz', navigation: 'Moduły badawcze', search: 'Szukaj', model: 'Model rozpoznawania' },
+  ] as const) {
+    assert.equal(translate(expected.locale, 'common.save'), expected.save);
+    assert.equal(getModuleShellCopy(expected.regional).navigation, expected.navigation);
+    assert.equal(
+      getResearchModuleCopyByLocale('research-catalog-search-panel/copy')[expected.locale].search,
+      expected.search,
+    );
+    const transkribus = getTranskribusCopy(expected.regional);
+    assert.equal(transkribus.model, expected.model);
+    assert.ok(transkribus.loginHint.includes('Transkribus'));
+  }
 });
 
 test('mathematics and health research help are available in all three base languages', () => {
