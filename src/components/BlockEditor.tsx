@@ -45,6 +45,7 @@ import {
   getTopLevelBlockFromResolvedPosition,
   OMI_VISUAL_NODE,
 } from '../editor/continuousManuscriptDocument';
+import { removeEmptyHeadingTransaction } from '../editor/emptyHeadingDeletion';
 import {
   getEditorCapabilities,
   type EditorCapabilities,
@@ -309,6 +310,22 @@ function BlockEditorComponent({
             view.state.tr.replaceSelectionWith(tabType.create()),
           );
           return true;
+        }
+
+        if (
+          continuous
+          && effectiveEditable
+          && !event.isComposing
+          && !event.altKey
+          && !event.ctrlKey
+          && !event.metaKey
+        ) {
+          const transaction = removeEmptyHeadingTransaction(view.state, event.key);
+          if (transaction) {
+            event.preventDefault();
+            view.dispatch(transaction);
+            return true;
+          }
         }
 
         if (continuous || !effectiveEditable || blockType !== 'paragraph' || event.isComposing) return false;
