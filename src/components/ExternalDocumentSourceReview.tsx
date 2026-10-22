@@ -16,6 +16,11 @@ export function ExternalDocumentSourceReview({
   locale, summary, source, selfAuthoredExternal, onSelfAuthoredExternalChange, busy = false, onSourceChange, onConfirm, onCancel,
 }: Props) {
   const [approved, setApproved] = useState(false);
+  const originNote = locale.toLowerCase().startsWith('hu')
+    ? 'A saját műként jelölését és az import idejét a dokumentum rejtett eredetadata őrzi. Ez nem igazolt szerzőség. A dokumentum minden része szabadon szerkeszthető és törölhető.'
+    : locale.toLowerCase().startsWith('de')
+      ? 'Ihre Erklärung als eigenes Werk und der Importzeitpunkt bleiben als verborgene Dokumentmetadaten erhalten. Dies ist kein geprüfter Urheberschaftsnachweis. Alle Dokumentteile bleiben frei bearbeitbar und löschbar.'
+      : 'Your own-work declaration and import time remain in hidden document metadata. This does not verify authorship. Every part of the document remains editable and deletable.';
   const copy = locale.toLowerCase().startsWith('hu')
     ? { title: 'Import forrásának ellenőrzése', source: 'Forrás (kötelező külső műnél)', note: 'A megadott forrásfelirat a kézirat elején jelenik meg. A fájlnév csak javaslat; ellenőrizze, és szükség esetén írja át.', own: 'Saját művem, amelyet korábban más programban készítettem; ne kerüljön be forrásfelirat.', ownNote: 'Saját mű importálásakor kihagyhatja a forrásmegjelölést. Nem kerül rejtett jelzés az első címsorhoz, így a címsor szabadon módosítható és törölhető.', approve: 'Ellenőriztem a forrást és jogosult vagyok a tartalom átvételére.', confirm: 'Kézirat létrehozása', cancel: 'Mégsem' }
     : locale.toLowerCase().startsWith('de')
@@ -32,6 +37,7 @@ export function ExternalDocumentSourceReview({
     {selfAuthoredExternal ? <p>{copy.ownNote}</p> : <label>{copy.source}
       <input required value={source} onChange={(event) => { onSourceChange(event.target.value); setApproved(false); }} />
     </label>}
+    {selfAuthoredExternal && <p>{originNote}</p>}
     {!selfAuthoredExternal && <label>
       <input type="checkbox" checked={approved} onChange={(event) => setApproved(event.target.checked)} />
       {copy.approve}
