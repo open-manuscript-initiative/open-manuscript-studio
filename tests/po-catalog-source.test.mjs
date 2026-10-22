@@ -4,9 +4,10 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { flattenStrings, parsePo } from '../scripts/po-utils.mjs';
+import { loadTranslationOverlay, resolveReviewedTranslation } from '../scripts/translation-overlays.mjs';
 
 const repositoryRoot = process.cwd();
-const primaryLocales = ['en', 'de', 'hu'];
+const primaryLocales = ['en', 'de', 'hu', 'nl', 'pl'];
 
 async function readCatalog(locale) {
   const source = await readFile(
@@ -24,7 +25,7 @@ function readPointerValue(dictionary, pointer) {
     .reduce((value, segment) => value?.[segment], dictionary);
 }
 
-test('English, German and Hungarian PO catalogs are complete and drive the runtime dictionaries', async () => {
+test('primary PO catalogs are complete and drive the runtime dictionaries', async () => {
   const englishEntries = await readCatalog('en');
   const englishByPointer = new Map(
     englishEntries.map((entry) => [entry.pointer, entry]),
@@ -44,6 +45,7 @@ test('English, German and Hungarian PO catalogs are complete and drive the runti
 
   for (const locale of primaryLocales) {
     const entries = locale === 'en' ? englishEntries : await readCatalog(locale);
+    const overlay = await loadTranslationOverlay(repositoryRoot, locale);
     const byPointer = new Map(entries.map((entry) => [entry.pointer, entry]));
     const actualKeys = [...byPointer.keys()].sort();
     const expectedKeys = [...englishByPointer.keys()].sort();
@@ -62,9 +64,16 @@ test('English, German and Hungarian PO catalogs are complete and drive the runti
       const entry = byPointer.get(pointer);
       assert.equal(entry.source, sourceEntry.source, `${locale} msgid must match English at ${pointer}`);
       assert.ok(entry.translation.trim(), `${locale} msgstr must be non-empty at ${pointer}`);
+      const resolved = resolveReviewedTranslation({
+        locale,
+        pointer,
+        source: sourceEntry.source,
+        current: entry.translation,
+        overlay,
+      });
       assert.equal(
         readPointerValue(runtime, pointer),
-        entry.translation,
+        resolved.value,
         `${locale} runtime value must be compiled from PO at ${pointer}`,
       );
     }

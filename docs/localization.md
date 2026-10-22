@@ -91,6 +91,12 @@ After translators edit the PO files, regenerate runtime dictionaries with:
 npm run i18n:po:compile
 ```
 
+The Dutch (`nl`, Nederlands) and Polish (`pl`, Polski) catalogs compile by
+default and cover the shared interface, research-module panels and Transkribus.
+The module runtime normalizes regional language tags such as `nl-NL`, `nl_BE`
+and `pl-PL` to these catalogs. Both PO files are protected from legacy
+JSON-to-PO export, and their full key sets are checked against English in CI.
+
 The compiler rejects a locale when:
 
 - a translation key is missing;

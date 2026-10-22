@@ -1,7 +1,6 @@
 import { translations } from '../i18n/config';
 import type { TranslationDictionary } from '../i18n/types';
-
-const CATALOG_LOCALES = ['en', 'de', 'hu', 'fr', 'it', 'es'] as const;
+import { MODULE_LOCALES } from './moduleLocale';
 
 function getAtPointer(dictionary: TranslationDictionary, pointer: string): unknown {
   const tokens = pointer
@@ -26,7 +25,7 @@ export function getResearchModuleCopyByLocale<T = Record<string, any>>(
   const english = getAtPointer(translations.en!, pointer);
   const result = {} as Record<string, T>;
 
-  for (const locale of CATALOG_LOCALES) {
+  for (const locale of MODULE_LOCALES) {
     Object.defineProperty(result, locale, {
       enumerable: true,
       get: () => {

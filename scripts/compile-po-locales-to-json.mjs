@@ -10,7 +10,7 @@ const root = path.resolve(__dirname, '..');
 const jsonRoot = path.join(root, 'src', 'i18n', 'locales');
 const poRoot = path.join(root, 'locale');
 const referenceLocale = 'en';
-const primaryLocales = ['en', 'de', 'hu', 'fr', 'it', 'es', 'sk'];
+const primaryLocales = ['en', 'de', 'hu', 'fr', 'it', 'es', 'sk', 'nl', 'pl'];
 
 function parseOptions(args) {
   const options = { all: false, locales: null };

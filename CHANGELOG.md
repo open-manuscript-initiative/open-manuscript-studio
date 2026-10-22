@@ -13,6 +13,8 @@ the portable OMI document model and individual renderers.
 
 ## Unreleased
 
+- Integrates the returned Dutch and Polish PO translations across the shared Studio interface and research modules, including Transkribus, and protects both catalogs during compilation, validation and legacy JSON export.
+
 ## 0.3.0-beta.7 — 2026-10-20
 
 ### Native applications and layout
