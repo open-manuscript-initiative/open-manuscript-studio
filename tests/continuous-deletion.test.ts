@@ -65,7 +65,7 @@ test('deletes selected text as a single operation', () => {
   const state = EditorState.create({
     schema,
     doc,
-    selection: TextSelection.create(doc, 2, 7),
+    selection: TextSelection.create(doc, 1, 7),
   });
 
   const result = applyDeletion(state, 'backward');
