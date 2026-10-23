@@ -52,7 +52,7 @@ function containsNonPrintingWhitespaceText(value: unknown): boolean {
   if (Array.isArray(value)) return value.some(containsNonPrintingWhitespaceText);
 
   const record = value as Record<string, unknown>;
-  if (record.type === 'text' && typeof record.text === 'string' && /[\\t \\p{Zs}]/u.test(record.text)) {
+  if (record.type === 'text' && typeof record.text === 'string' && /[\t \p{Zs}]/u.test(record.text)) {
     return true;
   }
   return Object.values(record).some(containsNonPrintingWhitespaceText);
