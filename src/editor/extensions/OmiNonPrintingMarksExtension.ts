@@ -1,8 +1,8 @@
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey, type Transaction } from '@tiptap/pm/state';
-import { Mapping } from '@tiptap/pm/transform';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
+
+import { transactionChangesNonPrintingContent } from '../nonPrintingMarkChanges';
 
 import './OmiNonPrintingMarks.css';
 
@@ -31,7 +31,7 @@ export const OmiNonPrintingMarksExtension = Extension.create({
             if (!transaction.docChanged) return decorations;
 
             const mapped = decorations.map(transaction.mapping, transaction.doc);
-            return transactionChangesNonPrintingContent(transaction, decorations)
+            return transactionChangesNonPrintingContent(transaction)
               ? buildNonPrintingDecorations(transaction.doc)
               : mapped;
           },
@@ -99,61 +99,6 @@ function nonPrintingWhitespaceGlyph(character: string | undefined): string | nul
   }
   if (character === '\t') return '→';
   return null;
-}
-
-function transactionChangesNonPrintingContent(
-  transaction: Transaction,
-  decorations: DecorationSet,
-): boolean {
-  let mapped = decorations;
-
-  for (let index = 0; index < transaction.steps.length; index += 1) {
-    const step = transaction.steps[index];
-    if (!step) continue;
-
-    const stepJson = step.toJSON();
-    if (containsStructuralNode(stepJson) || containsNonPrintingWhitespaceText(stepJson)) {
-      return true;
-    }
-
-    let removesWhitespace = false;
-    step.getMap().forEach((from, to) => {
-      if (to <= from) return;
-      if (mapped.find(from, to, (decoration) => decoration.spec.nonPrintingWhitespace).length) {
-        removesWhitespace = true;
-      }
-    });
-    if (removesWhitespace) return true;
-
-    const nextDoc = transaction.docs[index + 1] ?? transaction.doc;
-    const stepMapping = new Mapping();
-    stepMapping.appendMap(step.getMap());
-    mapped = mapped.map(stepMapping, nextDoc);
-  }
-
-  return false;
-}
-
-function containsStructuralNode(value: unknown): boolean {
-  if (!value || typeof value !== 'object') return false;
-  if (Array.isArray(value)) return value.some(containsStructuralNode);
-
-  const record = value as Record<string, unknown>;
-  if (record.type === 'paragraph' || record.type === 'heading' || record.type === 'hardBreak') {
-    return true;
-  }
-  return Object.values(record).some(containsStructuralNode);
-}
-
-function containsNonPrintingWhitespaceText(value: unknown): boolean {
-  if (!value || typeof value !== 'object') return false;
-  if (Array.isArray(value)) return value.some(containsNonPrintingWhitespaceText);
-
-  const record = value as Record<string, unknown>;
-  if (record.type === 'text' && typeof record.text === 'string' && /[\t \p{Zs}]/u.test(record.text)) {
-    return true;
-  }
-  return Object.values(record).some(containsNonPrintingWhitespaceText);
 }
 
 function createNonPrintingMark(
