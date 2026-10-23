@@ -350,6 +350,26 @@ function BlockEditorComponent({
           }
         }
 
+        if (
+          continuous
+          && effectiveEditable
+          && !event.isComposing
+          && !event.altKey
+          && !event.ctrlKey
+          && !event.metaKey
+          && (event.key === 'Backspace' || event.key === 'Delete')
+        ) {
+          const handled = applyContinuousDeletionInput(
+            view.state,
+            event.key === 'Backspace' ? 'backward' : 'forward',
+            (transaction) => view.dispatch(transaction),
+          );
+          if (handled) {
+            event.preventDefault();
+            return true;
+          }
+        }
+
         if (continuous || !effectiveEditable || blockType !== 'paragraph' || event.isComposing) return false;
         if (event.altKey || event.ctrlKey || event.metaKey) return false;
 
