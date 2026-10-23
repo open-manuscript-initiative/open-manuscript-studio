@@ -31,7 +31,7 @@ test('refreshes non-printing decorations when a space is deleted', () => {
 });
 
 test('refreshes non-printing decorations when a non-breaking space is deleted', () => {
-  const state = stateWithText('word\\u00a0word');
+  const state = stateWithText('word\u00a0word');
   const transaction = state.tr.delete(5, 6);
 
   assert.equal(transactionChangesNonPrintingContent(transaction), true);
