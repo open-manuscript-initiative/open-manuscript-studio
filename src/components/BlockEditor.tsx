@@ -81,6 +81,7 @@ import {
 import { renderCitationCluster } from '../model/cslRendering';
 import { sanitizeRichTextPasteHtml } from '../model/richText';
 import { applyContinuousDeletionInput } from '../editor/continuousDeletion';
+import { RecentLocalEditorContentHistory } from '../editor/recentLocalEditorContentHistory';
 import {
   createTableBlock,
   parseDelimitedTable,
@@ -176,7 +177,7 @@ function BlockEditorComponent({
   const [crossReferencePickerOpen, setCrossReferencePickerOpen] = useState(false);
   const [integrationAction, setIntegrationAction] = useState<'translate' | 'agent' | null>(null);
   const onUpdateRef = useRef(onUpdate);
-  const lastEmittedContentRef = useRef<string | null>(null);
+  const recentLocalContentRef = useRef(new RecentLocalEditorContentHistory());
   const onProofingSelectionRef = useRef(onProofingSelection);
   const tRef = useRef(t);
   const proofreadingSelectRef = useRef<(id: string | null) => void>(() => undefined);
@@ -488,7 +489,7 @@ function BlockEditorComponent({
     },
     onUpdate: ({ editor: currentEditor, transaction, appendedTransactions }) => {
       const serializedContent = JSON.stringify(currentEditor.getJSON());
-      lastEmittedContentRef.current = serializedContent;
+      recentLocalContentRef.current.record(serializedContent);
       if (capabilities.reconcileWorkspaceReferences) {
         const changedReferences = collectChangedWorkspaceReferences([
           transaction,
@@ -607,9 +608,12 @@ function BlockEditorComponent({
 
   useEffect(() => {
     if (!editor) return;
-    const emittedContent = lastEmittedContentRef.current;
-    lastEmittedContentRef.current = null;
-    if (content === emittedContent) return;
+    const recentLocalContent = recentLocalContentRef.current;
+    if (recentLocalContent.has(content)) {
+      recentLocalContent.acknowledge(content);
+      return;
+    }
+    recentLocalContent.clear();
     const incomingDocument = parseStoredContent(content);
     if (documentsAreEqual(editor.getJSON(), incomingDocument)) return;
 
