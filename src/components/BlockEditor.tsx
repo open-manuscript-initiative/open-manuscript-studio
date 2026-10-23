@@ -80,6 +80,7 @@ import {
 } from '../model/crossReferences';
 import { renderCitationCluster } from '../model/cslRendering';
 import { sanitizeRichTextPasteHtml } from '../model/richText';
+import { applyContinuousDeletionInput } from '../editor/continuousDeletion';
 import {
   createTableBlock,
   parseDelimitedTable,
@@ -291,6 +292,27 @@ function BlockEditorComponent({
         'aria-label': `${blockLabel}: ${t('studio.editorAria')}`,
         spellcheck: proofingMode === 'none' ? 'false' : 'true',
       },
+      handleDOMEvents: {
+        beforeinput: (view, rawEvent) => {
+          if (!continuous || !effectiveEditable) return false;
+          const event = rawEvent as InputEvent;
+          if (event.isComposing || !event.cancelable) return false;
+          const direction = event.inputType === 'deleteContentBackward'
+            ? 'backward'
+            : event.inputType === 'deleteContentForward'
+              ? 'forward'
+              : null;
+          if (!direction) return false;
+
+          const handled = applyContinuousDeletionInput(
+            view.state,
+            direction,
+            (transaction) => view.dispatch(transaction),
+          );
+          if (handled) event.preventDefault();
+          return handled;
+        },
+      },
       transformPastedHTML: (html) => sanitizeRichTextPasteHtml(html),
       handleKeyDown: (view, event) => {
         if (
@@ -324,6 +346,26 @@ function BlockEditorComponent({
           if (transaction) {
             event.preventDefault();
             view.dispatch(transaction);
+            return true;
+          }
+        }
+
+        if (
+          continuous
+          && effectiveEditable
+          && !event.isComposing
+          && !event.altKey
+          && !event.ctrlKey
+          && !event.metaKey
+          && (event.key === 'Backspace' || event.key === 'Delete')
+        ) {
+          const handled = applyContinuousDeletionInput(
+            view.state,
+            event.key === 'Backspace' ? 'backward' : 'forward',
+            (transaction) => view.dispatch(transaction),
+          );
+          if (handled) {
+            event.preventDefault();
             return true;
           }
         }
