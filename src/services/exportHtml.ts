@@ -757,18 +757,31 @@ function renderNotes(
   if (!notes.length) return '';
   const placement = state.context.profile.rules.notes.placement;
 
+  const citationRules = state.context.profile.rules.citations;
+  const previouslyCitedTargets = new Set<string>();
+  const noteItems = notes.map((note, index) => {
+    const noteDocument = createNoteBodyDocument(
+      note,
+      state.manuscript.bibliographicRecords ?? [],
+      citationRules.noteFirstStyle ?? citationRules.style,
+      state.context.locale,
+      {
+        subsequentStyle: citationRules.noteSubsequentStyle,
+        previouslyCitedTargets: [...previouslyCitedTargets],
+      },
+    );
+    for (const citation of note.noteCitations ?? []) previouslyCitedTargets.add(citation.target);
+    const body = noteBodyPlainText(noteDocument) || note.body;
+    return `<li id="${htmlId('note', note.id)}" role="doc-endnote" value="${escapeAttribute(
+      state.noteLabels.get(note.id) ?? String(index + 1),
+    )}">${escapeHtml(
+      body,
+    )} <a class="note-backref" href="#${htmlId('noteref', note.id)}" aria-label="Back to note reference">↩</a></li>`;
+  });
+
   return `<section class="article-notes" role="doc-endnotes" data-note-placement="${escapeAttribute(
     placement,
-  )}" aria-labelledby="notes-heading"><h2 id="notes-heading">${escapeHtml(labels.notes)}</h2><ol>${notes
-    .map(
-      (note, index) =>
-        `<li id="${htmlId('note', note.id)}" role="doc-endnote" value="${escapeAttribute(
-          state.noteLabels.get(note.id) ?? String(index + 1),
-        )}">${escapeHtml(
-          note.body,
-        )} <a class="note-backref" href="#${htmlId('noteref', note.id)}" aria-label="Back to note reference">↩</a></li>`,
-    )
-    .join('')}</ol></section>`;
+  )}" aria-labelledby="notes-heading"><h2 id="notes-heading">${escapeHtml(labels.notes)}</h2><ol>${noteItems.join('')}</ol></section>`;
 }
 
 function renderBibliographySection(
