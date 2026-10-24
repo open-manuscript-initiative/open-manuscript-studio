@@ -1,9 +1,10 @@
-## 0.3.0-beta.8 — 2026-10-20
+## 0.3.0-beta.9 — 2026-10-24
 
-- Fixes DOCX imports that duplicated the manuscript title as the first numbered heading; matching title headings are recognized in both standard and large-document imports.
-- Advances the shared Studio version to **0.3.0-beta.8**, Windows MSI to **0.3.0.8**, iOS build to **20** (short version **0.3.0**) and Android versionCode floor to **1207**.
+- Improves Linux deep-link registration, lookup and unregistration error handling, and removes only this app's MIME association.
+- Includes the returned Dutch and Polish translations across the shared Studio interface and research modules.
+- Advances the shared Studio version to **0.3.0-beta.9**, Windows MSI to **0.3.0.9**, iOS build to **21** (short version **0.3.0**) and Android versionCode floor to **1208**.
 - Keeps the portable manuscript format at **OMI-SPEC-320@0.3.0**.
-- See [the release notes](docs/release/0.3.0-beta.8.md) for packaging identities and deployment steps.
+- See [the release notes](docs/release/0.3.0-beta.9.md) for packaging identities and deployment steps.
 
 # Changelog
 
@@ -12,8 +13,13 @@ Application release numbers are independent from the version identifiers of
 the portable OMI document model and individual renderers.
 
 ## Unreleased
+# Changelog
 
-- Integrates the returned Dutch and Polish PO translations across the shared Studio interface and research modules, including Transkribus, and protects both catalogs during compilation, validation and legacy JSON export.
+Notable changes to Open Manuscript Studio are documented in this file.
+Application release numbers are independent from the version identifiers of
+the portable OMI document model and individual renderers.
+
+## Unreleased
 
 ## 0.3.0-beta.7 — 2026-10-20
 
