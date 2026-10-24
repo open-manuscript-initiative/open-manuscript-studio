@@ -540,7 +540,7 @@ mod imp {
                 enabled_quote: false,
                 enabled_escape: false,
                 // Keep the legacy desktop-entry parsing behavior on newer tauri-utils.
-                enabled_indented_multiline_value: false,
+                enabled_indented_mutiline_value: false,
                 enabled_preserve_key_leading_whitespace: false,
             },
         )
