@@ -520,3 +520,125 @@
     margin-top: .4rem;
   }
 }
+
+.publisher-profile-saved {
+  grid-template-columns: 2.4rem minmax(0, 1fr) repeat(3, auto);
+}
+
+.publisher-profile-open small {
+  overflow: hidden;
+  color: #64727a;
+  font-size: .68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.publisher-profile-download,
+.publisher-profile-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: .3rem;
+  background: transparent;
+  color: #536b75;
+}
+
+.publisher-profile-download:hover,
+.publisher-profile-copy:hover {
+  background: #eef3f4;
+}
+
+.publisher-profile-catalog {
+  display: grid;
+  gap: .55rem;
+  margin: .45rem 0 .7rem;
+  padding: .65rem;
+  border: 1px solid #dcd6cc;
+  border-radius: .4rem;
+  background: #fbfaf7;
+}
+
+.publisher-profile-catalog-actions,
+.publisher-profile-catalog-url > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem;
+}
+
+.publisher-profile-catalog-url {
+  display: grid;
+  gap: .25rem;
+  min-width: 0;
+}
+
+.publisher-profile-catalog-url > div input {
+  flex: 1 1 18rem;
+  min-width: 10rem;
+}
+
+.publisher-profile-catalog-list {
+  display: grid;
+  gap: .4rem;
+}
+
+.publisher-profile-catalog-list article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .65rem;
+  padding: .5rem;
+  border: 1px solid #e3ded5;
+  border-radius: .35rem;
+  background: #fff;
+}
+
+.publisher-profile-catalog-list article > div {
+  display: grid;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.publisher-profile-catalog-list article span,
+.publisher-profile-catalog-list article small,
+.publisher-profile-catalog-help,
+.publisher-profile-catalog-message {
+  color: #687178;
+  font-size: .78rem;
+}
+
+.publisher-profile-catalog-list article p {
+  margin: 0;
+}
+
+.publisher-profile-catalog-message {
+  margin: 0;
+}
+
+.publication-profile-options-group {
+  grid-column: 1 / -1;
+  margin: .35rem 0 0;
+  color: #5b6470;
+  font-size: .8rem;
+}
+
+@media (max-width: 680px) {
+  .publisher-profile-saved {
+    grid-template-columns: 2rem minmax(0, 1fr) auto auto;
+    gap: .35rem;
+  }
+
+  .publisher-profile-saved img,
+  .publisher-profile-logo-placeholder {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .publisher-profile-catalog-list article {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

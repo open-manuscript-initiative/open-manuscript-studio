@@ -43,6 +43,13 @@ export function NoteEditorCard({
     candidate.blocks.some((block) => block.id === note.targetBlockId),
   );
   const noteKind = getNoteKind(note);
+  const citationRules = manuscript.embeddedPublicationProfile?.rules.citations;
+  const precedingNotes = manuscript.annotations
+    .slice(0, manuscript.annotations.indexOf(note))
+    .filter(isNoteAnnotation);
+  const previouslyCitedTargets = [...new Set(precedingNotes.flatMap((item) =>
+    (item.noteCitations ?? []).map((citation) => citation.target),
+  ))];
 
   function navigateToNote(): void {
     if (!section) return;
@@ -103,7 +110,9 @@ export function NoteEditorCard({
         <NoteBodyEditor
           note={note}
           records={manuscript.bibliographicRecords ?? []}
-          citationStyle={manuscript.citationStyle ?? 'apa-7'}
+          citationStyle={citationRules?.noteFirstStyle ?? manuscript.citationStyle ?? 'apa-7'}
+          subsequentCitationStyle={citationRules?.noteSubsequentStyle ?? citationRules?.noteFirstStyle ?? manuscript.citationStyle ?? 'apa-7'}
+          previouslyCitedTargets={previouslyCitedTargets}
           manuscriptLocale={manuscript.locale}
         />
       </div>

@@ -84,11 +84,22 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
             id = noteReferenceIds[kind].size + 1;
             noteReferenceIds[kind].set(noteId, id);
             referencedNoteIds.add(noteId);
+            const citationRules = manuscript.embeddedPublicationProfile?.rules.citations;
+            const precedingNotes = manuscript.annotations
+              .slice(0, manuscript.annotations.indexOf(note))
+              .filter(isNoteAnnotation);
+            const previouslyCitedTargets = [...new Set(precedingNotes.flatMap((annotation) =>
+              annotation.noteCitations?.map((citation) => citation.target) ?? [],
+            ))];
             const noteDocument = createNoteBodyDocument(
               note,
               manuscript.bibliographicRecords ?? [],
-              manuscript.citationStyle ?? 'apa-7',
+              citationRules?.noteFirstStyle ?? manuscript.citationStyle ?? 'apa-7',
               manuscript.locale,
+              {
+                subsequentStyle: citationRules?.noteSubsequentStyle,
+                previouslyCitedTargets,
+              },
             );
             const noteBody = renderJsonContent(noteDocument);
             const target = kind === 'footnote' ? footnotes : endnotes;
