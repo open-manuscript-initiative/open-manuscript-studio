@@ -141,6 +141,7 @@ export function PublicationDocumentCanvas({
   const noteAnchorCacheRef = useRef(new Map<string, NoteAnchorCacheEntry>());
   const noteBodyCacheRef = useRef(new Map<string, NoteBodyCacheEntry>());
   const [stageWidth, setStageWidth] = useState(0);
+  const [visiblePageRange, setVisiblePageRange] = useState({ start: 0, end: 16 });
   const [pagination, setPagination] = useState<PublicationPaginationState>({
     pageCount: 1,
     css: '',
@@ -306,6 +307,8 @@ export function PublicationDocumentCanvas({
   ), [manuscript.annotations]);
   const noteLineHeight = positive(style.styles.footnote.lineHeight * PIXELS_PER_POINT * scale, 1);
   const noteSeparatorHeight = 8 * scale + 1;
+  const firstVisiblePage = Math.max(0, Math.min(pageCount - 1, visiblePageRange.start));
+  const visiblePageEnd = Math.min(pageCount, Math.max(firstVisiblePage + 1, visiblePageRange.end));
 
   useLayoutEffect(() => {
     const stage = stageRef.current;
@@ -317,6 +320,42 @@ export function PublicationDocumentCanvas({
     observer.observe(stage);
     return () => observer.disconnect();
   }, []);
+
+  useLayoutEffect(() => {
+    if (viewMode !== 'print') return;
+    const stage = stageRef.current;
+    const paper = stage?.querySelector<HTMLElement>('.publication-document-paper--print');
+    if (!stage || !paper) return;
+
+    let frame = 0;
+    const updateVisiblePages = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const stageRect = stage.getBoundingClientRect();
+        const paperRect = paper.getBoundingClientRect();
+        const paperTop = paperRect.top - stageRect.top + stage.scrollTop;
+        const viewportTop = stage.scrollTop - paperTop;
+        const overscan = Math.max(stage.clientHeight * 1.5, pageStride * 2);
+        const start = Math.max(0, Math.floor((viewportTop - overscan) / pageStride));
+        const end = Math.min(
+          pageCount,
+          Math.ceil((viewportTop + stage.clientHeight + overscan) / pageStride) + 1,
+        );
+        setVisiblePageRange((current) => (
+          current.start === start && current.end === end
+            ? current
+            : { start, end }
+        ));
+      });
+    };
+
+    stage.addEventListener('scroll', updateVisiblePages, { passive: true });
+    updateVisiblePages();
+    return () => {
+      stage.removeEventListener('scroll', updateVisiblePages);
+      cancelAnimationFrame(frame);
+    };
+  }, [pageCount, pageStride, viewMode]);
 
   useLayoutEffect(() => {
     if (viewMode !== 'print') {
@@ -724,7 +763,8 @@ export function PublicationDocumentCanvas({
         >
           {viewMode === 'print' ? (
             <div className="publication-document-page-guides" aria-hidden="true">
-            {Array.from({ length: pageCount }, (_, index) => {
+            {Array.from({ length: visiblePageEnd - firstVisiblePage }, (_, visibleIndex) => {
+              const index = firstVisiblePage + visibleIndex;
               const pageNumber = firstPageNumber + index;
               const evenPage = pageNumber % 2 === 0;
               const mirroredEvenPage = style.page.mirroredMargins && evenPage;
