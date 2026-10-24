@@ -51,6 +51,7 @@ import { PublicationHtmlSectionsEditor } from './PublicationHtmlSectionsEditor';
 import { PublicationSectionRuler } from './PublicationSectionRuler';
 import {
   paginatePublicationBlocks,
+  type PublicationFlowBlock,
   type PublicationFlowLine,
   type PublicationPageNote,
 } from './publicationPageLayout';
@@ -339,32 +340,71 @@ export function PublicationDocumentCanvas({
 
     let frame = 0;
     let scheduleTimer: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
     const update = () => {
       const flow = collectPublicationFlowElements(content);
-      const corrections = publicationCorrections;
-      const noteHeights = new Map(Array.from(
+      const noteElements = Array.from(
         noteMeasureRef.current?.querySelectorAll<HTMLElement>('[data-publication-note-id]') ?? [],
-      ).map((element) => [element.dataset.publicationNoteId!,
-        Math.max(noteLineHeight, Math.round(element.getBoundingClientRect().height / noteLineHeight) * noteLineHeight),
-      ]));
+      );
+      const noteHeights = new Map<string, number>();
+      let noteIndex = 0;
+
+      const measureNotesChunk = () => {
+        if (cancelled) return;
+        const startedAt = performance.now();
+        while (noteIndex < noteElements.length
+          && (noteIndex === 0 || performance.now() - startedAt < 8)) {
+          const element = noteElements[noteIndex]!;
+          noteHeights.set(
+            element.dataset.publicationNoteId!,
+            Math.max(
+              noteLineHeight,
+              Math.round(element.getBoundingClientRect().height / noteLineHeight) * noteLineHeight,
+            ),
+          );
+          noteIndex += 1;
+        }
+        if (noteIndex < noteElements.length) {
+          frame = requestAnimationFrame(measureNotesChunk);
+          return;
+        }
+        measureBlocksChunk();
+      };
+
+      const corrections = publicationCorrections;
+      const measuredBlocks: PublicationFlowBlock[] = [];
+      let flowIndex = 0;
       let existingFlowBreakHeight = 0;
-      const layout = paginatePublicationBlocks(
-        flow.map(({ element }) => {
+
+      const measureBlocksChunk = () => {
+        if (cancelled) return;
+        const startedAt = performance.now();
+        while (flowIndex < flow.length
+          && (flowIndex === 0 || performance.now() - startedAt < 8)) {
+          const { element } = flow[flowIndex]!;
           const blockId = element.dataset.blockId ?? '';
           const blockCorrections = corrections.filter(
             (correction) => correction.targetBlockId === blockId,
           );
           const splittable = isSplittablePublicationParagraph(element);
           const lines = splittable ? measurePublicationLines(element) : [];
-          const ownFlowBreakHeight = publicationFlowBreakHeight(element);
-          const anchors = Array.from(element.querySelectorAll<HTMLElement>('[data-omi-note][data-note-id]'))
-            .filter((anchor) => noteHeights.has(anchor.dataset.noteId!));
+          const elementRect = element.getBoundingClientRect();
+          const flowBreaks = Array.from(
+            element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'),
+          ).map((spacer) => {
+            const rect = spacer.getBoundingClientRect();
+            return { top: rect.top, height: rect.height };
+          });
+          const ownFlowBreakHeight = flowBreaks.reduce((sum, spacer) => sum + spacer.height, 0);
+          const anchors = Array.from(
+            element.querySelectorAll<HTMLElement>('[data-omi-note][data-note-id]'),
+          ).filter((anchor) => noteHeights.has(anchor.dataset.noteId!));
           for (const anchor of anchors) {
             const rect = anchor.getBoundingClientRect();
-            const removedSpace = Array.from(element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'))
-              .filter((spacer) => spacer.getBoundingClientRect().top < rect.top - 0.5)
-              .reduce((sum, spacer) => sum + spacer.getBoundingClientRect().height, 0);
-            const top = rect.top - element.getBoundingClientRect().top - removedSpace;
+            const removedSpace = flowBreaks
+              .filter((spacer) => spacer.top < rect.top - 0.5)
+              .reduce((sum, spacer) => sum + spacer.height, 0);
+            const top = rect.top - elementRect.top - removedSpace;
             const line = lines.reduce<PublicationFlowLine | undefined>((nearest, candidate) => (
               !nearest || Math.abs(candidate.top - top) < Math.abs(nearest.top - top) ? candidate : nearest
             ), undefined);
@@ -374,15 +414,12 @@ export function PublicationDocumentCanvas({
             style,
             element.dataset.paragraphStyleId,
           );
-          const block = {
+          measuredBlocks.push({
             top: Math.max(
               0,
               offsetTopWithin(element, content) - existingFlowBreakHeight,
             ),
-            height: Math.max(
-              0,
-              element.getBoundingClientRect().height - ownFlowBreakHeight,
-            ),
+            height: Math.max(0, elementRect.height - ownFlowBreakHeight),
             lines,
             noteIds: anchors.map((anchor) => anchor.dataset.noteId!),
             leadingHeight: lines[0]?.height,
@@ -395,45 +432,56 @@ export function PublicationDocumentCanvas({
             forcePageBreakBefore: blockCorrections.some(
               (item) => item.kind === 'page-break-before',
             ),
-          };
+          });
           existingFlowBreakHeight += ownFlowBreakHeight;
-          return block;
-        }),
-        usablePageHeight,
-        pageOverhead,
-        { heights: noteHeights, lineHeight: noteLineHeight, separatorHeight: noteSeparatorHeight },
-      );
-      const css = buildPaginationCss({
-        canvasId,
-        flow,
-        placements: layout.placements,
-        firstPageNumber,
-        mirroredMargins: style.page.mirroredMargins,
-        innerMargin,
-        outerMargin,
-        firstPageLeftMargin,
-      });
-      const flowBreaks = layout.flowBreaks.flatMap<OmiPublicationFlowBreak>(
-        (flowBreak) => {
-          const targetBlockId = flow[flowBreak.blockIndex]?.element.dataset.blockId;
-          return targetBlockId
-            ? [{
-                targetBlockId,
-                textOffset: flowBreak.textOffset,
-                height: flowBreak.height,
-              }]
-            : [];
-        },
-      );
+          flowIndex += 1;
+        }
 
-      setPagination((current) => (
-        current.pageCount === layout.pageCount
-          && JSON.stringify(current.pageNotes) === JSON.stringify(layout.pageNotes ?? [])
-          && current.css === css
-          && publicationFlowBreaksEqual(current.flowBreaks, flowBreaks)
-          ? current
-          : { pageCount: layout.pageCount, css, flowBreaks, pageNotes: layout.pageNotes ?? [] }
-      ));
+        if (flowIndex < flow.length) {
+          frame = requestAnimationFrame(measureBlocksChunk);
+          return;
+        }
+        if (cancelled) return;
+        const layout = paginatePublicationBlocks(
+          measuredBlocks,
+          usablePageHeight,
+          pageOverhead,
+          { heights: noteHeights, lineHeight: noteLineHeight, separatorHeight: noteSeparatorHeight },
+        );
+        const css = buildPaginationCss({
+          canvasId,
+          flow,
+          placements: layout.placements,
+          firstPageNumber,
+          mirroredMargins: style.page.mirroredMargins,
+          innerMargin,
+          outerMargin,
+          firstPageLeftMargin,
+        });
+        const flowBreaks = layout.flowBreaks.flatMap<OmiPublicationFlowBreak>(
+          (flowBreak) => {
+            const targetBlockId = flow[flowBreak.blockIndex]?.element.dataset.blockId;
+            return targetBlockId
+              ? [{
+                  targetBlockId,
+                  textOffset: flowBreak.textOffset,
+                  height: flowBreak.height,
+                }]
+              : [];
+          },
+        );
+
+        setPagination((current) => (
+          current.pageCount === layout.pageCount
+            && JSON.stringify(current.pageNotes) === JSON.stringify(layout.pageNotes ?? [])
+            && current.css === css
+            && publicationFlowBreaksEqual(current.flowBreaks, flowBreaks)
+            ? current
+            : { pageCount: layout.pageCount, css, flowBreaks, pageNotes: layout.pageNotes ?? [] }
+        ));
+      };
+
+      measureNotesChunk();
     };
     const schedule = () => {
       if (paginationDebounceMs > 0) {
@@ -467,6 +515,7 @@ export function PublicationDocumentCanvas({
     });
 
     return () => {
+      cancelled = true;
       if (scheduleTimer !== null) clearTimeout(scheduleTimer);
       cancelAnimationFrame(frame);
       resizeObserver?.disconnect();
