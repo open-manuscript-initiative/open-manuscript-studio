@@ -16,6 +16,7 @@ import {
   noteBodyPlainText,
   noteCitationNode,
   synchronizeNoteCitationLabels,
+  type NoteCitationStyleOptions,
 } from '../model/noteRichText';
 import type { OmiAnnotation, OmiBibliographicRecord, OmiCitationStyleId } from '../types/omi';
 import { CitationPicker, type CitationPickerSelection } from './CitationPicker';
@@ -25,6 +26,8 @@ interface NoteBodyEditorProps {
   records: readonly OmiBibliographicRecord[];
   citationStyle: OmiCitationStyleId;
   manuscriptLocale: string;
+  subsequentCitationStyle?: OmiCitationStyleId;
+  previouslyCitedTargets?: readonly string[];
 }
 
 export function NoteBodyEditor({
@@ -32,16 +35,19 @@ export function NoteBodyEditor({
   records,
   citationStyle,
   manuscriptLocale,
+  subsequentCitationStyle,
+  previouslyCitedTargets,
 }: NoteBodyEditorProps) {
   const { locale } = useTranslation();
   const copy = getNoteCitationCopy(locale);
+  const styleOptions: NoteCitationStyleOptions = { subsequentStyle: subsequentCitationStyle, previouslyCitedTargets };
   const [pickerOpen, setPickerOpen] = useState(false);
   const noteIdRef = useRef(note.id);
   const insertionPosRef = useRef<number | null>(null);
   noteIdRef.current = note.id;
 
   const initial = useMemo(
-    () => createNoteBodyDocument(note, records, citationStyle, manuscriptLocale) as JSONContent,
+    () => createNoteBodyDocument(note, records, citationStyle, manuscriptLocale, styleOptions) as JSONContent,
     // Intentionally initialize once per note. External label changes are synchronized below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [note.id],
@@ -80,6 +86,7 @@ export function NoteBodyEditor({
       records,
       citationStyle,
       manuscriptLocale,
+      styleOptions,
     ) as JSONContent;
     if (JSON.stringify(synchronized) === JSON.stringify(editor.getJSON())) return;
     editor.commands.setContent(synchronized, { emitUpdate: true });
