@@ -1,10 +1,9 @@
-## 0.3.0-beta.9 — 2026-10-24
+## 0.3.0-beta.10 — 2026-10-24
 
-- Improves Linux deep-link registration, lookup and unregistration error handling, and removes only this app's MIME association.
-- Includes the returned Dutch and Polish translations across the shared Studio interface and research modules.
-- Advances the shared Studio version to **0.3.0-beta.9**, Windows MSI to **0.3.0.9**, iOS build to **21** (short version **0.3.0**) and Android versionCode floor to **1208**.
+- Improves live publication editor responsiveness for long manuscripts by measuring print layout and footnotes in short, cancellable animation-frame chunks.
+- Advances the shared Studio version to **0.3.0-beta.10**, Windows MSI to **0.3.0.10**, iOS build to **22** (short version **0.3.0**) and Android versionCode floor to **1209**.
 - Keeps the portable manuscript format at **OMI-SPEC-320@0.3.0**.
-- See [the release notes](docs/release/0.3.0-beta.9.md) for packaging identities and deployment steps.
+- See [the release notes](docs/release/0.3.0-beta.10.md) for packaging identities and deployment steps.
 
 # Changelog
 
@@ -13,8 +12,6 @@ Application release numbers are independent from the version identifiers of
 the portable OMI document model and individual renderers.
 
 ## Unreleased
-
-- Chunks long print-layout measurement across animation frames so large manuscripts stay responsive while pages and footnotes are measured.
 ## 0.3.0-beta.7 — 2026-10-20
 
 ### Native applications and layout
