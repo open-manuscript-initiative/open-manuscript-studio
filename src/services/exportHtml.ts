@@ -8,6 +8,7 @@ import {
 import { renderBibliography, renderCitationCluster } from '../model/cslRendering.ts';
 import { getBibliographyRecords } from '../model/citations.ts';
 import { buildNoteNumberMap } from '../model/notes.ts';
+import { createNoteBodyDocument, noteBodyPlainText } from '../model/noteRichText.ts';
 import { contributorNameParts } from '../model/contributorName.ts';
 import { renderLatexMath } from '../model/equationRendering.ts';
 import { assetPath } from '../model/assets.ts';
