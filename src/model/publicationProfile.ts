@@ -101,6 +101,13 @@ export interface OmiPublicationProfileRules {
   outputs: OmiPublicationOutputFormat[];
 }
 
+export interface OmiPublicationProfileDistribution {
+  importedAt: string;
+  sourceType: 'file' | 'url' | 'catalog';
+  sourceUrl?: string;
+  catalogUrl?: string;
+}
+
 export interface OmiPublicationProfile {
   model: typeof OMI_PUBLICATION_PROFILE_MODEL;
   id: string;
@@ -108,6 +115,8 @@ export interface OmiPublicationProfile {
   name: string;
   description: string;
   publisher?: string;
+  /** Local provenance retained when a profile is imported from a publisher or catalog. */
+  distribution?: OmiPublicationProfileDistribution;
   branding?: OmiPublicationProfileBranding;
   /** A publisher-owned typesetting style imported from an InDesign IDML package. */
   publicationStyle?: PublicationStyle;
