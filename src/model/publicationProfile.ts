@@ -5,6 +5,7 @@ import type {
   OmiManuscriptState,
   OmiSectionNumberingStyle,
 } from '../types/omi';
+import type { PublicationStyle } from '../services/publicationStyleExport';
 
 export const OMI_PUBLICATION_PROFILE_MODEL =
   'omi-publication-profile-alpha-0.1' as const;
@@ -108,6 +109,8 @@ export interface OmiPublicationProfile {
   description: string;
   publisher?: string;
   branding?: OmiPublicationProfileBranding;
+  /** A publisher-owned typesetting style imported from an InDesign IDML package. */
+  publicationStyle?: PublicationStyle;
   rules: OmiPublicationProfileRules;
 }
 
