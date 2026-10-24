@@ -47,6 +47,11 @@ if [ -t 0 ]; then
       read -r registry_name
       printf "Public HTTPS origin (for example https://studio.example.org): "
       read -r registry_origin
+      echo ""
+      echo "The installer will request a pending directory listing."
+      echo "The next output shows the exact DNS TXT type, host name, and value to enter."
+      echo "The private registration token must stay in the server environment and must never go in DNS."
+      echo ""
       if ! docker compose -f compose.yml exec api npm run server:register -- --name "$registry_name" --origin "$registry_origin"; then
         echo "Directory registration could not be completed now. The Studio installation is running; you can retry registration later."
       fi
