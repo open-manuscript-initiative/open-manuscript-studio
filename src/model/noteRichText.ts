@@ -5,6 +5,11 @@ import type {
   OmiCitationStyleId,
 } from '../types/omi';
 
+export interface NoteCitationStyleOptions {
+  subsequentStyle?: OmiCitationStyleId;
+  previouslyCitedTargets?: readonly string[];
+}
+
 export interface NoteJsonNode {
   type?: string;
   text?: string;
@@ -25,19 +30,23 @@ export function createNoteBodyDocument(
   records: readonly OmiBibliographicRecord[],
   style: OmiCitationStyleId,
   locale: string,
+  styleOptions: NoteCitationStyleOptions = {},
 ): NoteJsonNode {
   const stored = parseNoteBodyContent(note.bodyContent);
-  if (stored) return synchronizeNoteCitationLabels(stored, note, records, style, locale);
+  if (stored) return synchronizeNoteCitationLabels(stored, note, records, style, locale, styleOptions);
 
   const content: NoteJsonNode[] = [];
   if (note.body) content.push({ type: 'text', text: note.body });
 
   const citations = note.noteCitations ?? [];
+  const seenTargets = new Set(styleOptions.previouslyCitedTargets ?? []);
   if (citations.length) {
     if (content.length) content.push({ type: 'text', text: ' ' });
     citations.forEach((citation, index) => {
       if (index > 0) content.push({ type: 'text', text: '; ' });
-      content.push(noteCitationNode(citation, note, records, style, locale));
+      const citationStyle = seenTargets.has(citation.target) ? styleOptions.subsequentStyle ?? style : style;
+      content.push(noteCitationNode(citation, note, records, citationStyle, locale));
+      seenTargets.add(citation.target);
     });
   }
 
@@ -79,7 +88,9 @@ export function synchronizeNoteCitationLabels(
   records: readonly OmiBibliographicRecord[],
   style: OmiCitationStyleId,
   locale: string,
+  styleOptions: NoteCitationStyleOptions = {},
 ): NoteJsonNode {
+  const seenTargets = new Set(styleOptions.previouslyCitedTargets ?? []);
   const citationMap = new Map((note.noteCitations ?? []).map((citation) => [citation.id, citation]));
   return transform(node, (candidate) => {
     if (candidate.type !== 'omiCitation') return candidate;
@@ -87,6 +98,8 @@ export function synchronizeNoteCitationLabels(
     if (typeof citationId !== 'string') return candidate;
     const citation = citationMap.get(citationId);
     if (!citation) return candidate;
+    const citationStyle = seenTargets.has(citation.target) ? styleOptions.subsequentStyle ?? style : style;
+    seenTargets.add(citation.target);
     return {
       ...candidate,
       attrs: {
@@ -94,7 +107,7 @@ export function synchronizeNoteCitationLabels(
         citationId,
         citationIds: [citationId],
         anchorId: `note-citation-anchor-${citationId}`,
-        label: renderNoteCitation(citation, note, records, style, locale),
+        label: renderNoteCitation(citation, note, records, citationStyle, locale),
       },
     };
   });
