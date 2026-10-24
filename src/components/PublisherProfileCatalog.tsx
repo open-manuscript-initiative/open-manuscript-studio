@@ -1,7 +1,7 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { Download, Globe, Upload } from 'lucide-react';
 
-import { OMI_PUBLICATION_PROFILE_MODEL, type OmiPublicationProfile } from '../model/publicationProfile';
+import { OMI_PUBLICATION_PROFILE_MODEL, type OmiPublicationProfile, type OmiPublicationProfileDistribution } from '../model/publicationProfile';
 import type { ProtectablePublicationProfile } from '../model/publisherProfileProtection';
 
 const DEFAULT_CATALOG_URL = 'https://raw.githubusercontent.com/open-manuscript-initiative/open-manuscript-studio/main/public/publisher-profile-catalog.json';
@@ -14,7 +14,8 @@ interface CatalogEntry {
   version: string;
   description?: string;
   url: string;
-  sha256?: string;
+  license: string;
+  sha256: string;
 }
 
 interface CatalogDocument {
@@ -28,7 +29,7 @@ export function PublisherProfileCatalog({
   onImport,
 }: {
   locale: string;
-  onImport: (profile: ProtectablePublicationProfile) => boolean;
+  onImport: (profile: ProtectablePublicationProfile, distribution: OmiPublicationProfileDistribution) => boolean;
 }) {
   const labels = copy(locale);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -55,15 +56,15 @@ export function PublisherProfileCatalog({
     return validateProfile(JSON.parse(text));
   }
 
-  function importProfile(profile: ProtectablePublicationProfile) {
-    setMessage(onImport(profile) ? labels.imported : labels.duplicate);
+  function importProfile(profile: ProtectablePublicationProfile, distribution: OmiPublicationProfileDistribution) {
+    setMessage(onImport(profile, distribution) ? labels.imported : labels.duplicate);
   }
 
   async function importFromUrl() {
     setBusy(true);
     setMessage('');
     try {
-      importProfile(await readProfile(profileUrl));
+      importProfile(await readProfile(profileUrl), { importedAt: new Date().toISOString(), sourceType: 'url', sourceUrl: new URL(profileUrl).toString() });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : labels.fetchFailed);
     } finally {
@@ -79,7 +80,7 @@ export function PublisherProfileCatalog({
     setMessage('');
     try {
       if (file.size > MAX_PROFILE_BYTES) throw new Error(labels.tooLarge);
-      importProfile(validateProfile(JSON.parse(await file.text())));
+      importProfile(validateProfile(JSON.parse(await file.text())), { importedAt: new Date().toISOString(), sourceType: 'file' });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : labels.invalidProfile);
     } finally {
@@ -117,7 +118,7 @@ export function PublisherProfileCatalog({
       if (profile.id !== entry.id || profile.name !== entry.name || profile.version !== entry.version) {
         throw new Error(labels.catalogMismatch);
       }
-      importProfile(profile);
+      importProfile(profile, { importedAt: new Date().toISOString(), sourceType: 'catalog', sourceUrl: entry.url, catalogUrl: DEFAULT_CATALOG_URL });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : labels.fetchFailed);
     } finally {
@@ -156,7 +157,7 @@ export function PublisherProfileCatalog({
         <div className="publisher-profile-catalog-list">
           {catalog.profiles.map((entry) => (
             <article key={entry.id + '@' + entry.version}>
-              <div><strong>{entry.name}</strong><span>{entry.publisher} · {entry.version}</span>{entry.description ? <p>{entry.description}</p> : null}</div>
+              <div><strong>{entry.name}</strong><span>{entry.publisher} · {entry.version}</span>{entry.description ? <p>{entry.description}</p> : null}<small>{labels.license}: {entry.license}</small></div>
               <button type="button" className="button button--secondary" disabled={busy} onClick={() => void importCatalogEntry(entry)}>{labels.importEntry}</button>
             </article>
           ))}
@@ -192,7 +193,8 @@ function isCatalogEntry(value: unknown): value is CatalogEntry {
     && typeof entry.publisher === 'string'
     && typeof entry.version === 'string'
     && typeof entry.url === 'string'
-    && (!entry.sha256 || /^[a-f0-9]{64}$/i.test(entry.sha256));
+    && typeof entry.license === 'string' && Boolean(entry.license.trim())
+    && typeof entry.sha256 === 'string' && /^[a-f0-9]{64}$/i.test(entry.sha256);
 }
 
 function copy(locale: string) {
@@ -203,7 +205,8 @@ function copy(locale: string) {
     profileUrl: 'Profil webcíme',
     importUrl: 'Betöltés webcímről',
     importEntry: 'Profil betöltése',
-    help: 'A katalógusba felvett profilok zárolt, verziózott pillanatképként tölthetők be. A kiadó a letöltött profilt a saját weboldalán is közzéteheti.',
+    help: 'A katalógus a kiadók saját weboldalán tárolt, pontos verziókra és ellenőrzőösszegre hivatkozó jegyzék. A profil fájlba is letölthető, majd a forrás megőrzésével szerkeszthető másolat készíthető.',
+    license: 'Licenc',
     httpsOnly: 'A profil webcímének HTTPS-kapcsolatot kell használnia.',
     fetchFailed: 'A profil nem tölthető be. Ellenőrizze a webcímet és a forrás CORS-beállítását.',
     tooLarge: 'A profil legfeljebb 2 MB lehet.',
@@ -224,7 +227,8 @@ function copy(locale: string) {
     profileUrl: 'Profil-URL',
     importUrl: 'Aus URL laden',
     importEntry: 'Profil laden',
-    help: 'Katalogprofile werden als gesperrte, versionierte Momentaufnahmen geladen. Verlage können heruntergeladene Profile auch auf ihrer eigenen Website veröffentlichen.',
+    help: 'Der Katalog verweist auf genaue Versionen und Prüfsummen von Profilen, die auf Verlagswebsites gespeichert sind. Profile können als Datei heruntergeladen und unter Beibehaltung der Quelle in eine bearbeitbare Kopie umgewandelt werden.',
+    license: 'Lizenz',
     httpsOnly: 'Die Profil-URL muss HTTPS verwenden.',
     fetchFailed: 'Das Profil konnte nicht geladen werden. Prüfen Sie die URL und die CORS-Einstellungen der Quelle.',
     tooLarge: 'Das Profil darf höchstens 2 MB groß sein.',
@@ -245,7 +249,8 @@ function copy(locale: string) {
     profileUrl: 'Profile URL',
     importUrl: 'Load from URL',
     importEntry: 'Load profile',
-    help: 'Catalog profiles load as locked, versioned snapshots. Publishers can also publish downloaded profiles on their own websites.',
+    help: 'The catalog indexes exact versions and checksums of profiles hosted on publisher websites. Profiles can be downloaded as files and copied for editing while retaining their source.',
+    license: 'License',
     httpsOnly: 'The profile URL must use HTTPS.',
     fetchFailed: 'The profile could not be loaded. Check the URL and the source CORS settings.',
     tooLarge: 'The profile must be 2 MB or smaller.',
