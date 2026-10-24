@@ -141,6 +141,7 @@ export function PublicationDocumentCanvas({
   const noteAnchorCacheRef = useRef(new Map<string, NoteAnchorCacheEntry>());
   const noteBodyCacheRef = useRef(new Map<string, NoteBodyCacheEntry>());
   const [stageWidth, setStageWidth] = useState(0);
+  const [visiblePageRange, setVisiblePageRange] = useState({ start: 0, end: 16 });
   const [pagination, setPagination] = useState<PublicationPaginationState>({
     pageCount: 1,
     css: '',
@@ -186,6 +187,7 @@ export function PublicationDocumentCanvas({
   const bleed = bleedMm * PIXELS_PER_MM * scale;
   const pageGap = Math.max(28, bleed * 2 + 12);
   const pageStride = pageHeight + pageGap;
+  const pageCount = viewMode === 'print' ? pagination.pageCount : 1;
   const usablePageHeight = Math.max(
     80,
     pageHeight - topMargin - bottomMargin,
@@ -306,6 +308,8 @@ export function PublicationDocumentCanvas({
   ), [manuscript.annotations]);
   const noteLineHeight = positive(style.styles.footnote.lineHeight * PIXELS_PER_POINT * scale, 1);
   const noteSeparatorHeight = 8 * scale + 1;
+  const firstVisiblePage = Math.max(0, Math.min(pageCount - 1, visiblePageRange.start));
+  const visiblePageEnd = Math.min(pageCount, Math.max(firstVisiblePage + 1, visiblePageRange.end));
 
   useLayoutEffect(() => {
     const stage = stageRef.current;
@@ -317,6 +321,42 @@ export function PublicationDocumentCanvas({
     observer.observe(stage);
     return () => observer.disconnect();
   }, []);
+
+  useLayoutEffect(() => {
+    if (viewMode !== 'print') return;
+    const stage = stageRef.current;
+    const paper = stage?.querySelector<HTMLElement>('.publication-document-paper--print');
+    if (!stage || !paper) return;
+
+    let frame = 0;
+    const updateVisiblePages = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const stageRect = stage.getBoundingClientRect();
+        const paperRect = paper.getBoundingClientRect();
+        const paperTop = paperRect.top - stageRect.top + stage.scrollTop;
+        const viewportTop = stage.scrollTop - paperTop;
+        const overscan = Math.max(stage.clientHeight * 1.5, pageStride * 2);
+        const start = Math.max(0, Math.floor((viewportTop - overscan) / pageStride));
+        const end = Math.min(
+          pageCount,
+          Math.ceil((viewportTop + stage.clientHeight + overscan) / pageStride) + 1,
+        );
+        setVisiblePageRange((current) => (
+          current.start === start && current.end === end
+            ? current
+            : { start, end }
+        ));
+      });
+    };
+
+    stage.addEventListener('scroll', updateVisiblePages, { passive: true });
+    updateVisiblePages();
+    return () => {
+      stage.removeEventListener('scroll', updateVisiblePages);
+      cancelAnimationFrame(frame);
+    };
+  }, [pageCount, pageStride, viewMode]);
 
   useLayoutEffect(() => {
     if (viewMode !== 'print') {
@@ -341,6 +381,8 @@ export function PublicationDocumentCanvas({
     let frame = 0;
     let scheduleTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
+    const measuredLines = new WeakMap<HTMLElement, PublicationFlowLine[]>();
+    const dirtyBlocks = new WeakSet<HTMLElement>();
     const update = () => {
       const flow = collectPublicationFlowElements(content);
       const noteElements = Array.from(
@@ -387,11 +429,31 @@ export function PublicationDocumentCanvas({
             (correction) => correction.targetBlockId === blockId,
           );
           const splittable = isSplittablePublicationParagraph(element);
-          const lines = splittable ? measurePublicationLines(element) : [];
-          const elementRect = element.getBoundingClientRect();
-          const flowBreaks = Array.from(
+          let lines: PublicationFlowLine[] = [];
+          const flowBreakElements = Array.from(
             element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'),
-          ).map((spacer) => {
+          );
+          if (splittable) {
+            const cachedLines = flowBreakElements.length > 0
+              ? undefined
+              : measuredLines.get(element);
+            if (cachedLines && !dirtyBlocks.has(element)) {
+              lines = cachedLines.map((line) => ({ ...line }));
+            } else {
+              lines = measurePublicationLines(element);
+              if (flowBreakElements.length > 0) {
+                measuredLines.delete(element);
+              } else {
+                measuredLines.set(
+                  element,
+                  lines.map((line) => ({ ...line, noteIds: undefined })),
+                );
+              }
+              dirtyBlocks.delete(element);
+            }
+          }
+          const elementRect = element.getBoundingClientRect();
+          const flowBreaks = flowBreakElements.map((spacer) => {
             const rect = spacer.getBoundingClientRect();
             return { top: rect.top, height: rect.height };
           });
@@ -507,12 +569,33 @@ export function PublicationDocumentCanvas({
     fonts?.addEventListener('loadingdone', schedule);
     const mutationObserver = typeof MutationObserver === 'undefined'
       ? null
-      : new MutationObserver(schedule);
+      : new MutationObserver((records) => {
+          for (const record of records) {
+            const target = record.target instanceof Element
+              ? record.target
+              : record.target.parentElement;
+            if (target?.closest('.omi-publication-flow-break')) continue;
+            const changedNodes = [...record.addedNodes, ...record.removedNodes];
+            if (changedNodes.length > 0 && changedNodes.every((node) => (
+              node instanceof HTMLElement && node.matches('.omi-publication-flow-break')
+            ))) continue;
+            const block = target?.closest<HTMLElement>('[data-block-id]');
+            if (block && content.contains(block)) dirtyBlocks.add(block);
+          }
+          schedule();
+        });
     mutationObserver?.observe(content, {
       childList: true,
       characterData: true,
       subtree: true,
     });
+    if (noteMeasureRef.current) {
+      mutationObserver?.observe(noteMeasureRef.current, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+      });
+    }
 
     return () => {
       cancelled = true;
@@ -524,16 +607,10 @@ export function PublicationDocumentCanvas({
     };
   }, [
     canvasId,
-    document,
     firstPageLeftMargin,
     firstPageNumber,
     innerMargin,
-    manuscript.abstract,
-    manuscript.motto,
     publicationCorrections,
-    manuscript.subtitle,
-    notes,
-    endnotes,
     noteLineHeight,
     noteSeparatorHeight,
     outerMargin,
@@ -567,7 +644,6 @@ export function PublicationDocumentCanvas({
   const heading1 = style.styles.heading1;
   const heading2 = style.styles.heading2;
   const note = style.styles.footnote;
-  const pageCount = viewMode === 'print' ? pagination.pageCount : 1;
   const paragraphStyleCss = buildLiveParagraphStyleCss(
     canvasId,
     style,
@@ -724,7 +800,8 @@ export function PublicationDocumentCanvas({
         >
           {viewMode === 'print' ? (
             <div className="publication-document-page-guides" aria-hidden="true">
-            {Array.from({ length: pageCount }, (_, index) => {
+            {Array.from({ length: visiblePageEnd - firstVisiblePage }, (_, visibleIndex) => {
+              const index = firstVisiblePage + visibleIndex;
               const pageNumber = firstPageNumber + index;
               const evenPage = pageNumber % 2 === 0;
               const mirroredEvenPage = style.page.mirroredMargins && evenPage;
