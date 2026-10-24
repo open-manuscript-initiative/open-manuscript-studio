@@ -87,7 +87,7 @@ export function buildDocxExport(manuscript: OmiManuscript): DocxExportResult {
             const citationRules = manuscript.embeddedPublicationProfile?.rules.citations;
             const precedingNotes = manuscript.annotations
               .slice(0, manuscript.annotations.indexOf(note))
-              .filter((annotation) => getNoteKind(annotation) !== undefined);
+              .filter(isNoteAnnotation);
             const previouslyCitedTargets = [...new Set(precedingNotes.flatMap((annotation) =>
               annotation.noteCitations?.map((citation) => citation.target) ?? [],
             ))];
