@@ -189,16 +189,18 @@ test('live pages place each footnote below its anchor and reflow after zoom and 
   await menu.getByRole('button', { name: 'Live publication editor', exact: true }).click();
   const canvas = menu.locator('.publication-document-canvas');
   const audit = () => canvas.evaluate((root) => {
-    const pages = Array.from(root.querySelectorAll('.publication-document-page-guide'));
+    const paper = root.querySelector<HTMLElement>('.publication-document-paper');
     const notes = Array.from(root.querySelectorAll<HTMLElement>('[data-footnote-page]'));
-    if (!notes.length) return ['no footnotes'];
+    if (!paper || !notes.length) return ['no footnotes'];
+    const paperStyle = getComputedStyle(paper);
+    const pageHeight = Number.parseFloat(paperStyle.getPropertyValue('--omi-publication-page-height'));
+    const pageGap = Number.parseFloat(paperStyle.getPropertyValue('--omi-publication-page-gap'));
+    const pageStride = pageHeight + pageGap;
     const failures: string[] = [];
     for (const anchor of root.querySelectorAll<HTMLElement>('[data-omi-note]')) {
       const rect = anchor.getBoundingClientRect();
-      const pageIndex = pages.findIndex((sheet) => {
-        const box = sheet.getBoundingClientRect();
-        return rect.top >= box.top && rect.bottom <= box.bottom;
-      });
+      const paperTop = paper.getBoundingClientRect().top;
+      const pageIndex = Math.floor((rect.top - paperTop) / pageStride);
       const area = notes.find((note) => Number(note.dataset.footnotePage) === pageIndex);
       const note = area?.querySelector(`[data-publication-note-id="${anchor.dataset.noteId}"]`);
       if (!note || rect.bottom > area!.getBoundingClientRect().top + 1) failures.push(anchor.dataset.noteId!);
