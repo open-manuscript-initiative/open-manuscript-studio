@@ -69,11 +69,17 @@ if (process.argv.includes('--verify')) {
       console.error(body);
       process.exitCode = 1;
     } else {
-      console.log('Keep the private registration token in your server environment until verification (never publish in DNS):');
-      console.log(`OMI_SERVER_REGISTRATION_TOKEN=${String(body.registrationToken)}`);
       const verification = body.verification as { name: string; value: string };
-      console.log('Publish this DNS TXT record to prove control of the server domain:');
-      console.log(`${verification.name} TXT ${verification.value}`);
+      console.log('WARNING: this server stays pending and will not appear in the public directory until DNS verification succeeds.');
+      console.log('Add the following record in the authoritative DNS zone for this server:');
+      console.log('Type: TXT');
+      console.log(`Name / Host: ${verification.name}`);
+      console.log(`Value / Content: ${verification.value}`);
+      console.log('If your DNS provider appends the zone name automatically, enter only the part of the host name before that zone.');
+      console.log('Do not put the private registration token in DNS.');
+      console.log('');
+      console.log('Keep this private registration token in the server environment until verification:');
+      console.log(`OMI_SERVER_REGISTRATION_TOKEN=${String(body.registrationToken)}`);
       console.log('');
       console.log('After DNS has propagated, verify the domain to receive the one-time heartbeat token:');
       console.log(`npm run server:register -- --verify ${String(body.id)}`);
