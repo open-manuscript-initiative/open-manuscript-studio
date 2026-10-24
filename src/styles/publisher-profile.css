@@ -232,6 +232,26 @@
   padding: .5rem .58rem;
 }
 
+.publisher-profile-indesign-settings {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--studio-border, #d8dce3);
+}
+
+.publisher-profile-indesign-settings > div {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.publisher-profile-indesign-settings p {
+  margin: 0.2rem 0 0;
+  color: var(--studio-muted, #5b6472);
+  font-size: 0.9rem;
+}
+
 .publisher-profile-form-grid input[type='color'] {
   min-height: 2.55rem !important;
   padding: .2rem !important;
