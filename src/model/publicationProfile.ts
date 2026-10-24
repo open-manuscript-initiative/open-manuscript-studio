@@ -51,7 +51,14 @@ export interface OmiPublicationProfileSectionRules {
 }
 
 export interface OmiPublicationProfileCitationRules {
+  /** Default style used for in-text citation markers. */
   style: OmiCitationStyleId;
+  /** Independent style used by the bibliography. */
+  bibliographyStyle?: OmiCitationStyleId;
+  /** Full citation style for a work's first appearance in notes. */
+  noteFirstStyle?: OmiCitationStyleId;
+  /** Short citation style for subsequent appearances in notes. */
+  noteSubsequentStyle?: OmiCitationStyleId;
   bibliographyHeading: boolean;
 }
 
@@ -152,7 +159,7 @@ const GENERIC_PROFILE: OmiPublicationProfile = {
   rules: {
     layout: { pageSize: 'A4', columns: 1, marginMm: { top: 25, right: 25, bottom: 25, left: 25 }, fontFamily: 'serif', baseFontSizePt: 11, lineHeight: 1.45, textAlign: 'left' },
     sections: { numberingStyle: 'decimal', maxNumberedDepth: 3 },
-    citations: { style: 'apa-7', bibliographyHeading: true },
+    citations: { style: 'apa-7', bibliographyStyle: 'apa-7', noteFirstStyle: 'chicago-notes-bibliography', noteSubsequentStyle: 'chicago-notes-bibliography', bibliographyHeading: true },
     notes: { placement: 'footnotes', restartNumbering: 'document' },
     objects: { numbering: 'document', figureCaptionPosition: 'below', tableCaptionPosition: 'above', equationNumbering: 'document' },
     contributors: { showAffiliations: true, affiliationMode: 'markers', showOrcid: true, showCorrespondingMarker: true },
@@ -188,7 +195,7 @@ const HUMANITIES_PROFILE: OmiPublicationProfile = {
   rules: {
     layout: { pageSize: 'A4', columns: 1, marginMm: { top: 25, right: 28, bottom: 25, left: 28 }, fontFamily: 'serif', baseFontSizePt: 11, lineHeight: 1.5, textAlign: 'justified' },
     sections: { numberingStyle: 'none', maxNumberedDepth: 0 },
-    citations: { style: 'chicago-notes-bibliography', bibliographyHeading: true },
+    citations: { style: 'chicago-notes-bibliography', bibliographyStyle: 'chicago-notes-bibliography', noteFirstStyle: 'chicago-notes-bibliography', noteSubsequentStyle: 'chicago-notes-bibliography', bibliographyHeading: true },
     notes: { placement: 'footnotes', restartNumbering: 'document' },
     objects: { numbering: 'document', figureCaptionPosition: 'below', tableCaptionPosition: 'above', equationNumbering: 'document' },
     contributors: { showAffiliations: true, affiliationMode: 'inline', showOrcid: true, showCorrespondingMarker: false },
