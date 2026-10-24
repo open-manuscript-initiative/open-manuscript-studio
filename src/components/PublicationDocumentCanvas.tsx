@@ -372,7 +372,7 @@ export function PublicationDocumentCanvas({
       };
 
       const corrections = publicationCorrections;
-      const measuredBlocks: Array<Parameters<typeof paginatePublicationBlocks>[0][number]> = [];
+      const measuredBlocks: PublicationFlowBlock[] = [];
       let flowIndex = 0;
       let existingFlowBreakHeight = 0;
 
