@@ -390,23 +390,30 @@ export function PublicationDocumentCanvas({
           );
           const splittable = isSplittablePublicationParagraph(element);
           let lines: PublicationFlowLine[] = [];
+          const flowBreakElements = Array.from(
+            element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'),
+          );
           if (splittable) {
-            const cachedLines = measuredLines.get(element);
+            const cachedLines = flowBreakElements.length > 0
+              ? undefined
+              : measuredLines.get(element);
             if (cachedLines && !dirtyBlocks.has(element)) {
               lines = cachedLines.map((line) => ({ ...line }));
             } else {
               lines = measurePublicationLines(element);
-              measuredLines.set(
-                element,
-                lines.map((line) => ({ ...line, noteIds: undefined })),
-              );
+              if (flowBreakElements.length > 0) {
+                measuredLines.delete(element);
+              } else {
+                measuredLines.set(
+                  element,
+                  lines.map((line) => ({ ...line, noteIds: undefined })),
+                );
+              }
               dirtyBlocks.delete(element);
             }
           }
           const elementRect = element.getBoundingClientRect();
-          const flowBreaks = Array.from(
-            element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'),
-          ).map((spacer) => {
+          const flowBreaks = flowBreakElements.map((spacer) => {
             const rect = spacer.getBoundingClientRect();
             return { top: rect.top, height: rect.height };
           });
