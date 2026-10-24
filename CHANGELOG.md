@@ -13,6 +13,8 @@ Application release numbers are independent from the version identifiers of
 the portable OMI document model and individual renderers.
 
 ## Unreleased
+
+- Chunks long print-layout measurement across animation frames so large manuscripts stay responsive while pages and footnotes are measured.
 ## 0.3.0-beta.7 — 2026-10-20
 
 ### Native applications and layout
