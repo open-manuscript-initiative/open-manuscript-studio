@@ -341,6 +341,8 @@ export function PublicationDocumentCanvas({
     let frame = 0;
     let scheduleTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
+    const measuredLines = new WeakMap<HTMLElement, PublicationFlowLine[]>();
+    const dirtyBlocks = new WeakSet<HTMLElement>();
     const update = () => {
       const flow = collectPublicationFlowElements(content);
       const noteElements = Array.from(
@@ -387,7 +389,20 @@ export function PublicationDocumentCanvas({
             (correction) => correction.targetBlockId === blockId,
           );
           const splittable = isSplittablePublicationParagraph(element);
-          const lines = splittable ? measurePublicationLines(element) : [];
+          let lines: PublicationFlowLine[] = [];
+          if (splittable) {
+            const cachedLines = measuredLines.get(element);
+            if (cachedLines && !dirtyBlocks.has(element)) {
+              lines = cachedLines.map((line) => ({ ...line }));
+            } else {
+              lines = measurePublicationLines(element);
+              measuredLines.set(
+                element,
+                lines.map((line) => ({ ...line, noteIds: undefined })),
+              );
+              dirtyBlocks.delete(element);
+            }
+          }
           const elementRect = element.getBoundingClientRect();
           const flowBreaks = Array.from(
             element.querySelectorAll<HTMLElement>('.omi-publication-flow-break'),
@@ -507,12 +522,33 @@ export function PublicationDocumentCanvas({
     fonts?.addEventListener('loadingdone', schedule);
     const mutationObserver = typeof MutationObserver === 'undefined'
       ? null
-      : new MutationObserver(schedule);
+      : new MutationObserver((records) => {
+          for (const record of records) {
+            const target = record.target instanceof Element
+              ? record.target
+              : record.target.parentElement;
+            if (target?.closest('.omi-publication-flow-break')) continue;
+            const changedNodes = [...record.addedNodes, ...record.removedNodes];
+            if (changedNodes.length > 0 && changedNodes.every((node) => (
+              node instanceof HTMLElement && node.matches('.omi-publication-flow-break')
+            ))) continue;
+            const block = target?.closest<HTMLElement>('[data-block-id]');
+            if (block && content.contains(block)) dirtyBlocks.add(block);
+          }
+          schedule();
+        });
     mutationObserver?.observe(content, {
       childList: true,
       characterData: true,
       subtree: true,
     });
+    if (noteMeasureRef.current) {
+      mutationObserver?.observe(noteMeasureRef.current, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+      });
+    }
 
     return () => {
       cancelled = true;
@@ -524,16 +560,10 @@ export function PublicationDocumentCanvas({
     };
   }, [
     canvasId,
-    document,
     firstPageLeftMargin,
     firstPageNumber,
     innerMargin,
-    manuscript.abstract,
-    manuscript.motto,
     publicationCorrections,
-    manuscript.subtitle,
-    notes,
-    endnotes,
     noteLineHeight,
     noteSeparatorHeight,
     outerMargin,
