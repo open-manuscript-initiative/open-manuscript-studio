@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   Download,
   FileCheck2,
+  LockKeyhole,
   LayoutTemplate,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -26,6 +27,7 @@ import {
   validateManuscriptForPublication,
   type OmiPublicationProfile,
 } from '../model/publicationProfile';
+import { loadPublisherProfiles, PUBLISHER_PROFILE_STORAGE_EVENT } from '../services/publisherProfileStorage';
 import { DirectSubmissionPanel } from './DirectSubmissionPanel';
 import { ExportFormatsPanel } from './ExportFormatsPanel';
 import { PublicationArtifactPanel } from './PublicationArtifactPanel';
@@ -45,18 +47,24 @@ export function PublicationProfilePanel() {
   const manuscript = useStudioStore((state) => state.manuscript);
   const activeReference = getPublicationProfileReference(manuscript);
   const activeProfile = resolvePublicationProfile(manuscript);
-  const [candidateId, setCandidateId] = useState(
-    activeReference?.id ?? DEFAULT_PUBLICATION_PROFILE_ID,
-  );
+  const activeKey = activeReference ? `${activeReference.id}@${activeReference.version}` : `${DEFAULT_PUBLICATION_PROFILE_ID}@${BUILTIN_PUBLICATION_PROFILES[0]?.version ?? ''}`;
+  const [candidateKey, setCandidateKey] = useState(activeKey);
+  const [savedProfiles, setSavedProfiles] = useState(loadPublisherProfiles);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    setCandidateId(activeReference?.id ?? DEFAULT_PUBLICATION_PROFILE_ID);
-  }, [activeReference?.id, activeReference?.version]);
+    setCandidateKey(activeKey);
+  }, [activeKey]);
 
-  const candidateProfile =
-    BUILTIN_PUBLICATION_PROFILES.find((profile) => profile.id === candidateId) ??
-    activeProfile;
+  useEffect(() => {
+    const refreshProfiles = () => setSavedProfiles(loadPublisherProfiles());
+    window.addEventListener(PUBLISHER_PROFILE_STORAGE_EVENT, refreshProfiles);
+    return () => window.removeEventListener(PUBLISHER_PROFILE_STORAGE_EVENT, refreshProfiles);
+  }, []);
+
+  const candidateProfile = [...savedProfiles, ...BUILTIN_PUBLICATION_PROFILES]
+    .find((profile) => `${profile.id}@${profile.version}` === candidateKey)
+    ?? activeProfile;
   const issues = useMemo(
     () => validateManuscriptForPublication(manuscript, activeProfile),
     [manuscript, activeProfile],
@@ -113,11 +121,12 @@ export function PublicationProfilePanel() {
         <div className="publication-profile-options">
           {BUILTIN_PUBLICATION_PROFILES.map((profile) => {
             const localized = copy.profileNames[profile.id] ?? { name: profile.name, description: profile.description };
-            const isActive = activeProfile.id === profile.id;
-            const isCandidate = candidateId === profile.id;
+            const key = `${profile.id}@${profile.version}`;
+            const isActive = activeProfile.id === profile.id && activeProfile.version === profile.version;
+            const isCandidate = candidateKey === key;
             return (
-              <label className={`publication-profile-option${isCandidate ? ' publication-profile-option--selected' : ''}`} key={profile.id}>
-                <input type="radio" name="publication-profile" value={profile.id} checked={isCandidate} onChange={() => { setCandidateId(profile.id); setStatusMessage(null); }} />
+              <label className={`publication-profile-option${isCandidate ? ' publication-profile-option--selected' : ''}`} key={key}>
+                <input type="radio" name="publication-profile" value={key} checked={isCandidate} onChange={() => { setCandidateKey(key); setStatusMessage(null); }} />
                 <span className="publication-profile-option-copy">
                   <span className="publication-profile-option-title">
                     <strong>{localized.name}</strong>
@@ -129,6 +138,30 @@ export function PublicationProfilePanel() {
               </label>
             );
           })}
+          {savedProfiles.length > 0 ? (
+            <>
+              <h5 className="publication-profile-options-group">{copy.myProfiles}</h5>
+              {savedProfiles.map((profile) => {
+                const key = `${profile.id}@${profile.version}`;
+                const isActive = activeProfile.id === profile.id && activeProfile.version === profile.version;
+                const isCandidate = candidateKey === key;
+                return (
+                  <label className={`publication-profile-option${isCandidate ? ' publication-profile-option--selected' : ''}`} key={key}>
+                    <input type="radio" name="publication-profile" value={key} checked={isCandidate} onChange={() => { setCandidateKey(key); setStatusMessage(null); }} />
+                    <span className="publication-profile-option-copy">
+                      <span className="publication-profile-option-title">
+                        <strong>{profile.name}</strong>
+                        {isActive ? <small className="publication-profile-active-badge">{copy.active}</small> : null}
+                        {profile.protection?.readOnly ? <small title={copy.lockedProfile}><LockKeyhole size={13} aria-hidden="true" /> {copy.lockedProfile}</small> : null}
+                      </span>
+                      <span>{profile.description || profile.publisher || ''}</span>
+                      <code>{profile.id}@{profile.version}</code>
+                    </span>
+                  </label>
+                );
+              })}
+            </>
+          ) : null}
         </div>
 
         <button type="button" className="studio-menu-primary-action publication-profile-apply" disabled={candidateProfile.id === activeProfile.id && candidateProfile.version === activeProfile.version && overrides.length === 0} onClick={() => applyProfile(candidateProfile)}>
