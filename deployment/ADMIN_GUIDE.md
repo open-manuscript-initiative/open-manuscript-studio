@@ -45,7 +45,7 @@ By default, the Studio HTTP port listens on `127.0.0.1:8080`. On Linux, point th
    ./install.sh
    ```
 
-   The script creates `deployment/.env`, applies file permissions, creates a sample SMTP configuration, pulls the API and web images, and starts the containers. On the first run, edit `msmtprc` with working mail relay settings; invitation and password-reset messages will not work without SMTP.
+   The script creates `deployment/.env`, applies file permissions, creates a sample SMTP configuration, pulls the API and web images, and starts the containers. In an interactive terminal, it also offers to register this instance in the public directory. If you opt in, it prints the exact DNS TXT record fields to add; the listing remains pending until domain verification succeeds. On the first run, edit `msmtprc` with working mail relay settings; invitation and password-reset messages will not work without SMTP.
 
 5. Configure the reverse proxy to use `http://127.0.0.1:8080` as the Studio upstream. The proxy should forward the `Host` header, set `X-Forwarded-Proto: https`, and allow WebSocket upgrades. TLS is handled by the proxy; this Compose package does not issue certificates.
 6. Open the HTTPS address configured in `PUBLIC_ORIGIN` and complete the checks below.
@@ -178,7 +178,7 @@ From the deployment directory, start registration with:
 docker compose -f compose.yml exec api npm run server:register -- --name "Research Studio" --origin https://studio.example.org
 ```
 
-Publish the displayed DNS TXT challenge. After it has propagated, verify the domain:
+The CLI prints the DNS record as separate fields: type `TXT`, `Name / Host`, and `Value / Content`. Create that record in the authoritative DNS zone for the server. If your DNS provider automatically appends the zone name, enter only the host portion before the zone suffix. Put only the displayed value in the TXT content field. Never publish `OMI_SERVER_REGISTRATION_TOKEN`; keep it private in the server environment. The registration remains pending and is not listed until DNS verification succeeds. After the record has propagated, verify the domain:
 
 ```sh
 docker compose -f compose.yml exec api npm run server:register -- --verify REGISTRATION_ID
