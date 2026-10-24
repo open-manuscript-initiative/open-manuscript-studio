@@ -5,6 +5,7 @@ import {
   type ProtectablePublicationProfile,
 } from '../model/publisherProfileProtection';
 
+export const PUBLISHER_PROFILE_STORAGE_EVENT = 'omi:publisher-profiles-changed';
 const STORAGE_KEY = 'omi.publisherProfiles.v1';
 
 export function loadPublisherProfiles(): ProtectablePublicationProfile[] {
@@ -107,6 +108,7 @@ export function deletePublisherProfile(
 
 function persist(profiles: readonly ProtectablePublicationProfile[]): void {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profiles));
+  window.dispatchEvent(new Event(PUBLISHER_PROFILE_STORAGE_EVENT));
 }
 
 function isProfile(value: unknown): value is OmiPublicationProfile {
