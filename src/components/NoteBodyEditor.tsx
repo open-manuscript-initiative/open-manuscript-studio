@@ -40,7 +40,11 @@ export function NoteBodyEditor({
 }: NoteBodyEditorProps) {
   const { locale } = useTranslation();
   const copy = getNoteCitationCopy(locale);
-  const styleOptions: NoteCitationStyleOptions = { subsequentStyle: subsequentCitationStyle, previouslyCitedTargets };
+  const previousTargetsKey = (previouslyCitedTargets ?? []).join('\u0000');
+  const styleOptions = useMemo<NoteCitationStyleOptions>(() => ({
+    subsequentStyle: subsequentCitationStyle,
+    previouslyCitedTargets: previousTargetsKey ? previousTargetsKey.split('\u0000') : [],
+  }), [previousTargetsKey, subsequentCitationStyle]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const noteIdRef = useRef(note.id);
   const insertionPosRef = useRef<number | null>(null);
@@ -90,7 +94,7 @@ export function NoteBodyEditor({
     ) as JSONContent;
     if (JSON.stringify(synchronized) === JSON.stringify(editor.getJSON())) return;
     editor.commands.setContent(synchronized, { emitUpdate: true });
-  }, [citationStyle, editor, manuscriptLocale, note, records, subsequentCitationStyle, previouslyCitedTargets]);
+  }, [citationStyle, editor, manuscriptLocale, note, records, styleOptions]);
 
   function togglePicker(): void {
     if (!editor) return;
