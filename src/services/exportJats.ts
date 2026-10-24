@@ -13,6 +13,7 @@ import {
 } from '../model/crossReferences';
 import { renderBibliography, renderCitationCluster } from '../model/cslRendering';
 import { getBibliographyRecords } from '../model/citations';
+import { createNoteBodyDocument, noteBodyPlainText } from '../model/noteRichText';
 import { buildNoteNumberMap } from '../model/notes';
 import { renderLatexMath } from '../model/equationRendering';
 import {
@@ -854,6 +855,8 @@ function renderFootnoteGroup(state: RenderState): string {
   );
   if (!notes.length) return '';
 
+  const citationRules = state.context.profile.rules.citations;
+  const previouslyCitedTargets = new Set<string>();
   return `<fn-group>\n${indent(
     notes
       .map((annotation, index) => {
@@ -874,9 +877,18 @@ function renderFootnoteGroup(state: RenderState): string {
           });
         }
 
+        const noteDocument = createNoteBodyDocument(
+          annotation,
+          state.manuscript.bibliographicRecords ?? [],
+          citationRules.noteFirstStyle ?? citationRules.style,
+          state.context.locale,
+          { subsequentStyle: citationRules.noteSubsequentStyle, previouslyCitedTargets: [...previouslyCitedTargets] },
+        );
+        for (const citation of annotation.noteCitations ?? []) previouslyCitedTargets.add(citation.target);
+        const noteBody = noteBodyPlainText(noteDocument) || annotation.body;
         const label = state.noteLabels.get(annotation.id) || String(index + 1);
         const fnType = annotation.noteKind === 'author-note' ? 'author' : 'other';
-        return `<fn id="${xmlId('fn', annotation.id)}" fn-type="${fnType}"><label>${escapeXml(label)}</label><p>${escapeXml(annotation.body)}</p></fn>`;
+        return `<fn id="${xmlId('fn', annotation.id)}" fn-type="${fnType}"><label>${escapeXml(label)}</label><p>${escapeXml(noteBody)}</p></fn>`;
       })
       .join('\n'),
     1,
