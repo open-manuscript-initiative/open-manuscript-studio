@@ -1,7 +1,8 @@
-import { ImagePlus, LockKeyhole, Save, Trash2, UnlockKeyhole } from 'lucide-react';
-import { useMemo, useState, type ChangeEvent } from 'react';
+import { FileUp, ImagePlus, LockKeyhole, Save, Trash2, UnlockKeyhole } from 'lucide-react';
+import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 
 import { stagePublicationProfileChange } from '../app/publicationProfileActions';
+import templateJson from '../document/publicationStyles/egyhaztorteneti-szemle.json';
 import { useTranslation } from '../i18n';
 import {
   OMI_PUBLICATION_PROFILE_MODEL,
@@ -23,9 +24,14 @@ import {
   savePublisherProfile,
   saveUnlockedPublisherProfile,
 } from '../services/publisherProfileStorage';
+import { importPublicationStyleFromIdml, type IdmlPublicationStyleImportResult } from '../services/idmlPublicationStyleImport';
+import { normalizePublicationStyle, type PublicationStyle } from '../services/publicationStyleExport';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 
 const MAX_LOGO_BYTES = 1024 * 1024;
+const STYLE_LIBRARY_KEY = 'omi:publication-style-library:v1';
+const ACTIVE_STYLE_KEY = 'omi:publication-style-active:v1';
+const LEGACY_STYLE_KEY = 'omi:publication-style:egyhaztorteneti-szemle';
 
 export function PublisherProfileEditor({
   baseProfile,
@@ -38,6 +44,7 @@ export function PublisherProfileEditor({
   const [savedProfiles, setSavedProfiles] = useState(loadPublisherProfiles);
   const [draft, setDraft] = useState<OmiPublicationProfile>(() => cloneAsCustom(baseProfile));
   const [message, setMessage] = useState('');
+  const idmlInputRef = useRef<HTMLInputElement>(null);
 
   const protectedProfile = isPublisherProfileReadOnly(draft);
   const canSave = !protectedProfile
@@ -96,6 +103,38 @@ export function PublisherProfileEditor({
     reader.readAsDataURL(file);
   }
 
+  async function handleIdmlImport(event: ChangeEvent<HTMLInputElement>): Promise<void> {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || protectedProfile) return;
+    setMessage(labels.importing);
+    try {
+      const imported = await importPublicationStyleFromIdml(file);
+      const style = createPublicationStyle(imported);
+      const existing = loadPublicationStyles();
+      window.localStorage.setItem(STYLE_LIBRARY_KEY, JSON.stringify([
+        ...existing.filter((item) => item.id !== style.id), style,
+      ]));
+      setDraft((current) => ({ ...current, publicationStyle: style }));
+      setMessage(labels.imported.replace('{name}', style.name));
+    } catch {
+      setMessage(labels.importFailed);
+    }
+  }
+
+  function activateAttachedStyle(profile: OmiPublicationProfile): void {
+    const style = profile.publicationStyle;
+    if (!style) return;
+    const normalized = normalizePublicationStyle(style);
+    const library = loadPublicationStyles();
+    window.localStorage.setItem(STYLE_LIBRARY_KEY, JSON.stringify([
+      ...library.filter((item) => item.id !== normalized.id), normalized,
+    ]));
+    window.localStorage.setItem(ACTIVE_STYLE_KEY, normalized.id);
+    // Existing HTML/PDF readers use this compatibility key.
+    window.localStorage.setItem(LEGACY_STYLE_KEY, JSON.stringify(normalized));
+  }
+
   function persistAndApply() {
     if (!canSave) return;
     const profile: OmiPublicationProfile = {
@@ -111,6 +150,7 @@ export function PublisherProfileEditor({
       setSavedProfiles(savePublisherProfile(profile));
       setDraft(profile);
       stagePublicationProfileChange(profile);
+      activateAttachedStyle(profile);
       setMessage(labels.saved);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : labels.saveFailed);
@@ -131,6 +171,7 @@ export function PublisherProfileEditor({
       setSavedProfiles(saveProtectedPublisherProfile(next));
       setDraft(next);
       stagePublicationProfileChange(next);
+      activateAttachedStyle(next);
       setMessage(labels.protected);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : labels.protectFailed);
@@ -147,6 +188,7 @@ export function PublisherProfileEditor({
       setSavedProfiles(saveUnlockedPublisherProfile(editable, currentUser.id));
       setDraft(editable);
       stagePublicationProfileChange(editable);
+      activateAttachedStyle(editable);
       setMessage(labels.unlocked);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : labels.unlockDenied);
@@ -240,6 +282,17 @@ export function PublisherProfileEditor({
             {logo ? <button type="button" onClick={() => updateBranding('logoDataUrl', undefined)}>{labels.removeLogo}</button> : null}
           </label>
         </div>
+        <div className="publisher-profile-indesign-settings">
+          <div>
+            <strong>{labels.indesignSettings}</strong>
+            <p>{draft.publicationStyle ? labels.attachedStyle.replace('{name}', draft.publicationStyle.name) : labels.noAttachedStyle}</p>
+          </div>
+          <input ref={idmlInputRef} type="file" accept=".idml,application/vnd.adobe.indesign-idml-package" hidden onChange={(event) => void handleIdmlImport(event)} />
+          <button type="button" className="studio-menu-secondary-action" onClick={() => idmlInputRef.current?.click()}>
+            <FileUp size={16} aria-hidden="true" />{labels.importIdml}
+          </button>
+          {draft.publicationStyle ? <button type="button" className="studio-menu-secondary-action" onClick={() => update('publicationStyle', undefined)}>{labels.removeSettings}</button> : null}
+        </div>
       </fieldset>
 
       <div className="publisher-profile-actions">
@@ -286,6 +339,55 @@ function makeProfileId(publisher: string, name: string): string {
   return `publisher:${value || 'custom-profile'}`;
 }
 
+function createPublicationStyle(imported: IdmlPublicationStyleImportResult): PublicationStyle {
+  const next = JSON.parse(JSON.stringify(templateJson)) as PublicationStyle;
+  next.id = `publication-style:idml:${crypto.randomUUID()}`;
+  next.name = imported.sourceName;
+  next.description = `Imported from Adobe InDesign IDML: ${imported.sourceName}`;
+  if (imported.page?.width !== undefined) next.page.width = imported.page.width;
+  if (imported.page?.height !== undefined) next.page.height = imported.page.height;
+  const margins = imported.page?.margins;
+  if (margins?.top !== undefined) next.page.margins.top = margins.top;
+  if (margins?.bottom !== undefined) next.page.margins.bottom = margins.bottom;
+  if (margins?.inner !== undefined) next.page.margins.inner = margins.inner;
+  if (margins?.outer !== undefined) next.page.margins.outer = margins.outer;
+  if (imported.paragraphStyles.length) {
+    const importedIds = new Set(imported.paragraphStyles.map((style) => style.id));
+    const mappedBodyId = imported.mappedStyles.find((mapping) => mapping.target === 'body' && importedIds.has(mapping.sourceId))?.sourceId;
+    next.paragraphStyles = { defaultStyleId: mappedBodyId ?? imported.paragraphStyles[0].id, items: imported.paragraphStyles };
+  }
+  let bodyFont: string | undefined;
+  let noteFont: string | undefined;
+  for (const [key, patch] of Object.entries(imported.styles)) {
+    if (!(key in next.styles)) continue;
+    const target = next.styles[key as keyof typeof next.styles] as Record<string, unknown>;
+    for (const field of ['fontSize', 'lineHeight', 'fontWeight', 'fontStyle', 'alignment', 'firstLineIndent', 'spaceBefore', 'spaceAfter', 'hyphenation', 'keepWithNext'] as const) {
+      const value = patch?.[field];
+      if (value !== undefined) target[field] = value;
+    }
+    const fontFamily = patch?.fontFamily;
+    if (fontFamily) {
+      if (key === 'footnote') noteFont = fontFamily;
+      else bodyFont ??= fontFamily;
+    }
+  }
+  if (bodyFont) {
+    next.fonts.body.family = bodyFont;
+    if (!noteFont) next.fonts.note.family = bodyFont;
+  }
+  if (noteFont) next.fonts.note.family = noteFont;
+  return normalizePublicationStyle(next);
+}
+
+function loadPublicationStyles(): PublicationStyle[] {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(STYLE_LIBRARY_KEY) ?? '[]') as unknown;
+    return Array.isArray(parsed) ? parsed as PublicationStyle[] : [];
+  } catch {
+    return [];
+  }
+}
+
 function initials(value: string): string {
   return value.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'P';
 }
@@ -317,17 +419,20 @@ function identityCopy(method: string | undefined, locale: string): string {
 function copy(locale: string) {
   if (locale === 'hu') return {
     title: 'Saját kiadói profil', description: 'A kiadó vagy folyóirat identitásának, arculatának és tulajdonosi védelmének beállítása.',
-    styleNotice: 'A tipográfiát, lapméretet, margókat, címsorokat és lábjegyzeteket az alábbi Kiadványstílus szerkesztő kezeli.',
+    styleNotice: 'InDesign-beállításokat itt lehet importálni a profilhoz. A tipográfia, lapméret, margók és stílusok az alábbi Kiadványstílus szerkesztőben tovább szerkeszthetők.',
+    indesignSettings: 'InDesign tördelési beállítások', noAttachedStyle: 'Nincs IDML-beállítás a profilhoz kapcsolva.', attachedStyle: 'Kapcsolt beállítás: {name}', importIdml: 'IDML-fájl importálása és kapcsolása', removeSettings: 'Kapcsolat eltávolítása', importing: 'InDesign-beállítások importálása…', imported: 'Az IDML-beállítások importálva és a profilhoz kapcsolva: {name}.', importFailed: 'Az IDML-beállítások importálása nem sikerült.',
     preview: 'Arculati előnézet', profileName: 'Profil neve', publisher: 'Kiadó / folyóirat', descriptionField: 'Leírás', website: 'Weboldal', logo: 'Logó', logoAlt: 'Logó alternatív szövege', chooseLogo: 'Logó kiválasztása', removeLogo: 'Logó eltávolítása', primaryColor: 'Elsődleges szín', accentColor: 'Kiemelő szín', saveApply: 'Profil mentése és alkalmazása', saved: 'A profil mentve és alkalmazva.', delete: 'Profil törlése', imageOnly: 'Csak képfájl tölthető fel.', imageTooLarge: 'A logó legfeljebb 1 MB lehet.', saveFailed: 'A profil mentése nem sikerült.', protect: 'Profil zárolása', protectHelp: 'A mentett kiadói identitás zárolása.', protected: 'A kiadói profil zárolva.', readOnly: 'Zárolt kiadói profil', protectedBy: 'Zárolta', identificationRequired: 'A zároláshoz aktív, bejelentkezett kiadói fiók szükséges.', saveBeforeProtect: 'Előbb mentse el a profilt, majd zárolhatja.', protectFailed: 'A profil zárolása nem sikerült.', unlock: 'Zárolás feloldása', unlocked: 'A zárolás feloldva.', unlockDenied: 'A zárolást csak a jogosult bejelentkezett fiók oldhatja fel.',
   };
   if (locale === 'de') return {
     title: 'Eigenes Verlagsprofil', description: 'Identität, Branding und Eigentumsschutz des Verlags oder der Zeitschrift verwalten.',
-    styleNotice: 'Typografie, Seitengröße, Ränder, Überschriften und Fußnoten werden ausschließlich im Publikationsstil-Editor unten bearbeitet.',
+    styleNotice: 'InDesign-Einstellungen können hier in das Profil importiert werden. Typografie, Seitengröße, Ränder und Formate lassen sich anschließend im Publikationsstil-Editor unten weiter bearbeiten.',
+    indesignSettings: 'InDesign-Satzparameter', noAttachedStyle: 'Dem Profil sind keine IDML-Einstellungen zugeordnet.', attachedStyle: 'Zugeordnete Einstellungen: {name}', importIdml: 'IDML-Datei importieren und zuordnen', removeSettings: 'Zuordnung entfernen', importing: 'InDesign-Einstellungen werden importiert…', imported: 'IDML-Einstellungen importiert und dem Profil zugeordnet: {name}.', importFailed: 'IDML-Einstellungen konnten nicht importiert werden.',
     preview: 'Branding-Vorschau', profileName: 'Profilname', publisher: 'Verlag / Zeitschrift', descriptionField: 'Beschreibung', website: 'Website', logo: 'Logo', logoAlt: 'Alternativtext des Logos', chooseLogo: 'Logo auswählen', removeLogo: 'Logo entfernen', primaryColor: 'Primärfarbe', accentColor: 'Akzentfarbe', saveApply: 'Profil speichern und anwenden', saved: 'Profil gespeichert und angewendet.', delete: 'Profil löschen', imageOnly: 'Es können nur Bilddateien hochgeladen werden.', imageTooLarge: 'Das Logo darf höchstens 1 MB groß sein.', saveFailed: 'Profil konnte nicht gespeichert werden.', protect: 'Profil sperren', protectHelp: 'Die gespeicherte Verlagsidentität sperren.', protected: 'Das Verlagsprofil ist gesperrt.', readOnly: 'Gesperrtes Verlagsprofil', protectedBy: 'Gesperrt von', identificationRequired: 'Zum Sperren ist ein aktives angemeldetes Verlagskonto erforderlich.', saveBeforeProtect: 'Speichern Sie das Profil zuerst und sperren Sie es danach.', protectFailed: 'Profil konnte nicht gesperrt werden.', unlock: 'Sperre aufheben', unlocked: 'Sperre aufgehoben.', unlockDenied: 'Nur das berechtigte angemeldete Konto kann die Sperre aufheben.',
   };
   return {
     title: 'Custom publisher profile', description: 'Manage publisher or journal identity, branding, and ownership protection.',
-    styleNotice: 'Typography, page size, margins, headings, and footnotes are edited only in the Publication Style editor below.',
+    styleNotice: 'Import InDesign settings into this profile here. Typography, page size, margins, and styles can then be edited in the Publication Style editor below.',
+    indesignSettings: 'InDesign typesetting settings', noAttachedStyle: 'No IDML settings are attached to this profile.', attachedStyle: 'Attached settings: {name}', importIdml: 'Import and attach IDML file', removeSettings: 'Remove attachment', importing: 'Importing InDesign settings…', imported: 'IDML settings imported and attached to the profile: {name}.', importFailed: 'Could not import the IDML settings.',
     preview: 'Brand preview', profileName: 'Profile name', publisher: 'Publisher / journal', descriptionField: 'Description', website: 'Website', logo: 'Logo', logoAlt: 'Logo alternative text', chooseLogo: 'Choose logo', removeLogo: 'Remove logo', primaryColor: 'Primary color', accentColor: 'Accent color', saveApply: 'Save and apply profile', saved: 'Profile saved and applied.', delete: 'Delete profile', imageOnly: 'Only image files can be uploaded.', imageTooLarge: 'Logo must be 1 MB or smaller.', saveFailed: 'Could not save the profile.', protect: 'Lock profile', protectHelp: 'Lock the saved publisher identity.', protected: 'The publisher profile is locked.', readOnly: 'Locked publisher profile', protectedBy: 'Locked by', identificationRequired: 'An active signed-in publisher account is required to lock a profile.', saveBeforeProtect: 'Save the profile first, then lock it.', protectFailed: 'Could not lock the profile.', unlock: 'Unlock profile', unlocked: 'Profile unlocked.', unlockDenied: 'Only the authorized signed-in account can unlock this profile.',
   };
 }
