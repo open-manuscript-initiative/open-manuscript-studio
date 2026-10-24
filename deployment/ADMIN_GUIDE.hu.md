@@ -45,7 +45,7 @@ A Studio HTTP portja alapértelmezés szerint `127.0.0.1:8080`-on figyel. Linuxo
    ./install.sh
    ```
 
-   A szkript létrehozza a `deployment/.env` fájlt, beállítja a jogosultságokat, elkészíti az SMTP konfiguráció mintáját, letölti az API- és webes image-eket, majd elindítja a konténereket. Első indításkor szerkeszd a `msmtprc` fájlt valódi levelezési adatokkal; SMTP nélkül a meghívó- és jelszó-visszaállító e-mailek nem működnek.
+   A szkript létrehozza a `deployment/.env` fájlt, beállítja a jogosultságokat, elkészíti az SMTP konfiguráció mintáját, letölti az API- és webes image-eket, majd elindítja a konténereket. Interaktív terminálban felajánlja azt is, hogy az új példány bekerüljön a nyilvános jegyzékbe. Ha ezt választod, kiírja a DNS TXT rekord pontos mezőit; a bejegyzés az ellenőrzésig függő állapotú marad. Első indításkor szerkeszd a `msmtprc` fájlt valódi levelezési adatokkal; SMTP nélkül a meghívó- és jelszó-visszaállító e-mailek nem működnek.
 
 5. A fordított proxyban a Studio háttércíme legyen `http://127.0.0.1:8080`. A proxy továbbítsa a `Host` fejlécet, állítsa be a `X-Forwarded-Proto: https` fejlécet, és engedje a WebSocket kapcsolatot. A TLS-t a proxy végzi; a Compose csomag nem állít ki tanúsítványt.
 6. Nyisd meg a `PUBLIC_ORIGIN` szerinti HTTPS-címet, és végezd el az ellenőrzőlistát.
@@ -178,7 +178,7 @@ A telepítési könyvtárból indítsd el a regisztrációt:
 docker compose -f compose.yml exec api npm run server:register -- --name "Kutatói Stúdió" --origin https://studio.pelda.hu
 ```
 
-Tedd közzé a parancs által kiírt DNS TXT ellenőrző rekordot. A DNS-frissülés után ellenőrizd a domaint:
+A CLI külön mezőként írja ki a DNS rekord típusát (`TXT`), nevét/gazdagépét (`Name / Host`) és értékét/tartalmát (`Value / Content`). Ezt a rekordot a szerver domainjének hiteles DNS-zónájában hozd létre. Ha a DNS-szolgáltató automatikusan hozzáfűzi a zóna nevét, a gazdagép mezőbe csak a zónanév előtti részt írd. A TXT tartalmába kizárólag a kiírt érték kerüljön. Az `OMI_SERVER_REGISTRATION_TOKEN` privát token; soha ne tedd DNS-be, csak a szerver környezetében tárold. A regisztráció az ellenőrzésig függő állapotú, nem jelenik meg a nyilvános listában. A rekord terjedése után ellenőrizd a domaint:
 
 ```sh
 docker compose -f compose.yml exec api npm run server:register -- --verify REGISZTRACIOS_AZONOSITO
