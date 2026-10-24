@@ -44,10 +44,14 @@ export function PublisherProfileEditor({
 }) {
   const { locale } = useTranslation();
   const labels = copy(locale);
-  const citationStyles = useMemo(loadCitationStyles, []);
   const currentUser = useAuthStore(getCurrentUser);
   const [savedProfiles, setSavedProfiles] = useState(loadPublisherProfiles);
   const [draft, setDraft] = useState<OmiPublicationProfile>(() => cloneAsCustom(baseProfile));
+  const citationStyles = useMemo(() => loadCitationStyles([
+    draft.rules.citations.bibliographyStyle,
+    draft.rules.citations.noteFirstStyle,
+    draft.rules.citations.noteSubsequentStyle,
+  ].filter((id): id is string => Boolean(id))), [draft.rules.citations.bibliographyStyle, draft.rules.citations.noteFirstStyle, draft.rules.citations.noteSubsequentStyle]);
   const [message, setMessage] = useState('');
   const idmlInputRef = useRef<HTMLInputElement>(null);
 
@@ -456,7 +460,7 @@ function createPublicationStyle(imported: IdmlPublicationStyleImportResult): Pub
   return normalizePublicationStyle(next);
 }
 
-function loadCitationStyles() {
+function loadCitationStyles(extraIds: readonly string[] = []) {
   const savedIds: string[] = [];
   try {
     const parsed = JSON.parse(window.localStorage.getItem('omi.customCitationStyles.v1') ?? '[]') as unknown;
@@ -464,7 +468,8 @@ function loadCitationStyles() {
       for (const id of parsed) if (typeof id === 'string' && parseCustomCitationStyleId(id)) savedIds.push(id);
     }
   } catch { /* Use built-in styles when the local custom-style list is unavailable. */ }
-  return [...CITATION_STYLE_CATALOG, ...savedIds.map((id) => getCitationStyleDescriptor(id))];
+  const customIds = [...new Set([...savedIds, ...extraIds])].filter((id) => !CITATION_STYLE_CATALOG.some((style) => style.id === id));
+  return [...CITATION_STYLE_CATALOG, ...customIds.map((id) => getCitationStyleDescriptor(id))];
 }
 
 function loadPublicationStyles(): PublicationStyle[] {
