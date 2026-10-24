@@ -187,6 +187,7 @@ export function PublicationDocumentCanvas({
   const bleed = bleedMm * PIXELS_PER_MM * scale;
   const pageGap = Math.max(28, bleed * 2 + 12);
   const pageStride = pageHeight + pageGap;
+  const pageCount = viewMode === 'print' ? pagination.pageCount : 1;
   const usablePageHeight = Math.max(
     80,
     pageHeight - topMargin - bottomMargin,
@@ -606,7 +607,6 @@ export function PublicationDocumentCanvas({
   const heading1 = style.styles.heading1;
   const heading2 = style.styles.heading2;
   const note = style.styles.footnote;
-  const pageCount = viewMode === 'print' ? pagination.pageCount : 1;
   const paragraphStyleCss = buildLiveParagraphStyleCss(
     canvasId,
     style,
