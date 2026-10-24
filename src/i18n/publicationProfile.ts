@@ -136,9 +136,9 @@ const en: PublicationProfileCopy = {
   },
   exportProfile: 'Export profile JSON',
   exportDescription: 'Save the exact profile definition used for reproducible future rendering.',
-  profileSeparation: 'The profile changes presentation and publication requirements, not scholarly content. Profile selection and explicit presentation overrides are revisioned separately from text edits.
+profileSeparation: 'The profile changes presentation and publication requirements, not scholarly content. Profile selection and explicit presentation overrides are revisioned separately from text edits.',
   myProfiles: 'My publisher profiles',
-  lockedProfile: 'Locked profile',',
+  lockedProfile: 'Locked profile',
   profileOverrides: 'This manuscript currently contains presentation overrides that differ from the selected profile.',
   resetDefaults: 'Reapply profile defaults',
   profileNames: {
@@ -228,9 +228,9 @@ const hu: PublicationProfileCopy = {
   },
   exportProfile: 'Profil JSON exportálása',
   exportDescription: 'A reprodukálható későbbi rendereléshez mentsd el a használt profil pontos definícióját.',
-  profileSeparation: 'A profil a megjelenítést és a publikációs követelményeket módosítja, nem a tudományos tartalmat. A profilválasztás és az explicit megjelenítési felülírások a szövegszerkesztéstől elkülönülten kerülnek a revíziótörténetbe.
+profileSeparation: 'A profil a megjelenítést és a publikációs követelményeket módosítja, nem a tudományos tartalmat. A profilválasztás és az explicit megjelenítési felülírások a szövegszerkesztéstől elkülönülten kerülnek a revíziótörténetbe.',
   myProfiles: 'Saját kiadói profilok',
-  lockedProfile: 'Zárolt profil',',
+  lockedProfile: 'Zárolt profil',
   profileOverrides: 'A kézirat jelenleg olyan megjelenítési felülírásokat tartalmaz, amelyek eltérnek a kiválasztott profil alapértékeitől.',
   resetDefaults: 'Profil alapértékeinek visszaállítása',
   profileNames: {
@@ -320,9 +320,9 @@ const de: PublicationProfileCopy = {
   },
   exportProfile: 'Profil-JSON exportieren',
   exportDescription: 'Speichern Sie die genaue Profildefinition für reproduzierbares zukünftiges Rendering.',
-  profileSeparation: 'Das Profil ändert Darstellung und Publikationsanforderungen, nicht den wissenschaftlichen Inhalt. Profilwahl und explizite Darstellungsüberschreibungen werden getrennt von Textänderungen versioniert.
+profileSeparation: 'Das Profil ändert Darstellung und Publikationsanforderungen, nicht den wissenschaftlichen Inhalt. Profilwahl und explizite Darstellungsüberschreibungen werden getrennt von Textänderungen versioniert.',
   myProfiles: 'Eigene Verlagsprofile',
-  lockedProfile: 'Gesperrtes Profil',',
+  lockedProfile: 'Gesperrtes Profil',
   profileOverrides: 'Dieses Manuskript enthält Darstellungsüberschreibungen, die vom ausgewählten Profil abweichen.',
   resetDefaults: 'Profilstandards erneut anwenden',
   profileNames: {
