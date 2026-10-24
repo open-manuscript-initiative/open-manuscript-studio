@@ -889,7 +889,7 @@ function renderReferenceList(state: RenderState): string {
 
   const order = renderBibliography(
     bibliographyRecords,
-    state.context.profile.rules.citations.style,
+    state.context.profile.rules.citations.bibliographyStyle ?? state.context.profile.rules.citations.style,
     state.context.locale,
   ).map((entry) => entry.recordId);
   const recordMap = new Map(
