@@ -13,14 +13,6 @@ Application release numbers are independent from the version identifiers of
 the portable OMI document model and individual renderers.
 
 ## Unreleased
-# Changelog
-
-Notable changes to Open Manuscript Studio are documented in this file.
-Application release numbers are independent from the version identifiers of
-the portable OMI document model and individual renderers.
-
-## Unreleased
-
 ## 0.3.0-beta.7 — 2026-10-20
 
 ### Native applications and layout
