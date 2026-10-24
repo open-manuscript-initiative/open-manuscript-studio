@@ -1,6 +1,6 @@
 # Roadmap
 
-Open Manuscript Studio is on the `0.3.0-beta.10` scholarly authoring, collaboration and publication beta line. This release improves live publication editor responsiveness for long manuscripts by chunking print-layout and footnote measurements. The portable manuscript format remains `OMI-SPEC-320@0.3.0`; the next milestone is a stable release candidate.
+Open Manuscript Studio is on the `0.3.0-beta.11` scholarly authoring, collaboration and publication beta line. This release improves editing responsiveness and reduces offscreen page-guide rendering while navigating. The portable manuscript format remains `OMI-SPEC-320@0.3.0`; the next milestone is a stable release candidate.
 
 This page records direction rather than promising dates. The [issue tracker](https://github.com/open-manuscript-initiative/open-manuscript-studio/issues), pull requests, and [CHANGELOG](https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/CHANGELOG.md) are the authoritative sources for individual work items.
 

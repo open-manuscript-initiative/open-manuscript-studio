@@ -1,3 +1,11 @@
+## 0.3.0-beta.11 — 2026-10-24
+
+- Keeps long-document editing responsive by reusing unchanged line measurements and invalidating only edited blocks.
+- Renders only the nearby print page guides while navigating, with an overscan buffer around the visible viewport.
+- Advances the shared Studio version to **0.3.0-beta.11**, Windows MSI to **0.3.0.11**, iOS build to **23** (short version **0.3.0**) and Android versionCode floor to **1210**.
+- Keeps the portable manuscript format at **OMI-SPEC-320@0.3.0**.
+- See [the release notes](docs/release/0.3.0-beta.11.md) for packaging identities and deployment steps.
+
 ## 0.3.0-beta.10 — 2026-10-24
 
 - Improves live publication editor responsiveness for long manuscripts by measuring print layout and footnotes in short, cancellable animation-frame chunks.
