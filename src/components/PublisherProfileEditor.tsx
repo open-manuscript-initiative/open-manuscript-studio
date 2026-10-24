@@ -28,7 +28,7 @@ import {
 } from '../services/publisherProfileStorage';
 import { importPublicationStyleFromIdml, type IdmlPublicationStyleImportResult } from '../services/idmlPublicationStyleImport';
 import { normalizePublicationStyle, type PublicationStyle } from '../services/publicationStyleExport';
-import { CITATION_STYLE_CATALOG } from '../model/cslRendering';
+import { CITATION_STYLE_CATALOG, getCitationStyleDescriptor, parseCustomCitationStyleId } from '../model/cslRendering';
 import { getCurrentUser, useAuthStore } from '../store/authStore';
 import { PublisherProfileCatalog } from './PublisherProfileCatalog';
 
@@ -44,6 +44,7 @@ export function PublisherProfileEditor({
 }) {
   const { locale } = useTranslation();
   const labels = copy(locale);
+  const citationStyles = useMemo(loadCitationStyles, []);
   const currentUser = useAuthStore(getCurrentUser);
   const [savedProfiles, setSavedProfiles] = useState(loadPublisherProfiles);
   const [draft, setDraft] = useState<OmiPublicationProfile>(() => cloneAsCustom(baseProfile));
@@ -344,7 +345,7 @@ export function PublisherProfileEditor({
           <label><span>{labels.profileName}</span><input value={draft.name} onChange={(e) => update('name', e.target.value)} /></label>
           <label><span>{labels.publisher}</span><input value={draft.publisher ?? ''} onChange={(e) => update('publisher', e.target.value)} /></label>
           <label className="publisher-profile-wide"><span>{labels.descriptionField}</span><textarea rows={3} value={draft.description} onChange={(e) => update('description', e.target.value)} /></label>
-          <label><span>{labels.bibliographyStyle}</span><select value={draft.rules.citations.bibliographyStyle ?? draft.rules.citations.style} onChange={(e) => updateCitationRule('bibliographyStyle', e.target.value)}>{CITATION_STYLE_CATALOG.map((style) => <option key={style.id} value={style.id}>{style.label}</option>)}</select></label>
+          <label><span>{labels.bibliographyStyle}</span><select value={draft.rules.citations.bibliographyStyle ?? draft.rules.citations.style} onChange={(e) => updateCitationRule('bibliographyStyle', e.target.value)}>{citationStyles.map((style) => <option key={style.id} value={style.id}>{style.label}</option>)}</select></label>
           <label><span>{labels.firstNoteStyle}</span><select value={draft.rules.citations.noteFirstStyle ?? draft.rules.citations.style} onChange={(e) => updateCitationRule('noteFirstStyle', e.target.value)}>{CITATION_STYLE_CATALOG.map((style) => <option key={style.id} value={style.id}>{style.label}</option>)}</select></label>
           <label><span>{labels.subsequentNoteStyle}</span><select value={draft.rules.citations.noteSubsequentStyle ?? draft.rules.citations.style} onChange={(e) => updateCitationRule('noteSubsequentStyle', e.target.value)}>{CITATION_STYLE_CATALOG.map((style) => <option key={style.id} value={style.id}>{style.label}</option>)}</select></label>
           <label><span>{labels.website}</span><input type="url" value={draft.branding?.website ?? ''} onChange={(e) => updateBranding('website', e.target.value)} /></label>
@@ -453,6 +454,17 @@ function createPublicationStyle(imported: IdmlPublicationStyleImportResult): Pub
   }
   if (noteFont) next.fonts.note.family = noteFont;
   return normalizePublicationStyle(next);
+}
+
+function loadCitationStyles() {
+  const savedIds: string[] = [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem('omi.customCitationStyles.v1') ?? '[]') as unknown;
+    if (Array.isArray(parsed)) {
+      for (const id of parsed) if (typeof id === 'string' && parseCustomCitationStyleId(id)) savedIds.push(id);
+    }
+  } catch { /* Use built-in styles when the local custom-style list is unavailable. */ }
+  return [...CITATION_STYLE_CATALOG, ...savedIds.map((id) => getCitationStyleDescriptor(id))];
 }
 
 function loadPublicationStyles(): PublicationStyle[] {
