@@ -51,7 +51,7 @@ export function PublisherProfileEditor({
     draft.rules.citations.bibliographyStyle,
     draft.rules.citations.noteFirstStyle,
     draft.rules.citations.noteSubsequentStyle,
-  ].filter((id): id is string => Boolean(id))), [draft.rules.citations.bibliographyStyle, draft.rules.citations.noteFirstStyle, draft.rules.citations.noteSubsequentStyle]);
+  ].filter((id) => id !== undefined) as string[]), [draft.rules.citations.bibliographyStyle, draft.rules.citations.noteFirstStyle, draft.rules.citations.noteSubsequentStyle]);
   const [message, setMessage] = useState('');
   const idmlInputRef = useRef<HTMLInputElement>(null);
 
