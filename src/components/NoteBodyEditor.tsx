@@ -90,7 +90,7 @@ export function NoteBodyEditor({
     ) as JSONContent;
     if (JSON.stringify(synchronized) === JSON.stringify(editor.getJSON())) return;
     editor.commands.setContent(synchronized, { emitUpdate: true });
-  }, [citationStyle, editor, manuscriptLocale, note, records]);
+  }, [citationStyle, editor, manuscriptLocale, note, records, subsequentCitationStyle, previouslyCitedTargets]);
 
   function togglePicker(): void {
     if (!editor) return;
