@@ -780,7 +780,7 @@ function renderBibliographySection(
 
   const entries = renderBibliography(
     bibliographyRecords,
-    state.context.profile.rules.citations.style,
+    state.context.profile.rules.citations.bibliographyStyle ?? state.context.profile.rules.citations.style,
     state.context.locale,
   );
   const heading = state.context.profile.rules.citations.bibliographyHeading
