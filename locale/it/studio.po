@@ -8070,3 +8070,28 @@ msgstr "Istantanea di recupero"
 msgctxt "/uncataloguedUi/euroOfficeRecovery/failed"
 msgid "Recovery saves could not be loaded or downloaded."
 msgstr "Non è stato possibile caricare o scaricare i file di recupero."
+
+#. OMI translation key: /researchModules/history-archives-siusa-search-panel/copyByLocale/title
+msgctxt "/researchModules/history-archives-siusa-search-panel/copyByLocale/title"
+msgid "SIUSA — Italian archival descriptions"
+msgstr "SIUSA – Sistema informativo archivistico italiano"
+
+#. OMI translation key: /researchModules/history-archives-siusa-search-panel/copyByLocale/description
+msgctxt "/researchModules/history-archives-siusa-search-panel/copyByLocale/description"
+msgid "Search SIUSA, the Italian national information system for non-state archives. Results open in the official catalogue in a new tab."
+msgstr "Cerca in SIUSA, il sistema informativo nazionale italiano per gli archivi non statali. I risultati si aprono nel catalogo ufficiale in una nuova scheda."
+
+#. OMI translation key: /researchModules/history-archives-siusa-search-panel/copyByLocale/label
+msgctxt "/researchModules/history-archives-siusa-search-panel/copyByLocale/label"
+msgid "Search SIUSA archives"
+msgstr "Cerca negli archivi SIUSA"
+
+#. OMI translation key: /researchModules/history-archives-siusa-search-panel/copyByLocale/placeholder
+msgctxt "/researchModules/history-archives-siusa-search-panel/copyByLocale/placeholder"
+msgid "Name, archive, place, or keyword"
+msgstr "Nome, archivio, luogo o parola chiave"
+
+#. OMI translation key: /researchModules/history-archives-siusa-search-panel/copyByLocale/search
+msgctxt "/researchModules/history-archives-siusa-search-panel/copyByLocale/search"
+msgid "Search SIUSA"
+msgstr "Cerca in SIUSA"

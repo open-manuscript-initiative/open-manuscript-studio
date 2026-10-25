@@ -1766,6 +1766,15 @@
         "modelMatches": "Overeenkomende modellen",
         "modelCenturies": "Eeuwen"
       }
+    },
+    "history-archives-siusa-search-panel": {
+      "copyByLocale": {
+        "title": "SIUSA – Italiaanse archiefbeschrijvingen",
+        "description": "Zoek in SIUSA, het Italiaanse nationale informatiesysteem voor niet-statelijke archieven. De resultaten openen in een nieuw tabblad in de officiële catalogus.",
+        "label": "Zoek in SIUSA-archieven",
+        "placeholder": "Naam, archief, plaats of trefwoord",
+        "search": "Zoeken in SIUSA"
+      }
     }
   },
   "uncataloguedUi": {

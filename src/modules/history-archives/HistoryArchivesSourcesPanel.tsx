@@ -7,6 +7,7 @@ import { EuropeanaSearchPanel } from './EuropeanaSearchPanel';
 import { EleveltarSearchPanel } from './EleveltarSearchPanel';
 import { NaraSearchPanel } from './NaraSearchPanel';
 import { RomanianArchivesSearchPanel } from './RomanianArchivesSearchPanel';
+import { SIUSASearchPanel } from './SIUSASearchPanel';
 import {
   DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS,
   getHistoryArchiveSourcesStorageKey,
@@ -25,7 +26,7 @@ interface HistoryArchivesSourcesPanelProps {
 }
 
 interface ArchivePortal {
-  id: Exclude<HistoryArchiveSourceId, 'europeana' | 'nara' | 'romanian' | 'hungarian'>;
+  id: Exclude<HistoryArchiveSourceId, 'europeana' | 'nara' | 'romanian' | 'hungarian' | 'siusa'>;
   url: string;
 }
 
@@ -183,6 +184,7 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     hungarian: 'eLevéltár – Hungarian archives',
     uk: 'The National Archives (UK)',
     italian: 'Sistema Archivistico Nazionale (Italy)',
+    siusa: 'SIUSA — Italian archival descriptions',
     spanish: 'PARES – Spanish Archives',
     dutch: 'Nationaal Archief (Netherlands)',
     french: 'Archives nationales (France)',
@@ -222,6 +224,7 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     hungarian: 'eLevéltár – Ungarische Archive',
     uk: 'The National Archives (UK)',
     italian: 'Sistema Archivistico Nazionale (Italien)',
+    siusa: 'SIUSA – italienisches Informationssystem für Archive',
     spanish: 'PARES – Spanische Archive',
     dutch: 'Nationaal Archief (Niederlande)',
     french: 'Archives nationales (Frankreich)',
@@ -261,6 +264,7 @@ const sourceNames: Record<string, Record<HistoryArchiveSourceId, string>> = {
     hungarian: 'eLevéltár – magyar levéltárak',
     uk: 'The National Archives (Egyesült Királyság)',
     italian: 'Sistema Archivistico Nazionale (Olaszország)',
+    siusa: 'SIUSA – olasz levéltári kereső',
     spanish: 'PARES – Spanyol Levéltárak',
     dutch: 'Nationaal Archief (Hollandia)',
     french: 'Archives nationales (Franciaország)',
@@ -376,6 +380,7 @@ export function HistoryArchivesSourcesPanel({
       {visible.has('europeana') ? <EuropeanaSearchPanel copy={europeanaCopy} locale={locale} /> : null}
       {visible.has('nara') ? <NaraSearchPanel copy={naraCopy} locale={locale} /> : null}
       {visible.has('romanian') ? <RomanianArchivesSearchPanel locale={locale} /> : null}
+      {visible.has('siusa') ? <SIUSASearchPanel locale={locale} /> : null}
       {visible.has('hungarian') ? <EleveltarSearchPanel locale={locale} /> : null}
       {archivePortals.filter(({ id }) => visible.has(id)).map((archive) => (
         <section className="europeana-search history-archives-portal" key={archive.id}>

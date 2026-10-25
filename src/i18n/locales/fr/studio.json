@@ -1766,6 +1766,15 @@
         "modelMatches": "Modèles correspondants",
         "modelCenturies": "Siècles"
       }
+    },
+    "history-archives-siusa-search-panel": {
+      "copyByLocale": {
+        "title": "SIUSA – archives italiennes",
+        "description": "Recherchez dans SIUSA, le système national italien d’information sur les archives non étatiques. Les résultats s’ouvrent dans le catalogue officiel dans un nouvel onglet.",
+        "label": "Rechercher dans SIUSA",
+        "placeholder": "Nom, archive, lieu ou mot-clé",
+        "search": "Rechercher dans SIUSA"
+      }
     }
   },
   "uncataloguedUi": {
