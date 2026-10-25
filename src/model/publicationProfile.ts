@@ -109,6 +109,8 @@ export interface OmiPublicationProfileRules {
 }
 
 export interface OmiPublicationProfileDistribution {
+  /** Digest of the exact imported UTF-8 bytes, not publisher authentication. */
+  sha256?: string;
   importedAt: string;
   sourceType: 'file' | 'url' | 'catalog';
   sourceUrl?: string;
@@ -153,7 +155,7 @@ declare module '../types/omi' {
 
 const GENERIC_PROFILE: OmiPublicationProfile = {
   model: OMI_PUBLICATION_PROFILE_MODEL,
-  id: 'omi-generic-scholarly', version: '0.1.0', name: 'OMI Generic Scholarly',
+  id: 'omi-generic-scholarly', version: '0.2.0', name: 'OMI Generic Scholarly',
   description: 'A neutral single-column scholarly profile for portable authoring and general-purpose publication.',
   publisher: 'Open Manuscript Initiative',
   rules: {
@@ -189,7 +191,7 @@ const AUTHOR_DATE_PROFILE: OmiPublicationProfile = {
 
 const HUMANITIES_PROFILE: OmiPublicationProfile = {
   model: OMI_PUBLICATION_PROFILE_MODEL,
-  id: 'omi-humanities-notes', version: '0.1.0', name: 'OMI Humanities — Notes & Bibliography',
+  id: 'omi-humanities-notes', version: '0.2.0', name: 'OMI Humanities — Notes & Bibliography',
   description: 'A humanities-oriented profile with Chicago notes and bibliography, footnotes and document-wide object numbering.',
   publisher: 'Open Manuscript Initiative',
   rules: {
@@ -208,9 +210,18 @@ const HUMANITIES_PROFILE: OmiPublicationProfile = {
 export const BUILTIN_PUBLICATION_PROFILES: readonly OmiPublicationProfile[] = [GENERIC_PROFILE, AUTHOR_DATE_PROFILE, HUMANITIES_PROFILE];
 export const DEFAULT_PUBLICATION_PROFILE_ID = GENERIC_PROFILE.id;
 
-export function getPublicationProfile(id: string | undefined): OmiPublicationProfile | undefined {
+const LEGACY_PROFILES = [GENERIC_PROFILE, HUMANITIES_PROFILE].map(profile => {
+  const legacy = JSON.parse(JSON.stringify(profile)) as OmiPublicationProfile;
+  legacy.version = '0.1.0';
+  delete legacy.rules.citations.bibliographyStyle;
+  delete legacy.rules.citations.noteFirstStyle;
+  delete legacy.rules.citations.noteSubsequentStyle;
+  return legacy;
+});
+
+export function getPublicationProfile(id: string | undefined, version?: string): OmiPublicationProfile | undefined {
   if (!id) return undefined;
-  return BUILTIN_PUBLICATION_PROFILES.find((profile) => profile.id === id);
+  return [...BUILTIN_PUBLICATION_PROFILES, ...LEGACY_PROFILES].find((profile) => profile.id === id && (!version || profile.version === version));
 }
 
 export function getPublicationProfileReference(manuscript: Pick<OmiManuscriptState, 'publicationProfile'>): OmiPublicationProfileReference | undefined {
@@ -223,15 +234,19 @@ export function resolvePublicationProfile(
   manuscriptOrReference: Pick<OmiManuscriptState, 'publicationProfile' | 'embeddedPublicationProfile'> | OmiPublicationProfileReference | undefined,
 ): OmiPublicationProfile {
   const possibleReference = manuscriptOrReference as OmiPublicationProfileReference | undefined;
-  const isReference = possibleReference && 'id' in possibleReference;
+  const isReference = possibleReference && 'id' in possibleReference && !('schema' in possibleReference);
   if (!isReference && manuscriptOrReference) {
     const state = manuscriptOrReference as Pick<OmiManuscriptState, 'publicationProfile' | 'embeddedPublicationProfile'>;
     const reference = getPublicationProfileReference(state);
     const embedded = state.embeddedPublicationProfile;
     if (embedded && embedded.id === reference?.id && embedded.version === reference.version) return embedded;
-    return getPublicationProfile(reference?.id) ?? GENERIC_PROFILE;
+    const resolved = getPublicationProfile(reference?.id, reference?.version);
+    if (reference && !resolved) throw new Error('Publication profile version is unavailable.');
+    return resolved ?? GENERIC_PROFILE;
   }
-  return getPublicationProfile(possibleReference?.id) ?? GENERIC_PROFILE;
+  const resolved = getPublicationProfile(possibleReference?.id, possibleReference?.version);
+  if (possibleReference && !resolved) throw new Error('Publication profile version is unavailable.');
+  return resolved ?? GENERIC_PROFILE;
 }
 
 export function createPublicationProfileReference(profile: OmiPublicationProfile): OmiPublicationProfileReference {

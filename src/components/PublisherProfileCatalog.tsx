@@ -1,7 +1,8 @@
+import { readPublisherProfileBytes } from '../model/publisherProfileImport';
 import { useRef, useState, type ChangeEvent } from 'react';
 import { Download, Globe, Upload } from 'lucide-react';
 
-import { OMI_PUBLICATION_PROFILE_MODEL, type OmiPublicationProfile, type OmiPublicationProfileDistribution } from '../model/publicationProfile';
+import { type OmiPublicationProfileDistribution } from '../model/publicationProfile';
 import type { ProtectablePublicationProfile } from '../model/publisherProfileProtection';
 
 const DEFAULT_CATALOG_URL = 'https://raw.githubusercontent.com/open-manuscript-initiative/open-manuscript-studio/main/public/publisher-profile-catalog.json';
@@ -38,22 +39,14 @@ export function PublisherProfileCatalog({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
-  async function readProfile(url: string, expectedSha256?: string): Promise<ProtectablePublicationProfile> {
+  async function readProfile(url: string, expectedSha256?: string): Promise<{ profile: ProtectablePublicationProfile; sha256: string }> {
     const parsedUrl = new URL(url, window.location.href);
     if (parsedUrl.protocol !== 'https:' && parsedUrl.hostname !== 'localhost') {
       throw new Error(labels.httpsOnly);
     }
     const response = await fetch(parsedUrl.toString(), { credentials: 'omit' });
     if (!response.ok) throw new Error(labels.fetchFailed);
-    const text = await response.text();
-    if (new TextEncoder().encode(text).length > MAX_PROFILE_BYTES) throw new Error(labels.tooLarge);
-    if (expectedSha256) {
-      if (!globalThis.crypto?.subtle) throw new Error(labels.integrityUnavailable);
-      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-      const actual = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-      if (actual.toLowerCase() !== expectedSha256.toLowerCase()) throw new Error(labels.integrityFailed);
-    }
-    return validateProfile(JSON.parse(text));
+    return readPublisherProfileBytes(new Uint8Array(await response.arrayBuffer()), expectedSha256);
   }
 
   function importProfile(profile: ProtectablePublicationProfile, distribution: OmiPublicationProfileDistribution) {
@@ -64,7 +57,8 @@ export function PublisherProfileCatalog({
     setBusy(true);
     setMessage('');
     try {
-      importProfile(await readProfile(profileUrl), { importedAt: new Date().toISOString(), sourceType: 'url', sourceUrl: new URL(profileUrl).toString() });
+      const imported = await readProfile(profileUrl);
+      importProfile(imported.profile, { sha256: imported.sha256, importedAt: new Date().toISOString(), sourceType: 'url', sourceUrl: new URL(profileUrl).toString() });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : labels.fetchFailed);
     } finally {
@@ -80,7 +74,8 @@ export function PublisherProfileCatalog({
     setMessage('');
     try {
       if (file.size > MAX_PROFILE_BYTES) throw new Error(labels.tooLarge);
-      importProfile(validateProfile(JSON.parse(await file.text())), { importedAt: new Date().toISOString(), sourceType: 'file' });
+      const imported = await readPublisherProfileBytes(new Uint8Array(await file.arrayBuffer()));
+      importProfile(imported.profile, { sha256: imported.sha256, importedAt: new Date().toISOString(), sourceType: 'file' });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : labels.invalidProfile);
     } finally {
@@ -114,11 +109,11 @@ export function PublisherProfileCatalog({
     setBusy(true);
     setMessage('');
     try {
-      const profile = await readProfile(entry.url, entry.sha256);
+      const { profile, sha256 } = await readProfile(entry.url, entry.sha256);
       if (profile.id !== entry.id || profile.name !== entry.name || profile.version !== entry.version) {
         throw new Error(labels.catalogMismatch);
       }
-      importProfile(profile, { importedAt: new Date().toISOString(), sourceType: 'catalog', sourceUrl: entry.url, catalogUrl: DEFAULT_CATALOG_URL });
+      importProfile(profile, { sha256, importedAt: new Date().toISOString(), sourceType: 'catalog', sourceUrl: entry.url, catalogUrl: DEFAULT_CATALOG_URL });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : labels.fetchFailed);
     } finally {
@@ -167,22 +162,6 @@ export function PublisherProfileCatalog({
       <p className="publisher-profile-catalog-help">{labels.help}</p>
     </section>
   );
-}
-
-function validateProfile(value: unknown): ProtectablePublicationProfile {
-  if (!value || typeof value !== 'object') throw new Error(copy('en').invalidProfile);
-  const profile = value as Partial<OmiPublicationProfile> & Record<string, unknown>;
-  if (
-    profile.model !== OMI_PUBLICATION_PROFILE_MODEL
-    || typeof profile.id !== 'string' || !profile.id.trim()
-    || typeof profile.version !== 'string' || !profile.version.trim()
-    || typeof profile.name !== 'string' || !profile.name.trim()
-    || !profile.rules || typeof profile.rules !== 'object'
-    || !('layout' in profile.rules) || !('metadata' in profile.rules)
-  ) {
-    throw new Error(copy('en').invalidProfile);
-  }
-  return profile as ProtectablePublicationProfile;
 }
 
 function isCatalogEntry(value: unknown): value is CatalogEntry {
