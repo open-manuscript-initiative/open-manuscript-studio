@@ -1,5 +1,12 @@
 # Publisher profile downloads and shared catalog
 
+All intake paths validate nested rule groups before activation and record SHA-256
+over the exact imported bytes in `distribution.sha256`. Catalog hashes are also
+compared before import. A hash identifies bytes; it does not authenticate a publisher.
+Read-only metadata from a downloaded file is an unverified declaration.
+Generic and humanities built-ins use version 0.2.0 for their new citation defaults;
+explicit 0.1.0 references retain the historical rules. Unknown versions fail closed.
+
 ## Download and use a profile
 
 A publisher can download each saved profile from **Publication → My publisher profiles** using its download button. Studio writes a portable `.omi-profile.json` file with the profile ID, version, publisher details, branding, publication rules, optional InDesign publication style, front-matter rules, and any existing protection metadata.

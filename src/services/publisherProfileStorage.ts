@@ -1,3 +1,4 @@
+import { validatePublisherProfile } from '../model/publisherProfileImport';
 import type { OmiPublicationProfile } from '../model/publicationProfile';
 import {
   canUnlockPublisherProfile,
@@ -21,6 +22,7 @@ export function loadPublisherProfiles(): ProtectablePublicationProfile[] {
 }
 
 export function savePublisherProfile(profile: OmiPublicationProfile): ProtectablePublicationProfile[] {
+  validatePublisherProfile(profile);
   const existing = loadPublisherProfiles();
   const sameVersion = existing.find(
     (item) => item.id === profile.id && item.version === profile.version,
@@ -112,11 +114,5 @@ function persist(profiles: readonly ProtectablePublicationProfile[]): void {
 }
 
 function isProfile(value: unknown): value is OmiPublicationProfile {
-  if (!value || typeof value !== 'object') return false;
-  const candidate = value as Partial<OmiPublicationProfile>;
-  return candidate.model === 'omi-publication-profile-alpha-0.1'
-    && typeof candidate.id === 'string'
-    && typeof candidate.version === 'string'
-    && typeof candidate.name === 'string'
-    && Boolean(candidate.rules);
+  try { validatePublisherProfile(value); return true; } catch { return false; }
 }
