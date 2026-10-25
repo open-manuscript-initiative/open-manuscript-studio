@@ -1766,6 +1766,15 @@
         "modelMatches": "Matching models",
         "modelCenturies": "Centuries"
       }
+    },
+    "history-archives-siusa-search-panel": {
+      "copyByLocale": {
+        "title": "SIUSA — Italian archival descriptions",
+        "description": "Search SIUSA, the Italian national information system for non-state archives. Results open in the official catalogue in a new tab.",
+        "label": "Search SIUSA archives",
+        "placeholder": "Name, archive, place, or keyword",
+        "search": "Search SIUSA"
+      }
     }
   },
   "uncataloguedUi": {

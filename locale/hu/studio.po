@@ -8075,3 +8075,28 @@ msgstr "Helyreállítási pillanatkép"
 msgctxt "/uncataloguedUi/euroOfficeRecovery/failed"
 msgid "Recovery saves could not be loaded or downloaded."
 msgstr "A helyreállítási mentések nem tölthetők be vagy le."
+
+#. OMI translation key: /researchModules/history-archives-siusa-search-panel/copyByLocale/title
+msgctxt "/researchModules/history-archives-siusa-search-panel/copyByLocale/title"
+msgid "SIUSA — Italian archival descriptions"
+msgstr "SIUSA – olasz levéltári kereső"
+
+#. OMI translation key: /researchModules/history-archives-siusa-search-panel/copyByLocale/description
+msgctxt "/researchModules/history-archives-siusa-search-panel/copyByLocale/description"
+msgid "Search SIUSA, the Italian national information system for non-state archives. Results open in the official catalogue in a new tab."
+msgstr "Keresés a SIUSA-ban, az olasz nem állami levéltárak országos információs rendszerében. Az eredmények a hivatalos katalógusban nyílnak meg új lapon."
+
+#. OMI translation key: /researchModules/history-archives-siusa-search-panel/copyByLocale/label
+msgctxt "/researchModules/history-archives-siusa-search-panel/copyByLocale/label"
+msgid "Search SIUSA archives"
+msgstr "Keresés a SIUSA levéltári adatbázisában"
+
+#. OMI translation key: /researchModules/history-archives-siusa-search-panel/copyByLocale/placeholder
+msgctxt "/researchModules/history-archives-siusa-search-panel/copyByLocale/placeholder"
+msgid "Name, archive, place, or keyword"
+msgstr "Név, levéltár, hely vagy kulcsszó"
+
+#. OMI translation key: /researchModules/history-archives-siusa-search-panel/copyByLocale/search
+msgctxt "/researchModules/history-archives-siusa-search-panel/copyByLocale/search"
+msgid "Search SIUSA"
+msgstr "Keresés a SIUSA-ban"

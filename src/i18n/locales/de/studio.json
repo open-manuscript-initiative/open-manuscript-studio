@@ -1766,6 +1766,15 @@
         "modelMatches": "Passende Modelle",
         "modelCenturies": "Jahrhunderte"
       }
+    },
+    "history-archives-siusa-search-panel": {
+      "copyByLocale": {
+        "title": "SIUSA – italienisches Informationssystem für Archive",
+        "description": "Durchsuchen Sie SIUSA, das italienische Informationssystem für nichtstaatliche Archive. Die Ergebnisse öffnen sich in einem neuen Tab im offiziellen Katalog.",
+        "label": "Archive in SIUSA durchsuchen",
+        "placeholder": "Name, Archiv, Ort oder Stichwort",
+        "search": "SIUSA durchsuchen"
+      }
     }
   },
   "uncataloguedUi": {

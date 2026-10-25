@@ -1766,6 +1766,15 @@
         "modelMatches": "Zodpovedajúce modely",
         "modelCenturies": "Storočia"
       }
+    },
+    "history-archives-siusa-search-panel": {
+      "copyByLocale": {
+        "title": "SIUSA – taliansky archívny informačný systém",
+        "description": "Vyhľadávajte v SIUSA, talianskom národnom informačnom systéme pre neštátne archívy. Výsledky sa otvoria v oficiálnom katalógu na novej karte.",
+        "label": "Vyhľadávanie v archívoch SIUSA",
+        "placeholder": "Meno, archív, miesto alebo kľúčové slovo",
+        "search": "Hľadať v SIUSA"
+      }
     }
   },
   "uncataloguedUi": {

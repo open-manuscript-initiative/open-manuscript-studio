@@ -1766,6 +1766,15 @@
         "modelMatches": "Modelli corrispondenti",
         "modelCenturies": "Secoli"
       }
+    },
+    "history-archives-siusa-search-panel": {
+      "copyByLocale": {
+        "title": "SIUSA – Sistema informativo archivistico italiano",
+        "description": "Cerca in SIUSA, il sistema informativo nazionale italiano per gli archivi non statali. I risultati si aprono nel catalogo ufficiale in una nuova scheda.",
+        "label": "Cerca negli archivi SIUSA",
+        "placeholder": "Nome, archivio, luogo o parola chiave",
+        "search": "Cerca in SIUSA"
+      }
     }
   },
   "uncataloguedUi": {

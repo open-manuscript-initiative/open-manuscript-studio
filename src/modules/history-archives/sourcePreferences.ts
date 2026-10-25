@@ -5,6 +5,7 @@ export const HISTORY_ARCHIVE_SOURCE_IDS = [
   'hungarian',
   'uk',
   'italian',
+  'siusa',
   'spanish',
   'dutch',
   'french',

@@ -1766,6 +1766,15 @@
         "modelMatches": "Megfelelő modellek",
         "modelCenturies": "Századok"
       }
+    },
+    "history-archives-siusa-search-panel": {
+      "copyByLocale": {
+        "title": "SIUSA – olasz levéltári kereső",
+        "description": "Keresés a SIUSA-ban, az olasz nem állami levéltárak országos információs rendszerében. Az eredmények a hivatalos katalógusban nyílnak meg új lapon.",
+        "label": "Keresés a SIUSA levéltári adatbázisában",
+        "placeholder": "Név, levéltár, hely vagy kulcsszó",
+        "search": "Keresés a SIUSA-ban"
+      }
     }
   },
   "uncataloguedUi": {
