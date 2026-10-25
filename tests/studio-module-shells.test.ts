@@ -248,7 +248,7 @@ test('archive source preferences default to existing sources, filter unknown IDs
   assert.deepEqual(readVisibleHistoryArchiveSources('{broken'), DEFAULT_VISIBLE_HISTORY_ARCHIVE_SOURCE_IDS);
   assert.deepEqual(readVisibleHistoryArchiveSources(JSON.stringify(['uk', 'uk', 'future', 4, 'nara'])), ['uk', 'nara']);
   assert.deepEqual(readVisibleHistoryArchiveSources('[]'), []);
-  assert.equal(HISTORY_ARCHIVE_SOURCE_IDS.length, 37);
+  assert.equal(HISTORY_ARCHIVE_SOURCE_IDS.length, 38);
   assert.ok(HISTORY_ARCHIVE_SOURCE_IDS.includes('vatican'));
   assert.ok(HISTORY_ARCHIVE_SOURCE_IDS.includes('beweb'));
   assert.deepEqual(readVisibleHistoryArchiveSources(JSON.stringify(['swedish', 'polish', 'slovak', 'austrian'])), ['swedish', 'polish', 'slovak', 'austrian']);
