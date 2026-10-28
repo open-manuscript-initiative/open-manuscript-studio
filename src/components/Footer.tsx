@@ -124,6 +124,7 @@ export function Footer() {
             <h2>{tCatalog("/uncataloguedUi/components-footer/project-f6f4da8")}</h2>
             <a href="https://openmanuscript.org/docs/governance/funding-and-partnerships/" target="_blank" rel="noopener noreferrer">{tCatalog("/uncataloguedUi/components-footer/funding-partnerships-6f9e7ea")}</a>
             <a href="https://openmanuscript.org/docs/governance/grant-readiness-pack/" target="_blank" rel="noopener noreferrer">{tCatalog("/uncataloguedUi/components-footer/grant-readiness-pack-b5f8c28")}</a>
+            <a href="https://openmanuscript.org/docs/governance/external-references/" target="_blank" rel="noopener noreferrer">XERJ Corpus Hub</a>
             <a href="https://openmanuscript.org/docs/governance/privacy-policy/" target="_blank" rel="noopener noreferrer">{tCatalog("/uncataloguedUi/components-footer/privacy-policy-7ceacdc")}</a>
             <a href="https://github.com/open-manuscript-initiative/open-manuscript-studio/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>
           </section>
@@ -137,6 +138,23 @@ export function Footer() {
           <a href={socialShareUrl('facebook')} target="_blank" rel="noopener noreferrer">Facebook</a>
           <a href={socialShareUrl('linkedin')} target="_blank" rel="noopener noreferrer">LinkedIn</a>
           <a href={socialShareUrl('bluesky')} target="_blank" rel="noopener noreferrer">Bluesky</a>
+        </div>
+
+        <div className="omi-footer-xerj">
+          <a
+            href="https://hub.xerj.org/contributors/vargaijanos"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="OMI Studio source code selected for the XERJ Corpus Hub — contributor profile"
+            title="XERJ Corpus Hub — selected source code"
+          >
+            <img
+              src="https://hub.xerj.org/contributors/vargaijanos/badge.svg"
+              alt="XERJ Corpus Hub contributor"
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
         </div>
 
         <div className="omi-footer-message">
