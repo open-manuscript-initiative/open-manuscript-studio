@@ -202,3 +202,29 @@
     margin-top: 1.5rem;
   }
 }
+
+/* Official XERJ Corpus Hub contributor badge, linked to the external record. */
+.omi-footer-xerj {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+  background: transparent;
+}
+
+.omi-footer-xerj a {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border-radius: .3rem;
+}
+
+.omi-footer-xerj img {
+  display: block;
+  max-width: min(100%, 18rem);
+  height: auto;
+}
+
+.omi-footer-xerj a:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+}
