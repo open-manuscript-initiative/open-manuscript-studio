@@ -105,16 +105,20 @@ app.use('/api/v1/auth', authRateLimit);
 app.use('/integrations', integrationRateLimit);
 app.use(cookieOriginGuard(allowedOrigins));
 
-app.use('/api/integrations/connections/:connectionId/direct-submission', express.json({ limit: '25mb' }));
-app.use('/api/integrations/connections/:connectionId/publication-artifact', express.json({ limit: '48mb' }));
-app.use('/api/native-editorial/submissions', express.json({ limit: '68mb' }));
+// Large document-parsing endpoints all require an authenticated session
+// before allocating/parsing request bodies. The PKP service-authorized OMP
+// revision callback below uses its own authentication and is intentionally
+// excluded from this browser-session gate.
+app.use('/api/integrations/connections/:connectionId/direct-submission', requireSession, express.json({ limit: '25mb' }));
+app.use('/api/integrations/connections/:connectionId/publication-artifact', requireSession, express.json({ limit: '48mb' }));
+app.use('/api/native-editorial/submissions', requireSession, express.json({ limit: '68mb' }));
 app.use('/integrations/omp/native/author/:contextId/revision', express.json({ limit: '36mb' }));
-app.use('/api/publication/render/pdf', express.json({ limit: '64mb' }));
-app.use('/api/publication/newsletter', express.json({ limit: '12mb' }));
-app.use('/api/v1/publications/web', express.json({ limit: '12mb' }));
-app.use('/api/publication/validate/jats', express.json({ limit: '7mb' }));
-app.use('/api/references/library', express.json({ limit: '8mb' }));
-app.use('/api/collaboration/documents', express.json({ limit: '140mb' }));
+app.use('/api/publication/render/pdf', requireSession, express.json({ limit: '64mb' }));
+app.use('/api/publication/newsletter', requireSession, express.json({ limit: '12mb' }));
+app.use('/api/v1/publications/web', requireSession, express.json({ limit: '12mb' }));
+app.use('/api/publication/validate/jats', requireSession, express.json({ limit: '7mb' }));
+app.use('/api/references/library', requireSession, express.json({ limit: '8mb' }));
+app.use('/api/collaboration/documents', requireSession, express.json({ limit: '140mb' }));
 app.use(['/api/v1/modules/critical-text-edition/transkribus/jobs', '/api/modules/critical-text-edition/transkribus/jobs'], requireSession, express.json({ limit: '28mb' }));
 app.use(express.json({ limit: '1mb' }));
 
