@@ -48,3 +48,20 @@ test('trusted integration URLs keep the production SSRF exception test-only', ()
   assert.match(source, /INTEGRATION_TEST_ALLOWED_HOSTS/);
   assert.match(source, /url\.hostname\.toLowerCase\(\)/);
 });
+
+test('desktop updater does not enable legacy ZIP extraction by default', () => {
+  const cargo = readFileSync(new URL('../src-tauri/Cargo.toml', import.meta.url), 'utf8');
+  const updaterDeclaration = cargo.split('\n').find((line) => /^tauri-plugin-updater\s*=/.test(line));
+  assert.ok(updaterDeclaration);
+  assert.match(updaterDeclaration, /default-features\s*=\s*false/);
+  assert.match(updaterDeclaration, /"rustls-tls"/);
+  assert.match(updaterDeclaration, /"system-proxy"/);
+  assert.doesNotMatch(updaterDeclaration, /"zip"/);
+});
+
+test('legacy-compatible compressed updater artifacts are not requested by bundle configuration', () => {
+  const config = JSON.parse(readFileSync(new URL('../src-tauri/tauri.conf.json', import.meta.url), 'utf8')) as {
+    bundle?: { createUpdaterArtifacts?: boolean | string };
+  };
+  assert.notEqual(config.bundle?.createUpdaterArtifacts, 'v1Compatible');
+});
