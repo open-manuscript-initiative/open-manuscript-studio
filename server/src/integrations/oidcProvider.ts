@@ -217,8 +217,10 @@ export async function validateOidcToken(input: {
   const issuer = typeof payload.iss === 'string' ? payload.iss : verificationDiscovery.issuer;
   const email = claimString(claims.email) ??
     (input.provider.key === 'microsoft' ? claimString(claims.preferred_username) : undefined);
-  const emailVerified = claims.email_verified === true ||
-    (input.provider.key === 'microsoft' && Boolean(email));
+  // preferred_username and email are not proof of verification. Microsoft
+  // does not always emit email_verified: keep login usable, but do not allow
+  // implicit elevation when verification evidence is absent.
+  const emailVerified = claims.email_verified === true;
   const displayName = claimString(claims.name) ?? claimString(claims.preferred_username) ?? email;
 
   return {
