@@ -57,6 +57,11 @@ test('desktop updater does not enable legacy ZIP extraction by default', () => {
   assert.match(updaterDeclaration, /"rustls-tls"/);
   assert.match(updaterDeclaration, /"system-proxy"/);
   assert.doesNotMatch(updaterDeclaration, /"zip"/);
+  const lock = readFileSync(new URL('../src-tauri/Cargo.lock', import.meta.url), 'utf8');
+  assert.doesNotMatch(lock, /\[\[package\]\]\s*name = "zip"\s*version = "4\./);
+  const updaterEntry = lock.match(/\[\[package\]\]\s*name = "tauri-plugin-updater"[\s\S]*?(?=\n\[\[package\]\]|$)/)?.[0];
+  assert.ok(updaterEntry);
+  assert.doesNotMatch(updaterEntry, /^ "zip",$/m);
 });
 
 test('legacy-compatible compressed updater artifacts are not requested by bundle configuration', () => {
