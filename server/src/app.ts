@@ -3,6 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 
 import { env } from './config/env.js';
+import { cookieOriginGuard } from './middleware/cookieOriginGuard.js';
 import {
   apiRateLimit,
   authRateLimit,
@@ -67,7 +68,7 @@ import { requireSession } from './middleware/requireSession.js';
 export const app = express();
 
 const allowedOrigins = new Set([
-  env.FRONTEND_ORIGIN,
+  new URL(env.FRONTEND_ORIGIN).origin,
   'tauri://localhost',
   'http://tauri.localhost',
   'https://tauri.localhost',
@@ -95,6 +96,15 @@ app.use((request, response, next) => {
   return standardCors(request, response, next);
 });
 
+// Apply controls before body parsing: unauthenticated large JSON requests
+// must not consume the 25–140 MiB parser allocations before rate limiting.
+app.use('/api/health', healthRouter);
+app.use(apiRateLimit);
+app.use('/api/auth', authRateLimit);
+app.use('/api/v1/auth', authRateLimit);
+app.use('/integrations', integrationRateLimit);
+app.use(cookieOriginGuard(allowedOrigins));
+
 app.use('/api/integrations/connections/:connectionId/direct-submission', express.json({ limit: '25mb' }));
 app.use('/api/integrations/connections/:connectionId/publication-artifact', express.json({ limit: '48mb' }));
 app.use('/api/native-editorial/submissions', express.json({ limit: '68mb' }));
@@ -115,8 +125,6 @@ app.get('/api', (_request, response) => {
   });
 });
 
-app.use('/api/health', healthRouter);
-app.use(apiRateLimit);
 app.use('/api/v1/server-registry', serverRegistryRouter);
 app.use('/api/server-registry', serverRegistryRouter); // Compatibility facade; identical policy and limits.
 app.use('/api/v1', euroOfficeRouter);
@@ -126,9 +134,6 @@ app.use('/api/v1', historyArchivesRouter);
 app.use('/api/v1', religiousTextsRouter);
 app.use('/api/v1', healthResearchRouter);
 app.use('/api/v1', researchDatabaseRouter);
-app.use('/api/auth', authRateLimit);
-app.use('/integrations', integrationRateLimit);
-
 app.use('/api/auth', orcidOidcRouter);
 app.use('/api/auth', oidcProviderRouter);
 app.use('/api/auth', federatedAuthRouter);
@@ -136,7 +141,7 @@ app.use('/api/auth', linkedIdentityRouter);
 app.use('/api/auth', institutionAdminAuthRouter);
 app.use('/api/auth', institutionalProfileRouter);
 app.use('/api/auth', publicationVenueRouter);
-app.use('/api/v1/auth', authRateLimit, passkeyRouter);
+app.use('/api/v1/auth', passkeyRouter);
 app.use('/api/auth', passkeyRouter); // Compatibility facade; identical application handlers.
 app.use('/api/auth', authRouter);
 app.use('/api/central-admin', centralAdminRouter);
