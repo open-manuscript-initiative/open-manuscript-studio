@@ -20,7 +20,11 @@ tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-persisted-scope = "2"
-tauri-plugin-updater = "2"
+# The updater only consumes the current signed installer/artifact format.
+# Disable legacy compressed (Tauri v1) updater archives, which transitively
+# pull the vulnerable zip 4.x crate. Keep rustls TLS and system proxy support.
+# Reassess before enabling v1Compatible createUpdaterArtifacts bundles.
+tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "system-proxy"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
