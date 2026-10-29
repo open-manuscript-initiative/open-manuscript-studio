@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+// Keep the OJS/OMP address checks in the existing release-security gate.
+import './integration-ip-security.test.ts';
+
 import { assertPortableOmiManuscript, toPortableOmiManuscript } from '../src/services/omiPortableFormat.ts';
 import { createReferenceManuscript } from './referenceManuscriptFixture.ts';
 
