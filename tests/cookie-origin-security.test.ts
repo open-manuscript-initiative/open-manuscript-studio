@@ -68,3 +68,23 @@ test('API rate limiting and CSRF checking run before the first large JSON parser
   }
   assert.equal(source.match(/app\.use\(apiRateLimit\);/g)?.length, 1);
 });
+
+test('large document parsers authenticate before JSON decode and keep the OMP signed callback separate', () => {
+  const source = readFileSync(new URL('../server/src/app.ts', import.meta.url), 'utf8');
+  for (const route of [
+    '/api/integrations/connections/:connectionId/direct-submission',
+    '/api/integrations/connections/:connectionId/publication-artifact',
+    '/api/native-editorial/submissions',
+    '/api/publication/render/pdf',
+    '/api/publication/newsletter',
+    '/api/v1/publications/web',
+    '/api/publication/validate/jats',
+    '/api/references/library',
+    '/api/collaboration/documents',
+  ]) {
+    assert.ok(source.includes("app.use('" + route + "', requireSession, express.json"), route);
+  }
+  assert.ok(source.includes(
+    "app.use('/integrations/omp/native/author/:contextId/revision', express.json"
+  ));
+});
