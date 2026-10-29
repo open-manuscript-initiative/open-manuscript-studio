@@ -11,6 +11,9 @@ export const MAX_VIVLIOSTYLE_HTML_BYTES = 48 * 1024 * 1024;
 export const MAX_VIVLIOSTYLE_PDF_BYTES = 96 * 1024 * 1024;
 
 const MAX_PROCESS_OUTPUT_CHARS = 64 * 1024;
+// Browser-enforced defense in depth against unrecognized HTML/CSS resource syntax.
+const OFFLINE_PDF_CSP_META =
+  '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src data:; font-src data:; media-src data:; style-src \'unsafe-inline\'; connect-src \'none\'; script-src \'none\'; object-src \'none\'; frame-src \'none\'; base-uri \'none\'; form-action \'none\'">';
 let rendererVersionPromise: Promise<string> | undefined;
 
 export type VivliostylePdfErrorCode =
@@ -57,7 +60,7 @@ export async function renderVivliostylePdf(
   const outputPath = join(directory, 'article.pdf');
 
   try {
-    await writeFile(inputPath, html, { encoding: 'utf8', mode: 0o600 });
+    await writeFile(inputPath, withOfflinePdfPolicy(html), { encoding: 'utf8', mode: 0o600 });
 
     const args = [
       'build',
@@ -115,6 +118,21 @@ export async function renderVivliostylePdf(
 }
 
 /**
+ * Install a restrictive browser CSP before user-controlled resources.
+ * Preserve a conventional head, or create one for a headless document.
+ */
+export function withOfflinePdfPolicy(html: string): string {
+  const head = /<head(?:\s[^>]*)?>/i.exec(html);
+  if (head && !/<\s*(?:body|img|video|audio|svg)\b/i.test(html.slice(0, head.index))) {
+    const offset = head.index + head[0].length;
+    return html.slice(0, offset) + OFFLINE_PDF_CSP_META + html.slice(offset);
+  }
+  const doctype = /^\s*<!doctype[^>]*>/i.exec(html);
+  const offset = doctype?.[0].length ?? 0;
+  return html.slice(0, offset) + '<head>' + OFFLINE_PDF_CSP_META + '</head>' + html.slice(offset);
+}
+
+/**
  * Returns an error message when input is unsuitable for the isolated renderer.
  */
 export function validateVivliostyleHtmlInput(html: string): string | undefined {
@@ -136,22 +154,23 @@ export function validateVivliostyleHtmlInput(html: string): string | undefined {
     return 'PDF source CSS must not import external stylesheets.';
   }
 
-  for (const match of html.matchAll(/\b(?:src|poster|data|xlink:href)\s*=\s*(["'])(.*?)\1/gi)) {
-    const value = (match[2] ?? '').trim();
+  // HTML permits unquoted attributes. They must pass the same checks.
+  for (const match of html.matchAll(/\b(?:src|poster|data|xlink:href)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'`=<>]+))/gi)) {
+    const value = (match[1] ?? match[2] ?? match[3] ?? '').trim();
     if (!isEmbeddedResource(value)) {
       return `PDF source contains a non-embedded resource: ${safeExcerpt(value)}.`;
     }
   }
 
-  for (const match of html.matchAll(/<\s*(?:image|use)\b[^>]*\bhref\s*=\s*(["'])(.*?)\1/gi)) {
-    const value = (match[2] ?? '').trim();
+  for (const match of html.matchAll(/<\s*(?:image|use)\b[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'`=<>]+))/gi)) {
+    const value = (match[1] ?? match[2] ?? match[3] ?? '').trim();
     if (!isEmbeddedResource(value)) {
       return `PDF source SVG contains a non-embedded resource: ${safeExcerpt(value)}.`;
     }
   }
 
-  for (const match of html.matchAll(/\bsrcset\s*=\s*(["'])(.*?)\1/gi)) {
-    const candidates = (match[2] ?? '')
+  for (const match of html.matchAll(/\bsrcset\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'`=<>]+))/gi)) {
+    const candidates = (match[1] ?? match[2] ?? match[3] ?? '')
       .split(',')
       .map((candidate) => candidate.trim().split(/\s+/)[0] ?? '')
       .filter(Boolean);

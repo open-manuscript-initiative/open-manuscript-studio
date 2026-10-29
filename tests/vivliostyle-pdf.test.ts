@@ -5,6 +5,7 @@ import {
   MAX_VIVLIOSTYLE_HTML_BYTES,
   renderVivliostylePdf,
   validateVivliostyleHtmlInput,
+  withOfflinePdfPolicy,
 } from '../server/dist/services/vivliostylePdfRenderer.js';
 
 test('Vivliostyle PDF source accepts self-contained resources and interactive links', () => {
@@ -36,6 +37,35 @@ test('Vivliostyle PDF source rejects active markup and remote subresources', () 
     validateVivliostyleHtmlInput('<style>body{background:url(../secret.png)}</style>') ?? '',
     /non-embedded resource/i,
   );
+});
+
+test('PDF resource checks also reject unquoted HTML, SVG and srcset URLs', () => {
+  for (const html of [
+    '<img src=https://127.0.0.1/secret>',
+    '<video poster=https://169.254.169.254/latest/meta-data/>',
+    '<svg><image href=https://example.test/private></image></svg>',
+    '<img srcset=https://example.test/image.png>',
+  ]) {
+    assert.match(validateVivliostyleHtmlInput(html) ?? '', /non-embedded/i, html);
+  }
+  assert.equal(
+    validateVivliostyleHtmlInput('<img src=data:image/png;base64,iVBORw0KGgo=>'),
+    undefined,
+  );
+});
+
+test('PDF renderer policy precedes author-controlled content and forbids network loads', () => {
+  const source = '<!doctype html><html><head><style>body{color:black}</style></head><body><p>Hello</p></body></html>';
+  const protectedHtml = withOfflinePdfPolicy(source);
+  assert.ok(protectedHtml.indexOf('Content-Security-Policy') < protectedHtml.indexOf('<style>'));
+  assert.match(protectedHtml, /default-src 'none'/);
+  assert.match(protectedHtml, /img-src data:/);
+  assert.match(protectedHtml, /font-src data:/);
+  assert.match(protectedHtml, /style-src 'unsafe-inline'/);
+  assert.match(protectedHtml, /connect-src 'none'/);
+
+  const fragment = withOfflinePdfPolicy('<p>Hello</p>');
+  assert.ok(fragment.indexOf('Content-Security-Policy') < fragment.indexOf('<p>'));
 });
 
 test('Vivliostyle PDF source enforces the HTML size boundary', () => {
