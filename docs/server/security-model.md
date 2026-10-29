@@ -51,9 +51,10 @@ Sessions
 
 CSRF & CORS
 
-- SameSite cookies + origin checks
-- CSRF token for state changes
-- CORS: allow only configured origins
+- Secure, HttpOnly, SameSite=Lax cookies; reject unsafe cookie-authenticated requests unless Origin exactly matches a configured browser/Tauri origin
+- Native clients use bearer credentials; server-to-server integrations use their dedicated authentication mechanisms without browser session cookies
+- CORS: allow only configured origins. CORS alone is not a CSRF defence against HTML forms or same-site subdomains
+- Future browser form endpoints must retain the Origin gate or add equivalent per-session CSRF token validation
 
 ---
 
