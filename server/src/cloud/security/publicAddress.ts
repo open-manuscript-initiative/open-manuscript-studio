@@ -36,7 +36,7 @@ export function isPublicRoutableAddress(address: string): boolean {
     const parts = address.toLowerCase().split(':');
     const first = Number.parseInt(parts[0] ?? '', 16);
     if (!Number.isFinite(first) || (first & 0xe000) !== 0x2000) return false;
-    const second = Number.parseInt(parts[1] ?? '', 16);
+    const second = parts[1] === '' ? 0 : Number.parseInt(parts[1] ?? '', 16);
     if (
       first === 0x2002 || // 6to4 encapsulation
       first === 0x3fff || // documentation prefix
