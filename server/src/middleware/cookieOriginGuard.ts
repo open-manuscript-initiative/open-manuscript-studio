@@ -12,11 +12,11 @@ const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
  */
 export function rejectsCookieOrigin(input: {
   method: string;
-  cookie?: string;
-  origin?: string;
-  authorization?: string;
-  nativeClient?: string;
-  fetchSite?: string;
+  cookie?: string | undefined;
+  origin?: string | undefined;
+  authorization?: string | undefined;
+  nativeClient?: string | undefined;
+  fetchSite?: string | undefined;
   allowedOrigins: ReadonlySet<string>;
 }): boolean {
   if (!UNSAFE_METHODS.has(input.method.toUpperCase())) return false;
