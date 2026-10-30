@@ -1,23 +1,14 @@
+import { readOmiSessionCookie as readSessionCookie } from './sessionCookie.js';
 import type { NextFunction, Request, Response } from 'express';
 
 import { getUserIdForSession } from '../services/authService.js';
 
-const COOKIE_NAME = 'omi_session';
+
 
 export interface AuthenticatedRequest extends Request<Record<string, string>> {
   authUserId?: string;
 }
 
-function readSessionCookie(header: string | undefined): string | undefined {
-  if (!header) return undefined;
-
-  for (const part of header.split(';')) {
-    const [name, ...rest] = part.trim().split('=');
-    if (name === COOKIE_NAME) return decodeURIComponent(rest.join('='));
-  }
-
-  return undefined;
-}
 
 function readBearerToken(header: string | undefined): string | undefined {
   if (!header) return undefined;

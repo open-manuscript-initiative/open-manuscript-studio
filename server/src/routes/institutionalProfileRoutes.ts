@@ -1,3 +1,4 @@
+import { readOmiSessionCookie } from '../middleware/sessionCookie.js';
 import { Router, type Request } from 'express';
 import { z } from 'zod';
 
@@ -11,7 +12,7 @@ import { getUserIdForSession } from '../services/authService.js';
 
 export const institutionalProfileRouter = Router();
 
-const COOKIE_NAME = 'omi_session';
+
 
 const createProfileSchema = z.object({
   organizationName: z.string().trim().min(1).max(300),
@@ -485,9 +486,5 @@ function readSessionToken(request: Request): string | undefined {
   }
   const cookieHeader = request.headers.cookie;
   if (!cookieHeader) return undefined;
-  for (const part of cookieHeader.split(';')) {
-    const [name, ...rest] = part.trim().split('=');
-    if (name === COOKIE_NAME) return decodeURIComponent(rest.join('='));
-  }
-  return undefined;
+  return readOmiSessionCookie(cookieHeader);
 }

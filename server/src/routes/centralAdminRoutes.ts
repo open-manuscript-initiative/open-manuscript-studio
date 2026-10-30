@@ -1,3 +1,4 @@
+import { readOmiSessionCookie } from '../middleware/sessionCookie.js';
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 
@@ -15,7 +16,7 @@ import {
 
 export const centralAdminRouter = Router();
 
-const COOKIE_NAME = 'omi_session';
+
 
 const createInstitutionSchema = z.object({
   name: z.string().trim().min(1).max(300),
@@ -555,11 +556,7 @@ function readSessionToken(request: Request): string | undefined {
   }
   const cookieHeader = request.headers.cookie;
   if (!cookieHeader) return undefined;
-  for (const part of cookieHeader.split(';')) {
-    const [name, ...rest] = part.trim().split('=');
-    if (name === COOKIE_NAME) return decodeURIComponent(rest.join('='));
-  }
-  return undefined;
+  return readOmiSessionCookie(cookieHeader);
 }
 
 function serializeInstitution(institution: {

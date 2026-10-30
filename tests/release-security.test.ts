@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+import './session-cookie-security.test.ts';
+
 // Keep the OJS/OMP address checks in the existing release-security gate.
 import './integration-ip-security.test.ts';
 
