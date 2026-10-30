@@ -23,7 +23,7 @@ Initial bootstrap is configured with:
 CENTRAL_ADMIN_EMAILS=admin@example.org,second-admin@example.org
 ```
 
-An e-mail match is not sufficient. Automatic bootstrap occurs only after the Studio account has a linked OIDC or SAML identity. This prevents a password-only account from becoming a central administrator from an e-mail allow-list alone.
+An e-mail match or a linked SSO account alone is not sufficient. Automatic bootstrap requires an ACTIVE Studio account on the configured allow-list and a linked OIDC or SAML profile with `emailVerified === true` and an email matching the Studio account (trimmed, case-insensitive). Missing verification claims fail closed. Microsoft `preferred_username` is not verified-email evidence. This is local operational authorization, not scholarly identity or manuscript access.
 
 ## Central administration API
 
@@ -67,7 +67,9 @@ PATCH  /api/central-admin/operators/{grantId}
 DELETE /api/central-admin/operators/{grantId}
 ```
 
-New central operators must already have an OIDC or SAML identity linked to their Studio account.
+New central operators must have an ACTIVE account and a linked OIDC or SAML identity with an explicitly verified email matching that account. The configured allow-list controls automatic bootstrap; explicit operator creation additionally requires an authorized central OWNER.
+
+For existing-grant review, managed institution bootstrap, lockout recovery and client compatibility, follow the [security contract rollout runbook](server/security-contract-rollout.md). This security hardening itself introduces no database migration.
 
 ## Institution Admin API credentials
 

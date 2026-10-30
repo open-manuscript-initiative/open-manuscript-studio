@@ -8,7 +8,7 @@ Scope: Auth, sessions, profiles, workspaces, invitations
 
 Purpose
 
-Defines backend security for local, self-hosted installations. Protects accounts, sessions, workspaces, invitations, and future content. No central auth.
+Defines backend security for local, self-hosted installations. Protects accounts, sessions, workspaces, invitations, and content. Deployments may also use central OMI Identity or institutional federation for authentication; Studio retains local authorization and workflow permissions. Authentication does not confer scholarly attribution or review/editorial authority.
 
 ---
 
@@ -178,6 +178,8 @@ Admin Security
 - Automatic central/institutional owner provisioning requires a configured allow-listed Studio email **and** a linked OIDC/SAML identity whose trusted provider explicitly verified the same email. Linking any unrelated SSO account must not grant administrator rights.
 - Microsoft preferred_username alone is not proof that an email address is verified. Admin bootstrap must fail closed when the provider omits verification evidence; use a trusted configured institutional IdP that supplies verified email claims for bootstrap.
 - Existing grants are not silently revoked by the new provisioning rule; administrators should audit previously issued owner grants and linked identities.
+
+The [security contract rollout runbook](security-contract-rollout.md) specifies the implemented Origin exceptions, bearer precedence, PDF limits, recovery steps and mandatory evidence. [Worker environment minimization](pdf-worker-environment.md) is implemented; OS sandboxing and connection-time egress enforcement remain separate deployment requirements, not completed guarantees.
 
 ---
 

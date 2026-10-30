@@ -93,6 +93,9 @@ jobs:
       - name: Test passkey authentication routes
         run: npm run test:passkey-auth
 
+      - name: Test security boundary HTTP and provisioning contracts
+        run: npm run test:security-boundary-contracts
+
       - name: Test health research API authorization
         run: npm run test:health-research-api
 
