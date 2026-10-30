@@ -1,3 +1,4 @@
+import { readOmiSessionCookie as readSessionCookie } from '../middleware/sessionCookie.js';
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { decryptSecret, encryptSecret, type EncryptedSecret } from '../integrations/secretCrypto.js';
@@ -62,14 +63,6 @@ const updateProfileSchema = z.object({
 const COOKIE_NAME = 'omi_session';
 const NATIVE_HEADER = 'x-omi-native-client';
 
-function readSessionCookie(header: string | undefined): string | undefined {
-  if (!header) return undefined;
-  for (const part of header.split(';')) {
-    const [name, ...rest] = part.trim().split('=');
-    if (name === COOKIE_NAME) return decodeURIComponent(rest.join('='));
-  }
-  return undefined;
-}
 
 function readBearerToken(header: string | undefined): string | undefined {
   if (!header) return undefined;
