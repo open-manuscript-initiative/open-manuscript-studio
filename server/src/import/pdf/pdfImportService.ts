@@ -13,6 +13,7 @@ import {
   rejectPdfImportAdmission,
 } from './pdfImportAdmission.js';
 
+import { buildPdfWorkerEnvironment } from '../../security/pdfWorkerEnvironment.js';
 const execFileAsync = promisify(execFile);
 const MAX_PDF_BYTES = 100 * 1024 * 1024;
 const MAX_PAGES = 2_000;
@@ -180,6 +181,7 @@ async function processJob(job: PdfImportJob, bytes: Buffer): Promise<void> {
       await execFileAsync('pdftotext', ['-bbox-layout', '-enc', 'UTF-8', inputPath, outputPath], {
         timeout: 120_000,
         maxBuffer: 4 * 1024 * 1024,
+        env: buildPdfWorkerEnvironment('poppler'),
       });
     } catch (error) {
       const code = error && typeof error === 'object' && 'code' in error
