@@ -16,7 +16,7 @@ import {
 
 export const centralAdminRouter = Router();
 
-const COOKIE_NAME = 'omi_session';
+
 
 const createInstitutionSchema = z.object({
   name: z.string().trim().min(1).max(300),
