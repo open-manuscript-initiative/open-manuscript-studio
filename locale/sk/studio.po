@@ -8272,3 +8272,255 @@ msgstr "Predchádzajúce verzie na serveri"
 msgctxt "/translationModel/savedHint"
 msgid "Translation saved. Open Translations to edit and review the language variant."
 msgstr "Preklad bol uložený. Otvorte Preklady a upravte a skontrolujte jazykovú verziu."
+
+msgctxt "/uncataloguedUi/validationModel/title"
+msgid "Validation"
+msgstr "Validácia"
+
+msgctxt "/uncataloguedUi/validationModel/description"
+msgid "Check the current manuscript and download a report. You can continue editing at any time."
+msgstr "Skontrolujte aktuálny rukopis a stiahnite si správu. V úpravách môžete kedykoľvek pokračovať."
+
+msgctxt "/uncataloguedUi/validationModel/profile"
+msgid "Check profile"
+msgstr "Profil kontroly"
+
+msgctxt "/uncataloguedUi/validationModel/authoring"
+msgid "Authoring"
+msgstr "Písanie"
+
+msgctxt "/uncataloguedUi/validationModel/exchange"
+msgid "OMI exchange"
+msgstr "Výmena OMI"
+
+msgctxt "/uncataloguedUi/validationModel/publication-preflight"
+msgid "Publication preflight"
+msgstr "Kontrola pred publikovaním"
+
+msgctxt "/uncataloguedUi/validationModel/run"
+msgid "Run checks"
+msgstr "Spustiť kontroly"
+
+msgctxt "/uncataloguedUi/validationModel/running"
+msgid "Checking…"
+msgstr "Kontroluje sa…"
+
+msgctxt "/uncataloguedUi/validationModel/export"
+msgid "Download JSON report"
+msgstr "Stiahnuť správu JSON"
+
+msgctxt "/uncataloguedUi/validationModel/empty"
+msgid "Run checks to create a report for this manuscript."
+msgstr "Spustite kontroly a vytvorte správu pre tento rukopis."
+
+msgctxt "/uncataloguedUi/validationModel/stale"
+msgid "The manuscript or selected profile changed. Run the checks again."
+msgstr "Rukopis alebo vybraný profil sa zmenil. Spustite kontroly znova."
+
+msgctxt "/uncataloguedUi/validationModel/valid"
+msgid "Valid within selected scope"
+msgstr "Platný v kontrolovanom rozsahu"
+
+msgctxt "/uncataloguedUi/validationModel/invalid"
+msgid "Issues found"
+msgstr "Našli sa problémy"
+
+msgctxt "/uncataloguedUi/validationModel/indeterminate"
+msgid "Result incomplete"
+msgstr "Neúplný výsledok"
+
+msgctxt "/uncataloguedUi/validationModel/complete"
+msgid "All selected checks completed"
+msgstr "Všetky vybrané kontroly sú dokončené"
+
+msgctxt "/uncataloguedUi/validationModel/incomplete"
+msgid "Some checks could not be completed"
+msgstr "Niektoré kontroly sa nepodarilo dokončiť"
+
+msgctxt "/uncataloguedUi/validationModel/error"
+msgid "Errors"
+msgstr "Chyby"
+
+msgctxt "/uncataloguedUi/validationModel/warning"
+msgid "Warnings"
+msgstr "Upozornenia"
+
+msgctxt "/uncataloguedUi/validationModel/info"
+msgid "Information"
+msgstr "Informácie"
+
+msgctxt "/uncataloguedUi/validationModel/all"
+msgid "All findings"
+msgstr "Všetky zistenia"
+
+msgctxt "/uncataloguedUi/validationModel/checks"
+msgid "Checks performed"
+msgstr "Vykonané kontroly"
+
+msgctxt "/uncataloguedUi/validationModel/findings"
+msgid "Findings"
+msgstr "Zistenia"
+
+msgctxt "/uncataloguedUi/validationModel/noFindings"
+msgid "No findings for this filter."
+msgstr "Pre tento filter nie sú žiadne zistenia."
+
+msgctxt "/uncataloguedUi/validationModel/openTarget"
+msgid "Open section"
+msgstr "Otvoriť oddiel"
+
+msgctxt "/uncataloguedUi/validationModel/previous"
+msgid "Previous"
+msgstr "Predchádzajúce"
+
+msgctxt "/uncataloguedUi/validationModel/next"
+msgid "Next"
+msgstr "Ďalšie"
+
+msgctxt "/uncataloguedUi/validationModel/failed"
+msgid "The report could not be created or saved."
+msgstr "Správu sa nepodarilo vytvoriť alebo uložiť."
+
+msgctxt "/uncataloguedUi/validationModel/scopeHint"
+msgid "This report covers the selected checks only. External resources and final publication artifacts require separate validation."
+msgstr "Táto správa zahŕňa iba vybrané kontroly. Externé zdroje a konečné publikačné súbory vyžadujú samostatnú validáciu."
+
+msgctxt "/uncataloguedUi/validationModel/truncated"
+msgid "Further findings omitted; the report is incomplete."
+msgstr "Ďalšie zistenia boli vynechané; správa je neúplná."
+
+msgctxt "/uncataloguedUi/validationModel/pass"
+msgid "Passed"
+msgstr "Úspešná"
+
+msgctxt "/uncataloguedUi/validationModel/fail"
+msgid "Failed"
+msgstr "Neúspešná"
+
+msgctxt "/uncataloguedUi/validationModel/skipped"
+msgid "Not checked"
+msgstr "Neskontrolované"
+
+msgctxt "/uncataloguedUi/validationModel/location"
+msgid "Location and rule"
+msgstr "Miesto a pravidlo"
+
+msgctxt "/uncataloguedUi/validationModel/check-identifiers"
+msgid "Identifiers and hierarchy"
+msgstr "Identifikátory a hierarchia"
+
+msgctxt "/uncataloguedUi/validationModel/check-references"
+msgid "Object references"
+msgstr "Odkazy na objekty"
+
+msgctxt "/uncataloguedUi/validationModel/check-anchors"
+msgid "Notes, citations and bookmarks"
+msgstr "Poznámky, citácie a záložky"
+
+msgctxt "/uncataloguedUi/validationModel/check-history"
+msgid "Revision history and integrity"
+msgstr "História a integrita verzií"
+
+msgctxt "/uncataloguedUi/validationModel/check-translations"
+msgid "Translation model"
+msgstr "Model prekladu"
+
+msgctxt "/uncataloguedUi/validationModel/check-portability"
+msgid "Portable OMI format"
+msgstr "Prenosný formát OMI"
+
+msgctxt "/uncataloguedUi/validationModel/check-assets"
+msgid "Local asset payloads"
+msgstr "Miestne prílohy"
+
+msgctxt "/uncataloguedUi/validationModel/check-publication"
+msgid "Publication profile"
+msgstr "Publikačný profil"
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-id"
+msgid "An object identifier is empty or invalid."
+msgstr "Identifikátor objektu je prázdny alebo neplatný."
+
+msgctxt "/uncataloguedUi/validationModel/message-duplicate-id"
+msgid "An object identifier is used more than once."
+msgstr "Identifikátor objektu je použitý viackrát."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-language"
+msgid "The manuscript language tag is invalid."
+msgstr "Jazyková značka rukopisu je neplatná."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-hierarchy"
+msgid "The section hierarchy is inconsistent."
+msgstr "Hierarchia oddielov je nekonzistentná."
+
+msgctxt "/uncataloguedUi/validationModel/message-unresolved-reference"
+msgid "A referenced object is missing."
+msgstr "Odkazovaný objekt chýba."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-bookmark"
+msgid "A bookmark name or destination is invalid."
+msgstr "Názov alebo cieľ záložky je neplatný."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-note-anchor"
+msgid "A note and its inline anchor do not match."
+msgstr "Poznámka a jej kotva v texte sa nezhodujú."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-citation-anchor"
+msgid "A citation and its inline anchor do not match."
+msgstr "Citácia a jej kotva v texte sa nezhodujú."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-cross-reference"
+msgid "An internal reference or its inline anchor is invalid."
+msgstr "Vnútorný odkaz alebo jeho kotva je neplatná."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-history"
+msgid "The revision history is inconsistent."
+msgstr "História verzií je nekonzistentná."
+
+msgctxt "/uncataloguedUi/validationModel/message-missing-digest"
+msgid "A revision has no stored integrity digest."
+msgstr "Verzia nemá uložený kontrolný súčet integrity."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-digest"
+msgid "A revision integrity digest is invalid or does not match."
+msgstr "Kontrolný súčet verzie je neplatný alebo sa nezhoduje."
+
+msgctxt "/uncataloguedUi/validationModel/message-shallow-history"
+msgid "Only part of the earlier history is available."
+msgstr "Dostupná je iba časť skoršej histórie."
+
+msgctxt "/uncataloguedUi/validationModel/message-unknown-translation-profile"
+msgid "This translation profile is not supported; its contents were not checked."
+msgstr "Tento profil prekladu nie je podporovaný; jeho obsah nebol skontrolovaný."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-translation-model"
+msgid "The translation model is invalid."
+msgstr "Model prekladu je neplatný."
+
+msgctxt "/uncataloguedUi/validationModel/message-stale-translation"
+msgid "Source changes require another translation review."
+msgstr "Zmeny zdroja vyžadujú opätovnú kontrolu prekladu."
+
+msgctxt "/uncataloguedUi/validationModel/message-unfinished-translation"
+msgid "The translation has not yet been fully reviewed."
+msgstr "Preklad ešte nebol úplne skontrolovaný."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-portable-document"
+msgid "The manuscript does not satisfy the portable OMI format checks."
+msgstr "Rukopis nespĺňa kontroly prenosného formátu OMI."
+
+msgctxt "/uncataloguedUi/validationModel/message-asset-check-unavailable"
+msgid "Local asset bytes could not be inspected."
+msgstr "Údaje miestnych príloh sa nepodarilo preskúmať."
+
+msgctxt "/uncataloguedUi/validationModel/message-missing-asset"
+msgid "A declared asset has no local payload."
+msgstr "Deklarovaná príloha nemá miestne údaje."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-asset"
+msgid "Asset size or checksum does not match the local bytes."
+msgstr "Veľkosť alebo kontrolný súčet prílohy sa nezhoduje s miestnymi údajmi."
+
+msgctxt "/uncataloguedUi/validationModel/message-check-unavailable"
+msgid "This check could not run; the result is incomplete."
+msgstr "Túto kontrolu sa nepodarilo vykonať; výsledok je neúplný."

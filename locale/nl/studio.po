@@ -8272,3 +8272,255 @@ msgstr "Eerdere serverversies"
 msgctxt "/translationModel/savedHint"
 msgid "Translation saved. Open Translations to edit and review the language variant."
 msgstr "Vertaling opgeslagen. Open Vertalingen om de taalversie te bewerken en te controleren."
+
+msgctxt "/uncataloguedUi/validationModel/title"
+msgid "Validation"
+msgstr "Validatie"
+
+msgctxt "/uncataloguedUi/validationModel/description"
+msgid "Check the current manuscript and download a report. You can continue editing at any time."
+msgstr "Controleer het huidige manuscript en download een rapport. U kunt altijd verder bewerken."
+
+msgctxt "/uncataloguedUi/validationModel/profile"
+msgid "Check profile"
+msgstr "Controleprofiel"
+
+msgctxt "/uncataloguedUi/validationModel/authoring"
+msgid "Authoring"
+msgstr "Schrijven"
+
+msgctxt "/uncataloguedUi/validationModel/exchange"
+msgid "OMI exchange"
+msgstr "OMI-uitwisseling"
+
+msgctxt "/uncataloguedUi/validationModel/publication-preflight"
+msgid "Publication preflight"
+msgstr "Controle vóór publicatie"
+
+msgctxt "/uncataloguedUi/validationModel/run"
+msgid "Run checks"
+msgstr "Controles starten"
+
+msgctxt "/uncataloguedUi/validationModel/running"
+msgid "Checking…"
+msgstr "Bezig met controleren…"
+
+msgctxt "/uncataloguedUi/validationModel/export"
+msgid "Download JSON report"
+msgstr "JSON-rapport downloaden"
+
+msgctxt "/uncataloguedUi/validationModel/empty"
+msgid "Run checks to create a report for this manuscript."
+msgstr "Start de controles om een rapport voor dit manuscript te maken."
+
+msgctxt "/uncataloguedUi/validationModel/stale"
+msgid "The manuscript or selected profile changed. Run the checks again."
+msgstr "Het manuscript of het gekozen profiel is gewijzigd. Voer de controles opnieuw uit."
+
+msgctxt "/uncataloguedUi/validationModel/valid"
+msgid "Valid within selected scope"
+msgstr "Geldig binnen het gecontroleerde bereik"
+
+msgctxt "/uncataloguedUi/validationModel/invalid"
+msgid "Issues found"
+msgstr "Problemen gevonden"
+
+msgctxt "/uncataloguedUi/validationModel/indeterminate"
+msgid "Result incomplete"
+msgstr "Resultaat onvolledig"
+
+msgctxt "/uncataloguedUi/validationModel/complete"
+msgid "All selected checks completed"
+msgstr "Alle gekozen controles voltooid"
+
+msgctxt "/uncataloguedUi/validationModel/incomplete"
+msgid "Some checks could not be completed"
+msgstr "Sommige controles konden niet worden voltooid"
+
+msgctxt "/uncataloguedUi/validationModel/error"
+msgid "Errors"
+msgstr "Fouten"
+
+msgctxt "/uncataloguedUi/validationModel/warning"
+msgid "Warnings"
+msgstr "Waarschuwingen"
+
+msgctxt "/uncataloguedUi/validationModel/info"
+msgid "Information"
+msgstr "Informatie"
+
+msgctxt "/uncataloguedUi/validationModel/all"
+msgid "All findings"
+msgstr "Alle bevindingen"
+
+msgctxt "/uncataloguedUi/validationModel/checks"
+msgid "Checks performed"
+msgstr "Uitgevoerde controles"
+
+msgctxt "/uncataloguedUi/validationModel/findings"
+msgid "Findings"
+msgstr "Bevindingen"
+
+msgctxt "/uncataloguedUi/validationModel/noFindings"
+msgid "No findings for this filter."
+msgstr "Geen bevindingen voor dit filter."
+
+msgctxt "/uncataloguedUi/validationModel/openTarget"
+msgid "Open section"
+msgstr "Sectie openen"
+
+msgctxt "/uncataloguedUi/validationModel/previous"
+msgid "Previous"
+msgstr "Vorige"
+
+msgctxt "/uncataloguedUi/validationModel/next"
+msgid "Next"
+msgstr "Volgende"
+
+msgctxt "/uncataloguedUi/validationModel/failed"
+msgid "The report could not be created or saved."
+msgstr "Het rapport kon niet worden gemaakt of opgeslagen."
+
+msgctxt "/uncataloguedUi/validationModel/scopeHint"
+msgid "This report covers the selected checks only. External resources and final publication artifacts require separate validation."
+msgstr "Dit rapport omvat alleen de gekozen controles. Externe bronnen en definitieve publicatiebestanden vereisen afzonderlijke validatie."
+
+msgctxt "/uncataloguedUi/validationModel/truncated"
+msgid "Further findings omitted; the report is incomplete."
+msgstr "Meer bevindingen weggelaten; het rapport is onvolledig."
+
+msgctxt "/uncataloguedUi/validationModel/pass"
+msgid "Passed"
+msgstr "Geslaagd"
+
+msgctxt "/uncataloguedUi/validationModel/fail"
+msgid "Failed"
+msgstr "Mislukt"
+
+msgctxt "/uncataloguedUi/validationModel/skipped"
+msgid "Not checked"
+msgstr "Niet gecontroleerd"
+
+msgctxt "/uncataloguedUi/validationModel/location"
+msgid "Location and rule"
+msgstr "Locatie en regel"
+
+msgctxt "/uncataloguedUi/validationModel/check-identifiers"
+msgid "Identifiers and hierarchy"
+msgstr "Identificatoren en hiërarchie"
+
+msgctxt "/uncataloguedUi/validationModel/check-references"
+msgid "Object references"
+msgstr "Objectverwijzingen"
+
+msgctxt "/uncataloguedUi/validationModel/check-anchors"
+msgid "Notes, citations and bookmarks"
+msgstr "Noten, citaten en bladwijzers"
+
+msgctxt "/uncataloguedUi/validationModel/check-history"
+msgid "Revision history and integrity"
+msgstr "Versiegeschiedenis en integriteit"
+
+msgctxt "/uncataloguedUi/validationModel/check-translations"
+msgid "Translation model"
+msgstr "Vertaalmodel"
+
+msgctxt "/uncataloguedUi/validationModel/check-portability"
+msgid "Portable OMI format"
+msgstr "Draagbaar OMI-formaat"
+
+msgctxt "/uncataloguedUi/validationModel/check-assets"
+msgid "Local asset payloads"
+msgstr "Lokale bijlagen"
+
+msgctxt "/uncataloguedUi/validationModel/check-publication"
+msgid "Publication profile"
+msgstr "Publicatieprofiel"
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-id"
+msgid "An object identifier is empty or invalid."
+msgstr "Een objectidentificator is leeg of ongeldig."
+
+msgctxt "/uncataloguedUi/validationModel/message-duplicate-id"
+msgid "An object identifier is used more than once."
+msgstr "Een objectidentificator wordt meermaals gebruikt."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-language"
+msgid "The manuscript language tag is invalid."
+msgstr "De taaltag van het manuscript is ongeldig."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-hierarchy"
+msgid "The section hierarchy is inconsistent."
+msgstr "De sectiehiërarchie is inconsistent."
+
+msgctxt "/uncataloguedUi/validationModel/message-unresolved-reference"
+msgid "A referenced object is missing."
+msgstr "Een object waarnaar wordt verwezen ontbreekt."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-bookmark"
+msgid "A bookmark name or destination is invalid."
+msgstr "De naam of bestemming van een bladwijzer is ongeldig."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-note-anchor"
+msgid "A note and its inline anchor do not match."
+msgstr "Een noot en het bijbehorende tekstanker komen niet overeen."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-citation-anchor"
+msgid "A citation and its inline anchor do not match."
+msgstr "Een citaat en het bijbehorende tekstanker komen niet overeen."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-cross-reference"
+msgid "An internal reference or its inline anchor is invalid."
+msgstr "Een interne verwijzing of het tekstanker is ongeldig."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-history"
+msgid "The revision history is inconsistent."
+msgstr "De versiegeschiedenis is inconsistent."
+
+msgctxt "/uncataloguedUi/validationModel/message-missing-digest"
+msgid "A revision has no stored integrity digest."
+msgstr "Een versie heeft geen opgeslagen integriteitscontrolegetal."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-digest"
+msgid "A revision integrity digest is invalid or does not match."
+msgstr "Een integriteitscontrolegetal is ongeldig of komt niet overeen."
+
+msgctxt "/uncataloguedUi/validationModel/message-shallow-history"
+msgid "Only part of the earlier history is available."
+msgstr "Slechts een deel van de eerdere geschiedenis is beschikbaar."
+
+msgctxt "/uncataloguedUi/validationModel/message-unknown-translation-profile"
+msgid "This translation profile is not supported; its contents were not checked."
+msgstr "Dit vertaalprofiel wordt niet ondersteund; de inhoud is niet gecontroleerd."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-translation-model"
+msgid "The translation model is invalid."
+msgstr "Het vertaalmodel is ongeldig."
+
+msgctxt "/uncataloguedUi/validationModel/message-stale-translation"
+msgid "Source changes require another translation review."
+msgstr "Bronwijzigingen vereisen een nieuwe controle van de vertaling."
+
+msgctxt "/uncataloguedUi/validationModel/message-unfinished-translation"
+msgid "The translation has not yet been fully reviewed."
+msgstr "De vertaling is nog niet volledig gecontroleerd."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-portable-document"
+msgid "The manuscript does not satisfy the portable OMI format checks."
+msgstr "Het manuscript voldoet niet aan de controles voor het draagbare OMI-formaat."
+
+msgctxt "/uncataloguedUi/validationModel/message-asset-check-unavailable"
+msgid "Local asset bytes could not be inspected."
+msgstr "De gegevens van lokale bijlagen konden niet worden onderzocht."
+
+msgctxt "/uncataloguedUi/validationModel/message-missing-asset"
+msgid "A declared asset has no local payload."
+msgstr "Een opgegeven bijlage heeft geen lokale gegevens."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-asset"
+msgid "Asset size or checksum does not match the local bytes."
+msgstr "De grootte of het controlegetal van de bijlage komt niet overeen met de lokale gegevens."
+
+msgctxt "/uncataloguedUi/validationModel/message-check-unavailable"
+msgid "This check could not run; the result is incomplete."
+msgstr "Deze controle kon niet worden uitgevoerd; het resultaat is onvolledig."

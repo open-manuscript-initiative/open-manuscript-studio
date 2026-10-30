@@ -15,6 +15,7 @@ import {
   Save,
   SaveAll,
   Settings2,
+  ShieldCheck,
   StickyNote,
   Usb,
   UserPlus,
@@ -83,8 +84,10 @@ import { SectionNumberingControl } from './SectionNumberingControl';
 import { ScholarlyMetadataPanel } from './ScholarlyMetadataPanel';
 import { SectionStructurePanel } from './SectionStructurePanel';
 import { TranslationPanel } from './TranslationPanel';
+import { ValidationPanel } from './ValidationPanel';
 
 type StudioMenuView =
+  | 'validation'
   | 'translations'
   | 'document'
   | 'manuscript'
@@ -222,6 +225,7 @@ export function StudioMenu({
               <MenuButton active={activeView === 'references'} icon={<Library size={18} aria-hidden="true" />} label={t('studio.navigation.references')} onClick={() => setActiveView('references')} />
               {navigationAfterReferences}
               <MenuButton active={activeView === 'history'} icon={<HistoryIcon size={18} aria-hidden="true" />} label={t('studio.navigation.history')} onClick={() => setActiveView('history')} />
+              <MenuButton active={activeView === 'validation'} icon={<ShieldCheck size={18} aria-hidden="true" />} label={translateCatalog(locale, '/uncataloguedUi/validationModel/title')} onClick={() => setActiveView('validation')} />
             </MenuNavGroup>
             <MenuNavGroup label={supplementalCopy.editorialGroup}>
               <MenuButton active={activeView === 'editorial-workflow'} icon={<Inbox size={18} aria-hidden="true" />} label={editorialWorkflowLabel} onClick={() => setActiveView('editorial-workflow')} />
@@ -246,6 +250,7 @@ export function StudioMenu({
             {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={returnHome} /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
             {activeView === 'translations' ? <TranslationPanel key={manuscriptId} /> : null}
+            {activeView === 'validation' ? <ValidationPanel key={manuscriptId} onNavigate={returnHome} /> : null}
             {activeView === 'notes' ? <NotesPanel onNavigate={returnHome} /> : null}
             {activeView === 'references' ? <ReferencesView /> : null}
             {activeView === 'editorial-workflow' ? <NativeEditorialWorkflowPanel /> : null}

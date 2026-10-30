@@ -1,4 +1,11 @@
-## Unreleased — Translation Model
+## Unreleased — Translation and Validation Models
+
+- Add the experimental OMI-SPEC-180 Studio validation profile with authoring,
+  OMI-exchange and publication-preflight checks; source-bound JSON reports;
+  explicit error, warning and incomplete states; and local asset integrity checks.
+- Add a responsive Validation menu in nine primary interface languages, report
+  filtering, section navigation and stale-report detection. Checks preserve source
+  editing and existing publication gates. See `docs/omi-spec-180-validation-model.md`.
 
 - Add the experimental OMI-SPEC-170 Studio translation profile: portable language
   variants, source/object alignment, draft/review and equivalence states, translator

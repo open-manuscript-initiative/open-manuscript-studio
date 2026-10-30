@@ -8272,3 +8272,255 @@ msgstr "Korábbi szerveroldali változatok"
 msgctxt "/translationModel/savedHint"
 msgid "Translation saved. Open Translations to edit and review the language variant."
 msgstr "A fordítás mentve. A Fordítások menüben szerkesztheti és ellenőrizheti a nyelvi változatot."
+
+msgctxt "/uncataloguedUi/validationModel/title"
+msgid "Validation"
+msgstr "Érvényesség ellenőrzése"
+
+msgctxt "/uncataloguedUi/validationModel/description"
+msgid "Check the current manuscript and download a report. You can continue editing at any time."
+msgstr "Ellenőrizze az aktuális kéziratot, és töltse le a jelentést. A szerkesztést bármikor folytathatja."
+
+msgctxt "/uncataloguedUi/validationModel/profile"
+msgid "Check profile"
+msgstr "Ellenőrzési profil"
+
+msgctxt "/uncataloguedUi/validationModel/authoring"
+msgid "Authoring"
+msgstr "Szerkesztés"
+
+msgctxt "/uncataloguedUi/validationModel/exchange"
+msgid "OMI exchange"
+msgstr "OMI-adatcsere"
+
+msgctxt "/uncataloguedUi/validationModel/publication-preflight"
+msgid "Publication preflight"
+msgstr "Kiadás előtti ellenőrzés"
+
+msgctxt "/uncataloguedUi/validationModel/run"
+msgid "Run checks"
+msgstr "Ellenőrzés indítása"
+
+msgctxt "/uncataloguedUi/validationModel/running"
+msgid "Checking…"
+msgstr "Ellenőrzés…"
+
+msgctxt "/uncataloguedUi/validationModel/export"
+msgid "Download JSON report"
+msgstr "JSON-jelentés letöltése"
+
+msgctxt "/uncataloguedUi/validationModel/empty"
+msgid "Run checks to create a report for this manuscript."
+msgstr "Indítsa el az ellenőrzést a kézirat jelentésének elkészítéséhez."
+
+msgctxt "/uncataloguedUi/validationModel/stale"
+msgid "The manuscript or selected profile changed. Run the checks again."
+msgstr "A kézirat vagy a kiválasztott profil megváltozott. Futtassa újra az ellenőrzést."
+
+msgctxt "/uncataloguedUi/validationModel/valid"
+msgid "Valid within selected scope"
+msgstr "Érvényes a vizsgált körben"
+
+msgctxt "/uncataloguedUi/validationModel/invalid"
+msgid "Issues found"
+msgstr "Problémákat találtunk"
+
+msgctxt "/uncataloguedUi/validationModel/indeterminate"
+msgid "Result incomplete"
+msgstr "Hiányos eredmény"
+
+msgctxt "/uncataloguedUi/validationModel/complete"
+msgid "All selected checks completed"
+msgstr "Minden kiválasztott ellenőrzés befejeződött"
+
+msgctxt "/uncataloguedUi/validationModel/incomplete"
+msgid "Some checks could not be completed"
+msgstr "Néhány ellenőrzést nem sikerült befejezni"
+
+msgctxt "/uncataloguedUi/validationModel/error"
+msgid "Errors"
+msgstr "Hibák"
+
+msgctxt "/uncataloguedUi/validationModel/warning"
+msgid "Warnings"
+msgstr "Figyelmeztetések"
+
+msgctxt "/uncataloguedUi/validationModel/info"
+msgid "Information"
+msgstr "Tájékoztatás"
+
+msgctxt "/uncataloguedUi/validationModel/all"
+msgid "All findings"
+msgstr "Minden megállapítás"
+
+msgctxt "/uncataloguedUi/validationModel/checks"
+msgid "Checks performed"
+msgstr "Elvégzett ellenőrzések"
+
+msgctxt "/uncataloguedUi/validationModel/findings"
+msgid "Findings"
+msgstr "Megállapítások"
+
+msgctxt "/uncataloguedUi/validationModel/noFindings"
+msgid "No findings for this filter."
+msgstr "Ezzel a szűrővel nincs megjeleníthető megállapítás."
+
+msgctxt "/uncataloguedUi/validationModel/openTarget"
+msgid "Open section"
+msgstr "Szakasz megnyitása"
+
+msgctxt "/uncataloguedUi/validationModel/previous"
+msgid "Previous"
+msgstr "Előző"
+
+msgctxt "/uncataloguedUi/validationModel/next"
+msgid "Next"
+msgstr "Következő"
+
+msgctxt "/uncataloguedUi/validationModel/failed"
+msgid "The report could not be created or saved."
+msgstr "A jelentést nem sikerült elkészíteni vagy menteni."
+
+msgctxt "/uncataloguedUi/validationModel/scopeHint"
+msgid "This report covers the selected checks only. External resources and final publication artifacts require separate validation."
+msgstr "A jelentés csak a kiválasztott ellenőrzésekre vonatkozik. A külső források és a végleges kiadványfájlok külön ellenőrzést igényelnek."
+
+msgctxt "/uncataloguedUi/validationModel/truncated"
+msgid "Further findings omitted; the report is incomplete."
+msgstr "További megállapítások kimaradtak; a jelentés hiányos."
+
+msgctxt "/uncataloguedUi/validationModel/pass"
+msgid "Passed"
+msgstr "Sikeres"
+
+msgctxt "/uncataloguedUi/validationModel/fail"
+msgid "Failed"
+msgstr "Sikertelen"
+
+msgctxt "/uncataloguedUi/validationModel/skipped"
+msgid "Not checked"
+msgstr "Nem vizsgált"
+
+msgctxt "/uncataloguedUi/validationModel/location"
+msgid "Location and rule"
+msgstr "Hely és szabály"
+
+msgctxt "/uncataloguedUi/validationModel/check-identifiers"
+msgid "Identifiers and hierarchy"
+msgstr "Azonosítók és hierarchia"
+
+msgctxt "/uncataloguedUi/validationModel/check-references"
+msgid "Object references"
+msgstr "Objektumhivatkozások"
+
+msgctxt "/uncataloguedUi/validationModel/check-anchors"
+msgid "Notes, citations and bookmarks"
+msgstr "Jegyzetek, idézések és könyvjelzők"
+
+msgctxt "/uncataloguedUi/validationModel/check-history"
+msgid "Revision history and integrity"
+msgstr "Verzióelőzmények és sértetlenség"
+
+msgctxt "/uncataloguedUi/validationModel/check-translations"
+msgid "Translation model"
+msgstr "Fordítási modell"
+
+msgctxt "/uncataloguedUi/validationModel/check-portability"
+msgid "Portable OMI format"
+msgstr "Hordozható OMI-formátum"
+
+msgctxt "/uncataloguedUi/validationModel/check-assets"
+msgid "Local asset payloads"
+msgstr "Helyi mellékletfájlok"
+
+msgctxt "/uncataloguedUi/validationModel/check-publication"
+msgid "Publication profile"
+msgstr "Kiadói profil"
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-id"
+msgid "An object identifier is empty or invalid."
+msgstr "Egy objektum azonosítója üres vagy érvénytelen."
+
+msgctxt "/uncataloguedUi/validationModel/message-duplicate-id"
+msgid "An object identifier is used more than once."
+msgstr "Egy objektumazonosító többször szerepel."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-language"
+msgid "The manuscript language tag is invalid."
+msgstr "A kézirat nyelvi címkéje érvénytelen."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-hierarchy"
+msgid "The section hierarchy is inconsistent."
+msgstr "A szakaszok hierarchiája következetlen."
+
+msgctxt "/uncataloguedUi/validationModel/message-unresolved-reference"
+msgid "A referenced object is missing."
+msgstr "Egy hivatkozott objektum hiányzik."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-bookmark"
+msgid "A bookmark name or destination is invalid."
+msgstr "Egy könyvjelző neve vagy célja érvénytelen."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-note-anchor"
+msgid "A note and its inline anchor do not match."
+msgstr "Egy jegyzet és a szövegbeli horgonya nem egyezik."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-citation-anchor"
+msgid "A citation and its inline anchor do not match."
+msgstr "Egy idézés és a szövegbeli horgonya nem egyezik."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-cross-reference"
+msgid "An internal reference or its inline anchor is invalid."
+msgstr "Egy belső hivatkozás vagy a szövegbeli horgonya érvénytelen."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-history"
+msgid "The revision history is inconsistent."
+msgstr "A verzióelőzmények következetlenek."
+
+msgctxt "/uncataloguedUi/validationModel/message-missing-digest"
+msgid "A revision has no stored integrity digest."
+msgstr "Egy verzióhoz nincs tárolt ellenőrzőösszeg."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-digest"
+msgid "A revision integrity digest is invalid or does not match."
+msgstr "Egy verzió ellenőrzőösszege érvénytelen vagy eltér."
+
+msgctxt "/uncataloguedUi/validationModel/message-shallow-history"
+msgid "Only part of the earlier history is available."
+msgstr "A korábbi előzmények csak részben állnak rendelkezésre."
+
+msgctxt "/uncataloguedUi/validationModel/message-unknown-translation-profile"
+msgid "This translation profile is not supported; its contents were not checked."
+msgstr "Ez a fordítási profil nem támogatott; a tartalmát nem ellenőriztük."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-translation-model"
+msgid "The translation model is invalid."
+msgstr "A fordítási modell érvénytelen."
+
+msgctxt "/uncataloguedUi/validationModel/message-stale-translation"
+msgid "Source changes require another translation review."
+msgstr "A forrás változásai miatt a fordítást újra át kell tekinteni."
+
+msgctxt "/uncataloguedUi/validationModel/message-unfinished-translation"
+msgid "The translation has not yet been fully reviewed."
+msgstr "A fordítást még nem ellenőrizték teljesen."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-portable-document"
+msgid "The manuscript does not satisfy the portable OMI format checks."
+msgstr "A kézirat nem felel meg a hordozható OMI-formátum ellenőrzéseinek."
+
+msgctxt "/uncataloguedUi/validationModel/message-asset-check-unavailable"
+msgid "Local asset bytes could not be inspected."
+msgstr "A helyi mellékletfájlok tartalmát nem lehetett megvizsgálni."
+
+msgctxt "/uncataloguedUi/validationModel/message-missing-asset"
+msgid "A declared asset has no local payload."
+msgstr "Egy nyilvántartott melléklet helyi fájlja hiányzik."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-asset"
+msgid "Asset size or checksum does not match the local bytes."
+msgstr "A melléklet mérete vagy ellenőrzőösszege eltér a helyi fájlétól."
+
+msgctxt "/uncataloguedUi/validationModel/message-check-unavailable"
+msgid "This check could not run; the result is incomplete."
+msgstr "Ez az ellenőrzés nem futott le; az eredmény hiányos."

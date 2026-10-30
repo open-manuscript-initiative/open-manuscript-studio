@@ -8272,3 +8272,255 @@ msgstr "Anciennes versions du serveur"
 msgctxt "/translationModel/savedHint"
 msgid "Translation saved. Open Translations to edit and review the language variant."
 msgstr "Traduction enregistrée. Ouvrez Traductions pour modifier et réviser la version linguistique."
+
+msgctxt "/uncataloguedUi/validationModel/title"
+msgid "Validation"
+msgstr "Validation"
+
+msgctxt "/uncataloguedUi/validationModel/description"
+msgid "Check the current manuscript and download a report. You can continue editing at any time."
+msgstr "Vérifiez le manuscrit actuel et téléchargez un rapport. Vous pouvez continuer à le modifier à tout moment."
+
+msgctxt "/uncataloguedUi/validationModel/profile"
+msgid "Check profile"
+msgstr "Profil de contrôle"
+
+msgctxt "/uncataloguedUi/validationModel/authoring"
+msgid "Authoring"
+msgstr "Rédaction"
+
+msgctxt "/uncataloguedUi/validationModel/exchange"
+msgid "OMI exchange"
+msgstr "Échange OMI"
+
+msgctxt "/uncataloguedUi/validationModel/publication-preflight"
+msgid "Publication preflight"
+msgstr "Contrôle avant publication"
+
+msgctxt "/uncataloguedUi/validationModel/run"
+msgid "Run checks"
+msgstr "Lancer les contrôles"
+
+msgctxt "/uncataloguedUi/validationModel/running"
+msgid "Checking…"
+msgstr "Vérification…"
+
+msgctxt "/uncataloguedUi/validationModel/export"
+msgid "Download JSON report"
+msgstr "Télécharger le rapport JSON"
+
+msgctxt "/uncataloguedUi/validationModel/empty"
+msgid "Run checks to create a report for this manuscript."
+msgstr "Lancez les contrôles pour créer un rapport sur ce manuscrit."
+
+msgctxt "/uncataloguedUi/validationModel/stale"
+msgid "The manuscript or selected profile changed. Run the checks again."
+msgstr "Le manuscrit ou le profil sélectionné a changé. Relancez les contrôles."
+
+msgctxt "/uncataloguedUi/validationModel/valid"
+msgid "Valid within selected scope"
+msgstr "Valide dans le périmètre contrôlé"
+
+msgctxt "/uncataloguedUi/validationModel/invalid"
+msgid "Issues found"
+msgstr "Problèmes détectés"
+
+msgctxt "/uncataloguedUi/validationModel/indeterminate"
+msgid "Result incomplete"
+msgstr "Résultat incomplet"
+
+msgctxt "/uncataloguedUi/validationModel/complete"
+msgid "All selected checks completed"
+msgstr "Tous les contrôles sélectionnés sont terminés"
+
+msgctxt "/uncataloguedUi/validationModel/incomplete"
+msgid "Some checks could not be completed"
+msgstr "Certains contrôles n’ont pas pu être terminés"
+
+msgctxt "/uncataloguedUi/validationModel/error"
+msgid "Errors"
+msgstr "Erreurs"
+
+msgctxt "/uncataloguedUi/validationModel/warning"
+msgid "Warnings"
+msgstr "Avertissements"
+
+msgctxt "/uncataloguedUi/validationModel/info"
+msgid "Information"
+msgstr "Informations"
+
+msgctxt "/uncataloguedUi/validationModel/all"
+msgid "All findings"
+msgstr "Tous les constats"
+
+msgctxt "/uncataloguedUi/validationModel/checks"
+msgid "Checks performed"
+msgstr "Contrôles effectués"
+
+msgctxt "/uncataloguedUi/validationModel/findings"
+msgid "Findings"
+msgstr "Constats"
+
+msgctxt "/uncataloguedUi/validationModel/noFindings"
+msgid "No findings for this filter."
+msgstr "Aucun constat pour ce filtre."
+
+msgctxt "/uncataloguedUi/validationModel/openTarget"
+msgid "Open section"
+msgstr "Ouvrir la section"
+
+msgctxt "/uncataloguedUi/validationModel/previous"
+msgid "Previous"
+msgstr "Précédent"
+
+msgctxt "/uncataloguedUi/validationModel/next"
+msgid "Next"
+msgstr "Suivant"
+
+msgctxt "/uncataloguedUi/validationModel/failed"
+msgid "The report could not be created or saved."
+msgstr "Le rapport n’a pas pu être créé ou enregistré."
+
+msgctxt "/uncataloguedUi/validationModel/scopeHint"
+msgid "This report covers the selected checks only. External resources and final publication artifacts require separate validation."
+msgstr "Ce rapport couvre uniquement les contrôles sélectionnés. Les ressources externes et les fichiers de publication définitifs nécessitent une validation distincte."
+
+msgctxt "/uncataloguedUi/validationModel/truncated"
+msgid "Further findings omitted; the report is incomplete."
+msgstr "D’autres constats ont été omis ; le rapport est incomplet."
+
+msgctxt "/uncataloguedUi/validationModel/pass"
+msgid "Passed"
+msgstr "Réussi"
+
+msgctxt "/uncataloguedUi/validationModel/fail"
+msgid "Failed"
+msgstr "Échoué"
+
+msgctxt "/uncataloguedUi/validationModel/skipped"
+msgid "Not checked"
+msgstr "Non contrôlé"
+
+msgctxt "/uncataloguedUi/validationModel/location"
+msgid "Location and rule"
+msgstr "Emplacement et règle"
+
+msgctxt "/uncataloguedUi/validationModel/check-identifiers"
+msgid "Identifiers and hierarchy"
+msgstr "Identifiants et hiérarchie"
+
+msgctxt "/uncataloguedUi/validationModel/check-references"
+msgid "Object references"
+msgstr "Références aux objets"
+
+msgctxt "/uncataloguedUi/validationModel/check-anchors"
+msgid "Notes, citations and bookmarks"
+msgstr "Notes, citations et signets"
+
+msgctxt "/uncataloguedUi/validationModel/check-history"
+msgid "Revision history and integrity"
+msgstr "Historique et intégrité des versions"
+
+msgctxt "/uncataloguedUi/validationModel/check-translations"
+msgid "Translation model"
+msgstr "Modèle de traduction"
+
+msgctxt "/uncataloguedUi/validationModel/check-portability"
+msgid "Portable OMI format"
+msgstr "Format OMI portable"
+
+msgctxt "/uncataloguedUi/validationModel/check-assets"
+msgid "Local asset payloads"
+msgstr "Fichiers joints locaux"
+
+msgctxt "/uncataloguedUi/validationModel/check-publication"
+msgid "Publication profile"
+msgstr "Profil de publication"
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-id"
+msgid "An object identifier is empty or invalid."
+msgstr "Un identifiant d’objet est vide ou invalide."
+
+msgctxt "/uncataloguedUi/validationModel/message-duplicate-id"
+msgid "An object identifier is used more than once."
+msgstr "Un identifiant d’objet est utilisé plusieurs fois."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-language"
+msgid "The manuscript language tag is invalid."
+msgstr "La balise de langue du manuscrit est invalide."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-hierarchy"
+msgid "The section hierarchy is inconsistent."
+msgstr "La hiérarchie des sections est incohérente."
+
+msgctxt "/uncataloguedUi/validationModel/message-unresolved-reference"
+msgid "A referenced object is missing."
+msgstr "Un objet référencé est absent."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-bookmark"
+msgid "A bookmark name or destination is invalid."
+msgstr "Le nom ou la destination d’un signet est invalide."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-note-anchor"
+msgid "A note and its inline anchor do not match."
+msgstr "Une note et son ancre dans le texte ne correspondent pas."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-citation-anchor"
+msgid "A citation and its inline anchor do not match."
+msgstr "Une citation et son ancre dans le texte ne correspondent pas."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-cross-reference"
+msgid "An internal reference or its inline anchor is invalid."
+msgstr "Une référence interne ou son ancre dans le texte est invalide."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-history"
+msgid "The revision history is inconsistent."
+msgstr "L’historique des versions est incohérent."
+
+msgctxt "/uncataloguedUi/validationModel/message-missing-digest"
+msgid "A revision has no stored integrity digest."
+msgstr "Une version ne possède pas d’empreinte d’intégrité enregistrée."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-digest"
+msgid "A revision integrity digest is invalid or does not match."
+msgstr "Une empreinte d’intégrité est invalide ou ne correspond pas."
+
+msgctxt "/uncataloguedUi/validationModel/message-shallow-history"
+msgid "Only part of the earlier history is available."
+msgstr "Seule une partie de l’historique antérieur est disponible."
+
+msgctxt "/uncataloguedUi/validationModel/message-unknown-translation-profile"
+msgid "This translation profile is not supported; its contents were not checked."
+msgstr "Ce profil de traduction n’est pas pris en charge ; son contenu n’a pas été contrôlé."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-translation-model"
+msgid "The translation model is invalid."
+msgstr "Le modèle de traduction est invalide."
+
+msgctxt "/uncataloguedUi/validationModel/message-stale-translation"
+msgid "Source changes require another translation review."
+msgstr "Les modifications du texte source nécessitent une nouvelle révision de la traduction."
+
+msgctxt "/uncataloguedUi/validationModel/message-unfinished-translation"
+msgid "The translation has not yet been fully reviewed."
+msgstr "La traduction n’a pas encore été entièrement révisée."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-portable-document"
+msgid "The manuscript does not satisfy the portable OMI format checks."
+msgstr "Le manuscrit ne satisfait pas aux contrôles du format OMI portable."
+
+msgctxt "/uncataloguedUi/validationModel/message-asset-check-unavailable"
+msgid "Local asset bytes could not be inspected."
+msgstr "Les données des fichiers joints locaux n’ont pas pu être inspectées."
+
+msgctxt "/uncataloguedUi/validationModel/message-missing-asset"
+msgid "A declared asset has no local payload."
+msgstr "Un fichier joint déclaré ne possède pas de données locales."
+
+msgctxt "/uncataloguedUi/validationModel/message-invalid-asset"
+msgid "Asset size or checksum does not match the local bytes."
+msgstr "La taille ou l’empreinte du fichier joint ne correspond pas aux données locales."
+
+msgctxt "/uncataloguedUi/validationModel/message-check-unavailable"
+msgid "This check could not run; the result is incomplete."
+msgstr "Ce contrôle n’a pas pu être exécuté ; le résultat est incomplet."

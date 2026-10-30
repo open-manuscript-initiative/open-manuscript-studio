@@ -1,0 +1,85 @@
+{
+  "$schema": "urn:omi:studio:validation-report:0.1",
+  "format": "omi-studio-validation-report",
+  "version": "0.1.0",
+  "ruleset": "studio-validation-0.1",
+  "relatedSpecification": "OMI-SPEC-180",
+  "experimental": true,
+  "id": "report-invalid-reference",
+  "createdAt": "2026-10-31T08:00:00.000Z",
+  "profile": "authoring",
+  "subject": {
+    "manuscriptId": "b514a476-df31-4a2f-8fe4-7e80132f5600",
+    "headRevisionId": "d2096594-6764-4e5d-b0a7-7c61e2413558",
+    "stateDigest": "782cb5a7ae4a5e921a1384bb6592901393c7bc071e145a8fadad0f2889e06d10",
+    "evidenceDigest": "257de2e978b36679595d83f1f3bc07c2dff5f06891575e9cecceb2898aa2c3ed"
+  },
+  "checks": [
+    {
+      "id": "identifiers",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    },
+    {
+      "id": "references",
+      "version": "0.1.0",
+      "status": "fail",
+      "diagnosticIds": [
+        "references:1"
+      ],
+      "truncated": false,
+      "complete": true
+    },
+    {
+      "id": "anchors",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    },
+    {
+      "id": "history",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    },
+    {
+      "id": "translations",
+      "version": "0.1.0",
+      "status": "pass",
+      "diagnosticIds": [],
+      "truncated": false,
+      "complete": true
+    }
+  ],
+  "diagnostics": [
+    {
+      "code": "unresolved-reference",
+      "severity": "error",
+      "path": "/annotations/0/targetBlockId",
+      "targetId": "missing-destination",
+      "relatedId": "absent-block",
+      "checkId": "references",
+      "id": "references:1"
+    }
+  ],
+  "summary": {
+    "outcome": "invalid",
+    "complete": true,
+    "errors": 1,
+    "warnings": 0,
+    "information": 0
+  },
+  "exclusions": [
+    "external-link-availability",
+    "scholarly-accuracy",
+    "artifact-rendering-and-dtd",
+    "signature-and-publisher-authentication"
+  ]
+}
