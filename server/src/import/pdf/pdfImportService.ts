@@ -121,10 +121,16 @@ export function createPdfImportJob(
   cleanupExpiredJobs();
   const admission = rejectPdfImportAdmission(jobs.values(), ownerUserId);
   if (admission) throw new PdfImportCapacityError(admission);
-  if (bytes.length < 5 || bytes.subarray(0, 5).toString('ascii') !== '%PDF-') {
+  // Revalidate the raw-byte contract at the service boundary: HTTP request
+  // bodies may otherwise be strings, arrays or other attacker-controlled types.
+  // Never use an unvalidated body's .length as a byte count.
+  if (!Buffer.isBuffer(bytes)) {
+    throw new Error('PDF import requires a binary Buffer body.');
+  }
+  if (bytes.byteLength < 5 || bytes.subarray(0, 5).toString('ascii') !== '%PDF-') {
     throw new Error('The uploaded file is not a valid PDF document.');
   }
-  if (bytes.length > MAX_PDF_BYTES) {
+  if (bytes.byteLength > MAX_PDF_BYTES) {
     throw new Error('PDF import is limited to 100 MB per file.');
   }
 
