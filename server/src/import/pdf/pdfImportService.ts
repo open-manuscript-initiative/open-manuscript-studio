@@ -8,6 +8,10 @@ import {
   canonicalizePdfPageTypography,
   parseCanonicalNoteMarker,
 } from './pdfCanonicalTypography.js';
+import {
+  PdfImportCapacityError,
+  rejectPdfImportAdmission,
+} from './pdfImportAdmission.js';
 
 const execFileAsync = promisify(execFile);
 const MAX_PDF_BYTES = 100 * 1024 * 1024;
@@ -115,6 +119,8 @@ export function createPdfImportJob(
   bytes: Buffer,
 ): PdfImportJobSnapshot {
   cleanupExpiredJobs();
+  const admission = rejectPdfImportAdmission(jobs.values(), ownerUserId);
+  if (admission) throw new PdfImportCapacityError(admission);
   if (bytes.length < 5 || bytes.subarray(0, 5).toString('ascii') !== '%PDF-') {
     throw new Error('The uploaded file is not a valid PDF document.');
   }
@@ -136,6 +142,13 @@ export function createPdfImportJob(
   return publicSnapshot(job);
 }
 
+/** Check the process quota before allocating/parsing a large PDF upload body. */
+export function getPdfImportAdmissionRejection(ownerUserId: string): PdfImportCapacityError | null {
+  cleanupExpiredJobs();
+  const code = rejectPdfImportAdmission(jobs.values(), ownerUserId);
+  return code ? new PdfImportCapacityError(code) : null;
+}
+
 export function getPdfImportJob(ownerUserId: string, jobId: string): PdfImportJobSnapshot | null {
   cleanupExpiredJobs();
   const job = jobs.get(jobId);
@@ -151,11 +164,11 @@ export function getPdfImportResult(ownerUserId: string, jobId: string): PdfImpor
 
 async function processJob(job: PdfImportJob, bytes: Buffer): Promise<void> {
   job.status = 'processing';
-  const directory = await mkdtemp(join(tmpdir(), 'omi-pdf-import-'));
-  const inputPath = join(directory, 'source.pdf');
-  const outputPath = join(directory, 'layout.html');
-
+  let directory: string | undefined;
   try {
+    directory = await mkdtemp(join(tmpdir(), 'omi-pdf-import-'));
+    const inputPath = join(directory, 'source.pdf');
+    const outputPath = join(directory, 'layout.html');
     await writeFile(inputPath, bytes, { flag: 'wx' });
     try {
       await execFileAsync('pdftotext', ['-bbox-layout', '-enc', 'UTF-8', inputPath, outputPath], {
@@ -198,7 +211,7 @@ async function processJob(job: PdfImportJob, bytes: Buffer): Promise<void> {
     job.error = error instanceof Error ? error.message : 'PDF import failed.';
     job.status = 'failed';
   } finally {
-    await rm(directory, { recursive: true, force: true }).catch(() => undefined);
+    if (directory) await rm(directory, { recursive: true, force: true }).catch(() => undefined);
   }
 }
 
