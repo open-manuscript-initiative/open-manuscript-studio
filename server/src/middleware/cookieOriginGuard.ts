@@ -1,6 +1,10 @@
 import type { NextFunction, Request, Response } from 'express';
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+const SIGNED_REVIEW_LAUNCH_PATHS = new Set([
+  '/integrations/ojs/review/launch',
+  '/integrations/omp/review/launch',
+]);
 
 /**
  * A browser can send SameSite cookies from another subdomain of the same
@@ -12,6 +16,7 @@ const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
  */
 export function rejectsCookieOrigin(input: {
   method: string;
+  path?: string | undefined;
   cookie?: string | undefined;
   origin?: string | undefined;
   authorization?: string | undefined;
@@ -25,6 +30,13 @@ export function rejectsCookieOrigin(input: {
     part.trim().split('=', 1)[0] === 'omi_session',
   );
   if (!cookiePresent) return false;
+
+  // PKP launches are POSTs authenticated by both an active Studio session and
+  // one-time HMAC-signed OJS/OMP assertions. External PKP servers legitimately
+  // send these without an Origin; signature/nonce verification remains mandatory.
+  if (input.method.toUpperCase() === 'POST' && input.path && SIGNED_REVIEW_LAUNCH_PATHS.has(input.path)) {
+    return false;
+  }
 
   // A Tauri native request is authenticated by its bearer token instead
   // of the browser's cookie. HTML forms cannot supply these custom headers.
@@ -47,6 +59,7 @@ export function cookieOriginGuard(allowedOrigins: ReadonlySet<string>) {
   return (request: Request, response: Response, next: NextFunction): void => {
     if (rejectsCookieOrigin({
       method: request.method,
+      path: request.path,
       cookie: request.headers.cookie,
       origin: request.headers.origin,
       authorization: request.headers.authorization,
