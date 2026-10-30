@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 
 import { env } from '../config/env.js';
 import { identityPrisma } from '../lib/identityPrisma.js';
+import { findVerifiedFederatedIdentity } from './verifiedFederatedIdentity.js';
 
 export type CentralAdminRole = 'ADMIN' | 'OWNER';
 
@@ -23,12 +24,9 @@ export async function provisionConfiguredCentralAdmin(userId: string): Promise<v
     where: { id: userId },
     include: { identities: true, centralAdminGrant: true },
   });
-  if (!user || !allowed.has(user.email.trim().toLowerCase())) return;
+  if (!user || user.status !== 'ACTIVE' || !allowed.has(user.email.trim().toLowerCase())) return;
 
-  const hasFederatedIdentity = user.identities.some(
-    (identity) => identity.provider === 'OIDC' || identity.provider === 'SAML',
-  );
-  if (!hasFederatedIdentity) return;
+  if (!findVerifiedFederatedIdentity(user.email, user.identities)) return;
 
   if (!user.centralAdminGrant) {
     await identityPrisma.centralAdminGrant.create({
@@ -67,8 +65,8 @@ export async function requireFederatedCentralAdminCandidate(userId: string) {
   if (!user || user.status !== 'ACTIVE') {
     throw new Error('The Studio account is not active.');
   }
-  if (!user.identities.some((identity) => identity.provider === 'OIDC' || identity.provider === 'SAML')) {
-    throw new Error('Central administrators must have a linked OIDC or SAML identity.');
+  if (!findVerifiedFederatedIdentity(user.email, user.identities)) {
+    throw new Error('Central administrators must link a federated identity with a verified email matching their Studio account.');
   }
   return user;
 }

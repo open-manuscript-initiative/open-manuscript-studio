@@ -174,6 +174,9 @@ Admin Security
 
 - Separate from workspace roles
 - Require audit logging and recent auth
+- Automatic central/institutional owner provisioning requires a configured allow-listed Studio email **and** a linked OIDC/SAML identity whose trusted provider explicitly verified the same email. Linking any unrelated SSO account must not grant administrator rights.
+- Microsoft preferred_username alone is not proof that an email address is verified. Admin bootstrap must fail closed when the provider omits verification evidence; use a trusted configured institutional IdP that supplies verified email claims for bootstrap.
+- Existing grants are not silently revoked by the new provisioning rule; administrators should audit previously issued owner grants and linked identities.
 
 ---
 
