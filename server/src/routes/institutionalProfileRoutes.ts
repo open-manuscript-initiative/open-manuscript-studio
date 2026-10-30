@@ -12,7 +12,7 @@ import { getUserIdForSession } from '../services/authService.js';
 
 export const institutionalProfileRouter = Router();
 
-const COOKIE_NAME = 'omi_session';
+
 
 const createProfileSchema = z.object({
   organizationName: z.string().trim().min(1).max(300),
