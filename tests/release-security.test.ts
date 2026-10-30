@@ -77,3 +77,42 @@ test('Rust Tauri updater lock excludes the vulnerable ZIP crate versions', () =>
   );
   assert.deepEqual(findVersions('tauri-plugin-updater'), ['2.14.1']);
 });
+
+function assertSafeLockedRustVersions(
+  name: string,
+  isSafe: (major: number, minor: number, patch: number) => boolean,
+  advisory: string,
+): void {
+  const cargoLock = readFileSync(new URL('../src-tauri/Cargo.lock', import.meta.url), 'utf8');
+  const versions = cargoLock.split('[[package]]').slice(1)
+    .filter((block) => block.includes('\nname = "' + name + '"\n'))
+    .map((block) => block.match(/\nversion = "([^"]+)"/)?.[1]);
+  assert.ok(versions.length > 0, name + ' must remain covered by the native security gate');
+  for (const version of versions) {
+    const match = version?.match(/^(\d+)\.(\d+)\.(\d+)$/);
+    assert.ok(match, name + ': review prereleases or malformed versions explicitly');
+    assert.ok(isSafe(Number(match[1]), Number(match[2]), Number(match[3])),
+      name + ' ' + version + ' is affected by ' + advisory);
+  }
+}
+
+test('locked TLS dependencies exclude releases affected by emSign certificate distrust', () => {
+  // RUSTSEC-2026-0382 / CVE-2026-111943: stable webpki fixes start at 0.103.16.
+  assertSafeLockedRustVersions('rustls-webpki', (major, minor, patch) => (
+    major > 0 || minor > 103 || (minor === 103 && patch >= 16)
+  ), 'RUSTSEC-2026-0382');
+  // RUSTSEC-2026-0383: 0.26.11 is only a wrapper; also check its 1.x root set.
+  assertSafeLockedRustVersions('webpki-root-certs', (major, minor, patch) => (
+    major > 1 || (major === 1 && (minor > 0 || patch >= 10))
+      || (major === 0 && minor === 26 && patch === 11)
+  ), 'RUSTSEC-2026-0383');
+});
+
+test('native Tokio lock excludes unsafe AsyncFd constructor releases', () => {
+  // RUSTSEC-2026-0386: fixed in the 1.51 and 1.53 branches and in 1.54+.
+  assertSafeLockedRustVersions('tokio', (major, minor, patch) => (
+    major > 1 || (major === 1 && (
+      minor >= 54 || (minor === 53 && patch >= 3) || (minor === 51 && patch >= 6)
+    ))
+  ), 'RUSTSEC-2026-0386');
+});
