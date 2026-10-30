@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { buildPdfWorkerEnvironment } from '../security/pdfWorkerEnvironment.js';
 import { env } from '../config/env.js';
 
 export const VIVLIOSTYLE_PDF_RENDERER = 'vivliostyle-cli' as const;
@@ -249,6 +250,7 @@ function runCommand(
       cwd,
       shell: false,
       windowsHide: true,
+      env: buildPdfWorkerEnvironment('vivliostyle'),
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
