@@ -21,6 +21,7 @@ jobs:
         run: |
           cd src-tauri
           cargo update -p tauri-plugin-updater --precise 2.14.1
+          cargo update -p zip --precise 9.0.5
           python3 - <<'PY'
           import pathlib, tomllib
           lock = tomllib.loads(pathlib.Path('Cargo.lock').read_text())
