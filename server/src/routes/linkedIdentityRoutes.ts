@@ -8,7 +8,7 @@ import { getUserIdForSession } from '../services/authService.js';
 
 export const linkedIdentityRouter = Router();
 
-const COOKIE_NAME = 'omi_session';
+
 const ORCID_ISSUER = new URL(env.ORCID_BASE_URL).origin;
 
 type IdentityProfile = Record<string, unknown>;
