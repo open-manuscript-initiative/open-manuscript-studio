@@ -1,0 +1,20 @@
+name: Temporary inspect CodeQL findings on PDF security PR
+on:
+  pull_request:
+    types: [synchronize]
+    paths:
+      - '.github/workflows/temporary-review-pdf-codeql.yml'
+permissions:
+  contents: read
+  checks: read
+jobs:
+  inspect:
+    if: ${{ github.event.pull_request.number == 772 && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Read CodeQL annotation locations
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh api "/repos/$GH_REPO/check-runs/123895988858/annotations?per_page=100" --jq '.[] | {path, start_line, end_line, annotation_level, title, message}'
