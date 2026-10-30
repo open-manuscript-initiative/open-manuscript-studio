@@ -3,6 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 
 import { env } from './config/env.js';
+import { cookieOriginGuard } from './middleware/cookieOriginGuard.js';
 import {
   apiRateLimit,
   authRateLimit,
@@ -67,7 +68,7 @@ import { requireSession } from './middleware/requireSession.js';
 export const app = express();
 
 const allowedOrigins = new Set([
-  env.FRONTEND_ORIGIN,
+  new URL(env.FRONTEND_ORIGIN).origin,
   'tauri://localhost',
   'http://tauri.localhost',
   'https://tauri.localhost',
@@ -95,16 +96,29 @@ app.use((request, response, next) => {
   return standardCors(request, response, next);
 });
 
-app.use('/api/integrations/connections/:connectionId/direct-submission', express.json({ limit: '25mb' }));
-app.use('/api/integrations/connections/:connectionId/publication-artifact', express.json({ limit: '48mb' }));
-app.use('/api/native-editorial/submissions', express.json({ limit: '68mb' }));
+// Apply controls before body parsing: unauthenticated large JSON requests
+// must not consume the 25–140 MiB parser allocations before rate limiting.
+app.use('/api/health', healthRouter);
+app.use(apiRateLimit);
+app.use('/api/auth', authRateLimit);
+app.use('/api/v1/auth', authRateLimit);
+app.use('/integrations', integrationRateLimit);
+app.use(cookieOriginGuard(allowedOrigins));
+
+// Large document-parsing endpoints all require an authenticated session
+// before allocating/parsing request bodies. The PKP service-authorized OMP
+// revision callback below uses its own authentication and is intentionally
+// excluded from this browser-session gate.
+app.use('/api/integrations/connections/:connectionId/direct-submission', requireSession, express.json({ limit: '25mb' }));
+app.use('/api/integrations/connections/:connectionId/publication-artifact', requireSession, express.json({ limit: '48mb' }));
+app.use('/api/native-editorial/submissions', requireSession, express.json({ limit: '68mb' }));
 app.use('/integrations/omp/native/author/:contextId/revision', express.json({ limit: '36mb' }));
-app.use('/api/publication/render/pdf', express.json({ limit: '64mb' }));
-app.use('/api/publication/newsletter', express.json({ limit: '12mb' }));
-app.use('/api/v1/publications/web', express.json({ limit: '12mb' }));
-app.use('/api/publication/validate/jats', express.json({ limit: '7mb' }));
-app.use('/api/references/library', express.json({ limit: '8mb' }));
-app.use('/api/collaboration/documents', express.json({ limit: '140mb' }));
+app.use('/api/publication/render/pdf', requireSession, express.json({ limit: '64mb' }));
+app.use('/api/publication/newsletter', requireSession, express.json({ limit: '12mb' }));
+app.use('/api/v1/publications/web', requireSession, express.json({ limit: '12mb' }));
+app.use('/api/publication/validate/jats', requireSession, express.json({ limit: '7mb' }));
+app.use('/api/references/library', requireSession, express.json({ limit: '8mb' }));
+app.use('/api/collaboration/documents', requireSession, express.json({ limit: '140mb' }));
 app.use(['/api/v1/modules/critical-text-edition/transkribus/jobs', '/api/modules/critical-text-edition/transkribus/jobs'], requireSession, express.json({ limit: '28mb' }));
 app.use(express.json({ limit: '1mb' }));
 
@@ -115,8 +129,6 @@ app.get('/api', (_request, response) => {
   });
 });
 
-app.use('/api/health', healthRouter);
-app.use(apiRateLimit);
 app.use('/api/v1/server-registry', serverRegistryRouter);
 app.use('/api/server-registry', serverRegistryRouter); // Compatibility facade; identical policy and limits.
 app.use('/api/v1', euroOfficeRouter);
@@ -126,9 +138,6 @@ app.use('/api/v1', historyArchivesRouter);
 app.use('/api/v1', religiousTextsRouter);
 app.use('/api/v1', healthResearchRouter);
 app.use('/api/v1', researchDatabaseRouter);
-app.use('/api/auth', authRateLimit);
-app.use('/integrations', integrationRateLimit);
-
 app.use('/api/auth', orcidOidcRouter);
 app.use('/api/auth', oidcProviderRouter);
 app.use('/api/auth', federatedAuthRouter);
@@ -136,7 +145,7 @@ app.use('/api/auth', linkedIdentityRouter);
 app.use('/api/auth', institutionAdminAuthRouter);
 app.use('/api/auth', institutionalProfileRouter);
 app.use('/api/auth', publicationVenueRouter);
-app.use('/api/v1/auth', authRateLimit, passkeyRouter);
+app.use('/api/v1/auth', passkeyRouter);
 app.use('/api/auth', passkeyRouter); // Compatibility facade; identical application handlers.
 app.use('/api/auth', authRouter);
 app.use('/api/central-admin', centralAdminRouter);
