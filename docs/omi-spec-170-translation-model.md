@@ -47,6 +47,11 @@ The panel renders 20 alignment editors per page. Saving a translation action che
 the shared working state. Source text is never locked by translation state. Revision
 reversion, OMI JSON serialization and the state digest include the extension.
 
+The `translationModel` interface catalog is complete in the nine primary locales.
+Other interface locales use the existing English fallback for this experimental
+workflow, as they do for research-module and supplemental UI catalogs. JSON parity
+and PO audits require all translation-workflow entries in every primary locale.
+
 ## Portable representation
 
 `extensions["urn:omi:studio:translation:1"]` contains:
