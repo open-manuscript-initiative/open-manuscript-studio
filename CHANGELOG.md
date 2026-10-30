@@ -1,3 +1,13 @@
+## 0.3.0-beta.12 — 2026-10-30
+
+- Packages the merged native security and installer fixes after beta.11 into new application builds.
+- Updates rustls-webpki to **0.103.16**, Tokio to **1.53.3** and the wasm32-only webpki-root-certs dependency to **1.0.10**; adds release-security regression gates.
+- Includes tauri-plugin-opener **2.7.2** and tauri-plugin-persisted-scope **2.4.2**.
+- Retries macOS DMG packaging only for transient hdiutil resource contention, without recompiling the application.
+- Advances Studio to **0.3.0-beta.12**, Windows MSI to **0.3.0.12**, iOS build to **24** (short version **0.3.0**) and Android versionCode floor to **1211**.
+- Keeps the portable format at **OMI-SPEC-320@0.3.0**. No database migration is added by this release.
+- See [the release notes](docs/release/0.3.0-beta.12.md) for source PRs and distribution steps.
+
 ## 0.3.0-beta.11 — 2026-10-24
 
 - Keeps long-document editing responsive by reusing unchanged line measurements and invalidating only edited blocks.
