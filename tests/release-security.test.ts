@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+// Keep the OJS/OMP address checks in the existing release-security gate.
+import './integration-ip-security.test.ts';
+
 import { assertPortableOmiManuscript, toPortableOmiManuscript } from '../src/services/omiPortableFormat.ts';
 import { createReferenceManuscript } from './referenceManuscriptFixture.ts';
 
@@ -47,4 +50,27 @@ test('trusted integration URLs keep the production SSRF exception test-only', ()
   assert.match(source, /process\.env\.NODE_ENV !== 'test'/);
   assert.match(source, /INTEGRATION_TEST_ALLOWED_HOSTS/);
   assert.match(source, /url\.hostname\.toLowerCase\(\)/);
+});
+
+test('Rust Tauri updater lock excludes the vulnerable ZIP crate versions', () => {
+  const cargoLock = readFileSync(
+    new URL('../src-tauri/Cargo.lock', import.meta.url),
+    'utf8',
+  );
+  const entries = cargoLock.split('[[package]]').slice(1);
+  const findVersions = (name: string): string[] => entries
+    .filter((block) => block.includes('\nname = "' + name + '"\n'))
+    .map((block) => block.match(/\nversion = "([^"]+)"/)?.[1])
+    .filter((value): value is string => Boolean(value));
+
+  const zipVersions = findVersions('zip');
+  assert.equal(zipVersions.length, 1, 'An older ZIP release must not coexist with zip 9');
+  assert.ok(
+    zipVersions.every((version) => {
+      const parts = version.split('.').map(Number);
+      return (parts[0] ?? 0) > 9 || ((parts[0] ?? 0) === 9 && ((parts[1] ?? 0) > 0 || ((parts[1] ?? 0) === 0 && (parts[2] ?? 0) >= 5)));
+    }),
+    'ZIP must be 9.0.5 or newer: ' + zipVersions.join(', '),
+  );
+  assert.deepEqual(findVersions('tauri-plugin-updater'), ['2.14.1']);
 });

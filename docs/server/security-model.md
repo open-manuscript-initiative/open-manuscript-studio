@@ -52,7 +52,7 @@ Sessions
 CSRF & CORS
 
 - Secure, HttpOnly, SameSite=Lax cookies; reject unsafe cookie-authenticated requests unless Origin exactly matches a configured browser/Tauri origin
-- Native clients use bearer credentials; server-to-server integrations use their dedicated authentication mechanisms without browser session cookies
+- Native clients use bearer credentials; one-time HMAC-signed PKP review launches explicitly retain their own session + signed-assertion checks
 - CORS: allow only configured origins. CORS alone is not a CSRF defence against HTML forms or same-site subdomains
 - Future browser form endpoints must retain the Origin gate or add equivalent per-session CSRF token validation
 
@@ -175,6 +175,9 @@ Admin Security
 
 - Separate from workspace roles
 - Require audit logging and recent auth
+- Automatic central/institutional owner provisioning requires a configured allow-listed Studio email **and** a linked OIDC/SAML identity whose trusted provider explicitly verified the same email. Linking any unrelated SSO account must not grant administrator rights.
+- Microsoft preferred_username alone is not proof that an email address is verified. Admin bootstrap must fail closed when the provider omits verification evidence; use a trusted configured institutional IdP that supplies verified email claims for bootstrap.
+- Existing grants are not silently revoked by the new provisioning rule; administrators should audit previously issued owner grants and linked identities.
 
 ---
 

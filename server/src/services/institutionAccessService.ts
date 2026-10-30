@@ -1,5 +1,6 @@
 import { env } from '../config/env.js';
 import { identityPrisma } from '../lib/identityPrisma.js';
+import { findVerifiedFederatedIdentity } from './verifiedFederatedIdentity.js';
 
 export type InstitutionRole = 'MEMBER' | 'ADMIN' | 'OWNER';
 
@@ -58,11 +59,9 @@ export async function provisionConfiguredInstitutionOwner(userId: string): Promi
     where: { id: userId },
     include: { identities: true },
   });
-  if (!user || !allowedEmails.has(user.email.trim().toLowerCase())) return;
+  if (!user || user.status !== 'ACTIVE' || !allowedEmails.has(user.email.trim().toLowerCase())) return;
 
-  const federatedIdentity = user.identities.find(
-    (identity) => identity.provider === 'OIDC' || identity.provider === 'SAML',
-  );
+  const federatedIdentity = findVerifiedFederatedIdentity(user.email, user.identities);
   if (!federatedIdentity) return;
 
   const configuredRor = env.INSTITUTIONAL_ROR_ID?.trim() || null;
@@ -114,7 +113,7 @@ export async function provisionConfiguredInstitutionOwner(userId: string): Promi
         role: 'OWNER',
         identityId: existing.identityId ?? federatedIdentity.id,
         institutionalEmail: existing.institutionalEmail ?? user.email,
-        emailVerified: existing.emailVerified || true,
+        emailVerified: true,
       },
     });
   }
