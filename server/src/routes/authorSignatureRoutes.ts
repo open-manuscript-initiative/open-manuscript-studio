@@ -1,3 +1,4 @@
+import { readOmiSessionCookie as readSessionCookie } from '../middleware/sessionCookie.js';
 import {
   createHash,
   createPublicKey,
@@ -444,14 +445,6 @@ function readBearerToken(header: string | undefined): string | undefined {
   return token || undefined;
 }
 
-function readSessionCookie(header: string | undefined): string | undefined {
-  if (!header) return undefined;
-  for (const part of header.split(';')) {
-    const [name, ...rest] = part.trim().split('=');
-    if (name === 'omi_session') return decodeURIComponent(rest.join('='));
-  }
-  return undefined;
-}
 
 async function credentialRows(userId: string): Promise<CredentialRow[]> {
   return prisma.$queryRaw<CredentialRow[]>`
