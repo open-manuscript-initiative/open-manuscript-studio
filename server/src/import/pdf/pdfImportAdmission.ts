@@ -54,3 +54,17 @@ export function pdfImportRejectionMessage(code: PdfImportAdmissionRejection): st
   if (code === 'PDF_IMPORT_USER_HISTORY_FULL') return 'PDF import history limit reached. Retry after older jobs expire.';
   return 'The PDF import service history is full. Retry after older jobs expire.';
 }
+
+export class PdfImportCapacityError extends Error {
+  readonly code: PdfImportAdmissionRejection;
+  readonly httpStatus: 429 | 503;
+
+  constructor(code: PdfImportAdmissionRejection) {
+    super(pdfImportRejectionMessage(code));
+    this.name = 'PdfImportCapacityError';
+    this.code = code;
+    this.httpStatus = code === 'PDF_IMPORT_SERVER_BUSY' || code === 'PDF_IMPORT_SERVER_HISTORY_FULL'
+      ? 503
+      : 429;
+  }
+}
