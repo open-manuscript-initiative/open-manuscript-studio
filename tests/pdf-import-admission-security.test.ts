@@ -65,4 +65,10 @@ test('PDF admission runs before 100 MiB body decoding; bytes are not copied', ()
   assert.doesNotMatch(route, /Buffer\.from\(request\.body\)/);
   assert.match(service, /rejectPdfImportAdmission\(jobs\.values\(\), ownerUserId\)/);
   assert.match(service, /if \(directory\) await rm\(directory/);
+  const validation = service.indexOf('if (!Buffer.isBuffer(bytes))');
+  const firstUse = service.indexOf('if (bytes.byteLength < 5');
+  assert.ok(validation > 0 && firstUse > validation, 'Validate raw upload as Buffer before accessing byteLength');
+  assert.ok(service.includes('if (bytes.byteLength > MAX_PDF_BYTES)'), 'Enforce the 100 MiB limit on raw bytes');
+  assert.doesNotMatch(service, /if \\(bytes\\.length [<>]/);
+
 });
