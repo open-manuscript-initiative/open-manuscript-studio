@@ -1,7 +1,9 @@
 import express, { Router } from 'express';
+import { PdfImportCapacityError } from '../import/pdf/pdfImportAdmission.js';
 
 import {
   createPdfImportJob,
+  getPdfImportAdmissionRejection,
   getPdfImportJob,
   getPdfImportResult,
 } from '../import/pdf/pdfImportService.js';
@@ -19,6 +21,17 @@ const pdfBody = express.raw({
 
 pdfImportRouter.use(requireSession);
 
+// Reject busy-process/user uploads before express.raw allocates up to 100 MiB.
+pdfImportRouter.post('/pdf', (request: AuthenticatedRequest, response, next) => {
+  const rejection = getPdfImportAdmissionRejection(request.authUserId!);
+  if (rejection) {
+    response.setHeader('Retry-After', '60');
+    response.status(rejection.httpStatus).json({ error: { code: rejection.code, message: rejection.message } });
+    return;
+  }
+  next();
+});
+
 pdfImportRouter.post('/pdf', pdfBody, (request: AuthenticatedRequest, response) => {
   if (!request.authUserId) {
     response.status(401).json({ error: { code: 'UNAUTHENTICATED', message: 'Authentication is required.' } });
@@ -29,7 +42,8 @@ pdfImportRouter.post('/pdf', pdfBody, (request: AuthenticatedRequest, response) 
     return;
   }
 
-  const pdfBytes = Buffer.from(request.body);
+  // express.raw already supplies an owned Buffer; avoid a second 100 MiB copy.
+  const pdfBytes = request.body as Buffer;
 
   try {
     const rawName = String(request.header('X-OMI-File-Name') ?? 'document.pdf');
@@ -37,6 +51,11 @@ pdfImportRouter.post('/pdf', pdfBody, (request: AuthenticatedRequest, response) 
     const job = createPdfImportJob(request.authUserId, fileName, pdfBytes);
     response.status(202).json({ job });
   } catch (error) {
+    if (error instanceof PdfImportCapacityError) {
+      response.setHeader('Retry-After', '60');
+      response.status(error.httpStatus).json({ error: { code: error.code, message: error.message } });
+      return;
+    }
     response.status(400).json({
       error: {
         code: 'PDF_IMPORT_REJECTED',

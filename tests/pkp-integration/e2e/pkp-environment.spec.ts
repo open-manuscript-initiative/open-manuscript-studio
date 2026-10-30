@@ -72,6 +72,12 @@ if (!fixturePath) {
 const fixture = JSON.parse(readFileSync(fixturePath, 'utf8')) as WorkflowFixture;
 const pkpBaseUrl = process.env.PKP_BASE_URL ?? fixture.publicBaseUrl;
 const studioApiBaseUrl = process.env.STUDIO_API_BASE_URL ?? fixture.studioBaseUrl;
+// Playwright's APIRequestContext is not a browser: it does not synthesize the
+// Origin header required for authenticated session-cookie mutations.
+// This origin matches FRONTEND_ORIGIN in the PKP integration Docker fixture.
+const studioBrowserOrigin = process.env.STUDIO_FRONTEND_ORIGIN ?? 'http://127.0.0.1:5173';
+const studioMutationHeaders = { Origin: studioBrowserOrigin };
+
 const platform = process.env.PKP_PLATFORM ?? fixture.platform;
 const contextBaseUrl = `${pkpBaseUrl}/index.php/${fixture.context.path}`;
 
@@ -331,6 +337,7 @@ test('reviewer receives one anonymous article and can return corrections', async
 
   const accepted = await request.post(
     `${studioApiBaseUrl}/api/reviews/assigned/${assignmentId}/accept`,
+    { headers: studioMutationHeaders },
   );
   await expectApiStatus(accepted, 200);
 
@@ -354,7 +361,7 @@ test('reviewer receives one anonymous article and can return corrections', async
 
   const incompleteSubmit = await request.post(
     `${studioApiBaseUrl}/api/reviews/assigned/${assignmentId}/submit`,
-    { data: {} },
+    { data: {}, headers: studioMutationHeaders },
   );
   await expectApiStatus(incompleteSubmit, 400);
   await expect(incompleteSubmit.json()).resolves.toMatchObject({
@@ -364,6 +371,7 @@ test('reviewer receives one anonymous article and can return corrections', async
   const savedReviewForm = await request.put(
     `${studioApiBaseUrl}/api/reviews/assigned/${assignmentId}/review-form`,
     {
+      headers: studioMutationHeaders,
       data: {
         responses: [{
           elementExternalId: fixture.reviewForm.elementId,
@@ -392,7 +400,7 @@ test('reviewer receives one anonymous article and can return corrections', async
   };
   const revision = await request.put(
     `${studioApiBaseUrl}/api/reviews/assigned/${assignmentId}/revision`,
-    { data: corrected },
+    { data: corrected, headers: studioMutationHeaders },
   );
   await expectApiStatus(revision, 200);
   expect(JSON.stringify(await revision.json())).toContain('Corrected line break and hyphenation.');
@@ -403,7 +411,7 @@ test('reviewer receives one anonymous article and can return corrections', async
   ]) {
     const response = await request.post(
       `${studioApiBaseUrl}/api/reviews/assigned/${assignmentId}/feedback`,
-      { data: feedback },
+      { data: feedback, headers: studioMutationHeaders },
     );
     await expectApiStatus(response, 201);
   }
@@ -422,6 +430,7 @@ test('reviewer receives one anonymous article and can return corrections', async
   const submitted = await request.post(
     `${studioApiBaseUrl}/api/reviews/assigned/${assignmentId}/submit`,
     {
+      headers: studioMutationHeaders,
       // Native external recommendations use the identifier offered by PKP.
       // OMP hosts without customizable recommendations submit no invented value.
       data: reviewerRecommendation
