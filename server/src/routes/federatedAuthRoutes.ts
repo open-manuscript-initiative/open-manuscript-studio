@@ -1,3 +1,4 @@
+import { readOmiSessionCookie } from '../middleware/sessionCookie.js';
 import { createHash, randomBytes } from 'node:crypto';
 
 import { Router, type Request } from 'express';
@@ -226,11 +227,7 @@ function readSessionToken(request: Request): string | undefined {
   }
   const cookieHeader = request.headers.cookie;
   if (!cookieHeader) return undefined;
-  for (const part of cookieHeader.split(';')) {
-    const [name, ...rest] = part.trim().split('=');
-    if (name === COOKIE_NAME) return decodeURIComponent(rest.join('='));
-  }
-  return undefined;
+  return readOmiSessionCookie(cookieHeader);
 }
 
 async function createSession(userId: string) {
