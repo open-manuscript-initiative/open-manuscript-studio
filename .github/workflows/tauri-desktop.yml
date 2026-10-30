@@ -24,6 +24,8 @@ on:
       - 'src-tauri/tauri.android.conf.json'
       - 'scripts/configure-android-modern-ui.mjs'
       - 'tests/android-modern-ui.test.mjs'
+      - 'scripts/bundle-macos-dmg.sh'
+      - 'tests/macos-dmg-bundling.test.mjs'
       - '.github/workflows/tauri-desktop.yml'
   push:
     branches:
@@ -51,10 +53,12 @@ jobs:
             args: '--bundles msi,nsis'
             artifact: windows-x86_64
           - platform: macos-latest
-            args: '--target aarch64-apple-darwin --bundles app,dmg'
+            args: '--target aarch64-apple-darwin --bundles app'
+            target: aarch64-apple-darwin
             artifact: macos-aarch64
           - platform: macos-latest
-            args: '--target x86_64-apple-darwin --bundles app,dmg'
+            args: '--target x86_64-apple-darwin --bundles app'
+            target: x86_64-apple-darwin
             artifact: macos-x86_64
 
     runs-on: ${{ matrix.platform }}
@@ -88,6 +92,10 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Test macOS DMG retry handling
+        if: startsWith(matrix.platform, 'macos')
+        run: node --test tests/macos-dmg-bundling.test.mjs
+
       - name: Verify locked Rust dependency graph
         run: cargo metadata --manifest-path src-tauri/Cargo.toml --locked --format-version 1
 
@@ -104,6 +112,13 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         with:
           args: ${{ matrix.args }}
+
+      - name: Package macOS DMG with bounded contention retries
+        if: startsWith(matrix.platform, 'macos')
+        shell: bash
+        env:
+          TAURI_TARGET: ${{ matrix.target }}
+        run: bash scripts/bundle-macos-dmg.sh "$TAURI_TARGET"
 
       - name: Verify Linux installer round trip
         if: matrix.artifact == 'linux-x86_64'
