@@ -13,6 +13,7 @@ const allowedOrigins = new Set([
 
 function rejects(input: {
   method: string;
+  path?: string;
   cookie?: string;
   origin?: string;
   authorization?: string;
@@ -54,7 +55,7 @@ test('Tauri bearer requests and server-to-server callbacks remain permitted', ()
 
 test('API rate limiting and CSRF checking run before the first large JSON parser', () => {
   const source = readFileSync(new URL('../server/src/app.ts', import.meta.url), 'utf8');
-  const firstLargeParser = source.indexOf("app.use('/api/integrations/connections/:connectionId/direct-submission', express.json");
+  const firstLargeParser = source.indexOf("app.use('/api/integrations/connections/:connectionId/direct-submission', requireSession, express.json");
   assert.ok(firstLargeParser > 0);
   for (const middleware of [
     'app.use(apiRateLimit);',
@@ -87,4 +88,12 @@ test('large document parsers authenticate before JSON decode and keep the OMP si
   assert.ok(source.includes(
     "app.use('/integrations/omp/native/author/:contextId/revision', express.json"
   ));
+});
+
+test('one-time HMAC-signed PKP review launch endpoints preserve Origin-less server callbacks', () => {
+  for (const path of ['/integrations/ojs/review/launch', '/integrations/omp/review/launch']) {
+    assert.equal(rejects({ method: 'POST', path, cookie: 'omi_session=opaque' }), false, path);
+    assert.equal(rejects({ method: 'POST', path: path + '/other', cookie: 'omi_session=opaque' }), true);
+    assert.equal(rejects({ method: 'DELETE', path, cookie: 'omi_session=opaque' }), true);
+  }
 });
