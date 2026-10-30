@@ -1,0 +1,40 @@
+name: Temporary secure Rust lockfile update
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'src-tauri/Cargo.toml'
+      - '.github/workflows/temporary-secure-zip-lock.yml'
+permissions:
+  contents: write
+jobs:
+  update-lock:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'security/tauri-updater-zip-20261030' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Update locked Tauri updater and security-fixed ZIP
+        run: |
+          cd src-tauri
+          cargo update -p tauri-plugin-updater --precise 2.14.1
+          python3 - <<'PY'
+          import pathlib, tomllib
+          lock = tomllib.loads(pathlib.Path('Cargo.lock').read_text())
+          for name, expected in [('tauri-plugin-updater','2.14.1'), ('zip','9.0.5')]:
+              installed = sorted(p['version'] for p in lock['package'] if p['name']==name)
+              assert installed==[expected], f'{name}: expected {expected}, got {installed}'
+          print('Verified updater 2.14.1 and zip 9.0.5 (no older duplicate)')
+          PY
+      - name: Commit the regenerated Cargo.lock to the security branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src-tauri/Cargo.lock
+          if ! git diff --cached --quiet; then
+            git commit -m "security(lock): resolve zip 9.0.5 through Tauri updater 2.14.1"
+            git push origin HEAD:security/tauri-updater-zip-20261030
+          fi
