@@ -8100,3 +8100,175 @@ msgstr "Meno, archív, miesto alebo kľúčové slovo"
 msgctxt "/researchModules/history-archives-siusa-search-panel/copyByLocale/search"
 msgid "Search SIUSA"
 msgstr "Hľadať v SIUSA"
+
+msgctxt "/translationModel/title"
+msgid "Translations"
+msgstr "Preklady"
+
+msgctxt "/translationModel/description"
+msgid "Create and review aligned language variants. Source edits flag affected translations for review; target text remains editable. Variants are saved inside the OMI manuscript."
+msgstr "Vytvárajte a kontrolujte zarovnané jazykové verzie. Zmeny zdroja označia preklady na kontrolu; cieľový text zostáva upraviteľný. Verzie sa ukladajú v rukopise OMI."
+
+msgctxt "/translationModel/targetLanguage"
+msgid "Target language (BCP 47)"
+msgstr "Cieľový jazyk (BCP 47)"
+
+msgctxt "/translationModel/scope"
+msgid "Scope"
+msgstr "Rozsah"
+
+msgctxt "/translationModel/manuscript"
+msgid "Whole manuscript"
+msgstr "Celý rukopis"
+
+msgctxt "/translationModel/section"
+msgid "Selected section"
+msgstr "Vybraná sekcia"
+
+msgctxt "/translationModel/block"
+msgid "Block"
+msgstr "Blok"
+
+msgctxt "/translationModel/create"
+msgid "Create translation"
+msgstr "Vytvoriť preklad"
+
+msgctxt "/translationModel/empty"
+msgid "No language variants yet."
+msgstr "Zatiaľ žiadne jazykové verzie."
+
+msgctxt "/translationModel/variant"
+msgid "Language variant"
+msgstr "Jazyková verzia"
+
+msgctxt "/translationModel/reviewed"
+msgid "Reviewed"
+msgstr "Skontrolované"
+
+msgctxt "/translationModel/draft"
+msgid "Draft"
+msgstr "Koncept"
+
+msgctxt "/translationModel/stale"
+msgid "Source changed"
+msgstr "Zdroj sa zmenil"
+
+msgctxt "/translationModel/current"
+msgid "Current source"
+msgstr "Aktuálny zdroj"
+
+msgctxt "/translationModel/missing"
+msgid "Source missing"
+msgstr "Zdroj chýba"
+
+msgctxt "/translationModel/added"
+msgid "New source segments"
+msgstr "Nové zdrojové segmenty"
+
+msgctxt "/translationModel/synchronize"
+msgid "Update source alignment"
+msgstr "Aktualizovať zarovnanie"
+
+msgctxt "/translationModel/syncHint"
+msgid "Updating the alignment keeps target text and translator notes. Changed segments return to draft. Missing source segments remain available until you archive them."
+msgstr "Aktualizácia zachová cieľový text a poznámky. Zmenené segmenty sa vrátia do konceptu. Chýbajúce zdrojové segmenty zostávajú dostupné až do archivácie."
+
+msgctxt "/translationModel/parallelExport"
+msgid "Parallel text HTML"
+msgstr "Paralelný text HTML"
+
+msgctxt "/translationModel/targetExport"
+msgid "Target text HTML"
+msgstr "Cieľový text HTML"
+
+msgctxt "/translationModel/remove"
+msgid "Remove variant"
+msgstr "Odstrániť verziu"
+
+msgctxt "/translationModel/removeConfirm"
+msgid "Remove this language variant? It remains available in revision history."
+msgstr "Odstrániť túto jazykovú verziu? Zostane dostupná v histórii zmien."
+
+msgctxt "/translationModel/sourceText"
+msgid "Source text"
+msgstr "Zdrojový text"
+
+msgctxt "/translationModel/targetText"
+msgid "Target text"
+msgstr "Cieľový text"
+
+msgctxt "/translationModel/notes"
+msgid "Translator notes"
+msgstr "Poznámky prekladateľa"
+
+msgctxt "/translationModel/equivalence"
+msgid "Relationship"
+msgstr "Vzťah"
+
+msgctxt "/translationModel/unassessed"
+msgid "Not assessed"
+msgstr "Neposúdené"
+
+msgctxt "/translationModel/equivalent"
+msgid "Equivalent translation"
+msgstr "Rovnocenný preklad"
+
+msgctxt "/translationModel/adapted"
+msgid "Intentional adaptation"
+msgstr "Zámerná úprava"
+
+msgctxt "/translationModel/save"
+msgid "Save changes"
+msgstr "Uložiť zmeny"
+
+msgctxt "/translationModel/saved"
+msgid "Translation saved."
+msgstr "Preklad bol uložený."
+
+msgctxt "/translationModel/markReviewed"
+msgid "Mark as reviewed"
+msgstr "Označiť ako skontrolované"
+
+msgctxt "/translationModel/previous"
+msgid "Previous"
+msgstr "Predchádzajúce"
+
+msgctxt "/translationModel/next"
+msgid "Next"
+msgstr "Ďalšie"
+
+msgctxt "/translationModel/human"
+msgid "Human translation"
+msgstr "Ľudský preklad"
+
+msgctxt "/translationModel/machine"
+msgid "Machine draft"
+msgstr "Strojový koncept"
+
+msgctxt "/translationModel/archive"
+msgid "Archive missing alignment"
+msgstr "Archivovať chýbajúce zarovnanie"
+
+msgctxt "/translationModel/archived"
+msgid "Archived alignments"
+msgstr "Archivované zarovnania"
+
+msgctxt "/translationModel/invalid"
+msgid "This translation profile is unsupported or damaged. The original data has been retained."
+msgstr "Tento profil prekladu nie je podporovaný alebo je poškodený. Pôvodné údaje zostali zachované."
+
+msgctxt "/translationModel/actionFailed"
+msgid "Unable to save. Check that the languages are distinct and valid, the source still exists, and the translation is ready for the requested review."
+msgstr "Uloženie zlyhalo. Skontrolujte platné a rozdielne jazyky, existenciu zdroja a pripravenosť na kontrolu."
+
+msgctxt "/translationModel/exportFailed"
+msgid "Unable to export. Synchronize and review every segment first."
+msgstr "Export zlyhal. Najprv aktualizujte a skontrolujte všetky segmenty."
+
+msgctxt "/translationModel/legacyVariants"
+msgid "Earlier server variants"
+msgstr "Predchádzajúce verzie na serveri"
+
+msgctxt "/translationModel/savedHint"
+msgid "Translation saved. Open Translations to edit and review the language variant."
+msgstr "Preklad bol uložený. Otvorte Preklady a upravte a skontrolujte jazykovú verziu."

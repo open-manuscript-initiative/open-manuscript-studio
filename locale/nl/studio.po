@@ -8100,3 +8100,175 @@ msgstr "Naam, archief, plaats of trefwoord"
 msgctxt "/researchModules/history-archives-siusa-search-panel/copyByLocale/search"
 msgid "Search SIUSA"
 msgstr "Zoeken in SIUSA"
+
+msgctxt "/translationModel/title"
+msgid "Translations"
+msgstr "Vertalingen"
+
+msgctxt "/translationModel/description"
+msgid "Create and review aligned language variants. Source edits flag affected translations for review; target text remains editable. Variants are saved inside the OMI manuscript."
+msgstr "Maak en controleer uitgelijnde taalversies. Wijzigingen in de bron markeren betrokken vertalingen voor controle; de doeltekst blijft bewerkbaar. Versies worden in het OMI-manuscript opgeslagen."
+
+msgctxt "/translationModel/targetLanguage"
+msgid "Target language (BCP 47)"
+msgstr "Doeltaal (BCP 47)"
+
+msgctxt "/translationModel/scope"
+msgid "Scope"
+msgstr "Bereik"
+
+msgctxt "/translationModel/manuscript"
+msgid "Whole manuscript"
+msgstr "Volledig manuscript"
+
+msgctxt "/translationModel/section"
+msgid "Selected section"
+msgstr "Geselecteerde sectie"
+
+msgctxt "/translationModel/block"
+msgid "Block"
+msgstr "Blok"
+
+msgctxt "/translationModel/create"
+msgid "Create translation"
+msgstr "Vertaling maken"
+
+msgctxt "/translationModel/empty"
+msgid "No language variants yet."
+msgstr "Nog geen taalversies."
+
+msgctxt "/translationModel/variant"
+msgid "Language variant"
+msgstr "Taalversie"
+
+msgctxt "/translationModel/reviewed"
+msgid "Reviewed"
+msgstr "Gecontroleerd"
+
+msgctxt "/translationModel/draft"
+msgid "Draft"
+msgstr "Concept"
+
+msgctxt "/translationModel/stale"
+msgid "Source changed"
+msgstr "Bron gewijzigd"
+
+msgctxt "/translationModel/current"
+msgid "Current source"
+msgstr "Actuele bron"
+
+msgctxt "/translationModel/missing"
+msgid "Source missing"
+msgstr "Bron ontbreekt"
+
+msgctxt "/translationModel/added"
+msgid "New source segments"
+msgstr "Nieuwe bronsegmenten"
+
+msgctxt "/translationModel/synchronize"
+msgid "Update source alignment"
+msgstr "Bronuitlijning bijwerken"
+
+msgctxt "/translationModel/syncHint"
+msgid "Updating the alignment keeps target text and translator notes. Changed segments return to draft. Missing source segments remain available until you archive them."
+msgstr "Bijwerken behoudt doeltekst en vertaalnotities. Gewijzigde segmenten worden weer concepten. Ontbrekende bronsegmenten blijven beschikbaar tot archivering."
+
+msgctxt "/translationModel/parallelExport"
+msgid "Parallel text HTML"
+msgstr "Parallelle tekst HTML"
+
+msgctxt "/translationModel/targetExport"
+msgid "Target text HTML"
+msgstr "Doeltekst HTML"
+
+msgctxt "/translationModel/remove"
+msgid "Remove variant"
+msgstr "Versie verwijderen"
+
+msgctxt "/translationModel/removeConfirm"
+msgid "Remove this language variant? It remains available in revision history."
+msgstr "Deze taalversie verwijderen? De versie blijft beschikbaar in de revisiegeschiedenis."
+
+msgctxt "/translationModel/sourceText"
+msgid "Source text"
+msgstr "Brontekst"
+
+msgctxt "/translationModel/targetText"
+msgid "Target text"
+msgstr "Doeltekst"
+
+msgctxt "/translationModel/notes"
+msgid "Translator notes"
+msgstr "Vertaalnotities"
+
+msgctxt "/translationModel/equivalence"
+msgid "Relationship"
+msgstr "Relatie"
+
+msgctxt "/translationModel/unassessed"
+msgid "Not assessed"
+msgstr "Niet beoordeeld"
+
+msgctxt "/translationModel/equivalent"
+msgid "Equivalent translation"
+msgstr "Gelijkwaardige vertaling"
+
+msgctxt "/translationModel/adapted"
+msgid "Intentional adaptation"
+msgstr "Bewuste bewerking"
+
+msgctxt "/translationModel/save"
+msgid "Save changes"
+msgstr "Wijzigingen opslaan"
+
+msgctxt "/translationModel/saved"
+msgid "Translation saved."
+msgstr "Vertaling opgeslagen."
+
+msgctxt "/translationModel/markReviewed"
+msgid "Mark as reviewed"
+msgstr "Als gecontroleerd markeren"
+
+msgctxt "/translationModel/previous"
+msgid "Previous"
+msgstr "Vorige"
+
+msgctxt "/translationModel/next"
+msgid "Next"
+msgstr "Volgende"
+
+msgctxt "/translationModel/human"
+msgid "Human translation"
+msgstr "Menselijke vertaling"
+
+msgctxt "/translationModel/machine"
+msgid "Machine draft"
+msgstr "Machineconcept"
+
+msgctxt "/translationModel/archive"
+msgid "Archive missing alignment"
+msgstr "Ontbrekende uitlijning archiveren"
+
+msgctxt "/translationModel/archived"
+msgid "Archived alignments"
+msgstr "Gearchiveerde uitlijningen"
+
+msgctxt "/translationModel/invalid"
+msgid "This translation profile is unsupported or damaged. The original data has been retained."
+msgstr "Dit vertaalprofiel wordt niet ondersteund of is beschadigd. De oorspronkelijke gegevens zijn behouden."
+
+msgctxt "/translationModel/actionFailed"
+msgid "Unable to save. Check that the languages are distinct and valid, the source still exists, and the translation is ready for the requested review."
+msgstr "Opslaan mislukt. Controleer verschillende geldige talen, de bron en de gereedheid voor controle."
+
+msgctxt "/translationModel/exportFailed"
+msgid "Unable to export. Synchronize and review every segment first."
+msgstr "Exporteren mislukt. Werk eerst alle segmenten bij en controleer ze."
+
+msgctxt "/translationModel/legacyVariants"
+msgid "Earlier server variants"
+msgstr "Eerdere serverversies"
+
+msgctxt "/translationModel/savedHint"
+msgid "Translation saved. Open Translations to edit and review the language variant."
+msgstr "Vertaling opgeslagen. Open Vertalingen om de taalversie te bewerken en te controleren."

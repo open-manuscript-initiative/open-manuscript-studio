@@ -725,7 +725,7 @@
       "resetDefaults": "Ripristina le impostazioni predefinite del profilo",
       "profileNames": {
         "omi-generic-scholarly": {
-          "name": "OMI Generic Scholarly",
+          "name": "OMI Scientifico generico",
           "description": "Resa accademica neutra per la pubblicazione generica."
         },
         "omi-journal-author-date": {
@@ -1986,5 +1986,50 @@
       "recovery": "Istantanea di recupero",
       "failed": "Non è stato possibile caricare o scaricare i file di recupero."
     }
+  },
+  "translationModel": {
+    "title": "Traduzioni",
+    "description": "Crea e verifica versioni linguistiche allineate. Le modifiche alla fonte segnalano le traduzioni da verificare; il testo di destinazione resta modificabile. Le versioni sono salvate nel manoscritto OMI.",
+    "targetLanguage": "Lingua di destinazione (BCP 47)",
+    "scope": "Ambito",
+    "manuscript": "Intero manoscritto",
+    "section": "Sezione selezionata",
+    "block": "Blocco",
+    "create": "Crea traduzione",
+    "empty": "Nessuna versione linguistica.",
+    "variant": "Versione linguistica",
+    "reviewed": "Verificato",
+    "draft": "Bozza",
+    "stale": "Fonte modificata",
+    "current": "Fonte attuale",
+    "missing": "Fonte mancante",
+    "added": "Nuovi segmenti della fonte",
+    "synchronize": "Aggiorna allineamenti",
+    "syncHint": "L’aggiornamento conserva il testo di destinazione e le note. I segmenti modificati tornano allo stato di bozza. I segmenti mancanti restano disponibili fino all’archiviazione.",
+    "parallelExport": "Testo parallelo HTML",
+    "targetExport": "Testo di destinazione HTML",
+    "remove": "Rimuovi versione",
+    "removeConfirm": "Rimuovere questa versione linguistica? Resta disponibile nella cronologia.",
+    "sourceText": "Testo originale",
+    "targetText": "Testo di destinazione",
+    "notes": "Note del traduttore",
+    "equivalence": "Relazione",
+    "unassessed": "Non valutato",
+    "equivalent": "Traduzione equivalente",
+    "adapted": "Adattamento intenzionale",
+    "save": "Salva modifiche",
+    "saved": "Traduzione salvata.",
+    "markReviewed": "Segna come verificato",
+    "previous": "Precedente",
+    "next": "Successivo",
+    "human": "Traduzione umana",
+    "machine": "Bozza automatica",
+    "archive": "Archivia allineamento mancante",
+    "archived": "Allineamenti archiviati",
+    "invalid": "Profilo di traduzione non supportato o danneggiato. I dati originali sono stati conservati.",
+    "actionFailed": "Impossibile salvare. Verifica che le lingue siano valide e distinte, la fonte esista e la traduzione sia pronta per la verifica.",
+    "exportFailed": "Impossibile esportare. Aggiorna e verifica prima tutti i segmenti.",
+    "legacyVariants": "Versioni precedenti sul server",
+    "savedHint": "Traduzione salvata. Apri Traduzioni per modificare e verificare la versione linguistica."
   }
 }

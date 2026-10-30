@@ -24,6 +24,7 @@ export type OmiHistoryCompleteness =
   | 'shallow';
 
 export type OmiChangeOperation =
+  | 'translation.model.set'
   | 'manuscript.snapshot.create'
   | 'manuscript.title.set'
   | 'manuscript.subtitle.set'
