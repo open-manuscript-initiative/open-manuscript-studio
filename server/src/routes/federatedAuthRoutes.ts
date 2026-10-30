@@ -11,7 +11,7 @@ import { getUserForSession, getUserIdForSession } from '../services/authService.
 
 export const federatedAuthRouter = Router();
 
-const COOKIE_NAME = 'omi_session';
+
 const NATIVE_HEADER = 'x-omi-native-client';
 const ORCID_ISSUER = new URL(env.ORCID_BASE_URL).origin;
 
