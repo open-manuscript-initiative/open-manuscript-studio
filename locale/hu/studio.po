@@ -8100,3 +8100,175 @@ msgstr "Név, levéltár, hely vagy kulcsszó"
 msgctxt "/researchModules/history-archives-siusa-search-panel/copyByLocale/search"
 msgid "Search SIUSA"
 msgstr "Keresés a SIUSA-ban"
+
+msgctxt "/translationModel/title"
+msgid "Translations"
+msgstr "Fordítások"
+
+msgctxt "/translationModel/description"
+msgid "Create and review aligned language variants. Source edits flag affected translations for review; target text remains editable. Variants are saved inside the OMI manuscript."
+msgstr "Hozzon létre és ellenőrizzen összehangolt nyelvi változatokat. A forrás módosítása jelzi az érintett fordítások ellenőrzési igényét; a célnyelvi szöveg szerkeszthető marad. A változatok az OMI-kéziratban tárolódnak."
+
+msgctxt "/translationModel/targetLanguage"
+msgid "Target language (BCP 47)"
+msgstr "Célnyelv (BCP 47)"
+
+msgctxt "/translationModel/scope"
+msgid "Scope"
+msgstr "Hatókör"
+
+msgctxt "/translationModel/manuscript"
+msgid "Whole manuscript"
+msgstr "Teljes kézirat"
+
+msgctxt "/translationModel/section"
+msgid "Selected section"
+msgstr "Kijelölt szakasz"
+
+msgctxt "/translationModel/block"
+msgid "Block"
+msgstr "Blokk"
+
+msgctxt "/translationModel/create"
+msgid "Create translation"
+msgstr "Fordítás létrehozása"
+
+msgctxt "/translationModel/empty"
+msgid "No language variants yet."
+msgstr "Még nincs nyelvi változat."
+
+msgctxt "/translationModel/variant"
+msgid "Language variant"
+msgstr "Nyelvi változat"
+
+msgctxt "/translationModel/reviewed"
+msgid "Reviewed"
+msgstr "Ellenőrzött"
+
+msgctxt "/translationModel/draft"
+msgid "Draft"
+msgstr "Piszkozat"
+
+msgctxt "/translationModel/stale"
+msgid "Source changed"
+msgstr "A forrás megváltozott"
+
+msgctxt "/translationModel/current"
+msgid "Current source"
+msgstr "Aktuális forrás"
+
+msgctxt "/translationModel/missing"
+msgid "Source missing"
+msgstr "A forrás hiányzik"
+
+msgctxt "/translationModel/added"
+msgid "New source segments"
+msgstr "Új forrásszegmensek"
+
+msgctxt "/translationModel/synchronize"
+msgid "Update source alignment"
+msgstr "Forráskapcsolatok frissítése"
+
+msgctxt "/translationModel/syncHint"
+msgid "Updating the alignment keeps target text and translator notes. Changed segments return to draft. Missing source segments remain available until you archive them."
+msgstr "A kapcsolatok frissítése megőrzi a célnyelvi szöveget és a fordítói jegyzeteket. A módosult részek piszkozatba kerülnek. A hiányzó forrásrészek az archiválásig elérhetők maradnak."
+
+msgctxt "/translationModel/parallelExport"
+msgid "Parallel text HTML"
+msgstr "Párhuzamos szöveg HTML"
+
+msgctxt "/translationModel/targetExport"
+msgid "Target text HTML"
+msgstr "Célnyelvi szöveg HTML"
+
+msgctxt "/translationModel/remove"
+msgid "Remove variant"
+msgstr "Változat eltávolítása"
+
+msgctxt "/translationModel/removeConfirm"
+msgid "Remove this language variant? It remains available in revision history."
+msgstr "Eltávolítja ezt a nyelvi változatot? A verzióelőzményekből továbbra is elérhető."
+
+msgctxt "/translationModel/sourceText"
+msgid "Source text"
+msgstr "Forrásszöveg"
+
+msgctxt "/translationModel/targetText"
+msgid "Target text"
+msgstr "Célnyelvi szöveg"
+
+msgctxt "/translationModel/notes"
+msgid "Translator notes"
+msgstr "Fordítói jegyzetek"
+
+msgctxt "/translationModel/equivalence"
+msgid "Relationship"
+msgstr "Kapcsolat"
+
+msgctxt "/translationModel/unassessed"
+msgid "Not assessed"
+msgstr "Még nem értékelt"
+
+msgctxt "/translationModel/equivalent"
+msgid "Equivalent translation"
+msgstr "Egyenértékű fordítás"
+
+msgctxt "/translationModel/adapted"
+msgid "Intentional adaptation"
+msgstr "Szándékos átdolgozás"
+
+msgctxt "/translationModel/save"
+msgid "Save changes"
+msgstr "Módosítások mentése"
+
+msgctxt "/translationModel/saved"
+msgid "Translation saved."
+msgstr "A fordítás mentve."
+
+msgctxt "/translationModel/markReviewed"
+msgid "Mark as reviewed"
+msgstr "Megjelölés ellenőrzöttként"
+
+msgctxt "/translationModel/previous"
+msgid "Previous"
+msgstr "Előző"
+
+msgctxt "/translationModel/next"
+msgid "Next"
+msgstr "Következő"
+
+msgctxt "/translationModel/human"
+msgid "Human translation"
+msgstr "Emberi fordítás"
+
+msgctxt "/translationModel/machine"
+msgid "Machine draft"
+msgstr "Gépi piszkozat"
+
+msgctxt "/translationModel/archive"
+msgid "Archive missing alignment"
+msgstr "Hiányzó kapcsolat archiválása"
+
+msgctxt "/translationModel/archived"
+msgid "Archived alignments"
+msgstr "Archivált kapcsolatok"
+
+msgctxt "/translationModel/invalid"
+msgid "This translation profile is unsupported or damaged. The original data has been retained."
+msgstr "Ez a fordítási profil nem támogatott vagy sérült. Az eredeti adatok megmaradtak."
+
+msgctxt "/translationModel/actionFailed"
+msgid "Unable to save. Check that the languages are distinct and valid, the source still exists, and the translation is ready for the requested review."
+msgstr "A mentés nem sikerült. Ellenőrizze a nyelvek érvényességét és különbözőségét, a forrás meglétét és a fordítás ellenőrizhetőségét."
+
+msgctxt "/translationModel/exportFailed"
+msgid "Unable to export. Synchronize and review every segment first."
+msgstr "Az export nem sikerült. Előbb frissítse és ellenőrizze az összes szegmenst."
+
+msgctxt "/translationModel/legacyVariants"
+msgid "Earlier server variants"
+msgstr "Korábbi szerveroldali változatok"
+
+msgctxt "/translationModel/savedHint"
+msgid "Translation saved. Open Translations to edit and review the language variant."
+msgstr "A fordítás mentve. A Fordítások menüben szerkesztheti és ellenőrizheti a nyelvi változatot."

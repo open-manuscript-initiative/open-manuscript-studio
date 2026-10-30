@@ -2,8 +2,9 @@ import { Bot, FileClock, Languages, Puzzle, RefreshCw, Sparkles, Trash2 } from '
 import { useEffect, useMemo, useState } from 'react';
 
 import { useStudioStore } from '../app/useStudioStore';
+import { addManuscriptTranslation } from '../app/translationActions';
+import type { TranslationScope } from '../model/translation';
 import {
-  applyStructuredTranslations,
   buildStructuredTranslationPlan,
 } from '../integrations/structuredExternalContent';
 import {
@@ -14,7 +15,6 @@ import {
   getTranslationVariants,
   runIntegrationAgent,
   saveIntegrationExtension,
-  saveTranslationVariant,
   translateWithDeepL,
   type BuiltInAgentId,
   type ExternalDocumentScope,
@@ -66,7 +66,8 @@ export function IntegrationExecutionWorkspace() {
   const [translationBusy, setTranslationBusy] = useState(false);
   const [translationError, setTranslationError] = useState('');
   const [translatedSegments, setTranslatedSegments] = useState<TranslationSegment[]>([]);
-  const [translatedManuscript, setTranslatedManuscript] = useState<OmiManuscript | null>(null);
+  const [translationSaved, setTranslationSaved] = useState(false);
+  const [translationBasis, setTranslationBasis] = useState<{ source: OmiManuscript; scope: TranslationScope; target: string; createdAt: string } | null>(null);
   const [variants, setVariants] = useState<TranslationVariant[]>([]);
 
   const [aiEndpoint, setAiEndpoint] = useState('https://api.openai.com/v1/chat/completions');
@@ -170,12 +171,14 @@ export function IntegrationExecutionWorkspace() {
   }
 
   async function translateScope(): Promise<void> {
+    useStudioStore.getState().checkpoint('manual');
+    const source = structuredClone(useStudioStore.getState().manuscript);
     const scope = currentTranslationScope();
     if (scope.kind === 'section' && !scope.id) {
       setTranslationError('Select a manuscript section before translating.');
       return;
     }
-    const plan = buildStructuredTranslationPlan(manuscript, scope);
+    const plan = buildStructuredTranslationPlan(source, scope);
     if (plan.segments.length === 0) {
       setTranslationError('The selected scope contains no translatable text.');
       return;
@@ -184,16 +187,17 @@ export function IntegrationExecutionWorkspace() {
     setTranslationBusy(true);
     setTranslationError('');
     setTranslatedSegments([]);
-    setTranslatedManuscript(null);
+    setTranslationSaved(false);
+    setTranslationBasis(null);
     try {
       const translated = await translateSegmentsInBatches(
         plan.segments,
         scope,
-        manuscript.locale,
+        source.locale,
         targetLanguage,
       );
       setTranslatedSegments(translated);
-      setTranslatedManuscript(applyStructuredTranslations(manuscript, scope, translated));
+      setTranslationBasis({ source, scope: scope as TranslationScope, target: targetLanguage, createdAt: new Date().toISOString() });
       await refreshStoredData();
     } catch (error) {
       setTranslationError(error instanceof Error ? error.message : String(error));
@@ -203,35 +207,17 @@ export function IntegrationExecutionWorkspace() {
   }
 
   async function persistVariant(): Promise<void> {
-    if (!translatedManuscript) return;
-    const scope = currentTranslationScope();
+    if (!translationBasis) return;
+    const { source, scope, target, createdAt } = translationBasis;
+    if (useStudioStore.getState().manuscript.id !== source.id) return;
     if (scope.kind !== 'section' && scope.kind !== 'manuscript') return;
 
     setTranslationBusy(true);
     setTranslationError('');
     try {
-      const translatedState = scope.kind === 'section'
-        ? {
-            section: translatedManuscript.sections.find((section) => section.id === scope.id),
-            sourceManuscriptId: manuscript.id,
-          }
-        : {
-            title: translatedManuscript.title,
-            subtitle: translatedManuscript.subtitle,
-            abstract: translatedManuscript.abstract,
-            keywords: translatedManuscript.keywords,
-            sections: translatedManuscript.sections,
-            annotations: translatedManuscript.annotations,
-            sourceManuscriptId: manuscript.id,
-          };
-      await saveTranslationVariant({
-        manuscriptId: manuscript.id,
-        sourceLocale: manuscript.locale,
-        targetLocale: targetLanguage,
-        scope: { kind: scope.kind, id: scope.id },
-        translatedState,
-      });
-      await refreshStoredData();
+      addManuscriptTranslation(scope, target, translatedSegments, source, { method: 'machine', provider: 'DeepL', createdAt });
+      setTranslationBasis(null);
+      setTranslationSaved(true);
     } catch (error) {
       setTranslationError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -358,11 +344,12 @@ export function IntegrationExecutionWorkspace() {
         {translationScope === 'section' ? <small>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/current-section-13a016b")} {selectedSection?.title || 'Untitled section'}</small> : null}
         <div className="omi-integration-card__actions">
           <button type="button" className="studio-menu-primary-action" disabled={translationBusy} onClick={() => void translateScope()}>{translationBusy ? tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translating-ae47b9e") : tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translate-2be17aa")}</button>
-          <button type="button" className="studio-menu-secondary-action" disabled={translationBusy || !translatedManuscript} onClick={() => void persistVariant()}>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/save-as-language-variant-d2ce9b4")}</button>
+          <button type="button" className="studio-menu-secondary-action" disabled={translationBusy || !translationBasis || translationBasis.source.id !== manuscript.id} onClick={() => void persistVariant()}>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/save-as-language-variant-d2ce9b4")}</button>
         </div>
         {translationError ? <p className="omi-integration-error" role="alert">{translationError}</p> : null}
+        {translationSaved ? <p role="status">{tCatalog("/translationModel/savedHint")}</p> : null}
         {translatedSegments.length ? <div className="omi-translation-preview"><strong>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/translation-preview-cb9856a")}</strong>{translatedSegments.slice(0, 8).map((segment) => <p key={segment.id}>{segment.text}</p>)}{translatedSegments.length > 8 ? <small>+ {translatedSegments.length - 8} {tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/more-structured-segments-5be05a4")}</small> : null}</div> : null}
-        {variants.length ? <div className="omi-integration-record-list"><strong>{tCatalog("/uncataloguedUi/components-integrationexecutionworkspace/saved-variants-6880354")}</strong>{variants.map((variant) => <div key={variant.id} className="omi-integration-record"><span><b>{variant.targetLocale}</b> · {variant.scope.kind}{variant.scope.id ? ` · ${variant.scope.id}` : ''} · {new Date(variant.updatedAt).toLocaleString()}</span><button type="button" className="studio-menu-secondary-action" onClick={() => void removeVariant(variant.id)}><Trash2 size={14} aria-hidden="true" /> Delete</button></div>)}</div> : null}
+        {variants.length ? <div className="omi-integration-record-list"><strong>{tCatalog("/translationModel/legacyVariants")}</strong>{variants.map((variant) => <div key={variant.id} className="omi-integration-record"><span><b>{variant.targetLocale}</b> · {variant.scope.kind}{variant.scope.id ? ` · ${variant.scope.id}` : ''} · {new Date(variant.updatedAt).toLocaleString()}</span><button type="button" className="studio-menu-secondary-action" onClick={() => void removeVariant(variant.id)}><Trash2 size={14} aria-hidden="true" /> Delete</button></div>)}</div> : null}
       </section>
 
       <section className="omi-integration-workspace-card">

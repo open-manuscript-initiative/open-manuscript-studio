@@ -1,3 +1,14 @@
+## Unreleased — Translation Model
+
+- Add the experimental OMI-SPEC-170 Studio translation profile: portable language
+  variants, source/object alignment, draft/review and equivalence states, translator
+  notes, human/machine provenance, stale detection, explicit synchronization and
+  archival, shared revision history, and gated parallel/target HTML text proofs.
+- Add a responsive Translations menu in nine primary interface languages. DeepL
+  previews save into the portable manuscript model using the captured request basis.
+- Document profile scope and remaining canonical translation/publication work in
+  `docs/omi-spec-170-translation-model.md`; upstream 170 remains Reserved.
+
 ## 0.3.0-beta.12 — 2026-10-30
 
 - Packages the merged native security and installer fixes after beta.11 into new application builds.

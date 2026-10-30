@@ -41,7 +41,7 @@ export function buildStructuredTranslationPlan(
   }
 
   if (scope.kind === 'section') {
-    const section = manuscript.sections.find((candidate) => candidate.id === scope.id);
+    const section = allSections(manuscript.sections).find((candidate) => candidate.id === scope.id);
     if (section) collectSectionSegments(section, segments);
     return { scope, segments };
   }
@@ -71,21 +71,16 @@ export function applyStructuredTranslations(
   const next = structuredClone(manuscript);
 
   if (scope.kind === 'block') {
-    for (const section of next.sections) {
-      const index = section.blocks.findIndex((block) => block.id === scope.id);
-      if (index >= 0) {
-        const block = section.blocks[index];
-        if (block) section.blocks[index] = applyBlockTranslations(block, translatedById);
-        break;
-      }
+    for (const section of allSections(next.sections)) {
+      section.blocks = section.blocks.map((block) => applySelectedBlock(block, scope.id, translatedById));
     }
     return next;
   }
 
   if (scope.kind === 'section') {
-    next.sections = next.sections.map((section) =>
-      section.id === scope.id ? applySectionTranslations(section, translatedById) : section,
-    );
+    for (const section of allSections(next.sections)) {
+      if (section.id === scope.id) Object.assign(section, applySectionTranslations(section, translatedById));
+    }
     return next;
   }
 
@@ -112,9 +107,11 @@ export function applyStructuredTranslations(
 function collectSectionSegments(section: OmiSection, output: TranslationSegment[]): void {
   addStringSegment(output, `section:${section.id}:title`, section.title, 'section-title');
   section.blocks.forEach((block) => collectBlockSegments(block, output));
+  section.children?.forEach((child) => collectSectionSegments(child, output));
 }
 
 function collectBlockSegments(block: OmiBlock, output: TranslationSegment[]): void {
+  block.children?.forEach((child) => collectBlockSegments(child, output));
   if (block.visual) {
     if (block.visual.kind === 'image') {
       addStringSegment(output, `visual:${block.id}:alt`, block.visual.alt, 'image-alt');
@@ -149,6 +146,7 @@ function applySectionTranslations(
     ...section,
     title: translatedById.get(`section:${section.id}:title`) ?? section.title,
     blocks: section.blocks.map((block) => applyBlockTranslations(block, translatedById)),
+    ...(section.children ? { children: section.children.map((child) => applySectionTranslations(child, translatedById)) } : {}),
   };
 }
 
@@ -156,6 +154,7 @@ function applyBlockTranslations(
   block: OmiBlock,
   translatedById: Map<string, string>,
 ): OmiBlock {
+  block = { ...block, ...(block.children ? { children: block.children.map((child) => applyBlockTranslations(child, translatedById)) } : {}) };
   if (block.visual) {
     const visual = { ...block.visual };
     if (visual.kind === 'image') {
@@ -241,5 +240,18 @@ function addStringSegment(
 
 function findBlock(manuscript: OmiManuscript, blockId: string | undefined): OmiBlock | undefined {
   if (!blockId) return undefined;
-  return manuscript.sections.flatMap((section) => section.blocks).find((block) => block.id === blockId);
+  return allSections(manuscript.sections).flatMap((section) => allBlocks(section.blocks)).find((block) => block.id === blockId);
+}
+
+function allSections(sections: OmiSection[]): OmiSection[] {
+  return sections.flatMap((section) => [section, ...allSections(section.children ?? [])]);
+}
+
+function allBlocks(blocks: OmiBlock[]): OmiBlock[] {
+  return blocks.flatMap((block) => [block, ...allBlocks(block.children ?? [])]);
+}
+
+function applySelectedBlock(block: OmiBlock, id: string | undefined, translated: Map<string, string>): OmiBlock {
+  if (block.id === id) return applyBlockTranslations(block, translated);
+  return block.children ? { ...block, children: block.children.map((child) => applySelectedBlock(child, id, translated)) } : block;
 }

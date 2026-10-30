@@ -8095,3 +8095,175 @@ msgstr "Nombre, archivo, lugar o palabra clave"
 msgctxt "/researchModules/history-archives-siusa-search-panel/copyByLocale/search"
 msgid "Search SIUSA"
 msgstr "Buscar en SIUSA"
+
+msgctxt "/translationModel/title"
+msgid "Translations"
+msgstr "Traducciones"
+
+msgctxt "/translationModel/description"
+msgid "Create and review aligned language variants. Source edits flag affected translations for review; target text remains editable. Variants are saved inside the OMI manuscript."
+msgstr "Cree y revise versiones lingüísticas alineadas. Los cambios en la fuente señalan las traducciones que requieren revisión; el texto de destino sigue siendo editable. Las versiones se guardan en el manuscrito OMI."
+
+msgctxt "/translationModel/targetLanguage"
+msgid "Target language (BCP 47)"
+msgstr "Idioma de destino (BCP 47)"
+
+msgctxt "/translationModel/scope"
+msgid "Scope"
+msgstr "Alcance"
+
+msgctxt "/translationModel/manuscript"
+msgid "Whole manuscript"
+msgstr "Manuscrito completo"
+
+msgctxt "/translationModel/section"
+msgid "Selected section"
+msgstr "Sección seleccionada"
+
+msgctxt "/translationModel/block"
+msgid "Block"
+msgstr "Bloque"
+
+msgctxt "/translationModel/create"
+msgid "Create translation"
+msgstr "Crear traducción"
+
+msgctxt "/translationModel/empty"
+msgid "No language variants yet."
+msgstr "Todavía no hay versiones lingüísticas."
+
+msgctxt "/translationModel/variant"
+msgid "Language variant"
+msgstr "Versión lingüística"
+
+msgctxt "/translationModel/reviewed"
+msgid "Reviewed"
+msgstr "Revisado"
+
+msgctxt "/translationModel/draft"
+msgid "Draft"
+msgstr "Borrador"
+
+msgctxt "/translationModel/stale"
+msgid "Source changed"
+msgstr "Fuente modificada"
+
+msgctxt "/translationModel/current"
+msgid "Current source"
+msgstr "Fuente actual"
+
+msgctxt "/translationModel/missing"
+msgid "Source missing"
+msgstr "Fuente ausente"
+
+msgctxt "/translationModel/added"
+msgid "New source segments"
+msgstr "Nuevos segmentos fuente"
+
+msgctxt "/translationModel/synchronize"
+msgid "Update source alignment"
+msgstr "Actualizar alineación"
+
+msgctxt "/translationModel/syncHint"
+msgid "Updating the alignment keeps target text and translator notes. Changed segments return to draft. Missing source segments remain available until you archive them."
+msgstr "La actualización conserva el texto de destino y las notas. Los segmentos modificados vuelven a borrador. Los segmentos fuente ausentes siguen disponibles hasta archivarlos."
+
+msgctxt "/translationModel/parallelExport"
+msgid "Parallel text HTML"
+msgstr "Texto paralelo HTML"
+
+msgctxt "/translationModel/targetExport"
+msgid "Target text HTML"
+msgstr "Texto de destino HTML"
+
+msgctxt "/translationModel/remove"
+msgid "Remove variant"
+msgstr "Eliminar versión"
+
+msgctxt "/translationModel/removeConfirm"
+msgid "Remove this language variant? It remains available in revision history."
+msgstr "¿Eliminar esta versión lingüística? Seguirá disponible en el historial."
+
+msgctxt "/translationModel/sourceText"
+msgid "Source text"
+msgstr "Texto fuente"
+
+msgctxt "/translationModel/targetText"
+msgid "Target text"
+msgstr "Texto de destino"
+
+msgctxt "/translationModel/notes"
+msgid "Translator notes"
+msgstr "Notas del traductor"
+
+msgctxt "/translationModel/equivalence"
+msgid "Relationship"
+msgstr "Relación"
+
+msgctxt "/translationModel/unassessed"
+msgid "Not assessed"
+msgstr "Sin evaluar"
+
+msgctxt "/translationModel/equivalent"
+msgid "Equivalent translation"
+msgstr "Traducción equivalente"
+
+msgctxt "/translationModel/adapted"
+msgid "Intentional adaptation"
+msgstr "Adaptación intencional"
+
+msgctxt "/translationModel/save"
+msgid "Save changes"
+msgstr "Guardar cambios"
+
+msgctxt "/translationModel/saved"
+msgid "Translation saved."
+msgstr "Traducción guardada."
+
+msgctxt "/translationModel/markReviewed"
+msgid "Mark as reviewed"
+msgstr "Marcar como revisado"
+
+msgctxt "/translationModel/previous"
+msgid "Previous"
+msgstr "Anterior"
+
+msgctxt "/translationModel/next"
+msgid "Next"
+msgstr "Siguiente"
+
+msgctxt "/translationModel/human"
+msgid "Human translation"
+msgstr "Traducción humana"
+
+msgctxt "/translationModel/machine"
+msgid "Machine draft"
+msgstr "Borrador automático"
+
+msgctxt "/translationModel/archive"
+msgid "Archive missing alignment"
+msgstr "Archivar alineación ausente"
+
+msgctxt "/translationModel/archived"
+msgid "Archived alignments"
+msgstr "Alineaciones archivadas"
+
+msgctxt "/translationModel/invalid"
+msgid "This translation profile is unsupported or damaged. The original data has been retained."
+msgstr "Este perfil de traducción no es compatible o está dañado. Se han conservado los datos originales."
+
+msgctxt "/translationModel/actionFailed"
+msgid "Unable to save. Check that the languages are distinct and valid, the source still exists, and the translation is ready for the requested review."
+msgstr "No se pudo guardar. Compruebe los idiomas válidos y distintos, la existencia de la fuente y el estado de revisión."
+
+msgctxt "/translationModel/exportFailed"
+msgid "Unable to export. Synchronize and review every segment first."
+msgstr "No se pudo exportar. Actualice y revise primero todos los segmentos."
+
+msgctxt "/translationModel/legacyVariants"
+msgid "Earlier server variants"
+msgstr "Versiones anteriores del servidor"
+
+msgctxt "/translationModel/savedHint"
+msgid "Translation saved. Open Translations to edit and review the language variant."
+msgstr "Traducción guardada. Abra Traducciones para editar y revisar la versión lingüística."

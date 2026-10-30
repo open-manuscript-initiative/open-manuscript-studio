@@ -51,15 +51,17 @@ for (const locale of locales) {
   const entries = flatten(dictionary);
   const keys = new Set(entries.map(([key]) => key));
 
-  // Research-module and supplemental UI catalogs are migrating in the primary
-  // locales first; other runtime dictionaries use the English copy fallback.
+  // Research-module, supplemental UI and experimental translation-workflow
+  // catalogs ship in the primary locales first. Other runtime dictionaries
+  // use the existing English copy fallback for these namespaces.
   const expectedKeys = primaryLocales.has(locale)
     ? referenceKeys
     : new Set(
         [...referenceKeys].filter(
           (key) =>
             !key.startsWith('researchModules.') &&
-            !key.startsWith('uncataloguedUi.'),
+            !key.startsWith('uncataloguedUi.') &&
+            !key.startsWith('translationModel.'),
         ),
       );
   const missing = [...expectedKeys].filter((key) => !keys.has(key));

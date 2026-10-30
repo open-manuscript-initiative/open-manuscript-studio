@@ -32,7 +32,7 @@ if(referenceByPointer.size!==referenceEntries.length) throw new Error(`${referen
 const rows=[]; let structuralFailures=0; let completenessFailures=0;
 for(const locale of localeDirs){
  const entries=await readEntries(locale); const byPointer=new Map(entries.map((entry)=>[entry.pointer,entry])); const overlay=await loadTranslationOverlay(root,locale);
- const localePointers=primaryLocales.has(locale)?expectedPointers:new Set([...expectedPointers].filter((pointer)=>!pointer.startsWith('/researchModules/')&&!pointer.startsWith('/uncataloguedUi/'))); const duplicates=entries.length-byPointer.size; const missing=[...localePointers].filter((pointer)=>!byPointer.has(pointer)); const extra=[...byPointer.keys()].filter((pointer)=>!localePointers.has(pointer)); const localeAllowlist=new Set(identicalAllowlistByLocale[locale]??[]);
+ const localePointers=primaryLocales.has(locale)?expectedPointers:new Set([...expectedPointers].filter((pointer)=>!pointer.startsWith('/researchModules/')&&!pointer.startsWith('/uncataloguedUi/')&&!pointer.startsWith('/translationModel/'))); const duplicates=entries.length-byPointer.size; const missing=[...localePointers].filter((pointer)=>!byPointer.has(pointer)); const extra=[...byPointer.keys()].filter((pointer)=>!localePointers.has(pointer)); const localeAllowlist=new Set(identicalAllowlistByLocale[locale]??[]);
  const empty=[]; const stale=[]; const identical=[]; let reviewedOverlay=0;
  for(const [pointer,referenceEntry] of referenceByPointer){
   if(!localePointers.has(pointer)) continue;

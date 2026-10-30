@@ -9,6 +9,7 @@ import {
   Inbox,
   LayoutTemplate,
   Library,
+  Languages,
   Menu,
   Printer,
   Save,
@@ -32,7 +33,7 @@ import {
 } from '../app/documentCloseState';
 import { closeCurrentDocument } from '../app/documentLifecycle';
 import { useStudioStore } from '../app/useStudioStore';
-import { useTranslation } from '../i18n';
+import { translateCatalog, useTranslation } from '../i18n';
 import { getLocalFileLabels, type LocalFileLabels } from '../i18n/nativeStorageTranslations';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
 import { getStudioMenuSupplementalCopy } from '../i18n/studioMenuSupplementalTranslations';
@@ -81,8 +82,10 @@ import { ReferencesPanel } from './ReferencesPanel';
 import { SectionNumberingControl } from './SectionNumberingControl';
 import { ScholarlyMetadataPanel } from './ScholarlyMetadataPanel';
 import { SectionStructurePanel } from './SectionStructurePanel';
+import { TranslationPanel } from './TranslationPanel';
 
 type StudioMenuView =
+  | 'translations'
   | 'document'
   | 'manuscript'
   | 'notes'
@@ -122,6 +125,7 @@ export function StudioMenu({
   externalContentActive = false,
 }: StudioMenuProps) {
   const { t, locale } = useTranslation();
+  const manuscriptId = useStudioStore((state) => state.manuscript.id);
   const publicationCopy = getPublicationProfileCopy(locale);
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
   const editorialWorkflowLabel = supplementalCopy.editorialWorkspace;
@@ -213,6 +217,7 @@ export function StudioMenu({
               <MenuButton active={activeView === 'document'} icon={<BookOpen size={18} aria-hidden="true" />} label={t('studio.navigation.document')} onClick={() => setActiveView('document')} />
               <MenuButton active={activeView === 'manuscript'} icon={<FileText size={18} aria-hidden="true" />} label={t('studio.navigation.manuscript')} onClick={() => setActiveView('manuscript')} />
               <MenuButton active={activeView === 'contributors'} icon={<Users size={18} aria-hidden="true" />} label={t('studio.navigation.contributors')} onClick={() => setActiveView('contributors')} />
+              <MenuButton active={activeView === 'translations'} icon={<Languages size={18} aria-hidden="true" />} label={translateCatalog(locale, '/translationModel/title')} onClick={() => setActiveView('translations')} />
               <MenuButton active={activeView === 'notes'} icon={<StickyNote size={18} aria-hidden="true" />} label={t('studio.navigation.notes')} onClick={() => setActiveView('notes')} />
               <MenuButton active={activeView === 'references'} icon={<Library size={18} aria-hidden="true" />} label={t('studio.navigation.references')} onClick={() => setActiveView('references')} />
               {navigationAfterReferences}
@@ -240,6 +245,7 @@ export function StudioMenu({
             {activeView === 'document' ? <DocumentMenuView documentCloseAction={documentCloseAction} onCreated={returnHome} /> : null}
             {activeView === 'manuscript' ? <ManuscriptDataView onNavigate={returnHome} /> : null}
             {activeView === 'contributors' ? <PropertiesPanel /> : null}
+            {activeView === 'translations' ? <TranslationPanel key={manuscriptId} /> : null}
             {activeView === 'notes' ? <NotesPanel onNavigate={returnHome} /> : null}
             {activeView === 'references' ? <ReferencesView /> : null}
             {activeView === 'editorial-workflow' ? <NativeEditorialWorkflowPanel /> : null}

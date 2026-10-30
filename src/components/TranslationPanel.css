@@ -1,0 +1,10 @@
+.omi-translation-panel { display: grid; gap: 1rem; min-width: 0; }
+.omi-translation-panel label { display: grid; gap: .4rem; min-width: 0; }
+.omi-translation-panel input, .omi-translation-panel select, .omi-translation-panel textarea { box-sizing: border-box; max-width: 100%; width: 100%; font: inherit; }
+.omi-translation-panel textarea { min-height: 6rem; resize: vertical; }
+.omi-translation-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .65rem; }
+.omi-translation-controls button { flex: 0 0 auto; width: auto; max-width: 100%; }
+.omi-translation-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.omi-translation-columns p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.omi-translation-alignment { display: grid; gap: .7rem; border-top: 1px solid var(--border-color, #d9dee5); padding: 1rem 0; min-width: 0; }
+@media (max-width: 650px) { .omi-translation-columns { grid-template-columns: minmax(0, 1fr); } }

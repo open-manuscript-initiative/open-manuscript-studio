@@ -12,6 +12,7 @@ import type {
 } from '../types/omi';
 export type { OmiFileFormatEnvelope } from '../types/omi';
 import { validateOmiManuscriptSchema } from './omiSchemaValidation';
+import { TRANSLATION_EXTENSION, TRANSLATION_PROFILE, validateTranslationModel } from '../model/translation';
 
 export type PortableOmiState = Omit<OmiManuscriptState, 'schema'> & {
   schema: OmiManuscriptSchemaUri;
@@ -319,6 +320,7 @@ export function assertPortableOmiManuscript(
 
   validateTombstones(value.tombstones, indexes.all);
   validateReferences(value, indexes);
+  validateTranslationExtension(value);
   validateHistory(value, indexes);
   rejectCredentialFields(value);
 }
@@ -348,6 +350,14 @@ function validateSection(
   optionalArray(value.children, `${path}/children`).forEach((child, index) =>
     validateSection(child, `${path}/children/${index}`, indexes),
   );
+}
+
+function validateTranslationExtension(value: Record<string, unknown>): void {
+  const model = isRecord(value.extensions) ? value.extensions[TRANSLATION_EXTENSION] : undefined;
+  // Unknown profiles are preserved as opaque extension data, never interpreted.
+  if (!isRecord(model) || model.profile !== TRANSLATION_PROFILE) return;
+  try { validateTranslationModel(model, String(value.id)); }
+  catch (error) { invalid(error instanceof Error ? error.message : 'Invalid Studio translation model.'); }
 }
 
 function validateSectionLayout(
@@ -535,6 +545,7 @@ function validateHistory(
         `/revisionHistory/revisions/${index}/actorAgentId`,
       );
     }
+    if (isRecord(record.snapshot) && isRecord(record.snapshot.state)) validateTranslationExtension(record.snapshot.state);
   });
 
   if (

@@ -468,6 +468,8 @@ export interface OmiSection {
   id: string;
   title: string;
   blocks: OmiBlock[];
+  /** Nested sections accepted by the canonical portable schema. */
+  children?: OmiSection[];
   /** Optional section-scoped publication layout retained in portable OMI state. */
   layout?: OmiSectionLayout;
 }
