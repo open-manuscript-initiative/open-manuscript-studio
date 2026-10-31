@@ -10,6 +10,7 @@ import { saveExportText } from '../services/exportFileDelivery';
 import { getAssetPayload } from '../services/assetRepository';
 import type { OmiManuscript } from '../types/omi';
 import './ValidationPanel.css';
+import { ModelSupportPanel } from './ModelSupportPanel';
 
 export function ValidationPanel({ onNavigate }: { onNavigate: () => void }) {
   const { locale } = useTranslation();
@@ -56,7 +57,7 @@ export function ValidationPanel({ onNavigate }: { onNavigate: () => void }) {
   const findings = report?.diagnostics.filter((item) => filter === 'all' || item.severity === filter) ?? [];
   const totalPages = Math.max(1, Math.ceil(findings.length / 20));
   const currentPage = Math.min(page, totalPages - 1);
-  return <section className="panel omi-validation-panel" aria-labelledby="omi-validation-title">
+  return <><section className="panel omi-validation-panel" aria-labelledby="omi-validation-title">
     <h3 id="omi-validation-title">{copy('title')}</h3>
     <p>{copy('description')}</p>
     <div className="omi-validation-controls">
@@ -97,5 +98,5 @@ export function ValidationPanel({ onNavigate }: { onNavigate: () => void }) {
         <button type="button" disabled={currentPage + 1 >= totalPages} onClick={() => setPage(currentPage + 1)}>{copy('next')}</button>
       </div> : null}
     </>}
-  </section>;
+  </section><ModelSupportPanel /></>;
 }

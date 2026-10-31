@@ -10,7 +10,7 @@ import { ensureManuscriptRevisionStateDigests } from '../model/revisionIntegrity
 import { buildDocxExport } from '../services/exportDocx';
 import { buildOdtExport } from '../services/exportOdt';
 import { buildEpubExport } from '../services/exportEpub';
-import { saveExportBlob, saveExportText, type ExportDeliveryResult } from '../services/exportFileDelivery';
+import { saveExportBlob, type ExportDeliveryResult } from '../services/exportFileDelivery';
 import {
   buildHtmlPackage,
   OMI_HTML_PACKAGE_VERSION,
@@ -44,6 +44,9 @@ import { buildOmiContainer } from '../services/omiContainer';
 import { savePublicationArtifactWithBuildSidecar } from '../services/publicationBuildSidecar';
 import { CustomExportPanel } from './CustomExportPanel';
 import { LongTaskStatus } from './LongTaskStatus';
+import { ExchangeReportView } from './ExchangeReportView';
+import { beginExportReport, reportExportArtifact } from '../services/exchangeSession';
+import type { ExchangeReport } from '../model/exchange';
 
 type ExportId = 'omi' | 'omi-json' | 'jats' | 'html' | 'docx' | 'odt' | 'custom' | 'idml' | 'xtg' | 'mif' | 'sla' | 'latex' | 'epub' | 'pdf';
 type ExportGroupId = 'portable' | 'publication';
@@ -72,6 +75,7 @@ export function ExportFormatsPanel() {
   const [busy, setBusy] = useState<ExportId | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [exchangeReport, setExchangeReport] = useState<ExchangeReport | null>(null);
   const customCopy = locale === 'hu'
     ? { label: 'Sablonalapú export', description: 'Egyéni blokksorrenddel, tipográfiával és saját fej-/lábléccel készített DOCX, PDF vagy HTML. Nem azonos a teljes kézirat DOCX-szel, a szemantikus HTML5-csomaggal vagy az alap PDF-exporttal.' }
     : locale === 'de'
@@ -105,25 +109,43 @@ export function ExportFormatsPanel() {
     ? copy.pdfInteractiveDescription
     : copy.pdfPrintDescription;
 
-  const reportDelivery = (delivery: ExportDeliveryResult): void => {
-    if (!delivery.saved) {
-      setNotice(copy.cancelled);
-      return;
-    }
-    setNotice(delivery.path ? `${copy.saved} ${delivery.path}` : copy.saved);
-  };
-
   const run = async (id: Exclude<ExportId, 'custom'>): Promise<void> => {
     if (mobile && !MOBILE_EXPORT_IDS.has(id)) return;
     setError('');
     setNotice('');
     setBusy(id);
+    setExchangeReport(null);
+    let job: ExchangeReport | null = null;
+    const recordAdapterDiagnostics = (result: unknown) => {
+      if (!job || !result || typeof result !== 'object') return;
+      if ('warnings' in result && Array.isArray(result.warnings)) {
+        job = { ...job, events: [...job.events, ...result.warnings.filter((item): item is string => typeof item === 'string').map((message) => ({
+          code: 'ADAPTER_WARNING', severity: 'warning' as const, disposition: 'unknown' as const,
+          sourceLocator: '/', feature: `${id}-mapping`, consequence: message,
+        }))] };
+      }
+    };
+    const inspectArtifact = async (blob: Blob) => {
+      if (!job) throw new Error('MAPPING_UNAVAILABLE');
+      job = await reportExportArtifact(job, blob);
+      if (job.status === 'failed') throw new Error('OUTPUT_INVALID');
+    };
+    const reportDelivery = (delivery: ExportDeliveryResult): void => {
+      if (job) { job = { ...job, status: delivery.saved ? job.status : 'cancelled' }; setExchangeReport(job); }
+      setNotice(!delivery.saved ? copy.cancelled : delivery.path ? `${copy.saved} ${delivery.path}` : copy.saved);
+    };
+    const deliverBlob = async (blob: Blob, fileName: string) => {
+      await inspectArtifact(blob);
+      return saveExportBlob(blob, fileName);
+    };
+    const deliverText = async (value: string, fileName: string, mediaType: string) => deliverBlob(new Blob([value], { type: mediaType }), fileName);
     await new Promise<void>((resolve) => {
       window.setTimeout(resolve, 0);
     });
     try {
       checkpoint('export');
       const manuscript = useStudioStore.getState().manuscript;
+      job = await beginExportReport(id, JSON.stringify(manuscript));
       switch (id) {
         case 'omi': {
           await externalizeActiveManuscriptAssets();
@@ -133,11 +155,12 @@ export function ExportFormatsPanel() {
           if (enriched !== current) useStudioStore.setState({ manuscript: enriched });
           const result = await buildOmiContainer(enriched);
           if (!result.validForExport) throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
-          reportDelivery(await saveExportBlob(result.blob, result.fileName));
+          job = await beginExportReport(id, JSON.stringify(enriched));
+          reportDelivery(await deliverBlob(result.blob, result.fileName));
           break;
         }
         case 'omi-json':
-          reportDelivery(await saveExportText(serializeOmiJson(manuscript), omiJsonFileName(manuscript), 'application/vnd.openmanuscript+json;charset=utf-8'));
+          reportDelivery(await deliverText(serializeOmiJson(manuscript), omiJsonFileName(manuscript), 'application/vnd.openmanuscript+json;charset=utf-8'));
           break;
         case 'jats': {
           const profile = resolvePublicationProfile(manuscript);
@@ -154,6 +177,7 @@ export function ExportFormatsPanel() {
             throw new Error(jatsPublicationReleaseFailureMessage(release));
           }
           const fileName = jatsFileName(manuscript);
+          await inspectArtifact(new Blob([result.xml]));
           const saved = await savePublicationArtifactWithBuildSidecar({
             manuscript,
             profile,
@@ -173,6 +197,7 @@ export function ExportFormatsPanel() {
           const profile = resolvePublicationProfile(manuscript);
           const result = await buildHtmlPackage(manuscript, profile);
           if (!result.validForExport) throw new Error(result.diagnostics.filter((item) => item.severity === 'error').map((item) => item.message).join('\n'));
+          await inspectArtifact(result.blob);
           const saved = await savePublicationArtifactWithBuildSidecar({
             manuscript,
             profile,
@@ -188,43 +213,51 @@ export function ExportFormatsPanel() {
         }
         case 'docx': {
           const result = buildDocxExport(manuscript);
-          reportDelivery(await saveExportBlob(result.blob, result.fileName));
+          recordAdapterDiagnostics(result);
+          reportDelivery(await deliverBlob(result.blob, result.fileName));
           break;
         }
         case 'odt': {
           const result = buildOdtExport(manuscript);
-          reportDelivery(await saveExportBlob(result.blob, result.fileName));
+          recordAdapterDiagnostics(result);
+          reportDelivery(await deliverBlob(result.blob, result.fileName));
           if (result.warnings.length) setNotice((current) => `${current} ${result.warnings.join(' ')}`.trim());
           break;
         }
         case 'idml': {
           const result = buildIdmlExport(manuscript, loadPublicationStyle());
-          reportDelivery(await saveExportBlob(result.blob, result.fileName));
+          recordAdapterDiagnostics(result);
+          reportDelivery(await deliverBlob(result.blob, result.fileName));
           break;
         }
         case 'xtg': {
           const result = buildXtgExport(manuscript);
-          reportDelivery(await saveExportBlob(result.blob, result.fileName));
+          recordAdapterDiagnostics(result);
+          reportDelivery(await deliverBlob(result.blob, result.fileName));
           break;
         }
         case 'mif': {
           const result = buildMifExport(manuscript);
-          reportDelivery(await saveExportBlob(result.blob, result.fileName));
+          recordAdapterDiagnostics(result);
+          reportDelivery(await deliverBlob(result.blob, result.fileName));
           break;
         }
         case 'sla': {
           const result = buildSlaExport(manuscript);
-          reportDelivery(await saveExportBlob(result.blob, result.fileName));
+          recordAdapterDiagnostics(result);
+          reportDelivery(await deliverBlob(result.blob, result.fileName));
           break;
         }
         case 'latex': {
           const result = buildLatexExport(manuscript);
-          reportDelivery(await saveExportBlob(result.blob, result.fileName));
+          recordAdapterDiagnostics(result);
+          reportDelivery(await deliverBlob(result.blob, result.fileName));
           break;
         }
         case 'epub': {
           const result = buildEpubExport(manuscript);
-          reportDelivery(await saveExportBlob(result.blob, result.fileName));
+          recordAdapterDiagnostics(result);
+          reportDelivery(await deliverBlob(result.blob, result.fileName));
           break;
         }
         case 'pdf': {
@@ -237,6 +270,7 @@ export function ExportFormatsPanel() {
             pdfContentMode,
           );
           const artifact = await renderPdfArtifact(html, fileName);
+          await inspectArtifact(artifact.blob);
           const saved = await savePublicationArtifactWithBuildSidecar({
             manuscript,
             profile,
@@ -256,6 +290,10 @@ export function ExportFormatsPanel() {
         }
       }
     } catch (cause) {
+      if (job) setExchangeReport({ ...job, status: 'failed', events: [...job.events, {
+        code: 'EXPORT_EXECUTION_FAILED', severity: 'error', disposition: 'unverifiable',
+        sourceLocator: '/', feature: 'output', consequence: 'Artifact generation or delivery failed; the source remains available.',
+      }] });
       setError(cause instanceof Error && cause.message ? cause.message : copy.failed);
     } finally {
       setBusy(null);
@@ -283,6 +321,7 @@ export function ExportFormatsPanel() {
       {busy ? <LongTaskStatus message={busyFormat ? `${busyFormat.label} — ${copy.preparing}` : copy.preparing} /> : null}
       {notice ? <p className="studio-settings-hint" role="status">{notice}</p> : null}
       {error ? <div className="studio-export-error" role="alert">{error}</div> : null}
+      {exchangeReport ? <ExchangeReportView report={exchangeReport} /> : null}
     </section>
   );
 }

@@ -1,5 +1,7 @@
 # Open Manuscript Studio
 
+The Validation view includes experimental OMI-SPEC-350 capability disclosures and a local model self-assessment. DOCX/ODT import reviews and standard exports expose OMI-SPEC-340 transformation reports; server collaboration adds OMI-SPEC-190 scoped decisions and live reauthorization. See [ADR-028](docs/architecture/adr-028-draft-exchange-capability-permission-models.md) for supported paths, report retention, verification commands and the explicit gaps. These Draft profiles do not assert full or independently verified conformance.
+
 **Open Manuscript Studio** is the open-source reference implementation of the **Open Manuscript Initiative (OMI)**: a structured, multilingual scholarly authoring environment for writing, reviewing, exchanging and preparing manuscripts for publication without locking the manuscript to one application, operating system or publishing platform.
 
 > **Current status:** `0.3.0-beta.12` · cross-platform quality beta.

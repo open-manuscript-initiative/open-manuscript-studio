@@ -58,6 +58,16 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Record Draft model self-assessment
+        run: npm run conformance:draft-models
+
+      - name: Upload Draft model evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: draft-model-assessment-${{ github.run_attempt }}
+          path: test-results/draft-model-assessment.json
+          retention-days: 14
+
       - name: Run release hardening unit gates
         run: npm run test:release-hardening
 

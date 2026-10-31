@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 
 import { prisma } from '../lib/prisma.js';
+import { collaborationDecision } from './collaborationPolicy.js';
 
 export class CollaborationTicketError extends Error {
   constructor(message: string, readonly code: 'FORBIDDEN' | 'NOT_FOUND') {
@@ -15,9 +16,10 @@ const TOKEN_PATTERN = /^[A-Za-z0-9_-]{32,128}$/u;
 export async function issueCollaborationConnectionTicket(userId: string, documentId: string) {
   const member = await prisma.collaborationMember.findUnique({
     where: { documentId_userId: { documentId, userId } },
-    select: { role: true, revokedAt: true },
+    select: { role: true, revokedAt: true, user: { select: { status: true } } },
   });
-  if (!member || member.revokedAt) {
+  if (!collaborationDecision(member ? { principalId: userId, documentId, role: member.role, revoked: !!member.revokedAt || member.user.status !== 'ACTIVE' } : null,
+    { principalId: userId, documentId, action: 'read' }).allowed) {
     throw new CollaborationTicketError('You do not have access to this document.', 'FORBIDDEN');
   }
   const token = randomBytes(32).toString('base64url');
@@ -33,7 +35,7 @@ export async function issueCollaborationConnectionTicket(userId: string, documen
   return {
     token,
     documentId,
-    role: member.role,
+    role: member!.role,
     expiresAt: expiresAt.toISOString(),
     webSocketPath: '/collaboration/ws',
   };
@@ -49,10 +51,24 @@ export async function authorizeCollaborationConnectionTicket(token: string, docu
 
   const member = await prisma.collaborationMember.findUnique({
     where: { documentId_userId: { documentId, userId: ticket.userId } },
-    select: { role: true, revokedAt: true },
+    select: { role: true, revokedAt: true, user: { select: { status: true } } },
   });
-  if (!member || member.revokedAt) return null;
-  return { userId: ticket.userId, role: member.role };
+  if (!collaborationDecision(member ? { principalId: ticket.userId, documentId, role: member.role, revoked: !!member.revokedAt || member.user.status !== 'ACTIVE' } : null,
+    { principalId: ticket.userId, documentId, action: 'read' }).allowed) return null;
+  return { userId: ticket.userId, role: member!.role, documentId, expiresAt: ticket.expiresAt.getTime() };
+}
+
+/** Current authoritative evidence, never client role metadata or portable ACLs. */
+export async function reauthorizeCollaborationSession(context: { userId: string; documentId: string; expiresAt: number }, documentId: string) {
+  if (context.documentId !== documentId || !Number.isFinite(context.expiresAt) || context.expiresAt <= Date.now()) return null;
+  const member = await prisma.collaborationMember.findUnique({
+    where: { documentId_userId: { documentId, userId: context.userId } },
+    select: { role: true, revokedAt: true, user: { select: { status: true } } },
+  });
+  const evidence = member ? { principalId: context.userId, documentId, role: member.role,
+    revoked: !!member.revokedAt || member.user.status !== 'ACTIVE', expiresAt: context.expiresAt } : null;
+  if (!collaborationDecision(evidence, { principalId: context.userId, documentId, action: 'read' }).allowed) return null;
+  return { readOnly: !collaborationDecision(evidence, { principalId: context.userId, documentId, action: 'edit-content' }).allowed };
 }
 
 export async function revokeCollaborationConnectionTickets(documentId: string, userId: string) {

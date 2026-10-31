@@ -7,6 +7,7 @@ import { closeCollaborationDocumentConnections } from '../collaboration/collabor
 import { identityPrisma } from '../lib/identityPrisma.js';
 import { prisma } from '../lib/prisma.js';
 import { revokeCollaborationConnectionTickets } from './collaborationTicketService.js';
+import { collaborationDecision } from './collaborationPolicy.js';
 
 export type CollaborationInviteRole = 'EDITOR' | 'AUTHOR' | 'VIEWER';
 const MAX_SHARED_PACKAGE_BYTES = 100 * 1024 * 1024;
@@ -481,7 +482,8 @@ export async function requireActiveMember(documentId: string, userId: string) {
     where: { documentId_userId: { documentId, userId } },
     select: { id: true, role: true, revokedAt: true },
   });
-  if (!member || member.revokedAt) {
+  if (!member || !collaborationDecision({ principalId: userId, documentId, role: member.role, revoked: !!member.revokedAt },
+    { principalId: userId, documentId, action: 'read' }).allowed) {
     throw new CollaborationInvitationError('You do not have access to this document.', 'FORBIDDEN');
   }
   return member;
@@ -489,7 +491,8 @@ export async function requireActiveMember(documentId: string, userId: string) {
 
 async function requireInviteAuthority(documentId: string, userId: string) {
   const member = await requireActiveMember(documentId, userId);
-  if (member.role !== 'OWNER' && member.role !== 'EDITOR' && member.role !== 'AUTHOR') {
+  if (!collaborationDecision({ principalId: userId, documentId, role: member.role, revoked: !!member.revokedAt },
+    { principalId: userId, documentId, action: 'invite' }).allowed) {
     throw new CollaborationInvitationError('You do not have permission to invite collaborators.', 'FORBIDDEN');
   }
   return member;

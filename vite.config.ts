@@ -1,10 +1,12 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 const tauriDevHost = process.env.TAURI_DEV_HOST;
+process.env.VITE_DEPENDENCY_DIGEST = createHash('sha256').update(readFileSync(new URL('./package-lock.json', import.meta.url))).digest('hex');
 
 const androidConfig = JSON.parse(
   readFileSync(new URL('./src-tauri/tauri.android.conf.json', import.meta.url), 'utf8'),

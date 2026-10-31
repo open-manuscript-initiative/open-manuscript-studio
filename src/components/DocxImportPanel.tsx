@@ -19,6 +19,11 @@ import {
 } from '../services/docxImportStrategy';
 import { PdfImportPanel } from './PdfImportPanel';
 import { ExternalDocumentSourceReview } from './ExternalDocumentSourceReview';
+import { ExchangeReportView } from './ExchangeReportView';
+import { OfficeImportPreparationError, prepareOfficeImport, type OfficeImportReceipt } from '../services/exchangeSession';
+import { finishExchangeReport } from '../model/exchange';
+import { useStudioStore } from '../app/useStudioStore';
+import { exchangeCopy } from '../i18n/exchange';
 
 interface DocxImportPanelProps {
   onImported?: () => void;
@@ -36,6 +41,9 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
   const [pendingPlan, setPendingPlan] = useState<DocxManuscriptImportPlan | null>(null);
   const [source, setSource] = useState('');
   const [selfAuthoredExternal, setSelfAuthoredExternal] = useState(false);
+  const [receipt, setReceipt] = useState<OfficeImportReceipt | null>(null);
+  const base = useRef(useStudioStore.getState().manuscript);
+  const [failedReceipt, setFailedReceipt] = useState<OfficeImportPreparationError | null>(null);
 
   async function handleFile(file: File | undefined): Promise<void> {
     if (!file || parsing) return;
@@ -44,22 +52,27 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
     setLargeDocumentMode(false);
     setError(null);
     setPendingPlan(null);
+    setReceipt(null); setFailedReceipt(null);
+    base.current = useStudioStore.getState().manuscript;
     setSelfAuthoredExternal(false);
 
     try {
       await yieldToBrowser();
-      const plan = await parseDocxForStudio(file, {
+      const prepared = await prepareOfficeImport(file, 'docx', (input) => parseDocxForStudio(input, {
         onProgress: ({ stage, largeDocumentMode: large }) => {
           setImportStage(stage);
           setLargeDocumentMode(large);
         },
-      });
+      }));
+      const plan = prepared.plan;
       await yieldToBrowser();
 
       setPendingPlan(plan);
+      setReceipt(prepared);
       setSource(plan.fileName);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      if (cause instanceof OfficeImportPreparationError) setFailedReceipt(cause);
+      setError(cause instanceof OfficeImportPreparationError ? exchangeCopy(locale).failed : cause instanceof Error ? cause.message : String(cause));
     } finally {
       setParsing(false);
       setImportStage(null);
@@ -71,11 +84,14 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
   function confirmImport(): void {
     if (!pendingPlan || (!selfAuthoredExternal && !source.trim())) return;
     try {
+      if (base.current !== useStudioStore.getState().manuscript) throw new Error(exchangeCopy(locale).changed);
       applyDocxImportPlan(pendingPlan, {
         importDetectedAuthors: pendingPlan.authors.length > 0,
         source,
         selfAuthoredExternal,
       });
+      if (receipt) setReceipt({ ...receipt, report: finishExchangeReport(receipt.report,
+        new TextEncoder().encode(JSON.stringify(useStudioStore.getState().manuscript))) });
       setPendingPlan(null);
       clearDocumentClosedState();
       onImported?.();
@@ -136,6 +152,8 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
           </div>
         ) : null}
       </section>
+      {failedReceipt ? <ExchangeReportView report={failedReceipt.report} original={failedReceipt.original} /> : null}
+      {receipt ? <ExchangeReportView report={receipt.report} original={receipt.original} /> : null}
       {pendingPlan && <ExternalDocumentSourceReview
         key={pendingPlan.fileName}
         locale={locale}
@@ -145,7 +163,7 @@ export function DocxImportPanel({ onImported }: DocxImportPanelProps) {
         onSelfAuthoredExternalChange={setSelfAuthoredExternal}
         onSourceChange={setSource}
         onConfirm={confirmImport}
-        onCancel={() => { setPendingPlan(null); setSource(''); }}
+        onCancel={() => { setPendingPlan(null); setSource(''); if (receipt) setReceipt({ ...receipt, report: { ...receipt.report, status: 'cancelled' } }); }}
       />}
       <PdfImportPanel onImported={onImported} />
     </>

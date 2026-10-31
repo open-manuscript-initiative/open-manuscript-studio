@@ -13,5 +13,6 @@ export const BUILD_INFO = {
     : null,
   build: buildValue(viteEnv.VITE_BUILD_NUMBER, '0'),
   commit: buildValue(viteEnv.VITE_COMMIT_SHA, '-'),
+  dependencies: buildValue(viteEnv.VITE_DEPENDENCY_DIGEST, 'unknown'),
   builtAt: buildValue(viteEnv.VITE_BUILD_DATE, '-'),
 };

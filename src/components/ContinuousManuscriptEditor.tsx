@@ -428,7 +428,9 @@ export function ContinuousManuscriptEditor() {
         url: collaborationWebSocketUrl(ticket.webSocketPath),
         name: manuscript.id,
         document,
-        token: ticket.token,
+        // Reconnection after server-enforced ticket expiry must obtain fresh
+        // authorization, including after revocation or an account change.
+        token: async () => (await getCollaborationTicket(manuscript.id)).token,
       });
       const session = {
         document,
