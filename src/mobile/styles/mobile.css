@@ -358,3 +358,31 @@
     margin: 0 auto;
   }
 }
+
+/* Mobile uses the same document tabs as desktop, inside the scrollable workspace.
+   Keep each title compact and horizontally scrollable on narrow screens. */
+.mobile-workspace .desktop-document-tabs {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 18;
+  width: 100%;
+}
+.mobile-workspace .desktop-document-tabs__track {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.mobile-workspace .desktop-document-tab {
+  flex: 0 0 auto;
+  width: min(58vw, 220px);
+  min-width: 130px;
+}
+.mobile-workspace .desktop-document-tab__main {
+  min-height: 44px;
+  font-size: 0.82rem;
+}
+.mobile-workspace .desktop-document-tab__close {
+  min-width: 40px;
+  width: 40px;
+}
