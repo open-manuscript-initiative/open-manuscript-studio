@@ -313,8 +313,10 @@ function DocumentMenuView({
 }) {
   const { t, locale } = useTranslation();
   const loadManuscript = useStudioStore((state) => state.loadManuscript);
+  const checkpoint = useStudioStore((state) => state.checkpoint);
   const [localPath, setLocalPath] = useState(getCurrentManuscriptFilePath());
   const [fileMessage, setFileMessage] = useState('');
+  const [fileBusy, setFileBusy] = useState<'save' | 'backup' | 'portable' | null>(null);
   const [documentClosed, setDocumentClosed] = useState(() => !useStudioStore.getState().hasOpenDocument);
   const browserFileInputRef = useRef<HTMLInputElement>(null);
   const native = isNativeStudio();
@@ -361,6 +363,113 @@ function DocumentMenuView({
     setFileMessage('');
   }
 
+  async function saveNative(asNewFile = false): Promise<void> {
+    if (!ownDevice || documentClosed) return;
+    setFileBusy('save');
+    setFileMessage('');
+    try {
+      checkpoint('manual');
+      const current = useStudioStore.getState().manuscript;
+      const path = asNewFile ? await saveLocalManuscriptAs(current) : await saveLocalManuscript(current);
+      if (!path) {
+        setFileMessage(labels.cancelled);
+        return;
+      }
+      setLocalPath(path);
+      setFileMessage(labels.saved);
+    } catch (error) {
+      setFileMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setFileBusy(null);
+    }
+  }
+
+  async function savePortableCopy(): Promise<void> {
+    if (documentClosed) return;
+    setFileBusy('portable');
+    setFileMessage('');
+    try {
+      checkpoint('manual');
+      const current = useStudioStore.getState().manuscript;
+      const path = await savePortableManuscriptCopy(current);
+      setFileMessage(path ? labels.portableSaved : labels.cancelled);
+      setLocalPath(null);
+    } catch (error) {
+      setFileMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setFileBusy(null);
+    }
+  }
+
+  async function savePortableBackup(): Promise<void> {
+    if (documentClosed) return;
+    setFileBusy('backup');
+    setFileMessage(labels.backupSaving);
+    try {
+      checkpoint('export');
+      const current = useStudioStore.getState().manuscript;
+      const packaged = await buildOmiContainer(current);
+      if (!packaged.validForExport) {
+        const detail = packaged.diagnostics
+          .filter((diagnostic) => diagnostic.severity === 'error')
+          .map((diagnostic) => diagnostic.message)
+          .join(' ');
+        throw new Error(detail || labels.backupFailed);
+      }
+      const delivery = await saveExportBlob(packaged.blob, packaged.fileName);
+      setFileMessage(delivery.saved ? labels.backupSaved : labels.cancelled);
+    } catch (error) {
+      setFileMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setFileBusy(null);
+    }
+  }
+
+  const ownDeviceSaveCard = native && ownDevice ? (
+    <div className="studio-tool-card">
+      <div>
+        <strong>{labels.localTitle}</strong>
+        <p>{labels.localDescription}</p>
+        <small>{formatNativeLocation(localPath, platform, labels)}</small>
+        {platform === 'android' ? <small>{labels.androidProviderHint}</small> : null}
+        {fileMessage ? <p role="status">{fileMessage}</p> : null}
+      </div>
+      <div className="studio-tool-actions">
+        <button type="button" className="studio-menu-primary-action" disabled={fileBusy !== null || documentClosed} onClick={() => void saveNative(false)}>
+          <Save size={16} aria-hidden="true" />{fileBusy === 'save' ? labels.saving : labels.save}
+        </button>
+        <button type="button" className="studio-menu-secondary-action" disabled={fileBusy !== null || documentClosed} onClick={() => void saveNative(true)}>
+          <SaveAll size={16} aria-hidden="true" />{labels.saveAs}
+        </button>
+        {platform === 'android' ? (
+          <button type="button" className="studio-menu-secondary-action" disabled={fileBusy !== null || documentClosed} onClick={() => void savePortableBackup()}>
+            <SaveAll size={16} aria-hidden="true" />{fileBusy === 'backup' ? labels.backupSaving : labels.portableBackup}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  ) : null;
+
+  const sharedDeviceSaveCard = native && !ownDevice ? (
+    <div className="studio-tool-card">
+      <div>
+        <strong>{labels.sharedTitle}</strong>
+        <p>{labels.sharedDescription}</p>
+        {fileMessage ? <p role="status">{fileMessage}</p> : null}
+      </div>
+      <div className="studio-tool-actions">
+        <button type="button" className="studio-menu-secondary-action" disabled={fileBusy !== null || documentClosed} onClick={() => void savePortableCopy()}>
+          <Usb size={16} aria-hidden="true" />{fileBusy === 'portable' ? labels.saving : labels.savePortable}
+        </button>
+        <button type="button" className="studio-menu-secondary-action" disabled={fileBusy !== null || documentClosed} onClick={() => void savePortableBackup()}>
+          <SaveAll size={16} aria-hidden="true" />{fileBusy === 'backup' ? labels.backupSaving : labels.portableBackup}
+        </button>
+      </div>
+    </div>
+  ) : null;
+
+  const nativeSaveCard = ownDevice ? ownDeviceSaveCard : sharedDeviceSaveCard;
+
   const openTitle = native
     ? (ownDevice ? labels.openTitle : labels.portableOpenTitle)
     : labels.openTitle;
@@ -405,6 +514,9 @@ function DocumentMenuView({
         ) : null)}
       </div>
     </div>
+    {nativeSaveCard}
+    {!native ? <div className="studio-tool-card"><div><strong>{labels.portableBackup}</strong></div><div className="studio-tool-actions"><button type="button" className="studio-menu-secondary-action" disabled={fileBusy !== null || documentClosed} onClick={() => void savePortableBackup()}><SaveAll size={16} aria-hidden="true" />{fileBusy === 'backup' ? labels.backupSaving : labels.portableBackup}</button></div></div> : null}
+    {!documentClosed ? <CloudStorageSettings view="documents" /> : null}
     <ProfileSavedDocumentsSection />
     <DocxImportPanel />
     <OdtImportPanel />
@@ -454,20 +566,11 @@ function ReferencesView() {
 }
 
 function ToolsView() {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const supplementalCopy = getStudioMenuSupplementalCopy(locale);
   const manuscript = useStudioStore((state) => state.manuscript);
   const selectedSectionId = useStudioStore((state) => state.selectedSectionId);
-  const checkpoint = useStudioStore((state) => state.checkpoint);
   const selectedSection = manuscript.sections.find((section) => section.id === selectedSectionId);
-  const [localPath, setLocalPath] = useState(getCurrentManuscriptFilePath());
-  const [fileMessage, setFileMessage] = useState('');
-  const [fileBusy, setFileBusy] = useState<'save' | 'backup' | 'portable' | null>(null);
-  const native = isNativeStudio();
-  const ownDevice = useOwnDeviceStorage();
-  const platform = getStudioPlatform();
-  const labels = getLocalFileLabels(locale, platform);
-
   const semanticSection = selectedSection ? {
     id: selectedSection.id,
     title: selectedSection.title,
@@ -478,114 +581,7 @@ function ToolsView() {
     })),
   } : null;
 
-  async function saveNative(asNewFile = false): Promise<void> {
-    if (!ownDevice) return;
-    setFileBusy('save');
-    setFileMessage('');
-    try {
-      checkpoint('manual');
-      const current = useStudioStore.getState().manuscript;
-      const path = asNewFile ? await saveLocalManuscriptAs(current) : await saveLocalManuscript(current);
-      if (!path) {
-        setFileMessage(labels.cancelled);
-        return;
-      }
-      setLocalPath(path);
-      setFileMessage(labels.saved);
-    } catch (error) {
-      setFileMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setFileBusy(null);
-    }
-  }
-
-  async function savePortableCopy(): Promise<void> {
-    setFileBusy('portable');
-    setFileMessage('');
-    try {
-      checkpoint('manual');
-      const current = useStudioStore.getState().manuscript;
-      const path = await savePortableManuscriptCopy(current);
-      setFileMessage(path ? labels.portableSaved : labels.cancelled);
-      setLocalPath(null);
-    } catch (error) {
-      setFileMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setFileBusy(null);
-    }
-  }
-
-  async function savePortableBackup(): Promise<void> {
-    setFileBusy('backup');
-    setFileMessage(labels.backupSaving);
-    try {
-      checkpoint('export');
-      const current = useStudioStore.getState().manuscript;
-      const packaged = await buildOmiContainer(current);
-      if (!packaged.validForExport) {
-        const detail = packaged.diagnostics
-          .filter((diagnostic) => diagnostic.severity === 'error')
-          .map((diagnostic) => diagnostic.message)
-          .join(' ');
-        throw new Error(detail || labels.backupFailed);
-      }
-      const delivery = await saveExportBlob(packaged.blob, packaged.fileName);
-      setFileMessage(delivery.saved ? labels.backupSaved : labels.cancelled);
-    } catch (error) {
-      setFileMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setFileBusy(null);
-    }
-  }
-
-  const ownDeviceSaveCard = native && ownDevice ? (
-    <div className="studio-tool-card">
-      <div>
-        <strong>{labels.localTitle}</strong>
-        <p>{labels.localDescription}</p>
-        <small>{formatNativeLocation(localPath, platform, labels)}</small>
-        {platform === 'android' ? <small>{labels.androidProviderHint}</small> : null}
-        {fileMessage ? <p role="status">{fileMessage}</p> : null}
-      </div>
-      <div className="studio-tool-actions">
-        <button type="button" className="studio-menu-primary-action" disabled={fileBusy !== null} onClick={() => void saveNative(false)}>
-          <Save size={16} aria-hidden="true" />{fileBusy === 'save' ? labels.saving : labels.save}
-        </button>
-        <button type="button" className="studio-menu-secondary-action" disabled={fileBusy !== null} onClick={() => void saveNative(true)}>
-          <SaveAll size={16} aria-hidden="true" />{labels.saveAs}
-        </button>
-        {platform === 'android' ? (
-          <button type="button" className="studio-menu-secondary-action" disabled={fileBusy !== null} onClick={() => void savePortableBackup()}>
-            <SaveAll size={16} aria-hidden="true" />{fileBusy === 'backup' ? labels.backupSaving : labels.portableBackup}
-          </button>
-        ) : null}
-      </div>
-    </div>
-  ) : null;
-
-  const sharedDeviceSaveCard = native && !ownDevice ? (
-    <div className="studio-tool-card">
-      <div>
-        <strong>{labels.sharedTitle}</strong>
-        <p>{labels.sharedDescription}</p>
-        {fileMessage ? <p role="status">{fileMessage}</p> : null}
-      </div>
-      <div className="studio-tool-actions">
-        <button type="button" className="studio-menu-secondary-action" disabled={fileBusy !== null} onClick={() => void savePortableCopy()}>
-          <Usb size={16} aria-hidden="true" />{fileBusy === 'portable' ? labels.saving : labels.savePortable}
-        </button>
-        <button type="button" className="studio-menu-secondary-action" disabled={fileBusy !== null} onClick={() => void savePortableBackup()}>
-          <SaveAll size={16} aria-hidden="true" />{fileBusy === 'backup' ? labels.backupSaving : labels.portableBackup}
-        </button>
-      </div>
-    </div>
-  ) : null;
-
-  const nativeSaveCard = ownDevice ? ownDeviceSaveCard : sharedDeviceSaveCard;
-
   return <section className="studio-menu-view studio-menu-view--tools"><div className="studio-menu-view-header"><div><h3>{supplementalCopy.tools}</h3><p>{t('studio.tools.description')}</p></div></div>
-    {platform === 'android' ? nativeSaveCard : null}
-    {platform !== 'android' ? nativeSaveCard : null}
     <AssetContainerPanel />
     <details className="studio-technical-details"><summary>{t('studio.tools.technicalData')}</summary><p>{t('studio.tools.technicalDescription')}</p><div className="studio-json-header"><strong>{t('studio.tools.liveJson')}</strong><span>{t('studio.tools.synced')}</span></div><pre className="studio-json-view"><code>{JSON.stringify(semanticSection, null, 2)}</code></pre></details></section>;
 }
