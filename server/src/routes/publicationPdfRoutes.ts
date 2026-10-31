@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { requireSession } from '../middleware/requireSession.js';
+import { requireSession, type AuthenticatedRequest } from '../middleware/requireSession.js';
 import {
   MAX_VIVLIOSTYLE_HTML_BYTES,
   VivliostylePdfError,
@@ -41,8 +41,9 @@ publicationPdfRouter.post(
     try {
       // The shared Unix-socket worker enforces per-user admission across API
       // replicas; never allow a caller to choose the queue identity.
-      const userId = (request as typeof request & { authUserId?: string }).authUserId;
-      const artifact = await renderVivliostylePdf(parsed.data.html, userId ?? 'authenticated');
+      const userId = (request as AuthenticatedRequest).authUserId;
+      if (!userId) { response.sendStatus(401); return; }
+      const artifact = await renderVivliostylePdf(parsed.data.html, userId);
       const fileName = safePdfFileName(parsed.data.fileName);
 
       response.status(200);
