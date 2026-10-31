@@ -8,6 +8,7 @@ import type {
   OmiCitationLocatorType,
   OmiSection,
 } from '../types/omi';
+import { mapManuscriptBlocks, walkManuscriptStructure } from './manuscriptTreeTraversal';
 
 export const BIBLIOGRAPHIC_RESOURCE_TYPES: OmiBibliographicResourceType[] = [
   'journal-article',
@@ -317,11 +318,30 @@ export function findLikelyDuplicateRecord(
     return undefined;
   }
 
-  return records.find(
-    (record) =>
-      normalizeForComparison(record.title) === title &&
+  return records.find((record) => {
+    // Two explicit, distinct persistent DOI identities must not be merged
+    // merely because titles, authors and dates happen to match.
+    const recordDoi = normalizeDoi(getBibliographicIdentifier(record, 'doi') ?? '').toLowerCase();
+    if (candidateDoi && recordDoi && recordDoi !== candidateDoi) return false;
+    return normalizeForComparison(record.title) === title &&
       normalizeForComparison(formatShortCreator(record)) === creator &&
-      normalizeForComparison(record.issued ?? '') === issued,
+      normalizeForComparison(record.issued ?? '') === issued;
+  });
+}
+
+/**
+ * Import-time exact duplicate evidence. A probable title/year match is only
+ * a review suggestion, never grounds to discard an incoming record silently.
+ * Different local IDs without DOI are preserved for author reconciliation.
+ */
+export function findConfirmedDuplicateRecord(
+  records: readonly OmiBibliographicRecord[],
+  candidate: OmiBibliographicRecord,
+): OmiBibliographicRecord | undefined {
+  const doi = normalizeDoi(getBibliographicIdentifier(candidate, 'doi') ?? '').toLowerCase();
+  if (!doi) return undefined;
+  return records.find((record) =>
+    normalizeDoi(getBibliographicIdentifier(record, 'doi') ?? '').toLowerCase() === doi,
   );
 }
 
@@ -354,28 +374,16 @@ export function collectCitationAnchors(
   sections: readonly OmiSection[],
 ): CitationAnchorReference[] {
   const anchors: CitationAnchorReference[] = [];
-
-  for (const section of sections) {
-    for (const block of section.blocks) {
-      walkStructuredContent(block.content, (node) => {
-        if (node.type !== 'omiCitation' || !isRecord(node.attrs)) {
-          return;
-        }
-
-        const citationId = stringValue(node.attrs.citationId);
-        const anchorId = stringValue(node.attrs.anchorId);
-
-        if (citationId && anchorId) {
-          anchors.push({
-            citationId,
-            anchorId,
-            targetBlockId: block.id,
-          });
-        }
-      });
-    }
+  for (const entry of walkManuscriptStructure(sections)) {
+    if (entry.kind !== 'block') continue;
+    const { block } = entry;
+    walkStructuredContent(block.content, (node) => {
+      if (node.type !== 'omiCitation' || !isRecord(node.attrs)) return;
+      const citationId = stringValue(node.attrs.citationId);
+      const anchorId = stringValue(node.attrs.anchorId);
+      if (citationId && anchorId) anchors.push({ citationId, anchorId, targetBlockId: block.id });
+    });
   }
-
   return anchors;
 }
 
@@ -383,23 +391,14 @@ export function removeCitationAnchorFromSections(
   sections: readonly OmiSection[],
   citationId: string,
 ): OmiSection[] {
-  return sections.map((section) => ({
-    ...section,
-    blocks: section.blocks.map((block) => ({
-      ...block,
-      content: transformStructuredContent(block.content, (node) => {
-        if (
-          node.type === 'omiCitation' &&
-          isRecord(node.attrs) &&
-          stringValue(node.attrs.citationId) === citationId
-        ) {
-          return null;
-        }
-
-        return node;
-      }),
-    })),
-  }));
+  return mapManuscriptBlocks(sections, (block) => {
+    const content = transformStructuredContent(block.content, (node) => {
+      if (node.type === 'omiCitation' && isRecord(node.attrs) &&
+          stringValue(node.attrs.citationId) === citationId) return null;
+      return node;
+    });
+    return content === block.content ? block : { ...block, content };
+  });
 }
 
 export function synchronizeCitationLabels(
@@ -409,34 +408,20 @@ export function synchronizeCitationLabels(
 ): OmiSection[] {
   const citationMap = new Map(citations.map((citation) => [citation.id, citation]));
   const recordMap = new Map(records.map((record) => [record.id, record]));
-
-  return sections.map((section) => ({
-    ...section,
-    blocks: section.blocks.map((block) => ({
-      ...block,
-      content: transformStructuredContent(block.content, (node) => {
-        if (node.type !== 'omiCitation' || !isRecord(node.attrs)) {
-          return node;
-        }
-
-        const citationId = stringValue(node.attrs.citationId);
-        const citation = citationId ? citationMap.get(citationId) : undefined;
-
-        if (!citation) {
-          return node;
-        }
-
-        return {
-          ...node,
-          attrs: {
-            ...node.attrs,
-            anchorId: citation.anchorId,
-            label: formatCitationLabel(recordMap.get(citation.target), citation),
-          },
-        };
-      }),
-    })),
-  }));
+  return mapManuscriptBlocks(sections, (block) => {
+    const content = transformStructuredContent(block.content, (node) => {
+      if (node.type !== 'omiCitation' || !isRecord(node.attrs)) return node;
+      const citationId = stringValue(node.attrs.citationId);
+      const citation = citationId ? citationMap.get(citationId) : undefined;
+      if (!citation) return node;
+      return { ...node, attrs: {
+        ...node.attrs,
+        anchorId: citation.anchorId,
+        label: formatCitationLabel(recordMap.get(citation.target), citation),
+      } };
+    });
+    return content === block.content ? block : { ...block, content };
+  });
 }
 
 function normalizeContributor(
