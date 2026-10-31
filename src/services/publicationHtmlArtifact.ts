@@ -1,9 +1,9 @@
 import {
   assetPath,
-  collectReferencedAssetIds,
   sha256Hex,
 } from '../model/assets';
 import { getDocumentStructureProfile } from '../model/documentProfile';
+import { walkManuscriptStructure } from '../model/manuscriptTreeTraversal';
 import {
   resolvePublicationProfile,
   type OmiPublicationProfile,
@@ -54,9 +54,15 @@ export async function buildPublicationHtmlArtifact(
   }
 
   let html = result.html;
-  for (const id of collectReferencedAssetIds(
-    manuscript.sections.flatMap((section) => section.blocks),
-  )) {
+  // A standalone HTML publication must inline assets from *every* nested
+  // section and child block; root-only traversal silently dropped figures.
+  const imageIds = new Set<string>();
+  for (const entry of walkManuscriptStructure(manuscript.sections)) {
+    if (entry.kind === 'block' && entry.block.visual?.kind === 'image' && entry.block.visual.assetId) {
+      imageIds.add(entry.block.visual.assetId);
+    }
+  }
+  for (const id of imageIds) {
     const asset = manuscript.assets?.find((item) => item.id === id);
     if (
       !asset ||
