@@ -7,7 +7,8 @@ After=omi-pdf-worker.socket
 Type=simple
 User=omi-pdf-worker
 Group=omi-pdf-worker
-ExecStart=/opt/plesk/node/24/bin/node /var/www/vhosts/openmanuscript.org/studio/repository/server/dist/workers/pdfWorkerServer.js
+WorkingDirectory=/opt/omi-pdf-worker
+ExecStart=/opt/plesk/node/24/bin/node /opt/omi-pdf-worker/workers/pdfWorkerServer.js
 Environment=NODE_ENV=production
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
 Environment=VIVLIOSTYLE_BIN=/usr/local/bin/vivliostyle
@@ -30,9 +31,8 @@ RestrictRealtime=yes
 LockPersonality=yes
 CapabilityBoundingSet=
 AmbientCapabilities=
-# The API's .env may be readable even when worker credentials are omitted.
-# Keep this file explicitly inaccessible to all worker subprocesses.
-InaccessiblePaths=-/var/www/vhosts/openmanuscript.org/studio/repository/server/.env
+# Never mount Studio/Plesk vhosts or secret .env directories into the worker.
+InaccessiblePaths=-/var/www/vhosts
 TemporaryFileSystem=/tmp:rw,nosuid,nodev,size=1024M
 MemoryMax=3G
 CPUQuota=200%
