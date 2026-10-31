@@ -12,10 +12,10 @@ const collaborationServer = env.MANUSCRIPT_COLLABORATION_ENABLED
 
 const server = app.listen(
   env.PORT,
-  '0.0.0.0',
+  env.API_BIND_HOST,
   () => {
     console.log(
-      `Open Manuscript Studio API listening on port ${env.PORT}.`,
+      `Open Manuscript Studio API listening on ${env.API_BIND_HOST}:${env.PORT}.`,
     );
   },
 );
