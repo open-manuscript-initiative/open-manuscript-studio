@@ -1,0 +1,23 @@
+{
+  "id": "m-1",
+  "title": "\u00c1rv\u00edzt\u0171r\u0151 \u4e2d\u6587",
+  "locale": "hu",
+  "createdAt": "2026-10-31T00:00:00Z",
+  "updatedAt": "2026-10-31T00:00:00Z",
+  "keywords": [
+    " "
+  ],
+  "sections": [
+    {
+      "id": "s-1",
+      "title": "Fejezet",
+      "blocks": [
+        {
+          "id": "b-1",
+          "type": "paragraph",
+          "content": "Text \ud83d\ude00"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+export function coreReviewCopy(locale: string) {
+  const en = { title: 'Core model review', description: 'Experimental checks for OMI-SPEC-000/120/100/140. The review inspects current document structure and metadata without changing content. It does not assert complete conformance.',
+    run: 'Review core models', running: 'Reviewing…', save: 'Save core review JSON', profile: 'Review scope', authoring: 'Authoring', exchange: 'Exchange',
+    valid: 'Valid within the core review scope', invalid: 'Core review issues found', indeterminate: 'Core review incomplete',
+    stale: 'The manuscript changed. Run the review again.', failed: 'The core review or report delivery failed.',
+    findings: 'Findings', limits: 'Limits and exclusions', empty: 'No core review run yet.', noFindings: 'No findings within the inspected scope.',
+    scope: 'Checks cover live object IDs, containment, block types and selected metadata. Full relationship, history, authorization, rendering and accessibility verification are separate.',
+  };
+  if (locale.startsWith('hu')) return { ...en, title: 'Alapmodellek felülvizsgálata', description: 'Az OMI-SPEC-000/120/100/140 kísérleti ellenőrzése. Az aktuális dokumentumszerkezetet és metaadatokat vizsgálja, a tartalom módosítása nélkül. Nem igazol teljes szabványmegfelelőséget.',
+    run: 'Alapmodellek ellenőrzése', running: 'Ellenőrzés…', save: 'Alapmodell-jelentés mentése', profile: 'Vizsgálati kör', authoring: 'Szerkesztés', exchange: 'Adatcsere',
+    valid: 'A vizsgált alapmodell-körben érvényes', invalid: 'Alapmodell-problémák találhatók', indeterminate: 'Az alapmodell-vizsgálat hiányos',
+    stale: 'A kézirat megváltozott. Futtassa újra a vizsgálatot.', failed: 'A vizsgálatot vagy a jelentés mentését nem sikerült elvégezni.',
+    findings: 'Megállapítások', limits: 'Korlátok és kizárások', empty: 'Még nem futott alapmodell-vizsgálat.', noFindings: 'A vizsgált körben nincs megállapítás.',
+    scope: 'Az élő objektumok azonosítóit, a hierarchiát, a blokktípusokat és egyes metaadatokat ellenőrzi. A teljes kapcsolat-, előzmény-, jogosultság-, megjelenítés- és akadálymentesség-vizsgálat külön feladat.',
+  };
+  if (locale.startsWith('de')) return { ...en, title: 'Prüfung der Kernmodelle', description: 'Experimentelle Prüfung von OMI-SPEC-000/120/100/140. Untersucht aktuelle Dokumentstruktur und Metadaten ohne Inhaltsänderung. Kein Nachweis vollständiger Konformität.',
+    run: 'Kernmodelle prüfen', running: 'Prüfung…', save: 'Kernmodellbericht speichern', profile: 'Prüfumfang', authoring: 'Bearbeitung', exchange: 'Austausch',
+    valid: 'Im geprüften Kernmodellumfang gültig', invalid: 'Kernmodellprobleme gefunden', indeterminate: 'Kernmodellprüfung unvollständig',
+    stale: 'Das Manuskript wurde geändert. Wiederholen Sie die Prüfung.', failed: 'Prüfung oder Berichtsspeicherung fehlgeschlagen.',
+    findings: 'Befunde', limits: 'Grenzen und Ausschlüsse', empty: 'Noch keine Kernmodellprüfung.', noFindings: 'Keine Befunde im geprüften Umfang.',
+    scope: 'Prüft aktuelle Objektkennungen, Hierarchie, Blocktypen und ausgewählte Metadaten. Beziehungen, Verlauf, Berechtigungen, Darstellung und Barrierefreiheit benötigen gesonderte Prüfungen.',
+  };
+  return en;
+}
+export function coreDiagnosticMessage(locale: string, code: string): string {
+  const en: Record<string, string> = { INVALID_ID: 'Missing or blank object identifier.', DUPLICATE_ID: 'An identifier occurs more than once among live objects.', INVALID_TITLE: 'Title is missing, malformed or empty for exchange.', INVALID_LANGUAGE: 'Unsupported language tag.', INVALID_TIMESTAMP: 'Invalid calendar timestamp or timezone.', TIMESTAMP_ORDER: 'Modification time precedes creation time.', INVALID_KEYWORDS: 'Keywords must contain nonblank text entries.', INVALID_UNICODE: 'Unpaired Unicode surrogate.', INVALID_ROOT: 'The manuscript root must be an object.', INVALID_OBJECT: 'An object record is malformed.', INVALID_ARRAY: 'An ordered collection must be an array.', INVALID_BLOCK_TYPE: 'Missing semantic block type.', INVALID_CONTENT: 'Invalid block content value.', UNKNOWN_BLOCK_TYPE: 'Unknown block type retained; its semantics were not inspected.', INVALID_PARENT: 'Malformed parent identifier.', CONFLICTING_PARENT: 'Nested and explicit parents disagree.', UNRESOLVED_PARENT: 'Parent section does not exist.', CYCLIC_CONTAINMENT: 'Cyclic section hierarchy.', SHARED_OR_CYCLIC_OBJECT: 'Cyclic JSON data.', NON_JSON_VALUE: 'A value cannot be represented as JSON.', RESOURCE_LIMIT: 'A resource limit prevented complete inspection.' };
+  const hu: Record<string, string> = { INVALID_ID: 'Hiányzó vagy üres objektumazonosító.', DUPLICATE_ID: 'Egy azonosító több élő objektumhoz tartozik.', INVALID_TITLE: 'A cím hiányzik, hibás, vagy adatcserekor üres.', INVALID_LANGUAGE: 'Nem támogatott nyelvi azonosító.', INVALID_TIMESTAMP: 'Hibás naptári időpont vagy időzóna.', TIMESTAMP_ORDER: 'A módosítás ideje megelőzi a létrehozást.', INVALID_KEYWORDS: 'A kulcsszavaknak nem üres szövegeknek kell lenniük.', INVALID_UNICODE: 'Hibás Unicode-karakterkódolás.', INVALID_ROOT: 'A kézirat gyökerének objektumnak kell lennie.', INVALID_OBJECT: 'Hibás objektumrekord.', INVALID_ARRAY: 'A rendezett gyűjteménynek tömbnek kell lennie.', INVALID_BLOCK_TYPE: 'Hiányzó szemantikus blokktípus.', INVALID_CONTENT: 'Hibás blokktartalom.', UNKNOWN_BLOCK_TYPE: 'Ismeretlen blokktípus; megmarad, de szemantikája nincs ellenőrizve.', INVALID_PARENT: 'Hibás szülőazonosító.', CONFLICTING_PARENT: 'A beágyazás és a szülőhivatkozás ellentmond egymásnak.', UNRESOLVED_PARENT: 'A szülőszakasz nem létezik.', CYCLIC_CONTAINMENT: 'Körkörös szakaszhierarchia.', SHARED_OR_CYCLIC_OBJECT: 'Körkörös JSON-adat.', NON_JSON_VALUE: 'Az érték nem ábrázolható JSON-ként.', RESOURCE_LIMIT: 'Az erőforráskorlát miatt a vizsgálat nem teljes.' };
+  return locale.startsWith('hu') ? hu[code] ?? code : en[code] ?? code;
+}
