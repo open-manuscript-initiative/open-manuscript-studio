@@ -240,7 +240,7 @@ function StudioApplication() {
   }, [activeDesktopTabId, desktopTabs, mobileStudio, reviewMode]);
 
   useEffect(() => {
-    if (reviewMode || mobileStudio) return;
+    if (reviewMode) return;
 
     return useStudioStore.subscribe((state, previousState) => {
       if (state.manuscript === previousState.manuscript) return;
@@ -301,7 +301,7 @@ function StudioApplication() {
         return nextTabs;
       });
     });
-  }, [mobileStudio, reviewMode]);
+  }, [reviewMode]);
 
   const activateDesktopTab = useCallback((tabId: DesktopDocumentTabId) => {
     if (tabId === activeDesktopTabIdRef.current) return;
@@ -536,6 +536,12 @@ function StudioApplication() {
           onOpenMenu={() => setMenuOpen(true)}
           onHome={navigateHome}
         >
+          <DesktopDocumentTabs
+            tabs={desktopTabs}
+            activeTabId={activeDesktopTabId}
+            onActivate={activateDesktopTab}
+            onClose={closeDesktopTab}
+          />
           <div className="focus-workspace">
             <EditorPane ojsContributors={ojsContributors} />
           </div>
