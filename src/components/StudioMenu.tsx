@@ -36,6 +36,7 @@ import { closeCurrentDocument } from '../app/documentLifecycle';
 import { useStudioStore } from '../app/useStudioStore';
 import { translateCatalog, useTranslation } from '../i18n';
 import { getLocalFileLabels, type LocalFileLabels } from '../i18n/nativeStorageTranslations';
+import { getCloudStorageCopy } from '../i18n/cloudStorageTranslations';
 import { getPublicationProfileCopy } from '../i18n/publicationProfile';
 import { getStudioMenuSupplementalCopy } from '../i18n/studioMenuSupplementalTranslations';
 import { getStudioPlatform, type StudioPlatform } from '../mobile/platform/platform';
@@ -317,6 +318,7 @@ function DocumentMenuView({
   const [localPath, setLocalPath] = useState(getCurrentManuscriptFilePath());
   const [fileMessage, setFileMessage] = useState('');
   const [fileBusy, setFileBusy] = useState<'save' | 'backup' | 'portable' | null>(null);
+  const [cloudBackupsExpanded, setCloudBackupsExpanded] = useState(false);
   const [documentClosed, setDocumentClosed] = useState(() => !useStudioStore.getState().hasOpenDocument);
   const browserFileInputRef = useRef<HTMLInputElement>(null);
   const native = isNativeStudio();
@@ -516,7 +518,21 @@ function DocumentMenuView({
     </div>
     {nativeSaveCard}
     {!native ? <div className="studio-tool-card"><div><strong>{labels.portableBackup}</strong></div><div className="studio-tool-actions"><button type="button" className="studio-menu-secondary-action" disabled={fileBusy !== null || documentClosed} onClick={() => void savePortableBackup()}><SaveAll size={16} aria-hidden="true" />{fileBusy === 'backup' ? labels.backupSaving : labels.portableBackup}</button></div></div> : null}
-    {!documentClosed ? <CloudStorageSettings view="documents" /> : null}
+    {!documentClosed ? (
+      <div className="studio-tool-card" data-document-cloud-backup="true">
+        <div className="studio-tool-actions">
+          <button
+            type="button"
+            className="studio-menu-secondary-action"
+            aria-expanded={cloudBackupsExpanded}
+            onClick={() => setCloudBackupsExpanded((expanded) => !expanded)}
+          >
+            {getCloudStorageCopy(locale).backupTitle}
+          </button>
+        </div>
+        {cloudBackupsExpanded ? <CloudStorageSettings view="documents" /> : null}
+      </div>
+    ) : null}
     <ProfileSavedDocumentsSection />
     <DocxImportPanel />
     <OdtImportPanel />
