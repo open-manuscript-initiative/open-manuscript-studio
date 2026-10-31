@@ -16,6 +16,14 @@
 - Document profile scope and remaining canonical translation/publication work in
   `docs/omi-spec-170-translation-model.md`; upstream 170 remains Reserved.
 
+## 0.3.0-beta.13 — 2026-10-31 (prepared; release gates pending)
+
+- Consolidates nine merged implementation-stabilization stages (PRs #786, #788–#795): core and notes, history, citations, containers, collaboration/review, publication, import/export, capability claims and extension API boundaries.
+- Preserves author editing freedom, recursively renders nested publication content, validates ZIP/OMI JSON envelopes and rejects unsafe manifest declarations and forged claims without asserting full conformance.
+- Version updates: Studio/Tauri **0.3.0-beta.13**, Windows MSI **0.3.0.13**, Android versionCode floor **1212**, iOS build **25** with numeric iOS version **0.3.0**. The OMI portable format remains **OMI-SPEC-320@0.3.0**.
+- Draft OMI-SPEC models are not promoted; **#765, #770, #774 and #271** are explicit open security risk/approval gates. Publication and native store rollout require owner Go/No-Go and exact-commit CI evidence.
+- See [beta.13 candidate release gates](docs/release/0.3.0-beta.13.md).
+
 ## 0.3.0-beta.12 — 2026-10-30
 
 - Packages the merged native security and installer fixes after beta.11 into new application builds.
