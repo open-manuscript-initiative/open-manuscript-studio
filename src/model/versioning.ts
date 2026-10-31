@@ -10,6 +10,7 @@ import type {
   OmiBlock,
   OmiManuscript,
   OmiManuscriptState,
+  OmiSection,
 } from '../types/omi';
 
 export const OMI_VERSIONING_MODEL_VERSION =
@@ -201,6 +202,12 @@ export function commitManuscriptRevision(
     throw new Error(
       'The manuscript revision history is not a valid linear history.',
     );
+  }
+
+  // The envelope and retained lineage must agree on the committed base.
+  // A stale head is not a valid parent for a new atomic change set.
+  if (manuscript.headRevisionId !== manuscript.revisionHistory.headRevisionId) {
+    throw new Error('The manuscript head revision does not match the history head.');
   }
 
   if (input.events.length === 0) {
@@ -564,15 +571,22 @@ function collectAddressableObjects(
     });
   }
 
-  for (const section of state.sections) {
+  // Inline child sections are addressable objects, not merely presentation.
+  // Reverts and tombstone reservation must examine them like flat sections.
+  const activeSections = new Set<OmiSection>();
+  function visitSection(section: OmiSection): void {
+    if (activeSections.has(section)) return;
+    activeSections.add(section);
     objects.set(section.id, {
       type: 'section',
       value: section,
       path: `/sections/${section.id}`,
     });
-
     collectBlocks(section.blocks, objects);
+    for (const child of section.children ?? []) visitSection(child);
+    activeSections.delete(section);
   }
+  for (const section of state.sections) visitSection(section);
 
   for (const annotation of state.annotations) {
     objects.set(annotation.id, {
