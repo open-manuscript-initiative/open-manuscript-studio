@@ -50,7 +50,8 @@ export async function startCollaborationServer(): Promise<Server> {
       if (origin !== expectedOrigin) throw new Error('This origin is not allowed.');
       const ticket = await authorizeCollaborationConnectionTicket(token, documentName);
       if (!ticket) throw new Error('The collaboration ticket is invalid or expired.');
-      connectionConfig.readOnly = ticket.role === 'VIEWER';
+      // Authentication is action-scoped: a role label alone is never write authority.
+      connectionConfig.readOnly = ticket.readOnly;
       return ticket;
     },
     async connected({ connection, socketId, documentName }) { connections.set(`${socketId}:${documentName}`, connection); },
