@@ -1,13 +1,10 @@
 import {
   Cloud,
   CloudUpload,
-  HardDrive,
   KeyRound,
   RefreshCw,
   RotateCcw,
-  Save,
   Trash2,
-  Usb,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -52,7 +49,6 @@ import {
   setDeviceStorageMode,
   subscribeDeviceStorageMode,
 } from '../services/deviceStorageMode';
-import { saveExportBlob } from '../services/exportFileDelivery';
 import {
   buildOmiContainer,
   OMI_CONTAINER_VERSION,
@@ -95,7 +91,7 @@ function connectionProviderLabel(connection: CloudConnection, copy: CloudCopy): 
   return 'Dropbox';
 }
 
-export function CloudStorageSettings() {
+export function CloudStorageSettings({ view = 'connections' }: { view?: 'connections' | 'documents' }) {
   const { locale } = useTranslation();
   const copy = getCloudStorageCopy(locale);
   const oauthCopy = getCloudOAuthCopy(locale);
@@ -254,34 +250,6 @@ export function CloudStorageSettings() {
     setMessage('');
   }
 
-  async function saveNativeBackup(portableOnly: boolean): Promise<void> {
-    if (!nativeStorageCapable) return;
-    setBusy(portableOnly ? 'portable-backup' : 'system-backup');
-    setMessage(copy.savingSystemBackup);
-    try {
-      checkpoint('manual');
-      const current = useStudioStore.getState().manuscript;
-      const packaged = await buildOmiContainer(current);
-      if (!packaged.validForExport) {
-        const detail = packaged.diagnostics
-          .filter((diagnostic) => diagnostic.severity === 'error')
-          .map((diagnostic) => diagnostic.message)
-          .join(' ');
-        throw new Error(detail || copy.invalidPackage);
-      }
-      const delivery = await saveExportBlob(packaged.blob, packaged.fileName);
-      setMessage(
-        delivery.saved
-          ? portableOnly ? copy.portableBackupSaved : copy.systemBackupSaved
-          : '',
-      );
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setBusy(null);
-    }
-  }
-
   async function connectWebDav(): Promise<void> {
     if (!selectedProvider?.directProviderType || selectedMethod?.implementation !== 'webdav') return;
     setBusy('connect');
@@ -427,15 +395,15 @@ export function CloudStorageSettings() {
     <section className="studio-settings-card" aria-labelledby="studio-cloud-storage-title">
       <div className="studio-settings-card-header">
         <div>
-          <h4 id="studio-cloud-storage-title"><Cloud size={18} aria-hidden="true" /> {copy.title}</h4>
-          <p>{copy.description}</p>
+          <h4 id="studio-cloud-storage-title"><Cloud size={18} aria-hidden="true" /> {view === 'documents' ? copy.backupTitle : copy.title}</h4>
+          <p>{view === 'documents' ? copy.backupDescription : copy.description}</p>
         </div>
         <button type="button" className="studio-menu-secondary-action" disabled={busy !== null} onClick={() => void refresh()}>
           <RefreshCw size={14} aria-hidden="true" /> {copy.refresh}
         </button>
       </div>
 
-      {nativeStorageCapable ? (
+      {view === 'connections' && nativeStorageCapable ? (
         <div className="studio-cloud-section">
           <label className="studio-settings-hint">
             <span>
@@ -451,50 +419,7 @@ export function CloudStorageSettings() {
         </div>
       ) : null}
 
-      <div className="studio-cloud-section">
-        <div className="studio-tool-card">
-          <div>
-            <strong><HardDrive size={16} aria-hidden="true" /> {copy.systemTitle} · {ownDevice ? copy.systemEnabled : copy.systemDisabled}</strong>
-            <p>{nativeStorageCapable ? copy.systemDescription : copy.systemWebDescription}</p>
-          </div>
-          {ownDevice ? (
-            <div className="studio-tool-actions">
-              <button
-                type="button"
-                className="studio-menu-primary-action"
-                disabled={busy !== null}
-                onClick={() => void saveNativeBackup(false)}
-              >
-                <Save size={16} aria-hidden="true" />
-                {busy === 'system-backup' ? copy.savingSystemBackup : copy.saveSystemBackup}
-              </button>
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      {nativeStorageCapable && !ownDevice ? (
-        <div className="studio-cloud-section">
-          <div className="studio-tool-card">
-            <div>
-              <strong><Usb size={16} aria-hidden="true" /> {copy.portableTitle}</strong>
-              <p>{copy.portableDescription}</p>
-            </div>
-            <div className="studio-tool-actions">
-              <button
-                type="button"
-                className="studio-menu-secondary-action"
-                disabled={busy !== null}
-                onClick={() => void saveNativeBackup(true)}
-              >
-                <Usb size={16} aria-hidden="true" />
-                {busy === 'portable-backup' ? copy.savingSystemBackup : copy.savePortableBackup}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
+      {view === 'connections' ? <>
       <div className="studio-cloud-section">
         <strong>{copy.providerSetup}</strong>
         <p>{copy.providerSetupDescription}</p>
@@ -636,9 +561,13 @@ export function CloudStorageSettings() {
         )}
       </div>
 
+      </> : null}
+
+      {view === 'documents' ? <>
       <div className="studio-cloud-section">
         <strong>{copy.backupTitle}</strong>
         <p>{copy.backupDescription}</p>
+        {connectedConnections.length === 0 ? <p>{copy.noConnections}</p> : null}
         <div className="omi-keyword-input-row">
           <select value={selectedConnectionId} onChange={(event) => setSelectedConnectionId(event.target.value)}>
             <option value="">{copy.chooseConnection}</option>
@@ -671,6 +600,8 @@ export function CloudStorageSettings() {
           </div>
         )}
       </div>
+
+      </> : null}
 
       {message ? <p className="studio-settings-hint" role="status">{message}</p> : null}
     </section>
