@@ -1,4 +1,5 @@
-import type { OmiBlock, OmiImageBlockData } from '../types/omi';
+import type { OmiBlock, OmiImageBlockData, OmiSection } from '../types/omi';
+import { walkManuscriptStructure } from './manuscriptTreeTraversal';
 import type { OmiAsset, OmiAssetRole } from '../types/assets';
 
 export const OMI_ASSET_MODEL_VERSION = '0.1.0-alpha.1' as const;
@@ -143,6 +144,18 @@ export function collectReferencedAssetIds(blocks: readonly OmiBlock[]): Set<stri
     }
     if (block.children?.length) {
       for (const id of collectReferencedAssetIds(block.children)) ids.add(id);
+    }
+  }
+  return ids;
+}
+
+/** Inspect every embedded section and block, not only root-section blocks.
+ * The same reference set must be used by package production and validation. */
+export function collectReferencedAssetIdsInSections(sections: readonly OmiSection[]): Set<string> {
+  const ids = new Set<string>();
+  for (const entry of walkManuscriptStructure(sections)) {
+    if (entry.kind === 'block' && entry.block.visual?.kind === 'image' && entry.block.visual.assetId) {
+      ids.add(entry.block.visual.assetId);
     }
   }
   return ids;
