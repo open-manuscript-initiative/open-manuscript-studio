@@ -53,9 +53,17 @@ export async function authorizeCollaborationConnectionTicket(token: string, docu
     where: { documentId_userId: { documentId, userId: ticket.userId } },
     select: { role: true, revokedAt: true, user: { select: { status: true } } },
   });
-  if (!collaborationDecision(member ? { principalId: ticket.userId, documentId, role: member.role, revoked: !!member.revokedAt || member.user.status !== 'ACTIVE' } : null,
-    { principalId: ticket.userId, documentId, action: 'read' }).allowed) return null;
-  return { userId: ticket.userId, role: member!.role, documentId, expiresAt: ticket.expiresAt.getTime() };
+  const evidence = member ? { principalId: ticket.userId, documentId, role: member.role,
+    revoked: !!member.revokedAt || member.user.status !== 'ACTIVE',
+    expiresAt: ticket.expiresAt.getTime() } : null;
+  if (!collaborationDecision(evidence, { principalId: ticket.userId, documentId, action: 'read' }).allowed) return null;
+  // Transport write privileges derive from the explicit action policy,
+  // not a heuristic role label. This also prevents widening access if a
+  // new read-only role is introduced later.
+  const readOnly = !collaborationDecision(evidence,
+    { principalId: ticket.userId, documentId, action: 'edit-content' }).allowed;
+  return { userId: ticket.userId, role: member!.role, documentId,
+    expiresAt: ticket.expiresAt.getTime(), readOnly };
 }
 
 /** Current authoritative evidence, never client role metadata or portable ACLs. */

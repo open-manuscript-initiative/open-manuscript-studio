@@ -8,13 +8,13 @@ release lock. The normative register still governs standards maturity.
 | --- | --- | --- | --- |
 | 1 | 000, 120, 100, 140 | Core review: [#786](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/786); fixture/independent review gaps documented | Not certified |
 | 2 | 150, 110, 130 | Nested anchors, notes, citations: [#788](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/788) merged, CI succeeded | Review gates still apply |
-| 3 | 160, 180 | History and validation isolation: [#789](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/789), merged | Independent review and full evidence gates still apply |
-| 4 | 220, 210, 221, 225 | Bibliographic identity, citations, reference library and sources: [#790](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/790), merged | Independent review and full evidence gates still apply |
-| 5 | 320, 330 | Portable file format and container: [#791](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/791), merged | Independent review and full evidence gates still apply |
-| 6 | 190, 170, 200 | Collaboration, translation, review: [#792](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/792) | Draft PR; CI and review acceptance outstanding |
-| 7 | 240, 230 | Rendering and publication: [#793](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/793) | Draft PR; CI and review acceptance outstanding |
-| 8 | 340 | Import and export: phase 8 Draft PR (SPEC-340), [evidence](spec-340-phase8.md) | Draft implementation; CI and manual interoperability acceptance outstanding |
-| 9 | 350, then 300, 310 | Capability/conformance, plugins and API | Not started |
+| 3 | 160, 180 | History and validation isolation: [#789](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/789), merged with green CI | Independent review / release-level evidence still required |
+| 4 | 220, 210, 221, 225 | Bibliographic identity, citations, reference library and sources: [#790](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/790), merged with green CI | Independent review / release-level evidence still required |
+| 5 | 320, 330 | Portable file format and container: [#791](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/791), merged with green CI | Independent review / release-level evidence still required |
+| 6 | 190, 170, 200 | Collaboration, translation, review: [#792](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/792), merged with green CI | Independent review / release-level evidence still required |
+| 7 | 240, 230 | Rendering and publication: [#793](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/793), merged with green CI | Independent review / release-level evidence still required |
+| 8 | 340 | Import and export: [#794](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/794), [phase 8 evidence](spec-340-phase8.md) | Draft PR; CI green, review/merge and manual interoperability acceptance pending |
+| 9 | 350, then 300, 310 | Capability/conformance, plugins and API: [#795](https://github.com/open-manuscript-initiative/open-manuscript-studio/pull/795) | Draft PR; CI, review and acceptance pending |
 
 ## Explicit version hold
 

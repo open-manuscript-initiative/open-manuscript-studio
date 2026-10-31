@@ -417,7 +417,7 @@ function renderBody(
 function renderSection(section: OmiRenderedSection, state: RenderState): string {
   const heading = `<title>${escapeXml(section.title)}</title>`;
   const blocks = section.blocks
-    .map((block) => renderBlock(block, state))
+    .map((block) => renderBlockTree(block, state))
     .filter(Boolean)
     .join('\n');
   const children = section.children
@@ -426,6 +426,14 @@ function renderSection(section: OmiRenderedSection, state: RenderState): string 
   const content = [heading, blocks, children].filter(Boolean).join('\n');
 
   return `<sec id="${xmlId('sec', section.id)}">\n${indent(content, 1)}\n</sec>`;
+}
+
+/** Keep all semantic child blocks in the output, in canonical preorder.
+ * Rendering-only flattening never modifies manuscript content or identities. */
+function renderBlockTree(block: OmiBlock, state: RenderState): string {
+  const own = renderBlock(block, state);
+  const descendants = (block.children ?? []).map((child) => renderBlockTree(child, state)).filter(Boolean);
+  return [own, ...descendants].filter(Boolean).join('\n');
 }
 
 function renderBlock(block: OmiBlock, state: RenderState): string {

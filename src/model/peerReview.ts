@@ -235,9 +235,11 @@ export function toAuthorVisibleReview(
     reviewRound: review.reviewRound,
     status: review.status,
     recommendation: review.recommendation,
-    feedback: review.feedback.filter(
-      (item) => item.visibility === 'author_and_editor',
-    ),
+    // A linked review round is not authorized to publish another round's
+    // feedback, even if a persisted record has an author-facing visibility.
+    feedback: review.feedback
+      .filter((item) => item.assignmentId === review.id && item.visibility === 'author_and_editor')
+      .map((item) => ({ ...item })),
     submittedAt: review.submittedAt,
     completedAt: review.completedAt,
   };
@@ -260,7 +262,9 @@ export function toReviewerVisibleReview(
     anonymityMode: review.anonymityMode,
     status: review.status,
     recommendation: review.recommendation,
-    feedback: [...review.feedback],
+    feedback: review.feedback
+      .filter((item) => item.assignmentId === review.id)
+      .map((item) => ({ ...item })),
     invitedAt: review.invitedAt,
     acceptedAt: review.acceptedAt,
     submittedAt: review.submittedAt,
@@ -272,7 +276,7 @@ export function toEditorVisibleReview(
 ): EditorVisibleReview {
   return {
     ...review,
-    feedback: [...review.feedback],
+    feedback: review.feedback.map((item) => ({ ...item })),
   };
 }
 

@@ -14,7 +14,7 @@ import {
   type OmiPublicationProfileIssue,
 } from './publicationProfile.ts';
 import { formatHierarchicalSectionNumber } from './sectionNumbering.ts';
-import { getParentSectionId } from './sectionStructure.ts';
+import { getParentSectionId, withParentSectionId } from './sectionStructure.ts';
 import { normalizeSectionLayout } from './sectionLayout';
 import type {
   OmiBlock,
@@ -192,15 +192,19 @@ export function buildRenderedSectionTree(
   sections: readonly OmiSection[],
   profile: OmiPublicationProfile,
 ): OmiRenderedSection[] {
+  // Core OMI accepts both flat parentSectionId order and embedded
+  // section.children trees. Resolve both into one *derived* preorder without
+  // rewriting scholarly manuscript storage or changing original object IDs.
+  const orderedSections = flattenPublicationSections(sections);
   const nodeMap = new Map<string, OmiRenderedSection>();
 
-  for (const section of sections) {
+  for (const section of orderedSections) {
     const parentSectionId = getParentSectionId(section);
-    const depth = sectionDepth(sections, section.id);
+    const depth = sectionDepth(orderedSections, section.id);
     const number =
       depth < profile.rules.sections.maxNumberedDepth
         ? formatHierarchicalSectionNumber(
-            sections,
+            orderedSections,
             section.id,
             profile.rules.sections.numberingStyle,
           )
@@ -220,7 +224,7 @@ export function buildRenderedSectionTree(
 
   const roots: OmiRenderedSection[] = [];
 
-  for (const section of sections) {
+  for (const section of orderedSections) {
     const node = nodeMap.get(section.id);
     if (!node) continue;
 
@@ -236,6 +240,24 @@ export function buildRenderedSectionTree(
   }
 
   return roots;
+}
+
+function flattenPublicationSections(sections: readonly OmiSection[]): OmiSection[] {
+  const flattened: OmiSection[] = [];
+  const active = new Set<object>();
+  function visit(section: OmiSection, embeddedParentId?: string): void {
+    // Malformed cyclic trees are rejected elsewhere by structural validation.
+    // Do not hang a rendering worker on an unexpected object reference cycle.
+    if (active.has(section)) return;
+    active.add(section);
+    flattened.push(embeddedParentId
+      ? withParentSectionId(section, embeddedParentId)
+      : section);
+    for (const child of section.children ?? []) visit(child, section.id);
+    active.delete(section);
+  }
+  for (const section of sections) visit(section);
+  return flattened;
 }
 
 function sectionDepth(

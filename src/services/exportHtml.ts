@@ -397,7 +397,7 @@ function renderSection(section: OmiRenderedSection, state: RenderState): string 
     ? `<span class="section-number" aria-hidden="true">${escapeHtml(section.number)}</span>`
     : '';
   const blocks = section.blocks
-    .map((block) => renderBlock(block, state))
+    .map((block) => renderBlockTree(block, state))
     .filter(Boolean)
     .join('\n');
   const children = section.children.map((child) => renderSection(child, state)).join('\n');
@@ -428,6 +428,14 @@ function renderSection(section: OmiRenderedSection, state: RenderState): string 
   return `<section id="${htmlId('sec', section.id)}" class="manuscript-section" data-omi-section-id="${escapeAttribute(
     section.id,
   )}">\n${indent(content, 1)}\n</section>`;
+}
+
+/** Keep all semantic child blocks in the output, in canonical preorder.
+ * Rendering-only flattening never modifies manuscript content or identities. */
+function renderBlockTree(block: OmiBlock, state: RenderState): string {
+  const own = renderBlock(block, state);
+  const descendants = (block.children ?? []).map((child) => renderBlockTree(child, state)).filter(Boolean);
+  return [own, ...descendants].filter(Boolean).join('\n');
 }
 
 function renderBlock(block: OmiBlock, state: RenderState): string {

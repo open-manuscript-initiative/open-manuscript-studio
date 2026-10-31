@@ -6,6 +6,8 @@ import type {
   OmiSectionNumberingStyle,
 } from '../types/omi';
 import type { PublicationStyle } from '../services/publicationStyleExport';
+import { walkManuscriptStructure } from './manuscriptTreeTraversal';
+import { collectCrossReferenceTargets } from './crossReferences';
 
 export const OMI_PUBLICATION_PROFILE_MODEL =
   'omi-publication-profile-alpha-0.1' as const;
@@ -297,13 +299,22 @@ export function validateManuscriptForPublication(manuscript: OmiManuscript, prof
     if (rules.metadata.affiliation !== 'off' && !agent.affiliations.some((affiliation) => affiliation.organizationName.trim())) issues.push({ code: 'missing-affiliation', severity: requirementSeverity(rules.metadata.affiliation), targetId: agent.id });
     if (rules.metadata.orcid !== 'off' && !agent.identifiers.some((identifier) => identifier.scheme.toLowerCase() === 'orcid' && identifier.normalizedValue.trim())) issues.push({ code: 'missing-orcid', severity: requirementSeverity(rules.metadata.orcid), targetId: agent.id });
   }
-  for (const section of manuscript.sections) for (const block of section.blocks) {
+  for (const entry of walkManuscriptStructure(manuscript.sections)) {
+    if (entry.kind !== 'block') continue;
+    const { block } = entry;
     if (block.visual?.kind === 'image' && rules.accessibility.figureAltText !== 'off' && !block.visual.alt.trim()) issues.push({ code: 'missing-figure-alt', severity: requirementSeverity(rules.accessibility.figureAltText), targetId: block.id });
     if (block.visual?.kind === 'table' && rules.accessibility.tableHeaders !== 'off' && (block.visual.headerRows ?? 0) < 1) issues.push({ code: 'missing-table-header', severity: requirementSeverity(rules.accessibility.tableHeaders), targetId: block.id });
   }
   const bibliographicIds = new Set((manuscript.bibliographicRecords ?? []).map((record) => record.id));
   for (const citation of manuscript.citations) if (!bibliographicIds.has(citation.target)) issues.push({ code: 'unresolved-citation', severity: 'error', targetId: citation.id });
-  for (const crossReference of manuscript.crossReferences ?? []) if (!manuscript.sections.some((section) => section.id === crossReference.targetId || section.blocks.some((block) => block.id === crossReference.targetId))) issues.push({ code: 'unresolved-cross-reference', severity: 'error', targetId: crossReference.id });
+  const targets = new Map(collectCrossReferenceTargets(manuscript).map((target) => [target.id, target]));
+  for (const crossReference of manuscript.crossReferences ?? []) {
+    const target = targets.get(crossReference.targetId);
+    // A paragraph must not silently satisfy an expected figure/bookmark target.
+    if (!target || target.kind !== crossReference.targetKind) {
+      issues.push({ code: 'unresolved-cross-reference', severity: 'error', targetId: crossReference.id });
+    }
+  }
   for (const detail of publicationProfileOverrides(manuscript, profile)) issues.push({ code: 'profile-override', severity: 'warning', targetId: manuscript.id, detail });
   return issues;
 }
