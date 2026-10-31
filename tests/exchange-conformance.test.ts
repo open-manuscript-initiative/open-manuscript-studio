@@ -69,14 +69,15 @@ test('round-trip evidence must exist and compare exact declared invariants', () 
 });
 
 test('office receipt retains the immutable source independently from editable candidate', async () => {
-  const original = new File(['source'], 'test.docx');
-  const plan = { title: 'Editable', warnings: [{ code: 'text-boxes-flattened', severity: 'warning', message: 'Flattened' }] } as DocxManuscriptImportPlan;
+  const originalZip = createStoreZip([textZipEntry('word/document.xml', 'source')]);
+  const original = new File([originalZip.buffer as ArrayBuffer], 'test.docx');
+  const plan = { title: 'Editable', sections: [], warnings: [{ code: 'text-boxes-flattened', severity: 'warning', message: 'Flattened' }] } as DocxManuscriptImportPlan;
   const receipt = await prepareOfficeImport(original, 'docx', async (file) => {
-    assert.equal(await file.arrayBuffer().then((buffer) => new TextDecoder().decode(buffer)), 'source');
+    assert.deepEqual(new Uint8Array(await file.arrayBuffer()), originalZip);
     return plan;
   });
   plan.title = 'Changed';
-  assert.equal(await receipt.original.text(), 'source');
+  assert.deepEqual(new Uint8Array(await receipt.original.arrayBuffer()), originalZip);
   assert.equal(receipt.report.status, 'prepared');
   assert.equal(receipt.report.events[1].code, 'text-boxes-flattened');
   await assert.rejects(prepareOfficeImport(original, 'odt', async () => plan), /INVALID_SOURCE/);
@@ -84,14 +85,14 @@ test('office receipt retains the immutable source independently from editable ca
 });
 
 test('failed parsing never returns a committable receipt or modifies the original', async () => {
-  const original = new File(['unchanged'], 'bad.odt');
+  const original = new File([createStoreZip([textZipEntry('content.xml', 'unchanged')]).buffer as ArrayBuffer], 'bad.odt');
   await assert.rejects(prepareOfficeImport(original, 'odt', async () => { throw new Error('invalid XML'); }), (error) => {
     assert.ok(error instanceof OfficeImportPreparationError);
     assert.equal(error.report.status, 'failed');
     assert.equal(error.original, original);
     return true;
   });
-  assert.equal(await original.text(), 'unchanged');
+  assert.ok((await original.arrayBuffer()).byteLength > 30);
 });
 
 test('asynchronous artifact receipts hash actual bytes and reject wrong output envelopes', async () => {
@@ -195,4 +196,42 @@ test('exchange inspection requires canonical OMI JSON and a JATS article envelop
     new Blob(['<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE article SYSTEM "local.dtd"><article/>']));
   assert.equal(article.status, 'completed-with-loss');
   assert.equal(article.validation.status, 'not-run', 'DTD validation remains a separate mandatory release gate');
+});
+
+
+test('office preflight rejects fake or broken DOCX/ODT archives and preserves source bytes', async () => {
+  const invalid = new File(['not a ZIP package'], 'fake.docx');
+  let parserInvoked = false;
+  await assert.rejects(
+    prepareOfficeImport(invalid, 'docx', async () => {
+      parserInvoked = true;
+      throw new Error('Should not be invoked for invalid input.');
+    }),
+    (error) => {
+      assert.ok(error instanceof OfficeImportPreparationError);
+      assert.equal(error.original, invalid);
+      assert.equal(error.report.status, 'failed');
+      assert.ok(error.report.events.some((event) => event.code === 'INVALID_SOURCE_ENVELOPE'));
+      return true;
+    },
+  );
+  assert.equal(parserInvoked, false);
+  assert.equal(await invalid.text(), 'not a ZIP package');
+});
+
+test('office preflight rejects a parser that returns a non-committable candidate', async () => {
+  const zip = createStoreZip([textZipEntry('content.xml', '<office:text/>')]);
+  const original = new File([zip.buffer as ArrayBuffer], 'candidate.odt');
+  await assert.rejects(
+    prepareOfficeImport(original, 'odt', async () => ({
+      title: 'Missing editable document sections', warnings: [],
+    } as unknown as DocxManuscriptImportPlan)),
+    (error) => {
+      assert.ok(error instanceof OfficeImportPreparationError);
+      assert.equal(error.report.status, 'failed');
+      assert.ok(error.report.events.some((event) => event.code === 'INVALID_IMPORT_CANDIDATE'));
+      return true;
+    },
+  );
+  assert.deepEqual(new Uint8Array(await original.arrayBuffer()), zip);
 });
