@@ -1,6 +1,7 @@
 import 'dotenv/config';
 
 import { z } from 'zod';
+import { apiBindHostSchema } from './apiBindHost.js';
 
 import {
   resolveOrcidCredentialProfile,
@@ -28,6 +29,8 @@ const environmentSchema = z.object({
     .positive()
     .max(65535)
     .default(3001),
+
+  API_BIND_HOST: apiBindHostSchema,
 
   DATABASE_URL: z
     .string()
