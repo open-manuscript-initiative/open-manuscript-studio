@@ -115,7 +115,7 @@ export async function buildPdfArtifactDocument(
 
   // Do not send unresolved package-local media references to the isolated renderer.
   // Its offline policy correctly rejects them; report the offending asset in the UI first.
-  const unresolved = html.match(/(?:src|href)\\s*=\\s*["'](media\\/[^"']+)["']/i);
+  const unresolved = html.match(/(?:src|href)\s*=\s*["'](media\/[^"']+)["']/i);
   if (unresolved) {
     throw new Error(
       `PDF references a media file that was not embedded: ${unresolved[1]}. ` +
