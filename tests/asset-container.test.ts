@@ -87,6 +87,9 @@ test('rejects archive traversal and ambiguous container paths', () => {
   assert.equal(isSafeContainerPath('/absolute/path'), false);
   assert.equal(isSafeContainerPath('media\\figure.png'), false);
   assert.equal(isSafeContainerPath('media//figure.png'), false);
+  assert.equal(isSafeContainerPath('C:/media/figure.png'), false);
+  assert.equal(isSafeContainerPath('media/figure\\u0000.png'), false);
+  assert.equal(isSafeContainerPath('media/figure\\u000A.png'), false);
 });
 
 test('builds a portable OMI ZIP with external asset payload and clean document JSON', async () => {
