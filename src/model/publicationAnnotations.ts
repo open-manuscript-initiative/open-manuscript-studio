@@ -1,5 +1,6 @@
 import type { OmiAnnotation, OmiManuscript } from '../types/omi';
 import { publicManuscriptExtensions } from './manuscriptImportOrigin';
+import { mapManuscriptBlocks } from './manuscriptTreeTraversal';
 
 /** Workflow visibility and hidden provenance are never public publication notes. */
 export function isPublicPublicationNote(annotation: OmiAnnotation): boolean {
@@ -42,9 +43,9 @@ export function publicPublicationManuscript(manuscript: OmiManuscript): OmiManus
     ...manuscript,
     extensions,
     annotations: manuscript.annotations.filter(isPublicPublicationNote),
-    sections: manuscript.sections.map((section) => ({
-      ...section,
-      blocks: section.blocks.map((block) => ({ ...block, content: contentView(block.content) })),
+    sections: mapManuscriptBlocks(manuscript.sections, (block) => ({
+      ...block,
+      content: contentView(block.content),
     })),
   };
 }
