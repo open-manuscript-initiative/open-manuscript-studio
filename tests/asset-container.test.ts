@@ -314,7 +314,9 @@ test('embedded-section image is collected, preview stripped and verified across 
   const document = JSON.parse(new TextDecoder().decode(entries.get('manuscript/document.json')));
   const historyJson = new TextDecoder().decode(entries.get('manuscript/history.json'));
   assert.equal(historyJson.includes('data:image/png;base64'), false);
-  assert.ok(nested.revisionHistory.revisions.at(-1)?.snapshot.state.sections[0]?.children?.[0]?.blocks?.[0]?.visual?.src?.startsWith('data:'));
+  const originalHistoricVisual = nested.revisionHistory.revisions.at(-1)?.snapshot.state.sections[0]?.children?.[0]?.blocks?.[0]?.visual;
+  assert.equal(originalHistoricVisual?.kind, 'image');
+  if (originalHistoricVisual?.kind === 'image') assert.ok(originalHistoricVisual.src.startsWith('data:'));
   const embeddedImage = document.sections[0].children[0].blocks[0];
   assert.equal(embeddedImage.visual.src, '');
   assert.equal(embeddedImage.visual.assetId, asset.id);
@@ -322,7 +324,8 @@ test('embedded-section image is collected, preview stripped and verified across 
   assert.equal(reopened.validForImport, true, JSON.stringify(reopened.diagnostics));
   assert.equal(reopened.summary.assetCount, 1);
   assert.equal(reopened.manuscript?.sections[0]?.children?.[0]?.blocks?.[0]?.visual?.kind, 'image');
-  assert.equal(reopened.manuscript?.sections[0]?.children?.[0]?.blocks?.[0]?.visual?.src, '');
+  const reopenedVisual = reopened.manuscript?.sections[0]?.children?.[0]?.blocks?.[0]?.visual;
+  if (reopenedVisual?.kind === 'image') assert.equal(reopenedVisual.src, '');
   assert.equal(JSON.stringify(manuscript), original);
 });
 
