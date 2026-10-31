@@ -4,12 +4,24 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { buildPdfWorkerEnvironment } from '../security/pdfWorkerEnvironment.js';
-import { env } from '../config/env.js';
+import { configuredPdfWorkerSocket, dispatchPdfWorkerTask } from '../security/pdfWorkerTransport.js';
 
 export const VIVLIOSTYLE_PDF_RENDERER = 'vivliostyle-cli' as const;
 export const VIVLIOSTYLE_PDF_RENDERER_VERSION = '11.0.4' as const;
 export const MAX_VIVLIOSTYLE_HTML_BYTES = 48 * 1024 * 1024;
 export const MAX_VIVLIOSTYLE_PDF_BYTES = 96 * 1024 * 1024;
+
+function pdfRendererBinary(): string {
+  return process.env.VIVLIOSTYLE_BIN || 'vivliostyle';
+}
+
+function pdfRendererTimeoutMs(): number {
+  const seconds = Number(process.env.VIVLIOSTYLE_TIMEOUT_SECONDS ?? 180);
+  if (!Number.isInteger(seconds) || seconds < 15 || seconds > 600) {
+    throw new VivliostylePdfError('PDF_RENDERER_UNAVAILABLE', 'Invalid PDF renderer timeout.');
+  }
+  return seconds * 1000;
+}
 
 const MAX_PROCESS_OUTPUT_CHARS = 64 * 1024;
 // Browser-enforced defense in depth against unrecognized HTML/CSS resource syntax.
@@ -49,12 +61,23 @@ export interface VivliostylePdfArtifact {
  */
 export async function renderVivliostylePdf(
   html: string,
+  ownerUserId = 'system',
 ): Promise<VivliostylePdfArtifact> {
   const inputError = validateVivliostyleHtmlInput(html);
   if (inputError) {
     throw new VivliostylePdfError('PDF_INPUT_UNSAFE', inputError);
   }
 
+  const workerSocket = configuredPdfWorkerSocket();
+  if (workerSocket) {
+    try {
+      const bytes = await dispatchPdfWorkerTask('render', Buffer.from(html, 'utf8'), ownerUserId, workerSocket, pdfRendererTimeoutMs() + 15_000);
+      if (bytes.byteLength < 5 || bytes.subarray(0, 5).toString('ascii') !== '%PDF-') throw new Error('Invalid isolated PDF output.');
+      return { bytes: new Uint8Array(bytes), renderer: VIVLIOSTYLE_PDF_RENDERER, rendererVersion: VIVLIOSTYLE_PDF_RENDERER_VERSION };
+    } catch (error) {
+      throw new VivliostylePdfError('PDF_RENDER_FAILED', error instanceof Error ? error.message : 'PDF worker unavailable.');
+    }
+  }
   const rendererVersion = await resolveRendererVersion();
   const directory = await mkdtemp(join(tmpdir(), 'omi-vivliostyle-'));
   const inputPath = join(directory, 'article.html');
@@ -70,19 +93,19 @@ export async function renderVivliostylePdf(
       '--output',
       outputPath,
       '--timeout',
-      String(env.VIVLIOSTYLE_TIMEOUT_SECONDS),
+      String(pdfRendererTimeoutMs() / 1000),
       '--log-level',
       'silent',
       '--no-vite-config-file',
     ];
-    if (env.VIVLIOSTYLE_EXECUTABLE_BROWSER) {
-      args.push('--executable-browser', env.VIVLIOSTYLE_EXECUTABLE_BROWSER);
+    if (process.env.VIVLIOSTYLE_EXECUTABLE_BROWSER) {
+      args.push('--executable-browser', process.env.VIVLIOSTYLE_EXECUTABLE_BROWSER);
     }
 
     const result = await runCommand(
-      env.VIVLIOSTYLE_BIN,
+      pdfRendererBinary(),
       args,
-      env.VIVLIOSTYLE_TIMEOUT_SECONDS * 1000 + 15_000,
+      pdfRendererTimeoutMs() + 15_000,
       directory,
     );
     if (result.exitCode !== 0) {
@@ -193,7 +216,7 @@ export function validateVivliostyleHtmlInput(html: string): string | undefined {
 async function resolveRendererVersion(): Promise<typeof VIVLIOSTYLE_PDF_RENDERER_VERSION> {
   rendererVersionPromise ??= (async () => {
     const result = await runCommand(
-      env.VIVLIOSTYLE_BIN,
+      pdfRendererBinary(),
       ['--version'],
       15_000,
       process.cwd(),

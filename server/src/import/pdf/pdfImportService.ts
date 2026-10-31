@@ -14,6 +14,7 @@ import {
 } from './pdfImportAdmission.js';
 
 import { buildPdfWorkerEnvironment } from '../../security/pdfWorkerEnvironment.js';
+import { configuredPdfWorkerSocket, dispatchPdfWorkerTask } from '../../security/pdfWorkerTransport.js';
 const execFileAsync = promisify(execFile);
 const MAX_PDF_BYTES = 100 * 1024 * 1024;
 const MAX_PAGES = 2_000;
@@ -178,11 +179,17 @@ async function processJob(job: PdfImportJob, bytes: Buffer): Promise<void> {
     const outputPath = join(directory, 'layout.html');
     await writeFile(inputPath, bytes, { flag: 'wx' });
     try {
-      await execFileAsync('pdftotext', ['-bbox-layout', '-enc', 'UTF-8', inputPath, outputPath], {
-        timeout: 120_000,
-        maxBuffer: 4 * 1024 * 1024,
-        env: buildPdfWorkerEnvironment('poppler'),
-      });
+      const workerSocket = configuredPdfWorkerSocket();
+      if (workerSocket) {
+        const layout = await dispatchPdfWorkerTask('import', bytes, job.ownerUserId, workerSocket, 135_000);
+        await writeFile(outputPath, layout, { mode: 0o600 });
+      } else {
+        await execFileAsync('pdftotext', ['-bbox-layout', '-enc', 'UTF-8', inputPath, outputPath], {
+          timeout: 120_000,
+          maxBuffer: 4 * 1024 * 1024,
+          env: buildPdfWorkerEnvironment('poppler'),
+        });
+      }
     } catch (error) {
       const code = error && typeof error === 'object' && 'code' in error
         ? String((error as { code?: unknown }).code)

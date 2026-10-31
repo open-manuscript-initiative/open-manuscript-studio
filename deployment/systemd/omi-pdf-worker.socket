@@ -1,0 +1,12 @@
+[Unit]
+Description=OMI PDF worker restricted Unix socket
+
+[Socket]
+ListenStream=/run/omi-pdf-worker.sock
+SocketUser=omi-pdf-worker
+SocketGroup=omi-pdf-clients
+SocketMode=0660
+RemoveOnStop=yes
+
+[Install]
+WantedBy=sockets.target

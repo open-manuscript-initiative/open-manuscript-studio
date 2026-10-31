@@ -1,0 +1,50 @@
+[Unit]
+Description=OMI isolated untrusted PDF import/render worker
+Requires=omi-pdf-worker.socket
+After=omi-pdf-worker.socket
+
+[Service]
+Type=simple
+User=omi-pdf-worker
+Group=omi-pdf-worker
+WorkingDirectory=/opt/omi-pdf-worker
+ExecStart=/opt/plesk/node/24/bin/node /opt/omi-pdf-worker/workers/pdfWorkerServer.js
+Environment=NODE_ENV=production
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+Environment=VIVLIOSTYLE_BIN=/usr/local/bin/vivliostyle
+Environment=VIVLIOSTYLE_EXECUTABLE_BROWSER=/usr/bin/chromium
+Environment=HOME=/tmp
+Environment=XDG_CACHE_HOME=/tmp/.cache
+UMask=0077
+NoNewPrivileges=yes
+PrivateNetwork=yes
+IPAddressDeny=any
+# Browser rendering may require localhost inside its own empty namespace;
+# this is not the host's loopback or an external network path.
+IPAddressAllow=localhost
+ProtectSystem=strict
+ProtectHome=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+# Never mount Studio/Plesk vhosts or secret .env directories into the worker.
+InaccessiblePaths=-/var/www/vhosts
+TemporaryFileSystem=/tmp:rw,nosuid,nodev,size=1024M
+MemoryMax=3G
+CPUQuota=200%
+TasksMax=128
+LimitNOFILE=1024
+TimeoutStopSec=30
+KillMode=control-group
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
