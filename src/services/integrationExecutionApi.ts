@@ -105,6 +105,37 @@ export interface IntegrationExtensionManifest {
   endpoints?: Record<string, string> | undefined;
 }
 
+/** Version-pinned, authenticated discovery; never an authorization token. */
+export interface IntegrationExtensionApiCapabilities {
+  model: 'omi-studio-integration-extension-api';
+  apiVersion: '1';
+  specification: 'OMI-SPEC-310@0.1.0';
+  pluginSpecification: 'OMI-SPEC-300@0.1.0';
+  status: 'partial-draft-implementation';
+  registryScope: 'authenticated-user';
+  manifestOnly: true;
+  executesPluginCode: false;
+  grantsManuscriptAccess: false;
+  publishingAuthority: false;
+  permissions: readonly string[];
+}
+
+export async function getIntegrationExtensionApiCapabilities(): Promise<IntegrationExtensionApiCapabilities> {
+  const response = await fetch(`${API_BASE_URL}/integrations/extensions/capabilities`, {
+    credentials: 'include', headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) {
+    throw await readError(response, `Integration registry discovery failed with HTTP ${response.status}.`);
+  }
+  const body: unknown = await response.json();
+  if (!body || typeof body !== 'object' || !('apiVersion' in body) ||
+      body.apiVersion !== '1' || !('manifestOnly' in body) || body.manifestOnly !== true ||
+      !('grantsManuscriptAccess' in body) || body.grantsManuscriptAccess !== false) {
+    throw new Error('INCOMPATIBLE_EXTENSION_REGISTRY_API');
+  }
+  return body as IntegrationExtensionApiCapabilities;
+}
+
 export interface RegisteredIntegrationExtension {
   id: string;
   extensionId: string;
