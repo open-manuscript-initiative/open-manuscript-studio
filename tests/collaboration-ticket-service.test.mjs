@@ -40,7 +40,12 @@ test('ticket authorization checks document, expiry, revocation, and current memb
   member = { role: 'AUTHOR', revokedAt: null, user: { status: 'ACTIVE' } };
   const raw = 'x'.repeat(43);
   ticketRow = { id: 'ticket-id', tokenHash: createHash('sha256').update(raw).digest('hex'), documentId, userId, expiresAt: new Date(Date.now() + 60_000), revokedAt: null };
-  assert.deepEqual(await service.authorizeCollaborationConnectionTicket(raw, documentId), { userId, role: 'AUTHOR', documentId, expiresAt: ticketRow.expiresAt.getTime() });
+  assert.deepEqual(await service.authorizeCollaborationConnectionTicket(raw, documentId), { userId, role: 'AUTHOR', documentId, expiresAt: ticketRow.expiresAt.getTime(), readOnly: false });
+  member = { role: 'VIEWER', revokedAt: null, user: { status: 'ACTIVE' } };
+  assert.deepEqual(await service.authorizeCollaborationConnectionTicket(raw, documentId), {
+    userId, role: 'VIEWER', documentId, expiresAt: ticketRow.expiresAt.getTime(), readOnly: true,
+  });
+  member = { role: 'AUTHOR', revokedAt: null, user: { status: 'ACTIVE' } };
   assert.equal(await service.authorizeCollaborationConnectionTicket(raw, 'another-document'), null);
   member = { role: 'AUTHOR', revokedAt: new Date(), user: { status: 'ACTIVE' } };
   assert.equal(await service.authorizeCollaborationConnectionTicket(raw, documentId), null);
