@@ -117,8 +117,10 @@ export function isAssessmentCurrent(report: ReturnType<typeof runModelAssessment
     const actual = evidence.results[i];
     const expected = MODEL_SUITE.cases[i];
     if (!actual || !expected || actual.id !== expected.id || actual.fixtureDigest !== expected.fixtureDigest) return false;
+    const definition = MODEL_CASES[i];
+    if (!definition) return false;
     let observed: string;
-    try { observed = executeModelCase(MODEL_CASES[i]); }
+    try { observed = executeModelCase(definition); }
     catch { return false; }
     if (actual.status !== (observed === expected.expected ? 'pass' : 'fail')) return false;
   }
@@ -127,8 +129,10 @@ export function isAssessmentCurrent(report: ReturnType<typeof runModelAssessment
   if (!Array.isArray(evidence.coverage) || evidence.coverage.length !== required.length) return false;
   for (let i = 0; i < required.length; i += 1) {
     const entry = evidence.coverage[i];
-    const expectedCases = MODEL_CASES.filter((item) => item.requirements.includes(required[i])).map((item) => item.id);
-    if (!entry || entry.requirement !== required[i] || JSON.stringify(entry.cases) !== JSON.stringify(expectedCases)
+    const requirement = required[i];
+    if (!requirement) return false;
+    const expectedCases = MODEL_CASES.filter((item) => item.requirements.includes(requirement)).map((item) => item.id);
+    if (!entry || entry.requirement !== requirement || JSON.stringify(entry.cases) !== JSON.stringify(expectedCases)
       || entry.status !== (expectedCases.length ? 'partially-evidenced' : 'not-run')) return false;
   }
   return report.evidenceDigest === digestBytes(new TextEncoder().encode(JSON.stringify(evidence)));
