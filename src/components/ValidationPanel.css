@@ -1,4 +1,7 @@
 .omi-validation-panel { min-width: 0; }
+.omi-core-model-review { min-width: 0; overflow-wrap: anywhere; }
+.omi-core-model-review code { white-space: normal; overflow-wrap: anywhere; }
+.omi-core-model-review label { display: grid; gap: .4rem; }
 .omi-model-support, .omi-exchange-report { min-width: 0; overflow-wrap: anywhere; }
 .omi-model-support code, .omi-exchange-report code { overflow-wrap: anywhere; white-space: normal; }
 .omi-validation-controls { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; margin-block: 1rem; }

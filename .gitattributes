@@ -1,0 +1,3 @@
+# Preserve the exact bytes pinned by the shared core-review SHA-256 digests.
+/src/model/coreSnapshotValidator.mjs text eol=lf
+/tests/fixtures/core-review/** text eol=lf

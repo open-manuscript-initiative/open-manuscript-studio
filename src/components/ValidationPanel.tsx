@@ -10,6 +10,7 @@ import { saveExportText } from '../services/exportFileDelivery';
 import { getAssetPayload } from '../services/assetRepository';
 import type { OmiManuscript } from '../types/omi';
 import './ValidationPanel.css';
+import { CoreModelReviewPanel } from './CoreModelReviewPanel';
 import { ModelSupportPanel } from './ModelSupportPanel';
 
 export function ValidationPanel({ onNavigate }: { onNavigate: () => void }) {
@@ -98,5 +99,5 @@ export function ValidationPanel({ onNavigate }: { onNavigate: () => void }) {
         <button type="button" disabled={currentPage + 1 >= totalPages} onClick={() => setPage(currentPage + 1)}>{copy('next')}</button>
       </div> : null}
     </>}
-  </section><ModelSupportPanel /></>;
+  </section><ModelSupportPanel /><CoreModelReviewPanel /></>;
 }

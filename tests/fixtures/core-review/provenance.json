@@ -1,0 +1,9 @@
+{
+  "repository": "open-manuscript-initiative/omi",
+  "sourcePath": "static/tools/core-snapshot-validator-0.1.mjs",
+  "profile": "urn:omi:profile:core-snapshot-review:0.1.0",
+  "sha256": "5a90c9f43c60b1e613823e117b0487e631a79c7b20d52d8ad9a6160bb7180341",
+  "independentImplementation": false,
+  "note": "Shared validator/corpus from the pinned companion core Draft commit. Not independent verification.",
+  "sourceCommit": "644afdf2bd551a333116276ace86f5ec85df1a46"
+}

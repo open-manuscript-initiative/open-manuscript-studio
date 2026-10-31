@@ -1,0 +1,900 @@
+{
+  "profile": "urn:omi:profile:core-snapshot-review:0.1.0",
+  "suiteVersion": "0.1.0-draft.1",
+  "approved": false,
+  "specifications": {
+    "OMI-SPEC-000": "0.2.0",
+    "OMI-SPEC-120": "0.3.0",
+    "OMI-SPEC-100": "0.2.0",
+    "OMI-SPEC-140": "0.2.0"
+  },
+  "schema": "https://openmanuscript.org/schemas/omi-core-snapshot-0.1.schema.json",
+  "validator": "/tools/core-snapshot-validator-0.1.mjs",
+  "fixtures": [
+    {
+      "id": "valid-unicode",
+      "path": "valid-unicode.json",
+      "mode": "authoring",
+      "expectedOutcome": "valid",
+      "expectedDiagnostics": [],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-MET-004",
+        "REQ-OBJ-003"
+      ],
+      "sha256": "0bb6d03a12d991915c2055c44219b0741fc46df35526bbde4594d0cd898ee6fd"
+    },
+    {
+      "id": "valid-authoring-empty-title",
+      "path": "valid-authoring-empty-title.json",
+      "mode": "authoring",
+      "expectedOutcome": "valid",
+      "expectedDiagnostics": [],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-DOC-008",
+        "REQ-MET-002"
+      ],
+      "sha256": "ce2f89eb80aab10ccf016624436fe8cf1f44a409793327644c10d2622eba32f9"
+    },
+    {
+      "id": "invalid-exchange-empty-title",
+      "path": "invalid-exchange-empty-title.json",
+      "mode": "exchange",
+      "expectedOutcome": "invalid",
+      "expectedDiagnostics": [
+        "INVALID_TITLE"
+      ],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-DOC-008",
+        "REQ-MET-002"
+      ],
+      "sha256": "ce2f89eb80aab10ccf016624436fe8cf1f44a409793327644c10d2622eba32f9"
+    },
+    {
+      "id": "valid-private-language",
+      "path": "valid-private-language.json",
+      "mode": "authoring",
+      "expectedOutcome": "valid",
+      "expectedDiagnostics": [],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-MET-003"
+      ],
+      "sha256": "f5448083b4068b2859b271cfb56cd157431bd4673d25281866e31bca4241de21"
+    },
+    {
+      "id": "invalid-language",
+      "path": "invalid-language.json",
+      "mode": "authoring",
+      "expectedOutcome": "invalid",
+      "expectedDiagnostics": [
+        "INVALID_LANGUAGE"
+      ],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-MET-003"
+      ],
+      "sha256": "6e7e288769153363929e09fcc7ebc570eddb3ad6994ff842f93cd625df5aefab"
+    },
+    {
+      "id": "invalid-duplicate-id",
+      "path": "invalid-duplicate-id.json",
+      "mode": "authoring",
+      "expectedOutcome": "invalid",
+      "expectedDiagnostics": [
+        "DUPLICATE_ID"
+      ],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-OBJ-002"
+      ],
+      "sha256": "ef81fdbe16b28b27360268f3bc0478b498a9c103f9573d73f471d575b7b23a83"
+    },
+    {
+      "id": "valid-case-sensitive-id",
+      "path": "valid-case-sensitive-id.json",
+      "mode": "authoring",
+      "expectedOutcome": "valid",
+      "expectedDiagnostics": [],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-OBJ-003"
+      ],
+      "sha256": "c446a2f365a93b1ac653815579858e2d51fc3aa1cd013575325980d64053c345"
+    },
+    {
+      "id": "invalid-blank-id",
+      "path": "invalid-blank-id.json",
+      "mode": "authoring",
+      "expectedOutcome": "invalid",
+      "expectedDiagnostics": [
+        "INVALID_ID"
+      ],
+      "schemaValid": false,
+      "requirements": [
+        "REQ-OBJ-001"
+      ],
+      "sha256": "9e033a9beff94f1f71b829e6f7ddea23dfb1b36d483125531f3af32d00627f5c"
+    },
+    {
+      "id": "invalid-block-type",
+      "path": "invalid-block-type.json",
+      "mode": "authoring",
+      "expectedOutcome": "invalid",
+      "expectedDiagnostics": [
+        "INVALID_BLOCK_TYPE"
+      ],
+      "schemaValid": false,
+      "requirements": [
+        "REQ-DOC-007"
+      ],
+      "sha256": "10c8b70fb0134831212821b9114db005528dbcce68fbde485b9469b42f02a163"
+    },
+    {
+      "id": "unknown-block-type",
+      "path": "unknown-block-type.json",
+      "mode": "authoring",
+      "expectedOutcome": "indeterminate",
+      "expectedDiagnostics": [
+        "UNKNOWN_BLOCK_TYPE"
+      ],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-OBJ-012",
+        "REQ-OBJ-017",
+        "REQ-DOC-007"
+      ],
+      "sha256": "57703b968f1157760676e5f5cd48ce007f63ce6982b75a691c01c930abca180a"
+    },
+    {
+      "id": "invalid-content-type",
+      "path": "invalid-content-type.json",
+      "mode": "authoring",
+      "expectedOutcome": "invalid",
+      "expectedDiagnostics": [
+        "INVALID_CONTENT"
+      ],
+      "schemaValid": false,
+      "requirements": [
+        "REQ-DOC-007"
+      ],
+      "sha256": "8d47bde8b821dd0942a0d5aa693a00a3cb49b12933ec1fbdb54991b0e15516f2"
+    },
+    {
+      "id": "invalid-unresolved-parent",
+      "path": "invalid-unresolved-parent.json",
+      "mode": "authoring",
+      "expectedOutcome": "invalid",
+      "expectedDiagnostics": [
+        "UNRESOLVED_PARENT"
+      ],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-DOC-004"
+      ],
+      "sha256": "d1add4e90a18da8c3fe3da7b603a0bcf5d59b45f42b81063cfa9b77fbcc3b61d"
+    },
+    {
+      "id": "invalid-self-parent",
+      "path": "invalid-self-parent.json",
+      "mode": "authoring",
+      "expectedOutcome": "invalid",
+      "expectedDiagnostics": [
+        "CYCLIC_CONTAINMENT"
+      ],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-DOC-004",
+        "REQ-OBJ-006"
+      ],
+      "sha256": "e03b8d4b916a75c7972e8207eb746be41d1709984385038c8ba6011a2c08f2eb"
+    },
+    {
+      "id": "valid-nested-section",
+      "path": "valid-nested-section.json",
+      "mode": "authoring",
+      "expectedOutcome": "valid",
+      "expectedDiagnostics": [],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-DOC-006",
+        "REQ-OBJ-006"
+      ],
+      "sha256": "1ee433ff4d8695d150bb7cd7416d33f7ff3bd0bb0c872bb94d753b1ee7d68330"
+    },
+    {
+      "id": "invalid-conflicting-parent",
+      "path": "invalid-conflicting-parent.json",
+      "mode": "authoring",
+      "expectedOutcome": "invalid",
+      "expectedDiagnostics": [
+        "CONFLICTING_PARENT",
+        "CYCLIC_CONTAINMENT"
+      ],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-DOC-005",
+        "REQ-OBJ-006"
+      ],
+      "sha256": "94608659d1d311184fe6fb6708e70311eacefb696160e4a52fd463bea19a5db7"
+    },
+    {
+      "id": "invalid-calendar-date",
+      "path": "invalid-calendar-date.json",
+      "mode": "authoring",
+      "expectedOutcome": "invalid",
+      "expectedDiagnostics": [
+        "INVALID_TIMESTAMP"
+      ],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-MET-006"
+      ],
+      "sha256": "2b87f88e520b655a96df6ca21f040a49c0feb5b1dce72c1c23641f9f34b62861"
+    },
+    {
+      "id": "invalid-timestamp-order",
+      "path": "invalid-timestamp-order.json",
+      "mode": "authoring",
+      "expectedOutcome": "invalid",
+      "expectedDiagnostics": [
+        "TIMESTAMP_ORDER"
+      ],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-MET-007"
+      ],
+      "sha256": "32fbd548dc2c17c7465f51d1c0c70e9beedd4dae08ab1bf1b2be40c05cdbf8da"
+    },
+    {
+      "id": "invalid-keyword",
+      "path": "invalid-keyword.json",
+      "mode": "authoring",
+      "expectedOutcome": "invalid",
+      "expectedDiagnostics": [
+        "INVALID_KEYWORDS"
+      ],
+      "schemaValid": false,
+      "requirements": [
+        "REQ-MET-016"
+      ],
+      "sha256": "df53c95a4078617ccfd8bcbfc48fd63c1f7aafd5d86ea437d70a56df20e78937"
+    },
+    {
+      "id": "invalid-unicode-scalar",
+      "path": "invalid-unicode-scalar.json",
+      "mode": "authoring",
+      "expectedOutcome": "invalid",
+      "expectedDiagnostics": [
+        "INVALID_UNICODE"
+      ],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-MET-004"
+      ],
+      "sha256": "16046dffd7f68d450ab66c4f47c56698cb2a1dbc176689a5921ac91dfc81e36a"
+    },
+    {
+      "id": "valid-opaque-extension",
+      "path": "valid-opaque-extension.json",
+      "mode": "authoring",
+      "expectedOutcome": "valid",
+      "expectedDiagnostics": [],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-OBJ-013",
+        "REQ-MET-014"
+      ],
+      "sha256": "9edeb2bd97017a28c97a8764f058e165adcc80973fd33439f1708f761b87c1c8"
+    },
+    {
+      "id": "valid-history-separate-scope",
+      "path": "valid-history-separate-scope.json",
+      "mode": "authoring",
+      "expectedOutcome": "valid",
+      "expectedDiagnostics": [],
+      "schemaValid": true,
+      "requirements": [
+        "REQ-OBJ-005"
+      ],
+      "sha256": "b375c83ed93138ea8db0d7db8e19ff685b531deb4723b53826d90cdcf0c1fe96"
+    },
+    {
+      "id": "invalid-collection-shape",
+      "path": "invalid-collection-shape.json",
+      "mode": "authoring",
+      "expectedOutcome": "invalid",
+      "expectedDiagnostics": [
+        "INVALID_ARRAY"
+      ],
+      "schemaValid": false,
+      "requirements": [
+        "REQ-OBJ-001"
+      ],
+      "sha256": "60fd3fce6cdb8bfebaee2ef13718d1740fd3bb5378b289232106c2d7d440dbc8"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "REQ-PRI-001",
+      "specification": "OMI-SPEC-000",
+      "version": "0.2.0",
+      "area": "architecture",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-PRI-002",
+      "specification": "OMI-SPEC-000",
+      "version": "0.2.0",
+      "area": "portability",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-PRI-003",
+      "specification": "OMI-SPEC-000",
+      "version": "0.2.0",
+      "area": "projection",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-PRI-004",
+      "specification": "OMI-SPEC-000",
+      "version": "0.2.0",
+      "area": "identity",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-PRI-005",
+      "specification": "OMI-SPEC-000",
+      "version": "0.2.0",
+      "area": "relationships",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-PRI-006",
+      "specification": "OMI-SPEC-000",
+      "version": "0.2.0",
+      "area": "authority",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-PRI-007",
+      "specification": "OMI-SPEC-000",
+      "version": "0.2.0",
+      "area": "editability",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-PRI-008",
+      "specification": "OMI-SPEC-000",
+      "version": "0.2.0",
+      "area": "loss",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-PRI-009",
+      "specification": "OMI-SPEC-000",
+      "version": "0.2.0",
+      "area": "privacy",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-PRI-010",
+      "specification": "OMI-SPEC-000",
+      "version": "0.2.0",
+      "area": "ai",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-PRI-011",
+      "specification": "OMI-SPEC-000",
+      "version": "0.2.0",
+      "area": "accessibility",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-PRI-012",
+      "specification": "OMI-SPEC-000",
+      "version": "0.2.0",
+      "area": "claims",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-PRI-013",
+      "specification": "OMI-SPEC-000",
+      "version": "0.2.0",
+      "area": "rights",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-PRI-014",
+      "specification": "OMI-SPEC-000",
+      "version": "0.2.0",
+      "area": "compatibility",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-OBJ-001",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "identity",
+      "status": "partial",
+      "fixtures": [
+        "invalid-blank-id",
+        "invalid-collection-shape"
+      ]
+    },
+    {
+      "id": "REQ-OBJ-002",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "identity",
+      "status": "partial",
+      "fixtures": [
+        "invalid-duplicate-id"
+      ]
+    },
+    {
+      "id": "REQ-OBJ-003",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "identity",
+      "status": "partial",
+      "fixtures": [
+        "valid-unicode",
+        "valid-case-sensitive-id"
+      ]
+    },
+    {
+      "id": "REQ-OBJ-004",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "identity",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-OBJ-005",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "history",
+      "status": "partial",
+      "fixtures": [
+        "valid-history-separate-scope"
+      ]
+    },
+    {
+      "id": "REQ-OBJ-006",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "containment",
+      "status": "partial",
+      "fixtures": [
+        "invalid-self-parent",
+        "valid-nested-section",
+        "invalid-conflicting-parent"
+      ]
+    },
+    {
+      "id": "REQ-OBJ-007",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "relationships",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-OBJ-008",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "relationships",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-OBJ-009",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "deletion",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-OBJ-010",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "identity",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-OBJ-011",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "granularity",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-OBJ-012",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "extensions",
+      "status": "partial",
+      "fixtures": [
+        "unknown-block-type"
+      ]
+    },
+    {
+      "id": "REQ-OBJ-013",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "extensions",
+      "status": "partial",
+      "fixtures": [
+        "valid-opaque-extension"
+      ]
+    },
+    {
+      "id": "REQ-OBJ-014",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "provenance",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-OBJ-015",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "assets",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-OBJ-016",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "lifecycle",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-OBJ-017",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "validation",
+      "status": "partial",
+      "fixtures": [
+        "unknown-block-type"
+      ]
+    },
+    {
+      "id": "REQ-OBJ-018",
+      "specification": "OMI-SPEC-120",
+      "version": "0.3.0",
+      "area": "editability",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-DOC-001",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "root",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-DOC-002",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "identity",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-DOC-003",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "order",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-DOC-004",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "containment",
+      "status": "partial",
+      "fixtures": [
+        "invalid-unresolved-parent",
+        "invalid-self-parent"
+      ]
+    },
+    {
+      "id": "REQ-DOC-005",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "containment",
+      "status": "partial",
+      "fixtures": [
+        "invalid-conflicting-parent"
+      ]
+    },
+    {
+      "id": "REQ-DOC-006",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "structure",
+      "status": "partial",
+      "fixtures": [
+        "valid-nested-section"
+      ]
+    },
+    {
+      "id": "REQ-DOC-007",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "structure",
+      "status": "partial",
+      "fixtures": [
+        "invalid-block-type",
+        "unknown-block-type",
+        "invalid-content-type"
+      ]
+    },
+    {
+      "id": "REQ-DOC-008",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "authoring",
+      "status": "partial",
+      "fixtures": [
+        "valid-authoring-empty-title",
+        "invalid-exchange-empty-title"
+      ]
+    },
+    {
+      "id": "REQ-DOC-009",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "projection",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-DOC-010",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "portability",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-DOC-011",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "editability",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-DOC-012",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "validation",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-DOC-013",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "limits",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-DOC-014",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "extensions",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-DOC-015",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "semantics",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-DOC-016",
+      "specification": "OMI-SPEC-100",
+      "version": "0.2.0",
+      "area": "history",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-MET-001",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "subject",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-MET-002",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "title",
+      "status": "partial",
+      "fixtures": [
+        "valid-authoring-empty-title",
+        "invalid-exchange-empty-title"
+      ]
+    },
+    {
+      "id": "REQ-MET-003",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "language",
+      "status": "partial",
+      "fixtures": [
+        "valid-private-language",
+        "invalid-language"
+      ]
+    },
+    {
+      "id": "REQ-MET-004",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "unicode",
+      "status": "partial",
+      "fixtures": [
+        "valid-unicode",
+        "invalid-unicode-scalar"
+      ]
+    },
+    {
+      "id": "REQ-MET-005",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "assertions",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-MET-006",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "dates",
+      "status": "partial",
+      "fixtures": [
+        "invalid-calendar-date"
+      ]
+    },
+    {
+      "id": "REQ-MET-007",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "dates",
+      "status": "partial",
+      "fixtures": [
+        "invalid-timestamp-order"
+      ]
+    },
+    {
+      "id": "REQ-MET-008",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "identity",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-MET-009",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "rights",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-MET-010",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "identifiers",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-MET-011",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "language",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-MET-012",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "provenance",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-MET-013",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "privacy",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-MET-014",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "extensions",
+      "status": "partial",
+      "fixtures": [
+        "valid-opaque-extension"
+      ]
+    },
+    {
+      "id": "REQ-MET-015",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "profile",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-MET-016",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "keywords",
+      "status": "partial",
+      "fixtures": [
+        "invalid-keyword"
+      ]
+    },
+    {
+      "id": "REQ-MET-017",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "mapping",
+      "status": "untested",
+      "fixtures": []
+    },
+    {
+      "id": "REQ-MET-018",
+      "specification": "OMI-SPEC-140",
+      "version": "0.2.0",
+      "area": "editability",
+      "status": "untested",
+      "fixtures": []
+    }
+  ]
+}
